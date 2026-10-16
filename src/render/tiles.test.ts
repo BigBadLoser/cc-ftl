@@ -61,16 +61,14 @@ describe("tile chains", () => {
     expect(low.some((i) => i.includes("upper.low"))).toBe(true);
     expect(low.some((i) => /upper\.(c|arm)/.test(i))).toBe(false);
   });
-  it("doors stand on the base whatever the cutaway, along the wall axis", () => {
+  it("doors draw a sill and a frame, never wall base or upper pieces, whatever the cutaway", () => {
     const d = grid([
       [W, W, W],
       [W, F, W],
       [W, Struct.Door, W],
     ]);
     for (const low of [false, true]) {
-      const pieces = ids(d, 1, 2, Struct.Door, low);
-      expect(pieces).toContain("door.x");
-      expect(pieces.some((p) => p.includes("upper"))).toBe(false);
+      expect(ids(d, 1, 2, Struct.Door, low)).toEqual(["door.sill.x", "door.x"]);
     }
   });
   it("lowers walls with interior behind them", () => {

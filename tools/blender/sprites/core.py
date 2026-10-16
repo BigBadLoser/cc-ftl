@@ -155,8 +155,9 @@ def clear_scene_meshes():
 # ---- procedural mesh builder (grid frame) -----------------------------------------------------------------
 
 class Mesh:
-    def __init__(self, name, selflit=False):
-        self.name, self.selflit = name, selflit
+    def __init__(self, name, selflit=False, flat=False):
+        """flat: every polygon is unlit (Self emission = its palette colour), so tones are exactly the palette's."""
+        self.name, self.selflit, self.flat = name, selflit, flat
         self.v, self.f = [], []   # verts (blender space), faces (idx list, col, self, glow)
 
     def _cols(self, color):
@@ -166,6 +167,8 @@ class Mesh:
                 return (0, 0, 0), c, c
             dim = tuple(x * 0.18 + 0.004 for x in c)
             return dim, (0, 0, 0), tuple(x * 0.85 for x in c)
+        if self.flat:
+            return (0, 0, 0), c, (0, 0, 0)
         return c, (0, 0, 0), (0, 0, 0)
 
     def poly(self, pts, color, flip=False):

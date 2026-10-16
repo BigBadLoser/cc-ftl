@@ -58,7 +58,7 @@ const DOOR_ORDER = UPPER + CENTRE_ORDER;
  * Pieces of the wall, hull or door at (x, y), drawn in `order` ascending with the tile. A wall is a low sloped base
  * plus a thin upper wall, both built from a centre piece and one arm toward each connected (wall or door) neighbour:
  * back arms (n, w), centre, front arms (s, e). Cutaway (`low`) swaps only the upper wall for a short stub and
- * leaves the base. Doors stand as a slim frame on base pieces whatever the cutaway; the frame runs along x when
+ * leaves the base. Doors draw no wall base: a threshold sill plus a slim frame that stands whatever the cutaway; the frame runs along x when
  * walls flank it in x, otherwise along y. Hull walls are walls touching space.
  */
 export function wallPieces(
@@ -80,11 +80,15 @@ export function wallPieces(
     for (const [d, , , o] of arms)
       out.push({ chain: part(layer, `arm.${d}`), order: base + o });
   };
-  add("base", 0);
   if (kind === Struct.Door) {
+    // No wall base through the opening: a threshold sill (with feet that meet the neighbouring wall bases) and the frame.
     const o =
       solidish(kindAt(x - 1, y)) && solidish(kindAt(x + 1, y)) ? "x" : "y";
+    out.push({ chain: [`tile.door.sill.${o}`], order: 0 });
     out.push({ chain: [`tile.door.${o}`], order: DOOR_ORDER });
-  } else add(low ? "upper.low" : "upper", UPPER);
+    return out;
+  }
+  add("base", 0);
+  add(low ? "upper.low" : "upper", UPPER);
   return out;
 }

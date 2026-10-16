@@ -11,14 +11,14 @@ builder); kind: floor (diamond-masked), block (no ring), prop (1 px ring)."""
 import math
 from . import core
 
-HB = 0.18          # base height (tiles)
-WB = 0.40          # base half-width at the floor
-WT = 0.125         # base half-width at the ridge (ridge is 1/4 tile wide)
+HB = 0.26          # base height (tiles)
+WB = 0.46          # base half-width at the floor (nearly the full tile across the wall line)
+WT = 0.11          # base half-width at the ridge
 TU = 3 / 32        # upper wall half-thickness (3/16 tile thick)
 HU = 0.85          # upper wall height above the ridge
 HU_LOW = 0.10      # collapsed (cutaway) upper stub
 DOOR_X = 0.31      # door posts span |u| in [DOOR_X, 0.5]
-DOOR_LINTEL = 0.62 # opening height above the ridge
+DOOR_LINTEL = 0.68 # opening height above the ridge
 E = 0.004          # decal offset
 DIRS = ("n", "e", "s", "w")
 
@@ -77,9 +77,22 @@ def _q(m, pts, col):
     m.poly([core.G(*p) for p in pts], col)
 
 
+# (z0, z1, colour) bands of the visible slope. The lit face (+y, seen on walls along x) is clearly lighter than the
+# floor, the other face (+x) clearly darker; both have a dark crease at the floor, faint panel line and a crest line.
+def _bands(lit, hull):
+    m = HB / 2
+    if hull:
+        haz = (0.0, 0.05, "haz")
+        return [haz, (0.05, m - 0.01, "steelL" if lit else "steelD"), (m - 0.01, m + 0.01, "steelD" if lit else "dark"),
+                (m + 0.01, HB - 0.03, "steelL" if lit else "steelD"), (HB - 0.03, HB, "plate" if lit else "steel")]
+    return [(0.0, 0.03, "dark"), (0.03, m - 0.01, "plate" if lit else "steelD"),
+            (m - 0.01, m + 0.01, "steelL" if lit else "dark"), (m + 0.01, HB - 0.03, "plate" if lit else "steelD"),
+            (HB - 0.03, HB, "medWhite" if lit else "steelL")]
+
+
 def _slope(m, axis, u0, u1, hull, taper=False):
-    """Visible (+v) sloped face of the base from u0 to u1 as bands: skirting / hazard stripe, then metal. With `taper`
-    (the centre frustum) the face is a trapezoid: its width at height z is 2*wv(z)."""
+    """Visible (+v) sloped face of the base from u0 to u1. With `taper` (the centre frustum) the face is a trapezoid:
+    its width at height z is 2*wv(z)."""
     def rng(a, b, z):
         return (max(a, -_wv(z)), min(b, _wv(z))) if taper else (a, b)
 
@@ -88,40 +101,64 @@ def _slope(m, axis, u0, u1, hull, taper=False):
         a1, b1 = rng(a, b, z1)
         _q(m, [_P(axis, a0, _wv(z0), z0), _P(axis, b0, _wv(z0), z0), _P(axis, b1, _wv(z1), z1),
                _P(axis, a1, _wv(z1), z1)], col)
-    for z0, z1, band in ((0.0, 0.035, True), (0.035, HB, False)):
-        if band and hull:                         # hazard stripe, stripes 1/16 tile long, aligned to the tile grid
+    for z0, z1, col in _bands(axis == "x", hull):
+        if col == "haz":                          # hazard stripe, stripes 1/16 tile long, aligned to the tile grid
             i0, i1 = math.floor((u0 + 0.5) * 16 + 1e-6), math.ceil((u1 + 0.5) * 16 - 1e-6)
             for i in range(i0, i1):
                 quad(max(u0, i / 16 - 0.5), min(u1, (i + 1) / 16 - 0.5), z0, z1, "hazY" if i % 2 == 0 else "hazK")
         else:
-            quad(u0, u1, z0, z1, "dark" if band else "steelD")
+            quad(u0, u1, z0, z1, col)
 
 
 def _ridge(m, axis, u0, u1, hull):
-    top = "steelD" if hull else "steel"
-    _q(m, [_P(axis, u0, -WT, HB), _P(axis, u1, -WT, HB), _P(axis, u1, WT, HB), _P(axis, u0, WT, HB)], top)
-    _q(m, [_P(axis, u0, WT - 0.035, HB + 0.001), _P(axis, u1, WT - 0.035, HB + 0.001),
-           _P(axis, u1, WT, HB + 0.001), _P(axis, u0, WT, HB + 0.001)], "steel" if hull else "steelL")
+    _q(m, [_P(axis, u0, -WT, HB), _P(axis, u1, -WT, HB), _P(axis, u1, WT, HB), _P(axis, u0, WT, HB)],
+       "steel" if hull else "steelL")
 
 
 def base_piece(part, hull):
     """part: 'c' or n/e/s/w arm."""
-    m = core.Mesh(f"base_{part}")
+    m = core.Mesh(f"base_{part}", flat=True)
     if part == "c":
         for ax in ("x", "y"):                     # visible slopes: +y (axis x) and +x (axis y)
             _slope(m, ax, -WB, WB, hull, taper=True)
-        _q(m, [(-WT, -WT, HB), (WT, -WT, HB), (WT, WT, HB), (-WT, WT, HB)], "steelD" if hull else "steel")
-        _q(m, [(-WT, WT - 0.035, HB + 0.001), (WT, WT - 0.035, HB + 0.001), (WT, WT, HB + 0.001), (-WT, WT, HB + 0.001)],
-           "steel" if hull else "steelL")
+        _q(m, [(-WT, -WT, HB), (WT, -WT, HB), (WT, WT, HB), (-WT, WT, HB)], "steel" if hull else "steelL")
     else:
         axis = "x" if part in ("e", "w") else "y"
         u0, u1 = (0.0, 0.5) if part in ("e", "s") else (-0.5, 0.0)
         _ridge(m, axis, u0, u1, hull)
         _slope(m, axis, u0, u1, hull)
         if part in ("e", "s"):                    # end cap (visible only where nothing continues)
-            for z0, z1 in ((0.0, HB),):
-                _q(m, [_P(axis, u1, -_wv(z0), z0), _P(axis, u1, _wv(z0), z0), _P(axis, u1, _wv(z1), z1),
-                       _P(axis, u1, -_wv(z1), z1)], "steelD")
+            _end_cap(m, axis, u1)
+    return [m.build()]
+
+
+def _end_cap(m, axis, u):
+    _q(m, [_P(axis, u, -_wv(0), 0), _P(axis, u, _wv(0), 0), _P(axis, u, _wv(HB), HB), _P(axis, u, -_wv(HB), HB)], "steelD")
+
+
+def door_sill(axis):
+    """Door threshold: a flat sill plate with hazard edges between the posts, plus a base foot under each post that
+    continues the neighbouring walls' base cross-section flush to the frame. No base runs through the opening."""
+    m = core.Mesh(f"sill_{axis}", flat=True)
+    for u0, u1, cap in ((-0.5, -DOOR_X, DOOR_X), (DOOR_X, 0.5, None)):
+        _ridge(m, axis, u0, u1, False)
+        _slope(m, axis, u0, u1, False)
+        if cap is not None:
+            _end_cap(m, axis, u1)                 # inner end of the near foot faces the opening and is visible
+        else:
+            _end_cap(m, axis, u1)                 # outer end (covered by the neighbour's arm)
+    d = 0.19                                      # sill depth along the passage (half)
+    zt = 0.03
+    _q(m, [_P(axis, -DOOR_X, -d, zt), _P(axis, DOOR_X, -d, zt), _P(axis, DOOR_X, d, zt), _P(axis, -DOOR_X, d, zt)], "steelL")
+    n = 10
+    for i in range(n):                            # hazard edge strips along both long edges, 1 art px wide
+        a = -DOOR_X + 2 * DOOR_X * i / n
+        b = -DOOR_X + 2 * DOOR_X * (i + 1) / n
+        col = "hazY" if i % 2 == 0 else "hazK"
+        for v0, v1 in ((d - 0.05, d), (-d, -d + 0.05)):
+            _q(m, [_P(axis, a, v0, zt + 0.001), _P(axis, b, v0, zt + 0.001), _P(axis, b, v1, zt + 0.001),
+                   _P(axis, a, v1, zt + 0.001)], col)
+    _q(m, [_P(axis, -DOOR_X, d, 0), _P(axis, DOOR_X, d, 0), _P(axis, DOOR_X, d, zt), _P(axis, -DOOR_X, d, zt)], "steelD")
     return [m.build()]
 
 
@@ -252,9 +289,9 @@ def door(axis="x", is_open=False):
     else:
         m.box((TU + 2 * E, 0, mid), (0.01, 2 * DOOR_X - 0.2, 0.025), "orange")
     pt = 0.045
-    ph = lint - z0
+    ph = lint - 0.03
     if not is_open:
-        box(-DOOR_X, DOOR_X, z0, lint, "steelD", "steelL", pt)
+        box(-DOOR_X, DOOR_X, 0.03, lint, "steelD", "steelL", pt)
 
         def pf(i, j):
             if j < 3:
@@ -264,10 +301,10 @@ def door(axis="x", is_open=False):
             if j >= round(ph * 39) - 2:
                 return "steelL"
             return "steel"
-        face(-DOOR_X, DOOR_X, z0, lint, pf, pt)
+        face(-DOOR_X, DOOR_X, 0.03, lint, pf, pt)
     else:
         for ua, ub in ((-DOOR_X, -DOOR_X + 0.05), (DOOR_X - 0.05, DOOR_X)):
-            box(ua, ub, z0, lint, "steelD", "steelL", pt)
+            box(ua, ub, 0.03, lint, "steelD", "steelL", pt)
     return [m.build()]
 
 
@@ -415,6 +452,7 @@ for _ax in ("x", "y"):
     SPRITES += [
         (f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False)),
         (f"tile.door.{_ax}.open", (1, 1), "block", lambda a=_ax: door(a, True)),
+        (f"tile.door.sill.{_ax}", (1, 1), "block", lambda a=_ax: door_sill(a)),
     ]
 SPRITES += [
     ("prop.crate", (1, 1), "prop", crates),

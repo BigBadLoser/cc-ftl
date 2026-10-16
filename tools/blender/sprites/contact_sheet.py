@@ -124,12 +124,14 @@ def blocks(s, layout, doors_open=(), cut=None):
             arms = [d for d in "nesw" if solid(x + DELTA[d][0], y + DELTA[d][1])]
             order = sorted(["c"] + arms, key=lambda p: ORDER[p])
             up = "upper.low" if lowered and k == "#" else "upper"
-            for layer in ("base", up) if k == "#" else ("base",):
-                for p in order:
-                    s.static(f"tile.{fam}.{layer}.{'c' if p == 'c' else 'arm.' + p}", x, y, 0.1 + 0.001 * ORDER[p] + (0.01 if layer != "base" else 0))
             if k == "D":
                 ax = "x" if solid(x - 1, y) and solid(x + 1, y) else "y"
+                s.static(f"tile.door.sill.{ax}", x, y, 0.1)
                 s.static(f"tile.door.{ax}{'.open' if (x, y) in doors_open else ''}", x, y, 0.13)
+                continue
+            for layer in ("base", up):
+                for p in order:
+                    s.static(f"tile.{fam}.{layer}.{'c' if p == 'c' else 'arm.' + p}", x, y, 0.1 + 0.001 * ORDER[p] + (0.01 if layer != "base" else 0))
 
 
 def room(assets, man):
