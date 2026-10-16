@@ -1,0 +1,323 @@
+{
+ "version": 1,
+ "tile": {
+  "w": 64,
+  "h": 32
+ },
+ "keyColors": {
+  "team.skin": "#d49c74",
+  "team.cloth": "#72845f"
+ },
+ "sheets": {
+  "env": {
+   "image": "env.png",
+   "glow": "env.glow.png"
+  },
+  "crew": {
+   "image": "crew.png",
+   "glow": "crew.glow.png"
+  }
+ },
+ "assets": {
+  "tile.floor.a": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": false
+  },
+  "tile.floor.b": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 64,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": false
+  },
+  "tile.floor.c": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 127,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": false
+  },
+  "tile.wall.x": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 190,
+    "y": 1,
+    "w": 39,
+    "h": 60
+   },
+   "anchor": {
+    "x": 7,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": false
+  },
+  "tile.wall.y": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 230,
+    "y": 1,
+    "w": 39,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": false
+  },
+  "tile.wall.low.x": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 270,
+    "y": 1,
+    "w": 39,
+    "h": 33
+   },
+   "anchor": {
+    "x": 7,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": false
+  },
+  "tile.wall.low.y": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 310,
+    "y": 1,
+    "w": 39,
+    "h": 33
+   },
+   "anchor": {
+    "x": 32,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": false
+  },
+  "tile.hull.x": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 350,
+    "y": 1,
+    "w": 42,
+    "h": 62
+   },
+   "anchor": {
+    "x": 10,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": false
+  },
+  "tile.hull.y": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 393,
+    "y": 1,
+    "w": 42,
+    "h": 62
+   },
+   "anchor": {
+    "x": 32,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": false
+  },
+  "tile.door.x": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 436,
+    "y": 1,
+    "w": 40,
+    "h": 61
+   },
+   "anchor": {
+    "x": 8,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tile.door.y": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 477,
+    "y": 1,
+    "w": 40,
+    "h": 61
+   },
+   "anchor": {
+    "x": 32,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "prop.console": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 678,
+    "y": 1,
+    "w": 43,
+    "h": 57
+   },
+   "anchor": {
+    "x": 15,
+    "y": 49
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "prop.reactor": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 722,
+    "y": 1,
+    "w": 126,
+    "h": 109
+   },
+   "anchor": {
+    "x": 63,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "prop.crates": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 849,
+    "y": 1,
+    "w": 50,
+    "h": 66
+   },
+   "anchor": {
+    "x": 25,
+    "y": 51
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "crew.human.body": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "body",
+   "order": 0,
+   "sheet": "crew",
+   "frameW": 52,
+   "frameH": 80,
+   "anchor": {
+    "x": 26,
+    "y": 70
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 7,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    }
+   },
+   "glow": true
+  }
+ }
+}

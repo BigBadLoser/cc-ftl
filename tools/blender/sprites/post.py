@@ -35,7 +35,27 @@ def build_palette():
     return np.clip(np.array(cols), 0, 255)
 
 
-PALETTE = build_palette()
+BASE = build_palette()
+NB = len(BASE)
+
+# ---- team (palette-swap) key colours ------------------------------------------------------------------------
+# team.* materials are rendered with a pure key albedo; lighting scales it, so a lit pixel is (s*k) for a key
+# vector k. Classification is exact-ish on the zeroed channels (no palette colour has them), then the scalar s is
+# binned into 5 shade steps (0 = darkest). The output pixels are exact key colours the runtime can match.
+TEAMS = ("team.skin", "team.hair", "team.cloth", "team.accent")
+TEAM_VEC = {"team.skin": (1, 0, 1), "team.hair": (0, 1, 0), "team.cloth": (1, 1, 0), "team.accent": (0, 1, 1)}
+KEY_LEVELS = (0.30, 0.47, 0.64, 0.82, 1.0)       # key channel value (0..1) of shade step 0..4
+SHADE_EDGES = (0.36, 0.52, 0.70, 0.88)           # lit scalar s thresholds between steps (calibrated)
+SHADE_MULT = (0.42, 0.62, 0.82, 1.0, 1.22)       # runtime: target = base colour * mult (see SHADES)
+
+
+def key_color(team, level):
+    v = round(KEY_LEVELS[level] * 255)
+    return tuple(v * c for c in TEAM_VEC[team])
+
+
+KEYS = np.array([key_color(t, l) for t in TEAMS for l in range(5)], float)
+PALETTE = np.vstack([BASE, KEYS])
 
 
 def _lut():
@@ -45,7 +65,7 @@ def _lut():
     out = np.empty(len(q), np.int32)
     w = np.array([2.0, 4.0, 3.0])
     for i in range(0, len(q), 2048):
-        d = (((q[i:i + 2048, None, :] - PALETTE[None]) ** 2) * w).sum(-1)
+        d = (((q[i:i + 2048, None, :] - BASE[None]) ** 2) * w).sum(-1)
         out[i:i + 2048] = d.argmin(1)
     return out.reshape(32, 32, 32)
 
@@ -55,8 +75,24 @@ LUT = _lut()
 
 def quantize(rgb):
     """rgb: (...,3) floats 0..255 -> palette index array."""
-    q = (np.clip(rgb, 0, 255) / 8).astype(int).clip(0, 31)
-    return LUT[q[..., 0], q[..., 1], q[..., 2]]
+    rgb = np.clip(rgb, 0, 255)
+    q = (rgb / 8).astype(int).clip(0, 31)
+    idx = LUT[q[..., 0], q[..., 1], q[..., 2]]
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    lo = 4.0
+    for t, team in enumerate(TEAMS):
+        v = TEAM_VEC[team]
+        zero = [c for c, k in zip((r, g, b), v) if k == 0]
+        full = [c for c, k in zip((r, g, b), v) if k == 1]
+        m = full[0] >= 14
+        for z in zero:
+            m = m & (z <= lo)
+        if len(full) == 2:
+            m = m & (np.abs(full[0] - full[1]) <= lo + 2)
+        s = sum(full) / len(full) / 255.0
+        lvl = np.searchsorted(SHADE_EDGES, s)
+        idx = np.where(m, NB + t * 5 + lvl, idx)
+    return idx
 
 
 def blocks(a, S):
@@ -84,6 +120,42 @@ def downsample(rgb, alpha, S, thresh, quant):
     return np.clip(out, 0, 255).astype(np.uint8), opaque
 
 
+def _is_key(rgb):
+    m = np.zeros(rgb.shape[:2], bool)
+    for k in KEYS.astype(np.uint8):
+        m |= (rgb == k).all(-1)
+    return m
+
+
+def snap_base(col):
+    """Nearest BASE palette colour (never a team key)."""
+    q = (np.clip(col, 0, 255) / 8).astype(int).clip(0, 31)
+    return BASE[LUT[q[..., 0], q[..., 1], q[..., 2]]]
+
+
+def ring_outline(rgb, opaque, full):
+    """Layer outline: 1px ring around `opaque` (the layer's holdout-cut alpha), skipping pixels that belong to the
+    layer's own UNCUT silhouette `full` (those edges are cut by a nearer layer, which draws its own edge there).
+    Ring colour is a dark tone of the neighbouring layer pixel (team key pixels use a neutral stand-in), snapped to
+    the base palette. Returns padded (rgb, opaque)."""
+    stand = np.where(_is_key(rgb)[..., None], np.array([70, 60, 60], np.uint8), rgb)
+    stand = np.pad(stand, ((1, 1), (1, 1), (0, 0)))
+    rgb = np.pad(rgb, ((1, 1), (1, 1), (0, 0)))
+    op = np.pad(opaque, 1)
+    fu = np.pad(full, 1)
+    nsum = np.zeros(rgb.shape, float)
+    ncnt = np.zeros(op.shape, float)
+    for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        o = np.roll(op, (dy, dx), (0, 1))
+        nsum += np.roll(stand, (dy, dx), (0, 1)).astype(float) * o[..., None]
+        ncnt += o
+    ring = (~op) & (~fu) & (ncnt > 0)
+    mean = nsum / np.maximum(ncnt, 1)[..., None]
+    col = snap_base(mean * 0.3 * 0.55 + np.array([8, 10, 18.0]) * 0.45)
+    rgb = np.where(ring[..., None], col, rgb).astype(np.uint8)
+    return rgb, op | ring
+
+
 def outline(rgb, opaque, quant, vertical_only=False):
     """1px outer outline, darkened neighbour colour. Returns padded (rgb, opaque)."""
     rgb = np.pad(rgb, ((1, 1), (1, 1), (0, 0)))
@@ -99,7 +171,7 @@ def outline(rgb, opaque, quant, vertical_only=False):
     mean = nsum / np.maximum(ncnt, 1)[..., None]
     col = mean * 0.3 * 0.55 + np.array([8, 10, 18.0]) * 0.45
     if quant:
-        col = PALETTE[quantize(col)]
+        col = snap_base(col)
     rgb = np.where(ring[..., None], col, rgb).astype(np.uint8)
     return rgb, op | ring
 

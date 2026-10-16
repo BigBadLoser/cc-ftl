@@ -250,14 +250,19 @@ def _set_pass(which):
     bg.inputs["Strength"].default_value = 1.0 if which == "color" else 0.0
 
 
-def render(W, H, which="color"):
-    """Render the scene centred on the origin; returns (rgb float 0..255 (H*SS,W*SS,3), alpha float 0..1)."""
+def render(W, H, which="color", origin=None):
+    """Render the scene; the world origin lands at pixel `origin` = (x, y from the top) of the WxH canvas (default:
+    centre). Returns (rgb float 0..255 (H*SS,W*SS,3), alpha float 0..1)."""
     sc, cam = _state["scene"], _state["cam"]
     _set_pass(which)
     sc.render.resolution_x, sc.render.resolution_y = W * SS, H * SS
     sc.render.resolution_percentage = 100
     cam.data.ortho_scale = max(W, H) / PXU
     cam.data.sensor_fit = "AUTO"
+    ox, oy = origin if origin else (W / 2, H / 2)
+    m = max(W, H)
+    # shift is a fraction of the larger dimension; positive shift moves the view up/right (objects down/left)
+    cam.data.shift_x, cam.data.shift_y = (W / 2 - ox) / m, (oy - H / 2) / m
     tmp = str(Path(tempfile.gettempdir()) / "spr_render.png")
     sc.render.filepath = tmp
     bpy.ops.render.render(write_still=True)

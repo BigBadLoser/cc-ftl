@@ -9,8 +9,8 @@ const noImports = (names, patterns) => ({
 });
 
 const pat = (dirs) => dirs.map((d) => ({ group: [`**/${d}`, `**/${d}/**`], message: `Forbidden import of ${d} here.` }));
-const threeNames = [{ name: 'three', message: 'three is not allowed here.' }];
-const threePat = [{ group: ['three/*'], message: 'three is not allowed here.' }];
+const pixiNames = [{ name: 'pixi.js', message: 'pixi.js is only allowed in src/render.' }];
+const pixiPat = [{ group: ['pixi.js/*', '@pixi/*'], message: 'pixi.js is only allowed in src/render.' }];
 const sveltePat = [{ group: ['svelte', 'svelte/*'], message: 'svelte is not allowed here.' }];
 
 const simBannedGlobals = ['window', 'document', 'performance', 'Date'].map((name) => ({
@@ -34,7 +34,7 @@ export default tseslint.config(
   {
     files: ['src/sim/**/*.ts'],
     rules: {
-      ...noImports(threeNames, [...threePat, ...sveltePat, ...pat(['content', 'render', 'ui', 'app'])]),
+      ...noImports(pixiNames, [...pixiPat, ...sveltePat, ...pat(['content', 'render', 'ui', 'app'])]),
       'no-restricted-globals': ['error', ...simBannedGlobals],
       'no-restricted-properties': [
         'error',
@@ -52,7 +52,7 @@ export default tseslint.config(
   },
   {
     files: ['src/content/**/*.ts'],
-    rules: noImports(threeNames, [...threePat, ...sveltePat, ...pat(['render', 'ui', 'app'])]),
+    rules: noImports(pixiNames, [...pixiPat, ...sveltePat, ...pat(['render', 'ui', 'app'])]),
   },
   {
     files: ['src/render/**/*.ts'],
@@ -60,6 +60,6 @@ export default tseslint.config(
   },
   {
     files: ['src/ui/**/*.ts', 'src/ui/**/*.svelte'],
-    rules: noImports(threeNames, [...threePat, ...pat(['render'])]),
+    rules: noImports(pixiNames, [...pixiPat, ...pat(['render'])]),
   },
 );

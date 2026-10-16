@@ -54,13 +54,16 @@ const api: UiApi = {
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
   attachCanvas(canvas) {
-    const r = createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world);
-    renderer = r;
-    const grid = sim.grids.get(1);
-    if (grid) r.setGrid(grid);
-    attachInput(canvas, r, controller.attach(r));
-    window.addEventListener('resize', () => r.resize());
-    loop.start();
+    createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world)
+      .then((r) => {
+        renderer = r;
+        const grid = sim.grids.get(1);
+        if (grid) r.setGrid(grid);
+        attachInput(canvas, r, controller.attach(r));
+        window.addEventListener('resize', () => r.resize());
+        loop.start();
+      })
+      .catch((e: unknown) => errorLog.push(e));
   },
 };
 

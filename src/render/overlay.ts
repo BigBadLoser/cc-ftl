@@ -1,56 +1,81 @@
-import { Color, DynamicDrawUsage, InstancedMesh, MeshBasicMaterial, Object3D, PlaneGeometry } from 'three';
-import { Struct } from '../sim/structure';
+import { Container, Sprite } from 'pixi.js';
 import type { Grid } from '../sim/grid';
+import { Struct } from '../sim/structure';
+import { diamondTextures } from './diamonds';
+import { iso } from './iso';
+
+function hsl(h: number, s: number, l: number): number {
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h * 12) % 12;
+    return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))));
+  };
+  return (f(0) << 16) | (f(8) << 8) | f(4);
+}
 
 /** Distinct hue for a room id (golden-angle spacing). */
-export function roomColor(id: number, out: Color): Color {
-  return out.setHSL(((id * 0.618034) % 1), 0.7, 0.45);
-}
-
+export const roomColor = (id: number): number => hsl((id * 0.618034) % 1, 0.7, 0.45);
 /** Blue -> red ramp, t in [0, 1]. */
-export function rampColor(t: number, out: Color): Color {
-  return out.setHSL(0.66 * (1 - Math.min(1, Math.max(0, t))), 0.8, 0.42);
+export const rampColor = (t: number): number => hsl(0.66 * (1 - Math.min(1, Math.max(0, t))), 0.8, 0.42);
+
+/** Tinted floor diamonds for one grid field (rooms, later gases/power...). Rebuilt from revisions. */
+export interface Overlay {
+  setField(field: string | null): void;
+  update(): void;
 }
 
-const geo = new PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0.5, 0, 0.5);
-const mat = new MeshBasicMaterial({ transparent: true, opacity: 0.25, depthWrite: false });
+export function createOverlay(grid: Grid, parent: Container): Overlay {
+  const layer = new Container();
+  parent.addChild(layer);
+  const tex = diamondTextures().fill;
+  let field: string | null = null;
+  let key = '';
 
-/** Flat colour quads just above the floor for one grid field. Returns null if nothing to draw. */
-export function buildOverlay(grid: Grid, field: string): InstancedMesh | null {
-  let data: ArrayLike<number>;
-  try {
-    data = grid.raw(field);
-  } catch {
-    return null;
+  function rebuild(f: string): void {
+    for (const c of layer.removeChildren()) c.destroy();
+    let data: ArrayLike<number>;
+    try {
+      data = grid.raw(f);
+    } catch {
+      return;
+    }
+    const struct = grid.raw('struct');
+    const room = f === 'room';
+    let max = 0;
+    if (!room) for (let i = 0; i < data.length; i++) max = Math.max(max, data[i] as number);
+    for (let i = 0; i < data.length; i++) {
+      const s = struct[i];
+      if (s !== Struct.Floor && s !== Struct.Door) continue;
+      const v = data[i] as number;
+      if (room && v === 0) continue;
+      const sp = new Sprite(tex);
+      sp.anchor.set(0.5);
+      const p = iso(i % grid.width, Math.floor(i / grid.width));
+      sp.position.set(p.x, p.y);
+      sp.tint = room ? roomColor(v) : rampColor(max > 0 ? v / max : 0);
+      sp.alpha = 0.3;
+      layer.addChild(sp);
+    }
   }
-  const struct = grid.raw('struct');
-  const room = field === 'room';
-  let max = 0;
-  if (!room) for (let i = 0; i < data.length; i++) max = Math.max(max, data[i] as number);
-  const cells: number[] = [];
-  for (let i = 0; i < data.length; i++) {
-    const s = struct[i];
-    const walkable = s === Struct.Floor || s === Struct.Door;
-    if (walkable && (!room || data[i] !== 0)) cells.push(i);
-  }
-  if (!cells.length) return null;
-  const mesh = new InstancedMesh(geo, mat, cells.length);
-  mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-  const dummy = new Object3D();
-  const c = new Color();
-  cells.forEach((i, n) => {
-    dummy.position.set(i % grid.width, 0.03, Math.floor(i / grid.width));
-    dummy.updateMatrix();
-    mesh.setMatrixAt(n, dummy.matrix);
-    const v = data[i] as number;
-    mesh.setColorAt(n, room ? roomColor(v, c) : rampColor(max > 0 ? v / max : 0, c));
-  });
-  mesh.renderOrder = 5;
-  mesh.frustumCulled = false;
-  return mesh;
-}
 
-export function disposeOverlayShared(): void {
-  geo.dispose();
-  mat.dispose();
+  return {
+    setField(f) {
+      field = f;
+      key = '';
+      if (!f) for (const c of layer.removeChildren()) c.destroy();
+    },
+    update() {
+      if (!field) return;
+      let rev: number;
+      try {
+        rev = grid.revision(field);
+      } catch {
+        rev = -2;
+      }
+      const k = `${field}:${rev}:${grid.revision('struct')}`;
+      if (k === key) return;
+      key = k;
+      rebuild(field);
+    },
+  };
 }

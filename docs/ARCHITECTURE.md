@@ -19,12 +19,12 @@ and polish came before gameplay. These rules exist to prevent that.
 src/
   sim/       pure game logic: ECS, grids, systems, commands, RNG, save format
   content/   game data as typed TS objects (weapons, species, modules, recipes, events…)
-  render/    Three.js: scene, voxel kit, meshing, models, crew generator, overlays, effects
+  render/    PixiJS: camera, depth-sorted sprite views (grid, crew, jobs), overlays, glow, asset loader
   ui/        Svelte components
   app/       wiring: boot, game loop, input, save/load, sim <-> render/ui bridge
 ```
 
-- `sim` imports nothing from the other folders, and nothing from three, svelte or the DOM.
+- `sim` imports nothing from the other folders, and nothing from pixi.js, svelte or the DOM.
 - `content` imports only types from `sim`. The sim receives content as a registry at boot, so tests can
   inject tiny fixtures.
 - `render` and `ui` read sim state and never mutate it.
@@ -223,7 +223,7 @@ Each milestone ends with something playable or watchable in the browser.
 
 | # | Milestone | Done when |
 |---|-----------|-----------|
-| M0 | **Skeleton** | Vite, TS, Svelte and Three are set up, with lint boundaries, Vitest, the ECS, the tick loop, the command queue, the seeded RNG and a save round-trip test. An empty scene renders. |
+| M0 | **Skeleton** | Vite, TS, Svelte and a renderer are set up, with lint boundaries, Vitest, the ECS, the tick loop, the command queue, the seeded RNG and a save round-trip test. An empty scene renders. |
 | M1 | **Grid & view** | A hard-coded test ship renders (originally voxels in Three.js; replaced in R1), an isometric camera, cutaway walls, pan and zoom, the tile inspector and a debug overlay. |
 | M2 | **Crew & jobs** | Crew pathfind (doors included), take jobs with reservations, follow role priorities and the grid, can be drafted and have minimal needs. Placeholder low-poly crew. |
 | R1 | **Pixel renderer** | `src/render` is rebuilt on PixiJS with the sprite pipeline: tiles, walls with cutaway, doors, crew layers with 8-direction clips, depth sorting, glow, pixel-perfect zoom, selection, blueprints and overlays. Three.js and the voxel kit are removed. Gameplay is unchanged. |

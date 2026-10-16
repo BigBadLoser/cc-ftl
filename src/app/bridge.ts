@@ -14,8 +14,8 @@ export interface Snapshot {
   frameMs: number;
   tickMs: number;
   seed: number;
-  drawCalls: number;
-  triangles: number;
+  zoom: number;
+  sprites: number;
 }
 
 export interface TileRef {
@@ -48,7 +48,7 @@ export interface Bridge {
   /** Called by main once the loop exists. */
   attachLoop(loop: Loop): void;
   /** Called by the loop each frame. */
-  update(stats: FrameStats, info?: { calls: number; triangles: number }): void;
+  update(stats: FrameStats, info?: { sprites: number; zoom: number }): void;
 }
 
 export function createBridge(sim: Sim): Bridge {
@@ -61,8 +61,8 @@ export function createBridge(sim: Sim): Bridge {
     frameMs: 0,
     tickMs: 0,
     seed: sim.seed,
-    drawCalls: 0,
-    triangles: 0,
+    zoom: 0,
+    sprites: 0,
   });
   const inspect = createStore<InspectSnapshot | null>(null);
   const crew = createStore<UiCrew[]>([]);
@@ -126,7 +126,7 @@ export function createBridge(sim: Sim): Bridge {
       loop = l;
     },
     update(stats, info) {
-      store.update((s) => ({ ...s, ...stats, drawCalls: info?.calls ?? s.drawCalls, triangles: info?.triangles ?? s.triangles }));
+      store.update((s) => ({ ...s, ...stats, zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites }));
       refreshInspect();
       refreshCrew();
     },

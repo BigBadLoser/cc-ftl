@@ -18,8 +18,8 @@
     <dt>Frame</dt><dd>{snap.frameMs.toFixed(1)} ms</dd>
     <dt>Tick</dt><dd>{snap.tick}</dd>
     <dt>Tick time</dt><dd>{snap.tickMs.toFixed(3)} ms</dd>
-    <dt>Draw calls</dt><dd>{snap.drawCalls}</dd>
-    <dt>Triangles</dt><dd>{snap.triangles}</dd>
+    <dt>Zoom</dt><dd>{snap.zoom}</dd>
+    <dt>Sprites</dt><dd>{snap.sprites}</dd>
     <dt>Entities</dt><dd>{snap.entityCount}</dd>
     <dt>Seed</dt><dd>{snap.seed}</dd>
   </dl>
