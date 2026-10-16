@@ -8,6 +8,14 @@ export type Command =
   | { type: 'job.build'; gridId: number; x: number; y: number; struct: number }
   | { type: 'job.deconstruct'; gridId: number; x: number; y: number }
   | { type: 'job.cancel'; gridId: number; x: number; y: number }
+  /** Blueprint a module; (x, y) is the top-left of the rotated footprint, rot = quarter turns clockwise. */
+  | { type: 'job.buildModule'; gridId: number; x: number; y: number; def: string; rot: number }
+  /** Deconstruct the module covering tile (x, y). */
+  | { type: 'job.deconstructModule'; gridId: number; x: number; y: number }
+  | { type: 'module.setPriority'; id: number; priority: number }
+  | { type: 'module.setEnabled'; id: number; enabled: boolean }
+  | { type: 'debug.ignite'; gridId: number; x: number; y: number }
+  | { type: 'debug.setField'; gridId: number; x: number; y: number; field: string; value: number }
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }

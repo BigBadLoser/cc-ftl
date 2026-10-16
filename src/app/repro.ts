@@ -49,7 +49,7 @@ export function buildRepro(sim: Sim, recentErrors: ErrorEntry[]): string {
 }
 
 /** Decode a repro string and rebuild its sim (for tests and tools). */
-export function loadRepro(s: string, content: ContentRegistry = { ships: {}, roles: {}, species: {}, crewNames: [] }): { sim: Sim; repro: Repro } {
+export function loadRepro(s: string, content: ContentRegistry = { ships: {}, roles: {}, species: {}, modules: {}, crewNames: [] }): { sim: Sim; repro: Repro } {
   const repro = decodeRepro(s);
   return { sim: deserialize(repro.saveJson, content), repro };
 }

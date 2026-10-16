@@ -6,9 +6,9 @@ import { commandHandlers } from './handlers';
 import type { Grid } from './grid';
 import { pipeline } from './pipeline';
 import { Rng } from './rng';
+import { TICK_HZ } from './time';
 
-/** Fixed simulation rate in ticks per second. */
-export const TICK_HZ = 20;
+export { TICK_HZ };
 
 /** The whole simulation state. Mutated only by step(), driven by queued commands. */
 export class Sim {
@@ -23,7 +23,7 @@ export class Sim {
   constructor(
     /** World seed: drives galaxy generation; saved with the game. */
     readonly seed: number,
-    readonly content: ContentRegistry = { ships: {}, roles: {}, species: {}, crewNames: [] },
+    readonly content: ContentRegistry = { ships: {}, roles: {}, species: {}, modules: {}, crewNames: [] },
   ) {
     this.rng = new Rng(seed);
   }

@@ -1,20 +1,20 @@
 import { CrewC, DraftedC, PathC, PositionC, type Crew, type Path, type Position } from '../crew/components';
-import { facingOf, isSettled } from '../crew/helpers';
-import { isWalkable } from '../structure';
+import { facingOf, isIncapacitated, isSettled } from '../crew/helpers';
+import { isTileWalkable } from '../modules/walk';
 import type { Sim } from '../sim';
-import { TICK_HZ } from '../sim';
+import { TICK_HZ } from '../time';
 import { stat } from '../stats';
 
 /** Advance crew along their paths. Diagonal steps take sqrt(2) longer. */
 export function movementSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, PositionC, PathC)) {
     const crew = sim.world.get(id, CrewC) as Crew;
-    if (crew.activity === 'sleeping') continue;
+    if (crew.activity === 'sleeping' || isIncapacitated(sim, id)) continue;
     const pos = sim.world.get(id, PositionC) as Position;
     const path = sim.world.get(id, PathC) as Path;
     const grid = sim.grids.get(pos.gridId);
     if (!grid?.has('struct')) continue;
-    const walk = (x: number, y: number): boolean => grid.inBounds(x, y) && isWalkable(grid.get('struct', x, y));
+    const walk = (x: number, y: number): boolean => isTileWalkable(sim, grid, x, y);
 
     if (!isSettled(pos) && !walk(pos.toX, pos.toY)) {
       // The tile we were stepping onto was built over: stop and let decide repath.

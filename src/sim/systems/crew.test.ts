@@ -21,6 +21,7 @@ const content: ContentRegistry = {
     'role.gunner': { name: 'G', priorities: { ...all(4), operating: 1 } },
     'role.medic': { name: 'M', priorities: { ...all(4), medical: 1 } },
   },
+  modules: {},
   species: { 'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 } },
   crewNames: ['A', 'B', 'C', 'D', 'E', 'F'],
 };

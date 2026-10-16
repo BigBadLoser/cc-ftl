@@ -4,8 +4,14 @@ export { Grid, CHUNK_SIZE, type FieldSpec, type FieldType, type GridData } from 
 export { CommandQueue, type Command, type QueuedCommand } from './commands';
 export { EventBuffer, type SimEvent } from './events';
 export { Sim, TICK_HZ } from './sim';
-export type { ContentRegistry, ShipTemplate, RoleDef, SpeciesDef } from './registry';
-export { gridFromTemplate } from './ship';
+export type { ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef } from './registry';
+export { gridFromTemplate, spawnTemplateModules } from './ship';
+export { ModuleC, type Module } from './modules/components';
+export { footprintTiles, accessTile, rotatedSize } from './modules/footprint';
+export { spawnModule, removeModule, placementError } from './modules/spawn';
+export { isTileWalkable } from './modules/walk';
+export { roomTiles } from './roomIndex';
+export * from './tuning';
 export { newGame } from './newGame';
 export { pipeline, type System } from './pipeline';
 export { MarkerC, type Marker } from './components';

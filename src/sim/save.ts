@@ -3,9 +3,11 @@ import { World, type WorldData } from './ecs';
 import { Grid, type GridData } from './grid';
 import type { ContentRegistry } from './registry';
 import { Sim } from './sim';
+import { SHIP_FIELDS } from './structure';
+import { initAtmosphere } from './ship';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -19,7 +21,22 @@ export interface SaveData {
 }
 
 /** Migrations keyed by the version they upgrade FROM; each returns data for version + 1. */
-export const migrations: Record<number, (data: Record<string, unknown>) => Record<string, unknown>> = {};
+export const migrations: Record<number, (data: Record<string, unknown>) => Record<string, unknown>> = {
+  // v1 -> v2 (ship systems): ship grids gain atmosphere, fire, light, door and module fields.
+  // Air and temperature start at normal values; everything else starts empty.
+  1: (data) => {
+    const grids = (data['grids'] as GridData[]).map((g) => {
+      if (!g.fields['struct']) return g;
+      const grid = Grid.deserialize(g);
+      for (const [name, type] of Object.entries(SHIP_FIELDS)) grid.addField(name, type);
+      for (let y = 0; y < grid.height; y++) {
+        for (let x = 0; x < grid.width; x++) initAtmosphere(grid, x, y);
+      }
+      return grid.serialize();
+    });
+    return { ...data, grids };
+  },
+};
 
 /** Serialize the sim to a JSON string. */
 export function serialize(sim: Sim): string {

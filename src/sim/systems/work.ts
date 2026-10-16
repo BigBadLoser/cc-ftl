@@ -1,14 +1,19 @@
 import {
-  AssignmentC, CrewC, JobC, PathC, PositionC, type Crew, type Job, type Position,
+  AssignmentC, CrewC, JobC, PathC, PositionC, type Crew, type Position,
 } from '../crew/components';
-import { clearPath, isAdjacent, isSettled, isTileOccupied, releaseAssignment } from '../crew/helpers';
-import { Struct } from '../structure';
+import { clearPath, isAdjacent, isIncapacitated, isSettled, releaseAssignment } from '../crew/helpers';
+import { performJob } from '../crew/jobWork';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
 
-/** Crew adjacent to their job's tile do work; finished jobs change the grid and disappear. */
+/**
+ * Crew adjacent to their job's tile do one tick of work on it (what that means per job kind is in
+ * crew/jobWork). Finished jobs disappear; jobs that cannot finish yet (tile occupied, no free bed)
+ * keep the crew in place until they can.
+ */
 export function workSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, AssignmentC, PositionC, PathC)) {
+    if (isIncapacitated(sim, id)) continue;
     const crew = sim.world.get(id, CrewC) as Crew;
     const pos = sim.world.get(id, PositionC) as Position;
     const assignment = sim.world.get(id, AssignmentC) as { jobId: number };
@@ -30,22 +35,11 @@ export function workSystem(sim: Sim): void {
       continue;
     }
     crew.activity = 'working';
-    job.progress = Math.min(job.work, job.progress + stat(sim, id, 'workSpeed'));
-    if (job.progress < job.work) continue;
-    if (job.kind === 'build' && isTileOccupied(sim, job.gridId, job.x, job.y)) continue; // wait for the tile to clear
-    complete(sim, id, assignment.jobId, job);
+    if (performJob(sim, id, job, stat(sim, id, 'workSpeed')) !== 'done') continue;
+    sim.world.remove(id, AssignmentC);
+    sim.world.destroyEntity(assignment.jobId);
+    sim.events.emit({ type: 'crew.jobDone', crew: id, kind: job.kind, gridId: job.gridId, x: job.x, y: job.y });
     crew.activity = 'idle';
     clearPath(sim, id);
   }
-}
-
-function complete(sim: Sim, crew: number, jobId: number, job: Job): void {
-  const grid = sim.grids.get(job.gridId);
-  if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {
-    const next = job.kind === 'build' ? job.struct : Struct.Floor;
-    if (grid.get('struct', job.x, job.y) !== next) grid.set('struct', job.x, job.y, next);
-  }
-  sim.world.remove(crew, AssignmentC);
-  sim.world.destroyEntity(jobId);
-  sim.events.emit({ type: 'crew.jobDone', crew, kind: job.kind, gridId: job.gridId, x: job.x, y: job.y });
 }

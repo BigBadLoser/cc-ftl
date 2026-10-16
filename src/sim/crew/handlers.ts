@@ -1,13 +1,18 @@
 import type { Command } from '../commands';
-import { Struct, isWalkable } from '../structure';
+import { isTileWalkable } from '../modules/walk';
+import { Struct } from '../structure';
 import type { Sim } from '../sim';
-import { TICK_HZ } from '../sim';
+import { TICK_HZ } from '../time';
 import {
   CrewC, DraftedC, JobC, PositionC, PrioritiesC, WORK_CATEGORIES, type Crew,
 } from './components';
-import { clearPath, findJobAt, releaseAssignment } from './helpers';
+import { releaseBedClaim } from './beds';
+import { clearPath, findJobAt, isIncapacitated, releaseAssignment } from './helpers';
 
-type CrewCommandType = Extract<Command['type'], `job.${string}` | `crew.${string}`>;
+export type CrewCommandType = Exclude<
+  Extract<Command['type'], `job.${string}` | `crew.${string}`>,
+  'job.buildModule' | 'job.deconstructModule'
+>;
 type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 const BUILDABLE: readonly number[] = [Struct.Floor, Struct.Wall, Struct.Door];
@@ -47,6 +52,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     const current = checkTile(sim, cmd.type, cmd.gridId, cmd.x, cmd.y);
     if (current < 0) return;
     if (current === cmd.struct) return reject(sim, cmd.type, 'sameStruct');
+    if (sim.grids.get(cmd.gridId)?.get('module', cmd.x, cmd.y)) return reject(sim, cmd.type, 'moduleHere');
     createJob(sim, 'build', cmd.gridId, cmd.x, cmd.y, cmd.struct, BUILD_TICKS[cmd.struct] as number);
   },
   'job.deconstruct': (sim, cmd) => {
@@ -81,7 +87,9 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     if (!crew) return;
     if (cmd.drafted) {
       if (sim.world.has(cmd.id, DraftedC)) return;
+      if (isIncapacitated(sim, cmd.id)) return reject(sim, cmd.type, 'incapacitated');
       releaseAssignment(sim, cmd.id);
+      releaseBedClaim(sim, cmd.id);
       sim.world.add(cmd.id, DraftedC, { target: null });
       crew.activity = 'drafted'; // also wakes a sleeper
     } else if (sim.world.remove(cmd.id, DraftedC)) {
@@ -95,7 +103,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     if (!drafted || !pos) return reject(sim, cmd.type, 'notDrafted');
     const grid = sim.grids.get(pos.gridId);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
-    if (!isWalkable(grid.get('struct', cmd.x, cmd.y))) return reject(sim, cmd.type, 'notWalkable');
+    if (!isTileWalkable(sim, grid, cmd.x, cmd.y)) return reject(sim, cmd.type, 'notWalkable');
     drafted.target = { x: cmd.x, y: cmd.y };
   },
 };
