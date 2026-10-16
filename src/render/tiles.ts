@@ -36,27 +36,55 @@ export function floorChain(x: number, y: number): Chain {
   return [`tile.floor.${v}`, "tile.floor.a"];
 }
 
+/** One sprite of a wall tile: the first existing asset id of the chain, plus its draw order inside the tile. */
+export interface Piece {
+  chain: Chain;
+  order: number;
+}
+
+type Dir = "n" | "e" | "s" | "w";
+const ARMS: readonly [Dir, number, number, number][] = [
+  ["n", 0, -1, 0],
+  ["w", -1, 0, 1],
+  ["s", 0, 1, 3],
+  ["e", 1, 0, 4],
+];
+const CENTRE_ORDER = 2;
+/** Upper pieces draw after every base piece of the tile. */
+const UPPER = 10;
+const DOOR_ORDER = UPPER + CENTRE_ORDER;
+
 /**
- * Sprite chain for the wall, hull or door block at (x, y). Walls are full-tile blocks, so there is exactly one per
- * tile and no stacking at corners or junctions. Hull walls are walls touching space. Doors run along x when walls
- * flank them in x, otherwise along y; `low` picks the cutaway block.
+ * Pieces of the wall, hull or door at (x, y), drawn in `order` ascending with the tile. A wall is a low sloped base
+ * plus a thin upper wall, both built from a centre piece and one arm toward each connected (wall or door) neighbour:
+ * back arms (n, w), centre, front arms (s, e). Cutaway (`low`) swaps only the upper wall for a short stub and
+ * leaves the base. Doors stand as a slim frame on base pieces whatever the cutaway; the frame runs along x when
+ * walls flank it in x, otherwise along y. Hull walls are walls touching space.
  */
-export function wallChain(
+export function wallPieces(
   kindAt: KindAt,
   x: number,
   y: number,
   kind: number,
   low: boolean,
-): Chain {
+): Piece[] {
+  const fam = touchesSpace(kindAt, x, y) ? "hull" : "wall";
+  const arms = ARMS.filter(([, dx, dy]) => solidish(kindAt(x + dx, y + dy)));
+  const part = (layer: string, id: string): Chain => [
+    `tile.${fam}.${layer}.${id}`,
+    `tile.wall.${layer}.${id}`,
+  ];
+  const out: Piece[] = [];
+  const add = (layer: string, base: number): void => {
+    out.push({ chain: part(layer, "c"), order: base + CENTRE_ORDER });
+    for (const [d, , , o] of arms)
+      out.push({ chain: part(layer, `arm.${d}`), order: base + o });
+  };
+  add("base", 0);
   if (kind === Struct.Door) {
     const o =
       solidish(kindAt(x - 1, y)) && solidish(kindAt(x + 1, y)) ? "x" : "y";
-    return low
-      ? [`tile.door.low.${o}`, `tile.door.${o}`, "tile.wall.low"]
-      : [`tile.door.${o}`, "tile.wall"];
-  }
-  const base = touchesSpace(kindAt, x, y) ? "tile.hull" : "tile.wall";
-  return low
-    ? [`${base}.low`, "tile.wall.low", base, "tile.wall"]
-    : [base, "tile.wall"];
+    out.push({ chain: [`tile.door.${o}`], order: DOOR_ORDER });
+  } else add(low ? "upper.low" : "upper", UPPER);
+  return out;
 }

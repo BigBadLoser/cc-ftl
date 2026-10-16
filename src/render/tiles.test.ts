@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Struct } from "../sim/structure";
-import { isLowered, wallChain } from "./tiles";
+import { isLowered, wallPieces } from "./tiles";
 
 const W = Struct.Wall;
 const F = Struct.Floor;
@@ -13,28 +13,65 @@ describe("tile chains", () => {
     [W, F, W],
     [W, W, W],
   ]);
-  it("hull wall is one block, low variant first when cut away", () => {
-    expect(wallChain(k, 0, 0, W, false)).toEqual(["tile.hull", "tile.wall"]);
-    expect(wallChain(k, 1, 2, W, true)[0]).toBe("tile.hull.low");
-  });
-  it("interior walls use the plain wall block", () => {
-    const big = grid([
-      [W, W, W, W, W],
-      [W, F, F, F, W],
-      [W, F, W, F, W],
-      [W, F, F, F, W],
-      [W, W, W, W, W],
+  const ids = (
+    kindAt: (x: number, y: number) => number,
+    x: number,
+    y: number,
+    kind: number,
+    low: boolean,
+  ) =>
+    wallPieces(kindAt, x, y, kind, low)
+      .sort((a, b) => a.order - b.order)
+      .map((p) => (p.chain[0] as string).replace(/^tile\./, ""));
+
+  it("hull corner: base then upper, centre plus arms toward s and e", () => {
+    expect(ids(k, 0, 0, W, false)).toEqual([
+      "hull.base.c",
+      "hull.base.arm.s",
+      "hull.base.arm.e",
+      "hull.upper.c",
+      "hull.upper.arm.s",
+      "hull.upper.arm.e",
     ]);
-    expect(wallChain(big, 2, 2, W, false)[0]).toBe("tile.wall");
   });
-  it("doors run along the wall axis", () => {
+  it("arms draw back (n, w) before the centre and front (s, e) after", () => {
+    const big = grid([
+      [S, S, S, S, S],
+      [S, W, W, W, S],
+      [S, W, F, W, S],
+      [S, W, W, W, S],
+      [S, S, S, S, S],
+    ]);
+    const base = (x: number, y: number) =>
+      ids(big, x, y, W, false).filter((i) => i.startsWith("hull.base"));
+    expect(base(1, 1)).toEqual([
+      "hull.base.c",
+      "hull.base.arm.s",
+      "hull.base.arm.e",
+    ]);
+    expect(base(2, 1)).toEqual([
+      "hull.base.arm.w",
+      "hull.base.c",
+      "hull.base.arm.e",
+    ]);
+  });
+  it("cutaway keeps the base and swaps the upper wall for the stub", () => {
+    const low = ids(k, 1, 2, W, true);
+    expect(low.some((i) => i.includes("base"))).toBe(true);
+    expect(low.some((i) => i.includes("upper.low"))).toBe(true);
+    expect(low.some((i) => /upper\.(c|arm)/.test(i))).toBe(false);
+  });
+  it("doors stand on the base whatever the cutaway, along the wall axis", () => {
     const d = grid([
       [W, W, W],
       [W, F, W],
       [W, Struct.Door, W],
     ]);
-    expect(wallChain(d, 1, 2, Struct.Door, false)[0]).toBe("tile.door.x");
-    expect(wallChain(d, 1, 2, Struct.Door, true)[0]).toBe("tile.door.low.x");
+    for (const low of [false, true]) {
+      const pieces = ids(d, 1, 2, Struct.Door, low);
+      expect(pieces).toContain("door.x");
+      expect(pieces.some((p) => p.includes("upper"))).toBe(false);
+    }
   });
   it("lowers walls with interior behind them", () => {
     expect(isLowered(k, 1, 2, "auto")).toBe(true);

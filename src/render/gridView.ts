@@ -7,7 +7,7 @@ import type { Layers } from "./layers";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay } from "./overlay";
 import { addStatic } from "./sprites";
-import { floorChain, isLowered, wallChain } from "./tiles";
+import { floorChain, isLowered, wallPieces } from "./tiles";
 
 export type CutawayMode = "auto" | "up" | "down";
 
@@ -42,14 +42,24 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers): GridView {
       for (let x = 0; x < grid.width; x++) {
         const k = kindAt(x, y);
         if (k === Struct.Space) continue;
-        if (k === Struct.Floor || k === Struct.Door) {
-          const f = atlas.firstOf(floorChain(x, y));
-          if (f) owned.push(...addStatic(L, f, x, y, 0, L.floor));
-        }
+        const f = atlas.firstOf(floorChain(x, y));
+        if (f) owned.push(...addStatic(L, f, x, y, 0, L.floor));
         if (k === Struct.Floor) continue;
         const low = isLowered(kindAt, x, y, mode);
-        const s = atlas.firstOf(wallChain(kindAt, x, y, k, low));
-        if (s) owned.push(...addStatic(L, s, x, y, depthKey(x, y), L.sorted));
+        for (const piece of wallPieces(kindAt, x, y, k, low)) {
+          const s = atlas.firstOf(piece.chain);
+          if (s)
+            owned.push(
+              ...addStatic(
+                L,
+                s,
+                x,
+                y,
+                depthKey(x, y) + piece.order * 0.001,
+                L.sorted,
+              ),
+            );
+        }
       }
     builtMode = mode;
   }
