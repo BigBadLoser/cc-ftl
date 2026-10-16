@@ -2,34 +2,33 @@
 
 All bones are short stubs along +Y (Blender) so every bone's rest orientation is the identity: the exported
 glTF joints have translation-only rest poses and a rotation of `rx` on a bone means exactly `rotation.x = rx`
-(three.js Euler in lab space), like groups in a scene graph. Origin at the feet, ~1.5 tiles tall.
+(three.js Euler in lab space), like groups in a scene graph. Origin at the feet, ~1.5 tiles tall (~6 heads).
 """
 import bpy
 from mathutils import Matrix, Quaternion, Vector
 import math
 
-# bone -> (parent, rest head in lab space = world, y up, front +z)
-_ARM_X, _LEG_X = 0.39, 0.14
+# bone -> (parent, rest head in lab space = world, y up, front +z). ~6 heads tall, 1.52 tiles, feet at y=0.
 BONES = {
     "root": (None, (0, 0, 0)),
-    "hips": ("root", (0, 0.5, 0)),
-    "spine": ("hips", (0, 0.57, 0)),
-    "head": ("spine", (0, 1.07, 0)),
+    "hips": ("root", (0, 0.78, 0)),
+    "spine": ("hips", (0, 0.88, 0)),
+    "head": ("spine", (0, 1.27, 0)),
 }
 for _n, _s in (("L", 1), ("R", -1)):
-    BONES[f"arm.{_n}"] = ("spine", (_s * _ARM_X, 0.97, 0))
-    BONES[f"forearm.{_n}"] = (f"arm.{_n}", (_s * _ARM_X, 0.74, 0))
-    BONES[f"hand.{_n}"] = (f"forearm.{_n}", (_s * _ARM_X, 0.52, 0.02))
-    BONES[f"leg.{_n}"] = ("hips", (_s * _LEG_X, 0.45, 0))
-    BONES[f"shin.{_n}"] = (f"leg.{_n}", (_s * _LEG_X, 0.22, 0))
-    BONES[f"foot.{_n}"] = (f"shin.{_n}", (_s * _LEG_X, 0.08, 0))
+    BONES[f"arm.{_n}"] = ("spine", (_s * 0.23, 1.19, 0))
+    BONES[f"forearm.{_n}"] = (f"arm.{_n}", (_s * 0.23, 0.90, 0))
+    BONES[f"hand.{_n}"] = (f"forearm.{_n}", (_s * 0.23, 0.68, 0.01))
+    BONES[f"leg.{_n}"] = ("hips", (_s * 0.095, 0.74, 0))
+    BONES[f"shin.{_n}"] = (f"leg.{_n}", (_s * 0.095, 0.40, 0))
+    BONES[f"foot.{_n}"] = (f"shin.{_n}", (_s * 0.095, 0.095, 0))
 
 # socket -> (bone, rest position in lab space); empties named `socket.<name>`, identity orientation
 SOCKETS = {
-    "socket.back": ("spine", (0, 0.84, -0.26)),
-    "socket.head": ("head", (0, 1.41, 0)),
-    "socket.hand.L": ("hand.L", (_ARM_X, 0.44, 0.08)),
-    "socket.hand.R": ("hand.R", (-_ARM_X, 0.44, 0.08)),
+    "socket.back": ("spine", (0, 1.05, -0.15)),
+    "socket.head": ("head", (0, 1.52, 0)),
+    "socket.hand.L": ("hand.L", (0.23, 0.60, 0.06)),
+    "socket.hand.R": ("hand.R", (-0.23, 0.60, 0.06)),
 }
 
 REST = {n: v[1] for n, v in BONES.items()}

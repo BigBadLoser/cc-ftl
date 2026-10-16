@@ -3,14 +3,16 @@
 Coordinates are "lab space" (x right, y up, front = +z, 1 unit = 1 tile) and are given relative to the
 bone/socket the part is attached to. Mesh data stays in lab space: the armature (or slot root) object is
 rotated +90 deg about X in Blender, so after glTF's Y-up conversion every node has identity rotation.
-Each (target, material) pair becomes one mesh object named `<target>@<item>.<material>`, with its
-origin at the target's rest head so it can be re-parented to that bone/socket without any offset.
+Rigid mode: each (target, material) pair becomes one mesh object named `<target>@<item>.<material>`, origin at
+the target's rest head, so it can be re-parented to that bone/socket without any offset.
+Skinned mode: one mesh per material named `skin@<item>.<material>` in armature space with vertex groups named
+after the bones (weights from lib.skinning), for soft parts (body, flesh, clothing).
 """
 import math
 import bmesh
 import bpy
 from mathutils import Matrix, Vector
-from . import materials, palette, vcolor
+from . import materials, palette, skinning, vcolor
 
 
 def rot_lab(r):
@@ -79,13 +81,17 @@ def box_geo(w, h, d, bevel=0.0, taper=1.0):
 # ---- the builder ----------------------------------------------------------------------------------------------
 
 class Builder:
-    """Collects parts per (target, material) and turns them into mesh objects."""
+    """Collects parts per (target, material) and turns them into mesh objects.
 
-    def __init__(self, item, rest, seed=1):
-        self.item, self.rest, self.seed = item, rest, seed
+    `tscale` maps a target to a uniform scale applied to every part on it (positions and sizes), so a part
+    list authored for one head size can be reused for another.
+    """
+
+    def __init__(self, item, rest, seed=1, skinned=False, tscale=None):
+        self.item, self.rest, self.seed, self.skinned = item, rest, seed, skinned
+        self.tscale = tscale or {}
         self._bms = {}
 
-    # colour spec -> (material key, linear base colour)
     def _spec(self, color):
         if isinstance(color, Tint):
             return f"team.{color.role}", (color.shade,) * 3, 1.0
@@ -93,27 +99,33 @@ class Builder:
             return f"emissive.{color}", palette.linear(color), 1.0
         return "base", palette.linear(color), 1.22
 
-    def _add(self, target, geo, color, pos, r, flat_ok=True):
+    def _bm(self, target, key):
+        k = ("skin" if self.skinned else target, key)
+        if k not in self._bms:
+            bm = bmesh.new()
+            self._bms[k] = (bm, bm.loops.layers.float_color.new("Col"), bm.verts.layers.deform.verify())
+        return self._bms[k]
+
+    def _add(self, target, geo, color, pos, r):
         key, rgb, tone = self._spec(color)
-        bm, cl = self._bm(target, key)
+        bm, cl, dl = self._bm(target, key)
+        k = self.tscale.get(target, 1.0)
         R = rot_lab(r)
         origin = Vector(self.rest[target])
         verts, faces = geo
-        local = [Vector(pos) + R @ Vector(v) for v in verts]
-        bverts = [bm.verts.new(p) for p in local]
+        local = [Vector(pos) * k + R @ (Vector(v) * k) for v in verts]
+        off = origin if self.skinned else Vector()
+        bverts = [bm.verts.new(p + off) for p in local]
+        if self.skinned:
+            for bv, p in zip(bverts, local):
+                for bone, w in skinning.weights(target, origin + p).items():
+                    bv[dl][skinning.INDEX[bone]] = w
         glow = key.startswith("emissive")
         for idx in faces:
             f = bm.faces.new([bverts[i] for i in idx])
             for lp, i in zip(f.loops, idx):
                 w = origin + local[i]
                 lp[cl] = (*rgb, 1.0) if glow else (*vcolor.shade(rgb, w, self.seed, tone), 1.0)
-
-    def _bm(self, target, key):
-        k = (target, key)
-        if k not in self._bms:
-            bm = bmesh.new()
-            self._bms[k] = (bm, bm.loops.layers.float_color.new("Col"))
-        return self._bms[k]
 
     def prism(self, target, kind, w, h, d, color, p=(0, 0, 0), r=None, taper=None):
         """kind 'box' = hexagonal prism, 'limb' = tapered pentagonal prism (the lab's two prism kinds)."""
@@ -131,13 +143,14 @@ class Builder:
         """Bevelled plating for mechanical parts (style 3's idea): a crisp chamfered slab."""
         self._add(target, box_geo(w, h, d, bevel, taper), color, p, r)
 
-    def finish(self, collection=None):
-        """Create mesh objects. Returns [(target, object)], object origin at the target's rest head (lab space)."""
+    def finish(self, arm=None):
+        """Create mesh objects. Returns [(target, object)]; skinned objects get vertex groups, an Armature
+        modifier on `arm` and are parented to it."""
         out = []
-        coll = collection or bpy.context.scene.collection
-        for (target, key), (bm, _cl) in self._bms.items():
+        coll = bpy.context.scene.collection
+        for (target, key), (bm, _cl, _dl) in self._bms.items():
             bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
-            name = f"{target}@{self.item}.{key}"
+            name = f"skin@{self.item}.{key}" if self.skinned else f"{target}@{self.item}.{key}"
             me = bpy.data.meshes.new(name)
             bm.to_mesh(me)
             bm.free()
@@ -145,8 +158,16 @@ class Builder:
             me.materials.append(materials.get(key))
             me.color_attributes.active_color = me.color_attributes["Col"]
             ob = bpy.data.objects.new(name, me)
-            ob.rotation_euler = (math.pi / 2, 0, 0)  # see module doc; keeps standalone (slot) nodes consistent with bone children
+            ob.rotation_euler = (math.pi / 2, 0, 0)  # see module doc; keeps standalone nodes consistent with bone children
             coll.objects.link(ob)
+            if self.skinned:
+                for bone in skinning.ORDER:
+                    ob.vertex_groups.new(name=bone)
+                if arm is not None:
+                    mod = ob.modifiers.new("Armature", "ARMATURE")
+                    mod.object = arm
+                    ob.parent = arm
+                    ob.matrix_world = arm.matrix_world
             out.append((target, ob))
         self._bms.clear()
         return out
