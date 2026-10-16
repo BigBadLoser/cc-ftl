@@ -87,8 +87,8 @@ def quantize(rgb):
         m = full[0] >= 14
         for z in zero:
             m = m & (z <= lo)
-        if len(full) == 2:
-            m = m & (np.abs(full[0] - full[1]) <= lo + 2)
+        if len(full) == 2:      # the cool ambient tint skews the two lit channels a little: allow a ratio band
+            m = m & (full[1] >= 14) & (full[0] / np.maximum(full[1], 1) > 0.55) & (full[0] / np.maximum(full[1], 1) < 1.8)
         s = sum(full) / len(full) / 255.0
         lvl = np.searchsorted(SHADE_EDGES, s)
         idx = np.where(m, NB + t * 5 + lvl, idx)
