@@ -1,12 +1,11 @@
 """Environment sprites -> one atlas (sprites/env.png + env.glow.png) and StaticAsset manifest entries.
 
-Outlines: floors and wall/door blocks none (blocks fill the footprint and tile into one mass; panel seams, skirting
-and a top lip are modelled instead); props a normal 1px ring."""
+Outlines: floors and wall/door blocks none (blocks fill the footprint and tile into one mass); props a normal 1px ring."""
 import math
 import bpy
 import numpy as np
 from mathutils import Vector
-from . import core, post, props
+from . import core, post, props, walls
 
 SS = core.SS
 
@@ -34,7 +33,7 @@ def render_sprite(sid, kind, objs):
     if kind == "floor":
         op = diamond_mask(W, H)
         c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
-    elif kind in ("block", "fx"):
+    elif kind in ("block", "fx", "ghost"):
         c, op = _pad1(c), _pad1(op)
     else:
         c, op = post.outline(c, op, True)
@@ -45,13 +44,17 @@ def render_sprite(sid, kind, objs):
 
 def build(out, only=None, log=print):
     items = []
-    for sid, fp, kind, fn in props.SPRITES:
+    for sid, fp, kind, fn in walls.SPRITES + props.SPRITES:
         if only and not any(o in sid for o in only):
             continue
         core.clear_scene_meshes()
         c, op, g, ox, oy = render_sprite(sid, kind, fn())
         x0, y0, x1, y1 = post.crop_box(op | (g[..., 3] > 0))
-        items.append({"id": sid, "fp": fp, "rgba": post.to_rgba(c, op)[y0:y1, x0:x1], "g": g[y0:y1, x0:x1],
+        rgba = post.to_rgba(c, op)
+        if kind == "ghost":                       # semi-transparent near-black silhouette, faint light edges
+            lum = c.astype(float).mean(-1)
+            rgba[..., 3] = np.where(op, np.where(lum > 45, 120, 165), 0)
+        items.append({"id": sid, "fp": fp, "rgba": rgba[y0:y1, x0:x1], "g": g[y0:y1, x0:x1],
                       "ax": ox - x0, "ay": oy - y0})
     AW, x, y, rowh = 1024, 1, 1, 0
     for it in items:

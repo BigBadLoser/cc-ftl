@@ -101,13 +101,19 @@ def crew_ids(man, parts):
     return [f"crew.human.{p}" for p in parts]
 
 
-ORDER = {"n": 0, "w": 1, "c": 2, "s": 3, "e": 4}
 DELTA = {"n": (0, -1), "e": (1, 0), "s": (0, 1), "w": (-1, 0)}
+BIT = {"n": 1, "e": 2, "s": 4, "w": 8}
+FLOOR_PICK = "aabacadafaageah"      # mirrors src/render/tiles.ts
 
 
-def blocks(s, layout, doors_open=(), cut=None):
-    """layout: strings, '#' wall, '.' floor, 'D' door, ' ' space. cut: None = auto rule, True/False = forced.
-    Mirrors src/render/tiles.ts: floor under every wall/door tile; base pieces then upper pieces, each n, w, c, s, e."""
+def tile_hash(x, y):
+    h = ((x * 73856093) ^ (y * 19349663)) & 0xFFFFFFFF
+    return (h ^ (h >> 15)) & 0xFFFFFFFF
+
+
+def blocks(s, layout, doors_open=(), ghosts=True):
+    """layout: strings, '#' wall/hull, '.' floor, 'D' door, ' ' space. Mirrors src/render/tiles.ts (masks, hull,
+    ghosts on exterior tiles whose +x/+y neighbour is space, door orientation, hash-picked variants)."""
     H, W = len(layout), len(layout[0])
     at = lambda x, y: layout[y][x] if 0 <= x < W and 0 <= y < H else " "  # noqa: E731
     solid = lambda x, y: at(x, y) in "#D"  # noqa: E731
@@ -116,22 +122,30 @@ def blocks(s, layout, doors_open=(), cut=None):
             k = at(x, y)
             if k == " ":
                 continue
-            s.static("tile.floor." + "abc"[(x * 3 + y * 5) % 7 % 3 if (x + y) % 3 == 0 else 0], x, y, -0.5)
+            s.static("tile.floor." + FLOOR_PICK[(tile_hash(x, y) >> 8) % len(FLOOR_PICK)], x, y, -0.5)
             if k == ".":
                 continue
-            lowered = (at(x - 1, y) in ".D" or at(x, y - 1) in ".D" or at(x - 1, y - 1) in ".D") if cut is None else cut
-            fam = "hull" if any(at(x + dx, y + dy) == " " for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy) else "wall"
-            arms = [d for d in "nesw" if solid(x + DELTA[d][0], y + DELTA[d][1])]
-            order = sorted(["c"] + arms, key=lambda p: ORDER[p])
-            up = "upper.low" if lowered and k == "#" else "upper"
             if k == "D":
                 ax = "x" if solid(x - 1, y) and solid(x + 1, y) else "y"
-                s.static(f"tile.door.sill.{ax}", x, y, 0.1)
-                s.static(f"tile.door.{ax}{'.open' if (x, y) in doors_open else ''}", x, y, 0.13)
+                s.static(f"tile.door.{ax}{'.open' if (x, y) in doors_open else ''}", x, y, 0.1)
                 continue
-            for layer in ("base", up):
-                for p in order:
-                    s.static(f"tile.{fam}.{layer}.{'c' if p == 'c' else 'arm.' + p}", x, y, 0.1 + 0.001 * ORDER[p] + (0.01 if layer != "base" else 0))
+            mask = sum(b for d, b in BIT.items() if solid(x + DELTA[d][0], y + DELTA[d][1]))
+            hull = any(at(x + dx, y + dy) == " " for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy)
+            sp = lambda dx, dy: at(x + dx, y + dy) == " "  # noqa: E731
+            if hull and ghosts and (sp(1, 0) or sp(0, 1)):
+                s.static(f"tile.hull.ghost.m{mask}", x, y, 0.1)
+                continue
+            fam = "hull" if hull else "wall"
+            vid = f"tile.{fam}.m{mask}"
+            if mask in (5, 10) and tile_hash(x, y) % 4 < 2:
+                v = f"{vid}.v{1 + tile_hash(x, y) % 2}"
+                vid = v if v in s.man["assets"] else vid
+            s.static(vid, x, y, 0.1)
+            if hull:
+                if not mask & 4 and sp(0, 1):
+                    s.static(f"tile.hull.haz.s.{(1 if mask & 8 else 0) | (2 if mask & 2 else 0)}", x, y, 0.101)
+                if not mask & 2 and sp(1, 0):
+                    s.static(f"tile.hull.haz.e.{(1 if mask & 1 else 0) | (2 if mask & 4 else 0)}", x, y, 0.101)
 
 
 def room(assets, man):
@@ -175,20 +189,21 @@ def room(assets, man):
 
 
 def junctions(assets, man):
-    """Runs, L corners, T and + junctions, an isolated post, door runs; full height (cut=False) and cutaway."""
-    layout = ["###########   #",
-              "#.........#   #",
-              "#..#####..##D##",
-              "#..#...#....#.#",
-              "#..#.#.#.##.#.#",
-              "#..##D##..#.#D#",
-              "#.......###.#.#",
-              "#########  ###."]
+    """Runs, L corners, T and + junctions, an isolated post, door runs, hull ring; ghosts on and off."""
+    layout = ["             ",
+              " ########### ",
+              " #.........# ",
+              " #..#####..# ",
+              " #..#...#.D. ",
+              " #.##.#.D.## ",
+              " #.D..###.#  ",
+              " #.#...#..#  ",
+              " ###D#####   "]
     out = []
-    for cut in (False, True):
-        W, H = 560, 300
-        s = Scene(assets, man, W, H, (W // 2 - 90, 30))
-        blocks(s, layout, doors_open=((5, 5),), cut=cut)
+    for g in (True, False):
+        W, H = 760, 420
+        s = Scene(assets, man, W, H, (W // 2 - 60, 20))
+        blocks(s, layout, doors_open=((9, 4),), ghosts=g)
         s.flush()
         out.append(s)
     return out
@@ -203,9 +218,10 @@ def main():
     r = room(assets, man)
     r.save(out / "contact-1x.png", 1)
     r.save(out / "contact-2x.png", 2)
-    full, cut = junctions(assets, man)
-    full.save(out / "junctions-full-2x.png", 2)
-    cut.save(out / "junctions-cut-2x.png", 2)
+    on, off = junctions(assets, man)
+    on.save(out / "junctions-ghost-2x.png", 2)
+    off.save(out / "junctions-noghost-2x.png", 2)
+    on.save(out / "junctions-ghost-1x.png", 1)
     print("CONTACT written", out)
 
 
