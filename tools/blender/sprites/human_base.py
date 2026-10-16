@@ -26,10 +26,11 @@ class Item:
     outline: bool = True      # per-layer 1px outline (off for tiny face details)
     default: bool = False     # member of the default holdout set for higher slots
     glow: bool = False        # has emissive pixels
+    order: int = 0            # stack order (set from the slot)
 
     @property
     def id(self):
-        return f"crew.human.{self.slot}.{self.name}"
+        return ".".join(["crew.human", self.slot] + ([self.name] if self.name else []))
 
 
 def import_base():
@@ -146,12 +147,17 @@ def build_skinned(arm, body):
     # flesh arms: the arm faces of the base, split by side (character left = +X)
     mk("arm.L", "flesh", R.arms & (R.x > 0), 0.0, lambda c, i: "team.skin", default=True)
     mk("arm.R", "flesh", R.arms & (R.x < 0), 0.0, lambda c, i: "team.skin", default=True)
-    mk("torso", "workshirt", R.torso & ~R.belt, 0.034, lambda c, i: _shirt_col(c, "shirt"), 2, _widen, default=True)
-    mk("torso", "blacktee", R.torso & ~R.belt, 0.034, lambda c, i: _shirt_col(c, "tee"), 2, _widen)
-    mk("legs", "cargo", R.legs, 0.02,
+    mk("torso", "work_shirt", R.torso & ~R.belt, 0.034, lambda c, i: _shirt_col(c, "shirt"), 2, _widen, default=True)
+    mk("torso", "tee", R.torso & ~R.belt, 0.034, lambda c, i: _shirt_col(c, "tee"), 2, _widen)
+    mk("legs", "cargo_pants", R.legs, 0.02,
        lambda c, i: "sole" if c.z < 0.05 else "boot" if c.z < 0.2 else ("pocket" if 0.4 < c.z < 0.5 and c.y < 0.05 else "pants"),
        1, default=True)
-    mk("gear.belt", "tools", R.belt, 0.05, lambda c, i: "leather", default=True)
+    mk("gear.belt", "tool_belt", R.belt, 0.05, lambda c, i: "leather", default=True)
+    # hair caps cut from the scalp (rigid hair is in human_gear)
+    cap = R.head & ((R.z > 1.635) | ((R.z > 1.59) & (R.y > 0.0)))
+    mk("hair", "short", cap, 0.032, lambda c, i: "team.hair", 1, default=True)
+    mk("hair", "ponytail", cap, 0.032, lambda c, i: "team.hair", 1)
+    mk("hair", "shaved", cap, 0.008, lambda c, i: "team.hair*0.55", 1)
     # body: everything but the arms (head, torso, legs); skin, plus the briefs object from the base
     bm = bmesh.new()
     bm.from_mesh(body.data)
@@ -162,7 +168,7 @@ def build_skinned(arm, body):
     paint(body, lambda c, i: "pants" if c.z < 0.95 else "team.skin")
     briefs = bpy.data.objects["skin@briefs.team.cloth"]
     paint(briefs, lambda c, i: "black")
-    items.append(Item("body", "base", [body, briefs], default=True))
+    items.append(Item("body", "", [body, briefs], default=True))
     for n in ("skin@eyes.base", "skin@brows.team.hair"):
         bpy.data.objects.remove(bpy.data.objects[n], do_unlink=True)
     return items
