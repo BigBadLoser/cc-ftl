@@ -8,7 +8,6 @@ import { depthKey, iso } from "./iso";
 import type { Layers } from "./layers";
 import {
   floorChain,
-  isLowered,
   wallPieces,
   type Chain,
   type KindAt,
@@ -102,8 +101,7 @@ export function createJobView(
           if (kind === Struct.Floor)
             draw([floorChain(j.x, j.y)], j.x, j.y, tint, alpha, key - 0.9);
           else if (kind === Struct.Wall || kind === Struct.Door) {
-            const low = isLowered(kindAt, j.x, j.y, "auto");
-            for (const pc of wallPieces(kindAt, j.x, j.y, kind, low))
+            for (const pc of wallPieces(kindAt, j.x, j.y, kind, false))
               draw([pc.chain], j.x, j.y, tint, alpha, key + pc.order * 0.001);
           }
         }

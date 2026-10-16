@@ -34,8 +34,8 @@ Cybernetic implants are everywhere. Neon is both mood and information.
 
 ## Ship & building
 
-- Tile grid, **full-tile walls**, no roof. Camera-facing walls are drawn low (cutaway). Cosmetic
-  half-walls may come later.
+- Tile grid, **full-tile walls**, no roof. Walls are low bevelled blocks that autotile by neighbour
+  (4-bit mask); exterior hull on the camera-facing side draws as a dark translucent ghost (toggle: Ghosts).
 - Modules (reactor, shields, weapons, life support, beds, stations…) are placed on the grid with
   footprints and access tiles.
 - **Refitting** at stations or by crafting is the main way builds change.

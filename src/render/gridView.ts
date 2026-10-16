@@ -8,14 +8,12 @@ import { lightTint, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
-import { floorChain, isLowered, wallPieces } from "./tiles";
-
-export type CutawayMode = "auto" | "up" | "down";
+import { floorChain, wallPieces } from "./tiles";
 
 export interface GridView extends Markers {
   readonly grid: Grid;
   update(): void;
-  setCutaway(mode: CutawayMode): void;
+  setGhosts(on: boolean): void;
   setOverlay(field: string | null): void;
   dispose(): void;
 }
@@ -42,15 +40,15 @@ interface Tinted {
   wall: boolean;
 }
 
-/** Floors, walls, hull and doors of one grid, rebuilt whenever the struct revision or cutaway mode changes. */
+/** Floors, walls, hull and doors of one grid, rebuilt whenever the struct revision or the ghost setting changes. */
 export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridViewHost): GridView {
   const markers = createMarkers(L.ui);
   const overlay: Overlay = createOverlay(grid, L.decal, host.overlayWorld);
   let owned: Sprite[] = [];
   let tinted: Tinted[] = [];
   let doors: Door[] = [];
-  let mode: CutawayMode = "auto";
-  let builtMode: CutawayMode | null = null;
+  let ghosts = true;
+  let builtGhosts: boolean | null = null;
   let rev = -1;
   let tintKey = "";
   let doorKey = -1;
@@ -79,22 +77,21 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           tinted.push({ spr: made[0] as Sprite, idx, wall: false });
         }
         if (k === Struct.Floor) continue;
-        const low = isLowered(kindAt, x, y, mode);
-        for (const piece of wallPieces(kindAt, x, y, k, low)) {
+        for (const piece of wallPieces(kindAt, x, y, k, ghosts)) {
           const s = atlas.firstOf(piece.chain);
           if (!s) continue;
           const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001, L.sorted);
           owned.push(...made);
-          const isDoorFrame = k === Struct.Door && piece.chain[0]?.startsWith("tile.door.") && !piece.chain[0].includes(".sill.");
-          if (isDoorFrame) {
+          const isDoor = k === Struct.Door;
+          if (isDoor) {
             const closedId = piece.chain[0] as string;
             const open = atlas.stat(`${closedId}.open`);
             if (open) doors.push({ objs: made, closed: s, open, idx });
           }
-          tinted.push({ spr: made[0] as Sprite, idx, wall: k !== Struct.Door || !isDoorFrame });
+          tinted.push({ spr: made[0] as Sprite, idx, wall: !isDoor });
         }
       }
-    builtMode = mode;
+    builtGhosts = ghosts;
     doorKey = -1;
     tintKey = "";
   }
@@ -145,7 +142,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     grid,
     update() {
       const r = grid.revision("struct");
-      if (r !== rev || builtMode !== mode) {
+      if (r !== rev || builtGhosts !== ghosts) {
         rebuild();
         rev = r;
       }
@@ -153,8 +150,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       updateTints();
       overlay.update();
     },
-    setCutaway(m) {
-      mode = m;
+    setGhosts(on) {
+      ghosts = on;
     },
     setOverlay: (f) => overlay.setField(f),
     dispose() {

@@ -63,7 +63,7 @@ const api: UiApi = {
       throw new Error('Test error from debug panel');
     }, 0);
   },
-  setCutaway: (mode) => renderer?.setCutaway(mode),
+  setGhosts: (on) => renderer?.setGhosts(on),
   setOverlay: (field) => renderer?.setOverlay(field),
   attachCanvas(canvas) {
     createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content.modules)
