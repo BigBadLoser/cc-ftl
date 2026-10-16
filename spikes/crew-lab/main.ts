@@ -11,7 +11,7 @@ import { createCameraRig } from '../../src/render/camera';
 import { applyToon, OutlinePass } from './fx';
 import { buildEnv, H, W } from './env';
 import { buildCrew, pose, Sparks, type Crew, type Mode } from './rig';
-import { glow, STYLES } from './styles';
+import { GLOW, STYLES } from './styles';
 
 const canvas = document.createElement('canvas');
 document.body.append(canvas);
@@ -184,7 +184,7 @@ function tick(now: number): void {
     frames = 0;
   }
   const mode = st.anim.toLowerCase() as Mode;
-  glow(0x19e6ff).color.setHex(0x19e6ff).multiplyScalar(1.45 + 0.25 * Math.sin(t * 3));
+  GLOW.color.setScalar(1 + 0.1 * Math.sin(t * 3));
   for (const s of slots) {
     pose(s.crew, t + s.i * 0.7, mode);
     const r = s.crew.root;

@@ -1,57 +1,46 @@
 import {
-  BufferAttribute, BufferGeometry, CapsuleGeometry, Color, CylinderGeometry, IcosahedronGeometry, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, SphereGeometry, Vector3, type Object3D,
+  BufferAttribute, BufferGeometry, Color, CylinderGeometry, Float32BufferAttribute, Group, IcosahedronGeometry, Mesh,
+  MeshBasicMaterial, MeshStandardMaterial, Vector3, type Object3D,
 } from 'three';
 import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry.js';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { hook } from './fx';
-import { voxelPart } from './voxpart';
 
 export type Kind = 'box' | 'limb' | 'ball';
-export interface Opt { emis?: boolean; taper?: number; r?: [number, number, number] }
+/** `mech`: a machine part (cyber-arm, tool rig, soles...). Only style 3 treats it differently. */
+export interface Opt { emis?: boolean; taper?: number; r?: [number, number, number]; mech?: boolean }
 export interface Style {
   id: number;
   name: string;
   blurb: string;
-  /** Style 1 only: panel-seam lines on the arm plates. */
+  /** Panel seams on the cyber-arm plates. */
   seams: boolean;
+  /** Idle forward lean in radians and relaxed posture. */
+  lean: number;
   mat: MeshStandardMaterial;
+  matMech?: MeshStandardMaterial;
   shape(k: Kind, w: number, h: number, d: number, color: number, o?: Opt): Mesh;
-  /** Bakes the final vertex colour from the base colour and the rest-pose world position. */
   shade(c: Color, p: Vector3): void;
 }
 
-const glows = new Map<number, MeshBasicMaterial>();
-/** Unlit emissive (HDR colour so bloom picks it up). Shared, so cyan pulses in unison. */
-export function glow(hex: number): MeshBasicMaterial {
-  let m = glows.get(hex);
-  if (!m) {
-    m = new MeshBasicMaterial({ color: hex, toneMapped: false });
-    m.color.multiplyScalar(1.6);
-    glows.set(hex, m);
-  }
-  return m;
-}
+/** One shared unlit emissive material with HDR vertex colours: every glow merges into one mesh per bone. */
+export const GLOW = new MeshBasicMaterial({ vertexColors: true, toneMapped: false });
 
 const hash = (x: number, y: number, z: number): number => {
   const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453;
   return s - Math.floor(s);
 };
-const smooth = (t: number): number => {
-  const k = Math.min(1, Math.max(0, t));
-  return k * k * (3 - 2 * k);
-};
 const GRIME = new Color(0x23282e);
 /** Per-vertex grime noise, darker toward the feet: the ship's wear language. */
-function grimy(c: Color, p: Vector3, amount: number): void {
+function grimy(c: Color, p: Vector3, amount: number, low: number): void {
   const n = hash(Math.round(p.x * 26), Math.round(p.y * 26), Math.round(p.z * 26));
-  c.multiplyScalar(1 - amount + amount * 1.1 * n).lerp(GRIME, Math.max(0, 1 - p.y / 0.55) * 0.32);
+  c.multiplyScalar(1 - amount + amount * 1.1 * n).lerp(GRIME, Math.max(0, 1 - p.y / 0.55) * low);
 }
 
-// ---- geometry factories -------------------------------------------------------------------------------------
+// ---- geometry factories --------------------------------------------------------------------------------------
 
 /** Convex hull of the 24 chamfer points = a box with all 12 edges and 8 corners cut. */
-function chamfer(w: number, h: number, d: number, c: number, taper = 1): BufferGeometry {
+function chamferBox(w: number, h: number, d: number, c: number, taper = 1): BufferGeometry {
   const pts: Vector3[] = [];
   for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
     const t = sy < 0 ? taper : 1;
@@ -61,42 +50,58 @@ function chamfer(w: number, h: number, d: number, c: number, taper = 1): BufferG
   return new ConvexGeometry(pts);
 }
 
-function kitbash(k: Kind, w: number, h: number, d: number, o: Opt): BufferGeometry {
+const kitbash = (k: Kind, w: number, h: number, d: number, o: Opt): BufferGeometry => {
   const m = Math.min(w, h, d);
-  return chamfer(w, h, d, k === 'ball' ? m * 0.3 : Math.min(0.022, m * 0.3), o.taper ?? (k === 'limb' ? 0.88 : 1));
-}
+  return chamferBox(w, h, d, k === 'ball' ? m * 0.3 : Math.min(0.03, m * 0.35), o.taper ?? (k === 'limb' ? 0.88 : 1));
+};
+
+const sidesOf = (k: Kind): number => (k === 'box' ? 6 : 5);
+const taperOf = (k: Kind, o: Opt): number => o.taper ?? (k === 'limb' ? 0.8 : 0.92);
 
 function faceted(k: Kind, w: number, h: number, d: number, o: Opt): BufferGeometry {
   if (k === 'ball') return new IcosahedronGeometry(0.5, Math.max(w, h, d) < 0.07 ? 0 : 1).scale(w, h, d);
-  const top = k === 'box' ? 0.5 : 0.5;
-  const t = o.taper ?? (k === 'limb' ? 0.8 : 0.92);
-  return new CylinderGeometry(top, top * t, h, k === 'box' ? 6 : 5, 1).scale(w * 1.1, 1, d);
+  return new CylinderGeometry(0.5, 0.5 * taperOf(k, o), h, sidesOf(k), 1).scale(w * 1.1, 1, d);
 }
 
-function soft(k: Kind, w: number, h: number, d: number, o: Opt): BufferGeometry {
-  if (k === 'ball') return new SphereGeometry(0.5, 22, 16).scale(w, h, d);
-  if (k === 'box') return new RoundedBoxGeometry(w, h, d, 5, Math.min(w, h, d) * 0.48);
-  const g = new CapsuleGeometry(0.5, 0.7, 6, 16);
-  const p = g.attributes.position as BufferAttribute;
-  const t = o.taper ?? 0.85;
-  for (let i = 0; i < p.count; i++) {
-    const f = t + (1 - t) * (p.getY(i) / 1.7 + 0.5);
-    p.setXYZ(i, p.getX(i) * w * f, (p.getY(i) / 1.7) * h * 1.18, p.getZ(i) * d * f);
+/** A faceted prism whose top/bottom rims and vertical polygon corners are all chamfered (hull of cut rings). */
+function chamferedFacets(k: Kind, w: number, h: number, d: number, o: Opt): BufferGeometry {
+  if (k === 'ball') return faceted(k, w, h, d, o);
+  const n = sidesOf(k), t = taperOf(k, o);
+  const c = Math.min(0.022, Math.min(w, h, d) * 0.3);
+  const inset = Math.max(0.55, 1 - c / (0.5 * Math.min(w, d)));
+  const pts: Vector3[] = [];
+  for (const sy of [-1, 1]) {
+    const rt = sy < 0 ? t : 1;
+    for (const [y, rs] of [[sy * (h / 2 - c), 1], [sy * (h / 2), inset]] as const) {
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2, b = ((i + 1) / n) * Math.PI * 2, z = ((i + n - 1) / n) * Math.PI * 2;
+        const v = [Math.sin(a), Math.cos(a)], nx = [Math.sin(b), Math.cos(b)], pv = [Math.sin(z), Math.cos(z)];
+        for (const q of [nx, pv]) {
+          const px = (v[0]! + (q[0]! - v[0]!) * 0.24) * 0.5 * rs * rt, pz = (v[1]! + (q[1]! - v[1]!) * 0.24) * 0.5 * rs * rt;
+          pts.push(new Vector3(px * w * 1.1, y, pz * d));
+        }
+      }
+    }
   }
-  g.computeVertexNormals();
-  return g;
+  return new ConvexGeometry(pts);
 }
 
 function make(
-  id: number, name: string, blurb: string, seams: boolean, mat: MeshStandardMaterial,
-  geo: (k: Kind, w: number, h: number, d: number, o: Opt) => BufferGeometry, shade: Style['shade'],
+  id: number, name: string, blurb: string, o: { seams: boolean; lean: number }, mat: MeshStandardMaterial,
+  geo: (k: Kind, w: number, h: number, d: number, o: Opt) => BufferGeometry, shade: Style['shade'], mech?: [MeshStandardMaterial, typeof geo],
 ): Style {
   return {
-    id, name, blurb, seams, mat, shade,
-    shape(k, w, h, d, color, o = {}) {
-      const me = new Mesh(geo(k, w, h, d, o), o.emis ? glow(color) : mat);
+    id, name, blurb, seams: o.seams, lean: o.lean, mat, matMech: mech?.[0], shade,
+    shape(k, w, h, d, color, op = {}) {
+      const useMech = !!(op.mech && mech);
+      const g = (useMech ? mech![1] : geo)(k, w, h, d, op);
+      const me = new Mesh(g, op.emis ? GLOW : useMech ? mech![0] : mat);
       me.userData.base = color;
-      if (o.r) me.rotation.set(...o.r);
+      if (op.emis) {
+        const c = new Color(color).multiplyScalar(1.15);
+        g.setAttribute('color', new Float32BufferAttribute(Array.from({ length: g.attributes.position!.count }, () => [c.r, c.g, c.b]).flat(), 3));
+      }
+      if (op.r) me.rotation.set(...op.r);
       return me;
     },
   };
@@ -105,28 +110,15 @@ function make(
 const std = (flat: boolean, rough: number): MeshStandardMaterial =>
   new MeshStandardMaterial({ vertexColors: true, flatShading: flat, roughness: rough, metalness: 0.12 });
 
-export const STYLES: Style[] = [
-  make(1, 'Bevelled kitbash', 'chamfered plates, ship grime', true, hook(std(false, 0.92), { grain: 0.07 }), kitbash, (c, p) => grimy(c, p, 0.2)),
-  make(2, 'Chunky faceted', 'low-sided prisms, flat shaded', false, hook(std(true, 0.9), { grain: 0.06 }), faceted, (c, p) => grimy(c.multiplyScalar(1.15), p, 0.16)),
-  make(3, 'Soft painted', 'smooth, colour blocked, rim', false, hook(std(false, 0.7), { rim: 0.2 }), soft, (c, p) => {
-    c.multiplyScalar(0.62 + 0.5 * smooth(p.y / 1.5));
-    c.offsetHSL(0, 0.04, 0);
-  }),
-  make(4, 'Rounded voxel', '32 voxels/tile, bevelled', false, hook(std(false, 0.9), {}),
-    () => new BufferGeometry(), (c, p) => {
-      c.multiplyScalar(0.78 + 0.27 * smooth(p.y / 1.5));
-    }),
-];
+const clean = (c: Color, p: Vector3): void => grimy(c.multiplyScalar(1.22), p, 0.08, 0.14);
 
-/** Style 4 needs the real colour at voxelisation time, so it overrides `shape`. */
-const vox = STYLES[3] as Style;
-vox.shape = (k, w, h, d, color, o = {}) => {
-  const g = voxelPart(k, w, h, d, color, o.taper ?? (k === 'limb' ? 0.85 : 1));
-  const me = new Mesh(g, o.emis ? glow(color) : vox.mat);
-  me.userData.base = color;
-  if (o.r) me.rotation.set(...o.r);
-  return me;
-};
+export const STYLES: Style[] = [
+  make(1, 'Kitbash refined', 'bigger chamfers, leaning posture', { seams: true, lean: 0.1 }, hook(std(false, 0.9), { grain: 0.06 }), kitbash, (c, p) => grimy(c.multiplyScalar(0.98), p, 0.18, 0.3)),
+  make(2, 'Faceted refined', 'clean colour blocks, face read', { seams: false, lean: 0.04 }, hook(std(true, 0.88), { grain: 0.04 }), faceted, clean),
+  make(3, 'Faceted flesh, kitbash machine', 'prisms = flesh, plates = machine', { seams: true, lean: 0.04 }, hook(std(true, 0.88), { grain: 0.04 }), faceted, clean,
+    [hook(std(false, 0.6), { grain: 0.05 }), kitbash]),
+  make(4, 'Chamfered facets', 'faceted + bevels + seams + grime', { seams: true, lean: 0.06 }, hook(std(true, 0.88), { grain: 0.06 }), chamferedFacets, (c, p) => grimy(c.multiplyScalar(1.15), p, 0.16, 0.26)),
+];
 
 /** Bake vertex colours in the rest pose (call right after building, before the crew is moved). */
 export function bake(root: Object3D, S: Style): void {
@@ -135,17 +127,46 @@ export function bake(root: Object3D, S: Style): void {
   const c = new Color();
   root.traverse((o) => {
     const me = o as Mesh;
-    if (!me.isMesh || me.userData.base === undefined || me.material !== S.mat) return;
+    if (!me.isMesh || me.userData.base === undefined || (me.material !== S.mat && me.material !== S.matMech)) return;
     const p = me.geometry.attributes.position as BufferAttribute;
-    const have = me.geometry.getAttribute('color') as BufferAttribute | undefined;
-    const arr = have ? (have.array as Float32Array) : new Float32Array(p.count * 3);
+    const arr = new Float32Array(p.count * 3);
     for (let i = 0; i < p.count; i++) {
       v.fromBufferAttribute(p, i).applyMatrix4(me.matrixWorld);
-      if (have) c.fromArray(arr, i * 3);
-      else c.setHex(me.userData.base as number);
+      c.setHex(me.userData.base as number);
       S.shade(c, v);
       c.toArray(arr, i * 3);
     }
-    if (!have) me.geometry.setAttribute('color', new BufferAttribute(arr, 3));
+    me.geometry.setAttribute('color', new BufferAttribute(arr, 3));
   });
+}
+
+/** Merge each bone's static parts into one mesh per material (glow shares one material, so one mesh). */
+export function mergeBones(root: Object3D): void {
+  const bones: Group[] = [];
+  root.traverse((o) => { if ((o as Group).isGroup) bones.push(o as Group); });
+  for (const bone of bones) {
+    const byMat = new Map<unknown, Mesh[]>();
+    for (const ch of bone.children) {
+      const me = ch as Mesh;
+      if (!me.isMesh || me.userData.base === undefined) continue;
+      byMat.set(me.material, [...(byMat.get(me.material) ?? []), me]);
+    }
+    for (const [mat, list] of byMat) {
+      const geos = list.map((me) => {
+        me.updateMatrix();
+        let g = me.geometry.clone();
+        g.deleteAttribute('uv');
+        if (g.index) g = g.toNonIndexed();
+        return g.applyMatrix4(me.matrix);
+      });
+      const merged = new Mesh(mergeGeometries(geos, false), mat as MeshStandardMaterial);
+      merged.castShadow = mat !== GLOW;
+      merged.userData.merged = true;
+      for (const me of list) {
+        bone.remove(me);
+        me.geometry.dispose();
+      }
+      bone.add(merged);
+    }
+  }
 }
