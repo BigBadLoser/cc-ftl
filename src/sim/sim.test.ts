@@ -40,7 +40,7 @@ describe('save', () => {
     sim.grids.get(1)?.set('flags', 2, 2, 7);
     sim.enqueue({ type: 'noop' });
     const json = serialize(sim);
-    const loaded = deserialize(json, {});
+    const loaded = deserialize(json, { ships: {} });
     expect(serialize(loaded)).toBe(json);
     expect(loaded.tick).toBe(sim.tick);
     expect(loaded.grids.get(1)?.get('flags', 2, 2)).toBe(7);
@@ -53,6 +53,6 @@ describe('save', () => {
   it('rejects newer or unmigratable versions', () => {
     const data = JSON.parse(serialize(new Sim(1)));
     data.version = 99;
-    expect(() => deserialize(JSON.stringify(data), {})).toThrow();
+    expect(() => deserialize(JSON.stringify(data), { ships: {} })).toThrow();
   });
 });

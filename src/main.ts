@@ -6,7 +6,8 @@ import { createErrorLog } from './app/errors';
 import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
 import { createRenderer, type Renderer } from './render/scene';
-import { Sim } from './sim';
+import { content } from './content';
+import { newGame } from './sim';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
@@ -15,7 +16,7 @@ const param = new URLSearchParams(location.search).get('seed');
 const seed = param !== null && Number.isFinite(Number(param)) ? Number(param) >>> 0 : (Math.random() * 0x100000000) >>> 0;
 
 const errorLog = createErrorLog();
-const sim = new Sim(seed);
+const sim = newGame(seed, content);
 const bridge = createBridge(sim);
 let renderer: Renderer | undefined;
 

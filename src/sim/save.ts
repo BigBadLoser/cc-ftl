@@ -1,7 +1,8 @@
 import type { QueuedCommand } from './commands';
 import { World, type WorldData } from './ecs';
 import { Grid, type GridData } from './grid';
-import { Sim, type ContentRegistry } from './sim';
+import type { ContentRegistry } from './registry';
+import { Sim } from './sim';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
 export const SAVE_VERSION = 1;

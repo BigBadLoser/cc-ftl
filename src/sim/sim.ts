@@ -1,3 +1,4 @@
+import type { ContentRegistry } from './registry';
 import { CommandQueue, type Command } from './commands';
 import { World } from './ecs';
 import { EventBuffer } from './events';
@@ -8,9 +9,6 @@ import { Rng } from './rng';
 
 /** Fixed simulation rate in ticks per second. */
 export const TICK_HZ = 20;
-
-/** Content registry injected at boot (weapons, modules...). Placeholder until M1+. */
-export type ContentRegistry = Record<string, unknown>;
 
 /** The whole simulation state. Mutated only by step(), driven by queued commands. */
 export class Sim {
@@ -25,7 +23,7 @@ export class Sim {
   constructor(
     /** World seed: drives galaxy generation; saved with the game. */
     readonly seed: number,
-    readonly content: ContentRegistry = {},
+    readonly content: ContentRegistry = { ships: {} },
   ) {
     this.rng = new Rng(seed);
   }

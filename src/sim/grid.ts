@@ -69,6 +69,11 @@ export class Grid {
     }
   }
 
+  /** True if the grid has this field. */
+  has(field: string): boolean {
+    return this.arrays.has(field);
+  }
+
   /** True if (x, y) lies inside the grid. */
   inBounds(x: number, y: number): boolean {
     return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < this.width && y < this.height;

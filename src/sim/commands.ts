@@ -1,7 +1,8 @@
 /** Every way to change the sim from outside. Add new variants here. */
 export type Command =
   | { type: 'noop' }
-  | { type: 'debug.spawnMarker'; x: number; y: number };
+  | { type: 'debug.spawnMarker'; x: number; y: number }
+  | { type: 'debug.setStruct'; gridId: number; x: number; y: number; kind: number };
 
 /** A command tagged with the tick at whose start it applies. */
 export interface QueuedCommand {
