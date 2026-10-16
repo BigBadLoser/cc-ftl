@@ -1,0 +1,138 @@
+"""numpy post-processing: palette quantization, mode downsample, outline, PNG writer. No bpy imports."""
+import json
+import struct
+import zlib
+from pathlib import Path
+import numpy as np
+
+ROOT = Path(__file__).resolve().parents[3]
+PAL = json.loads((ROOT / "palette.json").read_text())
+SHADES = (0.42, 0.62, 0.82, 1.0, 1.22)
+
+
+def _rgb(name):
+    h = PAL[name]["hex"].lstrip("#")
+    return np.array([int(h[i:i + 2], 16) for i in (0, 2, 4)], float)
+
+
+def build_palette():
+    """Palette colours expanded into shade ramps (cooler shadows, warmer highlights). Neon: lit + dim."""
+    cols = []
+    for name, v in PAL.items():
+        if name == "empty":
+            continue
+        c = _rgb(name)
+        if "emissive" in v:
+            cols += [c, c * 0.18 + np.array([6, 8, 12]), c * 0.6, np.minimum(c * 1.0 + 60, 255)]
+            continue
+        for m in SHADES:
+            x = c * m
+            if m < 1:
+                x = x * np.array([0.88, 0.96, 1.18]) ** ((1 - m) * 1.5)
+            elif m > 1:
+                x = x * np.array([1.04, 1.0, 0.92])
+            cols.append(x)
+    return np.clip(np.array(cols), 0, 255)
+
+
+PALETTE = build_palette()
+
+
+def _lut():
+    g = (np.arange(32) * 8 + 4).astype(float)
+    r, gg, b = np.meshgrid(g, g, g, indexing="ij")
+    q = np.stack([r, gg, b], -1).reshape(-1, 3)
+    out = np.empty(len(q), np.int32)
+    w = np.array([2.0, 4.0, 3.0])
+    for i in range(0, len(q), 2048):
+        d = (((q[i:i + 2048, None, :] - PALETTE[None]) ** 2) * w).sum(-1)
+        out[i:i + 2048] = d.argmin(1)
+    return out.reshape(32, 32, 32)
+
+
+LUT = _lut()
+
+
+def quantize(rgb):
+    """rgb: (...,3) floats 0..255 -> palette index array."""
+    q = (np.clip(rgb, 0, 255) / 8).astype(int).clip(0, 31)
+    return LUT[q[..., 0], q[..., 1], q[..., 2]]
+
+
+def blocks(a, S):
+    h, w = a.shape[0] // S, a.shape[1] // S
+    return a.reshape(h, S, w, S, *a.shape[2:]).swapaxes(1, 2).reshape(h, w, S * S, *a.shape[2:])
+
+
+def downsample(rgb, alpha, S, thresh, quant):
+    """rgb (H*S,W*S,3) 0..255, alpha bool. Returns (rgb (h,w,3) uint8, opaque bool (h,w))."""
+    am = blocks(alpha, S)
+    cnt = am.sum(-1)
+    opaque = cnt >= thresh
+    h, w = opaque.shape
+    if quant:
+        idx = blocks(quantize(rgb), S)
+        n = len(PALETTE)
+        b = np.where(am, idx, n).reshape(h * w, S * S)
+        flat = (np.arange(h * w)[:, None] * (n + 1) + b).ravel()
+        counts = np.bincount(flat, minlength=h * w * (n + 1)).reshape(h * w, n + 1)[:, :n]
+        out = PALETTE[counts.argmax(1)].reshape(h, w, 3)
+    else:
+        rb = blocks(rgb, S)
+        wgt = am[..., None]
+        out = (rb * wgt).sum(2) / np.maximum(wgt.sum(2), 1)
+    return np.clip(out, 0, 255).astype(np.uint8), opaque
+
+
+def outline(rgb, opaque, quant, vertical_only=False):
+    """1px outer outline, darkened neighbour colour. Returns padded (rgb, opaque)."""
+    rgb = np.pad(rgb, ((1, 1), (1, 1), (0, 0)))
+    op = np.pad(opaque, 1)
+    nsum = np.zeros(rgb.shape, float)
+    ncnt = np.zeros(op.shape, float)
+    for dy, dx in ((1, 0), (-1, 0)) if vertical_only else ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        o = np.roll(op, (dy, dx), (0, 1))
+        c = np.roll(rgb, (dy, dx), (0, 1)).astype(float)
+        nsum += c * o[..., None]
+        ncnt += o
+    ring = (~op) & (ncnt > 0)
+    mean = nsum / np.maximum(ncnt, 1)[..., None]
+    col = mean * 0.3 * 0.55 + np.array([8, 10, 18.0]) * 0.45
+    if quant:
+        col = PALETTE[quantize(col)]
+    rgb = np.where(ring[..., None], col, rgb).astype(np.uint8)
+    return rgb, op | ring
+
+
+def glow_down(rgb, S, thresh=3):
+    """rgb (H*S,W*S,3) 0..255 emission render. Returns (h,w,4) uint8, premultiplied-friendly (black = nothing)."""
+    lit = rgb.max(-1) > 40
+    lb, rb = blocks(lit, S), blocks(rgb, S)
+    cnt = lb.sum(-1)
+    mean = (rb * lb[..., None]).sum(2) / np.maximum(cnt, 1)[..., None]
+    on = cnt >= thresh
+    out = np.zeros(on.shape + (4,), np.uint8)
+    out[..., :3] = np.where(on[..., None], np.clip(mean, 0, 255), 0)
+    out[..., 3] = np.where(on, 255, 0)
+    return out
+
+
+def write_png(path, rgba):
+    h, w = rgba.shape[:2]
+    raw = b"".join(b"\x00" + rgba[y].tobytes() for y in range(h))
+
+    def chunk(t, d):
+        c = struct.pack(">I", len(d)) + t + d
+        return c + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+    png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))
+    png += chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
+    Path(path).write_bytes(png)
+
+
+def to_rgba(rgb, op):
+    return np.dstack([rgb, (op * 255).astype(np.uint8)])
+
+
+def crop_box(op, extra=None):
+    ys, xs = np.where(op if extra is None else (op | extra))
+    return xs.min(), ys.min(), xs.max() + 1, ys.max() + 1

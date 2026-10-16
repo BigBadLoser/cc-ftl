@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixel Lab</title>
+<link rel="stylesheet" href="./lab.css">
+</head>
+<body>
+<div id="stage"></div>
+<div id="ui">
+  <div class="row">
+    <span class="grp"><b>Zoom</b><button data-zoom="1">1x</button><button data-zoom="2">2x</button></span>
+    <button id="power" class="on">Power On</button>
+    <button id="blur">Glow blur</button>
+    <button id="outline" class="on">Outline</button>
+    <button id="quant" class="on">Palette</button>
+    <span id="fps">-- fps</span>
+  </div>
+</div>
+<div id="info"></div>
+<script type="module" src="./main.ts"></script>
+</body>
+</html>
