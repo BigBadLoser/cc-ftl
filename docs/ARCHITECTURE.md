@@ -129,17 +129,16 @@ field systems read.
 - It keeps its own caches (meshes, instances) and updates them from revision diffs.
 - It never writes to the sim.
 
-**Voxel kit.**
-- Models are code: shape helpers (box, cylinder, mirror…) plus **detail generators** (panels, rivets,
-  pipes, grime…).
-- Seeded, so the same input always gives the same model.
-- Meshed with **greedy meshing**, cached per model and **instanced** for repeated tiles and props.
-- Scale: 16 voxels per tile.
+**Assets come from the pipeline (see Asset pipeline).** The renderer only loads `.glb` files
+listed in `public/assets/manifest.json`. It never generates geometry for game content. The only
+exceptions are debug and overlay visuals: selection frames, overlays, blueprints.
 
 **Crew.**
-- Low-poly primitives assembled by a **parametric generator** from sim components (species, role gear,
-  implants, injuries, seed).
-- Limb hierarchy now; skeletal animation possible later.
+- Assembled at runtime from glTF parts: a species body (skeleton plus base meshes) plus slot items
+  attached to named bones.
+- Which parts to use comes from sim components (species, role gear, implants, injuries, appearance
+  seed).
+- Animation clips are played with `AnimationMixer`.
 
 **Visuals.**
 - Lighting is driven by the sim's light and power fields; neon emissives follow powered state.
@@ -148,6 +147,38 @@ field systems read.
 **Quality tiers.**
 - **High:** bloom and shadows. **Low:** neither.
 - Chunked, frustum-culled meshes.
+
+## Asset pipeline
+
+Asset *creation* is decoupled from asset *rendering*. The contract between them is glTF files plus
+naming conventions.
+
+```
+tools/blender/
+  setup.sh      installs a pinned headless Blender (the container is ephemeral)
+  lib/          shared Python: palette, style kit (faceted prisms, bevelled plating, grime vertex
+                colours), rig and attachment helpers, export
+  crew/         species body plans, slot items, animation clips
+  tiles/        floor, wall, hull, door variants (16 voxels per tile scale)
+  build.py      builds everything into public/assets/**.glb plus manifest.json
+  preview.py    renders turntable PNGs for review
+palette.json    the single palette, read by Blender scripts and the game
+```
+
+- **Run with `npm run assets`** (Blender headless). Generated `.glb` files and the manifest are
+  **committed**, because Cloudflare's build doesn't run Blender.
+- **Style:** chunky faceted (crew-lab style 2). Mechanical parts may use bevelled plating (style 3's
+  idea) through a separate kit helper.
+- **Conventions:**
+  - Units are 1 world unit = 1 tile, Y up, origin at the footprint's floor centre.
+  - Bones use fixed names (`root`, `hips`, `spine`, `head`, `arm.L/R`, `forearm.L/R`, `hand.L/R`,
+    `leg.L/R`, `shin.L/R`, `foot.L/R`).
+  - Attachment points are empties named `socket.<name>`.
+  - Material names carry meaning: `emissive.*` glows, `team.*` gets a role or faction tint.
+- **Crew parts are rigid meshes parented to bones**, not skinned. That keeps mix-and-match trivial and
+  the faceted look crisp. Slime may later use shape keys.
+- **Every asset has a manifest entry** with its id, file, kind, sockets, clips and footprint.
+  Content refers to assets by manifest id only.
 
 ## UI
 
@@ -181,12 +212,14 @@ Each milestone ends with something playable or watchable in the browser.
 | M0 | **Skeleton** | Vite, TS, Svelte and Three are set up, with lint boundaries, Vitest, the ECS, the tick loop, the command queue, the seeded RNG and a save round-trip test. An empty scene renders. |
 | M1 | **Grid & view** | A hard-coded test ship renders in voxels (16 per tile) with greedy meshing and instancing, an isometric camera, cutaway walls, pan and zoom, the tile inspector and a debug overlay. |
 | M2 | **Crew & jobs** | Crew pathfind (doors included), take jobs with reservations, follow role priorities and the grid, can be drafted and have minimal needs. Placeholder low-poly crew. |
+| A1 | **Asset pipeline: crew** | Blender setup, palette, style kit, the human body with slots (hair, eyes, arms, implants, role gear) and idle/walk/work/sleep clips, preview renders, runtime loader and crew assembler replacing the runtime-built crew. |
+| A2 | **Asset pipeline: tiles** | Floor, wall, hull and door from the pipeline replace the runtime voxel kit, and the voxel kit is removed from `src/render`. |
 | M3 | **Ship systems** | Power network, atmosphere, breaches, fire, smoke and lighting fields with overlays. Modules come from content, there is build mode with construction jobs, and the light economy works (items, storage, hauling). |
 | M4 | **Combat** | An enemy ship grid, weapons (charge and volley), shields, evasion, module targeting, tile effects, enemy AI doctrine, readability feedback, and destroy, flee and wreck endings. |
 | M5 | **Boarding & derelicts** | Portal graph across grids, airlocks and teleporters, EVA, crew-vs-crew combat, capture, and exploring wrecks. |
 | M6 | **Galaxy & events** | Chunked endless starmap, danger tiers, jumps, the event system (requirements, effects, flags, odds), stores and trade, and basic factions. |
 | M7 | **Depth pass** | Species, implants, more weapons and modules, recipes, and hardened saves. |
-| M8 | **Character art** | Textures, gear, role silhouettes and species body plans. |
+| M8 | **Character art** | More species (rock, robot, slime), more slot items, and portraits. |
 | Later | | Full production chains, mood and relationships drama, recoverable failure, fleets. |
 
 ## Working with Claude
