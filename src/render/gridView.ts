@@ -1,5 +1,5 @@
 import {
-  Group, InstancedMesh, Matrix4, MeshBasicMaterial, MeshStandardMaterial, Quaternion, Vector3,
+  BufferGeometry, DoubleSide, Float32BufferAttribute, Mesh, Group, InstancedMesh, Matrix4, MeshBasicMaterial, MeshStandardMaterial, Quaternion, Vector3,
   type InstancedMesh as IM,
 } from 'three';
 import type { Grid } from '../sim/grid';
@@ -20,6 +20,8 @@ export interface GridView {
   update(): void;
   setCutaway(mode: CutawayMode): void;
   setOverlay(field: string | null): void;
+  setSelection(tile: { x: number; y: number } | null): void;
+  setHover(tile: { x: number; y: number } | null): void;
   dispose(): void;
 }
 
@@ -27,6 +29,29 @@ const solidMat = new MeshStandardMaterial({ vertexColors: true, roughness: 0.92,
 /** Colour > 1 so emissive voxels clear the bloom threshold. */
 export const glowMat = new MeshBasicMaterial({ vertexColors: true, toneMapped: false });
 glowMat.color.setScalar(1.6);
+
+const frameMat = new MeshBasicMaterial({ color: 0x22d3ee, toneMapped: false, transparent: true, depthTest: false, depthWrite: false, side: DoubleSide });
+frameMat.color.multiplyScalar(1.6);
+const hoverMat = frameMat.clone();
+hoverMat.opacity = 0.45;
+
+/** Square ring of 8 triangles around a unit tile, `t` thick, lying at Y = 0.05. */
+function frameGeometry(t: number): BufferGeometry {
+  const o = [0, 1], i = [t, 1 - t];
+  const v = [o[0], o[0], o[1], o[0], o[1], o[1], o[0], o[1], i[0], i[0], i[1], i[0], i[1], i[1], i[0], i[1]];
+  const pos: number[] = [];
+  for (let k = 0; k < 16; k += 2) pos.push(v[k] as number, 0.05, v[k + 1] as number);
+  const idx: number[] = [];
+  for (let k = 0; k < 4; k++) {
+    const n = (k + 1) % 4;
+    idx.push(k, n, 4 + k, n, 4 + n, 4 + k);
+  }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  return g;
+}
+const frameGeo = frameGeometry(0.07);
 
 const ROT = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
 
@@ -37,7 +62,14 @@ export function createGridView(grid: Grid): GridView {
   group.position.set(offsetX, 0, offsetZ);
   const content = new Group();
   const overlayGroup = new Group();
-  group.add(content, overlayGroup);
+  const selMesh = new Mesh(frameGeo, frameMat);
+  const hoverMesh = new Mesh(frameGeo, hoverMat);
+  for (const m of [selMesh, hoverMesh]) {
+    m.visible = false;
+    m.renderOrder = 10;
+    m.frustumCulled = false;
+  }
+  group.add(content, overlayGroup, hoverMesh, selMesh);
 
   let mode: CutawayMode = 'auto';
   let structRev = -1;
@@ -164,6 +196,14 @@ export function createGridView(grid: Grid): GridView {
       overlayField = field;
       overlayKey = '';
       if (!field) rebuildOverlay();
+    },
+    setSelection(t) {
+      selMesh.visible = t !== null;
+      if (t) selMesh.position.set(t.x, 0, t.y);
+    },
+    setHover(t) {
+      hoverMesh.visible = t !== null;
+      if (t) hoverMesh.position.set(t.x, 0, t.y);
     },
     dispose() {
       for (const m of meshes) m.dispose();

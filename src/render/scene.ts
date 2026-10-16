@@ -7,7 +7,6 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import type { Grid } from '../sim/grid';
-import type { Sim } from '../sim';
 import { createCameraRig } from './camera';
 import { createGridView, type CutawayMode, type GridView } from './gridView';
 import { WALL_FULL_H } from './models/tiles';
@@ -16,8 +15,10 @@ import { VOXEL_SIZE } from './voxel/model';
 export type Quality = 'high' | 'low';
 export type { CutawayMode };
 
-/** Read-only window onto the sim; the renderer never writes through it. */
-export type SimView = Readonly<Pick<Sim, 'tick' | 'grids'>> & { readonly world: Readonly<Pick<Sim['world'], 'entityCount'>> };
+export interface RenderInfo {
+  calls: number;
+  triangles: number;
+}
 
 export interface Renderer {
   render(alpha: number): void;
@@ -27,6 +28,10 @@ export interface Renderer {
   setGrid(grid: Grid): void;
   setCutaway(mode: CutawayMode): void;
   setOverlay(field: string | null): void;
+  setSelection(tile: { x: number; y: number } | null): void;
+  setHover(tile: { x: number; y: number } | null): void;
+  /** Draw calls and triangles of the last frame (all passes). */
+  info(): RenderInfo;
   /** Drag the view by a screen-space delta in CSS px. */
   pan(dxPx: number, dyPx: number): void;
   /** Zoom by factor (>1 zooms in) keeping the point under (screenX, screenY) fixed. Canvas-relative px. */
@@ -35,9 +40,10 @@ export interface Renderer {
   pickTile(screenX: number, screenY: number): { x: number; y: number } | null;
 }
 
-export function createRenderer(canvas: HTMLCanvasElement, _sim: SimView, quality: Quality = 'high'): Renderer {
+export function createRenderer(canvas: HTMLCanvasElement, quality: Quality = 'high'): Renderer {
   const high = quality === 'high';
   const renderer = new WebGLRenderer({ canvas, antialias: high, powerPreference: 'high-performance' });
+  renderer.info.autoReset = false;
   renderer.toneMapping = ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.7;
   renderer.shadowMap.enabled = high;
@@ -67,6 +73,8 @@ export function createRenderer(canvas: HTMLCanvasElement, _sim: SimView, quality
   let view: GridView | null = null;
   let cutaway: CutawayMode = 'auto';
   let overlay: string | null = null;
+  let selection: { x: number; y: number } | null = null;
+  let hover: { x: number; y: number } | null = null;
   let cw = 1;
   let ch = 1;
 
@@ -100,6 +108,7 @@ export function createRenderer(canvas: HTMLCanvasElement, _sim: SimView, quality
   return {
     render() {
       view?.update();
+      renderer.info.reset();
       if (composer) composer.render();
       else renderer.render(scene, rig.camera);
     },
@@ -112,6 +121,8 @@ export function createRenderer(canvas: HTMLCanvasElement, _sim: SimView, quality
       view = createGridView(grid);
       view.setCutaway(cutaway);
       view.setOverlay(overlay);
+      view.setSelection(selection);
+      view.setHover(hover);
       scene.add(view.group);
       frame(grid);
     },
@@ -123,6 +134,15 @@ export function createRenderer(canvas: HTMLCanvasElement, _sim: SimView, quality
       overlay = field;
       view?.setOverlay(field);
     },
+    setSelection(t) {
+      selection = t;
+      view?.setSelection(t);
+    },
+    setHover(t) {
+      hover = t;
+      view?.setHover(t);
+    },
+    info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
     pan: (dx, dy) => rig.pan(dx, dy),
     zoomAt: (f, x, y) => rig.zoomAt(f, x, y),
     pickTile(sx, sy) {

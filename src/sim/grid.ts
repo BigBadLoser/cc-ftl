@@ -74,6 +74,11 @@ export class Grid {
     return this.arrays.has(field);
   }
 
+  /** Names of all fields, in definition order. */
+  fieldNames(): string[] {
+    return [...this.arrays.keys()];
+  }
+
   /** True if (x, y) lies inside the grid. */
   inBounds(x: number, y: number): boolean {
     return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < this.width && y < this.height;

@@ -14,7 +14,21 @@ export interface UiSnapshot {
   frameMs: number;
   tickMs: number;
   seed: number;
+  drawCalls: number;
+  triangles: number;
 }
+
+export interface UiInspect {
+  gridId: number;
+  x: number;
+  y: number;
+  structName: string;
+  room: number;
+  fields: { name: string; value: number }[];
+  selected: boolean;
+}
+
+export type UiCutaway = 'auto' | 'up' | 'down';
 
 export interface UiError {
   message: string;
@@ -26,6 +40,9 @@ export interface UiError {
 export interface UiApi {
   snapshot: Subscribable<UiSnapshot>;
   errors: Subscribable<UiError[]>;
+  inspect: Subscribable<UiInspect | null>;
+  setCutaway(mode: UiCutaway): void;
+  setOverlay(field: string | null): void;
   dispatch(cmd: Command): void;
   setSpeed(speed: 0 | 1 | 2 | 3): void;
   togglePause(): void;
