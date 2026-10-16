@@ -88,8 +88,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     cam.centerOn(c.x, c.y - 8);
     const spanW = (grid.width + grid.height) * (TILE_W / 2) + TILE_W;
     const spanH = (grid.width + grid.height) * (TILE_H / 2) + TILE_H * 2;
-    const dprInt = cam.scale / cam.zoom;
-    cam.setZoom(Math.min(3, Math.floor(Math.min(cam.w / dprInt / spanW, cam.h / dprInt / spanH))));
+    // Largest whole device-px-per-art-px scale at which the whole ship fits (at least 1).
+    cam.setZoom(Math.max(1, Math.floor(Math.min(cam.w / spanW, cam.h / spanH))));
   }
 
   return {

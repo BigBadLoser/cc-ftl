@@ -17,7 +17,7 @@ export function crewLoadout(atlas: Atlas, crew: Crew): LayerSprite[] {
     hair.length ? (hair[hash(crew.appearanceSeed, 10) % hair.length] as string) : '',
     `${p}arm.L.${engineer ? 'cyber' : 'flesh'}`,
     `${p}arm.R.flesh`,
-    `${p}torso.${engineer ? 'work_shirt' : 'tank_top'}`,
+    `${p}torso.${engineer ? 'work_shirt' : 'tee'}`,
     `${p}legs.cargo_pants`,
     ...(engineer ? [`${p}gear.belt.tool_belt`, `${p}gear.back.engineer_rig`, `${p}gear.head.welding_goggles`] : []),
   ];

@@ -155,8 +155,8 @@ def build_skinned(arm, body):
     # flesh arms: the arm faces of the base, split by side (character left = +X)
     mk("arm.L", "flesh", R.arms & (R.x > 0), 0.0, lambda c, i: "team.skin", default=True)
     mk("arm.R", "flesh", R.arms & (R.x < 0), 0.0, lambda c, i: "team.skin", default=True)
-    mk("torso", "work_shirt", R.torso & ~R.belt, 0.05, lambda c, i: _shirt_col(c, "shirt"), 0, _widen, default=True)
-    mk("torso", "tee", R.torso & ~R.belt, 0.05, lambda c, i: _shirt_col(c, "tee"), 0, _widen)
+    mk("torso", "work_shirt", R.torso & ~R.belt, 0.05, lambda c, i: _shirt_col(c, "shirt"), 2, _widen, default=True)
+    mk("torso", "tee", R.torso & ~R.belt, 0.05, lambda c, i: _shirt_col(c, "tee"), 2, _widen)
     mk("legs", "cargo_pants", R.legs, 0.03,
        lambda c, i: "sole" if c.z < 0.05 else "boot" if c.z < 0.2 else ("pocket" if 0.4 < c.z < 0.5 and c.y < 0.05 else "pants"),
        0, default=True)

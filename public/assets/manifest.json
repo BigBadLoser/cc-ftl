@@ -82,10 +82,10 @@
    "slot": "body",
    "order": 0,
    "sheet": "crew.human.body",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -121,10 +121,10 @@
    "slot": "eyes",
    "order": 10,
    "sheet": "crew.human.eyes.cyber",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -161,10 +161,10 @@
    "slot": "eyes",
    "order": 10,
    "sheet": "crew.human.eyes.organic",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -200,10 +200,10 @@
    "slot": "legs",
    "order": 20,
    "sheet": "crew.human.legs.cargo_pants",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -239,10 +239,10 @@
    "slot": "torso",
    "order": 30,
    "sheet": "crew.human.torso.tee",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -278,10 +278,10 @@
    "slot": "torso",
    "order": 30,
    "sheet": "crew.human.torso.work_shirt",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -317,10 +317,10 @@
    "slot": "gear.belt",
    "order": 40,
    "sheet": "crew.human.gear.belt.tool_belt",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -356,10 +356,10 @@
    "slot": "arm.R",
    "order": 50,
    "sheet": "crew.human.arm.R.cyber",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -396,10 +396,10 @@
    "slot": "arm.R",
    "order": 50,
    "sheet": "crew.human.arm.R.flesh",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -435,10 +435,10 @@
    "slot": "arm.L",
    "order": 51,
    "sheet": "crew.human.arm.L.cyber",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -475,10 +475,10 @@
    "slot": "arm.L",
    "order": 51,
    "sheet": "crew.human.arm.L.flesh",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -514,10 +514,10 @@
    "slot": "hair",
    "order": 60,
    "sheet": "crew.human.hair.mohawk",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -553,10 +553,10 @@
    "slot": "hair",
    "order": 60,
    "sheet": "crew.human.hair.ponytail",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -592,10 +592,10 @@
    "slot": "hair",
    "order": 60,
    "sheet": "crew.human.hair.shaved",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -631,10 +631,10 @@
    "slot": "hair",
    "order": 60,
    "sheet": "crew.human.hair.short",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -670,10 +670,10 @@
    "slot": "implant.temple",
    "order": 65,
    "sheet": "crew.human.implant.temple.neural_jack",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -710,10 +710,10 @@
    "slot": "gear.head",
    "order": 70,
    "sheet": "crew.human.gear.head.welding_goggles",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {
@@ -749,10 +749,10 @@
    "slot": "gear.back",
    "order": 80,
    "sheet": "crew.human.gear.back.engineer_rig",
-   "frameW": 98,
+   "frameW": 110,
    "frameH": 98,
    "anchor": {
-    "x": 49,
+    "x": 56,
     "y": 78
    },
    "clips": {

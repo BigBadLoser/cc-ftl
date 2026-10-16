@@ -1,5 +1,5 @@
 /**
- * Pixel-perfect camera. The view centre is a point in art px; one art px is always `zoom * dprInt`
+ * Pixel-perfect camera. The view centre is a point in art px; one art px is always `zoom`
  * whole device px, and the world container sits on a whole device px.
  */
 export interface Camera {
@@ -34,7 +34,10 @@ export function createCamera(maxZoom: number): Camera {
   let cx = 0;
   let cy = 0;
   let acc = 1;
-  const scale = () => zoom * dprInt;
+  /** Device px per art px. Always an integer, so art pixels stay crisp. */
+  const scale = () => zoom;
+  let maxScale = maxZoom;
+  let sized = false;
   const cam: Camera = {
     get zoom() {
       return zoom;
@@ -57,6 +60,12 @@ export function createCamera(maxZoom: number): Camera {
     resize(cssW, cssH, dpr) {
       ratio = Math.max(1, dpr);
       dprInt = Math.max(1, Math.round(dpr));
+      maxScale = maxZoom * dprInt;
+      if (!sized) {
+        zoom = dprInt;
+        sized = true;
+      }
+      zoom = Math.min(zoom, maxScale);
       w = Math.max(1, Math.round(cssW * ratio));
       h = Math.max(1, Math.round(cssH * ratio));
     },
@@ -72,7 +81,7 @@ export function createCamera(maxZoom: number): Camera {
       acc = 1;
     },
     setZoom(z, sx, sy) {
-      z = Math.max(1, Math.min(maxZoom, Math.round(z)));
+      z = Math.max(1, Math.min(maxScale, Math.round(z)));
       if (z === zoom) return;
       const a = sx === undefined || sy === undefined ? { x: cx, y: cy } : cam.toArt(sx, sy);
       const px = sx === undefined ? w / 2 : sx * ratio;
