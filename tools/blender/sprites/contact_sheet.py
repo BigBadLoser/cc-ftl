@@ -103,7 +103,7 @@ def crew_ids(man, parts):
 
 def room(assets, man):
     GW, GH = 9, 7
-    W, H = 660, 380
+    W, H = 660, 330
     s = Scene(assets, man, W, H, (W // 2 - 20, 40))
     for gx in range(GW):
         for gy in range(GH):
@@ -114,12 +114,12 @@ def room(assets, man):
     for gy in range(GH):
         s.static("tile.hull.y" if gy in (4, 5) else ("tile.door.open.y" if gy == 3 else "tile.wall.y"), 0, gy, 0.1)
         s.static("tile.wall.low.y", GW - 1, gy, 0.1)
-    s.static("module.reactor", 3, 3)
-    s.static("module.life_support", 6, 2)
-    s.static("module.bed", 1, 2)
+    s.static("module.reactor", 4, 4)
+    s.static("module.life_support", 7, 2)
+    s.static("module.bed", 1, 5)
     s.static("module.console", 5, 1)
-    s.static("prop.crate", 7, 4)
-    s.static("module.light", 2, 5)
+    s.static("prop.crate", 7, 5)
+    s.static("module.light", 2, 2)
     body = ["body", "legs.cargo_pants", "gear.belt.tool_belt"]
     a = body + ["eyes.organic", "hair.mohawk", "arm.L.flesh", "arm.R.flesh", "torso.work_shirt", "gear.back.engineer_rig",
                 "gear.head.welding_goggles", "implant.temple.neural_jack"]
@@ -128,10 +128,10 @@ def room(assets, man):
     sl = body + ["eyes.organic", "hair.shaved", "arm.L.flesh", "arm.R.flesh", "torso.tee"]
     base = {"team.skin": (212, 156, 116), "team.hair": (70, 48, 34), "team.cloth": (114, 132, 95), "team.accent": (200, 150, 40)}
     swap = {"team.skin": (120, 78, 54), "team.hair": (226, 140, 40), "team.cloth": (60, 96, 150), "team.accent": (200, 60, 70)}
-    s.crew(crew_ids(man, a), 4.0, 5.6, 1, "idle", 1, base)
-    s.crew(crew_ids(man, b), 5.6, 3.2, 3, "walk", 2, {**base, "team.skin": (232, 190, 150), "team.hair": (40, 40, 48)})
-    s.crew(crew_ids(man, c), 2.3, 3.7, 0, "work", 3, swap)
-    s.crew(crew_ids(man, sl), 1.5, 3.0, 2, "sleep", 1, {**base, "team.hair": (150, 150, 160)})
+    s.crew(crew_ids(man, a), 3.3, 5.7, 1, "idle", 1, base)
+    s.crew(crew_ids(man, b), 6.3, 3.6, 3, "walk", 2, {**base, "team.skin": (232, 190, 150), "team.hair": (40, 40, 48)})
+    s.crew(crew_ids(man, c), 5.5, 2.4, 6, "work", 3, swap)
+    s.crew(crew_ids(man, sl), 1.5, 5.0, 2, "sleep", 1, {**base, "team.hair": (150, 150, 160)})
     s.flush()
     return s
 

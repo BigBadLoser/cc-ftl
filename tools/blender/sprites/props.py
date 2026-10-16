@@ -84,7 +84,7 @@ def _face(m, axis, t, h, style):
             return "plate"
         if nv > 12 and top >= 2 and top < 5:
             return "steel"
-        return "steel" if (i // 16 + (j > nv // 2)) % 2 else "plateB"
+        return "steelL" if (i // 16 + (j > nv // 2)) % 2 else "steel"
     e = 0.004
     if axis == "x":
         m.pattern((-0.5, t / 2 + e, 0), (1, 0, 0), (0, 0, h), 32, nv, fn)

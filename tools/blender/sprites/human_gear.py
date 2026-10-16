@@ -54,13 +54,14 @@ def jack(arm):
 
 
 def goggles(arm):
+    """Welding goggles pushed up onto the hair, so they never hide the face."""
     def b(rs):
         h = rs.on("head")
-        h.box((0, -0.1, 1.668), (0.22, 0.2, 0.034), "team.accent*0.8", bevel=0.004)
-        h.box((0, 0.0, 1.668), (0.235, 0.04, 0.034), "team.accent*0.8")
+        h.box((0, -0.05, 1.672), (0.215, 0.15, 0.03), "team.accent*0.8", bevel=0.004)
+        h.box((0, 0.03, 1.672), (0.225, 0.05, 0.03), "team.accent*0.8")
         for sx in (-1, 1):
-            h.box((sx * 0.052, -0.145, 1.675), (0.1, 0.04, 0.075), "brass", bevel=0.01)
-            h.box((sx * 0.052, -0.168, 1.675), (0.075, 0.016, 0.056), "lens")
+            h.box((sx * 0.052, -0.125, 1.688), (0.1, 0.04, 0.07), "brass", bevel=0.01)
+            h.box((sx * 0.052, -0.147, 1.69), (0.072, 0.016, 0.05), "lens")
     return _items(arm, "gear.head", "welding_goggles", b)
 
 

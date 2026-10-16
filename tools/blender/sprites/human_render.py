@@ -26,7 +26,7 @@ CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("sl
 # sim facing d: 0 = grid +x, CCW in grid space, 2 = grid +y. Character faces Blender -Y at azimuth 0, and Blender
 # y = -grid y, so the azimuth about +Z that faces grid angle phi=45*d deg is theta = 90 - phi.
 THETA = [90 - 45 * d for d in range(8)]
-W, H = 96, 108
+W, H = 124, 108
 ORIGIN = (W // 2, 84)           # feet position in the render canvas (x, y from top)
 HEAD_SCALE = 1.45
 TORSO_W = 1.14
