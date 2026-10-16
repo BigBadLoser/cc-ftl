@@ -1,0 +1,437 @@
+{
+ "version": 1,
+ "assets": [
+  {
+   "id": "crew.human.body",
+   "file": "crew/human/body.glb",
+   "kind": "crew.body",
+   "species": "human",
+   "bones": [
+    "root",
+    "hips",
+    "spine",
+    "head",
+    "arm.L",
+    "forearm.L",
+    "hand.L",
+    "leg.L",
+    "shin.L",
+    "foot.L",
+    "arm.R",
+    "forearm.R",
+    "hand.R",
+    "leg.R",
+    "shin.R",
+    "foot.R"
+   ],
+   "sockets": [
+    "socket.back",
+    "socket.head",
+    "socket.hand.L",
+    "socket.hand.R"
+   ],
+   "clips": [
+    {
+     "name": "idle",
+     "duration": 3.0,
+     "loop": true
+    },
+    {
+     "name": "walk",
+     "duration": 1.0,
+     "loop": true
+    },
+    {
+     "name": "work",
+     "duration": 0.6667,
+     "loop": true
+    },
+    {
+     "name": "sleep",
+     "duration": 4.0,
+     "loop": true
+    }
+   ],
+   "tint": [
+    "team.skin"
+   ],
+   "bytes": 95684
+  },
+  {
+   "id": "crew.human.arm.L.flesh",
+   "file": "crew/human/slots/arm.L.flesh.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "arm.L",
+   "targets": [
+    "arm.L",
+    "forearm.L",
+    "hand.L"
+   ],
+   "tint": [
+    "team.skin"
+   ],
+   "emissive": [],
+   "bone": "arm.L",
+   "bytes": 12480
+  },
+  {
+   "id": "crew.human.arm.R.flesh",
+   "file": "crew/human/slots/arm.R.flesh.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "arm.R",
+   "targets": [
+    "arm.R",
+    "forearm.R",
+    "hand.R"
+   ],
+   "tint": [
+    "team.skin"
+   ],
+   "emissive": [],
+   "bone": "arm.R",
+   "bytes": 12480
+  },
+  {
+   "id": "crew.human.arm.L.cyber",
+   "file": "crew/human/slots/arm.L.cyber.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "arm.L",
+   "targets": [
+    "arm.L",
+    "forearm.L",
+    "hand.L"
+   ],
+   "tint": [],
+   "emissive": [
+    "emissive.cyan"
+   ],
+   "bone": "arm.L",
+   "bytes": 39052
+  },
+  {
+   "id": "crew.human.arm.R.cyber",
+   "file": "crew/human/slots/arm.R.cyber.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "arm.R",
+   "targets": [
+    "arm.R",
+    "forearm.R",
+    "hand.R"
+   ],
+   "tint": [],
+   "emissive": [
+    "emissive.cyan"
+   ],
+   "bone": "arm.R",
+   "bytes": 39052
+  },
+  {
+   "id": "crew.human.torso.work_jacket",
+   "file": "crew/human/slots/torso.work_jacket.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "torso",
+   "targets": [
+    "arm.L",
+    "arm.R",
+    "spine"
+   ],
+   "tint": [
+    "team.accent",
+    "team.cloth"
+   ],
+   "emissive": [],
+   "bone": "arm.L",
+   "bytes": 15664
+  },
+  {
+   "id": "crew.human.torso.work_jacket_hivis",
+   "file": "crew/human/slots/torso.work_jacket_hivis.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "torso",
+   "targets": [
+    "arm.L",
+    "arm.R",
+    "spine"
+   ],
+   "tint": [
+    "team.accent",
+    "team.cloth"
+   ],
+   "emissive": [],
+   "bone": "arm.L",
+   "bytes": 17224
+  },
+  {
+   "id": "crew.human.torso.tank_top",
+   "file": "crew/human/slots/torso.tank_top.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "torso",
+   "targets": [
+    "spine"
+   ],
+   "tint": [
+    "team.cloth"
+   ],
+   "emissive": [],
+   "bone": "spine",
+   "bytes": 5132
+  },
+  {
+   "id": "crew.human.legs.cargo_pants",
+   "file": "crew/human/slots/legs.cargo_pants.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "legs",
+   "targets": [
+    "hips",
+    "leg.L",
+    "leg.R",
+    "shin.L",
+    "shin.R"
+   ],
+   "tint": [],
+   "emissive": [],
+   "bone": "hips",
+   "bytes": 16432
+  },
+  {
+   "id": "crew.human.gear.back.engineer_rig",
+   "file": "crew/human/slots/gear.back.engineer_rig.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "gear.back",
+   "targets": [
+    "socket.back"
+   ],
+   "tint": [],
+   "emissive": [
+    "emissive.cyan"
+   ],
+   "socket": "socket.back",
+   "bytes": 26900
+  },
+  {
+   "id": "crew.human.gear.belt.tool_belt",
+   "file": "crew/human/slots/gear.belt.tool_belt.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "gear.belt",
+   "targets": [
+    "spine"
+   ],
+   "tint": [],
+   "emissive": [],
+   "bone": "spine",
+   "bytes": 10268
+  },
+  {
+   "id": "crew.human.gear.head.welding_goggles",
+   "file": "crew/human/slots/gear.head.welding_goggles.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "gear.head",
+   "targets": [
+    "head"
+   ],
+   "tint": [],
+   "emissive": [],
+   "bone": "head",
+   "bytes": 8600
+  },
+  {
+   "id": "crew.human.gear.hand.R.hammer",
+   "file": "crew/human/slots/gear.hand.R.hammer.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "gear.hand.R",
+   "targets": [
+    "socket.hand.R"
+   ],
+   "tint": [],
+   "emissive": [],
+   "socket": "socket.hand.R",
+   "bytes": 6964
+  },
+  {
+   "id": "crew.human.gear.back.medic_pack",
+   "file": "crew/human/slots/gear.back.medic_pack.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "gear.back",
+   "targets": [
+    "socket.back"
+   ],
+   "tint": [],
+   "emissive": [
+    "emissive.cyan"
+   ],
+   "socket": "socket.back",
+   "bytes": 18364
+  },
+  {
+   "id": "crew.human.gear.torso.gunner_vest",
+   "file": "crew/human/slots/gear.torso.gunner_vest.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "gear.torso",
+   "targets": [
+    "spine"
+   ],
+   "tint": [],
+   "emissive": [
+    "emissive.orange"
+   ],
+   "bone": "spine",
+   "bytes": 26056
+  },
+  {
+   "id": "crew.human.gear.head.pilot_headset",
+   "file": "crew/human/slots/gear.head.pilot_headset.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "gear.head",
+   "targets": [
+    "head"
+   ],
+   "tint": [],
+   "emissive": [
+    "emissive.cyan"
+   ],
+   "bone": "head",
+   "bytes": 20564
+  },
+  {
+   "id": "crew.human.gear.torso.security_plates",
+   "file": "crew/human/slots/gear.torso.security_plates.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "gear.torso",
+   "targets": [
+    "spine"
+   ],
+   "tint": [],
+   "emissive": [
+    "emissive.red"
+   ],
+   "bone": "spine",
+   "bytes": 15168
+  },
+  {
+   "id": "crew.human.hair.mohawk",
+   "file": "crew/human/slots/hair.mohawk.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "hair",
+   "targets": [
+    "head"
+   ],
+   "tint": [
+    "team.hair"
+   ],
+   "emissive": [],
+   "bone": "head",
+   "bytes": 9872
+  },
+  {
+   "id": "crew.human.hair.short",
+   "file": "crew/human/slots/hair.short.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "hair",
+   "targets": [
+    "head"
+   ],
+   "tint": [
+    "team.hair"
+   ],
+   "emissive": [],
+   "bone": "head",
+   "bytes": 9392
+  },
+  {
+   "id": "crew.human.hair.ponytail",
+   "file": "crew/human/slots/hair.ponytail.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "hair",
+   "targets": [
+    "head"
+   ],
+   "tint": [
+    "team.hair"
+   ],
+   "emissive": [],
+   "bone": "head",
+   "bytes": 10964
+  },
+  {
+   "id": "crew.human.hair.shaved",
+   "file": "crew/human/slots/hair.shaved.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "hair",
+   "targets": [
+    "head"
+   ],
+   "tint": [
+    "team.hair"
+   ],
+   "emissive": [],
+   "bone": "head",
+   "bytes": 7428
+  },
+  {
+   "id": "crew.human.eyes.organic",
+   "file": "crew/human/slots/eyes.organic.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "eyes",
+   "targets": [
+    "head"
+   ],
+   "tint": [],
+   "emissive": [],
+   "bone": "head",
+   "bytes": 3128
+  },
+  {
+   "id": "crew.human.eyes.cyber",
+   "file": "crew/human/slots/eyes.cyber.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "eyes",
+   "targets": [
+    "head"
+   ],
+   "tint": [],
+   "emissive": [
+    "emissive.cyan"
+   ],
+   "bone": "head",
+   "bytes": 7360
+  },
+  {
+   "id": "crew.human.implant.temple.neural_jack",
+   "file": "crew/human/slots/implant.temple.neural_jack.glb",
+   "kind": "crew.slot",
+   "species": "human",
+   "slot": "implant.temple",
+   "targets": [
+    "head"
+   ],
+   "tint": [],
+   "emissive": [
+    "emissive.magenta"
+   ],
+   "bone": "head",
+   "bytes": 8724
+  }
+ ]
+}

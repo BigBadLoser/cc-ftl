@@ -21,6 +21,7 @@ def _new(name):
     nt.links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
     bsdf.inputs["Roughness"].default_value = 0.88
     bsdf.inputs["Metallic"].default_value = 0.12
+    m.use_backface_culling = True
     return m, nt, bsdf
 
 

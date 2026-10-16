@@ -143,7 +143,9 @@ class Builder:
             bm.free()
             me.shade_flat()
             me.materials.append(materials.get(key))
+            me.color_attributes.active_color = me.color_attributes["Col"]
             ob = bpy.data.objects.new(name, me)
+            ob.rotation_euler = (math.pi / 2, 0, 0)  # see module doc; keeps standalone (slot) nodes consistent with bone children
             coll.objects.link(ob)
             out.append((target, ob))
         self._bms.clear()
