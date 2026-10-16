@@ -8,12 +8,14 @@ import { lightTint, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
-import { floorChain, wallPieces } from "./tiles";
+import { floorChain, wallPieces, type CutawayMode } from "./tiles";
+
+export type { CutawayMode };
 
 export interface GridView extends Markers {
   readonly grid: Grid;
   update(): void;
-  setGhosts(on: boolean): void;
+  setCutaway(mode: CutawayMode): void;
   setOverlay(field: string | null): void;
   dispose(): void;
 }
@@ -40,15 +42,15 @@ interface Tinted {
   wall: boolean;
 }
 
-/** Floors, walls, hull and doors of one grid, rebuilt whenever the struct revision or the ghost setting changes. */
+/** Floors, walls, hull and doors of one grid, rebuilt whenever the struct revision or the cutaway mode changes. */
 export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridViewHost): GridView {
   const markers = createMarkers(L.ui);
   const overlay: Overlay = createOverlay(grid, L.decal, host.overlayWorld);
   let owned: Sprite[] = [];
   let tinted: Tinted[] = [];
   let doors: Door[] = [];
-  let ghosts = true;
-  let builtGhosts: boolean | null = null;
+  let mode: CutawayMode = "auto";
+  let builtMode: CutawayMode | null = null;
   let rev = -1;
   let tintKey = "";
   let doorKey = -1;
@@ -77,7 +79,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           tinted.push({ spr: made[0] as Sprite, idx, wall: false });
         }
         if (k === Struct.Floor) continue;
-        for (const piece of wallPieces(kindAt, x, y, k, ghosts)) {
+        for (const piece of wallPieces(kindAt, x, y, k, mode)) {
           const s = atlas.firstOf(piece.chain);
           if (!s) continue;
           const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001, L.sorted);
@@ -91,7 +93,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           tinted.push({ spr: made[0] as Sprite, idx, wall: !isDoor });
         }
       }
-    builtGhosts = ghosts;
+    builtMode = mode;
     doorKey = -1;
     tintKey = "";
   }
@@ -142,7 +144,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     grid,
     update() {
       const r = grid.revision("struct");
-      if (r !== rev || builtGhosts !== ghosts) {
+      if (r !== rev || builtMode !== mode) {
         rebuild();
         rev = r;
       }
@@ -150,8 +152,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       updateTints();
       overlay.update();
     },
-    setGhosts(on) {
-      ghosts = on;
+    setCutaway(m) {
+      mode = m;
     },
     setOverlay: (f) => overlay.setField(f),
     dispose() {

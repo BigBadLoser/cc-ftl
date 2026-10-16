@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiSnapshot, UiToolState } from './api';
+  import type { UiApi, UiCutaway, UiSnapshot, UiToolState } from './api';
   import DebugPanel from './DebugPanel.svelte';
   import TileInspector from './TileInspector.svelte';
   import CrewBar from './CrewBar.svelte';
@@ -24,12 +24,14 @@
   let toast = $state<string | null>(null);
   let snap = $state<UiSnapshot | undefined>(undefined);
 
-  let ghosts = $state(true);
+  let cutaway = $state<UiCutaway>('auto');
   let selMod = $state<number | null>(null);
   let tool = $state<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
-  function toggleGhosts() {
-    ghosts = !ghosts;
-    api.setGhosts(ghosts);
+  const cutLabel: Record<UiCutaway, string> = { auto: 'Auto', up: 'Up', down: 'Down' };
+  const cutNext: Record<UiCutaway, UiCutaway> = { auto: 'up', up: 'down', down: 'auto' };
+  function cycleWalls() {
+    cutaway = cutNext[cutaway];
+    api.setCutaway(cutaway);
   }
 
   onMount(() => {
@@ -73,7 +75,7 @@
     {/each}
   </span>
   <span class="views">
-    <button onclick={toggleGhosts}>Ghosts<span class="long">: {ghosts ? 'On' : 'Off'}</span></button>
+    <button onclick={cycleWalls}>Walls<span class="long">: {cutLabel[cutaway]}</span></button>
     <OverlayPicker {api} />
   </span>
   <StatsChips {api} />

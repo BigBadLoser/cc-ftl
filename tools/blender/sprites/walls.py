@@ -14,15 +14,16 @@ H = 0.38           # block height (tiles)
 WT = 7 / 32        # top half-width of an open side (slope inset from the tile edge)
 CH = 2 / 32        # channel half-width
 NU, NT = 32, 16    # slope cells across / up
+HF = 1.2          # full-height wall top (tiles)
 DH = 1.3           # door frame height
 DX = 0.30          # door opening half-width
 DIRS = ("n", "e", "s", "w")
 BIT = {"n": 1, "e": 2, "s": 4, "w": 8}
 
 PAL = {  # family -> colours
-    "wall": dict(top="steelD", chan="dark", sb="steel", sp="steelL", sl="steelD", eb="steelD", ep="steel",
+    "wall": dict(top="steel", chan="dark", sb="steel", sp="steelL", sl="steelD", eb="steelD", ep="steel",
                  el="dark", crest="steelL"),
-    "hull": dict(top="plateA", chan="dark", sb="steelD", sp="steel", sl="dark", eb="plateA", ep="steelD",
+    "hull": dict(top="steelD", chan="dark", sb="steelD", sp="steel", sl="dark", eb="plateA", ep="steelD",
                  el="dark", crest="steel"),
     "ghost": dict(top="dark", chan="hazK", sb="grime", sp="hazK", sl="dark", eb="dark", ep="hazK",
                   el="dark", crest="steelL"),
@@ -86,7 +87,7 @@ def _slope(m, side, mask, c, deco):
             m.poly(pts, col)
 
 
-def _top(m, mask, c):
+def _top(m, mask, c, zt=H):
     xw, xe, yn, ys = rect(mask)
     for j in range(32):
         for i in range(32):
@@ -101,18 +102,50 @@ def _top(m, mask, c):
                        (abs(cy) < CH and ((mask & 8 and cx < 0) or (mask & 2 and cx > 0)))
             col = c["chan"] if chan else c["top"]
             x0, y0 = i / 32 - 0.5, j / 32 - 0.5
-            m.poly([core.G(x0, y0, H), core.G(x0 + 1 / 32, y0, H), core.G(x0 + 1 / 32, y0 + 1 / 32, H),
-                    core.G(x0, y0 + 1 / 32, H)], col)
+            m.poly([core.G(x0, y0, zt), core.G(x0 + 1 / 32, y0, zt), core.G(x0 + 1 / 32, y0 + 1 / 32, zt),
+                    core.G(x0, y0 + 1 / 32, zt)], col)
 
 
-def block(mask, fam, deco=None, name=None):
+def _upright(m, side, mask, c):
+    """Vertical panelled face from the slope crest (z = H) up to HF, on an open camera-facing side."""
+    xw, xe, yn, ys = rect(mask)
+    lit = side == "s"
+    body, inner, edge = (c["sb"], c["sp"], c["sl"]) if lit else (c["eb"], c["ep"], c["el"])
+    nz = int(round((HF - H) * 24))
+    a0, a1 = (xw, xe) if lit else (yn, ys)
+    i0, i1 = round((a0 + 0.5) * 32), round((a1 + 0.5) * 32)
+    for i in range(i0, i1):
+        for j in range(nz):
+            pi = i % 16
+            if j == nz - 1:
+                col = c["crest"]
+            elif j == 0 or (nz // 2 <= j <= nz // 2 + 1):
+                col = edge
+            elif pi == 0:
+                col = edge
+            elif 2 <= pi <= 13 and 3 <= j <= nz - 4 and j != nz // 2 + 2:
+                col = inner
+            else:
+                col = body
+            u0, u1, z0, z1 = i / 32 - 0.5, (i + 1) / 32 - 0.5, H + (HF - H) * j / nz, H + (HF - H) * (j + 1) / nz
+            if lit:
+                m.poly([core.G(u0, WT, z0), core.G(u1, WT, z0), core.G(u1, WT, z1), core.G(u0, WT, z1)], col)
+            else:
+                m.poly([core.G(WT, u0, z0), core.G(WT, u1, z0), core.G(WT, u1, z1), core.G(WT, u0, z1)], col)
+
+
+def block(mask, fam, deco=None, name=None, full=False):
     m = core.Mesh(name or f"wall_{fam}_{mask}", flat=True)
     c = PAL[fam]
-    _top(m, mask, c)
+    _top(m, mask, c, HF if full else H)
     if not mask & 4:
         _slope(m, "s", mask, c, deco if mask == 10 else None)
+        if full:
+            _upright(m, "s", mask, c)
     if not mask & 2:
         _slope(m, "e", mask, c, deco if mask == 5 else None)
+        if full:
+            _upright(m, "e", mask, c)
     return [m.build()]
 
 
@@ -310,7 +343,7 @@ def floor(variant):
                 return "steelD"
             return "steel"
         if variant == "g":                        # planks along y
-            pi = i % 8
+            pi = i % 16
             if pi == 0:
                 return "steelD"
             if pi == 1:
@@ -338,6 +371,9 @@ for _fam in ("wall", "hull", "ghost"):
     for _m in range(16):
         SPRITES.append((f"tile.{_id}.m{_m}", (1, 1), _kind, lambda m=_m, f=_fam: block(m, f)))
     if _fam != "ghost":
+        for _m in range(16):
+            SPRITES.append((f"tile.{_id.split('.')[0]}.full.m{_m}", (1, 1), "block",
+                            lambda m=_m, f=_fam: block(m, f, None, None, True)))
         for _m, _decos in ((5, ("screen", "vent")), (10, ("screen", "vent"))):
             for _k, _d in enumerate(_decos, 1):
                 SPRITES.append((f"tile.{_id}.m{_m}.v{_k}", (1, 1), "block",

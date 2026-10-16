@@ -115,6 +115,8 @@ export interface UiToolState {
   rot: number;
 }
 
+export type UiCutaway = 'auto' | 'up' | 'down';
+
 export interface UiError {
   message: string;
   stack: string;
@@ -147,7 +149,7 @@ export interface UiApi {
   setTool(state: Partial<UiToolState>): void;
   /** Select a crew member (null clears) and optionally center the camera on them. */
   selectCrew(id: number | null, focus?: boolean): void;
-  setGhosts(on: boolean): void;
+  setCutaway(mode: UiCutaway): void;
   setOverlay(field: string | null): void;
   dispatch(cmd: Command): void;
   setSpeed(speed: 0 | 1 | 2 | 3): void;

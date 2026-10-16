@@ -111,7 +111,7 @@ def tile_hash(x, y):
     return (h ^ (h >> 15)) & 0xFFFFFFFF
 
 
-def blocks(s, layout, doors_open=(), ghosts=True):
+def blocks(s, layout, doors_open=(), mode="auto"):
     """layout: strings, '#' wall/hull, '.' floor, 'D' door, ' ' space. Mirrors src/render/tiles.ts (masks, hull,
     ghosts on exterior tiles whose +x/+y neighbour is space, door orientation, hash-picked variants)."""
     H, W = len(layout), len(layout[0])
@@ -132,12 +132,14 @@ def blocks(s, layout, doors_open=(), ghosts=True):
             mask = sum(b for d, b in BIT.items() if solid(x + DELTA[d][0], y + DELTA[d][1]))
             hull = any(at(x + dx, y + dy) == " " for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy)
             sp = lambda dx, dy: at(x + dx, y + dy) == " "  # noqa: E731
-            if hull and ghosts and (sp(1, 0) or sp(0, 1)):
+            if hull and (sp(1, 0) or sp(0, 1)):
                 s.static(f"tile.hull.ghost.m{mask}", x, y, 0.1)
                 continue
             fam = "hull" if hull else "wall"
             vid = f"tile.{fam}.m{mask}"
-            if mask in (5, 10) and tile_hash(x, y) % 4 < 2:
+            if mode == "up":
+                vid = f"tile.{fam}.full.m{mask}"
+            elif mask in (5, 10) and tile_hash(x, y) % 4 < 2:
                 v = f"{vid}.v{1 + tile_hash(x, y) % 2}"
                 vid = v if v in s.man["assets"] else vid
             s.static(vid, x, y, 0.1)
@@ -189,7 +191,7 @@ def room(assets, man):
 
 
 def junctions(assets, man):
-    """Runs, L corners, T and + junctions, an isolated post, door runs, hull ring; ghosts on and off."""
+    """Runs, L corners, T and + junctions, an isolated post, door runs, hull ring; auto / up / down."""
     layout = ["             ",
               " ########### ",
               " #.........# ",
@@ -200,10 +202,10 @@ def junctions(assets, man):
               " #.#...#..#  ",
               " ###D#####   "]
     out = []
-    for g in (True, False):
+    for g in ("auto", "up", "down"):
         W, H = 760, 420
         s = Scene(assets, man, W, H, (W // 2 - 60, 20))
-        blocks(s, layout, doors_open=((9, 4),), ghosts=g)
+        blocks(s, layout, doors_open=((9, 4),), mode=g)
         s.flush()
         out.append(s)
     return out
@@ -218,10 +220,11 @@ def main():
     r = room(assets, man)
     r.save(out / "contact-1x.png", 1)
     r.save(out / "contact-2x.png", 2)
-    on, off = junctions(assets, man)
-    on.save(out / "junctions-ghost-2x.png", 2)
-    off.save(out / "junctions-noghost-2x.png", 2)
-    on.save(out / "junctions-ghost-1x.png", 1)
+    auto, up, down = junctions(assets, man)
+    auto.save(out / "junctions-auto-2x.png", 2)
+    up.save(out / "junctions-up-2x.png", 2)
+    down.save(out / "junctions-down-2x.png", 2)
+    auto.save(out / "junctions-auto-1x.png", 1)
     print("CONTACT written", out)
 
 

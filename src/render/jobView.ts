@@ -101,7 +101,7 @@ export function createJobView(
           if (kind === Struct.Floor)
             draw([floorChain(j.x, j.y)], j.x, j.y, tint, alpha, key - 0.9);
           else if (kind === Struct.Wall || kind === Struct.Door) {
-            for (const pc of wallPieces(kindAt, j.x, j.y, kind, false))
+            for (const pc of wallPieces(kindAt, j.x, j.y, kind, "down", false))
               draw([pc.chain], j.x, j.y, tint, alpha, key + pc.order * 0.001);
           }
         }

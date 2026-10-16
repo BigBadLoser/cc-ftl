@@ -3,6 +3,8 @@ import { Struct } from "../sim/structure";
 export type KindAt = (x: number, y: number) => number;
 /** One sprite to draw: the first existing asset id of the chain. */
 export type Chain = string[];
+/** Wall height mode: auto/down = low cutaway blocks, up = full-height walls. Exterior front hull is a ghost in all. */
+export type CutawayMode = "auto" | "up" | "down";
 
 const solidish = (k: number) => k === Struct.Wall || k === Struct.Door;
 
@@ -44,9 +46,9 @@ export function wallMask(kindAt: KindAt, x: number, y: number): number {
 
 /**
  * Pieces of the wall, hull or door at (x, y). A wall is one block piece chosen by its 4-bit neighbour mask (connected
- * sides are cut flush, open sides slope). Hull walls are walls touching space. A hull tile whose +x or +y neighbour is
+ * sides are cut flush, open sides slope), low (cutaway) or full height by `mode`. Hull walls are walls touching space. A hull tile whose +x or +y neighbour is
  * space faces the camera from outside: with `ghosts` on it draws as a dark translucent silhouette so it never hides
- * the interior. Visible exterior slopes of hull blocks get a hazard strip overlay. Doors orient along x when walls
+ * the interior (all modes). Visible exterior slopes of hull blocks get a hazard strip overlay. Doors orient along x when walls
  * flank them in x, otherwise along y.
  */
 export function wallPieces(
@@ -54,7 +56,8 @@ export function wallPieces(
   x: number,
   y: number,
   kind: number,
-  ghosts: boolean,
+  mode: CutawayMode,
+  ghosts = true,
 ): Piece[] {
   if (kind === Struct.Door) {
     const o =
@@ -71,7 +74,11 @@ export function wallPieces(
   const id = `tile.${fam}.m${mask}`;
   const h = tileHash(x, y);
   const chain: Chain =
-    (mask === 5 || mask === 10) && h % 4 < 2 ? [`${id}.v${1 + (h % 2)}`, id] : [id];
+    mode === "up"
+      ? [`tile.${fam}.full.m${mask}`, id]
+      : (mask === 5 || mask === 10) && h % 4 < 2
+        ? [`${id}.v${1 + (h % 2)}`, id]
+        : [id];
   const out: Piece[] = [{ chain, order: 0 }];
   if (hull) {
     if (!(mask & 4) && spaceS)

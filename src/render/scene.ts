@@ -4,7 +4,7 @@ import type { Grid } from '../sim/grid';
 import { loadAtlas } from './assets/loader';
 import { createCamera } from './camera';
 import { createCrewView } from './crewView';
-import { createGridView, type GridView } from './gridView';
+import { createGridView, type CutawayMode, type GridView } from './gridView';
 import { iso, tileAt, TILE_H, TILE_W } from './iso';
 import { createAtmosphere } from './fx/atmosphere';
 import { createParticles } from './fx/particles';
@@ -13,6 +13,7 @@ import { createJobView } from './jobView';
 import { createLayers } from './layers';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 
+export type { CutawayMode };
 export type Quality = 'high' | 'low';
 
 export interface RenderInfo {
@@ -30,7 +31,7 @@ export interface Renderer {
   dispose(): void;
   /** Show a grid (replacing any previous one) and frame the camera on it. */
   setGrid(grid: Grid): void;
-  setGhosts(on: boolean): void;
+  setCutaway(mode: CutawayMode): void;
   setOverlay(field: string | null): void;
   setSelection(tile: Tile | readonly Tile[] | null): void;
   setHover(tile: Tile | null): void;
@@ -89,7 +90,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const particles = createParticles(atlas, L);
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => (view ? { grid: view.grid } : null) });
   let lastFrame = performance.now();
-  let ghosts = true;
+  let cutaway: CutawayMode = 'auto';
   let overlay: string | null = null;
   let hover: Tile | null = null;
   let selection: Tile | readonly Tile[] | null = null;
@@ -133,16 +134,16 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     setGrid(grid) {
       view?.dispose();
       view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules } });
-      view.setGhosts(ghosts);
+      view.setCutaway(cutaway);
       view.setOverlay(overlay);
       view.setSelection(selection);
       view.setHover(hover);
       view.setPreview(preview, previewValid);
       frame(grid);
     },
-    setGhosts(on) {
-      ghosts = on;
-      view?.setGhosts(on);
+    setCutaway(m) {
+      cutaway = m;
+      view?.setCutaway(m);
     },
     setOverlay(f) {
       overlay = f;

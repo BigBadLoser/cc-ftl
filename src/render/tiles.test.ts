@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Struct } from "../sim/structure";
-import { floorChain, tileHash, wallMask, wallPieces } from "./tiles";
+import { floorChain, tileHash, wallMask, wallPieces, type CutawayMode } from "./tiles";
 
 const W = Struct.Wall;
 const F = Struct.Floor;
@@ -12,9 +12,10 @@ const ids = (
   x: number,
   y: number,
   kind: number,
-  ghosts: boolean,
+  mode: CutawayMode,
+  ghosts = true,
 ) =>
-  wallPieces(k, x, y, kind, ghosts).map((p) =>
+  wallPieces(k, x, y, kind, mode, ghosts).map((p) =>
     (p.chain[0] as string).replace(/^tile\./, "").replace(/\.v\d$/, ""),
   );
 
@@ -35,32 +36,37 @@ describe("wall autotiling", () => {
     expect(wallMask(d, 2, 0)).toBe(8);
   });
   it("an isolated wall is mask 0 and an interior wall is not hull", () => {
-    expect(ids(grid([[F, F, F], [F, W, F], [F, F, F]]), 1, 1, W, true)).toEqual(["wall.m0"]);
+    expect(ids(grid([[F, F, F], [F, W, F], [F, F, F]]), 1, 1, W, "auto")).toEqual(["wall.m0"]);
   });
   it("ghosts only exterior hull tiles whose +x or +y neighbour is space", () => {
-    expect(ids(ring, 2, 3, W, true)).toEqual(["hull.ghost.m10"]);
-    expect(ids(ring, 3, 2, W, true)).toEqual(["hull.ghost.m5"]);
-    expect(ids(ring, 2, 1, W, true)).toEqual(["hull.m10"]);
-    expect(ids(ring, 1, 2, W, true)).toEqual(["hull.m5"]);
+    expect(ids(ring, 2, 3, W, "auto")).toEqual(["hull.ghost.m10"]);
+    expect(ids(ring, 3, 2, W, "auto")).toEqual(["hull.ghost.m5"]);
+    expect(ids(ring, 2, 1, W, "auto")).toEqual(["hull.m10"]);
+    expect(ids(ring, 1, 2, W, "auto")).toEqual(["hull.m5"]);
   });
   it("ghosts off draws the front hull as a normal piece with a hazard strip", () => {
-    expect(ids(ring, 2, 3, W, false)).toEqual(["hull.m10", "hull.haz.s.3"]);
-    expect(ids(ring, 3, 2, W, false)).toEqual(["hull.m5", "hull.haz.e.3"]);
+    expect(ids(ring, 2, 3, W, "down", false)).toEqual(["hull.m10", "hull.haz.s.3"]);
+    expect(ids(ring, 3, 2, W, "down", false)).toEqual(["hull.m5", "hull.haz.e.3"]);
+  });
+  it("up mode uses full-height pieces except for ghosts; down and auto use low blocks", () => {
+    expect(ids(ring, 2, 1, W, "up")).toEqual(["hull.full.m10"]);
+    expect(ids(ring, 2, 3, W, "up")).toEqual(["hull.ghost.m10"]);
+    expect(ids(ring, 2, 1, W, "down")).toEqual(["hull.m10"]);
   });
   it("straight pieces pick decorative variants by tile hash, with a plain fallback", () => {
     const chains = new Set<string>();
     for (let x = 0; x < 40; x++) {
       const row = Array.from({ length: 42 }, () => W);
       const k = grid([row, row.map(() => F)]);
-      const p = wallPieces(k, x + 1, 0, W, true)[0];
+      const p = wallPieces(k, x + 1, 0, W, "auto")[0];
       chains.add(String(p?.chain[0]));
       expect(p?.chain.at(-1)).toBe("tile.hull.m10");
     }
     expect(chains.size).toBeGreaterThan(1);
   });
   it("doors orient along x between walls in x, otherwise y, with no wall piece", () => {
-    expect(ids(grid([[W, D, W]]), 1, 0, D, true)).toEqual(["door.x"]);
-    expect(ids(grid([[W], [D], [W]]), 0, 1, D, true)).toEqual(["door.y"]);
+    expect(ids(grid([[W, D, W]]), 1, 0, D, "auto")).toEqual(["door.x"]);
+    expect(ids(grid([[W], [D], [W]]), 0, 1, D, "auto")).toEqual(["door.y"]);
   });
 });
 
