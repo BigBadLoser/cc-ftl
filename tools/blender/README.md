@@ -99,10 +99,10 @@ each skinned clothing layer.
 ## Experiment: restyled CC0 base character (`crew/base_import.py`)
 Standalone, not part of `build.py`. Takes Quaternius' CC0 "Universal Base Characters" male plus the CC0
 "Universal Animation Library" (see `THIRD_PARTY.md`; downloaded from itch.io, not stored in the repo) and writes
-`public/assets/crew/human/base_cc0.glb`:
+`tools/blender/source/base_cc0.glb`:
 ```
 blender -b --factory-startup --python tools/blender/crew/base_import.py -- \
-  --base <Superhero_Male_FullBody.gltf> --anims <UAL1_Standard.glb> --out public/assets/crew/human/base_cc0.glb
+  --base <Superhero_Male_FullBody.gltf> --anims <UAL1_Standard.glb> --out tools/blender/source/base_cc0.glb
 ```
 - Restyle: head scaled up and body widened (`HEAD_SCALE`, `WIDTH`), uniform scale to `HEIGHT` = 1.7, symmetric collapse
   decimation to ~`TRIS` triangles (welded first), flat shading, per-face grey vertex colours. Textures are dropped.
