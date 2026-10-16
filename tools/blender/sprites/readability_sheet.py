@@ -121,12 +121,17 @@ def build_sprite(res, char, v):
         rgb, op, ring = outline(cv[..., :3], op, P["sil"])
         cv[..., :3], cv[..., 3] = rgb, op * 255
     if P["rim"]:
+        thin = P["rim"] == "cool_thin"
         core = op & ~ring if ring is not None else op
         if ring is None and v["cfg"]["outline"] != "none":
             core = op & np.logical_and.reduce(n4(op))
         rim = core & ~SHIFT(core, 0, 1)
-        c = np.array((120, 205, 255) if P["rim"] == "cool" else (255, 185, 110), float)
-        cv[..., :3][rim] = np.clip(cv[..., :3][rim] * 0.35 + c * 0.75, 0, 255).astype(np.uint8)
+        c = np.array((120, 205, 255) if P["rim"].startswith("cool") else (255, 185, 110), float)
+        if thin:         # subtler: a light tint, and not on features only 1 px wide
+            rim &= SHIFT(core, 0, -1)
+            cv[..., :3][rim] = np.clip(cv[..., :3][rim] * 0.62 + c * 0.38, 0, 255).astype(np.uint8)
+        else:
+            cv[..., :3][rim] = np.clip(cv[..., :3][rim] * 0.35 + c * 0.75, 0, 255).astype(np.uint8)
     if P["cyan"]:
         r, g_, b = (cv[..., i].astype(int) for i in range(3))
         m = (op & (b > 190) & (g_ > 160) & (r < 150) & (b - r > 90))
@@ -152,7 +157,7 @@ def cell_bg():
     return cv
 
 
-def halo(cell, gl, x, y):
+def halo(cell, gl, x, y, soft=1.0):
     gm = gl[..., 3] > 0
     for ring, k in ((1, 0.55), (2, 0.2)):
         cur = gm.copy()
@@ -174,7 +179,7 @@ def halo(cell, gl, x, y):
         mm = m[y0 - y:y1 - y, x0 - x:x1 - x]
         cc = col[y0 - y:y1 - y, x0 - x:x1 - x]
         sub = cell[y0:y1, x0:x1, :3].astype(float)
-        sub[mm] = np.minimum(255, sub[mm] + cc[mm] * k)
+        sub[mm] = np.minimum(255, sub[mm] + cc[mm] * k * soft)
         cell[y0:y1, x0:x1, :3] = sub.astype(np.uint8)
 
 
@@ -184,12 +189,14 @@ def render_cell(res, char, v, bg):
     x, y = FEET[0] - ORIGIN[0], FEET[1] - ORIGIN[1]
     compose.over(cell, cv, x, y)
     if v["post"]["halo"]:
-        halo(cell, gl, x, y)
+        halo(cell, gl, x, y, v["post"].get("halo_soft", 1.0))
     compose.add(cell, gl, x, y, 1.5 if v["post"]["cyan"] else 1.0)
     return cell
 
 
 def load_res(out, v):
+    if "glb" in v["cfg"]:
+        return {c: pickle.loads((out / "vcache" / f"{S.vkey(v, c)}.pkl").read_bytes()) for c in ("eng", "crew")}
     return {c: pickle.loads((out / "cache" / f"{S.render_key(v['cfg'], c)}.pkl").read_bytes()) for c in ("eng", "crew")}
 
 
@@ -226,6 +233,46 @@ def sheet(out, variants, title, name):
     im.save(out / f"{name}.png")
     im.resize((im.width * 2, im.height * 2), Image.NEAREST).save(out / f"{name.replace('1x', '2x')}.png")
     print("wrote", out / f"{name}.png", im.size)
+
+
+TAGS = {"se_idle": "SE", "nw_idle": "NW", "se_walk": "WALK", "se_work": "WORK"}
+
+
+def mesh_sheets(out):
+    """One row per base mesh: engineer then plain crew, SE | NW | walk | work. 1x, 2x, plus 4x engineer crops side by side."""
+    font = ImageFont.load_default()
+    bg = cell_bg()
+    M, LINE, LW = 8, CH + 14, 150
+    fr = [f[0] for f in S.VFRAMES]
+    n = 2 * len(fr)
+    W = M * 2 + LW + n * (CW + 2)
+    im = Image.new("RGB", (W, M * 2 + 14 + len(S.MESH_VARIANTS) * LINE), (6, 8, 11))
+    d = ImageDraw.Draw(im)
+    crops = []
+    for r, v in enumerate(S.MESH_VARIANTS):
+        res = load_res(out, v)
+        y = M + 14 + r * LINE
+        d.text((M, y + 50), v["label"], fill=(255, 255, 255), font=font)
+        for k, (char, fname) in enumerate([(c, f) for c in ("eng", "crew") for f in fr]):
+            cell = render_cell(res[char][fname], char, v, bg)
+            cx = M + LW + k * (CW + 2)
+            im.paste(Image.fromarray(cell[..., :3]), (cx, y + 12))
+            if r == 0:
+                d.text((cx + 1, M), ("ENG " if char == "eng" else "CREW ") + TAGS[fname], fill=(130, 190, 150) if char == "eng" else (150, 160, 210), font=font)
+            if char == "eng" and fname in ("se_idle", "se_work", "nw_idle"):
+                crops.append((fname, r, cell[8:122, 12:68, :3]))
+    im.save(out / "base-variants-1x.png")
+    im.resize((im.width * 2, im.height * 2), Image.NEAREST).save(out / "base-variants-2x.png")
+    rows = []
+    for fname in ("se_idle", "se_work", "nw_idle"):
+        row = np.hstack([np.pad(c, ((0, 0), (0, 6), (0, 0))) for f, r, c in crops if f == fname])
+        rows.append(row)
+    z = Image.fromarray(np.vstack(rows)).resize((rows[0].shape[1] * 4, sum(r.shape[0] for r in rows) * 4), Image.NEAREST)
+    dz = ImageDraw.Draw(z)
+    for i, m in enumerate("ABCD"):
+        dz.text((6 + i * 62 * 4, 4), m, fill=(255, 255, 255), font=font)
+    z.save(out / "base-variants-zoom.png")
+    print("wrote base-variants-{1x,2x,zoom}.png", im.size)
 
 
 def shipped(man, assets, layers, d, clip, frame, colours):
@@ -278,6 +325,9 @@ def diagnosis(out):
 
 def main():
     out = Path(sys.argv[1] if len(sys.argv) > 1 else DEFAULT_OUT)
+    if "--meshes" in sys.argv:
+        mesh_sheets(out)
+        return
     a = [v for v in S.VARIANTS if v["row"] <= 4]
     b = [v for v in S.VARIANTS if v["row"] > 4] + S.COMBO
     sheet(out, a, "readability sheet A: knobs 1-4 (one knob per variant vs baseline). Per variant: engineer SE | NW | walk SE, plain crew SE | NW | walk SE", "readability-1x-a")

@@ -47,7 +47,7 @@ COMBO = [
 ALL = VARIANTS + COMBO
 
 ROW_TITLES = {1: "1  CREW HEIGHT", 2: "2  PROPORTIONS (cumulative)", 3: "3  OUTLINE", 4: "4  SHADING BANDS",
-              5: "5  RIM LIGHT", 6: "6  CLOTHING CONTRAST", 7: "7  FACES", 8: "8  CYBER EMPHASIS", 9: "9  SURFACE (shading)", 10: "COMBO (best guess)"}
+              5: "5  RIM LIGHT", 6: "6  CLOTHING CONTRAST", 7: "7  FACES", 8: "8  CYBER EMPHASIS", 9: "9  SURFACE (shading)", 10: "COMBO (best guess)", 11: "BASE MESH"}
 FRAMES = [("se_idle", 0, "idle", 0), ("nw_idle", 4, "idle", 0), ("se_walk", 0, "walk", 2)]
 COLOURS = {
     "eng": {"team.skin": (212, 156, 116), "team.hair": (200, 40, 70), "team.cloth": (114, 132, 95), "team.accent": (200, 150, 40)},
@@ -77,3 +77,19 @@ def render_key(cfg, char):
     if c["surf"] == "base":
         del c["surf"]            # keeps pre-SURFACE cache keys valid
     return hashlib.md5(json.dumps(c, sort_keys=True).encode()).hexdigest()[:12]
+
+
+# Base-mesh comparison: the render settings are fixed to the COMBO (taller: every variant is scaled to the same plain-crew
+# sprite height, hpx = target px; thin cool rim, bigger cyber arm, halo toned down); only the base mesh differs.
+VFRAMES = FRAMES + [("se_work", 0, "work", 3)]
+VCFG = {"hpx": 70, "hs": 1.15, "hf": 1.3, "sh": 1.1, "bands": 4, "outline": "none", "face": "simple", "arm": 1.3,
+        "surf": "smooth_ng"}
+VPOST = {"sil": "colored", "smooth": True, "rim": "cool_thin", "sat": 1.3, "skinhl": True, "cyan": True, "halo": True,
+         "halo_soft": 0.7}
+MESHES = {"a": "A  decimated base (current)", "b": "B  original smooth mesh", "c": "C  B + stylised proportions",
+          "d": "D  C + upright pose + simplified head"}
+MESH_VARIANTS = [{"row": 11, "label": lbl, "cfg": {**BASE, **VCFG, "glb": k}, "post": {**POST, **VPOST}} for k, lbl in MESHES.items()]
+
+
+def vkey(v, char):
+    return f"{v['cfg']['glb']}_{char}"

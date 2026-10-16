@@ -5,6 +5,7 @@ arms, gear) live in human_gear.py.
 An Item is one sprite layer: slot + name + the Blender objects that make it up. Slot order is the runtime stack
 order; see human_render.py for how holdout makes that order valid in all directions."""
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 import bmesh
 import bpy
@@ -14,6 +15,18 @@ from . import core
 
 ROOT = Path(__file__).resolve().parents[3]
 GLB = ROOT / "tools/blender/source/base_cc0.glb"
+LEVEL = None                  # stylize level of GLB (c/d, see crew/stylize.py): maps the height thresholds below
+
+
+@lru_cache(maxsize=None)
+def Z(z):
+    """Height threshold of the unstyled base mapped to the current base (identity unless LEVEL is set)."""
+    if not LEVEL:
+        return z
+    import sys
+    sys.path.insert(0, str(ROOT / "tools/blender"))
+    from crew import stylize
+    return stylize.zmap(z, LEVEL)
 HEIGHT_UNITS = 1.5            # crew height in tiles (x ~39 px/unit => ~59 px at 1x)
 SCALE = HEIGHT_UNITS / 1.7
 FINGER = ("index", "middle", "ring", "pinky", "thumb")
@@ -74,7 +87,7 @@ def clone_part(src, name, keep, offset, subdiv=0, grow=None):
     for v in bm.verts:
         n, c = v.normal.copy(), v.co
         # the base's winding is not consistent: push radially outward from the body/limb axis, never inward
-        ctr = Vector((0.114 * np.sign(c.x), 0.036, c.z)) if c.z < 0.9 else Vector((0.0, 0.02, c.z))
+        ctr = Vector((0.114 * np.sign(c.x), 0.036, c.z)) if c.z < Z(0.9) else Vector((0.0, 0.02, c.z))
         r = Vector((c.x - ctr.x, c.y - ctr.y, 0.0))
         r = r.normalized() if r.length > 1e-6 else n
         if n.dot(c - ctr) < 0:
@@ -113,10 +126,10 @@ class Regions:
         self.head = fd == "head"
         neck = fd == "neck_01"
         z = self.z
-        self.legs = ~self.arms & ~self.head & ~neck & ~clav & (z < 0.95)
-        self.boots = self.legs & (z < 0.2)
-        self.torso = (~self.arms & ~self.head & ~neck & (z >= 0.97)) | (clav & (z > 0.97))
-        self.belt = ~self.arms & ~self.head & (z >= 0.92) & (z < 0.99)
+        self.legs = ~self.arms & ~self.head & ~neck & ~clav & (z < Z(0.95))
+        self.boots = self.legs & (z < Z(0.2))
+        self.torso = (~self.arms & ~self.head & ~neck & (z >= Z(0.97))) | (clav & (z > Z(0.97)))
+        self.belt = ~self.arms & ~self.head & (z >= Z(0.92)) & (z < Z(0.99))
 
     def ids(self, sel):
         return set(np.nonzero(sel)[0].tolist())
@@ -126,16 +139,16 @@ def _shirt_col(c, kind):
     if kind == "tee":
         return "black"
     # hi-vis vest: chest band, hem band and shoulder straps, wrapping front, sides and back
-    if 1.27 < c.z < 1.335 or 0.995 < c.z < 1.045:
+    if Z(1.27) < c.z < Z(1.335) or Z(0.995) < c.z < Z(1.045):
         return "hivis"
-    if c.z >= 1.335 and 0.075 < abs(c.x) < 0.135:
+    if c.z >= Z(1.335) and 0.075 < abs(c.x) < 0.135:
         return "hivis"
-    return "team.cloth" if c.z > 1.0 or abs(c.x) > 0.3 else "team.cloth*0.8"
+    return "team.cloth" if c.z > Z(1.0) or abs(c.x) > 0.3 else "team.cloth*0.8"
 
 
 def _widen(co):
     """Broaden the shirt shoulders/chest a little so the torso reads against the big head."""
-    k = np.clip((co.z - 1.0) / 0.35, 0.0, 1.0)
+    k = np.clip((co.z - Z(1.0)) / (Z(1.35) - Z(1.0)), 0.0, 1.0)
     co.x *= 1.0 + 0.09 * k
     return co
 
@@ -158,11 +171,11 @@ def build_skinned(arm, body):
     mk("torso", "work_shirt", R.torso & ~R.belt, 0.05, lambda c, i: _shirt_col(c, "shirt"), 2, _widen, default=True)
     mk("torso", "tee", R.torso & ~R.belt, 0.05, lambda c, i: _shirt_col(c, "tee"), 2, _widen)
     mk("legs", "cargo_pants", R.legs, 0.03,
-       lambda c, i: "sole" if c.z < 0.05 else "boot" if c.z < 0.2 else ("pocket" if 0.4 < c.z < 0.5 and c.y < 0.05 else "pants"),
+       lambda c, i: "sole" if c.z < Z(0.05) else "boot" if c.z < Z(0.2) else ("pocket" if Z(0.4) < c.z < Z(0.5) and c.y < 0.05 else "pants"),
        0, default=True)
     mk("gear.belt", "tool_belt", R.belt, 0.05, lambda c, i: "leather", default=True)
     # hair caps cut from the scalp (rigid hair is in human_gear)
-    cap = R.head & ((R.z > 1.635) | ((R.z > 1.59) & (R.y > 0.0)))
+    cap = R.head & ((R.z > Z(1.635)) | ((R.z > Z(1.59)) & (R.y > 0.0)))
     mk("hair", "short", cap, 0.032, lambda c, i: "team.hair", 0, default=True)
     mk("hair", "ponytail", cap, 0.032, lambda c, i: "team.hair", 0)
     mk("hair", "shaved", cap, 0.008, lambda c, i: "team.hair*0.55", 0)
@@ -173,7 +186,7 @@ def build_skinned(arm, body):
     bmesh.ops.delete(bm, geom=[f for f in bm.faces if R.arms[f.index]], context="FACES")
     bm.to_mesh(body.data)
     bm.free()
-    paint(body, lambda c, i: "pants" if c.z < 0.95 else "team.skin")
+    paint(body, lambda c, i: "pants" if c.z < Z(0.95) else "team.skin")
     briefs = bpy.data.objects["skin@briefs.team.cloth"]
     paint(briefs, lambda c, i: "black")
     items.append(Item("body", "", [body, briefs], default=True))

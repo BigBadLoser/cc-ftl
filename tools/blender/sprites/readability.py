@@ -12,6 +12,7 @@ with tools/blender/crew/base_import.py). Knob -> pipeline default:
 import math
 import os
 import pickle
+import re
 import sys
 from pathlib import Path
 import bpy
@@ -96,7 +97,52 @@ def build():
     for ob in detail_nomouth:
         ob.hide_render = True
     by = {i.id: i for i in items}
+    if hb.LEVEL:
+        warp_gear(items, hb.LEVEL)
     return arm, items, by, body, detail_full, detail_nomouth
+
+
+GEAR = re.compile(r"^gear\.(head|hips|spine_0[23]|(leg|shin|arm|forearm|hand)\.[LR])(\.\d+)?$")
+
+
+def islands(me):
+    """Connected vertex groups of a mesh (every box of the procedural builder is one island)."""
+    par = list(range(len(me.vertices)))
+
+    def find(i):
+        while par[i] != i:
+            par[i] = par[par[i]]
+            i = par[i]
+        return i
+    for p in me.polygons:
+        r0 = find(p.vertices[0])
+        for v in p.vertices[1:]:
+            par[find(v)] = r0
+    return np.array([find(i) for i in range(len(me.vertices))])
+
+
+def warp_gear(items, level):
+    """Rigid gear is modelled against the unstyled base: carry it through the same proportion warp as the mesh. Face
+    parts (eyes, brows) keep their pixel size: only their positions follow the bigger head."""
+    from crew import stylize
+    seen = set()
+    for it in items:
+        for ob in it.objs:
+            if GEAR.match(ob.name) and ob.name not in seen:
+                seen.add(ob.name)
+                me = ob.data
+                co = np.empty(len(me.vertices) * 3)
+                me.vertices.foreach_get("co", co)
+                co = co.reshape(-1, 3)
+                new = stylize.warp_gear(co, level)
+                if it.slot == "eyes":
+                    lab = islands(me)
+                    for k in np.unique(lab):
+                        m = lab == k
+                        c1 = co[m].mean(0)
+                        new[m] = stylize.warp_gear(c1[None], level)[0] + (co[m] - c1)
+                me.vertices.foreach_set("co", new.ravel())
+                me.update()
 
 
 def skinned(items):
@@ -167,7 +213,7 @@ def render_cfg(ctx, cfg, char):
     else:
         post.quantize = ORIG_Q
     out = {}
-    for fname, d, clip, i in S.FRAMES:
+    for fname, d, clip, i in (S.VFRAMES if cfg.get('glb') else S.FRAMES):
         head = pose(arm, cfg, char, d, clip, i, hb.SCALE)
         layers = []
         for lid in S.layer_ids(char, cfg["face"]):
@@ -190,6 +236,11 @@ def main():
     (out / "cache").mkdir(parents=True, exist_ok=True)
     if os.environ.get("READABILITY_GLB"):
         hb.GLB = Path(os.environ["READABILITY_GLB"])
+    letter = re.search(r"base_cc0_?([a-z]?)\.glb$", hb.GLB.name).group(1) or "a"
+    hb.LEVEL = letter if letter in ("c", "d") else None
+    if os.environ.get("READABILITY_MODE") == "meshes":
+        meshes(out, letter)
+        return
     ctx = build()
     base = dict(S.BASE, _hf=1.0)
     bfile = out / "cache" / "baseline_height.txt"
@@ -212,6 +263,22 @@ def main():
             f.write_bytes(pickle.dumps(render_cfg(ctx, cfg, char)))
             print("rendered", v["label"], char, key, flush=True)
     print("READABILITY done")
+
+
+def meshes(out, letter):
+    """Base-mesh comparison (READABILITY_MODE=meshes): renders the MESH_VARIANTS entry of this GLB, scaled so the plain
+    crew sprite has the target height (cfg hpx) whatever the mesh. Cache: <out>/vcache/<letter>_<char>.pkl."""
+    (out / "vcache").mkdir(exist_ok=True)
+    ctx = build()
+    v = next(m for m in S.MESH_VARIANTS if m["cfg"]["glb"] == letter)
+    cfg = dict(v["cfg"], hpx=None, _hf=1.0)
+    h = measure(render_cfg(ctx, cfg, "crew"))
+    cfg = dict(v["cfg"])
+    cfg["_hf"] = cfg["hpx"] / h
+    print("MESH", letter, "natural plain-crew height", h, "scale", round(cfg["_hf"], 3), flush=True)
+    for char in ("eng", "crew"):
+        (out / "vcache" / S.vkey(v, char)).with_suffix(".pkl").write_bytes(pickle.dumps(render_cfg(ctx, cfg, char)))
+        print("rendered", letter, char, flush=True)
 
 
 main()

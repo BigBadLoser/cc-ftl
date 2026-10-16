@@ -116,3 +116,14 @@ blender -b --factory-startup --python tools/blender/crew/base_import.py -- \
 - Clips: `idle`=Idle_Loop, `walk`=Walk_Loop, `work`=Interact, `sit`=Sitting_Idle_Loop, `sleep`=last (lying) pose of
   Death01 held. The glb default `team.cloth` tint is the jacket colour; recolour it dark (briefs) at runtime.
 - Sockets: `socket.back/head/hand.L/hand.R` are empties parented to bones.
+
+### Base-mesh variants (readability comparison)
+`base_import.py` options write the variants next to `base_cc0.glb` (A = default decimated):
+`--no-decimate` -> `base_cc0_b.glb` (original smooth mesh, welded); `--no-decimate --stylize c` -> `base_cc0_c.glb`
+(proportions baked into mesh and rest bones by `crew/stylize.py`: head x1.25, broader shoulders, shorter legs, thicker
+limbs, chunkier hands/boots, smoothed head detail); `--no-decimate --stylize d --upright` -> `base_cc0_d.glb` (c + rounder
+skull, defined jaw, flatter face; idle with upright head/neck/spine and arms at the sides, walk/work with upright head).
+The sprite pipeline follows a styled base through `human_base.LEVEL` (height thresholds via `stylize.zmap`) and
+`readability.warp_gear` (rigid gear is carried through the same warp; eyes keep their size). Sheet: for each letter run
+`READABILITY_MODE=meshes READABILITY_GLB=<glb> blender -b --python tools/blender/sprites/readability.py -- <out>`, then
+`python3 -I tools/blender/sprites/readability_sheet.py <out> --meshes`.

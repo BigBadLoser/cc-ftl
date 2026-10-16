@@ -384,6 +384,7 @@ def main():
     f = fit(arm, meshes)
     log("scale", round(f, 4))
     if args.stylize:
+        weld(meshes["body"])  # seam duplicates would be smoothed apart
         stylize.apply(arm, meshes, args.stylize)
     parts = restyle(meshes, None if args.no_decimate else TRIS)
     load_clips(arm, args.anims)
