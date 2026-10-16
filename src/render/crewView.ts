@@ -1,14 +1,22 @@
-import { Container, Sprite } from 'pixi.js';
+import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
-import { CrewC, DraftedC, PositionC } from '../sim/crew/components';
+import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
+import { CarryingC } from '../sim/items/components';
+import { BLEED_OUT_SECONDS } from '../sim/tuning';
 import type { Atlas, LayerSprite } from './assets/loader';
 import { createPaletteFilter, crewPalette } from './assets/palette';
 import { diamondTextures } from './diamonds';
+import { itemColor } from './itemColors';
+import { lightTint, mulColor, pulsePhase } from './lightTint';
 import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { clipFor, crewLoadout } from './loadout';
 
 export interface CrewViewHost {
+  /** True when the ship has no running power source (emergency lighting). */
+  emergency?(): boolean;
+  /** Light field of the shown grid, with its width, or null. */
+  light?(): { data: ArrayLike<number>; width: number } | null;
   /** Id of the grid being shown, or null when nothing is shown. */
   target(): { gridId: number } | null;
 }
@@ -27,6 +35,11 @@ interface Slot {
   parts: { layer: LayerSprite; sprite: Sprite }[];
   glows: { layer: LayerSprite; sprite: Sprite; halo: Sprite | null }[];
   ring: Sprite;
+  body: Container;
+  /** Small crate near the hands while hauling. */
+  carry: Sprite;
+  barBg: Sprite;
+  barFill: Sprite;
   x: number;
   y: number;
   placed: boolean;
@@ -67,7 +80,18 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
       body.addChild(sprite);
       return { layer, sprite };
     });
-    root.addChild(shadow, ring, body);
+    const carry = new Sprite(atlas.stat('prop.crate')?.tex);
+    const crate = atlas.stat('prop.crate');
+    carry.scale.set(0.3);
+    carry.position.set(7 - (crate?.ax ?? 0) * 0.3, -12 - (crate?.ay ?? 0) * 0.3);
+    carry.visible = false;
+    const barBg = new Sprite(Texture.WHITE);
+    barBg.tint = 0x05070a;
+    barBg.alpha = 0.8;
+    barBg.visible = false;
+    const barFill = new Sprite(Texture.WHITE);
+    barFill.visible = false;
+    root.addChild(shadow, ring, body, carry, barBg, barFill);
     const glows = layers
       .filter((l) => l.def.glow)
       .map((layer) => {
@@ -80,7 +104,20 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false };
+    return { root, parts, glows, ring, body, carry, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false };
+  }
+
+  function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
+    const l = host.light?.();
+    let lv = 255;
+    if (l) {
+      const i = Math.round(ty) * l.width + Math.round(tx);
+      lv = (l.data[i] as number | undefined) ?? 0;
+    }
+    const emergency = host.emergency?.() ?? false;
+    let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(performance.now()) : -1);
+    if (dead) tint = mulColor(tint, 0x7c7c7c);
+    s.body.tint = tint;
   }
 
   function drop(s: Slot): void {
@@ -120,12 +157,17 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         }
         const speed = dt > 0 ? (dist * k) / dt : 0;
         const dir = ((pos.facing % 8) + 8) % 8;
-        const clipName = clipFor(crew.activity, speed > 0.3);
+        const dead = world.has(id, DeadC);
+        const downed = world.get(id, DownedC);
+        const carried = world.get(id, CarriedC);
+        const hurtLying = dead || !!downed || !!carried;
+        const clipName = hurtLying ? 'sleep' : clipFor(crew.activity, speed > 0.3);
         if (clipName !== s.clip) {
           s.clip = clipName;
           s.t = 0;
         }
-        s.t += dt;
+        // Downed, dead and carried crew hold the first frame of the sleep clip (no dedicated lying clip yet).
+        if (!hurtLying) s.t += dt;
         s.lying = clipName === 'sleep';
         for (const { layer, sprite } of s.parts) sprite.texture = layer.frame(dir, colOf(layer, clipName, s.t));
         for (const g of s.glows) {
@@ -138,8 +180,28 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           }
         }
         const p = iso(s.x, s.y);
-        s.root.position.set(Math.round(p.x), Math.round(p.y));
-        s.root.zIndex = depthKey(s.x, s.y);
+        // A carried body hangs at the carrier's side, drawn just over them.
+        s.root.position.set(Math.round(p.x) + (carried ? 9 : 0), Math.round(p.y) + (carried ? -13 : 0));
+        s.root.zIndex = depthKey(s.x, s.y) + (carried ? 0.02 : 0);
+        applyLight(s, pos.x, pos.y, dead);
+        const carrying = world.get(id, CarryingC);
+        s.carry.visible = !!carrying && !hurtLying;
+        if (carrying) s.carry.tint = itemColor(carrying.item);
+        const hp = world.get(id, HealthC);
+        const showBar = !dead && (!!downed || (!!hp && hp.hp < hp.max));
+        s.barBg.visible = s.barFill.visible = showBar;
+        if (showBar) {
+          const frac = downed ? Math.max(0, downed.bleed / BLEED_OUT_SECONDS) : hp ? hp.hp / hp.max : 1;
+          const w = 22;
+          const by = s.lying ? -34 : -s.height - 10;
+          s.barBg.position.set(-w / 2 - 1, by - 1);
+          s.barBg.width = w + 2;
+          s.barBg.height = 5;
+          s.barFill.position.set(-w / 2, by);
+          s.barFill.width = Math.max(1, Math.round(w * frac));
+          s.barFill.height = 3;
+          s.barFill.tint = downed ? (downed.stabilized ? 0x4cc3ff : 0xff2d2d) : frac > 0.5 ? 0x4cd964 : frac > 0.25 ? 0xf0c030 : 0xff5a2d;
+        }
         const drafted = world.has(id, DraftedC) || crew.activity === 'drafted';
         s.ring.visible = drafted || id === selected;
         s.ring.tint = id === selected ? CYAN : RED;

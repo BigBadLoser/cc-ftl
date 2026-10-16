@@ -73,9 +73,13 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
 
   let view: GridView | null = null;
   const target = () => (view ? { grid: view.grid, gridId: view.grid.id } : null);
-  const crewView = createCrewView(world, atlas, L, { target });
-  const jobView = createJobView(world, atlas, L, { target });
   let emergency = false;
+  const crewView = createCrewView(world, atlas, L, {
+    target,
+    emergency: () => emergency,
+    light: () => (view ? { data: view.grid.raw('light'), width: view.grid.width } : null),
+  });
+  const jobView = createJobView(world, atlas, L, { target });
   const moduleView = createModuleView(world, atlas, L, modules, {
     target: () => (view ? { grid: view.grid } : null),
     emergency: () => emergency,
