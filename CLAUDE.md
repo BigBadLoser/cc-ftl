@@ -33,4 +33,5 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 
 - Use Sonnet or Haiku subagents for well-scoped tasks, and keep token use low.
 - Verify visual changes with a headless screenshot before handing them to the user. The user often
-  tests on a phone through Cloudflare Pages previews.
+  tests on a phone through Cloudflare previews: `main` deploys to https://cc-ftl.bigbadloser.workers.dev,
+  and each branch gets `<branch>-cc-ftl.bigbadloser.workers.dev`.
