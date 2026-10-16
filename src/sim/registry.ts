@@ -1,3 +1,5 @@
+import type { WorkCategory } from './crew/components';
+
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
   name: string;
@@ -8,4 +10,21 @@ export interface ShipTemplate {
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
   ships: Record<string, ShipTemplate>;
+}
+
+/** A crew role: default priorities for each work category (0 = off, 1 = highest .. 4). */
+export interface RoleDef {
+  name: string;
+  priorities: Record<WorkCategory, number>;
+}
+
+/** A species: base stats. Modifiers (traits, implants) come later via the stat resolver. */
+export interface SpeciesDef {
+  name: string;
+  /** Tiles per second. */
+  moveSpeed: number;
+  /** Work points per tick (1 = baseline). */
+  workSpeed: number;
+  /** Rest lost per second while awake. */
+  restDecay: number;
 }
