@@ -28,11 +28,12 @@ DEFAULT_OUT = "/tmp/claude-0/-home-user/ed10066a-51ba-5b6e-98cf-ce829905d359/scr
 hr.H, hr.ORIGIN = 130, (62, 112)          # taller canvas: the 72 px / heroic variants are taller than 108
 ORIG_RING, ORIG_Q = post.ring_outline, post.quantize
 _COL = {}
+_ORIG = {}
 
 
 def band_map(n):
     """PALETTE index -> index with the 5 shade steps of every ramp merged into `n` bands."""
-    tab = {2: (1, 1, 1, 3, 3), 3: (1, 1, 2, 3, 3), 4: (0, 1, 2, 3, 3)}[n]
+    tab = {2: (1, 1, 1, 3, 3), 3: (1, 1, 2, 3, 3), 4: (0, 1, 2, 3, 3), "toon": (1, 1, 3, 3, 4)}[n]
     m = np.arange(len(post.PALETTE))
     i = 0
     for name, v in post.PAL.items():
@@ -98,6 +99,31 @@ def build():
     return arm, items, by, body, detail_full, detail_nomouth
 
 
+def skinned(items):
+    return [ob for it in items for ob in it.objs if not ob.name.startswith("gear.")]
+
+
+def set_surface(ctx, mode):
+    """smooth*: interpolated normals on the skinned body/clothing/hair-cap meshes (rigid gear stays hard-surface).
+    smooth_ng: also drops the secondary tone patches (shirt hem, pants pocket patch, sole/boot split)."""
+    arm, items, by, *_ = ctx
+    for ob in skinned(items):
+        n = len(ob.data.polygons)
+        ob.data.polygons.foreach_set("use_smooth", [mode != "base"] * n)
+        ob.data.update()
+    for lid, fn in (("crew.human.torso.work_shirt", lambda c: hb._shirt_col(c, "shirt").replace("team.cloth*0.8", "team.cloth")),
+                    ("crew.human.legs.cargo_pants", lambda c: "boot" if c.z < 0.2 else "pants")):
+        ob = by[lid].objs[0]
+        if lid not in _ORIG:
+            _ORIG[lid] = np.array([d.color[:3] for d in ob.data.color_attributes["Col"].data], np.float32)
+        if mode == "smooth_ng":
+            hb.paint(ob, lambda c, i, fn=fn: fn(c))  # noqa
+        else:
+            arr = _ORIG[lid]
+            a = np.hstack([arr, np.ones((len(arr), 1), np.float32)])
+            ob.data.color_attributes["Col"].data.foreach_set("color", a.ravel())
+
+
 def pose(arm, cfg, char, d, clip, i, scale0):
     hr.HEAD_SCALE = 1.45 * cfg["hs"]
     hr.TORSO_W = 1.14 * cfg["sh"]
@@ -133,8 +159,10 @@ def render_cfg(ctx, cfg, char):
     _COL.clear()
     _COL.update(S.COLOURS[char])
     post.ring_outline = ring_coloured if cfg["outline"] == "colored" else ORIG_RING
-    if cfg["bands"] != 5:
-        bm = band_map(cfg["bands"])
+    set_surface(ctx, cfg["surf"])
+    nb = "toon" if cfg["surf"] == "toon" else cfg["bands"]
+    if nb != 5:
+        bm = band_map(nb)
         post.quantize = lambda rgb: bm[ORIG_Q(rgb)]
     else:
         post.quantize = ORIG_Q
