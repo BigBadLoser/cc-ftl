@@ -1,128 +1,175 @@
-"""Environment sprite models (grid frame, origin = centre of the FRONT-most footprint tile at floor level).
-Each builder returns the Blender objects. SPRITES lists (id, footprint (w,h), kind, builder)."""
+"""Environment sprite models (grid frame; origin = centre of the FRONT-most footprint tile at floor level).
+
+Walls and doors are SLABS through the tile centre (axis 'x' runs along grid +x, 'y' along grid +y), exactly one tile
+long so neighbours abut. Each slab piece carries an identical centre post (a little wider/taller than the slab), so
+stacking an x and a y piece on one tile (corner / T / plus) draws the same junction pixels twice instead of showing
+mismatched end faces. Builders return Blender objects; SPRITES lists (id, footprint, kind, builder).
+kind: floor (diamond-masked), slab:<axis> (outline ring only outside the row of neighbours), prop (full ring)."""
 import math
 from . import core
 
 H = 1.0          # full wall height (tiles)
+LOW = 0.3        # cutaway height
 T = 0.2          # wall thickness
+TH = 0.3         # hull thickness
+POST = 0.075     # post grows this much beyond the slab on each side
 
 
 def _h(i, j, s=0):
     return ((i * 73856093) ^ (j * 19349663) ^ (s * 83492791)) % 100
 
 
+# ---- floors ---------------------------------------------------------------------------------------------------
+
 def floor(variant):
     m = core.Mesh(f"floor_{variant}")
+    n = 32
 
     def fn(i, j):
-        n = 16
-        if variant == "a":
-            if i == 0 or j == 0:
-                return "seam"
-            if i == 1 or j == 1:
-                return "plateB"
-            if (i, j) in ((3, 3), (12, 3), (3, 12), (12, 12)):
-                return "bolt"
-            return "plateC" if _h(i, j) < 9 else "plateA"
-        if variant == "b":
-            if i == 0 or j == 0 or i == 8:
-                return "seam"
-            if i == 1 or j == 1 or i == 9:
-                return "plateB"
-            return "grime" if _h(i, j, 2) < 14 else "plateB" if _h(i, j, 3) < 7 else "plateA"
-        if i in (0, 15) or j in (0, 15):
-            return "seam" if (i == 0 or j == 0) else "steel"
-        if 2 <= i <= 13 and 2 <= j <= 13:
-            return "dark" if (i // 2 + j // 2) % 2 == 0 else "steelD"
-        return "plateA"
-    m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), 16, 16, fn)
+        pi, pj = i % 16, j % 16               # 2x2 big panels
+        edge = pi == 0 or pj == 0
+        hi = pi == 1 or pj == 1
+        if variant == "a":                     # bevelled steel panels
+            if edge:
+                return "dark"
+            if hi:
+                return "steelL"
+            if pi == 15 or pj == 15:
+                return "steelD"
+            if (pi, pj) in ((3, 3), (12, 3), (3, 12), (12, 12)):
+                return "plate"
+            return "steelD" if _h(i, j) < 7 else "steel"
+        if variant == "b":                     # grating: dark slots between bright ribs
+            if i % 16 == 0 or j % 16 == 0:
+                return "dark"
+            if i % 16 == 1 or j % 16 == 1:
+                return "steelL"
+            return "dark" if (i % 4 in (1, 2)) else ("steel" if _h(i, j, 2) > 10 else "steelD")
+        # c: diamond-plate with hazard edge strips
+        if (i < 2 or j < 2) and False:
+            return "hazY"
+        if edge:
+            return "dark"
+        if hi:
+            return "steelL"
+        if (pi + pj) % 4 < 2 and 3 <= pi <= 13 and 3 <= pj <= 13:
+            return "steelD"
+        return "rustD" if _h(i, j, 4) < 5 else "steel"
+    m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), n, n, fn)
     return [m.build()]
 
 
-def _wall_face(m, axis, t, h, style):
-    """Decal pattern on the visible long face. axis 'x': wall along gx at the back (gy=-.5) edge."""
+# ---- slabs ----------------------------------------------------------------------------------------------------
+
+def _face(m, axis, t, h, style):
+    """Decal on the visible long (+y / +x) face. 32 columns along the tile (1 px each) x ~40 rows (1 px each)."""
+    nv = max(6, int(round(h * 40)))
+    hull = style == "hull"
+
     def fn(i, j):
-        hz = style == "hull"
-        if j < 2:
-            return ("hazY" if (i + j) // 2 % 2 == 0 else "hazK") if hz else "steelD"
-        if j >= 14:
-            return "steelL" if not hz else "steel"
-        if i in (0, 8, 15):
-            return "seam"
-        if hz:
-            if _h(i, j, 5) < 7:
+        top = nv - 1 - j
+        if j < 3:
+            return ("hazY" if (i + j) // 3 % 2 == 0 else "hazK") if hull else "dark"
+        if top < 2:
+            return "steel" if hull else "steelL"
+        if i == 0:
+            return "dark"
+        if nv > 12 and j in (nv // 2, nv // 2 + 1):
+            return "dark" if hull else "steelD"
+        if hull:
+            if _h(i, j, 5) < 9:
                 return "rustD"
-            return "steelD" if j % 6 else "seam"
-        if j in (3, 12) or i in (1, 7, 9, 14):
+            return "steelD" if (j // 5 + i // 8) % 2 else "steel"
+        if nv > 12 and i in (2, 29) and j in (6, nv - 7):
+            return "plate"
+        if nv > 12 and top >= 2 and top < 5:
             return "steel"
-        if (i, j) in ((2, 4), (6, 4), (2, 11), (6, 11), (10, 4), (13, 11)):
-            return "bolt"
-        return "plateA" if i < 8 else "plateB"
-    e = 0.003
+        return "steel" if (i // 16 + (j > nv // 2)) % 2 else "plateB"
+    e = 0.004
     if axis == "x":
-        m.pattern((-0.5, -0.5 + t + e, 0), (1, 0, 0), (0, 0, h), 16, 16, fn)
+        m.pattern((-0.5, t / 2 + e, 0), (1, 0, 0), (0, 0, h), 32, nv, fn)
     else:
-        m.pattern((-0.5 + t + e, -0.5, 0), (0, 1, 0), (0, 0, h), 16, 16, fn)
+        m.pattern((t / 2 + e, -0.5, 0), (0, 1, 0), (0, 0, h), 32, nv, fn)
+
+
+def _post(m, axis, t, h):
+    s = t + 2 * POST
+    m.box((0, 0, 0), (s, s, h + 0.035), "steelD", top="plate", base=True)
+    e = 0.004
+    if axis == "x":
+        m.pattern((-s / 2, s / 2 + e, 0), (s, 0, 0), (0, 0, h + 0.035), 4, 12, lambda i, j: "dark" if j < 2 else ("plate" if j > 9 else "steelD"))
+    else:
+        m.pattern((s / 2 + e, -s / 2, 0), (0, s, 0), (0, 0, h + 0.035), 4, 12, lambda i, j: "dark" if j < 2 else ("plate" if j > 9 else "steelD"))
 
 
 def wall(axis="x", style="std", h=H, extra=None):
-    t = 0.3 if style == "hull" else T
+    t = TH if style == "hull" else T
     m = core.Mesh(f"wall_{style}_{axis}")
     size = (1, t, h) if axis == "x" else (t, 1, h)
-    cen = (0, -0.5 + t / 2, 0) if axis == "x" else (-0.5 + t / 2, 0, 0)
-    m.box(cen, size, "steelD" if style == "hull" else "steel", top="steelL" if style != "hull" else "steel", base=True)
-    if h > 0.5:
-        _wall_face(m, axis, t, h, style)
-    else:
-        ee = 0.003
-        if axis == "x":
-            m.pattern((-0.5, -0.5 + t + ee, 0), (1, 0, 0), (0, 0, h), 16, 6, lambda i, j: "steelD" if j < 2 else "steel" if i % 8 else "seam")
-        else:
-            m.pattern((-0.5 + t + ee, -0.5, 0), (0, 1, 0), (0, 0, h), 16, 6, lambda i, j: "steelD" if j < 2 else "steel" if i % 8 else "seam")
+    m.box((0, 0, 0), size, "steelD" if style == "hull" else "steel", top="steel" if style == "hull" else "steelL", base=True)
+    _face(m, axis, t, h, style)
+    _post(m, axis, t, h)
     if extra:
         extra(m, axis, t)
     return [m.build()]
 
 
 def _on_wall(m, axis, t, c_along, z, size_along, size_h, depth, color):
-    """Place a thin box on the visible face of a wall."""
     if axis == "x":
-        m.box((c_along, -0.5 + t + depth / 2, z), (size_along, depth, size_h), color, base=True)
+        m.box((c_along, t / 2 + depth / 2, z), (size_along, depth, size_h), color, base=True)
     else:
-        m.box((-0.5 + t + depth / 2, c_along, z), (depth, size_along, size_h), color, base=True)
+        m.box((t / 2 + depth / 2, c_along, z), (depth, size_along, size_h), color, base=True)
+
+
+def door(axis="x", h=H, is_open=False):
+    m = core.Mesh(f"door_{axis}")
+    tj = T + 0.06
+
+    def box(along, sz_along, z, hh, thick, off, col, top=None):
+        if axis == "x":
+            m.box((along, off, z), (sz_along, thick, hh), col, top=top, base=True)
+        else:
+            m.box((off, along, z), (thick, sz_along, hh), col, top=top, base=True)
+    box(-0.4, 0.2, 0, h, tj, 0, "steelL", "plate")
+    box(0.4, 0.2, 0, h, tj, 0, "steelL", "plate")
+    box(0, 0.6, h - 0.2 if h > 0.5 else h - 0.08, 0.2 if h > 0.5 else 0.08, tj, 0, "gmD", "gm")
+    box(0, 0.6, 0, 0.04, tj, 0, "hazY")                       # threshold
+    lh = h - 0.22 if h > 0.5 else h - 0.1
+    if is_open:                                               # leaf slid into the jambs
+        box(-0.32, 0.06, 0.04, lh, 0.12, 0, "steel")
+        box(0.32, 0.06, 0.04, lh, 0.12, 0, "steel")
+        status = "cyan"
+    else:
+        box(0, 0.6, 0.04, lh, 0.1, 0, "steel", "steelL")
+        box(0, 0.5, 0.04, 0.12 if h > 0.5 else 0.05, 0.11, 0, "hazY")
+        if h > 0.5:
+            box(0, 0.3, 0.56, 0.14, 0.115, 0, "steelD")
+            box(0, 0.016, 0.04, lh, 0.112, 0, "dark")
+        status = "orange"
+    if h > 0.5:
+        box(-0.27, 0.06, 0.62, 0.1, 0.12, 0, status if not is_open else "cyan")
+        box(0.27, 0.06, 0.62, 0.1, 0.12, 0, status)
+        box(0.0, 0.18, h - 0.1, 0.05, tj + 0.02, 0, "magenta")
+    return [m.build()]
 
 
 def light_extra(color_panel, bracket="gmD"):
     def f(m, axis, t):
-        _on_wall(m, axis, t, 0, 0.66, 0.34, 0.12, 0.07, bracket)
-        _on_wall(m, axis, t, 0, 0.685, 0.26, 0.06, 0.085, color_panel)
+        _on_wall(m, axis, t, 0.3, 0.62, 0.3, 0.12, 0.07, bracket)
+        _on_wall(m, axis, t, 0.3, 0.645, 0.22, 0.06, 0.085, color_panel)
     return f
 
 
-def beacon_extra(m, axis, t):
-    _on_wall(m, axis, t, 0, 0.62, 0.16, 0.16, 0.06, "gmD")
-    _on_wall(m, axis, t, 0, 0.64, 0.1, 0.12, 0.1, "red")
+# ---- props / modules ------------------------------------------------------------------------------------------
 
-
-def door(axis="x"):
-    m = core.Mesh(f"door_{axis}")
-    t = T + 0.04
-    a = lambda c, s, z, h, d, col: _on_wall(m, axis, 0.0, c, z, s, h, d, col)  # noqa: E731
-    # frame straddles the wall slot; geometry centred in the wall strip
-    def box(along, sz_along, z, hh, thick, off, col, top=None):
-        if axis == "x":
-            m.box((along, -0.5 + off, z), (sz_along, thick, hh), col, top=top, base=True)
-        else:
-            m.box((-0.5 + off, along, z), (thick, sz_along, hh), col, top=top, base=True)
-    box(-0.4, 0.2, 0, H, t, t / 2, "steelL", "plate")
-    box(0.4, 0.2, 0, H, t, t / 2, "steelL", "plate")
-    box(0, 1.0, H - 0.2, 0.2, t, t / 2, "gmD", "gm")
-    box(0, 0.6, 0, 0.8, 0.1, t / 2 + 0.02, "steel", "steelL")
-    box(0, 0.5, 0, 0.14, 0.11, t / 2 + 0.02, "hazY")
-    box(0, 0.3, 0.56, 0.12, 0.115, t / 2 + 0.02, "steelD")
-    box(-0.27, 0.06, 0.62, 0.1, 0.13, t / 2 + 0.02, "cyan")
-    box(0.27, 0.06, 0.62, 0.1, 0.13, t / 2 + 0.02, "orange")
-    box(0.0, 0.18, H - 0.1, 0.05, t + 0.02, t / 2, "magenta")
+def lamp():
+    """module.light: a standing lamp (works against any wall)."""
+    m = core.Mesh("lamp")
+    m.cyl((0, 0, 0), 0.14, 0.06, "steelD", sides=8, top="plate")
+    m.cyl((0, 0, 0.06), 0.035, 0.7, "gm", sides=6)
+    m.box((0, 0, 0.74), (0.2, 0.2, 0.05), "gmD", base=True, bevel=0.01)
+    m.box((0, 0, 0.79), (0.15, 0.15, 0.11), "arc", base=True)
+    m.box((0, 0, 0.9), (0.2, 0.2, 0.03), "gmD", base=True, bevel=0.01)
     return [m.build()]
 
 
@@ -174,6 +221,49 @@ def reactor():
     return [m.build()]
 
 
+def life_support():
+    """1 wide (x) by 2 long (y): footprint [1, 2]; origin on the front tile, body spans y -1.5..0.5."""
+    m = core.Mesh("life_support")
+    cy = -0.5
+    m.box((0, cy, 0), (0.92, 1.9, 0.14), "steelD", top="plateA", base=True, bevel=0.02)
+    for k, y in enumerate((cy - 0.45, cy + 0.45)):
+        m.cyl((0, y, 0.14), 0.36, 1.05, "steel", sides=8, top="steelL")
+        m.cyl((0, y, 0.5), 0.375, 0.07, "gmD", sides=8)
+        m.cyl((0, y, 1.0), 0.375, 0.06, "gmD", sides=8)
+        m.cyl((0, y, 1.19), 0.22, 0.12, "gm", sides=8, top="plate")
+        for a in (45, 135):
+            ar = math.radians(a)
+            r = 0.36 * math.cos(math.pi / 8) + 0.005
+            m.box((r * math.cos(ar), y + r * math.sin(ar), 0.62), (0.025, 0.1, 0.3), "cyan", rz=ar, base=True)
+    m.box((0, cy, 0.14), (0.16, 0.5, 0.95), "gm", top="plate", base=True, bevel=0.01)       # manifold between the tanks
+    m.box((0.0, cy, 0.8), (0.2, 0.3, 0.06), "cyan")
+    m.box((0.3, cy + 0.85, 0.14), (0.26, 0.2, 0.6), "steelD", top="plate", base=True, bevel=0.01)
+    for k in range(3):
+        m.box((0.3, cy + 0.96, 0.52 + k * 0.0), (0.16 - k * 0.04, 0.02, 0.04), ("cyan", "orange", "magenta")[k]) if False else None
+    m.box((0.3, cy + 0.96, 0.4), (0.14, 0.03, 0.05), "cyan")
+    m.box((0.3, cy + 0.96, 0.3), (0.14, 0.03, 0.05), "cyan")
+    return [m.build()]
+
+
+def bed():
+    """1 wide (x) by 2 long (y): footprint [1, 2]; mattress top is at 0.22 (sleeping crew are lifted by that)."""
+    m = core.Mesh("bed")
+    cy = -0.5
+    m.box((0, cy, 0), (0.88, 1.9, 0.12), "steelD", top="steel", base=True, bevel=0.015)
+    for sx in (-1, 1):
+        for y in (cy - 0.85, cy + 0.85):
+            m.box((sx * 0.38, y, 0), (0.1, 0.1, 0.1), "dark", base=True)
+    m.box((0, cy, 0.1), (0.84, 1.86, 0.12), "navy", top="blueGrey", base=True, bevel=0.02)
+    m.box((0, cy - 0.68, 0.22), (0.62, 0.42, 0.08), "medWhite", top="medWhite", base=True, bevel=0.03)   # pillow
+    m.box((0, cy + 0.2, 0.22), (0.82, 1.1, 0.035), "steelL", base=True)                                    # blanket
+    m.box((0, cy + 0.2, 0.255), (0.8, 1.06, 0.01), "blueGrey", base=True)
+    m.box((0, cy - 0.34, 0.22), (0.82, 0.05, 0.04), "orange", base=True)
+    m.box((0, cy + 0.93, 0.0), (0.88, 0.05, 0.38), "steelD", top="steel", base=True, bevel=0.01)          # footboard
+    m.box((0, cy - 0.93, 0.0), (0.88, 0.05, 0.5), "steelD", top="steel", base=True, bevel=0.01)           # headboard
+    m.box((0, cy - 0.9, 0.34), (0.5, 0.02, 0.05), "cyan")
+    return [m.build()]
+
+
 def _crate(m, c, s, body, top, post, rz=0.0, z0=0.0):
     m.box((c[0], c[1], z0), (s, s, s * 0.8), body, top=top, base=True, rz=rz, bevel=0.015)
     h = s * 0.8
@@ -190,33 +280,44 @@ def crates():
     m = core.Mesh("crates")
     _crate(m, (-0.1, -0.1), 0.72, "rust", "rustD", "steel")
     _crate(m, (-0.1, -0.1), 0.5, "steel", "steelL", "gm", rz=0.18, z0=0.58)
-    m.box((0.15, -0.46, 0.14), (0.22, 0.012, 0.16), "hazY", base=True)
+    m.box((0.15, 0.26, 0.14), (0.22, 0.012, 0.16), "hazY", base=True)
     m.box((0.3, 0.28, 0), (0.34, 0.34, 0.3), "steelD", top="steel", base=True, bevel=0.015, rz=-0.15)
     m.box((0.3, 0.28, 0.12), (0.355, 0.355, 0.04), "orange", base=True, rz=-0.15)
     return [m.build()]
 
 
-def _tile_wall(axis, style, h, extra):
+def _slab(axis, style, h, extra=None):
     return lambda: wall(axis, style, h, extra)
 
 
+def _all(fn_by_axis):
+    out = []
+    for ax in ("x", "y"):
+        out.append(fn_by_axis(ax))
+    return out
+
+
 SPRITES = [
-    ("floor_a", (1, 1), "floor", lambda: floor("a")),
-    ("floor_b", (1, 1), "floor", lambda: floor("b")),
-    ("floor_c", (1, 1), "floor", lambda: floor("c")),
-    ("wall_x", (1, 1), "wall", _tile_wall("x", "std", H, None)),
-    ("wall_y", (1, 1), "wall", _tile_wall("y", "std", H, None)),
-    ("wall_low_x", (1, 1), "wall", _tile_wall("x", "std", 0.3, None)),
-    ("wall_low_y", (1, 1), "wall", _tile_wall("y", "std", 0.3, None)),
-    ("hull_x", (1, 1), "wall", _tile_wall("x", "hull", H, None)),
-    ("hull_y", (1, 1), "wall", _tile_wall("y", "hull", H, None)),
-    ("door_x", (1, 1), "wall", lambda: door("x")),
-    ("door_y", (1, 1), "wall", lambda: door("y")),
-    ("wall_light_x", (1, 1), "light", _tile_wall("x", "std", H, light_extra("arc"))),
-    ("wall_light_y", (1, 1), "light", _tile_wall("y", "std", H, light_extra("arc"))),
-    ("emerg_light_x", (1, 1), "light", _tile_wall("x", "std", H, beacon_extra)),
-    ("emerg_light_y", (1, 1), "light", _tile_wall("y", "std", H, beacon_extra)),
-    ("console", (1, 1), "prop", console),
-    ("reactor", (2, 2), "prop", reactor),
-    ("crates", (1, 1), "prop", crates),
+    ("tile.floor.a", (1, 1), "floor", lambda: floor("a")),
+    ("tile.floor.b", (1, 1), "floor", lambda: floor("b")),
+    ("tile.floor.c", (1, 1), "floor", lambda: floor("c")),
+]
+for _ax in ("x", "y"):
+    SPRITES += [
+        (f"tile.wall.{_ax}", (1, 1), f"slab:{_ax}", _slab(_ax, "std", H)),
+        (f"tile.wall.low.{_ax}", (1, 1), f"slab:{_ax}", _slab(_ax, "std", LOW)),
+        (f"tile.hull.{_ax}", (1, 1), f"slab:{_ax}", _slab(_ax, "hull", H)),
+        (f"tile.hull.low.{_ax}", (1, 1), f"slab:{_ax}", _slab(_ax, "hull", LOW)),
+        (f"tile.door.{_ax}", (1, 1), f"slab:{_ax}", lambda a=_ax: door(a, H, False)),
+        (f"tile.door.open.{_ax}", (1, 1), f"slab:{_ax}", lambda a=_ax: door(a, H, True)),
+        (f"tile.door.low.{_ax}", (1, 1), f"slab:{_ax}", lambda a=_ax: door(a, LOW, False)),
+        (f"tile.door.low.open.{_ax}", (1, 1), f"slab:{_ax}", lambda a=_ax: door(a, LOW, True)),
+    ]
+SPRITES += [
+    ("prop.crate", (1, 1), "prop", crates),
+    ("module.reactor", (2, 2), "prop", reactor),
+    ("module.life_support", (1, 2), "prop", life_support),
+    ("module.light", (1, 1), "prop", lamp),
+    ("module.bed", (1, 2), "prop", bed),
+    ("module.console", (1, 1), "prop", console),
 ]
