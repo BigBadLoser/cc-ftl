@@ -4,10 +4,13 @@ export { Grid, CHUNK_SIZE, type FieldSpec, type FieldType, type GridData } from 
 export { CommandQueue, type Command, type QueuedCommand } from './commands';
 export { EventBuffer, type SimEvent } from './events';
 export { Sim, TICK_HZ } from './sim';
-export type { ContentRegistry, ShipTemplate } from './registry';
+export type { ContentRegistry, ShipTemplate, RoleDef, SpeciesDef } from './registry';
 export { gridFromTemplate } from './ship';
 export { newGame } from './newGame';
 export { pipeline, type System } from './pipeline';
 export { MarkerC, type Marker } from './components';
 export { SAVE_VERSION, serialize, deserialize, migrate, migrations, type SaveData } from './save';
 export { Struct, SHIP_FIELDS, isWalkable, type StructKind } from './structure';
+export * from './crew/components';
+export { findPath, type Tile, type PathGoal } from './crew/pathfind';
+export { stat, modifierSources, type Modifier, type ModifierSource, type StatName } from './stats';

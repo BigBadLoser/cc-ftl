@@ -10,6 +10,12 @@ export interface ShipTemplate {
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
   ships: Record<string, ShipTemplate>;
+  /** Role content id (e.g. 'role.engineer') to definition. */
+  roles: Record<string, RoleDef>;
+  /** Species content id (e.g. 'species.human') to definition. */
+  species: Record<string, SpeciesDef>;
+  /** Pool of first names for generated crew. */
+  crewNames: string[];
 }
 
 /** A crew role: default priorities for each work category (0 = off, 1 = highest .. 4). */

@@ -38,7 +38,7 @@ describe('rooms system', () => {
   it('save round-trips and recomputes after load', () => {
     const sim = make();
     sim.step();
-    const loaded = deserialize(serialize(sim), { ships: {} });
+    const loaded = deserialize(serialize(sim), { ships: {}, roles: {}, species: {}, crewNames: [] });
     loaded.step();
     expect(roomRow(loaded, 1)).toEqual([0, 1, 0, 2, 0]);
   });

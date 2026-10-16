@@ -1,0 +1,34 @@
+import { CrewC } from './crew/components';
+import type { Sim } from './sim';
+
+export type StatName = 'moveSpeed' | 'workSpeed' | 'restDecay';
+
+/** A tagged change to a stat. Applied as: (base + sum of adds) * product of muls. */
+export interface Modifier {
+  stat: StatName;
+  op: 'add' | 'mul';
+  value: number;
+}
+
+/** Returns the modifiers an entity currently has from one origin (traits, implants, items...). */
+export type ModifierSource = (sim: Sim, entity: number) => readonly Modifier[];
+
+/** Register sources here. Empty in M2: traits, implants and conditions plug in later. */
+export const modifierSources: ModifierSource[] = [];
+
+/** Resolve a stat: species base from content, then all modifiers. Systems never stack on their own. */
+export function stat(sim: Sim, entity: number, name: StatName): number {
+  const crew = sim.world.get(entity, CrewC);
+  const species = crew ? sim.content.species[crew.species] : undefined;
+  if (!species) throw new Error(`stat(${name}): entity ${entity} has no known species`);
+  let add = 0;
+  let mul = 1;
+  for (const source of modifierSources) {
+    for (const m of source(sim, entity)) {
+      if (m.stat !== name) continue;
+      if (m.op === 'add') add += m.value;
+      else mul *= m.value;
+    }
+  }
+  return (species[name] + add) * mul;
+}

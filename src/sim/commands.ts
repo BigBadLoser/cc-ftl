@@ -1,8 +1,17 @@
+import type { WorkCategory } from './crew/components';
+
 /** Every way to change the sim from outside. Add new variants here. */
 export type Command =
   | { type: 'noop' }
   | { type: 'debug.spawnMarker'; x: number; y: number }
-  | { type: 'debug.setStruct'; gridId: number; x: number; y: number; kind: number };
+  | { type: 'debug.setStruct'; gridId: number; x: number; y: number; kind: number }
+  | { type: 'job.build'; gridId: number; x: number; y: number; struct: number }
+  | { type: 'job.deconstruct'; gridId: number; x: number; y: number }
+  | { type: 'job.cancel'; gridId: number; x: number; y: number }
+  | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
+  | { type: 'crew.resetPriorities'; id: number }
+  | { type: 'crew.draft'; id: number; drafted: boolean }
+  | { type: 'crew.moveTo'; id: number; x: number; y: number };
 
 /** A command tagged with the tick at whose start it applies. */
 export interface QueuedCommand {
