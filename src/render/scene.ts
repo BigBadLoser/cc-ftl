@@ -1,7 +1,10 @@
 import {
   AmbientLight, ACESFilmicToneMapping, Color, DirectionalLight, HemisphereLight, PCFShadowMap, Scene,
-  Vector2, Vector3, WebGLRenderer,
+  Raycaster, Vector2, Vector3, WebGLRenderer,
 } from 'three';
+import type { World } from '../sim/ecs';
+import { createCrewView } from './crew/crewView';
+import { createJobView } from './jobView';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -38,9 +41,13 @@ export interface Renderer {
   zoomAt(factor: number, screenX: number, screenY: number): void;
   /** Tile under a canvas-relative screen position, or null if outside the grid. */
   pickTile(screenX: number, screenY: number): { x: number; y: number } | null;
+  /** Crew entity id under a canvas-relative screen position, or null. Prefer over pickTile when set. */
+  pickCrew(screenX: number, screenY: number): number | null;
+  /** Draw a cyan ring under this crew member (null clears). */
+  setSelectedCrew(id: number | null): void;
 }
 
-export function createRenderer(canvas: HTMLCanvasElement, quality: Quality = 'high'): Renderer {
+export function createRenderer(canvas: HTMLCanvasElement, quality: Quality = 'high', world?: World): Renderer {
   const high = quality === 'high';
   const renderer = new WebGLRenderer({ canvas, antialias: high, powerPreference: 'high-performance' });
   renderer.info.autoReset = false;
@@ -71,6 +78,12 @@ export function createRenderer(canvas: HTMLCanvasElement, quality: Quality = 'hi
   }
 
   let view: GridView | null = null;
+  const target = () => (view ? { offsetX: view.offsetX, offsetZ: view.offsetZ, gridId: view.grid.id, grid: view.grid } : null);
+  const crewView = world ? createCrewView(world, { target }) : null;
+  const jobView = world ? createJobView(world, { target }) : null;
+  if (crewView) scene.add(crewView.group);
+  if (jobView) scene.add(jobView.group);
+  const raycaster = new Raycaster();
   let cutaway: CutawayMode = 'auto';
   let overlay: string | null = null;
   let selection: { x: number; y: number } | null = null;
@@ -106,8 +119,10 @@ export function createRenderer(canvas: HTMLCanvasElement, quality: Quality = 'hi
   }
 
   return {
-    render() {
+    render(alpha) {
       view?.update();
+      jobView?.update();
+      crewView?.update(alpha);
       renderer.info.reset();
       if (composer) composer.render();
       else renderer.render(scene, rig.camera);
@@ -153,7 +168,15 @@ export function createRenderer(canvas: HTMLCanvasElement, quality: Quality = 'hi
       const y = Math.floor(p.z - view.offsetZ);
       return view.grid.inBounds(x, y) ? { x, y } : null;
     },
+    pickCrew(sx, sy) {
+      if (!crewView) return null;
+      raycaster.setFromCamera(new Vector2((sx / cw) * 2 - 1, -(sy / ch) * 2 + 1), rig.camera);
+      return crewView.pick(raycaster);
+    },
+    setSelectedCrew: (id) => crewView?.setSelectedCrew(id),
     dispose() {
+      crewView?.dispose();
+      jobView?.dispose();
       view?.dispose();
       composer?.dispose();
       renderer.dispose();
