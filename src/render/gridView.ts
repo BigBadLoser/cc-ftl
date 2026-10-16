@@ -1,15 +1,15 @@
-import type { Sprite } from 'pixi.js';
-import type { Atlas } from './assets/loader';
-import type { Grid } from '../sim/grid';
-import { Struct } from '../sim/structure';
-import { depthKey } from './iso';
-import type { Layers } from './layers';
-import { createMarkers, type Markers } from './markers';
-import { createOverlay, type Overlay } from './overlay';
-import { addStatic } from './sprites';
-import { floorChain, isLowered, wallChains } from './tiles';
+import type { Sprite } from "pixi.js";
+import type { Atlas } from "./assets/loader";
+import type { Grid } from "../sim/grid";
+import { Struct } from "../sim/structure";
+import { depthKey } from "./iso";
+import type { Layers } from "./layers";
+import { createMarkers, type Markers } from "./markers";
+import { createOverlay, type Overlay } from "./overlay";
+import { addStatic } from "./sprites";
+import { floorChain, isLowered, wallChain } from "./tiles";
 
-export type CutawayMode = 'auto' | 'up' | 'down';
+export type CutawayMode = "auto" | "up" | "down";
 
 export interface GridView extends Markers {
   readonly grid: Grid;
@@ -24,11 +24,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers): GridView {
   const markers = createMarkers(L.ui);
   const overlay: Overlay = createOverlay(grid, L.decal);
   let owned: Sprite[] = [];
-  let mode: CutawayMode = 'auto';
+  let mode: CutawayMode = "auto";
   let builtMode: CutawayMode | null = null;
   let rev = -1;
 
-  const kindAt = (x: number, y: number): number => (grid.inBounds(x, y) ? grid.get('struct', x, y) : Struct.Space);
+  const kindAt = (x: number, y: number): number =>
+    grid.inBounds(x, y) ? grid.get("struct", x, y) : Struct.Space;
 
   function clear(): void {
     for (const s of owned) s.destroy();
@@ -47,10 +48,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers): GridView {
         }
         if (k === Struct.Floor) continue;
         const low = isLowered(kindAt, x, y, mode);
-        for (const chain of wallChains(kindAt, x, y, k, low)) {
-          const s = atlas.firstOf(chain);
-          if (s) owned.push(...addStatic(L, s, x, y, depthKey(x, y), L.sorted));
-        }
+        const s = atlas.firstOf(wallChain(kindAt, x, y, k, low));
+        if (s) owned.push(...addStatic(L, s, x, y, depthKey(x, y), L.sorted));
       }
     builtMode = mode;
   }
@@ -59,7 +58,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers): GridView {
     ...markers,
     grid,
     update() {
-      const r = grid.revision('struct');
+      const r = grid.revision("struct");
       if (r !== rev || builtMode !== mode) {
         rebuild();
         rev = r;
@@ -72,7 +71,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers): GridView {
     setOverlay: (f) => overlay.setField(f),
     dispose() {
       clear();
-      for (const layer of [L.decal, L.ui]) for (const c of layer.removeChildren()) c.destroy({ children: true });
+      for (const layer of [L.decal, L.ui])
+        for (const c of layer.removeChildren()) c.destroy({ children: true });
     },
   };
 }

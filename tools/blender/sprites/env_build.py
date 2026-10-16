@@ -1,8 +1,7 @@
 """Environment sprites -> one atlas (sprites/env.png + env.glow.png) and StaticAsset manifest entries.
 
-Outlines: floors none (exact 64x32 diamond); props a normal 1px ring; slabs (walls/doors) a ring only on pixels not
-covered by the same piece's row of neighbours (rendered at +-1 tile along the slab axis), so abutting pieces never
-draw an outline across each other's pixels (no seams)."""
+Outlines: floors and wall/door blocks none (blocks fill the footprint and tile into one mass; panel seams, skirting
+and a top lip are modelled instead); props a normal 1px ring."""
 import math
 import bpy
 import numpy as np
@@ -35,23 +34,8 @@ def render_sprite(sid, kind, objs):
     if kind == "floor":
         op = diamond_mask(W, H)
         c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
-    elif kind.startswith("slab"):
-        shift = Vector((1, 0, 0)) if kind.endswith("x") else Vector((0, -1, 0))
-        dups = []
-        for s in (-1, 1):
-            for ob in objs:
-                d = ob.copy()
-                d.location = ob.location + shift * s
-                bpy.context.scene.collection.objects.link(d)
-                dups.append(d)
-        sc = bpy.context.scene
-        sc.cycles.samples = 1
-        _, ac = core.render(W, H, "color")
-        sc.cycles.samples = 4
-        for d in dups:
-            bpy.data.objects.remove(d, do_unlink=True)
-        ctx = (_alpha_cnt(ac) >= 1) | op
-        c, op = post.ring_outline(c, op, ctx)
+    elif kind == "block":
+        c, op = _pad1(c), _pad1(op)
     else:
         c, op = post.outline(c, op, True)
     grgb, _ = core.render(W, H, "glow")

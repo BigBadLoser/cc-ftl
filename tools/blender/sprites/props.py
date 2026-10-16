@@ -1,163 +1,168 @@
 """Environment sprite models (grid frame; origin = centre of the FRONT-most footprint tile at floor level).
 
-Walls and doors are SLABS through the tile centre (axis 'x' runs along grid +x, 'y' along grid +y), exactly one tile
-long so neighbours abut. Each slab piece carries an identical centre post (a little wider/taller than the slab), so
-stacking an x and a y piece on one tile (corner / T / plus) draws the same junction pixels twice instead of showing
-mismatched end faces. Builders return Blender objects; SPRITES lists (id, footprint, kind, builder).
-kind: floor (diamond-masked), slab:<axis> (outline ring only outside the row of neighbours), prop (full ring)."""
+Walls, hull and doors are FULL-TILE blocks: they fill the whole 64x32 footprint, so neighbours tile into one continuous
+mass (no posts, no gaps, no outline rings that could seam). Top faces carry a panel border so rows read as plates;
+side faces carry skirting, a top lip and panel seams. Doors are blocks with a passage cut through them (axis 'x' = the
+wall runs along grid x, you walk through along y; vice versa for 'y'). Builders return Blender objects; SPRITES lists
+(id, footprint, kind, builder); kind: floor (diamond-masked), block (no ring), prop (1 px ring)."""
 import math
 from . import core
 
-H = 1.0          # full wall height (tiles)
-LOW = 0.3        # cutaway height
-T = 0.2          # wall thickness
-TH = 0.3         # hull thickness
-POST = 0.075     # post grows this much beyond the slab on each side
+H = 1.3          # full wall height (tiles)
+LOW = 0.25       # cutaway height
+OPEN_W = 0.22    # door opening half-width along the wall axis
+OPEN_H = 0.9     # door opening height
+E = 0.004        # decal offset
 
 
 def _h(i, j, s=0):
     return ((i * 73856093) ^ (j * 19349663) ^ (s * 83492791)) % 100
 
 
-# ---- floors ---------------------------------------------------------------------------------------------------
+# ---- floors: large calm plates, no per-pixel noise ------------------------------------------------------------
 
 def floor(variant):
     m = core.Mesh(f"floor_{variant}")
-    n = 32
 
     def fn(i, j):
-        pi, pj = i % 16, j % 16               # 2x2 big panels
-        edge = pi == 0 or pj == 0
-        hi = pi == 1 or pj == 1
-        if variant == "a":                     # bevelled steel panels
-            if edge:
+        if variant == "a":                      # 2x2 plates, bevelled
+            pi, pj = i % 16, j % 16
+            if pi == 0 or pj == 0:
                 return "dark"
-            if hi:
+            if pi == 1 or pj == 1:
                 return "steelL"
-            if pi == 15 or pj == 15:
-                return "steelD"
-            if (pi, pj) in ((3, 3), (12, 3), (3, 12), (12, 12)):
+            if (pi, pj) in ((4, 4), (12, 4), (4, 12), (12, 12)):
                 return "plate"
-            return "steelD" if _h(i, j) < 7 else "steel"
-        if variant == "b":                     # grating: dark slots between bright ribs
-            if i % 16 == 0 or j % 16 == 0:
+            return "steel"
+        if variant == "b":                      # 2x2 plates, checkered tone
+            pi, pj = i % 16, j % 16
+            if pi == 0 or pj == 0:
                 return "dark"
-            if i % 16 == 1 or j % 16 == 1:
-                return "steelL"
-            return "dark" if (i % 4 in (1, 2)) else ("steel" if _h(i, j, 2) > 10 else "steelD")
-        # c: diamond-plate with hazard edge strips
-        if (i < 2 or j < 2) and False:
-            return "hazY"
-        if edge:
+            if pi == 1 or pj == 1:
+                return "steelL" if (i // 16 + j // 16) % 2 == 0 else "steel"
+            return "steelD" if (i // 16 + j // 16) % 2 else "steel"
+        if i == 0 or j == 0:                    # c: one big plate with an inset frame and corner bolts
             return "dark"
-        if hi:
+        if i == 1 or j == 1:
             return "steelL"
-        if (pi + pj) % 4 < 2 and 3 <= pi <= 13 and 3 <= pj <= 13:
+        if i in (5, 26) and 5 <= j <= 26 or j in (5, 26) and 5 <= i <= 26:
             return "steelD"
-        return "rustD" if _h(i, j, 4) < 5 else "steel"
-    m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), n, n, fn)
+        if (i, j) in ((3, 3), (28, 3), (3, 28), (28, 28)):
+            return "plate"
+        return "steel"
+    m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), 32, 32, fn)
     return [m.build()]
 
 
-# ---- slabs ----------------------------------------------------------------------------------------------------
+# ---- full-tile blocks -----------------------------------------------------------------------------------------
 
-def _face(m, axis, t, h, style):
-    """Decal on the visible long (+y / +x) face. 32 columns along the tile (1 px each) x ~40 rows (1 px each)."""
-    nv = max(6, int(round(h * 40)))
+def _top_fn(style):
+    hull = style == "hull"
+
+    def fn(i, j):
+        d = min(i, j, 31 - i, 31 - j)
+        if d < 2:
+            return "steelD" if hull else "steel"
+        if d == 4 and 4 <= min(i, j) and max(i, j) <= 27:
+            return "steel" if hull else "steelL"
+        if hull:
+            return "steel"
+        return "steelL" if d < 5 else "plate" if (i in (7, 24) and j in (7, 24)) else "steelL"
+    return fn
+
+
+def _side_fn(h, style):
+    nv = max(6, int(round(h * 39)))
     hull = style == "hull"
 
     def fn(i, j):
         top = nv - 1 - j
-        if j < 3:
-            return ("hazY" if (i + j) // 3 % 2 == 0 else "hazK") if hull else "dark"
-        if top < 2:
+        if hull and j < 6 and nv > 10:
+            return "hazY" if ((i + j) // 3) % 2 == 0 else "hazK"
+        if j < (3 if nv > 10 else 2):
+            return "dark"
+        if top < (3 if nv > 10 else 2):
             return "steel" if hull else "steelL"
         if i == 0:
             return "dark"
         if nv > 12 and j in (nv // 2, nv // 2 + 1):
             return "dark" if hull else "steelD"
         if hull:
-            if _h(i, j, 5) < 9:
-                return "rustD"
-            return "steelD" if (j // 5 + i // 8) % 2 else "steel"
-        if nv > 12 and i in (2, 29) and j in (6, nv - 7):
+            return "rustD" if _h(i, j, 5) < 3 else "steelD"
+        if nv > 12 and i in (3, 28) and j in (8, nv - 9):
             return "plate"
-        if nv > 12 and top >= 2 and top < 5:
-            return "steel"
-        return "steelL" if (i // 16 + (j > nv // 2)) % 2 else "steel"
-    e = 0.004
-    if axis == "x":
-        m.pattern((-0.5, t / 2 + e, 0), (1, 0, 0), (0, 0, h), 32, nv, fn)
-    else:
-        m.pattern((t / 2 + e, -0.5, 0), (0, 1, 0), (0, 0, h), 32, nv, fn)
+        return "steel" if (i // 16) % 2 == 0 else "blueGrey"
+    return fn, nv
 
 
-def _post(m, axis, t, h):
-    s = t + 2 * POST
-    m.box((0, 0, 0), (s, s, h + 0.035), "steelD", top="plate", base=True)
-    e = 0.004
-    if axis == "x":
-        m.pattern((-s / 2, s / 2 + e, 0), (s, 0, 0), (0, 0, h + 0.035), 4, 12, lambda i, j: "dark" if j < 2 else ("plate" if j > 9 else "steelD"))
-    else:
-        m.pattern((s / 2 + e, -s / 2, 0), (0, s, 0), (0, 0, h + 0.035), 4, 12, lambda i, j: "dark" if j < 2 else ("plate" if j > 9 else "steelD"))
+def _decals(m, h, style, hole=None, axis_hole=None):
+    """Top + the two visible side faces. `hole(u, v)->True` skips cells (door opening) on the face given by axis_hole."""
+    m.pattern((-0.5, -0.5, h + E), (1, 0, 0), (0, 1, 0), 32, 32, _top_fn(style))
+    fn, nv = _side_fn(h, style)
+    for face, o, du in (("y", (-0.5, 0.5 + E, 0), (1, 0, 0)), ("x", (0.5 + E, -0.5, 0), (0, 1, 0))):
+        def f(i, j, face=face):
+            if hole and face == axis_hole and hole(i, j):
+                return None
+            return fn(i, j)
+        m.pattern(o, du, (0, 0, h), 32, nv, f)
 
 
-def wall(axis="x", style="std", h=H, extra=None):
-    t = TH if style == "hull" else T
-    m = core.Mesh(f"wall_{style}_{axis}")
-    size = (1, t, h) if axis == "x" else (t, 1, h)
-    m.box((0, 0, 0), size, "steelD" if style == "hull" else "steel", top="steel" if style == "hull" else "steelL", base=True)
-    _face(m, axis, t, h, style)
-    _post(m, axis, t, h)
-    if extra:
-        extra(m, axis, t)
+def block(style="std", h=H):
+    m = core.Mesh(f"block_{style}")
+    m.box((0, 0, 0), (1, 1, h), "steelD" if style == "hull" else "steel", top="steel", base=True)
+    _decals(m, h, style)
     return [m.build()]
-
-
-def _on_wall(m, axis, t, c_along, z, size_along, size_h, depth, color):
-    if axis == "x":
-        m.box((c_along, t / 2 + depth / 2, z), (size_along, depth, size_h), color, base=True)
-    else:
-        m.box((t / 2 + depth / 2, c_along, z), (depth, size_along, size_h), color, base=True)
 
 
 def door(axis="x", h=H, is_open=False):
+    """Block with a passage cut through it. axis x: wall along x, opening on the +y face (walk along y)."""
     m = core.Mesh(f"door_{axis}")
-    tj = T + 0.06
+    a, oh = OPEN_W, OPEN_H
+    tall = h > 0.5
+    side = "steel"
 
-    def box(along, sz_along, z, hh, thick, off, col, top=None):
+    def bx(u0, u1, z0, z1):           # box spanning u in [u0,u1] along the wall axis, full depth
+        c, w = (u0 + u1) / 2, u1 - u0
         if axis == "x":
-            m.box((along, off, z), (sz_along, thick, hh), col, top=top, base=True)
+            m.box((c, 0, z0), (w, 1, z1 - z0), side, top="steel", base=True)
         else:
-            m.box((off, along, z), (thick, sz_along, hh), col, top=top, base=True)
-    box(-0.4, 0.2, 0, h, tj, 0, "steelL", "plate")
-    box(0.4, 0.2, 0, h, tj, 0, "steelL", "plate")
-    box(0, 0.6, h - 0.2 if h > 0.5 else h - 0.08, 0.2 if h > 0.5 else 0.08, tj, 0, "gmD", "gm")
-    box(0, 0.6, 0, 0.04, tj, 0, "hazY")                       # threshold
-    lh = h - 0.22 if h > 0.5 else h - 0.1
-    if is_open:                                               # leaf slid into the jambs
-        box(-0.32, 0.06, 0.04, lh, 0.12, 0, "steel")
-        box(0.32, 0.06, 0.04, lh, 0.12, 0, "steel")
-        status = "cyan"
-    else:
-        box(0, 0.6, 0.04, lh, 0.1, 0, "steel", "steelL")
-        box(0, 0.5, 0.04, 0.12 if h > 0.5 else 0.05, 0.11, 0, "hazY")
-        if h > 0.5:
-            box(0, 0.3, 0.56, 0.14, 0.115, 0, "steelD")
-            box(0, 0.016, 0.04, lh, 0.112, 0, "dark")
-        status = "orange"
-    if h > 0.5:
-        box(-0.27, 0.06, 0.62, 0.1, 0.12, 0, status if not is_open else "cyan")
-        box(0.27, 0.06, 0.62, 0.1, 0.12, 0, status)
-        box(0.0, 0.18, h - 0.1, 0.05, tj + 0.02, 0, "magenta")
+            m.box((0, c, z0), (1, w, z1 - z0), side, top="steel", base=True)
+    bx(-0.5, -a, 0, h)
+    bx(a, 0.5, 0, h)
+    if tall:
+        bx(-a, a, oh, h)
+    lo, hi = int((0.5 - a) * 32), int((0.5 + a) * 32)
+    nvh = int(oh * 39)
+    face = "y" if axis == "x" else "x"
+    _decals(m, h, "std", hole=lambda i, j: lo <= i < hi and j < (nvh if tall else 99), axis_hole=face)
+    pt = 0.12                                       # panel thickness along the passage
+    pz = oh - 0.04 if tall else h - 0.04
+    if not is_open:
+        if axis == "x":
+            m.box((0, 0, 0), (2 * a - 0.02, pt, pz), "steelD", top="steelL", base=True)
+            o, du = (-a + 0.01, pt / 2 + E, 0), (2 * a - 0.02, 0, 0)
+        else:
+            m.box((0, 0, 0), (pt, 2 * a - 0.02, pz), "steelD", top="steelL", base=True)
+            o, du = (pt / 2 + E, -a + 0.01, 0), (0, 2 * a - 0.02, 0)
+        nv = max(5, int(pz * 39))
+        w = int((2 * a - 0.02) * 32)
+
+        def pf(i, j):
+            if j < 3:
+                return "hazY" if ((i + j) // 2) % 2 == 0 else "hazK"
+            if i == w // 2 or i == w // 2 - 1:
+                return "dark"
+            if tall and nv - 8 <= j < nv - 4 and 2 <= i < w - 2 and i != w // 2 and i != w // 2 - 1:
+                return "orange" if i < w // 2 else "cyan"
+            return "steelL" if j >= nv - 2 else "steel"
+        m.pattern(o, du, (0, 0, pz), w, nv, pf)
+    elif tall:                                      # open: status light on the lintel
+        c = (0.0, 0.5 + 2 * E)
+        if axis == "x":
+            m.box((0, 0.5 + 0.02, oh + 0.06), (0.2, 0.04, 0.05), "cyan")
+        else:
+            m.box((0.5 + 0.02, 0, oh + 0.06), (0.04, 0.2, 0.05), "cyan")
     return [m.build()]
-
-
-def light_extra(color_panel, bracket="gmD"):
-    def f(m, axis, t):
-        _on_wall(m, axis, t, 0.3, 0.62, 0.3, 0.12, 0.07, bracket)
-        _on_wall(m, axis, t, 0.3, 0.645, 0.22, 0.06, 0.085, color_panel)
-    return f
 
 
 # ---- props / modules ------------------------------------------------------------------------------------------
@@ -286,32 +291,21 @@ def crates():
     return [m.build()]
 
 
-def _slab(axis, style, h, extra=None):
-    return lambda: wall(axis, style, h, extra)
-
-
-def _all(fn_by_axis):
-    out = []
-    for ax in ("x", "y"):
-        out.append(fn_by_axis(ax))
-    return out
-
-
 SPRITES = [
     ("tile.floor.a", (1, 1), "floor", lambda: floor("a")),
     ("tile.floor.b", (1, 1), "floor", lambda: floor("b")),
     ("tile.floor.c", (1, 1), "floor", lambda: floor("c")),
+    ("tile.wall", (1, 1), "block", lambda: block("std", H)),
+    ("tile.wall.low", (1, 1), "block", lambda: block("std", LOW)),
+    ("tile.hull", (1, 1), "block", lambda: block("hull", H)),
+    ("tile.hull.low", (1, 1), "block", lambda: block("hull", LOW)),
 ]
 for _ax in ("x", "y"):
     SPRITES += [
-        (f"tile.wall.{_ax}", (1, 1), f"slab:{_ax}", _slab(_ax, "std", H)),
-        (f"tile.wall.low.{_ax}", (1, 1), f"slab:{_ax}", _slab(_ax, "std", LOW)),
-        (f"tile.hull.{_ax}", (1, 1), f"slab:{_ax}", _slab(_ax, "hull", H)),
-        (f"tile.hull.low.{_ax}", (1, 1), f"slab:{_ax}", _slab(_ax, "hull", LOW)),
-        (f"tile.door.{_ax}", (1, 1), f"slab:{_ax}", lambda a=_ax: door(a, H, False)),
-        (f"tile.door.open.{_ax}", (1, 1), f"slab:{_ax}", lambda a=_ax: door(a, H, True)),
-        (f"tile.door.low.{_ax}", (1, 1), f"slab:{_ax}", lambda a=_ax: door(a, LOW, False)),
-        (f"tile.door.low.open.{_ax}", (1, 1), f"slab:{_ax}", lambda a=_ax: door(a, LOW, True)),
+        (f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, H, False)),
+        (f"tile.door.open.{_ax}", (1, 1), "block", lambda a=_ax: door(a, H, True)),
+        (f"tile.door.low.{_ax}", (1, 1), "block", lambda a=_ax: door(a, LOW, False)),
+        (f"tile.door.low.open.{_ax}", (1, 1), "block", lambda a=_ax: door(a, LOW, True)),
     ]
 SPRITES += [
     ("prop.crate", (1, 1), "prop", crates),

@@ -101,25 +101,52 @@ def crew_ids(man, parts):
     return [f"crew.human.{p}" for p in parts]
 
 
+def blocks(s, layout, hull=(), doors=()):
+    """layout: list of strings, '#' wall, '.' floor, ' ' space. Low (cutaway) walls where interior lies behind."""
+    H, W = len(layout), len(layout[0])
+    at = lambda x, y: layout[y][x] if 0 <= x < W and 0 <= y < H else " "  # noqa: E731
+    for y in range(H):
+        for x in range(W):
+            k = at(x, y)
+            if k == " ":
+                continue
+            if k in ".D":
+                s.static("tile.floor." + "abc"[(x * 3 + y * 5) % 7 % 3 if (x + y) % 3 == 0 else 0], x, y, -0.5)
+            if k == "#" or k == "D":
+                interior = at(x - 1, y) in ".D" or at(x, y - 1) in ".D" or at(x - 1, y - 1) in ".D"
+                touching = any(at(x + dx, y + dy) == " " for dx in (-1, 0, 1) for dy in (-1, 0, 1))
+                low = ".low" if interior else ""
+                if k == "D":
+                    ax = "x" if at(x - 1, y) == "#" and at(x + 1, y) == "#" else "y"
+                    s.static(f"tile.door{low}.{'open.' if (x, y) in doors else ''}{ax}", x, y, 0.1)
+                else:
+                    s.static(f"tile.{'hull' if touching else 'wall'}{low}", x, y, 0.1)
+
+
 def room(assets, man):
-    GW, GH = 9, 7
     W, H = 660, 330
     s = Scene(assets, man, W, H, (W // 2 - 20, 40))
-    for gx in range(GW):
-        for gy in range(GH):
-            s.static(["tile.floor.a", "tile.floor.b", "tile.floor.c"][(gx * 3 + gy) % 3 if (gx + gy) % 5 == 0 else (0 if gx % 2 else 1)], gx, gy, -0.5)
-    for gx in range(GW):
-        s.static("tile.hull.x" if gx in (2, 3, 4) else ("tile.door.x" if gx == 6 else "tile.wall.x"), gx, 0, 0.1)
-        s.static("tile.wall.low.x", gx, GH - 1, 0.1)
-    for gy in range(GH):
-        s.static("tile.hull.y" if gy in (4, 5) else ("tile.door.open.y" if gy == 3 else "tile.wall.y"), 0, gy, 0.1)
-        s.static("tile.wall.low.y", GW - 1, gy, 0.1)
-    s.static("module.reactor", 4, 4)
+    blocks(s, ["#########",
+               "#...#...#",
+               "#...#...#",
+               "#.......#",
+               "###D#####",
+               "#.......#",
+               "#.......#",
+               "#########"][:7] if False else
+              ["#########",
+               "#...#...#",
+               "#...D...#",
+               "#.......#",
+               "#...#...#",
+               "#...#...#",
+               "#########"], doors=((4, 2),))
+    s.static("module.reactor", 3, 3)
     s.static("module.life_support", 7, 2)
     s.static("module.bed", 1, 5)
-    s.static("module.console", 5, 1)
+    s.static("module.console", 6, 1)
     s.static("prop.crate", 7, 5)
-    s.static("module.light", 2, 2)
+    s.static("module.light", 2, 1)
     body = ["body", "legs.cargo_pants", "gear.belt.tool_belt"]
     a = body + ["eyes.organic", "hair.mohawk", "arm.L.flesh", "arm.R.flesh", "torso.work_shirt", "gear.back.engineer_rig",
                 "gear.head.welding_goggles", "implant.temple.neural_jack"]
@@ -129,7 +156,7 @@ def room(assets, man):
     base = {"team.skin": (212, 156, 116), "team.hair": (70, 48, 34), "team.cloth": (114, 132, 95), "team.accent": (200, 150, 40)}
     swap = {"team.skin": (120, 78, 54), "team.hair": (226, 140, 40), "team.cloth": (60, 96, 150), "team.accent": (200, 60, 70)}
     s.crew(crew_ids(man, a), 3.3, 5.7, 1, "idle", 1, base)
-    s.crew(crew_ids(man, b), 6.3, 3.6, 3, "walk", 2, {**base, "team.skin": (232, 190, 150), "team.hair": (40, 40, 48)})
+    s.crew(crew_ids(man, b), 5.3, 3.6, 3, "walk", 2, {**base, "team.skin": (232, 190, 150), "team.hair": (40, 40, 48)})
     s.crew(crew_ids(man, c), 5.5, 2.4, 6, "work", 3, swap)
     s.crew(crew_ids(man, sl), 1.5, 5.0, 2, "sleep", 1, {**base, "team.hair": (150, 150, 160)})
     s.flush()
@@ -137,34 +164,17 @@ def room(assets, man):
 
 
 def junctions(assets, man):
-    W, H = 520, 250
-    s = Scene(assets, man, W, H, (W // 2, 24))
-    for gx in range(-2, 9):
-        for gy in range(-2, 8):
-            s.static("tile.floor.a", gx, gy, -0.5) if 0 <= gx + 2 and False else None
-    # rows: wall x4, hull x3, door, then corner / T / plus blocks
-    for k in range(4):
-        s.static("tile.wall.x", k, 0)
-    for k in range(4, 7):
-        s.static("tile.hull.x", k, 0)
-    s.static("tile.door.x", 7, 0)
-    s.static("tile.wall.x", 8, 0)
-    for k in range(1, 5):
-        s.static("tile.wall.y", 0, k)
-    for k in range(5, 8):
-        s.static("tile.hull.low.y", 0, k)
-    # corner (x+y on one tile), T and plus further in
-    s.static("tile.wall.x", 0, 0, 0.2)
-    s.static("tile.wall.y", 0, 0, 0.2)
-    for tx, ty in ((3, 3), (6, 3), (3, 6)):
-        s.static("tile.wall.x", tx, ty, 0.2)
-        s.static("tile.wall.y", tx, ty, 0.2)
-    s.static("tile.wall.x", 4, 3)
-    s.static("tile.wall.y", 3, 4)
-    s.static("tile.wall.low.x", 6, 6)
-    s.static("tile.wall.low.y", 6, 6, 0.2)
-    s.static("tile.door.low.x", 7, 6)
-    s.static("tile.door.open.x", 8, 3)
+    """Long rows, L corners, T and + junctions, an island, doors; full height (cutaway off) and low variants."""
+    W, H = 600, 330
+    s = Scene(assets, man, W, H, (W // 2 - 60, 10))
+    blocks(s, ["###########  ",
+               "#.........#  ",
+               "#..#####..###",
+               "#..#...#....#",
+               "#..#.#.#....#",
+               "#..###D#....#",
+               "#.......#####",
+               "#########    "])
     s.flush()
     return s
 
