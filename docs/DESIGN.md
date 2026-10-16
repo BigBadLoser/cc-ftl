@@ -100,25 +100,27 @@ FTL's decision-making, with physical consequences.
 
 ## Art direction
 
-- **Live 3D isometric**: Three.js, fixed orthographic camera. Crisp, not pixelated.
-- **Voxel environment** at **16 voxels per tile** (props and machines at 16, small items up to 32),
-  generated in code. No hand-made image files.
-- **Low-poly crew** (flat-shaded primitives), built from **parameters**: species, body, role gear,
-  implants, injuries and a cosmetic seed. Appearance is derived from sim state, so changes show up
-  on the model.
-- **Detail generators:** a shared library (panels, seams, rivets, pipes, cables, vents, grilles,
-  hazard stripes, screens, wear and grime) so detail is cheap per model.
+- **Isometric pixel art in the spirit of Space Haven:** 2:1 isometric, 64x32 px tiles, detailed and
+  readable at a glance. The ship looks great as a whole.
+- **Made by pre-rendering 3D,** not hand-pixelled. Models are built in Blender and rendered to pixel
+  sprites with a fixed palette and outlines. Every direction and frame stays consistent, and
+  mix-and-match crew parts always line up.
+- **Gritty industrial with a cyberpunk edge:** muted metals and grime, hazard stripes, and neon
+  accents.
 - **Neon colour language:** cyan = power, orange = heat or overload, magenta = data or hacking,
-  red = emergency. With the power out, the ship goes dark and the glow is what you read.
-- **Lighting is a sim field.** Lights need power; darkness has gameplay effects.
-- Character art (textures, gear, role silhouettes, species body plans) gets its own milestone once
-  crew are playable.
-- **Quality tiers:** High (bloom, shadows) and Low. Phones are supported. The spike ran at 60 fps on
-  High on the user's phone.
+  red = emergency. Neon lives in a separate glow layer. With the power out, the ship goes dark and the
+  glow is what you read.
+- **Crew** are composited from layers: species body, hair, eyes, flesh or cyber arms, implants,
+  clothing and role gear. Appearance is derived from sim state, so installing a cyber-arm or losing an
+  arm shows.
+- **Species to come:** rock (glowing orange magma cracks), robot (screen face, panel seams) and slime
+  (translucent, gear floating inside).
+- **Lighting is a sim field.** Lights need power, and darkness has gameplay effects.
+- **Art never blocks gameplay.** Placeholders are fine, and art gets timeboxed sessions.
 
 ## UI
 
-- Full-screen 3D view with Svelte panels over it: a top bar (resources, time), a bottom context panel
+- Full-screen game view with Svelte panels over it: a top bar (resources, time), a bottom context panel
   (selection), side drawers (build, crew, priorities, starmap). Drawers become sheets on phones.
 - Field **overlays** (O2, heat, power, light, damage) and a **tile inspector**.
 - **Alert queue** with click-to-jump and per-type auto-pause.

@@ -11,8 +11,8 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm run lint`: ESLint, including the import-boundary rules
 - `npm run typecheck`: `tsc` and `svelte-check`
 - `npm run check`: lint, typecheck and test. Run it before every commit.
-- `npm run assets`: rebuild `public/assets/` with headless Blender (`tools/blender/setup.sh` installs
-  it). Commit the generated `.glb` files and manifest.
+- `npm run sprites`: rebuild the sprite sheets in `public/assets/` with headless Blender
+  (`tools/blender/setup.sh` installs it). Commit the generated sheets, JSON and manifest.
 
 ## Hard rules
 
@@ -30,8 +30,8 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - Soft limit of about 400 lines per file. No test or demo code in `src/`. Tests sit next to their source
   as `*.test.ts`.
 - Polish follows gameplay.
-- The renderer never builds game content geometry. Models come from the Blender pipeline as `.glb`
-  files listed in the asset manifest. See "Asset pipeline" in `docs/ARCHITECTURE.md`.
+- The renderer never draws game content procedurally. Art comes from the Blender sprite pipeline as
+  sheets listed in the asset manifest. See "Asset pipeline" in `docs/ARCHITECTURE.md`.
 
 ## Workflow
 
