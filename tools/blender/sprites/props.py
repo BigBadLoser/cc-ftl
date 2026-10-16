@@ -462,12 +462,34 @@ def fire(k):
     return [m.build()]
 
 
-def smoke():
-    m = core.Mesh("smoke", flat=True)
-    m.cyl((0, 0, 0.0), 0.2, 0.1, "gm", sides=8, rtop=0.3)
-    m.cyl((0, 0, 0.1), 0.3, 0.14, "plate", sides=8, rtop=0.3)
-    m.cyl((0, 0, 0.24), 0.3, 0.1, "gm", sides=8, rtop=0.2)
-    m.cyl((0.1, -0.05, 0.34), 0.18, 0.08, "plate", sides=8, rtop=0.1)
+def puff(k):
+    """Smoke puff, 4 growing stages: a flat-banded dome (dark rim, light top) that the particle system fades out."""
+    m = core.Mesh(f"puff_{k}", flat=True)
+    r = 0.07 + 0.045 * k
+    m.cyl((0, 0, 0.0), r * 0.8, r * 0.5, "gm", sides=8, rtop=r)
+    m.cyl((0, 0, r * 0.5), r, r * 0.45, "plate", sides=8, rtop=r * 0.6)
+    m.cyl((0, 0, r * 0.95), r * 0.6, r * 0.25, "steelL", sides=8, rtop=r * 0.25)
+    return [m.build()]
+
+
+def ember():
+    m = core.Mesh("ember", selflit=True)
+    m.cyl((0, 0, 0), 0.05, 0.04, "orange", sides=4, rtop=0.04)
+    m.cyl((0, 0, 0.04), 0.04, 0.03, "flameY", sides=4, rtop=0.02)
+    return [m.build()]
+
+
+def spark():
+    m = core.Mesh("spark", selflit=True)
+    m.cyl((0, 0, 0), 0.035, 0.05, "flameW", sides=4, rtop=0.02)
+    return [m.build()]
+
+
+def ice():
+    """Tiny ice crystal: a double pyramid in two flat tones."""
+    m = core.Mesh("ice", flat=True)
+    m.cyl((0, 0, 0.0), 0.005, 0.05, "lens", sides=4, rtop=0.045)
+    m.cyl((0, 0, 0.05), 0.045, 0.05, "medWhite", sides=4, rtop=0.005)
     return [m.build()]
 
 
@@ -500,4 +522,5 @@ SPRITES += [
     ("module.console", (1, 1), "prop", console),
 ]
 SPRITES += [(f"fx.fire.{_k}", (1, 1), "fx", lambda k=_k: fire(k)) for _k in range(FIRE_FRAMES)]
-SPRITES.append(("fx.smoke", (1, 1), "fx", smoke))
+SPRITES += [(f"fx.puff.{_k}", (1, 1), "fx", lambda k=_k: puff(k)) for _k in range(4)]
+SPRITES += [("fx.ember", (1, 1), "fx", ember), ("fx.spark", (1, 1), "fx", spark), ("fx.ice", (1, 1), "fx", ice)]

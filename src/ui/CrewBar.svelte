@@ -25,7 +25,7 @@
 
 <style>
   nav {
-    position: fixed; left: 0; right: 0; top: calc(56px + var(--sat)); display: flex; gap: 6px; overflow-x: auto;
+    position: fixed; left: 0; right: 0; top: calc(var(--hdr) + var(--sat)); display: flex; gap: 6px; overflow-x: auto;
     padding: 0 calc(8px + var(--sar)) 4px calc(8px + var(--sal)); pointer-events: none; scrollbar-width: none;
   }
   .chip { flex: none; display: grid; gap: 1px; width: 104px; padding: 3px 8px; text-align: left; line-height: 1.2; pointer-events: auto; background: var(--panel); }

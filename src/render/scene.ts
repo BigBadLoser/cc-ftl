@@ -6,6 +6,8 @@ import { createCamera } from './camera';
 import { createCrewView } from './crewView';
 import { createGridView, type CutawayMode, type GridView } from './gridView';
 import { iso, tileAt, TILE_H, TILE_W } from './iso';
+import { createAtmosphere } from './fx/atmosphere';
+import { createParticles } from './fx/particles';
 import { createFxView } from './fxView';
 import { createJobView } from './jobView';
 import { createLayers } from './layers';
@@ -85,6 +87,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     emergency: () => emergency,
   });
   const fxView = createFxView(atlas, L, { target: () => (view ? { grid: view.grid } : null) });
+  const particles = createParticles(atlas, L);
+  const atmosphere = createAtmosphere(world, particles, modules, { target: () => (view ? { grid: view.grid } : null) });
+  let lastFrame = performance.now();
   let cutaway: CutawayMode = 'auto';
   let overlay: string | null = null;
   let hover: Tile | null = null;
@@ -113,6 +118,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       view?.update();
       moduleView.update();
       fxView.update();
+      const now = performance.now();
+      const dt = Math.min(0.1, (now - lastFrame) / 1000);
+      lastFrame = now;
+      if (view) atmosphere.update(dt);
+      particles.update(dt);
       jobView.update();
       crewView.update();
       L.world.visible = view !== null;
@@ -156,7 +166,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       const p = iso(x, y);
       cam.centerOn(p.x, p.y - 8);
     },
-    info: () => ({ sprites: L.floor.children.length + L.sorted.children.length + L.decal.children.length, zoom: cam.zoom }),
+    info: () => ({ sprites: particles.count() + L.floor.children.length + L.sorted.children.length + L.decal.children.length, zoom: cam.zoom }),
     pan: (dx, dy) => cam.pan(dx, dy),
     zoomAt: (f, x, y) => cam.zoomAt(f, x, y),
     pickTile(sx, sy) {
@@ -178,6 +188,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       crewView.dispose();
       moduleView.dispose();
       fxView.dispose();
+      particles.dispose();
       jobView.dispose();
       view?.dispose();
       gl.destroy();
