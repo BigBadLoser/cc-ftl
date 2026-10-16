@@ -6,7 +6,7 @@ glTF joints have translation-only rest poses and a rotation of `rx` on a bone me
 """
 import bpy
 from mathutils import Matrix, Quaternion, Vector
-from .kit import bl
+import math
 
 # bone -> (parent, rest head in lab space = world, y up, front +z)
 _ARM_X, _LEG_X = 0.39, 0.14
@@ -39,16 +39,23 @@ PARENT_BONE.update({n: v[0] for n, v in SOCKETS.items()})
 STUB = 0.05
 
 
+def yup_root(name="armature", data=None):
+    """Object rotated +90 deg about X: children authored in Y-up lab space land correctly in Blender's Z-up world."""
+    arm = bpy.data.objects.new(name, data)
+    arm.rotation_euler = (math.pi / 2, 0, 0)
+    return arm
+
+
 def create_armature(name="armature"):
     """Create the standard armature object at the origin (object mode on return)."""
     data = bpy.data.armatures.new(name)
-    arm = bpy.data.objects.new(name, data)
+    arm = yup_root(name, data)
     bpy.context.scene.collection.objects.link(arm)
     bpy.context.view_layer.objects.active = arm
     bpy.ops.object.mode_set(mode="EDIT")
     for bn, (parent, head) in BONES.items():
         eb = data.edit_bones.new(bn)
-        eb.head = bl(head)
+        eb.head = Vector(head)
         eb.tail = eb.head + Vector((0, STUB, 0))
         eb.roll = 0.0
         if parent:
@@ -63,7 +70,7 @@ def attach(obj, arm, target):
     """Parent `obj` to the bone owning `target` (bone or socket name), keeping its world position at the target head."""
     bone = PARENT_BONE[target]
     obj.parent, obj.parent_type, obj.parent_bone = arm, "BONE", bone
-    obj.matrix_world = Matrix.Translation(bl(REST[target]))
+    obj.matrix_world = arm.matrix_world @ Matrix.Translation(REST[target])
 
 
 def add_sockets(arm):
@@ -78,12 +85,12 @@ def add_sockets(arm):
     return out
 
 
-# ---- posing (lab-space angles/offsets, as in the crew lab) -------------------------------------------------------
+# ---- posing (lab-space angles/offsets, as in the crew lab; no axis conversion needed) -------------------------------------------------------
 
 def lab_quat(r):
-    """Lab Euler (three order) -> Blender quaternion for a bone with identity rest orientation."""
+    """Euler (three.js XYZ order) -> quaternion; bones have identity rest orientation in lab axes."""
     rx, ry, rz = r
-    return Quaternion((1, 0, 0), rx) @ Quaternion((0, 0, 1), ry) @ Quaternion((0, 1, 0), -rz)
+    return Quaternion((1, 0, 0), rx) @ Quaternion((0, 1, 0), ry) @ Quaternion((0, 0, 1), rz)
 
 
 def key_pose(arm, frame, pose):
@@ -91,9 +98,9 @@ def key_pose(arm, frame, pose):
     for pb in arm.pose.bones:
         d = pose.get(pb.name, {})
         pb.rotation_quaternion = lab_quat(d.get("r", (0, 0, 0)))
-        pb.location = Vector(bl(d.get("p", (0, 0, 0))))
+        pb.location = Vector(d.get("p", (0, 0, 0)))
         s = d.get("s", (1, 1, 1))
-        pb.scale = (s[0], s[2], s[1])
+        pb.scale = s
         pb.keyframe_insert("rotation_quaternion", frame=frame)
         if pb.name in ("root", "hips"):
             pb.keyframe_insert("location", frame=frame)

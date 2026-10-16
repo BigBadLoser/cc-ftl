@@ -1,7 +1,8 @@
 """Style kit: the faceted look of crew-lab style 2, plus bevelled plating for machines.
 
 Coordinates are "lab space" (x right, y up, front = +z, 1 unit = 1 tile) and are given relative to the
-bone/socket the part is attached to. The Builder converts to Blender (Z up, front = -Y) on the way in.
+bone/socket the part is attached to. Mesh data stays in lab space: the armature (or slot root) object is
+rotated +90 deg about X in Blender, so after glTF's Y-up conversion every node has identity rotation.
 Each (target, material) pair becomes one mesh object named `<target>@<item>.<material>`, with its
 origin at the target's rest head so it can be re-parented to that bone/socket without any offset.
 """
@@ -10,11 +11,6 @@ import bmesh
 import bpy
 from mathutils import Matrix, Vector
 from . import materials, palette, vcolor
-
-
-def bl(v):
-    """Lab space -> Blender space."""
-    return Vector((v[0], -v[2], v[1]))
 
 
 def rot_lab(r):
@@ -104,7 +100,7 @@ class Builder:
         origin = Vector(self.rest[target])
         verts, faces = geo
         local = [Vector(pos) + R @ Vector(v) for v in verts]
-        bverts = [bm.verts.new(bl(p)) for p in local]
+        bverts = [bm.verts.new(p) for p in local]
         glow = key.startswith("emissive")
         for idx in faces:
             f = bm.faces.new([bverts[i] for i in idx])
@@ -136,7 +132,7 @@ class Builder:
         self._add(target, box_geo(w, h, d, bevel, taper), color, p, r)
 
     def finish(self, collection=None):
-        """Create mesh objects. Returns [(target, object)], object origin at the target's rest head (Blender space)."""
+        """Create mesh objects. Returns [(target, object)], object origin at the target's rest head (lab space)."""
         out = []
         coll = collection or bpy.context.scene.collection
         for (target, key), (bm, _cl) in self._bms.items():
