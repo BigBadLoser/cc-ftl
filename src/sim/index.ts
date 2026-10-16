@@ -7,3 +7,4 @@ export { Sim, TICK_HZ, type ContentRegistry } from './sim';
 export { pipeline, type System } from './pipeline';
 export { MarkerC, type Marker } from './components';
 export { SAVE_VERSION, serialize, deserialize, migrate, migrations, type SaveData } from './save';
+export { Struct, SHIP_FIELDS, isWalkable, type StructKind } from './structure';
