@@ -54,3 +54,24 @@ each skinned clothing layer.
    paired items (`build(b, s, side)`).
 2. Soft items: `skinned=True`, targets are bones. Hard items: leave rigid; target a bone or `socket.*`.
 3. `npm run assets`, then add it to `ENGINEER` in `preview.py` to check it. Commit the `.glb` and manifest.
+
+## Experiment: restyled CC0 base character (`crew/base_import.py`)
+Standalone, not part of `build.py`. Takes Quaternius' CC0 "Universal Base Characters" male plus the CC0
+"Universal Animation Library" (see `THIRD_PARTY.md`; downloaded from itch.io, not stored in the repo) and writes
+`public/assets/crew/human/base_cc0.glb`:
+```
+blender -b --factory-startup --python tools/blender/crew/base_import.py -- \
+  --base <Superhero_Male_FullBody.gltf> --anims <UAL1_Standard.glb> --out public/assets/crew/human/base_cc0.glb
+```
+- Restyle: head scaled up and body widened (`HEAD_SCALE`, `WIDTH`), uniform scale to `HEIGHT` = 1.7, symmetric collapse
+  decimation to ~`TRIS` triangles (welded first), flat shading, per-face grey vertex colours. Textures are dropped.
+  Briefs are found from the dark texels of the base texture, then cut with clean hem/waist planes (bisect) into their
+  own `team.cloth` mesh. Parts: `skin@body.team.skin`, `skin@briefs.team.cloth`, `skin@brows.team.hair`, `skin@eyes.base`.
+- Rig: the source skeleton has the same 65 bones as the library, so clips are retargeted by simply assigning the
+  actions (rotations only; location only on root/pelvis, scaled). Renamed to the standard names (`pelvis`->`hips`,
+  `spine_01`->`spine`, `upperarm`->`arm`, `lowerarm`->`forearm`, `thigh`->`leg`, `calf`->`shin`, `Head`->`head`,
+  `.L/.R` suffixes); extras kept (`spine_02/03`, `neck_01`, `clavicle.*`, fingers, `toe.*`). Unlike our own armature the
+  bones have real orientations (not identity rests), so rotation-only code written for the lab rig does not transfer.
+- Clips: `idle`=Idle_Loop, `walk`=Walk_Loop, `work`=Interact, `sit`=Sitting_Idle_Loop, `sleep`=last (lying) pose of
+  Death01 held. The glb default `team.cloth` tint is the jacket colour; recolour it dark (briefs) at runtime.
+- Sockets: `socket.back/head/hand.L/hand.R` are empties parented to bones.
