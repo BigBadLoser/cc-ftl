@@ -434,6 +434,43 @@ def crates():
     return [m.build()]
 
 
+# ---- fx: fire frames and a smoke puff (clean stacked shapes, a few flat colour bands, no noise) -------------------
+
+FIRE_FRAMES = 6
+
+
+def _tongue(m, cx, cy, h, r0, phase, sway, bands, nseg=6):
+    """A tapering flame tongue: stacked frusta, each shifted sideways by a sine so the frames loop as a flicker."""
+    seg = h / nseg
+    for i in range(nseg):
+        z0, z1 = i * seg, (i + 1) * seg
+        t0, t1 = i / nseg, (i + 1) / nseg
+        ra, rb = r0 * (1 - t0 ** 1.5), max(0.012, r0 * (1 - t1 ** 1.5))
+        ox = sway * math.sin(phase + t0 * 3.2) * t0
+        oy = sway * 0.6 * math.cos(phase * 1.0 + t0 * 2.6) * t0
+        col = bands[min(len(bands) - 1, int(t0 * len(bands)))]
+        m.cyl((cx + ox, cy + oy, z0), ra, seg + 0.004, col, sides=8, rtop=rb)
+
+
+def fire(k):
+    m = core.Mesh(f"fire_{k}", selflit=True)
+    ph = k / FIRE_FRAMES * math.tau
+    _tongue(m, 0, 0, 0.7 + 0.06 * math.sin(ph * 2), 0.17, ph, 0.07, ("red", "orange", "orange", "flameY"))
+    _tongue(m, 0.17, -0.17, 0.46 + 0.05 * math.sin(ph + 2), 0.12, ph + 2.1, 0.05, ("red", "orange", "flameY"), 5)
+    _tongue(m, -0.17, 0.17, 0.4 + 0.05 * math.sin(ph + 4), 0.11, ph + 4.2, 0.05, ("red", "orange", "flameY"), 5)
+    _tongue(m, 0.1, 0.1, 0.34 + 0.04 * math.sin(ph * 2 + 1), 0.1, ph + 0.6, 0.03, ("flameY", "flameY", "flameW"), 4)
+    return [m.build()]
+
+
+def smoke():
+    m = core.Mesh("smoke", flat=True)
+    m.cyl((0, 0, 0.0), 0.2, 0.1, "gm", sides=8, rtop=0.3)
+    m.cyl((0, 0, 0.1), 0.3, 0.14, "plate", sides=8, rtop=0.3)
+    m.cyl((0, 0, 0.24), 0.3, 0.1, "gm", sides=8, rtop=0.2)
+    m.cyl((0.1, -0.05, 0.34), 0.18, 0.08, "plate", sides=8, rtop=0.1)
+    return [m.build()]
+
+
 SPRITES = [
     ("tile.floor.a", (1, 1), "floor", lambda: floor("a")),
     ("tile.floor.b", (1, 1), "floor", lambda: floor("b")),
@@ -462,3 +499,5 @@ SPRITES += [
     ("module.bed", (1, 2), "prop", bed),
     ("module.console", (1, 1), "prop", console),
 ]
+SPRITES += [(f"fx.fire.{_k}", (1, 1), "fx", lambda k=_k: fire(k)) for _k in range(FIRE_FRAMES)]
+SPRITES.append(("fx.smoke", (1, 1), "fx", smoke))

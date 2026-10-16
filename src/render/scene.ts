@@ -6,8 +6,10 @@ import { createCamera } from './camera';
 import { createCrewView } from './crewView';
 import { createGridView, type CutawayMode, type GridView } from './gridView';
 import { iso, tileAt, TILE_H, TILE_W } from './iso';
+import { createFxView } from './fxView';
 import { createJobView } from './jobView';
 import { createLayers } from './layers';
+import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 
 export type Quality = 'high' | 'low';
 export type { CutawayMode };
@@ -29,9 +31,9 @@ export interface Renderer {
   setGrid(grid: Grid): void;
   setCutaway(mode: CutawayMode): void;
   setOverlay(field: string | null): void;
-  setSelection(tile: Tile | null): void;
+  setSelection(tile: Tile | readonly Tile[] | null): void;
   setHover(tile: Tile | null): void;
-  setPreview(tiles: readonly Tile[]): void;
+  setPreview(tiles: readonly Tile[], valid?: boolean): void;
   /** Center the camera on a (fractional) tile position. */
   focusTile(x: number, y: number): void;
   info(): RenderInfo;
@@ -43,12 +45,14 @@ export interface Renderer {
   pickTile(screenX: number, screenY: number): Tile | null;
   /** Crew entity id under a canvas-relative position, or null. Prefer over pickTile when set. */
   pickCrew(screenX: number, screenY: number): number | null;
+  /** Module entity under a canvas-relative position (its sprite bounds), or null. */
+  pickModule(screenX: number, screenY: number): number | null;
   /** Draw a ring under this crew member (null clears). */
   setSelectedCrew(id: number | null): void;
 }
 
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
-export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality, world: World): Promise<Renderer> {
+export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality, world: World, modules: ModuleDefs): Promise<Renderer> {
   const high = quality === 'high';
   const atlas = await loadAtlas();
   const gl = await autoDetectRenderer({
@@ -71,11 +75,18 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const target = () => (view ? { grid: view.grid, gridId: view.grid.id } : null);
   const crewView = createCrewView(world, atlas, L, { target });
   const jobView = createJobView(world, atlas, L, { target });
+  let emergency = false;
+  const moduleView = createModuleView(world, atlas, L, modules, {
+    target: () => (view ? { grid: view.grid } : null),
+    emergency: () => emergency,
+  });
+  const fxView = createFxView(atlas, L, { target: () => (view ? { grid: view.grid } : null) });
   let cutaway: CutawayMode = 'auto';
   let overlay: string | null = null;
-  let selection: Tile | null = null;
   let hover: Tile | null = null;
+  let selection: Tile | readonly Tile[] | null = null;
   let preview: readonly Tile[] = [];
+  let previewValid = true;
 
   function resize(): void {
     cam.resize(canvas.clientWidth || 1, canvas.clientHeight || 1, window.devicePixelRatio || 1);
@@ -94,7 +105,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
 
   return {
     render() {
+      emergency = view ? shipHasPower(world, modules, view.grid.id) === false : false;
       view?.update();
+      moduleView.update();
+      fxView.update();
       jobView.update();
       crewView.update();
       L.world.visible = view !== null;
@@ -105,12 +119,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     resize,
     setGrid(grid) {
       view?.dispose();
-      view = createGridView(grid, atlas, L);
+      view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules } });
       view.setCutaway(cutaway);
       view.setOverlay(overlay);
       view.setSelection(selection);
       view.setHover(hover);
-      view.setPreview(preview);
+      view.setPreview(preview, previewValid);
       frame(grid);
     },
     setCutaway(m) {
@@ -129,9 +143,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       hover = t;
       view?.setHover(t);
     },
-    setPreview(tiles) {
+    setPreview(tiles, valid = true) {
       preview = tiles;
-      view?.setPreview(tiles);
+      previewValid = valid;
+      view?.setPreview(tiles, valid);
     },
     focusTile(x, y) {
       const p = iso(x, y);
@@ -150,9 +165,15 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       const a = cam.toArt(sx, sy);
       return crewView.pick(a.x, a.y);
     },
+    pickModule(sx, sy) {
+      const a = cam.toArt(sx, sy);
+      return moduleView.pick(a.x, a.y);
+    },
     setSelectedCrew: (id) => crewView.setSelectedCrew(id),
     dispose() {
       crewView.dispose();
+      moduleView.dispose();
+      fxView.dispose();
       jobView.dispose();
       view?.dispose();
       gl.destroy();

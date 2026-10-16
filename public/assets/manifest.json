@@ -1602,6 +1602,138 @@
     1
    ],
    "glow": true
+  },
+  "fx.fire.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 700,
+    "y": 45,
+    "w": 32,
+    "h": 34
+   },
+   "anchor": {
+    "x": 16,
+    "y": 28
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 733,
+    "y": 45,
+    "w": 32,
+    "h": 37
+   },
+   "anchor": {
+    "x": 16,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire.2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 766,
+    "y": 45,
+    "w": 32,
+    "h": 33
+   },
+   "anchor": {
+    "x": 16,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire.3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 799,
+    "y": 45,
+    "w": 32,
+    "h": 34
+   },
+   "anchor": {
+    "x": 16,
+    "y": 28
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire.4": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 832,
+    "y": 45,
+    "w": 32,
+    "h": 35
+   },
+   "anchor": {
+    "x": 16,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire.5": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 865,
+    "y": 45,
+    "w": 32,
+    "h": 31
+   },
+   "anchor": {
+    "x": 16,
+    "y": 25
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.smoke": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 898,
+    "y": 45,
+    "w": 26,
+    "h": 22
+   },
+   "anchor": {
+    "x": 13,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ]
   }
  }
 }

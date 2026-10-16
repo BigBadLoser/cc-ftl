@@ -34,7 +34,7 @@ def render_sprite(sid, kind, objs):
     if kind == "floor":
         op = diamond_mask(W, H)
         c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
-    elif kind == "block":
+    elif kind in ("block", "fx"):
         c, op = _pad1(c), _pad1(op)
     else:
         c, op = post.outline(c, op, True)
