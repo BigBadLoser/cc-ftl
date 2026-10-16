@@ -1,457 +1,783 @@
 {
  "version": 1,
- "assets": [
-  {
-   "id": "crew.human.body",
-   "file": "crew/human/body.glb",
-   "kind": "crew.body",
+ "tile": {
+  "w": 64,
+  "h": 32
+ },
+ "keyColors": {
+  "team.skin": "#ff00ff",
+  "team.hair": "#00ff00",
+  "team.cloth": "#ffff00",
+  "team.accent": "#00ffff"
+ },
+ "sheets": {
+  "crew.human.body": {
+   "image": "sprites/crew.human.body.png"
+  },
+  "crew.human.eyes.cyber": {
+   "image": "sprites/crew.human.eyes.cyber.png",
+   "glow": "sprites/crew.human.eyes.cyber.glow.png"
+  },
+  "crew.human.eyes.organic": {
+   "image": "sprites/crew.human.eyes.organic.png"
+  },
+  "crew.human.legs.cargo_pants": {
+   "image": "sprites/crew.human.legs.cargo_pants.png"
+  },
+  "crew.human.torso.tee": {
+   "image": "sprites/crew.human.torso.tee.png"
+  },
+  "crew.human.torso.work_shirt": {
+   "image": "sprites/crew.human.torso.work_shirt.png"
+  },
+  "crew.human.gear.belt.tool_belt": {
+   "image": "sprites/crew.human.gear.belt.tool_belt.png"
+  },
+  "crew.human.arm.R.cyber": {
+   "image": "sprites/crew.human.arm.R.cyber.png",
+   "glow": "sprites/crew.human.arm.R.cyber.glow.png"
+  },
+  "crew.human.arm.R.flesh": {
+   "image": "sprites/crew.human.arm.R.flesh.png"
+  },
+  "crew.human.arm.L.cyber": {
+   "image": "sprites/crew.human.arm.L.cyber.png",
+   "glow": "sprites/crew.human.arm.L.cyber.glow.png"
+  },
+  "crew.human.arm.L.flesh": {
+   "image": "sprites/crew.human.arm.L.flesh.png"
+  },
+  "crew.human.hair.mohawk": {
+   "image": "sprites/crew.human.hair.mohawk.png"
+  },
+  "crew.human.hair.ponytail": {
+   "image": "sprites/crew.human.hair.ponytail.png"
+  },
+  "crew.human.hair.shaved": {
+   "image": "sprites/crew.human.hair.shaved.png"
+  },
+  "crew.human.hair.short": {
+   "image": "sprites/crew.human.hair.short.png"
+  },
+  "crew.human.implant.temple.neural_jack": {
+   "image": "sprites/crew.human.implant.temple.neural_jack.png",
+   "glow": "sprites/crew.human.implant.temple.neural_jack.glow.png"
+  },
+  "crew.human.gear.head.welding_goggles": {
+   "image": "sprites/crew.human.gear.head.welding_goggles.png"
+  },
+  "crew.human.gear.back.engineer_rig": {
+   "image": "sprites/crew.human.gear.back.engineer_rig.png",
+   "glow": "sprites/crew.human.gear.back.engineer_rig.glow.png"
+  }
+ },
+ "assets": {
+  "crew.human.body": {
+   "kind": "crew.layer",
    "species": "human",
-   "bones": [
-    "root",
-    "hips",
-    "spine",
-    "head",
-    "arm.L",
-    "forearm.L",
-    "hand.L",
-    "leg.L",
-    "shin.L",
-    "foot.L",
-    "arm.R",
-    "forearm.R",
-    "hand.R",
-    "leg.R",
-    "shin.R",
-    "foot.R"
-   ],
-   "sockets": [
-    "socket.back",
-    "socket.head",
-    "socket.hand.L",
-    "socket.hand.R"
-   ],
-   "clips": [
-    {
-     "name": "idle",
-     "duration": 3.0,
+   "slot": "body",
+   "order": 0,
+   "sheet": "crew.human.body",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     },
-    {
-     "name": "walk",
-     "duration": 1.0,
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
      "loop": true
     },
-    {
-     "name": "work",
-     "duration": 0.6667,
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
      "loop": true
     },
-    {
-     "name": "sleep",
-     "duration": 4.0,
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
      "loop": true
     }
-   ],
-   "tris": 1004,
-   "tint": [
-    "team.skin"
-   ],
-   "bytes": 192304
+   }
   },
-  {
-   "id": "crew.human.arm.L.flesh",
-   "file": "crew/human/slots/arm.L.flesh.glb",
-   "kind": "crew.slot",
+  "crew.human.eyes.cyber": {
+   "kind": "crew.layer",
    "species": "human",
-   "slot": "arm.L",
-   "skinned": true,
-   "targets": [
-    "skin"
-   ],
-   "tint": [
-    "team.skin"
-   ],
-   "emissive": [],
-   "bytes": 29212
+   "slot": "eyes",
+   "order": 10,
+   "sheet": "crew.human.eyes.cyber",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   },
+   "glow": true
   },
-  {
-   "id": "crew.human.arm.R.flesh",
-   "file": "crew/human/slots/arm.R.flesh.glb",
-   "kind": "crew.slot",
+  "crew.human.eyes.organic": {
+   "kind": "crew.layer",
    "species": "human",
-   "slot": "arm.R",
-   "skinned": true,
-   "targets": [
-    "skin"
-   ],
-   "tint": [
-    "team.skin"
-   ],
-   "emissive": [],
-   "bytes": 29216
+   "slot": "eyes",
+   "order": 10,
+   "sheet": "crew.human.eyes.organic",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
   },
-  {
-   "id": "crew.human.arm.L.cyber",
-   "file": "crew/human/slots/arm.L.cyber.glb",
-   "kind": "crew.slot",
-   "species": "human",
-   "slot": "arm.L",
-   "skinned": false,
-   "targets": [
-    "arm.L",
-    "forearm.L",
-    "hand.L"
-   ],
-   "tint": [],
-   "emissive": [
-    "emissive.cyan"
-   ],
-   "bone": "arm.L",
-   "bytes": 53264
-  },
-  {
-   "id": "crew.human.arm.R.cyber",
-   "file": "crew/human/slots/arm.R.cyber.glb",
-   "kind": "crew.slot",
-   "species": "human",
-   "slot": "arm.R",
-   "skinned": false,
-   "targets": [
-    "arm.R",
-    "forearm.R",
-    "hand.R"
-   ],
-   "tint": [],
-   "emissive": [
-    "emissive.cyan"
-   ],
-   "bone": "arm.R",
-   "bytes": 53264
-  },
-  {
-   "id": "crew.human.torso.work_shirt",
-   "file": "crew/human/slots/torso.work_shirt.glb",
-   "kind": "crew.slot",
-   "species": "human",
-   "slot": "torso",
-   "skinned": true,
-   "targets": [
-    "skin"
-   ],
-   "tint": [
-    "team.accent",
-    "team.cloth"
-   ],
-   "emissive": [],
-   "bytes": 31620
-  },
-  {
-   "id": "crew.human.torso.work_shirt_hivis",
-   "file": "crew/human/slots/torso.work_shirt_hivis.glb",
-   "kind": "crew.slot",
-   "species": "human",
-   "slot": "torso",
-   "skinned": true,
-   "targets": [
-    "skin"
-   ],
-   "tint": [
-    "team.accent",
-    "team.cloth"
-   ],
-   "emissive": [],
-   "bytes": 31648
-  },
-  {
-   "id": "crew.human.torso.tank_top",
-   "file": "crew/human/slots/torso.tank_top.glb",
-   "kind": "crew.slot",
-   "species": "human",
-   "slot": "torso",
-   "skinned": true,
-   "targets": [
-    "skin"
-   ],
-   "tint": [
-    "team.cloth"
-   ],
-   "emissive": [],
-   "bytes": 10540
-  },
-  {
-   "id": "crew.human.undershirt.tee_black",
-   "file": "crew/human/slots/undershirt.tee_black.glb",
-   "kind": "crew.slot",
-   "species": "human",
-   "slot": "undershirt",
-   "skinned": true,
-   "targets": [
-    "skin"
-   ],
-   "tint": [],
-   "emissive": [],
-   "bytes": 11856
-  },
-  {
-   "id": "crew.human.legs.cargo_pants",
-   "file": "crew/human/slots/legs.cargo_pants.glb",
-   "kind": "crew.slot",
+  "crew.human.legs.cargo_pants": {
+   "kind": "crew.layer",
    "species": "human",
    "slot": "legs",
-   "skinned": true,
-   "targets": [
-    "skin"
-   ],
-   "tint": [],
-   "emissive": [],
-   "bytes": 33108
+   "order": 20,
+   "sheet": "crew.human.legs.cargo_pants",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
   },
-  {
-   "id": "crew.human.gear.back.engineer_rig",
-   "file": "crew/human/slots/gear.back.engineer_rig.glb",
-   "kind": "crew.slot",
+  "crew.human.torso.tee": {
+   "kind": "crew.layer",
    "species": "human",
-   "slot": "gear.back",
-   "skinned": false,
-   "targets": [
-    "socket.back"
-   ],
-   "tint": [],
-   "emissive": [
-    "emissive.cyan"
-   ],
-   "socket": "socket.back",
-   "bytes": 34044
+   "slot": "torso",
+   "order": 30,
+   "sheet": "crew.human.torso.tee",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
   },
-  {
-   "id": "crew.human.gear.belt.tool_belt",
-   "file": "crew/human/slots/gear.belt.tool_belt.glb",
-   "kind": "crew.slot",
+  "crew.human.torso.work_shirt": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "torso",
+   "order": 30,
+   "sheet": "crew.human.torso.work_shirt",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.gear.belt.tool_belt": {
+   "kind": "crew.layer",
    "species": "human",
    "slot": "gear.belt",
-   "skinned": false,
-   "targets": [
-    "spine"
-   ],
-   "tint": [],
-   "emissive": [],
-   "bone": "spine",
-   "bytes": 13452
+   "order": 40,
+   "sheet": "crew.human.gear.belt.tool_belt",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
   },
-  {
-   "id": "crew.human.gear.head.welding_goggles",
-   "file": "crew/human/slots/gear.head.welding_goggles.glb",
-   "kind": "crew.slot",
+  "crew.human.arm.R.cyber": {
+   "kind": "crew.layer",
    "species": "human",
-   "slot": "gear.head",
-   "skinned": false,
-   "targets": [
-    "head"
-   ],
-   "tint": [],
-   "emissive": [],
-   "bone": "head",
-   "bytes": 11972
+   "slot": "arm.R",
+   "order": 50,
+   "sheet": "crew.human.arm.R.cyber",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   },
+   "glow": true
   },
-  {
-   "id": "crew.human.gear.hand.R.hammer",
-   "file": "crew/human/slots/gear.hand.R.hammer.glb",
-   "kind": "crew.slot",
+  "crew.human.arm.R.flesh": {
+   "kind": "crew.layer",
    "species": "human",
-   "slot": "gear.hand.R",
-   "skinned": false,
-   "targets": [
-    "socket.hand.R"
-   ],
-   "tint": [],
-   "emissive": [],
-   "socket": "socket.hand.R",
-   "bytes": 9620
+   "slot": "arm.R",
+   "order": 50,
+   "sheet": "crew.human.arm.R.flesh",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
   },
-  {
-   "id": "crew.human.gear.back.medic_pack",
-   "file": "crew/human/slots/gear.back.medic_pack.glb",
-   "kind": "crew.slot",
+  "crew.human.arm.L.cyber": {
+   "kind": "crew.layer",
    "species": "human",
-   "slot": "gear.back",
-   "skinned": false,
-   "targets": [
-    "socket.back"
-   ],
-   "tint": [],
-   "emissive": [
-    "emissive.cyan"
-   ],
-   "socket": "socket.back",
-   "bytes": 25332
+   "slot": "arm.L",
+   "order": 51,
+   "sheet": "crew.human.arm.L.cyber",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   },
+   "glow": true
   },
-  {
-   "id": "crew.human.gear.torso.gunner_vest",
-   "file": "crew/human/slots/gear.torso.gunner_vest.glb",
-   "kind": "crew.slot",
+  "crew.human.arm.L.flesh": {
+   "kind": "crew.layer",
    "species": "human",
-   "slot": "gear.torso",
-   "skinned": false,
-   "targets": [
-    "spine"
-   ],
-   "tint": [],
-   "emissive": [
-    "emissive.orange"
-   ],
-   "bone": "spine",
-   "bytes": 36496
+   "slot": "arm.L",
+   "order": 51,
+   "sheet": "crew.human.arm.L.flesh",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
   },
-  {
-   "id": "crew.human.gear.head.pilot_headset",
-   "file": "crew/human/slots/gear.head.pilot_headset.glb",
-   "kind": "crew.slot",
-   "species": "human",
-   "slot": "gear.head",
-   "skinned": false,
-   "targets": [
-    "head"
-   ],
-   "tint": [],
-   "emissive": [
-    "emissive.cyan"
-   ],
-   "bone": "head",
-   "bytes": 27548
-  },
-  {
-   "id": "crew.human.gear.torso.security_plates",
-   "file": "crew/human/slots/gear.torso.security_plates.glb",
-   "kind": "crew.slot",
-   "species": "human",
-   "slot": "gear.torso",
-   "skinned": false,
-   "targets": [
-    "spine"
-   ],
-   "tint": [],
-   "emissive": [
-    "emissive.red"
-   ],
-   "bone": "spine",
-   "bytes": 20420
-  },
-  {
-   "id": "crew.human.hair.mohawk",
-   "file": "crew/human/slots/hair.mohawk.glb",
-   "kind": "crew.slot",
+  "crew.human.hair.mohawk": {
+   "kind": "crew.layer",
    "species": "human",
    "slot": "hair",
-   "skinned": false,
-   "targets": [
-    "head"
-   ],
-   "tint": [
-    "team.hair"
-   ],
-   "emissive": [],
-   "bone": "head",
-   "bytes": 13976
+   "order": 60,
+   "sheet": "crew.human.hair.mohawk",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
   },
-  {
-   "id": "crew.human.hair.short",
-   "file": "crew/human/slots/hair.short.glb",
-   "kind": "crew.slot",
+  "crew.human.hair.ponytail": {
+   "kind": "crew.layer",
    "species": "human",
    "slot": "hair",
-   "skinned": false,
-   "targets": [
-    "head"
-   ],
-   "tint": [
-    "team.hair"
-   ],
-   "emissive": [],
-   "bone": "head",
-   "bytes": 13280
+   "order": 60,
+   "sheet": "crew.human.hair.ponytail",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
   },
-  {
-   "id": "crew.human.hair.ponytail",
-   "file": "crew/human/slots/hair.ponytail.glb",
-   "kind": "crew.slot",
+  "crew.human.hair.shaved": {
+   "kind": "crew.layer",
    "species": "human",
    "slot": "hair",
-   "skinned": false,
-   "targets": [
-    "head"
-   ],
-   "tint": [
-    "team.hair"
-   ],
-   "emissive": [],
-   "bone": "head",
-   "bytes": 15208
+   "order": 60,
+   "sheet": "crew.human.hair.shaved",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
   },
-  {
-   "id": "crew.human.hair.shaved",
-   "file": "crew/human/slots/hair.shaved.glb",
-   "kind": "crew.slot",
+  "crew.human.hair.short": {
+   "kind": "crew.layer",
    "species": "human",
    "slot": "hair",
-   "skinned": false,
-   "targets": [
-    "head"
-   ],
-   "tint": [
-    "team.hair"
-   ],
-   "emissive": [],
-   "bone": "head",
-   "bytes": 10448
+   "order": 60,
+   "sheet": "crew.human.hair.short",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
   },
-  {
-   "id": "crew.human.eyes.organic",
-   "file": "crew/human/slots/eyes.organic.glb",
-   "kind": "crew.slot",
-   "species": "human",
-   "slot": "eyes",
-   "skinned": false,
-   "targets": [
-    "head"
-   ],
-   "tint": [],
-   "emissive": [],
-   "bone": "head",
-   "bytes": 4052
-  },
-  {
-   "id": "crew.human.eyes.cyber",
-   "file": "crew/human/slots/eyes.cyber.glb",
-   "kind": "crew.slot",
-   "species": "human",
-   "slot": "eyes",
-   "skinned": false,
-   "targets": [
-    "head"
-   ],
-   "tint": [],
-   "emissive": [
-    "emissive.cyan"
-   ],
-   "bone": "head",
-   "bytes": 9020
-  },
-  {
-   "id": "crew.human.implant.temple.neural_jack",
-   "file": "crew/human/slots/implant.temple.neural_jack.glb",
-   "kind": "crew.slot",
+  "crew.human.implant.temple.neural_jack": {
+   "kind": "crew.layer",
    "species": "human",
    "slot": "implant.temple",
-   "skinned": false,
-   "targets": [
-    "head"
-   ],
-   "tint": [],
-   "emissive": [
-    "emissive.magenta"
-   ],
-   "bone": "head",
-   "bytes": 11096
+   "order": 65,
+   "sheet": "crew.human.implant.temple.neural_jack",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   },
+   "glow": true
+  },
+  "crew.human.gear.head.welding_goggles": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "gear.head",
+   "order": 70,
+   "sheet": "crew.human.gear.head.welding_goggles",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.gear.back.engineer_rig": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "gear.back",
+   "order": 80,
+   "sheet": "crew.human.gear.back.engineer_rig",
+   "frameW": 98,
+   "frameH": 98,
+   "anchor": {
+    "x": 49,
+    "y": 78
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   },
+   "glow": true
   }
- ]
+ }
 }
