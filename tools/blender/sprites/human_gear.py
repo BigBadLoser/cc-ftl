@@ -16,9 +16,9 @@ def eyes(arm, cyber):
     def b(rs):
         h = rs.on("head")
         for sx in (1, -1):
-            h.box((sx * 0.044, -0.118, 1.566), (0.066, 0.02, 0.046), "medWhite", bevel=0.004)
-            h.box((sx * 0.044, -0.13, 1.564), (0.036, 0.014, 0.04), "black")
-            h.box((sx * 0.045, -0.123, 1.607), (0.082, 0.02, 0.02), "team.hair")      # brow
+            h.box((sx * 0.046, -0.118, 1.564), (0.074, 0.02, 0.058), "medWhite", bevel=0.004)
+            h.box((sx * 0.044 - sx * 0.006, -0.13, 1.562), (0.04, 0.014, 0.05), "black")
+            h.box((sx * 0.047, -0.124, 1.612), (0.09, 0.02, 0.026), "team.hair")      # brow
         if cyber:                               # character right eye (x<0) is cyber
             h.box((-0.044, -0.126, 1.566), (0.08, 0.024, 0.06), "gmD", bevel=0.006)
             h.box((-0.044, -0.141, 1.566), (0.05, 0.014, 0.05), "cyan")
@@ -48,17 +48,16 @@ def ponytail_extra(arm, item):
 def jack(arm):
     def b(rs):
         h = rs.on("head")
-        h.box((0.122, 0.0, 1.585), (0.04, 0.09, 0.09), "gmD", bevel=0.008)
-        h.box((0.144, 0.0, 1.585), (0.016, 0.05, 0.05), "magenta")
-        h.box((0.134, 0.045, 1.60), (0.02, 0.02, 0.06), "gm")
+        h.box((0.112, 0.01, 1.595), (0.03, 0.05, 0.05), "gmD", bevel=0.006)
+        h.box((0.13, 0.01, 1.595), (0.012, 0.03, 0.03), "magenta")
     return _items(arm, "implant.temple", "neural_jack", b, glow=True)
 
 
 def goggles(arm):
     def b(rs):
         h = rs.on("head")
-        h.box((0, -0.1, 1.668), (0.22, 0.2, 0.034), "strap", bevel=0.004)
-        h.box((0, 0.0, 1.668), (0.235, 0.04, 0.034), "strap")
+        h.box((0, -0.1, 1.668), (0.22, 0.2, 0.034), "team.accent*0.8", bevel=0.004)
+        h.box((0, 0.0, 1.668), (0.235, 0.04, 0.034), "team.accent*0.8")
         for sx in (-1, 1):
             h.box((sx * 0.052, -0.145, 1.675), (0.1, 0.04, 0.075), "brass", bevel=0.01)
             h.box((sx * 0.052, -0.168, 1.675), (0.075, 0.016, 0.056), "lens")

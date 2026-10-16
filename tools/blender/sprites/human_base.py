@@ -9,6 +9,7 @@ from pathlib import Path
 import bmesh
 import bpy
 import numpy as np
+from mathutils import Vector
 from . import core
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -71,7 +72,14 @@ def clone_part(src, name, keep, offset, subdiv=0, grow=None):
         bmesh.ops.triangulate(bm, faces=bm.faces[:])
     bm.normal_update()
     for v in bm.verts:
-        v.co += v.normal * offset
+        n, c = v.normal.copy(), v.co
+        # the base's winding is not consistent: push radially outward from the body/limb axis, never inward
+        ctr = Vector((0.114 * np.sign(c.x), 0.036, c.z)) if c.z < 0.9 else Vector((0.0, 0.02, c.z))
+        r = Vector((c.x - ctr.x, c.y - ctr.y, 0.0))
+        r = r.normalized() if r.length > 1e-6 else n
+        if n.dot(c - ctr) < 0:
+            n = -n
+        v.co += (n * 0.5 + r * 0.5).normalized() * offset
         if grow:
             v.co = grow(v.co)
     bm.to_mesh(ob.data)
@@ -147,17 +155,17 @@ def build_skinned(arm, body):
     # flesh arms: the arm faces of the base, split by side (character left = +X)
     mk("arm.L", "flesh", R.arms & (R.x > 0), 0.0, lambda c, i: "team.skin", default=True)
     mk("arm.R", "flesh", R.arms & (R.x < 0), 0.0, lambda c, i: "team.skin", default=True)
-    mk("torso", "work_shirt", R.torso & ~R.belt, 0.034, lambda c, i: _shirt_col(c, "shirt"), 2, _widen, default=True)
-    mk("torso", "tee", R.torso & ~R.belt, 0.034, lambda c, i: _shirt_col(c, "tee"), 2, _widen)
-    mk("legs", "cargo_pants", R.legs, 0.02,
+    mk("torso", "work_shirt", R.torso & ~R.belt, 0.05, lambda c, i: _shirt_col(c, "shirt"), 0, _widen, default=True)
+    mk("torso", "tee", R.torso & ~R.belt, 0.05, lambda c, i: _shirt_col(c, "tee"), 0, _widen)
+    mk("legs", "cargo_pants", R.legs, 0.03,
        lambda c, i: "sole" if c.z < 0.05 else "boot" if c.z < 0.2 else ("pocket" if 0.4 < c.z < 0.5 and c.y < 0.05 else "pants"),
-       1, default=True)
+       0, default=True)
     mk("gear.belt", "tool_belt", R.belt, 0.05, lambda c, i: "leather", default=True)
     # hair caps cut from the scalp (rigid hair is in human_gear)
     cap = R.head & ((R.z > 1.635) | ((R.z > 1.59) & (R.y > 0.0)))
-    mk("hair", "short", cap, 0.032, lambda c, i: "team.hair", 1, default=True)
-    mk("hair", "ponytail", cap, 0.032, lambda c, i: "team.hair", 1)
-    mk("hair", "shaved", cap, 0.008, lambda c, i: "team.hair*0.55", 1)
+    mk("hair", "short", cap, 0.032, lambda c, i: "team.hair", 0, default=True)
+    mk("hair", "ponytail", cap, 0.032, lambda c, i: "team.hair", 0)
+    mk("hair", "shaved", cap, 0.008, lambda c, i: "team.hair*0.55", 0)
     # body: everything but the arms (head, torso, legs); skin, plus the briefs object from the base
     bm = bmesh.new()
     bm.from_mesh(body.data)

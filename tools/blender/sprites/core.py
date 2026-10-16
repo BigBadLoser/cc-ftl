@@ -20,6 +20,7 @@ from . import post  # noqa: E402
 TILE_W, TILE_H = 64, 32
 PXU = TILE_W / math.sqrt(2)          # px per ortho unit
 ZPX = PXU * math.cos(math.radians(30))  # px per world unit of height
+TEAM_ALBEDO = 0.7                    # key albedo scale (keeps lit top faces below clipping)
 SS = 4                               # supersample factor (mode-downsampled, never blurred)
 CAM_ROT = (math.radians(60), 0, math.radians(45))
 _R = np.array([0.7071068, 0.7071068, 0.0])
@@ -39,7 +40,7 @@ def lin(name):
     """Linear RGB of a palette name; team.* names give their pure key albedo (see post.TEAM_VEC)."""
     if name.startswith("team."):
         base, _, k = name.partition("*")
-        return tuple(float(v) * (float(k) if k else 1.0) for v in post.TEAM_VEC[base])
+        return tuple(float(v) * TEAM_ALBEDO * (float(k) if k else 1.0) for v in post.TEAM_VEC[base])
     return palette.linear(name)
 
 

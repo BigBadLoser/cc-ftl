@@ -45,7 +45,7 @@ NB = len(BASE)
 TEAMS = ("team.skin", "team.hair", "team.cloth", "team.accent")
 TEAM_VEC = {"team.skin": (1, 0, 1), "team.hair": (0, 1, 0), "team.cloth": (1, 1, 0), "team.accent": (0, 1, 1)}
 KEY_LEVELS = (0.30, 0.47, 0.64, 0.82, 1.0)       # key channel value (0..1) of shade step 0..4
-SHADE_EDGES = (0.36, 0.52, 0.70, 0.88)           # lit scalar s thresholds between steps (calibrated)
+SHADE_EDGES = (0.32, 0.50, 0.68, 0.90)           # lit scalar s thresholds between steps (calibrated)
 SHADE_MULT = (0.42, 0.62, 0.82, 1.0, 1.22)       # runtime: target = base colour * mult (see SHADES)
 
 
