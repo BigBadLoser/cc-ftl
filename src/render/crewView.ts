@@ -4,7 +4,8 @@ import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '.
 import { CarryingC } from '../sim/items/components';
 import { BLEED_OUT_SECONDS } from '../sim/tuning';
 import type { Atlas, LayerSprite } from './assets/loader';
-import { createPaletteFilter, crewPalette } from './assets/palette';
+import { createPaletteFilter, crewPalette, setFilterTint } from './assets/palette';
+import type { Filter } from 'pixi.js';
 import { diamondTextures } from './diamonds';
 import { itemColor } from './itemColors';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
@@ -35,7 +36,7 @@ interface Slot {
   parts: { layer: LayerSprite; sprite: Sprite }[];
   glows: { layer: LayerSprite; sprite: Sprite; halo: Sprite | null }[];
   ring: Sprite;
-  body: Container;
+  filter: Filter;
   /** Small crate near the hands while hauling. */
   carry: Sprite;
   barBg: Sprite;
@@ -73,7 +74,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     ring.anchor.set(0.5);
     ring.visible = false;
     const body = new Container();
-    body.filters = [createPaletteFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed))];
+    const filter = createPaletteFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed));
+    body.filters = [filter];
     const parts = layers.map((layer) => {
       const sprite = new Sprite();
       sprite.position.set(-layer.def.anchor.x, -layer.def.anchor.y);
@@ -104,7 +106,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, body, carry, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false };
+    return { root, parts, glows, ring, filter, carry, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -117,7 +119,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     const emergency = host.emergency?.() ?? false;
     let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(performance.now()) : -1);
     if (dead) tint = mulColor(tint, 0x7c7c7c);
-    s.body.tint = tint;
+    setFilterTint(s.filter, tint);
   }
 
   function drop(s: Slot): void {

@@ -1,4 +1,4 @@
-import { DraftedC, ModuleC, PositionC, Struct, footprintTiles, isWalkable, placementError, type Sim, type SimEvent } from '../sim';
+import { DraftedC, ModuleC, PositionC, Struct, footprintTiles, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
 import type { UiBuildKind, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
@@ -170,7 +170,17 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           const tile = renderer.pickTile(sx, sy);
           const grid0 = sim.grids.get(GRID);
           const modHere = tile && grid0 ? grid0.get('module', tile.x, tile.y) : 0;
-          const modId = modHere || (renderer.pickModule(sx, sy) ?? 0);
+          let modId = modHere;
+          if (!modId && tile) {
+            // Tall sprites cover tiles behind them; a tile in front of the module's front tile never selects it.
+            const hit = renderer.pickModule(sx, sy) ?? 0;
+            const m = hit ? sim.world.get(hit, ModuleC) : undefined;
+            const def = m && sim.content.modules[m.def];
+            if (m && def) {
+              const [w, h] = rotatedSize(def, m.rot);
+              if (tile.x <= m.x + w - 1 && tile.y <= m.y + h - 1) modId = hit;
+            }
+          }
           if (modId) return selectModule(modId);
           const sel = crewSel.get();
           const grid = sim.grids.get(GRID);

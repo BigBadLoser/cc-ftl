@@ -75,7 +75,7 @@
     {/each}
   </span>
   <span class="views">
-    <button onclick={cycleWalls}>Walls: {cutLabel[cutaway]}</button>
+    <button onclick={cycleWalls}>Walls<span class="long">: {cutLabel[cutaway]}</span></button>
     <OverlayPicker {api} />
   </span>
   <StatsChips {api} />
@@ -113,5 +113,5 @@
   .toast { position: fixed; left: 50%; top: calc(var(--hdr) + 100px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); border-radius: 8px; pointer-events: none; z-index: 9; }
   .tick { color: var(--cyan); min-width: 5.5em; }
   .speeds, .views { display: flex; gap: 4px; }
-  @media (max-width: 600px) { .tick { display: none; } header { gap: 4px; flex-wrap: wrap; justify-content: flex-start; } header button { padding: 0 8px; font-size: 12px; } .views { margin-left: auto; } }
+  @media (max-width: 600px) { .tick { display: none; } .long { display: none; } header { padding-bottom: 4px; } header button { min-width: 34px; } header { gap: 4px; flex-wrap: wrap; justify-content: flex-start; } header button { padding: 0 8px; font-size: 12px; } .views { margin-left: auto; } }
 </style>

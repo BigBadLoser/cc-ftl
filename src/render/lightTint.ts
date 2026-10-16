@@ -9,7 +9,7 @@ const pack = (c: readonly number[]): number =>
   Math.round(Math.min(1, Math.max(0, c[2] as number)) * 255);
 
 /** Strong cool darkening for unlit tiles; still readable. */
-const DARK: readonly number[] = [0.36, 0.45, 0.64];
+const DARK: readonly number[] = [0.5, 0.6, 0.82];
 const WHITE: readonly number[] = [1, 1, 1];
 /** Light level at which a tile counts as fully lit. */
 const FULL = 150;
@@ -22,7 +22,7 @@ const COLD: readonly number[] = [0.7, 0.86, 1];
 export function lightTint(light: number, vacuum: boolean, pulse: number): number {
   const t = Math.min(1, light / FULL);
   let c = mix(DARK, WHITE, t * t * (3 - 2 * t));
-  if (pulse >= 0 && light < LIGHT_DARK_BELOW) c = mix(c, [0.28 + 0.5 * pulse, 0.12, 0.14], 0.65);
+  if (pulse >= 0 && light < LIGHT_DARK_BELOW) c = mix(c, [0.45 + 0.55 * pulse, 0.2, 0.22], 0.6);
   if (vacuum) c = [(c[0] as number) * COLD[0]!, (c[1] as number) * COLD[1]!, (c[2] as number) * COLD[2]!];
   return pack(c);
 }

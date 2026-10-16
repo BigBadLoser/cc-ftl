@@ -49,6 +49,7 @@ uniform sampler2D uTexture;
 uniform vec4 uKeys[${MAX_KEYS}];
 uniform vec4 uRepl[${MAX_KEYS}];
 uniform float uCount;
+uniform vec3 uTint;
 void main(void) {
   vec4 c = texture(uTexture, vTextureCoord);
   if (c.a < 0.01) { finalColor = c; return; }
@@ -62,7 +63,7 @@ void main(void) {
       break;
     }
   }
-  finalColor = vec4(p * c.a, c.a);
+  finalColor = vec4(p * uTint * c.a, c.a);
 }`;
 
 const rgb = (hex: number): [number, number, number] => [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
@@ -91,7 +92,22 @@ export function createPaletteFilter(keyColors: Record<string, string>, pal: Crew
         uKeys: { value: keys, type: 'vec4<f32>', size: MAX_KEYS },
         uRepl: { value: repl, type: 'vec4<f32>', size: MAX_KEYS },
         uCount: { value: n, type: 'f32' },
+        uTint: { value: new Float32Array([1, 1, 1]), type: 'vec3<f32>' },
       },
     },
   });
+}
+
+/** Multiply the filter's output by a packed colour (applied after the palette swap, so key colours still match). */
+export function setFilterTint(filter: Filter, color: number): void {
+  const group = filter.resources.palette as { uniforms: { uTint: Float32Array }; update(): void };
+  const t = group.uniforms.uTint;
+  const r = ((color >> 16) & 255) / 255;
+  const g = ((color >> 8) & 255) / 255;
+  const b = (color & 255) / 255;
+  if (t[0] === r && t[1] === g && t[2] === b) return;
+  t[0] = r;
+  t[1] = g;
+  t[2] = b;
+  group.update();
 }

@@ -160,6 +160,8 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
   when unpowered. Red emergency glow pulses when power is out.
 - Normal-map sheets for dynamic lighting are an option for later.
 
+**Effects.** Fire flames are looping sprite frames plus glow. Smoke, embers, venting air and ice, module sparks and welding sparks are particles (`src/render/fx`): a small pooled system on Pixi `ParticleContainer`s with emitters as data, whole-pixel positions, integer scale and a hard cap. Particle art comes from the pipeline (`fx.*` in the env atlas). Renderer-only.
+
 **Visuals.** Field overlays and the tile inspector read grid arrays directly.
 
 ## Asset pipeline

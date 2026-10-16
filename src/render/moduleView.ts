@@ -1,4 +1,4 @@
-import { Sprite } from 'pixi.js';
+import { Sprite, type Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { ItemStackC } from '../sim/items/components';
 import type { Grid } from '../sim/grid';
@@ -29,6 +29,31 @@ export interface ModuleView {
 /** TODO: dedicated sprites. Stand-ins for modules whose asset is not in the manifest yet. */
 const FALLBACK: Record<string, string> = { 'module.fabricator': 'module.console', 'module.storage': 'prop.crate' };
 
+/** Alpha channel of a sprite's frame, cut lazily from its sheet so picking ignores transparent corners. */
+const alphaCache = new WeakMap<Texture, Uint8ClampedArray | null>();
+function alphaOf(tex: Texture): Uint8ClampedArray | null {
+  if (alphaCache.has(tex)) return alphaCache.get(tex) ?? null;
+  let out: Uint8ClampedArray | null = null;
+  try {
+    const { x, y, width, height } = tex.frame;
+    const c = document.createElement('canvas');
+    c.width = width;
+    c.height = height;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    const src = tex.source.resource as CanvasImageSource;
+    if (g) {
+      g.drawImage(src, x, y, width, height, 0, 0, width, height);
+      const d = g.getImageData(0, 0, width, height).data;
+      out = new Uint8ClampedArray(width * height);
+      for (let i = 0; i < out.length; i++) out[i] = d[i * 4 + 3] as number;
+    }
+  } catch {
+    out = null;
+  }
+  alphaCache.set(tex, out);
+  return out;
+}
+
 interface Part {
   spr: Sprite;
   glow: Sprite | null;
@@ -36,6 +61,7 @@ interface Part {
   /** Art-px rectangle the sprite covers. */
   rect: { x0: number; y0: number; x1: number; y1: number };
   key: number;
+  flip: boolean;
 }
 interface Entry {
   sig: string;
@@ -90,7 +116,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       if (L.halos) L.halo.addChild((halo = mk(s.glow)));
     }
     const x0 = flip ? x - w : x;
-    return { spr, glow, halo, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key };
+    return { spr, glow, halo, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key, flip };
   }
 
   function build(m: Module, def: ModuleDefs[string]): Part[] {
@@ -135,7 +161,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? (light[f.y * grid.width + f.x] as number) : 0;
         const on = m.powered && m.enabled && m.hp > 0;
         const base = lightTint(lsum / Math.max(1, tiles.length), false, pulse);
-        const tint = on ? base : dim(mulColor(base, 0xb4b4c0), 0.7);
+        const tint = on ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
         for (const p of e.parts) {
           p.spr.tint = tint;
           for (const g of [p.glow, p.halo]) if (g) g.visible = on;
@@ -180,7 +206,12 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       let bestKey = -Infinity;
       for (const [id, e] of mods)
         for (const p of e.parts)
-          if (ax >= p.rect.x0 && ax <= p.rect.x1 && ay >= p.rect.y0 && ay <= p.rect.y1 && p.key > bestKey) {
+          if (ax >= p.rect.x0 && ax < p.rect.x1 && ay >= p.rect.y0 && ay < p.rect.y1 && p.key > bestKey) {
+            const tex = p.spr.texture;
+            const a = alphaOf(tex);
+            const u = Math.floor(p.flip ? p.rect.x1 - ax : ax - p.rect.x0);
+            const v = Math.floor(ay - p.rect.y0);
+            if (a && (a[v * tex.frame.width + u] as number) < 40) continue;
             bestKey = p.key;
             best = id;
           }
