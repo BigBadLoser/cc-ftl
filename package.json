@@ -1,0 +1,32 @@
+{
+  "name": "cc-ftl",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p . && svelte-check --tsconfig ./tsconfig.json",
+    "check": "npm run lint && npm run typecheck && npm run test"
+  },
+  "dependencies": {
+    "svelte": "^5.57.2",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@types/three": "^0.186.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-svelte": "^3.23.1",
+    "globals": "^17.13.0",
+    "svelte-check": "^4.7.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}
