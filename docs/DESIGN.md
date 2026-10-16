@@ -56,6 +56,16 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   stability, vulnerability to EMP/ion and hacking.
 - Relationships (friends, rivals, grief) later.
 
+## Ship systems (M3 decisions)
+
+- **Power:** one network per ship for now, with module priorities deciding what loses power in a
+  shortage. Conduits may come later; the code leaves a seam for them.
+- **Atmosphere:** per tile, with gas spreading between tiles. Doors block gas when closed. Floor tiles
+  next to space vent.
+- **Injury:** at 0 HP a crew member is **downed** and bleeds out on a timer. Another crew member can
+  carry them to a bed to stabilise them. If the timer runs out, they die permanently.
+- The **economy** (items, storage, hauling, build costs) is its own milestone (M3b).
+
 ## Combat
 
 FTL's decision-making, with physical consequences.
