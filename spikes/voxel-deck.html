@@ -1,0 +1,333 @@
+<title>Voxel Deck Test</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root{color-scheme:dark;--bg:#07090d;--fg:#d5e2ee;--dim:#7f93a6;--panel:rgba(12,17,24,.82);--line:#26333f;--cy:#19e6ff;--mg:#ff2fb4}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--fg);font:13px/1.3 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:0}
+#cap{position:fixed;top:calc(10px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));right:calc(12px + env(safe-area-inset-right));color:var(--dim);pointer-events:none;text-shadow:0 1px 3px #000}
+#ui{position:fixed;left:calc(12px + env(safe-area-inset-left));bottom:calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+#ui button{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;min-height:38px;min-width:150px;padding:0 12px;text-align:left;cursor:pointer;touch-action:manipulation}
+#ui button[aria-pressed=true]{border-color:var(--cy);box-shadow:inset 3px 0 0 var(--cy)}
+#ui button:focus-visible{outline:2px solid var(--mg);outline-offset:2px}
+#fps{color:var(--dim);font-variant-numeric:tabular-nums;padding-left:2px}
+</style>
+<canvas id="c"></canvas>
+<div id="cap">Voxel deck test · drag to pan · pinch/scroll to zoom</div>
+<div id="ui">
+  <button id="bp" aria-pressed="true"></button>
+  <button id="bq"></button>
+  <div id="fps">-- fps</div>
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/+esm';
+import {EffectComposer} from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js/+esm';
+import {RenderPass} from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/RenderPass.js/+esm';
+import {UnrealBloomPass} from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js/+esm';
+import {OutputPass} from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/OutputPass.js/+esm';
+
+/* ---------- voxel kit: sparse model (x,y,z)->palette index, meshed w/ face culling ---------- */
+const PAL = [];
+const pc = (hex, glow = 0) => PAL.push({c: new THREE.Color(hex), g: glow}) - 1;
+const M = {
+  steel: pc(0x3b434e), steelD: pc(0x252b34), steelL: pc(0x59646f), dark: pc(0x12161b),
+  rust: pc(0x6e4129), rustD: pc(0x45291b), yel: pc(0xc9a227), blk: pc(0x14161a),
+  crate: pc(0x4b4e44), skin: pc(0xc8a07f), hair: pc(0x1b1c22), cloth: pc(0x2d5666), jacket: pc(0x8c4b2b), boot: pc(0x17191d),
+  skin2: pc(0x8d5b3d), hair2: pc(0xd9d4c7), suit: pc(0xd2601a), suitD: pc(0xa24412), pants: pc(0x232a35),
+  flA: pc(0x2b3138), flB: pc(0x2f353c), flC: pc(0x282d34), seam: pc(0x1f242a), bolt: pc(0x3a4149), grime: pc(0x23282e),
+  cyan: pc(0x19e6ff, 1), mag: pc(0xff2fb4, 1), magD: pc(0x7d1860, 1), org: pc(0xff7a1a, 1), red: pc(0xff1e2a, 1), lamp: pc(0xfff0c4, 1)
+};
+const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const key = (x, y, z) => x + 1024 * y + 1048576 * z;
+const FACES = [ // outward normal + 4 CCW corners
+  {d: [1, 0, 0], c: [[1, 0, 1], [1, 0, 0], [1, 1, 0], [1, 1, 1]]}, {d: [-1, 0, 0], c: [[0, 0, 0], [0, 0, 1], [0, 1, 1], [0, 1, 0]]},
+  {d: [0, 1, 0], c: [[0, 1, 1], [1, 1, 1], [1, 1, 0], [0, 1, 0]]}, {d: [0, -1, 0], c: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]]},
+  {d: [0, 0, 1], c: [[0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]]}, {d: [0, 0, -1], c: [[1, 0, 0], [0, 0, 0], [0, 1, 0], [1, 1, 0]]}];
+const SOLID = new THREE.MeshStandardMaterial({vertexColors: true, roughness: 0.92, metalness: 0.12});
+const GLOW = {}; // one shared emissive-style material per "kind" so gameplay state can toggle it
+for (const k of ['power', 'light', 'emerg', 'always']) GLOW[k] = new THREE.MeshBasicMaterial({vertexColors: true});
+
+class Model {
+  constructor(seed = 1) { this.v = new Map(); this.rng = mulberry(seed); }
+  set(x, y, z, c) { if (c != null) this.v.set(key(x, y, z), [x, y, z, c]); return this; }
+  // box: [x0,x1) [y0,y1) [z0,z1); c = palette index or (x,y,z)=>index|null
+  box(x0, y0, z0, x1, y1, z1, c) {
+    for (let x = x0; x < x1; x++) for (let y = y0; y < y1; y++) for (let z = z0; z < z1; z++) this.set(x, y, z, typeof c === 'function' ? c(x, y, z) : c);
+    return this;
+  }
+  disc(cx, cz, r, y0, y1, c) { // vertical cylinder
+    for (let x = 0; x < 64; x++) for (let z = 0; z < 64; z++) { const d = (x + .5 - cx) ** 2 + (z + .5 - cz) ** 2; if (d <= r * r) for (let y = y0; y < y1; y++) this.set(x, y, z, typeof c === 'function' ? c(x, y, z, Math.sqrt(d)) : c); }
+    return this;
+  }
+  mesh(kind = 'power') { // -> Group (solid mesh + glow mesh), hidden faces culled, per-voxel brightness jitter
+    const out = [{p: [], n: [], c: [], i: []}, {p: [], n: [], c: [], i: []}];
+    for (const [x, y, z, ci] of this.v.values()) {
+      const P = PAL[ci], o = out[P.g], j = P.g ? 1 : 1 + (this.rng() - .5) * .2;
+      for (const f of FACES) {
+        if (this.v.has(key(x + f.d[0], y + f.d[1], z + f.d[2]))) continue;
+        const b = o.p.length / 3;
+        for (const q of f.c) { o.p.push(x + q[0], y + q[1], z + q[2]); o.n.push(...f.d); o.c.push(P.c.r * j, P.c.g * j, P.c.b * j); }
+        o.i.push(b, b + 1, b + 2, b, b + 2, b + 3);
+      }
+    }
+    const g = new THREE.Group();
+    out.forEach((o, gi) => {
+      if (!o.p.length) return;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(o.p, 3));
+      geo.setAttribute('normal', new THREE.Float32BufferAttribute(o.n, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(o.c, 3));
+      geo.setIndex(o.i);
+      const m = new THREE.Mesh(geo, gi ? GLOW[kind] : SOLID);
+      if (!gi) m.castShadow = m.receiveShadow = true;
+      g.add(m);
+    });
+    return g;
+  }
+}
+const haz = (x, y, z) => ((x + y + z) >> 1) & 1 ? M.yel : M.blk;
+
+/* ---------- model library (all art is data) ---------- */
+function wallModel(h, band, seed) {
+  const m = new Model(seed), r = m.rng;
+  return m.box(0, 0, 0, 8, h, 8, (x, y, z) => {
+    if (h < 8 && y === h - 1) return haz(x, 0, z);
+    if (band && y >= 2 && y < 5) return haz(x, y, z);
+    if (r() < .24 * Math.max(0, 1 - y / 9) + .015) return r() < .5 ? M.rust : M.rustD;
+    if (h > 8 && y === h - 1) return M.steelL;
+    return (y % 10 === 9 || x === 0 || z === 0) ? M.steelD : M.steel;
+  }).mesh();
+}
+function floorModel(kind, seed) { // calm deck plate: one big panel per tile, faint seams, bolts and grime
+  const m = new Model(seed), r = m.rng, base = [M.flA, M.flB, M.flC][seed % 3];
+  m.box(0, 0, 0, 8, 1, 8, M.dark);
+  for (let x = 0; x < 8; x++) for (let z = 0; z < 8; z++) {
+    if (kind === 'haz') m.set(x, 1, z, haz(x, 0, z));
+    else m.set(x, 1, z, (x === 0 || z === 0) ? M.seam : ((x === 2 || x === 6) && (z === 2 || z === 6)) ? M.bolt : r() < .07 ? M.grime : base);
+  }
+  return m.mesh();
+}
+function reactorModel() { // 16x16 footprint, ~17 tall
+  const m = new Model(7), r = m.rng;
+  m.box(0, 0, 0, 16, 2, 16, (x, y, z) => (y === 1 && (x < 3 || x > 12) && (z < 3 || z > 12)) ? haz(x, 0, z) : M.steelD);
+  m.disc(8, 8, 6.5, 2, 5, (x, y, z, d) => (y === 4 && d > 5.6) ? M.cyan : M.steel);
+  m.disc(8, 8, 5.5, 5, 15, (x, y, z, d) => {
+    if (d < 3.2) return M.cyan;                            // glowing core column
+    if (d < 4.4) return null;                              // air gap
+    if (y > 6 && y < 14 && (Math.abs(x - 7.5) < 1.6 || Math.abs(z - 7.5) < 1.6)) return null; // slots show the core
+    return r() < .12 ? M.rustD : (y % 4 === 0 ? M.steelL : M.steelD);
+  });
+  m.disc(8, 8, 3.2, 5, 16, M.cyan);
+  m.disc(8, 8, 6.2, 15, 17, (x, y, z, d) => d < 3.6 ? (y === 15 ? M.cyan : null) : M.steelL);
+  for (const [x, z] of [[1, 1], [13, 1], [1, 13], [13, 13]]) m.box(x, 2, z, x + 2, 5, z + 2, M.steelD).box(x, 5, z, x + 2, 6, z + 2, M.org);
+  return m.mesh();
+}
+function consoleModel() { // 8w x 10h x 5d, screen faces +z
+  const m = new Model(11), r = m.rng;
+  m.box(0, 0, 0, 8, 5, 5, M.steel).box(0, 5, 0, 8, 10, 2, M.steelD).box(1, 5, 3, 7, 6, 5, M.steelL);
+  for (let x = 1; x < 7; x++) for (let z = 3; z < 5; z++) if (r() < .45) m.set(x, 5, z, M.cyan);
+  m.box(1, 6, 2, 7, 9, 3, (x, y) => y % 2 ? M.mag : M.magD);
+  m.box(1, 9, 2, 7, 10, 3, M.steelL).set(0, 3, 5, M.cyan);
+  return m.mesh();
+}
+const crateModel = () => new Model(5).box(0, 0, 0, 6, 6, 6, (x, y, z) => {
+  const e = (x % 5 === 0) + (y % 5 === 0) + (z % 5 === 0);
+  if (z === 5 && y > 1 && y < 4) return haz(x, 0, 0);
+  return e >= 2 ? M.steelL : M.crate;
+}).mesh();
+const fixtureModel = () => new Model(2).box(0, 0, 0, 6, 3, 1, M.steelD).box(1, 0, 1, 5, 2, 2, M.lamp).mesh('light');
+const lampModel = () => new Model(3).box(0, 0, 0, 3, 3, 1, M.steelD).box(0, 0, 1, 3, 3, 2, M.red).mesh('emerg');
+function signModel() {
+  const G = ['#######', '...#...', '#######', '#..#..#', '#######', '..#.#..', '.#...#.', '#.....#'], m = new Model(9);
+  m.box(0, 0, 0, 9, 10, 1, M.steelD);
+  G.forEach((row, i) => [...row].forEach((ch, j) => ch === '#' && m.set(1 + j, 8 - i, 1, M.mag)));
+  return m.mesh();
+}
+const doorModel = () => new Model(4).box(0, 0, 0, 8, 15, 2, (x, y, z) => y < 3 ? haz(x, y, 0) : (x === 0 || x === 7 || y === 14) ? M.steelL : (x === 4 ? M.steelD : M.steel)).set(6, 12, 2, M.cyan).set(6, 11, 2, M.cyan).mesh();
+const RUNS = [[20, 64, 64, 64], [20, 38, 20, 64], [36, 38, 36, 64]]; // conduit runs (world units): reactor -> consoles
+const groundY = (x, z) => RUNS.some(([x0, z0, x1, z1]) => x >= x0 - 4 && x < x1 + 4 && z >= z0 - 4 && z < z1 + 4) ? 3 : 2;
+function stripModel() { // the only grating on the deck: an 8-wide strip along each run, cyan power line down the middle
+  const m = new Model(13), r = m.rng;
+  for (const [x0, z0, x1, z1] of RUNS) for (let x = x0 - 4; x < x1 + 4; x++) for (let z = z0 - 4; z < z1 + 4; z++) {
+    const a = z0 === z1 ? z - z0 : x - x0;
+    m.set(x, 0, z, a === 0 ? ((x + z) % 9 ? M.cyan : M.steelL) : Math.abs(a) === 1 ? M.steelD : (x % 4 === 0 || z % 4 === 0) ? (r() < .12 ? M.rustD : M.steelL) : M.dark);
+  }
+  return m.mesh();
+}
+/* Crew use finer voxels (0.5 world unit, ~13 units = 1.6 tiles tall). Limbs are separate groups pivoting at hip/shoulder; +z is front. */
+const CREW1 = {skin: M.skin, hair: M.hair, shirt: M.cloth, vest: M.jacket, sleeve: M.cloth, pants: M.pants, boot: M.boot, cyber: true};
+const CREW2 = {skin: M.skin2, hair: M.hair2, shirt: M.suit, vest: M.suitD, sleeve: M.suit, pants: M.suit, boot: M.boot, strip: true, jack: true, tail: true};
+const blob = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), q = g.createRadialGradient(32, 32, 6, 32, 32, 32);
+  q.addColorStop(0, 'rgba(0,0,0,.7)'); q.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = q; g.fillRect(0, 0, 64, 64);
+  return new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false}); })();
+function makeCrew(c) {
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const part = (seed, py, fn) => { const m = new Model(seed), g = new THREE.Group(); fn(m); const mesh = m.mesh('always'); mesh.scale.setScalar(.5); g.add(mesh); g.position.y = py * .5; body.add(g); return g; };
+  const leg = (sx, seed) => part(seed, 10, m => { // hip pivot; boots, pants, strap, knee pad
+    m.box(sx, -7, -2, sx + 3, 0, 2, c.pants).box(sx, -10, -2, sx + 3, -7, 3, c.boot).box(sx, -7, -2, sx + 3, -6, 2, M.steelL).box(sx, -4, 2, sx + 3, -2, 3, M.steelD);
+    if (c.strip) m.box(sx, -2, -2, sx + 3, -1, 2, M.yel);
+  });
+  const arm = (s, seed) => part(seed, 18, m => { // shoulder pivot; pad, sleeve, hand
+    const lo = s > 0 ? 4 : -7, cy = s > 0 && c.cyber, mid = lo + 1, out = s > 0 ? lo + 2 : lo;
+    m.box(lo, -1, -2, lo + 3, 1, 3, cy ? M.steelL : c.vest).box(lo, -6, -1, lo + 3, -1, 2, cy ? M.steel : c.sleeve).box(lo, -8, -1, lo + 3, -6, 2, cy ? M.steelL : c.skin);
+    if (cy) { m.box(lo, -4, -1, lo + 3, -3, 2, M.steelD); for (let y = -6; y < -1; y++) if (y !== -4) m.set(out, y, 0, M.cyan).set(mid, y, 1, M.cyan); m.set(mid, -8, 1, M.cyan); }
+  });
+  part(21, 0, m => { // torso: shirt, belt + buckle, open vest with raised collar
+    m.box(-4, 10, -2, 4, 18, 2, c.shirt).box(-4, 10, -2, 4, 12, 2, M.steelD).box(-1, 10, 2, 1, 12, 3, M.yel);
+    m.box(-4, 12, -2, -2, 17, 3, c.vest).box(2, 12, -2, 4, 17, 3, c.vest).box(-4, 12, -3, 4, 18, -2, c.vest).box(-4, 18, -3, 4, 19, -1, c.vest);
+    if (c.strip) m.box(-4, 14, -2, 4, 15, 3, M.yel); else m.box(-3, 13, 3, -1, 15, 4, M.steelD).set(-3, 15, 3, M.cyan).box(-3, 11, -5, 3, 17, -3, M.steelD);
+  });
+  const head = part(23, 18, m => { // skin, hair cap + fringe, eyes, mouth, implants
+    m.box(-4, 0, -3, 4, 8, 3, c.skin).box(-4, 6, -3, 4, 8, 3, c.hair).box(-4, 2, -3, 4, 6, -1, c.hair).box(-4, 5, 1, 4, 6, 3, c.hair).box(-2, 2, 2, 1, 3, 3, M.rustD).set(-2, 4, 2, M.dark);
+    if (c.cyber) m.set(1, 4, 2, M.cyan).set(2, 4, 2, M.cyan).set(1, 3, 2, M.steelL).set(2, 3, 2, M.steelL).set(3, 4, 2, M.steelL); else m.set(1, 4, 2, M.dark);
+    if (c.jack) m.set(-5, 4, 0, M.mag).set(-5, 4, -1, M.mag).set(-5, 3, 0, M.magD).set(4, 4, 0, M.mag).set(4, 4, -1, M.mag).set(4, 3, 0, M.magD);
+    if (c.tail) m.box(-1, 1, -5, 1, 6, -3, c.hair);
+  });
+  const disc = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), blob); // ground-contact shadow so the crew reads on the floor
+  disc.rotation.x = -Math.PI / 2; disc.position.y = .12; disc.renderOrder = 1; root.add(disc);
+  return {root, body, head, legs: [leg(-4, 22), leg(1, 24)], arms: [arm(-1, 25), arm(1, 26)]};
+}
+const walkPose = (C, ph, amp) => { const s = Math.sin(ph) * amp; C.legs[0].rotation.x = s * .65; C.legs[1].rotation.x = -s * .65; C.arms[0].rotation.x = -s * .55; C.arms[1].rotation.x = s * .55; C.body.position.y = Math.abs(s) * .35; };
+
+/* ---------- renderer / scene / camera ---------- */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: 'high-performance'});
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x07090d);
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 900);
+const target = new THREE.Vector3(56, 6, 58), DIR = new THREE.Vector3(1, 1, 1).normalize();
+let viewH = 150;
+
+const ambient = new THREE.AmbientLight(0x6f84ad, 1.0), hemi = new THREE.HemisphereLight(0x7f9bd0, 0x1d1712, 0.8);
+const key1 = new THREE.DirectionalLight(0xc4d6ff, 1.5);
+key1.position.set(56 + 40, 120, 58 + 80); key1.target.position.set(56, 0, 58);
+Object.assign(key1.shadow.camera, {left: -110, right: 110, top: 110, bottom: -110, near: 10, far: 400});
+key1.shadow.bias = -0.0006; key1.shadow.normalBias = 0.35; key1.shadow.radius = 3;
+scene.add(ambient, hemi, key1, key1.target);
+const pl = (col, I, d = 110) => { const l = new THREE.PointLight(col, I, d, 2); scene.add(l); return l; };
+const LI = {fix: 300, reactor: 1100, emerg: 380};
+const fixLights = [pl(0xfff0d0, LI.fix), pl(0xfff0d0, LI.fix)], reactorLight = pl(0x19e6ff, LI.reactor), redLights = [pl(0xff2030, 0), pl(0xff2030, 0)];
+fixLights[0].position.set(47, 15, 36); fixLights[1].position.set(12, 15, 87);
+reactorLight.position.set(72, 14, 64); redLights[0].position.set(85.5, 15.5, 36); redLights[1].position.set(12, 15.5, 101.5);
+
+/* ---------- build the deck ---------- */
+const hash = (a, b) => ((a * 73856093) ^ (b * 19349663)) >>> 0;
+const W = {full: [wallModel(20, 0, 31), wallModel(20, 0, 32), wallModel(20, 1, 33)], low: [wallModel(5, 0, 41), wallModel(5, 0, 42)]};
+const F = {plate: [floorModel('plate', 51), floorModel('plate', 52), floorModel('plate', 53), floorModel('plate', 54)], haz: floorModel('haz', 55)};
+const lintel = new Model(6).box(0, 17, 0, 8, 20, 8, (x, y, z) => y === 17 ? haz(x, 0, z) : M.steel).mesh();
+const put = (obj, x, y, z, ry = 0) => { const o = obj.clone(); o.position.set(x, y, z); o.rotation.y = ry; scene.add(o); return o; };
+function tileKind(tx, tz) {
+  if (tz <= 2) { if (tx < 6 || tx > 8) return null; if (tz === 0) return tx === 8 ? 'low' : 'full'; return tx === 6 ? 'full' : tx === 8 ? 'low' : 'floor'; }
+  if (tz === 3) return tx === 7 ? 'door' : tx === 13 ? 'low' : 'full';
+  if (tz === 13 || tx === 13) return 'low';
+  return tx === 0 ? 'full' : 'floor';
+}
+for (let tz = 0; tz < 14; tz++) for (let tx = 0; tx < 14; tx++) {
+  const k = tileKind(tx, tz); if (!k) continue; const h = hash(tx, tz), X = tx * 8, Z = tz * 8;
+  if (k === 'full') put(W.full[(h % 7 === 0) ? 2 : h % 2], X, 0, Z);
+  else if (k === 'low') put(W.low[h % 2], X, 0, Z);
+  else if (k === 'door') { put(F.haz, X, 0, Z); put(lintel, X, 0, Z); }
+  else put(F.plate[h % 4], X, 0, Z);
+}
+put(stripModel(), 0, 2, 0);
+put(reactorModel(), 64, 2, 56);
+put(consoleModel(), 16, 2, 32); put(consoleModel(), 32, 2, 32);
+const crate = crateModel(); put(crate, 88, 2, 88); put(crate, 95, 2, 89); put(crate, 91, 8, 89);
+const fix = fixtureModel(); put(fix, 44, 14, 32); put(fix, 8, 14, 90, Math.PI / 2);
+const lamp = lampModel(); put(lamp, 84, 14, 32); put(lamp, 8, 14, 103, Math.PI / 2);
+put(signModel(), 8, 8, 61, Math.PI / 2);
+const door = put(doorModel(), 56, 2, 27);
+const crew1 = makeCrew(CREW1), crew2 = makeCrew(CREW2); crew2.root.position.set(36, 3, 40.5); crew2.root.rotation.y = Math.PI; scene.add(crew1.root, crew2.root); // crew 2 idles at the console
+let crew1Y = 2;
+const PATH = [[58, 64], [36, 64], [36, 50], [20, 50], [20, 64]].map(p => new THREE.Vector2(...p));
+const segLen = PATH.map((p, i) => p.distanceTo(PATH[(i + 1) % PATH.length])), total = segLen.reduce((a, b) => a + b, 0);
+
+/* ---------- state + quality plumbing ---------- */
+const S = {power: true, hq: !matchMedia('(pointer: coarse)').matches};
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let composer = null, bloom = null;
+function makeComposer() {
+  try {
+    composer = new EffectComposer(renderer); composer.setPixelRatio(1);
+    composer.addPass(new RenderPass(scene, camera));
+    bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.5, 0.85);
+    composer.addPass(bloom); composer.addPass(new OutputPass());
+  } catch (e) { console.warn('composer failed', e); composer = null; S.hq = false; }
+}
+function resize() {
+  const w = innerWidth, h = innerHeight, a = w / h, hh = viewH / 2;
+  Object.assign(camera, {left: -hh * a, right: hh * a, top: hh, bottom: -hh}); camera.updateProjectionMatrix();
+  const s = S.hq ? Math.min(devicePixelRatio, 2) : 1, bw = Math.max(1, Math.round(w * s)), bh = Math.max(1, Math.round(h * s));
+  renderer.setPixelRatio(1); renderer.setSize(bw, bh, false);
+  if (composer) composer.setSize(bw, bh);
+}
+function placeCam() { camera.position.copy(target).addScaledVector(DIR, 400); camera.lookAt(target); }
+function applyQuality() {
+  if (S.hq && !composer) makeComposer();
+  renderer.shadowMap.enabled = S.hq; key1.castShadow = S.hq; SOLID.needsUpdate = true;
+  resize();
+}
+function applyUI() {
+  bp.textContent = 'Power: ' + (S.power ? 'On' : 'Off'); bp.setAttribute('aria-pressed', S.power);
+  bq.textContent = 'Quality: ' + (S.hq ? 'High' : 'Low'); bq.setAttribute('aria-pressed', S.hq);
+}
+function applyPower() {
+  const on = S.power;
+  ambient.intensity = on ? 1.0 : 0.28; hemi.intensity = on ? 0.8 : 0.22; key1.intensity = on ? 1.5 : 0.35;
+  fixLights.forEach(l => l.intensity = on ? LI.fix : 0); reactorLight.intensity = on ? LI.reactor : 0;
+  GLOW.power.color.setScalar(on ? 1.5 : 0.05); GLOW.light.color.setScalar(on ? 0.5 : 0.05); GLOW.always.color.setScalar(1.6); // crew implants stay lit without power
+}
+const $ = id => document.getElementById(id), bp = $('bp'), bq = $('bq');
+bp.onclick = () => { S.power = !S.power; applyPower(); applyUI(); };
+bq.onclick = () => { S.hq = !S.hq; applyQuality(); applyUI(); };
+
+/* ---------- pan / zoom (mouse, touch, wheel, pinch) ---------- */
+const ptr = new Map(); let pinch = 0;
+const RIGHT = new THREE.Vector3(.7071, 0, -.7071), FWD = new THREE.Vector3(-.7071, 0, -.7071);
+const setZoom = v => { viewH = Math.min(400, Math.max(28, v)); resize(); };
+canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); ptr.set(e.pointerId, {x: e.clientX, y: e.clientY}); pinch = 0; });
+canvas.addEventListener('pointermove', e => {
+  const p = ptr.get(e.pointerId); if (!p) return;
+  if (ptr.size === 1) {
+    const ppu = innerHeight / viewH;
+    target.addScaledVector(RIGHT, -(e.clientX - p.x) / ppu).addScaledVector(FWD, (e.clientY - p.y) / (ppu * .5774));
+    target.x = Math.min(130, Math.max(-20, target.x)); target.z = Math.min(130, Math.max(-20, target.z));
+  }
+  p.x = e.clientX; p.y = e.clientY;
+  if (ptr.size === 2) { const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) setZoom(viewH * pinch / d); pinch = d; }
+});
+const up = e => { ptr.delete(e.pointerId); pinch = 0; };
+canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+canvas.addEventListener('wheel', e => { e.preventDefault(); setZoom(viewH * Math.exp(e.deltaY * .0012)); }, {passive: false});
+addEventListener('resize', resize);
+
+/* ---------- main loop ---------- */
+const clock = new THREE.Clock(); let frames = 0, acc = 0;
+const fpsEl = $('fps'), ang = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a));
+function frame() {
+  const dt = Math.min(clock.getDelta(), .1), t = clock.elapsedTime;
+  // door: slides sideways into the wall tile, holds open, closes
+  const tri = 1 - Math.abs(2 * ((t / 12) % 1) - 1); door.position.x = 56 - 8 * Math.min(1, Math.max(0, tri * 3 - .6));
+  // crew loop
+  let d = (t * 12) % total, i = 0; while (d > segLen[i]) d -= segLen[i++];
+  const a = PATH[i], b = PATH[(i + 1) % PATH.length], f = d / segLen[i];
+  const x = a.x + (b.x - a.x) * f, z = a.y + (b.y - a.y) * f, amp = reduced ? 0 : 1, yaw = crew1.root.rotation.y;
+  crew1Y += (groundY(x, z) - crew1Y) * Math.min(1, dt * 12);
+  crew1.root.position.set(x, crew1Y, z);
+  crew1.root.rotation.y = yaw + (ang(yaw, Math.atan2(b.x - a.x, b.y - a.y)) - yaw) * Math.min(1, dt * 10); // smooth turn toward travel
+  walkPose(crew1, t * 12 * .55, amp);
+  crew2.arms.forEach((m, i) => m.rotation.x = -.85 + Math.sin(t * 13 + i * 2.1) * .07 + Math.sin(t * 4.1 + i) * .04); // typing
+  crew2.head.rotation.x = .1 + Math.sin(t * .8) * .04; crew2.body.position.y = Math.sin(t * 1.5) * .06;
+  // emergency lights pulse only when power is off
+  const k = .5 + .5 * Math.sin(t * 2.2);
+  GLOW.emerg.color.setScalar(S.power ? 0 : .3 + 1.4 * k); redLights.forEach(l => l.intensity = S.power ? 0 : LI.emerg * (.15 + k));
+  placeCam();
+  if (S.hq && composer) composer.render(dt); else renderer.render(scene, camera);
+  frames++; acc += dt; if (acc > .5) { fpsEl.textContent = Math.round(frames / acc) + ' fps'; frames = 0; acc = 0; }
+  requestAnimationFrame(frame);
+}
+{ const a = innerWidth / innerHeight; viewH = Math.min(400, Math.max(120, 190 / a)); }
+applyPower(); applyQuality(); applyUI(); placeCam();
+requestAnimationFrame(frame);
+</script>
