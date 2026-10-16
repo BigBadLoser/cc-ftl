@@ -1,8 +1,10 @@
-import { CrewC, NeedsC, PathC, PositionC, PrioritiesC } from './crew/components';
+import { CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC } from './crew/components';
 import type { ContentRegistry } from './registry';
 import { Sim } from './sim';
-import { gridFromTemplate } from './ship';
+import { isTileWalkable } from './modules/walk';
+import { gridFromTemplate, spawnTemplateModules } from './ship';
 import { Struct } from './structure';
+import { CREW_MAX_HP } from './tuning';
 
 const STARTER_ROLES = ['role.engineer', 'role.engineer', 'role.gunner', 'role.medic'];
 
@@ -13,10 +15,11 @@ export function newGame(seed: number, content: ContentRegistry, shipId = 'ship.s
   const sim = new Sim(seed, content);
   const grid = gridFromTemplate(1, template);
   sim.grids.set(1, grid);
+  spawnTemplateModules(sim, 1, template);
 
   const floor: { x: number; y: number }[] = [];
   for (let y = 0; y < grid.height; y++) {
-    for (let x = 0; x < grid.width; x++) if (grid.get('struct', x, y) === Struct.Floor) floor.push({ x, y });
+    for (let x = 0; x < grid.width; x++) if (grid.get('struct', x, y) === Struct.Floor && isTileWalkable(sim, grid, x, y)) floor.push({ x, y });
   }
   const names = [...content.crewNames];
   for (const roleId of STARTER_ROLES) {
@@ -32,6 +35,7 @@ export function newGame(seed: number, content: ContentRegistry, shipId = 'ship.s
     sim.world.add(id, PathC, { steps: [] });
     sim.world.add(id, PrioritiesC, { ...role.priorities });
     sim.world.add(id, NeedsC, { rest: sim.rng.int(60, 100) });
+    sim.world.add(id, HealthC, { hp: CREW_MAX_HP, max: CREW_MAX_HP });
   }
   return sim;
 }

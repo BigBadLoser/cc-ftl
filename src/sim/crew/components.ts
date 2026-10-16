@@ -1,4 +1,6 @@
 import { defineComponent } from '../ecs';
+import type { HaulData } from '../items/components';
+import type { ItemQty } from '../registry';
 
 /**
  * Shared contract for M2 (crew & jobs). Sim systems write these; render/ui only read them.
@@ -34,12 +36,13 @@ export const WORK_CATEGORIES = [
   'repair',
   'construction',
   'hauling',
+  'crafting',
   'cooking',
 ] as const;
 export type WorkCategory = (typeof WORK_CATEGORIES)[number];
 
 /** What a crew member is currently doing, shown in UI and used by render for animation. */
-export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted';
+export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead';
 
 export interface Crew {
   name: string;
@@ -79,8 +82,12 @@ export const AssignmentC = defineComponent<Assignment>('assignment');
 /** A unit of work at a tile. Jobs are entities. */
 export interface Job {
   category: WorkCategory;
-  /** Job kind, e.g. 'build' or 'deconstruct'. */
-  kind: 'build' | 'deconstruct';
+  /**
+   * Job kind. Player-made: build/deconstruct (struct), module (blueprint), moduleDecon.
+   * Auto-made by the autojobs system: extinguish (fire at x,y), repair (module `target`),
+   * rescue (downed crew `target`).
+   */
+  kind: JobKind;
   gridId: number;
   x: number;
   y: number;
@@ -92,5 +99,60 @@ export interface Job {
   progress: number;
   /** Crew entity that reserved it, or 0. */
   reservedBy: number;
+  /** For 'module' jobs: the blueprint. */
+  module?: { def: string; rot: number };
+  /** Entity the job acts on: module (moduleDecon, repair) or downed crew (rescue). */
+  target?: number;
+  /** For 'rescue': the bed module reserved for the patient, or 0. */
+  bed?: number;
+  /** Materials still to be delivered before work may start (build, module, craft). Absent = none needed. */
+  needs?: ItemQty[];
+  /** Materials delivered so far; consumed when the job completes, dropped as floor stacks if it is cancelled. */
+  delivered?: ItemQty[];
+  /** Tick of the last 'job.missingMaterials' / 'storage.full' warning (debounce). */
+  warnedAt?: number;
+  /** For 'haul' jobs: what moves where. */
+  haul?: HaulData;
+  /** For 'craft' jobs: the recipe being made. */
+  craft?: { recipe: string };
 }
 export const JobC = defineComponent<Job>('job');
+
+export type JobKind =
+  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft';
+
+/** Hit points of a crew member. At 0 they are downed (see DownedC). */
+export interface Health {
+  hp: number;
+  max: number;
+}
+export const HealthC = defineComponent<Health>('health');
+
+/** Present while a crew member is at 0 hp but alive. Bleeds out unless stabilized in a bed. */
+export interface Downed {
+  /** Seconds until death while not stabilized. */
+  bleed: number;
+  stabilized: boolean;
+  /** Bed module the patient is reserved for / lying in, or 0. */
+  bed: number;
+}
+export const DownedC = defineComponent<Downed>('downed');
+
+/** Corpse marker. The Crew data stays; no AI components remain. */
+export interface Dead {
+  /** Tick of death. */
+  tick: number;
+}
+export const DeadC = defineComponent<Dead>('dead');
+
+/** The crew member is being carried; their Position follows the carrier's. */
+export interface Carried {
+  carrier: number;
+}
+export const CarriedC = defineComponent<Carried>('carried');
+
+/** A bed module this crew member has reserved for sleeping. */
+export interface BedClaim {
+  bed: number;
+}
+export const BedClaimC = defineComponent<BedClaim>('bedClaim');

@@ -1,10 +1,10 @@
 /** Storage type of a grid field. */
-export type FieldType = 'u8' | 'u16' | 'f32';
+export type FieldType = 'u8' | 'u16' | 'u32' | 'f32';
 
 /** Field name -> storage type, passed at Grid construction. */
 export type FieldSpec = Record<string, FieldType>;
 
-type FieldArray = Uint8Array | Uint16Array | Float32Array;
+type FieldArray = Uint8Array | Uint16Array | Uint32Array | Float32Array;
 
 /** JSON-able snapshot of a Grid. Revisions are not saved; they restart at 0. */
 export interface GridData {
@@ -20,6 +20,7 @@ export const CHUNK_SIZE = 16;
 function allocate(type: FieldType, n: number): FieldArray {
   if (type === 'u8') return new Uint8Array(n);
   if (type === 'u16') return new Uint16Array(n);
+  if (type === 'u32') return new Uint32Array(n);
   return new Float32Array(n);
 }
 
@@ -67,6 +68,15 @@ export class Grid {
       this.revisions.set(name, 0);
       this.chunkRevs.set(name, new Uint32Array(this.chunksX * this.chunksY));
     }
+  }
+
+  /** Add a zero-filled field to an existing grid (save migrations). No-op if it exists. */
+  addField(name: string, type: FieldType): void {
+    if (this.arrays.has(name)) return;
+    this.types.set(name, type);
+    this.arrays.set(name, allocate(type, this.width * this.height));
+    this.revisions.set(name, 0);
+    this.chunkRevs.set(name, new Uint32Array(this.chunksX * this.chunksY));
   }
 
   /** True if the grid has this field. */

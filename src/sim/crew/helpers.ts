@@ -1,5 +1,7 @@
 import type { Sim } from '../sim';
-import { AssignmentC, CrewC, JobC, PathC, PositionC, type Position } from './components';
+import {
+  AssignmentC, CarriedC, CrewC, DeadC, DownedC, JobC, PathC, PositionC, type Position,
+} from './components';
 import type { Tile } from './pathfind';
 
 // Facing index per unit step: 0 = +x, counter-clockwise in grid space, 2 = +y.
@@ -44,9 +46,15 @@ export function releaseAssignment(sim: Sim, crew: number): void {
   clearPath(sim, crew);
 }
 
-/** True if any crew member stands on, or is stepping onto, the tile. */
+/** True if the crew member cannot act: downed, dead or being carried. */
+export function isIncapacitated(sim: Sim, crew: number): boolean {
+  return sim.world.has(crew, DownedC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC);
+}
+
+/** True if any living crew member stands on, or is stepping onto, the tile. */
 export function isTileOccupied(sim: Sim, gridId: number, x: number, y: number): boolean {
   for (const id of sim.world.query(CrewC, PositionC)) {
+    if (sim.world.has(id, DeadC)) continue;
     const p = sim.world.get(id, PositionC) as Position;
     if (p.gridId !== gridId) continue;
     if ((p.x === x && p.y === y) || (p.toX === x && p.toY === y)) return true;
@@ -54,11 +62,13 @@ export function isTileOccupied(sim: Sim, gridId: number, x: number, y: number): 
   return false;
 }
 
-/** The job entity at a tile, or 0. */
+const PLAYER_JOB_KINDS: readonly string[] = ['build', 'deconstruct', 'module', 'moduleDecon'];
+
+/** The player-made job (build, deconstruct, module blueprint) at a tile, or 0. */
 export function findJobAt(sim: Sim, gridId: number, x: number, y: number): number {
   for (const id of sim.world.query(JobC)) {
     const j = sim.world.get(id, JobC);
-    if (j && j.gridId === gridId && j.x === x && j.y === y) return id;
+    if (j && j.gridId === gridId && j.x === x && j.y === y && PLAYER_JOB_KINDS.includes(j.kind)) return id;
   }
   return 0;
 }
