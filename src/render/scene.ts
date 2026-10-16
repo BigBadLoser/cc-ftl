@@ -1,20 +1,20 @@
 import {
-  AmbientLight,
-  BoxGeometry,
-  Color,
-  DirectionalLight,
-  HemisphereLight,
-  Mesh,
-  MeshStandardMaterial,
-  OrthographicCamera,
-  PCFShadowMap,
-  PointLight,
-  Scene,
-  WebGLRenderer,
+  AmbientLight, ACESFilmicToneMapping, Color, DirectionalLight, HemisphereLight, PCFShadowMap, Scene,
+  Vector2, Vector3, WebGLRenderer,
 } from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import type { Grid } from '../sim/grid';
 import type { Sim } from '../sim';
+import { createCameraRig } from './camera';
+import { createGridView, type CutawayMode, type GridView } from './gridView';
+import { WALL_FULL_H } from './models/tiles';
+import { VOXEL_SIZE } from './voxel/model';
 
 export type Quality = 'high' | 'low';
+export type { CutawayMode };
 
 /** Read-only window onto the sim; the renderer never writes through it. */
 export type SimView = Readonly<Pick<Sim, 'tick' | 'grids'>> & { readonly world: Readonly<Pick<Sim['world'], 'entityCount'>> };
@@ -23,82 +23,119 @@ export interface Renderer {
   render(alpha: number): void;
   resize(): void;
   dispose(): void;
+  /** Show a grid (replacing any previous one) and frame the camera on it. */
+  setGrid(grid: Grid): void;
+  setCutaway(mode: CutawayMode): void;
+  setOverlay(field: string | null): void;
+  /** Drag the view by a screen-space delta in CSS px. */
+  pan(dxPx: number, dyPx: number): void;
+  /** Zoom by factor (>1 zooms in) keeping the point under (screenX, screenY) fixed. Canvas-relative px. */
+  zoomAt(factor: number, screenX: number, screenY: number): void;
+  /** Tile under a canvas-relative screen position, or null if outside the grid. */
+  pickTile(screenX: number, screenY: number): { x: number; y: number } | null;
 }
 
-const PITCH = Math.atan(1 / Math.SQRT2); // 35.264 degrees
-const VIEW_TILES = 9; // visible world height at zoom 1
-
-export function createRenderer(canvas: HTMLCanvasElement, sim: SimView, quality: Quality = 'high'): Renderer {
+export function createRenderer(canvas: HTMLCanvasElement, _sim: SimView, quality: Quality = 'high'): Renderer {
   const high = quality === 'high';
   const renderer = new WebGLRenderer({ canvas, antialias: high, powerPreference: 'high-performance' });
-  renderer.setClearColor(new Color(0x070b12));
+  renderer.toneMapping = ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.7;
   renderer.shadowMap.enabled = high;
   renderer.shadowMap.type = PCFShadowMap;
 
   const scene = new Scene();
-  const camera = new OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
-  const dist = 40;
-  camera.position.set(
-    dist * Math.cos(PITCH) * Math.sin(Math.PI / 4),
-    dist * Math.sin(PITCH),
-    dist * Math.cos(PITCH) * Math.cos(Math.PI / 4),
-  );
-  camera.lookAt(0, 0, 0);
+  scene.background = new Color(0x07090d);
 
-  scene.add(new AmbientLight(0x3a4a6a, 0.6));
-  scene.add(new HemisphereLight(0x6f8fc8, 0x10141c, 0.5));
-  const sun = new DirectionalLight(0x9fb4e0, 0.7);
-  sun.position.set(-8, 14, 6);
-  sun.castShadow = high;
-  sun.shadow.mapSize.set(1024, 1024);
-  Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8 });
-  scene.add(sun);
+  const rig = createCameraRig();
+  scene.add(new AmbientLight(0x8a9abb, 1.3));
+  scene.add(new HemisphereLight(0x8fa8d4, 0x1d1712, 1.0));
+  const key = new DirectionalLight(0xd4e0ff, 2.4);
+  key.castShadow = high;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.bias = -0.0006;
+  key.shadow.normalBias = 0.02;
+  scene.add(key, key.target);
 
-  const tileGeo = new BoxGeometry(0.96, 0.2, 0.96);
-  const tileMat = new MeshStandardMaterial({ color: 0x1a2232, roughness: 0.9 });
-  for (let x = -3; x <= 3; x++) {
-    for (let z = -3; z <= 3; z++) {
-      const tile = new Mesh(tileGeo, tileMat);
-      tile.position.set(x, -0.1, z);
-      tile.receiveShadow = true;
-      scene.add(tile);
-    }
+  let composer: EffectComposer | null = null;
+  if (high) {
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, rig.camera));
+    composer.addPass(new UnrealBloomPass(new Vector2(256, 256), 0.55, 0.5, 0.85));
+    composer.addPass(new OutputPass());
   }
-  const cubeGeo = new BoxGeometry(0.8, 0.8, 0.8);
-  const cubeMat = new MeshStandardMaterial({ color: 0x0a3a44, emissive: 0x22d3ee, emissiveIntensity: 1.4 });
-  const cube = new Mesh(cubeGeo, cubeMat);
-  cube.position.set(0, 0.4, 0);
-  cube.castShadow = high;
-  scene.add(cube);
-  const glow = new PointLight(0x22d3ee, 6, 6);
-  glow.position.set(0, 1.2, 0);
-  scene.add(glow);
 
-  function resize() {
-    const w = canvas.clientWidth || 1;
-    const h = canvas.clientHeight || 1;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(w, h, false);
-    const aspect = w / h;
-    camera.left = (-VIEW_TILES * aspect) / 2;
-    camera.right = (VIEW_TILES * aspect) / 2;
-    camera.top = VIEW_TILES / 2;
-    camera.bottom = -VIEW_TILES / 2;
-    camera.updateProjectionMatrix();
+  let view: GridView | null = null;
+  let cutaway: CutawayMode = 'auto';
+  let overlay: string | null = null;
+  let cw = 1;
+  let ch = 1;
+
+  function resize(): void {
+    cw = canvas.clientWidth || 1;
+    ch = canvas.clientHeight || 1;
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    renderer.setPixelRatio(ratio);
+    renderer.setSize(cw, ch, false);
+    composer?.setPixelRatio(ratio);
+    composer?.setSize(cw, ch);
+    rig.resize(cw, ch);
   }
   resize();
 
+  function frame(grid: Grid): void {
+    const w = grid.width;
+    const h = grid.height;
+    const aspect = cw / ch;
+    const span = (w + h) * Math.SQRT1_2; // screen width of the footprint
+    const wallH = WALL_FULL_H * VOXEL_SIZE;
+    const needH = span * Math.sin(Math.atan(1 / Math.SQRT2)) + wallH * 0.82;
+    rig.setView(new Vector3(0, wallH * 0.2, 0), Math.max(needH, span / aspect) * 1.12);
+    const r = Math.max(w, h) * 0.9;
+    Object.assign(key.shadow.camera, { left: -r, right: r, top: r, bottom: -r, near: 1, far: r * 6 });
+    key.shadow.camera.updateProjectionMatrix();
+    key.position.set(r * 0.5, r * 1.6, r * 1.1);
+    key.target.position.set(0, 0, 0);
+  }
+
   return {
     render() {
-      cube.position.y = 0.4 + Math.sin(sim.tick / 10) * 0.05;
-      renderer.render(scene, camera);
+      view?.update();
+      if (composer) composer.render();
+      else renderer.render(scene, rig.camera);
     },
     resize,
+    setGrid(grid) {
+      if (view) {
+        scene.remove(view.group);
+        view.dispose();
+      }
+      view = createGridView(grid);
+      view.setCutaway(cutaway);
+      view.setOverlay(overlay);
+      scene.add(view.group);
+      frame(grid);
+    },
+    setCutaway(mode) {
+      cutaway = mode;
+      view?.setCutaway(mode);
+    },
+    setOverlay(field) {
+      overlay = field;
+      view?.setOverlay(field);
+    },
+    pan: (dx, dy) => rig.pan(dx, dy),
+    zoomAt: (f, x, y) => rig.zoomAt(f, x, y),
+    pickTile(sx, sy) {
+      if (!view) return null;
+      const p = rig.groundAt(sx, sy);
+      if (!p) return null;
+      const x = Math.floor(p.x - view.offsetX);
+      const y = Math.floor(p.z - view.offsetZ);
+      return view.grid.inBounds(x, y) ? { x, y } : null;
+    },
     dispose() {
-      tileGeo.dispose();
-      tileMat.dispose();
-      cubeGeo.dispose();
-      cubeMat.dispose();
+      view?.dispose();
+      composer?.dispose();
       renderer.dispose();
     },
   };
