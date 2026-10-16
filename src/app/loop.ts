@@ -1,4 +1,4 @@
-import { TICK_HZ, type Sim } from '../sim';
+import { TICK_HZ, type Sim, type SimEvent } from '../sim';
 
 export type Speed = 0 | 1 | 2 | 3;
 
@@ -38,6 +38,8 @@ export interface LoopOptions {
   sim: Sim;
   /** Called every frame with the interpolation fraction in [0,1). */
   render: (alpha: number) => void;
+  /** Called each frame with the events emitted by that frame's ticks (output only). */
+  onEvents?: (events: SimEvent[]) => void;
   /** Called every frame after steps and event draining. */
   onFrame: (stats: FrameStats) => void;
 }
@@ -81,7 +83,8 @@ export function createLoop(opts: LoopOptions): Loop {
       sim.step();
       push(tickTimes, performance.now() - t0);
     }
-    sim.events.drain(); // M0: nothing consumes events yet
+    const events = sim.events.drain();
+    if (events.length) opts.onEvents?.(events);
     alpha = speed === 0 ? 0 : acc / (1000 / TICK_HZ);
     opts.render(alpha);
     const frameMs = avg(frameTimes);

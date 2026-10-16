@@ -5,9 +5,6 @@
   let { api, snap }: { api: UiApi; snap: UiSnapshot } = $props();
   let toast = $state('');
 
-  function spawn() {
-    api.dispatch({ type: 'debug.spawnMarker', x: Math.floor(Math.random() * 32), y: Math.floor(Math.random() * 32) });
-  }
   async function repro() {
     const ok = await copyText(api.buildRepro());
     toast = ok ? 'Copied' : 'Copy failed';
@@ -27,7 +24,6 @@
     <dt>Seed</dt><dd>{snap.seed}</dd>
   </dl>
   <div class="btns">
-    <button onclick={spawn}>Spawn marker</button>
     <button onclick={repro}>Copy repro</button>
     <button onclick={() => api.throwTestError()}>Throw test error</button>
   </div>
@@ -35,7 +31,7 @@
 </aside>
 
 <style>
-  aside { position: fixed; top: calc(60px + var(--sat)); left: calc(8px + var(--sal)); width: min(260px, calc(100vw - 16px - var(--sal) - var(--sar))); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+  aside { position: fixed; top: calc(112px + var(--sat)); left: calc(8px + var(--sal)); width: min(260px, calc(100vw - 16px - var(--sal) - var(--sar))); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
   dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; margin: 0 0 10px; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; color: var(--cyan); }
   .btns { display: flex; flex-direction: column; gap: 6px; }

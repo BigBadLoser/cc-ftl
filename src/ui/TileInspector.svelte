@@ -31,6 +31,7 @@
       {/each}
     </dl>
     {#if info.selected}
+      <div class="dbg">Debug: instant</div>
       <div class="btns">
         {#each kinds as k (k.kind)}
           <button onclick={() => setKind(k.kind)}>{k.label}</button>
@@ -50,6 +51,7 @@
   h2 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
   dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; margin: 0 0 8px; font-variant-numeric: tabular-nums; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; }
+  .dbg { color: var(--dim); font-size: 12px; margin-bottom: 4px; }
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   @media (max-width: 600px) {
     aside { left: 0; right: 0; bottom: 0; width: auto; border-radius: 14px 14px 0 0; border-width: 1px 0 0; padding: 10px 14px calc(10px + var(--sab)); }

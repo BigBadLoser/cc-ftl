@@ -2,6 +2,7 @@ import { mount } from 'svelte';
 import App from './ui/App.svelte';
 import type { UiApi } from './ui/api';
 import { createBridge } from './app/bridge';
+import { createController } from './app/controller';
 import { createErrorLog } from './app/errors';
 import { attachInput } from './app/input';
 import { createLoop } from './app/loop';
@@ -19,11 +20,13 @@ const seed = param !== null && Number.isFinite(Number(param)) ? Number(param) >>
 const errorLog = createErrorLog();
 const sim = newGame(seed, content);
 const bridge = createBridge(sim);
+const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
 
 const loop = createLoop({
   sim,
   render: (alpha) => renderer?.render(alpha),
+  onEvents: controller.onEvents,
   onFrame: (stats) => bridge.update(stats, renderer?.info()),
 });
 bridge.attachLoop(loop);
@@ -32,6 +35,12 @@ const api: UiApi = {
   snapshot: bridge.snapshot,
   inspect: bridge.inspect,
   errors: errorLog.errors,
+  crew: bridge.crew,
+  selectedCrew: controller.selectedCrew,
+  tool: controller.tool,
+  toast: controller.toast,
+  setTool: controller.setTool,
+  selectCrew: controller.selectCrew,
   dispatch: bridge.dispatch,
   setSpeed: bridge.setSpeed,
   togglePause: bridge.togglePause,
@@ -49,17 +58,7 @@ const api: UiApi = {
     renderer = r;
     const grid = sim.grids.get(1);
     if (grid) r.setGrid(grid);
-    const toRef = (t: { x: number; y: number } | null) => (t ? { gridId: 1, ...t } : null);
-    attachInput(canvas, r, {
-      onSelect(t) {
-        r.setSelection(t);
-        bridge.setSelected(toRef(t));
-      },
-      onHover(t) {
-        r.setHover(t);
-        bridge.setHovered(toRef(t));
-      },
-    });
+    attachInput(canvas, r, controller.attach(r));
     window.addEventListener('resize', () => r.resize());
     loop.start();
   },

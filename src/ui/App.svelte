@@ -3,6 +3,10 @@
   import type { UiApi, UiCutaway, UiSnapshot } from './api';
   import DebugPanel from './DebugPanel.svelte';
   import TileInspector from './TileInspector.svelte';
+  import CrewBar from './CrewBar.svelte';
+  import CrewInspector from './CrewInspector.svelte';
+  import PriorityGrid from './PriorityGrid.svelte';
+  import ToolBar from './ToolBar.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import './theme.css';
 
@@ -10,6 +14,9 @@
 
   let canvas: HTMLCanvasElement;
   let debug = $state(false);
+  let priorities = $state(false);
+  let selCrew = $state<number | null>(null);
+  let toast = $state<string | null>(null);
   let snap = $state<UiSnapshot | undefined>(undefined);
 
   let cutaway = $state<UiCutaway>('auto');
@@ -26,9 +33,13 @@
   }
 
   onMount(() => {
-    const unsub = api.snapshot.subscribe((s) => (snap = s));
+    const unsubs = [
+      api.snapshot.subscribe((s) => (snap = s)),
+      api.selectedCrew.subscribe((c) => (selCrew = c)),
+      api.toast.subscribe((t) => (toast = t)),
+    ];
     api.attachCanvas(canvas);
-    return unsub;
+    return () => unsubs.forEach((u) => u());
   });
 
   function onKey(e: KeyboardEvent) {
@@ -69,7 +80,16 @@
 {#if debug && snap}
   <DebugPanel {api} {snap} />
 {/if}
-<TileInspector {api} />
+<CrewBar {api} />
+<ToolBar {api} />
+{#if priorities}
+  <PriorityGrid {api} onClose={() => (priorities = false)} />
+{:else if selCrew !== null}
+  <CrewInspector {api} onPriorities={() => (priorities = true)} />
+{:else}
+  <TileInspector {api} />
+{/if}
+{#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 <ErrorOverlay {api} />
 
 <style>
@@ -80,6 +100,7 @@
     padding: calc(8px + var(--sat)) calc(8px + var(--sar)) 8px calc(8px + var(--sal));
     background: linear-gradient(var(--panel), transparent);
   }
+  .toast { position: fixed; left: 50%; top: calc(150px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); border-radius: 8px; pointer-events: none; z-index: 9; }
   .tick { color: var(--cyan); min-width: 5.5em; }
   .speeds, .views { display: flex; gap: 4px; }
   @media (max-width: 600px) { .tick { display: none; } header { gap: 4px; } header button { padding: 0 8px; font-size: 12px; } }

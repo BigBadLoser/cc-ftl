@@ -33,6 +33,9 @@ export interface Renderer {
   setOverlay(field: string | null): void;
   setSelection(tile: { x: number; y: number } | null): void;
   setHover(tile: { x: number; y: number } | null): void;
+  setPreview(tiles: readonly { x: number; y: number }[]): void;
+  /** Center the camera on a (fractional) tile position. */
+  focusTile(x: number, y: number): void;
   /** Draw calls and triangles of the last frame (all passes). */
   info(): RenderInfo;
   /** Drag the view by a screen-space delta in CSS px. */
@@ -88,6 +91,7 @@ export function createRenderer(canvas: HTMLCanvasElement, quality: Quality = 'hi
   let overlay: string | null = null;
   let selection: { x: number; y: number } | null = null;
   let hover: { x: number; y: number } | null = null;
+  let preview: readonly { x: number; y: number }[] = [];
   let cw = 1;
   let ch = 1;
 
@@ -138,6 +142,7 @@ export function createRenderer(canvas: HTMLCanvasElement, quality: Quality = 'hi
       view.setOverlay(overlay);
       view.setSelection(selection);
       view.setHover(hover);
+      view.setPreview(preview);
       scene.add(view.group);
       frame(grid);
     },
@@ -156,6 +161,13 @@ export function createRenderer(canvas: HTMLCanvasElement, quality: Quality = 'hi
     setHover(t) {
       hover = t;
       view?.setHover(t);
+    },
+    setPreview(tiles) {
+      preview = tiles;
+      view?.setPreview(tiles);
+    },
+    focusTile(x, y) {
+      if (view) rig.focus(x + view.offsetX, y + view.offsetZ);
     },
     info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
     pan: (dx, dy) => rig.pan(dx, dy),

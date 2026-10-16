@@ -1,5 +1,7 @@
 import { Struct, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
+import type { UiCrew } from '../ui/api';
+import { buildCrewList } from './crewSnapshot';
 import { createStore, type Readable } from './store';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
@@ -37,6 +39,7 @@ const STRUCT_NAMES: Record<number, string> = Object.fromEntries(Object.entries(S
 export interface Bridge {
   snapshot: Readable<Snapshot>;
   inspect: Readable<InspectSnapshot | null>;
+  crew: Readable<UiCrew[]>;
   setSelected(tile: TileRef | null): void;
   setHovered(tile: TileRef | null): void;
   dispatch(cmd: Command): void;
@@ -62,6 +65,8 @@ export function createBridge(sim: Sim): Bridge {
     triangles: 0,
   });
   const inspect = createStore<InspectSnapshot | null>(null);
+  const crew = createStore<UiCrew[]>([]);
+  let lastCrew = '';
   let selected: TileRef | null = null;
   let hovered: TileRef | null = null;
   let lastInspect = '';
@@ -86,6 +91,13 @@ export function createBridge(sim: Sim): Bridge {
     lastInspect = key;
     inspect.set(snap);
   };
+  const refreshCrew = () => {
+    const list = buildCrewList(sim);
+    const key = JSON.stringify(list);
+    if (key === lastCrew) return;
+    lastCrew = key;
+    crew.set(list);
+  };
   let loop: Loop | undefined;
   let lastSpeed: Speed = 1;
 
@@ -98,6 +110,7 @@ export function createBridge(sim: Sim): Bridge {
   return {
     snapshot: store,
     inspect,
+    crew,
     setSelected(t) {
       selected = t;
       refreshInspect();
@@ -115,6 +128,7 @@ export function createBridge(sim: Sim): Bridge {
     update(stats, info) {
       store.update((s) => ({ ...s, ...stats, drawCalls: info?.calls ?? s.drawCalls, triangles: info?.triangles ?? s.triangles }));
       refreshInspect();
+      refreshCrew();
     },
   };
 }

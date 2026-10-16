@@ -6,8 +6,16 @@ export interface Tile {
 }
 
 export interface InputHandlers {
-  /** Tile tapped/clicked, or null when empty space was hit. */
-  onSelect(tile: Tile | null): void;
+  /** Tap/click at canvas-relative px (not called while painting). */
+  onTap(screenX: number, screenY: number): void;
+  /** True while a build/deconstruct/cancel tool is active: one-finger drag paints instead of panning. */
+  paintMode(): boolean;
+  /** Drag-paint lifecycle. `end` commits, `cancel` aborts (second finger, pointer cancel). */
+  onPaint(phase: 'start' | 'move' | 'end' | 'cancel', tile: Tile | null): void;
+  /** Right-click: back out of the current tool. */
+  onBack(): void;
+  /** Non-camera hotkeys: 'escape', 'r'. */
+  onKey(key: string): void;
   /** Mouse hover tile (null when off-grid or pointer left). */
   onHover(tile: Tile | null): void;
 }
@@ -24,6 +32,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
   let downId = -1;
   let start = { x: 0, y: 0 };
   let dragging = false;
+  let painting = false;
   let multi = false; // a second finger joined: never counts as a tap
   let pinchDist = 0;
 
@@ -37,6 +46,10 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
   };
 
   const onDown = (e: PointerEvent) => {
+    if (e.button === 2) {
+      h.onBack();
+      return;
+    }
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, local(e));
     if (pointers.size === 1) {
@@ -44,7 +57,13 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
       start = local(e);
       dragging = false;
       multi = false;
+      painting = e.button === 0 && h.paintMode();
+      if (painting) h.onPaint('start', renderer.pickTile(start.x, start.y));
     } else if (pointers.size === 2) {
+      if (painting) {
+        painting = false;
+        h.onPaint('cancel', null);
+      }
       multi = true;
       pinchDist = mid().d;
     }
@@ -67,6 +86,10 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
       return;
     }
     pointers.set(e.pointerId, p);
+    if (painting) {
+      h.onPaint('move', renderer.pickTile(p.x, p.y));
+      return;
+    }
     if (!dragging && Math.hypot(p.x - start.x, p.y - start.y) >= DRAG_THRESHOLD) dragging = true;
     if (dragging) renderer.pan(p.x - prev.x, p.y - prev.y);
     else if (e.pointerType === 'mouse') h.onHover(renderer.pickTile(p.x, p.y));
@@ -76,9 +99,13 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     const wasDown = pointers.delete(e.pointerId);
     if (!wasDown) return;
     if (pointers.size === 1) pinchDist = 0;
-    if (e.pointerId === downId && e.type === 'pointerup' && !dragging && !multi) {
+    if (painting && e.pointerId === downId) {
+      painting = false;
       const p = local(e);
-      h.onSelect(renderer.pickTile(p.x, p.y));
+      h.onPaint(e.type === 'pointerup' ? 'end' : 'cancel', renderer.pickTile(p.x, p.y));
+    } else if (e.pointerId === downId && e.type === 'pointerup' && !dragging && !multi) {
+      const p = local(e);
+      h.onTap(p.x, p.y);
     }
     if (pointers.size === 0) multi = false;
   };
@@ -128,6 +155,8 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
         lastT = performance.now();
         raf = requestAnimationFrame(tick);
       }
+    } else if (k === 'escape' || k === 'r') {
+      h.onKey(k);
     } else if (k === '+' || k === '=' || k === '-' || k === '_') {
       const r = canvas.getBoundingClientRect();
       renderer.zoomAt(k === '-' || k === '_' ? 1 / KEY_ZOOM : KEY_ZOOM, r.width / 2, r.height / 2);
@@ -142,6 +171,8 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
   canvas.addEventListener('pointercancel', onUp);
   canvas.addEventListener('pointerleave', onLeave);
   canvas.addEventListener('wheel', onWheel, { passive: false });
+  const noMenu = (e: Event) => e.preventDefault();
+  canvas.addEventListener('contextmenu', noMenu);
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('blur', onBlur);
@@ -152,6 +183,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     canvas.removeEventListener('pointercancel', onUp);
     canvas.removeEventListener('pointerleave', onLeave);
     canvas.removeEventListener('wheel', onWheel);
+    canvas.removeEventListener('contextmenu', noMenu);
     window.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('keyup', onKeyUp);
     window.removeEventListener('blur', onBlur);

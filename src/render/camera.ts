@@ -18,6 +18,8 @@ export interface CameraRig {
   setView(target: Vector3, viewHeight: number): void;
   pan(dxPx: number, dyPx: number): void;
   zoomAt(factor: number, sx: number, sy: number): void;
+  /** Move the view target to a world ground point, keeping zoom. */
+  focus(x: number, z: number): void;
   /** World point on Y = 0 under a screen position (canvas-relative px), or null. */
   groundAt(sx: number, sy: number): Vector3 | null;
 }
@@ -78,6 +80,10 @@ export function createCameraRig(): CameraRig {
       proj();
       const after = before && groundAt(sx, sy);
       if (before && after) target.add(before).sub(after);
+      place();
+    },
+    focus(x, z) {
+      target.set(x, target.y, z);
       place();
     },
     groundAt,

@@ -22,6 +22,8 @@ export interface GridView {
   setOverlay(field: string | null): void;
   setSelection(tile: { x: number; y: number } | null): void;
   setHover(tile: { x: number; y: number } | null): void;
+  /** Highlight a set of tiles (drag-paint preview). Empty clears. */
+  setPreview(tiles: readonly { x: number; y: number }[]): void;
   dispose(): void;
 }
 
@@ -70,6 +72,7 @@ export function createGridView(grid: Grid): GridView {
     m.frustumCulled = false;
   }
   group.add(content, overlayGroup, hoverMesh, selMesh);
+  const previewPool: Mesh[] = [];
 
   let mode: CutawayMode = 'auto';
   let structRev = -1;
@@ -200,6 +203,20 @@ export function createGridView(grid: Grid): GridView {
     setSelection(t) {
       selMesh.visible = t !== null;
       if (t) selMesh.position.set(t.x, 0, t.y);
+    },
+    setPreview(tiles) {
+      while (previewPool.length < tiles.length) {
+        const m = new Mesh(frameGeo, hoverMat);
+        m.renderOrder = 10;
+        m.frustumCulled = false;
+        previewPool.push(m);
+        group.add(m);
+      }
+      previewPool.forEach((m, i) => {
+        const t = tiles[i];
+        m.visible = t !== undefined;
+        if (t) m.position.set(t.x, 0, t.y);
+      });
     },
     setHover(t) {
       hoverMesh.visible = t !== null;
