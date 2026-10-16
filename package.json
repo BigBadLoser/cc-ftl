@@ -14,6 +14,7 @@
     "check": "npm run lint && npm run typecheck && npm run test",
     "assets": "tools/blender/setup.sh && \"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/build.py",
     "assets:preview": "\"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/preview.py -- /tmp/claude-0/-home-user/ed10066a-51ba-5b6e-98cf-ce829905d359/scratchpad/assets-preview",
+    "sprites:readability": "mkdir -p \"${A1_OUT:-/tmp/a1}\" && READABILITY_GLB=${READABILITY_GLB:-public/assets/crew/human/base_cc0.glb} \"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/sprites/readability.py -- \"${A1_OUT:-/tmp/a1}\" && python3 -I tools/blender/sprites/readability_sheet.py \"${A1_OUT:-/tmp/a1}\"",
     "sprites": "\"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/sprites/build_sprites.py",
     "pixel-lab:build": "vite build -c spikes/pixel-lab/vite.config.ts && node spikes/pixel-lab/post.mjs"
   },

@@ -229,7 +229,7 @@ def sheet(out, variants, title, name):
 
 
 def shipped(man, assets, layers, d, clip, frame, colours):
-    cv = np.zeros((130, 110, 4), np.uint8)
+    cv = np.zeros((134, 110, 4), np.uint8)
     cv[..., :3] = BG
     cv[..., 3] = 255
     ax = ay = None
@@ -256,7 +256,7 @@ def diagnosis(out):
     flat = np.dstack([np.full((CH, CW, 3), BG, np.uint8), np.full((CH, CW), 255, np.uint8)])
     panels, stats = [], []
     for fname, d in (("se_idle", 0), ("nw_idle", 4)):
-        a = shipped(man, assets, S.layer_ids("eng", "base"), d, "idle", 0, S.COLOURS["eng"])[8:130, 20:98, :3]
+        a = shipped(man, assets, S.layer_ids("eng", "base"), d, "idle", 0, S.COLOURS["eng"])[8:132, 20:98, :3]
         b = render_cell(resn[fname], "eng", nov, flat)[..., :3]
         for im in (a, b):
             dk = (im < 48).all(-1)
