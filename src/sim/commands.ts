@@ -19,7 +19,16 @@ export type Command =
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }
-  | { type: 'crew.moveTo'; id: number; x: number; y: number };
+  | { type: 'crew.moveTo'; id: number; x: number; y: number }
+  /** Queue a production order on a crafting module. `target`: batches ('count') or stock level ('keep'). */
+  | { type: 'production.add'; moduleId: number; recipe: string; mode: 'count' | 'keep'; target: number }
+  /** Remove the order at `index` of the module's list. */
+  | { type: 'production.remove'; moduleId: number; index: number }
+  /** Move the order at index `from` to index `to`. */
+  | { type: 'production.reorder'; moduleId: number; from: number; to: number }
+  /** Restrict a storage module to `items` (item ids), or null to accept everything. */
+  | { type: 'storage.setFilter'; moduleId: number; items: string[] | null }
+  | { type: 'debug.spawnItems'; gridId: number; x: number; y: number; item: string; count: number };
 
 /** A command tagged with the tick at whose start it applies. */
 export interface QueuedCommand {

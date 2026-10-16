@@ -7,7 +7,7 @@ import { SHIP_FIELDS } from './structure';
 import { initAtmosphere } from './ship';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -34,6 +34,19 @@ export const migrations: Record<number, (data: Record<string, unknown>) => Recor
       }
       return grid.serialize();
     });
+    return { ...data, grids };
+  },
+  // v2 -> v3 (economy): ship grids gain the `item` field; crew gain a 'crafting' priority. Existing jobs have
+  // no `needs`, so they count as fully delivered; no storage or items exist yet.
+  2: (data) => {
+    const grids = (data['grids'] as GridData[]).map((g) => {
+      if (!g.fields['struct']) return g;
+      const grid = Grid.deserialize(g);
+      grid.addField('item', SHIP_FIELDS.item);
+      return grid.serialize();
+    });
+    const world = data['world'] as WorldData;
+    for (const entry of world.stores['priorities'] ?? []) (entry[1] as Record<string, number>)['crafting'] = 3;
     return { ...data, grids };
   },
 };

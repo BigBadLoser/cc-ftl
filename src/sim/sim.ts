@@ -23,7 +23,7 @@ export class Sim {
   constructor(
     /** World seed: drives galaxy generation; saved with the game. */
     readonly seed: number,
-    readonly content: ContentRegistry = { ships: {}, roles: {}, species: {}, modules: {}, crewNames: [] },
+    readonly content: ContentRegistry = { ships: {}, roles: {}, species: {}, modules: {}, crewNames: [], items: {}, recipes: {}, structCosts: {} },
   ) {
     this.rng = new Rng(seed);
   }

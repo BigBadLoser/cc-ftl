@@ -4,7 +4,7 @@ export { Grid, CHUNK_SIZE, type FieldSpec, type FieldType, type GridData } from 
 export { CommandQueue, type Command, type QueuedCommand } from './commands';
 export { EventBuffer, type SimEvent } from './events';
 export { Sim, TICK_HZ } from './sim';
-export type { ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef } from './registry';
+export type { ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ItemDef, ItemQty, RecipeDef } from './registry';
 export { gridFromTemplate, spawnTemplateModules } from './ship';
 export { ModuleC, type Module } from './modules/components';
 export { footprintTiles, accessTile, rotatedSize } from './modules/footprint';
@@ -20,3 +20,9 @@ export { Struct, SHIP_FIELDS, isWalkable, type StructKind } from './structure';
 export * from './crew/components';
 export { findPath, type Tile, type PathGoal } from './crew/pathfind';
 export { stat, modifierSources, type Modifier, type ModifierSource, type StatName } from './stats';
+export * from './items/components';
+export { storageSpace, storageCount, storageAdd, storageTake } from './items/storage';
+export { stackAt, stackSizeOf } from './items/stacks';
+export { totalStock } from './items/stock';
+export { missingMaterials, needsMaterials } from './items/materials';
+export { activeOrder } from './items/production';

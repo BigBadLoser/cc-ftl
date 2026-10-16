@@ -1,3 +1,7 @@
+import { performCraft } from '../items/craft';
+import { performHaul } from '../items/haul';
+import { consumeDelivered, needsMaterials } from '../items/materials';
+import { evictStack, refundCost, structCostKey } from '../items/stacks';
 import { footprintTiles } from '../modules/footprint';
 import { ModuleC } from '../modules/components';
 import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/spawn';
@@ -15,12 +19,18 @@ export type WorkResult = 'done' | 'working' | 'wait';
 
 /** Do one tick of work on a job. `speed` is the crew member's resolved workSpeed. */
 export function performJob(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
+  if ((job.kind === 'build' || job.kind === 'module') && needsMaterials(job)) return 'wait';
   switch (job.kind) {
+    case 'haul': return performHaul(sim, crew, job);
+    case 'craft': return performCraft(sim, job, speed);
     case 'build':
     case 'deconstruct': return timed(job, speed, () => finishStruct(sim, job));
     case 'module': return timed(job, speed, () => finishModule(sim, job));
     case 'moduleDecon': return timed(job, speed, () => {
+      const m = sim.world.get(job.target ?? 0, ModuleC);
+      const cost = m && sim.content.modules[m.def]?.cost;
       removeModule(sim, job.target ?? 0);
+      if (m) refundCost(sim, job.gridId, m.x, m.y, cost); // after the tiles are free
       return 'done';
     });
     case 'extinguish': return extinguish(sim, job, speed);
@@ -40,8 +50,15 @@ function finishStruct(sim: Sim, job: Job): WorkResult {
   const grid = sim.grids.get(job.gridId);
   if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {
     const next = job.kind === 'build' ? job.struct : Struct.Floor;
-    if (grid.get('struct', job.x, job.y) !== next) grid.set('struct', job.x, job.y, next);
+    const before = grid.get('struct', job.x, job.y);
+    if (before !== next) grid.set('struct', job.x, job.y, next);
+    if (job.kind === 'deconstruct') {
+      const key = structCostKey(before);
+      refundCost(sim, job.gridId, job.x, job.y, key ? sim.content.structCosts[key] : undefined);
+    }
+    if (grid.has('item') && next !== Struct.Floor) evictStack(sim, job.gridId, job.x, job.y);
   }
+  consumeDelivered(job);
   return 'done';
 }
 
@@ -54,8 +71,11 @@ function finishModule(sim: Sim, job: Job): WorkResult {
   const free = footprintTiles(def, job.x, job.y, bp.rot).every(
     (t) => grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Floor && grid.get('module', t.x, t.y) === 0,
   );
-  if (free) spawnModule(sim, job.gridId, bp.def, job.x, job.y, bp.rot);
-  return 'done'; // a blueprint whose site was spoiled is dropped
+  if (!free) return 'done'; // a blueprint whose site was spoiled is dropped (delivered materials spill)
+  spawnModule(sim, job.gridId, bp.def, job.x, job.y, bp.rot);
+  consumeDelivered(job);
+  if (grid.has('item')) for (const t of footprintTiles(def, job.x, job.y, bp.rot)) evictStack(sim, job.gridId, t.x, t.y);
+  return 'done';
 }
 
 function extinguish(sim: Sim, job: Job, speed: number): WorkResult {

@@ -94,3 +94,15 @@ export const LOW_O2_WORK_MULT = 0.8;
 export const ALERT_INTERVAL_TICKS = 5;
 export const O2_ALERT_BELOW = 16;
 export const O2_ALERT_CLEAR_ABOVE = 18;
+
+// --- Economy ---
+/** Units a crew member carries at once when the species does not say. */
+export const DEFAULT_CARRY_CAPACITY = 50;
+/** Fraction (rounded down) of a build cost refunded when deconstructing. */
+export const DECON_REFUND = 0.5;
+/** Planners (supply, hauling, crafting) run once per this many ticks. */
+export const PLAN_INTERVAL = 10;
+/** Minimum ticks between repeats of the same 'job.missingMaterials' / 'storage.full' warning. */
+export const WARN_DEBOUNCE = 400;
+/** Units per second a stack burns at flammability 1 on a fully burning tile. */
+export const ITEM_BURN_PER_SEC = 6;

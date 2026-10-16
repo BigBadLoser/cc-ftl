@@ -8,7 +8,7 @@
   onMount(() => api.crew.subscribe((v) => (crew = v)));
 
   const SHORT: Record<WorkCategory, string> = {
-    firefighting: 'Fire', medical: 'Med', operating: 'Ops', repair: 'Fix', construction: 'Build', hauling: 'Haul', cooking: 'Cook',
+    firefighting: 'Fire', medical: 'Med', operating: 'Ops', repair: 'Fix', construction: 'Build', hauling: 'Haul', crafting: 'Craft', cooking: 'Cook',
   };
   /** 1 -> 2 -> 3 -> 4 -> off -> 1 */
   const next = (v: number) => (v + 1) % 5;

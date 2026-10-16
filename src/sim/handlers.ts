@@ -1,6 +1,7 @@
 import { MarkerC } from './components';
 import type { Command } from './commands';
 import { crewHandlers } from './crew/handlers';
+import { itemHandlers } from './items/handlers';
 import { moduleHandlers } from './modules/handlers';
 import { FIRE_START_INTENSITY } from './tuning';
 import { Struct } from './structure';
@@ -12,6 +13,7 @@ type Handler<T extends Command['type']> = (sim: Sim, cmd: Extract<Command, { typ
 export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...crewHandlers,
   ...moduleHandlers,
+  ...itemHandlers,
   noop: () => {},
   'debug.spawnMarker': (sim, cmd) => {
     const entity = sim.world.createEntity();

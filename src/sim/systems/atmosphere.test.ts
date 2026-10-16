@@ -22,6 +22,9 @@ const content: ContentRegistry = {
     light: mod({ solid: false, power: -1, priority: 2, light: { radius: 6, level: 230 } }),
   },
   crewNames: [],
+  items: {},
+  recipes: {},
+  structCosts: {},
 };
 
 // Two 3x3 rooms joined by a door at (5, 3), surrounded by space.

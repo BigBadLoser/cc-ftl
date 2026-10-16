@@ -43,6 +43,15 @@ export const starterShip = {
     { def: 'module.console', x: 18, y: 4, rot: 0 },
     { def: 'module.lifeSupport', x: 20, y: 6, rot: 0 },
     { def: 'module.light', x: 16, y: 4, rot: 0 },
+    // Cargo (bottom-left room): crates along the south wall (rot 2 puts the access tile north), fabricator
+    // beside the door lane. The door at (9, 8) opens onto (9, 9), which stays clear.
+    { def: 'module.fabricator', x: 10, y: 9, rot: 0 },
+    {
+      def: 'module.storage', x: 8, y: 11, rot: 2,
+      stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }],
+    },
+    { def: 'module.storage', x: 9, y: 11, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }] },
+    { def: 'module.storage', x: 10, y: 11, rot: 2 },
   ],
 } satisfies ShipTemplate;
 

@@ -18,9 +18,12 @@ const content: ContentRegistry = {
   species: { 'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 } },
   modules: { crate: mod({ flammability: 0.6, maxHp: 60 }) },
   crewNames: [],
+  items: {},
+  recipes: {},
+  structCosts: {},
 };
 const prio = (v: number): Priorities => ({
-  firefighting: 1, medical: v, operating: v, repair: v, construction: v, hauling: v, cooking: v,
+  firefighting: 1, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v,
 });
 
 // A 5x4 room with crates along the north wall, in a sealed hull.

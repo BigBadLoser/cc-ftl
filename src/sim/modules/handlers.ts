@@ -5,6 +5,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { ModuleC } from './components';
 import { placementError } from './spawn';
+import { needsFrom } from '../items/materials';
 
 type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPriority' | 'module.setEnabled';
 type Handler<T extends ModuleCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -21,10 +22,12 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     if (err) return reject(sim, cmd.type, err);
     if (findJobAt(sim, cmd.gridId, cmd.x, cmd.y)) return reject(sim, cmd.type, 'jobExists');
     const def = sim.content.modules[cmd.def];
+    const needs = needsFrom(def?.cost);
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, {
       category: 'construction', kind: 'module', gridId: cmd.gridId, x: cmd.x, y: cmd.y, struct: 0,
       work: def?.buildWork ?? TICK_HZ, progress: 0, reservedBy: 0, module: { def: cmd.def, rot: cmd.rot },
+      ...(needs ? { needs, delivered: [] } : {}),
     });
   },
   'job.deconstructModule': (sim, cmd) => {

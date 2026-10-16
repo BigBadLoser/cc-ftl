@@ -3,10 +3,14 @@ import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
 import { carrySystem } from './systems/carry';
+import { craftJobsSystem } from './systems/craftJobs';
 import { decideSystem } from './systems/decide';
 import { doorsSystem } from './systems/doors';
 import { draftedSystem } from './systems/drafted';
 import { fireSystem } from './systems/fire';
+import { haulCleanupSystem } from './systems/haulCleanup';
+import { haulJobsSystem } from './systems/haulJobs';
+import { itemFireSystem } from './systems/itemFire';
 import { lightingSystem } from './systems/lighting';
 import { modulesSystem } from './systems/modules';
 import { movementSystem } from './systems/movement';
@@ -14,6 +18,7 @@ import { needsSystem } from './systems/needs';
 import { powerSystem } from './systems/power';
 import { roomsSystem } from './systems/rooms';
 import { smokeSystem } from './systems/smoke';
+import { supplyJobsSystem } from './systems/supplyJobs';
 import { temperatureSystem } from './systems/temperature';
 import { vitalsSystem } from './systems/vitals';
 import { workSystem } from './systems/work';
@@ -39,6 +44,8 @@ export const pipeline: readonly System[] = [
   atmosphereSystem,
   // Fire reads the settled air (O2) and writes its o2/co2/smoke/heat back for next tick.
   fireSystem,
+  // Loose item stacks burn on the fire's final intensity for this tick.
+  itemFireSystem,
   // Temperature after the heat sources (reactor, fire) so their heat spreads immediately.
   temperatureSystem,
   // Smoke after fire has added to it.
@@ -51,6 +58,12 @@ export const pipeline: readonly System[] = [
   vitalsSystem,
   // Auto jobs after vitals, so a crew member who just went down gets a rescue job this tick.
   autoJobsSystem,
+  // Economy planners, in dependency order: drop dead hauls (frees reservations), open craft jobs,
+  // then supply (jobs get first claim on stock), then clear the floor with what is left unclaimed.
+  haulCleanupSystem,
+  craftJobsSystem,
+  supplyJobsSystem,
+  haulJobsSystem,
   // Needs before decisions, so a crew member who just got tired sleeps this tick.
   needsSystem,
   // Decide before drafted/movement: new paths are walked the same tick.

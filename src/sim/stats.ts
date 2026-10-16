@@ -1,8 +1,9 @@
 import { CrewC } from './crew/components';
 import { environmentModifiers } from './crew/conditions';
 import type { Sim } from './sim';
+import { DEFAULT_CARRY_CAPACITY } from './tuning';
 
-export type StatName = 'moveSpeed' | 'workSpeed' | 'restDecay';
+export type StatName = 'moveSpeed' | 'workSpeed' | 'restDecay' | 'carryCapacity';
 
 /** A tagged change to a stat. Applied as: (base + sum of adds) * product of muls. */
 export interface Modifier {
@@ -31,5 +32,5 @@ export function stat(sim: Sim, entity: number, name: StatName): number {
       else mul *= m.value;
     }
   }
-  return (species[name] + add) * mul;
+  return ((species[name] ?? DEFAULT_CARRY_CAPACITY) + add) * mul;
 }

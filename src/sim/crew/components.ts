@@ -1,4 +1,6 @@
 import { defineComponent } from '../ecs';
+import type { HaulData } from '../items/components';
+import type { ItemQty } from '../registry';
 
 /**
  * Shared contract for M2 (crew & jobs). Sim systems write these; render/ui only read them.
@@ -34,6 +36,7 @@ export const WORK_CATEGORIES = [
   'repair',
   'construction',
   'hauling',
+  'crafting',
   'cooking',
 ] as const;
 export type WorkCategory = (typeof WORK_CATEGORIES)[number];
@@ -102,10 +105,21 @@ export interface Job {
   target?: number;
   /** For 'rescue': the bed module reserved for the patient, or 0. */
   bed?: number;
+  /** Materials still to be delivered before work may start (build, module, craft). Absent = none needed. */
+  needs?: ItemQty[];
+  /** Materials delivered so far; consumed when the job completes, dropped as floor stacks if it is cancelled. */
+  delivered?: ItemQty[];
+  /** Tick of the last 'job.missingMaterials' / 'storage.full' warning (debounce). */
+  warnedAt?: number;
+  /** For 'haul' jobs: what moves where. */
+  haul?: HaulData;
+  /** For 'craft' jobs: the recipe being made. */
+  craft?: { recipe: string };
 }
 export const JobC = defineComponent<Job>('job');
 
-export type JobKind = 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue';
+export type JobKind =
+  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft';
 
 /** Hit points of a crew member. At 0 they are downed (see DownedC). */
 export interface Health {

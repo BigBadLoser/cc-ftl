@@ -24,9 +24,12 @@ const content: ContentRegistry = {
     bed: mod({ footprint: [1, 2], bed: true }),
   },
   crewNames: [],
+  items: {},
+  recipes: {},
+  structCosts: {},
 };
 const all = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, cooking: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v,
 });
 // A 5x3 corridor-like room: a solid block placed in the middle row can be walked around.
 const rows = ['.......', '.#####.', '.#___#.', '.#___#.', '.#___#.', '.#####.', '.......'];

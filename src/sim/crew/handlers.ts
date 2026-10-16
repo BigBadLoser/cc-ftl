@@ -1,5 +1,7 @@
 import type { Command } from '../commands';
 import { isTileWalkable } from '../modules/walk';
+import { needsFrom } from '../items/materials';
+import { destroyJob, structCostKey } from '../items/stacks';
 import { Struct } from '../structure';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -26,8 +28,11 @@ function reject(sim: Sim, command: string, reason: string): void {
 
 function createJob(sim: Sim, kind: 'build' | 'deconstruct', gridId: number, x: number, y: number, struct: number, work: number): void {
   const id = sim.world.createEntity();
+  const key = kind === 'build' ? structCostKey(struct) : undefined;
+  const needs = needsFrom(key ? sim.content.structCosts[key] : undefined);
   sim.world.add(id, JobC, {
     category: 'construction', kind, gridId, x, y, struct, work, progress: 0, reservedBy: 0,
+    ...(needs ? { needs, delivered: [] } : {}),
   });
 }
 
@@ -64,9 +69,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
   'job.cancel': (sim, cmd) => {
     const jobId = findJobAt(sim, cmd.gridId, cmd.x, cmd.y);
     if (!jobId) return reject(sim, cmd.type, 'noJob');
-    const reservedBy = (sim.world.get(jobId, JobC) as { reservedBy: number }).reservedBy;
-    if (reservedBy) releaseAssignment(sim, reservedBy);
-    sim.world.destroyEntity(jobId);
+    destroyJob(sim, jobId); // delivered materials fall to the floor; hauls aimed at it are dropped by haulCleanup
   },
   'crew.setPriority': (sim, cmd) => {
     const prio = sim.world.get(cmd.id, PrioritiesC);

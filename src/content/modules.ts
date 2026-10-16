@@ -17,6 +17,7 @@ export const modules = {
     flammability: 0.1,
     maxHp: 200,
     buildWork: 240,
+    cost: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }],
   },
   'module.lifeSupport': {
     name: 'Life support',
@@ -30,6 +31,7 @@ export const modules = {
     flammability: 0.2,
     maxHp: 100,
     buildWork: 160,
+    cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 6 }],
   },
   // A lamp on a floor tile beside a wall. Not solid: crew walk over it.
   'module.light': {
@@ -43,6 +45,7 @@ export const modules = {
     flammability: 0.1,
     maxHp: 30,
     buildWork: 40,
+    cost: [{ item: 'item.metal', count: 1 }, { item: 'item.electronics', count: 1 }],
   },
   'module.bed': {
     name: 'Bed',
@@ -53,6 +56,7 @@ export const modules = {
     flammability: 0.5,
     maxHp: 50,
     buildWork: 80,
+    cost: [{ item: 'item.metal', count: 4 }, { item: 'item.polymer', count: 4 }],
     bed: true,
   },
   'module.console': {
@@ -67,6 +71,37 @@ export const modules = {
     flammability: 0.3,
     maxHp: 60,
     buildWork: 100,
+    cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
     workstation: true,
+  },
+  // Crew work at the access tile (below, at rotation 0). Draws power; crafts recipes with this station.
+  'module.fabricator': {
+    name: 'Fabricator',
+    asset: 'module.fabricator',
+    footprint: [2, 1],
+    solid: true,
+    access: [0, 1],
+    power: -4,
+    priority: 3,
+    flammability: 0.3,
+    maxHp: 120,
+    buildWork: 160,
+    cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 6 }],
+    workstation: true,
+    crafting: true,
+  },
+  // A crate. Crew use it from any neighbouring tile; the access tile just keeps one side walkable.
+  'module.storage': {
+    name: 'Storage crate',
+    asset: 'module.storage',
+    footprint: [1, 1],
+    solid: true,
+    access: [0, 1],
+    power: 0,
+    flammability: 0.2,
+    maxHp: 60,
+    buildWork: 60,
+    cost: [{ item: 'item.metal', count: 6 }],
+    storage: { capacity: 8 },
   },
 } satisfies Record<string, ModuleDef>;

@@ -1,3 +1,4 @@
+import { ItemStackC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import type { Grid } from '../grid';
 import type { Sim } from '../sim';
@@ -13,11 +14,14 @@ import {
 const NEIGHBOURS: readonly (readonly [number, number])[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const O2_RANGE = NORMAL_O2 - FIRE_MIN_O2;
 
-/** Fuel at a tile: the more flammable of bare floor and the module standing on it. */
+/** Fuel at a tile: the most flammable of bare floor, the module standing on it and a loose item stack. */
 function fuelAt(sim: Sim, grid: Grid, x: number, y: number): number {
   const id = grid.get('module', x, y);
   const m = id ? sim.world.get(id, ModuleC) : undefined;
-  return Math.max(FLOOR_FLAMMABILITY, m ? (sim.content.modules[m.def]?.flammability ?? 0) : 0);
+  const sid = grid.has('item') ? grid.get('item', x, y) : 0;
+  const stack = sid ? sim.world.get(sid, ItemStackC) : undefined;
+  const itemFuel = stack ? (sim.content.items[stack.item]?.flammability ?? 0) : 0;
+  return Math.max(FLOOR_FLAMMABILITY, itemFuel, m ? (sim.content.modules[m.def]?.flammability ?? 0) : 0);
 }
 
 const o2Factor = (o2: number): number => Math.max(0, Math.min(1, (o2 - FIRE_MIN_O2) / O2_RANGE));

@@ -5,6 +5,8 @@ import {
 } from '../crew/components';
 import { clearPath, isAdjacent, isIncapacitated, isSettled, origin, releaseAssignment } from '../crew/helpers';
 import { findPath, type Tile } from '../crew/pathfind';
+import { needsMaterials } from '../items/materials';
+import { dropCarried } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
 import type { Sim } from '../sim';
@@ -27,6 +29,7 @@ export function decideSystem(sim: Sim): void {
     const assignment = sim.world.get(id, AssignmentC);
     if (needs.rest < SLEEP_BELOW && !isCarrying(sim, id)) {
       if (assignment) releaseAssignment(sim, id);
+      dropCarried(sim, id);
       goToSleep(sim, id, crew, pos);
       continue;
     }
@@ -46,6 +49,7 @@ export function decideSystem(sim: Sim): void {
       continue;
     }
 
+    dropCarried(sim, id); // a load left over from a lost haul job
     if (!pickJob(sim, id, pos)) wander(sim, id, pos, crew);
   }
 }
@@ -106,7 +110,7 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
     let best: { id: number; steps: Tile[] } | null = null;
     for (const jobId of jobs) {
       const job = sim.world.get(jobId, JobC);
-      if (!job || job.gridId !== pos.gridId || !cats.includes(job.category) || job.target === crewId) continue;
+      if (!job || job.gridId !== pos.gridId || !cats.includes(job.category) || job.target === crewId || needsMaterials(job)) continue;
       const steps = findPath(sim, pos.gridId, origin(pos), { x: job.x, y: job.y, adjacent: true });
       if (steps && (!best || steps.length < best.steps.length)) best = { id: jobId, steps };
     }

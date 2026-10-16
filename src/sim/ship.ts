@@ -1,5 +1,6 @@
 import type { ShipTemplate } from './registry';
 import { Grid } from './grid';
+import { storageAdd } from './items/storage';
 import { spawnModule } from './modules/spawn';
 import type { Sim } from './sim';
 import { SHIP_FIELDS, Struct } from './structure';
@@ -41,5 +42,8 @@ export function initAtmosphere(grid: Grid, x: number, y: number): void {
 
 /** Place a template's modules on a grid that is already in `sim.grids`. */
 export function spawnTemplateModules(sim: Sim, gridId: number, t: ShipTemplate): void {
-  for (const m of t.modules ?? []) spawnModule(sim, gridId, m.def, m.x, m.y, m.rot);
+  for (const m of t.modules ?? []) {
+    const id = spawnModule(sim, gridId, m.def, m.x, m.y, m.rot);
+    for (const q of m.stock ?? []) storageAdd(sim, id, q.item, q.count);
+  }
 }

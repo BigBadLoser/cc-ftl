@@ -4,7 +4,7 @@ import type { WorkCategory } from './crew/components';
 export interface ShipTemplate {
   name: string;
   /** Modules to place at game start; `rot` is quarter turns clockwise (0..3). */
-  modules?: { def: string; x: number; y: number; rot: number }[];
+  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[] }[];
   /** '.' space, '#' wall, '_' floor, 'D' door. Rows may differ in length; short rows pad with space. */
   rows: string[];
 }
@@ -20,6 +20,37 @@ export interface ContentRegistry {
   modules: Record<string, ModuleDef>;
   /** Pool of first names for generated crew. */
   crewNames: string[];
+  /** Item content id (e.g. 'item.metal') to definition. */
+  items: Record<string, ItemDef>;
+  /** Recipe content id to definition. */
+  recipes: Record<string, RecipeDef>;
+  /** Build cost per struct kind: keys 'floor', 'wall', 'door'. Deconstructing refunds DECON_REFUND of it. */
+  structCosts: Record<string, ItemQty[]>;
+}
+
+/** An item id with a quantity. */
+export interface ItemQty {
+  item: string;
+  count: number;
+}
+
+export interface ItemDef {
+  name: string;
+  tags: string[];
+  /** Most units one floor stack or one storage slot holds. */
+  stackSize: number;
+  /** 0..1 fuel factor for a loose stack on a burning tile. Default 0 (does not burn). */
+  flammability?: number;
+}
+
+export interface RecipeDef {
+  name: string;
+  /** Module def id of the station that crafts it. */
+  station: string;
+  inputs: ItemQty[];
+  outputs: ItemQty[];
+  /** Ticks of work at workSpeed 1. */
+  work: number;
 }
 
 /** A crew role: default priorities for each work category (0 = off, 1 = highest .. 4). */
@@ -37,6 +68,8 @@ export interface SpeciesDef {
   workSpeed: number;
   /** Rest lost per second while awake. */
   restDecay: number;
+  /** Units a crew member carries at once (default DEFAULT_CARRY_CAPACITY). */
+  carryCapacity?: number;
 }
 
 /**
@@ -71,4 +104,10 @@ export interface ModuleDef {
   buildWork: number;
   bed?: true;
   workstation?: true;
+  /** Materials to build it; deconstructing refunds DECON_REFUND of them. */
+  cost?: ItemQty[];
+  /** Holds items: capacity in stacks. */
+  storage?: { capacity: number };
+  /** Crafts recipes whose `station` is this def (gets a ProductionC order list). */
+  crafting?: true;
 }

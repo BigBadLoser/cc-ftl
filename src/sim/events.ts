@@ -17,6 +17,14 @@ export type SimEvent =
   | { type: 'crew.rescued'; crew: number; by: number }
   | { type: 'crew.fellAsleep'; crew: number }
   | { type: 'crew.wokeUp'; crew: number }
+  /** A crew member deposited items into a storage module (`to` 'storage') or onto a job (`to` 'job'). */
+  | { type: 'item.hauled'; crew: number; item: string; count: number; gridId: number; x: number; y: number; to: 'floor' | 'storage' | 'job' }
+  /** A job lacks materials and no stock exists to fetch (debounced per job). */
+  | { type: 'job.missingMaterials'; job: number; gridId: number; x: number; y: number; item: string }
+  /** A crafting module finished a batch; outputs lie at (x, y). */
+  | { type: 'production.done'; module: number; recipe: string; gridId: number; x: number; y: number }
+  /** A loose stack has no storage to go to (debounced per stack). */
+  | { type: 'storage.full'; gridId: number; x: number; y: number; item: string }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 

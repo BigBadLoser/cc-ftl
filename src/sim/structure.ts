@@ -34,6 +34,8 @@ export const SHIP_FIELDS = {
   door: 'u8',
   /** Entity id of the module occupying the tile (0 = none). Written by module spawn/remove. */
   module: 'u32',
+  /** Entity id of the loose item stack lying on the tile (0 = none). At most one stack per tile. */
+  item: 'u32',
 } as const satisfies FieldSpec;
 
 /** True if crew can stand on this tile kind (ignores modules: see modules/walk.ts). */

@@ -3,6 +3,7 @@ import {
 } from '../crew/components';
 import { clearPath, isAdjacent, isIncapacitated, isSettled, releaseAssignment } from '../crew/helpers';
 import { performJob } from '../crew/jobWork';
+import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
 
@@ -37,7 +38,7 @@ export function workSystem(sim: Sim): void {
     crew.activity = 'working';
     if (performJob(sim, id, job, stat(sim, id, 'workSpeed')) !== 'done') continue;
     sim.world.remove(id, AssignmentC);
-    sim.world.destroyEntity(assignment.jobId);
+    destroyJob(sim, assignment.jobId);
     sim.events.emit({ type: 'crew.jobDone', crew: id, kind: job.kind, gridId: job.gridId, x: job.x, y: job.y });
     crew.activity = 'idle';
     clearPath(sim, id);

@@ -1,4 +1,6 @@
 import { CrewC, JobC, PositionC } from '../crew/components';
+import { ProductionC, StorageC } from '../items/components';
+import { spillItems } from '../items/stacks';
 import type { Sim } from '../sim';
 import { DEFAULT_PRIORITY } from '../tuning';
 import { Struct } from '../structure';
@@ -16,6 +18,8 @@ export function spawnModule(sim: Sim, gridId: number, defId: string, x: number, 
     def: defId, gridId, x, y, rot, hp: def.maxHp, priority: def.priority ?? DEFAULT_PRIORITY,
     enabled: true, powered: false, reservedBy: 0,
   });
+  if (def.storage) sim.world.add(id, StorageC, { capacity: def.storage.capacity, filter: null, stacks: [] });
+  if (def.crafting) sim.world.add(id, ProductionC, { orders: [] });
   for (const t of footprintTiles(def, x, y, rot)) grid.set('module', t.x, t.y, id);
   return id;
 }
@@ -31,6 +35,7 @@ export function removeModule(sim: Sim, id: number): void {
       if (grid.inBounds(t.x, t.y) && grid.get('module', t.x, t.y) === id) grid.set('module', t.x, t.y, 0);
     }
   }
+  for (const st of sim.world.get(id, StorageC)?.stacks ?? []) spillItems(sim, m.gridId, m.x, m.y, st.item, st.count);
   sim.world.destroyEntity(id);
 }
 
