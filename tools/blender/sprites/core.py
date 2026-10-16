@@ -5,6 +5,7 @@ Blender's y (by = -gy) on creation. Camera: orthographic, yaw 45, elevation 30 d
 1x1 tile floor is exactly TILE_W x TILE_H px. 1 world unit = 1 tile = TILE_W px wide.
 """
 import math
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -268,7 +269,7 @@ def render(W, H, which="color", origin=None):
     m = max(W, H)
     # shift is a fraction of the larger dimension; positive shift moves the view up/right (objects down/left)
     cam.data.shift_x, cam.data.shift_y = (W / 2 - ox) / m, (oy - H / 2) / m
-    tmp = str(Path(tempfile.gettempdir()) / "spr_render.png")
+    tmp = str(Path(tempfile.gettempdir()) / f"spr_render_{os.getpid()}.png")
     sc.render.filepath = tmp
     bpy.ops.render.render(write_still=True)
     img = bpy.data.images.load(tmp)
