@@ -10,6 +10,7 @@
     "test": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p . && svelte-check --tsconfig ./tsconfig.json",
+    "lab:build": "vite build -c spikes/crew-lab/vite.config.ts && node spikes/crew-lab/post.mjs",
     "check": "npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {
@@ -27,6 +28,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.2",
     "vite": "^8.3.4",
+    "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^5.0.5"
   }
 }
