@@ -23,7 +23,8 @@ export class Sim {
   events = new EventBuffer();
 
   constructor(
-    seed: number,
+    /** World seed: drives galaxy generation; saved with the game. */
+    readonly seed: number,
     readonly content: ContentRegistry = {},
   ) {
     this.rng = new Rng(seed);

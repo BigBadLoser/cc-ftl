@@ -9,6 +9,7 @@ export const SAVE_VERSION = 1;
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
   version: number;
+  seed: number;
   tick: number;
   rng: number;
   world: WorldData;
@@ -23,6 +24,7 @@ export const migrations: Record<number, (data: Record<string, unknown>) => Recor
 export function serialize(sim: Sim): string {
   const data: SaveData = {
     version: SAVE_VERSION,
+    seed: sim.seed,
     tick: sim.tick,
     rng: sim.rng.getState(),
     world: sim.world.serialize(),
@@ -50,7 +52,7 @@ export function migrate(raw: Record<string, unknown>): Record<string, unknown> {
 /** Rebuild a Sim from a JSON save, migrating older versions. */
 export function deserialize(json: string, content: ContentRegistry): Sim {
   const data = migrate(JSON.parse(json) as Record<string, unknown>) as unknown as SaveData;
-  const sim = new Sim(0, content);
+  const sim = new Sim(data.seed, content);
   sim.tick = data.tick;
   sim.rng.setState(data.rng);
   sim.world = World.deserialize(data.world);

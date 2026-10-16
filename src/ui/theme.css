@@ -1,0 +1,19 @@
+:root {
+  --bg: #070b12;
+  --panel: rgba(18, 26, 40, 0.92);
+  --panel-2: #1a2434;
+  --line: #2a3a54;
+  --text: #d6e2f5;
+  --dim: #8195b3;
+  --cyan: #22d3ee;
+  --red: #ef4444;
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+html, body, #app { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+body { font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-variant-numeric: tabular-nums; touch-action: none; -webkit-user-select: none; user-select: none; }
+button { min-height: 40px; min-width: 40px; padding: 0 12px; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; font: inherit; cursor: pointer; }
+button:hover { border-color: var(--cyan); }
+button.on { background: #0e4a56; border-color: var(--cyan); color: #fff; }
