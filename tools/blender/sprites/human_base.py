@@ -1,4 +1,4 @@
-"""Human layer items, part 1: the CC0 Quaternius base (public/assets/crew/human/base_cc0.glb) imported, plus the
+"""Human layer items, part 1: the CC0 Quaternius base (tools/blender/source/base_cc0.glb) imported, plus the
 skinned items cut from its body mesh (body, shirts, pants/boots, belt, flesh arms). Rigid items (eyes, hair, cyber
 arms, gear) live in human_gear.py.
 
@@ -13,7 +13,7 @@ from mathutils import Vector
 from . import core
 
 ROOT = Path(__file__).resolve().parents[3]
-GLB = ROOT / "public/assets/crew/human/base_cc0.glb"
+GLB = ROOT / "tools/blender/source/base_cc0.glb"
 HEIGHT_UNITS = 1.5            # crew height in tiles (x ~39 px/unit => ~59 px at 1x)
 SCALE = HEIGHT_UNITS / 1.7
 FINGER = ("index", "middle", "ring", "pinky", "thumb")

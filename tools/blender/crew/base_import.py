@@ -2,7 +2,7 @@
 Library") into our pipeline conventions. Standalone: it is not part of build.py.
 
     blender -b --factory-startup --python tools/blender/crew/base_import.py -- \
-        --base <Superhero_Male_FullBody.gltf> --anims <UAL1_Standard.glb> --out public/assets/crew/human/base_cc0.glb
+        --base <Superhero_Male_FullBody.gltf> --anims <UAL1_Standard.glb> --out tools/blender/source/base_cc0.glb
 
 What it does
   1. imports the base, drops the stray scene objects (cube, icosphere, camera, light)

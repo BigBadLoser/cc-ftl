@@ -5,7 +5,7 @@ Results are cached per config in <out>/cache/*.pkl so re-runs only render new co
 
   blender -b --factory-startup --python tools/blender/sprites/readability.py -- [outdir]
 
-Env READABILITY_GLB overrides the base character (default public/assets/crew/human/base_cc0.glb, regenerate it
+Env READABILITY_GLB overrides the base character (default tools/blender/source/base_cc0.glb, regenerate it
 with tools/blender/crew/base_import.py). Knob -> pipeline default:
   hpx -> human_base.HEIGHT_UNITS; hs -> human_render.HEAD_SCALE; hf/sh -> bone scales in pose_frame / TORSO_W;
   bands -> post.SHADE_EDGES/KEY_LEVELS + palette ramp; outline -> human_render.render_item / post.ring_outline."""
