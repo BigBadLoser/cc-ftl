@@ -7,7 +7,7 @@ and polish came before gameplay. These rules exist to prevent that.
 ## Stack
 
 - TypeScript (strict), Vite.
-- **Three.js** for the game view.
+- **PixiJS** (v8) for the game view: 2D isometric pixel-art sprites.
 - **Svelte 5** for the UI.
 - **Vitest** for tests.
 - ESLint with import-boundary rules.
@@ -19,12 +19,12 @@ and polish came before gameplay. These rules exist to prevent that.
 src/
   sim/       pure game logic: ECS, grids, systems, commands, RNG, save format
   content/   game data as typed TS objects (weapons, species, modules, recipes, events…)
-  render/    Three.js: scene, voxel kit, meshing, models, crew generator, overlays, effects
+  render/    PixiJS: camera, depth-sorted sprite views (grid, crew, jobs), overlays, glow, asset loader
   ui/        Svelte components
   app/       wiring: boot, game loop, input, save/load, sim <-> render/ui bridge
 ```
 
-- `sim` imports nothing from the other folders, and nothing from three, svelte or the DOM.
+- `sim` imports nothing from the other folders, and nothing from pixi.js, svelte or the DOM.
 - `content` imports only types from `sim`. The sim receives content as a registry at boot, so tests can
   inject tiny fixtures.
 - `render` and `ui` read sim state and never mutate it.
@@ -126,28 +126,73 @@ field systems read.
 
 **Two-way contract.**
 - The renderer reads the sim's world through a read-only view each frame.
-- It keeps its own caches (meshes, instances) and updates them from revision diffs.
+- It keeps its own caches (sprites, containers) and updates them from revision diffs.
 - It never writes to the sim.
 
-**Voxel kit.**
-- Models are code: shape helpers (box, cylinder, mirror…) plus **detail generators** (panels, rivets,
-  pipes, grime…).
-- Seeded, so the same input always gives the same model.
-- Meshed with **greedy meshing**, cached per model and **instanced** for repeated tiles and props.
-- Scale: 16 voxels per tile.
+**Pixel-perfect isometric 2D (PixiJS).**
+- Tiles are 2:1 isometric, **64x32 px** at 1x.
+- Nearest-neighbour scaling, integer zoom steps only, and the camera snapped to whole pixels.
+- Each art pixel maps to a whole number of device pixels.
+
+**Assets come from the pipeline (see Asset pipeline).** The renderer only draws sprite sheets listed
+in `public/assets/manifest.json`. It never draws game content procedurally. The only exceptions are
+debug and overlay visuals: selection frames, overlays, blueprints.
+
+**Depth sorting.** Draw order is by isometric depth (tile `x + y`, then height). Multi-tile objects
+anchor at their front-most footprint tile. Crew sort by their interpolated sub-tile position.
 
 **Crew.**
-- Low-poly primitives assembled by a **parametric generator** from sim components (species, role gear,
-  implants, injuries, seed).
-- Limb hierarchy now; skeletal animation possible later.
+- Composited at runtime from **sprite layers**: a species body plus slot layers (hair, eyes, arms,
+  implants, clothing, gear).
+- Every layer has the same frame layout (8 directions x clip frames) and the same anchor, so the layers
+  always line up.
+- Layers are rendered in Blender with the rest of the character as a **holdout**, so the hidden parts
+  are already cut out. Layers then stack in a fixed order in every direction.
+- Which layers to use comes from sim components (species, role gear, implants, injuries, appearance
+  seed).
+- Skin, hair and cloth colours use **palette swap**. `team.*` materials render as reserved key colours,
+  which a shader remaps per crew member.
 
-**Visuals.**
-- Lighting is driven by the sim's light and power fields; neon emissives follow powered state.
-- Field overlays and the tile inspector read grid arrays directly.
+**Lighting.**
+- Base sprites are lit in Blender with a fixed key light. A separate **glow sheet** (the emission pass)
+  is drawn with additive blending.
+- At runtime the sim's power and light fields tint the environment, and glow layers dim or switch off
+  when unpowered. Red emergency glow pulses when power is out.
+- Normal-map sheets for dynamic lighting are an option for later.
 
-**Quality tiers.**
-- **High:** bloom and shadows. **Low:** neither.
-- Chunked, frustum-culled meshes.
+**Visuals.** Field overlays and the tile inspector read grid arrays directly.
+
+## Asset pipeline
+
+Asset *creation* is decoupled from asset *rendering*. Models are built as 3D in Blender, then
+**pre-rendered into isometric pixel-art sprite sheets**. The contract with the game is sprite sheets
+plus JSON metadata plus the manifest.
+
+```
+tools/blender/
+  setup.sh      installs a pinned headless Blender (the container is ephemeral)
+  lib/          shared Python: palette, style kit, rig helpers, material conventions
+  crew/         body plans (the CC0 Quaternius base for humans; see THIRD_PARTY.md), slot items
+  sprites/      the sprite renderer: 2:1 ortho camera, supersample to block-mode downsample,
+                palette quantization, 1 px outline, emission pass to glow sheet, packing and JSON
+palette.json    the single palette, read by Blender scripts and the game
+```
+
+- **Run with `npm run sprites`** (Blender headless). Generated sheets, JSON and the manifest are
+  **committed**, because Cloudflare's build doesn't run Blender.
+- **Camera:** orthographic, yaw 45 degrees, 30 degree elevation. One 1x1 tile renders as an exact
+  64x32 diamond.
+- **Look:** flat colour bands (about 1.0 / 0.75 / 0.5 for top, left and right faces), muted palette
+  with shade ramps, a dark 1 px outline taken from the neighbouring colour, binary alpha, and neon
+  only in the glow pass.
+- **Crew:** about 60 px tall at 1x, 8 directions (no mirroring, since characters are asymmetric),
+  clips at fixed frame counts (idle 4, walk 8, work 6, and more as needed).
+- **Conventions:**
+  - The anchor is the feet or front footprint point in each frame's JSON.
+  - Material names carry meaning: `emissive.*` goes to the glow sheet, and `team.*` renders as
+    palette-swap key colours.
+  - Every asset has a manifest entry with its id, sheet, frames, anchor, footprint and layers.
+    Content refers to assets by manifest id only.
 
 ## UI
 
@@ -178,15 +223,17 @@ Each milestone ends with something playable or watchable in the browser.
 
 | # | Milestone | Done when |
 |---|-----------|-----------|
-| M0 | **Skeleton** | Vite, TS, Svelte and Three are set up, with lint boundaries, Vitest, the ECS, the tick loop, the command queue, the seeded RNG and a save round-trip test. An empty scene renders. |
-| M1 | **Grid & view** | A hard-coded test ship renders in voxels (16 per tile) with greedy meshing and instancing, an isometric camera, cutaway walls, pan and zoom, the tile inspector and a debug overlay. |
+| M0 | **Skeleton** | Vite, TS, Svelte and a renderer are set up, with lint boundaries, Vitest, the ECS, the tick loop, the command queue, the seeded RNG and a save round-trip test. An empty scene renders. |
+| M1 | **Grid & view** | A hard-coded test ship renders (originally voxels in Three.js; replaced in R1), an isometric camera, cutaway walls, pan and zoom, the tile inspector and a debug overlay. |
 | M2 | **Crew & jobs** | Crew pathfind (doors included), take jobs with reservations, follow role priorities and the grid, can be drafted and have minimal needs. Placeholder low-poly crew. |
+| R1 | **Pixel renderer** | `src/render` is rebuilt on PixiJS with the sprite pipeline: tiles, walls with cutaway, doors, crew layers with 8-direction clips, depth sorting, glow, pixel-perfect zoom, selection, blueprints and overlays. Three.js and the voxel kit are removed. Gameplay is unchanged. |
+| A1 | **Readability session** (timeboxed art) | The pipeline renders a variant sheet (proportions, silhouette, outline, shading bands, rim light, colour contrast, face simplification, crew height) at real game zoom. The user picks the winners, which become pipeline defaults, and crew sprites are regenerated. |
 | M3 | **Ship systems** | Power network, atmosphere, breaches, fire, smoke and lighting fields with overlays. Modules come from content, there is build mode with construction jobs, and the light economy works (items, storage, hauling). |
 | M4 | **Combat** | An enemy ship grid, weapons (charge and volley), shields, evasion, module targeting, tile effects, enemy AI doctrine, readability feedback, and destroy, flee and wreck endings. |
 | M5 | **Boarding & derelicts** | Portal graph across grids, airlocks and teleporters, EVA, crew-vs-crew combat, capture, and exploring wrecks. |
 | M6 | **Galaxy & events** | Chunked endless starmap, danger tiers, jumps, the event system (requirements, effects, flags, odds), stores and trade, and basic factions. |
 | M7 | **Depth pass** | Species, implants, more weapons and modules, recipes, and hardened saves. |
-| M8 | **Character art** | Textures, gear, role silhouettes and species body plans. |
+| M8 | **Character art** | More species (rock, robot, slime), more slot items, and portraits. |
 | Later | | Full production chains, mood and relationships drama, recoverable failure, fleets. |
 
 ## Working with Claude

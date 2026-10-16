@@ -14,8 +14,8 @@ export interface UiSnapshot {
   frameMs: number;
   tickMs: number;
   seed: number;
-  drawCalls: number;
-  triangles: number;
+  zoom: number;
+  sprites: number;
 }
 
 export interface UiInspect {

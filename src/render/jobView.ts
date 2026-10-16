@@ -1,92 +1,91 @@
-import { BoxGeometry, EdgesGeometry, Group, LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial } from 'three';
+import { Sprite } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { JobC } from '../sim/crew/components';
 import type { Grid } from '../sim/grid';
 import { Struct } from '../sim/structure';
-import { WALL_FULL_H } from './models/tiles';
-import { VOXEL_SIZE } from './voxel/model';
+import type { Atlas } from './assets/loader';
+import { depthKey, iso } from './iso';
+import type { Layers } from './layers';
+import { floorChain, isLowered, wallChains, type Chain, type KindAt } from './tiles';
 
 export interface JobViewHost {
-  target(): { grid: Grid; offsetX: number; offsetZ: number } | null;
+  target(): { grid: Grid } | null;
 }
 
 export interface JobView {
-  group: Group;
   update(): void;
   dispose(): void;
 }
 
-interface Ghost {
-  root: Group;
-  fill: Mesh;
-  edges: LineSegments;
-}
+const BUILD = 0x22d3ee;
+const DECON = 0xff3b3b;
 
-const unit = new BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
-const edgeGeo = new EdgesGeometry(unit);
-const glowMat = (c: number, a: number) => {
-  const m = new MeshBasicMaterial({ color: c, transparent: true, opacity: a, depthWrite: false, toneMapped: false });
-  m.color.multiplyScalar(1.4);
-  return m;
-};
-const buildFill = glowMat(0x22d3ee, 0.3);
-const decFill = glowMat(0xff3b3b, 0.12);
-const buildEdge = new LineBasicMaterial({ color: 0x22d3ee, toneMapped: false, transparent: true, opacity: 0.9 });
-const decEdge = new LineBasicMaterial({ color: 0xff4040, toneMapped: false, transparent: true, opacity: 0.9 });
+/** Blueprints: the target tile's own sprite, tinted cyan (build, alpha rises with progress) or red (deconstruct). */
+export function createJobView(world: World, atlas: Atlas, L: Layers, host: JobViewHost): JobView {
+  const pool: Sprite[] = [];
+  let used = 0;
 
-const WALL_H = WALL_FULL_H * VOXEL_SIZE;
-/** Footprint [w, h, d] of a struct kind's ghost box. */
-function dims(kind: number): [number, number, number] {
-  if (kind === Struct.Wall) return [1, WALL_H, 1];
-  if (kind === Struct.Door) return [0.95, WALL_H * 0.8, 0.3];
-  return [1, 0.06, 1];
-}
-
-export function createJobView(world: World, host: JobViewHost): JobView {
-  const group = new Group();
-  const pool: Ghost[] = [];
-
-  function ghost(i: number): Ghost {
-    let g = pool[i];
-    if (!g) {
-      const root = new Group();
-      const fill = new Mesh(unit, buildFill);
-      const edges = new LineSegments(edgeGeo, buildEdge);
-      fill.renderOrder = 5;
-      root.add(fill, edges);
-      group.add(root);
-      pool[i] = g = { root, fill, edges };
+  const sprite = (): Sprite => {
+    let s = pool[used];
+    if (!s) {
+      s = new Sprite();
+      L.sorted.addChild(s);
+      pool[used] = s;
     }
-    return g;
+    used++;
+    s.visible = true;
+    return s;
+  };
+
+  function draw(chains: Chain[], x: number, y: number, tint: number, alpha: number, key: number): void {
+    for (const chain of chains) {
+      const a = atlas.firstOf(chain);
+      if (!a) continue;
+      const s = sprite();
+      const p = iso(x, y);
+      s.texture = a.tex;
+      s.position.set(Math.round(p.x - a.ax), Math.round(p.y - a.ay));
+      s.tint = tint;
+      s.alpha = alpha;
+      s.zIndex = key;
+    }
   }
 
   return {
-    group,
     update() {
       const t = host.target();
-      group.visible = t !== null;
-      if (!t) return;
-      group.position.set(t.offsetX, 0, t.offsetZ);
-      let n = 0;
-      for (const id of world.query(JobC)) {
-        const job = world.get(id, JobC);
-        if (!job || job.gridId !== t.grid.id || !t.grid.inBounds(job.x, job.y)) continue;
-        const build = job.kind === 'build';
-        const [w, h, d] = dims(build ? job.struct : t.grid.get('struct', job.x, job.y));
-        const g = ghost(n++);
-        g.root.visible = true;
-        g.root.position.set(job.x + 0.5, 0, job.y + 0.5);
-        g.root.scale.set(w, h, d);
-        const frac = job.work > 0 ? Math.min(1, job.progress / job.work) : 0;
-        const fillFrac = build ? Math.max(0.06, frac) : 1;
-        g.fill.scale.set(0.96, fillFrac, 0.96);
-        g.fill.material = build ? buildFill : decFill;
-        g.edges.material = build ? buildEdge : decEdge;
+      used = 0;
+      if (t) {
+        const { grid } = t;
+        const jobs = [...world.query(JobC)].flatMap((id) => {
+          const j = world.get(id, JobC);
+          return j && j.gridId === grid.id && grid.inBounds(j.x, j.y) ? [j] : [];
+        });
+        // Pending walls and doors count as neighbours so a drawn line gets the right orientation.
+        const pending = new Map<number, number>();
+        for (const j of jobs) if (j.kind === 'build') pending.set(j.y * grid.width + j.x, j.struct);
+        const kindAt: KindAt = (x, y) => {
+          if (!grid.inBounds(x, y)) return Struct.Space;
+          const p = pending.get(y * grid.width + x);
+          return p === Struct.Wall || p === Struct.Door ? p : grid.get('struct', x, y);
+        };
+        for (const j of jobs) {
+          const build = j.kind === 'build';
+          const kind = build ? j.struct : grid.get('struct', j.x, j.y);
+          const frac = j.work > 0 ? Math.min(1, j.progress / j.work) : 0;
+          const tint = build ? BUILD : DECON;
+          const alpha = build ? 0.3 + 0.5 * frac : 0.65;
+          const key = depthKey(j.x, j.y) + 0.02;
+          if (kind === Struct.Floor) draw([floorChain(j.x, j.y)], j.x, j.y, tint, alpha, key - 0.9);
+          else if (kind === Struct.Wall || kind === Struct.Door) {
+            draw(wallChains(kindAt, j.x, j.y, kind, isLowered(kindAt, j.x, j.y, 'auto')), j.x, j.y, tint, alpha, key);
+          }
+        }
       }
-      for (let i = n; i < pool.length; i++) (pool[i] as Ghost).root.visible = false;
+      for (let i = used; i < pool.length; i++) (pool[i] as Sprite).visible = false;
     },
     dispose() {
-      group.clear();
+      for (const s of pool) s.destroy();
       pool.length = 0;
     },
   };

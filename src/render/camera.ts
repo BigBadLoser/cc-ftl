@@ -1,91 +1,102 @@
-import { OrthographicCamera, Plane, Ray, Vector2, Vector3 } from 'three';
-
-/** Isometric camera rig: fixed yaw 45 deg / pitch 35.26 deg, free target and zoom. */
-const PITCH = Math.atan(1 / Math.SQRT2);
-const DIR = new Vector3(Math.cos(PITCH) * Math.SQRT1_2, Math.sin(PITCH), Math.cos(PITCH) * Math.SQRT1_2);
-/** Screen-right and screen-up (ground projection) directions on the ground plane. */
-const RIGHT = new Vector3(Math.SQRT1_2, 0, -Math.SQRT1_2);
-const FWD = new Vector3(-Math.SQRT1_2, 0, -Math.SQRT1_2);
-const GROUND = new Plane(new Vector3(0, 1, 0), 0);
-const MIN_H = 5;
-const MAX_H = 300;
-
-export interface CameraRig {
-  camera: OrthographicCamera;
-  readonly target: Vector3;
-  viewHeight(): number;
-  resize(w: number, h: number): void;
-  setView(target: Vector3, viewHeight: number): void;
-  pan(dxPx: number, dyPx: number): void;
+/**
+ * Pixel-perfect camera. The view centre is a point in art px; one art px is always `zoom`
+ * whole device px, and the world container sits on a whole device px.
+ */
+export interface Camera {
+  readonly zoom: number;
+  /** Device px per art px (integer). */
+  readonly scale: number;
+  /** Canvas size in device px. */
+  readonly w: number;
+  readonly h: number;
+  /** World container position in device px (whole numbers). */
+  readonly originX: number;
+  readonly originY: number;
+  resize(cssW: number, cssH: number, dpr: number): void;
+  /** Drag by a delta in CSS px. */
+  pan(dx: number, dy: number): void;
+  /** Continuous zoom factor from wheel/pinch/keys, accumulated into integer steps. */
   zoomAt(factor: number, sx: number, sy: number): void;
-  /** Move the view target to a world ground point, keeping zoom. */
-  focus(x: number, z: number): void;
-  /** World point on Y = 0 under a screen position (canvas-relative px), or null. */
-  groundAt(sx: number, sy: number): Vector3 | null;
+  setZoom(zoom: number, sx?: number, sy?: number): void;
+  centerOn(ax: number, ay: number): void;
+  /** CSS px (canvas-relative) -> art px. */
+  toArt(sx: number, sy: number): { x: number; y: number };
 }
 
-export function createCameraRig(): CameraRig {
-  const camera = new OrthographicCamera(-1, 1, 1, -1, 1, 600);
-  const target = new Vector3();
-  let viewH = 12;
+const STEP_UP = 1.14;
+
+export function createCamera(maxZoom: number): Camera {
+  let zoom = 1;
+  let dprInt = 1;
+  let ratio = 1; // device px per css px
   let w = 1;
   let h = 1;
-
-  function place(): void {
-    camera.position.copy(target).addScaledVector(DIR, 300);
-    camera.lookAt(target);
-    camera.updateMatrixWorld();
-  }
-  function proj(): void {
-    const a = w / h;
-    camera.left = (-viewH * a) / 2;
-    camera.right = (viewH * a) / 2;
-    camera.top = viewH / 2;
-    camera.bottom = -viewH / 2;
-    camera.updateProjectionMatrix();
-  }
-  function groundAt(sx: number, sy: number): Vector3 | null {
-    const ndc = new Vector2((sx / w) * 2 - 1, -(sy / h) * 2 + 1);
-    const near = new Vector3(ndc.x, ndc.y, -1).unproject(camera);
-    const far = new Vector3(ndc.x, ndc.y, 1).unproject(camera);
-    const ray = new Ray(near, far.sub(near).normalize());
-    return ray.intersectPlane(GROUND, new Vector3());
-  }
-  place();
-  proj();
-
-  return {
-    camera,
-    target,
-    viewHeight: () => viewH,
-    resize(nw, nh) {
-      w = Math.max(1, nw);
-      h = Math.max(1, nh);
-      proj();
+  let cx = 0;
+  let cy = 0;
+  let acc = 1;
+  /** Device px per art px. Always an integer, so art pixels stay crisp. */
+  const scale = () => zoom;
+  let maxScale = maxZoom;
+  let sized = false;
+  const cam: Camera = {
+    get zoom() {
+      return zoom;
     },
-    setView(t, vh) {
-      target.copy(t);
-      viewH = Math.min(MAX_H, Math.max(MIN_H, vh));
-      place();
-      proj();
+    get scale() {
+      return scale();
+    },
+    get w() {
+      return w;
+    },
+    get h() {
+      return h;
+    },
+    get originX() {
+      return Math.round(w / 2 - cx * scale());
+    },
+    get originY() {
+      return Math.round(h / 2 - cy * scale());
+    },
+    resize(cssW, cssH, dpr) {
+      ratio = Math.max(1, dpr);
+      dprInt = Math.max(1, Math.round(dpr));
+      maxScale = maxZoom * dprInt;
+      if (!sized) {
+        zoom = dprInt;
+        sized = true;
+      }
+      zoom = Math.min(zoom, maxScale);
+      w = Math.max(1, Math.round(cssW * ratio));
+      h = Math.max(1, Math.round(cssH * ratio));
     },
     pan(dx, dy) {
-      const s = viewH / h;
-      target.addScaledVector(RIGHT, -dx * s).addScaledVector(FWD, (dy * s) / Math.sin(PITCH));
-      place();
+      cx -= (dx * ratio) / scale();
+      cy -= (dy * ratio) / scale();
     },
     zoomAt(factor, sx, sy) {
-      const before = groundAt(sx, sy);
-      viewH = Math.min(MAX_H, Math.max(MIN_H, viewH / factor));
-      proj();
-      const after = before && groundAt(sx, sy);
-      if (before && after) target.add(before).sub(after);
-      place();
+      acc *= factor;
+      if (acc >= STEP_UP) cam.setZoom(zoom + 1, sx, sy);
+      else if (acc <= 1 / STEP_UP) cam.setZoom(zoom - 1, sx, sy);
+      else return;
+      acc = 1;
     },
-    focus(x, z) {
-      target.set(x, target.y, z);
-      place();
+    setZoom(z, sx, sy) {
+      z = Math.max(1, Math.min(maxScale, Math.round(z)));
+      if (z === zoom) return;
+      const a = sx === undefined || sy === undefined ? { x: cx, y: cy } : cam.toArt(sx, sy);
+      const px = sx === undefined ? w / 2 : sx * ratio;
+      const py = sy === undefined ? h / 2 : sy * ratio;
+      zoom = z;
+      cx = a.x - (px - w / 2) / scale();
+      cy = a.y - (py - h / 2) / scale();
     },
-    groundAt,
+    centerOn(ax, ay) {
+      cx = ax;
+      cy = ay;
+    },
+    toArt(sx, sy) {
+      return { x: (sx * ratio - cam.originX) / scale(), y: (sy * ratio - cam.originY) / scale() };
+    },
   };
+  return cam;
 }
