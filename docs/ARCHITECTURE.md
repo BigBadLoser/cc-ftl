@@ -171,7 +171,8 @@ plus JSON metadata plus the manifest.
 ```
 tools/blender/
   setup.sh      installs a pinned headless Blender (the container is ephemeral)
-  lib/          shared Python: palette, style kit, rig helpers, material conventions
+  lib/          shared Python: palette, style kit (clean hard-surface shapes, smooth shading with
+                toon-like bands; no faceting or noise), rig helpers, material conventions
   crew/         body plans (the CC0 Quaternius base for humans; see THIRD_PARTY.md), slot items
   sprites/      the sprite renderer: 2:1 ortho camera, supersample to block-mode downsample,
                 palette quantization, 1 px outline, emission pass to glow sheet, packing and JSON
