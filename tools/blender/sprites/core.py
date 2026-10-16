@@ -36,6 +36,10 @@ def G(x, y, z=0.0):
 
 
 def lin(name):
+    """Linear RGB of a palette name; team.* names give their pure key albedo (see post.TEAM_VEC)."""
+    if name.startswith("team."):
+        base, _, k = name.partition("*")
+        return tuple(float(v) * (float(k) if k else 1.0) for v in post.TEAM_VEC[base])
     return palette.linear(name)
 
 
@@ -155,7 +159,7 @@ class Mesh:
 
     def _cols(self, color):
         c = lin(color)
-        if palette.emissive(color):
+        if not color.startswith("team.") and palette.emissive(color):
             if self.selflit:
                 return (0, 0, 0), c, c
             dim = tuple(x * 0.18 + 0.004 for x in c)
