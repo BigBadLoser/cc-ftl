@@ -3,7 +3,7 @@
   import type { UiApi, UiBuildKind, UiTool, UiToolState } from './api';
 
   let { api }: { api: UiApi } = $props();
-  let st = $state<UiToolState>({ tool: 'select', build: 'wall' });
+  let st = $state<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
 
   onMount(() => api.tool.subscribe((t) => (st = t)));
 
@@ -17,6 +17,7 @@
     { id: 'wall', label: 'Wall' },
     { id: 'floor', label: 'Floor' },
     { id: 'door', label: 'Door' },
+    { id: 'module', label: 'Modules' },
   ];
 </script>
 
@@ -36,7 +37,7 @@
 </div>
 
 <style>
-  .tools { position: fixed; right: calc(8px + var(--sar)); top: calc(104px + var(--sat)); display: flex; gap: 6px; align-items: flex-start; pointer-events: none; }
+  .tools { position: fixed; right: calc(8px + var(--sar)); top: calc(var(--hdr) + 48px + var(--sat)); display: flex; gap: 6px; align-items: flex-start; pointer-events: none; }
   .col { display: flex; flex-direction: column; gap: 4px; pointer-events: auto; }
   .subs { margin-top: 44px; }
   button { background: var(--panel); padding: 0 8px; font-size: 13px; min-width: 44px; }

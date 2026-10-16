@@ -12,7 +12,7 @@ import type { SimEvent } from '../events';
 
 const rows = ['#########', '#___#___#', '#___D___#', '#___#___#', '#########'];
 const all = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, cooking: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v,
 });
 const content: ContentRegistry = {
   ships: { 'ship.t': { name: 't', rows } },
@@ -21,8 +21,12 @@ const content: ContentRegistry = {
     'role.gunner': { name: 'G', priorities: { ...all(4), operating: 1 } },
     'role.medic': { name: 'M', priorities: { ...all(4), medical: 1 } },
   },
+  modules: {},
   species: { 'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 } },
   crewNames: ['A', 'B', 'C', 'D', 'E', 'F'],
+  items: {},
+  recipes: {},
+  structCosts: {},
 };
 
 function make(): Sim {

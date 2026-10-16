@@ -1,8 +1,12 @@
 import { Container, Sprite } from 'pixi.js';
+import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
+import { ModuleC } from '../sim/modules/components';
+import type { ModuleDef } from '../sim/registry';
 import { Struct } from '../sim/structure';
 import { diamondTextures } from './diamonds';
 import { iso } from './iso';
+import { overlayDef, rampAt, type OverlayDef } from './overlayDefs';
 
 function hsl(h: number, s: number, l: number): number {
   const a = s * Math.min(l, 1 - l);
@@ -15,67 +19,108 @@ function hsl(h: number, s: number, l: number): number {
 
 /** Distinct hue for a room id (golden-angle spacing). */
 export const roomColor = (id: number): number => hsl((id * 0.618034) % 1, 0.7, 0.45);
-/** Blue -> red ramp, t in [0, 1]. */
-export const rampColor = (t: number): number => hsl(0.66 * (1 - Math.min(1, Math.max(0, t))), 0.8, 0.42);
 
-/** Tinted floor diamonds for one grid field (rooms, later gases/power...). Rebuilt from revisions. */
+/** What the overlay needs besides the grid: module state for the power overlay. */
+export interface OverlayWorld {
+  world: World;
+  modules: Readonly<Record<string, ModuleDef>>;
+}
+
+/** Tinted floor diamonds for one grid field (gases, fire, light, power, rooms). Rebuilt from revisions, at most ~8x a second. */
 export interface Overlay {
   setField(field: string | null): void;
   update(): void;
 }
 
-export function createOverlay(grid: Grid, parent: Container): Overlay {
+const MIN_INTERVAL_MS = 120;
+const ALPHA = 0.42;
+
+export function createOverlay(grid: Grid, parent: Container, ow: OverlayWorld): Overlay {
   const layer = new Container();
   parent.addChild(layer);
   const tex = diamondTextures().fill;
-  let field: string | null = null;
+  const pool: (Sprite | undefined)[] = [];
+  let def: OverlayDef | undefined;
   let key = '';
+  let lastAt = -Infinity;
 
-  function rebuild(f: string): void {
-    for (const c of layer.removeChildren()) c.destroy();
-    let data: ArrayLike<number>;
-    try {
-      data = grid.raw(f);
-    } catch {
-      return;
-    }
-    const struct = grid.raw('struct');
-    const room = f === 'room';
-    let max = 0;
-    if (!room) for (let i = 0; i < data.length; i++) max = Math.max(max, data[i] as number);
-    for (let i = 0; i < data.length; i++) {
-      const s = struct[i];
-      if (s !== Struct.Floor && s !== Struct.Door) continue;
-      const v = data[i] as number;
-      if (room && v === 0) continue;
-      const sp = new Sprite(tex);
-      sp.anchor.set(0.5);
+  const sprite = (i: number): Sprite => {
+    let s = pool[i];
+    if (!s) {
+      s = new Sprite(tex);
+      s.anchor.set(0.5);
       const p = iso(i % grid.width, Math.floor(i / grid.width));
-      sp.position.set(p.x, p.y);
-      sp.tint = room ? roomColor(v) : rampColor(max > 0 ? v / max : 0);
-      sp.alpha = 0.3;
-      layer.addChild(sp);
+      s.position.set(p.x, p.y);
+      s.alpha = ALPHA;
+      layer.addChild(s);
+      pool[i] = s;
+    }
+    return s;
+  };
+
+  function powerKey(): string {
+    let k = '';
+    for (const id of ow.world.query(ModuleC)) {
+      const m = ow.world.get(id, ModuleC);
+      if (m && m.gridId === grid.id) k += `${id}${m.powered && m.enabled && m.hp > 0 ? 1 : 0}`;
+    }
+    return k;
+  }
+
+  function paint(d: OverlayDef): void {
+    const struct = grid.raw('struct');
+    const used = new Set<number>();
+    const put = (i: number, color: number) => {
+      const s = sprite(i);
+      s.visible = true;
+      s.tint = color;
+      used.add(i);
+    };
+    if (d.special === 'power') {
+      const mod = grid.raw('module');
+      for (let i = 0; i < mod.length; i++) {
+        const id = mod[i] as number;
+        if (!id) continue;
+        const m = ow.world.get(id, ModuleC);
+        const power = m ? (ow.modules[m.def]?.power ?? 0) : 0;
+        if (!m || power === 0) continue;
+        const on = m.powered && m.enabled && m.hp > 0;
+        put(i, on ? (power > 0 ? 0x4ce0ff : 0x4cd964) : 0xe5322d);
+      }
+    } else {
+      const room = d.special === 'room';
+      const data = grid.raw(room ? 'room' : d.id);
+      for (let i = 0; i < data.length; i++) {
+        const s = struct[i];
+        if (s !== Struct.Floor && s !== Struct.Door) continue;
+        const v = data[i] as number;
+        if (room ? v === 0 : d.hideZero && v <= 0) continue;
+        put(i, room ? roomColor(v) : rampAt(d, v));
+      }
+    }
+    for (let i = 0; i < pool.length; i++) {
+      const s = pool[i];
+      if (s && !used.has(i)) s.visible = false;
     }
   }
 
   return {
     setField(f) {
-      field = f;
+      def = f ? overlayDef(f) : undefined;
       key = '';
-      if (!f) for (const c of layer.removeChildren()) c.destroy();
+      for (const s of pool) if (s) s.visible = false;
     },
     update() {
-      if (!field) return;
-      let rev: number;
-      try {
-        rev = grid.revision(field);
-      } catch {
-        rev = -2;
-      }
-      const k = `${field}:${rev}:${grid.revision('struct')}`;
+      if (!def) return;
+      const now = performance.now();
+      if (now - lastAt < MIN_INTERVAL_MS) return;
+      let k: string;
+      if (def.special === 'power') k = `p:${grid.revision('module')}:${powerKey()}`;
+      else k = `${def.id}:${grid.revision(def.special === 'room' ? 'room' : def.id)}:${grid.revision('struct')}`;
       if (k === key) return;
       key = k;
-      rebuild(field);
+      lastAt = now;
+      paint(def);
     },
   };
 }

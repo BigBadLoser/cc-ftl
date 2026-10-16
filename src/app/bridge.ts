@@ -1,6 +1,7 @@
 import { Struct, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiCrew } from '../ui/api';
+import type { UiCrew, UiModule, UiStats } from '../ui/api';
+import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildCrewList } from './crewSnapshot';
 import { createStore, type Readable } from './store';
 
@@ -40,6 +41,8 @@ export interface Bridge {
   snapshot: Readable<Snapshot>;
   inspect: Readable<InspectSnapshot | null>;
   crew: Readable<UiCrew[]>;
+  modules: Readable<UiModule[]>;
+  stats: Readable<UiStats>;
   setSelected(tile: TileRef | null): void;
   setHovered(tile: TileRef | null): void;
   dispatch(cmd: Command): void;
@@ -66,6 +69,11 @@ export function createBridge(sim: Sim): Bridge {
   });
   const inspect = createStore<InspectSnapshot | null>(null);
   const crew = createStore<UiCrew[]>([]);
+  const modules = createStore<UiModule[]>([]);
+  const stats = createStore<UiStats>({ supply: 0, demand: 0, o2: null });
+  let lastMods = '';
+  let lastStats = '';
+  let frame = 0;
   let lastCrew = '';
   let selected: TileRef | null = null;
   let hovered: TileRef | null = null;
@@ -98,6 +106,22 @@ export function createBridge(sim: Sim): Bridge {
     lastCrew = key;
     crew.set(list);
   };
+  const refreshShip = () => {
+    if (frame++ % 4) return;
+    const ml = buildModuleList(sim);
+    const mk = JSON.stringify(ml);
+    if (mk !== lastMods) {
+      lastMods = mk;
+      modules.set(ml);
+    }
+    const st = buildStats(sim);
+    st.o2 = st.o2 === null ? null : Math.round(st.o2 * 10) / 10;
+    const sk = JSON.stringify(st);
+    if (sk !== lastStats) {
+      lastStats = sk;
+      stats.set(st);
+    }
+  };
   let loop: Loop | undefined;
   let lastSpeed: Speed = 1;
 
@@ -111,6 +135,8 @@ export function createBridge(sim: Sim): Bridge {
     snapshot: store,
     inspect,
     crew,
+    modules,
+    stats,
     setSelected(t) {
       selected = t;
       refreshInspect();
@@ -129,6 +155,7 @@ export function createBridge(sim: Sim): Bridge {
       store.update((s) => ({ ...s, ...stats, zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites }));
       refreshInspect();
       refreshCrew();
+      refreshShip();
     },
   };
 }

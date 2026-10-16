@@ -20,6 +20,8 @@
   "orange": { "hex": "#ff7a1a", "emissive": 2.5 },
   "red": { "hex": "#ff1e2a", "emissive": 3.0 },
   "arc": { "hex": "#cff8ff", "emissive": 4.0 },
+  "flameY": { "hex": "#ffd23a", "emissive": 3.0 },
+  "flameW": { "hex": "#fff6c8", "emissive": 3.5 },
 
   "jacket": { "hex": "#72845f" },
   "jacketD": { "hex": "#56674a" },

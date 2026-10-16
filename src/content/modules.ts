@@ -1,0 +1,107 @@
+import type { ModuleDef } from '../sim';
+
+/**
+ * Ship modules. Power is in units per second (+ supply, - draw). Footprints are [w, h] at
+ * rotation 0; `access` is the tile (offset from the footprint's top-left) crew stand on.
+ * `asset` ids name models in the render asset manifest.
+ */
+export const modules = {
+  'module.reactor': {
+    name: 'Reactor',
+    asset: 'module.reactor',
+    footprint: [2, 2],
+    solid: true,
+    power: 50,
+    priority: 1,
+    heatPerSec: 8,
+    flammability: 0.1,
+    maxHp: 200,
+    buildWork: 240,
+    cost: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }],
+  },
+  'module.lifeSupport': {
+    name: 'Life support',
+    asset: 'module.life_support',
+    footprint: [1, 2],
+    solid: true,
+    power: -6,
+    priority: 1,
+    o2PerSec: 3,
+    co2ScrubPerSec: 1,
+    flammability: 0.2,
+    maxHp: 100,
+    buildWork: 160,
+    cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 6 }],
+  },
+  // A lamp on a floor tile beside a wall. Not solid: crew walk over it.
+  'module.light': {
+    name: 'Light',
+    asset: 'module.light',
+    footprint: [1, 1],
+    solid: false,
+    power: -1,
+    priority: 2,
+    light: { radius: 7, level: 230 },
+    flammability: 0.1,
+    maxHp: 30,
+    buildWork: 40,
+    cost: [{ item: 'item.metal', count: 1 }, { item: 'item.electronics', count: 1 }],
+  },
+  'module.bed': {
+    name: 'Bed',
+    asset: 'module.bed',
+    footprint: [1, 2],
+    solid: false,
+    power: 0,
+    flammability: 0.5,
+    maxHp: 50,
+    buildWork: 80,
+    cost: [{ item: 'item.metal', count: 4 }, { item: 'item.polymer', count: 4 }],
+    bed: true,
+  },
+  'module.console': {
+    name: 'Console',
+    asset: 'module.console',
+    footprint: [1, 1],
+    solid: true,
+    // Crew stand on the tile below (rotation 0).
+    access: [0, 1],
+    power: -3,
+    priority: 4,
+    flammability: 0.3,
+    maxHp: 60,
+    buildWork: 100,
+    cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
+    workstation: true,
+  },
+  // Crew work at the access tile (below, at rotation 0). Draws power; crafts recipes with this station.
+  'module.fabricator': {
+    name: 'Fabricator',
+    asset: 'module.fabricator',
+    footprint: [2, 1],
+    solid: true,
+    access: [0, 1],
+    power: -4,
+    priority: 3,
+    flammability: 0.3,
+    maxHp: 120,
+    buildWork: 160,
+    cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 6 }],
+    workstation: true,
+    crafting: true,
+  },
+  // A crate. Crew use it from any neighbouring tile; the access tile just keeps one side walkable.
+  'module.storage': {
+    name: 'Storage crate',
+    asset: 'module.storage',
+    footprint: [1, 1],
+    solid: true,
+    access: [0, 1],
+    power: 0,
+    flammability: 0.2,
+    maxHp: 60,
+    buildWork: 60,
+    cost: [{ item: 'item.metal', count: 6 }],
+    storage: { capacity: 8 },
+  },
+} satisfies Record<string, ModuleDef>;

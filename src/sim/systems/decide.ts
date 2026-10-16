@@ -1,10 +1,14 @@
+import { findFreeBed, releaseBedClaim } from '../crew/beds';
 import {
-  AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
-  type Crew, type Position, type Priorities,
+  AssignmentC, BedClaimC, CarriedC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
+  type Crew, type Path, type Position, type Priorities,
 } from '../crew/components';
-import { clearPath, isAdjacent, isSettled, origin, releaseAssignment } from '../crew/helpers';
+import { clearPath, isAdjacent, isIncapacitated, isSettled, origin, releaseAssignment } from '../crew/helpers';
 import { findPath, type Tile } from '../crew/pathfind';
-import { isWalkable } from '../structure';
+import { needsMaterials } from '../items/materials';
+import { dropCarried } from '../items/stacks';
+import { ModuleC } from '../modules/components';
+import { isTileWalkable } from '../modules/walk';
 import type { Sim } from '../sim';
 
 /** Below this rest a non-drafted crew member drops everything and sleeps in place. */
@@ -16,22 +20,20 @@ const WANDER_RADIUS = 3;
 /** Autonomous decisions for non-drafted crew: sleep, keep/repath a job, pick a job, or idle. */
 export function decideSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, PrioritiesC, PositionC, PathC, NeedsC)) {
-    if (sim.world.has(id, DraftedC)) continue;
+    if (sim.world.has(id, DraftedC) || isIncapacitated(sim, id)) continue;
     const crew = sim.world.get(id, CrewC) as Crew;
     if (crew.activity === 'sleeping') continue;
     const pos = sim.world.get(id, PositionC) as Position;
     const needs = sim.world.get(id, NeedsC) as { rest: number };
 
-    if (needs.rest < SLEEP_BELOW) {
-      releaseAssignment(sim, id);
-      if (isSettled(pos)) {
-        crew.activity = 'sleeping';
-        sim.events.emit({ type: 'crew.fellAsleep', crew: id });
-      }
+    const assignment = sim.world.get(id, AssignmentC);
+    if (needs.rest < SLEEP_BELOW && !isCarrying(sim, id)) {
+      if (assignment) releaseAssignment(sim, id);
+      dropCarried(sim, id);
+      goToSleep(sim, id, crew, pos);
       continue;
     }
 
-    const assignment = sim.world.get(id, AssignmentC);
     if (assignment) {
       const job = sim.world.get(assignment.jobId, JobC);
       if (!job) {
@@ -47,8 +49,55 @@ export function decideSystem(sim: Sim): void {
       continue;
     }
 
+    dropCarried(sim, id); // a load left over from a lost haul job
     if (!pickJob(sim, id, pos)) wander(sim, id, pos, crew);
   }
+}
+
+/** True if the crew member is on a rescue job and holds the patient (they must not drop them to sleep). */
+function isCarrying(sim: Sim, id: number): boolean {
+  const a = sim.world.get(id, AssignmentC);
+  const job = a && sim.world.get(a.jobId, JobC);
+  return !!job && job.kind === 'rescue' && sim.world.get(job.target ?? 0, CarriedC)?.carrier === id;
+}
+
+/**
+ * Tired: claim the nearest free bed and walk to it, then sleep there (faster rest). With no
+ * reachable bed, sleep where standing. Only falls asleep once settled on a tile.
+ */
+function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
+  let claim = sim.world.get(id, BedClaimC);
+  const bed = claim && sim.world.get(claim.bed, ModuleC);
+  if (claim && (!bed || bed.hp <= 0)) {
+    releaseBedClaim(sim, id);
+    claim = undefined;
+  }
+  const path = sim.world.get(id, PathC) as Path;
+  if (claim && bed) {
+    if (isSettled(pos) && pos.x === bed.x && pos.y === bed.y) return fallAsleep(sim, id, crew);
+    if (path.steps.length > 0 || !isSettled(pos)) return; // still walking to the bed
+    const steps = findPath(sim, pos.gridId, origin(pos), { x: bed.x, y: bed.y });
+    if (steps && steps.length > 0) {
+      path.steps = steps;
+      return;
+    }
+    releaseBedClaim(sim, id); // unreachable: sleep on the floor instead
+  } else {
+    const plan = findFreeBed(sim, pos.gridId, origin(pos));
+    if (plan) {
+      (sim.world.get(plan.bed, ModuleC) as { reservedBy: number }).reservedBy = id;
+      sim.world.add(id, BedClaimC, { bed: plan.bed });
+      path.steps = plan.steps;
+      return;
+    }
+  }
+  if (isSettled(pos)) fallAsleep(sim, id, crew);
+}
+
+function fallAsleep(sim: Sim, id: number, crew: Crew): void {
+  clearPath(sim, id);
+  crew.activity = 'sleeping';
+  sim.events.emit({ type: 'crew.fellAsleep', crew: id });
 }
 
 /** Reserve the best job by priority level, then shortest path, then lowest id. */
@@ -61,7 +110,7 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
     let best: { id: number; steps: Tile[] } | null = null;
     for (const jobId of jobs) {
       const job = sim.world.get(jobId, JobC);
-      if (!job || job.gridId !== pos.gridId || !cats.includes(job.category)) continue;
+      if (!job || job.gridId !== pos.gridId || !cats.includes(job.category) || job.target === crewId || needsMaterials(job)) continue;
       const steps = findPath(sim, pos.gridId, origin(pos), { x: job.x, y: job.y, adjacent: true });
       if (steps && (!best || steps.length < best.steps.length)) best = { id: jobId, steps };
     }
@@ -88,7 +137,7 @@ function wander(sim: Sim, id: number, pos: Position, crew: Crew): void {
   const tx = pos.x + sim.rng.int(-WANDER_RADIUS, WANDER_RADIUS);
   const ty = pos.y + sim.rng.int(-WANDER_RADIUS, WANDER_RADIUS);
   if ((tx === pos.x && ty === pos.y) || !grid.inBounds(tx, ty)) return;
-  if (!isWalkable(grid.get('struct', tx, ty)) || grid.get('room', tx, ty) !== room) return;
+  if (!isTileWalkable(sim, grid, tx, ty) || grid.get('room', tx, ty) !== room) return;
   const steps = findPath(sim, pos.gridId, { x: pos.x, y: pos.y }, { x: tx, y: ty });
   if (steps && steps.length <= 2 * WANDER_RADIUS) path.steps = steps;
   else clearPath(sim, id);

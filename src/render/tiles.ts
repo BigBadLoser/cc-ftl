@@ -3,9 +3,10 @@ import { Struct } from "../sim/structure";
 export type KindAt = (x: number, y: number) => number;
 /** One sprite to draw: the first existing asset id of the chain. */
 export type Chain = string[];
+/** Wall height mode: auto/down = low cutaway blocks, up = full-height walls. Exterior front hull is a ghost in all. */
+export type CutawayMode = "auto" | "up" | "down";
 
 const solidish = (k: number) => k === Struct.Wall || k === Struct.Door;
-const interior = (k: number) => k === Struct.Floor || k === Struct.Door;
 
 export function touchesSpace(kindAt: KindAt, x: number, y: number): boolean {
   for (let dy = -1; dy <= 1; dy++)
@@ -14,25 +15,16 @@ export function touchesSpace(kindAt: KindAt, x: number, y: number): boolean {
   return false;
 }
 
-/** The camera looks toward -x/-y, so interior behind a tile (lower x/y) means the tile is near the camera and gets cut. */
-export function isLowered(
-  kindAt: KindAt,
-  x: number,
-  y: number,
-  mode: "auto" | "up" | "down",
-): boolean {
-  if (mode === "up") return false;
-  if (mode === "down") return true;
-  return (
-    interior(kindAt(x - 1, y)) ||
-    interior(kindAt(x, y - 1)) ||
-    interior(kindAt(x - 1, y - 1))
-  );
+/** Deterministic per-tile hash (the Blender contact sheet mirrors it). */
+export function tileHash(x: number, y: number): number {
+  const h = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+  return (h ^ (h >>> 15)) >>> 0;
 }
 
-const FLOORS = ["a", "b", "a", "a", "c"];
+/** Plain plates dominate; grates and hatches are rare accents. Keep in sync with contact_sheet.py. */
+const FLOORS = "aabacadafaageah";
 export function floorChain(x: number, y: number): Chain {
-  const v = FLOORS[(x * 7 + y * 13 + ((x ^ y) & 3)) % FLOORS.length] as string;
+  const v = FLOORS[(tileHash(x, y) >>> 8) % FLOORS.length] as string;
   return [`tile.floor.${v}`, "tile.floor.a"];
 }
 
@@ -42,53 +34,63 @@ export interface Piece {
   order: number;
 }
 
-type Dir = "n" | "e" | "s" | "w";
-const ARMS: readonly [Dir, number, number, number][] = [
-  ["n", 0, -1, 0],
-  ["w", -1, 0, 1],
-  ["s", 0, 1, 3],
-  ["e", 1, 0, 4],
-];
-const CENTRE_ORDER = 2;
-/** Upper pieces draw after every base piece of the tile. */
-const UPPER = 10;
-const DOOR_ORDER = UPPER + CENTRE_ORDER;
+/** Neighbour mask: bit 1 = N (-y), 2 = E (+x), 4 = S (+y), 8 = W (-x). Walls, hull and doors connect. */
+export function wallMask(kindAt: KindAt, x: number, y: number): number {
+  return (
+    (solidish(kindAt(x, y - 1)) ? 1 : 0) |
+    (solidish(kindAt(x + 1, y)) ? 2 : 0) |
+    (solidish(kindAt(x, y + 1)) ? 4 : 0) |
+    (solidish(kindAt(x - 1, y)) ? 8 : 0)
+  );
+}
 
 /**
- * Pieces of the wall, hull or door at (x, y), drawn in `order` ascending with the tile. A wall is a low sloped base
- * plus a thin upper wall, both built from a centre piece and one arm toward each connected (wall or door) neighbour:
- * back arms (n, w), centre, front arms (s, e). Cutaway (`low`) swaps only the upper wall for a short stub and
- * leaves the base. Doors draw no wall base: a threshold sill plus a slim frame that stands whatever the cutaway; the frame runs along x when
- * walls flank it in x, otherwise along y. Hull walls are walls touching space.
+ * Pieces of the wall, hull or door at (x, y). A wall is one block piece chosen by its 4-bit neighbour mask (connected
+ * sides are cut flush, open sides slope), low (cutaway) or full height by `mode`. Hull walls are walls touching space. A hull tile whose +x or +y neighbour is
+ * space faces the camera from outside: with `ghosts` on it draws as a dark translucent silhouette so it never hides
+ * the interior (all modes). Visible exterior slopes of hull blocks get a hazard strip overlay. Doors orient along x when walls
+ * flank them in x, otherwise along y.
  */
 export function wallPieces(
   kindAt: KindAt,
   x: number,
   y: number,
   kind: number,
-  low: boolean,
+  mode: CutawayMode,
+  ghosts = true,
 ): Piece[] {
-  const fam = touchesSpace(kindAt, x, y) ? "hull" : "wall";
-  const arms = ARMS.filter(([, dx, dy]) => solidish(kindAt(x + dx, y + dy)));
-  const part = (layer: string, id: string): Chain => [
-    `tile.${fam}.${layer}.${id}`,
-    `tile.wall.${layer}.${id}`,
-  ];
-  const out: Piece[] = [];
-  const add = (layer: string, base: number): void => {
-    out.push({ chain: part(layer, "c"), order: base + CENTRE_ORDER });
-    for (const [d, , , o] of arms)
-      out.push({ chain: part(layer, `arm.${d}`), order: base + o });
-  };
   if (kind === Struct.Door) {
-    // No wall base through the opening: a threshold sill (with feet that meet the neighbouring wall bases) and the frame.
     const o =
       solidish(kindAt(x - 1, y)) && solidish(kindAt(x + 1, y)) ? "x" : "y";
-    out.push({ chain: [`tile.door.sill.${o}`], order: 0 });
-    out.push({ chain: [`tile.door.${o}`], order: DOOR_ORDER });
-    return out;
+    return [{ chain: [`tile.door.${o}`], order: 0 }];
   }
-  add("base", 0);
-  add(low ? "upper.low" : "upper", UPPER);
+  const mask = wallMask(kindAt, x, y);
+  const hull = touchesSpace(kindAt, x, y);
+  const spaceS = kindAt(x, y + 1) === Struct.Space;
+  const spaceE = kindAt(x + 1, y) === Struct.Space;
+  if (hull && ghosts && (spaceS || spaceE))
+    return [{ chain: [`tile.hull.ghost.m${mask}`], order: 0 }];
+  const fam = hull ? "hull" : "wall";
+  const id = `tile.${fam}.m${mask}`;
+  const h = tileHash(x, y);
+  const chain: Chain =
+    mode === "up"
+      ? [`tile.${fam}.full.m${mask}`, id]
+      : (mask === 5 || mask === 10) && h % 4 < 2
+        ? [`${id}.v${1 + (h % 2)}`, id]
+        : [id];
+  const out: Piece[] = [{ chain, order: 0 }];
+  if (hull) {
+    if (!(mask & 4) && spaceS)
+      out.push({
+        chain: [`tile.hull.haz.s.${(mask & 8 ? 1 : 0) | (mask & 2 ? 2 : 0)}`],
+        order: 1,
+      });
+    if (!(mask & 2) && spaceE)
+      out.push({
+        chain: [`tile.hull.haz.e.${(mask & 1 ? 1 : 0) | (mask & 4 ? 2 : 0)}`],
+        order: 1,
+      });
+  }
   return out;
 }

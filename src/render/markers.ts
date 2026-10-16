@@ -5,12 +5,15 @@ import { iso } from './iso';
 type Tile = { x: number; y: number };
 
 const CYAN = 0x22d3ee;
+const BAD = 0xff4d4d;
 
-/** Pixel-stepped diamond outlines for selection, hover and the drag-build preview. */
+/** Pixel-stepped diamond outlines for selection, hover and the drag/footprint build preview. */
 export interface Markers {
-  setSelection(t: Tile | null): void;
+  /** One tile, or every tile of a footprint. */
+  setSelection(t: Tile | readonly Tile[] | null): void;
   setHover(t: Tile | null): void;
-  setPreview(tiles: readonly Tile[]): void;
+  /** `valid` false tints the preview red (blocked placement). */
+  setPreview(tiles: readonly Tile[], valid?: boolean): void;
 }
 
 export function createMarkers(parent: Container): Markers {
@@ -31,15 +34,22 @@ export function createMarkers(parent: Container): Markers {
       s.position.set(p.x, p.y);
     }
   };
-  const sel = make(1);
   const hover = make(0.45);
+  const sel: Sprite[] = [];
   const pool: Sprite[] = [];
   return {
-    setSelection: (t) => put(sel, t),
+    setSelection(t) {
+      const tiles = t === null ? [] : Array.isArray(t) ? (t as readonly Tile[]) : [t as Tile];
+      while (sel.length < tiles.length) sel.push(make(1));
+      sel.forEach((s, i) => put(s, tiles[i] ?? null));
+    },
     setHover: (t) => put(hover, t),
-    setPreview(tiles) {
-      while (pool.length < tiles.length) pool.push(make(0.7));
-      pool.forEach((s, i) => put(s, tiles[i] ?? null));
+    setPreview(tiles, valid = true) {
+      while (pool.length < tiles.length) pool.push(make(0.75));
+      pool.forEach((s, i) => {
+        s.tint = valid ? CYAN : BAD;
+        put(s, tiles[i] ?? null);
+      });
     },
   };
 }

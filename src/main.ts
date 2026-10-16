@@ -3,6 +3,8 @@ import App from './ui/App.svelte';
 import type { UiApi } from './ui/api';
 import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
+import { buildModuleDefs } from './app/moduleSnapshot';
+import { overlayLegend, overlayList } from './app/overlayLegend';
 import { createErrorLog } from './app/errors';
 import { attachInput } from './app/input';
 import { createLoop } from './app/loop';
@@ -37,6 +39,16 @@ const api: UiApi = {
   errors: errorLog.errors,
   crew: bridge.crew,
   selectedCrew: controller.selectedCrew,
+  modules: bridge.modules,
+  moduleDefs: buildModuleDefs(sim),
+  selectedModule: controller.selectedModule,
+  stats: bridge.stats,
+  alerts: controller.alerts.list,
+  overlayList,
+  overlayLegend,
+  dismissAlert: controller.alerts.dismiss,
+  focusAlert: controller.focusAlert,
+  selectModule: controller.selectModule,
   tool: controller.tool,
   toast: controller.toast,
   setTool: controller.setTool,
@@ -54,7 +66,7 @@ const api: UiApi = {
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
   attachCanvas(canvas) {
-    createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world)
+    createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content.modules)
       .then((r) => {
         renderer = r;
         const grid = sim.grids.get(1);

@@ -12,7 +12,13 @@ def over(dst, src, x, y):
     s = src[y0 - y:y1 - y, x0 - x:x1 - x]
     m = s[..., 3] > 0
     d = dst[y0:y1, x0:x1]
+    part = m & (s[..., 3] < 255)
+    soft = d[part].astype(float)
+    a = s[..., 3][part][:, None] / 255.0
     d[m] = s[m]
+    if part.any():                       # semi-transparent pixels (ghost walls) blend over the destination
+        d[part, :3] = (s[part][:, :3] * a + soft[:, :3] * (1 - a)).astype(np.uint8)
+        d[part, 3] = 255
 
 
 def add(dst, src, x, y, gain=1.0):

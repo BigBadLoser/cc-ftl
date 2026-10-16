@@ -8,6 +8,10 @@ export interface Layers {
   decal: Container;
   /** Walls, doors, props, crew, blueprints, crew glow; sorted by zIndex. */
   sorted: Container;
+  /** Translucent effects above everything in the world (smoke). */
+  fx: Container;
+  /** Additive particles (embers, sparks). */
+  fxAdd: Container;
   /** Blurred additive copy of glow sprites (Quality High only). */
   halo: Container;
   /** Selection, hover and build-preview markers. */
@@ -21,6 +25,9 @@ export function createLayers(halos: boolean): Layers {
   const floor = new Container();
   const decal = new Container();
   const sorted = new Container();
+  const fx = new Container();
+  const fxAdd = new Container();
+  fxAdd.blendMode = 'add';
   const halo = new Container();
   const ui = new Container();
   sorted.sortableChildren = true;
@@ -28,12 +35,14 @@ export function createLayers(halos: boolean): Layers {
   halo.filters = [blur];
   halo.blendMode = 'add';
   halo.visible = halos;
-  world.addChild(floor, decal, sorted, halo, ui);
+  world.addChild(floor, decal, sorted, fx, fxAdd, halo, ui);
   return {
     world,
     floor,
     decal,
     sorted,
+    fx,
+    fxAdd,
     halo,
     ui,
     halos,

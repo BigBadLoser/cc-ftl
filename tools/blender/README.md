@@ -33,9 +33,14 @@ Palette swap: `team.*` materials render as pure key albedo. Every key pixel is `
 1.22)[step] with cooler shadows (see `compose.shade`). Fixed-colour parts use plain palette colours (no key).
 
 ### Environment
-Atlas `sprites/env.png` (+ `env.glow.png`); anchors = floor-diamond centre of the front-most footprint tile. Walls and
-doors are one-tile slabs through the tile centre, each with an identical centre post, so x + y pieces stacked on one
-tile (corner/T/plus) composite cleanly; rows abut with no seams (rings are only drawn outside the piece's row).
+Atlas `sprites/env.png` (+ `env.glow.png`); anchors = floor-diamond centre of the front-most footprint tile.
+`walls.py` builds walls, hull, ghosts, doors and floors; `props.py` the modules, props and fx.
+- Walls: one low bevelled block per 4-neighbour mask (bit 1 N = -y, 2 E = +x, 4 S = +y, 8 W = -x): connected sides are
+  cut flush, open sides slope, the flat top has a dark channel along connections (isolated: a pit). Ids
+  `tile.wall.m<0-15>`, `tile.hull.m<0-15>` (darker; `tile.hull.haz.<s|e>.<0-3>` are hazard foot-strip overlays for
+  exterior slopes), straight variants `.m5.v1/.v2`, `.m10.v1/.v2`, ghosts `tile.hull.ghost.m<0-15>` (near-black, ~55%
+  alpha, light edge). Doors `tile.door.x|y` (+ `.open`), tall frame; doors count as wall neighbours for masks.
+- Floors `tile.floor.a..h`, seamless plated deck variants.
 
 ---
 

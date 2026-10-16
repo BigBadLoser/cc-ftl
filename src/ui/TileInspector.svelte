@@ -27,7 +27,7 @@
       <dt>Struct</dt><dd data-testid="inspect-struct">{info.structName}</dd>
       <dt>Room</dt><dd data-testid="inspect-room">{info.room || 'none'}</dd>
       {#each info.fields.filter((f) => f.name !== 'struct' && f.name !== 'room') as f (f.name)}
-        <dt>{f.name}</dt><dd>{f.value}</dd>
+        <dt>{f.name}</dt><dd>{Number.isInteger(f.value) ? f.value : f.value.toFixed(2)}</dd>
       {/each}
     </dl>
     {#if info.selected}

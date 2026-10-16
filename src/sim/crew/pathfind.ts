@@ -1,3 +1,4 @@
+import { isSolidModule } from '../modules/walk';
 import { isWalkable } from '../structure';
 import type { Sim } from '../sim';
 
@@ -28,7 +29,16 @@ export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal): 
   if (!grid?.has('struct') || !grid.inBounds(from.x, from.y) || !grid.inBounds(goal.x, goal.y)) return null;
   const { width, height } = grid;
   const struct = grid.raw('struct');
-  const walk = (i: number): boolean => isWalkable(struct[i] as number);
+  const mods = grid.has('module') ? grid.raw('module') : null;
+  const solid = new Map<number, boolean>();
+  const walk = (i: number): boolean => {
+    if (!isWalkable(struct[i] as number)) return false;
+    const m = mods ? (mods[i] as number) : 0;
+    if (m === 0) return true;
+    let s = solid.get(m);
+    if (s === undefined) solid.set(m, (s = isSolidModule(sim, m)));
+    return !s;
+  };
   const adj = goal.adjacent ? 1 : 0;
   const isGoal = (x: number, y: number): boolean =>
     adj ? Math.max(Math.abs(x - goal.x), Math.abs(y - goal.y)) === 1 : x === goal.x && y === goal.y;

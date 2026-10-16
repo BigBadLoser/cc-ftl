@@ -8,6 +8,11 @@ const REASONS: Record<string, string> = {
   notDrafted: 'Draft the crew member first',
   notWalkable: "Can't walk there",
   noCrew: 'That crew member is gone',
+  notFloor: 'Modules need bare floor',
+  occupied: 'Something is already there',
+  noAccess: 'Keep a walkable tile free for crew access',
+  badRot: "Can't rotate that",
+  badDef: 'Unknown module',
   badStruct: "Can't build that",
 };
 
