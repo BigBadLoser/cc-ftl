@@ -3,6 +3,7 @@ import type { ShipTemplate } from '../../sim';
 /** Engine at the back (left), bridge at the nose (right), corridor along the middle. */
 export const starterShip = {
   name: 'Starter ship',
+  crew: ['role.engineer', 'role.engineer', 'role.gunner', 'role.pilot', 'role.medic'],
   rows: [
     '########..............',
     '#______#########......',

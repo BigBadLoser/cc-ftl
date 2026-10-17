@@ -1,3 +1,4 @@
+import { WeaponC } from '../combat/components';
 import { CrewC, JobC, PositionC } from '../crew/components';
 import { ProductionC, StorageC } from '../items/components';
 import { spillItems } from '../items/stacks';
@@ -19,6 +20,7 @@ export function spawnModule(sim: Sim, gridId: number, defId: string, x: number, 
     enabled: true, powered: false, reservedBy: 0,
   });
   if (def.storage) sim.world.add(id, StorageC, { capacity: def.storage.capacity, filter: null, stacks: [] });
+  if (def.weapon) sim.world.add(id, WeaponC, { charge: 0, target: null, shotsLeft: 0, nextShotTick: 0, volleyTarget: null });
   if (def.crafting) sim.world.add(id, ProductionC, { orders: [] });
   for (const t of footprintTiles(def, x, y, rot)) grid.set('module', t.x, t.y, id);
   return id;

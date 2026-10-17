@@ -4,7 +4,7 @@ export { Grid, CHUNK_SIZE, type FieldSpec, type FieldType, type GridData } from 
 export { CommandQueue, type Command, type QueuedCommand } from './commands';
 export { EventBuffer, type SimEvent } from './events';
 export { Sim, TICK_HZ } from './sim';
-export type { ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ItemDef, ItemQty, RecipeDef } from './registry';
+export type { WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ItemDef, ItemQty, RecipeDef } from './registry';
 export { gridFromTemplate, spawnTemplateModules } from './ship';
 export { ModuleC, type Module } from './modules/components';
 export { footprintTiles, accessTile, rotatedSize } from './modules/footprint';
@@ -26,3 +26,6 @@ export { stackAt, stackSizeOf } from './items/stacks';
 export { totalStock } from './items/stock';
 export { missingMaterials, needsMaterials } from './items/materials';
 export { activeOrder } from './items/production';
+export * from './combat/components';
+export { shipOf, shipEntityOf, nextGridId, spawnShip, spawnCrew, shieldCapacity } from './combat/ships';
+export { hullSum, damageStruct } from './combat/hull';

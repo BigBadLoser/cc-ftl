@@ -25,6 +25,26 @@ export type SimEvent =
   | { type: 'production.done'; module: number; recipe: string; gridId: number; x: number; y: number }
   /** A loose stack has no storage to go to (debounced per stack). */
   | { type: 'storage.full'; gridId: number; x: number; y: number; item: string }
+  /** A ship entered the sector (newGame or debug.spawnEnemy). */
+  | { type: 'ship.spawned'; gridId: number; faction: 'player' | 'hostile' | 'neutral' }
+  | { type: 'combat.started' }
+  | { type: 'combat.ended' }
+  /** A weapon module launched one shot (`projectile` is its entity). */
+  | { type: 'weapon.fired'; gridId: number; weaponId: number; weapon: string; projectile: number; targetGridId: number; targetModuleId: number }
+  /** A shot landed on the hull at tile (x, y); `moduleId` is the module there (0 = none). */
+  | { type: 'projectile.hit'; projectile: number; weapon: string; gridId: number; x: number; y: number; moduleId: number }
+  /** A shot missed: 'evaded' (engines), 'space' (fell outside the hull) or 'gone' (target left). */
+  | { type: 'projectile.miss'; projectile: number; weapon: string; gridId: number; reason: 'evaded' | 'space' | 'gone'; x: number; y: number }
+  /** A shield layer absorbed (or an ion bolt drained) a shot; `layers` remain. */
+  | { type: 'projectile.shieldHit'; projectile: number; weapon: string; gridId: number; layers: number }
+  | { type: 'projectile.intercepted'; projectile: number; weapon: string; gridId: number }
+  /** A module reached 0 hp from combat damage. */
+  | { type: 'module.destroyed'; moduleId: number; def: string; gridId: number }
+  /** Ship state changes. 'destroyed' = became a wreck. */
+  | { type: 'ship.disabled'; gridId: number }
+  | { type: 'ship.recovered'; gridId: number }
+  | { type: 'ship.destroyed'; gridId: number }
+  | { type: 'ship.fled'; gridId: number }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 
