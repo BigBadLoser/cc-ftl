@@ -96,9 +96,10 @@ FTL's decision-making with physical consequences, in a shared sector.
   - **Ion:** drains a shield layer or disables the module it hits.
   - **Incendiary:** starts fires.
 - **Shields** come in layers set by generator power, and regenerate.
-- **Fog of war (later):** an enemy ship's interior is hidden unless sensors reveal it. Shield
-  generators, hull-mounted weapons and engines always show on top of the fog, so they can still be
-  seen and targeted.
+- **Roofed view (later):** enemy ships render with a roof (top hull) over their rooms, which hides
+  the interior. Modules that should be visible from outside (weapons, shield generators, engines and
+  similar) show a unique roof tile above them instead of the generic one, so they can still be
+  identified and targeted.
 - **Hits** land on tiles near the aim point (spread by accuracy). Walls lose integrity and breach,
   modules lose HP, and crew get hurt. M3's systems take it from there: venting, fire, power loss,
   darkness.
