@@ -1,9 +1,12 @@
 import { CrewC } from './crew/components';
 import { environmentModifiers } from './crew/conditions';
+import { roleSkillModifiers } from './crew/skills';
 import type { Sim } from './sim';
 import { DEFAULT_CARRY_CAPACITY } from './tuning';
 
-export type StatName = 'moveSpeed' | 'workSpeed' | 'restDecay' | 'carryCapacity';
+export type StatName = 'moveSpeed' | 'workSpeed' | 'restDecay' | 'carryCapacity' | 'gunnery' | 'piloting' | 'shielding';
+
+const SKILL_STATS: readonly StatName[] = ['gunnery', 'piloting', 'shielding'];
 
 /** A tagged change to a stat. Applied as: (base + sum of adds) * product of muls. */
 export interface Modifier {
@@ -16,7 +19,7 @@ export interface Modifier {
 export type ModifierSource = (sim: Sim, entity: number) => readonly Modifier[];
 
 /** Register sources here. Environment conditions today; traits and implants plug in later. */
-export const modifierSources: ModifierSource[] = [environmentModifiers];
+export const modifierSources: ModifierSource[] = [environmentModifiers, roleSkillModifiers];
 
 /** Resolve a stat: species base from content, then all modifiers. Systems never stack on their own. */
 export function stat(sim: Sim, entity: number, name: StatName): number {
@@ -32,5 +35,6 @@ export function stat(sim: Sim, entity: number, name: StatName): number {
       else mul *= m.value;
     }
   }
-  return ((species[name] ?? DEFAULT_CARRY_CAPACITY) + add) * mul;
+  const base = (species as unknown as Record<string, number | undefined>)[name] ?? (SKILL_STATS.includes(name) ? 0 : DEFAULT_CARRY_CAPACITY);
+  return (base + add) * mul;
 }

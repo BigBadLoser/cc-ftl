@@ -85,7 +85,8 @@ export interface Job {
   /**
    * Job kind. Player-made: build/deconstruct (struct), module (blueprint), moduleDecon.
    * Auto-made by the autojobs system: extinguish (fire at x,y), repair (module `target`),
-   * rescue (downed crew `target`).
+   * rescue (downed crew `target`), operate (console module `target`; x, y is its access tile, which the
+   * operator stands ON; the job never finishes, it is dropped when the console is not needed).
    */
   kind: JobKind;
   gridId: number;
@@ -119,7 +120,7 @@ export interface Job {
 export const JobC = defineComponent<Job>('job');
 
 export type JobKind =
-  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft';
+  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'operate';
 
 /** Hit points of a crew member. At 0 they are downed (see DownedC). */
 export interface Health {

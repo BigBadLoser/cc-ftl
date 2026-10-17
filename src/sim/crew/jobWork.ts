@@ -36,6 +36,7 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'extinguish': return extinguish(sim, job, speed);
     case 'repair': return repair(sim, job, speed);
     case 'rescue': return rescue(sim, crew, job);
+    case 'operate': return 'working'; // held until the operate-jobs system drops it
   }
 }
 

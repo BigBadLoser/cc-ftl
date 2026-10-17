@@ -3,13 +3,15 @@ import {
   AssignmentC, BedClaimC, CarriedC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
   type Crew, type Path, type Position, type Priorities,
 } from '../crew/components';
-import { clearPath, isAdjacent, isIncapacitated, isSettled, origin, releaseAssignment } from '../crew/helpers';
+import { atJob, clearPath, isIncapacitated, jobGoal, isSettled, origin, releaseAssignment } from '../crew/helpers';
 import { findPath, type Tile } from '../crew/pathfind';
 import { needsMaterials } from '../items/materials';
 import { dropCarried } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
+import { operateAffinity } from '../combat/operators';
 import type { Sim } from '../sim';
+import { OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW } from '../tuning';
 
 /** Below this rest a non-drafted crew member drops everything and sleeps in place. */
 const SLEEP_BELOW = 20;
@@ -27,7 +29,8 @@ export function decideSystem(sim: Sim): void {
     const needs = sim.world.get(id, NeedsC) as { rest: number };
 
     const assignment = sim.world.get(id, AssignmentC);
-    if (needs.rest < SLEEP_BELOW && !isCarrying(sim, id)) {
+    const operating = assignment && sim.world.get(assignment.jobId, JobC)?.kind === 'operate';
+    if (needs.rest < (operating ? OPERATOR_EXHAUSTED_BELOW : SLEEP_BELOW) && !isCarrying(sim, id)) {
       if (assignment) releaseAssignment(sim, id);
       dropCarried(sim, id);
       goToSleep(sim, id, crew, pos);
@@ -41,8 +44,8 @@ export function decideSystem(sim: Sim): void {
         continue;
       }
       const path = sim.world.get(id, PathC);
-      if (path && path.steps.length === 0 && !isAdjacent(origin(pos), job)) {
-        const steps = findPath(sim, pos.gridId, origin(pos), { x: job.x, y: job.y, adjacent: true });
+      if (path && path.steps.length === 0 && !atJob(origin(pos), job)) {
+        const steps = findPath(sim, pos.gridId, origin(pos), jobGoal(job));
         if (steps) path.steps = steps;
         else releaseAssignment(sim, id);
       }
@@ -107,12 +110,14 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
   if (jobs.length === 0) return false;
   for (let level = 1; level <= 4; level++) {
     const cats = WORK_CATEGORIES.filter((c) => prio[c] === level);
-    let best: { id: number; steps: Tile[] } | null = null;
+    let best: { id: number; steps: Tile[]; score: number } | null = null;
     for (const jobId of jobs) {
       const job = sim.world.get(jobId, JobC);
       if (!job || job.gridId !== pos.gridId || !cats.includes(job.category) || job.target === crewId || needsMaterials(job)) continue;
-      const steps = findPath(sim, pos.gridId, origin(pos), { x: job.x, y: job.y, adjacent: true });
-      if (steps && (!best || steps.length < best.steps.length)) best = { id: jobId, steps };
+      if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL) continue;
+      const steps = findPath(sim, pos.gridId, origin(pos), jobGoal(job));
+      const score = steps ? steps.length - operateAffinity(sim, crewId, job) : 0;
+      if (steps && (!best || score < best.score)) best = { id: jobId, steps, score };
     }
     if (best) {
       (sim.world.get(best.id, JobC) as { reservedBy: number }).reservedBy = crewId;

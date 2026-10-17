@@ -3,6 +3,7 @@ import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
 import { carrySystem } from './systems/carry';
+import { combatStateSystem } from './systems/combatState';
 import { craftJobsSystem } from './systems/craftJobs';
 import { decideSystem } from './systems/decide';
 import { doorsSystem } from './systems/doors';
@@ -15,6 +16,7 @@ import { lightingSystem } from './systems/lighting';
 import { modulesSystem } from './systems/modules';
 import { movementSystem } from './systems/movement';
 import { needsSystem } from './systems/needs';
+import { operateJobsSystem } from './systems/operateJobs';
 import { powerSystem } from './systems/power';
 import { roomsSystem } from './systems/rooms';
 import { smokeSystem } from './systems/smoke';
@@ -58,6 +60,8 @@ export const pipeline: readonly System[] = [
   vitalsSystem,
   // Auto jobs after vitals, so a crew member who just went down gets a rescue job this tick.
   autoJobsSystem,
+  // Console operating jobs (combat): after vitals so downed operators are already released.
+  operateJobsSystem,
   // Economy planners, in dependency order: drop dead hauls (frees reservations), open craft jobs,
   // then supply (jobs get first claim on stock), then clear the floor with what is left unclaimed.
   haulCleanupSystem,
@@ -74,4 +78,6 @@ export const pipeline: readonly System[] = [
   carrySystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.
   workSystem,
+  // --- Combat (see each system's notes). State first: it decides whether consoles are needed next tick.
+  combatStateSystem,
 ];
