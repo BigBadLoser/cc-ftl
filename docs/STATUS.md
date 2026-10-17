@@ -1,0 +1,89 @@
+# Project status and handoff
+
+Living document: update it whenever a milestone lands, a decision is made, or a session ends.
+Last updated: 2026-10-17.
+
+## Where things are
+
+**On `main`** (live at https://cc-ftl.bigbadloser.workers.dev):
+- **M0–M2:** the core sim (ECS, grids, commands, saves), crew, jobs, priorities and drafting.
+- **R1:** the PixiJS isometric pixel-art renderer with the Blender sprite pipeline. Tiles are 64x32.
+- **Walls:** autotiled, with low cut-away blocks, full-height versions, ghosts for the exterior walls
+  nearest the camera, and tall door frames. Floors use one main plate plus rare variants.
+- **Crew art (A1):**
+  - Body: the CC0 Quaternius base, variant D (stylised and upright).
+  - Settings: 4 shading bands, smooth shading, no eyes, one composite outline plus a cool rim
+    (renderer filter).
+  - Engineers get the cyan cyber eye.
+- **M3a ship systems:** power, per-tile atmosphere, fire, light, temperature, vitals,
+  downed→bleed-out→death, rescue to beds, overlays, alerts, the module inspector and the build menu.
+- **M3b economy:** items, storage with filters, hauling, build costs with delivery, the fabricator
+  (orders: make N / keep N), the stock drawer, and item and fabricator sprites.
+
+**In progress** (not merged; each branch has its own worktree):
+
+| Branch | Worktree | What | State |
+|---|---|---|---|
+| `m4-combat` | (base) | M4 combat **sim** (sector, ships, weapons, shields, consoles, AI core, projectiles, enemy AI, wrecks, flee) | Done, 138 tests. Not merged because its modules have no sprites yet. |
+| `m4-assets` | `/home/user/cc-ftl-m4art` | M4 sprites: weapons, engine, shield gen, consoles, AI core, roof tiles, projectile and fx sprites. Review sheets in the scratchpad `m4art/` | Agent running. **The user reviews the Blender and pixel sheets before integration.** |
+| `m4-ui` | `/home/user/cc-ftl-m4` | M4 combat overlay, targeting, projectiles, fx, roofed enemies, Spawn raider debug. Uses fallback sprites until m4-assets is approved | Agent running |
+
+After both: swap the fallback ids for the real ones, take screenshots, get user approval, then merge
+m4-combat + m4-assets + m4-ui to main.
+
+Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
+are already merged or superseded. Don't build on them.
+
+## Decisions log (beyond DESIGN.md)
+
+- **Workflow:**
+  - Visual work: send the user screenshots (default + zoomed) and get approval before merging to
+    main.
+  - Assets: the user reviews **both** the Blender renders and the pixel sprites before integration.
+- **Art:**
+  - Pixel art pre-rendered from Blender. Models use clean shapes and smooth shading quantised to
+    flat bands, with no faceting and no noise.
+  - Third-party game sprites the user shared (in the scratchpad `ref-walls/`) are visual reference
+    only. **Never copy or commit them.**
+- **Walls:**
+  - Interior walls and far exterior walls use the cut-away look in Auto mode.
+  - Exterior walls nearest the camera are ghosts: an angled dark footing plus short glass.
+  - Doors are always tall.
+- **Combat:**
+  - No movement or maneuvering. Distance only affects projectile travel time.
+  - Combat overlay; consoles (weapons/shields/helm) instead of manning each weapon; the AI core
+    runs point defence.
+  - Shield generators can sit inside the ship; weapons and engines must touch the hull.
+  - **Roofed enemy view** instead of fog: special roof tiles mark weapons, shields and engines
+    (`ModuleDef.roofAsset`).
+- **Sectors:**
+  - A sector is a playable grid holding ships, stations, asteroids and derelicts.
+  - A **deploy modal** (simplified sector map) chooses the ship position on entry. It is planned
+    for M6.
+- **Economy follow-up:**
+  - Ship-wide **stock targets** (keep N of item X) that auto-queue crafts on any capable
+    fabricator.
+  - A UI pass when the user is at their PC.
+- **Known art TODOs:**
+  - The crew "work" clip renders odd half-bodies.
+  - The cyber eye is faint.
+  - The fabricator inspector covers the cargo room.
+  - Wall corner artifact: the user said "good enough for now".
+
+## Environment notes
+
+- Blender 4.2 LTS headless: `tools/blender/setup.sh` installs it to `/opt/tools`. Previews render
+  with Cycles CPU (EEVEE needs a GPU).
+- Screenshots use `node_modules/playwright-core` 1.56 with
+  `/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`, args
+  `--use-gl=swiftshader --enable-unsafe-swiftshader`, against `npx vite preview --port <n>`.
+- The pipeline's source body model is `tools/blender/source/base_cc0.glb` (CC0, see THIRD_PARTY.md).
+- Agents work in separate git worktrees so they don't collide. Commit and push WIP often: sessions
+  hit usage limits and the container can restart.
+
+## Next milestones
+
+- **Finish M4** (above).
+- **M5:** boarding and derelicts. Portal graph across grids, airlocks and teleporters, EVA,
+  crew-vs-crew combat, capture, exploring wrecks.
+- **M6:** galaxy and sectors. Deploy modal, events, stores, factions.
