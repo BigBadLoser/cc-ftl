@@ -128,7 +128,8 @@ class Regions:
         z = self.z
         self.legs = ~self.arms & ~self.head & ~neck & ~clav & (z < Z(0.95))
         self.boots = self.legs & (z < Z(0.2))
-        self.torso = (~self.arms & ~self.head & ~neck & (z >= Z(0.97))) | (clav & (z > Z(0.97)))
+        scoop = (z > Z(1.32)) & (np.abs(self.x) < 0.11)          # neckline: skin shows between the shoulder straps
+        self.torso = ((~self.arms & ~self.head & ~neck & (z >= Z(0.97))) | (clav & (z > Z(0.97)))) & ~scoop
         self.belt = ~self.arms & ~self.head & (z >= Z(0.92)) & (z < Z(0.99))
 
     def ids(self, sel):

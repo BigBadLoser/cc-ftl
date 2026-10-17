@@ -18,12 +18,12 @@ def eyes(arm, cyber):
     def b(rs):
         h = rs.on("head")
         for sx in (1, -1):
-            h.box((sx * 0.047, -0.14, 1.612), (0.092, 0.02, 0.02), "team.hair")             # brow, thin
+            h.box((sx * 0.047, -0.14, 1.624), (0.08, 0.02, 0.018), "team.hair")             # brow, thin
             if not (cyber and sx == -1):
-                h.box((sx * 0.046, -0.14, 1.553), (0.046, 0.03, 0.046), "black")           # eye
+                h.box((sx * 0.046, -0.14, 1.546), (0.046, 0.03, 0.046), "black")           # eye
         if cyber:
-            h.box((-0.046, -0.14, 1.553), (0.06, 0.032, 0.056), "gmD", bevel=0.006)
-            h.box((-0.046, -0.158, 1.553), (0.034, 0.014, 0.034), "cyan")
+            h.box((-0.046, -0.14, 1.546), (0.06, 0.032, 0.056), "gmD", bevel=0.006)
+            h.box((-0.046, -0.158, 1.546), (0.034, 0.014, 0.034), "cyan")
     return _items(arm, "eyes", "cyber" if cyber else "organic", b, default=not cyber, glow=cyber)
 
 
@@ -121,8 +121,8 @@ def cyber_arm(arm, side):
         f.box((sx * 0.52, 0.07, 1.323), (0.075, 0.1, 0.1), "gmD", bevel=0.015)                 # elbow
         f.box((sx * 0.61, 0.07, 1.323), (0.2, 0.1, 0.1), "gm", bevel=0.02)                     # forearm
         f.box((sx * 0.61, 0.07, 1.375), (0.15, 0.062, 0.016), "plate", bevel=0.006)
-        f.box((sx * 0.61, 0.0, 1.323), (0.16, 0.012, 0.022), "cyan")                           # the one cyan strip
-        f.box((sx * 0.715, 0.07, 1.323), (0.022, 0.112, 0.112), "cyan")                        # wrist ring
+        f.box((sx * 0.595, 0.0, 1.323), (0.12, 0.012, 0.022), "cyan")                           # the one cyan strip
+        f.box((sx * 0.715, 0.07, 1.323), (0.016, 0.108, 0.108), "cyan")                        # wrist ring
         h = rs.on(f"hand.{s}")
         h.box((sx * 0.785, 0.062, 1.32), (0.085, 0.09, 0.075), "gmD", bevel=0.012)
         h.box((sx * 0.845, 0.06, 1.31), (0.05, 0.075, 0.04), "gm", bevel=0.008)
