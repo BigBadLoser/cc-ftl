@@ -2,6 +2,7 @@
 Coordinates are the base's rest frame: x lateral (+X = character left), y front is NEGATIVE, z up (see rigid.py).
 Palette names are plain; team.* colours are palette-swap keys; emissive palette colours (cyan, magenta, orange) go to
 the glow sheet."""
+import os
 from .human_base import Item
 from .rigid import RigidSet
 
@@ -12,6 +13,10 @@ def _items(arm, slot, name, build, **kw):
     return Item(slot, name, rs.build(), **kw)
 
 
+# CREW_EYES: subtle = eyes in the darkest step of the skin key (palette-swapped, never black); none = no eye geometry
+EYES = os.environ.get("CREW_EYES", "subtle")
+
+
 def eyes(arm, cyber):
     """Simplified face: two small dark eyes (1-2 px each), a thin lighter brow with a clear skin gap above them, no
     sclera and no mouth. The engineer's right eye (x<0) is a cyber eye."""
@@ -19,8 +24,8 @@ def eyes(arm, cyber):
         h = rs.on("head")
         for sx in (1, -1):
             h.box((sx * 0.047, -0.14, 1.624), (0.08, 0.02, 0.018), "team.hair")             # brow, thin
-            if not (cyber and sx == -1):
-                h.box((sx * 0.046, -0.14, 1.546), (0.046, 0.03, 0.046), "black")           # eye
+            if EYES == "subtle" and not (cyber and sx == -1):                                 # eye: darkest skin step, 1 px
+                h.box((sx * 0.046, -0.14, 1.546), (0.03, 0.03, 0.03), "team.skin*0.3")
         if cyber:
             h.box((-0.046, -0.14, 1.546), (0.06, 0.032, 0.056), "gmD", bevel=0.006)
             h.box((-0.046, -0.158, 1.546), (0.034, 0.014, 0.034), "cyan")
