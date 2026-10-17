@@ -114,6 +114,23 @@ describe('crafting', () => {
   });
 });
 
+describe('production.edit', () => {
+  it('changes mode and target in place, keeping batches done, and rejects bad input', () => {
+    const { sim, fab } = setup(0);
+    sim.enqueue({ type: 'production.add', moduleId: fab, recipe: 'metal', mode: 'count', target: 3 });
+    run(sim, 1);
+    const order = sim.world.get(fab, ProductionC)?.orders[0];
+    if (order) order.done = 2;
+    sim.enqueue({ type: 'production.edit', moduleId: fab, index: 0, target: 5 });
+    sim.enqueue({ type: 'production.edit', moduleId: fab, index: 0, mode: 'keep' });
+    sim.enqueue({ type: 'production.edit', moduleId: fab, index: 1, target: 5 });
+    sim.enqueue({ type: 'production.edit', moduleId: fab, index: 0, target: 0 });
+    const events = run(sim, 1);
+    expect(sim.world.get(fab, ProductionC)?.orders[0]).toEqual({ recipe: 'metal', mode: 'keep', target: 5, done: 2 });
+    expect(events.filter((e) => e.type === 'command.rejected')).toHaveLength(2);
+  });
+});
+
 describe('fire and items', () => {
   it('a flammable stack on a burning tile burns away, a non-flammable one does not', () => {
     const { sim } = setup(0);

@@ -1,4 +1,5 @@
 import { CrewC, DeadC, ModuleC, PositionC, roomTiles, type Sim } from '../sim';
+import { costsOf } from './logisticsSnapshot';
 import type { UiModule, UiModuleDef, UiStats } from '../ui/api';
 
 const GRID = 1;
@@ -13,6 +14,7 @@ export function buildModuleList(sim: Sim): UiModule[] {
     out.push({
       id, def: m.def, name: def.name, x: m.x, y: m.y, hp: Math.round(m.hp), maxHp: def.maxHp,
       priority: m.priority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
+      storage: !!def.storage, crafting: !!def.crafting,
     });
   }
   return out;
@@ -25,7 +27,7 @@ export function buildModuleDefs(sim: Sim): UiModuleDef[] {
     w: d.footprint[0],
     h: d.footprint[1],
     power: d.power,
-    cost: (d.cost ?? []).map((c) => `${c.count} ${sim.content.items[c.item]?.name ?? c.item}`).join(', '),
+    cost: costsOf(sim, d.cost),
   }));
 }
 

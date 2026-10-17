@@ -55,6 +55,8 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: e.type, key: `m${e.x},${e.y}`, text: `Missing ${sim.content.items[e.item]?.name ?? e.item}`, at: { x: e.x, y: e.y } };
       case 'storage.full':
         return { kind: e.type, key: `s${e.x},${e.y}`, text: `Storage full (${sim.content.items[e.item]?.name ?? e.item})`, at: { x: e.x, y: e.y } };
+      case 'production.done':
+        return { kind: e.type, key: `pd${e.module}`, text: `${sim.content.recipes[e.recipe]?.name ?? 'Batch'} done`, at: { x: e.x, y: e.y } };
       default: return null;
     }
   }
