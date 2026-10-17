@@ -93,3 +93,4 @@ for _r in range(4):
     SPRITES.append((f"module.fabricator{_sfx}.active", _fp, "prop", lambda r=_r: fabricator(True, r)))
 for _f in ("empty", "partial", "full"):
     SPRITES.append((f"module.storage.{_f}", (1, 1), "prop", lambda f=_f: storage(f)))
+SPRITES.append(("module.storage", (1, 1), "prop", lambda: storage("partial")))     # the def's asset id; the game picks a fill

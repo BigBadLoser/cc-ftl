@@ -66,7 +66,7 @@ const api: UiApi = {
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
   attachCanvas(canvas) {
-    createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content.modules)
+    createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content.modules, content.items)
       .then((r) => {
         renderer = r;
         const grid = sim.grids.get(1);
