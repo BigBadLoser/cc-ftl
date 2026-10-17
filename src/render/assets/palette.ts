@@ -39,7 +39,7 @@ export function crewPalette(seed: number): CrewPalette {
 }
 
 const MAX_KEYS = 6;
-const VERT = `
+const VERT = `#version 300 es
 in vec2 aPosition;
 out vec2 vTextureCoord;
 uniform vec4 uInputSize;
@@ -60,7 +60,8 @@ void main(void) {
  *  - a thin cool rim on the left silhouette edge.
  * Neighbours are sampled `uZoom` px away (one art px at the camera's integer zoom), so everything stays on the art grid.
  */
-const FRAG = `
+const FRAG = `#version 300 es
+precision highp float;
 in vec2 vTextureCoord;
 out vec4 finalColor;
 uniform sampler2D uTexture;
