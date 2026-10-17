@@ -83,7 +83,7 @@ export function spawnShip(
   const ship = sim.world.createEntity();
   sim.world.add(ship, ShipC, {
     gridId, name: template.name, faction: opts.faction, state: 'active', x: opts.x, y: opts.y,
-    width: grid.width, height: grid.height, hullMax: hullSum(grid),
+    width: grid.width, height: grid.height, hullMax: hullSum(grid), integrity: 1,
   });
   const layers = shieldCapacity(sim, gridId, false);
   const combat: Combat = {
@@ -94,4 +94,15 @@ export function spawnShip(
   spawnCrew(sim, gridId, template.crew ?? [], opts.rest);
   sim.events.emit({ type: 'ship.spawned', gridId, faction: opts.faction });
   return gridId;
+}
+
+/** Seconds per shield layer of the quickest running generator on a grid (Infinity if none). */
+export function shieldRechargeSec(sim: Sim, gridId: number): number {
+  let best = Infinity;
+  for (const id of sim.world.query(ModuleC)) {
+    const m = sim.world.get(id, ModuleC);
+    const gen = m && m.gridId === gridId ? sim.content.modules[m.def]?.shieldGen : undefined;
+    if (m && gen && m.powered && m.hp > 0 && !sim.world.has(id, IonC)) best = Math.min(best, gen.rechargeSec);
+  }
+  return best;
 }

@@ -74,7 +74,7 @@ export const migrations: Record<number, (data: Record<string, unknown>) => Recor
       world.alive.push(id);
       ships.push([id, {
         gridId: g.id, name: 'Ship', faction: 'player', state: 'active', x: PLAYER_START.x, y: PLAYER_START.y,
-        width: grid.width, height: grid.height, hullMax: hullSum(grid),
+        width: grid.width, height: grid.height, hullMax: hullSum(grid), integrity: 1,
       }]);
       combats.push([id, {
         hold: false, volley: false, target: null, doctrine: 'random', ftl: 0,

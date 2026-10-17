@@ -8,6 +8,17 @@ import { craftJobsSystem } from './systems/craftJobs';
 import { decideSystem } from './systems/decide';
 import { doorsSystem } from './systems/doors';
 import { draftedSystem } from './systems/drafted';
+import { enemyAiSystem } from './systems/enemyAi';
+import { firingSystem } from './systems/firing';
+import { helmSystem } from './systems/helm';
+import { impactSystem } from './systems/impacts';
+import { ionSystem } from './systems/ion';
+import { pointDefenceSystem } from './systems/pointDefence';
+import { projectileSystem } from './systems/projectiles';
+import { shieldSystem } from './systems/shields';
+import { shipStateSystem } from './systems/shipState';
+import { targetingSystem } from './systems/targeting';
+import { weaponChargeSystem } from './systems/weaponCharge';
 import { fireSystem } from './systems/fire';
 import { haulCleanupSystem } from './systems/haulCleanup';
 import { haulJobsSystem } from './systems/haulJobs';
@@ -80,4 +91,21 @@ export const pipeline: readonly System[] = [
   workSystem,
   // --- Combat (see each system's notes). State first: it decides whether consoles are needed next tick.
   combatStateSystem,
+  // Ion timers expire before anything asks whether a module is disabled.
+  ionSystem,
+  // Shields and helm settle this tick's layers, evasion and FTL charge before shots resolve.
+  shieldSystem,
+  helmSystem,
+  // The enemy AI issues commands (applied next tick), then targets are validated.
+  enemyAiSystem,
+  targetingSystem,
+  // Charge, then fire: a weapon that reaches full charge fires the same tick.
+  weaponChargeSystem,
+  firingSystem,
+  // Flight, then point defence gets its roll on shots in range, then arrivals resolve (evasion, shields, effects).
+  projectileSystem,
+  pointDefenceSystem,
+  impactSystem,
+  // Ship state last: it reads the damage done this tick.
+  shipStateSystem,
 ];

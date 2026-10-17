@@ -24,8 +24,10 @@ export interface Ship {
   /** Grid size in tiles (the ship's sector footprint). */
   width: number;
   height: number;
-  /** Largest wall + door integrity total seen; hull integrity = current / this. */
+  /** Largest wall + door integrity total seen (the wall part of the integrity maximum). */
   hullMax: number;
+  /** 0..1 overall integrity: wall integrity (lightly weighted) plus module hp. Updated by the ship-state system. */
+  integrity: number;
 }
 export const ShipC = defineComponent<Ship>('ship');
 
