@@ -5,6 +5,16 @@ from . import core
 
 # ---- shared layouts: (x, y, rz) slots, filled in order; size grows s < m < l ---------------------------------
 
+STACK_K = 1.3     # whole-model scale so stacks read at 1x zoom
+HELD_K = 1.25
+
+
+def _fin(m, k):
+    ob = m.build()
+    ob.scale = (k, k, k)
+    return ob
+
+
 SLOTS = {
     "s": [(0.0, 0.0, 0.3)],
     "m": [(-0.17, -0.08, 0.2), (0.17, 0.1, -0.3), (0.0, -0.22, 0.5)],
@@ -45,7 +55,7 @@ def scrap(size):
                                          "m": [(0.26, 0.18, 0.04, 0.18, 0), (-0.26, -0.18, 0.035, 0.12, 0)],
                                          "l": [(0.32, 0.3, 0.045, 0.24, 0), (-0.34, -0.12, 0.04, 0.18, 0), (0.34, -0.3, 0.035, 0.12, 0)]}[size]):
         m.cyl((x, y, z), r, h, "gm", sides=6, top="plate")
-    return [m.build()]
+    return [_fin(m, STACK_K)]
 
 
 def plates(m, c, n, w=0.4, d=0.28, th=0.05, rz=0.0, gap=0.0):
@@ -65,7 +75,7 @@ def metal(size):
         # two stacked ingots on top of the first pile
         x, y, rz = SLOTS[size][0]
         m.box((x, y, 6 * 0.05), (0.3, 0.12, 0.08), "plate", top="medWhite", rz=rz, base=True, bevel=0.012, taper=0.85)
-    return [m.build()]
+    return [_fin(m, STACK_K)]
 
 
 def board(m, c, rz, z, chips):
@@ -84,7 +94,7 @@ def electronics(size):
             board(m, (x, y), rz + 0.12 * (k % 2), k * 0.05, chip if k == n - 1 else chip[:1])
         # a thin separator sheet under each board stack
         m.box((x, y, 0), (0.1, 0.1, 0.012), "steelD", base=True)
-    return [m.build()]
+    return [_fin(m, STACK_K)]
 
 
 def polymer(size):
@@ -101,7 +111,7 @@ def polymer(size):
         m.cyl((x, y, h - 0.005), 0.045, 0.01, "dark", sides=6)        # core hole
     if size != "s":
         m.box((0.0, -0.02, 0), (0.24, 0.16, 0.05), "steelD", top="steel", base=True)  # pallet under the group
-    return [m.build()]
+    return [_fin(m, STACK_K)]
 
 
 def ice(size):
@@ -113,7 +123,7 @@ def ice(size):
     for (x, y, z), s, h, rz in spec:
         m.box((x, y, z), (s, s * 0.9, h), "iceB", top="medWhite", rz=rz, base=True, bevel=0.03)
         m.box((x, y, z + h * 0.45), (s + 0.004, s * 0.9 + 0.004, 0.03), "lens", rz=rz, base=True)
-    return [m.build()]
+    return [_fin(m, STACK_K)]
 
 
 STACKS = {"item.scrap": scrap, "item.metal": metal, "item.electronics": electronics, "item.polymer": polymer, "item.ice": ice}
@@ -140,7 +150,7 @@ def held(item):
         m.cyl((0, 0, 0.085), 0.098, 0.025, "dark", sides=8)
     else:
         m.box((0, 0, 0), (0.18, 0.16, 0.16), "iceB", top="medWhite", rz=0.3, base=True, bevel=0.02)
-    return [m.build()]
+    return [_fin(m, HELD_K)]
 
 
 SPRITES = []

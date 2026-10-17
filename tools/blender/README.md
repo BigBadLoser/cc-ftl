@@ -41,6 +41,10 @@ Atlas `sprites/env.png` (+ `env.glow.png`); anchors = floor-diamond centre of th
   exterior slopes), straight variants `.m5.v1/.v2`, `.m10.v1/.v2`, ghosts `tile.hull.ghost.m<0-15>` (near-black, ~55%
   alpha, light edge). Doors `tile.door.x|y` (+ `.open`), tall frame; doors count as wall neighbours for masks.
 - Floors `tile.floor.a..h`, seamless plated deck variants.
+- Economy (`logistics.py`, `items.py`): `module.fabricator` (2x1; `.active` = crafting glow and sparks; `.r1/.r2/.r3` are the
+  rotations, front = access side) and `module.storage.empty|partial|full` (`module.storage` = partial). Items: floor stacks
+  `item.<id>.s|m|l` (renderer picks by count / stack size) and carried `item.<id>.held`, for scrap, metal, electronics, polymer,
+  ice. Placements are fixed tables (no random). Preview a subset: `env_build.build(out, only=[substrings])`.
 
 ---
 
