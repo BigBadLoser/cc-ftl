@@ -13,8 +13,8 @@ def _items(arm, slot, name, build, **kw):
     return Item(slot, name, rs.build(), **kw)
 
 
-# CREW_EYES: subtle = eyes in the darkest step of the skin key (palette-swapped, never black); none = no eye geometry
-EYES = os.environ.get("CREW_EYES", "subtle")
+# CREW_EYES: none (default) = brow only, no eye geometry; subtle = eyes in the darkest step of the skin key
+EYES = os.environ.get("CREW_EYES", "none")
 
 
 def eyes(arm, cyber):

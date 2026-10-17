@@ -22,10 +22,10 @@ COLOURS = {
     "eng": {"team.skin": (212, 156, 116), "team.hair": (200, 40, 70), "team.cloth": (114, 132, 95), "team.accent": (200, 150, 40)},
     "crew": {"team.skin": (232, 190, 150), "team.hair": (70, 48, 34), "team.cloth": (60, 96, 150), "team.accent": (200, 150, 40)},
 }
-COMMON = ["body", "legs.cargo_pants", "gear.belt.tool_belt", "eyes.organic"]
+COMMON = ["body", "legs.cargo_pants", "gear.belt.tool_belt"]
 LAYERS = {
-    "eng": COMMON + ["hair.mohawk", "arm.L.cyber", "arm.R.flesh", "torso.work_shirt", "gear.back.engineer_rig", "gear.head.welding_goggles"],
-    "crew": COMMON + ["hair.short", "arm.L.flesh", "arm.R.flesh", "torso.tee"],
+    "eng": COMMON + ["eyes.cyber", "hair.mohawk", "arm.L.cyber", "arm.R.flesh", "torso.work_shirt", "gear.back.engineer_rig", "gear.head.welding_goggles"],
+    "crew": COMMON + ["eyes.organic", "hair.short", "arm.L.flesh", "arm.R.flesh", "torso.tee"],
 }
 DIRS = [("SE", 0), ("S", 1), ("SW", 2), ("NW", 4)]
 FRAMES = [("idle", "idle", 0), ("walk", "walk", 2), ("work", "work", 3)]

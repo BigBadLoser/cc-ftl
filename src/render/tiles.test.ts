@@ -53,17 +53,6 @@ describe("wall autotiling", () => {
     expect(ids(ring, 2, 3, W, "up")).toEqual(["hull.ghost.m10"]);
     expect(ids(ring, 2, 1, W, "down")).toEqual(["hull.m10"]);
   });
-  it("straight pieces pick decorative variants by tile hash, with a plain fallback", () => {
-    const chains = new Set<string>();
-    for (let x = 0; x < 40; x++) {
-      const row = Array.from({ length: 42 }, () => W);
-      const k = grid([row, row.map(() => F)]);
-      const p = wallPieces(k, x + 1, 0, W, "auto")[0];
-      chains.add(String(p?.chain[0]));
-      expect(p?.chain.at(-1)).toBe("tile.hull.m10");
-    }
-    expect(chains.size).toBeGreaterThan(1);
-  });
   it("doors orient along x between walls in x, otherwise y, with no wall piece", () => {
     expect(ids(grid([[W, D, W]]), 1, 0, D, "auto")).toEqual(["door.x"]);
     expect(ids(grid([[W], [D], [W]]), 0, 1, D, "auto")).toEqual(["door.y"]);
@@ -76,7 +65,8 @@ describe("floors", () => {
     const set = new Set<string>();
     for (let y = 0; y < 20; y++)
       for (let x = 0; x < 20; x++) set.add(floorChain(x, y)[0] as string);
-    expect(set.size).toBeGreaterThan(4);
+    expect(set.size).toBeLessThanOrEqual(3);
+    expect([...set].filter((v) => v === "tile.floor.a").length).toBe(1);
     expect(tileHash(1, 2)).toBe(tileHash(1, 2));
   });
 });

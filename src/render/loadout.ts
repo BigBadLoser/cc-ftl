@@ -13,7 +13,7 @@ export function crewLoadout(atlas: Atlas, crew: Crew): LayerSprite[] {
   const hair = atlas.ids(`${p}hair.`);
   const ids = [
     `${p}body`,
-    `${p}eyes.organic`,
+    `${p}eyes.${engineer ? 'cyber' : 'organic'}`,
     hair.length ? (hair[hash(crew.appearanceSeed, 10) % hair.length] as string) : '',
     `${p}arm.L.${engineer ? 'cyber' : 'flesh'}`,
     `${p}arm.R.flesh`,
