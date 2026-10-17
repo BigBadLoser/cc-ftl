@@ -242,12 +242,14 @@ def main():
     r.save(out / "contact-2x.png", 2)
     for md in ("auto", "up", "ghost"):
         mos = mask_sheet(assets, man, md)
-        post.write_png(out / f"masks-{md}-4x.png", mos.repeat(3, 0).repeat(3, 1))
+        post.write_png(out / f"masks-{md}-4x.png", mos.repeat(4, 0).repeat(4, 1))
     auto, up, down = junctions(assets, man)
     auto.save(out / "junctions-auto-2x.png", 2)
     up.save(out / "junctions-up-2x.png", 2)
     down.save(out / "junctions-down-2x.png", 2)
     auto.save(out / "junctions-auto-1x.png", 1)
+    auto.save(out / "junctions-auto-4x.png", 4)
+    up.save(out / "junctions-up-4x.png", 4)
     print("CONTACT written", out)
 
 
