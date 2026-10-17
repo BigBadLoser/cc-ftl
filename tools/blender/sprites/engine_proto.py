@@ -4,7 +4,15 @@ Local frame: u -2.5..2.5 is the footprint (+u = hull side), v -2..2. x built wit
 its ends; the bells protrude from that face into space."""
 import math
 from . import core, detail as D, greeble as G, walls
+from . import cmbkit
 from .cmbkit import Frame
+
+
+def _g(name):
+    """Tag the following primitives with a group for overlap.py (no-op unless recording)."""
+    if cmbkit.REC is not None:
+        cmbkit.REC.group = name
+
 
 CENTRE = {0: (-1.5, -2.0), 1: (-2.0, -1.5)}     # footprint centre relative to the front-most tile centre
 BZ = 0.95                                        # bell axis height
@@ -18,19 +26,25 @@ def bulkhead(g, full):
     height (1.2); cut mode stays low (cutaway intent) but keeps the same layout. Real wall tiles run underneath, so the
     outer ends (v = +-2) butt into neighbouring walls with the wall profile."""
     hs, hp = (1.45, 2.05) if full else (0.58, 0.9)
+    _g("bulkhead")
     g.box(2.02, 0, 0, 0.96, 3.9, hs, "steel", top="plate")
     D.trim(g, 2.02, 0, hs, 0.96, 3.9, "plate")
-    for vv in (-1.76, 0.0, 1.76):                                               # armoured pylons around the bells
-        sv = 0.42 if vv == 0 else 0.4
+    _g("pylon")
+    for vv in (-1.85, 0.0, 1.85):                                               # armoured pylons clear of the bell shells
+        sv = 0.42 if vv == 0 else 0.3
         g.box(2.0, vv, hs, 0.74, sv, hp - hs, "steelL", top="plate")
         D.trim(g, 2.0, vv, hp, 0.74, sv, "plate", w=0.05)
+    _g("bulkhead")
     for k in range(13):                                                         # ribbed seams on the outer face
         vv = -1.92 + k * 0.32
         g.box(2.53, vv, 0.05, 0.07, 0.1, hs - 0.1, "plate")
     for zz in ((0.45, 0.95) if full else (0.3,)):
         g.box(2.53, 0, zz, 0.07, 3.8, 0.08, "steelD")
-    for k in range(10):                                                         # ribs across the slab top
+    for k in range(10):                                                         # ribs across the slab top (between the greebles)
+        if full and any(abs(-1.8 + k * 0.4 - gv) < 0.32 for gv in (0.62, -0.62)):
+            continue
         g.box(2.02, -1.8 + k * 0.4, hs, 0.8, 0.07, 0.05, "plate")
+    _g("collar")
     for sv in (-1, 1):                                                          # bell-mount collars with bolts
         v = sv * BV
         D.annulus(g, 2.5, 2.64, v, BZ, 0.98, 0.72, "steelL", "plate", sides=16)
@@ -38,12 +52,12 @@ def bulkhead(g, full):
             ang = k * math.tau / 8 + 0.2
             c, s_ = math.cos(ang), math.sin(ang)
             D.seg(g, (2.64, v + 0.86 * c, BZ + 0.86 * s_), (2.71, v + 0.86 * c, BZ + 0.86 * s_), 0.05, "plate", 6)
+    _g("greeble")
     D.panel(g, 1.85, 1.95, 0.45 if full else 0.28, 0.55, 0.38 if full else 0.3, "blueGrey", face="+v")
-    if full:
-        G.scatter(g, "+v", 1.95, [("hatch", 1.85, 0.45), ("valve", 2.2, 1.05), ("junction", 1.75, 1.15)])
+    if full:                                                                    # greebles only where nothing covers them
         G.scatter(g, "z", hs, [("junction", 2.0, 0.62), ("bolts", 2.2, -0.62)])
-    else:
-        G.scatter(g, "z", hs, [("bolts", 2.2, -0.62)])
+        for vv in (-1.85, 0.0, 1.85):
+            G.hex_cluster(g, "+u", vv, hs + 0.3, 2.37, n=2, cols=1, pitch=0.2)
 
 
 def hull_section(f, rot, full, holdout=False):
@@ -74,7 +88,7 @@ def hull_section(f, rot, full, holdout=False):
 def bell(f, v, hot, glow):
     """Solid segmented nozzle: closed flared shell of chunky ring segments separated by deep dark grooves, longitudinal
     ribs, thick lip, dark liner and a glowing core."""
-    D.drum(f, 1.2, 1.5, v, BZ, 0.72, n=1, body="steelL", rib="plate", sides=16)             # mount flange (inside the bulkhead)
+    D.drum(f, 1.2, 1.5, v, BZ, 0.66, n=1, body="steelL", rib="plate", sides=16)             # mount flange (inside the bulkhead)
     f.hcyl(1.5, 2.45, v, BZ, 0.55, "gm", r1=0.58, sides=16)
     f.hcyl(2.45, 2.75, v, BZ, 0.8, "steelL", sides=16, cap="plate")                          # mount flange (in front of it)
     ro = lambda u: 0.62 + (u - 2.75) / 1.25 * 0.34                                          # noqa: E731
@@ -99,45 +113,56 @@ def bell(f, v, hot, glow):
 def machine(f, rot, hot):
     glow = "cyan" if hot else "steelD"
     amber = "orange" if hot else "gmD"
+    _g("deck")
     f.box(0, 0, 0, 4.9, 3.9, 0.08, "steel", top="plateB")
     f.box(0.2, 0, 0.0, 0.5, 3.9, 0.1, "steelD", top="steel")                                 # grime-free deck seam
     for sv in (-1, 1):
         v = sv * BV
-        vf = sv * (BV + 0.86)                                                                  # outer face of the housing
+        vf = sv * (BV + 0.75)                                                                  # outer face of the housing
+        _g("housing")
         # --- rear tank stack -------------------------------------------------------------------------------
-        f.box(-1.95, v, 0.08, 1.0, 1.7, 0.7, "steelL", top="plate")
-        D.trim(f, -1.95, v, 0.78, 1.0, 1.7, "plate")
+        f.box(-1.95, v, 0.08, 1.0, 1.5, 0.7, "steelL", top="plate")
+        D.trim(f, -1.95, v, 0.78, 1.0, 1.5, "plate")
         D.tank(f, -2.0, v - 0.4, 0.82, 0.3, 0.7, mat="steelL", cap="plate", bands=2)
         D.tank(f, -2.0, v + 0.4, 0.82, 0.3, 0.45, mat="steelL", cap="plate", bands=1)
         # --- stacked housing: base, stepped second tier, fin pack, drum -------------------------------------
-        f.box(-0.45, v, 0.08, 2.1, 1.7, 0.95, "steelL", top="plate")
-        D.trim(f, -0.45, v, 1.03, 2.1, 1.7, "plate")
-        f.box(-1.2, v, 1.06, 1.0, 1.3, 0.28, "blueGrey", top="plate")                              # stepped tier (inset = shadow line)
-        D.trim(f, -1.2, v, 1.34, 1.0, 1.3, "plate")
+        f.box(-0.45, v, 0.08, 2.1, 1.5, 0.95, "steelL", top="plate")
+        D.trim(f, -0.45, v, 1.03, 2.1, 1.5, "plate")
+        f.box(-1.2, v, 1.06, 1.0, 1.15, 0.28, "blueGrey", top="plate")                              # stepped tier (inset = shadow line)
+        D.trim(f, -1.2, v, 1.34, 1.0, 1.15, "plate")
         D.fins(f, -1.55, -0.85, v, 1.38, 1.0, 0.24, 5, thick=0.07, mat="steelL", top="plate")
         D.drum(f, -0.3, 1.0, v, 1.45, 0.4, n=5, body="steel", rib="plate")
-        f.box(-0.55, v, 1.06, 0.3, 0.9, 0.1, "steelL", top="plate")
+        f.box(-0.55, v, 1.06, 0.3, 0.8, 0.1, "steelL", top="plate")
+        _g("greeble")
         # --- outer face: panels, slats, greebles ---------------------------------------------------------------
-        D.panel(f, -0.9, vf, 0.62, 1.0, 0.55, "blueGrey", face="+v" if sv > 0 else "-v")
-        D.slats(f, 0.1, 0.9, vf, 0.2, 0.52, 3, sv, depth=0.04, w=0.06)
-        G.scatter(f, "+v" if sv > 0 else "-v", vf, [("hatch", -0.85, 0.6), ("junction", 0.45, 0.72), ("valve", -1.5, 0.66),
-                                                     ("bolts", 0.7, 0.78)])
+        D.panel(f, -0.7, vf, 0.62, 1.4, 0.55, "blueGrey", face="+v" if sv > 0 else "-v")
+        D.slats(f, 0.15, 0.55, vf, 0.2, 0.52, 3, sv, depth=0.04, w=0.06)
+        fc = "+v" if sv > 0 else "-v"
+        G.scatter(f, fc, vf, [("valve", -1.05, 0.62), ("hatch", -0.45, 0.6), ("junction", 0.3, 0.72)])
         for k in range(4):                                                                     # status lamps
-            f.box(-1.45 + k * 0.28, vf + sv * 0.02, 0.92, 0.13, 0.05, 0.1, amber, base=False)
-        f.box(0.5, vf + sv * 0.02, 0.3, 0.9, 0.05, 0.1, glow, base=False)
-        for u in (-1.3, 0.25):                                                                 # thick cable risers
-            D.rail(f, (u, vf + sv * 0.1, 0.1), (u, vf + sv * 0.1, 0.98), 0.085, "plate")
-        # housing top and front greebles
-        G.scatter(f, "z", 1.03, [("junction", -0.45, v + sv * 0.55), ("bolts", 0.7, v - sv * 0.5)])
+            f.box(-1.4 + k * 0.28, vf + sv * 0.02, 0.95, 0.13, 0.05, 0.1, amber, base=False)
+        f.box(0.3, vf + sv * 0.02, 0.38, 0.5, 0.05, 0.08, glow, base=False)
+        _g("pipe")
+        for u in (-1.45, 0.0):                                                                 # thick cable risers, between the pipes
+            D.rail(f, (u, vf + sv * 0.1, 0.34), (u, vf + sv * 0.1, 1.0), 0.085, "plate")
+        _g("greeble")
+        # housing top
+        G.scatter(f, "z", 1.03, [("bolts", 0.3, v + sv * 0.58), ("bolts", -0.6, v - sv * 0.58)])
         G.scatter(f, "z", 0.78, [("bolts", -1.95, v)])
-        G.scatter(f, "+u", 0.6, [("junction", v - 0.5, 0.5), ("valve", v + 0.35, 0.55)])
+        G.scatter(f, "+u", 0.6, [("junction", v - 0.35, 0.5), ("valve", v + 0.3, 0.55)])
+        _g("bell")
         bell(f, v, hot, glow)
+        _g("pipe")
         # --- pipes along the outer side, into the hull ---------------------------------------------------------
-        vo = sv * 1.93
-        D.pipe(f, [(-2.2, vo, 0.3), (0.9, vo, 0.3), (0.9, vo, 0.62), (1.45, vo, 0.62)], 0.12, "gm")
-        D.pipe(f, [(-2.3, vo, 0.55), (-1.55, vo, 0.55), (-1.55, vo, 1.15), (-0.4, vo, 1.15)], 0.09, "plate")
+        vo = sv * 1.93                                       # standoff: touches the housing face, ends in flanges
+        D.pipe(f, [(-2.2, vo, 0.2), (1.3, vo, 0.2)], 0.1, "gm")
+        D.flange(f, (1.32, vo, 0.2), "u", 0.15, "steelL", t=0.08)
+        D.pipe(f, [(-2.3, vo, 1.15), (-0.4, vo, 1.15)], 0.09, "plate")
+        D.flange(f, (-0.38, vo, 1.15), "u", 0.14, "steelL", t=0.08)
     # --- central spine ---------------------------------------------------------------------------------------
+    _g("deck")
     f.box(-0.2, 0, 0.08, 3.4, 0.3, 0.18, "steelD", top="steel")
+    _g("pipe")
     D.conduit_bundle(f, (-2.3, 0, 0.5), (1.5, 0, 0.5), n=3, pitch=0.16, r=0.07, across="z", clamps=4)
     D.pipe(f, [(-2.3, 0, 0.95), (-1.6, 0, 0.95), (-1.6, 0, 1.6), (0.9, 0, 1.6)], 0.09, "gm")
     for u in (-1.9, -0.9, 0.1, 1.0):

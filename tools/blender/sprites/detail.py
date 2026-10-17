@@ -5,6 +5,7 @@ Rule of thumb for sprites at 64x32 tiles: one tile is ~45 px along an axis, so e
 diameter, panel inset) must be >= ~0.05 tiles or it vanishes in the downsample. Shapes stay clean: flat bands from
 geometry, never texture."""
 import math
+from .cmbkit import prim as cmbkit_prim
 from mathutils import Vector
 
 
@@ -16,6 +17,11 @@ def _basis(a):
 
 
 def seg(f, a, b, r, mat, sides=8, cap=None, capstart=None):
+    return _seg(f, a, b, r, mat, sides, cap, capstart)
+
+
+@cmbkit_prim
+def _seg(f, a, b, r, mat, sides=8, cap=None, capstart=None):
     """Round tube between two local points a, b (u, v, z), any direction."""
     a, b = Vector(a), Vector(b)
     ax = (b - a).normalized()
@@ -166,6 +172,7 @@ def rail(f, a, b, w=0.05, mat="steelL"):
     seg(f, a, b, w, mat, sides=4, cap=mat, capstart=mat)
 
 
+@cmbkit_prim
 def loft_box(f, corner, mat, top=None):
     """Box lofted between arbitrary corners: corner(a, b, d) -> local point for a, b, d in (-1, 1). The corner frame
     (a, b, d) must be right-handed like (u, v, z); the faces are the same as Frame.box."""
@@ -193,6 +200,18 @@ def vanes(f, u0, u1, v, z, ri, ro, n, thick=0.08, mat="gm", phase=0.0):
 
 
 def annulus(f, u0, u1, v, z, r_out, r_in, mat, cap_mat=None, sides=12):
+    from . import cmbkit
+    if cmbkit.REC is not None and not cmbkit.REC.depth:
+        cmbkit.REC.add({"kind": "cyl", "axis": 0 if f.rot % 2 else 1, "c": f._cyl_c(u0, v, z), "r": (r_in, r_out), "a": f._cyl_a(u0, u1), "src": "annulus"})
+        cmbkit.REC.depth = 1
+        try:
+            return _annulus(f, u0, u1, v, z, r_out, r_in, mat, cap_mat, sides)
+        finally:
+            cmbkit.REC.depth = 0
+    return _annulus(f, u0, u1, v, z, r_out, r_in, mat, cap_mat, sides)
+
+
+def _annulus(f, u0, u1, v, z, r_out, r_in, mat, cap_mat=None, sides=12):
     """Thick hoop around a bell axis: outer surface plus flat end faces between r_in and r_out (so it reads as a ring
     with real thickness, not a wire)."""
     f.hcyl(u0, u1, v, z, r_out, mat, sides=sides)

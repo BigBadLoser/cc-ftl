@@ -13,6 +13,41 @@ from . import core
 CENTRE = {0: (0.0, -0.5), 1: (-0.5, 0.0), 2: (0.0, -0.5), 3: (-0.5, 0.0)}
 
 
+class Recorder:
+    """Optional geometry log for overlap.py: every primitive Frame/detail builds becomes a part (bounding box or cylinder
+    shape, in Blender space) tagged with the current `group`. Off unless `cmbkit.REC` is set."""
+
+    def __init__(self):
+        self.parts, self.group, self.depth, self.pts, self.custom = [], "", 0, None, False
+
+    def add(self, shape):
+        shape["group"] = self.group
+        self.parts.append(shape)
+
+
+REC = None
+
+
+def prim(fn):
+    """Decorator for primitives: collect the polygon points of the outermost call into one box part (unless the
+    primitive registers its own shape through REC.add)."""
+    def wrapper(self, *a, **k):
+        r = REC
+        if r is None or r.depth:
+            return fn(self, *a, **k)
+        r.depth, r.pts, r.custom = 1, [], False
+        try:
+            out = fn(self, *a, **k)
+        finally:
+            r.depth = 0
+            pts, r.pts = r.pts, None
+        if pts and not r.custom:
+            r.add({"kind": "box", "lo": [min(p[i] for p in pts) for i in range(3)], "hi": [max(p[i] for p in pts) for i in range(3)],
+                   "src": fn.__name__})
+        return out
+    return wrapper
+
+
 class Frame:
     def __init__(self, m, rot=0, centre=None, square=False):
         self.m, self.rot = m, rot
@@ -37,10 +72,13 @@ class Frame:
         return core.G(x, y, z)
 
     def poly(self, pts, color, flip=False):
+        if REC is not None and REC.pts is not None:
+            REC.pts.extend(tuple(p) for p in pts)
         self.m.poly(pts, color, flip=flip)
 
     # ---- primitives -------------------------------------------------------------------------------------------
 
+    @prim
     def box(self, u, v, z, su, sv, sz, color, top=None, pitch=0.0, pu=0.0, pz=0.0, base=True, taper=1.0, tv=None):
         """Box centred at (u, v) with its bottom at z (base) or centred on z. taper scales the top face; tv scales
         only its v extent (a wedge across)."""
@@ -65,9 +103,14 @@ class Frame:
         for *ks, col in faces:
             self.poly([P[k] for k in ks], col, flip=True)
 
+    @prim
     def hcyl(self, u0, u1, v, z, r0, color, r1=None, sides=8, pitch=0.0, pu=0.0, pz=0.0, cap=None, capstart=None):
         """Cylinder (or cone frustum) along u from u0 to u1 with centre height z; radius r0 at u0 to r1 at u1."""
         r1 = r0 if r1 is None else r1
+        if REC is not None and REC.depth == 1:
+            REC.custom = True
+            REC.add({"kind": "cyl", "axis": 0 if self.rot % 2 else 1, "c": self._cyl_c(u0, v, z), "r": (0.0, max(r0, r1)),
+                     "a": self._cyl_a(u0, u1), "src": "hcyl"})
         a0 = math.pi / sides
         ring = lambda u, r: [self.pt(u, v + r * math.cos(a0 + i * math.tau / sides), z + r * math.sin(a0 + i * math.tau / sides), pitch, pu, pz) for i in range(sides)]  # noqa: E731
         A, B = ring(u0, r0), ring(u1, r1)
@@ -79,9 +122,22 @@ class Frame:
         if capstart:
             self.poly(A, capstart, flip=True)
 
+    @prim
     def vcyl(self, u, v, z, r, h, color, top=None, rtop=None, sides=8):
         x, y = self.xy(u, v)
+        if REC is not None and REC.depth == 1:
+            REC.custom = True
+            REC.add({"kind": "box", "lo": [x - r, -y - r, z], "hi": [x + r, -y + r, z + h], "src": "vcyl"})
         self.m.cyl((x, y, z), r, h, color, sides=sides, top=top, rtop=rtop)
+
+    def _cyl_c(self, u, v, z):
+        p = self.pt(u, v, z)
+        return (p.y, p.z) if self.rot % 2 else (p.x, p.z)
+
+    def _cyl_a(self, u0, u1):
+        a, b = self.pt(u0, 0, 0), self.pt(u1, 0, 0)
+        i = 0 if self.rot % 2 else 1
+        return (min(a[i], b[i]), max(a[i], b[i]))
 
     def vring_disc(self, u, v, z, r, color, sides=8, thick=0.01):
         x, y = self.xy(u, v)
