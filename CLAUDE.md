@@ -1,6 +1,7 @@
 # cc-ftl
 
-Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). Read
+Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). Read `docs/STATUS.md`
+(current state, branches, decisions) first, then
 `docs/DESIGN.md` and `docs/ARCHITECTURE.md` before non-trivial work.
 
 ## Commands
