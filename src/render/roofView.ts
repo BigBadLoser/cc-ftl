@@ -10,7 +10,7 @@ import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { mulColor } from './lightTint';
 
-/** Height in art px of a full-height wall: the plane the roof sits on. */
+/** Height in art px of a full-height wall: the plane the roof sits on (also used to lift overlay markers). */
 export const ROOF_H = 38;
 const FIRE_TINT = 0xff9a60;
 
@@ -22,6 +22,7 @@ export interface RoofView {
 
 interface Piece {
   spr: Sprite;
+  extra: Sprite | null;
   idx: number;
   tint: number;
 }
@@ -38,7 +39,10 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
   let fireRev = -1;
 
   function clear(): void {
-    for (const p of pieces) p.spr.destroy();
+    for (const p of pieces) {
+      p.spr.destroy();
+      p.extra?.destroy();
+    }
     pieces = [];
   }
 
@@ -56,13 +60,24 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       const art = resolveArt(atlas, [roofId ?? 'roof.generic']) ?? resolveArt(atlas, ['roof.generic']);
       if (!art) continue;
       const p = iso(x, y);
-      const spr = new Sprite(art.s.tex);
-      spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - (art.fallback ? ROOF_H : 0)));
+      const mk = (): Sprite => {
+        const s = new Sprite(art.s.tex);
+        s.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - art.lift));
+        s.visible = visible;
+        L.sorted.addChild(s);
+        return s;
+      };
+      const spr = mk();
       spr.tint = art.tint;
       spr.zIndex = depthKey(x, y) + 0.9;
-      spr.visible = visible;
-      L.sorted.addChild(spr);
-      pieces.push({ spr, idx: i, tint: art.tint });
+      let extra: Sprite | null = null;
+      if (art.add !== undefined) {
+        extra = mk();
+        extra.blendMode = 'add';
+        extra.tint = art.add;
+        extra.zIndex = depthKey(x, y) + 0.91;
+      }
+      pieces.push({ spr, extra, idx: i, tint: art.tint });
     }
     fireRev = -1;
   }
@@ -82,7 +97,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
     },
     setVisible(v) {
       visible = v;
-      for (const p of pieces) p.spr.visible = v;
+      for (const p of pieces) p.spr.visible = p.extra ? (p.extra.visible = v) : v;
     },
     dispose: clear,
   };

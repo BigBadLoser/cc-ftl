@@ -62,7 +62,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     light: () => ({ data: grid.raw('light'), width: grid.width }),
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: inside, emergency: () => emergency });
   const itemView = createItemView(world, atlas, L, items, { target: inside, emergency: () => emergency });
   const fxView = createFxView(atlas, L, { target: inside });
   const particles = createParticles(atlas, L);

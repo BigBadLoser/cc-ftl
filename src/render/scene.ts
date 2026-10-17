@@ -1,4 +1,4 @@
-import { autoDetectRenderer, Container, Graphics } from 'pixi.js';
+import { autoDetectRenderer, Container, Sprite, Texture } from 'pixi.js';
 import { CombatC, ShipC, WeaponC, type Ship } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
@@ -128,13 +128,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const sectorParticles = createParticles(atlas, SL);
   const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules }, { ref: () => shipOf(refId) ?? null });
 
-  // The combat overlay: the shown ship's layer stack is drawn a second time, scaled into a rectangle of the canvas.
+  // The combat overlay: a second scene of the shown ship, scaled into a rectangle of the canvas, drawn in the same pass.
   const miniRoot = new Container();
-  const miniBg = new Graphics();
-  const miniMask = new Graphics();
-  miniRoot.addChild(miniBg, miniMask);
-  miniRoot.mask = miniMask;
+  const miniBg = new Sprite(Texture.WHITE);
+  miniBg.tint = 0x04070b;
+    miniRoot.addChild(miniBg);
+  miniRoot.zIndex = 2e9;
+  miniRoot.visible = false;
+  stage.addChild(miniRoot);
   let mini: { gridId: number; rect: CombatViewRect } | null = null;
+  /** The overlay's own scene for the shown ship (a second set of sprites, so the main pass is the only pass). */
+  let miniScene: ShipScene | null = null;
   let miniGeom: { x: number; y: number; w: number; h: number; scale: number; ox: number; oy: number; lift: number } | null = null;
 
   function shipOf(gridId: number): Ship | undefined {
@@ -215,13 +219,32 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     return out;
   }
 
-  function drawMini(): void {
-    const sc = mini && scenes.get(mini.gridId);
+  function drawMini(dt: number): void {
     const ship = mini && shipOf(mini.gridId);
-    if (!mini || !sc || !ship) {
+    const grid = mini && grids.get(mini.gridId);
+    if (!mini || !ship || !grid || ship.state === 'fled') {
       miniGeom = null;
+      miniRoot.visible = false;
+      if (miniScene) {
+        miniRoot.removeChild(miniScene.layers.world);
+        miniScene.dispose();
+        miniScene = null;
+      }
       return;
     }
+    if (miniScene && miniScene.grid !== grid) {
+      miniRoot.removeChild(miniScene.layers.world);
+      miniScene.dispose();
+      miniScene = null;
+    }
+    if (!miniScene) {
+      miniScene = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: false, roofed: wantsRoof(ship) });
+      miniRoot.addChild(miniScene.layers.world);
+    }
+    const sc = miniScene;
+    if (sc.isRoofed() !== wantsRoof(ship)) sc.setRoofed(wantsRoof(ship));
+    sc.setMarks(true, targetedModules(mini.gridId));
+    sc.update(dt);
     const k = ratio();
     const x = Math.round(mini.rect.x * k);
     const y = Math.round(mini.rect.y * k);
@@ -235,14 +258,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     const ox = Math.round(x + w / 2 - c.x * scale);
     const oy = Math.round(y + h / 2 - (c.y - lift / 2) * scale);
     miniGeom = { x, y, w, h, scale, ox, oy, lift };
-    miniBg.clear().rect(x, y, w, h).fill(0x04070b);
-    miniMask.clear().rect(x, y, w, h).fill(0xffffff);
-    const root = sc.layers.world;
+    miniBg.position.set(x, y);
+    miniBg.width = w;
+    miniBg.height = h;
     sc.layers.setScale(scale);
-    root.position.set(ox, oy);
-    miniRoot.addChild(root);
-    gl.render({ container: miniRoot, clear: false });
-    stage.addChild(root);
+    sc.layers.world.position.set(ox, oy);
+    miniRoot.visible = true;
   }
 
   return {
@@ -255,7 +276,6 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       for (const [id, sc] of scenes) {
         const s = shipOf(id);
         const L = sc.layers;
-        sc.setMarks(mini?.gridId === id, mini?.gridId === id ? targetedModules(id) : new Set());
         sc.update(dt);
         const off = ref && s ? iso(s.x - ref.x, s.y - ref.y) : { x: 0, y: 0 };
         L.setScale(cam.scale);
@@ -267,8 +287,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       sectorParticles.update(dt);
       SL.setScale(cam.scale);
       SL.world.position.set(cam.originX, cam.originY);
+      drawMini(dt);
       gl.render({ container: stage });
-      drawMini();
     },
     resize,
     setGrids(g) {
@@ -363,7 +383,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     pickCombat(sx, sy) {
       const g = miniGeom;
-      const sc = mini && scenes.get(mini.gridId);
+      const sc = miniScene;
       if (!g || !sc) return null;
       const k = ratio();
       const dx = sx * k;
@@ -390,6 +410,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     dispose() {
       fx.dispose();
       sectorParticles.dispose();
+      miniScene?.dispose();
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
       gl.destroy();

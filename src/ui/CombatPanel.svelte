@@ -96,7 +96,7 @@
 <style>
   /* The page canvas shows through .view (the enemy ship is drawn there), so every other part paints its own background. */
   .combat {
-    --panel: #111927;
+
     position: fixed; z-index: 7; display: flex; flex-direction: column; overflow: hidden;
     right: calc(8px + var(--sar)); top: calc(var(--hdr) + 8px + var(--sat)); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
     border: 1px solid var(--line); border-radius: 10px;

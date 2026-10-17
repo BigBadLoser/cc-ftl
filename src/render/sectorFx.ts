@@ -35,7 +35,7 @@ const cached = (key: string, make: () => EmitterDef): EmitterDef => {
   return d;
 };
 const trail = (tint: number): EmitterDef =>
-  cached(`t${tint}`, () => ({ frames: ['fx.spark', 'fx.ember'], life: [0.3, 0.6], vx: [-6, 6], vy: [-6, 6], fade: 'out', additive: true, tint, scale: 2 }));
+  cached(`t${tint}`, () => ({ frames: ['fx.spark', 'fx.ember'], life: [0.3, 0.6], vx: [-6, 6], vy: [-6, 6], fade: 'out', additive: true, tint, scale: 3 }));
 const burst = (tint: number, speed: number): EmitterDef =>
   cached(`b${tint}|${speed}`, () => ({
     frames: ['fx.ember', 'fx.spark'], life: [0.3, 0.7], vx: [-speed, speed], vy: [-speed, speed * 0.3], gy: 60, fade: 'out', additive: true, tint, scale: 2,
@@ -112,11 +112,10 @@ export function createSectorFx(
     const k = (s.width + s.height) / 2;
     const rx = (s.width + s.height) * 16 + 10;
     const g = new Graphics();
-    g.ellipse(0, 0, rx, rx / 2).fill({ color: SHIELD_COLOR, alpha: 0.16 }).stroke({ width: 2, color: 0xbff3ff, alpha: 1 });
-    g.blendMode = 'add';
+    g.ellipse(0, 0, rx, rx / 2).stroke({ width: 3, color: 0x9fefff, alpha: 1 });
     g.position.set(Math.round(c.x), Math.round(c.y));
     L.sorted.addChild(g);
-    flashes.push({ spr: g, age: 0, life: 0.45, grow: 0.06, peak: 1 });
+    flashes.push({ spr: g, age: 0, life: 0.45, grow: 0, peak: 1 });
     particles.burst(burst(SHIELD_COLOR, 70), c.x, c.y, 10, k * 24);
   }
 
