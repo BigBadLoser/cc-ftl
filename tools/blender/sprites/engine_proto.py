@@ -2,6 +2,7 @@
 
 Local frame: u -2.5..2.5 is the footprint (+u = hull side), v -2..2. x built with the SAME profile as tile.hull walls (walls.py: H, WT, CH, palette), so the hull wall butts into
 its ends; the bells protrude from that face into space."""
+import math
 from . import core, detail as D, greeble as G, walls
 from .cmbkit import Frame
 
@@ -9,6 +10,40 @@ CENTRE = {0: (-1.5, -2.0), 1: (-2.0, -1.5)}     # footprint centre relative to t
 BZ = 0.95                                        # bell axis height
 BV = 1.05                                        # bell offset from centre
 UH = 2.0                                         # hull row centre (u)
+
+
+def bulkhead(g, full):
+    """Engine bulkhead on the hull row: a heavy slab across the whole hull side with taller armoured pylons between and
+    at the ends of the bells, ribbed plating, bell-mount collars and a greebled end cheek. Full mode rises above wall
+    height (1.2); cut mode stays low (cutaway intent) but keeps the same layout. Real wall tiles run underneath, so the
+    outer ends (v = +-2) butt into neighbouring walls with the wall profile."""
+    hs, hp = (1.45, 2.05) if full else (0.58, 0.9)
+    g.box(2.02, 0, 0, 0.96, 3.9, hs, "steel", top="plate")
+    D.trim(g, 2.02, 0, hs, 0.96, 3.9, "plate")
+    for vv in (-1.76, 0.0, 1.76):                                               # armoured pylons around the bells
+        sv = 0.42 if vv == 0 else 0.4
+        g.box(2.0, vv, hs, 0.74, sv, hp - hs, "steelL", top="plate")
+        D.trim(g, 2.0, vv, hp, 0.74, sv, "plate", w=0.05)
+    for k in range(13):                                                         # ribbed seams on the outer face
+        vv = -1.92 + k * 0.32
+        g.box(2.53, vv, 0.05, 0.07, 0.1, hs - 0.1, "plate")
+    for zz in ((0.45, 0.95) if full else (0.3,)):
+        g.box(2.53, 0, zz, 0.07, 3.8, 0.08, "steelD")
+    for k in range(10):                                                         # ribs across the slab top
+        g.box(2.02, -1.8 + k * 0.4, hs, 0.8, 0.07, 0.05, "plate")
+    for sv in (-1, 1):                                                          # bell-mount collars with bolts
+        v = sv * BV
+        D.annulus(g, 2.5, 2.64, v, BZ, 0.98, 0.72, "steelL", "plate", sides=16)
+        for k in range(8):
+            ang = k * math.tau / 8 + 0.2
+            c, s_ = math.cos(ang), math.sin(ang)
+            D.seg(g, (2.64, v + 0.86 * c, BZ + 0.86 * s_), (2.71, v + 0.86 * c, BZ + 0.86 * s_), 0.05, "plate", 6)
+    D.panel(g, 1.85, 1.95, 0.45 if full else 0.28, 0.55, 0.38 if full else 0.3, "blueGrey", face="+v")
+    if full:
+        G.scatter(g, "+v", 1.95, [("hatch", 1.85, 0.45), ("valve", 2.2, 1.05), ("junction", 1.75, 1.15)])
+        G.scatter(g, "z", hs, [("junction", 2.0, 0.62), ("bolts", 2.2, -0.62)])
+    else:
+        G.scatter(g, "z", hs, [("bolts", 2.2, -0.62)])
 
 
 def hull_section(f, rot, full, holdout=False):
@@ -27,39 +62,38 @@ def hull_section(f, rot, full, holdout=False):
     if holdout:
         for ob in objs:
             ob.is_holdout = True
-    if full:
-        m = core.Mesh(f"engine_armour_{rot}")
-        g = Frame(m, rot, centre=CENTRE[rot])
-        for sv in (-1, 1):
-            v = sv * BV
-            g.box(2.26, v, 0.38, 0.1, 1.9, 0.82, "steel", top="plate")
-            D.panel(g, 2.31, v, 0.8, 1.7, 0.62, "gm", face="+u")
-            G.hex_cluster(g, "+u", v - 0.78, 1.07, 2.31, n=2, cols=1, pitch=0.2)
-            G.hex_cluster(g, "+u", v + 0.78, 1.07, 2.31, n=2, cols=1, pitch=0.2)
-            G.hex_cluster(g, "+u", v - 0.78, 0.55, 2.31, n=2, cols=1, pitch=0.2)
-            G.hex_cluster(g, "+u", v + 0.78, 0.55, 2.31, n=2, cols=1, pitch=0.2)
-        ar = m.build()
-        if holdout:
-            ar.is_holdout = True
-        objs.append(ar)
+    m = core.Mesh(f"engine_bulkhead_{rot}_{int(full)}")
+    bulkhead(Frame(m, rot, centre=CENTRE[rot]), full)
+    ar = m.build()
+    if holdout:
+        ar.is_holdout = True
+    objs.append(ar)
     return objs
 
 
 def bell(f, v, hot, glow):
-    D.drum(f, 1.2, 1.5, v, BZ, 0.72, n=1, body="steelL", rib="plate", sides=12)              # armoured port collar
-    f.hcyl(1.5, 2.45, v, BZ, 0.55, "gm", r1=0.58, sides=12)                                   # neck through the plating
-    D.ribs(f, 1.6, 2.4, v, BZ, 0.55, 0.58, 3, thick=0.12, grow=0.08, mat="plate")
-    f.hcyl(2.45, 2.7, v, BZ, 0.8, "steelL", sides=12, cap="plate")                            # mid flange
-    f.hcyl(2.7, 4.0, v, BZ, 0.36, "dark", r1=0.58, sides=12)                                  # inner liner (seen between vanes)
-    ri = lambda u: 0.36 + (u - 2.7) / 1.3 * 0.22                                            # noqa: E731
-    ro = lambda u: 0.62 + (u - 2.7) / 1.3 * 0.36                                            # noqa: E731
-    D.vanes(f, 2.7, 4.0, v, BZ, ri, ro, 8, thick=0.15, mat="gm", phase=0.2)
-    for u in (3.2, 3.62):                                                                    # retaining rings, thick + flush with vanes
-        D.annulus(f, u - 0.07, u + 0.07, v, BZ, ro(u) + 0.05, ro(u) - 0.16, "gm", "steelL")
-    D.annulus(f, 3.92, 4.08, v, BZ, ro(4.0) + 0.07, ro(4.0) - 0.2, "gm", "plate")       # lip
-    f.hcyl(3.1, 3.12, v, BZ, 0.5, glow, sides=12, cap="arc" if hot else "steelD")          # throat glow disc
+    """Solid segmented nozzle: closed flared shell of chunky ring segments separated by deep dark grooves, longitudinal
+    ribs, thick lip, dark liner and a glowing core."""
+    D.drum(f, 1.2, 1.5, v, BZ, 0.72, n=1, body="steelL", rib="plate", sides=16)             # mount flange (inside the bulkhead)
+    f.hcyl(1.5, 2.45, v, BZ, 0.55, "gm", r1=0.58, sides=16)
+    f.hcyl(2.45, 2.75, v, BZ, 0.8, "steelL", sides=16, cap="plate")                          # mount flange (in front of it)
+    ro = lambda u: 0.62 + (u - 2.75) / 1.25 * 0.34                                          # noqa: E731
+    f.hcyl(2.75, 4.0, v, BZ, 0.4, "dark", r1=0.62, sides=16)                                 # liner seen through the mouth
+    n = 6
+    for k in range(n):                                                                       # segments + grooves
+        u0 = 2.75 + 1.25 * k / n
+        u1 = 2.75 + 1.25 * (k + 1) / n
+        f.hcyl(u0, u1 - 0.07, v, BZ, ro(u0) + 0.02, "gm", r1=ro(u1 - 0.07) + 0.02, sides=16, cap="gm")
+        f.hcyl(u1 - 0.07, u1, v, BZ, ro(u1) - 0.08, "dark", sides=16)                       # deep groove
+        D.annulus(f, u0 + 0.01, u0 + 0.08, v, BZ, ro(u0) + 0.09, ro(u0) - 0.02, "plate", "plate", sides=16)   # raised rib
+    for k in range(8):                                                                       # longitudinal ribs on the shell
+        ang = k * math.tau / 8 + 0.2
+        c, s_ = math.cos(ang), math.sin(ang)
+        D.rail(f, (2.85, v + 0.68 * c, BZ + 0.68 * s_), (3.98, v + 1.0 * c, BZ + 1.0 * s_), 0.045, "steelL")
+    D.annulus(f, 3.9, 4.12, v, BZ, ro(4.0) + 0.1, ro(4.0) - 0.2, "plate", "steelL", sides=16)   # thick lip
+    f.hcyl(3.15, 3.17, v, BZ, 0.45, glow, sides=16, cap="arc" if hot else "steelD")        # glowing core
     if hot:
-        f.hcyl(4.0, 4.8, v, BZ, 0.5, "cyan", r1=0.1, sides=10, cap="arc")
+        f.hcyl(4.0, 4.8, v, BZ, 0.5, "cyan", r1=0.1, sides=12, cap="arc")
 
 
 def machine(f, rot, hot):

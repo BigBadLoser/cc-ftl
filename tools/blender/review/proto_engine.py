@@ -39,7 +39,7 @@ def main():
             if "--machine" in args and part.startswith("hull"):
                 continue
             rgba, g, ox, oy = pixel_sprite(rot, hot, part)
-            tag = f"r{rot}_{part}{'_active' if hot else ''}_v3"
+            tag = f"r{rot}_{part}{'_active' if hot else ''}_v4"
             np.savez(OUT / f"px_{tag}.npz", rgba=rgba, glow=g, ox=ox, oy=oy)
             print("pixel", tag, rgba.shape, flush=True)
         if rot == 1 and "--cell" in args:
@@ -47,7 +47,7 @@ def main():
             core.clear_scene_meshes()
             col, glow = _ns["render_cell"]("cell", lambda: engine_proto.engine4x5(1, True, "cell"), "prop", 760, 620)
             arr = _ns["finish"](col, glow, "prop")
-            post.write_png(OUT / "blender_r1_active_v3.png", np.dstack([arr, np.full(arr.shape[:2], 255, np.uint8)]))
+            post.write_png(OUT / "blender_r1_active_v4.png", np.dstack([arr, np.full(arr.shape[:2], 255, np.uint8)]))
 
 
 main()
