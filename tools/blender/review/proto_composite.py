@@ -13,7 +13,7 @@ D = Path(sys.argv[1])
 ROT = int(sys.argv[2]) if len(sys.argv) > 2 else 1
 MAN = json.loads((AS / "manifest.json").read_text())["assets"]
 ENV = np.array(Image.open(AS / "sprites/env.png").convert("RGBA")).astype(np.float32)
-W, H = 460, 330
+W, H = 600, 440
 BG = np.array([10, 14, 22], np.float32)
 
 
@@ -61,34 +61,58 @@ def crew(sc, cx, cy, d=0, frame=0):
         sc.blit(fr, None, int(cx - an["x"]), int(cy - an["y"]))
 
 
+def depth_sort(items):
+    """items: (x0, x1, y0, y1, draw). A is behind B when A ends before B starts on x or y (grid +x/+y point at the camera)."""
+    out, rest = [], list(items)
+    while rest:
+        for a in rest:
+            if not any(b is not a and (b[1] <= a[0] + 1e-6 or b[3] <= a[2] + 1e-6) and not (a[1] <= b[0] + 1e-6 or a[3] <= b[2] + 1e-6)
+                       for b in rest):
+                out.append(a)
+                rest.remove(a)
+                break
+        else:
+            rest.sort(key=lambda t: t[1] + t[3])
+            out.append(rest.pop(0))
+    return out
+
+
 def build(hot):
-    tag = f"r{ROT}{'_active' if hot else ''}"
+    tag = f"r{ROT}{'_active' if hot else ''}_v2"
     z = np.load(D / f"px_{tag}.npz")
     rgba, glow, ox, oy = z["rgba"], z["glow"], int(z["ox"]), int(z["oy"])
     sc = Scene()
-    T = lambda x, y: (230 + (x - y) * 32 - 40, 70 + (x + y) * 16)  # noqa: E731
-    # footprint x 0..4 (u, toward the hull), y 0..3 ; hull wall column at x = 5
-    for x in range(-1, 5):
-        for y in range(-1, 5):
+    # grid coordinates: tile (x, y) centre; r1 footprint x -4..0 (hull row x = 0), y -3..0 shifted so the front tile is (4, 3)
+    T = lambda x, y: (250 + (x - y) * 32, 150 + (x + y) * 16)  # noqa: E731
+    if ROT == 1:
+        fx0, fx1, fy0, fy1, front = -0.5, 4.5, -0.5, 3.5, (4, 3)
+        floor = [(x, y) for x in range(-3, 4) for y in range(-3, 7)]
+        walls = [(4, y, "tile.hull.m5") for y in (-3, -2, -1, 4, 5, 6)]
+        people = [(0.5, 5.2, 0), (-1.5, -1.6, 7), (3.0, 6.3, 1)]
+    else:
+        fx0, fx1, fy0, fy1, front = -0.5, 3.5, -0.5, 4.5, (3, 4)
+        floor = [(x, y) for x in range(-3, 7) for y in range(0, 7)]
+        walls = [(x, 0, "tile.hull.m10") for x in (-3, -2, -1, 4, 5, 6)]
+        people = [(1.5, 5.8, 0), (-1.0, 2.5, 4), (5.0, 3.5, 2)]
+    for x, y in floor:
+        if not (fx0 < x < fx1 and fy0 < y < fy1) or True:
             sc.asset("tile.floor.a", *T(x, y), dim=0.6)
-    for y in range(-2, 4):
-        sc.asset("tile.wall.m5", *T(5, y))
-    ex, ey = T(4, 3)
-    sc.blit(rgba, glow, ex - ox, ey - oy)
-    sc.asset("tile.wall.m5", *T(5, 4))
-    crew(sc, *T(1, 4.2))
-    crew(sc, *T(-0.2, 2.2), d=7)
+    ex, ey = T(*front)
+    items = [(fx0, fx1, fy0, fy1, lambda: sc.blit(rgba, glow, ex - ox, ey - oy))]
+    for x, y, aid in walls:
+        items.append((x - 0.5, x + 0.5, y - 0.5, y + 0.5, lambda aid=aid, x=x, y=y: sc.asset(aid, *T(x, y))))
+    for x, y, d in people:
+        items.append((x - 0.2, x + 0.2, y - 0.2, y + 0.2, lambda x=x, y=y, d=d: crew(sc, *T(x, y), d=d)))
+    for it in depth_sort(items):
+        it[4]()
     img = Image.fromarray(np.clip(sc.px, 0, 255).astype(np.uint8))
     img.save(D / f"scene_{tag}_1x.png")
-    box = (ex - ox - 6, ey - oy - 6, ex - ox + rgba.shape[1] + 6, ey - oy + rgba.shape[0] + 6)
+    box = (ex - ox - 70, ey - oy - 30, ex - ox + rgba.shape[1] + 70, ey - oy + rgba.shape[0] + 80)
     img.crop(box).resize(((box[2] - box[0]) * 3, (box[3] - box[1]) * 3), Image.NEAREST).save(D / f"scene_{tag}_3x.png")
-    # sprite alone, composited on dark with glow, 3x
-    alone = Scene()
-    alone.px[:] = BG
-    alone.blit(rgba, glow, 4, 4)
-    im = Image.fromarray(np.clip(alone.px[:rgba.shape[0] + 8, :rgba.shape[1] + 8], 0, 255).astype(np.uint8))
-    im.resize((im.width * 3, im.height * 3), Image.NEAREST).save(D / f"sprite_{tag}_3x.png")
 
 
 for hot in (False, True):
-    build(hot)
+    try:
+        build(hot)
+    except FileNotFoundError:
+        pass

@@ -164,3 +164,29 @@ def drum(f, u0, u1, v, z, r, n=5, body="gmD", rib="plate", cap="steelL", sides=1
 def rail(f, a, b, w=0.05, mat="steelL"):
     """Square-section strap/rail between two local points (gusset, spine, cable tray)."""
     seg(f, a, b, w, mat, sides=4, cap=mat, capstart=mat)
+
+
+def loft_box(f, corner, mat, top=None):
+    """Box lofted between arbitrary corners: corner(a, b, d) -> local point for a, b, d in (-1, 1). The corner frame
+    (a, b, d) must be right-handed like (u, v, z); the faces are the same as Frame.box."""
+    P = {(a, b, d): f.pt(*corner(a, b, d)) for a in (-1, 1) for b in (-1, 1) for d in (-1, 1)}
+    faces = [((-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1)), ((-1, -1, -1), (-1, 1, -1), (1, 1, -1), (1, -1, -1)),
+             ((1, -1, -1), (1, 1, -1), (1, 1, 1), (1, -1, 1)), ((-1, -1, -1), (-1, -1, 1), (-1, 1, 1), (-1, 1, -1)),
+             ((-1, 1, -1), (-1, 1, 1), (1, 1, 1), (1, 1, -1)), ((-1, -1, -1), (1, -1, -1), (1, -1, 1), (-1, -1, 1))]
+    for ks in faces:
+        f.poly([P[k] for k in ks], mat, flip=True)
+
+
+def vanes(f, u0, u1, v, z, ri, ro, n, thick=0.08, mat="gm", phase=0.0):
+    """Radial vane array around a bell axis along u: n plates from inner radius ri(u) to outer radius ro(u)
+    (callables of u), leaving open gaps between them. Gives a segmented / finned nozzle instead of a smooth cone."""
+    for k in range(n):
+        th = phase + k * math.tau / n
+        s, c = math.sin(th), math.cos(th)
+
+        def corner(a, b, d, s=s, c=c):
+            u = u0 if a < 0 else u1
+            rho = ri(u) if d < 0 else ro(u)
+            t = b * thick / 2
+            return (u, v + rho * s + t * c, z + rho * c - t * s)
+        loft_box(f, corner, mat)

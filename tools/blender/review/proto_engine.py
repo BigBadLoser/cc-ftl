@@ -34,13 +34,13 @@ def main():
     _ns["setup"]()
     for rot in ROTS:
         for hot in (False, True):
-            tag = f"r{rot}{'_active' if hot else ''}"
+            tag = f"r{rot}{'_active' if hot else ''}_v2"
             col, glow = _ns["render_cell"](tag, lambda: engine_proto.engine4x5(rot, hot), "prop", 760, 620)
             arr = _ns["finish"](col, glow, "prop")
             post.write_png(OUT / f"blender_{tag}.png", np.dstack([arr, np.full(arr.shape[:2], 255, np.uint8)]))
             core.setup_scene()
             rgba, g, ox, oy = pixel_sprite(rot, hot)
-            tag = f"r{rot}{'_active' if hot else ''}"
+            tag = f"r{rot}{'_active' if hot else ''}_v2"
             np.savez(OUT / f"px_{tag}.npz", rgba=rgba, glow=g, ox=ox, oy=oy)
             print("pixel", tag, rgba.shape, flush=True)
 
