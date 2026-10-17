@@ -48,6 +48,8 @@
 </div>
 
 <style>
+  :global(html[data-combat]) .tools { right: calc(388px + var(--sar)); }
+  @media (max-width: 600px) { :global(html[data-combat]) .tools { right: calc(8px + var(--sar)); } }
   .tools { position: fixed; right: calc(8px + var(--sar)); top: calc(var(--hdr) + 48px + var(--sat)); display: flex; gap: 6px; align-items: flex-start; pointer-events: none; }
   .col { display: flex; flex-direction: column; gap: 4px; pointer-events: auto; }
   .subs { margin-top: 44px; }

@@ -13,6 +13,11 @@
     const b = api.modules.subscribe((m) => (mods = m));
     return () => (a(), b());
   });
+  let roofed = $state(true);
+  const toggleRoof = () => {
+    roofed = !roofed;
+    api.setRoofEnemies(roofed);
+  };
   const tile = $derived(info?.selected ? info : null);
   const ignite = () => tile && api.dispatch({ type: 'debug.ignite', gridId: tile.gridId, x: tile.x, y: tile.y });
   const breach = () => tile && api.dispatch({ type: 'debug.setStruct', gridId: tile.gridId, x: tile.x, y: tile.y, kind: Struct.Space });
@@ -46,6 +51,8 @@
     <button data-testid="dbg-breach" disabled={!tile} onclick={breach}>Breach selected tile</button>
     <button data-testid="dbg-kill-reactor" onclick={killReactor}>Kill reactor</button>
     <button data-testid="dbg-revive-reactor" onclick={reviveReactor}>Restore reactor</button>
+    <button data-testid="dbg-spawn-raider" onclick={() => api.spawnRaider()}>Spawn raider</button>
+    <button class:on={!roofed} data-testid="dbg-roof" onclick={toggleRoof}>{roofed ? 'Unroof enemies' : 'Roof enemies'}</button>
     <button onclick={repro}>Copy repro</button>
     <button onclick={() => api.throwTestError()}>Throw test error</button>
   </div>

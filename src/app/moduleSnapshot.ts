@@ -10,7 +10,7 @@ export function buildModuleList(sim: Sim): UiModule[] {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def) continue;
+    if (!m || !def || m.gridId !== GRID) continue;
     out.push({
       id, def: m.def, name: def.name, x: m.x, y: m.y, hp: Math.round(m.hp), maxHp: def.maxHp,
       priority: m.priority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,

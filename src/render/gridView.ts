@@ -1,10 +1,10 @@
 import type { Sprite } from "pixi.js";
 import type { Atlas, StaticSprite } from "./assets/loader";
 import type { Grid } from "../sim/grid";
-import { Struct } from "../sim/structure";
+import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
-import { lightTint, pulsePhase } from "./lightTint";
+import { lightTint, mulColor, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
@@ -40,6 +40,17 @@ interface Tinted {
   spr: Sprite;
   idx: number;
   wall: boolean;
+  /** Walls and doors darken as their integrity drops. */
+  solid: boolean;
+}
+
+/** Multiply tint of a damaged wall: dark and slightly warm toward 0 integrity. */
+function damageTint(hp: number): number {
+  const r = Math.min(1, hp / STRUCT_MAX_HP);
+  if (r > 0.85) return 0xffffff;
+  const f = 0.5 + 0.5 * (r / 0.85);
+  const c = (v: number) => Math.round(255 * Math.min(1, v));
+  return (c(f) << 16) | (c(f * 0.88) << 8) | c(f * 0.82);
 }
 
 /** Floors, walls, hull and doors of one grid, rebuilt whenever the struct revision or the cutaway mode changes. */
@@ -76,7 +87,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         if (f) {
           const made = addStatic(L, f, x, y, 0, L.floor);
           owned.push(...made);
-          tinted.push({ spr: made[0] as Sprite, idx, wall: false });
+          tinted.push({ spr: made[0] as Sprite, idx, wall: false, solid: false });
         }
         if (k === Struct.Floor) continue;
         for (const piece of wallPieces(kindAt, x, y, k, mode)) {
@@ -90,7 +101,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             const open = atlas.stat(`${closedId}.open`);
             if (open) doors.push({ objs: made, closed: s, open, idx });
           }
-          tinted.push({ spr: made[0] as Sprite, idx, wall: !isDoor });
+          tinted.push({ spr: made[0] as Sprite, idx, wall: !isDoor, solid: true });
         }
       }
     builtMode = mode;
@@ -115,11 +126,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   function updateTints(): void {
     const emergency = host.emergency();
     const pulse = emergency ? pulsePhase(performance.now()) : -1;
-    const key = `${grid.revision("light")}|${grid.revision("o2")}|${pulse}`;
+    const key = `${grid.revision("light")}|${grid.revision("o2")}|${grid.revision("hp")}|${pulse}`;
     if (key === tintKey) return;
     tintKey = key;
     const light = grid.raw("light");
     const o2 = grid.raw("o2");
+    const hp = grid.raw("hp");
     const { width, height } = grid;
     const wallLight = (idx: number): number => {
       const x = idx % width;
@@ -135,7 +147,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     };
     for (const t of tinted) {
       const lv = t.wall ? wallLight(t.idx) : (light[t.idx] as number);
-      t.spr.tint = lightTint(lv, !t.wall && (o2[t.idx] as number) < VACUUM_O2, pulse);
+      const lit = lightTint(lv, !t.wall && (o2[t.idx] as number) < VACUUM_O2, pulse);
+      t.spr.tint = t.solid ? mulColor(lit, damageTint(hp[t.idx] as number)) : lit;
     }
   }
 

@@ -29,3 +29,6 @@ export { activeOrder } from './items/production';
 export * from './combat/components';
 export { shipOf, shipEntityOf, nextGridId, spawnShip, spawnCrew, shieldCapacity } from './combat/ships';
 export { hullSum, damageStruct } from './combat/hull';
+export { shieldRechargeSec } from './combat/ships';
+export { operatorOf } from './combat/operators';
+export { ammoCount } from './combat/ammo';

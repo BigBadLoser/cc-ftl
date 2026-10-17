@@ -8,6 +8,7 @@ import type { Atlas, StaticSprite } from './assets/loader';
 import { iso, depthKey } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
+import { resolveArt } from './assets/fallback';
 import { craftProgress, moduleAssets } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
@@ -61,6 +62,8 @@ interface Part {
 }
 interface Entry {
   sig: string;
+  /** Multiply tint of stand-in art (white for real art). */
+  art: number;
   parts: Part[];
 }
 
@@ -152,8 +155,9 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
         if (!m || !def || m.gridId !== grid.id) continue;
-        const asset = atlas.firstOf(moduleAssets(world, id, m, def, m.powered && m.enabled && crafting(progress, id, now)));
-        if (!asset) continue;
+        const art = resolveArt(atlas, moduleAssets(world, id, m, def, m.powered && m.enabled && crafting(progress, id, now)), def.asset);
+        if (!art) continue;
+        const asset = art.s;
         live.add(id);
         const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${asset.tex.uid}`;
         let e = mods.get(id);
@@ -161,13 +165,13 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           dropEntry(e);
           e = undefined;
         }
-        if (!e) mods.set(id, (e = { sig, parts: build(m, def, asset) }));
+        if (!e) mods.set(id, (e = { sig, art: art.tint, parts: build(m, def, asset) }));
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
         for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? (light[f.y * grid.width + f.x] as number) : 0;
         const on = m.powered && m.enabled && m.hp > 0;
         const base = lightTint(lsum / Math.max(1, tiles.length), false, pulse);
-        const tint = on ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
+        const tint = mulColor(on ? base : dim(mulColor(base, 0xc8c8d4), 0.78), e.art);
         for (const p of e.parts) {
           p.spr.tint = tint;
           for (const g of [p.glow, p.halo]) if (g) g.visible = on;
