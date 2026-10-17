@@ -12,6 +12,7 @@
   import ModuleInspector from './ModuleInspector.svelte';
   import OverlayPicker from './OverlayPicker.svelte';
   import StatsChips from './StatsChips.svelte';
+  import StockDrawer from './StockDrawer.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import './theme.css';
 
@@ -19,6 +20,7 @@
 
   let canvas: HTMLCanvasElement;
   let debug = $state(false);
+  let stockOpen = $state(false);
   let priorities = $state(false);
   let selCrew = $state<number | null>(null);
   let toast = $state<string | null>(null);
@@ -53,6 +55,7 @@
       api.togglePause();
     } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
     else if (e.key === '`') debug = !debug;
+    else if (e.key === 'Escape') stockOpen = false;
   }
 
   const speeds: { label: string; speed: 0 | 1 | 2 | 3 }[] = [
@@ -78,10 +81,13 @@
     <button onclick={cycleWalls}>Walls<span class="long">: {cutLabel[cutaway]}</span></button>
     <OverlayPicker {api} />
   </span>
-  <StatsChips {api} />
+  <StatsChips {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} />
   <button class:on={debug} onclick={() => (debug = !debug)}>Debug</button>
 </header>
 
+{#if stockOpen}
+  <StockDrawer {api} onClose={() => (stockOpen = false)} />
+{/if}
 {#if debug && snap}
   <DebugPanel {api} {snap} />
 {/if}

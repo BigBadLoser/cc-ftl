@@ -24,6 +24,8 @@ export type Command =
   | { type: 'production.add'; moduleId: number; recipe: string; mode: 'count' | 'keep'; target: number }
   /** Remove the order at `index` of the module's list. */
   | { type: 'production.remove'; moduleId: number; index: number }
+  /** Change the mode and/or target of the order at `index`, keeping its batches done. */
+  | { type: 'production.edit'; moduleId: number; index: number; mode?: 'count' | 'keep'; target?: number }
   /** Move the order at index `from` to index `to`. */
   | { type: 'production.reorder'; moduleId: number; from: number; to: number }
   /** Restrict a storage module to `items` (item ids), or null to accept everything. */

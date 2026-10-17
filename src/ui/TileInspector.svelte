@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Struct } from '../sim';
   import type { UiApi, UiInspect } from './api';
+  import ItemIcon from './ItemIcon.svelte';
 
   let { api }: { api: UiApi } = $props();
   let info = $state<UiInspect | null>(null);
@@ -26,7 +27,11 @@
     <dl>
       <dt>Struct</dt><dd data-testid="inspect-struct">{info.structName}</dd>
       <dt>Room</dt><dd data-testid="inspect-room">{info.room || 'none'}</dd>
-      {#each info.fields.filter((f) => f.name !== 'struct' && f.name !== 'room') as f (f.name)}
+      {#if info.stack}
+        <dt>Floor stack</dt>
+        <dd class="stack" data-testid="inspect-stack"><ItemIcon {api} item={info.stack.item} size={26} />{info.stack.count} {info.stack.name}</dd>
+      {/if}
+      {#each info.fields.filter((f) => f.name !== 'struct' && f.name !== 'room' && f.name !== 'item') as f (f.name)}
         <dt>{f.name}</dt><dd>{Number.isInteger(f.value) ? f.value : f.value.toFixed(2)}</dd>
       {/each}
     </dl>
@@ -51,6 +56,7 @@
   h2 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
   dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; margin: 0 0 8px; font-variant-numeric: tabular-nums; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; }
+  dd.stack { display: flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--text); }
   .dbg { color: var(--dim); font-size: 12px; margin-bottom: 4px; }
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   @media (max-width: 600px) {

@@ -48,5 +48,8 @@
   "torn": { "hex": "#6e4129" },
   "medWhite": { "hex": "#d8dde2" },
   "medRed": { "hex": "#c8283a" },
-  "navy": { "hex": "#2c3e5c" }
+  "navy": { "hex": "#2c3e5c" },
+  "pcb": { "hex": "#2f8a64" },
+  "polyB": { "hex": "#2f7fd0" },
+  "iceB": { "hex": "#8fd3f0" }
 }

@@ -1,9 +1,12 @@
 import { mount } from 'svelte';
 import App from './ui/App.svelte';
-import type { UiApi } from './ui/api';
+import type { UiApi, UiIcon } from './ui/api';
 import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
 import { buildModuleDefs } from './app/moduleSnapshot';
+import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
+import { loadItemIcons } from './app/itemIcons';
+import { createStore } from './app/store';
 import { overlayLegend, overlayList } from './app/overlayLegend';
 import { createErrorLog } from './app/errors';
 import { attachInput } from './app/input';
@@ -25,6 +28,9 @@ const bridge = createBridge(sim);
 const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
 
+const itemIcons = createStore<Record<string, UiIcon>>({});
+loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e: unknown) => errorLog.push(e));
+
 const loop = createLoop({
   sim,
   render: (alpha) => renderer?.render(alpha),
@@ -41,6 +47,13 @@ const api: UiApi = {
   selectedCrew: controller.selectedCrew,
   modules: bridge.modules,
   moduleDefs: buildModuleDefs(sim),
+  items: buildItemDefs(sim),
+  recipes: buildRecipes(sim),
+  structCosts: buildStructCosts(sim),
+  itemIcons,
+  stock: bridge.stock,
+  storages: bridge.storages,
+  fabs: bridge.fabs,
   selectedModule: controller.selectedModule,
   stats: bridge.stats,
   alerts: controller.alerts.list,
@@ -66,7 +79,7 @@ const api: UiApi = {
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
   attachCanvas(canvas) {
-    createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content.modules)
+    createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content.modules, content.items)
       .then((r) => {
         renderer = r;
         const grid = sim.grids.get(1);

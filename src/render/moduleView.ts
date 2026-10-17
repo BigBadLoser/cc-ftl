@@ -1,15 +1,14 @@
 import { Sprite, type Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
-import { ItemStackC } from '../sim/items/components';
 import type { Grid } from '../sim/grid';
 import { ModuleC, type Module } from '../sim/modules/components';
 import { footprintTiles, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import type { Atlas, StaticSprite } from './assets/loader';
-import { itemColor } from './itemColors';
 import { iso, depthKey } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
+import { craftProgress, moduleAssets } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -25,9 +24,6 @@ export interface ModuleView {
   pick(ax: number, ay: number): number | null;
   dispose(): void;
 }
-
-/** TODO: dedicated sprites. Stand-ins for modules whose asset is not in the manifest yet. */
-const FALLBACK: Record<string, string> = { 'module.fabricator': 'module.console', 'module.storage': 'prop.crate' };
 
 /** Alpha channel of a sprite's frame, cut lazily from its sheet so picking ignores transparent corners. */
 const alphaCache = new WeakMap<Texture, Uint8ClampedArray | null>();
@@ -68,6 +64,9 @@ interface Entry {
   parts: Part[];
 }
 
+/** A craft job counts as running while its progress moved within this many ms. */
+const ACTIVE_MS = 400;
+
 /** True if any enabled power source of the grid is running. */
 export function shipHasPower(world: World, defs: ModuleDefs, gridId: number): boolean {
   for (const id of world.query(ModuleC)) {
@@ -77,11 +76,10 @@ export function shipHasPower(world: World, defs: ModuleDefs, gridId: number): bo
   return false;
 }
 
-/** Module sprites (anchored at the footprint's front tile, depth sorted, tinted by light and power) and floor item stacks. */
+/** Module sprites: anchored at the footprint's front tile, depth sorted, tinted by light and power, with state variants. */
 export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: ModuleDefs, host: ModuleViewHost): ModuleView {
   const mods = new Map<number, Entry>();
-  const items = new Map<number, Sprite>();
-  const crate = atlas.stat('prop.crate');
+  const lastProgress = new Map<number, { value: number; at: number }>();
 
   function dropEntry(e: Entry): void {
     for (const p of e.parts) {
@@ -119,43 +117,51 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     return { spr, glow, halo, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key, flip };
   }
 
-  function build(m: Module, def: ModuleDefs[string]): Part[] {
-    const chain = [def.asset, FALLBACK[def.asset] ?? ''].filter(Boolean);
-    const s = atlas.firstOf(chain);
-    if (!s) return [];
+  function build(m: Module, def: ModuleDefs[string], s: StaticSprite): Part[] {
     const [w, h] = rotatedSize(def, m.rot);
     const [nw, nh] = def.footprint;
-    // TODO: rotated sprites. A quarter turn of a non-square footprint is drawn mirrored; the rest unrotated.
-    const flip = nw !== nh && m.rot % 2 === 1;
+    // A quarter turn of a non-square footprint without its own sprite is drawn mirrored.
+    const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
     const key = (tx: number, ty: number) => depthKey(tx, ty) - (def.solid ? 0.05 : 0.5);
-    const fallback = s !== atlas.stat(def.asset);
-    const tiles = footprintTiles(def, m.x, m.y, m.rot);
-    if (fallback && tiles.length > 1 && s.footprint[0] * s.footprint[1] === 1)
-      return tiles.map((t) => makePart(s, t.x, t.y, false, key(t.x, t.y)));
     return [makePart(s, m.x + w - 1, m.y + h - 1, flip, key(m.x + w - 1, m.y + h - 1))];
+  }
+
+  /** True while the module's craft job made progress in the last moment. */
+  function crafting(progress: Map<number, number>, id: number, now: number): boolean {
+    const p = progress.get(id);
+    if (p === undefined) {
+      lastProgress.delete(id);
+      return false;
+    }
+    const prev = lastProgress.get(id);
+    if (!prev || prev.value !== p) lastProgress.set(id, { value: p, at: p > 0 ? now : -Infinity });
+    return now - (lastProgress.get(id)?.at ?? -Infinity) < ACTIVE_MS;
   }
 
   function update(): void {
     const t = host.target();
     const live = new Set<number>();
-    const liveItems = new Set<number>();
     if (t) {
+      const now = performance.now();
+      const progress = craftProgress(world);
       const { grid } = t;
       const emergency = host.emergency();
-      const pulse = emergency ? pulsePhase(performance.now()) : -1;
+      const pulse = emergency ? pulsePhase(now) : -1;
       const light = grid.raw('light');
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
         if (!m || !def || m.gridId !== grid.id) continue;
+        const asset = atlas.firstOf(moduleAssets(world, id, m, def, m.powered && m.enabled && crafting(progress, id, now)));
+        if (!asset) continue;
         live.add(id);
-        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}`;
+        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${asset.tex.uid}`;
         let e = mods.get(id);
         if (e && e.sig !== sig) {
           dropEntry(e);
           e = undefined;
         }
-        if (!e) mods.set(id, (e = { sig, parts: build(m, def) }));
+        if (!e) mods.set(id, (e = { sig, parts: build(m, def, asset) }));
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
         for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? (light[f.y * grid.width + f.x] as number) : 0;
@@ -167,35 +173,11 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           for (const g of [p.glow, p.halo]) if (g) g.visible = on;
         }
       }
-      for (const id of world.query(ItemStackC)) {
-        const st = world.get(id, ItemStackC);
-        if (!st || st.gridId !== grid.id || !crate) continue;
-        liveItems.add(id);
-        let spr = items.get(id);
-        if (!spr) {
-          spr = new Sprite(crate.tex);
-          spr.alpha = 1;
-          items.set(id, spr);
-          L.sorted.addChild(spr);
-        }
-        const p = iso(st.x, st.y);
-        const sc = 0.34 + 0.16 * Math.min(1, st.count / 100);
-        spr.scale.set(sc);
-        spr.position.set(Math.round(p.x - crate.ax * sc), Math.round(p.y - crate.ay * sc));
-        spr.zIndex = depthKey(st.x, st.y) - 0.4;
-        const lv = grid.inBounds(st.x, st.y) ? (light[st.y * grid.width + st.x] as number) : 0;
-        spr.tint = mulColor(itemColor(st.item), lightTint(lv, false, pulse));
-      }
     }
     for (const [id, e] of mods) {
       if (live.has(id)) continue;
       dropEntry(e);
       mods.delete(id);
-    }
-    for (const [id, s] of items) {
-      if (liveItems.has(id)) continue;
-      s.destroy();
-      items.delete(id);
     }
   }
 
@@ -219,9 +201,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     },
     dispose() {
       for (const e of mods.values()) dropEntry(e);
-      for (const s of items.values()) s.destroy();
       mods.clear();
-      items.clear();
+      lastProgress.clear();
     },
   };
 }

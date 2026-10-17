@@ -5,7 +5,8 @@ import math
 import bpy
 import numpy as np
 from mathutils import Vector
-from . import core, post, props, envtiles
+from . import core, post, props, envtiles, logistics
+from . import items as itemart
 
 SS = core.SS
 
@@ -74,7 +75,7 @@ def render_sprite(sid, kind, objs):
 
 def build(out, only=None, log=print):
     items = []
-    for sid, fp, kind, fn in envtiles.SPRITES + props.SPRITES:
+    for sid, fp, kind, fn in envtiles.SPRITES + props.SPRITES + logistics.SPRITES + itemart.SPRITES:
         if only and not any(o in sid for o in only):
             continue
         core.clear_scene_meshes()

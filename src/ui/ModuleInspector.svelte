@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiModule } from './api';
+  import FabPanel from './FabPanel.svelte';
+  import StoragePanel from './StoragePanel.svelte';
 
   let { api }: { api: UiApi } = $props();
   let mods = $state<UiModule[]>([]);
@@ -19,7 +21,7 @@
 </script>
 
 {#if m}
-  <aside class="sheet" data-testid="module-inspector">
+  <aside class="sheet" class:wide={m.crafting || m.storage} data-testid="module-inspector">
     <h2>{m.name} <small>{m.x},{m.y}</small></h2>
     <dl>
       <dt>State</dt><dd data-testid="module-state" class:bad={!m.powered && m.power !== 0}>{stateOf(m)}</dd>
@@ -27,6 +29,8 @@
       <dt>Health</dt><dd>{m.hp}/{m.maxHp}</dd>
     </dl>
     <div class="bar hp" class:low={hpPct(m) < 40}><i style:width="{hpPct(m)}%"></i></div>
+    {#if m.crafting}<FabPanel {api} id={m.id} def={m.def} />{/if}
+    {#if m.storage}<StoragePanel {api} id={m.id} />{/if}
     {#if m.power !== 0}
       <div class="row">
         <span class="lbl">Priority</span>
@@ -47,7 +51,8 @@
 {/if}
 
 <style>
-  aside { left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab)); width: 260px; }
+  aside { left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab)); width: 260px; max-height: calc(100vh - var(--hdr) - 24px); overflow-y: auto; }
+  aside.wide { width: 340px; }
   h2 { margin: 0 0 6px; font-size: 15px; color: var(--cyan); }
   h2 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; }
@@ -60,5 +65,5 @@
   .prio button { min-width: 36px; padding: 0; }
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
   .warn { border-color: #7a2a2a; }
-  @media (max-width: 600px) { aside { width: auto; left: 0; bottom: 0; } }
+  @media (max-width: 600px) { aside, aside.wide { width: auto; left: 0; bottom: 0; max-height: 62vh; } }
 </style>

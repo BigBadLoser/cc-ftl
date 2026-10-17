@@ -4,7 +4,7 @@ import type { Sim } from '../sim';
 import { ProductionC, StorageC } from './components';
 import { spillItems } from './stacks';
 
-type ItemCommandType = 'production.add' | 'production.remove' | 'production.reorder' | 'storage.setFilter' | 'debug.spawnItems';
+type ItemCommandType = 'production.add' | 'production.remove' | 'production.edit' | 'production.reorder' | 'storage.setFilter' | 'debug.spawnItems';
 type Handler<T extends ItemCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 function reject(sim: Sim, command: string, reason: string): void {
@@ -28,6 +28,14 @@ export const itemHandlers: { [T in ItemCommandType]: Handler<T> } = {
     if (!prod) return reject(sim, cmd.type, 'noStation');
     if (!prod.orders[cmd.index]) return reject(sim, cmd.type, 'badIndex');
     prod.orders.splice(cmd.index, 1);
+  },
+  'production.edit': (sim, cmd) => {
+    const order = sim.world.get(cmd.moduleId, ProductionC)?.orders[cmd.index];
+    if (!order) return reject(sim, cmd.type, 'badIndex');
+    if (cmd.mode !== undefined && cmd.mode !== 'count' && cmd.mode !== 'keep') return reject(sim, cmd.type, 'badMode');
+    if (cmd.target !== undefined && (!Number.isInteger(cmd.target) || cmd.target < 1)) return reject(sim, cmd.type, 'badValue');
+    if (cmd.mode !== undefined) order.mode = cmd.mode;
+    if (cmd.target !== undefined) order.target = cmd.target;
   },
   'production.reorder': (sim, cmd) => {
     const prod = sim.world.get(cmd.moduleId, ProductionC);
