@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import core, cmbkit, overlap, engine_proto as E, walls  # noqa: E402
 
 ALLOW = [("bulkhead", "wall"), ("pylon", "bulkhead"), ("pylon", "wall"), ("bell", "bulkhead"), ("bell", "wall"),
-         ("collar", "bulkhead"), ("collar", "wall"), ("collar", "bell"), ("bulkhead", "greeble_on_bulkhead")]
+         ("collar", "bulkhead"), ("collar", "wall"), ("collar", "bell"), ("bell", "chamber")]
 
 
 def parts_for(rot, full):
@@ -28,4 +28,6 @@ def parts_for(rot, full):
 for rot in (1, 0):
     for full in (True, False):
         print(f"== r{rot} {'full' if full else 'cut'}")
-        overlap.report(parts_for(rot, full), ALLOW)
+        ps = parts_for(rot, full)
+        overlap.report(ps, ALLOW)
+        overlap.floating(ps)

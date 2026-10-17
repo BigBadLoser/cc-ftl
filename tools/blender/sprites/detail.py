@@ -23,6 +23,18 @@ def seg(f, a, b, r, mat, sides=8, cap=None, capstart=None):
 @cmbkit_prim
 def _seg(f, a, b, r, mat, sides=8, cap=None, capstart=None):
     """Round tube between two local points a, b (u, v, z), any direction."""
+    from . import cmbkit
+    if cmbkit.REC is not None and cmbkit.REC.depth == 1:
+        cmbkit.REC.custom = True
+        pa, pb = tuple(f.pt(*a)), tuple(f.pt(*b))
+        diff = [i for i in range(3) if abs(pa[i] - pb[i]) > 1e-6]
+        if len(diff) == 1:                       # axis-aligned: exact cylinder (flat caps), not a capsule
+            ax = diff[0]
+            cross = [i for i in range(3) if i != ax]
+            cmbkit.REC.add({"kind": "cyl", "axis": ax, "c": (pa[cross[0]], pa[cross[1]]), "r": (0.0, r),
+                            "a": (min(pa[ax], pb[ax]), max(pa[ax], pb[ax])), "src": "seg"})
+        else:
+            cmbkit.REC.add({"kind": "seg", "a": pa, "b": pb, "r": r, "src": "seg"})
     a, b = Vector(a), Vector(b)
     ax = (b - a).normalized()
     e1, e2 = _basis(ax)

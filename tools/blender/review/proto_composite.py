@@ -78,13 +78,13 @@ def depth_sort(items):
 
 
 def load(rot, part, hot=False):
-    z = np.load(D / f"px_r{rot}_{part}{'_active' if hot else ''}_v5.npz")
+    z = np.load(D / f"px_r{rot}_{part}{'_active' if hot else ''}_v6.npz")
     return z["rgba"], z["glow"], int(z["ox"]), int(z["oy"])
 
 
 def build(mode, hot):
     """mode: 'full' (tile.hull.full walls + full engine hull section) or 'cut' (low cutaway versions)."""
-    tag = f"r{ROT}_{mode}{'_active' if hot else ''}_v5"
+    tag = f"r{ROT}_{mode}{'_active' if hot else ''}_v6"
     hull = load(ROT, f"hull_{mode}")
     mach = load(ROT, f"machine_{mode}", hot)
     sc = Scene()
