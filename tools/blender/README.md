@@ -23,13 +23,21 @@ Stack order (`order`): body 0, eyes 10, legs 20, torso 30, gear.belt 40, arm.R 5
 implant.temple 65, gear.head 70, gear.back 80.
 
 Holdout: when a layer is rendered, the default items of all LOWER slots are Cycles holdout objects, so the layer is cut
-wherever a lower layer is nearer; one fixed order is then correct in all directions. Outline: per layer, 1 px ring
-around the cut alpha, skipped on the layer's own uncut silhouette edges that a nearer layer cuts (those get the nearer
-layer's ring), so rings never overwrite nearer layers. Eyes and implant have no ring.
+wherever a lower layer is nearer; one fixed order is then correct in all directions. There is NO per-layer outline:
+the renderer draws ONE 1 px outline (plus a thin cool rim on the left edge) around the stacked layers in its composite
+filter (`createCrewFilter` in `src/render/assets/palette.ts`).
+
+Crew look (locked-in defaults after the A1 readability pass): base = `source/base_cc0.glb` (variant D: stylised
+proportions, upright idle, simplified head; regenerate with the `base_import.py` defaults), head enlarged ONCE
+(`stylize.HEAD_K` 1.2; no head scale anywhere else), 4 shade bands (`post.BAND`), smooth shading and no secondary tone
+patches (shirt hem, pocket, sole), +30% clothing saturation (`human_render.SAT`; the runtime boosts the cloth colour too),
+simplified face (small dark eyes, thin lighter brow with a skin gap, no mouth) with a skin highlight on the head,
+gunmetal cyber arm the size of a flesh arm with one cyan strip and a wrist ring, goggles as two lenses on a strap.
+`crew_check.py` composites the shipped sheets like the runtime and writes the 4x verification sheet.
 
 Palette swap: `team.*` materials render as pure key albedo. Every key pixel is `s * K` with K the manifest key colour
 (`team.skin` #ff00ff, `team.hair` #00ff00, `team.cloth` #ffff00, `team.accent` #00ffff) and s one of five shade steps
-0.30, 0.47, 0.64, 0.82, 1.00 (step 0 darkest). Suggested runtime ramp: target = base colour * (0.42, 0.62, 0.82, 1.0,
+0.30, 0.47, 0.64, 0.82, 1.00 (step 0 darkest; crew uses steps 0-3, step 4 only for the skin highlight). Runtime ramp: target = base colour * (0.42, 0.62, 0.82, 1.0,
 1.22)[step] with cooler shadows (see `compose.shade`). Fixed-colour parts use plain palette colours (no key).
 
 ### Environment
@@ -122,13 +130,10 @@ blender -b --factory-startup --python tools/blender/crew/base_import.py -- \
   Death01 held. The glb default `team.cloth` tint is the jacket colour; recolour it dark (briefs) at runtime.
 - Sockets: `socket.back/head/hand.L/hand.R` are empties parented to bones.
 
-### Base-mesh variants (readability comparison)
-`base_import.py` options write the variants next to `base_cc0.glb` (A = default decimated):
-`--no-decimate` -> `base_cc0_b.glb` (original smooth mesh, welded); `--no-decimate --stylize c` -> `base_cc0_c.glb`
-(proportions baked into mesh and rest bones by `crew/stylize.py`: head x1.25, broader shoulders, shorter legs, thicker
-limbs, chunkier hands/boots, smoothed head detail); `--no-decimate --stylize d --upright` -> `base_cc0_d.glb` (c + rounder
-skull, defined jaw, flatter face; idle with upright head/neck/spine and arms at the sides, walk/work with upright head).
-The sprite pipeline follows a styled base through `human_base.LEVEL` (height thresholds via `stylize.zmap`) and
-`readability.warp_gear` (rigid gear is carried through the same warp; eyes keep their size). Sheet: for each letter run
-`READABILITY_MODE=meshes READABILITY_GLB=<glb> blender -b --python tools/blender/sprites/readability.py -- <out>`, then
-`python3 -I tools/blender/sprites/readability_sheet.py <out> --meshes`.
+### Base mesh (D) and options
+`base_import.py` defaults produce the shipped base: original smooth mesh (welded, `--decimate` for the old faceted look),
+`--stylize d` (`none`, `c` or `d`; `crew/stylize.py` bakes proportions into mesh and rest bones: head x1.2, broader
+shoulders, shorter legs, thicker limbs, chunkier hands/boots; d adds a rounder skull, defined jaw and flatter face),
+`--upright` (idle with upright head/neck/spine and arms at the sides; `--no-upright` to keep the source idle). The sprite
+pipeline follows the styled base (`human_base.LEVEL`: height thresholds via `stylize.zmap`, rigid gear carried through the
+same warp by `human_base.warp_gear`; eyes keep their size).

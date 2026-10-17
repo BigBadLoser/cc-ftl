@@ -5,6 +5,7 @@ Writes <outdir>/sprites/*.png (+ .glow.png twins) and <outdir>/manifest.json in 
 src/render/assets/manifest.ts. Default outdir = public/assets. Crew and env run separately for iteration; their
 manifest fragments are cached in the temp dir so a partial run still writes a complete manifest."""
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -45,7 +46,10 @@ def main():
     if what in ("crew", "all"):
         from sprites import crew_pack, human_render as hr
         arm, items = hr.build_items()
-        res, cols = hr.render_all(arm, items)
+        # CREW_QUICK=1: only the frames crew_check.py shows (idle 0, walk 2, work 3 in SE, S, SW, NW) for fast iteration
+        quick = os.environ.get("CREW_QUICK")
+        res, cols = hr.render_all(arm, items, dirs=(0, 1, 2, 4) if quick else range(8),
+                                  frames={("idle", 0), ("walk", 2), ("work", 3)} if quick else None)
         save_part("crew", *crew_pack.pack(items, res, cols, out))
     if what in ("env", "all"):
         from sprites import env_build

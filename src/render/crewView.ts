@@ -4,7 +4,7 @@ import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '.
 import { CarryingC } from '../sim/items/components';
 import { BLEED_OUT_SECONDS } from '../sim/tuning';
 import type { Atlas, LayerSprite } from './assets/loader';
-import { createPaletteFilter, crewPalette, setFilterTint } from './assets/palette';
+import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
 import { diamondTextures } from './diamonds';
 import { itemColor } from './itemColors';
@@ -74,7 +74,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     ring.anchor.set(0.5);
     ring.visible = false;
     const body = new Container();
-    const filter = createPaletteFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed));
+    const filter = createCrewFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed));
     body.filters = [filter];
     const parts = layers.map((layer) => {
       const sprite = new Sprite();
@@ -102,7 +102,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         sprite.position.set(-layer.def.anchor.x, -layer.def.anchor.y);
         root.addChild(sprite);
         let halo: Sprite | null = null;
-        if (L.halos) L.halo.addChild((halo = new Sprite()));
+        if (L.halos && !layer.def.slot.startsWith('arm')) L.halo.addChild((halo = new Sprite())); // cyber arm: no halo
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
@@ -120,6 +120,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(performance.now()) : -1);
     if (dead) tint = mulColor(tint, 0x7c7c7c);
     setFilterTint(s.filter, tint);
+    setFilterZoom(s.filter, L.scale);
   }
 
   function drop(s: Slot): void {
