@@ -5,7 +5,7 @@ import math
 import bpy
 import numpy as np
 from mathutils import Vector
-from . import core, post, props, envtiles, logistics
+from . import core, post, props, envtiles, logistics, combat
 from . import items as itemart
 
 SS = core.SS
@@ -75,10 +75,12 @@ def render_sprite(sid, kind, objs):
 
 def build(out, only=None, log=print):
     items = []
-    for sid, fp, kind, fn in envtiles.SPRITES + props.SPRITES + logistics.SPRITES + itemart.SPRITES:
+    new = {x[0] for x in combat.SPRITES}
+    for sid, fp, kind, fn in envtiles.SPRITES + props.SPRITES + logistics.SPRITES + itemart.SPRITES + combat.SPRITES:
         if only and not any(o in sid for o in only):
             continue
         core.clear_scene_meshes()
+        post.select(sid in new)
         c, op, g, ox, oy, al = render_sprite(sid, kind, fn())
         x0, y0, x1, y1 = post.crop_box(op | (g[..., 3] > 0))
         rgba = post.to_rgba(c, op)

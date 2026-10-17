@@ -3678,6 +3678,3182 @@
     1,
     1
    ]
+  },
+  "module.burst_laser": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 869,
+    "y": 585,
+    "w": 92,
+    "h": 67
+   },
+   "anchor": {
+    "x": 30,
+    "y": 52
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.burst_laser.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 653,
+    "w": 92,
+    "h": 67
+   },
+   "anchor": {
+    "x": 30,
+    "y": 52
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.burst_laser.r1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 94,
+    "y": 653,
+    "w": 92,
+    "h": 68
+   },
+   "anchor": {
+    "x": 62,
+    "y": 53
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.burst_laser.r1.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 187,
+    "y": 653,
+    "w": 92,
+    "h": 68
+   },
+   "anchor": {
+    "x": 62,
+    "y": 53
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.burst_laser.r2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 280,
+    "y": 653,
+    "w": 92,
+    "h": 68
+   },
+   "anchor": {
+    "x": 30,
+    "y": 53
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.burst_laser.r2.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 373,
+    "y": 653,
+    "w": 92,
+    "h": 68
+   },
+   "anchor": {
+    "x": 30,
+    "y": 53
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.burst_laser.r3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 466,
+    "y": 653,
+    "w": 92,
+    "h": 67
+   },
+   "anchor": {
+    "x": 62,
+    "y": 52
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.burst_laser.r3.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 559,
+    "y": 653,
+    "w": 92,
+    "h": 67
+   },
+   "anchor": {
+    "x": 62,
+    "y": 52
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.mass_driver": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 652,
+    "y": 653,
+    "w": 99,
+    "h": 74
+   },
+   "anchor": {
+    "x": 31,
+    "y": 59
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.mass_driver.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 752,
+    "y": 653,
+    "w": 99,
+    "h": 74
+   },
+   "anchor": {
+    "x": 31,
+    "y": 59
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.mass_driver.r1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 852,
+    "y": 653,
+    "w": 99,
+    "h": 75
+   },
+   "anchor": {
+    "x": 63,
+    "y": 60
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.mass_driver.r1.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 729,
+    "w": 99,
+    "h": 75
+   },
+   "anchor": {
+    "x": 63,
+    "y": 60
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.mass_driver.r2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 101,
+    "y": 729,
+    "w": 99,
+    "h": 75
+   },
+   "anchor": {
+    "x": 36,
+    "y": 60
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.mass_driver.r2.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 201,
+    "y": 729,
+    "w": 99,
+    "h": 75
+   },
+   "anchor": {
+    "x": 36,
+    "y": 60
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.mass_driver.r3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 301,
+    "y": 729,
+    "w": 99,
+    "h": 74
+   },
+   "anchor": {
+    "x": 68,
+    "y": 59
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.mass_driver.r3.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 401,
+    "y": 729,
+    "w": 99,
+    "h": 74
+   },
+   "anchor": {
+    "x": 68,
+    "y": 59
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.missile_launcher": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 501,
+    "y": 729,
+    "w": 92,
+    "h": 89
+   },
+   "anchor": {
+    "x": 30,
+    "y": 74
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.missile_launcher.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 594,
+    "y": 729,
+    "w": 92,
+    "h": 89
+   },
+   "anchor": {
+    "x": 30,
+    "y": 74
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.missile_launcher.r1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 687,
+    "y": 729,
+    "w": 92,
+    "h": 74
+   },
+   "anchor": {
+    "x": 62,
+    "y": 59
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.missile_launcher.r1.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 780,
+    "y": 729,
+    "w": 92,
+    "h": 74
+   },
+   "anchor": {
+    "x": 62,
+    "y": 59
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.missile_launcher.r2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 873,
+    "y": 729,
+    "w": 92,
+    "h": 74
+   },
+   "anchor": {
+    "x": 30,
+    "y": 59
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.missile_launcher.r2.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 819,
+    "w": 92,
+    "h": 74
+   },
+   "anchor": {
+    "x": 30,
+    "y": 59
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.missile_launcher.r3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 94,
+    "y": 819,
+    "w": 92,
+    "h": 89
+   },
+   "anchor": {
+    "x": 62,
+    "y": 74
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.missile_launcher.r3.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 187,
+    "y": 819,
+    "w": 92,
+    "h": 89
+   },
+   "anchor": {
+    "x": 62,
+    "y": 74
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.ion_cannon": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 280,
+    "y": 819,
+    "w": 94,
+    "h": 71
+   },
+   "anchor": {
+    "x": 30,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.ion_cannon.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 375,
+    "y": 819,
+    "w": 94,
+    "h": 71
+   },
+   "anchor": {
+    "x": 30,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.ion_cannon.r1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 470,
+    "y": 819,
+    "w": 94,
+    "h": 71
+   },
+   "anchor": {
+    "x": 62,
+    "y": 56
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.ion_cannon.r1.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 565,
+    "y": 819,
+    "w": 94,
+    "h": 71
+   },
+   "anchor": {
+    "x": 62,
+    "y": 56
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.ion_cannon.r2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 660,
+    "y": 819,
+    "w": 94,
+    "h": 71
+   },
+   "anchor": {
+    "x": 32,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.ion_cannon.r2.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 755,
+    "y": 819,
+    "w": 94,
+    "h": 71
+   },
+   "anchor": {
+    "x": 32,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.ion_cannon.r3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 850,
+    "y": 819,
+    "w": 94,
+    "h": 71
+   },
+   "anchor": {
+    "x": 64,
+    "y": 56
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.ion_cannon.r3.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 909,
+    "w": 94,
+    "h": 71
+   },
+   "anchor": {
+    "x": 64,
+    "y": 56
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.incendiary_launcher": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 96,
+    "y": 909,
+    "w": 92,
+    "h": 78
+   },
+   "anchor": {
+    "x": 30,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.incendiary_launcher.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 189,
+    "y": 909,
+    "w": 92,
+    "h": 78
+   },
+   "anchor": {
+    "x": 30,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.incendiary_launcher.r1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 282,
+    "y": 909,
+    "w": 92,
+    "h": 69
+   },
+   "anchor": {
+    "x": 62,
+    "y": 54
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.incendiary_launcher.r1.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 375,
+    "y": 909,
+    "w": 92,
+    "h": 69
+   },
+   "anchor": {
+    "x": 62,
+    "y": 54
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.incendiary_launcher.r2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 468,
+    "y": 909,
+    "w": 92,
+    "h": 69
+   },
+   "anchor": {
+    "x": 30,
+    "y": 54
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.incendiary_launcher.r2.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 561,
+    "y": 909,
+    "w": 92,
+    "h": 69
+   },
+   "anchor": {
+    "x": 30,
+    "y": 54
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.incendiary_launcher.r3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 654,
+    "y": 909,
+    "w": 92,
+    "h": 78
+   },
+   "anchor": {
+    "x": 62,
+    "y": 63
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.incendiary_launcher.r3.charged": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 747,
+    "y": 909,
+    "w": 92,
+    "h": 78
+   },
+   "anchor": {
+    "x": 62,
+    "y": 63
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.engine": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 840,
+    "y": 909,
+    "w": 92,
+    "h": 71
+   },
+   "anchor": {
+    "x": 30,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.engine.active": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 988,
+    "w": 97,
+    "h": 71
+   },
+   "anchor": {
+    "x": 30,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.engine.r1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 99,
+    "y": 988,
+    "w": 92,
+    "h": 72
+   },
+   "anchor": {
+    "x": 62,
+    "y": 57
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.engine.r1.active": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 192,
+    "y": 988,
+    "w": 97,
+    "h": 72
+   },
+   "anchor": {
+    "x": 62,
+    "y": 57
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.engine.r2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 290,
+    "y": 988,
+    "w": 92,
+    "h": 72
+   },
+   "anchor": {
+    "x": 30,
+    "y": 57
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.engine.r2.active": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 383,
+    "y": 988,
+    "w": 97,
+    "h": 72
+   },
+   "anchor": {
+    "x": 35,
+    "y": 57
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.engine.r3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 481,
+    "y": 988,
+    "w": 92,
+    "h": 71
+   },
+   "anchor": {
+    "x": 62,
+    "y": 56
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.engine.r3.active": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 574,
+    "y": 988,
+    "w": 97,
+    "h": 71
+   },
+   "anchor": {
+    "x": 67,
+    "y": 56
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.shield_gen": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 672,
+    "y": 988,
+    "w": 92,
+    "h": 82
+   },
+   "anchor": {
+    "x": 30,
+    "y": 67
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 765,
+    "y": 988,
+    "w": 92,
+    "h": 69
+   },
+   "anchor": {
+    "x": 62,
+    "y": 54
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 858,
+    "y": 988,
+    "w": 92,
+    "h": 69
+   },
+   "anchor": {
+    "x": 30,
+    "y": 54
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 1071,
+    "w": 92,
+    "h": 82
+   },
+   "anchor": {
+    "x": 62,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 94,
+    "y": 1071,
+    "w": 62,
+    "h": 66
+   },
+   "anchor": {
+    "x": 31,
+    "y": 50
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.weapons_console": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 157,
+    "y": 1071,
+    "w": 43,
+    "h": 59
+   },
+   "anchor": {
+    "x": 15,
+    "y": 51
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.shield_console": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 201,
+    "y": 1071,
+    "w": 43,
+    "h": 59
+   },
+   "anchor": {
+    "x": 15,
+    "y": 51
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.helm": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 245,
+    "y": 1071,
+    "w": 43,
+    "h": 59
+   },
+   "anchor": {
+    "x": 15,
+    "y": 51
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.ai_core": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 289,
+    "y": 1071,
+    "w": 56,
+    "h": 88
+   },
+   "anchor": {
+    "x": 28,
+    "y": 74
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.generic.m0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 346,
+    "y": 1071,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 411,
+    "y": 1071,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 476,
+    "y": 1071,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 540,
+    "y": 1071,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m4": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 604,
+    "y": 1071,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m5": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 668,
+    "y": 1071,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m6": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 732,
+    "y": 1071,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m7": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 795,
+    "y": 1071,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m8": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 858,
+    "y": 1071,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m9": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 923,
+    "y": 1071,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m10": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 1160,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m11": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 65,
+    "y": 1160,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m12": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 129,
+    "y": 1160,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m13": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 193,
+    "y": 1160,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m14": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 257,
+    "y": 1160,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic.m15": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 320,
+    "y": 1160,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.generic": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 383,
+    "y": 1160,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 446,
+    "y": 1160,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 511,
+    "y": 1160,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 576,
+    "y": 1160,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 640,
+    "y": 1160,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m4": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 704,
+    "y": 1160,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m5": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 768,
+    "y": 1160,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m6": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 832,
+    "y": 1160,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m7": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 895,
+    "y": 1160,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m8": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 958,
+    "y": 1160,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m9": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 1198,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m10": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 66,
+    "y": 1198,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m11": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 130,
+    "y": 1198,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m12": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 194,
+    "y": 1198,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m13": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 258,
+    "y": 1198,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m14": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 322,
+    "y": 1198,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon.m15": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 385,
+    "y": 1198,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.weapon": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 448,
+    "y": 1198,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "roof.shield.m0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 511,
+    "y": 1198,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 576,
+    "y": 1198,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 641,
+    "y": 1198,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 705,
+    "y": 1198,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m4": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 769,
+    "y": 1198,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m5": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 833,
+    "y": 1198,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m6": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 897,
+    "y": 1198,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m7": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 960,
+    "y": 1198,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m8": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 1236,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m9": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 66,
+    "y": 1236,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m10": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 131,
+    "y": 1236,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m11": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 195,
+    "y": 1236,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m12": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 259,
+    "y": 1236,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m13": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 323,
+    "y": 1236,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m14": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 387,
+    "y": 1236,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield.m15": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 450,
+    "y": 1236,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.shield": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 513,
+    "y": 1236,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 576,
+    "y": 1236,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 641,
+    "y": 1236,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 706,
+    "y": 1236,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 770,
+    "y": 1236,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m4": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 834,
+    "y": 1236,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m5": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 898,
+    "y": 1236,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m6": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 1274,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m7": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 64,
+    "y": 1274,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m8": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 127,
+    "y": 1274,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m9": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 192,
+    "y": 1274,
+    "w": 64,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m10": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 257,
+    "y": 1274,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m11": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 321,
+    "y": 1274,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m12": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 385,
+    "y": 1274,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m13": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 449,
+    "y": 1274,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m14": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 513,
+    "y": 1274,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine.m15": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 576,
+    "y": 1274,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "roof.engine": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 639,
+    "y": 1274,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.laser_bolt.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 702,
+    "y": 1274,
+    "w": 29,
+    "h": 6
+   },
+   "anchor": {
+    "x": 17,
+    "y": 3
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.laser_bolt.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 732,
+    "y": 1274,
+    "w": 37,
+    "h": 6
+   },
+   "anchor": {
+    "x": 23,
+    "y": 3
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.laser_bolt": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 770,
+    "y": 1274,
+    "w": 29,
+    "h": 6
+   },
+   "anchor": {
+    "x": 17,
+    "y": 3
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mass_slug.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 800,
+    "y": 1274,
+    "w": 45,
+    "h": 8
+   },
+   "anchor": {
+    "x": 37,
+    "y": 4
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mass_slug.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 846,
+    "y": 1274,
+    "w": 45,
+    "h": 8
+   },
+   "anchor": {
+    "x": 37,
+    "y": 4
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mass_slug": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 892,
+    "y": 1274,
+    "w": 45,
+    "h": 8
+   },
+   "anchor": {
+    "x": 37,
+    "y": 4
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.missile.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 938,
+    "y": 1274,
+    "w": 32,
+    "h": 12
+   },
+   "anchor": {
+    "x": 22,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.missile.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 971,
+    "y": 1274,
+    "w": 37,
+    "h": 12
+   },
+   "anchor": {
+    "x": 27,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.missile.2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 1,
+    "y": 1312,
+    "w": 34,
+    "h": 12
+   },
+   "anchor": {
+    "x": 24,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.missile": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 36,
+    "y": 1312,
+    "w": 32,
+    "h": 12
+   },
+   "anchor": {
+    "x": 22,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.ion_bolt.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 69,
+    "y": 1312,
+    "w": 29,
+    "h": 20
+   },
+   "anchor": {
+    "x": 18,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.ion_bolt.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 99,
+    "y": 1312,
+    "w": 32,
+    "h": 24
+   },
+   "anchor": {
+    "x": 22,
+    "y": 12
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.ion_bolt": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 132,
+    "y": 1312,
+    "w": 29,
+    "h": 20
+   },
+   "anchor": {
+    "x": 18,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire_shell.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 162,
+    "y": 1312,
+    "w": 24,
+    "h": 12
+   },
+   "anchor": {
+    "x": 18,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire_shell.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 187,
+    "y": 1312,
+    "w": 26,
+    "h": 12
+   },
+   "anchor": {
+    "x": 20,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire_shell": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 214,
+    "y": 1312,
+    "w": 24,
+    "h": 12
+   },
+   "anchor": {
+    "x": 18,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.pd_shot.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 239,
+    "y": 1312,
+    "w": 20,
+    "h": 4
+   },
+   "anchor": {
+    "x": 17,
+    "y": 2
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.pd_shot.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 260,
+    "y": 1312,
+    "w": 16,
+    "h": 4
+   },
+   "anchor": {
+    "x": 14,
+    "y": 2
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.pd_shot": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 277,
+    "y": 1312,
+    "w": 20,
+    "h": 4
+   },
+   "anchor": {
+    "x": 17,
+    "y": 2
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.shield_hit.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 298,
+    "y": 1312,
+    "w": 18,
+    "h": 16
+   },
+   "anchor": {
+    "x": 9,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.shield_hit.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 317,
+    "y": 1312,
+    "w": 32,
+    "h": 28
+   },
+   "anchor": {
+    "x": 16,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.shield_hit.2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 350,
+    "y": 1312,
+    "w": 50,
+    "h": 44
+   },
+   "anchor": {
+    "x": 25,
+    "y": 22
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.shield_hit.3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 401,
+    "y": 1312,
+    "w": 68,
+    "h": 58
+   },
+   "anchor": {
+    "x": 34,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.shield_hit": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 470,
+    "y": 1312,
+    "w": 18,
+    "h": 16
+   },
+   "anchor": {
+    "x": 9,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.explosion_small.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 489,
+    "y": 1312,
+    "w": 14,
+    "h": 14
+   },
+   "anchor": {
+    "x": 7,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.explosion_small.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 504,
+    "y": 1312,
+    "w": 32,
+    "h": 32
+   },
+   "anchor": {
+    "x": 16,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.explosion_small.2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 537,
+    "y": 1312,
+    "w": 44,
+    "h": 41
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.explosion_small.3": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 582,
+    "y": 1312,
+    "w": 41,
+    "h": 38
+   },
+   "anchor": {
+    "x": 22,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.explosion_small.4": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 624,
+    "y": 1312,
+    "w": 30,
+    "h": 28
+   },
+   "anchor": {
+    "x": 15,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.explosion_small": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 655,
+    "y": 1312,
+    "w": 14,
+    "h": 14
+   },
+   "anchor": {
+    "x": 7,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.laser.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 670,
+    "y": 1312,
+    "w": 12,
+    "h": 12
+   },
+   "anchor": {
+    "x": 6,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.laser.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 683,
+    "y": 1312,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.laser.2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 704,
+    "y": 1312,
+    "w": 10,
+    "h": 10
+   },
+   "anchor": {
+    "x": 5,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.mass.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 715,
+    "y": 1312,
+    "w": 16,
+    "h": 18
+   },
+   "anchor": {
+    "x": 8,
+    "y": 9
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.mass.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 732,
+    "y": 1312,
+    "w": 30,
+    "h": 28
+   },
+   "anchor": {
+    "x": 15,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.mass.2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 763,
+    "y": 1312,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.missile.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 784,
+    "y": 1312,
+    "w": 10,
+    "h": 10
+   },
+   "anchor": {
+    "x": 5,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.missile.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 795,
+    "y": 1312,
+    "w": 18,
+    "h": 18
+   },
+   "anchor": {
+    "x": 9,
+    "y": 9
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.missile.2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 814,
+    "y": 1312,
+    "w": 12,
+    "h": 12
+   },
+   "anchor": {
+    "x": 6,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.ion.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 827,
+    "y": 1312,
+    "w": 14,
+    "h": 14
+   },
+   "anchor": {
+    "x": 7,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.ion.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 842,
+    "y": 1312,
+    "w": 22,
+    "h": 22
+   },
+   "anchor": {
+    "x": 11,
+    "y": 11
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.ion.2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 865,
+    "y": 1312,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.fire.0": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 882,
+    "y": 1312,
+    "w": 12,
+    "h": 12
+   },
+   "anchor": {
+    "x": 6,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.fire.1": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 895,
+    "y": 1312,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.muzzle.fire.2": {
+   "kind": "static",
+   "sheet": "env",
+   "frame": {
+    "x": 916,
+    "y": 1312,
+    "w": 14,
+    "h": 14
+   },
+   "anchor": {
+    "x": 7,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
   }
  }
 }
