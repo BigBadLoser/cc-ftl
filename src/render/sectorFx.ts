@@ -7,7 +7,6 @@ import { ProjectileC, ShipC, type Ship } from '../sim/combat/components';
 import type { ModuleDef, WeaponDef } from '../sim/registry';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
-import { diamondTextures } from './diamonds';
 import { iso } from './iso';
 import type { Layers } from './layers';
 import type { EmitterDef, Particles } from './fx/particles';
@@ -43,7 +42,7 @@ const burst = (tint: number, speed: number): EmitterDef =>
   }));
 
 interface Flash {
-  spr: Sprite;
+  spr: Sprite | Graphics;
   age: number;
   life: number;
   grow: number;
@@ -79,7 +78,6 @@ export function createSectorFx(
   const floaters: Floater[] = [];
   const lines = new Graphics();
   L.ui.addChild(lines);
-  const diamond = diamondTextures();
 
   const ship = (gridId: number): Ship | undefined => {
     for (const id of world.query(ShipC)) {
@@ -112,16 +110,13 @@ export function createSectorFx(
   function bubble(s: Ship): void {
     const c = secArt(s.x + s.width / 2, s.y + s.height / 2);
     const k = (s.width + s.height) / 2;
-    for (const [tex, peak] of [[diamond.fill, 0.22], [diamond.outline, 0.95]] as const) {
-      const spr = new Sprite(tex);
-      spr.anchor.set(0.5);
-      spr.tint = SHIELD_COLOR;
-      spr.blendMode = 'add';
-      spr.position.set(Math.round(c.x), Math.round(c.y));
-      spr.scale.set(k * 1.12);
-      L.sorted.addChild(spr);
-      flashes.push({ spr, age: 0, life: 0.45, grow: 0.04, peak });
-    }
+    const rx = (s.width + s.height) * 16 + 10;
+    const g = new Graphics();
+    g.ellipse(0, 0, rx, rx / 2).fill({ color: SHIELD_COLOR, alpha: 0.16 }).stroke({ width: 2, color: 0xbff3ff, alpha: 1 });
+    g.blendMode = 'add';
+    g.position.set(Math.round(c.x), Math.round(c.y));
+    L.sorted.addChild(g);
+    flashes.push({ spr: g, age: 0, life: 0.45, grow: 0.06, peak: 1 });
     particles.burst(burst(SHIELD_COLOR, 70), c.x, c.y, 10, k * 24);
   }
 
@@ -129,7 +124,7 @@ export function createSectorFx(
     const p = secArt(sx, sy);
     const t = new Text({
       text, resolution: Math.max(1, L.scale),
-      style: { fontFamily: 'monospace', fontSize: 9, fontWeight: 'bold', fill, stroke: { color: 0x05080d, width: 2 } },
+      style: { fontFamily: 'monospace', fontSize: 12, fontWeight: 'bold', fill, stroke: { color: 0x05080d, width: 2 } },
     });
     t.anchor.set(0.5);
     t.position.set(Math.round(p.x), Math.round(p.y - 14));

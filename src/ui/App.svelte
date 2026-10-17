@@ -136,6 +136,8 @@
     background: linear-gradient(var(--panel), transparent);
   }
   .toast { position: fixed; left: 50%; top: calc(var(--hdr) + 100px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); border-radius: 8px; pointer-events: none; z-index: 9; }
+  /* The phone sheet leaves a transparent window for the enemy view; keep other overlays out of it. */
+  @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
   .fight { border-color: var(--red); color: #ffd0d0; }
   .tick { color: var(--cyan); min-width: 5.5em; }
   .speeds, .views { display: flex; gap: 4px; }
