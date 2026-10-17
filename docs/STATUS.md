@@ -26,7 +26,7 @@ Last updated: 2026-10-17.
 |---|---|---|---|
 | `m4-combat` | (base) | M4 combat **sim** (sector, ships, weapons, shields, consoles, AI core, projectiles, enemy AI, wrecks, flee) | Done, 138 tests. Not merged because its modules have no sprites yet. |
 | `m4-assets` | `/home/user/cc-ftl-m4art` | M4 sprites: weapons, engine, shield gen, consoles, AI core, roof tiles, projectile and fx sprites. Review sheets in the scratchpad `m4art/` | Agent running. **The user reviews the Blender and pixel sheets before integration.** |
-| `m4-ui` | `/home/user/cc-ftl-m4` | M4 combat overlay, targeting, projectiles, fx, roofed enemies, Spawn raider debug. Uses fallback sprites until m4-assets is approved | Agent running |
+| `m4-ui` | `/home/user/cc-ftl-m4` | M4 combat overlay, targeting, projectiles, fx, roofed enemies, Spawn raider debug. Fallback sprites via `src/render/assets/fallback.ts` (real ids swap in automatically once in the manifest) | Built, check passes, pushed. Known issues: white box covers the enemy preview in the desktop overlay; the enemy in the overlay looks unroofed (roof fallback reads as floor); preview at 0.5 scale breaks integer zoom; projectiles tiny; raider spawns ~25 tiles off (Frame button); raider downs player crew too fast (balance) |
 
 After both: swap the fallback ids for the real ones, take screenshots, get user approval, then merge
 m4-combat + m4-assets + m4-ui to main.
