@@ -175,6 +175,6 @@ export interface ModuleDef {
   engine?: { evasionPerPower: number };
   /** AI core: point defence at this tier. */
   aiCore?: { tier: number };
-  /** Stays visible/targetable when enemy interiors are hidden by fog of war (shield gens, weapons, engines). */
-  fogVisible?: boolean;
+  /** Render asset id of the special roof tile drawn above this module on roofed (enemy) ships, e.g. 'roof.weapon'. Render-only. */
+  roofAsset?: string;
 }
