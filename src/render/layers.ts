@@ -17,6 +17,8 @@ export interface Layers {
   /** Selection, hover and build-preview markers. */
   ui: Container;
   readonly halos: boolean;
+  /** Device px per art px (integer camera zoom). */
+  readonly scale: number;
   setScale(scale: number): void;
 }
 
@@ -31,6 +33,7 @@ export function createLayers(halos: boolean): Layers {
   const halo = new Container();
   const ui = new Container();
   sorted.sortableChildren = true;
+  let scale = 1;
   const blur = new BlurFilter({ strength: 4, quality: 3 });
   halo.filters = [blur];
   halo.blendMode = 'add';
@@ -46,9 +49,13 @@ export function createLayers(halos: boolean): Layers {
     halo,
     ui,
     halos,
-    setScale(scale) {
-      world.scale.set(scale);
-      blur.strength = 1.5 * scale;
+    get scale() {
+      return scale;
+    },
+    setScale(sc) {
+      scale = sc;
+      world.scale.set(sc);
+      blur.strength = 1.5 * sc;
     },
   };
 }

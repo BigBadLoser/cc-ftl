@@ -39,3 +39,5 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - Verify visual changes with a headless screenshot before handing them to the user. The user often
   tests on a phone through `main` at https://cc-ftl.bigbadloser.workers.dev. Branch previews
   (`<branch>-cc-ftl.bigbadloser.workers.dev`) are unreliable, so finished, verified work goes to `main`.
+- Visual changes: send the user the screenshots (default and zoomed-in) and get their approval before
+  merging to `main`. Don't merge visual work on the strength of your own review alone.

@@ -23,12 +23,23 @@ export function hash(seed: number, salt: number): number {
 
 const pick = <T>(list: readonly T[], seed: number, salt: number): T => list[hash(seed, salt) % list.length] as T;
 
+/** Saturation boost of clothing (pipeline default: +30%, so shirts read against skin and pants). */
+const CLOTH_SAT = 1.3;
+function saturate(hex: number, f: number): number {
+  const r = (hex >> 16) & 255;
+  const g = (hex >> 8) & 255;
+  const b = hex & 255;
+  const y = 0.3 * r + 0.59 * g + 0.11 * b;
+  const c = (v: number) => Math.round(Math.min(255, Math.max(0, y + (v - y) * f)));
+  return (c(r) << 16) | (c(g) << 8) | c(b);
+}
+
 export function crewPalette(seed: number): CrewPalette {
-  return { skin: pick(SKIN, seed, 1), hair: pick(HAIR, seed, 2), cloth: pick(CLOTH, seed, 3), accent: pick(ACCENT, seed, 4) };
+  return { skin: pick(SKIN, seed, 1), hair: pick(HAIR, seed, 2), cloth: saturate(pick(CLOTH, seed, 3), CLOTH_SAT), accent: pick(ACCENT, seed, 4) };
 }
 
 const MAX_KEYS = 6;
-const VERT = `
+const VERT = `#version 300 es
 in vec2 aPosition;
 out vec2 vTextureCoord;
 uniform vec4 uInputSize;
@@ -41,29 +52,69 @@ void main(void) {
   gl_Position = vec4(position, 0.0, 1.0);
   vTextureCoord = aPosition * (uOutputFrame.zw * uInputSize.zw);
 }`;
-/** A pixel matches a key colour K when it is a shade of it (p ~ s*K); the replacement is scaled by the same s. */
-const FRAG = `
+/**
+ * Crew composite shader, run once on a crew member's stacked layers:
+ *  - palette swap: a pixel that is s*K for a key colour K becomes the crew colour on the shade ramp (the same ramp as
+ *    tools/blender compose.shade: cooler shadows, warmer lights), then the light tint;
+ *  - ONE 1 px outline around the combined alpha: a darkened version of the adjacent pixel's colour;
+ *  - a thin cool rim on the left silhouette edge.
+ * Neighbours are sampled `uZoom` px away (one art px at the camera's integer zoom), so everything stays on the art grid.
+ */
+const FRAG = `#version 300 es
+precision highp float;
 in vec2 vTextureCoord;
 out vec4 finalColor;
 uniform sampler2D uTexture;
+uniform highp vec4 uInputSize;
 uniform vec4 uKeys[${MAX_KEYS}];
 uniform vec4 uRepl[${MAX_KEYS}];
 uniform float uCount;
+uniform float uZoom;
 uniform vec3 uTint;
-void main(void) {
-  vec4 c = texture(uTexture, vTextureCoord);
-  if (c.a < 0.01) { finalColor = c; return; }
+const float MULT[5] = float[5](0.42, 0.62, 0.82, 1.0, 1.22);
+const vec3 RIM = vec3(0.47, 0.8, 1.0);
+
+vec3 ramp(vec3 col, float s) {
+  int lv = int(s > 0.385) + int(s > 0.555) + int(s > 0.73) + int(s > 0.91);
+  float m = MULT[lv];
+  if (m < 1.0) return col * m * pow(vec3(0.88, 0.96, 1.18), vec3((1.0 - m) * 1.5));
+  return col * m * (m > 1.0 ? vec3(1.04, 1.0, 0.92) : vec3(1.0));
+}
+
+vec3 swapColor(vec4 c) {
   vec3 p = c.rgb / c.a;
   for (int i = 0; i < ${MAX_KEYS}; i++) {
     if (float(i) >= uCount) break;
     vec3 k = uKeys[i].rgb;
     float s = dot(p, k) / dot(k, k);
-    if (s > 0.3 && s < 1.4 && length(p - s * k) < 0.14 * max(s, 0.5)) {
-      p = clamp(uRepl[i].rgb * s, 0.0, 1.0);
-      break;
+    if (s > 0.3 && s < 1.4 && length(p - s * k) < 0.14 * max(s, 0.5)) return clamp(ramp(uRepl[i].rgb, s), 0.0, 1.0);
+  }
+  return p;
+}
+
+void main(void) {
+  vec2 st = uInputSize.zw * uZoom;
+  vec4 c = texture(uTexture, vTextureCoord);
+  if (c.a > 0.5) {
+    vec3 col = swapColor(c);
+    float l = texture(uTexture, vTextureCoord - vec2(st.x, 0.0)).a;
+    float r = texture(uTexture, vTextureCoord + vec2(st.x, 0.0)).a;
+    if (l < 0.5 && r > 0.5) col = mix(col, RIM, 0.38);
+    finalColor = vec4(col * uTint, 1.0);
+    return;
+  }
+  vec3 sum = vec3(0.0);
+  float n = 0.0;
+  vec2 offs[4] = vec2[4](vec2(st.x, 0.0), vec2(-st.x, 0.0), vec2(0.0, st.y), vec2(0.0, -st.y));
+  for (int i = 0; i < 4; i++) {
+    vec4 q = texture(uTexture, vTextureCoord + offs[i]);
+    if (q.a > 0.5) {
+      sum += swapColor(q);
+      n += 1.0;
     }
   }
-  finalColor = vec4(p * uTint * c.a, c.a);
+  if (n > 0.0) finalColor = vec4(clamp(sum / n * 0.42 + vec3(4.0, 5.0, 10.0) / 255.0, 0.0, 1.0) * uTint, 1.0);
+  else finalColor = vec4(0.0);
 }`;
 
 const rgb = (hex: number): [number, number, number] => [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
@@ -71,9 +122,9 @@ const parseHex = (s: string): number => parseInt(s.replace('#', ''), 16);
 
 let program: GlProgram | undefined;
 
-/** Filter remapping the manifest's key colours (team.skin, team.hair, team.cloth...) to a crew palette. */
-export function createPaletteFilter(keyColors: Record<string, string>, pal: CrewPalette): Filter {
-  program ??= GlProgram.from({ vertex: VERT, fragment: FRAG, name: 'crew-palette' });
+/** Composite filter for one crew member: palette swap of the manifest's key colours, one outline, thin rim. */
+export function createCrewFilter(keyColors: Record<string, string>, pal: CrewPalette): Filter {
+  program ??= GlProgram.from({ vertex: VERT, fragment: FRAG, name: 'crew-composite' });
   const keys = new Float32Array(MAX_KEYS * 4);
   const repl = new Float32Array(MAX_KEYS * 4);
   let n = 0;
@@ -87,11 +138,13 @@ export function createPaletteFilter(keyColors: Record<string, string>, pal: Crew
   }
   return new Filter({
     glProgram: program,
+    padding: 1,
     resources: {
       palette: {
         uKeys: { value: keys, type: 'vec4<f32>', size: MAX_KEYS },
         uRepl: { value: repl, type: 'vec4<f32>', size: MAX_KEYS },
         uCount: { value: n, type: 'f32' },
+        uZoom: { value: 1, type: 'f32' },
         uTint: { value: new Float32Array([1, 1, 1]), type: 'vec3<f32>' },
       },
     },
@@ -109,5 +162,14 @@ export function setFilterTint(filter: Filter, color: number): void {
   t[0] = r;
   t[1] = g;
   t[2] = b;
+  group.update();
+}
+
+/** Camera zoom (device px per art px): the outline and rim step this far, and the filter pads one art px. */
+export function setFilterZoom(filter: Filter, zoom: number): void {
+  const group = filter.resources.palette as { uniforms: { uZoom: number }; update(): void };
+  if (group.uniforms.uZoom === zoom) return;
+  group.uniforms.uZoom = zoom;
+  filter.padding = zoom;
   group.update();
 }

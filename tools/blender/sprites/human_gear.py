@@ -2,6 +2,7 @@
 Coordinates are the base's rest frame: x lateral (+X = character left), y front is NEGATIVE, z up (see rigid.py).
 Palette names are plain; team.* colours are palette-swap keys; emissive palette colours (cyan, magenta, orange) go to
 the glow sheet."""
+import os
 from .human_base import Item
 from .rigid import RigidSet
 
@@ -12,18 +13,23 @@ def _items(arm, slot, name, build, **kw):
     return Item(slot, name, rs.build(), **kw)
 
 
+# CREW_EYES: none (default) = brow only, no eye geometry; subtle = eyes in the darkest step of the skin key
+EYES = os.environ.get("CREW_EYES", "none")
+
+
 def eyes(arm, cyber):
+    """Simplified face: two small dark eyes (1-2 px each), a thin lighter brow with a clear skin gap above them, no
+    sclera and no mouth. The engineer's right eye (x<0) is a cyber eye."""
     def b(rs):
         h = rs.on("head")
         for sx in (1, -1):
-            h.box((sx * 0.046, -0.118, 1.564), (0.074, 0.02, 0.058), "medWhite", bevel=0.004)
-            h.box((sx * 0.044 - sx * 0.006, -0.13, 1.562), (0.04, 0.014, 0.05), "black")
-            h.box((sx * 0.047, -0.124, 1.612), (0.09, 0.02, 0.026), "team.hair")      # brow
-        if cyber:                               # character right eye (x<0) is cyber
-            h.box((-0.044, -0.126, 1.566), (0.08, 0.024, 0.06), "gmD", bevel=0.006)
-            h.box((-0.044, -0.141, 1.566), (0.05, 0.014, 0.05), "cyan")
-            h.box((-0.044, -0.147, 1.58), (0.02, 0.006, 0.014), "arc")
-    return _items(arm, "eyes", "cyber" if cyber else "organic", b, outline=False, default=not cyber, glow=cyber)
+            h.box((sx * 0.047, -0.14, 1.624), (0.08, 0.02, 0.018), "team.hair")             # brow, thin
+            if EYES == "subtle" and not (cyber and sx == -1):                                 # eye: darkest skin step, 1 px
+                h.box((sx * 0.046, -0.14, 1.546), (0.03, 0.03, 0.03), "team.skin*0.3")
+        if cyber:
+            h.box((-0.046, -0.14, 1.546), (0.06, 0.032, 0.056), "gmD", bevel=0.006)
+            h.box((-0.046, -0.158, 1.546), (0.034, 0.014, 0.034), "cyan")
+    return _items(arm, "eyes", "cyber" if cyber else "organic", b, default=not cyber, glow=cyber)
 
 
 def hair_mohawk(arm):
@@ -38,7 +44,7 @@ def hair_mohawk(arm):
 def ponytail_extra(arm, item):
     rs = RigidSet(arm)
     h = rs.on("head")
-    h.box((0, 0.13, 1.64), (0.06, 0.05, 0.05), "strap")
+    h.box((0, 0.13, 1.64), (0.06, 0.05, 0.05), "leather")
     h.box((0, 0.155, 1.60), (0.07, 0.06, 0.1), "team.hair", taper=0.8)
     h.box((0, 0.17, 1.52), (0.06, 0.05, 0.12), "team.hair", taper=0.7)
     h.box((0, 0.17, 1.44), (0.04, 0.04, 0.08), "team.hair", taper=0.6)
@@ -54,14 +60,18 @@ def jack(arm):
 
 
 def goggles(arm):
-    """Welding goggles pushed up onto the hair, so they never hide the face."""
+    """Welding goggles worn on the forehead, just under the mohawk: a thin strap round the head and two small round
+    lenses in brass rims on the front, clear of the hair."""
     def b(rs):
         h = rs.on("head")
-        h.box((0, -0.05, 1.672), (0.215, 0.15, 0.03), "team.accent*0.8", bevel=0.004)
-        h.box((0, 0.03, 1.672), (0.225, 0.05, 0.03), "team.accent*0.8")
+        z = 1.652
+        h.box((0, -0.123, z), (0.205, 0.03, 0.02), "leather")
         for sx in (-1, 1):
-            h.box((sx * 0.052, -0.125, 1.688), (0.1, 0.04, 0.07), "brass", bevel=0.01)
-            h.box((sx * 0.052, -0.147, 1.69), (0.072, 0.016, 0.05), "lens")
+            h.box((sx * 0.104, -0.03, z), (0.03, 0.2, 0.02), "leather")
+        h.box((0, 0.1, z), (0.215, 0.03, 0.02), "leather")
+        for sx in (-1, 1):
+            h.box((sx * 0.052, -0.14, z), (0.074, 0.03, 0.074), "brass", bevel=0.02)       # rim, reads round
+            h.box((sx * 0.052, -0.158, z), (0.048, 0.016, 0.048), "lens", bevel=0.012)
     return _items(arm, "gear.head", "welding_goggles", b)
 
 
@@ -102,38 +112,33 @@ def legs_extra(arm, item):
 
 
 def cyber_arm(arm, side):
+    """Gunmetal arm with the same size and silhouette as the flesh arm (about 5% bulkier): plated shoulder cap, upper arm,
+    forearm and a plain hand. The only bright parts are ONE cyan strip along the forearm and a small wrist ring."""
     sx = 1 if side == "L" else -1
     s = side
 
     def b(rs):
         a = rs.on(f"arm.{s}")
-        a.box((sx * 0.20, 0.07, 1.325), (0.14, 0.2, 0.22), "gmD", bevel=0.025)               # shoulder cap
-        a.box((sx * 0.34, 0.07, 1.323), (0.25, 0.17, 0.17), "gm", bevel=0.015)
-        a.box((sx * 0.30, 0.07, 1.323), (0.035, 0.19, 0.19), "gmD", bevel=0.008)
-        a.box((sx * 0.38, 0.07, 1.323), (0.035, 0.19, 0.19), "gmD", bevel=0.008)
-        a.box((sx * 0.34, -0.022, 1.323), (0.16, 0.014, 0.034), "cyan")                      # cyan strip
-        a.box((sx * 0.34, 0.07, 1.412), (0.16, 0.034, 0.014), "cyan")
+        a.box((sx * 0.215, 0.07, 1.325), (0.12, 0.125, 0.125), "gmD", bevel=0.03)             # shoulder cap
+        a.box((sx * 0.37, 0.07, 1.323), (0.25, 0.108, 0.108), "gm", bevel=0.02)               # upper arm
+        a.box((sx * 0.37, 0.07, 1.378), (0.2, 0.07, 0.016), "plate", bevel=0.006)             # plate on top
         f = rs.on(f"forearm.{s}")
-        f.box((sx * 0.47, 0.07, 1.323), (0.07, 0.14, 0.14), "dark", bevel=0.01)
-        f.box((sx * 0.60, 0.07, 1.323), (0.22, 0.165, 0.165), "gm", bevel=0.015)
-        f.box((sx * 0.60, 0.07, 1.41), (0.16, 0.1, 0.02), "plate", bevel=0.006)
-        f.box((sx * 0.60, -0.018, 1.323), (0.17, 0.014, 0.04), "cyan")
-        f.box((sx * 0.60, 0.07, 1.409), (0.1, 0.03, 0.014), "cyan")
-        f.box((sx * 0.705, 0.07, 1.323), (0.03, 0.19, 0.19), "cyan")                         # wrist ring
+        f.box((sx * 0.52, 0.07, 1.323), (0.075, 0.1, 0.1), "gmD", bevel=0.015)                 # elbow
+        f.box((sx * 0.61, 0.07, 1.323), (0.2, 0.1, 0.1), "gm", bevel=0.02)                     # forearm
+        f.box((sx * 0.61, 0.07, 1.375), (0.15, 0.062, 0.016), "plate", bevel=0.006)
+        f.box((sx * 0.595, 0.0, 1.323), (0.12, 0.012, 0.022), "cyan")                           # the one cyan strip
+        f.box((sx * 0.715, 0.07, 1.323), (0.016, 0.108, 0.108), "cyan")                        # wrist ring
         h = rs.on(f"hand.{s}")
-        h.box((sx * 0.765, 0.057, 1.318), (0.09, 0.105, 0.07), "gmD", bevel=0.01)
-        for yy in (0.03, 0.057, 0.084):
-            h.box((sx * 0.83, yy, 1.31), (0.06, 0.022, 0.03), "gm")
-        h.box((sx * 0.75, 0.0, 1.325), (0.05, 0.03, 0.03), "gm")
+        h.box((sx * 0.785, 0.062, 1.32), (0.085, 0.09, 0.075), "gmD", bevel=0.012)
+        h.box((sx * 0.845, 0.06, 1.31), (0.05, 0.075, 0.04), "gm", bevel=0.008)
     return _items(arm, f"arm.{side}", "cyber", b, glow=True)
 
 
 def nose_mouth(arm, body_item):
-    """Facial relief for the body layer: nose, mouth line, ears (skin key + dark)."""
+    """Facial relief for the body layer: a small nose and ears (skin key). No mouth."""
     rs = RigidSet(arm)
     h = rs.on("head")
-    h.box((0, -0.122, 1.545), (0.035, 0.04, 0.055), "team.skin", bevel=0.006)
-    h.box((0, -0.108, 1.512), (0.07, 0.02, 0.012), "rustD")
+    h.box((0, -0.132, 1.532), (0.035, 0.04, 0.045), "team.skin", bevel=0.006)
     for sx in (-1, 1):
         h.box((sx * 0.1, 0.0, 1.56), (0.025, 0.045, 0.06), "team.skin", bevel=0.006)
     body_item.objs += rs.build()

@@ -1,6 +1,7 @@
 import { autoDetectRenderer, Container } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
+import type { ItemDef } from '../sim/registry';
 import { loadAtlas } from './assets/loader';
 import { createCamera } from './camera';
 import { createCrewView } from './crewView';
@@ -9,6 +10,7 @@ import { iso, tileAt, TILE_H, TILE_W } from './iso';
 import { createAtmosphere } from './fx/atmosphere';
 import { createParticles } from './fx/particles';
 import { createFxView } from './fxView';
+import { createItemView } from './itemView';
 import { createJobView } from './jobView';
 import { createLayers } from './layers';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
@@ -54,7 +56,7 @@ export interface Renderer {
 }
 
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
-export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality, world: World, modules: ModuleDefs): Promise<Renderer> {
+export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality, world: World, modules: ModuleDefs, items: Readonly<Record<string, ItemDef>>): Promise<Renderer> {
   const high = quality === 'high';
   const atlas = await loadAtlas();
   const gl = await autoDetectRenderer({
@@ -83,6 +85,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   });
   const jobView = createJobView(world, atlas, L, { target });
   const moduleView = createModuleView(world, atlas, L, modules, {
+    target: () => (view ? { grid: view.grid } : null),
+    emergency: () => emergency,
+  });
+  const itemView = createItemView(world, atlas, L, items, {
     target: () => (view ? { grid: view.grid } : null),
     emergency: () => emergency,
   });
@@ -117,6 +123,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       emergency = view ? shipHasPower(world, modules, view.grid.id) === false : false;
       view?.update();
       moduleView.update();
+      itemView.update();
       fxView.update();
       const now = performance.now();
       const dt = Math.min(0.1, (now - lastFrame) / 1000);
@@ -187,6 +194,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     dispose() {
       crewView.dispose();
       moduleView.dispose();
+      itemView.dispose();
       fxView.dispose();
       particles.dispose();
       jobView.dispose();

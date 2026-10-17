@@ -18,10 +18,19 @@ export interface UiSnapshot {
   sprites: number;
 }
 
+/** A loose stack on a floor tile. */
+export interface UiStack {
+  item: string;
+  name: string;
+  count: number;
+}
+
 export interface UiInspect {
   gridId: number;
   x: number;
   y: number;
+  /** The loose item stack on the tile, or null. */
+  stack: UiStack | null;
   structName: string;
   room: number;
   fields: { name: string; value: number }[];
@@ -65,6 +74,81 @@ export interface UiModule {
   powered: boolean;
   /** Units per second: positive supplies, negative draws. */
   power: number;
+  /** Holds items (has a storage panel). */
+  storage: boolean;
+  /** Crafts recipes (has a production panel). */
+  crafting: boolean;
+}
+
+/** An item amount with its display name. */
+export interface UiCost {
+  item: string;
+  name: string;
+  count: number;
+}
+
+export interface UiItemDef {
+  id: string;
+  name: string;
+  stackSize: number;
+}
+
+export interface UiRecipe {
+  id: string;
+  name: string;
+  /** Module def id of the station. */
+  station: string;
+  inputs: UiCost[];
+  outputs: UiCost[];
+  /** Seconds of work at work speed 1. */
+  seconds: number;
+}
+
+/** Where an item sprite sits in a sheet, for CSS icons. */
+export interface UiIcon {
+  src: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  sheetW: number;
+  sheetH: number;
+}
+
+/** Ship-wide totals of one item. */
+export interface UiStock {
+  item: string;
+  name: string;
+  floor: number;
+  stored: number;
+  carried: number;
+}
+
+export interface UiStorage {
+  id: number;
+  capacity: number;
+  /** Accepted item ids, or null for everything. */
+  filter: string[] | null;
+  stacks: { item: string; count: number }[];
+}
+
+export interface UiOrder {
+  recipe: string;
+  name: string;
+  mode: 'count' | 'keep';
+  target: number;
+  done: number;
+  /** 'keep' orders: units in stock of the first output. */
+  have: number;
+  /** The order the station is working on now. */
+  active: boolean;
+}
+
+export interface UiFab {
+  id: number;
+  orders: UiOrder[];
+  /** Craft job now, or null. */
+  job: { name: string; progress: number; phase: 'materials' | 'power' | 'crafting' | 'ready' } | null;
 }
 
 /** A module the build menu offers. */
@@ -74,7 +158,7 @@ export interface UiModuleDef {
   w: number;
   h: number;
   power: number;
-  cost: string;
+  cost: UiCost[];
 }
 
 export interface UiStats {
@@ -86,7 +170,7 @@ export interface UiStats {
 
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'crew.died' | 'crew.rescued'
-  | 'job.missingMaterials' | 'storage.full';
+  | 'job.missingMaterials' | 'storage.full' | 'production.done';
 
 export interface UiAlert {
   id: number;
@@ -134,6 +218,15 @@ export interface UiApi {
   tool: Subscribable<UiToolState>;
   modules: Subscribable<UiModule[]>;
   moduleDefs: UiModuleDef[];
+  items: UiItemDef[];
+  recipes: UiRecipe[];
+  /** Build cost per struct kind ('floor', 'wall', 'door'). */
+  structCosts: Record<string, UiCost[]>;
+  /** Icon frames by item id; fills in once the asset manifest is loaded. */
+  itemIcons: Subscribable<Record<string, UiIcon>>;
+  stock: Subscribable<UiStock[]>;
+  storages: Subscribable<UiStorage[]>;
+  fabs: Subscribable<UiFab[]>;
   selectedModule: Subscribable<number | null>;
   selectModule(id: number | null): void;
   stats: Subscribable<UiStats>;

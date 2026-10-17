@@ -1,6 +1,7 @@
-import { Struct, type Command, type Sim } from '../sim';
+import { ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiCrew, UiModule, UiStats } from '../ui/api';
+import type { UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildCrewList } from './crewSnapshot';
 import { createStore, type Readable } from './store';
@@ -28,6 +29,8 @@ export interface TileRef {
 /** Plain-data description of one tile, for the inspector. */
 export interface InspectSnapshot extends TileRef {
   structName: string;
+  /** The loose item stack on the tile, or null. */
+  stack: { item: string; name: string; count: number } | null;
   /** Room id, or 0 when none. */
   room: number;
   fields: { name: string; value: number }[];
@@ -43,6 +46,9 @@ export interface Bridge {
   crew: Readable<UiCrew[]>;
   modules: Readable<UiModule[]>;
   stats: Readable<UiStats>;
+  stock: Readable<UiStock[]>;
+  storages: Readable<UiStorage[]>;
+  fabs: Readable<UiFab[]>;
   setSelected(tile: TileRef | null): void;
   setHovered(tile: TileRef | null): void;
   dispatch(cmd: Command): void;
@@ -71,6 +77,10 @@ export function createBridge(sim: Sim): Bridge {
   const crew = createStore<UiCrew[]>([]);
   const modules = createStore<UiModule[]>([]);
   const stats = createStore<UiStats>({ supply: 0, demand: 0, o2: null });
+  const stock = createStore<UiStock[]>([]);
+  const storages = createStore<UiStorage[]>([]);
+  const fabs = createStore<UiFab[]>([]);
+  const lastLog = ['', '', ''];
   let lastMods = '';
   let lastStats = '';
   let frame = 0;
@@ -86,8 +96,11 @@ export function createBridge(sim: Sim): Bridge {
     if (ref && grid?.inBounds(ref.x, ref.y)) {
       const fields = grid.fieldNames().map((name) => ({ name, value: grid.get(name, ref.x, ref.y) }));
       const struct = fields.find((f) => f.name === 'struct')?.value ?? 0;
+      const sid = stackAt(sim, ref.gridId, ref.x, ref.y);
+      const st = sid ? sim.world.get(sid, ItemStackC) : undefined;
       snap = {
         ...ref,
+        stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count } : null,
         structName: STRUCT_NAMES[struct] ?? `Unknown(${struct})`,
         room: fields.find((f) => f.name === 'room')?.value ?? 0,
         fields,
@@ -114,6 +127,12 @@ export function createBridge(sim: Sim): Bridge {
       lastMods = mk;
       modules.set(ml);
     }
+    const logs = [buildStock(sim), buildStorages(sim), buildFabs(sim)] as const;
+    const keys = logs.map((l) => JSON.stringify(l));
+    if (keys[0] !== lastLog[0]) stock.set(logs[0]);
+    if (keys[1] !== lastLog[1]) storages.set(logs[1]);
+    if (keys[2] !== lastLog[2]) fabs.set(logs[2]);
+    keys.forEach((k, i) => (lastLog[i] = k));
     const st = buildStats(sim);
     st.o2 = st.o2 === null ? null : Math.round(st.o2 * 10) / 10;
     const sk = JSON.stringify(st);
@@ -137,6 +156,9 @@ export function createBridge(sim: Sim): Bridge {
     crew,
     modules,
     stats,
+    stock,
+    storages,
+    fabs,
     setSelected(t) {
       selected = t;
       refreshInspect();

@@ -2,7 +2,7 @@
 Library") into our pipeline conventions. Standalone: it is not part of build.py.
 
     blender -b --factory-startup --python tools/blender/crew/base_import.py -- \
-        --base <Superhero_Male_FullBody.gltf> --anims <UAL1_Standard.glb> --out public/assets/crew/human/base_cc0.glb
+        --base <Superhero_Male_FullBody.gltf> --anims <UAL1_Standard.glb> --out tools/blender/source/base_cc0.glb
 
 What it does
   1. imports the base, drops the stray scene objects (cube, icosphere, camera, light)
@@ -16,6 +16,7 @@ What it does
   7. exports through lib.export
 Textures are dropped on purpose: the look is flat colour + faceting, tinted per crew member at runtime.
 """
+import argparse
 import math
 import sys
 from pathlib import Path
@@ -26,6 +27,7 @@ import numpy as np
 from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from crew import stylize  # noqa: E402
 from lib import export, materials, palette, vcolor  # noqa: E402
 
 HEIGHT = 1.7           # world units, feet to top of head
@@ -59,9 +61,15 @@ def log(*a):
 
 
 def parse_args():
-    argv = sys.argv[sys.argv.index("--") + 1:]
-    opts = {argv[i].lstrip("-"): argv[i + 1] for i in range(0, len(argv), 2)}
-    return Path(opts["base"]), Path(opts["anims"]), Path(opts["out"])
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--base", type=Path, required=True)
+    ap.add_argument("--anims", type=Path, required=True)
+    ap.add_argument("--out", type=Path, required=True)
+    B = argparse.BooleanOptionalAction
+    ap.add_argument("--decimate", action=B, default=False, help="decimate to ~TRIS faceted triangles (default: keep the original smooth mesh density, welded)")
+    ap.add_argument("--stylize", choices=sorted(stylize.LEVELS) + ["none"], default="d", help="reshape the mesh and bones (stylize.py): c = proportions, d = c + head shape (default d)")
+    ap.add_argument("--upright", action=B, default=True, help="idle clip: upright relaxed head/neck/spine and arms at the sides (default on)")
+    return ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
 
 
 # ---- import ---------------------------------------------------------------------------------------------------------------------------
@@ -172,13 +180,18 @@ def fit(arm, meshes):
 
 # ---- restyle --------------------------------------------------------------------------------------------------------------------------
 
+def weld(ob):
+    """UV seams leave duplicate vertices (hard normals, cracks under decimation): weld them."""
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
+    bm.to_mesh(ob.data)
+    bm.free()
+
+
 def decimate(ob, target_tris):
     me = ob.data
-    bm = bmesh.new()  # UV seams leave duplicate vertices: weld them or the collapse opens cracks along the seams
-    bm.from_mesh(me)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
-    bm.to_mesh(me)
-    bm.free()
+    weld(ob)
     me.calc_loop_triangles()
     ratio = min(1.0, target_tris / max(1, len(me.loop_triangles)))
     md = ob.modifiers.new("dec", "DECIMATE")
@@ -196,15 +209,15 @@ def set_material(ob, key):
     ob.data.materials.append(materials.get(key))
 
 
-def paint(ob, colour_fn):
-    """Flat shading + one colour per face (corner colours) from colour_fn(face_center_world)."""
+def paint(ob, colour_fn, smooth=False):
+    """Flat (or smooth) shading + one colour per face (corner colours) from colour_fn(face_center_world)."""
     me = ob.data
     for name in [a.name for a in me.color_attributes]:
         if name in me.color_attributes:
             me.color_attributes.remove(me.color_attributes[name])
     attr = me.color_attributes.new("Col", "FLOAT_COLOR", "CORNER")
     me.color_attributes.active_color = attr
-    me.polygons.foreach_set("use_smooth", [False] * len(me.polygons))
+    me.polygons.foreach_set("use_smooth", [smooth] * len(me.polygons))
     data = attr.data
     for p in me.polygons:
         c = colour_fn(p.center)
@@ -227,10 +240,13 @@ def briefs_band(body):
     return zs[int(len(zs) * 0.03)], zs[int(len(zs) * 0.97)]
 
 
-def split_body(body):
+def split_body(body, decimate_to=TRIS):
     """Decimate, cut clean horizontal hem/waist lines (bisect), then split into skin and briefs parts."""
     hem, waist = briefs_band(body)
-    decimate(body, TRIS)
+    if decimate_to:
+        decimate(body, decimate_to)
+    else:
+        weld(body)
     body.vertex_groups.remove(body.vertex_groups["_briefs"])
     me = body.data
     bm = bmesh.new()
@@ -260,11 +276,11 @@ def split_body(body):
     return skin, briefs
 
 
-def restyle(meshes):
-    skin, briefs = split_body(meshes["body"])
+def restyle(meshes, decimate_to=TRIS):
+    skin, briefs = split_body(meshes["body"], decimate_to)
     skin.name, briefs.name = "skin@body.team.skin", "skin@briefs.team.cloth"
-    paint(skin, grey_shade(1))
-    paint(briefs, grey_shade(2))
+    paint(skin, grey_shade(1), not decimate_to)
+    paint(briefs, grey_shade(2), not decimate_to)
     brows, eyes = meshes["brows"], meshes["eyes"]
     decimate(brows, 80)
     set_material(brows, "team.hair")
@@ -361,25 +377,30 @@ def add_sockets(arm):
 
 
 def main():
-    base, anims, out = parse_args()
-    arm, meshes = import_base(base)
+    args = parse_args()
+    arm, meshes = import_base(args.base)
     briefs_weights(meshes["body"])
     scale_head(arm, meshes, HEAD_SCALE)
     widen(arm, meshes, WIDTH)
     f = fit(arm, meshes)
     log("scale", round(f, 4))
-    parts = restyle(meshes)
-    load_clips(arm, anims)
+    if args.stylize != "none":
+        weld(meshes["body"])  # seam duplicates would be smoothed apart
+        stylize.apply(arm, meshes, args.stylize)
+    parts = restyle(meshes, TRIS if args.decimate else None)
+    load_clips(arm, args.anims)
     rename_bones(arm)
+    if args.upright:
+        stylize.make_upright(arm)
     sockets = add_sockets(arm)
     tris = 0
     for o in parts:
         o.data.calc_loop_triangles()
         tris += len(o.data.loop_triangles)
     log("tris", tris, "bones", len(arm.data.bones), "clips", [a.name for a in bpy.data.actions])
-    out.parent.mkdir(parents=True, exist_ok=True)
-    export.export_glb(out, [arm] + parts + sockets, animations=True, skins=True)
-    log("wrote", out, out.stat().st_size, "bytes")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    export.export_glb(args.out, [arm] + parts + sockets, animations=True, skins=True)
+    log("wrote", args.out, args.out.stat().st_size, "bytes")
 
 
 if __name__ == "__main__":

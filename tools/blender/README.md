@@ -23,13 +23,21 @@ Stack order (`order`): body 0, eyes 10, legs 20, torso 30, gear.belt 40, arm.R 5
 implant.temple 65, gear.head 70, gear.back 80.
 
 Holdout: when a layer is rendered, the default items of all LOWER slots are Cycles holdout objects, so the layer is cut
-wherever a lower layer is nearer; one fixed order is then correct in all directions. Outline: per layer, 1 px ring
-around the cut alpha, skipped on the layer's own uncut silhouette edges that a nearer layer cuts (those get the nearer
-layer's ring), so rings never overwrite nearer layers. Eyes and implant have no ring.
+wherever a lower layer is nearer; one fixed order is then correct in all directions. There is NO per-layer outline:
+the renderer draws ONE 1 px outline (plus a thin cool rim on the left edge) around the stacked layers in its composite
+filter (`createCrewFilter` in `src/render/assets/palette.ts`).
+
+Crew look (locked-in defaults after the A1 readability pass): base = `source/base_cc0.glb` (variant D: stylised
+proportions, upright idle, simplified head; regenerate with the `base_import.py` defaults), head enlarged ONCE
+(`stylize.HEAD_K` 1.2; no head scale anywhere else), 4 shade bands (`post.BAND`), smooth shading and no secondary tone
+patches (shirt hem, pocket, sole), +30% clothing saturation (`human_render.SAT`; the runtime boosts the cloth colour too),
+simplified face (small dark eyes, thin lighter brow with a skin gap, no mouth) with a skin highlight on the head,
+gunmetal cyber arm the size of a flesh arm with one cyan strip and a wrist ring, goggles as two lenses on a strap.
+`crew_check.py` composites the shipped sheets like the runtime and writes the 4x verification sheet.
 
 Palette swap: `team.*` materials render as pure key albedo. Every key pixel is `s * K` with K the manifest key colour
 (`team.skin` #ff00ff, `team.hair` #00ff00, `team.cloth` #ffff00, `team.accent` #00ffff) and s one of five shade steps
-0.30, 0.47, 0.64, 0.82, 1.00 (step 0 darkest). Suggested runtime ramp: target = base colour * (0.42, 0.62, 0.82, 1.0,
+0.30, 0.47, 0.64, 0.82, 1.00 (step 0 darkest; crew uses steps 0-3, step 4 only for the skin highlight). Runtime ramp: target = base colour * (0.42, 0.62, 0.82, 1.0,
 1.22)[step] with cooler shadows (see `compose.shade`). Fixed-colour parts use plain palette colours (no key).
 
 ### Environment
@@ -41,6 +49,10 @@ Atlas `sprites/env.png` (+ `env.glow.png`); anchors = floor-diamond centre of th
   exterior slopes), straight variants `.m5.v1/.v2`, `.m10.v1/.v2`, ghosts `tile.hull.ghost.m<0-15>` (near-black, ~55%
   alpha, light edge). Doors `tile.door.x|y` (+ `.open`), tall frame; doors count as wall neighbours for masks.
 - Floors `tile.floor.a..h`, seamless plated deck variants.
+- Economy (`logistics.py`, `items.py`): `module.fabricator` (2x1; `.active` = crafting glow and sparks; `.r1/.r2/.r3` are the
+  rotations, front = access side) and `module.storage.empty|partial|full` (`module.storage` = partial). Items: floor stacks
+  `item.<id>.s|m|l` (renderer picks by count / stack size) and carried `item.<id>.held`, for scrap, metal, electronics, polymer,
+  ice. Placements are fixed tables (no random). Preview a subset: `env_build.build(out, only=[substrings])`.
 
 ---
 
@@ -104,10 +116,10 @@ each skinned clothing layer.
 ## Experiment: restyled CC0 base character (`crew/base_import.py`)
 Standalone, not part of `build.py`. Takes Quaternius' CC0 "Universal Base Characters" male plus the CC0
 "Universal Animation Library" (see `THIRD_PARTY.md`; downloaded from itch.io, not stored in the repo) and writes
-`public/assets/crew/human/base_cc0.glb`:
+`tools/blender/source/base_cc0.glb`:
 ```
 blender -b --factory-startup --python tools/blender/crew/base_import.py -- \
-  --base <Superhero_Male_FullBody.gltf> --anims <UAL1_Standard.glb> --out public/assets/crew/human/base_cc0.glb
+  --base <Superhero_Male_FullBody.gltf> --anims <UAL1_Standard.glb> --out tools/blender/source/base_cc0.glb
 ```
 - Restyle: head scaled up and body widened (`HEAD_SCALE`, `WIDTH`), uniform scale to `HEIGHT` = 1.7, symmetric collapse
   decimation to ~`TRIS` triangles (welded first), flat shading, per-face grey vertex colours. Textures are dropped.
@@ -121,3 +133,11 @@ blender -b --factory-startup --python tools/blender/crew/base_import.py -- \
 - Clips: `idle`=Idle_Loop, `walk`=Walk_Loop, `work`=Interact, `sit`=Sitting_Idle_Loop, `sleep`=last (lying) pose of
   Death01 held. The glb default `team.cloth` tint is the jacket colour; recolour it dark (briefs) at runtime.
 - Sockets: `socket.back/head/hand.L/hand.R` are empties parented to bones.
+
+### Base mesh (D) and options
+`base_import.py` defaults produce the shipped base: original smooth mesh (welded, `--decimate` for the old faceted look),
+`--stylize d` (`none`, `c` or `d`; `crew/stylize.py` bakes proportions into mesh and rest bones: head x1.2, broader
+shoulders, shorter legs, thicker limbs, chunkier hands/boots; d adds a rounder skull, defined jaw and flatter face),
+`--upright` (idle with upright head/neck/spine and arms at the sides; `--no-upright` to keep the source idle). The sprite
+pipeline follows the styled base (`human_base.LEVEL`: height thresholds via `stylize.zmap`, rigid gear carried through the
+same warp by `human_base.warp_gear`; eyes keep their size).

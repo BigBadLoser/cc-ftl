@@ -72,6 +72,32 @@ def _lut():
 
 LUT = _lut()
 
+# 4 shade bands: the top two of the 5 ramp steps merge (steps 0..3 are used; step 4, the lightest key, is only produced
+# by the skin highlight in human_render).
+BAND = (0, 1, 2, 3, 3)
+
+
+def _band_map():
+    m = np.arange(len(PALETTE))
+    i = 0
+    for name, v in PAL.items():
+        if name == "empty":
+            continue
+        if "emissive" in v:
+            i += 4
+            continue
+        for lv in range(5):
+            m[i + lv] = i + BAND[lv]
+        i += 5
+    for k in range(len(TEAMS)):
+        for lv in range(5):
+            m[NB + k * 5 + lv] = NB + k * 5 + BAND[lv]
+    return m
+
+
+BAND_MAP = _band_map()
+MERGE_BANDS = False        # set while rendering crew (environment keeps the 5-step ramps)
+
 
 def quantize(rgb):
     """rgb: (...,3) floats 0..255 -> palette index array."""
@@ -92,7 +118,7 @@ def quantize(rgb):
         s = sum(full) / len(full) / 255.0
         lvl = np.searchsorted(SHADE_EDGES, s)
         idx = np.where(m, NB + t * 5 + lvl, idx)
-    return idx
+    return BAND_MAP[idx] if MERGE_BANDS else idx
 
 
 def blocks(a, S):
@@ -131,29 +157,6 @@ def snap_base(col):
     """Nearest BASE palette colour (never a team key)."""
     q = (np.clip(col, 0, 255) / 8).astype(int).clip(0, 31)
     return BASE[LUT[q[..., 0], q[..., 1], q[..., 2]]]
-
-
-def ring_outline(rgb, opaque, full):
-    """Layer outline: 1px ring around `opaque` (the layer's holdout-cut alpha), skipping pixels that belong to the
-    layer's own UNCUT silhouette `full` (those edges are cut by a nearer layer, which draws its own edge there).
-    Ring colour is a dark tone of the neighbouring layer pixel (team key pixels use a neutral stand-in), snapped to
-    the base palette. Returns padded (rgb, opaque)."""
-    stand = np.where(_is_key(rgb)[..., None], np.array([70, 60, 60], np.uint8), rgb)
-    stand = np.pad(stand, ((1, 1), (1, 1), (0, 0)))
-    rgb = np.pad(rgb, ((1, 1), (1, 1), (0, 0)))
-    op = np.pad(opaque, 1)
-    fu = np.pad(full, 1)
-    nsum = np.zeros(rgb.shape, float)
-    ncnt = np.zeros(op.shape, float)
-    for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-        o = np.roll(op, (dy, dx), (0, 1))
-        nsum += np.roll(stand, (dy, dx), (0, 1)).astype(float) * o[..., None]
-        ncnt += o
-    ring = (~op) & (~fu) & (ncnt > 0)
-    mean = nsum / np.maximum(ncnt, 1)[..., None]
-    col = snap_base(mean * 0.3 * 0.55 + np.array([8, 10, 18.0]) * 0.45)
-    rgb = np.where(ring[..., None], col, rgb).astype(np.uint8)
-    return rgb, op | ring
 
 
 def outline(rgb, opaque, quant, vertical_only=False):

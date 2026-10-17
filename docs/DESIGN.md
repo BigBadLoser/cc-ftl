@@ -138,8 +138,11 @@ FTL's decision-making with physical consequences, in a shared sector.
 - **Made by pre-rendering 3D,** not hand-pixelled. Models are built in Blender and rendered to pixel
   sprites with a fixed palette and outlines. Every direction and frame stays consistent, and
   mix-and-match crew parts always line up.
-- **Gritty industrial with a cyberpunk edge:** muted metals and grime, hazard stripes, and neon
-  accents.
+- **Clean pixel art:** the 3D source uses clean, simple shapes with smooth shading quantised into a few
+  flat tone bands (toon-like). No faceting and no surface noise; detail comes from deliberate shapes
+  (panel seams, bolts, stripes, lights).
+- **Gritty industrial with a cyberpunk edge:** muted metals, wear shown through shapes and colour,
+  hazard stripes, and neon accents.
 - **Neon colour language:** cyan = power, orange = heat or overload, magenta = data or hacking,
   red = emergency. Neon lives in a separate glow layer. With the power out, the ship goes dark and the
   glow is what you read.

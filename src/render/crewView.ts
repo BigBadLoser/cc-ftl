@@ -4,10 +4,10 @@ import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '.
 import { CarryingC } from '../sim/items/components';
 import { BLEED_OUT_SECONDS } from '../sim/tuning';
 import type { Atlas, LayerSprite } from './assets/loader';
-import { createPaletteFilter, crewPalette, setFilterTint } from './assets/palette';
+import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
 import { diamondTextures } from './diamonds';
-import { itemColor } from './itemColors';
+import { heldAssets } from './itemView';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
 import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
@@ -37,8 +37,9 @@ interface Slot {
   glows: { layer: LayerSprite; sprite: Sprite; halo: Sprite | null }[];
   ring: Sprite;
   filter: Filter;
-  /** Small crate near the hands while hauling. */
+  /** The item held in the hands while hauling: one sprite drawn over the body, one under it (when facing away). */
   carry: Sprite;
+  carryBack: Sprite;
   barBg: Sprite;
   barFill: Sprite;
   x: number;
@@ -54,6 +55,9 @@ interface Slot {
 const RED = 0xff3b3b;
 const CYAN = 0x22d3ee;
 const SMOOTH = 14;
+/** Screen offset (art px, from the feet) of the hands for each facing 0..7 (SE, S, SW, W, NW, N, NE, E), and their height. */
+const HAND: readonly (readonly [number, number])[] = [[7, 3], [0, 5], [-7, 3], [-8, 0], [-7, -3], [0, -4], [7, -3], [8, 0]];
+const HAND_Y = -19;
 
 export function createCrewView(world: World, atlas: Atlas, L: Layers, host: CrewViewHost): CrewView {
   const slots = new Map<number, Slot>();
@@ -74,7 +78,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     ring.anchor.set(0.5);
     ring.visible = false;
     const body = new Container();
-    const filter = createPaletteFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed));
+    const filter = createCrewFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed));
     body.filters = [filter];
     const parts = layers.map((layer) => {
       const sprite = new Sprite();
@@ -82,18 +86,16 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
       body.addChild(sprite);
       return { layer, sprite };
     });
-    const carry = new Sprite(atlas.stat('prop.crate')?.tex);
-    const crate = atlas.stat('prop.crate');
-    carry.scale.set(0.3);
-    carry.position.set(7 - (crate?.ax ?? 0) * 0.3, -12 - (crate?.ay ?? 0) * 0.3);
-    carry.visible = false;
+    const carry = new Sprite();
+    const carryBack = new Sprite();
+    carry.visible = carryBack.visible = false;
     const barBg = new Sprite(Texture.WHITE);
     barBg.tint = 0x05070a;
     barBg.alpha = 0.8;
     barBg.visible = false;
     const barFill = new Sprite(Texture.WHITE);
     barFill.visible = false;
-    root.addChild(shadow, ring, body, carry, barBg, barFill);
+    root.addChild(shadow, ring, carryBack, body, carry, barBg, barFill);
     const glows = layers
       .filter((l) => l.def.glow)
       .map((layer) => {
@@ -102,11 +104,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         sprite.position.set(-layer.def.anchor.x, -layer.def.anchor.y);
         root.addChild(sprite);
         let halo: Sprite | null = null;
-        if (L.halos) L.halo.addChild((halo = new Sprite()));
+        if (L.halos && !layer.def.slot.startsWith('arm')) L.halo.addChild((halo = new Sprite())); // cyber arm: no halo
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, filter, carry, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false };
+    return { root, parts, glows, ring, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -120,6 +122,20 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(performance.now()) : -1);
     if (dead) tint = mulColor(tint, 0x7c7c7c);
     setFilterTint(s.filter, tint);
+    setFilterZoom(s.filter, L.scale);
+  }
+
+  /** Put the carried item's sprite at the hands: ahead of the body, over it unless the carrier faces away. */
+  function showHeld(s: Slot, item: string | undefined, dir: number, ok: boolean, bob: number): void {
+    const held = ok && item ? atlas.firstOf(heldAssets(item)) : undefined;
+    s.carry.visible = s.carryBack.visible = false;
+    if (!held) return;
+    const [ox, oy] = HAND[dir] ?? [0, 0];
+    const behind = dir >= 4 && dir <= 6;
+    const spr = behind ? s.carryBack : s.carry;
+    spr.texture = held.tex;
+    spr.position.set(ox - held.ax, HAND_Y + oy - bob - held.ay);
+    spr.visible = true;
   }
 
   function drop(s: Slot): void {
@@ -187,8 +203,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         s.root.zIndex = depthKey(s.x, s.y) + (carried ? 0.02 : 0);
         applyLight(s, pos.x, pos.y, dead);
         const carrying = world.get(id, CarryingC);
-        s.carry.visible = !!carrying && !hurtLying;
-        if (carrying) s.carry.tint = itemColor(carrying.item);
+        showHeld(s, carrying?.item, dir, !hurtLying, s.clip === 'walk' ? Math.round(Math.abs(Math.sin(s.t * 9))) : 0);
         const hp = world.get(id, HealthC);
         const showBar = !dead && (!!downed || (!!hp && hp.hp < hp.max));
         s.barBg.visible = s.barFill.visible = showBar;
