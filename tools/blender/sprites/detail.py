@@ -190,3 +190,15 @@ def vanes(f, u0, u1, v, z, ri, ro, n, thick=0.08, mat="gm", phase=0.0):
             t = b * thick / 2
             return (u, v + rho * s + t * c, z + rho * c - t * s)
         loft_box(f, corner, mat)
+
+
+def annulus(f, u0, u1, v, z, r_out, r_in, mat, cap_mat=None, sides=12):
+    """Thick hoop around a bell axis: outer surface plus flat end faces between r_in and r_out (so it reads as a ring
+    with real thickness, not a wire)."""
+    f.hcyl(u0, u1, v, z, r_out, mat, sides=sides)
+    a0 = math.pi / sides
+    pt = lambda u, r, i: f.pt(u, v + r * math.cos(a0 + i * math.tau / sides), z + r * math.sin(a0 + i * math.tau / sides))  # noqa: E731
+    for i in range(sides):
+        j = (i + 1) % sides
+        f.poly([pt(u1, r_in, i), pt(u1, r_out, i), pt(u1, r_out, j), pt(u1, r_in, j)][::-1], cap_mat or mat, flip=True)
+        f.poly([pt(u0, r_in, i), pt(u0, r_out, i), pt(u0, r_out, j), pt(u0, r_in, j)], cap_mat or mat, flip=True)

@@ -77,28 +77,37 @@ def depth_sort(items):
     return out
 
 
-def build(hot):
-    tag = f"r{ROT}{'_active' if hot else ''}_v2"
-    z = np.load(D / f"px_{tag}.npz")
-    rgba, glow, ox, oy = z["rgba"], z["glow"], int(z["ox"]), int(z["oy"])
+def load(rot, part, hot=False):
+    z = np.load(D / f"px_r{rot}_{part}{'_active' if hot else ''}_v3.npz")
+    return z["rgba"], z["glow"], int(z["ox"]), int(z["oy"])
+
+
+def build(mode, hot):
+    """mode: 'full' (tile.hull.full walls + full engine hull section) or 'cut' (low cutaway versions)."""
+    tag = f"r{ROT}_{mode}{'_active' if hot else ''}_v3"
+    hull = load(ROT, f"hull_{mode}")
+    mach = load(ROT, f"machine_{mode}", hot)
     sc = Scene()
-    # grid coordinates: tile (x, y) centre; r1 footprint x -4..0 (hull row x = 0), y -3..0 shifted so the front tile is (4, 3)
     T = lambda x, y: (250 + (x - y) * 32, 150 + (x + y) * 16)  # noqa: E731
+    wid = "tile.hull.full" if mode == "full" else "tile.hull"
     if ROT == 1:
         fx0, fx1, fy0, fy1, front = -0.5, 4.5, -0.5, 3.5, (4, 3)
         floor = [(x, y) for x in range(-3, 4) for y in range(-3, 7)]
-        walls = [(4, y, "tile.hull.m5") for y in (-3, -2, -1, 4, 5, 6)]
+        walls = [(4, y, f"{wid}.m5") for y in (-3, -2, -1, 4, 5, 6)]
         people = [(0.5, 5.2, 0), (-1.5, -1.6, 7), (3.0, 6.3, 1)]
     else:
         fx0, fx1, fy0, fy1, front = -0.5, 3.5, -0.5, 4.5, (3, 4)
         floor = [(x, y) for x in range(-3, 7) for y in range(0, 7)]
-        walls = [(x, 0, "tile.hull.m10") for x in (-3, -2, -1, 4, 5, 6)]
+        walls = [(x, 0, f"{wid}.m10") for x in (-3, -2, -1, 4, 5, 6)]
         people = [(1.5, 5.8, 0), (-1.0, 2.5, 4), (5.0, 3.5, 2)]
     for x, y in floor:
-        if not (fx0 < x < fx1 and fy0 < y < fy1) or True:
-            sc.asset("tile.floor.a", *T(x, y), dim=0.6)
+        sc.asset("tile.floor.a", *T(x, y), dim=0.6)
     ex, ey = T(*front)
-    items = [(fx0, fx1, fy0, fy1, lambda: sc.blit(rgba, glow, ex - ox, ey - oy))]
+
+    def engine():
+        for rgba, glow, ox, oy in (hull, mach):                 # hull section first, then the machine (cut by holdout)
+            sc.blit(rgba, glow, ex - ox, ey - oy)
+    items = [(fx0, fx1, fy0, fy1, engine)]
     for x, y, aid in walls:
         items.append((x - 0.5, x + 0.5, y - 0.5, y + 0.5, lambda aid=aid, x=x, y=y: sc.asset(aid, *T(x, y))))
     for x, y, d in people:
@@ -107,12 +116,13 @@ def build(hot):
         it[4]()
     img = Image.fromarray(np.clip(sc.px, 0, 255).astype(np.uint8))
     img.save(D / f"scene_{tag}_1x.png")
+    rgba, _, ox, oy = mach
     box = (ex - ox - 70, ey - oy - 30, ex - ox + rgba.shape[1] + 70, ey - oy + rgba.shape[0] + 80)
     img.crop(box).resize(((box[2] - box[0]) * 3, (box[3] - box[1]) * 3), Image.NEAREST).save(D / f"scene_{tag}_3x.png")
 
 
-for hot in (False, True):
+for mode, hot in (("full", False), ("full", True), ("cut", False)):
     try:
-        build(hot)
+        build(mode, hot)
     except FileNotFoundError:
         pass

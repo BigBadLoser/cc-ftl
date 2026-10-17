@@ -33,7 +33,7 @@ def disc(f, face, a, b, s, r, d0, d1, mat, sides=8, cap=None):
     D.seg(f, _pt(face, a, b, s, d0), _pt(face, a, b, s, d1), r, mat, sides, cap=cap or mat, capstart=mat)
 
 
-def hex_cluster(f, face, a, b, s, n=4, pitch=0.15, r=0.055, mat="plate", cols=2):
+def hex_cluster(f, face, a, b, s, n=4, pitch=0.17, r=0.065, mat="plate", cols=2):
     """n hex bolt heads in a grid (cols wide) centred on (a, b)."""
     rows = (n + cols - 1) // cols
     for k in range(n):
@@ -41,7 +41,7 @@ def hex_cluster(f, face, a, b, s, n=4, pitch=0.15, r=0.055, mat="plate", cols=2)
         disc(f, face, a + (i - (cols - 1) / 2) * pitch, b + (j - (rows - 1) / 2) * pitch, s, r, 0, 0.045, mat, sides=6)
 
 
-def junction_box(f, face, a, b, s, w=0.36, h=0.27, d=0.1, mat="steelL", lid="plate"):
+def junction_box(f, face, a, b, s, w=0.44, h=0.34, d=0.12, mat="steelL", lid="plate"):
     """Boxy junction with an inset lid, corner bolts and a conduit stub out of one side."""
     sbox(f, face, a, b, s, w, h, d, mat)
     sbox(f, face, a, b, s, w - 0.07, h - 0.07, d + 0.03, "steelD")
@@ -51,7 +51,7 @@ def junction_box(f, face, a, b, s, w=0.36, h=0.27, d=0.1, mat="steelL", lid="pla
     sbox(f, face, a + w / 2 + 0.05, b, s, 0.1, 0.07, 0.07, "gm")
 
 
-def valve_wheel(f, face, a, b, s, r=0.17, mat="brass"):
+def valve_wheel(f, face, a, b, s, r=0.21, mat="brass"):
     """Hand wheel on a stem: rim disc, dark hub, two crossed spokes."""
     disc(f, face, a, b, s, 0.04, 0, 0.09, "steelL", sides=6)
     disc(f, face, a, b, s, r, 0.09, 0.12, mat, sides=10)
