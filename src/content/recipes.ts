@@ -23,4 +23,11 @@ export const recipes = {
     outputs: [{ item: 'item.polymer', count: 1 }],
     work: 80,
   },
+  'recipe.missile': {
+    name: 'Assemble missiles',
+    station: 'module.fabricator',
+    inputs: [{ item: 'item.metal', count: 2 }, { item: 'item.electronics', count: 1 }],
+    outputs: [{ item: 'item.missile', count: 2 }],
+    work: 100,
+  },
 } satisfies Record<string, RecipeDef>;

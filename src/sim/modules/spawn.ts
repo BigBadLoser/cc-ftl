@@ -2,9 +2,10 @@ import { WeaponC } from '../combat/components';
 import { CrewC, JobC, PositionC } from '../crew/components';
 import { ProductionC, StorageC } from '../items/components';
 import { spillItems } from '../items/stacks';
+import type { Grid } from '../grid';
 import type { Sim } from '../sim';
 import { DEFAULT_PRIORITY } from '../tuning';
-import { Struct } from '../structure';
+import { Struct, bordersSpace } from '../structure';
 import { ModuleC } from './components';
 import { accessTile, footprintTiles } from './footprint';
 import { isTileWalkable } from './walk';
@@ -57,6 +58,7 @@ export function placementError(sim: Sim, gridId: number, defId: string, x: numbe
     if (grid.get('struct', t.x, t.y) !== Struct.Floor) return 'notFloor';
     if (grid.get('module', t.x, t.y) !== 0) return 'occupied';
   }
+  if (def.mount === 'hull' && !touchesHull(grid, tiles)) return 'notOnHull';
   const access = accessTile(def, x, y, rot);
   if (access && !isTileWalkable(sim, grid, access.x, access.y)) return 'noAccess';
   for (const jobId of sim.world.query(JobC)) {
@@ -79,6 +81,18 @@ export function footprintBlockedByCrew(sim: Sim, gridId: number, defId: string, 
     const p = sim.world.get(id, PositionC);
     if (!p || p.gridId !== gridId) continue;
     if (tiles.some((t) => (t.x === p.x && t.y === p.y) || (t.x === p.toX && t.y === p.toY))) return true;
+  }
+  return false;
+}
+
+/** True if any footprint tile has a 4-neighbour that is a wall tile bordering Space (or the grid edge). */
+export function touchesHull(grid: Grid, tiles: readonly { x: number; y: number }[]): boolean {
+  for (const t of tiles) {
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const nx = t.x + dx;
+      const ny = t.y + dy;
+      if (grid.inBounds(nx, ny) && grid.get('struct', nx, ny) === Struct.Wall && bordersSpace(grid, nx, ny)) return true;
+    }
   }
   return false;
 }

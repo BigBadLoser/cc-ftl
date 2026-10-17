@@ -8,7 +8,7 @@ export type { WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleD
 export { gridFromTemplate, spawnTemplateModules } from './ship';
 export { ModuleC, type Module } from './modules/components';
 export { footprintTiles, accessTile, rotatedSize } from './modules/footprint';
-export { spawnModule, removeModule, placementError } from './modules/spawn';
+export { spawnModule, removeModule, placementError, touchesHull } from './modules/spawn';
 export { isTileWalkable } from './modules/walk';
 export { roomTiles } from './roomIndex';
 export * from './tuning';
