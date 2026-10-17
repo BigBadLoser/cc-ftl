@@ -28,9 +28,9 @@ def burst_laser(rot, hot):
     for sv in (-1, 1):                                                                 # side power strips
         f.box(-0.5, sv * 0.405, 0.18, 0.6, 0.02, 0.06, "cyan" if hot else "dark")
     f.vcyl(-0.82, 0.22, 0.4, 0.12, 0.22, "gm", top="plate")                            # capacitors
-    f.vcyl(-0.82, 0.22, 0.58, 0.13, 0.04, "cyan" if hot else "gmD")
+    f.vcyl(-0.82, 0.22, 0.58, 0.13, 0.07, "cyan" if hot else "gmD")
     f.vcyl(-0.82, -0.22, 0.4, 0.12, 0.22, "gm", top="plate")
-    f.vcyl(-0.82, -0.22, 0.58, 0.13, 0.04, "cyan" if hot else "gmD")
+    f.vcyl(-0.82, -0.22, 0.58, 0.13, 0.07, "cyan" if hot else "gmD")
     return [m.build()]
 
 
