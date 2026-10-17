@@ -9,13 +9,14 @@ from functools import lru_cache
 from pathlib import Path
 import bmesh
 import bpy
+import re
 import numpy as np
 from mathutils import Vector
 from . import core
 
 ROOT = Path(__file__).resolve().parents[3]
 GLB = ROOT / "tools/blender/source/base_cc0.glb"
-LEVEL = None                  # stylize level of GLB (c/d, see crew/stylize.py): maps the height thresholds below
+LEVEL = "d"                   # stylize level baked into GLB (crew/stylize.py): maps the height thresholds below and warps rigid gear
 
 
 @lru_cache(maxsize=None)
@@ -37,7 +38,6 @@ class Item:
     slot: str
     name: str
     objs: list = field(default_factory=list)
-    outline: bool = True      # per-layer 1px outline (off for tiny face details)
     default: bool = False     # member of the default holdout set for higher slots
     glow: bool = False        # has emissive pixels
     order: int = 0            # stack order (set from the slot)
@@ -193,3 +193,47 @@ def build_skinned(arm, body):
     for n in ("skin@eyes.base", "skin@brows.team.hair"):
         bpy.data.objects.remove(bpy.data.objects[n], do_unlink=True)
     return items
+
+
+GEAR = re.compile(r"^gear\.(head|hips|spine_0[23]|(leg|shin|arm|forearm|hand)\.[LR])(\.\d+)?$")
+
+
+def _islands(me):
+    """Connected vertex groups of a mesh (every box of the procedural builder is one island)."""
+    par = list(range(len(me.vertices)))
+
+    def find(i):
+        while par[i] != i:
+            par[i] = par[par[i]]
+            i = par[i]
+        return i
+    for p in me.polygons:
+        r0 = find(p.vertices[0])
+        for v in p.vertices[1:]:
+            par[find(v)] = r0
+    return np.array([find(i) for i in range(len(me.vertices))])
+
+
+def warp_gear(items):
+    """Rigid gear is modelled against the unstyled base: carry it through the same proportion warp as the mesh. Eyes keep
+    their pixel size (only their positions follow the head)."""
+    from crew import stylize
+    seen = set()
+    for it in items:
+        for ob in it.objs:
+            if not GEAR.match(ob.name) or ob.name in seen:
+                continue
+            seen.add(ob.name)
+            me = ob.data
+            co = np.empty(len(me.vertices) * 3)
+            me.vertices.foreach_get("co", co)
+            co = co.reshape(-1, 3)
+            new = stylize.warp_gear(co, LEVEL)
+            if it.slot == "eyes":
+                lab = _islands(me)
+                for k in np.unique(lab):
+                    m = lab == k
+                    c1 = co[m].mean(0)
+                    new[m] = stylize.warp_gear(c1[None], LEVEL)[0] + (co[m] - c1)
+            me.vertices.foreach_set("co", new.ravel())
+            me.update()

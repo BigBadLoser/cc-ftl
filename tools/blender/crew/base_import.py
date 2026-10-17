@@ -65,9 +65,10 @@ def parse_args():
     ap.add_argument("--base", type=Path, required=True)
     ap.add_argument("--anims", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--no-decimate", action="store_true", help="keep the original smooth mesh density (welded, smooth shaded)")
-    ap.add_argument("--stylize", choices=sorted(stylize.LEVELS), help="reshape the mesh and bones (stylize.py): c = proportions, d = c + head shape")
-    ap.add_argument("--upright", action="store_true", help="idle clip: upright relaxed head/neck/spine and arms at the sides")
+    B = argparse.BooleanOptionalAction
+    ap.add_argument("--decimate", action=B, default=False, help="decimate to ~TRIS faceted triangles (default: keep the original smooth mesh density, welded)")
+    ap.add_argument("--stylize", choices=sorted(stylize.LEVELS) + ["none"], default="d", help="reshape the mesh and bones (stylize.py): c = proportions, d = c + head shape (default d)")
+    ap.add_argument("--upright", action=B, default=True, help="idle clip: upright relaxed head/neck/spine and arms at the sides (default on)")
     return ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
 
 
@@ -383,10 +384,10 @@ def main():
     widen(arm, meshes, WIDTH)
     f = fit(arm, meshes)
     log("scale", round(f, 4))
-    if args.stylize:
+    if args.stylize != "none":
         weld(meshes["body"])  # seam duplicates would be smoothed apart
         stylize.apply(arm, meshes, args.stylize)
-    parts = restyle(meshes, None if args.no_decimate else TRIS)
+    parts = restyle(meshes, TRIS if args.decimate else None)
     load_clips(arm, args.anims)
     rename_bones(arm)
     if args.upright:

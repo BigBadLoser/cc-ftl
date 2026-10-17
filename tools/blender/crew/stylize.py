@@ -13,7 +13,7 @@ only. Pure numpy apart from the bpy helpers, which import bpy lazily."""
 import numpy as np
 
 LEVELS = {"c", "d"}
-HEAD_K = 1.25
+HEAD_K = 1.2         # the ONE head enlargement of the pipeline (relative to base_cc0's own head); no other head scale anywhere
 HEAD_PIVOT = (0.0, 0.02, 1.43)
 SHOULDER_GAIN, SHOULDER_CAP = 0.14, 0.22     # x shift = gain * min(|x|, cap), weighted by height
 LEG_SHORTEN, LEG_BLEND = 0.07, (0.80, 0.95)  # leg scale 1-LEG_SHORTEN below the blend band
