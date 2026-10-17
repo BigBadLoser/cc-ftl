@@ -154,7 +154,7 @@ def main():
     y += 24
     ids = [f"roof.generic.m{m}" for m in range(16)]
     for i, aid in enumerate(ids):
-        c.put(aid, 40 + (i % 8) * 70 + 20, y + 36 + (i // 8) * 52)
+        c.put(aid, 40 + (i % 8) * 70 + 20, y + 52 + (i // 8) * 52)
         c.label(14 + (i % 8) * 70, y + 4 + (i // 8) * 52, f"m{i}")
     xo = 620
     for j, k in enumerate(("weapon", "shield", "engine")):
