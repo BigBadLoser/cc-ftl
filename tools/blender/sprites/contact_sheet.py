@@ -103,7 +103,7 @@ def crew_ids(man, parts):
 
 DELTA = {"n": (0, -1), "e": (1, 0), "s": (0, 1), "w": (-1, 0)}
 BIT = {"n": 1, "e": 2, "s": 4, "w": 8}
-FLOOR_PICK = "aabacadafaageah"      # mirrors src/render/tiles.ts
+
 
 
 def tile_hash(x, y):
@@ -122,7 +122,7 @@ def blocks(s, layout, doors_open=(), mode="auto"):
             k = at(x, y)
             if k == " ":
                 continue
-            s.static("tile.floor." + FLOOR_PICK[(tile_hash(x, y) >> 8) % len(FLOOR_PICK)], x, y, -0.5)
+            s.static("tile.floor." + {0: "c", 1: "h"}.get((tile_hash(x, y) >> 8) % 20, "a"), x, y, -0.5)
             if k == ".":
                 continue
             if k == "D":
@@ -132,6 +132,9 @@ def blocks(s, layout, doors_open=(), mode="auto"):
             mask = sum(b for d, b in BIT.items() if solid(x + DELTA[d][0], y + DELTA[d][1]))
             hull = any(at(x + dx, y + dy) == " " for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy)
             sp = lambda dx, dy: at(x + dx, y + dy) == " "  # noqa: E731
+            if mode == "ghost":
+                s.static(f"tile.hull.ghost.m{mask}", x, y, 0.1)
+                continue
             if hull and (sp(1, 0) or sp(0, 1)):
                 s.static(f"tile.hull.ghost.m{mask}", x, y, 0.1)
                 continue
@@ -139,9 +142,6 @@ def blocks(s, layout, doors_open=(), mode="auto"):
             vid = f"tile.{fam}.m{mask}"
             if mode == "up":
                 vid = f"tile.{fam}.full.m{mask}"
-            elif mask in (5, 10) and tile_hash(x, y) % 4 < 2:
-                v = f"{vid}.v{1 + tile_hash(x, y) % 2}"
-                vid = v if v in s.man["assets"] else vid
             s.static(vid, x, y, 0.1)
             if hull:
                 if not mask & 4 and sp(0, 1):
@@ -211,6 +211,26 @@ def junctions(assets, man):
     return out
 
 
+def mask_sheet(assets, man, mode):
+    """Every mask with its arms (2 tiles long) in a floor field, cropped around the centre, mosaic 4 x 4."""
+    tiles = []
+    for mask in range(16):
+        lay = [["." for _ in range(7)] for _ in range(7)]
+        lay[3][3] = "#"
+        for d, b in BIT.items():
+            if mask & b:
+                for k in (1, 2):
+                    lay[3 + DELTA[d][1] * k][3 + DELTA[d][0] * k] = "#"
+        W, H = 420, 260
+        s = Scene(assets, man, W, H, (W // 2, 20))
+        blocks(s, ["".join(r) for r in lay], mode=mode)
+        s.flush()
+        cx, cy = s.screen(3.5, 3.5)
+        tiles.append(s.cv[int(cy) - 80:int(cy) + 60, int(cx) - 100:int(cx) + 100])
+    rows = [np.concatenate(tiles[r * 4:(r + 1) * 4], 1) for r in range(4)]
+    return np.concatenate(rows, 0)
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     assets = Path(argv[0]) if argv else ROOT / "public/assets"
@@ -220,6 +240,9 @@ def main():
     r = room(assets, man)
     r.save(out / "contact-1x.png", 1)
     r.save(out / "contact-2x.png", 2)
+    for md in ("auto", "up", "ghost"):
+        mos = mask_sheet(assets, man, md)
+        post.write_png(out / f"masks-{md}-4x.png", mos.repeat(3, 0).repeat(3, 1))
     auto, up, down = junctions(assets, man)
     auto.save(out / "junctions-auto-2x.png", 2)
     up.save(out / "junctions-up-2x.png", 2)

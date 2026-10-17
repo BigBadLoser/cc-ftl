@@ -24,7 +24,37 @@ def _alpha_cnt(a):
     return post.blocks(a > 0.5, SS).sum(-1)
 
 
+def render_ghost(objs, W, H):
+    """objs = [plate, glass]. Plate: opaque palette-quantized floor plate. Glass: separate pass, never quantized or
+    outlined; its brightness becomes alpha over a pale tint. Returns (rgb, alpha uint8, padded)."""
+    plate, glass = objs
+    glass.hide_render = True
+    rgb, a = core.render(W, H, "color")
+    c, op = post.downsample(rgb, a > 0.5, SS, 8, True)
+    glass.hide_render, plate.hide_render = False, True
+    rgb2, a2 = core.render(W, H, "color")
+    plate.hide_render = False
+    cov = post.blocks(a2 > 0.5, SS)
+    cnt = cov.sum(-1)
+    lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / np.maximum(cnt, 1)
+    ga = np.where(cnt >= 6, np.clip(lum / 255.0 * 0.65, 0, 0.9), 0.0)
+    tint = np.array([200.0, 214.0, 232.0])
+    out = np.where(op[..., None], c.astype(float), tint)
+    mixed = np.where(op[..., None], c * (1 - ga[..., None]) + tint * ga[..., None], tint)
+    alpha = np.where(op, 255, np.round(ga * 255)).astype(np.uint8)
+    return mixed.astype(np.uint8), alpha
+
+
 def render_sprite(sid, kind, objs):
+    if kind == "ghost":
+        xs = core.extent_px(objs)
+        xmin, xmax, ymin, ymax = xs
+        W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
+        H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
+        c, al = render_ghost(objs, W, H)
+        c, al = _pad1(c), np.pad(al, 1)
+        z = np.zeros((H + 2, W + 2, 4), np.uint8)
+        return c, al > 0, z, (W + 2) // 2, (H + 2) // 2, al
     xmin, xmax, ymin, ymax = core.extent_px(objs)
     W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
     H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
@@ -39,7 +69,7 @@ def render_sprite(sid, kind, objs):
         c, op = post.outline(c, op, True)
     grgb, _ = core.render(W, H, "glow")
     g = _pad1(post.glow_down(grgb, SS, 3))
-    return c, op, g, (W + 2) // 2, (H + 2) // 2
+    return c, op, g, (W + 2) // 2, (H + 2) // 2, None
 
 
 def build(out, only=None, log=print):
@@ -48,12 +78,11 @@ def build(out, only=None, log=print):
         if only and not any(o in sid for o in only):
             continue
         core.clear_scene_meshes()
-        c, op, g, ox, oy = render_sprite(sid, kind, fn())
+        c, op, g, ox, oy, al = render_sprite(sid, kind, fn())
         x0, y0, x1, y1 = post.crop_box(op | (g[..., 3] > 0))
         rgba = post.to_rgba(c, op)
-        if kind == "ghost":                       # semi-transparent near-black silhouette, faint light edges
-            lum = c.astype(float).mean(-1)
-            rgba[..., 3] = np.where(op, np.where(lum > 45, 120, 165), 0)
+        if al is not None:
+            rgba[..., 3] = al
         items.append({"id": sid, "fp": fp, "rgba": rgba[y0:y1, x0:x1], "g": g[y0:y1, x0:x1],
                       "ax": ox - x0, "ay": oy - y0})
     AW, x, y, rowh = 1024, 1, 1, 0

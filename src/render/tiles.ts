@@ -21,10 +21,11 @@ export function tileHash(x: number, y: number): number {
   return (h ^ (h >>> 15)) >>> 0;
 }
 
-/** Plain plates dominate; grates and hatches are rare accents. Keep in sync with contact_sheet.py. */
-const FLOORS = "aabacadafaageah";
+/** One main plate; two very subtle variants on ~10% of tiles. Grates, hatches and the rest stay unused in the manifest.
+ * Keep in sync with contact_sheet.py. */
 export function floorChain(x: number, y: number): Chain {
-  const v = FLOORS[(tileHash(x, y) >>> 8) % FLOORS.length] as string;
+  const r = (tileHash(x, y) >>> 8) % 20;
+  const v = r === 0 ? "c" : r === 1 ? "h" : "a";
   return [`tile.floor.${v}`, "tile.floor.a"];
 }
 
@@ -72,13 +73,7 @@ export function wallPieces(
     return [{ chain: [`tile.hull.ghost.m${mask}`], order: 0 }];
   const fam = hull ? "hull" : "wall";
   const id = `tile.${fam}.m${mask}`;
-  const h = tileHash(x, y);
-  const chain: Chain =
-    mode === "up"
-      ? [`tile.${fam}.full.m${mask}`, id]
-      : (mask === 5 || mask === 10) && h % 4 < 2
-        ? [`${id}.v${1 + (h % 2)}`, id]
-        : [id];
+  const chain: Chain = mode === "up" ? [`tile.${fam}.full.m${mask}`, id] : [id];
   const out: Piece[] = [{ chain, order: 0 }];
   if (hull) {
     if (!(mask & 4) && spaceS)
