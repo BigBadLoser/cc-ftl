@@ -66,7 +66,17 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   When a core is destroyed, unpowered or hacked, its robots go **inert**. To capture an AI ship, crewless or
   robot-crewed, take its cores down and hold the bridge (on AI ships, the cores count as the bridge). Crew with
   the hacking skill can hack a core; this is a job that takes time.
-- **Robot fabricators** keep building robots while their core is live, up to a cap.
+- **Hacking a core is a hold.** While the hacker stays at the core, its robots fight for the hacker's side. When the
+  hacker leaves or is interrupted, the robots go back to their own side, inert.
+- **Robots run on a battery** instead of sleeping. It drains faster while they work or fight. When the charge is
+  low, or a robot is badly damaged, it goes to its **robot bay**: one robot per bay, like an assigned bed. The bay
+  recharges it and slowly repairs it with parts or metal from storage. A crew mender is faster, and the robot holds
+  still while being mended.
+- **The player gets robots by assembling them in a robot bay.** You pick a robot type; the bay's materials (parts,
+  metal, electronics) are delivered and worked over time. The new robot calls that bay home.
+- **Security bots** use a heavy chassis: more hp, armour against crew damage, slower.
+- **Robot fabricators** stay the rogue AI's own spawner: no materials, just a live core and power, up to a cap.
+  Rogue ships and shipyards also have robot bays, where their robots recharge.
 - **Derelicts come in two kinds:**
   - Scrapper and other wrecks are abandoned and infested with hostile aliens.
   - AI-faction derelicts are rogue AI shipyards and factories (fabricators, cores, robots).

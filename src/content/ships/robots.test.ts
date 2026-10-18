@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AllegianceC, CoreLinkC, CrewC, DeadC, DownedC, DraftedC, EquipC, HackedC, HealthC, InertC, ModuleC, PathC, PositionC,
   PrisonerC, ShipC, StunC, WreckC, deserialize, isSubdued, migrate, newGame, serialize, shipEntityOf, storageCount, StorageC,
-  WeaponC, type ContentRegistry, type ModuleDef, type Sim, type SimEvent,
+  SAVE_VERSION, WeaponC, type ContentRegistry, type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { wantsToSurrender } from '../../sim/fight/surrender';
@@ -19,7 +19,7 @@ const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[]
 const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
-const robotsOn = (sim: Sim, gridId: number): number[] => crewOn(sim, gridId).filter((i) => sim.world.get(i, CrewC)!.species === 'species.robot');
+const robotsOn = (sim: Sim, gridId: number): number[] => crewOn(sim, gridId).filter((i) => sim.world.get(i, CrewC)!.species.startsWith('species.robot'));
 const modulesOf = (sim: Sim, gridId: number, def: string): number[] =>
   sim.world.query(ModuleC).filter((i) => sim.world.get(i, ModuleC)!.gridId === gridId && sim.world.get(i, ModuleC)!.def === def);
 const ship = (sim: Sim, gridId: number) => sim.world.get(shipEntityOf(sim, gridId), ShipC)!;
@@ -198,23 +198,34 @@ describe('AI control and capture', () => {
     for (const r of robotsOn(sim, 2)) expect(sim.world.has(r, InertC)).toBe(true);
   });
 
-  it('an engineer can hack the core (a job, not instant): its robots go inert', () => {
+  it('an engineer hacks the core (a job, not instant): its robots fight for the player while the hacker holds it, then go inert', () => {
     const sim = setup();
     const eng = crewOn(sim, 1).find((i) => roleOf(sim, i) === 'role.engineer')!;
     const c = sim.world.get(core(sim), ModuleC)!;
     teleport(sim, eng, 2, c.x + 3, c.y + 1);
-    for (const r of robotsOn(sim, 2)) sim.world.add(r, DraftedC, { target: null }); // keep the robots out of it
-    for (const r of robotsOn(sim, 2)) sim.world.add(r, StunC, { until: 1e9 });
+    const robots = robotsOn(sim, 2);
+    for (const r of robots) sim.world.add(r, StunC, { until: 1e9 }); // keep the robots out of the fight
     sim.enqueue({ type: 'crew.hack', id: eng, module: core(sim) });
     run(sim, 100);
     expect(sim.world.has(core(sim), HackedC)).toBe(false);
     const out = run(sim, 1000, () => sim.world.has(core(sim), HackedC));
-    expect(sim.world.get(core(sim), HackedC)!.by).toBe('player');
+    expect(sim.world.get(core(sim), HackedC)).toMatchObject({ by: 'player', hacker: eng });
     expect(of(out, 'core.hacked')).toHaveLength(1);
-    run(sim, 2);
-    for (const r of robotsOn(sim, 2)) expect(sim.world.has(r, InertC)).toBe(true);
+    const flip = run(sim, 2);
+    expect(of(flip, 'robot.flipped')).toHaveLength(robots.length);
+    for (const r of robots) {
+      expect(sim.world.get(r, AllegianceC)!.faction).toBe('player');
+      expect(sim.world.has(r, InertC)).toBe(false);
+    }
     sim.enqueue({ type: 'crew.hack', id: crewOn(sim, 1)[0]!, module: core(sim) });
-    expect(of(run(sim, 1), 'command.rejected')).toHaveLength(1);
+    expect(of(run(sim, 1), 'command.rejected')).toHaveLength(1); // held: nothing to hack
+    teleport(sim, eng, 2, 15, 5); // the hacker walks away: the hold breaks
+    run(sim, 2);
+    expect(sim.world.get(core(sim), HackedC)!.hacker).toBe(0);
+    for (const r of robots) {
+      expect(sim.world.get(r, AllegianceC)!.faction).toBe('rogue');
+      expect(sim.world.has(r, InertC)).toBe(true);
+    }
   });
 });
 
@@ -292,6 +303,6 @@ describe('determinism and saves', () => {
     const sim = setup();
     const data = JSON.parse(serialize(sim)) as Record<string, unknown>;
     data['version'] = 10;
-    expect(migrate(data)['version']).toBe(11);
+    expect(migrate(data)['version']).toBe(SAVE_VERSION);
   });
 });

@@ -49,3 +49,8 @@ export function freeze(pos: Position): void {
 export function crewOnGrid(sim: Sim, gridId: number): number[] {
   return sim.world.query(CrewC, PositionC).filter((id) => sim.world.get(id, PositionC)?.gridId === gridId);
 }
+
+/** Damage fraction a crew member's body ignores (SpeciesDef.armor, 0..1). */
+export function armorOf(sim: Sim, crew: number): number {
+  return Math.min(1, Math.max(0, speciesOf(sim, crew)?.armor ?? 0));
+}

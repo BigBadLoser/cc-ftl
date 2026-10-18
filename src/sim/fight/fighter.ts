@@ -12,6 +12,7 @@ import { AllegianceC, FighterC, type Fighter } from './components';
 import { fleePath } from './flee';
 import { sightLine, type Cover } from './los';
 import { isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
+import { armorOf } from '../robots/core';
 import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
@@ -55,7 +56,7 @@ function setMode(sim: Sim, id: number, f: Fighter, mode: Fighter['mode']): void 
     releaseBedClaim(sim, id);
     dropCarried(sim, id);
     const crew = sim.world.get(id, CrewC) as Crew;
-    if (crew.activity === 'sleeping') crew.activity = 'idle';
+    if (crew.activity === 'sleeping' || crew.activity === 'charging') crew.activity = 'idle';
   } else if (mode === 'idle' && !sim.world.get(id, DraftedC)?.target) clearPath(sim, id);
   f.mode = mode;
   if (mode === 'idle') {
@@ -189,8 +190,9 @@ function attack(
     return;
   }
   const health = sim.world.get(targetId, HealthC);
-  if (health) health.hp = Math.max(0, health.hp - weapon.def.damage); // vitals downs them next tick
-  sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage: weapon.def.damage, hp: health?.hp ?? 0, cover });
+  const damage = weapon.def.damage * (1 - armorOf(sim, targetId));
+  if (health) health.hp = Math.max(0, health.hp - damage); // vitals downs them next tick
+  sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage, hp: health?.hp ?? 0, cover });
   if (weapon.def.ion) stunCrew(sim, targetId);
 }
 

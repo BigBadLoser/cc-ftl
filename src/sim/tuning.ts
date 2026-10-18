@@ -201,3 +201,9 @@ export const MEND_PER_SEC = 4;
 export const SALVAGE_SEC = 4;
 /** Seconds to hack an AI core at hacking level 1 (each level above is SKILL_STEP faster). */
 export const HACK_SEC = 20;
+/** Stat multiplier on moveSpeed and workSpeed of a robot whose battery is empty. */
+export const EMPTY_CHARGE_MULT = 0.3;
+/** A robot heads for its bay to be repaired below this hp fraction (when the ship has repair items). */
+export const BAY_REPAIR_BELOW = 0.5;
+/** Hold: a hacker keeps a hacked core while within this many tiles (Chebyshev) of its footprint. */
+export const HACK_HOLD_RADIUS = 1;

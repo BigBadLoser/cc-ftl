@@ -5,6 +5,7 @@ import { evictStack, refundCost, structCostKey } from '../items/stacks';
 import { footprintTiles } from '../modules/footprint';
 import { ModuleC } from '../modules/components';
 import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/spawn';
+import { performAssemble } from '../robots/bay';
 import { performHack, performMend, performSalvage } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -20,7 +21,7 @@ export type WorkResult = 'done' | 'working' | 'wait';
 
 /** Do one tick of work on a job. `speed` is the crew member's resolved workSpeed. */
 export function performJob(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
-  if ((job.kind === 'build' || job.kind === 'module') && needsMaterials(job)) return 'wait';
+  if ((job.kind === 'build' || job.kind === 'module' || job.kind === 'assemble') && needsMaterials(job)) return 'wait';
   switch (job.kind) {
     case 'haul': return performHaul(sim, crew, job);
     case 'craft': return performCraft(sim, job, speed);
@@ -41,6 +42,7 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'mend': return performMend(sim, crew, job, speed);
     case 'salvage': return performSalvage(sim, job, speed);
     case 'hack': return performHack(sim, crew, job, speed);
+    case 'assemble': return performAssemble(sim, job, speed);
   }
 }
 

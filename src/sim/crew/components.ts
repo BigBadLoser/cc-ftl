@@ -47,8 +47,8 @@ export const WORK_CATEGORIES = [
 export type WorkCategory = (typeof WORK_CATEGORIES)[number];
 
 /** What a crew member is currently doing, shown in UI and used by render for animation. */
-/** 'inert': a robot shut down (no live AI core) or stunned. */
-export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead' | 'inert';
+/** 'inert': a robot shut down (no live AI core) or stunned. 'charging': a robot in its bay. */
+export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead' | 'inert' | 'charging';
 
 export interface Crew {
   name: string;
@@ -69,6 +69,8 @@ export const PrioritiesC = defineComponent<Priorities>('priorities');
 /** Needs on a 0..100 scale where 100 = fully satisfied. Only rest in M2. */
 export interface Needs {
   rest: number;
+  /** Battery 0..100 for species with SpeciesDef.charge (robots); absent otherwise. */
+  charge?: number;
 }
 export const NeedsC = defineComponent<Needs>('needs');
 
@@ -122,6 +124,8 @@ export interface Job {
   warnedAt?: number;
   /** For 'haul' jobs: what moves where. */
   haul?: HaulData;
+  /** For 'assemble' jobs: the robot role being built. */
+  assemble?: { role: string };
   /** For 'craft' jobs: the recipe being made. */
   craft?: { recipe: string };
 }
@@ -130,7 +134,9 @@ export const JobC = defineComponent<Job>('job');
 export type JobKind =
   | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'operate'
   /** mend: repair a damaged robot (`target`); salvage: strip a robot wreck (`target`); hack: take over an AI core (`target`). */
-  | 'mend' | 'salvage' | 'hack';
+  | 'mend' | 'salvage' | 'hack'
+  /** assemble: build a robot of `assemble.role` in the robot bay `target`. */
+  | 'assemble';
 
 /** Hit points of a crew member. At 0 they are downed (see DownedC). */
 export interface Health {

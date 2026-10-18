@@ -27,10 +27,12 @@ export function createCrew(
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...role.priorities });
   // Species without rest decay (robots) keep a full Needs record: the decision system reads it, nothing drains it.
-  sim.world.add(id, NeedsC, { rest: species.restDecay > 0 ? opts.rest ?? sim.rng.int(60, 100) : 100 });
+  sim.world.add(id, NeedsC, {
+    rest: species.restDecay > 0 ? opts.rest ?? sim.rng.int(60, 100) : 100, ...(species.charge ? { charge: 100 } : {}),
+  });
   const hp = species.maxHp ?? CREW_MAX_HP;
   sim.world.add(id, HealthC, { hp, max: hp });
   sim.world.add(id, AllegianceC, { faction: opts.faction });
-  if (species.coreLinked && opts.faction === 'rogue') sim.world.add(id, CoreLinkC, { gridId });
+  if (species.coreLinked && opts.faction === 'rogue') sim.world.add(id, CoreLinkC, { gridId, faction: 'rogue' });
   return id;
 }

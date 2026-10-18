@@ -11,7 +11,8 @@ import { dropCarried } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
 import { operateAffinity } from '../combat/operators';
-import { canTakeRobotJob } from '../robots/jobs';
+import { goToBay, wantsBay } from '../robots/bay';
+import { canTakeRobotJob, heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW } from '../tuning';
 
@@ -21,16 +22,30 @@ const SLEEP_BELOW = 20;
 const WANDER_CHANCE = 0.005;
 const WANDER_RADIUS = 3;
 
-/** Autonomous decisions for non-drafted crew: sleep, keep/repath a job, pick a job, or idle. */
+/** Autonomous decisions for non-drafted crew: hold for a mender, go recharge (robots), sleep, keep/repath a job, pick a job, or idle. */
 export function decideSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, PrioritiesC, PositionC, PathC, NeedsC)) {
     if (sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
     const crew = sim.world.get(id, CrewC) as Crew;
-    if (crew.activity === 'sleeping') continue;
+    if (crew.activity === 'sleeping' || crew.activity === 'charging') continue;
     const pos = sim.world.get(id, PositionC) as Position;
     const needs = sim.world.get(id, NeedsC) as { rest: number };
 
     const assignment = sim.world.get(id, AssignmentC);
+    // Robots: hold still for a mender; head to the robot bay when the battery is low or badly damaged.
+    if (heldForMend(sim, id) && !isCarrying(sim, id)) {
+      if (assignment) releaseAssignment(sim, id);
+      clearPath(sim, id);
+      continue;
+    }
+    if (wantsBay(sim, id) && !isCarrying(sim, id) && goToBay(sim, id, crew, pos)) {
+      if (assignment) {
+        releaseAssignment(sim, id); // also clears the path: plan the walk to the bay again
+        goToBay(sim, id, crew, pos);
+      }
+      dropCarried(sim, id);
+      continue;
+    }
     const operating = assignment && sim.world.get(assignment.jobId, JobC)?.kind === 'operate';
     if (needs.rest < (operating ? OPERATOR_EXHAUSTED_BELOW : SLEEP_BELOW) && !isCarrying(sim, id)) {
       if (assignment) releaseAssignment(sim, id);

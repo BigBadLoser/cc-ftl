@@ -9,6 +9,7 @@ import { IGNITE_INTENSITY, ION_STUN_RADIUS } from '../tuning';
 import { CombatC, IonC } from './components';
 import { damageStruct } from './hull';
 import { shipEntityOf } from './ships';
+import { armorOf } from '../robots/core';
 import { stunCrew } from '../robots/halt';
 
 /** Where and from what an impact happens. */
@@ -97,7 +98,7 @@ function crewDamage(sim: Sim, at: Impact, amount: number, radius: number): void 
     const o = origin(pos);
     if (Math.max(Math.abs(o.x - at.x), Math.abs(o.y - at.y)) > radius) continue;
     const health = sim.world.get(id, HealthC);
-    if (health) health.hp = Math.max(0, health.hp - amount);
+    if (health) health.hp = Math.max(0, health.hp - amount * (1 - armorOf(sim, id)));
   }
 }
 

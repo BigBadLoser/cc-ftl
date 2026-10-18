@@ -1,7 +1,7 @@
 import { ammoCount, consumeAmmo } from '../combat/ammo';
 import { shipOf } from '../combat/ships';
 import { skillOf } from '../combat/operators';
-import { AssignmentC, CarriedC, DeadC, DraftedC, HealthC, PositionC, type Job, type Position } from '../crew/components';
+import { AssignmentC, CarriedC, DeadC, DraftedC, HealthC, JobC, PositionC, type Job, type Position } from '../crew/components';
 import { origin } from '../crew/helpers';
 import type { WorkResult } from '../crew/jobWork';
 import { AllegianceC } from '../fight/components';
@@ -42,10 +42,11 @@ export function keepRobotJob(sim: Sim, jobId: number, job: Job): boolean | null 
     job.y = o.y;
     return true;
   }
+  if (job.kind === 'assemble') return (sim.world.get(target, ModuleC)?.hp ?? 0) > 0;
   if (job.kind === 'salvage') return sim.world.has(target, WreckC) && !sim.world.has(target, CarriedC);
   if (job.kind === 'hack') {
     const by = job.reservedBy;
-    const ok = sim.world.has(target, ModuleC) && !sim.world.has(target, HackedC) && by !== 0
+    const ok = sim.world.has(target, ModuleC) && !sim.world.get(target, HackedC)?.hacker && by !== 0
       && sim.world.get(by, AssignmentC)?.jobId === jobId && sim.world.get(by, DraftedC)?.target === null;
     return ok;
   }
@@ -65,6 +66,14 @@ export function robotJobs(sim: Sim, seen: Set<string>, add: (job: NewJob) => voi
     if (!pos || seen.has(`salvage:${id}`) || shipOf(sim, pos.gridId)?.faction !== 'player') continue;
     add({ category: 'hauling', kind: 'salvage', gridId: pos.gridId, x: pos.x, y: pos.y, target: id, work: SALVAGE_SEC * TICK_HZ });
   }
+}
+
+/** True while a crew mender has taken the mend job for this robot: it holds still so they can reach it. */
+export function heldForMend(sim: Sim, robot: number): boolean {
+  return sim.world.query(JobC).some((j) => {
+    const job = sim.world.get(j, JobC);
+    return job?.kind === 'mend' && job.target === robot && job.reservedBy !== 0;
+  });
 }
 
 /** May this crew member take this robot job? Mending needs the repair skill and a robot of their own side; hacks are only ever ordered. */
@@ -113,11 +122,11 @@ export function performSalvage(sim: Sim, job: Job, speed: number): WorkResult {
 export function performHack(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
   const core = job.target ?? 0;
   const m = sim.world.get(core, ModuleC);
-  if (!m || sim.world.has(core, HackedC)) return 'done';
+  if (!m || sim.world.get(core, HackedC)?.hacker) return 'done';
   job.progress = Math.min(job.work, job.progress + speed * (1 + SKILL_STEP * Math.max(0, skillOf(sim, crew, 'hacking') - 1)));
   if (job.progress < job.work) return 'working';
   const by = sim.world.get(crew, AllegianceC)?.faction ?? 'player';
-  sim.world.add(core, HackedC, { by, tick: sim.tick });
+  sim.world.add(core, HackedC, { by, tick: sim.tick, hacker: crew });
   sim.events.emit({ type: 'core.hacked', moduleId: core, gridId: m.gridId, by });
   return 'done';
 }

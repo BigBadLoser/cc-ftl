@@ -78,6 +78,13 @@ export type SimEvent =
   /** Robots: stunned by ion/EMP until `until`; shut down (no live AI core) or back online; wrecked at 0 hp; wreck salvaged. */
   | { type: 'robot.stunned'; crew: number; until: number }
   | { type: 'robot.inert'; crew: number }
+  /** A held hack lent the robot to `faction` (or it went back to its own side). */
+  | { type: 'robot.flipped'; crew: number; faction: Faction }
+  /** A robot bay finished assembling a robot (its home bay). */
+  | { type: 'robot.assembled'; crew: number; bay: number; gridId: number }
+  /** A robot settled into its bay to recharge / left it full. */
+  | { type: 'robot.charging'; crew: number; bay: number }
+  | { type: 'robot.charged'; crew: number; bay: number }
   | { type: 'robot.active'; crew: number }
   | { type: 'robot.wrecked'; crew: number }
   | { type: 'robot.salvaged'; crew: number; gridId: number; x: number; y: number }

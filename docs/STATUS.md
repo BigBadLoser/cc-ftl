@@ -83,7 +83,17 @@ are already merged or superseded. Don't build on them.
     the hacker yet (follow-up).
   - `module.robotFabricator` builds robots while powered and run by a live core, up to its cap.
     `ship.rogueShipyard` is the debug test grid (Debug panel: spawn shipyard, spawn bots on the selected tile).
-  - No robot art yet: robots render with the human layers as a placeholder. Save v11.
+  - **v2:**
+    - A held hack lends the core's robots to the hacker's side (`HackedC.hacker`, `robot.flipped`). When the
+      hacker leaves they revert, inert.
+    - The robot holds still for a mender.
+    - `species.robot_heavy` (200 hp, armour 0.3, slower) for security bots.
+    - Battery need (`SpeciesDef.charge`, `Needs.charge`). Robots go to `module.robotBay` (1x2, placeholder bed
+      sprite) to recharge and get repaired.
+    - `module.assembleRobot` / `module.cancelAssembly` assemble a player robot from `RoleDef.assemble`. The bay
+      becomes its home (`Module.reservedBy`).
+    - The fabricator is kept separate from the bay: it is the AI spawner. The shipyard has 3 bays.
+  - No robot art yet: robots render with the human layers as a placeholder. Save v12.
   - Derelicts: scrapper and other wrecks will be alien-infested; AI-faction derelicts are rogue AI shipyards.
     Combat drones (a launched weapon class) come later: the hooks are the `emp` effect and the AI core's tier.
 

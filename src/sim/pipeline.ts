@@ -42,6 +42,7 @@ import { turretSystem } from './systems/turrets';
 import { vitalsSystem } from './systems/vitals';
 import { robotsSystem } from './systems/robots';
 import { fabricatorSystem } from './systems/fabricators';
+import { robotBaySystem } from './systems/robotBays';
 import { workSystem } from './systems/work';
 import { vehicleSystem } from './systems/vehicles';
 import { boardingAiSystem } from './systems/boardingAi';
@@ -65,6 +66,8 @@ export const pipeline: readonly System[] = [
   robotsSystem,
   // Fabricators after robot control (same live-core rule); new robots act from the next systems on.
   fabricatorSystem,
+  // Robot bays charge and repair the robots settled in their cradles (power is fresh; needs drains later this tick).
+  robotBaySystem,
   // Module effects (life support o2/co2, reactor heat) write into the gas and temperature fields.
   modulesSystem,
   // Doors before atmosphere: crew-opened doors let gas through this very tick.

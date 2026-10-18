@@ -14,8 +14,10 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { HACK_SEC } from '../tuning';
 import { HackedC } from './components';
+import { assemblyAt, bayFree, isBay } from './bay';
+import { destroyJob } from '../items/stacks';
 
-type RobotCommand = 'crew.hack' | 'debug.spawnCrew';
+type RobotCommand = 'crew.hack' | 'debug.spawnCrew' | 'module.assembleRobot' | 'module.cancelAssembly';
 type Handler<T extends RobotCommand> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 function reject(sim: Sim, command: string, reason: string): void {
@@ -31,7 +33,7 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     const m = sim.world.get(cmd.module, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (!m || !def?.aiCore || m.hp <= 0) return reject(sim, cmd.type, 'badTarget');
-    if (sim.world.has(cmd.module, HackedC)) return reject(sim, cmd.type, 'alreadyHacked');
+    if (sim.world.get(cmd.module, HackedC)?.hacker) return reject(sim, cmd.type, 'alreadyHacked');
     if (!factionsHostile(sim.world.get(cmd.id, AllegianceC)?.faction, shipOf(sim, m.gridId)?.faction)) return reject(sim, cmd.type, 'notHostile');
     if (pos.gridId !== m.gridId) return reject(sim, cmd.type, 'notAboard');
     let plan: { x: number; y: number; steps: { x: number; y: number }[] } | null = null;
@@ -57,6 +59,24 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     });
     sim.world.add(cmd.id, AssignmentC, { jobId: job });
     (sim.world.get(cmd.id, PathC) as Path).steps = plan.steps;
+  },
+  'module.assembleRobot': (sim, cmd) => {
+    const m = sim.world.get(cmd.moduleId, ModuleC);
+    if (!m || !isBay(sim, cmd.moduleId)) return reject(sim, cmd.type, 'notBay');
+    const plan = sim.content.roles[cmd.role]?.assemble;
+    if (!plan) return reject(sim, cmd.type, 'badRole');
+    if (!bayFree(sim, cmd.moduleId)) return reject(sim, cmd.type, 'bayTaken');
+    const job = sim.world.createEntity();
+    sim.world.add(job, JobC, {
+      category: 'crafting', kind: 'assemble', gridId: m.gridId, x: m.x, y: m.y, struct: 0, work: plan.work, progress: 0,
+      reservedBy: 0, target: cmd.moduleId, assemble: { role: cmd.role },
+      ...(plan.cost.length > 0 ? { needs: plan.cost.map((q) => ({ ...q })), delivered: [] } : {}),
+    });
+  },
+  'module.cancelAssembly': (sim, cmd) => {
+    const job = assemblyAt(sim, cmd.moduleId);
+    if (!job) return reject(sim, cmd.type, 'noAssembly');
+    destroyJob(sim, job); // delivered materials fall to the floor
   },
   'debug.spawnCrew': (sim, cmd) => {
     const grid = sim.grids.get(cmd.gridId);

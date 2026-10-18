@@ -165,8 +165,10 @@ export interface RoleDef {
   fighter?: true;
   /** Item ids (best first) the crew member fetches from storage on their own when unarmed. */
   loadout?: string[];
-  /** Species of crew spawned in this role (default 'species.human'). Robot variants are roles of 'species.robot'. */
+  /** Species of crew spawned in this role (default 'species.human'). Robot variants are roles of robot species. */
   species?: string;
+  /** A robot bay can assemble this role (module.assembleRobot): materials delivered, then `work` ticks at workSpeed 1. */
+  assemble?: { cost: readonly ItemQty[]; work: number };
   /** Hp fraction (0..1) under which this role surrenders when outnumbered. Default: SURRENDER_HP_FRAC for non-player crew, never for player crew. */
   surrenderBelow?: number;
 }
@@ -202,6 +204,14 @@ export interface SpeciesDef {
   wreck?: readonly ItemQty[];
   /** On a rogue ship it is run by that ship's AI core and goes inert while no core is live (CoreLinkC). */
   coreLinked?: true;
+  /** Fraction (0..1) of incoming hand-weapon and ship-weapon crew damage the body shrugs off. Default 0. */
+  armor?: number;
+  /**
+   * Runs on a battery instead of sleeping (Needs.charge, 0..100): drains `drainPerSec` per second, `busyMult` times
+   * faster while working or fighting. Under `lowBelow` (or when badly damaged) it goes to its robot bay to recharge;
+   * at 0 it crawls (EMPTY_CHARGE_MULT).
+   */
+  charge?: { drainPerSec: number; busyMult: number; lowBelow: number };
 }
 
 /**
@@ -292,6 +302,12 @@ export interface ModuleDef {
    * ship's faction every `intervalSec` (cycling through `roles`) next to itself, while fewer than `cap` it made live.
    */
   robotFabricator?: { roles: readonly string[]; intervalSec: number; cap: number };
+  /**
+   * Robot bay: a charging cradle on the module's anchor tile, home to one robot (Module.reservedBy, like a bed). While
+   * powered it recharges the robot in it by `chargePerSec` and repairs `repairPerSec` hp, using the species' repair
+   * items from the ship's storage. It also assembles robots (module.assembleRobot).
+   */
+  robotBay?: { chargePerSec: number; repairPerSec: number };
   /** AI core: operates the ship's point defence (and, later, other automation) at this tier. */
   aiCore?: { tier: number };
   /** Render asset id of the special roof tile drawn above this module on roofed (enemy) ships, e.g. 'roof.weapon'. Render-only. */

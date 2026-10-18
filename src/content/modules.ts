@@ -196,6 +196,13 @@ export const modules = {
     robotFabricator: { roles: ['role.robot_worker', 'role.robot_security', 'role.robot_repair'], intervalSec: 30, cap: 4 },
     cost: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 12 }],
   },
+  // Robot bay 1x2: a charging cradle on the anchor tile (the robot stands in it, like a bed), the charger behind it.
+  // Home to one robot: recharges and repairs it, and assembles new ones. Placeholder art: the bed sprite.
+  'module.robotBay': {
+    name: 'Robot bay', asset: 'module.bed', footprint: [1, 2], solid: false, power: -3, priority: 3,
+    flammability: 0.2, maxHp: 90, buildWork: 200, robotBay: { chargePerSec: 1.5, repairPerSec: 1 },
+    cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 8 }],
+  },
   'module.aiCore': {
     name: 'AI core', asset: 'module.ai_core', footprint: [2, 2], solid: true, power: -4,
     priority: 3, flammability: 0.2, maxHp: 80, buildWork: 240, aiCore: { tier: 1 }, roofAsset: 'roof.ai', deploySec: 2,
