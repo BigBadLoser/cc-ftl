@@ -85,15 +85,18 @@ describe('ship generator', () => {
       expect(d, 'arranger debug data').toBeDefined();
       expect(d.joins.length).toBeGreaterThanOrEqual(2);
       // A major assembly joined to another north or south of it (not a dock or a strut): side by side, not a chain.
+      // Long decks reach far fore and aft of their host: stacked means the spans overlap lengthways, not beside.
       const major = (k: string): boolean => k !== 'dock' && k !== 'hall';
       if (d.joins.some((j) => {
         const a = d.assemblies[j.a]!;
         const b = d.assemblies[j.b]!;
-        return major(a.kind) && major(b.kind) && Math.abs(b.y + b.h / 2 - (a.y + a.h / 2)) > Math.abs(b.x + b.w / 2 - (a.x + a.w / 2));
+        const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+        const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+        return major(a.kind) && major(b.kind) && overlapX > 4 && overlapY < Math.min(a.h, b.h) / 2;
       })) sideBySide++;
     }
     expect([...families].sort()).toEqual(['carrier', 'corvette', 'cruiser', 'frigate']);
-    expect(sideBySide).toBeGreaterThan(30);
+    expect(sideBySide).toBeGreaterThan(25);
     const deep = Array.from({ length: 12 }, (_, i) => gen('faction.navy', i + 1, 9));
     expect(meanPairwise(deep.map((g) => silhouetteMask(g.template.rows)), silhouetteDistance)).toBeGreaterThan(0.25);
     expect(meanPairwise(deep.map((g) => adjacencySignature(g.debug!)), adjacencyDistance)).toBeGreaterThan(0.45);

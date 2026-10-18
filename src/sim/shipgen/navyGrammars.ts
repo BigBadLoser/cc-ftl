@@ -1,8 +1,12 @@
 import { Builder } from './builder';
-import { bandBlock, noseBlock } from './navyBlocks';
+import { blockFrom, localBuilder } from './blocks';
+import { noseBlock } from './navyBlocks';
 import { bands, chain, deckPair, evenDepth, jobs, mirrorBlock, no, order, propulsion, section, spanOf, twinDrives, type Ctx, type SectionPlan } from './navyKit';
 import { pickNose } from './topoNavy';
 import type { FactionDef, NavyGrammar } from './types';
+import type { RoomSpec } from './plan';
+import { pairUp } from './topoNavy';
+import { runLen } from './topoParts';
 
 /**
  * Navy hull grammars on the 2D arranger. Major assemblies overlap lengthways or run in parallel layers (decks) rather
@@ -16,15 +20,30 @@ const nose = (c: Ctx, f: FactionDef): number | null => {
 
 const pick = <T>(c: Ctx, xs: readonly T[]): T => c.rng.pick(xs);
 
-/** Rooms per side in a spine section that carries decks: fewer rooms make a longer, slimmer spine for them. */
-const slim = (c: Ctx): number => c.rng.int(1, Math.max(1, c.fam.sectionRooms - 1));
+/**
+ * Rooms per side in a spine section: few, so a ship with more rooms grows longer before it grows broader (warships
+ * are long). Decks then run the length of the spine.
+ */
+/**
+ * Move crew rooms from the decks into the spine until the decks (per side) are no longer than the spine: decks run
+ * along the hull, never past its stern, and a ship with more rooms grows longer rather than broader.
+ */
+function balance(spine: RoomSpec[], deck: RoomSpec[], per: number): void {
+  const half = (xs: RoomSpec[]): number => runLen(pairUp(xs)[0]);
+  const spineLen = (): number => half(spine) + 2 * Math.ceil(pairUp(spine)[0].length / Math.max(1, per));
+  for (let i = deck.length - 1; i >= 0 && half(deck) > spineLen(); i--) {
+    if ((deck[i] as RoomSpec).role !== 'weapons') spine.push(...deck.splice(i, 1));
+  }
+}
+
+const slim = (c: Ctx): number => (c.rng.chance(0.7) ? 1 : Math.min(2, c.fam.sectionRooms));
 
 /** Corvette: a short chain, everything in band sections. */
 function linear(c: Ctx, f: FactionDef): boolean {
   const root = nose(c, f);
   if (root === null) return no(c, 'nose');
   const j = jobs(c.plan);
-  const secs = [...bands('battery', j.guns, 2), ...bands('core', [...j.core, ...j.crew, ...j.stores], c.fam.sectionRooms)];
+  const secs = [...bands('battery', j.guns, 2), ...bands('core', [...j.core, ...j.crew, ...j.stores], slim(c))];
   const ids = chain(c, root, order(c.rng, secs));
   return !!ids && propulsion(c, ids[ids.length - 1] as number, pick(c, c.fam.propulsion));
 }
@@ -35,8 +54,11 @@ function deckPairGrammar(c: Ctx, f: FactionDef): boolean {
   if (root === null) return no(c, 'nose');
   const j = jobs(c.plan);
   const guns = bands('battery', j.guns, 2);
-  const secs = [...guns, ...bands('core', [...j.core, ...j.stores], slim(c))];
-  evenDepth(c, ['core'], 1);
+  const per = slim(c);
+  const spineRooms = [...j.core, ...j.stores];
+  balance(spineRooms, j.crew, per);
+  const secs = [...guns, ...bands('core', spineRooms, per)];
+  evenDepth(c, ['core']);
   const ids = chain(c, root, secs, secs.length - 1);
   if (!ids) return false;
   const host = ids[ids.length - 1] as number;
@@ -51,15 +73,25 @@ function spineDecks(c: Ctx, f: FactionDef): boolean {
   const root = nose(c, f);
   if (root === null) return no(c, 'nose');
   const j = jobs(c.plan);
-  const spine = order(c.rng, bands('core', [...j.core, ...j.stores], slim(c)));
-  evenDepth(c, ['core', 'cargo'], 1);
+  const per = slim(c);
+  // Mostly one layer: guns and airlocks outboard in the decks (their faces need open space), everything else in a
+  // long spine; sometimes crew decks inside gun decks.
+  const single = c.rng.chance(0.85);
+  const docks = j.crew.filter((r) => r.role === 'dock');
+  const spineRooms = [...j.core, ...j.stores, ...(single ? j.crew.filter((r) => r.role !== 'dock') : [])];
+  const deckRooms = single ? [...j.guns, ...docks] : j.crew;
+  balance(spineRooms, deckRooms, per);
+  if (!single) j.crew = deckRooms;
+  const spine = order(c.rng, bands('core', spineRooms, per));
+  evenDepth(c, ['core', 'cargo']);
   const ids = chain(c, root, spine, 0);
   if (!ids) return false;
   if (!propulsion(c, ids[ids.length - 1] as number, pick(c, c.fam.propulsion.filter((p) => p !== 'wingPods')))) return false;
   // Long shallow decks the length of the spine, behind the nose: guns outboard, crew between them; one deck per side,
   // or crew and guns as two layers, the outer one shorter (stepped in at the stern).
   const all = spanOf(c, ids);
-  if (c.rng.chance(0.5)) return !!deckPair(c, ids[0] as number, ids[0] as number, 'gun', [...j.guns, ...j.crew], 'start', all) || no(c, 'decks');
+  // One layer of decks mostly: decks hug the hull lengthways rather than add beam.
+  if (single) return !!deckPair(c, ids[0] as number, ids[0] as number, 'gun', deckRooms, 'start', all) || no(c, 'decks');
   const inner = deckPair(c, ids[0] as number, ids[0] as number, 'crew', j.crew, 'start', all);
   if (!inner) return no(c, 'crew decks');
   const outer = spanOf(c, ids.slice(0, Math.max(1, ids.length - 1)));
@@ -120,18 +152,28 @@ function layered(c: Ctx, f: FactionDef): boolean {
   const root = nose(c, f);
   if (root === null) return no(c, 'nose');
   const j = jobs(c.plan);
-  const spine = order(c.rng, bands('core', [...j.core, ...j.stores], slim(c)));
-  evenDepth(c, ['core', 'cargo'], 1);
-  const ids = chain(c, root, spine, 0);
+  // A battleship: a long spine (one room a side per section, guns inline at the bow), then two long layers.
+  // Half the crew lives in the spine (it grows long), half in the inner layer; the outer layer carries the guns and
+  // airlocks (their faces need open space).
+  const bow = j.guns.splice(0, Math.floor(j.guns.length / 3));
+  const docks = j.crew.filter((r) => r.role === 'dock');
+  const crew = j.crew.filter((r) => r.role !== 'dock');
+  const innerCrew = crew.filter((_, i) => i % 2 === 0);
+  const spine = [...bands('battery', bow, 1), ...order(c.rng, bands('core', [...j.core, ...j.stores, ...crew.filter((_, i) => i % 2 === 1)], 1))];
+  evenDepth(c, ['core', 'cargo', 'battery']);
+  const ids = chain(c, root, spine, spine.length - 1);
   if (!ids) return false;
   if (!propulsion(c, ids[ids.length - 1] as number, pick(c, c.fam.propulsion))) return false;
+  const deckIds = ids.filter((_, i) => spine[i]?.kind !== 'battery');
+  const host = ids[ids.length - 1] as number;
   // Two layers the length of the spine: crew decks on it, gun decks on them, each layer stepped in at bow and
   // stern (a broad stepped hull, not a cross).
-  const all = spanOf(c, ids);
-  const inner = deckPair(c, ids[0] as number, ids[0] as number, 'crew', j.crew, 'start', all);
-  if (!inner) return no(c, 'crew decks');
-  const step = Math.max(2, Math.floor(all.span / 6));
-  return !!deckPair(c, inner[0], inner[1], 'gun', j.guns, 'start', { span: all.span - 2 * step, xMin: all.xMin + step }) || no(c, 'gun decks');
+  const all = spanOf(c, deckIds);
+  const inner = deckPair(c, host, host, 'crew', innerCrew, 'start', all);
+  if (!inner) return no(c, 'inner decks');
+  const outer = [...docks, ...j.guns];
+  const step = Math.max(2, Math.floor(all.span / 8));
+  return !!deckPair(c, inner[0], inner[1], 'gun', outer, 'start', { span: all.span - 2 * step, xMin: all.xMin + step }) || no(c, 'gun decks');
 }
 
 /** Carrier: a hangar block with hull decks along it (real volume), an offset island, nacelles aft. */
@@ -149,12 +191,15 @@ function carrierIsland(c: Ctx): boolean {
   if (!decks) return no(c, 'hull decks');
   // Drives at the aft ends of both hull decks, pushed outboard: the hangar well behind the hangar stays open aft.
   if (!twinDrives(c, decks, pick(c, c.fam.propulsion), 'start')) return false;
-  // The island: the command room on a short tower over one deck, off-centre.
-  const island = bandBlock(c.rng, 'command', [c.plan.command], [], { depth: c.plan.command.h, hatchS: true });
+  // The island: the command room grafted straight onto one hull deck's outer wall, off-centre (no stalk).
+  const ib = localBuilder(c.rng);
+  const cmd = c.plan.command;
+  ib.place({ x: 0, y: 0, w: cmd.w + 2, h: cmd.h + 2 }, 'bridge', cmd);
+  const island = blockFrom(ib, 'command', 'island', 'human', [{ id: 's', side: 's', x: 1, y: cmd.h + 1, len: cmd.w, access: 'human' }]);
   const side = c.rng.chance(0.5) ? 'n' : 's';
-  const isl = side === 'n' ? island : island && mirrorBlock(island);
+  const isl = side === 'n' ? island : mirrorBlock(island);
   const host = side === 'n' ? decks[0] : decks[1];
-  if (!isl || c.A.attach(host, isl, { side, align: pick(c, ['start', 'mid', 'any'] as const), doors: 1 }) === null) return no(c, 'island');
+  if (c.A.attach(host, isl, { side, align: pick(c, ['mid', 'end', 'any'] as const), doors: 1 }) === null) return no(c, 'island');
   c.parts.push(`island ${side}`);
   return true;
 }

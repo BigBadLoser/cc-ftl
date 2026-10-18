@@ -99,7 +99,8 @@ function generated(c: Ctx, src: FactionDef['salvage'], who: 'navy' | 'drone', su
   const fams = (s?.faction.hullFamilies ?? []).filter((h) => s?.families.includes(h.id));
   if (!s || fams.length === 0) return null;
   const fam = pickWeighted(c.rng, fams.map((h) => ({ value: h, weight: 1 })));
-  const r = arrangeHull(c.rng, s.faction, fam, sub, c.defs);
+  // One candidate: a donor is cut and welded anyway, its proportions do not matter.
+  const r = arrangeHull(c.rng, s.faction, fam, sub, c.defs, 1);
   return typeof r === 'string' ? null : { b: r.b, A: r.A };
 }
 

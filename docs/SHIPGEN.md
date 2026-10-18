@@ -133,13 +133,27 @@ distance over join tokens `kindA>dir>kindB` and assembly-degree tokens. It is re
 - **Second carrier: `flightDeck`.** Nose, a battery, then hangars side by side in pairs on the spine, core and
   stores aft, and long hull decks along the aft sections.
 
+### Navy v10: long warships
+
+- **Proportion targets.** Soft scoring targets are now corvette and frigate 3 to 4, cruiser 2.5 to 3.5, carrier
+  2.8 to 3.6. `arrangeHull` scores 6 candidates.
+- **Spines grow first.** Spine sections carry one room a side 70% of the time (else two), so a ship with more
+  rooms gets longer before it gets broader. `balance` moves crew rooms from the decks into the spine until the decks
+  are no longer than the spine.
+- **One deck layer by default.** Frigate decks carry the guns and airlocks, whose faces need open space; the crew
+  sits in the spine. Crew decks inside gun decks happen 15% of the time.
+- **Layered cruisers are battleships.** A long one-room-a-side spine (bow guns inline, half the crew), crew decks
+  the whole spine, and gun decks stepped in by an eighth of its length at each end. Weights: twin-hull 3,
+  layered 1.5, citadel 0.5 (the citadel layout still reads squat).
+- **Island carrier.** The command room is grafted straight onto a hull deck's outer wall, with no stalk.
+- Donor sections cut from generated navy hulls (scrappers) use one candidate.
+
 ### Navy follow-ups
 
-- Layered cruisers are broad (aspect about 1.1); a longer spine would read more like a battleship.
-- Island carriers keep a long stalk to the island; a flush island would read better.
-- Within-grammar variety is still low (adjacency within grammar 0.19 to 0.27). Grammars give the families their
-  look; inside a grammar only depths, slimness and propulsion vary.
-- About 20% of first attempts at depth 4 fail "weapons do not fit" (the v5 rate was about 17%); reseeding covers it.
+- Frigates average about 2.0 to 2.6 and carriers about 2.3, still short of their targets. Gun decks are as deep
+  as their mounts and add beam.
+- Citadel cruisers are still squat (about 1.8), so their weight is low; a longer citadel would help.
+- Within-grammar variety is low at depth 9.
 
 ## Drones (built, v6): machinery first, same arranger
 
