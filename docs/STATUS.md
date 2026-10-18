@@ -66,6 +66,11 @@ The user did not approve the first m4-assets sheets: modules were far too small.
 - **Weapons art APPROVED for now** (`opus-weapons` d629ae2: S burst laser, H mass driver, R point
   defence, bays with slim full-height cores, hazard-seam hatches). Remaining nits: rear glow ring
   reads like a muzzle at some aims; hazard seam reads dashed. Other 3 weapons not designed yet.
+- **Roof v8 direction (user-approved):** combine C palette + patch plates, B raised belts with
+  bevelled steps and trenches (no blisters), and a LIVERY SYSTEM: several deterministic schemes per
+  ship/faction (spine stripes, pinstripes, saddle bands, bow chevrons, registry block, emblem),
+  each with its own colour pair, ideally as tinted motif masks. No hazard-tape-like edge bars.
+  Turret/dish/mast props stay on the roof.
 - **Roof:** Opus v5 (`roof-art` a25cf44) is the best so far (4x4 modules, girders, bevelled
   plates, 136 sprites); user says it "could use work" — v6 in progress.
 - **Walls pass 5:** thinner walls (~0.22–0.26), hull as layered plate courses (not a
