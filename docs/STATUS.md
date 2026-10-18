@@ -93,6 +93,11 @@ in 4 min unmanned). User approved: repair rate 12 â†’ 3/s, starter ion cannon â†
   - Visual work: send the user screenshots (default + zoomed) and get approval before merging to
     main.
   - Assets: the user reviews **both** the Blender renders and the pixel sprites before integration.
+  - **Preview first:** for art feedback, agents stop at a quick preview (one rotation, low samples
+    + denoise, one test scene at 1x/3x, a Blender render) and report. No full sprite builds,
+    manifests, extra rotations or wiring until the user approves the look.
+  - The cloud container has 4 cores: run at most ~3 Blender-rendering agents at once, one Blender
+    process each.
 - **Art:**
   - Pixel art pre-rendered from Blender. Models use clean shapes and smooth shading quantised to
     flat bands, with no faceting and no noise.
