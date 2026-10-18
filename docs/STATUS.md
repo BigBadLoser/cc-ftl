@@ -44,8 +44,12 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   (`overlap.py`) on every new model.
 - **Consoles:** the user likes the chairs and screens of the `m4-art-consoles` prototype.
 - **No module floor slabs:** modules sit directly on the ship floor (no plinth/deck plate).
-- **Taller walls:** full-height walls (and the roof plane) go up by about 1 tile, `walls.HF`
-  1.2 → ~2.2, so the roof clears crew heads. Cutaway height unchanged. Branch `walls-tall`.
+- **Walls redesign** (branch `walls-tall`, not merged): height alone was not the problem (tried 2.2
+  and 3.0; settled ~2.4, crew are 1.5). Space Haven-like profile: base covers the whole tile, thin
+  top, ONE slope that always faces the camera, vertical back. Hull is a separate chunky
+  colour-blocked armour band. Interior walls get their own colour and subtle seams (lockers and
+  lights are placeable modules, not wall art). Doors are deep recessed portals in a strong colour,
+  ~1.5x crew height; a lower cutaway variant exists.
 - **Engine:** the v7 bell is approved. Add real rocket plumbing (torus manifold, turbopump,
   ducts, tubes down the bell); no valve wheels on posts.
 - **Engine and weapons art handed to Sol** (user's choice, 2026-10-18) using the prompts in this
