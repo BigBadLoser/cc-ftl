@@ -85,6 +85,9 @@ The user did not approve the first m4-assets sheets: modules were far too small.
 - **Sitting crew and roof** handed to Opus (high effort) after repeated misses.
 - **Point defence** is its own module (2x2 bay + R Revolver turret), OPERATED by the AI core
   (needs a powered AI core with its mast up), the way the weapons console operates weapons.
+- **Three wall view levels (user-confirmed):** walls up; cutaway (front walls/hull cut or ghosted,
+  rear hull full height); shortest (the whole hull is a ghost rim, as in the Space Haven whole-ship
+  cutaway reference).
 - **Wall view rules (user):** the skirt is identical in both modes (only the wall above it is cut);
   in cutaway the REAR (far) hull stays full height; cut hull sections get a black top cap like cut
   walls; doors are never cut; the FRONT hull extends below the floor and curves away underneath
