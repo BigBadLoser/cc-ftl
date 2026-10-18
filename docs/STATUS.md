@@ -37,15 +37,19 @@ are already merged or superseded. Don't build on them.
 ## M4 art rework (session 2026-10-17, supersedes the m4-assets sheets)
 
 The user did not approve the first m4-assets sheets: modules were far too small. Agreed direction:
-- **Style:** Space Haven-like mechanical detail (pipes, conduits, ribs, panels, greebles) built from
-  geometry in Blender. Every detail >= 2 px at game scale; flat bands, no texture noise. Helpers in
-  `tools/blender/sprites/detail.py` and `greeble.py` (m4-assets).
+- **Style:** ENGINES ONLY get the Space Haven-like industrial detail (brass, pipes, bolts, valves,
+  greebles; helpers in `tools/blender/sprites/detail.py` and `greeble.py`). Consoles and weapons
+  stay clean and sleek (smooth panels, seams, colour from screens/lights/emissive strips). Every
+  detail >= 2 px at game scale; flat bands, no texture noise. Run the overlap check
+  (`overlap.py`) on every new model.
+- **Consoles:** the user likes the chairs and screens of the `m4-art-consoles` prototype.
 - **Sizes:** engine 4x5 (4 along the hull); helm 3x2, shield console 3x2, weapons console 2x2, each
   with its chair as a walkable access tile inside the footprint (needs per-tile solidity in the sim);
   light weapons 2x2, heavy 3x3; shield gen 2x3, small shield gen 2x2, AI core 2x2. Ships get bigger
   (starter ~30x20, raider ~24x16 with fewer modules).
 - **Engines replace the hull wall** where placed and carry their own armoured bulkhead (full and
-  cutaway variants, like walls). Bells protrude into space. Engines may block the view. A destroyed
+  is always full height: it never collapses in the cutaway view). One big bell per engine
+  (~2.6 tiles), in the cleaner v5 bell style (few rings). Bells protrude into space. Engines may block the view. A destroyed
   engine just stops working (no breach).
 - **Weapons:** a floor module (the bay: breech, feed, loader) anywhere under the roof, plus a turret
   on the ROOF above it that aims (8 pre-rendered directions) and fires. On the player's own ship
