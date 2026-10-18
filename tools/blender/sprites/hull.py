@@ -1,14 +1,15 @@
 """Hull ghosts: the low hull silhouette that never hides the interior (after Space Haven's shortest cutaway).
 
-A ghost is a full-tile, near-black rim just above the deck (walls.ZG) with a fine lit, toothed line on its outer edge and
-a thin line on its inner edge. On the camera-facing outer sides (o bit 1: space at +y, bit 2: at +x) the ship's
-below-deck belly hangs from the rim: dark blue-teal panelled armour with rails and vents (muted ochre bands on the
-variant), straight down for DROP - CURVE and then curving back under the ship. The outer corner (o = 3) is cut at 45
+A ghost's rim is see-through: only semi-transparent edge lines (a 'ghost' sprite) over a full-tile footprint at walls.ZG,
+the crest on its outer edge, its inner edges and a seam across its flat top at every tile. On the camera-facing outer
+sides (o bit 1: space at +y, bit 2: at +x) the solid belly rises to the crest, so the crest sits directly on it (one
+dark band, as in 13.webp): dark blue-teal panelled armour with rails and vents (muted ochre bands on the variant),
+straight down to DROP - CURVE below the deck and then curving back under the ship. The outer corner (o = 3) is cut at 45
 degrees across the tile and that face looks straight at the camera; the side corners (SW: o 1 without a W neighbour,
 NE: o 2 without an N neighbour) are cut at 45 degrees in plan; o = 4 is the concave corner of a step.
 
 Near-hull ghosts (o > 0) are drawn in every view level. In the shortest level the far hull is a ghost too (o = 0: the
-rim alone, with a small lit face toward the room)."""
+lines of its sloped skirt)."""
 import math
 
 from . import core
@@ -22,8 +23,8 @@ CH = 0.07                  # that chamfer's size
 STEP_DEPTH = (0.0, 0.12, 0.2, 0.05)   # extra depth per quarter tile: a broken lower silhouette
 
 
-RUNG = 0.22               # rear ghost: its slope toward the room (13.webp: a 19-22 px band at 55 deg)
-ZGR = 0.31                # ... and its crest height
+ZGR = ZG                  # rear ghost crest height: the same as the front rim, so the two meet flush at corners
+RUNG = ZGR / math.tan(math.radians(55))   # its slope toward the room at 55 deg (13.webp: an ~19 px band)
 
 
 class Out(Spec):
@@ -112,8 +113,11 @@ class Out(Spec):
         return "y" if abs(gx) < e else ("x" if abs(gy) < e else "h")
 
     def _line(self, i, j):
-        """Ghost edge lines: 2 = crest (flat meets slope), 1 = other creases (toe, mitres, the rear slope's seam at every
-        tile) and the front rim's unconnected edges, 0 = no line. One-sided, so every edge is a single 1 px line. The
+        """Ghost edge lines: 2 = crest (flat meets slope), 1 = the rear slope's toe and its fall line at every tile seam
+        and the front rim's seam across its flat top from the inner edge to the crest (each tile draws only its left seam),
+        and the front rim's unconnected edges, 0 = no line. Runs stop one cell short of a connected +x /
+        +y neighbour, so two sprites never both draw the shared boundary pixel (that overlap made bright dots).
+        Slope-to-slope mitres are not lined: at a concave corner the two adjacent seams already meet there. One-sided, so every edge is a single 1 px line. The
         rear ghost's flat part behind its crest stays unlined (13.webp shows only the sloped band)."""
         if self._lines is None:
             K = [[self._kind(a, b) if self.cover(a, b) else None for b in range(GN)] for a in range(GN)]
@@ -127,8 +131,8 @@ class Out(Spec):
                     v = 0
                     for da, db in ((1, 0), (0, 1)):
                         n = K[a + da][b + db] if a + da < GN and b + db < GN else k
-                        if n is not None and n != k:
-                            v = max(v, 2 if "flat" in (k, n) else 1)
+                        if n is not None and n != k and "flat" in (k, n):
+                            v = max(v, 2)                              # crest; slope-to-slope mitres stay unlined
                     if self.o and self._edge(x, y) < C and not self.dist(x, y) < BEV:
                         v = max(v, 1)                                  # outline (the outer side has the crest)
                     if not self.o and k in ("x", "y") and (a == 0 if k == "y" else b == 0):
@@ -137,6 +141,11 @@ class Out(Spec):
                         v = 2                                          # the front rim's outer crest
                     if not self.o and k != "flat" and self._inner(x, y) < C:
                         v = max(v, 1)                                  # the rear slope's toe
+                    if self.o in (1, 2, 3) and k == "flat" and (
+                            (a == 0 and self.o != 2 and self.mask & 8) or (b == 0 and self.o != 1 and self.mask & 1)):
+                        v = max(v, 1)                                  # front rim: its seam across the rim top
+                    if (a == GN - 1 and self.mask & 2) or (b == GN - 1 and self.mask & 4):
+                        v = 0                                          # the neighbour draws the shared pixel: no dot
                     L[a][b] = v
             self._lines = L
         return self._lines[i][j]
@@ -157,8 +166,8 @@ class Out(Spec):
 
     def col_face(self, face, x, y, z):
         s = self._fs(face, x, y)
-        if z > -1e-6:
-            return A.ghost_line(0)                                     # the rim's faces are see-through
+        if self.part == "rim":
+            return A.ghost_line(0)                                     # the rim's own faces are see-through
         f = (self.foot - z) / (self.foot + self.drop_at(x, y))
         return A.hull_out_face(face, s, min(max(f, 0.0), 1.0), self.variant)
 
@@ -233,9 +242,9 @@ def vert():
     """Ghost vertical edge line at the tile's front corner (+x, +y), from the deck up to the rim: placed where the front
     ghost's outer silhouette turns or ends (convex and concave corners, steps, run ends). Edge-only 'ghost' sprite."""
     m = core.Mesh("ghost_vert", flat=True)
-    w = 0.6 * C
+    w = 0.36 * C                                                # about 1 px wide on screen
     p = (0.5, 0.5)
     a, b = (p[0] - w, p[1] + w), (p[0] + w, p[1] - w)          # a screen-horizontal sliver through the corner
-    m.poly([core.G(*a, 0.0), core.G(*b, 0.0), core.G(*b, ZG), core.G(*a, ZG)], "gW1")
+    zt = ZG - 0.03                                              # stops under the crest line: no doubled bright dot
+    m.poly([core.G(*a, 0.0), core.G(*b, 0.0), core.G(*b, zt), core.G(*a, zt)], "gW2")
     return [_dummy("ghost_vert_plate"), m.build()]
-
