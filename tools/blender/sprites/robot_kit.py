@@ -97,6 +97,27 @@ class Part:
                            lambda p: xf((p[0] * rx * math.cos(lo), p[1] * rf * math.cos(lo), rz * math.sin(lo))))
             self._face([u + i for i in range(segs)][::-1], color, False)
 
+    @staticmethod
+    def _span(a, b):
+        d = Vector(b) - Vector(a)
+        e = Vector((0, 0, 1)).rotation_difference(d.normalized()).to_euler("XYZ")
+        return tuple(math.degrees(v) for v in e), d.length, tuple((Vector(a) + Vector(b)) / 2)
+
+    def limb(self, a, b, r, color, rf=None, over=1.0):
+        """Ellipsoid spanning points a..b (radius r across, rf front-back; `over` stretches it past the ends)."""
+        rot, ln, c = self._span(a, b)
+        self.ball(c, (r, rf or r, ln / 2 * over), color, rot=rot)
+
+    def plate(self, a, b, w, d, color, taper=1.0, r=0.025, top=None):
+        """Rounded box shell from a to b (w across, d front-back); taper scales the b end. Crisp limb armour."""
+        rot, ln, c = self._span(a, b)
+        self.rbox(c, (w, d, ln), color, r=r, rot=rot, taper=taper, top=top)
+
+    def strut(self, a, b, r, color, taper=1.0):
+        """Cylinder from a to b (taper scales the b end)."""
+        rot, ln, c = self._span(a, b)
+        self.cyl(c, r, ln, color, rot=rot, taper=taper)
+
     def build(self, pivot):
         me = bpy.data.meshes.new(self.name)
         p = Vector(pivot)

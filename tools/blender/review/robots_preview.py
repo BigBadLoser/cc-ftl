@@ -232,7 +232,11 @@ def shapes(pub, rob, out, big):
     if not big or not big.exists():
         return
     names = ["SE", "S", "SW", "NW"]
-    tiles = [[np.array(Image.open(big / f"robots-shapes-{k}-{n}.png").convert("RGBA")) for n in names] for k, _ in TYPES]
+    rogue = (big / "robots-shapes-worker-SE-rogue.png").exists()
+    sfx = [""] + (["-rogue"] if rogue else [])
+    tiles = [[np.array(Image.open(big / f"robots-shapes-{k}-{n}{x}.png").convert("RGBA")) for x in sfx for n in names]
+             for k, _ in TYPES]
+    names = [n + (" rogue" if x else "") for x in sfx for n in names]
     h, w = tiles[0][0].shape[:2]
     sheet = np.zeros((h * len(TYPES), w * len(names), 3), np.uint8)
     sheet[:] = (40, 46, 56)
