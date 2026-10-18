@@ -62,6 +62,8 @@ export interface ModuleLayer {
   dz?: number;
   /** Lies outside the hull (an engine bell): sorts by the tile just beyond the hull row's front tile. */
   out?: boolean;
+  /** Real art is cut into screen strips, one per footprint diagonal, each sorted by its front-most tile (a pit crew walk around). */
+  strips?: boolean;
 }
 
 /** Depth offset of a seated operator over the console's key, and of the desk-front overlay over it. */

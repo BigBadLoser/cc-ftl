@@ -275,10 +275,9 @@ export interface ModuleDef {
    */
   airlock?: { cycleSec: number };
   /**
-   * Vehicle bay: an interior landing pad (walkable, no hull contact needed; the vehicle launches through a hatch in the
-   * pad). Holds one vehicle whose `VehicleDef.class` equals `class` ('shuttle' bays are 4x5; later 'pod' bays, 3x3, for
-   * mining and construction pods). Crew board and leave it at `access` (inside the footprint, so list it in `openTiles`
-   * too).
+   * Vehicle bay: a pit the vehicle sits in (solid, nothing walkable inside; it launches through hatch doors in the pit
+   * floor). Holds one vehicle whose `VehicleDef.class` equals `class` ('shuttle' bays are 4x5; later 'pod' bays, 3x3, for
+   * mining and construction pods). Crew board and leave it at `access`, a floor tile beside the footprint.
    */
   vehicleBay?: { class: string };
   /**

@@ -85,7 +85,9 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const turretView = createTurretView(world, atlas, L, grid, modules);
   const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null);
   const wallHeight = () => wallTopPx(roofed ? 'up' : cutaway);
-  // PLACEHOLDER shuttle parked in this ship's bay (see shuttlePlaceholder.ts).
+  // PLACEHOLDER shuttle parked in this ship's bay (see shuttlePlaceholder.ts): only while the manifest has no real parked
+  // shuttle art (`vehicle.shuttle.parked.r<rot>`, drawn by the bay's own layers, see vehicleBayArt.ts).
+  const parkedArt = () => !!atlas.stat('vehicle.shuttle.parked.r0');
   const shipPos = () => {
     for (const id of world.query(ShipC)) {
       const sh = world.get(id, ShipC);
@@ -104,7 +106,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       const sh = shipPos();
       return iso(sx - (sh?.x ?? 0) - 0.5, sy - (sh?.y ?? 0) - 0.5);
     },
-    include: (v) => v.state === 'stowed' && v.homeGrid === grid.id && !roofed,
+    include: (v) => v.state === 'stowed' && v.homeGrid === grid.id && !roofed && !parkedArt(),
     heading: (v) => {
       const b = bayOf(v.home);
       return b && b.w > b.h ? 0 : Math.PI / 2;

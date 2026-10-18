@@ -1,4 +1,4 @@
-import { Container, Sprite, type Texture } from 'pixi.js';
+import { Container, Rectangle, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ModuleC, type Module } from '../sim/modules/components';
@@ -6,11 +6,12 @@ import { footprintTiles, hullRow, openTilesOf, rotatedSize } from '../sim/module
 import type { ModuleDef } from '../sim/registry';
 import type { Atlas, StaticSprite } from './assets/loader';
 import type { Art } from './assets/fallback';
-import { iso, depthKey } from './iso';
+import { iso, depthKey, TILE_W } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
 import { robotBayLayers } from './robotBayArt';
+import { createBayAnimator, shuttleHome, vehicleBayLayers } from './vehicleBayArt';
 import { craftProgress, glowKey, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
@@ -78,6 +79,19 @@ export function moduleKey(def: ModuleDef, tx: number, ty: number): number {
   return depthKey(tx, ty) - (def.solid ? 0.05 : 0.5);
 }
 
+/** Width of a depth strip of a vehicle bay sprite: one footprint diagonal, half a tile wide each side of its centre line. */
+const STRIP_W = TILE_W / 2;
+const stripCache = new WeakMap<Texture, Map<string, Texture>>();
+/** Columns x0..x1 of a sheet frame as a texture of their own (cached: the animation re-cuts the same strips every loop). */
+function cut(tex: Texture, x0: number, x1: number): Texture {
+  let m = stripCache.get(tex);
+  if (!m) stripCache.set(tex, (m = new Map()));
+  const k = `${x0}:${x1}`;
+  let t = m.get(k);
+  if (!t) m.set(k, (t = new Texture({ source: tex.source, frame: new Rectangle(tex.frame.x + x0, tex.frame.y, x1 - x0, tex.frame.height) })));
+  return t;
+}
+
 /** A craft job counts as running while its progress moved within this many ms. */
 const ACTIVE_MS = 400;
 
@@ -94,6 +108,7 @@ export function shipHasPower(world: World, defs: ModuleDefs, gridId: number): bo
 export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: ModuleDefs, host: ModuleViewHost): ModuleView {
   const mods = new Map<number, Entry>();
   const lastProgress = new Map<number, { value: number; at: number }>();
+  const bayAnim = createBayAnimator();
 
   function dropEntry(e: Entry): void {
     for (const p of e.parts) {
@@ -155,6 +170,27 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         }
         return;
       }
+      if (layer.strips && !art.fallback) {
+        // Cut into one strip per footprint diagonal, each sorted by the front-most footprint tile on its diagonal (the pit's
+        // near lip, towers and gangway then draw over crew beside the pit, and under crew in front of it).
+        const tx = m.x + w - 1;
+        const ty = m.y + h - 1;
+        const dMin = m.x - ty;
+        const dMax = tx - m.y;
+        const kLo = Math.floor((-s.ax + STRIP_W / 2) / STRIP_W);
+        const kHi = Math.ceil((s.tex.width - s.ax - STRIP_W / 2) / STRIP_W);
+        for (let k = kLo; k <= kHi; k++) {
+          const x0 = Math.max(0, Math.round(k * STRIP_W - STRIP_W / 2 + s.ax));
+          const x1 = Math.min(s.tex.width, Math.round(k * STRIP_W + STRIP_W / 2 + s.ax));
+          if (x1 <= x0) continue;
+          const d = Math.min(dMax, Math.max(dMin, tx - ty + k));
+          const fx = Math.min(tx, d + ty);
+          const sk = key(fx, fx - d);
+          const sub = { tex: cut(s.tex, x0, x1), glow: s.glow ? cut(s.glow, x0, x1) : null, ax: s.ax - x0, ay: s.ay, footprint: s.footprint };
+          out.push(makePart(sub, tx, ty, false, sk, art.tint, glowKey(layer, sk)));
+        }
+        return;
+      }
       // A quarter turn of a non-square footprint without its own sprite is drawn mirrored.
       const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
       const k = key(m.x + w - 1, m.y + h - 1);
@@ -193,7 +229,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const on = m.powered && m.enabled && m.hp > 0;
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
         const roofed = host.roofed();
-        const layers = (def.robotBay ? robotBayLayers(world, id, m, def, now) : moduleLayers(world, id, m, def, active, true)).flatMap((layer) => {
+        const layers = (def.robotBay ? robotBayLayers(world, id, m, def, now) : def.vehicleBay ? vehicleBayLayers(m, def, bayAnim.stepOf(id, shuttleHome(world, id), now)) : moduleLayers(world, id, m, def, active, true)).flatMap((layer) => {
           if (roofed && layer.tiles !== 'hull' && !(def.hullEdge && layer.tiles === 'rest')) return [];
           const art = resolveArt(atlas, layer.chain, layer.key);
           return art ? [{ layer, art }] : [];
@@ -223,6 +259,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       if (live.has(id)) continue;
       dropEntry(e);
       mods.delete(id);
+      bayAnim.forget(id);
     }
   }
 

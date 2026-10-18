@@ -5,6 +5,7 @@
   consoles  helm / weapons / shield consoles, 4 rotations, desk-front overlays for seated crew
   weapons   roof turrets (8 aims, charged, stowed, deploy frames) and their floor bays, 4 rotations
   roof      roof plating modules, edges, inset and patch plates, livery masks, cut plates (roof_cuts.py)
+  vehicle_bay the shuttle bay (pit, doors, gangway, claws) and the shuttle parked in it, 4 rotations (vehicle_bay.py)
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
@@ -29,11 +30,14 @@ def jobs(name):
     if name == "robot_bay":
         from . import robot_bay
         return robot_bay.jobs(), True
+    if name == "vehicle_bay":
+        from . import vehicle_bay
+        return vehicle_bay.jobs(), True
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
     raise KeyError(name)
 
 
-RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay")
+RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay")
 ALL = RENDERED + ("sol",)

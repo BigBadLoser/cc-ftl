@@ -34,6 +34,19 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
+## Shuttle bay (branch `opus-bay`, not merged; awaiting user approval of the in-game look)
+
+- `module.vehicle_bay` is a solid 4x5 pit (nothing walkable inside). Its access tile is outside the footprint beside the
+  long side in the hatch row (r0: (4, 3), rotating with the module). Starter bay moved its fabricator to (19, 12) so the
+  boarding tile (18, 16) stays reachable; raider bay moved to (2, 3).
+- Sprite family `vehicle_bay` (`tools/blender/sprites/vehicle_bay.py`, model `shuttle_bay.py`, shuttle `shuttle_craft.py`):
+  per rotation `module.vehicle_bay.r<r>[.empty|.fold.f0-1|.open.f0-2]` and `vehicle.shuttle.parked.r<r>[.fold.f0-1]`
+  (40 sprites). The parked shuttle is rendered with the bay as a holdout and drawn after it, feet 0.85 above the pit
+  floor (`shuttle_bay.FEET_Z`). Both are cut into depth strips per footprint diagonal in `moduleView` (`ModuleLayer.strips`).
+- `vehicleBayArt.ts` plays launch / return sequences (claws fold, doors open) when the vehicle leaves or returns. The old
+  placeholder shuttle is only drawn while `vehicle.shuttle.parked.r0` is missing from the manifest.
+- Missing: shuttle fly directions (flying shuttles are still the placeholder), per-faction livery (player colours baked), pod bays.
+
 ## M4 art rework (session 2026-10-17, supersedes the m4-assets sheets)
 
 The user did not approve the first m4-assets sheets: modules were far too small. Agreed direction:

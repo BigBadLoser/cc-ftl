@@ -85,8 +85,8 @@ export const starterShip = {
     { def: 'module.light', x: 12, y: 17, rot: 0 },
     { def: 'module.light', x: 9, y: 12, rot: 0 },
     // Cargo (south-east room): crates along the south wall (rot 2 puts the access tile north), fabricator by the
-    // door lane. The door at (17, 11) opens onto (17, 12), which stays clear.
-    { def: 'module.fabricator', x: 18, y: 12, rot: 0 },
+    // door lane. The door at (17, 11) opens onto (17, 12) and (18, 12) stays clear: the way round the shuttle bay to its boarding tile (18, 16).
+    { def: 'module.fabricator', x: 19, y: 12, rot: 0 },
     {
       def: 'module.storage', x: 20, y: 17, rot: 2,
       stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }],
@@ -96,7 +96,7 @@ export const starterShip = {
     { def: 'module.light', x: 15, y: 12, rot: 0 },
     { def: 'module.light', x: 14, y: 12, rot: 0 },
     { def: 'module.light', x: 20, y: 15, rot: 0 },
-    // Shuttle bay (pad x 14..17, y 13..17, boarding tile (15, 17)) with the ship's shuttle.
+    // Shuttle bay (pit x 14..17, y 13..17, boarding tile (18, 16) east of it) with the ship's shuttle.
     { def: 'module.vehicle_bay', x: 14, y: 13, rot: 0, vehicle: 'vehicle.shuttle' },
     // Airlock on the west hull, corridor row y = 9 (outer door (1, 9), inside tile (5, 9)).
     { def: 'module.airlock', x: 1, y: 9, rot: 3 },

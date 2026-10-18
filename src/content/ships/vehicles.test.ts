@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AboardC, CrewC, DeadC, DownedC, ModuleC, PositionC, VehicleBayC, VehicleC, destroyVehicle, deserialize, newGame, serialize,
-  storageAdd, vehicleViews, type ContentRegistry, type ModuleDef, type Sim, type SimEvent,
+  accessTile, boardingTile, footprintTiles, isTileWalkable, rotatedSize, storageAdd, vehicleViews, type ContentRegistry, type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
 
@@ -254,5 +254,33 @@ describe('enemy boarding AI', () => {
     run(a, 20 * 20);
     run(loaded, 20 * 20);
     expect(serialize(loaded)).toBe(serialize(a));
+  });
+});
+
+describe('shuttle bay pit', () => {
+  const bayDef = content.modules['module.vehicle_bay'] as ModuleDef;
+
+  it('is a solid pit: no footprint tile is walkable, and the shuttle boards from the floor east of it in the hatch row', () => {
+    const sim = newGame(1, content);
+    const bay = sim.world.query(VehicleBayC)[0] as number;
+    const m = sim.world.get(bay, ModuleC)!;
+    const grid = sim.grids.get(m.gridId)!;
+    for (const t of footprintTiles(bayDef, m.x, m.y, m.rot)) expect(isTileWalkable(sim, grid, t.x, t.y)).toBe(false);
+    const at = boardingTile(sim, shuttleOf(sim, 1));
+    expect(at).toEqual({ gridId: m.gridId, x: m.x + 4, y: m.y + 3 });
+    expect(isTileWalkable(sim, grid, at!.x, at!.y)).toBe(true);
+  });
+
+  it('keeps its access tile outside the footprint beside the long side at every rotation, in the hatch row', () => {
+    const outside = [[4, 3], [1, 4], [-1, 1], [3, -1]]; // offsets from the module origin for 4x5 rotated 0..3 (x, y)
+    for (let rot = 0; rot < 4; rot++) {
+      const a = accessTile(bayDef, 10, 10, rot)!;
+      const [w, h] = rotatedSize(bayDef, rot);
+      const inside = a.x >= 10 && a.x < 10 + w && a.y >= 10 && a.y < 10 + h;
+      expect(inside).toBe(false);
+      expect({ x: a.x - 10, y: a.y - 10 }).toEqual({ x: outside[rot]![0], y: outside[rot]![1] });
+      // The long side: for the 4 wide (5 tall) pit the access tile is east or west of it; rotated, south or north.
+      expect(rot % 2 === 0 ? a.y >= 10 && a.y < 10 + h : a.x >= 10 && a.x < 10 + w).toBe(true);
+    }
   });
 });
