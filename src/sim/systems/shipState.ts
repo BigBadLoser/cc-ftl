@@ -6,8 +6,8 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { SHIP_STATE_INTERVAL, WRECK_BELOW } from '../tuning';
 
-/** One wall tile's weight in the integrity score, relative to one module hp (a full wall tile counts as 5). */
-const WALL_WEIGHT = 0.02;
+/** One wall tile's weight in the integrity score, relative to one module hp (a full wall tile counts as 1.3). */
+const WALL_WEIGHT = 0.005;
 
 /**
  * Ship lifecycle, checked every few ticks. Integrity = (wall integrity x WALL_WEIGHT + module hp) over their

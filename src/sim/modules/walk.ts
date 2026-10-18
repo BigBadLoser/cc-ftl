@@ -30,6 +30,8 @@ export function isTileWalkable(sim: Sim, grid: Grid, x: number, y: number): bool
   if (!grid.has('module')) return true;
   const id = grid.get('module', x, y);
   if (id === 0) return true;
-  const info = walkInfo(sim, id);
-  return !info.solid || info.open.has(y * OPEN_KEY + x);
+  const m = sim.world.get(id, ModuleC);
+  const def = m && sim.content.modules[m.def];
+  if (!m || !def?.solid) return true;
+  return openTilesOf(def, m.x, m.y, m.rot).some((t) => t.x === x && t.y === y);
 }

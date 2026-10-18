@@ -7,7 +7,7 @@ import type { ShipTemplate } from '../../sim';
 export const raiderShip = {
   name: 'Raider',
   faction: 'hostile',
-  doctrine: 'weapons',
+  doctrine: 'random',
   crew: ['role.gunner', 'role.pilot', 'role.engineer'],
   rows: [
     '........................',
@@ -28,9 +28,10 @@ export const raiderShip = {
     '........................',
   ],
   modules: [
-    // Engine room: engine on the west hull, reactor, life support. Doors at (8, 5) and (8, 11).
+    // Engine room: engine on the west hull, two reactors, life support. Doors at (8, 5) and (8, 11).
     { def: 'module.engine', x: 1, y: 3, rot: 3 },
-    { def: 'module.reactor', x: 3, y: 9, rot: 0 },
+    { def: 'module.reactor', x: 3, y: 8, rot: 0 },
+    { def: 'module.reactor', x: 3, y: 11, rot: 0 },
     { def: 'module.lifeSupport', x: 6, y: 9, rot: 0 },
     { def: 'module.light', x: 7, y: 3, rot: 0 },
     { def: 'module.light', x: 7, y: 12, rot: 0 },

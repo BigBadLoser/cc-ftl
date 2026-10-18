@@ -71,9 +71,9 @@ export const starterShip = {
     { def: 'module.lifeSupport', x: 26, y: 7, rot: 1 },
     { def: 'module.light', x: 22, y: 7, rot: 0 },
     { def: 'module.light', x: 27, y: 5, rot: 0 },
-    // Weapon bays (nose, south): burst laser and ion cannon (2x2), missile launcher (3x3) around the lane x = 24.
+    // Weapon bays (nose, south): two burst lasers (2x2), missile launcher (3x3) around the lane x = 24.
     { def: 'module.burstLaser', x: 22, y: 12, rot: 0 },
-    { def: 'module.ionCannon', x: 22, y: 15, rot: 0 },
+    { def: 'module.burstLaser', x: 22, y: 15, rot: 0 },
     { def: 'module.missileLauncher', x: 25, y: 12, rot: 0 },
     { def: 'module.lifeSupport', x: 26, y: 16, rot: 1 },
     { def: 'module.light', x: 24, y: 17, rot: 0 },
