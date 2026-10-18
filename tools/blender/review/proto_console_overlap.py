@@ -32,8 +32,8 @@ def gap(a, b):
 
 def floating(parts):
     """Parts not connected (gap <= GAP, chained) to the floor deck. Returns the loose parts."""
-    ok = [p for p in parts if p["group"] == "deck"]
-    rest = [p for p in parts if p["group"] != "deck"]
+    ok = [p for p in parts if gap(p, p)[1][0][2] <= 0.02]                       # grounded: touches the ship floor (z = 0)
+    rest = [p for p in parts if p not in ok]
     changed = True
     while changed:
         changed = False

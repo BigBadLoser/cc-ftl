@@ -39,6 +39,10 @@ def scene(hot):
     for (x, y) in walls:
         m = (1 if (x, y - 1) in walls else 0) | (2 if (x + 1, y) in walls else 0) | (4 if (x, y + 1) in walls else 0) | (8 if (x - 1, y) in walls else 0)
         aid = f"tile.wall.{'full.' if (y == -1 or x == -1) else ''}m{m}"
+        if (y == -1 or x == -1) and (D / f"wall_full_m{m}.npz").exists():                    # raised (HF 2.2) full wall
+            z = np.load(D / f"wall_full_m{m}.npz")
+            items.append((x - .5, x + .5, y - .5, y + .5, lambda z=z, x=x, y=y: sc.blit(z["rgba"], z["glow"], int(T(x, y)[0] - int(z["ox"])), int(T(x, y)[1] - int(z["oy"])))))
+            continue
         items.append((x - .5, x + .5, y - .5, y + .5, lambda aid=aid, x=x, y=y: sc.asset(aid, *T(x, y))))
     for name, rot, (px, py) in PLACE:
         mt = META[f"{name}.r{rot}"]
@@ -60,9 +64,9 @@ def scene(hot):
 for hot in (False, True):
     img = scene(hot)
     tag = "active" if hot else "idle"
-    img.save(D / f"scene_{tag}_1x_v4.png")
-    img.resize((img.width * 3, img.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_v4.png")
+    img.save(D / f"scene_{tag}_1x_v5.png")
+    img.resize((img.width * 3, img.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_v5.png")
     # tight 3x crops: r0 row along the north wall, r1 column along the east wall
     for nm, box in (("r0row", (440, 100, 860, 370)), ("r1col", (400, 340, 830, 560))):
         c = img.crop(box)
-        c.resize((c.width * 3, c.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_{nm}_v4.png")
+        c.resize((c.width * 3, c.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_{nm}_v5.png")

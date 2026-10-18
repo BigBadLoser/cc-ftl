@@ -13,7 +13,7 @@ from . import detail as D
 from .cmbkit import Frame
 
 FOOT = {"helm": (2, 3), "shield": (2, 3), "weapons": (2, 2)}
-CHAIR = {"helm": (-0.5, 0.0), "shield": (-0.5, 1.0), "weapons": (-0.5, -0.5)}
+CHAIR = {"helm": (-0.5, 0.0), "shield": (-0.5, 0.0), "weapons": (-0.5, -0.5)}
 DIM = {"red": "rustD", "cyan": "navy", "green": "pcb"}                 # non-emissive stand-ins for idle screen content
 BTN = {"red": ("red", "orange", "flameY"), "cyan": ("cyan", "arc", "green"), "green": ("green", "orange", "green")}
 FACES = [((-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1)), ((-1, -1, -1), (-1, 1, -1), (1, 1, -1), (1, -1, -1)),
@@ -160,22 +160,23 @@ def button_mat(k, st, col):
     return "gmD" if r == 2 else "steelL"
 
 
-def strip(f, u, v, yaw, w, z, n, off, st, col, pitch=None):
+def strip(f, u, v, yaw, w, z, n, off, st, col, pitch=None, thin=False):
     """Row of n square buttons across a desk top; idle shows only every fourth one lit."""
     _g("buttons")
     pitch = pitch or w / n
     for k in range(n):
         x = (k - (n - 1) / 2) * pitch
         mat = button_mat(k, st, col)
+        if thin and mat == BTN[col][0] and st:
+            mat = DIM[col]
         bu, bv = at(u, v, yaw, x, off)
         ybox(f, bu, bv, z, 0.065, 0.065, 0.04, mat, yaw)
 
 
-def desk(f, u, v, yaw, w, d, h, st, col, nbtn=0, slab=True, base="steel", band=True):
+def desk(f, u, v, yaw, w, d, h, st, col, nbtn=0, slab=True, base="steel", band=True, thin=False):
     """One desk bay: kick plate, panelled body with seams and a groove, a light edge rail, control slab."""
     _g("desk")
-    ybox(f, u, v, 0, d + 0.04, w + 0.02, 0.1, "steelD", yaw, top="plateA")
-    ybox(f, u, v, 0.1, d, w, h - 0.1, base, yaw, top="plate")
+    ybox(f, u, v, 0.0, d, w, h, base, yaw, top="plate")
     for k in range(max(1, round(w / 0.55)) + 1):                                     # panel seams
         x = (k - max(1, round(w / 0.55)) / 2) * w / max(1, round(w / 0.55))
         su, sv = at(u, v, yaw, x, 0)
@@ -193,7 +194,7 @@ def desk(f, u, v, yaw, w, d, h, st, col, nbtn=0, slab=True, base="steel", band=T
         su, sv = at(u, v, yaw, 0, 0.1)
         ybox(f, su, sv, h, d * 0.62, w - 0.06, 0.1, "blueGrey", yaw, top="plateB", lean=-0.1)
         if nbtn:
-            strip(f, u, v, yaw, w - 0.16, h + 0.1, nbtn, -d * 0.12, st, col)
+            strip(f, u, v, yaw, w - 0.16, h + 0.1, nbtn, -d * 0.12, st, col, thin=thin)
             _g("desk")
 
 
@@ -222,8 +223,6 @@ def chair(f, u, v, st):
 
 def helm(f, st):
     col = "green"
-    _g("deck")
-    f.box(0, 0, 0, 1.96, 2.96, 0.04, "steelD", top="plateA")
     n, ph = 7, [math.radians(-62 + k * 124 / 6) for k in range(7)]
     pts = [(-0.5 + 1.0 * math.cos(p), 1.3 * math.sin(p)) for p in ph]
     sc = {0: (0.0, 0.0), 1: (0.38, 0.3), 2: (0.5, 0.34), 3: (0.74, 0.42), 4: (0.5, 0.34), 5: (0.38, 0.3), 6: (0.0, 0.0)}
@@ -232,7 +231,7 @@ def helm(f, st):
         yaw = math.atan2(math.sin(p), 1.3 * math.cos(p))
         nb = pts[min(k + 1, n - 1)] if k < n - 1 else pts[k - 1]
         w = math.hypot(nb[0] - pu, nb[1] - pv) * 1.15
-        desk(f, pu, pv, yaw, w, 0.46, 0.52, st, col, nbtn=4 if 0 < k < n - 1 else 3)
+        desk(f, pu, pv, yaw, w, 0.46, 0.52, st, col, nbtn=4 if 0 < k < n - 1 else 3, thin=k % 2 == 1)
         sw, sh = sc[k]
         if sw:
             su, sv = at(pu, pv, yaw, 0, 0.12)
@@ -254,16 +253,15 @@ def helm(f, st):
     for sv in (-1, 1):
         pv = sv * 1.12
         _g("desk")
-        f.box(-0.52, pv, 0.0, 0.62, 0.56, 0.1, "steelD", top="plateA")
-        f.box(-0.52, pv, 0.1, 0.58, 0.52, 0.34, "steel", top="plate")
-        f.box(-0.52, pv, 0.27, 0.6, 0.54, 0.035, "steelD")
+        f.box(-0.52, pv, 0.0, 0.58, 0.52, 0.44, "steel", top="plate")
+        f.box(-0.52, pv, 0.2, 0.6, 0.54, 0.035, "steelD")
         f.box(-0.52, pv, 0.44, 0.46, 0.5, 0.05, "blueGrey", top="plateB", taper=0.9)
         f.box(-0.8, pv, 0.44, 0.06, 0.52, 0.04, "steelL", top="plate")
         strip(f, -0.62, pv, 0, 0.4, 0.49, 3, 0.0, st, col)
         _g("lever")
         for k in (-1, 1):
             f.vcyl(-0.5, pv + k * 0.12, 0.49, 0.03, 0.2, "gm", sides=6)
-            f.vcyl(-0.5, pv + k * 0.12, 0.69, 0.055, 0.07, "green" if st else "plate", sides=6)
+            f.vcyl(-0.5, pv + k * 0.12, 0.69, 0.055, 0.07, ("green" if k < 0 else "pcb") if st else "plate", sides=6)
         _g("desk")
     chair(f, *CHAIR["helm"], st)
 
@@ -272,41 +270,29 @@ def helm(f, st):
 
 def shield(f, st):
     col = "cyan"
-    _g("deck")
-    f.box(0, 0, 0, 1.96, 2.96, 0.04, "steelD", top="plateA")
-    desk(f, 0.56, 0, 0, 2.94, 0.82, 0.6, st, col, nbtn=0, slab=False, base="blueGrey")        # back bar
-    desk(f, -0.5, -0.5, 0, 2.0, 0.66, 0.5, st, col, nbtn=0, slab=False, base="steel")           # side bar
+    desk(f, 0.56, 0, 0, 2.94, 0.82, 0.6, st, col, nbtn=0, slab=False, base="blueGrey")        # back bar behind the three monitors
+    desk(f, -0.5, -0.95, 0, 0.9, 0.66, 0.5, st, col, nbtn=0, slab=False, base="steel")           # short counter, ends at the projector
+    desk(f, -0.5, 1.0, 0, 0.8, 0.6, 0.46, st, col, nbtn=3, slab=True, base="steel")             # low cabinet on the other side
     _g("desk")
-    ybox(f, -0.5, 0.4, 0.0, 0.4, 0.3, 0.5, "steel", 0.7, top="plate")                            # chamfer toward the chair
-    ybox(f, -0.5, 0.4, 0.5, 0.42, 0.32, 0.04, "steelL", 0.7)
-    # control slabs
-    ybox(f, -0.52, -0.5, 0.5, 0.5, 1.9, 0.1, "blueGrey", 0, top="plateB", lean=-0.1)
+    ybox(f, -0.52, -0.95, 0.5, 0.5, 0.8, 0.1, "blueGrey", 0, top="plateB", lean=-0.1)
     ybox(f, 0.4, 0, 0.6, 0.36, 2.8, 0.1, "blueGrey", 0, top="plateB", lean=-0.1)
-    strip(f, -0.52, -0.9, 0, 0.9, 0.6, 5, -0.3, st, col)
-    strip(f, 0.4, 0.55, 0, 0.9, 0.7, 6, -0.12, st, col)
-    strip(f, 0.4, -1.1, 0, 0.7, 0.7, 4, -0.12, st, col)
-    # three tall tilted screens above the back bar
-    for k, (sv, sw) in enumerate(((-1.0, 0.8), (0.0, 0.8), (1.0, 0.9))):
+    strip(f, -0.52, -0.95, 0, 0.6, 0.6, 4, -0.3, st, col)
+    strip(f, 0.4, 0.75, 0, 0.7, 0.7, 4, -0.12, st, col)
+    strip(f, 0.4, -0.75, 0, 0.7, 0.7, 4, -0.12, st, col)
+    # three tall tilted screens above the back bar; the chair faces the middle one
+    for k, (sv, sw) in enumerate(((-1.0, 0.8), (0.0, 0.8), (1.0, 0.8))):
         bars = [(-0.5 + i * 0.25, 0.6, 0.1, bh, kd) for i, (bh, kd) in enumerate(((0.12, "b"), (0.22, "a"), (0.1, "b"), (0.26, "a"), (0.16, "a")))]
         bars += [(0.0, 0.0, 0.8, 0.04, "a"), (0.0, 0.12, 0.55, 0.04, "a"), (0.0, 0.24, 0.3, 0.04, "a")]
         screen(f, 0.62, sv, 0, sw, 0.75, 0.7, col, st, bars, lean=-0.16, d=0.1)
-    # projector on the side bar: one tilted disc (faces up and toward the operator) in a frame ring on a post
+    # projector at the end of the counter: one tilted disc (faces up and toward the operator) in a frame ring on a post
     _g("holo")
-    pv, pz, tl = -0.55, 0.98, 0.3
+    pv, pz, tl = -1.05, 0.98, 0.3
     ybox(f, -0.5, pv, 0.55, 0.3, 0.3, 0.06, "steelD", top="plate")
     ybox(f, -0.5, pv, 0.61, 0.08, 0.08, pz - 0.61 - 0.03, "steelL")
     tdisc(f, -0.5, pv, pz, tl, 0.37, 0.05, "steelL", "plate", 0.3)
     tdisc(f, -0.5, pv, pz, tl, 0.3, 0.035, "navy" if st else "dark", "navy" if st else "dark", 0.0, dz=0.012)
     if st:                                                                         # hex-cell shield motif: cyan lines on the dark-cyan disc
         hexcells(f, -0.5, pv, pz, tl, 0.1, 0.03)
-    # tall side pillar at the outer end
-    _g("pylon")
-    ybox(f, -0.5, -1.38, 0.0, 0.46, 0.22, 0.95, "steelL", top="plate")
-    ybox(f, -0.5, -1.38, 0.95, 0.5, 0.26, 0.04, "steelL")
-    for k in range(3):
-        ybox(f, -0.5, -1.38, 0.2 + k * 0.25, 0.5, 0.24, 0.05, "steelD")
-    D.rail(f, (-0.5, -1.38, 1.0), (-0.5, -1.38, 1.1), 0.05, "cyan" if st else "navy")
-    f.vcyl(-0.5, -1.38, 1.0, 0.07, 0.1, "cyan" if st else "steelD", sides=6)
     chair(f, *CHAIR["shield"], st)
 
 
@@ -314,8 +300,6 @@ def shield(f, st):
 
 def weapons(f, st):
     col = "red"
-    _g("deck")
-    f.box(0, 0, 0, 1.96, 1.96, 0.04, "steelD", top="plateA")
     desk(f, 0.52, 0, 0, 1.94, 0.88, 0.5, st, col, nbtn=0, slab=False, base="steelD")          # back bar
     desk(f, -0.5, 0.55, 0, 0.84, 0.95, 0.46, st, col, nbtn=0, slab=False, base="steelD")      # right bar
     _g("desk")

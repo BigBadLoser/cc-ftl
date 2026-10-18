@@ -10,7 +10,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import console_proto as C
-from sprites import core, env_build, post
+from sprites import core, env_build, post, walls
 from sprites.cmbkit import Frame
 
 args = sys.argv[sys.argv.index("--") + 1:]
@@ -57,6 +57,15 @@ def main():
                 print("pixel", name, rot, st, rgba.shape, flush=True)
     if not only:
         (OUT / "meta.json").write_text(json.dumps(info, indent=1))
+    if "--walls" in args:                                                              # interior full walls at the raised height (local override)
+        walls.HF = 2.2
+        for m in (3, 5, 6, 10, 12):
+            core.setup_scene()
+            core.clear_scene_meshes()
+            post.select(False)
+            c, op, g, ox, oy, _ = env_build.render_sprite("x", "block", walls.block(m, "wall", None, None, True))
+            np.savez(OUT / f"wall_full_m{m}.npz", rgba=post.to_rgba(c, op), glow=g, ox=ox, oy=oy)
+            print("wall", m, flush=True)
     if "--cell" in args:
         for name in names:
             _ns["setup"]()
