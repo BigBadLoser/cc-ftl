@@ -118,3 +118,66 @@ for _name, _fn in (("generic", generic), ("weapon", weapon), ("shield", shield),
     for _m in range(16):
         SPRITES.append((f"roof.{_name}.m{_m}", (1, 1), "block", lambda m=_m, f=_fn: f(m)))
     SPRITES.append((f"roof.{_name}", (1, 1), "block", lambda f=_fn: f(15)))
+
+
+# ---- v7 variant studies (preview only; see roof_variants.py) ---------------------------------------------------
+DZ = 8 / core.ZPX         # raised armour belt (variant B): exactly 8 px higher, so belts are drawn with an anchor offset
+
+
+def variant_base(layout, col, u, v, variant="v6", patch=False, paint=None):
+    from . import roof_variants as rv
+    g, raised = rv.tile(layout, col, u, v, variant, patch, paint)
+    fam = (rv.FAM_C if variant == "C" else rl.FAM)[col]
+    m = core.Mesh(f"roof_{variant}_{layout}{col}_{u}{v}", flat=True)
+    m.pattern((-0.5, -0.5, ZR), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: None if (i, j) in raised else g[j][i])
+    if raised:
+        zb = ZR + rv.DZ_BLISTER
+        m.pattern((-0.5, -0.5, zb), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: g[j][i] if (i, j) in raised else None)
+        for i, j in raised:                        # blister side faces; at a tile edge always (a continuing neighbour covers it)
+            x0, y0 = i / GN - 0.5, j / GN - 0.5
+            x1, y1 = x0 + 1 / GN, y0 + 1 / GN
+            if (i, j + 1) not in raised:
+                m.poly([core.G(x0, y1, ZR), core.G(x1, y1, ZR), core.G(x1, y1, zb), core.G(x0, y1, zb)], fam["fs"])
+            if (i + 1, j) not in raised:
+                m.poly([core.G(x1, y0, ZR), core.G(x1, y1, ZR), core.G(x1, y1, zb), core.G(x1, y0, zb)], fam["fe"])
+    return [m.build()]
+
+
+def variant_edge(side, col, variant="v6", tall=False):
+    from . import roof_variants as rv
+    fam = (rv.FAM_C if variant == "C" else rl.FAM)
+    f = fam[col]
+    m = core.Mesh(f"roof_{variant}_edge_{side}{col}", flat=True)
+    if side in ("n", "w"):
+        cv = rl._Canvas(f, GN)
+        rl._girder(cv, side, GN)
+        cells = {(i, j): c for j, row in enumerate(cv.g) for i, c in enumerate(row) if c}
+    elif side == "s":
+        cells = {(k, GN - 1): f["lit"] for k in range(GN)}
+    else:
+        cells = {(GN - 1, k): f["shd"] for k in range(GN)}
+    m.pattern((-0.5, -0.5, ZR), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: cells.get((i, j)))
+    if side in ("s", "e"):
+        t = T + DZ if tall else T
+        z, z0 = ZR, ZR - t
+        a, b = ((-0.5, 0.5), (0.5, 0.5)) if side == "s" else ((0.5, -0.5), (0.5, 0.5))
+        m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z), core.G(*a, z)], f["fs"] if side == "s" else f["fe"])
+        m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z0 + 0.035), core.G(*a, z0 + 0.035)], f["k"])
+    return [m.build()]
+
+
+def belt_step(col):
+    """E step face of a raised belt tile (absolute z ZR..ZR+DZ, drawn with the belt tile at its normal anchor)."""
+    f = rl.FAM[col]
+    m = core.Mesh(f"roof_step_{col}", flat=True)
+    m.poly([core.G(0.5, -0.5, ZR), core.G(0.5, 0.5, ZR), core.G(0.5, 0.5, ZR + DZ), core.G(0.5, -0.5, ZR + DZ)], f["fe"])
+    m.poly([core.G(0.5, -0.5, ZR), core.G(0.5, 0.5, ZR), core.G(0.5, 0.5, ZR + 0.03), core.G(0.5, -0.5, ZR + 0.03)], f["k"])
+    return [m.build()]
+
+
+def trench(side, col="b"):
+    from . import roof_variants as rv
+    cells = rv.trench_cells(side, rl.FAM, col)
+    m = core.Mesh(f"roof_trench_{side}{col}", flat=True)
+    m.pattern((-0.5, -0.5, ZR), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: cells.get((i, j)))
+    return [m.build()]

@@ -1,0 +1,106 @@
+"""Roof v7 variant studies on top of the v6 module language (pure Python, no bpy). Preview only for now.
+
+A  livery   painted spine stripe along the ship's length plus bow chevrons. The paint recolours plate surfaces
+            (grooves stay dark), so it reads as painted plating. Rule: the module grid origin is chosen per ship so
+            the spine lands on rows v = 1..2 of one module row; tiles there use a painted base sprite.
+            Cost: stripe 4 layouts x 2 colours x 4 u x 2 v = 64, chevrons (bow module of the spine row) another 64.
+B  depth    ochre courses are raised armour belts (drawn DZ higher: same base sprites, an anchor offset), with a
+            shaded step face on their E side, taller slab overlays on their open S / E ends and a recessed trench in
+            the blue-grey plating along both sides of each belt. Two layouts swap their big pocket for a raised
+            blister (geometry inside the tile, no extra sprites). Cost: +6 sprites (step e, tall edge s / e, trench
+            w / e, ...) ; blisters 0 (they replace pockets).
+C  material stronger value range and saturation, cooler blue-grey and warmer ochre (own palette), one replacement
+            plate in a fresh tone in every third module ((mx + 2 my) % 3 == 0, plate fixed per layout), and a subtle
+            ship-wide light gradient done as a runtime per-tile tint (0 sprites). Cost: patched plates 2 colours x
+            (sum of patched-plate tiles over layouts) = 2 x 14 = 28.
+"""
+from . import roof_layout as rl
+from .roof_layout import GN, MC, FAM, _Canvas, _raised, _feature, _girder, _corners
+
+FAM_C = {
+    "o": dict(top="cO1", t2="cO2", lit="cOL", shd="cOS", rl="cOR", k="cOK", fs="cOD", fe="cOE", pa="cOP", pa2="cOQ"),
+    "b": dict(top="cB1", t2="cB2", lit="cBL", shd="cBS", rl="cBR", k="cBK", fs="cBD", fe="cBE", pa="cBP", pa2="cBQ"),
+}
+PATCH = (2, 1, 0, 1)          # patched plate index per layout (variant C)
+LAYOUTS_B = tuple(tuple((p[:5] + ("B",)) if p[5] == "P" and p[2] * p[3] >= 6 else p for p in lay)
+                  for lay in rl.LAYOUTS)
+DZ_BLISTER = 0.1              # blister height (tiles), about 4 px
+PAINT = {"top": "lvR", "t2": "lvR2", "lit": "lvRL", "shd": "lvRS", "rl": "lvRS"}
+PAINT_W = {"top": "lvW", "t2": "lvW2", "lit": "lvWL", "shd": "lvWS", "rl": "lvWS"}
+
+
+def module_cells(layout, prim, fam=FAM, layouts=rl.LAYOUTS, patch=False):
+    """(names 128x128, raised set of (X, Y) cells for blisters)."""
+    f0 = fam[prim]
+    cv = _Canvas(f0)
+    raised = set()
+    for idx, (x0, y0, w, h, tone, feat) in enumerate(layouts[layout]):
+        cv.f = dict(f0, top=f0["pa"], t2=f0["pa2"]) if patch and idx == PATCH[layout] else f0
+        body, other = ("t2", "top") if tone else ("top", "t2")
+        X0, Y0, X1, Y1 = x0 * GN, y0 * GN, (x0 + w) * GN, (y0 + h) * GN
+        _raised(cv, X0, Y0, X1, Y1, body)
+        if feat == "B":
+            bx0, by0, bx1, by1 = X0 + rl.FM + 2, Y0 + rl.FM + 2, X1 - 9, Y1 - 9
+            _raised(cv, bx0, by0, bx1, by1, other)
+            raised |= {(X, Y) for X in range(bx0, bx1) for Y in range(by0, by1)}
+            _corners(cv, bx0 - 6, by0 - 6, bx1 + 2, by1 + 2)
+        else:
+            _feature(cv, feat, X0, Y0, X1, Y1, other)
+    cv.f = f0
+    _girder(cv, "n", MC)
+    _girder(cv, "w", MC)
+    for d in range(2, rl.RAIL):
+        for e in range(2, rl.RAIL):
+            cv.put(d, e, "rl")
+    return cv.g, raised
+
+
+_CACHE = {}
+
+
+def tile(layout, prim, u, v, variant="v6", patch=False, paint=None):
+    """(32x32 names, raised cells {(i, j)}) of one base tile. paint: None, 'stripe' or 'chevron' (variant A, v 1..2)."""
+    fam = FAM_C if variant == "C" else FAM
+    lays = LAYOUTS_B if variant == "B" else rl.LAYOUTS
+    key = (layout, prim, variant, patch)
+    if key not in _CACHE:
+        _CACHE[key] = module_cells(layout, prim, fam, lays, patch)
+    g, raised = _CACHE[key]
+    out = [list(row[u * GN:(u + 1) * GN]) for row in g[v * GN:(v + 1) * GN]]
+    rs = {(X - u * GN, Y - v * GN) for X, Y in raised if u * GN <= X < (u + 1) * GN and v * GN <= Y < (v + 1) * GN}
+    if paint:
+        f = fam[prim]
+        inv = {f[r]: r for r in ("top", "t2", "lit", "shd", "rl")}
+        for j in range(GN):
+            B = (v - 1) * GN + j                       # row inside the 64-cell spine band
+            for i in range(GN):
+                r = inv.get(out[j][i])
+                if r is None:
+                    continue
+                X = u * GN + i
+                if 10 <= B < 14 or 50 <= B < 54:        # white pinstripes
+                    out[j][i] = PAINT_W[r]
+                elif 18 <= B < 46:                      # the faction band
+                    white = paint == "chevron" and ((X - abs(B - 31.5) * 1.0) // 10) % 2 == 0
+                    out[j][i] = (PAINT_W if white else PAINT)[r]
+    return out, rs
+
+
+def trench_cells(side, fam=FAM, col="b"):
+    """Recessed channel along a tile's W or E edge, beside a raised belt (variant B): dark shadow at the belt's foot,
+    channel floor in the girder tone, then the plate's own wall (hidden on W, a shaded face on E)."""
+    f = fam[col]
+    out = {}
+    for k in range(GN):
+        for d in range(8):
+            i = d if side == "w" else GN - 1 - d
+            if d < 2:
+                c = "k"
+            elif d < 6:
+                c = "rl"
+            else:
+                c = "k" if side == "w" else "shd"
+            if side == "w" and d == 7:
+                continue
+            out[(i, k)] = f[c]
+    return out
