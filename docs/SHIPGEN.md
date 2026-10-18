@@ -1,5 +1,8 @@
 # Ship generation v3: assembly-driven
 
+> New to the generator? Start with [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md): scope, file map, how to render
+> sheets, metrics, design constraints and the open backlog.
+
 Status: the generic 2D arranger and four navy hull grammars are built (v4). Drones and scrappers still run on v2
 (structure-first topologies) until their proofs of concept replace it; v2's topology code is then removed. There is
 one pipeline; only its stage 3 currently branches on whether a faction has hull families.
