@@ -17,3 +17,13 @@ export function moduleCenter(sim: Sim, moduleId: number): { x: number; y: number
 export function gauss(sim: Sim): number {
   return (sim.rng.next() + sim.rng.next() + sim.rng.next() - 1.5) * 2;
 }
+
+/** Quantise a direction (dx, dy) in grid space to one of 8 turret aims (see Weapon.aim). */
+export function aimDirection(dx: number, dy: number): number {
+  return (((Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) % 8) + 8) % 8);
+}
+
+/** Where a weapon's shots start: its roof turret, centred above the bay (sector tiles). */
+export function turretPosition(sim: Sim, moduleId: number): { x: number; y: number } | null {
+  return moduleCenter(sim, moduleId);
+}

@@ -70,6 +70,11 @@ export interface Weapon {
   nextShotTick: number;
   /** Resolved target of the running volley. */
   volleyTarget: Target | null;
+  /**
+   * Roof turret aim, quantised to 8 directions: 0 = +x (east in grid space), then clockwise in grid space
+   * (y grows downward): 1 = +x+y, 2 = +y, 3 = -x+y, 4 = -x, 5 = -x-y, 6 = -y, 7 = +x-y. Renderer-readable.
+   */
+  aim: number;
 }
 export const WeaponC = defineComponent<Weapon>('weapon');
 

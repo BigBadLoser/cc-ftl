@@ -57,7 +57,7 @@ export const LIGHT_FALLOFF = 0.55;
 /** Door openness lost per tick once nobody is in the doorway (closes in ~3 s). */
 export const DOOR_CLOSE_PER_TICK = 4;
 /** Hp repaired per second at workSpeed 1. */
-export const REPAIR_PER_SEC = 12;
+export const REPAIR_PER_SEC = 3;
 /** Fire intensity removed per second at workSpeed 1. */
 export const EXTINGUISH_PER_SEC = 90;
 

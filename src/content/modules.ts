@@ -2,7 +2,9 @@ import type { ModuleDef } from '../sim';
 
 /**
  * Ship modules. Power is in units per second (+ supply, - draw). Footprints are [w, h] at
- * rotation 0; `access` is the tile (offset from the footprint's top-left) crew stand on.
+ * rotation 0; `access` is the tile (offset from the footprint's top-left) crew stand on. `openTiles` lists
+ * footprint tiles (offsets, rotation 0) that stay walkable inside a solid module: a console's chair and the floor
+ * beside it. Everything else of a solid module blocks walking.
  * `asset` ids name models in the render asset manifest.
  */
 export const modules = {
@@ -105,70 +107,77 @@ export const modules = {
     storage: { capacity: 8 },
   },
 
-  // --- Combat. Hull-mounted modules must touch a wall that borders space (validated on build). ---
+  // --- Combat. Offsets are (x, y) from the footprint's top-left at rotation 0; crew face south at rotation 0. ---
+  // Weapons are a floor bay plus a roof turret: the bay sits anywhere under the roof; the turret aims (Weapon.aim).
+  // Light weapons 2x2, heavy 3x3.
   'module.burstLaser': {
-    name: 'Burst laser', asset: 'module.burst_laser', footprint: [1, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.2, maxHp: 80, buildWork: 200, mount: 'hull', weapon: 'weapon.burstLaser', roofAsset: 'roof.weapon',
+    name: 'Burst laser', asset: 'module.burst_laser', footprint: [2, 2], solid: true, power: -8, priority: 3,
+    flammability: 0.2, maxHp: 80, buildWork: 200, weapon: 'weapon.burstLaser', roofAsset: 'roof.weapon',
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }],
   },
   'module.massDriver': {
-    name: 'Mass driver', asset: 'module.mass_driver', footprint: [1, 2], solid: true, power: -12, priority: 3,
-    flammability: 0.2, maxHp: 100, buildWork: 260, mount: 'hull', weapon: 'weapon.massDriver', roofAsset: 'roof.weapon',
+    name: 'Mass driver', asset: 'module.mass_driver', footprint: [3, 3], solid: true, power: -12, priority: 3,
+    flammability: 0.2, maxHp: 100, buildWork: 260, weapon: 'weapon.massDriver', roofAsset: 'roof.weapon',
     cost: [{ item: 'item.metal', count: 24 }, { item: 'item.electronics', count: 8 }],
   },
   'module.missileLauncher': {
-    name: 'Missile launcher', asset: 'module.missile_launcher', footprint: [1, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.3, maxHp: 80, buildWork: 220, mount: 'hull', weapon: 'weapon.missile', roofAsset: 'roof.weapon',
+    name: 'Missile launcher', asset: 'module.missile_launcher', footprint: [3, 3], solid: true, power: -8, priority: 3,
+    flammability: 0.3, maxHp: 80, buildWork: 220, weapon: 'weapon.missile', roofAsset: 'roof.weapon',
     cost: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 10 }],
   },
   'module.ionCannon': {
-    name: 'Ion cannon', asset: 'module.ion_cannon', footprint: [1, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.2, maxHp: 80, buildWork: 220, mount: 'hull', weapon: 'weapon.ion', roofAsset: 'roof.weapon',
+    name: 'Ion cannon', asset: 'module.ion_cannon', footprint: [2, 2], solid: true, power: -8, priority: 3,
+    flammability: 0.2, maxHp: 80, buildWork: 220, weapon: 'weapon.ion', roofAsset: 'roof.weapon',
     cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 14 }],
   },
   'module.incendiaryLauncher': {
-    name: 'Incendiary launcher', asset: 'module.incendiary_launcher', footprint: [1, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.4, maxHp: 80, buildWork: 200, mount: 'hull', weapon: 'weapon.incendiary', roofAsset: 'roof.weapon',
+    name: 'Incendiary launcher', asset: 'module.incendiary_launcher', footprint: [2, 2], solid: true, power: -8, priority: 3,
+    flammability: 0.4, maxHp: 80, buildWork: 200, weapon: 'weapon.incendiary', roofAsset: 'roof.weapon',
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 6 }],
   },
+  // 4 wide along the hull, 5 deep. At rotation 0 the north row (y = 0) replaces the hull wall (rotate clockwise for
+  // east, south, west); the bell protrudes into space beyond it.
   'module.engine': {
-    name: 'Engine', asset: 'module.engine', footprint: [1, 2], solid: true, power: -6, priority: 3,
-    heatPerSec: 4, flammability: 0.2, maxHp: 120, buildWork: 200, mount: 'hull', engine: { evasionPerPower: 0.02 },
+    name: 'Engine', asset: 'module.engine', footprint: [4, 5], solid: true, power: -6, priority: 3,
+    heatPerSec: 4, flammability: 0.2, maxHp: 160, buildWork: 320, engine: { evasionPerPower: 0.02 }, hullEdge: 'n',
     roofAsset: 'roof.engine',
-    cost: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 6 }],
+    cost: [{ item: 'item.metal', count: 24 }, { item: 'item.electronics', count: 8 }],
   },
   // 8 power -> 2 layers, one back every 10 s. Sits anywhere inside the ship.
   'module.shieldGen': {
-    name: 'Shield generator', asset: 'module.shield_gen', footprint: [1, 2], solid: true, power: -8, priority: 2,
+    name: 'Shield generator', asset: 'module.shield_gen', footprint: [2, 3], solid: true, power: -8, priority: 2,
     flammability: 0.2, maxHp: 100, buildWork: 220, shieldGen: { layersPerPower: 0.25, rechargeSec: 10 },
     roofAsset: 'roof.shield',
     cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 12 }],
   },
   'module.shieldGenSmall': {
-    name: 'Small shield generator', asset: 'module.shield_gen', footprint: [1, 1], solid: true, power: -4, priority: 2,
+    name: 'Small shield generator', asset: 'module.shield_gen_small', footprint: [2, 2], solid: true, power: -4, priority: 2,
     flammability: 0.2, maxHp: 70, buildWork: 140, shieldGen: { layersPerPower: 0.25, rechargeSec: 12 },
     roofAsset: 'roof.shield',
     cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 8 }],
   },
-  // Consoles: crew stand on the access tile (below at rotation 0) and run the ship system during combat.
+  // Consoles: the chair is a walkable tile inside the footprint; crew sit there to run the ship system in combat.
+  // Weapons console 2x2: solid (0,0) (1,0) (0,1); chair (1,1).
   'module.weaponsConsole': {
-    name: 'Weapons console', asset: 'module.weapons_console', footprint: [1, 1], solid: true, access: [0, 1], power: -3,
-    priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true, console: 'weapons',
-    cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
+    name: 'Weapons console', asset: 'module.weapons_console', footprint: [2, 2], solid: true, access: [1, 1],
+    openTiles: [[1, 1]], power: -3, priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true,
+    console: 'weapons', cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
   },
+  // Shield console 3x2: solid (0,0) (1,0) (2,0) (0,1); chair (1,1) and free floor (2,1). May shrink to 2x2 later.
   'module.shieldConsole': {
-    name: 'Shield console', asset: 'module.shield_console', footprint: [1, 1], solid: true, access: [0, 1], power: -3,
-    priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true, console: 'shields',
-    cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
+    name: 'Shield console', asset: 'module.shield_console', footprint: [3, 2], solid: true, access: [1, 1],
+    openTiles: [[1, 1], [2, 1]], power: -3, priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true,
+    console: 'shields', cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
   },
+  // Helm 3x2: solid (0,0) (1,0) (2,0) (0,1) (2,1); chair (1,1) between the side panels.
   'module.helm': {
-    name: 'Helm', asset: 'module.helm', footprint: [1, 1], solid: true, access: [0, 1], power: -3,
+    name: 'Helm', asset: 'module.helm', footprint: [3, 2], solid: true, access: [1, 1], openTiles: [[1, 1]], power: -3,
     priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true, console: 'helm',
     cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
   },
   'module.aiCore': {
-    name: 'AI core', asset: 'module.ai_core', footprint: [1, 1], solid: true, access: [0, 1], power: -4,
-    priority: 3, flammability: 0.2, maxHp: 80, buildWork: 240, aiCore: { tier: 1 },
+    name: 'AI core', asset: 'module.ai_core', footprint: [2, 2], solid: true, power: -4,
+    priority: 3, flammability: 0.2, maxHp: 80, buildWork: 240, aiCore: { tier: 1 }, roofAsset: 'roof.ai',
     cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 16 }],
   },
 } satisfies Record<string, ModuleDef>;

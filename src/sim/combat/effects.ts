@@ -45,9 +45,17 @@ function hullDamage(sim: Sim, at: Impact, amount: number, radius: number, fallof
     for (let dx = -radius; dx <= radius; dx++) {
       const x = at.x + dx;
       const y = at.y + dy;
-      if (grid.inBounds(x, y)) damageStruct(grid, x, y, dx === 0 && dy === 0 ? amount : amount * falloff);
+      if (!grid.inBounds(x, y) || isEngineWall(sim, at.gridId, x, y)) continue;
+      damageStruct(grid, x, y, dx === 0 && dy === 0 ? amount : amount * falloff);
     }
   }
+}
+
+/** True if an engine's armoured wall row covers the tile: it replaces the hull wall and never breaches. */
+function isEngineWall(sim: Sim, gridId: number, x: number, y: number): boolean {
+  const grid = sim.grids.get(gridId);
+  const m = grid?.has('module') ? sim.world.get(grid.get('module', x, y), ModuleC) : undefined;
+  return !!m && !!sim.content.modules[m.def]?.hullEdge && grid?.get('struct', x, y) === Struct.Wall;
 }
 
 /** Distinct module ids within `radius` tiles (Chebyshev) of the impact. */

@@ -38,3 +38,38 @@ export function accessTile(def: ModuleDef, x: number, y: number, rot: number): T
   const o = rotateOffset(def, rot, def.access[0], def.access[1]);
   return { x: x + o.x, y: y + o.y };
 }
+
+/** World tiles of a module's footprint that crew can walk on (its `openTiles`, rotated). */
+export function openTilesOf(def: ModuleDef, x: number, y: number, rot: number): Tile[] {
+  return (def.openTiles ?? []).map(([ox, oy]) => {
+    const o = rotateOffset(def, rot, ox, oy);
+    return { x: x + o.x, y: y + o.y };
+  });
+}
+
+/** True if (tx, ty) is inside the module's footprint. */
+export function inFootprint(def: ModuleDef, x: number, y: number, rot: number, tx: number, ty: number): boolean {
+  const [w, h] = rotatedSize(def, rot);
+  return tx >= x && ty >= y && tx < x + w && ty < y + h;
+}
+
+/** Footprint side that lies on the hull line after rotation ('n' | 'e' | 's' | 'w'), or null. */
+export function hullSide(def: ModuleDef, rot: number): 'n' | 'e' | 's' | 'w' | null {
+  if (!def.hullEdge) return null;
+  const order = ['n', 'e', 's', 'w'] as const;
+  return order[(order.indexOf(def.hullEdge) + rot) % 4] as 'n' | 'e' | 's' | 'w';
+}
+
+/** The footprint tiles on the hull side (the engine's wall row). */
+export function hullRow(def: ModuleDef, x: number, y: number, rot: number): Tile[] {
+  const side = hullSide(def, rot);
+  if (!side) return [];
+  const [w, h] = rotatedSize(def, rot);
+  return footprintTiles(def, x, y, rot).filter((t) =>
+    side === 'n' ? t.y === y : side === 's' ? t.y === y + h - 1 : side === 'w' ? t.x === x : t.x === x + w - 1);
+}
+
+/** Unit step pointing out of the ship from the hull side. */
+export function hullOutward(side: 'n' | 'e' | 's' | 'w'): Tile {
+  return side === 'n' ? { x: 0, y: -1 } : side === 's' ? { x: 0, y: 1 } : side === 'w' ? { x: -1, y: 0 } : { x: 1, y: 0 };
+}

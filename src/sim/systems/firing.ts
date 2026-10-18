@@ -1,6 +1,6 @@
 import { consumeAmmo } from '../combat/ammo';
 import { CombatC, IonC, ProjectileC, WeaponC, type Target } from '../combat/components';
-import { moduleCenter } from '../combat/geometry';
+import { aimDirection, turretPosition } from '../combat/geometry';
 import { operatorSkill } from '../combat/operators';
 import { shipEntityOf, shipOf } from '../combat/ships';
 import { resolveTarget } from '../combat/targets';
@@ -46,7 +46,7 @@ export function firingSystem(sim: Sim): void {
 }
 
 function launchNext(
-  sim: Sim, moduleId: number, w: { shotsLeft: number; nextShotTick: number; volleyTarget: Target | null }, weapon: string,
+  sim: Sim, moduleId: number, w: { shotsLeft: number; nextShotTick: number; volleyTarget: Target | null; aim: number }, weapon: string,
   def: WeaponDef, gridId: number,
 ): void {
   w.shotsLeft--;
@@ -54,10 +54,11 @@ function launchNext(
   const target = w.volleyTarget;
   if (!target) return void (w.shotsLeft = 0);
   if (def.ammo && !consumeAmmo(sim, gridId, def.ammo)) return void (w.shotsLeft = 0);
-  const from = moduleCenter(sim, moduleId);
+  const from = turretPosition(sim, moduleId);
   const alive = sim.world.get(target.moduleId, ModuleC)?.gridId === target.gridId;
-  const to = moduleCenter(sim, alive ? target.moduleId : 0) ?? centerOf(sim, target.gridId);
+  const to = turretPosition(sim, alive ? target.moduleId : 0) ?? centerOf(sim, target.gridId);
   if (!from || !to) return void (w.shotsLeft = 0);
+  w.aim = aimDirection(to.x - from.x, to.y - from.y);
   const dist = Math.max(1, Math.hypot(to.x - from.x, to.y - from.y));
   const skill = operatorSkill(sim, gridId, 'weapons');
   const spread = def.spread * Math.max(MIN_SPREAD_FACTOR, 1 - SPREAD_PER_GUNNERY * skill);

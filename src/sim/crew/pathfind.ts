@@ -1,4 +1,4 @@
-import { isSolidModule } from '../modules/walk';
+import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
 import { isWalkable } from '../structure';
 import type { Sim } from '../sim';
 
@@ -30,14 +30,14 @@ export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal): 
   const { width, height } = grid;
   const struct = grid.raw('struct');
   const mods = grid.has('module') ? grid.raw('module') : null;
-  const solid = new Map<number, boolean>();
+  const infos = new Map<number, WalkInfo>();
   const walk = (i: number): boolean => {
     if (!isWalkable(struct[i] as number)) return false;
     const m = mods ? (mods[i] as number) : 0;
     if (m === 0) return true;
-    let s = solid.get(m);
-    if (s === undefined) solid.set(m, (s = isSolidModule(sim, m)));
-    return !s;
+    let info = infos.get(m);
+    if (!info) infos.set(m, (info = walkInfo(sim, m)));
+    return !info.solid || info.open.has(Math.floor(i / width) * OPEN_KEY + (i % width));
   };
   const adj = goal.adjacent ? 1 : 0;
   const isGoal = (x: number, y: number): boolean =>

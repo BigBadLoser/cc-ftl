@@ -9,7 +9,7 @@ export const weapons = {
   'weapon.burstLaser': {
     name: 'Burst laser', projectileAsset: 'fx.laser_bolt', shots: 3, shotDelaySec: 0.3, chargeSec: 8, speed: 30, spread: 1,
     shield: { damage: 1, pierce: 0 },
-    effects: [{ type: 'hullDamage', amount: 14 }, { type: 'moduleDamage', amount: 8 }, { type: 'crewDamage', amount: 6 }],
+    effects: [{ type: 'hullDamage', amount: 24 }, { type: 'moduleDamage', amount: 22 }, { type: 'crewDamage', amount: 8, radius: 1 }],
   },
   // One slug that passes a single shield layer and punches through the wall (breach).
   'weapon.massDriver': {
@@ -26,7 +26,7 @@ export const weapons = {
     ammo: 'item.missile', interceptable: true, shield: { damage: 0, pierce: 0, bypass: true },
     effects: [
       { type: 'hullDamage', amount: 90, radius: 1, falloff: 0.5 },
-      { type: 'moduleDamage', amount: 40 }, { type: 'crewDamage', amount: 20 },
+      { type: 'moduleDamage', amount: 60 }, { type: 'crewDamage', amount: 20 },
     ],
   },
   // Drains a shield layer; with none up it disables the module it hits for 10 s.
