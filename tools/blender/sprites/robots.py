@@ -55,11 +55,15 @@ def _head(rig, hd, c, s, eye_r):
     rig.part(hd, "eye").ball((x, f + s[1] * 1.04, z - s[2] * 0.08), (eye_r, eye_r * 0.5, eye_r), EYE)
 
 
-def _socket(rig, t, c, rot=None):
-    """Head socket in the top of the torso: a grey rim round a dark well cut to the head's footprint (the head could
-    sink in until its brow plate sits flush). c = centre of the chest top face."""
-    rig.part(t).rbox(c, (0.22, 0.27, 0.03), MID, r=0.04, rot=rot)
-    rig.part(t).rbox((c[0], c[1], c[2] + 0.004), (0.175, 0.225, 0.03), "dark", r=0.03, rot=rot)
+def _socket(rig, t, c, w=0.17, ln=0.2, rot=None):
+    """Head socket in the top of the torso, shaped to the head's brow plate (w wide at the back, tapering 0.75 to the
+    front, ln long): a grey rim of even width round a dark well. In the charge clip the head sinks until the brow plate
+    sits flush in it like a fitted cover. c = centre of the chest top face."""
+    def ring(pad):
+        return (w + pad, 0.03, ln + pad), (w * 0.75 + pad) / (w + pad)
+    (rs, rt), (ws, wt) = ring(0.05), ring(0.012)
+    rig.part(t).rbox(c, rs, MID, r=0.03, taper=rt, axis="f", rot=rot)
+    rig.part(t).rbox((c[0], c[1], c[2] + 0.004), ws, "dark", r=0.02, taper=wt, axis="f", rot=rot)
 
 
 def _sensor_head(rig, hd, f, z, k, pitch=0.0, wedge_h=0.1, brow=1.0):
@@ -147,7 +151,7 @@ def worker():
     rig.part(t).rbox((0, -0.14, 1.13), (0.24, 0.08, 0.2), FRAME_L, r=0.02)                  # power pack
     _charge_bar(rig, t, -0.075, -0.18, 1.075, face=-1)
     _charge_bar(rig, t, -0.06, 0.122, 1.13, w=0.04, h=0.035)                              # on the sternum plate
-    _socket(rig, t, (0, 0.01, 1.258))
+    _socket(rig, t, (0, 0.0, 1.258))
     _sensor_head(rig, hd, 0.02, 1.345, 1.0)
     _util_arm(rig, t)
     rig.build()
@@ -200,7 +204,7 @@ def heavy():
     for k in range(4):                                                                   # front cells, on the chest slope
         rig.part(t, f"bar{k}").box((-0.075 + k * 0.05, 0.215, 1.12), (0.04, 0.03, 0.04), BAR, rot=(-12, 0, 0))
     rig.part(t).rbox((0, 0.215, 1.24), (0.2, 0.06, 0.15), FRAME_L, r=0.03, taper=1.15, rot=(-12, 0, 0))  # chest inset
-    _socket(rig, t, (0, 0.085, 1.358), rot=(-12, 0, 0))
+    _socket(rig, t, (0, 0.105, 1.354), w=0.17 * 1.15, ln=0.2 * 1.15, rot=(-12, 0, 0))
     _sensor_head(rig, hd, 0.12, 1.435, 1.0, pitch=-12, wedge_h=0.08, brow=1.15)
     rig.build()
     rig.root.scale = (1.1,) * 3
