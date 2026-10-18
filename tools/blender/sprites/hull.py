@@ -54,7 +54,7 @@ class Out(Spec):
                or (self.o >= 3 and i + j <= 1))
         if rim:
             return A.ramp(A._blk(s, self.variant), "y")["K"]
-        return A.hull_out_top("flat", s, self.dist(x, y) - BEV, self.variant)
+        return A.hull_out_top("flat", s, self.dist(x, y) - BEV, self.variant, 1 - BEV)
 
     def col_face(self, face, x, y, z):
         f = (self.foot - z) / (self.foot + DROP)

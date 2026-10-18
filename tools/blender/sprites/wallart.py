@@ -49,7 +49,15 @@ def _box(s, z, s0, s1, z0, z1, R, raised=True, body=None):
 
 # ---- interior partition walls ---------------------------------------------------------------------------------
 
+def _tseam(s):
+    """Tile-level seam: 0 = dark seam column at the tile edge, 1 = lit column right of it, None = body."""
+    c = cell(s)
+    return 0 if c == 0 else (1 if c == 1 else None)
+
+
 def wall_face(face, s, z, top, zs, full):
+    """Vertical face of an interior wall. Full: a lower course of two raised panels per tile, a chest-high rail and an
+    upper course of one wide recessed panel per tile; seams only at tile edges, so the run reads as long panels."""
     R = ramp("wall", face)
     if z < zs + 0.03:
         return R["D"]                                    # crease at the skirt
@@ -57,49 +65,65 @@ def wall_face(face, s, z, top, zs, full):
         return R["H"]                                    # bright lip under the black cap
     if z > top - 0.08:
         return R["D"]
-    sm = _seam(s)
-    if sm == 0:
-        return R["D"]
     if not full:
+        sm = _seam(s)
+        if sm == 0:
+            return R["D"]
         b = _box(s, z, 0.09, 0.41, zs + 0.06, top - 0.11, R)
         if b:
             return b
         return R["L"] if sm == 1 else R["M"]
-    if 1.42 <= z < 1.46:
+    sm = _tseam(s)
+    if sm == 0:
+        return R["D"]
+    zr = zs + 0.42 * (top - zs)                          # rail splits the face into two courses
+    if zr + 0.08 <= z < zr + 0.11:
         return R["L"]                                    # rail: lit top
-    if 1.33 <= z < 1.42:
+    if zr <= z < zr + 0.08:
         return R["S"]
-    if 1.30 <= z < 1.33:
+    if zr - 0.03 <= z < zr:
         return R["D"]                                    # rail shadow
     if sm == 1:
         return R["L"]
-    if z >= 1.46:
-        if abs(z - 1.95) < 0.015:
-            return R["D"]                                # horizontal plate seam
-        if abs(z - 1.92) < 0.015:
-            return R["L"]
-        if 0.62 <= s < 0.82 and top - 0.2 <= z < top - 0.15:
-            return R["D"]                                # one vent slot per tile
-        return R["M"]
-    b = _box(s, z, 0.07, 0.43, zs + 0.13, 1.18, R) if cell(s) < 16 else None
+    if z >= zr + 0.11:                                   # upper course: one wide recessed panel
+        z0, z1 = zr + 0.2, top - 0.17
+        if 0.08 <= s < 0.92 and z0 <= z < z1:
+            if z1 - z < 0.03 or s < 0.08 + C:
+                return R["D"]                            # recess: dark top / left
+            if z - z0 < 0.03 or s >= 0.92 - C:
+                return R["L"]                            # lit bottom / right lip
+            if 0.66 <= s < 0.84 and abs(z - (z0 + 0.12)) < 0.02:
+                return R["D"]                            # vent slot
+            return R["M"]
+        return R["S"]
+    b = _box(s, z, 0.06, 0.44, zs + 0.1, zr - 0.1, R)
     if b:
-        if b == R["S"] and 0.17 <= s < 0.33 and 0.64 <= z < 0.68:
-            return R["D"]                                # drawer slot
+        p = s % 0.5
+        if b == R["S"] and 0.18 <= p < 0.32 and abs(z - (zs + zr) / 2 - 0.08) < 0.02:
+            return R["D"]                                # handle slot
         return b
-    if cell(s) >= 16 and 0.9 <= z < 0.94 and 0.6 <= s < 0.9:
-        return R["D"]
     return R["M"]
 
 
-def wall_skirt(face, s, d, run):
-    """Sloped skirt. face y/x/h (hip); d = distance from the wall foot, run = skirt depth."""
+def wall_skirt(face, s, d, run, full=True):
+    """Sloped skirt. face y/x/h (hip); d = distance from the wall foot, run = skirt depth. Half-tile plates with a
+    raised inset panel each, like the reference's big skirt panels."""
     R = ramp("wall", "x" if face == "x" else "y")
     if d < C:
         return R["L"]                                    # lit crest
     if run - d < C:
         return R["D"]                                    # toe line on the floor
-    if face != "h" and _seam(s) == 0:
+    if face == "h":
+        return R["S"]
+    if _seam(s) == 0:
         return R["D"]
+    p = s % 0.5
+    if full and 0.07 <= p < 0.43 and 0.22 * run <= d < 0.8 * run:
+        if d < 0.22 * run + 1.2 * C or p < 0.07 + C:
+            return R["L"]                                # lit upper / left edge of the inset
+        if d >= 0.8 * run - 1.2 * C or p >= 0.43 - C:
+            return R["D"]
+        return R["S"]
     if d < 2 * C:
         return R["S"]
     return R["M"]
@@ -147,29 +171,34 @@ def hull_inner_face(face, s, z, top, zs, full, variant):
         if 0.12 <= p < 0.38 and top - 0.2 <= z < top - 0.15:
             return B["D"]
         return B["M"]
-    if z < 1.12:                                         # teal drawer course
+    zd = zs + 0.37 * (top - zs)
+    if z < zd:                                           # teal drawer course
         W = ramp("wall", face)
-        if z > 1.08:
+        if z > zd - 0.04:
             return W["L"]
         if sm == 0:
             return W["D"]
-        b = _box(s, z, 0.06, 0.44, zs + 0.1, 1.0, W)
+        b = _box(s, z, 0.06, 0.44, zs + 0.1, zd - 0.12, W)
         if b:
             p = s % 0.5
-            if b == W["S"] and 0.15 <= p < 0.35 and 0.55 <= z < 0.59:
+            if b == W["S"] and 0.15 <= p < 0.35 and abs(z - (zs + zd) / 2) < 0.02:
                 return W["D"]
             return b
         return W["M"]
-    if z < 1.18:
+    if z < zd + 0.06:
         return B["K"]
-    if sm == 0 or abs(z - 1.8) < 0.015:
-        return B["K"]                                    # plate seams
-    if sm == 1 or abs(z - 1.77) < 0.015:
+    zp = (zd + top) / 2
+    tm = _tseam(s)
+    if tm == 0 or abs(z - zp) < 0.015:
+        return B["K"]                                    # plate seams (tile edges and one course line)
+    if tm == 1 or abs(z - zp + 0.03) < 0.015:
         return B["L"]
+    if cell(s) == 16 and z > zp:
+        return B["D"]                                    # light seam splitting the upper plate
     p = s % 0.5
-    if abs(z - 1.86) < 0.025 and cell(p) in (4, 11):
+    if abs(z - zp - 0.06) < 0.025 and cell(p) in (4, 11):
         return B["H"]                                    # bolts
-    if z < 1.3:
+    if z < zd + 0.18:
         return B["D"]
     return B["M"]
 
@@ -208,55 +237,64 @@ def hull_skirt(face, s, d, run, variant):
 # ---- near (outer) hull ------------------------------------------------------------------------------------------
 
 def hull_out_face(face, s, f, variant):
-    """Outer armour face. f = 0 at the bevel foot down to 1 at the bottom of the below-deck band. Courses: lights band,
-    vent band, big plates with bolts, lower vents, dark undercut. Ochre plates are raised: lit left / top edge."""
+    """Outer armour face. f = 0 at the bevel foot down to 1 at the bottom of the below-deck band. Layered courses: a
+    window strip, a vent course, a tall course of half-tile plates that alternate raised (lit top / left edges) and
+    recessed, a lower grille course and a dark undercut. Ochre plates (variant 1) run the full height and are raised."""
     if face == "d":
         s = (s * 2) % 1.0                                # the corner face is two tiles wide
-    ochre = ochre_at(s, variant) and f < 0.86
+    ochre = ochre_at(s, variant) and f < 0.9
     R = ramp("ochre" if ochre else "blue", face)
     c = cell(s)
     p = c % 16
-    if f < 0.025:
-        return R["H"]
-    if ochre and f > 0.845:
-        return R["K"]
-    e = _blk_edge(s, variant) if f < 0.86 else 0
+    if f < 0.02:
+        return R["H"]                                    # crest
+    e = _blk_edge(s, variant) if f < 0.9 else 0
     if e:
-        return R["H"] if e < 0 else R["K"]
-    if 0.2 <= f < 0.215 or 0.375 <= f < 0.39 or 0.70 <= f < 0.715:
-        return R["K"]                                    # course seams
-    if 0.36 <= f < 0.375:
-        return R["L"]
-    if f < 0.2:
-        if 0.08 <= f < 0.135 and c in (9, 10, 13, 14):
-            return R["H"]                                # paired lights, once per tile
-        return R["M"] if f > 0.05 else R["L"]
-    if f < 0.36:
-        if c == 0 and f > 0.22:
-            return R["K"]
-        if 0.24 <= f < 0.33 and 19 <= c <= 27 and c % 2 == 1:
-            return R["D"]                                # vent group
-        return R["M"]
-    if f < 0.70:
-        if c == 0 or (c == 16 and f < 0.62):
-            return R["K"]                                # plate seams
-        if c == 1 or c == 17 or 0.39 <= f < 0.405:
-            return R["L"]                                # lit plate edges
-        if 0.43 <= f < 0.46 and c in (4, 6, 26, 28):
-            return R["H"]                                # bolt pairs
-        return R["D"] if f > 0.62 else R["M"]
-    if f < 0.86:
-        if 0.74 <= f < 0.83 and 6 <= c <= 14 and c % 2 == 0:
-            return R["K"]
+        return R["H"] if e < 0 else R["K"]               # the ochre block stands proud: lit left, dark right edge
+    for f0 in (0.17, 0.33, 0.8):
+        if f0 <= f < f0 + 0.012:
+            return R["K"]                                # course seams
+        if f0 + 0.012 <= f < f0 + 0.024:
+            return R["L"]                                # lit lip below each seam
+    if f < 0.17:                                         # window strip
+        if 0.07 <= f < 0.12 and c in (6, 7, 10, 11, 21, 22, 25, 26):
+            return "glassL" if f < 0.095 else R["L"]
+        return R["L"] if f < 0.05 else R["M"]
+    if f < 0.33:                                         # vent course
         if c == 0:
             return R["K"]
-        return R["D"]
-    if f < 0.875:
+        if 0.21 <= f < 0.29 and 4 <= p <= 11:
+            return R["K"] if p % 2 == 0 else R["D"]      # grille
         return R["M"]
-    return R["K"]
+    if f < 0.8:                                          # big plates, alternately raised and recessed
+        raised = (c // 16) % 2 == 0
+        if p == 0:
+            return R["K"]
+        if raised:
+            if p == 1 or f < 0.348:
+                return R["L"]
+            if p == 15 or f > 0.77:
+                return R["D"]
+            if 0.62 <= f < 0.645 and p in (4, 5, 10, 11):
+                return R["L"]                            # bolt pairs
+            if abs(f - 0.55) < 0.008:
+                return R["D"]
+            return R["L"] if ochre else R["T"]
+        if p == 1 or f < 0.36:
+            return R["D"]                                # recessed: shadowed top / left
+        if p == 15 or f > 0.77:
+            return R["L"]
+        if abs(f - 0.55) < 0.008:
+            return R["D"]
+        return R["M"]
+    if f < 0.9:                                          # lower grille course
+        if c == 0 or (0.83 <= f < 0.88 and 3 <= p <= 12 and p % 2 == 1):
+            return R["K"]
+        return R["D"]
+    return R["K"] if f > 0.93 else R["D"]
 
 
-def hull_out_top(kind, s, w, variant):
+def hull_out_top(kind, s, w, variant, wmax=1.0):
     """Top of the near hull. kind: 'bevel' (the 45 degree slope) or 'flat'; w = distance from the bevel crest
     (flat) or from the outer foot (bevel)."""
     fam = _blk(s, variant)
@@ -270,7 +308,7 @@ def hull_out_top(kind, s, w, variant):
         return R["L"]
     if w < C:
         return R["H"]                                    # crest line
-    if w > 1 - 8 / 32 - 1.5 * C:
+    if w > wmax - 1.5 * C:
         return R["K"]                                    # inner rim against the deck
     if cell(s) % 16 == 0:
         return R["D"]

@@ -19,23 +19,43 @@ from . import core
 from . import wallart as A
 
 GN = 32
-HF = 2.4           # full wall height (the roof sits at the same height); crew are 1.5 tall
+# Heights (tiles; crew are 1.5 tall). Interior walls rise to HF; the roof is a ROOF_T slab on top of them (HF .. HF +
+# ROOF_T, roofs.ZR is its top); the hull rises to the roof's top so the roof sits flush with it. Everything else is
+# derived from HF when a piece is built, so HF stays the single height knob.
+HF = 2.2           # interior wall height
+ROOF_T = 0.2       # roof slab thickness
 H = 0.5            # cutaway cut plane (walls, far hull and the near hull top)
 HH = H             # (compat) cutaway hull height
-T = TW = 8 / 32    # interior wall thickness
-TWH = 12 / 32      # far hull thickness
-ZS = {True: 0.36, False: 0.16}   # skirt top: full / cutaway
-DROP = 1.3         # the near hull's outer face reaches this far below the deck
-BEV = 9 / 32       # near hull top bevel (45 degrees)
+SKIRT = 0.30       # full skirt top as a fraction of HF (Space Haven's skirt is about 0.3 of the wall)
+ZSL = 0.2          # cutaway skirt top
+T = TW = 11 / 32   # interior wall thickness (Space Haven: about 0.35 of a tile)
+TWH = 16 / 32      # far hull thickness
+DROP = 1.8         # the near hull's outer face reaches this far below the deck
+BEV = 12 / 32      # near hull top bevel (45 degrees)
 DZ = 1 / 40        # vertical face row height (about 1 px)
 BIT = {"n": 1, "e": 2, "s": 4, "w": 8}
 EDGES = {"f": "y0y1x0x1", "se": "y0x0", "nw": "y1x1", "ne": "y1x0", "sw": "y0x1"}
 TRI = {"se": (0, 1, 3), "nw": (1, 2, 3), "ne": (0, 2, 3), "sw": (0, 1, 2)}   # kept corners of a half cell
 
 
+def hull_top():
+    """Top of the full-height hull: the roof slab's top."""
+    return HF + ROOF_T
+
+
+def skirt_top(full):
+    return SKIRT * HF if full else ZSL
+
+
+def wall_top(fam, full):
+    if not full:
+        return H
+    return hull_top() if fam == "hull" else HF
+
+
 def profile(fam, full):
     """(wall thickness, wall top z, skirt top z)."""
-    return (TWH if fam == "hull" else TW), (HF if full else H), ZS[full]
+    return (TWH if fam == "hull" else TW), wall_top(fam, full), skirt_top(full)
 
 
 def lerp(a, b, t):
@@ -82,6 +102,10 @@ class Spec:
 
     def topz(self, x, y):
         return 0.0
+
+    def cell_top(self, i, j):
+        """Flat top height of a covered cell, or None to use topz at the corners (sloped tops)."""
+        return None
 
     def skirtz(self, x, y):
         return 0.0
@@ -141,7 +165,8 @@ def emit(m, sp):
             P = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
             cv = cov[i][j]
             if cv:
-                Pz = [(x, y, sp.topz(x, y)) for x, y in P]
+                ct = sp.cell_top(i, j)
+                Pz = [(x, y, sp.topz(x, y) if ct is None else ct) for x, y in P]
                 for poly in _polys(Pz, cv):
                     m.poly([core.G(*p) for p in poly], sp.col_top(i, j, _kind(poly), (x0 + x1) / 2, (y0 + y1) / 2))
             elif not sp.skip_skirt(i, j):
@@ -160,7 +185,14 @@ def emit(m, sp):
             for face, a, b, edge, nb, opp, last, op, dr in (
                     ("y", (x0, y1), (x1, y1), "y1", (i, j + 1), "y0", j == GN - 1, sp.open_y, sp.drop_y),
                     ("x", (x1, y1), (x1, y0), "x1", (i + 1, j), "x0", i == GN - 1, sp.open_x, sp.drop_x)):
-                if edge not in EDGES[cv] or has(*nb, opp) or (last and not op):
+                if edge not in EDGES[cv] or (last and not op):
+                    continue
+                ct = sp.cell_top(i, j)
+                if has(*nb, opp):
+                    cn = sp.cell_top(*nb)
+                    if ct is None or cn is None or cn >= ct - 1e-6:
+                        continue
+                    _face(m, sp, face, a, b, (cn, cn), (ct, ct))     # step down to a lower neighbour
                     continue
                 if last and dr:
                     za = (-DROP, -DROP)
@@ -168,7 +200,8 @@ def emit(m, sp):
                     za = (sp.skirtz(*a), sp.skirtz(*b))
                 lo = sp.face_lo(*a), sp.face_lo(*b)
                 za = tuple(z if q is None else max(z, q) for z, q in zip(za, lo))
-                _face(m, sp, face, a, b, za, (sp.topz(*a), sp.topz(*b)))
+                zt = (sp.topz(*a), sp.topz(*b)) if ct is None else (ct, ct)
+                _face(m, sp, face, a, b, za, zt)
             if cv == "se" and sp.diag:
                 a, b = (x0, y1), (x1, y0)
                 _face(m, sp, "d", a, b, (-DROP, -DROP), (sp.topz(*a), sp.topz(*b)))
@@ -183,11 +216,13 @@ class Strip(Spec):
         hull = fam == "hull"
         te = TW if hull and mask & 5 == 5 else t        # an arm off a straight hull run is a partition
         ts = TW if hull and mask & 10 == 10 else t
-        self.rects = [((-0.5, -0.5 + t, -0.5, -0.5 + t), fam, t)]
+        rf = lambda w: "wall" if w < t else fam          # noqa: E731
+        # rects: (x0, x1, y0, y1), family, thickness, top
+        self.rects = [((-0.5, -0.5 + t, -0.5, -0.5 + t), fam, t, self.top)]
         if mask & 2:
-            self.rects.append(((-0.5 + t, 0.5, -0.5, -0.5 + te), "wall" if te < t else fam, te))
+            self.rects.append(((-0.5 + t, 0.5, -0.5, -0.5 + te), rf(te), te, wall_top(rf(te), full)))
         if mask & 4:
-            self.rects.append(((-0.5, -0.5 + ts, -0.5 + t, 0.5), "wall" if ts < t else fam, ts))
+            self.rects.append(((-0.5, -0.5 + ts, -0.5 + t, 0.5), rf(ts), ts, wall_top(rf(ts), full)))
         k = round(t * GN)
         self.keep = (lambda ci, cj: ci + cj >= k) if hull and mask == 6 else None   # chamfered outer corner
 
@@ -206,6 +241,10 @@ class Strip(Spec):
 
     def topz(self, x, y):
         return self.top
+
+    def cell_top(self, i, j):
+        r = self._rect_at((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5, 0.0)
+        return r[3] if r else None
 
     def _dist(self, x, y):
         best = (1e9, None)
@@ -239,15 +278,16 @@ class Strip(Spec):
         s = x + 0.5 if kind == "y" else 0.5 - y
         if r[1] == "hull":
             return A.hull_skirt(kind, s, d, run, self.variant)
-        return A.wall_skirt(kind, s, d, run)
+        return A.wall_skirt(kind, s, d, run, self.full)
 
     def col_face(self, face, x, y, z):
         e = 0.5 / GN
         r = self._rect_at(x, y - e) if face == "y" else self._rect_at(x - e, y)
         s = x + 0.5 if face == "y" else 0.5 - y
+        top = r[3] if r else self.top
         if r and r[1] == "hull":
-            return A.hull_inner_face(face, s, z, self.top, self.zs, self.full, self.variant)
-        return A.wall_face(face, s, z, self.top, self.zs, self.full)
+            return A.hull_inner_face(face, s, z, top, self.zs, self.full, self.variant)
+        return A.wall_face(face, s, z, top, self.zs, self.full)
 
 
 def block(mask, fam, deco=None, name=None, full=False):
@@ -263,13 +303,14 @@ def end_face(fam, side):
     t = TWH if fam == "hull" else TW
     m = core.Mesh(f"end_{fam}_{side}", flat=True)
     n = int(round(t * GN))
-    rows = int(round((HF - H) / DZ))
+    top = wall_top(fam, True)
+    rows = int(round((top - H) / DZ))
     R = A.ramp("blue" if fam == "hull" else "wall", "y" if side == "s" else "x")
     for c in range(n):
         u0, u1 = c / GN, (c + 1) / GN
         for k in range(rows):
-            z0, z1 = H + (HF - H) * k / rows, H + (HF - H) * (k + 1) / rows
-            col = R["H"] if z1 > HF - 0.05 else (R["L"] if c == 0 else (R["D"] if c == n - 1 else R["M"]))
+            z0, z1 = H + (top - H) * k / rows, H + (top - H) * (k + 1) / rows
+            col = R["H"] if z1 > top - 0.05 else (R["L"] if c == 0 else (R["D"] if c == n - 1 else R["M"]))
             if side == "s":
                 a, b = (-0.5 + u0, 0.5), (-0.5 + u1, 0.5)
             else:

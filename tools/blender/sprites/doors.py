@@ -9,11 +9,11 @@ no leaf: the doorway is a real hole that shows the floor and room behind. The cu
 with near-black cut tops, like the walls."""
 from . import core
 from . import wallart as A
-from .walls import GN, TW, ZS, Strip, emit
+from . import walls
+from .walls import GN, TW, Strip, emit, skirt_top
 
 DXF = 0.50                  # frame half-width
 DXO = 0.31                  # opening half-width
-ZO, ZF = 1.84, 2.16         # opening height, frame top (the wall is HF = 2.4)
 CHF = 0.18                  # upper corner chamfer
 PF = 3 / 32                 # frame stands this far proud of the wall face
 ZL = 1.0                    # cutaway cut height
@@ -24,10 +24,18 @@ VF = VW + PF                # frame front
 VL = -0.5 + TW / 2          # leaf plane
 
 
+def door_heights():
+    """(opening height, frame top): 1.72 / 1.98 where the wall leaves room, otherwise kept 0.14 under the wall top with
+    the opening at least 1.55 (crew are 1.5), so the door is always shorter than the wall and taller than the crew."""
+    zf = min(1.98, walls.HF - 0.14)
+    return max(1.55, zf - 0.26), zf
+
+
 class DoorWall(Strip):
     def __init__(self, axis, low):
         super().__init__(10 if axis == "x" else 5, "wall", not low)
         self.axis, self.low = axis, low
+        self.zf = door_heights()[1]
 
     def _u(self, x, y):
         return x if self.axis == "x" else y
@@ -39,25 +47,41 @@ class DoorWall(Strip):
         return cv
 
     def skip_skirt(self, i, j):
-        return abs(self._u((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5)) < DXF
+        return abs(self._u((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5)) < DXO
+
+    def col_skirt(self, i, j, kind, x, y):
+        """Under the jambs the skirt is the frame's flared rose foot."""
+        if abs(self._u(x, y)) >= DXF:
+            return super().col_skirt(i, j, kind, x, y)
+        d, r = self._dist(x, y)
+        run = 1.0 - r[2]
+        R = A.ramp("rose", "x" if kind == "x" else "y")
+        if d < C or abs(abs(self._u(x, y)) - DXO) < C:
+            return R["H"]
+        if run - d < C:
+            return R["K"]
+        if run * 0.55 <= d < run * 0.55 + C:
+            return R["D"]                                   # groove across the foot
+        return R["L"] if d < 2 * C else R["M"]
 
     def face_lo(self, x, y):
         u = abs(self._u(x, y))
         if self.low or u > DXF + 1e-9:
             return None
-        return ZF - max(0.0, u - (DXF - CHF))
+        return self.zf - max(0.0, u - (DXF - CHF))
 
 
 def door(axis="x", is_open=False, low=False):
     m = core.Mesh(f"door_{'low_' if low else ''}{axis}{'_open' if is_open else ''}", flat=True)
     sp = DoorWall(axis, low)
+    zo, zf = door_heights()
     emit(m, sp)
-    zs = ZS[not low]
+    zs = skirt_top(not low)
     face = "y" if axis == "x" else "x"           # the wall face the door sits in
     side = "x" if axis == "x" else "y"           # orientation of the +u side faces
     R, Rs = A.ramp("rose", face), A.ramp("rose", side)
     left = -1 if axis == "x" else 1              # sign of u at the screen-left jamb
-    top = ZL if low else ZF
+    top = ZL if low else zf
     cut = "wK"
 
     def G(u, v, z):
@@ -70,7 +94,7 @@ def door(axis="x", is_open=False, low=False):
         """Frame silhouette in the (u, z) plane."""
         if abs(u) > DXF or z > top:
             return False
-        return low or z <= ZF - CHF or abs(u) - (DXF - CHF) <= ZF - z
+        return low or z <= zf - CHF or abs(u) - (DXF - CHF) <= zf - z
 
     nu, nz = int(round(2 * DXF * GN)), int(round(top * 20))
     du, dz = 2 * DXF / nu, top / nz
@@ -80,20 +104,20 @@ def door(axis="x", is_open=False, low=False):
             um, zm = u0 + du / 2, z0 + dz / 2
             if not outline(um, zm):
                 continue
-            if abs(um) < DXO and zm < ZO:
+            if abs(um) < DXO and zm < zo:
                 continue                                        # the doorway
             lu = um * left                                      # > 0 toward the screen-left
             rim_side = abs(um) > DXF - C * 1.2
-            rim_top = not low and (zm > ZF - 0.04 or (abs(um) - (DXF - CHF)) > ZF - zm - 0.06)
+            rim_top = not low and (zm > zf - 0.04 or (abs(um) - (DXF - CHF)) > zf - zm - 0.06)
             if rim_side:
                 col = R["H"] if lu > 0 else R["D"]
             elif rim_top:
                 col = R["H"] if (lu > 0 or abs(um) < DXF - CHF) else R["M"]
-            elif abs(um) > DXF - C * 2.2 or (not low and zm > ZF - 0.08):
+            elif abs(um) > DXF - C * 2.2 or (not low and zm > zf - 0.08):
                 col = R["M"]                                    # groove inside the rim
-            elif abs(abs(um) - DXO) < C * 1.1 or (abs(um) < DXO + C and ZO <= zm < ZO + 0.03):
+            elif abs(abs(um) - DXO) < C * 1.1 or (abs(um) < DXO + C and zo <= zm < zo + 0.03):
                 col = R["K"]                                    # trim round the doorway
-            elif abs(abs(um) - (DXO + DXF) / 2) < C * 0.6 and 0.12 < zm < ZO - 0.12:
+            elif abs(abs(um) - (DXO + DXF) / 2) < C * 0.6 and 0.12 < zm < zo - 0.12:
                 col = R["D"]                                    # jamb groove
             elif low and zm > top - 0.04:
                 col = R["H"]                                    # lit lip under the cut
@@ -107,23 +131,22 @@ def door(axis="x", is_open=False, low=False):
         for a, b in ((-DXF, -DXO), (DXO, DXF)):
             quad([(a, vt, top), (b, vt, top), (b, VF, top), (a, VF, top)], cut)
     else:
-        quad([(-DXF + CHF, vt, ZF), (DXF - CHF, vt, ZF), (DXF - CHF, VF, ZF), (-DXF + CHF, VF, ZF)], R["H"])
+        quad([(-DXF + CHF, vt, zf), (DXF - CHF, vt, zf), (DXF - CHF, VF, zf), (-DXF + CHF, VF, zf)], R["H"])
         for sg in (-1, 1):
-            p0, p1 = (sg * (DXF - CHF), ZF), (sg * DXF, ZF - CHF)
+            p0, p1 = (sg * (DXF - CHF), zf), (sg * DXF, zf - CHF)
             col = R["H"] if sg == left else R["M"]
             quad([(p0[0], vt, p0[1]), (p1[0], vt, p1[1]), (p1[0], VF, p1[1]), (p0[0], VF, p0[1])], col)
-    zt = top if low else ZF - CHF
+    zt = top if low else zf - CHF
     quad([(DXF, VB, 0), (DXF, VF, 0), (DXF, VF, zt), (DXF, VB, zt)], Rs["D"])
-    W = A.ramp("wall", side)
-    m.poly([G(-DXF, VW, 0), G(-DXF, 0.5, 0), G(-DXF, VW, zs)], W["D"])     # the skirt's cut edge
+    m.poly([G(-DXO, VW, 0), G(-DXO, 0.5, 0), G(-DXO, VW, zs)], Rs["D"])    # the foot's cut edge at the opening
     # reveal (the jamb's inner side at u = -DXO faces +u)
     vr = VB if is_open else VL
-    zr = min(ZO, top)
+    zr = min(zo, top)
     quad([(-DXO, vr, 0), (-DXO, VF, 0), (-DXO, VF, zr), (-DXO, vr, zr)], Rs["D"])
     quad([(-DXO, vr, zr - 0.04), (-DXO, VF, zr - 0.04), (-DXO, VF, zr), (-DXO, vr, zr)], Rs["K"])
 
     if not is_open:
-        _leaf(m, G, R, top, low, cut)
+        _leaf(m, G, R, top, low, cut, zo)
     # sill through the doorway and the hazard threshold on the floor in front
     v0 = VB if is_open else VL
     quad([(-DXO, v0, 0.012), (DXO, v0, 0.012), (DXO, VF, 0.012), (-DXO, VF, 0.012)], "steelD")
@@ -140,9 +163,9 @@ def door(axis="x", is_open=False, low=False):
     return [m.build()]
 
 
-def _leaf(m, G, R, top, low, cut):
+def _leaf(m, G, R, top, low, cut, zo):
     """Closed leaf in the recess: window, red light, dashed band, lower panel."""
-    zt = min(ZO, top)
+    zt = min(zo, top)
     nu, nz = int(round(2 * DXO * GN)), int(round(zt * 20))
     du, dz = 2 * DXO / nu, zt / nz
     for jj in range(nz):
@@ -155,18 +178,18 @@ def _leaf(m, G, R, top, low, cut):
                 col = R["K"]
             elif low and zm > zt - 0.04:
                 col = R["H"]
-            elif ZO * 0.6 <= zm < ZO * 0.9 and p < DXO - 0.07:
-                if p > DXO - 0.07 - C or zm < ZO * 0.6 + 0.03 or zm > ZO * 0.9 - 0.03:
+            elif zo * 0.6 <= zm < zo * 0.9 and p < DXO - 0.07:
+                if p > DXO - 0.07 - C or zm < zo * 0.6 + 0.03 or zm > zo * 0.9 - 0.03:
                     col = R["D"]
                 else:
-                    glint = abs((um + DXO) * 2 - (zm - ZO * 0.6) * 1.2 - 0.18) < 0.035
+                    glint = abs((um + DXO) * 2 - (zm - zo * 0.6) * 1.2 - 0.18) < 0.035
                     col = "glassL" if glint else "glassD"
-            elif ZO * 0.49 <= zm < ZO * 0.555 and p < 0.095:
+            elif zo * 0.49 <= zm < zo * 0.555 and p < 0.095:
                 col = "red"
-            elif ZO * 0.42 <= zm < ZO * 0.45:
+            elif zo * 0.42 <= zm < zo * 0.45:
                 col = "steelL" if int((um + DXO) * GN) % 4 < 2 else "blueGrey"
-            elif 0.14 <= zm < ZO * 0.36 and p < DXO - 0.06:
-                if p > DXO - 0.06 - C or zm >= ZO * 0.36 - 0.03:
+            elif 0.14 <= zm < zo * 0.36 and p < DXO - 0.06:
+                if p > DXO - 0.06 - C or zm >= zo * 0.36 - 0.03:
                     col = R["D"]
                 elif zm < 0.17:
                     col = R["H"]
