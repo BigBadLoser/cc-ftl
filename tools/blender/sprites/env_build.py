@@ -37,7 +37,7 @@ def render_ghost(objs, W, H):
     cov = post.blocks(a2 > 0.5, SS)
     cnt = cov.sum(-1)
     lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / np.maximum(cnt, 1)
-    ga = np.where(cnt >= 6, np.clip(lum / 255.0 * 0.65, 0, 0.9), 0.0)
+    ga = np.where(cnt >= 3, np.clip(lum / 255.0 * 0.65, 0, 0.9), 0.0)    # low threshold: thin lines stay unbroken
     tint = np.array([200.0, 214.0, 232.0])
     out = np.where(op[..., None], c.astype(float), tint)
     mixed = np.where(op[..., None], c * (1 - ga[..., None]) + tint * ga[..., None], tint)
