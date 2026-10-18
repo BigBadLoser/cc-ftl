@@ -15,7 +15,7 @@ D = Path(sys.argv[1])
 MAN = json.loads((AS / "manifest.json").read_text())["assets"]
 ENV = np.array(Image.open(AS / "sprites/env.png").convert("RGBA")).astype(np.float32)
 BG = np.array([10, 14, 22], np.float32)
-GHOST = 0.45
+GHOST = 0.30
 
 
 class Scene:
@@ -41,6 +41,19 @@ class Scene:
             if glow is not None:
                 self.px[y, xo] = np.minimum(255, self.px[y, xo] + glow[dy, ok, :3] * (glow[dy, ok, 3:4] / 255) * alpha)
 
+    def ghost(self, rgba, glow, x0, y0, alpha=GHOST):
+        """Semi-transparent sprite with a thin light inner outline (own-ship cutaway turret)."""
+        a = rgba[..., 3] > 0
+        p = np.pad(a, 1)
+        inner = a & ~(p[:-2, 1:-1] & p[2:, 1:-1] & p[1:-1, :-2] & p[1:-1, 2:])
+        r = rgba.copy()
+        r[inner, :3] = (190, 225, 255)
+        r[inner, 3] = 255
+        a_map = np.where(inner, 0.7, alpha)
+        r2 = r.copy()
+        r2[..., 3] = r[..., 3] * a_map
+        self.blit(r2, glow, x0, y0, 1.0)
+
     def asset(self, aid, cx, cy, dim=1.0):
         a = MAN[aid]
         f, an = a["frame"], a["anchor"]
@@ -52,9 +65,9 @@ class Scene:
         """1x = crop (whole room); 3x = nearest-neighbour zoom of `zoom` (the weapon) or of the crop."""
         img = Image.fromarray(np.clip(self.px, 0, 255).astype(np.uint8))
         full = img.crop(crop) if crop else img
-        full.save(D / f"{name}_1x.png")
+        full.save(D / f"{name}_v2_1x.png")
         z = img.crop(zoom) if zoom else full
-        z.resize((z.width * 3, z.height * 3), Image.NEAREST).save(D / f"{name}_3x.png")
+        z.resize((z.width * 3, z.height * 3), Image.NEAREST).save(D / f"{name}_v2_3x.png")
 
 
 def crew(sc, cx, cy, d=0, frame=0):
@@ -88,7 +101,7 @@ def depth_sort(items):
 
 
 def load(tag):
-    z = np.load(D / f"px_{tag}.npz")
+    z = np.load(D / f"px2_{tag}.npz")
     return z["rgba"], z["glow"], int(z["ox"]), int(z["oy"])
 
 
@@ -149,7 +162,7 @@ def main():
         sc, T, (bx, by) = room_scene(w, mode="cut")
         for tag in (f"turret_{w}_k1",):
             r, g, ox, oy = load(tag)
-            sc.blit(r, g, T(bx, by)[0] - ox, T(bx, by)[1] - oy, alpha=GHOST)
+            sc.ghost(r, g, T(bx, by)[0] - int(ox), T(bx, by)[1] - int(oy))
         sc.save(f"scene_a_{w}", sc.crop, sc.zoom)
         # (b) enemy roofed view: idle k1, then charged k1
         for hot in (False, True):

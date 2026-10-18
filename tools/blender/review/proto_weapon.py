@@ -22,7 +22,7 @@ def pixel(tag, kind, hot=False, k=0):
     core.clear_scene_meshes()
     post.select(True)
     c, op, g, ox, oy, _ = env_build.render_sprite("x", "prop", W.build(kind, hot, k))
-    np.savez(OUT / f"px_{tag}.npz", rgba=post.to_rgba(c, op), glow=g, ox=ox, oy=oy)
+    np.savez(OUT / f"px2_{tag}.npz", rgba=post.to_rgba(c, op), glow=g, ox=ox, oy=oy)
     print("pixel", tag, flush=True)
 
 
@@ -32,12 +32,12 @@ def main():
         for k in (0, 1, 2):
             pixel(f"turret_{w}_k{k}", f"turret_{w}", False, k)
             pixel(f"turret_{w}_k{k}_charged", f"turret_{w}", True, k)
-    for w, (cw, ch) in (("laser", (700, 640)), ("driver", (900, 800))):
+    for w, (cw, ch) in (("laser", (760, 700)), ("driver", (1000, 900))):
         _ns["setup"]()
         core.clear_scene_meshes()
         col, glow = _ns["render_cell"](f"cell_{w}", lambda w=w: W.build(f"cell_{w}", True, 1), "prop", cw, ch)
         arr = _ns["finish"](col, glow, "prop")
-        post.write_png(OUT / f"blender_{w}.png", np.dstack([arr, np.full(arr.shape[:2], 255, np.uint8)]))
+        post.write_png(OUT / f"blender_{w}_v2.png", np.dstack([arr, np.full(arr.shape[:2], 255, np.uint8)]))
         print("cell", w, flush=True)
 
 

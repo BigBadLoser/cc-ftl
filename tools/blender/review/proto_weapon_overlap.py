@@ -5,9 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import core, cmbkit, overlap, weapon_proto as W  # noqa: E402
 
-BAY_ALLOW = [("pipe", "cap"), ("pipe", "core"), ("pipe", "loader"), ("pipe", "drum"), ("support", "drum"), ("support", "loader"),
-             ("column", "core"), ("greeble", "core"), ("greeble", "loader"), ("greeble", "cap"), ("greeble", "column"),
-             ("drum", "core"), ("loader", "core"), ("cap", "core")]
+BAY_ALLOW = [("column", "body"), ("pod", "plinth"), ("cap", "plinth"), ("body", "plinth"), ("pod", "body"), ("cap", "body"), ("column", "plinth"), ("pod", "cap")]
 TUR_ALLOW = [("base", "head"), ("barrel", "head"), ("barrel", "yoke"), ("yoke", "head"), ("greeble", "head"), ("cradle", "head"),
              ("rail", "cradle"), ("rail", "head"), ("greeble", "base"), ("greeble", "rail")]
 
