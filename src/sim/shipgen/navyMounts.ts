@@ -45,10 +45,10 @@ function rank(c: Ctx, hosts: Host[], cluster: Cluster): Host[] {
  * Graft guns onto the flanks of `hosts` (spine sections fore to aft). Mirrored pairs or staggered sides; returns the
  * guns that found no place.
  */
-export function mountGuns(c: Ctx, hosts: Host[], guns: RoomSpec[], o: { cluster?: Cluster; paired?: boolean } = {}): RoomSpec[] {
+export function mountGuns(c: Ctx, hosts: Host[], guns: RoomSpec[], o: { cluster?: Cluster; paired?: boolean; keepOrder?: boolean } = {}): RoomSpec[] {
   const cluster = o.cluster ?? c.rng.pick(['spread', 'spread', 'fore', 'mid', 'aft'] as const);
   const paired = o.paired ?? c.rng.chance(0.5);
-  const order_ = rank(c, hosts, cluster);
+  const order_ = o.keepOrder ? hosts : rank(c, hosts, cluster);
   const left: RoomSpec[] = [];
   const queue = [...guns];
   let side: Side = c.rng.chance(0.5) ? 'n' : 's';

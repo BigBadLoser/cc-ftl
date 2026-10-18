@@ -3,6 +3,7 @@ import { blockFrom, localBuilder } from './blocks';
 import { noseBlock } from './navyBlocks';
 import { bands, chain, deckPair, evenDepth, jobs, mirrorBlock, no, order, propulsion, section, spanOf, twinDrives, type Ctx, type SectionPlan } from './navyKit';
 import { battleship, spineMounts } from './navyMounts';
+import { componentBattleship, componentFrigate } from './components';
 import { pickNose } from './topoNavy';
 import type { FactionDef, NavyGrammar } from './types';
 import type { RoomSpec } from './plan';
@@ -202,5 +203,5 @@ function flightDeck(c: Ctx, f: FactionDef): boolean {
 }
 
 export const GRAMMARS: Record<NavyGrammar, (c: Ctx, f: FactionDef) => boolean> = {
-  linear, deckPair: deckPairGrammar, spineDecks, spineWings, citadelFlanked, twinHull, layered: battleship, spineMounts, carrierIsland: (c) => carrierIsland(c), flightDeck,
+  linear, deckPair: deckPairGrammar, spineDecks, spineWings, citadelFlanked, twinHull, layered: battleship, spineMounts, componentFrigate, componentBattleship, carrierIsland: (c) => carrierIsland(c), flightDeck,
 };

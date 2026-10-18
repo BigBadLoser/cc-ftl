@@ -99,7 +99,7 @@ export interface ArchitectureDef {
 }
 
 /** Navy hull grammars (see navyGrammars.ts). */
-export type NavyGrammar = 'linear' | 'deckPair' | 'spineDecks' | 'spineWings' | 'citadelFlanked' | 'twinHull' | 'layered' | 'carrierIsland' | 'flightDeck' | 'spineMounts';
+export type NavyGrammar = 'linear' | 'deckPair' | 'spineDecks' | 'spineWings' | 'citadelFlanked' | 'twinHull' | 'layered' | 'carrierIsland' | 'flightDeck' | 'spineMounts' | 'componentFrigate' | 'componentBattleship';
 /** Drone (machine) grammars (see droneGrammars.ts). */
 export type DroneGrammar = 'spoke' | 'truss' | 'cluster';
 /** Scrapper (salvage) grammars (see scrapGrammars.ts). */
