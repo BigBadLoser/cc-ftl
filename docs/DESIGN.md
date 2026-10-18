@@ -56,6 +56,22 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   stability, vulnerability to EMP/ion and hacking.
 - Relationships (friends, rivals, grief) later.
 
+### Robots and the rogue AI
+
+- **Robots** are a crew species with no needs (no air, food, sleep or mood) and no fear of vacuum or fire panic,
+  though fire still damages them. They are **repaired, not healed**: crew with repair skill mend them using parts
+  or metal, and a medbay does nothing for them. Ion and EMP **stun** them. They never surrender: at 0 hp they are
+  **wrecked** and can be salvaged for parts.
+- The **rogue AI** faction is crewed by robots and hostile to everyone. Its robots run off their ship's **AI core**.
+  When a core is destroyed, unpowered or hacked, its robots go **inert**. To capture an AI ship, crewless or
+  robot-crewed, take its cores down and hold the bridge (on AI ships, the cores count as the bridge). Crew with
+  the hacking skill can hack a core; this is a job that takes time.
+- **Robot fabricators** keep building robots while their core is live, up to a cap.
+- **Derelicts come in two kinds:**
+  - Scrapper and other wrecks are abandoned and infested with hostile aliens.
+  - AI-faction derelicts are rogue AI shipyards and factories (fabricators, cores, robots).
+- **Combat drones** (a launched weapon class) come later. They will build on the AI core's tier and the EMP effect.
+
 ## Ship systems (M3 decisions)
 
 - **Power:** one network per ship for now, with module priorities deciding what loses power in a

@@ -368,7 +368,7 @@ describe('determinism and saves', () => {
     raw.version = 8;
     delete raw.world.stores['allegiance'];
     const data = migrate(raw as never) as unknown as { version: number };
-    expect(data.version).toBe(10);
+    expect(data.version).toBe(11);
     const old = deserialize(JSON.stringify(raw), content);
     for (const id of old.world.query(CrewC)) expect(old.world.get(id, AllegianceC)?.faction).toBe('player');
     expect(old.world.query(DraftedC)).toHaveLength(0);

@@ -261,7 +261,7 @@ describe('determinism and saves', () => {
     data.version = 9;
     for (const e of data.world.stores['vehicle']!) delete e[1]['cargo'];
     const moved = migrate(data as unknown as Record<string, unknown>) as typeof data;
-    expect(moved.version).toBe(10);
+    expect(moved.version).toBe(11);
     expect(moved.world.stores['vehicle']!.every((e) => Array.isArray(e[1]['cargo']))).toBe(true);
     run(deserialize(JSON.stringify(moved), content), 5);
   });
