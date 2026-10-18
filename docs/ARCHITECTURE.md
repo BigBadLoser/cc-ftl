@@ -186,7 +186,7 @@ palette.json    the single palette, read by Blender scripts and the game
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
-  crew, see below), `env` (props,
+  crew, see below), `robot_bay`, `env` (props,
   economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks) and `sol` (the engine, AI core and shield packs, rendered by
   their own scripts in `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
@@ -212,6 +212,22 @@ palette.json    the single palette, read by Blender scripts and the game
     (split at the waist).
   - `team.cloth` is the faction shell and `team.accent` the seam; the eye and charge cells glow.
   - Look previews: `ROBOT_QUICK`, `ROBOT_REST` and `ROBOT_ANIM` builds, composited by `review/robots_preview.py`.
+- **Robot bay** (`sprites/robot_bay.py`, family `robot_bay`): 1x2, in the robots' look (light shells over a dark frame,
+  the status light as a single eye).
+  - The cradle is the footprint's rotated (0, 0) tile (the sim's `rotateOffset`), and the tower is the rotated (0, 1)
+    tile. The tower tile should be solid and the cradle walkable.
+  - Sprites per rotation r:
+    - `module.robot_bay.r<r>`: empty.
+    - `.charging`: a walker docks.
+    - `.charging.drone`: clamp out; the drone hangs from it.
+    - `.assembling.<worker|repair|security>.f0..f7`: an 8-frame assembly loop at 8 fps (yellow tool arms riding
+      carriages over a part-built robot).
+  - Each charging state has a `.front` overlay. Layer like a console: bay at K, docked robot at K + 0.02, overlay at
+    K + 0.03.
+  - The docked robot faces away from the tower (r0: dir 6, r1: 0, r2: 2, r3: 4) and plays its `charge` clip.
+  - Unpowered: glow off. Charging: pulse the glow in the renderer (about 0.55..1 over 1.6 s).
+  - Welding sparks: fx particles at the welder tip.
+  - Previews: `review/robot_bay_preview.py` (add `anim` for an MP4) and `review/robot_bay_shapes.py`.
 - **Conventions:**
   - The anchor is the feet or front footprint point in each frame's JSON.
   - Material names carry meaning: `emissive.*` goes to the glow sheet, and `team.*` renders as
