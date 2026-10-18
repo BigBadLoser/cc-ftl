@@ -8,22 +8,22 @@ r2 south, r3 west), v along the hull. Tile roles:
   u = -1  (keep-out)  v = -1..1: hazard-edged deck marking, walkable
   u = 2   (outside)   the docking collar, its round iris hatch (the outer door) at its mouth
 
-The housing (inner door tile and hull pass-through) is a faceted white-grey armour block, never cut in any wall view
-level; on the hull row it carries production hull-profile shoulders (walls.py) where it meets the plain hull either
-side. The chamber is the housing's passage plus the collar tube; the outer door is the iris at the collar mouth.
+The housing is a squat faceted white-grey armour block at wall height, a tile wide plus shoulders flaring over the
+unloaders' edges, never cut in any wall view level; on the hull row a production-profile bulkhead (walls.py) carries
+the passage through the hull, never cut either. The chamber is the housing's passage plus the collar tube; the outer
+door is the iris at the collar mouth.
 
 Sprites, per rotation r (each anchored at its own tile so the renderer sorts it by that tile; footprint [1, 1]):
   module.airlock.housing.r<r>.<closed|f1|f2|open>     inner door tile: housing and inner door (opening frames f1, f2)
-  module.airlock.hull.r<r>.<up|cut|low>               hull row: the housing's pass-through and hull shoulders (the
-                                                      shoulders follow the wall view level; the housing never cuts)
+  module.airlock.hull.r<r>                            hull row: production-profile bulkhead round the passage
   module.airlock.light.r<r>.<red|green>               the cycle light: lit strip on top and keypad status lamp
   module.airlock.collar.r<r>.<closed|f1|f2|open>[.docked]
                                                       collar and iris hatch (sort by the tile beyond the hull row);
                                                       docked: clamps swung onto the shuttle hatch, seal light green
   module.airlock.unloader.r<r>                        a cargo unloader (the same sprite on both side tiles)
   module.airlock.keepout.r<r>.<l|m|r>                 keep-out deck marking on the tiles at v = -1, 0, 1
-The collar's mating face (where a shuttle's hatch meets it) is COLLAR_END: the far edge of the tile beyond the hull,
-i.e. 1 tile past the hull row's outer edge."""
+The collar runs from the hull strip's outer face to its mating face (where a shuttle's hatch meets it) at COLLAR_END:
+the far edge of the tile beyond the hull, 1 tile past the hull row's outer edge in every rotation."""
 import math
 
 from . import core, env_build, post
@@ -34,9 +34,10 @@ from .console_proto import centre
 ID = "module.airlock"
 DOORS = (("closed", 0.0), ("f1", 0.35), ("f2", 0.7), ("open", 1.0))
 HULL_U, COLLAR_END = 1.0, 2.5
-UI = -0.4                          # housing's inboard face
-HW, TW, CZ, TOP = 0.44, 0.27, 1.5, 2.14   # housing half width, half width at the top, chamfer start, top
-DW, DH = 0.25, 1.62                # inner door half width, height
+UI = -0.2                          # housing's inboard face
+HW, TW, CZ, TOP = 0.62, 0.32, 1.05, W.HF  # housing half width (over the unloaders' edges), half width at the top,
+                                          # shoulder slope start, top (wall height)
+DW, DH = 0.3, 1.5                  # inner door half width, height
 ZC, RH, RR = 0.86, 0.68, 0.84      # collar axis height, iris (hatch) radius, sealing ring outer radius
 ARM, ARM_T, LEAF = "gW1", "medWhite", "steelL"
 ORANGE = "hivis"
@@ -102,7 +103,7 @@ def _body(f, u0, u1):
         dv, dz = s * (TW - HW), TOP - CZ
         ln = math.hypot(dv, dz)
         nv, nz = s * dz / ln * 0.014, abs(dv) / ln * 0.014
-        a, b = (s * HW + dv * 0.04, CZ + dz * 0.04), (s * HW + dv * 0.24, CZ + dz * 0.24)
+        a, b = (s * HW + dv * 0.3, CZ + dz * 0.3), (s * HW + dv * 0.48, CZ + dz * 0.48)
         _tube(f, u0, u1, [a, b, (b[0] + nv, b[1] + nz), (a[0] + nv, a[1] + nz)], ORANGE, cap=ORANGE)   # shoulder stripe
         f.box((u0 + u1) / 2, s * (HW + 0.006), 0.6, u1 - u0 - 0.08, 0.012, 0.05, "steelL", top="steelL")   # seam band
         f.box((u0 + u1) / 2, s * (DW - 0.01), 0, u1 - u0, 0.02, DH, "steelD", top="steelD")       # passage liner
@@ -128,7 +129,7 @@ def _leaves(f, uc, p):
 def housing(rot, p):
     m = core.Mesh(f"airlock_housing_{rot}")
     f = frame(m, rot)
-    _body(f, UI, 0.5)
+    _body(f, UI, max(0.5, strip(rot)[0]))          # on a north / west hull it runs on to the hull strip
     for s in (-1, 1):
         f.box(UI - 0.02, s * (DW + 0.03), 0, 0.04, 0.06, DH, ARM_T, top=ARM_T)                    # door surround
         kv = s * (DW + 0.06 + (HW - DW - 0.07) / 2)
@@ -140,9 +141,9 @@ def housing(rot, p):
     f.box(UI - 0.015, kv, 0.96, 0.03, 0.11, 0.26, "dark", top="steelD")                           # keypad
     f.box(UI - 0.032, kv, 0.99, 0.006, 0.07, 0.12, "steelL", top="steelL")
     f.box(UI + 0.07, 0, TOP, 0.09, 0.44, 0.02, "dark", top="dark")                                 # light channel
-    f.box(0.2, 0, TOP, 0.34, 0.34, 0.02, "steelL", top="steelL")                                   # roof vent
-    for k in range(3):
-        f.box(0.2, -0.1 + k * 0.1, TOP + 0.02, 0.28, 0.04, 0.004, "dark", top="dark")
+    f.box(0.2, 0, TOP, 0.34, 0.4, 0.02, "steelL", top="steelL")                                    # roof vent
+    for k in range(4):
+        f.box(0.2, -0.15 + k * 0.1, TOP + 0.02, 0.28, 0.04, 0.004, "dark", top="dark")
     uc = UI + 0.12
     for k in range(6):                                                                           # hazard threshold
         c = "hazY" if k % 2 else "hazK"
@@ -151,23 +152,27 @@ def housing(rot, p):
     return [m.build()]
 
 
-def hull(rot, level):
-    """The hull row: the housing's pass-through (never cut), with production-profile hull shoulders (strip, sloped
-    skirt, 2.05 top) between the armour and the tile edges, where the plain hull either side butts against it. The
-    shoulders follow the hull beside them: full on a far (north / west) hull in up and cut, else the ghost rim."""
-    m = core.Mesh(f"airlock_hull_{rot}_{level}")
+def hull(rot):
+    """The hull row: a bulkhead on the production hull profile (walls.py: strip, sloped skirt, 2.05 top) across the
+    whole tile with the passage through it, never cut, like the engine's. The plain hull either side butts against
+    it; the housing stands against its inboard face and the collar mounts on its outer face."""
+    m = core.Mesh(f"airlock_hull_{rot}")
     f = frame(m, rot)
-    _body(f, 0.5, 1.5)
     inner, outer = strip(rot)
     zs, run, top = W.skirt_top(), W.skirt_run(), W.hull_top()
-    if rot in (1, 2) or level == "low":
-        shape = [(inner, 0), (inner, W.ZG), (outer, W.ZG), (outer, 0)]
+    if rot in (1, 2):
+        edge = HULL_U + 0.5
+        ze = max(0.0, zs * (1 - (edge - outer) / run))
+        shape = [(inner, 0), (inner, top), (outer, top), (outer, zs), (edge, ze), (edge, 0)]
     else:
         edge = HULL_U - 0.5
         ze = max(0.0, zs * (1 - (inner - edge) / run))
         shape = [(edge, 0), (edge, ze), (inner, zs), (inner, top), (outer, top), (outer, 0)]
-    for a, b in ((-0.5, -HW), (HW, 0.5)):
+    for a, b in ((-0.5, -DW), (DW, 0.5)):
         prism(f, shape, a, b, HULL, HULL_T)
+    prism(f, [(inner, DH), (inner, top), (outer, top), (outer, DH)], -DW, DW, HULL, HULL_T)
+    for s in (-1, 1):
+        f.box((inner + outer) / 2, s * (DW - 0.01), 0, outer - inner, 0.02, DH, "steelD", top="steelD")   # liner
     return [m.build()]
 
 
@@ -196,7 +201,7 @@ def collar(rot, p, docked):
     ring is green when docked."""
     m = core.Mesh(f"airlock_collar_{rot}_{int(docked)}")
     f = frame(m, rot)
-    u0, ue = HULL_U + 0.5, COLLAR_END
+    u0, ue = strip(rot)[1], COLLAR_END
     uf = ue - 0.2
     f.hcyl(u0 - 0.02, u0 + 0.08, 0, ZC, RR + 0.04, ARM, sides=16, cap=ARM_T)                       # mounting flange
     f.hcyl(u0 + 0.08, uf, 0, ZC, RH + 0.06, ARM_T, sides=16, cap="dark")                         # tube
@@ -241,21 +246,21 @@ def unloader(rot):
     m = core.Mesh(f"airlock_unloader_{rot}")
     f = frame(m, rot)
     v = 1.0
-    f.box(-0.04, v, 0, 0.7, 0.72, 0.38, ARM, top=ARM_T)                                            # cabinet
-    f.box(0.31, v, 0, 0.2, 0.76, 0.78, ARM, top=ARM_T, taper=0.8, tv=1.0)                           # hood
-    f.box(0.205, v, 0.4, 0.012, 0.5, 0.26, "dark", top="dark")                                      # cargo chute
+    f.box(-0.04, v, 0, 0.7, 0.64, 0.38, ARM, top=ARM_T)                                            # cabinet
+    f.box(0.31, v, 0, 0.2, 0.68, 0.78, ARM, top=ARM_T, taper=0.8, tv=1.0)                           # hood
+    f.box(0.205, v, 0.4, 0.012, 0.46, 0.26, "dark", top="dark")                                      # cargo chute
     for k in range(4):                                                                           # chute flaps
-        f.box(0.198, v - 0.18 + k * 0.12, 0.44, 0.006, 0.1, 0.2, "steelD", top="steelD")
+        f.box(0.198, v - 0.165 + k * 0.11, 0.44, 0.006, 0.1, 0.2, "steelD", top="steelD")
     for s in (-1, 1):
-        f.box(0.2, v + s * 0.28, 0.38, 0.03, 0.06, 0.32, ORANGE, top=ORANGE)                        # chute guides
-        f.box(-0.07, v + s * 0.3, 0.38, 0.54, 0.05, 0.07, "steelL", top="steelL")                  # bed rails
+        f.box(0.2, v + s * 0.26, 0.38, 0.03, 0.06, 0.32, ORANGE, top=ORANGE)                        # chute guides
+        f.box(-0.07, v + s * 0.27, 0.38, 0.54, 0.05, 0.07, "steelL", top="steelL")                  # bed rails
         for k in range(3):                                                                       # side vents
-            f.box(-0.24 + k * 0.12, v + s * 0.362, 0.1, 0.05, 0.008, 0.16, "dark", top="dark")
+            f.box(-0.24 + k * 0.12, v + s * 0.322, 0.1, 0.05, 0.008, 0.16, "dark", top="dark")
     for k in range(5):                                                                           # rollers
-        f.box(-0.31 + k * 0.115, v, 0.38, 0.06, 0.54, 0.04, "plate", top="plate")
-    f.box(-0.37, v, 0.38, 0.04, 0.6, 0.08, "steelD", top="steelD")                                  # end stop
-    f.box(-0.395, v, 0.27, 0.012, 0.6, 0.05, ORANGE, top=ORANGE)                                   # front band
-    f.box(0.215, v + 0.3, 0.68, 0.01, 0.05, 0.05, "green", top="green")                            # status lamp
+        f.box(-0.31 + k * 0.115, v, 0.38, 0.06, 0.48, 0.04, "plate", top="plate")
+    f.box(-0.37, v, 0.38, 0.04, 0.56, 0.08, "steelD", top="steelD")                                  # end stop
+    f.box(-0.395, v, 0.27, 0.012, 0.56, 0.05, ORANGE, top=ORANGE)                                   # front band
+    f.box(0.215, v + 0.26, 0.68, 0.01, 0.05, 0.05, "green", top="green")                            # status lamp
     return [m.build()]
 
 
@@ -301,8 +306,7 @@ def items(rot):
         for docked in (False, True):
             add(f"{ID}.collar.r{rot}.{name}" + (".docked" if docked else ""), "prop",
                 lambda p=p, d=docked: collar(rot, p, d), HULL_U + 1)
-    for lv in W.LEVELS:
-        add(f"{ID}.hull.r{rot}.{lv}", "block", lambda lv=lv: hull(rot, lv), HULL_U)
+    add(f"{ID}.hull.r{rot}", "block", lambda: hull(rot), HULL_U)
     for col in ("red", "green"):
         add(f"{ID}.light.r{rot}.{col}", "fx", lambda c=col: lights(rot, c), 0)
     add(f"{ID}.unloader.r{rot}", "prop", lambda: unloader(rot), 0, 1)
