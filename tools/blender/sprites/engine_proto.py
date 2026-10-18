@@ -20,7 +20,7 @@ BZ = 1.4                                         # bell axis height
 UH = 2.0                                         # hull row centre (u)
 
 
-def bulkhead(g, full):
+def bulkhead(g, full=True):
     """Engine bulkhead on the hull row, wrapping ONE big bell: a heavy slab across the whole hull side, armoured pylons
     at the ends (clear of the bell's mount collar), ribbed plating, the bell-mount collar with bolts and a flush end
     cheek. Full mode rises above wall height (1.2); cut mode stays low but keeps the layout. Real wall tiles run
@@ -86,20 +86,20 @@ def bell(f, hot, glow):
     (idle) or glowing core and plume (active)."""
     f.hcyl(1.05, 1.5, 0, BZ, 0.7, "gm", r1=0.62, sides=16)                                  # throat cone
     f.hcyl(1.5, 2.45, 0, BZ, 0.62, "gm", r1=0.72, sides=16)                                 # neck through the bulkhead
-    D.ribs(f, 1.6, 2.4, 0, BZ, 0.62, 0.72, 3, thick=0.12, grow=0.08, mat="plate", sides=16)
+    D.ribs(f, 1.65, 2.35, 0, BZ, 0.62, 0.72, 2, thick=0.14, grow=0.08, mat="plate", sides=16)
     f.hcyl(2.45, 2.8, 0, BZ, 1.05, "steelL", sides=16, cap="plate")                         # mount flange, inside the collar
     ro = lambda u: 0.98 + (u - 2.8) / 1.5 * 0.38                                            # noqa: E731
     f.hcyl(2.8, 4.3, 0, BZ, 0.5, "dark", r1=0.9, sides=16)                                  # dark liner seen through the mouth
-    n = 8
-    for k in range(n):                                                                       # segments + deep grooves + rib hoops
+    f.hcyl(2.8, 4.3, 0, BZ, ro(2.8) - 0.05, "steelD", r1=ro(4.3) - 0.05, sides=20)           # continuous under-shell: grooves are recesses, never gaps
+    n = 5
+    for k in range(n):                                                                       # five clean segments, deep grooves
         u0, u1 = 2.8 + 1.5 * k / n, 2.8 + 1.5 * (k + 1) / n
-        f.hcyl(u0, u1 - 0.08, 0, BZ, ro(u0) + 0.02, "gm", r1=ro(u1 - 0.08) + 0.02, sides=20, cap="gm")
-        f.hcyl(u1 - 0.08, u1, 0, BZ, ro(u1) - 0.1, "dark", sides=20)
-        D.annulus(f, u0 + 0.01, u0 + 0.09, 0, BZ, ro(u0) + 0.1, ro(u0) - 0.02, "plate", "plate", sides=20)
-    for k in range(12):                                                                      # longitudinal ribs on the shell
-        ang = k * math.tau / 12 + 0.1
+        f.hcyl(u0, u1 - 0.1, 0, BZ, ro(u0) + 0.03, "gm", r1=ro(u1 - 0.1) + 0.03, sides=20)
+        f.hcyl(u1 - 0.1, u1, 0, BZ, ro(u1) - 0.08, "steelD", sides=20)
+    for k in range(8):                                                                       # longitudinal ribs on the shell
+        ang = k * math.tau / 8 + 0.2
         c, s_ = math.cos(ang), math.sin(ang)
-        r0_, r1_ = ro(2.9) + 0.05, ro(4.25) + 0.05
+        r0_, r1_ = ro(2.9) + 0.06, ro(4.25) + 0.06
         D.rail(f, (2.9, r0_ * c, BZ + r0_ * s_), (4.25, r1_ * c, BZ + r1_ * s_), 0.05, "steelL")
     D.annulus(f, 4.2, 4.42, 0, BZ, ro(4.3) + 0.1, ro(4.3) - 0.22, "plate", "steelL", sides=20)   # thick lip
     f.hcyl(3.4, 3.42, 0, BZ, 0.7, glow, sides=16, cap="arc" if hot else "dark")             # core (dark when idle)
@@ -121,8 +121,9 @@ def machine(f, rot, hot):
         for u in (-2.05, -1.5, -0.95):
             D.annulus(f, u - 0.06, u + 0.06, vt, 0.62, 0.57, 0.3, "plate", "plate", sides=16)
         _g("greeble")
-        G.valve_wheel(f, "z", -1.78, vt, 1.12)
-        G.valve_wheel(f, "z", -1.2, vt, 1.12)
+        for u in (-1.775, -1.225):                                                               # standing valve wheels on posts
+            D.seg(f, (u, vt, 1.14), (u, vt, 1.36), 0.05, "steelL", 8)
+            G.valve_wheel(f, "+v", u, 1.36, vt - 0.02, r=0.2)
         _g("pipe")                                                                              # feed line: tank -> manifold
         D.pipe(f, [(-0.55, vt, 0.62), (-0.55, vt, BZ), (-0.55, sv * 0.98, BZ)], 0.12, "gm")
         vo = sv * 1.85                                                                          # coolant run, on brackets
@@ -143,7 +144,7 @@ def machine(f, rot, hot):
     _g("chamber")
     f.hcyl(-2.25, -1.8, 0, BZ, 0.35, "gm", sides=16, cap="steelL", capstart="steelL")             # turbine
     D.drum(f, -1.75, -0.65, 0, BZ, 0.5, n=4, body="steel", rib="plate", sides=16)                # pump casing
-    f.hcyl(-0.62, -0.45, 0, BZ, 0.88, "steelL", sides=20, cap="plate", capstart="plate")         # propellant manifold
+    f.hcyl(-0.62, -0.47, 0, BZ, 0.88, "steelL", sides=20, cap="plate", capstart="plate")         # propellant manifold
     for k in range(10):
         ang = k * math.tau / 10 + 0.15
         c, s_ = math.cos(ang), math.sin(ang)
@@ -153,16 +154,16 @@ def machine(f, rot, hot):
     bell(f, hot, glow)
 
 
-def engine4x5(rot, hot, part="machine_cut"):
-    """part: machine_cut (whole machine, for the low cutaway hull), machine_full (machine with the full-height hull
-    section as a Cycles holdout, so the bells and housing are cut away behind the wall), hull_full, hull_cut, or
-    cell (hull_full + whole machine, for the Blender review render)."""
-    if part.startswith("hull"):
-        f = Frame(core.Mesh("tmp"), rot, centre=CENTRE[rot])
-        return hull_section(f, rot, part == "hull_full")
+def engine4x5(rot, hot, part="machine"):
+    """The engine has ONE hull section, full height in every view mode (neighbouring walls may be cut down beside it).
+    part: hull (hull section: wall tiles + bulkhead), machine (everything else, rendered with the hull as a Cycles
+    holdout so it is cut away behind the wall; same in every mode), or cell (hull + whole machine, Blender review)."""
+    if part == "hull":
+        return hull_section(Frame(core.Mesh("tmp"), rot, centre=CENTRE[rot]), rot, True)
     m = core.Mesh(f"engine45_{rot}_{int(hot)}_{part}")
     f = Frame(m, rot, centre=CENTRE[rot])
-    hold = hull_section(f, rot, True, holdout=True) if part == "machine_full" else []
+    if part == "machine":
+        hull_section(f, rot, True, holdout=True)
     machine(f, rot, hot)
     ob = m.build()
     if part == "cell":

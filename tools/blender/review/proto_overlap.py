@@ -26,7 +26,7 @@ def parts_for(rot, full):
 
 
 for rot in (1, 0):
-    for full in (True, False):
+    for full in (True,):
         print(f"== r{rot} {'full' if full else 'cut'}")
         ps = parts_for(rot, full)
         overlap.report(ps, ALLOW)
