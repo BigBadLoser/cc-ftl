@@ -74,10 +74,13 @@ const defs = content.modules as Record<string, ModuleDef>;
 
 export const factionIds = (): string[] => Object.keys(content.factions);
 
-export function gen(faction: string, seed: number, depth: number): GenResult {
-  const f = (content.factions as Record<string, (typeof content.factions)[keyof typeof content.factions]>)[faction];
-  if (!f) throw new Error(`unknown faction ${faction}; try ${factionIds().join(', ')}`);
-  return generateShip(f, faction, seed, depth, defs);
+/** `faction.drones:picket` keeps only that hull family (one family's sheet). */
+export function gen(factionSpec: string, seed: number, depth: number): GenResult {
+  const [faction, family] = factionSpec.split(':') as [string, string | undefined];
+  const f0 = (content.factions as Record<string, (typeof content.factions)[keyof typeof content.factions]>)[faction];
+  if (!f0) throw new Error(`unknown faction ${faction}; try ${factionIds().join(', ')}`);
+  const f = family && f0.hullFamilies ? { ...f0, hullFamilies: f0.hullFamilies.filter((h) => h.id === family) } : f0;
+  return generateShip(f as typeof f0, faction, seed, depth, defs);
 }
 
 /** Draw one layout at (ox, oy), `s` px per tile. */

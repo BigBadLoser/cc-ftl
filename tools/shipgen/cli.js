@@ -50,7 +50,7 @@ try {
   mkdirSync(out, { recursive: true });
   const factions = which === 'all' ? lib.factionIds() : [which.startsWith('faction.') ? which : `faction.${which}`];
   for (const f of factions) {
-    const base = join(out, `${f.replace('faction.', '')}-d${depth}`);
+    const base = join(out, `${f.replace('faction.', '').replace(':', '-')}-d${depth}`);
     let text = '';
     for (const view of views) {
       const sheet = lib.contactSheet(f, from, count, depth, scale, 2600, view);

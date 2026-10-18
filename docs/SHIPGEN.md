@@ -223,6 +223,21 @@ The navy's structural helpers carry over:
 - **Viewer.** A new `structure` view (CLI `-structure.png`, live viewer option): beams, traversal and enclosed
   machinery in three flat colours.
 
+### Drones v17: picket variation
+
+- **Why v16 pickets came out identical.** It was not seed handling. Picket construction drew almost nothing from
+  the ship's rng after the plan: the collar was forced once a picket had more than three pods, and the stub
+  length, rail length and socket positions all followed from the plan. Depth-9 drone plans have the same pod
+  sizes (both light guns are 2x2), so different seeds built the same ship.
+- **Fix: parametric chassis choices.**
+  - Collar or ring, drawn once per ship.
+  - Rail length (0 to 2 shorter), rail thickness (1 to 2), the bow brace (70%), and a seeded share of pods per
+    face.
+  - The ring stands off the core on struts (7 to 9 tiles), is open aft for the drive, and puts its corner pods
+    first (`Carrier.ends`).
+  - The smallest pickets (three pods or fewer) only choose between brace and collar.
+- Viewer: `faction.drones:picket` renders one hull family.
+
 ### Drone follow-ups
 
 - Swarm grammar is mixed: some lattices grow a run of nodes in one line (swarm #4 at depth 9 is half comb, half
