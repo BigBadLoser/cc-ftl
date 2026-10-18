@@ -185,7 +185,8 @@ palette.json    the single palette, read by Blender scripts and the game
   **committed**, because Cloudflare's build doesn't run Blender.
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
-  be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `env` (props,
+  be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
+  crew, see below), `env` (props,
   economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks) and `sol` (the engine, AI core and shield packs, rendered by
   their own scripts in `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
@@ -204,6 +205,13 @@ palette.json    the single palette, read by Blender scripts and the game
   only in the glow pass.
 - **Crew:** about 60 px tall at 1x, 8 directions (no mirroring, since characters are asymmetric),
   clips at fixed frame counts (idle 4, walk 8, work 6, and more as needed).
+- **Robot crew** (`sprites/robots.py`, `robot_kit.py`, `robot_render.py`): rigid parts on a joint rig, not skinned.
+  - One body layer per type, in the crew layer format: `crew.robot.body.worker`, `crew.robot.body.repair` (hover
+    drone) and `crew.robot_heavy.body.security`.
+  - Clips are idle 4, walk 8, work 6, charge 4 (head sunk into its socket, charge cells filling) and wreck 1
+    (split at the waist).
+  - `team.cloth` is the faction shell and `team.accent` the seam; the eye and charge cells glow.
+  - Look previews: `ROBOT_QUICK`, `ROBOT_REST` and `ROBOT_ANIM` builds, composited by `review/robots_preview.py`.
 - **Conventions:**
   - The anchor is the feet or front footprint point in each frame's JSON.
   - Material names carry meaning: `emissive.*` goes to the glow sheet, and `team.*` renders as

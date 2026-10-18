@@ -29,7 +29,7 @@ def main():
     what = argv[1] if len(argv) > 1 else "all"
     out.mkdir(parents=True, exist_ok=True)
     mpath = out / "manifest.json"
-    names = (["crew"] + list(families.ALL)) if what == "all" else what.split(",")
+    names = (["crew", "robots"] + list(families.ALL)) if what == "all" else what.split(",")
     for name in names:
         m = pack.load_manifest(mpath, base())
         if name == "crew":
