@@ -62,18 +62,21 @@ def _socket(rig, t, c, rot=None):
     rig.part(t).rbox((c[0], c[1], c[2] + 0.004), (0.175, 0.225, 0.03), "dark", r=0.03, rot=rot)
 
 
-def _sensor_head(rig, hd, f, z, k, pitch=0.0):
+def _sensor_head(rig, hd, f, z, k, pitch=0.0, wedge_h=0.1, brow=1.0):
     """The shared robot head: a dark wedge sensor head pointing forward, a livery brow plate and one eye, on a short
     dark neck column rising out of the torso's socket. f, z = the wedge centre; k = scale; pitch (degrees, < 0 = nose
-    down) tilts the whole head about its centre to follow a sloped chest."""
+    down) tilts the whole head about its centre to follow a sloped chest. wedge_h: height of the dark wedge (its base
+    stays put; the brow plate rides on its top); brow scales the brow plate."""
     c, sn = math.cos(math.radians(pitch)), math.sin(math.radians(pitch))
     rot = (pitch, 0, 0) if pitch else None
 
     def at(df, dz):
         return (0, f + df * c - dz * sn, z + df * sn + dz * c)
     rig.part(hd).cyl(at(-0.01, -0.075 * k), 0.045 * k, 0.06 * k, "dark", rot=rot)
-    rig.part(hd).rbox(at(0, 0), (0.15 * k, 0.1 * k, 0.2 * k), "dark", r=0.03 * k, taper=0.7, axis="f", rot=rot)
-    rig.part(hd).rbox(at(-0.02 * k, 0.045 * k), (0.17 * k, 0.045 * k, 0.2 * k), CLOTH, r=0.02 * k, taper=0.75, axis="f", rot=rot)
+    dz = (wedge_h - 0.1) / 2 * k                                                         # wedge base fixed at -0.05
+    rig.part(hd).rbox(at(0, dz), (0.15 * k, wedge_h * k, 0.2 * k), "dark", r=0.03 * k, taper=0.7, axis="f", rot=rot)
+    rig.part(hd).rbox(at(-0.02 * k, 0.045 * k + 2 * dz), (0.17 * k * brow, 0.045 * k * brow, 0.2 * k * brow), CLOTH,
+                      r=0.02 * k, taper=0.75, axis="f", rot=rot)
     rig.part(hd, "eye").ball(at(0.105 * k, -0.005 * k), (0.03 * k, 0.015 * k, 0.025 * k), EYE, rot=rot)
 
 
@@ -195,7 +198,7 @@ def heavy():
     _charge_bar(rig, t, -0.075, -0.27, 1.13, face=-1)
     rig.part(t).rbox((0, 0.215, 1.24), (0.2, 0.06, 0.15), FRAME_L, r=0.03, taper=1.15, rot=(-12, 0, 0))  # chest inset
     _socket(rig, t, (0, 0.085, 1.358), rot=(-12, 0, 0))
-    _sensor_head(rig, hd, 0.12, 1.435, 1.0, pitch=-12)
+    _sensor_head(rig, hd, 0.12, 1.435, 1.0, pitch=-12, wedge_h=0.08, brow=1.15)
     rig.build()
     rig.root.scale = (1.1,) * 3
     return rig
