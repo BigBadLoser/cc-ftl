@@ -35,7 +35,7 @@ def scene(bay, rob, pub, out, n=None):
             ("charging.drone", ("repair", "charge", 3)), ("assembling.worker", None), ("assembling.repair", None),
             ("assembling.security", None)]
     tick = n or 0
-    work, charge = f".f{(tick * 8 // 10) % 6}", (tick * 3 // 10) % 4
+    work, charge = f".f{(tick * 8 // 10) % 8}", (tick * 3 // 10) % 4
     pulse = 0.775 + 0.225 * math.sin(math.tau * tick / 16) if n is not None else 1.0
     row0 = [(st + work if st.startswith("assembling") else st, (b[0], b[1], charge) if b and b[1] == "charge" else b)
             for st, b in row0]

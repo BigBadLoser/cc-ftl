@@ -13,7 +13,7 @@ Sprites, per rotation r (cradle = the footprint's rotated (0, 0) tile, as the si
   module.robot_bay.r<r>                  empty: status light green (front and back of the tower)
   module.robot_bay.r<r>.charging         contacts lit, light cyan (a walker docks: the crew sprite in its charge clip)
   module.robot_bay.r<r>.charging.drone   the same, docking clamp swung out for the drone
-  module.robot_bay.r<r>.assembling.<t>.f<0..5>   assembly loop: tool arms working over a part-built <t> (worker,
+  module.robot_bay.r<r>.assembling.<t>.f<0..7>   assembly loop: tool arms working over a part-built <t> (worker,
                                          repair, security), light amber; sparks come from the fx particles
   module.robot_bay.r<r>.charging[.drone].front   overlay: the bay pixels in front of the docked robot
 Renderer layering (as the consoles): bay at its depth K, the docked robot at K + 0.02, the front overlay at K + 0.03.
@@ -27,7 +27,7 @@ from .robot_kit import Rig
 
 ID = "module.robot_bay"
 TYPES = ("worker", "repair", "security")
-WORK_FRAMES = 6                 # assembly loop frames (the renderer cycles .f0..f5, like the turret deploy frames)
+WORK_FRAMES = 8                 # assembly loop frames (the renderer cycles .f0..f7, like the turret deploy frames)
 STATES = ("", "charging", "charging.drone") + tuple(f"assembling.{t}.f{i}" for t in TYPES for i in range(WORK_FRAMES))
 PRIMER = "plate"                # a part-built robot in bare primer, no livery
 ARM = "hazY"                    # tool arms: industrial yellow, apart from the primer-grey robot they build
@@ -108,13 +108,16 @@ def _clamp(rig, out):
 
 def _tool_arms(rig, frame=None):
     """Two jointed tool arms on the alcove cheeks (industrial yellow on dark hinges, a welder and a gripper): folded
-    down along the cheeks, or (assembly loop frame 0..5) reaching over the cradle and working: the welder dips in and
-    pulls back while the gripper shifts its hold, out of phase."""
+    down along the cheeks, or (assembly loop frame 0..7) reaching over the cradle and working. Each shoulder rides a
+    carriage up and down a track on its cheek, the two in opposition, so they work the legs, torso and upper body in
+    turn; on top of that the welder dips in and pulls back while the gripper shifts its hold."""
     for side, sx in (("R", 1), ("L", -1)):
         sh, el = (sx * 0.34, -0.52, 0.98), (sx * 0.34, -0.52, 0.72)
         s = rig.joint(f"tool_{side}", "root", sh)
         e = rig.joint(f"tool_el_{side}", s, el)
         tip = (sx * 0.34, -0.52, 0.5)
+        rig.part("root").rbox((sx * 0.29, -0.6, 0.6), (0.02, 0.07, 0.72), "dark", r=0.01)   # carriage track
+        rig.part(s).rbox((sx * 0.31, sh[1], sh[2]), (0.05, 0.11, 0.1), FRAME_L, r=0.02)  # carriage
         rig.part(s).cyl(sh, 0.05, 0.09, "dark", axis="x")
         rig.part(s).plate(sh, el, 0.07, 0.075, ARM, taper=0.85, r=0.02)
         rig.part(e).cyl(el, 0.045, 0.085, "dark", axis="x")
@@ -127,9 +130,11 @@ def _tool_arms(rig, frame=None):
                 rig.part(e).rbox((tip[0], tip[1] + df, tip[2] - 0.1), (0.045, 0.025, 0.08), FRAME_L, r=0.01, taper=0.7)
         if frame is not None:
             t = math.tau * frame / WORK_FRAMES
-            w = math.sin(t) if side == "R" else math.sin(t + math.pi * 0.6)
-            rig.rot(s, pitch=-68 + 16 * w, roll=sx * (24 - 8 * w))
-            rig.rot(e, pitch=-52 + 26 * w)
+            slide = math.sin(t if side == "R" else t + math.pi)                 # carriage height, arms opposed
+            w = math.sin(2 * t + (0 if side == "R" else math.pi * 0.6))        # the work motion, twice per sweep
+            rig.shift(s, dz=-0.2 + 0.2 * slide)
+            rig.rot(s, pitch=-64 + 12 * w - 8 * slide, roll=sx * (24 - 6 * w))
+            rig.rot(e, pitch=-50 + 22 * w)
 
 
 def _partial(kind):
