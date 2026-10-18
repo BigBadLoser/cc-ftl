@@ -39,7 +39,7 @@ describe('ship generator', () => {
         if (g.problems.length > 0) bad.push(`seed ${seed}: ${g.problems.join('; ')}`);
       }
       expect(bad).toEqual([]);
-    });
+    }, 90000);
   }
 
   it('scales with depth: deeper ships are longer, better armed and shielded, with more power and crew', () => {

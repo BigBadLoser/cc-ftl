@@ -174,6 +174,30 @@ distance over join tokens `kindA>dir>kindB` and assembly-degree tokens. It is re
 - Carriers (about 2.3) and twin-hull cruisers stay broader than their targets.
 - Small corvettes with one gun look alike (depth-1 adjacency within family 0.33).
 
+## Drones v13: sockets and profiles on trusses
+
+The navy's structural helpers carry over:
+- **Sockets.** A carrier (beam or crawlway) gets sockets at even intervals along it.
+- **Profiles.** A shared `Profile` (`profile.ts`) sets the strut length at each socket.
+- **The result:** pods ride in a designed outline, and the beam stays visible between them.
+
+- **Families** (grammar weights 5:1):
+  - picket: the core, a sturdy socketed beam fore with the pods hugging it, a crawl spine only when there are
+    many pods, paired thrusters;
+  - lancer: a long fore beam whose struts follow a lance-head profile, a flatter beam aft, rail-end engines;
+  - swarm: repeated crawl nodes, an engine pod on nodes and links where the exhaust is clear (distributed).
+- **Propulsion.** `drive` builds a short rail with gaps, paired groups at both ends of a cross beam, or a rail-end
+  pair on the carrier's faces. Engines always face +x.
+- **Dock.** The dock sits straight on the core face, not on an antenna tube. The core is 7x4 so the dock door,
+  the AI core and the console all fit.
+
+### Drone follow-ups
+
+- Pickets and lancers still share a core-plus-beam skeleton; picket compactness against lancer length is the main
+  difference.
+- Rails with three engines still stack vertically (with gaps between).
+- Join-pattern diversity within a family fell (about 0.3): each family now has one construction.
+
 ## Drones (built, v6): machinery first, same arranger
 
 - **Blocks** (`droneBlocks.ts`):
