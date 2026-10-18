@@ -104,7 +104,7 @@
   </span>
   <StatsChips {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} />
   {#if shuttles.bays.length}
-    <button class:on={shuttleOpen} data-testid="shuttle-open" onclick={() => (shuttleOpen = !shuttleOpen)}>Shuttle</button>
+    <button class:on={shuttleOpen} data-testid="shuttle-open" onclick={() => { shuttleOpen = !shuttleOpen; if (shuttleOpen) api.selectCrew(null); }}><span class="long">Shuttle</span><span class="short" aria-label="Shuttle">🚀</span></button>
   {/if}
   {#if combat.inCombat && !combatOpen}
     <button class="fight" data-testid="combat-open" onclick={() => (combatOpen = true)}>⚔ Combat</button>
@@ -152,7 +152,8 @@
   /* The phone sheet leaves a transparent window for the enemy view; keep other overlays out of it. */
   @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
   .fight { border-color: var(--red); color: #ffd0d0; }
+  .short { display: none; }
   .tick { color: var(--cyan); min-width: 5.5em; }
   .speeds, .views { display: flex; gap: 4px; }
-  @media (max-width: 600px) { .tick { display: none; } .long { display: none; } header { padding-bottom: 4px; } header button { min-width: 34px; } header { gap: 4px; flex-wrap: wrap; justify-content: flex-start; } header button { padding: 0 8px; font-size: 12px; } .views { margin-left: auto; } }
+  @media (max-width: 600px) { .tick { display: none; } .long { display: none; } .short { display: inline; } header { padding-bottom: 4px; } header button { min-width: 34px; } header { gap: 4px; flex-wrap: wrap; justify-content: flex-start; } header button { padding: 0 8px; font-size: 12px; } .views { margin-left: auto; } }
 </style>

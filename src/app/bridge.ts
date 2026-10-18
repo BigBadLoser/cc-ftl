@@ -3,7 +3,7 @@ import type { FrameStats, Loop, Speed } from './loop';
 import type { UiCombat, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
-import { buildCrewList } from './crewSnapshot';
+import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { createStore, type Readable } from './store';
@@ -46,6 +46,7 @@ export interface Bridge {
   snapshot: Readable<Snapshot>;
   inspect: Readable<InspectSnapshot | null>;
   crew: Readable<UiCrew[]>;
+  hostiles: Readable<UiCrew[]>;
   modules: Readable<UiModule[]>;
   stats: Readable<UiStats>;
   stock: Readable<UiStock[]>;
@@ -79,6 +80,8 @@ export function createBridge(sim: Sim): Bridge {
   });
   const inspect = createStore<InspectSnapshot | null>(null);
   const crew = createStore<UiCrew[]>([]);
+  const hostiles = createStore<UiCrew[]>([]);
+  let lastHostiles = '';
   const modules = createStore<UiModule[]>([]);
   const stats = createStore<UiStats>({ supply: 0, demand: 0, o2: null });
   const stock = createStore<UiStock[]>([]);
@@ -122,11 +125,17 @@ export function createBridge(sim: Sim): Bridge {
     inspect.set(snap);
   };
   const refreshCrew = () => {
-    const list = buildCrewList(sim);
-    const key = JSON.stringify(list);
-    if (key === lastCrew) return;
-    lastCrew = key;
-    crew.set(list);
+    const lists = buildCrewLists(sim);
+    const key = JSON.stringify(lists.crew);
+    if (key !== lastCrew) {
+      lastCrew = key;
+      crew.set(lists.crew);
+    }
+    const hk = JSON.stringify(lists.hostiles);
+    if (hk !== lastHostiles) {
+      lastHostiles = hk;
+      hostiles.set(lists.hostiles);
+    }
   };
   const refreshShip = () => {
     if (frame++ % 4) return;
@@ -179,6 +188,7 @@ export function createBridge(sim: Sim): Bridge {
     snapshot: store,
     inspect,
     crew,
+    hostiles,
     modules,
     stats,
     stock,

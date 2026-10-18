@@ -25,7 +25,7 @@
 </div>
 
 <style>
-  .alerts { position: fixed; z-index: 4; left: calc(8px + var(--sal)); top: calc(var(--hdr) + var(--sat) + 58px); display: grid; gap: 4px; width: min(250px, calc(100vw - 110px)); pointer-events: none; }
+  .alerts { position: fixed; z-index: 4; left: calc(8px + var(--sal)); top: calc(var(--hdr) + var(--sat) + 58px + var(--foes, 0px)); display: grid; gap: 4px; width: min(250px, calc(100vw - 110px)); pointer-events: none; }
   .alert { display: flex; pointer-events: auto; background: var(--panel); border: 1px solid var(--amber); border-radius: 8px; overflow: hidden; }
   .alert.danger { border-color: var(--red); }
   .alert.good { border-color: #3fae6a; }

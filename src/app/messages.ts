@@ -22,7 +22,11 @@ const REASONS: Record<string, string> = {
   noShuttle: 'No shuttle in storage for this bay',
   bayFull: 'That bay already holds a shuttle',
   notDocked: 'The shuttle is not docked',
-  badTarget: "Can't dock there",
+  badTarget: "Can't do that to that target",
+  notAWeapon: "That isn't a weapon",
+  alreadyEquipped: 'Already wielding that',
+  noStock: 'None of that in storage on this ship',
+  nothingEquipped: 'Nothing wielded',
   incapacitated: 'That crew member cannot move',
   badStruct: "Can't build that",
 };

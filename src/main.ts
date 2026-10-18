@@ -12,6 +12,7 @@ import { createErrorLog } from './app/errors';
 import { attachInput } from './app/input';
 import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
+import { installDebugHook } from './app/debugHook';
 import { createRenderer, type Renderer } from './render/scene';
 import { content } from './content';
 import { newGame, ShipC, VehicleC } from './sim';
@@ -27,6 +28,7 @@ const sim = newGame(seed, content);
 const bridge = createBridge(sim);
 const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
+let hook: { onEvents(types: readonly string[]): void } | undefined;
 
 const itemIcons = createStore<Record<string, UiIcon>>({});
 loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e: unknown) => errorLog.push(e));
@@ -37,6 +39,7 @@ const loop = createLoop({
   onEvents: (events) => {
     controller.onEvents(events);
     renderer?.onEvents(events);
+    hook?.onEvents(events.map((e) => e.type));
   },
   onFrame: (stats) => bridge.update(stats, renderer?.info()),
 });
@@ -75,6 +78,9 @@ const api: UiApi = {
   inspect: bridge.inspect,
   errors: errorLog.errors,
   crew: bridge.crew,
+  hostiles: bridge.hostiles,
+  focusCrew: controller.focusCrew,
+  attack: controller.attack,
   selectedCrew: controller.selectedCrew,
   modules: bridge.modules,
   moduleDefs: buildModuleDefs(sim),
@@ -124,6 +130,7 @@ const api: UiApi = {
     createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content)
       .then((r) => {
         renderer = r;
+        if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
         r.setGrids(sim.grids);
         const grid = sim.grids.get(1);
         if (grid) r.setGrid(grid);

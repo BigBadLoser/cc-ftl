@@ -117,5 +117,5 @@
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
   .none { color: var(--dim); margin: 4px 0; }
   .assign { width: 100%; margin-top: 8px; }
-  @media (max-width: 600px) { aside { width: auto; left: 0; bottom: 0; max-height: 60vh; } }
+  @media (max-width: 600px) { aside { width: auto; left: 0; bottom: 0; max-height: 46vh; z-index: 8; } }
 </style>

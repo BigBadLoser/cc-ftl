@@ -58,6 +58,36 @@ export interface UiCrew {
   /** Name of the crew member carrying this one, or null. */
   carriedBy: string | null;
   carrying: { item: string; count: number } | null;
+  /** Which side: the player's crew, or hostile crew standing on a grid the player's crew is on. */
+  side: 'player' | 'enemy';
+  /** Grid they stand on (0 = aboard a shuttle), and a label for where they are. */
+  gridId: number;
+  where: string;
+  /** Not on the home ship. */
+  away: boolean;
+  /** Wielded hand weapon, or null for bare hands. */
+  weapon: { item: string; name: string; ranged: boolean; damage: number; range: number } | null;
+  /** Hand weapons in storage on their grid that they could fetch. */
+  arms: { item: string; name: string; count: number }[];
+  surrendered: boolean;
+  prisoner: boolean;
+  inert: boolean;
+  fight: UiFight | null;
+}
+
+export interface UiFight {
+  mode: 'idle' | 'engage' | 'flee';
+  /** Shoots hostiles on its own (drafted crew). */
+  engage: boolean;
+  target: string | null;
+  targetId: number;
+  /** The player ordered this target. */
+  ordered: boolean;
+  /** Seconds until the next attack, and the weapon's cooldown. */
+  cooldown: number;
+  cooldownMax: number;
+  /** Cover against its current target, or null with no target in sight. */
+  cover: 'none' | 'partial' | 'full' | null;
 }
 
 /** A placed module, for the inspector and the debug panel. */
@@ -328,6 +358,12 @@ export interface UiApi {
   errors: Subscribable<UiError[]>;
   inspect: Subscribable<UiInspect | null>;
   crew: Subscribable<UiCrew[]>;
+  /** Hostile crew on grids the player's crew stand on. */
+  hostiles: Subscribable<UiCrew[]>;
+  /** Center the camera on a crew member wherever they are. */
+  focusCrew(id: number): void;
+  /** Order drafted crew (the selected one, else all) to attack a hostile crew member. */
+  attack(target: number): void;
   /** Selected crew id, or null (tile selection is reported through `inspect`). */
   selectedCrew: Subscribable<number | null>;
   tool: Subscribable<UiToolState>;
