@@ -7,6 +7,7 @@ export type Chain = string[];
 export type CutawayMode = "auto" | "up" | "down";
 
 const solidish = (k: number) => k === Struct.Wall || k === Struct.Door;
+const isRoom = (k: number) => !solidish(k) && k !== Struct.Space;
 
 export function touchesSpace(kindAt: KindAt, x: number, y: number): boolean {
   for (let dy = -1; dy <= 1; dy++)
@@ -74,10 +75,10 @@ export function replacesFloor(kindAt: KindAt, x: number, y: number, mode: Cutawa
 }
 
 /**
- * Pieces of the wall, hull or door at (x, y), after walls pass 9 (walls.py / hull.py / envtiles.py; the walls art is
+ * Pieces of the wall, hull or door at (x, y), after walls pass 10 (walls.py / hull.py / envtiles.py; the walls art is
  * not final, keep this the one place that maps the grid to wall sprite ids). Three view levels (`wallLevel`):
  *  - up: full-height partitions and far hull; cut: partitions cut above the skirt, the far hull full; low: partition
- *    stubs, every hull side a ghost rim (`tile.hull.ghost.m*`).
+ *    stubs, every hull side a ghost (see-through edge lines, `tile.hull.ghost.m*[.r*]`).
  *  - The near hull (a hull tile with space at +x / +y / the +x+y diagonal) is a ghost in every level:
  *    `tile.hull.o<outward>.m<mask>` (a flat rim with a lit crest), plus its belly below the deck
  *    `tile.hull.belly.o<outward>.m<mask>` (not for concave corners), drawn under the floor layer (`under`).
@@ -110,7 +111,12 @@ export function wallPieces(
     if (o < 4) out.push({ chain: [`tile.hull.belly.o${o}.m${mask}${v}`, `tile.hull.belly.o${o}.m${mask}`], order: 1, under: true });
     return out;
   }
-  if (ghosts && hull && level === "low") return [{ chain: [`tile.hull.ghost.m${mask}`], order: 0 }];
+  if (ghosts && hull && level === "low") {
+    // The rear ghost traces its sloped skirt; `.r<1|8|9>` = which unconnected N / W sides face a room, not space.
+    const room = (isRoom(kindAt(x, y - 1)) ? 1 : 0) | (isRoom(kindAt(x - 1, y)) ? 8 : 0);
+    const id = `tile.hull.ghost.m${mask}`;
+    return [{ chain: room ? [`${id}.r${room}`, id] : [id], order: 0 }];
+  }
   const fam = hull ? "hull" : "wall";
   const base = `tile.${fam}.${PRE[level]}m${mask}`;
   const out: Piece[] = [{ chain: [base + v, base], order: 0 }];
