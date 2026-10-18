@@ -13,7 +13,8 @@ Sprites, per rotation r (cradle = the footprint's rotated (0, 0) tile, as the si
   module.robot_bay.r<r>                  empty: status light green (front and back of the tower)
   module.robot_bay.r<r>.charging         contacts lit, light cyan (a walker docks: the crew sprite in its charge clip)
   module.robot_bay.r<r>.charging.drone   the same, docking clamp swung out for the drone
-  module.robot_bay.r<r>.assembling.<t>   tool arms out over a part-built <t> (worker, repair, security), light amber
+  module.robot_bay.r<r>.assembling.<t>.f<0..5>   assembly loop: tool arms working over a part-built <t> (worker,
+                                         repair, security), light amber; sparks come from the fx particles
   module.robot_bay.r<r>.charging[.drone].front   overlay: the bay pixels in front of the docked robot
 Renderer layering (as the consoles): bay at its depth K, the docked robot at K + 0.02, the front overlay at K + 0.03.
 Unpowered is the renderer's job: glow off. Glow: only the contacts and the status light."""
@@ -26,7 +27,8 @@ from .robot_kit import Rig
 
 ID = "module.robot_bay"
 TYPES = ("worker", "repair", "security")
-STATES = ("", "charging", "charging.drone") + tuple(f"assembling.{t}" for t in TYPES)
+WORK_FRAMES = 6                 # assembly loop frames (the renderer cycles .f0..f5, like the turret deploy frames)
+STATES = ("", "charging", "charging.drone") + tuple(f"assembling.{t}.f{i}" for t in TYPES for i in range(WORK_FRAMES))
 PRIMER = "plate"                # a part-built robot in bare primer, no livery
 ARM = "hazY"                    # tool arms: industrial yellow, apart from the primer-grey robot they build
 SHELL, SHELL_D, FRAME, FRAME_L = "sole", "plate", "dark", "steelD"    # the robots' look: light shells over a dark frame
@@ -104,9 +106,10 @@ def _clamp(rig, out):
     rig.rot(j, pitch=0 if out else 88)
 
 
-def _tool_arms(rig, out):
+def _tool_arms(rig, frame=None):
     """Two jointed tool arms on the alcove cheeks (industrial yellow on dark hinges, a welder and a gripper): folded
-    down along the cheeks, or reaching over the cradle."""
+    down along the cheeks, or (assembly loop frame 0..5) reaching over the cradle and working: the welder dips in and
+    pulls back while the gripper shifts its hold, out of phase."""
     for side, sx in (("R", 1), ("L", -1)):
         sh, el = (sx * 0.34, -0.52, 0.98), (sx * 0.34, -0.52, 0.72)
         s = rig.joint(f"tool_{side}", "root", sh)
@@ -122,9 +125,11 @@ def _tool_arms(rig, out):
         else:                                                                                   # gripper
             for df in (-0.025, 0.025):
                 rig.part(e).rbox((tip[0], tip[1] + df, tip[2] - 0.1), (0.045, 0.025, 0.08), FRAME_L, r=0.01, taper=0.7)
-        if out:
-            rig.rot(s, pitch=-70, roll=sx * 22)
-            rig.rot(e, pitch=-55)
+        if frame is not None:
+            t = math.tau * frame / WORK_FRAMES
+            w = math.sin(t) if side == "R" else math.sin(t + math.pi * 0.6)
+            rig.rot(s, pitch=-68 + 16 * w, roll=sx * (24 - 8 * w))
+            rig.rot(e, pitch=-52 + 26 * w)
 
 
 def _partial(kind):
@@ -151,11 +156,12 @@ def build(rot, state):
     core.clear_scene_meshes()
     (dx, dy), d = placement(rot)
     kind = state.split(".")[1] if state.startswith("assembling") else None
+    frame = int(state.split(".")[2][1:]) if kind else None
     rig = Rig(f"bay{rot}")
     _tower(rig, LIGHT[state.split(".")[0] if kind else state], state.startswith("charging"))
     _cradle(rig, state.startswith("charging"))
     _clamp(rig, state == "charging.drone")
-    _tool_arms(rig, bool(kind))
+    _tool_arms(rig, frame)
     rig.build()
     objs = rig.objects()
     roots = [rig.root]

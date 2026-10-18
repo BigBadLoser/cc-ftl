@@ -13,7 +13,8 @@ from sprites.robot_render import pose  # noqa: E402
 
 Z = 3
 W, H = 120 * Z, 120 * Z
-CELLS = [(0, s, None) for s in robot_bay.STATES] + [(r, "", None) for r in (1, 2, 3)]
+CELLS = [(0, s, None) for s in robot_bay.STATES if not s.startswith("assembling") or s.endswith(".f0")]
+CELLS += [(r, "", None) for r in (1, 2, 3)]
 CELLS += [(2, "charging", "worker"), (2, "charging", "security"), (2, "charging.drone", "repair"), (0, "charging", "worker"),
           (3, "charging", "security")]
 
