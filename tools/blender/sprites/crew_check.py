@@ -28,7 +28,7 @@ LAYERS = {
     "crew": COMMON + ["eyes.organic", "hair.short", "arm.L.flesh", "arm.R.flesh", "torso.tee"],
 }
 DIRS = [("SE", 0), ("S", 1), ("SW", 2), ("NW", 4)]
-FRAMES = [("idle", "idle", 0), ("walk", "walk", 2), ("work", "work", 3), ("sit", "sit", 0)]
+FRAMES = [("idle", "idle", 0), ("walk", "walk", 2), ("work", "work", 3), ("sit_idle", "sit_idle", 0), ("sit_work", "sit_work", 2)]
 SHIFT = lambda a, dy, dx: np.roll(a, (dy, dx), (0, 1))  # noqa: E731
 
 

@@ -24,7 +24,7 @@ ORDER = {"body": 0, "eyes": 10, "legs": 20, "torso": 30, "gear.belt": 40, "arm.R
          "implant.temple": 65, "gear.head": 70, "gear.back": 80}
 UNION_SLOTS = ("arm.L", "arm.R")
 # (clip, frames, fps, loop)
-CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("sleep", 3, 2, True), ("sit", 4, 3, True)]
+CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("sleep", 3, 2, True), ("sit_idle", 4, 3, True), ("sit_work", 6, 8, True)]
 # sim facing d: 0 = grid +x, CCW in grid space, 2 = grid +y. Character faces Blender -Y at azimuth 0, and Blender
 # y = -grid y, so the azimuth about +Z that faces grid angle phi=45*d deg is theta = 90 - phi.
 THETA = [90 - 45 * d for d in range(8)]
@@ -94,7 +94,7 @@ def set_state(items, show, hold):
 def clip_frames():
     """Yield (clip, index, action name, frame number)."""
     for clip, n, _, _ in CLIPS:
-        if clip == "sit":               # procedural (human_sit): fingers come from idle frame 0
+        if clip.startswith("sit"):      # procedural (human_sit): fingers come from idle frame 0
             for i in range(n):
                 yield clip, i, "idle_Armature", 0
             continue
@@ -153,7 +153,7 @@ def pose_frame(arm, clip, i, name, f):
     for b in pb:
         b.scale = (1, 1, 1)
     arm.location = (0, 0, 0)
-    br = hs.apply(arm, i, SCALE) if clip == "sit" else 0.0
+    br = hs.apply(arm, i, SCALE, clip) if clip.startswith("sit") else 0.0
     pb["spine_03"].scale = (TORSO_W, 1 + 0.03 * br, 1 + 0.03 * br)
     pb["spine_02"].scale = (1 + (TORSO_W - 1) / 2, 1 + 0.02 * br, 1 + 0.02 * br)
     if clip == "sleep":
