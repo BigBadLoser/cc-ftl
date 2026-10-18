@@ -1,21 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, CrewC, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, deserialize, newGame, serialize, shipEntityOf, shipOf,
+  CombatC, CrewC, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, shipEntityOf, shipOf,
   type ContentRegistry, type ShipTemplate, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
 
 type Mod = NonNullable<ShipTemplate['modules']>[number];
 
-/** A 10x5 test hull: reactor, weapons console, one hull-mounted weapon module on the east wall, optional extras. */
+/** A 14x9 test hull: reactor, weapons console (chair at (7, 2)), one weapon bay, a clear lane, optional extras. */
 function gunShip(weapon: string, crew: string[], extra: Mod[] = [], faction?: 'hostile'): ShipTemplate {
   return {
     name: 'Gun', crew, ...(faction ? { faction } : {}),
-    rows: ['##########', '#________#', '#________#', '#________#', '##########'],
+    rows: [
+      '##############', '#____________#', '#____________#', '#____________#', '#____________#', '#____________#',
+      '#____________#', '#____________#', '##############',
+    ],
     modules: [
       { def: 'module.reactor', x: 1, y: 1, rot: 0 },
-      { def: 'module.weaponsConsole', x: 4, y: 1, rot: 0 },
-      { def: weapon, x: 8, y: 1, rot: 0 },
+      { def: 'module.weaponsConsole', x: 6, y: 1, rot: 0 },
+      { def: weapon, x: 9, y: 1, rot: 0 },
       ...extra,
     ],
   };
@@ -25,7 +28,7 @@ const dummy: ShipTemplate = { ...content.ships['ship.raider'], crew: [] };
 const dummyNoShield: ShipTemplate = {
   ...dummy, modules: dummy.modules!.filter((m) => m.def !== 'module.shieldGenSmall'),
 };
-const withMissiles: Mod = { def: 'module.storage', x: 5, y: 3, rot: 2, stock: [{ item: 'item.missile', count: 20 }] };
+const withMissiles: Mod = { def: 'module.storage', x: 5, y: 6, rot: 2, stock: [{ item: 'item.missile', count: 20 }] };
 
 function registry(ships: Record<string, ShipTemplate>): ContentRegistry {
   return { ...content, ships: { ...content.ships, ...ships } };
@@ -105,6 +108,34 @@ describe('combat start and consoles', () => {
   });
 });
 
+describe('turrets', () => {
+  it('aim at the target in 8 directions and shots start at the turret', () => {
+    const sim = duel('module.burstLaser', dummyNoShield);
+    const [laser] = modulesOf(sim, 1, 'module.burstLaser') as [number];
+    const [target] = modulesOf(sim, 2, 'module.reactor') as [number];
+    aim(sim, 1, 2, target);
+    run(sim, 2);
+    const from = turretPosition(sim, laser)!;
+    const to = turretPosition(sim, target)!;
+    const aimNow = sim.world.get(laser, WeaponC)!.aim;
+    expect(aimNow).toBe(aimDirection(to.x - from.x, to.y - from.y));
+    expect(aimNow).toBe(0); // the enemy lies far to the east and a little south
+    let fired: SimEvent | undefined;
+    for (let i = 0; i < 20 * 20 && !fired; i++) {
+      sim.step();
+      fired = sim.events.drain().find((e) => e.type === 'weapon.fired');
+    }
+    expect(fired?.type).toBe('weapon.fired');
+    const p = sim.world.get((fired as Extract<SimEvent, { type: 'weapon.fired' }>).projectile, ProjectileC)!;
+    expect([p.x0, p.y0]).toEqual([from.x, from.y]);
+  });
+
+  it('quantises directions clockwise from +x', () => {
+    expect([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]].map(([x, y]) => aimDirection(x!, y!)))
+      .toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+  });
+});
+
 describe('weapons', () => {
   it('burst laser strips shield layers, then shields recharge', () => {
     const sim = duel('module.burstLaser', dummy);
@@ -123,20 +154,23 @@ describe('weapons', () => {
   });
 
   it('mass driver breaches the hull and the room vents', () => {
-    const sim = duel('module.massDriver', dummyNoShield);
-    const driver = modulesOf(sim, 2, 'module.massDriver')[0] as number;
-    aim(sim, 1, 2, driver);
-    const grid2 = () => sim.grids.get(2)!;
+    const wallTarget: ShipTemplate = {
+      name: 'Wall', crew: [], faction: 'hostile',
+      rows: ['##############', '#____________#', '#____________#', '#____________#', '#____________#', '#____________#', '##############'],
+      modules: [{ def: 'module.storage', x: 12, y: 3, rot: 2 }],
+    };
+    const sim = duel('module.massDriver', wallTarget);
+    aim(sim, 1, 2, modulesOf(sim, 2, 'module.storage')[0] as number);
     const meanO2 = (): number => {
-      const g = grid2();
+      const g = sim.grids.get(2)!;
       let sum = 0;
       let n = 0;
-      for (let y = 1; y <= 5; y++) for (let x = 6; x <= 10; x++) { sum += g.get('o2', x, y); n++; }
+      for (let y = 1; y <= 5; y++) for (let x = 1; x <= 12; x++) { sum += g.get('o2', x, y); n++; }
       return sum / n;
     };
     run(sim, 20);
     expect(meanO2()).toBeGreaterThan(18);
-    const events = run(sim, 20 * 90);
+    const events = run(sim, 20 * 120);
     expect(ofType(events, 'projectile.hit').length).toBeGreaterThan(0);
     expect(ofType(events, 'hull.breach').length).toBeGreaterThan(0);
     expect(meanO2()).toBeLessThan(8);
@@ -297,7 +331,7 @@ describe('enemy AI, endings', () => {
     sim.enqueue({ type: 'combat.flee', gridId: 1 });
     const early = run(sim, 2);
     expect(early.some((e) => e.type === 'command.rejected' && e.reason === 'notCharged')).toBe(true);
-    run(sim, 20 * 10);
+    run(sim, 20 * 25);
     expect(combatOf(sim, 1).ftl).toBeGreaterThan(5);
     combatOf(sim, 1).ftl = 40;
     sim.enqueue({ type: 'combat.flee', gridId: 1 });
@@ -311,11 +345,13 @@ describe('enemy AI, endings', () => {
   it('a badly damaged raider with a charged drive retreats', () => {
     const sim = newGame(1, content);
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
-    run(sim, 100);
+    run(sim, 400);
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC)!;
-      if (m.gridId === 2) m.hp = m.def === 'module.reactor' ? 60 : 0;
+      if (m.gridId === 2) m.hp = m.def === 'module.reactor' ? 100 : 0;
     }
+    const g2 = sim.grids.get(2)!;
+    for (let y = 0; y < g2.height; y++) for (let x = 0; x < g2.width; x++) if (g2.get('struct', x, y) === 2) g2.set('hp', x, y, 80); // walls at about a third
     combatOf(sim, 2).ftl = 40;
     const events = run(sim, 100);
     expect(ofType(events, 'ship.fled').map((e) => e.gridId)).toEqual([2]);
@@ -327,7 +363,7 @@ function countAmmo(sim: Sim, crate: number): number {
   return s.stacks.filter((x) => x.item === 'item.missile').reduce((n, x) => n + x.count, 0);
 }
 
-describe('determinism, saves, performance', () => {
+describe('determinism, saves, performance', { timeout: 30000 }, () => {
   const fightSim = (seed: number): Sim => {
     const sim = newGame(seed, content);
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });

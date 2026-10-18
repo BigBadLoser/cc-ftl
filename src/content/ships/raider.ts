@@ -1,33 +1,52 @@
 import type { ShipTemplate } from '../../sim';
 
-/** A small hostile raider: two weapons, one shield layer, a helm and a weapons console, 3 crew. */
+/**
+ * 24x16 hostile raider with the same full-size modules as the player but fewer: one engine (west hull, rot 3), two
+ * light weapons, a small shield generator (one layer), a helm and a weapons console, 3 crew.
+ */
 export const raiderShip = {
   name: 'Raider',
   faction: 'hostile',
   doctrine: 'weapons',
   crew: ['role.gunner', 'role.pilot', 'role.engineer'],
   rows: [
-    '############',
-    '#____#_____#',
-    '#____#_____#',
-    '#____D_____#',
-    '#____#_____#',
-    '#____#_____#',
-    '############',
+    '........................',
+    '.######################.',
+    '.#______#_____________#.',
+    '.#______#_____________#.',
+    '.#______#_____________#.',
+    '.#______D_____________#.',
+    '.#______#_____________#.',
+    '.#______#_____________#.',
+    '.#______#######D#######.',
+    '.#______#_____________#.',
+    '.#______#_____________#.',
+    '.#______D_____________#.',
+    '.#______#_____________#.',
+    '.#______#_____________#.',
+    '.######################.',
+    '........................',
   ],
   modules: [
-    // Engine room: reactor, life support, engine on the west hull.
-    { def: 'module.reactor', x: 2, y: 1, rot: 0 },
-    { def: 'module.lifeSupport', x: 4, y: 1, rot: 0 },
-    { def: 'module.engine', x: 1, y: 4, rot: 0 },
-    { def: 'module.light', x: 3, y: 5, rot: 0 },
-    // Bridge: consoles on the north wall, weapons on the east hull.
-    { def: 'module.shieldGenSmall', x: 6, y: 1, rot: 0 },
-    { def: 'module.weaponsConsole', x: 7, y: 1, rot: 0 },
-    { def: 'module.helm', x: 8, y: 1, rot: 0 },
-    { def: 'module.burstLaser', x: 10, y: 1, rot: 0 },
-    { def: 'module.massDriver', x: 10, y: 4, rot: 0 },
-    { def: 'module.light', x: 8, y: 5, rot: 0 },
+    // Engine room: engine on the west hull, reactor, life support. Doors at (8, 5) and (8, 11).
+    { def: 'module.engine', x: 1, y: 3, rot: 3 },
+    { def: 'module.reactor', x: 3, y: 9, rot: 0 },
+    { def: 'module.lifeSupport', x: 6, y: 9, rot: 0 },
+    { def: 'module.light', x: 7, y: 3, rot: 0 },
+    { def: 'module.light', x: 7, y: 12, rot: 0 },
+    // Bridge (north): weapons console (chair (11, 3)), helm (chair (15, 3), reached from the south).
+    { def: 'module.weaponsConsole', x: 10, y: 2, rot: 0 },
+    { def: 'module.helm', x: 14, y: 2, rot: 0 },
+    { def: 'module.light', x: 20, y: 2, rot: 0 },
+    { def: 'module.light', x: 12, y: 7, rot: 0 },
+    { def: 'module.light', x: 20, y: 7, rot: 0 },
+    // Weapon deck (south): two light weapons and the small shield generator. The door at (15, 8) stays clear.
+    { def: 'module.burstLaser', x: 10, y: 10, rot: 0 },
+    { def: 'module.burstLaser', x: 13, y: 10, rot: 0 },
+    { def: 'module.shieldGenSmall', x: 18, y: 10, rot: 0 },
+    { def: 'module.light', x: 16, y: 13, rot: 0 },
+    { def: 'module.light', x: 21, y: 13, rot: 0 },
+    { def: 'module.light', x: 9, y: 13, rot: 0 },
   ],
 } satisfies ShipTemplate;
 

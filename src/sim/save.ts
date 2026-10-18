@@ -10,7 +10,7 @@ import { hullSum } from './combat/hull';
 import { initAtmosphere } from './ship';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -87,6 +87,14 @@ export const migrations: Record<number, (data: Record<string, unknown>) => Recor
     world.stores['combat'] = combats;
     const sector: Sector = { width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false };
     return { ...data, grids, sector };
+  },
+  // v4 -> v5 (art rework): weapons gain the turret `aim`. Module footprints were resized in the same change
+  // (consoles 1x1 -> chairs inside 2x2/3x2, bigger engines and weapons); the game had no persisted saves yet, so
+  // only the component shape is migrated and old ship layouts are not converted.
+  4: (data) => {
+    const world = data['world'] as WorldData;
+    for (const entry of world.stores['weapon'] ?? []) (entry[1] as Record<string, unknown>)['aim'] = 0;
+    return data;
   },
 };
 

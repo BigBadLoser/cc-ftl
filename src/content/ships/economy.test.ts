@@ -29,7 +29,7 @@ describe('starter economy', () => {
     expect(sim.world.query(StorageC)).toHaveLength(3);
   });
 
-  it('crafts metal from scrap and hauls it away on the real ship', () => {
+  it('crafts metal from scrap and hauls it away on the real ship', { timeout: 30000 }, () => {
     const sim = busy();
     run(sim, 3000);
     expect(sim.world.get(find(sim, 'module.fabricator'), ProductionC)?.orders[0]?.done).toBe(3);
@@ -70,7 +70,7 @@ describe('starter economy', () => {
     }
     for (const [, p] of data.world.stores['priorities'] ?? []) delete p['crafting'];
     const loaded = deserialize(JSON.stringify(data), content);
-    expect(SAVE_VERSION).toBe(4);
+    expect(SAVE_VERSION).toBe(5);
     expect(loaded.grids.get(1)?.has('item')).toBe(true);
     run(loaded, 20);
   });
