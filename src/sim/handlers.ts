@@ -5,6 +5,7 @@ import { crewHandlers } from './crew/handlers';
 import { itemHandlers } from './items/handlers';
 import { moduleHandlers } from './modules/handlers';
 import { portalHandlers } from './portals/handlers';
+import { vehicleHandlers } from './vehicles/handlers';
 import { FIRE_START_INTENSITY } from './tuning';
 import { Struct, writeStruct } from './structure';
 import type { Sim } from './sim';
@@ -18,6 +19,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...moduleHandlers,
   ...itemHandlers,
   ...portalHandlers,
+  ...vehicleHandlers,
   noop: () => {},
   'debug.spawnMarker': (sim, cmd) => {
     const entity = sim.world.createEntity();

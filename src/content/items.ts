@@ -10,4 +10,6 @@ export const items = {
   'item.ice': { name: 'Ice', tags: ['raw', 'water'], stackSize: 50 },
   // Ammo for missile launchers. Explosive: loose missiles fuel fires.
   'item.missile': { name: 'Missile', tags: ['ammo'], stackSize: 20, flammability: 0.5 },
+  // Crafted at the fabricator; a vehicle bay turns it into a stowed shuttle (vehicle.assign).
+  'item.shuttle': { name: 'Shuttle', tags: ['vehicle'], stackSize: 1, vehicle: 'vehicle.shuttle' },
 } satisfies Record<string, ItemDef>;

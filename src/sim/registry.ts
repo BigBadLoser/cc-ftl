@@ -7,7 +7,7 @@ export type SkillName = 'gunnery' | 'piloting' | 'shielding';
 export interface ShipTemplate {
   name: string;
   /** Modules to place at game start; `rot` is quarter turns clockwise (0..3). */
-  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[] }[];
+  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string }[];
   /** '.' space, '#' wall, '_' floor, 'D' door. Rows may differ in length; short rows pad with space. */
   rows: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
@@ -16,6 +16,12 @@ export interface ShipTemplate {
   crew?: string[];
   /** Enemy targeting doctrine (default 'random'). */
   doctrine?: 'weapons' | 'shields' | 'random';
+  /**
+   * Boarding doctrine flag (hostile ships). Present = the ship may send `party` crew by shuttle to an airlock of the
+   * player's ship once `afterSec` seconds of combat have passed, or earlier when fewer than half its weapons work or its
+   * integrity falls below `losingBelow`. Absent = it never boards (keeps the balance scenarios comparable).
+   */
+  boarding?: { party: number; afterSec: number; losingBelow: number };
 }
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
@@ -37,6 +43,24 @@ export interface ContentRegistry {
   structCosts: Record<string, ItemQty[]>;
   /** Weapon content id (e.g. 'weapon.burstLaser') to definition. Absent = no weapons. */
   weapons?: Record<string, WeaponDef>;
+  /** Vehicle content id (e.g. 'vehicle.shuttle') to definition. Absent = no vehicles. */
+  vehicles?: Record<string, VehicleDef>;
+}
+
+/** A shuttle type. It is an entity in the sector, not a grid: no interior, crew aboard are hidden. */
+export interface VehicleDef {
+  name: string;
+  /** Which bays take it: matches ModuleDef.vehicleBay.class. */
+  class: string;
+  /** Render asset id. */
+  asset: string;
+  /** Sector tiles per second at piloting skill 0. */
+  speed: number;
+  maxHp: number;
+  /** Passengers besides the pilot. */
+  capacity: number;
+  /** Chance 0..1 that a weapon shot aimed at it in flight misses. */
+  evasion: number;
 }
 
 /** One typed result of a weapon impact. All are applied by combat/effects.ts. */
@@ -92,6 +116,8 @@ export interface ItemDef {
   stackSize: number;
   /** 0..1 fuel factor for a loose stack on a burning tile. Default 0 (does not burn). */
   flammability?: number;
+  /** VehicleDef id: a vehicle bay can turn one of these into a shuttle (vehicle.assign). */
+  vehicle?: string;
 }
 
 export interface RecipeDef {
@@ -183,6 +209,13 @@ export interface ModuleDef {
    * `cycleSec` and moves the chamber's air to or from the ship, so crew passing never vents the ship.
    */
   airlock?: { cycleSec: number };
+  /**
+   * Vehicle bay: an interior landing pad (walkable, no hull contact needed; the vehicle launches through a hatch in the
+   * pad). Holds one vehicle whose `VehicleDef.class` equals `class` ('shuttle' bays are 4x5; later 'pod' bays, 3x3, for
+   * mining and construction pods). Crew board and leave it at `access` (inside the footprint, so list it in `openTiles`
+   * too).
+   */
+  vehicleBay?: { class: string };
   /** Marks a console; its operator runs that ship system during combat. */
   console?: 'weapons' | 'shields' | 'helm';
   /** WeaponDef id this module fires. */

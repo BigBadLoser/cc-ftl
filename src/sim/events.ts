@@ -52,6 +52,18 @@ export type SimEvent =
   | { type: 'portal.unlinked'; portal: number }
   /** An airlock finished a cycle; `side` is the door now open. */
   | { type: 'airlock.cycled'; gridId: number; module: number; side: 'inner' | 'outer' }
+  /** A shuttle left its bay (home ship `gridId`) at sector position (x, y). */
+  | { type: 'vehicle.launched'; vehicle: number; gridId: number; x: number; y: number }
+  /** A shuttle latched on to `airlock` (module) of ship `gridId`. */
+  | { type: 'vehicle.docked'; vehicle: number; gridId: number; airlock: number }
+  | { type: 'vehicle.undocked'; vehicle: number; gridId: number; airlock: number }
+  /** A shuttle flew into its home bay. */
+  | { type: 'vehicle.stowed'; vehicle: number; bay: number }
+  | { type: 'vehicle.damaged'; vehicle: number; amount: number; hp: number; source: 'weapon' | 'pointDefence' }
+  /** A shuttle was destroyed in `state`; see destroyVehicle for what happens to those aboard. */
+  | { type: 'vehicle.destroyed'; vehicle: number; state: 'stowed' | 'flying' | 'docked'; x: number; y: number }
+  | { type: 'crew.embarked'; crew: number; vehicle: number; role: 'pilot' | 'passenger' }
+  | { type: 'crew.disembarked'; crew: number; vehicle: number; gridId: number; x: number; y: number }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 

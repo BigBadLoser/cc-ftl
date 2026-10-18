@@ -193,4 +193,11 @@ export const modules = {
     priority: 3, flammability: 0.2, maxHp: 80, buildWork: 240, aiCore: { tier: 1 }, roofAsset: 'roof.ai', deploySec: 2,
     cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 16 }],
   },
+  // Shuttle bay 4x5: a big interior landing pad with a launch hatch (no hull contact needed). Walkable; crew board the
+  // shuttle at (1, 4), the south edge of the pad. Pod bays (3x3, class 'pod') come later.
+  'module.vehicle_bay': {
+    name: 'Shuttle bay', asset: 'module.vehicle_bay', footprint: [4, 5], solid: false, access: [1, 4], openTiles: [[1, 4]],
+    power: -1, priority: 4, flammability: 0.1, maxHp: 200, buildWork: 400, vehicleBay: { class: 'shuttle' },
+    cost: [{ item: 'item.metal', count: 32 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }],
+  },
 } satisfies Record<string, ModuleDef>;

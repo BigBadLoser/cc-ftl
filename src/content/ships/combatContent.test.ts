@@ -26,6 +26,7 @@ describe('combat content', () => {
         const wall = hullRow(def, m.x, m.y, m.rot);
         for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
           const onWall = wall.some((w) => w.x === t.x && w.y === t.y);
+          if (def.airlock) continue; // airlock tiles become doors and chamber floor on spawn
           expect(grid.get('struct', t.x, t.y), `${m.def} at ${t.x},${t.y}`).toBe(onWall ? Struct.Wall : Struct.Floor);
         }
         const at = accessTile(def, m.x, m.y, m.rot);

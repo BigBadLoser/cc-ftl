@@ -9,6 +9,8 @@ import type { ShipTemplate } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { CREW_MAX_HP } from '../tuning';
+import { TICK_HZ } from '../time';
+import { BoarderC } from '../vehicles/components';
 import { CombatC, IonC, ShipC, type Combat, type Faction, type Ship } from './components';
 import { hullSum } from './hull';
 
@@ -92,6 +94,12 @@ export function spawnShip(
     shield: { layers, max: layers, timer: 0 }, evasion: 0, aiTimer: 0,
   };
   sim.world.add(ship, CombatC, combat);
+  if (template.boarding) {
+    sim.world.add(ship, BoarderC, {
+      party: template.boarding.party, afterTicks: Math.round(template.boarding.afterSec * TICK_HZ),
+      losingBelow: template.boarding.losingBelow, state: 'idle', timer: 0, vehicle: 0, crew: [],
+    });
+  }
   spawnCrew(sim, gridId, template.crew ?? [], opts.rest);
   sim.events.emit({ type: 'ship.spawned', gridId, faction: opts.faction });
   return gridId;

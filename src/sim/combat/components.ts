@@ -31,10 +31,12 @@ export interface Ship {
 }
 export const ShipC = defineComponent<Ship>('ship');
 
-/** A weapon target: a ship grid and optionally one of its modules (0 = any module). */
+/** A weapon target: a ship grid and optionally one of its modules (0 = any module), or a vehicle. */
 export interface Target {
   gridId: number;
   moduleId: number;
+  /** Set (with gridId 0, moduleId 0) when the target is a shuttle in flight or docked. */
+  vehicle?: number;
 }
 
 export type Doctrine = 'weapons' | 'shields' | 'random';

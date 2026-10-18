@@ -39,6 +39,8 @@ import { temperatureSystem } from './systems/temperature';
 import { turretSystem } from './systems/turrets';
 import { vitalsSystem } from './systems/vitals';
 import { workSystem } from './systems/work';
+import { vehicleSystem } from './systems/vehicles';
+import { boardingAiSystem } from './systems/boardingAi';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
 export type System = (sim: Sim) => void;
@@ -95,6 +97,8 @@ export const pipeline: readonly System[] = [
   // Portal crossings after movement: crew who just reached a portal end start or finish a traversal.
   portalSystem,
   carrySystem,
+  // Vehicles after crew movement: embarking crew board on arrival, shuttles fly before this tick's shots are aimed.
+  vehicleSystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.
   workSystem,
   // --- Combat (see each system's notes). State first: it decides whether consoles are needed next tick.
@@ -108,6 +112,8 @@ export const pipeline: readonly System[] = [
   helmSystem,
   // The enemy AI issues commands (applied next tick), then targets are validated.
   enemyAiSystem,
+  // The boarding doctrine issues vehicle commands (applied next tick).
+  boardingAiSystem,
   targetingSystem,
   // Charge, then fire: a weapon that reaches full charge fires the same tick.
   weaponChargeSystem,

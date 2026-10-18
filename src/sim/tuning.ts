@@ -143,3 +143,16 @@ export const OPERATOR_EXHAUSTED_BELOW = 5;
  * point defence cannot roll until the part is fully deployed. Set false to keep the animation but drop the gating.
  */
 export const DEPLOY_GATES_ACTIONS = true;
+
+// --- Vehicles ---
+/** Point defence engages hostile shuttles within this many sector tiles of the defending ship's centre. */
+export const VEHICLE_PD_RANGE = 45;
+/** Ticks between a point-defence module's rolls against a shuttle. */
+export const VEHICLE_PD_INTERVAL = 10;
+/** Chance per roll, and hp taken on a hit. */
+export const VEHICLE_PD_CHANCE = 0.35;
+export const VEHICLE_PD_DAMAGE = 10;
+/** Boarding parties never leave the ship with fewer than this many crew aboard. */
+export const BOARDING_MIN_HOME = 1;
+/** Ticks the boarding AI waits for its party to reach the bay before it launches with whoever is aboard. */
+export const BOARDING_LOAD_TICKS = 600;

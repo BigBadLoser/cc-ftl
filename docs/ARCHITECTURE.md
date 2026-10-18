@@ -247,3 +247,24 @@ Each milestone ends with something playable or watchable in the browser.
 - Throwaway visual tests are published as private claude.ai pages so the user can check them on any
   device.
 - Spikes so far: voxel deck (environment, lighting, power-off) and crew lineup (style B chosen).
+
+## Vehicles (shuttles), `src/sim/vehicles/`
+
+- A shuttle is an **entity** (`VehicleC`), never a grid. States: `stowed` (in its home bay), `flying` (sector x, y), `docked` (at an
+  airlock's outer door). Crew aboard (`AboardC`) have no Position/Path: hidden, on no grid.
+- `module.vehicle_bay` (4x5 interior pad, `vehicleBay: { class: 'shuttle' }`) holds one vehicle; later 3x3 `pod` bays and pods
+  (mining, construction) reuse the same `class` match. Shuttles are crafted as `item.shuttle` and put in an empty bay with
+  `vehicle.assign`.
+- Commands: `vehicle.assign/embark/disembark/launch/dock/undock/return`. Embark walks the crew member (drafted) to the boarding tile
+  (bay access tile, or the docked airlock's inside tile) and boards on arrival. The first aboard is the pilot; a launch needs one.
+  Disembark without a crew id lets passengers off and keeps the pilot aboard.
+- Docking is vehicle state, not a portal (a shuttle has no tiles): the airlock must be working; disembarking puts crew on the
+  airlock's inside tile. Boarders of another faction are drafted so they stand where they land.
+- Flight: straight line at `VehicleDef.speed` x (1 + SKILL_STEP x pilot's `piloting`).
+- Combat: any weapon can target a shuttle that is flying or docked (`combat.setTarget` with `targetVehicle`); shots home on it,
+  its `evasion` rolls, then it takes the weapon's total `moduleDamage` (ship shields do not cover it). Point defence covers its home
+  ship's shuttles against missiles within `VEHICLE_PD_RANGE`, and shoots hostile shuttles that are in range or docked at its ship.
+  Destroyed in flight: everyone aboard dies. Destroyed docked: they land on the airlock's inside tile downed (rescuable). A stowed
+  shuttle is lost (crew die) if its bay is destroyed.
+- Enemy boarding: `ShipTemplate.boarding` (doctrine flag -> `BoarderC`). Off for `ship.raider` (balance scenarios stay comparable);
+  on for `ship.raiderBoarder`. See `systems/boardingAi.ts`.

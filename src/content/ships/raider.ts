@@ -40,7 +40,7 @@ export const raiderShip = {
     { def: 'module.helm', x: 14, y: 2, rot: 0 },
     { def: 'module.light', x: 20, y: 2, rot: 0 },
     { def: 'module.light', x: 12, y: 7, rot: 0 },
-    { def: 'module.light', x: 20, y: 7, rot: 0 },
+    { def: 'module.light', x: 21, y: 7, rot: 0 },
     // Weapon deck (south): two light weapons and the small shield generator. The door at (15, 8) stays clear.
     { def: 'module.burstLaser', x: 10, y: 10, rot: 0 },
     { def: 'module.burstLaser', x: 13, y: 10, rot: 0 },
@@ -48,7 +48,24 @@ export const raiderShip = {
     { def: 'module.light', x: 16, y: 13, rot: 0 },
     { def: 'module.light', x: 21, y: 13, rot: 0 },
     { def: 'module.light', x: 9, y: 13, rot: 0 },
+    // Shuttle bay in the bridge room (pad x 17..20, y 3..7, boarding tile (18, 7)) with its shuttle.
+    { def: 'module.vehicle_bay', x: 17, y: 3, rot: 0, vehicle: 'vehicle.shuttle' },
+    // Airlock on the east hull, weapon deck (outer door (22, 12), inside tile (18, 12)).
+    { def: 'module.airlock', x: 19, y: 12, rot: 1 },
   ],
 } satisfies ShipTemplate;
 
 export const raiderShipId = 'ship.raider';
+
+/**
+ * The raider with the boarding doctrine switched on: after 90 s of combat (or sooner when fewer than half its weapons
+ * work or its integrity is under 0.6) it sends 2 crew by shuttle to a player airlock. The plain raider never boards, so
+ * the balance scenarios stay comparable.
+ */
+export const raiderBoarder = {
+  ...raiderShip,
+  name: 'Raider (boarders)',
+  boarding: { party: 2, afterSec: 90, losingBelow: 0.6 },
+} satisfies ShipTemplate;
+
+export const raiderBoarderId = 'ship.raiderBoarder';

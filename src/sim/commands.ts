@@ -32,6 +32,19 @@ export type Command =
   | { type: 'airlock.cycle'; moduleId: number; to: 'inner' | 'outer' }
   /** Give or take a crew member's EVA suit. */
   | { type: 'suit.set'; crew: number; worn: boolean }
+  /** Turn one shuttle item from a storage module on the bay's ship into a shuttle stowed in the (empty) bay. */
+  | { type: 'vehicle.assign'; bay: number; item?: string }
+  /** Walk a crew member to the vehicle's boarding tile (bay access tile, or the docked airlock's inside tile) and climb in. */
+  | { type: 'vehicle.embark'; crew: number; vehicle: number }
+  /** Passengers (or just `crew`, pilot included) leave at the boarding tile. Needs the vehicle stowed or docked. */
+  | { type: 'vehicle.disembark'; vehicle: number; crew?: number }
+  /** Launch a stowed vehicle from its bay (needs a pilot aboard). It hovers where it starts. */
+  | { type: 'vehicle.launch'; vehicle: number }
+  /** Fly to an airlock's outer door and dock there (launches a stowed vehicle first). */
+  | { type: 'vehicle.dock'; vehicle: number; airlock: number }
+  | { type: 'vehicle.undock'; vehicle: number }
+  /** Fly back to the home bay and stow (undocks first if docked). */
+  | { type: 'vehicle.return'; vehicle: number }
   /** Queue a production order on a crafting module. `target`: batches ('count') or stock level ('keep'). */
   | { type: 'production.add'; moduleId: number; recipe: string; mode: 'count' | 'keep'; target: number }
   /** Remove the order at `index` of the module's list. */
@@ -44,8 +57,8 @@ export type Command =
   | { type: 'storage.setFilter'; moduleId: number; items: string[] | null }
   /** Spawn a hostile ship from a template; (x, y) is its top-left tile in sector coordinates. */
   | { type: 'debug.spawnEnemy'; template: string; x: number; y: number }
-  /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetGridId 0 clears; targetModuleId 0 = any module. */
-  | { type: 'combat.setTarget'; shipGridId: number; weaponId: number | null; targetGridId: number; targetModuleId: number }
+  /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetGridId 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetGridId 0) aims at a shuttle in flight or docked. */
+  | { type: 'combat.setTarget'; shipGridId: number; weaponId: number | null; targetGridId: number; targetModuleId: number; targetVehicle?: number }
   /** Hold fire: weapons charge but only fire on combat.fireVolley. */
   | { type: 'combat.setHold'; gridId: number; hold: boolean }
   /** Fire every charged weapon of the ship now. */

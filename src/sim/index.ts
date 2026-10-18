@@ -4,7 +4,7 @@ export { Grid, CHUNK_SIZE, type FieldSpec, type FieldType, type GridData } from 
 export { CommandQueue, type Command, type QueuedCommand } from './commands';
 export { EventBuffer, type SimEvent } from './events';
 export { Sim, TICK_HZ } from './sim';
-export type { WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ItemDef, ItemQty, RecipeDef } from './registry';
+export type { VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ItemDef, ItemQty, RecipeDef } from './registry';
 export { gridFromTemplate, spawnTemplateModules } from './ship';
 export { ModuleC, DeployC, type Module, type Deploy } from './modules/components';
 export { isDeployed } from './modules/deploy';
@@ -35,3 +35,7 @@ export * from './portals/components';
 export { createPortal, removePortal, portalUsable, portalError, allPortals, PORTAL_DEFAULTS } from './portals/graph';
 export { planRoute, stepsCost, type Route, type Leg, type RouteGoal, type RouteStart } from './portals/route';
 export { airlockTiles, airlockWorking, airlockDoorAt } from './portals/airlock';
+export * from './vehicles/components';
+export { vehicleViews, vehiclesInSector, type VehicleView } from './vehicles/queries';
+export { boardingTile, dockPoint, bayCenter } from './vehicles/geometry';
+export { spawnVehicle, destroyVehicle, damageVehicle } from './vehicles/lifecycle';
