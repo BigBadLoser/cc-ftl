@@ -53,6 +53,11 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   weapon concepts were rejected; keep them only as code reference.
 - **Weapons (history):** square-barrel prototype rejected. Restarting with round barrels; concept sheet
   with 3 directions for the user to pick.
+- **Roof parts fold away:** turrets, shield-gen dishes and the AI core mast stow into their
+  modules when not in use and deploy (~2 s, 5 frames) through a roof hatch. Turrets and dishes
+  deploy in combat or with an enemy in range; the AI mast whenever powered; unpowered stows.
+  Gameplay effect (for now, tunable): weapons can't fire and shields don't come up until fully
+  deployed. Ghosted on the player's ship only while deployed.
 - **Consoles APPROVED** (branch `m4-art-consoles`, pass 5 plus pass 6 cabinet removal): helm 3x2,
   weapons 2x2, shield 3x2 with counter ending at the projector, seat centred on the monitors, and
   one empty walkable tile inside the footprint (modules can have several walkable tiles).
