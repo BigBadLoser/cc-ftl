@@ -25,7 +25,8 @@ from .robot_kit import Rig
 ID = "module.robot_bay"
 TYPES = ("worker", "repair", "security")
 STATES = ("", "charging", "charging.drone") + tuple(f"assembling.{t}" for t in TYPES)
-BODY, BODY_D, BODY_L, TRIM = "steelL", "steel", "plate", "steelD"
+BODY, BODY_D, BODY_L, TRIM, PANEL = "steelL", "steel", "plate", "steelD", "plate"
+ARM = "hazY"                    # tool arms: industrial yellow, apart from the primer-grey robot they build
 LIGHT = {"": "green", "charging": "cyan", "charging.drone": "cyan", "assembling": "orange"}
 FACE = {0: 6, 1: 0, 2: 2, 3: 4}          # docked robot's facing (sim direction) per rotation: away from the tower
 
@@ -56,17 +57,23 @@ def _tower(rig, light, contacts):
     p.rbox((0, -1.04, 1.12), (0.56, 0.42, 0.86), BODY, top=BODY_L, r=0.05, taper=0.9)       # column
     p.rbox((0, -1.04, 1.565), (0.54, 0.4, 0.04), TRIM, r=0.04)                             # column cap
     p.rbox((0, -0.83, 1.06), (0.34, 0.06, 0.74), "dark", r=0.03)                           # alcove recess
+    p.rbox((0, -0.744, 0.36), (0.6, 0.02, 0.42), "dark", r=0.02)                          # base front panel: seam,
+    p.rbox((0, -0.738, 0.36), (0.56, 0.02, 0.38), PANEL, r=0.02)                          # light panel
     for sx in (1, -1):
         p.rbox((sx * 0.34, -0.62, 0.5), (0.09, 0.28, 1.0), BODY_D, top=BODY, r=0.03, taper=0.85)   # cradle cheeks
-        p.rbox((sx * 0.405, -1.0, 0.35), (0.02, 0.3, 0.32), "dark", r=0.01)                # base side vents
-        p.rbox((sx * 0.27, -1.04, 1.12), (0.02, 0.3, 0.6), TRIM, r=0.01)                   # column side seams
+        p.rbox((sx * 0.402, -1.0, 0.34), (0.02, 0.42, 0.46), "dark", r=0.02)               # base side panel: seam,
+        p.rbox((sx * 0.41, -1.0, 0.34), (0.02, 0.38, 0.42), PANEL, r=0.02)                 # light panel,
+        p.rbox((sx * 0.42, -1.0, 0.34), (0.01, 0.24, 0.2), "dark", r=0.005)                # vent
+        p.rbox((sx * 0.262, -1.04, 1.1), (0.02, 0.36, 0.68), "dark", r=0.02)               # column side panel: seam,
+        p.rbox((sx * 0.27, -1.04, 1.1), (0.02, 0.32, 0.64), PANEL, r=0.02)                 # light panel
     p.rbox((0, -0.66, 0.97), (0.12, 0.34, 0.07), TRIM, r=0.02)                              # spine bracket
     p.rbox((0, -0.5, 0.98), (0.15, 0.07, 0.82), BODY_D, top=TRIM, r=0.03)                  # charging spine
     rig.part("root", "contacts").box((0, -0.46, 0.98), (0.06, 0.02, 0.58), "cyan" if contacts else "dark")
     p.rbox((0, -0.83, 1.46), (0.2, 0.04, 0.1), "dark", r=0.02)
     rig.part("root", "light").box((0, -0.85, 1.46), (0.14, 0.03, 0.06), light)            # status light, front
     # back face (the side the camera sees when the tower stands in front of the robot): service panel, vents, conduits
-    p.rbox((0, -1.255, 0.36), (0.52, 0.03, 0.46), BODY_D, r=0.03)
+    p.rbox((0, -1.255, 0.36), (0.52, 0.03, 0.46), PANEL, r=0.03)
+    p.rbox((0, -1.215, 1.1), (0.4, 0.03, 0.5), PANEL, r=0.03)                              # column back panel
     for z in (0.26, 0.36, 0.46):
         p.rbox((0, -1.275, z), (0.36, 0.02, 0.05), "dark", r=0.01)
     for sx in (1, -1):
@@ -80,10 +87,9 @@ def _cradle(rig, contacts):
     for sx in (1, -1):
         p.rbox((sx * 0.12, 0.02, 0.025), (0.17, 0.3, 0.05), BODY_D, top=BODY, r=0.03)          # foot clamp
         rig.part("root", "contacts").box((sx * 0.12, 0.02, 0.055), (0.08, 0.14, 0.012), "cyan" if contacts else "dark")
-        for f in (-0.32, 0.3):                                                                 # rail posts
-            p.rbox((sx * 0.38, f, 0.15), (0.06, 0.06, 0.3), BODY_D, r=0.015)
-        p.rbox((sx * 0.38, -0.02, 0.31), (0.07, 0.72, 0.05), BODY, r=0.02)                   # side rail
-        p.rbox((sx * 0.38, 0.33, 0.31), (0.075, 0.06, 0.055), "hazY", r=0.01)                 # rail end marker
+        p.rbox((sx * 0.38, 0.3, 0.16), (0.08, 0.08, 0.32), BODY_D, r=0.02)                   # front post
+        p.plate((sx * 0.36, -0.52, 0.32), (sx * 0.38, 0.27, 0.32), 0.09, 0.07, PANEL, r=0.025)   # side rail, from the cheek
+        p.rbox((sx * 0.38, 0.33, 0.32), (0.095, 0.07, 0.075), "hazY", r=0.015)                # rail end marker
 
 
 def _clamp(rig, out):
@@ -98,20 +104,26 @@ def _clamp(rig, out):
 
 
 def _tool_arms(rig, out):
-    """Two jointed tool arms on the alcove cheeks: folded up along them, or reaching over the cradle."""
+    """Two jointed tool arms on the alcove cheeks (industrial yellow on dark hinges, a welder and a gripper): folded
+    down along the cheeks, or reaching over the cradle."""
     for side, sx in (("R", 1), ("L", -1)):
         sh, el = (sx * 0.34, -0.52, 0.98), (sx * 0.34, -0.52, 0.72)
         s = rig.joint(f"tool_{side}", "root", sh)
         e = rig.joint(f"tool_el_{side}", s, el)
         tip = (sx * 0.34, -0.52, 0.5)
-        rig.part(s).cyl(sh, 0.045, 0.08, "dark", axis="x")
-        rig.part(s).plate(sh, el, 0.06, 0.065, TRIM, taper=0.85, r=0.02)
-        rig.part(e).cyl(el, 0.04, 0.075, "dark", axis="x")
-        rig.part(e).plate(el, tip, 0.055, 0.06, TRIM, taper=0.8, r=0.02)
-        rig.part(e).cyl(tip, 0.03, 0.07, BODY_D, taper=0.5)
+        rig.part(s).cyl(sh, 0.05, 0.09, "dark", axis="x")
+        rig.part(s).plate(sh, el, 0.07, 0.075, ARM, taper=0.85, r=0.02)
+        rig.part(e).cyl(el, 0.045, 0.085, "dark", axis="x")
+        rig.part(e).plate(el, tip, 0.065, 0.07, ARM, taper=0.8, r=0.02)
+        rig.part(e).rbox((tip[0], tip[1], tip[2] - 0.02), (0.08, 0.08, 0.06), "dark", r=0.015)      # tool head
+        if side == "R":                                                                         # welder nozzle
+            rig.part(e).cyl((tip[0], tip[1], tip[2] - 0.11), 0.018, 0.08, "brass", taper=1.8)
+        else:                                                                                   # gripper
+            for df in (-0.025, 0.025):
+                rig.part(e).rbox((tip[0], tip[1] + df, tip[2] - 0.1), (0.045, 0.025, 0.08), BODY_D, r=0.01, taper=0.7)
         if out:
-            rig.rot(s, pitch=-62, roll=sx * 18)
-            rig.rot(e, pitch=-38)
+            rig.rot(s, pitch=-70, roll=sx * 22)
+            rig.rot(e, pitch=-55)
 
 
 def _partial(kind):
