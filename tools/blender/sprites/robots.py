@@ -62,8 +62,8 @@ def _socket(rig, t, c, w=0.17, ln=0.2, rot=None):
     def ring(pad):
         return (w + pad, 0.03, ln + pad), (w * 0.75 + pad) / (w + pad)
     (rs, rt), (ws, wt) = ring(0.05), ring(0.012)
-    rig.part(t).rbox(c, rs, MID, r=0.03, taper=rt, axis="f", rot=rot)
-    rig.part(t).rbox((c[0], c[1], c[2] + 0.004), ws, "dark", r=0.02, taper=wt, axis="f", rot=rot)
+    rig.part(t).rbox(c, rs, MID, r=0.05, taper=rt, axis="f", rot=rot, seg=4)
+    rig.part(t).rbox((c[0], c[1], c[2] + 0.004), ws, "dark", r=0.035, taper=wt, axis="f", rot=rot, seg=4)
 
 
 def _sensor_head(rig, hd, f, z, k, pitch=0.0, wedge_h=0.1, brow=1.0):
@@ -215,17 +215,17 @@ DRONE_Z = 0.84
 
 
 def drone():
-    """Hovering repair drone: a sleek shell over a dark belly, one eye in dark glass at the front, a ducted thruster
-    underneath, two side nacelles, and two jointed tool arms (welder on its right, claw on its left)."""
+    """Hovering repair drone: a chamfered, tapered hull plate over a dark belly (the walkers' chest language), the shared
+    wedge sensor head at the front, a ducted thruster underneath, two side nacelles, and two jointed tool arms (welder
+    on its right, claw on its left)."""
     rig = Rig("drone")
     rig.kind = "drone"
     z = DRONE_Z
     b = rig.joint("body", "root", (0, 0, z))
-    rig.part(b).ball((0, 0, z - 0.01), (0.19, 0.26, 0.1), FRAME)                         # belly
-    rig.part(b).ball((0, -0.01, z + 0.01), (0.205, 0.275, 0.16), CLOTH, z0=-0.15)        # shell
-    rig.part(b).ball((0, 0.19, z + 0.02), (0.115, 0.095, 0.085), "dark")                 # face glass
-    rig.part(b, "eye").ball((0, 0.282, z + 0.02), (0.034, 0.016, 0.034), EYE)
-    rig.part(b).rbox((0, -0.14, z + 0.155), (0.05, 0.14, 0.06), FRAME_L, r=0.02, taper=0.6)  # dorsal fin
+    rig.part(b).rbox((0, 0, z - 0.055), (0.3, 0.4, 0.09), FRAME, r=0.06, taper=1.1)      # belly
+    rig.part(b).rbox((0, -0.02, z + 0.055), (0.37, 0.46, 0.13), CLOTH, r=0.08, taper=0.78)   # hull plate
+    _sensor_head(rig, b, 0.22, z + 0.035, 0.85)                                          # front sensor head
+    rig.part(b).rbox((0, -0.15, z + 0.14), (0.05, 0.14, 0.06), FRAME_L, r=0.02, taper=0.6)   # dorsal fin
     rig.part(b).cyl((0, 0, z - 0.115), 0.13, 0.05, ACCENT)                              # thruster collar
     rig.part(b).cyl((0, 0, z - 0.185), 0.105, 0.09, FRAME_L, taper=1.25)
     rig.part(b, "jet").cyl((0, 0, z - 0.252), 0.1, 0.045, EYE)                           # thruster ring
@@ -236,7 +236,7 @@ def drone():
         rig.part(b).plate((x, -0.26, z + 0.11), (x, 0.04, z + 0.08), 0.08, 0.085, FRAME_L, taper=0.7, r=0.03)
         rig.part(b).plate((x, -0.23, z + 0.155), (x, 0.01, z + 0.125), 0.085, 0.035, CLOTH, taper=0.7, r=0.015)
     for k in range(4):                                                                   # charge cells, top
-        rig.part(b, f"bar{k}").box((-0.075 + k * 0.05, 0.0, z + 0.163), (0.04, 0.06, 0.03), BAR)
+        rig.part(b, f"bar{k}").box((-0.075 + k * 0.05, -0.04, z + 0.12), (0.04, 0.06, 0.03), BAR)
     for side, x in (("R", 0.17), ("L", -0.17)):           # arms mount back under the hull and sweep forward and down
         sh, el = (x, 0.0, z - 0.08), (x, 0.15, z - 0.24)
         s = rig.joint(f"arm_{side}", b, sh)
