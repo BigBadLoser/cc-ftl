@@ -11,6 +11,8 @@ import { decideSystem } from './systems/decide';
 import { deploySystem } from './systems/deploy';
 import { doorsSystem } from './systems/doors';
 import { draftedSystem } from './systems/drafted';
+import { crewCombatSystem } from './systems/crewCombat';
+import { equipSystem } from './systems/equip';
 import { enemyAiSystem } from './systems/enemyAi';
 import { firingSystem } from './systems/firing';
 import { helmSystem } from './systems/helm';
@@ -90,8 +92,12 @@ export const pipeline: readonly System[] = [
   // Needs before decisions, so a crew member who just got tired sleeps this tick.
   needsSystem,
   // Decide before drafted/movement: new paths are walked the same tick.
+  // Weapon fetching before decide: crew on an equip order must not be handed a job this tick.
+  equipSystem,
   decideSystem,
   draftedSystem,
+  // Crew combat after decisions: it overrides paths of crew who fight or flee, before movement walks them.
+  crewCombatSystem,
   // Movement before carry (carried crew copy their carrier's fresh position) and work.
   movementSystem,
   // Portal crossings after movement: crew who just reached a portal end start or finish a traversal.

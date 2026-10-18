@@ -66,5 +66,7 @@ export interface Boarder {
   vehicle: number;
   /** Crew chosen for the party. */
   crew: number[];
+  /** Hand weapon item id issued to the party when it leaves. */
+  weapon?: string;
 }
 export const BoarderC = defineComponent<Boarder>('boarder');

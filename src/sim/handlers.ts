@@ -2,6 +2,7 @@ import { MarkerC } from './components';
 import type { Command } from './commands';
 import { combatHandlers } from './combat/handlers';
 import { crewHandlers } from './crew/handlers';
+import { fightHandlers } from './fight/handlers';
 import { itemHandlers } from './items/handlers';
 import { moduleHandlers } from './modules/handlers';
 import { portalHandlers } from './portals/handlers';
@@ -15,6 +16,7 @@ type Handler<T extends Command['type']> = (sim: Sim, cmd: Extract<Command, { typ
 /** One handler per command type. The compiler requires an entry for every Command variant. */
 export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...crewHandlers,
+  ...fightHandlers,
   ...combatHandlers,
   ...moduleHandlers,
   ...itemHandlers,

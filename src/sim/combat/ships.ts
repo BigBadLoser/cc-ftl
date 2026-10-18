@@ -1,6 +1,7 @@
 import {
   CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC,
 } from '../crew/components';
+import { AllegianceC } from '../fight/components';
 import { ModuleC } from '../modules/components';
 import { isDeployed } from '../modules/deploy';
 import { isTileWalkable } from '../modules/walk';
@@ -70,6 +71,7 @@ export function spawnCrew(sim: Sim, gridId: number, roles: readonly string[], re
     sim.world.add(id, PrioritiesC, { ...role.priorities });
     sim.world.add(id, NeedsC, { rest: rest ?? sim.rng.int(60, 100) });
     sim.world.add(id, HealthC, { hp: CREW_MAX_HP, max: CREW_MAX_HP });
+    sim.world.add(id, AllegianceC, { faction: shipOf(sim, gridId)?.faction ?? 'player' });
     out.push(id);
   }
   return out;
@@ -98,6 +100,7 @@ export function spawnShip(
     sim.world.add(ship, BoarderC, {
       party: template.boarding.party, afterTicks: Math.round(template.boarding.afterSec * TICK_HZ),
       losingBelow: template.boarding.losingBelow, state: 'idle', timer: 0, vehicle: 0, crew: [],
+      ...(template.boarding.weapon ? { weapon: template.boarding.weapon } : {}),
     });
   }
   spawnCrew(sim, gridId, template.crew ?? [], opts.rest);

@@ -4,7 +4,7 @@ export { Grid, CHUNK_SIZE, type FieldSpec, type FieldType, type GridData } from 
 export { CommandQueue, type Command, type QueuedCommand } from './commands';
 export { EventBuffer, type SimEvent } from './events';
 export { Sim, TICK_HZ } from './sim';
-export type { VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ItemDef, ItemQty, RecipeDef } from './registry';
+export type { VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ItemDef, HandWeaponDef, ItemQty, RecipeDef } from './registry';
 export { gridFromTemplate, spawnTemplateModules } from './ship';
 export { ModuleC, DeployC, type Module, type Deploy } from './modules/components';
 export { isDeployed } from './modules/deploy';
@@ -36,6 +36,10 @@ export { createPortal, removePortal, portalUsable, portalError, allPortals, PORT
 export { planRoute, stepsCost, type Route, type Leg, type RouteGoal, type RouteStart } from './portals/route';
 export { airlockTiles, airlockWorking, airlockDoorAt } from './portals/airlock';
 export * from './vehicles/components';
+export * from './fight/components';
+export { isHostile, isSubdued, isCombatReady, isInvader } from './fight/relations';
+export { sightLine, rayCells, type Cover } from './fight/los';
+export { wielded, hitChance, handDefOf } from './fight/weapons';
 export { vehicleViews, vehiclesInSector, type VehicleView } from './vehicles/queries';
 export { boardingTile, dockPoint, bayCenter } from './vehicles/geometry';
 export { spawnVehicle, destroyVehicle, damageVehicle } from './vehicles/lifecycle';

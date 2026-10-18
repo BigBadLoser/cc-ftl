@@ -260,7 +260,7 @@ describe('determinism and saves', () => {
     delete raw.world.stores['portal'];
     delete raw.world.stores['airlock'];
     const data = migrate(raw as never) as unknown as { version: number; world: { stores: Record<string, unknown> } };
-    expect(data.version).toBe(8);
+    expect(data.version).toBe(9);
     expect(deserialize(JSON.stringify(raw), content).world.query(PortalC)).toHaveLength(0);
   });
 });

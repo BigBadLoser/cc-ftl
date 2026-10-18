@@ -1,7 +1,7 @@
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
-export type SkillName = 'gunnery' | 'piloting' | 'shielding';
+export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee';
 
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
@@ -21,7 +21,7 @@ export interface ShipTemplate {
    * player's ship once `afterSec` seconds of combat have passed, or earlier when fewer than half its weapons work or its
    * integrity falls below `losingBelow`. Absent = it never boards (keeps the balance scenarios comparable).
    */
-  boarding?: { party: number; afterSec: number; losingBelow: number };
+  boarding?: { party: number; afterSec: number; losingBelow: number; /** Hand weapon (item id) issued to the party when it leaves. */ weapon?: string };
 }
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
@@ -118,6 +118,21 @@ export interface ItemDef {
   flammability?: number;
   /** VehicleDef id: a vehicle bay can turn one of these into a shuttle (vehicle.assign). */
   vehicle?: string;
+  /** Present = crew can equip it and fight with it. */
+  hand?: HandWeaponDef;
+}
+
+/** A hand weapon (sidearm, rifle, blade) carried by crew. Ranged ones need line of sight; melee ones need adjacency. */
+export interface HandWeaponDef {
+  kind: 'ranged' | 'melee';
+  /** Hp taken from the target per hit. */
+  damage: number;
+  /** Tiles (ranged only; melee reaches the 8 neighbours). */
+  range: number;
+  /** Seconds between attacks. */
+  cooldownSec: number;
+  /** Base hit chance 0..1 before skill, range and cover. */
+  accuracy: number;
 }
 
 export interface RecipeDef {
@@ -136,6 +151,12 @@ export interface RoleDef {
   priorities: Record<WorkCategory, number>;
   /** Skill levels this role adds through the stat resolver. */
   skills?: Partial<Record<SkillName, number>>;
+  /** Fights even unarmed, and hunts boarders it cannot see yet. Other roles flee from hostiles unless armed. */
+  fighter?: true;
+  /** Item ids (best first) the crew member fetches from storage on their own when unarmed. */
+  loadout?: string[];
+  /** Hp fraction (0..1) under which this role surrenders when outnumbered. Default: SURRENDER_HP_FRAC for non-player crew, never for player crew. */
+  surrenderBelow?: number;
 }
 
 /** A species: base stats. Modifiers (traits, implants) come later via the stat resolver. */
@@ -162,6 +183,8 @@ export interface ModuleDef {
   footprint: readonly [number, number];
   /** Solid modules block walking on their tiles. */
   solid: boolean;
+  /** Cover this solid module gives a target standing right behind it (default 'partial'). */
+  cover?: 'partial' | 'full';
   /**
    * Tile (offset from the footprint's top-left at rotation 0) crew stand on to use it. It may lie outside the
    * footprint (a tile beside the module) or inside it, in which case it must also be listed in `openTiles`.

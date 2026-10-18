@@ -20,6 +20,14 @@ export type Command =
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }
+  /** Drafted crew attack this hostile crew member (walking into range first) until it is subdued. Cleared by crew.moveTo. */
+  | { type: 'crew.attack'; id: number; target: number }
+  /** Drafted crew shoot at the nearest visible hostile on their own (default on), or hold fire. */
+  | { type: 'crew.setEngage'; id: number; engage: boolean }
+  /** Fetch an `item` weapon from the nearest storage holding it and wield it (swapping the old one back). */
+  | { type: 'crew.equip'; id: number; item: string }
+  /** Drop the wielded weapon at the crew member's feet. */
+  | { type: 'crew.unequip'; id: number }
   /** Walk a drafted crew member to a tile, on another grid if `gridId` is given and portals lead there. */
   | { type: 'crew.moveTo'; id: number; x: number; y: number; gridId?: number }
   /** Link two tiles through a portal. `cost`/`ticks` default by kind; ends on an airlock's outer door attach to that airlock. */

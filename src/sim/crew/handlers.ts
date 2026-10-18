@@ -2,6 +2,7 @@ import type { Command } from '../commands';
 import { isTileWalkable } from '../modules/walk';
 import { needsFrom } from '../items/materials';
 import { destroyJob, structCostKey } from '../items/stacks';
+import { FighterC } from '../fight/components';
 import { Struct } from '../structure';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -13,7 +14,7 @@ import { clearPath, findJobAt, isIncapacitated, releaseAssignment } from './help
 
 export type CrewCommandType = Exclude<
   Extract<Command['type'], `job.${string}` | `crew.${string}`>,
-  'job.buildModule' | 'job.deconstructModule'
+  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip'
 >;
 type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
@@ -108,6 +109,8 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     const grid = sim.grids.get(gridId);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
     if (!isTileWalkable(sim, grid, cmd.x, cmd.y)) return reject(sim, cmd.type, 'notWalkable');
+    const fighter = sim.world.get(cmd.id, FighterC);
+    if (fighter) fighter.ordered = 0; // a move order cancels an attack order
     drafted.target = gridId === pos.gridId ? { x: cmd.x, y: cmd.y } : { x: cmd.x, y: cmd.y, gridId };
   },
 };

@@ -5,6 +5,7 @@ import {
 } from '../crew/components';
 import { atJob, clearPath, isIncapacitated, jobGoal, isSettled, origin, releaseAssignment } from '../crew/helpers';
 import { findPath, type Tile } from '../crew/pathfind';
+import { isOffDuty } from '../fight/relations';
 import { needsMaterials } from '../items/materials';
 import { dropCarried } from '../items/stacks';
 import { ModuleC } from '../modules/components';
@@ -22,7 +23,7 @@ const WANDER_RADIUS = 3;
 /** Autonomous decisions for non-drafted crew: sleep, keep/repath a job, pick a job, or idle. */
 export function decideSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, PrioritiesC, PositionC, PathC, NeedsC)) {
-    if (sim.world.has(id, DraftedC) || isIncapacitated(sim, id)) continue;
+    if (sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
     const crew = sim.world.get(id, CrewC) as Crew;
     if (crew.activity === 'sleeping') continue;
     const pos = sim.world.get(id, PositionC) as Position;

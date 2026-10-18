@@ -10,7 +10,7 @@ import { hullSum } from './combat/hull';
 import { initAtmosphere } from './ship';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -106,6 +106,24 @@ export const migrations: Record<number, (data: Record<string, unknown>) => Recor
   // save lacks (created on first use), and bay modules need a `vehicleBay` component. Old saves have no bay modules, so
   // nothing to convert; Target gains an optional `vehicle`.
   7: (data) => data,
+  // v8 -> v9 (crew combat): every crew member gains an allegiance, taken from the ship they stand on (or, riding a
+  // shuttle, the ship it belongs to; default player). Equip, fighter, equipOrder and surrendered stores are created
+  // on first use.
+  8: (data) => {
+    const world = data['world'] as WorldData;
+    const store = (name: string): Map<number, Record<string, unknown>> =>
+      new Map((world.stores[name] ?? []).map(([id, v]) => [id, v as Record<string, unknown>]));
+    const factionOfGrid = new Map<number, string>();
+    for (const s of store('ship').values()) factionOfGrid.set(s['gridId'] as number, s['faction'] as string);
+    const positions = store('position');
+    const aboard = store('aboard');
+    const vehicles = store('vehicle');
+    world.stores['allegiance'] = (world.stores['crew'] ?? []).map(([id]) => {
+      const grid = positions.get(id)?.['gridId'] ?? vehicles.get(aboard.get(id)?.['vehicle'] as number)?.['homeGrid'];
+      return [id, { faction: factionOfGrid.get(grid as number) ?? 'player' }];
+    });
+    return data;
+  },
 };
 
 /** Serialize the sim to a JSON string. */

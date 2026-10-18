@@ -19,7 +19,9 @@ export const roles = {
   'role.security': {
     name: 'Security',
     priorities: { firefighting: 2, medical: 4, operating: 2, repair: 4, construction: 4, hauling: 3, crafting: 4, cooking: 4 },
-    skills: { gunnery: 1 },
+    skills: { gunnery: 2, melee: 2 },
+    fighter: true,
+    loadout: ['item.rifle', 'item.sidearm', 'item.blade'],
   },
   'role.pilot': {
     name: 'Pilot',

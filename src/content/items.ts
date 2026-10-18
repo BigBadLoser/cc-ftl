@@ -12,4 +12,8 @@ export const items = {
   'item.missile': { name: 'Missile', tags: ['ammo'], stackSize: 20, flammability: 0.5 },
   // Crafted at the fabricator; a vehicle bay turns it into a stowed shuttle (vehicle.assign).
   'item.shuttle': { name: 'Shuttle', tags: ['vehicle'], stackSize: 1, vehicle: 'vehicle.shuttle' },
+  // Hand weapons: crew equip them from storage (crew.equip, or automatically for a role's loadout). Range in tiles.
+  'item.sidearm': { name: 'Sidearm', tags: ['weapon', 'ranged'], stackSize: 5, hand: { kind: 'ranged', damage: 12, range: 8, cooldownSec: 1, accuracy: 0.7 } },
+  'item.rifle': { name: 'Rifle', tags: ['weapon', 'ranged'], stackSize: 5, hand: { kind: 'ranged', damage: 18, range: 14, cooldownSec: 1.6, accuracy: 0.75 } },
+  'item.blade': { name: 'Blade', tags: ['weapon', 'melee'], stackSize: 5, hand: { kind: 'melee', damage: 20, range: 1, cooldownSec: 1.2, accuracy: 0.8 } },
 } satisfies Record<string, ItemDef>;

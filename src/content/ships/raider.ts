@@ -65,7 +65,7 @@ export const raiderShipId = 'ship.raider';
 export const raiderBoarder = {
   ...raiderShip,
   name: 'Raider (boarders)',
-  boarding: { party: 2, afterSec: 90, losingBelow: 0.6 },
+  boarding: { party: 2, afterSec: 90, losingBelow: 0.6, weapon: 'item.sidearm' },
 } satisfies ShipTemplate;
 
 export const raiderBoarderId = 'ship.raiderBoarder';

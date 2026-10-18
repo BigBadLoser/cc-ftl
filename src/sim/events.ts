@@ -64,6 +64,13 @@ export type SimEvent =
   | { type: 'vehicle.destroyed'; vehicle: number; state: 'stowed' | 'flying' | 'docked'; x: number; y: number }
   | { type: 'crew.embarked'; crew: number; vehicle: number; role: 'pilot' | 'passenger' }
   | { type: 'crew.disembarked'; crew: number; vehicle: number; gridId: number; x: number; y: number }
+  /** A crew member attacked `target` with `weapon` (item id or 'unarmed'); (x, y) to (tx, ty) on grid `gridId`. Followed by crew.hit or crew.miss. */
+  | { type: 'crew.attacked'; crew: number; target: number; weapon: string; ranged: boolean; gridId: number; x: number; y: number; tx: number; ty: number }
+  | { type: 'crew.hit'; crew: number; target: number; damage: number; hp: number; cover: 'none' | 'partial' | 'full' }
+  | { type: 'crew.miss'; crew: number; target: number; cover: 'none' | 'partial' | 'full' }
+  | { type: 'crew.equipped'; crew: number; item: string }
+  | { type: 'crew.unequipped'; crew: number; item: string }
+  | { type: 'crew.surrendered'; crew: number }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 

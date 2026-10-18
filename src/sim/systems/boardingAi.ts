@@ -1,6 +1,7 @@
 import { ShipC } from '../combat/components';
 import { DeadC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
+import { EquipC } from '../fight/components';
 import { ModuleC } from '../modules/components';
 import { airlockWorking } from '../portals/airlock';
 import { AirlockC } from '../portals/components';
@@ -27,7 +28,7 @@ export function boardingAiSystem(sim: Sim): void {
     if (b.state === 'idle') {
       if (!sim.sector.inCombat) continue;
       b.timer++;
-      if (b.timer >= b.afterTicks || losing(sim, ship.gridId, ship.integrity, b.losingBelow)) start(sim, ship.gridId, b);
+      if (b.timer >= b.afterTicks || losing(sim, ship.gridId, ship.integrity, b.losingBelow)) start(sim, ship.gridId, b, b.weapon);
     } else if (!v) {
       b.state = 'done';
     } else if (b.state === 'loading') {
@@ -81,7 +82,7 @@ function pickAirlock(sim: Sim, vehicle: number): number {
   return 0;
 }
 
-function start(sim: Sim, gridId: number, b: Boarder): void {
+function start(sim: Sim, gridId: number, b: Boarder, weapon?: string): void {
   let vehicle = 0;
   for (const vid of sim.world.query(VehicleC)) {
     const v = sim.world.get(vid, VehicleC);
@@ -103,5 +104,8 @@ function start(sim: Sim, gridId: number, b: Boarder): void {
   b.vehicle = vehicle;
   b.timer = 0;
   b.state = 'loading';
-  for (const crew of b.crew) sim.enqueue({ type: 'vehicle.embark', crew, vehicle });
+  for (const crew of b.crew) {
+    if (weapon) sim.world.add(crew, EquipC, { weapon });
+    sim.enqueue({ type: 'vehicle.embark', crew, vehicle });
+  }
 }

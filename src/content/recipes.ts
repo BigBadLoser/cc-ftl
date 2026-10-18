@@ -37,4 +37,25 @@ export const recipes = {
     outputs: [{ item: 'item.shuttle', count: 1 }],
     work: 600,
   },
+  'recipe.sidearm': {
+    name: 'Assemble sidearm',
+    station: 'module.fabricator',
+    inputs: [{ item: 'item.metal', count: 4 }, { item: 'item.electronics', count: 2 }],
+    outputs: [{ item: 'item.sidearm', count: 1 }],
+    work: 120,
+  },
+  'recipe.rifle': {
+    name: 'Assemble rifle',
+    station: 'module.fabricator',
+    inputs: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 4 }, { item: 'item.polymer', count: 2 }],
+    outputs: [{ item: 'item.rifle', count: 1 }],
+    work: 220,
+  },
+  'recipe.blade': {
+    name: 'Forge blade',
+    station: 'module.fabricator',
+    inputs: [{ item: 'item.metal', count: 5 }],
+    outputs: [{ item: 'item.blade', count: 1 }],
+    work: 100,
+  },
 } satisfies Record<string, RecipeDef>;

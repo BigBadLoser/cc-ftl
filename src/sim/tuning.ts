@@ -156,3 +156,28 @@ export const VEHICLE_PD_DAMAGE = 10;
 export const BOARDING_MIN_HOME = 1;
 /** Ticks the boarding AI waits for its party to reach the bay before it launches with whoever is aboard. */
 export const BOARDING_LOAD_TICKS = 600;
+
+// --- Crew combat ---
+/** Crew notice hostiles this far away (tiles) when they have line of sight. */
+export const COMBAT_SIGHT = 16;
+/** Bare hands. */
+export const UNARMED = { damage: 5, cooldownSec: 1.2, accuracy: 0.7 } as const;
+/** Hit chance added per gunnery / melee level. */
+export const ACCURACY_PER_SKILL = 0.05;
+/** Ranged hit chance is scaled by (1 - this * distance / range): a shot at maximum range keeps (1 - this). */
+export const RANGE_FALLOFF = 0.4;
+/** Hit chance multipliers behind partial and full cover. */
+export const COVER_PARTIAL_MULT = 0.6;
+export const COVER_FULL_MULT = 0.35;
+export const HIT_CHANCE_MIN = 0.05;
+export const HIT_CHANCE_MAX = 0.95;
+/** A door tile at or above this openness (0..255) lets sight through. */
+export const DOOR_SIGHT_OPEN = 64;
+/** Ticks between flee replans. */
+export const FLEE_REPLAN_TICKS = 15;
+export const FLEE_RADIUS = 10;
+/** Ticks between path replans while closing in on a target. */
+export const CHASE_REPLAN_TICKS = 6;
+/** Surrender: hp fraction under which a non-player crew member gives up when outnumbered within this many tiles. */
+export const SURRENDER_HP_FRAC = 0.3;
+export const SURRENDER_RADIUS = 12;
