@@ -50,6 +50,11 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   colour-blocked armour band. Interior walls get their own colour and subtle seams (lockers and
   lights are placeable modules, not wall art). Doors are deep recessed portals in a strong colour,
   ~1.5x crew height; a lower cutaway variant exists.
+  CORRECTION (pass 3 got this wrong): only the BASE is sloped. A low sloped skirt (the lower ~15–25%)
+  spreads across the tile on the camera side, and above it stands a thin vertical flat wall with a
+  flat cap. Hull corners are chamfered at 45°. Doors are framed portals set into the vertical face,
+  ~1.6x crew, shorter than the wall. Study `images/11.jpg`-style references closely (crop and zoom)
+  before modelling.
 - **Engine:** the v7 bell is approved. Add real rocket plumbing (torus manifold, turbopump,
   ducts, tubes down the bell); no valve wheels on posts.
 - **Weapons picked** (Opus concepts, branch `opus-weapons`): burst laser = S Sponson, mass driver =
