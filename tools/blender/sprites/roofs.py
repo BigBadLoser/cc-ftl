@@ -15,7 +15,7 @@ from . import core
 from . import roof_layout as rl
 
 ZR = 2.4          # plating height: the top of a full-height wall (= walls.HF)
-T = 0.14          # slab thickness shown on open S / E sides
+T = 0.22          # slab thickness shown on open S / E sides
 GN = rl.GN
 
 

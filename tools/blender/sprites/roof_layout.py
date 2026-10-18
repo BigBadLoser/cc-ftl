@@ -2,18 +2,20 @@
 
 Sprite rule (deterministic, local): for roof tile (x, y) of a ship,
     module (mx, my) = (x // 4, y // 4), position (u, v) = (x % 4, y % 4)
-    layout L = module_layout(mx, my) (hash, 4 layouts), colour c = module_colour(mx, my) (module columns alternate)
+    layout L = module_layout(mx, my) (hash, 4 layouts), colour c = module_colour(mx) (colour courses, see below)
     base sprite  = roof.p<L><c>.<u><v>      4 layouts x 2 colours x 16 positions = 128
     overlays     = roof.edge.<n|e|s|w>.<c>  one per OPEN side (mask bit clear; N1 E2 S4 W8) = 8
 Plates are tile-aligned and a module has one colour, so a tile's overlays always match its plate.
 
 Look (lit like the walls: +y faces lit, +x faces shaded):
-  - frame rail: each module's N / W side is a 2-cell groove plus a dark riveted girder band (the large-scale rhythm);
-  - 2-3 raised plates per module: 1-cell groove on N / W, lit lip on S, shade lip on E, alternating two tones;
-  - every plate carries one feature: a recessed pocket (lit N wall, shaded W wall, dark S / E line) with four corner
-    bolts, or a riveted strap across its middle;
-  - bolts are 2x2 lit heads with a 1-cell dark foot on S / E; nothing is scattered.
-Cells are 1/32 tile; a cell is a 2x1 px diamond at 1x, so a bolt head is 4x2 px.
+  - frame girder: each module's N / W side is a 2-cell groove plus a dark band with a pair of rivets per tile.
+    An open N / W side gets the same girder from its overlay, so the ship outline is framed wherever it runs;
+  - 2-3 raised plates per module: 1-cell groove on N / W, lit lip on S, shaded lip on E, two tones of the hue;
+  - each plate has its own surfacing: recessed pocket with corner bolts, twin pockets, riveted strap, bolted lap seam,
+    corner bolts only, or plain. Every layout mixes them differently;
+  - colour courses: module columns are grouped into bands (blue-grey 1-3 modules wide, hashed by band index, between
+    1-module ochre bands), so the ship reads as blue-grey armour with ochre bands, like the hull.
+Bolts are 2x2-cell lit heads with a 1-cell dark foot on S / E. Cells are 1/32 tile (a 2x1 px diamond at 1x).
 """
 M = 4                  # module size (tiles)
 GN = 32                # cells per tile side
@@ -25,15 +27,18 @@ FAM = {
     "b": dict(top="rB1", t2="rB2", lit="rBL", shd="rBS", rl="rBR", k="rBK", fs="rBD", fe="rBE"),
 }
 
-# plates per layout, in tile units: (x0, y0, w, h, tone, feature); features: P pocket, X strap along x, Y strap along y
+# plates per layout, in tile units: (x0, y0, w, h, tone, feature)
+# features: P pocket + corner bolts, PP twin pockets, X / Y riveted strap along x / y, LX / LY bolted lap seam
+# across x / y, C corner bolts only, - plain
 LAYOUTS = (
-    ((0, 0, 4, 2, 0, "P"), (0, 2, 2, 2, 1, "Y"), (2, 2, 2, 2, 0, "P")),
-    ((0, 0, 2, 4, 0, "P"), (2, 0, 2, 2, 1, "P"), (2, 2, 2, 2, 0, "X")),
-    ((0, 0, 2, 2, 1, "P"), (2, 0, 2, 2, 0, "Y"), (0, 2, 4, 2, 0, "P")),
-    ((0, 0, 2, 2, 0, "X"), (2, 0, 2, 4, 1, "P"), (0, 2, 2, 2, 1, "P")),
+    ((0, 0, 4, 2, 0, "P"), (0, 2, 2, 2, 1, "LX"), (2, 2, 2, 2, 0, "-")),
+    ((0, 0, 2, 4, 0, "Y"), (2, 0, 2, 2, 1, "C"), (2, 2, 2, 2, 0, "P")),
+    ((0, 0, 4, 1, 1, "-"), (0, 1, 2, 3, 0, "P"), (2, 1, 2, 3, 1, "LY")),
+    ((0, 0, 2, 2, 1, "-"), (2, 0, 2, 2, 0, "X"), (0, 2, 4, 2, 1, "PP")),
 )
-RAIL = 9               # frame rail width (cells) along each module's N and W edge, incl. its 2-cell groove
-RIV = 8                # rivet pitch on rails and straps (cells)
+RAIL = 9               # girder width (cells): 2-cell groove, 6-cell band, 1-cell weld line
+RIVETS = (12, 17)      # girder rivet pair, offsets along each tile (cells)
+FM = RAIL + 2          # feature margin from a plate's N / W edge (clear of any girder)
 
 
 def _h(*v):
@@ -48,9 +53,15 @@ def module_layout(mx, my):
     return _h(mx, my, 7) % len(LAYOUTS)
 
 
-def module_colour(mx, my):
-    """Colour courses across the ship: whole module columns alternate blue-grey / ochre."""
-    return "b" if mx % 2 == 0 else "o"
+def module_colour(mx, my=0):
+    """Colour courses: bands of module columns, blue-grey (1-3 modules, hashed by band index) between ochre bands (1)."""
+    x0, k = 0, 0
+    while True:
+        col = "b" if k % 2 == 0 else "o"
+        w = 1 + _h(k, 11) % 3 if col == "b" else 1
+        if mx < x0 + w:
+            return col
+        x0, k = x0 + w, k + 1
 
 
 def plate_at(layout, u, v):
@@ -66,32 +77,35 @@ def plate_family(layout, prim, u, v):
 
 
 class _Canvas:
-    def __init__(self, f):
-        self.g = [[None] * MC for _ in range(MC)]
+    def __init__(self, f, n=MC):
+        self.g = [[None] * n for _ in range(n)]
         self.f = f
-        self.flat = set()          # cells that are plain plate top (bolts may go there)
+        self.flat = set()          # cells that are plain plate / band surface (bolts may go there)
 
     def put(self, X, Y, role, flat=False):
         self.g[Y][X] = self.f[role]
         (self.flat.add if flat else self.flat.discard)((X, Y))
 
-    def bolt(self, X, Y):
+    def bolt(self, X, Y, foot=True):
         """2x2 lit head with a 1-cell dark foot on its S / E side (reads raised at 1x)."""
         head = [(X + a, Y + b) for a in (0, 1) for b in (0, 1)]
         if not all(c in self.flat for c in head):
             return
         for c in head:
             self.put(*c, "lit")
-        for c in ((X + 2, Y), (X + 2, Y + 1), (X, Y + 2), (X + 1, Y + 2), (X + 2, Y + 2)):
-            if c in self.flat:
-                self.put(*c, "k")
+        if foot:
+            for c in ((X + 2, Y), (X + 2, Y + 1), (X, Y + 2), (X + 1, Y + 2), (X + 2, Y + 2)):
+                if c in self.flat:
+                    self.put(*c, "k")
 
 
 def _raised(cv, X0, Y0, X1, Y1, body):
-    """Raised slab: body, lit lip on its S edge, shade lip on its E edge (grooves are drawn by the caller)."""
+    """Raised slab: body, lit lip on its S edge, shade lip on its E edge, 1-cell groove on its N / W edge."""
     for Y in range(Y0, Y1):
         for X in range(X0, X1):
-            if Y == Y1 - 1:
+            if Y == Y0 or X == X0:
+                cv.put(X, Y, "k")
+            elif Y == Y1 - 1:
                 cv.put(X, Y, "lit")
             elif X == X1 - 1:
                 cv.put(X, Y, "shd")
@@ -113,6 +127,91 @@ def _pocket(cv, X0, Y0, X1, Y1, floor):
                 cv.put(X, Y, floor)
 
 
+def _corners(cv, X0, Y0, X1, Y1):
+    for bx, by in ((X0 + FM, Y0 + FM), (X1 - 7, Y0 + FM), (X0 + FM, Y1 - 7), (X1 - 7, Y1 - 7)):
+        cv.bolt(bx, by)
+
+
+def _feature(cv, feat, X0, Y0, X1, Y1, other):
+    w, h = X1 - X0, Y1 - Y0
+    if feat == "P":
+        _pocket(cv, X0 + FM + 5, Y0 + FM + 5, X1 - 10, Y1 - 10, other)
+        _corners(cv, X0, Y0, X1, Y1)
+    elif feat == "PP":                                   # twin pockets split along the plate's long axis
+        if w >= h:
+            mid = X0 + w // 2
+            _pocket(cv, X0 + FM + 3, Y0 + FM + 3, mid - 3, Y1 - 9, other)
+            _pocket(cv, mid + 3, Y0 + FM + 3, X1 - 9, Y1 - 9, other)
+        else:
+            mid = Y0 + h // 2
+            _pocket(cv, X0 + FM + 3, Y0 + FM + 3, X1 - 9, mid - 3, other)
+            _pocket(cv, X0 + FM + 3, mid + 3, X1 - 9, Y1 - 9, other)
+    elif feat in ("X", "Y"):                             # riveted strap across the middle, rivet pairs per tile
+        along_x = feat == "X"
+        c0 = ((Y0 + Y1) // 2 - 5) if along_x else ((X0 + X1) // 2 - 5)
+        sx0, sy0, sx1, sy1 = (X0 + 1, c0, X1 - 1, c0 + 11) if along_x else (c0, Y0 + 1, c0 + 11, Y1 - 1)
+        for Y in range(sy0, sy1):
+            for X in range(sx0, sx1):
+                if (along_x and Y == sy0) or (not along_x and X == sx0):
+                    cv.put(X, Y, "k")
+                elif along_x and Y == sy1 - 1:
+                    cv.put(X, Y, "lit")
+                elif not along_x and X == sx1 - 1:
+                    cv.put(X, Y, "shd")
+                else:
+                    cv.put(X, Y, other, True)
+        a0, a1 = (sx0, sx1) if along_x else (sy0, sy1)
+        for t in range(a0 // GN, (a1 - 1) // GN + 1):
+            for q in RIVETS:
+                p = t * GN + q
+                if a0 + 4 <= p < a1 - 5:
+                    cv.bolt(*((p, sy0 + 4) if along_x else (sx0 + 4, p)), foot=False)
+    elif feat in ("LX", "LY"):                           # lap seam: the far sub-plate laps over the near one, bolted
+        along_x = feat == "LX"
+        if along_x:
+            s = Y0 + (Y1 - Y0) * 2 // 5
+            for X in range(X0 + 1, X1 - 1):
+                cv.put(X, s, "lit")
+                cv.put(X, s + 1, "k")
+            for Y in range(s + 2, Y1 - 1):
+                for X in range(X0 + 1, X1 - 1):
+                    if cv.g[Y][X] == cv.f["top" if other == "t2" else "t2"]:
+                        cv.put(X, Y, other, True)
+            for p in range(X0 + FM, X1 - 8, 10):
+                cv.bolt(p, s - 5)
+        else:
+            s = X0 + (X1 - X0) * 2 // 5
+            for Y in range(Y0 + 1, Y1 - 1):
+                cv.put(s, Y, "shd")
+                cv.put(s + 1, Y, "k")
+            for Y in range(Y0 + 1, Y1 - 1):
+                for X in range(s + 2, X1 - 1):
+                    if cv.g[Y][X] == cv.f["top" if other == "t2" else "t2"]:
+                        cv.put(X, Y, other, True)
+            for p in range(Y0 + FM, Y1 - 8, 10):
+                cv.bolt(s - 5, p)
+    elif feat == "C":
+        _corners(cv, X0, Y0, X1, Y1)
+
+
+def _girder(cv, side, n):
+    """Groove + dark band + weld line along the N (side 'n') or W ('w') edge of an n-cell square, rivet pairs per tile."""
+    for a in range(n):
+        for d in range(RAIL):
+            X, Y = (a, d) if side == "n" else (d, a)
+            if d < 2:
+                cv.put(X, Y, "k")
+            elif d == RAIL - 1:
+                if a >= RAIL - 1 or cv.g[Y][X] is None or (X, Y) in cv.flat:
+                    cv.put(X, Y, "k")
+            else:
+                cv.put(X, Y, "rl", True)
+    for t in range(n // GN):
+        for q in RIVETS:
+            p = t * GN + q
+            cv.bolt(*((p, 4) if side == "n" else (4, p)), foot=False)
+
+
 def module_cells(layout, prim):
     """128x128 palette names for the module (rows Y, columns X)."""
     cv = _Canvas(FAM[prim])
@@ -120,47 +219,12 @@ def module_cells(layout, prim):
         body, other = ("t2", "top") if tone else ("top", "t2")
         X0, Y0, X1, Y1 = x0 * GN, y0 * GN, (x0 + w) * GN, (y0 + h) * GN
         _raised(cv, X0, Y0, X1, Y1, body)
-        for Y in range(Y0, Y1):                                  # grooves on the plate's N / W sides
-            for X in range(X0, X1):
-                if (Y == Y0 and y0) or (X == X0 and x0):
-                    cv.put(X, Y, "k")
-        # inner area (inside grooves / rails / lips)
-        ix0, iy0 = X0 + (RAIL if x0 == 0 else 1), Y0 + (RAIL if y0 == 0 else 1)
-        ix1, iy1 = X1 - 1, Y1 - 1
-        if feat == "P":
-            m = 7
-            _pocket(cv, ix0 + m, iy0 + m, ix1 - m, iy1 - m, other)
-            for bx, by in ((ix0 + 3, iy0 + 3), (ix1 - 5, iy0 + 3), (ix0 + 3, iy1 - 5), (ix1 - 5, iy1 - 5)):
-                cv.bolt(bx, by)
-        elif feat in "XY":                                       # riveted strap across the plate's middle
-            along_x = feat == "X"
-            c0 = ((iy0 + iy1) // 2 - 4) if along_x else ((ix0 + ix1) // 2 - 4)
-            sx0, sy0, sx1, sy1 = (ix0, c0, ix1, c0 + 9) if along_x else (c0, iy0, c0 + 9, iy1)
-            for Y in range(sy0, sy1):
-                for X in range(sx0, sx1):
-                    if (along_x and Y == sy0) or (not along_x and X == sx0):
-                        cv.put(X, Y, "k")
-                    elif (along_x and Y == sy1 - 1) or (not along_x and X == sx1 - 1):
-                        cv.put(X, Y, "lit" if along_x else "shd")
-                    else:
-                        cv.put(X, Y, other, True)
-            span = range(sx0 + 4, sx1 - 4, RIV) if along_x else range(sy0 + 4, sy1 - 4, RIV)
-            for p in span:
-                cv.bolt(*((p, sy0 + 3) if along_x else (sx0 + 3, p)))
-    # module frame: 2-cell groove + rail band along N and W, rivet row on the rail
-    for Y in range(MC):
-        for X in range(MC):
-            if X < 2 or Y < 2:
-                cv.put(X, Y, "k")
-            elif (X < RAIL - 1 and Y >= 2) or (Y < RAIL - 1 and X >= 2):
-                cv.put(X, Y, "rl", True)
-            elif (X == RAIL - 1 and Y >= RAIL - 1) or (Y == RAIL - 1 and X >= RAIL - 1):
-                cv.put(X, Y, "k")
-    for p in range(RAIL + 1, MC - 2, RIV):
-        for X, Y in ((p, 4), (4, p)):
-            if (X, Y) in cv.flat and (X + 1, Y + 1) in cv.flat:
-                for c in ((X, Y), (X + 1, Y), (X, Y + 1), (X + 1, Y + 1)):
-                    cv.put(*c, "lit")
+        _feature(cv, feat, X0, Y0, X1, Y1, other)
+    _girder(cv, "n", MC)
+    _girder(cv, "w", MC)
+    for d in range(2, RAIL):                       # girder crossing: keep the band continuous under the N girder
+        for e in range(2, RAIL):
+            cv.put(d, e, "rl")
     return cv.g
 
 
@@ -177,19 +241,16 @@ def tile_cells(layout, prim, u, v):
 
 
 def edge_cells(side, fam):
-    """Top-surface cells an open side overrides: {(i, j): name}. N / W: dark rim; S: lit lip; E: shade lip."""
+    """Top-surface cells an open side overrides: {(i, j): name}. N / W: the frame girder (same as a module edge);
+    S: lit lip; E: shade lip (the slab face below is geometry, see roofs.py)."""
+    if side in ("n", "w"):
+        cv = _Canvas(FAM[fam], GN)
+        _girder(cv, side, GN)
+        return {(i, j): c for j, row in enumerate(cv.g) for i, c in enumerate(row) if c}
     f = FAM[fam]
-    out = {}
-    for k in range(GN):
-        if side == "n":
-            out[(k, 0)] = out[(k, 1)] = f["k"]
-        elif side == "w":
-            out[(0, k)] = out[(1, k)] = f["k"]
-        elif side == "s":
-            out[(k, GN - 1)] = f["lit"]
-        elif side == "e":
-            out[(GN - 1, k)] = f["shd"]
-    return out
+    if side == "s":
+        return {(k, GN - 1): f["lit"] for k in range(GN)}
+    return {(GN - 1, k): f["shd"] for k in range(GN)}
 
 
 def tile_id(x, y):
