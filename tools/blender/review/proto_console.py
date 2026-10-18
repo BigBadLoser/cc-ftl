@@ -93,8 +93,9 @@ FACE = {0: 6, 1: 0}                                              # seated crew d
 
 
 def occluders(name, rot, W, H, hr, rig):
-    """-> bool (H+2, W+2): pixels where the console DESK (not the chair) hides the seated crew in ANY sit_idle / sit_work
-    frame of the cast (bulky + slim kit), from the 3D scene: crew alone vs crew with the desk as holdout."""
+    """-> (hit, seen) bool (H+2, W+2): pixels where the console DESK (not the chair) hides the seated crew in ANY sit_idle /
+    sit_work frame of the cast (bulky + slim kit), and pixels where the crew is in front of the desk in any frame. From the
+    3D scene: crew alone vs crew with the desk as holdout."""
     arm, items = rig
     by = {it.id: it for it in items}
     parts = C.console_parts(name, rot, True)
@@ -102,6 +103,7 @@ def occluders(name, rot, W, H, hr, rig):
         o.is_holdout, o.hide_render = True, k == "chair"
     cx, cy = meta(name, rot)["chair_rel_origin"]
     hit = np.zeros((H + 2, W + 2), bool)
+    seen = hit.copy()
     for clip, n, _, _ in [c for c in hr.CLIPS if c[0].startswith("sit")]:
         for i in range(n):
             arm.rotation_euler = (0, 0, math.radians(hr.THETA[FACE[rot]]))
@@ -116,18 +118,20 @@ def occluders(name, rot, W, H, hr, rig):
                     rgb, a = core.render(W, H, "color")
                     vis.append(np.pad(post.downsample(rgb, a > 0.5, core.SS, 6, False)[1], 1))
                 hit |= vis[0] & ~vis[1]
+                seen |= vis[1]
     arm.location = (0, 0, 0)
     for it in items:
         for ob in it.objs:
             ob.hide_render = True
     for o in parts.values():
         bpy.data.objects.remove(o, do_unlink=True)
-    return hit
+    return hit, seen
 
 
 def pixel_split_gt(name, rot, hr, rig):
     """The seated-crew layering from 3D occlusion: the full sprite plus the FRONT OVERLAY = the full-sprite pixels where the
-    desk hides the seated crew in some sit frame (occluders), plus the sprite's outline pixels touching them. Unlike the
+    desk hides the seated crew in some sit frame (occluders), grown by 1 px (the crew outline ring) wherever the crew never
+    shows in front of the desk, plus the sprite's own outline pixels touching them. Unlike the
     polygon split it never covers a hand that is above the desk top. Runs in the scene of `rig` (human_render.build_items)."""
     post.select(True)
     rig[0].location = (0, 0, 0)
@@ -139,11 +143,11 @@ def pixel_split_gt(name, rot, hr, rig):
     ring = op & ~np.pad(post.downsample(rgb, a > 0.5, core.SS, 8, False)[1], 1)     # the sprite's outline pixels
     for o in objs:
         bpy.data.objects.remove(o, do_unlink=True)
-    hit = occluders(name, rot, W, H, hr, rig)
+    hit, seen = occluders(name, rot, W, H, hr, rig)
     near = hit.copy()
     for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
         near |= np.roll(hit, (dy, dx), (0, 1))
-    front = op & (hit | (ring & near))
+    front = op & (hit | (near & (ring | ~seen)))     # + 1 px where the crew never shows: covers its outline ring
     full = post.to_rgba(c, op)
     over = full.copy()
     over[~front] = 0
