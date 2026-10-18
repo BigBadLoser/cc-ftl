@@ -5,12 +5,14 @@ PAD surface (z = 0). `Spin(heading)` turns the model to any heading in grid spac
 bay rotations (r0 nose -y, r1 +x, r2 +y, r3 -x, like the modules) and `fly_heading` the eight sim facings (d0 = +x,
 counter-clockwise in grid space, d2 = +y; the crew sheet convention).
 
-Shape (v3, rounded): a fuselage swept from a rounded-rectangle cross-section (superellipse, `sweep`) that droops and
-narrows into the nose, with a wraparound canopy; it sits in a wide rounded skirt that carries the landing legs; a rear
-shroud holds one big vaned main nozzle; twin swept fins on top. Port (-v) side: a round AIRLOCK HATCH with a docking
-collar (the bay / another hull mates here); starboard (+v) side: a rose sliding door. Footprint 4.0 (u -2.14..1.85) by
-2.6 tiles. Heights (pad = 0): belly BELLY, skirt to 1.02, roofline ROOF, fin tips TOP. Legs down = parked. The bay's
-pit must be at least TOP - roofs.ZR deep for the roof slab; PIT_SUGGESTED sinks most of the body below the deck.
+Shape (v4): a fuselage swept from a rounded-rectangle cross-section (superellipse, `sweep`) with a separate, narrower
+COCKPIT pod stepped down and forward of it under a wraparound canopy; it sits in a wide rounded skirt that carries the
+landing legs; twin engine pods on the rear flanks; a single tail fin; and two large swept WINGS on hinge fairings that
+spread in flight and fold up beside the hull when parked or docked. The rear face is a LOADING RAMP (rose, hazard
+sill): the bay's airlock and another hull's door mate here. Footprint parked 4.0 (u -2.12..1.9) by 3.0 tiles (pods);
+in flight the spread wings reach 4.3 across. Heights (pad = 0): belly BELLY, skirt to 1.0, roofline ROOF, fin tip
+TOP_FLY, folded wing tips TOP. Legs down = parked. The bay's pit must be at least TOP - roofs.ZR deep for the roof
+slab; PIT_SUGGESTED sinks most of the body below the deck.
 
 Livery: flat panels in the roof-livery key colours mkP (primary) / mkS (secondary), rendered unlit so the renderer
 can match them exactly; the base hull is light grey (gW1). Curved parts use smooth custom normals (`smooth`) so they
@@ -22,20 +24,27 @@ from . import core, detail as D, cmbkit
 from .cmbkit import Frame
 
 ROOF = 1.8             # roofline (fuselage top)
-TOP = 2.15             # highest point (fin tips)
+TOP_FLY = 2.05         # tail fin tip
+TOP = 2.35             # highest point parked: the folded wing tips
 BELLY = 0.42           # ground clearance on the legs (skirt bottom)
-PIT_SUGGESTED = 1.1    # pit depth for the bay: roof at 0.7 and fins at 1.05 above the deck, under the roof slab (2.05)
-NZ, NR = 1.1, 0.42     # main nozzle centre height / throat radius
-HATCH = (-0.55, 1.32)  # airlock hatch centre (u, z) on the port side
+PIT_SUGGESTED = 1.1    # pit depth for the bay: roof at 0.7 and folded wing tips at 1.25 above the deck (slab at 2.05)
+POD_V, POD_Z, POD_R = 1.2, 1.05, 0.3   # engine pods
+HINGE = (1.1, 1.36)    # wing hinge line (v, z) on the hull flank
+FOLD = math.radians(82)                # wing fold angle when parked / docked
 GLOW = "cyan"          # nozzle glow (the ship's drives glow cyan too)
 SMOOTH_DEG = 35        # edges sharper than this stay hard
 PROF_N, PROF_P = 20, 4 # cross-section sampling / superellipse power (4 = rounded rectangle; corners < 29 deg)
 
-# fuselage stations (u, half width, half height, v centre, z centre): flat amidships, drooping narrowing nose
-FUSE = [(-1.75, 1.0, 0.6, 0, 1.1), (-1.2, 1.1, 0.68, 0, 1.12), (0.4, 1.1, 0.68, 0, 1.12), (1.1, 1.0, 0.58, 0, 1.02),
-        (1.6, 0.75, 0.4, 0, 0.9), (1.85, 0.45, 0.22, 0, 0.82)]
-SKIRT = [(-1.8, 1.05, 0.28, 0, 0.72), (-1.4, 1.3, 0.3, 0, 0.72), (0.7, 1.3, 0.3, 0, 0.72), (1.5, 0.95, 0.26, 0, 0.74)]
-SHROUD = [(-2.05, 0.8, 0.62, 0, NZ), (-1.95, 0.84, 0.64, 0, NZ), (-1.7, 0.84, 0.64, 0, NZ)]
+# swept bodies: stations (u, half width, half height, v centre, z centre)
+FUSE = [(-1.75, 1.0, 0.6, 0, 1.1), (-1.2, 1.1, 0.68, 0, 1.12), (0.5, 1.1, 0.68, 0, 1.12), (0.95, 1.02, 0.6, 0, 1.1),
+        (1.15, 0.8, 0.46, 0, 1.0)]
+COCKPIT = [(0.6, 0.62, 0.42, 0, 1.06), (1.25, 0.62, 0.42, 0, 1.04), (1.65, 0.5, 0.32, 0, 0.98), (1.9, 0.3, 0.17, 0, 0.9)]
+SKIRT = [(-1.8, 1.05, 0.28, 0, 0.72), (-1.4, 1.3, 0.3, 0, 0.72), (0.7, 1.3, 0.3, 0, 0.72), (1.5, 0.9, 0.26, 0, 0.74)]
+
+
+def pod(sv):
+    return [(-2.0, 0.27, 0.27, sv * POD_V, POD_Z), (-1.85, POD_R, POD_R, sv * POD_V, POD_Z), (-0.9, POD_R, POD_R, sv * POD_V, POD_Z),
+            (-0.55, 0.17, 0.17, sv * POD_V, POD_Z)]
 
 
 class Spin(Frame):
@@ -140,65 +149,77 @@ def smooth(ob, angle=SMOOTH_DEG):
     return ob
 
 
-def airlock(f, u, z):
-    """Round docking hatch on the port side: collar sunk into the hull, rim ring, door with a window, four lugs."""
-    D.seg(f, (u, -0.85, z), (u, -1.2, z), 0.36, "steelL", 16, cap="plate")
-    D.seg(f, (u, -1.2, z), (u, -1.23, z), 0.31, "plate", 16, cap="steelD")
-    D.seg(f, (u, -1.2, z), (u, -1.25, z), 0.26, "steel", 16, cap="steelL")
-    D.seg(f, (u, -1.25, z), (u, -1.265, z), 0.08, "glassD", 10, cap="glassD")
-    f.box(u, -1.26, z - 0.17, 0.3, 0.02, 0.05, "hazY", base=False)
-    for a in (45, 135, 225, 315):
-        c, s = math.cos(math.radians(a)), math.sin(math.radians(a))
-        f.box(u + 0.3 * c, -1.24, z + 0.3 * s, 0.07, 0.03, 0.07, "plate", base=False)
+def wing(f, sv, fold, flash_only=False):
+    """Swept tapered wing on the hull flank (sv = side), rotated about the hinge line by `fold` (0 = spread level,
+    FOLD = standing up beside the hull). Root chord u -1.45..-0.15, tip chord -1.3..-0.7, span 0.95. flash_only builds
+    just the livery flash on its top (for the flat livery mesh)."""
+    hv, zh = HINGE
+    cs, sn = math.cos(fold), math.sin(fold)
+
+    def T(v, z):                                   # (outward from the hinge, height) -> (v, z) in the frame
+        return sv * (hv + v * cs - (z - zh) * sn), zh + v * sn + (z - zh) * cs
+
+    def plate(z_off, th, span, c_root, c_tip, mat, inset=0.0):
+        def corner(a, b, d):
+            tip = b * sv > 0
+            u0, u1 = c_tip if tip else c_root
+            u = u0 + inset if a < 0 else u1 - inset
+            vv, zz = T((span if tip else 0.0) + (-inset if tip else inset), zh + z_off + (th / 2 if d > 0 else -th / 2))
+            return (u, vv, zz)
+        D.loft_box(f, corner, mat)
+    if flash_only:
+        plate(0.045, 0.012, 0.75, (-1.25, -0.5), (-1.2, -0.75), "mkP")             # top flash
+        return
+    plate(0.0, 0.08, 0.95, (-1.45, -0.15), (-1.3, -0.7), "plate")                  # the wing
+    u0, u1 = -1.35, -0.6
+    vv, zz = T(0.95, zh)
+    f.box((u0 + u1) / 2, vv, zz, u1 - u0, 0.1, 0.1, "steelD", top="gm", base=False)   # tip pod
+    f.box(-0.8, sv * (hv - 0.02), zh, 1.4, 0.2, 0.22, "steelL", top="plate", base=False)   # hinge fairing on the hull
 
 
-def body(f, legs, glow, damaged=False):
+def body(f, legs, glow, fold, damaged=False):
     hull = "gW1"
     _g("skirt")
     sweep(f, SKIRT, profile(), "plate", cap0="plate", cap1="plate")
     _g("hull")
     sweep(f, FUSE, profile(), hull, cap0=hull, cap1=hull)
-    _g("shroud")
-    sweep(f, SHROUD, profile(), "steelL", cap0="steel")
-    _g("nozzle")
-    f.hcyl(-2.14, -2.04, 0, NZ, NR + 0.05, "steelD", r1=NR, sides=16)              # flared lip
-    f.hcyl(-2.04, -1.98, 0, NZ, NR, "gm", sides=16)                                 # throat
-    f.hcyl(-2.08, -2.06, 0, NZ, NR - 0.02, "dark", sides=16, cap="dark", capstart="dark")   # liner floor
-    f.hcyl(-2.09, -2.08, 0, NZ, 0.26, glow, sides=12, capstart="arc" if glow != "dark" else "dark")   # core
-    for k in range(4):                                                            # vanes across the mouth
-        a = k * math.pi / 2 + math.pi / 4
-        D.seg(f, (-2.11, 0, NZ), (-2.11, (NR + 0.03) * math.cos(a), NZ + (NR + 0.03) * math.sin(a)), 0.035, "steelL", 4)
-    D.seg(f, (-2.08, 0, NZ), (-2.13, 0, NZ), 0.09, "steelD", 8, cap="steelL")      # hub
-    _g("canopy")                                                                  # wraparound windscreen on the nose
-    patch(f, FUSE, 1.1, 1.75, 30, 150, 1.015, "plate", n=11, steps=5)
-    patch(f, FUSE, 1.15, 1.7, 38, 142, 1.03, "glassD", n=11, steps=5)
-    patch(f, FUSE, 1.3, 1.42, 40, 140, 1.04, "lens", n=11, steps=2)               # one reflection band
-    _g("fins")                                                                    # twin swept fins
+    _g("cockpit")                                                                 # separate pod, lower and narrower
+    sweep(f, COCKPIT, profile(), hull, cap1="steelL")
+    patch(f, COCKPIT, 0.98, 1.85, 22, 158, 1.02, "plate", n=13, steps=5)          # canopy frame
+    patch(f, COCKPIT, 1.03, 1.8, 30, 150, 1.04, "glassD", n=13, steps=5)
+    patch(f, COCKPIT, 1.25, 1.4, 32, 148, 1.05, "lens", n=13, steps=2)            # one reflection band
+    f.box(0.98, 0, 0.66, 0.05, 1.1, 0.1, "steelD", base=False)                    # neck seam under the cockpit
+    _g("pods")
     for sv in (-1, 1):
-        D.loft_box(f, lambda a, b, d, sv=sv: ((-1.5 if a < 0 else -0.95), sv * 0.5 + b * 0.035,
-                                              1.72 if d < 0 else (TOP if a < 0 else 2.0)), "plate")
-    _g("hatch")
-    airlock(f, *HATCH)
-    _g("door")                                                                    # starboard sliding door (rose)
-    u, z = HATCH[0], 1.25
-    f.box(u, 1.1, z, 0.72, 0.04, 0.44, "dark", base=False)
-    f.box(u, 1.135, z, 0.62, 0.03, 0.38, "rM", base=False)
-    f.box(u, 1.155, z + 0.13, 0.62, 0.014, 0.06, "rH", base=False)
-    f.box(u, 1.155, z, 0.045, 0.014, 0.3, "rD", base=False)                       # seam between the leaves
-    f.box(u, 1.155, z - 0.03, 0.26, 0.014, 0.09, "glassD", base=False)
-    f.box(u, 1.155, z - 0.16, 0.62, 0.014, 0.05, "hazY", base=False)
+        sweep(f, pod(sv), profile(n=16, p=2), "steelL", cap1="steelD")
+        _g("nozzle")
+        f.hcyl(-2.12, -2.0, sv * POD_V, POD_Z, 0.3, "steelD", r1=0.26, sides=16)        # flared lip
+        f.hcyl(-2.06, -2.04, sv * POD_V, POD_Z, 0.24, "dark", sides=16, cap="dark", capstart="dark")   # liner floor
+        f.hcyl(-2.07, -2.06, sv * POD_V, POD_Z, 0.16, glow, sides=12, capstart="arc" if glow != "dark" else "dark")
+        _g("pods")
+        f.box(-1.3, sv * (POD_V - 0.1), POD_Z - 0.3, 1.0, 0.3, 0.25, "steel", top="steelL")   # pod cradle on the skirt
+    _g("wings")
+    for sv in (-1, 1):
+        wing(f, sv, fold)
+    _g("fin")                                                                     # single tail fin
+    D.loft_box(f, lambda a, b, d: ((-1.55 if a < 0 else -1.0), b * 0.035, 1.72 if d < 0 else (TOP_FLY if a < 0 else 1.92)), "plate")
+    _g("ramp")                                                                    # rear loading ramp (rose, like the doors)
+    u = -1.75
+    f.box(u - 0.01, 0, 1.03, 0.02, 1.34, 0.96, "dark", base=False)                # seam frame
+    f.box(u - 0.03, 0, 1.03, 0.03, 1.2, 0.86, "rM", base=False)                   # ramp leaf
+    f.box(u - 0.04, 0, 1.36, 0.014, 1.2, 0.07, "rH", base=False)                  # lit band
+    f.box(u - 0.04, 0, 1.15, 0.014, 0.4, 0.12, "rD", base=False)                  # window slot
+    f.box(u - 0.04, 0, 1.15, 0.014, 0.3, 0.08, "glassD", base=False)
+    for k in range(8):                                                            # hazard sill
+        f.box(u - 0.04, -0.525 + k * 0.15, 0.66, 0.014, 0.15, 0.05, "hazY" if k % 2 == 0 else "hazK", base=False)
     _g("greeble")
-    for sv, (t0, t1) in ((1, (-22, 22)), (-1, (158, 202))):                        # raised side panels ahead of the doors
-        patch(f, FUSE, 0.05, 0.85, t0, t1, 1.02, "plate", n=7, steps=3)
-        f.box(0.45, sv * 1.126, 1.12, 0.6, 0.012, 0.045, "steelD", base=False)    # seam line on the panel
-    for sv in (-1, 1):                                                            # rcs blocks on the skirt corners
+    for sv in (-1, 1):                                                            # rcs blocks on the skirt's front corners
         f.box(1.1, sv * 1.1, 0.96, 0.2, 0.2, 0.14, "steelD", top="gm")
-        f.box(-1.55, sv * 1.1, 0.96, 0.2, 0.2, 0.14, "steelD", top="gm")
-    f.vcyl(-0.3, 0, ROOF - 0.01, 0.22, 0.05, "plate", top="steelL", sides=12)     # dorsal hatch
-    f.vcyl(-0.3, 0, ROOF + 0.04, 0.16, 0.04, "steelL", top="plate", sides=12)
-    f.vcyl(0.5, -0.55, ROOF - 0.03, 0.045, 0.2, "steelL", sides=6)                # antenna
-    f.box(0.5, -0.55, ROOF + 0.17, 0.09, 0.09, 0.07, "dark")
-    f.box(0.2, 0.42, ROOF - 0.004, 0.9, 0.045, 0.008, "steelD")                   # roof seam
+    f.vcyl(-0.3, 0.45, ROOF - 0.01, 0.2, 0.05, "plate", top="steelL", sides=12)   # dorsal hatch
+    f.vcyl(-0.3, 0.45, ROOF + 0.04, 0.14, 0.04, "steelL", top="plate", sides=12)
+    f.vcyl(0.55, -0.55, ROOF - 0.03, 0.045, 0.2, "steelL", sides=6)               # antenna
+    f.box(0.55, -0.55, ROOF + 0.17, 0.09, 0.09, 0.07, "dark")
+    f.box(0.1, -0.42, ROOF - 0.004, 1.0, 0.045, 0.008, "steelD")                  # roof seam
     if legs:
         _g("legs")
         for su in (-1.0, 1.0):
@@ -211,39 +232,44 @@ def body(f, legs, glow, damaged=False):
         patch(f, FUSE, 0.1, 0.6, 20, 70, 1.035, "grime", n=5, steps=2)            # scorch over the starboard shoulder
         patch(f, FUSE, -1.3, -0.9, 95, 130, 1.035, "grime", n=5, steps=2)
         f.box(0.3, -1.306, 0.75, 0.35, 0.012, 0.2, "dark", base=False)            # torn skirt panel
-        f.box(-1.2, -0.51, TOP - 0.1, 0.3, 0.1, 0.012, "dark")                    # chipped fin tip
+        f.box(-1.2, 0, TOP_FLY - 0.08, 0.3, 0.1, 0.012, "dark")                   # chipped fin tip
 
 
-def livery(f):
-    """Flat key-colour panels (f over a flat Mesh): roof stripe (P) with S edges, skirt bands (S), fin + shroud flashes (P)."""
+def livery(f, fold):
+    """Flat key-colour panels (f over a flat Mesh): roof stripe (P) with S edges, skirt bands (S), wing, fin and pod
+    flashes."""
     _g("livery")
+    for sv in (-1, 1):
+        wing(f, sv, fold, flash_only=True)
     f.box(-0.5, 0, ROOF - 0.004, 2.0, 0.36, 0.012, "mkP")
     for sv in (-1, 1):
         f.box(-0.5, sv * 0.24, ROOF - 0.004, 2.0, 0.12, 0.012, "mkS")
         f.box(-0.35, sv * 1.306, 0.72, 2.0, 0.012, 0.14, "mkS", base=False)
-        f.box(-1.22, sv * 0.545, 1.93, 0.5, 0.012, 0.06, "mkP", base=False)
-        f.box(-1.85, sv * 0.846, NZ, 0.25, 0.012, 0.08, "mkP", base=False)
+        f.box(-1.2, sv * (POD_V + POD_R - 0.004), POD_Z, 0.5, 0.012, 0.1, "mkS", base=False)
+    f.box(-1.28, 0.04, 1.86, 0.4, 0.012, 0.06, "mkP", base=False)
+    f.box(-1.28, -0.04, 1.86, 0.4, 0.012, 0.06, "mkP", base=False)
 
 
 def shuttle(heading, state="parked", damaged=False, dz=0.0):
-    """state: parked (legs down, nozzle dark), fly (legs up, nozzle glowing), docked (legs up, nozzle dark).
-    dz shifts the whole craft (a parked one sits at -pit depth)."""
+    """state: parked (legs down, wings folded, nozzles dark), fly (legs up, wings spread, nozzles glowing), docked
+    (legs up, wings folded, nozzles dark). dz shifts the whole craft (a parked one sits at -pit depth)."""
     legs = state == "parked"
     glow = GLOW if state == "fly" else "dark"
+    fold = 0.0 if state == "fly" else FOLD
     m = core.Mesh(f"shuttle_{state}")
     m.dz = dz
-    body(Spin(m, heading), legs, glow, damaged)
+    body(Spin(m, heading), legs, glow, fold, damaged)
     lv = core.Mesh(f"shuttle_{state}_livery", flat=True)
     lv.dz = dz
-    livery(Spin(lv, heading))
+    livery(Spin(lv, heading), fold)
     return [smooth(m.build()), lv.build()]
 
 
-ALLOW = [("hull", "skirt"), ("shroud", "hull"), ("shroud", "skirt"), ("nozzle", "shroud"), ("canopy", "hull"), ("fins", "hull"),
-         ("hatch", "hull"), ("hatch", "skirt"), ("door", "hull"), ("legs", "skirt"),
-         ("greeble", "hull"), ("greeble", "skirt"), ("greeble", "canopy"),
-         ("livery", "hull"), ("livery", "skirt"), ("livery", "fins"), ("livery", "shroud"), ("livery", "greeble"),
-         ("damage", "hull"), ("damage", "skirt"), ("damage", "livery"), ("damage", "greeble"), ("damage", "fins")]
+ALLOW = [("hull", "skirt"), ("cockpit", "hull"), ("cockpit", "skirt"), ("pods", "hull"), ("pods", "skirt"), ("nozzle", "pods"),
+         ("wings", "hull"), ("wings", "pods"), ("fin", "hull"), ("ramp", "hull"), ("legs", "skirt"),
+         ("greeble", "hull"), ("greeble", "skirt"), ("greeble", "cockpit"),
+         ("livery", "hull"), ("livery", "skirt"), ("livery", "fin"), ("livery", "pods"), ("livery", "greeble"), ("livery", "wings"),
+         ("damage", "hull"), ("damage", "skirt"), ("damage", "livery"), ("damage", "greeble"), ("damage", "fin")]
 
 
 def pit(depth=PIT_SUGGESTED, w=4, l=5, rot=0):

@@ -53,8 +53,8 @@ def check(rot):
     rec.group = "deck"
     rec.add({"kind": "box", "lo": [-2.5, -2.5, -0.05], "hi": [2.5, 2.5, 0.0], "src": "pad"})
     f = S.Spin(core.Mesh("chk"), S.rot_heading(rot))
-    S.body(f, True, "dark", damaged="--damaged" in args)
-    S.livery(S.Spin(core.Mesh("chk_lv", flat=True), S.rot_heading(rot)))
+    S.body(f, True, "dark", S.FOLD, damaged="--damaged" in args)
+    S.livery(S.Spin(core.Mesh("chk_lv", flat=True), S.rot_heading(rot)), S.FOLD)
     cmbkit.REC = None
     print(f"== overlap check, parked r{rot}: {len(rec.parts)} parts")
     overlap.report(rec.parts, S.ALLOW)
