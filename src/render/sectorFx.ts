@@ -7,6 +7,7 @@ import { ProjectileC, ShipC, type Ship } from '../sim/combat/components';
 import type { ModuleDef, WeaponDef } from '../sim/registry';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
+import { IMPACT_H, MUZZLE_H } from './heights';
 import { iso } from './iso';
 import type { Layers } from './layers';
 import type { EmitterDef, Particles } from './fx/particles';
@@ -141,8 +142,8 @@ export function createSectorFx(
           if (!m || !def || !s) continue;
           const [w, h] = rotatedSize(def, m.rot);
           const c = secArt(s.x + m.x + w / 2, s.y + m.y + h / 2);
-          particles.burst(burst(colorOf(e.weapon), 60), c.x, c.y - 8, 8, 6);
-          flash('fx.pd_shot', c.x, c.y - 8, 2);
+          particles.burst(burst(colorOf(e.weapon), 60), c.x, c.y - MUZZLE_H, 8, 6);
+          flash('fx.pd_shot', c.x, c.y - MUZZLE_H, 2);
         } else if (e.type === 'projectile.shieldHit') {
           const s = ship(e.gridId);
           if (s) bubble(s);
@@ -190,8 +191,10 @@ export function createSectorFx(
         }
         sh.x = a.x;
         sh.y = a.y;
-        sh.spr.position.set(Math.round(a.x), Math.round(a.y - 6));
-        particles.emit(`pj${id}`, trail(colorOf(p.weapon)), a.x, a.y - 6, 90, dt, 3);
+        // From the roof turret down to the target's floor level.
+        const h = MUZZLE_H + (IMPACT_H - MUZZLE_H) * t;
+        sh.spr.position.set(Math.round(a.x), Math.round(a.y - h));
+        particles.emit(`pj${id}`, trail(colorOf(p.weapon)), a.x, a.y - h, 90, dt, 3);
       }
       for (const [id, sh] of shots) {
         if (seen.has(id)) continue;
