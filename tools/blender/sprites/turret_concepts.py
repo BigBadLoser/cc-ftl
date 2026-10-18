@@ -57,11 +57,23 @@ def place(rig, d=0, pitch=0.0, lift=0.0, z0=ZR, parts=("fixed", "head", "gun")):
 
 # ---- shared parts ------------------------------------------------------------------------------------------------
 
+@cmbkit.prim
+def vannulus(f, ro, ri, z0, z1, mat, top=None, sides=28):
+    """Flat ring around the vertical axis (outer wall, inner wall, top): open in the middle."""
+    P = lambda r, z, k: f.pt(r * math.cos(k * math.tau / sides), r * math.sin(k * math.tau / sides), z)  # noqa: E731
+    for k in range(sides):
+        j = (k + 1) % sides
+        f.poly([P(ro, z0, k), P(ro, z0, j), P(ro, z1, j), P(ro, z1, k)], mat, flip=True)
+        f.poly([P(ri, z0, j), P(ri, z0, k), P(ri, z1, k), P(ri, z1, j)], mat, flip=True)
+        f.poly([P(ri, z1, k), P(ri, z1, j), P(ro, z1, j), P(ro, z1, k)], top or mat, flip=True)
+
+
 def coaming(f, R):
-    """Fixed armoured ring on the roof around the turret race (it is what the turret visibly comes up through)."""
+    """Fixed armoured ring on the roof around the turret race (it is what the turret visibly comes up through). Open
+    in the middle, so the same ring frames the roof hatch when the turret is stowed."""
     _g("deck")
-    f.vcyl(0, 0, -0.02, R + 0.16, 0.08, "steelD", top="steelL", sides=28)
-    f.vcyl(0, 0, -0.02, R + 0.06, 0.085, "dark", top="dark", sides=28)
+    vannulus(f, R + 0.16, R + 0.06, -0.02, 0.06, "steelD", "steelL")
+    vannulus(f, R + 0.06, R - 0.02, -0.02, 0.065, "dark", "dark")
 
 
 def turntable(f, R, hot, col, ribs=16):
@@ -81,6 +93,26 @@ def hoop(f, u, z, w, ro, ri, hot, col, mat="steelD", cap="steelL", v=0.0):
     """Coil hoop around the barrel axis: thick annulus with a glowing inner face."""
     D.annulus(f, u - w / 2, u + w / 2, v, z, ro, ri, mat, cap, sides=24)
     f.hcyl(u - w / 2 + 0.01, u + w / 2 - 0.01, v, z, ri, G(hot, col), sides=24)
+
+
+def split_hoop(f, u, z, ro, ri, hot, col, v=0.0, w=0.06, gap=0.05):
+    """Open coil ring: two armoured discs with a glowing coil band between them and a glowing bore face, so it reads
+    as a ring from the end (glow inside) and as steel-glow-steel stripes edge-on."""
+    for s_ in (-1, 1):
+        uc = u + s_ * (gap + w) / 2
+        D.annulus(f, uc - w / 2, uc + w / 2, v, z, ro, ri, "steelD", "steelL", sides=24)
+    f.hcyl(u - gap / 2, u + gap / 2, v, z, ro - 0.03, G(hot, col), sides=24)
+    f.hcyl(u - gap / 2 - w + 0.01, u + gap / 2 + w - 0.01, v, z, ri, G(hot, col), sides=24)
+
+
+def cheeks(h, u0, u1, vs, r, hot, col, z0=0.29):
+    """Low round housings lying on the deck either side of the mount (fill the turntable, stay round)."""
+    _g("cheek")
+    for sv in (-1, 1):
+        h.hcyl(u0, u1, sv * vs, z0 + r, r, "steelD", sides=16, cap="steel", capstart="steel")
+        um = (u0 + u1) / 2
+        h.hcyl(um - 0.05, um + 0.05, sv * vs, z0 + r, r + 0.025, "steel", sides=16, cap="steelL", capstart="steelL")
+        h.hcyl(u1, u1 + 0.02, sv * vs, z0 + r, r * 0.45, G(hot, col), sides=12, cap=G(hot, col))
 
 
 def brake(f, u0, v, z, r, rb, hot, col, baffles=2, gap=0.07, w=0.09):
@@ -105,7 +137,12 @@ def halo_driver(hot):
     h = rig.f("head")
     turntable(h, R, hot, col)
     _g("neck")
-    h.vcyl(PU, 0, 0.29, 0.3, 0.17, "steel", top="steelL", sides=20)
+    h.vcyl(0, 0, 0.29, 0.6, 0.07, "steelD", top="steel", sides=28)                               # raised deck ring
+    for k in range(8):
+        a = (k + 0.5) * math.tau / 8
+        h.box(0.5 * math.cos(a), 0.5 * math.sin(a), 0.36, 0.1, 0.1, 0.012, "dark")
+    h.vcyl(PU, 0, 0.36, 0.3, 0.1, "steel", top="steelL", sides=20)
+    cheeks(h, -0.78, 0.3, 0.64, 0.12, hot, col, z0=0.29)
     g = rig.f("gun")
     _g("breech")
     g.hcyl(-1.08, -0.28, 0, BZ, 0.41, "steelD", sides=24, capstart="steel")
@@ -121,14 +158,14 @@ def halo_driver(hot):
         g.hcyl(-0.6, -0.54, sv * 0.4, BZ - 0.08, 0.165, G(hot, col), sides=14)
     _g("barrel")
     g.hcyl(-0.28, -0.18, 0, BZ, 0.34, "steel", sides=24, cap="steelL")
-    g.hcyl(-0.18, 1.62, 0, BZ, 0.13, "gm", sides=16)
+    g.hcyl(-0.18, 1.62, 0, BZ, 0.11, "gm", sides=16)
     _g("hoops")
-    for u, ro, ri in ((0.06, 0.5, 0.3), (0.45, 0.47, 0.29), (0.83, 0.44, 0.28), (1.19, 0.41, 0.27)):
-        hoop(g, u, BZ, 0.15, ro, ri, hot, col)
+    for u, ro, ri in ((0.1, 0.52, 0.37), (0.5, 0.5, 0.36), (0.9, 0.48, 0.35), (1.28, 0.46, 0.34)):
+        split_hoop(g, u, BZ, ro, ri, hot, col)
     _g("rods")
     for a in (90, 210, 330):
         c, s = math.cos(math.radians(a)), math.sin(math.radians(a))
-        D.seg(g, (-0.3, 0.385 * c, BZ + 0.385 * s), (1.26, 0.335 * c, BZ + 0.335 * s), 0.045, "steelL", 8)
+        D.seg(g, (-0.3, 0.43 * c, BZ + 0.43 * s), (1.36, 0.4 * c, BZ + 0.4 * s), 0.04, "steelL", 8)
     _g("brake")
     brake(g, 1.6, 0, BZ, 0.2, 0.14, hot, col)
     return rig
@@ -207,12 +244,17 @@ def sponson_driver(hot):
 
 def sponson_laser(hot):
     col, R, BZ, PU = "cyan", 0.62, 0.52, 0.0
-    rig = Rig("sponson_laser", (PU, BZ), 1.25)
+    rig = Rig("sponson_laser", (PU, BZ), 1.45)
     coaming(rig.f("fixed"), R)
     h = rig.f("head")
     turntable(h, R, hot, col, ribs=12)
-    _drum(h, 0.34, 0.29, 0.66, hot, col, ribs=8)
+    _drum(h, 0.36, 0.29, 0.66, hot, col, ribs=8)
     h.vcyl(0.12, 0, 0.76, 0.08, 0.08, "steel", top="lens", sides=10)
+    _g("cheek")
+    D.seg(h, (-0.47, -0.24, 0.39), (-0.47, 0.24, 0.39), 0.1, "steelD", 14, cap="steel", capstart="steel")   # counterweight
+    D.seg(h, (-0.47, -0.06, 0.39), (-0.47, 0.06, 0.39), 0.115, "steel", 14, cap="steelL", capstart="steelL")
+    h.vcyl(0.44, 0, 0.29, 0.1, 0.1, "steelD", top="steel", sides=14)                                       # designator
+    h.vcyl(0.44, 0, 0.39, 0.065, 0.05, "steel", top="lens", sides=12)
     g = rig.f("gun")
     for sv in (-1, 1):
         vc = sv * 0.6
@@ -265,12 +307,13 @@ def revolver_driver(hot):
 
 def rotary_laser(hot):
     col, R, BZ, PU = "cyan", 0.64, 0.72, -0.25
-    rig = Rig("rotary_laser", (PU, BZ), 1.25)
+    rig = Rig("rotary_laser", (PU, BZ), 1.4)
     coaming(rig.f("fixed"), R)
     h = rig.f("head")
     turntable(h, R, hot, col, ribs=12)
     _g("neck")
     h.vcyl(PU, 0, 0.29, 0.26, 0.14, "steel", top="steelL", sides=16)
+    cheeks(h, -0.5, 0.26, 0.42, 0.11, hot, col)
     g = rig.f("gun")
     _g("motor")
     g.hcyl(-0.78, -0.12, 0, BZ, 0.27, "steelD", sides=20, capstart="steel")
@@ -293,3 +336,7 @@ def rotary_laser(hot):
 TURRETS = {("H", "driver"): halo_driver, ("H", "laser"): halo_laser, ("S", "driver"): sponson_driver,
            ("S", "laser"): sponson_laser, ("R", "driver"): revolver_driver, ("R", "laser"): rotary_laser}
 NAMES = {"H": "HALO", "S": "SPONSON", "R": "REVOLVER"}
+# the user's picks (round 3): burst laser = S laser, mass driver = H driver, point defence = R rotary laser
+PICKS = {"laser": sponson_laser, "driver": halo_driver, "pd": rotary_laser}
+for _k, _fn in PICKS.items():
+    TURRETS[("P", _k)] = _fn

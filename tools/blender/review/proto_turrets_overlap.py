@@ -9,7 +9,7 @@ from sprites import cmbkit, overlap, turret_concepts as TC, turret_bays as TB  #
 ALLOW = [("table", "neck"), ("table", "drum"), ("neck", "breech"), ("neck", "cylinder"), ("neck", "motor"),
          ("breech", "barrel"), ("breech", "rods"), ("hoops", "rods"), ("barrel", "hoops"), ("barrel", "rods"), ("barrel", "brake"), ("barrel", "cylinder"),
          ("drum", "trunnion"), ("trunnion", "carriage"), ("carriage", "barrel"), ("carriage", "brake"),
-         ("motor", "cluster"), ("bus", "caps"), ("bus", "trunk"), ("arm", "feeder"), ("arm", "trunk"), ("hoopfoot", "feeder")]
+         ("motor", "cluster"), ("bus", "caps"), ("bus", "trunk"), ("arm", "feeder"), ("arm", "trunk"), ("hoopfoot", "feeder"), ("cheek", "table"), ("cheek", "neck")]
 
 
 def check(name, build):
@@ -21,7 +21,7 @@ def check(name, build):
     overlap.floating(rec.parts)
 
 
-for (d_, kind), fn in TC.TURRETS.items():
-    check(f"turret {d_} {kind}", lambda fn=fn: fn(True))
-for d_ in "HSR":
-    check(f"bay {d_}", lambda d_=d_: TB.bay(d_))
+for kind, fn in TC.PICKS.items():
+    check(f"turret {kind}", lambda fn=fn: fn(True))
+for kind in ("driver", "laser", "pd"):
+    check(f"bay {kind}", TB.BAYS[kind])

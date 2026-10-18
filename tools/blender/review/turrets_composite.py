@@ -117,11 +117,13 @@ def roof_scene(d_, kind, dd=0, hot=1):
     return trim(sc.image())
 
 
-def bay_scene(d_, ghost=True):
-    """Mass driver bay (3x3, tiles 0..2) in a room -1..3: full back walls (at roof height), low front walls, crew."""
-    sc = Scene(520, 470)
-    T = lambda x, y: (260 + (x - y) * 32, 300 + (x + y) * 16)  # noqa: E731
-    lo, hi = -1, 3
+def bay_scene(bay_tag, ghost_tag, n=3):
+    """n x n bay (tiles 0..n-1) in a room -1..n: full-height back walls (roof height), low front walls, two crew, and
+    the turret drawn as the own-ship 30% ghost at roof height."""
+    sc = Scene(520, 500)
+    T = lambda x, y: (260 + (x - y) * 32, 330 + (x + y) * 16)  # noqa: E731
+    lo, hi = -1, n
+    c = (n - 1) / 2
     for x in range(lo + 1, hi):
         for y in range(lo + 1, hi):
             sc.asset("tile.floor.a", *T(x, y), dim=0.6)
@@ -131,29 +133,31 @@ def bay_scene(d_, ghost=True):
             if x not in (lo, hi) and y not in (lo, hi):
                 continue
             m = ring_mask(x, y, lo, hi)
-            back = y == lo or x == lo
-            if back:
+            if y == lo or x == lo:
                 draw = lambda m=m, x=x, y=y: sc.sprite(f"wallf_{m}", *T(x, y))
             else:
                 draw = lambda m=m, x=x, y=y: sc.asset(f"tile.wall.m{m}", *T(x, y))
             items.append((x - .5, x + .5, y - .5, y + .5, draw))
-    items.append((-0.5, 2.5, -0.5, 2.5, lambda: sc.sprite(f"bay_{d_}", *T(1, 1))))
-    for x, y, dd in ((2.75, -0.35, 2), (-0.25, 2.8, 0)):
+    items.append((-0.5, n - 0.5, -0.5, n - 0.5, lambda: sc.sprite(bay_tag, *T(c, c))))
+    for x, y, dd in ((n - 0.25, -0.35, 2), (-0.3, n - 0.2, 0)):
         items.append((x - .2, x + .2, y - .2, y + .2, lambda x=x, y=y, dd=dd: crew(sc, *T(x, y), d=dd)))
     for it in depth_sort(items):
         it[4]()
     if ghost:
-        sc.sprite(f"t_{d_}_driver_1_d0", *T(1, 1), ghost=True)
+        sc.sprite(ghost_tag, *T(c, c), ghost=True)
     return trim(sc.image())
+
+
+ghost = True
 
 
 def strip(tags, n=3, labels=None):
     """Sprites side by side, each on its own n x n roof patch."""
     ims = []
     for i, tag in enumerate(tags):
-        sc = Scene(360, 340)
-        sc.sprite(f"roof_{n}", 180, 260)
-        sc.sprite(tag, 180, 260)
+        sc = Scene(440, 400)
+        sc.sprite(f"roof_{n}", 220, 320)
+        sc.sprite(tag, 220, 320)
         im = trim(sc.image(), pad=4)
         ims.append(label(im, labels[i]) if labels else im)
     h = max(i.height for i in ims)
@@ -177,42 +181,53 @@ def label(img, text, sub=None):
     return out
 
 
+PICK = [("laser", "BURST LASER  (S sponson)", 4, 2), ("driver", "MASS DRIVER  (H halo)", 5, 3),
+        ("pd", "POINT DEFENCE  (R rotary)", 4, 2)]
+
+
+def turret_cell(kind, n, dd):
+    sc = Scene(440, 400)
+    sc.sprite(f"roof_{n}", 220, 320)
+    sc.sprite(f"t_P_{kind}_1_d{dd}", 220, 320)
+    return trim(sc.image())
+
+
+def row(ims, gap=10):
+    h = max(i.height for i in ims)
+    out = Image.new("RGB", (sum(i.width for i in ims) + gap * (len(ims) - 1), h), tuple(int(c) for c in BG))
+    x = 0
+    for im in ims:
+        out.paste(im, (x, h - im.height))
+        x += im.width + gap
+    return out
+
+
 def main():
     OUTD.mkdir(parents=True, exist_ok=True)
-    cols = []
-    for d_ in DIRS:
-        cells = [label(roof_scene(d_, "laser"), "burst laser turret, charged, aim d0"),
-                 label(roof_scene(d_, "driver"), "mass driver turret, charged, aim d0")]
-        if (D / f"bay_{d_}.npz").exists():
-            cells.append(label(bay_scene(d_), "mass driver bay + crew, turret ghost 30%"))
-        for i, c in enumerate(cells):
-            zoom(c).save(OUTD / f"{d_}_{i}_3x.png")
-        cols.append((d_, cells))
-    cw = max(c.width for _, cs in cols for c in cs) + 16
-    rows = max(len(cs) for _, cs in cols)
-    rh = [max(cs[r].height for _, cs in cols if r < len(cs)) for r in range(rows)]
-    sheet = Image.new("RGB", (cw * len(cols), 46 + sum(rh) + 8 * rows), tuple(int(c) for c in BG))
-    dr = ImageDraw.Draw(sheet)
-    for ci, (d_, cs) in enumerate(cols):
-        dr.text((ci * cw + 8, 6), TITLE[d_][0], fill=(235, 235, 235))
-        dr.text((ci * cw + 8, 22), TITLE[d_][1], fill=(150, 170, 190))
-        y = 46
-        for r, c in enumerate(cs):
-            sheet.paste(c, (ci * cw + (cw - c.width) // 2, y))
-            y += rh[r] + 8
-    sheet.save(OUTD / "concepts_1x.png")
-    zoom(sheet).save(OUTD / "concepts_3x.png")
-    for d_ in DIRS:
-        tags = [f"t_{d_}_driver_0_d{k}" for k in range(8)]
-        if all((D / f"{t}.npz").exists() for t in tags):
-            im = label(strip(tags, labels=[f"d{k}" for k in range(8)]), f"{TITLE[d_][0]}  mass driver, idle, 8 aims")
-            im.save(OUTD / f"{d_}_dirs_1x.png")
-            zoom(im).save(OUTD / f"{d_}_dirs_3x.png")
-        tags = [f"dep_{d_}_stowed"] + [f"dep_{d_}_f{k}" for k in range(5)]
-        if all((D / f"{t}.npz").exists() for t in tags):
-            im = label(strip(tags, 3, ["stowed"] + [f"deploy f{k}" for k in range(5)]), f"{TITLE[d_][0]}  mass driver: stowed hatch and deploy frames (d0)")
-            im.save(OUTD / f"{d_}_deploy_1x.png")
-            zoom(im).save(OUTD / f"{d_}_deploy_3x.png")
-
+    rows = []
+    for kind, title, n, bn in PICK:
+        cells = [label(turret_cell(kind, n, dd), f"charged, aim d{dd}") for dd in (0, 1, 2)]
+        if kind == "driver" and (D / "t_P_driver_1_d3.npz").exists():
+            cells.append(label(turret_cell(kind, n, 3), "d3 (side-on check)"))
+        cells.append(label(bay_scene(f"bay_{kind}", f"t_P_{kind}_1_d0", bn), f"{bn}x{bn} bay, full-height mount column, ghost 30%"))
+        r = label(row(cells), title)
+        r.save(OUTD / f"pick_{kind}_1x.png")
+        zoom(r).save(OUTD / f"pick_{kind}_3x.png")
+        rows.append(r)
+    tags = ["dep_P_stowed"] + [f"dep_P_f{k}" for k in range(5)] + ["t_P_driver_1_d0"]
+    if all((D / f"{t}.npz").exists() for t in tags):
+        r = label(strip(tags, 5, ["stowed"] + [f"f{k}" for k in range(5)] + ["deployed"]),
+                  "MASS DRIVER  stowed hatch -> deploy f0..f4 -> deployed (aim d0)")
+        r.save(OUTD / "pick_deploy_1x.png")
+        zoom(r).save(OUTD / "pick_deploy_3x.png")
+        rows.append(r)
+    w = max(r.width for r in rows)
+    sheet = Image.new("RGB", (w + 16, sum(r.height for r in rows) + 14 * len(rows) + 8), tuple(int(c) for c in BG))
+    y = 8
+    for r in rows:
+        sheet.paste(r, (8, y))
+        y += r.height + 14
+    sheet.save(OUTD / "picks_1x.png")
+    zoom(sheet).save(OUTD / "picks_3x.png")
 
 main()
