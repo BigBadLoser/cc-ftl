@@ -133,6 +133,12 @@ bays with `WeaponC.aim` 0..7 (`turretSystem`, `turretPosition()`), new footprint
 raider 24x16, save v5. Balance tuned with fixed-seed scenario tests (manned player wins, no deaths
 in 4 min unmanned). User approved: repair rate 12 → 3/s, starter ion cannon → second burst laser.
 
+**Integration in progress: branch `m4-integration`** = m4-ui + crew-sit + walls-tall + roof-art +
+opus-weapons + Sol's `art/low-ceiling-modules` commits (d391f5a, 9b89fbf cherry-picked). Checks pass
+(161 tests). An Opus agent is building production sprites, wiring the renderer (sit layering, roof
+module rule and livery shader, real ids, ROOF_H = 2.05) and taking in-game screenshots. Walls are
+still pending approval (walls-tall pass 8); re-merge walls-tall when it changes. Not on main.
+
 ## Decisions log (beyond DESIGN.md)
 
 - **Workflow:**
