@@ -65,11 +65,11 @@ export const navy = {
   hullFamilies: [
     {
       id: 'corvette', weight: { base: 5, perDepth: -0.5, max: 5 }, bonus: { weapons: -1, crew: -3, crates: -3, shields: -1, engines: -1 },
-      depth: { battery: [3, 4], core: [3, 3], habitat: [3, 3], cargo: [3, 3] }, batteryCols: [1, 2], sponsonChance: 0.25, sectionRooms: 4, merge: true, grammars: [{ value: 'linear', weight: 2 }, { value: 'spineMounts', weight: 3 }, { value: 'deckPair', weight: 0.5 }], aspect: [3, 4], propulsion: ['bank', 'cluster', 'sideDrives'],
+      depth: { battery: [3, 4], core: [3, 3], habitat: [3, 3], cargo: [3, 3] }, batteryCols: [1, 2], sponsonChance: 0.25, sectionRooms: 4, merge: true, grammars: [{ value: 'linear', weight: 2 }, { value: 'componentFrigate', weight: 3 }, { value: 'deckPair', weight: 0.5 }], aspect: [3, 4], propulsion: ['bank', 'cluster', 'sideDrives'],
     },
     {
       id: 'frigate', weight: { base: 3, perDepth: 0, max: 3 },
-      depth: { battery: [3, 5], core: [3, 4], habitat: [3, 3], cargo: [3, 4] }, batteryCols: [1, 2], sponsonChance: 0.5, sectionRooms: 3, grammars: [{ value: 'componentFrigate', weight: 5 }, { value: 'spineDecks', weight: 1 }, { value: 'spineWings', weight: 1 }], aspect: [3, 4], propulsion: ['wingPods', 'nacelles', 'cluster'],
+      depth: { battery: [3, 5], core: [3, 4], habitat: [3, 3], cargo: [3, 4] }, batteryCols: [1, 2], sponsonChance: 0.5, sectionRooms: 3, grammars: [{ value: 'componentFrigate', weight: 5 }, { value: 'spineWings', weight: 1 }], aspect: [3, 4], propulsion: ['wingPods', 'nacelles', 'cluster'],
     },
     {
       id: 'cruiser', weight: { base: -1, perDepth: 0.5, max: 4 }, bonus: { weapons: 2, shields: 1, crew: 2 },

@@ -5,6 +5,7 @@ import { Builder } from './builder';
 import { bandBlock, noseBlock } from './navyBlocks';
 import { pickNose } from './topoNavy';
 import type { FactionDef } from './types';
+import { depthAt, type Profile } from './profile';
 
 /**
  * Proof of concept: parametric structural components between the functional assemblies and the arranger.
@@ -15,21 +16,6 @@ import type { FactionDef } from './types';
  *                one-mount block grafted on a socket)
  * Battleships and frigates are rebuilt from these; everything else is unchanged.
  */
-
-/** A hull profile: interior depth of the band rooms along the spine (t = 0 bow .. 1 stern). */
-export interface Profile {
-  lo: number;
-  hi: number;
-  /** Where the hull is broadest, and over how long a stretch (fractions of the spine). */
-  peak: number;
-  plateau: number;
-}
-
-export function depthAt(p: Profile, t: number): number {
-  const off = Math.max(0, Math.abs(t - p.peak) - p.plateau / 2);
-  const reach = Math.max(1e-3, Math.max(p.peak, 1 - p.peak) - p.plateau / 2);
-  return Math.round(p.hi - (p.hi - p.lo) * Math.min(1, off / reach));
-}
 
 /** Spine sections fore to aft with their profile depth; flush guns go into the sections the cluster names. */
 export function hullSpine(c: Ctx, from: number, rooms: RoomSpec[], per: number, p: Profile, flush: RoomSpec[], cluster: Cluster): { ids: number[]; depth: number[] } | null {
@@ -71,21 +57,29 @@ const nose = (c: Ctx, f: FactionDef): number | null => {
 const sockets = (ids: number[], depth: number[], narrowFirst: boolean): Host[] =>
   ids.map((id, i) => ({ id, d: depth[i] as number, i })).sort((a, b) => (narrowFirst ? a.d - b.d : b.d - a.d) || a.i - b.i).map((x) => ({ n: x.id, s: x.id }));
 
-/** Frigate from components: a tapered spine (broadest forward or amidships), light guns flush, heavy ones bulged. */
-export function componentFrigate(c: Ctx, f: FactionDef): boolean {
+/**
+ * Corvette / frigate from components: a profiled spine (broadest forward or amidships), light guns flush in it with
+ * the given share, the rest bulged on sockets.
+ */
+function profiledHull(c: Ctx, f: FactionDef, flushShare: number): boolean {
   const root = nose(c, f);
   if (root === null) return no(c, 'nose');
   const j = jobs(c.plan);
   const p: Profile = { lo: 3, hi: c.rng.int(3, 4), peak: c.rng.next() * 0.5 + 0.2, plateau: c.rng.next() * 0.5 };
   const cluster = c.rng.pick(['spread', 'fore', 'mid', 'aft'] as const);
   const light = j.guns.filter((g) => g.h <= 3 && g.mods.length === 1);
-  const flush = light.filter(() => c.rng.chance(0.5));
+  const flush = light.filter(() => c.rng.next() < flushShare);
   const bulged = j.guns.filter((g) => !flush.includes(g));
   const sp = hullSpine(c, root, [...j.core, ...j.stores, ...j.crew], c.rng.chance(0.6) ? 1 : 2, p, flush, cluster);
   if (!sp) return false;
   if (!propulsion(c, sp.ids[sp.ids.length - 1] as number, c.rng.pick(c.fam.propulsion.filter((x) => x !== 'wingPods')))) return false;
   return mountGuns(c, sockets(sp.ids, sp.depth, c.rng.chance(0.5)), bulged, { cluster, keepOrder: true }).length === 0 || no(c, 'mounts');
 }
+
+/** Sponson hull: half the light guns flush, the rest (and every heavy one) bulged. */
+export const componentFrigate = (c: Ctx, f: FactionDef): boolean => profiledHull(c, f, 0.5);
+/** Flush hull: every light gun inside the hull line (only heavy mounts bulge). */
+export const linearHull = (c: Ctx, f: FactionDef): boolean => profiledHull(c, f, 1);
 
 /**
  * Battleship from components: a long spine with a raised citadel (a plateau of deep sections amidships tapering

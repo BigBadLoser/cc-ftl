@@ -6,6 +6,7 @@ import { dockSpec, engineSpec, reactorSpec, cargoSpec, type RoomSpec } from './p
 import type { Rng } from '../rng';
 import { hall, nose, stern, type pickNose } from './topoNavy';
 import { runLen } from './topoParts';
+import { depthAt, type Profile } from './profile';
 
 /**
  * The navy's standard section vocabulary as blocks. Every section is mirrored about its own axis (rows -1 / 0) and
@@ -183,7 +184,7 @@ export function noseBlock(rng: Rng, front: ReturnType<typeof pickNose>): Block |
  * An outboard deck: a 2-wide hall running fore and aft with one band of rooms on its outer (north) side, attached
  * lengthways along a host through its inner wall ('xs'); mirror it for the south side. Decks give parallel layers.
  */
-export function deckBlock(rng: Rng, kind: string, roomsIn: RoomSpec[], depth: number, minLen = 0): Block | null {
+export function deckBlock(rng: Rng, kind: string, roomsIn: RoomSpec[], depth: number, minLen = 0, profile?: Profile): Block | null {
   const b = localBuilder(rng);
   const d = Math.max(depth, ...roomsIn.map((r) => r.h));
   // A deck stretched to `minLen` (the length it runs along its host) widens its rooms, not its corridor.
@@ -192,7 +193,14 @@ export function deckBlock(rng: Rng, kind: string, roomsIn: RoomSpec[], depth: nu
   const L = Math.max(5, runLen(rooms), minLen);
   const h = b.place({ x: 0, y: 0, w: L, h: 4 }, 'hall');
   if (!h) return null;
-  const parts = b.strip(h, 'n', rooms.map((r) => ({ ...r, h: d })), 0).parts;
+  // A profiled deck steps its outer edge along its length (room by room); otherwise one depth throughout.
+  let x = 1;
+  const deep = rooms.map((r) => {
+    const t = (x + r.w / 2) / L;
+    x += r.w + 1;
+    return { ...r, h: profile ? Math.max(r.h, depthAt(profile, t)) : d };
+  });
+  const parts = b.strip(h, 'n', deep, 0).parts;
   const ports: LocalPort[] = [
     { id: 'xs', side: 's', x: 1, y: 3, len: L - 2, access: 'human' },
     { id: 'w', side: 'w', x: 0, y: 1, len: 2, access: 'human' }, { id: 'e', side: 'e', x: L - 1, y: 1, len: 2, access: 'human' },

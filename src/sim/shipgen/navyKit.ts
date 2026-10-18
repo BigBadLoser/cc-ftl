@@ -1,10 +1,11 @@
 import { mirrorBlock, type Arranger, type Block } from './arranger';
 import { hallBlock } from './blocks';
 import { bandBlock, bankBlock, clusterBlock, deckBlock, enclosedBlock, podBlock, powerBlock, type SectionOpts } from './navyBlocks';
-import { dockSpec, engineSpec, shuffle, type RoomSpec, type ShipPlan } from './plan';
+import { cargoSpec, dockSpec, engineSpec, shuffle, type RoomSpec, type ShipPlan } from './plan';
 import type { Rng } from '../rng';
 import { blockFrom, localBuilder } from './blocks';
 import { pairUp } from './topoNavy';
+import type { Profile } from './profile';
 import { runLen } from './topoParts';
 import type { HullFamilyDef, SectionKind } from './types';
 
@@ -105,14 +106,16 @@ export function order(rng: Rng, mid: SectionPlan[]): SectionPlan[] {
  * along a host's north / south face. Tries the host's hatch, passage and room ports in turn.
  */
 export function deckPair(
-  c: Ctx, host: number, mhost: number, kind: string, specs: RoomSpec[], align: 'start' | 'mid' | 'end' = 'mid', o: { span?: number; xMin?: number } = {},
+  c: Ctx, host: number, mhost: number, kind: string, specs: RoomSpec[], align: 'start' | 'mid' | 'end' = 'mid', o: { span?: number; xMin?: number; profile?: Profile } = {},
 ): [number, number] | null {
   if (specs.length === 0) return null;
-  const [p, q] = pairUp(specs);
+  const [p0, q0] = pairUp(specs);
   const depth = c.depth.habitat ?? 3;
+  // A profiled pair shares one outline: rooms matched in width, a store filling the shorter side.
+  const [p, q] = o.profile ? matched(p0, q0) : [p0, q0];
   const len = Math.max(o.span ?? 0, runLen(p), runLen(q));
-  const n = deckBlock(c.rng, kind, p, depth, len);
-  const s = deckBlock(c.rng, kind, q, depth, len);
+  const n = deckBlock(c.rng, kind, p, depth, len, o.profile);
+  const s = deckBlock(c.rng, kind, q, depth, len, o.profile);
   if (!n || !s) return null;
   const ports = c.A.free(host, 'n').map((x) => x.id).sort((a, b) => rankPort(a) - rankPort(b));
   for (const pp of ports) {
@@ -134,6 +137,21 @@ export function evenDepth(c: Ctx, kinds: SectionKind[], deeper = 0): void {
   // `deeper`: at least this much deeper than the decks (the hull steps down to them).
   const d = Math.max((c.depth.habitat ?? 3) + deeper, ...kinds.map((k) => c.depth[k] ?? 3));
   for (const k of kinds) c.depth[k] = d;
+}
+
+function matched(p: RoomSpec[], q: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
+  const k = Math.max(p.length, q.length);
+  const a: RoomSpec[] = [];
+  const b: RoomSpec[] = [];
+  for (let i = 0; i < k; i++) {
+    const x = p[i] ?? cargoSpec(1);
+    const y = q[i] ?? cargoSpec(1);
+    const w = Math.max(x.w, y.w);
+    const h = Math.max(x.h, y.h);
+    a.push({ ...x, w, h });
+    b.push({ ...y, w, h });
+  }
+  return [a, b];
 }
 
 const rankPort = (id: string): number => (id.startsWith('h') ? 0 : id.startsWith('p') ? 1 : 2);
