@@ -23,8 +23,9 @@ def section(width,center,height):
 
 
 def loft(f,stations,color,upper=None,front=None):
-    """Stations are u, half-width, centre-height, half-height."""
-    rings=[[f.pt(u,v,z) for v,z in section(w,c,h)] for u,w,c,h in stations]
+    """Stations are u, half-width, centre-height, half-height, optional v offset."""
+    rings=[[f.pt(row[0],v+(row[4] if len(row)>4 else 0),z)
+            for v,z in section(*row[1:4])] for row in stations]
     f.poly(rings[0],color,flip=True)
     f.poly(rings[-1][::-1],front or color,flip=True)
     for a,b in zip(rings,rings[1:]):
@@ -36,6 +37,17 @@ def loft(f,stations,color,upper=None,front=None):
 def plate(f,points,z,thickness,color):
     a=[f.pt(u,v,z) for u,v in points]
     b=[f.pt(u,v,z+thickness) for u,v in points]
+    f.poly(a[::-1],color,flip=True)
+    f.poly(b,color,flip=True)
+    for i in range(len(a)):
+        j=(i+1)%len(a)
+        f.poly([a[i],a[j],b[j],b[i]],color,flip=True)
+
+
+def side_prism(f,profile,v0,v1,color):
+    """Extrude a closed u/z profile across the side of a pressure hull."""
+    a=[f.pt(u,v0,z) for u,z in profile]
+    b=[f.pt(u,v1,z) for u,z in profile]
     f.poly(a[::-1],color,flip=True)
     f.poly(b,color,flip=True)
     for i in range(len(a)):

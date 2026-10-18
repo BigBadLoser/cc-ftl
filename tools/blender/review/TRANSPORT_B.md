@@ -1,63 +1,75 @@
-# Transport B — sweepback utility shuttle, first preview
+# Transport B2 — sweepback utility shuttle review
 
-A fresh craft design, kept as a separate variant alongside the earlier shuttle.
+The separate concept B has a lower integrated cockpit, fuller passenger/cargo
+cabin, broad engine shoulder fairings and rear storage cradles for its wings.
+The movable foils taper from a thicker root and sweep rearward 75° for storage.
+Recessed bearings attach directly to the fairings; cradle floors and stops are
+closed solids joined to the engine housings. The pressure door is ahead of the
+folded wings, with a 1.60-unit clear-height leaf, a docking land and hazard sill.
 The original v4 geometry, `shuttle()` entry point and review scripts are intact.
 
-The new builder is `transport_shuttle(heading, state, dz=0, wing_fold=None)` in
-`tools/blender/sprites/shuttle_craft.py`. Closed-solid helpers live in
-`tools/blender/lib/transport_forms.py`; they contain no v4 geometry. The new craft
-has a blunt wedge body, raised cockpit bridge, a port-side pressure hatch,
-compact aft engines and large wings on visible swivel bearings. The wings
-sweep rearward 75° in the horizontal plane for storage and docking, keeping the
-parked height constant. No interior is modeled or visible.
+The current builder is `transport_shuttle(heading, state, dz=0, wing_fold=None)`
+in `tools/blender/sprites/shuttle_craft.py`. Closed-solid helpers are in
+`tools/blender/lib/transport_forms.py`. No interior is modeled or visible.
 
 ## Measured envelope
 
 | Quantity | World units / tiles |
 | --- | --- |
-| Parked width, including folded wings | 3.3919 |
+| Parked width, including folded wings and cradles | 3.3950 |
 | Parked length | 4.4000 |
-| Height from landing feet | 2.7000 |
+| Height from landing feet | 2.4000 |
 | Flight wing span | 5.6000 |
-| Placeholder pit depth below deck | 1.7000 |
-| Highest point above deck | 1.0000 |
-| Clearance to roof top at 2.05 | 1.0500 |
+| Placeholder pit depth below deck | 1.5000 |
+| Highest point above deck | 0.9000 |
+| Clearance to roof top at 2.05 | 1.1500 |
+| Boarding opening height | 1.6000 |
+| Folded moving-wing clearance ahead of boarding leaf | 0.1436 |
 
-The pit floor is at −1.70 and the vehicle is translated down by that amount.
-The pad and room are review placeholders; the bay session owns the final pit.
-The parked craft has legs down and dark nozzles. Flight has legs up and wings
-deployed. Only nozzle interiors emit light. The builder also accepts `docked`
-for folded wings, retracted legs and dark nozzles; docking pose art is deferred
-until preview approval.
+The canopy half-height is reduced from .54 to .40, about 26%. Its windscreen
+slopes into the forebody. Overall height falls from 2.70 to 2.40. The placeholder
+pit is consequently 1.50 deep, with most of the craft below deck. The bay
+session owns its final depth, access and structure; the review room is not bay
+module art.
 
-Primary and secondary paint are flat, unlit `mkP`/`mkS` panels, using exact
-`#ff0000` and `#00ff00`. The grey hull is lit normally. Pixel checks verify both
-keys survive export exactly, all native colour alpha is binary, and 3× boards
-are exact nearest-neighbour copies.
+Parked has legs down and dark nozzles. Flight has legs fully concealed and
+wings deployed. Only nozzle interiors emit light. `docked` gives folded wings,
+retracted legs and dark nozzles. Docking views and remaining rotations await
+art approval.
 
-## Preview only
+## Livery
 
-Outputs in `artifacts/shuttle-sweepback/`:
+Primary paint is on the moving wings; secondary paint follows a coherent
+beltline over the engine fairings, forebody and boarding leaf. Both are unlit
+and preserve exact `#ff0000` / `#00ff00` in native sprite files. A muted blue
+`#527593` / ochre `#c7a15e` faction palette is applied only to review boards
+and the beauty scene. The raw-key board provides the export reference. Paint
+does not emit glow.
 
-- `transport-B-parked-1x.png`, `-3x.png`: r0 parked in a placeholder 4×5 pit,
-  surrounded by a room, with a shipped crew sprite at deck level for scale.
-- `transport-B-flight-1x.png`, `-3x.png`: d0, d2, d5 flight views.
-- `transport-B-beauty.png`, `transport-B-preview.blend`: one low-sample beauty
-  and its editable scene.
-- `folded-r0.png`: unobstructed folded silhouette, to inspect the wing mechanism.
-- `design.json`, `pixel-checks.json`: measured geometry and export checks.
+## Preview files
+
+Current files are under `artifacts/shuttle-sweepback-r2/`. The first concept B
+images remain under `artifacts/shuttle-sweepback/` for the comparison board.
+
+- `transport-B-silhouettes-1x.png`, `-3x.png`: matching-heading folded/deployed
+  views, crew scale and flat silhouette comparison.
+- `transport-B-before-after-1x.png`, `-3x.png`: previous and revised concepts
+  at the same pixel metric, direction and review livery.
+- `transport-B-parked-1x.png`, `-3x.png`: r0 in the placeholder 4×5 pit and room.
+- `transport-B-flight-1x.png`, `-3x.png`: d0, d2 and d5 flight views.
+- `transport-B-export-keys-1x.png`, `-3x.png`: raw primary/secondary key colours.
+- `transport-B-beauty.png`, `transport-B-preview.blend`: low-sample beauty
+  and editable review scene with faction-coloured paint.
+- `design.json`, `pixel-checks.json`: dimensions, folded-wing/hatch clearance,
+  nozzle-only emission, exact export keys, binary alpha and exact 3× checks.
 
 Render these review views only, one Blender process at a time:
 
 ```sh
-blender -b -t 2 --factory-startup --python-exit-code 1 \
-  --python tools/blender/review/transport_preview.py -- \
-  --out "$PWD/artifacts/shuttle-sweepback"
-python3 tools/blender/review/transport_preview.py \
-  --out "$PWD/artifacts/shuttle-sweepback" --compose
+blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r2"
+python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r2" --compose
 ```
 
-Four samples for sprite previews, eight for the beauty, using Blender 4.3.2.
-No full sprite build, atlas rebuild, `src/` wiring or gameplay changes are part
-of this preview. Await user sign-off and suggested changes before producing
-the remaining rotations, docking views or final-quality sprites.
+Four samples for sprite previews, eight for the beauty, Blender 4.3.2. No full
+sprite build, production atlas rebuild, `src/` wiring or gameplay changes are
+part of this review. Await user sign-off before final-quality renders.
