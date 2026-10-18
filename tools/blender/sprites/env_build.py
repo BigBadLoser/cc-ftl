@@ -5,8 +5,7 @@ import math
 import bpy
 import numpy as np
 from mathutils import Vector
-from . import core, post, props, envtiles, logistics
-from . import items as itemart
+from . import core, post
 
 SS = core.SS
 
@@ -38,7 +37,7 @@ def render_ghost(objs, W, H):
     cov = post.blocks(a2 > 0.5, SS)
     cnt = cov.sum(-1)
     lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / np.maximum(cnt, 1)
-    ga = np.where(cnt >= 6, np.clip(lum / 255.0 * 0.65, 0, 0.9), 0.0)
+    ga = np.where(cnt >= 3, np.clip(lum / 255.0 * 0.65, 0, 0.9), 0.0)    # low threshold: thin lines stay unbroken
     tint = np.array([200.0, 214.0, 232.0])
     out = np.where(op[..., None], c.astype(float), tint)
     mixed = np.where(op[..., None], c * (1 - ga[..., None]) + tint * ga[..., None], tint)
@@ -73,42 +72,33 @@ def render_sprite(sid, kind, objs):
     return c, op, g, (W + 2) // 2, (H + 2) // 2, None
 
 
-def build(out, only=None, log=print):
+def crop_item(sid, fp, c, op, g, ox, oy, al=None):
+    """Cropped manifest item {id, fp, rgba, g, ax, ay} of a rendered sprite."""
+    vis = op | (g[..., 3] > 0)
+    if not vis.any():
+        return None                                     # nothing visible (e.g. a corner ghost with no belly)
+    x0, y0, x1, y1 = post.crop_box(vis)
+    rgba = post.to_rgba(c, op)
+    if al is not None:
+        rgba[..., 3] = al
+    return {"id": sid, "fp": fp, "rgba": rgba[y0:y1, x0:x1], "g": g[y0:y1, x0:x1], "ax": ox - x0, "ay": oy - y0}
+
+
+def render_jobs(jobs, extra=True, only=None, log=print):
+    """Render sprite jobs: (id, footprint, kind, builder) tuples, or callables returning ready items (multi-part
+    sprites such as a console and its front overlay). `extra` picks the quantisation palette (see post.select)."""
     items = []
-    for sid, fp, kind, fn in envtiles.SPRITES + props.SPRITES + logistics.SPRITES + itemart.SPRITES:
+    for job in jobs:
+        if callable(job):
+            items += job()
+            continue
+        sid, fp, kind, fn = job
         if only and not any(o in sid for o in only):
             continue
         core.clear_scene_meshes()
-        c, op, g, ox, oy, al = render_sprite(sid, kind, fn())
-        x0, y0, x1, y1 = post.crop_box(op | (g[..., 3] > 0))
-        rgba = post.to_rgba(c, op)
-        if al is not None:
-            rgba[..., 3] = al
-        items.append({"id": sid, "fp": fp, "rgba": rgba[y0:y1, x0:x1], "g": g[y0:y1, x0:x1],
-                      "ax": ox - x0, "ay": oy - y0})
-    AW, x, y, rowh = 1024, 1, 1, 0
-    for it in items:
-        h, w = it["g"].shape[:2]
-        if x + w + 1 > AW:
-            x, y, rowh = 1, y + rowh + 1, 0
-        it["x"], it["y"] = x, y
-        x += w + 1
-        rowh = max(rowh, h)
-    AH = y + rowh + 1
-    atlas = np.zeros((AH, AW, 4), np.uint8)
-    glow = np.zeros_like(atlas)
-    assets = {}
-    for it in items:
-        h, w = it["g"].shape[:2]
-        atlas[it["y"]:it["y"] + h, it["x"]:it["x"] + w] = it["rgba"]
-        glow[it["y"]:it["y"] + h, it["x"]:it["x"] + w] = it["g"]
-        a = {"kind": "static", "sheet": "env", "frame": {"x": it["x"], "y": it["y"], "w": w, "h": h},
-             "anchor": {"x": int(it["ax"]), "y": int(it["ay"])}, "footprint": list(it["fp"])}
-        if it["g"][..., 3].any():
-            a["glow"] = True
-        assets[it["id"]] = a
-    (out / "sprites").mkdir(parents=True, exist_ok=True)
-    post.write_png(out / "sprites/env.png", atlas)
-    post.write_png(out / "sprites/env.glow.png", glow)
-    log(f"ENV atlas {AW}x{AH}, {len(items)} sprites")
-    return {"env": {"image": "sprites/env.png", "glow": "sprites/env.glow.png"}}, assets
+        post.select(extra(sid) if callable(extra) else extra)
+        it = crop_item(sid, fp, *render_sprite(sid, kind, fn()))
+        if it:
+            items.append(it)
+    log(f"RENDERED {len(items)} sprites")
+    return items

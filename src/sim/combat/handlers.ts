@@ -1,0 +1,76 @@
+import type { Command } from '../commands';
+import { ModuleC } from '../modules/components';
+import type { Sim } from '../sim';
+import { FTL_CHARGE_SEC } from '../tuning';
+import { CombatC, ShipC, WeaponC, type Target } from './components';
+import { shipEntityOf, shipOf, spawnShip } from './ships';
+
+type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy'>;
+type Handler<T extends CombatCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
+
+function reject(sim: Sim, command: string, reason: string): void {
+  sim.events.emit({ type: 'command.rejected', command, reason });
+}
+
+/** True if the module entity lies on the grid. */
+function moduleOnGrid(sim: Sim, id: number, gridId: number): boolean {
+  return sim.world.get(id, ModuleC)?.gridId === gridId;
+}
+
+export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
+  'debug.spawnEnemy': (sim, cmd) => {
+    const template = sim.content.ships[cmd.template];
+    if (!template) return reject(sim, cmd.type, 'badTemplate');
+    if (!Number.isInteger(cmd.x) || !Number.isInteger(cmd.y)) return reject(sim, cmd.type, 'badValue');
+    const w = Math.max(1, ...template.rows.map((r) => r.length));
+    const h = Math.max(1, template.rows.length);
+    if (cmd.x < 0 || cmd.y < 0 || cmd.x + w > sim.sector.width || cmd.y + h > sim.sector.height) {
+      return reject(sim, cmd.type, 'outOfBounds');
+    }
+    for (const id of sim.world.query(ShipC)) {
+      const s = sim.world.get(id, ShipC);
+      if (s && cmd.x < s.x + s.width && s.x < cmd.x + w && cmd.y < s.y + s.height && s.y < cmd.y + h) {
+        return reject(sim, cmd.type, 'overlap');
+      }
+    }
+    spawnShip(sim, template, { faction: template.faction ?? 'hostile', x: cmd.x, y: cmd.y, rest: 100 });
+  },
+  'combat.setTarget': (sim, cmd) => {
+    const ship = shipEntityOf(sim, cmd.shipGridId);
+    const combat = sim.world.get(ship, CombatC);
+    if (!combat) return reject(sim, cmd.type, 'noShip');
+    let target: Target | null = null;
+    if (cmd.targetGridId !== 0) {
+      if (cmd.targetGridId === cmd.shipGridId || !shipOf(sim, cmd.targetGridId)) return reject(sim, cmd.type, 'badTarget');
+      if (cmd.targetModuleId !== 0 && !moduleOnGrid(sim, cmd.targetModuleId, cmd.targetGridId)) return reject(sim, cmd.type, 'badTarget');
+      target = { gridId: cmd.targetGridId, moduleId: cmd.targetModuleId };
+    }
+    if (cmd.weaponId === null) {
+      combat.target = target;
+      return;
+    }
+    const weapon = sim.world.get(cmd.weaponId, WeaponC);
+    if (!weapon || !moduleOnGrid(sim, cmd.weaponId, cmd.shipGridId)) return reject(sim, cmd.type, 'noWeapon');
+    weapon.target = target;
+  },
+  'combat.setHold': (sim, cmd) => {
+    const combat = sim.world.get(shipEntityOf(sim, cmd.gridId), CombatC);
+    if (!combat) return reject(sim, cmd.type, 'noShip');
+    combat.hold = cmd.hold;
+  },
+  'combat.fireVolley': (sim, cmd) => {
+    const combat = sim.world.get(shipEntityOf(sim, cmd.gridId), CombatC);
+    if (!combat) return reject(sim, cmd.type, 'noShip');
+    combat.volley = true;
+  },
+  'combat.flee': (sim, cmd) => {
+    const entity = shipEntityOf(sim, cmd.gridId);
+    const ship = sim.world.get(entity, ShipC);
+    const combat = sim.world.get(entity, CombatC);
+    if (!ship || !combat) return reject(sim, cmd.type, 'noShip');
+    if (ship.state !== 'active') return reject(sim, cmd.type, 'notActive');
+    if (combat.ftl < FTL_CHARGE_SEC) return reject(sim, cmd.type, 'notCharged');
+    ship.state = 'fled';
+    sim.events.emit({ type: 'ship.fled', gridId: cmd.gridId });
+  },
+};

@@ -3,7 +3,7 @@ import { Grid } from './grid';
 import { storageAdd } from './items/storage';
 import { spawnModule } from './modules/spawn';
 import type { Sim } from './sim';
-import { SHIP_FIELDS, Struct } from './structure';
+import { SHIP_FIELDS, Struct, writeStruct } from './structure';
 import { NORMAL_CO2, NORMAL_O2, NORMAL_TEMP, SPACE_TEMP } from './tuning';
 
 const CHARS: Record<string, number> = { '.': Struct.Space, '#': Struct.Wall, _: Struct.Floor, D: Struct.Door };
@@ -22,7 +22,7 @@ export function gridFromTemplate(id: number, t: ShipTemplate): Grid {
       if (kind === undefined) {
         throw new Error(`Ship "${t.name}": unknown char "${row[x]}" at row ${y}, col ${x}`);
       }
-      if (kind !== Struct.Space) grid.set('struct', x, y, kind);
+      if (kind !== Struct.Space) writeStruct(grid, x, y, kind);
     }
   });
   for (let y = 0; y < height; y++) {

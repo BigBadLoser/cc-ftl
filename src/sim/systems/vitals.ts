@@ -1,8 +1,9 @@
 import { releaseBed, releaseBedClaim } from '../crew/beds';
 import {
-  AssignmentC, CrewC, DeadC, DownedC, DraftedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC,
+  CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC,
   type Crew, type Downed, type Health, type Position,
 } from '../crew/components';
+import { killCrew } from '../crew/death';
 import { releaseAssignment } from '../crew/helpers';
 import type { Grid } from '../grid';
 import type { Sim } from '../sim';
@@ -47,7 +48,9 @@ export function vitalsSystem(sim: Sim): void {
 
     const harm = harmPerSec(grid, pos.x, pos.y);
     if (!downed) {
-      if (harm > 0) health.hp = Math.max(0, health.hp - harm / TICK_HZ);
+      if (health.hp <= 0) {
+        // Already at 0 (combat damage): go down without regenerating first.
+      } else if (harm > 0) health.hp = Math.max(0, health.hp - harm / TICK_HZ);
       else health.hp = Math.min(health.max, health.hp + REGEN_PER_SEC / TICK_HZ);
       if (health.hp <= 0) down(sim, id, pos);
     } else if (downed.stabilized && harm < BED_HEAL_PER_SEC) {
@@ -82,13 +85,5 @@ function getUp(sim: Sim, id: number, downed: Downed): void {
 
 function die(sim: Sim, id: number, downed: Downed): void {
   releaseBed(sim, downed.bed, id);
-  releaseAssignment(sim, id);
-  releaseBedClaim(sim, id);
-  sim.world.remove(id, DownedC);
-  for (const key of [DraftedC, PrioritiesC, NeedsC, AssignmentC]) sim.world.remove(id, key);
-  const path = sim.world.get(id, PathC);
-  if (path) path.steps = [];
-  sim.world.add(id, DeadC, { tick: sim.tick });
-  (sim.world.get(id, CrewC) as Crew).activity = 'dead';
-  sim.events.emit({ type: 'crew.died', crew: id });
+  killCrew(sim, id);
 }

@@ -68,26 +68,50 @@ Cybernetic implants are everywhere. Neon is both mood and information.
 
 ## Combat
 
-FTL's decision-making, with physical consequences.
+FTL's decision-making with physical consequences, in a shared sector.
 
-- **No movement, no range, no firing arcs.** Engines + pilot give **evasion** and charge the FTL drive
-  for escape.
-- Weapons **charge** and fire **volleys**; **shields** are layers that regenerate; **power** is limited.
-  The core puzzle is timing and targeting.
-- You target a **module/room**; shots land on real tiles near the aim point (spread by accuracy).
-- Hits apply **effects to tiles**: pierce hull (breach), ignite, ion, EMP, spawn boarders… The field
-  systems take it from there.
-- Weapons are **heavy and rare** overall; Gatling turrets and point defence are deliberate fast
-  exceptions. Point defence counters missiles and drones.
-- **Endings:** destroy (the wreck persists as a lootable derelict; how you fought decides what
-  survives), disable and board to **capture**, negotiate (bribe, surrender), or flee.
-- **Boarding** uses the same crew sim. Defence: crew, doors, turrets, venting rooms on purpose.
-- **Enemy AI** from the first combat milestone: target priorities, power management, crew response,
-  retreat. Factions have doctrines (pirates board, military snipes weapons).
-- **Feel:** readability first (visible projectiles, enemy charge bars, telegraphed volleys, combat log,
-  optional auto-pause on key events), then punch (hit-stop, light shake, sparks, decals, visible
-  smoke). Fights last roughly 1–3 minutes.
-- Fleet combat is **not** a core feature.
+- **Sectors:** a sector is a playable space holding ships, stations, asteroids and derelicts, each its
+  own grid at a world position. On entering a sector, a **deploy modal** (a simplified sector map)
+  lets you choose where your ship sits relative to the other objects.
+- **No movement, no maneuvering, no firing arcs.** Distance only affects **projectile travel time**,
+  so a far deployment gives more time to react (shields, point defence). There is no accuracy penalty.
+- **Combat overlay:** the camera stays on your ship, and an overlay panel shows the enemy ship live,
+  where you pick targets. On phones it is an expandable sheet.
+- **Consoles, not manned weapons:**
+  - The **weapons console** operator runs all weapons; their skill affects charge and accuracy. With
+    no operator, weapons don't fire.
+  - The **shield console** works unmanned at base strength; an operator speeds up recharge.
+  - The **helm** pilot gives evasion and charges the FTL drive to flee. With no pilot, there is no
+    evasion and no escape.
+  - The **AI core** operates the **point-defence modules** automatically (they do nothing without a
+    powered AI core whose mast is out; several modules stack). Its tier sets how much else it can
+    automate later (drones, standing in for missing operators at reduced efficiency).
+- **Physical systems:**
+  - **Weapons and engines** are modules that must touch the hull.
+  - **Shield generators** can sit anywhere inside the ship.
+  - All of them are targetable, can burn, and need power.
+- **Weapons** charge and fire in volleys (auto-fire at the chosen target, or hold and fire together).
+  - **Burst laser:** strips shield layers, light hull damage.
+  - **Mass driver:** pierces one shield layer and breaches hull.
+  - **Missile:** bypasses shields and uses crafted ammo.
+  - **Ion:** drains a shield layer or disables the module it hits.
+  - **Incendiary:** starts fires.
+- **Shields** come in layers set by generator power, and regenerate.
+- **Roofed view (later):** enemy ships render with a roof (top hull) over their rooms, which hides
+  the interior. Modules that should be visible from outside (weapons, shield generators, engines and
+  similar) show a unique roof tile above them instead of the generic one, so they can still be
+  identified and targeted.
+- **Hits** land on tiles near the aim point (spread by accuracy). Walls lose integrity and breach,
+  modules lose HP, and crew get hurt. M3's systems take it from there: venting, fire, power loss,
+  darkness.
+- **Enemies run the same sim:** their own crew, power, fires and repairs, plus an AI doctrine for
+  targeting, power and retreat.
+- **Endings:**
+  - **Destroy:** the wreck persists as a lootable derelict grid.
+  - **Flee:** charge the FTL drive.
+  - **Capture:** via boarding, in M5.
+  - **Negotiate:** via events, in M6.
+- Fights last roughly 1 to 3 minutes. Fleet combat is not a core feature.
 
 ## Exploration & events
 

@@ -14,7 +14,7 @@ import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
 import { createRenderer, type Renderer } from './render/scene';
 import { content } from './content';
-import { newGame } from './sim';
+import { newGame, ShipC } from './sim';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
@@ -34,10 +34,40 @@ loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e
 const loop = createLoop({
   sim,
   render: (alpha) => renderer?.render(alpha),
-  onEvents: controller.onEvents,
+  onEvents: (events) => {
+    controller.onEvents(events);
+    renderer?.onEvents(events);
+  },
   onFrame: (stats) => bridge.update(stats, renderer?.info()),
 });
 bridge.attachLoop(loop);
+
+/** Frame the player's ship and a hostile one (or only the player's ship) in the camera. */
+function focusFight(gridId: number | null): void {
+  renderer?.frameShips(gridId === null ? [1] : [1, gridId]);
+}
+
+/** Debug: put a raider a fair distance from the player's ship (diagonally, so a fight fits on a phone screen too). */
+function spawnRaider(): void {
+  const mine = shipOfGrid(1);
+  const t = content.ships['ship.raider'];
+  if (!mine || !t) return;
+  const w = Math.max(...t.rows.map((r) => r.length));
+  const h = t.rows.length;
+  const cx = mine.x + mine.width / 2;
+  const cy = mine.y + mine.height / 2;
+  const x = Math.min(sim.sector.width - w, Math.max(0, Math.round(cx + 18 - w / 2)));
+  const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy + 22 - h / 2)));
+  bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.raider', x, y });
+}
+
+function shipOfGrid(gridId: number) {
+  for (const id of sim.world.query(ShipC)) {
+    const s = sim.world.get(id, ShipC);
+    if (s?.gridId === gridId) return s;
+  }
+  return undefined;
+}
 
 const api: UiApi = {
   snapshot: bridge.snapshot,
@@ -57,6 +87,12 @@ const api: UiApi = {
   selectedModule: controller.selectedModule,
   stats: bridge.stats,
   alerts: controller.alerts.list,
+  combat: bridge.combat,
+  setCombatView: (view) => renderer?.setCombatView(view),
+  pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
+  setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
+  focusFight: (gridId) => focusFight(gridId),
+  spawnRaider: () => spawnRaider(),
   overlayList,
   overlayLegend,
   dismissAlert: controller.alerts.dismiss,
@@ -79,9 +115,10 @@ const api: UiApi = {
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
   attachCanvas(canvas) {
-    createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content.modules, content.items)
+    createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content)
       .then((r) => {
         renderer = r;
+        r.setGrids(sim.grids);
         const grid = sim.grids.get(1);
         if (grid) r.setGrid(grid);
         attachInput(canvas, r, controller.attach(r));

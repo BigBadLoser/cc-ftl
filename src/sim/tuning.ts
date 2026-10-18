@@ -57,7 +57,7 @@ export const LIGHT_FALLOFF = 0.55;
 /** Door openness lost per tick once nobody is in the doorway (closes in ~3 s). */
 export const DOOR_CLOSE_PER_TICK = 4;
 /** Hp repaired per second at workSpeed 1. */
-export const REPAIR_PER_SEC = 12;
+export const REPAIR_PER_SEC = 3;
 /** Fire intensity removed per second at workSpeed 1. */
 export const EXTINGUISH_PER_SEC = 90;
 
@@ -106,3 +106,40 @@ export const PLAN_INTERVAL = 10;
 export const WARN_DEBOUNCE = 400;
 /** Units per second a stack burns at flammability 1 on a fully burning tile. */
 export const ITEM_BURN_PER_SEC = 6;
+// --- Combat ---
+export const SECTOR_WIDTH = 200;
+export const SECTOR_HEIGHT = 120;
+/** Where the player's ship sits in a new sector (top-left tile). */
+export const PLAYER_START = { x: 20, y: 50 } as const;
+/** Seconds of piloted, powered engines to charge the FTL drive. */
+export const FTL_CHARGE_SEC = 40;
+/** Evasion never exceeds this. */
+export const EVASION_CAP = 0.75;
+/** Each skill level multiplies the effect by (1 + this). */
+export const SKILL_STEP = 0.1;
+/** Aim sigma shrinks by this per gunnery level (floor at MIN_SPREAD_FACTOR). */
+export const SPREAD_PER_GUNNERY = 0.12;
+export const MIN_SPREAD_FACTOR = 0.3;
+/** Shield recharge speed bonus with an operator at the shield console (plus SKILL_STEP per shielding level). */
+export const SHIELD_OPERATED_BONUS = 0.5;
+/** Each working point-defence module gets its own roll at this chance against each interceptable shot. */
+export const PD_CHANCE = 0.35;
+/** Point defence rolls once a shot is this far along its flight. */
+export const PD_WINDOW = 0.6;
+/** Hull integrity below which a ship is a wreck / below which the AI tries to flee. */
+export const WRECK_BELOW = 0.15;
+export const FLEE_BELOW = 0.3;
+/** Ticks between ship-state and AI re-evaluations. */
+export const SHIP_STATE_INTERVAL = 10;
+export const AI_RETARGET_TICKS = 40;
+/** Fire intensity set by incendiary hits. */
+export const IGNITE_INTENSITY = 90;
+/** Crew with operating priority at or below this level (1 or 2) will man consoles on their own. */
+export const OPERATE_MAX_LEVEL = 2;
+/** Operators keep manning their console until rest drops below this. */
+export const OPERATOR_EXHAUSTED_BELOW = 5;
+/**
+ * Deployable roof parts gate gameplay: weapons cannot charge or fire, shields cannot come up or regenerate and
+ * point defence cannot roll until the part is fully deployed. Set false to keep the animation but drop the gating.
+ */
+export const DEPLOY_GATES_ACTIONS = true;

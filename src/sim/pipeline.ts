@@ -3,10 +3,23 @@ import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
 import { carrySystem } from './systems/carry';
+import { combatStateSystem } from './systems/combatState';
 import { craftJobsSystem } from './systems/craftJobs';
 import { decideSystem } from './systems/decide';
+import { deploySystem } from './systems/deploy';
 import { doorsSystem } from './systems/doors';
 import { draftedSystem } from './systems/drafted';
+import { enemyAiSystem } from './systems/enemyAi';
+import { firingSystem } from './systems/firing';
+import { helmSystem } from './systems/helm';
+import { impactSystem } from './systems/impacts';
+import { ionSystem } from './systems/ion';
+import { pointDefenceSystem } from './systems/pointDefence';
+import { projectileSystem } from './systems/projectiles';
+import { shieldSystem } from './systems/shields';
+import { shipStateSystem } from './systems/shipState';
+import { targetingSystem } from './systems/targeting';
+import { weaponChargeSystem } from './systems/weaponCharge';
 import { fireSystem } from './systems/fire';
 import { haulCleanupSystem } from './systems/haulCleanup';
 import { haulJobsSystem } from './systems/haulJobs';
@@ -15,11 +28,13 @@ import { lightingSystem } from './systems/lighting';
 import { modulesSystem } from './systems/modules';
 import { movementSystem } from './systems/movement';
 import { needsSystem } from './systems/needs';
+import { operateJobsSystem } from './systems/operateJobs';
 import { powerSystem } from './systems/power';
 import { roomsSystem } from './systems/rooms';
 import { smokeSystem } from './systems/smoke';
 import { supplyJobsSystem } from './systems/supplyJobs';
 import { temperatureSystem } from './systems/temperature';
+import { turretSystem } from './systems/turrets';
 import { vitalsSystem } from './systems/vitals';
 import { workSystem } from './systems/work';
 
@@ -58,6 +73,8 @@ export const pipeline: readonly System[] = [
   vitalsSystem,
   // Auto jobs after vitals, so a crew member who just went down gets a rescue job this tick.
   autoJobsSystem,
+  // Console operating jobs (combat): after vitals so downed operators are already released.
+  operateJobsSystem,
   // Economy planners, in dependency order: drop dead hauls (frees reservations), open craft jobs,
   // then supply (jobs get first claim on stock), then clear the floor with what is left unclaimed.
   haulCleanupSystem,
@@ -74,4 +91,27 @@ export const pipeline: readonly System[] = [
   carrySystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.
   workSystem,
+  // --- Combat (see each system's notes). State first: it decides whether consoles are needed next tick.
+  combatStateSystem,
+  // Ion timers expire before anything asks whether a module is disabled.
+  ionSystem,
+  // Roof parts fold out or away on this tick's combat state and power, before anything checks them.
+  deploySystem,
+  // Shields and helm settle this tick's layers, evasion and FTL charge before shots resolve.
+  shieldSystem,
+  helmSystem,
+  // The enemy AI issues commands (applied next tick), then targets are validated.
+  enemyAiSystem,
+  targetingSystem,
+  // Charge, then fire: a weapon that reaches full charge fires the same tick.
+  weaponChargeSystem,
+  // Turrets track their targets before firing, so shots leave along the aim.
+  turretSystem,
+  firingSystem,
+  // Flight, then point defence gets its roll on shots in range, then arrivals resolve (evasion, shields, effects).
+  projectileSystem,
+  pointDefenceSystem,
+  impactSystem,
+  // Ship state last: it reads the damage done this tick.
+  shipStateSystem,
 ];

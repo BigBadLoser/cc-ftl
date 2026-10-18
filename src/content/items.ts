@@ -8,4 +8,6 @@ export const items = {
   // Flammable: loose polymer on a burning tile burns and feeds the fire.
   'item.polymer': { name: 'Polymer', tags: ['refined', 'building'], stackSize: 50, flammability: 0.6 },
   'item.ice': { name: 'Ice', tags: ['raw', 'water'], stackSize: 50 },
+  // Ammo for missile launchers. Explosive: loose missiles fuel fires.
+  'item.missile': { name: 'Missile', tags: ['ammo'], stackSize: 20, flammability: 0.5 },
 } satisfies Record<string, ItemDef>;

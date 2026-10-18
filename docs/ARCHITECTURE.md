@@ -183,6 +183,20 @@ palette.json    the single palette, read by Blender scripts and the game
 
 - **Run with `npm run sprites`** (Blender headless). Generated sheets, JSON and the manifest are
   **committed**, because Cloudflare's build doesn't run Blender.
+- **Families:** the art is split into families that each render into their own sheets and are merged
+  into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
+  be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `env` (props,
+  economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
+  bays), `roof` (plating, edges, livery masks) and `sol` (the engine, AI core and shield packs, rendered by
+  their own scripts in `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
+- **Heights:** walls 1.85 tiles, roof top 2.05 (`walls.HF`, `walls.hull_top()`). The manifest carries
+  them (`heights`) and `src/render/heights.ts` mirrors them (a test checks the two agree). Roof-mounted
+  art (turrets, dishes, the AI mast) is modelled on the roof plane and anchored at floor level, so the
+  renderer never lifts real art; `ROOF_H` only lifts stand-ins, markers and projectile launch points.
+- **Roof plating:** the module rule (4x4-tile armour modules, layout and colour by hash, patch and inset
+  plates) and the livery plan live in Python (`roof_layout.py`, `roof_variants.py`, `roof_livery.py`)
+  and are mirrored in `src/render/roofArt.ts`. Livery masks are key-coloured overlays recoloured by the
+  livery shader (`src/render/livery.ts`); a ship's scheme is picked from its faction and name.
 - **Camera:** orthographic, yaw 45 degrees, 30 degree elevation. One 1x1 tile renders as an exact
   64x32 diamond.
 - **Look:** flat colour bands (about 1.0 / 0.75 / 0.5 for top, left and right faces), muted palette

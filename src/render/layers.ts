@@ -3,6 +3,8 @@ import { BlurFilter, Container } from 'pixi.js';
 /** Draw layers, bottom to top. Everything depth-sorted (walls, props, crew, glow) shares `sorted`. */
 export interface Layers {
   world: Container;
+  /** Below the deck (the hull's belly), depth sorted; the floor plates in front hide it. */
+  under: Container;
   floor: Container;
   /** Flat tinted tiles above the floor (overlays). */
   decal: Container;
@@ -24,6 +26,8 @@ export interface Layers {
 
 export function createLayers(halos: boolean): Layers {
   const world = new Container();
+  const under = new Container();
+  under.sortableChildren = true;
   const floor = new Container();
   const decal = new Container();
   const sorted = new Container();
@@ -38,9 +42,10 @@ export function createLayers(halos: boolean): Layers {
   halo.filters = [blur];
   halo.blendMode = 'add';
   halo.visible = halos;
-  world.addChild(floor, decal, sorted, fx, fxAdd, halo, ui);
+  world.addChild(under, floor, decal, sorted, fx, fxAdd, halo, ui);
   return {
     world,
+    under,
     floor,
     decal,
     sorted,

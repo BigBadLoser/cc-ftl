@@ -72,3 +72,13 @@ export function findJobAt(sim: Sim, gridId: number, x: number, y: number): numbe
   }
   return 0;
 }
+
+/** Where a crew member must be to work a job: adjacent to it, or ON its tile for operate jobs. */
+export function atJob(pos: Tile, job: { kind: string; x: number; y: number }): boolean {
+  return job.kind === 'operate' ? pos.x === job.x && pos.y === job.y : isAdjacent(pos, job);
+}
+
+/** Path goal for reaching a job (see atJob). */
+export function jobGoal(job: { kind: string; x: number; y: number }): { x: number; y: number; adjacent: boolean } {
+  return { x: job.x, y: job.y, adjacent: job.kind !== 'operate' };
+}

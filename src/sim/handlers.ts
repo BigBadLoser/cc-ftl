@@ -1,10 +1,11 @@
 import { MarkerC } from './components';
 import type { Command } from './commands';
+import { combatHandlers } from './combat/handlers';
 import { crewHandlers } from './crew/handlers';
 import { itemHandlers } from './items/handlers';
 import { moduleHandlers } from './modules/handlers';
 import { FIRE_START_INTENSITY } from './tuning';
-import { Struct } from './structure';
+import { Struct, writeStruct } from './structure';
 import type { Sim } from './sim';
 
 type Handler<T extends Command['type']> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -12,6 +13,7 @@ type Handler<T extends Command['type']> = (sim: Sim, cmd: Extract<Command, { typ
 /** One handler per command type. The compiler requires an entry for every Command variant. */
 export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...crewHandlers,
+  ...combatHandlers,
   ...moduleHandlers,
   ...itemHandlers,
   noop: () => {},
@@ -24,7 +26,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
     const grid = sim.grids.get(cmd.gridId);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y)) return;
     if (!Object.values(Struct).includes(cmd.kind as never)) return;
-    if (grid.get('struct', cmd.x, cmd.y) !== cmd.kind) grid.set('struct', cmd.x, cmd.y, cmd.kind);
+    writeStruct(grid, cmd.x, cmd.y, cmd.kind);
   },
   'debug.ignite': (sim, cmd) => {
     const grid = sim.grids.get(cmd.gridId);

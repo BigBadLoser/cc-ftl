@@ -1,7 +1,7 @@
 import {
   AssignmentC, CrewC, JobC, PathC, PositionC, type Crew, type Position,
 } from '../crew/components';
-import { clearPath, isAdjacent, isIncapacitated, isSettled, releaseAssignment } from '../crew/helpers';
+import { atJob, clearPath, isIncapacitated, isSettled, releaseAssignment } from '../crew/helpers';
 import { performJob } from '../crew/jobWork';
 import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
@@ -30,7 +30,7 @@ export function workSystem(sim: Sim): void {
       path.steps.length === 0 &&
       isSettled(pos) &&
       pos.gridId === job.gridId &&
-      isAdjacent(pos, job);
+      atJob(pos, job);
     if (!ready) {
       if (crew.activity === 'working') crew.activity = 'idle';
       continue;

@@ -1,5 +1,5 @@
 import {
-  AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, NeedsC, PrioritiesC, Struct,
+  AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, NeedsC, PositionC, PrioritiesC, Struct,
   WORK_CATEGORIES, type Job, type Sim, type WorkCategory,
 } from '../sim';
 import type { UiCrew } from '../ui/api';
@@ -28,7 +28,7 @@ export function buildCrewList(sim: Sim): UiCrew[] {
   const out: UiCrew[] = [];
   for (const id of sim.world.query(CrewC)) {
     const crew = sim.world.get(id, CrewC);
-    if (!crew) continue;
+    if (!crew || sim.world.get(id, PositionC)?.gridId !== 1) continue; // the player's ship only
     const role = sim.content.roles[crew.role];
     let job: string | null = null;
     const a = sim.world.get(id, AssignmentC);

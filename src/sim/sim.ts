@@ -4,9 +4,11 @@ import { World } from './ecs';
 import { EventBuffer } from './events';
 import { commandHandlers } from './handlers';
 import type { Grid } from './grid';
+import type { Sector } from './combat/components';
 import { pipeline } from './pipeline';
 import { Rng } from './rng';
 import { TICK_HZ } from './time';
+import { SECTOR_HEIGHT, SECTOR_WIDTH } from './tuning';
 
 export { TICK_HZ };
 
@@ -19,6 +21,7 @@ export class Sim {
   grids = new Map<number, Grid>();
   commands = new CommandQueue();
   events = new EventBuffer();
+  sector: Sector = { width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false };
 
   constructor(
     /** World seed: drives galaxy generation; saved with the game. */

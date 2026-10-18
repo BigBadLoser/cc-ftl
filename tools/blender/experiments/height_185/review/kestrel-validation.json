@@ -1,0 +1,111 @@
+{
+  "stage": 7,
+  "geometry": {
+    "r0": {
+      "bellDiameter": 2.6,
+      "protrusion": 1.5,
+      "footprint": [
+        4,
+        5
+      ],
+      "endWallHeight": 1.85,
+      "bulkheadHeight": 2.05,
+      "directDeckMounts": true,
+      "separateFloorPlate": false
+    },
+    "r1": {
+      "bellDiameter": 2.6,
+      "protrusion": 1.5,
+      "footprint": [
+        5,
+        4
+      ],
+      "endWallHeight": 1.85,
+      "bulkheadHeight": 2.05,
+      "directDeckMounts": true,
+      "separateFloorPlate": false
+    },
+    "r2": {
+      "bellDiameter": 2.6,
+      "protrusion": 1.5,
+      "footprint": [
+        4,
+        5
+      ],
+      "endWallHeight": 1.85,
+      "bulkheadHeight": 2.05,
+      "directDeckMounts": true,
+      "separateFloorPlate": false
+    },
+    "r3": {
+      "bellDiameter": 2.6,
+      "protrusion": 1.5,
+      "footprint": [
+        5,
+        4
+      ],
+      "endWallHeight": 1.85,
+      "bulkheadHeight": 2.05,
+      "directDeckMounts": true,
+      "separateFloorPlate": false
+    }
+  },
+  "sprites": {
+    "module.engine.hull.r1": {
+      "size": [
+        159,
+        148
+      ],
+      "paletteColors": 24,
+      "additivePixelsOutsideColor": 0,
+      "binaryAlpha": true
+    },
+    "module.engine.machine.r1": {
+      "size": [
+        303,
+        181
+      ],
+      "paletteColors": 59,
+      "additivePixelsOutsideColor": 0,
+      "binaryAlpha": true
+    },
+    "module.engine.machine.r1.active": {
+      "size": [
+        366,
+        181
+      ],
+      "paletteColors": 59,
+      "additivePixelsOutsideColor": 1402,
+      "binaryAlpha": true
+    },
+    "module.engine.hull.r0": {
+      "size": [
+        159,
+        148
+      ],
+      "paletteColors": 17,
+      "additivePixelsOutsideColor": 0,
+      "binaryAlpha": true
+    },
+    "module.engine.machine.r0": {
+      "size": [
+        303,
+        238
+      ],
+      "paletteColors": 62,
+      "additivePixelsOutsideColor": 0,
+      "binaryAlpha": true
+    },
+    "module.engine.machine.r0.active": {
+      "size": [
+        366,
+        238
+      ],
+      "paletteColors": 60,
+      "additivePixelsOutsideColor": 1401,
+      "binaryAlpha": true
+    }
+  },
+  "completeSetRequired": false,
+  "result": "PASS"
+}

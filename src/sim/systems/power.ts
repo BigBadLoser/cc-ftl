@@ -1,3 +1,4 @@
+import { IonC } from '../combat/components';
 import { ModuleC, type Module } from '../modules/components';
 import { networkOf } from '../modules/network';
 import type { ModuleDef } from '../registry';
@@ -35,7 +36,7 @@ function allocate(sim: Sim, members: Member[]): void {
   let demand = 0;
   const consumers: Member[] = [];
   for (const mem of members) {
-    const live = mem.m.enabled && mem.m.hp > 0;
+    const live = mem.m.enabled && mem.m.hp > 0 && !sim.world.has(mem.id, IonC);
     if (!live) {
       mem.m.powered = false;
     } else if (mem.def.power > 0) {

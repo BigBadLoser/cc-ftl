@@ -1,3 +1,4 @@
+import { PointDefenseC, WeaponC } from '../combat/components';
 import { CrewC, JobC, PositionC } from '../crew/components';
 import { ProductionC, StorageC } from '../items/components';
 import { spillItems } from '../items/stacks';
@@ -5,7 +6,7 @@ import type { Sim } from '../sim';
 import { DEFAULT_PRIORITY } from '../tuning';
 import { Struct } from '../structure';
 import { ModuleC } from './components';
-import { accessTile, footprintTiles } from './footprint';
+import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, inFootprint, openTilesOf } from './footprint';
 import { isTileWalkable } from './walk';
 
 /** Create a module entity and claim its footprint in the grid. Assumes placement was validated. */
@@ -19,6 +20,8 @@ export function spawnModule(sim: Sim, gridId: number, defId: string, x: number, 
     enabled: true, powered: false, reservedBy: 0,
   });
   if (def.storage) sim.world.add(id, StorageC, { capacity: def.storage.capacity, filter: null, stacks: [] });
+  if (def.weapon) sim.world.add(id, WeaponC, { charge: 0, target: null, shotsLeft: 0, nextShotTick: 0, volleyTarget: null, aim: 0 });
+  if (def.pointDefense) sim.world.add(id, PointDefenseC, { aim: 0 });
   if (def.crafting) sim.world.add(id, ProductionC, { orders: [] });
   for (const t of footprintTiles(def, x, y, rot)) grid.set('module', t.x, t.y, id);
   return id;
@@ -50,13 +53,32 @@ export function placementError(sim: Sim, gridId: number, defId: string, x: numbe
   if (!def) return 'badDef';
   if (!Number.isInteger(rot) || rot < 0 || rot > 3) return 'badRot';
   const tiles = footprintTiles(def, x, y, rot);
+  const wallRow = hullRow(def, x, y, rot);
   for (const t of tiles) {
     if (!grid.inBounds(t.x, t.y)) return 'outOfBounds';
-    if (grid.get('struct', t.x, t.y) !== Struct.Floor) return 'notFloor';
+    const onWall = wallRow.some((w) => w.x === t.x && w.y === t.y);
+    if (onWall ? grid.get('struct', t.x, t.y) !== Struct.Wall : grid.get('struct', t.x, t.y) !== Struct.Floor) {
+      return onWall ? 'notOnHull' : 'notFloor';
+    }
     if (grid.get('module', t.x, t.y) !== 0) return 'occupied';
   }
+  const side = hullSide(def, rot);
+  if (side) {
+    // The wall row must be exterior hull: Space right beyond every tile of it.
+    const out = hullOutward(side);
+    for (const t of wallRow) {
+      const bx = t.x + out.x;
+      const by = t.y + out.y;
+      if (!grid.inBounds(bx, by) || grid.get('struct', bx, by) !== Struct.Space) return 'notOnHull';
+    }
+  }
   const access = accessTile(def, x, y, rot);
-  if (access && !isTileWalkable(sim, grid, access.x, access.y)) return 'noAccess';
+  if (access) {
+    const inside = inFootprint(def, x, y, rot, access.x, access.y);
+    if (inside ? !openTilesOf(def, x, y, rot).some((o) => o.x === access.x && o.y === access.y) : !isTileWalkable(sim, grid, access.x, access.y)) {
+      return 'noAccess';
+    }
+  }
   for (const jobId of sim.world.query(JobC)) {
     const j = sim.world.get(jobId, JobC);
     if (j?.kind !== 'module' || j.gridId !== gridId || !j.module) continue;
@@ -72,7 +94,8 @@ export function placementError(sim: Sim, gridId: number, defId: string, x: numbe
 export function footprintBlockedByCrew(sim: Sim, gridId: number, defId: string, x: number, y: number, rot: number): boolean {
   const def = sim.content.modules[defId];
   if (!def?.solid) return false;
-  const tiles = footprintTiles(def, x, y, rot);
+  const open = openTilesOf(def, x, y, rot);
+  const tiles = footprintTiles(def, x, y, rot).filter((t) => !open.some((o) => o.x === t.x && o.y === t.y));
   for (const id of sim.world.query(CrewC, PositionC)) {
     const p = sim.world.get(id, PositionC);
     if (!p || p.gridId !== gridId) continue;

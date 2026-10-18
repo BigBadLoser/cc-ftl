@@ -15,11 +15,11 @@ const meanO2 = (sim: Sim, tiles: number[]) => {
 };
 
 describe('starter ship', () => {
-  it('parses to 22x14 and has at least 4 rooms', () => {
+  it('parses to 30x20 and has at least 4 rooms', () => {
     const sim = newGame(1, content);
     sim.step();
     const g = sim.grids.get(1)!;
-    expect([g.width, g.height]).toEqual([22, 14]);
+    expect([g.width, g.height]).toEqual([30, 20]);
     const rooms = new Set<number>();
     for (const r of g.raw('room')) if (r) rooms.add(r);
     expect(rooms.size).toBeGreaterThanOrEqual(4);
@@ -48,9 +48,9 @@ describe('starter ship', () => {
     const sim = newGame(1, content);
     run(sim, 20);
     const g = sim.grids.get(1)!;
-    const quarters = ROOM_TILES(sim, g.get('room', 9, 3));
-    const neighbour = ROOM_TILES(sim, g.get('room', 13, 3));
-    sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 9, y: 1, kind: Struct.Floor }); // north hull, space beyond
+    const quarters = ROOM_TILES(sim, g.get('room', 10, 6));
+    const neighbour = ROOM_TILES(sim, g.get('room', 19, 6));
+    sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 11, y: 1, kind: Struct.Floor }); // north hull, space beyond
     run(sim, 20 * 90);
     expect(meanO2(sim, quarters)).toBeLessThan(5);
     expect(meanO2(sim, neighbour)).toBeGreaterThan(18);
@@ -61,7 +61,7 @@ describe('starter ship', () => {
       const sim = newGame(42, content);
       sim.enqueue({ type: 'debug.ignite', gridId: 1, x: 10, y: 6 });
       run(sim, 400);
-      sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 9, y: 1, kind: Struct.Floor });
+      sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 11, y: 1, kind: Struct.Floor });
       run(sim, 800);
       return serialize(sim);
     };
@@ -70,7 +70,7 @@ describe('starter ship', () => {
 
   it('round-trips a save taken mid-fire and keeps simulating identically', () => {
     const sim = newGame(7, content);
-    sim.enqueue({ type: 'debug.ignite', gridId: 1, x: 9, y: 3 });
+    sim.enqueue({ type: 'debug.ignite', gridId: 1, x: 10, y: 6 });
     run(sim, 160);
     const json = serialize(sim);
     const loaded = deserialize(json, content);

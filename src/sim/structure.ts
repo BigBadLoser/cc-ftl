@@ -1,4 +1,4 @@
-import type { FieldSpec } from './grid';
+import type { FieldSpec, Grid } from './grid';
 
 /** Structural kind of a tile, stored in the `struct` field. Materials/variants come later. */
 export const Struct = {
@@ -36,6 +36,8 @@ export const SHIP_FIELDS = {
   module: 'u32',
   /** Entity id of the loose item stack lying on the tile (0 = none). At most one stack per tile. */
   item: 'u32',
+  /** Integrity of structural tiles (wall, door) 0..255. At 0 the tile breaches (see combat/breach.ts). */
+  hp: 'u8',
 } as const satisfies FieldSpec;
 
 /** True if crew can stand on this tile kind (ignores modules: see modules/walk.ts). */
@@ -48,4 +50,29 @@ export function gasConductance(kind: number, doorOpen: number): number {
   if (kind === Struct.Floor || kind === Struct.Space) return 1;
   if (kind === Struct.Door) return doorOpen / 255;
   return 0;
+}
+
+/** Starting integrity of a wall or door tile. */
+export const STRUCT_MAX_HP = 255;
+
+/** True if the tile kind has integrity (walls and doors). */
+export function hasIntegrity(kind: number): boolean {
+  return kind === Struct.Wall || kind === Struct.Door;
+}
+
+/** Write a tile's struct kind and reset its integrity to match (full for walls/doors, 0 otherwise). */
+export function writeStruct(grid: Grid, x: number, y: number, kind: number): void {
+  if (grid.get('struct', x, y) !== kind) grid.set('struct', x, y, kind);
+  const hp = hasIntegrity(kind) ? STRUCT_MAX_HP : 0;
+  if (grid.has('hp') && grid.get('hp', x, y) !== hp) grid.set('hp', x, y, hp);
+}
+
+/** True if any 4-neighbour of (x, y) is Space or lies outside the grid (the ship's outer boundary). */
+export function bordersSpace(grid: Grid, x: number, y: number): boolean {
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (!grid.inBounds(nx, ny) || grid.get('struct', nx, ny) === Struct.Space) return true;
+  }
+  return false;
 }

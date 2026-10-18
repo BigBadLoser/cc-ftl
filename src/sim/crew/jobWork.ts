@@ -7,7 +7,7 @@ import { ModuleC } from '../modules/components';
 import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/spawn';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { Struct } from '../structure';
+import { Struct, writeStruct } from '../structure';
 import { stochasticRound } from '../stochastic';
 import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC } from '../tuning';
 import { findFreeBed } from './beds';
@@ -36,6 +36,7 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'extinguish': return extinguish(sim, job, speed);
     case 'repair': return repair(sim, job, speed);
     case 'rescue': return rescue(sim, crew, job);
+    case 'operate': return 'working'; // held until the operate-jobs system drops it
   }
 }
 
@@ -51,7 +52,7 @@ function finishStruct(sim: Sim, job: Job): WorkResult {
   if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {
     const next = job.kind === 'build' ? job.struct : Struct.Floor;
     const before = grid.get('struct', job.x, job.y);
-    if (before !== next) grid.set('struct', job.x, job.y, next);
+    writeStruct(grid, job.x, job.y, next);
     if (job.kind === 'deconstruct') {
       const key = structCostKey(before);
       refundCost(sim, job.gridId, job.x, job.y, key ? sim.content.structCosts[key] : undefined);

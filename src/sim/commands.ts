@@ -30,6 +30,16 @@ export type Command =
   | { type: 'production.reorder'; moduleId: number; from: number; to: number }
   /** Restrict a storage module to `items` (item ids), or null to accept everything. */
   | { type: 'storage.setFilter'; moduleId: number; items: string[] | null }
+  /** Spawn a hostile ship from a template; (x, y) is its top-left tile in sector coordinates. */
+  | { type: 'debug.spawnEnemy'; template: string; x: number; y: number }
+  /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetGridId 0 clears; targetModuleId 0 = any module. */
+  | { type: 'combat.setTarget'; shipGridId: number; weaponId: number | null; targetGridId: number; targetModuleId: number }
+  /** Hold fire: weapons charge but only fire on combat.fireVolley. */
+  | { type: 'combat.setHold'; gridId: number; hold: boolean }
+  /** Fire every charged weapon of the ship now. */
+  | { type: 'combat.fireVolley'; gridId: number }
+  /** Jump away with a fully charged FTL drive. */
+  | { type: 'combat.flee'; gridId: number }
   | { type: 'debug.spawnItems'; gridId: number; x: number; y: number; item: string; count: number };
 
 /** A command tagged with the tick at whose start it applies. */
