@@ -14,6 +14,7 @@ from .cmbkit import Frame
 
 FOOT = {"helm": (2, 3), "shield": (2, 3), "weapons": (2, 2)}
 CHAIR = {"helm": (-0.5, 0.0), "shield": (-0.5, 0.0), "weapons": (-0.5, -0.5)}
+EMPTY = {"shield": [(-0.5, 1.0)]}                                  # empty walkable footprint tiles (u, v) besides the chair
 DIM = {"red": "rustD", "cyan": "navy", "green": "pcb"}                 # non-emissive stand-ins for idle screen content
 BTN = {"red": ("red", "orange", "flameY"), "cyan": ("cyan", "arc", "green"), "green": ("green", "orange", "green")}
 FACES = [((-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1)), ((-1, -1, -1), (-1, 1, -1), (1, 1, -1), (1, -1, -1)),
@@ -272,7 +273,6 @@ def shield(f, st):
     col = "cyan"
     desk(f, 0.56, 0, 0, 2.94, 0.82, 0.6, st, col, nbtn=0, slab=False, base="blueGrey")        # back bar behind the three monitors
     desk(f, -0.5, -0.95, 0, 0.9, 0.66, 0.5, st, col, nbtn=0, slab=False, base="steel")           # short counter, ends at the projector
-    desk(f, -0.5, 1.0, 0, 0.8, 0.6, 0.46, st, col, nbtn=3, slab=True, base="steel")             # low cabinet on the other side
     _g("desk")
     ybox(f, -0.52, -0.95, 0.5, 0.5, 0.8, 0.1, "blueGrey", 0, top="plateB", lean=-0.1)
     ybox(f, 0.4, 0, 0.6, 0.36, 2.8, 0.1, "blueGrey", 0, top="plateB", lean=-0.1)

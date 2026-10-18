@@ -29,11 +29,13 @@ def meta(name, rot):
     mnx, mny = min(t[0][0] for t in tiles), min(t[0][1] for t in tiles)
     grid = lambda p: (round(p[0] - mnx), round(p[1] - mny))
     cu, cv = C.CHAIR[name]
+    walk = {(round(a + nu / 2 - .5), round(b + nv / 2 - .5)) for a, b in [C.CHAIR[name]] + C.EMPTY.get(name, [])}
     return {"foot_xy": grid((cx + (nu if rot % 2 else nv) - 1, cy)) if False else (nu if rot % 2 else nv, nv if rot % 2 else nu),
             "origin_tile_from_min": grid((0, 0)),
             "chair_tile": grid(f.xy(cu, cv)), "entry_tile": grid(f.xy(cu - 1.0, cv)),
             "chair_rel_origin": [f.xy(cu, cv)[0], f.xy(cu, cv)[1]], "entry_rel_origin": [f.xy(cu - 1.0, cv)[0], f.xy(cu - 1.0, cv)[1]],
-            "centre": [cx, cy], "solid_tiles": [grid(t[0]) for t in tiles if t[1] != (C.CHAIR[name][0] + nu / 2 - .5, C.CHAIR[name][1] + nv / 2 - .5)]}
+            "centre": [cx, cy], "solid_tiles": [grid(t[0]) for t in tiles if t[1] not in walk],
+            "walkable_tiles": [grid(t[0]) for t in tiles if t[1] in walk]}
 
 
 def pixel(name, rot, st):
@@ -55,8 +57,10 @@ def main():
                 rgba, g, ox, oy = pixel(name, rot, st)
                 np.savez(OUT / f"px_{name}_r{rot}{'_active' if st else ''}.npz", rgba=rgba, glow=g, ox=ox, oy=oy)
                 print("pixel", name, rot, st, rgba.shape, flush=True)
-    if not only:
-        (OUT / "meta.json").write_text(json.dumps(info, indent=1))
+    mp = OUT / "meta.json"
+    old = json.loads(mp.read_text()) if mp.exists() else {}
+    old.update(info)
+    mp.write_text(json.dumps(old, indent=1))
     if "--walls" in args:                                                              # interior full walls at the raised height (local override)
         walls.HF = 2.2
         for m in (3, 5, 6, 10, 12):
