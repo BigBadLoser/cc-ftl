@@ -70,8 +70,9 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   plates, 136 sprites); user says it "could use work" — v6 in progress.
 - **Walls pass 5:** thinner walls (~0.22–0.26), hull as layered plate courses (not a
   checkerboard), denser shaded wall faces, muted dusty-rose doors.
-- **Heights (final):** interior walls 2.2; the ROOF is a 0.2-thick slab from 2.2 to 2.4 (top at
-  2.4, thickness visible at edges); the hull rises to 2.4 so the roof sits flush with it. Crew 1.5.
+- **Heights (NOT final):** the roof needs visible thickness (a slab, top around 2.4). The user is
+  considering interior walls at 2.2 (roof slab 2.2–2.4) vs keeping 2.4; previews compare both.
+  Crew 1.5.
 - **Sitting crew and roof** handed to Opus (high effort) after repeated misses.
 - **Point defence** is its own module (2x2 bay + R Revolver turret), OPERATED by the AI core
   (needs a powered AI core with its mast up), the way the weapons console operates weapons.
