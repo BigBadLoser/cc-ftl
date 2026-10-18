@@ -147,8 +147,8 @@ portal graph across grids, cross-grid pathing, crew grid membership, airlock mod
 - **Shuttles are entities, not grids** (no visible interior). Crew embark at a vehicle bay or at a
   docked shuttle and ride hidden; shuttles fly through the sector and can be shot down (weapons and
   point defence target them). One generic shuttle to start. The shuttle bay is a buildable 4x5
-  INTERIOR pad module (not hull-mounted); 3x3 pod bays for mining/construction pods come later. It is
-  shuttles are crafted, and the starter ship comes with one. Enemies board you by docking shuttles at
+  INTERIOR pad module (not hull-mounted); 3x3 pod bays for mining/construction pods come later.
+  Shuttles are crafted, and the starter ship comes with one. Enemies board you by docking shuttles at
   your airlocks.
 - **EVA** only on derelicts or on the outside of enemy ships, after shuttling over.
 - **Crew combat:** real time via drafting, weapons as items (sidearms, rifles, melee), cover from walls
