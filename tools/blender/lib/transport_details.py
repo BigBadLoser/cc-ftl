@@ -6,8 +6,8 @@ from lib.transport_ramp import loading_ramp
 
 def cabin_details(f,hatch_height):
     # Thin flush end rims and a centre mullion give the opaque glass a frame.
-    canopy=[(.50,.70,2.00,.40),(1.50,.66,2.00,.38),(1.90,.60,1.86,.34),
-            (2.25,.53,1.56,.32),(2.43,.40,1.26,.32)]
+    canopy=[(.50,.70,2.00,.40),(1.50,.65,1.98,.38),(1.90,.56,1.84,.34),
+            (2.25,.46,1.54,.30),(2.43,.32,1.25,.29)]
     loft(f,canopy,"gW1",upper="glassD")
     for a,b,t0,t1 in ((canopy[0],canopy[1],0,.08),(canopy[-2],canopy[-1],.92,1)):
         rows=[tuple(x+(y-x)*t for x,y in zip(a,b)) for t in (t0,t1)]

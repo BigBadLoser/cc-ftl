@@ -1,35 +1,35 @@
-# Transport B5 — swept-wing shuttle review
+# Transport B6 — shaped nose, angled wing mounts and aft-leaning ramp
 
-Concept B remains a separate craft from the rejected original v4 model. Revision
-5 keeps the large 7.20-unit wing span and 2.70-unit fore-aft wing envelope, with
-swept leading edges, narrower tips, thicker roots and thinner outer panels.
-Wing plan area is 10.3982, versus B4's 11.4692: taper changes the outline while
-retaining the broad overall footprint. The roots now join directly into sloped
-engine shoulders; the tall rectangular storage platforms are removed.
+Concept B remains separate from the rejected original v4 craft. Revision 6
+keeps the approved wing shape: 7.20-unit span, 2.70-unit fore-aft envelope and
+10.3982 square units of plan area. The nose, wing supports, crew hatch hardware
+and stern receive the current review changes.
 
-Longitudinal hinge beams roll the outer wings 180 degrees flat over the aft
-roof. Two substantial knuckles and locking blocks mark each fold axis. The
-outer panels lift onto thickness-clearance seats, and underside paint becomes
-the visible livery when folded. Deployment takes place with the bay roof open /
-after launch. Static folded/deployed review poses are provided here.
+## Shape and access
 
-## Access, cockpit and stern
+The front windscreen narrows from .80 to .64 at its tip, with lower intermediate
+stations and a smoother slope into the chin. The front hull narrows from 1.50
+to 1.20, with a narrower crown bevel and thinner chin. The extended opaque
+glazing remains; its front top is 1.54 above the landing datum.
 
-The former rectangular crew door is replaced by a circular pressure hatch with
-a 1.60-unit opening diameter, a bevelled flange, recessed opaque leaf, eight
-locking dogs, a three-spoke handwheel and lower hazard arcs. It is ahead of the
-wings: the leaf starts .38 forward of their foremost point, and the outer rim
-starts .26 forward of it. A reshaped forebody accommodates the round pressure
-opening. The canopy extends down the nose to u=2.43 and z=1.58, versus B4's
-front z=1.92, with a continuous dark windscreen and thin flush frame/mullion.
+Each wing has a raised structural mount with a flat seat at z=2.30, a sloping
+front face and tapered sides. The front starts at u=.34 at its base (z=1.66)
+and recedes to u=-.14 at the seat. Chamfered corners, an aft-raked rear edge
+and angled nacelle nose caps carry the hull's lines through the raised step.
+The wing hinge locations, moving panels and folded envelope are unchanged.
 
-The central rear face now leans 16 degrees from vertical. Its loading hatch is
-a bottom-hinged ramp with a framed aperture, hinge knuckles, reinforcing edges,
-traction ribs and threshold markings. Review views show it shut and lowered.
-An opaque dark cap masks the cabin in the lowered view; no interior is modeled
-or visible. Cooling grilles and reinforced nozzle collars remain at either side.
-The lowered ramp extends beyond the stowed envelope, requiring loading access
-outside the parked footprint; it is not shown deployed inside the pit placeholder.
+The 1.60-diameter crew pressure hatch keeps its circular flange, locking dogs
+and handwheel. It adds an opaque inspection porthole above the wheel and a
+compact pressure-equalisation control/valve with a short connection into the
+ring. These additions do not emit light or reveal the cabin.
+
+The stern slope is corrected: **the top projects aft, farther from the nose;
+the lower ramp hinge is tucked forward underneath**. It leans 16 degrees from
+vertical. The bottom-hinged ramp follows that face when closed. The lower keel
+also tucks forward to clear the ramp. Review views show the ramp closed and
+lowered, with traction ribs and reinforced edges. An opaque dark cap masks the
+cabin when lowered; no interior is modeled or visible. The lowered ramp extends
+beyond the stowed footprint and is shown separately from the placeholder pit.
 
 ## Measured envelope
 
@@ -43,57 +43,63 @@ outside the parked footprint; it is not shown deployed inside the pit placeholde
 | Placeholder pit depth below deck | 1.7000 |
 | Highest point above deck | 0.9400 |
 | Clearance to roof top at 2.05 | 1.1100 |
-| Circular crew hatch opening diameter | 1.6000 |
+| Crew hatch opening diameter | 1.6000 |
 | Wing clearance aft of circular leaf | 0.3800 |
 
-Height and pit depth remain unchanged from B4. The longer nose and swept-back
-wings now use 4.93 of the 5-unit bay depth, with .02 clearance at the rear and
-.05 at the nose in the centred placeholder. Most of the craft stays below deck.
-The bay session owns its final depth, loading access and structure; the review
-room remains a scale placeholder.
+All envelope and pit numbers remain unchanged from B5. Inside the centred 4x5
+placeholder the rear clearance is .02, nose clearance .05 and side clearance
+about .0875. Most of the craft stays below deck. The bay session owns its final
+pit, loading access and structure; the review room remains a scale placeholder.
 
-Parked: legs down, outer wings folded, nozzles dark. Flight: legs concealed,
-wings deployed, nozzle glow active. Docked: legs concealed, wings folded,
-nozzles dark. Remaining rotations and docking views await art approval.
+The outer wings roll 180 degrees over the aft roof on longitudinal hinge beams,
+with knuckles and locking blocks. They lift onto thickness-clearance seats;
+underside paint becomes visible when folded. Deployment takes place with the
+bay roof open / after launch. This review contains static folded/deployed poses.
+
+Parked: legs down, wings folded, dark nozzles. Flight: legs concealed, wings
+deployed, nozzle glow active. Docked: legs concealed, wings folded, nozzles
+dark. Remaining rotations and docking views await art approval.
 
 ## Builders and livery
 
-The requested entry point is `transport_shuttle(heading, state, dz=0,
-wing_fold=None, ramp_open=0)` in `tools/blender/sprites/shuttle_craft.py`.
-Supporting geometry is in `tools/blender/lib/transport_forms.py`,
-`transport_details.py`, `transport_wings.py`, `transport_hatch.py` and
-`transport_ramp.py`. Original v4 source, `shuttle()` and reviews are unchanged.
+Entry: `transport_shuttle(heading, state, dz=0, wing_fold=None, ramp_open=0)`
+in `tools/blender/sprites/shuttle_craft.py`. Supporting geometry is under
+`tools/blender/lib/`: `transport_forms.py`, `transport_details.py`,
+`transport_wings.py`, `transport_mounts.py`, `transport_hatch.py` and
+`transport_ramp.py`. Original v4 source and `shuttle()` remain unchanged.
 
-Primary paint is on both wing panels; secondary paint follows the engine
-fairings and forebody. Native files preserve exact `#ff0000` / `#00ff00` keys.
-Review boards and beauty use muted blue `#527593` / ochre `#c7a15e`. Only nozzle
-interiors populate the glow channel. Export-key ink is camera-visible only in
-the review shader, preventing red/green light spill onto nearby hull surfaces.
+Primary paint is on both wing panels; secondary follows the fairings and
+forebody. Native files preserve exact `#ff0000` / `#00ff00` keys. Review boards
+and beauty use muted blue `#527593` / ochre `#c7a15e`. Only nozzle interiors
+populate glow. Export-key ink is camera-visible only in the review shader,
+preventing red/green illumination of nearby hull surfaces.
 
 ## Review artifacts
 
-Current files: `artifacts/shuttle-sweepback-r5/`. B4 remains under
-`artifacts/shuttle-sweepback-r4/` for the before/after comparison.
+Current files: `artifacts/shuttle-sweepback-r6/`. B5 remains in
+`artifacts/shuttle-sweepback-r5/` for the before/after comparison.
 
+- `transport-B-beauty.png`, `transport-B-preview.blend`: low-sample beauty
+  and editable scene, showing the nose, airlock and angled wing mounts.
 - `transport-B-parked-1x.png`, `-3x.png`: r0 in the 4x5 placeholder room/pit,
   with a 1.5-unit crew member on deck.
 - `transport-B-flight-1x.png`, `-3x.png`: d0, d2 and rear d5 flight views.
 - `transport-B-ramp-1x.png`, `-3x.png`: rear three-quarter closed/lowered ramp.
 - `transport-B-silhouettes-1x.png`, `-3x.png`: folded/deployed forms and crew.
-- `transport-B-planform-1x.png`, `-3x.png`: top views with the 4x5 bay outline.
-- `transport-B-before-after-1x.png`, `-3x.png`: B4 and B5, same heading/scale.
+- `transport-B-planform-1x.png`, `-3x.png`: top views and 4x5 bay outline.
+- `transport-B-before-after-1x.png`, `-3x.png`: B5/B6 at the same heading/scale.
 - `transport-B-export-keys-1x.png`, `-3x.png`: raw export-key colours.
-- `transport-B-beauty.png`, `transport-B-preview.blend`: low-sample beauty
-  and editable review scene.
-- `design.json`, `pixel-checks.json`: envelope, hatch/wing clearance, lowered
-  ramp ground check, nozzle-only glow, key colours, alpha and exact 3x checks.
+- `design.json`, `pixel-checks.json`: envelope, actual closed-ramp slope,
+  mount front rake/taper, lowered-ramp ground check, hatch clearance,
+  nozzle-only glow, exact key colours, alpha and exact 3x checks.
 
 ```sh
-blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r5"
-python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r5" --compose
+blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r6"
+python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r6" --compose
 ```
 
 One Blender process at a time, two threads, four sprite samples and eight
-beauty samples, Blender 4.3.2. `--validate-only` runs the geometry checks without
-rendering. This is preview art only: no full sprite build, production atlas,
-`src/` wiring or gameplay changes. Await user sign-off before full renders.
+beauty samples, Blender 4.3.2. `--validate-only` runs the geometry checks from
+`tools/blender/review/transport_geometry.py` without rendering. Preview art
+only: no full sprite build, atlas, `src/` wiring or gameplay changes. Await user
+sign-off before full renders.

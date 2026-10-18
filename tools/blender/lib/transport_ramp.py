@@ -1,14 +1,15 @@
 """Angled rear loading ramp, kept opaque even in the lowered mechanism preview."""
 import math
 
-REAR_SLOPE=.2866666667
-RAMP_HINGE_U=-2.15+(.64-.60)*REAR_SLOPE-.028
+REAR_SLOPE=-.2866666667
+REAR_BASE_U=-1.72
+RAMP_HINGE_U=REAR_BASE_U+(.64-.60)*REAR_SLOPE-.028
 RAMP_HINGE_Z=.64
 RAMP_LENGTH=1.48
 
 
 def rear_u(z):
-    return -2.15+(z-.60)*REAR_SLOPE
+    return REAR_BASE_U+(z-.60)*REAR_SLOPE
 
 
 def loading_ramp(f,opening=0):
