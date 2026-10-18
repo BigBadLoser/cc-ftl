@@ -221,8 +221,10 @@ def trench(side, col="b", variant="v6"):
 
 
 def livery_mask(name):
-    """Livery motif mask (v8): flat cells at ZR in two key colours, mkP (primary) and mkS (secondary). The renderer
-    recolours them per scheme and shades them by the plating underneath, so one mask set serves every scheme."""
+    """Livery motif mask: flat cells at ZR in two key colours, mkP (primary) and mkS (secondary). The renderer
+    recolours them per scheme as opaque paint with only a faint relief hint taken from the plating underneath
+    (formula and constants in roof_livery's docstring: RELIEF_DARK / LIGHT, RELIEF_K_DARK / LIGHT), so one mask set
+    serves every scheme."""
     from . import roof_livery as lv
     m = core.Mesh(f"roof_lv_{name}", flat=True)
     fn = lv.MASKS[name]

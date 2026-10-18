@@ -1,10 +1,18 @@
 """Roof livery system (v8 study, pure Python, no bpy): painted motifs as tile masks, recoloured per scheme.
 
-Cost model (v10: 80 masks): every motif is a set of 1x1-tile masks (MASKS, 32x32 cells) in two key channels, P (primary) and
-S (secondary). They are rendered once as overlay sprites (roofs.livery_mask). At runtime a scheme only picks the
-masks per tile (plan) and the colour pair; the overlay is recoloured and shaded by the plating under it:
-    out = colour * lum(plating) / lum(top tone of the tile's colour family)
-so grooves, lips and bolts show through the paint. One mask set (len(MASKS)) serves every scheme and faction.
+Cost model (78 masks): every motif is a set of 1x1-tile masks (MASKS, 32x32 cells) in two key channels, P (primary,
+key colour mkP #ff0000) and S (secondary, mkS #00ff00). They are rendered once as overlay sprites
+(roofs.livery_mask) at the plating height. At runtime a scheme only picks the masks per tile (plan) and its colours;
+one mask set (len(MASKS)) serves every scheme and faction. A 3-colour scheme remaps a motif's P / S channels.
+
+Recolour model (final, v12; the renderer shader must match): paint is OPAQUE. For a mask pixel of channel colour C
+over a plating pixel B on a tile of colour family f (o / b, known per tile from the module rule):
+    s   = lum(B) / lum(top tone of f)                     lum = 0.299 r + 0.587 g + 0.114 b
+    h   = -RELIEF_K_DARK  if s < RELIEF_DARK              (grooves, bolt feet: paint one shade darker)
+          +RELIEF_K_LIGHT if s > RELIEF_LIGHT             (lit lips, bolt heads, inset far rims: one shade lighter)
+          0               otherwise                       (every plate tone, patch plates, girder bands)
+    out = C * (1 + h) * tint                              tint = the ship-wide light gradient (same as the plating)
+No plating colour is mixed in; only that faint relief hint survives.
 
 Ship frame: the ship's long axis is x (bow = +x). The spine line sits on the tile boundary yc between rows yc - 1 ("n"
 tiles) and yc ("s" tiles). Motif positions are fixed fractions of the spine length, so the rule adapts to any outline.
@@ -21,7 +29,9 @@ DIGITS = {"0": ("111", "101", "101", "101", "111"), "1": ("010", "110", "010", "
 AFT = ((0, 44), (54, 72), (82, 92))                  # aft banding: painted runs (cells from the stern), thinning
 LETTERS = {"-": ("000", "000", "111", "000", "000"), "F": ("111", "100", "110", "100", "100"),
            "X": ("101", "101", "010", "101", "101"), "K": ("101", "110", "100", "110", "101")}
-STENCIL = ("FX-", "407")                            # stern code block, one mask per tile
+STENCIL = ("FX-", "407")
+RELIEF_DARK, RELIEF_LIGHT = 0.40, 1.20               # recolour model thresholds (see the module docstring)
+RELIEF_K_DARK, RELIEF_K_LIGHT = 0.10, 0.08                            # stern code block, one mask per tile
 
 
 def _stripe(n):
