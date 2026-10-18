@@ -45,7 +45,9 @@ def door(axis="x", is_open=False, low=False):
             if abs(um) < DXO and zm < zo:
                 continue                                    # the doorway
             if abs(um) > DXF - 0.04 or zm > zf - 0.04:
-                col = hi                                    # edge trim
+                col = hi                                    # bevel: lit outer edge
+            elif abs(um) > DXF - 0.085 or zm > zf - 0.085:
+                col = lo                                    # bevel: groove inside it
             elif abs(um) < DXO - 0.04 and zo + 0.35 * (zf - zo) < zm < zo + 0.7 * (zf - zo):
                 col = "flameY"                              # yellow light strip above the doorway
             elif abs(abs(um) - DXO) < 0.04 and zm < zo + 0.04:
@@ -65,16 +67,22 @@ def door(axis="x", is_open=False, low=False):
         for ii in range(nuo):
             u0, u1 = -DXO + 2 * DXO * ii / nuo, -DXO + 2 * DXO * (ii + 1) / nuo
             z0, z1 = zo * jj / nzo, zo * (jj + 1) / nzo
+            mid = ii in (nuo // 2 - 1, nuo // 2)
+            low_p = 2 <= jj <= int(nzo * 0.45)
+            up_p = int(nzo * 0.6) <= jj <= nzo - 2
             if is_open:
                 col = K
             elif jj < 2:
                 col = "hazY" if (ii + jj) % 2 == 0 else "hazK"
-            elif nuo // 2 - 1 <= ii <= nuo // 2 and jj in (int(nzo * 0.55), int(nzo * 0.55) + 1):
-                col = "red"
-            elif ii in (nuo // 2 - 1, nuo // 2) or jj == nzo - 1:
-                col = "steelD"
+            elif mid and jj in (int(nzo * 0.5), int(nzo * 0.5) + 1):
+                col = "red"                                 # door light
+            elif mid or jj == nzo - 1:
+                col = "dark"                                # centre seam / head
+            elif (low_p and (jj in (2, int(nzo * 0.45)) or ii in (1, nuo - 2) or ii in (nuo // 2 - 2, nuo // 2 + 1))) or \
+                 (up_p and (jj in (int(nzo * 0.6), nzo - 2) or ii in (1, nuo - 2) or ii in (nuo // 2 - 2, nuo // 2 + 1))):
+                col = "steelL" if (jj >= int(nzo * 0.5) or ii < nuo // 2) else "steelD"   # inset panel edges
             else:
-                col = "dark"
+                col = "steel"
             m.poly([G(u0, yr, z0), G(u1, yr, z0), G(u1, yr, z1), G(u0, yr, z1)], col)
     for ii in range(2 * int(DXO * GN)):                     # threshold plate in front of the doorway
         u0, u1 = -DXO + ii / GN, -DXO + (ii + 1) / GN

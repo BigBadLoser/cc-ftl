@@ -21,9 +21,9 @@ NU, NT = 32, 16
 H = 0.45           # cutaway interior wall stub height (tiles)
 HH = 0.7           # cutaway hull stub height
 HF = 2.4           # full-height wall top; crew are 1.5 tall (human_base.HEIGHT_UNITS)
-T = TW = 11 / 32   # interior wall thickness (on the 1/32 grid so mitre creases follow cell diagonals)
-TWH = 16 / 32      # hull thickness
-CH = 5 / 32        # hull corner chamfer
+T = TW = 8 / 32   # interior wall thickness (on the 1/32 grid so mitre creases follow cell diagonals)
+TWH = 12 / 32      # hull thickness
+CH = 4 / 32        # hull corner chamfer
 BIT = {"n": 1, "e": 2, "s": 4, "w": 8}
 DIRS = ("n", "e", "s", "w")
 
@@ -88,42 +88,78 @@ def _grad(t):
 
 
 def _pal(fam, variant):
+    """Palette roles. Hull: the blue-grey set is the base (top, skirt, hips); `o` is the ochre set for plate panels."""
     c = PAL[fam]
-    if fam == "hull" and variant:
-        return dict(L=c["L2"], M=c["M2"], D=c["D2"], K=c["K2"], top=c["top2"],
-                    tL=c["L"], tM=c["M"], tD=c["D"], tK=c["K"])
-    return dict(L=c["L"], M=c["M"], D=c["D"], K=c["K"], top=c["top"],
-                tL=c.get("L2"), tM=c.get("M2"), tD=c.get("D2"), tK=c.get("K2"))
+    if fam == "hull":
+        return dict(L=c["L2"], M=c["M2"], D=c["D2"], K=c["K2"], top=c["top2"], variant=variant,
+                    o=dict(L=c["L"], M=c["M"], D=c["D"], K=c["K"]))
+    return dict(L=c["L"], M=c["M"], D=c["D"], K=c["K"], top=c["top"], variant=variant)
 
 
 def _skirt_col(c, fam, lit):
     if fam == "hull":
-        return c["tM"] if lit else c["tD"]               # the skirt carries the contrasting colour block
-    return c["L"] if lit else c["M"]
+        return c["M"] if lit else c["D"]
+    return c["M"] if lit else c["D"]
+
+
+def _tones(s, lit):
+    """(highlight, body, shade, dark) of a colour set on a lit (+y) or shaded (+x) face."""
+    return (s["L"], s["M"], s["D"], s["D"]) if lit else (s["M"], s["D"], s["K"], s["K"])
+
+
+def _hull_face(c, lit, u, z, top, zs):
+    """Layered armour: courses ~0.45 tall (lighter top edge and bolt row, darker lower part, seam line), vertical seams
+    staggered between courses, one recessed dark course. Blue-grey is the base; the ochre variant makes the middle
+    courses ochre, the blue variant has a single ochre band."""
+    n = max(1, int(round((top - zs) / 0.45)))
+    f = (z - zs) / (top - zs) * n
+    k = min(int(f), n - 1)
+    t = f - k
+    ochre = (c["variant"] and 0 < k < max(n - 1, 1)) or (not c["variant"] and n >= 3 and k == n - 2) \
+        or (not c["variant"] and n == 1 and t > 0.62)
+    hi, body, shade, dark = _tones(c["o"] if ochre else c, lit)
+    if n >= 3 and k == 1 and not c["variant"]:
+        hi, body, shade, dark = _tones(c, lit)
+        return dark if 0.3 < t < 0.7 else shade                      # recessed band
+    off = 0.25 * (k % 2)
+    if t < 0.07 or (abs(((u - off) % 0.5)) < 0.5 / 32 and t > 0.1):
+        return dark                                                  # course seam / vertical seam
+    if t > 0.9:
+        return hi                                                    # lighter top edge
+    if 0.74 < t < 0.84 and int(u * 32) % 4 == 1:
+        return hi                                                    # bolt row
+    if t < 0.38:
+        return shade                                                 # darker lower part
+    return body
 
 
 def _wall_col(c, fam, lit, u, z, top, zs):
     """Colour of the vertical face at along-wall position u (0..1) and height z."""
-    body, hi, lo = (c["M"], c["L"], c["D"]) if lit else (c["D"], c["M"], c["K"])
-    seam = u < 1 / 32 or abs(u - 0.5) < 0.5 / 32
+    if fam == "hull":
+        return _hull_face(c, lit, u, z, top, zs)
+    hi, body, lo, dk = (c["L"], c["M"], c["D"], c["K"]) if lit else (c["M"], c["D"], c["K"], c["K"])
     if z < zs + 0.03:
         return lo                                        # crease where the wall meets the skirt
     if z > top - 0.03:
         return hi                                        # cap edge highlight
-    if fam == "hull":
-        tb = c["tM"] if lit else c["tD"]
-        if z > top - 0.22 or z < zs + 0.2:
-            return tb                                    # colour-blocked bands
-        if seam or abs(z - (zs + top) / 2) < 0.015:
+    if u < 1 / 32 or abs(u - 0.5) < 0.5 / 32:
+        return lo                                        # vertical panel seams
+    if top < 1.0:
+        return hi if z > top - 0.1 else body
+    # full height: dark lower zone, mid zone, lighter upper zone, grooves between, inset panels
+    for g in (0.95, 1.55):
+        if abs(z - g) < 0.025:
             return lo
-        return body
-    if seam:
-        return lo
-    if top > 1.0 and any(abs(z - g) < 0.02 for g in (1.05, 1.7)):
-        return lo                                        # horizontal panel bands
-    if z > top - (0.3 if top > 1.0 else 0.1):
-        return hi if lit else body                       # lighter tone band near the top
-    return body
+    zone = dk if (z < 0.95 and not lit) else (lo if z < 0.95 else (body if z < 1.55 else hi))
+    for z0, z1 in ((zs + 0.12, 0.84), (1.06, 1.44), (1.66, top - 0.18)):
+        for u0, u1 in ((0.07, 0.43), (0.57, 0.93)):
+            if z0 <= z <= z1 and u0 <= u <= u1:
+                if z - z0 < 0.05 or u - u0 < 1 / 32:
+                    return hi if lit else body               # lit top / left edge of the inset
+                if z1 - z < 0.05 or u1 - u < 1 / 32:
+                    return lo if lit else dk                 # shaded bottom / right edge
+                return zone
+    return zone
 
 
 def emit(m, mask, fam, variant, full, skip=None):

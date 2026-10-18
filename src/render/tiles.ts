@@ -73,8 +73,8 @@ export function wallPieces(
     return [{ chain: [`tile.hull.ghost.m${mask}`], order: 0 }];
   const fam = hull ? "hull" : "wall";
   const id = `tile.${fam}.m${mask}`;
-  // Hull plating alternates two colour-blocked variants along a run.
-  const v = hull && (x + y) % 2 !== 0 ? ".v1" : "";
+  // Hull plating is blue-grey with a band of ochre; every few tiles a run switches to the ochre-panel variant.
+  const v = hull && [3, 4, 5].includes((((x + y) % 8) + 8) % 8) ? ".v1" : "";
   const full = `tile.${fam}.full.m${mask}`;
   const chain: Chain =
     mode === "up" ? [full + v, full, id + v, id] : [id + v, id];

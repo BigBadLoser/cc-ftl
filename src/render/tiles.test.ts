@@ -49,9 +49,10 @@ describe("wall autotiling", () => {
     expect(ids(ring, 3, 2, W, "down")).toEqual(["hull.m5", "hull.haz.e.3"]);
     expect(ids(ring, 2, 3, W, "up", false)).toEqual(["hull.full.m10", "hull.haz.s.3"]);
   });
-  it("hull plating alternates its colour variant along a run", () => {
+  it("hull plating uses the ochre-panel variant in runs of three tiles", () => {
     expect(wallPieces(ring, 2, 1, W, "auto")[0]?.chain[0]).toBe("tile.hull.m10.v1");
-    expect(wallPieces(ring, 3, 1, W, "auto")[0]?.chain[0]).toBe("tile.hull.m12");
+    expect(wallPieces(ring, 3, 1, W, "auto")[0]?.chain[0]).toBe("tile.hull.m12.v1");
+    expect(wallPieces(ring, 1, 1, W, "auto")[0]?.chain[0]).toBe("tile.hull.m6");
   });
   it("up mode uses full-height pieces except for ghosts; down and auto use low blocks", () => {
     expect(ids(ring, 2, 1, W, "up")).toEqual(["hull.full.m10"]);
