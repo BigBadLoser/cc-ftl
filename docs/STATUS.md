@@ -50,7 +50,9 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   ducts, tubes down the bell); no valve wheels on posts.
 - **Weapons:** square-barrel prototype rejected. Restarting with round barrels; concept sheet
   with 3 directions for the user to pick.
-- **Shield console:** counter ends at the projector, seat centred on the monitors.
+- **Consoles APPROVED** (branch `m4-art-consoles`, pass 5 plus pass 6 cabinet removal): helm 3x2,
+  weapons 2x2, shield 3x2 with counter ending at the projector, seat centred on the monitors, and
+  one empty walkable tile inside the footprint (modules can have several walkable tiles).
 - **Sizes:** engine 4x5 (4 along the hull); helm 3x2, shield console 3x2, weapons console 2x2, each
   with its chair as a walkable access tile inside the footprint (needs per-tile solidity in the sim);
   light weapons 2x2, heavy 3x3; shield gen 2x3, small shield gen 2x2, AI core 2x2. Ships get bigger
