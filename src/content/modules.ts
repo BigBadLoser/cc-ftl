@@ -105,35 +105,35 @@ export const modules = {
     storage: { capacity: 8 },
   },
 
-  // --- Combat. Hull-mounted modules must touch a wall that borders space (validated on build). ---
+  // --- Combat. ---
   'module.burstLaser': {
     name: 'Burst laser', asset: 'module.burst_laser', footprint: [1, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.2, maxHp: 80, buildWork: 200, mount: 'hull', weapon: 'weapon.burstLaser', roofAsset: 'roof.weapon',
+    flammability: 0.2, maxHp: 80, buildWork: 200, weapon: 'weapon.burstLaser', roofAsset: 'roof.weapon',
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }],
   },
   'module.massDriver': {
     name: 'Mass driver', asset: 'module.mass_driver', footprint: [1, 2], solid: true, power: -12, priority: 3,
-    flammability: 0.2, maxHp: 100, buildWork: 260, mount: 'hull', weapon: 'weapon.massDriver', roofAsset: 'roof.weapon',
+    flammability: 0.2, maxHp: 100, buildWork: 260, weapon: 'weapon.massDriver', roofAsset: 'roof.weapon',
     cost: [{ item: 'item.metal', count: 24 }, { item: 'item.electronics', count: 8 }],
   },
   'module.missileLauncher': {
     name: 'Missile launcher', asset: 'module.missile_launcher', footprint: [1, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.3, maxHp: 80, buildWork: 220, mount: 'hull', weapon: 'weapon.missile', roofAsset: 'roof.weapon',
+    flammability: 0.3, maxHp: 80, buildWork: 220, weapon: 'weapon.missile', roofAsset: 'roof.weapon',
     cost: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 10 }],
   },
   'module.ionCannon': {
     name: 'Ion cannon', asset: 'module.ion_cannon', footprint: [1, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.2, maxHp: 80, buildWork: 220, mount: 'hull', weapon: 'weapon.ion', roofAsset: 'roof.weapon',
+    flammability: 0.2, maxHp: 80, buildWork: 220, weapon: 'weapon.ion', roofAsset: 'roof.weapon',
     cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 14 }],
   },
   'module.incendiaryLauncher': {
     name: 'Incendiary launcher', asset: 'module.incendiary_launcher', footprint: [1, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.4, maxHp: 80, buildWork: 200, mount: 'hull', weapon: 'weapon.incendiary', roofAsset: 'roof.weapon',
+    flammability: 0.4, maxHp: 80, buildWork: 200, weapon: 'weapon.incendiary', roofAsset: 'roof.weapon',
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 6 }],
   },
   'module.engine': {
     name: 'Engine', asset: 'module.engine', footprint: [1, 2], solid: true, power: -6, priority: 3,
-    heatPerSec: 4, flammability: 0.2, maxHp: 120, buildWork: 200, mount: 'hull', engine: { evasionPerPower: 0.02 },
+    heatPerSec: 4, flammability: 0.2, maxHp: 120, buildWork: 200, engine: { evasionPerPower: 0.02 },
     roofAsset: 'roof.engine',
     cost: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 6 }],
   },

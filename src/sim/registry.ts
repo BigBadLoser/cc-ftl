@@ -136,8 +136,16 @@ export interface ModuleDef {
   footprint: readonly [number, number];
   /** Solid modules block walking on their tiles. */
   solid: boolean;
-  /** Tile (offset from the footprint's top-left) crew stand on to use it. */
+  /**
+   * Tile (offset from the footprint's top-left at rotation 0) crew stand on to use it. It may lie outside the
+   * footprint (a tile beside the module) or inside it, in which case it must also be listed in `openTiles`.
+   */
   access?: readonly [number, number];
+  /**
+   * Per-tile solidity: footprint tiles (rotation-0 offsets) crew can walk on although the module is solid, e.g. a
+   * console's chair and the free floor beside it. All other footprint tiles of a solid module block walking.
+   */
+  openTiles?: readonly (readonly [number, number])[];
   /** Positive supplies power, negative draws it (units per second). */
   power: number;
   /** Power priority 1 (served first) .. 5. Default DEFAULT_PRIORITY. */
@@ -163,8 +171,12 @@ export interface ModuleDef {
   storage?: { capacity: number };
   /** Crafts recipes whose `station` is this def (gets a ProductionC order list). */
   crafting?: true;
-  /** 'hull': must touch a wall tile that borders Space. Default 'interior'. */
-  mount?: 'hull' | 'interior';
+  /**
+   * Replaces the hull wall: the footprint side (rotation 0; rotation turns it clockwise: n -> e -> s -> w) lying on
+   * the hull line. Its tiles must be existing exterior wall tiles with Space beyond them. They stay Wall (airtight,
+   * immune to hull damage) whether or not the module works or exists.
+   */
+  hullEdge?: 'n' | 'e' | 's' | 'w';
   /** Marks a console; its operator runs that ship system during combat. */
   console?: 'weapons' | 'shields' | 'helm';
   /** WeaponDef id this module fires. */

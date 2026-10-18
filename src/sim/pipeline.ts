@@ -33,6 +33,7 @@ import { roomsSystem } from './systems/rooms';
 import { smokeSystem } from './systems/smoke';
 import { supplyJobsSystem } from './systems/supplyJobs';
 import { temperatureSystem } from './systems/temperature';
+import { turretSystem } from './systems/turrets';
 import { vitalsSystem } from './systems/vitals';
 import { workSystem } from './systems/work';
 
@@ -101,6 +102,8 @@ export const pipeline: readonly System[] = [
   targetingSystem,
   // Charge, then fire: a weapon that reaches full charge fires the same tick.
   weaponChargeSystem,
+  // Turrets track their targets before firing, so shots leave along the aim.
+  turretSystem,
   firingSystem,
   // Flight, then point defence gets its roll on shots in range, then arrivals resolve (evasion, shields, effects).
   projectileSystem,

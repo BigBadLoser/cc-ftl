@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, footprintTiles, newGame, touchesHull, type Sim } from '../../sim';
+import { ModuleC, footprintTiles, newGame, type Sim } from '../../sim';
 import { content } from '../index';
 
 function spawned(shipId: string): Sim {
@@ -11,7 +11,7 @@ function spawned(shipId: string): Sim {
 
 describe('combat content', () => {
   for (const shipId of ['ship.starter', 'ship.raider']) {
-    it(`${shipId}: hull modules touch the hull, access tiles are open, power balances`, () => {
+    it(`${shipId}: access tiles are open, power balances`, () => {
       const sim = spawned(shipId);
       const gridId = shipId === 'ship.starter' ? 1 : 2;
       const grid = sim.grids.get(gridId)!;
@@ -20,10 +20,9 @@ describe('combat content', () => {
       for (const id of sim.world.query(ModuleC)) {
         const m = sim.world.get(id, ModuleC)!;
         if (m.gridId !== gridId) continue;
-        const def = content.modules[m.def as keyof typeof content.modules] as { mount?: string; power: number; footprint: readonly [number, number] };
+        const def = content.modules[m.def as keyof typeof content.modules] as { power: number; footprint: readonly [number, number] };
         const tiles = footprintTiles(def as never, m.x, m.y, m.rot);
         for (const t of tiles) expect(grid.get('struct', t.x, t.y), `${m.def} on floor`).toBe(1);
-        if (def.mount === 'hull') expect(touchesHull(grid, tiles), `${m.def} at ${m.x},${m.y}`).toBe(true);
         if (def.power > 0) supply += def.power;
         else demand -= def.power;
       }
