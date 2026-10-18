@@ -165,6 +165,17 @@ describe('ship generator', () => {
     expect(anchors.size).toBeGreaterThanOrEqual(4);
   });
 
+  it('civilians (same arranger, civil builders): four families, lightly armed, never a battery', () => {
+    const families = new Set<string>();
+    for (let seed = 0; seed < 40; seed++) {
+      const g = gen('faction.civilian', seed, seed % 10);
+      families.add(g.role);
+      expect(count(g, (m) => !!m.weapon && !m.pointDefense), `seed ${seed} guns`).toBeLessThanOrEqual(2);
+      expect(count(g, (m) => !!m.bed)).toBeGreaterThan(0);
+    }
+    expect([...families].sort()).toEqual(['freighter', 'liner', 'mining', 'station']);
+  });
+
   it('beam tiles load as solid, unwalkable, airtight Struct.Beam', () => {
     const seed = Array.from({ length: 30 }, (_, s) => s).find((s) => gen('faction.drones', s, 5).template.rows.some((r) => r.includes('=')))!;
     const sim = newGame(1, content);

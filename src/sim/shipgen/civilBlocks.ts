@@ -4,9 +4,9 @@ import { cargoSpec, engineSpec, reactorSpec, type RoomSpec } from './plan';
 import type { Rng } from '../rng';
 
 /**
- * Hand-made salvage donors: civilian and one-off hulls only (navy and drone donors come from those factions' own
- * generators). Each is drawn on a local builder in its own construction style and frozen later (after any cut or
- * damage) with ports found from its outline:
+ * Civilian builders, shared by the civilian generator and by scrapper salvage (as donors). Each draws one civil
+ * section on a local builder in its own construction style; callers freeze it (after any salvage cut or damage)
+ * with ports found from its outline:
  *   freighter  one huge open bay under a 2-wide gangway
  *   habitat    a 1-wide ring corridor round a hub room
  *   liner      a 1-wide spine lined with tiny identical cabins, a lounge bulb at one end
@@ -14,6 +14,8 @@ import type { Rng } from '../rng';
  *   barge      a catwalk over a row of deep hoppers stepping down in depth (a sawtooth keel)
  *   pod string cargo pods on a string of 1-tile tubes
  *   tug        a stubby hull with a reactor, an ore hopper and one big engine aft
+ *   containers cargo containers strung along a 1-wide spine, gaps between them
+ *   cockpit    a blunt bridge room on a short corridor stub
  */
 
 /** Salvaged reactor rooms are patched up around whatever doors the welds cut: a spare column and row. */
@@ -52,16 +54,17 @@ export function habitat(rng: Rng, hub: RoomSpec, top: RoomSpec[], bottom: RoomSp
 }
 
 /** Passenger liner segment: one-bed cabins both sides of a 1-wide spine, the lounge (life support) at the west end. */
-export function liner(rng: Rng, beds: number, lounge: RoomSpec): Builder | null {
+export function liner(rng: Rng, beds: number, lounge: RoomSpec, cabin: [number, number] = [2, 2], bulb = 7): Builder | null {
   const b = localBuilder(rng);
-  const cabins = Array.from({ length: beds }, (): RoomSpec => ({ role: 'quarters', mods: ['module.bed'], w: 2, h: 2 }));
+  // Cabins of `cabin` size (one bed each), the lounge bulb `bulb` tiles deep (it stands proud of the cabin rows).
+  const cabins = Array.from({ length: beds }, (): RoomSpec => ({ role: 'quarters', mods: ['module.bed'], w: cabin[0], h: cabin[1] }));
   const n = cabins.slice(0, Math.ceil(beds / 2));
   const s = cabins.slice(n.length);
   const lw = Math.max(3, lounge.w);
-  const lo = b.place({ x: 0, y: -5, w: lw + 2, h: 9 }, lounge.role, { ...lounge, w: lw, h: 7 });
+  const hb = Math.max(3, bulb);
+  const lo = b.place({ x: 0, y: -1 - Math.ceil(hb / 2) - 1, w: lw + 2, h: hb + 2 }, lounge.role, { ...lounge, w: lw, h: hb });
   const sp = b.place({ x: lw + 1, y: -2, w: Math.max(run(n), run(s)) + 1, h: 3 }, 'hall');
-  if (!lo || !sp) return null;
-  b.door(lo, sp);
+  if (!lo || !sp || !b.door(lo, sp)) return null;
   b.strip(sp, 'n', n, lw + 1);
   b.strip(sp, 's', s, lw + 1);
   return b;
@@ -146,5 +149,42 @@ export function reactorRoom(rng: Rng, k: number): Builder | null {
   const room = b.place({ x: 0, y: -4, w: r.w + 2, h: r.h + 2 }, 'reactor', r);
   const pass = b.place({ x: 0, y: 1, w: r.w + 2, h: 3 }, 'hall');
   if (!room || !pass || !b.door(room, pass)) return null;
+  return b;
+}
+
+/** Container spine: identical cargo containers both sides of a 1-wide spine, a tile of spine showing between them. */
+export function containers(rng: Rng, crates: number, size: number, gap: number, stagger = 0): Builder | null {
+  const b = localBuilder(rng);
+  // A container holds a couple of crates per row of its depth, with a walkway: many small units on the spine.
+  const per = Math.max(2, 2 * (size - 1));
+  const k = Math.max(2, Math.ceil(crates / per));
+  const left: RoomSpec[] = [];
+  for (let i = 0, rest = crates; i < k; i++) {
+    const n = Math.max(1, Math.ceil(rest / (k - i)));
+    rest -= n;
+    left.push({ ...cargoSpec(n), w: size, h: size });
+  }
+  const n = left.filter((_, i) => i % 2 === 0);
+  const s = left.filter((_, i) => i % 2 === 1);
+  const len = Math.max(n.length, s.length) * (size + 1 + gap) + gap + 1 + stagger;
+  const sp = b.place({ x: 0, y: -2, w: len + 2, h: 3 }, 'hall');
+  if (!sp) return null;
+  b.strip(sp, 'n', n, 1 + gap, { gap: () => gap });
+  // `stagger`: the lower row offset along the spine (staggered stacking) instead of matched pairs.
+  b.strip(sp, 's', s, 1 + gap + stagger, { gap: () => gap });
+  return b;
+}
+
+/** A blunt civil bridge: the command room with a short corridor stub aft (and any extra rooms beside the stub). */
+export function cockpit(rng: Rng, command: RoomSpec, beside: RoomSpec[]): Builder | null {
+  const b = localBuilder(rng);
+  const h = command.h;
+  const room = b.place({ x: 0, y: -1 - Math.ceil(h / 2), w: command.w + 2, h: h + 2 }, 'bridge', command);
+  const half = (k: number): number => beside.filter((_, i) => i % 2 === k).reduce((t, r) => t + r.w + 1, 1);
+  const L = Math.max(3, half(0), half(1));
+  const stub = room && b.place({ x: command.w + 1, y: -2, w: L + 2, h: 3 }, 'hall');
+  if (!room || !stub || !b.door(room, stub)) return null;
+  b.strip(stub, 'n', beside.filter((_, i) => i % 2 === 0), command.w + 1);
+  b.strip(stub, 's', beside.filter((_, i) => i % 2 === 1), command.w + 1);
   return b;
 }

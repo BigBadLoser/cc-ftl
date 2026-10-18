@@ -1,6 +1,7 @@
 import { Arranger } from './arranger';
 import { fillHoles, holes, taper } from './hullFill';
 import { Builder } from './builder';
+import { CIVIL_GRAMMARS } from './civilGrammars';
 import { DRONE_GRAMMARS } from './droneGrammars';
 import { SCRAP_GRAMMARS } from './scrapGrammars';
 import { GRAMMARS as NAVY } from './navyGrammars';
@@ -52,7 +53,7 @@ export function arrangeHull(
     const grammar = k < candidates ? first : pickWeighted(rng, fam.grammars);
     const A = new Arranger(() => rng.next(), -1);
     const c: Ctx = { rng, fam, plan: clonePlan(plan), A, depth, parts: [grammar], why: '', defs, variant };
-    GRAMMARS ??= { ...NAVY, ...DRONE_GRAMMARS, ...SCRAP_GRAMMARS };
+    GRAMMARS ??= { ...NAVY, ...DRONE_GRAMMARS, ...SCRAP_GRAMMARS, ...CIVIL_GRAMMARS };
     const run = GRAMMARS[grammar];
     if (!run || !run(c, f)) { why ||= `${grammar}: ${c.why || 'no fit'}`; continue; }
     const s = score(A, fam, rng.next() * 0.6);

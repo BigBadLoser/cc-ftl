@@ -5,14 +5,14 @@ import type { Ctx } from './navyKit';
 import { arrangeHull } from './navyLayouts';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
 import { cutSeam, freeze, notch, survivors } from './salvage';
-import { barge, freighter, habitat, liner, podString, reactorRoom, station, tug } from './scrapBlocks';
+import { barge, freighter, habitat, liner, podString, reactorRoom, station, tug } from './civilBlocks';
 import { pickNose } from './topoNavy';
 import type { DonorKind, FactionDef } from './types';
 
 /**
  * Salvage donors: what each one is, which of the ship's jobs it can carry, and how it is built. Navy and drone donors
  * are cut from those factions' own generators (the navy blocks, or a whole navy / drone arrangement on a sub-plan),
- * so their refinements carry over; civil and one-off donors are hand-made (`scrapBlocks.ts`). A donor takes what it
+ * so their refinements carry over; civil and one-off donors come from the shared civil builders (`civilBlocks.ts`). A donor takes what it
  * carries from the shared pool; whatever a cut or damage took off it goes back to the pool for the next donor.
  */
 

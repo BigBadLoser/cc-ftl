@@ -364,6 +364,22 @@ Same arranger, no sim changes. Files:
   of the pods on each rail, staggered when crowded); a ring that would sprawl past twice the core's length falls
   back to a collar. Its stub reaches past the ring, so the airlock and stores sit outside it.
 
+## Civilians (v19): four families from the civil builders
+
+`civilGrammars.ts` on the shared arranger, built from `civilBlocks.ts` (the same builders the scrappers freeze as donors).
+Content: `src/content/factions/civilian.ts`. Lightly armed: point defence, at most a single light gun and a small shield; never a battery.
+
+- freighter: a cockpit (crew beside its stub), 1-3 spines of cargo containers (size 3-5, gap 2-3, optional stagger), the drive.
+- liner: a cockpit, 1-3 passenger segments (lounge bulb plus cabin rows; cabin size and bulb drawn per ship), the drive.
+- mining: an exposed beam rig fore (a cross piece and 2-3 arms), the cockpit, 1-2 ore-hold barges, the drive.
+- station: a square hub, docking arms n and s with airlocks, cargo pods w, a habitat ring and small drive e.
+
+Sections join corridor end to corridor end (hall ports), so each train is one straight run.
+Taper: `{ slope 3, max 2, jitter 0, label 'fairing' }`. Commercial hulls are cheap and plain, so section changes get long,
+low fairings (at most two tiles), never the navy's armoured shoulders or scrapper jaggedness.
+
+Known weak spots: low within-family variety (stations especially), and every family shares the navy `bankBlock` stern.
+
 ## Diversity
 
 The viewer and tests report:

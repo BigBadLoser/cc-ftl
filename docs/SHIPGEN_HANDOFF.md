@@ -64,7 +64,8 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 | `navyGrammars.ts` | the other navy grammars (decks, wings, citadel, twin hull, carrier island, flight deck) and the GRAMMARS table |
 | `droneBlocks.ts` | sealed pods, crawls, the core room, beams, stores |
 | `droneGrammars.ts` | sockets, `frame` topologies (single, fork, twin, h, collar, ring, brace), drives, picket, lancer and swarm |
-| `scrapBlocks.ts` | civil and one-off donor builders (freighter, habitat, liner, station, barge, pods, tug) |
+| `civilBlocks.ts` | civil builders shared by the civilian generator and scrapper donors (freighter, habitat, liner, station, barge, pods, tug, containers, cockpit) |
+| `civilGrammars.ts` | civilian grammars: freighter, liner, mining, station |
 | `scrapDonors.ts` | the donor registry and job pool; navy and drone donors cut from their own generators |
 | `scrapGrammars.ts` | salvage composition (heap, raft, chain), welding, improvised extras |
 | `salvage.ts` | cuts at seams, corner damage, outline ports, `freeze` |
@@ -170,7 +171,7 @@ the structure and silhouette sheets.
    - Done: pods stay ordered on the prongs (staggered at most).
 6. **Scrapper grey slabs.**
    - Symptom: patched reactors and strapped engines read as plain slabs.
-   - Cause: `scrapBlocks.ts` `reactorRoom`, and `podBlock` used for strapped engines.
+   - Cause: `civilBlocks.ts` `reactorRoom`, and `podBlock` used for strapped engines.
    - Done: those pieces have a recognisable shape.
 7. **Scrapper blobs.**
    - Symptom: heaps of four or more donors merge into one blob.

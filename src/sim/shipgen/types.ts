@@ -104,6 +104,7 @@ export type NavyGrammar = 'linear' | 'deckPair' | 'spineWings' | 'citadelFlanked
 export type DroneGrammar = 'spoke' | 'truss' | 'cluster';
 /** Scrapper (salvage) grammars (see scrapGrammars.ts). */
 export type ScrapGrammar = 'heap' | 'raft' | 'chain';
+export type CivilGrammar = 'freighter' | 'liner' | 'mining' | 'station';
 /** Salvage donor sections: navy and drone ones are cut from those factions' own generators, the rest are hand-made. */
 export type DonorKind =
   | 'navyBow' | 'navyDrive' | 'navyBattery' | 'navyHulk' | 'droneSection'
@@ -134,7 +135,7 @@ export interface HullFamilyDef {
   /** The core is a citadel: an enclosed compartment on the axis, passages around it, crew quarters outboard. */
   citadel?: boolean;
   /** Structural grammars the family uses (how its sections are arranged in 2D), weighted. */
-  grammars: readonly Weighted<NavyGrammar | DroneGrammar | ScrapGrammar>[];
+  grammars: readonly Weighted<NavyGrammar | DroneGrammar | ScrapGrammar | CivilGrammar>[];
   /** Soft proportion target (length / beam): arrangements nearer it score better; never a hard reject. */
   aspect: readonly [number, number];
   /** Propulsion configurations the family uses (engines always face +x). */
