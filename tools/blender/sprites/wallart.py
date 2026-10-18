@@ -287,27 +287,7 @@ def hull_belly(face, s, k, steps, variant):
     return (edge, body, seam)[min(2, k - 1)]
 
 
-def ghost_top(kind, s, w):
-    """Top of a hull ghost (13.webp). Front ghost: a flat near-black rim with a bright teal toothed crest on its outer
-    edge and dim teal lines on its inner edges. Rear ghost: a neutral dark-grey band with a toothed outer edge and a lit
-    crest, then a short black slope down to the floor. kind: crest / bevel / flat / lip / side / rflat / rcrest /
-    redge / rslope."""
-    if kind == "crest":
-        return "gC" if cell(s) % 3 else "gL"            # toothed: two lit cells, one dim
-    if kind in ("bevel", "lip"):
-        return "gL"
-    if kind == "side":
-        return "gB2"
-    if kind == "rflat":
-        return "gG"
-    if kind == "rcrest":
-        return "gGL"
-    if kind == "redge":
-        return "gGL" if cell(s) % 3 else "gG"
-    if kind == "rslope":
-        return "gK"
-    if w < C:
-        return "gL"                                      # inner lip line
-    if w < 2 * C:
-        return "gK"
-    return "gR"
+def ghost_line(v):
+    """Ghost rim edge lines (rendered as alpha over a pale tint, see env_build.render_ghost): 2 = crest, 1 = other
+    edges, 0 = see-through. 13.webp: 1 px lines, the crest about 0.4 opaque, the rest about 0.15."""
+    return ("void", "gW2", "gW1")[v]
