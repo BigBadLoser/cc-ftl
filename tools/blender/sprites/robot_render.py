@@ -39,7 +39,7 @@ def _stance(rig, a):
         rig.rot(f"ankle_{side}", pitch=-(hip + knee))
 
 
-SINK = {"worker": 0.095, "heavy": 0.065}      # charge: head drop that puts its brow plate flush with the socket rim
+SINK = {"worker": 0.125, "heavy": 0.105}      # charge: head drop that puts its brow plate flush with the socket rim
 
 
 def _biped(rig, clip, i):
