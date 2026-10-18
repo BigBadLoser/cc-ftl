@@ -1,5 +1,6 @@
 import { mirrorBlock, mirrorX, type Block, type Side } from './arranger';
 import { hallBlock } from './blocks';
+import { plate } from './hullFill';
 import { storeRoom } from './droneBlocks';
 import { dockBlock, podBlock } from './navyBlocks';
 import { no, type Ctx } from './navyKit';
@@ -102,7 +103,7 @@ function improvise(c: Ctx, p: Pool): boolean {
     if (weld(c, shuffle(c.rng, hostsOf(c)), { ...storeRoom(c.rng, n), donor: 'scrap', label: 'scrap: crates' }, ['n', 's', 'w']) !== null) p.crates -= n;
   }
   for (; p.docks > 0; p.docks--) weld(c, shuffle(c.rng, hostsOf(c)), { ...dockBlock(c.rng), donor: 'scrap', label: 'scrap: airlock' }, ['n', 's']);
-  if (c.A.plate(2) > 0) c.parts.push('plates');
+  if (plate(c.A, 2) > 0) c.parts.push('plates');
   return true;
 }
 

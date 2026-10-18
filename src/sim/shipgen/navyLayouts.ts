@@ -1,4 +1,5 @@
 import { Arranger } from './arranger';
+import { fillHoles, holes, taper } from './hullFill';
 import { Builder } from './builder';
 import { DRONE_GRAMMARS } from './droneGrammars';
 import { SCRAP_GRAMMARS } from './scrapGrammars';
@@ -26,7 +27,7 @@ function score(A: Arranger, fam: HullFamilyDef, noise: number): number {
   const [lo, hi] = fam.aspect;
   const off = aspect < lo ? lo / aspect - 1 : aspect > hi ? aspect / hi - 1 : 0;
   // Enclosed courtyards read as mistakes: open them or fill them.
-  return -3 * off + (s.filled / (s.w * s.h)) - (8 * A.holes()) / s.filled + noise;
+  return -3 * off + (s.filled / (s.w * s.h)) - (8 * holes(A)) / s.filled + noise;
 }
 
 // Built on first use: scrapper grammars call back into arrangeHull for their navy and drone donors.
@@ -59,7 +60,9 @@ export function arrangeHull(
   }
   if (!best) return why || 'no feasible arrangement';
   // Small enclosed pockets (between a drive and a deck end, between welded hulls) are plated over.
-  if (best.A.fillHoles(16) > 0) best.c.parts.push('filled');
+  // Transitions in the faction's style where sections of different widths meet, then small pockets plated over.
+  if (f.transition && taper(best.A, f.transition, () => rng.next()) > 0) best.c.parts.push('tapered');
+  if (fillHoles(best.A, 16) > 0) best.c.parts.push('filled');
   const b = new Builder(rng, -1);
   best.A.stamp(b);
   return { b, A: best.A, profile: best.c.parts.join(' '), plan: best.c.plan };

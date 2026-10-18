@@ -144,6 +144,17 @@ export interface HullFamilyDef {
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 
+/** How a faction builds its transitions: slope (run per step of height), largest step, irregularity. */
+export interface TransitionStyle {
+  /** Tiles along the narrower section per tile of height: 1 is a 45-degree stair, 2 a gentler taper. */
+  slope: number;
+  /** Largest step height bridged. */
+  max: number;
+  /** 0 for regular stairs; up to 1 for ragged, improvised plating. */
+  jitter: number;
+  label: string;
+}
+
 /** Diagnostic metric bands: a generated ship outside a band is rejected and reseeded. */
 export type MetricId = 'compactness' | 'occupancy' | 'corridorRatio' | 'narrowLinks' | 'aspect' | 'beamShare';
 export type MetricBands = Partial<Record<MetricId, readonly [number, number]>>;
@@ -157,6 +168,8 @@ export interface FactionDef {
   architecture: ArchitectureDef;
   /** Assembly-driven generation (v3): hull families. When present, the faction uses the composer instead of v2. */
   hullFamilies?: readonly HullFamilyDef[];
+  /** Tapered transitions where sections of different widths meet (none: exposed joins, e.g. drone beams). */
+  transition?: TransitionStyle;
   /** Salvage sources: the factions whose generators build navy- and drone-origin donors, and the families they use. */
   salvage?: Partial<Record<'navy' | 'drone', { faction: FactionDef; families: readonly string[] }>>;
   metrics?: MetricBands;

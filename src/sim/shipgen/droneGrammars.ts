@@ -41,7 +41,7 @@ function socketed(c: Ctx, host: number, len: number, side: Side, specs: RoomSpec
   const stagger = blocks.length > 1 && used + blocks.length + 1 > len;
   const gap = Math.max(0, Math.floor((len - used) / (blocks.length + 1)));
   const step = stagger ? Math.max(2, Math.floor((len - podLen(blocks[blocks.length - 1] as Block, side)) / (blocks.length - 1))) : 0;
-  const outer = stagger ? Math.max(...blocks.map((b) => podLen(b, across))) + 3 : 0;
+  const outer = stagger ? Math.max(...blocks.map((b) => podLen(b, across))) + 1 : 0;
   let x = stagger ? 0 : gap;
   // Corner pods: the first two sit flush at the carrier's ends, the rest spread between.
   const at = (i: number): number | undefined => (ends && blocks.length >= 2 && !stagger ? (i === 0 ? 0 : i === 1 ? len - podLen(blocks[1] as Block, side) : undefined) : undefined);
@@ -180,7 +180,7 @@ function byVariant(c: Ctx, set: [Topology, number][]): Topology {
   return (set[set.length - 1] as [Topology, number])[0];
 }
 
-function frame(c: Ctx, core: number, topo: Topology, run: number, thick: number): { carriers: Carrier[]; tips: number[] } | null {
+function frame(c: Ctx, core: number, topo: Topology, run: number, thick: number, standoff = 2): { carriers: Carrier[]; tips: number[] } | null {
   const sep = c.rng.int(4, 7);
   const out: Carrier[] = [];
   const tips: number[] = [];
@@ -230,10 +230,10 @@ function frame(c: Ctx, core: number, topo: Topology, run: number, thick: number)
       out.push({ id: bow, len: b.h - 2 + 2 * thick, faces: ['w'] });
     }
   } else if (topo === 'ring') {
-    // A ring frame standing off the core on struts (open aft for the drive), corner pods first on each rail: a
-    // frame `standoff` tiles out, `run` deciding how far it reaches aft.
+    // A ring frame standing `standoff` tiles off the core on struts (open aft for the drive), corner pods first on
+    // each rail; `run` is how much longer the rails are than the core plus its standoff.
     const b = c.A.bounds(core);
-    const sd = c.rng.int(7, 9);
+    const sd = standoff;
     const W = b.w - 2 + 2 * sd + run;
     for (const side of ['n', 's'] as const) {
       const up = beamOn(c, core, side, sd, 1);
@@ -303,15 +303,23 @@ function spoke(c: Ctx): boolean {
   const all = [...mounts, ...reactors];
   const core = c.A.placeRoot(coreRoom(c.rng, c.plan, 7, 4));
   const p = rollProfile(() => c.rng.next(), 0, c.rng.int(0, 1), [0.3, 0.7]);
-  // Compact defensive chassis: a collar frame around the core and its stores stub (it grows aft with the pod
-  // count), or for a handful of pods a short brace with one pod at each arm's tip.
-  // Small pickets: function leaves little choice (brace or a short collar). Bigger: collar or ring.
-  const topo: Topology = all.length <= 3 ? byVariant(c, [['collar', 1], ['brace', 1]]) : byVariant(c, [['collar', 1], ['ring', 1]]);
+  // Compact defensive chassis. Small pickets: function leaves little choice (brace or a short collar). Bigger: a
+  // collar hugging the core and its stores stub, or a ring a few tiles off the core, sized from its pods.
   const perSide = Math.ceil(all.length / 2);
-  // Compact: the frame grows aft only so far; more pods stagger into a second row on its sockets.
-  const stubLen = Math.min(10, Math.max(3, 3 * c.plan.cargo.length, all.slice(0, perSide).reduce((t, x) => t + x.w + 4, 2) - 9));
+  const widths = all.reduce((t, x) => t + x.w + 3, 0);
+  let topo: Topology = all.length <= 3 ? byVariant(c, [['collar', 1], ['brace', 1]]) : byVariant(c, [['collar', 1], ['ring', 1]]);
+  const sd = c.rng.int(2, 3);
+  // Ring: two rails and the bow carry the pods (a second staggered row when crowded); rails no longer than that.
+  const coreW = c.A.bounds(core).w - 2;
+  const ringRun = Math.max(c.rng.int(0, 2), Math.ceil((widths * 0.4) / 2) - coreW - 2 * sd);
+  // A ring that would have to sprawl to hold its pods falls back to the collar.
+  if (topo === 'ring' && ringRun > coreW) topo = 'collar';
+  // Compact: the collar grows aft only so far; more pods stagger into a second row on its sockets.
+  const collarStub = Math.min(10, Math.max(3, 3 * c.plan.cargo.length, all.slice(0, perSide).reduce((t, x) => t + x.w + 4, 2) - 9));
+  // The ring's stub reaches past the ring's aft end (stores and the airlock sit outside it, the drive behind).
+  const stubLen = topo === 'ring' ? Math.max(3 * c.plan.cargo.length, sd + Math.ceil(ringRun / 2) + 5) : collarStub;
   // The collar stops just short of the stub's end: the drive beam goes on behind it.
-  const f = frame(c, core, topo, stubLen - 2, c.rng.int(1, 2));
+  const f = frame(c, core, topo, topo === 'ring' ? ringRun : stubLen - 2, c.rng.int(1, 2), sd);
   if (!f || !load(c, f.carriers, all, p)) return no(c, 'picket frame');
   // A short crawl stub aft for the stores and the airlock; the drive behind it.
   const stub = c.A.attach(core, crawl(c.rng, stubLen, true), { side: 'e', doors: 1 });

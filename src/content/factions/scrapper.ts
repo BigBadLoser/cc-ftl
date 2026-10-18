@@ -26,6 +26,8 @@ export const scrapper = {
     noses: navy.architecture.noses,
   },
   // Salvage families (assembly-driven): donor sections welded together, chosen by what the role needs.
+  // Improvised adapters: ragged steep plating welded into the steps between mismatched donors.
+  transition: { slope: 1, max: 3, jitter: 0.5, label: 'adapter plating' },
   hullFamilies: [
     {
       // Raiders want guns and boarding: navy hulks and drone guns, airlocks, a shuttle bay.

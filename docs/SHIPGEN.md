@@ -342,6 +342,25 @@ Same arranger, no sim changes. Files:
 
 - Per-donor livery and wear art (hull tint, rust, patch plates) from the sprite pipeline.
 
+## Transitions (v18): tapered collars between sections
+
+- **`hullFill.ts` holds all the plating passes** that run after an arrangement: seam plates, enclosed-pocket
+  fills, and `taper`. The Arranger exposes `cell`, `reserved` and `box` to them.
+- **How `taper` works.** It finds concave steps where two different blocks meet (a wider section's wall rising from
+  a narrower one's outer wall). It fills each corner with a stepped diagonal of plating, up to the step height and
+  as far along the narrower section as the slope asks.
+  - Reserved cells (gun and airlock faces, engine exhaust) stop it, so equipment, traversal and clearances are
+    never touched.
+  - Steps inside one block are left alone.
+- **Per faction (`FactionDef.transition`).**
+  - Navy: integrated, regular (slope 2, up to 4 high).
+  - Scrappers: improvised adapter plating (slope 1, up to 3, jitter 0.5).
+  - Drones: none (exposed beam joins).
+- It runs in `arrangeHull` before pockets are filled, so it applies to scrapper donors cut from navy hulls too.
+- **Picket ring (v18).** The ring stands 2 to 3 tiles off the core. Its rails are as long as its pods need (40%
+  of the pods on each rail, staggered when crowded); a ring that would sprawl past twice the core's length falls
+  back to a collar. Its stub reaches past the ring, so the airlock and stores sit outside it.
+
 ## Diversity
 
 The viewer and tests report:
