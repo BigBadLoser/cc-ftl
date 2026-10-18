@@ -63,8 +63,11 @@ The user did not approve the first m4-assets sheets: modules were far too small.
 - **Roof:** keep v1 (`roof-art`) ochre/blue-grey multi-tile plates, seams and edge trim; remove all
   scattered details (lights, vent squares, hatches, nubs, hazard tape). The structure-driven v2 was
   rejected.
-- **Weapons art APPROVED in direction** (`opus-weapons`): hatch gets darker armour + hazard seam;
-  ring-stack look mid-deploy is fine.
+- **Weapons art APPROVED for now** (`opus-weapons` d629ae2: S burst laser, H mass driver, R point
+  defence, bays with slim full-height cores, hazard-seam hatches). Remaining nits: rear glow ring
+  reads like a muzzle at some aims; hazard seam reads dashed. Other 3 weapons not designed yet.
+- **Roof:** Opus v5 (`roof-art` a25cf44) is the best so far (4x4 modules, girders, bevelled
+  plates, 136 sprites); user says it "could use work" — v6 in progress.
 - **Walls pass 5:** thinner walls (~0.22–0.26), hull as layered plate courses (not a
   checkerboard), denser shaded wall faces, muted dusty-rose doors.
 - **Sitting crew and roof** handed to Opus (high effort) after repeated misses.
