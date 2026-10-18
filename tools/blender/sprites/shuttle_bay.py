@@ -1,36 +1,36 @@
-"""SHUTTLE BAY prototype (module.vehicle_bay, 4x5 interior pad). Not wired in.
+"""SHUTTLE BAY (module.vehicle_bay, 4x5). v9 BLOCKOUT: the WHOLE footprint is the pit. Not wired in.
 
 Local frame (BayFrame): u = grid x, v = grid y at rotation 0, origin = footprint centre, z up. The footprint is u -2..2,
-v -2.5..2.5; the sim's boarding tile (1, 4) is the front-row tile centred at (-0.5, 2.0). The sprite origin is the centre
-of the front-most footprint tile, as for every module. Rotations follow the sim: clockwise, (x, y) -> (h-1-y, x).
+v -2.5..2.5. The sprite origin is the centre of the front-most footprint tile, as for every module. Rotations follow the
+sim: clockwise, (x, y) -> (h-1-y, x).
 
-Layout (after the Space Haven hangar well): a deep recessed HANGAR WELL 3 wide x 5 long (columns x 0..2 at r0) beside a
-one-tile BOARDING WALKWAY down the long +x side (column x 3). The well is an octagonal opening (all four corners chamfered
-alike) with a raised hazard-striped coaming lip, panelled walls in three rows with pilasters and light bars, and a floor
-of two launch doors (hazard seam, launch rails, clamps) at PIT below the deck, split along the long axis. The well is
-deep so a shuttle taller than the walls still fits under the roof slab: the craft parks with its length along the 5-tile
-axis, side hatch toward the walkway, stands on the doors and is rendered with the bay as a holdout, so the coaming cuts
-it. Opening the doors shows the shaft to space. The walkway has the boarding plate on the access tile at its middle, a
-gate on the coaming with a gangway out to the shuttle's side, light strips, and a service pedestal at its back end.
-A 3x3 pod bay is the same kit with a smaller OPEN."""
+Layout: an octagonal HANGAR PIT filling the footprint (all four corners chamfered alike), PIT = 1.8 deep, with a hazard-
+striped coaming lip, three rows of panelled walls with pilasters and light bars, and a floor of two launch doors. There is
+no walkway inside the footprint: crew board from the normal floor beside the LONG +u side (access tile outside the
+footprint, at r0 the one east of the pit at the hatch row) over a GANGWAY: a gate on the lip, a plate on the outside
+floor, a steep stair-ramp down over the pit wall and a landing at the parked shuttle's side hatch (the hatch sill is
+HATCH_Z - 0.8 above the pit floor). The shuttle (art/shuttle, transport_shuttle) parks with its nose to +v so its hatch
+faces +u, the side that faces the camera at r0."""
 import math
 from . import core, cmbkit, walls, roofs
 from .cmbkit import Frame, prim
 
-PAD_T = 0.06                          # pad plate thickness (the pad itself)
+PAD_T = 0.06                          # deck plate thickness
 LEAF_T = 0.04                         # launch door thickness
-OPEN = (-1.68, 0.78, -2.18, 2.18)     # well opening u0, u1, v0, v1 (columns x 0..2, all 5 rows)
-UC = (OPEN[0] + OPEN[1]) / 2           # well centre line (u); the doors split here
+OPEN = (-1.96, 1.96, -2.46, 2.46)     # pit opening u0, u1, v0, v1: the footprint less a 0.04 seat (the shuttle is 3.82 x 4.90)
+UC = 0.0                              # pit centre line (u); the doors split here
 CH = (0.5, 0.5, 0.5, 0.5)             # opening chamfer per corner (all four alike)
-BAND = 0.22                           # dark deck band round the opening (the lip sits on its inner part)
-PIT = 1.6                             # WELL DEPTH: the launch doors' top (where a parked shuttle stands) is PIT below the deck
-LIP, LIP_W = 0.09, 0.15                # raised coaming lip round the opening: height, width
+PIT = 1.8                             # PIT DEPTH below the deck = where the parked shuttle's feet stand
+LIP, LIP_W = 0.09, 0.14               # raised coaming lip round the opening: height, width (it overhangs the footprint by 0.1)
 SHAFT = 1.0                           # launch shaft below the doors when open
-CLEAR_ROOF = PIT + walls.HF           # 3.45: tallest shuttle that fits under the roof slab's underside
-CLEAR_TOP = PIT + roofs.ZR            # 3.65: ... up to the roof slab's top (2.05 above the deck)
-BOARD = (1.5, 0.0)                    # boarding tile centre: the middle of the walkway column (sim tile (3, 2) at r0)
-GANG = 0.4                            # gangway reach from the coaming's outer edge out over the well (-u)
-FEET = ((0.7, -0.92), (0.7, 0.75))    # foot clamps on the doors (|u - UC|, v): where a parked shuttle's feet go
+# parked shuttle (art/shuttle transport_shuttle), centred on the pit, nose +v at r0 (heading +90 deg), feet on the doors
+HATCH = (0.817, 1.40, -PIT + 1.30)    # hatch centre (hull surface): u, v, z. Round, 1.6 across, so sill z = -1.30, top z = +0.30
+HATCH_SILL = HATCH[2] - 0.8
+FEET = ((1.28, -1.45), (1.28, 1.24))  # landing-leg pads on the doors: |u - UC|, v
+GANG_W = 0.8                          # gangway width (across v), centred on the hatch row
+GANG_TOP = 2.45                       # outer end of the plate on the outside floor (footprint edge is u = 2.0)
+GANG_FOOT = 1.08                      # inner end of the stair-ramp / start of the landing
+GANG_END = 0.99                       # landing's inner end, just off the hull flange
 
 
 def _g(name):
@@ -164,63 +164,13 @@ def hazard_band(f, inner, width, z, w=0.13, period=0.27, slant=0.12, base="hazK"
 # ---- the bay ------------------------------------------------------------------------------------------------
 
 def pad(f):
-    """Deck pad: steel plating from the footprint edge to the hazard ring, the ring, then the opening lip."""
+    """Deck plate: the four corner triangles between the footprint corners and the chamfered opening, plus the thin seat."""
     _g("deck")
     outer = octagon(-2.0, 2.0, -2.5, 2.5, (0, 0, 0, 0))
-    rect, ch = grow(OPEN, CH, BAND)
-    ring = octagon(*rect, ch)
     hole = octagon(*OPEN, CH)
-    lip = octagon(-1.94, 1.94, -2.44, 2.44, (0, 0, 0, 0))
     for i in range(8):
         j = (i + 1) % 8
-        prism(f, [outer[i], outer[j], lip[j], lip[i]], 0.0, PAD_T, "steelD", top="steelL")      # lit edge lip: the pad's outline
-        prism(f, [lip[i], lip[j], ring[j], ring[i]], 0.0, PAD_T, "steelD", top="blueGrey")
-        prism(f, [ring[i], ring[j], hole[j], hole[i]], 0.0, PAD_T, "steelD", top="hazK")      # dark band under / outside the lip
-    for v in (-1.0, 1.0):                                                            # deck plate seams across the walkway
-        prism(f, [(1.06, v - 0.035), (1.94, v - 0.035), (1.94, v + 0.035), (1.06, v + 0.035)], PAD_T, PAD_T + 0.004, "steelD")
-
-
-def lights(f, on=True):
-    """Flush light strips down the walkway's outer edge and twin bars at its ends (pale white-cyan like the walls' lamps)."""
-    _g("lights")
-    lit = "arc" if on else "glassL"
-    z = PAD_T
-    for v0, v1 in ((-2.15, -1.45), (-0.95, -0.55), (0.55, 0.95), (1.45, 2.15)):
-        prism(f, [(1.83, v0), (1.92, v0), (1.92, v1), (1.83, v1)], z, z + 0.012, "steelD", top=lit)
-    for v in (1.9, 2.1):                                                             # twin "||" bars across the walkway's front end
-        prism(f, [(1.15, v - 0.045), (1.6, v - 0.045), (1.6, v + 0.045), (1.15, v + 0.045)], z, z + 0.012, "steelD", top=lit)
-
-
-def boarding(f, home=True):
-    """Boarding plate on the access tile (mid-walkway): a lighter plate with two chevrons pointing at the well (-u, the
-    shuttle's side hatch) and a lamp strip on its outer edge (green while a shuttle is home)."""
-    _g("lights")
-    u, v = BOARD
-    z = PAD_T
-    prism(f, [(u - 0.38, v - 0.42), (u + 0.4, v - 0.42), (u + 0.4, v + 0.42), (u - 0.38, v + 0.42)], z, z + 0.01, "steelD", top="steelL")
-    for du in (-0.08, 0.17):                                                         # chevrons point -u (into the well)
-        for s in (-1, 1):
-            prism(f, [(b, a) for a, b in _chev(v, u + du, s)], z + 0.01, z + 0.016, "hazY")
-    prism(f, [(u + 0.29, v - 0.34), (u + 0.36, v - 0.34), (u + 0.36, v + 0.34), (u + 0.29, v + 0.34)], z + 0.01, z + 0.02, "steelD",
-          top="green" if home else "pcb")
-
-
-def _chev(u, c, s):
-    """One arm of a chevron (s = -1 left, +1 right), a convex quad from the tip (u, c - 0.11) out and back (points -v;
-    swap the coordinates for one pointing -u)."""
-    w = 0.08
-    return [(u, c - 0.11), (u + s * 0.3, c + 0.06), (u + s * 0.3, c + 0.06 + w), (u, c - 0.11 + w)]
-
-
-def pedestal(f):
-    """Service pedestal (power / fuel umbilical) at the back end of the walkway, beside the well's chamfer."""
-    _g("pedestal")
-    u, v = 1.6, -2.22
-    f.box(u, v, PAD_T, 0.36, 0.36, 0.06, "steelD", top="steel")
-    f.box(u, v, PAD_T + 0.06, 0.26, 0.26, 0.5, "steel", top="steelL")
-    f.box(u, v, PAD_T + 0.56, 0.32, 0.32, 0.08, "steelD", top="steel")
-    f.box(u - 0.15, v + 0.04, PAD_T + 0.2, 0.04, 0.16, 0.24, "dark", base=True)        # umbilical socket on the -u face
-    f.box(u - 0.15, v + 0.04, PAD_T + 0.46, 0.04, 0.12, 0.06, "cyan", base=True)
+        prism(f, [outer[i], outer[j], hole[j], hole[i]], 0.0, PAD_T, "steelD", top="blueGrey")
 
 
 def leaves(f, t):
@@ -230,7 +180,7 @@ def leaves(f, t):
     _g("hatch")
     hole = octagon(*OPEN, CH)
     hw = (OPEN[1] - OPEN[0]) / 2
-    v0, v1 = OPEN[2] + 0.1, OPEN[3] - 0.1
+    v0, v1 = OPEN[2] + 0.55, OPEN[3] - 0.55
     z = -PIT
     for s in (-1, 1):
         k = t * hw                                      # how far the inner edge has moved out
@@ -255,7 +205,7 @@ def leaves(f, t):
             if abs(uu - UC) + 0.17 > hw - 0.02:
                 continue
             for sv in (-1, 1):
-                f.box(uu, vv + sv * 0.2, z + 0.05, 0.3, 0.08, 0.08, "steel", top="hazY")
+                f.box(uu, vv + sv * 0.3, z + 0.05, 0.3, 0.08, 0.08, "steel", top="hazY")
 
 
 def _wall(f, p, q, nin, t0, t1, d0, d1, z0, z1, mat, top=None):
@@ -274,7 +224,7 @@ def pit(f, t):
     _g("pit")
     hole = _dedup(octagon(*OPEN, CH))
     zb = -(PIT + (SHAFT if t > 0 else LEAF_T))
-    rows = ((-0.08, -0.56, "blueGrey"), (-0.62, -1.06, "steel"), (-1.12, -PIT + 0.06, "steelD"))
+    rows = ((-0.08, -0.62, "blueGrey"), (-0.68, -1.18, "steel"), (-1.24, -PIT + 0.06, "steelD"))
     n = len(hole)
     cx = sum(a[0] for a in hole) / n
     cy = sum(a[1] for a in hole) / n
@@ -291,26 +241,26 @@ def pit(f, t):
         for j in range(k):                                                            # wall panels between pilasters
             a0, a1 = (j + 0.08) / k, (j + 0.92) / k
             for z1, z0, col in rows:
-                _wall(f, p, q, nin, a0, a1, 0.0, 0.02, z0, z1, col)
+                _wall(f, p, q, nin, a0, a1, 0.0, 0.015, z0, z1, col)
             m = (a0 + a1) / 2                                                          # inset sub-panels, upper two rows
             for b0, b1 in ((a0 + 0.06 / L, m - 0.03 / L), (m + 0.03 / L, a1 - 0.06 / L)):
                 if b1 - b0 > 0.08 / L:
-                    _wall(f, p, q, nin, b0, b1, 0.02, 0.03, -0.5, -0.3, "steelD")
-                    _wall(f, p, q, nin, b0, b1, 0.02, 0.03, -1.0, -0.7, "steelD")
+                    _wall(f, p, q, nin, b0, b1, 0.015, 0.025, -0.55, -0.35, "steelD")
+                    _wall(f, p, q, nin, b0, b1, 0.02, 0.03, -1.08, -0.84, "steelD")
             if L > 1.0 and not (tw and a0 < tw[1] and a1 > tw[0]):
-                _wall(f, p, q, nin, a0 + 0.1 / k, a1 - 0.1 / k, 0.02, 0.03, -0.24, -0.16, "arc")     # light bar
+                _wall(f, p, q, nin, a0 + 0.1 / k, a1 - 0.1 / k, 0.015, 0.025, -0.24, -0.16, "arc")     # light bar
             if L > 1.0 and j % 2 == 1:
-                _wall(f, p, q, nin, a0 + 0.3 / k, a1 - 0.3 / k, 0.03, 0.04, -0.9, -0.84, "orange" if t > 0 else "cyan")  # launch warning
+                _wall(f, p, q, nin, a0 + 0.3 / k, a1 - 0.3 / k, 0.025, 0.035, -1.0, -0.94, "orange" if t > 0 else "cyan")  # launch warning
         for j in range(k + 1):                                                        # pilasters
             tt = min(max(j / k, 0.045 / L), 1 - 0.045 / L)
-            _wall(f, p, q, nin, tt - 0.045 / L, tt + 0.045 / L, 0.0, 0.06, -PIT, -0.02, "steelL")
-        for zr in (-0.59, -1.09):                                                     # rails between the rows
+            _wall(f, p, q, nin, tt - 0.045 / L, tt + 0.045 / L, 0.0, 0.04, -PIT, -0.02, "steelL")
+        for zr in (-0.65, -1.21):                                                     # rails between the rows
             _wall(f, p, q, nin, 0.0, 1.0, 0.0, 0.03, zr - 0.035, zr + 0.035, "steelL")
         if t > 0:
             _wall(f, p, q, nin, 0.0, 1.0, 0.0, 0.012, -PIT - 0.36, -PIT - 0.3, "cyan")
     p, q = hole[0], hole[1]                                                           # twin vertical lamps, back wall
     for tt in (0.62, 0.68):
-        _wall(f, p, q, (0, 1), tt, tt + 0.03, 0.03, 0.045, -1.0, -0.12, "arc")
+        _wall(f, p, q, (0, 1), tt, tt + 0.03, 0.025, 0.04, -1.0, -0.12, "arc")
     if t > 0:
         f.poly([f.pt(u, v, zb) for u, v in hole], "void", flip=True)
 
@@ -328,21 +278,34 @@ def coaming(f):
 
 
 def gate(f, t, home=True):
-    """Boarding gate on the coaming at mid-walkway: two posts with lamp caps (green while a shuttle is home) and a gangway
-    reaching GANG out over the well (-u) to the parked shuttle's side hatch; it retracts while the doors open."""
+    """Boarding gate on the long +u lip at the hatch row: two posts with lamp caps (green while a shuttle is home), a plate on
+    the outside floor, a steep stair-ramp over the pit wall down to a landing at the hatch sill, with hazard-yellow rails.
+    It retracts while the doors open."""
     _g("gate")
-    u1, v = OPEN[1] + LIP_W, BOARD[1]
-    z1 = PAD_T + LIP
+    v = HATCH[1]
+    u1 = OPEN[1] + LIP_W
     for sv in (-1, 1):
-        f.box(u1 + 0.06, v + sv * 0.36, PAD_T, 0.1, 0.1, 0.62, "steel", top="steelL")
-        f.box(u1 + 0.06, v + sv * 0.36, PAD_T + 0.62, 0.12, 0.12, 0.06, "steelD", top="green" if home else "pcb")
+        f.box(u1 + 0.05, v + sv * (GANG_W / 2 + 0.12), PAD_T, 0.1, 0.1, 0.62, "steel", top="steelL")
+        f.box(u1 + 0.05, v + sv * (GANG_W / 2 + 0.12), PAD_T + 0.62, 0.12, 0.12, 0.06, "steelD", top="green" if home else "pcb")
     _g("bridge")
-    ln = GANG * (1.0 - min(1.0, t * 3))
-    if ln < 0.05:
+    if t > 0.33:
         return
-    f.box(u1 - ln / 2, v, z1 - 0.05, ln, 0.6, 0.05, "steelD", top="steelL")
-    for sv in (-1, 1):
-        f.box(u1 - ln / 2, v + sv * 0.27, z1, ln, 0.06, 0.025, "hazY", top="hazY")
+    zt = PAD_T + 0.02
+    f.box((GANG_TOP + u1) / 2, v, PAD_T, GANG_TOP - u1, GANG_W, 0.02, "steelD", top="steelL")        # plate on the outside floor
+    ut, ub = u1, GANG_FOOT                                                                                 # stair-ramp, top .. foot
+    zb = HATCH_SILL + 0.04
+    def ramp(a, b, mats):
+        lbox(f, lambda a_, b_, d: (ut if b_ < 0 else ub, v + a_ * a, (zt if b_ < 0 else zb) - (0.05 if d < 0 else 0.0)), mats)
+    ramp(GANG_W / 2, 0, {"side": "steelD", "top": "steelL"})
+    for k in range(1, 6):                                                                                  # tread bars
+        u = ut + (ub - ut) * k / 6
+        z = zt + (zb - zt) * k / 6
+        f.box(u, v, z, 0.05, GANG_W - 0.1, 0.012, "steelD")
+    f.box((ub + GANG_END) / 2, v, zb - 0.05, ub - GANG_END, GANG_W, 0.05, "steelD", top="steelL")           # landing at the hatch
+    for sv in (-1, 1):                                                                                     # rails
+        vr = v + sv * (GANG_W / 2 - 0.03)
+        lbox(f, lambda a_, b_, d, vr=vr: (ut if b_ < 0 else ub, vr + a_ * 0.03, (zt if b_ < 0 else zb) + (0.0 if d < 0 else 0.1)), {"side": "hazY", "top": "hazY"})
+        f.box((ub + GANG_END) / 2, vr, zb, ub - GANG_END, 0.06, 0.1, "hazY", top="hazY")
 
 
 def floor_holdout(rot, holdout=True, colour="dark"):
@@ -364,9 +327,6 @@ def floor_holdout(rot, holdout=True, colour="dark"):
 
 def build(f, t=0.0, home=True):
     pad(f)
-    lights(f)
-    boarding(f, home)
-    pedestal(f)
     pit(f, t)
     coaming(f)
     leaves(f, t)
