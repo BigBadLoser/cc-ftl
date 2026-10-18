@@ -94,6 +94,22 @@ def wall(rot,holdout=True):
     return out
 
 
+def skirted(f,rot,inner,outer,a,b,top,mat,topmat):
+    """A bulkhead block across v in [a, b] with the production hull's skirt (sprites/walls.py: SKIRT * HF high, 55 degrees,
+    reaching the tile edge) on the side of the strip that is not its tile edge: outboard for an east / south hull
+    (r1 / r2, strip on the inner edge), inboard for a north / west one (r0 / r3, strip on the outer edge)."""
+    zs,run=W.skirt_top(),W.skirt_run()
+    if rot in (1,2):
+        edge=2.5
+        ze=max(0.0,zs*(1-(edge-outer)/run))
+        shape=[(inner,0),(inner,top),(outer,top),(outer,zs),(edge,ze),(edge,0)]
+    else:
+        edge=1.5
+        ze=max(0.0,zs*(1-(inner-edge)/run))
+        shape=[(edge,0),(edge,ze),(inner,zs),(inner,top),(outer+0.04,top),(outer+0.04,0)]
+    prism(f,shape,a,b,mat,topmat)
+
+
 def hull(rot,stage=1,holdout=False):
     """The engine's bulkhead (module.engine.hull.r<n>, never cut): two full-height armour shoulders through the hull
     strip, the low sill under the bearing, the blue-grey plates on the outer face and the circular bearing around the
@@ -103,11 +119,10 @@ def hull(rot,stage=1,holdout=False):
     top=W.hull_top()
     m=core.Mesh("KESTREL_armoured_bulkhead")
     f=Frame(m,rot,centre=CENTRE[rot])
-    uc,du=(inner+outer+0.04)/2,outer+0.04-inner
     for side in (-1,1):
-        f.box(uc,side*0.81,0,du,0.38,top-0.02,"steel",top="steelL")
+        skirted(f,rot,inner,outer,side*0.62,side*1.0,top-0.02,"steel","steelL")
         f.box(outer+0.05,side*0.82,0.45,0.04,0.28,0.4,"blueGrey",top="steel")
-    f.box(uc,0,0,du,1.24,BZ-0.57,"steelD",top="steel")
+    skirted(f,rot,inner,outer,-0.62,0.62,BZ-0.57,"steelD","steel")
     # Compact circular bearing instead of a tall rectangular bridge.
     bearing_start=len(m.v)
     annulus(f,1.81,2.26,0.555,0.75,BZ,"steel","steelL",sides=32)
