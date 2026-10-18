@@ -7,10 +7,10 @@ wall's foot across the rest of the tile on the camera side (L-inf distance to th
 mitred). Interior walls have a near-black cut cap with a bright lip; the far hull is a thicker strip with a colour-blocked
 cap. Full pieces rise to HF; cutaway pieces are cut at H.
 
-The NEAR hull (a hull tile whose +y or +x neighbour is space: "out" pieces, hull.py) is a different element: a full-tile
-armour block cut at H with a big 45 degree bevel, whose outer face continues DROP below the deck, so the chunky plating
-shows in every mode without hiding the interior. Its outer corner (+x, +y) is chamfered at 45 degrees and faces the
-camera; the side corners are chamfered in plan.
+The NEAR hull (a hull tile whose +y or +x neighbour is space: "out" pieces, hull.py) is a GHOST in every view mode, so
+it never hides the interior: a low armoured footing (top ZG, a narrow lit chamfer on its outer edge, its outer face
+continuing DROP below the deck) with short glass above it. Its outer corner (+x, +y) is chamfered at 45 degrees and
+faces the camera; the side corners are chamfered in plan.
 
 Every piece is a heightfield on a 32x32 cell grid (`Spec`): covered cells are the wall body (top surface at topz), the
 others are skirt (skirtz) or floor; camera-facing vertical faces are emitted where the body ends. Cells may be half cells
@@ -22,16 +22,18 @@ GN = 32
 # Heights (tiles; crew are 1.5 tall). Interior walls rise to HF; the roof is a ROOF_T slab on top of them (HF .. HF +
 # ROOF_T, roofs.ZR is its top); the hull rises to the roof's top so the roof sits flush with it. Everything else is
 # derived from HF when a piece is built, so HF stays the single height knob.
-HF = 2.2           # interior wall height
+HF = 1.85          # interior wall height (chosen by the user; Space Haven measures about 1.85-1.9)
 ROOF_T = 0.2       # roof slab thickness
 H = 0.5            # cutaway cut plane (walls, far hull and the near hull top)
 HH = H             # (compat) cutaway hull height
-SKIRT = 0.30       # full skirt top as a fraction of HF (Space Haven's skirt is about 0.3 of the wall)
-ZSL = 0.2          # cutaway skirt top
-T = TW = 11 / 32   # interior wall thickness (Space Haven: about 0.35 of a tile)
-TWH = 16 / 32      # far hull thickness
-DROP = 1.8         # the near hull's outer face reaches this far below the deck
-BEV = 12 / 32      # near hull top bevel (45 degrees)
+SKIRT = 0.30       # full skirt rise as a fraction of HF (Space Haven: rise ~0.57 on a ~1.88 wall)
+SKIRT_RUN = 0.40   # full skirt run from the wall face to its toe (Space Haven ~0.40: about 55 degrees)
+ZSL = 0.2          # cutaway skirt rise (same slope, so a shorter run)
+T = TW = 12 / 32   # interior wall thickness (Space Haven: black cap ~0.37 of a tile)
+TWH = 19 / 32      # far hull thickness (Space Haven ~0.9 incl. its skirt; ours keeps the skirt inside the tile)
+ZG = 0.3           # near-hull ghost: footing top (the ghost is drawn in every view mode)
+DROP = 0.45        # the ghost's outer armour face continues this far below the deck (the deck edge)
+BEV = 6 / 32       # ghost footing: narrow lit 45 degree chamfer along its outer edge
 DZ = 1 / 40        # vertical face row height (about 1 px)
 BIT = {"n": 1, "e": 2, "s": 4, "w": 8}
 EDGES = {"f": "y0y1x0x1", "se": "y0x0", "nw": "y1x1", "ne": "y1x0", "sw": "y0x1"}
@@ -51,6 +53,10 @@ def wall_top(fam, full):
     if not full:
         return H
     return hull_top() if fam == "hull" else HF
+
+
+def skirt_run(full):
+    return SKIRT_RUN * skirt_top(full) / skirt_top(True)
 
 
 def profile(fam, full):
@@ -213,6 +219,7 @@ class Strip(Spec):
     def __init__(self, mask, fam, full, variant=0):
         self.mask, self.fam, self.full, self.variant = mask, fam, full, variant
         t, self.top, self.zs = profile(fam, full)
+        self.run = skirt_run(full)
         hull = fam == "hull"
         te = TW if hull and mask & 5 == 5 else t        # an arm off a straight hull run is a partition
         ts = TW if hull and mask & 10 == 10 else t
@@ -260,7 +267,7 @@ class Strip(Spec):
         for r in self.rects:
             x0, x1, y0, y1 = r[0]
             d = max(x0 - x, x - x1, y0 - y, y - y1, 0.0)
-            z = max(z, self.zs * max(0.0, 1.0 - d / (1.0 - r[2])))
+            z = max(z, self.zs * max(0.0, 1.0 - d / self.run))
         return z
 
     def col_top(self, i, j, kind, x, y):
@@ -274,7 +281,7 @@ class Strip(Spec):
 
     def col_skirt(self, i, j, kind, x, y):
         d, r = self._dist(x, y)
-        run = 1.0 - r[2]
+        run = self.run
         s = x + 0.5 if kind == "y" else 0.5 - y
         if r[1] == "hull":
             return A.hull_skirt(kind, s, d, run, self.variant)
@@ -297,23 +304,30 @@ def block(mask, fam, deco=None, name=None, full=False):
     return [m.build()]
 
 
-def end_face(fam, side):
-    """Walls-up overlay: the end face of a full-height wall where it butts into the low near hull (side s: the +y end
-    of an S arm, e: the +x end of an E arm)."""
-    t = TWH if fam == "hull" else TW
-    m = core.Mesh(f"end_{fam}_{side}", flat=True)
-    n = int(round(t * GN))
-    top = wall_top(fam, True)
-    rows = int(round((top - H) / DZ))
+def end_face(fam, side, full=True):
+    """Overlay where a wall or far hull butts into the low near-hull ghost: the cross-section of the wall and its skirt
+    above the ghost footing (ZG). side s: the +y end of an S arm, e: the +x end of an E arm."""
+    t, top, zs = profile(fam, full)
+    run = skirt_run(full)
+    m = core.Mesh(f"end_{fam}_{side}_{int(full)}", flat=True)
     R = A.ramp("blue" if fam == "hull" else "wall", "y" if side == "s" else "x")
-    for c in range(n):
+    for c in range(GN):
         u0, u1 = c / GN, (c + 1) / GN
+        um = (u0 + u1) / 2
+        body = um < t
+        zt = top if body else zs * max(0.0, 1.0 - (um - t) / run)
+        if zt <= ZG + 1e-6:
+            continue
+        rows = max(1, int(round((zt - ZG) / DZ)))
         for k in range(rows):
-            z0, z1 = H + (top - H) * k / rows, H + (top - H) * (k + 1) / rows
-            col = R["H"] if z1 > top - 0.05 else (R["L"] if c == 0 else (R["D"] if c == n - 1 else R["M"]))
+            z0, z1 = ZG + (zt - ZG) * k / rows, ZG + (zt - ZG) * (k + 1) / rows
+            if body:
+                col = R["H"] if z1 > top - 0.05 else (R["L"] if c == 0 else (R["D"] if c == round(t * GN) - 1 else R["M"]))
+            else:
+                col = R["L"] if k == rows - 1 else R["D"]
             if side == "s":
                 a, b = (-0.5 + u0, 0.5), (-0.5 + u1, 0.5)
             else:
-                a, b = (0.5, -0.5 + t - u0), (0.5, -0.5 + t - u1)
+                a, b = (0.5, -0.5 + u0), (0.5, -0.5 + u1)
             m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z1), core.G(*a, z1)], col)
     return [m.build()]

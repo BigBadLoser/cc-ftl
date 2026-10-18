@@ -1,13 +1,14 @@
 """Near hull: hull tiles whose +y (o bit 1) or +x (o bit 2) neighbour is space, the side the camera sees from outside.
 
-A full-tile armour block cut at walls.H with a 45 degree bevel along the outer edge(s); its outer face runs DROP below
-the deck (the ship's side), layered blue-grey / ochre plating in horizontal courses (wallart.hull_out_face). The outer
-corner (o = 3) is cut at 45 degrees across the tile and that face looks straight at the camera; the side corners
-(SW: o 1 without a W neighbour, NE: o 2 without an N neighbour) are cut at 45 degrees in plan. The same block is used in
-every view mode; walls-up adds a translucent glass pane on top (`glass`) instead of a full-height wall."""
+Drawn as a GHOST in every view mode (as on main), so it never hides the interior: a low full-tile armoured footing (top
+walls.ZG) whose top is a dark cut with a narrow lit 45 degree chamfer along the outer edge(s); its outer face continues
+DROP below the deck (the deck edge) in the hull's blue-grey / ochre plating (wallart.hull_out_face). On the crest
+stands a short translucent glass pane (`glass`). The outer corner (o = 3) is cut at 45 degrees across the tile and that
+face looks straight at the camera; the side corners (SW: o 1 without a W neighbour, NE: o 2 without an N neighbour) are
+cut at 45 degrees in plan."""
 from . import core
 from . import wallart as A
-from .walls import BEV, DROP, DZ, GN, H, TW, Spec, emit, half_cell
+from .walls import BEV, DROP, DZ, GN, TW, ZG, Spec, emit, half_cell
 
 
 class Out(Spec):
@@ -26,7 +27,7 @@ class Out(Spec):
         if o == 2 and not mask & 1:
             keeps.append(lambda ci, cj: ci <= cj)                      # NE side corner
         self.keep = lambda ci, cj: all(k(ci, cj) for k in keeps)
-        self.foot = H - BEV
+        self.foot = ZG - BEV
 
     def cover(self, i, j):
         return half_cell(self.keep, i, j)
@@ -35,10 +36,12 @@ class Out(Spec):
         """Distance from the outer edge (the mitre with the neighbours' bevels is exact for the corner)."""
         if self.o == 3:
             return -(x + y)
+        if self.o == 4:
+            return max(0.5 - x, 0.5 - y)                               # concave corner: only the corner square dips
         return 0.5 - y if self.o & 1 else 0.5 - x
 
     def topz(self, x, y):
-        return H - max(0.0, BEV - self.dist(x, y))
+        return ZG - max(0.0, BEV - self.dist(x, y))
 
     def _s(self, x, y):
         if self.o in (3, 4):
@@ -74,7 +77,7 @@ def out_block(mask, o, variant=0):
 def drop(side):
     """The below-deck band alone (for a door set into the near hull): side s along x at +y, e along y at +x."""
     m = core.Mesh(f"hull_drop_{side}", flat=True)
-    foot = H - BEV
+    foot = ZG - BEV
     rows = int(round(DROP / DZ))
     for c in range(GN):
         s0, s1 = c / GN, (c + 1) / GN
@@ -90,13 +93,13 @@ def drop(side):
     return [m.build()]
 
 
-GH = 1.05          # walls-up glass pane top
+GH = 0.8           # glass pane top (short: the ghost never hides the interior)
 GT = 3 / 32        # glass pane thickness
 
 
 def glass(mask, o):
-    """Walls-up ghost: an empty plate plus a translucent glass pane standing on the near hull's bevel crest, with a
-    light frame rail on top (env_build renders the glass in its own pass, its brightness becomes alpha)."""
+    """The ghost's glass: an empty plate plus a translucent pane standing on the footing's chamfer crest, with a light
+    frame rail on top (env_build renders the glass in its own pass, its brightness becomes alpha)."""
     plate = core.Mesh(f"glass_plate_{o}_{mask}", flat=True)
     gm = core.Mesh(f"glass_{o}_{mask}", flat=True)
     sp = Out(mask, o)
@@ -105,7 +108,7 @@ def glass(mask, o):
     def inside(cx, cy):
         return sp.cover(int((cx + 0.5) * GN), int((cy + 0.5) * GN)) and BEV < sp.dist(cx, cy) < inset + GT
 
-    nz = int(round((GH - H) / DZ))
+    nz = int(round((GH - ZG) / DZ))
     for j in range(GN):
         for i in range(GN):
             cx, cy = (i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5
@@ -119,7 +122,7 @@ def glass(mask, o):
                 if inside(*nb):
                     continue
                 for k in range(nz):
-                    za, zb = H + (GH - H) * k / nz, H + (GH - H) * (k + 1) / nz
+                    za, zb = ZG + (GH - ZG) * k / nz, ZG + (GH - ZG) * (k + 1) / nz
                     col = "plate" if k >= nz - 2 else ("steelL" if (k + i + j) % 9 == 0 else "steel")
                     gm.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], col)
     plate.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")   # sub-pixel: renders nothing

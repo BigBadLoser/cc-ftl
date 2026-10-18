@@ -193,8 +193,6 @@ def hull_inner_face(face, s, z, top, zs, full, variant):
         return B["K"]                                    # plate seams (tile edges and one course line)
     if tm == 1 or abs(z - zp + 0.03) < 0.015:
         return B["L"]
-    if cell(s) == 16 and z > zp:
-        return B["D"]                                    # light seam splitting the upper plate
     p = s % 0.5
     if abs(z - zp - 0.06) < 0.025 and cell(p) in (4, 11):
         return B["H"]                                    # bolts
@@ -209,8 +207,12 @@ def hull_cap(s, w, depth, variant, region="hull"):
         return wall_cap()
     fam = _blk(s, variant)
     R = ramp(fam, "y")
+    if w < 0.2:
+        return "wK"                                      # inner cut band, like the partitions' caps
+    w -= 0.2
+    depth -= 0.2
     if w < C:
-        return R["H"]                                    # camera-side lip
+        return R["H"]                                    # lit edge of the armour top
     if depth - w < C:
         return R["M"]                                    # outer rim
     if cell(s) % 16 == 0:
@@ -237,61 +239,38 @@ def hull_skirt(face, s, d, run, variant):
 # ---- near (outer) hull ------------------------------------------------------------------------------------------
 
 def hull_out_face(face, s, f, variant):
-    """Outer armour face. f = 0 at the bevel foot down to 1 at the bottom of the below-deck band. Layered courses: a
-    window strip, a vent course, a tall course of half-tile plates that alternate raised (lit top / left edges) and
-    recessed, a lower grille course and a dark undercut. Ochre plates (variant 1) run the full height and are raised."""
+    """Outer armour face of the ghost footing (about 22 px tall). f = 0 at the chamfer foot down to 1 at the bottom of
+    the deck edge. A lit crest, an upper course with paired lights, a seam at deck level, a lower course of half-tile
+    plates (alternately raised and recessed) with vent slots, and a dark undercut. Ochre blocks (variant 1) are raised."""
     if face == "d":
         s = (s * 2) % 1.0                                # the corner face is two tiles wide
     ochre = ochre_at(s, variant) and f < 0.9
     R = ramp("ochre" if ochre else "blue", face)
     c = cell(s)
     p = c % 16
-    if f < 0.02:
+    if f < 0.06:
         return R["H"]                                    # crest
-    e = _blk_edge(s, variant) if f < 0.9 else 0
+    if f > 0.9:
+        return R["K"]                                    # undercut
+    e = _blk_edge(s, variant)
     if e:
-        return R["H"] if e < 0 else R["K"]               # the ochre block stands proud: lit left, dark right edge
-    for f0 in (0.17, 0.33, 0.8):
-        if f0 <= f < f0 + 0.012:
-            return R["K"]                                # course seams
-        if f0 + 0.012 <= f < f0 + 0.024:
-            return R["L"]                                # lit lip below each seam
-    if f < 0.17:                                         # window strip
-        if 0.07 <= f < 0.12 and c in (6, 7, 10, 11, 21, 22, 25, 26):
-            return "glassL" if f < 0.095 else R["L"]
-        return R["L"] if f < 0.05 else R["M"]
-    if f < 0.33:                                         # vent course
-        if c == 0:
-            return R["K"]
-        if 0.21 <= f < 0.29 and 4 <= p <= 11:
-            return R["K"] if p % 2 == 0 else R["D"]      # grille
-        return R["M"]
-    if f < 0.8:                                          # big plates, alternately raised and recessed
-        raised = (c // 16) % 2 == 0
-        if p == 0:
-            return R["K"]
-        if raised:
-            if p == 1 or f < 0.348:
-                return R["L"]
-            if p == 15 or f > 0.77:
-                return R["D"]
-            if 0.62 <= f < 0.645 and p in (4, 5, 10, 11):
-                return R["L"]                            # bolt pairs
-            if abs(f - 0.55) < 0.008:
-                return R["D"]
-            return R["L"] if ochre else R["T"]
-        if p == 1 or f < 0.36:
-            return R["D"]                                # recessed: shadowed top / left
-        if p == 15 or f > 0.77:
-            return R["L"]
-        if abs(f - 0.55) < 0.008:
-            return R["D"]
-        return R["M"]
-    if f < 0.9:                                          # lower grille course
-        if c == 0 or (0.83 <= f < 0.88 and 3 <= p <= 12 and p % 2 == 1):
-            return R["K"]
-        return R["D"]
-    return R["K"] if f > 0.93 else R["D"]
+        return R["H"] if e < 0 else R["K"]
+    if 0.36 <= f < 0.42:
+        return R["K"]                                    # seam at deck level
+    if 0.42 <= f < 0.48:
+        return R["L"]
+    if p == 0:
+        return R["K"]
+    if f < 0.36:                                         # upper course
+        if 0.14 <= f < 0.26 and c in (6, 7, 9, 10, 22, 23, 25, 26):
+            return R["H"]                                # paired lights
+        return R["L"] if f < 0.12 else R["M"]
+    raised = (c // 16) % 2 == 0 or ochre
+    if 0.62 <= f < 0.8 and 4 <= p <= 11 and p % 2 == 1:
+        return R["K"]                                    # vent slots
+    if raised:
+        return R["L"] if p == 1 else (R["D"] if p == 15 else R["T"])
+    return R["D"] if p == 1 else (R["L"] if p == 15 else R["M"])
 
 
 def hull_out_top(kind, s, w, variant, wmax=1.0):
@@ -308,11 +287,10 @@ def hull_out_top(kind, s, w, variant, wmax=1.0):
         return R["L"]
     if w < C:
         return R["H"]                                    # crest line
+    if w < 2 * C:
+        return R["M"]
     if w > wmax - 1.5 * C:
-        return R["K"]                                    # inner rim against the deck
+        return R["M"]                                    # faint rim against the deck
     if cell(s) % 16 == 0:
         return R["D"]
-    e = _blk_edge(s, variant)
-    if e:
-        return "oH" if e < 0 else "oK"
-    return R["T"]
+    return R["K"]                                        # dark cut top: the ghost reads as a cut, not a pavement

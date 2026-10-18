@@ -126,5 +126,9 @@
  },
  "glassL": {
   "hex": "#7d97a8"
+ },
+ "lampY": {
+  "hex": "#f2d47e",
+  "emissive": 1.2
  }
 }

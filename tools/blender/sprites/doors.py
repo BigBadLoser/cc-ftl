@@ -1,21 +1,25 @@
 """Door sprites: a framed portal set INTO the vertical wall face (grid frame, origin = tile centre at floor level).
 
-The interior wall piece (walls.Strip, mask 10 for a door along x, 5 along y) with its skirt left out across the door
-span and its face starting above the frame (the lintel). In the span stands a dusty-rose frame that stands proud of the
-wall face: thick jambs and header with 45 degree upper corners, a lit rim on the screen-left and top edges, grooves; the
-leaf is recessed (the reveal shows the depth) with a window, a red status light, a dashed band and a lower panel; a
-hazard-striped threshold lies on the floor in front. The full door is clearly shorter than the wall. The open door has
-no leaf: the doorway is a real hole that shows the floor and room behind. The cutaway door is the same frame cut at ZL
-with near-black cut tops, like the walls."""
+The interior wall piece (walls.Strip, mask 10 for a door along x, 5 along y) with its skirt cut out across the opening
+and its face starting above the frame (a thin lintel). The dusty-rose frame stands proud of the wall face: wide jambs and
+a header with rounded upper corners (Space Haven's door is an arch that rises nearly to the wall top), a lit rim on the
+screen-left and top edges and grooves; a lamp strip sits on the header. Under the jambs the skirt is the frame's flared
+rose foot. The leaf is recessed (the reveal shows the depth) in a round-topped opening, with a window, a red status
+light, a dashed band and a lower panel; a hazard-striped threshold lies on the floor in front. The open door has no
+leaf: the doorway is a real hole that shows the floor and room behind. The cutaway door is the same frame cut at ZL with
+near-black cut tops, standing on the plain wall skirt."""
+import math
+
 from . import core
 from . import wallart as A
 from . import walls
-from .walls import GN, TW, Strip, emit, skirt_top
+from .walls import GN, TW, Strip, emit, skirt_run, skirt_top
 
 DXF = 0.50                  # frame half-width
-DXO = 0.31                  # opening half-width
-CHF = 0.18                  # upper corner chamfer
-PF = 3 / 32                 # frame stands this far proud of the wall face
+DXO = 0.27                  # opening half-width (Space Haven: about 0.55 of the frame)
+RF = 0.26                   # frame top corner radius
+RO = 0.12                   # opening top corner radius
+PF = 4 / 32                 # frame stands this far proud of the wall face
 ZL = 1.0                    # cutaway cut height
 C = 1 / GN
 VB = -0.5                   # frame back
@@ -25,10 +29,26 @@ VL = -0.5 + TW / 2          # leaf plane
 
 
 def door_heights():
-    """(opening height, frame top): 1.72 / 1.98 where the wall leaves room, otherwise kept 0.14 under the wall top with
-    the opening at least 1.55 (crew are 1.5), so the door is always shorter than the wall and taller than the crew."""
-    zf = min(1.98, walls.HF - 0.14)
-    return max(1.55, zf - 0.26), zf
+    """(opening height, frame top). Space Haven: the frame rises to about the wall top (a thin header and lamp strip
+    above), the opening is about 0.2 lower. Here the frame stops 0.07 under the wall top; the opening is at least 1.55
+    (crew are 1.5)."""
+    zf = walls.HF - 0.07
+    return max(1.55, zf - 0.18), zf
+
+
+def frame_top(u, zf):
+    """Height of the full frame's top edge at u (rounded upper corners)."""
+    a = abs(u) - (DXF - RF)
+    if a <= 0:
+        return zf
+    return zf - RF + math.sqrt(max(0.0, RF * RF - a * a))
+
+
+def open_top(u, zo):
+    a = abs(u) - (DXO - RO)
+    if a <= 0:
+        return zo
+    return zo - RO + math.sqrt(max(0.0, RO * RO - a * a))
 
 
 class DoorWall(Strip):
@@ -50,11 +70,11 @@ class DoorWall(Strip):
         return abs(self._u((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5)) < DXO
 
     def col_skirt(self, i, j, kind, x, y):
-        """Under the jambs the skirt is the frame's flared rose foot."""
-        if abs(self._u(x, y)) >= DXF:
+        """Under the full door's jambs the skirt is the frame's flared rose foot (the cutaway keeps the wall skirt)."""
+        if self.low or abs(self._u(x, y)) >= DXF:
             return super().col_skirt(i, j, kind, x, y)
         d, r = self._dist(x, y)
-        run = 1.0 - r[2]
+        run = self.run
         R = A.ramp("rose", "x" if kind == "x" else "y")
         if d < C or abs(abs(self._u(x, y)) - DXO) < C:
             return R["H"]
@@ -68,7 +88,7 @@ class DoorWall(Strip):
         u = abs(self._u(x, y))
         if self.low or u > DXF + 1e-9:
             return None
-        return self.zf - max(0.0, u - (DXF - CHF))
+        return frame_top(u, self.zf)
 
 
 def door(axis="x", is_open=False, low=False):
@@ -94,7 +114,10 @@ def door(axis="x", is_open=False, low=False):
         """Frame silhouette in the (u, z) plane."""
         if abs(u) > DXF or z > top:
             return False
-        return low or z <= zf - CHF or abs(u) - (DXF - CHF) <= zf - z
+        return low or z <= frame_top(u, zf)
+
+    def opening(u, z):
+        return abs(u) < DXO and z < min(open_top(u, zo), top)
 
     nu, nz = int(round(2 * DXF * GN)), int(round(top * 20))
     du, dz = 2 * DXF / nu, top / nz
@@ -104,18 +127,18 @@ def door(axis="x", is_open=False, low=False):
             um, zm = u0 + du / 2, z0 + dz / 2
             if not outline(um, zm):
                 continue
-            if abs(um) < DXO and zm < zo:
+            if opening(um, zm):
                 continue                                        # the doorway
             lu = um * left                                      # > 0 toward the screen-left
             rim_side = abs(um) > DXF - C * 1.2
-            rim_top = not low and (zm > zf - 0.04 or (abs(um) - (DXF - CHF)) > zf - zm - 0.06)
-            if rim_side:
+            rim_top = not low and zm > frame_top(um, zf) - 0.045
+            if rim_side and not (rim_top and abs(um) > DXF - RF):
                 col = R["H"] if lu > 0 else R["D"]
             elif rim_top:
-                col = R["H"] if (lu > 0 or abs(um) < DXF - CHF) else R["M"]
-            elif abs(um) > DXF - C * 2.2 or (not low and zm > zf - 0.08):
+                col = R["H"] if (lu > 0 or abs(um) < DXF - RF) else R["M"]
+            elif abs(um) > DXF - C * 2.2 or (not low and zm > frame_top(um, zf) - 0.09):
                 col = R["M"]                                    # groove inside the rim
-            elif abs(abs(um) - DXO) < C * 1.1 or (abs(um) < DXO + C and zo <= zm < zo + 0.03):
+            elif opening(um - C * 1.1, zm) or opening(um + C * 1.1, zm) or opening(um, zm - 0.035):
                 col = R["K"]                                    # trim round the doorway
             elif abs(abs(um) - (DXO + DXF) / 2) < C * 0.6 and 0.12 < zm < zo - 0.12:
                 col = R["D"]                                    # jamb groove
@@ -125,23 +148,32 @@ def door(axis="x", is_open=False, low=False):
                 col = R["L"]
             quad([(u0, VF, z0), (u0 + du, VF, z0), (u0 + du, VF, z0 + dz), (u0, VF, z0 + dz)], col)
 
-    # top / cut surfaces, chamfers and the +u end of the frame
+    # top / cut surfaces, the rounded head (stepped per column) and the +u end of the frame
     vt = VB if low else VW
     if low:
         for a, b in ((-DXF, -DXO), (DXO, DXF)):
             quad([(a, vt, top), (b, vt, top), (b, VF, top), (a, VF, top)], cut)
     else:
-        quad([(-DXF + CHF, vt, zf), (DXF - CHF, vt, zf), (DXF - CHF, VF, zf), (-DXF + CHF, VF, zf)], R["H"])
-        for sg in (-1, 1):
-            p0, p1 = (sg * (DXF - CHF), zf), (sg * DXF, zf - CHF)
-            col = R["H"] if sg == left else R["M"]
-            quad([(p0[0], vt, p0[1]), (p1[0], vt, p1[1]), (p1[0], VF, p1[1]), (p0[0], VF, p0[1])], col)
-    zt = top if low else zf - CHF
+        for ii in range(nu):
+            u0 = -DXF + ii * du
+            zt0 = frame_top(u0 + du / 2, zf)
+            col = R["H"] if (u0 + du / 2) * left > -(DXF - RF) else R["M"]
+            quad([(u0, vt, zt0), (u0 + du, vt, zt0), (u0 + du, VF, zt0), (u0, VF, zt0)], col)
+            if ii + 1 < nu:
+                zt1 = frame_top(u0 + 1.5 * du, zf)
+                if zt1 < zt0:                                   # step down toward +u: a face looking at +u
+                    quad([(u0 + du, vt, zt1), (u0 + du, VF, zt1), (u0 + du, VF, zt0), (u0 + du, vt, zt0)], Rs["L"])
+        lw = 0.2                                                # lamp strip on the header
+        zl = zf + 0.04
+        quad([(-lw, VW, zl), (lw, VW, zl), (lw, VW + 2 * C, zl), (-lw, VW + 2 * C, zl)], "lampY")
+        quad([(-lw, VW + 2 * C, zf), (lw, VW + 2 * C, zf), (lw, VW + 2 * C, zl), (-lw, VW + 2 * C, zl)], "lampY")
+    zt = top if low else frame_top(DXF - 1e-6, zf)
     quad([(DXF, VB, 0), (DXF, VF, 0), (DXF, VF, zt), (DXF, VB, zt)], Rs["D"])
-    m.poly([G(-DXO, VW, 0), G(-DXO, 0.5, 0), G(-DXO, VW, zs)], Rs["D"])    # the foot's cut edge at the opening
+    m.poly([G(-DXO, VW, 0), G(-DXO, VW + skirt_run(not low), 0), G(-DXO, VW, zs)],
+           Rs["D"] if not low else A.ramp("wall", side)["D"])  # the skirt's cut edge at the opening
     # reveal (the jamb's inner side at u = -DXO faces +u)
     vr = VB if is_open else VL
-    zr = min(zo, top)
+    zr = min(zo - RO, top)
     quad([(-DXO, vr, 0), (-DXO, VF, 0), (-DXO, VF, zr), (-DXO, vr, zr)], Rs["D"])
     quad([(-DXO, vr, zr - 0.04), (-DXO, VF, zr - 0.04), (-DXO, VF, zr), (-DXO, vr, zr)], Rs["K"])
 
@@ -172,9 +204,11 @@ def _leaf(m, G, R, top, low, cut, zo):
         for ii in range(nu):
             u0, z0 = -DXO + ii * du, jj * dz
             um, zm = u0 + du / 2, z0 + dz / 2
+            if zm > open_top(um, zo):
+                continue
             p = abs(um)
             col = R["M"]
-            if zm < 0.05 or p > DXO - C:
+            if zm < 0.05 or p > DXO - C or zm > open_top(um, zo) - 0.03:
                 col = R["K"]
             elif low and zm > zt - 0.04:
                 col = R["H"]

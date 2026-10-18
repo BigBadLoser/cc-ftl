@@ -1,9 +1,10 @@
 """Registry of the wall, hull, door and floor sprites: (id, footprint, kind, builder).
 
 Far pieces by 4-bit neighbour mask (tile.wall / tile.hull, cutaway or .full), hull colour variant .v1 (ochre plate);
-near hull blocks tile.hull.o{o}.m{mask} (o: 1 = space at +y, 2 = at +x, 3 = both: the chamfered outer corner) with the
-walls-up glass tile.hull.glass.o{o}.m{mask}; walls-up end faces where a full wall butts into the near hull; the
-below-deck band alone for doors in the near hull; doors."""
+near-hull ghost footings tile.hull.o{o}.m{mask} (o: 1 = space at +y, 2 = at +x, 3 = both: the chamfered outer corner,
+4 = concave corner) with their glass tile.hull.glass.o{o}.m{mask}, both drawn in every view mode; end faces where a wall
+butts into the ghost (tile.{fam}.end.{s|e} cutaway, tile.{fam}.full.end.{s|e} walls up); the deck-edge band alone for
+doors in the near hull; doors."""
 from .doors import door
 from .floors import floor
 from .hull import drop, glass, out_block
@@ -31,6 +32,7 @@ for _o, _clear in OUT_MASK.items():
 for _s in ("s", "e"):
     for _fam in ("wall", "hull"):
         SPRITES.append((f"tile.{_fam}.full.end.{_s}", (1, 1), "block", lambda f=_fam, s=_s: end_face(f, s)))
+        SPRITES.append((f"tile.{_fam}.end.{_s}", (1, 1), "block", lambda f=_fam, s=_s: end_face(f, s, False)))
     SPRITES.append((f"tile.hull.drop.{_s}", (1, 1), "block", lambda s=_s: drop(s)))
 for _ax in ("x", "y"):
     SPRITES += [(f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False)),
