@@ -52,6 +52,11 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   ~1.5x crew height; a lower cutaway variant exists.
 - **Engine:** the v7 bell is approved. Add real rocket plumbing (torus manifold, turbopump,
   ducts, tubes down the bell); no valve wheels on posts.
+- **Weapons picked** (Opus concepts, branch `opus-weapons`): burst laser = S Sponson, mass driver =
+  H Halo, R Revolver's six-barrel rotary = point-defence turret asset. Bay core column runs full
+  height to the roof. Engine stays with Sol (the Opus engine preview on `opus-engine` is reference).
+- **Roof:** v1 (`roof-art`) rejected as random; v2 must follow ship structure (ribs along walls
+  below, one panel per room, one colour rule, purposeful details only).
 - **Engine and weapons art handed to Sol** (user's choice, 2026-10-18) using the prompts in this
   session's scratchpad `sol/` (shared context + engine + weapons). All of our engine passes and
   weapon concepts were rejected; keep them only as code reference.
