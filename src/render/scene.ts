@@ -157,11 +157,14 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   }
   resize();
 
+  /** Extra screen height (art px) that full-height walls (about 2.4 tiles tall) stand above the floor diamond. */
+  const WALL_RISE = 70;
+
   function frame(grid: Grid): void {
     const c = iso(grid.width / 2 - 0.5, grid.height / 2 - 0.5);
-    cam.centerOn(c.x, c.y - 8);
+    cam.centerOn(c.x, c.y - 8 - WALL_RISE / 2);
     const spanW = (grid.width + grid.height) * (TILE_W / 2) + TILE_W;
-    const spanH = (grid.width + grid.height) * (TILE_H / 2) + TILE_H * 2;
+    const spanH = (grid.width + grid.height) * (TILE_H / 2) + TILE_H * 2 + WALL_RISE;
     // Largest whole device-px-per-art-px scale at which the whole ship fits (at least 1).
     cam.setZoom(Math.max(1, Math.floor(Math.min(cam.w / spanW, cam.h / spanH))));
   }

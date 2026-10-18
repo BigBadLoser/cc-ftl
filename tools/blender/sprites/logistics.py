@@ -30,7 +30,7 @@ def fabricator(active, rot):
         x, y = T(u, v)
         m.cyl((x, y, z), r, h, color, sides=8, top=top, rtop=rtop)
 
-    box(CU, 0, 0, 1.9, 0.92, 0.1, "steelD", "plateA", 0.015)                      # base plate
+    m.dz = -0.1                                                                   # no floor slab
     box(CU, -0.3, 0.1, 1.86, 0.3, 0.72, "steelD", "steel", 0.015)                 # rear housing
     for k in range(5):                                                            # vent slats on the housing front
         box(CU + 0.55 + k * 0.1, -0.148, 0.5, 0.05, 0.012, 0.26, "dark")

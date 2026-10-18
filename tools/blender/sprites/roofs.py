@@ -5,9 +5,10 @@ connected side continues the plating seamlessly (the cross-seam grid is one tile
 open side gets a raised rim and a slab edge. `roof.weapon / .shield / .engine` (+ `.m<n>`) add one hint of the module
 below: a turret ring, an emitter dome, an exhaust vent. `roof.<kind>` alone = the fully connected tile (m15)."""
 from . import core
+from . import walls
 
-ZR = 1.2          # plating height: the top of a full-height wall
-T = 0.14          # slab thickness shown on open sides
+ZR = walls.HF + walls.ROOF_T   # plating height: the slab's top (= walls.hull_top(), flush with the hull)
+T = walls.ROOF_T               # slab thickness shown on open sides (it sits on the interior walls at walls.HF)
 GN = 32
 BAND = 3          # rim width in cells on open sides
 

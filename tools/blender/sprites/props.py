@@ -41,7 +41,7 @@ def console():
 def reactor():
     m = core.Mesh("reactor")
     cx = cy = -0.5
-    m.box((cx, cy, 0), (1.92, 1.92, 0.12), "steelD", top="plateA", base=True, bevel=0.02)
+    m.dz = -0.12                                                                            # no floor slab
     for k in range(10):
         m.box((cx - 0.9 + k * 0.2, cy + 0.95, 0.12), (0.12, 0.05, 0.03), "hazY" if k % 2 == 0 else "hazK", base=True)
         m.box((cx + 0.95, cy - 0.9 + k * 0.2, 0.12), (0.05, 0.12, 0.03), "hazY" if k % 2 == 0 else "hazK", base=True)
@@ -70,7 +70,7 @@ def life_support():
     """1 wide (x) by 2 long (y): footprint [1, 2]; origin on the front tile, body spans y -1.5..0.5."""
     m = core.Mesh("life_support")
     cy = -0.5
-    m.box((0, cy, 0), (0.92, 1.9, 0.14), "steelD", top="plateA", base=True, bevel=0.02)
+    m.dz = -0.14                                                                            # no floor slab
     for k, y in enumerate((cy - 0.45, cy + 0.45)):
         m.cyl((0, y, 0.14), 0.36, 1.05, "steel", sides=8, top="steelL")
         m.cyl((0, y, 0.5), 0.375, 0.07, "gmD", sides=8)

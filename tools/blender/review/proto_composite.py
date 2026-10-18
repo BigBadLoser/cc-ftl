@@ -78,18 +78,18 @@ def depth_sort(items):
 
 
 def load(rot, part, hot=False):
-    z = np.load(D / f"px_r{rot}_{part}{'_active' if hot else ''}_v5.npz")
+    z = np.load(D / f"px_r{rot}_{part}{'_active' if hot else ''}_v7.npz")
     return z["rgba"], z["glow"], int(z["ox"]), int(z["oy"])
 
 
-def build(mode, hot):
-    """mode: 'full' (tile.hull.full walls + full engine hull section) or 'cut' (low cutaway versions)."""
-    tag = f"r{ROT}_{mode}{'_active' if hot else ''}_v5"
-    hull = load(ROT, f"hull_{mode}")
-    mach = load(ROT, f"machine_{mode}", hot)
+def build(nb, hot):
+    """nb: neighbouring wall mode ('full' or 'cut'). The engine hull section is full height either way."""
+    tag = f"r{ROT}_{'cutwalls' if nb == 'cut' else 'active' if hot else 'idle'}_v7"
+    hull = load(ROT, "hull")
+    mach = load(ROT, "machine", hot)
     sc = Scene()
     T = lambda x, y: (250 + (x - y) * 32, 150 + (x + y) * 16)  # noqa: E731
-    wid = "tile.hull.full" if mode == "full" else "tile.hull"
+    wid = "tile.hull.full" if nb == "full" else "tile.hull"
     if ROT == 1:
         fx0, fx1, fy0, fy1, front = -0.5, 4.5, -0.5, 3.5, (4, 3)
         floor = [(x, y) for x in range(-3, 4) for y in range(-3, 7)]
@@ -121,8 +121,8 @@ def build(mode, hot):
     img.crop(box).resize(((box[2] - box[0]) * 3, (box[3] - box[1]) * 3), Image.NEAREST).save(D / f"scene_{tag}_3x.png")
 
 
-for mode, hot in (("full", False), ("full", True), ("cut", False)):
+for nb, hot in (("full", False), ("full", True), ("cut", False)):
     try:
-        build(mode, hot)
+        build(nb, hot)
     except FileNotFoundError:
         pass

@@ -158,6 +158,7 @@ class Mesh:
     def __init__(self, name, selflit=False, flat=False):
         """flat: every polygon is unlit (Self emission = its palette colour), so tones are exactly the palette's."""
         self.name, self.selflit, self.flat = name, selflit, flat
+        self.dz = 0.0             # whole-mesh z shift applied at build (modules drop their old floor slab by this much)
         self.v, self.f = [], []   # verts (blender space), faces (idx list, col, self, glow)
 
     def _cols(self, color):
@@ -230,7 +231,7 @@ class Mesh:
 
     def build(self, link=True):
         me = bpy.data.meshes.new(self.name)
-        me.from_pydata(self.v, [], [f[0] for f in self.f])
+        me.from_pydata([(x, y, z + self.dz) for x, y, z in self.v], [], [f[0] for f in self.f])
         me.update()
         ob = bpy.data.objects.new(self.name, me)
         bpy.context.scene.collection.objects.link(ob)

@@ -1,126 +1,238 @@
-"""Door sprites: a tall upright frame on the wall line (grid frame, origin = tile centre at floor level).
+"""Door sprites: a framed portal set INTO the vertical wall face (grid frame, origin = tile centre at floor level).
 
-Built only from closed solids (every box emits all six faces, the berm stubs are closed prisms) so no visible face can
-be missing. Coplanar overlaps are avoided (posts start on the stub top, the panel stops just under the header).
-axis 'x': the wall runs along x (u = gx, v = gy); axis 'y': u = gy, v = gx. The camera sees +u, +v and the tops."""
+The interior wall piece (walls.Strip, mask 10 for a door along x, 5 along y) with its skirt cut out across the opening
+and its face starting above the frame (a thin lintel). The dusty-rose frame stands proud of the wall face: wide jambs and
+a header with rounded upper corners (Space Haven's door is an arch that rises nearly to the wall top), a lit rim on the
+screen-left and top edges and grooves; a lamp strip sits on the header. Under the jambs the skirt is the frame's flared
+rose foot. The leaf is recessed (the reveal shows the depth) in a round-topped opening, with a window, a red status
+light, a dashed band and a lower panel; a hazard-striped threshold lies on the floor in front. The open door has no
+leaf: the doorway is a real hole that shows the floor and room behind. The cutaway door is the same frame cut at ZL with
+near-black cut tops, standing on the plain wall skirt."""
+import math
+
 from . import core
-from .walls import H, WT, NT, DH, DX, lerp, PAL
+from . import wallart as A
+from . import walls
+from .walls import GN, TW, Strip, emit, skirt_run, skirt_top
 
-PW = 0.17          # post half-thickness
-PANEL_W = 0.06     # sliding panel half-thickness
-Z_HEAD = 1.0       # header bottom
-Z_SILL = 0.02
+DXF = 0.50                  # frame half-width
+DXO = 0.27                  # opening half-width (Space Haven: about 0.55 of the frame)
+RF = 0.26                   # frame top corner radius
+RO = 0.12                   # opening top corner radius
+PF = 4 / 32                 # frame stands this far proud of the wall face
+ZL = 1.0                    # cutaway cut height
+C = 1 / GN
+VB = -0.5                   # frame back
+VW = -0.5 + TW              # wall face plane
+VF = VW + PF                # frame front
+VL = -0.5 + TW / 2          # leaf plane
 
 
-def door(axis="x", is_open=False):
-    m = core.Mesh(f"door_{axis}", flat=True)
-    lit_v = axis == "x"                                    # +v face is the lit +y face only for axis x
-    lit, shade = PAL["wall"]["sb"], PAL["wall"]["eb"]
-    cv, cu = (lit, shade) if lit_v else (shade, lit)
+def door_heights():
+    """(opening height, frame top). Space Haven: the frame rises to about the wall top (a thin header and lamp strip
+    above), the opening is about 0.2 lower. Here the frame stops 0.07 under the wall top; the opening is at least 1.55
+    (crew are 1.5)."""
+    zf = walls.HF - 0.07
+    return max(1.55, zf - 0.18), zf
 
-    def T(u, v, z):
+
+def frame_top(u, zf):
+    """Height of the full frame's top edge at u (rounded upper corners)."""
+    a = abs(u) - (DXF - RF)
+    if a <= 0:
+        return zf
+    return zf - RF + math.sqrt(max(0.0, RF * RF - a * a))
+
+
+def open_top(u, zo):
+    a = abs(u) - (DXO - RO)
+    if a <= 0:
+        return zo
+    return zo - RO + math.sqrt(max(0.0, RO * RO - a * a))
+
+
+class DoorWall(Strip):
+    def __init__(self, axis, low):
+        super().__init__(10 if axis == "x" else 5, "wall", not low)
+        self.axis, self.low = axis, low
+        self.zf = door_heights()[1]
+
+    def _u(self, x, y):
+        return x if self.axis == "x" else y
+
+    def cover(self, i, j):
+        cv = super().cover(i, j)
+        if cv and self.low and abs(self._u((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5)) < DXF:
+            return None
+        return cv
+
+    def skip_skirt(self, i, j):
+        return abs(self._u((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5)) < DXO
+
+    def col_skirt(self, i, j, kind, x, y):
+        """Under the full door's jambs the skirt is the frame's flared rose foot (the cutaway keeps the wall skirt)."""
+        if self.low or abs(self._u(x, y)) >= DXF:
+            return super().col_skirt(i, j, kind, x, y)
+        d, r = self._dist(x, y)
+        run = self.run
+        R = A.ramp("rose", "x" if kind == "x" else "y")
+        if d < C or abs(abs(self._u(x, y)) - DXO) < C:
+            return R["H"]
+        if run - d < C:
+            return R["K"]
+        if run * 0.55 <= d < run * 0.55 + C:
+            return R["D"]                                   # groove across the foot
+        return R["L"] if d < 2 * C else R["M"]
+
+    def face_lo(self, x, y):
+        u = abs(self._u(x, y))
+        if self.low or u > DXF + 1e-9:
+            return None
+        return frame_top(u, self.zf)
+
+
+def door(axis="x", is_open=False, low=False):
+    m = core.Mesh(f"door_{'low_' if low else ''}{axis}{'_open' if is_open else ''}", flat=True)
+    sp = DoorWall(axis, low)
+    zo, zf = door_heights()
+    emit(m, sp)
+    zs = skirt_top(not low)
+    face = "y" if axis == "x" else "x"           # the wall face the door sits in
+    side = "x" if axis == "x" else "y"           # orientation of the +u side faces
+    R, Rs = A.ramp("rose", face), A.ramp("rose", side)
+    left = -1 if axis == "x" else 1              # sign of u at the screen-left jamb
+    top = ZL if low else zf
+    cut = "wK"
+
+    def G(u, v, z):
         return core.G(u, v, z) if axis == "x" else core.G(v, u, z)
 
-    def quad(a, b, c, d, col):
-        m.poly([T(*p) for p in (a, b, c, d)], col)
+    def quad(pts, col):
+        m.poly([G(*p) for p in pts], col)
 
-    def cells(o, du, dv, nu, nv, fn):
-        for j in range(nv):
-            for i in range(nu):
-                col = fn(i, j)
-                if col:
-                    p = lambda a, b: tuple(o[k] + du[k] * a / nu + dv[k] * b / nv for k in range(3))  # noqa: E731
-                    quad(p(i, j), p(i + 1, j), p(i + 1, j + 1), p(i, j + 1), col)
+    def outline(u, z):
+        """Frame silhouette in the (u, z) plane."""
+        if abs(u) > DXF or z > top:
+            return False
+        return low or z <= frame_top(u, zf)
 
-    def face(o, du, dv, spec):
-        if isinstance(spec, str):
-            quad(o, tuple(o[k] + du[k] for k in range(3)), tuple(o[k] + du[k] + dv[k] for k in range(3)),
-                 tuple(o[k] + dv[k] for k in range(3)), spec)
-        elif spec:
-            cells(o, du, dv, *spec)
+    def opening(u, z):
+        return abs(u) < DXO and z < min(open_top(u, zo), top)
 
-    def solid(u0, u1, v0, v1, z0, z1, top, pv, pu, nv="dark", nu="dark", bot="dark"):
-        """Closed box; each face is a colour or (n_across, n_up, fn)."""
-        du, dv, dz = u1 - u0, v1 - v0, z1 - z0
-        face((u0, v0, z1), (du, 0, 0), (0, dv, 0), top)
-        face((u0, v1, z0), (du, 0, 0), (0, 0, dz), pv)
-        face((u0, v0, z0), (du, 0, 0), (0, 0, dz), nv)
-        face((u1, v0, z0), (0, dv, 0), (0, 0, dz), pu)
-        face((u0, v0, z0), (0, dv, 0), (0, 0, dz), nu)
-        if bot:
-            face((u0, v0, z0), (du, 0, 0), (0, dv, 0), bot)
+    nu, nz = int(round(2 * DXF * GN)), int(round(top * 20))
+    du, dz = 2 * DXF / nu, top / nz
+    for jj in range(nz):
+        for ii in range(nu):
+            u0, z0 = -DXF + ii * du, jj * dz
+            um, zm = u0 + du / 2, z0 + dz / 2
+            if not outline(um, zm):
+                continue
+            if opening(um, zm):
+                continue                                        # the doorway
+            lu = um * left                                      # > 0 toward the screen-left
+            rim_side = abs(um) > DXF - C * 1.2
+            rim_top = not low and zm > frame_top(um, zf) - 0.045
+            if rim_side and not (rim_top and abs(um) > DXF - RF):
+                col = R["H"] if lu > 0 else R["D"]
+            elif rim_top:
+                col = R["H"] if (lu > 0 or abs(um) < DXF - RF) else R["M"]
+            elif abs(um) > DXF - C * 2.2 or (not low and zm > frame_top(um, zf) - 0.09):
+                col = R["M"]                                    # groove inside the rim
+            elif opening(um - C * 1.1, zm) or opening(um + C * 1.1, zm) or opening(um, zm - 0.035):
+                col = R["K"]                                    # trim round the doorway
+            elif abs(abs(um) - (DXO + DXF) / 2) < C * 0.6 and 0.12 < zm < zo - 0.12:
+                col = R["D"]                                    # jamb groove
+            elif low and zm > top - 0.04:
+                col = R["H"]                                    # lit lip under the cut
+            else:
+                col = R["L"]
+            quad([(u0, VF, z0), (u0 + du, VF, z0), (u0 + du, VF, z0 + dz), (u0, VF, z0 + dz)], col)
 
-    # berm stubs under the posts: the wall cross-section (bottom +-0.5, top +-WT) from the tile edge to the opening
-    for ua, ub in ((-0.5, -DX), (DX, 0.5)):
-        n = round((ub - ua) * 32)
-
-        def slope(i, j, lit_face=lit_v):
-            if j == 0:
-                return "dark"
-            if j == NT - 1:
-                return "steelL"
-            return PAL["wall"]["sl"] if j == NT // 2 else (cv if lit_face else cv)
-        quad((ua, -WT, H), (ub, -WT, H), (ub, WT, H), (ua, WT, H), PAL["wall"]["top"])
-        for j in range(NT):                               # +v slope (cells along u)
-            t0, t1 = j / NT, (j + 1) / NT
-            for i in range(n):
-                a, b = lerp(ua, ub, i / n), lerp(ua, ub, (i + 1) / n)
-                quad((a, lerp(0.5, WT, t0), H * t0), (b, lerp(0.5, WT, t0), H * t0),
-                     (b, lerp(0.5, WT, t1), H * t1), (a, lerp(0.5, WT, t1), H * t1), slope(i, j))
-            quad((ua, -lerp(0.5, WT, t0), H * t0), (ub, -lerp(0.5, WT, t0), H * t0),
-                 (ub, -lerp(0.5, WT, t1), H * t1), (ua, -lerp(0.5, WT, t1), H * t1), "dark")
-        for u, col in ((ua, "dark"), (ub, cu)):           # end caps (trapezoids)
-            quad((u, -0.5, 0), (u, 0.5, 0), (u, WT, H), (u, -WT, H), col)
-
-    nz = int(round((DH - H) * 24))
-
-    def post_fn(i, j, w):
-        if j == 0:
-            return "dark"
-        if j == nz - 1:
-            return "steelL"
-        if i == 0:
-            return "steelL"
-        if i == w - 1:
-            return "steelD"
-        if w // 2 - 1 <= i <= w // 2 and 4 <= j <= nz - 5:
-            return "dark"
-        return cv if j != nz // 2 else "steelD"
-    plain_u = (4, nz, lambda i, j: "dark" if j == 0 else ("steelL" if j == nz - 1 else cu))
-    for ua, ub in ((-0.5, -DX), (DX, 0.5)):
-        w = round((ub - ua) * 32)
-        solid(ua, ub, -PW, PW, H, DH, "steelL", (w, nz, lambda i, j, w=w: post_fn(i, j, w)), plain_u, bot=None)
-    # header with lit strip
-    nh = int(round((DH - Z_HEAD) * 24))
-    nw = round(2 * DX * 32)
-
-    def head_fn(i, j):
-        if j == nh - 1:
-            return "steelL"
-        if j == 0:
-            return "dark"
-        if 2 <= i <= nw - 3 and nh // 2 - 1 <= j <= nh // 2 + 1:
-            return "flameY"
-        return "steelD"
-    solid(-DX, DX, -PW, PW, Z_HEAD, DH, "steelL", (nw, nh, head_fn), cu)
-    # sliding panel (closed) or retracted slivers (open), stopping just under the header
-    zp0, zp1 = 0.04, Z_HEAD - 0.005
-    npz = int(round((zp1 - zp0) * 24))
-
-    def pan_fn(i, j):
-        if j < 3:
-            return "hazY" if ((i + j) // 2) % 2 == 0 else "hazK"
-        if i in (nw // 2 - 1, nw // 2):
-            return "dark"
-        if j == npz - 1:
-            return "steelL"
-        return "steelD" if j in (npz // 2, npz // 2 + 1) else cv
-    if not is_open:
-        solid(-DX, DX, -PANEL_W, PANEL_W, zp0, zp1, "steelL", (nw, npz, pan_fn), cu)
+    # top / cut surfaces, the rounded head (stepped per column) and the +u end of the frame
+    vt = VB if low else VW
+    if low:
+        for a, b in ((-DXF, -DXO), (DXO, DXF)):
+            quad([(a, vt, top), (b, vt, top), (b, VF, top), (a, VF, top)], cut)
     else:
-        for ua, ub in ((-DX, -DX + 0.07), (DX - 0.07, DX)):
-            solid(ua, ub, -PANEL_W, PANEL_W, zp0, zp1, "steelL",
-                  (2, npz, lambda i, j: "steelL" if j == npz - 1 else "steelD"), "steelD")
-    # threshold plate with hazard stripes
-    solid(-DX, DX, -PW, PW, 0.0, Z_SILL, (nw, 11, lambda i, j: "hazY" if (i // 2) % 2 == 0 else "hazK"), "steelD", "steelD")
+        for ii in range(nu):
+            u0 = -DXF + ii * du
+            zt0 = frame_top(u0 + du / 2, zf)
+            col = R["H"] if (u0 + du / 2) * left > -(DXF - RF) else R["M"]
+            quad([(u0, vt, zt0), (u0 + du, vt, zt0), (u0 + du, VF, zt0), (u0, VF, zt0)], col)
+            if ii + 1 < nu:
+                zt1 = frame_top(u0 + 1.5 * du, zf)
+                if zt1 < zt0:                                   # step down toward +u: a face looking at +u
+                    quad([(u0 + du, vt, zt1), (u0 + du, VF, zt1), (u0 + du, VF, zt0), (u0 + du, vt, zt0)], Rs["L"])
+        lw = 0.2                                                # lamp strip on the header
+        zl = zf + 0.04
+        quad([(-lw, VW, zl), (lw, VW, zl), (lw, VW + 2 * C, zl), (-lw, VW + 2 * C, zl)], "lampY")
+        quad([(-lw, VW + 2 * C, zf), (lw, VW + 2 * C, zf), (lw, VW + 2 * C, zl), (-lw, VW + 2 * C, zl)], "lampY")
+    zt = top if low else frame_top(DXF - 1e-6, zf)
+    quad([(DXF, VB, 0), (DXF, VF, 0), (DXF, VF, zt), (DXF, VB, zt)], Rs["D"])
+    m.poly([G(-DXO, VW, 0), G(-DXO, VW + skirt_run(not low), 0), G(-DXO, VW, zs)],
+           Rs["D"] if not low else A.ramp("wall", side)["D"])  # the skirt's cut edge at the opening
+    # reveal (the jamb's inner side at u = -DXO faces +u)
+    vr = VB if is_open else VL
+    zr = min(zo - RO, top)
+    quad([(-DXO, vr, 0), (-DXO, VF, 0), (-DXO, VF, zr), (-DXO, vr, zr)], Rs["D"])
+    quad([(-DXO, vr, zr - 0.04), (-DXO, VF, zr - 0.04), (-DXO, VF, zr), (-DXO, vr, zr)], Rs["K"])
+
+    if not is_open:
+        _leaf(m, G, R, top, low, cut, zo)
+    # sill through the doorway and the hazard threshold on the floor in front
+    v0 = VB if is_open else VL
+    quad([(-DXO, v0, 0.012), (DXO, v0, 0.012), (DXO, VF, 0.012), (-DXO, VF, 0.012)], "steelD")
+    n = int(round(2 * DXF * GN))
+    for k in range(n):
+        u0, u1 = -DXF + k * C, -DXF + (k + 1) * C
+        for r in range(7):
+            v1, v2 = VF + r * C, VF + (r + 1) * C
+            if abs(u0 + C / 2) > DXO:
+                col = "steel" if r < 6 else "steelD"
+            else:
+                col = "hazY" if ((k + r) // 3) % 2 == 0 else "hazK"
+            quad([(u0, v1, 0.012), (u1, v1, 0.012), (u1, v2, 0.012), (u0, v2, 0.012)], col)
     return [m.build()]
+
+
+def _leaf(m, G, R, top, low, cut, zo):
+    """Closed leaf in the recess: window, red light, dashed band, lower panel."""
+    zt = min(zo, top)
+    nu, nz = int(round(2 * DXO * GN)), int(round(zt * 20))
+    du, dz = 2 * DXO / nu, zt / nz
+    for jj in range(nz):
+        for ii in range(nu):
+            u0, z0 = -DXO + ii * du, jj * dz
+            um, zm = u0 + du / 2, z0 + dz / 2
+            if zm > open_top(um, zo):
+                continue
+            p = abs(um)
+            col = R["M"]
+            if zm < 0.05 or p > DXO - C or zm > open_top(um, zo) - 0.03:
+                col = R["K"]
+            elif low and zm > zt - 0.04:
+                col = R["H"]
+            elif zo * 0.6 <= zm < zo * 0.9 and p < DXO - 0.07:
+                if p > DXO - 0.07 - C or zm < zo * 0.6 + 0.03 or zm > zo * 0.9 - 0.03:
+                    col = R["D"]
+                else:
+                    glint = abs((um + DXO) * 2 - (zm - zo * 0.6) * 1.2 - 0.18) < 0.035
+                    col = "glassL" if glint else "glassD"
+            elif zo * 0.49 <= zm < zo * 0.555 and p < 0.095:
+                col = "red"
+            elif zo * 0.42 <= zm < zo * 0.45:
+                col = "steelL" if int((um + DXO) * GN) % 4 < 2 else "blueGrey"
+            elif 0.14 <= zm < zo * 0.36 and p < DXO - 0.06:
+                if p > DXO - 0.06 - C or zm >= zo * 0.36 - 0.03:
+                    col = R["D"]
+                elif zm < 0.17:
+                    col = R["H"]
+                elif 0.3 <= zm < 0.34 and p < 0.12:
+                    col = R["K"]
+                else:
+                    col = R["M"]
+            elif p < C and zm > 0.05:
+                col = R["D"]
+            m.poly([G(u0, VL, z0), G(u0 + du, VL, z0), G(u0 + du, VL, z0 + dz), G(u0, VL, z0 + dz)], col)
+    if low:
+        m.poly([G(-DXO, VL - 2 * C, zt), G(DXO, VL - 2 * C, zt), G(DXO, VL, zt), G(-DXO, VL, zt)], cut)

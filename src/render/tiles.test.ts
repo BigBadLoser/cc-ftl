@@ -38,24 +38,30 @@ describe("wall autotiling", () => {
   it("an isolated wall is mask 0 and an interior wall is not hull", () => {
     expect(ids(grid([[F, F, F], [F, W, F], [F, F, F]]), 1, 1, W, "auto")).toEqual(["wall.m0"]);
   });
-  it("ghosts only exterior hull tiles whose +x or +y neighbour is space", () => {
-    expect(ids(ring, 2, 3, W, "auto")).toEqual(["hull.ghost.m10"]);
-    expect(ids(ring, 3, 2, W, "auto")).toEqual(["hull.ghost.m5"]);
-    expect(ids(ring, 2, 1, W, "auto")).toEqual(["hull.m10"]);
-    expect(ids(ring, 1, 2, W, "auto")).toEqual(["hull.m5"]);
+  it("ghosts the exterior front hull in up mode only", () => {
+    expect(ids(ring, 2, 3, W, "up")).toEqual(["hull.ghost.m10"]);
+    expect(ids(ring, 3, 2, W, "up")).toEqual(["hull.ghost.m5"]);
+    expect(ids(ring, 2, 1, W, "up")).toEqual(["hull.full.m10"]);
+    expect(ids(ring, 1, 2, W, "up")).toEqual(["hull.full.m5"]);
   });
-  it("ghosts off draws the front hull as a normal piece with a hazard strip", () => {
-    expect(ids(ring, 2, 3, W, "down", false)).toEqual(["hull.m10", "hull.haz.s.3"]);
-    expect(ids(ring, 3, 2, W, "down", false)).toEqual(["hull.m5", "hull.haz.e.3"]);
+  it("auto and down draw the front hull solid with a hazard strip; ghosts off does too in up mode", () => {
+    expect(ids(ring, 2, 3, W, "auto")).toEqual(["hull.m10", "hull.haz.s.3"]);
+    expect(ids(ring, 3, 2, W, "down")).toEqual(["hull.m5", "hull.haz.e.3"]);
+    expect(ids(ring, 2, 3, W, "up", false)).toEqual(["hull.full.m10", "hull.haz.s.3"]);
+  });
+  it("hull plating uses the ochre-panel variant in runs of three tiles", () => {
+    expect(wallPieces(ring, 2, 1, W, "auto")[0]?.chain[0]).toBe("tile.hull.m10.v1");
+    expect(wallPieces(ring, 3, 1, W, "auto")[0]?.chain[0]).toBe("tile.hull.m12.v1");
+    expect(wallPieces(ring, 1, 1, W, "auto")[0]?.chain[0]).toBe("tile.hull.m6");
   });
   it("up mode uses full-height pieces except for ghosts; down and auto use low blocks", () => {
     expect(ids(ring, 2, 1, W, "up")).toEqual(["hull.full.m10"]);
-    expect(ids(ring, 2, 3, W, "up")).toEqual(["hull.ghost.m10"]);
     expect(ids(ring, 2, 1, W, "down")).toEqual(["hull.m10"]);
   });
   it("doors orient along x between walls in x, otherwise y, with no wall piece", () => {
-    expect(ids(grid([[W, D, W]]), 1, 0, D, "auto")).toEqual(["door.x"]);
-    expect(ids(grid([[W], [D], [W]]), 0, 1, D, "auto")).toEqual(["door.y"]);
+    expect(ids(grid([[W, D, W]]), 1, 0, D, "auto")).toEqual(["door.low.x"]);
+    expect(ids(grid([[W, D, W]]), 1, 0, D, "up")).toEqual(["door.x"]);
+    expect(ids(grid([[W], [D], [W]]), 0, 1, D, "auto")).toEqual(["door.low.y"]);
   });
 });
 

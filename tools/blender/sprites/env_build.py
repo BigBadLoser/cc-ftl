@@ -80,7 +80,7 @@ def build(out, only=None, log=print):
         if only and not any(o in sid for o in only):
             continue
         core.clear_scene_meshes()
-        post.select(sid in new)
+        post.select(sid in new or sid.startswith(("tile.wall", "tile.hull", "tile.door")))
         c, op, g, ox, oy, al = render_sprite(sid, kind, fn())
         x0, y0, x1, y1 = post.crop_box(op | (g[..., 3] > 0))
         rgba = post.to_rgba(c, op)
