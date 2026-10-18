@@ -4,6 +4,8 @@
   python3 -I tools/blender/review/robots_preview.py <robot assets dir> <out dir>
     -> robots-scene-1x.png / -3x.png (a room: human, both factions, charging, wrecked)
        robots-poses-1x.png / -3x.png (per type: idle, walk, charge in SE, SW, NW; work and wreck in SE)
+  python3 -I tools/blender/review/robots_preview.py <ROBOT_REST assets dir> <out dir> shapes [shape render dir]
+    -> robots-shapes-1x.png / -3x.png (rest pose, 8 directions) and robots-shapes-blender.png
 The human comes from public/assets. Rogue robots: crimson livery, and the cyan visor recoloured red."""
 import json
 import sys
@@ -206,11 +208,56 @@ def poses(pub, rob, out):
         cv.save(out / f"robots-poses-{s}x.png", s)
 
 
+DIR8 = ["SE", "S", "SW", "W", "NW", "N", "NE", "E"]
+
+
+def shapes(pub, rob, out, big):
+    """Rest-pose shape review (ROBOT_REST sheets): per type, a human then the robot in all 8 directions, 1x and 3x;
+    plus the 4x Blender shape renders (robots_shapes.py) on one sheet when `big` holds them."""
+    cw, ch = 64, 86
+    cv = Canvas(cw * 9, ch * len(TYPES) + 14)
+    for r, (kind, _) in enumerate(TYPES):
+        y0 = 14 + r * ch
+        for c in range(9):
+            sub = Canvas(cw, ch)
+            for gx in (-1, 0, 1):
+                for gy in (-1, 0, 1):
+                    sub.static(pub, "tile.floor.a", cw // 2 + (gx - gy) * 32, ch - 16 + (gx + gy) * 16)
+            sub.char(human(pub, 0) if c == 0 else robot(rob, kind, c - 1, "idle"), cw // 2, ch - 16)
+            cv.px[y0:y0 + ch, c * cw:(c + 1) * cw] = sub.px
+            if r == 0:
+                cv.labels.append((c * cw + 2, 2, "human" if c == 0 else DIR8[c - 1]))
+    for s in (1, 3):
+        cv.save(out / f"robots-shapes-{s}x.png", s)
+    if not big or not big.exists():
+        return
+    names = ["SE", "S", "SW", "NW"]
+    tiles = [[np.array(Image.open(big / f"robots-shapes-{k}-{n}.png").convert("RGBA")) for n in names] for k, _ in TYPES]
+    h, w = tiles[0][0].shape[:2]
+    sheet = np.zeros((h * len(TYPES), w * len(names), 3), np.uint8)
+    sheet[:] = (40, 46, 56)
+    for r, row in enumerate(tiles):
+        for c, t in enumerate(row):
+            a = t[..., 3:4] / 255.0
+            sl = sheet[r * h:(r + 1) * h, c * w:(c + 1) * w]
+            sl[:] = (t[..., :3] * a + sl * (1 - a)).astype(np.uint8)
+    im = Image.fromarray(sheet)
+    dr = ImageDraw.Draw(im)
+    for c, n in enumerate(names):
+        dr.text((c * w + 8, 6), n, fill=(220, 225, 235))
+    for r, (k, _) in enumerate(TYPES):
+        dr.text((8, r * h + 22), k, fill=(220, 225, 235))
+    im.save(out / "robots-shapes-blender.png")
+
+
 def main():
     rob = Assets(sys.argv[1])
     out = Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
     pub = Assets(ROOT / "public/assets")
+    if len(sys.argv) > 3 and sys.argv[3] == "shapes":
+        shapes(pub, rob, out, Path(sys.argv[4]) if len(sys.argv) > 4 else None)
+        return
     scene(pub, rob, out)
     poses(pub, rob, out)
     print("wrote", out)

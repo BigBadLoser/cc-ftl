@@ -124,9 +124,16 @@ def _drone(rig, clip, i):
         rig.drop("arm_L")
 
 
+REST = os.environ.get("ROBOT_REST")
+
+
 def pose(rig, clip, i):
     rig.rest()
     _state(rig, clip, i)
+    if REST:                                 # shape review: the bare rest pose, standing on the floor
+        if rig.kind != "drone":
+            rig.ground_attached()
+        return
     (_drone if rig.kind == "drone" else _biped)(rig, clip, i)
 
 
@@ -189,11 +196,15 @@ QUICK = {("idle", 0), ("walk", 2), ("work", 3), ("charge", 3), ("wreck", 0)}
 
 
 def build(outdir, kinds=("worker", "repair", "security")):
-    """ROBOT_QUICK=1: only the preview frames in SE, SW, NW (fast look iteration; never for commits)."""
+    """ROBOT_QUICK=1: only the preview frames in SE, SW, NW; ROBOT_REST=1: the rest pose (idle 0 cell) in all 8
+    directions, for shape review. Both are for look iteration, never for commits."""
     quick = os.environ.get("ROBOT_QUICK")
     sheets, assets = {}, {}
     for k in kinds:
-        res, cols = render_type(k, dirs=(0, 2, 4) if quick else range(8), frames=QUICK if quick else None)
+        if REST:
+            res, cols = render_type(k, frames={("idle", 0)})
+        else:
+            res, cols = render_type(k, dirs=(0, 2, 4) if quick else range(8), frames=QUICK if quick else None)
         s, a = pack(k, res, cols, outdir)
         sheets.update(s)
         assets.update(a)
