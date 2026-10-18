@@ -143,6 +143,13 @@ export const modules = {
     roofAsset: 'roof.engine',
     cost: [{ item: 'item.metal', count: 24 }, { item: 'item.electronics', count: 8 }],
   },
+  // 1 wide, 4 deep, on the hull. Rotation 0: row 0 is the outer door on the hull line (the wall tile becomes a door), rows
+  // 1-2 the chamber, row 3 the inner door. Cycles in 4 s, pumping the chamber's air back into the ship.
+  'module.airlock': {
+    name: 'Airlock', asset: 'module.airlock', footprint: [1, 4], solid: false, power: -2, priority: 2,
+    flammability: 0.1, maxHp: 120, buildWork: 200, hullEdge: 'n', airlock: { cycleSec: 4 },
+    cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 6 }],
+  },
   // 8 power -> 2 layers, one back every 10 s. Sits anywhere inside the ship.
   'module.shieldGen': {
     name: 'Shield generator', asset: 'module.shield_gen', footprint: [2, 3], solid: true, power: -8, priority: 2,

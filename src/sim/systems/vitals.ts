@@ -6,6 +6,7 @@ import {
 import { killCrew } from '../crew/death';
 import { releaseAssignment } from '../crew/helpers';
 import type { Grid } from '../grid';
+import { SuitC } from '../portals/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import {
@@ -15,13 +16,13 @@ import {
 } from '../tuning';
 
 /** Harm per second from the tile a crew member stands on: thin air, CO2, heat, cold and fire. */
-function harmPerSec(grid: Grid, x: number, y: number): number {
+function harmPerSec(grid: Grid, x: number, y: number, suited: boolean): number {
   let harm = 0;
   const o2 = grid.get('o2', x, y);
   const co2 = grid.get('co2', x, y);
   const temp = grid.get('temp', x, y);
-  if (o2 < O2_HARM_BELOW) harm += (O2_HARM_BELOW - o2) * O2_HARM_PER_SEC;
-  if (co2 > CO2_HARM_ABOVE) harm += (co2 - CO2_HARM_ABOVE) * CO2_HARM_PER_SEC;
+  if (!suited && o2 < O2_HARM_BELOW) harm += (O2_HARM_BELOW - o2) * O2_HARM_PER_SEC;
+  if (!suited && co2 > CO2_HARM_ABOVE) harm += (co2 - CO2_HARM_ABOVE) * CO2_HARM_PER_SEC;
   if (temp > HOT_ABOVE) harm += (temp - HOT_ABOVE) * TEMP_HARM_PER_SEC;
   if (temp < COLD_BELOW) harm += (COLD_BELOW - temp) * TEMP_HARM_PER_SEC;
   harm += (FIRE_CREW_DAMAGE * grid.get('fire', x, y)) / 255;
@@ -43,10 +44,13 @@ export function vitalsSystem(sim: Sim): void {
     const health = sim.world.get(id, HealthC) as Health;
     const downed = sim.world.get(id, DownedC);
 
-    grid.set('o2', pos.x, pos.y, Math.max(0, grid.get('o2', pos.x, pos.y) - BREATH_O2_PER_SEC / TICK_HZ));
-    grid.set('co2', pos.x, pos.y, grid.get('co2', pos.x, pos.y) + BREATH_CO2_PER_SEC / TICK_HZ);
+    const suited = sim.world.has(id, SuitC); // a suit has its own air: no breathing from the tile, no thin-air harm
+    if (!suited) {
+      grid.set('o2', pos.x, pos.y, Math.max(0, grid.get('o2', pos.x, pos.y) - BREATH_O2_PER_SEC / TICK_HZ));
+      grid.set('co2', pos.x, pos.y, grid.get('co2', pos.x, pos.y) + BREATH_CO2_PER_SEC / TICK_HZ);
+    }
 
-    const harm = harmPerSec(grid, pos.x, pos.y);
+    const harm = harmPerSec(grid, pos.x, pos.y, suited);
     if (!downed) {
       if (health.hp <= 0) {
         // Already at 0 (combat damage): go down without regenerating first.

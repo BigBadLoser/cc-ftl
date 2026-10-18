@@ -10,7 +10,7 @@ import { hullSum } from './combat/hull';
 import { initAtmosphere } from './ship';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -98,6 +98,10 @@ export const migrations: Record<number, (data: Record<string, unknown>) => Recor
   },
   // v5 -> v6 (point defence is its own module): nothing to convert; old AI cores simply stop intercepting.
   5: (data) => data,
+  // v6 -> v7 (boarding foundation): the world gains `portal`, `crossing`, `suit` and `airlock` stores, which an old
+  // save simply lacks (stores are created on first use, so no portals exist). Path.then and Drafted.planned are
+  // optional. Nothing to convert; old airlock-less ships have no airlock module.
+  6: (data) => data,
 };
 
 /** Serialize the sim to a JSON string. */

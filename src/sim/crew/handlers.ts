@@ -104,9 +104,10 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     const drafted = sim.world.get(cmd.id, DraftedC);
     const pos = sim.world.get(cmd.id, PositionC);
     if (!drafted || !pos) return reject(sim, cmd.type, 'notDrafted');
-    const grid = sim.grids.get(pos.gridId);
+    const gridId = cmd.gridId ?? pos.gridId;
+    const grid = sim.grids.get(gridId);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
     if (!isTileWalkable(sim, grid, cmd.x, cmd.y)) return reject(sim, cmd.type, 'notWalkable');
-    drafted.target = { x: cmd.x, y: cmd.y };
+    drafted.target = gridId === pos.gridId ? { x: cmd.x, y: cmd.y } : { x: cmd.x, y: cmd.y, gridId };
   },
 };

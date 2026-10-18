@@ -31,3 +31,7 @@ export * from './combat/components';
 export { shipOf, shipEntityOf, nextGridId, spawnShip, spawnCrew, shieldCapacity } from './combat/ships';
 export { hullSum, damageStruct } from './combat/hull';
 export { aimDirection, turretPosition } from './combat/geometry';
+export * from './portals/components';
+export { createPortal, removePortal, portalUsable, portalError, allPortals, PORTAL_DEFAULTS } from './portals/graph';
+export { planRoute, stepsCost, type Route, type Leg, type RouteGoal, type RouteStart } from './portals/route';
+export { airlockTiles, airlockWorking, airlockDoorAt } from './portals/airlock';

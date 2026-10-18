@@ -1,4 +1,5 @@
 import type { WorkCategory } from './crew/components';
+import type { PortalKind, PortalRequirement } from './portals/components';
 
 /** Every way to change the sim from outside. Add new variants here. */
 export type Command =
@@ -19,7 +20,18 @@ export type Command =
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }
-  | { type: 'crew.moveTo'; id: number; x: number; y: number }
+  /** Walk a drafted crew member to a tile, on another grid if `gridId` is given and portals lead there. */
+  | { type: 'crew.moveTo'; id: number; x: number; y: number; gridId?: number }
+  /** Link two tiles through a portal. `cost`/`ticks` default by kind; ends on an airlock's outer door attach to that airlock. */
+  | {
+      type: 'portal.link'; kind: PortalKind; a: { gridId: number; x: number; y: number }; b: { gridId: number; x: number; y: number };
+      cost?: number; ticks?: number; requires?: PortalRequirement[]; oneWay?: boolean;
+    }
+  | { type: 'portal.unlink'; id: number }
+  /** Ask an airlock module to open its `to` side (it cycles when the open doorway is clear). */
+  | { type: 'airlock.cycle'; moduleId: number; to: 'inner' | 'outer' }
+  /** Give or take a crew member's EVA suit. */
+  | { type: 'suit.set'; crew: number; worn: boolean }
   /** Queue a production order on a crafting module. `target`: batches ('count') or stock level ('keep'). */
   | { type: 'production.add'; moduleId: number; recipe: string; mode: 'count' | 'keep'; target: number }
   /** Remove the order at `index` of the module's list. */

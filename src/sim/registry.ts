@@ -177,6 +177,12 @@ export interface ModuleDef {
    * immune to hull damage) whether or not the module works or exists.
    */
   hullEdge?: 'n' | 'e' | 's' | 'w';
+  /**
+   * Airlock: footprint [1, n] with n >= 3 and `hullEdge: 'n'`. Local row 0 is the outer door (on the hull line), the last
+   * row the inner door, the rows between the chamber. Placing it turns those tiles into doors and floor. Cycling takes
+   * `cycleSec` and moves the chamber's air to or from the ship, so crew passing never vents the ship.
+   */
+  airlock?: { cycleSec: number };
   /** Marks a console; its operator runs that ship system during combat. */
   console?: 'weapons' | 'shields' | 'helm';
   /** WeaponDef id this module fires. */

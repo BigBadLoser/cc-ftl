@@ -1,4 +1,5 @@
 import type { JobKind } from './crew/components';
+import type { PortalEnd, PortalKind } from './portals/components';
 
 /** Outbound notifications for UI and audio. */
 export type SimEvent =
@@ -45,6 +46,12 @@ export type SimEvent =
   | { type: 'ship.recovered'; gridId: number }
   | { type: 'ship.destroyed'; gridId: number }
   | { type: 'ship.fled'; gridId: number }
+  /** A crew member finished crossing a portal and now stands at (x, y) on `toGridId`. */
+  | { type: 'crew.crossed'; crew: number; portal: number; kind: PortalKind; fromGridId: number; toGridId: number; x: number; y: number }
+  | { type: 'portal.linked'; portal: number; kind: PortalKind; a: PortalEnd; b: PortalEnd }
+  | { type: 'portal.unlinked'; portal: number }
+  /** An airlock finished a cycle; `side` is the door now open. */
+  | { type: 'airlock.cycled'; gridId: number; module: number; side: 'inner' | 'outer' }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 

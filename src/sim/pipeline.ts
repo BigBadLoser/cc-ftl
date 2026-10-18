@@ -1,4 +1,6 @@
 import type { Sim } from './sim';
+import { airlockSystem } from './systems/airlock';
+import { portalSystem } from './systems/portals';
 import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
@@ -55,6 +57,8 @@ export const pipeline: readonly System[] = [
   modulesSystem,
   // Doors before atmosphere: crew-opened doors let gas through this very tick.
   doorsSystem,
+  // Airlock doors and chamber air, right after the doors system (which skips them) and before diffusion.
+  airlockSystem,
   // Gas diffusion runs on the doors and module output of this tick.
   atmosphereSystem,
   // Fire reads the settled air (O2) and writes its o2/co2/smoke/heat back for next tick.
@@ -88,6 +92,8 @@ export const pipeline: readonly System[] = [
   draftedSystem,
   // Movement before carry (carried crew copy their carrier's fresh position) and work.
   movementSystem,
+  // Portal crossings after movement: crew who just reached a portal end start or finish a traversal.
+  portalSystem,
   carrySystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.
   workSystem,
