@@ -205,36 +205,42 @@ def leaves(f, t):
             f.box(uu, (FEET[0][1] + FEET[1][1]) / 2, z, 0.16, FEET[1][1] - FEET[0][1] + 0.7, 0.05, "steelD", top="steelL")
 
 
-# gantry booms (v11): (side, v). Only the nose half of the shuttle is narrow (hull side |u| ~ 1.0 above z -0.5), so the booms
-# stand on the side lips there and reach in to grip the hull. +u booms stay clear of the gangway (v 1.0..1.8, rails/head height).
-BOOMS = ((-1, 0.75), (-1, 1.85), (1, 0.55), (1, 2.15))
-HULL_U = 1.0                          # hull side at the nose half, |u|
-BOOM_Z = 0.62                         # boom centre height (shuttle hull side spans z -0.45 .. 1.5 there)
-TOWER_TOP = 1.12
+# GANTRY (v12): overhead bridges latching onto the shuttle's TOP. Measured top of the parked shuttle (z above deck, feet -0.95):
+# folded wings cover the whole aft half (1.57 .. 1.81, nothing fits over them); the cabin spine is 1.45 over v 0.6..1.5 and
+# 1.33 mid-spine between the wing roots (v -0.3 .. 0.0); the nose drops to ~1.0 at v 2.1. The roof slab underside is 1.85.
+# A bridge beam BEAM_T thick fits at BEAM_Z0 .. 1.80 over the nose half, with latch arms down to hardpoint pads on the spine.
+BRIDGES = ((-0.1, 1.33, (-0.4, 0.0, 0.4)), (2.2, 0.98, (0.0,)))     # v, spine top z under it, latch u positions
+BEAM_Z0, BEAM_T = 1.60, 0.20
+TOWER_TOP = 1.82
 
 
 def clamps(f, t):
-    """GANTRY: four towers on the side lips of the pit (nose half), each with a boom reaching in over the opening to a grip pad
-    on the hull side, so the shuttle hangs from them. The booms retract into the towers as the doors start to open (gone by
-    t = 0.25). Nothing comes from the ceiling."""
+    """GANTRY: two bridges across the pit (towers on both side lips, a beam over the shuttle just under the roof slab) with
+    latch arms dropping onto hardpoint pads on the spine, so the shuttle hangs from above. Opening: the arms lift into the
+    beams (by t = 0.125), then the half-beams slide back into the towers (by t = 0.25). Nothing is above 1.82."""
     _g("clamps")
-    k = min(1.0, t * 4.0)
-    zl = PAD_T + LIP
-    for sx, vv in BOOMS:
-        ut = sx * (OPEN[1] + 0.07)                                                                # tower centre, on the lip
-        f.box(ut, vv, zl, 0.3, 0.42, 0.05, "steelD", top="hazK")                                   # base plate
-        f.box(ut, vv, zl + 0.05, 0.2, 0.28, TOWER_TOP - zl - 0.05, "steelL", top="steel")          # tower
-        f.box(ut, vv, TOWER_TOP, 0.26, 0.34, 0.06, "steelD", top="steel")                          # cap
-        f.box(ut - sx * 0.101, vv, 0.3, 0.02, 0.1, 0.55, "arc", base=True)                          # inner lamp bar
-        ln = (abs(ut) - 0.1 - HULL_U - 0.07) * (1.0 - k)
-        if ln < 0.05:
-            continue
-        ub = ut - sx * (0.1 + ln / 2)
-        f.box(ub, vv, BOOM_Z - 0.07, ln, 0.16, 0.14, "steel", top="steelL")                         # boom
-        f.box(ub, vv, BOOM_Z + 0.07, ln, 0.05, 0.012, "hazY")                                       # hazard stripe along the top
-        ug = ut - sx * (0.1 + ln + 0.03)
-        f.box(ug, vv, BOOM_Z - 0.3, 0.08, 0.44, 0.6, "steelD", top="hazY")                          # grip pad on the hull side
-        f.box(ug - sx * 0.045, vv, BOOM_Z - 0.04, 0.02, 0.2, 0.08, "cyan", base=True)
+    k1 = min(1.0, t * 8.0)
+    k2 = min(1.0, max(0.0, (t - 0.12) * 8.0))
+    for vv, zt, lat in BRIDGES:
+        for sx in (-1, 1):
+            ut = sx * (OPEN[1] + 0.07)
+            f.box(ut, vv, PAD_T, 0.3, 0.42, 0.05, "steelD", top="hazK")
+            f.box(ut, vv, PAD_T + 0.05, 0.2, 0.28, TOWER_TOP - PAD_T - 0.11, "steelL", top="steel")
+            f.box(ut, vv, TOWER_TOP - 0.06, 0.26, 0.34, 0.06, "steelD", top="steel")
+            f.box(ut - sx * 0.101, vv, 0.5, 0.02, 0.1, 1.0, "arc", base=True)                        # inner lamp bar
+            L = (abs(ut) - 0.1) * (1.0 - k2)
+            if L > 0.05:
+                ub = ut - sx * (0.1 + L / 2)
+                f.box(ub, vv, BEAM_Z0, L, 0.3, BEAM_T, "steel", top="steelL")                          # half beam
+                f.box(ub, vv, BEAM_Z0 + BEAM_T, L, 0.06, 0.01, "hazY")
+                f.box(ub, vv - 0.151, BEAM_Z0 + 0.06, L - 0.1, 0.01, 0.08, "arc", base=True)
+        if k1 < 1.0:
+            for u in lat:
+                f.box(u, vv, zt, 0.34, 0.3, 0.05, "steelD", top="hazY")                                  # hardpoint pad on the spine
+                h = (BEAM_Z0 - zt - 0.05) * (1.0 - k1)
+                if h > 0.03:
+                    f.box(u, vv, BEAM_Z0 - h, 0.14, 0.14, h, "steelD")                                    # latch arm
+                    f.box(u, vv, zt + 0.05, 0.22, 0.22, 0.07 if h > 0.1 else 0.0, "steel", top="cyan")   # latch head
 
 
 def _wall(f, p, q, nin, t0, t1, d0, d1, z0, z1, mat, top=None):
