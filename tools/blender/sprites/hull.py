@@ -1,14 +1,15 @@
 """Hull ghosts: the low hull silhouette that never hides the interior (after Space Haven's shortest cutaway).
 
-A ghost is a full-tile, near-black rim just above the deck (walls.ZG) with a fine lit, toothed line on its outer edge and
-a thin line on its inner edge. On the camera-facing outer sides (o bit 1: space at +y, bit 2: at +x) the ship's
-below-deck belly hangs from the rim: dark blue-teal panelled armour with rails and vents (muted ochre bands on the
-variant), straight down for DROP - CURVE and then curving back under the ship. The outer corner (o = 3) is cut at 45
+A ghost's rim is see-through: only semi-transparent edge lines (a 'ghost' sprite) over a full-tile footprint at walls.ZG,
+the crest on its outer edge, its inner edges and a seam across its flat top at every tile. On the camera-facing outer
+sides (o bit 1: space at +y, bit 2: at +x) the solid belly rises to the crest, so the crest sits directly on it (one
+dark band, as in 13.webp): dark blue-teal panelled armour with rails and vents (muted ochre bands on the variant),
+straight down to DROP - CURVE below the deck and then curving back under the ship. The outer corner (o = 3) is cut at 45
 degrees across the tile and that face looks straight at the camera; the side corners (SW: o 1 without a W neighbour,
 NE: o 2 without an N neighbour) are cut at 45 degrees in plan; o = 4 is the concave corner of a step.
 
 Near-hull ghosts (o > 0) are drawn in every view level. In the shortest level the far hull is a ghost too (o = 0: the
-rim alone, with a small lit face toward the room)."""
+lines of its sloped skirt)."""
 import math
 
 from . import core
@@ -113,8 +114,8 @@ class Out(Spec):
 
     def _line(self, i, j):
         """Ghost edge lines: 2 = crest (flat meets slope), 1 = the rear slope's toe and its fall line at every tile seam
-        (each tile draws only its left seam) and the front rim's unconnected edges, 0 = no line. (The front rim's seams
-        are separate quads on its outer face, see _rim_seams.) Runs stop one cell short of a connected +x /
+        and the front rim's seam across its flat top from the inner edge to the crest (each tile draws only its left seam),
+        and the front rim's unconnected edges, 0 = no line. Runs stop one cell short of a connected +x /
         +y neighbour, so two sprites never both draw the shared boundary pixel (that overlap made bright dots).
         Slope-to-slope mitres are not lined: at a concave corner the two adjacent seams already meet there. One-sided, so every edge is a single 1 px line. The
         rear ghost's flat part behind its crest stays unlined (13.webp shows only the sloped band)."""
@@ -140,6 +141,9 @@ class Out(Spec):
                         v = 2                                          # the front rim's outer crest
                     if not self.o and k != "flat" and self._inner(x, y) < C:
                         v = max(v, 1)                                  # the rear slope's toe
+                    if self.o in (1, 2, 3) and k == "flat" and (
+                            (a == 0 and self.o != 2 and self.mask & 8) or (b == 0 and self.o != 1 and self.mask & 1)):
+                        v = max(v, 1)                                  # front rim: its seam across the rim top
                     if (a == GN - 1 and self.mask & 2) or (b == GN - 1 and self.mask & 4):
                         v = 0                                          # the neighbour draws the shared pixel: no dot
                     L[a][b] = v
@@ -162,8 +166,8 @@ class Out(Spec):
 
     def col_face(self, face, x, y, z):
         s = self._fs(face, x, y)
-        if z > -1e-6:
-            return A.ghost_line(0)                                     # the rim's faces are see-through
+        if self.part == "rim":
+            return A.ghost_line(0)                                     # the rim's own faces are see-through
         f = (self.foot - z) / (self.foot + self.drop_at(x, y))
         return A.hull_out_face(face, s, min(max(f, 0.0), 1.0), self.variant)
 
@@ -201,32 +205,6 @@ def _dummy(name):
     return m.build()
 
 
-def _rim_seams(m, mask, o):
-    """Front ghost seams: at each tile seam a 1 px line from the crest point toward the viewer, in the iso tile-edge
-    direction on screen (down-left on +y runs, down-right on +x runs), across the band between the crest and the top
-    of the belly. That band is the rim's outer face, so the line is a slanted quad on that face, solved so that its
-    screen projection follows the tile-edge direction. Each tile draws only the seam at its +x (o 1) / +y (o 2) end,
-    where the line falls on its own face, so no seam is drawn twice; it starts 1.5 px under the crest so the two lines
-    never overlap.
-
-    Screen px (grid frame): sx = 32 (x - y), sy = 16 (x + y) - ZPX z, ZPX = 39.2 (core.ZPX)."""
-    zp = core.ZPX
-    t0 = 0.5                         # the seam at the tile's +x / +y end
-    if o == 1 and mask & 2:          # run along x, outer face y = 0.5, toward the viewer = screen (-32, +16)
-        sx0, sy0 = 32 * (t0 - (0.5 - BEV)), 16 * (t0 + 0.5 - BEV) - zp * ZG
-        u = lambda z: (zp * z + sy0 + sx0 / 2) / 32                       # noqa: E731
-        P = lambda a, z: core.G(a, 0.5 + 0.004, z)                        # noqa: E731
-    elif o == 2 and mask & 4:        # run along y, outer face x = 0.5, toward the viewer = screen (+32, +16)
-        sx0, sy0 = 32 * ((0.5 - BEV) - t0), 16 * ((0.5 - BEV) + t0) - zp * ZG
-        u = lambda z: (zp * z + sy0 - sx0 / 2) / 32                       # noqa: E731
-        P = lambda a, z: core.G(0.5 + 0.004, a, z)                        # noqa: E731
-    else:
-        return
-    w = 0.3 * C
-    z1, z0 = ZG - BEV - 1.5 * DZ, 0.0
-    m.poly([P(u(z0) - w, z0), P(u(z0) + w, z0), P(u(z1) + w, z1), P(u(z1) - w, z1)], "gW2")
-
-
 def out_block(mask, o, variant=0, part="rim", room=0):
     """A ghost piece. part "rim": the see-through edge lines above the deck (a 'ghost' sprite: env_build renders its
     brightness as alpha; drawn in the sorted layer). part "belly": the solid armour below the deck (drawn UNDER the
@@ -236,7 +214,6 @@ def out_block(mask, o, variant=0, part="rim", room=0):
     if not m.f:                                       # a corner piece with no camera-facing outer edge
         m.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")
     if part == "rim":
-        _rim_seams(m, mask, o)
         return [_dummy(f"ghost_plate_{o}_{mask}_{room}"), m.build()]
     return [m.build()]
 

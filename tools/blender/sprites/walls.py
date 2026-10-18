@@ -31,7 +31,7 @@ T = TW = 10 / 32   # partition thickness (Space Haven: cap 19-22 px on a 64 px t
 ZG = 0.30          # ghost hull: front rim top AND rear crest height (one value, so they meet flush at corners)
 DROP = 1.5         # ghost hull: the below-deck belly's depth on the camera-facing sides (13.webp: ~1.2 tiles)
 CURVE = 0.35       # ... of which the last part curves back under the ship
-BEV = 3 / 32       # ghost rim: narrow lit chamfer on its outer edge
+BEV = 0.0          # ghost rim: no chamfer, the crest sits directly on the solid belly (13.webp: one dark band)
 H = 0.5            # (compat) legacy cut height, unused by the wall pieces
 DZ = 1 / 40        # vertical face row height (about 1 px)
 BIT = {"n": 1, "e": 2, "s": 4, "w": 8}
@@ -115,7 +115,7 @@ class Spec:
     open_y = open_x = False      # tile boundary +y / +x edges get a vertical face where the body reaches them
     drop_y = drop_x = False      # ... reaching down to -drop_z (the hull ghost's belly) instead of the floor
     drop_z = DROP
-    part = None                  # None = whole piece; "rim" = above the deck only; "belly" = the dropped part only
+    part = None                  # None = whole piece; "rim" = the tops only; "belly" = the dropped faces (to the top)
     diag = False                 # 'se' half cells get a camera-facing 45 degree face (reaching -DROP)
 
     def cover(self, i, j):
@@ -216,6 +216,8 @@ def emit(m, sp):
                     ("x", (x1, y1), (x1, y0), "x1", (i + 1, j), "x0", i == GN - 1, sp.open_x, sp.drop_x)):
                 if edge not in EDGES[cv] or (last and not op) or (sp.part == "belly" and not (last and dr)):
                     continue
+                if sp.part == "rim" and last and dr:
+                    continue                                   # the solid belly carries this face up to the crest
                 ct = sp.cell_top(i, j)
                 if has(*nb, opp):
                     cn = sp.cell_top(*nb)
@@ -224,25 +226,21 @@ def emit(m, sp):
                     _face(m, sp, face, a, b, (cn, cn), (ct, ct))     # step down to a lower neighbour
                     continue
                 if last and dr:
-                    zd = 0.0 if sp.part == "rim" else -sp.drop_at((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+                    zd = -sp.drop_at((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
                     za = (zd, zd)
                 else:
                     za = (sp.skirtz(*a), sp.skirtz(*b))
                 lo = sp.face_lo(*a), sp.face_lo(*b)
                 za = tuple(z if q is None else max(z, q) for z, q in zip(za, lo))
                 zt = (sp.topz(*a), sp.topz(*b)) if ct is None else (ct, ct)
-                if sp.part == "belly":
-                    zt = (0.0, 0.0)
                 _face(m, sp, face, a, b, za, zt)
                 if last and dr and sp.part != "rim":
                     sp.belly(m, face, a, b)
-            if cv == "se" and sp.diag:
+            if cv == "se" and sp.diag and sp.part != "rim":
                 a, b = (x0, y1), (x1, y0)
-                zd = 0.0 if sp.part == "rim" else -sp.drop_at((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
-                zt = (0.0, 0.0) if sp.part == "belly" else (sp.topz(*a), sp.topz(*b))
-                _face(m, sp, "d", a, b, (zd, zd), zt)
-                if sp.part != "rim":
-                    sp.belly(m, "d", a, b)
+                zd = -sp.drop_at((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+                _face(m, sp, "d", a, b, (zd, zd), (sp.topz(*a), sp.topz(*b)))
+                sp.belly(m, "d", a, b)
 
 
 # ---- far walls: interior partitions and the far hull -------------------------------------------------------------
