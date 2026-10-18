@@ -84,21 +84,21 @@ def _sensor_head(rig, hd, f, z, k, pitch=0.0, wedge_h=0.1, brow=1.0):
     rig.part(hd, "eye").ball(at(0.105 * k, -0.005 * k), (0.03 * k, 0.015 * k, 0.025 * k), EYE, rot=rot)
 
 
-UTIL_BASE, UTIL_EL = (-0.14, -0.17, 1.2), (-0.27, -0.1, 1.58)
+UTIL_BASE, UTIL_EL = (-0.14, -0.17, 1.2), (-0.36, -0.17, 1.34)
 
 
 def _util_arm(rig, t):
-    """The worker's third arm: a boom on the back, folded up over its left shoulder with a claw hanging in front, outboard
-    of the head (joints util / util_el; the work clip unfolds it). Livery plates on dark hinges, so it reads against
-    both the dark background and the grey limbs."""
+    """The worker's third arm: a boom on the back, folded low behind its left shoulder with the claw resting just
+    outboard of the shoulder plate, so it barely changes the outline (joints util / util_el; the work clip unfolds it
+    up and forward). Grey metal on dark hinges like the other limbs, so it reads apart from the livery shell."""
     u = rig.joint("util", t, UTIL_BASE)
     ue = rig.joint("util_el", u, UTIL_EL)
-    tip = (-0.32, 0.09, 1.42)
+    tip = (-0.42, 0.06, 1.28)
     _hinge(rig.part(u), UTIL_BASE, 0.05, 0.08)
     rig.part(u).strut(UTIL_BASE, UTIL_EL, 0.03, FRAME)
-    rig.part(u).plate(_along(UTIL_BASE, UTIL_EL, 0.05), _along(UTIL_BASE, UTIL_EL, 0.36), 0.085, 0.09, CLOTH, taper=0.85, r=0.02)
+    rig.part(u).plate(_along(UTIL_BASE, UTIL_EL, 0.05), _along(UTIL_BASE, UTIL_EL, 0.27), 0.085, 0.09, MID, taper=0.85, r=0.02)
     _hinge(rig.part(ue), UTIL_EL, 0.055, 0.1)
-    rig.part(ue).plate(_along(UTIL_EL, tip, 0.04), _along(UTIL_EL, tip, 0.23), 0.075, 0.08, CLOTH, taper=0.8, r=0.02)
+    rig.part(ue).plate(_along(UTIL_EL, tip, 0.04), _along(UTIL_EL, tip, 0.2), 0.075, 0.08, MID, taper=0.8, r=0.02)
     rig.part(ue).rbox(tip, (0.08, 0.08, 0.055), FRAME, r=0.015)                          # wrist
     for df in (-0.03, 0.03):                                                             # claw
         rig.part(ue).rbox((tip[0], tip[1] + df, tip[2] - 0.065), (0.05, 0.035, 0.09), FRAME_L, r=0.01, taper=0.7)
