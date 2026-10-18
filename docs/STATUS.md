@@ -224,6 +224,24 @@ portal graph across grids, cross-grid pathing, crew grid membership, airlock mod
 - Agents work in separate git worktrees so they don't collide. Commit and push WIP often: sessions
   hit usage limits and the container can restart.
 
+## Shipped
+
+- **2026-10-18:** M4 art merged to `main` (bdde1e9). It covers:
+  - consoles and seated crew;
+  - the S, H and R weapons;
+  - Sol's engine, AI core and shield generator;
+  - roof v12 with livery, on top of the hull, with cut plates;
+  - walls pass 17;
+  - the engine bulkhead split into layers, with the hull skirt;
+  - ships mirrored so the engines face the camera;
+  - livery bow at either end.
+- **Still open on M4:**
+  - missile, ion and incendiary art;
+  - combat fx;
+  - the glow over seated heads;
+  - stray ghost-outline bits near the doors;
+  - deploy and "Fire volley" not yet confirmed in game.
+
 ## Next milestones
 
 - **Finish M4** (above).
