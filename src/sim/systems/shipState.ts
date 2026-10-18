@@ -1,6 +1,6 @@
 import { CrewC, DeadC, DownedC, HealthC, PositionC } from '../crew/components';
-import { killCrew } from '../crew/death';
-import { CombatC, ShipC, WeaponC, type Ship } from '../combat/components';
+import { ShipC } from '../combat/components';
+import { wreckShip } from '../combat/wreck';
 import { hullSum } from '../combat/hull';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
@@ -20,7 +20,7 @@ export function shipStateSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC)) {
     const ship = sim.world.get(id, ShipC);
     const grid = ship && sim.grids.get(ship.gridId);
-    if (!ship || !grid?.has('hp') || ship.state === 'wreck' || ship.state === 'fled') continue;
+    if (!ship || !grid?.has('hp') || ship.state === 'wreck' || ship.state === 'fled' || ship.state === 'prize') continue;
     const walls = hullSum(grid);
     ship.hullMax = Math.max(ship.hullMax, walls);
     let modHp = 0;
@@ -42,7 +42,7 @@ export function shipStateSystem(sim: Sim): void {
     }
     ship.integrity = (walls * WALL_WEIGHT + modHp) / Math.max(1, ship.hullMax * WALL_WEIGHT + modMax);
     if (ship.integrity < WRECK_BELOW || (sources > 0 && alive === 0)) {
-      wreck(sim, ship);
+      wreckShip(sim, ship);
       continue;
     }
     const disabled = ableCrew(sim, ship.gridId) === 0 || (sources > 0 && running === 0);
@@ -62,27 +62,4 @@ function ableCrew(sim: Sim, gridId: number): number {
     if (sim.world.get(id, PositionC)?.gridId === gridId && !sim.world.has(id, DeadC) && !sim.world.has(id, DownedC)) n++;
   }
   return n;
-}
-
-function wreck(sim: Sim, ship: Ship): void {
-  ship.state = 'wreck';
-  ship.integrity = Math.min(ship.integrity, WRECK_BELOW);
-  for (const id of sim.world.query(CrewC, PositionC)) {
-    if (sim.world.get(id, PositionC)?.gridId === ship.gridId) killCrew(sim, id);
-  }
-  for (const id of sim.world.query(WeaponC)) {
-    const w = sim.world.get(id, WeaponC);
-    if (w && sim.world.get(id, ModuleC)?.gridId === ship.gridId) {
-      w.charge = 0;
-      w.shotsLeft = 0;
-    }
-  }
-  for (const id of sim.world.query(ShipC, CombatC)) {
-    const c = sim.world.get(id, CombatC);
-    if (c && sim.world.get(id, ShipC)?.gridId === ship.gridId) {
-      c.shield.layers = 0;
-      c.evasion = 0;
-    }
-  }
-  sim.events.emit({ type: 'ship.destroyed', gridId: ship.gridId });
 }

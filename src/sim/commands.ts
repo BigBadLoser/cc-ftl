@@ -73,6 +73,8 @@ export type Command =
   | { type: 'combat.fireVolley'; gridId: number }
   /** Jump away with a fully charged FTL drive. */
   | { type: 'combat.flee'; gridId: number }
+  /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
+  | { type: 'ship.scuttle'; gridId: number }
   | { type: 'debug.spawnItems'; gridId: number; x: number; y: number; item: string; count: number };
 
 /** A command tagged with the tick at whose start it applies. */

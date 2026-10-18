@@ -43,6 +43,8 @@ import { vitalsSystem } from './systems/vitals';
 import { workSystem } from './systems/work';
 import { vehicleSystem } from './systems/vehicles';
 import { boardingAiSystem } from './systems/boardingAi';
+import { captureSystem } from './systems/capture';
+import { cargoJobsSystem } from './systems/cargoJobs';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
 export type System = (sim: Sim) => void;
@@ -88,6 +90,8 @@ export const pipeline: readonly System[] = [
   haulCleanupSystem,
   craftJobsSystem,
   supplyJobsSystem,
+  // Shuttle cargo hauls before the floor planner, so salvage on a prize goes to the shuttle, not nowhere.
+  cargoJobsSystem,
   haulJobsSystem,
   // Needs before decisions, so a crew member who just got tired sleeps this tick.
   needsSystem,
@@ -130,6 +134,8 @@ export const pipeline: readonly System[] = [
   projectileSystem,
   pointDefenceSystem,
   impactSystem,
-  // Ship state last: it reads the damage done this tick.
+  // Ship state: it reads the damage done this tick.
   shipStateSystem,
+  // Capture last: it reads this tick's crew states (downed, surrendered, positions) and may end combat for the next.
+  captureSystem,
 ];

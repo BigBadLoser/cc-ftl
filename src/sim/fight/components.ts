@@ -46,3 +46,9 @@ export interface Surrendered {
   tick: number;
 }
 export const SurrenderedC = defineComponent<Surrendered>('surrendered');
+
+/** A captured enemy crew member: surrendered or downed when their ship was taken, and held in place (also carries SurrenderedC). */
+export interface Prisoner {
+  tick: number;
+}
+export const PrisonerC = defineComponent<Prisoner>('prisoner');

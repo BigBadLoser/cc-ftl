@@ -3,7 +3,9 @@ import { ModuleC } from '../modules/components';
 import { CarryingC, ItemStackC } from '../items/components';
 import { destinationTile } from '../items/haul';
 import { destroyJob } from '../items/stacks';
+import type { HaulRef } from '../items/components';
 import type { Sim } from '../sim';
+import { VehicleC } from '../vehicles/components';
 
 /**
  * Drops haul jobs that can no longer happen so their reservations free up: the source stack or
@@ -17,8 +19,14 @@ export function haulCleanupSystem(sim: Sim): void {
     if (!job || !h) continue;
     const stale =
       destinationTile(sim, job) === null ||
-      (h.phase === 'pickup' && !(h.src.kind === 'floor' ? sim.world.has(h.src.id, ItemStackC) : sim.world.has(h.src.id, ModuleC))) ||
+      (h.phase === 'pickup' && !sourceExists(sim, h.src)) ||
       (h.phase === 'deliver' && (job.reservedBy === 0 || sim.world.get(job.reservedBy, CarryingC)?.item !== h.item));
     if (stale) destroyJob(sim, id);
   }
+}
+
+function sourceExists(sim: Sim, src: HaulRef): boolean {
+  if (src.kind === 'floor') return sim.world.has(src.id, ItemStackC);
+  if (src.kind === 'vehicle') return sim.world.has(src.id, VehicleC);
+  return sim.world.has(src.id, ModuleC);
 }

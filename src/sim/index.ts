@@ -37,6 +37,8 @@ export { planRoute, stepsCost, type Route, type Leg, type RouteGoal, type RouteS
 export { airlockTiles, airlockWorking, airlockDoorAt } from './portals/airlock';
 export * from './vehicles/components';
 export * from './fight/components';
+export { prizeValue } from './capture/prize';
+export { cargoCount, cargoSpace, cargoOf } from './vehicles/cargo';
 export { isHostile, isSubdued, isCombatReady, isInvader } from './fight/relations';
 export { sightLine, rayCells, type Cover } from './fight/los';
 export { wielded, hitChance, handDefOf } from './fight/weapons';

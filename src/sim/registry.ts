@@ -61,6 +61,8 @@ export interface VehicleDef {
   capacity: number;
   /** Chance 0..1 that a weapon shot aimed at it in flight misses. */
   evasion: number;
+  /** Cargo hold: total item units it carries besides its crew (hauled in and out at its boarding tile). Absent = none. */
+  cargo?: number;
 }
 
 /** One typed result of a weapon impact. All are applied by combat/effects.ts. */
@@ -239,6 +241,12 @@ export interface ModuleDef {
    * too).
    */
   vehicleBay?: { class: string };
+  /**
+   * Marks the ship's bridge for capture (a helm console counts as one with the defaults). Holding it means a live
+   * crew member of the attacking side stands within `radius` tiles (default CAPTURE_BRIDGE_RADIUS) of the module's access
+   * tile for `holdSec` seconds (default CAPTURE_HOLD_SEC) while every crew member of the ship is subdued.
+   */
+  bridge?: { holdSec?: number; radius?: number };
   /** Marks a console; its operator runs that ship system during combat. */
   console?: 'weapons' | 'shields' | 'helm';
   /** WeaponDef id this module fires. */

@@ -1,4 +1,5 @@
 import { defineComponent } from '../ecs';
+import type { ItemQty } from '../registry';
 
 /**
  * 'stowed': inside its home bay (not targetable, not on the sector map). 'flying': in the sector at (x, y). 'docked':
@@ -32,6 +33,8 @@ export interface Vehicle {
   dest: VehicleDest | null;
   /** Airlock module it is docked at (state 'docked'), else 0. */
   dock: number;
+  /** Hauled items aboard (see VehicleDef.cargo). */
+  cargo: ItemQty[];
 }
 export const VehicleC = defineComponent<Vehicle>('vehicle');
 

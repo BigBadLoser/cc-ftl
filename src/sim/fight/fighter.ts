@@ -78,7 +78,7 @@ function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: numb
   } else clearPath(sim, id);
 }
 
-/** Nearest bridge console of the grid (a boarder's objective), as its access tile. */
+/** The grid's bridge if it has one (so boarders go hold it, which captures the ship), else its nearest console: a boarder's objective, as an access tile. */
 function consoleObjective(sim: Sim, gridId: number, from: Position): { x: number; y: number } | null {
   let best: { x: number; y: number } | null = null;
   let bestD = Infinity;
@@ -87,7 +87,7 @@ function consoleObjective(sim: Sim, gridId: number, from: Position): { x: number
     const def = m && sim.content.modules[m.def];
     if (!m || !def?.console || m.gridId !== gridId || m.hp <= 0) continue;
     const at = accessTile(def, m.x, m.y, m.rot);
-    const d = at ? Math.hypot(at.x - from.x, at.y - from.y) : Infinity;
+    const d = (at ? Math.hypot(at.x - from.x, at.y - from.y) : Infinity) + (def.bridge || def.console === 'helm' ? 0 : 1000);
     if (at && d < bestD) {
       best = at;
       bestD = d;

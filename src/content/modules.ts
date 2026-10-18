@@ -179,7 +179,7 @@ export const modules = {
   // Helm 3x2: solid (0,0) (1,0) (2,0) (0,1) (2,1); chair (1,1) between the side panels.
   'module.helm': {
     name: 'Helm', asset: 'module.helm', footprint: [3, 2], solid: true, access: [1, 1], openTiles: [[1, 1]], power: -3,
-    priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true, console: 'helm',
+    priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true, console: 'helm', bridge: {},
     cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
   },
   // Point defence: floor bay plus roof turret. Works only while the ship has a powered, intact AI core with its mast out.

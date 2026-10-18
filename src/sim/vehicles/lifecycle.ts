@@ -49,7 +49,7 @@ export function spawnVehicle(sim: Sim, defId: string, bay: number): number {
   const id = sim.world.createEntity();
   sim.world.add(id, VehicleC, {
     def: defId, homeGrid: mod.gridId, home: bay, state: 'stowed', x: c.x, y: c.y, heading: 0, hp: def.maxHp,
-    pilot: 0, passengers: [], dest: null, dock: 0,
+    pilot: 0, passengers: [], dest: null, dock: 0, cargo: [],
   });
   bm.vehicle = id;
   return id;

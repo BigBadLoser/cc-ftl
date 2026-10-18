@@ -181,3 +181,13 @@ export const CHASE_REPLAN_TICKS = 6;
 /** Surrender: hp fraction under which a non-player crew member gives up when outnumbered within this many tiles. */
 export const SURRENDER_HP_FRAC = 0.3;
 export const SURRENDER_RADIUS = 12;
+
+// --- Capture ---
+/** Default seconds player-side crew must hold a ship's bridge, unopposed, to capture it. A bridge module's `bridge.holdSec` overrides. */
+export const CAPTURE_HOLD_SEC = 6;
+/** Default reach (tiles, Chebyshev) from a bridge module's access tile that counts as holding it. `bridge.radius` overrides. */
+export const CAPTURE_BRIDGE_RADIUS = 2;
+/** Prize value estimate (future ship broker): credits per unit of module build cost, scaled by module hp fraction. */
+export const PRIZE_VALUE_PER_COST = 10;
+/** Prize value per point of wall/door integrity. */
+export const PRIZE_VALUE_PER_WALL_HP = 0.05;

@@ -4,10 +4,10 @@ import { WeaponC, type Combat, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { shipOf } from './ships';
 
-/** True if the ship can still be shot at (exists, not a fled ship). Wrecks stay targetable but are not worth it for the AI. */
+/** True if the ship can still be shot at (exists, not a fled ship or a prize). Wrecks stay targetable but are not worth it for the AI. */
 export function targetableShip(sim: Sim, gridId: number): boolean {
   const ship = shipOf(sim, gridId);
-  return !!ship && ship.state !== 'fled';
+  return !!ship && ship.state !== 'fled' && ship.state !== 'prize';
 }
 
 /** True if a shuttle can be shot at: it exists and is out of its bay (flying or docked). */

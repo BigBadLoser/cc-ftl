@@ -19,7 +19,7 @@ export type SimEvent =
   | { type: 'crew.fellAsleep'; crew: number }
   | { type: 'crew.wokeUp'; crew: number }
   /** A crew member deposited items into a storage module (`to` 'storage') or onto a job (`to` 'job'). */
-  | { type: 'item.hauled'; crew: number; item: string; count: number; gridId: number; x: number; y: number; to: 'floor' | 'storage' | 'job' }
+  | { type: 'item.hauled'; crew: number; item: string; count: number; gridId: number; x: number; y: number; to: 'floor' | 'storage' | 'job' | 'vehicle' }
   /** A job lacks materials and no stock exists to fetch (debounced per job). */
   | { type: 'job.missingMaterials'; job: number; gridId: number; x: number; y: number; item: string }
   /** A crafting module finished a batch; outputs lie at (x, y). */
@@ -71,6 +71,11 @@ export type SimEvent =
   | { type: 'crew.equipped'; crew: number; item: string }
   | { type: 'crew.unequipped'; crew: number; item: string }
   | { type: 'crew.surrendered'; crew: number }
+  /** `by`'s crew took the ship on grid `gridId` (it is now a prize if `by` is the player, else the loss is `game.lost`). */
+  | { type: 'ship.captured'; gridId: number; by: 'player' | 'hostile' | 'neutral'; from: 'player' | 'hostile' | 'neutral' }
+  | { type: 'crew.imprisoned'; crew: number; gridId: number }
+  /** The player lost the game; `reason` is a short code ('captured'). */
+  | { type: 'game.lost'; reason: string }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 

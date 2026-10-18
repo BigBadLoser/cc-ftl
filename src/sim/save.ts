@@ -10,7 +10,7 @@ import { hullSum } from './combat/hull';
 import { initAtmosphere } from './ship';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -122,6 +122,13 @@ export const migrations: Record<number, (data: Record<string, unknown>) => Recor
       const grid = positions.get(id)?.['gridId'] ?? vehicles.get(aboard.get(id)?.['vehicle'] as number)?.['homeGrid'];
       return [id, { faction: factionOfGrid.get(grid as number) ?? 'player' }];
     });
+    return data;
+  },
+  // v9 -> v10 (capture): vehicles gain a `cargo` hold (empty). Ship state 'prize', the prize / captureProgress / prisoner
+  // stores and Sector.lost are new and optional, created on first use.
+  9: (data) => {
+    const world = data['world'] as WorldData;
+    for (const entry of world.stores['vehicle'] ?? []) (entry[1] as Record<string, unknown>)['cargo'] = [];
     return data;
   },
 };

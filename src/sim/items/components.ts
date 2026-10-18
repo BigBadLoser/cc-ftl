@@ -47,7 +47,7 @@ export const ProductionC = defineComponent<Production>('production');
 
 /** Where a haul takes from or delivers to. `id` is the stack, module or job entity. */
 export interface HaulRef {
-  kind: 'floor' | 'storage' | 'job';
+  kind: 'floor' | 'storage' | 'job' | 'vehicle';
   id: number;
 }
 
