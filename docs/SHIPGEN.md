@@ -148,12 +148,31 @@ distance over join tokens `kindA>dir>kindB` and assembly-degree tokens. It is re
 - **Island carrier.** The command room is grafted straight onto a hull deck's outer wall, with no stalk.
 - Donor sections cut from generated navy hulls (scrappers) use one candidate.
 
+### Navy v11: guns as mounts (`navyMounts.ts`)
+
+- **Slim hull, guns outside it.**
+  - The hull is a slim spine of crew, core and stores, with the airlocks in its faces.
+  - Guns are sponsons: one room sized to its mount (`mountBlock`), grafted onto a spine section's flank with one
+    door.
+  - Light guns are sometimes flush in a bow band section. Heavy (3x3) guns are always sponsons.
+- **Mount layout per seed (`mountGuns`).**
+  - Clustering: spread at intervals, or fore, amidships or aft.
+  - Pairing: mirrored pairs (`attachMirrored`) or staggered sides.
+  - Gun faces stay open: the arranger keeps the mounts' outer faces clear.
+- **Grammars.**
+  - `spineMounts`: frigate weight 5 (decks and wings 1 each); corvette weight 3 (straight chain 2, decks 0.5).
+  - `layered` is now `battleship`: a long one-room-a-side spine, a short raised citadel (crew decks over the
+    middle third), heavy sponsons on the citadel, the rest spread along the spine fore and aft.
+  - Twin-hull cruisers and carriers are unchanged.
+- **Bow gun fix.** The bow gun room takes only a light mount (`pickNose`). A 3x3 mount never found a straight hull
+  face there; this was the cause of almost all "weapons do not fit" failures (about 20% of first attempts at depth
+  4, now 0 of 80).
+
 ### Navy follow-ups
 
-- Frigates average about 2.0 to 2.6 and carriers about 2.3, still short of their targets. Gun decks are as deep
-  as their mounts and add beam.
-- Citadel cruisers are still squat (about 1.8), so their weight is low; a longer citadel would help.
-- Within-grammar variety is low at depth 9.
+- Battleships still bulge amidships (citadel plus turret); a lower citadel would read longer.
+- Carriers (about 2.3) and twin-hull cruisers stay broader than their targets.
+- Small corvettes with one gun look alike (depth-1 adjacency within family 0.33).
 
 ## Drones (built, v6): machinery first, same arranger
 

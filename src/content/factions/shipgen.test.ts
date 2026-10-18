@@ -67,8 +67,17 @@ describe('ship generator', () => {
       expect(s.template.boarding).toBeDefined();
       expect(count(s, (m) => !!m.storage)).toBeGreaterThanOrEqual(5);
       const n = gen('faction.navy', seed, seed % 10);
-      // Navy hulls are mirrored, except the carrier's offset island.
-      if (n.role !== 'carrier') expect([...n.template.rows].reverse(), `${n.template.name} hull is mirror-symmetric`).toEqual(n.template.rows);
+      // Navy hulls are mirrored (doors aside), except the carrier's offset island; staggered gun mounts may break it,
+      // so any mismatch must lie inside a mount (or its mirror image).
+      const dbg = n.debug!;
+      const mounts = dbg.assemblies.filter((a) => a.kind === 'mount' || a.kind === 'plate');
+      const inMount = (x: number, y: number): boolean => mounts.some((a) => x >= a.x && x < a.x + a.w && y >= a.y && y < a.y + a.h);
+      const rows = n.template.rows.map((r) => r.replace(/D/g, '#'));
+      // Mirror about the root assembly's axis (asymmetric mounts shift the crop).
+      const r0 = dbg.assemblies[0]!;
+      const m = (y: number): number => 2 * r0.y + r0.h - 1 - y;
+      const bad = rows.flatMap((r, y) => [...r].map((ch, x) => ((rows[m(y)]?.[x] ?? '.') !== ch && !inMount(x, y) && !inMount(x, m(y)) ? `${x},${y}` : '')).filter(Boolean));
+      if (n.role !== 'carrier') expect(bad, `${n.template.name} hull is mirror-symmetric`).toEqual([]);
     }
     const lopsided = Array.from({ length: 20 }, (_, seed) => gen('faction.scrapper', seed, 4).template.rows)
       .filter((rows) => rows.join() !== [...rows].reverse().join());

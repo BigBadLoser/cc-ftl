@@ -77,8 +77,10 @@ export function pickNose(b: Builder, f: FactionDef, plan: ShipPlan): { c: ChunkD
   const specs: Record<string, RoomSpec> = { b: plan.command };
   if (c.rows.some((r) => r.includes('w'))) {
     // The nose gun deck takes one mount; the rest of that battery goes back to the plan.
-    const gun = plan.weapons.shift();
-    if (gun && gun.mods.length > 1) plan.weapons.unshift({ ...gun, mods: gun.mods.slice(1) });
+    // Only a light mount fits the bow's gun room (a 3x3 mount never finds a straight hull face there).
+    const at = plan.weapons.findIndex((g) => g.h <= 3);
+    const gun = at >= 0 ? plan.weapons.splice(at, 1)[0] : undefined;
+    if (gun && gun.mods.length > 1) plan.weapons.splice(at, 0, { ...gun, mods: gun.mods.slice(1) });
     specs.w = gun ? { ...gun, mods: gun.mods.slice(0, 1) } : cargoSpec(2);
   }
   return { c, specs };

@@ -2,6 +2,7 @@ import { Builder } from './builder';
 import { blockFrom, localBuilder } from './blocks';
 import { noseBlock } from './navyBlocks';
 import { bands, chain, deckPair, evenDepth, jobs, mirrorBlock, no, order, propulsion, section, spanOf, twinDrives, type Ctx, type SectionPlan } from './navyKit';
+import { battleship, spineMounts } from './navyMounts';
 import { pickNose } from './topoNavy';
 import type { FactionDef, NavyGrammar } from './types';
 import type { RoomSpec } from './plan';
@@ -147,35 +148,6 @@ function twinHull(c: Ctx, f: FactionDef): boolean {
   return twinDrives(c, hulls, pick(c, c.fam.propulsion), 'start');
 }
 
-/** Cruiser: a broad layered hull, a spine with two layers of decks on each side. */
-function layered(c: Ctx, f: FactionDef): boolean {
-  const root = nose(c, f);
-  if (root === null) return no(c, 'nose');
-  const j = jobs(c.plan);
-  // A battleship: a long spine (one room a side per section, guns inline at the bow), then two long layers.
-  // Half the crew lives in the spine (it grows long), half in the inner layer; the outer layer carries the guns and
-  // airlocks (their faces need open space).
-  const bow = j.guns.splice(0, Math.floor(j.guns.length / 3));
-  const docks = j.crew.filter((r) => r.role === 'dock');
-  const crew = j.crew.filter((r) => r.role !== 'dock');
-  const innerCrew = crew.filter((_, i) => i % 2 === 0);
-  const spine = [...bands('battery', bow, 1), ...order(c.rng, bands('core', [...j.core, ...j.stores, ...crew.filter((_, i) => i % 2 === 1)], 1))];
-  evenDepth(c, ['core', 'cargo', 'battery']);
-  const ids = chain(c, root, spine, spine.length - 1);
-  if (!ids) return false;
-  if (!propulsion(c, ids[ids.length - 1] as number, pick(c, c.fam.propulsion))) return false;
-  const deckIds = ids.filter((_, i) => spine[i]?.kind !== 'battery');
-  const host = ids[ids.length - 1] as number;
-  // Two layers the length of the spine: crew decks on it, gun decks on them, each layer stepped in at bow and
-  // stern (a broad stepped hull, not a cross).
-  const all = spanOf(c, deckIds);
-  const inner = deckPair(c, host, host, 'crew', innerCrew, 'start', all);
-  if (!inner) return no(c, 'inner decks');
-  const outer = [...docks, ...j.guns];
-  const step = Math.max(2, Math.floor(all.span / 8));
-  return !!deckPair(c, inner[0], inner[1], 'gun', outer, 'start', { span: all.span - 2 * step, xMin: all.xMin + step }) || no(c, 'gun decks');
-}
-
 /** Carrier: a hangar block with hull decks along it (real volume), an offset island, nacelles aft. */
 function carrierIsland(c: Ctx): boolean {
   const j = jobs(c.plan);
@@ -230,5 +202,5 @@ function flightDeck(c: Ctx, f: FactionDef): boolean {
 }
 
 export const GRAMMARS: Record<NavyGrammar, (c: Ctx, f: FactionDef) => boolean> = {
-  linear, deckPair: deckPairGrammar, spineDecks, spineWings, citadelFlanked, twinHull, layered, carrierIsland: (c) => carrierIsland(c), flightDeck,
+  linear, deckPair: deckPairGrammar, spineDecks, spineWings, citadelFlanked, twinHull, layered: battleship, spineMounts, carrierIsland: (c) => carrierIsland(c), flightDeck,
 };
