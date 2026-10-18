@@ -10,7 +10,7 @@ import { iso, depthKey } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
-import { craftProgress, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
+import { craftProgress, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -134,10 +134,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     const out: Part[] = [];
     layers.forEach(({ layer, art }, i) => {
       const s = art.s;
-      // On a roofed ship an engine's machine (its bell reaches out past the hull) sorts under the roof plates of its
-      // footprint, so only the bell outside the hull shows.
-      const underRoof = roofed && !!def.hullEdge && layer.tiles === 'rest';
-      const key = (tx: number, ty: number) => (underRoof ? depthKey(m.x, m.y) + 0.85 : moduleKey(def, tx, ty) + (layer.dz ?? i * 0.001));
+      const key = (tx: number, ty: number) => layerKey(def, m, layer, i, roofed, moduleKey(def, tx, ty));
       if (art.fallback && art.perTile) {
         // A stand-in covers the footprint tile by tile (never the walkable open tiles, nor the hull row for the machine).
         const skip = new Set((layer.tiles === 'hull' ? [] : openTilesOf(def, m.x, m.y, m.rot)).map((t) => `${t.x},${t.y}`));

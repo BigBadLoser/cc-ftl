@@ -4,6 +4,7 @@ import { isSettled } from '../sim/crew/helpers';
 import { StorageC } from '../sim/items/components';
 import type { Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
+import { depthKey } from './iso';
 
 /** Storage reads 'full' from this share of its slots upward. */
 const FULL_SHARE = 0.75;
@@ -98,4 +99,15 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
   if (!def.console) return [main];
   const front = active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}`];
   return [main, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ }];
+}
+
+/**
+ * Depth key of layer `i` of a module drawn on a tile whose own module key is `key`. On a roofed ship an engine's layers
+ * (its bulkhead in the hull line and the machine with the bell outside) sort under the roof plates of its footprint
+ * (just before its rear-most tile's plate), so the roof hides everything inboard and only the bulkhead top and the bell
+ * show, like the hull around it. Drawn at its front tile they would paint over the roof.
+ */
+export function layerKey(def: ModuleDef, m: Module, layer: ModuleLayer, i: number, roofed: boolean, key: number): number {
+  if (roofed && def.hullEdge) return depthKey(m.x, m.y) + 0.85 + i * 0.001;
+  return key + (layer.dz ?? i * 0.001);
 }
