@@ -22,4 +22,6 @@ for _s in ("s", "e"):
         SPRITES.append((f"tile.hull.haz.{_s}.{_b}", (1, 1), "block", lambda s=_s, b=_b: hazard(s, b)))
 for _ax in ("x", "y"):
     SPRITES += [(f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False)),
-                (f"tile.door.{_ax}.open", (1, 1), "block", lambda a=_ax: door(a, True))]
+                (f"tile.door.{_ax}.open", (1, 1), "block", lambda a=_ax: door(a, True)),
+                (f"tile.door.low.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False, True)),
+                (f"tile.door.low.{_ax}.open", (1, 1), "block", lambda a=_ax: door(a, True, True))]

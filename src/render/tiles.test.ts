@@ -54,8 +54,9 @@ describe("wall autotiling", () => {
     expect(ids(ring, 2, 1, W, "down")).toEqual(["hull.m10"]);
   });
   it("doors orient along x between walls in x, otherwise y, with no wall piece", () => {
-    expect(ids(grid([[W, D, W]]), 1, 0, D, "auto")).toEqual(["door.x"]);
-    expect(ids(grid([[W], [D], [W]]), 0, 1, D, "auto")).toEqual(["door.y"]);
+    expect(ids(grid([[W, D, W]]), 1, 0, D, "auto")).toEqual(["door.low.x"]);
+    expect(ids(grid([[W, D, W]]), 1, 0, D, "up")).toEqual(["door.x"]);
+    expect(ids(grid([[W], [D], [W]]), 0, 1, D, "auto")).toEqual(["door.low.y"]);
   });
 });
 

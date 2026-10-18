@@ -63,7 +63,7 @@ export function wallPieces(
   if (kind === Struct.Door) {
     const o =
       solidish(kindAt(x - 1, y)) && solidish(kindAt(x + 1, y)) ? "x" : "y";
-    return [{ chain: [`tile.door.${o}`], order: 0 }];
+    return [{ chain: [mode === "up" ? `tile.door.${o}` : `tile.door.low.${o}`], order: 0 }];
   }
   const mask = wallMask(kindAt, x, y);
   const hull = touchesSpace(kindAt, x, y);
