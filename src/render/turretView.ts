@@ -63,7 +63,7 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
       const turretIds = [...world.query(ModuleC, WeaponC), ...world.query(ModuleC, PointDefenseC)];
       for (const id of turretIds) {
         const m = world.get(id, ModuleC);
-        const w = world.get(id, WeaponC) ?? (world.get(id, PointDefenseC) as { aim: number } | undefined);
+        const w: { aim: number; charge?: number } | undefined = world.get(id, WeaponC) ?? world.get(id, PointDefenseC);
         const def = m && defs[m.def];
         if (!m || !w || !def || m.gridId !== grid.id) continue;
         const stage = def.deploySec === undefined ? DEPLOY_FRAMES : deployStage(world, id);
@@ -73,7 +73,7 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const aim = out ? ((Math.round(w.aim) % 8) + 8) % 8 : 0;
         const stem = `turret.${turretStem(def.asset)}`;
         const base = `${stem}.d${aim}`;
-        const charged = out && 'charge' in w && w.charge >= 1;
+        const charged = out && (w.charge ?? 0) >= 1;
         const art = out
           ? resolveArt(atlas, charged ? [`${base}.charged`, base] : [base], charged ? 'turret.generic.charged' : 'turret.generic')
           : resolveArt(atlas, [deployId(stem, stage)]);
