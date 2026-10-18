@@ -5,8 +5,9 @@ import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { shipEntityOf, shipOf, spawnShip } from './ships';
+import { generateShip } from '../shipgen/generate';
 
-type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy'>;
+type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy' | 'debug.spawnGenerated'>;
 type Handler<T extends CombatCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 function reject(sim: Sim, command: string, reason: string): void {
@@ -16,6 +17,15 @@ function reject(sim: Sim, command: string, reason: string): void {
 /** True if the module entity lies on the grid. */
 function moduleOnGrid(sim: Sim, id: number, gridId: number): boolean {
   return sim.world.get(id, ModuleC)?.gridId === gridId;
+}
+
+/** True if a w x h box at sector (x, y) overlaps any ship. */
+function overlapsShip(sim: Sim, x: number, y: number, w: number, h: number): boolean {
+  for (const id of sim.world.query(ShipC)) {
+    const s = sim.world.get(id, ShipC);
+    if (s && x < s.x + s.width && s.x < x + w && y < s.y + s.height && s.y < y + h) return true;
+  }
+  return false;
 }
 
 export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
@@ -28,13 +38,22 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (cmd.x < 0 || cmd.y < 0 || cmd.x + w > sim.sector.width || cmd.y + h > sim.sector.height) {
       return reject(sim, cmd.type, 'outOfBounds');
     }
-    for (const id of sim.world.query(ShipC)) {
-      const s = sim.world.get(id, ShipC);
-      if (s && cmd.x < s.x + s.width && s.x < cmd.x + w && cmd.y < s.y + s.height && s.y < cmd.y + h) {
-        return reject(sim, cmd.type, 'overlap');
-      }
-    }
+    if (overlapsShip(sim, cmd.x, cmd.y, w, h)) return reject(sim, cmd.type, 'overlap');
     spawnShip(sim, template, { faction: template.faction ?? 'hostile', x: cmd.x, y: cmd.y, rest: 100 });
+  },
+  'debug.spawnGenerated': (sim, cmd) => {
+    const faction = sim.content.factions?.[cmd.faction];
+    if (!faction) return reject(sim, cmd.type, 'badFaction');
+    if (![cmd.cx, cmd.cy, cmd.depth].every(Number.isInteger) || cmd.depth < 0) return reject(sim, cmd.type, 'badValue');
+    const seed = cmd.seed === undefined ? sim.rng.int(0, 0x7fffffff) : cmd.seed >>> 0;
+    const gen = generateShip(faction, cmd.faction, seed, cmd.depth, sim.content.modules);
+    if (gen.problems.length > 0) return reject(sim, cmd.type, 'noLayout');
+    const x = Math.min(sim.sector.width - gen.width, Math.max(0, cmd.cx - (gen.width >> 1)));
+    const y = Math.min(sim.sector.height - gen.height, Math.max(0, cmd.cy - (gen.height >> 1)));
+    if (overlapsShip(sim, x, y, gen.width, gen.height)) return reject(sim, cmd.type, 'overlap');
+    const gridId = spawnShip(sim, gen.template, { faction: 'hostile', x, y, rest: 100 });
+    const ship = shipOf(sim, gridId);
+    if (ship) ship.gen = { faction: cmd.faction, seed, depth: cmd.depth };
   },
   'combat.setTarget': (sim, cmd) => {
     const ship = shipEntityOf(sim, cmd.shipGridId);

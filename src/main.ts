@@ -47,8 +47,31 @@ function focusFight(gridId: number | null): void {
   renderer?.frameShips(gridId === null ? [1] : [1, gridId]);
 }
 
+/**
+ * Generated enemies (behind a flag): `?shipgen=1` makes "Spawn raider" generate a ship of a random faction,
+ * `?shipgen=navy` (scrapper, drones) picks one; `?depth=N` sets the sector depth (default 2).
+ */
+const params = new URLSearchParams(location.search);
+const shipgenFlag = params.get('shipgen');
+const genDepth = Math.max(0, Math.floor(Number(params.get('depth') ?? 2)) || 0);
+
+/** Debug: generate a ship of `faction` (random if omitted) and put it where a raider would go. */
+function spawnGenerated(faction?: string): void {
+  const mine = shipOfGrid(1);
+  const ids = Object.keys(content.factions);
+  const id = faction ?? ids[Math.floor(Math.random() * ids.length)];
+  if (!mine || !id) return;
+  const cx = Math.round(mine.x + mine.width / 2 + 18);
+  const cy = Math.round(mine.y + mine.height / 2 + 22);
+  bridge.dispatch({ type: 'debug.spawnGenerated', faction: id, depth: genDepth, seed: (Math.random() * 0x7fffffff) >>> 0, cx, cy });
+}
+
 /** Debug: put a raider a fair distance from the player's ship (diagonally, so a fight fits on a phone screen too). */
 function spawnRaider(): void {
+  if (shipgenFlag) {
+    spawnGenerated(shipgenFlag === '1' || shipgenFlag === 'true' ? undefined : `faction.${shipgenFlag.replace(/^faction\./, '')}`);
+    return;
+  }
   const mine = shipOfGrid(1);
   const t = content.ships['ship.raider'];
   if (!mine || !t) return;
@@ -93,6 +116,7 @@ const api: UiApi = {
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   focusFight: (gridId) => focusFight(gridId),
   spawnRaider: () => spawnRaider(),
+  spawnGenerated: (faction) => spawnGenerated(faction),
   overlayList,
   overlayLegend,
   dismissAlert: controller.alerts.dismiss,

@@ -65,6 +65,11 @@ export type Command =
   | { type: 'storage.setFilter'; moduleId: number; items: string[] | null }
   /** Spawn a hostile ship from a template; (x, y) is its top-left tile in sector coordinates. */
   | { type: 'debug.spawnEnemy'; template: string; x: number; y: number }
+  /**
+   * Generate a hostile ship for a faction (content.factions) at sector `depth` from `seed` (default: drawn from the sim
+   * RNG) and spawn it centred on sector tile (cx, cy), clamped into the sector. The origin is stored on the ship.
+   */
+  | { type: 'debug.spawnGenerated'; faction: string; depth: number; seed?: number; cx: number; cy: number }
   /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetGridId 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetGridId 0) aims at a shuttle in flight or docked. */
   | { type: 'combat.setTarget'; shipGridId: number; weaponId: number | null; targetGridId: number; targetModuleId: number; targetVehicle?: number }
   /** Hold fire: weapons charge but only fire on combat.fireVolley. */

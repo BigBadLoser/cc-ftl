@@ -24,6 +24,8 @@ src/
   app/       wiring: boot, game loop, input, save/load, sim <-> render/ui bridge
 ```
 
+- `tools/shipgen` is a dev-only viewer for generated ship layouts (PNG contact sheets, ASCII, live page); nothing in
+  `src/` imports it.
 - `sim` imports nothing from the other folders, and nothing from pixi.js, svelte or the DOM.
 - `content` imports only types from `sim`. The sim receives content as a registry at boot, so tests can
   inject tiny fixtures.

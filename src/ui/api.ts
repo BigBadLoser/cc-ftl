@@ -309,6 +309,8 @@ export interface UiApi {
   focusFight(gridId: number | null): void;
   /** Spawn a raider about 30 tiles from the player's ship. */
   spawnRaider(): void;
+  /** Spawn a procedurally generated enemy of a faction id (random faction if omitted) where a raider would go. */
+  spawnGenerated(faction?: string): void;
   /** Overlay ids offered by the picker, in order. */
   overlayList: { id: string; label: string }[];
   overlayLegend(id: string): UiLegend | null;
