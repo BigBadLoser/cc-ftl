@@ -156,6 +156,10 @@ portal graph across grids, cross-grid pathing, crew grid membership, airlock mod
 - **Capture:** all enemy crew downed or surrendered AND you control their bridge. Captured ships are
   not flown; maybe sold to a ship broker later.
 - **Enemies can board you.**
+- **Crew combat built** (`m5-boarding` ce8f298, 091615d): weapon items (sidearm, rifle, blade), equip and
+  loadouts, LoS and cover, engage and flee behaviour, boarders hunt crew then head for consoles,
+  surrender (`isSubdued`). The starter ship has NO security crew (user decision); its storage holds a
+  rifle, two sidearms and a blade.
 - **Derelicts:** combat wrecks plus event-spawned derelicts with hazards, loot and hostile aliens.
 
 ## Decisions log (beyond DESIGN.md)
