@@ -231,13 +231,16 @@ def drop(side):
 
 
 def vert():
-    """Ghost vertical edge line at the tile's front corner (+x, +y), from the deck up to the rim: placed where the front
-    ghost's outer silhouette turns or ends (convex and concave corners, steps, run ends). Edge-only 'ghost' sprite."""
+    """Ghost vertical edge line at the tile's front corner (+x, +y), placed where the front ghost's outer silhouette
+    turns or ends (convex and concave corners, steps, run ends). It runs the ghost's full height: from just under the
+    rim's crest line (so the two semi-transparent lines never overlap into a bright dot) down the belly to where the
+    belly turns under. 1 px wide: the corner sits on a pixel boundary, so the sliver is shifted half a pixel onto a
+    pixel column. Edge-only 'ghost' sprite at the secondary line weight."""
     m = core.Mesh("ghost_vert", flat=True)
-    w = 0.36 * C                                                # about 1 px wide on screen
-    p = (0.5, 0.5)
+    w = 0.3 * C                                                 # well under 1 px wide
+    h = 1 / 128                                                 # (x + h, y - h) moves the corner +0.5 px on screen
+    p = (0.5 + h, 0.5 - h)
     a, b = (p[0] - w, p[1] + w), (p[0] + w, p[1] - w)          # a screen-horizontal sliver through the corner
-    zt = ZG - 0.03                                              # stops under the crest line: no doubled bright dot
-    m.poly([core.G(*a, 0.0), core.G(*b, 0.0), core.G(*b, zt), core.G(*a, zt)], "gW2")
+    z0, z1 = -ZB, ZG - 1.5 * DZ
+    m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z1), core.G(*a, z1)], "gW2")
     return [_dummy("ghost_vert_plate"), m.build()]
-
