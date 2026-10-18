@@ -7,7 +7,9 @@ from, in (u, v) (always one tile in front of the chair, -u).
 Idle: screens dark with dim tinted content (non-emissive), a few pilot lights. Active (`st` true): content bright,
 every button and rail light on."""
 import math
-from . import core, detail as D, greeble as G, cmbkit
+
+from . import cmbkit, core
+from . import detail as D
 from .cmbkit import Frame
 
 FOOT = {"helm": (2, 3), "shield": (2, 3), "weapons": (2, 2)}
@@ -82,11 +84,11 @@ def strip(f, u, v, yaw, w, z, n, off, st, col, pitch=None):
         lit = st and k % 4 != 3 or (not st and k % 5 == 0)
         mat = BTN[col][(k // 2) % 3] if lit else "gmD"
         bu, bv = at(u, v, yaw, x, off)
-        ybox(f, bu, bv, z, 0.075, 0.075, 0.045, mat, yaw)
+        ybox(f, bu, bv, z, 0.065, 0.065, 0.04, mat, yaw)
 
 
 def desk(f, u, v, yaw, w, d, h, st, col, nbtn=0, slab=True, base="steel", band=True):
-    """One desk bay: kick plate, panelled body with seams and a brass band, brass lip on the operator edge, control slab."""
+    """One desk bay: kick plate, panelled body with seams and a groove, a light edge rail, control slab."""
     _g("desk")
     ybox(f, u, v, 0, d + 0.04, w + 0.02, 0.1, "steelD", yaw, top="plateA")
     ybox(f, u, v, 0.1, d, w, h - 0.1, base, yaw, top="plate")
@@ -96,9 +98,9 @@ def desk(f, u, v, yaw, w, d, h, st, col, nbtn=0, slab=True, base="steel", band=T
         if abs(x) < w / 2 - 0.02:
             ybox(f, su, sv, 0.14, d + 0.03, 0.045, h - 0.24, "steelD", yaw)
     if band:
-        ybox(f, u, v, 0.27, d + 0.03, w + 0.01, 0.05, "brass", yaw)                  # brass band
+        ybox(f, u, v, 0.27, d + 0.025, w + 0.01, 0.035, "steelD", yaw)                 # panel groove
     lu, lv = at(u, v, yaw, 0, -d / 2 + 0.03)
-    ybox(f, lu, lv, h, 0.07, w + 0.01, 0.05, "brass", yaw)                           # brass lip on the operator edge
+    ybox(f, lu, lv, h, 0.06, w + 0.01, 0.04, "steelL", yaw, top="plate")                # bevelled edge rail
     if slab:
         su, sv = at(u, v, yaw, 0, 0.1)
         ybox(f, su, sv, h, d * 0.62, w - 0.06, 0.1, "blueGrey", yaw, top="plateB", lean=-0.1)
@@ -128,17 +130,6 @@ def chair(f, u, v, st):
         ybox(f, u + 0.03, v + sv * 0.25, 0.51, 0.3, 0.09, 0.05, "navy")            # armrest pad
 
 
-def side_greebles(f, face, s, items):
-    _g("greeble")
-    G.scatter(f, face, s, items)
-
-
-def hazard_v(f, u, v0, v1, z, step=0.1):
-    n = int(round((v1 - v0) / step))
-    for k in range(n):
-        f.box(u, v0 + (k + 0.5) * step, z, 0.05, step, 0.04, "hazY" if k % 2 == 0 else "hazK")
-
-
 # ---- helm: a long curved desk with the chair in front ---------------------------------------------------------
 
 def helm(f, st):
@@ -163,15 +154,15 @@ def helm(f, st):
             if k == 3:
                 bars += [(-0.24 + i * 0.12, 0.1, 0.05, 0.05 + 0.04 * (i % 3), "a") for i in range(5)]
             screen(f, su, sv, yaw, sw, sh + 0.1, 0.72, col, st, bars, lean=-0.1)
-    # yoke on the centre bay: stalk, brass rim wheel, hub, spokes
+    # yoke on the centre bay: stalk, rim wheel, hub, spokes
     _g("yoke")
     cu, cv = pts[3]
     yu = cu - 0.13
     f.vcyl(yu, cv, 0.52, 0.045, 0.26, "steelL", sides=8)
-    f.vcyl(yu, cv, 0.78, 0.17, 0.035, "brass", sides=10)
+    f.vcyl(yu, cv, 0.78, 0.17, 0.035, "steelL", sides=10)
     f.vcyl(yu, cv, 0.815, 0.11, 0.02, "dark", sides=10)
     for a in (0, 1):
-        ybox(f, yu, cv, 0.78, 0.3 if a == 0 else 0.05, 0.05 if a == 0 else 0.3, 0.05, "brass")
+        ybox(f, yu, cv, 0.78, 0.3 if a == 0 else 0.05, 0.05 if a == 0 else 0.3, 0.05, "steelL")
     f.vcyl(yu, cv, 0.83, 0.05, 0.04, "green" if st else "pcb", sides=6)
     # side pods in front, with throttle levers and valves
     for sv in (-1, 1):
@@ -179,27 +170,15 @@ def helm(f, st):
         _g("desk")
         f.box(-0.52, pv, 0.0, 0.62, 0.56, 0.1, "steelD", top="plateA")
         f.box(-0.52, pv, 0.1, 0.58, 0.52, 0.34, "steel", top="plate")
-        f.box(-0.52, pv, 0.27, 0.6, 0.54, 0.05, "brass")
+        f.box(-0.52, pv, 0.27, 0.6, 0.54, 0.035, "steelD")
         f.box(-0.52, pv, 0.44, 0.46, 0.5, 0.05, "blueGrey", top="plateB", taper=0.9)
-        f.box(-0.8, pv, 0.44, 0.06, 0.52, 0.05, "brass")
+        f.box(-0.8, pv, 0.44, 0.06, 0.52, 0.04, "steelL", top="plate")
         strip(f, -0.62, pv, 0, 0.4, 0.49, 3, 0.0, st, col)
         _g("lever")
         for k in (-1, 1):
             f.vcyl(-0.5, pv + k * 0.12, 0.49, 0.03, 0.2, "gm", sides=6)
             f.vcyl(-0.5, pv + k * 0.12, 0.69, 0.055, 0.07, "green" if st else "plate", sides=6)
-        side_greebles(f, "+v" if sv > 0 else "-v", sv * 1.4, [("valve", -0.52, 0.24)])
         _g("desk")
-    # service trunk behind the arc with greebles, brass pipe run on top
-    _g("trunk")
-    f.box(0.9, 0, 0, 0.2, 2.9, 0.62, "steel", top="plate")
-    D.trim(f, 0.9, 0, 0.62, 0.2, 2.9, "plate")
-    for vv in (-1.0, -0.33, 0.33, 1.0):
-        f.box(1.0, vv, 0.05, 0.03, 0.05, 0.5, "steelD")
-    _g("pipe")
-    D.pipe(f, [(0.9, -1.3, 0.72), (0.9, 1.3, 0.72)], 0.07, "brass", flanges=True)
-    for vv in (-0.9, 0.0, 0.9):
-        D.bracket(f, 0.9, vv, 0.62, 0.7)
-    side_greebles(f, "+u", 1.0, [("hatch", -0.95, 0.3), ("junction", -0.35, 0.34), ("valve", 0.3, 0.3), ("junction", 0.9, 0.34)])
     chair(f, *CHAIR["helm"], st)
 
 
@@ -213,7 +192,7 @@ def shield(f, st):
     desk(f, -0.5, -0.5, 0, 2.0, 0.66, 0.5, st, col, nbtn=0, slab=False, base="steel")           # side bar
     _g("desk")
     ybox(f, -0.5, 0.4, 0.0, 0.4, 0.3, 0.5, "steel", 0.7, top="plate")                            # chamfer toward the chair
-    ybox(f, -0.5, 0.4, 0.5, 0.42, 0.32, 0.05, "brass", 0.7)
+    ybox(f, -0.5, 0.4, 0.5, 0.42, 0.32, 0.04, "steelL", 0.7)
     # control slabs
     ybox(f, -0.52, -0.5, 0.5, 0.5, 1.9, 0.1, "blueGrey", 0, top="plateB", lean=-0.1)
     ybox(f, 0.4, 0, 0.6, 0.36, 2.8, 0.1, "blueGrey", 0, top="plateB", lean=-0.1)
@@ -234,24 +213,18 @@ def shield(f, st):
     ring = "cyan" if st else "navy"
     ybox(f, -0.5, pv, 0.55, 0.12, 0.12, 0.2, "steelL", top="plate")
     ybox(f, -0.5, pv, 0.55, 0.3, 0.3, 0.06, "steelD", top="plate")
-    f.hcyl(-0.78, -0.22, pv, pz, 0.03, "steelL", sides=6, cap="steelL", capstart="steelL")
-    f.hcyl(-0.52, -0.48, pv, pz, 0.08, "arc" if st else "navy", sides=8, cap="arc" if st else "navy", capstart="arc" if st else "navy")
-    for k, (ru, rr) in enumerate(((-0.72, 0.18), (-0.62, 0.3), (-0.5, 0.42))):
-        D.annulus(f, ru - 0.025, ru + 0.025, pv, pz, rr + 0.03, rr - 0.03, ring, ring, sides=14)
-        ybox(f, ru, pv, pz - rr, 0.05, 0.05, rr - 0.02, "steelL")
-        ybox(f, ru, pv, pz + 0.02, 0.05, 0.05, rr - 0.02, "steelL")
-    ybox(f, -0.5, pv, 0.6, 0.05, 0.05, pz - 0.6 - 0.42, "steelL")
-    # tall side pillar with brass pipes at the outer end
+    f.hcyl(-0.54, -0.5, pv, pz, 0.3, "dark", sides=16, cap="dark", capstart="dark")                     # disc backing
+    f.hcyl(-0.5, -0.47, pv, pz, 0.24, "cyan" if st else "navy", sides=16, cap="cyan" if st else "navy", capstart="cyan" if st else "navy")
+    D.annulus(f, -0.57, -0.43, pv, pz, 0.36, 0.3, "steelL", "plate", sides=16)                           # single frame ring
+    ybox(f, -0.5, pv, 0.6, 0.08, 0.08, pz - 0.6 - 0.34, "steelL")
+    # tall side pillar at the outer end
     _g("pylon")
     ybox(f, -0.5, -1.38, 0.0, 0.46, 0.22, 0.95, "steelL", top="plate")
-    ybox(f, -0.5, -1.38, 0.95, 0.5, 0.26, 0.05, "brass")
+    ybox(f, -0.5, -1.38, 0.95, 0.5, 0.26, 0.04, "steelL")
     for k in range(3):
         ybox(f, -0.5, -1.38, 0.2 + k * 0.25, 0.5, 0.24, 0.05, "steelD")
     D.rail(f, (-0.5, -1.38, 1.0), (-0.5, -1.38, 1.1), 0.05, "cyan" if st else "navy")
     f.vcyl(-0.5, -1.38, 1.0, 0.07, 0.1, "cyan" if st else "navy", sides=6)
-    # greebles
-    side_greebles(f, "+u", 0.97, [("hatch", -1.0, 0.3), ("junction", -0.35, 0.3), ("valve", 0.4, 0.3), ("junction", 1.05, 0.3)])
-    side_greebles(f, "-u", -0.83, [("junction", -0.95, 0.27), ("hatch", -0.35, 0.27)])
     chair(f, *CHAIR["shield"], st)
 
 
@@ -265,7 +238,7 @@ def weapons(f, st):
     desk(f, -0.5, 0.55, 0, 0.84, 0.95, 0.46, st, col, nbtn=0, slab=False, base="steelD")      # right bar
     _g("desk")
     ybox(f, 0.02, 0.18, 0.0, 0.46, 0.32, 0.5, "steelD", -0.785, top="plate")                    # inner chamfer
-    ybox(f, 0.02, 0.18, 0.5, 0.48, 0.34, 0.05, "brass", -0.785)
+    ybox(f, 0.02, 0.18, 0.5, 0.48, 0.34, 0.04, "steelL", -0.785)
     for u, v, y0, w, d, h in ((0.5, 0.0, 0, 1.9, 0.36, 0.5), (-0.48, 0.55, 0, 0.78, 0.5, 0.46)):
         ybox(f, u, v, h, d, w, 0.1, "plateA", y0, top="plateB", lean=-0.1)
     strip(f, 0.38, -0.5, 0, 0.8, 0.6, 4, -0.1, st, col)
@@ -274,7 +247,7 @@ def weapons(f, st):
     # left arm pod with a flight stick, in the chair tile's edge (U shape)
     _g("desk")
     ybox(f, -0.4, -0.9, 0.0, 0.8, 0.2, 0.4, "steelD", top="plate")
-    ybox(f, -0.4, -0.9, 0.4, 0.84, 0.22, 0.05, "brass")
+    ybox(f, -0.4, -0.9, 0.4, 0.84, 0.22, 0.04, "steelL")
     strip(f, -0.55, -0.9, 0, 0.24, 0.45, 2, 0.0, st, col)
     _g("lever")
     f.vcyl(-0.2, -0.9, 0.45, 0.04, 0.2, "gm", sides=6)
@@ -287,19 +260,13 @@ def weapons(f, st):
     # guarded fire buttons and the scope on the right bar
     _g("fire")
     for k, v in enumerate((0.42, 0.7)):
-        f.vcyl(-0.36, v, 0.56, 0.095, 0.05, "hazY", sides=8)
+        f.vcyl(-0.36, v, 0.56, 0.095, 0.05, "steelL", sides=8)
         f.vcyl(-0.36, v, 0.61, 0.065, 0.05, "red" if st else "rustD", sides=8)
     _g("scope")
     for u in (-0.7, -0.45):
         ybox(f, u, 0.55, 0.56, 0.08, 0.08, 0.06, "steelL")
     f.hcyl(-0.82, -0.3, 0.55, 0.69, 0.07, "gm", sides=8, cap="plate", capstart="lens" if st else "dark")
     f.hcyl(-0.84, -0.8, 0.55, 0.69, 0.085, "steelL", sides=8, cap="plate", capstart="plate")
-    # hazard lip along the front of the back bar
-    _g("hazard")
-    hazard_v(f, 0.075, -0.95, -0.35, 0.5)
-    # greebles
-    side_greebles(f, "+u", 0.97, [("hatch", -0.5, 0.26), ("junction", 0.35, 0.28), ("valve", 0.75, 0.25)])
-    side_greebles(f, "+v", 0.97, [("valve", -0.55, 0.23), ("bolts", -0.15, 0.3)])
     chair(f, *CHAIR["weapons"], st)
 
 

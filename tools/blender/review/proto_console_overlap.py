@@ -2,8 +2,10 @@
   blender -b --factory-startup --python tools/blender/review/proto_console_overlap.py"""
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sprites import core, cmbkit, overlap, console_proto as C  # noqa: E402
+from sprites import cmbkit, core, overlap
+from sprites import console_proto as C
 
 # intended mounts: things standing on / inside desk bodies (rotated boxes are recorded as axis-aligned bounds, so yawed bays
 # and chamfers legitimately overlap their neighbours' bounds)

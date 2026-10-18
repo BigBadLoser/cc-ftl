@@ -4,12 +4,14 @@ and meta.json (footprint, chair tile, entry tile, per rotation). Composite with 
 import json
 import sys
 from pathlib import Path
+
 import bpy  # noqa: F401
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sprites import core, post, env_build, console_proto as C  # noqa: E402
-from sprites.cmbkit import Frame  # noqa: E402
+from sprites import console_proto as C
+from sprites import core, env_build, post
+from sprites.cmbkit import Frame
 
 args = sys.argv[sys.argv.index("--") + 1:]
 OUT = Path(args[0])
@@ -25,7 +27,7 @@ def meta(name, rot):
     f = Frame(None, rot, centre=(cx, cy))
     tiles = [(f.xy(-nu / 2 + .5 + i, -nv / 2 + .5 + j), (i, j)) for i in range(nu) for j in range(nv)]
     mnx, mny = min(t[0][0] for t in tiles), min(t[0][1] for t in tiles)
-    grid = lambda p: (round(p[0] - mnx), round(p[1] - mny))  # noqa: E731  tile offset from the footprint's min-x/min-y tile
+    grid = lambda p: (round(p[0] - mnx), round(p[1] - mny))
     cu, cv = C.CHAIR[name]
     return {"foot_xy": grid((cx + (nu if rot % 2 else nv) - 1, cy)) if False else (nu if rot % 2 else nv, nv if rot % 2 else nu),
             "origin_tile_from_min": grid((0, 0)),
@@ -61,7 +63,7 @@ def main():
             core.clear_scene_meshes()
             col, glow = _ns["render_cell"]("cell", lambda n=name: C.console(n, 0, True), "prop", 760, 620)
             arr = _ns["finish"](col, glow, "prop")
-            post.write_png(OUT / f"blender_{name}_r0_active.png", np.dstack([arr, np.full(arr.shape[:2], 255, np.uint8)]))
+            post.write_png(OUT / f"blender_{name}_r0_active_v2.png", np.dstack([arr, np.full(arr.shape[:2], 255, np.uint8)]))
             print("cell", name, flush=True)
 
 

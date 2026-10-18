@@ -4,6 +4,7 @@
 import json
 import sys
 from pathlib import Path
+
 import numpy as np
 from PIL import Image
 
@@ -14,7 +15,7 @@ src = src.replace("W, H = 600, 440", "W, H = 900, 560")
 exec(src)
 META = json.loads((D / "meta.json").read_text())
 TX, TY = 40, 150
-T = lambda x, y: (TX + 14 * 32 + (x - y) * 32, TY + 20 + (x + y) * 16)  # noqa: E731
+T = lambda x, y: (TX + 14 * 32 + (x - y) * 32, TY + 20 + (x + y) * 16)
 # (console, rot, footprint min tile)
 PLACE = [("shield", 0, (1, 0)), ("helm", 0, (5, 0)), ("weapons", 0, (9, 0)),
          ("helm", 1, (11, 3)), ("shield", 1, (11, 7)), ("weapons", 1, (11, 11))]
@@ -24,7 +25,7 @@ X0, X1, Y0, Y1 = 0, 12, 0, 13
 
 def load(name, rot, hot):
     z = np.load(D / f"px_{name}_r{rot}{'_active' if hot else ''}.npz")
-    return z["rgba"], z["glow"], int(z["ox"]), int(z["oy"])
+    return z["rgba"], z["glow"].astype(np.float32) * 0.8, int(z["ox"]), int(z["oy"])
 
 
 def scene(hot):
@@ -59,9 +60,9 @@ def scene(hot):
 for hot in (False, True):
     img = scene(hot)
     tag = "active" if hot else "idle"
-    img.save(D / f"scene_{tag}_1x.png")
-    img.resize((img.width * 3, img.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x.png")
+    img.save(D / f"scene_{tag}_1x_v2.png")
+    img.resize((img.width * 3, img.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_v2.png")
     # tight 3x crops: r0 row along the north wall, r1 column along the east wall
     for nm, box in (("r0row", (440, 100, 860, 370)), ("r1col", (400, 340, 830, 560))):
         c = img.crop(box)
-        c.resize((c.width * 3, c.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_{nm}.png")
+        c.resize((c.width * 3, c.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_{nm}_v2.png")
