@@ -4,7 +4,7 @@
  * (livery plan and schemes); the sprite ids are listed in roofs.py (production set).
  */
 import { Struct } from '../sim/structure';
-import { outward, touchesSpace, type KindAt } from './tiles';
+import { outward, touchesSpace, wallMask, type KindAt } from './tiles';
 
 /** Python's roof_layout._h: a 32-bit multiplicative hash of small ints. */
 export function rhash(...v: number[]): number {
@@ -228,18 +228,36 @@ export function roofGradient(x: number, y: number, width: number, height: number
 }
 
 /**
- * Tiles the roof plating covers on a roofed ship, so its top is flush with the hull top (2.05) everywhere:
- *  - interior tiles and partitions (the slab sits on the walls);
- *  - the far hull (no space at +x / +y): its top strip stands at the tile's far edge, so without plating its skirt
- *    and inner face would show between the hull top and the roof (a raised lip, the ship reads as a bowl);
- *  - an engine's hull row: the slab sits on the 1.85 bulkhead like on a wall, closing the gap above it.
- * The near hull (facing the camera) is not covered: its strip already meets the roof at the tile's far edge and its
- * outer face is the visible hull side.
+ * Tiles the roof plating covers on a roofed ship: every tile of the ship. The slab sits on the interior walls and on
+ * top of the hull, its outer edge on the hull's outer face (cut plates, `roofCut`), so no hull top strip shows.
  */
-export function roofCovers(kindAt: KindAt, x: number, y: number, engineHull = false): boolean {
+export function roofCovers(kindAt: KindAt, x: number, y: number): boolean {
   const k = kindAt(x, y);
-  if (k === Struct.Floor || k === Struct.Door) return true;
-  if (k !== Struct.Wall) return false;
-  return engineHull || !touchesSpace(kindAt, x, y) || outward(kindAt, x, y) === 0;
+  return k === Struct.Floor || k === Struct.Door || k === Struct.Wall;
 }
 
+/** Which cut plate a roof tile needs (tools/blender/sprites/roof_cuts.py), '' for a full plate. */
+export type RoofCut = '' | 's' | 'e' | 'se' | 'c' | 'xs' | 'xe';
+
+/**
+ * The cut of roof tile (x, y): the near hull is cut at its outer face (`s` space at +y, `e` at +x, `se` both), the
+ * far corner whose N and W sides face space is chamfered like the hull (`c`), and an engine's hull row facing +y / +x
+ * is cut at its bulkhead's outer face (`xs` / `xe`). The far hull's outer face is its tile edge: full plates.
+ */
+export function roofCut(kindAt: KindAt, x: number, y: number, engineSide: 'n' | 'e' | 's' | 'w' | null = null): RoofCut {
+  if (engineSide) return engineSide === 'e' ? 'xe' : engineSide === 's' ? 'xs' : '';
+  if (kindAt(x, y) !== Struct.Wall || !touchesSpace(kindAt, x, y)) return '';
+  const o = outward(kindAt, x, y);
+  if (o === 1) return 's';
+  if (o === 2) return 'e';
+  if (o === 3) return 'se';
+  return o === 0 && wallMask(kindAt, x, y) === 6 && kindAt(x, y - 1) === Struct.Space && kindAt(x - 1, y) === Struct.Space ? 'c' : '';
+}
+
+/** Sprite id suffix of a cut, and the open sides its own lip / girders replace. */
+export function cutSuffix(cut: RoofCut): string {
+  return cut === '' ? '' : cut.startsWith('x') ? `.cutx.${cut.slice(1)}` : `.cut.${cut}`;
+}
+export function cutHides(cut: RoofCut, side: 'n' | 'e' | 's' | 'w'): boolean {
+  return cut === 'c' ? side === 'n' || side === 'w' : cut.replace('x', '').includes(side);
+}

@@ -4,7 +4,7 @@
   walls     floors, walls, hull, doors (walls.LEVELS view levels)        (sheet walls)
   consoles  helm / weapons / shield consoles, 4 rotations, desk-front overlays for seated crew
   weapons   roof turrets (8 aims, charged, stowed, deploy frames) and their floor bays, 4 rotations
-  roof      roof plating modules, edges, inset and patch plates, livery masks
+  roof      roof plating modules, edges, inset and patch plates, livery masks, cut plates (roof_cuts.py)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -26,8 +26,8 @@ def jobs(name):
         from . import turrets
         return turrets.SPRITES, True
     if name == "roof":
-        from . import roofs
-        return roofs.SPRITES, True
+        from . import roofs, roof_cuts
+        return roofs.SPRITES + roof_cuts.SPRITES, True
     raise KeyError(name)
 
 

@@ -2,7 +2,7 @@ import { Sprite, type Filter } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ModuleC } from '../sim/modules/components';
-import { footprintTiles, hullRow, rotatedSize } from '../sim/modules/footprint';
+import { footprintTiles, hullRow, hullSide, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import { buildRoofPlating, hasRoofArt, type Livery, type RoofPiece } from './roofPlating';
 import { resolveArt } from './assets/fallback';
@@ -93,13 +93,14 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
     pieces = [];
   }
 
-  /** Tile indices of engine hull rows (the roof slab sits on their bulkheads). */
-  function engineHullTiles(): Set<number> {
-    const out = new Set<number>();
+  /** Tile indices of engine hull rows and the side they face (the roof slab ends at their bulkheads' outer face). */
+  function engineHullTiles(): Map<number, 'n' | 'e' | 's' | 'w'> {
+    const out = new Map<number, 'n' | 'e' | 's' | 'w'>();
     for (const id of world.query(ModuleC)) {
       const m = world.get(id, ModuleC);
       const def = m && defs[m.def];
-      if (m && def?.hullEdge && m.gridId === grid.id) for (const t of hullRow(def, m.x, m.y, m.rot)) out.add(t.y * grid.width + t.x);
+      const side = m && def ? hullSide(def, m.rot) : null;
+      if (m && def && side && m.gridId === grid.id) for (const t of hullRow(def, m.x, m.y, m.rot)) out.set(t.y * grid.width + t.x, side);
     }
     return out;
   }

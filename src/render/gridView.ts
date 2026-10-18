@@ -113,7 +113,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts)) {
           const s = atlas.firstOf(piece.chain);
           if (!s) continue;
-          const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001, piece.under ? L.under : L.sorted);
+          // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
+          // their shared top edge (they all end flush at the roof top).
+          const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001 - (ghosts ? 0 : 0.15), piece.under ? L.under : L.sorted);
           owned.push(...made);
           const isDoor = k === Struct.Door;
           if (isDoor) {

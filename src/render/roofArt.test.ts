@@ -42,9 +42,9 @@ describe('livery plan', () => {
   });
 });
 
-describe('roof coverage', () => {
-  it('covers the interior, partitions, the far hull and engine hull rows, not the near hull', async () => {
-    const { roofCovers } = await import('./roofArt');
+describe('roof coverage and cuts', () => {
+  it('plates every ship tile and cuts the near hull, the chamfered far corner and engine rows', async () => {
+    const { roofCovers, roofCut, cutSuffix, cutHides } = await import('./roofArt');
     const { Struct } = await import('../sim/structure');
     const W = Struct.Wall;
     const F = Struct.Floor;
@@ -57,12 +57,16 @@ describe('roof coverage', () => {
       [S, S, S, S, S],
     ];
     const k = (x: number, y: number) => rows[y]?.[x] ?? S;
-    expect(roofCovers(k, 2, 2)).toBe(true);
-    expect(roofCovers(k, 2, 1)).toBe(true); // far (north) hull
-    expect(roofCovers(k, 1, 2)).toBe(true); // far (west) hull
-    expect(roofCovers(k, 2, 3)).toBe(false); // near (south) hull
-    expect(roofCovers(k, 3, 2)).toBe(false); // near (east) hull
-    expect(roofCovers(k, 3, 2, true)).toBe(true); // an engine's hull row
-    expect(roofCovers(k, 0, 0)).toBe(false);
+    expect([roofCovers(k, 2, 2), roofCovers(k, 2, 1), roofCovers(k, 3, 3), roofCovers(k, 0, 0)]).toEqual([true, true, true, false]);
+    expect(roofCut(k, 2, 2)).toBe('');
+    expect(roofCut(k, 2, 1)).toBe(''); // far hull: outer face on the tile edge
+    expect(roofCut(k, 1, 1)).toBe('c'); // far corner, chamfered
+    expect(roofCut(k, 2, 3)).toBe('s');
+    expect(roofCut(k, 3, 2)).toBe('e');
+    expect(roofCut(k, 3, 3)).toBe('se');
+    expect(roofCut(k, 3, 2, 'e')).toBe('xe');
+    expect(roofCut(k, 1, 2, 'w')).toBe('');
+    expect([cutSuffix('se'), cutSuffix('xe'), cutSuffix('')]).toEqual(['.cut.se', '.cutx.e', '']);
+    expect([cutHides('se', 's'), cutHides('se', 'n'), cutHides('c', 'w'), cutHides('xe', 'e')]).toEqual([true, false, true, true]);
   });
 });

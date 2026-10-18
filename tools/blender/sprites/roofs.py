@@ -108,11 +108,11 @@ DZ = 4 / core.ZPX         # raised armour belt (variant B): one plate thickness,
 BEV = 0.05                # belt step bevel width (tiles)
 
 
-def variant_base(layout, col, u, v, variant="v6", patch=False, paint=None):
+def variant_base(layout, col, u, v, variant="v6", patch=False, paint=None, mesh=core.Mesh):
     from . import roof_variants as rv
     g, raised = rv.tile(layout, col, u, v, variant, patch, paint)
     fam = (rv.FAM_C if variant == "C" else rl.FAM)[col]
-    m = core.Mesh(f"roof_{variant}_{layout}{col}_{u}{v}", flat=True)
+    m = mesh(f"roof_{variant}_{layout}{col}_{u}{v}", flat=True)
     m.pattern((-0.5, -0.5, ZR), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: None if (i, j) in raised else g[j][i])
     if raised:
         zb = ZR + rv.DZ_BLISTER
@@ -127,7 +127,7 @@ def variant_base(layout, col, u, v, variant="v6", patch=False, paint=None):
     return [m.build()]
 
 
-def inset_base(layout, col, u, v, patch=False):
+def inset_base(layout, col, u, v, patch=False, mesh=core.Mesh):
     """v10 base tile on a recessed plate: the plate floor sits DI px below ZR, with a bevelled rim on the far
     side (lit N chamfer, shaded W chamfer) where the plate starts, and a shaded near (S / E) lip on the floor."""
     from . import roof_variants as rv
@@ -144,7 +144,7 @@ def inset_base(layout, col, u, v, patch=False):
                 g[j][i] = floor.get(g[j][i], g[j][i])
     di, b = rv.DI / core.ZPX, 1.0 / GN
     zf, zb = ZR - di, ZR - di * 0.4
-    m = core.Mesh(f"roof_inset_{layout}{col}_{u}{v}", flat=True)
+    m = mesh(f"roof_inset_{layout}{col}_{u}{v}", flat=True)
     m.pattern((-0.5, -0.5, zf), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: g[j][i])
     if v == y0:                                     # far N rim: thin lit bevel, then the S-facing wall
         m.poly([core.G(-0.5, -0.5, ZR), core.G(0.5, -0.5, ZR), core.G(0.5, -0.5 + b, zb), core.G(-0.5, -0.5 + b, zb)], f["lit"])
@@ -155,11 +155,11 @@ def inset_base(layout, col, u, v, patch=False):
     return [m.build()]
 
 
-def variant_edge(side, col, variant="v6", tall=False):
+def variant_edge(side, col, variant="v6", tall=False, mesh=core.Mesh):
     from . import roof_variants as rv
     fam = (rv.FAM_C if variant == "C" else rl.FAM)
     f = fam[col]
-    m = core.Mesh(f"roof_{variant}_edge_{side}{col}", flat=True)
+    m = mesh(f"roof_{variant}_edge_{side}{col}", flat=True)
     if side in ("n", "w"):
         cv = rl._Canvas(f, GN)
         rl._girder(cv, side, GN)
