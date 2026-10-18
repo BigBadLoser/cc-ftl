@@ -17,13 +17,14 @@ from . import core, post
 from . import human_base as hb
 from .human_base import SCALE, build_skinned, import_base
 from . import human_gear as hg
+from . import human_sit as hs
 
 SS = core.SS
 ORDER = {"body": 0, "eyes": 10, "legs": 20, "torso": 30, "gear.belt": 40, "arm.R": 50, "arm.L": 51, "hair": 60,
          "implant.temple": 65, "gear.head": 70, "gear.back": 80}
 UNION_SLOTS = ("arm.L", "arm.R")
 # (clip, frames, fps, loop)
-CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("sleep", 3, 2, True)]
+CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("sleep", 3, 2, True), ("sit", 4, 3, True)]
 # sim facing d: 0 = grid +x, CCW in grid space, 2 = grid +y. Character faces Blender -Y at azimuth 0, and Blender
 # y = -grid y, so the azimuth about +Z that faces grid angle phi=45*d deg is theta = 90 - phi.
 THETA = [90 - 45 * d for d in range(8)]
@@ -93,6 +94,10 @@ def set_state(items, show, hold):
 def clip_frames():
     """Yield (clip, index, action name, frame number)."""
     for clip, n, _, _ in CLIPS:
+        if clip == "sit":               # procedural (human_sit): fingers come from idle frame 0
+            for i in range(n):
+                yield clip, i, "idle_Armature", 0
+            continue
         act = bpy.data.actions[f"{clip}_Armature"]
         lo, hi = act.frame_range
         for i in range(n):
@@ -142,13 +147,15 @@ def centre_on_origin(arm):
 def pose_frame(arm, clip, i, name, f):
     sc = bpy.context.scene
     arm.animation_data.action = bpy.data.actions[name]
+    arm.pose.bones["root"].location = (0, 0, 0)
     sc.frame_set(int(f), subframe=f - int(f))
     pb = arm.pose.bones
     for b in pb:
         b.scale = (1, 1, 1)
-    pb["spine_03"].scale = (TORSO_W, 1, 1)
-    pb["spine_02"].scale = (1 + (TORSO_W - 1) / 2, 1, 1)
     arm.location = (0, 0, 0)
+    br = hs.apply(arm, i, SCALE) if clip == "sit" else 0.0
+    pb["spine_03"].scale = (TORSO_W, 1 + 0.03 * br, 1 + 0.03 * br)
+    pb["spine_02"].scale = (1 + (TORSO_W - 1) / 2, 1 + 0.02 * br, 1 + 0.02 * br)
     if clip == "sleep":
         for b in pb:
             if b.name in _IDLE_ARMS:
