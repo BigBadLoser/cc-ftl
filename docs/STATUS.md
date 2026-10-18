@@ -139,6 +139,19 @@ opus-weapons + Sol's `art/low-ceiling-modules` commits (d391f5a, 9b89fbf cherry-
 module rule and livery shader, real ids, ROOF_H = 2.05) and taking in-game screenshots. Walls are
 still pending approval (walls-tall pass 8); re-merge walls-tall when it changes. Not on main.
 
+**M5 (boarding, derelicts) — decisions so far** (branch `m5-boarding`, foundation in progress:
+portal graph across grids, cross-grid pathing, crew grid membership, airlock module):
+- Ships don't move, so crossing between grids needs a **vehicle system**: shuttles dock at
+  **airlocks** on other grids, or sit in **vehicle bays** in their home ship. Docking creates the
+  portal link.
+- **EVA** only on derelicts or on the outside of enemy ships, after shuttling over.
+- **Crew combat:** real time via drafting, weapons as items (sidearms, rifles, melee), cover from walls
+  and doorways, existing downed/bleed-out.
+- **Capture:** all enemy crew downed or surrendered AND you control their bridge. Captured ships are
+  not flown; maybe sold to a ship broker later.
+- **Enemies can board you.**
+- **Derelicts:** combat wrecks plus event-spawned derelicts with hazards, loot and hostile aliens.
+
 ## Decisions log (beyond DESIGN.md)
 
 - **Workflow:**
