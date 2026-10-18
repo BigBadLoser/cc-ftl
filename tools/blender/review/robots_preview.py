@@ -7,7 +7,7 @@
   python3 -I tools/blender/review/robots_preview.py <ROBOT_REST assets dir> <out dir> shapes [shape render dir]
     -> robots-shapes-1x.png / -3x.png (rest pose, 8 directions) and robots-shapes-blender.png
   python3 -I tools/blender/review/robots_preview.py <ROBOT_ANIM assets dir> <out dir> anim
-    -> robots-anim-player-3x.gif / robots-anim-rogue-3x.gif (every clip facing SE, at the clip fps)
+    -> robots-anim-{player,rogue}-3x.gif and .mp4 (every clip facing SE, at the clip fps)
 The human comes from public/assets. Rogue robots: crimson livery, and the cyan visor recoloured red."""
 import json
 import sys
@@ -285,6 +285,18 @@ def anim(pub, rob, out, faction="player"):
             dr.text((x * 3, y * 3), t, fill=(220, 225, 235))
         frames.append(im)
     frames[0].save(out / f"robots-anim-{faction}-3x.gif", save_all=True, append_images=frames[1:], duration=100, loop=0)
+    mp4(frames, out / f"robots-anim-{faction}-3x.mp4")
+
+
+def mp4(frames, path, fps=10, loops=3):
+    """H.264 video of the frames (looped a few times; some viewers only show a GIF's first frame)."""
+    import subprocess
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        for k, im in enumerate(frames * loops):
+            im.save(f"{d}/f{k:04d}.png")
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps), "-i", f"{d}/f%04d.png", "-c:v", "libx264",
+                        "-pix_fmt", "yuv420p", "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-crf", "18", str(path)], check=True)
 
 
 def main():

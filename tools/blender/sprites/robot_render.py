@@ -39,6 +39,9 @@ def _stance(rig, a):
         rig.rot(f"ankle_{side}", pitch=-(hip + knee))
 
 
+SINK = {"worker": 0.095, "heavy": 0.065}      # charge: head drop that puts its brow plate flush with the socket rim
+
+
 def _biped(rig, clip, i):
     a = 0.8 if rig.name == "heavy" else 1.0
     r = rig.rot
@@ -81,10 +84,10 @@ def _biped(rig, clip, i):
             r(f"hip_{side}", pitch=-10)
             r(f"knee_{side}", pitch=18)
             r(f"ankle_{side}", pitch=-8)
-        util(20 + 6 * math.sin(t), -48 + 14 * math.sin(t))         # reaches up and forward over the head, working
+        util(42 + 6 * math.sin(t), -78 + 12 * math.sin(t))         # reaches up, over and well out in front, working
     elif clip == "charge":
         r("torso", pitch=12)
-        r("head", pitch=30)
+        rig.shift("head", dz=-SINK[rig.name])                       # powered down: head drawn into its socket
         for side, sg in (("R", 1), ("L", -1)):
             r(f"arm_{side}", pitch=4, roll=2 * sg)
             r(f"elbow_{side}", pitch=-10)
@@ -102,9 +105,9 @@ def _biped(rig, clip, i):
         r("arm_L", pitch=10, roll=-35)
         r("elbow_L", pitch=-50)
         util(-35, 40)
-        rig.detach("head", (-0.55, 0.15, 0.0), (80, 0, 35))
+        rig.detach("torso", (0.22, -0.62, 0.0), (-84, 12, 40))    # split at the waist: the upper body lies apart, behind the legs
         rig.ground_attached()
-        rig.drop("head")
+        rig.drop("torso")
         return
     rig.ground_attached()
 
