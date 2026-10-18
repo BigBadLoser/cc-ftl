@@ -61,6 +61,26 @@ export const navy = {
     battery: 2,
     noses,
   },
+  // Hull families (assembly-driven): standard sections, family proportions.
+  hullFamilies: [
+    {
+      id: 'corvette', weight: { base: 5, perDepth: -0.5, max: 5 }, bonus: { weapons: -1, crew: -3, crates: -3, shields: -1, engines: -1 },
+      depth: { battery: [3, 4], core: [3, 3], habitat: [3, 3], cargo: [3, 3] }, batteryCols: [1, 2], sponsonChance: 0.25, sectionRooms: 4, merge: true, drive: ['pods'],
+    },
+    {
+      id: 'frigate', weight: { base: 3, perDepth: 0, max: 3 },
+      depth: { battery: [4, 6], core: [3, 5], habitat: [3, 3], cargo: [3, 5] }, batteryCols: [1, 2], sponsonChance: 0.5, sectionRooms: 3, drive: ['pods', 'block'],
+    },
+    {
+      id: 'cruiser', weight: { base: -1, perDepth: 0.5, max: 4 }, bonus: { weapons: 2, shields: 1, crew: 2 },
+      depth: { battery: [4, 5], core: [4, 5], habitat: [3, 5], cargo: [3, 4] }, batteryCols: [1, 2], sponsonChance: 0.5, sectionRooms: 3, citadel: true, drive: ['block'],
+    },
+    {
+      id: 'carrier', weight: { base: -2, perDepth: 0.6, max: 4 }, bonus: { pointDefense: 1, engines: 1 }, bays: 3,
+      depth: { battery: [3, 4], core: [3, 4], habitat: [3, 4], cargo: [3, 5] }, batteryCols: [1, 2], sponsonChance: 0.3, sectionRooms: 3, drive: ['block'],
+    },
+  ],
+  metrics: { compactness: [0.38, 1], corridorRatio: [0.1, 0.45] },
   weapons: {
     light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.ionCannon', weight: 1 }],
     heavy: [{ value: 'module.missileLauncher', weight: 2 }, { value: 'module.massDriver', weight: 1 }],

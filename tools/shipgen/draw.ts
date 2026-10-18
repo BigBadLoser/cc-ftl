@@ -3,7 +3,12 @@
  * ASCII dump and a validation summary. Used by the node CLI (PNG contact sheets) and the live page.
  */
 import { content } from '../../src/content';
-import { footprintTiles, generateShip, rotatedSize, type GenResult, type ModuleDef, type RoomRole } from '../../src/sim';
+import {
+  footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, type GenResult, type ModuleDef, type RoomRole,
+} from '../../src/sim';
+import { drawAssemblies, drawSilhouette } from './views';
+
+export type View = 'detail' | 'silhouette' | 'assembly';
 
 type RGB = [number, number, number];
 
@@ -135,12 +140,14 @@ export function summary(g: GenResult, seed: number): string {
   const roles = g.rooms.map((r) => r.role).filter((r) => r !== 'hall');
   return `seed ${seed}: ${g.role}/${g.archetype} (${g.topology}) ${g.width}x${g.height} ${roles.length} rooms, power ${demand}/${supply}, weapons ${n((d) => !!d.weapon)}, ` +
     `shields ${n((d) => !!d.shieldGen)}, engines ${n((d) => !!d.engine)}, crew ${g.template.crew?.length ?? 0}, ` +
-    `attempts ${g.attempts}, ${g.problems.length === 0 ? 'OK' : `INVALID: ${g.problems.join('; ')}`}` +
+    `${g.metrics ? `metrics ${JSON.stringify(g.metrics)}, ` : ''}attempts ${g.attempts}, ${g.problems.length === 0 ? 'OK' : `INVALID: ${g.problems.join('; ')}`}` +
     (g.failures.length > 0 ? ` [rejected: ${g.failures.join(', ')}]` : '');
 }
 
 /** A contact sheet of seeds [from, from + count) for one faction at one depth. */
-export function contactSheet(faction: string, from: number, count: number, depth: number, s = 10, maxWidth = 1800): { raster: Raster; text: string } {
+export function contactSheet(
+  faction: string, from: number, count: number, depth: number, s = 10, maxWidth = 1800, view: View = 'detail',
+): { raster: Raster; text: string } {
   const ts = s >= 12 ? 2 : 1;
   const errors: string[] = [];
   const ships = Array.from({ length: count }, (_, i) => {
@@ -157,15 +164,19 @@ export function contactSheet(faction: string, from: number, count: number, depth
   const cols = Math.min(count, Math.max(1, Math.floor(maxWidth / cellW)));
   const rowsN = Math.ceil(count / cols);
   const r = new Raster(cols * cellW + 8, rowsN * cellH + 30);
-  r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1}`, 8, 8, [230, 230, 230], 2);
+  const sil = meanPairwise(ships.map((x) => silhouetteMask(x.g.template.rows)), silhouetteDistance);
+  const arch = meanPairwise(ships.map((x) => x.g.debug?.profile ?? x.g.topology), profileDistance);
+  r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1} ${view}  diversity: shape ${sil.toFixed(2)} sections ${arch.toFixed(2)}`, 8, 8, [230, 230, 230], 2);
   const text: string[] = [];
   ships.forEach(({ seed, g }, i) => {
     const ox = 8 + (i % cols) * cellW;
     const oy = 30 + Math.floor(i / cols) * cellH;
     r.text(`#${seed} ${g.role} / ${g.archetype} ${g.width}X${g.height}${g.problems.length ? ' BAD' : ''}`, ox, oy, g.problems.length ? [255, 80, 80] : [220, 220, 220], ts);
-    r.text(g.topology, ox, oy + 7 * ts, [150, 170, 200], ts);
-    drawShip(r, g, ox, oy + 14 * ts + 4, s);
+    const m = g.metrics;
+    const ms = m ? ` C${m.compactness.toFixed(2)} O${m.occupancy.toFixed(2)} R${m.corridorRatio.toFixed(2)} N${m.narrowLinks.toFixed(2)}` : '';
+    r.text(`${g.topology}${ms}`, ox, oy + 7 * ts, [150, 170, 200], ts);
+    (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
     text.push(summary(g, seed), ascii(g), '');
   });
-  return { raster: r, text: [...errors, ...text].join('\n') };
+  return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}`, ...errors, ...text].join('\n') };
 }

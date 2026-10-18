@@ -67,6 +67,7 @@ export class Canvas {
         } else if (cur !== '.') return false;
       }
     }
+    this.stamped.push(chunk);
     for (let j = 0; j < rows.length; j++) {
       const row = rows[j] as string;
       for (let i = 0; i < row.length; i++) {
@@ -97,6 +98,9 @@ export class Canvas {
     return id;
   }
 
+  /** Every chunk key stamped so far, in order (parts and hand-made chunks). */
+  readonly stamped: string[] = [];
+
   /** Put a door on a wall tile (callers check it joins two floors). */
   setDoor(x: number, y: number): void {
     const k = this.idx(x, y);
@@ -117,7 +121,7 @@ export class Canvas {
   }
 
   /** Rows of the used area with a one-tile space margin, and the label of every cell in that frame. */
-  crop(): { rows: string[]; labels: Int16Array; width: number; height: number } {
+  crop(): { rows: string[]; labels: Int16Array; width: number; height: number; ox: number; oy: number } {
     let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
     for (let k = 0; k < this.cells.length; k++) {
       if (this.cells[k] === '.') continue;
@@ -141,7 +145,8 @@ export class Canvas {
       }
       rows.push(row);
     }
-    return { rows, labels, width, height };
+    const o = this.size >> 1;
+    return { rows, labels, width, height, ox: x0 - 1 - o, oy: y0 - 1 - o };
   }
 }
 

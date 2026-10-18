@@ -28,12 +28,19 @@ export const box = (x: number, y: number, w: number, h: number): Rect => ({ x: x
  * on shared walls, hand-made chunks (noses), and mirroring about the ship's long axis.
  */
 export class Builder {
-  readonly cv = new Canvas();
-  readonly parts: Part[] = [];
+  cv = new Canvas();
+  parts: Part[] = [];
   private n = 0;
 
   /** `axis2`: twice the y of the mirror axis (rows y and axis2 - y mirror each other). */
   constructor(readonly rng: Rng, public axis2 = 0) {}
+
+  /** Throw away everything drawn (an arrangement is being revised). */
+  reset(): void {
+    this.cv = new Canvas();
+    this.parts = [];
+    this.chunkSpecs.clear();
+  }
 
   /** Stamp a walled box with the role's floor; null (nothing drawn) if it clashes. */
   place(r: Rect, role: RoomRole, spec?: RoomSpec): Part | null {
@@ -91,6 +98,17 @@ export class Builder {
     else if (b.x + b.w - 1 === a.x) vert(a.x);
     else if (a.x + a.w - 1 === b.x) vert(b.x);
     if (cands.length === 0) return false;
+    if (pick === 'mid' && cands.length % 2 === 0 && cands[0]?.[0] === cands[1]?.[0]) {
+      // A vertical stretch with two middle tiles: take the one nearer the mirror axis (both when equally near), so
+      // mirrored rooms get mirrored doors.
+      const a = cands[cands.length / 2 - 1] as [number, number];
+      const c = cands[cands.length / 2] as [number, number];
+      const da = Math.abs(2 * a[1] - this.axis2);
+      const dc = Math.abs(2 * c[1] - this.axis2);
+      if (da <= dc) this.cv.setDoor(a[0], a[1]);
+      if (dc <= da) this.cv.setDoor(c[0], c[1]);
+      return true;
+    }
     const i = pick === 'rand' ? this.rng.int(0, cands.length - 1) : pick === 'low' ? 0 : pick === 'high' ? cands.length - 1 : (cands.length - 1) >> 1;
     const [x, y] = cands[i] as [number, number];
     this.cv.setDoor(x, y);

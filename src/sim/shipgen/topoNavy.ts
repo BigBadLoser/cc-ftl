@@ -72,15 +72,20 @@ export function stern(b: Builder, x: number, joins: Rect[], engines: number, rea
 }
 
 /** Pick a nose chunk; if it has a gun deck, reserve the plan's first weapon room for it. */
-function pickNose(b: Builder, f: FactionDef, plan: ShipPlan): { c: ChunkDef; specs: Record<string, RoomSpec> } {
+export function pickNose(b: Builder, f: FactionDef, plan: ShipPlan): { c: ChunkDef; specs: Record<string, RoomSpec> } {
   const c = pickWeighted(b.rng, f.architecture.noses.map((n) => ({ value: n, weight: n.weight ?? 1 })));
   const specs: Record<string, RoomSpec> = { b: plan.command };
-  if (c.rows.some((r) => r.includes('w'))) specs.w = plan.weapons.shift() ?? cargoSpec(2);
+  if (c.rows.some((r) => r.includes('w'))) {
+    // The nose gun deck takes one mount; the rest of that battery goes back to the plan.
+    const gun = plan.weapons.shift();
+    if (gun && gun.mods.length > 1) plan.weapons.unshift({ ...gun, mods: gun.mods.slice(1) });
+    specs.w = gun ? { ...gun, mods: gun.mods.slice(0, 1) } : cargoSpec(2);
+  }
   return { c, specs };
 }
 
 /** Stamp the nose on the west wall at column x with its doors on the axis rows. */
-function nose(b: Builder, n: { c: ChunkDef; specs: Record<string, RoomSpec> }, x: number): boolean {
+export function nose(b: Builder, n: { c: ChunkDef; specs: Record<string, RoomSpec> }, x: number): boolean {
   const doors = doorRows(n.c, 'last');
   const first = (b.axis2 + 1 - doors.length) / 2;
   return Number.isInteger(first) && b.nose(n.c, x, first, n.specs);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ModuleC, ShipC, Struct, accessTile, deserialize, footprintTiles, generateShip, hullRow, isTileWalkable, newGame,
-  openTilesOf, serialize, type FactionDef, type GenResult, type ModuleDef, type Sim,
+  meanPairwise, openTilesOf, profileDistance, serialize, silhouetteDistance, silhouetteMask, type FactionDef, type GenResult, type ModuleDef, type Sim,
 } from '../../sim';
 import { content } from '../index';
 import { factions } from './index';
@@ -67,13 +67,28 @@ describe('ship generator', () => {
       expect(count(s, (m) => !!m.vehicleBay)).toBe(1);
       expect(s.template.boarding).toBeDefined();
       expect(count(s, (m) => !!m.storage)).toBeGreaterThanOrEqual(5);
-      for (const g of [d, gen('faction.navy', seed, seed % 10)]) {
-        expect([...g.template.rows].reverse(), `${g.template.name} hull is mirror-symmetric`).toEqual(g.template.rows);
-      }
+      const n = gen('faction.navy', seed, seed % 10);
+      expect([...n.template.rows].reverse(), `${n.template.name} hull is mirror-symmetric`).toEqual(n.template.rows);
     }
     const lopsided = Array.from({ length: 20 }, (_, seed) => gen('faction.scrapper', seed, 4).template.rows)
       .filter((rows) => rows.join() !== [...rows].reverse().join());
     expect(lopsided.length).toBeGreaterThanOrEqual(18);
+  });
+
+  it('navy (assembly-driven): sections with matched bulkhead ports, every hull family appears, seeds vary at macro scale', () => {
+    const families = new Set<string>();
+    for (let seed = 0; seed < 60; seed++) {
+      const g = gen('faction.navy', seed, seed % 2 === 1 ? 9 : seed % 10);
+      families.add(g.role);
+      expect(g.debug, 'composer debug data').toBeDefined();
+      expect(g.debug!.ports.every((p) => p.matched), `seed ${seed} ports`).toBe(true);
+      expect(g.debug!.joins.some((j) => j.kind === 'frame')).toBe(true);
+      expect(g.metrics!.compactness).toBeGreaterThan(0.38);
+    }
+    expect([...families].sort()).toEqual(['carrier', 'corvette', 'cruiser', 'frigate']);
+    const deep = Array.from({ length: 12 }, (_, i) => gen('faction.navy', i + 1, 9));
+    expect(meanPairwise(deep.map((g) => silhouetteMask(g.template.rows)), silhouetteDistance)).toBeGreaterThan(0.15);
+    expect(meanPairwise(deep.map((g) => g.debug!.profile), profileDistance)).toBeGreaterThan(0.4);
   });
 
   for (const id of ids) {

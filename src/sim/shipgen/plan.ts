@@ -129,7 +129,7 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const cargo: RoomSpec[] = [];
   for (let left = b.crates; left > 0; left -= 6) cargo.push(cargoSpec(Math.min(6, left)));
   const hangars: RoomSpec[] = Array.from({ length: role.bays ?? (f.doctrine.boarding ? 1 : 0) }, () => ({
-    role: 'hangar' as const, mods: ['module.vehicle_bay'], w: 5, h: 6, vehicle: true,
+    role: 'hangar' as const, mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true,
   }));
   const plan: ShipPlan = {
     role, command, weapons, shields, engines: Math.max(1, b.engines), reactors: 1, core, pd, quarters, cargo, hangars, support, crew,
@@ -138,7 +138,7 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   // Power: enough reactors for the plan, or drop guns until the reactor cap covers it.
   const demandOf = (): number => {
     const rooms = allRooms(plan);
-    let d = plan.engines * 6 + 2 + rooms.length * 2;
+    let d = plan.engines * 6 + 2 + rooms.length * 3;
     for (const r of rooms) for (const m of r.mods) d += Math.max(0, -(defs[m]?.power ?? 0));
     return d;
   };

@@ -26,7 +26,9 @@ export type ArchetypeId =
   /** Distributed clusters (a junction and its pods) linked by long thin struts. */
   | 'clusters'
   /** Salvaged sections of different build joined by narrow offset connectors; strapped-on engines. */
-  | 'salvage';
+  | 'salvage'
+  /** Assembly-driven: standard functional sections composed by constraints (v3; navy first). */
+  | 'sections';
 
 /**
  * A hand-made piece of hull, drawn with the bow to the west (-x). '.' outside, '#' wall, 'D' a door on the attach
@@ -96,6 +98,38 @@ export interface ArchitectureDef {
   noses: readonly ChunkDef[];
 }
 
+/** Standard functional sections of a navy hull (one per kind of job). */
+export type SectionKind = 'command' | 'battery' | 'core' | 'habitat' | 'cargo' | 'hangar' | 'drive';
+
+/**
+ * A hull family: standardised engineering with its own proportions. The sections a ship needs come from its plan;
+ * the family sets their depth (rooms per side), gun columns, sponsons, and which jobs get their own sections.
+ */
+export interface HullFamilyDef {
+  id: string;
+  weight: Scaled;
+  bonus?: Partial<Record<keyof ShipBudget, number>>;
+  bays?: number;
+  /** Interior depth of each section's room band (per side), [min, max]. */
+  depth: Partial<Record<SectionKind, readonly [number, number]>>;
+  /** Gun columns per side in one battery section. */
+  batteryCols: readonly [number, number];
+  /** Chance a battery section carries its guns in grafted sponsons instead of inside the hull line. */
+  sponsonChance: number;
+  /** Most rooms per side in a habitat / cargo / core section before it splits in two. */
+  sectionRooms: number;
+  /** One combined section for core, crew and stores (small hulls). */
+  merge?: boolean;
+  /** The core is a citadel: an enclosed compartment on the axis, passages around it, crew quarters outboard. */
+  citadel?: boolean;
+  /** Drive layouts the family builds: a transverse engineering block, or engine pods flush with the stern. */
+  drive: readonly ('block' | 'pods')[];
+}
+
+/** Diagnostic metric bands: a generated ship outside a band is rejected and reseeded. */
+export type MetricId = 'compactness' | 'occupancy' | 'corridorRatio' | 'narrowLinks' | 'aspect';
+export type MetricBands = Partial<Record<MetricId, readonly [number, number]>>;
+
 export interface FactionDef {
   name: string;
   /** Building style id; also the art lookup key. */
@@ -103,6 +137,9 @@ export interface FactionDef {
   /** Art variants for the renderer (looked up later; no art is generated here). */
   art: { hull: string; wall: string; roof: string; livery: string; signature: readonly string[] };
   architecture: ArchitectureDef;
+  /** Assembly-driven generation (v3): hull families. When present, the faction uses the composer instead of v2. */
+  hullFamilies?: readonly HullFamilyDef[];
+  metrics?: MetricBands;
   weapons: { light: readonly Weighted<string>[]; heavy: readonly Weighted<string>[] };
   shields: readonly Weighted<string>[];
   /** Crate stock: each crate rolls each entry in [min, max]. */
@@ -147,6 +184,55 @@ export interface GenResult {
   problems: string[];
   /** Why earlier attempts were rejected. */
   failures: string[];
+  /** Diagnostic metrics of the layout. */
+  metrics?: Record<MetricId, number>;
+  /** Assemblies, ports, joins and traversal (assembly-driven generation only), for the viewer. */
+  debug?: CompDebug;
+}
+
+export type AccessKind = 'human' | 'robot' | 'external';
+export type JoinKind = 'frame' | 'graft' | 'beam';
+
+/** A functional assembly as placed: its kind, label, who must reach it, its bounds and the parts it is made of. */
+export interface AsmRecord {
+  id: number;
+  kind: string;
+  label: string;
+  access: AccessKind;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** An access port on an assembly's boundary: a tile, the side it faces, and whether a neighbour's port met it. */
+export interface PortRecord {
+  asm: number;
+  x: number;
+  y: number;
+  dir: 'n' | 's' | 'e' | 'w';
+  access: AccessKind;
+  matched: boolean;
+}
+
+/** A structural connection between two assemblies, with the tiles it runs through. */
+export interface JoinRecord {
+  kind: JoinKind;
+  a: number;
+  b: number;
+  tiles: { x: number; y: number }[];
+}
+
+export interface CompDebug {
+  assemblies: AsmRecord[];
+  /** Assembly index per tile (-1 none), same frame as the template rows. */
+  asmOf: Int16Array;
+  ports: PortRecord[];
+  joins: JoinRecord[];
+  /** Walkable traversal tiles with the access kind they serve. */
+  traversal: { x: number; y: number; access: AccessKind }[];
+  /** Section sequence and depths, e.g. 'C B4 K3 H3 D' (for diversity checks). */
+  profile: string;
 }
 
 export type { ItemQty };

@@ -1,6 +1,9 @@
 import { Rng } from '../rng';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { Builder } from './builder';
+import type { Composer } from './compose';
+import { composeNavy } from './composeNavy';
+import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne } from './fit';
 import { Layout } from './layout';
@@ -18,7 +21,7 @@ export const GEN_ATTEMPTS = 24;
 const attemptSeed = (seed: number, n: number): number => (Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b) + Math.imul(n, 0xc2b2ae35)) >>> 0;
 
 type Topology = (b: Builder, f: FactionDef, plan: ShipPlan) => string | null;
-const TOPOLOGIES: Record<ArchetypeId, Topology> = {
+const TOPOLOGIES: Record<Exclude<ArchetypeId, 'sections'>, Topology> = {
   spine, ring: (b, f, p) => ring(b, f, p), carrier: (b, f, p) => ring(b, f, p, true), hub, rails, clusters, salvage,
 };
 
@@ -78,6 +81,13 @@ function fitOut(
   let supply = 0;
   let demand = 0;
   for (const m of lay.modules) { const p = (defs[m.def] as ModuleDef).power; if (p > 0) supply += p; else demand -= p; }
+  // Short of power after lighting: squeeze extra reactors into engineering or stores.
+  const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || r === 'cargo' || r === 'support' ? i : -1)).filter((i) => i >= 0);
+  const reactor = defs['module.reactor'];
+  for (let k = 0; k < 3 && supply < demand && reactor; k++) {
+    if (!placeOne(lay, rng, 'module.reactor', spare)) break;
+    supply += reactor.power;
+  }
   if (supply < demand) return { ...out, error: 'not enough power' };
   return out;
 }
@@ -115,13 +125,35 @@ export function generateAttempt(
   f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, n: number,
 ): GenResult | string {
   const rng = new Rng(attemptSeed(seed, n));
-  const { role, archetype } = pickRole(rng, f, depth);
-  const plan = planShip(rng, f, role, depth, defs);
-  const b = new Builder(rng);
-  const topology = TOPOLOGIES[archetype](b, f, plan);
+  let role: ShipRoleDef;
+  let archetype: ArchetypeId;
+  let plan: ShipPlan;
+  let b: Builder;
+  let topology: string | null;
+  let comp: Composer | null = null;
+  let profile = '';
+  if (f.hullFamilies && f.hullFamilies.length > 0) {
+    // Assembly-driven: a hull family, its standard sections, composed by constraints.
+    const fams = f.hullFamilies.map((h) => ({ value: h, weight: scaled(h.weight, depth) }));
+    const fam = pickWeighted(rng, fams.some((x) => x.weight > 0) ? fams : fams.map((x) => ({ ...x, weight: 1 })));
+    role = { id: fam.id, weight: fam.weight, archetypes: [], ...(fam.bonus ? { bonus: fam.bonus } : {}), ...(fam.bays ? { bays: fam.bays } : {}) };
+    archetype = 'sections';
+    plan = planShip(rng, f, role, depth, defs);
+    const r = composeNavy(rng, f, fam, plan);
+    if (!r) return 'sections: no feasible arrangement';
+    comp = r.c;
+    b = r.c.b;
+    profile = r.profile;
+    topology = `${r.profile}${r.revisions > 0 ? ` (rev ${r.revisions})` : ''}`;
+  } else {
+    ({ role, archetype } = pickRole(rng, f, depth));
+    plan = planShip(rng, f, role, depth, defs);
+    b = new Builder(rng);
+    topology = TOPOLOGIES[archetype as Exclude<ArchetypeId, 'sections'>](b, f, plan);
+  }
   if (!topology) return `${archetype}: structure clash`;
   b.cv.fixDoors();
-  const { rows, labels: roomOf, width, height } = b.cv.crop();
+  const { rows, labels: roomOf, width, height, ox, oy } = b.cv.crop();
   const labels = b.cv.labels;
   const roles = labels.map((l) => roleOfLetter(l.letter) ?? 'cargo');
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
@@ -129,8 +161,14 @@ export function generateAttempt(
   const d = fitOut(rng, f, rows, roomOf, roles, specs, defs);
   const template = toTemplate(f, role, factionId, seed, plan, rows, d);
   const problems = d.error ? [d.error] : validateTemplate(template, defs);
+  const metrics = layoutMetrics(template, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', defs);
+  const bad = metricViolation(metrics, f.metrics);
+  if (bad && problems.length === 0) problems.push(bad);
   const rooms: GenRoom[] = roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
-  return { template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [] };
+  return {
+    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics,
+    ...(comp ? { debug: comp.debug(ox, oy, width, height, roomOf, rows, profile) } : {}),
+  };
 }
 
 /**
