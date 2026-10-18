@@ -12,10 +12,10 @@ from PIL import Image
 D = Path(sys.argv[1])
 src = Path(__file__).with_name("proto_composite.py").read_text().split("def load(")[0]
 src = src.replace("D = Path(sys.argv[1])\nROT = int(sys.argv[2]) if len(sys.argv) > 2 else 1\n", "")
-src = src.replace("W, H = 600, 440", "W, H = 980, 640")
+src = src.replace("W, H = 600, 440", "W, H = 980, 700")
 exec(src)
 META = json.loads((D / "meta.json").read_text())
-TX, TY = 70, 190
+TX, TY = 70, 215
 T = lambda x, y: (TX + 14 * 32 + (x - y) * 32, TY + 20 + (x + y) * 16)
 PLACE = [("shield_gen", 0, (1, 0)), ("shield_small", 0, (5, 0)), ("ai_core", 0, (8, 0)),
          ("shield_gen", 1, (11, 3)), ("shield_small", 1, (11, 7)), ("ai_core", 1, (11, 10))]
@@ -81,7 +81,7 @@ def room(hot):
         mt, ox, oy, (ex, ey) = anchor(name, rot, p)
         wx, wy = mt["foot_xy"]
         mod, glow, sx, sy = load("px", name, rot, hot)
-        rp, _, rx, ry = load("roofpart", name, rot, hot)
+        rp, _, rx, ry = load("roofpart", name, rot, True)
         g = ghost(rp)
 
         def draw(a=(mod, glow, ex - sx, ey - sy), g=g, gx=ex - rx, gy=ey - ry):
@@ -124,17 +124,47 @@ def roofed(hot):
     return Image.fromarray(np.clip(sc.px, 0, 255).astype(np.uint8))
 
 
-def out(img, tag):
-    img.save(D / f"scene_{tag}_1x.png")
-    img.resize((img.width * 3, img.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x.png")
+def strip(name):
+    """Deploy strip for one roof part: stowed, f0..f3, deployed (f4), each over roof tiles, 3x nearest-neighbour."""
+    seq = [("roofstow", "stowed", False), ("roofdep", "f0", False), ("roofdep", "f1", False), ("roofdep", "f2", False), ("roofdep", "f3", False),
+           ("roofpart", "deployed", True)]
+    cells = []
+    mt = META[f"{name}.r0"]
+    cx, cy = mt["centre"]
+    for pre, tag, act in seq:
+        fn = {"roofstow": f"roofstow_{name}_r0", "roofdep": f"roofdep_{name}_r0_{tag}", "roofpart": f"roofpart_{name}_r0_active"}[pre]
+        z = np.load(D / f"{fn}.npz")
+        cells.append((z["rgba"], z["glow"].astype(np.float32) * 0.8, int(z["ox"]), int(z["oy"])))
+    x0 = min(-c[2] for c in cells) - 12
+    x1 = max(c[0].shape[1] - c[2] for c in cells) + 12
+    y0 = min(-c[3] for c in cells) - 12
+    y1 = max(c[0].shape[0] - c[3] for c in cells) + 12
+    cw, ch = x1 - x0, y1 - y0
+    rt = np.load(D / "roof_m15.npz")
+    out = Image.new("RGB", (cw * len(cells) + 4 * (len(cells) - 1), ch), (30, 30, 40))
+    for k, (rgba, glow, ox, oy) in enumerate(cells):
+        sc = Scene()
+        sc.px = np.zeros((ch, cw, 3), np.float32) + BG
+        sc.px[:] = BG
+        globals()["W"], globals()["H"] = cw, ch
+        ex, ey = -x0 + (cx - cy) * 32, -y0 + (cx + cy) * 16
+        for tx in range(-2, 3):
+            for ty in range(-2, 3):
+                px_, py_ = ex + (tx - ty) * 32, ey + (tx + ty) * 16
+                sc.blit(rt["rgba"], rt["glow"], int(px_ - int(rt["ox"])), int(py_ - int(rt["oy"])))
+        sc.blit(rgba, glow, int(ex - ox), int(ey - oy))
+        out.paste(Image.fromarray(np.clip(sc.px, 0, 255).astype(np.uint8)), (k * (cw + 4), 0))
+    globals()["W"], globals()["H"] = 980, 700
+    out.resize((out.width * 3, out.height * 3), Image.NEAREST).save(D / f"deploy_strip_{name}_3x_v2.png")
 
 
-CROPS = {"r0row": (330, 40, 940, 380), "r1col": (400, 250, 940, 600)}
-for hot in (False, True):
-    tag = "active" if hot else "idle"
-    for kind, fn in (("room", room), ("roofed", roofed)):
-        img = fn(hot)
-        out(img, f"{kind}_{tag}")
-        for nm, box in CROPS.items():
-            c = img.crop(box)
-            c.resize((c.width * 3, c.height * 3), Image.NEAREST).save(D / f"scene_{kind}_{tag}_3x_{nm}.png")
+hot = True
+img = room(hot)
+img.save(D / "scene_room_active_1x_v2.png")
+img.resize((img.width * 3, img.height * 3), Image.NEAREST).save(D / "scene_room_active_3x_v2.png")
+for nm, box in CROPS.items():
+    c = img.crop(box)
+    c.resize((c.width * 3, c.height * 3), Image.NEAREST).save(D / f"scene_room_active_3x_{nm}_v2.png")
+roofed(hot).save(D / "scene_roofed_active_1x_v2.png")
+for n in ("shield_gen", "shield_small", "ai_core"):
+    strip(n)
