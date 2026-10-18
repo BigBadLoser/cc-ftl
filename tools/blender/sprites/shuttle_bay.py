@@ -216,9 +216,10 @@ TOWER_W = 0.6
 # and drops to a grip shoe on the cabin's shoulder (hull top ~1.30 at |u| 0.7..0.8; the roof rises to 1.45 at |u| < 0.5).
 ARM = ((1.95, 1.22), (1.82, 1.58), (1.40, 1.72), (0.98, 1.62), (0.74, 1.43))
 ARM_TH, ARM_W = 0.16, 0.60
-# LOWER claw: a pylon on the side wall (floor to -0.95) and a curved arm that rises from it and grips the lower flank from below.
-# Seen from r0 the near lip hides the part of it deeper than about z -0.5 beyond |u| 1.3; the tip and shoe are visible.
-LOW = ((1.88, -1.35), (1.72, -0.95), (1.40, -0.62), (1.12, -0.44), (0.90, -0.34))
+# LOWER arm: leaves the tower near its base, drops past the lip into the pit beside the hull (v 0.36: flank |u| ~ 0.8, belly z -0.58
+# flat for |u| < 0.6) and curves in under the belly to a cradle shoe. With the upper arm it forms a C round the cabin. From r0
+# the near lip hides the drop below about z -0.5 and the under-belly part.
+LOW = ((1.92, 0.22), (1.55, -0.12), (1.18, -0.42), (1.10, -0.85), (0.80, -0.98), (0.45, -0.86))
 
 
 def _seg(f, sx, p0, p1, w, th, mat, top):
@@ -236,7 +237,7 @@ def _seg(f, sx, p0, p1, w, th, mat, top):
 def clamps(f, t):
     """GANTRY (v15): two claw towers on the side lips over the cabin. Each carries a big pale curved arm that rises from the
     tower, arcs over the hull flank under the roof slab and grips the cabin shoulder with an orange shoe; a lamp strip runs
-    along it. There is no beam: the arms carry the shuttle; a matching LOWER claw rises from each side wall and grips the lower flank. Opening: the upper arms fold back into the towers and the lower ones down into the wall pylons (t 0 .. 0.08).
+    along it. There is no beam: the arms carry the shuttle; a LOWER arm leaves the tower base, drops into the pit and curls under the belly (a C round the cabin). Opening: both arms fold back into the tower (t 0 .. 0.08).
     Everything is at or below 1.82."""
     _g("clamps")
     k = min(1.0, t / 0.08)
@@ -247,10 +248,6 @@ def clamps(f, t):
         f.box(ut, vv, PAD_T + 0.05, 0.24, TOWER_W, TOWER_TOP - PAD_T - 0.11, "steelD", top="steel")
         f.box(ut, vv, TOWER_TOP - 0.06, 0.3, TOWER_W + 0.06, 0.06, "steelD", top="steel")
         f.box(ut - sx * 0.121, vv, 0.4, 0.02, 0.2, 0.7, "arc", base=True)                               # tower lamp bar
-        uw = sx * (OPEN[1] - 0.09)                                                                      # lower claw pylon on the wall
-        f.box(uw, vv, -PIT, 0.18, TOWER_W + 0.1, 0.06, "steelD", top="steel")
-        f.box(uw, vv, -PIT + 0.06, 0.14, TOWER_W, 0.5, "steelD", top="steel")
-        f.box(uw - sx * 0.071, vv, -PIT + 0.15, 0.02, 0.2, 0.3, "arc", base=True)
         if k >= 0.97:
             continue
         for pts in (ARM, LOW):
@@ -259,7 +256,7 @@ def clamps(f, t):
                 _seg(f, sx, p[i], p[i + 1], ARM_W, ARM_TH, "steelL", "steelL")
                 _seg(f, sx, p[i], p[i + 1], 0.12, ARM_TH + 0.03, "arc", "arc")                           # lamp strip
             tu, tz = p[-1]
-            f.box(sx * tu, vv, tz - (0.14 if pts is ARM else 0.04), 0.3, ARM_W + 0.04, 0.16, "orange", top="hazY")   # grip shoe
+            f.box(sx * tu, vv, tz - (0.14 if pts is ARM else -0.06), 0.3, ARM_W + 0.04, 0.16 if pts is ARM else 0.18, "orange", top="hazY")   # grip shoe
             f.box(sx * p[2][0], vv, p[2][1] - 0.1, 0.18, ARM_W + 0.03, 0.12, "steelD", top="hazY")       # knuckle band
 
 
