@@ -144,6 +144,11 @@ portal graph across grids, cross-grid pathing, crew grid membership, airlock mod
 - Ships don't move, so crossing between grids needs a **vehicle system**: shuttles dock at
   **airlocks** on other grids, or sit in **vehicle bays** in their home ship. Docking creates the
   portal link.
+- **Shuttles are entities, not grids** (no visible interior). Crew embark at a vehicle bay or at a
+  docked shuttle and ride hidden; shuttles fly through the sector and can be shot down (weapons and
+  point defence target them). One generic shuttle to start. The vehicle bay is a buildable module,
+  shuttles are crafted, and the starter ship comes with one. Enemies board you by docking shuttles at
+  your airlocks.
 - **EVA** only on derelicts or on the outside of enemy ships, after shuttling over.
 - **Crew combat:** real time via drafting, weapons as items (sidearms, rifles, melee), cover from walls
   and doorways, existing downed/bleed-out.
