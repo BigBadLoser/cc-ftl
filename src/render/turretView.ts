@@ -37,7 +37,7 @@ export const turretStem = (asset: string): string => asset.replace(/^module\./, 
 
 /**
  * Roof turrets of weapon and point-defence modules (`PointDefenseC.aim`, never charged): `turret.<weapon>.d{0..7}` (`.charged` when fully charged) chosen from `WeaponC.aim`,
- * drawn centred above the bay at roof height (`ROOF_H`); real art is anchored on the roof plane at the bay centre.
+ * drawn centred above the bay; real art is modelled on the roof plane and anchored at the bay centre on the floor, stand-ins are lifted by `ROOF_H`.
  * Stand-ins get a row of dots along the aim direction so the aim is readable.
  */
 export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Grid, defs: ModuleDefs): TurretView {
@@ -86,7 +86,9 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const cy = m.y + (bh - 1) / 2;
         const p = iso(cx, cy);
         t.spr.texture = art.s.tex;
-        t.spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - ROOF_H + (1 - art.rise) * RISE_PX));
+        // Real turret art is modelled on the roof plane (anchor = bay centre on the floor); stand-ins are lifted to it.
+        const lift = art.fallback ? ROOF_H : 0;
+        t.spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - lift + (1 - art.rise) * RISE_PX));
         const lx = Math.min(grid.width - 1, Math.max(0, Math.round(cx)));
         const ly = Math.min(grid.height - 1, Math.max(0, Math.round(cy)));
         t.spr.tint = mulColor(lightTint(light[ly * grid.width + lx] as number, false, -1), art.tint);

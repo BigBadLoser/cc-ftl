@@ -35,7 +35,7 @@ export const raiderShip = {
     { def: 'module.lifeSupport', x: 6, y: 9, rot: 0 },
     { def: 'module.light', x: 7, y: 3, rot: 0 },
     { def: 'module.light', x: 7, y: 12, rot: 0 },
-    // Bridge (north): weapons console (chair (11, 3)), helm (chair (15, 3), reached from the south).
+    // Bridge (north): weapons console (chair (10, 3)), helm (chair (15, 3), reached from the south).
     { def: 'module.weaponsConsole', x: 10, y: 2, rot: 0 },
     { def: 'module.helm', x: 14, y: 2, rot: 0 },
     { def: 'module.light', x: 20, y: 2, rot: 0 },

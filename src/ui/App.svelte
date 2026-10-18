@@ -36,7 +36,7 @@
   $effect(() => {
     document.documentElement.toggleAttribute('data-combat', combat.inCombat && combatOpen);
   });
-  const cutLabel: Record<UiCutaway, string> = { auto: 'Auto', up: 'Up', down: 'Down' };
+  const cutLabel: Record<UiCutaway, string> = { auto: 'Cutaway', up: 'Up', down: 'Low' };
   const cutNext: Record<UiCutaway, UiCutaway> = { auto: 'up', up: 'down', down: 'auto' };
   function cycleWalls() {
     cutaway = cutNext[cutaway];

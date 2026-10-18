@@ -10,7 +10,7 @@ import { iso, depthKey } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
-import { craftProgress, moduleLayers, type ModuleLayer } from './moduleArt';
+import { craftProgress, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -18,7 +18,7 @@ export interface ModuleViewHost {
   target(): { grid: Grid } | null;
   /** True when the ship has no running power source (emergency lighting). */
   emergency(): boolean;
-  /** Roofed ships hide their interior: only the engine hull sections (always full height) are drawn. */
+  /** Roofed ships hide their interior: only the engines (hull sections, and the machines under the roof) are drawn. */
   roofed(): boolean;
 }
 
@@ -72,7 +72,7 @@ interface Entry {
 
 /** Depth key of a module sprite drawn on tile (tx, ty): solid modules sit just behind the crew of their tile, flat ones under everything. */
 export function moduleKey(def: ModuleDef, tx: number, ty: number): number {
-  return depthKey(tx, ty) - (def.weapon ? 0.45 : def.solid ? 0.05 : 0.5);
+  return depthKey(tx, ty) - (def.solid ? 0.05 : 0.5);
 }
 
 /** A craft job counts as running while its progress moved within this many ms. */
@@ -128,13 +128,16 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     return { spr, glow, halo, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key, flip, art };
   }
 
-  function build(m: Module, def: ModuleDefs[string], layers: { layer: ModuleLayer; art: Art }[]): Part[] {
+  function build(m: Module, def: ModuleDefs[string], layers: { layer: ModuleLayer; art: Art }[], roofed: boolean): Part[] {
     const [w, h] = rotatedSize(def, m.rot);
     const [nw, nh] = def.footprint;
     const out: Part[] = [];
     layers.forEach(({ layer, art }, i) => {
       const s = art.s;
-      const key = (tx: number, ty: number) => moduleKey(def, tx, ty) + i * 0.001;
+      // On a roofed ship an engine's machine (its bell reaches out past the hull) sorts under the roof plates of its
+      // footprint, so only the bell outside the hull shows.
+      const underRoof = roofed && !!def.hullEdge && layer.tiles === 'rest';
+      const key = (tx: number, ty: number) => (underRoof ? depthKey(m.x, m.y) + 0.85 : moduleKey(def, tx, ty) + (layer.dz ?? i * 0.001));
       if (art.fallback && art.perTile) {
         // A stand-in covers the footprint tile by tile (never the walkable open tiles, nor the hull row for the machine).
         const skip = new Set((layer.tiles === 'hull' ? [] : openTilesOf(def, m.x, m.y, m.rot)).map((t) => `${t.x},${t.y}`));
@@ -171,6 +174,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     if (t) {
       const now = performance.now();
       const progress = craftProgress(world);
+      const manned = mannedConsoles(world);
       const { grid } = t;
       const emergency = host.emergency();
       const pulse = emergency ? pulsePhase(now) : -1;
@@ -179,10 +183,11 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
         if (!m || !def || m.gridId !== grid.id) continue;
-        const active = m.powered && m.enabled && m.hp > 0 && (def.hullEdge ? true : crafting(progress, id, now));
+        const on = m.powered && m.enabled && m.hp > 0;
+        const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
         const roofed = host.roofed();
         const layers = moduleLayers(world, id, m, def, active).flatMap((layer) => {
-          if (roofed && layer.tiles !== 'hull') return [];
+          if (roofed && layer.tiles !== 'hull' && !(def.hullEdge && layer.tiles === 'rest')) return [];
           const art = resolveArt(atlas, layer.chain, layer.key);
           return art ? [{ layer, art }] : [];
         });
@@ -194,11 +199,10 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           dropEntry(e);
           e = undefined;
         }
-        if (!e) mods.set(id, (e = { sig, parts: build(m, def, layers) }));
+        if (!e) mods.set(id, (e = { sig, parts: build(m, def, layers, roofed) }));
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
         for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? (light[f.y * grid.width + f.x] as number) : 0;
-        const on = m.powered && m.enabled && m.hp > 0;
         const base = lightTint(lsum / Math.max(1, tiles.length), false, pulse);
         const tint = on ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
         for (const p of e.parts) {

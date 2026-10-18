@@ -13,7 +13,8 @@ import { createParticles } from './fx/particles';
 import { createLayers } from './layers';
 import type { ModuleDefs } from './moduleView';
 import { isTargetable } from './moduleArt';
-import { ROOF_H } from './roofView';
+import { ROOF_H } from './heights';
+import { liveryFor } from './roofArt';
 import { createSectorFx } from './sectorFx';
 import { createShipScene, type ShipScene } from './shipScene';
 
@@ -157,8 +158,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   }
   resize();
 
-  /** Extra screen height (art px) that full-height walls (about 2.4 tiles tall) stand above the floor diamond. */
-  const WALL_RISE = 70;
+  /** Extra screen height (art px) that full-height walls (the roof top) stand above the floor diamond. */
+  const WALL_RISE = ROOF_H;
 
   function frame(grid: Grid): void {
     const c = iso(grid.width / 2 - 0.5, grid.height / 2 - 0.5);
@@ -172,7 +173,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const wantsRoof = (s: Ship) => roofEnemies && s.faction === 'hostile' && s.state !== 'wreck';
 
   function addScene(s: Ship, grid: Grid): ShipScene {
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s) });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: liveryFor(s.faction, s.name) });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);

@@ -10,14 +10,15 @@ import { lightTint, mulColor, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
-import { floorChain, wallPieces, type CutawayMode } from "./tiles";
+import { floorChain, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
 
 export interface GridView extends Markers {
   readonly grid: Grid;
   update(): void;
-  setCutaway(mode: CutawayMode): void;
+  /** Wall view mode; `ghosts` false (roofed ships) draws the near hull as solid full-height plating. */
+  setCutaway(mode: CutawayMode, ghosts?: boolean): void;
   setOverlay(field: string | null): void;
   dispose(): void;
 }
@@ -63,7 +64,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let tinted: Tinted[] = [];
   let doors: Door[] = [];
   let mode: CutawayMode = "auto";
-  let builtMode: CutawayMode | null = null;
+  let ghosts = true;
+  let builtMode = "";
   let rev = -1;
   let modRev = -1;
   let tintKey = "";
@@ -100,17 +102,18 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         const k = kindAt(x, y);
         if (k === Struct.Space) continue;
         const idx = y * grid.width + x;
-        const f = atlas.firstOf(floorChain(x, y));
+        // A near-hull ghost replaces the floor plate under it (not under an engine: its bulkhead stands on the deck).
+        const f = ghosts && replacesFloor(kindAt, x, y, mode) && !replaced.has(idx) ? undefined : atlas.firstOf(floorChain(x, y));
         if (f) {
           const made = addStatic(L, f, x, y, 0, L.floor);
           owned.push(...made);
           tinted.push({ spr: made[0] as Sprite, idx, wall: false, solid: false });
         }
         if (k === Struct.Floor || replaced.has(idx)) continue;
-        for (const piece of wallPieces(kindAt, x, y, k, mode)) {
+        for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts)) {
           const s = atlas.firstOf(piece.chain);
           if (!s) continue;
-          const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001, L.sorted);
+          const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001, piece.under ? L.under : L.sorted);
           owned.push(...made);
           const isDoor = k === Struct.Door;
           if (isDoor) {
@@ -121,7 +124,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           tinted.push({ spr: made[0] as Sprite, idx, wall: !isDoor, solid: true });
         }
       }
-    builtMode = mode;
+    builtMode = `${mode}|${ghosts}`;
     doorKey = -1;
     tintKey = "";
   }
@@ -175,7 +178,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     update() {
       const r = grid.revision("struct");
       const mr = grid.revision("module");
-      if (r !== rev || mr !== modRev || builtMode !== mode) {
+      if (r !== rev || mr !== modRev || builtMode !== `${mode}|${ghosts}`) {
         rebuild();
         rev = r;
         modRev = mr;
@@ -184,8 +187,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       updateTints();
       overlay.update();
     },
-    setCutaway(m) {
+    setCutaway(m, g = true) {
       mode = m;
+      ghosts = g;
     },
     setOverlay: (f) => overlay.setField(f),
     dispose() {

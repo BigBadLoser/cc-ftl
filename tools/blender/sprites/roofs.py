@@ -5,11 +5,8 @@ Python): 4x4-tile armour modules with a riveted frame rail on each module's N / 
 (lit S lip, shaded E lip, grooves), a recessed pocket with corner bolts or a riveted strap on every plate, and colour
 courses (module columns alternate). No objects sit on the roof.
 
-Sprites:
-  roof.p<L><c>.<u><v>      base tile at position (u, v) of a module with layout L and colour c (o / b); no edges
-  roof.edge.<side>.<c>     overlay for an open side (n / w: dark rim, s: lit lip + slab face, e: shade lip + slab face)
-  roof.<kind>[.m<mask>]    legacy ids (generic plate and the weapon / shield / engine markers), kept until the
-                           renderer switches to the module rule; mask bits N1 E2 S4 W8 = connected.
+Production sprites: see SPRITES at the end (the v12 set: C palette, patch and inset plates, livery masks). The
+older builders (base, edge, generic and the marker tiles) are kept for the review tools only.
 """
 from . import core
 from . import roof_layout as rl
@@ -104,22 +101,6 @@ def engine(mask):
         m.box((0, -0.2 + k * 0.1, z + 0.065), (0.54, 0.05, 0.03), "steelD", top="gm", base=True)
     m.box((0, 0.27, z + 0.06), (0.5, 0.03, 0.02), "orange", base=True)               # heat leaking out (glows)
     return [m.build()]
-
-
-SPRITES = []
-for _l in range(len(rl.LAYOUTS)):
-    for _c in rl.FAM:
-        for _v in range(rl.M):
-            for _u in range(rl.M):
-                SPRITES.append((f"roof.p{_l}{_c}.{_u}{_v}", (1, 1), "block",
-                                lambda l=_l, c=_c, u=_u, v=_v: base(l, c, u, v)))
-for _s in "nesw":
-    for _c in rl.FAM:
-        SPRITES.append((f"roof.edge.{_s}.{_c}", (1, 1), "block", lambda s=_s, c=_c: edge(s, c)))
-for _name, _fn in (("generic", generic), ("weapon", weapon), ("shield", shield), ("engine", engine)):
-    for _m in range(16):
-        SPRITES.append((f"roof.{_name}.m{_m}", (1, 1), "block", lambda m=_m, f=_fn: f(m)))
-    SPRITES.append((f"roof.{_name}", (1, 1), "block", lambda f=_fn: f(15)))
 
 
 # ---- v7 variant studies (preview only; see roof_variants.py) ---------------------------------------------------
@@ -232,3 +213,37 @@ def livery_mask(name):
     key = {"P": "mkP", "S": "mkS"}
     m.pattern((-0.5, -0.5, ZR), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: key.get(fn(i, j)))
     return [m.build()]
+
+
+# ---- production set (v12, approved) -----------------------------------------------------------------------------
+# Module rule (mirrored in src/render/roofArt.ts): tile (x, y) -> module (x // 4, y // 4), position (x % 4, y % 4),
+# layout L = rl.module_layout, colour c = rl.module_colour; the patched plate of every third module (rv.PATCH) and the
+# inset plate of about 2 in 3 modules (rv.inset_module / rv.inset_plate) use their own base sprites. Overlays: one
+# edge per open side, livery masks (recoloured by the renderer, see roof_livery) between the base and the edges.
+#   roof.c<L><c>.<u><v>[.patch|.inset]   base tiles        roof.edge.<n|e|s|w>.<c>   open-side edges
+#   roof.lv.<mask>                       livery masks (key colours mkP / mkS)
+
+
+def _production():
+    from . import roof_livery as lv
+    from . import roof_variants as rv
+    out = []
+    for L in range(len(rl.LAYOUTS)):
+        for c in rl.FAM:
+            for v in range(rl.M):
+                for u in range(rl.M):
+                    sid = f"roof.c{L}{c}.{u}{v}"
+                    out.append((sid, (1, 1), "block", lambda L=L, c=c, u=u, v=v: variant_base(L, c, u, v, "C", False, None)))
+                    if rl.plate_at(L, u, v) == rl.LAYOUTS[L][rv.PATCH[L]]:
+                        out.append((sid + ".patch", (1, 1), "block", lambda L=L, c=c, u=u, v=v: variant_base(L, c, u, v, "C", True, None)))
+                    if rv.inset_plate(L, u, v) is not None:
+                        out.append((sid + ".inset", (1, 1), "block", lambda L=L, c=c, u=u, v=v: inset_base(L, c, u, v, False)))
+    for s in "nesw":
+        for c in rl.FAM:
+            out.append((f"roof.edge.{s}.{c}", (1, 1), "block", lambda s=s, c=c: variant_edge(s, c, "C", False)))
+    for name in lv.MASKS:
+        out.append((f"roof.lv.{name}", (1, 1), "block", lambda n=name: livery_mask(n)))
+    return out
+
+
+SPRITES = _production()

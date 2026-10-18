@@ -12,8 +12,9 @@ import math
 from mathutils import Matrix
 from . import core, cmbkit, detail as D
 from .cmbkit import Frame
+from . import walls
 
-ZR = 2.4   # LOCAL override: the roof is being raised to 2.4 (walls.HF / roofs.ZR) in a parallel branch
+ZR = walls.hull_top()   # the roof top (2.05): turrets sit on it, bay columns reach it
 
 
 def _g(name):

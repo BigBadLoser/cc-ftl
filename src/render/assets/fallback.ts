@@ -32,8 +32,9 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.missile_launcher.bay': { ids: FLOOR, tint: 0xffe08a, perTile: true },
   'module.ion_cannon.bay': { ids: FLOOR, tint: 0x8ac8ff, perTile: true },
   'module.incendiary_launcher.bay': { ids: FLOOR, tint: 0xff7a4a, perTile: true },
+  'module.point_defense.bay': { ids: FLOOR, tint: 0xd0d8e8, perTile: true },
   // Engine: the always-full-height hull section (one wall block per hull-row tile) and the machine behind it.
-  'module.engine.hull': { ids: ['tile.hull.full.m15'], tint: 0xffc080, perTile: true },
+  'module.engine.hull': { ids: ['tile.hull.full.m15', 'tile.hull.m15'], tint: 0xffc080, perTile: true },
   'module.engine.machine': { ids: CRATE, tint: 0xffb060, perTile: true },
   'module.engine.machine.active': { ids: CRATE, tint: 0xffe0a0, perTile: true },
   'module.shield_gen': { ids: CRATE, tint: 0x7fe6ff, perTile: true },

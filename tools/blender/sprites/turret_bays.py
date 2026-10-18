@@ -104,9 +104,9 @@ def loader(f):
     D.seg(f, (-0.9, 1.1, z), (-0.85, 0.87, 0.86), 0.08, "steelL", 12, cap="steel", capstart="steel")
 
 
-def bay_driver():
+def bay_driver(rot=0):
     m = core.Mesh("bay_driver")
-    f = Frame(m, 1, square=True)
+    f = Frame(m, (1 + rot) % 4, square=True)
     _floor(-1.5, 1.5)
     _column(f, 0.3, CAGE)
     _caps(f, ((1.2, -1.2), (1.3, -0.74), (0.74, -1.3)), r=0.16, rt=CAGE + 0.03)
@@ -136,10 +136,10 @@ def pd_drum(f, v):
     D.drum(f, -0.95, -0.4, v, z, 0.22, n=3, body="steelD", rib="steel", cap="steelL", sides=20)
 
 
-def small_bay(kind):
+def small_bay(kind, rot=0):
     """2x2 bay (burst laser / point defence), u, v in -1..1: slim full-height column, gear in three corners only."""
     m = core.Mesh(f"bay_{kind}")
-    f = Frame(m, 1, square=True)
+    f = Frame(m, (1 + rot) % 4, square=True)
     _floor(-1.0, 1.0)
     _column(f, 0.2)
     _caps(f, ((0.68, -0.62),), r=0.16, h=0.8)
@@ -151,7 +151,8 @@ def small_bay(kind):
     return [m.build()] if cmbkit.REC is None else []
 
 
-BAYS = {"driver": bay_driver, "laser": lambda: small_bay("laser"), "pd": lambda: small_bay("pd")}
+# rot: sim rotation (clockwise quarter turns; Frame rot 1 is the unrotated grid frame u = +x, v = +y)
+BAYS = {"driver": bay_driver, "laser": lambda rot=0: small_bay("laser", rot), "pd": lambda rot=0: small_bay("pd", rot)}
 
 
 # ---- roof hatch + deploy frames ---------------------------------------------------------------------------------
@@ -209,10 +210,10 @@ DEPTH = 3.8   # well depth (rig units) the stowed turret sits in
 DEPLOY = [(0.45, -3.0, 90), (1.0, -2.1, 90), (1.0, -1.0, 90), (1.0, 0.0, 45), (1.0, 0.0, 0)]
 
 
-def deploy(d_, k):
-    """k = -1: stowed (closed hatch + the fixed coaming); 0..4: deploy frames (aim d0)."""
-    rig = TC.TURRETS[(d_, "driver")](False)
-    s, rh = rig.scale, RADIUS.get(d_, 0.92) + 0.06
+def deploy(d_, k, kind="driver", r=None):
+    """k = -1: stowed (closed hatch + the fixed coaming); 0..4: deploy frames (aim d0). r: race radius (rig units)."""
+    rig = TC.TURRETS[(d_, kind)](False)
+    s, rh = rig.scale, (RADIUS.get(d_, 0.92) if r is None else r) + 0.06
     if k < 0:
         return hatch(rh, 0.0, s=s) + TC.place(rig, 0, parts=("fixed",))
     op, lift, pitch = DEPLOY[k]

@@ -5,8 +5,9 @@ import { CarryingC } from '../sim/items/components';
 import { BLEED_OUT_SECONDS } from '../sim/tuning';
 import type { ModuleDef } from '../sim/registry';
 import type { Module } from '../sim/modules/components';
-import { footprintTiles, openTilesOf } from '../sim/modules/footprint';
+import { accessTile, footprintTiles, openTilesOf } from '../sim/modules/footprint';
 import { moduleKey } from './moduleView';
+import { SEAT_DZ } from './moduleArt';
 import type { Atlas, LayerSprite } from './assets/loader';
 import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
@@ -42,6 +43,7 @@ interface Slot {
   parts: { layer: LayerSprite; sprite: Sprite }[];
   glows: { layer: LayerSprite; sprite: Sprite; halo: Sprite | null }[];
   ring: Sprite;
+  shadow: Sprite;
   filter: Filter;
   /** The item held in the hands while hauling: one sprite drawn over the body, one under it (when facing away). */
   carry: Sprite;
@@ -64,6 +66,8 @@ const SMOOTH = 14;
 /** Screen offset (art px, from the feet) of the hands for each facing 0..7 (SE, S, SW, W, NW, N, NE, E), and their height. */
 const HAND: readonly (readonly [number, number])[] = [[7, 3], [0, 5], [-7, 3], [-8, 0], [-7, -3], [0, -4], [7, -3], [8, 0]];
 const HAND_Y = -19;
+/** Seated operator direction per console rotation (faces the desk: r0 -y, r1 +x, r2 +y, r3 -x; consoles.py SEAT_DIR). */
+const SEAT_DIR = [6, 0, 2, 4];
 
 export function createCrewView(world: World, atlas: Atlas, L: Layers, host: CrewViewHost): CrewView {
   const slots = new Map<number, Slot>();
@@ -114,7 +118,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false };
+    return { root, parts, glows, ring, shadow, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -180,18 +184,22 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           s.y += (ty - s.y) * k;
         }
         const speed = dt > 0 ? (dist * k) / dt : 0;
-        const dir = ((pos.facing % 8) + 8) % 8;
+        const facing = ((pos.facing % 8) + 8) % 8;
         const dead = world.has(id, DeadC);
         const downed = world.get(id, DownedC);
         const carried = world.get(id, CarriedC);
         const hurtLying = dead || !!downed || !!carried;
-        // Crew on a walkable tile inside a module's footprint (a console's chair) sit in front of its sprite.
+        // Crew on a walkable tile inside a module's footprint (a console's chair) draw in front of its sprite; on the
+        // chair itself they sit (sit_work while operating), facing the desk, without a floor shadow.
         const mx = Math.round(s.x);
         const my = Math.round(s.y);
         const at = host.moduleAt?.(mx, my) ?? null;
         const onOpen = !!at && openTilesOf(at.def, at.m.x, at.m.y, at.m.rot).some((t) => t.x === mx && t.y === my);
-        const sitting = onOpen && !hurtLying && speed <= 0.3 && crew.activity === 'working' && s.parts.some((q) => q.layer.def.clips.sit);
-        const clipName = hurtLying ? 'sleep' : sitting ? 'sit' : clipFor(crew.activity, speed > 0.3);
+        const chair = at && at.def.console ? accessTile(at.def, at.m.x, at.m.y, at.m.rot) : null;
+        const sitting = !!chair && chair.x === mx && chair.y === my && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips.sit_idle);
+        const clipName = hurtLying ? 'sleep' : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : clipFor(crew.activity, speed > 0.3);
+        const dir = sitting && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
+        s.shadow.visible = !sitting;
         if (clipName !== s.clip) {
           s.clip = clipName;
           s.t = 0;
@@ -215,7 +223,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         let z = depthKey(s.x, s.y) + (carried ? 0.02 : 0);
         if (at && onOpen) {
           const f = footprintTiles(at.def, at.m.x, at.m.y, at.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
-          z = Math.max(z, moduleKey(at.def, f.x, f.y) + 0.02);
+          z = Math.max(z, moduleKey(at.def, f.x, f.y) + SEAT_DZ);
         }
         s.root.zIndex = z;
         applyLight(s, pos.x, pos.y, dead);

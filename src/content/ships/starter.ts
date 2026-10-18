@@ -63,7 +63,7 @@ export const starterShip = {
     { def: 'module.light', x: 14, y: 10, rot: 0 },
     { def: 'module.light', x: 20, y: 9, rot: 0 },
     { def: 'module.light', x: 26, y: 10, rot: 0 },
-    // Bridge (nose, north): shield console (chair (23, 3), open floor (24, 3)), weapons console (chair (27, 3)),
+    // Bridge (nose, north): shield console (chair (23, 3), open floor (24, 3)), weapons console (chair (26, 3)),
     // helm (chair (24, 6), reached from the south), life support along the south wall.
     { def: 'module.shieldConsole', x: 22, y: 2, rot: 0 },
     { def: 'module.weaponsConsole', x: 26, y: 2, rot: 0 },

@@ -156,10 +156,11 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 8 }],
   },
   // Consoles: the chair is a walkable tile inside the footprint; crew sit there to run the ship system in combat.
-  // Weapons console 2x2: solid (0,0) (1,0) (0,1); chair (1,1).
+  // Footprints, chairs and open tiles match the approved art (tools/blender/sprites/consoles.py meta()).
+  // Weapons console 2x2: desk (0,0) (1,0) and the right-hand bar (1,1); chair (0,1) in the U, the flight-stick pod on its left.
   'module.weaponsConsole': {
-    name: 'Weapons console', asset: 'module.weapons_console', footprint: [2, 2], solid: true, access: [1, 1],
-    openTiles: [[1, 1]], power: -3, priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true,
+    name: 'Weapons console', asset: 'module.weapons_console', footprint: [2, 2], solid: true, access: [0, 1],
+    openTiles: [[0, 1]], power: -3, priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true,
     console: 'weapons', cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
   },
   // Shield console 3x2: solid (0,0) (1,0) (2,0) (0,1); chair (1,1) and free floor (2,1). May shrink to 2x2 later.

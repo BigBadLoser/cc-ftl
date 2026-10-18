@@ -4,7 +4,7 @@ import type { Grid } from '../sim/grid';
 import { ModuleC } from '../sim/modules/components';
 import { footprintTiles, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
-import { Struct } from '../sim/structure';
+import { buildRoofPlating, hasRoofArt, type Livery, type RoofPiece } from './roofPlating';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
 import { DEPLOY_FRAMES, RISE_PX, deployId, deployStage } from './deployArt';
@@ -32,22 +32,16 @@ interface PartSprite {
   ghost: Filter;
 }
 
-interface Piece {
-  spr: Sprite;
-  extra: Sprite | null;
-  idx: number;
-  tint: number;
-}
 
 /**
- * The roof of a ship (enemy ships in the main view and the combat overlay): the generic roof tile over every interior
- * tile, with the roof parts of shield generators and the AI core (`ModuleDef.roofAsset`, `.active` while powered) in
- * place of the tiles above them, so they can be told apart and targeted. Roof parts sit on the roof plane (`ROOF_H`).
+ * The roof of a ship (enemy ships in the main view and the combat overlay): the plating (roofPlating: module rule,
+ * livery, edges) over every interior tile, with the roof parts of shield generators and the AI core
+ * (`ModuleDef.roofAsset`, `.active` while powered, deploy frames) on top, so they can be told apart and targeted.
  * On a cutaway ship (not roofed) the generic roof is hidden and the parts stay as ghosts (faint, with a light outline).
  * Rebuilt when the structure or the module layout changes; tiles on fire glow.
  */
-export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World, defs: Readonly<Record<string, ModuleDef>>): RoofView {
-  let pieces: Piece[] = [];
+export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World, defs: Readonly<Record<string, ModuleDef>>, livery: Livery | null = null): RoofView {
+  let pieces: RoofPiece[] = [];
   let key = '';
   let visible = true;
   let fireRev = -1;
@@ -70,15 +64,19 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       const stage = def.deploySec === undefined ? DEPLOY_FRAMES : deployStage(world, id);
       if (stage < 0 && !visible) continue; // stowed on the player's cutaway ship: nothing, no ghost
       const out = stage >= DEPLOY_FRAMES;
-      const chain = !out ? [deployId(def.roofAsset, stage)] : on ? [`${def.roofAsset}.active`, def.roofAsset] : [def.roofAsset];
-      const art = resolveArt(atlas, chain, out && on && FALLBACK_ACTIVE.has(def.roofAsset) ? chain[0] : out ? def.roofAsset : chain[0]);
+      // A non-square part has its own art for odd rotations (`<id>.r1.*`, anchored like the rotated module).
+      const bases = def.footprint[0] !== def.footprint[1] && m.rot % 2 === 1 ? [`${def.roofAsset}.r1`, def.roofAsset] : [def.roofAsset];
+      const chain = bases.flatMap((b) => (!out ? [deployId(b, stage)] : on ? [`${b}.active`, b] : [b]));
+      const key = !out ? deployId(def.roofAsset, stage) : on && FALLBACK_ACTIVE.has(def.roofAsset) ? `${def.roofAsset}.active` : def.roofAsset;
+      const art = resolveArt(atlas, chain, key);
       if (!art) continue;
       const [w, h] = rotatedSize(def, m.rot);
       const spots = art.fallback && art.perTile ? footprintTiles(def, m.x, m.y, m.rot) : [{ x: m.x + w - 1, y: m.y + h - 1 }];
       for (const t of spots) {
         const p = iso(t.x, t.y);
         const spr = new Sprite(art.s.tex);
-        spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - (art.fallback ? art.lift || ROOF_H : ROOF_H) + (1 - art.rise) * RISE_PX));
+        // Real roof parts are modelled on the roof plane (anchored at floor level); stand-ins are lifted to it.
+        spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - (art.fallback ? art.lift || ROOF_H : 0) + (1 - art.rise) * RISE_PX));
         spr.tint = art.tint;
         spr.zIndex = depthKey(t.x, t.y) + 0.92;
         const ghost = createGhostFilter();
@@ -91,46 +89,21 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
 
   function clear(): void {
     clearParts();
-    for (const p of pieces) {
-      p.spr.destroy();
-      p.extra?.destroy();
-    }
+    for (const p of pieces) for (const o of p.objs) o.destroy();
     pieces = [];
   }
 
   function rebuild(): void {
     clear();
-    const struct = grid.raw('struct');
-    const w = grid.width;
-    for (let i = 0; i < struct.length; i++) {
-      const k = struct[i];
-      if (k !== Struct.Floor && k !== Struct.Door) continue;
-      const x = i % w;
-      const y = (i - x) / w;
+    // Stand-in roof parts replace the plates above their module; real parts sit on the plating.
+    const real = hasRoofArt(atlas);
+    pieces = buildRoofPlating(grid, atlas, L, livery, (x, y) => {
+      if (real) return false;
       const mod = grid.get('module', x, y);
-      if (mod && defs[world.get(mod, ModuleC)?.def ?? '']?.roofAsset) continue;
-      const art = resolveArt(atlas, ['roof.generic']);
-      if (!art) continue;
-      const p = iso(x, y);
-      const mk = (): Sprite => {
-        const s = new Sprite(art.s.tex);
-        s.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - art.lift));
-        s.visible = visible;
-        L.sorted.addChild(s);
-        return s;
-      };
-      const spr = mk();
-      spr.tint = art.tint;
-      spr.zIndex = depthKey(x, y) + 0.9;
-      let extra: Sprite | null = null;
-      if (art.add !== undefined) {
-        extra = mk();
-        extra.blendMode = 'add';
-        extra.tint = art.add;
-        extra.zIndex = depthKey(x, y) + 0.91;
-      }
-      pieces.push({ spr, extra, idx: i, tint: art.tint });
-    }
+      return !!(mod && defs[world.get(mod, ModuleC)?.def ?? '']?.roofAsset);
+    });
+    for (const p of pieces) for (const o of p.objs) o.visible = visible;
+    for (const p of pieces) for (const o of p.tinted) (o as Sprite).tint = p.tint;
     fireRev = -1;
   }
 
@@ -155,13 +128,13 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       if (fr === fireRev) return;
       fireRev = fr;
       const fire = grid.raw('fire');
-      for (const p of pieces) p.spr.tint = (fire[p.idx] as number) > 0 ? mulColor(p.tint, FIRE_TINT) : p.tint;
+      for (const p of pieces) for (const o of p.tinted) (o as Sprite).tint = (fire[p.idx] as number) > 0 ? mulColor(p.tint, FIRE_TINT) : p.tint;
     },
     setVisible(v) {
       visible = v;
       partKey = ''; // stowed parts appear on roofed ships only: rebuild
       for (const p of partSprites) p.spr.filters = v ? [] : [p.ghost];
-      for (const p of pieces) p.spr.visible = p.extra ? (p.extra.visible = v) : v;
+      for (const p of pieces) for (const o of p.objs) o.visible = v;
     },
     dispose: clear,
   };

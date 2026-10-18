@@ -13,7 +13,9 @@ import { createJobView } from './jobView';
 import { createLayers, type Layers } from './layers';
 import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
-import { createRoofView, ROOF_H } from './roofView';
+import { createRoofView } from './roofView';
+import type { Livery } from './roofPlating';
+import { ROOF_H, wallTopPx } from './heights';
 import { createTargetMarks } from './targetMarks';
 import { createTurretView } from './turretView';
 
@@ -25,6 +27,8 @@ export interface ShipSceneOptions {
   /** Blurred glow halos (Quality High); only worth it on the player's ship. */
   halos: boolean;
   roofed: boolean;
+  /** Roof livery (scheme and registry seed); none = plain plating. */
+  livery?: Livery | null;
 }
 
 /** One ship grid with all its views (tiles, modules, items, crew, fx), in its own layer stack. */
@@ -76,11 +80,11 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const particles = createParticles(atlas, L);
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => ({ grid }) });
   const turretView = createTurretView(world, atlas, L, grid, modules);
-  const roof = createRoofView(grid, atlas, L, world, modules);
-  const wallHeight = () => (roofed ? ROOF_H : cutaway === 'up' ? ROOF_H : 6);
+  const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null);
+  const wallHeight = () => wallTopPx(roofed ? 'up' : cutaway);
   const damage = createDamageView(grid, L, wallHeight);
   const marks = createTargetMarks(grid, world, modules, L);
-  const applyMode = () => view.setCutaway(roofed ? 'up' : cutaway);
+  const applyMode = () => view.setCutaway(roofed ? 'up' : cutaway, !roofed);
   applyMode();
   roof.setVisible(roofed);
   turretView.setRoofed(roofed);
