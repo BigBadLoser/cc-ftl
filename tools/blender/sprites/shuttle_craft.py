@@ -293,3 +293,91 @@ def pit(depth=PIT_SUGGESTED, w=4, l=5, rot=0):
     ob = deck.build()
     ob.is_holdout = True
     return [m.build(), ob]
+
+
+# Separate concept B: a broad utility lifter with horizontal sweepback wings.
+# The earlier v4 model and its `shuttle()` entry point above are preserved.
+TRANSPORT_HEIGHT = 2.7
+TRANSPORT_PIT = 1.7
+TRANSPORT_FOLD = math.radians(75)
+TRANSPORT_WING = [(0.05,0),(.55,.25),(0,1.7),(-.65,1.7),(-1.05,.25),(-.8,0)]
+
+
+def transport_wing(f,side,fold,livery=False):
+    """Large wings sweep rearward in their horizontal plane, without adding height."""
+    from lib.transport_forms import plate
+    c,s=math.cos(fold),math.sin(fold)
+    def xy(u,v):
+        return .35+u*c-v*s,side*(1.1+u*s+v*c)
+    points=TRANSPORT_WING
+    if livery:
+        # Broad inset flash, wholly contained by the wing outline.
+        points=[(.02,.16),(.32,.37),(-.13,1.47),(-.50,1.47),(-.78,.36),(-.63,.16)]
+    plate(f,[xy(u,v) for u,v in points],2.294 if livery else 2.20,
+          .006 if livery else .09,"mkP" if livery else "gW1")
+
+
+def transport_shuttle(heading,state="parked",dz=0,wing_fold=None):
+    """Fresh concept B. Original v4 is unchanged. Origin is pad centre, feet at z=0.
+
+    Parked/docked: wings sweep rearward 75 degrees; flight: span is 5.6 tiles.
+    Height 2.7, suggested pit 1.7, leaving the highest point 1.0 above deck.
+    No interior, pad, pit or bay geometry is part of this vehicle builder.
+    """
+    from lib.transport_forms import FlightFrame,loft
+    fold=(0 if state=="fly" else TRANSPORT_FOLD) if wing_fold is None else wing_fold
+    m=core.Mesh("transport_B_"+state)
+    m.dz=dz
+    f=FlightFrame(m,heading)
+    # Blunt wedge hull, broad passenger cabin and clipped cargo tail.
+    loft(f,[(-2.15,.57,1.22,.38),(-1.70,.78,1.25,.55),
+            (-.45,1.04,1.35,.80),(.65,1.08,1.39,.89),
+            (1.50,.85,1.35,.55),(2.18,.45,1.20,.22)],"gW1",upper="gW1")
+    # Distinct dark lower keel, ending short of the wedge nose.
+    loft(f,[(-1.9,.57,.65,.14),(-1.0,.83,.61,.16),
+            (1.1,.70,.69,.18),(1.8,.34,.92,.12)],"steelD",upper="steelL")
+    # Raised cockpit bridge: large opaque glass planes, no visible interior.
+    loft(f,[(.58,.76,2.08,.54),(1.25,.70,2.04,.47),(1.70,.39,1.89,.30)],
+         "gW1",upper="glassD",front="glassD")
+    f.box(.79,0,2.57,.065,1.01,.045,"gW1")
+    f.box(1.48,0,2.32,.055,.80,.045,"steelL")
+    f.box(.40,0,2.58,.32,.36,.12,"gW1",top="plate")
+    for side in (-1,1):
+        # Compact aft engines sit beneath the roots; nozzle interiors alone glow.
+        v=side*1.38
+        f.hcyl(-2.05,-.62,v,1.31,.30,"gW1",r1=.23,sides=12,cap="steelD")
+        f.hcyl(-2.22,-2.05,v,1.31,.30,"steelD",r1=.28,sides=12)
+        f.hcyl(-2.19,-2.17,v,1.31,.23,"dark",sides=12,capstart="dark")
+        f.hcyl(-2.195,-2.185,v,1.31,.16,"cyan" if state=="fly" else "dark",
+                sides=12,capstart="arc" if state=="fly" else "dark")
+        f.box(-1.02,side*1.04,1.12,1.32,.35,.40,"steelL",top="gW2")
+        # Visible swivel bearings support wings above the rear hull.
+        f.box(.35,side*1.01,1.80,.36,.22,.42,"steelD",top="gW2")
+        f.vcyl(.35,side*1.10,2.18,.18,.12,"steelL",top="gW1",sides=12)
+        transport_wing(f,side,fold)
+        f.box(-1.63,side*1.16,.57,.48,.18,.12,"steelD",top="plate")
+    # Large port-side boarding hatch, with a recessed pressure door and threshold.
+    f.box(-.42,-1.105,.57,1.08,.10,1.30,"steelD",top="gW1")
+    f.box(-.42,-1.16,.65,.88,.025,1.10,"rM",top="rH")
+    f.box(-.42,-1.179,1.09,.54,.018,.13,"glassD")
+    for i in range(6):
+        f.box(-.86+i*.17,-1.18,.59,.16,.04,.06,"hazY" if i%2==0 else "hazK")
+    f.box(-.42,-1.17,1.79,1.0,.045,.085,"gW1")
+    if state=="parked":
+        for u in (-1.45,1.24):
+            for v in (-1.28,1.28):
+                f.box(u,v,0,.40,.30,.07,"steelD",top="steelL")
+                f.vcyl(u,v,.07,.06,.50,"steelL",sides=8)
+                f.box(u,v,.42,.18,.18,.16,"gW2",top="gW1")
+    # Retracted legs are entirely enclosed by the lower keel in flight/docking.
+    lv=core.Mesh("transport_B_"+state+"_livery",flat=True)
+    lv.dz=dz
+    g=FlightFrame(lv,heading)
+    for side in (-1,1):
+        transport_wing(g,side,fold,True)
+        g.box(-1.05,side*1.675,1.20,.55,.012,.17,"mkS")
+    for points in (((-1.2,-.2,1.944),(-.6,-.2,2.112),(-.6,.2,2.112),(-1.2,.2,1.944)),
+                   ((1.78,-.15,1.7064),(2.08,-.15,1.4946),(2.08,.15,1.4946),(1.78,.15,1.7064))):
+        g.poly([g.pt(*p) for p in points],"mkS",flip=True)
+    g.box(-.42,-1.182,1.79,.58,.012,.06,"mkS")
+    return [m.build(),lv.build()]
