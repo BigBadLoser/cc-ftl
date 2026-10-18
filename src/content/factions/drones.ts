@@ -29,7 +29,7 @@ export const drones = {
       aspect: [0.9, 1.8], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['cluster'],
     },
     {
-      id: 'lancer', weight: { base: 2, perDepth: 0.2, max: 4 }, bonus: { heavyPct: 20 }, grammars: [{ value: 'truss', weight: 5 }, { value: 'spoke', weight: 1 }],
+      id: 'lancer', weight: { base: 2, perDepth: 0.2, max: 4 }, bonus: { heavyPct: 20 }, grammars: [{ value: 'truss', weight: 1 }],
       aspect: [2.2, 4.5], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['cluster'],
     },
     {

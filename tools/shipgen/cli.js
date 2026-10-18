@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Ship layout contact sheets without Blender or sprite art.
- *   node tools/shipgen/cli.js <faction|all> [--from 1] [--count 12] [--depth 0] [--out dir] [--scale 10] [--views detail|silhouette|assembly|all]
+ *   node tools/shipgen/cli.js <faction|all> [--from 1] [--count 12] [--depth 0] [--out dir] [--scale 10] [--views detail|silhouette|assembly|structure|all]
  * Writes <out>/<faction>-d<depth>.png and .txt (validation summary + ASCII dump per seed) and prints the summary.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -20,7 +20,7 @@ const count = Number(opt('count', 12));
 const depth = Number(opt('depth', 0));
 const scale = Number(opt('scale', 10));
 const out = resolve(opt('out', 'tools/shipgen/out'));
-const views = opt('views', 'detail') === 'all' ? ['detail', 'silhouette', 'assembly'] : opt('views', 'detail').split(',');
+const views = opt('views', 'detail') === 'all' ? ['detail', 'silhouette', 'assembly', 'structure'] : opt('views', 'detail').split(',');
 
 function crc32(buf) {
   let c = ~0;

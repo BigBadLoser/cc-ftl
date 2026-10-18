@@ -11,6 +11,35 @@ export function drawSilhouette(r: Raster, g: GenResult, ox: number, oy: number, 
   }
 }
 
+/**
+ * Structure: three flat colours, no labels. Exposed beams, crawlways and corridors (traversal), and everything
+ * enclosed (pods, core, rooms). Walls take the colour of what they enclose (rooms before corridors).
+ */
+export function drawStructure(r: Raster, g: GenResult, ox: number, oy: number, s: number): void {
+  const BEAM: RGB = [235, 70, 200];
+  const WAY: RGB = [110, 200, 140];
+  const BOX: RGB = [90, 130, 200];
+  const at = (x: number, y: number): string => g.template.rows[y]?.[x] ?? '.';
+  const role = (x: number, y: number): string | undefined => g.rooms[g.roomOf[y * g.width + x] ?? -1]?.role;
+  const floor = (x: number, y: number): 'way' | 'box' | null => {
+    const c = at(x, y);
+    if (c !== '_' && c !== 'D') return null;
+    return c === 'D' || role(x, y) === 'hall' ? 'way' : 'box';
+  };
+  for (let y = 0; y < g.height; y++) {
+    for (let x = 0; x < g.width; x++) {
+      const c = at(x, y);
+      if (c === '.') continue;
+      let k: 'way' | 'box' | null = c === '=' ? null : floor(x, y);
+      if (c === '#') {
+        const near = [-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => floor(x + dx, y + dy)));
+        k = near.includes('box') ? 'box' : near.includes('way') ? 'way' : 'box';
+      }
+      r.rect(ox + x * s, oy + y * s, s, s, c === '=' ? BEAM : k === 'way' ? WAY : BOX);
+    }
+  }
+}
+
 const TINTS: RGB[] = [
   [90, 140, 200], [200, 120, 80], [110, 180, 110], [190, 90, 160], [200, 180, 80], [80, 180, 180], [160, 120, 220],
   [220, 140, 140], [120, 160, 90], [140, 140, 200], [210, 160, 110], [100, 130, 150],

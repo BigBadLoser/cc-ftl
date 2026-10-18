@@ -31,18 +31,23 @@ function mount(c: Ctx, parent: number, side: Side, p: Block, strut: number, at?:
 
 /**
  * Pods on sockets along one side of a carrier `len` tiles long: evenly spaced (the carrier shows between them),
- * struts from the profile at each socket. Falls back to any free spot on the carrier.
+ * struts from the profile at each socket. When they do not fit in one row they stagger into two, every other pod
+ * out on a longer strut, so a crowded face stays ordered instead of clumping. Falls back to any free spot.
  */
 function socketed(c: Ctx, host: number, len: number, side: Side, specs: RoomSpec[], p: Profile): boolean {
   const blocks = specs.map((s) => pod(c, s));
+  const across: Side = side === 'n' || side === 's' ? 'e' : 'n';
   const used = blocks.reduce((t, b) => t + podLen(b, side), 0);
+  const stagger = blocks.length > 1 && used + blocks.length + 1 > len;
   const gap = Math.max(0, Math.floor((len - used) / (blocks.length + 1)));
-  let x = gap;
-  for (const b of blocks) {
+  const step = stagger ? Math.max(2, Math.floor((len - podLen(blocks[blocks.length - 1] as Block, side)) / (blocks.length - 1))) : 0;
+  const outer = stagger ? Math.max(...blocks.map((b) => podLen(b, across))) + 3 : 0;
+  let x = stagger ? 0 : gap;
+  for (const [i, b] of blocks.entries()) {
     const t = len > 1 ? (x + podLen(b, side) / 2) / len : 0.5;
-    const strut = depthAt(p, t);
+    const strut = depthAt(p, t) + (i % 2 === 1 ? outer : 0);
     if (mount(c, host, side, b, strut, x) === null && mount(c, host, side, b, strut) === null && mount(c, host, side, b, 0) === null) return no(c, `socket ${side}`);
-    x += podLen(b, side) + gap;
+    x += stagger ? step : podLen(b, side) + gap;
   }
   return true;
 }
@@ -143,8 +148,9 @@ function stores(c: Ctx, on: number, n: number): void {
 interface Carrier { id: number; len: number; faces: Side[] }
 
 /** A beam on a face of `host`; `along` lays it across that face instead of out from it (cross pieces, rails). */
-const beamOn = (c: Ctx, host: number, side: Side, len: number, thick: number, align: 'start' | 'mid' | 'end' = 'mid', along = false): number | null =>
-  c.A.attach(host, beam(c.rng, len, thick, (side === 'e' || side === 'w') !== along), { side, align, doors: 0, kind: 'beam' });
+const beamOn = (c: Ctx, host: number, side: Side, len: number, thick: number, align: 'start' | 'mid' | 'end' | 'flush' = 'mid', along = false): number | null =>
+  // 'flush': a beam laid along the face starting level with the host's fore (or top) end.
+  c.A.attach(host, beam(c.rng, len, thick, (side === 'e' || side === 'w') !== along), align === 'flush' ? { side, align: 'start', shift: len - 1, doors: 0, kind: 'beam' } : { side, align, doors: 0, kind: 'beam' });
 
 /**
  * The frame: how the beams around the core are laid out. Same blocks, different topology:
@@ -155,7 +161,7 @@ const beamOn = (c: Ctx, host: number, side: Side, len: number, thick: number, al
  *   cross   short beams fore, up and down
  * Returns the carriers (pods ride on them) and the tips engines can sit on (their aft faces stay clear).
  */
-type Topology = 'single' | 'fork' | 'twin' | 'h' | 'cross';
+type Topology = 'single' | 'fork' | 'twin' | 'h' | 'collar' | 'brace';
 
 /** The ship's topology, drawn once per ship from the family's weighted set (every candidate shares it). */
 function byVariant(c: Ctx, set: [Topology, number][]): Topology {
@@ -199,15 +205,26 @@ function frame(c: Ctx, core: number, topo: Topology, run: number, thick: number)
       out.push({ id: rail, len: 2 * run, faces: [side] });
       tips.push(rail);
     }
-  } else {
-    const fore = beamOn(c, core, 'w', Math.ceil(run / 2), thick);
-    if (fore === null) return null;
-    out.push({ id: fore, len: Math.ceil(run / 2), faces: ['n', 's'] });
+  } else if (topo === 'collar') {
+    // A box frame hugging the core: rails along its top and bottom faces running aft `run` tiles past it (over the
+    // stores stub), a brace across its bow; pods ride the frame's outer faces.
+    const b = c.A.bounds(core);
+    const L = b.w - 2 + run;
     for (const side of ['n', 's'] as const) {
-      const arm = beamOn(c, core, side, Math.ceil(run / 2), thick);
+      const rail = beamOn(c, core, side, L, thick, 'flush', true);
+      if (rail === null) return null;
+      out.push({ id: rail, len: L, faces: [side] });
+    }
+    const bow = beamOn(c, core, 'w', b.h - 2 + 2 * thick, thick, 'mid', true);
+    if (bow === null) return null;
+    out.push({ id: bow, len: b.h - 2 + 2 * thick, faces: ['w'] });
+  } else {
+    // A short brace: stubby arms up, down and forward, a pod at each tip and more along them.
+    for (const side of ['n', 's', 'w'] as const) {
+      const arm = beamOn(c, core, side, c.rng.int(4, 5), thick);
       if (arm === null) return null;
-      out.push({ id: arm, len: Math.ceil(run / 2), faces: ['w'] });
-      tips.push(arm);
+      out.push({ id: arm, len: thick, faces: [side] });
+      if (side !== 'w') tips.push(arm);
     }
   }
   c.parts.push(topo);
@@ -233,8 +250,10 @@ function load(c: Ctx, carriers: Carrier[], specs: RoomSpec[], p: Profile): boole
 function tipDrives(c: Ctx, tips: number[], aft: number, engines: RoomSpec[]): boolean {
   const nTip = Math.min(tips.length, engines.length);
   const rest = engines.slice(nTip);
-  const style = rest.length === 2 && c.rng.chance(0.5) ? 'paired' : rest.length >= 2 ? 'railEnd' : c.rng.pick(['rail', 'railEnd'] as const);
-  if (!drive(c, aft, rest, style)) return false;
+  const style: 'rail' | 'paired' | 'railEnd' = rest.length === 2 && c.rng.chance(0.5) ? 'paired' : rest.length >= 2 ? 'railEnd' : c.rng.pick(['rail', 'railEnd'] as const);
+  // A beam drive that finds no room places nothing: fall back to a narrower one, the stern fan last.
+  const order: ('rail' | 'paired' | 'railEnd')[] = [style, ...(['paired', 'rail', 'railEnd'] as const).filter((x) => x !== style)];
+  if (!order.some((st) => drive(c, aft, rest, st))) return false;
   const left = engines.slice(0, nTip);
   for (const t of tips) {
     if (left.length === 0) break;
@@ -256,11 +275,17 @@ function spoke(c: Ctx): boolean {
   const all = [...mounts, ...reactors];
   const core = c.A.placeRoot(coreRoom(c.rng, c.plan, 7, 4));
   const p = rollProfile(() => c.rng.next(), 0, c.rng.int(0, 1), [0.3, 0.7]);
-  const topo: Topology = all.length > 5 ? 'cross' : byVariant(c, [['single', 2], ['cross', 1]]);
-  const f = frame(c, core, topo, runOf(all.length > 5 ? all.slice(0, Math.ceil(all.length / 3)) : all), 2);
+  // Compact defensive chassis: a collar frame around the core and its stores stub (it grows aft with the pod
+  // count), or for a handful of pods a short brace with one pod at each arm's tip.
+  const topo: Topology = all.length > 3 ? 'collar' : byVariant(c, [['collar', 1], ['brace', 1]]);
+  const perSide = Math.ceil(all.length / 2);
+  // Compact: the frame grows aft only so far; more pods stagger into a second row on its sockets.
+  const stubLen = Math.min(10, Math.max(3, 3 * c.plan.cargo.length, all.slice(0, perSide).reduce((t, x) => t + x.w + 4, 2) - 9));
+  // The collar stops just short of the stub's end: the drive beam goes on behind it.
+  const f = frame(c, core, topo, stubLen - 2, 2);
   if (!f || !load(c, f.carriers, all, p)) return no(c, 'picket frame');
   // A short crawl stub aft for the stores and the airlock; the drive behind it.
-  const stub = c.A.attach(core, crawl(c.rng, Math.max(3, 3 * c.plan.cargo.length), true), { side: 'e', doors: 1 });
+  const stub = c.A.attach(core, crawl(c.rng, stubLen, true), { side: 'e', doors: 1 });
   if (stub === null) return no(c, 'stub');
   stores(c, stub, c.plan.cargo.length);
   if (!dock(c, [stub, core])) return false;

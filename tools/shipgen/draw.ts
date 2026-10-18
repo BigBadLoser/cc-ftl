@@ -6,9 +6,9 @@ import { content } from '../../src/content';
 import {
   adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, type GenResult, type ModuleDef, type RoomRole,
 } from '../../src/sim';
-import { drawAssemblies, drawSilhouette } from './views';
+import { drawAssemblies, drawSilhouette, drawStructure } from './views';
 
-export type View = 'detail' | 'silhouette' | 'assembly';
+export type View = 'detail' | 'silhouette' | 'assembly' | 'structure';
 
 type RGB = [number, number, number];
 
@@ -186,7 +186,7 @@ export function contactSheet(
     const m = g.metrics;
     const ms = m ? ` C${m.compactness.toFixed(2)} O${m.occupancy.toFixed(2)} R${m.corridorRatio.toFixed(2)} N${m.narrowLinks.toFixed(2)}` : '';
     r.text(`${g.topology}${ms}`, ox, oy + 7 * ts, [150, 170, 200], ts);
-    (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
+    (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : view === 'structure' ? drawStructure : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
     text.push(summary(g, seed), ascii(g), '');
   });
   return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}, ${adjText}`, ...errors, ...text].join('\n') };

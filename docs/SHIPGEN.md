@@ -209,12 +209,27 @@ The navy's structural helpers carry over:
   - The aft drive goes on before the aft pods.
 - **Core ports are multi-use,** so the dock, beams and crawls can share a face.
 
+### Drones v16: picket chassis
+
+- **Picket chassis.** A compact `collar` frame: rails hugging the core's top and bottom faces running aft over the
+  stores stub (capped at 10 tiles), and a bow brace across the front. Pods ride the frame's outer faces on
+  sockets.
+  - A handful of pods may use a short `brace` instead (stubby arms, one pod at each tip).
+  - The drive sits behind the stub.
+  - The lancer's spoke alternative and the `cross` topology are gone, so no lancer looks like a picket.
+- **Crowded faces stagger.** When a face's pods do not fit in one row, every other pod goes out on a longer strut
+  (a second row). This is a shared socket rule; it also helps fork and twin prongs.
+- **The drive falls back** to a narrower style when a beam drive finds no room.
+- **Viewer.** A new `structure` view (CLI `-structure.png`, live viewer option): beams, traversal and enclosed
+  machinery in three flat colours.
+
 ### Drone follow-ups
 
-- Fork and twin prongs sometimes pack pods into walled clumps where sockets run out.
-- Pickets and swarms are both compact blobs at a glance; swarms are larger and looser.
-- First-attempt failures: "no airlock fits" on picket crosses and swarm lattices, and "weapons do not fit" on
-  twin and fork lancers. Reseeding covers both.
+- Swarm grammar is mixed: some lattices grow a run of nodes in one line (swarm #4 at depth 9 is half comb, half
+  blob). Node links could prefer turning.
+- Fork and twin prongs still crowd: inner-face pods clump against the stem.
+- Pickets at depth 1 to 4 look alike (one collar); a second compact chassis (a ring with corner pods) would help.
+- Staggered picket rows read busier than single rows.
 
 ## Drones (built, v6): machinery first, same arranger
 
