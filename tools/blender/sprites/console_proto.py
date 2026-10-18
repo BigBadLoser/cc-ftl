@@ -56,9 +56,36 @@ def at(u, v, yaw, x, off):
     return u + off * c - x * s, v + off * s + x * c
 
 
+@cmbkit.prim
+def tdisc(f, u, v, z, tl, r, h, mat, top, r_in, dz=0.0, sides=18):
+    """Flat disc (or ring when r_in > 0) of radius r and thickness h centred at (u, v, z), tilted by `tl` about the v axis so its
+    face points up and toward -u (the operator)."""
+    e1, e2, n = (0, 1, 0), (math.cos(tl), 0, math.sin(tl)), (-math.sin(tl), 0, math.cos(tl))
+
+    def P(rad, a, s):
+        c, s_ = math.cos(a), math.sin(a)
+        return f.pt(u + rad * s_ * e1[0] + rad * c * e2[0] + (s * h / 2 + dz) * n[0], v + rad * s_ * e1[1] + rad * c * e2[1] + (s * h / 2 + dz) * n[1],
+                    z + rad * s_ * e1[2] + rad * c * e2[2] + (s * h / 2 + dz) * n[2])
+    for i in range(sides):
+        a0, a1 = i * math.tau / sides, (i + 1) * math.tau / sides
+        if r_in:
+            f.poly([P(r_in, a0, 1), P(r, a0, 1), P(r, a1, 1), P(r_in, a1, 1)][::-1], top, flip=True)
+            f.poly([P(r_in, a0, -1), P(r, a0, -1), P(r, a1, -1), P(r_in, a1, -1)], mat, flip=True)
+            f.poly([P(r_in, a0, -1), P(r_in, a1, -1), P(r_in, a1, 1), P(r_in, a0, 1)], mat, flip=True)
+        else:
+            f.poly([P(0, 0, 1), P(r, a0, 1), P(r, a1, 1)][::-1], top, flip=True)
+            f.poly([P(0, 0, -1), P(r, a0, -1), P(r, a1, -1)], mat, flip=True)
+        f.poly([P(r, a0, -1), P(r, a1, -1), P(r, a1, 1), P(r, a0, 1)], mat, flip=True)
+
+
+SCREEN_LOG = []          # (name, glass w, glass h, margin, [(x0, x1, t0, t1)]) in screen-local metres, read by proto_console_overlap.py
+MARGIN = 0.04            # keep-out between glass edge and any glyph (about 2 px at game scale)
+
+
 def screen(f, u, v, yaw, w, h, z, col, st, bars, lean=-0.14, d=0.09):
-    """Tilted screen (frame + glass + content bars) standing at z, centre (u, v), facing -N. bars: [(x, t, bw, bh, kind)] with
-    x across, t height above the glass bottom, kind 'a' accent / 'b' second colour / 'w' white-ish. Idle: dim tint only."""
+    """Tilted screen (frame + glass + content) standing at z, centre (u, v), facing -N. Idle: blank dark glass. Active: bars
+    [(fx, ft, fw, bh, kind)]: fx -0.5..0.5 and ft 0..1 place the bar inside the free area of the glass (so it can never leave
+    it), fw is the width as a fraction of that area, bh the height in metres, kind 'a' accent / 'b' second colour / 'w' third."""
     _g("screen")
     ybox(f, u, v, z, d, w, h, "steelD", yaw, top="plate", lean=lean)
     hg, wg = h - 0.09, w - 0.1
@@ -66,13 +93,18 @@ def screen(f, u, v, yaw, w, h, z, col, st, bars, lean=-0.14, d=0.09):
     og = -d / 2 + (-lean) * 0.045 / h - 0.016
     gu, gv = at(u, v, yaw, 0, og + 0.012)
     ybox(f, gu, gv, z + 0.045, 0.024, wg, hg, "dark", yaw, lean=lg)
-    on = st
-    for x, t, bw, bh, kind in bars:
-        base = {"a": col, "b": BTN[col][1], "w": BTN[col][1]}[kind]
-        if not on:
-            base = DIM[col]
+    wi, hi = wg - 2 * MARGIN, hg - 2 * MARGIN
+    log = []
+    for fx, ft, fw, bh, kind in (bars if st else []):
+        bh = min(max(bh, 0.04), hi)
+        bw = min(max(fw * wi, 0.04), wi)
+        x = fx * (wi - bw)
+        t = MARGIN + ft * (hi - bh)
+        log.append((x - bw / 2, x + bw / 2, t, t + bh))
+        base = {"a": col, "b": BTN[col][1], "w": BTN[col][2]}[kind]
         bu, bv = at(u, v, yaw, x, og - 0.004 + (-lg) * t / hg)
         ybox(f, bu, bv, z + 0.045 + t, 0.03, bw, bh, base, yaw, lean=lg * bh / hg)
+    SCREEN_LOG.append((f"{w:.2f}x{h:.2f}", wg, hg, MARGIN, log))
 
 
 def strip(f, u, v, yaw, w, z, n, off, st, col, pitch=None):
@@ -97,10 +129,14 @@ def desk(f, u, v, yaw, w, d, h, st, col, nbtn=0, slab=True, base="steel", band=T
         su, sv = at(u, v, yaw, x, 0)
         if abs(x) < w / 2 - 0.02:
             ybox(f, su, sv, 0.14, d + 0.03, 0.045, h - 0.24, "steelD", yaw)
-    if band:
-        ybox(f, u, v, 0.27, d + 0.025, w + 0.01, 0.035, "steelD", yaw)                 # panel groove
+    nb = max(1, round(w / 0.55))
+    for k in range(nb):                                                              # inset panels between the seams
+        x = (k - (nb - 1) / 2) * w / nb
+        pu, pv = at(u, v, yaw, x, 0)
+        ybox(f, pu, pv, 0.17, d + 0.014, w / nb - 0.12, h - 0.34, "plateB", yaw, top="plateB")
     lu, lv = at(u, v, yaw, 0, -d / 2 + 0.03)
     ybox(f, lu, lv, h, 0.06, w + 0.01, 0.04, "steelL", yaw, top="plate")                # bevelled edge rail
+    ybox(f, u, v, h, d - 0.02, w - 0.02, 0.012, "plate", yaw, top="plate")             # raised top skin
     if slab:
         su, sv = at(u, v, yaw, 0, 0.1)
         ybox(f, su, sv, h, d * 0.62, w - 0.06, 0.1, "blueGrey", yaw, top="plateB", lean=-0.1)
@@ -147,12 +183,10 @@ def helm(f, st):
         desk(f, pu, pv, yaw, w, 0.46, 0.52, st, col, nbtn=4 if 0 < k < n - 1 else 3)
         sw, sh = sc[k]
         if sw:
-            c = 0.5 if k == 3 else 0.3
             su, sv = at(pu, pv, yaw, 0, 0.12)
-            bars = [(-sw * 0.3, sh * 0.12, sw * 0.28, 0.035, "a"), (0.0, sh * 0.4, sw * 0.7, 0.035, "a"), (sw * 0.1, sh * 0.62, sw * 0.45, 0.035, "b"),
-                    (-sw * 0.25, sh * 0.78, 0.07, 0.07, "w")]
+            bars = [(0.0, 0.0, 0.5, 0.04, "a"), (0.0, 0.4, 0.8, 0.04, "a"), (0.2, 0.7, 0.55, 0.04, "b"), (-0.5, 1.0, 0.2, 0.06, "w")]
             if k == 3:
-                bars += [(-0.24 + i * 0.12, 0.1, 0.05, 0.05 + 0.04 * (i % 3), "a") for i in range(5)]
+                bars = bars[1:] + [(-0.5 + i * 0.25, 0.0, 0.1, 0.1 + 0.06 * (i % 3), "a") for i in range(5)]
             screen(f, su, sv, yaw, sw, sh + 0.1, 0.72, col, st, bars, lean=-0.1)
     # yoke on the centre bay: stalk, rim wheel, hub, spokes
     _g("yoke")
@@ -201,22 +235,16 @@ def shield(f, st):
     strip(f, 0.4, -1.1, 0, 0.7, 0.7, 4, -0.12, st, col)
     # three tall tilted screens above the back bar
     for k, (sv, sw) in enumerate(((-1.0, 0.8), (0.0, 0.8), (1.0, 0.9))):
-        hx = []
-        for ring in range(3):
-            hx += [(0, 0.1 + ring * 0.1, 0.5 - ring * 0.16, 0.035, "a")]
-        bars = [(-sw * 0.3, 0.55, 0.06, 0.12, "b"), (-sw * 0.15, 0.5, 0.06, 0.22, "a"), (0.0, 0.58, 0.06, 0.1, "b"), (sw * 0.15, 0.48, 0.06, 0.26, "a"),
-                (sw * 0.3, 0.54, 0.06, 0.16, "a")] + hx
+        bars = [(-0.5 + i * 0.25, 0.6, 0.1, bh, kd) for i, (bh, kd) in enumerate(((0.12, "b"), (0.22, "a"), (0.1, "b"), (0.26, "a"), (0.16, "a")))]
+        bars += [(0.0, 0.0, 0.8, 0.04, "a"), (0.0, 0.12, 0.55, 0.04, "a"), (0.0, 0.24, 0.3, 0.04, "a")]
         screen(f, 0.62, sv, 0, sw, 0.75, 0.7, col, st, bars, lean=-0.16, d=0.1)
-    # projector on the side bar: nested vertical rings on an axle, spokes, post
+    # projector on the side bar: one tilted disc (faces up and toward the operator) in a frame ring on a post
     _g("holo")
-    pv, pz = -0.55, 1.12
-    ring = "cyan" if st else "navy"
-    ybox(f, -0.5, pv, 0.55, 0.12, 0.12, 0.2, "steelL", top="plate")
+    pv, pz, tl = -0.55, 0.98, 0.3
     ybox(f, -0.5, pv, 0.55, 0.3, 0.3, 0.06, "steelD", top="plate")
-    f.hcyl(-0.54, -0.5, pv, pz, 0.3, "dark", sides=16, cap="dark", capstart="dark")                     # disc backing
-    f.hcyl(-0.5, -0.47, pv, pz, 0.24, "cyan" if st else "navy", sides=16, cap="cyan" if st else "navy", capstart="cyan" if st else "navy")
-    D.annulus(f, -0.57, -0.43, pv, pz, 0.36, 0.3, "steelL", "plate", sides=16)                           # single frame ring
-    ybox(f, -0.5, pv, 0.6, 0.08, 0.08, pz - 0.6 - 0.34, "steelL")
+    ybox(f, -0.5, pv, 0.61, 0.08, 0.08, pz - 0.61 - 0.03, "steelL")
+    tdisc(f, -0.5, pv, pz, tl, 0.37, 0.05, "steelL", "plate", 0.3)
+    tdisc(f, -0.5, pv, pz, tl, 0.3, 0.035, "cyan" if st else "dark", "cyan" if st else "dark", 0.0, dz=0.012)
     # tall side pillar at the outer end
     _g("pylon")
     ybox(f, -0.5, -1.38, 0.0, 0.46, 0.22, 0.95, "steelL", top="plate")
@@ -254,8 +282,8 @@ def weapons(f, st):
     f.vcyl(-0.2, -0.9, 0.65, 0.065, 0.07, "red" if st else "rustD", sides=6)
     # screens: one big targeting display, two small flanking
     for sv, sw, sh in ((0.0, 0.9, 0.5), (-0.7, 0.45, 0.3), (0.7, 0.45, 0.3)):
-        bars = [(0.0, sh * 0.48, 0.04, sh * 0.7, "a"), (0.0, sh * 0.5, sw * 0.7, 0.04, "a"), (0.0, sh * 0.5, 0.08, 0.08, "w"),
-                (-sw * 0.3, sh * 0.2, 0.1, 0.05, "b"), (sw * 0.28, sh * 0.75, 0.1, 0.05, "b"), (sw * 0.3, sh * 0.3, 0.07, 0.07, "a")]
+        bars = [(0.0, 0.0, 0.05, 0.4, "a"), (0.0, 0.5, 0.7, 0.04, "a"), (0.0, 0.5, 0.1, 0.07, "w"),
+                (-0.4, 0.1, 0.12, 0.04, "b"), (0.4, 0.9, 0.12, 0.04, "b"), (0.45, 0.3, 0.08, 0.06, "a")]
         screen(f, 0.62, sv, 0, sw, sh + 0.1, 0.6, col, st, bars, lean=-0.14, d=0.1)
     # guarded fire buttons and the scope on the right bar
     _g("fire")

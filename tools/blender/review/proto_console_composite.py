@@ -60,9 +60,9 @@ def scene(hot):
 for hot in (False, True):
     img = scene(hot)
     tag = "active" if hot else "idle"
-    img.save(D / f"scene_{tag}_1x_v2.png")
-    img.resize((img.width * 3, img.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_v2.png")
+    img.save(D / f"scene_{tag}_1x_v3.png")
+    img.resize((img.width * 3, img.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_v3.png")
     # tight 3x crops: r0 row along the north wall, r1 column along the east wall
     for nm, box in (("r0row", (440, 100, 860, 370)), ("r1col", (400, 340, 830, 560))):
         c = img.crop(box)
-        c.resize((c.width * 3, c.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_{nm}_v2.png")
+        c.resize((c.width * 3, c.height * 3), Image.NEAREST).save(D / f"scene_{tag}_3x_{nm}_v3.png")

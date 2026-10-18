@@ -49,7 +49,13 @@ def run(name, rot):
     nu, nv = C.FOOT[name]
     rec = cmbkit.REC = overlap.Recorder()
     f = cmbkit.Frame(core.Mesh("chk"), rot, centre=C.centre(rot, nu, nv))
+    C.SCREEN_LOG.clear()
     C.BUILD[name](f, True)
+    for nm, wg, hg, m, bars in C.SCREEN_LOG:                       # graphics must sit inside the glass with a margin, screen-local
+        for x0, x1, t0, t1 in bars:
+            if x0 < -wg / 2 + m - 1e-6 or x1 > wg / 2 - m + 1e-6 or t0 < m - 1e-6 or t1 > hg - m + 1e-6 or min(x1 - x0, t1 - t0) < 0.039:
+                print('SCREEN GLYPH OUT OF BOUNDS', nm, round(x0, 3), round(x1, 3), round(t0, 3), round(t1, 3))
+    print('screens checked:', len(C.SCREEN_LOG), 'glyphs:', sum(len(b[4]) for b in C.SCREEN_LOG))
     cmbkit.REC = None
     print(f"== {name} r{rot}: {len(rec.parts)} parts")
     overlap.report(rec.parts, ALLOW)
