@@ -29,6 +29,7 @@ LAYERS = {
 }
 DIRS = [("SE", 0), ("S", 1), ("SW", 2), ("NW", 4)]
 FRAMES = [("idle", "idle", 0), ("walk", "walk", 2), ("work", "work", 3), ("sit_idle", "sit_idle", 0), ("sit_work", "sit_work", 2)]
+HIDDEN_A = 12
 SHIFT = lambda a, dy, dx: np.roll(a, (dy, dx), (0, 1))  # noqa: E731
 
 
@@ -43,23 +44,31 @@ def stack(man, assets, char, d, clip, frame):
         fw, fh = a["frameW"], a["frameH"]
         sl = (slice(d * fh, (d + 1) * fh), slice(col * fw, (col + 1) * fw))
         x, y = 60 - a["anchor"]["x"], 120 - a["anchor"]["y"]
-        compose.over(cv, compose.remap_keys(img[sl], COLOURS[char]), x, y)
+        lay = compose.remap_keys(img[sl], COLOURS[char])
+        hid = (lay[..., 3] > 0) & (lay[..., 3] < 128)       # sit clips: pixels hidden behind the chair (faint alpha)
+        if hid.any():
+            sub = cv[y:y + fh, x:x + fw]
+            sub[hid & (sub[..., 3] == 0), 3] = HIDDEN_A
+            lay[hid] = 0
+        compose.over(cv, lay, x, y)
         if "glow" in sh:
             compose.over(gl, np.array(Image.open(assets / sh["glow"]).convert("RGBA"))[sl], x, y)
     return cv, gl
 
 
 def outline_rim(cv):
-    """The runtime composite filter: outline = darkened mean of the 4-neighbours' colours, thin rim on the left edge."""
-    rgb, op = cv[..., :3].astype(float), cv[..., 3] > 0
+    """The runtime composite filter: outline = darkened mean of the 4-neighbours' colours, thin rim on the left edge.
+    Pixels with a faint alpha (hidden behind the sit chair) stay empty and stop neither the outline nor the rim test."""
+    rgb, op = cv[..., :3].astype(float), cv[..., 3] >= 128
+    hid = (cv[..., 3] > 0) & ~op
     cnt, ns = np.zeros(op.shape), np.zeros(rgb.shape)
     for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
         o = SHIFT(op, dy, dx)
         ns += SHIFT(rgb, dy, dx) * o[..., None]
         cnt += o
-    ring = ~op & (cnt > 0)
+    ring = ~op & ~hid & (cnt > 0)
     out = rgb.copy()
-    rim = op & ~SHIFT(op, 0, 1) & SHIFT(op, 0, -1)
+    rim = op & ~SHIFT(op | hid, 0, 1) & SHIFT(op, 0, -1)
     out[rim] = out[rim] * (1 - RIM_MIX) + RIM * RIM_MIX
     out[ring] = (ns / np.maximum(cnt, 1)[..., None])[ring] * OUTLINE_MUL + OUTLINE_ADD
     return np.clip(out, 0, 255).astype(np.uint8), op | ring

@@ -73,6 +73,8 @@ uniform float uZoom;
 uniform vec3 uTint;
 const float MULT[5] = float[5](0.42, 0.62, 0.82, 1.0, 1.22);
 const vec3 RIM = vec3(0.47, 0.8, 1.0);
+// Sit clips mark crew pixels hidden behind the chair with a faint alpha: drawn as nothing, and no outline or rim along the cut.
+const float HIDDEN = 0.01;
 
 vec3 ramp(vec3 col, float s) {
   int lv = int(s > 0.385) + int(s > 0.555) + int(s > 0.73) + int(s > 0.91);
@@ -99,8 +101,12 @@ void main(void) {
     vec3 col = swapColor(c);
     float l = texture(uTexture, vTextureCoord - vec2(st.x, 0.0)).a;
     float r = texture(uTexture, vTextureCoord + vec2(st.x, 0.0)).a;
-    if (l < 0.5 && r > 0.5) col = mix(col, RIM, 0.38);
+    if (l < HIDDEN && r > 0.5) col = mix(col, RIM, 0.38);
     finalColor = vec4(col * uTint, 1.0);
+    return;
+  }
+  if (c.a > HIDDEN) {
+    finalColor = vec4(0.0);
     return;
   }
   vec3 sum = vec3(0.0);

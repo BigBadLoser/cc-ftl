@@ -46,11 +46,49 @@ def pixel(name, rot, st):
     return post.to_rgba(c, op), g, ox, oy
 
 
+def pixel_split(name, rot, st):
+    """The seated-crew layering: the full sprite (same pixels as pixel()) plus the FRONT OVERLAY = the full-sprite pixels
+    owned by the desk polygons nearer the camera than the chair (console_proto.console_parts), and the glow split into
+    the base's share (back desk + chair) and the overlay's share. Ownership = which part is the visible surface (the
+    other parts as Cycles holdouts); outline-ring pixels go to the overlay when they touch it."""
+    core.setup_scene()
+    core.clear_scene_meshes()
+    post.select(True)
+    parts = C.console_parts(name, rot, st)
+    objs = list(parts.values())
+    c, op, g, ox, oy, _ = env_build.render_sprite("x", "prop", objs)
+    W, H = op.shape[1] - 2, op.shape[0] - 2
+
+    def owned(front, which):
+        for k, o in parts.items():
+            o.is_holdout = (k == "front") != front
+        rgb, a = core.render(W, H, which)
+        for o in objs:
+            o.is_holdout = False
+        return rgb, a
+
+    masks, glows = {}, {}
+    for front in (True, False):
+        rgb, a = owned(front, "color")
+        masks[front] = np.pad(post.downsample(rgb, a > 0.5, core.SS, 8, False)[1], 1)
+        grgb, _ = owned(front, "glow")
+        glows[front] = np.pad(post.glow_down(grgb, core.SS, 3), ((1, 1), (1, 1), (0, 0)))
+    fo = masks[True]
+    near = np.zeros_like(fo)
+    for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        near |= np.roll(fo, (dy, dx), (0, 1))
+    front = op & (fo | (~masks[False] & ~fo & near))
+    full = post.to_rgba(c, op)
+    over = full.copy()
+    over[~front] = 0
+    return full, g, glows[False], over, glows[True], ox, oy
+
+
 def main():
     info = {}
     only = args[args.index('--only') + 1] if '--only' in args else None
     names = [n for n in C.BUILD if not only or n == only]
-    for name in names:
+    for name in names if "--split" not in args else []:
         for rot in (0, 1):
             info[f"{name}.r{rot}"] = meta(name, rot)
             for st in (False, True):
@@ -61,6 +99,13 @@ def main():
     old = json.loads(mp.read_text()) if mp.exists() else {}
     old.update(info)
     mp.write_text(json.dumps(old, indent=1))
+    if "--split" in args:
+        for name in names:
+            for rot in (0, 1):
+                full, g, gb, over, gf, ox, oy = pixel_split(name, rot, True)
+                np.savez(OUT / f"split_{name}_r{rot}.npz", rgba=full, glow=g, glow_base=gb, front=over, glow_front=gf, ox=ox, oy=oy)
+                print("split", name, rot, full.shape, int((over[..., 3] > 0).sum()), flush=True)
+        return
     if "--walls" in args:                                                              # interior full walls at the raised height (local override)
         walls.HF = 2.2
         for m in (3, 5, 6, 10, 12):

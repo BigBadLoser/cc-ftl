@@ -202,6 +202,9 @@ def desk(f, u, v, yaw, w, d, h, st, col, nbtn=0, slab=True, base="steel", band=T
 def chair(f, u, v, st):
     """Swivel chair facing +u: star base with casters, post, padded seat, back with headrest, armrests, brass pivot ring."""
     _g("chair")
+    split = f.m if isinstance(f.m, _Split) else None
+    if split:
+        split.in_chair = True
     D.seg(f, (u, v, 0.05), (u, v, 0.26), 0.05, "steelL", 8)
     for k in range(5):
         a = k * math.tau / 5 + 0.3
@@ -218,6 +221,8 @@ def chair(f, u, v, st):
     for sv in (-1, 1):
         ybox(f, u + 0.0, v + sv * 0.25, 0.39, 0.06, 0.06, 0.12, "steelL")          # armrest post
         ybox(f, u + 0.03, v + sv * 0.25, 0.51, 0.3, 0.09, 0.05, "navy")            # armrest pad
+    if split:
+        split.in_chair = False
 
 
 # ---- helm: a long curved desk with the chair in front ---------------------------------------------------------
@@ -344,3 +349,34 @@ def console(name, rot, st):
     m = core.Mesh(f"console_{name}_{rot}_{int(st)}")
     BUILD[name](Frame(m, rot, centre=centre(rot, nu, nv)), st)
     return [m.build()]
+
+
+# ---- split for the seated operator ------------------------------------------------------------------------------
+
+class _Split(core.Mesh):
+    """Routes every polygon to one of three meshes: the chair, `front` = desk polygons whose centroid is nearer the camera
+    than the chair centre (grid x + y larger), `back` = the rest. Lets the renderer draw a seated crew member between the
+    console and its front overlay."""
+
+    def __init__(self, name, chair_xy):
+        super().__init__(name)
+        self.parts = {k: core.Mesh(f"{name}_{k}") for k in ("back", "chair", "front")}
+        self.depth, self.in_chair = chair_xy[0] + chair_xy[1], False
+
+    def poly(self, pts, color, flip=False):
+        if self.in_chair:
+            k = "chair"
+        else:
+            n = len(pts)
+            k = "front" if sum(p[0] - p[1] for p in pts) / n > self.depth else "back"   # Blender y = -grid y
+        self.parts[k].poly(pts, color, flip)
+
+
+def console_parts(name, rot, st):
+    """-> {"back", "chair", "front": object}: the same geometry as console(), split for the seated-crew layering."""
+    nu, nv = FOOT[name]
+    f = Frame(None, rot, centre=centre(rot, nu, nv))
+    m = _Split(f"console_{name}_{rot}_{int(st)}", f.xy(*CHAIR[name]))
+    f.m = m
+    BUILD[name](f, st)
+    return {k: p.build() for k, p in m.parts.items()}

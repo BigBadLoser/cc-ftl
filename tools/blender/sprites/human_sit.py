@@ -2,7 +2,9 @@
 odd bone axes do not matter). Pelvis on the console swivel chair (console_proto.chair: seat cushion top z = 0.39 tiles),
 thighs ~horizontal, shins vertical, feet flat on the floor, torso slightly forward, hands forward at desk height.
 The sprite origin is the chair centre on the floor (the crew stands where the chair is), the body is shifted back a little so
-the pelvis sits on the cushion with the thighs pointing along the facing direction. A 4-frame loop: breathing + hand motion."""
+the pelvis sits on the cushion with the thighs pointing along the facing direction. A 4-frame loop: breathing + hand motion.
+Occlusion by the chair is baked in (human_render.chair_holdout); the 3D pose clears the backrest and armrests, the
+buttocks press ~0.035 into the 0.07 cushion."""
 import math
 from mathutils import Matrix, Vector
 
