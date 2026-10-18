@@ -41,3 +41,28 @@ describe('livery plan', () => {
     expect(SCHEME_NAMES).toContain(liveryFor('hostile', 'Raider').scheme);
   });
 });
+
+describe('roof coverage', () => {
+  it('covers the interior, partitions, the far hull and engine hull rows, not the near hull', async () => {
+    const { roofCovers } = await import('./roofArt');
+    const { Struct } = await import('../sim/structure');
+    const W = Struct.Wall;
+    const F = Struct.Floor;
+    const S = Struct.Space;
+    const rows = [
+      [S, S, S, S, S],
+      [S, W, W, W, S],
+      [S, W, F, W, S],
+      [S, W, W, W, S],
+      [S, S, S, S, S],
+    ];
+    const k = (x: number, y: number) => rows[y]?.[x] ?? S;
+    expect(roofCovers(k, 2, 2)).toBe(true);
+    expect(roofCovers(k, 2, 1)).toBe(true); // far (north) hull
+    expect(roofCovers(k, 1, 2)).toBe(true); // far (west) hull
+    expect(roofCovers(k, 2, 3)).toBe(false); // near (south) hull
+    expect(roofCovers(k, 3, 2)).toBe(false); // near (east) hull
+    expect(roofCovers(k, 3, 2, true)).toBe(true); // an engine's hull row
+    expect(roofCovers(k, 0, 0)).toBe(false);
+  });
+});

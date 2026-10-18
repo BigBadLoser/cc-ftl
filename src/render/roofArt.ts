@@ -3,6 +3,8 @@
  * tools/blender/sprites/roof_layout.py (module rule), roof_variants.py (patch and inset plates) and roof_livery.py
  * (livery plan and schemes); the sprite ids are listed in roofs.py (production set).
  */
+import { Struct } from '../sim/structure';
+import { outward, touchesSpace, type KindAt } from './tiles';
 
 /** Python's roof_layout._h: a 32-bit multiplicative hash of small ints. */
 export function rhash(...v: number[]): number {
@@ -224,3 +226,20 @@ export function liveryPlan(width: number, height: number, solid: (x: number, y: 
 export function roofGradient(x: number, y: number, width: number, height: number): number {
   return 0.93 + (0.13 * (y - x + width)) / (width + height);
 }
+
+/**
+ * Tiles the roof plating covers on a roofed ship, so its top is flush with the hull top (2.05) everywhere:
+ *  - interior tiles and partitions (the slab sits on the walls);
+ *  - the far hull (no space at +x / +y): its top strip stands at the tile's far edge, so without plating its skirt
+ *    and inner face would show between the hull top and the roof (a raised lip, the ship reads as a bowl);
+ *  - an engine's hull row: the slab sits on the 1.85 bulkhead like on a wall, closing the gap above it.
+ * The near hull (facing the camera) is not covered: its strip already meets the roof at the tile's far edge and its
+ * outer face is the visible hull side.
+ */
+export function roofCovers(kindAt: KindAt, x: number, y: number, engineHull = false): boolean {
+  const k = kindAt(x, y);
+  if (k === Struct.Floor || k === Struct.Door) return true;
+  if (k !== Struct.Wall) return false;
+  return engineHull || !touchesSpace(kindAt, x, y) || outward(kindAt, x, y) === 0;
+}
+
