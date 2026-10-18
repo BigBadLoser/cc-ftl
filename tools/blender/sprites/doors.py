@@ -1,77 +1,83 @@
-"""Door sprites: a deep recessed portal cut into the wall wedge (grid frame, origin = tile centre at floor level).
+"""Door sprites: a framed portal set INTO the vertical wall face (grid frame, origin = tile centre at floor level).
 
-The door is the wall profile itself (walls.cells, mask 10 for a door along x, 5 along y) in a strong door colour: the
-jambs and the heavy lintel are the sloped wall faces with seams and trim, the yellow indicator sits on the lintel, and
-the opening is a tunnel through the slope with the grey door leaf standing in a vertical plane level with the slope at
-the lintel's underside, so it is recessed deepest at the floor (the reveal shows the depth). Hazard strips on the leaf
-foot and on the threshold. `low` is the short cutaway variant (a 1.3 high wedge among the 0.38 low walls)."""
+The wall piece itself (walls.emit, mask 10 for a door along x, 5 along y) with the skirt and face left out across the door
+span. In that gap stands a dusty-rose frame block with chamfered upper corners, a dark recessed doorway (reveals show the
+depth) with a red light, a yellow light strip above it, and a hazard threshold. The full door is clearly shorter than the
+wall; the cutaway door is a short frame that rises above the low stub (`tile.door.low.*`)."""
 from . import core
-from .walls import HF, GN, R, T, _grad, cells
+from .walls import GN, emit, profile
 
-DX = 0.28                        # opening half-width (jambs 0.22 wide)
-OPEN_FULL, TOP_FULL = 2.0, HF    # opening height / frame top, full variant
-OPEN_LOW, TOP_LOW = 0.95, 1.3    # cutaway variant
+DXF = 0.38                       # frame half-width (jambs 0.12 wide)
+DXO = 0.26                       # opening half-width
+CHF = 0.14                       # chamfer of the frame's upper corners
+FULL = dict(zo=1.9, zf=2.15)     # opening height, frame top
+LOW = dict(zo=0.78, zf=1.05)
+DEP = 0.16                       # recess depth
 
 
 def door(axis="x", is_open=False, low=False):
-    zo, top = (OPEN_LOW, TOP_LOW) if low else (OPEN_FULL, TOP_FULL)
+    zo, zf = (LOW if low else FULL)["zo"], (LOW if low else FULL)["zf"]
     m = core.Mesh(f"door_{'low_' if low else ''}{axis}", flat=True)
     mask = 10 if axis == "x" else 5
-    lit = axis == "x"                                      # the slope faces +y (lit) for x doors, +x (shade) for y doors
-    body, hi, lo = ("drM", "drL", "drD") if lit else ("drD", "drM", "drK")
-    ys = 0.5 - R * zo / top                                # slope position at the lintel underside = leaf plane
+    lit = axis == "x"
+    L, M, D, K = "drL", "drM", "drD", "drK"
+    body, hi, lo = (M, L, D) if lit else (D, M, K)
+    tw, top, zs = profile("wall", not low)
+    yf = -0.5 + tw                                         # wall face plane
 
-    def G(a, b, z):                                        # a: along the wall, b: across (toward +camera)
+    def G(a, b, z):                                        # a along the wall, b across (toward the camera)
         return core.G(a, b, z) if axis == "x" else core.G(b, a, z)
 
-    for kind, i, j, pts in cells(mask, top):
-        along = [p[0] if axis == "x" else p[1] for p in pts]
-        zs = [p[2] for p in pts]
-        um, zm = sum(along) / len(along), sum(zs) / len(zs)
-        if kind == "flat":
-            if zs[0] > top - 1e-9:
-                m.poly([core.G(*p) for p in pts], hi)
-            continue
-        if abs(um) < DX and max(zs) <= zo + 1e-6:
-            continue                                       # the tunnel
-        gx, gy = _grad(pts)
-        f = zm / top
-        edge = abs(abs(um) - DX) < 1.6 / GN and zm <= zo + 0.02
-        col = body
-        if abs(um) > 0.5 - 1.0 / GN or edge or (abs(um) < DX and zm < zo + 0.05):
-            col = lo                                       # tile seam, opening trim, lintel underside
-        elif f > 0.95:
-            col = hi
-        elif any(abs(zm - g) < 0.03 for g in ((0.7, 1.4) if not low else (0.5,))):
-            col = lo                                       # panel grooves
-        elif abs(um) < DX - 0.07 and zo + (top - zo) * 0.3 < zm < zo + (top - zo) * 0.65:
-            col = "flameY"                                 # yellow indicator on the lintel
-        m.poly([core.G(*p) for p in pts], col)
+    emit(m, mask, "wall", 0, not low, skip=(axis, DXF, zf))
 
-    # reveal: the inner side of the near jamb, a triangle from the floor up to the lintel (lit face of the x door)
-    a = -DX
-    m.poly([G(a, ys, 0.0), G(a, 0.5, 0.0), G(a, ys, zo)], "drD" if lit else "drM")
-    # door leaf in the recess
-    nu, nz = 16, max(4, int(round(zo * 12)))
+    # the skirt's cut edge against the near jamb (+u face), a triangle on the floor
+    m.poly([G(-DXF, 0.5, 0.0), G(-DXF, yf, 0.0), G(-DXF, yf, zs)], lo)
+    # frame block: front face with chamfered upper corners, top and the chamfer
+    nu, nz = 24, max(6, int(round(zf * 14)))
+    yp = yf + 0.02
     for jj in range(nz):
         for ii in range(nu):
-            u0, u1 = -DX + 2 * DX * ii / nu, -DX + 2 * DX * (ii + 1) / nu
-            z0, z1 = zo * jj / nz, zo * (jj + 1) / nz
+            u0, u1 = -DXF + 2 * DXF * ii / nu, -DXF + 2 * DXF * (ii + 1) / nu
+            z0, z1 = zf * jj / nz, zf * (jj + 1) / nz
+            um, zm = (u0 + u1) / 2, (z0 + z1) / 2
+            if zm > zf - CHF and (abs(um) - (DXF - CHF)) + (zm - (zf - CHF)) > CHF:
+                continue                                    # chamfered corner
+            if abs(um) < DXO and zm < zo:
+                continue                                    # the doorway
+            if abs(um) > DXF - 0.04 or zm > zf - 0.04:
+                col = hi                                    # edge trim
+            elif abs(um) < DXO - 0.04 and zo + 0.35 * (zf - zo) < zm < zo + 0.7 * (zf - zo):
+                col = "flameY"                              # yellow light strip above the doorway
+            elif abs(abs(um) - DXO) < 0.04 and zm < zo + 0.04:
+                col = lo                                    # doorway trim
+            else:
+                col = body
+            m.poly([G(u0, yp, z0), G(u1, yp, z0), G(u1, yp, z1), G(u0, yp, z1)], col)
+    m.poly([G(-DXF + CHF, yp, zf), G(DXF - CHF, yp, zf), G(DXF - CHF, yp - tw, zf), G(-DXF + CHF, yp - tw, zf)], hi)
+    m.poly([G(DXF - CHF, yp, zf), G(DXF, yp, zf - CHF), G(DXF, yp - tw, zf - CHF), G(DXF - CHF, yp - tw, zf)], hi)
+    if low:                                                # the frame's end above the short stub
+        m.poly([G(DXF, yp, top), G(DXF, yp - tw, top), G(DXF, yp - tw, zf - CHF), G(DXF, yp, zf - CHF)], lo)
+    # doorway: reveal (near jamb side), dark recess with red light, hazard threshold
+    yr = yp - DEP
+    m.poly([G(-DXO, yp, 0.0), G(-DXO, yr, 0.0), G(-DXO, yr, zo), G(-DXO, yp, zo)], lo)
+    nuo, nzo = 12, max(4, int(round(zo * 10)))
+    for jj in range(nzo):
+        for ii in range(nuo):
+            u0, u1 = -DXO + 2 * DXO * ii / nuo, -DXO + 2 * DXO * (ii + 1) / nuo
+            z0, z1 = zo * jj / nzo, zo * (jj + 1) / nzo
             if is_open:
-                col = "drK"
+                col = K
             elif jj < 2:
                 col = "hazY" if (ii + jj) % 2 == 0 else "hazK"
-            elif ii in (nu // 2 - 1, nu // 2) or jj == nz - 1:
+            elif nuo // 2 - 1 <= ii <= nuo // 2 and jj in (int(nzo * 0.55), int(nzo * 0.55) + 1):
+                col = "red"
+            elif ii in (nuo // 2 - 1, nuo // 2) or jj == nzo - 1:
                 col = "steelD"
             else:
-                col = "steelL" if lit else "steel"
-            m.poly([G(u0, ys, z0), G(u1, ys, z0), G(u1, ys, z1), G(u0, ys, z1)], col)
-    if is_open:                                            # retracted leaf slivers in the jambs
-        for ua, ub in ((-DX, -DX + 0.07), (DX - 0.07, DX)):
-            m.poly([G(ua, ys + 0.01, 0.0), G(ub, ys + 0.01, 0.0), G(ub, ys + 0.01, zo), G(ua, ys + 0.01, zo)], "steelL")
-    # threshold plate with hazard stripes in front of the opening
-    for ii in range(2 * int(DX * GN)):
-        u0, u1 = -DX + ii / GN, -DX + (ii + 1) / GN
-        m.poly([G(u0, ys, 0.015), G(u1, ys, 0.015), G(u1, 0.5, 0.015), G(u0, 0.5, 0.015)],
+                col = "dark"
+            m.poly([G(u0, yr, z0), G(u1, yr, z0), G(u1, yr, z1), G(u0, yr, z1)], col)
+    for ii in range(2 * int(DXO * GN)):                     # threshold plate in front of the doorway
+        u0, u1 = -DXO + ii / GN, -DXO + (ii + 1) / GN
+        m.poly([G(u0, yr, 0.015), G(u1, yr, 0.015), G(u1, 0.5, 0.015), G(u0, 0.5, 0.015)],
                "hazY" if (ii // 2) % 2 == 0 else "hazK")
     return [m.build()]

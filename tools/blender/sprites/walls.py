@@ -1,14 +1,14 @@
 """Wall and hull blocks (grid frame, origin = tile centre at floor level).
 
-ASYMMETRIC profile (as in Space Haven): the base fills the whole tile, the flat top is a thin strip T wide along the
-tile's far edges (-x, -y: away from the camera, which sees +x, +y and the tops) and the slope ALWAYS faces the camera,
-falling from the top strip to the floor at the near (+x / +y) tile edge. The back side is vertical (never seen, so not
-drawn). The top strip (core) is the corner square plus an arm to the +x edge (bit 2 = E) and one to the +y edge (bit 4 =
-S); neighbours' arms and squares meet at the shared tile edges, so every mask autotiles: runs are plain wedges, run ends
-taper with a slope facing +x/+y, corners and T junctions are mitred (hips/valleys, L-inf distance to the core). The slope
-rises to H (cutaway), HH (low hull) or HF (full height). Hull pieces add colour-blocked plating (variant 0/1 swaps the
-ochre and blue-grey bands; the renderer alternates them). Hazard strips for hull slopes are overlay sprites. Ghosts:
-ghosts.py, doors: doors.py, floors: floors.py, registry: envtiles.py."""
+Profile (after Space Haven): a thin VERTICAL wall with a flat cap stands on a low sloped SKIRT. The wall occupies a
+strip `tw` wide along the tile's far edges (-x, -y: away from the camera, which sees +x, +y and the tops); the skirt
+spreads from the wall's foot across the rest of the tile on the camera-facing side, falling from zs to the floor at the
+near edge. Only the skirt is sloped; above it the face is flat and vertical. The strip (core) is the corner square plus an
+arm to the +x edge (bit 2 = E) and one to the +y edge (bit 4 = S), so neighbouring tiles join at the shared edges: runs
+are plain, run ends and corners are mitred in the skirt (L-inf distance to the core). Full pieces rise to HF, cutaway
+pieces are a short stub (H interior, HH hull) on a lower skirt. Hull is chunkier (thicker, taller stub), colour-blocked
+ochre / blue-grey (variant 0/1 swaps them) and its outer corners and run ends are chamfered at 45 degrees. Hazard strips
+for hull skirts are overlay sprites. Ghosts: ghosts.py, doors: doors.py, floors: floors.py, registry: envtiles.py."""
 from . import core
 
 
@@ -16,28 +16,33 @@ def lerp(a, b, t):
     return a + (b - a) * t
 
 
-H = 0.38           # low (cutaway) interior wall height (tiles)
-HH = 0.55          # low (cutaway) hull height: chunkier than interior walls
-HF = 2.4           # full-height wall top (tiles); crew are 1.5 tall (human_base.HEIGHT_UNITS)
-T = 5 / 32         # flat top strip width (on the 1/32 grid so the mitre creases follow cell diagonals)
-WT = T             # legacy name
-NU, NT = 32, 16
 GN = 32
-R = 1.0 - T        # slope run (horizontal)
-DIRS = ("n", "e", "s", "w")
+NU, NT = 32, 16
+H = 0.45           # cutaway interior wall stub height (tiles)
+HH = 0.7           # cutaway hull stub height
+HF = 2.4           # full-height wall top; crew are 1.5 tall (human_base.HEIGHT_UNITS)
+T = TW = 11 / 32   # interior wall thickness (on the 1/32 grid so mitre creases follow cell diagonals)
+TWH = 16 / 32      # hull thickness
+CH = 5 / 32        # hull corner chamfer
 BIT = {"n": 1, "e": 2, "s": 4, "w": 8}
+DIRS = ("n", "e", "s", "w")
 
-# family -> palette names: L highlight, M body (lit +y face), D shade body (+x face), K darkest; top: flat strip
-PAL = {
+PAL = {   # L highlight, M body (lit +y face), D shade body (+x face), K darkest
     "wall": dict(L="wallL", M="wallM", D="wallD", K="wallK", top="wallL"),
     "hull": dict(L="ochL", M="ochM", D="ochD", K="ochK", top="ochL",
                  L2="hbL", M2="hbM", D2="hbD", K2="hbK", top2="hbL"),
 }
 
 
-def core_rects(mask):
-    """Flat-top rectangles (x0, x1, y0, y1): corner square plus arms toward connected +x / +y sides."""
-    x1, y1 = -0.5 + T, -0.5 + T
+def profile(fam, full):
+    """(wall thickness, wall top z, skirt top z) for a family and mode."""
+    if fam == "hull":
+        return (TWH, HF, 0.55) if full else (TWH, HH, 0.28)
+    return (TW, HF, 0.5) if full else (TW, H, 0.18)
+
+
+def core_rects(mask, tw=TW):
+    x1 = y1 = -0.5 + tw
     rs = [(-0.5, x1, -0.5, y1)]
     if mask & 2:
         rs.append((x1, 0.5, -0.5, y1))
@@ -46,28 +51,26 @@ def core_rects(mask):
     return rs
 
 
-def height(mask, x, y, top):
-    """Piecewise-linear heightfield: L-inf distance to the core (mitred hips and valleys)."""
+def height(mask, x, y, zs, tw=TW):
+    """Skirt heightfield: zs at the core, falling linearly to 0 at L-inf distance 1 - tw (mitred hips and valleys)."""
     d = 1e9
-    for x0, x1, y0, y1 in core_rects(mask):
+    for x0, x1, y0, y1 in core_rects(mask, tw):
         d = min(d, max(x0 - x, x - x1, y0 - y, y - y1, 0.0))
-    return top * max(0.0, 1.0 - d / R)
+    return zs * max(0.0, 1.0 - d / (1.0 - tw))
 
 
-def in_core(mask, cx, cy, e=0.0):
-    """Is the point inside the core (flat top) footprint, optionally grown by e?"""
-    return any(x0 - e < cx < x1 + e and y0 - e < cy < y1 + e for x0, x1, y0, y1 in core_rects(mask))
+def in_core(mask, cx, cy, e=0.0, tw=TW):
+    return any(x0 - e < cx < x1 + e and y0 - e < cy < y1 + e for x0, x1, y0, y1 in core_rects(mask, tw))
 
 
-def cells(mask, top):
-    """Yield (kind, i, j, pts) for the 32x32 cells: 'flat' (4 points at z = top or 0) or 'tri' (3 points, sloped).
-    Creases lie on the cell diagonals (x - y = const through grid corners), so every cell splits along the main one."""
+def cells(mask, zs, tw=TW):
+    """Yield (kind, i, j, pts) for the 32x32 cells: 'flat' (4 points, at zs = core or 0) or 'tri' (skirt, 3 points)."""
     for j in range(GN):
         for i in range(GN):
             x0, y0 = i / GN - 0.5, j / GN - 0.5
             x1, y1 = x0 + 1 / GN, y0 + 1 / GN
             p = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-            z = [height(mask, px, py, top) for px, py in p]
+            z = [height(mask, px, py, zs, tw) for px, py in p]
             q = [(px, py, zz) for (px, py), zz in zip(p, z)]
             if max(z) - min(z) < 1e-9:
                 yield "flat", i, j, q
@@ -93,60 +96,104 @@ def _pal(fam, variant):
                 tL=c.get("L2"), tM=c.get("M2"), tD=c.get("D2"), tK=c.get("K2"))
 
 
-def _face_col(c, fam, lit, u, f):
-    """Colour of a slope cell: u 0..1 along the wall, f 0..1 up the slope."""
-    body, hi, lo = (c["M"], c["L"], c["D"]) if lit else (c["D"], c["M"], c["K"])
-    seam_u = u < 1 / 32 or abs(u - 0.5) < 0.5 / 32
+def _skirt_col(c, fam, lit):
     if fam == "hull":
-        tb, tlo = (c["tM"], c["tD"]) if lit else (c["tD"], c["tK"])
-        if f < 0.04:
+        return c["tM"] if lit else c["tD"]               # the skirt carries the contrasting colour block
+    return c["L"] if lit else c["M"]
+
+
+def _wall_col(c, fam, lit, u, z, top, zs):
+    """Colour of the vertical face at along-wall position u (0..1) and height z."""
+    body, hi, lo = (c["M"], c["L"], c["D"]) if lit else (c["D"], c["M"], c["K"])
+    seam = u < 1 / 32 or abs(u - 0.5) < 0.5 / 32
+    if z < zs + 0.03:
+        return lo                                        # crease where the wall meets the skirt
+    if z > top - 0.03:
+        return hi                                        # cap edge highlight
+    if fam == "hull":
+        tb = c["tM"] if lit else c["tD"]
+        if z > top - 0.22 or z < zs + 0.2:
+            return tb                                    # colour-blocked bands
+        if seam or abs(z - (zs + top) / 2) < 0.015:
             return lo
-        if f < 0.14:                                         # colour-blocked foot band
-            return tb
-        if f > 0.93:
-            return hi
-        if f > 0.84:
-            return tb
-        if seam_u or abs(f - 0.50) < 0.012:
-            return lo
-        if f > 0.50 and (u % 0.5) < 0.04:                    # plate step on the upper panel
-            return hi
         return body
-    if f < 0.035:
+    if seam:
         return lo
-    if f > 0.955:
-        return hi
-    if seam_u or abs(f - 0.34) < 0.014 or abs(f - 0.66) < 0.014:
-        return lo
-    if f > 0.66:
-        return hi if lit else body
+    if top > 1.0 and any(abs(z - g) < 0.02 for g in (1.05, 1.7)):
+        return lo                                        # horizontal panel bands
+    if z > top - (0.3 if top > 1.0 else 0.1):
+        return hi if lit else body                       # lighter tone band near the top
     return body
 
 
-def _slope_col(c, fam, t, top):
-    gx, gy = _grad(t)
-    eps = 1e-6
-    cxm, cym = sum(p[0] for p in t) / 3, sum(p[1] for p in t) / 3
-    f = min(max(sum(p[2] for p in t) / 3 / top, 0.0), 1.0)
-    if gy < -eps and abs(gx) < eps:                        # +y slope (lit)
-        return _face_col(c, fam, True, cxm + 0.5, f)
-    if gx < -eps and abs(gy) < eps:                        # +x slope (shaded)
-        return _face_col(c, fam, False, cym + 0.5, f)
-    return c["D"] if fam == "wall" else c["K"]             # mitre hips and valleys
+def emit(m, mask, fam, variant, full, skip=None):
+    """Add the wall piece to mesh m. skip = (axis, half_width, z_top): leave the skirt and face free for a door."""
+    tw, top, zs = profile(fam, full)
+    c = _pal(fam, variant)
+    nz = max(2, int(round((top - zs) * 20)))
+    xa, ya = -0.5 + tw, -0.5 + tw
+    cham = fam == "hull" and not mask & 6                # outer corner / run end: chamfer the (+x, +y) corner of the strip
+    in_cham = lambda cx, cy: cham and (cx - (xa - CH)) + (cy - (ya - CH)) > CH  # noqa: E731
+    skipped = lambda cx, cy: skip is not None and abs(cx if skip[0] == "x" else cy) < skip[1]  # noqa: E731
+
+    for kind, i, j, pts in cells(mask, zs, tw):
+        cx = sum(p[0] for p in pts) / len(pts)
+        cy = sum(p[1] for p in pts) / len(pts)
+        if kind == "flat":
+            if pts[0][2] > zs - 1e-9 and not in_cham(cx, cy):
+                m.poly([core.G(x, y, top) for x, y, z in pts], c["top"])
+            elif pts[0][2] > zs - 1e-9:
+                m.poly([core.G(*p) for p in pts], _skirt_col(c, fam, True))
+            continue
+        if skipped(cx, cy):
+            continue
+        gx, gy = _grad(pts)
+        if gy < -1e-6 and abs(gx) < 1e-6:
+            col = _skirt_col(c, fam, True)
+        elif gx < -1e-6 and abs(gy) < 1e-6:
+            col = _skirt_col(c, fam, False)
+        else:
+            col = c["K"] if fam == "hull" else c["D"]
+        m.poly([core.G(*p) for p in pts], col)
+
+    for j in range(GN):                                  # vertical faces on the camera-facing boundary of the core
+        for i in range(GN):
+            cx, cy = (i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5
+            if not in_core(mask, cx, cy, 0.0, tw):
+                continue
+            x0, y0 = i / GN - 0.5, j / GN - 0.5
+            x1, y1 = x0 + 1 / GN, y0 + 1 / GN
+            for lit in (True, False):
+                if lit:
+                    if j == GN - 1 or in_core(mask, cx, cy + 1 / GN, 0.0, tw) or (cham and cx > xa - CH):
+                        continue
+                else:
+                    if i == GN - 1 or in_core(mask, cx + 1 / GN, cy, 0.0, tw) or (cham and cy > ya - CH):
+                        continue
+                if skipped(cx, cy):
+                    continue
+                u = cx + 0.5 if lit else cy + 0.5
+                for k in range(nz):
+                    za, zb = zs + (top - zs) * k / nz, zs + (top - zs) * (k + 1) / nz
+                    col = _wall_col(c, fam, lit, u, (za + zb) / 2, top, zs)
+                    if lit:
+                        m.poly([core.G(x0, y1, za), core.G(x1, y1, za), core.G(x1, y1, zb), core.G(x0, y1, zb)], col)
+                    else:
+                        m.poly([core.G(x1, y0, za), core.G(x1, y1, za), core.G(x1, y1, zb), core.G(x1, y0, zb)], col)
+    if cham:                                             # 45 degree corner face
+        for k in range(nz):
+            za, zb = zs + (top - zs) * k / nz, zs + (top - zs) * (k + 1) / nz
+            col = _wall_col(c, fam, True, 0.5, (za + zb) / 2, top, zs)
+            for q in range(5):
+                t0, t1 = q / 5 * CH, (q + 1) / 5 * CH
+                m.poly([core.G(xa - CH + t0, ya - t0, za), core.G(xa - CH + t1, ya - t1, za),
+                        core.G(xa - CH + t1, ya - t1, zb), core.G(xa - CH + t0, ya - t0, zb)], col)
 
 
 def block(mask, fam, deco=None, name=None, full=False):
     """deco: colour variant (hull: 1 swaps the ochre / blue-grey bands)."""
-    variant = 1 if deco == 1 else 0
     m = core.Mesh(name or f"wall_{fam}_{mask}", flat=True)
-    c = _pal(fam, variant)
-    top = HF if full else (HH if fam == "hull" else H)
-    for kind, i, j, pts in cells(mask, top):
-        if kind == "flat":
-            if pts[0][2] > top - 1e-9:
-                m.poly([core.G(*p) for p in pts], c["top"])
-            continue
-        m.poly([core.G(*p) for p in pts], _slope_col(c, fam, pts, top))
+    emit(m, mask, fam, 1 if deco == 1 else 0, full)
     return [m.build()]
 
 
@@ -158,12 +205,12 @@ def hazard(side, bits):
         mask = (8 if bits & 1 else 0) | (2 if bits & 2 else 0) | 1
     else:
         mask = (1 if bits & 1 else 0) | (4 if bits & 2 else 0) | 8
-    for kind, i, j, pts in cells(mask, HH):
+    for kind, i, j, pts in cells(mask, profile("hull", False)[2], TWH):
         if kind != "tri":
             continue
         gx, gy = _grad(pts)
         pure = (side == "s" and gy < -1e-6 and abs(gx) < 1e-6) or (side == "e" and gx < -1e-6 and abs(gy) < 1e-6)
-        if pure and max(p[2] for p in pts) <= HH * 3 / NT + 1e-9:
+        if pure and max(p[2] for p in pts) <= profile("hull", False)[2] * 3 / NT + 1e-9:
             xs = i if side == "s" else j
             m.poly([core.G(x, y, z + 0.002) for x, y, z in pts], "hazY" if (xs // 2) % 2 == 0 else "hazK")
     return [m.build()]
