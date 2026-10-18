@@ -140,7 +140,8 @@ export function summary(g: GenResult, seed: number): string {
 }
 
 /** A contact sheet of seeds [from, from + count) for one faction at one depth. */
-export function contactSheet(faction: string, from: number, count: number, depth: number, s = 10): { raster: Raster; text: string } {
+export function contactSheet(faction: string, from: number, count: number, depth: number, s = 10, maxWidth = 1800): { raster: Raster; text: string } {
+  const ts = s >= 12 ? 2 : 1;
   const errors: string[] = [];
   const ships = Array.from({ length: count }, (_, i) => {
     try {
@@ -152,8 +153,8 @@ export function contactSheet(faction: string, from: number, count: number, depth
   }).filter((x): x is { seed: number; g: GenResult } => x !== null);
   if (ships.length === 0) return { raster: new Raster(200, 20), text: errors.join('\n') };
   const cellW = Math.max(...ships.map((x) => x.g.width)) * s + 16;
-  const cellH = Math.max(...ships.map((x) => x.g.height)) * s + 34;
-  const cols = Math.min(count, Math.max(1, Math.floor(1800 / cellW)));
+  const cellH = Math.max(...ships.map((x) => x.g.height)) * s + 18 * ts + 16;
+  const cols = Math.min(count, Math.max(1, Math.floor(maxWidth / cellW)));
   const rowsN = Math.ceil(count / cols);
   const r = new Raster(cols * cellW + 8, rowsN * cellH + 30);
   r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1}`, 8, 8, [230, 230, 230], 2);
@@ -161,9 +162,9 @@ export function contactSheet(faction: string, from: number, count: number, depth
   ships.forEach(({ seed, g }, i) => {
     const ox = 8 + (i % cols) * cellW;
     const oy = 30 + Math.floor(i / cols) * cellH;
-    r.text(`#${seed} ${g.role} / ${g.archetype} ${g.width}X${g.height}${g.problems.length ? ' BAD' : ''}`, ox, oy, g.problems.length ? [255, 80, 80] : [220, 220, 220]);
-    r.text(g.topology, ox, oy + 8, [150, 170, 200]);
-    drawShip(r, g, ox, oy + 18, s);
+    r.text(`#${seed} ${g.role} / ${g.archetype} ${g.width}X${g.height}${g.problems.length ? ' BAD' : ''}`, ox, oy, g.problems.length ? [255, 80, 80] : [220, 220, 220], ts);
+    r.text(g.topology, ox, oy + 7 * ts, [150, 170, 200], ts);
+    drawShip(r, g, ox, oy + 14 * ts + 4, s);
     text.push(summary(g, seed), ascii(g), '');
   });
   return { raster: r, text: [...errors, ...text].join('\n') };

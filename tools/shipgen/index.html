@@ -5,22 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Shipgen viewer</title>
   <style>
-    body { margin: 0; padding: 12px; background: #101218; color: #ccd; font: 13px monospace; }
-    label { margin-right: 10px; }
+    body { margin: 0; padding: 12px 16px; background: #101218; color: #ccd; font: 14px monospace; }
+    .bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+    input, select, button { font: inherit; padding: 6px 8px; background: #1c1f28; color: #dde; border: 1px solid #3a3f4c; border-radius: 4px; }
     input { width: 5em; }
-    canvas { image-rendering: pixelated; display: block; margin: 10px 0; max-width: 100%; }
-    pre { white-space: pre; overflow-x: auto; }
+    button { padding: 8px 16px; }
+    .wrap { overflow-x: auto; margin: 12px 0; }
+    canvas { image-rendering: pixelated; display: block; }
+    pre { white-space: pre; overflow-x: auto; font-size: 11px; }
   </style>
 </head>
 <body>
-  <div>
+  <div class="bar">
     <label>Faction <select id="faction"></select></label>
-    <label>Depth <input id="depth" type="number" min="0" value="2" /></label>
+    <label>Depth <input id="depth" type="number" min="0" max="12" value="4" /></label>
     <label>Seed <input id="seed" type="number" value="1" /></label>
-    <label>Count <input id="count" type="number" min="1" value="6" /></label>
+    <label>Count <input id="count" type="number" min="1" max="24" value="1" /></label>
+    <label>Zoom <select id="zoom"><option value="fit">fit</option><option value="6">6</option><option value="10">10</option><option value="16">16</option></select></label>
+    <button id="prev">&lt;</button>
     <button id="reroll">Reroll</button>
+    <button id="next">&gt;</button>
   </div>
-  <canvas id="sheet"></canvas>
+  <div class="wrap"><canvas id="sheet"></canvas></div>
   <pre id="text"></pre>
   <script type="module" src="./live.ts"></script>
 </body>
