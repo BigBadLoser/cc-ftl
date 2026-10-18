@@ -3,7 +3,7 @@ import { Struct } from "../sim/structure";
 export type KindAt = (x: number, y: number) => number;
 /** One sprite to draw: the first existing asset id of the chain. */
 export type Chain = string[];
-/** Wall height mode: auto/down = low cutaway blocks, up = full-height walls. Exterior front hull is a ghost in all. */
+/** Wall height mode: auto/down = low cutaway blocks, up = full-height walls. Exterior front hull is a ghost only in up mode. */
 export type CutawayMode = "auto" | "up" | "down";
 
 const solidish = (k: number) => k === Struct.Wall || k === Struct.Door;
@@ -69,11 +69,15 @@ export function wallPieces(
   const hull = touchesSpace(kindAt, x, y);
   const spaceS = kindAt(x, y + 1) === Struct.Space;
   const spaceE = kindAt(x + 1, y) === Struct.Space;
-  if (hull && ghosts && (spaceS || spaceE))
+  if (hull && ghosts && mode === "up" && (spaceS || spaceE))
     return [{ chain: [`tile.hull.ghost.m${mask}`], order: 0 }];
   const fam = hull ? "hull" : "wall";
   const id = `tile.${fam}.m${mask}`;
-  const chain: Chain = mode === "up" ? [`tile.${fam}.full.m${mask}`, id] : [id];
+  // Hull plating alternates two colour-blocked variants along a run.
+  const v = hull && (x + y) % 2 !== 0 ? ".v1" : "";
+  const full = `tile.${fam}.full.m${mask}`;
+  const chain: Chain =
+    mode === "up" ? [full + v, full, id + v, id] : [id + v, id];
   const out: Piece[] = [{ chain, order: 0 }];
   if (hull) {
     if (!(mask & 4) && spaceS)

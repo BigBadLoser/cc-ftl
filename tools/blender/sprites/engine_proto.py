@@ -23,9 +23,9 @@ UH = 2.0                                         # hull row centre (u)
 def bulkhead(g, full=True):
     """Engine bulkhead on the hull row, wrapping ONE big bell: a heavy slab across the whole hull side, armoured pylons
     at the ends (clear of the bell's mount collar), ribbed plating, the bell-mount collar with bolts and a flush end
-    cheek. Full mode rises above wall height (3.0); cut mode stays low but keeps the layout. Real wall tiles run
+    cheek. Full mode rises above wall height (2.4); cut mode stays low but keeps the layout. Real wall tiles run
     underneath, so the ends (v = +-2) butt into neighbouring walls with the wall profile."""
-    hs, hp = (3.25, 3.85) if full else (0.58, 0.9)
+    hs, hp = (2.65, 3.25) if full else (0.58, 0.9)
     _g("bulkhead")
     g.box(2.02, 0, 0, 0.96, 3.9, hs, "steel", top="plate")
     D.trim(g, 2.02, 0, hs, 0.96, 3.9, "plate")
@@ -37,7 +37,7 @@ def bulkhead(g, full=True):
     for vv in (-1.9, -1.45, 1.45, 1.9):                                         # ribbed seams on the outer face
         g.box(2.53, vv, 0.05, 0.07, 0.1, hs - 0.1, "plate")
     for sv in (-1, 1):
-        for zz in ((0.45, 0.95, 1.45, 1.95, 2.45, 2.95) if full else (0.3,)):
+        for zz in ((0.45, 0.95, 1.45, 1.95, 2.45) if full else (0.3,)):
             g.box(2.53, sv * 1.68, zz, 0.07, 0.62, 0.08, "steelD")
         for vv in (1.45, 1.9):                                                  # ribs across the slab top, outside the neck
             g.box(2.02, sv * vv, hs, 0.8, 0.07, 0.05, "plate")

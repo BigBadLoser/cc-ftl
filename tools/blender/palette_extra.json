@@ -1,4 +1,58 @@
 {
-  "green": { "hex": "#3df08a", "emissive": 2.5 },
-  "blueN": { "hex": "#4a7dff", "emissive": 2.5 }
+ "green": {
+  "hex": "#3df08a",
+  "emissive": 2.5
+ },
+ "blueN": {
+  "hex": "#4a7dff",
+  "emissive": 2.5
+ },
+ "wallL": {
+  "hex": "#6a8d92"
+ },
+ "wallM": {
+  "hex": "#4e6d72"
+ },
+ "wallD": {
+  "hex": "#385056"
+ },
+ "wallK": {
+  "hex": "#25363b"
+ },
+ "ochL": {
+  "hex": "#c9a24a"
+ },
+ "ochM": {
+  "hex": "#a07d34"
+ },
+ "ochD": {
+  "hex": "#6f5726"
+ },
+ "ochK": {
+  "hex": "#43341a"
+ },
+ "hbL": {
+  "hex": "#6483a0"
+ },
+ "hbM": {
+  "hex": "#4a647f"
+ },
+ "hbD": {
+  "hex": "#33465d"
+ },
+ "hbK": {
+  "hex": "#202d3d"
+ },
+ "drL": {
+  "hex": "#e0787f"
+ },
+ "drM": {
+  "hex": "#b94f59"
+ },
+ "drD": {
+  "hex": "#7d303b"
+ },
+ "drK": {
+  "hex": "#471b24"
+ }
 }

@@ -13,10 +13,10 @@ for _fam, _id in (("wall", "wall"), ("hull", "hull"), ("ghost", "hull.ghost")):
     if _fam != "ghost":
         for _m in range(16):
             SPRITES.append((f"tile.{_id}.full.m{_m}", (1, 1), "block", lambda m=_m, f=_fam: block(m, f, None, None, True)))
-        # decorative straights (indicator screen, vent): kept in the manifest, not picked by the renderer
-        for _m in (5, 10):
-            for _k, _d in enumerate(("screen", "vent"), 1):
-                SPRITES.append((f"tile.{_id}.m{_m}.v{_k}", (1, 1), "block", lambda m=_m, f=_fam, d=_d: block(m, f, d)))
+    if _fam == "hull":                                 # colour-swapped plating variant, alternated by the renderer
+        for _m in range(16):
+            SPRITES.append((f"tile.hull.m{_m}.v1", (1, 1), "block", lambda m=_m: block(m, "hull", 1)))
+            SPRITES.append((f"tile.hull.full.m{_m}.v1", (1, 1), "block", lambda m=_m: block(m, "hull", 1, None, True)))
 for _s in ("s", "e"):
     for _b in range(4):
         SPRITES.append((f"tile.hull.haz.{_s}.{_b}", (1, 1), "block", lambda s=_s, b=_b: hazard(s, b)))

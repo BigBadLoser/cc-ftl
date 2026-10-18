@@ -6,7 +6,7 @@ open side gets a raised rim and a slab edge. `roof.weapon / .shield / .engine` (
 below: a turret ring, an emitter dome, an exhaust vent. `roof.<kind>` alone = the fully connected tile (m15)."""
 from . import core
 
-ZR = 3.0          # plating height: the top of a full-height wall (= walls.HF)
+ZR = 2.4          # plating height: the top of a full-height wall (= walls.HF)
 T = 0.14          # slab thickness shown on open sides
 GN = 32
 BAND = 3          # rim width in cells on open sides

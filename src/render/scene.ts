@@ -109,8 +109,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   }
   resize();
 
-  /** Extra screen height (art px) that full-height walls (about 3 tiles tall) stand above the floor diamond. */
-  const WALL_RISE = 88;
+  /** Extra screen height (art px) that full-height walls (about 2.4 tiles tall) stand above the floor diamond. */
+  const WALL_RISE = 70;
 
   function frame(grid: Grid): void {
     const c = iso(grid.width / 2 - 0.5, grid.height / 2 - 0.5);
