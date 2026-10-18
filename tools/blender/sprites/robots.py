@@ -43,6 +43,33 @@ def _head(rig, hd, c, s, eye_r):
     rig.part(hd, "eye").ball((x, f + s[1] * 1.04, z - s[2] * 0.08), (eye_r, eye_r * 0.5, eye_r), EYE)
 
 
+def _sensor_head(rig, hd, f, z, k):
+    """The shared robot head: a dark wedge sensor head pointing forward, a livery brow plate and one eye, no neck (it
+    sits low between the shoulders). f, z = the wedge centre; k = scale."""
+    rig.part(hd).rbox((0, f, z), (0.15 * k, 0.1 * k, 0.2 * k), "dark", r=0.03 * k, taper=0.7, axis="f")
+    rig.part(hd).rbox((0, f - 0.02 * k, z + 0.045 * k), (0.17 * k, 0.045 * k, 0.2 * k), CLOTH, r=0.02 * k, taper=0.75, axis="f")
+    rig.part(hd, "eye").ball((0, f + 0.105 * k, z - 0.005 * k), (0.03 * k, 0.015 * k, 0.025 * k), EYE)
+
+
+UTIL_BASE, UTIL_EL = (-0.12, -0.17, 1.2), (-0.22, -0.08, 1.55)
+
+
+def _util_arm(rig, t):
+    """The worker's third arm: a slim boom on the back, folded up over its left shoulder with a claw hanging in front
+    (joints util / util_el; the work clip unfolds it)."""
+    u = rig.joint("util", t, UTIL_BASE)
+    ue = rig.joint("util_el", u, UTIL_EL)
+    tip = (-0.28, 0.1, 1.4)
+    _hinge(rig.part(u), UTIL_BASE, 0.045, 0.07)
+    rig.part(u).plate(UTIL_BASE, UTIL_EL, 0.075, 0.08, MID, taper=0.85, r=0.02)
+    rig.part(u).plate((-0.14, -0.15, 1.28), (-0.2, -0.1, 1.48), 0.09, 0.05, CLOTH, taper=0.8, r=0.015)
+    _hinge(rig.part(ue), UTIL_EL, 0.05, 0.085)
+    rig.part(ue).plate(UTIL_EL, tip, 0.065, 0.07, MID, taper=0.85, r=0.02)
+    rig.part(ue).rbox(tip, (0.07, 0.07, 0.05), FRAME, r=0.015)                           # wrist
+    for df in (-0.025, 0.025):                                                           # claw
+        rig.part(ue).rbox((tip[0], tip[1] + df, tip[2] - 0.06), (0.045, 0.03, 0.08), FRAME_L, r=0.01, taper=0.7)
+
+
 def worker():
     """Worker: an armoured humanoid. Angular helmet with a visor slit over a dark jaw, broad chest plate over an exposed
     ribbed abdomen, armoured hip skirt, big thigh and shin plates, chunky forearms, and dark hinge discs standing out at
@@ -51,7 +78,7 @@ def worker():
     rig.kind = "biped"
     b = rig.joint("body", "root", (0, 0, 0.78))
     t = rig.joint("torso", b, (0, 0, 0.88))
-    hd = rig.joint("head", t, (0, 0, 1.31))
+    hd = rig.joint("head", t, (0, 0.02, 1.27))
     for side, x in (("R", 0.11), ("L", -0.11)):
         sx = 1 if x > 0 else -1
         hp, kn, an = (x, 0, 0.75), (x, 0.01, 0.42), (x, 0, 0.09)
@@ -88,12 +115,10 @@ def worker():
     rig.part(t).rbox((0, 0.005, 1.165), (0.37, 0.23, 0.18), CLOTH, r=0.03, taper=1.1)        # chest plate
     rig.part(t).rbox((0, 0.09, 1.16), (0.2, 0.08, 0.13), "gm", r=0.02, taper=0.8)            # sternum plate
     rig.part(t).rbox((0, -0.14, 1.13), (0.24, 0.08, 0.2), FRAME_L, r=0.02)                  # power pack
-    _charge_bar(rig, t, -0.075, -0.18, 1.14, face=-1)
-    rig.part(hd).strut((0, 0, 1.25), (0, 0.01, 1.34), 0.035, FRAME)                         # neck
-    rig.part(hd).rbox((0, 0.04, 1.36), (0.11, 0.13, 0.07), FRAME, r=0.025, taper=0.85)      # jaw
-    rig.part(hd).rbox((0, 0.0, 1.43), (0.17, 0.19, 0.15), CLOTH, r=0.035, taper=0.8)       # helmet
-    rig.part(hd).rbox((0, 0.09, 1.425), (0.15, 0.04, 0.055), "dark", r=0.015)                # visor band
-    rig.part(hd, "eye").box((0, 0.11, 1.425), (0.1, 0.012, 0.04), EYE)                      # visor slit
+    _charge_bar(rig, t, -0.075, -0.18, 1.075, face=-1)
+    rig.part(t).rbox((0, -0.05, 1.29), (0.26, 0.14, 0.09), CLOTH, r=0.03, taper=0.6)       # cowl behind the head
+    _sensor_head(rig, hd, 0.02, 1.32, 1.0)
+    _util_arm(rig, t)
     rig.build()
     return rig
 
@@ -110,12 +135,13 @@ def heavy():
         h = rig.joint(f"hip_{side}", b, hp)
         k = rig.joint(f"knee_{side}", h, kn)
         a = rig.joint(f"ankle_{side}", k, an)
-        rig.part(a).rbox((x, 0.08, 0.035), (0.13, 0.24, 0.07), FRAME, r=0.03, taper=0.75)    # foot
-        rig.part(a).strut(an, toe, 0.038, FRAME_L)                                         # metatarsal
+        rig.part(a).rbox((x, 0.08, 0.015), (0.14, 0.26, 0.03), FRAME, r=0.015)               # sole
+        rig.part(a).rbox((x, 0.07, 0.05), (0.13, 0.22, 0.06), CLOTH, r=0.02, taper=0.75)     # foot shell
+        rig.part(a).plate(an, toe, 0.08, 0.08, MID, taper=0.85, r=0.02)                   # metatarsal
         _hinge(rig.part(a), an, 0.048, 0.11)
         rig.part(k).strut(kn, an, 0.04, FRAME)
         _piston(rig.part(k), (x + sx * 0.075, -0.06, 0.26), (x + sx * 0.075, 0.1, 0.5), 0.026)  # calf piston
-        rig.part(k).plate((x, -0.05, 0.28), (x, 0.13, 0.52), 0.11, 0.09, FRAME_L, taper=1.25)  # calf armour
+        rig.part(k).plate((x, -0.05, 0.28), (x, 0.13, 0.52), 0.12, 0.1, MID, taper=1.25, r=0.025)  # calf armour
         _hinge(rig.part(k), kn, 0.065, 0.14)
         _hinge(rig.part(h), hp, 0.06, 0.1)
         rig.part(h).plate((x, 0.17, 0.5), hp, 0.15, 0.17, CLOTH, taper=1.2, r=0.04)        # thigh, over the knee
@@ -124,9 +150,10 @@ def heavy():
         e = rig.joint(f"elbow_{side}", s, el)
         _hinge(rig.part(s), sh, 0.08, 0.11)
         rig.part(s).rbox((sx * 0.35, 0.03, 1.36), (0.2, 0.3, 0.12), CLOTH, r=0.04, taper=0.7, rot=(0, -sx * 24, 0))  # pauldron
-        rig.part(s).strut(sh, el, 0.05, FRAME_L)
+        rig.part(s).strut(sh, el, 0.04, FRAME)
+        rig.part(s).plate((sx * 0.335, 0.075, 1.04), (sx * 0.315, 0.05, 1.2), 0.1, 0.11, MID, taper=1.1, r=0.025)   # upper arm
         _hinge(rig.part(e), el, 0.055, 0.12)
-        rig.part(e).rbox((sx * 0.345, 0.09, 0.84), (0.13, 0.16, 0.28), CLOTH, r=0.035, taper=1.3)   # forearm armour
+        rig.part(e).rbox((sx * 0.345, 0.09, 0.84), (0.13, 0.16, 0.28), MID, r=0.035, taper=1.3)     # gauntlet
         rig.part(e).rbox((sx * 0.345, 0.1, 0.65), (0.09, 0.11, 0.1), FRAME, r=0.03, taper=0.8)    # fist
     rig.part(b).rbox((0, 0, 0.87), (0.36, 0.22, 0.12), FRAME_L, r=0.04, taper=1.1)        # pelvis
     rig.part(t).strut((0, 0.0, 0.9), (0, 0.03, 1.08), 0.11, FRAME)                       # abdomen
@@ -137,9 +164,8 @@ def heavy():
     for sx in (1, -1):                                                                   # back fins
         rig.part(t).rbox((sx * 0.1, -0.27, 1.27), (0.05, 0.16, 0.24), FRAME, r=0.015, rot=(25, 0, 0))
     _charge_bar(rig, t, -0.075, -0.27, 1.13, face=-1)
-    rig.part(hd).rbox((0, 0.13, 1.39), (0.15, 0.1, 0.2), "dark", r=0.03, taper=0.7, axis="f")     # head wedge
-    rig.part(hd).rbox((0, 0.11, 1.435), (0.17, 0.045, 0.2), CLOTH, r=0.02, taper=0.75, axis="f")  # brow plate
-    rig.part(hd, "eye").ball((0, 0.235, 1.385), (0.03, 0.015, 0.025), EYE)
+    rig.part(t).rbox((0, 0.215, 1.24), (0.2, 0.06, 0.15), FRAME_L, r=0.03, taper=1.15, rot=(-12, 0, 0))  # chest inset
+    _sensor_head(rig, hd, 0.13, 1.39, 1.0)
     rig.build()
     rig.root.scale = (1.1,) * 3
     return rig
@@ -165,10 +191,10 @@ def drone():
     rig.part(b, "jet").cyl((0, 0, z - 0.252), 0.1, 0.045, EYE)                           # thruster ring
     rig.part(b, "jetoff").cyl((0, 0, z - 0.252), 0.1, 0.045, FRAME)
     for sx in (1, -1):                                                                   # side nacelles
-        x = sx * 0.34
-        rig.part(b).rbox((sx * 0.24, -0.01, z - 0.02), (0.16, 0.07, 0.04), FRAME, r=0.015)   # pylon
-        rig.part(b).plate((x, -0.16, z - 0.02), (x, 0.13, z - 0.02), 0.085, 0.09, FRAME_L, taper=0.7, r=0.03)
-        rig.part(b).plate((x, -0.13, z + 0.03), (x, 0.1, z + 0.03), 0.09, 0.04, CLOTH, taper=0.7, r=0.015)
+        x = sx * 0.29
+        rig.part(b).plate((sx * 0.15, -0.1, z + 0.05), (x, -0.1, z + 0.09), 0.07, 0.05, FRAME, r=0.015)  # pylon
+        rig.part(b).plate((x, -0.26, z + 0.11), (x, 0.04, z + 0.08), 0.08, 0.085, FRAME_L, taper=0.7, r=0.03)
+        rig.part(b).plate((x, -0.23, z + 0.155), (x, 0.01, z + 0.125), 0.085, 0.035, CLOTH, taper=0.7, r=0.015)
     for k in range(4):                                                                   # charge cells, top
         rig.part(b, f"bar{k}").box((-0.075 + k * 0.05, 0.0, z + 0.163), (0.04, 0.06, 0.03), BAR)
     for side, x in (("R", 0.17), ("L", -0.17)):                                          # arms: dark, so they read apart from the shell
