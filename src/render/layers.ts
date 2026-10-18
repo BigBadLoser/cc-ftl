@@ -18,6 +18,8 @@ export interface Layers {
   halo: Container;
   /** Selection, hover and build-preview markers. */
   ui: Container;
+  /** A blurred additive halo group depth sorted into `sorted` at `z` (a console's glow, which must stay under the seated crew); Quality High only. */
+  haloAt(z: number): Container;
   readonly halos: boolean;
   /** Device px per art px (integer camera zoom). */
   readonly scale: number;
@@ -43,6 +45,14 @@ export function createLayers(halos: boolean): Layers {
   halo.blendMode = 'add';
   halo.visible = halos;
   world.addChild(under, floor, decal, sorted, fx, fxAdd, halo, ui);
+  const haloAt = (z: number): Container => {
+    const c = new Container();
+    c.filters = [blur];
+    c.blendMode = 'add';
+    c.zIndex = z;
+    sorted.addChild(c);
+    return c;
+  };
   return {
     world,
     under,
@@ -54,6 +64,7 @@ export function createLayers(halos: boolean): Layers {
     halo,
     ui,
     halos,
+    haloAt,
     get scale() {
       return scale;
     },
