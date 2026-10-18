@@ -134,7 +134,7 @@ def room(bay_tag, shuttle_tag=None, crew_on=True, close=False):
             aid = "tile.door.x" if (x, y) == DOOR else f"tile.wall.{'full.' if back else ''}m{m}"
             items.append((x - .5, x + .5, y - .5, y + .5, lambda aid=aid, x=x, y=y: sc.asset(aid, *T(x, y))))
     if crew_on:
-        for x, y, d, cl in ((1.0, 4.05, 2, (114, 132, 95)), (4.6, 1.2, 1, (170, 70, 90)), (2.6, 5.7, 0, (90, 110, 160))):
+        for x, y, d, cl in ((3.05, 2.0, 6, (114, 132, 95)), (4.6, 3.6, 1, (170, 70, 90)), (1.4, 5.7, 0, (90, 110, 160))):
             items.append((x - .2, x + .2, y - .2, y + .2, lambda x=x, y=y, d=d, cl=cl: crew(sc, *T(x, y), d=d, cloth=cl)))
     for it in depth_sort(items):
         it[4]()

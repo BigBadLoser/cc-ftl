@@ -40,12 +40,24 @@ def render(tag, objs, kind, holdouts=()):
     print("pixel", tag, c.shape, flush=True)
 
 
+PH_K = 0.88                       # placeholder scale (it is wider than the 3-wide well at 1:1)
+
+
+def placeholder_xf(rot):
+    """(centre (x, y) in Blender space, scale, z lift) that puts the PLACEHOLDER on the doors, centred in the well."""
+    c = B.BayFrame(None, rot).pt(B.UC, 0.0, 0.0)
+    return (c.x, c.y), PH_K, -B.PIT + 0.05 - 0.04 * PH_K
+
+
 def placeholder(rot):
-    """The PLACEHOLDER shuttle (shuttle.py, for scale only) standing on the launch doors, PIT below the deck."""
+    """The PLACEHOLDER shuttle (shuttle.py, for scale only), length along the well's 5-tile axis, standing on the rails."""
     m = core.Mesh(f"shuttle_placeholder_r{rot}")
-    m.dz = -B.PIT + 0.01
-    S.build(B.BayFrame(m, rot, off=S.OFF), "parked")
-    return [m.build()]
+    S.build(B.BayFrame(m, rot, off=(B.UC, 0.0)), "parked")
+    ob = m.build()
+    (cx, cy), k, lz = placeholder_xf(rot)
+    ob.scale = (k, k, k)
+    ob.location = (cx * (1 - k), cy * (1 - k), lz)
+    return [ob]
 
 
 def fresh():

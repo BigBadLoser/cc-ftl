@@ -31,19 +31,29 @@ for rot in (0, 1, 2, 3):
 
 print("== bay r0 + placeholder shuttle in the well")
 bay = record(lambda: B.build(B.BayFrame(core.Mesh("chk"), 0), 0.0))
-sh = record(lambda: S.build(B.BayFrame(core.Mesh("chk2"), 0, off=S.OFF), "parked"))
-dz = -B.PIT + 0.01
-for p in sh:                                              # Mesh.dz is applied at build, so shift the recorded parts here
+sh = record(lambda: S.build(B.BayFrame(core.Mesh("chk2"), 0, off=(B.UC, 0.0)), "parked"))
+c = B.BayFrame(None, 0).pt(B.UC, 0.0, 0.0)
+k, lz = 0.88, -B.PIT + 0.05 - 0.04 * 0.88                 # same transform as proto_bay.placeholder (scale about the centre)
+C = (c.x, c.y, 0.0)
+X = lambda p: tuple(C[i] + k * (p[i] - C[i]) + (lz if i == 2 else 0.0) for i in range(3))  # noqa: E731
+for p in sh:
     if p["kind"] == "box":
-        p["lo"][2] += dz
-        p["hi"][2] += dz
+        lo, hi = X(p["lo"]), X(p["hi"])
+        p["lo"], p["hi"] = list(lo), list(hi)
     elif p["kind"] == "seg":
-        p["a"] = (p["a"][0], p["a"][1], p["a"][2] + dz)
-        p["b"] = (p["b"][0], p["b"][1], p["b"][2] + dz)
-    elif p["axis"] == 2:
-        p["a"] = (p["a"][0] + dz, p["a"][1] + dz)
+        p["a"], p["b"], p["r"] = X(p["a"]), X(p["b"]), p["r"] * k
     else:
-        p["c"] = (p["c"][0], p["c"][1] + dz)
+        ax = p["axis"]
+        cross = [i for i in range(3) if i != ax]
+        q = [0.0, 0.0, 0.0]
+        q[cross[0]], q[cross[1]] = p["c"]
+        q[ax] = p["a"][0]
+        q0 = X(q)
+        q[ax] = p["a"][1]
+        q1 = X(q)
+        p["c"] = (q0[cross[0]], q0[cross[1]])
+        p["a"] = (min(q0[ax], q1[ax]), max(q0[ax], q1[ax]))
+        p["r"] = (p["r"][0] * k, p["r"][1] * k)
 ps = bay + sh
 overlap.report(ps, ALLOW)
 overlap.floating(ps)
