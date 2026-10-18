@@ -1,109 +1,33 @@
-import type { ChunkDef, FactionDef } from '../../sim';
+import type { FactionDef } from '../../sim';
 
 /**
- * Drones: symmetric, compact hulls of one repeated pod design, clean right angles. No beds or life support: crewed by
- * robots (species to come; they spawn as humans for now) and meant to be captured by disabling the AI core (follow-up).
+ * Drones: mobile machinery. No bridge or main hallway: a processing core (helm, weapons console, AI core) with
+ * struts out to compact pods, parallel rails, or distributed clusters on long thin struts. Redundant single-reactor
+ * pods, single mounts, symmetry only when the roll says the mounts are balanced. No beds or life support: crewed by
+ * robots (they spawn as humans until the robots branch lands) and meant to be captured by disabling the core (follow-up).
  */
-const bows: ChunkDef[] = [
-  { id: 'drone.bow.block', rows: [
-    '..#######',
-    '.##bbbbb#',
-    '##bbbbbb#',
-    '#bbbbbbbD',
-    '##bbbbbb#',
-    '.##bbbbb#',
-    '..#######',
-  ] },
-  { id: 'drone.bow.core', rows: [
-    '##########',
-    '#aaa#bbbb#',
-    '#aaa#bbbb#',
-    '#aaaDbbbbD',
-    '#aaa#bbbb#',
-    '#aaa#bbbb#',
-    '##########',
-  ] },
-  { id: 'drone.bow.prong', rows: [
-    '#####......',
-    '#www#######',
-    '#wwwDbbbbb#',
-    '#####bbbbb#',
-    '....#bbbbbD',
-    '#####bbbbb#',
-    '#WWWDbbbbb#',
-    '#WWW#######',
-    '#####......',
-  ] },
-];
-
-const sterns: ChunkDef[] = [
-  { id: 'drone.stern.twin', rows: [
-    '###########',
-    '#rrr#eeeee#',
-    '#rrr#eeeee#',
-    '#rrrDeeeee#',
-    '#####eeeee#',
-    'Deeeeeeeee#',
-    '#####eeeee#',
-    '#RRRDeeeee#',
-    '#RRR#eeeee#',
-    '#RRR#eeeee#',
-    '###########',
-  ] },
-  { id: 'drone.stern.box', rows: [
-    '##########',
-    '#eeeeeeee#',
-    '#eeeeeeee#',
-    'Deeeeeeee#',
-    '#eeeeeeee#',
-    '#eeeeeeee#',
-    '##########',
-  ] },
-];
-
-const pods: ChunkDef[] = [
-  { id: 'drone.pod.cell', rows: [
-    '######',
-    '#1111#',
-    '#1111#',
-    '#1111#',
-    '#1111#',
-    '##D###',
-  ] },
-  { id: 'drone.pod.cube', rows: [
-    '#####',
-    '#111#',
-    '#111#',
-    '#111#',
-    '##D##',
-  ] },
-  { id: 'drone.pod.double', rows: [
-    '#########',
-    '#111#222#',
-    '#111#222#',
-    '#111#222#',
-    '##D###D##',
-  ] },
-];
-
 export const drones = {
   name: 'Drone',
   motif: 'motif.drone',
   art: { hull: 'hull.clean', wall: 'wall.panel', roof: 'roof.grid', livery: 'livery.drone', signature: ['module.aiCore', 'module.pointDefense'] },
-  hull: { symmetry: 'mirror', corridorWidth: [1, 1], repeatPods: true, nubChance: 0, gapChance: 0 },
-  chunks: { bows, sterns, pods, nubs: [] },
-  rooms: [
-    { value: 'weapons', weight: 4 }, { value: 'shields', weight: 2 }, { value: 'reactor', weight: 1 }, { value: 'cargo', weight: 1 },
-  ],
-  requiredRooms: ['weapons', 'shields', 'core'],
-  fill: {
-    cargo: [{ def: 'module.storage', min: 1, max: 2, stock: [{ item: 'item.electronics', min: 1, max: 4 }] }],
+  architecture: {
+    roles: [
+      { id: 'picket', weight: { base: 4, perDepth: -0.3, max: 4 }, archetypes: [{ value: 'hub', weight: 3 }, { value: 'clusters', weight: 1 }] },
+      { id: 'lancer', weight: { base: 2, perDepth: 0.2, max: 4 }, archetypes: [{ value: 'rails', weight: 3 }, { value: 'hub', weight: 1 }], bonus: { heavyPct: 20 } },
+      { id: 'swarm', weight: { base: 0, perDepth: 0.4, max: 4 }, archetypes: [{ value: 'clusters', weight: 3 }, { value: 'rails', weight: 1 }], bonus: { weapons: 1, size: 1 } },
+    ],
+    symmetry: 0.35,
+    corridorWidth: [1, 1],
+    strutLength: [2, 5],
+    battery: 1,
+    noses: [],
   },
   weapons: {
     light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.ionCannon', weight: 2 }],
     heavy: [{ value: 'module.massDriver', weight: 1 }],
   },
-  shields: [{ value: 'module.shieldGenSmall', weight: 2 }, { value: 'module.shieldGen', weight: 1 }],
+  shields: [{ value: 'module.shieldGenSmall', weight: 3 }, { value: 'module.shieldGen', weight: 1 }],
+  stock: [{ item: 'item.electronics', min: 1, max: 4 }],
   living: false,
   aiCore: true,
   crew: {
@@ -113,13 +37,14 @@ export const drones = {
   },
   doctrine: { targeting: 'shields' },
   budget: {
-    pods: { base: 2, perDepth: 0.3, max: 4 },
-    weapons: { base: 2, perDepth: 0.4, max: 5 },
-    heavyPct: { base: 10, perDepth: 6, max: 50 },
-    shields: { base: 1, perDepth: 0.2, max: 2 },
-    engines: { base: 1, perDepth: 0.25, max: 2 },
+    weapons: { base: 2, perDepth: 0.4, max: 6 },
+    heavyPct: { base: 10, perDepth: 5, max: 50 },
+    shields: { base: 1, perDepth: 0.2, max: 3 },
+    engines: { base: 1, perDepth: 0.25, max: 3 },
     reactors: { base: 2, perDepth: 0.25, max: 4 },
-    pointDefense: { base: 1, perDepth: 0.2, max: 2 },
+    pointDefense: { base: 1, perDepth: 0.2, max: 3 },
     crew: { base: 2, perDepth: 0.2, max: 4 },
+    crates: { base: 0, perDepth: 0.2, max: 2 },
+    size: { base: 0, perDepth: 0.4, max: 4 },
   },
 } satisfies FactionDef;

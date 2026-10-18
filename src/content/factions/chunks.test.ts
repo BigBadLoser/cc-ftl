@@ -12,7 +12,7 @@ function chunkProblems(c: ChunkDef, kind: 'bow' | 'stern' | 'pod' | 'nub'): stri
     for (let x = 0; x < w; x++) {
       const ch = at(x, y);
       if (!floor(ch)) continue;
-      if (!/^[1-9]$/.test(ch) && !roleOfLetter(ch)) out.push(`unknown ${ch} at ${x},${y}`);
+      if (!roleOfLetter(ch)) out.push(`unknown ${ch} at ${x},${y}`);
       for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
         const n = at(nx, ny);
         if (n === '.') out.push(`open floor at ${x},${y}`);
@@ -27,9 +27,8 @@ function chunkProblems(c: ChunkDef, kind: 'bow' | 'stern' | 'pod' | 'nub'): stri
 
 describe('faction chunks', () => {
   for (const [id, f] of Object.entries(factions)) {
-    it(`${id}: every chunk is closed, its rooms walled apart, with a door on its attach edge`, () => {
-      const kinds = [['bow', f.chunks.bows], ['stern', f.chunks.sterns], ['pod', f.chunks.pods], ['nub', f.chunks.nubs]] as const;
-      for (const [kind, list] of kinds) for (const c of list) expect(chunkProblems(c, kind), c.id).toEqual([]);
+    it(`${id}: every nose chunk is closed, its rooms walled apart, with a door on its attach edge`, () => {
+      for (const c of f.architecture.noses) expect(chunkProblems(c, 'bow'), c.id).toEqual([]);
     });
   }
 });

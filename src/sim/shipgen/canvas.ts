@@ -2,7 +2,11 @@ import type { ChunkDef, RoomRole } from './types';
 
 const ROLES: Record<string, RoomRole> = {
   b: 'bridge', e: 'engine', r: 'reactor', w: 'weapons', s: 'shields', c: 'cargo', q: 'quarters', a: 'core', g: 'hangar', h: 'hall',
+  k: 'dock', u: 'support',
 };
+
+/** Floor letter of a role (inverse of roleOfLetter). */
+export const letterOf = (role: RoomRole): string => Object.keys(ROLES).find((k) => ROLES[k] === role) ?? 'h';
 
 /** Role of a fixed-role floor letter (upper case = a second room of the same role), or undefined for a slot digit. */
 export const roleOfLetter = (letter: string): RoomRole | undefined => ROLES[letter.toLowerCase()];
@@ -26,7 +30,7 @@ export class Canvas {
   readonly labels: Label[] = [];
   private readonly labelIds = new Map<string, number>();
 
-  constructor(size = 160) {
+  constructor(size = 220) {
     this.size = size;
     this.cells = new Array<string>(size * size).fill('.');
     this.label = new Int16Array(size * size).fill(-1);
@@ -91,6 +95,12 @@ export class Canvas {
       this.labelIds.set(key, id);
     }
     return id;
+  }
+
+  /** Put a door on a wall tile (callers check it joins two floors). */
+  setDoor(x: number, y: number): void {
+    const k = this.idx(x, y);
+    if (k >= 0 && this.cells[k] === '#') this.cells[k] = 'D';
   }
 
   /** Turn doors that do not join floor on two opposite sides back into walls. */

@@ -1,10 +1,10 @@
 import type { ChunkDef, FactionDef } from '../../sim';
 
 /**
- * Navy / corporate: clean, disciplined, near-symmetric hulls (mirrored shape; rooms may differ side to side), a
- * tapered nose, a broad engine block, well armed and shielded.
+ * Navy / corporate: standardised naval engineering. Mirrored hulls in several archetypes (escort spine, ring-corridor
+ * warship, carrier with twin nacelles), zoned by function, continuous hull lines, hand-made noses.
  */
-const bows: ChunkDef[] = [
+const noses: ChunkDef[] = [
   { id: 'navy.bow.taper', rows: [
     '......#####',
     '....###bbb#',
@@ -35,77 +35,13 @@ const bows: ChunkDef[] = [
   ] },
   { id: 'navy.bow.blunt', rows: [
     '...#############',
-    '.###11111#bbbbb#',
-    '##1111111Dbbbbb#',
-    '#11111111#bbbbbD',
-    '#11111111#bbbbbD',
-    '##1111111Dbbbbb#',
-    '.###11111#bbbbb#',
+    '.###wwwww#bbbbb#',
+    '##wwwwwwwDbbbbb#',
+    '#wwwwwwww#bbbbbD',
+    '#wwwwwwww#bbbbbD',
+    '##wwwwwwwDbbbbb#',
+    '.###wwwww#bbbbb#',
     '...#############',
-  ] },
-];
-
-const sterns: ChunkDef[] = [
-  { id: 'navy.stern.triple', rows: [
-    '###########',
-    '#rrr#eeeee#',
-    '#rrr#eeeee#',
-    '#rrrDeeeee#',
-    '#rrr#eeeee#',
-    '#rrr#eeeee#',
-    '#####eeeee#',
-    'Deeeeeeeee#',
-    'Deeeeeeeee#',
-    '#####eeeee#',
-    '#RRR#eeeee#',
-    '#RRR#eeeee#',
-    '#RRRDeeeee#',
-    '#RRR#eeeee#',
-    '#RRR#eeeee#',
-    '###########',
-  ] },
-  { id: 'navy.stern.wide', rows: [
-    '....#######',
-    '....#eeeee#',
-    '#####eeeee#',
-    '#rrr#eeeee#',
-    '#rrrDeeeee#',
-    '#####eeeee#',
-    'Deeeeeeeee#',
-    'Deeeeeeeee#',
-    '#####eeeee#',
-    '#RRRDeeeee#',
-    '#RRR#eeeee#',
-    '#####eeeee#',
-    '....#eeeee#',
-    '....#######',
-  ] },
-];
-
-const pods: ChunkDef[] = [
-  { id: 'navy.pod.bay', rows: [
-    '########',
-    '#111111#',
-    '#111111#',
-    '#111111#',
-    '#111111#',
-    '###D####',
-  ] },
-  { id: 'navy.pod.split', rows: [
-    '##########',
-    '#1111#222#',
-    '#1111#222#',
-    '#1111#222#',
-    '#1111#222#',
-    '##D####D##',
-  ] },
-  { id: 'navy.pod.chamfer', rows: [
-    '.#######.',
-    '##11111##',
-    '#1111111#',
-    '#1111111#',
-    '#1111111#',
-    '####D####',
   ] },
 ];
 
@@ -113,24 +49,24 @@ export const navy = {
   name: 'Navy',
   motif: 'motif.navy',
   art: { hull: 'hull.plated', wall: 'wall.clean', roof: 'roof.armour', livery: 'livery.navy', signature: ['module.shieldGen', 'module.missileLauncher'] },
-  hull: { symmetry: 'loose', corridorWidth: [2, 2], repeatPods: false, nubChance: 0, gapChance: 0 },
-  chunks: { bows, sterns, pods, nubs: [] },
-  rooms: [
-    { value: 'weapons', weight: 4 }, { value: 'shields', weight: 2 }, { value: 'quarters', weight: 2 },
-    { value: 'cargo', weight: 1 }, { value: 'reactor', weight: 1 },
-  ],
-  requiredRooms: ['weapons', 'shields', 'quarters', 'core', 'cargo'],
-  fill: {
-    cargo: [
-      { def: 'module.storage', min: 2, max: 3, stock: [{ item: 'item.missile', min: 3, max: 8 }, { item: 'item.metal', min: 0, max: 4 }] },
-      { def: 'module.fabricator', min: 0, max: 1 },
+  architecture: {
+    roles: [
+      { id: 'escort', weight: { base: 6, perDepth: -0.6, max: 6 }, archetypes: [{ value: 'spine', weight: 1 }] },
+      { id: 'cruiser', weight: { base: 1, perDepth: 0.6, max: 5 }, archetypes: [{ value: 'ring', weight: 1 }], bonus: { weapons: 1, shields: 1, size: 1 } },
+      { id: 'carrier', weight: { base: -1, perDepth: 0.45, max: 3 }, archetypes: [{ value: 'carrier', weight: 1 }], bonus: { engines: 1, pointDefense: 1 }, bays: 2 },
     ],
+    symmetry: 1,
+    corridorWidth: [2, 2],
+    strutLength: [2, 3],
+    battery: 2,
+    noses,
   },
   weapons: {
     light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.ionCannon', weight: 1 }],
     heavy: [{ value: 'module.missileLauncher', weight: 2 }, { value: 'module.massDriver', weight: 1 }],
   },
   shields: [{ value: 'module.shieldGen', weight: 3 }, { value: 'module.shieldGenSmall', weight: 1 }],
+  stock: [{ item: 'item.missile', min: 2, max: 6 }, { item: 'item.metal', min: 0, max: 4 }],
   living: true,
   aiCore: true,
   crew: {
@@ -140,13 +76,14 @@ export const navy = {
   },
   doctrine: { targeting: 'weapons' },
   budget: {
-    pods: { base: 2, perDepth: 0.3, max: 5 },
     weapons: { base: 2, perDepth: 0.4, max: 6 },
     heavyPct: { base: 15, perDepth: 6, max: 60 },
-    shields: { base: 1, perDepth: 0.3, max: 3 },
+    shields: { base: 1, perDepth: 0.25, max: 3 },
     engines: { base: 2, perDepth: 0.15, max: 3 },
     reactors: { base: 2, perDepth: 0.3, max: 4 },
     pointDefense: { base: 0, perDepth: 0.25, max: 2 },
     crew: { base: 5, perDepth: 0.5, max: 10 },
+    crates: { base: 2, perDepth: 0.3, max: 6 },
+    size: { base: 0, perDepth: 0.5, max: 4 },
   },
 } satisfies FactionDef;

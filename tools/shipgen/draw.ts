@@ -41,12 +41,13 @@ const GLYPHS: Record<string, string> = Object.fromEntries(Object.entries({
   Z: '111001010100111', 0: '111101101101111', 1: '010110010010111', 2: '110001010100111', 3: '110001010001110',
   4: '101101111001001', 5: '111100110001110', 6: '011100111101111', 7: '111001010010010', 8: '111101111101111',
   9: '111101111001110', '-': '000000111000000', '.': '000000000000010', ':': '000010000010000', '/': '001001010100100',
-  '#': '101111101111101', ' ': '000000000000000', '?': '110001010000010', '=': '000111000111000', '+': '000010111010000',
+  '#': '101111101111101', ' ': '000000000000000', ',': '000000000010100', '(': '010100100100010', ')': '010001001001010', '?': '110001010000010', '=': '000111000111000', '+': '000010111010000',
 }));
 
 const ROLE_TINT: Record<RoomRole, RGB> = {
   bridge: [52, 92, 140], engine: [120, 70, 40], reactor: [120, 110, 40], weapons: [120, 50, 70], shields: [40, 110, 120],
   cargo: [88, 80, 60], quarters: [70, 100, 60], core: [100, 60, 130], hangar: [70, 70, 90], hall: [58, 60, 66],
+  dock: [140, 140, 150], support: [50, 105, 90],
 };
 
 /** Short labels and colours per module. */
@@ -132,16 +133,26 @@ export function summary(g: GenResult, seed: number): string {
   let supply = 0; let demand = 0;
   for (const m of mods) { const p = defs[m.def]?.power ?? 0; if (p > 0) supply += p; else demand -= p; }
   const roles = g.rooms.map((r) => r.role).filter((r) => r !== 'hall');
-  return `seed ${seed}: ${g.width}x${g.height} ${roles.length} rooms, power ${demand}/${supply}, weapons ${n((d) => !!d.weapon)}, ` +
+  return `seed ${seed}: ${g.role}/${g.archetype} (${g.topology}) ${g.width}x${g.height} ${roles.length} rooms, power ${demand}/${supply}, weapons ${n((d) => !!d.weapon)}, ` +
     `shields ${n((d) => !!d.shieldGen)}, engines ${n((d) => !!d.engine)}, crew ${g.template.crew?.length ?? 0}, ` +
-    `attempts ${g.attempts}, ${g.problems.length === 0 ? 'OK' : `INVALID: ${g.problems.join('; ')}`}`;
+    `attempts ${g.attempts}, ${g.problems.length === 0 ? 'OK' : `INVALID: ${g.problems.join('; ')}`}` +
+    (g.failures.length > 0 ? ` [rejected: ${g.failures.join(', ')}]` : '');
 }
 
 /** A contact sheet of seeds [from, from + count) for one faction at one depth. */
 export function contactSheet(faction: string, from: number, count: number, depth: number, s = 10): { raster: Raster; text: string } {
-  const ships = Array.from({ length: count }, (_, i) => ({ seed: from + i, g: gen(faction, from + i, depth) }));
+  const errors: string[] = [];
+  const ships = Array.from({ length: count }, (_, i) => {
+    try {
+      return { seed: from + i, g: gen(faction, from + i, depth) };
+    } catch (e) {
+      errors.push(`seed ${from + i}: FAILED ${String(e).slice(0, 600)}`);
+      return null;
+    }
+  }).filter((x): x is { seed: number; g: GenResult } => x !== null);
+  if (ships.length === 0) return { raster: new Raster(200, 20), text: errors.join('\n') };
   const cellW = Math.max(...ships.map((x) => x.g.width)) * s + 16;
-  const cellH = Math.max(...ships.map((x) => x.g.height)) * s + 26;
+  const cellH = Math.max(...ships.map((x) => x.g.height)) * s + 34;
   const cols = Math.min(count, Math.max(1, Math.floor(1800 / cellW)));
   const rowsN = Math.ceil(count / cols);
   const r = new Raster(cols * cellW + 8, rowsN * cellH + 30);
@@ -150,9 +161,10 @@ export function contactSheet(faction: string, from: number, count: number, depth
   ships.forEach(({ seed, g }, i) => {
     const ox = 8 + (i % cols) * cellW;
     const oy = 30 + Math.floor(i / cols) * cellH;
-    r.text(`#${seed} ${g.width}X${g.height}${g.problems.length ? ' BAD' : ''}`, ox, oy, g.problems.length ? [255, 80, 80] : [200, 200, 200]);
-    drawShip(r, g, ox, oy + 10, s);
+    r.text(`#${seed} ${g.role} / ${g.archetype} ${g.width}X${g.height}${g.problems.length ? ' BAD' : ''}`, ox, oy, g.problems.length ? [255, 80, 80] : [220, 220, 220]);
+    r.text(g.topology, ox, oy + 8, [150, 170, 200]);
+    drawShip(r, g, ox, oy + 18, s);
     text.push(summary(g, seed), ascii(g), '');
   });
-  return { raster: r, text: text.join('\n') };
+  return { raster: r, text: [...errors, ...text].join('\n') };
 }

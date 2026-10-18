@@ -1,7 +1,7 @@
 export type {
-  ChunkDef, FactionDef, FillRule, GenOrigin, GenResult, GenRoom, HullGrammar, RoomRole, Scaled, ShipBudget, Weighted,
+  ArchetypeId, ArchitectureDef, ChunkDef, FactionDef, GenOrigin, GenResult, GenRoom, RoomRole, Scaled, ShipBudget, ShipRoleDef, Weighted,
 } from './types';
-export { generateShip, GEN_ATTEMPTS } from './generate';
+export { generateShip, generateAttempt, GEN_ATTEMPTS } from './generate';
 export { validateTemplate } from './validate';
-export { scaled } from './silhouette';
+export { scaled } from './plan';
 export { roleOfLetter } from './canvas';

@@ -1,40 +1,43 @@
 import type { ItemQty, ShipTemplate } from '../registry';
 
 /**
- * Procedural ship layouts. A faction picks a building style (its motif); the generator assembles a silhouette from
- * the motif's hand-made chunks, assigns room roles and places modules within a budget scaled by sector depth.
+ * Procedural ship layouts, in stages: pick a ship role and a hull archetype (weighted by the faction's architectural
+ * policy and the sector depth), plan the modules from the budget, build the structure (corridors, hubs, rails,
+ * sections, rooms sized to what they will hold, zoned by function), place the modules, then validate.
  */
 
-/** What a room is for. The generator fills each role with its own module rules. */
+/** What a room is for. */
 export type RoomRole =
-  | 'bridge' | 'engine' | 'reactor' | 'weapons' | 'shields' | 'cargo' | 'quarters' | 'core' | 'hangar' | 'hall';
+  | 'bridge' | 'engine' | 'reactor' | 'weapons' | 'shields' | 'cargo' | 'quarters' | 'core' | 'hangar' | 'hall'
+  | 'dock' | 'support';
+
+/** Structural topologies the builder knows. Factions weight them; any faction could use any. */
+export type ArchetypeId =
+  /** One spine corridor, mirrored room strips, a nose, an engineering transverse at the stern. */
+  | 'spine'
+  /** Two parallel corridors joined in a loop around a compartment band; nose; stern transverse. */
+  | 'ring'
+  /** Two corridors around a hangar band, sponsons outboard, engines on two nacelles. */
+  | 'carrier'
+  /** A processing core with struts out to module pods; no bridge or hallway. */
+  | 'hub'
+  /** Parallel rails joined by struts, pods hung off them, engines at the rail ends. */
+  | 'rails'
+  /** Distributed clusters (a junction and its pods) linked by long thin struts. */
+  | 'clusters'
+  /** Salvaged sections of different build joined by narrow offset connectors; strapped-on engines. */
+  | 'salvage';
 
 /**
  * A hand-made piece of hull, drawn with the bow to the west (-x). '.' outside, '#' wall, 'D' a door on the attach
- * edge (bow: east column, stern: west column, pod and nub: bottom row). Floor letters name the room:
- * fixed roles b bridge, e engine, r reactor, w weapons, s shields, c cargo, q quarters, a core, g hangar, h hall;
- * an upper-case letter is a second room of the same role; digits 1-9 are free slots whose role the generator draws from the faction's room pool. Each distinct letter in a
- * chunk is one room. Chunks must be closed by walls on their own.
+ * edge (a nose's east column). Floor letters name the room: b bridge, e engine, r reactor, w weapons, s shields,
+ * c cargo, q quarters, a core, g hangar, h hall, k dock, u support; an upper-case letter is a second room of the same
+ * role. Chunks must be closed by walls on their own.
  */
 export interface ChunkDef {
   id: string;
   rows: string[];
-  /** Relative pick weight (default 1). */
   weight?: number;
-}
-
-/** Hull-assembly rules of a motif. */
-export interface HullGrammar {
-  /** 'mirror': south pods mirror north pods exactly; 'loose': mirrored shape, rooms may differ; 'none': independent sides. */
-  symmetry: 'mirror' | 'loose' | 'none';
-  /** Corridor interior width (rows); chunks' door blocks are aligned to it. */
-  corridorWidth: readonly [number, number];
-  /** Repeat one pod design along each side (drone pods). */
-  repeatPods: boolean;
-  /** Chance per pod of a bolted-on nub chunk on its outer wall. */
-  nubChance: number;
-  /** Chance per pod slot of a one-tile gap (open corridor wall) before the pod: irregular edges. */
-  gapChance: number;
 }
 
 /** A value that grows with sector depth: min(max, floor(base + perDepth * depth)). */
@@ -46,18 +49,19 @@ export interface Scaled {
 
 /** Difficulty budget, all scaled by depth. */
 export interface ShipBudget {
-  /** Pods along each side of the corridor (sets the hull length). */
-  pods: Scaled;
   weapons: Scaled;
-  /** Chance (0..100 per weapon, scaled) of drawing from the heavy pool instead of the light one. */
+  /** Chance (0..100 per weapon) of drawing from the heavy pool instead of the light one. */
   heavyPct: Scaled;
-  /** Shield generators. */
   shields: Scaled;
   engines: Scaled;
-  /** Most reactors the ship may carry (power cap). */
+  /** Most reactors the ship may carry. */
   reactors: Scaled;
   pointDefense: Scaled;
   crew: Scaled;
+  /** Storage crates. */
+  crates: Scaled;
+  /** Structural complexity: extra pods, sections, loops or clusters. */
+  size: Scaled;
 }
 
 export interface Weighted<T> {
@@ -65,13 +69,31 @@ export interface Weighted<T> {
   weight: number;
 }
 
-/** Extra modules a room role gets, beyond the ones the generator places from the budget. */
-export interface FillRule {
-  def: string;
-  min: number;
-  max: number;
-  /** Starting stock for storage modules: each crate gets one entry, count rolled in [min, max]. */
-  stock?: readonly { item: string; min: number; max: number }[];
+/** A ship role within a faction: what it is for, which archetypes fit, and how it bends the budget. */
+export interface ShipRoleDef {
+  id: string;
+  /** Pick weight, scaled by depth (a role can appear only deeper). */
+  weight: Scaled;
+  archetypes: readonly Weighted<ArchetypeId>[];
+  /** Added to the budget values (after scaling). */
+  bonus?: Partial<Record<keyof ShipBudget, number>>;
+  /** Shuttle bays (with shuttles). */
+  bays?: number;
+}
+
+/** The architectural policy of a faction: how the builder shapes its ships. */
+export interface ArchitectureDef {
+  roles: readonly ShipRoleDef[];
+  /** Chance a topology that can be mirrored is mirrored. */
+  symmetry: number;
+  /** Corridor interior width range. */
+  corridorWidth: readonly [number, number];
+  /** Strut / connector length range (tiles of corridor between parts). */
+  strutLength: readonly [number, number];
+  /** Weapons per weapon room (1 = single mounts, 2 = batteries). */
+  battery: number;
+  /** Hand-made noses for nose-led archetypes (spine, ring, carrier). */
+  noses: readonly ChunkDef[];
 }
 
 export interface FactionDef {
@@ -80,16 +102,11 @@ export interface FactionDef {
   motif: string;
   /** Art variants for the renderer (looked up later; no art is generated here). */
   art: { hull: string; wall: string; roof: string; livery: string; signature: readonly string[] };
-  hull: HullGrammar;
-  chunks: { bows: readonly ChunkDef[]; sterns: readonly ChunkDef[]; pods: readonly ChunkDef[]; nubs: readonly ChunkDef[] };
-  /** Pool for digit slots. */
-  rooms: readonly Weighted<RoomRole>[];
-  /** Roles the ship must have at least once among its slots (beyond bridge and engine). */
-  requiredRooms: readonly RoomRole[];
-  /** Per-role extras (crates, fabricators, lights are automatic). */
-  fill: Partial<Record<RoomRole, readonly FillRule[]>>;
+  architecture: ArchitectureDef;
   weapons: { light: readonly Weighted<string>[]; heavy: readonly Weighted<string>[] };
   shields: readonly Weighted<string>[];
+  /** Crate stock: each crate rolls each entry in [min, max]. */
+  stock: readonly { item: string; min: number; max: number }[];
   /** Crew are living and breathing: beds for every crew member and life support. */
   living: boolean;
   /** Has an AI core (needed for point defence). */
@@ -120,10 +137,16 @@ export interface GenResult {
   roomOf: Int16Array;
   width: number;
   height: number;
+  /** Ship role and archetype picked, and a one-line description of the topology built. */
+  role: string;
+  archetype: ArchetypeId;
+  topology: string;
   /** Attempts used (1 = first seed worked). */
   attempts: number;
   /** Problems of the accepted layout (empty when valid). */
   problems: string[];
+  /** Why earlier attempts were rejected. */
+  failures: string[];
 }
 
 export type { ItemQty };
