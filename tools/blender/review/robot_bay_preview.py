@@ -29,7 +29,7 @@ def scene(bay, rob, pub, out):
         cv.static(pub, "tile.wall.full.m5", *iso(ox, oy, -1, gy))
     draw = []        # (depth, kind, payload, gx, gy, label)
     row0 = [("", None), ("charging", ("worker", "charge", 3)), ("charging", ("security", "charge", 3)),
-            ("charging.drone", ("repair", "idle", 0)), ("assembling.worker", None), ("assembling.repair", None),
+            ("charging.drone", ("repair", "charge", 3)), ("assembling.worker", None), ("assembling.repair", None),
             ("assembling.security", None)]
     for k, (st, bot) in enumerate(row0):                  # r2: the tower stands behind the robot
         _bay(draw, 2, st, bot, 1 + 2 * k, 2, st or "empty")
@@ -42,6 +42,9 @@ def scene(bay, rob, pub, out):
         sx, sy = iso(ox, oy, gx, gy)
         if kind == "bay":
             cv.static(bay, pay, sx, sy)
+        elif kind == "front":
+            if pay in bay.m["assets"]:
+                cv.static(bay, pay, sx, sy)
         elif kind == "human":
             cv.char(human(pub, DIRS["SE"]), sx, sy)
         else:
@@ -53,13 +56,16 @@ def scene(bay, rob, pub, out):
 
 
 def _bay(draw, rot, st, bot, gx, gy, label):
-    """A bay whose front-most tile is (gx, gy); its robot (if any) on the cradle tile."""
+    """A bay whose front-most tile is (gx, gy), layered as the runtime will: bay at K, its docked robot (on the cradle
+    tile) at K + 0.02, the bay's front overlay at K + 0.03."""
     sid = f"module.robot_bay.r{rot}" + (f".{st}" if st else "")
-    draw.append((gx + gy, "bay", sid, gx, gy, label))
+    k = gx + gy
+    draw.append((k, "bay", sid, gx, gy, label))
     if bot:
         cx, cy = gx + CRADLE[rot][0], gy + CRADLE[rot][1]
         kind, clip, i = bot
-        draw.append((cx + cy + 0.02, "robot", (kind, FACE[rot], clip, i), cx, cy, None))
+        draw.append((k + 0.02, "robot", (kind, FACE[rot], clip, i), cx, cy, None))
+        draw.append((k + 0.03, "front", sid + ".front", gx, gy, None))
 
 
 def main():

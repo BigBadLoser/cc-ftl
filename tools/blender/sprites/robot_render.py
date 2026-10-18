@@ -135,9 +135,8 @@ def _drone(rig, clip, i):
             r(f"elbow_{side}", pitch=-8 + 14 * math.sin(t) * sg)
     elif clip == "charge":
         for side in ("R", "L"):
-            r(f"arm_{side}", pitch=-75)          # landed: arms forward, forearms down as props
-            r(f"elbow_{side}", pitch=45)
-        rig.ground_attached()
+            r(f"arm_{side}", pitch=12)           # docked: hangs from the bay clamp at hover height, arms slack
+            r(f"elbow_{side}", pitch=28)
     elif clip == "wreck":
         r("body", pitch=20, roll=-72)
         r("arm_R", pitch=-30, roll=20)

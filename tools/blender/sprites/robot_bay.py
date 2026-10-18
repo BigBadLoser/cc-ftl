@@ -12,16 +12,20 @@ Sprites, per rotation r (cradle = the footprint's rotated (0, 0) tile, as the si
   module.robot_bay.r<r>.charging         contacts lit, light cyan (a walker docks: the crew sprite in its charge clip)
   module.robot_bay.r<r>.charging.drone   the same, docking clamp swung out for the drone
   module.robot_bay.r<r>.assembling.<t>   tool arms out over a part-built <t> (worker, repair, security), light amber
+  module.robot_bay.r<r>.charging[.drone].front   overlay: the bay pixels in front of the docked robot
+Renderer layering (as the consoles): bay at its depth K, the docked robot at K + 0.02, the front overlay at K + 0.03.
 Unpowered is the renderer's job: glow off. Glow: only the contacts and the status light."""
 import math
 
+import numpy as np
+
 from . import core, env_build, post, robots
-from .robot_kit import Rig, bl
+from .robot_kit import Rig
 
 ID = "module.robot_bay"
 TYPES = ("worker", "repair", "security")
 STATES = ("", "charging", "charging.drone") + tuple(f"assembling.{t}" for t in TYPES)
-BODY, BODY_D, BODY_L, TRIM = "steel", "steelD", "steelL", "gm"
+BODY, BODY_D, BODY_L, TRIM = "steelL", "steel", "plate", "steelD"
 LIGHT = {"": "green", "charging": "cyan", "charging.drone": "cyan", "assembling": "orange"}
 FACE = {0: 6, 1: 0, 2: 2, 3: 4}          # docked robot's facing (sim direction) per rotation: away from the tower
 
@@ -43,25 +47,32 @@ def placement(rot):
 
 
 def _tower(rig, light, contacts):
+    """A wide service base with a slimmer column on it (more of a docked robot shows past it when the tower stands in
+    front), lighter panels on dark trim. The charging spine stands out of the column's alcove on a bracket, so its
+    contact strip meets a docked walker's back pack."""
     p = rig.part("root")
-    p.rbox((0, -1.0, 0.78), (0.8, 0.52, 1.56), BODY, top=BODY_L, r=0.05, taper=0.94)        # tower body
-    p.rbox((0, -1.0, 1.585), (0.78, 0.54, 0.05), BODY_L, r=0.05)                            # top cap
-    p.rbox((0, -0.73, 0.86), (0.5, 0.07, 1.18), "dark", r=0.03)                            # alcove recess
-    for sx in (1, -1):                                                                     # alcove cheeks
-        p.rbox((sx * 0.34, -0.6, 0.62), (0.09, 0.32, 1.24), BODY_D, top=BODY, r=0.03, taper=0.85)
-        p.rbox((sx * 0.42, -1.0, 0.95), (0.03, 0.3, 0.5), "dark", r=0.01)                 # side vents
-    p.rbox((0, -0.68, 0.95), (0.15, 0.07, 0.9), TRIM, r=0.03)                              # charging spine
-    rig.part("root", "contacts").box((0, -0.64, 0.95), (0.06, 0.02, 0.62), "cyan" if contacts else BODY_D)
-    rig.part("root", "light").box((0, -0.73, 1.5), (0.14, 0.03, 0.06), light)             # status light
-    p.rbox((0, -0.72, 1.5), (0.2, 0.04, 0.1), "dark", r=0.02)
-    # back face (the side the camera sees when the tower stands in front of the robot): service panel, vents, conduits
-    p.rbox((0, -1.255, 0.82), (0.5, 0.04, 0.9), BODY_D, r=0.03)
-    for z in (0.55, 0.68, 0.81):
-        p.rbox((0, -1.275, z), (0.34, 0.02, 0.05), "dark", r=0.01)
+    p.rbox((0, -1.0, 0.33), (0.8, 0.5, 0.66), BODY, top=BODY_L, r=0.04)                     # base
+    p.rbox((0, -1.0, 0.675), (0.82, 0.52, 0.04), TRIM, r=0.04)                              # base cap trim
+    p.rbox((0, -1.04, 1.12), (0.56, 0.42, 0.86), BODY, top=BODY_L, r=0.05, taper=0.9)       # column
+    p.rbox((0, -1.04, 1.565), (0.54, 0.4, 0.04), TRIM, r=0.04)                             # column cap
+    p.rbox((0, -0.83, 1.06), (0.34, 0.06, 0.74), "dark", r=0.03)                           # alcove recess
     for sx in (1, -1):
-        p.cyl((sx * 0.3, -1.275, 0.7), 0.035, 1.2, TRIM)
-    p.rbox((0, -1.255, 1.38), (0.32, 0.04, 0.16), TRIM, r=0.02)
-    rig.part("root", "light").box((0, -1.28, 1.38), (0.12, 0.02, 0.05), light)
+        p.rbox((sx * 0.34, -0.62, 0.5), (0.09, 0.28, 1.0), BODY_D, top=BODY, r=0.03, taper=0.85)   # cradle cheeks
+        p.rbox((sx * 0.405, -1.0, 0.35), (0.02, 0.3, 0.32), "dark", r=0.01)                # base side vents
+        p.rbox((sx * 0.27, -1.04, 1.12), (0.02, 0.3, 0.6), TRIM, r=0.01)                   # column side seams
+    p.rbox((0, -0.66, 0.97), (0.12, 0.34, 0.07), TRIM, r=0.02)                              # spine bracket
+    p.rbox((0, -0.5, 0.98), (0.15, 0.07, 0.82), BODY_D, top=TRIM, r=0.03)                  # charging spine
+    rig.part("root", "contacts").box((0, -0.46, 0.98), (0.06, 0.02, 0.58), "cyan" if contacts else "dark")
+    p.rbox((0, -0.83, 1.46), (0.2, 0.04, 0.1), "dark", r=0.02)
+    rig.part("root", "light").box((0, -0.85, 1.46), (0.14, 0.03, 0.06), light)            # status light, front
+    # back face (the side the camera sees when the tower stands in front of the robot): service panel, vents, conduits
+    p.rbox((0, -1.255, 0.36), (0.52, 0.03, 0.46), BODY_D, r=0.03)
+    for z in (0.26, 0.36, 0.46):
+        p.rbox((0, -1.275, z), (0.36, 0.02, 0.05), "dark", r=0.01)
+    for sx in (1, -1):
+        p.cyl((sx * 0.2, -1.255, 1.1), 0.03, 0.8, TRIM)
+    p.rbox((0, -1.23, 1.38), (0.24, 0.04, 0.14), "dark", r=0.02)
+    rig.part("root", "light").box((0, -1.255, 1.38), (0.12, 0.02, 0.05), light)          # status light, back
 
 
 def _cradle(rig, contacts):
@@ -77,10 +88,10 @@ def _cradle(rig, contacts):
 
 def _clamp(rig, out):
     """Drone docking clamp on the spine: folded up flush, or swung out over the cradle at fin height."""
-    j = rig.joint("clamp", "root", (0, -0.64, 1.2))
+    j = rig.joint("clamp", "root", (0, -0.5, 1.42))
     p = rig.part(j)
-    p.cyl((0, -0.64, 1.2), 0.045, 0.16, "dark", axis="x")
-    p.plate((0, -0.64, 1.2), (0, -0.2, 1.2), 0.08, 0.06, TRIM, taper=0.85, r=0.02)
+    p.cyl((0, -0.5, 1.42), 0.045, 0.16, "dark", axis="x")
+    p.plate((0, -0.5, 1.42), (0, -0.2, 1.24), 0.08, 0.06, TRIM, taper=0.85, r=0.02)
     for sx in (1, -1):
         p.rbox((sx * 0.035, -0.17, 1.165), (0.03, 0.07, 0.08), "dark", r=0.01)
     rig.rot(j, pitch=0 if out else 88)
@@ -89,10 +100,10 @@ def _clamp(rig, out):
 def _tool_arms(rig, out):
     """Two jointed tool arms on the alcove cheeks: folded up along them, or reaching over the cradle."""
     for side, sx in (("R", 1), ("L", -1)):
-        sh, el = (sx * 0.34, -0.5, 1.15), (sx * 0.34, -0.5, 0.82)
+        sh, el = (sx * 0.34, -0.52, 0.98), (sx * 0.34, -0.52, 0.72)
         s = rig.joint(f"tool_{side}", "root", sh)
         e = rig.joint(f"tool_el_{side}", s, el)
-        tip = (sx * 0.34, -0.5, 0.56)
+        tip = (sx * 0.34, -0.52, 0.5)
         rig.part(s).cyl(sh, 0.045, 0.08, "dark", axis="x")
         rig.part(s).plate(sh, el, 0.06, 0.065, TRIM, taper=0.85, r=0.02)
         rig.part(e).cyl(el, 0.04, 0.075, "dark", axis="x")
@@ -146,12 +157,61 @@ def build(rot, state):
     return objs
 
 
+def _occluders(rot, state, bay, W, H):
+    """(hit, seen) for the robots that dock in this state: pixels where the bay hides a docked robot in some charge frame,
+    and where the robot shows with the bay in front of it (3D: robot alone vs robot with the bay as a holdout)."""
+    import bpy
+    from . import robot_render as rr
+    hit = np.zeros((H + 2, W + 2), bool)
+    seen = hit.copy()
+    (dx, dy), d = placement(rot)
+    for kind in (("repair",) if state == "charging.drone" else ("worker", "security")):
+        rig = robots.BUILD[kind]()
+        for i in range(4):
+            rig.root.rotation_euler = (0, 0, math.radians(rr.hr.THETA[d]))
+            rr.pose(rig, "charge", i)
+            rig.root.location = (dx, -dy, rig.root.location.z)
+            vis = []
+            for holdout in (False, True):
+                for o in bay:
+                    o.is_holdout, o.hide_render = holdout, not holdout
+                rgb, a = core.render(W, H, "color")
+                vis.append(np.pad(post.downsample(rgb, a > 0.5, core.SS, 6, False)[1], 1))
+            hit |= vis[0] & ~vis[1]
+            seen |= vis[1]
+        for ob in [p.obj for p in rig.parts] + [e for e, _ in rig.joints.values()]:
+            bpy.data.objects.remove(ob, do_unlink=True)
+    for o in bay:
+        o.is_holdout, o.hide_render = False, False
+    return hit, seen
+
+
 def items(rot, state):
+    """The sprite for (rot, state); a charging state also gets its `.front` overlay: the bay pixels that hide a docked
+    robot (grown 1 px over the outline ring), drawn over the robot like a console's desk front. The main sprite keeps
+    every pixel; its glow leaves out the overlay's share."""
     post.select(True)
     objs = build(rot, state)
     fp = (2, 1) if rot % 2 else (1, 2)
     sid = f"{ID}.r{rot}" + (f".{state}" if state else "")
-    return [env_build.crop_item(sid, fp, *env_build.render_sprite(sid, "prop", objs))]
+    c, op, g, ox, oy, _ = env_build.render_sprite(sid, "prop", objs)
+    if not state.startswith("charging"):
+        return [env_build.crop_item(sid, fp, c, op, g, ox, oy)]
+    W, H = op.shape[1] - 2, op.shape[0] - 2
+    rgb, a = core.render(W, H, "color")
+    ring = op & ~np.pad(post.downsample(rgb, a > 0.5, core.SS, 8, False)[1], 1)
+    hit, seen = _occluders(rot, state, objs, W, H)
+    near = hit.copy()
+    for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        near |= np.roll(hit, (dy, dx), (0, 1))
+    fr = op & (hit | (near & (ring | ~seen)))
+    gb, gf = g.copy(), g.copy()
+    gb[fr] = 0
+    gf[~fr] = 0
+    out = [env_build.crop_item(sid, fp, c, op, gb, ox, oy)]
+    if fr.any():
+        out.append(env_build.crop_item(f"{sid}.front", fp, c, fr, gf, ox, oy))
+    return out
 
 
 def jobs():
