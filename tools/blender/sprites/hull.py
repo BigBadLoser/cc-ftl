@@ -223,3 +223,15 @@ def drop(side):
             m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z1), core.G(*a, z1)], col)
         _belly(m, face, a, b, ZB, lambda k, s: A.hull_belly(face, s, k, STEPS, 0))
     return [m.build()]
+
+
+def vert():
+    """Ghost vertical edge line at the tile's front corner (+x, +y), from the deck up to the rim: placed where the front
+    ghost's outer silhouette turns or ends (convex and concave corners, steps, run ends). Edge-only 'ghost' sprite."""
+    m = core.Mesh("ghost_vert", flat=True)
+    w = 0.6 * C
+    p = (0.5, 0.5)
+    a, b = (p[0] - w, p[1] + w), (p[0] + w, p[1] - w)          # a screen-horizontal sliver through the corner
+    m.poly([core.G(*a, 0.0), core.G(*b, 0.0), core.G(*b, ZG), core.G(*a, ZG)], "gW1")
+    return [_dummy("ghost_vert_plate"), m.build()]
+
