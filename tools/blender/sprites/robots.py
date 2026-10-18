@@ -7,6 +7,7 @@ the heavy security chassis is hunched, armoured and reverse-jointed (about 1.6 a
 smaller, root scale 1.1); the drone is a hovering shell about 1.2 at the top (root scale 1.15). `team.accent` is a
 thin faction seam. The eye is the only glow while running; the charge cells (green, flush in the shell) light only
 in the charge clip; the drone's thruster ring and the welder tip glow while they work."""
+import math
 from .robot_kit import Rig
 
 CLOTH, ACCENT = "team.cloth", "team.accent"
@@ -61,32 +62,39 @@ def _socket(rig, t, c, rot=None):
     rig.part(t).rbox((c[0], c[1], c[2] + 0.004), (0.175, 0.225, 0.03), "dark", r=0.03, rot=rot)
 
 
-def _sensor_head(rig, hd, f, z, k):
+def _sensor_head(rig, hd, f, z, k, pitch=0.0):
     """The shared robot head: a dark wedge sensor head pointing forward, a livery brow plate and one eye, on a short
-    dark neck column rising out of the torso's socket. f, z = the wedge centre; k = scale."""
-    rig.part(hd).cyl((0, f - 0.01, z - 0.075 * k), 0.045 * k, 0.06 * k, "dark")
-    rig.part(hd).rbox((0, f, z), (0.15 * k, 0.1 * k, 0.2 * k), "dark", r=0.03 * k, taper=0.7, axis="f")
-    rig.part(hd).rbox((0, f - 0.02 * k, z + 0.045 * k), (0.17 * k, 0.045 * k, 0.2 * k), CLOTH, r=0.02 * k, taper=0.75, axis="f")
-    rig.part(hd, "eye").ball((0, f + 0.105 * k, z - 0.005 * k), (0.03 * k, 0.015 * k, 0.025 * k), EYE)
+    dark neck column rising out of the torso's socket. f, z = the wedge centre; k = scale; pitch (degrees, < 0 = nose
+    down) tilts the whole head about its centre to follow a sloped chest."""
+    c, sn = math.cos(math.radians(pitch)), math.sin(math.radians(pitch))
+    rot = (pitch, 0, 0) if pitch else None
+
+    def at(df, dz):
+        return (0, f + df * c - dz * sn, z + df * sn + dz * c)
+    rig.part(hd).cyl(at(-0.01, -0.075 * k), 0.045 * k, 0.06 * k, "dark", rot=rot)
+    rig.part(hd).rbox(at(0, 0), (0.15 * k, 0.1 * k, 0.2 * k), "dark", r=0.03 * k, taper=0.7, axis="f", rot=rot)
+    rig.part(hd).rbox(at(-0.02 * k, 0.045 * k), (0.17 * k, 0.045 * k, 0.2 * k), CLOTH, r=0.02 * k, taper=0.75, axis="f", rot=rot)
+    rig.part(hd, "eye").ball(at(0.105 * k, -0.005 * k), (0.03 * k, 0.015 * k, 0.025 * k), EYE, rot=rot)
 
 
-UTIL_BASE, UTIL_EL = (-0.12, -0.17, 1.2), (-0.22, -0.08, 1.55)
+UTIL_BASE, UTIL_EL = (-0.14, -0.17, 1.2), (-0.27, -0.1, 1.58)
 
 
 def _util_arm(rig, t):
-    """The worker's third arm: a slim boom on the back, folded up over its left shoulder with a claw hanging in front
-    (joints util / util_el; the work clip unfolds it)."""
+    """The worker's third arm: a boom on the back, folded up over its left shoulder with a claw hanging in front, outboard
+    of the head (joints util / util_el; the work clip unfolds it). Livery plates on dark hinges, so it reads against
+    both the dark background and the grey limbs."""
     u = rig.joint("util", t, UTIL_BASE)
     ue = rig.joint("util_el", u, UTIL_EL)
-    tip = (-0.28, 0.1, 1.4)
-    _hinge(rig.part(u), UTIL_BASE, 0.045, 0.07)
-    rig.part(u).plate(UTIL_BASE, UTIL_EL, 0.075, 0.08, MID, taper=0.85, r=0.02)
-    rig.part(u).plate((-0.14, -0.15, 1.28), (-0.2, -0.1, 1.48), 0.09, 0.05, CLOTH, taper=0.8, r=0.015)
-    _hinge(rig.part(ue), UTIL_EL, 0.05, 0.085)
-    rig.part(ue).plate(UTIL_EL, tip, 0.065, 0.07, MID, taper=0.85, r=0.02)
-    rig.part(ue).rbox(tip, (0.07, 0.07, 0.05), FRAME, r=0.015)                           # wrist
-    for df in (-0.025, 0.025):                                                           # claw
-        rig.part(ue).rbox((tip[0], tip[1] + df, tip[2] - 0.06), (0.045, 0.03, 0.08), FRAME_L, r=0.01, taper=0.7)
+    tip = (-0.32, 0.09, 1.42)
+    _hinge(rig.part(u), UTIL_BASE, 0.05, 0.08)
+    rig.part(u).strut(UTIL_BASE, UTIL_EL, 0.03, FRAME)
+    rig.part(u).plate(_along(UTIL_BASE, UTIL_EL, 0.05), _along(UTIL_BASE, UTIL_EL, 0.36), 0.085, 0.09, CLOTH, taper=0.85, r=0.02)
+    _hinge(rig.part(ue), UTIL_EL, 0.055, 0.1)
+    rig.part(ue).plate(_along(UTIL_EL, tip, 0.04), _along(UTIL_EL, tip, 0.23), 0.075, 0.08, CLOTH, taper=0.8, r=0.02)
+    rig.part(ue).rbox(tip, (0.08, 0.08, 0.055), FRAME, r=0.015)                          # wrist
+    for df in (-0.03, 0.03):                                                             # claw
+        rig.part(ue).rbox((tip[0], tip[1] + df, tip[2] - 0.065), (0.05, 0.035, 0.09), FRAME_L, r=0.01, taper=0.7)
 
 
 def worker():
@@ -187,7 +195,7 @@ def heavy():
     _charge_bar(rig, t, -0.075, -0.27, 1.13, face=-1)
     rig.part(t).rbox((0, 0.215, 1.24), (0.2, 0.06, 0.15), FRAME_L, r=0.03, taper=1.15, rot=(-12, 0, 0))  # chest inset
     _socket(rig, t, (0, 0.085, 1.358), rot=(-12, 0, 0))
-    _sensor_head(rig, hd, 0.12, 1.435, 1.0)
+    _sensor_head(rig, hd, 0.12, 1.435, 1.0, pitch=-12)
     rig.build()
     rig.root.scale = (1.1,) * 3
     return rig
