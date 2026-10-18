@@ -112,27 +112,27 @@ export const modules = {
   // Light weapons 2x2, heavy 3x3.
   'module.burstLaser': {
     name: 'Burst laser', asset: 'module.burst_laser', footprint: [2, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.2, maxHp: 80, buildWork: 200, weapon: 'weapon.burstLaser', roofAsset: 'roof.weapon',
+    flammability: 0.2, maxHp: 80, buildWork: 200, weapon: 'weapon.burstLaser', roofAsset: 'roof.weapon', deploySec: 2,
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }],
   },
   'module.massDriver': {
     name: 'Mass driver', asset: 'module.mass_driver', footprint: [3, 3], solid: true, power: -12, priority: 3,
-    flammability: 0.2, maxHp: 100, buildWork: 260, weapon: 'weapon.massDriver', roofAsset: 'roof.weapon',
+    flammability: 0.2, maxHp: 100, buildWork: 260, weapon: 'weapon.massDriver', roofAsset: 'roof.weapon', deploySec: 2,
     cost: [{ item: 'item.metal', count: 24 }, { item: 'item.electronics', count: 8 }],
   },
   'module.missileLauncher': {
     name: 'Missile launcher', asset: 'module.missile_launcher', footprint: [3, 3], solid: true, power: -8, priority: 3,
-    flammability: 0.3, maxHp: 80, buildWork: 220, weapon: 'weapon.missile', roofAsset: 'roof.weapon',
+    flammability: 0.3, maxHp: 80, buildWork: 220, weapon: 'weapon.missile', roofAsset: 'roof.weapon', deploySec: 2,
     cost: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 10 }],
   },
   'module.ionCannon': {
     name: 'Ion cannon', asset: 'module.ion_cannon', footprint: [2, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.2, maxHp: 80, buildWork: 220, weapon: 'weapon.ion', roofAsset: 'roof.weapon',
+    flammability: 0.2, maxHp: 80, buildWork: 220, weapon: 'weapon.ion', roofAsset: 'roof.weapon', deploySec: 2,
     cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 14 }],
   },
   'module.incendiaryLauncher': {
     name: 'Incendiary launcher', asset: 'module.incendiary_launcher', footprint: [2, 2], solid: true, power: -8, priority: 3,
-    flammability: 0.4, maxHp: 80, buildWork: 200, weapon: 'weapon.incendiary', roofAsset: 'roof.weapon',
+    flammability: 0.4, maxHp: 80, buildWork: 200, weapon: 'weapon.incendiary', roofAsset: 'roof.weapon', deploySec: 2,
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 6 }],
   },
   // 4 wide along the hull, 5 deep. At rotation 0 the north row (y = 0) replaces the hull wall (rotate clockwise for
@@ -147,13 +147,13 @@ export const modules = {
   'module.shieldGen': {
     name: 'Shield generator', asset: 'module.shield_gen', footprint: [2, 3], solid: true, power: -8, priority: 2,
     flammability: 0.2, maxHp: 100, buildWork: 220, shieldGen: { layersPerPower: 0.25, rechargeSec: 10 },
-    roofAsset: 'roof.shield',
+    roofAsset: 'roof.shield', deploySec: 2,
     cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 12 }],
   },
   'module.shieldGenSmall': {
     name: 'Small shield generator', asset: 'module.shield_gen_small', footprint: [2, 2], solid: true, power: -4, priority: 2,
     flammability: 0.2, maxHp: 70, buildWork: 140, shieldGen: { layersPerPower: 0.25, rechargeSec: 12 },
-    roofAsset: 'roof.shield',
+    roofAsset: 'roof.shield', deploySec: 2,
     cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 8 }],
   },
   // Consoles: the chair is a walkable tile inside the footprint; crew sit there to run the ship system in combat.
@@ -177,7 +177,7 @@ export const modules = {
   },
   'module.aiCore': {
     name: 'AI core', asset: 'module.ai_core', footprint: [2, 2], solid: true, power: -4,
-    priority: 3, flammability: 0.2, maxHp: 80, buildWork: 240, aiCore: { tier: 1 }, roofAsset: 'roof.ai',
+    priority: 3, flammability: 0.2, maxHp: 80, buildWork: 240, aiCore: { tier: 1 }, roofAsset: 'roof.ai', deploySec: 2,
     cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 16 }],
   },
 } satisfies Record<string, ModuleDef>;

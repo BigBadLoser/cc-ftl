@@ -2,6 +2,7 @@ import {
   CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC,
 } from '../crew/components';
 import { ModuleC } from '../modules/components';
+import { isDeployed } from '../modules/deploy';
 import { isTileWalkable } from '../modules/walk';
 import { gridFromTemplate, spawnTemplateModules } from '../ship';
 import type { ShipTemplate } from '../registry';
@@ -36,7 +37,7 @@ export function shieldCapacity(sim: Sim, gridId: number, powered: boolean): numb
     const m = sim.world.get(id, ModuleC);
     const gen = m && m.gridId === gridId ? sim.content.modules[m.def]?.shieldGen : undefined;
     if (!m || !gen || m.hp <= 0 || !m.enabled || (powered && !m.powered)) continue;
-    if (powered && sim.world.has(id, IonC)) continue;
+    if (powered && (sim.world.has(id, IonC) || !isDeployed(sim, id))) continue;
     layers += Math.floor(Math.abs(sim.content.modules[m.def]?.power ?? 0) * gen.layersPerPower);
   }
   return layers;

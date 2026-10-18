@@ -8,7 +8,7 @@ import { SHIELD_OPERATED_BONUS, SKILL_STEP } from '../tuning';
 /**
  * Shield layers: the maximum comes from the running generators (floor(|power| x layersPerPower) each). Layers
  * above the maximum vanish at once; below it one layer returns every rechargeSec, faster with an operator at
- * the shield console. Wrecks and fled ships have none.
+ * the shield console. A generator counts only once its emitter dish is fully deployed. Wrecks and fled ships have none.
  */
 export function shieldSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC, CombatC)) {

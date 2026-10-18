@@ -6,6 +6,7 @@ import { carrySystem } from './systems/carry';
 import { combatStateSystem } from './systems/combatState';
 import { craftJobsSystem } from './systems/craftJobs';
 import { decideSystem } from './systems/decide';
+import { deploySystem } from './systems/deploy';
 import { doorsSystem } from './systems/doors';
 import { draftedSystem } from './systems/drafted';
 import { enemyAiSystem } from './systems/enemyAi';
@@ -94,6 +95,8 @@ export const pipeline: readonly System[] = [
   combatStateSystem,
   // Ion timers expire before anything asks whether a module is disabled.
   ionSystem,
+  // Roof parts fold out or away on this tick's combat state and power, before anything checks them.
+  deploySystem,
   // Shields and helm settle this tick's layers, evasion and FTL charge before shots resolve.
   shieldSystem,
   helmSystem,

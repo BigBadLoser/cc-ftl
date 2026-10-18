@@ -6,6 +6,7 @@ import { shipEntityOf, shipOf } from '../combat/ships';
 import { resolveTarget } from '../combat/targets';
 import { ModuleC } from '../modules/components';
 import type { WeaponDef } from '../registry';
+import { isDeployed } from '../modules/deploy';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { MIN_SPREAD_FACTOR, SPREAD_PER_GUNNERY } from '../tuning';
@@ -25,7 +26,7 @@ export function firingSystem(sim: Sim): void {
     const ship = m && shipOf(sim, m.gridId);
     const combat = ship && sim.world.get(shipEntityOf(sim, ship.gridId), CombatC);
     if (!m || !w || !def || !ship || !combat) continue;
-    const ready = ship.state === 'active' && m.powered && m.hp > 0 && !sim.world.has(id, IonC);
+    const ready = ship.state === 'active' && m.powered && m.hp > 0 && !sim.world.has(id, IonC) && isDeployed(sim, id);
     if (w.shotsLeft > 0) {
       if (!ready) w.shotsLeft = 0;
       else if (sim.tick >= w.nextShotTick) launchNext(sim, id, w, weaponId as string, def, m.gridId);
