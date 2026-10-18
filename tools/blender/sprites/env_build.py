@@ -82,7 +82,10 @@ def build(out, only=None, log=print):
         core.clear_scene_meshes()
         post.select(sid in new or sid.startswith(("tile.wall", "tile.hull", "tile.door")))
         c, op, g, ox, oy, al = render_sprite(sid, kind, fn())
-        x0, y0, x1, y1 = post.crop_box(op | (g[..., 3] > 0))
+        vis = op | (g[..., 3] > 0)
+        if not vis.any():
+            continue                                    # nothing visible (e.g. a corner ghost with no belly): no sprite
+        x0, y0, x1, y1 = post.crop_box(vis)
         rgba = post.to_rgba(c, op)
         if al is not None:
             rgba[..., 3] = al
