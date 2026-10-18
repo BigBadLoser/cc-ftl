@@ -233,3 +233,42 @@ def _annulus(f, u0, u1, v, z, r_out, r_in, mat, cap_mat=None, sides=12):
         j = (i + 1) % sides
         f.poly([pt(u1, r_in, i), pt(u1, r_out, i), pt(u1, r_out, j), pt(u1, r_in, j)][::-1], cap_mat or mat, flip=True)
         f.poly([pt(u0, r_in, i), pt(u0, r_out, i), pt(u0, r_out, j), pt(u0, r_in, j)], cap_mat or mat, flip=True)
+
+
+def bezier(pts, n=10):
+    """Points along a Bezier curve through control points pts (u, v, z), n+1 samples."""
+    P = [Vector(p) for p in pts]
+    out = []
+    for k in range(n + 1):
+        t = k / n
+        Q = P
+        while len(Q) > 1:
+            Q = [Q[i] * (1 - t) + Q[i + 1] * t for i in range(len(Q) - 1)]
+        out.append(tuple(Q[0]))
+    return out
+
+
+def curve_pipe(f, ctrl, r, mat="gm", n=10, sides=8, joint="steelL", clamps=(), clamp_r=1.45, end_caps=True):
+    """Smoothly curved tube: Bezier through ctrl as n short round segments, joined by round knuckles so bends stay closed,
+    with optional steel clamp rings at curve fractions in `clamps`."""
+    pts = bezier(ctrl, n)
+    for a, b in zip(pts, pts[1:]):
+        seg(f, a, b, r, mat, sides, cap=mat, capstart=mat)
+    for p in pts[1:-1]:
+        f.box(p[0], p[1], p[2], r * 1.7, r * 1.7, r * 1.7, mat, base=False)
+    for c in clamps:
+        i = max(1, min(n - 1, round(c * n)))
+        a, b = Vector(pts[i - 1]), Vector(pts[i + 1])
+        seg(f, Vector(pts[i]) - (b - a).normalized() * 0.04, Vector(pts[i]) + (b - a).normalized() * 0.04, r * clamp_r, joint, sides, cap=joint, capstart=joint)
+    return pts
+
+
+def torus(f, u, v, z, R, r, mat="steelL", n=24, sides=8):
+    """Fat ring (exhaust manifold) wrapped round a bell axis along u: n round segments of radius r on a circle of radius R."""
+    pts = [(u, v + R * math.cos(k * math.tau / n), z + R * math.sin(k * math.tau / n)) for k in range(n)]
+    for k in range(n):
+        a, b = pts[k], pts[(k + 1) % n]
+        seg(f, a, b, r, mat, sides, cap=mat, capstart=mat)
+    for p in pts:
+        f.box(p[0], p[1], p[2], r * 1.7, r * 1.7, r * 1.7, mat, base=False)
+    return pts

@@ -5,8 +5,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import core, cmbkit, overlap, engine_proto as E, walls  # noqa: E402
 
+walls.HF = 2.2    # temporary prototype override (parallel branch raises the real value)
+
 ALLOW = [("bulkhead", "wall"), ("pylon", "bulkhead"), ("pylon", "wall"), ("bell", "bulkhead"), ("bell", "wall"),
-         ("collar", "bulkhead"), ("collar", "wall"), ("collar", "bell"), ("bell", "chamber")]
+         ("collar", "bulkhead"), ("collar", "wall"), ("collar", "bell"), ("bell", "chamber"),
+         ("manifold", "bell"), ("manifold", "pipe"), ("manifold", "collar"), ("pipe", "collar"), ("pipe", "bell"),
+         ("duct", "chamber"), ("duct", "pump"), ("dome", "chamber"), ("pump", "housing"), ("pump", "pipe"),
+         ("gimbal", "chamber"), ("gimbal", "bulkhead"), ("gimbal", "wall"), ("gimbal", "housing"), ("duct", "gimbal"),
+         ("manifold", "gimbal"), ("dome", "pipe"), ("tank", "pipe"), ("tank", "housing"), ("dome", "duct")]
 
 
 def parts_for(rot, full):
@@ -19,6 +25,8 @@ def parts_for(rot, full):
         for u0, u1, z1 in ((E.UH - walls.WT, E.UH + walls.WT, top), (E.UH - 0.5, E.UH + 0.5, walls.H)):
             a, b = f.pt(u0, v0, 0), f.pt(u1, v1, z1)
             rec.add({"kind": "box", "lo": [min(a[i], b[i]) for i in range(3)], "hi": [max(a[i], b[i]) for i in range(3)], "src": "wall"})
+    rec.group = "deck"          # the ship's floor tiles under the footprint (anchor only; not part of the model)
+    rec.add({"kind": "box", "lo": [-9, -9, -0.05], "hi": [9, 9, 0.0], "src": "floor"})
     E.bulkhead(f, full)
     E.machine(f, rot, True)
     cmbkit.REC = None

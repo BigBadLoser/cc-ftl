@@ -11,9 +11,10 @@ ROOT = Path(__file__).resolve().parents[3]
 AS = ROOT / "public/assets"
 D = Path(sys.argv[1])
 ROT = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+TAG = "v8"
 MAN = json.loads((AS / "manifest.json").read_text())["assets"]
 ENV = np.array(Image.open(AS / "sprites/env.png").convert("RGBA")).astype(np.float32)
-W, H = 600, 440
+W, H = 640, 520
 BG = np.array([10, 14, 22], np.float32)
 
 
@@ -78,17 +79,18 @@ def depth_sort(items):
 
 
 def load(rot, part, hot=False):
-    z = np.load(D / f"px_r{rot}_{part}{'_active' if hot else ''}_v7.npz")
+    z = np.load(D / f"px_r{rot}_{part}{'_active' if hot else ''}_{TAG}.npz")
     return z["rgba"], z["glow"], int(z["ox"]), int(z["oy"])
 
 
 def build(nb, hot):
     """nb: neighbouring wall mode ('full' or 'cut'). The engine hull section is full height either way."""
-    tag = f"r{ROT}_{'cutwalls' if nb == 'cut' else 'active' if hot else 'idle'}_v7"
+    tag = f"r{ROT}_{'cutwalls' if nb == 'cut' else 'active' if hot else 'idle'}_{TAG}"
     hull = load(ROT, "hull")
     mach = load(ROT, "machine", hot)
+    nb_mode_full = nb == "full"
     sc = Scene()
-    T = lambda x, y: (250 + (x - y) * 32, 150 + (x + y) * 16)  # noqa: E731
+    T = lambda x, y: (280 + (x - y) * 32, 220 + (x + y) * 16)  # noqa: E731
     wid = "tile.hull.full" if nb == "full" else "tile.hull"
     if ROT == 1:
         fx0, fx1, fy0, fy1, front = -0.5, 4.5, -0.5, 3.5, (4, 3)
@@ -108,8 +110,13 @@ def build(nb, hot):
         for rgba, glow, ox, oy in (hull, mach):                 # hull section first, then the machine (cut by holdout)
             sc.blit(rgba, glow, ex - ox, ey - oy)
     items = [(fx0, fx1, fy0, fy1, engine)]
+    nb = load(ROT, "nbwall") if nb_mode_full else None
     for x, y, aid in walls:
-        items.append((x - 0.5, x + 0.5, y - 0.5, y + 0.5, lambda aid=aid, x=x, y=y: sc.asset(aid, *T(x, y))))
+        if nb is not None:                                      # full neighbours re-rendered at the overridden HF
+            draw = lambda x=x, y=y: sc.blit(nb[0], nb[1], int(T(x, y)[0]) - nb[2], int(T(x, y)[1]) - nb[3])
+        else:
+            draw = lambda aid=aid, x=x, y=y: sc.asset(aid, *T(x, y))
+        items.append((x - 0.5, x + 0.5, y - 0.5, y + 0.5, draw))
     for x, y, d in people:
         items.append((x - 0.2, x + 0.2, y - 0.2, y + 0.2, lambda x=x, y=y, d=d: crew(sc, *T(x, y), d=d)))
     for it in depth_sort(items):

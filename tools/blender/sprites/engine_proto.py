@@ -23,9 +23,10 @@ UH = 2.0                                         # hull row centre (u)
 def bulkhead(g, full=True):
     """Engine bulkhead on the hull row, wrapping ONE big bell: a heavy slab across the whole hull side, armoured pylons
     at the ends (clear of the bell's mount collar), ribbed plating, the bell-mount collar with bolts and a flush end
-    cheek. Full mode rises above wall height (1.2); cut mode stays low but keeps the layout. Real wall tiles run
-    underneath, so the ends (v = +-2) butt into neighbouring walls with the wall profile."""
-    hs, hp = (1.45, 2.05) if full else (0.58, 0.9)
+    cheek. Full mode rises above full wall height (walls.HF); cut mode stays low but keeps the layout. Real wall tiles
+    run underneath, so the ends (v = +-2) butt into neighbouring walls with the wall profile."""
+    hf = walls.HF
+    hs, hp = (hf + 0.1, hf + 0.7) if full else (0.58, 0.9)
     _g("bulkhead")
     g.box(2.02, 0, 0, 0.96, 3.9, hs, "steel", top="plate")
     D.trim(g, 2.02, 0, hs, 0.96, 3.9, "plate")
@@ -37,7 +38,7 @@ def bulkhead(g, full=True):
     for vv in (-1.9, -1.45, 1.45, 1.9):                                         # ribbed seams on the outer face
         g.box(2.53, vv, 0.05, 0.07, 0.1, hs - 0.1, "plate")
     for sv in (-1, 1):
-        for zz in ((0.45, 0.95) if full else (0.3,)):
+        for zz in ([0.45 + 0.5 * k for k in range(int((hs - 0.4) / 0.5))] if full else (0.3,)):
             g.box(2.53, sv * 1.68, zz, 0.07, 0.62, 0.08, "steelD")
         for vv in (1.45, 1.9):                                                  # ribs across the slab top, outside the neck
             g.box(2.02, sv * vv, hs, 0.8, 0.07, 0.05, "plate")
@@ -107,40 +108,83 @@ def bell(f, hot, glow):
         f.hcyl(4.3, 5.7, 0, BZ, 0.9, "cyan", r1=0.15, sides=14, cap="arc")
 
 
+def plumbing(f, hot):
+    """Rocket-engine plumbing translated from a real F-1: fat exhaust-manifold torus round the bell, thin pipes down the
+    bell to it, a side-mounted turbopump with big curved ducts sweeping into the chamber top, an arched feed-line
+    cluster round the injector dome and gimbal struts to the bulkhead. All bands >= ~0.1 tiles."""
+    ro = lambda u: 0.98 + (u - 2.8) / 1.5 * 0.38                                            # noqa: E731
+    _g("manifold")
+    um = 3.45
+    rm_ = ro(um) + 0.17
+    D.torus(f, um, 0, BZ, rm_, 0.2, "steelL", n=28)
+    for k in range(6):                                                                       # clamp straps round the torus
+        ang = k * math.tau / 6 + 0.3
+        c, s_ = math.cos(ang), math.sin(ang)
+        R = rm_
+        D.seg(f, (um - 0.1, R * c, BZ + R * s_), (um + 0.1, R * c, BZ + R * s_), 0.25, "brass", 8, cap="brass", capstart="brass")
+    _g("pipe")                                                                               # thin pipes: collar -> manifold
+    for ang in (35, 70, 110, 145, 180):
+        c, s_ = math.cos(math.radians(ang)), math.sin(math.radians(ang))
+        R = rm_
+        D.seg(f, (2.7, R * c, BZ + R * s_), (um, R * c, BZ + R * s_), 0.055, "brass", 6, cap="brass", capstart="brass")
+        D.flange(f, (3.08, R * c, BZ + R * s_), "u", 0.1, "plate", t=0.07, sides=6)
+    _g("pump")                                                                               # side turbopump, floor standing
+    pu, pv = 0.3, 1.45
+    f.box(pu, pv, 0.0, 0.9, 0.9, 0.12, "steelD", top="steel")                                # pump foot
+    D.seg(f, (pu, pv, 0.1), (pu, pv, 1.0), 0.38, "gm", 14, cap="steelL", capstart="steelL")  # pump casing
+    for z in (0.3, 0.62, 0.92):
+        D.flange(f, (pu, pv, z), "z", 0.44, "plate", t=0.09, sides=14)
+    D.seg(f, (pu, pv, 1.0), (pu, pv, 1.22), 0.26, "steelL", 12, cap="plate", capstart="steelL")   # volute head
+    D.seg(f, (pu + 0.35, pv + 0.0, 0.5), (pu + 0.8, pv, 0.5), 0.17, "gm", 8, cap="steelL", capstart="steelL")  # turbine exhaust stub
+    _g("duct")
+    D.curve_pipe(f, [(pu, pv, 1.22), (pu, pv, 2.3), (pu, 0.6, 2.5), (pu, 0.0, 2.1)], 0.17, "brass", n=12, sides=10, joint="steelL", clamps=(0.3, 0.55, 0.8))
+    D.curve_pipe(f, [(pu + 0.3, pv - 0.1, 0.85), (pu + 0.6, pv - 0.1, 1.6), (pu + 0.6, 0.95, 1.55), (pu + 0.55, 0.62, BZ + 0.2)],
+                 0.12, "brass", n=10, sides=8, joint="steelL", clamps=(0.5,))
+    _g("dome")                                                                               # arched feed lines round the injector dome
+    for ang in (25, 55, 85, 115, 145, 175):
+        c, s_ = math.cos(math.radians(ang)), math.sin(math.radians(ang))
+        rm = 1.08
+        D.curve_pipe(f, [(-0.62, 0.8 * c, BZ + 0.8 * s_), (-0.4, rm * c, BZ + rm * s_), (-0.1, rm * c, BZ + rm * s_), (0.25, 0.8 * c, BZ + 0.8 * s_)],
+                     0.06, "brass" if ang % 2 else "steelL", n=6, sides=6)
+    _g("gimbal")                                                                             # gimbal bearings + struts to the bulkhead
+    for sv in (-1, 1):
+        f.box(0.95, sv * 0.84, BZ, 0.3, 0.26, 0.34, "steelD", top="steelL")
+        D.seg(f, (0.95, sv * 0.9, BZ + 0.15), (1.56, sv * 1.4, BZ - 0.2), 0.075, "steelL", 6, cap="steelL", capstart="steelL")
+        D.seg(f, (0.95, sv * 0.9, BZ - 0.15), (1.56, sv * 1.4, BZ - 0.65), 0.075, "steelL", 6, cap="steelL", capstart="steelL")
+        f.box(1.5, sv * 1.4, BZ - 0.45, 0.12, 0.2, 0.7, "steelD", base=False)
+
+
 def machine(f, rot, hot):
-    """Single drive train: horizontal fuel tanks in cradles, a turbopump with propellant manifold, thick feed lines
-    into the combustion chamber, all feeding the one bell. Horizontal plumbing, no upright cans."""
+    """Single drive train standing directly on the ship's floor tiles (no module slab): horizontal fuel tanks on saddle
+    cradles, an in-line turbine and propellant manifold, a combustion chamber on a low cradle, all feeding the one bell,
+    plus the rocket plumbing."""
     glow = "cyan" if hot else "dark"
-    _g("deck")
-    f.box(0, 0, 0, 4.9, 3.9, 0.08, "steel", top="plateB")
     for sv in (-1, 1):
         vt = sv * 1.15
-        _g("tank")                                                                              # horizontal tank + cradle
-        f.box(-1.5, vt, 0.08, 1.6, 1.1, 0.05, "steelD", top="steel")
+        _g("tank")                                                                              # horizontal tank on two saddles
         f.hcyl(-2.3, -0.7, vt, 0.62, 0.5, "gm", sides=16, cap="steelL", capstart="steelL")
+        for u in (-2.05, -0.95):
+            f.box(u, vt, 0.0, 0.2, 0.9, 0.3, "steelD", top="steel")
         for u in (-2.05, -1.5, -0.95):
             D.annulus(f, u - 0.06, u + 0.06, vt, 0.62, 0.57, 0.3, "plate", "plate", sides=16)
-        _g("greeble")
-        for u in (-1.775, -1.225):                                                               # standing valve wheels on posts
-            D.seg(f, (u, vt, 1.14), (u, vt, 1.36), 0.05, "steelL", 8)
-            G.valve_wheel(f, "+v", u, 1.36, vt - 0.02, r=0.2)
         _g("pipe")                                                                              # feed line: tank -> manifold
         D.pipe(f, [(-0.55, vt, 0.62), (-0.55, vt, BZ), (-0.55, sv * 0.98, BZ)], 0.12, "gm")
-        vo = sv * 1.85                                                                          # coolant run, on brackets
-        D.pipe(f, [(-1.9, vo, 0.2), (1.3, vo, 0.2)], 0.1, "gm")
-        D.flange(f, (1.32, vo, 0.2), "u", 0.15, "steelL", t=0.08)
-        D.flange(f, (-1.88, vo, 0.2), "u", 0.15, "steelL", t=0.08)
-        for u in (-1.0, 0.2):
-            D.bracket(f, u, vo, 0.08, 0.12)
+        if sv < 0:                                                                              # coolant run (the +v side holds the turbopump)
+            vo = sv * 1.85
+            D.pipe(f, [(-1.9, vo, 0.2), (1.3, vo, 0.2)], 0.1, "gm")
+            D.flange(f, (1.32, vo, 0.2), "u", 0.15, "steelL", t=0.08)
+            D.flange(f, (-1.88, vo, 0.2), "u", 0.15, "steelL", t=0.08)
+            for u in (-1.0, 0.2):
+                D.bracket(f, u, vo, 0.0, 0.12)
     _g("pipe")                                                                                  # rear cross-feed between tanks
     D.pipe(f, [(-2.4, -1.15, 0.62), (-2.4, 1.15, 0.62)], 0.1, "gm", flange_every=5)
     _g("housing")                                                                               # chamber cradle + pump gearbox
-    f.box(0.525, 0, 0.08, 1.85, 2.0, 0.5, "steelL", top="plate")
+    f.box(0.525, 0, 0.0, 1.85, 2.0, 0.58, "steelL", top="plate")
     D.trim(f, 0.525, 0, 0.58, 1.85, 2.0, "plate")
-    f.box(-1.475, 0, 0.08, 1.45, 1.0, 0.62, "steel", top="plate")
+    f.box(-1.475, 0, 0.0, 1.45, 1.0, 0.62, "steel", top="plate")
     _g("greeble")
-    G.scatter(f, "+v", 1.0, [("valve", 0.0, 0.3), ("hatch", 0.6, 0.3), ("junction", 1.2, 0.3)])
-    f.box(-0.3, 1.02, 0.52, 0.1, 0.05, 0.05, "orange" if hot else "gmD", base=False)
+    G.scatter(f, "-v", -1.0, [("valve", 0.0, 0.3), ("hatch", 0.6, 0.3)])
+    G.scatter(f, "+v", 1.0, [("junction", 1.2, 0.3)])
     _g("chamber")
     f.hcyl(-2.25, -1.8, 0, BZ, 0.35, "gm", sides=16, cap="steelL", capstart="steelL")             # turbine
     D.drum(f, -1.75, -0.65, 0, BZ, 0.5, n=4, body="steel", rib="plate", sides=16)                # pump casing
@@ -150,6 +194,7 @@ def machine(f, rot, hot):
         c, s_ = math.cos(ang), math.sin(ang)
         D.seg(f, (-0.62, 0.8 * c, BZ + 0.8 * s_), (-0.69, 0.8 * c, BZ + 0.8 * s_), 0.045, "plate", 6)
     D.drum(f, -0.45, 1.0, 0, BZ, 0.75, n=6, body="steel", rib="plate", sides=20, rib_t=0.12, grow=0.07)   # combustion chamber
+    plumbing(f, hot)
     _g("bell")
     bell(f, hot, glow)
 
