@@ -75,9 +75,9 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   plates, 136 sprites); user says it "could use work" — v6 in progress.
 - **Walls pass 5:** thinner walls (~0.22–0.26), hull as layered plate courses (not a
   checkerboard), denser shaded wall faces, muted dusty-rose doors.
-- **Heights (NOT final):** the roof needs visible thickness (a slab, top around 2.4). The user is
-  considering interior walls at 2.2 (roof slab 2.2–2.4) vs keeping 2.4; previews compare both.
-  Crew 1.5.
+- **Heights (DECIDED):** walls.HF = 1.85 (Space Haven measures ~1.85 with the same 1.5 crew); the
+  roof is a 0.2 slab on top (top at 2.05); the hull rises to the roof top. Doors sized from the
+  reference. Wall-top thickness ~0.34–0.36 tile (measured), skirt ~0.3 of wall height.
 - **Sitting crew and roof** handed to Opus (high effort) after repeated misses.
 - **Point defence** is its own module (2x2 bay + R Revolver turret), OPERATED by the AI core
   (needs a powered AI core with its mast up), the way the weapons console operates weapons.
