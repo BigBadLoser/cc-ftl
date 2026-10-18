@@ -14,9 +14,9 @@ Sprites:
 from . import core
 from . import roof_layout as rl
 
-ZR = 2.4          # roof top: the plating is drawn here
 T = 0.2           # roof slab thickness, shown as a face on open S / E sides
-ZB = ZR - T       # slab underside (2.2). Interior wall height under the roof is not decided yet (2.2 or 2.4)
+ZB = 1.85         # slab underside = walls.HF (1.85 on walls-tall; use walls.HF once that branch is merged)
+ZR = ZB + T       # roof top (2.05): the plating is drawn here
 GN = rl.GN
 
 

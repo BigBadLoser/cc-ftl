@@ -54,7 +54,7 @@ def _in_poly(x, y, pts):
     return c
 
 
-STAR = [((17 if k % 2 == 0 else 7) * math.cos(k * math.pi / 5), (17 if k % 2 == 0 else 7) * math.sin(k * math.pi / 5))
+STAR = [((21 if k % 2 == 0 else 9) * math.cos(k * math.pi / 5), (21 if k % 2 == 0 else 9) * math.sin(k * math.pi / 5))
         for k in range(10)]
 
 
@@ -63,10 +63,12 @@ def _glyph(c):
 
 
 def _big(c, k):
-    def f(i, j):                                      # big hull number: 24 x 30 px a digit, two tiles wide
-        I = k * GN + i
-        a, b = (I - j - 5) // 8, (j - 1) // 6
-        return "P" if 1 <= j < 31 and I - j - 5 >= 0 and 0 <= a < 3 and b < 5 and _glyph(c)[b][a] == "1" else None
+    def f(i, j):                                      # big hull number: the registry style (panel + digit painted
+        I = k * GN + i                                # along the deck) at 6 cells a glyph pixel, 2 tiles a digit
+        if not 1 <= j < 31:
+            return None
+        a, b = (I - j - 10) // 6, (j - 1) // 6
+        return "S" if I - j - 10 >= 0 and 0 <= a < 3 and b < 5 and _glyph(c)[b][a] == "1" else "P"
     return f
 
 
@@ -150,12 +152,12 @@ SCHEMES = {
     "tide": dict(motifs=("aft", "saddle", "em.delta", "reg"), P="#2f8f8a", S="#e2ddd0"),
     "sovereign": dict(motifs=("stripe", "em.cross", "reg"), P="#26282e", S="#e0b23e"),
     "orchid": dict(motifs=("aft", "pins", "chev", "reg"), P="#74509e", S="#c3c8d2"),
-    "hornet": dict(motifs=("dbl", "nose", "big"), P="#d9822b", S="#25272d", remap={"big": ("S", "S")}),
-    "glacier": dict(motifs=("split", "arrow", "sten"), P="#aebdcb", S="#1d2a44"),
+    "hornet": dict(motifs=("dbl", "nose", "big"), P="#d9822b", S="#25272d"),
+    "glacier": dict(motifs=("split", "arrow", "sten"), P="#aebdcb", S="#1d2a44", remap={"arrow": ("S", "P")}),
     "verdant": dict(motifs=("bars", "arrow", "em.star", "sten"), P="#4f9a4a", S="#e2ddd0"),
     "ember": dict(motifs=("nose", "bars", "em.diamond", "big"), P="#26282e", S="#d9822b"),
     "tricolour": dict(motifs=("split", "dbl", "em.star", "big", "sten"), P="#24324f", S="#e2ddd0", T="#b0443a",
-                      remap={"dbl": ("T", "S"), "em.star": ("T", "S"), "big": ("S", "S")}),
+                      remap={"dbl": ("T", "S"), "em.star": ("T", "S"), "big": ("T", "S")}),
 }
 
 
