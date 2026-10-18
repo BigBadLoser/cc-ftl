@@ -55,8 +55,13 @@ The user did not approve the first m4-assets sheets: modules were far too small.
 - **Weapons picked** (Opus concepts, branch `opus-weapons`): burst laser = S Sponson, mass driver =
   H Halo, R Revolver's six-barrel rotary = point-defence turret asset. Bay core column runs full
   height to the roof. Engine stays with Sol (the Opus engine preview on `opus-engine` is reference).
-- **Roof:** v1 (`roof-art`) rejected as random; v2 must follow ship structure (ribs along walls
-  below, one panel per room, one colour rule, purposeful details only).
+- **Roof:** keep v1 (`roof-art`) ochre/blue-grey multi-tile plates, seams and edge trim; remove all
+  scattered details (lights, vent squares, hatches, nubs, hazard tape). The structure-driven v2 was
+  rejected.
+- **Point defence** is its own module (2x2 bay + R Revolver turret), OPERATED by the AI core
+  (needs a powered AI core with its mast up), the way the weapons console operates weapons.
+- **Sitting crew:** facing is correct. Fix chair clipping; add `sit_work` (arms on the controls)
+  and keep the current pose as `sit_idle` (lounging/watching).
 - **Engine and weapons art handed to Sol** (user's choice, 2026-10-18) using the prompts in this
   session's scratchpad `sol/` (shared context + engine + weapons). All of our engine passes and
   weapon concepts were rejected; keep them only as code reference.
