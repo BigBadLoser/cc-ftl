@@ -69,6 +69,12 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   `tools/blender/review/proto_*.py`), user approves the look, then the other modules, then sim and
   layout changes, then balance tuning (raider currently wipes the crew in ~2 min).
 
+**m4-combat sim updated** (075b63a, 5993855, 1b0e482): `ModuleDef.openTiles` (walkable tiles in a
+footprint), `hullEdge` engines that replace the hull wall (airtight, no breach), weapons as floor
+bays with `WeaponC.aim` 0..7 (`turretSystem`, `turretPosition()`), new footprints, starter 30x20,
+raider 24x16, save v5. Balance tuned with fixed-seed scenario tests (manned player wins, no deaths
+in 4 min unmanned). User approved: repair rate 12 → 3/s, starter ion cannon → second burst laser.
+
 ## Decisions log (beyond DESIGN.md)
 
 - **Workflow:**
