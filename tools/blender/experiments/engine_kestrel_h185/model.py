@@ -6,6 +6,7 @@ u points outboard. The 4x5 footprint and two-layer engine contract are fixed.
 import math
 from sprites import core, detail as D, greeble as G
 import hull_walls as walls
+from sprites import walls as W
 from sprites.cmbkit import Frame
 from geometry import annulus, curved_pipe, sleeve, torus
 from cassette import heavy_bed, armoured_powerhead, integrated_services
@@ -73,23 +74,26 @@ def sculpted_stave(f,profile,t0,t1,mat,relief=1.0):
 
 
 def hull(rot,stage=1,holdout=False):
+    """The engine's hull section: the production hull wall (sprites/walls.py, the same profile, thickness, skirt and
+    hull_top() height as the hull around it) along the hull row, with the approved bulkhead detailing on its outer
+    (+u) face and the circular bearing through it. The production far-hull piece puts its strip at the tile's -x / -y
+    edge: the inner edge for an east / south hull (r1 / r2), the outer edge for a north / west one (r0 / r3)."""
     objects=[]
     f=Frame(core.Mesh("unused"),rot,centre=CENTRE[rot])
-    for v in (-1.5,1.5):
-        ob=walls.block(5 if rot%2 else 10,"hull",full=True)[0]
+    for v in (-1.5,-0.5,0.5,1.5):
+        ob=W.block(5 if rot%2 else 10,"hull",level="up")[0]
         x,y=f.xy(2,v)
         ob.location=core.G(x,y,0)
         objects.append(ob)
+    t=(math.floor(W.hull_thick()*W.GN-0.5)+1)/W.GN   # walls.Strip covers the cells whose centre lies inside: 20/32
+    outer=1.5+t if rot in (1,2) else 2.5           # u of the strip's outer face
+    top=W.hull_top()
     m=core.Mesh("KESTREL_armoured_bulkhead")
     f=Frame(m,rot,centre=CENTRE[rot])
-    # Full-height armour shoulders meet the exact production end pieces.
+    # Armour shoulders and blue-grey plates on the outer face (as approved, now on the production wall face).
     for side in (-1,1):
-        f.box(2,side*0.81,0,2*walls.WT,0.38,walls.HF,"steel",top="steelL")
-        prism(f,[(1.5,0),(1.5,0.04),(2-walls.WT,walls.H),
-                 (2+walls.WT,walls.H),(2.5,0.04),(2.5,0)],
-              side*0.6,side*1.0,"steelD","steelD")
-        f.box(2.22,side*0.82,0.45,0.04,0.28,0.4,"blueGrey",top="steel")
-    f.box(2,0,0,2*walls.WT,1.24,BZ-0.57,"steelD",top="steel")
+        f.box(outer+0.02,side*0.81,0,0.04,0.38,top-0.02,"steel",top="steelL")
+        f.box(outer+0.05,side*0.82,0.45,0.04,0.28,0.4,"blueGrey",top="steel")
     # Compact circular bearing instead of a tall rectangular bridge.
     bearing_start=len(m.v)
     annulus(f,1.81,2.26,0.555,0.75,BZ,"steel","steelL",sides=32)

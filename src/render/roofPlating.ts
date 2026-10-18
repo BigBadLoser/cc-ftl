@@ -21,6 +21,8 @@ export interface RoofPiece {
 export interface Livery {
   scheme: string;
   seed: number;
+  /** Bow motifs (chevrons, registry block) at the -x end instead of +x. */
+  bowWest?: boolean;
 }
 
 const SIDES = [['n', 0, -1], ['w', -1, 0], ['s', 0, 1], ['e', 1, 0]] as const;
@@ -37,16 +39,15 @@ export const hasRoofArt = (atlas: Atlas): boolean => !!atlas.stat('roof.c0b.00')
  * the module-rule base sprite (roofArt.roofTile), the ship's livery masks recoloured by the livery shader, and an edge
  * overlay on each open side, at roof depth (+0.9 .. +0.91). Without the roof family it falls back to the stand-in plate.
  */
-export function buildRoofPlating(grid: Grid, atlas: Atlas, L: Layers, livery: Livery | null, skip: (x: number, y: number) => boolean,
-  engineHull: ReadonlyMap<number, 'n' | 'e' | 's' | 'w'> = new Map()): RoofPiece[] {
+export function buildRoofPlating(grid: Grid, atlas: Atlas, L: Layers, livery: Livery | null, skip: (x: number, y: number) => boolean): RoofPiece[] {
   const struct = grid.raw('struct');
   const { width: W, height: H } = grid;
   const kindAt = (x: number, y: number): number => (x < 0 || y < 0 || x >= W || y >= H ? Struct.Space : (struct[y * W + x] as number));
   const roofed = (x: number, y: number): boolean => roofCovers(kindAt, x, y);
-  const cutOf = (x: number, y: number): RoofCut => roofCut(kindAt, x, y, engineHull.get(y * W + x) ?? null);
+  const cutOf = (x: number, y: number): RoofCut => roofCut(kindAt, x, y);
   const real = hasRoofArt(atlas);
   // Livery paints the full plates only (a mask would overhang a cut plate).
-  const plan = real && livery ? liveryPlan(W, H, (x, y) => roofed(x, y) && !cutOf(x, y), livery.scheme, livery.seed, (m) => !!atlas.stat(`roof.lv.${m}`)) : new Map();
+  const plan = real && livery ? liveryPlan(W, H, (x, y) => roofed(x, y) && !cutOf(x, y), livery.scheme, livery.seed, (m) => !!atlas.stat(`roof.lv.${m}`), !!livery.bowWest) : new Map();
   const out: RoofPiece[] = [];
   const place = <T extends Container>(o: T, z: number): T => {
     o.zIndex = z;
@@ -98,7 +99,7 @@ export function buildRoofPlating(grid: Grid, atlas: Atlas, L: Layers, livery: Li
       for (const [side, dx, dy] of SIDES) {
         if (roofed(x + dx, y + dy) || cutHides(cut, side)) continue;
         // An open N / W girder on a cut tile is clipped at the cut like the plate.
-        const clip = cut === '' || cut === 'c' ? '' : (side === 'n' && cut.endsWith('e')) || (side === 'w' && cut.endsWith('s')) ? (cut.startsWith('x') ? '.cutx' : '.cut') : '';
+        const clip = cut === '' || cut === 'c' ? '' : (side === 'n' && cut.endsWith('e')) || (side === 'w' && cut.endsWith('s')) ? '.cut' : '';
         const e = atlas.stat(`roof.edge.${side}.${col}${clip}`) ?? atlas.stat(`roof.edge.${side}.${col}`);
         if (e) objs.push(sprite(e, 0.908));
       }

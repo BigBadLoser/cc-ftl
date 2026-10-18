@@ -155,6 +155,19 @@ MASKS = {
 
 MASKS = {k: f for k, f in MASKS.items() if any(f(i, j) for i in range(GN) for j in range(GN))}   # drop empty ones
 
+# Bow at either end: a ship whose bow is at -x takes the plan of its x-mirror, with every direction-dependent mask
+# mirrored (i -> GN - 1 - i, sprites roof.lv.<mask>.m) and text (registry digits, stencils) kept readable: only its
+# placement mirrors (src/render/roofArt.ts liveryPlan, bowWest).
+TEXT = ("reg.", "big.", "sten.")
+MIRROR = [k for k, f in MASKS.items()
+          if not k.startswith(TEXT) and any(f(i, j) != f(GN - 1 - i, j) for i in range(GN) for j in range(GN))]
+
+
+def mirrored(name):
+    fn = MASKS[name]
+    return lambda i, j: fn(GN - 1 - i, j)
+
+
 # scheme: motifs (painted in this order), colours P / S (/ T), and per-motif channel remaps for 3-colour schemes
 SCHEMES = {
     "crimson": dict(motifs=("stripe", "chev", "reg"), P="#b0443a", S="#e2ddd0"),

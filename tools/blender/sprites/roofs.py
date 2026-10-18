@@ -202,14 +202,14 @@ def trench(side, col="b", variant="v6"):
     return [m.build()]
 
 
-def livery_mask(name):
+def livery_mask(name, mirror=False):
     """Livery motif mask: flat cells at ZR in two key colours, mkP (primary) and mkS (secondary). The renderer
     recolours them per scheme as opaque paint with only a faint relief hint taken from the plating underneath
     (formula and constants in roof_livery's docstring: RELIEF_DARK / LIGHT, RELIEF_K_DARK / LIGHT), so one mask set
     serves every scheme."""
     from . import roof_livery as lv
-    m = core.Mesh(f"roof_lv_{name}", flat=True)
-    fn = lv.MASKS[name]
+    m = core.Mesh(f"roof_lv_{name}{'_m' if mirror else ''}", flat=True)
+    fn = lv.mirrored(name) if mirror else lv.MASKS[name]
     key = {"P": "mkP", "S": "mkS"}
     m.pattern((-0.5, -0.5, ZR), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: key.get(fn(i, j)))
     return [m.build()]
@@ -243,6 +243,8 @@ def _production():
             out.append((f"roof.edge.{s}.{c}", (1, 1), "block", lambda s=s, c=c: variant_edge(s, c, "C", False)))
     for name in lv.MASKS:
         out.append((f"roof.lv.{name}", (1, 1), "block", lambda n=name: livery_mask(n)))
+    for name in lv.MIRROR:
+        out.append((f"roof.lv.{name}.m", (1, 1), "block", lambda n=name: livery_mask(n, True)))
     return out
 
 

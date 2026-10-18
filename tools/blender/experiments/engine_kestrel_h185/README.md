@@ -51,3 +51,11 @@ module.engine.machine.r{0..3}
 module.engine.machine.r{0..3}.active
 4 along hull x 5 deep; [4,5] at r0/r2 and [5,4] at r1/r3
 ```
+
+## Integration change (m4-integration)
+
+`model.hull()` now builds the engine's hull section from the production hull wall (`sprites/walls.py`
+`block(..., "hull", level="up")`: the same 20/32 strip, sloped skirt and `hull_top()` 2.05 as the hull around
+it) instead of this folder's `hull_walls.py` copy, with the shoulders and blue-grey plates moved onto its outer
+face and the bearing unchanged. The machine layer still uses the hull as its holdout, so both layers line up.
+`hull_walls.py` remains for the review context tiles only.

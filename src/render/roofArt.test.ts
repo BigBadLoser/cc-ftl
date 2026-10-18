@@ -64,9 +64,45 @@ describe('roof coverage and cuts', () => {
     expect(roofCut(k, 2, 3)).toBe('s');
     expect(roofCut(k, 3, 2)).toBe('e');
     expect(roofCut(k, 3, 3)).toBe('se');
-    expect(roofCut(k, 3, 2, 'e')).toBe('xe');
-    expect(roofCut(k, 1, 2, 'w')).toBe('');
-    expect([cutSuffix('se'), cutSuffix('xe'), cutSuffix('')]).toEqual(['.cut.se', '.cutx.e', '']);
-    expect([cutHides('se', 's'), cutHides('se', 'n'), cutHides('c', 'w'), cutHides('xe', 'e')]).toEqual([true, false, true, true]);
+    expect([cutSuffix('se'), cutSuffix('')]).toEqual(['.cut.se', '']);
+    expect([cutHides('se', 's'), cutHides('se', 'n'), cutHides('c', 'w'), cutHides('e', 'e')]).toEqual([true, false, true, true]);
+  });
+});
+
+describe('livery bow at either end', () => {
+  const MIRRORED = new Set(
+    ('chev.n chev.s saddle.w saddle.e aft.1 aft.2 em.dot.0 em.dot.1 em.dot.2 em.dot.3 em.delta.0 em.delta.1 em.delta.2 em.delta.3 ' +
+      'em.cross.0 em.cross.1 em.cross.2 em.cross.3 em.star.0 em.star.1 em.star.2 em.star.3 em.diamond.0 em.diamond.1 em.diamond.2 ' +
+      'em.diamond.3 bar arr.0.0 arr.0.1 arr.0.2 arr.0.3 arr.1.1 arr.1.2').split(' ').map((m) => `${m}.m`),
+  );
+  const has = (m: string) => MASKS.has(m) || MIRRORED.has(m);
+  const text = (m: string) => /^(reg|big|sten)\./.test(m);
+  it('mirrors every motif to the other end, with mirrored masks, and keeps the text readable', () => {
+    for (const sc of SCHEME_NAMES) {
+      const east = liveryPlan(24, 16, solid, sc, 42, has);
+      const west = liveryPlan(24, 16, solid, sc, 42, has, true);
+      expect(west.size, sc).toBe(east.size);
+      for (const [key, list] of east) {
+        const [x, y] = key.split(',').map(Number) as [number, number];
+        const other = west.get(`${23 - x},${y}`);
+        expect(other?.map((q) => q.motif), `${sc} ${key}`).toEqual(list.map((q) => q.motif));
+        list.forEach((q, i) => {
+          const w = other?.[i]?.mask ?? '';
+          if (text(q.mask)) expect(text(w)).toBe(true);
+          else expect(w, `${sc} ${key}`).toBe(MIRRORED.has(`${q.mask}.m`) ? `${q.mask}.m` : q.mask);
+        });
+      }
+      // The registry number reads the same, left to right, at the other end.
+      const read = (p: Map<string, { mask: string }[]>) =>
+        [...p].flatMap(([k, l]) => l.filter((q) => /^(reg|big)\./.test(q.mask)).map((q) => [Number(k.split(',')[0]), q.mask] as const))
+          .sort((a, b) => a[0] - b[0]).map((e) => e[1]).join(' ');
+      expect(read(west), sc).toBe(read(east));
+    }
+  });
+  it('chevrons sit at the low-x end of a ship whose bow is west', () => {
+    const west = liveryPlan(24, 16, solid, 'crimson', 42, has, true);
+    const xs = [...west].filter(([, l]) => l.some((q) => q.mask.startsWith('chev.'))).map(([k]) => Number(k.split(',')[0]));
+    expect(Math.max(...xs)).toBeLessThan(5);
+    expect([...west.values()].flat().some((q) => q.mask === 'chev.n.m')).toBe(true);
   });
 });

@@ -108,11 +108,14 @@ function strHash(s: string): number {
   return h;
 }
 
-/** Deterministic livery of a ship: scheme and registry seed from its faction and name. */
-export function liveryFor(faction: string, name: string): { scheme: string; seed: number } {
+/** Deterministic livery of a ship from its faction and name: scheme, registry seed and which end the bow motifs take. */
+export function liveryFor(faction: string, name: string): { scheme: string; seed: number; bowWest: boolean } {
   const h = strHash(`${faction}:${name}`);
-  return { scheme: SCHEME_NAMES[h % SCHEME_NAMES.length] as string, seed: h % 1000 };
+  return { scheme: SCHEME_NAMES[h % SCHEME_NAMES.length] as string, seed: h % 1000, bowWest: ((h >>> 11) & 1) === 1 };
 }
+
+/** Text masks (registry digits, stencils): never mirrored, so they stay readable; only their placement mirrors. */
+const isText = (mask: string): boolean => mask.startsWith('reg.') || mask.startsWith('big.') || mask.startsWith('sten.');
 
 /** Python's round(): halves go to the even neighbour. */
 function pyRound(v: number): number {
@@ -132,6 +135,42 @@ export interface Paint {
  * tile, `has(mask)` = the mask exists (empty masks are not built).
  */
 export function liveryPlan(width: number, height: number, solid: (x: number, y: number) => boolean, scheme: string, seed: number,
+  has: (mask: string) => boolean, bowWest = false): Map<string, Paint[]> {
+  return bowWest ? mirrorPlan(width, height, solid, scheme, seed, has) : planBowEast(width, height, solid, scheme, seed, has);
+}
+
+/**
+ * The plan with the bow at -x: the plan of the x-mirrored outline, mapped back. Direction-dependent masks use their
+ * mirrored sprites (`<mask>.m`, roof_livery.MIRROR; a mask without one is symmetric); each text block keeps its
+ * left-to-right reading order on its mirrored tiles.
+ */
+function mirrorPlan(width: number, height: number, solid: (x: number, y: number) => boolean, scheme: string, seed: number,
+  has: (mask: string) => boolean): Map<string, Paint[]> {
+  const src = planBowEast(width, height, (x, y) => solid(width - 1 - x, y), scheme, seed, has);
+  const out = new Map<string, Paint[]>();
+  const text = new Map<string, { xp: number; mask: string; paint: Paint }[]>();
+  for (const [key, list] of src) {
+    const [xp, y] = key.split(',').map(Number) as [number, number];
+    const x = width - 1 - xp;
+    const paints = list.map((q) => {
+      const paint = { mask: isText(q.mask) || !has(`${q.mask}.m`) ? q.mask : `${q.mask}.m`, motif: q.motif };
+      if (isText(q.mask)) {
+        const g = text.get(`${q.motif}|${y}`) ?? [];
+        g.push({ xp, mask: q.mask, paint });
+        text.set(`${q.motif}|${y}`, g);
+      }
+      return paint;
+    });
+    out.set(`${x},${y}`, paints);
+  }
+  for (const g of text.values()) {
+    const masks = [...g].sort((a, b) => a.xp - b.xp).map((e) => e.mask);
+    [...g].sort((a, b) => b.xp - a.xp).forEach((e, i) => (e.paint.mask = masks[i] as string));
+  }
+  return out;
+}
+
+function planBowEast(width: number, height: number, solid: (x: number, y: number) => boolean, scheme: string, seed: number,
   has: (mask: string) => boolean): Map<string, Paint[]> {
   const out = new Map<string, Paint[]>();
   const sc = SCHEMES[scheme];
@@ -237,15 +276,14 @@ export function roofCovers(kindAt: KindAt, x: number, y: number): boolean {
 }
 
 /** Which cut plate a roof tile needs (tools/blender/sprites/roof_cuts.py), '' for a full plate. */
-export type RoofCut = '' | 's' | 'e' | 'se' | 'c' | 'xs' | 'xe';
+export type RoofCut = '' | 's' | 'e' | 'se' | 'c';
 
 /**
  * The cut of roof tile (x, y): the near hull is cut at its outer face (`s` space at +y, `e` at +x, `se` both), the
- * far corner whose N and W sides face space is chamfered like the hull (`c`), and an engine's hull row facing +y / +x
- * is cut at its bulkhead's outer face (`xs` / `xe`). The far hull's outer face is its tile edge: full plates.
+ * far corner whose N and W sides face space is chamfered like the hull (`c`). The far hull's outer face is its tile
+ * edge: full plates. An engine's hull row is the same production hull wall, so it takes the same cuts.
  */
-export function roofCut(kindAt: KindAt, x: number, y: number, engineSide: 'n' | 'e' | 's' | 'w' | null = null): RoofCut {
-  if (engineSide) return engineSide === 'e' ? 'xe' : engineSide === 's' ? 'xs' : '';
+export function roofCut(kindAt: KindAt, x: number, y: number): RoofCut {
   if (kindAt(x, y) !== Struct.Wall || !touchesSpace(kindAt, x, y)) return '';
   const o = outward(kindAt, x, y);
   if (o === 1) return 's';
@@ -256,8 +294,8 @@ export function roofCut(kindAt: KindAt, x: number, y: number, engineSide: 'n' | 
 
 /** Sprite id suffix of a cut, and the open sides its own lip / girders replace. */
 export function cutSuffix(cut: RoofCut): string {
-  return cut === '' ? '' : cut.startsWith('x') ? `.cutx.${cut.slice(1)}` : `.cut.${cut}`;
+  return cut === '' ? '' : `.cut.${cut}`;
 }
 export function cutHides(cut: RoofCut, side: 'n' | 'e' | 's' | 'w'): boolean {
-  return cut === 'c' ? side === 'n' || side === 'w' : cut.replace('x', '').includes(side);
+  return cut === 'c' ? side === 'n' || side === 'w' : cut.includes(side);
 }

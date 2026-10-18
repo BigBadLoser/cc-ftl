@@ -2,23 +2,21 @@
 
 The far hull's outer face is its tile edge, so full plates fit there. The near hull (camera side) stands at the inner
 edge of its tile and is HULL cells thick (walls.Strip covers the cells whose centre lies within walls.hull_thick() =
-0.61 of the inner edge: 19 of 32), and an engine's hull row ends at its bulkhead's outer face (Sol's Kestrel:
-tile centre + walls.WT 7/32 in experiments/engine_kestrel_h185/model.py and hull_walls.py: 23 of 32). The cut plates
+0.61 of the inner edge: 20 of 32). An engine's hull row is the same production hull wall (engine_kestrel_h185
+model.hull), so it takes the same cuts. The cut plates
 are the production base tiles (same module rule, patch and inset plates, girders) clipped at that line, with the slab's
 camera-facing side (lit lip + face down to the walls' top, like roof.edge.s / .e) on the cut:
 
   roof.c<L><c>.<u><v>[.patch|.inset].cut.<s|e|se>   near hull: space at +y, at +x, or both (the outer corner)
   roof.c<L><c>.<u><v>[.patch|.inset].cut.c          the chamfered far corner (N and W open), girders included
-  roof.c<L><c>.<u><v>[.patch|.inset].cutx.<s|e>     an engine hull row facing +y / +x
-  roof.edge.<n|w>.<c>.cut[x]                        an open N / W girder on an e / s cut tile, clipped likewise
+  roof.edge.<n|w>.<c>.cut                           an open N / W girder on an e / s cut tile, clipped likewise
 The renderer (src/render/roofArt.ts roofCut) picks them; a cut side gets no separate edge overlay."""
 from . import core
 from . import roof_layout as rl
 from . import roofs
 
 GN = rl.GN
-HULL = 19
-ENGINE = 23
+HULL = 20
 EPS = 1e-6
 
 
@@ -127,13 +125,9 @@ def _sprites():
                         for cut in ("s", "e", "se", "c"):
                             out.append((f"{sid}.cut.{cut}", (1, 1), "block",
                                         lambda L=L, c=c, u=u, v=v, k=kind, t=cut: cut_tile(L, c, u, v, k, t, HULL)))
-                        for cut in ("s", "e"):
-                            out.append((f"{sid}.cutx.{cut}", (1, 1), "block",
-                                        lambda L=L, c=c, u=u, v=v, k=kind, t=cut: cut_tile(L, c, u, v, k, t, ENGINE)))
     for c in rl.FAM:
         for side in "nw":
-            for tag, n in (("cut", HULL), ("cutx", ENGINE)):
-                out.append((f"roof.edge.{side}.{c}.{tag}", (1, 1), "block", lambda s=side, c=c, n=n: cut_edge(s, c, n)))
+            out.append((f"roof.edge.{side}.{c}.cut", (1, 1), "block", lambda s=side, c=c: cut_edge(s, c, HULL)))
     return out
 
 

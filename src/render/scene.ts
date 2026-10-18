@@ -170,10 +170,13 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     cam.setZoom(Math.max(1, Math.floor(Math.min(cam.w / spanW, cam.h / spanH))));
   }
 
+  /** A ship's roof livery; the debug URL parameter `?bow=east|west` forces the end the bow motifs take. */
+  const bowParam = new URLSearchParams(window.location.search).get('bow');
+  const shipLivery = (s: Ship) => ({ ...liveryFor(s.faction, s.name), ...(bowParam ? { bowWest: bowParam === 'west' } : {}) });
   const wantsRoof = (s: Ship) => roofEnemies && s.faction === 'hostile' && s.state !== 'wreck';
 
   function addScene(s: Ship, grid: Grid): ShipScene {
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: liveryFor(s.faction, s.name) });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: shipLivery(s) });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
