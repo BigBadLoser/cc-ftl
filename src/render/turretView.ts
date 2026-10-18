@@ -1,7 +1,7 @@
 import { Container, Sprite } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
-import { WeaponC } from '../sim/combat/components';
+import { PointDefenseC, WeaponC } from '../sim/combat/components';
 import { ModuleC } from '../sim/modules/components';
 import { rotatedSize } from '../sim/modules/footprint';
 import { DEPLOY_FRAMES, RISE_PX, deployId, deployStage } from './deployArt';
@@ -36,7 +36,7 @@ const BARREL_AT = [0.3, 0.55, 0.8];
 export const turretStem = (asset: string): string => asset.replace(/^module\./, '');
 
 /**
- * Roof turrets of weapon modules: `turret.<weapon>.d{0..7}` (`.charged` when fully charged) chosen from `WeaponC.aim`,
+ * Roof turrets of weapon and point-defence modules (`PointDefenseC.aim`, never charged): `turret.<weapon>.d{0..7}` (`.charged` when fully charged) chosen from `WeaponC.aim`,
  * drawn centred above the bay at roof height (`ROOF_H`); real art is anchored on the roof plane at the bay centre.
  * Stand-ins get a row of dots along the aim direction so the aim is readable.
  */
@@ -60,9 +60,10 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
     update() {
       const live = new Set<number>();
       const light = grid.raw('light');
-      for (const id of world.query(ModuleC, WeaponC)) {
+      const turretIds = [...world.query(ModuleC, WeaponC), ...world.query(ModuleC, PointDefenseC)];
+      for (const id of turretIds) {
         const m = world.get(id, ModuleC);
-        const w = world.get(id, WeaponC);
+        const w = world.get(id, WeaponC) ?? (world.get(id, PointDefenseC) as { aim: number } | undefined);
         const def = m && defs[m.def];
         if (!m || !w || !def || m.gridId !== grid.id) continue;
         const stage = def.deploySec === undefined ? DEPLOY_FRAMES : deployStage(world, id);
@@ -72,7 +73,7 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const aim = out ? ((Math.round(w.aim) % 8) + 8) % 8 : 0;
         const stem = `turret.${turretStem(def.asset)}`;
         const base = `${stem}.d${aim}`;
-        const charged = out && w.charge >= 1;
+        const charged = out && 'charge' in w && w.charge >= 1;
         const art = out
           ? resolveArt(atlas, charged ? [`${base}.charged`, base] : [base], charged ? 'turret.generic.charged' : 'turret.generic')
           : resolveArt(atlas, [deployId(stem, stage)]);

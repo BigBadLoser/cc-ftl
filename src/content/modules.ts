@@ -177,7 +177,7 @@ export const modules = {
   // Point defence: floor bay plus roof turret. Works only while the ship has a powered, intact AI core with its mast out.
   'module.pointDefense': {
     name: 'Point defence', asset: 'module.point_defense', footprint: [2, 2], solid: true, power: -5, priority: 3,
-    flammability: 0.2, maxHp: 70, buildWork: 180, pointDefense: true, roofAsset: 'roof.weapon', deploySec: 2,
+    flammability: 0.2, maxHp: 70, buildWork: 180, pointDefense: true, deploySec: 2,
     cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 8 }],
   },
   'module.aiCore': {

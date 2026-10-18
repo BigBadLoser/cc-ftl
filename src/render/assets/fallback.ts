@@ -69,7 +69,7 @@ export const FALLBACK: Record<string, Fallback> = {
 function deployFallbacks(): Record<string, Fallback> {
   const out: Record<string, Fallback> = {};
   const parts: [string, string][] = [['turret.generic', 'turret.generic']];
-  for (const stem of ['burst_laser', 'mass_driver', 'missile_launcher', 'ion_cannon', 'incendiary_launcher']) parts.push([`turret.${stem}`, 'turret.generic']);
+  for (const stem of ['burst_laser', 'mass_driver', 'missile_launcher', 'ion_cannon', 'incendiary_launcher', 'point_defense']) parts.push([`turret.${stem}`, 'turret.generic']);
   for (const id of ['roof.shield_gen', 'roof.shield_gen_small', 'roof.ai_core']) parts.push([id, id]);
   for (const [base, like] of parts) {
     const out_ = FALLBACK[like] as Fallback;
