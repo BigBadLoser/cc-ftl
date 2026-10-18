@@ -81,6 +81,10 @@ The user did not approve the first m4-assets sheets: modules were far too small.
 - **Sitting crew and roof** handed to Opus (high effort) after repeated misses.
 - **Point defence** is its own module (2x2 bay + R Revolver turret), OPERATED by the AI core
   (needs a powered AI core with its mast up), the way the weapons console operates weapons.
+- **Wall view rules (user):** the skirt is identical in both modes (only the wall above it is cut);
+  in cutaway the REAR (far) hull stays full height; cut hull sections get a black top cap like cut
+  walls; doors are never cut; the FRONT hull extends below the floor and curves away underneath
+  (carries the chunky armour) while above the floor it is a low ghost footing plus glass.
 - **Sitting crew: APPROVED / COMPLETE** (`crew-sit` d981ad9). Clips `sit_idle` and `sit_work`, 8
   directions; chair occlusion cut into the crew sheets via a Blender holdout; engineer backpack
   hidden while seated; armrests raised slightly. Game layering: console sprite at K, seated crew
