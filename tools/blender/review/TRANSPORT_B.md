@@ -1,17 +1,14 @@
-# Transport B12 — nose walls flare outward: top wider than base
+# Transport B13 — earlier upper width, narrower base, outward flare
 
-Concept B remains separate from the rejected original v4 shuttle. The nose wall
-lean is reversed from B11: both sides now flare outward by 6 degrees as they
-rise, making the top wider than the base. The circular hatch rolls with the wall.
-The existing plan-view taper, mirrored fairings, canopy, wings and rear ramp
-remain. The one-sided hatch and its interrupted nose stripe are the only
-bilateral exceptions.
+Concept B remains separate from the rejected original v4 shuttle. The upper wall
+edges return to their B11 widths. The lower walls move inward beneath them,
+keeping B12's 6-degree outward flare. At mid-nose, the upper wall is 1.6662 units
+wide and the lower wall is 1.2828. Geometry checks assert that the upper edges
+match B11 and are wider than the base. Existing plan taper and symmetry remain.
 
-The mirror audit compares every raw polygon's geometry and paint with its
-reflection, without the hatch, in parked, flying, docked and lowered-ramp poses.
-The wall check additionally asserts that each measured upper edge lies farther
-from the centre than its lower edge. Measured upper/lower widths are recorded
-in design.json. A top-view silhouette hides the hatch for visual inspection.
+The round hatch is rigidly fitted to the narrower side wall. A short mounting
+sleeve joins its flat flange to the hull profile; no interior is visible.
+The canopy, wings, mirrored fairings and rear ramp retain their geometry.
 
 ## Wing shape and attitude
 
@@ -32,16 +29,12 @@ the bay roof open / after launch. Static folded/deployed review poses only.
 
 ## Cockpit, hatch and ramp
 
-The full nose walls retain B9's 6.84-degree taper in top view, starting at longitudinal
-station 0.50 with a half-width of 1.05. Half-width is 0.93 at station 1.50 and
-0.84 at station 2.25, before meeting the existing 0.60-wide tip. These widths
-are measured at the hatch-centre height. Both wall edges follow the taper.
-Each wall now flares outward 6 degrees about
-the hatch-centre height of 1.30, leaving a narrower lower cheek and
-broader upper shoulder. The lean blends into the aft cabin between stations
--0.55 and 0.50. The circular hatch uses rigid yaw and roll to seat flush on the
-wall, retaining its true 1.60 diameter and opaque leaf. The forebody livery
-follows the same leaning surface.
+The full nose walls retain their plan taper. Outward flare is anchored to B11's
+upper wall edge at every loft station, instead of widening the upper body around
+the hatch-centre height. This keeps the earlier slim upper outline and narrows
+the base. The lean blends into the aft cabin between stations -0.55 and 0.50.
+The forebody livery follows the same surface. The hatch retains its true circular
+1.60 diameter; its flat flange has a hull-conforming mounting sleeve.
 
 The windshield and small forward corner chamfers retain B8's geometry. The long
 canopy taper and thin central mullion remain; no cabin interior is visible.
@@ -101,8 +94,8 @@ shader, preventing red/green illumination of nearby hull surfaces.
 
 ## Review artifacts
 
-Current files: `artifacts/shuttle-sweepback-r12/`. B11 remains under
-`artifacts/shuttle-sweepback-r11/` for the before/after comparison.
+Current files: `artifacts/shuttle-sweepback-r13/`. B12 remains under
+`artifacts/shuttle-sweepback-r12/` for the before/after comparison.
 
 - `transport-B-beauty.png`, `transport-B-preview.blend`: low-sample beauty
   and editable scene, showing tapered/outward-flared nose walls, the aligned hatch and swept wings.
@@ -114,8 +107,8 @@ Current files: `artifacts/shuttle-sweepback-r12/`. B11 remains under
 - `transport-B-ramp-1x.png`, `-3x.png`: rear three-quarter closed/lowered ramp.
 - `transport-B-silhouettes-1x.png`, `-3x.png`: folded/deployed forms and crew.
 - `transport-B-planform-1x.png`, `-3x.png`: top views with a 4x5 bay outline.
-- `transport-B-before-after-1x.png`, `-3x.png`: B11/B12 at the same heading/scale.
-- `transport-B-nose-plan-1x.png`, `-3x.png`: B11/B12 in top view, showing the
+- `transport-B-before-after-1x.png`, `-3x.png`: B12/B13 at the same heading/scale.
+- `transport-B-nose-plan-1x.png`, `-3x.png`: B12/B13 in top view, showing the
   taper along the full wall and the aligned circular hatch.
 - `transport-B-symmetry-1x.png`, `-3x.png`: top view beside the audit silhouette
   with the hatch hidden and centre line marked.
@@ -126,8 +119,8 @@ Current files: `artifacts/shuttle-sweepback-r12/`. B11 remains under
   glow, bilateral polygon/paint symmetry, export keys, alpha and exact nearest-neighbour 3x checks.
 
 ```sh
-blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r12"
-python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r12" --compose
+blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r13"
+python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r13" --compose
 ```
 
 One Blender process at a time, two threads, four sprite samples and eight

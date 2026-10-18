@@ -308,7 +308,7 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
 
     Parked/docked: broad outer wings fold 180 degrees flat over the aft hull.
     Flight span 7.2; each swept wing has a 2.75-unit local fore-aft envelope.
-    Revision 12: nose walls flare outward as they rise; top wider than base. ramp_open is a preview pose in [0,1].
+    Revision 13: B11 upper width retained; lower walls narrowed for outward flare. ramp_open is a preview pose in [0,1].
     Height about 2.765, suggested pit 1.80, leaving about .965 above deck.
     No interior, pad, pit or bay geometry is part of this vehicle builder.
     """
@@ -326,11 +326,13 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
               (-.55,1.00,1.38,.92),(.50,1.05,1.31,.95,0,.96),
               (1.50,nose_width(1.50),1.31,.95,0,.96),(1.90,nose_width(1.90),1.25,.85,0,.96),
               (2.25,nose_width(2.25),1.18,.60,0,.96,.62),(2.45,.60,1.15,.30,0,.48,.66)]
-    loft(LeaningNoseFrame(m,heading),chamfer_station(forebody,6),"gW1",aft_slope=REAR_SLOPE)
+    forebody=chamfer_station(forebody,6)
+    nose=LeaningNoseFrame(m,heading,forebody)
+    loft(nose,forebody,"gW1",aft_slope=REAR_SLOPE)
     # Distinct dark lower keel, ending short of the wedge nose.
     loft(f,[(-1.55,.57,.65,.14),(-1.0,.83,.61,.16),
             (1.1,.70,.69,.18),(1.8,.34,.92,.12)],"steelD",upper="steelL")
-    cabin_details(f,TRANSPORT_HATCH_HEIGHT,TaperedHatchFrame(m,heading))
+    cabin_details(f,TRANSPORT_HATCH_HEIGHT,TaperedHatchFrame(m,heading,nose))
     rear_details(f,ramp_open)
     for side in (-1,1):
         # A continuous shoulder/nacelle blends the wing root into the engine.
@@ -358,7 +360,7 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
         transport_wing(g,side,fold,True)
         for chain in (((-2.04,1.66),(-1.45,1.72),(-.45,1.57),(.22,1.26)),
                       ((.50,1.05),(2.25,nose_width(2.25)),(2.45,.60))):
-            paint=LeaningNoseFrame(lv,heading) if chain[0][0]==.50 else g
+            paint=LeaningNoseFrame(lv,heading,forebody) if chain[0][0]==.50 else g
             for (u0,v0),(u1,v1) in zip(chain,chain[1:]):
                 if side==-1 and u0==.50:
                     continue
