@@ -127,7 +127,7 @@ def blocks(s, layout, doors_open=(), mode="auto"):
                 continue
             if k == "D":
                 ax = "x" if solid(x - 1, y) and solid(x + 1, y) else "y"
-                s.static(f"tile.door.{ax}{'.open' if (x, y) in doors_open else ''}", x, y, 0.1)
+                s.static(f"tile.door.{'' if mode == 'up' else 'low.'}{ax}{'.open' if (x, y) in doors_open else ''}", x, y, 0.1)
                 continue
             mask = sum(b for d, b in BIT.items() if solid(x + DELTA[d][0], y + DELTA[d][1]))
             hull = any(at(x + dx, y + dy) == " " for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy)

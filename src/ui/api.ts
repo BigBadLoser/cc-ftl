@@ -170,7 +170,74 @@ export interface UiStats {
 
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'crew.died' | 'crew.rescued'
-  | 'job.missingMaterials' | 'storage.full' | 'production.done';
+  | 'job.missingMaterials' | 'storage.full' | 'production.done'
+  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost';
+
+/** A weapon module of the player's ship. */
+export interface UiWeapon {
+  id: number;
+  name: string;
+  /** 0..1. */
+  charge: number;
+  /** Missiles in stock for ammo weapons, null for weapons that use none. */
+  ammo: number | null;
+  ion: boolean;
+  powered: boolean;
+  /** Own target label, or null when it uses the ship-wide one. */
+  target: string | null;
+}
+
+/** A console of the player's ship and who runs it. */
+export interface UiConsole {
+  id: number;
+  kind: 'weapons' | 'shields' | 'helm';
+  name: string;
+  operator: string | null;
+  powered: boolean;
+}
+
+/** A module of a ship in combat, for target lists. */
+export interface UiShipModule {
+  id: number;
+  name: string;
+  kind: 'weapon' | 'shield' | 'engine' | 'other';
+  hp: number;
+  maxHp: number;
+  ion: boolean;
+}
+
+export interface UiShipCombat {
+  gridId: number;
+  name: string;
+  state: 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
+  /** 0..1 hull and module integrity. */
+  integrity: number;
+  shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };
+  /** 0..1 chance a shot misses. */
+  evasion: number;
+  hold: boolean;
+  /** FTL charge seconds and the seconds needed to flee. */
+  ftl: number;
+  ftlMax: number;
+  /** Ship-wide target, with a label. */
+  target: { gridId: number; moduleId: number; label: string } | null;
+  modules: UiShipModule[];
+}
+
+export interface UiCombat {
+  inCombat: boolean;
+  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[] }) | null;
+  /** Hostile ships (not fled), nearest first. */
+  enemies: UiShipCombat[];
+}
+
+/** Where the combat overlay shows the enemy ship, in CSS px relative to the page. */
+export interface UiRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 export interface UiAlert {
   id: number;
@@ -231,6 +298,17 @@ export interface UiApi {
   selectModule(id: number | null): void;
   stats: Subscribable<UiStats>;
   alerts: Subscribable<UiAlert[]>;
+  combat: Subscribable<UiCombat>;
+  /** Show a ship in the combat overlay rectangle (null hides it). */
+  setCombatView(view: { gridId: number; rect: UiRect } | null): void;
+  /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
+  pickCombat(x: number, y: number): { moduleId: number } | null;
+  /** Roof hostile ships (default) or show their interior. */
+  setRoofEnemies(on: boolean): void;
+  /** Frame the player's ship and a hostile ship (or only the player's ship) in the camera. */
+  focusFight(gridId: number | null): void;
+  /** Spawn a raider about 30 tiles from the player's ship. */
+  spawnRaider(): void;
   /** Overlay ids offered by the picker, in order. */
   overlayList: { id: string; label: string }[];
   overlayLegend(id: string): UiLegend | null;

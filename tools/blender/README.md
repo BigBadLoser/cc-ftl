@@ -2,10 +2,14 @@
 
 ## Sprite pipeline (current): `npm run sprites`
 
-`sprites/build_sprites.py` renders pre-baked isometric pixel sprites into `public/assets/sprites/*.png` and writes
-`public/assets/manifest.json` in the shape of `src/render/assets/manifest.ts` (the contract). Modes: `crew`, `env`,
-`all` (default; fragments are cached in the temp dir so a partial run still writes the full manifest). The older GLB
-pipeline below (`build.py`, `crew/`, `lib/`) is kept as source for the CC0 base import but no longer feeds the game.
+`sprites/build_sprites.py` renders pre-baked isometric pixel sprites into `public/assets/sprites/*.png` and merges them
+into `public/assets/manifest.json` in the shape of `src/render/assets/manifest.ts` (the contract). The art is split into
+families (`sprites/families.py`): `crew`, `env`, `walls`, `consoles`, `weapons`, `roof`, `sol`. Each renders into its own
+sheets (`pack.py`: pages of at most 2048 px) and replaces only its own sheets and ids in the manifest, so
+`npm run sprites -- public/assets walls` rebuilds one family and the committed manifest is the cache (`all` = every
+family). `sol` runs Sol's renderers in `experiments/` (final quality, one Blender job at a time) and packs their output
+(`sol_pack.py`). The manifest also records the art heights (`heights`: wall 1.85, roof top 2.05, px per tile of height).
+The older GLB pipeline below (`build.py`, `crew/`, `lib/`) is kept as source for the CC0 base import but no longer feeds the game.
 
 - Camera: ortho, yaw 45, elevation 30, tile 64x32; SS 4 supersample, mode-downsample, palette quantization, binary alpha.
 - Modules: `core.py` scene/mesh builder/render, `post.py` numpy (palette, team keys, outlines, PNG), `props.py`

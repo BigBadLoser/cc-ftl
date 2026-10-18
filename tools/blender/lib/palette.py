@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 _data = json.loads((ROOT / "palette.json").read_text())
+_data.update(json.loads((ROOT / "tools/blender/palette_extra.json").read_text()))   # neon extras for combat art (not in the game palette)
 
 
 def srgb_to_linear(c):

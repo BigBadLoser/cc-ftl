@@ -7,7 +7,7 @@ import { content } from '../index';
 
 type Mod = NonNullable<ShipTemplate['modules']>[number];
 
-/** A 14x9 test hull: reactor, weapons console (chair at (7, 2)), one weapon bay, a clear lane, optional extras. */
+/** A 14x9 test hull: reactor, weapons console (chair at (6, 2)), one weapon bay, a clear lane, optional extras. */
 function gunShip(weapon: string, crew: string[], extra: Mod[] = [], faction?: 'hostile'): ShipTemplate {
   return {
     name: 'Gun', crew, ...(faction ? { faction } : {}),

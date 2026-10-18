@@ -1,9 +1,10 @@
 import { ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiCombat, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildCrewList } from './crewSnapshot';
+import { buildCombat } from './combatSnapshot';
 import { createStore, type Readable } from './store';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
@@ -49,6 +50,7 @@ export interface Bridge {
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
   fabs: Readable<UiFab[]>;
+  combat: Readable<UiCombat>;
   setSelected(tile: TileRef | null): void;
   setHovered(tile: TileRef | null): void;
   dispatch(cmd: Command): void;
@@ -80,6 +82,9 @@ export function createBridge(sim: Sim): Bridge {
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
+  const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
+  let lastCombat = '';
+  let combatFrame = 0;
   const lastLog = ['', '', ''];
   let lastMods = '';
   let lastStats = '';
@@ -141,6 +146,14 @@ export function createBridge(sim: Sim): Bridge {
       stats.set(st);
     }
   };
+  const refreshCombat = () => {
+    if (combatFrame++ % 3) return;
+    const snap = buildCombat(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastCombat) return;
+    lastCombat = key;
+    combat.set(snap);
+  };
   let loop: Loop | undefined;
   let lastSpeed: Speed = 1;
 
@@ -159,6 +172,7 @@ export function createBridge(sim: Sim): Bridge {
     stock,
     storages,
     fabs,
+    combat,
     setSelected(t) {
       selected = t;
       refreshInspect();
@@ -178,6 +192,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshInspect();
       refreshCrew();
       refreshShip();
+      refreshCombat();
     },
   };
 }

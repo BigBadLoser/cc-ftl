@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCutaway, UiSnapshot, UiToolState } from './api';
+  import type { UiApi, UiCombat, UiCutaway, UiSnapshot, UiToolState } from './api';
+  import CombatPanel from './CombatPanel.svelte';
   import DebugPanel from './DebugPanel.svelte';
   import TileInspector from './TileInspector.svelte';
   import CrewBar from './CrewBar.svelte';
@@ -25,11 +26,17 @@
   let selCrew = $state<number | null>(null);
   let toast = $state<string | null>(null);
   let snap = $state<UiSnapshot | undefined>(undefined);
+  let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
+  let combatOpen = $state(false);
+  let wasInCombat = false;
 
   let cutaway = $state<UiCutaway>('auto');
   let selMod = $state<number | null>(null);
   let tool = $state<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
-  const cutLabel: Record<UiCutaway, string> = { auto: 'Auto', up: 'Up', down: 'Down' };
+  $effect(() => {
+    document.documentElement.toggleAttribute('data-combat', combat.inCombat && combatOpen);
+  });
+  const cutLabel: Record<UiCutaway, string> = { auto: 'Cutaway', up: 'Up', down: 'Low' };
   const cutNext: Record<UiCutaway, UiCutaway> = { auto: 'up', up: 'down', down: 'auto' };
   function cycleWalls() {
     cutaway = cutNext[cutaway];
@@ -43,6 +50,12 @@
       api.toast.subscribe((t) => (toast = t)),
       api.selectedModule.subscribe((m) => (selMod = m)),
       api.tool.subscribe((t) => (tool = t)),
+      api.combat.subscribe((c) => {
+        combat = c;
+        // The overlay opens by itself when a fight starts; closing it is the player's call until the next fight.
+        if (c.inCombat && !wasInCombat) combatOpen = true;
+        wasInCombat = c.inCombat;
+      }),
     ];
     api.attachCanvas(canvas);
     return () => unsubs.forEach((u) => u());
@@ -82,6 +95,9 @@
     <OverlayPicker {api} />
   </span>
   <StatsChips {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} />
+  {#if combat.inCombat && !combatOpen}
+    <button class="fight" data-testid="combat-open" onclick={() => (combatOpen = true)}>⚔ Combat</button>
+  {/if}
   <button class:on={debug} onclick={() => (debug = !debug)}>Debug</button>
 </header>
 
@@ -90,6 +106,9 @@
 {/if}
 {#if debug && snap}
   <DebugPanel {api} {snap} />
+{/if}
+{#if combat.inCombat && combatOpen}
+  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} />
 {/if}
 <CrewBar {api} />
 <ToolBar {api} />
@@ -117,6 +136,9 @@
     background: linear-gradient(var(--panel), transparent);
   }
   .toast { position: fixed; left: 50%; top: calc(var(--hdr) + 100px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); border-radius: 8px; pointer-events: none; z-index: 9; }
+  /* The phone sheet leaves a transparent window for the enemy view; keep other overlays out of it. */
+  @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
+  .fight { border-color: var(--red); color: #ffd0d0; }
   .tick { color: var(--cyan); min-width: 5.5em; }
   .speeds, .views { display: flex; gap: 4px; }
   @media (max-width: 600px) { .tick { display: none; } .long { display: none; } header { padding-bottom: 4px; } header button { min-width: 34px; } header { gap: 4px; flex-wrap: wrap; justify-content: flex-start; } header button { padding: 0 8px; font-size: 12px; } .views { margin-left: auto; } }

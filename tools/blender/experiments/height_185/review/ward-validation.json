@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "rotationsChecked": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "wallZ": 1.85,
+  "roofZ": 2.05,
+  "casingTopZ": 0.86,
+  "hexClearance": 0.04590375661849977,
+  "hexFace": "same geometry, translated down 0.30",
+  "spine": "original full length and sweep, translated down 0.35",
+  "roofAndHatch": "unchanged"
+}

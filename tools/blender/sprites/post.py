@@ -7,6 +7,8 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
 PAL = json.loads((ROOT / "palette.json").read_text())
+EXTRA = json.loads((ROOT / "tools/blender/palette_extra.json").read_text())   # neon extras, only for sprites that ask (select)
+_BASE_PAL = dict(PAL)
 SHADES = (0.42, 0.62, 0.82, 1.0, 1.22)
 
 
@@ -211,3 +213,22 @@ def to_rgba(rgb, op):
 def crop_box(op, extra=None):
     ys, xs = np.where(op if extra is None else (op | extra))
     return xs.min(), ys.min(), xs.max() + 1, ys.max() + 1
+
+
+_STATES = {}
+
+
+def select(extra):
+    """Switch the quantisation palette: the game palette (default) or it plus the neon extras. Existing sprites keep
+    the plain one so their pixels never change when a colour is added."""
+    global PAL, BASE, NB, PALETTE, LUT, BAND_MAP
+    key = bool(extra)
+    if key not in _STATES:
+        PAL = {**_BASE_PAL, **EXTRA} if key else dict(_BASE_PAL)
+        BASE = build_palette()
+        NB = len(BASE)
+        PALETTE = np.vstack([BASE, KEYS])
+        LUT = _lut()
+        BAND_MAP = _band_map()
+        _STATES[key] = (PAL, BASE, NB, PALETTE, LUT, BAND_MAP)
+    PAL, BASE, NB, PALETTE, LUT, BAND_MAP = _STATES[key]

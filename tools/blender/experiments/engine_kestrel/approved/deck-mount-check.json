@@ -1,0 +1,31 @@
+{
+  "r0": {
+    "hullUnchanged": true,
+    "powerheadUnchanged": true,
+    "servicesUnchanged": true,
+    "legacyFloorRemoved": true,
+    "mountsReachDeck": true
+  },
+  "r1": {
+    "hullUnchanged": true,
+    "powerheadUnchanged": true,
+    "servicesUnchanged": true,
+    "legacyFloorRemoved": true,
+    "mountsReachDeck": true
+  },
+  "r2": {
+    "hullUnchanged": true,
+    "powerheadUnchanged": true,
+    "servicesUnchanged": true,
+    "legacyFloorRemoved": true,
+    "mountsReachDeck": true
+  },
+  "r3": {
+    "hullUnchanged": true,
+    "powerheadUnchanged": true,
+    "servicesUnchanged": true,
+    "legacyFloorRemoved": true,
+    "mountsReachDeck": true
+  },
+  "result": "PASS"
+}

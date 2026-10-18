@@ -1,4 +1,4 @@
-import { CrewC, ModuleC, PositionC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
+import { CrewC, ModuleC, PositionC, ShipC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createStore, type Readable } from './store';
 
@@ -34,6 +34,7 @@ export function createAlerts(sim: Sim): Alerts {
     }
     return { x: sx / tiles.length, y: sy / tiles.length };
   };
+  const shipName = (gridId: number) => [...sim.world.query(ShipC)].map((id) => sim.world.get(id, ShipC)).find((s) => s?.gridId === gridId);
   const reactorAt = () => {
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
@@ -42,7 +43,18 @@ export function createAlerts(sim: Sim): Alerts {
     return null;
   };
 
+  /** Hostile ships and their crew raise no alerts of their own. */
+  const foreign = (e: SimEvent): boolean => {
+    if (e.type === 'fire.started' || e.type === 'hull.breach' || e.type === 'power.shortage' || e.type === 'o2.low') return e.gridId !== 1;
+    if (e.type === 'crew.downed' || e.type === 'crew.died' || e.type === 'crew.rescued') {
+      const g = sim.world.get(e.crew, PositionC)?.gridId;
+      return g !== undefined && g !== 1;
+    }
+    return false;
+  };
+
   function describe(e: SimEvent): { kind: UiAlertKind; key: string; text: string; at: UiAlert['at'] } | null {
+    if (foreign(e)) return null;
     switch (e.type) {
       case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire!', at: { x: e.x, y: e.y } };
       case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', at: roomCentre(sim.grids.get(e.gridId), e.room) };
@@ -57,6 +69,19 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: e.type, key: `s${e.x},${e.y}`, text: `Storage full (${sim.content.items[e.item]?.name ?? e.item})`, at: { x: e.x, y: e.y } };
       case 'production.done':
         return { kind: e.type, key: `pd${e.module}`, text: `${sim.content.recipes[e.recipe]?.name ?? 'Batch'} done`, at: { x: e.x, y: e.y } };
+      case 'combat.started': return { kind: e.type, key: 'cs', text: 'Hostile ship in range: combat!', at: null };
+      case 'module.destroyed': {
+        const s = shipName(e.gridId);
+        if (s?.faction !== 'player') return null;
+        return { kind: e.type, key: `md${e.moduleId}`, text: `${sim.content.modules[e.def]?.name ?? 'Module'} destroyed`, at: null };
+      }
+      case 'ship.destroyed': {
+        const s = shipName(e.gridId);
+        return s?.faction === 'player'
+          ? { kind: 'ship.lost', key: 'sl', text: 'Your ship is destroyed', at: null }
+          : { kind: e.type, key: `sd${e.gridId}`, text: `${s?.name ?? 'Ship'} destroyed`, at: null };
+      }
+      case 'ship.fled': return { kind: e.type, key: `sf${e.gridId}`, text: `${shipName(e.gridId)?.name ?? 'Ship'} jumped away`, at: null };
       default: return null;
     }
   }
