@@ -12,6 +12,7 @@ from .robot_kit import Rig
 CLOTH, ACCENT = "team.cloth", "team.accent"
 EYE, BAR = "cyan", "green"
 FRAME, FRAME_L = "dark", "steelD"        # exposed under-frame
+MID = "gm"                               # secondary (non-livery) plating: splits limbs from the livery shell
 
 
 def _charge_bar(rig, joint, x0, f, z, n=4, w=0.05, h=0.04, face=1):
@@ -43,41 +44,56 @@ def _head(rig, hd, c, s, eye_r):
 
 
 def worker():
+    """Worker: an armoured humanoid. Angular helmet with a visor slit over a dark jaw, broad chest plate over an exposed
+    ribbed abdomen, armoured hip skirt, big thigh and shin plates, chunky forearms, and dark hinge discs standing out at
+    every joint (the articulation read)."""
     rig = Rig("worker")
     rig.kind = "biped"
-    b = rig.joint("body", "root", (0, 0, 0.8))
+    b = rig.joint("body", "root", (0, 0, 0.78))
     t = rig.joint("torso", b, (0, 0, 0.88))
-    hd = rig.joint("head", t, (0, 0, 1.3))
-    for side, x in (("R", 0.09), ("L", -0.09)):
-        hp, kn, an = (x, 0, 0.78), (x, 0.01, 0.43), (x, 0, 0.09)
+    hd = rig.joint("head", t, (0, 0, 1.31))
+    for side, x in (("R", 0.11), ("L", -0.11)):
+        sx = 1 if x > 0 else -1
+        hp, kn, an = (x, 0, 0.75), (x, 0.01, 0.42), (x, 0, 0.09)
         h = rig.joint(f"hip_{side}", b, hp)
         k = rig.joint(f"knee_{side}", h, kn)
         a = rig.joint(f"ankle_{side}", k, an)
-        rig.part(a).rbox((x, 0.04, 0.03), (0.08, 0.21, 0.06), FRAME_L, r=0.03, taper=0.7)   # foot
-        _hinge(rig.part(a), an, 0.032, 0.075)
-        rig.part(k).strut(an, kn, 0.024, FRAME)
-        rig.part(k).plate((x, 0.015, 0.13), (x, 0.02, 0.4), 0.065, 0.07, CLOTH, taper=1.35)   # shin shell
-        _piston(rig.part(k), (x, -0.04, 0.12), (x, -0.035, 0.38))                          # calf piston
-        _hinge(rig.part(k), kn, 0.038, 0.09, FRAME_L)
-        _hinge(rig.part(h), hp, 0.04, 0.07)
-        rig.part(h).plate((x, 0, 0.47), (x, 0, 0.76), 0.085, 0.1, CLOTH, taper=1.3, r=0.035)   # thigh
-        sx = 1 if x > 0 else -1
-        sh, el = (sx * 0.19, 0, 1.2), (sx * 0.205, 0, 0.94)
+        rig.part(a).rbox((x, 0.045, 0.015), (0.125, 0.26, 0.03), FRAME, r=0.015)             # sole
+        rig.part(a).rbox((x, 0.035, 0.055), (0.115, 0.22, 0.06), CLOTH, r=0.02, taper=0.75)  # foot shell
+        _hinge(rig.part(a), an, 0.038, 0.12)
+        rig.part(k).strut(an, kn, 0.03, FRAME)
+        rig.part(k).plate((x, 0.01, 0.15), (x, 0.015, 0.38), 0.115, 0.13, MID, taper=1.25, r=0.025)     # shin
+        rig.part(k).rbox((x, 0.075, 0.45), (0.1, 0.05, 0.11), CLOTH, r=0.02, taper=0.75)       # knee cap
+        _hinge(rig.part(k), kn, 0.05, 0.15)
+        rig.part(h).plate((x, 0.005, 0.47), (x, 0, 0.72), 0.13, 0.15, CLOTH, taper=1.12, r=0.025)   # thigh
+        _hinge(rig.part(h), (x + sx * 0.06, 0, 0.74), 0.055, 0.05, FRAME_L)                  # hip disc
+        sh, el = (sx * 0.245, 0, 1.2), (sx * 0.27, 0.0, 0.96)
         s = rig.joint(f"arm_{side}", t, sh)
         e = rig.joint(f"elbow_{side}", s, el)
-        rig.part(s).ball(sh, 0.05, FRAME_L)
-        rig.part(s).plate((sx * 0.2, 0, 0.98), (sx * 0.195, 0, 1.2), 0.06, 0.07, CLOTH, taper=1.3)  # upper arm
-        _hinge(rig.part(e), el, 0.032, 0.075)
-        rig.part(e).plate((sx * 0.21, 0.01, 0.69), (sx * 0.205, 0.005, 0.92), 0.06, 0.065, CLOTH, taper=1.25)
-        rig.part(e).rbox((sx * 0.21, 0.01, 0.645), (0.04, 0.07, 0.07), FRAME, r=0.015, taper=0.8)    # hand
-    rig.part(b).rbox((0, 0, 0.8), (0.22, 0.14, 0.1), FRAME_L, r=0.04, taper=1.15)        # pelvis
-    rig.part(t).strut((0, 0, 0.85), (0, 0, 1.0), 0.05, FRAME)                            # spine
-    rig.part(t).cyl((0, 0, 0.92), 0.062, 0.03, FRAME_L)
-    rig.part(t).rbox((0, 0, 1.12), (0.19, 0.15, 0.24), CLOTH, r=0.05, taper=1.65)         # chest shell
-    rig.part(t).rbox((0, 0, 1.025), (0.22, 0.17, 0.025), ACCENT, r=0.06)                 # seam
-    _charge_bar(rig, t, -0.075, -0.1, 1.15, face=-1)
-    rig.part(hd).strut((0, 0, 1.24), (0, 0.01, 1.34), 0.03, FRAME)                       # neck
-    _head(rig, hd, (0, 0.02, 1.4), (0.085, 0.115, 0.1), 0.032)
+        _hinge(rig.part(s), sh, 0.06, 0.09)
+        rig.part(s).rbox((sx * 0.265, 0, 1.24), (0.15, 0.19, 0.14), CLOTH, r=0.03, taper=0.8, rot=(0, sx * 12, 0))  # shoulder
+        rig.part(s).strut(sh, el, 0.03, FRAME)
+        rig.part(s).plate((sx * 0.268, 0, 1.0), (sx * 0.258, 0, 1.13), 0.085, 0.09, MID, taper=1.1, r=0.02)     # upper arm
+        _hinge(rig.part(e), el, 0.045, 0.12)
+        rig.part(e).plate((sx * 0.275, 0.01, 0.92), (sx * 0.28, 0.015, 0.71), 0.1, 0.11, MID, taper=0.8, r=0.02)    # forearm
+        rig.part(e).rbox((sx * 0.28, 0.015, 0.66), (0.055, 0.085, 0.07), FRAME_L, r=0.015)     # hand
+        rig.part(e).rbox((sx * 0.28, 0.025, 0.6), (0.05, 0.075, 0.06), FRAME, r=0.012, taper=0.8)   # fingers
+    rig.part(b).ball((0, 0, 0.76), (0.13, 0.09, 0.07), FRAME)                                 # pelvis core
+    rig.part(b).rbox((0, 0.005, 0.81), (0.3, 0.19, 0.1), MID, r=0.025, taper=1.12)          # hip skirt
+    rig.part(b).rbox((0, 0.09, 0.75), (0.11, 0.05, 0.11), MID, r=0.02, taper=1.35)          # codpiece
+    rig.part(t).rbox((0, 0, 0.96), (0.17, 0.12, 0.17), FRAME, r=0.03)                        # abdomen core
+    for z in (0.92, 0.995):                                                                  # ribs
+        rig.part(t).rbox((0, 0.005, z), (0.2, 0.135, 0.04), FRAME_L, r=0.02)
+    rig.part(t).rbox((0, 0.0, 1.055), (0.33, 0.21, 0.045), ACCENT, r=0.03)                  # seam
+    rig.part(t).rbox((0, 0.005, 1.165), (0.37, 0.23, 0.18), CLOTH, r=0.03, taper=1.1)        # chest plate
+    rig.part(t).rbox((0, 0.09, 1.16), (0.2, 0.08, 0.13), "gm", r=0.02, taper=0.8)            # sternum plate
+    rig.part(t).rbox((0, -0.14, 1.13), (0.24, 0.08, 0.2), FRAME_L, r=0.02)                  # power pack
+    _charge_bar(rig, t, -0.075, -0.18, 1.14, face=-1)
+    rig.part(hd).strut((0, 0, 1.25), (0, 0.01, 1.34), 0.035, FRAME)                         # neck
+    rig.part(hd).rbox((0, 0.04, 1.36), (0.11, 0.13, 0.07), FRAME, r=0.025, taper=0.85)      # jaw
+    rig.part(hd).rbox((0, 0.0, 1.43), (0.17, 0.19, 0.15), CLOTH, r=0.035, taper=0.8)       # helmet
+    rig.part(hd).rbox((0, 0.09, 1.425), (0.15, 0.04, 0.055), "dark", r=0.015)                # visor band
+    rig.part(hd, "eye").box((0, 0.11, 1.425), (0.1, 0.012, 0.04), EYE)                      # visor slit
     rig.build()
     return rig
 
@@ -114,12 +130,13 @@ def heavy():
         rig.part(e).rbox((sx * 0.345, 0.1, 0.65), (0.09, 0.11, 0.1), FRAME, r=0.03, taper=0.8)    # fist
     rig.part(b).rbox((0, 0, 0.87), (0.36, 0.22, 0.12), FRAME_L, r=0.04, taper=1.1)        # pelvis
     rig.part(t).strut((0, 0.0, 0.9), (0, 0.03, 1.08), 0.11, FRAME)                       # abdomen
-    rig.part(t).rbox((0, 0.04, 1.19), (0.34, 0.27, 0.34), CLOTH, r=0.04, taper=1.4, rot=(-12, 0, 0))   # chest
+    rig.part(t).rbox((0, 0.05, 1.19), (0.34, 0.31, 0.34), CLOTH, r=0.04, taper=1.4, rot=(-12, 0, 0))   # chest
+    rig.part(t).rbox((0, -0.2, 1.18), (0.3, 0.14, 0.26), FRAME_L, r=0.03)                # power unit (side depth)
     rig.part(t).rbox((0, 0.02, 1.07), (0.37, 0.29, 0.03), ACCENT, r=0.05, rot=(-12, 0, 0))            # seam
     rig.part(t).rbox((0, -0.08, 1.36), (0.3, 0.16, 0.12), CLOTH, r=0.03, taper=0.6)      # cowl behind the head
     for sx in (1, -1):                                                                   # back fins
-        rig.part(t).rbox((sx * 0.1, -0.21, 1.24), (0.04, 0.16, 0.24), FRAME_L, r=0.015, rot=(25, 0, 0))
-    _charge_bar(rig, t, -0.075, -0.2, 1.1, face=-1)
+        rig.part(t).rbox((sx * 0.1, -0.27, 1.27), (0.05, 0.16, 0.24), FRAME, r=0.015, rot=(25, 0, 0))
+    _charge_bar(rig, t, -0.075, -0.27, 1.13, face=-1)
     rig.part(hd).rbox((0, 0.13, 1.39), (0.15, 0.1, 0.2), "dark", r=0.03, taper=0.7, axis="f")     # head wedge
     rig.part(hd).rbox((0, 0.11, 1.435), (0.17, 0.045, 0.2), CLOTH, r=0.02, taper=0.75, axis="f")  # brow plate
     rig.part(hd, "eye").ball((0, 0.235, 1.385), (0.03, 0.015, 0.025), EYE)
@@ -148,30 +165,30 @@ def drone():
     rig.part(b, "jet").cyl((0, 0, z - 0.252), 0.1, 0.045, EYE)                           # thruster ring
     rig.part(b, "jetoff").cyl((0, 0, z - 0.252), 0.1, 0.045, FRAME)
     for sx in (1, -1):                                                                   # side nacelles
-        x = sx * 0.28
-        rig.part(b).rbox((sx * 0.2, -0.01, z - 0.02), (0.1, 0.08, 0.045), FRAME, r=0.015)
+        x = sx * 0.34
+        rig.part(b).rbox((sx * 0.24, -0.01, z - 0.02), (0.16, 0.07, 0.04), FRAME, r=0.015)   # pylon
         rig.part(b).plate((x, -0.16, z - 0.02), (x, 0.13, z - 0.02), 0.085, 0.09, FRAME_L, taper=0.7, r=0.03)
         rig.part(b).plate((x, -0.13, z + 0.03), (x, 0.1, z + 0.03), 0.09, 0.04, CLOTH, taper=0.7, r=0.015)
     for k in range(4):                                                                   # charge cells, top
         rig.part(b, f"bar{k}").box((-0.075 + k * 0.05, 0.0, z + 0.163), (0.04, 0.06, 0.03), BAR)
-    for side, x in (("R", 0.15), ("L", -0.15)):
-        sh, el = (x, 0.1, z - 0.08), (x, 0.1, z - 0.26)
+    for side, x in (("R", 0.17), ("L", -0.17)):                                          # arms: dark, so they read apart from the shell
+        sh, el = (x, 0.13, z - 0.09), (x, 0.15, z - 0.29)
         s = rig.joint(f"arm_{side}", b, sh)
         e = rig.joint(f"elbow_{side}", s, el)
         _hinge(rig.part(s), sh, 0.035, 0.06)
         rig.part(s).strut(sh, el, 0.022, FRAME)
-        rig.part(s).plate((x, 0.1, z - 0.24), (x, 0.1, z - 0.1), 0.055, 0.06, CLOTH, taper=0.8, r=0.015)
-        _hinge(rig.part(e), el, 0.032, 0.065)
-        rig.part(e).plate((x, 0.12, z - 0.26), (x, 0.29, z - 0.26), 0.06, 0.06, CLOTH, taper=0.8, r=0.015)
+        rig.part(s).plate((x, 0.145, z - 0.27), (x, 0.13, z - 0.11), 0.055, 0.06, FRAME_L, taper=0.8, r=0.015)
+        _hinge(rig.part(e), el, 0.034, 0.075, FRAME_L)
+        rig.part(e).plate((x, 0.17, z - 0.29), (x, 0.3, z - 0.29), 0.06, 0.06, "gm", taper=0.8, r=0.015)
         if side == "R":                                                                 # welder
-            rig.part(e).cyl((x, 0.32, z - 0.26), 0.035, 0.06, FRAME_L, axis="f")
-            rig.part(e).cyl((x, 0.375, z - 0.26), 0.03, 0.06, "gm", axis="f", taper=0.5)
-            rig.part(e, "torch").ball((x, 0.415, z - 0.26), 0.028, "orange")
-            rig.part(e, "spark").ball((x, 0.445, z - 0.26), 0.05, "arc")
+            rig.part(e).cyl((x, 0.33, z - 0.29), 0.035, 0.06, FRAME_L, axis="f")
+            rig.part(e).cyl((x, 0.385, z - 0.29), 0.03, 0.06, "gm", axis="f", taper=0.5)
+            rig.part(e, "torch").ball((x, 0.425, z - 0.29), 0.028, "orange")
+            rig.part(e, "spark").ball((x, 0.455, z - 0.29), 0.05, "arc")
         else:                                                                           # claw
-            rig.part(e).rbox((x, 0.32, z - 0.26), (0.08, 0.05, 0.06), FRAME, r=0.015, axis="f")
+            rig.part(e).rbox((x, 0.33, z - 0.29), (0.08, 0.05, 0.06), FRAME, r=0.015, axis="f")
             for dx in (-0.028, 0.028):
-                rig.part(e).box((x + dx, 0.375, z - 0.26), (0.04, 0.08, 0.045), FRAME_L)
+                rig.part(e).box((x + dx, 0.385, z - 0.29), (0.04, 0.08, 0.045), FRAME_L)
     rig.build()
     rig.root.scale = (1.15,) * 3
     return rig

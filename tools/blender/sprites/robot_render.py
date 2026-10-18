@@ -30,15 +30,25 @@ def _state(rig, clip, i):
         rig.show(f"bar{k}", clip == "charge" and k <= i)
 
 
+def _stance(rig, a):
+    """Standing: the right foot a little forward, knees soft, so the legs read apart in the side views."""
+    for side, sg in (("R", 1), ("L", -1)):
+        hip, knee = -10 * a * sg - 3, 7
+        rig.rot(f"hip_{side}", pitch=hip)
+        rig.rot(f"knee_{side}", pitch=knee)
+        rig.rot(f"ankle_{side}", pitch=-(hip + knee))
+
+
 def _biped(rig, clip, i):
     a = 0.8 if rig.name == "heavy" else 1.0
     r = rig.rot
     if clip == "idle":
         t = TAU * i / 4
+        _stance(rig, a)
         r("head", yaw=(0, 8, 0, -8)[i])
         for s, sg in (("R", 1), ("L", -1)):
-            r(f"arm_{s}", pitch=2 * math.sin(t) * sg, roll=4 * sg)
-            r(f"elbow_{s}", pitch=-8)
+            r(f"arm_{s}", pitch=-5 + 2 * math.sin(t) * sg, roll=6 * sg)
+            r(f"elbow_{s}", pitch=-16)
         rig.shift("torso", dz=0.006 * math.sin(t))
     elif clip == "walk":
         t = TAU * i / 8
@@ -130,10 +140,8 @@ REST = os.environ.get("ROBOT_REST")
 def pose(rig, clip, i):
     rig.rest()
     _state(rig, clip, i)
-    if REST:                                 # shape review: the bare rest pose, standing on the floor
-        if rig.kind != "drone":
-            rig.ground_attached()
-        return
+    if REST:                                 # shape review: the neutral standing pose (idle frame 0)
+        clip, i = "idle", 0
     (_drone if rig.kind == "drone" else _biped)(rig, clip, i)
 
 

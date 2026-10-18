@@ -1,4 +1,4 @@
-"""Blender shape render of the robot crew in the rest pose (smooth, unquantised, 4x game scale), for reviewing the
+"""Blender shape render of the robot crew in the neutral standing pose, idle frame 0 (smooth, unquantised, 4x game scale), for reviewing the
 basic forms before animation. Writes robots-shapes-<type>-<dir>.png (RGBA) into the out dir.
 
   blender -b --factory-startup --python tools/blender/review/robots_shapes.py -- <out dir>"""
@@ -11,7 +11,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import core, post, robots  # noqa: E402
 from sprites import human_render as hr  # noqa: E402
-from sprites.robot_render import _state  # noqa: E402
+from sprites.robot_render import pose  # noqa: E402
 
 Z = 4                                       # zoom over game scale
 W, H, ORIGIN = 124 * Z, 100 * Z, (62 * Z, 88 * Z)
@@ -48,10 +48,7 @@ def main():
         rig.root.scale = tuple(v * Z for v in rig.root.scale)
         for name, d in DIRS.items():
             rig.root.rotation_euler = (0, 0, math.radians(hr.THETA[d]))
-            rig.rest()
-            _state(rig, "idle", 0)
-            if rig.kind != "drone":
-                rig.ground_attached()
+            pose(rig, "idle", 0)
             rgb, a = core.render(W, H, "color", ORIGIN)
             g, _ = core.render(W, H, "glow", ORIGIN)
             rgba = np.dstack([np.clip(rgb + g * 0.6, 0, 255), a * 255]).astype(np.uint8)
