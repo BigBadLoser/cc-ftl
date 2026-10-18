@@ -6,26 +6,28 @@ a header with rounded upper corners (Space Haven's door is an arch that rises ne
 screen-left and top edges and grooves; a lamp strip sits on the header. Under the jambs the skirt is the frame's flared
 rose foot. The leaf is recessed (the reveal shows the depth) in a round-topped opening, with a window, a red status
 light, a dashed band and a lower panel; a hazard-striped threshold lies on the floor in front. The open door has no
-leaf: the doorway is a real hole that shows the floor and room behind. The cutaway door is the same frame cut at ZL with
-near-black cut tops, standing on the plain wall skirt."""
+leaf: the doorway is a real hole that shows the floor and room behind. Doors are never cut: the same full door is drawn
+in every view level."""
 import math
 
 from . import core
 from . import wallart as A
 from . import walls
-from .walls import GN, TW, Strip, emit, skirt_run, skirt_top
+from .walls import GN, TW, Strip, emit, skirt_run, skirt_top, wall_back
 
 DXF = 0.50                  # frame half-width
 DXO = 0.27                  # opening half-width (Space Haven: about 0.55 of the frame)
 RF = 0.26                   # frame top corner radius
 RO = 0.12                   # opening top corner radius
 PF = 4 / 32                 # frame stands this far proud of the wall face
-ZL = 1.0                    # cutaway cut height
 C = 1 / GN
-VB = -0.5                   # frame back
-VW = -0.5 + TW              # wall face plane
-VF = VW + PF                # frame front
-VL = -0.5 + TW / 2          # leaf plane
+
+
+def planes():
+    """(frame back, wall face, frame front, leaf plane) along the wall's depth axis; the partition is set back."""
+    vb = -0.5 + wall_back()
+    vw = vb + TW
+    return vb, vw, vw + PF, vb + TW / 2
 
 
 def door_heights():
@@ -52,26 +54,20 @@ def open_top(u, zo):
 
 
 class DoorWall(Strip):
-    def __init__(self, axis, low):
-        super().__init__(10 if axis == "x" else 5, "wall", not low)
-        self.axis, self.low = axis, low
+    def __init__(self, axis):
+        super().__init__(10 if axis == "x" else 5, "wall", "up")
+        self.axis = axis
         self.zf = door_heights()[1]
 
     def _u(self, x, y):
         return x if self.axis == "x" else y
 
-    def cover(self, i, j):
-        cv = super().cover(i, j)
-        if cv and self.low and abs(self._u((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5)) < DXF:
-            return None
-        return cv
-
     def skip_skirt(self, i, j):
         return abs(self._u((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5)) < DXO
 
     def col_skirt(self, i, j, kind, x, y):
-        """Under the full door's jambs the skirt is the frame's flared rose foot (the cutaway keeps the wall skirt)."""
-        if self.low or abs(self._u(x, y)) >= DXF:
+        """Under the jambs the skirt is the frame's flared rose foot."""
+        if abs(self._u(x, y)) >= DXF:
             return super().col_skirt(i, j, kind, x, y)
         d, r = self._dist(x, y)
         run = self.run
@@ -86,23 +82,23 @@ class DoorWall(Strip):
 
     def face_lo(self, x, y):
         u = abs(self._u(x, y))
-        if self.low or u > DXF + 1e-9:
+        if u > DXF + 1e-9:
             return None
         return frame_top(u, self.zf)
 
 
-def door(axis="x", is_open=False, low=False):
-    m = core.Mesh(f"door_{'low_' if low else ''}{axis}{'_open' if is_open else ''}", flat=True)
-    sp = DoorWall(axis, low)
+def door(axis="x", is_open=False):
+    m = core.Mesh(f"door_{axis}{'_open' if is_open else ''}", flat=True)
+    sp = DoorWall(axis)
     zo, zf = door_heights()
+    VB, VW, VF, VL = planes()
     emit(m, sp)
-    zs = skirt_top(not low)
+    zs = skirt_top()
     face = "y" if axis == "x" else "x"           # the wall face the door sits in
     side = "x" if axis == "x" else "y"           # orientation of the +u side faces
     R, Rs = A.ramp("rose", face), A.ramp("rose", side)
     left = -1 if axis == "x" else 1              # sign of u at the screen-left jamb
-    top = ZL if low else zf
-    cut = "wK"
+    top = zf
 
     def G(u, v, z):
         return core.G(u, v, z) if axis == "x" else core.G(v, u, z)
@@ -114,7 +110,7 @@ def door(axis="x", is_open=False, low=False):
         """Frame silhouette in the (u, z) plane."""
         if abs(u) > DXF or z > top:
             return False
-        return low or z <= frame_top(u, zf)
+        return z <= frame_top(u, zf)
 
     def opening(u, z):
         return abs(u) < DXO and z < min(open_top(u, zo), top)
@@ -131,46 +127,40 @@ def door(axis="x", is_open=False, low=False):
                 continue                                        # the doorway
             lu = um * left                                      # > 0 toward the screen-left
             rim_side = abs(um) > DXF - C * 1.2
-            rim_top = not low and zm > frame_top(um, zf) - 0.045
+            rim_top = zm > frame_top(um, zf) - 0.045
             if rim_side and not (rim_top and abs(um) > DXF - RF):
                 col = R["H"] if lu > 0 else R["D"]
             elif rim_top:
                 col = R["H"] if (lu > 0 or abs(um) < DXF - RF) else R["M"]
-            elif abs(um) > DXF - C * 2.2 or (not low and zm > frame_top(um, zf) - 0.09):
+            elif abs(um) > DXF - C * 2.2 or zm > frame_top(um, zf) - 0.09:
                 col = R["M"]                                    # groove inside the rim
             elif opening(um - C * 1.1, zm) or opening(um + C * 1.1, zm) or opening(um, zm - 0.035):
                 col = R["K"]                                    # trim round the doorway
             elif abs(abs(um) - (DXO + DXF) / 2) < C * 0.6 and 0.12 < zm < zo - 0.12:
                 col = R["D"]                                    # jamb groove
-            elif low and zm > top - 0.04:
-                col = R["H"]                                    # lit lip under the cut
             else:
                 col = R["L"]
             quad([(u0, VF, z0), (u0 + du, VF, z0), (u0 + du, VF, z0 + dz), (u0, VF, z0 + dz)], col)
 
-    # top / cut surfaces, the rounded head (stepped per column) and the +u end of the frame
-    vt = VB if low else VW
-    if low:
-        for a, b in ((-DXF, -DXO), (DXO, DXF)):
-            quad([(a, vt, top), (b, vt, top), (b, VF, top), (a, VF, top)], cut)
-    else:
-        for ii in range(nu):
-            u0 = -DXF + ii * du
-            zt0 = frame_top(u0 + du / 2, zf)
-            col = R["H"] if (u0 + du / 2) * left > -(DXF - RF) else R["M"]
-            quad([(u0, vt, zt0), (u0 + du, vt, zt0), (u0 + du, VF, zt0), (u0, VF, zt0)], col)
-            if ii + 1 < nu:
-                zt1 = frame_top(u0 + 1.5 * du, zf)
-                if zt1 < zt0:                                   # step down toward +u: a face looking at +u
-                    quad([(u0 + du, vt, zt1), (u0 + du, VF, zt1), (u0 + du, VF, zt0), (u0 + du, vt, zt0)], Rs["L"])
-        lw = 0.2                                                # lamp strip on the header
-        zl = zf + 0.04
-        quad([(-lw, VW, zl), (lw, VW, zl), (lw, VW + 2 * C, zl), (-lw, VW + 2 * C, zl)], "lampY")
-        quad([(-lw, VW + 2 * C, zf), (lw, VW + 2 * C, zf), (lw, VW + 2 * C, zl), (-lw, VW + 2 * C, zl)], "lampY")
-    zt = top if low else frame_top(DXF - 1e-6, zf)
+    # the rounded head (stepped per column) and the +u end of the frame
+    vt = VW
+    for ii in range(nu):
+        u0 = -DXF + ii * du
+        zt0 = frame_top(u0 + du / 2, zf)
+        col = R["H"] if (u0 + du / 2) * left > -(DXF - RF) else R["M"]
+        quad([(u0, vt, zt0), (u0 + du, vt, zt0), (u0 + du, VF, zt0), (u0, VF, zt0)], col)
+        if ii + 1 < nu:
+            zt1 = frame_top(u0 + 1.5 * du, zf)
+            if zt1 < zt0:                                       # step down toward +u: a face looking at +u
+                quad([(u0 + du, vt, zt1), (u0 + du, VF, zt1), (u0 + du, VF, zt0), (u0 + du, vt, zt0)], Rs["L"])
+    lw = 0.2                                                # lamp strip on the header
+    zl = zf + 0.04
+    quad([(-lw, VW, zl), (lw, VW, zl), (lw, VW + 2 * C, zl), (-lw, VW + 2 * C, zl)], "lampY")
+    quad([(-lw, VW + 2 * C, zf), (lw, VW + 2 * C, zf), (lw, VW + 2 * C, zl), (-lw, VW + 2 * C, zl)], "lampY")
+    zt = frame_top(DXF - 1e-6, zf)
     quad([(DXF, VB, 0), (DXF, VF, 0), (DXF, VF, zt), (DXF, VB, zt)], Rs["D"])
-    m.poly([G(-DXO, VW, 0), G(-DXO, VW + skirt_run(not low), 0), G(-DXO, VW, zs)],
-           Rs["D"] if not low else A.ramp("wall", side)["D"])  # the skirt's cut edge at the opening
+    m.poly([G(-DXO, VW, 0), G(-DXO, VW + skirt_run(), 0), G(-DXO, VW, zs)],
+           Rs["D"])                                                  # the foot's cut edge at the opening
     # reveal (the jamb's inner side at u = -DXO faces +u)
     vr = VB if is_open else VL
     zr = min(zo - RO, top)
@@ -178,7 +168,7 @@ def door(axis="x", is_open=False, low=False):
     quad([(-DXO, vr, zr - 0.04), (-DXO, VF, zr - 0.04), (-DXO, VF, zr), (-DXO, vr, zr)], Rs["K"])
 
     if not is_open:
-        _leaf(m, G, R, top, low, cut, zo)
+        _leaf(m, G, R, top, zo, VL)
     # sill through the doorway and the hazard threshold on the floor in front
     v0 = VB if is_open else VL
     quad([(-DXO, v0, 0.012), (DXO, v0, 0.012), (DXO, VF, 0.012), (-DXO, VF, 0.012)], "steelD")
@@ -195,7 +185,7 @@ def door(axis="x", is_open=False, low=False):
     return [m.build()]
 
 
-def _leaf(m, G, R, top, low, cut, zo):
+def _leaf(m, G, R, top, zo, VL):
     """Closed leaf in the recess: window, red light, dashed band, lower panel."""
     zt = min(zo, top)
     nu, nz = int(round(2 * DXO * GN)), int(round(zt * 20))
@@ -210,8 +200,6 @@ def _leaf(m, G, R, top, low, cut, zo):
             col = R["M"]
             if zm < 0.05 or p > DXO - C or zm > open_top(um, zo) - 0.03:
                 col = R["K"]
-            elif low and zm > zt - 0.04:
-                col = R["H"]
             elif zo * 0.6 <= zm < zo * 0.9 and p < DXO - 0.07:
                 if p > DXO - 0.07 - C or zm < zo * 0.6 + 0.03 or zm > zo * 0.9 - 0.03:
                     col = R["D"]
@@ -234,5 +222,3 @@ def _leaf(m, G, R, top, low, cut, zo):
             elif p < C and zm > 0.05:
                 col = R["D"]
             m.poly([G(u0, VL, z0), G(u0 + du, VL, z0), G(u0 + du, VL, z0 + dz), G(u0, VL, z0 + dz)], col)
-    if low:
-        m.poly([G(-DXO, VL - 2 * C, zt), G(DXO, VL - 2 * C, zt), G(DXO, VL, zt), G(-DXO, VL, zt)], cut)
