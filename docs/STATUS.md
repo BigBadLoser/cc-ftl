@@ -47,7 +47,7 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   with its chair as a walkable access tile inside the footprint (needs per-tile solidity in the sim);
   light weapons 2x2, heavy 3x3; shield gen 2x3, small shield gen 2x2, AI core 2x2. Ships get bigger
   (starter ~30x20, raider ~24x16 with fewer modules).
-- **Engines replace the hull wall** where placed and carry their own armoured bulkhead (full and
+- **Engines replace the hull wall** where placed and carry their own armoured bulkhead (it
   is always full height: it never collapses in the cutaway view). One big bell per engine
   (~2.6 tiles), in the cleaner v5 bell style (few rings). Bells protrude into space. Engines may block the view. A destroyed
   engine just stops working (no breach).
