@@ -7,6 +7,7 @@ import { findPath } from '../crew/pathfind';
 import { createCrew } from '../crew/spawn';
 import { consumeDelivered } from '../items/materials';
 import { ModuleC } from '../modules/components';
+import { openTilesOf } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { BAY_REPAIR_BELOW } from '../tuning';
 import { speciesOf } from './core';
@@ -21,6 +22,13 @@ export function isBay(sim: Sim, id: number): boolean {
 export function bayOccupant(sim: Sim, bay: number): number {
   const r = sim.world.get(bay, ModuleC)?.reservedBy ?? 0;
   return r && sim.world.has(r, CrewC) && !sim.world.has(r, DeadC) ? r : 0;
+}
+
+/** The tile of a bay's cradle (its walkable open tile, where the robot stands), or the module origin without one. */
+export function cradleOf(sim: Sim, bay: number): { x: number; y: number } {
+  const m = sim.world.get(bay, ModuleC);
+  const def = m && sim.content.modules[m.def];
+  return (m && def && openTilesOf(def, m.x, m.y, m.rot)[0]) || { x: m?.x ?? 0, y: m?.y ?? 0 };
 }
 
 /** The assemble job running in a bay, or 0. */
@@ -75,13 +83,13 @@ export function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): boo
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
       if (!m || m.gridId !== pos.gridId || !bayFree(sim, id)) continue;
-      const steps = findPath(sim, pos.gridId, origin(pos), { x: m.x, y: m.y });
+      const steps = findPath(sim, pos.gridId, origin(pos), cradleOf(sim, id));
       if (steps && steps.length < best) [bay, best] = [id, steps.length];
     }
     if (!bay) return false;
     (sim.world.get(bay, ModuleC) as { reservedBy: number }).reservedBy = robot;
   }
-  const m = sim.world.get(bay, ModuleC) as { x: number; y: number };
+  const m = cradleOf(sim, bay);
   const path = sim.world.get(robot, PathC) as Path;
   if (isSettled(pos) && pos.x === m.x && pos.y === m.y) {
     clearPath(sim, robot);
@@ -103,7 +111,7 @@ export function performAssemble(sim: Sim, job: Job, speed: number): WorkResult {
   if (!bay || bay.hp <= 0 || !role) return 'done';
   job.progress = Math.min(job.work, job.progress + speed);
   if (job.progress < job.work) return 'working';
-  const robot = createCrew(sim, bay.gridId, role, { x: bay.x, y: bay.y }, { faction: shipOf(sim, bay.gridId)?.faction ?? 'player' });
+  const robot = createCrew(sim, bay.gridId, role, cradleOf(sim, job.target ?? 0), { faction: shipOf(sim, bay.gridId)?.faction ?? 'player' });
   if (!robot) return 'done';
   bay.reservedBy = robot;
   consumeDelivered(job);

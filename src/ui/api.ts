@@ -108,6 +108,17 @@ export interface UiModule {
   storage: boolean;
   /** Crafts recipes (has a production panel). */
   crafting: boolean;
+  /** Robot bay state (null for other modules). */
+  bay: UiRobotBay | null;
+}
+
+export interface UiRobotBay {
+  /** The robot that calls this bay home. */
+  occupant: { id: number; name: string; role: string; charging: boolean; charge: number; hp: number; maxHp: number } | null;
+  /** Assembly under way: progress 0..1, and whether it still waits for materials. */
+  assembling: { role: string; name: string; progress: number; waiting: boolean; cost: UiCost[] } | null;
+  /** Robot types this bay can build. */
+  options: { role: string; name: string; seconds: number; cost: (UiCost & { have: number })[] }[];
 }
 
 /** An item amount with its display name. */
@@ -299,6 +310,16 @@ export interface UiShuttleAirlock {
   y: number;
 }
 
+/** A captured ship. `value` is the hull value estimate (prizeValue); `crewAboard` counts the player's crew still on it (scuttling needs none). */
+export interface UiPrize {
+  gridId: number;
+  name: string;
+  from: string;
+  value: number;
+  prisoners: { id: number; name: string; role: string; hp: number; maxHp: number; state: 'downed' | 'surrendered' }[];
+  crewAboard: number;
+}
+
 export interface UiShuttles {
   shuttles: UiShuttle[];
   /** Airlocks of other ships a shuttle can dock at. */
@@ -384,6 +405,7 @@ export interface UiApi {
   alerts: Subscribable<UiAlert[]>;
   combat: Subscribable<UiCombat>;
   shuttles: Subscribable<UiShuttles>;
+  prizes: Subscribable<UiPrize[]>;
   /** Center the camera on a shuttle (any state). */
   focusShuttle(id: number): void;
   /** Show a ship in the combat overlay rectangle (null hides it). */

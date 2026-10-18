@@ -1,10 +1,11 @@
 import { ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiCombat, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
+import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { createStore, type Readable } from './store';
 
@@ -54,6 +55,7 @@ export interface Bridge {
   fabs: Readable<UiFab[]>;
   combat: Readable<UiCombat>;
   shuttles: Readable<UiShuttles>;
+  prizes: Readable<UiPrize[]>;
   setSelected(tile: TileRef | null): void;
   setHovered(tile: TileRef | null): void;
   dispatch(cmd: Command): void;
@@ -89,6 +91,8 @@ export function createBridge(sim: Sim): Bridge {
   const fabs = createStore<UiFab[]>([]);
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
   const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], roster: [], bays: [] });
+  const prizes = createStore<UiPrize[]>([]);
+  let lastPrizes = '';
   let lastShuttles = '';
   let lastCombat = '';
   let combatFrame = 0;
@@ -175,6 +179,14 @@ export function createBridge(sim: Sim): Bridge {
     lastShuttles = key;
     shuttles.set(snap);
   };
+  const refreshPrizes = () => {
+    if (combatFrame % 3) return;
+    const snap = buildPrizes(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastPrizes) return;
+    lastPrizes = key;
+    prizes.set(snap);
+  };
   let loop: Loop | undefined;
   let lastSpeed: Speed = 1;
 
@@ -196,6 +208,7 @@ export function createBridge(sim: Sim): Bridge {
     fabs,
     combat,
     shuttles,
+    prizes,
     setSelected(t) {
       selected = t;
       refreshInspect();
@@ -216,6 +229,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshCrew();
       refreshShip();
       refreshShuttles();
+      refreshPrizes();
       refreshCombat();
     },
   };

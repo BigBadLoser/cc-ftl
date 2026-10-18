@@ -13,6 +13,8 @@ const REASONS: Record<string, string> = {
   noAccess: 'Keep a walkable tile free for crew access',
   badRot: "Can't rotate that",
   badDef: 'Unknown module',
+  notPrize: 'Only a captured ship can be scuttled',
+  crewAboard: 'Get your crew off the prize before scuttling it',
   noPilot: 'The shuttle needs a pilot aboard',
   notStowed: 'The shuttle is not in its bay',
   bayDown: 'The vehicle bay is down',

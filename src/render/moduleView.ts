@@ -10,6 +10,7 @@ import { iso, depthKey } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
+import { robotBayLayers } from './robotBayArt';
 import { craftProgress, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
@@ -183,7 +184,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const on = m.powered && m.enabled && m.hp > 0;
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
         const roofed = host.roofed();
-        const layers = moduleLayers(world, id, m, def, active, true).flatMap((layer) => {
+        const layers = (def.robotBay ? robotBayLayers(world, id, m, def, now) : moduleLayers(world, id, m, def, active, true)).flatMap((layer) => {
           if (roofed && layer.tiles !== 'hull' && !(def.hullEdge && layer.tiles === 'rest')) return [];
           const art = resolveArt(atlas, layer.chain, layer.key);
           return art ? [{ layer, art }] : [];
@@ -205,6 +206,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         for (const p of e.parts) {
           p.spr.tint = mulColor(tint, p.art);
           for (const g of [p.glow, p.halo]) if (g) g.visible = on;
+          if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }
       }
     }

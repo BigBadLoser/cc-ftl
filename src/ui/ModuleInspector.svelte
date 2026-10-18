@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiModule } from './api';
   import FabPanel from './FabPanel.svelte';
+  import RobotBayPanel from './RobotBayPanel.svelte';
   import StoragePanel from './StoragePanel.svelte';
 
   let { api }: { api: UiApi } = $props();
@@ -31,6 +32,7 @@
     <div class="bar hp" class:low={hpPct(m) < 40}><i style:width="{hpPct(m)}%"></i></div>
     {#if m.crafting}<FabPanel {api} id={m.id} def={m.def} />{/if}
     {#if m.storage}<StoragePanel {api} id={m.id} />{/if}
+    {#if m.bay}<RobotBayPanel {api} id={m.id} bay={m.bay} />{/if}
     {#if m.power !== 0}
       <div class="row">
         <span class="lbl">Priority</span>

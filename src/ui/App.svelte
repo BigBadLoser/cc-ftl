@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCombat, UiCutaway, UiShuttles, UiSnapshot, UiToolState } from './api';
+  import type { UiApi, UiCombat, UiCutaway, UiPrize, UiShuttles, UiSnapshot, UiToolState } from './api';
   import CombatPanel from './CombatPanel.svelte';
+  import PrizePanel from './PrizePanel.svelte';
   import ShuttlePanel from './ShuttlePanel.svelte';
   import DebugPanel from './DebugPanel.svelte';
   import TileInspector from './TileInspector.svelte';
@@ -31,6 +32,8 @@
   let combatOpen = $state(false);
   let wasInCombat = false;
   let shuttleOpen = $state(false);
+  let prizeOpen = $state(false);
+  let prizes = $state<UiPrize[]>([]);
   let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], roster: [], bays: [] });
 
   let cutaway = $state<UiCutaway>('auto');
@@ -39,6 +42,7 @@
   $effect(() => {
     document.documentElement.toggleAttribute('data-combat', combat.inCombat && combatOpen);
   });
+  const phone = () => window.matchMedia('(max-width: 600px)').matches;
   const cutLabel: Record<UiCutaway, string> = { auto: 'Cutaway', up: 'Up', down: 'Low' };
   const cutNext: Record<UiCutaway, UiCutaway> = { auto: 'up', up: 'down', down: 'auto' };
   function cycleWalls() {
@@ -57,6 +61,14 @@
         if (m !== null && shuttles.bays.some((b) => b.id === m)) shuttleOpen = true;
       }),
       api.shuttles.subscribe((v) => (shuttles = v)),
+      api.prizes.subscribe((v) => {
+        if (v.length > prizes.length) {
+          prizeOpen = true; // a ship was just taken
+          api.selectCrew(null);
+        }
+        prizes = v;
+        if (!v.length) prizeOpen = false;
+      }),
       api.tool.subscribe((t) => (tool = t)),
       api.combat.subscribe((c) => {
         combat = c;
@@ -103,13 +115,19 @@
     <OverlayPicker {api} />
   </span>
   <StatsChips {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} />
-  {#if shuttles.bays.length}
-    <button class:on={shuttleOpen} data-testid="shuttle-open" onclick={() => { shuttleOpen = !shuttleOpen; if (shuttleOpen) api.selectCrew(null); }}><span class="long">Shuttle</span><span class="short" aria-label="Shuttle">🚀</span></button>
-  {/if}
-  {#if combat.inCombat && !combatOpen}
-    <button class="fight" data-testid="combat-open" onclick={() => (combatOpen = true)}>⚔ Combat</button>
-  {/if}
+  <span class="brk"></span>
+  <span class="acts">
+    {#if shuttles.bays.length}
+      <button class:on={shuttleOpen} data-testid="shuttle-open" onclick={() => { shuttleOpen = !shuttleOpen; if (shuttleOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><span class="long">Shuttle</span><span class="short" aria-label="Shuttle">🚀</span></button>
+    {/if}
+    {#if prizes.length}
+      <button class:on={prizeOpen} data-testid="prize-open" onclick={() => { prizeOpen = !prizeOpen; if (prizeOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><span class="long">Prizes</span><span class="short" aria-label="Prizes">★</span></button>
+    {/if}
+    {#if combat.inCombat && !combatOpen}
+      <button class="fight" data-testid="combat-open" onclick={() => { combatOpen = true; if (phone()) { shuttleOpen = false; prizeOpen = false; } }}>⚔<span class="long"> Combat</span></button>
+    {/if}
   <button class:on={debug} onclick={() => (debug = !debug)}>Debug</button>
+  </span>
 </header>
 
 {#if stockOpen}
@@ -129,6 +147,8 @@
   <BuildModules {api} />
 {:else if selCrew !== null}
   <CrewInspector {api} onPriorities={() => (priorities = true)} />
+{:else if prizeOpen}
+  <PrizePanel {api} onClose={() => (prizeOpen = false)} />
 {:else if shuttleOpen && (selMod === null || shuttles.bays.some((b) => b.id === selMod))}
   <ShuttlePanel {api} onClose={() => (shuttleOpen = false)} />
 {:else if selMod !== null}
@@ -153,7 +173,17 @@
   @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
   .fight { border-color: var(--red); color: #ffd0d0; }
   .short { display: none; }
+  .acts { display: flex; gap: 8px; align-items: center; }
+  .brk { display: none; }
   .tick { color: var(--cyan); min-width: 5.5em; }
   .speeds, .views { display: flex; gap: 4px; }
-  @media (max-width: 600px) { .tick { display: none; } .long { display: none; } .short { display: inline; } header { padding-bottom: 4px; } header button { min-width: 34px; } header { gap: 4px; flex-wrap: wrap; justify-content: flex-start; } header button { padding: 0 8px; font-size: 12px; } .views { margin-left: auto; } }
+  @media (max-width: 600px) {
+    .tick { display: none; } .long { display: none; } .short { display: inline; }
+    header { padding-bottom: 4px; gap: 4px; flex-wrap: wrap; justify-content: flex-start; }
+    header button { min-width: 32px; min-height: 34px; padding: 0 8px; font-size: 12px; }
+    .views { margin-left: auto; }
+    /* Row 1: speeds and views. Row 2: stats chips and the action buttons. */
+    .brk { display: block; flex-basis: 100%; height: 0; order: 8; }
+    .acts { order: 10; margin-left: auto; gap: 4px; }
+  }
 </style>

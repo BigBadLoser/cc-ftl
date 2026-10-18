@@ -96,6 +96,7 @@ const api: UiApi = {
   alerts: controller.alerts.list,
   combat: bridge.combat,
   shuttles: bridge.shuttles,
+  prizes: bridge.prizes,
   focusShuttle: (id) => {
     const v = sim.world.get(id, VehicleC);
     if (v) renderer?.focusSector(v.x, v.y);

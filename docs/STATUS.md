@@ -218,6 +218,15 @@ portal graph across grids, cross-grid pathing, crew grid membership, airlock mod
 - `m5-boarding` and `robots` merged onto main (mirrored templates kept, shuttle bay and airlock mirrored to the west hull).
   Checkpoint 1 adds a shuttle panel and a placeholder shuttle sprite (`src/render/shuttlePlaceholder.ts`).
 
+### Boarding UI and robots wired (checkpoints 1 to 3)
+
+- UI: shuttle panel, crew bar with all crew wherever they are (hostiles are targeted in the world, no name row), equip,
+  draft and attack orders across ships, prize panel (prisoners, prize value, scuttle), robot bay panel (assemble, cancel).
+- Placeholders, each in its own file: `render/shuttlePlaceholder.ts`, `fightFx.ts`, `crewMarks.ts`.
+- Art: robot crew sheets and the robot bay sprites (`render/robotBayArt.ts`; empty, charging, drone, 8-frame assembly)
+  from `art/robot-bay`. The bay is solid with a walkable cradle (`openTiles [[0,0]]`, `cradleOf` in `sim/robots/bay.ts`).
+- Tooling: `?hook` installs `window.__cc` (screen positions, events). Debug panel: robot bay, parts, drain batteries, capture.
+
 ### Robots (from branch `robots`)
 
 - **Robots and the rogue AI (branch `robots`, on top of `m5-boarding`):**

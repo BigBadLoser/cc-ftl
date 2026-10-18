@@ -2,7 +2,7 @@ import { factionsHostile } from '../combat/factions';
 import { shipOf } from '../combat/ships';
 import { skillOf } from '../combat/operators';
 import type { Command } from '../commands';
-import { AssignmentC, CrewC, DraftedC, JobC, PathC, PositionC, type Path } from '../crew/components';
+import { AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, type Path } from '../crew/components';
 import { isIncapacitated, origin, releaseAssignment } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
 import { createCrew } from '../crew/spawn';
@@ -14,10 +14,10 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { HACK_SEC } from '../tuning';
 import { HackedC } from './components';
-import { assemblyAt, bayFree, isBay } from './bay';
+import { assemblyAt, bayFree, cradleOf, isBay } from './bay';
 import { destroyJob } from '../items/stacks';
 
-type RobotCommand = 'crew.hack' | 'debug.spawnCrew' | 'module.assembleRobot' | 'module.cancelAssembly';
+type RobotCommand = 'crew.hack' | 'debug.spawnCrew' | 'module.assembleRobot' | 'module.cancelAssembly' | 'debug.setCharge';
 type Handler<T extends RobotCommand> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 function reject(sim: Sim, command: string, reason: string): void {
@@ -68,7 +68,7 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     if (!bayFree(sim, cmd.moduleId)) return reject(sim, cmd.type, 'bayTaken');
     const job = sim.world.createEntity();
     sim.world.add(job, JobC, {
-      category: 'crafting', kind: 'assemble', gridId: m.gridId, x: m.x, y: m.y, struct: 0, work: plan.work, progress: 0,
+      category: 'crafting', kind: 'assemble', gridId: m.gridId, ...cradleOf(sim, cmd.moduleId), struct: 0, work: plan.work, progress: 0,
       reservedBy: 0, target: cmd.moduleId, assemble: { role: cmd.role },
       ...(plan.cost.length > 0 ? { needs: plan.cost.map((q) => ({ ...q })), delivered: [] } : {}),
     });
@@ -77,6 +77,12 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     const job = assemblyAt(sim, cmd.moduleId);
     if (!job) return reject(sim, cmd.type, 'noAssembly');
     destroyJob(sim, job); // delivered materials fall to the floor
+  },
+  'debug.setCharge': (sim, cmd) => {
+    for (const id of sim.world.query(NeedsC)) {
+      const n = sim.world.get(id, NeedsC);
+      if (n && n.charge !== undefined) n.charge = Math.max(0, Math.min(100, cmd.value));
+    }
   },
   'debug.spawnCrew': (sim, cmd) => {
     const grid = sim.grids.get(cmd.gridId);

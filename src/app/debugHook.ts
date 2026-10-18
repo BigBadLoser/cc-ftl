@@ -1,4 +1,4 @@
-import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, accessTile, type Sim } from '../sim';
+import { AllegianceC, CrewC, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 
 /**
@@ -25,7 +25,7 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     crew: () =>
       [...sim.world.query(CrewC, PositionC)].map((id) => {
         const p = sim.world.get(id, PositionC);
-        return p && { id, enemy: sim.world.get(id, AllegianceC)?.faction !== 'player', gridId: p.gridId, ...r.screenOf(p.gridId, p.x, p.y) };
+        return p && { id, enemy: sim.world.get(id, AllegianceC)?.faction !== 'player', down: sim.world.has(id, DownedC) || sim.world.has(id, SurrenderedC), gridId: p.gridId, ...r.screenOf(p.gridId, p.x, p.y) };
       }),
     ships: () => [...sim.world.query(ShipC)].map((id) => sim.world.get(id, ShipC)),
     events: () => seen,

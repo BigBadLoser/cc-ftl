@@ -8,7 +8,10 @@ import type { Crew } from '../sim/crew/components';
  */
 export function crewLoadout(atlas: Atlas, crew: Crew): LayerSprite[] {
   const own = crew.species.replace(/^species\./, '');
-  // Species without art yet (robots) borrow the human layers as a placeholder until their sheets exist.
+  // Robots wear a single body layer per type (worker, repair, security), built from the role id.
+  const bot = atlas.layer(`crew.${own}.body.${crew.role.replace(/^role\.robot_/, '')}`);
+  if (bot && bot.def.species === own) return [bot];
+  // Species without art yet borrow the human layers as a placeholder until their sheets exist.
   const sp = atlas.layer(`crew.${own}.body`) ? own : 'human';
   const p = `crew.${sp}.`;
   const engineer = crew.role === 'role.engineer';
@@ -34,6 +37,7 @@ export function crewLoadout(atlas: Atlas, crew: Crew): LayerSprite[] {
 /** Clip name for a sim activity. */
 export function clipFor(activity: string, moving: boolean): string {
   if (activity === 'sleeping') return 'sleep';
+  if (activity === 'charging') return 'charge';
   if (activity === 'walking' || moving) return 'walk';
   return activity === 'working' ? 'work' : 'idle';
 }

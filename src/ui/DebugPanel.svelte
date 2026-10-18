@@ -61,6 +61,10 @@
     <button disabled={!tile} onclick={() => spawnBot('role.robot_worker')}>Worker bot on tile</button>
     <button disabled={!tile} onclick={() => spawnBot('role.robot_repair')}>Repair bot on tile</button>
     <button disabled={!tile} onclick={() => spawnBot('role.robot_security', 'hostile')}>Hostile security bot on tile</button>
+    <button disabled={!tile} data-testid="dbg-robot-bay" onclick={() => tile && api.dispatch({ type: 'debug.spawnModule', gridId: tile.gridId, x: tile.x, y: tile.y, def: 'module.robotBay', rot: 0 })}>Robot bay on tile</button>
+    <button disabled={!tile} data-testid="dbg-parts" onclick={() => tile && api.dispatch({ type: 'debug.spawnItems', gridId: tile.gridId, x: tile.x, y: tile.y, item: 'item.parts', count: 40 })}>40 parts on tile</button>
+    <button data-testid="dbg-drain" onclick={() => api.dispatch({ type: 'debug.setCharge', value: 12 })}>Drain robot batteries</button>
+    <button data-testid="dbg-capture" onclick={() => api.dispatch({ type: 'debug.capture', gridId: 2 })}>Capture ship 2 (raider)</button>
     <button onclick={spawnShipyard}>Spawn rogue AI shipyard</button>
     <button onclick={repro}>Copy repro</button>
     <button onclick={() => api.throwTestError()}>Throw test error</button>

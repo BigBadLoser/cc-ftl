@@ -197,9 +197,9 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 12 }],
   },
   // Robot bay 1x2: a charging cradle on the anchor tile (the robot stands in it, like a bed), the charger behind it.
-  // Home to one robot: recharges and repairs it, and assembles new ones. Placeholder art: the bed sprite.
+  // Home to one robot: recharges and repairs it, and assembles new ones. The tower (local row 1) is solid; the cradle (row 0) is walkable.
   'module.robotBay': {
-    name: 'Robot bay', asset: 'module.bed', footprint: [1, 2], solid: false, power: -3, priority: 3,
+    name: 'Robot bay', asset: 'module.robot_bay', footprint: [1, 2], solid: true, access: [0, 0], openTiles: [[0, 0]], power: -3, priority: 3,
     flammability: 0.2, maxHp: 90, buildWork: 200, robotBay: { chargePerSec: 1.5, repairPerSec: 1 },
     cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 8 }],
   },

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CrewC, DeadC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, StorageC, deserialize, newGame, placementError, serialize,
-  spawnModule, stat, storageAdd, storageCount, type Sim, type SimEvent,
+  spawnModule, removeModule, findPath, stat, storageAdd, storageCount, type Sim, type SimEvent,
 } from '../../sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { content } from '../index';
@@ -36,7 +36,12 @@ function bays(sim: Sim, n = 1): number[] {
   const out: number[] = [];
   for (let y = 0; y < grid.height && out.length < n; y++) {
     for (let x = 0; x < grid.width && out.length < n; x++) {
-      if (placementError(sim, 1, 'module.robotBay', x, y, 0) === null) out.push(spawnModule(sim, 1, 'module.robotBay', x, y, 0));
+      if (placementError(sim, 1, 'module.robotBay', x, y, 0) !== null) continue;
+      // The cradle must be reachable from the crew's room (the tower blocks its south side).
+      const at = sim.world.get(crewOn(sim, 1)[0]!, PositionC)!;
+      const id = spawnModule(sim, 1, 'module.robotBay', x, y, 0);
+      if (findPath(sim, 1, { x: at.x, y: at.y }, { x, y })) out.push(id);
+      else removeModule(sim, id);
     }
   }
   run(sim, 1);

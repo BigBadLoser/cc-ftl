@@ -2,7 +2,7 @@ import { CrewC, HealthC, NeedsC, PositionC, type Crew, type Health, type Needs, 
 import { isSettled } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
 import { RobotBayC } from '../robots/components';
-import { buyRepair, homeBay, repairItem } from '../robots/bay';
+import { buyRepair, cradleOf, homeBay, repairItem } from '../robots/bay';
 import { speciesOf } from '../robots/core';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -21,7 +21,7 @@ export function robotBaySystem(sim: Sim): void {
     const bayId = homeBay(sim, id);
     const bay = sim.world.get(bayId, ModuleC);
     const def = bay && sim.content.modules[bay.def]?.robotBay;
-    if (!bay || !def || bay.hp <= 0 || bay.gridId !== pos.gridId || bay.x !== pos.x || bay.y !== pos.y || !isSettled(pos)) {
+    if (!bay || !def || bay.hp <= 0 || bay.gridId !== pos.gridId || cradleOf(sim, bayId).x !== pos.x || cradleOf(sim, bayId).y !== pos.y || !isSettled(pos)) {
       crew.activity = 'idle';
       continue;
     }

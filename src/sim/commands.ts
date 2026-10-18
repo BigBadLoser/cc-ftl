@@ -84,6 +84,12 @@ export type Command =
   | { type: 'module.cancelAssembly'; moduleId: number }
   /** Spawn one crew member of `role` (robot variants included) on a walkable tile; faction defaults to the grid's ship. */
   | { type: 'debug.spawnCrew'; gridId: number; x: number; y: number; role: string; faction?: Faction }
+  /** Place a finished module without a build job (the debug panel); rejected when placement is invalid. */
+  | { type: 'debug.spawnModule'; gridId: number; x: number; y: number; def: string; rot: number }
+  /** Set the battery (0..100) of every battery robot (the debug panel). */
+  | { type: 'debug.setCharge'; value: number }
+  /** Take the ship on `gridId` as a prize at once, its crew surrendering (the debug panel). */
+  | { type: 'debug.capture'; gridId: number }
   | { type: 'debug.spawnItems'; gridId: number; x: number; y: number; item: string; count: number };
 
 /** A command tagged with the tick at whose start it applies. */
