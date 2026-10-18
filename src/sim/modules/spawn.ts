@@ -8,6 +8,10 @@ import { Struct } from '../structure';
 import { ModuleC } from './components';
 import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, inFootprint, openTilesOf } from './footprint';
 import { isTileWalkable } from './walk';
+import { dismantleAirlock, initAirlock } from '../portals/airlock';
+import { removePortalsOfAirlock } from '../portals/graph';
+import { VehicleBayC } from '../vehicles/components';
+import { releaseBayVehicle } from '../vehicles/lifecycle';
 
 /** Create a module entity and claim its footprint in the grid. Assumes placement was validated. */
 export function spawnModule(sim: Sim, gridId: number, defId: string, x: number, y: number, rot: number): number {
@@ -23,7 +27,9 @@ export function spawnModule(sim: Sim, gridId: number, defId: string, x: number, 
   if (def.weapon) sim.world.add(id, WeaponC, { charge: 0, target: null, shotsLeft: 0, nextShotTick: 0, volleyTarget: null, aim: 0 });
   if (def.pointDefense) sim.world.add(id, PointDefenseC, { aim: 0 });
   if (def.crafting) sim.world.add(id, ProductionC, { orders: [] });
+  if (def.vehicleBay) sim.world.add(id, VehicleBayC, { vehicle: 0 });
   for (const t of footprintTiles(def, x, y, rot)) grid.set('module', t.x, t.y, id);
+  if (def.airlock) initAirlock(sim, grid, id);
   return id;
 }
 
@@ -34,10 +40,15 @@ export function removeModule(sim: Sim, id: number): void {
   const def = sim.content.modules[m.def];
   const grid = sim.grids.get(m.gridId);
   if (def && grid) {
+    if (def.airlock) {
+      dismantleAirlock(sim, grid, id);
+      removePortalsOfAirlock(sim, id);
+    }
     for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
       if (grid.inBounds(t.x, t.y) && grid.get('module', t.x, t.y) === id) grid.set('module', t.x, t.y, 0);
     }
   }
+  if (def?.vehicleBay) releaseBayVehicle(sim, id, m.gridId, m.x, m.y);
   for (const st of sim.world.get(id, StorageC)?.stacks ?? []) spillItems(sim, m.gridId, m.x, m.y, st.item, st.count);
   sim.world.destroyEntity(id);
 }

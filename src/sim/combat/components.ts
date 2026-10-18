@@ -7,10 +7,16 @@ export interface Sector {
   height: number;
   /** True while an active player ship and an active/disabled hostile ship coexist. */
   inCombat: boolean;
+  /** Set once the player has lost (reason code, e.g. 'captured'); see the `game.lost` event. */
+  lost?: string;
 }
 
 export type Faction = 'player' | 'hostile' | 'neutral';
-export type ShipState = 'active' | 'disabled' | 'wreck' | 'fled';
+/**
+ * 'prize': a captured ship. Player-owned but inactive: no weapons, shields, AI or combat role; not flown. The player can
+ * salvage it or scuttle it (-> 'wreck').
+ */
+export type ShipState = 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
 
 /** A ship (one per grid): identity, world placement and lifecycle state. */
 export interface Ship {
@@ -31,10 +37,12 @@ export interface Ship {
 }
 export const ShipC = defineComponent<Ship>('ship');
 
-/** A weapon target: a ship grid and optionally one of its modules (0 = any module). */
+/** A weapon target: a ship grid and optionally one of its modules (0 = any module), or a vehicle. */
 export interface Target {
   gridId: number;
   moduleId: number;
+  /** Set (with gridId 0, moduleId 0) when the target is a shuttle in flight or docked. */
+  vehicle?: number;
 }
 
 export type Doctrine = 'weapons' | 'shields' | 'random';
@@ -117,3 +125,20 @@ export interface Ion {
   until: number;
 }
 export const IonC = defineComponent<Ion>('ion');
+
+/** On a ship entity while the other side holds its bridge: ticks held so far and by whom. */
+export interface CaptureProgress {
+  by: Faction;
+  ticks: number;
+}
+export const CaptureProgressC = defineComponent<CaptureProgress>('captureProgress');
+
+/** On a captured ship's entity: the record a future ship broker prices. */
+export interface Prize {
+  capturedTick: number;
+  /** Faction it belonged to. */
+  from: Faction;
+  /** Hull value estimate at capture, from module build costs x hp and wall integrity. Refresh with `prizeValue`. */
+  hullValue: number;
+}
+export const PrizeC = defineComponent<Prize>('prize');

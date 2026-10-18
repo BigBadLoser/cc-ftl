@@ -5,6 +5,7 @@ import { operatorSkill } from '../combat/operators';
 import { shipEntityOf, shipOf } from '../combat/ships';
 import { resolveTarget } from '../combat/targets';
 import { ModuleC } from '../modules/components';
+import { VehicleC } from '../vehicles/components';
 import type { WeaponDef } from '../registry';
 import { isDeployed } from '../modules/deploy';
 import type { Sim } from '../sim';
@@ -57,7 +58,8 @@ function launchNext(
   if (def.ammo && !consumeAmmo(sim, gridId, def.ammo)) return void (w.shotsLeft = 0);
   const from = turretPosition(sim, moduleId);
   const alive = sim.world.get(target.moduleId, ModuleC)?.gridId === target.gridId;
-  const to = turretPosition(sim, alive ? target.moduleId : 0) ?? centerOf(sim, target.gridId);
+  const vehicle = target.vehicle ? sim.world.get(target.vehicle, VehicleC) : undefined;
+  const to = vehicle ?? turretPosition(sim, alive ? target.moduleId : 0) ?? centerOf(sim, target.gridId);
   if (!from || !to) return void (w.shotsLeft = 0);
   w.aim = aimDirection(to.x - from.x, to.y - from.y);
   const dist = Math.max(1, Math.hypot(to.x - from.x, to.y - from.y));

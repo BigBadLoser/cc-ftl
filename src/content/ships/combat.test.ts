@@ -348,7 +348,7 @@ describe('enemy AI, endings', () => {
     run(sim, 400);
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC)!;
-      if (m.gridId === 2) m.hp = m.def === 'module.reactor' ? 100 : 0;
+      if (m.gridId === 2) m.hp = m.def === 'module.reactor' ? 100 : m.def === 'module.vehicle_bay' ? 60 : 0; // bay hp tuned so integrity stays between wreck and flee
     }
     const g2 = sim.grids.get(2)!;
     for (let y = 0; y < g2.height; y++) for (let x = 0; x < g2.width; x++) if (g2.get('struct', x, y) === 2) g2.set('hp', x, y, 80); // walls at about a third

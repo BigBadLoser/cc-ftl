@@ -209,7 +209,7 @@ export interface UiShipModule {
 export interface UiShipCombat {
   gridId: number;
   name: string;
-  state: 'active' | 'disabled' | 'wreck' | 'fled';
+  state: 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
   /** 0..1 hull and module integrity. */
   integrity: number;
   shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };

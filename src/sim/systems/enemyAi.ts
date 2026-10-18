@@ -2,13 +2,16 @@ import { CombatC, ShipC, type Combat } from '../combat/components';
 import { modulesOnGrid, randomModule } from '../combat/targets';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
+import { VehicleC } from '../vehicles/components';
+import { vehicleFaction } from '../vehicles/lifecycle';
 import { AI_RETARGET_TICKS, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
 
 /**
  * Enemy doctrine. Hostile active ships (a) retreat via combat.flee once integrity < FLEE_BELOW and the FTL drive
  * is charged, (b) never hold fire, and (c) every AI_RETARGET_TICKS pick a target on the first live player ship
  * when theirs is missing or destroyed: 'weapons' doctrine aims at weapon modules, 'shields' at shield
- * generators, 'random' at any module weighted by max hp. The AI only issues commands, like the player does.
+ * generators, 'random' at any module weighted by max hp. A hostile shuttle of another faction in flight is targeted
+ * before any ship. The AI only issues commands, like the player does.
  */
 export function enemyAiSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC, CombatC)) {
@@ -24,6 +27,15 @@ export function enemyAiSystem(sim: Sim): void {
       combat.aiTimer--;
       continue;
     }
+    const fv = flyingFoeVehicle(sim, ship.faction);
+    if (fv) {
+      // A foe shuttle in flight is shot down first (all weapons; the ship-wide target).
+      if (combat.target?.vehicle !== fv) {
+        combat.aiTimer = AI_RETARGET_TICKS;
+        sim.enqueue({ type: 'combat.setTarget', shipGridId: ship.gridId, weaponId: null, targetGridId: 0, targetModuleId: 0, targetVehicle: fv });
+      }
+      continue;
+    }
     const foe = firstFoe(sim);
     if (!foe) continue;
     const t = combat.target;
@@ -32,6 +44,15 @@ export function enemyAiSystem(sim: Sim): void {
     combat.aiTimer = AI_RETARGET_TICKS;
     sim.enqueue({ type: 'combat.setTarget', shipGridId: ship.gridId, weaponId: null, targetGridId: foe, targetModuleId: pick(sim, combat, foe) });
   }
+}
+
+/** The first shuttle in flight that belongs to a different faction, or 0. */
+function flyingFoeVehicle(sim: Sim, faction: string): number {
+  for (const id of sim.world.query(VehicleC)) {
+    const v = sim.world.get(id, VehicleC);
+    if (v?.state === 'flying' && vehicleFaction(sim, v) !== faction) return id;
+  }
+  return 0;
 }
 
 /** Grid id of the first player ship still in play, or 0. */

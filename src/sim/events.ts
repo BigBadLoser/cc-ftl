@@ -1,4 +1,5 @@
 import type { JobKind } from './crew/components';
+import type { PortalEnd, PortalKind } from './portals/components';
 
 /** Outbound notifications for UI and audio. */
 export type SimEvent =
@@ -18,7 +19,7 @@ export type SimEvent =
   | { type: 'crew.fellAsleep'; crew: number }
   | { type: 'crew.wokeUp'; crew: number }
   /** A crew member deposited items into a storage module (`to` 'storage') or onto a job (`to` 'job'). */
-  | { type: 'item.hauled'; crew: number; item: string; count: number; gridId: number; x: number; y: number; to: 'floor' | 'storage' | 'job' }
+  | { type: 'item.hauled'; crew: number; item: string; count: number; gridId: number; x: number; y: number; to: 'floor' | 'storage' | 'job' | 'vehicle' }
   /** A job lacks materials and no stock exists to fetch (debounced per job). */
   | { type: 'job.missingMaterials'; job: number; gridId: number; x: number; y: number; item: string }
   /** A crafting module finished a batch; outputs lie at (x, y). */
@@ -45,6 +46,36 @@ export type SimEvent =
   | { type: 'ship.recovered'; gridId: number }
   | { type: 'ship.destroyed'; gridId: number }
   | { type: 'ship.fled'; gridId: number }
+  /** A crew member finished crossing a portal and now stands at (x, y) on `toGridId`. */
+  | { type: 'crew.crossed'; crew: number; portal: number; kind: PortalKind; fromGridId: number; toGridId: number; x: number; y: number }
+  | { type: 'portal.linked'; portal: number; kind: PortalKind; a: PortalEnd; b: PortalEnd }
+  | { type: 'portal.unlinked'; portal: number }
+  /** An airlock finished a cycle; `side` is the door now open. */
+  | { type: 'airlock.cycled'; gridId: number; module: number; side: 'inner' | 'outer' }
+  /** A shuttle left its bay (home ship `gridId`) at sector position (x, y). */
+  | { type: 'vehicle.launched'; vehicle: number; gridId: number; x: number; y: number }
+  /** A shuttle latched on to `airlock` (module) of ship `gridId`. */
+  | { type: 'vehicle.docked'; vehicle: number; gridId: number; airlock: number }
+  | { type: 'vehicle.undocked'; vehicle: number; gridId: number; airlock: number }
+  /** A shuttle flew into its home bay. */
+  | { type: 'vehicle.stowed'; vehicle: number; bay: number }
+  | { type: 'vehicle.damaged'; vehicle: number; amount: number; hp: number; source: 'weapon' | 'pointDefence' }
+  /** A shuttle was destroyed in `state`; see destroyVehicle for what happens to those aboard. */
+  | { type: 'vehicle.destroyed'; vehicle: number; state: 'stowed' | 'flying' | 'docked'; x: number; y: number }
+  | { type: 'crew.embarked'; crew: number; vehicle: number; role: 'pilot' | 'passenger' }
+  | { type: 'crew.disembarked'; crew: number; vehicle: number; gridId: number; x: number; y: number }
+  /** A crew member attacked `target` with `weapon` (item id or 'unarmed'); (x, y) to (tx, ty) on grid `gridId`. Followed by crew.hit or crew.miss. */
+  | { type: 'crew.attacked'; crew: number; target: number; weapon: string; ranged: boolean; gridId: number; x: number; y: number; tx: number; ty: number }
+  | { type: 'crew.hit'; crew: number; target: number; damage: number; hp: number; cover: 'none' | 'partial' | 'full' }
+  | { type: 'crew.miss'; crew: number; target: number; cover: 'none' | 'partial' | 'full' }
+  | { type: 'crew.equipped'; crew: number; item: string }
+  | { type: 'crew.unequipped'; crew: number; item: string }
+  | { type: 'crew.surrendered'; crew: number }
+  /** `by`'s crew took the ship on grid `gridId` (it is now a prize if `by` is the player, else the loss is `game.lost`). */
+  | { type: 'ship.captured'; gridId: number; by: 'player' | 'hostile' | 'neutral'; from: 'player' | 'hostile' | 'neutral' }
+  | { type: 'crew.imprisoned'; crew: number; gridId: number }
+  /** The player lost the game; `reason` is a short code ('captured'). */
+  | { type: 'game.lost'; reason: string }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 

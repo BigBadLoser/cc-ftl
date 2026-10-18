@@ -1,13 +1,13 @@
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
-export type SkillName = 'gunnery' | 'piloting' | 'shielding';
+export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee';
 
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
   name: string;
   /** Modules to place at game start; `rot` is quarter turns clockwise (0..3). */
-  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[] }[];
+  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string }[];
   /** '.' space, '#' wall, '_' floor, 'D' door. Rows may differ in length; short rows pad with space. */
   rows: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
@@ -16,6 +16,12 @@ export interface ShipTemplate {
   crew?: string[];
   /** Enemy targeting doctrine (default 'random'). */
   doctrine?: 'weapons' | 'shields' | 'random';
+  /**
+   * Boarding doctrine flag (hostile ships). Present = the ship may send `party` crew by shuttle to an airlock of the
+   * player's ship once `afterSec` seconds of combat have passed, or earlier when fewer than half its weapons work or its
+   * integrity falls below `losingBelow`. Absent = it never boards (keeps the balance scenarios comparable).
+   */
+  boarding?: { party: number; afterSec: number; losingBelow: number; /** Hand weapon (item id) issued to the party when it leaves. */ weapon?: string };
 }
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
@@ -37,6 +43,26 @@ export interface ContentRegistry {
   structCosts: Record<string, ItemQty[]>;
   /** Weapon content id (e.g. 'weapon.burstLaser') to definition. Absent = no weapons. */
   weapons?: Record<string, WeaponDef>;
+  /** Vehicle content id (e.g. 'vehicle.shuttle') to definition. Absent = no vehicles. */
+  vehicles?: Record<string, VehicleDef>;
+}
+
+/** A shuttle type. It is an entity in the sector, not a grid: no interior, crew aboard are hidden. */
+export interface VehicleDef {
+  name: string;
+  /** Which bays take it: matches ModuleDef.vehicleBay.class. */
+  class: string;
+  /** Render asset id. */
+  asset: string;
+  /** Sector tiles per second at piloting skill 0. */
+  speed: number;
+  maxHp: number;
+  /** Passengers besides the pilot. */
+  capacity: number;
+  /** Chance 0..1 that a weapon shot aimed at it in flight misses. */
+  evasion: number;
+  /** Cargo hold: total item units it carries besides its crew (hauled in and out at its boarding tile). Absent = none. */
+  cargo?: number;
 }
 
 /** One typed result of a weapon impact. All are applied by combat/effects.ts. */
@@ -92,6 +118,23 @@ export interface ItemDef {
   stackSize: number;
   /** 0..1 fuel factor for a loose stack on a burning tile. Default 0 (does not burn). */
   flammability?: number;
+  /** VehicleDef id: a vehicle bay can turn one of these into a shuttle (vehicle.assign). */
+  vehicle?: string;
+  /** Present = crew can equip it and fight with it. */
+  hand?: HandWeaponDef;
+}
+
+/** A hand weapon (sidearm, rifle, blade) carried by crew. Ranged ones need line of sight; melee ones need adjacency. */
+export interface HandWeaponDef {
+  kind: 'ranged' | 'melee';
+  /** Hp taken from the target per hit. */
+  damage: number;
+  /** Tiles (ranged only; melee reaches the 8 neighbours). */
+  range: number;
+  /** Seconds between attacks. */
+  cooldownSec: number;
+  /** Base hit chance 0..1 before skill, range and cover. */
+  accuracy: number;
 }
 
 export interface RecipeDef {
@@ -110,6 +153,12 @@ export interface RoleDef {
   priorities: Record<WorkCategory, number>;
   /** Skill levels this role adds through the stat resolver. */
   skills?: Partial<Record<SkillName, number>>;
+  /** Fights even unarmed, and hunts boarders it cannot see yet. Other roles flee from hostiles unless armed. */
+  fighter?: true;
+  /** Item ids (best first) the crew member fetches from storage on their own when unarmed. */
+  loadout?: string[];
+  /** Hp fraction (0..1) under which this role surrenders when outnumbered. Default: SURRENDER_HP_FRAC for non-player crew, never for player crew. */
+  surrenderBelow?: number;
 }
 
 /** A species: base stats. Modifiers (traits, implants) come later via the stat resolver. */
@@ -136,6 +185,8 @@ export interface ModuleDef {
   footprint: readonly [number, number];
   /** Solid modules block walking on their tiles. */
   solid: boolean;
+  /** Cover this solid module gives a target standing right behind it (default 'partial'). */
+  cover?: 'partial' | 'full';
   /**
    * Tile (offset from the footprint's top-left at rotation 0) crew stand on to use it. It may lie outside the
    * footprint (a tile beside the module) or inside it, in which case it must also be listed in `openTiles`.
@@ -177,6 +228,25 @@ export interface ModuleDef {
    * immune to hull damage) whether or not the module works or exists.
    */
   hullEdge?: 'n' | 'e' | 's' | 'w';
+  /**
+   * Airlock: footprint [1, n] with n >= 3 and `hullEdge: 'n'`. Local row 0 is the outer door (on the hull line), the last
+   * row the inner door, the rows between the chamber. Placing it turns those tiles into doors and floor. Cycling takes
+   * `cycleSec` and moves the chamber's air to or from the ship, so crew passing never vents the ship.
+   */
+  airlock?: { cycleSec: number };
+  /**
+   * Vehicle bay: an interior landing pad (walkable, no hull contact needed; the vehicle launches through a hatch in the
+   * pad). Holds one vehicle whose `VehicleDef.class` equals `class` ('shuttle' bays are 4x5; later 'pod' bays, 3x3, for
+   * mining and construction pods). Crew board and leave it at `access` (inside the footprint, so list it in `openTiles`
+   * too).
+   */
+  vehicleBay?: { class: string };
+  /**
+   * Marks the ship's bridge for capture (a helm console counts as one with the defaults). Holding it means a live
+   * crew member of the attacking side stands within `radius` tiles (default CAPTURE_BRIDGE_RADIUS) of the module's access
+   * tile for `holdSec` seconds (default CAPTURE_HOLD_SEC) while every crew member of the ship is subdued.
+   */
+  bridge?: { holdSec?: number; radius?: number };
   /** Marks a console; its operator runs that ship system during combat. */
   console?: 'weapons' | 'shields' | 'helm';
   /** WeaponDef id this module fires. */

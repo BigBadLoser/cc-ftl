@@ -142,6 +142,13 @@ export const modules = {
     heatPerSec: 4, flammability: 0.2, maxHp: 160, buildWork: 320, engine: { evasionPerPower: 0.02 }, hullEdge: 'n',
     cost: [{ item: 'item.metal', count: 24 }, { item: 'item.electronics', count: 8 }],
   },
+  // 1 wide, 4 deep, on the hull. Rotation 0: row 0 is the outer door on the hull line (the wall tile becomes a door), rows
+  // 1-2 the chamber, row 3 the inner door. Cycles in 4 s, pumping the chamber's air back into the ship.
+  'module.airlock': {
+    name: 'Airlock', asset: 'module.airlock', footprint: [1, 4], solid: false, power: -2, priority: 2,
+    flammability: 0.1, maxHp: 120, buildWork: 200, hullEdge: 'n', airlock: { cycleSec: 4 },
+    cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 6 }],
+  },
   // 8 power -> 2 layers, one back every 10 s. Sits anywhere inside the ship.
   'module.shieldGen': {
     name: 'Shield generator', asset: 'module.shield_gen', footprint: [2, 3], solid: true, power: -8, priority: 2,
@@ -172,7 +179,7 @@ export const modules = {
   // Helm 3x2: solid (0,0) (1,0) (2,0) (0,1) (2,1); chair (1,1) between the side panels.
   'module.helm': {
     name: 'Helm', asset: 'module.helm', footprint: [3, 2], solid: true, access: [1, 1], openTiles: [[1, 1]], power: -3,
-    priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true, console: 'helm',
+    priority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true, console: 'helm', bridge: {},
     cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
   },
   // Point defence: floor bay plus roof turret. Works only while the ship has a powered, intact AI core with its mast out.
@@ -185,5 +192,12 @@ export const modules = {
     name: 'AI core', asset: 'module.ai_core', footprint: [2, 2], solid: true, power: -4,
     priority: 3, flammability: 0.2, maxHp: 80, buildWork: 240, aiCore: { tier: 1 }, roofAsset: 'roof.ai_core', deploySec: 2,
     cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 16 }],
+  },
+  // Shuttle bay 4x5: a big interior landing pad with a launch hatch (no hull contact needed). Walkable; crew board the
+  // shuttle at (1, 4), the south edge of the pad. Pod bays (3x3, class 'pod') come later.
+  'module.vehicle_bay': {
+    name: 'Shuttle bay', asset: 'module.vehicle_bay', footprint: [4, 5], solid: false, access: [1, 4], openTiles: [[1, 4]],
+    power: -1, priority: 4, flammability: 0.1, maxHp: 200, buildWork: 400, vehicleBay: { class: 'shuttle' },
+    cost: [{ item: 'item.metal', count: 32 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }],
   },
 } satisfies Record<string, ModuleDef>;
