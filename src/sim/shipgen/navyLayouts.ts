@@ -25,7 +25,8 @@ function score(A: Arranger, fam: HullFamilyDef, noise: number): number {
   const aspect = s.w / s.h;
   const [lo, hi] = fam.aspect;
   const off = aspect < lo ? lo / aspect - 1 : aspect > hi ? aspect / hi - 1 : 0;
-  return -3 * off + (s.filled / (s.w * s.h)) + noise;
+  // Enclosed courtyards read as mistakes: open them or fill them.
+  return -3 * off + (s.filled / (s.w * s.h)) - (8 * A.holes()) / s.filled + noise;
 }
 
 // Built on first use: scrapper grammars call back into arrangeHull for their navy and drone donors.
@@ -56,6 +57,8 @@ export function arrangeHull(
     if (!best || s > best.s) best = { A, c, s };
   }
   if (!best) return why || 'no feasible arrangement';
+  // Small enclosed pockets (between a drive and a deck end, between welded hulls) are plated over.
+  if (best.A.fillHoles(16) > 0) best.c.parts.push('filled');
   const b = new Builder(rng, -1);
   best.A.stamp(b);
   return { b, A: best.A, profile: best.c.parts.join(' '), plan: best.c.plan };

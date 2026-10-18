@@ -77,7 +77,7 @@ export const navy = {
     },
     {
       id: 'carrier', weight: { base: -2, perDepth: 0.6, max: 4 }, bonus: { pointDefense: 1, engines: 1 }, bays: 3,
-      depth: { battery: [3, 4], core: [3, 4], habitat: [3, 4], cargo: [3, 5] }, batteryCols: [1, 2], sponsonChance: 0.3, sectionRooms: 3, grammars: [{ value: 'carrierIsland', weight: 1 }], aspect: [1.8, 2.8], propulsion: ['bank', 'cluster'],
+      depth: { battery: [3, 4], core: [3, 4], habitat: [3, 4], cargo: [3, 5] }, batteryCols: [1, 2], sponsonChance: 0.3, sectionRooms: 3, grammars: [{ value: 'carrierIsland', weight: 1 }, { value: 'flightDeck', weight: 1 }], aspect: [1.8, 2.8], propulsion: ['bank', 'cluster'],
     },
   ],
   metrics: { compactness: [0.38, 1], corridorRatio: [0.1, 0.45] },

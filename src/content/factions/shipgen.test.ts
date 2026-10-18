@@ -99,6 +99,28 @@ describe('ship generator', () => {
     expect(meanPairwise(deep.map((g) => adjacencySignature(g.debug!)), adjacencyDistance)).toBeGreaterThan(0.45);
   });
 
+  it('navy hulls have no enclosed courtyards (open at one end, or plated over)', () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const g = gen('faction.navy', seed, seed % 10);
+      const w = g.width;
+      const rows = g.template.rows.map((r) => r.padEnd(w, '.'));
+      const seen = new Set<number>([0]);
+      const st = [0];
+      while (st.length > 0) {
+        const i = st.pop() as number;
+        const x = i % w;
+        const y = Math.floor(i / w);
+        for (const [a, b] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+          if (a < 0 || b < 0 || a >= w || b >= g.height || rows[b]?.[a] !== '.' || seen.has(b * w + a)) continue;
+          seen.add(b * w + a);
+          st.push(b * w + a);
+        }
+      }
+      const enclosed = rows.reduce((t, r, y) => t + [...r].filter((c, x) => c === '.' && !seen.has(y * w + x)).length, 0);
+      expect(enclosed, `seed ${seed}`).toBe(0);
+    }
+  });
+
   it('drones (same arranger, machine doctrine): AI core as bridge, sealed pods, beams, robot crawlways only', () => {
     let beams = 0;
     for (let seed = 0; seed < 30; seed++) {

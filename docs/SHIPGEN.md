@@ -112,13 +112,34 @@ distance over join tokens `kindA>dir>kindB` and assembly-degree tokens. It is re
 - **Order:** constraint-scored (hangar amidships, batteries spread, core between batteries, stores aft) with seeded
   noise, so sequences vary between seeds.
 
-## Navy follow-ups (v5 accepted as the baseline)
+## Navy v9 refinement (the five v5 follow-ups)
 
-- Rework or drop layered cruisers.
-- Make side decks longer and shallower than their host.
-- Open or fill the enclosed holes (courtyards between long decks and twin drives).
-- Keep side decks behind the nose (no fork noses).
-- Add a second carrier layout.
+- **Long shallow decks.**
+  - `deckPair` takes a span. A deck stretched to its span widens its rooms, not its corridor.
+  - Deck grammars (`spineDecks`, `deckPair`, `layered`, `flightDeck`) build slimmer spines: 1 to `sectionRooms - 1`
+    rooms per side, at one even depth at least one deeper than the decks (`evenDepth`).
+  - Decks run the length of several spine sections, flush on all of them.
+- **No fork noses.** `AttachOpts.xMin` keeps a child's west wall at or behind a column. Every deck is laid with
+  `xMin` at its host's west wall, so decks sit behind the nose.
+- **Layered cruisers reworked.** Crew decks run the whole spine and gun decks the crew decks, each layer stepped in
+  at bow and stern. The result is a broad stepped hull, not a cross with stub decks.
+- **Citadel cruisers.** Gun decks run the length of the flank decks (flush, or inset by 2 to 4 tiles).
+- **Courtyards.**
+  - Twin-hull and island-carrier drives attach `align: 'start'`, pushed outboard, so the gap between the hulls,
+    or the hangar well, stays open aft.
+  - `arrangeHull` scores enclosed space against a candidate (`Arranger.holes`). It then plates over enclosed
+    pockets of up to 16 cells (`fillHoles`), never ones a gun or airlock looks out of. This applies to every
+    faction on the arranger.
+- **Second carrier: `flightDeck`.** Nose, a battery, then hangars side by side in pairs on the spine, core and
+  stores aft, and long hull decks along the aft sections.
+
+### Navy follow-ups
+
+- Layered cruisers are broad (aspect about 1.1); a longer spine would read more like a battleship.
+- Island carriers keep a long stalk to the island; a flush island would read better.
+- Within-grammar variety is still low (adjacency within grammar 0.19 to 0.27). Grammars give the families their
+  look; inside a grammar only depths, slimness and propulsion vary.
+- About 20% of first attempts at depth 4 fail "weapons do not fit" (the v5 rate was about 17%); reseeding covers it.
 
 ## Drones (built, v6): machinery first, same arranger
 

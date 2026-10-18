@@ -63,6 +63,8 @@ export interface AttachOpts {
   kind?: JoinKind;
   /** Open at most this many door tiles on the join. */
   doors?: number;
+  /** The child's west wall may not lie west of this column (keeps side decks behind a nose). */
+  xMin?: number;
 }
 
 const key = (x: number, y: number): number => (y + 4096) * 8192 + (x + 4096);
@@ -99,6 +101,9 @@ export function mirrorX(b: Block): Block {
     ports: b.ports.map((p) => ({ ...p, side: flip(p.side), x: p.side === 'n' || p.side === 's' ? W - p.x - p.len : W - 1 - p.x })),
   };
 }
+
+/** First drawn column of a block (blocks carry a space margin). */
+const west = (b: Block): number => Math.min(...b.rows.map((r) => { const i = r.search(/[^.]/); return i < 0 ? Infinity : i; }));
 
 const unkey = (k: number): { x: number; y: number } => ({ x: (k % 8192) - 4096, y: Math.floor(k / 8192) - 4096 });
 
@@ -184,6 +189,7 @@ export class Arranger {
         for (let d = lo; d <= hi; d++) {
           const X = horiz ? wx + d - cp.x + (o.shift ?? 0) : wx - cp.x;
           const Y = horiz ? wy - cp.y : wy + d - cp.y + (o.shift ?? 0);
+          if (o.xMin !== undefined && X + west(child) < o.xMin) continue;
           const tiles = this.sharedOpenings(P, pp, child, cp, X, Y);
           if (tiles.length === 0 && o.doors !== 0) continue;
           const t = (d - lo) / Math.max(1, hi - lo);
@@ -326,6 +332,49 @@ export class Arranger {
     const rows = Array.from({ length: H }, (_, j) => Array.from({ length: W }, (_, i) => (cells.has(key(X + i, Y + j)) ? '#' : '.')).join(''));
     this.place({ kind: 'plate', label: `${donor}: ${label}`, access: 'external', rows, legend: new Map(), ports: [], faceE: [], origin: { x: 0, y: 0 }, exposed: [], donor }, X, Y);
     return cells.size;
+  }
+
+  /** Enclosed space (courtyards with no way out to open space), as connected regions of cells. */
+  private enclosed(): { x: number; y: number }[][] {
+    let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
+    for (const k of this.occ.keys()) { const c = unkey(k); x0 = Math.min(x0, c.x); y0 = Math.min(y0, c.y); x1 = Math.max(x1, c.x); y1 = Math.max(y1, c.y); }
+    const seen = new Set<number>();
+    const flood = (sx: number, sy: number): { x: number; y: number }[] => {
+      const out = [{ x: sx, y: sy }];
+      seen.add(key(sx, sy));
+      for (let i = 0; i < out.length; i++) {
+        const { x, y } = out[i] as { x: number; y: number };
+        for (const [a, b] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+          if (a < x0 - 1 || b < y0 - 1 || a > x1 + 1 || b > y1 + 1 || seen.has(key(a, b)) || this.occ.has(key(a, b))) continue;
+          seen.add(key(a, b));
+          out.push({ x: a, y: b });
+        }
+      }
+      return out;
+    };
+    flood(x0 - 1, y0 - 1);
+    const regions: { x: number; y: number }[][] = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (!this.occ.has(key(x, y)) && !seen.has(key(x, y))) regions.push(flood(x, y));
+    return regions;
+  }
+
+  /** Enclosed space cells in all (scoring pressure against courtyards). */
+  holes(): number {
+    return this.enclosed().reduce((t, r) => t + r.length, 0);
+  }
+
+  /** Plate over enclosed pockets of at most `max` cells (never one a gun or airlock must see out of). */
+  fillHoles(max: number): number {
+    const cells = this.enclosed().filter((r) => r.length <= max && !r.some((c) => this.open.has(key(c.x, c.y)))).flat();
+    if (cells.length === 0) return 0;
+    const X = Math.min(...cells.map((p) => p.x));
+    const Y = Math.min(...cells.map((p) => p.y));
+    const set = new Set(cells.map((p) => key(p.x, p.y)));
+    const W = Math.max(...cells.map((p) => p.x)) - X + 1;
+    const H = Math.max(...cells.map((p) => p.y)) - Y + 1;
+    const rows = Array.from({ length: H }, (_, j) => Array.from({ length: W }, (_, i) => (set.has(key(X + i, Y + j)) ? '#' : '.')).join(''));
+    this.place({ kind: 'plate', label: 'filled pocket', access: 'external', rows, legend: new Map(), ports: [], faceE: [], origin: { x: 0, y: 0 }, exposed: [] }, X, Y);
+    return cells.length;
   }
 
   /** Take back the last attachment (a tube that led nowhere). */

@@ -183,10 +183,13 @@ export function noseBlock(rng: Rng, front: ReturnType<typeof pickNose>): Block |
  * An outboard deck: a 2-wide hall running fore and aft with one band of rooms on its outer (north) side, attached
  * lengthways along a host through its inner wall ('xs'); mirror it for the south side. Decks give parallel layers.
  */
-export function deckBlock(rng: Rng, kind: string, rooms: RoomSpec[], depth: number): Block | null {
+export function deckBlock(rng: Rng, kind: string, roomsIn: RoomSpec[], depth: number, minLen = 0): Block | null {
   const b = localBuilder(rng);
-  const d = Math.max(depth, ...rooms.map((r) => r.h));
-  const L = Math.max(5, runLen(rooms));
+  const d = Math.max(depth, ...roomsIn.map((r) => r.h));
+  // A deck stretched to `minLen` (the length it runs along its host) widens its rooms, not its corridor.
+  const rooms = roomsIn.map((r) => ({ ...r }));
+  for (let extra = minLen - runLen(rooms), i = 0; extra > 0 && rooms.length > 0; extra--, i++) (rooms[i % rooms.length] as RoomSpec).w++;
+  const L = Math.max(5, runLen(rooms), minLen);
   const h = b.place({ x: 0, y: 0, w: L, h: 4 }, 'hall');
   if (!h) return null;
   const parts = b.strip(h, 'n', rooms.map((r) => ({ ...r, h: d })), 0).parts;

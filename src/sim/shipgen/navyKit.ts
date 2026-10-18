@@ -5,6 +5,7 @@ import { dockSpec, engineSpec, shuffle, type RoomSpec, type ShipPlan } from './p
 import type { Rng } from '../rng';
 import { blockFrom, localBuilder } from './blocks';
 import { pairUp } from './topoNavy';
+import { runLen } from './topoParts';
 import type { HullFamilyDef, SectionKind } from './types';
 
 /** Shared pieces of the navy grammars: section plans, decks, propulsion configurations, chains. */
@@ -103,19 +104,36 @@ export function order(rng: Rng, mid: SectionPlan[]): SectionPlan[] {
  * A mirrored pair of outboard decks from one list of rooms (each deck its own half, same outline), laid lengthways
  * along a host's north / south face. Tries the host's hatch, passage and room ports in turn.
  */
-export function deckPair(c: Ctx, host: number, mhost: number, kind: string, specs: RoomSpec[], align: 'start' | 'mid' | 'end' = 'mid'): [number, number] | null {
+export function deckPair(
+  c: Ctx, host: number, mhost: number, kind: string, specs: RoomSpec[], align: 'start' | 'mid' | 'end' = 'mid', o: { span?: number; xMin?: number } = {},
+): [number, number] | null {
   if (specs.length === 0) return null;
   const [p, q] = pairUp(specs);
   const depth = c.depth.habitat ?? 3;
-  const n = deckBlock(c.rng, kind, p, depth);
-  const s = deckBlock(c.rng, kind, q, depth);
+  const len = Math.max(o.span ?? 0, runLen(p), runLen(q));
+  const n = deckBlock(c.rng, kind, p, depth, len);
+  const s = deckBlock(c.rng, kind, q, depth, len);
   if (!n || !s) return null;
   const ports = c.A.free(host, 'n').map((x) => x.id).sort((a, b) => rankPort(a) - rankPort(b));
   for (const pp of ports) {
-    const r = c.A.attachMirrored(host, mhost, n, { side: 'n', parentPort: pp, childPort: 'xs', align }, s);
+    const r = c.A.attachMirrored(host, mhost, n, { side: 'n', parentPort: pp, childPort: 'xs', align, ...(o.xMin !== undefined ? { xMin: o.xMin } : {}) }, s);
     if (r) { c.parts.push(`${kind} decks`); return r; }
   }
   return null;
+}
+
+/** Wall-to-wall length of a run of placed blocks fore to aft, and its west wall (to lay a deck the whole way along). */
+export function spanOf(c: Ctx, ids: number[]): { span: number; xMin: number } {
+  const a = c.A.bounds(ids[0] as number);
+  const z = c.A.bounds(ids[ids.length - 1] as number);
+  return { span: z.x + z.w - 1 - (a.x + 1), xMin: a.x + 1 };
+}
+
+/** One interior depth for every section kind of a spine, so decks laid along it sit flush on all of them. */
+export function evenDepth(c: Ctx, kinds: SectionKind[], deeper = 0): void {
+  // `deeper`: at least this much deeper than the decks (the hull steps down to them).
+  const d = Math.max((c.depth.habitat ?? 3) + deeper, ...kinds.map((k) => c.depth[k] ?? 3));
+  for (const k of kinds) c.depth[k] = d;
 }
 
 const rankPort = (id: string): number => (id.startsWith('h') ? 0 : id.startsWith('p') ? 1 : 2);
@@ -149,13 +167,13 @@ export function propulsion(c: Ctx, aft: number, mode: HullFamilyDef['propulsion'
   return no(c, 'side drives');
 }
 
-/** Twin drives at the east ends of two mirrored hulls. */
-export function twinDrives(c: Ctx, hulls: [number, number], mode: HullFamilyDef['propulsion'][number]): boolean {
+/** Twin drives at the east ends of two mirrored hulls ('start': pushed outboard, leaving the gap between open aft). */
+export function twinDrives(c: Ctx, hulls: [number, number], mode: HullFamilyDef['propulsion'][number], align: 'start' | 'mid' = 'mid'): boolean {
   const e = Math.max(1, Math.ceil(c.plan.engines / 2));
   const r = Math.max(1, Math.ceil(c.plan.reactors / 2));
   const blk = mode === 'cluster' ? clusterBlock(c.rng, e, r) : bankBlock(c.rng, e, r);
   c.parts.push(`twin ${mode}`);
-  return (!!blk && !!c.A.attachMirrored(hulls[0], hulls[1], blk, { side: 'e' })) || no(c, 'twin drives');
+  return (!!blk && !!c.A.attachMirrored(hulls[0], hulls[1], blk, { side: 'e', align })) || no(c, 'twin drives');
 }
 
 export { mirrorBlock };
