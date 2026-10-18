@@ -63,6 +63,11 @@ The user did not approve the first m4-assets sheets: modules were far too small.
 - **Roof:** keep v1 (`roof-art`) ochre/blue-grey multi-tile plates, seams and edge trim; remove all
   scattered details (lights, vent squares, hatches, nubs, hazard tape). The structure-driven v2 was
   rejected.
+- **Weapons art APPROVED in direction** (`opus-weapons`): hatch gets darker armour + hazard seam;
+  ring-stack look mid-deploy is fine.
+- **Walls pass 5:** thinner walls (~0.22–0.26), hull as layered plate courses (not a
+  checkerboard), denser shaded wall faces, muted dusty-rose doors.
+- **Sitting crew and roof** handed to Opus (high effort) after repeated misses.
 - **Point defence** is its own module (2x2 bay + R Revolver turret), OPERATED by the AI core
   (needs a powered AI core with its mast up), the way the weapons console operates weapons.
 - **Sitting crew:** facing is correct. Fix chair clipping; add `sit_work` (arms on the controls)
