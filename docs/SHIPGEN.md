@@ -191,12 +191,30 @@ The navy's structural helpers carry over:
 - **Dock.** The dock sits straight on the core face, not on an antenna tube. The core is 7x4 so the dock door,
   the AI core and the console all fit.
 
+### Drones v15: frame topologies
+
+- **One frame per ship.** `frame` lays the carriers around the core in one of these topologies: single beam,
+  Y fork (stem, cross piece, prongs), twin beams, H (rails on uprights), cross.
+  - The topology is drawn once per ship (`Ctx.variant`, shared by every candidate arrangement).
+  - Each family draws from its own weighted set.
+  - Pods are shared out over the carrier faces by length (`load`).
+- **Families now use one grammar each.**
+  - Picket (`spoke`): single or cross, sturdy short beams, a crawl stub only for stores.
+  - Lancer (`truss`): single, fork, twin or H; the spoke grammar stays as a rare alternative.
+  - Swarm (`cluster`): a lattice of small nodes grown off any earlier node, on any face. There is no spine.
+- **Engines follow the topology.**
+  - Tips: the fork cross piece, H rails and cross arms each take one engine.
+  - The rest sit at the stern: a fan (one pod off the beam end, one on a strut above and one below, exhausts
+    clear), a paired cross beam, or a short rail.
+  - The aft drive goes on before the aft pods.
+- **Core ports are multi-use,** so the dock, beams and crawls can share a face.
+
 ### Drone follow-ups
 
-- Pickets and lancers still share a core-plus-beam skeleton; picket compactness against lancer length is the main
-  difference.
-- Rails with three engines still stack vertically (with gaps between).
-- Join-pattern diversity within a family fell (about 0.3): each family now has one construction.
+- Fork and twin prongs sometimes pack pods into walled clumps where sockets run out.
+- Pickets and swarms are both compact blobs at a glance; swarms are larger and looser.
+- First-attempt failures: "no airlock fits" on picket crosses and swarm lattices, and "weapons do not fit" on
+  twin and fork lancers. Reseeding covers both.
 
 ## Drones (built, v6): machinery first, same arranger
 

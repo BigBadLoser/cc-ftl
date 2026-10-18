@@ -25,7 +25,7 @@ export const drones = {
   // Machine hull families (assembly-driven): sealed pods on crawlways and beams, the AI core as the bridge.
   hullFamilies: [
     {
-      id: 'picket', weight: { base: 4, perDepth: -0.3, max: 4 }, grammars: [{ value: 'spoke', weight: 5 }, { value: 'cluster', weight: 1 }],
+      id: 'picket', weight: { base: 4, perDepth: -0.3, max: 4 }, grammars: [{ value: 'spoke', weight: 1 }],
       aspect: [0.9, 1.8], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['cluster'],
     },
     {
@@ -33,7 +33,7 @@ export const drones = {
       aspect: [2.2, 4.5], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['cluster'],
     },
     {
-      id: 'swarm', weight: { base: 0, perDepth: 0.4, max: 4 }, bonus: { weapons: 1, size: 1 }, grammars: [{ value: 'cluster', weight: 5 }, { value: 'truss', weight: 1 }],
+      id: 'swarm', weight: { base: 0, perDepth: 0.4, max: 4 }, bonus: { weapons: 1, size: 1 }, grammars: [{ value: 'cluster', weight: 1 }],
       aspect: [1.2, 3], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['cluster'],
     },
   ],

@@ -40,6 +40,7 @@ export function arrangeHull(
   // The grammar is drawn once (the family's architectural mix stays as weighted); proportion pressure then chooses
   // between candidate arrangements of that grammar, falling back to any grammar if none fits.
   const first = pickWeighted(rng, fam.grammars);
+  const variant = rng.next();
   for (let k = 0; k < candidates + 2; k++) {
     if (k >= candidates && best) break;
     const depth: Partial<Record<SectionKind, number>> = {};
@@ -49,7 +50,7 @@ export function arrangeHull(
     }
     const grammar = k < candidates ? first : pickWeighted(rng, fam.grammars);
     const A = new Arranger(() => rng.next(), -1);
-    const c: Ctx = { rng, fam, plan: clonePlan(plan), A, depth, parts: [grammar], why: '', defs };
+    const c: Ctx = { rng, fam, plan: clonePlan(plan), A, depth, parts: [grammar], why: '', defs, variant };
     GRAMMARS ??= { ...NAVY, ...DRONE_GRAMMARS, ...SCRAP_GRAMMARS };
     const run = GRAMMARS[grammar];
     if (!run || !run(c, f)) { why ||= `${grammar}: ${c.why || 'no fit'}`; continue; }

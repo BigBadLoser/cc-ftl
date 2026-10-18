@@ -54,7 +54,7 @@ export function coreRoom(rng: Rng, plan: ShipPlan, w = 5, h = 3): Block {
   const spec = { ...plan.command, w, h };
   const y = h % 2 === 0 ? -h / 2 - 1 : -2 - (h - 3) / 2;
   b.place({ x: 0, y, w: w + 2, h: h + 2 }, 'core', spec);
-  return blockFrom(b, 'core', 'core', 'robot', sides(w + 2, h + 2, 'robot').map((p) => ({ ...p, y: p.y + y })));
+  return blockFrom(b, 'core', 'core', 'robot', sides(w + 2, h + 2, 'robot', true).map((p) => ({ ...p, y: p.y + y })));
 }
 
 /** A small store reached from a crawlway. */

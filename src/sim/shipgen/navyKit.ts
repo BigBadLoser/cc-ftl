@@ -29,6 +29,8 @@ export interface Ctx {
   parts: string[];
   why: string;
   defs: Record<string, import('../registry').ModuleDef>;
+  /** Drawn once per ship (like the grammar): architecture choices every candidate arrangement shares. */
+  variant?: number;
 }
 
 export const no = (c: Ctx, why: string): false => { c.why ||= why; return false; };
