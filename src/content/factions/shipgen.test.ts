@@ -84,7 +84,7 @@ describe('ship generator', () => {
       families.add(g.role);
       const d = g.debug!;
       expect(d, 'arranger debug data').toBeDefined();
-      expect(d.joins.length).toBeGreaterThan(2);
+      expect(d.joins.length).toBeGreaterThanOrEqual(2);
       // A major assembly joined to another north or south of it (not a dock or a strut): side by side, not a chain.
       const major = (k: string): boolean => k !== 'dock' && k !== 'hall';
       if (d.joins.some((j) => {

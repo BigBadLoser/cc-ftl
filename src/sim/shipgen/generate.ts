@@ -140,9 +140,10 @@ export function generateAttempt(
     archetype = 'sections';
     plan = planShip(rng, f, role, depth, defs);
     const r = arrangeNavy(rng, f, fam, plan);
-    if (typeof r === 'string') return `${fam.grammar}: ${r}`;
+    if (typeof r === 'string') return `${fam.id}: ${r}`;
     comp = r.A;
     b = r.b;
+    plan = r.plan;
     profile = r.profile;
     topology = r.profile;
   } else {

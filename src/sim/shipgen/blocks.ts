@@ -33,8 +33,21 @@ export function blockFrom(b: Builder, kind: string, label: string, access: Acces
     }
     return ch;
   }).join(''));
+  // Gun mounts and airlocks keep their outer (north / south) faces open: the space just outside their outer walls.
+  const exposed: { x: number; y: number }[] = [];
+  for (const p of b.parts.filter((q) => q.role === 'weapons' || q.role === 'dock')) {
+    for (let y = p.y; y < p.y + p.h; y++) {
+      for (let x = p.x + 1; x < p.x + p.w - 1; x++) {
+        if (x > p.x && x < p.x + p.w - 1 && y > p.y && y < p.y + p.h - 1) continue;
+        // Navy mounts face north or south; only those faces are kept open.
+        for (const [dx, dy] of [[0, -1], [0, 1]] as const) {
+          if (b.cv.at(x + dx, y + dy) === '.' && b.cv.at(x - dx, y - dy) !== '.') exposed.push({ x: x + dx - ox, y: y + dy - oy });
+        }
+      }
+    }
+  }
   const faceE = b.parts.filter((p) => p.role === 'engine').map((p) => ({ x: p.x + p.w - 1 - ox, y0: p.y + 1 - oy, y1: p.y + p.h - 2 - oy }));
-  return { kind, label, access, rows: out, legend, ports: ports.map((p) => ({ ...p, x: p.x - ox, y: p.y - oy })), faceE, origin: { x: ox, y: oy } };
+  return { kind, label, access, rows: out, legend, ports: ports.map((p) => ({ ...p, x: p.x - ox, y: p.y - oy })), faceE, origin: { x: ox, y: oy }, exposed };
 }
 
 /** A local builder for one block (axis on rows -1 / 0, like the ship). */

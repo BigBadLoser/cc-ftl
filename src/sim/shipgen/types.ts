@@ -98,6 +98,9 @@ export interface ArchitectureDef {
   noses: readonly ChunkDef[];
 }
 
+/** Navy hull grammars (see navyGrammars.ts). */
+export type NavyGrammar = 'linear' | 'deckPair' | 'spineDecks' | 'spineWings' | 'citadelFlanked' | 'twinHull' | 'layered' | 'carrierIsland';
+
 /** Standard functional sections of a navy hull (one per kind of job). */
 export type SectionKind = 'command' | 'battery' | 'core' | 'habitat' | 'cargo' | 'hangar' | 'drive';
 
@@ -122,8 +125,10 @@ export interface HullFamilyDef {
   merge?: boolean;
   /** The core is a citadel: an enclosed compartment on the axis, passages around it, crew quarters outboard. */
   citadel?: boolean;
-  /** Structural grammar: how the sections are arranged in 2D. */
-  grammar: 'linear' | 'spineWings' | 'twinHull' | 'carrierIsland';
+  /** Structural grammars the family uses (how its sections are arranged in 2D), weighted. */
+  grammars: readonly Weighted<NavyGrammar>[];
+  /** Soft proportion target (length / beam): arrangements nearer it score better; never a hard reject. */
+  aspect: readonly [number, number];
   /** Propulsion configurations the family uses (engines always face +x). */
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }

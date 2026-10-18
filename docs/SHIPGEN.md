@@ -72,7 +72,16 @@ The arranger is faction-agnostic.
 
 Drones will reuse the arranger with their own blocks and grammar.
 
-**Navy grammars** (`navyLayouts.ts`, chosen per hull family as data):
+**v5:**
+- **Decks:** outboard decks (a hall plus one band of rooms, attached lengthways through their inner wall) make
+  parallel layers and lengthways overlap instead of perpendicular wings.
+- **Several grammars per family:** a weighted list in the data. A grammar is drawn first, then up to four candidate
+  arrangements of it are scored against the family's soft `aspect` target and compactness (pressure, never a reject).
+- **Kept-open faces:** gun mounts and airlocks keep their north / south faces open (`Block.exposed`), so nothing
+  buries them.
+- **Flush airlocks:** airlocks sit flush as dock rooms inside bands and decks.
+
+**Navy grammars** (v5: `navyGrammars.ts`, several per family; the list below is v4):
 - **corvette** `linear`: a short chain.
 - **frigate** `spineWings`: a spine, plus mirrored wing blocks side by side on a hatch of the mid-spine section.
 - **cruiser** `twinHull`: a citadel at the root, two mirrored hull chains flanking it, twin drives.

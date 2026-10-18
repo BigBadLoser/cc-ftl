@@ -36,6 +36,8 @@ export interface Block {
   faceE: { x: number; y0: number; y1: number }[];
   /** Where the block's row 0 / column 0 sat in the frame it was drawn in (its own axis rows -1 / 0). */
   origin: { x: number; y: number };
+  /** Space cells that must stay open (outside gun mounts and airlocks), so later blocks never bury them. */
+  exposed: { x: number; y: number }[];
 }
 
 interface Placed {
@@ -72,6 +74,7 @@ export function mirrorBlock(b: Block): Block {
   return {
     ...b,
     rows: [...b.rows].reverse(),
+    exposed: b.exposed.map((e) => ({ x: e.x, y: h - 1 - e.y })),
     ports: b.ports.map((p) => ({ ...p, id: p.side === 'n' || p.side === 's' ? flipId(p.id) : p.id, side: flip(p.side), y: p.side === 'e' || p.side === 'w' ? h - p.y - p.len : h - 1 - p.y })),
     faceE: b.faceE.map((f) => ({ x: f.x, y0: h - 1 - f.y1, y1: h - 1 - f.y0 })),
   };
@@ -83,6 +86,7 @@ export class Arranger {
   readonly joins: JoinRecord[] = [];
   readonly ports: PortRecord[] = [];
   private readonly rays: { x: number; y0: number; y1: number }[] = [];
+  private readonly open = new Set<number>();
   private readonly doorTiles: { x: number; y: number }[] = [];
   private readonly history: { parent: number; port: string }[] = [];
 
@@ -104,8 +108,10 @@ export class Arranger {
         const e = this.at(x, y);
         if (e !== undefined && (isFloor(c) || isFloor(e))) return false;
         for (const r of this.rays) if (x > r.x && y >= r.y0 && y <= r.y1) return false;
+        if (this.open.has(key(x, y))) return false;
       }
     }
+    for (const e of b.exposed) if (this.occ.has(key(X + e.x, Y + e.y))) return false;
     for (const f of b.faceE) {
       for (const [k, c] of this.occ) {
         if (c === undefined) continue;
@@ -133,6 +139,7 @@ export class Arranger {
       }
     }
     for (const f of b.faceE) this.rays.push({ x: X + f.x, y0: Y + f.y0, y1: Y + f.y1 });
+    for (const e of b.exposed) this.open.add(key(X + e.x, Y + e.y));
     this.placed.push({ block: b, x: X, y: Y, used: new Set() });
     return this.placed.length - 1;
   }
@@ -247,6 +254,7 @@ export class Arranger {
     const keep = [...this.placed];
     this.occ.clear();
     this.rays.length = 0;
+    this.open.clear();
     this.placed.length = 0;
     for (const p of keep) { const id = this.place(p.block, p.x, p.y); (this.placed[id] as Placed).used = p.used; }
     for (const t of this.doorTiles) this.occ.set(key(t.x, t.y), 'D');
@@ -256,6 +264,17 @@ export class Arranger {
   free(id: number, side: Side): BlockPort[] {
     const p = this.placed[id] as Placed;
     return p.block.ports.filter((x) => x.side === side && !p.used.has(x.id));
+  }
+
+  /** Overall bounds and filled tile count (for proportion scoring). */
+  stats(): { w: number; h: number; filled: number } {
+    let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
+    for (const k of this.occ.keys()) {
+      const x = (k % 8192) - 4096;
+      const y = Math.floor(k / 8192) - 4096;
+      x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+    }
+    return { w: x1 - x0 + 1, h: y1 - y0 + 1, filled: this.occ.size };
   }
 
   /** World bounds of a placed block. */

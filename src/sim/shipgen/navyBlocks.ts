@@ -178,3 +178,22 @@ export function noseBlock(rng: Rng, front: ReturnType<typeof pickNose>): Block |
   const dr = doorRows(front.c, 'last');
   return blockFrom(b, 'command', 'command', 'human', [{ id: 'e', side: 'e', x: 0, y: -1, len: dr.length, access: 'human' }]);
 }
+
+/**
+ * An outboard deck: a 2-wide hall running fore and aft with one band of rooms on its outer (north) side, attached
+ * lengthways along a host through its inner wall ('xs'); mirror it for the south side. Decks give parallel layers.
+ */
+export function deckBlock(rng: Rng, kind: string, rooms: RoomSpec[], depth: number): Block | null {
+  const b = localBuilder(rng);
+  const d = Math.max(depth, ...rooms.map((r) => r.h));
+  const L = Math.max(5, runLen(rooms));
+  const h = b.place({ x: 0, y: 0, w: L, h: 4 }, 'hall');
+  if (!h) return null;
+  const parts = b.strip(h, 'n', rooms.map((r) => ({ ...r, h: d })), 0).parts;
+  const ports: LocalPort[] = [
+    { id: 'xs', side: 's', x: 1, y: 3, len: L - 2, access: 'human' },
+    { id: 'w', side: 'w', x: 0, y: 1, len: 2, access: 'human' }, { id: 'e', side: 'e', x: L - 1, y: 1, len: 2, access: 'human' },
+    ...roomPorts(parts, 'n'),
+  ];
+  return blockFrom(b, kind, `${kind} deck`, 'human', ports);
+}
