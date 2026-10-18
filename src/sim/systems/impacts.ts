@@ -4,8 +4,11 @@ import { gauss } from '../combat/geometry';
 import { shipEntityOf, shipOf } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
+import type { Effect } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
+import { VehicleC } from '../vehicles/components';
+import { damageVehicle, vehicleDefOf } from '../vehicles/lifecycle';
 
 /**
  * Resolves projectiles that arrived. Order: target gone -> miss; evasion roll (ship evasion) -> miss; shield
@@ -19,6 +22,10 @@ export function impactSystem(sim: Sim): void {
     if (!p || p.t < 1) continue;
     sim.world.destroyEntity(id);
     const def = sim.content.weapons?.[p.weapon];
+    if (p.target.vehicle) {
+      hitVehicle(sim, id, p.weapon, p.target.vehicle, def?.effects ?? [], p.x1, p.y1);
+      continue;
+    }
     const gridId = p.target.gridId;
     const ship = shipOf(sim, gridId);
     const grid = sim.grids.get(gridId);
@@ -52,4 +59,24 @@ export function impactSystem(sim: Sim): void {
     sim.events.emit({ type: 'projectile.hit', ...base, x, y, moduleId: grid.get('module', x, y) });
     applyEffects(sim, { gridId, x, y, projectile: id, weapon: p.weapon }, def.effects);
   }
+}
+
+/**
+ * A shot that caught a shuttle: the shuttle's evasion rolls first (a miss), then it takes the weapon's total
+ * moduleDamage (hull, crew, fire and ion effects do nothing to it). Ship shields do not cover a shuttle, docked or not.
+ */
+function hitVehicle(sim: Sim, projectile: number, weapon: string, vehicle: number, effects: readonly Effect[], x: number, y: number): void {
+  const v = sim.world.get(vehicle, VehicleC);
+  const def = v && vehicleDefOf(sim, v);
+  if (!v || !def) {
+    sim.events.emit({ type: 'projectile.miss', projectile, weapon, gridId: 0, reason: 'gone', x, y });
+    return;
+  }
+  if (sim.rng.chance(def.evasion)) {
+    sim.events.emit({ type: 'projectile.miss', projectile, weapon, gridId: 0, reason: 'evaded', x, y });
+    return;
+  }
+  let amount = 0;
+  for (const e of effects) if (e.type === 'moduleDamage') amount += e.amount;
+  damageVehicle(sim, vehicle, amount, 'weapon');
 }

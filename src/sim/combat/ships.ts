@@ -1,13 +1,13 @@
-import {
-  CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC,
-} from '../crew/components';
+import { createCrew } from '../crew/spawn';
 import { ModuleC } from '../modules/components';
+import { isDeployed } from '../modules/deploy';
 import { isTileWalkable } from '../modules/walk';
 import { gridFromTemplate, spawnTemplateModules } from '../ship';
 import type { ShipTemplate } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
-import { CREW_MAX_HP } from '../tuning';
+import { TICK_HZ } from '../time';
+import { BoarderC } from '../vehicles/components';
 import { CombatC, IonC, ShipC, type Combat, type Faction, type Ship } from './components';
 import { hullSum } from './hull';
 
@@ -36,7 +36,7 @@ export function shieldCapacity(sim: Sim, gridId: number, powered: boolean): numb
     const m = sim.world.get(id, ModuleC);
     const gen = m && m.gridId === gridId ? sim.content.modules[m.def]?.shieldGen : undefined;
     if (!m || !gen || m.hp <= 0 || !m.enabled || (powered && !m.powered)) continue;
-    if (powered && sim.world.has(id, IonC)) continue;
+    if (powered && (sim.world.has(id, IonC) || !isDeployed(sim, id))) continue;
     layers += Math.floor(Math.abs(sim.content.modules[m.def]?.power ?? 0) * gen.layersPerPower);
   }
   return layers;
@@ -57,17 +57,12 @@ export function spawnCrew(sim: Sim, gridId: number, roles: readonly string[], re
     const role = sim.content.roles[roleId];
     if (!role || names.length === 0 || floor.length === 0) continue;
     const tile = floor.splice(sim.rng.int(0, floor.length - 1), 1)[0] as { x: number; y: number };
-    const name = names.splice(sim.rng.int(0, names.length - 1), 1)[0] as string;
-    const id = sim.world.createEntity();
-    sim.world.add(id, CrewC, {
-      name, role: roleId, species: 'species.human', appearanceSeed: sim.rng.int(0, 0x7fffffff), activity: 'idle',
+    const designated = !!sim.content.species[role.species ?? 'species.human']?.designation;
+    const name = designated ? undefined : names.splice(sim.rng.int(0, names.length - 1), 1)[0] as string;
+    const id = createCrew(sim, gridId, roleId, tile, {
+      faction: shipOf(sim, gridId)?.faction ?? 'player', ...(rest !== undefined ? { rest } : {}), ...(name ? { name } : {}),
     });
-    sim.world.add(id, PositionC, { gridId, x: tile.x, y: tile.y, toX: tile.x, toY: tile.y, progress: 0, facing: 0 });
-    sim.world.add(id, PathC, { steps: [] });
-    sim.world.add(id, PrioritiesC, { ...role.priorities });
-    sim.world.add(id, NeedsC, { rest: rest ?? sim.rng.int(60, 100) });
-    sim.world.add(id, HealthC, { hp: CREW_MAX_HP, max: CREW_MAX_HP });
-    out.push(id);
+    if (id) out.push(id);
   }
   return out;
 }
@@ -91,6 +86,13 @@ export function spawnShip(
     shield: { layers, max: layers, timer: 0 }, evasion: 0, aiTimer: 0,
   };
   sim.world.add(ship, CombatC, combat);
+  if (template.boarding) {
+    sim.world.add(ship, BoarderC, {
+      party: template.boarding.party, afterTicks: Math.round(template.boarding.afterSec * TICK_HZ),
+      losingBelow: template.boarding.losingBelow, state: 'idle', timer: 0, vehicle: 0, crew: [],
+      ...(template.boarding.weapon ? { weapon: template.boarding.weapon } : {}),
+    });
+  }
   spawnCrew(sim, gridId, template.crew ?? [], opts.rest);
   sim.events.emit({ type: 'ship.spawned', gridId, faction: opts.faction });
   return gridId;

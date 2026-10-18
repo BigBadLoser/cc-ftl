@@ -1,14 +1,17 @@
-import { Sprite, type Texture } from 'pixi.js';
+import { Container, Sprite, type Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ModuleC, type Module } from '../sim/modules/components';
-import { footprintTiles, rotatedSize } from '../sim/modules/footprint';
+import { footprintTiles, hullRow, openTilesOf, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import type { Atlas, StaticSprite } from './assets/loader';
+import type { Art } from './assets/fallback';
 import { iso, depthKey } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
-import { craftProgress, moduleAssets } from './moduleArt';
+import { resolveArt } from './assets/fallback';
+import { robotBayLayers } from './robotBayArt';
+import { craftProgress, glowKey, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -16,6 +19,8 @@ export interface ModuleViewHost {
   target(): { grid: Grid } | null;
   /** True when the ship has no running power source (emergency lighting). */
   emergency(): boolean;
+  /** Roofed ships hide their interior: only the engines (hull sections, and the machines under the roof) are drawn. */
+  roofed(): boolean;
 }
 
 export interface ModuleView {
@@ -53,15 +58,24 @@ function alphaOf(tex: Texture): Uint8ClampedArray | null {
 interface Part {
   spr: Sprite;
   glow: Sprite | null;
+  /** Halo group sorted under the crew (a console's desk front), destroyed with the part. */
+  under: Container | null;
   halo: Sprite | null;
   /** Art-px rectangle the sprite covers. */
   rect: { x0: number; y0: number; x1: number; y1: number };
   key: number;
   flip: boolean;
+  /** Multiply tint of stand-in art (white for real art). */
+  art: number;
 }
 interface Entry {
   sig: string;
   parts: Part[];
+}
+
+/** Depth key of a module sprite drawn on tile (tx, ty): solid modules sit just behind the crew of their tile, flat ones under everything. */
+export function moduleKey(def: ModuleDef, tx: number, ty: number): number {
+  return depthKey(tx, ty) - (def.solid ? 0.05 : 0.5);
 }
 
 /** A craft job counts as running while its progress moved within this many ms. */
@@ -86,10 +100,11 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       p.spr.destroy();
       p.glow?.destroy();
       p.halo?.destroy();
+      p.under?.destroy();
     }
   }
 
-  function makePart(s: StaticSprite, tx: number, ty: number, flip: boolean, key: number): Part {
+  function makePart(s: StaticSprite, tx: number, ty: number, flip: boolean, key: number, art = 0xffffff, glowKey = key + 0.01, haloUnder = false): Part {
     const p = iso(tx, ty);
     const w = s.tex.width;
     const h = s.tex.height;
@@ -106,24 +121,46 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     L.sorted.addChild(spr);
     let glow: Sprite | null = null;
     let halo: Sprite | null = null;
+    let under: Container | null = null;
     if (s.glow) {
       glow = mk(s.glow);
       glow.blendMode = 'add';
-      glow.zIndex = key + 0.01;
+      glow.zIndex = glowKey;
       L.sorted.addChild(glow);
-      if (L.halos) L.halo.addChild((halo = mk(s.glow)));
+      if (L.halos) {
+        halo = mk(s.glow);
+        if (haloUnder) (under = L.haloAt(glowKey)).addChild(halo);
+        else L.halo.addChild(halo);
+      }
     }
     const x0 = flip ? x - w : x;
-    return { spr, glow, halo, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key, flip };
+    return { spr, glow, halo, under, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key, flip, art };
   }
 
-  function build(m: Module, def: ModuleDefs[string], s: StaticSprite): Part[] {
+  function build(m: Module, def: ModuleDefs[string], layers: { layer: ModuleLayer; art: Art }[], roofed: boolean): Part[] {
     const [w, h] = rotatedSize(def, m.rot);
     const [nw, nh] = def.footprint;
-    // A quarter turn of a non-square footprint without its own sprite is drawn mirrored.
-    const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
-    const key = (tx: number, ty: number) => depthKey(tx, ty) - (def.solid ? 0.05 : 0.5);
-    return [makePart(s, m.x + w - 1, m.y + h - 1, flip, key(m.x + w - 1, m.y + h - 1))];
+    const out: Part[] = [];
+    layers.forEach(({ layer, art }, i) => {
+      const s = art.s;
+      const key = (tx: number, ty: number) => layerKey(def, m, layer, i, roofed, moduleKey(def, tx, ty));
+      if (art.fallback && art.perTile) {
+        // A stand-in covers the footprint tile by tile (never the walkable open tiles, nor the hull row for the machine).
+        const skip = new Set((layer.tiles === 'hull' ? [] : openTilesOf(def, m.x, m.y, m.rot)).map((t) => `${t.x},${t.y}`));
+        const hull = new Set(hullRow(def, m.x, m.y, m.rot).map((t) => `${t.x},${t.y}`));
+        for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
+          const k = `${t.x},${t.y}`;
+          if (skip.has(k) || (layer.tiles !== 'all' && (layer.tiles === 'hull') !== hull.has(k))) continue;
+          out.push(makePart(s, t.x, t.y, false, key(t.x, t.y), art.tint));
+        }
+        return;
+      }
+      // A quarter turn of a non-square footprint without its own sprite is drawn mirrored.
+      const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
+      const k = key(m.x + w - 1, m.y + h - 1);
+      out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k), !!def.console));
+    });
+    return out;
   }
 
   /** True while the module's craft job made progress in the last moment. */
@@ -144,6 +181,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     if (t) {
       const now = performance.now();
       const progress = craftProgress(world);
+      const manned = mannedConsoles(world);
       const { grid } = t;
       const emergency = host.emergency();
       const pulse = emergency ? pulsePhase(now) : -1;
@@ -152,25 +190,32 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
         if (!m || !def || m.gridId !== grid.id) continue;
-        const asset = atlas.firstOf(moduleAssets(world, id, m, def, m.powered && m.enabled && crafting(progress, id, now)));
-        if (!asset) continue;
+        const on = m.powered && m.enabled && m.hp > 0;
+        const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
+        const roofed = host.roofed();
+        const layers = (def.robotBay ? robotBayLayers(world, id, m, def, now) : moduleLayers(world, id, m, def, active, true)).flatMap((layer) => {
+          if (roofed && layer.tiles !== 'hull' && !(def.hullEdge && layer.tiles === 'rest')) return [];
+          const art = resolveArt(atlas, layer.chain, layer.key);
+          return art ? [{ layer, art }] : [];
+        });
+        if (!layers.length) continue;
         live.add(id);
-        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${asset.tex.uid}`;
+        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${roofed ? 1 : 0}|${layers.map((l) => l.art.s.tex.uid).join(',')}`;
         let e = mods.get(id);
         if (e && e.sig !== sig) {
           dropEntry(e);
           e = undefined;
         }
-        if (!e) mods.set(id, (e = { sig, parts: build(m, def, asset) }));
+        if (!e) mods.set(id, (e = { sig, parts: build(m, def, layers, roofed) }));
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
         for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? (light[f.y * grid.width + f.x] as number) : 0;
-        const on = m.powered && m.enabled && m.hp > 0;
         const base = lightTint(lsum / Math.max(1, tiles.length), false, pulse);
         const tint = on ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
         for (const p of e.parts) {
-          p.spr.tint = tint;
+          p.spr.tint = mulColor(tint, p.art);
           for (const g of [p.glow, p.halo]) if (g) g.visible = on;
+          if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }
       }
     }

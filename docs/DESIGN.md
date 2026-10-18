@@ -56,6 +56,32 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   stability, vulnerability to EMP/ion and hacking.
 - Relationships (friends, rivals, grief) later.
 
+### Robots and the rogue AI
+
+- **Robots** are a crew species with no needs (no air, food, sleep or mood) and no fear of vacuum or fire panic,
+  though fire still damages them. They are **repaired, not healed**: crew with repair skill mend them using parts
+  or metal, and a medbay does nothing for them. Ion and EMP **stun** them. They never surrender: at 0 hp they are
+  **wrecked** and can be salvaged for parts.
+- The **rogue AI** faction is crewed by robots and hostile to everyone. Its robots run off their ship's **AI core**.
+  When a core is destroyed, unpowered or hacked, its robots go **inert**. To capture an AI ship, crewless or
+  robot-crewed, take its cores down and hold the bridge (on AI ships, the cores count as the bridge). Crew with
+  the hacking skill can hack a core; this is a job that takes time.
+- **Hacking a core is a hold.** While the hacker stays at the core, its robots fight for the hacker's side. When the
+  hacker leaves or is interrupted, the robots go back to their own side, inert.
+- **Robots run on a battery** instead of sleeping. It drains faster while they work or fight. When the charge is
+  low, or a robot is badly damaged, it goes to its **robot bay**: one robot per bay, like an assigned bed. The bay
+  recharges it and slowly repairs it with parts or metal from storage. A crew mender is faster, and the robot holds
+  still while being mended.
+- **The player gets robots by assembling them in a robot bay.** You pick a robot type; the bay's materials (parts,
+  metal, electronics) are delivered and worked over time. The new robot calls that bay home.
+- **Security bots** use a heavy chassis: more hp, armour against crew damage, slower.
+- **Robot fabricators** stay the rogue AI's own spawner: no materials, just a live core and power, up to a cap.
+  Rogue ships and shipyards also have robot bays, where their robots recharge.
+- **Derelicts come in two kinds:**
+  - Scrapper and other wrecks are abandoned and infested with hostile aliens.
+  - AI-faction derelicts are rogue AI shipyards and factories (fabricators, cores, robots).
+- **Combat drones** (a launched weapon class) come later. They will build on the AI core's tier and the EMP effect.
+
 ## Ship systems (M3 decisions)
 
 - **Power:** one network per ship for now, with module priorities deciding what loses power in a
@@ -83,7 +109,8 @@ FTL's decision-making with physical consequences, in a shared sector.
   - The **shield console** works unmanned at base strength; an operator speeds up recharge.
   - The **helm** pilot gives evasion and charges the FTL drive to flee. With no pilot, there is no
     evasion and no escape.
-  - The **AI core** runs **point defence** automatically. Its tier sets how much else it can
+  - The **AI core** operates the **point-defence modules** automatically (they do nothing without a
+    powered AI core whose mast is out; several modules stack). Its tier sets how much else it can
     automate later (drones, standing in for missing operators at reduced efficiency).
 - **Physical systems:**
   - **Weapons and engines** are modules that must touch the hull.

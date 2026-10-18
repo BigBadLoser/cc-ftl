@@ -1,0 +1,21 @@
+{
+  "name": "KESTREL / 02",
+  "stage": 7,
+  "rotationsRendered": [
+    0,
+    1
+  ],
+  "footprintAlongHull": 4,
+  "footprintDepth": 5,
+  "variant": "wall-1.85-roof-2.05",
+  "wallZ": 1.85,
+  "roofZ": 2.05,
+  "thrustAxisZ": 1.3,
+  "cassetteVerticalFit": 0.66,
+  "spriteSamples": 4,
+  "bellOuterDiameter": 2.6,
+  "metalProtrusion": 1.5,
+  "bulkheadAlwaysFullHeight": true,
+  "separateFloorPlate": false,
+  "mountingSurface": "ship-deck"
+}

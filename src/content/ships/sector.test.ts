@@ -35,8 +35,18 @@ describe('sector and ships', () => {
     for (const g of data.grids) delete g.fields.hp;
     const loaded = deserialize(JSON.stringify(data), content);
     expect(shipOf(loaded, 1)?.faction).toBe('player');
-    expect(loaded.grids.get(1)!.get('hp', 0, 0)).toBe(255);
+    expect(loaded.grids.get(1)!.get('hp', 1, 1)).toBe(255);
     expect(loaded.sector.width).toBeGreaterThan(0);
     for (let i = 0; i < 20; i++) loaded.step();
+  });
+
+  it('migrates a version 4 save: weapons gain a turret aim', () => {
+    const sim = newGame(3, content);
+    const data = JSON.parse(serialize(sim)) as { version: number; world: { stores: Record<string, [number, Record<string, unknown>][]> } };
+    data.version = 4;
+    for (const e of data.world.stores.weapon ?? []) delete e[1].aim;
+    expect((data.world.stores.weapon ?? []).length).toBeGreaterThan(0);
+    const loaded = deserialize(JSON.stringify(data), content);
+    expect(serialize(loaded)).toBe(serialize(sim));
   });
 });

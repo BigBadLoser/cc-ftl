@@ -58,6 +58,36 @@ export interface UiCrew {
   /** Name of the crew member carrying this one, or null. */
   carriedBy: string | null;
   carrying: { item: string; count: number } | null;
+  /** Which side: the player's crew, or hostile crew standing on a grid the player's crew is on. */
+  side: 'player' | 'enemy';
+  /** Grid they stand on (0 = aboard a shuttle), and a label for where they are. */
+  gridId: number;
+  where: string;
+  /** Not on the home ship. */
+  away: boolean;
+  /** Wielded hand weapon, or null for bare hands. */
+  weapon: { item: string; name: string; ranged: boolean; damage: number; range: number } | null;
+  /** Hand weapons in storage on their grid that they could fetch. */
+  arms: { item: string; name: string; count: number }[];
+  surrendered: boolean;
+  prisoner: boolean;
+  inert: boolean;
+  fight: UiFight | null;
+}
+
+export interface UiFight {
+  mode: 'idle' | 'engage' | 'flee';
+  /** Shoots hostiles on its own (drafted crew). */
+  engage: boolean;
+  target: string | null;
+  targetId: number;
+  /** The player ordered this target. */
+  ordered: boolean;
+  /** Seconds until the next attack, and the weapon's cooldown. */
+  cooldown: number;
+  cooldownMax: number;
+  /** Cover against its current target, or null with no target in sight. */
+  cover: 'none' | 'partial' | 'full' | null;
 }
 
 /** A placed module, for the inspector and the debug panel. */
@@ -78,6 +108,17 @@ export interface UiModule {
   storage: boolean;
   /** Crafts recipes (has a production panel). */
   crafting: boolean;
+  /** Robot bay state (null for other modules). */
+  bay: UiRobotBay | null;
+}
+
+export interface UiRobotBay {
+  /** The robot that calls this bay home. */
+  occupant: { id: number; name: string; role: string; charging: boolean; charge: number; hp: number; maxHp: number } | null;
+  /** Assembly under way: progress 0..1, and whether it still waits for materials. */
+  assembling: { role: string; name: string; progress: number; waiting: boolean; cost: UiCost[] } | null;
+  /** Robot types this bay can build. */
+  options: { role: string; name: string; seconds: number; cost: (UiCost & { have: number })[] }[];
 }
 
 /** An item amount with its display name. */
@@ -170,7 +211,132 @@ export interface UiStats {
 
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'crew.died' | 'crew.rescued'
-  | 'job.missingMaterials' | 'storage.full' | 'production.done';
+  | 'job.missingMaterials' | 'storage.full' | 'production.done'
+  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost';
+
+/** A weapon module of the player's ship. */
+export interface UiWeapon {
+  id: number;
+  name: string;
+  /** 0..1. */
+  charge: number;
+  /** Missiles in stock for ammo weapons, null for weapons that use none. */
+  ammo: number | null;
+  ion: boolean;
+  powered: boolean;
+  /** Own target label, or null when it uses the ship-wide one. */
+  target: string | null;
+}
+
+/** A console of the player's ship and who runs it. */
+export interface UiConsole {
+  id: number;
+  kind: 'weapons' | 'shields' | 'helm';
+  name: string;
+  operator: string | null;
+  powered: boolean;
+}
+
+/** A module of a ship in combat, for target lists. */
+export interface UiShipModule {
+  id: number;
+  name: string;
+  kind: 'weapon' | 'shield' | 'engine' | 'other';
+  hp: number;
+  maxHp: number;
+  ion: boolean;
+}
+
+export interface UiShipCombat {
+  gridId: number;
+  name: string;
+  state: 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
+  /** 0..1 hull and module integrity. */
+  integrity: number;
+  shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };
+  /** 0..1 chance a shot misses. */
+  evasion: number;
+  hold: boolean;
+  /** FTL charge seconds and the seconds needed to flee. */
+  ftl: number;
+  ftlMax: number;
+  /** Ship-wide target, with a label. */
+  target: { gridId: number; moduleId: number; label: string } | null;
+  modules: UiShipModule[];
+}
+
+export interface UiCombat {
+  inCombat: boolean;
+  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[] }) | null;
+  /** Hostile ships (not fled), nearest first. */
+  enemies: UiShipCombat[];
+}
+
+/** A crew member as the shuttle panel lists them. `boarding` is the vehicle they are walking to (0 = none). */
+export interface UiShuttleCrew {
+  id: number;
+  name: string;
+  role: string;
+  boarding: number;
+}
+
+export interface UiShuttle {
+  id: number;
+  name: string;
+  state: 'stowed' | 'flying' | 'docked';
+  hp: number;
+  maxHp: number;
+  /** Passenger seats (the pilot is extra). */
+  capacity: number;
+  pilot: UiShuttleCrew | null;
+  passengers: UiShuttleCrew[];
+  destination: 'dock' | 'bay' | null;
+  /** Name of the ship it is docked at, or null. */
+  dockShip: string | null;
+  /** Module id of its home bay. */
+  bay: number;
+  /** Crew can climb in or out here right now (stowed in the bay, or docked). */
+  boardable: boolean;
+}
+
+export interface UiShuttleAirlock {
+  id: number;
+  gridId: number;
+  ship: string;
+  working: boolean;
+  /** Another shuttle is docked or headed there. */
+  busy: boolean;
+  x: number;
+  y: number;
+}
+
+/** A captured ship. `value` is the hull value estimate (prizeValue); `crewAboard` counts the player's crew still on it (scuttling needs none). */
+export interface UiPrize {
+  gridId: number;
+  name: string;
+  from: string;
+  value: number;
+  prisoners: { id: number; name: string; role: string; hp: number; maxHp: number; state: 'downed' | 'surrendered' }[];
+  crewAboard: number;
+}
+
+export interface UiShuttles {
+  shuttles: UiShuttle[];
+  /** Airlocks of other ships a shuttle can dock at. */
+  airlocks: UiShuttleAirlock[];
+  /** Crew on the player's ship who could climb in. */
+  roster: UiShuttleCrew[];
+  /** The player's vehicle bays (module ids) and whether each is empty. */
+  bays: { id: number; empty: boolean }[];
+}
+
+/** Where the combat overlay shows the enemy ship, in CSS px relative to the page. */
+export interface UiRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 export interface UiAlert {
   id: number;
@@ -213,6 +379,12 @@ export interface UiApi {
   errors: Subscribable<UiError[]>;
   inspect: Subscribable<UiInspect | null>;
   crew: Subscribable<UiCrew[]>;
+  /** Hostile crew on grids the player's crew stand on. */
+  hostiles: Subscribable<UiCrew[]>;
+  /** Center the camera on a crew member wherever they are. */
+  focusCrew(id: number): void;
+  /** Order drafted crew (the selected one, else all) to attack a hostile crew member. */
+  attack(target: number): void;
   /** Selected crew id, or null (tile selection is reported through `inspect`). */
   selectedCrew: Subscribable<number | null>;
   tool: Subscribable<UiToolState>;
@@ -231,6 +403,21 @@ export interface UiApi {
   selectModule(id: number | null): void;
   stats: Subscribable<UiStats>;
   alerts: Subscribable<UiAlert[]>;
+  combat: Subscribable<UiCombat>;
+  shuttles: Subscribable<UiShuttles>;
+  prizes: Subscribable<UiPrize[]>;
+  /** Center the camera on a shuttle (any state). */
+  focusShuttle(id: number): void;
+  /** Show a ship in the combat overlay rectangle (null hides it). */
+  setCombatView(view: { gridId: number; rect: UiRect } | null): void;
+  /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
+  pickCombat(x: number, y: number): { moduleId: number } | null;
+  /** Roof hostile ships (default) or show their interior. */
+  setRoofEnemies(on: boolean): void;
+  /** Frame the player's ship and a hostile ship (or only the player's ship) in the camera. */
+  focusFight(gridId: number | null): void;
+  /** Spawn a raider about 30 tiles from the player's ship. */
+  spawnRaider(boarders?: boolean): void;
   /** Overlay ids offered by the picker, in order. */
   overlayList: { id: string; label: string }[];
   overlayLegend(id: string): UiLegend | null;

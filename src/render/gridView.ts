@@ -1,21 +1,24 @@
 import type { Sprite } from "pixi.js";
 import type { Atlas, StaticSprite } from "./assets/loader";
 import type { Grid } from "../sim/grid";
-import { Struct } from "../sim/structure";
+import { ModuleC } from "../sim/modules/components";
+import { hullRow } from "../sim/modules/footprint";
+import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
-import { lightTint, pulsePhase } from "./lightTint";
+import { lightTint, mulColor, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
-import { floorChain, wallPieces, type CutawayMode } from "./tiles";
+import { floorChain, ghostVerts, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
 
 export interface GridView extends Markers {
   readonly grid: Grid;
   update(): void;
-  setCutaway(mode: CutawayMode): void;
+  /** Wall view mode; `ghosts` false (roofed ships) draws the near hull as solid full-height plating. */
+  setCutaway(mode: CutawayMode, ghosts?: boolean): void;
   setOverlay(field: string | null): void;
   dispose(): void;
 }
@@ -40,6 +43,17 @@ interface Tinted {
   spr: Sprite;
   idx: number;
   wall: boolean;
+  /** Walls and doors darken as their integrity drops. */
+  solid: boolean;
+}
+
+/** Multiply tint of a damaged wall: dark and slightly warm toward 0 integrity. */
+function damageTint(hp: number): number {
+  const r = Math.min(1, hp / STRUCT_MAX_HP);
+  if (r > 0.85) return 0xffffff;
+  const f = 0.5 + 0.5 * (r / 0.85);
+  const c = (v: number) => Math.round(255 * Math.min(1, v));
+  return (c(f) << 16) | (c(f * 0.88) << 8) | c(f * 0.82);
 }
 
 /** Floors, walls, hull and doors of one grid, rebuilt whenever the struct revision or the cutaway mode changes. */
@@ -50,8 +64,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let tinted: Tinted[] = [];
   let doors: Door[] = [];
   let mode: CutawayMode = "auto";
-  let builtMode: CutawayMode | null = null;
+  let ghosts = true;
+  let builtMode = "";
   let rev = -1;
+  let modRev = -1;
   let tintKey = "";
   let doorKey = -1;
 
@@ -65,24 +81,49 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     doors = [];
   }
 
+  /** Tile indices of the engine hull rows the bulkhead covers (walls up / roofed: it stands there in place of the hull wall). */
+  function engineHull(): Set<number> {
+    const out = new Set<number>();
+    const { world, modules } = host.overlayWorld;
+    for (const id of world.query(ModuleC)) {
+      const m = world.get(id, ModuleC);
+      const def = m && modules[m.def];
+      if (!m || !def?.hullEdge || m.gridId !== grid.id) continue;
+      // The bulkhead spans the row's inner tiles; the two end tiles keep their hull wall (the sprite stops inside them).
+      const row = hullRow(def, m.x, m.y, m.rot).sort((a, b) => a.x + a.y - (b.x + b.y));
+      for (const t of row.slice(1, -1)) out.add(t.y * grid.width + t.x);
+    }
+    return out;
+  }
+
   function rebuild(): void {
     clear();
+    const replaced = engineHull();
+    const gapAt = (x: number, y: number): boolean => mode === "up" && grid.inBounds(x, y) && replaced.has(y * grid.width + x);
     for (let y = 0; y < grid.height; y++)
       for (let x = 0; x < grid.width; x++) {
         const k = kindAt(x, y);
         if (k === Struct.Space) continue;
         const idx = y * grid.width + x;
-        const f = atlas.firstOf(floorChain(x, y));
+        // A near-hull ghost replaces the floor plate under it (not under an engine: its bulkhead stands on the deck).
+        // An engine's hull row is the hull wall in cutaway / low (the same ghost as the hull around it); with the walls
+        // up or roofed the wall is left out and the engine's bulkhead stands there between the hull runs.
+        const engineUp = replaced.has(idx) && mode === "up";
+        const f = ghosts && !engineUp && replacesFloor(kindAt, x, y, mode) ? undefined : atlas.firstOf(floorChain(x, y));
         if (f) {
           const made = addStatic(L, f, x, y, 0, L.floor);
           owned.push(...made);
-          tinted.push({ spr: made[0] as Sprite, idx, wall: false });
+          tinted.push({ spr: made[0] as Sprite, idx, wall: false, solid: false });
         }
         if (k === Struct.Floor) continue;
-        for (const piece of wallPieces(kindAt, x, y, k, mode)) {
+        // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
+        if (gapAt(x, y)) continue;
+        for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts, gapAt)) {
           const s = atlas.firstOf(piece.chain);
           if (!s) continue;
-          const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001, L.sorted);
+          // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
+          // their shared top edge (they all end flush at the roof top).
+          const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001 - (ghosts ? 0 : 0.15), piece.under ? L.under : L.sorted);
           owned.push(...made);
           const isDoor = k === Struct.Door;
           if (isDoor) {
@@ -90,10 +131,14 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             const open = atlas.stat(`${closedId}.open`);
             if (open) doors.push({ objs: made, closed: s, open, idx });
           }
-          tinted.push({ spr: made[0] as Sprite, idx, wall: !isDoor });
+          tinted.push({ spr: made[0] as Sprite, idx, wall: !isDoor, solid: true });
         }
       }
-    builtMode = mode;
+    if (ghosts) {
+      const vert = atlas.stat("tile.hull.ghost.vert");
+      if (vert) for (const t of ghostVerts(kindAt, grid.width, grid.height)) owned.push(...addStatic(L, vert, t.x, t.y, depthKey(t.x, t.y) + 0.001, L.sorted));
+    }
+    builtMode = `${mode}|${ghosts}`;
     doorKey = -1;
     tintKey = "";
   }
@@ -115,11 +160,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   function updateTints(): void {
     const emergency = host.emergency();
     const pulse = emergency ? pulsePhase(performance.now()) : -1;
-    const key = `${grid.revision("light")}|${grid.revision("o2")}|${pulse}`;
+    const key = `${grid.revision("light")}|${grid.revision("o2")}|${grid.revision("hp")}|${pulse}`;
     if (key === tintKey) return;
     tintKey = key;
     const light = grid.raw("light");
     const o2 = grid.raw("o2");
+    const hp = grid.raw("hp");
     const { width, height } = grid;
     const wallLight = (idx: number): number => {
       const x = idx % width;
@@ -135,7 +181,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     };
     for (const t of tinted) {
       const lv = t.wall ? wallLight(t.idx) : (light[t.idx] as number);
-      t.spr.tint = lightTint(lv, !t.wall && (o2[t.idx] as number) < VACUUM_O2, pulse);
+      const lit = lightTint(lv, !t.wall && (o2[t.idx] as number) < VACUUM_O2, pulse);
+      t.spr.tint = t.solid ? mulColor(lit, damageTint(hp[t.idx] as number)) : lit;
     }
   }
 
@@ -144,16 +191,19 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     grid,
     update() {
       const r = grid.revision("struct");
-      if (r !== rev || builtMode !== mode) {
+      const mr = grid.revision("module");
+      if (r !== rev || mr !== modRev || builtMode !== `${mode}|${ghosts}`) {
         rebuild();
         rev = r;
+        modRev = mr;
       }
       updateDoors();
       updateTints();
       overlay.update();
     },
-    setCutaway(m) {
+    setCutaway(m, g = true) {
       mode = m;
+      ghosts = g;
     },
     setOverlay: (f) => overlay.setField(f),
     dispose() {

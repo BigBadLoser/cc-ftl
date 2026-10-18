@@ -3,6 +3,7 @@ import { IonC, WeaponC } from '../combat/components';
 import { mannedConsole, skillOf } from '../combat/operators';
 import { shipOf } from '../combat/ships';
 import { ModuleC } from '../modules/components';
+import { isDeployed } from '../modules/deploy';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { SKILL_STEP } from '../tuning';
@@ -18,7 +19,7 @@ export function weaponChargeSystem(sim: Sim): void {
     const w = sim.world.get(id, WeaponC);
     const def = m && sim.content.weapons?.[sim.content.modules[m.def]?.weapon ?? ''];
     if (!m || !w || !def || w.charge >= 1) continue;
-    if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC)) continue;
+    if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC) || !isDeployed(sim, id)) continue;
     if (shipOf(sim, m.gridId)?.state !== 'active') continue;
     let skill = gunnery.get(m.gridId);
     if (skill === undefined) {

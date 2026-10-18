@@ -21,3 +21,12 @@ export interface Module {
   reservedBy: number;
 }
 export const ModuleC = defineComponent<Module>('module');
+
+/**
+ * Deployable roof part (turret, emitter dish, sensor mast) of a module whose def has `deploySec`. `amount` is
+ * 0 (stowed) .. 1 (fully deployed). Created lazily by the deploy system, so it is absent until the first tick.
+ */
+export interface Deploy {
+  amount: number;
+}
+export const DeployC = defineComponent<Deploy>('deploy');

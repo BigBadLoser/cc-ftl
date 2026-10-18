@@ -2,6 +2,8 @@ import type { Sim } from '../sim';
 import {
   AssignmentC, CarriedC, CrewC, DeadC, DownedC, JobC, PathC, PositionC, type Position,
 } from './components';
+import { CrossingC } from '../portals/components';
+import { InertC, StunC } from '../robots/components';
 import type { Tile } from './pathfind';
 
 // Facing index per unit step: 0 = +x, counter-clockwise in grid space, 2 = +y.
@@ -33,6 +35,13 @@ export function isAdjacent(a: Tile, b: Tile): boolean {
 export function clearPath(sim: Sim, crew: number): void {
   const path = sim.world.get(crew, PathC);
   if (path && path.steps.length > 0) path.steps = [];
+  if (path?.then) delete path.then;
+}
+
+/** True if the crew member still has somewhere to walk: steps left, or portal crossings planned. */
+export function hasRoute(sim: Sim, crew: number): boolean {
+  const path = sim.world.get(crew, PathC);
+  return !!path && (path.steps.length > 0 || (path.then?.length ?? 0) > 0 || sim.world.has(crew, CrossingC));
 }
 
 /** Drop a crew member's job: free the reservation, remove the Assignment, clear the path. */
@@ -46,9 +55,10 @@ export function releaseAssignment(sim: Sim, crew: number): void {
   clearPath(sim, crew);
 }
 
-/** True if the crew member cannot act: downed, dead or being carried. */
+/** True if the crew member cannot act: downed, dead, being carried, or a robot that is inert or stunned. */
 export function isIncapacitated(sim: Sim, crew: number): boolean {
-  return sim.world.has(crew, DownedC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC);
+  return sim.world.has(crew, DownedC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)
+    || sim.world.has(crew, InertC) || sim.world.has(crew, StunC);
 }
 
 /** True if any living crew member stands on, or is stepping onto, the tile. */

@@ -3,6 +3,7 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
+import { VehicleC } from '../vehicles/components';
 import { shipEntityOf, shipOf, spawnShip } from './ships';
 
 type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy'>;
@@ -40,7 +41,11 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const combat = sim.world.get(ship, CombatC);
     if (!combat) return reject(sim, cmd.type, 'noShip');
     let target: Target | null = null;
-    if (cmd.targetGridId !== 0) {
+    if (cmd.targetVehicle !== undefined) {
+      const v = sim.world.get(cmd.targetVehicle, VehicleC);
+      if (!v || v.state === 'stowed' || v.homeGrid === cmd.shipGridId) return reject(sim, cmd.type, 'badTarget');
+      target = { gridId: 0, moduleId: 0, vehicle: cmd.targetVehicle };
+    } else if (cmd.targetGridId !== 0) {
       if (cmd.targetGridId === cmd.shipGridId || !shipOf(sim, cmd.targetGridId)) return reject(sim, cmd.type, 'badTarget');
       if (cmd.targetModuleId !== 0 && !moduleOnGrid(sim, cmd.targetModuleId, cmd.targetGridId)) return reject(sim, cmd.type, 'badTarget');
       target = { gridId: cmd.targetGridId, moduleId: cmd.targetModuleId };
