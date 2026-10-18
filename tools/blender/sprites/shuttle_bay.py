@@ -209,60 +209,50 @@ def leaves(f, t):
 # folded wings cover the whole aft half (1.57 .. 1.81, nothing fits over them); the cabin spine is 1.45 over v 0.6..1.5 and
 # 1.33 mid-spine between the wing roots (v -0.3 .. 0.0); the nose drops to ~1.0 at v 2.1. The roof slab underside is 1.85.
 # A bridge beam BEAM_T thick fits at BEAM_Z0 .. 1.80 over the nose half, with latch arms down to hardpoint pads on the spine.
-BRIDGE_V = 0.36                       # the bridge, over the cabin just forward of the folded wings, aft of the gangway (v 0.83..1.95)
-BEAM_Z0, BEAM_T, BEAM_W = 1.55, 0.25, 0.36
+BRIDGE_V = 0.36                       # the claw towers stand over the cabin just forward of the folded wings, aft of the gangway
 TOWER_TOP = 1.82
-# claw arm centreline in (u, z), half section: top bar, corner chamfer, flank (hull here: top ~1.33..1.45, |u| ~ 0.95, hatch
-# flange starts at v 0.48 and is at its widest at z 0.35, so the flank tips stop at z 0.75)
-ARM = ((0.0, 1.48), (0.70, 1.48), (1.08, 1.18), (1.08, 0.62))
-ARM_TH, ARM_W = 0.15, 0.34
+TOWER_W = 0.6
+# Claw arm centreline (u, z): rises from the tower's inner face, arcs over the hull flank just under the roof slab (top <= 1.80)
+# and drops to a grip shoe on the cabin's shoulder (hull top ~1.30 at |u| 0.7..0.8; the roof rises to 1.45 at |u| < 0.5).
+ARM = ((1.95, 1.22), (1.82, 1.58), (1.40, 1.72), (0.98, 1.62), (0.74, 1.43))
+ARM_TH, ARM_W = 0.16, 0.60
 
 
-def _seg(f, sx, p0, p1, o, dz, mat, top):
-    """One thick arm segment from p0 to p1 (u, z) mirrored to side sx, pushed out by o and lifted by dz."""
+def _seg(f, sx, p0, p1, w, th, mat, top):
+    """One thick arm segment from p0 to p1 (u, z), mirrored to side sx, v-width w, thickness th."""
     ex, ez = p1[0] - p0[0], p1[1] - p0[1]
     n = math.hypot(ex, ez)
     nx, nz = ez / n, -ex / n
 
     def corner(a, b, d):
         q = p0 if b < 0 else p1
-        return (sx * (q[0] + o + nx * d * ARM_TH / 2), BRIDGE_V + sx * a * ARM_W / 2, q[1] + dz + nz * d * ARM_TH / 2)
+        return (sx * (q[0] + nx * d * th / 2), BRIDGE_V + sx * a * w / 2, q[1] + nz * d * th / 2)
     lbox(f, corner, {"side": mat, "top": top})
 
 
 def clamps(f, t):
-    """GANTRY (v14): one bridge over the cabin (towers on both side lips just aft of the gangway, a beam under the roof slab)
-    with a pair of curved CLAW ARMS hanging from it, hugging the hull top and flanks with a small gap and ending above the
-    hatch. Opening: the arms swing out (t 0 .. 0.06), lift into the beam (.06 .. .12), the half-beams slide into the towers
-    (.12 .. .25). Everything is at or below 1.82."""
+    """GANTRY (v15): two claw towers on the side lips over the cabin. Each carries a big pale curved arm that rises from the
+    tower, arcs over the hull flank under the roof slab and grips the cabin shoulder with an orange shoe; a lamp strip runs
+    along it. There is no beam: the arms carry the shuttle. Opening: the arms fold back into the towers (t 0 .. 0.08).
+    Everything is at or below 1.82."""
     _g("clamps")
-    ko = min(1.0, t / 0.06)
-    kl = min(1.0, max(0.0, (t - 0.06) / 0.06))
-    k2 = min(1.0, max(0.0, (t - 0.12) / 0.13))
+    k = min(1.0, t / 0.08)
     vv = BRIDGE_V
     for sx in (-1, 1):
         ut = sx * (OPEN[1] + 0.08)
-        f.box(ut, vv, PAD_T, 0.34, 0.5, 0.05, "steelD", top="hazK")
-        f.box(ut, vv, PAD_T + 0.05, 0.24, 0.38, TOWER_TOP - PAD_T - 0.11, "steelL", top="steel")
-        f.box(ut, vv, TOWER_TOP - 0.06, 0.3, 0.44, 0.06, "steelD", top="steel")
-        f.box(ut - sx * 0.121, vv, 0.4, 0.02, 0.14, 1.1, "arc", base=True)
-        L = (abs(ut) - 0.12) * (1.0 - k2)
-        if L > 0.05:
-            ub = ut - sx * (0.12 + L / 2)
-            f.box(ub, vv, BEAM_Z0, L, BEAM_W, BEAM_T, "steel", top="steelL")
-            f.box(ub, vv, BEAM_Z0 + BEAM_T, L, 0.08, 0.01, "hazY")
-            f.box(ub, vv - BEAM_W / 2 - 0.001, BEAM_Z0 + 0.08, L - 0.1, 0.01, 0.09, "arc", base=True)
-    if t > 0.14:
-        return
-    o, dz = 0.34 * ko, 0.2 * kl
-    f.box(0.0, vv, 1.47 + dz, 0.5, 0.3, 0.08, "steel", top="steelL")                                    # hub under the beam
-    f.box(0.0, vv - 0.151, 1.49 + dz, 0.4, 0.01, 0.04, "cyan", base=True)
-    for sx in (-1, 1):
-        for i in range(len(ARM) - 1):
-            _seg(f, sx, ARM[i], ARM[i + 1], o, dz, "steel", "steelL")
-        tip = ARM[-1]
-        f.box(sx * (tip[0] + o), vv, tip[1] + dz - 0.06, 0.22, ARM_W + 0.04, 0.16, "orange", top="hazY")   # tip shoe
-        f.box(sx * (ARM[2][0] + o), vv, ARM[2][1] + dz - 0.07, 0.15, ARM_W + 0.02, 0.14, "steelD", top="hazY")   # knuckle
+        f.box(ut, vv, PAD_T, 0.34, TOWER_W + 0.14, 0.05, "steelD", top="hazK")
+        f.box(ut, vv, PAD_T + 0.05, 0.24, TOWER_W, TOWER_TOP - PAD_T - 0.11, "steelD", top="steel")
+        f.box(ut, vv, TOWER_TOP - 0.06, 0.3, TOWER_W + 0.06, 0.06, "steelD", top="steel")
+        f.box(ut - sx * 0.121, vv, 0.4, 0.02, 0.2, 0.7, "arc", base=True)                               # tower lamp bar
+        if k >= 0.97:
+            continue
+        p = [(ARM[0][0] + (u - ARM[0][0]) * (1 - k), ARM[0][1] + (z - ARM[0][1]) * (1 - k)) for u, z in ARM]
+        for i in range(len(p) - 1):
+            _seg(f, sx, p[i], p[i + 1], ARM_W, ARM_TH, "steelL", "steelL")
+            _seg(f, sx, p[i], p[i + 1], 0.12, ARM_TH + 0.03, "arc", "arc")                               # lamp strip
+        tu, tz = p[-1]
+        f.box(sx * tu, vv, tz - 0.14, 0.3, ARM_W + 0.04, 0.16, "orange", top="hazY")                    # grip shoe
+        f.box(sx * p[2][0], vv, p[2][1] - 0.1, 0.18, ARM_W + 0.03, 0.12, "steelD", top="hazY")           # knuckle band
 
 
 def _wall(f, p, q, nin, t0, t1, d0, d1, z0, z1, mat, top=None):
