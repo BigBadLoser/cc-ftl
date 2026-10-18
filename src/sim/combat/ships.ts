@@ -1,7 +1,4 @@
-import {
-  CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC,
-} from '../crew/components';
-import { AllegianceC } from '../fight/components';
+import { createCrew } from '../crew/spawn';
 import { ModuleC } from '../modules/components';
 import { isDeployed } from '../modules/deploy';
 import { isTileWalkable } from '../modules/walk';
@@ -9,7 +6,6 @@ import { gridFromTemplate, spawnTemplateModules } from '../ship';
 import type { ShipTemplate } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
-import { CREW_MAX_HP } from '../tuning';
 import { TICK_HZ } from '../time';
 import { BoarderC } from '../vehicles/components';
 import { CombatC, IonC, ShipC, type Combat, type Faction, type Ship } from './components';
@@ -61,18 +57,12 @@ export function spawnCrew(sim: Sim, gridId: number, roles: readonly string[], re
     const role = sim.content.roles[roleId];
     if (!role || names.length === 0 || floor.length === 0) continue;
     const tile = floor.splice(sim.rng.int(0, floor.length - 1), 1)[0] as { x: number; y: number };
-    const name = names.splice(sim.rng.int(0, names.length - 1), 1)[0] as string;
-    const id = sim.world.createEntity();
-    sim.world.add(id, CrewC, {
-      name, role: roleId, species: 'species.human', appearanceSeed: sim.rng.int(0, 0x7fffffff), activity: 'idle',
+    const designated = !!sim.content.species[role.species ?? 'species.human']?.designation;
+    const name = designated ? undefined : names.splice(sim.rng.int(0, names.length - 1), 1)[0] as string;
+    const id = createCrew(sim, gridId, roleId, tile, {
+      faction: shipOf(sim, gridId)?.faction ?? 'player', ...(rest !== undefined ? { rest } : {}), ...(name ? { name } : {}),
     });
-    sim.world.add(id, PositionC, { gridId, x: tile.x, y: tile.y, toX: tile.x, toY: tile.y, progress: 0, facing: 0 });
-    sim.world.add(id, PathC, { steps: [] });
-    sim.world.add(id, PrioritiesC, { ...role.priorities });
-    sim.world.add(id, NeedsC, { rest: rest ?? sim.rng.int(60, 100) });
-    sim.world.add(id, HealthC, { hp: CREW_MAX_HP, max: CREW_MAX_HP });
-    sim.world.add(id, AllegianceC, { faction: shipOf(sim, gridId)?.faction ?? 'player' });
-    out.push(id);
+    if (id) out.push(id);
   }
   return out;
 }

@@ -1,3 +1,4 @@
+import type { Faction } from './combat/components';
 import type { JobKind } from './crew/components';
 import type { PortalEnd, PortalKind } from './portals/components';
 
@@ -27,7 +28,7 @@ export type SimEvent =
   /** A loose stack has no storage to go to (debounced per stack). */
   | { type: 'storage.full'; gridId: number; x: number; y: number; item: string }
   /** A ship entered the sector (newGame or debug.spawnEnemy). */
-  | { type: 'ship.spawned'; gridId: number; faction: 'player' | 'hostile' | 'neutral' }
+  | { type: 'ship.spawned'; gridId: number; faction: Faction }
   | { type: 'combat.started' }
   | { type: 'combat.ended' }
   /** A weapon module launched one shot (`projectile` is its entity). */
@@ -72,8 +73,25 @@ export type SimEvent =
   | { type: 'crew.unequipped'; crew: number; item: string }
   | { type: 'crew.surrendered'; crew: number }
   /** `by`'s crew took the ship on grid `gridId` (it is now a prize if `by` is the player, else the loss is `game.lost`). */
-  | { type: 'ship.captured'; gridId: number; by: 'player' | 'hostile' | 'neutral'; from: 'player' | 'hostile' | 'neutral' }
+  | { type: 'ship.captured'; gridId: number; by: Faction; from: Faction }
   | { type: 'crew.imprisoned'; crew: number; gridId: number }
+  /** Robots: stunned by ion/EMP until `until`; shut down (no live AI core) or back online; wrecked at 0 hp; wreck salvaged. */
+  | { type: 'robot.stunned'; crew: number; until: number }
+  | { type: 'robot.inert'; crew: number }
+  /** A held hack lent the robot to `faction` (or it went back to its own side). */
+  | { type: 'robot.flipped'; crew: number; faction: Faction }
+  /** A robot bay finished assembling a robot (its home bay). */
+  | { type: 'robot.assembled'; crew: number; bay: number; gridId: number }
+  /** A robot settled into its bay to recharge / left it full. */
+  | { type: 'robot.charging'; crew: number; bay: number }
+  | { type: 'robot.charged'; crew: number; bay: number }
+  | { type: 'robot.active'; crew: number }
+  | { type: 'robot.wrecked'; crew: number }
+  | { type: 'robot.salvaged'; crew: number; gridId: number; x: number; y: number }
+  /** A robot fabricator built a robot. */
+  | { type: 'robot.fabricated'; crew: number; moduleId: number; gridId: number }
+  /** An AI core was hacked by `by`. */
+  | { type: 'core.hacked'; moduleId: number; gridId: number; by: Faction }
   /** The player lost the game; `reason` is a short code ('captured'). */
   | { type: 'game.lost'; reason: string }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */

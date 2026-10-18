@@ -191,3 +191,19 @@ export const CAPTURE_BRIDGE_RADIUS = 2;
 export const PRIZE_VALUE_PER_COST = 10;
 /** Prize value per point of wall/door integrity. */
 export const PRIZE_VALUE_PER_WALL_HP = 0.05;
+
+// --- Robots ---
+/** Ion that reaches the deck (no shield layer drained) stuns ion-vulnerable crew this many tiles (Chebyshev) from the hit. */
+export const ION_STUN_RADIUS = 1;
+/** Hp per second a mender restores on a robot at workSpeed 1, plus SKILL_STEP per repair level. */
+export const MEND_PER_SEC = 4;
+/** Seconds of work to strip a robot wreck for parts. */
+export const SALVAGE_SEC = 4;
+/** Seconds to hack an AI core at hacking level 1 (each level above is SKILL_STEP faster). */
+export const HACK_SEC = 20;
+/** Stat multiplier on moveSpeed and workSpeed of a robot whose battery is empty. */
+export const EMPTY_CHARGE_MULT = 0.3;
+/** A robot heads for its bay to be repaired below this hp fraction (when the ship has repair items). */
+export const BAY_REPAIR_BELOW = 0.5;
+/** Hold: a hacker keeps a hacked core while within this many tiles (Chebyshev) of its footprint. */
+export const HACK_HOLD_RADIUS = 1;

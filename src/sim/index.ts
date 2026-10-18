@@ -48,3 +48,8 @@ export { wielded, hitChance, handDefOf } from './fight/weapons';
 export { vehicleViews, vehiclesInSector, type VehicleView } from './vehicles/queries';
 export { boardingTile, dockPoint, bayCenter } from './vehicles/geometry';
 export { spawnVehicle, destroyVehicle, damageVehicle } from './vehicles/lifecycle';
+export * from './robots/components';
+export { hasLiveCore, isCoreLive, aiCores, isShutDown } from './robots/core';
+export { factionsHostile, isAiFaction } from './combat/factions';
+export { createCrew } from './crew/spawn';
+export { captureReady, isAiRun } from './capture/control';

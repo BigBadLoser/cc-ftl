@@ -28,6 +28,10 @@
     for (const m of mods) if (m.power > 0) api.dispatch({ type: 'module.setEnabled', id: m.id, enabled: true });
   };
 
+  const spawnBot = (role: string, faction?: 'hostile') =>
+    tile && api.dispatch({ type: 'debug.spawnCrew', gridId: tile.gridId, x: tile.x, y: tile.y, role, ...(faction ? { faction } : {}) });
+  const spawnShipyard = () => api.dispatch({ type: 'debug.spawnEnemy', template: 'ship.rogueShipyard', x: 100, y: 50 });
+
   async function repro() {
     const ok = await copyText(api.buildRepro());
     toast = ok ? 'Copied' : 'Copy failed';
@@ -53,6 +57,10 @@
     <button data-testid="dbg-revive-reactor" onclick={reviveReactor}>Restore reactor</button>
     <button data-testid="dbg-spawn-raider" onclick={() => api.spawnRaider()}>Spawn raider</button>
     <button class:on={!roofed} data-testid="dbg-roof" onclick={toggleRoof}>{roofed ? 'Unroof enemies' : 'Roof enemies'}</button>
+    <button disabled={!tile} onclick={() => spawnBot('role.robot_worker')}>Worker bot on tile</button>
+    <button disabled={!tile} onclick={() => spawnBot('role.robot_repair')}>Repair bot on tile</button>
+    <button disabled={!tile} onclick={() => spawnBot('role.robot_security', 'hostile')}>Hostile security bot on tile</button>
+    <button onclick={spawnShipyard}>Spawn rogue AI shipyard</button>
     <button onclick={repro}>Copy repro</button>
     <button onclick={() => api.throwTestError()}>Throw test error</button>
   </div>

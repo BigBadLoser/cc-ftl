@@ -7,6 +7,7 @@ import { releaseAssignment } from '../crew/helpers';
 import { AllegianceC, FighterC, PrisonerC, SurrenderedC } from '../fight/components';
 import { dropWeapon } from '../fight/equip';
 import { ModuleC } from '../modules/components';
+import { InertC } from '../robots/components';
 import type { Sim } from '../sim';
 import { PRIZE_VALUE_PER_COST, PRIZE_VALUE_PER_WALL_HP } from '../tuning';
 
@@ -36,7 +37,7 @@ function imprison(sim: Sim, crew: number, gridId: number): void {
   if (path) path.steps = [];
   if (!sim.world.has(crew, SurrenderedC)) sim.world.add(crew, SurrenderedC, { tick: sim.tick });
   sim.world.add(crew, PrisonerC, { tick: sim.tick });
-  (sim.world.get(crew, CrewC) as Crew).activity = sim.world.has(crew, DownedC) ? 'downed' : 'idle';
+  (sim.world.get(crew, CrewC) as Crew).activity = sim.world.has(crew, DownedC) ? 'downed' : sim.world.has(crew, InertC) ? 'inert' : 'idle';
   sim.events.emit({ type: 'crew.imprisoned', crew, gridId });
 }
 
@@ -59,7 +60,7 @@ export function capturePrize(sim: Sim, ship: Ship): void {
     if (pos?.gridId !== ship.gridId) continue;
     const faction = sim.world.get(id, AllegianceC)?.faction;
     if (faction === from) {
-      if (sim.world.has(id, SurrenderedC) || sim.world.has(id, DownedC)) imprison(sim, id, ship.gridId);
+      if (sim.world.has(id, SurrenderedC) || sim.world.has(id, DownedC) || sim.world.has(id, InertC)) imprison(sim, id, ship.gridId);
     } else if (faction === 'player') {
       sim.world.remove(id, DraftedC); // the boarders go back to work (salvage) instead of standing at attention
     }

@@ -10,9 +10,10 @@ import { vehicles } from './vehicles';
 import { species } from './species';
 import { raiderBoarder, raiderBoarderId, raiderShip, raiderShipId } from './ships/raider';
 import { starterShip, starterShipId } from './ships/starter';
+import { rogueShipyard, rogueShipyardId } from './ships/rogue';
 
 export const content = {
-  ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip, [raiderBoarderId]: raiderBoarder },
+  ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip, [raiderBoarderId]: raiderBoarder, [rogueShipyardId]: rogueShipyard },
   roles,
   modules,
   species,

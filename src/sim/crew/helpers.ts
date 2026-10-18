@@ -3,6 +3,7 @@ import {
   AssignmentC, CarriedC, CrewC, DeadC, DownedC, JobC, PathC, PositionC, type Position,
 } from './components';
 import { CrossingC } from '../portals/components';
+import { InertC, StunC } from '../robots/components';
 import type { Tile } from './pathfind';
 
 // Facing index per unit step: 0 = +x, counter-clockwise in grid space, 2 = +y.
@@ -54,9 +55,10 @@ export function releaseAssignment(sim: Sim, crew: number): void {
   clearPath(sim, crew);
 }
 
-/** True if the crew member cannot act: downed, dead or being carried. */
+/** True if the crew member cannot act: downed, dead, being carried, or a robot that is inert or stunned. */
 export function isIncapacitated(sim: Sim, crew: number): boolean {
-  return sim.world.has(crew, DownedC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC);
+  return sim.world.has(crew, DownedC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)
+    || sim.world.has(crew, InertC) || sim.world.has(crew, StunC);
 }
 
 /** True if any living crew member stands on, or is stepping onto, the tile. */

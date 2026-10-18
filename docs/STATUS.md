@@ -213,6 +213,40 @@ portal graph across grids, cross-grid pathing, crew grid membership, airlock mod
 - **M4 art follow-ups:** move to a fresh Sonnet agent once the current Opus engine pass lands.
 - **Opus exceptions:** the ship generator (`shipgen`) and robots (`robots`) are already approved for Opus.
 
+## M5 integration (branch `m5-integration`)
+
+- `m5-boarding` and `robots` merged onto main (mirrored templates kept, shuttle bay and airlock mirrored to the west hull).
+  Checkpoint 1 adds a shuttle panel and a placeholder shuttle sprite (`src/render/shuttlePlaceholder.ts`).
+
+### Robots (from branch `robots`)
+
+- **Robots and the rogue AI (branch `robots`, on top of `m5-boarding`):**
+  - `species.robot` is gated by species flags, never by id: `airless` (no O2, no vacuum harm), `mechanical`
+    (no regen or bed healing; crew with the new `repair` skill mend it with parts or metal), `ionStunSec`
+    (ion near the hit, EMP and the ion pistol stun it), `fearless` (never flees or surrenders), `wreck` (at 0 hp it
+    is wrecked and salvaged for parts), `coreLinked`. Variants are roles: `role.robot_worker`,
+    `role.robot_security`, `role.robot_repair`.
+  - Faction `rogue` is at war with everyone, neutral included (`combat/factions.ts`). Its robots are linked to
+    their ship's AI core and go **inert** (subdued) when the core is destroyed, unpowered, ion-disabled or hacked.
+    AI-run ships are captured by downing the cores and holding a bridge (AI cores count as bridges there).
+  - `crew.hack` (engineers have hacking 1) is a drafted job of `HACK_SEC`. Hacked cores do not flip robots to
+    the hacker yet (follow-up).
+  - `module.robotFabricator` builds robots while powered and run by a live core, up to its cap.
+    `ship.rogueShipyard` is the debug test grid (Debug panel: spawn shipyard, spawn bots on the selected tile).
+  - **v2:**
+    - A held hack lends the core's robots to the hacker's side (`HackedC.hacker`, `robot.flipped`). When the
+      hacker leaves they revert, inert.
+    - The robot holds still for a mender.
+    - `species.robot_heavy` (200 hp, armour 0.3, slower) for security bots.
+    - Battery need (`SpeciesDef.charge`, `Needs.charge`). Robots go to `module.robotBay` (1x2, placeholder bed
+      sprite) to recharge and get repaired.
+    - `module.assembleRobot` / `module.cancelAssembly` assemble a player robot from `RoleDef.assemble`. The bay
+      becomes its home (`Module.reservedBy`).
+    - The fabricator is kept separate from the bay: it is the AI spawner. The shipyard has 3 bays.
+  - No robot art yet: robots render with the human layers as a placeholder. Save v12.
+  - Derelicts: scrapper and other wrecks will be alien-infested; AI-faction derelicts are rogue AI shipyards.
+    Combat drones (a launched weapon class) come later: the hooks are the `emp` effect and the AI core's tier.
+
 ## Environment notes
 
 - Blender 4.2 LTS headless: `tools/blender/setup.sh` installs it to `/opt/tools`. Previews render

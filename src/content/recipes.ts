@@ -16,6 +16,13 @@ export const recipes = {
     outputs: [{ item: 'item.electronics', count: 1 }],
     work: 120,
   },
+  'recipe.parts': {
+    name: 'Machine spare parts',
+    station: 'module.fabricator',
+    inputs: [{ item: 'item.metal', count: 1 }, { item: 'item.electronics', count: 1 }],
+    outputs: [{ item: 'item.parts', count: 2 }],
+    work: 100,
+  },
   'recipe.polymer': {
     name: 'Press polymer',
     station: 'module.fabricator',

@@ -5,10 +5,12 @@ import type { Effect } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
-import { IGNITE_INTENSITY } from '../tuning';
+import { IGNITE_INTENSITY, ION_STUN_RADIUS } from '../tuning';
 import { CombatC, IonC } from './components';
 import { damageStruct } from './hull';
 import { shipEntityOf } from './ships';
+import { armorOf } from '../robots/core';
+import { stunCrew } from '../robots/halt';
 
 /** Where and from what an impact happens. */
 export interface Impact {
@@ -33,7 +35,14 @@ export function applyEffects(sim: Sim, impact: Impact, effects: readonly Effect[
       case 'crewDamage': crewDamage(sim, impact, e.amount, e.radius ?? 0); break;
       case 'ignite': ignite(sim, impact, e.radius ?? 0); break;
       case 'shieldDrain': drained = drainShield(sim, impact, e.layers) || drained; break;
-      case 'ionDisable': if (!(e.ifNoDrain && drained)) ionDisable(sim, impact, e.seconds); break;
+      case 'ionDisable':
+        if (!(e.ifNoDrain && drained)) ionDisable(sim, impact, e.seconds);
+        if (!drained) stunNear(sim, impact, ION_STUN_RADIUS); // ion that reaches the deck stuns robots near the hit
+        break;
+      case 'emp':
+        for (const id of modulesNear(sim, impact, e.radius)) ionModule(sim, id, e.seconds);
+        stunNear(sim, impact, e.radius);
+        break;
     }
   }
 }
@@ -89,7 +98,7 @@ function crewDamage(sim: Sim, at: Impact, amount: number, radius: number): void 
     const o = origin(pos);
     if (Math.max(Math.abs(o.x - at.x), Math.abs(o.y - at.y)) > radius) continue;
     const health = sim.world.get(id, HealthC);
-    if (health) health.hp = Math.max(0, health.hp - amount);
+    if (health) health.hp = Math.max(0, health.hp - amount * (1 - armorOf(sim, id)));
   }
 }
 
@@ -116,10 +125,24 @@ function drainShield(sim: Sim, at: Impact, layers: number): boolean {
   return true;
 }
 
+/** Ion-vulnerable crew within `radius` tiles (Chebyshev) of the impact are stunned (see stunCrew). */
+function stunNear(sim: Sim, at: Impact, radius: number): void {
+  for (const id of sim.world.query(CrewC, PositionC)) {
+    const pos = sim.world.get(id, PositionC);
+    if (!pos || pos.gridId !== at.gridId || sim.world.has(id, DeadC)) continue;
+    const o = origin(pos);
+    if (Math.max(Math.abs(o.x - at.x), Math.abs(o.y - at.y)) <= radius) stunCrew(sim, id);
+  }
+}
+
 function ionDisable(sim: Sim, at: Impact, seconds: number): void {
   const grid = sim.grids.get(at.gridId);
   const id = grid?.has('module') ? grid.get('module', at.x, at.y) : 0;
-  if (!id || !sim.world.has(id, ModuleC)) return;
+  if (id) ionModule(sim, id, seconds);
+}
+
+function ionModule(sim: Sim, id: number, seconds: number): void {
+  if (!sim.world.has(id, ModuleC)) return;
   const until = sim.tick + Math.round(seconds * TICK_HZ);
   const cur = sim.world.get(id, IonC);
   sim.world.add(id, IonC, { until: Math.max(until, cur?.until ?? 0) });

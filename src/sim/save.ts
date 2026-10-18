@@ -10,7 +10,7 @@ import { hullSum } from './combat/hull';
 import { initAtmosphere } from './ship';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 12;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -129,6 +129,19 @@ export const migrations: Record<number, (data: Record<string, unknown>) => Recor
   9: (data) => {
     const world = data['world'] as WorldData;
     for (const entry of world.stores['vehicle'] ?? []) (entry[1] as Record<string, unknown>)['cargo'] = [];
+    return data;
+  },
+  // v10 -> v11 (robots): the coreLink, inert, stun, wreck, hacked and fabricator stores are new and created on first use;
+  // faction 'rogue', activity 'inert', job kinds mend/salvage/hack and Crew.species other than human are new values.
+  // Old crew are all human with the same components, so nothing to convert.
+  10: (data) => data,
+  // v11 -> v12 (robot bays, held hacks): CoreLink gains the robot's own `faction` (from its allegiance), Hacked gains
+  // `hacker` (0: nobody holds it). Needs.charge, the robotBay store and Job.assemble are optional / created on use.
+  11: (data) => {
+    const world = data['world'] as WorldData;
+    const allegiance = new Map((world.stores['allegiance'] ?? []).map(([id, v]) => [id, (v as { faction: string }).faction]));
+    for (const [id, v] of world.stores['coreLink'] ?? []) (v as Record<string, unknown>)['faction'] = allegiance.get(id) ?? 'rogue';
+    for (const entry of world.stores['hacked'] ?? []) (entry[1] as Record<string, unknown>)['hacker'] = 0;
     return data;
   },
 };
