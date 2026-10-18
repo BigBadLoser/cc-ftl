@@ -1,8 +1,8 @@
 """Concept B, preview only: one Blender process, four samples, no atlas writes.
 
 blender -b -t 2 --factory-startup --python-exit-code 1 --python \
-  tools/blender/review/transport_preview.py -- --out artifacts/shuttle-sweepback-r6
-python3 tools/blender/review/transport_preview.py --out artifacts/shuttle-sweepback-r6 --compose
+  tools/blender/review/transport_preview.py -- --out artifacts/shuttle-sweepback-r7
+python3 tools/blender/review/transport_preview.py --out artifacts/shuttle-sweepback-r7 --compose
 """
 import argparse
 import json
@@ -84,7 +84,7 @@ def render(out,flight_only=False,validate_only=False):
         print("GEOMETRY CHECKS passed",flush=True)
         return
 
-    def sprite(sid,build,glow=False,top=False):
+    def sprite(sid,build,glow=False,top=False,side=False):
         setup()
         obs=build()
         xmin,xmax,ymin,ymax=core.extent_px(obs)
@@ -93,6 +93,11 @@ def render(out,flight_only=False,validate_only=False):
         if top:
             core._state["cam"].location=(0,0,60)
             core._state["cam"].rotation_euler=(0,0,0)
+            w,h=380,300
+        if side:
+            from mathutils import Vector
+            core._state["cam"].location=(0,60,0)
+            core._state["cam"].rotation_euler=Vector((0,-60,0)).to_track_quat("-Z","Y").to_euler()
             w,h=380,300
         rgb,a=core.render(w,h,"color")
         c,op=post.downsample(rgb,a>.5,core.SS,8,True)
@@ -120,6 +125,7 @@ def render(out,flight_only=False,validate_only=False):
         sprite("folded-r2",lambda:craft.transport_shuttle(math.pi/2,"parked"))
         sprite("plan-folded",lambda:craft.transport_shuttle(math.pi/2,"parked"),top=True)
         sprite("plan-deployed",lambda:craft.transport_shuttle(math.pi/2,"fly"),top=True)
+        sprite("profile-fly",lambda:craft.transport_shuttle(0,"fly"),True,side=True)
         sprite("ramp-closed",lambda:craft.transport_shuttle(math.pi,"parked"))
         sprite("ramp-lowered",lambda:craft.transport_shuttle(math.pi,"parked",ramp_open=1))
     (out/"preview.manifest.json").write_text(json.dumps(man,indent=2)+"\n")
@@ -215,7 +221,7 @@ def compose(out):
     C.over(cv,post.to_rgba(c,op),round(320+(3-.7)*32-an["x"]-1),round(270+(3+.7)*16-an["y"]-1))
     im=Image.fromarray(cv)
     d=ImageDraw.Draw(im)
-    d.text((18,15),"TRANSPORT / B6 — WINGS FOLDED",font=font(18),fill=(213,224,233))
+    d.text((18,15),"TRANSPORT / B7 — WINGS FOLDED",font=font(18),fill=(213,224,233))
     d.text((18,42),"Placeholder 4 x 5 pit / crew at deck level / 64 x 32 tiles",font=font(12),fill=(142,161,177))
     d.text((18,474),f"Height {design['parkedSize'][2]:.2f}  |  pit depth {design['pitDepth']:.2f}  |  top above deck {design['topAboveDeck']:.2f}",font=font(12),fill=(210,181,119))
     d.text((18,496),"Preview only. Bay geometry is a scale placeholder.",font=font(11),fill=(142,161,177))
@@ -225,7 +231,7 @@ def compose(out):
         paste(flight,f"fly-d{direction}",200+col*400,280)
     im=Image.fromarray(flight)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B6 — WINGS DEPLOYED",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B7 — WINGS DEPLOYED",font=font(18),fill=(213,224,233))
     for col,direction in enumerate((0,2,5)):
         d.text((col*400+18,46),f"D{direction} / landing legs retracted",font=font(12),fill=(142,161,177))
     d.text((18,357),"Flight span 7.20 / faction livery preview / nozzle-only glow",font=font(12),fill=(210,181,119))
@@ -238,7 +244,7 @@ def compose(out):
     C.over(comparison,post.to_rgba(c,op),round(325-an["x"]-1),round(270-an["y"]-1))
     im=Image.fromarray(comparison)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B6 — FOLDED AND DEPLOYED",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B7 — FOLDED AND DEPLOYED",font=font(18),fill=(213,224,233))
     for col,label in enumerate(("FOLDED / 1.60 circular airlock hatch","DEPLOYED / 7.20 span")):
         d.text((18+col*400,48),label,font=font(12),fill=(142,161,177))
     d.text((18,335),"Matching silhouettes / same heading / native 1x pixel scale",font=font(12),fill=(210,181,119))
@@ -249,10 +255,10 @@ def compose(out):
         paste(keys,f"fly-d{direction}",200+col*400,280,faction=False)
     im=Image.fromarray(keys)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B6 — RAW EXPORT KEYS",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B7 — RAW EXPORT KEYS",font=font(18),fill=(213,224,233))
     d.text((18,357),"Exact #ff0000 primary / #00ff00 secondary. Faction preview colours are presentation only.",font=font(12),fill=(142,161,177))
     save("transport-B-export-keys",im)
-    previous=ROOT/"artifacts/shuttle-sweepback-r5"
+    previous=ROOT/"artifacts/shuttle-sweepback-r6"
     comparison_names=[]
     if (previous/"preview.manifest.json").exists():
         old=json.loads((previous/"preview.manifest.json").read_text())
@@ -266,8 +272,8 @@ def compose(out):
         im=Image.fromarray(before_after)
         d=ImageDraw.Draw(im)
         d.text((18,14),"TRANSPORT / BEFORE AND AFTER",font=font(18),fill=(213,224,233))
-        d.text((18,47),"B5 / previous revision",font=font(12),fill=(142,161,177))
-        d.text((418,47),"B6 / shaped nose, hatch and mounts",font=font(12),fill=(142,161,177))
+        d.text((18,47),"B6 / previous revision",font=font(12),fill=(142,161,177))
+        d.text((418,47),"B7 / swept wings and rounded cockpit",font=font(12),fill=(142,161,177))
         d.text((18,317),"Same heading, pixel scale and review livery",font=font(12),fill=(210,181,119))
         save("transport-B-before-after",im)
         comparison_names.append("transport-B-before-after")
@@ -276,9 +282,9 @@ def compose(out):
         paste(plan,sid,220+col*440,200)
     im=Image.fromarray(plan)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B6 — WING PLANFORM",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B7 — WING PLANFORM",font=font(18),fill=(213,224,233))
     d.text((18,46),"FOLDED / 4 x 5 bay outline",font=font(12),fill=(142,161,177))
-    d.text((458,46),"DEPLOYED / 2.70 fore-aft wing chord",font=font(12),fill=(142,161,177))
+    d.text((458,46),"DEPLOYED / 2.75 local fore-aft wing envelope",font=font(12),fill=(142,161,177))
     px=64/math.sqrt(2)
     d.rectangle((220-2*px,200-2.5*px,220+2*px,200+2.5*px),outline=(142,161,177))
     d.text((18,335),"Outer panels fold flat over aft roof / 7.20 deployed span",font=font(12),fill=(210,181,119))
@@ -288,11 +294,21 @@ def compose(out):
         paste(ramps,sid,220+col*450,260)
     im=Image.fromarray(ramps)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B6 — ANGLED REAR LOADING RAMP",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B7 — ANGLED REAR LOADING RAMP",font=font(18),fill=(213,224,233))
     d.text((18,46),"CLOSED / upper edge aft, hinge tucked forward",font=font(12),fill=(142,161,177))
     d.text((468,46),"LOWERED / traction ribs and loading surface",font=font(12),fill=(142,161,177))
     d.text((18,395),"Mechanism preview / interior stays opaque / lowered ramp extends beyond parked envelope",font=font(11),fill=(210,181,119))
     save("transport-B-ramp",im)
+    attitude=np.full((400,920,4),BG,np.uint8)
+    paste(attitude,"plan-deployed",220,220)
+    paste(attitude,"profile-fly",680,280)
+    im=Image.fromarray(attitude)
+    d=ImageDraw.Draw(im)
+    d.text((18,14),"TRANSPORT / B7 — WING SWEEP AND ATTITUDE",font=font(18),fill=(213,224,233))
+    d.text((18,46),"TOP / swept leading edge and narrow tips",font=font(12),fill=(142,161,177))
+    d.text((478,46),"SIDE / wing plane rises aft by 6 degrees",font=font(12),fill=(142,161,177))
+    d.text((18,375),"7.20 span / about 40 degrees of sweep / narrow folding seam",font=font(12),fill=(210,181,119))
+    save("transport-B-wing-attitude",im)
     raw=np.array(Image.open(out/"folded-r0.png"))
     on=raw[...,3]>0
     colors=raw[on,:3]
@@ -302,7 +318,7 @@ def compose(out):
     for sid in man["assets"]:
         rgba=np.array(Image.open(out/(sid+".png")))
         assert set(np.unique(rgba[...,3])).issubset({0,255})
-    for name in ["transport-B-parked","transport-B-flight","transport-B-silhouettes","transport-B-export-keys","transport-B-planform","transport-B-ramp"]+comparison_names:
+    for name in ["transport-B-parked","transport-B-flight","transport-B-silhouettes","transport-B-export-keys","transport-B-planform","transport-B-ramp","transport-B-wing-attitude"]+comparison_names:
         a=np.array(Image.open(out/(name+"-1x.png")))
         b=np.array(Image.open(out/(name+"-3x.png")))
         for dy in range(3):

@@ -35,14 +35,17 @@ def validate(craft,core,setup,faction):
     loading_ramp(FlightFrame(ramp,0))
     rq=np.array(ramp.v)
     assert rq[rq[:,2]>1.95,0].max()<rq[rq[:,2]<.75,0].min()-.25
-    from lib.transport_mounts import wing_mount,MOUNT_BASE_Z,MOUNT_SEAT_Z
-    mount=core.Mesh("review_mount")
-    wing_mount(FlightFrame(mount,0),1)
-    mq=np.array(mount.v)
-    lower=mq[np.isclose(mq[:,2],MOUNT_BASE_Z)]
-    upper=mq[np.isclose(mq[:,2],MOUNT_SEAT_Z)]
-    assert upper[:,0].max()<lower[:,0].max()-.40
-    assert np.ptp(upper[:,1])<np.ptp(lower[:,1])-.20
+    from lib.transport_wings import TRANSPORT_WING_PITCH
+    wing=core.Mesh("review_deployed_wing")
+    craft.transport_wing(FlightFrame(wing,0),1,0)
+    wq=np.array(wing.v)
+    underside=wq[wing.f[7][0]]
+    actual_pitch=math.atan(np.polyfit(underside[:,0],underside[:,2],1)[0])
+    assert abs(actual_pitch-TRANSPORT_WING_PITCH)<1e-5 and actual_pitch<math.radians(-5)
+    upper=wq[wing.f[6][0]]
+    root=upper[np.abs(upper[:,1])<2]
+    tip=upper[np.abs(upper[:,1])>3.5]
+    assert tip[:,0].max()<root[:,0].max()-1.60
     glow_faces=0
     for ob in flight:
         attr=ob.data.color_attributes["Glow"]
@@ -56,12 +59,12 @@ def validate(craft,core,setup,faction):
     lowered=craft.transport_shuttle(0,"parked",ramp_open=1)
     ramp_q=np.concatenate([np.array([v.co[:] for v in ob.data.vertices]) for ob in lowered])
     assert ramp_q[:,2].min()>=-1e-4 and ramp_q[:,0].min() < -3.0
-    height=craft.TRANSPORT_HEIGHT
+    height=round(craft.TRANSPORT_HEIGHT,4)
     def area(points):
         return abs(sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(points,points[1:]+points[:1])))/2
     wing_area=2*(area(craft.TRANSPORT_WING)+area(craft.TRANSPORT_OUTER_WING))
-    assert wing_area>10.0
-    design={"variant":"B / full-chord folding-wing utility shuttle / revision 6","legacyV4Preserved":True,
+    assert wing_area>9.0
+    design={"variant":"B / full-chord folding-wing utility shuttle / revision 7","legacyV4Preserved":True,
             "parkedSize":[round(float(dims[1]),4),round(float(dims[0]),4),height],
             "pitDepth":pit,"topAboveDeck":round(height-pit,4),"roofTop":2.05,
             "clearanceToRoofTop":round(2.05-(height-pit),4),"flightSpan":craft.TRANSPORT_WING_SPAN,
@@ -72,17 +75,20 @@ def validate(craft,core,setup,faction):
             "rearSlopeDirection":"upper edge aft / lower hinge toward nose",
             "rearTopU":round(rear_u(2.03),4),"rearBottomU":round(rear_u(.70),4),
             "rearSlopeGeometryCheck":"passed",
-            "mountFrontBaseU":round(float(lower[:,0].max()),4),
-            "mountFrontSeatU":round(float(upper[:,0].max()),4),
-            "mountSeatHeight":MOUNT_SEAT_Z,"mountTaperGeometryCheck":"passed",
-            "hatchFeatures":["opaque inspection porthole","pressure equalisation valve"],
+            "supportGeometry":"restored B5 thruster bodies and wing rests",
+            "wingPitchDegrees":round(math.degrees(actual_pitch),2),
+            "wingPitchDirection":"leading edge lower / trailing edge higher",
+            "wingLeadingEdgeSweepDegrees":round(math.degrees(math.atan2(2.25,2.66)),2),
+            "wingSweepGeometryCheck":"passed",
+            "hatchFeatures":["six radial reinforcement ribs","smaller manual handwheel"],
             "loadingRamp":"bottom-hinged / closed and lowered review poses",
-            "canopyFrontU":2.43,"canopyFrontTop":1.54,"canopyFrontWidth":.64,
+            "cockpit":"rounded faceted pod / wraparound opaque windscreen",
+            "canopyFrontU":2.4215,"canopyFrontTop":1.5024,"noseMaximumU":2.445,
             "foldedWingClearanceAheadOfDoorLeaf":round(door_min-moving_u,4),
             "reviewFactionColors":faction,
             "wingFoldDegrees":180,"wingFoldPlane":"longitudinal roll / flat over aft roof",
             "outerPanelFoldDegrees":180,"wingStorage":"outer panels stacked flat over aft hull",
-            "deployedWingChord":2.7,"doorLeafMinimumU":round(door_min,4),
+            "deployedWingChord":2.75,"doorLeafMinimumU":round(door_min,4),
             "loweredRampMinimumU":round(float(ramp_q[:,0].min()),4),"loweredRampGroundCheck":"passed",
             "spriteSamples":4,"beautySamples":8,"glowingNozzleFaces":glow_faces,
             "previewOnly":True,"renderedFlights":[0,2,5],"geometryChecks":"passed"}

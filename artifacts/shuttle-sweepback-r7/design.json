@@ -1,0 +1,69 @@
+{
+  "variant": "B / full-chord folding-wing utility shuttle / revision 7",
+  "legacyV4Preserved": true,
+  "parkedSize": [
+    3.8249,
+    4.8949,
+    2.7643
+  ],
+  "pitDepth": 1.8,
+  "topAboveDeck": 0.9643,
+  "roofTop": 2.05,
+  "clearanceToRoofTop": 1.0857,
+  "flightSpan": 7.2,
+  "deployedWingPlanArea": 9.113,
+  "previousWingPlanArea": 10.3982,
+  "boardingOpeningHeight": 1.6,
+  "boardingOpeningShape": "circle",
+  "boardingOpeningDiameter": 1.6,
+  "rearFaceAngleFromVertical": 16.0,
+  "rearSlopeDirection": "upper edge aft / lower hinge toward nose",
+  "rearTopU": -2.1299,
+  "rearBottomU": -1.7487,
+  "rearSlopeGeometryCheck": "passed",
+  "supportGeometry": "restored B5 thruster bodies and wing rests",
+  "wingPitchDegrees": -6.0,
+  "wingPitchDirection": "leading edge lower / trailing edge higher",
+  "wingLeadingEdgeSweepDegrees": 40.23,
+  "wingSweepGeometryCheck": "passed",
+  "hatchFeatures": [
+    "six radial reinforcement ribs",
+    "smaller manual handwheel"
+  ],
+  "loadingRamp": "bottom-hinged / closed and lowered review poses",
+  "cockpit": "rounded faceted pod / wraparound opaque windscreen",
+  "canopyFrontU": 2.4215,
+  "canopyFrontTop": 1.5024,
+  "noseMaximumU": 2.445,
+  "foldedWingClearanceAheadOfDoorLeaf": 0.3108,
+  "reviewFactionColors": {
+    "primary": [
+      82,
+      117,
+      147
+    ],
+    "secondary": [
+      199,
+      161,
+      94
+    ]
+  },
+  "wingFoldDegrees": 180,
+  "wingFoldPlane": "longitudinal roll / flat over aft roof",
+  "outerPanelFoldDegrees": 180,
+  "wingStorage": "outer panels stacked flat over aft hull",
+  "deployedWingChord": 2.75,
+  "doorLeafMinimumU": 0.6,
+  "loweredRampMinimumU": -3.116,
+  "loweredRampGroundCheck": "passed",
+  "spriteSamples": 4,
+  "beautySamples": 8,
+  "glowingNozzleFaces": 26,
+  "previewOnly": true,
+  "renderedFlights": [
+    0,
+    2,
+    5
+  ],
+  "geometryChecks": "passed"
+}
