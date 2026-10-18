@@ -109,6 +109,14 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
 }
 
 /**
+ * Depth key of a layer's additive glow. It sits just over the layer, except for a layer that draws over the seated operator
+ * (a console's desk front): its glow stays under the operator, so the screens' light never paints over their head.
+ */
+export function glowKey(layer: ModuleLayer, key: number): number {
+  return layer.dz !== undefined && layer.dz >= SEAT_DZ ? key - layer.dz + SEAT_DZ - 0.005 : key + 0.01;
+}
+
+/**
  * Depth key of layer `i` of a module drawn on a tile whose own module key is `key`. An engine's bell sorts by the tile
  * beyond its hull row (`out`). On a roofed ship the engine's other layers (bulkhead and machine) sort under the roof plates of its footprint
  * (just before its rear-most tile's plate), so the roof hides everything inboard and only the bulkhead top and the bell
