@@ -6,7 +6,8 @@ and low (shortest: partitions are skirt-high stubs, every hull side is a ghost).
   tile.hull.full.m* (up) and tile.hull.m* (cut), each with the ochre plate variant .v1; tile.hull.ghost.m* is the far
   hull's ghost rim (low).
 - Near-hull ghosts tile.hull.o{o}.m{mask} (o: 1 = space at +y, 2 = at +x, 3 = both: the chamfered outer corner, 4 =
-  concave corner), drawn in every level, with .v1 variants on straight runs.
+  concave corner), drawn in every level, and their below-deck bellies tile.hull.belly.o{o}.m{mask} (.v1: muted ochre
+  band), which the renderer draws UNDER the floor layer so a deck in front hides them.
 - End faces where a wall butts into a ghost: tile.{fam}.{full.|low.|}end.{s|e}.
 - The belly alone for a door in the near hull (tile.hull.drop.{s|e}); doors, never cut (tile.door.{x|y}[.open])."""
 from .doors import door
@@ -31,8 +32,12 @@ for _o, _clear in OUT_MASK.items():
         if _m & _clear or (_o == 4 and _m & 6 != 6):
             continue
         SPRITES.append((f"tile.hull.o{_o}.m{_m}", (1, 1), "block", lambda m=_m, o=_o: out_block(m, o)))
+        if _o < 4:
+            SPRITES.append((f"tile.hull.belly.o{_o}.m{_m}", (1, 1), "block",
+                            lambda m=_m, o=_o: out_block(m, o, 0, "belly")))
         if _o < 3:
-            SPRITES.append((f"tile.hull.o{_o}.m{_m}.v1", (1, 1), "block", lambda m=_m, o=_o: out_block(m, o, 1)))
+            SPRITES.append((f"tile.hull.belly.o{_o}.m{_m}.v1", (1, 1), "block",
+                            lambda m=_m, o=_o: out_block(m, o, 1, "belly")))
 for _s in ("s", "e"):
     for _lv, _pre in PRE.items():
         SPRITES.append((f"tile.wall.{_pre}end.{_s}", (1, 1), "block", lambda s=_s, lv=_lv: end_face("wall", s, lv)))

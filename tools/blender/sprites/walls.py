@@ -27,9 +27,9 @@ ROOF_T = 0.2       # roof slab thickness
 SKIRT = 0.30       # skirt rise as a fraction of HF (Space Haven: about 0.3 of the wall), the same in every view level
 SLOPE = math.tan(math.radians(55))   # skirt rise / run (Space Haven: 55 degrees)
 CUT = 0.2          # cutaway: the wall face kept above the skirt
-T = TW = 12 / 32   # partition thickness (Space Haven: about 0.17 of the wall height, like ours)
-ZG = 0.1           # ghost hull: rim top, just above the deck
-DROP = 1.5         # ghost hull: the below-deck belly's depth on the camera-facing sides
+T = TW = 10 / 32   # partition thickness (Space Haven: cap 19-22 px on a 64 px tile, minus a 2 px outline: ~0.30)
+ZG = 0.22          # ghost hull: rim top (a low raised rim, as in Space Haven's shortest view)
+DROP = 1.5         # ghost hull: the below-deck belly's depth on the camera-facing sides (13.webp: ~1.2 tiles)
 CURVE = 0.35       # ... of which the last part curves back under the ship
 BEV = 3 / 32       # ghost rim: narrow lit chamfer on its outer edge
 H = 0.5            # (compat) legacy cut height, unused by the wall pieces
@@ -61,7 +61,7 @@ def hull_thick():
 def wall_back():
     """A partition is set back from the tile's far edge by this much (a hidden back skirt), so its front skirt toe
     reaches the near tile edge as in Space Haven, at the measured slope and thickness."""
-    return max(0.0, 1.0 - TW - skirt_run())
+    return max(0.0, math.floor((1.0 - TW - skirt_run()) * GN) / GN)      # snapped to the cell grid
 
 
 def wall_top(fam, level):
@@ -115,6 +115,7 @@ class Spec:
     open_y = open_x = False      # tile boundary +y / +x edges get a vertical face where the body reaches them
     drop_y = drop_x = False      # ... reaching down to -drop_z (the hull ghost's belly) instead of the floor
     drop_z = DROP
+    part = None                  # None = whole piece; "rim" = above the deck only; "belly" = the dropped part only
     diag = False                 # 'se' half cells get a camera-facing 45 degree face (reaching -DROP)
 
     def cover(self, i, j):
@@ -135,6 +136,9 @@ class Spec:
 
     def face_lo(self, x, y):
         return None
+
+    def drop_at(self, x, y):
+        return self.drop_z
 
     def belly(self, m, face, a, b):
         """Extra geometry hung under a dropped face (the ghost's curved belly)."""
@@ -187,6 +191,8 @@ def emit(m, sp):
             x1, y1 = x0 + 1 / GN, y0 + 1 / GN
             P = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
             cv = cov[i][j]
+            if sp.part == "belly":
+                continue
             if cv:
                 ct = sp.cell_top(i, j)
                 Pz = [(x, y, sp.topz(x, y) if ct is None else ct) for x, y in P]
@@ -208,7 +214,7 @@ def emit(m, sp):
             for face, a, b, edge, nb, opp, last, op, dr in (
                     ("y", (x0, y1), (x1, y1), "y1", (i, j + 1), "y0", j == GN - 1, sp.open_y, sp.drop_y),
                     ("x", (x1, y1), (x1, y0), "x1", (i + 1, j), "x0", i == GN - 1, sp.open_x, sp.drop_x)):
-                if edge not in EDGES[cv] or (last and not op):
+                if edge not in EDGES[cv] or (last and not op) or (sp.part == "belly" and not (last and dr)):
                     continue
                 ct = sp.cell_top(i, j)
                 if has(*nb, opp):
@@ -218,19 +224,25 @@ def emit(m, sp):
                     _face(m, sp, face, a, b, (cn, cn), (ct, ct))     # step down to a lower neighbour
                     continue
                 if last and dr:
-                    za = (-sp.drop_z, -sp.drop_z)
+                    zd = 0.0 if sp.part == "rim" else -sp.drop_at((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+                    za = (zd, zd)
                 else:
                     za = (sp.skirtz(*a), sp.skirtz(*b))
                 lo = sp.face_lo(*a), sp.face_lo(*b)
                 za = tuple(z if q is None else max(z, q) for z, q in zip(za, lo))
                 zt = (sp.topz(*a), sp.topz(*b)) if ct is None else (ct, ct)
+                if sp.part == "belly":
+                    zt = (0.0, 0.0)
                 _face(m, sp, face, a, b, za, zt)
-                if last and dr:
+                if last and dr and sp.part != "rim":
                     sp.belly(m, face, a, b)
             if cv == "se" and sp.diag:
                 a, b = (x0, y1), (x1, y0)
-                _face(m, sp, "d", a, b, (-sp.drop_z, -sp.drop_z), (sp.topz(*a), sp.topz(*b)))
-                sp.belly(m, "d", a, b)
+                zd = 0.0 if sp.part == "rim" else -sp.drop_at((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+                zt = (0.0, 0.0) if sp.part == "belly" else (sp.topz(*a), sp.topz(*b))
+                _face(m, sp, "d", a, b, (zd, zd), zt)
+                if sp.part != "rim":
+                    sp.belly(m, "d", a, b)
 
 
 # ---- far walls: interior partitions and the far hull -------------------------------------------------------------
@@ -359,7 +371,7 @@ def end_face(fam, side, level="up"):
             if body:
                 col = R["H"] if z1 > top - 0.05 else (R["L"] if u0 <= lo + 1e-9 else R["M"])
             else:
-                col = R["L"] if k == rows - 1 else R["D"]
+                col = R["H"] if k == rows - 1 else R["M"]      # the skirt's cut section, in the skirt's own tone
             if side == "s":
                 a, b = (-0.5 + u0, 0.5), (-0.5 + u1, 0.5)
             else:

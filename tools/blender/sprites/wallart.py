@@ -238,70 +238,76 @@ def hull_skirt(face, s, d, run, variant):
 
 # ---- near (outer) hull ------------------------------------------------------------------------------------------
 
-def _belly_ramp(face, s, variant):
-    """(lit, body, dark, seam) for the ghost belly: dark blue-teal armour; the ochre variant is a muted ochre band."""
-    if ochre_at(s, variant):
-        R = ramp("ochre", face)
-        return R["M"], R["D"], R["K"], R["K"]
-    R = ramp("blue", face)
-    return R["L"], R["D"], R["K"], R["K"]
+def _belly_ramp(face):
+    """(rail, edge, body, seam) for the ghost belly: dark, low-contrast blue-teal armour (Space Haven's 13.webp)."""
+    if face == "x":
+        return "gBX3", "gBX2", "gBX1", "wK"
+    return "gB3", "gB2", "gB1", "wK"
 
 
 def hull_out_face(face, s, f, variant):
-    """Below-deck belly face of a hull ghost. f = 0 just under the rim down to 1 where the belly starts curving under.
-    Space Haven's ghost belly: dark blue-teal panelled armour with rails and vents."""
+    """Below-deck belly face of a hull ghost. f = 0 just under the rim down to 1 where the belly turns under. Rails,
+    uneven panels (half / quarter tiles), vent groups and small hatches, all close in value; the ochre variant is only a
+    thin muted band along the upper rail."""
     if face == "d":
         s = (s * 2) % 1.0                                # the corner face is two tiles wide
-    lit, body, dark, seam = _belly_ramp(face, s, variant)
+    rail, edge, body, seam = _belly_ramp(face)
     c = cell(s)
     p = c % 16
-    e = _blk_edge(s, variant)
-    if f < 0.035:
-        return lit                                       # rail just under the rim
-    if f < 0.07:
-        return dark
-    if 0.12 <= f < 0.145:
-        return lit                                       # upper rail
-    if f < 0.17:
-        return body
-    if 0.8 <= f < 0.83:
+    if f < 0.03:
+        return rail                                      # lip under the rim
+    if f < 0.06:
         return seam
-    if 0.83 <= f < 0.86:
-        return lit                                       # lower rail
-    if f >= 0.86:
-        return body if p else seam
-    if e:
-        return lit if e < 0 else seam
-    if p == 0:
-        return seam                                      # half-tile panel seams
-    if p == 1 or f < 0.195:
-        return lit                                       # lit panel edges
-    if p == 15:
-        return dark
-    if (c // 16) % 2 == 0 and 0.3 <= f < 0.55 and 4 <= p <= 11 and p % 2 == 1:
-        return seam                                      # vent group
-    if (c // 16) % 2 == 1 and 0.32 <= f < 0.62 and 5 <= p <= 10:
-        return lit if (p == 5 or f < 0.345) else (dark if p == 10 or f > 0.595 else body)   # inset hatch
+    if 0.1 <= f < 0.13:
+        return ("gO" if face != "x" else "gOX") if ochre_at(s, variant) else rail   # upper rail (ochre band)
+    if f < 0.16:
+        return body
+    if 0.78 <= f < 0.8:
+        return seam
+    if 0.8 <= f < 0.83:
+        return edge                                      # lower rail
+    if f >= 0.83:
+        return body if c % 8 else seam
+    if p == 0 or (c // 16 == 1 and p == 8 and f > 0.45):
+        return seam                                      # uneven panel seams
+    if p == 1 or f < 0.18:
+        return edge
+    if c // 8 in (0, 3) and 0.3 <= f < 0.5 and c % 8 in (3, 5):
+        return seam                                      # vent pairs
+    if c // 8 == 1 and 0.55 <= f < 0.7 and 2 <= c % 8 <= 6:
+        return edge if (c % 8 == 2 or f < 0.57) else body   # small hatch
     return body
 
 
 def hull_belly(face, s, k, steps, variant):
-    """The belly's curve back under the ship, segment k of steps (darker as it turns away)."""
-    lit, body, dark, seam = _belly_ramp(face, s, variant)
-    if cell((s * 2) % 1.0 if face == "d" else s) % 16 == 0:
-        return seam
-    return (body, dark, seam, "wK")[min(3, k * 4 // steps)]
+    """The belly turning under the ship, segment k of steps: a lit chamfer, then darker as it turns away."""
+    rail, edge, body, seam = _belly_ramp(face)
+    if k == 0:
+        return rail
+    return (edge, body, seam)[min(2, k - 1)]
 
 
 def ghost_top(kind, s, w):
-    """Top of a hull ghost rim: near-black like a cut, with a fine toothed lit line on the outer crest and a thin line on
-    the other unconnected edges. kind: crest / bevel / flat / lip / side."""
+    """Top of a hull ghost (13.webp). Front ghost: a flat near-black rim with a bright teal toothed crest on its outer
+    edge and dim teal lines on its inner edges. Rear ghost: a neutral dark-grey band with a toothed outer edge and a lit
+    crest, then a short black slope down to the floor. kind: crest / bevel / flat / lip / side / rflat / rcrest /
+    redge / rslope."""
     if kind == "crest":
-        return "bL" if cell(s) % 2 == 0 else "bM"
-    if kind == "bevel":
-        return "bM"
-    if kind == "lip":
-        return "bL"
+        return "gC" if cell(s) % 3 else "gL"            # toothed: two lit cells, one dim
+    if kind in ("bevel", "lip"):
+        return "gL"
     if kind == "side":
-        return "bD"
-    return "bM" if w < C else "wK"
+        return "gB2"
+    if kind == "rflat":
+        return "gG"
+    if kind == "rcrest":
+        return "gGL"
+    if kind == "redge":
+        return "gGL" if cell(s) % 3 else "gG"
+    if kind == "rslope":
+        return "gK"
+    if w < C:
+        return "gL"                                      # inner lip line
+    if w < 2 * C:
+        return "gK"
+    return "gR"

@@ -1,7 +1,7 @@
 """Door sprites: a framed portal set INTO the vertical wall face (grid frame, origin = tile centre at floor level).
 
 The interior wall piece (walls.Strip, mask 10 for a door along x, 5 along y) with its skirt cut out across the opening
-and its face starting above the frame (a thin lintel). The dusty-rose frame stands proud of the wall face: wide jambs and
+and its face starting above the frame (a thin lintel). The dusty-rose frame sits within the wall thickness, flush with its face: wide jambs and
 a header with rounded upper corners (Space Haven's door is an arch that rises nearly to the wall top), a lit rim on the
 screen-left and top edges and grooves; a lamp strip sits on the header. Under the jambs the skirt is the frame's flared
 rose foot. The leaf is recessed (the reveal shows the depth) in a round-topped opening, with a window, a red status
@@ -19,7 +19,7 @@ DXF = 0.50                  # frame half-width
 DXO = 0.27                  # opening half-width (Space Haven: about 0.55 of the frame)
 RF = 0.26                   # frame top corner radius
 RO = 0.12                   # opening top corner radius
-PF = 4 / 32                 # frame stands this far proud of the wall face
+PF = 0.0                    # the frame sits within the wall's thickness, flush with its face (as in Space Haven)
 C = 1 / GN
 
 
@@ -58,6 +58,7 @@ class DoorWall(Strip):
         super().__init__(10 if axis == "x" else 5, "wall", "up")
         self.axis = axis
         self.zf = door_heights()[1]
+        self.open_x, self.open_y = axis == "x", axis == "y"   # the lintel's +u end (seen when the next wall is cut)
 
     def _u(self, x, y):
         return x if self.axis == "x" else y
@@ -158,7 +159,8 @@ def door(axis="x", is_open=False):
     quad([(-lw, VW, zl), (lw, VW, zl), (lw, VW + 2 * C, zl), (-lw, VW + 2 * C, zl)], "lampY")
     quad([(-lw, VW + 2 * C, zf), (lw, VW + 2 * C, zf), (lw, VW + 2 * C, zl), (-lw, VW + 2 * C, zl)], "lampY")
     zt = frame_top(DXF - 1e-6, zf)
-    quad([(DXF, VB, 0), (DXF, VF, 0), (DXF, VF, zt), (DXF, VB, zt)], Rs["D"])
+    quad([(DXF, VB, 0), (DXF, VF - C, 0), (DXF, VF - C, zt), (DXF, VB, zt)], Rs["D"])   # +u side, wall-deep
+    quad([(DXF, VF - C, 0), (DXF, VF, 0), (DXF, VF, zt), (DXF, VF - C, zt)], Rs["L"])
     m.poly([G(-DXO, VW, 0), G(-DXO, VW + skirt_run(), 0), G(-DXO, VW, zs)],
            Rs["D"])                                                  # the foot's cut edge at the opening
     # reveal (the jamb's inner side at u = -DXO faces +u)
