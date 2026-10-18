@@ -147,13 +147,11 @@ in 4 min unmanned). User approved: repair rate 12 â†’ 3/s, starter ion cannon â†
 - **Art:**
   - Pixel art pre-rendered from Blender. Models use clean shapes and smooth shading quantised to
     flat bands, with no faceting and no noise.
-  - Third-party game sprites and screenshots the user shares are visual reference only. **Never copy
-    or commit them.** They live only in a session scratchpad (`refs/`, with a README) and are lost when
-    the container goes, so ask the user to re-attach them in a new session. The useful set so far:
-    a Space Haven whole-ship shot in the shortest cutaway view (ghost hull rim, short interior walls,
-    full-height doors, below-deck hull belly); a Space Haven walls/doors/colour-blocked hull shot; a
-    Space Haven engine; Space Haven nav/shields/weapons consoles; a Saturn V F-1 photo; and the user's
-    Sol test render (the quality bar).
+  - Third-party screenshots the user shares are visual reference only: never trace them, ship
+    them, or copy them into `public/` or the pipeline. With the user's permission they are kept in
+    `docs/refs/` (see its README): a Space Haven whole-ship shot in the shortest cutaway view, a
+    Space Haven walls/doors/hull shot, a Space Haven engine, Space Haven consoles, a Saturn V F-1
+    photo, and the user's Sol test renders (the quality bar).
 - **Walls:**
   - Interior walls and far exterior walls use the cut-away look in Auto mode.
   - Exterior walls nearest the camera are ghosts: an angled dark footing plus short glass.
