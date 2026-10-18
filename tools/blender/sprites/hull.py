@@ -26,8 +26,10 @@ RUNG = 0.16               # rear ghost: its short dark slope toward the room (13
 
 
 class Out(Spec):
-    def __init__(self, mask, o, variant=0, part=None):
-        self.mask, self.o, self.variant, self.part = mask, o, variant if o in (1, 2) else 0, part
+    def __init__(self, mask, o, variant=0, part=None, room=0):
+        """room (rear ghost only): unconnected N (1) / W (8) sides that face a room instead of space."""
+        self.mask, self.o, self.variant, self.part, self.room = mask, o, variant if o in (1, 2) else 0, part, room
+        self._lines = None
         self.drop_y = bool(o & 1) and o != 4
         self.drop_x = bool(o & 2) and o != 4
         self.open_y = self.drop_y or not mask & 4
@@ -58,12 +60,19 @@ class Out(Spec):
         return 0.5 - y if self.o & 1 else 0.5 - x
 
     def _inner(self, x, y):
-        """Rear ghost: distance to the room-side (unconnected S / E) edges, where its slope runs down to the floor."""
-        d = [9.0]
-        if not self.mask & 4:
+        """Rear ghost: L-inf distance to the room side (unconnected S / E edges, room-facing N / W edges, and the
+        diagonal room cell of a concave corner), where its slope runs down to the floor."""
+        m, d = self.mask, [9.0]
+        if not m & 4:
             d.append(0.5 - y)
-        if not self.mask & 2:
+        if not m & 2:
             d.append(0.5 - x)
+        if self.room & 1:
+            d.append(y + 0.5)
+        if self.room & 8:
+            d.append(x + 0.5)
+        if m & 6 == 6:
+            d.append(max(0.5 - x, 0.5 - y))
         return min(d)
 
     def topz(self, x, y):
@@ -91,21 +100,45 @@ class Out(Spec):
             d.append(-(x + y) / math.sqrt(2))
         return min(d)
 
+    def _kind(self, i, j):
+        """Orientation of a top cell from its corner heights: flat, y, x or h (mixed)."""
+        x0, y0 = i / GN - 0.5, j / GN - 0.5
+        z = [self.topz(x0, y0), self.topz(x0 + C, y0), self.topz(x0 + C, y0 + C), self.topz(x0, y0 + C)]
+        gx, gy = (z[1] + z[2] - z[0] - z[3]) / 2, (z[2] + z[3] - z[0] - z[1]) / 2
+        e = 1e-6
+        if abs(gx) < e and abs(gy) < e:
+            return "flat"
+        return "y" if abs(gx) < e else ("x" if abs(gy) < e else "h")
+
+    def _line(self, i, j):
+        """Ghost edge lines: 2 = crest (flat meets slope), 1 = other creases (toe, mitres) and unconnected tile edges,
+        0 = no line. One-sided, so every edge is a single 1 px line."""
+        if self._lines is None:
+            K = [[self._kind(a, b) if self.cover(a, b) else None for b in range(GN)] for a in range(GN)]
+            L = [[0] * GN for _ in range(GN)]
+            for a in range(GN):
+                for b in range(GN):
+                    k = K[a][b]
+                    if k is None:
+                        continue
+                    x, y = (a + 0.5) / GN - 0.5, (b + 0.5) / GN - 0.5
+                    v = 0
+                    for da, db in ((1, 0), (0, 1)):
+                        n = K[a + da][b + db] if a + da < GN and b + db < GN else k
+                        if n is not None and n != k:
+                            v = max(v, 2 if "flat" in (k, n) else 1)
+                    if self._edge(x, y) < C and not (self.o and self.dist(x, y) < BEV):
+                        v = max(v, 1)                                  # outline (the outer side has the crest)
+                    if self.o and self.dist(x, y) - BEV < C and k == "flat":
+                        v = 2                                          # the front rim's outer crest
+                    if not self.o and k != "flat" and self._inner(x, y) < C:
+                        v = max(v, 1)                                  # the rear slope's toe
+                    L[a][b] = v
+            self._lines = L
+        return self._lines[i][j]
+
     def col_top(self, i, j, kind, x, y):
-        s = self._s(x, y)
-        if not self.o:
-            if kind != "flat":
-                return A.ghost_top("rslope", s, 0.0)
-            if self._inner(x, y) < RUNG + C:
-                return A.ghost_top("rcrest", s, 0.0)               # lit crest on top of the slope
-            if (not self.mask & 1 and y + 0.5 < C) or (not self.mask & 8 and x + 0.5 < C):
-                return A.ghost_top("redge", x + 0.5 if not self.mask & 1 else 0.5 - y, 0.0)   # toothed outer edge
-            return A.ghost_top("rflat", s, 0.0)
-        if kind != "flat":
-            return A.ghost_top("bevel", s, 0.0)
-        if self.o and self.dist(x, y) - BEV < C:
-            return A.ghost_top("crest", s, 0.0)
-        return A.ghost_top("flat", s, self._edge(x, y))
+        return A.ghost_line(self._line(i, j))
 
     def _fs(self, face, x, y):
         if face == "d":
@@ -120,8 +153,8 @@ class Out(Spec):
 
     def col_face(self, face, x, y, z):
         s = self._fs(face, x, y)
-        if z > -1e-6 and not self.o:
-            return A.ghost_top("lip" if z > ZG - 0.04 else "side", s, 0.0)
+        if z > -1e-6:
+            return A.ghost_line(0)                                     # the rim's faces are see-through
         f = (self.foot - z) / (self.foot + self.drop_at(x, y))
         return A.hull_out_face(face, s, min(max(f, 0.0), 1.0), self.variant)
 
@@ -153,13 +186,22 @@ def _belly(m, face, a, b, depth, col):
         m.poly([core.G(*pa1, z1), core.G(*pb1, z1), core.G(*pb0, z0), core.G(*pa0, z0)], col(k, s))
 
 
-def out_block(mask, o, variant=0, part="rim"):
-    """A ghost piece: part "rim" (above the deck; drawn in the sorted layer) or "belly" (below the deck; drawn UNDER the
+def _dummy(name):
+    m = core.Mesh(name, flat=True)
+    m.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")      # sub-pixel: renders nothing
+    return m.build()
+
+
+def out_block(mask, o, variant=0, part="rim", room=0):
+    """A ghost piece. part "rim": the see-through edge lines above the deck (a 'ghost' sprite: env_build renders its
+    brightness as alpha; drawn in the sorted layer). part "belly": the solid armour below the deck (drawn UNDER the
     floor layer, so a deck in front of it hides it)."""
-    m = core.Mesh(f"hull_ghost{o}_{mask}_{variant}_{part}", flat=True)
-    emit(m, Out(mask, o, variant, part))
+    m = core.Mesh(f"hull_ghost{o}_{mask}_{variant}_{part}_{room}", flat=True)
+    emit(m, Out(mask, o, variant, part, room))
     if not m.f:                                       # a corner piece with no camera-facing outer edge
-        m.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")   # sub-pixel: renders nothing
+        m.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")
+    if part == "rim":
+        return [_dummy(f"ghost_plate_{o}_{mask}_{room}"), m.build()]
     return [m.build()]
 
 
