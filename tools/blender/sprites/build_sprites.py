@@ -46,10 +46,10 @@ def main():
     if what in ("crew", "all"):
         from sprites import crew_pack, human_render as hr
         arm, items = hr.build_items()
-        # CREW_QUICK=1: only the frames crew_check.py shows (idle 0, walk 2, work 3 in SE, S, SW, NW) for fast iteration
+        # CREW_QUICK=1: only the frames crew_check.py shows (idle 0, walk 2, work 3, sit_idle/sit_work 0 in SE, S, SW, NW) for fast iteration
         quick = os.environ.get("CREW_QUICK")
         res, cols = hr.render_all(arm, items, dirs=(0, 1, 2, 4) if quick else range(8),
-                                  frames={("idle", 0), ("walk", 2), ("work", 3)} if quick else None)
+                                  frames={("idle", 0), ("walk", 2), ("work", 3), ("sit_idle", 0), ("sit_work", 0)} if quick else None)
         save_part("crew", *crew_pack.pack(items, res, cols, out))
     if what in ("env", "all"):
         from sprites import env_build

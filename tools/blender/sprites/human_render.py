@@ -6,6 +6,11 @@ LOWER slot are in the scene as Cycles holdout objects, so L is cut away wherever
 camera. Higher layers never need cutting by lower ones' absence: they are drawn over them anyway. (Arm slots use the
 union of all arm variants as holdout so a chunky cyber arm still occludes a rig that was cut by a flesh arm.)
 
+Sit clips (sit_idle, sit_work): the console chair is in the scene as a holdout (chair_holdout), so every layer is already
+cut where the backrest, seat or armrests are nearer the camera, and those pixels carry alpha HIDDEN_A so the runtime
+filter draws neither outline nor rim along the cut; the gear.back slot is left empty while seated. The
+runtime draws the console sprite (chair included) first, the seated crew over it, then the console's front overlay.
+
 No per-layer outline: the runtime draws ONE outline around the stacked layers (crewView outline filter).
 
 Finishing (this module, after the raw render of a layer): the skin highlight on the head (body layer), brighter cyan on
@@ -17,13 +22,14 @@ from . import core, post
 from . import human_base as hb
 from .human_base import SCALE, build_skinned, import_base
 from . import human_gear as hg
+from . import human_sit as hs
 
 SS = core.SS
 ORDER = {"body": 0, "eyes": 10, "legs": 20, "torso": 30, "gear.belt": 40, "arm.R": 50, "arm.L": 51, "hair": 60,
          "implant.temple": 65, "gear.head": 70, "gear.back": 80}
 UNION_SLOTS = ("arm.L", "arm.R")
 # (clip, frames, fps, loop)
-CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("sleep", 3, 2, True)]
+CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("sleep", 3, 2, True), ("sit_idle", 4, 3, True), ("sit_work", 6, 8, True)]
 # sim facing d: 0 = grid +x, CCW in grid space, 2 = grid +y. Character faces Blender -Y at azimuth 0, and Blender
 # y = -grid y, so the azimuth about +Z that faces grid angle phi=45*d deg is theta = 90 - phi.
 THETA = [90 - 45 * d for d in range(8)]
@@ -33,6 +39,9 @@ TORSO_W = 1.1
 SAT = 1.3                       # clothing saturation
 CLOTHES = (("torso",), ("legs",), ("gear.belt",))
 SLEEP_PHASE = (0.0, 1.0, 0.0)   # breathing: chest scale amount per sleep frame, then back
+HIDDEN_A = 12                   # alpha of a chair-occluded pixel (sit clips): the crew filter draws it as nothing, no outline/rim
+SIT_HIDE = ("gear.back",)       # slots left empty in the sit clips (the engineer rig would sit inside the backrest)
+_CHAIR = []
 
 
 def build_items():
@@ -93,6 +102,10 @@ def set_state(items, show, hold):
 def clip_frames():
     """Yield (clip, index, action name, frame number)."""
     for clip, n, _, _ in CLIPS:
+        if clip.startswith("sit"):      # procedural (human_sit): fingers come from idle frame 0
+            for i in range(n):
+                yield clip, i, "idle_Armature", 0
+            continue
         act = bpy.data.actions[f"{clip}_Armature"]
         lo, hi = act.frame_range
         for i in range(n):
@@ -142,13 +155,15 @@ def centre_on_origin(arm):
 def pose_frame(arm, clip, i, name, f):
     sc = bpy.context.scene
     arm.animation_data.action = bpy.data.actions[name]
+    arm.pose.bones["root"].location = (0, 0, 0)
     sc.frame_set(int(f), subframe=f - int(f))
     pb = arm.pose.bones
     for b in pb:
         b.scale = (1, 1, 1)
-    pb["spine_03"].scale = (TORSO_W, 1, 1)
-    pb["spine_02"].scale = (1 + (TORSO_W - 1) / 2, 1, 1)
     arm.location = (0, 0, 0)
+    br = hs.apply(arm, i, SCALE, clip) if clip.startswith("sit") else 0.0
+    pb["spine_03"].scale = (TORSO_W, 1 + 0.03 * br, 1 + 0.03 * br)
+    pb["spine_02"].scale = (1 + (TORSO_W - 1) / 2, 1 + 0.02 * br, 1 + 0.02 * br)
     if clip == "sleep":
         for b in pb:
             if b.name in _IDLE_ARMS:
@@ -214,23 +229,54 @@ def finish(item, rgba, head):
     return rgba
 
 
-def render_item(item, items, head, with_glow=True):
-    """-> (rgba uint8 (H+2,W+2,4), glow uint8 or None) for the current pose and arm azimuth."""
-    hold = hold_set(item, items)
-    set_state(items, [item], hold)
-    rgb, a = core.render(W, H, "color", ORIGIN)
+def _opaque(rgb, a):
     post.MERGE_BANDS = True
     try:
-        c, op = post.downsample(rgb, a > 0.5, SS, 6, True)
+        return post.downsample(rgb, a > 0.5, SS, 6, True)
     finally:
         post.MERGE_BANDS = False
+
+
+def render_item(item, items, head, with_glow=True, chair=None):
+    """-> (rgba uint8 (H+2,W+2,4), glow uint8 or None) for the current pose and arm azimuth. With `chair` (the sit clips'
+    holdout, visible): pixels the chair hides get alpha HIDDEN_A, so the runtime filter puts no outline or rim there."""
+    hold = hold_set(item, items)
+    set_state(items, [item], hold)
+    hidden = None
+    if chair is not None:
+        chair.hide_render = True
+        _, free = _opaque(*core.render(W, H, "color", ORIGIN))
+        chair.hide_render = False
+    rgb, a = core.render(W, H, "color", ORIGIN)
+    c, op = _opaque(rgb, a)
+    if chair is not None:
+        hidden = np.pad(free & ~op, 1)
     c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
     g = None
     if item.glow and with_glow:
         set_state(items, [item], hold)
         grgb, _ = core.render(W, H, "glow", ORIGIN)
         g = np.pad(post.glow_down(grgb, SS), ((1, 1), (1, 1), (0, 0)))
-    return finish(item, post.to_rgba(c, op), head), g
+    out = finish(item, post.to_rgba(c, op), head)
+    if hidden is not None:
+        out[hidden] = (0, 0, 0, HIDDEN_A)
+    return out, g
+
+
+def chair_holdout():
+    """The console swivel chair (console_proto.chair) at the sprite origin, facing the azimuth-0 way (grid +y, Frame rot 2).
+    In the sit clips it is a Cycles holdout turned with the character, so the backrest, seat and armrests cut the crew
+    exactly where they are nearer the camera (those pixels are kept as HIDDEN_A markers). The console sprite draws the chair
+    itself, beneath the crew."""
+    if not _CHAIR:
+        from . import console_proto as C
+        from .cmbkit import Frame
+        m = core.Mesh("sit_chair_holdout")
+        C.chair(Frame(m, 2, centre=(0.0, 0.0)), 0.0, 0.0, False)
+        ob = m.build()
+        ob.is_holdout, ob.hide_render = True, True
+        _CHAIR.append(ob)
+    return _CHAIR[0]
 
 
 def render_all(arm, items, dirs=range(8), clips=None, only=None, frames=None, log=print):
@@ -248,7 +294,13 @@ def render_all(arm, items, dirs=range(8), clips=None, only=None, frames=None, lo
             pose_frame(arm, clip, i, name, f)
             head = head_px(arm)
             col = cols.index((clip, i))
+            sit = clip.startswith("sit")
+            chair = chair_holdout()
+            chair.hide_render, chair.rotation_euler = not sit, arm.rotation_euler
             for k in todo:
-                res[k][(d, col)] = render_item(items[k], items, head)
+                if sit and items[k].slot in SIT_HIDE:
+                    res[k][(d, col)] = (np.zeros((H + 2, W + 2, 4), np.uint8), None)
+                    continue
+                res[k][(d, col)] = render_item(items[k], items, head, chair=chair if sit else None)
         log(f"dir {d} done")
     return res, cols
