@@ -42,6 +42,11 @@ def _stance(rig, a):
 def _biped(rig, clip, i):
     a = 0.8 if rig.name == "heavy" else 1.0
     r = rig.rot
+
+    def util(pitch, el):                     # the worker's crane arm (util / util_el); other chassis have none
+        if "util" in rig.joints:
+            r("util", pitch=pitch)
+            r("util_el", pitch=el)
     if clip == "idle":
         t = TAU * i / 4
         _stance(rig, a)
@@ -50,6 +55,7 @@ def _biped(rig, clip, i):
             r(f"arm_{s}", pitch=-5 + 2 * math.sin(t) * sg, roll=6 * sg)
             r(f"elbow_{s}", pitch=-16)
         rig.shift("torso", dz=0.006 * math.sin(t))
+        util(2 * math.sin(t), 0)
     elif clip == "walk":
         t = TAU * i / 8
         s = 22 * a * math.sin(t)
@@ -59,10 +65,11 @@ def _biped(rig, clip, i):
             r(f"hip_{side}", pitch=hip)
             r(f"knee_{side}", pitch=knee)
             r(f"ankle_{side}", pitch=-(hip + knee) + 4)
-            r(f"arm_{side}", pitch=18 * a * math.sin(t) * sg, roll=4 * sg)
-            r(f"elbow_{side}", pitch=-16)
+            r(f"arm_{side}", pitch=-4 + 18 * a * math.sin(t) * sg, roll=6 * sg)
+            r(f"elbow_{side}", pitch=-18)
         r("body", pitch=4)
         r("torso", yaw=5 * a * math.sin(t))
+        util(3 * math.sin(2 * t), -4 * math.sin(2 * t))
     elif clip == "work":
         t = TAU * i / 6
         r("body", pitch=6)
@@ -74,6 +81,7 @@ def _biped(rig, clip, i):
             r(f"hip_{side}", pitch=-10)
             r(f"knee_{side}", pitch=18)
             r(f"ankle_{side}", pitch=-8)
+        util(20 + 6 * math.sin(t), -48 + 14 * math.sin(t))         # reaches up and forward over the head, working
     elif clip == "charge":
         r("torso", pitch=12)
         r("head", pitch=30)
@@ -83,6 +91,7 @@ def _biped(rig, clip, i):
             r(f"hip_{side}", pitch=-16)
             r(f"knee_{side}", pitch=30)
             r(f"ankle_{side}", pitch=-14)
+        util(-6, 8)
     elif clip == "wreck":
         r("body", pitch=-82, roll=8)
         r("hip_R", pitch=12, roll=6)
@@ -92,6 +101,7 @@ def _biped(rig, clip, i):
         r("arm_R", pitch=-20, roll=55)
         r("arm_L", pitch=10, roll=-35)
         r("elbow_L", pitch=-50)
+        util(-35, 40)
         rig.detach("head", (-0.55, 0.15, 0.0), (80, 0, 35))
         rig.ground_attached()
         rig.drop("head")
@@ -112,18 +122,18 @@ def _drone(rig, clip, i):
         rig.shift("body", dz=0.015 * math.sin(2 * t))
         r("body", pitch=12, roll=2 * math.sin(t))
         for side, sg in (("R", 1), ("L", -1)):
-            r(f"arm_{side}", pitch=22 + 6 * math.sin(t) * sg)
-            r(f"elbow_{side}", pitch=30)
+            r(f"arm_{side}", pitch=16 + 6 * math.sin(t) * sg)
+            r(f"elbow_{side}", pitch=12)
     elif clip == "work":
         t = TAU * i / 6
         r("body", pitch=8)
         for side, sg in (("R", 1), ("L", -1)):
-            r(f"arm_{side}", pitch=-28 + 6 * math.sin(t) * sg)
-            r(f"elbow_{side}", pitch=-6 + 14 * math.sin(t) * sg)
+            r(f"arm_{side}", pitch=-22 + 6 * math.sin(t) * sg)
+            r(f"elbow_{side}", pitch=-8 + 14 * math.sin(t) * sg)
     elif clip == "charge":
         for side in ("R", "L"):
-            r(f"arm_{side}", pitch=-58)
-            r(f"elbow_{side}", pitch=32)
+            r(f"arm_{side}", pitch=-75)          # landed: arms forward, forearms down as props
+            r(f"elbow_{side}", pitch=45)
         rig.ground_attached()
     elif clip == "wreck":
         r("body", pitch=20, roll=-72)
@@ -205,12 +215,14 @@ QUICK = {("idle", 0), ("walk", 2), ("work", 3), ("charge", 3), ("wreck", 0)}
 
 def build(outdir, kinds=("worker", "repair", "security")):
     """ROBOT_QUICK=1: only the preview frames in SE, SW, NW; ROBOT_REST=1: the rest pose (idle 0 cell) in all 8
-    directions, for shape review. Both are for look iteration, never for commits."""
+    directions, for shape review; ROBOT_ANIM=1: every frame facing SE. All are for look iteration, never for commits."""
     quick = os.environ.get("ROBOT_QUICK")
     sheets, assets = {}, {}
     for k in kinds:
         if REST:
             res, cols = render_type(k, frames={("idle", 0)})
+        elif os.environ.get("ROBOT_ANIM"):    # every frame, SE only: the animated preview
+            res, cols = render_type(k, dirs=(0,))
         else:
             res, cols = render_type(k, dirs=(0, 2, 4) if quick else range(8), frames=QUICK if quick else None)
         s, a = pack(k, res, cols, outdir)

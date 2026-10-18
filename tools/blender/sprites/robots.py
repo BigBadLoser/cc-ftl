@@ -146,6 +146,7 @@ def worker():
     rig.part(t).rbox((0, 0.09, 1.16), (0.2, 0.08, 0.13), "gm", r=0.02, taper=0.8)            # sternum plate
     rig.part(t).rbox((0, -0.14, 1.13), (0.24, 0.08, 0.2), FRAME_L, r=0.02)                  # power pack
     _charge_bar(rig, t, -0.075, -0.18, 1.075, face=-1)
+    _charge_bar(rig, t, -0.06, 0.122, 1.13, w=0.04, h=0.035)                              # on the sternum plate
     _socket(rig, t, (0, 0.01, 1.258))
     _sensor_head(rig, hd, 0.02, 1.345, 1.0)
     _util_arm(rig, t)
@@ -196,6 +197,8 @@ def heavy():
     for sx in (1, -1):                                                                   # back fins
         rig.part(t).rbox((sx * 0.1, -0.27, 1.27), (0.05, 0.16, 0.24), FRAME, r=0.015, rot=(25, 0, 0))
     _charge_bar(rig, t, -0.075, -0.27, 1.13, face=-1)
+    for k in range(4):                                                                   # front cells, on the chest slope
+        rig.part(t, f"bar{k}").box((-0.075 + k * 0.05, 0.215, 1.12), (0.04, 0.03, 0.04), BAR, rot=(-12, 0, 0))
     rig.part(t).rbox((0, 0.215, 1.24), (0.2, 0.06, 0.15), FRAME_L, r=0.03, taper=1.15, rot=(-12, 0, 0))  # chest inset
     _socket(rig, t, (0, 0.085, 1.358), rot=(-12, 0, 0))
     _sensor_head(rig, hd, 0.12, 1.435, 1.0, pitch=-12, wedge_h=0.08, brow=1.15)

@@ -6,6 +6,8 @@
        robots-poses-1x.png / -3x.png (per type: idle, walk, charge in SE, SW, NW; work and wreck in SE)
   python3 -I tools/blender/review/robots_preview.py <ROBOT_REST assets dir> <out dir> shapes [shape render dir]
     -> robots-shapes-1x.png / -3x.png (rest pose, 8 directions) and robots-shapes-blender.png
+  python3 -I tools/blender/review/robots_preview.py <ROBOT_ANIM assets dir> <out dir> anim
+    -> robots-anim-player-3x.gif / robots-anim-rogue-3x.gif (every clip facing SE, at the clip fps)
 The human comes from public/assets. Rogue robots: crimson livery, and the cyan visor recoloured red."""
 import json
 import sys
@@ -254,11 +256,46 @@ def shapes(pub, rob, out, big):
     im.save(out / "robots-shapes-blender.png")
 
 
+ANIM = [("idle", 4, 4), ("walk", 8, 10), ("work", 6, 8), ("charge", 4, 3)]
+
+
+def anim(pub, rob, out, faction="player"):
+    """ROBOT_ANIM sheets: every type in every clip facing SE, animated at the clips' own fps, 3x GIF."""
+    cw, ch = 84, 96
+    frames = []
+    for n in range(48):                                          # 4.8 s at 100 ms
+        cv = Canvas(cw * (len(ANIM) + 1), ch * len(TYPES) + 14)
+        for r, (kind, _) in enumerate(TYPES):
+            for c in range(len(ANIM) + 1):
+                sub = Canvas(cw, ch)
+                for gx in (-1, 0, 1):
+                    for gy in (-1, 0, 1):
+                        sub.static(pub, "tile.floor.a", cw // 2 + (gx - gy) * 32, ch - 18 + (gx + gy) * 16)
+                if c == 0:
+                    sub.char(human(pub, 0, "idle", (n * 4 // 10) % 4), cw // 2, ch - 18)
+                else:
+                    clip, nf, fps = ANIM[c - 1]
+                    sub.char(robot(rob, kind, 0, clip, (n * fps // 10) % nf, faction), cw // 2, ch - 18)
+                cv.px[14 + r * ch:14 + (r + 1) * ch, c * cw:(c + 1) * cw] = sub.px
+                if r == 0:
+                    cv.labels.append((c * cw + 2, 2, "human" if c == 0 else ANIM[c - 1][0]))
+        im = Image.fromarray(cv.px[..., :3]).resize((cv.px.shape[1] * 3, cv.px.shape[0] * 3), Image.NEAREST)
+        dr = ImageDraw.Draw(im)
+        for x, y, t in cv.labels:
+            dr.text((x * 3, y * 3), t, fill=(220, 225, 235))
+        frames.append(im)
+    frames[0].save(out / f"robots-anim-{faction}-3x.gif", save_all=True, append_images=frames[1:], duration=100, loop=0)
+
+
 def main():
     rob = Assets(sys.argv[1])
     out = Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
     pub = Assets(ROOT / "public/assets")
+    if len(sys.argv) > 3 and sys.argv[3] == "anim":
+        anim(pub, rob, out)
+        anim(pub, rob, out, "rogue")
+        return
     if len(sys.argv) > 3 and sys.argv[3] == "shapes":
         shapes(pub, rob, out, Path(sys.argv[4]) if len(sys.argv) > 4 else None)
         return

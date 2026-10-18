@@ -19,6 +19,8 @@ DIRS = {"SE": 0, "S": 1, "SW": 2, "NW": 4}
 # Livery keys shown in faction colours (preview only; the sprites keep the palette-swap keys). ROBOT_ROGUE=1: the
 # rogue AI's crimson livery and red eyes.
 ROGUE = bool(os.environ.get("ROBOT_ROGUE"))
+CLIP, _, _F = os.environ.get("ROBOT_POSE", "idle:0").partition(":")       # ROBOT_POSE=work:3 renders that frame instead
+FRAME = int(_F or 0)
 LIVERY = ({"team.cloth": (132, 38, 42), "team.accent": (44, 44, 52)} if ROGUE else
           {"team.cloth": (186, 182, 166), "team.accent": (205, 140, 40)})
 _lin = core.lin
@@ -48,11 +50,11 @@ def main():
         rig.root.scale = tuple(v * Z for v in rig.root.scale)
         for name, d in DIRS.items():
             rig.root.rotation_euler = (0, 0, math.radians(hr.THETA[d]))
-            pose(rig, "idle", 0)
+            pose(rig, CLIP, FRAME)
             rgb, a = core.render(W, H, "color", ORIGIN)
             g, _ = core.render(W, H, "glow", ORIGIN)
             rgba = np.dstack([np.clip(rgb + g * 0.6, 0, 255), a * 255]).astype(np.uint8)
-            post.write_png(out / f"robots-shapes-{kind}-{name}{'-rogue' if ROGUE else ''}.png", rgba)
+            post.write_png(out / f"robots-shapes-{kind}-{name}{'-rogue' if ROGUE else ''}{'-' + CLIP if CLIP != 'idle' else ''}.png", rgba)
             print("shape", kind, name, flush=True)
     core.SS = ss
 
