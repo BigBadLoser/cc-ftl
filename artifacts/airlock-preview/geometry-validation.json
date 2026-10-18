@@ -1,0 +1,95 @@
+{
+  "rotations": [
+    {
+      "rotation": 0,
+      "bounds": [
+        [
+          -1.75,
+          -0.5,
+          0.0
+        ],
+        [
+          2.0,
+          0.5,
+          1.857
+        ]
+      ],
+      "allDoorPosesInFootprint": true,
+      "openLaneWidth": 0.62,
+      "interlockPoses": true,
+      "noFloorSlab": true,
+      "opaqueTubeInAllViews": true,
+      "roofAndSideRayChecks": true
+    },
+    {
+      "rotation": 1,
+      "bounds": [
+        [
+          -1.75,
+          -0.5,
+          0.0
+        ],
+        [
+          2.0,
+          0.5,
+          1.857
+        ]
+      ],
+      "allDoorPosesInFootprint": true,
+      "openLaneWidth": 0.62,
+      "interlockPoses": true,
+      "noFloorSlab": true,
+      "opaqueTubeInAllViews": true,
+      "roofAndSideRayChecks": true
+    },
+    {
+      "rotation": 2,
+      "bounds": [
+        [
+          -1.75,
+          -0.5,
+          0.0
+        ],
+        [
+          2.0,
+          0.5,
+          1.857
+        ]
+      ],
+      "allDoorPosesInFootprint": true,
+      "openLaneWidth": 0.62,
+      "interlockPoses": true,
+      "noFloorSlab": true,
+      "opaqueTubeInAllViews": true,
+      "roofAndSideRayChecks": true
+    },
+    {
+      "rotation": 3,
+      "bounds": [
+        [
+          -1.75,
+          -0.5,
+          0.0
+        ],
+        [
+          2.0,
+          0.5,
+          1.857
+        ]
+      ],
+      "allDoorPosesInFootprint": true,
+      "openLaneWidth": 0.62,
+      "interlockPoses": true,
+      "noFloorSlab": true,
+      "opaqueTubeInAllViews": true,
+      "roofAndSideRayChecks": true
+    }
+  ],
+  "wallZ": 1.85,
+  "footprint": [
+    1,
+    4
+  ],
+  "cycleSeconds": 4,
+  "simImplemented": false
+}

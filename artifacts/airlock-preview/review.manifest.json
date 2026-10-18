@@ -1,0 +1,1221 @@
+{
+  "version": 1,
+  "sheets": {
+    "scene.r0.full": {
+      "image": "raw/scene.r0.full.png",
+      "glow": "raw/scene.r0.full.glow.png"
+    },
+    "scene.r0.cut": {
+      "image": "raw/scene.r0.cut.png",
+      "glow": "raw/scene.r0.cut.glow.png"
+    },
+    "scene.r0.ghost": {
+      "image": "raw/scene.r0.ghost.png",
+      "glow": "raw/scene.r0.ghost.glow.png"
+    },
+    "scene.r0.ghost-overlay": {
+      "image": "raw/scene.r0.ghost-overlay.png",
+      "glow": "raw/scene.r0.ghost-overlay.glow.png"
+    },
+    "state.r0.sealed": {
+      "image": "raw/state.r0.sealed.png",
+      "glow": "raw/state.r0.sealed.glow.png"
+    },
+    "state.r0.inner-opening": {
+      "image": "raw/state.r0.inner-opening.png",
+      "glow": "raw/state.r0.inner-opening.glow.png"
+    },
+    "state.r0.inner-open": {
+      "image": "raw/state.r0.inner-open.png",
+      "glow": "raw/state.r0.inner-open.glow.png"
+    },
+    "state.r0.cycling": {
+      "image": "raw/state.r0.cycling.png",
+      "glow": "raw/state.r0.cycling.glow.png"
+    },
+    "state.r0.outer-opening": {
+      "image": "raw/state.r0.outer-opening.png",
+      "glow": "raw/state.r0.outer-opening.glow.png"
+    },
+    "state.r0.outer-open": {
+      "image": "raw/state.r0.outer-open.png",
+      "glow": "raw/state.r0.outer-open.glow.png"
+    },
+    "state.r0.unpowered": {
+      "image": "raw/state.r0.unpowered.png",
+      "glow": "raw/state.r0.unpowered.glow.png"
+    },
+    "module.airlock.r0": {
+      "image": "sprites/module.airlock.r0.png",
+      "glow": "sprites/module.airlock.r0.glow.png"
+    },
+    "module.airlock.outer.r0.closed": {
+      "image": "sprites/module.airlock.outer.r0.closed.png",
+      "glow": "sprites/module.airlock.outer.r0.closed.glow.png"
+    },
+    "module.airlock.outer.r0.opening.f0": {
+      "image": "sprites/module.airlock.outer.r0.opening.f0.png",
+      "glow": "sprites/module.airlock.outer.r0.opening.f0.glow.png"
+    },
+    "module.airlock.outer.r0.opening.f1": {
+      "image": "sprites/module.airlock.outer.r0.opening.f1.png",
+      "glow": "sprites/module.airlock.outer.r0.opening.f1.glow.png"
+    },
+    "module.airlock.outer.r0.opening.f2": {
+      "image": "sprites/module.airlock.outer.r0.opening.f2.png",
+      "glow": "sprites/module.airlock.outer.r0.opening.f2.glow.png"
+    },
+    "module.airlock.outer.r0.open": {
+      "image": "sprites/module.airlock.outer.r0.open.png",
+      "glow": "sprites/module.airlock.outer.r0.open.glow.png"
+    },
+    "module.airlock.inner.r0.closed": {
+      "image": "sprites/module.airlock.inner.r0.closed.png",
+      "glow": "sprites/module.airlock.inner.r0.closed.glow.png"
+    },
+    "module.airlock.inner.r0.opening.f0": {
+      "image": "sprites/module.airlock.inner.r0.opening.f0.png",
+      "glow": "sprites/module.airlock.inner.r0.opening.f0.glow.png"
+    },
+    "module.airlock.inner.r0.opening.f1": {
+      "image": "sprites/module.airlock.inner.r0.opening.f1.png",
+      "glow": "sprites/module.airlock.inner.r0.opening.f1.glow.png"
+    },
+    "module.airlock.inner.r0.opening.f2": {
+      "image": "sprites/module.airlock.inner.r0.opening.f2.png",
+      "glow": "sprites/module.airlock.inner.r0.opening.f2.glow.png"
+    },
+    "module.airlock.inner.r0.open": {
+      "image": "sprites/module.airlock.inner.r0.open.png",
+      "glow": "sprites/module.airlock.inner.r0.open.glow.png"
+    },
+    "module.airlock.r0.status.sealed": {
+      "image": "sprites/module.airlock.r0.status.sealed.png",
+      "glow": "sprites/module.airlock.r0.status.sealed.glow.png"
+    },
+    "module.airlock.r0.status.outer-open": {
+      "image": "sprites/module.airlock.r0.status.outer-open.png",
+      "glow": "sprites/module.airlock.r0.status.outer-open.glow.png"
+    },
+    "module.airlock.r0.status.inner-open": {
+      "image": "sprites/module.airlock.r0.status.inner-open.png",
+      "glow": "sprites/module.airlock.r0.status.inner-open.glow.png"
+    },
+    "module.airlock.r0.cycling.f0": {
+      "image": "sprites/module.airlock.r0.cycling.f0.png",
+      "glow": "sprites/module.airlock.r0.cycling.f0.glow.png"
+    },
+    "module.airlock.r0.cycling.f1": {
+      "image": "sprites/module.airlock.r0.cycling.f1.png",
+      "glow": "sprites/module.airlock.r0.cycling.f1.glow.png"
+    },
+    "scene.r1.full": {
+      "image": "raw/scene.r1.full.png",
+      "glow": "raw/scene.r1.full.glow.png"
+    },
+    "scene.r1.cut": {
+      "image": "raw/scene.r1.cut.png",
+      "glow": "raw/scene.r1.cut.glow.png"
+    },
+    "scene.r1.ghost": {
+      "image": "raw/scene.r1.ghost.png",
+      "glow": "raw/scene.r1.ghost.glow.png"
+    },
+    "scene.r1.ghost-overlay": {
+      "image": "raw/scene.r1.ghost-overlay.png",
+      "glow": "raw/scene.r1.ghost-overlay.glow.png"
+    },
+    "state.r1.sealed": {
+      "image": "raw/state.r1.sealed.png",
+      "glow": "raw/state.r1.sealed.glow.png"
+    },
+    "state.r1.inner-opening": {
+      "image": "raw/state.r1.inner-opening.png",
+      "glow": "raw/state.r1.inner-opening.glow.png"
+    },
+    "state.r1.inner-open": {
+      "image": "raw/state.r1.inner-open.png",
+      "glow": "raw/state.r1.inner-open.glow.png"
+    },
+    "state.r1.cycling": {
+      "image": "raw/state.r1.cycling.png",
+      "glow": "raw/state.r1.cycling.glow.png"
+    },
+    "state.r1.outer-opening": {
+      "image": "raw/state.r1.outer-opening.png",
+      "glow": "raw/state.r1.outer-opening.glow.png"
+    },
+    "state.r1.outer-open": {
+      "image": "raw/state.r1.outer-open.png",
+      "glow": "raw/state.r1.outer-open.glow.png"
+    },
+    "state.r1.unpowered": {
+      "image": "raw/state.r1.unpowered.png",
+      "glow": "raw/state.r1.unpowered.glow.png"
+    },
+    "module.airlock.r1": {
+      "image": "sprites/module.airlock.r1.png",
+      "glow": "sprites/module.airlock.r1.glow.png"
+    },
+    "module.airlock.outer.r1.closed": {
+      "image": "sprites/module.airlock.outer.r1.closed.png",
+      "glow": "sprites/module.airlock.outer.r1.closed.glow.png"
+    },
+    "module.airlock.outer.r1.opening.f0": {
+      "image": "sprites/module.airlock.outer.r1.opening.f0.png",
+      "glow": "sprites/module.airlock.outer.r1.opening.f0.glow.png"
+    },
+    "module.airlock.outer.r1.opening.f1": {
+      "image": "sprites/module.airlock.outer.r1.opening.f1.png",
+      "glow": "sprites/module.airlock.outer.r1.opening.f1.glow.png"
+    },
+    "module.airlock.outer.r1.opening.f2": {
+      "image": "sprites/module.airlock.outer.r1.opening.f2.png",
+      "glow": "sprites/module.airlock.outer.r1.opening.f2.glow.png"
+    },
+    "module.airlock.outer.r1.open": {
+      "image": "sprites/module.airlock.outer.r1.open.png",
+      "glow": "sprites/module.airlock.outer.r1.open.glow.png"
+    },
+    "module.airlock.inner.r1.closed": {
+      "image": "sprites/module.airlock.inner.r1.closed.png",
+      "glow": "sprites/module.airlock.inner.r1.closed.glow.png"
+    },
+    "module.airlock.inner.r1.opening.f0": {
+      "image": "sprites/module.airlock.inner.r1.opening.f0.png",
+      "glow": "sprites/module.airlock.inner.r1.opening.f0.glow.png"
+    },
+    "module.airlock.inner.r1.opening.f1": {
+      "image": "sprites/module.airlock.inner.r1.opening.f1.png",
+      "glow": "sprites/module.airlock.inner.r1.opening.f1.glow.png"
+    },
+    "module.airlock.inner.r1.opening.f2": {
+      "image": "sprites/module.airlock.inner.r1.opening.f2.png",
+      "glow": "sprites/module.airlock.inner.r1.opening.f2.glow.png"
+    },
+    "module.airlock.inner.r1.open": {
+      "image": "sprites/module.airlock.inner.r1.open.png",
+      "glow": "sprites/module.airlock.inner.r1.open.glow.png"
+    },
+    "module.airlock.r1.status.sealed": {
+      "image": "sprites/module.airlock.r1.status.sealed.png",
+      "glow": "sprites/module.airlock.r1.status.sealed.glow.png"
+    },
+    "module.airlock.r1.status.outer-open": {
+      "image": "sprites/module.airlock.r1.status.outer-open.png",
+      "glow": "sprites/module.airlock.r1.status.outer-open.glow.png"
+    },
+    "module.airlock.r1.status.inner-open": {
+      "image": "sprites/module.airlock.r1.status.inner-open.png",
+      "glow": "sprites/module.airlock.r1.status.inner-open.glow.png"
+    },
+    "module.airlock.r1.cycling.f0": {
+      "image": "sprites/module.airlock.r1.cycling.f0.png",
+      "glow": "sprites/module.airlock.r1.cycling.f0.glow.png"
+    },
+    "module.airlock.r1.cycling.f1": {
+      "image": "sprites/module.airlock.r1.cycling.f1.png",
+      "glow": "sprites/module.airlock.r1.cycling.f1.glow.png"
+    }
+  },
+  "assets": {
+    "scene.r0.full": {
+      "kind": "static",
+      "sheet": "scene.r0.full",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 322,
+        "h": 232
+      },
+      "anchor": {
+        "x": 129,
+        "y": 165
+      },
+      "glow": true
+    },
+    "scene.r0.cut": {
+      "kind": "static",
+      "sheet": "scene.r0.cut",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 322,
+        "h": 198
+      },
+      "anchor": {
+        "x": 129,
+        "y": 131
+      },
+      "glow": true
+    },
+    "scene.r0.ghost": {
+      "kind": "static",
+      "sheet": "scene.r0.ghost",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 322,
+        "h": 198
+      },
+      "anchor": {
+        "x": 129,
+        "y": 131
+      },
+      "glow": true
+    },
+    "scene.r0.ghost-overlay": {
+      "kind": "static",
+      "sheet": "scene.r0.ghost-overlay",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 191,
+        "h": 166
+      },
+      "anchor": {
+        "x": -2,
+        "y": 165
+      },
+      "glow": false
+    },
+    "state.r0.sealed": {
+      "kind": "static",
+      "sheet": "state.r0.sealed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 144
+      },
+      "anchor": {
+        "x": 25,
+        "y": 131
+      },
+      "glow": true
+    },
+    "state.r0.inner-opening": {
+      "kind": "static",
+      "sheet": "state.r0.inner-opening",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 144
+      },
+      "anchor": {
+        "x": 25,
+        "y": 131
+      },
+      "glow": true
+    },
+    "state.r0.inner-open": {
+      "kind": "static",
+      "sheet": "state.r0.inner-open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 144
+      },
+      "anchor": {
+        "x": 25,
+        "y": 131
+      },
+      "glow": true
+    },
+    "state.r0.cycling": {
+      "kind": "static",
+      "sheet": "state.r0.cycling",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 144
+      },
+      "anchor": {
+        "x": 25,
+        "y": 131
+      },
+      "glow": true
+    },
+    "state.r0.outer-opening": {
+      "kind": "static",
+      "sheet": "state.r0.outer-opening",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 144
+      },
+      "anchor": {
+        "x": 25,
+        "y": 131
+      },
+      "glow": true
+    },
+    "state.r0.outer-open": {
+      "kind": "static",
+      "sheet": "state.r0.outer-open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 144
+      },
+      "anchor": {
+        "x": 25,
+        "y": 131
+      },
+      "glow": true
+    },
+    "state.r0.unpowered": {
+      "kind": "static",
+      "sheet": "state.r0.unpowered",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 144
+      },
+      "anchor": {
+        "x": 25,
+        "y": 131
+      },
+      "glow": false
+    },
+    "module.airlock.r0": {
+      "kind": "static",
+      "sheet": "module.airlock.r0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 144
+      },
+      "anchor": {
+        "x": 25,
+        "y": 131
+      },
+      "glow": false,
+      "footprint": [
+        1,
+        4
+      ]
+    },
+    "module.airlock.outer.r0.closed": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r0.closed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r0.opening.f0": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r0.opening.f0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r0.opening.f1": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r0.opening.f1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r0.opening.f2": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r0.opening.f2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r0.open": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r0.open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r0.closing.f0": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r0.opening.f2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r0.closing.f1": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r0.opening.f1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r0.closing.f2": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r0.opening.f0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r0.closed": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r0.closed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 63
+      },
+      "anchor": {
+        "x": 11,
+        "y": 62
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r0.opening.f0": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r0.opening.f0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 64
+      },
+      "anchor": {
+        "x": 11,
+        "y": 62
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r0.opening.f1": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r0.opening.f1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 17,
+        "h": 65
+      },
+      "anchor": {
+        "x": 12,
+        "y": 63
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r0.opening.f2": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r0.opening.f2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 57
+      },
+      "anchor": {
+        "x": 13,
+        "y": 63
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r0.open": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r0.open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r0.closing.f0": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r0.opening.f2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 57
+      },
+      "anchor": {
+        "x": 13,
+        "y": 63
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r0.closing.f1": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r0.opening.f1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 17,
+        "h": 65
+      },
+      "anchor": {
+        "x": 12,
+        "y": 63
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r0.closing.f2": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r0.opening.f0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 64
+      },
+      "anchor": {
+        "x": 11,
+        "y": 62
+      },
+      "glow": false
+    },
+    "module.airlock.r0.status.sealed": {
+      "kind": "static",
+      "sheet": "module.airlock.r0.status.sealed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 30,
+        "h": 20
+      },
+      "anchor": {
+        "x": 21,
+        "y": 52
+      },
+      "glow": true
+    },
+    "module.airlock.r0.status.outer-open": {
+      "kind": "static",
+      "sheet": "module.airlock.r0.status.outer-open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 30,
+        "h": 20
+      },
+      "anchor": {
+        "x": 21,
+        "y": 52
+      },
+      "glow": true
+    },
+    "module.airlock.r0.status.inner-open": {
+      "kind": "static",
+      "sheet": "module.airlock.r0.status.inner-open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 30,
+        "h": 20
+      },
+      "anchor": {
+        "x": 21,
+        "y": 52
+      },
+      "glow": true
+    },
+    "module.airlock.r0.cycling.f0": {
+      "kind": "static",
+      "sheet": "module.airlock.r0.cycling.f0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 131,
+        "h": 95
+      },
+      "anchor": {
+        "x": 21,
+        "y": 127
+      },
+      "glow": true
+    },
+    "module.airlock.r0.cycling.f1": {
+      "kind": "static",
+      "sheet": "module.airlock.r0.cycling.f1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 131,
+        "h": 95
+      },
+      "anchor": {
+        "x": 21,
+        "y": 127
+      },
+      "glow": true
+    },
+    "scene.r1.full": {
+      "kind": "static",
+      "sheet": "scene.r1.full",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 322,
+        "h": 181
+      },
+      "anchor": {
+        "x": 225,
+        "y": 130
+      },
+      "glow": true
+    },
+    "scene.r1.cut": {
+      "kind": "static",
+      "sheet": "scene.r1.cut",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 322,
+        "h": 181
+      },
+      "anchor": {
+        "x": 225,
+        "y": 130
+      },
+      "glow": true
+    },
+    "scene.r1.ghost": {
+      "kind": "static",
+      "sheet": "scene.r1.ghost",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 322,
+        "h": 181
+      },
+      "anchor": {
+        "x": 225,
+        "y": 130
+      },
+      "glow": true
+    },
+    "scene.r1.ghost-overlay": {
+      "kind": "static",
+      "sheet": "scene.r1.ghost-overlay",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 194,
+        "h": 166
+      },
+      "anchor": {
+        "x": 97,
+        "y": 117
+      },
+      "glow": false
+    },
+    "state.r1.sealed": {
+      "kind": "static",
+      "sheet": "state.r1.sealed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 147
+      },
+      "anchor": {
+        "x": 121,
+        "y": 130
+      },
+      "glow": true
+    },
+    "state.r1.inner-opening": {
+      "kind": "static",
+      "sheet": "state.r1.inner-opening",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 147
+      },
+      "anchor": {
+        "x": 121,
+        "y": 130
+      },
+      "glow": true
+    },
+    "state.r1.inner-open": {
+      "kind": "static",
+      "sheet": "state.r1.inner-open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 147
+      },
+      "anchor": {
+        "x": 121,
+        "y": 130
+      },
+      "glow": true
+    },
+    "state.r1.cycling": {
+      "kind": "static",
+      "sheet": "state.r1.cycling",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 147
+      },
+      "anchor": {
+        "x": 121,
+        "y": 130
+      },
+      "glow": true
+    },
+    "state.r1.outer-opening": {
+      "kind": "static",
+      "sheet": "state.r1.outer-opening",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 147
+      },
+      "anchor": {
+        "x": 121,
+        "y": 130
+      },
+      "glow": true
+    },
+    "state.r1.outer-open": {
+      "kind": "static",
+      "sheet": "state.r1.outer-open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 147
+      },
+      "anchor": {
+        "x": 121,
+        "y": 130
+      },
+      "glow": true
+    },
+    "state.r1.unpowered": {
+      "kind": "static",
+      "sheet": "state.r1.unpowered",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 147
+      },
+      "anchor": {
+        "x": 121,
+        "y": 130
+      },
+      "glow": false
+    },
+    "module.airlock.r1": {
+      "kind": "static",
+      "sheet": "module.airlock.r1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 154,
+        "h": 147
+      },
+      "anchor": {
+        "x": 121,
+        "y": 130
+      },
+      "glow": false,
+      "footprint": [
+        4,
+        1
+      ]
+    },
+    "module.airlock.outer.r1.closed": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r1.closed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 60
+      },
+      "anchor": {
+        "x": 3,
+        "y": 62
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r1.opening.f0": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r1.opening.f0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 17,
+        "h": 58
+      },
+      "anchor": {
+        "x": 2,
+        "y": 62
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r1.opening.f1": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r1.opening.f1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 57
+      },
+      "anchor": {
+        "x": -1,
+        "y": 62
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r1.opening.f2": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r1.opening.f2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 56
+      },
+      "anchor": {
+        "x": -4,
+        "y": 62
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r1.open": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r1.open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r1.closing.f0": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r1.opening.f2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 56
+      },
+      "anchor": {
+        "x": -4,
+        "y": 62
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r1.closing.f1": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r1.opening.f1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 57
+      },
+      "anchor": {
+        "x": -1,
+        "y": 62
+      },
+      "glow": false
+    },
+    "module.airlock.outer.r1.closing.f2": {
+      "kind": "static",
+      "sheet": "module.airlock.outer.r1.opening.f0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 17,
+        "h": 58
+      },
+      "anchor": {
+        "x": 2,
+        "y": 62
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r1.closed": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r1.closed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r1.opening.f0": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r1.opening.f0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r1.opening.f1": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r1.opening.f1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r1.opening.f2": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r1.opening.f2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r1.open": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r1.open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r1.closing.f0": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r1.opening.f2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r1.closing.f1": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r1.opening.f1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.inner.r1.closing.f2": {
+      "kind": "static",
+      "sheet": "module.airlock.inner.r1.opening.f0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "glow": false
+    },
+    "module.airlock.r1.status.sealed": {
+      "kind": "static",
+      "sheet": "module.airlock.r1.status.sealed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 30,
+        "h": 20
+      },
+      "anchor": {
+        "x": 7,
+        "y": 51
+      },
+      "glow": true
+    },
+    "module.airlock.r1.status.outer-open": {
+      "kind": "static",
+      "sheet": "module.airlock.r1.status.outer-open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 30,
+        "h": 20
+      },
+      "anchor": {
+        "x": 7,
+        "y": 51
+      },
+      "glow": true
+    },
+    "module.airlock.r1.status.inner-open": {
+      "kind": "static",
+      "sheet": "module.airlock.r1.status.inner-open",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 30,
+        "h": 20
+      },
+      "anchor": {
+        "x": 7,
+        "y": 51
+      },
+      "glow": true
+    },
+    "module.airlock.r1.cycling.f0": {
+      "kind": "static",
+      "sheet": "module.airlock.r1.cycling.f0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 130,
+        "h": 94
+      },
+      "anchor": {
+        "x": 107,
+        "y": 125
+      },
+      "glow": true
+    },
+    "module.airlock.r1.cycling.f1": {
+      "kind": "static",
+      "sheet": "module.airlock.r1.cycling.f1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 130,
+        "h": 94
+      },
+      "anchor": {
+        "x": 107,
+        "y": 125
+      },
+      "glow": true
+    }
+  }
+}

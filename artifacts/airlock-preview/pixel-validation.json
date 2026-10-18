@@ -1,0 +1,34 @@
+{
+  "spriteImagesChecked": 132,
+  "binarySpriteAlpha": true,
+  "localPalette": true,
+  "unpoweredGlowIsEmpty": true,
+  "doorStatesDistinct": true,
+  "exact3xBoards": [
+    "airlock-cut-1x",
+    "airlock-doors-inner-1x",
+    "airlock-doors-outer-1x",
+    "airlock-full-1x",
+    "airlock-ghost-1x",
+    "airlock-installations-1x",
+    "installation-r0-cut-1x",
+    "installation-r0-full-1x",
+    "installation-r0-ghost-1x",
+    "installation-r1-cut-1x",
+    "installation-r1-full-1x",
+    "installation-r1-ghost-1x"
+  ],
+  "blenderVersion": "4.3.2",
+  "spriteSamples": 4,
+  "beautySamples": 8,
+  "previewRotations": [
+    0,
+    1
+  ],
+  "geometryRotations": [
+    0,
+    1,
+    2,
+    3
+  ]
+}
