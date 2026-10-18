@@ -1,23 +1,33 @@
-"""Near hull: hull tiles whose +y (o bit 1) or +x (o bit 2) neighbour is space, the side the camera sees from outside.
+"""Hull ghosts: the low hull silhouette that never hides the interior (after Space Haven's shortest cutaway).
 
-Drawn as a GHOST in every view mode (as on main), so it never hides the interior: a low full-tile armoured footing (top
-walls.ZG) whose top is a dark cut with a narrow lit 45 degree chamfer along the outer edge(s); its outer face continues
-DROP below the deck (the deck edge) in the hull's blue-grey / ochre plating (wallart.hull_out_face). On the crest
-stands a short translucent glass pane (`glass`). The outer corner (o = 3) is cut at 45 degrees across the tile and that
-face looks straight at the camera; the side corners (SW: o 1 without a W neighbour, NE: o 2 without an N neighbour) are
-cut at 45 degrees in plan."""
+A ghost is a full-tile, near-black rim just above the deck (walls.ZG) with a fine lit, toothed line on its outer edge and
+a thin line on its inner edge. On the camera-facing outer sides (o bit 1: space at +y, bit 2: at +x) the ship's
+below-deck belly hangs from the rim: dark blue-teal panelled armour with rails and vents (muted ochre bands on the
+variant), straight down for DROP - CURVE and then curving back under the ship. The outer corner (o = 3) is cut at 45
+degrees across the tile and that face looks straight at the camera; the side corners (SW: o 1 without a W neighbour,
+NE: o 2 without an N neighbour) are cut at 45 degrees in plan; o = 4 is the concave corner of a step.
+
+Near-hull ghosts (o > 0) are drawn in every view level. In the shortest level the far hull is a ghost too (o = 0: the
+rim alone, with a small lit face toward the room)."""
+import math
+
 from . import core
 from . import wallart as A
-from .walls import BEV, DROP, DZ, GN, TW, ZG, Spec, emit, half_cell
+from .walls import BEV, CURVE, DROP, DZ, GN, ZG, Spec, emit, half_cell
+
+C = 1 / GN
+ZB = DROP - CURVE          # straight part of the belly below the deck
+STEPS = 4                  # belly curve segments
 
 
 class Out(Spec):
     def __init__(self, mask, o, variant=0):
-        self.mask, self.o, self.variant = mask, o, variant if o < 3 else 0
-        self.open_y = self.drop_y = bool(o & 1)
-        self.open_x = self.drop_x = bool(o & 2)
-        self.open_y = self.open_y or not mask & 4
-        self.open_x = self.open_x or not mask & 2
+        self.mask, self.o, self.variant = mask, o, variant if o in (1, 2) else 0
+        self.drop_y = bool(o & 1) and o != 4
+        self.drop_x = bool(o & 2) and o != 4
+        self.open_y = self.drop_y or not mask & 4
+        self.open_x = self.drop_x or not mask & 2
+        self.drop_z = ZB
         self.diag = o == 3
         keeps = []
         if o == 3:
@@ -33,11 +43,13 @@ class Out(Spec):
         return half_cell(self.keep, i, j)
 
     def dist(self, x, y):
-        """Distance from the outer edge (the mitre with the neighbours' bevels is exact for the corner)."""
+        """Distance from the outer (camera-facing) edge; large for the far-hull ghost."""
         if self.o == 3:
             return -(x + y)
         if self.o == 4:
             return max(0.5 - x, 0.5 - y)                               # concave corner: only the corner square dips
+        if self.o == 0:
+            return 9.0
         return 0.5 - y if self.o & 1 else 0.5 - x
 
     def topz(self, x, y):
@@ -48,82 +60,84 @@ class Out(Spec):
             return (x - y + 1) / 2
         return x + 0.5 if self.o & 1 else 0.5 - y
 
+    def _edge(self, x, y):
+        """Distance to the nearest unconnected tile edge (the rim's outline)."""
+        m, d = self.mask, [9.0]
+        if not m & 1:
+            d.append(y + 0.5)
+        if not m & 8:
+            d.append(x + 0.5)
+        if not m & 4:
+            d.append(0.5 - y)
+        if not m & 2:
+            d.append(0.5 - x)
+        if self.o == 3:
+            d.append(-(x + y) / math.sqrt(2))
+        return min(d)
+
     def col_top(self, i, j, kind, x, y):
         s = self._s(x, y)
         if kind != "flat":
-            return A.hull_out_top("bevel", s, 0.0, self.variant)
-        rim = ((self.o == 1 and j == 0 and not (self.mask & 1 and i < TW * GN))
-               or (self.o == 2 and i == 0 and not (self.mask & 8 and j < TW * GN))
-               or (self.o >= 3 and i + j <= 1))
-        if rim:
-            return A.ramp(A._blk(s, self.variant), "y")["K"]
-        return A.hull_out_top("flat", s, self.dist(x, y) - BEV, self.variant, 1 - BEV)
+            return A.ghost_top("bevel", s, 0.0)
+        if self.o and self.dist(x, y) - BEV < C:
+            return A.ghost_top("crest", s, 0.0)
+        return A.ghost_top("flat", s, self._edge(x, y))
 
     def col_face(self, face, x, y, z):
-        f = (self.foot - z) / (self.foot + DROP)
         if face == "d":
             s = (x - y + 1) / 2
         else:
             s = x + 0.5 if face == "y" else 0.5 - y
+        if z > 0.0 and not self.o:
+            return A.ghost_top("lip" if z > ZG - 0.03 else "side", s, 0.0)
+        f = (self.foot - z) / (self.foot + ZB)
         return A.hull_out_face(face, s, min(max(f, 0.0), 1.0), self.variant)
+
+    def belly(self, m, face, a, b):
+        _belly(m, face, a, b, lambda k, s: A.hull_belly(face, s, k, STEPS, self.variant))
+
+
+def _belly(m, face, a, b, col):
+    """Curve the belly back under the ship below the edge a -> b (screen left to right)."""
+    n = {"y": (0.0, 1.0), "x": (1.0, 0.0), "d": (math.sqrt(0.5), math.sqrt(0.5))}[face]
+    if face == "y":
+        s = (a[0] + b[0]) / 2 + 0.5
+    elif face == "x":
+        s = 0.5 - (a[1] + b[1]) / 2
+    else:
+        s = ((a[0] + b[0]) - (a[1] + b[1])) / 4 + 0.5
+    prof = [(CURVE * (1 - math.cos(th)), -ZB - CURVE * math.sin(th))
+            for th in (k * math.pi / 2 / STEPS for k in range(STEPS + 1))]
+    for k in range(STEPS):
+        (i0, z0), (i1, z1) = prof[k], prof[k + 1]
+        pa0 = (a[0] - n[0] * i0, a[1] - n[1] * i0)
+        pb0 = (b[0] - n[0] * i0, b[1] - n[1] * i0)
+        pa1 = (a[0] - n[0] * i1, a[1] - n[1] * i1)
+        pb1 = (b[0] - n[0] * i1, b[1] - n[1] * i1)
+        m.poly([core.G(*pa1, z1), core.G(*pb1, z1), core.G(*pb0, z0), core.G(*pa0, z0)], col(k, s))
 
 
 def out_block(mask, o, variant=0):
-    m = core.Mesh(f"hull_out{o}_{mask}_{variant}", flat=True)
+    m = core.Mesh(f"hull_ghost{o}_{mask}_{variant}", flat=True)
     emit(m, Out(mask, o, variant))
     return [m.build()]
 
 
 def drop(side):
-    """The below-deck band alone (for a door set into the near hull): side s along x at +y, e along y at +x."""
+    """The belly alone (for a door set into the near hull): side s along x at +y, e along y at +x."""
     m = core.Mesh(f"hull_drop_{side}", flat=True)
-    foot = ZG - BEV
-    rows = int(round(DROP / DZ))
+    rows = int(round(ZB / DZ))
+    face = "y" if side == "s" else "x"
     for c in range(GN):
         s0, s1 = c / GN, (c + 1) / GN
+        if side == "s":
+            a, b = (s0 - 0.5, 0.5), (s1 - 0.5, 0.5)
+        else:
+            a, b = (0.5, 0.5 - s0), (0.5, 0.5 - s1)
         for k in range(rows):
-            z0, z1 = -DROP + DROP * k / rows, -DROP + DROP * (k + 1) / rows
-            f = (foot - (z0 + z1) / 2) / (foot + DROP)
-            col = A.hull_out_face("y" if side == "s" else "x", (s0 + s1) / 2, f, 0)
-            if side == "s":
-                a, b = (s0 - 0.5, 0.5), (s1 - 0.5, 0.5)
-            else:
-                a, b = (0.5, 0.5 - s0), (0.5, 0.5 - s1)
+            z0, z1 = -ZB * (k + 1) / rows, -ZB * k / rows
+            f = (ZG - BEV - (z0 + z1) / 2) / (ZG - BEV + ZB)
+            col = A.hull_out_face(face, (s0 + s1) / 2, f, 0)
             m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z1), core.G(*a, z1)], col)
+        _belly(m, face, a, b, lambda k, s: A.hull_belly(face, s, k, STEPS, 0))
     return [m.build()]
-
-
-GH = 0.8           # glass pane top (short: the ghost never hides the interior)
-GT = 3 / 32        # glass pane thickness
-
-
-def glass(mask, o):
-    """The ghost's glass: an empty plate plus a translucent pane standing on the footing's chamfer crest, with a light
-    frame rail on top (env_build renders the glass in its own pass, its brightness becomes alpha)."""
-    plate = core.Mesh(f"glass_plate_{o}_{mask}", flat=True)
-    gm = core.Mesh(f"glass_{o}_{mask}", flat=True)
-    sp = Out(mask, o)
-    inset = BEV + 1 / GN
-
-    def inside(cx, cy):
-        return sp.cover(int((cx + 0.5) * GN), int((cy + 0.5) * GN)) and BEV < sp.dist(cx, cy) < inset + GT
-
-    nz = int(round((GH - ZG) / DZ))
-    for j in range(GN):
-        for i in range(GN):
-            cx, cy = (i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5
-            if not inside(cx, cy):
-                continue
-            x0, y0 = i / GN - 0.5, j / GN - 0.5
-            x1, y1 = x0 + 1 / GN, y0 + 1 / GN
-            gm.poly([core.G(x0, y0, GH), core.G(x1, y0, GH), core.G(x1, y1, GH), core.G(x0, y1, GH)], "plate")
-            for face, a, b, nb in (("y", (x0, y1), (x1, y1), (cx, cy + 1 / GN)),
-                                   ("x", (x1, y1), (x1, y0), (cx + 1 / GN, cy))):
-                if inside(*nb):
-                    continue
-                for k in range(nz):
-                    za, zb = ZG + (GH - ZG) * k / nz, ZG + (GH - ZG) * (k + 1) / nz
-                    col = "plate" if k >= nz - 2 else ("steelL" if (k + i + j) % 9 == 0 else "steel")
-                    gm.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], col)
-    plate.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")   # sub-pixel: renders nothing
-    return [plate.build(), gm.build()]
