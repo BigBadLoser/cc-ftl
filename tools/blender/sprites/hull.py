@@ -112,8 +112,9 @@ class Out(Spec):
         return "y" if abs(gx) < e else ("x" if abs(gy) < e else "h")
 
     def _line(self, i, j):
-        """Ghost edge lines: 2 = crest (flat meets slope), 1 = other creases (toe, mitres, the rear slope's seam at every
-        tile) and the front rim's unconnected edges, 0 = no line. One-sided, so every edge is a single 1 px line. The
+        """Ghost edge lines: 2 = crest (flat meets slope), 1 = the rear slope's toe and its seam at every tile (each tile
+        draws only its left seam, so no seam is drawn twice) and the front rim's unconnected edges, 0 = no line.
+        Slope-to-slope mitres are not lined: at a concave corner the two adjacent seams already meet there. One-sided, so every edge is a single 1 px line. The
         rear ghost's flat part behind its crest stays unlined (13.webp shows only the sloped band)."""
         if self._lines is None:
             K = [[self._kind(a, b) if self.cover(a, b) else None for b in range(GN)] for a in range(GN)]
@@ -127,8 +128,8 @@ class Out(Spec):
                     v = 0
                     for da, db in ((1, 0), (0, 1)):
                         n = K[a + da][b + db] if a + da < GN and b + db < GN else k
-                        if n is not None and n != k:
-                            v = max(v, 2 if "flat" in (k, n) else 1)
+                        if n is not None and n != k and "flat" in (k, n):
+                            v = max(v, 2)                              # crest; slope-to-slope mitres stay unlined
                     if self.o and self._edge(x, y) < C and not self.dist(x, y) < BEV:
                         v = max(v, 1)                                  # outline (the outer side has the crest)
                     if not self.o and k in ("x", "y") and (a == 0 if k == "y" else b == 0):
@@ -233,9 +234,10 @@ def vert():
     """Ghost vertical edge line at the tile's front corner (+x, +y), from the deck up to the rim: placed where the front
     ghost's outer silhouette turns or ends (convex and concave corners, steps, run ends). Edge-only 'ghost' sprite."""
     m = core.Mesh("ghost_vert", flat=True)
-    w = 0.6 * C
+    w = 0.36 * C                                                # about 1 px wide on screen
     p = (0.5, 0.5)
     a, b = (p[0] - w, p[1] + w), (p[0] + w, p[1] - w)          # a screen-horizontal sliver through the corner
-    m.poly([core.G(*a, 0.0), core.G(*b, 0.0), core.G(*b, ZG), core.G(*a, ZG)], "gW1")
+    zt = ZG - 0.03                                              # stops under the crest line: no doubled bright dot
+    m.poly([core.G(*a, 0.0), core.G(*b, 0.0), core.G(*b, zt), core.G(*a, zt)], "gW2")
     return [_dummy("ghost_vert_plate"), m.build()]
 
