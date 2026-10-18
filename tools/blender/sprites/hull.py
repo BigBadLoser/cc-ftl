@@ -22,8 +22,8 @@ CH = 0.07                  # that chamfer's size
 STEP_DEPTH = (0.0, 0.12, 0.2, 0.05)   # extra depth per quarter tile: a broken lower silhouette
 
 
-RUNG = 0.22               # rear ghost: its slope toward the room (13.webp: a 19-22 px band at 55 deg)
-ZGR = 0.31                # ... and its crest height
+ZGR = ZG                  # rear ghost crest height: the same as the front rim, so the two meet flush at corners
+RUNG = ZGR / math.tan(math.radians(55))   # its slope toward the room at 55 deg (13.webp: an ~19 px band)
 
 
 class Out(Spec):
@@ -112,8 +112,10 @@ class Out(Spec):
         return "y" if abs(gx) < e else ("x" if abs(gy) < e else "h")
 
     def _line(self, i, j):
-        """Ghost edge lines: 2 = crest (flat meets slope), 1 = the rear slope's toe and its seam at every tile (each tile
-        draws only its left seam, so no seam is drawn twice) and the front rim's unconnected edges, 0 = no line.
+        """Ghost edge lines: 2 = crest (flat meets slope), 1 = the rear slope's toe, the seam at every tile (rear: a fall
+        line down the slope; front: a line across the flat rim top from the inner edge to the crest; each tile draws only
+        its left seam) and the front rim's unconnected edges, 0 = no line. Runs stop one cell short of a connected +x /
+        +y neighbour, so two sprites never both draw the shared boundary pixel (that overlap made bright dots).
         Slope-to-slope mitres are not lined: at a concave corner the two adjacent seams already meet there. One-sided, so every edge is a single 1 px line. The
         rear ghost's flat part behind its crest stays unlined (13.webp shows only the sloped band)."""
         if self._lines is None:
@@ -138,6 +140,11 @@ class Out(Spec):
                         v = 2                                          # the front rim's outer crest
                     if not self.o and k != "flat" and self._inner(x, y) < C:
                         v = max(v, 1)                                  # the rear slope's toe
+                    if self.o in (1, 2, 3) and k == "flat" and (
+                            (a == 0 and self.o != 2 and self.mask & 8) or (b == 0 and self.o != 1 and self.mask & 1)):
+                        v = max(v, 1)                                  # front rim: its seam across the rim top
+                    if (a == GN - 1 and self.mask & 2) or (b == GN - 1 and self.mask & 4):
+                        v = 0                                          # the neighbour draws the shared pixel: no dot
                     L[a][b] = v
             self._lines = L
         return self._lines[i][j]
@@ -231,16 +238,12 @@ def drop(side):
 
 
 def vert():
-    """Ghost vertical edge line at the tile's front corner (+x, +y), placed where the front ghost's outer silhouette
-    turns or ends (convex and concave corners, steps, run ends). It runs the ghost's full height: from just under the
-    rim's crest line (so the two semi-transparent lines never overlap into a bright dot) down the belly to where the
-    belly turns under. 1 px wide: the corner sits on a pixel boundary, so the sliver is shifted half a pixel onto a
-    pixel column. Edge-only 'ghost' sprite at the secondary line weight."""
+    """Ghost vertical edge line at the tile's front corner (+x, +y), from the deck up to the rim: placed where the front
+    ghost's outer silhouette turns or ends (convex and concave corners, steps, run ends). Edge-only 'ghost' sprite."""
     m = core.Mesh("ghost_vert", flat=True)
-    w = 0.3 * C                                                 # well under 1 px wide
-    h = 1 / 128                                                 # (x + h, y - h) moves the corner +0.5 px on screen
-    p = (0.5 + h, 0.5 - h)
+    w = 0.36 * C                                                # about 1 px wide on screen
+    p = (0.5, 0.5)
     a, b = (p[0] - w, p[1] + w), (p[0] + w, p[1] - w)          # a screen-horizontal sliver through the corner
-    z0, z1 = -ZB, ZG - 1.5 * DZ
-    m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z1), core.G(*a, z1)], "gW2")
+    zt = ZG - 0.03                                              # stops under the crest line: no doubled bright dot
+    m.poly([core.G(*a, 0.0), core.G(*b, 0.0), core.G(*b, zt), core.G(*a, zt)], "gW2")
     return [_dummy("ghost_vert_plate"), m.build()]

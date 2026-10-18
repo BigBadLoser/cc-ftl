@@ -28,7 +28,7 @@ SKIRT = 0.30       # skirt rise as a fraction of HF (Space Haven: about 0.3 of t
 SLOPE = math.tan(math.radians(55))   # skirt rise / run (Space Haven: 55 degrees)
 CUT = 0.2          # cutaway: the wall face kept above the skirt
 T = TW = 10 / 32   # partition thickness (Space Haven: cap 19-22 px on a 64 px tile, minus a 2 px outline: ~0.30)
-ZG = 0.22          # ghost hull: rim top (a low raised rim, as in Space Haven's shortest view)
+ZG = 0.30          # ghost hull: front rim top AND rear crest height (one value, so they meet flush at corners)
 DROP = 1.5         # ghost hull: the below-deck belly's depth on the camera-facing sides (13.webp: ~1.2 tiles)
 CURVE = 0.35       # ... of which the last part curves back under the ship
 BEV = 3 / 32       # ghost rim: narrow lit chamfer on its outer edge
