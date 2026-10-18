@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "productionSprites": {
+    "ai-core": 10,
+    "shields": 20
+  },
+  "alpha": "binary",
+  "zoom": "exact nearest-neighbour 3x",
+  "anchors": "integer, world-origin based",
+  "idleAI": "blank, no glow",
+  "fullyDeployedEqualsActive": true
+}
