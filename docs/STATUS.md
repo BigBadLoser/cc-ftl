@@ -229,4 +229,11 @@ portal graph across grids, cross-grid pathing, crew grid membership, airlock mod
 - **Finish M4** (above).
 - **M5:** boarding and derelicts. Portal graph across grids, airlocks and teleporters, EVA,
   crew-vs-crew combat, capture, exploring wrecks.
+- **M5 queue (after the M4 merge, on Sonnet):**
+  - robot crew sprites and the robot bay art;
+  - the robot assembly UI;
+  - the rest of the M5 render and UI work: shuttles, boarding, gunfire, equipment, capture and prisoners;
+  - airlock and bay art;
+  - EVA;
+  - derelicts: alien-infested wrecks, and rogue AI shipyards for the AI faction.
 - **M6:** galaxy and sectors. Deploy modal, events, stores, factions.
