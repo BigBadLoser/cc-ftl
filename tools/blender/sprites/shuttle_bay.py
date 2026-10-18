@@ -205,29 +205,36 @@ def leaves(f, t):
             f.box(uu, (FEET[0][1] + FEET[1][1]) / 2, z, 0.16, FEET[1][1] - FEET[0][1] + 0.7, 0.05, "steelD", top="steelL")
 
 
+# gantry booms (v11): (side, v). Only the nose half of the shuttle is narrow (hull side |u| ~ 1.0 above z -0.5), so the booms
+# stand on the side lips there and reach in to grip the hull. +u booms stay clear of the gangway (v 1.0..1.8, rails/head height).
+BOOMS = ((-1, 0.75), (-1, 1.85), (1, 0.55), (1, 2.15))
+HULL_U = 1.0                          # hull side at the nose half, |u|
+BOOM_Z = 0.62                         # boom centre height (shuttle hull side spans z -0.45 .. 1.5 there)
+TOWER_TOP = 1.12
+
+
 def clamps(f, t):
-    """Cradle arms holding the shuttle by its four leg pads: a pylon on each side wall (floor to just above the pad) and a
-    horizontal arm from it to under the pad, with jaws either side of the pad. They retract into the pylons as the doors
-    start to open (gone by t = 0.25)."""
+    """GANTRY: four towers on the side lips of the pit (nose half), each with a boom reaching in over the opening to a grip pad
+    on the hull side, so the shuttle hangs from them. The booms retract into the towers as the doors start to open (gone by
+    t = 0.25). Nothing comes from the ceiling."""
     _g("clamps")
     k = min(1.0, t * 4.0)
-    for sx in (-1, 1):
-        for vv in (FEET[0][1], FEET[1][1]):
-            uw = UC + sx * (OPEN[1] - 0.1)                                                       # pylon centre on the wall
-            f.box(uw, vv, -PIT, 0.12, 0.5, 0.06, "steelD", top="steelL")
-            f.box(uw, vv, -PIT + 0.06, 0.1, 0.36, FEET_Z - (-PIT) + 0.06, "steelL", top="steelL")
-            f.box(uw - sx * 0.04, vv, FEET_Z - 0.2, 0.02, 0.2, 0.12, "cyan", base=True)            # pylon lamp slot
-            full = abs(uw) - FEET[0][0] + 0.17                                                       # pylon face to the pad's far edge
-            ln = full * (1.0 - k)
-            if ln < 0.04:
-                continue
-            ua = uw - sx * (0.05 + ln / 2)
-            f.box(ua, vv, FEET_Z - 0.11, ln, 0.16, 0.11, "steel", top="steelL")                      # arm, top touches the pad underside
-            f.box(ua, vv, FEET_Z - 0.04, ln, 0.04, 0.04, "hazY")
-            if k < 0.5:
-                ue = uw - sx * (0.05 + ln)
-                for sv in (-1, 1):                                                                   # jaws either side of the pad
-                    f.box(ue + sx * 0.02, vv + sv * 0.25, FEET_Z - 0.11, 0.16, 0.06, 0.26, "steelD", top="hazY")
+    zl = PAD_T + LIP
+    for sx, vv in BOOMS:
+        ut = sx * (OPEN[1] + 0.07)                                                                # tower centre, on the lip
+        f.box(ut, vv, zl, 0.3, 0.42, 0.05, "steelD", top="hazK")                                   # base plate
+        f.box(ut, vv, zl + 0.05, 0.2, 0.28, TOWER_TOP - zl - 0.05, "steelL", top="steel")          # tower
+        f.box(ut, vv, TOWER_TOP, 0.26, 0.34, 0.06, "steelD", top="steel")                          # cap
+        f.box(ut - sx * 0.101, vv, 0.3, 0.02, 0.1, 0.55, "arc", base=True)                          # inner lamp bar
+        ln = (abs(ut) - 0.1 - HULL_U - 0.07) * (1.0 - k)
+        if ln < 0.05:
+            continue
+        ub = ut - sx * (0.1 + ln / 2)
+        f.box(ub, vv, BOOM_Z - 0.07, ln, 0.16, 0.14, "steel", top="steelL")                         # boom
+        f.box(ub, vv, BOOM_Z + 0.07, ln, 0.05, 0.012, "hazY")                                       # hazard stripe along the top
+        ug = ut - sx * (0.1 + ln + 0.03)
+        f.box(ug, vv, BOOM_Z - 0.3, 0.08, 0.44, 0.6, "steelD", top="hazY")                          # grip pad on the hull side
+        f.box(ug - sx * 0.045, vv, BOOM_Z - 0.04, 0.02, 0.2, 0.08, "cyan", base=True)
 
 
 def _wall(f, p, q, nin, t0, t1, d0, d1, z0, z1, mat, top=None):

@@ -73,6 +73,10 @@ def main():
             fresh()
             hold = B.bay(rot, 0.0)
             render(f"shuttle_parked_r{rot}", shuttle_ob(rot) + hold, "prop", hold)
+    if "t20" in JOBS:                                                  # shuttle still hanging while the gantry swings clear
+        fresh()
+        hold = B.bay(0, 0.2)
+        render("shuttle_parked_r0_t20", shuttle_ob(0) + hold, "prop", hold)
 
 
 main()

@@ -168,28 +168,40 @@ def flyers(ds):
     return row(ims)
 
 
+def frame(bay_tag, shuttle_tag=None, lab="", crew_on=True):
+    """Frame-style view: the bay on its own floor, no walls; a crew member for scale on the outside floor by the gangway."""
+    sc = Scene(560, 440)
+    T = lambda x, y: (280 + (x - y) * 32, 150 + (x + y) * 16)  # noqa: E731
+    for x in range(-1, 6):
+        for y in range(-1, 6):
+            sc.asset("tile.floor.a", *T(x, y))
+    sc.sprite(bay_tag, *T(3, 4))
+    if shuttle_tag:
+        sc.sprite(shuttle_tag, *T(3, 4))
+    if crew_on:
+        crew(sc, *T(4.5, 2.5), d=4)
+    return label(trim(sc.image(), 4), lab)
+
+
+def save(im, name):
+    im.save(OUTD / f"{name}_1x.png")
+    zoom(im).save(OUTD / f"{name}_3x.png")
+
+
 def main():
     OUTD.mkdir(parents=True, exist_ok=True)
-    V = sys.argv[5] if len(sys.argv) > 5 else "v9"
-    im = room("bay_r0_t0", "shuttle_parked_r0")
-    im.save(OUTD / f"bay_room_r0_{V}_1x.png")
-    zoom(im).save(OUTD / f"bay_room_r0_{V}_3x.png")
-    e = room("bay_r0_t0", None)
-    e.save(OUTD / f"bay_empty_r0_{V}_1x.png")
-    zoom(e).save(OUTD / f"bay_empty_r0_{V}_3x.png")
-    zoom(room("bay_r0_t0", "shuttle_parked_r0", close=True)).save(OUTD / f"bay_room_close_r0_{V}_3x.png")
-    r = alone(["bay_r0_t0", "bay_r0_t20", "bay_r0_t66"], ["closed", "open 0.2 (arms swinging clear)", "open 0.66 (gangway retracted)"])
-    r.save(OUTD / f"bay_hatch_frames_{V}_1x.png")
-    zoom(r).save(OUTD / f"bay_hatch_frames_{V}_3x.png")
+    V = sys.argv[5] if len(sys.argv) > 5 else "v11"
+    save(row([frame("bay_r0_t0", "shuttle_parked_r0", "closed"), frame("bay_r0_t20", "shuttle_parked_r0_t20", "open 0.2: gantry swinging clear"),
+              frame("bay_r0_t66", None, "open 0.66: shuttle gone, gangway retracted")]), f"bay_frames_{V}")
+    save(frame("bay_r0_t0", "shuttle_parked_r0", "closed"), f"bay_closed_{V}")
+    save(frame("bay_r0_t0", None, "empty"), f"bay_empty_{V}")
     ims = []
     for k in range(4):
         sc = Scene(560, 440)
         sc.sprite(f"bay_r{k}_t0", 300, 300)
         sc.sprite(f"shuttle_parked_r{k}", 300, 300)
         ims.append(label(trim(sc.image(), 4), f"r{k}"))
-    r = row(ims)
-    r.save(OUTD / f"bay_rots_{V}_1x.png")
-    zoom(r).save(OUTD / f"bay_rots_{V}_3x.png")
+    save(row(ims), f"bay_rots_{V}")
 
 
 main()
