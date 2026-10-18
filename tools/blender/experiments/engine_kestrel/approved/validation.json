@@ -1,0 +1,75 @@
+{
+  "stage": 7,
+  "geometry": {
+    "r0": {
+      "bellDiameter": 2.6,
+      "protrusion": 1.5,
+      "footprint": [
+        4,
+        5
+      ],
+      "endWallHeight": 1.2,
+      "bulkheadHeight": 2.17,
+      "directDeckMounts": true,
+      "separateFloorPlate": false
+    },
+    "r1": {
+      "bellDiameter": 2.6,
+      "protrusion": 1.5,
+      "footprint": [
+        5,
+        4
+      ],
+      "endWallHeight": 1.2,
+      "bulkheadHeight": 2.17,
+      "directDeckMounts": true,
+      "separateFloorPlate": false
+    },
+    "r2": {
+      "bellDiameter": 2.6,
+      "protrusion": 1.5,
+      "footprint": [
+        4,
+        5
+      ],
+      "endWallHeight": 1.2,
+      "bulkheadHeight": 2.17,
+      "directDeckMounts": true,
+      "separateFloorPlate": false
+    },
+    "r3": {
+      "bellDiameter": 2.6,
+      "protrusion": 1.5,
+      "footprint": [
+        5,
+        4
+      ],
+      "endWallHeight": 1.2,
+      "bulkheadHeight": 2.17,
+      "directDeckMounts": true,
+      "separateFloorPlate": false
+    }
+  },
+  "sprites": {
+    "module.engine.hull.r1": {
+      "size": [
+        159,
+        130
+      ],
+      "paletteColors": 24,
+      "additivePixelsOutsideColor": 0,
+      "binaryAlpha": true
+    },
+    "module.engine.machine.r1": {
+      "size": [
+        303,
+        191
+      ],
+      "paletteColors": 59,
+      "additivePixelsOutsideColor": 0,
+      "binaryAlpha": true
+    }
+  },
+  "completeSetRequired": false,
+  "result": "PASS"
+}

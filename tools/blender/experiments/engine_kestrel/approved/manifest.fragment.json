@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "sheets": {
+    "module.engine.hull.r1": {
+      "image": "sprites/module.engine.hull.r1.png",
+      "glow": "sprites/module.engine.hull.r1.glow.png"
+    },
+    "module.engine.machine.r1": {
+      "image": "sprites/module.engine.machine.r1.png",
+      "glow": "sprites/module.engine.machine.r1.glow.png"
+    }
+  },
+  "assets": {
+    "module.engine.hull.r1": {
+      "kind": "static",
+      "sheet": "module.engine.hull.r1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 159,
+        "h": 130
+      },
+      "anchor": {
+        "x": 31,
+        "y": 114
+      },
+      "footprint": [
+        5,
+        4
+      ],
+      "glow": false
+    },
+    "module.engine.machine.r1": {
+      "kind": "static",
+      "sheet": "module.engine.machine.r1",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 303,
+        "h": 191
+      },
+      "anchor": {
+        "x": 148,
+        "y": 183
+      },
+      "footprint": [
+        5,
+        4
+      ],
+      "glow": false
+    }
+  }
+}
