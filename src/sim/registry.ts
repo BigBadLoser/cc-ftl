@@ -9,7 +9,7 @@ export interface ShipTemplate {
   name: string;
   /** Modules to place at game start; `rot` is quarter turns clockwise (0..3). */
   modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string }[];
-  /** '.' space, '#' wall, '_' floor, 'D' door. Rows may differ in length; short rows pad with space. */
+  /** '.' space, '#' wall, '_' floor, 'D' door, '=' beam. Rows may differ in length; short rows pad with space. */
   rows: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
   faction?: 'player' | 'hostile' | 'neutral';

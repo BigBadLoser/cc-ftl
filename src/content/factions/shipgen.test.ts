@@ -100,6 +100,38 @@ describe('ship generator', () => {
     expect(meanPairwise(deep.map((g) => adjacencySignature(g.debug!)), adjacencyDistance)).toBeGreaterThan(0.45);
   });
 
+  it('drones (same arranger, machine doctrine): AI core as bridge, sealed pods, beams, robot crawlways only', () => {
+    let beams = 0;
+    for (let seed = 0; seed < 30; seed++) {
+      const g = gen('faction.drones', seed, seed % 10);
+      const d = g.debug!;
+      expect(d, 'arranger debug data').toBeDefined();
+      expect(count(g, (m) => !!m.bridge)).toBe(0);
+      expect(count(g, (m) => !!m.aiCore)).toBe(1);
+      expect(d.traversal.every((t) => t.access === 'robot' || t.access === 'human')).toBe(true);
+      expect(d.assemblies.some((a) => a.access === 'external')).toBe(true);
+      expect(g.metrics!.occupancy).toBeGreaterThan(0.6);
+      expect(g.metrics!.corridorRatio).toBeLessThan(0.35);
+      if (g.template.rows.some((r) => r.includes('='))) beams++;
+    }
+    expect(beams).toBeGreaterThan(20);
+  });
+
+  it('beam tiles load as solid, unwalkable, airtight Struct.Beam', () => {
+    const seed = Array.from({ length: 30 }, (_, s) => s).find((s) => gen('faction.drones', s, 5).template.rows.some((r) => r.includes('=')))!;
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.drones', seed, depth: 5, cx: 130, cy: 70 });
+    sim.step();
+    const grid = [...sim.grids.values()].find((x) => x.id !== 1)!;
+    let seen = 0;
+    for (let y = 0; y < grid.height; y++) for (let x = 0; x < grid.width; x++) {
+      if (grid.get('struct', x, y) !== Struct.Beam) continue;
+      seen++;
+      expect(isTileWalkable(sim, grid, x, y)).toBe(false);
+    }
+    expect(seen).toBeGreaterThan(0);
+  });
+
   for (const id of ids) {
     it(`${id}: spawned in the sim, modules sit on floor and hull, chairs and access tiles are open, all floor is reachable, power balances`, () => {
       for (let seed = 0; seed < 12; seed++) {

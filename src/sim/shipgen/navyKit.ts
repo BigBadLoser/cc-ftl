@@ -26,6 +26,7 @@ export interface Ctx {
   depth: Partial<Record<SectionKind, number>>;
   parts: string[];
   why: string;
+  defs: Record<string, import('../registry').ModuleDef>;
 }
 
 export const no = (c: Ctx, why: string): false => { c.why ||= why; return false; };

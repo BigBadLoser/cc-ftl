@@ -74,7 +74,8 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   }
   if (demand > supply) problems.push(`power: demand ${demand} > supply ${supply}`);
   const count = (pred: (d: ModuleDef) => boolean): number => mods.filter((m) => defs[m.def] && pred(defs[m.def] as ModuleDef)).length;
-  if (count((d) => !!d.bridge) === 0) problems.push('no helm');
+  // A helm is the bridge; on AI-run ships the AI core stands in (as on the robots branch).
+  if (count((d) => !!d.bridge || !!d.aiCore) === 0) problems.push('no helm or AI core');
   if (count((d) => !!d.engine) === 0) problems.push('no engine');
   if (count((d) => d.power > 0) === 0) problems.push('no reactor');
   if (t.boarding && count((d) => !!d.vehicleBay) === 0) problems.push('boards but has no shuttle bay');

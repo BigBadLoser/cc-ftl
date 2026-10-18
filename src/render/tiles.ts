@@ -7,7 +7,7 @@ export type Chain = string[];
 export type CutawayMode = "auto" | "up" | "down";
 
 const solidish = (k: number) => k === Struct.Wall || k === Struct.Door;
-const isRoom = (k: number) => !solidish(k) && k !== Struct.Space;
+const isRoom = (k: number) => k === Struct.Floor;
 
 export function touchesSpace(kindAt: KindAt, x: number, y: number): boolean {
   for (let dy = -1; dy <= 1; dy++)

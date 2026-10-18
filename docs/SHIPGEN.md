@@ -112,7 +112,40 @@ distance over join tokens `kindA>dir>kindB` and assembly-degree tokens. It is re
 - **Order:** constraint-scored (hangar amidships, batteries spread, core between batteries, stores aft) with seeded
   noise, so sequences vary between seeds.
 
-## Drones (next): machinery first
+## Navy follow-ups (v5 accepted as the baseline)
+
+- Rework or drop layered cruisers.
+- Make side decks longer and shallower than their host.
+- Open or fill the enclosed holes (courtyards between long decks and twin drives).
+- Keep side decks behind the nose (no fork noses).
+- Add a second carrier layout.
+
+## Drones (built, v6): machinery first, same arranger
+
+- **Blocks** (`droneBlocks.ts`):
+  - sealed pods whose interior is exactly the module footprint: guns, PD, shields, 1–2-reactor banks, engines. Access
+    kind `external`; there is no door and no floor left, so they are serviced from outside;
+  - robot crawlways one tile wide (access `robot`), whose long sides carry several mounts;
+  - solid beams (`=` in templates, sim `Struct.Beam`: solid, airtight, unwalkable, no floor, no integrity);
+  - the processing room (AI core plus the weapons console);
+  - small stores;
+  - a dock.
+- **Grammars** (`droneGrammars.ts`):
+  - `spoke`: the processing room at the centre, crawl spokes to repeated pod clusters (mirrored only when rolled),
+    reactors on a west arm, engines on a crawl rail aft;
+  - `truss`: beam trusses fore (guns) and aft (defences, reactors) with pods on struts, engines on a cross beam;
+  - `cluster`: repeated crawl-node clusters on a zig-zag of crawl tubes, pods out on beam struts.
+- **Families:** picket, lancer and swarm weight these grammars and carry soft aspect targets.
+- **No helm:** the AI core is the bridge for validation (as on the robots branch). One weapons console stays,
+  because weapons only charge with a manned console. Crews are human placeholders until the robots branch merges.
+  The AI core is the boarding target; validation makes it reachable over the crawlways from the airlock.
+- **Beams in game** draw with an isolated, clearly marked placeholder (`src/render/beamPlaceholder.ts`) until strut
+  sprites exist. In the viewer, beam tiles are magenta.
+- **Sim follow-ups:**
+  - capability-based crawl speed (robots normal, humans slow) needs the robots branch;
+  - sealed pods can't be repaired from inside (external servicing is not simulated yet).
+
+## Drones (original plan)
 
 - Dense machine assemblies (weapon clusters, reactor banks, a processing core with PD), repeated in modules of 2–4.
 - Arranged by utility: processing central, power by its loads, mounts outward, drive at +x.

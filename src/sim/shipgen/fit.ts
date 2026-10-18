@@ -35,7 +35,7 @@ function hugScore(lay: Layout, def: ModuleDef, x: number, y: number, rot: number
  * Returns the placement or null.
  */
 export function placeOne(
-  lay: Layout, rng: Rng, defId: string, rooms: readonly number[], opts: { rots?: number[]; spread?: boolean } = {},
+  lay: Layout, rng: Rng, defId: string, rooms: readonly number[], opts: { rots?: number[]; spread?: boolean; sealed?: boolean } = {},
 ): PlacedModule | null {
   const def = lay.defs[defId];
   if (!def) return null;
@@ -63,7 +63,7 @@ export function placeOne(
     cands.sort((a, b) => b.score - a.score);
     for (const c of cands.slice(0, 40)) {
       lay.push(c.pm);
-      if ((!def.solid && !def.airlock) || lay.connected()) return c.pm;
+      if ((!def.solid && !def.airlock) || opts.sealed || lay.connected()) return c.pm;
       lay.pop();
     }
   }

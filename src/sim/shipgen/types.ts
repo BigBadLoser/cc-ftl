@@ -100,6 +100,8 @@ export interface ArchitectureDef {
 
 /** Navy hull grammars (see navyGrammars.ts). */
 export type NavyGrammar = 'linear' | 'deckPair' | 'spineDecks' | 'spineWings' | 'citadelFlanked' | 'twinHull' | 'layered' | 'carrierIsland';
+/** Drone (machine) grammars (see droneGrammars.ts). */
+export type DroneGrammar = 'spoke' | 'truss' | 'cluster';
 
 /** Standard functional sections of a navy hull (one per kind of job). */
 export type SectionKind = 'command' | 'battery' | 'core' | 'habitat' | 'cargo' | 'hangar' | 'drive';
@@ -126,7 +128,7 @@ export interface HullFamilyDef {
   /** The core is a citadel: an enclosed compartment on the axis, passages around it, crew quarters outboard. */
   citadel?: boolean;
   /** Structural grammars the family uses (how its sections are arranged in 2D), weighted. */
-  grammars: readonly Weighted<NavyGrammar>[];
+  grammars: readonly Weighted<NavyGrammar | DroneGrammar>[];
   /** Soft proportion target (length / beam): arrangements nearer it score better; never a hard reject. */
   aspect: readonly [number, number];
   /** Propulsion configurations the family uses (engines always face +x). */
@@ -134,7 +136,7 @@ export interface HullFamilyDef {
 }
 
 /** Diagnostic metric bands: a generated ship outside a band is rejected and reseeded. */
-export type MetricId = 'compactness' | 'occupancy' | 'corridorRatio' | 'narrowLinks' | 'aspect';
+export type MetricId = 'compactness' | 'occupancy' | 'corridorRatio' | 'narrowLinks' | 'aspect' | 'beamShare';
 export type MetricBands = Partial<Record<MetricId, readonly [number, number]>>;
 
 export interface FactionDef {

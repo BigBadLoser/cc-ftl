@@ -35,13 +35,16 @@ export function blockFrom(b: Builder, kind: string, label: string, access: Acces
   }).join(''));
   // Gun mounts and airlocks keep their outer (north / south) faces open: the space just outside their outer walls.
   const exposed: { x: number; y: number }[] = [];
-  for (const p of b.parts.filter((q) => q.role === 'weapons' || q.role === 'dock')) {
+  for (const p of b.parts.filter((q) => (q.role === 'weapons' || q.role === 'dock') && !q.spec?.sealed)) {
     for (let y = p.y; y < p.y + p.h; y++) {
       for (let x = p.x + 1; x < p.x + p.w - 1; x++) {
         if (x > p.x && x < p.x + p.w - 1 && y > p.y && y < p.y + p.h - 1) continue;
         // Navy mounts face north or south; only those faces are kept open.
         for (const [dx, dy] of [[0, -1], [0, 1]] as const) {
-          if (b.cv.at(x + dx, y + dy) === '.' && b.cv.at(x - dx, y - dy) !== '.') exposed.push({ x: x + dx - ox, y: y + dy - oy });
+          if (b.cv.at(x + dx, y + dy) !== '.' || b.cv.at(x - dx, y - dy) === '.') continue;
+          // Faces the block joins through (its ports) are meant to be covered.
+          const onPort = ports.some((q) => !q.id.startsWith('r') && (q.side === 'n' || q.side === 's') && q.y === y && x >= q.x && x < q.x + q.len);
+          if (!onPort) exposed.push({ x: x + dx - ox, y: y + dy - oy });
         }
       }
     }

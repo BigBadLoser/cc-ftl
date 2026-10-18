@@ -10,6 +10,7 @@ import { lightTint, mulColor, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
+import { beamPlaceholder } from "./beamPlaceholder";
 import { floorChain, ghostVerts, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
@@ -61,6 +62,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   const markers = createMarkers(L.ui);
   const overlay: Overlay = createOverlay(grid, L.decal, host.overlayWorld);
   let owned: Sprite[] = [];
+  // Beams use a temporary placeholder drawing (see beamPlaceholder.ts) until strut art exists.
+  let beams: import("pixi.js").Graphics[] = [];
   let tinted: Tinted[] = [];
   let doors: Door[] = [];
   let mode: CutawayMode = "auto";
@@ -77,6 +80,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   function clear(): void {
     for (const s of owned) s.destroy();
     owned = [];
+    for (const g of beams) g.destroy();
+    beams = [];
     tinted = [];
     doors = [];
   }
@@ -101,6 +106,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       for (let x = 0; x < grid.width; x++) {
         const k = kindAt(x, y);
         if (k === Struct.Space) continue;
+        if (k === Struct.Beam) {
+          const g = beamPlaceholder(x, y, depthKey(x, y));
+          L.sorted.addChild(g);
+          beams.push(g);
+          continue;
+        }
         const idx = y * grid.width + x;
         // A near-hull ghost replaces the floor plate under it (not under an engine: its bulkhead stands on the deck).
         const f = ghosts && replacesFloor(kindAt, x, y, mode) && !replaced.has(idx) ? undefined : atlas.firstOf(floorChain(x, y));

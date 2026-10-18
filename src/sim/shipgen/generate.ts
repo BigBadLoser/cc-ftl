@@ -2,7 +2,7 @@ import { Rng } from '../rng';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { Builder } from './builder';
 import type { Arranger } from './arranger';
-import { arrangeNavy } from './navyLayouts';
+import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne } from './fit';
@@ -56,12 +56,12 @@ function fitOut(
   const out: Fitted = { lay, stock: new Map(), vehicles: new Set() };
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];
   specs.forEach((spec, room) => { for (const def of spec?.mods ?? []) jobs.push({ room, def, spec: spec as RoomSpec }); });
-  jobs.sort((a, b) => rank(a.def, defs[a.def] as ModuleDef) - rank(b.def, defs[b.def] as ModuleDef));
+  jobs.sort((a, b) => (a.spec.sealed ? 0 : 1) - (b.spec.sealed ? 0 : 1) || rank(a.def, defs[a.def] as ModuleDef) - rank(b.def, defs[b.def] as ModuleDef));
   const placed: Record<string, number> = {};
   const wanted: Record<string, number> = {};
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
-    const pm = placeOne(lay, rng, j.def, [j.room], { spread: !!defs[j.def]?.weapon });
+    const pm = placeOne(lay, rng, j.def, [j.room], { spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) });
     if (!pm) continue;
     placed[j.def] = (placed[j.def] ?? 0) + 1;
     const idx = lay.modules.length - 1;
@@ -139,7 +139,7 @@ export function generateAttempt(
     role = { id: fam.id, weight: fam.weight, archetypes: [], ...(fam.bonus ? { bonus: fam.bonus } : {}), ...(fam.bays ? { bays: fam.bays } : {}) };
     archetype = 'sections';
     plan = planShip(rng, f, role, depth, defs);
-    const r = arrangeNavy(rng, f, fam, plan);
+    const r = arrangeHull(rng, f, fam, plan, defs);
     if (typeof r === 'string') return `${fam.id}: ${r}`;
     comp = r.A;
     b = r.b;

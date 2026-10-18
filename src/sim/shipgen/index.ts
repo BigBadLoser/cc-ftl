@@ -1,5 +1,5 @@
 export type {
-  AccessKind, AsmRecord, NavyGrammar, CompDebug, HullFamilyDef, JoinKind, JoinRecord, MetricBands, MetricId, PortRecord, SectionKind,
+  AccessKind, AsmRecord, NavyGrammar, DroneGrammar, CompDebug, HullFamilyDef, JoinKind, JoinRecord, MetricBands, MetricId, PortRecord, SectionKind,
   ArchetypeId, ArchitectureDef, ChunkDef, FactionDef, GenOrigin, GenResult, GenRoom, RoomRole, Scaled, ShipBudget, ShipRoleDef, Weighted,
 } from './types';
 export { generateShip, generateAttempt, GEN_ATTEMPTS } from './generate';

@@ -16,11 +16,11 @@ const TINTS: RGB[] = [
   [220, 140, 140], [120, 160, 90], [140, 140, 200], [210, 160, 110], [100, 130, 150],
 ];
 const JOIN: Record<JoinKind, RGB> = { frame: [255, 230, 90], graft: [255, 140, 40], beam: [255, 60, 220] };
-const ACCESS: Record<AccessKind, RGB> = { human: [80, 230, 255], robot: [230, 90, 255], external: [255, 255, 120] };
+const ACCESS: Record<AccessKind, RGB> = { human: [80, 230, 255], robot: [120, 255, 140], external: [255, 255, 120] };
 
 /**
- * Assemblies tinted and labelled, walls darker; joins drawn by kind (frame yellow, graft orange, beam magenta);
- * traversal tiles dotted by access kind (human cyan, robot magenta, external yellow); ports green (met) / red.
+ * Assemblies tinted and labelled, walls darker, beam tiles solid magenta; joins framed by kind (frame yellow, graft
+ * orange, beam magenta); traversal dotted by access kind (human cyan, robot green, external yellow); ports green / red.
  */
 export function drawAssemblies(r: Raster, g: GenResult, ox: number, oy: number, s: number): void {
   const d = g.debug;
@@ -29,6 +29,7 @@ export function drawAssemblies(r: Raster, g: GenResult, ox: number, oy: number, 
       const c = g.template.rows[y]?.[x] ?? '.';
       if (c === '.') continue;
       const a = d ? (d.asmOf[y * g.width + x] ?? -1) : -1;
+      if (c === '=') { r.rect(ox + x * s, oy + y * s, s, s, [235, 70, 200]); continue; }
       const t = a >= 0 ? (TINTS[a % TINTS.length] as RGB) : ([90, 90, 90] as RGB);
       const k = c === '#' ? 0.45 : 1;
       r.rect(ox + x * s, oy + y * s, s, s, t.map((v) => v * k) as RGB);

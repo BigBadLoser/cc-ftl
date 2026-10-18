@@ -62,7 +62,7 @@ export class Canvas {
         const k = this.idx(ox + i, oy + j);
         if (k < 0) return false;
         const cur = this.cells[k] as string;
-        if (c === '#' || c === 'D') {
+        if (c === '#' || c === 'D' || c === '=') {
           if (cur === '_') return false;
         } else if (cur !== '.') return false;
       }
@@ -77,6 +77,8 @@ export class Canvas {
         const cur = this.cells[k] as string;
         if (c === '#') {
           if (cur !== 'D') this.cells[k] = '#';
+        } else if (c === '=') {
+          if (cur === '.') this.cells[k] = '=';
         } else if (c === 'D') this.cells[k] = 'D';
         else {
           this.cells[k] = '_';

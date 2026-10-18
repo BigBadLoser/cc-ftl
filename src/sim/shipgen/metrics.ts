@@ -11,12 +11,13 @@ export function layoutMetrics(t: ShipTemplate, hallTile: (x: number, y: number) 
   const w = Math.max(...t.rows.map((r) => r.length));
   const at = (x: number, y: number): string => t.rows[y]?.[x] ?? '.';
   let x0 = w; let y0 = h; let x1 = 0; let y1 = 0;
-  let filled = 0; let floor = 0; let halls = 0; let narrow = 0;
+  let filled = 0; let floor = 0; let halls = 0; let narrow = 0; let beams = 0;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const c = at(x, y);
       if (c === '.') continue;
       filled++;
+      if (c === '=') beams++;
       x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
       if (c !== '_') continue;
       floor++;
@@ -40,6 +41,7 @@ export function layoutMetrics(t: ShipTemplate, hallTile: (x: number, y: number) 
     corridorRatio: r(halls / Math.max(1, floor)),
     narrowLinks: r(narrow / Math.max(1, halls)),
     aspect: r(bw / bh),
+    beamShare: r(beams / Math.max(1, filled)),
   };
 }
 

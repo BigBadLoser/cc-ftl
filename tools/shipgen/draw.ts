@@ -93,6 +93,7 @@ export function drawShip(r: Raster, g: GenResult, ox: number, oy: number, s: num
         r.rect(px, py, s, s, room >= 0 ? ROLE_TINT[g.rooms[room]?.role ?? 'hall'] : [60, 60, 60]);
         r.rect(px, py, 1, 1, [30, 30, 34]);
       } else if (c === 'D') r.rect(px + 1, py + 1, s - 2, s - 2, [230, 150, 40]);
+      else if (c === '=') { r.rect(px, py, s, s, [120, 60, 120]); r.rect(px + 1, py + (s >> 1) - 1, s - 2, 2, [235, 70, 200]); }
       else {
         const hull = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].some(([dx, dy]) => (rows[y + (dy as number)]?.[x + (dx as number)] ?? '.') === '.');
         r.rect(px, py, s, s, hull ? [150, 160, 175] : [100, 104, 112]);
@@ -166,14 +167,16 @@ export function contactSheet(
   const r = new Raster(cols * cellW + 8, rowsN * cellH + 30);
   const sil = meanPairwise(ships.map((x) => silhouetteMask(x.g.template.rows)), silhouetteDistance);
   const arch = meanPairwise(ships.map((x) => x.g.debug?.profile ?? x.g.topology), profileDistance);
-  const sigs = ships.filter((x) => x.g.debug).map((x) => ({ fam: x.g.role, sig: adjacencySignature(x.g.debug!) }));
+  const sigs = ships.filter((x) => x.g.debug).map((x) => ({ fam: x.g.role, gram: x.g.topology.split(' ')[0], sig: adjacencySignature(x.g.debug!) }));
   const adj = meanPairwise(sigs, (p, q) => adjacencyDistance(p.sig, q.sig));
   const within = meanPairwise(sigs, (p, q) => (p.fam === q.fam ? adjacencyDistance(p.sig, q.sig) : NaN));
   const pairsIn = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.fam === p.fam).map((q) => adjacencyDistance(p.sig, q.sig)));
   const pairsX = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.fam !== p.fam).map((q) => adjacencyDistance(p.sig, q.sig)));
   const mean = (xs: number[]): number => (xs.length ? xs.reduce((t, v) => t + v, 0) / xs.length : 0);
   void within;
-  const adjText = `adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)})`;
+  const gIn = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.gram === p.gram).map((q) => adjacencyDistance(p.sig, q.sig)));
+  const gX = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.gram !== p.gram).map((q) => adjacencyDistance(p.sig, q.sig)));
+  const adjText = `adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)}; within grammar ${mean(gIn).toFixed(2)}, across ${mean(gX).toFixed(2)})`;
   r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1} ${view}  shape ${sil.toFixed(2)} sections ${arch.toFixed(2)} ${adjText}`, 8, 8, [230, 230, 230], 2);
   const text: string[] = [];
   ships.forEach(({ seed, g }, i) => {

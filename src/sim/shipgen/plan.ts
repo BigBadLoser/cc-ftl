@@ -33,6 +33,8 @@ export interface RoomSpec {
   /** Crates get starting stock; a vehicle bay gets a shuttle. */
   stock?: boolean;
   vehicle?: boolean;
+  /** No door: equipment serviced from outside; its footprint fills the room (no connectivity check). */
+  sealed?: boolean;
 }
 
 /** Everything the ship carries, grouped into rooms. Topologies decide where each room goes. */
@@ -107,7 +109,9 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
     const big = (defs[g]?.footprint[1] ?? 2) > 2;
     shields.push({ role: 'shields', mods: [g], w: big ? 4 : 3, h: big ? 4 : 3 });
   }
-  const consoles = ['module.helm', 'module.weaponsConsole', ...(shields.length > 0 && f.living ? ['module.shieldConsole'] : [])];
+  // Crewed ships fly from a helm; AI-run ships have no helm, the AI core is their bridge (one weapons console stays:
+  // weapons charge only with a manned console).
+  const consoles = f.living ? ['module.helm', 'module.weaponsConsole', ...(shields.length > 0 ? ['module.shieldConsole'] : [])] : ['module.weaponsConsole'];
   if (!f.living && f.aiCore) consoles.push('module.aiCore');
   const command: RoomSpec = { role: f.living ? 'bridge' : 'core', mods: consoles, w: 7, h: f.living ? 4 : 5 };
   const pdCount = f.aiCore ? b.pointDefense : 0;

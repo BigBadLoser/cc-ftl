@@ -22,6 +22,8 @@ export interface BlockPort {
   y: number;
   len: number;
   access: AccessKind;
+  /** Reusable for several attachments (crawl and truss sides that carry many pods). */
+  multi?: boolean;
 }
 
 export interface Block {
@@ -62,7 +64,7 @@ export interface AttachOpts {
 }
 
 const key = (x: number, y: number): number => (y + 4096) * 8192 + (x + 4096);
-const isFloor = (c: string | undefined): boolean => c !== undefined && c !== '#' && c !== 'D' && c !== '.';
+const isFloor = (c: string | undefined): boolean => c !== undefined && c !== '#' && c !== 'D' && c !== '.' && c !== '=';
 
 /** A port id with its north/south marker swapped ('hn' <-> 'hs', 'rn0' <-> 'rs0'); ids track their sides. */
 export const flipId = (id: string): string => id.replace(/[ns]/, (m) => (m === 'n' ? 's' : 'n'));
@@ -135,7 +137,8 @@ export class Arranger {
         const c = row[i] as string;
         if (c === '.') continue;
         const k = key(X + i, Y + j);
-        if (!isFloor(this.occ.get(k)) && this.occ.get(k) !== 'D') this.occ.set(k, c === 'D' ? 'D' : isFloor(c) ? c : '#');
+        const cur = this.occ.get(k);
+        if (!isFloor(cur) && cur !== 'D' && !(c === '=' && cur === '#')) this.occ.set(k, c === 'D' ? 'D' : isFloor(c) ? c : c === '=' ? '=' : '#');
       }
     }
     for (const f of b.faceE) this.rays.push({ x: X + f.x, y0: Y + f.y0, y1: Y + f.y1 });
@@ -162,7 +165,7 @@ export class Arranger {
           const X = horiz ? wx + d - cp.x + (o.shift ?? 0) : wx - cp.x;
           const Y = horiz ? wy - cp.y : wy + d - cp.y + (o.shift ?? 0);
           const tiles = this.sharedOpenings(P, pp, child, cp, X, Y);
-          if (tiles.length === 0) continue;
+          if (tiles.length === 0 && o.doors !== 0) continue;
           const t = (d - lo) / Math.max(1, hi - lo);
           const pref = o.align === 'start' ? -t : o.align === 'end' ? t : o.align === 'mid' || !o.align ? -Math.abs(t - 0.5) : this.rand();
           out.push({ X, Y, pp, cp, tiles, score: pref });
@@ -224,20 +227,26 @@ export class Arranger {
 
   private commit(parent: number, child: Block, c: { X: number; Y: number; pp: BlockPort; cp: BlockPort; tiles: { x: number; y: number }[] }, o: AttachOpts): number {
     const id = this.place(child, c.X, c.Y);
-    (this.placed[parent] as Placed).used.add(c.pp.id);
-    this.history.push({ parent, port: c.pp.id });
-    (this.placed[id] as Placed).used.add(c.cp.id);
+    if (!c.pp.multi) (this.placed[parent] as Placed).used.add(c.pp.id);
+    this.history.push({ parent, port: c.pp.multi ? '' : c.pp.id });
+    if (!c.cp.multi) (this.placed[id] as Placed).used.add(c.cp.id);
     const n = Math.min(o.doors ?? 2, c.tiles.length);
     const mid = Math.floor((c.tiles.length - n) / 2);
     const doors = c.tiles.slice(mid, mid + n);
     this.doorTiles.push(...doors);
     for (const t of doors) this.occ.set(key(t.x, t.y), 'D');
-    this.joins.push({ kind: o.kind ?? 'frame', a: parent, b: id, tiles: doors });
+    this.joins.push({ kind: o.kind ?? 'frame', a: parent, b: id, tiles: doors.length > 0 ? doors : this.contact(c.pp, this.placed[parent] as Placed) });
     for (const t of doors) {
       this.ports.push({ asm: parent, x: t.x, y: t.y, dir: c.pp.side, access: c.pp.access, matched: true });
       this.ports.push({ asm: id, x: t.x, y: t.y, dir: c.cp.side, access: c.cp.access, matched: true });
     }
     return id;
+  }
+
+  /** The parent-port tiles (for joins without doors: grafts and beams). */
+  private contact(pp: BlockPort, P: Placed): { x: number; y: number }[] {
+    const horiz = pp.side === 'n' || pp.side === 's';
+    return Array.from({ length: Math.min(pp.len, 3) }, (_, i) => ({ x: P.x + pp.x + (horiz ? i : 0), y: P.y + pp.y + (horiz ? 0 : i) }));
   }
 
   /** Remove the last attached block (and its join), restoring occupancy, rays and the parent's port. */

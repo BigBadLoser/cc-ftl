@@ -1,13 +1,15 @@
 import { Arranger } from './arranger';
 import { Builder } from './builder';
-import { GRAMMARS } from './navyGrammars';
+import { DRONE_GRAMMARS } from './droneGrammars';
+import { GRAMMARS as NAVY } from './navyGrammars';
+import type { ModuleDef } from '../registry';
 import type { Ctx } from './navyKit';
 import { pickWeighted, type ShipPlan } from './plan';
 import type { Rng } from '../rng';
 import type { FactionDef, HullFamilyDef, SectionKind } from './types';
 
 /**
- * Navy arrangement: draw a grammar of the family, try a few candidate arrangements of it (each with its own seeded
+ * Hull arrangement (any faction with hull families): draw a grammar of the family, try a few candidate arrangements of it (each with its own seeded
  * depths, slides and propulsion), then keep the one that best fits the family's soft proportion target and compactness. Proportions are scoring pressure,
  * never a hard reject.
  */
@@ -25,7 +27,11 @@ function score(A: Arranger, fam: HullFamilyDef, noise: number): number {
   return -3 * off + (s.filled / (s.w * s.h)) + noise;
 }
 
-export function arrangeNavy(rng: Rng, f: FactionDef, fam: HullFamilyDef, plan: ShipPlan): { b: Builder; A: Arranger; profile: string; plan: ShipPlan } | string {
+const GRAMMARS = { ...NAVY, ...DRONE_GRAMMARS };
+
+export function arrangeHull(
+  rng: Rng, f: FactionDef, fam: HullFamilyDef, plan: ShipPlan, defs: Record<string, ModuleDef>,
+): { b: Builder; A: Arranger; profile: string; plan: ShipPlan } | string {
   let best: { A: Arranger; c: Ctx; s: number } | null = null;
   let why = '';
   // The grammar is drawn once (the family's architectural mix stays as weighted); proportion pressure then chooses
@@ -40,7 +46,7 @@ export function arrangeNavy(rng: Rng, f: FactionDef, fam: HullFamilyDef, plan: S
     }
     const grammar = k < CANDIDATES ? first : pickWeighted(rng, fam.grammars);
     const A = new Arranger(() => rng.next(), -1);
-    const c: Ctx = { rng, fam, plan: clonePlan(plan), A, depth, parts: [grammar], why: '' };
+    const c: Ctx = { rng, fam, plan: clonePlan(plan), A, depth, parts: [grammar], why: '', defs };
     if (!GRAMMARS[grammar](c, f)) { why ||= `${grammar}: ${c.why || 'no fit'}`; continue; }
     const s = score(A, fam, rng.next() * 0.6);
     if (!best || s > best.s) best = { A, c, s };
