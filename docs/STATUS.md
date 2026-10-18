@@ -81,8 +81,12 @@ The user did not approve the first m4-assets sheets: modules were far too small.
 - **Sitting crew and roof** handed to Opus (high effort) after repeated misses.
 - **Point defence** is its own module (2x2 bay + R Revolver turret), OPERATED by the AI core
   (needs a powered AI core with its mast up), the way the weapons console operates weapons.
-- **Sitting crew:** facing is correct. Fix chair clipping; add `sit_work` (arms on the controls)
-  and keep the current pose as `sit_idle` (lounging/watching).
+- **Sitting crew: APPROVED / COMPLETE** (`crew-sit` d981ad9). Clips `sit_idle` and `sit_work`, 8
+  directions; chair occlusion cut into the crew sheets via a Blender holdout; engineer backpack
+  hidden while seated; armrests raised slightly. Game layering: console sprite at K, seated crew
+  at the chair tile at K+0.02 (r0 offset (-32,-16) px, r1 (0,-32) px, crew dirs r0=d6, r1=d0),
+  `module.<c>.front.r{n}` desk overlay at K+0.03 (anchors in the d981ad9 report/commit). Still to do
+  at integration: full crew sheet bake, renderer wiring, r2/r3 console renders.
 - **Engine and weapons art handed to Sol** (user's choice, 2026-10-18) using the prompts in this
   session's scratchpad `sol/` (shared context + engine + weapons). All of our engine passes and
   weapon concepts were rejected; keep them only as code reference.
