@@ -34,17 +34,153 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
+## M4 art rework (session 2026-10-17, supersedes the m4-assets sheets)
+
+The user did not approve the first m4-assets sheets: modules were far too small. Agreed direction:
+- **Style:** ENGINES ONLY get the Space Haven-like industrial detail (brass, pipes, bolts, valves,
+  greebles; helpers in `tools/blender/sprites/detail.py` and `greeble.py`). Consoles and weapons
+  stay clean and sleek (smooth panels, seams, colour from screens/lights/emissive strips). Every
+  detail >= 2 px at game scale; flat bands, no texture noise. Run the overlap check
+  (`overlap.py`) on every new model.
+- **Consoles:** the user likes the chairs and screens of the `m4-art-consoles` prototype.
+- **No module floor slabs:** modules sit directly on the ship floor (no plinth/deck plate).
+- **Walls redesign** (branch `walls-tall`, not merged): height alone was not the problem (tried 2.2
+  and 3.0; settled ~2.4, crew are 1.5). Space Haven-like profile: base covers the whole tile, thin
+  top, ONE slope that always faces the camera, vertical back. Hull is a separate chunky
+  colour-blocked armour band. Interior walls get their own colour and subtle seams (lockers and
+  lights are placeable modules, not wall art). Doors are deep recessed portals in a strong colour,
+  ~1.5x crew height; a lower cutaway variant exists.
+  CORRECTION (pass 3 got this wrong): only the BASE is sloped. A low sloped skirt (the lower ~15–25%)
+  spreads across the tile on the camera side, and above it stands a thin vertical flat wall with a
+  flat cap. Hull corners are chamfered at 45°. Doors are framed portals set into the vertical face,
+  ~1.6x crew, shorter than the wall. Study `images/11.jpg`-style references closely (crop and zoom)
+  before modelling.
+- **Engine:** the v7 bell is approved. Add real rocket plumbing (torus manifold, turbopump,
+  ducts, tubes down the bell); no valve wheels on posts.
+- **Weapons picked** (Opus concepts, branch `opus-weapons`): burst laser = S Sponson, mass driver =
+  H Halo, R Revolver's six-barrel rotary = point-defence turret asset. Bay core column runs full
+  height to the roof. Engine stays with Sol (the Opus engine preview on `opus-engine` is reference).
+- **Roof:** keep v1 (`roof-art`) ochre/blue-grey multi-tile plates, seams and edge trim; remove all
+  scattered details (lights, vent squares, hatches, nubs, hazard tape). The structure-driven v2 was
+  rejected.
+- **Weapons art APPROVED for now** (`opus-weapons` d629ae2: S burst laser, H mass driver, R point
+  defence, bays with slim full-height cores, hazard-seam hatches). Remaining nits: rear glow ring
+  reads like a muzzle at some aims; hazard seam reads dashed. Other 3 weapons not designed yet.
+- **Roof APPROVED** (`roof-art` v11 246414a, plus a v12 pass making the paint near-opaque): flat
+  0.2 slab (1.85–2.05), 4x4 modules with girders, bevelled plates, per-plate insets, C palette and
+  patch plates, livery system (10 schemes, 78 tinted masks, registry digits painted along the deck).
+  Integration: build the sprite set, port the module/livery rule to TS, add the recolour shader.
+- **Roof v8 direction (user-approved):** combine C palette + patch plates, B raised belts with
+  bevelled steps and trenches (no blisters), and a LIVERY SYSTEM: several deterministic schemes per
+  ship/faction (spine stripes, pinstripes, saddle bands, bow chevrons, registry block, emblem),
+  each with its own colour pair, ideally as tinted motif masks. No hazard-tape-like edge bars.
+  Turret/dish/mast props stay on the roof.
+- **Roof:** Opus v5 (`roof-art` a25cf44) is the best so far (4x4 modules, girders, bevelled
+  plates, 136 sprites); user says it "could use work" — v6 in progress.
+- **Walls pass 5:** thinner walls (~0.22–0.26), hull as layered plate courses (not a
+  checkerboard), denser shaded wall faces, muted dusty-rose doors.
+- **Heights (DECIDED):** walls.HF = 1.85 (Space Haven measures ~1.85 with the same 1.5 crew); the
+  roof is a 0.2 slab on top (top at 2.05); the hull rises to the roof top. Doors sized from the
+  reference. Wall-top thickness ~0.34–0.36 tile (measured), skirt ~0.3 of wall height.
+- **Sitting crew and roof** handed to Opus (high effort) after repeated misses.
+- **Point defence** is its own module (2x2 bay + R Revolver turret), OPERATED by the AI core
+  (needs a powered AI core with its mast up), the way the weapons console operates weapons.
+- **Three wall view levels (user-confirmed):** walls up; cutaway (front walls/hull cut or ghosted,
+  rear hull full height); shortest (the whole hull is a ghost rim, as in the Space Haven whole-ship
+  cutaway reference).
+- **Wall view rules (user):** the skirt is identical in both modes (only the wall above it is cut);
+  in cutaway the REAR (far) hull stays full height; cut hull sections get a black top cap like cut
+  walls; doors are never cut; the FRONT hull extends below the floor and curves away underneath
+  (carries the chunky armour) while above the floor it is a low ghost footing plus glass.
+- **Sitting crew: APPROVED / COMPLETE** (`crew-sit` d981ad9). Clips `sit_idle` and `sit_work`, 8
+  directions; chair occlusion cut into the crew sheets via a Blender holdout; engineer backpack
+  hidden while seated; armrests raised slightly. Game layering: console sprite at K, seated crew
+  at the chair tile at K+0.02 (r0 offset (-32,-16) px, r1 (0,-32) px, crew dirs r0=d6, r1=d0),
+  `module.<c>.front.r{n}` desk overlay at K+0.03 (anchors in the d981ad9 report/commit). Still to do
+  at integration: full crew sheet bake, renderer wiring, r2/r3 console renders.
+- **Engine and weapons art handed to Sol** (user's choice, 2026-10-18) using the prompts in this
+  session's scratchpad `sol/` (shared context + engine + weapons). All of our engine passes and
+  weapon concepts were rejected; keep them only as code reference.
+- **Weapons (history):** square-barrel prototype rejected. Restarting with round barrels; concept sheet
+  with 3 directions for the user to pick.
+- **Roof parts fold away:** turrets, shield-gen dishes and the AI core mast stow into their
+  modules when not in use and deploy (~2 s, 5 frames) through a roof hatch. Turrets and dishes
+  deploy in combat or with an enemy in range; the AI mast whenever powered; unpowered stows.
+  Gameplay effect (for now, tunable): weapons can't fire and shields don't come up until fully
+  deployed. Ghosted on the player's ship only while deployed.
+- **Consoles APPROVED** (branch `m4-art-consoles`, pass 5 plus pass 6 cabinet removal): helm 3x2,
+  weapons 2x2, shield 3x2 with counter ending at the projector, seat centred on the monitors, and
+  one empty walkable tile inside the footprint (modules can have several walkable tiles).
+- **Sizes:** engine 4x5 (4 along the hull); helm 3x2, shield console 3x2, weapons console 2x2, each
+  with its chair as a walkable access tile inside the footprint (needs per-tile solidity in the sim);
+  light weapons 2x2, heavy 3x3; shield gen 2x3, small shield gen 2x2, AI core 2x2. Ships get bigger
+  (starter ~30x20, raider ~24x16 with fewer modules).
+- **Engines replace the hull wall** where placed and carry their own armoured bulkhead (it
+  is always full height: it never collapses in the cutaway view). One big bell per engine
+  (~2.6 tiles), in the cleaner v5 bell style (few rings). Bells protrude into space. Engines may block the view. A destroyed
+  engine just stops working (no breach).
+- **Weapons:** a floor module (the bay: breech, feed, loader) anywhere under the roof, plus a turret
+  on the ROOF above it that aims (8 pre-rendered directions) and fires. On the player's own ship
+  the turret is drawn semi-transparent at roof height. Shield gens and the AI core also get roof
+  parts (emitter dish, antenna mast). These roof parts replace the quiet roof markers.
+- **Process:** engine prototype first (`tools/blender/sprites/engine_proto.py`,
+  `tools/blender/review/proto_*.py`), user approves the look, then the other modules, then sim and
+  layout changes, then balance tuning (raider currently wipes the crew in ~2 min).
+
+**m4-combat sim updated** (075b63a, 5993855, 1b0e482): `ModuleDef.openTiles` (walkable tiles in a
+footprint), `hullEdge` engines that replace the hull wall (airtight, no breach), weapons as floor
+bays with `WeaponC.aim` 0..7 (`turretSystem`, `turretPosition()`), new footprints, starter 30x20,
+raider 24x16, save v5. Balance tuned with fixed-seed scenario tests (manned player wins, no deaths
+in 4 min unmanned). User approved: repair rate 12 → 3/s, starter ion cannon → second burst laser.
+
+**Integration in progress: branch `m4-integration`** = m4-ui + crew-sit + walls-tall + roof-art +
+opus-weapons + Sol's `art/low-ceiling-modules` commits (d391f5a, 9b89fbf cherry-picked). Checks pass
+(161 tests). An Opus agent is building production sprites, wiring the renderer (sit layering, roof
+module rule and livery shader, real ids, ROOF_H = 2.05) and taking in-game screenshots. Walls are
+still pending approval (walls-tall pass 8); re-merge walls-tall when it changes. Not on main.
+
+**M5 (boarding, derelicts) — decisions so far** (branch `m5-boarding`, foundation in progress:
+portal graph across grids, cross-grid pathing, crew grid membership, airlock module):
+- Ships don't move, so crossing between grids needs a **vehicle system**: shuttles dock at
+  **airlocks** on other grids, or sit in **vehicle bays** in their home ship. Docking creates the
+  portal link.
+- **Shuttles are entities, not grids** (no visible interior). Crew embark at a vehicle bay or at a
+  docked shuttle and ride hidden; shuttles fly through the sector and can be shot down (weapons and
+  point defence target them). One generic shuttle to start. The shuttle bay is a buildable 4x5
+  INTERIOR pad module (not hull-mounted); 3x3 pod bays for mining/construction pods come later.
+  Shuttles are crafted, and the starter ship comes with one. Enemies board you by docking shuttles at
+  your airlocks.
+- **EVA** only on derelicts or on the outside of enemy ships, after shuttling over.
+- **Crew combat:** real time via drafting, weapons as items (sidearms, rifles, melee), cover from walls
+  and doorways, existing downed/bleed-out.
+- **Capture:** all enemy crew downed or surrendered AND you control their bridge. Captured ships are
+  not flown; maybe sold to a ship broker later.
+- **Enemies can board you.**
+- **Crew combat built** (`m5-boarding` ce8f298, 091615d): weapon items (sidearm, rifle, blade), equip and
+  loadouts, LoS and cover, engage and flee behaviour, boarders hunt crew then head for consoles,
+  surrender (`isSubdued`). The starter ship has NO security crew (user decision); its storage holds a
+  rifle, two sidearms and a blade.
+- **Derelicts:** combat wrecks plus event-spawned derelicts with hazards, loot and hostile aliens.
+
 ## Decisions log (beyond DESIGN.md)
 
 - **Workflow:**
   - Visual work: send the user screenshots (default + zoomed) and get approval before merging to
     main.
   - Assets: the user reviews **both** the Blender renders and the pixel sprites before integration.
+  - **Preview first:** for art feedback, agents stop at a quick preview (one rotation, low samples
+    + denoise, one test scene at 1x/3x, a Blender render) and report. No full sprite builds,
+    manifests, extra rotations or wiring until the user approves the look.
+  - The cloud container has 4 cores: run at most ~3 Blender-rendering agents at once, one Blender
+    process each.
 - **Art:**
   - Pixel art pre-rendered from Blender. Models use clean shapes and smooth shading quantised to
     flat bands, with no faceting and no noise.
-  - Third-party game sprites the user shared (in the scratchpad `ref-walls/`) are visual reference
-    only. **Never copy or commit them.**
+  - Third-party screenshots the user shares are visual reference only: never trace them, ship
+    them, or copy them into `public/` or the pipeline. With the user's permission they are kept in
+    `docs/refs/` (see its README): a Space Haven whole-ship shot in the shortest cutaway view, a
+    Space Haven walls/doors/hull shot, a Space Haven engine, Space Haven consoles, a Saturn V F-1
+    photo, and the user's Sol test renders (the quality bar).
 - **Walls:**
   - Interior walls and far exterior walls use the cut-away look in Auto mode.
   - Exterior walls nearest the camera are ghosts: an angled dark footing plus short glass.
@@ -70,6 +206,13 @@ are already merged or superseded. Don't build on them.
   - The fabricator inspector covers the cargo room.
   - Wall corner artifact: the user said "good enough for now".
 
+## Agent workflow (user decision, 2026-10-18)
+
+- **Default model:** subagents run on Sonnet (or Haiku for trivial work).
+- **Opus:** only with the user's sign-off. Say why the task needs it and ask first.
+- **M4 art follow-ups:** move to a fresh Sonnet agent once the current Opus engine pass lands.
+- **Opus exceptions:** the ship generator (`shipgen`) and robots (`robots`) are already approved for Opus.
+
 ## Environment notes
 
 - Blender 4.2 LTS headless: `tools/blender/setup.sh` installs it to `/opt/tools`. Previews render
@@ -86,4 +229,11 @@ are already merged or superseded. Don't build on them.
 - **Finish M4** (above).
 - **M5:** boarding and derelicts. Portal graph across grids, airlocks and teleporters, EVA,
   crew-vs-crew combat, capture, exploring wrecks.
+- **M5 queue (after the M4 merge, on Sonnet):**
+  - robot crew sprites and the robot bay art;
+  - the robot assembly UI;
+  - the rest of the M5 render and UI work: shuttles, boarding, gunfire, equipment, capture and prisoners;
+  - airlock and bay art;
+  - EVA;
+  - derelicts: alien-infested wrecks, and rogue AI shipyards for the AI faction.
 - **M6:** galaxy and sectors. Deploy modal, events, stores, factions.
