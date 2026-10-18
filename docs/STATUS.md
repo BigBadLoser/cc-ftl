@@ -43,6 +43,14 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   detail >= 2 px at game scale; flat bands, no texture noise. Run the overlap check
   (`overlap.py`) on every new model.
 - **Consoles:** the user likes the chairs and screens of the `m4-art-consoles` prototype.
+- **No module floor slabs:** modules sit directly on the ship floor (no plinth/deck plate).
+- **Taller walls:** full-height walls (and the roof plane) go up by about 1 tile, `walls.HF`
+  1.2 → ~2.2, so the roof clears crew heads. Cutaway height unchanged. Branch `walls-tall`.
+- **Engine:** the v7 bell is approved. Add real rocket plumbing (torus manifold, turbopump,
+  ducts, tubes down the bell); no valve wheels on posts.
+- **Weapons:** square-barrel prototype rejected. Restarting with round barrels; concept sheet
+  with 3 directions for the user to pick.
+- **Shield console:** counter ends at the projector, seat centred on the monitors.
 - **Sizes:** engine 4x5 (4 along the hull); helm 3x2, shield console 3x2, weapons console 2x2, each
   with its chair as a walkable access tile inside the footprint (needs per-tile solidity in the sim);
   light weapons 2x2, heavy 3x3; shield gen 2x3, small shield gen 2x2, AI core 2x2. Ships get bigger
