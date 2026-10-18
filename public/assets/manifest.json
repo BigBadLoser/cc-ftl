@@ -78,6 +78,18 @@
   "crew.human.torso.work_shirt": {
    "image": "sprites/crew.human.torso.work_shirt.png"
   },
+  "crew.robot.body.repair": {
+   "image": "sprites/crew.robot.body.repair.png",
+   "glow": "sprites/crew.robot.body.repair.glow.png"
+  },
+  "crew.robot.body.worker": {
+   "image": "sprites/crew.robot.body.worker.png",
+   "glow": "sprites/crew.robot.body.worker.glow.png"
+  },
+  "crew.robot_heavy.body.security": {
+   "image": "sprites/crew.robot_heavy.body.security.png",
+   "glow": "sprites/crew.robot_heavy.body.security.glow.png"
+  },
   "engine": {
    "image": "sprites/engine.png",
    "glow": "sprites/engine.glow.png"
@@ -1025,6 +1037,144 @@
      "loop": true
     }
    }
+  },
+  "crew.robot.body.repair": {
+   "kind": "crew.layer",
+   "species": "robot",
+   "slot": "body",
+   "order": 0,
+   "sheet": "crew.robot.body.repair",
+   "frameW": 72,
+   "frameH": 76,
+   "anchor": {
+    "x": 36,
+    "y": 58
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "charge": {
+     "start": 18,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "wreck": {
+     "start": 22,
+     "frames": 1,
+     "fps": 1,
+     "loop": false
+    }
+   },
+   "glow": true
+  },
+  "crew.robot.body.worker": {
+   "kind": "crew.layer",
+   "species": "robot",
+   "slot": "body",
+   "order": 0,
+   "sheet": "crew.robot.body.worker",
+   "frameW": 110,
+   "frameH": 99,
+   "anchor": {
+    "x": 55,
+    "y": 72
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "charge": {
+     "start": 18,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "wreck": {
+     "start": 22,
+     "frames": 1,
+     "fps": 1,
+     "loop": false
+    }
+   },
+   "glow": true
+  },
+  "crew.robot_heavy.body.security": {
+   "kind": "crew.layer",
+   "species": "robot_heavy",
+   "slot": "body",
+   "order": 0,
+   "sheet": "crew.robot_heavy.body.security",
+   "frameW": 106,
+   "frameH": 95,
+   "anchor": {
+    "x": 53,
+    "y": 74
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "charge": {
+     "start": 18,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "wreck": {
+     "start": 22,
+     "frames": 1,
+     "fps": 1,
+     "loop": false
+    }
+   },
+   "glow": true
   },
   "fx.ember": {
    "kind": "static",
