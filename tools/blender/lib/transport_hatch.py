@@ -8,6 +8,8 @@ HATCH_OUTER=.92
 RIB_DEPTH=.015
 RIB_COLOR="steelL"
 NOSE_TAPER=.12
+NOSE_LEAN=math.radians(6)
+NOSE_LEAN_SLOPE=math.tan(NOSE_LEAN)
 
 
 def nose_width(u):
@@ -15,14 +17,25 @@ def nose_width(u):
     return 1.05-NOSE_TAPER*(u-.50)
 
 
-class TaperedHatchFrame(FlightFrame):
-    """Rigid yaw keeps the circular hatch seated on the tapered port wall."""
-    def xy(self,u,v):
-        a=math.atan(NOSE_TAPER)
-        c,s=math.cos(a),math.sin(a)
-        du,dv=u-HATCH_U,v+1.05
-        return super().xy(HATCH_U+du*c-dv*s,-nose_width(HATCH_U)+du*s+dv*c)
+class LeaningNoseFrame(FlightFrame):
+    """Lean both nose walls inward, blending into the existing aft cabin."""
+    def pt(self,u,v,z):
+        blend=max(0,min(1,(u+.55)/1.05))
+        v-=math.copysign(1,v)*NOSE_LEAN_SLOPE*(z-HATCH_Z)*blend
+        return super().pt(u,v,z)
 
+
+class TaperedHatchFrame(FlightFrame):
+    """Rigid yaw and roll seat the round hatch on the tapered, leaning wall."""
+    def pt(self,u,v,z):
+        a=math.atan(NOSE_TAPER)
+        b=math.atan(NOSE_LEAN_SLOPE/math.sqrt(1+NOSE_TAPER**2))
+        c,s=math.cos(a),math.sin(a)
+        cb,sb=math.cos(b),math.sin(b)
+        du,dv,dz=u-HATCH_U,v+1.05,z-HATCH_Z
+        across=dv*cb+dz*sb
+        return super().pt(HATCH_U+du*c-across*s,-nose_width(HATCH_U)+du*s+across*c,
+                          HATCH_Z-dv*sb+dz*cb)
 
 
 def pressure_hatch(f):
