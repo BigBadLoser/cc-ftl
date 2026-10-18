@@ -168,11 +168,12 @@ def variant_edge(side, col, variant="v6", tall=False):
     return [m.build()]
 
 
-def belt_step(col):
+def belt_step(col, variant="v6"):
     """Bevelled E step of a raised belt tile (absolute z ZR..ZR+DZ, drawn with the belt tile at its normal anchor):
     a short vertical riser, then a 45-ish chamfer back onto the belt top, with a lit arris along the top."""
-    f = rl.FAM[col]
-    m = core.Mesh(f"roof_step_{col}", flat=True)
+    from . import roof_variants as rv
+    f = (rv.FAM_C if variant == "C" else rl.FAM)[col]
+    m = core.Mesh(f"roof_step_{variant}{col}", flat=True)
     zr = ZR + DZ * 0.35
     m.poly([core.G(0.5, -0.5, ZR), core.G(0.5, 0.5, ZR), core.G(0.5, 0.5, zr), core.G(0.5, -0.5, zr)], f["fe"])
     xb = 0.5 - BEV
@@ -183,9 +184,20 @@ def belt_step(col):
     return [m.build()]
 
 
-def trench(side, col="b"):
+def trench(side, col="b", variant="v6"):
     from . import roof_variants as rv
-    cells = rv.trench_cells(side, rl.FAM, col)
-    m = core.Mesh(f"roof_trench_{side}{col}", flat=True)
+    cells = rv.trench_cells(side, rv.FAM_C if variant == "C" else rl.FAM, col)
+    m = core.Mesh(f"roof_trench_{variant}{side}{col}", flat=True)
     m.pattern((-0.5, -0.5, ZR), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: cells.get((i, j)))
+    return [m.build()]
+
+
+def livery_mask(name):
+    """Livery motif mask (v8): flat cells at ZR in two key colours, mkP (primary) and mkS (secondary). The renderer
+    recolours them per scheme and shades them by the plating underneath, so one mask set serves every scheme."""
+    from . import roof_livery as lv
+    m = core.Mesh(f"roof_lv_{name}", flat=True)
+    fn = lv.MASKS[name]
+    key = {"P": "mkP", "S": "mkS"}
+    m.pattern((-0.5, -0.5, ZR), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: key.get(fn(i, j)))
     return [m.build()]
