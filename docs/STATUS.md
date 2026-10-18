@@ -206,6 +206,13 @@ portal graph across grids, cross-grid pathing, crew grid membership, airlock mod
   - The fabricator inspector covers the cargo room.
   - Wall corner artifact: the user said "good enough for now".
 
+## Agent workflow (user decision, 2026-10-18)
+
+- **Default model:** subagents run on Sonnet (or Haiku for trivial work).
+- **Opus:** only with the user's sign-off. Say why the task needs it and ask first.
+- **M4 art follow-ups:** move to a fresh Sonnet agent once the current Opus engine pass lands.
+- **Opus exceptions:** the ship generator (`shipgen`) and robots (`robots`) are already approved for Opus.
+
 ## Environment notes
 
 - Blender 4.2 LTS headless: `tools/blender/setup.sh` installs it to `/opt/tools`. Previews render
