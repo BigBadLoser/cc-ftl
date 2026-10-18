@@ -1,0 +1,44 @@
+{
+  "variant": "B / sweepback utility shuttle / revision 3",
+  "legacyV4Preserved": true,
+  "parkedSize": [
+    3.82,
+    4.4,
+    2.4
+  ],
+  "pitDepth": 1.5,
+  "topAboveDeck": 0.9,
+  "roofTop": 2.05,
+  "clearanceToRoofTop": 1.15,
+  "flightSpan": 7.2,
+  "deployedWingPlanArea": 3.4228,
+  "previousWingPlanArea": 1.9493,
+  "boardingOpeningHeight": 1.6,
+  "foldedWingClearanceAheadOfDoorLeaf": 0.119,
+  "reviewFactionColors": {
+    "primary": [
+      82,
+      117,
+      147
+    ],
+    "secondary": [
+      199,
+      161,
+      94
+    ]
+  },
+  "wingFoldDegrees": 75,
+  "wingFoldPlane": "horizontal / rearward",
+  "outerPanelFoldDegrees": 180,
+  "wingStorage": "outer panel stacked on inner panel",
+  "spriteSamples": 4,
+  "beautySamples": 8,
+  "glowingNozzleFaces": 26,
+  "previewOnly": true,
+  "renderedFlights": [
+    0,
+    2,
+    5
+  ],
+  "geometryChecks": "passed"
+}

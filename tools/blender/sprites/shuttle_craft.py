@@ -295,82 +295,57 @@ def pit(depth=PIT_SUGGESTED, w=4, l=5, rot=0):
     return [m.build(), ob]
 
 
-# Separate concept B: a broad utility lifter with horizontal sweepback wings.
+# Separate concept B: a broad utility lifter with full-chord folding wings.
 # The earlier v4 model and its `shuttle()` entry point above are preserved.
-TRANSPORT_HEIGHT = 2.4
-TRANSPORT_PIT = 1.5
-TRANSPORT_FOLD = math.radians(75)
+TRANSPORT_HEIGHT = 2.64
+TRANSPORT_PIT = 1.70
 TRANSPORT_HATCH_HEIGHT = 1.6
-TRANSPORT_WING = [(0,0),(.55,.12),(.50,.35),(-.08,1.72),(-.62,1.72)]
-
-
-def transport_wing(f,side,fold,livery=False):
-    """Large wings sweep rearward in their horizontal plane, without adding height."""
-    c,s=math.cos(fold),math.sin(fold)
-    def xy(u,v):
-        return .30+u*c-v*s,side*(1.08+u*s+v*c)
-    points=TRANSPORT_WING
-    if livery:
-        points=[(.10,.12),(.40,.23),(-.15,1.51),(-.49,1.51),(-.07,.28)]
-    # Thick root, thinner tips; the folded foil seats in the rear cradle.
-    a=[f.pt(*xy(u,v),1.92) for u,v in points]
-    b=[f.pt(*xy(u,v),2.08-.09*v/1.72+(.004 if livery else 0)) for u,v in points]
-    f.poly(b,"mkP" if livery else "gW1",flip=True)
-    if not livery:
-        f.poly(a[::-1],"gW2",flip=True)
-        for i in range(len(a)):
-            j=(i+1)%len(a)
-            f.poly([a[i],a[j],b[j],b[i]],"gW1",flip=True)
+from lib.transport_wings import (TRANSPORT_FOLD,TRANSPORT_WING_SPAN,
+                                TRANSPORT_WING,TRANSPORT_OUTER_WING,transport_wing)
 
 
 def transport_shuttle(heading,state="parked",dz=0,wing_fold=None):
     """Fresh concept B. Original v4 is unchanged. Origin is pad centre, feet at z=0.
 
-    Parked/docked: wings sweep rearward 75 degrees; flight: span is 5.6 tiles.
-    Revision 2: lower canopy, faired roots, rear cradles, 1.60-high hatch.
-    Height 2.4, suggested pit 1.5, leaving the highest point .9 above deck.
+    Parked/docked: broad outer wings fold 180 degrees flat over the aft hull.
+    Flight span 7.2; each deployed wing covers 2.7 units of the hull length.
+    Revision 4: full-chord wings, forward unobstructed hatch, detailed aft face.
+    Height 2.64, suggested pit 1.70, leaving the highest point .94 above deck.
     No interior, pad, pit or bay geometry is part of this vehicle builder.
     """
     from lib.transport_forms import FlightFrame,loft,side_prism
+    from lib.transport_details import cabin_details,rear_details
     fold=(0 if state=="fly" else TRANSPORT_FOLD) if wing_fold is None else wing_fold
     m=core.Mesh("transport_B_"+state)
     m.dz=dz
     f=FlightFrame(m,heading)
     # Fuller passenger/cargo cabin flows into a sloped, lower cockpit nose.
-    loft(f,[(-2.15,.57,1.22,.38),(-1.70,.78,1.34,.66),
-            (-.55,1.00,1.38,.92),(.55,1.08,1.40,.95),
-            (1.25,.99,1.34,.88),(1.62,.78,1.30,.55),(2.18,.45,1.22,.20)],"gW1")
+    loft(f,[(-2.15,.72,1.35,.75),(-1.70,.78,1.34,.66),
+            (-.55,1.00,1.38,.92),(.86,1.05,1.31,.93,0,.90),
+            (1.82,1.05,1.31,.93,0,.90),(2.18,.45,1.22,.20)],
+         "gW1",omit=((3,6),))
     # Distinct dark lower keel, ending short of the wedge nose.
     loft(f,[(-1.9,.57,.65,.14),(-1.0,.83,.61,.16),
             (1.1,.70,.69,.18),(1.8,.34,.92,.12)],"steelD",upper="steelL")
-    # Canopy half-height .40 replaces .54; the windscreen slopes into the hull.
-    loft(f,[(.55,.70,2.00,.40),(1.15,.65,1.93,.36),(1.72,.39,1.65,.26)],
-         "gW1",upper="glassD",front="glassD")
+    cabin_details(f,TRANSPORT_HATCH_HEIGHT)
+    rear_details(f)
     for side in (-1,1):
         # A continuous shoulder/nacelle blends the wing root into the engine.
-        loft(f,[(-2.04,.30,1.32,.30,side*1.36),(-1.45,.42,1.31,.50,side*1.24),
+        shoulder=[(-2.04,.30,1.40,.62,side*1.36),(-1.45,.42,1.31,.50,side*1.24),
                 (-.45,.46,1.30,.55,side*1.14),(.30,.25,1.42,.50,side*1.02),
-                (.72,.14,1.48,.29,side*.96)],"gW1")
+                (.72,.14,1.48,.29,side*.96)]
+        loft(f,shoulder[:-1] if side==-1 else shoulder,"gW1")
         v=side*1.38
         f.hcyl(-2.22,-2.05,v,1.31,.30,"steelD",r1=.28,sides=12)
         f.hcyl(-2.19,-2.17,v,1.31,.23,"dark",sides=12,capstart="dark")
         f.hcyl(-2.195,-2.185,v,1.31,.16,"cyan" if state=="fly" else "dark",
                 sides=12,capstart="arc" if state=="fly" else "dark")
-        # Recessed bearing and positive stops give the folded wing a real seat.
-        f.vcyl(.30,side*1.08,1.90,.17,.14,"steelL",top="gW2",sides=12)
-        side_prism(f,[(-1.72,1.45),(.35,1.55),(.30,1.87),(-1.62,1.87)],
-                   side*.90,side*1.6975,"gW1")
-        f.box(-.68,side*1.68,1.84,1.86,.035,.08,"gW2",top="steelL")
-        f.box(-.93,side*.94,1.84,1.18,.035,.08,"gW2",top="steelL")
+        # Full-length inner wings blend into the shoulder deck; outer wings fold over.
+        side_prism(f,[(-1.72,1.45),(.35,1.55),(.30,2.30),(-1.62,2.30)],
+                   side*.90,side*1.91,"gW1")
+        f.box(-.68,side*1.89,2.26,1.86,.035,.08,"gW2",top="steelL")
+        f.box(-.93,side*.94,2.26,1.18,.035,.08,"gW2",top="steelL")
         transport_wing(f,side,fold)
-    # Crew-height pressure hatch is ahead of the folded wing, with a docking land.
-    side_prism(f,[(.44,.44),(1.23,.44),(1.34,.55),(1.34,2.09),
-                  (1.23,2.20),(.44,2.20),(.33,2.09),(.33,.55)],-.68,-1.17,"gW1")
-    f.box(.835,-1.179,.48,.85,.018,1.68,"steelD",top="steelL")
-    f.box(.835,-1.193,.52,.73,.012,TRANSPORT_HATCH_HEIGHT,"rM",top="rH")
-    f.box(.835,-1.204,1.56,.38,.012,.13,"glassD")
-    for i in range(6):
-        f.box(.44+i*.155,-1.198,.46,.15,.06,.055,"hazY" if i%2==0 else "hazK")
     if state=="parked":
         for u in (-1.45,1.24):
             for v in (-1.28,1.28):
@@ -384,9 +359,11 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None):
     for side in (-1,1):
         transport_wing(g,side,fold,True)
         for chain in (((-2.04,1.66),(-1.45,1.66),(-.45,1.60),(.30,1.27),(.72,1.10)),
-                      ((.72,1.059),(1.25,.99),(1.62,.78),(2.18,.45))):
+                      ((.86,1.05),(1.82,1.05),(2.18,.45))):
             for (u0,v0),(u1,v1) in zip(chain,chain[1:]):
+                if side==-1 and u0 in (.86,.30):
+                    continue
                 g.poly([g.pt(u0,side*(v0+.006),1.20),g.pt(u1,side*(v1+.006),1.20),
                         g.pt(u1,side*(v1+.006),1.30),g.pt(u0,side*(v0+.006),1.30)],"mkS",flip=True)
-    g.box(.835,-1.205,1.20,.72,.006,.10,"mkS")
+    g.box(1.335,-1.027,1.20,.72,.004,.10,"mkS")
     return [m.build(),lv.build()]

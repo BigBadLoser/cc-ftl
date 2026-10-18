@@ -15,21 +15,23 @@ class FlightFrame(Frame):
         return u*self.c-v*self.s,u*self.s+v*self.c
 
 
-def section(width,center,height):
+def section(width,center,height,side_height=.48):
     return [(-width*.72,center+height),(width*.72,center+height),
-            (width,center+height*.48),(width,center-height*.48),
+            (width,center+height*side_height),(width,center-height*side_height),
             (width*.72,center-height),(-width*.72,center-height),
-            (-width,center-height*.48),(-width,center+height*.48)]
+            (-width,center-height*side_height),(-width,center+height*side_height)]
 
 
-def loft(f,stations,color,upper=None,front=None):
-    """Stations are u, half-width, centre-height, half-height, optional v offset."""
+def loft(f,stations,color,upper=None,front=None,omit=()):
+    """Stations: u, half-width, centre, half-height, optional offset/side-height."""
     rings=[[f.pt(row[0],v+(row[4] if len(row)>4 else 0),z)
-            for v,z in section(*row[1:4])] for row in stations]
+            for v,z in section(*row[1:4],row[5] if len(row)>5 else .48)] for row in stations]
     f.poly(rings[0],color,flip=True)
     f.poly(rings[-1][::-1],front or color,flip=True)
-    for a,b in zip(rings,rings[1:]):
+    for seg,(a,b) in enumerate(zip(rings,rings[1:])):
         for i in range(8):
+            if (seg,i) in omit:
+                continue
             j=(i+1)%8
             f.poly([a[i],a[j],b[j],b[i]],upper if upper and i in (0,1,7) else color,flip=True)
 
