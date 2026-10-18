@@ -72,7 +72,7 @@ describe("wall autotiling", () => {
     expect(ids(room, 2, 3, W, "auto")).toEqual(["wall.m10", "wall.end.e"]);
     expect(ids(room, 2, 1, W, "up")).toEqual(["hull.full.m10", "hull.full.end.e"]);
   });
-  it("a solid near-hull tile (an engine row with walls up) is a full block with end faces toward its ghost neighbours", () => {
+  it("hull beside a gap (an engine's bulkhead with walls up) gets an end face toward it, ghost or plain block", () => {
     const col = grid([
       [S, S, S, S],
       [S, W, W, S],
@@ -82,9 +82,12 @@ describe("wall autotiling", () => {
       [S, S, S, S],
     ]);
     const eng = (x: number, y: number) => x === 2 && (y === 2 || y === 3);
-    expect(ids(col, 2, 2, W, "up", true, eng)).toEqual(["hull.full.m5"]);
-    expect(ids(col, 2, 3, W, "up", true, eng)).toEqual(["hull.full.m5", "hull.full.end.s"]);
-    expect(ids(col, 2, 3, W, "up")).toEqual(["hull.o2.m5", "hull.belly.o2.m5"]);
+    // Roofed (no ghosts): the hull run above the gap is a plain block capped toward it; none below (its back side).
+    expect(ids(col, 2, 1, W, "up", false, eng)).toEqual(["hull.full.m12", "hull.full.end.s"]);
+    expect(ids(col, 2, 4, W, "up", false, eng)).toEqual(["hull.full.m9"]);
+    // Ghost hull stays a ghost rim; without a gap there is no end face.
+    expect(ids(col, 2, 1, W, "up", true, eng)).toEqual(["hull.o2.m12", "hull.belly.o2.m12"]);
+    expect(ids(col, 2, 1, W, "up", false)).toEqual(["hull.full.m12"]);
   });
   it("hull plating uses the ochre-panel variant on every third diagonal", () => {
     expect(wallPieces(ring, 2, 1, W, "auto")[0]?.chain[0]).toBe("tile.hull.m10.v1");

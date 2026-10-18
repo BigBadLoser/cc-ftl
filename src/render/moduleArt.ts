@@ -81,7 +81,7 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
 
 /**
  * The sprite layers of a module, bottom first.
- *  - Engines: `<asset>.hull.r{n}` (the bulkhead, never cut; the hull wall around it is the game's hull tile), the
+ *  - Engines: `<asset>.hull.r{n}` (the bulkhead, never cut; with the walls up or roofed it stands in a gap of the hull wall, otherwise the hull tile draws it), the
  *    machine `<asset>.machine.r{n}` (cut by the wall; `.machine.open.r{n}` when the walls are down, `open`), and the
  *    bell outside the hull `<asset>.bell.r{n}`, sorted by its own tile (`out`); `.active` while burning.
  *  - Weapons: the floor bay `<asset>.bay.r{n}`; the turret above it is drawn by turretView.

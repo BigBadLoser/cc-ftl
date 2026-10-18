@@ -85,9 +85,9 @@ export function replacesFloor(kindAt: KindAt, x: number, y: number, mode: Cutawa
  *  - A wall or far hull tile butting into a ghost gets an end face (`tile.<fam>.<pre>end.s|e`).
  *  - Doors are never cut (`tile.door.x|y`); a door in the near hull hangs the belly under it (`tile.hull.drop.s|e`, under).
  *  - Hull plating and bellies use the ochre `.v1` variant on every third diagonal.
- * `ghosts` false (blueprints, roofed ships) draws plain blocks instead of ghosts. `solid(x, y)` marks tiles drawn as
- * plain blocks while the hull around them stays ghosts (an engine's hull row with the walls up), with end faces
- * toward the ghosts.
+ * `ghosts` false (blueprints, roofed ships) draws plain blocks instead of ghosts. `gap(x, y)` marks hull tiles that are
+ * not drawn at all because a module's own art stands there (an engine's bulkhead with the walls up or roofed): the
+ * hull runs beside it get an end face toward the gap, like toward a ghost.
  */
 export function wallPieces(
   kindAt: KindAt,
@@ -96,7 +96,7 @@ export function wallPieces(
   kind: number,
   mode: CutawayMode,
   ghosts = true,
-  solid: (x: number, y: number) => boolean = () => false,
+  gap: (x: number, y: number) => boolean = () => false,
 ): Piece[] {
   const level = wallLevel(mode);
   const o = outward(kindAt, x, y);
@@ -109,7 +109,7 @@ export function wallPieces(
   const mask = wallMask(kindAt, x, y);
   const hull = touchesSpace(kindAt, x, y);
   const v = hull && (((x + y) % 3) + 3) % 3 === 0 ? ".v1" : "";
-  const selfGhost = ghosts && !solid(x, y);
+  const selfGhost = ghosts;
   if (selfGhost && hull && o) {
     const out: Piece[] = [{ chain: [`tile.hull.o${o}.m${mask}`], order: 0 }];
     if (o < 4) out.push({ chain: [`tile.hull.belly.o${o}.m${mask}${v}`, `tile.hull.belly.o${o}.m${mask}`], order: 1, under: true });
@@ -124,8 +124,8 @@ export function wallPieces(
   const fam = hull ? "hull" : "wall";
   const base = `tile.${fam}.${PRE[level]}m${mask}`;
   const out: Piece[] = [{ chain: [base + v, base], order: 0 }];
-  if (ghosts && mask & 4 && !solid(x, y + 1) && ghostAt(kindAt, x, y + 1, level)) out.push({ chain: [`tile.${fam}.${PRE[level]}end.s`], order: 1 });
-  if (ghosts && mask & 2 && !solid(x + 1, y) && ghostAt(kindAt, x + 1, y, level)) out.push({ chain: [`tile.${fam}.${PRE[level]}end.e`], order: 1 });
+  if (mask & 4 && ((ghosts && ghostAt(kindAt, x, y + 1, level)) || gap(x, y + 1))) out.push({ chain: [`tile.${fam}.${PRE[level]}end.s`], order: 1 });
+  if (mask & 2 && ((ghosts && ghostAt(kindAt, x + 1, y, level)) || gap(x + 1, y))) out.push({ chain: [`tile.${fam}.${PRE[level]}end.e`], order: 1 });
   return out;
 }
 

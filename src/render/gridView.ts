@@ -81,7 +81,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     doors = [];
   }
 
-  /** Tile indices of engine hull rows (drawn full height with the walls up, like the engine's bulkhead). */
+  /** Tile indices of engine hull rows (the bulkhead stands there with the walls up, in place of the hull wall). */
   function engineHull(): Set<number> {
     const out = new Set<number>();
     const { world, modules } = host.overlayWorld;
@@ -97,15 +97,15 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   function rebuild(): void {
     clear();
     const replaced = engineHull();
-    const solidAt = (x: number, y: number): boolean => mode === "up" && grid.inBounds(x, y) && replaced.has(y * grid.width + x);
+    const gapAt = (x: number, y: number): boolean => mode === "up" && grid.inBounds(x, y) && replaced.has(y * grid.width + x);
     for (let y = 0; y < grid.height; y++)
       for (let x = 0; x < grid.width; x++) {
         const k = kindAt(x, y);
         if (k === Struct.Space) continue;
         const idx = y * grid.width + x;
         // A near-hull ghost replaces the floor plate under it (not under an engine: its bulkhead stands on the deck).
-        // An engine's hull row is the hull wall itself (its bulkhead is the engine's own sprite): full height with the
-        // walls up, the same ghost as the hull around it otherwise.
+        // An engine's hull row is the hull wall in cutaway / low (the same ghost as the hull around it); with the walls
+        // up or roofed the wall is left out and the engine's bulkhead stands there between the hull runs.
         const engineUp = replaced.has(idx) && mode === "up";
         const f = ghosts && !engineUp && replacesFloor(kindAt, x, y, mode) ? undefined : atlas.firstOf(floorChain(x, y));
         if (f) {
@@ -114,7 +114,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           tinted.push({ spr: made[0] as Sprite, idx, wall: false, solid: false });
         }
         if (k === Struct.Floor) continue;
-        for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts, solidAt)) {
+        // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
+        if (gapAt(x, y)) continue;
+        for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts, gapAt)) {
           const s = atlas.firstOf(piece.chain);
           if (!s) continue;
           // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
