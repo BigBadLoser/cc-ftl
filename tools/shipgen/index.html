@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shipgen viewer</title>
+  <style>
+    body { margin: 0; padding: 12px; background: #101218; color: #ccd; font: 13px monospace; }
+    label { margin-right: 10px; }
+    input { width: 5em; }
+    canvas { image-rendering: pixelated; display: block; margin: 10px 0; max-width: 100%; }
+    pre { white-space: pre; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div>
+    <label>Faction <select id="faction"></select></label>
+    <label>Depth <input id="depth" type="number" min="0" value="2" /></label>
+    <label>Seed <input id="seed" type="number" value="1" /></label>
+    <label>Count <input id="count" type="number" min="1" value="6" /></label>
+    <button id="reroll">Reroll</button>
+  </div>
+  <canvas id="sheet"></canvas>
+  <pre id="text"></pre>
+  <script type="module" src="./live.ts"></script>
+</body>
+</html>
