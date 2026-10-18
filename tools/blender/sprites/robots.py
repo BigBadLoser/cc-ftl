@@ -23,6 +23,17 @@ def _charge_bar(rig, joint, x0, f, z, n=4, w=0.05, h=0.04, face=1):
         rig.part(joint, f"bar{k}").box((x, f, z), (w - 0.01, 0.03, h), BAR)
 
 
+def _dir(v):
+    n = sum(c * c for c in v) ** 0.5
+    return tuple(c / n for c in v)
+
+
+def _along(a, b, u):
+    """The point u tiles from a towards b."""
+    d = _dir(tuple(q - p for p, q in zip(a, b)))
+    return tuple(p + c * u for p, c in zip(a, d))
+
+
 def _hinge(p, c, r, w, color=FRAME):
     """Joint hinge: a short cylinder across the limb (x axis)."""
     p.cyl(c, r, w, color, axis="x")
@@ -43,9 +54,17 @@ def _head(rig, hd, c, s, eye_r):
     rig.part(hd, "eye").ball((x, f + s[1] * 1.04, z - s[2] * 0.08), (eye_r, eye_r * 0.5, eye_r), EYE)
 
 
+def _socket(rig, t, c, rot=None):
+    """Head socket in the top of the torso: a grey rim round a dark well cut to the head's footprint (the head could
+    sink in until its brow plate sits flush). c = centre of the chest top face."""
+    rig.part(t).rbox(c, (0.22, 0.27, 0.03), MID, r=0.04, rot=rot)
+    rig.part(t).rbox((c[0], c[1], c[2] + 0.004), (0.175, 0.225, 0.03), "dark", r=0.03, rot=rot)
+
+
 def _sensor_head(rig, hd, f, z, k):
-    """The shared robot head: a dark wedge sensor head pointing forward, a livery brow plate and one eye, no neck (it
-    sits low between the shoulders). f, z = the wedge centre; k = scale."""
+    """The shared robot head: a dark wedge sensor head pointing forward, a livery brow plate and one eye, on a short
+    dark neck column rising out of the torso's socket. f, z = the wedge centre; k = scale."""
+    rig.part(hd).cyl((0, f - 0.01, z - 0.075 * k), 0.045 * k, 0.06 * k, "dark")
     rig.part(hd).rbox((0, f, z), (0.15 * k, 0.1 * k, 0.2 * k), "dark", r=0.03 * k, taper=0.7, axis="f")
     rig.part(hd).rbox((0, f - 0.02 * k, z + 0.045 * k), (0.17 * k, 0.045 * k, 0.2 * k), CLOTH, r=0.02 * k, taper=0.75, axis="f")
     rig.part(hd, "eye").ball((0, f + 0.105 * k, z - 0.005 * k), (0.03 * k, 0.015 * k, 0.025 * k), EYE)
@@ -116,8 +135,8 @@ def worker():
     rig.part(t).rbox((0, 0.09, 1.16), (0.2, 0.08, 0.13), "gm", r=0.02, taper=0.8)            # sternum plate
     rig.part(t).rbox((0, -0.14, 1.13), (0.24, 0.08, 0.2), FRAME_L, r=0.02)                  # power pack
     _charge_bar(rig, t, -0.075, -0.18, 1.075, face=-1)
-    rig.part(t).rbox((0, -0.05, 1.29), (0.26, 0.14, 0.09), CLOTH, r=0.03, taper=0.6)       # cowl behind the head
-    _sensor_head(rig, hd, 0.02, 1.32, 1.0)
+    _socket(rig, t, (0, 0.01, 1.258))
+    _sensor_head(rig, hd, 0.02, 1.345, 1.0)
     _util_arm(rig, t)
     rig.build()
     return rig
@@ -155,17 +174,20 @@ def heavy():
         _hinge(rig.part(e), el, 0.055, 0.12)
         rig.part(e).rbox((sx * 0.345, 0.09, 0.84), (0.13, 0.16, 0.28), MID, r=0.035, taper=1.3)     # gauntlet
         rig.part(e).rbox((sx * 0.345, 0.1, 0.65), (0.09, 0.11, 0.1), FRAME, r=0.03, taper=0.8)    # fist
-    rig.part(b).rbox((0, 0, 0.87), (0.36, 0.22, 0.12), FRAME_L, r=0.04, taper=1.1)        # pelvis
-    rig.part(t).strut((0, 0.0, 0.9), (0, 0.03, 1.08), 0.11, FRAME)                       # abdomen
+    rig.part(b).rbox((0, 0, 0.85), (0.36, 0.22, 0.09), FRAME_L, r=0.04, taper=1.1)        # pelvis
+    rig.part(t).strut((0, 0.0, 0.9), (0, 0.03, 1.08), 0.11, FRAME)                       # abdomen pivot
+    rig.part(t).cyl((0, 0.01, 0.945), 0.13, 0.045, MID)                                 # rib band
+    for sx in (1, -1):                                                                   # side pistons, pelvis to chest
+        _piston(rig.part(t), (sx * 0.19, 0.0, 0.87), (sx * 0.19, 0.02, 1.07), 0.03)
     rig.part(t).rbox((0, 0.05, 1.19), (0.34, 0.31, 0.34), CLOTH, r=0.04, taper=1.4, rot=(-12, 0, 0))   # chest
     rig.part(t).rbox((0, -0.2, 1.18), (0.3, 0.14, 0.26), FRAME_L, r=0.03)                # power unit (side depth)
     rig.part(t).rbox((0, 0.02, 1.07), (0.37, 0.29, 0.03), ACCENT, r=0.05, rot=(-12, 0, 0))            # seam
-    rig.part(t).rbox((0, -0.08, 1.36), (0.3, 0.16, 0.12), CLOTH, r=0.03, taper=0.6)      # cowl behind the head
     for sx in (1, -1):                                                                   # back fins
         rig.part(t).rbox((sx * 0.1, -0.27, 1.27), (0.05, 0.16, 0.24), FRAME, r=0.015, rot=(25, 0, 0))
     _charge_bar(rig, t, -0.075, -0.27, 1.13, face=-1)
     rig.part(t).rbox((0, 0.215, 1.24), (0.2, 0.06, 0.15), FRAME_L, r=0.03, taper=1.15, rot=(-12, 0, 0))  # chest inset
-    _sensor_head(rig, hd, 0.13, 1.39, 1.0)
+    _socket(rig, t, (0, 0.085, 1.358), rot=(-12, 0, 0))
+    _sensor_head(rig, hd, 0.12, 1.435, 1.0)
     rig.build()
     rig.root.scale = (1.1,) * 3
     return rig
@@ -197,24 +219,27 @@ def drone():
         rig.part(b).plate((x, -0.23, z + 0.155), (x, 0.01, z + 0.125), 0.085, 0.035, CLOTH, taper=0.7, r=0.015)
     for k in range(4):                                                                   # charge cells, top
         rig.part(b, f"bar{k}").box((-0.075 + k * 0.05, 0.0, z + 0.163), (0.04, 0.06, 0.03), BAR)
-    for side, x in (("R", 0.17), ("L", -0.17)):                                          # arms: dark, so they read apart from the shell
-        sh, el = (x, 0.13, z - 0.09), (x, 0.15, z - 0.29)
+    for side, x in (("R", 0.17), ("L", -0.17)):           # arms mount back under the hull and sweep forward and down
+        sh, el = (x, 0.0, z - 0.08), (x, 0.15, z - 0.24)
         s = rig.joint(f"arm_{side}", b, sh)
         e = rig.joint(f"elbow_{side}", s, el)
         _hinge(rig.part(s), sh, 0.035, 0.06)
         rig.part(s).strut(sh, el, 0.022, FRAME)
-        rig.part(s).plate((x, 0.145, z - 0.27), (x, 0.13, z - 0.11), 0.055, 0.06, FRAME_L, taper=0.8, r=0.015)
+        rig.part(s).plate(_along(sh, el, 0.05), _along(sh, el, 0.18), 0.055, 0.06, FRAME_L, taper=0.8, r=0.015)
         _hinge(rig.part(e), el, 0.034, 0.075, FRAME_L)
-        rig.part(e).plate((x, 0.17, z - 0.29), (x, 0.3, z - 0.29), 0.06, 0.06, "gm", taper=0.8, r=0.015)
+        d = _dir((0, 0.15, -0.06))                                                          # forearm slope
+        at = lambda u: tuple(el[i] + d[i] * u for i in range(3))  # noqa: E731
+        rig.part(e).plate(at(0.02), at(0.16), 0.06, 0.06, "gm", taper=0.8, r=0.015)
         if side == "R":                                                                 # welder
-            rig.part(e).cyl((x, 0.33, z - 0.29), 0.035, 0.06, FRAME_L, axis="f")
-            rig.part(e).cyl((x, 0.385, z - 0.29), 0.03, 0.06, "gm", axis="f", taper=0.5)
-            rig.part(e, "torch").ball((x, 0.425, z - 0.29), 0.028, "orange")
-            rig.part(e, "spark").ball((x, 0.455, z - 0.29), 0.05, "arc")
+            rig.part(e).strut(at(0.16), at(0.22), 0.035, FRAME_L)
+            rig.part(e).strut(at(0.22), at(0.28), 0.03, "gm", taper=0.5)
+            rig.part(e, "torch").ball(at(0.3), 0.028, "orange")
+            rig.part(e, "spark").ball(at(0.33), 0.05, "arc")
         else:                                                                           # claw
-            rig.part(e).rbox((x, 0.33, z - 0.29), (0.08, 0.05, 0.06), FRAME, r=0.015, axis="f")
+            rig.part(e).plate(at(0.15), at(0.2), 0.08, 0.06, FRAME, r=0.015)
             for dx in (-0.028, 0.028):
-                rig.part(e).box((x + dx, 0.385, z - 0.29), (0.04, 0.08, 0.045), FRAME_L)
+                rig.part(e).plate(tuple(v + (dx if i == 0 else 0) for i, v in enumerate(at(0.2))),
+                                  tuple(v + (dx if i == 0 else 0) for i, v in enumerate(at(0.28))), 0.04, 0.045, FRAME_L, r=0.01)
     rig.build()
     rig.root.scale = (1.15,) * 3
     return rig
