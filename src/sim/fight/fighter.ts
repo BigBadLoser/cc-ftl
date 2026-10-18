@@ -12,6 +12,7 @@ import { AllegianceC, FighterC, type Fighter } from './components';
 import { fleePath } from './flee';
 import { sightLine, type Cover } from './los';
 import { isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
+import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
 
@@ -112,7 +113,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   if (foes.length === 0) {
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
-    if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping') {
+    if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
       const goal = consoleObjective(sim, pos.gridId, pos);
       if (goal && (pos.x !== goal.x || pos.y !== goal.y)) walkTo(sim, id, f, pos, goal, false);
     }
@@ -145,7 +146,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     if (f.ordered && !ordered) f.ordered = 0;
     target = ordered ?? (f.engage && canFight ? seen : undefined);
   } else if (canFight) target = seen ?? (hunter ? foes[0] : undefined);
-  else if (seen) return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
+  else if (seen && !sim.content.species[crew.species]?.fearless) return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
 
   if (!target) {
     setMode(sim, id, f, 'idle');
@@ -190,6 +191,7 @@ function attack(
   const health = sim.world.get(targetId, HealthC);
   if (health) health.hp = Math.max(0, health.hp - weapon.def.damage); // vitals downs them next tick
   sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage: weapon.def.damage, hp: health?.hp ?? 0, cover });
+  if (weapon.def.ion) stunCrew(sim, targetId);
 }
 
 /** Unarmed non-fighters run from hostiles they can see: replan every FLEE_REPLAN_TICKS or when the path runs out. */

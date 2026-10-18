@@ -14,7 +14,7 @@ import { clearPath, findJobAt, isIncapacitated, releaseAssignment } from './help
 
 export type CrewCommandType = Exclude<
   Extract<Command['type'], `job.${string}` | `crew.${string}`>,
-  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip'
+  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip' | 'crew.hack'
 >;
 type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 

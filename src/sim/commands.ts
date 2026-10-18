@@ -1,3 +1,4 @@
+import type { Faction } from './combat/components';
 import type { WorkCategory } from './crew/components';
 import type { PortalKind, PortalRequirement } from './portals/components';
 
@@ -75,6 +76,10 @@ export type Command =
   | { type: 'combat.flee'; gridId: number }
   /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
   | { type: 'ship.scuttle'; gridId: number }
+  /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */
+  | { type: 'crew.hack'; id: number; module: number }
+  /** Spawn one crew member of `role` (robot variants included) on a walkable tile; faction defaults to the grid's ship. */
+  | { type: 'debug.spawnCrew'; gridId: number; x: number; y: number; role: string; faction?: Faction }
   | { type: 'debug.spawnItems'; gridId: number; x: number; y: number; item: string; count: number };
 
 /** A command tagged with the tick at whose start it applies. */

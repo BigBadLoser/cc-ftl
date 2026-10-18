@@ -11,6 +11,7 @@ import { dropCarried } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
 import { operateAffinity } from '../combat/operators';
+import { canTakeRobotJob } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW } from '../tuning';
 
@@ -116,6 +117,7 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
       const job = sim.world.get(jobId, JobC);
       if (!job || job.gridId !== pos.gridId || !cats.includes(job.category) || job.target === crewId || needsMaterials(job)) continue;
       if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL) continue;
+      if (!canTakeRobotJob(sim, crewId, job)) continue;
       const steps = findPath(sim, pos.gridId, origin(pos), jobGoal(job));
       const score = steps ? steps.length - operateAffinity(sim, crewId, job) : 0;
       if (steps && (!best || score < best.score)) best = { id: jobId, steps, score };

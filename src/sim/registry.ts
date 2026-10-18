@@ -1,7 +1,8 @@
+import type { Faction } from './combat/components';
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
-export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee';
+export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking';
 
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
@@ -11,7 +12,7 @@ export interface ShipTemplate {
   /** '.' space, '#' wall, '_' floor, 'D' door. Rows may differ in length; short rows pad with space. */
   rows: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
-  faction?: 'player' | 'hostile' | 'neutral';
+  faction?: Faction;
   /** Role ids of the crew to spawn. */
   crew?: string[];
   /** Enemy targeting doctrine (default 'random'). */
@@ -75,7 +76,12 @@ export type Effect =
   | { type: 'ignite'; radius?: number }
   /** Disables the module on the impact tile. `ifNoDrain`: only when no shield layer was drained by this hit. */
   | { type: 'ionDisable'; seconds: number; ifNoDrain?: boolean }
-  | { type: 'shieldDrain'; layers: number };
+  | { type: 'shieldDrain'; layers: number }
+  /**
+   * EMP burst: ion-disables every module and stuns every ion-vulnerable crew member (SpeciesDef.ionStunSec) within
+   * `radius` tiles. No weapon uses it yet; it is the hook for EMP warheads and, later, combat drones.
+   */
+  | { type: 'emp'; seconds: number; radius: number };
 
 /** A weapon: how it charges, flies and what it does. Power draw is on the carrying ModuleDef. */
 export interface WeaponDef {
@@ -135,6 +141,8 @@ export interface HandWeaponDef {
   cooldownSec: number;
   /** Base hit chance 0..1 before skill, range and cover. */
   accuracy: number;
+  /** Ion weapon: a hit also stuns an ion-vulnerable target (SpeciesDef.ionStunSec). */
+  ion?: true;
 }
 
 export interface RecipeDef {
@@ -157,6 +165,8 @@ export interface RoleDef {
   fighter?: true;
   /** Item ids (best first) the crew member fetches from storage on their own when unarmed. */
   loadout?: string[];
+  /** Species of crew spawned in this role (default 'species.human'). Robot variants are roles of 'species.robot'. */
+  species?: string;
   /** Hp fraction (0..1) under which this role surrenders when outnumbered. Default: SURRENDER_HP_FRAC for non-player crew, never for player crew. */
   surrenderBelow?: number;
 }
@@ -172,6 +182,26 @@ export interface SpeciesDef {
   restDecay: number;
   /** Units a crew member carries at once (default DEFAULT_CARRY_CAPACITY). */
   carryCapacity?: number;
+  /** Max hp (default CREW_MAX_HP). */
+  maxHp?: number;
+  /** Generated names are `<designation>-<3 digits>` instead of first names from the pool. */
+  designation?: string;
+  // Body flags. Systems gate behaviour on these, never on species ids. Absent = organic defaults.
+  /** Does not breathe: uses no O2, immune to thin air, CO2 and vacuum cold. Heat and fire still hurt. */
+  airless?: true;
+  /**
+   * Mechanical body: no natural regeneration and no bed healing. Crew with the `repair` skill mend it (a 'mend' job),
+   * using one unit of the first of `items` the ship's storage holds per `hpPerItem` hp restored.
+   */
+  mechanical?: { items: readonly string[]; hpPerItem: number };
+  /** Ion- and EMP-vulnerable: stunned this many seconds per ion hit. Absent = immune. */
+  ionStunSec?: number;
+  /** Never flees from hostiles and never surrenders (and will ignore fire panic once danger avoidance exists). */
+  fearless?: true;
+  /** At 0 hp it is wrecked (dead at once, no bleeding out) and leaves a wreck that crew salvage for these items. */
+  wreck?: readonly ItemQty[];
+  /** On a rogue ship it is run by that ship's AI core and goes inert while no core is live (CoreLinkC). */
+  coreLinked?: true;
 }
 
 /**
@@ -257,6 +287,11 @@ export interface ModuleDef {
   engine?: { evasionPerPower: number };
   /** Point-defence turret: shoots down interceptable shots; needs a working AI core on the ship. */
   pointDefense?: true;
+  /**
+   * Robot fabricator: while powered, intact and on a grid whose ship has a live AI core, it builds a robot of the
+   * ship's faction every `intervalSec` (cycling through `roles`) next to itself, while fewer than `cap` it made live.
+   */
+  robotFabricator?: { roles: readonly string[]; intervalSec: number; cap: number };
   /** AI core: operates the ship's point defence (and, later, other automation) at this tier. */
   aiCore?: { tier: number };
   /** Render asset id of the special roof tile drawn above this module on roofed (enemy) ships, e.g. 'roof.weapon'. Render-only. */

@@ -5,7 +5,7 @@ export const roles = {
   'role.engineer': {
     name: 'Engineer',
     priorities: { firefighting: 2, medical: 4, operating: 3, repair: 1, construction: 1, hauling: 3, crafting: 2, cooking: 4 },
-    skills: { shielding: 2 },
+    skills: { shielding: 2, repair: 2, hacking: 1 },
   },
   'role.gunner': {
     name: 'Gunner',
@@ -27,5 +27,25 @@ export const roles = {
     name: 'Pilot',
     priorities: { firefighting: 2, medical: 4, operating: 1, repair: 4, construction: 4, hauling: 3, crafting: 4, cooking: 4 },
     skills: { piloting: 3 },
+  },
+  // --- Robot variants (species.robot). They never surrender; no medical or cooking work. ---
+  'role.robot_worker': {
+    name: 'Worker bot',
+    species: 'species.robot',
+    priorities: { firefighting: 2, medical: 0, operating: 3, repair: 2, construction: 1, hauling: 1, crafting: 2, cooking: 0 },
+  },
+  'role.robot_security': {
+    name: 'Security bot',
+    species: 'species.robot',
+    priorities: { firefighting: 3, medical: 0, operating: 2, repair: 4, construction: 0, hauling: 4, crafting: 0, cooking: 0 },
+    skills: { gunnery: 3, melee: 3 },
+    fighter: true,
+    loadout: ['item.rifle', 'item.sidearm', 'item.blade'],
+  },
+  'role.robot_repair': {
+    name: 'Repair drone-bot',
+    species: 'species.robot',
+    priorities: { firefighting: 1, medical: 0, operating: 4, repair: 1, construction: 2, hauling: 3, crafting: 4, cooking: 0 },
+    skills: { repair: 3 },
   },
 } satisfies Record<string, RoleDef>;

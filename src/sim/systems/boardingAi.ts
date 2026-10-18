@@ -1,4 +1,5 @@
 import { ShipC } from '../combat/components';
+import { isAiFaction } from '../combat/factions';
 import { DeadC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { EquipC } from '../fight/components';
@@ -23,7 +24,7 @@ export function boardingAiSystem(sim: Sim): void {
   for (const id of sim.world.query(BoarderC, ShipC)) {
     const b = sim.world.get(id, BoarderC) as Boarder;
     const ship = sim.world.get(id, ShipC)!;
-    if (b.state === 'done' || ship.faction !== 'hostile' || ship.state !== 'active') continue;
+    if (b.state === 'done' || !isAiFaction(ship.faction) || ship.state !== 'active') continue;
     const v = b.vehicle ? sim.world.get(b.vehicle, VehicleC) : undefined;
     if (b.state === 'idle') {
       if (!sim.sector.inCombat) continue;

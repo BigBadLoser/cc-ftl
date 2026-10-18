@@ -10,7 +10,7 @@ import { hullSum } from './combat/hull';
 import { initAtmosphere } from './ship';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -131,6 +131,10 @@ export const migrations: Record<number, (data: Record<string, unknown>) => Recor
     for (const entry of world.stores['vehicle'] ?? []) (entry[1] as Record<string, unknown>)['cargo'] = [];
     return data;
   },
+  // v10 -> v11 (robots): the coreLink, inert, stun, wreck, hacked and fabricator stores are new and created on first use;
+  // faction 'rogue', activity 'inert', job kinds mend/salvage/hack and Crew.species other than human are new values.
+  // Old crew are all human with the same components, so nothing to convert.
+  10: (data) => data,
 };
 
 /** Serialize the sim to a JSON string. */

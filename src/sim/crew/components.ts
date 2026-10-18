@@ -47,13 +47,14 @@ export const WORK_CATEGORIES = [
 export type WorkCategory = (typeof WORK_CATEGORIES)[number];
 
 /** What a crew member is currently doing, shown in UI and used by render for animation. */
-export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead';
+/** 'inert': a robot shut down (no live AI core) or stunned. */
+export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead' | 'inert';
 
 export interface Crew {
   name: string;
   /** Role content id, e.g. 'role.engineer'. Sets default priorities. */
   role: string;
-  /** Species content id (only 'species.human' in M2). */
+  /** Species content id (e.g. 'species.human', 'species.robot'). */
   species: string;
   /** Cosmetic seed for the parametric model generator (hair, face, palette). */
   appearanceSeed: number;
@@ -127,7 +128,9 @@ export interface Job {
 export const JobC = defineComponent<Job>('job');
 
 export type JobKind =
-  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'operate';
+  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'operate'
+  /** mend: repair a damaged robot (`target`); salvage: strip a robot wreck (`target`); hack: take over an AI core (`target`). */
+  | 'mend' | 'salvage' | 'hack';
 
 /** Hit points of a crew member. At 0 they are downed (see DownedC). */
 export interface Health {

@@ -7,7 +7,9 @@ import type { Crew } from '../sim/crew/components';
  * Ids that the manifest lacks are skipped, so partial asset sets still render.
  */
 export function crewLoadout(atlas: Atlas, crew: Crew): LayerSprite[] {
-  const sp = crew.species.replace(/^species\./, '');
+  const own = crew.species.replace(/^species\./, '');
+  // Species without art yet (robots) borrow the human layers as a placeholder until their sheets exist.
+  const sp = atlas.layer(`crew.${own}.body`) ? own : 'human';
   const p = `crew.${sp}.`;
   const engineer = crew.role === 'role.engineer';
   const hair = atlas.ids(`${p}hair.`);

@@ -5,6 +5,7 @@ import { evictStack, refundCost, structCostKey } from '../items/stacks';
 import { footprintTiles } from '../modules/footprint';
 import { ModuleC } from '../modules/components';
 import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/spawn';
+import { performHack, performMend, performSalvage } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { Struct, writeStruct } from '../structure';
@@ -37,6 +38,9 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'repair': return repair(sim, job, speed);
     case 'rescue': return rescue(sim, crew, job);
     case 'operate': return 'working'; // held until the operate-jobs system drops it
+    case 'mend': return performMend(sim, crew, job, speed);
+    case 'salvage': return performSalvage(sim, job, speed);
+    case 'hack': return performHack(sim, crew, job, speed);
   }
 }
 

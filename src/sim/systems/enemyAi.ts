@@ -1,4 +1,5 @@
-import { CombatC, ShipC, type Combat } from '../combat/components';
+import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
+import { factionsHostile, isAiFaction } from '../combat/factions';
 import { modulesOnGrid, randomModule } from '../combat/targets';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
@@ -7,9 +8,9 @@ import { vehicleFaction } from '../vehicles/lifecycle';
 import { AI_RETARGET_TICKS, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
 
 /**
- * Enemy doctrine. Hostile active ships (a) retreat via combat.flee once integrity < FLEE_BELOW and the FTL drive
+ * Enemy doctrine. Hostile and rogue active ships (a) retreat via combat.flee once integrity < FLEE_BELOW and the FTL drive
  * is charged, (b) never hold fire, and (c) every AI_RETARGET_TICKS pick a target on the first live player ship
- * when theirs is missing or destroyed: 'weapons' doctrine aims at weapon modules, 'shields' at shield
+ * (else any ship at war with them; rogue AIs fight raiders too) when theirs is missing or destroyed: 'weapons' doctrine aims at weapon modules, 'shields' at shield
  * generators, 'random' at any module weighted by max hp. A hostile shuttle of another faction in flight is targeted
  * before any ship. The AI only issues commands, like the player does.
  */
@@ -17,7 +18,7 @@ export function enemyAiSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC, CombatC)) {
     const ship = sim.world.get(id, ShipC);
     const combat = sim.world.get(id, CombatC);
-    if (!ship || !combat || ship.faction !== 'hostile' || ship.state !== 'active' || !sim.sector.inCombat) continue;
+    if (!ship || !combat || !isAiFaction(ship.faction) || ship.state !== 'active' || !sim.sector.inCombat) continue;
     if (ship.integrity < FLEE_BELOW && combat.ftl >= FTL_CHARGE_SEC) {
       sim.enqueue({ type: 'combat.flee', gridId: ship.gridId });
       continue;
@@ -36,7 +37,7 @@ export function enemyAiSystem(sim: Sim): void {
       }
       continue;
     }
-    const foe = firstFoe(sim);
+    const foe = firstFoe(sim, ship.faction);
     if (!foe) continue;
     const t = combat.target;
     const hp = t && sim.world.get(t.moduleId, ModuleC)?.hp;
@@ -55,13 +56,16 @@ function flyingFoeVehicle(sim: Sim, faction: string): number {
   return 0;
 }
 
-/** Grid id of the first player ship still in play, or 0. */
-function firstFoe(sim: Sim): number {
+/** Grid id of the first ship still in play at war with `faction` (a player ship first), or 0. */
+function firstFoe(sim: Sim, faction: Ship['faction']): number {
+  let other = 0;
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s?.faction === 'player' && (s.state === 'active' || s.state === 'disabled')) return s.gridId;
+    if (!s || (s.state !== 'active' && s.state !== 'disabled') || !factionsHostile(faction, s.faction)) continue;
+    if (s.faction === 'player') return s.gridId;
+    other ||= s.gridId;
   }
-  return 0;
+  return other;
 }
 
 function pick(sim: Sim, combat: Combat, gridId: number): number {

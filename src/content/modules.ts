@@ -188,6 +188,14 @@ export const modules = {
     flammability: 0.2, maxHp: 70, buildWork: 180, pointDefense: true, roofAsset: 'roof.weapon', deploySec: 2,
     cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 8 }],
   },
+  // Robot fabricator (rogue AI shipyards): builds hostile robots while powered and run by a live AI core. Placeholder
+  // art: the crafting fabricator's sprite.
+  'module.robotFabricator': {
+    name: 'Robot fabricator', asset: 'module.fabricator', footprint: [2, 1], solid: true, access: [0, 1], power: -6,
+    priority: 3, flammability: 0.2, maxHp: 140, buildWork: 240,
+    robotFabricator: { roles: ['role.robot_worker', 'role.robot_security', 'role.robot_repair'], intervalSec: 30, cap: 4 },
+    cost: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 12 }],
+  },
   'module.aiCore': {
     name: 'AI core', asset: 'module.ai_core', footprint: [2, 2], solid: true, power: -4,
     priority: 3, flammability: 0.2, maxHp: 80, buildWork: 240, aiCore: { tier: 1 }, roofAsset: 'roof.ai', deploySec: 2,
