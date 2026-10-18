@@ -8,7 +8,7 @@ Layout: an octagonal HANGAR PIT filling the footprint (all four corners chamfere
 striped coaming lip, three rows of panelled walls with pilasters and light bars, and a floor of two launch doors. There is
 no walkway inside the footprint: crew board from the normal floor beside the LONG +u side (access tile outside the
 footprint, at r0 the one east of the pit at the hatch row) over a GANGWAY: a gate on the lip, a plate on the outside
-floor, a steep stair-ramp down over the pit wall and a landing at the parked shuttle's side hatch (the hatch sill is
+floor, a short ramp down over the lip and a landing at the parked shuttle's side hatch (the hatch sill is
 HATCH_Z - 0.8 above the pit floor). The shuttle (art/shuttle, transport_shuttle) parks with its nose to +v so its hatch
 faces +u, the side that faces the camera at r0."""
 import math
@@ -24,12 +24,15 @@ PIT = 1.8                             # PIT DEPTH below the deck = where the par
 LIP, LIP_W = 0.09, 0.14               # raised coaming lip round the opening: height, width (it overhangs the footprint by 0.1)
 SHAFT = 1.0                           # launch shaft below the doors when open
 # parked shuttle (art/shuttle transport_shuttle), centred on the pit, nose +v at r0 (heading +90 deg), feet on the doors
-HATCH = (0.817, 1.40, -PIT + 1.30)    # hatch centre (hull surface): u, v, z. Round, 1.6 across, so sill z = -1.30, top z = +0.30
+LIFT = 0.85                           # the shuttle hangs LIFT above the pit floor in its cradle arms (PIT stays 1.8)
+FEET_Z = -PIT + LIFT                  # -0.95: z of the shuttle's feet / leg pads
+TOP_Z = FEET_Z + 2.7643               # +1.814: highest point (folded wing tips); the roof slab underside is walls.HF = 1.85
+HATCH = (0.817, 1.40, FEET_Z + 1.30)  # hatch centre (hull surface): u, v, z. Round, 1.6 across: sill z = -0.45, top z = +1.15
 HATCH_SILL = HATCH[2] - 0.8
 FEET = ((1.28, -1.45), (1.28, 1.24))  # landing-leg pads on the doors: |u - UC|, v
 GANG_W = 0.8                          # gangway width (across v), centred on the hatch row
 GANG_TOP = 2.45                       # outer end of the plate on the outside floor (footprint edge is u = 2.0)
-GANG_FOOT = 1.08                      # inner end of the stair-ramp / start of the landing
+GANG_FOOT = 1.45                      # inner end of the stair-ramp / start of the landing
 GANG_END = 0.99                       # landing's inner end, just off the hull flange
 
 
@@ -200,12 +203,31 @@ def leaves(f, t):
         uu = e + s * du
         if abs(uu - UC) + 0.1 < hw - 0.05:                                            # launch rail under the feet
             f.box(uu, (FEET[0][1] + FEET[1][1]) / 2, z, 0.16, FEET[1][1] - FEET[0][1] + 0.7, 0.05, "steelD", top="steelL")
-        for du, vv in FEET:                                                           # foot clamps: jaws either side of the pad
-            uu = e + s * du
-            if abs(uu - UC) + 0.17 > hw - 0.02:
+
+
+def clamps(f, t):
+    """Cradle arms holding the shuttle by its four leg pads: a pylon on each side wall (floor to just above the pad) and a
+    horizontal arm from it to under the pad, with jaws either side of the pad. They retract into the pylons as the doors
+    start to open (gone by t = 0.25)."""
+    _g("clamps")
+    k = min(1.0, t * 4.0)
+    for sx in (-1, 1):
+        for vv in (FEET[0][1], FEET[1][1]):
+            uw = UC + sx * (OPEN[1] - 0.1)                                                       # pylon centre on the wall
+            f.box(uw, vv, -PIT, 0.12, 0.5, 0.06, "steelD", top="steelL")
+            f.box(uw, vv, -PIT + 0.06, 0.1, 0.36, FEET_Z - (-PIT) + 0.06, "steelL", top="steelL")
+            f.box(uw - sx * 0.04, vv, FEET_Z - 0.2, 0.02, 0.2, 0.12, "cyan", base=True)            # pylon lamp slot
+            full = abs(uw) - FEET[0][0] + 0.17                                                       # pylon face to the pad's far edge
+            ln = full * (1.0 - k)
+            if ln < 0.04:
                 continue
-            for sv in (-1, 1):
-                f.box(uu, vv + sv * 0.3, z + 0.05, 0.3, 0.08, 0.08, "steel", top="hazY")
+            ua = uw - sx * (0.05 + ln / 2)
+            f.box(ua, vv, FEET_Z - 0.11, ln, 0.16, 0.11, "steel", top="steelL")                      # arm, top touches the pad underside
+            f.box(ua, vv, FEET_Z - 0.04, ln, 0.04, 0.04, "hazY")
+            if k < 0.5:
+                ue = uw - sx * (0.05 + ln)
+                for sv in (-1, 1):                                                                   # jaws either side of the pad
+                    f.box(ue + sx * 0.02, vv + sv * 0.25, FEET_Z - 0.11, 0.16, 0.06, 0.26, "steelD", top="hazY")
 
 
 def _wall(f, p, q, nin, t0, t1, d0, d1, z0, z1, mat, top=None):
@@ -297,9 +319,9 @@ def gate(f, t, home=True):
     def ramp(a, b, mats):
         lbox(f, lambda a_, b_, d: (ut if b_ < 0 else ub, v + a_ * a, (zt if b_ < 0 else zb) - (0.05 if d < 0 else 0.0)), mats)
     ramp(GANG_W / 2, 0, {"side": "steelD", "top": "steelL"})
-    for k in range(1, 6):                                                                                  # tread bars
-        u = ut + (ub - ut) * k / 6
-        z = zt + (zb - zt) * k / 6
+    for k in range(1, 4):                                                                                  # tread bars
+        u = ut + (ub - ut) * k / 4
+        z = zt + (zb - zt) * k / 4
         f.box(u, v, z, 0.05, GANG_W - 0.1, 0.012, "steelD")
     f.box((ub + GANG_END) / 2, v, zb - 0.05, ub - GANG_END, GANG_W, 0.05, "steelD", top="steelL")           # landing at the hatch
     for sv in (-1, 1):                                                                                     # rails
@@ -330,6 +352,7 @@ def build(f, t=0.0, home=True):
     pit(f, t)
     coaming(f)
     leaves(f, t)
+    clamps(f, t)
     gate(f, t, home)
 
 

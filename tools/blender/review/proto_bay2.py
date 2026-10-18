@@ -18,7 +18,7 @@ OUT = Path(args[0])
 JOBS = args[1:] or ["bay", "shuttle"]
 OUT.mkdir(parents=True, exist_ok=True)
 SAMPLES = 16
-FRAMES = (0.0, 0.66)
+FRAMES = (0.0, 0.2, 0.66)
 
 
 def render(tag, objs, kind, holdouts=()):
@@ -43,11 +43,11 @@ def render(tag, objs, kind, holdouts=()):
 
 def shuttle_ob(rot):
     """The real parked shuttle (art/shuttle transport_shuttle), centred on the pit, nose +v at r0 so the hatch faces +u (the
-    long side that faces the camera), standing on the doors at z = -PIT. Review livery colours stand in for the export keys."""
+    long side that faces the camera), hanging in the cradle arms, feet at z = FEET_Z (PIT - LIFT). Review livery colours stand in for the export keys."""
     from lib import palette
     from sprites import shuttle_craft as SC
     palette._data["mkP"], palette._data["mkS"] = {"hex": "#527593"}, {"hex": "#c7a15e"}
-    obs = SC.transport_shuttle(math.pi / 2 + rot * math.pi / 2, "parked", dz=-B.PIT)
+    obs = SC.transport_shuttle(math.pi / 2 + rot * math.pi / 2, "parked", dz=B.FEET_Z)
     c = B.BayFrame(None, rot).pt(0.0, 0.0, 0.0)
     for ob in obs:
         ob.location = (ob.location.x + c.x, ob.location.y + c.y, ob.location.z)

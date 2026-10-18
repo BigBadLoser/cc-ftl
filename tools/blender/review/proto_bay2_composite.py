@@ -178,7 +178,7 @@ def main():
     e.save(OUTD / f"bay_empty_r0_{V}_1x.png")
     zoom(e).save(OUTD / f"bay_empty_r0_{V}_3x.png")
     zoom(room("bay_r0_t0", "shuttle_parked_r0", close=True)).save(OUTD / f"bay_room_close_r0_{V}_3x.png")
-    r = alone(["bay_r0_t0", "bay_r0_t66"], ["closed", "open 0.66 (gangway retracted)"])
+    r = alone(["bay_r0_t0", "bay_r0_t20", "bay_r0_t66"], ["closed", "open 0.2 (arms swinging clear)", "open 0.66 (gangway retracted)"])
     r.save(OUTD / f"bay_hatch_frames_{V}_1x.png")
     zoom(r).save(OUTD / f"bay_hatch_frames_{V}_3x.png")
     ims = []
