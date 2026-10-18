@@ -1,6 +1,6 @@
 # Ship generation v3: assembly-driven
 
-Status: the shared framework and the navy proof of concept are built. Drones and scrappers still run on v2
+Status: the generic 2D arranger and four navy hull grammars are built (v4). Drones and scrappers still run on v2
 (structure-first topologies) until their proofs of concept replace it; v2's topology code is then removed. There is
 one pipeline; only its stage 3 currently branches on whether a faction has hull families.
 
@@ -51,7 +51,45 @@ one pipeline; only its stage 3 currently branches on whether a faction has hull 
 |---|---|---|
 | placer and fitting (`Layout`, `fit.ts`), `validate.ts`, determinism, canvas stamping, `ShipTemplate`, debug spawn, viewer | `plan.ts` is the brief; `Builder` is the low-level stamper (with `reset` for revisions); `pairUp`, `stern` and the noses are section helpers | v2 topologies (spine, ring, carrier, hub, rails, clusters, salvage), kept only until the drone and scrapper proofs of concept land |
 
-## Navy (built): standardised functional sections
+## The 2D arranger (`arranger.ts`, `blocks.ts`)
+
+The arranger is faction-agnostic.
+
+- **Blocks:** a block is drawn with a local Builder and frozen into rows, plus:
+  - one private char per room, with its role and spec;
+  - ports (wall segments with a side and an access kind);
+  - engine faces.
+- **Attaching:** `attach(parent, child, {side, parentPort, childPort, align, kind})` joins two free ports on opposite
+  sides along a shared wall line and slides the child along the overlap. Before it commits a candidate placement it
+  checks feasibility:
+  - floor only on empty tiles;
+  - walls only on empty tiles or walls;
+  - nothing east of any engine face, whether it was placed before or after.
+- **Mirrored attaching:** `attachMirrored` places a block and its mirror partner (same outline, its own contents) on
+  mirrored parents, both or neither, undoing the first if the second fails.
+- **Doors:** these open only where both sides of the shared wall are floor.
+- **Debug output:** assemblies, ports, joins (frame, graft or beam) and traversal.
+
+Drones will reuse the arranger with their own blocks and grammar.
+
+**Navy grammars** (`navyLayouts.ts`, chosen per hull family as data):
+- **corvette** `linear`: a short chain.
+- **frigate** `spineWings`: a spine, plus mirrored wing blocks side by side on a hatch of the mid-spine section.
+- **cruiser** `twinHull`: a citadel at the root, two mirrored hull chains flanking it, twin drives.
+- **carrier** `carrierIsland`: a hangar block at the root, a bow battery, an offset command island on one side, a gun
+  block on the other, an aft chain and nacelles.
+
+**Propulsion** (`propulsion` per family, engines always facing +x):
+- transverse bank;
+- engine cluster on a stern spine;
+- nacelles on outriggers;
+- pods at the wing ends;
+- side drives overhanging the power section.
+
+**Diversity:** in addition to shape and section-profile distance, an **adjacency distance**: the multiset Jaccard
+distance over join tokens `kindA>dir>kindB` and assembly-degree tokens. It is reported within and across families.
+
+## Navy sections
 
 - **Sections are mirrored assemblies:**
   - Band sections: rooms around a 2-wide axis hall.

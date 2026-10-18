@@ -6,4 +6,5 @@ export { generateShip, generateAttempt, GEN_ATTEMPTS } from './generate';
 export { validateTemplate } from './validate';
 export { scaled } from './plan';
 export { roleOfLetter } from './canvas';
-export { layoutMetrics, meanPairwise, profileDistance, silhouetteDistance, silhouetteMask } from './metrics';
+export { adjacencyDistance, adjacencySignature, layoutMetrics, meanPairwise, profileDistance, silhouetteDistance, silhouetteMask } from './metrics';
+export { Arranger, mirrorBlock, flipId, type Block, type BlockPort, type AttachOpts } from './arranger';

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ModuleC, ShipC, Struct, accessTile, deserialize, footprintTiles, generateShip, hullRow, isTileWalkable, newGame,
-  meanPairwise, openTilesOf, profileDistance, serialize, silhouetteDistance, silhouetteMask, type FactionDef, type GenResult, type ModuleDef, type Sim,
+  adjacencyDistance, adjacencySignature, meanPairwise, openTilesOf, serialize, silhouetteDistance, silhouetteMask, type FactionDef, type GenResult, type ModuleDef, type Sim,
 } from '../../sim';
 import { content } from '../index';
 import { factions } from './index';
@@ -68,27 +68,36 @@ describe('ship generator', () => {
       expect(s.template.boarding).toBeDefined();
       expect(count(s, (m) => !!m.storage)).toBeGreaterThanOrEqual(5);
       const n = gen('faction.navy', seed, seed % 10);
-      expect([...n.template.rows].reverse(), `${n.template.name} hull is mirror-symmetric`).toEqual(n.template.rows);
+      // Navy hulls are mirrored, except the carrier's offset island.
+      if (n.role !== 'carrier') expect([...n.template.rows].reverse(), `${n.template.name} hull is mirror-symmetric`).toEqual(n.template.rows);
     }
     const lopsided = Array.from({ length: 20 }, (_, seed) => gen('faction.scrapper', seed, 4).template.rows)
       .filter((rows) => rows.join() !== [...rows].reverse().join());
     expect(lopsided.length).toBeGreaterThanOrEqual(18);
   });
 
-  it('navy (assembly-driven): sections with matched bulkhead ports, every hull family appears, seeds vary at macro scale', () => {
+  it('navy (2D arranger): every hull family appears, major assemblies sit side by side, architecture varies', () => {
     const families = new Set<string>();
+    let sideBySide = 0;
     for (let seed = 0; seed < 60; seed++) {
       const g = gen('faction.navy', seed, seed % 2 === 1 ? 9 : seed % 10);
       families.add(g.role);
-      expect(g.debug, 'composer debug data').toBeDefined();
-      expect(g.debug!.ports.every((p) => p.matched), `seed ${seed} ports`).toBe(true);
-      expect(g.debug!.joins.some((j) => j.kind === 'frame')).toBe(true);
-      expect(g.metrics!.compactness).toBeGreaterThan(0.38);
+      const d = g.debug!;
+      expect(d, 'arranger debug data').toBeDefined();
+      expect(d.joins.length).toBeGreaterThan(2);
+      // A major assembly joined to another north or south of it (not a dock or a strut): side by side, not a chain.
+      const major = (k: string): boolean => k !== 'dock' && k !== 'hall';
+      if (d.joins.some((j) => {
+        const a = d.assemblies[j.a]!;
+        const b = d.assemblies[j.b]!;
+        return major(a.kind) && major(b.kind) && Math.abs(b.y + b.h / 2 - (a.y + a.h / 2)) > Math.abs(b.x + b.w / 2 - (a.x + a.w / 2));
+      })) sideBySide++;
     }
     expect([...families].sort()).toEqual(['carrier', 'corvette', 'cruiser', 'frigate']);
+    expect(sideBySide).toBeGreaterThan(30);
     const deep = Array.from({ length: 12 }, (_, i) => gen('faction.navy', i + 1, 9));
-    expect(meanPairwise(deep.map((g) => silhouetteMask(g.template.rows)), silhouetteDistance)).toBeGreaterThan(0.15);
-    expect(meanPairwise(deep.map((g) => g.debug!.profile), profileDistance)).toBeGreaterThan(0.4);
+    expect(meanPairwise(deep.map((g) => silhouetteMask(g.template.rows)), silhouetteDistance)).toBeGreaterThan(0.25);
+    expect(meanPairwise(deep.map((g) => adjacencySignature(g.debug!)), adjacencyDistance)).toBeGreaterThan(0.45);
   });
 
   for (const id of ids) {

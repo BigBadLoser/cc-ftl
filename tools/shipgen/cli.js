@@ -53,7 +53,7 @@ try {
     const base = join(out, `${f.replace('faction.', '')}-d${depth}`);
     let text = '';
     for (const view of views) {
-      const sheet = lib.contactSheet(f, from, count, depth, scale, 1800, view);
+      const sheet = lib.contactSheet(f, from, count, depth, scale, 2600, view);
       const file = view === 'detail' ? `${base}.png` : `${base}-${view}.png`;
       writeFileSync(file, png(sheet.raster.width, sheet.raster.height, sheet.raster.data));
       console.log(file);

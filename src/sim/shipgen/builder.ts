@@ -40,6 +40,7 @@ export class Builder {
     this.cv = new Canvas();
     this.parts = [];
     this.chunkSpecs.clear();
+    this.chunkRoles.clear();
   }
 
   /** Stamp a walled box with the role's floor; null (nothing drawn) if it clashes. */
@@ -150,6 +151,8 @@ export class Builder {
 
   /** Specs for rooms of hand-made chunks, by canvas label key ('nose3:b'). */
   readonly chunkSpecs = new Map<string, RoomSpec>();
+  /** Roles for rooms of stamped blocks whose chars are private (not role letters), by label key. */
+  readonly chunkRoles = new Map<string, RoomRole>();
 
   /**
    * Stamp a hand-made chunk with its first east-column door on row `firstRow` (a nose joins a corridor there).

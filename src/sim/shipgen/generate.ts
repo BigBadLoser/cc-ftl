@@ -1,8 +1,8 @@
 import { Rng } from '../rng';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { Builder } from './builder';
-import type { Composer } from './compose';
-import { composeNavy } from './composeNavy';
+import type { Arranger } from './arranger';
+import { arrangeNavy } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne } from './fit';
@@ -130,7 +130,7 @@ export function generateAttempt(
   let plan: ShipPlan;
   let b: Builder;
   let topology: string | null;
-  let comp: Composer | null = null;
+  let comp: Arranger | null = null;
   let profile = '';
   if (f.hullFamilies && f.hullFamilies.length > 0) {
     // Assembly-driven: a hull family, its standard sections, composed by constraints.
@@ -139,12 +139,12 @@ export function generateAttempt(
     role = { id: fam.id, weight: fam.weight, archetypes: [], ...(fam.bonus ? { bonus: fam.bonus } : {}), ...(fam.bays ? { bays: fam.bays } : {}) };
     archetype = 'sections';
     plan = planShip(rng, f, role, depth, defs);
-    const r = composeNavy(rng, f, fam, plan);
-    if (!r) return 'sections: no feasible arrangement';
-    comp = r.c;
-    b = r.c.b;
+    const r = arrangeNavy(rng, f, fam, plan);
+    if (typeof r === 'string') return `${fam.grammar}: ${r}`;
+    comp = r.A;
+    b = r.b;
     profile = r.profile;
-    topology = `${r.profile}${r.revisions > 0 ? ` (rev ${r.revisions})` : ''}`;
+    topology = r.profile;
   } else {
     ({ role, archetype } = pickRole(rng, f, depth));
     plan = planShip(rng, f, role, depth, defs);
@@ -155,7 +155,7 @@ export function generateAttempt(
   b.cv.fixDoors();
   const { rows, labels: roomOf, width, height, ox, oy } = b.cv.crop();
   const labels = b.cv.labels;
-  const roles = labels.map((l) => roleOfLetter(l.letter) ?? 'cargo');
+  const roles = labels.map((l) => b.chunkRoles.get(`${l.chunk}:${l.letter}`) ?? roleOfLetter(l.letter) ?? 'cargo');
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
   const d = fitOut(rng, f, rows, roomOf, roles, specs, defs);
@@ -167,7 +167,7 @@ export function generateAttempt(
   const rooms: GenRoom[] = roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
   return {
     template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics,
-    ...(comp ? { debug: comp.debug(ox, oy, width, height, roomOf, rows, profile) } : {}),
+    ...(comp ? { debug: comp.debug(ox, oy, width, height, rows, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', profile) } : {}),
   };
 }
 

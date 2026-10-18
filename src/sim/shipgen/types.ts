@@ -122,8 +122,10 @@ export interface HullFamilyDef {
   merge?: boolean;
   /** The core is a citadel: an enclosed compartment on the axis, passages around it, crew quarters outboard. */
   citadel?: boolean;
-  /** Drive layouts the family builds: a transverse engineering block, or engine pods flush with the stern. */
-  drive: readonly ('block' | 'pods')[];
+  /** Structural grammar: how the sections are arranged in 2D. */
+  grammar: 'linear' | 'spineWings' | 'twinHull' | 'carrierIsland';
+  /** Propulsion configurations the family uses (engines always face +x). */
+  propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 
 /** Diagnostic metric bands: a generated ship outside a band is rejected and reseeded. */

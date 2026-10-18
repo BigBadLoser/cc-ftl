@@ -1,6 +1,6 @@
 import { footprintTiles } from '../modules/footprint';
 import type { ModuleDef, ShipTemplate } from '../registry';
-import type { MetricBands, MetricId } from './types';
+import type { CompDebug, MetricBands, MetricId } from './types';
 
 /**
  * Geometric diagnostics of a layout. They describe the architecture (how compact, how full of equipment, how much of
@@ -93,4 +93,37 @@ export function meanPairwise<T>(items: T[], dist: (a: T, b: T) => number): numbe
   let n = 0;
   for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) { s += dist(items[i] as T, items[j] as T); n++; }
   return n === 0 ? 0 : s / n;
+}
+
+/**
+ * Architecture signature of a composed ship: one token per structural join, "kindA>dir>kindB" with the direction
+ * of B relative to A (n/s/e/w by bounds centres), plus a token per assembly kind with its degree.
+ */
+export function adjacencySignature(d: CompDebug): string[] {
+  const out: string[] = [];
+  const deg = new Map<number, number>();
+  for (const j of d.joins) {
+    const a = d.assemblies[j.a];
+    const b = d.assemblies[j.b];
+    if (!a || !b) continue;
+    deg.set(j.a, (deg.get(j.a) ?? 0) + 1);
+    deg.set(j.b, (deg.get(j.b) ?? 0) + 1);
+    const dx = b.x + b.w / 2 - (a.x + a.w / 2);
+    const dy = b.y + b.h / 2 - (a.y + a.h / 2);
+    const dir = Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'e' : 'w') : dy > 0 ? 's' : 'n';
+    out.push(`${a.kind}>${dir}>${b.kind}`);
+  }
+  for (const a of d.assemblies) out.push(`${a.kind}#${Math.min(4, deg.get(a.id) ?? 0)}`);
+  return out;
+}
+
+/** Multiset Jaccard distance between two adjacency signatures (0 same architecture, 1 nothing shared). */
+export function adjacencyDistance(a: string[], b: string[]): number {
+  const count = (xs: string[]): Map<string, number> => { const m = new Map<string, number>(); for (const x of xs) m.set(x, (m.get(x) ?? 0) + 1); return m; };
+  const ca = count(a);
+  const cb = count(b);
+  let inter = 0;
+  let union = 0;
+  for (const k of new Set([...ca.keys(), ...cb.keys()])) { inter += Math.min(ca.get(k) ?? 0, cb.get(k) ?? 0); union += Math.max(ca.get(k) ?? 0, cb.get(k) ?? 0); }
+  return union === 0 ? 0 : 1 - inter / union;
 }

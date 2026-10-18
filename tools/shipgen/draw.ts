@@ -4,7 +4,7 @@
  */
 import { content } from '../../src/content';
 import {
-  footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, type GenResult, type ModuleDef, type RoomRole,
+  adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, type GenResult, type ModuleDef, type RoomRole,
 } from '../../src/sim';
 import { drawAssemblies, drawSilhouette } from './views';
 
@@ -166,7 +166,15 @@ export function contactSheet(
   const r = new Raster(cols * cellW + 8, rowsN * cellH + 30);
   const sil = meanPairwise(ships.map((x) => silhouetteMask(x.g.template.rows)), silhouetteDistance);
   const arch = meanPairwise(ships.map((x) => x.g.debug?.profile ?? x.g.topology), profileDistance);
-  r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1} ${view}  diversity: shape ${sil.toFixed(2)} sections ${arch.toFixed(2)}`, 8, 8, [230, 230, 230], 2);
+  const sigs = ships.filter((x) => x.g.debug).map((x) => ({ fam: x.g.role, sig: adjacencySignature(x.g.debug!) }));
+  const adj = meanPairwise(sigs, (p, q) => adjacencyDistance(p.sig, q.sig));
+  const within = meanPairwise(sigs, (p, q) => (p.fam === q.fam ? adjacencyDistance(p.sig, q.sig) : NaN));
+  const pairsIn = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.fam === p.fam).map((q) => adjacencyDistance(p.sig, q.sig)));
+  const pairsX = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.fam !== p.fam).map((q) => adjacencyDistance(p.sig, q.sig)));
+  const mean = (xs: number[]): number => (xs.length ? xs.reduce((t, v) => t + v, 0) / xs.length : 0);
+  void within;
+  const adjText = `adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)})`;
+  r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1} ${view}  shape ${sil.toFixed(2)} sections ${arch.toFixed(2)} ${adjText}`, 8, 8, [230, 230, 230], 2);
   const text: string[] = [];
   ships.forEach(({ seed, g }, i) => {
     const ox = 8 + (i % cols) * cellW;
@@ -178,5 +186,5 @@ export function contactSheet(
     (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
     text.push(summary(g, seed), ascii(g), '');
   });
-  return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}`, ...errors, ...text].join('\n') };
+  return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}, ${adjText}`, ...errors, ...text].join('\n') };
 }
