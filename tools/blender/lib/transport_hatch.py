@@ -5,6 +5,8 @@ from lib.transport_forms import side_prism
 HATCH_U,HATCH_Z=1.40,1.30
 HATCH_RADIUS=.80
 HATCH_OUTER=.92
+RIB_DEPTH=.015
+RIB_COLOR="steelL"
 
 
 def pressure_hatch(f):
@@ -52,4 +54,4 @@ def pressure_hatch(f):
         c,s=math.cos(a),math.sin(a)
         profile=[(HATCH_U+r*c-t*s,HATCH_Z+r*s+t*c)
                  for r,t in ((.24,-.055),(.73,-.080),(.73,.080),(.24,.055))]
-        side_prism(f,profile,-1.078,-1.115,"gW1")
+        side_prism(f,profile,-1.078,-1.078-RIB_DEPTH,RIB_COLOR)

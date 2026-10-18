@@ -22,6 +22,19 @@ def section(width,center,height,side_height=.48,top_width=.72):
             (-width,center-height*side_height),(-width,center+height*side_height)]
 
 
+def chamfer_station(stations,index,trim=.04):
+    """Clip one profile corner with a small flat facet, preserving the taper."""
+    rows=[tuple(row) for row in stations]
+    size=max(map(len,rows))
+    defaults=(0,.48,.72)
+    rows=[row+defaults[len(row)-4:size-4] for row in rows]
+    a,b,c=rows[index-1:index+2]
+    def toward(other):
+        t=min(trim/abs(other[0]-b[0]),.45)
+        return tuple(x+(y-x)*t for x,y in zip(b,other))
+    return rows[:index]+[toward(a),toward(c)]+rows[index+1:]
+
+
 def loft(f,stations,color,upper=None,front=None,omit=(),aft_slope=0,front_slope=0):
     """Stations: u, half-width, centre, half-height, optional offset/side-height."""
     rings=[[f.pt(row[0]+(z-row[2])*(aft_slope if k==0 else front_slope if k==len(stations)-1 else 0),

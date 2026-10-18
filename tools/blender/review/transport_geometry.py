@@ -64,7 +64,7 @@ def validate(craft,core,setup,faction):
         return abs(sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(points,points[1:]+points[:1])))/2
     wing_area=2*(area(craft.TRANSPORT_WING)+area(craft.TRANSPORT_OUTER_WING))
     assert wing_area>9.0
-    design={"variant":"B / full-chord folding-wing utility shuttle / revision 7","legacyV4Preserved":True,
+    design={"variant":"B / full-chord folding-wing utility shuttle / revision 8","legacyV4Preserved":True,
             "parkedSize":[round(float(dims[1]),4),round(float(dims[0]),4),height],
             "pitDepth":pit,"topAboveDeck":round(height-pit,4),"roofTop":2.05,
             "clearanceToRoofTop":round(2.05-(height-pit),4),"flightSpan":craft.TRANSPORT_WING_SPAN,
@@ -80,10 +80,11 @@ def validate(craft,core,setup,faction):
             "wingPitchDirection":"leading edge lower / trailing edge higher",
             "wingLeadingEdgeSweepDegrees":round(math.degrees(math.atan2(2.25,2.66)),2),
             "wingSweepGeometryCheck":"passed",
-            "hatchFeatures":["six radial reinforcement ribs","smaller manual handwheel"],
+            "hatchFeatures":["six shallow dark radial reinforcement ribs","smaller manual handwheel"],
             "loadingRamp":"bottom-hinged / closed and lowered review poses",
-            "cockpit":"rounded faceted pod / wraparound opaque windscreen",
-            "canopyFrontU":2.4215,"canopyFrontTop":1.5024,"noseMaximumU":2.445,
+            "cockpit":"restored B6 tapered wedge / lightly chamfered nose corners / opaque glass",
+            "canopyFrontU":2.43,"canopyFrontTop":1.54,"noseMaximumU":2.45,
+            "noseCornerTrim":.04,"hatchRibDepth":.015,
             "foldedWingClearanceAheadOfDoorLeaf":round(door_min-moving_u,4),
             "reviewFactionColors":faction,
             "wingFoldDegrees":180,"wingFoldPlane":"longitudinal roll / flat over aft roof",

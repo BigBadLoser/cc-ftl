@@ -1,9 +1,9 @@
-# Transport B7 — swept/raked wings and rounded cockpit pod
+# Transport B8 — restored wedge nose and subdued hatch ribs
 
 Concept B remains separate from the rejected original v4 shuttle. This pass
-restores B5's thruster body / wing-rest geometry, removes B6's additional angled
-support blocks, and changes the wings themselves in plan and side elevation.
-The corrected aft-leaning rear ramp remains.
+restores B6's wedge-shaped forebody and tapered canopy, with only a small
+chamfer at their forward profile corners. B7's swept/raked wings, B5 thruster
+bodies and wing rests, and the corrected aft-leaning rear ramp are retained.
 
 ## Wing shape and attitude
 
@@ -23,16 +23,16 @@ the bay roof open / after launch. Static folded/deployed review poses only.
 
 ## Cockpit, hatch and ramp
 
-A new rounded faceted pod replaces the wedge-shaped nose/canopy. The side
-profile is curved around the circular hatch, while the windscreen wraps over
-the upper/front arc of the pod. It has a thin central mullion, opaque dark glass
-and an armoured lower chin. Broad facets remain readable at native game scale;
-there is no cabin interior.
+The earlier wedge-shaped nose and canopy replace B7's rounded barrel-like pod.
+A 0.04-unit profile trim creates a small flat facet at the forward corner of
+both the hull and canopy. The long taper and thin central mullion are retained;
+the dark glass remains opaque, with no cabin interior.
 
-The 1.60-diameter crew pressure hatch keeps its flange and locking dogs. Six
-broad shallow radial ribs reinforce the leaf; a smaller operating handwheel
-sits above them at the centre. The recent porthole and external pressure-control
-box have been removed.
+The 1.60-diameter crew pressure hatch keeps its flange, locking dogs and small
+manual handwheel. Its six radial ribs now project only 0.015 units rather than
+0.037, and use medium grey instead of bright hull paint. They read as leaf
+reinforcement without dominating the circular opening. The removed porthole
+and external control box stay removed.
 
 The stern remains corrected: its upper edge projects aft, farther from the nose,
 with the lower ramp hinge tucked forward underneath. It leans 16 degrees from
@@ -46,7 +46,7 @@ footprint and is reviewed separately from the placeholder pit.
 | Quantity | World units / tiles |
 | --- | --- |
 | Parked width, including hinge knuckles | 3.8249 |
-| Parked length | 4.8949 |
+| Parked length | 4.8999 |
 | Height from feet, including tilted folded wings | 2.7643 |
 | Flight wing span | 7.2000 |
 | Local fore-aft wing envelope | 2.7500 |
@@ -70,7 +70,7 @@ dark. Other rotations and docking views await art approval.
 Entry: `transport_shuttle(heading, state, dz=0, wing_fold=None, ramp_open=0)`
 in `tools/blender/sprites/shuttle_craft.py`. Supporting geometry is under
 `tools/blender/lib/`: `transport_forms.py`, `transport_details.py`,
-`transport_wings.py`, `transport_cockpit.py`, `transport_hatch.py` and
+`transport_wings.py`, `transport_hatch.py` and
 `transport_ramp.py`. Original v4 source and `shuttle()` remain unchanged.
 
 Primary paint occupies the wing panels; secondary follows the fairings and
@@ -81,11 +81,11 @@ shader, preventing red/green illumination of nearby hull surfaces.
 
 ## Review artifacts
 
-Current files: `artifacts/shuttle-sweepback-r7/`. B6 remains under
-`artifacts/shuttle-sweepback-r6/` for the before/after comparison.
+Current files: `artifacts/shuttle-sweepback-r8/`. B7 remains under
+`artifacts/shuttle-sweepback-r7/` for the before/after comparison.
 
 - `transport-B-beauty.png`, `transport-B-preview.blend`: low-sample beauty
-  and editable scene, showing the rounded pod, ribbed hatch and swept wings.
+  and editable scene, showing the restored tapered nose, subdued hatch ribs and swept wings.
 - `transport-B-wing-attitude-1x.png`, `-3x.png`: top and side views showing
   rearward sweep and the wing plane's six-degree aft rake.
 - `transport-B-parked-1x.png`, `-3x.png`: r0 in the 4x5 placeholder room/pit,
@@ -94,15 +94,15 @@ Current files: `artifacts/shuttle-sweepback-r7/`. B6 remains under
 - `transport-B-ramp-1x.png`, `-3x.png`: rear three-quarter closed/lowered ramp.
 - `transport-B-silhouettes-1x.png`, `-3x.png`: folded/deployed forms and crew.
 - `transport-B-planform-1x.png`, `-3x.png`: top views with a 4x5 bay outline.
-- `transport-B-before-after-1x.png`, `-3x.png`: B6/B7 at the same heading/scale.
+- `transport-B-before-after-1x.png`, `-3x.png`: B7/B8 at the same heading/scale.
 - `transport-B-export-keys-1x.png`, `-3x.png`: raw export-key colours.
 - `design.json`, `pixel-checks.json`: envelope, actual mesh wing pitch/sweep,
   corrected rear slope, lowered-ramp ground check, hatch clearance, nozzle-only
   glow, export keys, alpha and exact nearest-neighbour 3x checks.
 
 ```sh
-blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r7"
-python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r7" --compose
+blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r8"
+python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r8" --compose
 ```
 
 One Blender process at a time, two threads, four sprite samples and eight
