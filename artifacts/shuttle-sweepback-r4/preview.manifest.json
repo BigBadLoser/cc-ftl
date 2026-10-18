@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "assets": {
+    "parked-room-r0": {
+      "sheet": "parked-room-r0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 579,
+        "h": 359
+      },
+      "anchor": {
+        "x": 286,
+        "y": 217
+      }
+    },
+    "fly-d0": {
+      "sheet": "fly-d0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 274,
+        "h": 213
+      },
+      "anchor": {
+        "x": 178,
+        "y": 185
+      }
+    },
+    "fly-d2": {
+      "sheet": "fly-d2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 274,
+        "h": 213
+      },
+      "anchor": {
+        "x": 96,
+        "y": 185
+      }
+    },
+    "fly-d5": {
+      "sheet": "fly-d5",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 328,
+        "h": 162
+      },
+      "anchor": {
+        "x": 164,
+        "y": 136
+      }
+    },
+    "folded-r0": {
+      "sheet": "folded-r0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 223,
+        "h": 191
+      },
+      "anchor": {
+        "x": 130,
+        "y": 141
+      }
+    },
+    "folded-r2": {
+      "sheet": "folded-r2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 223,
+        "h": 216
+      },
+      "anchor": {
+        "x": 93,
+        "y": 169
+      }
+    },
+    "plan-folded": {
+      "sheet": "plan-folded",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 176,
+        "h": 202
+      },
+      "anchor": {
+        "x": 88,
+        "y": 102
+      }
+    },
+    "plan-deployed": {
+      "sheet": "plan-deployed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 328,
+        "h": 202
+      },
+      "anchor": {
+        "x": 164,
+        "y": 102
+      }
+    }
+  },
+  "sheets": {
+    "parked-room-r0": {
+      "image": "parked-room-r0.png",
+      "glow": "parked-room-r0.glow.png"
+    },
+    "fly-d0": {
+      "image": "fly-d0.png",
+      "glow": "fly-d0.glow.png"
+    },
+    "fly-d2": {
+      "image": "fly-d2.png",
+      "glow": "fly-d2.glow.png"
+    },
+    "fly-d5": {
+      "image": "fly-d5.png",
+      "glow": "fly-d5.glow.png"
+    },
+    "folded-r0": {
+      "image": "folded-r0.png",
+      "glow": "folded-r0.glow.png"
+    },
+    "folded-r2": {
+      "image": "folded-r2.png",
+      "glow": "folded-r2.glow.png"
+    },
+    "plan-folded": {
+      "image": "plan-folded.png",
+      "glow": "plan-folded.glow.png"
+    },
+    "plan-deployed": {
+      "image": "plan-deployed.png",
+      "glow": "plan-deployed.glow.png"
+    }
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "version": 1,
+  "assets": {
+    "parked-room-r0": {
+      "sheet": "parked-room-r0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 579,
+        "h": 363
+      },
+      "anchor": {
+        "x": 286,
+        "y": 217
+      }
+    },
+    "fly-d0": {
+      "sheet": "fly-d0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 299,
+        "h": 224
+      },
+      "anchor": {
+        "x": 195,
+        "y": 196
+      }
+    },
+    "fly-d2": {
+      "sheet": "fly-d2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 295,
+        "h": 224
+      },
+      "anchor": {
+        "x": 100,
+        "y": 196
+      }
+    },
+    "fly-d5": {
+      "sheet": "fly-d5",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 328,
+        "h": 149
+      },
+      "anchor": {
+        "x": 164,
+        "y": 130
+      }
+    },
+    "folded-r0": {
+      "sheet": "folded-r0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 238,
+        "h": 180
+      },
+      "anchor": {
+        "x": 138,
+        "y": 130
+      }
+    },
+    "folded-r2": {
+      "sheet": "folded-r2",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 238,
+        "h": 224
+      },
+      "anchor": {
+        "x": 100,
+        "y": 177
+      }
+    },
+    "plan-folded": {
+      "sheet": "plan-folded",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 176,
+        "h": 224
+      },
+      "anchor": {
+        "x": 88,
+        "y": 112
+      }
+    },
+    "plan-deployed": {
+      "sheet": "plan-deployed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 328,
+        "h": 224
+      },
+      "anchor": {
+        "x": 164,
+        "y": 112
+      }
+    },
+    "profile-fly": {
+      "sheet": "profile-fly",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 224,
+        "h": 103
+      },
+      "anchor": {
+        "x": 112,
+        "y": 118
+      }
+    },
+    "ramp-closed": {
+      "sheet": "ramp-closed",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 242,
+        "h": 177
+      },
+      "anchor": {
+        "x": 104,
+        "y": 127
+      }
+    },
+    "ramp-lowered": {
+      "sheet": "ramp-lowered",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 242,
+        "h": 186
+      },
+      "anchor": {
+        "x": 104,
+        "y": 127
+      }
+    }
+  },
+  "sheets": {
+    "parked-room-r0": {
+      "image": "parked-room-r0.png",
+      "glow": "parked-room-r0.glow.png"
+    },
+    "fly-d0": {
+      "image": "fly-d0.png",
+      "glow": "fly-d0.glow.png"
+    },
+    "fly-d2": {
+      "image": "fly-d2.png",
+      "glow": "fly-d2.glow.png"
+    },
+    "fly-d5": {
+      "image": "fly-d5.png",
+      "glow": "fly-d5.glow.png"
+    },
+    "folded-r0": {
+      "image": "folded-r0.png",
+      "glow": "folded-r0.glow.png"
+    },
+    "folded-r2": {
+      "image": "folded-r2.png",
+      "glow": "folded-r2.glow.png"
+    },
+    "plan-folded": {
+      "image": "plan-folded.png",
+      "glow": "plan-folded.glow.png"
+    },
+    "plan-deployed": {
+      "image": "plan-deployed.png",
+      "glow": "plan-deployed.glow.png"
+    },
+    "profile-fly": {
+      "image": "profile-fly.png",
+      "glow": "profile-fly.glow.png"
+    },
+    "ramp-closed": {
+      "image": "ramp-closed.png",
+      "glow": "ramp-closed.glow.png"
+    },
+    "ramp-lowered": {
+      "image": "ramp-lowered.png",
+      "glow": "ramp-lowered.glow.png"
+    }
+  }
+}
