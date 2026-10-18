@@ -68,7 +68,7 @@ def apply(arm, i, scale, clip="sit_idle"):
         _aim(arm, f"shin.{n_}", _rest_dir(arm, f"shin.{n_}") + Vector((0, 0.03, 0)))
         _aim(arm, f"foot.{n_}", _rest_dir(arm, f"foot.{n_}"))
         if work:
-            # elbows stay above the armrest pads (z 0.56) and inside them; forearms reach forward onto the desk, tapping
+            # elbows just clear the armrest pads (top z 0.59, sit_idle forearms rest on them); forearms reach forward onto the desk, tapping
             tap = math.sin(ph + (0 if s > 0 else math.pi))
             _aim(arm, f"arm.{n_}", Vector((s * -0.05, -0.55, -0.83)))
             _aim(arm, f"forearm.{n_}", Vector((-s * 0.10, -0.97, -0.12 - 0.07 * tap)))

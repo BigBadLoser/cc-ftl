@@ -219,8 +219,8 @@ def chair(f, u, v, st):
     ybox(f, u - 0.185, v, 0.43, 0.06, 0.36, 0.3, "navy", lean=0.05)                # back cushion
     ybox(f, u - 0.27, v, 0.73, 0.09, 0.26, 0.1, "navy", lean=0.05)                 # headrest
     for sv in (-1, 1):
-        ybox(f, u + 0.0, v + sv * 0.25, 0.39, 0.06, 0.06, 0.12, "steelL")          # armrest post
-        ybox(f, u + 0.03, v + sv * 0.25, 0.51, 0.3, 0.09, 0.05, "navy")            # armrest pad
+        ybox(f, u + 0.0, v + sv * 0.25, 0.39, 0.06, 0.06, 0.15, "steelL")          # armrest post
+        ybox(f, u + 0.03, v + sv * 0.25, 0.54, 0.3, 0.09, 0.05, "navy")            # armrest pad: top 0.59, under the seated elbows
     if split:
         split.in_chair = False
 

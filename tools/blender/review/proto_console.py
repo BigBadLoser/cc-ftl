@@ -2,6 +2,7 @@
 and meta.json (footprint, chair tile, entry tile, per rotation). Composite with proto_console_composite.py.
   blender -b --factory-startup --python tools/blender/review/proto_console.py -- <out dir> [--cell]"""
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -84,6 +85,75 @@ def pixel_split(name, rot, st):
     return full, g, glows[False], over, glows[True], ox, oy
 
 
+SIT_CAST = (("body", "legs.cargo_pants", "gear.belt.tool_belt", "eyes.cyber", "hair.mohawk", "arm.L.cyber", "arm.R.cyber",
+             "torso.work_shirt", "gear.head.welding_goggles"),
+            ("body", "legs.cargo_pants", "gear.belt.tool_belt", "eyes.organic", "hair.ponytail", "arm.L.flesh", "arm.R.flesh",
+             "torso.tee"))
+FACE = {0: 6, 1: 0}                                              # seated crew direction per console rotation (faces the desk)
+
+
+def occluders(name, rot, W, H, hr, rig):
+    """-> bool (H+2, W+2): pixels where the console DESK (not the chair) hides the seated crew in ANY sit_idle / sit_work
+    frame of the cast (bulky + slim kit), from the 3D scene: crew alone vs crew with the desk as holdout."""
+    arm, items = rig
+    by = {it.id: it for it in items}
+    parts = C.console_parts(name, rot, True)
+    for k, o in parts.items():
+        o.is_holdout, o.hide_render = True, k == "chair"
+    cx, cy = meta(name, rot)["chair_rel_origin"]
+    hit = np.zeros((H + 2, W + 2), bool)
+    for clip, n, _, _ in [c for c in hr.CLIPS if c[0].startswith("sit")]:
+        for i in range(n):
+            arm.rotation_euler = (0, 0, math.radians(hr.THETA[FACE[rot]]))
+            hr.pose_frame(arm, clip, i, "idle_Armature", 0)
+            arm.location = (cx, -cy, 0)
+            for cast in SIT_CAST:
+                hr.set_state(items, [by["crew.human." + c] for c in cast], [])
+                vis = []
+                for desk in (False, True):
+                    for k, o in parts.items():
+                        o.hide_render = k == "chair" or not desk
+                    rgb, a = core.render(W, H, "color")
+                    vis.append(np.pad(post.downsample(rgb, a > 0.5, core.SS, 6, False)[1], 1))
+                hit |= vis[0] & ~vis[1]
+    arm.location = (0, 0, 0)
+    for it in items:
+        for ob in it.objs:
+            ob.hide_render = True
+    for o in parts.values():
+        bpy.data.objects.remove(o, do_unlink=True)
+    return hit
+
+
+def pixel_split_gt(name, rot, hr, rig):
+    """The seated-crew layering from 3D occlusion: the full sprite plus the FRONT OVERLAY = the full-sprite pixels where the
+    desk hides the seated crew in some sit frame (occluders), plus the sprite's outline pixels touching them. Unlike the
+    polygon split it never covers a hand that is above the desk top. Runs in the scene of `rig` (human_render.build_items)."""
+    post.select(True)
+    rig[0].location = (0, 0, 0)
+    hr.set_state(rig[1], [], [])
+    objs = C.console(name, rot, True)
+    c, op, g, ox, oy, _ = env_build.render_sprite("x", "prop", objs)
+    W, H = op.shape[1] - 2, op.shape[0] - 2
+    rgb, a = core.render(W, H, "color")
+    ring = op & ~np.pad(post.downsample(rgb, a > 0.5, core.SS, 8, False)[1], 1)     # the sprite's outline pixels
+    for o in objs:
+        bpy.data.objects.remove(o, do_unlink=True)
+    hit = occluders(name, rot, W, H, hr, rig)
+    near = hit.copy()
+    for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        near |= np.roll(hit, (dy, dx), (0, 1))
+    front = op & (hit | (ring & near))
+    full = post.to_rgba(c, op)
+    over = full.copy()
+    over[~front] = 0
+    gf = g.copy()
+    gf[~front] = 0
+    gb = g.copy()
+    gb[front] = 0
+    return full, g, gb, over, gf, ox, oy
+
+
 def main():
     info = {}
     only = args[args.index('--only') + 1] if '--only' in args else None
@@ -100,9 +170,13 @@ def main():
     old.update(info)
     mp.write_text(json.dumps(old, indent=1))
     if "--split" in args:
+        gt = "--gt" in args
+        if gt:
+            from sprites import human_render as hr
+            rig = hr.build_items()
         for name in names:
             for rot in (0, 1):
-                full, g, gb, over, gf, ox, oy = pixel_split(name, rot, True)
+                full, g, gb, over, gf, ox, oy = pixel_split_gt(name, rot, hr, rig) if gt else pixel_split(name, rot, True)
                 np.savez(OUT / f"split_{name}_r{rot}.npz", rgba=full, glow=g, glow_base=gb, front=over, glow_front=gf, ox=ox, oy=oy)
                 print("split", name, rot, full.shape, int((over[..., 3] > 0).sum()), flush=True)
         return
