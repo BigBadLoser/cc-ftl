@@ -27,6 +27,9 @@ TYPES = ("worker", "repair", "security")
 STATES = ("", "charging", "charging.drone") + tuple(f"assembling.{t}" for t in TYPES)
 BODY, BODY_D, BODY_L, TRIM, PANEL = "steelL", "steel", "plate", "steelD", "plate"
 ARM = "hazY"                    # tool arms: industrial yellow, apart from the primer-grey robot they build
+SHELL, SHELL_D, FRAME, FRAME_L = "sole", "plate", "dark", "steelD"    # BAY_STYLE=bot: the robots' shell-over-frame look
+import os  # noqa: E402
+STYLE = os.environ.get("BAY_STYLE", "")
 LIGHT = {"": "green", "charging": "cyan", "charging.drone": "cyan", "assembling": "orange"}
 FACE = {0: 6, 1: 0, 2: 2, 3: 4}          # docked robot's facing (sim direction) per rotation: away from the tower
 
@@ -92,6 +95,48 @@ def _cradle(rig, contacts):
         p.rbox((sx * 0.38, 0.33, 0.32), (0.095, 0.07, 0.075), "hazY", r=0.015)                # rail end marker
 
 
+def _tower_bot(rig, light, contacts):
+    """The robots' language: light shell plates over a dark exposed frame, tapered and chamfered, hinge discs, and a
+    wedge brow plate on top with the status light as the single round eye (front and back)."""
+    p = rig.part("root")
+    p.rbox((0, -1.0, 0.31), (0.7, 0.44, 0.62), FRAME, r=0.05, taper=0.92)                  # base frame
+    for sx in (1, -1):
+        p.rbox((sx * 0.35, -1.0, 0.33), (0.07, 0.46, 0.5), SHELL, r=0.03, taper=0.8)      # base side shells
+        p.rbox((sx * 0.34, -0.62, 0.5), (0.09, 0.28, 1.0), FRAME, top=SHELL_D, r=0.03, taper=0.85)   # cradle cheeks
+        p.rbox((sx * 0.35, -0.62, 0.62), (0.1, 0.24, 0.5), SHELL, r=0.03, taper=0.85)     # cheek shells
+    p.rbox((0, -0.775, 0.33), (0.5, 0.05, 0.44), SHELL, r=0.03, taper=0.85)               # base front shell
+    p.rbox((0, -1.0, 0.64), (0.58, 0.38, 0.05), SHELL_D, r=0.04)                           # waist band
+    p.rbox((0, -1.04, 1.1), (0.38, 0.32, 0.86), FRAME, r=0.05)                             # column core (the alcove)
+    p.rbox((0, -1.12, 1.12), (0.58, 0.32, 0.66), SHELL, r=0.08, taper=1.18)                # column shell, chest-like
+    p.rbox((0, -1.1, 0.83), (0.5, 0.33, 0.04), SHELL_D, r=0.06)                            # seam under the shell
+    for sx in (1, -1):
+        p.cyl((sx * 0.3, -0.95, 1.22), 0.045, 0.05, FRAME, axis="x")                       # shell hinge discs
+    p.rbox((0, -0.98, 1.6), (0.5, 0.06, 0.52), SHELL, r=0.03, taper=0.75, axis="f")        # brow plate, over the alcove
+    p.rbox((0, -0.86, 1.5), (0.22, 0.12, 0.16), FRAME, r=0.03, taper=0.7, axis="f")        # sensor wedge under it
+    rig.part("root", "light").ball((0, -0.79, 1.5), (0.04, 0.02, 0.035), light)            # status eye, front
+    p.rbox((0, -0.66, 0.97), (0.12, 0.34, 0.07), FRAME, r=0.02)                             # spine bracket
+    p.rbox((0, -0.5, 0.98), (0.15, 0.07, 0.82), FRAME, top=SHELL_D, r=0.03)                # charging spine
+    rig.part("root", "contacts").box((0, -0.46, 0.98), (0.06, 0.02, 0.58), "cyan" if contacts else "dark")
+    for z in (0.62, 1.32):
+        p.cyl((0, -0.5, z), 0.05, 0.19, FRAME_L, axis="x")                                 # spine hinge discs
+    p.rbox((0, -1.29, 1.36), (0.18, 0.06, 0.12), FRAME, r=0.03)                            # back: sensor and eye,
+    rig.part("root", "light").ball((0, -1.325, 1.36), (0.035, 0.02, 0.03), light)
+    for z in (0.22, 0.34, 0.46):                                                           # vents in the base frame
+        p.rbox((0, -1.225, z), (0.36, 0.02, 0.05), FRAME_L, r=0.01)
+
+
+def _cradle_bot(rig, contacts):
+    p = rig.part("root")
+    for sx in (1, -1):
+        p.rbox((sx * 0.12, 0.02, 0.015), (0.17, 0.32, 0.03), FRAME, r=0.015)                  # foot clamp: sole,
+        p.rbox((sx * 0.12, 0.0, 0.05), (0.15, 0.24, 0.05), SHELL, r=0.02, taper=0.75)          # shell
+        rig.part("root", "contacts").box((sx * 0.12, 0.13, 0.04), (0.08, 0.04, 0.03), "cyan" if contacts else "dark")
+        p.rbox((sx * 0.38, 0.3, 0.16), (0.08, 0.08, 0.32), FRAME, r=0.02)                      # front post
+        p.cyl((sx * 0.38, 0.3, 0.32), 0.05, 0.1, FRAME_L, axis="x")                           # its hinge disc
+        p.plate((sx * 0.36, -0.52, 0.32), (sx * 0.38, 0.27, 0.32), 0.09, 0.07, SHELL, taper=0.85, r=0.03)   # rail shell
+        p.rbox((sx * 0.38, 0.35, 0.32), (0.09, 0.05, 0.07), "hazY", r=0.015)                  # rail end marker
+
+
 def _clamp(rig, out):
     """Drone docking clamp on the spine: folded up flush, or swung out over the cradle at fin height."""
     j = rig.joint("clamp", "root", (0, -0.5, 1.42))
@@ -151,8 +196,9 @@ def build(rot, state):
     (dx, dy), d = placement(rot)
     kind = state.split(".")[1] if state.startswith("assembling") else None
     rig = Rig(f"bay{rot}")
-    _tower(rig, LIGHT[state.split(".")[0] if kind else state], state.startswith("charging"))
-    _cradle(rig, state.startswith("charging"))
+    tower, cradle = (_tower_bot, _cradle_bot) if STYLE == "bot" else (_tower, _cradle)
+    tower(rig, LIGHT[state.split(".")[0] if kind else state], state.startswith("charging"))
+    cradle(rig, state.startswith("charging"))
     _clamp(rig, state == "charging.drone")
     _tool_arms(rig, bool(kind))
     rig.build()
