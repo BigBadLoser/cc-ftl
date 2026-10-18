@@ -8,6 +8,7 @@ import { roles } from './roles';
 import { weapons } from './weapons';
 import { vehicles } from './vehicles';
 import { species } from './species';
+import { factions } from './factions';
 import { raiderBoarder, raiderBoarderId, raiderShip, raiderShipId } from './ships/raider';
 import { starterShip, starterShipId } from './ships/starter';
 
@@ -22,4 +23,5 @@ export const content = {
   structCosts,
   weapons,
   vehicles,
+  factions,
 } satisfies ContentRegistry;

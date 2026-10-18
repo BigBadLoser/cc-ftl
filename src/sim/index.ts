@@ -48,3 +48,4 @@ export { wielded, hitChance, handDefOf } from './fight/weapons';
 export { vehicleViews, vehiclesInSector, type VehicleView } from './vehicles/queries';
 export { boardingTile, dockPoint, bayCenter } from './vehicles/geometry';
 export { spawnVehicle, destroyVehicle, damageVehicle } from './vehicles/lifecycle';
+export * from './shipgen';

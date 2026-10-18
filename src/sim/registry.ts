@@ -1,3 +1,4 @@
+import type { FactionDef } from './shipgen/types';
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
@@ -45,6 +46,8 @@ export interface ContentRegistry {
   weapons?: Record<string, WeaponDef>;
   /** Vehicle content id (e.g. 'vehicle.shuttle') to definition. Absent = no vehicles. */
   vehicles?: Record<string, VehicleDef>;
+  /** Faction content id (e.g. 'faction.scrapper') to definition, for generated ships. Absent = none. */
+  factions?: Record<string, FactionDef>;
 }
 
 /** A shuttle type. It is an entity in the sector, not a grid: no interior, crew aboard are hidden. */
