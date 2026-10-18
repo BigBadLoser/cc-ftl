@@ -1,9 +1,9 @@
-# Transport B8 — restored wedge nose and subdued hatch ribs
+# Transport B9 — full nose walls taper in plan
 
-Concept B remains separate from the rejected original v4 shuttle. This pass
-restores B6's wedge-shaped forebody and tapered canopy, with only a small
-chamfer at their forward profile corners. B7's swept/raked wings, B5 thruster
-bodies and wing rests, and the corrected aft-leaning rear ramp are retained.
+Concept B remains separate from the rejected original v4 shuttle. Both full-height
+nose side walls now taper inward from the cabin/canopy junction, rather than only
+at the tips. The circular hatch is yawed with its wall, preserving its round shape.
+B8's canopy, hatch ribs, wings, thruster bodies and rear ramp are retained.
 
 ## Wing shape and attitude
 
@@ -23,10 +23,14 @@ the bay roof open / after launch. Static folded/deployed review poses only.
 
 ## Cockpit, hatch and ramp
 
-The earlier wedge-shaped nose and canopy replace B7's rounded barrel-like pod.
-A 0.04-unit profile trim creates a small flat facet at the forward corner of
-both the hull and canopy. The long taper and thin central mullion are retained;
-the dark glass remains opaque, with no cabin interior.
+The full nose walls taper about 6.84 degrees in top view, starting at longitudinal
+station 0.50 with a half-width of 1.05. Half-width is 0.93 at station 1.50 and
+0.84 at station 2.25, before meeting the existing 0.60-wide tip. Both the top and
+bottom wall edges follow the taper. The circular hatch uses a rigid yaw to seat
+on the angled port wall, retaining its true 1.60 diameter and opaque leaf.
+
+The windshield and small forward corner chamfers retain B8's geometry. The long
+canopy taper and thin central mullion remain; no cabin interior is visible.
 
 The 1.60-diameter crew pressure hatch keeps its flange, locking dogs and small
 manual handwheel. Its six radial ribs now project only 0.015 units rather than
@@ -81,11 +85,11 @@ shader, preventing red/green illumination of nearby hull surfaces.
 
 ## Review artifacts
 
-Current files: `artifacts/shuttle-sweepback-r8/`. B7 remains under
-`artifacts/shuttle-sweepback-r7/` for the before/after comparison.
+Current files: `artifacts/shuttle-sweepback-r9/`. B8 remains under
+`artifacts/shuttle-sweepback-r8/` for the before/after comparison.
 
 - `transport-B-beauty.png`, `transport-B-preview.blend`: low-sample beauty
-  and editable scene, showing the restored tapered nose, subdued hatch ribs and swept wings.
+  and editable scene, showing the full nose-wall taper, aligned hatch and swept wings.
 - `transport-B-wing-attitude-1x.png`, `-3x.png`: top and side views showing
   rearward sweep and the wing plane's six-degree aft rake.
 - `transport-B-parked-1x.png`, `-3x.png`: r0 in the 4x5 placeholder room/pit,
@@ -94,15 +98,17 @@ Current files: `artifacts/shuttle-sweepback-r8/`. B7 remains under
 - `transport-B-ramp-1x.png`, `-3x.png`: rear three-quarter closed/lowered ramp.
 - `transport-B-silhouettes-1x.png`, `-3x.png`: folded/deployed forms and crew.
 - `transport-B-planform-1x.png`, `-3x.png`: top views with a 4x5 bay outline.
-- `transport-B-before-after-1x.png`, `-3x.png`: B7/B8 at the same heading/scale.
+- `transport-B-before-after-1x.png`, `-3x.png`: B8/B9 at the same heading/scale.
+- `transport-B-nose-plan-1x.png`, `-3x.png`: B8/B9 in top view, showing the
+  taper along the full wall and the aligned circular hatch.
 - `transport-B-export-keys-1x.png`, `-3x.png`: raw export-key colours.
 - `design.json`, `pixel-checks.json`: envelope, actual mesh wing pitch/sweep,
   corrected rear slope, lowered-ramp ground check, hatch clearance, nozzle-only
   glow, export keys, alpha and exact nearest-neighbour 3x checks.
 
 ```sh
-blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r8"
-python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r8" --compose
+blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r9"
+python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r9" --compose
 ```
 
 One Blender process at a time, two threads, four sprite samples and eight

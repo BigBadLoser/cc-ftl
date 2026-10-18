@@ -12,6 +12,12 @@ def validate(craft,core,setup,faction):
     assert dims[0]<=5.0+1e-5 and dims[1]<=3.9+1e-5
     assert np.abs(q[:,0]).max()<2.5 and np.abs(q[:,1]).max()<2
     assert abs(q[:,2].min())<1e-6 and abs(q[:,2].max()-craft.TRANSPORT_HEIGHT)<1e-5
+    # Check the full wall already narrows at the middle of the nose.
+    from lib.transport_hatch import nose_width,NOSE_TAPER
+    wall=np.array([v.co[:] for v in parked[0].data.vertices])
+    for u in (.50,1.50):
+        side=wall[np.abs(wall[:,0]-u)<1e-5]
+        assert abs(np.abs(side[:,1]).max()-nose_width(u))<1e-5
     pit=craft.TRANSPORT_PIT
     assert q[:,2].max()-pit<2.05 and pit>dims[2]/2
     setup()
@@ -64,7 +70,7 @@ def validate(craft,core,setup,faction):
         return abs(sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(points,points[1:]+points[:1])))/2
     wing_area=2*(area(craft.TRANSPORT_WING)+area(craft.TRANSPORT_OUTER_WING))
     assert wing_area>9.0
-    design={"variant":"B / full-chord folding-wing utility shuttle / revision 8","legacyV4Preserved":True,
+    design={"variant":"B / full-chord folding-wing utility shuttle / revision 9","legacyV4Preserved":True,
             "parkedSize":[round(float(dims[1]),4),round(float(dims[0]),4),height],
             "pitDepth":pit,"topAboveDeck":round(height-pit,4),"roofTop":2.05,
             "clearanceToRoofTop":round(2.05-(height-pit),4),"flightSpan":craft.TRANSPORT_WING_SPAN,
@@ -82,7 +88,10 @@ def validate(craft,core,setup,faction):
             "wingSweepGeometryCheck":"passed",
             "hatchFeatures":["six shallow dark radial reinforcement ribs","smaller manual handwheel"],
             "loadingRamp":"bottom-hinged / closed and lowered review poses",
-            "cockpit":"restored B6 tapered wedge / lightly chamfered nose corners / opaque glass",
+            "cockpit":"B8 canopy / full-height nose side walls taper from cabin junction",
+            "noseSideTaperDegrees":round(math.degrees(math.atan(NOSE_TAPER)),2),
+            "noseWallHalfWidths":{"cabinJunction":nose_width(.50),"middle":nose_width(1.50),"front":nose_width(2.25)},
+            "hatchAlignment":"rigid yaw to tapered wall / circular leaf preserved",
             "canopyFrontU":2.43,"canopyFrontTop":1.54,"noseMaximumU":2.45,
             "noseCornerTrim":.04,"hatchRibDepth":.015,
             "foldedWingClearanceAheadOfDoorLeaf":round(door_min-moving_u,4),

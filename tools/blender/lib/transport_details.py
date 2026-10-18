@@ -4,7 +4,7 @@ from lib.transport_hatch import pressure_hatch
 from lib.transport_ramp import loading_ramp
 
 
-def cabin_details(f,hatch_height):
+def cabin_details(f,hatch_height,hatch_frame=None):
     # Thin flush end rims and a centre mullion give the opaque glass a frame.
     canopy=[(.50,.70,2.00,.40),(1.50,.65,1.98,.38),(1.90,.56,1.84,.34),
             (2.25,.46,1.54,.30),(2.43,.32,1.25,.29)]
@@ -25,7 +25,7 @@ def cabin_details(f,hatch_height):
     for u0,u1,w,col,d in ((-1.43,-.54,.53,"steelD",.004),(-1.37,-.60,.47,"gW1",.008)):
         f.poly([f.pt(u0,-w,roof(u0)+d),f.pt(u1,-w,roof(u1)+d),
                 f.pt(u1,w,roof(u1)+d),f.pt(u0,w,roof(u0)+d)],col,flip=True)
-    pressure_hatch(f)
+    pressure_hatch(hatch_frame or f)
 
 
 def rear_details(f,ramp_open=0):

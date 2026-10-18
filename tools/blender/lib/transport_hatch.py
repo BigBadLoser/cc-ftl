@@ -1,12 +1,28 @@
 """Opaque circular pressure hatch; no cabin interior or glowing indicators."""
 import math
-from lib.transport_forms import side_prism
+from lib.transport_forms import side_prism,FlightFrame
 
 HATCH_U,HATCH_Z=1.40,1.30
 HATCH_RADIUS=.80
 HATCH_OUTER=.92
 RIB_DEPTH=.015
 RIB_COLOR="steelL"
+NOSE_TAPER=.12
+
+
+def nose_width(u):
+    """Full nose side wall: inward taper starts at the cabin/canopy junction."""
+    return 1.05-NOSE_TAPER*(u-.50)
+
+
+class TaperedHatchFrame(FlightFrame):
+    """Rigid yaw keeps the circular hatch seated on the tapered port wall."""
+    def xy(self,u,v):
+        a=math.atan(NOSE_TAPER)
+        c,s=math.cos(a),math.sin(a)
+        du,dv=u-HATCH_U,v+1.05
+        return super().xy(HATCH_U+du*c-dv*s,-nose_width(HATCH_U)+du*s+dv*c)
+
 
 
 def pressure_hatch(f):

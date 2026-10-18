@@ -308,27 +308,29 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
 
     Parked/docked: broad outer wings fold 180 degrees flat over the aft hull.
     Flight span 7.2; each swept wing has a 2.75-unit local fore-aft envelope.
-    Revision 8: restored wedge nose, lightly clipped corners and subdued hatch ribs. ramp_open is a preview pose in [0,1].
+    Revision 9: full nose walls taper in plan; circular hatch follows the wall angle. ramp_open is a preview pose in [0,1].
     Height about 2.765, suggested pit 1.80, leaving about .965 above deck.
     No interior, pad, pit or bay geometry is part of this vehicle builder.
     """
     from lib.transport_forms import FlightFrame,loft,chamfer_station
     from lib.transport_details import cabin_details,rear_details
     from lib.transport_ramp import REAR_SLOPE
+    from lib.transport_hatch import nose_width,TaperedHatchFrame
     fold=(0 if state=="fly" else TRANSPORT_FOLD) if wing_fold is None else wing_fold
     m=core.Mesh("transport_B_"+state)
     m.dz=dz
     f=FlightFrame(m,heading)
     # Fuller passenger/cargo cabin flows into a sloped, lower cockpit nose.
+    # Both full-height side walls taper from the cabin junction, not just the tips.
     forebody=[(-1.935,.72,1.35,.75),(-1.50,.78,1.34,.66),
               (-.55,1.00,1.38,.92),(.50,1.05,1.31,.95,0,.96),
-              (1.50,1.05,1.31,.95,0,.96),(1.90,1.05,1.25,.85,0,.96),
-              (2.25,1.05,1.18,.60,0,.96,.62),(2.45,.60,1.15,.30,0,.48,.66)]
+              (1.50,nose_width(1.50),1.31,.95,0,.96),(1.90,nose_width(1.90),1.25,.85,0,.96),
+              (2.25,nose_width(2.25),1.18,.60,0,.96,.62),(2.45,.60,1.15,.30,0,.48,.66)]
     loft(f,chamfer_station(forebody,6),"gW1",aft_slope=REAR_SLOPE)
     # Distinct dark lower keel, ending short of the wedge nose.
     loft(f,[(-1.55,.57,.65,.14),(-1.0,.83,.61,.16),
             (1.1,.70,.69,.18),(1.8,.34,.92,.12)],"steelD",upper="steelL")
-    cabin_details(f,TRANSPORT_HATCH_HEIGHT)
+    cabin_details(f,TRANSPORT_HATCH_HEIGHT,TaperedHatchFrame(m,heading))
     rear_details(f,ramp_open)
     for side in (-1,1):
         # A continuous shoulder/nacelle blends the wing root into the engine.
@@ -356,7 +358,7 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
     for side in (-1,1):
         transport_wing(g,side,fold,True)
         for chain in (((-2.04,1.66),(-1.45,1.72),(-.45,1.57),(.22,1.26),(.65,1.10)),
-                      ((.50,1.05),(2.25,1.05),(2.45,.60))):
+                      ((.50,1.05),(2.25,nose_width(2.25)),(2.45,.60))):
             for (u0,v0),(u1,v1) in zip(chain,chain[1:]):
                 if side==-1 and u0 in (.50,.22):
                     continue

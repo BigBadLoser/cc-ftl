@@ -1,8 +1,8 @@
 """Concept B, preview only: one Blender process, four samples, no atlas writes.
 
 blender -b -t 2 --factory-startup --python-exit-code 1 --python \
-  tools/blender/review/transport_preview.py -- --out artifacts/shuttle-sweepback-r8
-python3 tools/blender/review/transport_preview.py --out artifacts/shuttle-sweepback-r8 --compose
+  tools/blender/review/transport_preview.py -- --out artifacts/shuttle-sweepback-r9
+python3 tools/blender/review/transport_preview.py --out artifacts/shuttle-sweepback-r9 --compose
 """
 import argparse
 import json
@@ -221,7 +221,7 @@ def compose(out):
     C.over(cv,post.to_rgba(c,op),round(320+(3-.7)*32-an["x"]-1),round(270+(3+.7)*16-an["y"]-1))
     im=Image.fromarray(cv)
     d=ImageDraw.Draw(im)
-    d.text((18,15),"TRANSPORT / B8 — WINGS FOLDED",font=font(18),fill=(213,224,233))
+    d.text((18,15),"TRANSPORT / B9 — WINGS FOLDED",font=font(18),fill=(213,224,233))
     d.text((18,42),"Placeholder 4 x 5 pit / crew at deck level / 64 x 32 tiles",font=font(12),fill=(142,161,177))
     d.text((18,474),f"Height {design['parkedSize'][2]:.2f}  |  pit depth {design['pitDepth']:.2f}  |  top above deck {design['topAboveDeck']:.2f}",font=font(12),fill=(210,181,119))
     d.text((18,496),"Preview only. Bay geometry is a scale placeholder.",font=font(11),fill=(142,161,177))
@@ -231,7 +231,7 @@ def compose(out):
         paste(flight,f"fly-d{direction}",200+col*400,280)
     im=Image.fromarray(flight)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B8 — WINGS DEPLOYED",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B9 — WINGS DEPLOYED",font=font(18),fill=(213,224,233))
     for col,direction in enumerate((0,2,5)):
         d.text((col*400+18,46),f"D{direction} / landing legs retracted",font=font(12),fill=(142,161,177))
     d.text((18,357),"Flight span 7.20 / faction livery preview / nozzle-only glow",font=font(12),fill=(210,181,119))
@@ -244,7 +244,7 @@ def compose(out):
     C.over(comparison,post.to_rgba(c,op),round(325-an["x"]-1),round(270-an["y"]-1))
     im=Image.fromarray(comparison)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B8 — FOLDED AND DEPLOYED",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B9 — FOLDED AND DEPLOYED",font=font(18),fill=(213,224,233))
     for col,label in enumerate(("FOLDED / 1.60 circular airlock hatch","DEPLOYED / 7.20 span")):
         d.text((18+col*400,48),label,font=font(12),fill=(142,161,177))
     d.text((18,335),"Matching silhouettes / same heading / native 1x pixel scale",font=font(12),fill=(210,181,119))
@@ -255,10 +255,10 @@ def compose(out):
         paste(keys,f"fly-d{direction}",200+col*400,280,faction=False)
     im=Image.fromarray(keys)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B8 — RAW EXPORT KEYS",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B9 — RAW EXPORT KEYS",font=font(18),fill=(213,224,233))
     d.text((18,357),"Exact #ff0000 primary / #00ff00 secondary. Faction preview colours are presentation only.",font=font(12),fill=(142,161,177))
     save("transport-B-export-keys",im)
-    previous=ROOT/"artifacts/shuttle-sweepback-r7"
+    previous=ROOT/"artifacts/shuttle-sweepback-r8"
     comparison_names=[]
     if (previous/"preview.manifest.json").exists():
         old=json.loads((previous/"preview.manifest.json").read_text())
@@ -272,17 +272,30 @@ def compose(out):
         im=Image.fromarray(before_after)
         d=ImageDraw.Draw(im)
         d.text((18,14),"TRANSPORT / BEFORE AND AFTER",font=font(18),fill=(213,224,233))
-        d.text((18,47),"B7 / rounded cockpit",font=font(12),fill=(142,161,177))
-        d.text((418,47),"B8 / restored wedge and subdued hatch ribs",font=font(12),fill=(142,161,177))
+        d.text((18,47),"B8 / straight nose side walls",font=font(12),fill=(142,161,177))
+        d.text((418,47),"B9 / full nose walls taper in plan",font=font(12),fill=(142,161,177))
         d.text((18,317),"Same heading, pixel scale and review livery",font=font(12),fill=(210,181,119))
         save("transport-B-before-after",im)
         comparison_names.append("transport-B-before-after")
+        top_compare=np.full((360,880,4),BG,np.uint8)
+        a=old["assets"]["plan-deployed"]["anchor"]
+        C.over(top_compare,recolor(np.array(Image.open(previous/"plan-deployed.png"))),
+               round(220-a["x"]),round(200-a["y"]))
+        paste(top_compare,"plan-deployed",660,200)
+        im=Image.fromarray(top_compare)
+        d=ImageDraw.Draw(im)
+        d.text((18,14),"TRANSPORT / FULL NOSE WALL TAPER — TOP VIEW",font=font(18),fill=(213,224,233))
+        d.text((18,46),"B8 / previous",font=font(12),fill=(142,161,177))
+        d.text((458,46),"B9 / full side walls and hatch angled inward",font=font(12),fill=(142,161,177))
+        d.text((18,335),"Taper begins at cabin/canopy junction / 6.84 degrees per side",font=font(12),fill=(210,181,119))
+        save("transport-B-nose-plan",im)
+        comparison_names.append("transport-B-nose-plan")
     plan=np.full((360,880,4),BG,np.uint8)
     for col,sid in enumerate(("plan-folded","plan-deployed")):
         paste(plan,sid,220+col*440,200)
     im=Image.fromarray(plan)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B8 — WING PLANFORM",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B9 — WING PLANFORM",font=font(18),fill=(213,224,233))
     d.text((18,46),"FOLDED / 4 x 5 bay outline",font=font(12),fill=(142,161,177))
     d.text((458,46),"DEPLOYED / 2.75 local fore-aft wing envelope",font=font(12),fill=(142,161,177))
     px=64/math.sqrt(2)
@@ -294,7 +307,7 @@ def compose(out):
         paste(ramps,sid,220+col*450,260)
     im=Image.fromarray(ramps)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B8 — ANGLED REAR LOADING RAMP",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B9 — ANGLED REAR LOADING RAMP",font=font(18),fill=(213,224,233))
     d.text((18,46),"CLOSED / upper edge aft, hinge tucked forward",font=font(12),fill=(142,161,177))
     d.text((468,46),"LOWERED / traction ribs and loading surface",font=font(12),fill=(142,161,177))
     d.text((18,395),"Mechanism preview / interior stays opaque / lowered ramp extends beyond parked envelope",font=font(11),fill=(210,181,119))
@@ -304,7 +317,7 @@ def compose(out):
     paste(attitude,"profile-fly",680,280)
     im=Image.fromarray(attitude)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B8 — WING SWEEP AND ATTITUDE",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B9 — WING SWEEP AND ATTITUDE",font=font(18),fill=(213,224,233))
     d.text((18,46),"TOP / swept leading edge and narrow tips",font=font(12),fill=(142,161,177))
     d.text((478,46),"SIDE / wing plane rises aft by 6 degrees",font=font(12),fill=(142,161,177))
     d.text((18,375),"7.20 span / about 40 degrees of sweep / narrow folding seam",font=font(12),fill=(210,181,119))
