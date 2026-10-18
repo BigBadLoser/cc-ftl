@@ -83,12 +83,14 @@ def owned(sheet, family):
 
 
 def merge(manifest, family, sheets, assets, crew=False):
-    """Replace the family's sheets/assets (crew=True: every crew layer) in manifest (in place)."""
+    """Replace the family's sheets/assets (crew=True: every human crew layer; robot layers belong to `robots`) in
+    manifest (in place)."""
     drop = {s for s in manifest["sheets"] if owned(s, family)}
+    human = lambda a: a["kind"] == "crew.layer" and a.get("species") == "human"  # noqa: E731
     if crew:
-        drop |= {a["sheet"] for a in manifest["assets"].values() if a["kind"] == "crew.layer"}
+        drop |= {a["sheet"] for a in manifest["assets"].values() if human(a)}
     manifest["assets"] = {k: a for k, a in manifest["assets"].items()
-                          if a["sheet"] not in drop and k not in assets and not (crew and a["kind"] == "crew.layer")}
+                          if a["sheet"] not in drop and k not in assets and not (crew and human(a))}
     for s in drop:
         manifest["sheets"].pop(s, None)
     used = {a["sheet"] for a in manifest["assets"].values()}
