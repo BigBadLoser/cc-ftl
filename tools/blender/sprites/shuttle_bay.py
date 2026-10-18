@@ -214,12 +214,10 @@ TOWER_TOP = 1.82
 TOWER_W = 0.6
 # Claw arm centreline (u, z): rises from the tower's inner face, arcs over the hull flank just under the roof slab (top <= 1.80)
 # and drops to a grip shoe on the cabin's shoulder (hull top ~1.30 at |u| 0.7..0.8; the roof rises to 1.45 at |u| < 0.5).
-ARM = ((1.95, 1.22), (1.82, 1.58), (1.40, 1.72), (0.98, 1.62), (0.74, 1.43))
+ARM = ((1.95, 1.22), (1.82, 1.58), (1.40, 1.72), (0.98, 1.62), (0.72, 1.50))
+# shoe seat, measured on the shuttle mesh: hull top over u 0.59..0.81, v 0.04..0.68 slopes 1.335 -> 1.295 (flat in v to 0.03)
+SHOE_U, SHOE_Z, SHOE_H = (0.59, 0.81), (1.335, 1.295), 0.14
 ARM_TH, ARM_W = 0.16, 0.60
-# LOWER arm: leaves the tower near its base, drops past the lip into the pit beside the hull (v 0.36: flank |u| ~ 0.8, belly z -0.58
-# flat for |u| < 0.6) and curves in under the belly to a cradle shoe. With the upper arm it forms a C round the cabin. From r0
-# the near lip hides the drop below about z -0.5 and the under-belly part.
-LOW = ((1.92, 0.22), (1.55, -0.12), (1.18, -0.42), (1.10, -0.85), (0.80, -0.98), (0.45, -0.86))
 
 
 def _seg(f, sx, p0, p1, w, th, mat, top):
@@ -234,13 +232,14 @@ def _seg(f, sx, p0, p1, w, th, mat, top):
     lbox(f, corner, {"side": mat, "top": top})
 
 
-def clamps(f, t):
+def clamps(f, t, fold=None):
     """GANTRY (v15): two claw towers on the side lips over the cabin. Each carries a big pale curved arm that rises from the
     tower, arcs over the hull flank under the roof slab and grips the cabin shoulder with an orange shoe; a lamp strip runs
-    along it. There is no beam: the arms carry the shuttle; a LOWER arm leaves the tower base, drops into the pit and curls under the belly (a C round the cabin). Opening: both arms fold back into the tower (t 0 .. 0.08).
+    along it. There is no beam: the arms carry the shuttle. Opening: the arms fold back into the towers (t 0 .. 0.08; `fold`
+    0 gripping .. 1 folded overrides that schedule, e.g. for an empty bay with the doors closed).
     Everything is at or below 1.82."""
     _g("clamps")
-    k = min(1.0, t / 0.08)
+    k = min(1.0, t / 0.08) if fold is None else fold
     vv = BRIDGE_V
     for sx in (-1, 1):
         ut = sx * (OPEN[1] + 0.08)
@@ -248,16 +247,25 @@ def clamps(f, t):
         f.box(ut, vv, PAD_T + 0.05, 0.24, TOWER_W, TOWER_TOP - PAD_T - 0.11, "steelD", top="steel")
         f.box(ut, vv, TOWER_TOP - 0.06, 0.3, TOWER_W + 0.06, 0.06, "steelD", top="steel")
         f.box(ut - sx * 0.121, vv, 0.4, 0.02, 0.2, 0.7, "arc", base=True)                               # tower lamp bar
+        f.box(ut, vv, PAD_T + 0.05, 0.26, TOWER_W + 0.02, 0.1, "hazK")                                # hazard band at the base
+        for dv in (-0.22, -0.07, 0.08, 0.23):
+            f.box(ut, vv + dv, PAD_T + 0.05, 0.27, 0.08, 0.1, "hazY")
+        for zp in (0.75, 1.3):                                                                       # panel lines
+            f.box(ut, vv, zp, 0.255, TOWER_W + 0.012, 0.02, "steelL")
         if k >= 0.97:
             continue
-        for pts in (ARM, LOW):
-            p = [(pts[0][0] + (u - pts[0][0]) * (1 - k), pts[0][1] + (z - pts[0][1]) * (1 - k)) for u, z in pts]
-            for i in range(len(p) - 1):
-                _seg(f, sx, p[i], p[i + 1], ARM_W, ARM_TH, "steelL", "steelL")
-                _seg(f, sx, p[i], p[i + 1], 0.12, ARM_TH + 0.03, "arc", "arc")                           # lamp strip
-            tu, tz = p[-1]
-            f.box(sx * tu, vv, tz - (0.14 if pts is ARM else -0.06), 0.3, ARM_W + 0.04, 0.16 if pts is ARM else 0.18, "orange", top="hazY")   # grip shoe
-            f.box(sx * p[2][0], vv, p[2][1] - 0.1, 0.18, ARM_W + 0.03, 0.12, "steelD", top="hazY")       # knuckle band
+        p = [(ARM[0][0] + (u - ARM[0][0]) * (1 - k), ARM[0][1] + (z - ARM[0][1]) * (1 - k)) for u, z in ARM]
+        for i in range(len(p) - 1):
+            _seg(f, sx, p[i], p[i + 1], ARM_W, ARM_TH, "steelL", "steelL")
+            _seg(f, sx, p[i], p[i + 1], 0.12, ARM_TH + 0.03, "arc", "arc")                               # lamp strip
+        sw, dzk = ARM_W + 0.04, (1 - k)
+        f.box(sx * p[2][0], vv, p[2][1] - 0.1, 0.18, ARM_W + 0.03, 0.12, "steelD", top="hazY")           # knuckle band
+
+        def shoe(a, b, d):                                                                              # grip shoe, seated on the hull slope
+            u = SHOE_U[1] if b < 0 else SHOE_U[0]
+            z = (SHOE_Z[1] if b < 0 else SHOE_Z[0]) + (SHOE_H if d > 0 else 0.0)
+            return (sx * (u * dzk + p[0][0] * k), vv + sx * a * sw / 2, z * dzk + p[0][1] * k)
+        lbox(f, shoe, {"side": "orange", "top": "hazY"})
 
 
 def _wall(f, p, q, nin, t0, t1, d0, d1, z0, z1, mat, top=None):
@@ -377,17 +385,17 @@ def floor_holdout(rot, holdout=True, colour="dark"):
     return ob
 
 
-def build(f, t=0.0, home=True):
+def build(f, t=0.0, home=True, fold=None):
     pad(f)
     pit(f, t)
     coaming(f)
     leaves(f, t)
-    clamps(f, t)
+    clamps(f, t, fold)
     gate(f, t, home)
 
 
-def bay(rot=0, t=0.0, home=True):
+def bay(rot=0, t=0.0, home=True, fold=None):
     """Objects for the bay sprite at hatch open fraction t; the last object is the floor holdout (exclude it from extents)."""
     m = core.Mesh(f"vehicle_bay_r{rot}_{int(t * 100)}")
-    build(BayFrame(m, rot), t, home)
+    build(BayFrame(m, rot), t, home, fold)
     return [m.build(), floor_holdout(rot)]

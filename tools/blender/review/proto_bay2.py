@@ -77,6 +77,10 @@ def main():
         fresh()
         hold = B.bay(0, 0.05)
         render("shuttle_parked_r0_t5", shuttle_ob(0) + hold, "prop", hold)
+    if "empty" in JOBS:                                                # doors closed, arms folded, no shuttle
+        fresh()
+        objs = B.bay(0, 0.0, True, 1.0)
+        render("bay_r0_empty", objs, "block", objs[1:])
 
 
 main()

@@ -168,18 +168,30 @@ def flyers(ds):
     return row(ims)
 
 
-def frame(bay_tag, shuttle_tag=None, lab="", crew_on=True):
-    """Frame-style view: the bay on its own floor, no walls; a crew member for scale on the outside floor by the gangway."""
-    sc = Scene(560, 440)
-    T = lambda x, y: (280 + (x - y) * 32, 150 + (x + y) * 16)  # noqa: E731
-    for x in range(-1, 6):
-        for y in range(-1, 6):
+def frame(bay_tag, shuttle_tag=None, lab="", crew_on=True, rot=0):
+    """Frame-style view: the bay on its own floor, no walls; a crew member for scale on the outside floor by the gangway
+    (bay-local u 3.0, v 0.5: one tile past the +u long side at the hatch row, rotated with the bay)."""
+    w, h = (4, 5) if rot % 2 == 0 else (5, 4)
+    fx, fy = w / 2 - 0.5, h / 2 - 0.5
+    sc = Scene(640, 520)
+    T = lambda x, y: (320 + (x - y) * 32, 150 + (x + y) * 16)  # noqa: E731
+    for x in range(-2, 8):
+        for y in range(-2, 8):
             sc.asset("tile.floor.a", *T(x, y))
-    sc.sprite(bay_tag, *T(3, 4))
-    if shuttle_tag:
-        sc.sprite(shuttle_tag, *T(3, 4))
+    cp = None
     if crew_on:
-        crew(sc, *T(4.5, 2.5), d=4)
+        u, v = 3.0, 0.5
+        for _ in range(rot % 4):
+            u, v = -v, u
+        cp = (w - 1 + u - fx, h - 1 + v - fy)
+    behind = cp is not None and cp[0] + cp[1] < (w - 1) + (h - 1) - 1.5       # crew on the far side of the bay: draw it first
+    if behind:
+        crew(sc, *T(*cp), d=(4 + 2 * rot) % 8)
+    sc.sprite(bay_tag, *T(w - 1, h - 1))
+    if shuttle_tag:
+        sc.sprite(shuttle_tag, *T(w - 1, h - 1))
+    if cp is not None and not behind:
+        crew(sc, *T(*cp), d=(4 + 2 * rot) % 8)
     return label(trim(sc.image(), 4), lab)
 
 
@@ -190,20 +202,14 @@ def save(im, name):
 
 def main():
     OUTD.mkdir(parents=True, exist_ok=True)
-    V = sys.argv[5] if len(sys.argv) > 5 else "v17"
-    save(row([frame("bay_r0_t0", "shuttle_parked_r0", "closed"), frame("bay_r0_t5", "shuttle_parked_r0_t5", "open 0.05: both arms fold into towers"),
-              frame("bay_r0_t66", None, "open 0.66: shuttle gone, gangway retracted")]), f"bay_frames_{V}")
+    V = sys.argv[5] if len(sys.argv) > 5 else "v18"
+    save(row([frame("bay_r0_t0", "shuttle_parked_r0", "closed"), frame("bay_r0_t5", "shuttle_parked_r0_t5", "arms folding back"),
+              frame("bay_r0_t66", None, "doors open, shuttle gone")]), f"bay_frames_{V}")
     save(frame("bay_r0_t0", "shuttle_parked_r0", "closed"), f"bay_closed_{V}")
-    if not (D / "bay_r1_t0.npz").exists():
-        return
-    save(frame("bay_r0_t0", None, "empty"), f"bay_empty_{V}")
-    ims = []
-    for k in range(4):
-        sc = Scene(560, 440)
-        sc.sprite(f"bay_r{k}_t0", 300, 300)
-        sc.sprite(f"shuttle_parked_r{k}", 300, 300)
-        ims.append(label(trim(sc.image(), 4), f"r{k}"))
-    save(row(ims), f"bay_rots_{V}")
+    if (D / "bay_r0_empty.npz").exists():
+        save(frame("bay_r0_empty", None, "empty: doors closed, arms folded"), f"bay_empty_{V}")
+    if (D / "bay_r3_t0.npz").exists():
+        save(row([frame(f"bay_r{k}_t0", f"shuttle_parked_r{k}", f"r{k}", rot=k) for k in range(4)]), f"bay_rots_{V}")
 
 
 main()
