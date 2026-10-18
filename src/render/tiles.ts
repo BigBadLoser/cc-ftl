@@ -124,3 +124,33 @@ export function wallPieces(
   if (ghosts && mask & 2 && ghostAt(kindAt, x + 1, y, level)) out.push({ chain: [`tile.${fam}.${PRE[level]}end.e`], order: 1 });
   return out;
 }
+
+/**
+ * Tiles carrying a front-ghost vertical edge line (`tile.hull.ghost.vert`, drawn at the tile's front corner): the
+ * corners where the near hull's silhouette turns or ends (walls pass 12, complib.ghost_verts).
+ */
+export function ghostVerts(kindAt: KindAt, width: number, height: number): { x: number; y: number }[] {
+  const seg = new Map<string, { x: number; y: number; dirs: Set<string>; n: number }>();
+  const put = (px: number, py: number, d: string) => {
+    const k = `${px},${py}`;
+    const e = seg.get(k) ?? { x: px, y: py, dirs: new Set<string>(), n: 0 };
+    e.dirs.add(d);
+    e.n++;
+    seg.set(k, e);
+  };
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      if (kindAt(x, y) !== Struct.Wall || !touchesSpace(kindAt, x, y)) continue;
+      const o = outward(kindAt, x, y);
+      const m = wallMask(kindAt, x, y);
+      const segs: [number, number, number, number, string][] = [];
+      if (o === 1 && m & 8) segs.push([x - 0.5, y + 0.5, x + 0.5, y + 0.5, "y"]);
+      if (o === 2 && m & 1) segs.push([x + 0.5, y - 0.5, x + 0.5, y + 0.5, "x"]);
+      if (o === 3) segs.push([x - 0.5, y + 0.5, x + 0.5, y - 0.5, "d"]);
+      for (const [ax, ay, bx, by, d] of segs) {
+        put(ax, ay, d);
+        put(bx, by, d);
+      }
+    }
+  return [...seg.values()].filter((e) => e.n === 1 || e.dirs.size > 1).map((e) => ({ x: e.x - 0.5, y: e.y - 0.5 }));
+}

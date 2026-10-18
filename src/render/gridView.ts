@@ -10,7 +10,7 @@ import { lightTint, mulColor, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
-import { floorChain, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { floorChain, ghostVerts, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
 
@@ -124,6 +124,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           tinted.push({ spr: made[0] as Sprite, idx, wall: !isDoor, solid: true });
         }
       }
+    if (ghosts) {
+      const vert = atlas.stat("tile.hull.ghost.vert");
+      if (vert) for (const t of ghostVerts(kindAt, grid.width, grid.height)) owned.push(...addStatic(L, vert, t.x, t.y, depthKey(t.x, t.y) + 0.001, L.sorted));
+    }
     builtMode = `${mode}|${ghosts}`;
     doorKey = -1;
     tintKey = "";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Struct } from "../sim/structure";
-import { floorChain, outward, replacesFloor, tileHash, wallMask, wallPieces, type CutawayMode } from "./tiles";
+import { floorChain, ghostVerts, outward, replacesFloor, tileHash, wallMask, wallPieces, type CutawayMode } from "./tiles";
 
 const W = Struct.Wall;
 const F = Struct.Floor;
@@ -79,6 +79,10 @@ describe("wall autotiling", () => {
     expect(ids(grid([[F, F, F], [W, D, W], [F, F, F]]), 1, 1, D, "auto")).toEqual(["door.x"]);
     expect(ids(grid([[F, W, F], [F, D, F], [F, W, F]]), 1, 1, D, "down")).toEqual(["door.y"]);
     expect(ids(grid([[F, F, F], [W, D, W]]), 1, 1, D, "up")).toEqual(["door.x", "hull.drop.s"]);
+  });
+  it("front ghost verticals stand where the near-hull silhouette turns or ends", () => {
+    const v = ghostVerts(ring, 5, 5).map((t) => `${t.x},${t.y}`).sort();
+    expect(v).toEqual(["1,3", "2,3", "3,1", "3,2"]);
   });
   it("a near-hull ghost replaces the floor under it", () => {
     expect(replacesFloor(ring, 2, 3)).toBe(true);

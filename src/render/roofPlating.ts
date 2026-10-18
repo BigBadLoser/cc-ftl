@@ -6,6 +6,7 @@ import type { Atlas } from './assets/loader';
 import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { createLiveryMesh } from './livery';
+import { touchesSpace } from './tiles';
 import { liveryPlan, motifColours, roofGradient, roofTile } from './roofArt';
 
 /** One roof tile's display objects (base, livery, edges), tinted together. */
@@ -33,17 +34,18 @@ const grey = (k: number): number => {
 export const hasRoofArt = (atlas: Atlas): boolean => !!atlas.stat('roof.c0b.00');
 
 /**
- * The roof plating over every roofed tile (floor and door tiles; `skip` drops tiles under stand-in roof parts):
+ * The roof plating over every roofed tile (floors, doors and partitions; `skip` drops tiles under stand-in roof parts):
  * the module-rule base sprite (roofArt.roofTile), the ship's livery masks recoloured by the livery shader, and an edge
  * overlay on each open side, at roof depth (+0.9 .. +0.91). Without the roof family it falls back to the stand-in plate.
  */
 export function buildRoofPlating(grid: Grid, atlas: Atlas, L: Layers, livery: Livery | null, skip: (x: number, y: number) => boolean): RoofPiece[] {
   const struct = grid.raw('struct');
   const { width: W, height: H } = grid;
+  const kindAt = (x: number, y: number): number => (x < 0 || y < 0 || x >= W || y >= H ? Struct.Space : (struct[y * W + x] as number));
+  // Interior tiles and partitions carry the roof slab (it sits on the walls); the hull rises flush to its top.
   const roofed = (x: number, y: number): boolean => {
-    if (x < 0 || y < 0 || x >= W || y >= H) return false;
-    const k = struct[y * W + x];
-    return k === Struct.Floor || k === Struct.Door;
+    const k = kindAt(x, y);
+    return k === Struct.Floor || k === Struct.Door || (k === Struct.Wall && !touchesSpace(kindAt, x, y));
   };
   const real = hasRoofArt(atlas);
   const plan = real && livery ? liveryPlan(W, H, roofed, livery.scheme, livery.seed, (m) => !!atlas.stat(`roof.lv.${m}`)) : new Map();
