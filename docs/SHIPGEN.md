@@ -141,7 +141,15 @@ distance over join tokens `kindA>dir>kindB` and assembly-degree tokens. It is re
   The AI core is the boarding target; validation makes it reachable over the crawlways from the airlock.
 - **Beams in game** draw with an isolated, clearly marked placeholder (`src/render/beamPlaceholder.ts`) until strut
   sprites exist. In the viewer, beam tiles are magenta.
-- **Sim follow-ups:**
+- **Generator follow-ups:**
+  - beams are buried under pod walls; trusses should stay visible along their length;
+  - small drones have a high corridor share;
+  - engine rails are repetitive;
+  - the dock still looks like an antenna;
+  - families are less distinct than grammars;
+  - some spoke layouts still look like randomly attached equipment: favour purposeful machinery clusters and
+    structural relationships over arbitrary branching.
+- **Sim follow-ups** (no sim work until the generator is signed off):
   - capability-based crawl speed (robots normal, humans slow) needs the robots branch;
   - sealed pods can't be repaired from inside (external servicing is not simulated yet).
 
@@ -152,11 +160,36 @@ distance over join tokens `kindA>dir>kindB` and assembly-degree tokens. It is re
 - Exposed beams between assemblies, and robot crawlways only where an access port needs one.
 - Mirrored only when the mounts balance.
 
-## Scrappers (after drones): grafted donor sections
+## Scrappers (built, v7): salvaged donors welded together
 
-- Hand-made donor sections first: a navy drive block, a freighter hold, a drone weapon cluster, a habitat.
-- Each keeps its own interior, and they are grafted at believable points.
-- Cutting donors out of generated ships comes later; donor livery comes later too.
+Same arranger, no new sim concepts. `scrapBlocks.ts` holds the donors, `scrapGrammars.ts` the welding. Every
+block carries `donor` (navy, civil, drone, mining; `scrap` for improvised parts) and the assembly view tints by it.
+
+- Donors, each in its builder's own construction style:
+  - navy bow (the hand-made nose chunk), navy drive (the transverse engine bank), navy battery (a band section);
+  - civil freighter: one big open cargo bay under a 2-wide gangway, shuttle bay and core rooms off the gangway;
+  - civil habitat: a ring corridor round a central hub room, cabins and airlocks outboard;
+  - drone weapon cluster: a frozen drone arrangement (crawl node, sealed gun pods sized to the mount, crawl stub);
+  - mining tug: a stubby hall with a reactor, an ore hopper and its own engine room aft.
+- Welding: donors graft wall to wall (`kind: 'graft'`), a short scrap tube only if nothing fits flush (none in
+  the v7 sheets). Extra engines are strapped on as pods, crates bolted to free walls.
+- Grammars: `heap` (freighter at the heart, the rest welded on around it) and `raft` (freighter and habitat welded
+  lengthways). Families raider, hauler, gunrunner weight them and the budget.
+- At least three origins on every ship: the tug comes along whenever no drone guns do (tested).
+
+### Generator follow-ups
+
+- Two civil donors read as one colour family; a third civil donor (tanker, passenger liner) would help.
+- Drone clusters at low depth are a single pod on a stub: too small to read as a drone section.
+- Donors are always grafted at their native orientation; rotated or upside-down donors would sell salvage more.
+- Weld seams are clean wall joins. Overlapping hulls, cut-off rooms and patched breaches would sell salvage more.
+- Families differ in budget and grammar weight, not in donor choice (adjacency within family 0.38 at depth 9).
+- Freighter is always the root; a heap rooted on the habitat or a navy hulk would add variety.
+- Cutting donors out of real generated navy and drone ships is still to come; so is donor livery.
+
+### Sim follow-ups (not started; no sim work until the generator is accepted)
+
+- Donor origin as ship data (livery, part condition, salvage value per section).
 
 ## Diversity
 

@@ -44,16 +44,15 @@ describe('ship generator', () => {
 
   it('scales with depth: deeper ships are longer, better armed and shielded, with more power and crew', () => {
     for (const id of ids) {
-      const avg = (depth: number, f: (g: GenResult) => number): number => {
-        let s = 0;
-        for (let seed = 0; seed < 30; seed++) s += f(gen(id, seed, depth));
-        return s / 30;
-      };
       const stats = (g: GenResult) => [g.width, count(g, (d) => !!d.weapon), count(g, (d) => !!d.shieldGen), count(g, (d) => d.power > 0), g.template.crew?.length ?? 0];
+      const avgs = (depth: number): number[] => {
+        const s = [0, 0, 0, 0, 0];
+        for (let seed = 0; seed < 30; seed++) stats(gen(id, seed, depth)).forEach((v, k) => { s[k]! += v / 30; });
+        return s;
+      };
+      const [lo, hi] = [avgs(0), avgs(9)];
       for (let k = 0; k < 5; k++) {
-        const shallow = avg(0, (g) => stats(g)[k] as number);
-        const deep = avg(9, (g) => stats(g)[k] as number);
-        expect(deep, `${id} stat ${k}`).toBeGreaterThan(shallow);
+        expect(hi[k], `${id} stat ${k}`).toBeGreaterThan(lo[k] as number);
       }
     }
   });
@@ -115,6 +114,17 @@ describe('ship generator', () => {
       if (g.template.rows.some((r) => r.includes('='))) beams++;
     }
     expect(beams).toBeGreaterThan(20);
+  });
+
+  it('scrappers (same arranger, salvage doctrine): at least three donor origins grafted together, donors kept whole', () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const d = gen('faction.scrapper', seed, seed % 10).debug!;
+      const origins = new Set(d.assemblies.map((a) => a.donor).filter((o) => o && o !== 'scrap'));
+      expect(origins.size, `seed ${seed} origins`).toBeGreaterThanOrEqual(3);
+      expect(d.joins.some((j) => j.kind === 'graft')).toBe(true);
+      // Pieces are whole donors, not room-by-room corridor assemblies.
+      expect(d.assemblies.filter((a) => a.donor !== 'scrap').length).toBeLessThanOrEqual(8);
+    }
   });
 
   it('beam tiles load as solid, unwalkable, airtight Struct.Beam', () => {

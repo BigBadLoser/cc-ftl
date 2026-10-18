@@ -8,6 +8,7 @@ import type { AccessKind, RoomRole } from './types';
 /**
  * Drone vocabulary: dense machinery, not rooms. Sealed pods whose interior is exactly their module's footprint
  * (serviced from outside), robot crawlways one tile wide, solid beams that carry pods, a small processing room.
+ * Beam ports lie one tile outside the beam: whatever joins a beam touches it and never replaces its tiles.
  */
 
 const sides = (w: number, h: number, access: AccessKind, multi = false): LocalPort[] => [
@@ -72,12 +73,13 @@ export function beam(rng: Rng, len: number, thick: number, horiz: boolean): Bloc
   b.cv.stamp(Array.from({ length: h }, () => '='.repeat(w)), 0, 0, 'beam');
   const ports: LocalPort[] = horiz
     ? [
-      { id: 'w', side: 'w', x: 0, y: 0, len: thick, access: 'external' }, { id: 'e', side: 'e', x: w - 1, y: 0, len: thick, access: 'external' },
-      { id: 'n', side: 'n', x: 0, y: 0, len, access: 'external', multi: true }, { id: 's', side: 's', x: 0, y: h - 1, len, access: 'external', multi: true },
+      { id: 'w', side: 'w', x: -1, y: 0, len: thick, access: 'external' }, { id: 'e', side: 'e', x: w, y: 0, len: thick, access: 'external' },
+      // Mounts ride just outside the beam (their walls touch it, never replace it).
+      { id: 'n', side: 'n', x: 0, y: -1, len, access: 'external', multi: true }, { id: 's', side: 's', x: 0, y: h, len, access: 'external', multi: true },
     ]
     : [
-      { id: 'n', side: 'n', x: 0, y: 0, len: thick, access: 'external' }, { id: 's', side: 's', x: 0, y: h - 1, len: thick, access: 'external' },
-      { id: 'w', side: 'w', x: 0, y: 0, len, access: 'external', multi: true }, { id: 'e', side: 'e', x: w - 1, y: 0, len, access: 'external', multi: true },
+      { id: 'n', side: 'n', x: 0, y: -1, len: thick, access: 'external' }, { id: 's', side: 's', x: 0, y: h, len: thick, access: 'external' },
+      { id: 'w', side: 'w', x: -1, y: 0, len, access: 'external', multi: true }, { id: 'e', side: 'e', x: w, y: 0, len, access: 'external', multi: true },
     ];
   return blockFrom(b, 'beam', 'beam', 'external', ports);
 }

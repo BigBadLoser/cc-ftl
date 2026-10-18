@@ -40,6 +40,8 @@ export interface Block {
   origin: { x: number; y: number };
   /** Space cells that must stay open (outside gun mounts and airlocks), so later blocks never bury them. */
   exposed: { x: number; y: number }[];
+  /** Where the block was built (salvage donors: navy, civil, drone, mining; 'scrap' for improvised parts). */
+  donor?: string;
 }
 
 interface Placed {
@@ -309,7 +311,7 @@ export class Arranger {
   debug(ox: number, oy: number, width: number, height: number, rows: string[], hallAt: (x: number, y: number) => boolean, profile: string): CompDebug {
     const assemblies: AsmRecord[] = this.placed.map((p, id) => {
       const r = this.bounds(id);
-      return { id, kind: p.block.kind, label: p.block.label, access: p.block.access, x: r.x - ox, y: r.y - oy, w: r.w, h: r.h };
+      return { id, kind: p.block.kind, label: p.block.label, access: p.block.access, x: r.x - ox, y: r.y - oy, w: r.w, h: r.h, ...(p.block.donor ? { donor: p.block.donor } : {}) };
     });
     const asmOf = new Int16Array(width * height).fill(-1);
     this.placed.forEach((p, id) => {

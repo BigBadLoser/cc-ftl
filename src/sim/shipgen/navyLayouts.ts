@@ -1,6 +1,7 @@
 import { Arranger } from './arranger';
 import { Builder } from './builder';
 import { DRONE_GRAMMARS } from './droneGrammars';
+import { SCRAP_GRAMMARS } from './scrapGrammars';
 import { GRAMMARS as NAVY } from './navyGrammars';
 import type { ModuleDef } from '../registry';
 import type { Ctx } from './navyKit';
@@ -27,7 +28,7 @@ function score(A: Arranger, fam: HullFamilyDef, noise: number): number {
   return -3 * off + (s.filled / (s.w * s.h)) + noise;
 }
 
-const GRAMMARS = { ...NAVY, ...DRONE_GRAMMARS };
+const GRAMMARS = { ...NAVY, ...DRONE_GRAMMARS, ...SCRAP_GRAMMARS };
 
 export function arrangeHull(
   rng: Rng, f: FactionDef, fam: HullFamilyDef, plan: ShipPlan, defs: Record<string, ModuleDef>,

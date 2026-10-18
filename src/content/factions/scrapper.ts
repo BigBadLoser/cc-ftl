@@ -1,4 +1,5 @@
 import type { FactionDef } from '../../sim';
+import { navy } from './navy';
 
 /**
  * Scrapper raiders: improvised assemblies of salvaged sections (a freighter segment, a habitat, a gun deck…), each
@@ -20,8 +21,24 @@ export const scrapper = {
     corridorWidth: [1, 2],
     strutLength: [1, 4],
     battery: 1,
-    noses: [],
+    // Salvaged navy bows: the navy's own nose chunks.
+    noses: navy.architecture.noses,
   },
+  // Salvage families (assembly-driven): donor sections welded together.
+  hullFamilies: [
+    {
+      id: 'raider', weight: { base: 4, perDepth: 0, max: 4 }, grammars: [{ value: 'heap', weight: 2 }, { value: 'raft', weight: 1 }],
+      aspect: [1, 2.2], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
+    },
+    {
+      id: 'hauler', weight: { base: 2, perDepth: 0, max: 2 }, bonus: { crates: 6, weapons: -1 }, grammars: [{ value: 'raft', weight: 2 }, { value: 'heap', weight: 1 }],
+      aspect: [1, 2.2], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
+    },
+    {
+      id: 'gunrunner', weight: { base: 0, perDepth: 0.4, max: 3 }, bonus: { weapons: 1, heavyPct: 15 }, grammars: [{ value: 'heap', weight: 1 }],
+      aspect: [1, 2.2], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
+    },
+  ],
   weapons: {
     light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.incendiaryLauncher', weight: 2 }],
     heavy: [{ value: 'module.massDriver', weight: 1 }],

@@ -22,6 +22,16 @@ const ACCESS: Record<AccessKind, RGB> = { human: [80, 230, 255], robot: [120, 25
  * Assemblies tinted and labelled, walls darker, beam tiles solid magenta; joins framed by kind (frame yellow, graft
  * orange, beam magenta); traversal dotted by access kind (human cyan, robot green, external yellow); ports green / red.
  */
+/** Salvage origin hues (scrappers); pieces of one origin alternate lightness so separate donors stay apart. */
+const DONOR: Record<string, RGB> = { navy: [70, 110, 210], civil: [200, 135, 40], habitat: [235, 215, 140], drone: [190, 70, 70], mining: [120, 175, 70], scrap: [150, 140, 130] };
+function tint(d: NonNullable<GenResult['debug']>, a: number): RGB {
+  const asm = d.assemblies[a];
+  const o = asm?.label.includes('habitat') ? 'habitat' : asm?.donor;
+  const base = o ? DONOR[o] : undefined;
+  if (!base) return TINTS[a % TINTS.length] as RGB;
+  return (a % 2 ? base : base.map((v) => Math.min(255, v * 1.25))) as RGB;
+}
+
 export function drawAssemblies(r: Raster, g: GenResult, ox: number, oy: number, s: number): void {
   const d = g.debug;
   for (let y = 0; y < g.height; y++) {
@@ -30,7 +40,7 @@ export function drawAssemblies(r: Raster, g: GenResult, ox: number, oy: number, 
       if (c === '.') continue;
       const a = d ? (d.asmOf[y * g.width + x] ?? -1) : -1;
       if (c === '=') { r.rect(ox + x * s, oy + y * s, s, s, [235, 70, 200]); continue; }
-      const t = a >= 0 ? (TINTS[a % TINTS.length] as RGB) : ([90, 90, 90] as RGB);
+      const t = a >= 0 ? tint(d, a) : ([90, 90, 90] as RGB);
       const k = c === '#' ? 0.45 : 1;
       r.rect(ox + x * s, oy + y * s, s, s, t.map((v) => v * k) as RGB);
     }

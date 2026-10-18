@@ -102,6 +102,8 @@ export interface ArchitectureDef {
 export type NavyGrammar = 'linear' | 'deckPair' | 'spineDecks' | 'spineWings' | 'citadelFlanked' | 'twinHull' | 'layered' | 'carrierIsland';
 /** Drone (machine) grammars (see droneGrammars.ts). */
 export type DroneGrammar = 'spoke' | 'truss' | 'cluster';
+/** Scrapper (salvage) grammars (see scrapGrammars.ts). */
+export type ScrapGrammar = 'heap' | 'raft';
 
 /** Standard functional sections of a navy hull (one per kind of job). */
 export type SectionKind = 'command' | 'battery' | 'core' | 'habitat' | 'cargo' | 'hangar' | 'drive';
@@ -128,7 +130,7 @@ export interface HullFamilyDef {
   /** The core is a citadel: an enclosed compartment on the axis, passages around it, crew quarters outboard. */
   citadel?: boolean;
   /** Structural grammars the family uses (how its sections are arranged in 2D), weighted. */
-  grammars: readonly Weighted<NavyGrammar | DroneGrammar>[];
+  grammars: readonly Weighted<NavyGrammar | DroneGrammar | ScrapGrammar>[];
   /** Soft proportion target (length / beam): arrangements nearer it score better; never a hard reject. */
   aspect: readonly [number, number];
   /** Propulsion configurations the family uses (engines always face +x). */
@@ -212,6 +214,8 @@ export interface AsmRecord {
   y: number;
   w: number;
   h: number;
+  /** Donor origin of a salvaged section (navy, civil, drone, mining) or 'scrap' for improvised parts. */
+  donor?: string;
 }
 
 /** An access port on an assembly's boundary: a tile, the side it faces, and whether a neighbour's port met it. */
