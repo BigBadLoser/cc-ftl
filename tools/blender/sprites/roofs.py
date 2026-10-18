@@ -14,8 +14,9 @@ Sprites:
 from . import core
 from . import roof_layout as rl
 
-ZR = 2.4          # plating height: the top of a full-height wall (= walls.HF)
-T = 0.22          # slab thickness shown on open S / E sides
+ZR = 2.4          # roof top: the plating is drawn here
+T = 0.2           # roof slab thickness, shown as a face on open S / E sides
+ZB = ZR - T       # slab underside (2.2). Interior wall height under the roof is not decided yet (2.2 or 2.4)
 GN = rl.GN
 
 
@@ -24,7 +25,7 @@ def _grid(m, grid):
 
 
 def _slab(m, side, f):
-    z, z0 = ZR, ZR - T
+    z, z0 = ZR, ZB
     if side == "s":
         a, b = (-0.5, 0.5), (0.5, 0.5)
     else:
@@ -121,7 +122,8 @@ for _name, _fn in (("generic", generic), ("weapon", weapon), ("shield", shield),
 
 
 # ---- v7 variant studies (preview only; see roof_variants.py) ---------------------------------------------------
-DZ = 8 / core.ZPX         # raised armour belt (variant B): exactly 8 px higher, so belts are drawn with an anchor offset
+DZ = 12 / core.ZPX        # raised armour belt (variant B): exactly 12 px higher, so belts are drawn with an anchor offset
+BEV = 0.14                # belt step bevel width (tiles)
 
 
 def variant_base(layout, col, u, v, variant="v6", patch=False, paint=None):
@@ -167,10 +169,16 @@ def variant_edge(side, col, variant="v6", tall=False):
 
 
 def belt_step(col):
-    """E step face of a raised belt tile (absolute z ZR..ZR+DZ, drawn with the belt tile at its normal anchor)."""
+    """Bevelled E step of a raised belt tile (absolute z ZR..ZR+DZ, drawn with the belt tile at its normal anchor):
+    a short vertical riser, then a 45-ish chamfer back onto the belt top, with a lit arris along the top."""
     f = rl.FAM[col]
     m = core.Mesh(f"roof_step_{col}", flat=True)
-    m.poly([core.G(0.5, -0.5, ZR), core.G(0.5, 0.5, ZR), core.G(0.5, 0.5, ZR + DZ), core.G(0.5, -0.5, ZR + DZ)], f["fe"])
+    zr = ZR + DZ * 0.35
+    m.poly([core.G(0.5, -0.5, ZR), core.G(0.5, 0.5, ZR), core.G(0.5, 0.5, zr), core.G(0.5, -0.5, zr)], f["fe"])
+    xb = 0.5 - BEV
+    m.poly([core.G(0.5, -0.5, zr), core.G(0.5, 0.5, zr), core.G(xb, 0.5, ZR + DZ), core.G(xb, -0.5, ZR + DZ)], f["shd"])
+    m.poly([core.G(xb, -0.5, ZR + DZ + 0.002), core.G(xb, 0.5, ZR + DZ + 0.002), core.G(xb + 0.025, 0.5, ZR + DZ - 0.02),
+            core.G(xb + 0.025, -0.5, ZR + DZ - 0.02)], f["lit"])
     m.poly([core.G(0.5, -0.5, ZR), core.G(0.5, 0.5, ZR), core.G(0.5, 0.5, ZR + 0.03), core.G(0.5, -0.5, ZR + 0.03)], f["k"])
     return [m.build()]
 

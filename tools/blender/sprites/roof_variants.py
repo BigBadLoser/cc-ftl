@@ -1,18 +1,20 @@
 """Roof v7 variant studies on top of the v6 module language (pure Python, no bpy). Preview only for now.
 
-A  livery   painted spine stripe along the ship's length plus bow chevrons. The paint recolours plate surfaces
-            (grooves stay dark), so it reads as painted plating. Rule: the module grid origin is chosen per ship so
-            the spine lands on rows v = 1..2 of one module row; tiles there use a painted base sprite.
-            Cost: stripe 4 layouts x 2 colours x 4 u x 2 v = 64, chevrons (bow module of the spine row) another 64.
-B  depth    ochre courses are raised armour belts (drawn DZ higher: same base sprites, an anchor offset), with a
-            shaded step face on their E side, taller slab overlays on their open S / E ends and a recessed trench in
-            the blue-grey plating along both sides of each belt. Two layouts swap their big pocket for a raised
-            blister (geometry inside the tile, no extra sprites). Cost: +6 sprites (step e, tall edge s / e, trench
-            w / e, ...) ; blisters 0 (they replace pockets).
-C  material stronger value range and saturation, cooler blue-grey and warmer ochre (own palette), one replacement
-            plate in a fresh tone in every third module ((mx + 2 my) % 3 == 0, plate fixed per layout), and a subtle
-            ship-wide light gradient done as a runtime per-tile tint (0 sprites). Cost: patched plates 2 colours x
-            (sum of patched-plate tiles over layouts) = 2 x 14 = 28.
+A  livery   painted spine stripe along the ship's length with forward-pointing chevrons in the bow module, a red
+            registry block with a white hull number on the module behind the bow (S of the stripe), and red bars on
+            open E (bow-facing) edges of the bow module column near the spine. Paint recolours plate surfaces by
+            role (grooves stay dark), so it reads as painted plating. Rule: the module grid origin is chosen per ship
+            so the spine lands on rows v = 1..2 of one module row.
+            Cost: stripe 64 + bow chevrons 64 + edge bars 32 (u = 3 bases) + registry digits 20 (decals) = ~+180.
+B  depth    ochre courses are raised armour belts (12 px higher: same base sprites, an anchor offset), with a
+            bevelled step on their E side, tall slab faces on their open S / E ends and a recessed trench in the
+            blue-grey plating along both sides of each belt. In modules fully inside the hull, layouts 0 and 2 swap
+            their big pocket for a raised blister.
+            Cost: step 1 + trench 2 + tall edges 2 = +5; blisters +64 (2 layouts x 2 colours x 16).
+C  material stronger value range and saturation, cooler blue-grey and warmer ochre (own palette, replaces the v6
+            one at no extra cost), one replacement plate in a slightly different tone in every third module
+            ((mx + 2 my) % 3 == 0, plate fixed per layout), and a subtle ship-wide light gradient done as a runtime
+            per-tile tint (0 sprites). Cost: patched plates 2 colours x 16 tiles = +32.
 """
 from . import roof_layout as rl
 from .roof_layout import GN, MC, FAM, _Canvas, _raised, _feature, _girder, _corners
@@ -24,7 +26,7 @@ FAM_C = {
 PATCH = (2, 1, 0, 1)          # patched plate index per layout (variant C)
 LAYOUTS_B = tuple(tuple((p[:5] + ("B",)) if p[5] == "P" and p[2] * p[3] >= 6 else p for p in lay)
                   for lay in rl.LAYOUTS)
-DZ_BLISTER = 0.1              # blister height (tiles), about 4 px
+DZ_BLISTER = 0.16             # blister height (tiles), about 6 px
 PAINT = {"top": "lvR", "t2": "lvR2", "lit": "lvRL", "shd": "lvRS", "rl": "lvRS"}
 PAINT_W = {"top": "lvW", "t2": "lvW2", "lit": "lvWL", "shd": "lvWS", "rl": "lvWS"}
 
@@ -68,21 +70,49 @@ def tile(layout, prim, u, v, variant="v6", patch=False, paint=None):
     g, raised = _CACHE[key]
     out = [list(row[u * GN:(u + 1) * GN]) for row in g[v * GN:(v + 1) * GN]]
     rs = {(X - u * GN, Y - v * GN) for X, Y in raised if u * GN <= X < (u + 1) * GN and v * GN <= Y < (v + 1) * GN}
-    if paint:
-        f = fam[prim]
-        inv = {f[r]: r for r in ("top", "t2", "lit", "shd", "rl")}
+    f = fam[prim]
+    inv = {f[r]: r for r in ("top", "t2", "lit", "shd", "rl")}
+    for layer in (paint or ()):
         for j in range(GN):
-            B = (v - 1) * GN + j                       # row inside the 64-cell spine band
             for i in range(GN):
                 r = inv.get(out[j][i])
-                if r is None:
+                if r is None and not (layer.startswith("reg") and out[j][i] == f["k"]):
                     continue
-                X = u * GN + i
-                if 10 <= B < 14 or 50 <= B < 54:        # white pinstripes
-                    out[j][i] = PAINT_W[r]
-                elif 18 <= B < 46:                      # the faction band
-                    white = paint == "chevron" and ((X - abs(B - 31.5) * 1.0) // 10) % 2 == 0
-                    out[j][i] = (PAINT_W if white else PAINT)[r]
+                r = r or "shd"
+                c = _paint(layer, u, v, i, j)
+                if c:
+                    out[j][i] = (PAINT_W if c == "w" else PAINT)[r]
+    return out, rs
+
+
+DIGITS = {"0": ("111", "101", "101", "101", "111"), "7": ("111", "001", "001", "010", "010"),
+          "1": ("010", "110", "010", "010", "111"), "2": ("111", "001", "111", "100", "111"),
+          "3": ("111", "001", "011", "001", "111"), "4": ("101", "101", "111", "001", "001"),
+          "5": ("111", "100", "111", "001", "111"), "6": ("111", "100", "111", "101", "111"),
+          "8": ("111", "101", "111", "101", "111"), "9": ("111", "101", "111", "001", "111")}
+
+
+def _paint(layer, u, v, i, j):
+    """'r' (faction red), 'w' (white) or None for cell (i, j) of tile (u, v) under one paint layer."""
+    X, B = u * GN + i, (v - 1) * GN + j               # B: row inside the 64-cell spine band (v = 1..2)
+    if layer in ("stripe", "chevron"):
+        if 10 <= B < 14 or 50 <= B < 54:               # white pinstripes
+            return "w"
+        if 18 <= B < 46:                               # the faction band
+            return "w" if layer == "chevron" and ((X + abs(B - 31.5)) // 10) % 2 == 0 else "r"
+        return None
+    if layer == "edge":                                # bow edge chevrons: red bars along an open E edge
+        return "r" if i >= GN - 12 and ((i + j) // 6) % 2 == 0 else None
+    if layer.startswith("reg"):                        # registry block: red panel with a white digit, 2 tiles wide
+        side, d = layer[3], layer[4]                   # side 'l' / 'r' of the block
+        if not (3 <= j < 29) or (side == "l" and i < 4) or (side == "r" and i >= GN - 4):
+            return None
+        x0 = 14 if side == "l" else 3                  # digit 3x5 at 5 cells a pixel
+        a, b = (i - x0) // 5, (j - 4) // 5
+        if 0 <= a < 3 and 0 <= b < 5 and DIGITS[d][b][a] == "1" and i - x0 >= 0 and j >= 4:
+            return "w"
+        return "r"
+    return None
     return out, rs
 
 
@@ -92,15 +122,15 @@ def trench_cells(side, fam=FAM, col="b"):
     f = fam[col]
     out = {}
     for k in range(GN):
-        for d in range(8):
+        for d in range(12):
             i = d if side == "w" else GN - 1 - d
-            if d < 2:
+            if d < 3:
                 c = "k"
-            elif d < 6:
+            elif d < 9:
                 c = "rl"
-            else:
+            elif d < 11:
                 c = "k" if side == "w" else "shd"
-            if side == "w" and d == 7:
-                continue
+            else:
+                c = "k"
             out[(i, k)] = f[c]
     return out
