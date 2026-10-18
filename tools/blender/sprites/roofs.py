@@ -1,22 +1,21 @@
 """Roof tiles for the enemy 'roofed' view (grid frame, origin = tile centre at floor level, plating at ZR).
 
-Hull-language armour: ochre and blue-grey colour-blocked plates that span 2-4 tiles. `plate_at(tx, ty)` is a pure
-position hash (bands of 2-3 tiles, each cut into 2-4 tile plates, brick-offset) so seams line up across tiles into big
-plates. A tile sprite is picked from (colour, seams N/W, elevation, detail): seam 1 = plate boundary line, 2 = visible
-step face (neighbour plate higher); no seam inside a plate, so there is no per-tile grid. Open sides (mask bits N1 E2 S4
-W8 = connected) get a raised steel trim lip, and the S/E sides a hull slab edge. Sparse details sit in the tile centre.
-`roof.weapon / .shield / .engine` keep their hints on the plain plate."""
-import math
+Hull-language armour: ochre and blue-grey colour-blocked plates that span 2-4 tiles and run flush to the hull edge
+(S / E edges turn down into the plate's own dark slab face). `plate_geom(tx, ty)` is a pure position hash: bands of 2-3
+tiles cut into 2-4 tile plates with a brick offset, plus a per-plate sub-plate layout. Surface detail belongs to the
+plating itself: plate-boundary seams, a split seam / L-shaped lap seam inside the plate with a slight same-hue tone
+change between sub-plates, and neat rivet rows (2x2 cells) inset from the plate edge and along the seams. All of it is
+computed in PLATE cell coordinates (32 cells per tile), so rows and seams line up across tiles. The sprite is the
+mesh of `tile_grid(...)`; identical grids share a sprite. No objects sit on the roof. Mask bits N1 E2 S4 W8 = connected.
+`roof.weapon / .shield / .engine` keep their hints on a plain plate."""
 from . import core
 
 ZR = 2.4          # plating height: the top of a full-height wall (= walls.HF)
 T = 0.14          # slab thickness shown on open sides
 GN = 32
-STEP = 0.05       # raised plate height
-LIP = 0.075       # trim lip height / width
-COLS = {          # plate family -> top, +y face, +x face, highlight, seam
-    "o": dict(top="ochM", fy="ochD", fx="ochK", hi="ochL"),
-    "b": dict(top="hbM", fy="hbD", fx="hbK", hi="hbL"),
+COLS = {          # plate family -> two same-hue tones, +y face, +x face, highlight (rivets, seam lit edge)
+    "o": dict(t=("rO1", "rO2"), fy="rOD", fx="rOK", hi="rOL"),
+    "b": dict(t=("rB1", "rB2"), fy="rBD", fx="rBK", hi="rBL"),
 }
 
 
@@ -28,128 +27,114 @@ def _h(*v):
     return x
 
 
-def plate_at(tx, ty):
-    """Deterministic plate layout. Returns (col 'o'|'b', elevation 0|1, seamN, seamW, detail (kind, flip) or None)."""
+def plate_geom(tx, ty):
+    """Plate containing tile (tx, ty): dict(col, sn, sw, u, v, pw, ph, lay). u, v = tile offset inside the plate."""
     b0, b = 0, 0                                   # y bands of height 2-3
     while True:
-        hgt = 2 + _h(b, 1) % 2
-        if ty < b0 + hgt:
+        ph = 2 + _h(b, 1) % 2
+        if ty < b0 + ph:
             break
-        b0 += hgt
+        b0 += ph
         b += 1
-    off = _h(b, 2) % 4
-    x0, k = -off, 0                                # x segments of width 2-4, offset per band
+    x0, k = -(_h(b, 2) % 4), 0                     # x segments of width 2-4, offset per band
     while True:
-        w = 2 + _h(b, k, 3) % 3
-        if tx < x0 + w:
+        pw = 2 + _h(b, k, 3) % 3
+        if tx < x0 + pw:
             break
-        x0 += w
+        x0 += pw
         k += 1
-
-    def info(bb, kk):
-        r = _h(bb, kk, 4) % 100
-        return ("o" if r < 50 else "b"), 0          # no plate elevation (steps did not read)
-    col, el = info(b, k)
-    sn = sw = 0
-    if ty == b0:                                   # plate boundary above: the plate in the previous band
-        sn = 1
-        pb, pb0 = b - 1, 0
-        # elevation of the plate directly above (tile ty-1, same tx)
-        pel = plate_at(tx, ty - 1)[1] if ty > 0 else el
-        sn = 2 if pel > el else 1
-    if tx == x0:
-        pel = plate_at(tx - 1, ty)[1] if tx > -50 else el
-        sw = 2 if pel > el else 1
-    d = None
-    r = _h(tx, ty, 6) % 100
-    if False:                                      # scattered details removed (v3): plain plates only
-        d = (("vent", "hatch", "nub", "haz", "light")[_h(tx, ty, 7) % 5], _h(tx, ty, 8) & 1)
-    return col, el, sn, sw, d
+    r = _h(b, k, 4) % 100
+    lay = _h(b, k, 9) % 100
+    return dict(col="o" if r < 50 else "b", sn=1 if ty == b0 else 0, sw=1 if tx == x0 else 0, u=tx - x0, v=ty - b0,
+                pw=pw, ph=ph, lay=0 if lay < 30 else 1 if lay < 55 else 2 if lay < 80 else 3)
 
 
-def _cell(i, j, c, sn, sw, mask):
-    open_n, open_e, open_s, open_w = not mask & 1, not mask & 2, not mask & 4, not mask & 8
-    if sn == 1 and not open_n:
-        if j < 2:
-            return "wallK"
-        if j == 2:
-            return c["hi"]
-    if sw == 1 and not open_w:
-        if i < 2:
-            return "wallK"
-        if i == 2:
-            return c["hi"]
-    if (sn == 2 and j < 2 and not open_n) or (sw == 2 and i < 2 and not open_w):
-        return c["hi"]
-    return c["top"]
+def _spread(a, b):
+    """Evenly spaced rivet positions from a to b inclusive (spacing about 8 cells)."""
+    n = max(1, round((b - a) / 8))
+    return [round(a + k * (b - a) / n) for k in range(n + 1)]
 
 
-def _lip(m, x0, x1, y0, y1, z):
-    """Raised trim strip: flat top, lit +y face, shaded +x face."""
-    h = LIP
-    m.poly([core.G(x0, y0, z + h), core.G(x1, y0, z + h), core.G(x1, y1, z + h), core.G(x0, y1, z + h)], "wallL", flip=True)
-    m.poly([core.G(x0, y1, z), core.G(x1, y1, z), core.G(x1, y1, z + h), core.G(x0, y1, z + h)], "wallM")
-    m.poly([core.G(x1, y0, z), core.G(x1, y1, z), core.G(x1, y1, z + h), core.G(x1, y0, z + h)], "wallD")
+def _plate_layout(pw, ph, lay):
+    """Sub-plate seams in plate cells: ([(axis, pos, a0, a1)], tone2(PU, PV), rivet cells)."""
+    PW, PH = pw * 32, ph * 32
+    lines, riv = [], set()
+    sv, sh = (PW // 2) // 8 * 8, (PH // 2) // 8 * 8
+    if lay == 1:
+        lines = [("v", sv, 0, PH)]
+    elif lay == 2:
+        lines = [("h", sh, 0, PW)]
+    elif lay == 3:
+        lines = [("v", sv, 0, PH), ("h", sh, sv, PW)]
+    tone2 = {0: lambda u, v: False, 1: lambda u, v: u >= sv, 2: lambda u, v: v >= sh, 3: lambda u, v: u >= sv and v >= sh}[lay]
+    for p in _spread(4, PW - 6):                    # perimeter rows, inset 4 cells
+        riv |= {(p, 4), (p, PH - 6)}
+    for p in _spread(4, PH - 6):
+        riv |= {(4, p), (PW - 6, p)}
+    for ax, pos, a0, a1 in lines:                   # rows along the lap seams
+        if ax == "v":
+            riv |= {(pos + 4, p) for p in _spread(4, PH - 6)}
+        else:
+            riv |= {(p, pos + 4) for p in _spread(max(a0 + 4, 4), PW - 6)}
+    return lines, tone2, riv
 
 
-def _detail(m, z, kind, flip, col):
-    rz = math.pi / 2 if flip else 0.0
+def tile_grid(g, mask):
+    """32x32 palette names for the tile (rows j, columns i)."""
+    c = COLS[g["col"]]
+    PW, PH = g["pw"] * 32, g["ph"] * 32
+    lines, tone2, riv = _plate_layout(g["pw"], g["ph"], g["lay"])
+    ou, ov = g["u"] * 32, g["v"] * 32
+    cells = {(ou + i, ov + j): None for j in range(GN) for i in range(GN)}
+    open_n, open_w = not mask & 1, not mask & 8
+    out = []
+    for j in range(GN):
+        row = []
+        for i in range(GN):
+            U, V = ou + i, ov + j
+            col = c["t"][1 if tone2(U, V) else 0]
+            for ax, pos, a0, a1 in lines:
+                d, along = (U - pos, V) if ax == "v" else (V - pos, U)
+                if a0 <= along < a1:
+                    if d == 0:
+                        col = "wallK"
+                    elif d == 1:
+                        col = c["hi"]
+            if g["sn"] and not open_n:
+                if j < 2:
+                    col = "wallK"
+                elif j == 2:
+                    col = c["hi"]
+            if g["sw"] and not open_w:
+                if i < 2:
+                    col = "wallK"
+                elif i == 2:
+                    col = c["hi"]
+            row.append(col)
+        out.append(row)
+    for (pu, pv) in riv:                            # rivets: 2x2 cells, skipped where they would touch a seam
+        cs = [(pu + a, pv + b) for a in (0, 1) for b in (0, 1)]
+        if all(0 <= u - ou < GN and 0 <= v - ov < GN for u, v in cs) and all(out[v - ov][u - ou] in (c["t"][0], c["t"][1]) for u, v in cs):
+            for u, v in cs:
+                out[v - ov][u - ou] = c["hi"]
+    return out
 
-    def P(x, y):
-        return (y, x) if flip else (x, y)
 
-    def bx(x, y, dz, sx, sy, sz, color, top=None):
-        px, py = P(x, y)
-        m.box((px, py, z + dz), (sx, sy, sz), color, top=top, rz=rz, base=True)
-    if kind == "vent":
-        bx(0, 0, 0, 0.44, 0.34, 0.03, "wallK")
-        for k in (-1, 0, 1):
-            bx(0, k * 0.1, 0.03, 0.36, 0.06, 0.04, "wallD", top="wallL")
-    elif kind == "hatch":
-        bx(0, 0, 0, 0.46, 0.46, 0.03, "wallK")
-        bx(0, 0, 0.03, 0.38, 0.38, 0.03, "wallM", top="wallL")
-        bx(0, 0, 0.06, 0.16, 0.07, 0.04, COLS[col]["hi"], top=COLS[col]["hi"])
-    elif kind == "nub":
-        m.cyl((0, 0, z), 0.11, 0.05, "wallK", sides=8, top="wallD")
-        m.cyl((0, 0, z + 0.05), 0.075, 0.1, "wallM", sides=8, top="wallL")
-        m.cyl((0, 0, z + 0.15), 0.05, 0.03, "cyan", sides=8)
-    elif kind == "haz":
-        o = P(-0.3, -0.12)
-        du, dv = ((0.6, 0, 0), (0, 0.24, 0)) if not flip else ((0.24, 0, 0), (0, 0.6, 0))
-        if flip:
-            o = (-0.12, -0.3)
-        m.pattern((o[0], o[1], z + 0.012), du, dv, 19 if not flip else 8, 8 if not flip else 19,
-                  (lambda i, j: "hazY" if ((i + j) // 2) % 2 else "hazK") if not flip else
-                  (lambda i, j: "hazY" if ((i + j) // 2) % 2 else "hazK"), flip=False)
-    elif kind == "light":
-        for s, c in ((-1, "green"), (1, "blueN")):
-            bx(s * 0.22, 0, 0, 0.13, 0.13, 0.02, "wallK")
-            px, py = P(s * 0.22, 0)
-            m.cyl((px, py, z + 0.02), 0.05, 0.04, c, sides=6)
-
-
-def _tile(m, mask, col="o", sn=0, sw=0, el=0, detail=None):
+def _tile(m, mask, col="o", grid=None):
     c = COLS[col]
-    z = ZR + STEP * el
-    m.pattern((-0.5, -0.5, z), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: _cell(i, j, c, sn, sw, mask))
-    z0 = z - T
-    if sn == 2 and mask & 1:                        # visible step face: the higher plate's +y side
-        m.poly([core.G(-0.5, -0.5, z - STEP), core.G(0.5, -0.5, z - STEP), core.G(0.5, -0.5, z), core.G(-0.5, -0.5, z)], "wallD")
-    if sw == 2 and mask & 8:
-        m.poly([core.G(-0.5, -0.5, z - STEP), core.G(-0.5, 0.5, z - STEP), core.G(-0.5, 0.5, z), core.G(-0.5, -0.5, z)], "wallK")
-    if not mask & 4:                                # +y edge (lit): hull slab side
+    m.pattern((-0.5, -0.5, ZR), (1, 0, 0), (0, 1, 0), GN, GN, (lambda i, j: grid[j][i]) if grid else (lambda i, j: c["t"][0]))
+    z, z0 = ZR, ZR - T
+    if not mask & 4:                                # +y edge (lit): the plate turns down into its slab face
         m.poly([core.G(-0.5, 0.5, z0), core.G(0.5, 0.5, z0), core.G(0.5, 0.5, z), core.G(-0.5, 0.5, z)], c["fy"])
         m.poly([core.G(-0.5, 0.5, z0), core.G(0.5, 0.5, z0), core.G(0.5, 0.5, z0 + 0.035), core.G(-0.5, 0.5, z0 + 0.035)], "wallK")
     if not mask & 2:                                # +x edge (shaded)
         m.poly([core.G(0.5, -0.5, z0), core.G(0.5, 0.5, z0), core.G(0.5, 0.5, z), core.G(0.5, -0.5, z)], c["fx"])
         m.poly([core.G(0.5, -0.5, z0), core.G(0.5, 0.5, z0), core.G(0.5, 0.5, z0 + 0.035), core.G(0.5, -0.5, z0 + 0.035)], "wallK")
-    if detail and mask == 15:
-        _detail(m, z, detail[0], detail[1], col)
 
 
-def plate(mask, col="o", sn=0, sw=0, el=0, detail=None):
+def plate(mask, col="o", grid=None):
     m = core.Mesh("roof_plate", flat=True)
-    _tile(m, mask, col, sn, sw, el, detail)
+    _tile(m, mask, col, grid)
     return [m.build()]
 
 
