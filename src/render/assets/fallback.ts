@@ -1,4 +1,5 @@
 import { ROOF_H } from '../heights';
+import { DEPLOY_FRAMES } from '../deployArt';
 import type { Atlas, StaticSprite } from './loader';
 
 /** Stand-in art for an asset id the manifest does not have (yet): existing sprites, plus a tint and an integer scale. */
@@ -12,6 +13,8 @@ export interface Fallback {
   add?: number;
   /** Draw the sprite once per footprint tile (solid tiles only) instead of once at the front tile, so a stand-in fills a multi-tile footprint. */
   perTile?: boolean;
+  /** Deploy-frame stand-in: 0..1 how far out it is (drawn lower while small). */
+  rise?: number;
 }
 
 const CRATE = ['prop.crate'];
@@ -22,7 +25,7 @@ const FLOOR = ['tile.floor.a'];
  * Fallback table, keyed by the missing asset id. Swapping in real art means adding the ids to the manifest: an id
  * that exists is always used as is, and an id that is in neither the manifest nor this table simply draws nothing.
  */
-export const FALLBACK: Readonly<Record<string, Fallback>> = {
+export const FALLBACK: Record<string, Fallback> = {
   // Combat modules, one stand-in sprite per footprint tile. Weapons are floor bays (flat plates) under a roof turret.
   'module.burst_laser.bay': { ids: FLOOR, tint: 0xff9a8a, perTile: true },
   'module.mass_driver.bay': { ids: FLOOR, tint: 0xffc38a, perTile: true },
@@ -59,6 +62,25 @@ export const FALLBACK: Readonly<Record<string, Fallback>> = {
   'fx.pd_shot': { ids: ['fx.spark'], tint: 0xffffff, scale: 2 },
 };
 
+/**
+ * Placeholders for deployable roof parts: a flat cap while stowed, and the deployed stand-in rising by `rise` for the
+ * deploy frames. Stand-ins only; the real art is pre-rendered frames under the same ids.
+ */
+function deployFallbacks(): Record<string, Fallback> {
+  const out: Record<string, Fallback> = {};
+  const parts: [string, string][] = [['turret.generic', 'turret.generic']];
+  for (const stem of ['burst_laser', 'mass_driver', 'missile_launcher', 'ion_cannon', 'incendiary_launcher']) parts.push([`turret.${stem}`, 'turret.generic']);
+  for (const id of ['roof.shield_gen', 'roof.shield_gen_small', 'roof.ai_core']) parts.push([id, id]);
+  for (const [base, like] of parts) {
+    const out_ = FALLBACK[like] as Fallback;
+    const turret = base.startsWith('turret');
+    out[`${base}.stowed`] = { ids: FLOOR, tint: 0x8a94a8, lift: ROOF_H, add: 0x303844, ...(turret ? {} : { perTile: true }) };
+    for (let i = 0; i < DEPLOY_FRAMES; i++) out[`${base}.deploy.f${i}`] = { ...out_, rise: (i + 1) / (DEPLOY_FRAMES + 1) };
+  }
+  return out;
+}
+Object.assign(FALLBACK, deployFallbacks());
+
 export interface Art {
   s: StaticSprite;
   /** Multiply tint (white for real art). */
@@ -70,13 +92,15 @@ export interface Art {
   lift: number;
   add?: number;
   perTile: boolean;
+  /** 1 for anything but a deploy-frame stand-in. */
+  rise: number;
 }
 
 /** The first existing asset of `chain`, else the fallback for `key`, else undefined. */
 export function resolveArt(atlas: Atlas, chain: readonly string[], key: string = chain[chain.length - 1] ?? ''): Art | undefined {
   const real = atlas.firstOf(chain);
-  if (real) return { s: real, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false };
+  if (real) return { s: real, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 };
   const fb = FALLBACK[key];
   const s = fb && atlas.firstOf(fb.ids);
-  return fb && s ? { s, tint: fb.tint ?? 0xffffff, scale: fb.scale ?? 1, fallback: true, lift: fb.lift ?? 0, add: fb.add, perTile: !!fb.perTile } : undefined;
+  return fb && s ? { s, tint: fb.tint ?? 0xffffff, scale: fb.scale ?? 1, fallback: true, lift: fb.lift ?? 0, add: fb.add, perTile: !!fb.perTile, rise: fb.rise ?? 1 } : undefined;
 }

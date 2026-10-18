@@ -4,6 +4,7 @@ import type { Grid } from '../sim/grid';
 import { WeaponC } from '../sim/combat/components';
 import { ModuleC } from '../sim/modules/components';
 import { rotatedSize } from '../sim/modules/footprint';
+import { DEPLOY_FRAMES, RISE_PX, deployId, deployStage } from './deployArt';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
 import { createGhostFilter, setGhostZoom } from './ghost';
@@ -64,10 +65,17 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const w = world.get(id, WeaponC);
         const def = m && defs[m.def];
         if (!m || !w || !def || m.gridId !== grid.id) continue;
-        const aim = ((Math.round(w.aim) % 8) + 8) % 8;
-        const base = `turret.${turretStem(def.asset)}.d${aim}`;
-        const charged = w.charge >= 1;
-        const art = resolveArt(atlas, charged ? [`${base}.charged`, base] : [base], charged ? 'turret.generic.charged' : 'turret.generic');
+        const stage = def.deploySec === undefined ? DEPLOY_FRAMES : deployStage(world, id);
+        // Stowed: a hatch on a roofed (enemy) ship, nothing at all on the player's cutaway ship.
+        if (stage < 0 && !roofed) continue;
+        const out = stage >= DEPLOY_FRAMES;
+        const aim = out ? ((Math.round(w.aim) % 8) + 8) % 8 : 0;
+        const stem = `turret.${turretStem(def.asset)}`;
+        const base = `${stem}.d${aim}`;
+        const charged = out && w.charge >= 1;
+        const art = out
+          ? resolveArt(atlas, charged ? [`${base}.charged`, base] : [base], charged ? 'turret.generic.charged' : 'turret.generic')
+          : resolveArt(atlas, [deployId(stem, stage)]);
         if (!art) continue;
         live.add(id);
         let t = turrets.get(id);
@@ -77,13 +85,13 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const cy = m.y + (bh - 1) / 2;
         const p = iso(cx, cy);
         t.spr.texture = art.s.tex;
-        t.spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - ROOF_H));
+        t.spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - ROOF_H + (1 - art.rise) * RISE_PX));
         const lx = Math.min(grid.width - 1, Math.max(0, Math.round(cx)));
         const ly = Math.min(grid.height - 1, Math.max(0, Math.round(cy)));
         t.spr.tint = mulColor(lightTint(light[ly * grid.width + lx] as number, false, -1), art.tint);
         // The front tile of the bay, +0.93: over the roof tiles of the footprint, behind the next tile row.
         t.root.zIndex = depthKey(m.x + bw - 1, m.y + bh - 1) + 0.93;
-        if (art.fallback) {
+        if (art.fallback && out) {
           while (t.barrel.length < BARREL_AT.length) {
             const dot = new Sprite();
             t.root.addChild(dot);

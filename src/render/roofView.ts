@@ -7,6 +7,7 @@ import type { ModuleDef } from '../sim/registry';
 import { Struct } from '../sim/structure';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
+import { DEPLOY_FRAMES, RISE_PX, deployId, deployStage } from './deployArt';
 import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { createGhostFilter, setGhostZoom } from './ghost';
@@ -66,15 +67,18 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       const def = m && defs[m.def];
       if (!m || !def?.roofAsset || m.gridId !== grid.id) continue;
       const on = m.powered && m.enabled && m.hp > 0;
-      const chain = on ? [`${def.roofAsset}.active`, def.roofAsset] : [def.roofAsset];
-      const art = resolveArt(atlas, chain, on && FALLBACK_ACTIVE.has(def.roofAsset) ? chain[0] : def.roofAsset);
+      const stage = def.deploySec === undefined ? DEPLOY_FRAMES : deployStage(world, id);
+      if (stage < 0 && !visible) continue; // stowed on the player's cutaway ship: nothing, no ghost
+      const out = stage >= DEPLOY_FRAMES;
+      const chain = !out ? [deployId(def.roofAsset, stage)] : on ? [`${def.roofAsset}.active`, def.roofAsset] : [def.roofAsset];
+      const art = resolveArt(atlas, chain, out && on && FALLBACK_ACTIVE.has(def.roofAsset) ? chain[0] : out ? def.roofAsset : chain[0]);
       if (!art) continue;
       const [w, h] = rotatedSize(def, m.rot);
       const spots = art.fallback && art.perTile ? footprintTiles(def, m.x, m.y, m.rot) : [{ x: m.x + w - 1, y: m.y + h - 1 }];
       for (const t of spots) {
         const p = iso(t.x, t.y);
         const spr = new Sprite(art.s.tex);
-        spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - (art.fallback ? art.lift || ROOF_H : ROOF_H)));
+        spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - (art.fallback ? art.lift || ROOF_H : ROOF_H) + (1 - art.rise) * RISE_PX));
         spr.tint = art.tint;
         spr.zIndex = depthKey(t.x, t.y) + 0.92;
         const ghost = createGhostFilter();
@@ -140,7 +144,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       let pk = '';
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
-        if (m && m.gridId === grid.id && defs[m.def]?.roofAsset) pk += `${id}:${m.x},${m.y},${m.rot}:${m.powered && m.enabled && m.hp > 0 ? 1 : 0};`;
+        if (m && m.gridId === grid.id && defs[m.def]?.roofAsset) pk += `${id}:${m.x},${m.y},${m.rot}:${m.powered && m.enabled && m.hp > 0 ? 1 : 0}:${defs[m.def]?.deploySec === undefined ? '' : deployStage(world, id)};`;
       }
       if (pk !== partKey) {
         partKey = pk;
@@ -155,6 +159,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
     },
     setVisible(v) {
       visible = v;
+      partKey = ''; // stowed parts appear on roofed ships only: rebuild
       for (const p of partSprites) p.spr.filters = v ? [] : [p.ghost];
       for (const p of pieces) p.spr.visible = p.extra ? (p.extra.visible = v) : v;
     },
