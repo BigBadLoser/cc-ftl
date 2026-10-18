@@ -66,6 +66,10 @@ The user did not approve the first m4-assets sheets: modules were far too small.
 - **Weapons art APPROVED for now** (`opus-weapons` d629ae2: S burst laser, H mass driver, R point
   defence, bays with slim full-height cores, hazard-seam hatches). Remaining nits: rear glow ring
   reads like a muzzle at some aims; hazard seam reads dashed. Other 3 weapons not designed yet.
+- **Roof APPROVED** (`roof-art` v11 246414a, plus a v12 pass making the paint near-opaque): flat
+  0.2 slab (1.85–2.05), 4x4 modules with girders, bevelled plates, per-plate insets, C palette and
+  patch plates, livery system (10 schemes, 78 tinted masks, registry digits painted along the deck).
+  Integration: build the sprite set, port the module/livery rule to TS, add the recolour shader.
 - **Roof v8 direction (user-approved):** combine C palette + patch plates, B raised belts with
   bevelled steps and trenches (no blisters), and a LIVERY SYSTEM: several deterministic schemes per
   ship/faction (spine stripes, pinstripes, saddle bands, bow chevrons, registry block, emblem),
