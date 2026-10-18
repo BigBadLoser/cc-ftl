@@ -145,8 +145,9 @@ class Frame:
 
 
 def platform(f, length=1.9, width=0.92, h=0.1):
-    """Standard deck plate under a 1x2 module."""
-    f.box(0, 0, 0, length, width, h, "steelD", top="plateA")
+    """No slab any more: modules sit on the ship floor. The geometry that used to sit on a plate of height h is dropped
+    by h so it rests on the floor (length and width are kept for the call sites)."""
+    f.m.dz = -h
 
 
 def hazard_strip(f, u0, u1, v, z, step=0.1, w=0.05, h=0.03):

@@ -8,7 +8,7 @@ from .walls import H, WT, NT, DH, DX, lerp, PAL
 
 PW = 0.17          # post half-thickness
 PANEL_W = 0.06     # sliding panel half-thickness
-Z_HEAD = 1.0       # header bottom
+Z_HEAD = 1.8       # header bottom
 Z_SILL = 0.02
 
 

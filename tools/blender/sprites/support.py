@@ -94,7 +94,7 @@ def helm():
 def ai_core():
     """Server tower: a tall rack with drive bays blinking magenta and a data spine."""
     m = core.Mesh("ai_core")
-    m.box((0, 0, 0), (0.86, 0.86, 0.1), "steelD", top="plateA", base=True, bevel=0.015)
+    m.dz = -0.1                                                                              # no floor slab
     m.box((0, 0, 0.1), (0.7, 0.7, 1.15), "gmD", top="gm", base=True, bevel=0.015)           # tower body
     m.box((0, 0, 1.25), (0.76, 0.76, 0.06), "steelL", top="plate", base=True, bevel=0.01)    # cap
     m.box((0, 0, 0.1), (0.76, 0.76, 0.06), "steel", base=True)                                # plinth lip
@@ -154,7 +154,7 @@ def shield_gen(rot):
 def shield_gen_small():
     m = core.Mesh("shield_gen_small")
     f = Frame(m, 0, square=True)
-    f.box(0, 0, 0, 0.92, 0.92, 0.1, "steelD", top="plateA")
+    f.m.dz = -0.1                                                                       # no floor slab
     _dish(f, 0.0, 0.0, 0.32, 0.1)
     return [m.build()]
 
