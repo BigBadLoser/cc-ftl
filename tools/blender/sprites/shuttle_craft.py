@@ -308,7 +308,7 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
 
     Parked/docked: broad outer wings fold 180 degrees flat over the aft hull.
     Flight span 7.2; each swept wing has a 2.75-unit local fore-aft envelope.
-    Revision 11: mirrored nacelles and trim; the airlock is the only side exception. ramp_open is a preview pose in [0,1].
+    Revision 12: nose walls flare outward as they rise; top wider than base. ramp_open is a preview pose in [0,1].
     Height about 2.765, suggested pit 1.80, leaving about .965 above deck.
     No interior, pad, pit or bay geometry is part of this vehicle builder.
     """

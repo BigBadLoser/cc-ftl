@@ -8,8 +8,8 @@ HATCH_OUTER=.92
 RIB_DEPTH=.015
 RIB_COLOR="steelL"
 NOSE_TAPER=.12
-NOSE_LEAN=math.radians(6)
-NOSE_LEAN_SLOPE=math.tan(NOSE_LEAN)
+NOSE_OUTWARD_LEAN=math.radians(6)
+NOSE_LEAN_SLOPE=-math.tan(NOSE_OUTWARD_LEAN)
 
 
 def nose_width(u):
@@ -18,7 +18,7 @@ def nose_width(u):
 
 
 class LeaningNoseFrame(FlightFrame):
-    """Lean both nose walls inward, blending into the existing aft cabin."""
+    """Flare both nose walls outward as they rise: top wider than base."""
     def pt(self,u,v,z):
         blend=max(0,min(1,(u+.55)/1.05))
         v-=math.copysign(1,v)*NOSE_LEAN_SLOPE*(z-HATCH_Z)*blend
