@@ -48,7 +48,10 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   1.2 → ~2.2, so the roof clears crew heads. Cutaway height unchanged. Branch `walls-tall`.
 - **Engine:** the v7 bell is approved. Add real rocket plumbing (torus manifold, turbopump,
   ducts, tubes down the bell); no valve wheels on posts.
-- **Weapons:** square-barrel prototype rejected. Restarting with round barrels; concept sheet
+- **Engine and weapons art handed to Sol** (user's choice, 2026-10-18) using the prompts in this
+  session's scratchpad `sol/` (shared context + engine + weapons). All of our engine passes and
+  weapon concepts were rejected; keep them only as code reference.
+- **Weapons (history):** square-barrel prototype rejected. Restarting with round barrels; concept sheet
   with 3 directions for the user to pick.
 - **Consoles APPROVED** (branch `m4-art-consoles`, pass 5 plus pass 6 cabinet removal): helm 3x2,
   weapons 2x2, shield 3x2 with counter ending at the projector, seat centred on the monitors, and
