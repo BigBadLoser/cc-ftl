@@ -24,6 +24,19 @@ FAM_C = {
     "b": dict(top="cB1", t2="cB2", lit="cBL", shd="cBS", rl="cBR", k="cBK", fs="cBD", fe="cBE", pa="cBP", pa2="cBQ"),
 }
 PATCH = (2, 1, 0, 1)          # patched plate index per layout (variant C)
+INSET = (1, 2, 2, 0)          # inset plate index per layout (v10): never the patched plate
+DI = 2.5                      # inset depth (px at 1x)
+
+
+def inset_module(mx, my):
+    """v10: about 2 in 3 modules recess their INSET plate (hashed per module, so never a whole course)."""
+    return rl._h(mx, my, 13) % 3 != 0
+
+
+def inset_plate(layout, u, v):
+    """The INSET plate of a layout if tile (u, v) lies on it, else None (plates are tile-aligned)."""
+    p = rl.LAYOUTS[layout][INSET[layout]]
+    return p if p[0] <= u < p[0] + p[2] and p[1] <= v < p[1] + p[3] else None
 LAYOUTS_B = tuple(tuple((p[:5] + ("B",)) if p[5] == "P" and p[2] * p[3] >= 6 else p for p in lay)
                   for lay in rl.LAYOUTS)
 DZ_BLISTER = 0.16             # blister height (tiles), about 6 px
