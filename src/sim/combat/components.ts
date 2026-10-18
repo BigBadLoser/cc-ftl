@@ -78,6 +78,13 @@ export interface Weapon {
 }
 export const WeaponC = defineComponent<Weapon>('weapon');
 
+/** On point-defence modules. */
+export interface PointDefense {
+  /** Turret aim toward the shot it is engaging; same 8-direction coding as Weapon.aim. Renderer-readable. */
+  aim: number;
+}
+export const PointDefenseC = defineComponent<PointDefense>('pointDefense');
+
 /** A shot in flight, in sector coordinates (tiles). */
 export interface Projectile {
   /** WeaponDef id. */

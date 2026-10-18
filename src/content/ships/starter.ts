@@ -80,6 +80,8 @@ export const starterShip = {
     { def: 'module.light', x: 24, y: 13, rot: 0 },
     // AI room (south, middle): AI core (2x2); the door at (18, 11) stays clear.
     { def: 'module.aiCore', x: 18, y: 13, rot: 0 },
+    // Point defence (2x2) south of the core; the AI core operates it. Lane x = 17 stays clear.
+    { def: 'module.pointDefense', x: 18, y: 15, rot: 0 },
     { def: 'module.light', x: 17, y: 17, rot: 0 },
     { def: 'module.light', x: 20, y: 12, rot: 0 },
     // Cargo (south-west room): crates along the south wall (rot 2 puts the access tile north), fabricator by the

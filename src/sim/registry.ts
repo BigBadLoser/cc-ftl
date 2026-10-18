@@ -185,7 +185,9 @@ export interface ModuleDef {
   shieldGen?: { layersPerPower: number; rechargeSec: number };
   /** Engine: evasion added per unit of power (needs a pilot). */
   engine?: { evasionPerPower: number };
-  /** AI core: point defence at this tier. */
+  /** Point-defence turret: shoots down interceptable shots; needs a working AI core on the ship. */
+  pointDefense?: true;
+  /** AI core: operates the ship's point defence (and, later, other automation) at this tier. */
   aiCore?: { tier: number };
   /** Render asset id of the special roof tile drawn above this module on roofed (enemy) ships, e.g. 'roof.weapon'. Render-only. */
   roofAsset?: string;

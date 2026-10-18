@@ -83,7 +83,8 @@ FTL's decision-making with physical consequences, in a shared sector.
   - The **shield console** works unmanned at base strength; an operator speeds up recharge.
   - The **helm** pilot gives evasion and charges the FTL drive to flee. With no pilot, there is no
     evasion and no escape.
-  - The **AI core** runs **point defence** automatically. Its tier sets how much else it can
+  - The **AI core** operates the **point-defence modules** automatically (they do nothing without a
+    powered AI core whose mast is out; several modules stack). Its tier sets how much else it can
     automate later (drones, standing in for missing operators at reduced efficiency).
 - **Physical systems:**
   - **Weapons and engines** are modules that must touch the hull.
