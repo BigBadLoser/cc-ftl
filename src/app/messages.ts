@@ -13,6 +13,17 @@ const REASONS: Record<string, string> = {
   noAccess: 'Keep a walkable tile free for crew access',
   badRot: "Can't rotate that",
   badDef: 'Unknown module',
+  noPilot: 'The shuttle needs a pilot aboard',
+  notStowed: 'The shuttle is not in its bay',
+  bayDown: 'The vehicle bay is down',
+  full: 'The shuttle is full',
+  notBoardable: 'Crew can only climb in or out in the bay or at a dock',
+  airlockDown: 'That airlock is not working',
+  noShuttle: 'No shuttle in storage for this bay',
+  bayFull: 'That bay already holds a shuttle',
+  notDocked: 'The shuttle is not docked',
+  badTarget: "Can't dock there",
+  incapacitated: 'That crew member cannot move',
   badStruct: "Can't build that",
 };
 

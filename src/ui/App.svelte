@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCombat, UiCutaway, UiSnapshot, UiToolState } from './api';
+  import type { UiApi, UiCombat, UiCutaway, UiShuttles, UiSnapshot, UiToolState } from './api';
   import CombatPanel from './CombatPanel.svelte';
+  import ShuttlePanel from './ShuttlePanel.svelte';
   import DebugPanel from './DebugPanel.svelte';
   import TileInspector from './TileInspector.svelte';
   import CrewBar from './CrewBar.svelte';
@@ -29,6 +30,8 @@
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
   let combatOpen = $state(false);
   let wasInCombat = false;
+  let shuttleOpen = $state(false);
+  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], roster: [], bays: [] });
 
   let cutaway = $state<UiCutaway>('auto');
   let selMod = $state<number | null>(null);
@@ -48,7 +51,12 @@
       api.snapshot.subscribe((s) => (snap = s)),
       api.selectedCrew.subscribe((c) => (selCrew = c)),
       api.toast.subscribe((t) => (toast = t)),
-      api.selectedModule.subscribe((m) => (selMod = m)),
+      api.selectedModule.subscribe((m) => {
+        selMod = m;
+        // Selecting a vehicle bay opens the shuttle panel.
+        if (m !== null && shuttles.bays.some((b) => b.id === m)) shuttleOpen = true;
+      }),
+      api.shuttles.subscribe((v) => (shuttles = v)),
       api.tool.subscribe((t) => (tool = t)),
       api.combat.subscribe((c) => {
         combat = c;
@@ -95,6 +103,9 @@
     <OverlayPicker {api} />
   </span>
   <StatsChips {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} />
+  {#if shuttles.bays.length}
+    <button class:on={shuttleOpen} data-testid="shuttle-open" onclick={() => (shuttleOpen = !shuttleOpen)}>Shuttle</button>
+  {/if}
   {#if combat.inCombat && !combatOpen}
     <button class="fight" data-testid="combat-open" onclick={() => (combatOpen = true)}>⚔ Combat</button>
   {/if}
@@ -118,6 +129,8 @@
   <BuildModules {api} />
 {:else if selCrew !== null}
   <CrewInspector {api} onPriorities={() => (priorities = true)} />
+{:else if shuttleOpen && (selMod === null || shuttles.bays.some((b) => b.id === selMod))}
+  <ShuttlePanel {api} onClose={() => (shuttleOpen = false)} />
 {:else if selMod !== null}
   <ModuleInspector {api} />
 {:else}

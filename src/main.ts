@@ -14,7 +14,7 @@ import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
 import { createRenderer, type Renderer } from './render/scene';
 import { content } from './content';
-import { newGame, ShipC } from './sim';
+import { newGame, ShipC, VehicleC } from './sim';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
@@ -48,9 +48,10 @@ function focusFight(gridId: number | null): void {
 }
 
 /** Debug: put a raider a fair distance from the player's ship (diagonally, so a fight fits on a phone screen too). */
-function spawnRaider(): void {
+function spawnRaider(boarders = false): void {
+  const template = boarders ? 'ship.raiderBoarder' : 'ship.raider';
   const mine = shipOfGrid(1);
-  const t = content.ships['ship.raider'];
+  const t = content.ships[template];
   if (!mine || !t) return;
   const w = Math.max(...t.rows.map((r) => r.length));
   const h = t.rows.length;
@@ -58,7 +59,7 @@ function spawnRaider(): void {
   const cy = mine.y + mine.height / 2;
   const x = Math.min(sim.sector.width - w, Math.max(0, Math.round(cx + 18 - w / 2)));
   const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy + 22 - h / 2)));
-  bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.raider', x, y });
+  bridge.dispatch({ type: 'debug.spawnEnemy', template, x, y });
 }
 
 function shipOfGrid(gridId: number) {
@@ -88,11 +89,16 @@ const api: UiApi = {
   stats: bridge.stats,
   alerts: controller.alerts.list,
   combat: bridge.combat,
+  shuttles: bridge.shuttles,
+  focusShuttle: (id) => {
+    const v = sim.world.get(id, VehicleC);
+    if (v) renderer?.focusSector(v.x, v.y);
+  },
   setCombatView: (view) => renderer?.setCombatView(view),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   focusFight: (gridId) => focusFight(gridId),
-  spawnRaider: () => spawnRaider(),
+  spawnRaider: (boarders) => spawnRaider(boarders),
   overlayList,
   overlayLegend,
   dismissAlert: controller.alerts.dismiss,

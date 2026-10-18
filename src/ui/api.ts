@@ -231,6 +231,54 @@ export interface UiCombat {
   enemies: UiShipCombat[];
 }
 
+/** A crew member as the shuttle panel lists them. `boarding` is the vehicle they are walking to (0 = none). */
+export interface UiShuttleCrew {
+  id: number;
+  name: string;
+  role: string;
+  boarding: number;
+}
+
+export interface UiShuttle {
+  id: number;
+  name: string;
+  state: 'stowed' | 'flying' | 'docked';
+  hp: number;
+  maxHp: number;
+  /** Passenger seats (the pilot is extra). */
+  capacity: number;
+  pilot: UiShuttleCrew | null;
+  passengers: UiShuttleCrew[];
+  destination: 'dock' | 'bay' | null;
+  /** Name of the ship it is docked at, or null. */
+  dockShip: string | null;
+  /** Module id of its home bay. */
+  bay: number;
+  /** Crew can climb in or out here right now (stowed in the bay, or docked). */
+  boardable: boolean;
+}
+
+export interface UiShuttleAirlock {
+  id: number;
+  gridId: number;
+  ship: string;
+  working: boolean;
+  /** Another shuttle is docked or headed there. */
+  busy: boolean;
+  x: number;
+  y: number;
+}
+
+export interface UiShuttles {
+  shuttles: UiShuttle[];
+  /** Airlocks of other ships a shuttle can dock at. */
+  airlocks: UiShuttleAirlock[];
+  /** Crew on the player's ship who could climb in. */
+  roster: UiShuttleCrew[];
+  /** The player's vehicle bays (module ids) and whether each is empty. */
+  bays: { id: number; empty: boolean }[];
+}
+
 /** Where the combat overlay shows the enemy ship, in CSS px relative to the page. */
 export interface UiRect {
   x: number;
@@ -299,6 +347,9 @@ export interface UiApi {
   stats: Subscribable<UiStats>;
   alerts: Subscribable<UiAlert[]>;
   combat: Subscribable<UiCombat>;
+  shuttles: Subscribable<UiShuttles>;
+  /** Center the camera on a shuttle (any state). */
+  focusShuttle(id: number): void;
   /** Show a ship in the combat overlay rectangle (null hides it). */
   setCombatView(view: { gridId: number; rect: UiRect } | null): void;
   /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
@@ -308,7 +359,7 @@ export interface UiApi {
   /** Frame the player's ship and a hostile ship (or only the player's ship) in the camera. */
   focusFight(gridId: number | null): void;
   /** Spawn a raider about 30 tiles from the player's ship. */
-  spawnRaider(): void;
+  spawnRaider(boarders?: boolean): void;
   /** Overlay ids offered by the picker, in order. */
   overlayList: { id: string; label: string }[];
   overlayLegend(id: string): UiLegend | null;

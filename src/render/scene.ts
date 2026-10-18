@@ -15,6 +15,7 @@ import type { ModuleDefs } from './moduleView';
 import { isTargetable } from './moduleArt';
 import { ROOF_H } from './heights';
 import { liveryFor } from './roofArt';
+import { createShuttleView } from './shuttlePlaceholder';
 import { createSectorFx } from './sectorFx';
 import { createShipScene, type ShipScene } from './shipScene';
 
@@ -129,6 +130,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   stage.addChild(SL.world);
   const sectorParticles = createParticles(atlas, SL);
   const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules }, { ref: () => shipOf(refId) ?? null });
+
+  // PLACEHOLDER shuttles out in space (flying or docked), in the camera ship's frame (see shuttlePlaceholder.ts).
+  const shuttles = createShuttleView(world, {
+    layer: SL.sorted,
+    project: (sx, sy) => {
+      const r = shipOf(refId) ?? { x: 0, y: 0 };
+      return iso(sx - r.x - 0.5, sy - r.y - 0.5);
+    },
+    include: (v) => v.state !== 'stowed',
+    depth: (v) => v.x + v.y,
+  });
 
   // The combat overlay: a second scene of the shown ship, scaled into a rectangle of the canvas, drawn in the same pass.
   const miniRoot = new Container();
@@ -291,6 +303,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         L.world.zIndex = s ? s.x + s.y : 0;
         L.world.visible = ref !== undefined;
       }
+      shuttles.update(dt);
       fx.update(dt, alpha);
       sectorParticles.update(dt);
       SL.setScale(cam.scale);
@@ -417,6 +430,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return { moduleId: best };
     },
     dispose() {
+      shuttles.dispose();
       fx.dispose();
       sectorParticles.dispose();
       miniScene?.dispose();
