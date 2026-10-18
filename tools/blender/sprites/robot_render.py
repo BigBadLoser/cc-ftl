@@ -15,7 +15,7 @@ from . import robots
 
 CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("charge", 4, 3, True), ("wreck", 1, 1, False)]
 SPECIES = {"worker": "robot", "repair": "robot", "security": "robot_heavy"}
-W, H, ORIGIN = hr.W, hr.H, hr.ORIGIN
+W, H, ORIGIN = 132, 124, (66, 84)       # roomier than the humans' canvas: the wrecks lie spread over the floor
 TAU = math.tau
 
 
@@ -105,7 +105,7 @@ def _biped(rig, clip, i):
         r("arm_L", pitch=10, roll=-35)
         r("elbow_L", pitch=-50)
         util(-35, 40)
-        rig.detach("torso", (0.22, -0.62, 0.0), (-84, 12, 40))    # split at the waist: the upper body lies apart, behind the legs
+        rig.detach("torso", (0.15, -0.46, 0.0), (-84, 12, 40))    # split at the waist: the upper body lies apart, behind the legs
         rig.ground_attached()
         rig.drop("torso")
         return
@@ -142,7 +142,7 @@ def _drone(rig, clip, i):
         r("body", pitch=20, roll=-72)
         r("arm_R", pitch=-30, roll=20)
         r("elbow_R", pitch=50)
-        rig.detach("arm_L", (0.45, 0.35, 0.0), (0, 85, 60))
+        rig.detach("arm_L", (0.32, 0.24, 0.0), (0, 85, 60))
         rig.ground_attached()
         rig.drop("arm_L")
 
