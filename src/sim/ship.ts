@@ -3,6 +3,7 @@ import { Grid } from './grid';
 import { storageAdd } from './items/storage';
 import { spawnModule } from './modules/spawn';
 import type { Sim } from './sim';
+import { spawnVehicle } from './vehicles/lifecycle';
 import { SHIP_FIELDS, Struct, writeStruct } from './structure';
 import { NORMAL_CO2, NORMAL_O2, NORMAL_TEMP, SPACE_TEMP } from './tuning';
 
@@ -45,5 +46,6 @@ export function spawnTemplateModules(sim: Sim, gridId: number, t: ShipTemplate):
   for (const m of t.modules ?? []) {
     const id = spawnModule(sim, gridId, m.def, m.x, m.y, m.rot);
     for (const q of m.stock ?? []) storageAdd(sim, id, q.item, q.count);
+    if (m.vehicle) spawnVehicle(sim, m.vehicle, id);
   }
 }

@@ -1,5 +1,7 @@
 import { CrewC, DeadC, PositionC } from '../crew/components';
+import { AirlockC } from '../portals/components';
 import type { Sim } from '../sim';
+import type { Grid } from '../grid';
 import { Struct } from '../structure';
 import { DOOR_CLOSE_PER_TICK } from '../tuning';
 
@@ -23,6 +25,7 @@ export function doorsSystem(sim: Sim): void {
     }
     for (let i = 0; i < struct.length; i++) {
       const cur = door[i] as number;
+      if (struct[i] === Struct.Door && isAirlockDoor(sim, grid, i)) continue; // the airlock system owns these
       let next = cur;
       if (struct[i] !== Struct.Door) next = 0;
       else if (used.has(i)) next = 255;
@@ -33,4 +36,10 @@ export function doorsSystem(sim: Sim): void {
       }
     }
   }
+}
+
+function isAirlockDoor(sim: Sim, grid: Grid, i: number): boolean {
+  if (!grid.has('module')) return false;
+  const id = grid.raw('module')[i] as number;
+  return id !== 0 && sim.world.has(id, AirlockC);
 }

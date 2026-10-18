@@ -68,6 +68,7 @@ const HAND: readonly (readonly [number, number])[] = [[7, 3], [0, 5], [-7, 3], [
 const HAND_Y = -19;
 /** Seated operator direction per console rotation (faces the desk: r0 -y, r1 +x, r2 +y, r3 -x; consoles.py SEAT_DIR). */
 const SEAT_DIR = [6, 0, 2, 4];
+/** A robot docked in a bay cradle faces away from the tower (robot_bay.py: r0 6, r1 0, r2 2, r3 4): same table. */
 
 export function createCrewView(world: World, atlas: Atlas, L: Layers, host: CrewViewHost): CrewView {
   const slots = new Map<number, Slot>();
@@ -197,8 +198,9 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const onOpen = !!at && openTilesOf(at.def, at.m.x, at.m.y, at.m.rot).some((t) => t.x === mx && t.y === my);
         const chair = at && at.def.console ? accessTile(at.def, at.m.x, at.m.y, at.m.rot) : null;
         const sitting = !!chair && chair.x === mx && chair.y === my && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips.sit_idle);
-        const clipName = hurtLying ? 'sleep' : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : clipFor(crew.activity, speed > 0.3);
-        const dir = sitting && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
+        const clipName = hurtLying ? (s.parts.some((q) => q.layer.def.clips.wreck) ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : clipFor(crew.activity, speed > 0.3);
+        const docked = crew.activity === 'charging' && !!at?.def.robotBay && !hurtLying;
+        const dir = (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
         s.shadow.visible = !sitting;
         if (clipName !== s.clip) {
           s.clip = clipName;

@@ -25,6 +25,11 @@ export const PositionC = defineComponent<Position>('position');
 /** Remaining path (excluding the current tile), consumed by the movement system. */
 export interface Path {
   steps: { x: number; y: number }[];
+  /**
+   * Cross-grid journeys: when `steps` run out the crew member crosses `then[0].portal` and walks `then[0].steps` on the
+   * far grid, and so on (see portals/route.ts and the portal system). Absent or empty = a single-grid path.
+   */
+  then?: { portal: number; steps: { x: number; y: number }[] }[];
 }
 export const PathC = defineComponent<Path>('path');
 
@@ -42,13 +47,14 @@ export const WORK_CATEGORIES = [
 export type WorkCategory = (typeof WORK_CATEGORIES)[number];
 
 /** What a crew member is currently doing, shown in UI and used by render for animation. */
-export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead';
+/** 'inert': a robot shut down (no live AI core) or stunned. 'charging': a robot in its bay. */
+export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead' | 'inert' | 'charging';
 
 export interface Crew {
   name: string;
   /** Role content id, e.g. 'role.engineer'. Sets default priorities. */
   role: string;
-  /** Species content id (only 'species.human' in M2). */
+  /** Species content id (e.g. 'species.human', 'species.robot'). */
   species: string;
   /** Cosmetic seed for the parametric model generator (hair, face, palette). */
   appearanceSeed: number;
@@ -63,13 +69,17 @@ export const PrioritiesC = defineComponent<Priorities>('priorities');
 /** Needs on a 0..100 scale where 100 = fully satisfied. Only rest in M2. */
 export interface Needs {
   rest: number;
+  /** Battery 0..100 for species with SpeciesDef.charge (robots); absent otherwise. */
+  charge?: number;
 }
 export const NeedsC = defineComponent<Needs>('needs');
 
 /** Present while the player controls this crew member directly. */
 export interface Drafted {
-  /** Ordered destination, if any. */
-  target: { x: number; y: number } | null;
+  /** Ordered destination, if any. `gridId` absent = the grid the crew member was on when ordered. */
+  target: { x: number; y: number; gridId?: number } | null;
+  /** The target the current route was planned for (so a changed target is noticed). */
+  planned?: { x: number; y: number; gridId: number };
 }
 export const DraftedC = defineComponent<Drafted>('drafted');
 
@@ -114,13 +124,19 @@ export interface Job {
   warnedAt?: number;
   /** For 'haul' jobs: what moves where. */
   haul?: HaulData;
+  /** For 'assemble' jobs: the robot role being built. */
+  assemble?: { role: string };
   /** For 'craft' jobs: the recipe being made. */
   craft?: { recipe: string };
 }
 export const JobC = defineComponent<Job>('job');
 
 export type JobKind =
-  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'operate';
+  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'operate'
+  /** mend: repair a damaged robot (`target`); salvage: strip a robot wreck (`target`); hack: take over an AI core (`target`). */
+  | 'mend' | 'salvage' | 'hack'
+  /** assemble: build a robot of `assemble.role` in the robot bay `target`. */
+  | 'assemble';
 
 /** Hit points of a crew member. At 0 they are downed (see DownedC). */
 export interface Health {

@@ -186,7 +186,8 @@ palette.json    the single palette, read by Blender scripts and the game
   **committed**, because Cloudflare's build doesn't run Blender.
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
-  be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `env` (props,
+  be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
+  crew, see below), `robot_bay`, `env` (props,
   economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks) and `sol` (the engine, AI core and shield packs, rendered by
   their own scripts in `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
@@ -205,6 +206,29 @@ palette.json    the single palette, read by Blender scripts and the game
   only in the glow pass.
 - **Crew:** about 60 px tall at 1x, 8 directions (no mirroring, since characters are asymmetric),
   clips at fixed frame counts (idle 4, walk 8, work 6, and more as needed).
+- **Robot crew** (`sprites/robots.py`, `robot_kit.py`, `robot_render.py`): rigid parts on a joint rig, not skinned.
+  - One body layer per type, in the crew layer format: `crew.robot.body.worker`, `crew.robot.body.repair` (hover
+    drone) and `crew.robot_heavy.body.security`.
+  - Clips are idle 4, walk 8, work 6, charge 4 (head sunk into its socket, charge cells filling) and wreck 1
+    (split at the waist).
+  - `team.cloth` is the faction shell and `team.accent` the seam; the eye and charge cells glow.
+  - Look previews: `ROBOT_QUICK`, `ROBOT_REST` and `ROBOT_ANIM` builds, composited by `review/robots_preview.py`.
+- **Robot bay** (`sprites/robot_bay.py`, family `robot_bay`): 1x2, in the robots' look (light shells over a dark frame,
+  the status light as a single eye).
+  - The cradle is the footprint's rotated (0, 0) tile (the sim's `rotateOffset`), and the tower is the rotated (0, 1)
+    tile. The tower tile should be solid and the cradle walkable.
+  - Sprites per rotation r:
+    - `module.robot_bay.r<r>`: empty.
+    - `.charging`: a walker docks.
+    - `.charging.drone`: clamp out; the drone hangs from it.
+    - `.assembling.<worker|repair|security>.f0..f7`: an 8-frame assembly loop at 8 fps (yellow tool arms riding
+      carriages over a part-built robot).
+  - Each charging state has a `.front` overlay. Layer like a console: bay at K, docked robot at K + 0.02, overlay at
+    K + 0.03.
+  - The docked robot faces away from the tower (r0: dir 6, r1: 0, r2: 2, r3: 4) and plays its `charge` clip.
+  - Unpowered: glow off. Charging: pulse the glow in the renderer (about 0.55..1 over 1.6 s).
+  - Welding sparks: fx particles at the welder tip.
+  - Previews: `review/robot_bay_preview.py` (add `anim` for an MP4) and `review/robot_bay_shapes.py`.
 - **Conventions:**
   - The anchor is the feet or front footprint point in each frame's JSON.
   - Material names carry meaning: `emissive.*` goes to the glow sheet, and `team.*` renders as
@@ -262,3 +286,24 @@ Each milestone ends with something playable or watchable in the browser.
 - Throwaway visual tests are published as private claude.ai pages so the user can check them on any
   device.
 - Spikes so far: voxel deck (environment, lighting, power-off) and crew lineup (style B chosen).
+
+## Vehicles (shuttles), `src/sim/vehicles/`
+
+- A shuttle is an **entity** (`VehicleC`), never a grid. States: `stowed` (in its home bay), `flying` (sector x, y), `docked` (at an
+  airlock's outer door). Crew aboard (`AboardC`) have no Position/Path: hidden, on no grid.
+- `module.vehicle_bay` (4x5 interior pad, `vehicleBay: { class: 'shuttle' }`) holds one vehicle; later 3x3 `pod` bays and pods
+  (mining, construction) reuse the same `class` match. Shuttles are crafted as `item.shuttle` and put in an empty bay with
+  `vehicle.assign`.
+- Commands: `vehicle.assign/embark/disembark/launch/dock/undock/return`. Embark walks the crew member (drafted) to the boarding tile
+  (bay access tile, or the docked airlock's inside tile) and boards on arrival. The first aboard is the pilot; a launch needs one.
+  Disembark without a crew id lets passengers off and keeps the pilot aboard.
+- Docking is vehicle state, not a portal (a shuttle has no tiles): the airlock must be working; disembarking puts crew on the
+  airlock's inside tile. Boarders of another faction are drafted so they stand where they land.
+- Flight: straight line at `VehicleDef.speed` x (1 + SKILL_STEP x pilot's `piloting`).
+- Combat: any weapon can target a shuttle that is flying or docked (`combat.setTarget` with `targetVehicle`); shots home on it,
+  its `evasion` rolls, then it takes the weapon's total `moduleDamage` (ship shields do not cover it). Point defence covers its home
+  ship's shuttles against missiles within `VEHICLE_PD_RANGE`, and shoots hostile shuttles that are in range or docked at its ship.
+  Destroyed in flight: everyone aboard dies. Destroyed docked: they land on the airlock's inside tile downed (rescuable). A stowed
+  shuttle is lost (crew die) if its bay is destroyed.
+- Enemy boarding: `ShipTemplate.boarding` (doctrine flag -> `BoarderC`). Off for `ship.raider` (balance scenarios stay comparable);
+  on for `ship.raiderBoarder`. See `systems/boardingAi.ts`.

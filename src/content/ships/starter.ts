@@ -92,9 +92,14 @@ export const starterShip = {
       stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }],
     },
     { def: 'module.storage', x: 19, y: 17, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 8 }] },
-    { def: 'module.storage', x: 18, y: 17, rot: 2 },
+    { def: 'module.storage', x: 18, y: 17, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }] },
     { def: 'module.light', x: 15, y: 12, rot: 0 },
-    { def: 'module.light', x: 15, y: 17, rot: 0 },
+    { def: 'module.light', x: 14, y: 12, rot: 0 },
+    { def: 'module.light', x: 20, y: 15, rot: 0 },
+    // Shuttle bay (pad x 14..17, y 13..17, boarding tile (15, 17)) with the ship's shuttle.
+    { def: 'module.vehicle_bay', x: 14, y: 13, rot: 0, vehicle: 'vehicle.shuttle' },
+    // Airlock on the west hull, corridor row y = 9 (outer door (1, 9), inside tile (5, 9)).
+    { def: 'module.airlock', x: 1, y: 9, rot: 3 },
   ],
 } satisfies ShipTemplate;
 

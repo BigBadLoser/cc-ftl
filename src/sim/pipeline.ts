@@ -1,4 +1,6 @@
 import type { Sim } from './sim';
+import { airlockSystem } from './systems/airlock';
+import { portalSystem } from './systems/portals';
 import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
@@ -9,6 +11,8 @@ import { decideSystem } from './systems/decide';
 import { deploySystem } from './systems/deploy';
 import { doorsSystem } from './systems/doors';
 import { draftedSystem } from './systems/drafted';
+import { crewCombatSystem } from './systems/crewCombat';
+import { equipSystem } from './systems/equip';
 import { enemyAiSystem } from './systems/enemyAi';
 import { firingSystem } from './systems/firing';
 import { helmSystem } from './systems/helm';
@@ -36,7 +40,14 @@ import { supplyJobsSystem } from './systems/supplyJobs';
 import { temperatureSystem } from './systems/temperature';
 import { turretSystem } from './systems/turrets';
 import { vitalsSystem } from './systems/vitals';
+import { robotsSystem } from './systems/robots';
+import { fabricatorSystem } from './systems/fabricators';
+import { robotBaySystem } from './systems/robotBays';
 import { workSystem } from './systems/work';
+import { vehicleSystem } from './systems/vehicles';
+import { boardingAiSystem } from './systems/boardingAi';
+import { captureSystem } from './systems/capture';
+import { cargoJobsSystem } from './systems/cargoJobs';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
 export type System = (sim: Sim) => void;
@@ -51,10 +62,18 @@ export const pipeline: readonly System[] = [
   roomsSystem,
   // Power before modules: modules only act when the power system marked them powered this tick.
   powerSystem,
+  // Robot control after power: AI cores are live only while powered this tick; stuns run out.
+  robotsSystem,
+  // Fabricators after robot control (same live-core rule); new robots act from the next systems on.
+  fabricatorSystem,
+  // Robot bays charge and repair the robots settled in their cradles (power is fresh; needs drains later this tick).
+  robotBaySystem,
   // Module effects (life support o2/co2, reactor heat) write into the gas and temperature fields.
   modulesSystem,
   // Doors before atmosphere: crew-opened doors let gas through this very tick.
   doorsSystem,
+  // Airlock doors and chamber air, right after the doors system (which skips them) and before diffusion.
+  airlockSystem,
   // Gas diffusion runs on the doors and module output of this tick.
   atmosphereSystem,
   // Fire reads the settled air (O2) and writes its o2/co2/smoke/heat back for next tick.
@@ -80,15 +99,25 @@ export const pipeline: readonly System[] = [
   haulCleanupSystem,
   craftJobsSystem,
   supplyJobsSystem,
+  // Shuttle cargo hauls before the floor planner, so salvage on a prize goes to the shuttle, not nowhere.
+  cargoJobsSystem,
   haulJobsSystem,
   // Needs before decisions, so a crew member who just got tired sleeps this tick.
   needsSystem,
   // Decide before drafted/movement: new paths are walked the same tick.
+  // Weapon fetching before decide: crew on an equip order must not be handed a job this tick.
+  equipSystem,
   decideSystem,
   draftedSystem,
+  // Crew combat after decisions: it overrides paths of crew who fight or flee, before movement walks them.
+  crewCombatSystem,
   // Movement before carry (carried crew copy their carrier's fresh position) and work.
   movementSystem,
+  // Portal crossings after movement: crew who just reached a portal end start or finish a traversal.
+  portalSystem,
   carrySystem,
+  // Vehicles after crew movement: embarking crew board on arrival, shuttles fly before this tick's shots are aimed.
+  vehicleSystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.
   workSystem,
   // --- Combat (see each system's notes). State first: it decides whether consoles are needed next tick.
@@ -102,6 +131,8 @@ export const pipeline: readonly System[] = [
   helmSystem,
   // The enemy AI issues commands (applied next tick), then targets are validated.
   enemyAiSystem,
+  // The boarding doctrine issues vehicle commands (applied next tick).
+  boardingAiSystem,
   targetingSystem,
   // Charge, then fire: a weapon that reaches full charge fires the same tick.
   weaponChargeSystem,
@@ -112,6 +143,8 @@ export const pipeline: readonly System[] = [
   projectileSystem,
   pointDefenceSystem,
   impactSystem,
-  // Ship state last: it reads the damage done this tick.
+  // Ship state: it reads the damage done this tick.
   shipStateSystem,
+  // Capture last: it reads this tick's crew states (downed, surrendered, positions) and may end combat for the next.
+  captureSystem,
 ];

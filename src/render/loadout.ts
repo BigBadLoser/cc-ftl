@@ -7,7 +7,12 @@ import type { Crew } from '../sim/crew/components';
  * Ids that the manifest lacks are skipped, so partial asset sets still render.
  */
 export function crewLoadout(atlas: Atlas, crew: Crew): LayerSprite[] {
-  const sp = crew.species.replace(/^species\./, '');
+  const own = crew.species.replace(/^species\./, '');
+  // Robots wear a single body layer per type (worker, repair, security), built from the role id.
+  const bot = atlas.layer(`crew.${own}.body.${crew.role.replace(/^role\.robot_/, '')}`);
+  if (bot && bot.def.species === own) return [bot];
+  // Species without art yet borrow the human layers as a placeholder until their sheets exist.
+  const sp = atlas.layer(`crew.${own}.body`) ? own : 'human';
   const p = `crew.${sp}.`;
   const engineer = crew.role === 'role.engineer';
   const hair = atlas.ids(`${p}hair.`);
@@ -32,6 +37,7 @@ export function crewLoadout(atlas: Atlas, crew: Crew): LayerSprite[] {
 /** Clip name for a sim activity. */
 export function clipFor(activity: string, moving: boolean): string {
   if (activity === 'sleeping') return 'sleep';
+  if (activity === 'charging') return 'charge';
   if (activity === 'walking' || moving) return 'walk';
   return activity === 'working' ? 'work' : 'idle';
 }

@@ -15,7 +15,7 @@ export function shieldSystem(sim: Sim): void {
     const ship = sim.world.get(id, ShipC);
     const s = sim.world.get(id, CombatC)?.shield;
     if (!ship || !s) continue;
-    s.max = ship.state === 'wreck' || ship.state === 'fled' ? 0 : shieldCapacity(sim, ship.gridId, true);
+    s.max = ship.state === 'wreck' || ship.state === 'fled' || ship.state === 'prize' ? 0 : shieldCapacity(sim, ship.gridId, true);
     if (s.layers > s.max) s.layers = s.max;
     if (s.layers >= s.max) {
       s.timer = 0;

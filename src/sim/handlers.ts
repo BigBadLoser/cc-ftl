@@ -1,9 +1,14 @@
 import { MarkerC } from './components';
 import type { Command } from './commands';
+import { captureHandlers } from './capture/handlers';
 import { combatHandlers } from './combat/handlers';
 import { crewHandlers } from './crew/handlers';
+import { fightHandlers } from './fight/handlers';
 import { itemHandlers } from './items/handlers';
 import { moduleHandlers } from './modules/handlers';
+import { portalHandlers } from './portals/handlers';
+import { robotHandlers } from './robots/handlers';
+import { vehicleHandlers } from './vehicles/handlers';
 import { FIRE_START_INTENSITY } from './tuning';
 import { Struct, writeStruct } from './structure';
 import type { Sim } from './sim';
@@ -13,9 +18,14 @@ type Handler<T extends Command['type']> = (sim: Sim, cmd: Extract<Command, { typ
 /** One handler per command type. The compiler requires an entry for every Command variant. */
 export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...crewHandlers,
+  ...fightHandlers,
   ...combatHandlers,
+  ...captureHandlers,
   ...moduleHandlers,
   ...itemHandlers,
+  ...portalHandlers,
+  ...vehicleHandlers,
+  ...robotHandlers,
   noop: () => {},
   'debug.spawnMarker': (sim, cmd) => {
     const entity = sim.world.createEntity();

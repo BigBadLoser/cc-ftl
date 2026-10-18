@@ -1,10 +1,12 @@
 import { ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiCombat, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
-import { buildCrewList } from './crewSnapshot';
+import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
+import { buildPrizes } from './prizeSnapshot';
+import { buildShuttles } from './shuttleSnapshot';
 import { createStore, type Readable } from './store';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
@@ -45,12 +47,15 @@ export interface Bridge {
   snapshot: Readable<Snapshot>;
   inspect: Readable<InspectSnapshot | null>;
   crew: Readable<UiCrew[]>;
+  hostiles: Readable<UiCrew[]>;
   modules: Readable<UiModule[]>;
   stats: Readable<UiStats>;
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
   fabs: Readable<UiFab[]>;
   combat: Readable<UiCombat>;
+  shuttles: Readable<UiShuttles>;
+  prizes: Readable<UiPrize[]>;
   setSelected(tile: TileRef | null): void;
   setHovered(tile: TileRef | null): void;
   dispatch(cmd: Command): void;
@@ -77,12 +82,18 @@ export function createBridge(sim: Sim): Bridge {
   });
   const inspect = createStore<InspectSnapshot | null>(null);
   const crew = createStore<UiCrew[]>([]);
+  const hostiles = createStore<UiCrew[]>([]);
+  let lastHostiles = '';
   const modules = createStore<UiModule[]>([]);
   const stats = createStore<UiStats>({ supply: 0, demand: 0, o2: null });
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
+  const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], roster: [], bays: [] });
+  const prizes = createStore<UiPrize[]>([]);
+  let lastPrizes = '';
+  let lastShuttles = '';
   let lastCombat = '';
   let combatFrame = 0;
   const lastLog = ['', '', ''];
@@ -118,11 +129,17 @@ export function createBridge(sim: Sim): Bridge {
     inspect.set(snap);
   };
   const refreshCrew = () => {
-    const list = buildCrewList(sim);
-    const key = JSON.stringify(list);
-    if (key === lastCrew) return;
-    lastCrew = key;
-    crew.set(list);
+    const lists = buildCrewLists(sim);
+    const key = JSON.stringify(lists.crew);
+    if (key !== lastCrew) {
+      lastCrew = key;
+      crew.set(lists.crew);
+    }
+    const hk = JSON.stringify(lists.hostiles);
+    if (hk !== lastHostiles) {
+      lastHostiles = hk;
+      hostiles.set(lists.hostiles);
+    }
   };
   const refreshShip = () => {
     if (frame++ % 4) return;
@@ -154,6 +171,22 @@ export function createBridge(sim: Sim): Bridge {
     lastCombat = key;
     combat.set(snap);
   };
+  const refreshShuttles = () => {
+    if (combatFrame % 3) return;
+    const snap = buildShuttles(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastShuttles) return;
+    lastShuttles = key;
+    shuttles.set(snap);
+  };
+  const refreshPrizes = () => {
+    if (combatFrame % 3) return;
+    const snap = buildPrizes(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastPrizes) return;
+    lastPrizes = key;
+    prizes.set(snap);
+  };
   let loop: Loop | undefined;
   let lastSpeed: Speed = 1;
 
@@ -167,12 +200,15 @@ export function createBridge(sim: Sim): Bridge {
     snapshot: store,
     inspect,
     crew,
+    hostiles,
     modules,
     stats,
     stock,
     storages,
     fabs,
     combat,
+    shuttles,
+    prizes,
     setSelected(t) {
       selected = t;
       refreshInspect();
@@ -192,6 +228,8 @@ export function createBridge(sim: Sim): Bridge {
       refreshInspect();
       refreshCrew();
       refreshShip();
+      refreshShuttles();
+      refreshPrizes();
       refreshCombat();
     },
   };

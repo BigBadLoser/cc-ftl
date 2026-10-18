@@ -15,6 +15,12 @@ import type { ModuleDefs } from './moduleView';
 import { isTargetable } from './moduleArt';
 import { ROOF_H } from './heights';
 import { liveryFor } from './roofArt';
+import { createShuttleView } from './shuttlePlaceholder';
+import { createFightFx } from './fightFx';
+import { createCrewMarks } from './crewMarks';
+import { pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { AllegianceC } from '../sim/fight/components';
 import { createSectorFx } from './sectorFx';
 import { createShipScene, type ShipScene } from './shipScene';
 
@@ -70,6 +76,10 @@ export interface Renderer {
   pickCrew(screenX: number, screenY: number): number | null;
   /** Module entity under a canvas-relative position (its sprite bounds), or null. */
   pickModule(screenX: number, screenY: number): number | null;
+  /** The ship tile (any ship in the sector) under a canvas-relative position, or null. */
+  pickTileAny(screenX: number, screenY: number): { gridId: number; x: number; y: number } | null;
+  /** Canvas-relative CSS px of a tile's centre on any ship. */
+  screenOf(gridId: number, x: number, y: number): { x: number; y: number };
   /** Draw a ring under this crew member (null clears). */
   setSelectedCrew(id: number | null): void;
   /** Sim events of the last frame, for combat fx. */
@@ -130,6 +140,22 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const sectorParticles = createParticles(atlas, SL);
   const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules }, { ref: () => shipOf(refId) ?? null });
 
+  // PLACEHOLDER shuttles out in space (flying or docked), in the camera ship's frame (see shuttlePlaceholder.ts).
+  const shuttles = createShuttleView(world, {
+    layer: SL.sorted,
+    project: (sx, sy) => {
+      const r = shipOf(refId) ?? { x: 0, y: 0 };
+      return iso(sx - r.x - 0.5, sy - r.y - 0.5);
+    },
+    include: (v) => v.state !== 'stowed',
+    depth: (v) => v.x + v.y,
+  });
+
+  const pickHost = (): PickHost => ({ scenes, cam, ship: shipOf, refId });
+  // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
+  const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ref: () => shipOf(refId) ?? null, ship: shipOf });
+  const crewMarks = createCrewMarks(world, SL.ui, { ref: () => shipOf(refId) ?? null, ship: shipOf, visible: (id) => scenes.has(id) && !scenes.get(id)?.isRoofed() });
+
   // The combat overlay: a second scene of the shown ship, scaled into a rectangle of the canvas, drawn in the same pass.
   const miniRoot = new Container();
   const miniBg = new Sprite(Texture.WHITE);
@@ -173,7 +199,14 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   /** A ship's roof livery; the debug URL parameter `?bow=east|west` forces the end the bow motifs take. */
   const bowParam = new URLSearchParams(window.location.search).get('bow');
   const shipLivery = (s: Ship) => ({ ...liveryFor(s.faction, s.name), ...(bowParam ? { bowWest: bowParam === 'west' } : {}) });
-  const wantsRoof = (s: Ship) => roofEnemies && s.faction === 'hostile' && s.state !== 'wreck';
+  /** True while any of the player's crew stand on this grid (boarders): its interior is shown so they can be ordered about. */
+  const boarded = (gridId: number) => {
+    for (const id of world.query(CrewC, PositionC)) {
+      if (world.get(id, PositionC)?.gridId === gridId && world.get(id, AllegianceC)?.faction === 'player') return true;
+    }
+    return false;
+  };
+  const wantsRoof = (s: Ship) => roofEnemies && s.faction === 'hostile' && s.state !== 'wreck' && !boarded(s.gridId);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
     const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: shipLivery(s) });
@@ -183,8 +216,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       sc.view.setSelection(selection);
       sc.view.setHover(hover);
       sc.view.setPreview(preview, previewValid);
-      sc.setSelectedCrew(selectedCrew);
     }
+    sc.setSelectedCrew(selectedCrew);
     stage.addChild(sc.layers.world);
     scenes.set(grid.id, sc);
     return sc;
@@ -291,6 +324,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         L.world.zIndex = s ? s.x + s.y : 0;
         L.world.visible = ref !== undefined;
       }
+      shuttles.update(dt);
+      fightFx.update(dt);
+      crewMarks.update();
       fx.update(dt, alpha);
       sectorParticles.update(dt);
       SL.setScale(cam.scale);
@@ -372,19 +408,21 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       const t = tileAt(a.x, a.y);
       return grid.inBounds(t.x, t.y) ? t : null;
     },
-    pickCrew(sx, sy) {
-      const a = cam.toArt(sx, sy);
-      return scenes.get(refId)?.pickCrew(a.x, a.y) ?? null;
-    },
+    pickCrew: (sx, sy) => pickCrewAcross(pickHost(), sx, sy),
+    pickTileAny: (sx, sy) => pickTileAcross(pickHost(), sx, sy),
+    screenOf: (gridId, x, y) => screenOfTile(pickHost(), ratio(), gridId, x, y),
     pickModule(sx, sy) {
       const a = cam.toArt(sx, sy);
       return scenes.get(refId)?.pickModule(a.x, a.y) ?? null;
     },
     setSelectedCrew(id) {
       selectedCrew = id;
-      scenes.get(refId)?.setSelectedCrew(id);
+      for (const sc of scenes.values()) sc.setSelectedCrew(id);
     },
-    onEvents: (events) => fx.onEvents(events),
+    onEvents: (events) => {
+      fx.onEvents(events);
+      fightFx.onEvents(events);
+    },
     setCombatView(v) {
       mini = v;
       if (!v) miniGeom = null;
@@ -417,6 +455,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return { moduleId: best };
     },
     dispose() {
+      shuttles.dispose();
+      fightFx.dispose();
+      crewMarks.dispose();
       fx.dispose();
       sectorParticles.dispose();
       miniScene?.dispose();

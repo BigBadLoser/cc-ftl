@@ -2,6 +2,7 @@ import { findFreeBed } from '../crew/beds';
 import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components';
 import { origin, releaseAssignment } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
+import { keepRobotJob, robotJobs } from '../robots/jobs';
 import type { Sim } from '../sim';
 
 /** Work value for jobs that finish by condition (fire out, hp full, patient delivered), not by progress. */
@@ -21,7 +22,8 @@ function drop(sim: Sim, jobId: number, job: Job): void {
  * Maintains the jobs the colony creates for itself, so crew react to emergencies without orders:
  *  - extinguish (firefighting): one per burning tile, removed once the fire is out;
  *  - repair (repair): one per damaged module, removed at full hp or when the module is gone;
- *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists.
+ *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists;
+ *  - robots (robots/jobs): mend damaged robots, salvage wrecks; ordered hacks are dropped once their hacker lets go.
  * Jobs are keyed by (kind, tile) or (kind, target) so none is duplicated.
  */
 export function autoJobsSystem(sim: Sim): void {
@@ -31,7 +33,7 @@ export function autoJobsSystem(sim: Sim): void {
     const keep = job.kind === 'extinguish' ? keepExtinguish(sim, job)
       : job.kind === 'repair' ? keepRepair(sim, job)
       : job.kind === 'rescue' ? keepRescue(sim, job)
-      : null;
+      : keepRobotJob(sim, jobId, job);
     if (keep === null) continue;
     if (!keep) drop(sim, jobId, job);
     else seen.add(jobKey(job));
@@ -62,6 +64,7 @@ export function autoJobsSystem(sim: Sim): void {
     if (!downed.bed && !findFreeBed(sim, pos.gridId, origin(pos))) continue; // nowhere to take them
     addJob(sim, { category: 'medical', kind: 'rescue', gridId: pos.gridId, x: pos.x, y: pos.y, target: id, bed: downed.bed });
   }
+  robotJobs(sim, seen, (job) => addJob(sim, job));
 }
 
 function jobKey(job: Job): string {

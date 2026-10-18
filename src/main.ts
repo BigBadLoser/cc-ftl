@@ -12,9 +12,10 @@ import { createErrorLog } from './app/errors';
 import { attachInput } from './app/input';
 import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
+import { installDebugHook } from './app/debugHook';
 import { createRenderer, type Renderer } from './render/scene';
 import { content } from './content';
-import { newGame, ShipC } from './sim';
+import { newGame, ShipC, VehicleC } from './sim';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
@@ -27,6 +28,7 @@ const sim = newGame(seed, content);
 const bridge = createBridge(sim);
 const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
+let hook: { onEvents(types: readonly string[]): void } | undefined;
 
 const itemIcons = createStore<Record<string, UiIcon>>({});
 loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e: unknown) => errorLog.push(e));
@@ -37,6 +39,7 @@ const loop = createLoop({
   onEvents: (events) => {
     controller.onEvents(events);
     renderer?.onEvents(events);
+    hook?.onEvents(events.map((e) => e.type));
   },
   onFrame: (stats) => bridge.update(stats, renderer?.info()),
 });
@@ -48,9 +51,10 @@ function focusFight(gridId: number | null): void {
 }
 
 /** Debug: put a raider a fair distance from the player's ship (diagonally, so a fight fits on a phone screen too). */
-function spawnRaider(): void {
+function spawnRaider(boarders = false): void {
+  const template = boarders ? 'ship.raiderBoarder' : 'ship.raider';
   const mine = shipOfGrid(1);
-  const t = content.ships['ship.raider'];
+  const t = content.ships[template];
   if (!mine || !t) return;
   const w = Math.max(...t.rows.map((r) => r.length));
   const h = t.rows.length;
@@ -58,7 +62,7 @@ function spawnRaider(): void {
   const cy = mine.y + mine.height / 2;
   const x = Math.min(sim.sector.width - w, Math.max(0, Math.round(cx + 18 - w / 2)));
   const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy + 22 - h / 2)));
-  bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.raider', x, y });
+  bridge.dispatch({ type: 'debug.spawnEnemy', template, x, y });
 }
 
 function shipOfGrid(gridId: number) {
@@ -74,6 +78,9 @@ const api: UiApi = {
   inspect: bridge.inspect,
   errors: errorLog.errors,
   crew: bridge.crew,
+  hostiles: bridge.hostiles,
+  focusCrew: controller.focusCrew,
+  attack: controller.attack,
   selectedCrew: controller.selectedCrew,
   modules: bridge.modules,
   moduleDefs: buildModuleDefs(sim),
@@ -88,11 +95,17 @@ const api: UiApi = {
   stats: bridge.stats,
   alerts: controller.alerts.list,
   combat: bridge.combat,
+  shuttles: bridge.shuttles,
+  prizes: bridge.prizes,
+  focusShuttle: (id) => {
+    const v = sim.world.get(id, VehicleC);
+    if (v) renderer?.focusSector(v.x, v.y);
+  },
   setCombatView: (view) => renderer?.setCombatView(view),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   focusFight: (gridId) => focusFight(gridId),
-  spawnRaider: () => spawnRaider(),
+  spawnRaider: (boarders) => spawnRaider(boarders),
   overlayList,
   overlayLegend,
   dismissAlert: controller.alerts.dismiss,
@@ -118,6 +131,7 @@ const api: UiApi = {
     createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content)
       .then((r) => {
         renderer = r;
+        if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
         r.setGrids(sim.grids);
         const grid = sim.grids.get(1);
         if (grid) r.setGrid(grid);

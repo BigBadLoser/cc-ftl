@@ -6,12 +6,14 @@ import { modules } from './modules';
 import { recipes } from './recipes';
 import { roles } from './roles';
 import { weapons } from './weapons';
+import { vehicles } from './vehicles';
 import { species } from './species';
-import { raiderShip, raiderShipId } from './ships/raider';
+import { raiderBoarder, raiderBoarderId, raiderShip, raiderShipId } from './ships/raider';
 import { starterShip, starterShipId } from './ships/starter';
+import { rogueShipyard, rogueShipyardId } from './ships/rogue';
 
 export const content = {
-  ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip },
+  ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip, [raiderBoarderId]: raiderBoarder, [rogueShipyardId]: rogueShipyard },
   roles,
   modules,
   species,
@@ -20,4 +22,5 @@ export const content = {
   recipes,
   structCosts,
   weapons,
+  vehicles,
 } satisfies ContentRegistry;

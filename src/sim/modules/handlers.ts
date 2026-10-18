@@ -4,10 +4,10 @@ import { findJobAt } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { ModuleC } from './components';
-import { placementError } from './spawn';
+import { placementError, spawnModule } from './spawn';
 import { needsFrom } from '../items/materials';
 
-type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPriority' | 'module.setEnabled';
+type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPriority' | 'module.setEnabled' | 'debug.spawnModule';
 type Handler<T extends ModuleCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 const DECON_FRACTION = 0.5;
@@ -52,6 +52,11 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     if (!m) return reject(sim, cmd.type, 'noModule');
     if (!Number.isInteger(cmd.priority) || cmd.priority < 1 || cmd.priority > 5) return reject(sim, cmd.type, 'badValue');
     m.priority = cmd.priority;
+  },
+  'debug.spawnModule': (sim, cmd) => {
+    const err = placementError(sim, cmd.gridId, cmd.def, cmd.x, cmd.y, cmd.rot);
+    if (err) return reject(sim, cmd.type, err);
+    spawnModule(sim, cmd.gridId, cmd.def, cmd.x, cmd.y, cmd.rot);
   },
   'module.setEnabled': (sim, cmd) => {
     const m = sim.world.get(cmd.id, ModuleC);

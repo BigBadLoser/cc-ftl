@@ -28,5 +28,5 @@
   button.chip { min-height: 0; min-width: 0; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
   button.chip.on { background: #0e4a56; border-color: var(--cyan); }
   .chip.bad { border-color: var(--red); color: #ffb4b4; }
-  @media (max-width: 600px) { .stats { flex-basis: 100%; order: 9; justify-content: flex-start; } }
+  @media (max-width: 600px) { .stats { order: 9; gap: 3px; } .chip { padding: 5px 6px; font-size: 12px; } button.chip { font-size: 12px; } }
 </style>

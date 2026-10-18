@@ -1,4 +1,6 @@
-import { DraftedC, ModuleC, PositionC, Struct, footprintTiles, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
+import {
+  AboardC, AllegianceC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isWalkable, placementError, rotatedSize, type Sim, type SimEvent,
+} from '../sim';
 import type { Renderer } from '../render/scene';
 import type { UiBuildKind, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
@@ -20,6 +22,10 @@ export interface Controller {
   toast: Readable<string | null>;
   setTool(state: Partial<UiToolState>): void;
   selectCrew(id: number | null, focus?: boolean): void;
+  /** Center the camera on a crew member wherever they are. */
+  focusCrew(id: number): void;
+  /** Order drafted crew (the selected one, else all) to attack a hostile crew member. */
+  attack(target: number): void;
   selectModule(id: number | null): void;
   focusAlert(id: number): void;
   onEvents(events: SimEvent[]): void;
@@ -40,10 +46,10 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   let paintEnd: Tile | null = null;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, ms = TOAST_MS) => {
     toast.set(msg);
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.set(null), TOAST_MS);
+    toastTimer = setTimeout(() => toast.set(null), ms);
   };
 
   const selectTile = (t: Tile | null) => {
@@ -53,6 +59,19 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     r?.setSelection(t);
     bridge.setSelected(t ? { gridId: GRID, ...t } : null);
   };
+  /** Center the camera on a crew member: on their ship, or on the shuttle they ride. */
+  const focusCrew = (id: number) => {
+    const p = sim.world.get(id, PositionC);
+    if (p) {
+      for (const sid of sim.world.query(ShipC)) {
+        const s = sim.world.get(sid, ShipC);
+        if (s?.gridId === p.gridId) return r?.focusSector(s.x + p.x + (p.toX - p.x) * p.progress + 0.5, s.y + p.y + (p.toY - p.y) * p.progress + 0.5);
+      }
+    }
+    const v = sim.world.get(sim.world.get(id, AboardC)?.vehicle ?? 0, VehicleC);
+    if (v) r?.focusSector(v.x, v.y);
+  };
+  const isPlayerCrew = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
   const selectCrew = (id: number | null, focus = false) => {
     if (id === null) return selectTile(null);
     modSel.set(null);
@@ -60,8 +79,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     r?.setSelection(null);
     bridge.setSelected(null);
     r?.setSelectedCrew(id);
-    const p = sim.world.get(id, PositionC);
-    if (focus && p) r?.focusTile(p.x + (p.toX - p.x) * p.progress + 0.5, p.y + (p.toY - p.y) * p.progress + 0.5);
+    if (focus) focusCrew(id);
+  };
+  const attack = (target: number) => {
+    const sel = crewSel.get();
+    const ids = sel !== null && sim.world.has(sel, DraftedC) && isPlayerCrew(sel) ? [sel] : [...sim.world.query(CrewC, DraftedC)].filter(isPlayerCrew);
+    if (!ids.length) return showToast('Draft crew first');
+    for (const id of ids) sim.enqueue({ type: 'crew.attack', id, target });
   };
 
   const selectModule = (id: number | null) => {
@@ -133,7 +157,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   };
   const toggleDraft = () => {
     const id = crewSel.get();
-    if (id !== null) sim.enqueue({ type: 'crew.draft', id, drafted: !sim.world.has(id, DraftedC) });
+    if (id !== null && isPlayerCrew(id)) sim.enqueue({ type: 'crew.draft', id, drafted: !sim.world.has(id, DraftedC) });
   };
 
   const placeModule = () => {
@@ -157,8 +181,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     toast,
     setTool,
     selectCrew,
+    focusCrew,
+    attack,
     onEvents(events) {
-      for (const e of events) if (e.type === 'command.rejected') showToast(rejectionMessage(e.reason));
+      for (const e of events) {
+        if (e.type === 'command.rejected') showToast(rejectionMessage(e.reason));
+        else if (e.type === 'ship.captured') showToast(e.by === 'player' ? 'Ship captured! It is now a prize.' : 'Your ship was captured!', 8000);
+      }
       alerts.onEvents(events);
     },
     attach(renderer) {
@@ -166,7 +195,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       return {
         onTap(sx, sy) {
           const crewId = renderer.pickCrew(sx, sy);
-          if (crewId !== null) return selectCrew(crewId);
+          if (crewId !== null) return isPlayerCrew(crewId) ? selectCrew(crewId) : crewSel.get() !== null && sim.world.has(crewSel.get() as number, DraftedC) ? attack(crewId) : selectCrew(crewId);
           const tile = renderer.pickTile(sx, sy);
           const grid0 = sim.grids.get(GRID);
           const modHere = tile && grid0 ? grid0.get('module', tile.x, tile.y) : 0;
@@ -183,9 +212,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           }
           if (modId) return selectModule(modId);
           const sel = crewSel.get();
-          const grid = sim.grids.get(GRID);
-          if (tile && sel !== null && sim.world.has(sel, DraftedC) && grid && isWalkable(grid.get('struct', tile.x, tile.y))) {
-            sim.enqueue({ type: 'crew.moveTo', id: sel, x: tile.x, y: tile.y });
+          const any = renderer.pickTileAny(sx, sy);
+          const ag = any && sim.grids.get(any.gridId);
+          if (any && ag && sel !== null && sim.world.has(sel, DraftedC) && isWalkable(ag.get('struct', any.x, any.y))) {
+            const here = sim.world.get(sel, PositionC)?.gridId;
+            sim.enqueue({ type: 'crew.moveTo', id: sel, x: any.x, y: any.y, ...(here !== any.gridId ? { gridId: any.gridId } : {}) });
           } else selectTile(tile);
         },
         onHover(t) {
