@@ -1,5 +1,6 @@
 import { IonC, ProjectileC } from '../combat/components';
 import { ModuleC } from '../modules/components';
+import { isDeployed } from '../modules/deploy';
 import type { Sim } from '../sim';
 import { PD_CAP, PD_CHANCE_PER_TIER, PD_WINDOW } from '../tuning';
 
@@ -25,7 +26,7 @@ function coreTiers(sim: Sim, gridId: number): number {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const core = m && m.gridId === gridId ? sim.content.modules[m.def]?.aiCore : undefined;
-    if (m && core && m.powered && m.hp > 0 && !sim.world.has(id, IonC)) tiers += core.tier;
+    if (m && core && m.powered && m.hp > 0 && !sim.world.has(id, IonC) && isDeployed(sim, id)) tiers += core.tier;
   }
   return tiers;
 }

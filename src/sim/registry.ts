@@ -189,4 +189,6 @@ export interface ModuleDef {
   aiCore?: { tier: number };
   /** Render asset id of the special roof tile drawn above this module on roofed (enemy) ships, e.g. 'roof.weapon'. Render-only. */
   roofAsset?: string;
+  /** Has a roof part that folds away: seconds for a full deploy (or stow). Absent = always out. */
+  deploySec?: number;
 }

@@ -139,3 +139,8 @@ export const IGNITE_INTENSITY = 90;
 export const OPERATE_MAX_LEVEL = 2;
 /** Operators keep manning their console until rest drops below this. */
 export const OPERATOR_EXHAUSTED_BELOW = 5;
+/**
+ * Deployable roof parts gate gameplay: weapons cannot charge or fire, shields cannot come up or regenerate and
+ * point defence cannot roll until the part is fully deployed. Set false to keep the animation but drop the gating.
+ */
+export const DEPLOY_GATES_ACTIONS = true;

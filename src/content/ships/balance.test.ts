@@ -76,7 +76,7 @@ describe('starter vs raider balance (fixed seeds)', { timeout: 120000 }, () => {
       expect(r.winner).toBe('player');
       expect(r.seconds).toBeGreaterThan(60); // not a walkover
       expect(r.seconds).toBeLessThan(6 * 60);
-      expect(r.minIntegrity).toBeLessThan(0.96); // some damage
+      expect(r.minIntegrity).toBeLessThan(0.975); // some damage (was 0.96 before the 2 s roof-part deploy delay)
       expect(r.minIntegrity).toBeGreaterThan(0.6);
       expect(r.deadAt4).toBe(0);
       expect(r.downAt4).toBeLessThanOrEqual(2);
