@@ -70,7 +70,7 @@ describe('starter economy', () => {
     }
     for (const [, p] of data.world.stores['priorities'] ?? []) delete p['crafting'];
     const loaded = deserialize(JSON.stringify(data), content);
-    expect(SAVE_VERSION).toBe(8);
+    expect(SAVE_VERSION).toBe(9);
     expect(loaded.grids.get(1)?.has('item')).toBe(true);
     run(loaded, 20);
   });

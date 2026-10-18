@@ -225,6 +225,20 @@ describe('enemy boarding AI', () => {
     for (const e of landed) expect(sim.world.get(e.crew, PositionC)?.gridId).toBe(1);
   });
 
+  it('armed boarders fight the defenders once ashore, and nobody else takes chores from them', () => {
+    const armed: ContentRegistry = {
+      ...content,
+      ships: { ...content.ships, 'ship.raiderBoarder': { ...content.ships['ship.raiderBoarder'], boarding: { party: 2, afterSec: 3, losingBelow: 0.6, weapon: 'item.sidearm' } } },
+    };
+    const sim = setup(1, armed, 'ship.raiderBoarder');
+    const out = run(sim, 20 * 120);
+    const landed = of(out, 'crew.disembarked').map((e) => e.crew);
+    expect(landed.length).toBeGreaterThanOrEqual(2);
+    const shots = of(out, 'crew.attacked').filter((e) => landed.includes(e.crew));
+    expect(shots.length).toBeGreaterThan(0);
+    expect(shots.every((e) => e.weapon === 'item.sidearm' && e.gridId === 1)).toBe(true);
+  });
+
   it('is deterministic, and survives a save and load mid-flight', () => {
     const a = setup(3, reg, 'ship.raiderBoarder');
     const b = setup(3, reg, 'ship.raiderBoarder');
