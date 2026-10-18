@@ -116,15 +116,19 @@ describe('ship generator', () => {
     expect(beams).toBeGreaterThan(20);
   });
 
-  it('scrappers (same arranger, salvage doctrine): at least three donor origins grafted together, donors kept whole', () => {
+  it('scrappers (same arranger, salvage doctrine): several donor hulls of two or more origins welded together, anchors vary', () => {
+    const anchors = new Set<string>();
     for (let seed = 0; seed < 30; seed++) {
       const d = gen('faction.scrapper', seed, seed % 10).debug!;
-      const origins = new Set(d.assemblies.map((a) => a.donor).filter((o) => o && o !== 'scrap'));
-      expect(origins.size, `seed ${seed} origins`).toBeGreaterThanOrEqual(3);
+      const donors = d.assemblies.filter((a) => a.donor && a.donor !== 'scrap');
+      expect(new Set(donors.map((a) => a.label)).size, `seed ${seed} donor kinds`).toBeGreaterThanOrEqual(3);
+      expect(new Set(donors.map((a) => a.donor)).size, `seed ${seed} origins`).toBeGreaterThanOrEqual(2);
       expect(d.joins.some((j) => j.kind === 'graft')).toBe(true);
       // Pieces are whole donors, not room-by-room corridor assemblies.
-      expect(d.assemblies.filter((a) => a.donor !== 'scrap').length).toBeLessThanOrEqual(8);
+      expect(donors.length).toBeLessThanOrEqual(10);
+      anchors.add(d.assemblies[0]!.label);
     }
+    expect(anchors.size).toBeGreaterThanOrEqual(4);
   });
 
   it('beam tiles load as solid, unwalkable, airtight Struct.Beam', () => {

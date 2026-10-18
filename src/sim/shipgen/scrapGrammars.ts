@@ -1,145 +1,138 @@
-import { mirrorBlock, type Block, type Side } from './arranger';
+import { mirrorBlock, mirrorX, type Block, type Side } from './arranger';
 import { hallBlock } from './blocks';
-import { Builder } from './builder';
 import { storeRoom } from './droneBlocks';
-import { podBlock } from './navyBlocks';
-import { jobs, no, type Ctx } from './navyKit';
-import { cargoSpec, weaponSpec, type RoomSpec } from './plan';
-import { droneCluster, freighterHold, habitat, miningTug, navyBattery, navyBow, navyDrive } from './scrapBlocks';
-import { pickNose } from './topoNavy';
-import type { FactionDef, ScrapGrammar } from './types';
+import { dockBlock, podBlock } from './navyBlocks';
+import { no, type Ctx } from './navyKit';
+import { pickWeighted, shuffle } from './plan';
+import { DONORS, leftovers, poolOf, clonePool, restorePool, type Need, type Pool } from './scrapDonors';
+import type { DonorKind, FactionDef, ScrapGrammar } from './types';
 
 /**
- * Scrapper grammars: ships welded together from salvaged donor sections on the shared 2D arranger. A big anchor
- * donor, others grafted wall to wall on any face (a short improvised tube only when nothing fits flush), drives
- * where their engines face open space, extra engines strapped on, crates bolted to whatever wall is free.
+ * Scrapper composition on the shared 2D arranger: an anchor donor, the donors this role needs (chosen by job, weighted
+ * by the family), grafted wall to wall where they fit. How they are placed is the grammar:
+ *   heap   each donor welded to any part already aboard, on any face
+ *   raft   the first two donors welded lengthways, the rest heaped on
+ *   chain  donors welded end to end, each onto the last, sideways only when the line is blocked
+ * Donors may flip top to bottom; engine-free, non-navy donors may also flip end to end (engines always face +x, navy
+ * sections keep their bow forward). Seams the welds leave are plated over.
  */
 
-const flip = (b: Block, side: Side): Block => (side === 's' ? mirrorBlock(b) : b);
 const OPP: Record<Side, Side> = { n: 's', s: 'n', e: 'w', w: 'e' };
+const NEEDS: Need[] = ['command', 'hangar', 'crew', 'guns', 'crates', 'drive'];
 
-/** Graft `child` onto one of `hosts` on one of `sides`: flush first, then through a short scrap tube. */
-function graft(c: Ctx, hosts: number[], child: Block, sides: Side[], label: string, flipForSouth = false): number | null {
+/** Donors for this ship: the anchor, one per job nobody carries yet, then extras the role likes. */
+function choose(c: Ctx): DonorKind[] {
+  const w = c.fam.donors ?? {};
+  const kinds = Object.keys(w) as DonorKind[];
+  const anchor = c.fam.anchors && c.fam.anchors.length > 0 ? pickWeighted(c.rng, c.fam.anchors) : 'freighter';
+  const out: DonorKind[] = [anchor];
+  for (const need of NEEDS) {
+    if (need === 'hangar' && c.plan.hangars.length === 0) continue;
+    if (out.some((k) => DONORS[k].serves.includes(need))) continue;
+    const opts = kinds.filter((k) => DONORS[k].serves.includes(need) && (w[k] ?? 0) > 0);
+    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
+  }
+  for (let n = c.rng.int(0, 1 + Math.floor(c.plan.size / 2)); n > 0; n--) {
+    const opts = kinds.filter((k) => (w[k] ?? 0) > 0 && out.filter((x) => x === k).length < 2 && !['navyBow', 'tug', 'navyDrive'].includes(k));
+    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
+  }
+  return out;
+}
+
+/** Build the chosen donors in order, each taking its share of the jobs; then patch in whatever is left. */
+function build(c: Ctx, f: FactionDef, kinds: DonorKind[], p: Pool): Block[] {
+  for (const k of kinds) for (const n of DONORS[k].serves) p.share[n] = (p.share[n] ?? 0) + 1;
+  const cmd = kinds.filter((k) => DONORS[k].serves.includes('command'));
+  p.commandBy = cmd.includes('navyBow') ? 'navyBow' : cmd.length > 0 ? c.rng.pick(cmd) : null;
+  const out: Block[] = [];
+  for (const k of kinds) {
+    const save = clonePool(p);
+    const b = DONORS[k].build(c, f, p);
+    if (!b) restorePool(p, save);
+    else out.push(b);
+    for (const n of DONORS[k].serves) p.share[n] = Math.max(0, (p.share[n] ?? 1) - 1);
+  }
+  return [...out, ...leftovers(c, f, p)];
+}
+
+/** Ways a donor may be turned: flipped top to bottom always, end to end only when nothing in it is directional. */
+function variants(c: Ctx, b: Block): Block[] {
+  const v = [b, mirrorBlock(b)];
+  if (b.faceE.length === 0 && b.donor !== 'navy') v.push(mirrorX(b), mirrorX(mirrorBlock(b)));
+  return shuffle(c.rng, v);
+}
+
+/** Weld `child` onto one of `hosts` (in order) on one of `sides`: flush first, then through a short scrap tube. */
+function weld(c: Ctx, hosts: number[], child: Block, sides: Side[], align: 'any' | 'start' | 'end' = 'any'): number | null {
+  const vs = variants(c, child);
   for (const tube of [false, true]) {
     for (const h of hosts) {
       for (const side of sides) {
-        const blk = flipForSouth ? flip(child, side) : child;
-        if (!blk.ports.some((p) => p.side === OPP[side])) continue;
-        if (!tube) {
-          const id = c.A.attach(h, blk, { side, align: 'any', kind: 'graft' });
-          if (id !== null) { c.parts.push(label); return id; }
-          continue;
+        for (const v of vs) {
+          if (!v.ports.some((p) => p.side === OPP[side])) continue;
+          if (!tube) {
+            const id = c.A.attach(h, v, { side, align, kind: 'graft' });
+            if (id !== null) return id;
+            continue;
+          }
+          const t = hallBlock(c.rng, c.rng.int(1, 3), c.rng.int(1, 2), side === 'e' || side === 'w', 'human');
+          const tid = c.A.attach(h, { ...t, donor: 'scrap', label: 'scrap: tube' }, { side, align: 'any', kind: 'graft' });
+          if (tid === null) continue;
+          const id = c.A.attach(tid, v, { side, align: 'mid', kind: 'graft' });
+          if (id !== null) { c.parts.push('tube'); return id; }
+          c.A.undoLast();
         }
-        const t = hallBlock(c.rng, c.rng.int(1, 3), c.rng.int(1, 2), side === 'e' || side === 'w', 'human');
-        const tid = c.A.attach(h, { ...t, donor: 'scrap', label: 'scrap: tube' }, { side, align: 'any', kind: 'graft' });
-        if (tid === null) continue;
-        const id = c.A.attach(tid, blk, { side, align: 'mid', kind: 'graft' });
-        if (id !== null) { c.parts.push(`${label} (tube)`); return id; }
       }
     }
   }
   return null;
 }
 
-/** Strap extra engines on free outer walls whose east side is open; bolt crates on. */
-function improvise(c: Ctx, engines: number, crates: number): boolean {
-  const ids = [...Array(c.A.placed.length).keys()];
-  for (let k = 0; k < engines; k++) {
-    let ok = false;
-    for (const id of ids.reverse()) {
-      for (const side of ['n', 's'] as const) {
-        const pod = side === 'n' ? podBlock(c.rng, 1) : mirrorBlock(podBlock(c.rng, 1));
-        if (c.A.attach(id, { ...pod, donor: 'scrap', label: 'scrap: strapped engine' }, { side, align: 'end', kind: 'graft', doors: 1 }) !== null) { ok = true; break; }
-      }
-      if (ok) break;
-    }
-    if (!ok) return no(c, 'strapped engine');
+const hostsOf = (c: Ctx): number[] => c.A.placed.map((_, i) => i).filter((i) => c.A.placed[i]?.block.kind !== 'plate');
+
+/** Strap the extra engines on as pods, bolt on crates and airlocks, plate the seams. */
+function improvise(c: Ctx, p: Pool): boolean {
+  for (; p.engines > 0; p.engines--) {
+    const pod = { ...podBlock(c.rng, 1), donor: 'scrap', label: 'scrap: strapped engine' };
+    if (weld(c, shuffle(c.rng, hostsOf(c)), pod, ['n', 's']) === null) return no(c, 'strapped engine');
     c.parts.push('strapped engine');
   }
-  for (let k = 0; k < crates; k++) {
-    const side = c.rng.pick(['n', 's'] as const);
-    const crate = { ...flip(storeRoom(c.rng, 2), side === 'n' ? 'n' : 's'), donor: 'scrap', label: 'scrap: crates' };
-    for (const id of [...Array(c.A.placed.length).keys()].sort(() => 0)) if (c.A.attach(id, crate, { side, align: 'any', kind: 'graft', doors: 1 }) !== null) { c.parts.push('crates'); break; }
+  for (let k = 0; k < 3 && p.crates > 0; k++) {
+    const n = Math.min(3, p.crates);
+    if (weld(c, shuffle(c.rng, hostsOf(c)), { ...storeRoom(c.rng, n), donor: 'scrap', label: 'scrap: crates' }, ['n', 's', 'w']) !== null) p.crates -= n;
   }
+  for (; p.docks > 0; p.docks--) weld(c, shuffle(c.rng, hostsOf(c)), { ...dockBlock(c.rng), donor: 'scrap', label: 'scrap: airlock' }, ['n', 's']);
+  if (c.A.plate(2) > 0) c.parts.push('plates');
   return true;
 }
 
-interface Donors {
-  hold: Block;
-  hab: Block;
-  guns: Block | null;
-  battery: Block | null;
-  bow: Block | null;
-  drive: Block;
-  tug: Block | null;
-  strapped: number;
+/** Compose: build the donors, place the anchor, weld the rest on as the grammar says. */
+function compose(c: Ctx, f: FactionDef, mode: ScrapGrammar): boolean {
+  const p = poolOf(c.plan);
+  const blocks = build(c, f, choose(c), p);
+  const [anchor, ...rest] = blocks;
+  if (!anchor) return no(c, 'donors');
+  c.A.placeRoot(anchor);
+  c.parts.push(mode, anchor.label);
+  // Drives last, so nothing has to keep clear of their exhaust while it is placed.
+  const order = [...shuffle(c.rng, rest.filter((b) => b.faceE.length === 0)), ...rest.filter((b) => b.faceE.length > 0)];
+  let last = 0;
+  for (const [i, b] of order.entries()) {
+    const all = shuffle(c.rng, hostsOf(c));
+    const sides = shuffle(c.rng, ['n', 's', 'e', 'w'] as Side[]);
+    let id: number | null = null;
+    if (mode === 'raft' && i === 0) id = weld(c, [0], b, shuffle(c.rng, ['n', 's'] as Side[]), c.rng.pick(['start', 'end'] as const));
+    else if (mode === 'chain') id = weld(c, [last, ...all.filter((h) => h !== last)], b, [...shuffle(c.rng, ['e', 'w'] as Side[]), 'n', 's']);
+    id ??= weld(c, all, b, sides);
+    if (id === null) return no(c, `weld ${b.label}`);
+    last = id;
+    c.parts.push(b.label);
+  }
+  return improvise(c, p);
 }
 
-/** Cut the donors for this ship from the plan: who carries the bridge, guns, crew, stores, engines. */
-function donors(c: Ctx, f: FactionDef): Donors | null {
-  const j = jobs(c.plan);
-  const withBow = c.rng.chance(0.6);
-  const bow = withBow ? navyBow(c.rng, pickNose(new Builder(c.rng), f, c.plan)) : null;
-  const mounts = c.plan.weapons.flatMap((s) => s.mods);
-  // Drone pods are sealed, so their interior is exactly the mount's footprint; navy rooms keep a walkway.
-  const droneGuns = mounts.filter((_, i) => i % 2 === 0).map((m): RoomSpec => {
-    const [w, h] = (c.defs[m]?.footprint ?? [2, 2]) as [number, number];
-    return { role: 'weapons', mods: [m], w, h, sealed: true };
-  });
-  const navyGuns = mounts.filter((_, i) => i % 2 === 1).map((m) => weaponSpec(c.defs, [m]));
-  const crates = j.stores.reduce((t, r) => t + r.mods.length, 0);
-  const hold = freighterHold(c.rng, c.plan.hangars, Math.max(4, crates), j.core);
-  const crew = j.crew.filter((r) => r.role !== 'dock');
-  const docks = j.crew.filter((r) => r.role === 'dock');
-  const hi = crew.findIndex((r) => r.role !== 'quarters');
-  const hub = crew.splice(hi >= 0 ? hi : 0, 1)[0] ?? c.plan.command;
-  const top = [...(withBow || hub === c.plan.command ? [] : [c.plan.command]), ...crew.filter((_, i) => i % 2 === 0), ...docks.slice(0, 1)];
-  const hab = habitat(c.rng, hub, top, [...crew.filter((_, i) => i % 2 === 1), ...docks.slice(1)]);
-  // A third builder's work is always aboard: the mining tug comes along when no drone guns do.
-  const useTug = droneGuns.length === 0 || (c.plan.engines >= 2 && c.rng.chance(0.6));
-  const strapped = Math.max(0, c.plan.engines - 1 - (useTug ? 1 : 0));
-  const drive = navyDrive(c.rng, 1, c.plan.reactors);
-  const tug = useTug ? miningTug(c.rng, cargoSpec(2)) : null;
-  const cluster = droneGuns.length > 0 ? droneCluster(c.rng, droneGuns) : null;
-  const battery = navyGuns.length > 0 ? navyBattery(c.rng, navyGuns) : null;
-  if (!hold || !hab || !drive) return null;
-  return { hold, hab, guns: cluster, battery, bow, drive, tug, strapped: c.plan.engines > 1 ? strapped : 0 };
-}
-
-/** Heap: a freighter hold at the heart, the other donors welded on around it wherever they fit. */
-function heap(c: Ctx, f: FactionDef): boolean {
-  const d = donors(c, f);
-  if (!d) return no(c, 'donors');
-  const root = c.A.placeRoot(d.hold);
-  c.parts.push('hold');
-  if (graft(c, [root], d.drive, ['e'], 'navy drive') === null) return no(c, 'drive');
-  if (d.bow && graft(c, [root], d.bow, ['w'], 'navy bow') === null) return no(c, 'bow');
-  const habSide = c.rng.pick(['n', 's'] as const);
-  const hab = graft(c, [root], d.hab, [habSide, OPP[habSide]], 'habitat');
-  if (hab === null) return no(c, 'habitat');
-  const all = (): number[] => [...Array(c.A.placed.length).keys()];
-  if (d.guns && graft(c, [root, hab, ...all()], d.guns, ['n', 's'], 'drone guns', true) === null) return no(c, 'drone guns');
-  if (d.battery && graft(c, [hab, root, ...all()], d.battery, ['w', 'e', 'n', 's'], 'navy battery') === null) return no(c, 'battery');
-  if (d.tug && graft(c, [hab, ...all()], d.tug, ['e', 'n', 's'], 'mining tug') === null) return no(c, 'tug');
-  return improvise(c, d.strapped, c.rng.int(1, 3));
-}
-
-/** Raft: two big donors welded side by side lengthways (hold and habitat), drives on both, the rest on the edges. */
-function raft(c: Ctx, f: FactionDef): boolean {
-  const d = donors(c, f);
-  if (!d) return no(c, 'donors');
-  const root = c.A.placeRoot(d.hold);
-  c.parts.push('hold');
-  const hab = c.A.attach(root, d.hab, { side: 'n', align: c.rng.pick(['start', 'end', 'any'] as const), kind: 'graft' });
-  if (hab === null) return no(c, 'raft weld');
-  c.parts.push('habitat (welded)');
-  if (graft(c, [root], d.drive, ['e'], 'navy drive') === null) return no(c, 'drive');
-  if (d.tug && graft(c, [hab], d.tug, ['e'], 'mining tug') === null && graft(c, [hab, root], d.tug, ['n', 's'], 'mining tug') === null) return no(c, 'tug');
-  const all = (): number[] => [...Array(c.A.placed.length).keys()];
-  if (d.bow && graft(c, [root, hab], d.bow, ['w'], 'navy bow') === null) return no(c, 'bow');
-  if (d.guns && graft(c, [hab, root, ...all()], d.guns, ['n', 's'], 'drone guns', true) === null) return no(c, 'drone guns');
-  if (d.battery && graft(c, [root, ...all()], d.battery, ['s', 'w', 'n', 'e'], 'navy battery') === null) return no(c, 'battery');
-  return improvise(c, d.strapped, c.rng.int(1, 3));
-}
-
-export const SCRAP_GRAMMARS: Record<ScrapGrammar, (c: Ctx, f: FactionDef) => boolean> = { heap, raft };
+export const SCRAP_GRAMMARS: Record<ScrapGrammar, (c: Ctx, f: FactionDef) => boolean> = {
+  heap: (c, f) => compose(c, f, 'heap'),
+  raft: (c, f) => compose(c, f, 'raft'),
+  chain: (c, f) => compose(c, f, 'chain'),
+};

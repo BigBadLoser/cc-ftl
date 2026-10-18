@@ -160,36 +160,61 @@ distance over join tokens `kindA>dir>kindB` and assembly-degree tokens. It is re
 - Exposed beams between assemblies, and robot crawlways only where an access port needs one.
 - Mirrored only when the mounts balance.
 
-## Scrappers (built, v7): salvaged donors welded together
+## Scrappers (v8): anchored salvage compositions
 
-Same arranger, no new sim concepts. `scrapBlocks.ts` holds the donors, `scrapGrammars.ts` the welding. Every
-block carries `donor` (navy, civil, drone, mining; `scrap` for improvised parts) and the assembly view tints by it.
+Same arranger, no sim changes. Files:
+- `scrapDonors.ts`: the donor registry and its pool of jobs.
+- `scrapBlocks.ts`: the hand-made civil and one-off hulls.
+- `salvage.ts`: cut, damage, outline ports and freezing a section.
+- `scrapGrammars.ts`: composition.
 
-- Donors, each in its builder's own construction style:
-  - navy bow (the hand-made nose chunk), navy drive (the transverse engine bank), navy battery (a band section);
-  - civil freighter: one big open cargo bay under a 2-wide gangway, shuttle bay and core rooms off the gangway;
-  - civil habitat: a ring corridor round a central hub room, cabins and airlocks outboard;
-  - drone weapon cluster: a frozen drone arrangement (crawl node, sealed gun pods sized to the mount, crawl stub);
-  - mining tug: a stubby hall with a reactor, an ore hopper and its own engine room aft.
-- Welding: donors graft wall to wall (`kind: 'graft'`), a short scrap tube only if nothing fits flush (none in
-  the v7 sheets). Extra engines are strapped on as pods, crates bolted to free walls.
-- Grammars: `heap` (freighter at the heart, the rest welded on around it) and `raft` (freighter and habitat welded
-  lengthways). Families raider, hauler, gunrunner weight them and the budget.
-- At least three origins on every ship: the tug comes along whenever no drone guns do (tested).
+- **Donor sourcing.** Each donor's origin is in `Block.donor`.
+  - Navy donors come from the navy's own builders: bow (`noseBlock`), drive (`bankBlock`), battery (`bandBlock`).
+  - The old navy hull is a whole navy arrangement (`arrangeHull` with the navy faction and a corvette or frigate
+    family on a sub-plan), cut off fore or aft of a seam.
+  - The drone weapon section is the drone generator's own arrangement of the guns, with its processing room gutted.
+  - Navy and drone refinements therefore carry over automatically. The sources are named in
+    `FactionDef.salvage`.
+  - Hand-made, civil or unique only: freighter (open bay under a 2-wide gangway), habitat (1-wide ring round a hub),
+    liner segment (tiny one-bed cabins on a 1-wide spine, lounge bulb), station module (square, 1-wide cross
+    corridor, four quadrants), ore barge (catwalk over hoppers stepping shallower), cargo pod string (pods on 1-tile
+    tubes), mining tug.
+- **Role selection.**
+  - Each hull family weights donors by what the role wants (`HullFamilyDef.donors`) and names its anchors
+    (`anchors`). Raiders lean on hulks, drone guns and habitats; haulers on freighters, barges and pod strings;
+    gunrunners on batteries, drone sections and stations.
+  - Every job the plan has (command, hangar, crew, guns, crates, drive) gets a donor that carries it. Donors that
+    share a job split it. Extras scale with size.
+  - Whatever no donor kept is patched in: bow, gun band, habitat, station, patched reactor, strapped engines,
+    bolted crates, spare airlocks.
+- **Composition.**
+  - `heap`: weld onto any part on any face.
+  - `raft`: two donors welded lengthways.
+  - `chain`: end to end, onto the last donor.
+  - Donors flip top to bottom. Engine-free non-navy donors also flip end to end. Engines always face +x.
+  - Seams of 1 to 2 tiles between hulls are plated over (`Arranger.plate`), never over engine exhaust or kept-open
+    gun and airlock faces.
+- **Salvage look** (`salvage.ts`).
+  - Partial hulls: a cut along a seam column that crosses no room and no room's only door, resealed into wall.
+    Whatever the cut lost goes back to the pool, by module.
+  - Damage: a 2 to 3 tile corner knocked off a room that can spare the floor. Never through a door, corridor,
+    sealed pod, engine, airlock or bay.
+  - Graft ports come from the remaining outline. Engine, airlock, bay and reactor rooms take no grafts.
 
 ### Generator follow-ups
 
-- Two civil donors read as one colour family; a third civil donor (tanker, passenger liner) would help.
-- Drone clusters at low depth are a single pod on a stub: too small to read as a drone section.
-- Donors are always grafted at their native orientation; rotated or upside-down donors would sell salvage more.
-- Weld seams are clean wall joins. Overlapping hulls, cut-off rooms and patched breaches would sell salvage more.
-- Families differ in budget and grammar weight, not in donor choice (adjacency within family 0.38 at depth 9).
-- Freighter is always the root; a heap rooted on the habitat or a navy hulk would add variety.
-- Cutting donors out of real generated navy and drone ships is still to come; so is donor livery.
+- Size does not scale enough: depth-1 scrappers are almost as large as depth-9 ones. Each job gets a donor and
+  donors have minimum sizes; small ships need fewer, smaller donors (or cut ones).
+- Patched reactors and strapped engines are frequent and read as grey slabs; give them a donor look.
+- Some enclosed one-tile space pockets survive between welded hulls; plate enclosed pockets too.
+- No rotation by 90 degrees (gun and airlock faces are north / south only); flips only.
+- Liner and pod string are rare at depth 1 to 4; families could weight them by size.
+- Navy and drone donor shapes improve with the navy and drone passes.
+- About 10% of first attempts still fail fit-out (a gun or engine squeezed by a weld); reseeding covers it.
 
-### Sim follow-ups (not started; no sim work until the generator is accepted)
+### Render follow-ups (not started)
 
-- Donor origin as ship data (livery, part condition, salvage value per section).
+- Per-donor livery and wear art (hull tint, rust, patch plates) from the sprite pipeline.
 
 ## Diversity
 

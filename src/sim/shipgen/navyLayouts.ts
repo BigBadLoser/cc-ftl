@@ -28,7 +28,8 @@ function score(A: Arranger, fam: HullFamilyDef, noise: number): number {
   return -3 * off + (s.filled / (s.w * s.h)) + noise;
 }
 
-const GRAMMARS = { ...NAVY, ...DRONE_GRAMMARS, ...SCRAP_GRAMMARS };
+// Built on first use: scrapper grammars call back into arrangeHull for their navy and drone donors.
+let GRAMMARS: Record<string, (c: Ctx, f: FactionDef) => boolean> | null = null;
 
 export function arrangeHull(
   rng: Rng, f: FactionDef, fam: HullFamilyDef, plan: ShipPlan, defs: Record<string, ModuleDef>,
@@ -48,7 +49,9 @@ export function arrangeHull(
     const grammar = k < CANDIDATES ? first : pickWeighted(rng, fam.grammars);
     const A = new Arranger(() => rng.next(), -1);
     const c: Ctx = { rng, fam, plan: clonePlan(plan), A, depth, parts: [grammar], why: '', defs };
-    if (!GRAMMARS[grammar](c, f)) { why ||= `${grammar}: ${c.why || 'no fit'}`; continue; }
+    GRAMMARS ??= { ...NAVY, ...DRONE_GRAMMARS, ...SCRAP_GRAMMARS };
+    const run = GRAMMARS[grammar];
+    if (!run || !run(c, f)) { why ||= `${grammar}: ${c.why || 'no fit'}`; continue; }
     const s = score(A, fam, rng.next() * 0.6);
     if (!best || s > best.s) best = { A, c, s };
   }

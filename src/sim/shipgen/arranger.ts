@@ -84,6 +84,24 @@ export function mirrorBlock(b: Block): Block {
   };
 }
 
+/**
+ * Block flipped east to west. Only for blocks without engine faces (engines always face +x); callers keep
+ * directional pieces (bows, drives) as built.
+ */
+export function mirrorX(b: Block): Block {
+  if (b.faceE.length > 0) return b;
+  const W = Math.max(...b.rows.map((r) => r.length));
+  const flip = (s: Side): Side => (s === 'e' ? 'w' : s === 'w' ? 'e' : s);
+  return {
+    ...b,
+    rows: b.rows.map((r) => [...r.padEnd(W, '.')].reverse().join('')),
+    exposed: b.exposed.map((e) => ({ x: W - 1 - e.x, y: e.y })),
+    ports: b.ports.map((p) => ({ ...p, side: flip(p.side), x: p.side === 'n' || p.side === 's' ? W - p.x - p.len : W - 1 - p.x })),
+  };
+}
+
+const unkey = (k: number): { x: number; y: number } => ({ x: (k % 8192) - 4096, y: Math.floor(k / 8192) - 4096 });
+
 export class Arranger {
   private readonly occ = new Map<number, string>();
   readonly placed: Placed[] = [];
@@ -269,6 +287,50 @@ export class Arranger {
     this.placed.length = 0;
     for (const p of keep) { const id = this.place(p.block, p.x, p.y); (this.placed[id] as Placed).used = p.used; }
     for (const t of this.doorTiles) this.occ.set(key(t.x, t.y), 'D');
+  }
+
+  /** Engine rays and kept-open cells in world coordinates (to freeze an arrangement into one block). */
+  frozen(): { rays: { x: number; y0: number; y1: number }[]; open: { x: number; y: number }[] } {
+    return { rays: this.rays.map((r) => ({ ...r })), open: [...this.open].map(unkey) };
+  }
+
+  /**
+   * Patch plates: space cells in gaps of at most `maxGap` tiles between two hull walls (seams between misaligned
+   * blocks) become plating. Kept-open cells and engine rays are never plated. Returns the plated cell count.
+   */
+  plate(maxGap: number, label = 'patch plates', donor = 'scrap'): number {
+    const wall = (x: number, y: number): boolean => this.at(x, y) === '#';
+    const free = (x: number, y: number): boolean => this.at(x, y) === undefined && !this.open.has(key(x, y)) && !this.rays.some((r) => x > r.x && y >= r.y0 && y <= r.y1);
+    const s = this.stats();
+    let x0 = Infinity; let y0 = Infinity;
+    for (const k of this.occ.keys()) { const c = unkey(k); x0 = Math.min(x0, c.x); y0 = Math.min(y0, c.y); }
+    const cells = new Set<number>();
+    for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
+      for (let y = y0; y < y0 + s.h; y++) {
+        for (let x = x0; x < x0 + s.w; x++) {
+          if (!wall(x, y) || this.at(x + dx, y + dy) !== undefined) continue;
+          let n = 1;
+          while (n <= maxGap && this.at(x + dx * n, y + dy * n) === undefined) n++;
+          if (n > maxGap || !wall(x + dx * n, y + dy * n)) continue;
+          const run = Array.from({ length: n - 1 }, (_, i) => ({ x: x + dx * (i + 1), y: y + dy * (i + 1) }));
+          if (run.every((c) => free(c.x, c.y))) for (const c of run) cells.add(key(c.x, c.y));
+        }
+      }
+    }
+    if (cells.size === 0) return 0;
+    const pts = [...cells].map(unkey);
+    const X = Math.min(...pts.map((p) => p.x));
+    const Y = Math.min(...pts.map((p) => p.y));
+    const W = Math.max(...pts.map((p) => p.x)) - X + 1;
+    const H = Math.max(...pts.map((p) => p.y)) - Y + 1;
+    const rows = Array.from({ length: H }, (_, j) => Array.from({ length: W }, (_, i) => (cells.has(key(X + i, Y + j)) ? '#' : '.')).join(''));
+    this.place({ kind: 'plate', label: `${donor}: ${label}`, access: 'external', rows, legend: new Map(), ports: [], faceE: [], origin: { x: 0, y: 0 }, exposed: [], donor }, X, Y);
+    return cells.size;
+  }
+
+  /** Take back the last attachment (a tube that led nowhere). */
+  undoLast(): void {
+    this.undo();
   }
 
   /** Free ports of a placed block on a side. */

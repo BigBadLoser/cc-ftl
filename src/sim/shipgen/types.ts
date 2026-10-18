@@ -103,7 +103,11 @@ export type NavyGrammar = 'linear' | 'deckPair' | 'spineDecks' | 'spineWings' | 
 /** Drone (machine) grammars (see droneGrammars.ts). */
 export type DroneGrammar = 'spoke' | 'truss' | 'cluster';
 /** Scrapper (salvage) grammars (see scrapGrammars.ts). */
-export type ScrapGrammar = 'heap' | 'raft';
+export type ScrapGrammar = 'heap' | 'raft' | 'chain';
+/** Salvage donor sections: navy and drone ones are cut from those factions' own generators, the rest are hand-made. */
+export type DonorKind =
+  | 'navyBow' | 'navyDrive' | 'navyBattery' | 'navyHulk' | 'droneSection'
+  | 'freighter' | 'habitat' | 'liner' | 'station' | 'barge' | 'podString' | 'tug';
 
 /** Standard functional sections of a navy hull (one per kind of job). */
 export type SectionKind = 'command' | 'battery' | 'core' | 'habitat' | 'cargo' | 'hangar' | 'drive';
@@ -134,6 +138,9 @@ export interface HullFamilyDef {
   /** Soft proportion target (length / beam): arrangements nearer it score better; never a hard reject. */
   aspect: readonly [number, number];
   /** Propulsion configurations the family uses (engines always face +x). */
+  /** Salvage families: how much this role wants each donor aboard (by function), and which donors can anchor. */
+  donors?: Partial<Record<DonorKind, number>>;
+  anchors?: readonly Weighted<DonorKind>[];
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 
@@ -150,6 +157,8 @@ export interface FactionDef {
   architecture: ArchitectureDef;
   /** Assembly-driven generation (v3): hull families. When present, the faction uses the composer instead of v2. */
   hullFamilies?: readonly HullFamilyDef[];
+  /** Salvage sources: the factions whose generators build navy- and drone-origin donors, and the families they use. */
+  salvage?: Partial<Record<'navy' | 'drone', { faction: FactionDef; families: readonly string[] }>>;
   metrics?: MetricBands;
   weapons: { light: readonly Weighted<string>[]; heavy: readonly Weighted<string>[] };
   shields: readonly Weighted<string>[];

@@ -103,6 +103,20 @@ export class Canvas {
   /** Every chunk key stamped so far, in order (parts and hand-made chunks). */
   readonly stamped: string[] = [];
 
+  /** Overwrite one cell (salvage cuts and damage); anything but floor drops the room label. */
+  put(x: number, y: number, c: string): void {
+    const k = this.idx(x, y);
+    if (k < 0) return;
+    this.cells[k] = c;
+    if (c !== '_') this.label[k] = -1;
+  }
+
+  /** Room label index of a cell (-1: none). */
+  labelAt(x: number, y: number): number {
+    const k = this.idx(x, y);
+    return k < 0 ? -1 : (this.label[k] as number);
+  }
+
   /** Put a door on a wall tile (callers check it joins two floors). */
   setDoor(x: number, y: number): void {
     const k = this.idx(x, y);

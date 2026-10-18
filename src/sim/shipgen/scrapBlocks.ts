@@ -1,74 +1,42 @@
-import { Arranger, mirrorBlock, type Block } from './arranger';
-import { blockFrom, localBuilder, type LocalPort } from './blocks';
-import { Builder } from './builder';
-import { crawl, sealedPod } from './droneBlocks';
-import { bandBlock, bankBlock, noseBlock } from './navyBlocks';
+import { localBuilder } from './blocks';
+import type { Builder } from './builder';
 import { cargoSpec, engineSpec, reactorSpec, type RoomSpec } from './plan';
-import type { Part } from './builder';
 import type { Rng } from '../rng';
 
 /**
- * Salvage donors: whole sections cut from other builders' ships, each keeping its own geometry, layout and
- * construction style, tagged with its origin. Navy pieces come from the navy blocks themselves, the drone weapon
- * cluster is a small drone arrangement frozen into one block, the civil and mining pieces are hand-made.
+ * Hand-made salvage donors: civilian and one-off hulls only (navy and drone donors come from those factions' own
+ * generators). Each is drawn on a local builder in its own construction style and frozen later (after any cut or
+ * damage) with ports found from its outline:
+ *   freighter  one huge open bay under a 2-wide gangway
+ *   habitat    a 1-wide ring corridor round a hub room
+ *   liner      a 1-wide spine lined with tiny identical cabins, a lounge bulb at one end
+ *   station    a square module, a 1-wide cross corridor, a room in each quadrant
+ *   barge      a catwalk over a row of deep hoppers stepping down in depth (a sawtooth keel)
+ *   pod string cargo pods on a string of 1-tile tubes
+ *   tug        a stubby hull with a reactor, an ore hopper and one big engine aft
  */
 
-const tag = (b: Block, donor: string, label: string): Block => ({ ...b, donor, label: `${donor}: ${label}` });
-
-/** Navy bow cut-out: the hand-made nose chunk with the scrapper's bridge in it. */
-export function navyBow(rng: Rng, front: Parameters<typeof noseBlock>[1]): Block | null {
-  const b = noseBlock(rng, front);
-  return b && tag(b, 'navy', 'bow');
-}
-
-/** Navy drive cut-out: the transverse engineering bank (engines and reactors). */
-export function navyDrive(rng: Rng, engines: number, reactors: number): Block | null {
-  const b = bankBlock(rng, engines, reactors);
-  return b && tag(b, 'navy', 'drive');
-}
-
-/** Navy battery cut-out: a mirrored gun section, room ports on both faces. */
-export function navyBattery(rng: Rng, guns: RoomSpec[]): Block | null {
-  const half = Math.ceil(guns.length / 2);
-  const b = bandBlock(rng, 'battery', guns.slice(0, half), guns.slice(half), { depth: Math.max(3, ...guns.map((g) => g.h)), hatchN: true, hatchS: true });
-  return b && tag(b, 'navy', 'battery');
-}
+/** Salvaged reactor rooms are patched up around whatever doors the welds cut: a spare column and row. */
+const roomy = (k: number): RoomSpec => ({ ...reactorSpec(k), w: 2 * k + 2, h: 4 });
 
 const run = (specs: RoomSpec[]): number => specs.reduce((t, r) => t + r.w + 1, 1);
-const outer = (parts: Part[], side: 'n' | 's', pre: string): LocalPort[] =>
-  parts.filter((p) => p.role !== 'hall').map((p, i) => ({ id: `${pre}${i}`, side, x: p.x + 1, y: side === 'n' ? p.y : p.y + p.h - 1, len: p.w - 2, access: 'human' as const }));
-/** Bare hull wall left over after a strip of rooms, as a graft port. */
-const bare = (id: string, side: 'n' | 's', from: number, to: number, y: number): LocalPort[] =>
-  to - from >= 2 ? [{ id, side, x: from, y, len: to - from, access: 'human' }] : [];
 
-/**
- * Civil bulk freighter: one big open cargo bay under a 2-wide gangway, the shuttle bay and service rooms on the
- * gangway's far side. No hatches, no band of matching rooms: one huge box and a walkway.
- */
-export function freighterHold(rng: Rng, north: RoomSpec[], crates: number, south: RoomSpec[]): Block | null {
+/** Civil bulk freighter: the bay under the gangway, shuttle bay and service rooms off the gangway's far side. */
+export function freighter(rng: Rng, north: RoomSpec[], crates: number, south: RoomSpec[]): Builder | null {
   const b = localBuilder(rng);
   const bay: RoomSpec = { ...cargoSpec(crates), w: Math.max(6, Math.ceil(crates / 3) + 2), h: 5 };
   const W = Math.max(10, run(north), bay.w + 1 + run(south));
   const g = b.place({ x: 0, y: -2, w: W, h: 4 }, 'hall');
-  if (!g) return null;
-  const bx = b.place({ x: 0, y: 1, w: bay.w + 2, h: bay.h + 2 }, 'cargo', bay);
-  if (!bx) return null;
-  b.door(g, bx);
-  const n = b.strip(g, 'n', north, 0);
-  const s = b.strip(g, 's', south, bay.w + 1);
-  const ports: LocalPort[] = [
-    { id: 'w', side: 'w', x: 0, y: -1, len: 2, access: 'human' }, { id: 'e', side: 'e', x: W - 1, y: -1, len: 2, access: 'human' },
-    ...outer(n.parts, 'n', 'rn'), ...bare('hn', 'n', n.x + 1, W - 1, -2),
-    { id: 'bay', side: 's', x: 1, y: bx.y + bx.h - 1, len: bay.w, access: 'human' },
-    ...outer(s.parts, 's', 'rs'), ...bare('hs', 's', s.x + 1, W - 1, 1),
-  ];
-  return tag(blockFrom(b, 'hold', 'hold', 'human', ports), 'civil', 'freighter');
+  const bx = g && b.place({ x: 0, y: 1, w: bay.w + 2, h: bay.h + 2 }, 'cargo', bay);
+  if (!g || !bx) return null;
+  b.door(g, bx, 'low');
+  b.strip(g, 'n', north, 0);
+  b.strip(g, 's', south, bay.w + 1);
+  return b;
 }
 
-/**
- * Civil habitat: a ring corridor round a central hub room (mess, medbay), cabins and airlocks outboard of the ring.
- */
-export function habitat(rng: Rng, hub: RoomSpec, top: RoomSpec[], bottom: RoomSpec[]): Block | null {
+/** Civil habitat: a ring corridor round a hub room, cabins and airlocks outboard of the ring. */
+export function habitat(rng: Rng, hub: RoomSpec, top: RoomSpec[], bottom: RoomSpec[]): Builder | null {
   const b = localBuilder(rng);
   const W = Math.max(hub.w + 6, run(top) + 4, run(bottom) + 4, 10);
   const th = b.place({ x: 2, y: -5, w: W - 4, h: 3 }, 'hall');
@@ -78,51 +46,105 @@ export function habitat(rng: Rng, hub: RoomSpec, top: RoomSpec[], bottom: RoomSp
   const ce = b.place({ x: W - 3, y: -5, w: 3, h: 10 }, 'hall');
   if (!th || !hb || !bh || !cw || !ce) return null;
   for (const [a, c] of [[cw, th], [cw, bh], [ce, th], [ce, bh], [th, hb]] as const) b.door(a, c);
-  const n = b.strip(th, 'n', top, 2);
-  const s = b.strip(bh, 's', bottom, 2);
-  const ports: LocalPort[] = [
-    { id: 'w', side: 'w', x: 0, y: -1, len: 2, access: 'human' }, { id: 'e', side: 'e', x: W - 1, y: -1, len: 2, access: 'human' },
-    ...outer(n.parts, 'n', 'rn'), ...bare('hn', 'n', n.x + 1, W - 3, -5),
-    ...outer(s.parts, 's', 'rs'), ...bare('hs', 's', s.x + 1, W - 3, 4),
-  ];
-  return tag(blockFrom(b, 'habitat', 'habitat', 'human', ports), 'civil', 'habitat ring');
+  b.strip(th, 'n', top, 2);
+  b.strip(bh, 's', bottom, 2);
+  return b;
+}
+
+/** Passenger liner segment: one-bed cabins both sides of a 1-wide spine, the lounge (life support) at the west end. */
+export function liner(rng: Rng, beds: number, lounge: RoomSpec): Builder | null {
+  const b = localBuilder(rng);
+  const cabins = Array.from({ length: beds }, (): RoomSpec => ({ role: 'quarters', mods: ['module.bed'], w: 2, h: 2 }));
+  const n = cabins.slice(0, Math.ceil(beds / 2));
+  const s = cabins.slice(n.length);
+  const lw = Math.max(3, lounge.w);
+  const lo = b.place({ x: 0, y: -5, w: lw + 2, h: 9 }, lounge.role, { ...lounge, w: lw, h: 7 });
+  const sp = b.place({ x: lw + 1, y: -2, w: Math.max(run(n), run(s)) + 1, h: 3 }, 'hall');
+  if (!lo || !sp) return null;
+  b.door(lo, sp);
+  b.strip(sp, 'n', n, lw + 1);
+  b.strip(sp, 's', s, lw + 1);
+  return b;
+}
+
+/** Station module: a square of quadrant rooms round a 1-wide cross corridor open on all four faces. */
+export function station(rng: Rng, rooms: RoomSpec[]): Builder | null {
+  const b = localBuilder(rng);
+  const Q = Math.max(3, ...rooms.map((r) => Math.max(r.w, r.h)));
+  const hz = b.place({ x: 0, y: Q + 1, w: 2 * Q + 5, h: 3 }, 'hall');
+  const na = b.place({ x: Q + 1, y: 0, w: 3, h: Q + 2 }, 'hall');
+  const sa = b.place({ x: Q + 1, y: Q + 3, w: 3, h: Q + 2 }, 'hall');
+  if (!hz || !na || !sa) return null;
+  b.door(na, hz);
+  b.door(sa, hz);
+  const quad = [{ x: 0, y: 0, arm: na }, { x: Q + 3, y: 0, arm: na }, { x: 0, y: Q + 3, arm: sa }, { x: Q + 3, y: Q + 3, arm: sa }];
+  for (let i = 0; i < Math.min(4, rooms.length); i++) {
+    const q = quad[i] as (typeof quad)[number];
+    const r = rooms[i] as RoomSpec;
+    const p = b.place({ x: q.x, y: q.y, w: Q + 2, h: Q + 2 }, r.role, { ...r, w: Q, h: Q });
+    if (!p || (!b.door(q.arm, p) && !b.door(hz, p))) return null;
+  }
+  return b;
+}
+
+/** Ore barge: a catwalk over a row of deep hoppers, each no deeper than the last (the sawtooth keel). */
+export function barge(rng: Rng, crates: number): Builder | null {
+  const b = localBuilder(rng);
+  const k = Math.max(2, Math.min(4, Math.ceil(crates / 4)));
+  let d = rng.int(5, 6);
+  let left = crates;
+  const hoppers: RoomSpec[] = [];
+  for (let i = 0; i < k; i++) {
+    const n = Math.max(1, Math.ceil(left / (k - i)));
+    left -= n;
+    hoppers.push({ ...cargoSpec(n), w: 4, h: d });
+    d = Math.max(3, d - rng.int(0, 1));
+  }
+  const cw = b.place({ x: 0, y: -2, w: run(hoppers), h: 3 }, 'hall');
+  if (!cw) return null;
+  b.strip(cw, 's', hoppers, 0);
+  return b;
+}
+
+/** Cargo pod string: pods on a string of 1-tile tubes. */
+export function podString(rng: Rng, crates: number): Builder | null {
+  const b = localBuilder(rng);
+  const k = Math.max(2, Math.min(4, Math.ceil(crates / 4)));
+  let left = crates;
+  let tube: ReturnType<Builder['place']> = null;
+  for (let i = 0; i < k; i++) {
+    const n = Math.max(1, Math.ceil(left / (k - i)));
+    left -= n;
+    const pod = b.place({ x: 6 * i, y: -3, w: 5, h: 5 }, 'cargo', { ...cargoSpec(n), w: 3, h: 3 });
+    if (!pod || (tube && !b.door(tube, pod))) return null;
+    if (i === k - 1) break;
+    tube = b.place({ x: 6 * i + 4, y: -2, w: 3, h: 3 }, 'hall');
+    if (!tube || !b.door(pod, tube)) return null;
+  }
+  return b;
 }
 
 /** Mining tug: a stubby hull with an ore hopper, a reactor and one big engine aft. */
-export function miningTug(rng: Rng, hopper: RoomSpec): Block | null {
+export function tug(rng: Rng, hopper: RoomSpec, reactors: number): Builder | null {
   const b = localBuilder(rng);
-  const r = reactorSpec(1);
+  const r = roomy(Math.max(1, reactors));
   const L = Math.max(r.w, hopper.w) + 3;
   const h = b.place({ x: 0, y: -2, w: L + 2, h: 4 }, 'hall');
   if (!h) return null;
-  const top = b.strip(h, 'n', [{ ...r, h: 3 }], 1).parts;
-  const bot = b.strip(h, 's', [{ ...hopper, h: Math.max(3, hopper.h) }], 1).parts;
+  b.strip(h, 'n', [r], 1);
+  b.strip(h, 's', [{ ...hopper, h: Math.max(3, hopper.h) }], 1);
   const e = engineSpec(1, 'w');
   const eng = b.place({ x: L + 1, y: -3, w: e.w + 2, h: e.h + 2 }, 'engine', e);
-  if (eng) b.door(h, eng);
-  const ports: LocalPort[] = [
-    { id: 'w', side: 'w', x: 0, y: -1, len: 2, access: 'human' },
-    ...top.map((p, i) => ({ id: `rn${i}`, side: 'n' as const, x: p.x + 1, y: p.y, len: p.w - 2, access: 'human' as const })),
-    ...bot.map((p, i) => ({ id: `rs${i}`, side: 's' as const, x: p.x + 1, y: p.y + p.h - 1, len: p.w - 2, access: 'human' as const })),
-  ];
-  return tag(blockFrom(b, 'tug', 'tug', 'human', ports), 'mining', 'tug');
+  if (!eng || !b.door(h, eng)) return null;
+  return b;
 }
 
-/**
- * Drone weapon cluster: a crawl node with sealed gun pods on its outer side and a crawl stub down to the graft
- * point ('s'); mirror it to graft from above.
- */
-export function droneCluster(rng: Rng, guns: RoomSpec[]): Block | null {
-  const A = new Arranger(() => rng.next(), -1);
-  const node = A.placeRoot(crawl(rng, Math.max(4, guns.reduce((t, g) => t + g.w + 1, 0)), true));
-  for (const g of guns) if (A.attach(node, sealedPod(rng, 'weapons pod', g), { side: 'n', align: 'any', doors: 0 }) === null) return null;
-  const stub = A.attach(node, crawl(rng, rng.int(1, 2), false), { side: 's', align: 'mid', doors: 1 });
-  if (stub === null) return null;
-  const b = new Builder(rng, -1);
-  A.stamp(b);
-  const s = A.bounds(stub);
-  // Block bounds include a one-tile margin: the stub's interior column is x + 2, its bottom wall h - 2 down.
-  return tag(blockFrom(b, 'guns', 'guns', 'robot', [{ id: 's', side: 's', x: s.x + 2, y: s.y + s.h - 2, len: 1, access: 'robot' }]), 'drone', 'weapon cluster');
+/** A patched-in reactor room (power the donors did not bring) on a short access passage. */
+export function reactorRoom(rng: Rng, k: number): Builder | null {
+  const b = localBuilder(rng);
+  const r = roomy(k);
+  const room = b.place({ x: 0, y: -4, w: r.w + 2, h: r.h + 2 }, 'reactor', r);
+  const pass = b.place({ x: 0, y: 1, w: r.w + 2, h: 3 }, 'hall');
+  if (!room || !pass || !b.door(room, pass)) return null;
+  return b;
 }
-
-export { mirrorBlock };
