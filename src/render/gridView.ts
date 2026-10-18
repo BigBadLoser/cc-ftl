@@ -81,7 +81,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     doors = [];
   }
 
-  /** Tile indices of engine hull rows (the bulkhead stands there with the walls up, in place of the hull wall). */
+  /** Tile indices of the engine hull rows the bulkhead covers (walls up / roofed: it stands there in place of the hull wall). */
   function engineHull(): Set<number> {
     const out = new Set<number>();
     const { world, modules } = host.overlayWorld;
@@ -89,7 +89,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const m = world.get(id, ModuleC);
       const def = m && modules[m.def];
       if (!m || !def?.hullEdge || m.gridId !== grid.id) continue;
-      for (const t of hullRow(def, m.x, m.y, m.rot)) out.add(t.y * grid.width + t.x);
+      // The bulkhead spans the row's inner tiles; the two end tiles keep their hull wall (the sprite stops inside them).
+      const row = hullRow(def, m.x, m.y, m.rot).sort((a, b) => a.x + a.y - (b.x + b.y));
+      for (const t of row.slice(1, -1)) out.add(t.y * grid.width + t.x);
     }
     return out;
   }

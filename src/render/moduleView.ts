@@ -20,8 +20,6 @@ export interface ModuleViewHost {
   emergency(): boolean;
   /** Roofed ships hide their interior: only the engines (hull sections, and the machines under the roof) are drawn. */
   roofed(): boolean;
-  /** True when the walls are down (cutaway or low view): engines show their machine without the hull wall's cut. */
-  wallsDown?(): boolean;
 }
 
 export interface ModuleView {
@@ -185,7 +183,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const on = m.powered && m.enabled && m.hp > 0;
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
         const roofed = host.roofed();
-        const layers = moduleLayers(world, id, m, def, active, !roofed && !!host.wallsDown?.()).flatMap((layer) => {
+        const layers = moduleLayers(world, id, m, def, active, true).flatMap((layer) => {
           if (roofed && layer.tiles !== 'hull' && !(def.hullEdge && layer.tiles === 'rest')) return [];
           const art = resolveArt(atlas, layer.chain, layer.key);
           return art ? [{ layer, art }] : [];
