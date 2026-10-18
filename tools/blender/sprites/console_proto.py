@@ -78,6 +78,42 @@ def tdisc(f, u, v, z, tl, r, h, mat, top, r_in, dz=0.0, sides=18):
         f.poly([P(r, a0, -1), P(r, a1, -1), P(r, a1, 1), P(r, a0, 1)], mat, flip=True)
 
 
+@cmbkit.prim
+def tline(f, u, v, z, tl, a, b, w, h, d0, mat):
+    """Thin box on the tilted disc plane from disc-local point a to b (x along e2, y along e1), width w, thickness h at offset d0."""
+    e1, e2, n = (0, 1, 0), (math.cos(tl), 0, math.sin(tl)), (-math.sin(tl), 0, math.cos(tl))
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    L = math.hypot(dx, dy)
+    ex, ey = dx / L, dy / L
+    px, py = -ey, ex
+
+    def P(i, j, s):
+        x = (a[0] + b[0]) / 2 + i * ex * L / 2 + j * px * w / 2
+        y = (a[1] + b[1]) / 2 + i * ey * L / 2 + j * py * w / 2
+        q = d0 + (s + 1) / 2 * h
+        return f.pt(u + x * e2[0] + y * e1[0] + q * n[0], v + x * e2[1] + y * e1[1] + q * n[1], z + x * e2[2] + y * e1[2] + q * n[2])
+    P8 = {(i, j, s): P(i, j, s) for i in (-1, 1) for j in (-1, 1) for s in (-1, 1)}
+    for i, ks in enumerate(FACES):
+        f.poly([P8[k] for k in ks], mat, flip=True)
+
+
+def hexcells(f, u, v, z, tl, R, w):
+    """Centre hexagon plus its six neighbours (flat-top cells of circumradius R) as cyan line work, all inside the disc."""
+    seen = set()
+    cells = [(0.0, 0.0)] + [(math.sqrt(3) * R * math.cos(math.radians(30 + 60 * i)), math.sqrt(3) * R * math.sin(math.radians(30 + 60 * i))) for i in range(6)]
+    for cx, cy in cells:
+        pts = [(cx + R * math.cos(math.radians(60 * i)), cy + R * math.sin(math.radians(60 * i))) for i in range(6)]
+        for i in range(6):
+            a, b = pts[i], pts[(i + 1) % 6]
+            key = (round(a[0], 3), round(a[1], 3), round(b[0], 3), round(b[1], 3))
+            key2 = (round(b[0], 3), round(b[1], 3), round(a[0], 3), round(a[1], 3))
+            if key in seen or key2 in seen:
+                continue
+            seen.add(key)
+            assert max(math.hypot(*a), math.hypot(*b)) <= 0.285, "hex line leaves the disc"
+            tline(f, u, v, z, tl, a, b, w, 0.02, 0.026, "cyan")
+
+
 SCREEN_LOG = []          # (name, glass w, glass h, margin, [(x0, x1, t0, t1)]) in screen-local metres, read by proto_console_overlap.py
 MARGIN = 0.04            # keep-out between glass edge and any glyph (about 2 px at game scale)
 
@@ -107,14 +143,30 @@ def screen(f, u, v, yaw, w, h, z, col, st, bars, lean=-0.14, d=0.09):
     SCREEN_LOG.append((f"{w:.2f}x{h:.2f}", wg, hg, MARGIN, log))
 
 
+MIX = ("hazY", "iceB", "medRed", "pcb", "navy")   # muted (non-emissive) amber / soft blue / red / green / blue caps
+
+
+def button_mat(k, st, col):
+    """Active: about a third bright (identity colour, a little amber/white), the rest muted tints or unlit caps. Idle: pilots only."""
+    if not st:
+        return BTN[col][0] if k % 5 == 0 else "gmD"
+    r = k % 6
+    if r == 0:
+        return BTN[col][0]
+    if r == 3:
+        return BTN[col][1] if k % 12 == 3 else DIM[col]
+    if r in (1, 4):
+        return MIX[(k * 2 + r) % 5]
+    return "gmD" if r == 2 else "steelL"
+
+
 def strip(f, u, v, yaw, w, z, n, off, st, col, pitch=None):
     """Row of n square buttons across a desk top; idle shows only every fourth one lit."""
     _g("buttons")
     pitch = pitch or w / n
     for k in range(n):
         x = (k - (n - 1) / 2) * pitch
-        lit = st and k % 4 != 3 or (not st and k % 5 == 0)
-        mat = BTN[col][(k // 2) % 3] if lit else "gmD"
+        mat = button_mat(k, st, col)
         bu, bv = at(u, v, yaw, x, off)
         ybox(f, bu, bv, z, 0.065, 0.065, 0.04, mat, yaw)
 
@@ -244,7 +296,9 @@ def shield(f, st):
     ybox(f, -0.5, pv, 0.55, 0.3, 0.3, 0.06, "steelD", top="plate")
     ybox(f, -0.5, pv, 0.61, 0.08, 0.08, pz - 0.61 - 0.03, "steelL")
     tdisc(f, -0.5, pv, pz, tl, 0.37, 0.05, "steelL", "plate", 0.3)
-    tdisc(f, -0.5, pv, pz, tl, 0.3, 0.035, "cyan" if st else "dark", "cyan" if st else "dark", 0.0, dz=0.012)
+    tdisc(f, -0.5, pv, pz, tl, 0.3, 0.035, "navy" if st else "dark", "navy" if st else "dark", 0.0, dz=0.012)
+    if st:                                                                         # hex-cell shield motif: cyan lines on the dark-cyan disc
+        hexcells(f, -0.5, pv, pz, tl, 0.1, 0.03)
     # tall side pillar at the outer end
     _g("pylon")
     ybox(f, -0.5, -1.38, 0.0, 0.46, 0.22, 0.95, "steelL", top="plate")
@@ -252,7 +306,7 @@ def shield(f, st):
     for k in range(3):
         ybox(f, -0.5, -1.38, 0.2 + k * 0.25, 0.5, 0.24, 0.05, "steelD")
     D.rail(f, (-0.5, -1.38, 1.0), (-0.5, -1.38, 1.1), 0.05, "cyan" if st else "navy")
-    f.vcyl(-0.5, -1.38, 1.0, 0.07, 0.1, "cyan" if st else "navy", sides=6)
+    f.vcyl(-0.5, -1.38, 1.0, 0.07, 0.1, "cyan" if st else "steelD", sides=6)
     chair(f, *CHAIR["shield"], st)
 
 
@@ -279,7 +333,7 @@ def weapons(f, st):
     strip(f, -0.55, -0.9, 0, 0.24, 0.45, 2, 0.0, st, col)
     _g("lever")
     f.vcyl(-0.2, -0.9, 0.45, 0.04, 0.2, "gm", sides=6)
-    f.vcyl(-0.2, -0.9, 0.65, 0.065, 0.07, "red" if st else "rustD", sides=6)
+    f.vcyl(-0.2, -0.9, 0.65, 0.065, 0.07, "red" if st else "steelD", sides=6)
     # screens: one big targeting display, two small flanking
     for sv, sw, sh in ((0.0, 0.9, 0.5), (-0.7, 0.45, 0.3), (0.7, 0.45, 0.3)):
         bars = [(0.0, 0.0, 0.05, 0.4, "a"), (0.0, 0.5, 0.7, 0.04, "a"), (0.0, 0.5, 0.1, 0.07, "w"),
@@ -289,7 +343,7 @@ def weapons(f, st):
     _g("fire")
     for k, v in enumerate((0.42, 0.7)):
         f.vcyl(-0.36, v, 0.56, 0.095, 0.05, "steelL", sides=8)
-        f.vcyl(-0.36, v, 0.61, 0.065, 0.05, "red" if st else "rustD", sides=8)
+        f.vcyl(-0.36, v, 0.61, 0.065, 0.05, "red" if st else "steelD", sides=8)
     _g("scope")
     for u in (-0.7, -0.45):
         ybox(f, u, 0.55, 0.56, 0.08, 0.08, 0.06, "steelL")
