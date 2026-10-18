@@ -4,8 +4,8 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 
 /**
- * Roof parts (weapon turrets, shield dishes, AI sensor masts) move toward a target of 1 (out) or 0 (stowed) at
- * 1 / (deploySec x TICK_HZ) per tick. Weapons and shield generators want to be out while the sector is in combat;
+ * Roof parts (weapon turrets, shield dishes, AI sensor masts, point-defence turrets) move toward a target of 1 (out) or 0 (stowed) at
+ * 1 / (deploySec x TICK_HZ) per tick. Weapons, point defence and shield generators want to be out while the sector is in combat;
  * the AI core whenever it runs. All need to be powered and intact, on a ship that is not a wreck or fled.
  */
 export function deploySystem(sim: Sim): void {

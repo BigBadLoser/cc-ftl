@@ -122,9 +122,8 @@ export const SPREAD_PER_GUNNERY = 0.12;
 export const MIN_SPREAD_FACTOR = 0.3;
 /** Shield recharge speed bonus with an operator at the shield console (plus SKILL_STEP per shielding level). */
 export const SHIELD_OPERATED_BONUS = 0.5;
-/** Point-defence chance per AI core tier against each interceptable shot (cap PD_CAP). */
-export const PD_CHANCE_PER_TIER = 0.35;
-export const PD_CAP = 0.9;
+/** Each working point-defence module gets its own roll at this chance against each interceptable shot. */
+export const PD_CHANCE = 0.35;
 /** Point defence rolls once a shot is this far along its flight. */
 export const PD_WINDOW = 0.6;
 /** Hull integrity below which a ship is a wreck / below which the AI tries to flee. */

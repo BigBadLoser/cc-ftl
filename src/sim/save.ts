@@ -10,7 +10,7 @@ import { hullSum } from './combat/hull';
 import { initAtmosphere } from './ship';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -96,6 +96,8 @@ export const migrations: Record<number, (data: Record<string, unknown>) => Recor
     for (const entry of world.stores['weapon'] ?? []) (entry[1] as Record<string, unknown>)['aim'] = 0;
     return data;
   },
+  // v5 -> v6 (point defence is its own module): nothing to convert; old AI cores simply stop intercepting.
+  5: (data) => data,
 };
 
 /** Serialize the sim to a JSON string. */
