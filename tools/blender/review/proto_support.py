@@ -19,6 +19,7 @@ roofs.ZR = 2.4
 S.install_palette()
 args = sys.argv[sys.argv.index("--") + 1:]
 OUT = Path(args[0])
+QUICK = "--quick" in args      # preview: r0, active only, 20 samples + denoise
 OUT.mkdir(parents=True, exist_ok=True)
 _src = Path(__file__).with_name("blender_cells.py").read_text().rsplit("\nmain()", 1)[0]
 _ns = {"__name__": "blender_cells_lib", "__file__": str(Path(__file__).with_name("blender_cells.py"))}
@@ -27,7 +28,9 @@ exec(compile(_src, "blender_cells.py", "exec"), _ns)
 
 def fresh():
     core.setup_scene()
-    core._state["scene"].cycles.samples = 64
+    cy = core._state["scene"].cycles
+    cy.samples = 20 if QUICK else 64
+    cy.use_denoising = QUICK
     core.clear_scene_meshes()
 
 
@@ -59,9 +62,9 @@ def main():
     old = json.loads(mp.read_text()) if mp.exists() else {}
     for name in names:
         jobs = []                                                                       # (file, model kwargs)
-        for rot in (0, 1):
+        for rot in ((0,) if QUICK else (0, 1)):
             old[f"{name}.r{rot}"] = meta(name, rot)
-            for st in (False, True):
+            for st in ((True,) if QUICK else (False, True)):
                 tag = f"{name}_r{rot}{'_active' if st else ''}"
                 if "--roofonly" not in args:
                     jobs.append((f"px_{tag}", dict(name=name, rot=rot, st=st)))

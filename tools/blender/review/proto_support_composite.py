@@ -18,8 +18,8 @@ META = json.loads((D / "meta.json").read_text())
 TX, TY = 70, 215
 T = lambda x, y: (TX + 14 * 32 + (x - y) * 32, TY + 20 + (x + y) * 16)
 PLACE = [("shield_gen", 0, (1, 0)), ("shield_small", 0, (5, 0)), ("ai_core", 0, (8, 0)),
-         ("shield_gen", 1, (11, 3)), ("shield_small", 1, (11, 7)), ("ai_core", 1, (11, 10))]
-CREW = [((4.2, 2.0), 5), ((10.2, 6.2), 7)]
+         ]                                              # quick preview: r0 only
+CREW = [((4.2, 2.0), 5)]
 FACE = {0: 5, 1: 7}
 X0, X1, Y0, Y1 = 0, 12, 0, 13
 GHOST_ALPHA = 0.30
@@ -147,18 +147,19 @@ def strip(name):
         sc.px = np.zeros((ch, cw, 3), np.float32) + BG
         sc.px[:] = BG
         globals()["W"], globals()["H"] = cw, ch
-        ex, ey = -x0 + (cx - cy) * 32, -y0 + (cx + cy) * 16
+        ex, ey = -x0 + (cx - cy) * 32, -y0 + (cx + cy) * 16          # footprint centre (roof tiles)
         for tx in range(-2, 3):
             for ty in range(-2, 3):
                 px_, py_ = ex + (tx - ty) * 32, ey + (tx + ty) * 16
                 sc.blit(rt["rgba"], rt["glow"], int(px_ - int(rt["ox"])), int(py_ - int(rt["oy"])))
-        sc.blit(rgba, glow, int(ex - ox), int(ey - oy))
+        sc.blit(rgba, glow, int(-x0 - ox), int(-y0 - oy))
         out.paste(Image.fromarray(np.clip(sc.px, 0, 255).astype(np.uint8)), (k * (cw + 4), 0))
     globals()["W"], globals()["H"] = 980, 700
     out.resize((out.width * 3, out.height * 3), Image.NEAREST).save(D / f"deploy_strip_{name}_3x_v2.png")
 
 
 hot = True
+CROPS = {"r0row": (330, 40, 940, 420)}
 img = room(hot)
 img.save(D / "scene_room_active_1x_v2.png")
 img.resize((img.width * 3, img.height * 3), Image.NEAREST).save(D / "scene_room_active_3x_v2.png")
