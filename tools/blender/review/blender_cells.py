@@ -132,4 +132,5 @@ def main():
     (OUT / "cells.json").write_text(json.dumps(cells))
 
 
-main()
+if __name__ == "__main__":
+    main()
