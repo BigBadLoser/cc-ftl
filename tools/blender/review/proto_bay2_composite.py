@@ -190,8 +190,8 @@ def save(im, name):
 
 def main():
     OUTD.mkdir(parents=True, exist_ok=True)
-    V = sys.argv[5] if len(sys.argv) > 5 else "v13"
-    save(row([frame("bay_r0_t0", "shuttle_parked_r0", "closed"), frame("bay_r0_t5", "shuttle_parked_r0_t5", "open 0.05: claw opening"),
+    V = sys.argv[5] if len(sys.argv) > 5 else "v14"
+    save(row([frame("bay_r0_t0", "shuttle_parked_r0", "closed"), frame("bay_r0_t5", "shuttle_parked_r0_t5", "open 0.05: claw arms swinging out"),
               frame("bay_r0_t66", None, "open 0.66: shuttle gone, gangway retracted")]), f"bay_frames_{V}")
     save(frame("bay_r0_t0", "shuttle_parked_r0", "closed"), f"bay_closed_{V}")
     save(frame("bay_r0_t0", None, "empty"), f"bay_empty_{V}")

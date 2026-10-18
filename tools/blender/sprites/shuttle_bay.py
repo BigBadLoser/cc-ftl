@@ -209,17 +209,32 @@ def leaves(f, t):
 # folded wings cover the whole aft half (1.57 .. 1.81, nothing fits over them); the cabin spine is 1.45 over v 0.6..1.5 and
 # 1.33 mid-spine between the wing roots (v -0.3 .. 0.0); the nose drops to ~1.0 at v 2.1. The roof slab underside is 1.85.
 # A bridge beam BEAM_T thick fits at BEAM_Z0 .. 1.80 over the nose half, with latch arms down to hardpoint pads on the spine.
-BRIDGE_V = -0.1                       # the one bridge, over the mid-spine between the wing roots (spine top 1.33 there)
-SPINE_Z = 1.33
+BRIDGE_V = 0.36                       # the bridge, over the cabin just forward of the folded wings, aft of the gangway (v 0.83..1.95)
 BEAM_Z0, BEAM_T, BEAM_W = 1.55, 0.25, 0.36
 TOWER_TOP = 1.82
+# claw arm centreline in (u, z), half section: top bar, corner chamfer, flank (hull here: top ~1.33..1.45, |u| ~ 0.95, hatch
+# flange starts at v 0.48 and is at its widest at z 0.35, so the flank tips stop at z 0.75)
+ARM = ((0.0, 1.48), (0.70, 1.48), (1.08, 1.18), (1.08, 0.62))
+ARM_TH, ARM_W = 0.15, 0.34
+
+
+def _seg(f, sx, p0, p1, o, dz, mat, top):
+    """One thick arm segment from p0 to p1 (u, z) mirrored to side sx, pushed out by o and lifted by dz."""
+    ex, ez = p1[0] - p0[0], p1[1] - p0[1]
+    n = math.hypot(ex, ez)
+    nx, nz = ez / n, -ex / n
+
+    def corner(a, b, d):
+        q = p0 if b < 0 else p1
+        return (sx * (q[0] + o + nx * d * ARM_TH / 2), BRIDGE_V + sx * a * ARM_W / 2, q[1] + dz + nz * d * ARM_TH / 2)
+    lbox(f, corner, {"side": mat, "top": top})
 
 
 def clamps(f, t):
-    """GANTRY (v13): one bridge across the pit (towers on both side lips, a beam just under the roof slab) with a CLAW at its
-    middle: a hub under the beam whose four fingers close round a socket on the spine between the wing roots. Opening: the
-    claw splays (t 0 .. 0.06), the hub lifts into the beam (.06 .. .12), the half-beams slide into the towers (.12 .. .25).
-    Everything is at or below 1.82."""
+    """GANTRY (v14): one bridge over the cabin (towers on both side lips just aft of the gangway, a beam under the roof slab)
+    with a pair of curved CLAW ARMS hanging from it, hugging the hull top and flanks with a small gap and ending above the
+    hatch. Opening: the arms swing out (t 0 .. 0.06), lift into the beam (.06 .. .12), the half-beams slide into the towers
+    (.12 .. .25). Everything is at or below 1.82."""
     _g("clamps")
     ko = min(1.0, t / 0.06)
     kl = min(1.0, max(0.0, (t - 0.06) / 0.06))
@@ -239,20 +254,15 @@ def clamps(f, t):
             f.box(ub, vv - BEAM_W / 2 - 0.001, BEAM_Z0 + 0.08, L - 0.1, 0.01, 0.09, "arc", base=True)
     if t > 0.14:
         return
-    f.box(0.0, vv, SPINE_Z, 1.0, 0.86, 0.04, "steelD", top="steel")                                 # socket flange on the spine
-    f.box(0.0, vv, SPINE_Z + 0.04, 0.66, 0.54, 0.07, "steelL", top="cyan")                            # socket neck, lit
-    dz = 0.2 * kl                                                                                    # hub lift into the beam
-    zh = SPINE_Z + 0.14 + dz
-    f.box(0.0, vv, zh, 0.9, 0.5, 0.15, "steel", top="steelL")                                       # hub
-    f.box(0.0, vv - 0.251, zh + 0.04, 0.7, 0.01, 0.07, "cyan", base=True)
-    f.box(0.0, vv + 0.251, zh + 0.04, 0.7, 0.01, 0.07, "cyan", base=True)
-    f.box(0.0, vv, zh + 0.15, 0.5, 0.34, 0.06, "steelD", top="hazY")                                  # piston collar
-    d = 1.0 + 0.55 * ko
-    for sx in (-1, 1):                                                                               # four claw fingers
-        for sv in (-1, 1):
-            fx, fy = sx * 0.46 * d, vv + sv * 0.3 * d
-            f.box(fx, fy, SPINE_Z + 0.015 + dz * 0.0, 0.16, 0.14, zh - SPINE_Z - 0.015 + 0.03, "steelD", top="steelL")
-            f.box(fx - sx * 0.1, fy, SPINE_Z + 0.015, 0.14, 0.13, 0.05, "hazY", top="hazY")        # hooked foot
+    o, dz = 0.34 * ko, 0.2 * kl
+    f.box(0.0, vv, 1.47 + dz, 0.5, 0.3, 0.08, "steel", top="steelL")                                    # hub under the beam
+    f.box(0.0, vv - 0.151, 1.49 + dz, 0.4, 0.01, 0.04, "cyan", base=True)
+    for sx in (-1, 1):
+        for i in range(len(ARM) - 1):
+            _seg(f, sx, ARM[i], ARM[i + 1], o, dz, "steel", "steelL")
+        tip = ARM[-1]
+        f.box(sx * (tip[0] + o), vv, tip[1] + dz - 0.06, 0.22, ARM_W + 0.04, 0.16, "orange", top="hazY")   # tip shoe
+        f.box(sx * (ARM[2][0] + o), vv, ARM[2][1] + dz - 0.07, 0.15, ARM_W + 0.02, 0.14, "steelD", top="hazY")   # knuckle
 
 
 def _wall(f, p, q, nin, t0, t1, d0, d1, z0, z1, mat, top=None):
