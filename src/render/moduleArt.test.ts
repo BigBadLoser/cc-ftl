@@ -18,4 +18,10 @@ describe('module layer depth', () => {
     expect(machine).toBeGreaterThan(hull);
     expect(machine).toBeLessThan(26.9);
   });
+  it('sorts the bell by the tile beyond the hull row, roofed or not, so it draws over the hull behind it', () => {
+    const layers = moduleLayers(null as never, 1, m, engine, true, true);
+    expect(layers.map((l) => l.chain[0])).toEqual(['module.engine.hull.r1', 'module.engine.machine.open.r1.active', 'module.engine.bell.r1.active']);
+    expect(layerKey(engine, m, layers[2]!, 2, false, 31)).toBe(34.5);
+    expect(layerKey(engine, m, layers[2]!, 2, true, 31)).toBe(34.5);
+  });
 });

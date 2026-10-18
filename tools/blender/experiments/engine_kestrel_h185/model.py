@@ -73,27 +73,41 @@ def sculpted_stave(f,profile,t0,t1,mat,relief=1.0):
         f.poly(end,"steelD",flip=True)
 
 
-def hull(rot,stage=1,holdout=False):
-    """The engine's hull section: the production hull wall (sprites/walls.py, the same profile, thickness, skirt and
-    hull_top() height as the hull around it) along the hull row, with the approved bulkhead detailing on its outer
-    (+u) face and the circular bearing through it. The production far-hull piece puts its strip at the tile's -x / -y
-    edge: the inner edge for an east / south hull (r1 / r2), the outer edge for a north / west one (r0 / r3)."""
-    objects=[]
+def strip(rot):
+    """(inner, outer) u of the production hull strip on the engine's hull row (sprites/walls.py: the far-hull piece
+    puts its strip at the tile's -x / -y edge: the inner edge for an east / south hull (r1 / r2), the outer edge for a
+    north / west one (r0 / r3)); walls.Strip covers the cells whose centre lies inside hull_thick(): 20/32."""
+    t=(math.floor(W.hull_thick()*W.GN-0.5)+1)/W.GN
+    return (1.5,1.5+t) if rot in (1,2) else (2.5-t,2.5)
+
+
+def wall(rot,holdout=True):
+    """The production hull wall along the hull row (drawn by the game's wall layer, used here as a holdout only)."""
     f=Frame(core.Mesh("unused"),rot,centre=CENTRE[rot])
+    out=[]
     for v in (-1.5,-0.5,0.5,1.5):
         ob=W.block(5 if rot%2 else 10,"hull",level="up")[0]
         x,y=f.xy(2,v)
         ob.location=core.G(x,y,0)
-        objects.append(ob)
-    t=(math.floor(W.hull_thick()*W.GN-0.5)+1)/W.GN   # walls.Strip covers the cells whose centre lies inside: 20/32
-    outer=1.5+t if rot in (1,2) else 2.5           # u of the strip's outer face
+        ob.is_holdout=holdout
+        out.append(ob)
+    return out
+
+
+def hull(rot,stage=1,holdout=False):
+    """The engine's bulkhead (module.engine.hull.r<n>, never cut): two full-height armour shoulders through the hull
+    strip, the low sill under the bearing, the blue-grey plates on the outer face and the circular bearing around the
+    bell mount. The hull wall itself is the game's own hull tile (it follows the wall view level)."""
+    objects=[]
+    inner,outer=strip(rot)
     top=W.hull_top()
     m=core.Mesh("KESTREL_armoured_bulkhead")
     f=Frame(m,rot,centre=CENTRE[rot])
-    # Armour shoulders and blue-grey plates on the outer face (as approved, now on the production wall face).
+    uc,du=(inner+outer+0.04)/2,outer+0.04-inner
     for side in (-1,1):
-        f.box(outer+0.02,side*0.81,0,0.04,0.38,top-0.02,"steel",top="steelL")
+        f.box(uc,side*0.81,0,du,0.38,top-0.02,"steel",top="steelL")
         f.box(outer+0.05,side*0.82,0.45,0.04,0.28,0.4,"blueGrey",top="steel")
+    f.box(uc,0,0,du,1.24,BZ-0.57,"steelD",top="steel")
     # Compact circular bearing instead of a tall rectangular bridge.
     bearing_start=len(m.v)
     annulus(f,1.81,2.26,0.555,0.75,BZ,"steel","steelL",sides=32)
@@ -331,31 +345,43 @@ def exhaust(f,stage):
         f.poly(pts[::-1] if reverse else pts,"cyan",flip=True)
 
 
-def machine(rot,hot=False,stage=1,holdout=True):
+def machine(rot,hot=False,stage=1,holdout=True,part="machine"):
+    """The engine's machine, split at the hull's outer face: part "machine" (inboard, the hull wall as a holdout, for
+    walls-up and roofed views), "machine.open" (inboard without the wall, for the cutaway and low views) and "bell"
+    (outboard: nozzle, its pipework and the exhaust), each cut by the bulkhead."""
     if holdout:
         hull(rot,stage,True)
+        if part!="machine.open":
+            wall(rot)
+    _,outer=strip(rot)
+    cx,cy=CENTRE[rot]
     objects=[]
-    for name,fn in (("bed",bed),("powerhead",powerhead),
-                    ("services",lambda f,s:services(f,s,hot)),("bell",nozzle)):
-        m=core.Mesh("KESTREL_"+name)
+    meshes=[(name,fn) for name,fn in (("bed",bed),("powerhead",powerhead),
+            ("services",lambda f,s:services(f,s,hot)),("bell",nozzle))]
+    if hot:
+        meshes.append(("exhaust",exhaust))
+    for name,fn in meshes:
+        m=core.Mesh("KESTREL_"+name,selflit=name=="exhaust")
         fn(Frame(m,rot,centre=CENTRE[rot]),stage)
         if name=="powerhead":
             # A low, broad armoured cassette fits inside the new roof plane.
             # Its fore end returns smoothly to a circular throat so the
             # full-size bell and bearing retain their approved round section.
-            cx,cy=CENTRE[rot]
             for i,(x,y,z) in enumerate(m.v):
                 gx,gy=x-cx,-y-cy
                 u=(-gy,gx,gy,-gx)[rot]
                 blend=max(0,min(1,(u-1.45)/.95))
                 fit=CASSETTE_Z_FIT+(1-CASSETTE_Z_FIT)*blend
                 m.v[i]=(x,y,THRUST_Z+(z-BZ)*fit)
-        elif name in ("services","bell"):
+        elif name in ("services","bell","exhaust"):
             m.v=[(x,y,z+THRUST_Z-BZ) for x,y,z in m.v]
-        objects.append(m.build())
-    if hot:
-        m=core.Mesh("KESTREL_exhaust",selflit=True)
-        exhaust(Frame(m,rot,centre=CENTRE[rot]),stage)
-        m.v=[(x,y,z+THRUST_Z-BZ) for x,y,z in m.v]
-        objects.append(m.build())
+        # Keep the faces on this part's side of the hull's outer face.
+        def u_of(face):
+            pts=[m.v[i] for i in face[0]]
+            gx=sum(p[0] for p in pts)/len(pts)-cx
+            gy=-sum(p[1] for p in pts)/len(pts)-cy
+            return (-gy,gx,gy,-gx)[rot]
+        m.f=[face for face in m.f if (u_of(face)>outer)==(part=="bell")]
+        if m.f:
+            objects.append(m.build())
     return objects

@@ -25,7 +25,7 @@ def flame_visible(visible):
 def sprite(out,rot,hot,part,stage,preview=False):
     core.setup_scene()
     core._state["scene"].cycles.samples=4 if preview else 24
-    objects=model.hull(rot,stage) if part=="hull" else model.machine(rot,hot,stage)
+    objects=model.hull(rot,stage) if part=="hull" else model.machine(rot,hot,stage,part=part)
     bounds=core.extent_px(objects)
     xmin,xmax,ymin,ymax=bounds
     w=2*(math.ceil(max(-xmin,xmax))+5)
@@ -33,7 +33,7 @@ def sprite(out,rot,hot,part,stage,preview=False):
     flame_visible(False)
     rgb,a=core.render(w,h,"color")
     c,op=post.downsample(rgb,a>0.5,core.SS,8,True)
-    if part=="machine":
+    if part!="hull":
         c,op=post.outline(c,op,True)
     else:
         c=np.pad(c,((1,1),(1,1),(0,0)))
@@ -132,7 +132,8 @@ def beauty(out,rot,hot,stage,save=False):
     sun=core._state["sun"]
     sun.data.use_shadow=True
     sun.data.angle=0.12
-    objects=model.hull(rot,stage)+model.machine(rot,hot,stage,holdout=False)
+    objects=(model.wall(rot,False)+model.hull(rot,stage)+model.machine(rot,hot,stage,holdout=False)
+             +model.machine(rot,hot,stage,holdout=False,part="bell"))
     xmin,xmax,ymin,ymax=core.extent_px(objects)
     # Actual ship deck stops at the hull: the bell and exhaust hang over space.
     m=core.Mesh("review_inboard_deck")
@@ -200,8 +201,9 @@ def main():
     entries=json.loads(fragment.read_text())["assets"] if fragment.exists() else {}
     for r in a.rot:
         if not a.no_sprites:
-            for part,hot in (("hull",False),("machine",False),("machine",True)):
-                if part=="machine" and a.sprite_state!="both" and hot!=(a.sprite_state=="active"):
+            for part,hot in (("hull",False),("machine",False),("machine",True),("machine.open",False),
+                             ("machine.open",True),("bell",False),("bell",True)):
+                if part!="hull" and a.sprite_state!="both" and hot!=(a.sprite_state=="active"):
                     continue
                 sid,entry=sprite(a.out,r,hot,part,a.stage,a.preview)
                 entries[sid]=entry

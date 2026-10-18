@@ -54,8 +54,13 @@ module.engine.machine.r{0..3}.active
 
 ## Integration change (m4-integration)
 
-`model.hull()` now builds the engine's hull section from the production hull wall (`sprites/walls.py`
-`block(..., "hull", level="up")`: the same 20/32 strip, sloped skirt and `hull_top()` 2.05 as the hull around
-it) instead of this folder's `hull_walls.py` copy, with the shoulders and blue-grey plates moved onto its outer
-face and the bearing unchanged. The machine layer still uses the hull as its holdout, so both layers line up.
+The hull wall of the engine's hull row is the game's own hull tile (it follows the wall view level: full with
+the walls up and on roofed ships, the near-hull ghost in cutaway / low). The engine's layers, all on one anchor:
+- `module.engine.hull.r<n>`: the bulkhead only, never cut: two full-height armour shoulders through the
+  production hull strip (20/32, `strip()`), the sill under the bearing, the blue-grey plates and the bearing;
+- `module.engine.machine.r<n>[.active]`: the inboard machine cut by the bulkhead and the production hull wall
+  (`wall()`, `sprites/walls.py` pieces as holdouts), for walls-up / roofed views;
+- `module.engine.machine.open.r<n>[.active]`: the same without the wall cut, for cutaway / low;
+- `module.engine.bell.r<n>[.active]`: everything beyond the hull's outer face (nozzle, pipework, exhaust), which
+  the renderer sorts by the tile beyond the hull row so it draws over the hull behind it.
 `hull_walls.py` remains for the review context tiles only.

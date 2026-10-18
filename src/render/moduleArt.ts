@@ -5,6 +5,7 @@ import { StorageC } from '../sim/items/components';
 import type { Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { depthKey } from './iso';
+import { hullOutward, hullRow, hullSide } from '../sim/modules/footprint';
 
 /** Storage reads 'full' from this share of its slots upward. */
 const FULL_SHARE = 0.75;
@@ -59,6 +60,8 @@ export interface ModuleLayer {
   tiles: LayerTiles;
   /** Depth offset over the module's key (a console's desk front draws over its seated operator). */
   dz?: number;
+  /** Lies outside the hull (an engine bell): sorts by the tile just beyond the hull row's front tile. */
+  out?: boolean;
 }
 
 /** Depth offset of a seated operator over the console's key, and of the desk-front overlay over it. */
@@ -78,20 +81,24 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
 
 /**
  * The sprite layers of a module, bottom first.
- *  - Engines: `<asset>.hull.r{n}` (the always-full-height hull section) then `<asset>.machine.r{n}` (`.active` while burning).
+ *  - Engines: `<asset>.hull.r{n}` (the bulkhead, never cut; the hull wall around it is the game's hull tile), the
+ *    machine `<asset>.machine.r{n}` (cut by the wall; `.machine.open.r{n}` when the walls are down, `open`), and the
+ *    bell outside the hull `<asset>.bell.r{n}`, sorted by its own tile (`out`); `.active` while burning.
  *  - Weapons: the floor bay `<asset>.bay.r{n}`; the turret above it is drawn by turretView.
  *  - Consoles: the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
  *  - Everything else: the usual chain from `moduleAssets`.
  */
-export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean): ModuleLayer[] {
+export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false): ModuleLayer[] {
   const a = def.asset;
   const r = `.r${m.rot}`;
   if (def.hullEdge) {
     const burn = active ? ['.active'] : [];
-    const machine = [...burn.map((b) => `${a}.machine${r}${b}`), `${a}.machine${r}`, ...burn.map((b) => `${a}.machine${b}`), `${a}.machine`];
+    const variant = (part: string) => [...burn.map((b) => `${a}.${part}${r}${b}`), `${a}.${part}${r}`];
+    const machine = [...(open ? variant('machine.open') : []), ...variant('machine'), ...burn.map((b) => `${a}.machine${b}`), `${a}.machine`];
     return [
       { chain: [`${a}.hull${r}`, `${a}.hull`], key: `${a}.hull`, tiles: 'hull' },
       { chain: machine, key: active ? `${a}.machine.active` : `${a}.machine`, tiles: 'rest' },
+      { chain: variant('bell'), key: `${a}.bell`, tiles: 'rest', out: true },
     ];
   }
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
@@ -102,12 +109,20 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
 }
 
 /**
- * Depth key of layer `i` of a module drawn on a tile whose own module key is `key`. On a roofed ship an engine's layers
- * (its bulkhead in the hull line and the machine with the bell outside) sort under the roof plates of its footprint
+ * Depth key of layer `i` of a module drawn on a tile whose own module key is `key`. An engine's bell sorts by the tile
+ * beyond its hull row (`out`). On a roofed ship the engine's other layers (bulkhead and machine) sort under the roof plates of its footprint
  * (just before its rear-most tile's plate), so the roof hides everything inboard and only the bulkhead top and the bell
  * show, like the hull around it. Drawn at its front tile they would paint over the roof.
  */
 export function layerKey(def: ModuleDef, m: Module, layer: ModuleLayer, i: number, roofed: boolean, key: number): number {
+  if (layer.out) {
+    // The bell hangs outside the hull toward space: it draws over the hull behind it and under anything nearer.
+    const row = hullRow(def, m.x, m.y, m.rot);
+    const side = hullSide(def, m.rot);
+    const front = row.reduce((p, t) => (t.x + t.y > p.x + p.y ? t : p), row[0] ?? { x: m.x, y: m.y });
+    const o = side ? hullOutward(side) : { x: 0, y: 0 };
+    return depthKey(front.x + o.x, front.y + o.y) + 0.5;
+  }
   if (roofed && def.hullEdge) return depthKey(m.x, m.y) + 0.85 + i * 0.001;
   return key + (layer.dz ?? i * 0.001);
 }

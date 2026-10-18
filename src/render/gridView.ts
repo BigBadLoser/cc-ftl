@@ -81,7 +81,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     doors = [];
   }
 
-  /** Tile indices of engine hull sections: the engine's own hull art replaces the wall there. */
+  /** Tile indices of engine hull rows (drawn full height with the walls up, like the engine's bulkhead). */
   function engineHull(): Set<number> {
     const out = new Set<number>();
     const { world, modules } = host.overlayWorld;
@@ -97,20 +97,24 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   function rebuild(): void {
     clear();
     const replaced = engineHull();
+    const solidAt = (x: number, y: number): boolean => mode === "up" && grid.inBounds(x, y) && replaced.has(y * grid.width + x);
     for (let y = 0; y < grid.height; y++)
       for (let x = 0; x < grid.width; x++) {
         const k = kindAt(x, y);
         if (k === Struct.Space) continue;
         const idx = y * grid.width + x;
         // A near-hull ghost replaces the floor plate under it (not under an engine: its bulkhead stands on the deck).
-        const f = ghosts && replacesFloor(kindAt, x, y, mode) && !replaced.has(idx) ? undefined : atlas.firstOf(floorChain(x, y));
+        // An engine's hull row is the hull wall itself (its bulkhead is the engine's own sprite): full height with the
+        // walls up, the same ghost as the hull around it otherwise.
+        const engineUp = replaced.has(idx) && mode === "up";
+        const f = ghosts && !engineUp && replacesFloor(kindAt, x, y, mode) ? undefined : atlas.firstOf(floorChain(x, y));
         if (f) {
           const made = addStatic(L, f, x, y, 0, L.floor);
           owned.push(...made);
           tinted.push({ spr: made[0] as Sprite, idx, wall: false, solid: false });
         }
-        if (k === Struct.Floor || replaced.has(idx)) continue;
-        for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts)) {
+        if (k === Struct.Floor) continue;
+        for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts, solidAt)) {
           const s = atlas.firstOf(piece.chain);
           if (!s) continue;
           // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
