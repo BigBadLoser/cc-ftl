@@ -12,6 +12,7 @@ import { iso, tileAt, TILE_H, TILE_W } from './iso';
 import { createParticles } from './fx/particles';
 import { createLayers } from './layers';
 import type { ModuleDefs } from './moduleView';
+import { isTargetable } from './moduleArt';
 import { ROOF_H } from './roofView';
 import { createSectorFx } from './sectorFx';
 import { createShipScene, type ShipScene } from './shipScene';
@@ -400,7 +401,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
           const id = sc.grid.get('module', tx, ty);
           const m = id ? world.get(id, ModuleC) : undefined;
           const d = Math.hypot(tx - t.x, ty - t.y);
-          if (m && (d === 0 || content.modules[m.def]?.roofAsset) && d < bestD) {
+          const targetable = (def: string) => { const md = content.modules[def]; return !!md && isTargetable(md); };
+          if (m && (d === 0 || targetable(m.def)) && d < bestD) {
             best = id;
             bestD = d;
           }

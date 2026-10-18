@@ -11,9 +11,11 @@ import { createGridView, type CutawayMode, type GridView } from './gridView';
 import { createItemView } from './itemView';
 import { createJobView } from './jobView';
 import { createLayers, type Layers } from './layers';
+import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { createRoofView, ROOF_H } from './roofView';
 import { createTargetMarks } from './targetMarks';
+import { createTurretView } from './turretView';
 
 export interface ShipSceneOptions {
   world: World;
@@ -59,14 +61,21 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const crewView = createCrewView(world, atlas, L, {
     target: () => (roofed ? null : { grid, gridId: grid.id }),
     emergency: () => emergency,
+    moduleAt: (x, y) => {
+      const id = grid.inBounds(x, y) ? grid.get('module', x, y) : 0;
+      const m = id ? world.get(id, ModuleC) : undefined;
+      const def = m && modules[m.def];
+      return m && def ? { m, def } : null;
+    },
     light: () => ({ data: grid.raw('light'), width: grid.width }),
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: inside, emergency: () => emergency });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed });
   const itemView = createItemView(world, atlas, L, items, { target: inside, emergency: () => emergency });
   const fxView = createFxView(atlas, L, { target: inside });
   const particles = createParticles(atlas, L);
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => ({ grid }) });
+  const turretView = createTurretView(world, atlas, L, grid, modules);
   const roof = createRoofView(grid, atlas, L, world, modules);
   const wallHeight = () => (roofed ? ROOF_H : cutaway === 'up' ? ROOF_H : 6);
   const damage = createDamageView(grid, L, wallHeight);
@@ -74,6 +83,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const applyMode = () => view.setCutaway(roofed ? 'up' : cutaway);
   applyMode();
   roof.setVisible(roofed);
+  turretView.setRoofed(roofed);
 
   return {
     grid,
@@ -90,6 +100,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       jobView.update();
       crewView.update();
       roof.update();
+      turretView.update();
       damage.update();
       marks.update(marksOn, targeted, roofed ? ROOF_H : 0);
     },
@@ -97,6 +108,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       roofed = r;
       applyMode();
       roof.setVisible(r);
+      turretView.setRoofed(r);
     },
     isRoofed: () => roofed,
     setCutaway(m) {
@@ -115,6 +127,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       marks.dispose();
       damage.dispose();
       roof.dispose();
+      turretView.dispose();
       crewView.dispose();
       moduleView.dispose();
       itemView.dispose();

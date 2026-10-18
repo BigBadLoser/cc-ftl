@@ -1,3 +1,4 @@
+import { ROOF_H } from '../heights';
 import type { Atlas, StaticSprite } from './loader';
 
 /** Stand-in art for an asset id the manifest does not have (yet): existing sprites, plus a tint and an integer scale. */
@@ -9,33 +10,44 @@ export interface Fallback {
   lift?: number;
   /** Extra additive pass with this colour, to brighten a dark sprite into a clearly different plate. */
   add?: number;
+  /** Draw the sprite once per footprint tile (solid tiles only) instead of once at the front tile, so a stand-in fills a multi-tile footprint. */
+  perTile?: boolean;
 }
 
 const CRATE = ['prop.crate'];
 const CONSOLE = ['module.console'];
+const FLOOR = ['tile.floor.a'];
 
 /**
  * Fallback table, keyed by the missing asset id. Swapping in real art means adding the ids to the manifest: an id
  * that exists is always used as is, and an id that is in neither the manifest nor this table simply draws nothing.
  */
 export const FALLBACK: Readonly<Record<string, Fallback>> = {
-  // Combat modules.
-  'module.burst_laser': { ids: CRATE, tint: 0xff9a8a },
-  'module.mass_driver': { ids: CRATE, tint: 0xffc38a },
-  'module.missile_launcher': { ids: CRATE, tint: 0xffe08a },
-  'module.ion_cannon': { ids: CRATE, tint: 0x8ac8ff },
-  'module.incendiary_launcher': { ids: CRATE, tint: 0xff7a4a },
-  'module.engine': { ids: CRATE, tint: 0xffb060 },
-  'module.shield_gen': { ids: CRATE, tint: 0x7fe6ff },
-  'module.weapons_console': { ids: CONSOLE, tint: 0xff9a8a },
-  'module.shield_console': { ids: CONSOLE, tint: 0x8ad8ff },
-  'module.helm': { ids: CONSOLE, tint: 0xa8ff9a },
-  'module.ai_core': { ids: CONSOLE, tint: 0xd9a8ff },
+  // Combat modules, one stand-in sprite per footprint tile. Weapons are floor bays (flat plates) under a roof turret.
+  'module.burst_laser.bay': { ids: FLOOR, tint: 0xff9a8a, perTile: true },
+  'module.mass_driver.bay': { ids: FLOOR, tint: 0xffc38a, perTile: true },
+  'module.missile_launcher.bay': { ids: FLOOR, tint: 0xffe08a, perTile: true },
+  'module.ion_cannon.bay': { ids: FLOOR, tint: 0x8ac8ff, perTile: true },
+  'module.incendiary_launcher.bay': { ids: FLOOR, tint: 0xff7a4a, perTile: true },
+  // Engine: the always-full-height hull section (one wall block per hull-row tile) and the machine behind it.
+  'module.engine.hull': { ids: ['tile.hull.full.m15'], tint: 0xffc080, perTile: true },
+  'module.engine.machine': { ids: CRATE, tint: 0xffb060, perTile: true },
+  'module.engine.machine.active': { ids: CRATE, tint: 0xffe0a0, perTile: true },
+  'module.shield_gen': { ids: CRATE, tint: 0x7fe6ff, perTile: true },
+  'module.shield_gen_small': { ids: CRATE, tint: 0x7fe6ff, perTile: true },
+  'module.weapons_console': { ids: CONSOLE, tint: 0xff9a8a, perTile: true },
+  'module.shield_console': { ids: CONSOLE, tint: 0x8ad8ff, perTile: true },
+  'module.helm': { ids: CONSOLE, tint: 0xa8ff9a, perTile: true },
+  'module.ai_core': { ids: CONSOLE, tint: 0xd9a8ff, perTile: true },
+  // Roof turret: a crate with a barrel nub pointing along the aim (see turretView).
+  'turret.generic': { ids: CRATE, tint: 0xd0d8e8 },
+  'turret.generic.charged': { ids: CRATE, tint: 0xfff0b0 },
   // Roofs: the floor plate raised to wall height and lightened/coloured by an additive pass, so it reads as a roof, not a floor.
-  'roof.generic': { ids: ['tile.floor.a'], tint: 0xffffff, lift: 38, add: 0x707c92 },
-  'roof.weapon': { ids: ['tile.floor.a'], tint: 0xffffff, lift: 38, add: 0xc03020 },
-  'roof.shield': { ids: ['tile.floor.a'], tint: 0xffffff, lift: 38, add: 0x1090c8 },
-  'roof.engine': { ids: ['tile.floor.a'], tint: 0xffffff, lift: 38, add: 0xc07808 },
+  'roof.generic': { ids: ['tile.floor.a'], tint: 0xffffff, lift: ROOF_H, add: 0x707c92 },
+  'roof.shield_gen': { ids: CRATE, tint: 0x9fe8ff, perTile: true },
+  'roof.shield_gen_small': { ids: CRATE, tint: 0x9fe8ff, perTile: true },
+  'roof.ai_core': { ids: CONSOLE, tint: 0xd9a8ff, perTile: true },
+  'roof.ai_core.active': { ids: CONSOLE, tint: 0xf0d8ff, perTile: true },
   // Projectiles and combat effects.
   'fx.laser_bolt': { ids: ['fx.spark'], tint: 0xff4d4d, scale: 8 },
   'fx.mass_slug': { ids: ['fx.ember'], tint: 0xffd27a, scale: 8 },
@@ -57,13 +69,14 @@ export interface Art {
   fallback: boolean;
   lift: number;
   add?: number;
+  perTile: boolean;
 }
 
 /** The first existing asset of `chain`, else the fallback for `key`, else undefined. */
 export function resolveArt(atlas: Atlas, chain: readonly string[], key: string = chain[chain.length - 1] ?? ''): Art | undefined {
   const real = atlas.firstOf(chain);
-  if (real) return { s: real, tint: 0xffffff, scale: 1, fallback: false, lift: 0 };
+  if (real) return { s: real, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false };
   const fb = FALLBACK[key];
   const s = fb && atlas.firstOf(fb.ids);
-  return fb && s ? { s, tint: fb.tint ?? 0xffffff, scale: fb.scale ?? 1, fallback: true, lift: fb.lift ?? 0, add: fb.add } : undefined;
+  return fb && s ? { s, tint: fb.tint ?? 0xffffff, scale: fb.scale ?? 1, fallback: true, lift: fb.lift ?? 0, add: fb.add, perTile: !!fb.perTile } : undefined;
 }

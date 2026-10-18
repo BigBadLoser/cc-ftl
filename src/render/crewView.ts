@@ -3,6 +3,10 @@ import type { World } from '../sim/ecs';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
 import { CarryingC } from '../sim/items/components';
 import { BLEED_OUT_SECONDS } from '../sim/tuning';
+import type { ModuleDef } from '../sim/registry';
+import type { Module } from '../sim/modules/components';
+import { footprintTiles, openTilesOf } from '../sim/modules/footprint';
+import { moduleKey } from './moduleView';
 import type { Atlas, LayerSprite } from './assets/loader';
 import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
@@ -20,6 +24,8 @@ export interface CrewViewHost {
   light?(): { data: ArrayLike<number>; width: number } | null;
   /** Id of the grid being shown, or null when nothing is shown. */
   target(): { gridId: number } | null;
+  /** The module covering tile (x, y) of the shown grid, if any (to sort crew on a console's chair tile against its sprite). */
+  moduleAt?(x: number, y: number): { m: Module; def: ModuleDef } | null;
 }
 
 export interface CrewView {
@@ -179,7 +185,13 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const downed = world.get(id, DownedC);
         const carried = world.get(id, CarriedC);
         const hurtLying = dead || !!downed || !!carried;
-        const clipName = hurtLying ? 'sleep' : clipFor(crew.activity, speed > 0.3);
+        // Crew on a walkable tile inside a module's footprint (a console's chair) sit in front of its sprite.
+        const mx = Math.round(s.x);
+        const my = Math.round(s.y);
+        const at = host.moduleAt?.(mx, my) ?? null;
+        const onOpen = !!at && openTilesOf(at.def, at.m.x, at.m.y, at.m.rot).some((t) => t.x === mx && t.y === my);
+        const sitting = onOpen && !hurtLying && speed <= 0.3 && crew.activity === 'working' && s.parts.some((q) => q.layer.def.clips.sit);
+        const clipName = hurtLying ? 'sleep' : sitting ? 'sit' : clipFor(crew.activity, speed > 0.3);
         if (clipName !== s.clip) {
           s.clip = clipName;
           s.t = 0;
@@ -200,7 +212,12 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const p = iso(s.x, s.y);
         // A carried body hangs at the carrier's side, drawn just over them.
         s.root.position.set(Math.round(p.x) + (carried ? 9 : 0), Math.round(p.y) + (carried ? -13 : 0));
-        s.root.zIndex = depthKey(s.x, s.y) + (carried ? 0.02 : 0);
+        let z = depthKey(s.x, s.y) + (carried ? 0.02 : 0);
+        if (at && onOpen) {
+          const f = footprintTiles(at.def, at.m.x, at.m.y, at.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
+          z = Math.max(z, moduleKey(at.def, f.x, f.y) + 0.02);
+        }
+        s.root.zIndex = z;
         applyLight(s, pos.x, pos.y, dead);
         const carrying = world.get(id, CarryingC);
         showHeld(s, carrying?.item, dir, !hurtLying, s.clip === 'walk' ? Math.round(Math.abs(Math.sin(s.t * 9))) : 0);

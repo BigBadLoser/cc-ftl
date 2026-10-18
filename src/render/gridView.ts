@@ -1,6 +1,8 @@
 import type { Sprite } from "pixi.js";
 import type { Atlas, StaticSprite } from "./assets/loader";
 import type { Grid } from "../sim/grid";
+import { ModuleC } from "../sim/modules/components";
+import { hullRow } from "../sim/modules/footprint";
 import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
@@ -63,6 +65,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let mode: CutawayMode = "auto";
   let builtMode: CutawayMode | null = null;
   let rev = -1;
+  let modRev = -1;
   let tintKey = "";
   let doorKey = -1;
 
@@ -76,8 +79,22 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     doors = [];
   }
 
+  /** Tile indices of engine hull sections: the engine's own hull art replaces the wall there. */
+  function engineHull(): Set<number> {
+    const out = new Set<number>();
+    const { world, modules } = host.overlayWorld;
+    for (const id of world.query(ModuleC)) {
+      const m = world.get(id, ModuleC);
+      const def = m && modules[m.def];
+      if (!m || !def?.hullEdge || m.gridId !== grid.id) continue;
+      for (const t of hullRow(def, m.x, m.y, m.rot)) out.add(t.y * grid.width + t.x);
+    }
+    return out;
+  }
+
   function rebuild(): void {
     clear();
+    const replaced = engineHull();
     for (let y = 0; y < grid.height; y++)
       for (let x = 0; x < grid.width; x++) {
         const k = kindAt(x, y);
@@ -89,7 +106,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           owned.push(...made);
           tinted.push({ spr: made[0] as Sprite, idx, wall: false, solid: false });
         }
-        if (k === Struct.Floor) continue;
+        if (k === Struct.Floor || replaced.has(idx)) continue;
         for (const piece of wallPieces(kindAt, x, y, k, mode)) {
           const s = atlas.firstOf(piece.chain);
           if (!s) continue;
@@ -157,9 +174,11 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     grid,
     update() {
       const r = grid.revision("struct");
-      if (r !== rev || builtMode !== mode) {
+      const mr = grid.revision("module");
+      if (r !== rev || mr !== modRev || builtMode !== mode) {
         rebuild();
         rev = r;
+        modRev = mr;
       }
       updateDoors();
       updateTints();

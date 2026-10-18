@@ -38,3 +38,37 @@ export function moduleAssets(world: World, id: number, m: Module, def: ModuleDef
   out.push(`${def.asset}${state}`, def.asset);
   return out;
 }
+
+/** Which footprint tiles a stand-in sprite of a layer is repeated on (real art is one sprite per layer). */
+export type LayerTiles = 'all' | 'hull' | 'rest';
+
+/** One sprite layer of a module: tried in order, with `key` naming its stand-in. */
+export interface ModuleLayer {
+  chain: string[];
+  key: string;
+  tiles: LayerTiles;
+}
+
+/** Targetable on enemy ships: weapons, engines, shield generators and the AI core (what the combat overlay can aim at). */
+export const isTargetable = (def: ModuleDef): boolean => !!(def.weapon || def.engine || def.shieldGen || def.aiCore);
+
+/**
+ * The sprite layers of a module, bottom first.
+ *  - Engines: `<asset>.hull.r{n}` (the always-full-height hull section) then `<asset>.machine.r{n}` (`.active` while burning).
+ *  - Weapons: the floor bay `<asset>.bay.r{n}`; the turret above it is drawn by turretView.
+ *  - Everything else: the usual chain from `moduleAssets`.
+ */
+export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean): ModuleLayer[] {
+  const a = def.asset;
+  const r = `.r${m.rot}`;
+  if (def.hullEdge) {
+    const burn = active ? ['.active'] : [];
+    const machine = [...burn.map((b) => `${a}.machine${r}${b}`), `${a}.machine${r}`, ...burn.map((b) => `${a}.machine${b}`), `${a}.machine`];
+    return [
+      { chain: [`${a}.hull${r}`, `${a}.hull`], key: `${a}.hull`, tiles: 'hull' },
+      { chain: machine, key: active ? `${a}.machine.active` : `${a}.machine`, tiles: 'rest' },
+    ];
+  }
+  if (def.weapon) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
+  return [{ chain: moduleAssets(world, id, m, def, active), key: a, tiles: 'all' }];
+}
