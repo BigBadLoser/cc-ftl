@@ -202,32 +202,44 @@ def row(ims, gap=10):
     return out
 
 
+def turret_cell_hot(kind, n, dd, hot):
+    sc = Scene(440, 400)
+    sc.sprite(f"roof_{n}", 220, 320)
+    sc.sprite(f"t_P_{kind}_{hot}_d{dd}", 220, 320)
+    return trim(sc.image())
+
+
 def main():
     OUTD.mkdir(parents=True, exist_ok=True)
+    V = "_v3"
     rows = []
     for kind, title, n, bn in PICK:
-        cells = [label(turret_cell(kind, n, dd), f"charged, aim d{dd}") for dd in (0, 1, 2)]
-        if kind == "driver" and (D / "t_P_driver_1_d3.npz").exists():
-            cells.append(label(turret_cell(kind, n, 3), "d3 (side-on check)"))
-        cells.append(label(bay_scene(f"bay_{kind}", f"t_P_{kind}_1_d0", bn), f"{bn}x{bn} bay, full-height mount column, ghost 30%"))
-        r = label(row(cells), title)
-        r.save(OUTD / f"pick_{kind}_1x.png")
-        zoom(r).save(OUTD / f"pick_{kind}_3x.png")
+        a = [label(turret_cell_hot(kind, n, dd, 1), f"charged d{dd}") for dd in range(4)]
+        a.append(label(turret_cell_hot(kind, n, 0, 0), "idle d0"))
+        b = [label(turret_cell_hot(kind, n, dd, 1), f"charged d{dd}") for dd in range(4, 8)]
+        b.append(label(bay_scene(f"bay_{kind}", f"t_P_{kind}_1_d0", bn), f"{bn}x{bn} bay + crew, ghost 30%"))
+        r = label(stack([row(a), row(b)]), title)
+        r.save(OUTD / f"pick_{kind}{V}_1x.png")
+        zoom(r).save(OUTD / f"pick_{kind}{V}_3x.png")
         rows.append(r)
     tags = ["dep_P_stowed"] + [f"dep_P_f{k}" for k in range(5)] + ["t_P_driver_1_d0"]
-    if all((D / f"{t}.npz").exists() for t in tags):
-        r = label(strip(tags, 5, ["stowed"] + [f"f{k}" for k in range(5)] + ["deployed"]),
-                  "MASS DRIVER  stowed hatch -> deploy f0..f4 -> deployed (aim d0)")
-        r.save(OUTD / "pick_deploy_1x.png")
-        zoom(r).save(OUTD / "pick_deploy_3x.png")
-        rows.append(r)
-    w = max(r.width for r in rows)
-    sheet = Image.new("RGB", (w + 16, sum(r.height for r in rows) + 14 * len(rows) + 8), tuple(int(c) for c in BG))
+    r = label(strip(tags, 5, ["stowed"] + [f"f{k}" for k in range(5)] + ["deployed"]),
+              "MASS DRIVER  stowed hatch (hazard seam) -> deploy f0..f4 -> deployed (aim d0)")
+    r.save(OUTD / f"pick_deploy{V}_1x.png")
+    zoom(r).save(OUTD / f"pick_deploy{V}_3x.png")
+    rows.append(r)
+    sheet = stack(rows, gap=14)
+    sheet.save(OUTD / f"picks{V}_1x.png")
+    zoom(sheet).save(OUTD / f"picks{V}_3x.png")
+
+
+def stack(ims, gap=8):
+    w = max(i.width for i in ims)
+    out = Image.new("RGB", (w + 16, sum(i.height for i in ims) + gap * len(ims) + 8), tuple(int(c) for c in BG))
     y = 8
-    for r in rows:
-        sheet.paste(r, (8, y))
-        y += r.height + 14
-    sheet.save(OUTD / "picks_1x.png")
-    zoom(sheet).save(OUTD / "picks_3x.png")
+    for im in ims:
+        out.paste(im, (8, y))
+        y += im.height + gap
+    return out
 
 main()

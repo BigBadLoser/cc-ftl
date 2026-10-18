@@ -1,41 +1,52 @@
-"""WEAPON BAY CONCEPTS (round 2): the 3x3 mass driver bay for each turret direction, and the roof-hatch deploy frames.
+"""WEAPON BAYS for the picked turrets (round 3), and the roof-hatch deploy frames.
 
-Bay frame: cmbkit.Frame(rot=1, square=True), u = grid +x, v = grid +y, origin = footprint centre at floor level, footprint
-u, v in -1.5..1.5. No slab: the lift trunk, capacitor cans, fin stack, console and feeder each stand on their own feet.
-Shared layout: the turret lift trunk in the middle (the turret stows into it, under the roof hatch), capacitor bank at the
-right corner, fin stack at the back, crew service console at the front, and a direction-specific ammo feeder on the left
-(H: slug loader through coil hoops, S: twin magazine drums, R: revolving slug magazine). Idle: accents dark."""
+Frame: cmbkit.Frame(rot=1, square=True), u = grid +x, v = grid +y, origin = footprint centre at floor level. No slab: every
+piece stands on its own feet. Each bay has a slim FULL-HEIGHT mount column (floor to roof plane) that carries the turret
+through the roof. The 3x3 mass driver bay also has an open guide cage at the turret's race-ring radius (the well the turret
+stows into), so the gear behind stays visible. Gear sits in the corners. Idle: accents dark."""
 import math
 from . import core, cmbkit, detail as D
 from .cmbkit import Frame, prim
 from . import turret_concepts as TC
 
 _g = TC._g
-RADIUS = {"H": 0.92, "S": 0.86, "R": 0.9}      # turret race radius (rig units) = hatch radius - 0.06
+RADIUS = {"driver": 0.92}            # turret race radius (rig units); hatch radius = this + 0.06
+CAGE = 0.92 * 1.3                    # mass driver race radius in world units (rig scale 1.3)
 
 
-def _trunk(f, r=0.74, top=TC.ZR, ribs=12):
-    """The turret's mount column, FULL HEIGHT from the floor to the roof plane: it carries the turret through the roof
-    (the turret stows down into it). Foot flange, armour bands, ribs, dark status lamps, collar flush with the roof."""
+def _column(f, r=0.3, cage=None, posts=10, top=TC.ZR):
+    """Slim full-height mount column; optional open guide cage at the race-ring radius (posts + rings, roof ring)."""
     _g("trunk")
-    f.vcyl(0, 0, 0, r + 0.1, 0.07, "steelD", top="steel", sides=32)
-    f.vcyl(0, 0, 0.07, r, top - 0.19, "steelD", sides=32)
-    for z in (0.42, 0.98, 1.54):
-        f.vcyl(0, 0, z, r + 0.025, 0.1, "steel", top="steelL", sides=32)
-    for k in range(ribs):
-        a = (k + 0.5) * math.tau / ribs
-        f.box((r - 0.005) * math.cos(a), (r - 0.005) * math.sin(a), 0.07, 0.08, 0.08, top - 0.19, "steel", top="steelL")
-    f.vcyl(0, 0, top - 0.12, r + 0.08, 0.12, "steelL", top="steel", sides=32)       # collar under the roof ring
-    f.vcyl(0, 0, top, r - 0.12, 0.012, "dark", sides=32)
+    f.vcyl(0, 0, 0, r + 0.12, 0.07, "steelD", top="steel", sides=28)
+    f.vcyl(0, 0, 0.07, r, top - 0.19, "steelD", sides=28)
+    for z in (0.5, 1.1, 1.7):
+        f.vcyl(0, 0, z, r + 0.03, 0.08, "steel", top="steelL", sides=28)
+    for k in range(8):
+        a = (k + 0.5) * math.tau / 8
+        f.box((r - 0.005) * math.cos(a), (r - 0.005) * math.sin(a), 0.07, 0.07, 0.07, top - 0.19, "steel", top="steelL")
+    f.vcyl(0, 0, top - 0.12, r + 0.08, 0.12, "steelL", top="steel", sides=28)
     for k in range(4):                                                               # status lamps (idle: dark)
         a = k * math.tau / 4 + math.pi / 4
-        f.box((r + 0.02) * math.cos(a), (r + 0.02) * math.sin(a), 1.25, 0.08, 0.08, 0.1, "dark", base=False)
+        f.box((r + 0.02) * math.cos(a), (r + 0.02) * math.sin(a), 1.35, 0.07, 0.07, 0.1, "dark", base=False)
+    if not cage:
+        return
+    _g("cage")
+    TC.vannulus(f, cage + 0.07, cage - 0.07, 0, 0.08, "steelD", "steel")
+    TC.vannulus(f, cage + 0.09, cage - 0.07, top - 0.1, top, "steelD", "steelL")
+    for z in (0.85, 1.6):
+        TC.vannulus(f, cage + 0.04, cage - 0.04, z, z + 0.07, "steel", "steelL")
+    for k in range(posts):
+        a = (k + 0.5) * math.tau / posts
+        c, s_ = math.cos(a), math.sin(a)
+        D.seg(f, (cage * c, cage * s_, 0.08), (cage * c, cage * s_, top - 0.1), 0.045, "steel", 8)
+    _g("spoke")
+    for k in range(4):
+        a = k * math.tau / 4
+        c, s_ = math.cos(a), math.sin(a)
+        D.rail(f, ((r + 0.05) * c, (r + 0.05) * s_, top - 0.06), ((cage - 0.05) * c, (cage - 0.05) * s_, top - 0.06), 0.04, "steelD")
 
 
-CAPS = ((1.2, -0.62), (0.95, -1.12), (0.42, -1.24))
-
-
-def _caps(f, caps=CAPS, r=0.2, h=1.0, rt=0.72):
+def _caps(f, caps, r=0.17, h=0.9, rt=None):
     _g("caps")
     for u, v in caps:
         f.vcyl(u, v, 0, r + 0.05, 0.06, "steelD", top="steel", sides=16)
@@ -44,23 +55,25 @@ def _caps(f, caps=CAPS, r=0.2, h=1.0, rt=0.72):
             f.vcyl(u, v, z, r + 0.015, 0.07, "steelD", sides=16)
         f.vcyl(u, v, h + 0.06, r * 0.6, 0.08, "steelD", top="plate", sides=12)
         f.vcyl(u, v, h + 0.06, r + 0.005, 0.03, "dark", sides=16)
+    if rt is None:
+        return
     _g("bus")
-    for u, v in caps:                                                                # bus straps into the trunk
+    for u, v in caps:                                                                # bus straps to the column / cage
         d = math.hypot(u, v)
-        D.rail(f, (u - u / d * (r - 0.02), v - v / d * (r - 0.02), h * 0.86), (u * rt / d, v * rt / d, h * 0.86), 0.045, "steelL")
+        D.rail(f, (u - u / d * (r - 0.02), v - v / d * (r - 0.02), 0.86), (u * rt / d, v * rt / d, 0.86), 0.04, "steelL")
 
 
-def _fins(f, u0=-1.4, u1=-0.54, v=-1.12, h=0.95, n=7):
+def _fins(f, u0, u1, v, h=0.9, n=5):
     _g("fins")
     um, su = (u0 + u1) / 2, u1 - u0
     for u in (u0 + 0.08, u1 - 0.08):
-        f.box(u, v, 0, 0.12, 0.62, 0.08, "steelD", top="steel")
-    f.box(um, v, 0.08, su + 0.06, 0.5, 0.1, "steel", top="steelL")
-    D.fins(f, u0, u1, v, 0.18, 0.46, h, n, thick=0.06, mat="steelL", top="plate")
-    f.box(um, v, h + 0.18, su + 0.06, 0.5, 0.06, "steelD", top="steel")
+        f.box(u, v, 0, 0.12, 0.5, 0.08, "steelD", top="steel")
+    f.box(um, v, 0.08, su + 0.06, 0.42, 0.1, "steel", top="steelL")
+    D.fins(f, u0, u1, v, 0.18, 0.38, h, n, thick=0.06, mat="steelL", top="plate")
+    f.box(um, v, h + 0.18, su + 0.06, 0.42, 0.06, "steelD", top="steel")
 
 
-def _console(f, u=1.12, v=1.12, k=1.0):
+def _console(f, u, v, k=1.0):
     _g("console")
     f.box(u, v, 0, 0.42 * k, 0.42 * k, 0.06, "steelD", top="steel")
     f.box(u, v, 0.06, 0.26 * k, 0.26 * k, 0.62, "steel", top="steelL")
@@ -68,111 +81,77 @@ def _console(f, u=1.12, v=1.12, k=1.0):
     f.box(u, v, 0.78, 0.42 * k, 0.42 * k, 0.05, "dark", top="cyan", taper=0.9)
 
 
-def _feet(f, u0, u1, v, z, r, w=0.2):
-    for u in (u0, u1):
-        f.box(u, v, 0, 0.16, w + 2 * r * 0.6, z - r * 0.8, "steelD", top="steel")
-
-
-def feeder_H(f):
-    _g("feeder")
-    v, z = 1.05, 0.6
-    _feet(f, -1.15, -0.43, v, z, 0.3)
-    f.hcyl(-1.42, 0.05, v, z, 0.16, "gm", sides=16, cap="steelL", capstart="steelL")
-    for u in (-0.98, -0.6, -0.22):
-        TC.hoop(f, u, z, 0.1, 0.3, 0.2, False, "orange", v=v)
-        _g("hoopfoot")
-        f.box(u, v, 0, 0.1, 0.18, z - 0.29, "steelD", top="steel")
-        _g("feeder")
-    f.hcyl(-1.46, -1.36, v, z, 0.24, "steel", sides=16, capstart="steelL", cap="steelL")
-    _g("arm")
-    D.seg(f, (-0.02, v, z), (-0.02, 0.7, z), 0.12, "steelL", 12, cap="steel")
-
-
-def feeder_S(f):
-    _g("feeder")
-    for u, v in ((-0.95, 1.05), (0.2, 1.18)):
-        f.vcyl(u, v, 0, 0.36, 0.06, "steelD", top="steel", sides=20)
-        f.vcyl(u, v, 0.06, 0.3, 0.86, "steelD", sides=20, top="steel")
-        for z in (0.2, 0.62):
-            f.vcyl(u, v, z, 0.315, 0.08, "steel", sides=20)
-        f.vcyl(u, v, 0.92, 0.2, 0.06, "steelL", top="plate", sides=16)
-        f.vcyl(u, v, 0.45, 0.31, 0.06, "dark", sides=20)
-    _g("arm")
-    D.seg(f, (-0.75, 0.83, 0.75), (-0.45, 0.6, 0.75), 0.1, "steelL", 12, cap="steel", capstart="steel")
-    D.seg(f, (0.17, 0.9, 0.75), (0.12, 0.7, 0.75), 0.1, "steelL", 12, cap="steel", capstart="steel")
-
-
-def feeder_R(f):
-    _g("feeder")
-    v, z = 1.05, 0.62
-    _feet(f, -1.0, -0.4, v, z, 0.42, w=0.3)
-    f.hcyl(-1.36, -0.08, v, z, 0.16, "dark", sides=16)
-    for k in range(6):
-        a = k * math.tau / 6 + math.pi / 6
-        f.hcyl(-1.3, -0.14, v + 0.28 * math.cos(a), z + 0.28 * math.sin(a), 0.115, "gm", sides=12, cap="steelL", capstart="steelL")
-    for u0 in (-1.4, -0.74, -0.12):
-        f.hcyl(u0, u0 + 0.08, v, z, 0.42, "steelD", sides=24, cap="steel", capstart="steel")
-    _g("arm")
-    D.seg(f, (-0.04, v - 0.1, z), (0.1, 0.72, z), 0.11, "steelL", 12, cap="steel", capstart="steel")
-
-
-def bay(d_):
-    m = core.Mesh(f"bay_{d_}")
-    f = Frame(m, 1, square=True)
+def _floor(lo, hi):
     if cmbkit.REC is not None:
         cmbkit.REC.group = "deck"
-        cmbkit.REC.add({"kind": "box", "lo": [-1.5, -1.5, -0.05], "hi": [1.5, 1.5, 0.0], "src": "floor"})
-    _trunk(f)
-    _caps(f)
-    _fins(f)
-    _console(f)
-    {"H": feeder_H, "S": feeder_S, "R": feeder_R}[d_](f)
+        cmbkit.REC.add({"kind": "box", "lo": [lo, lo, -0.05], "hi": [hi, hi, 0.0], "src": "floor"})
+
+
+def loader(f):
+    """Mass driver slug loader in the left corner: a short loader tube through two coil rings, on feet, with a feed
+    chute up to the cage ring."""
+    _g("feeder")
+    v, z = 1.2, 0.5
+    for u in (-1.38, -0.98):
+        f.box(u, v, 0, 0.12, 0.3, z - 0.12, "steelD", top="steel")
+    f.hcyl(-1.48, -0.86, v, z, 0.13, "gm", sides=16, cap="steelL", capstart="steelL")
+    for u in (-1.24, -1.08):
+        TC.split_hoop(f, u, z, 0.24, 0.16, False, "orange", v=v, w=0.04, gap=0.035)
+        _g("hoopfoot")
+        f.box(u, v, 0, 0.08, 0.14, z - 0.235, "steelD", top="steel")
+        _g("feeder")
+    _g("arm")
+    D.seg(f, (-0.9, 1.1, z), (-0.85, 0.87, 0.86), 0.08, "steelL", 12, cap="steel", capstart="steel")
+
+
+def bay_driver():
+    m = core.Mesh("bay_driver")
+    f = Frame(m, 1, square=True)
+    _floor(-1.5, 1.5)
+    _column(f, 0.3, CAGE)
+    _caps(f, ((1.2, -1.2), (1.3, -0.74), (0.74, -1.3)), r=0.16, rt=CAGE + 0.03)
+    _fins(f, -1.45, -0.95, -1.2)
+    _console(f, 1.18, 1.18, 0.8)
+    loader(f)
     return [m.build()] if cmbkit.REC is None else []
-
-
-BAYS = {k: (lambda k=k: bay(k)) for k in "HSR"}
 
 
 def emitter(f, u, v):
-    """Laser bay: upright lasing cell, a tall round canister with a dark crystal window (idle) between armour rings."""
+    """Laser bay: upright lasing cell, a round canister with a dark crystal window (idle) between armour rings."""
     _g("feeder")
-    f.vcyl(u, v, 0, 0.3, 0.06, "steelD", top="steel", sides=20)
-    f.vcyl(u, v, 0.06, 0.24, 1.1, "steelD", sides=20, top="steel")
-    for z in (0.12, 0.62, 0.98):
-        f.vcyl(u, v, z, 0.26, 0.08, "steel", top="steelL", sides=20)
-    f.vcyl(u, v, 0.28, 0.25, 0.26, "dark", sides=20)
-    f.vcyl(u, v, 1.16, 0.12, 0.1, "steelL", top="plate", sides=14)
+    f.vcyl(u, v, 0, 0.26, 0.06, "steelD", top="steel", sides=20)
+    f.vcyl(u, v, 0.06, 0.2, 1.0, "steelD", sides=20, top="steel")
+    for z in (0.12, 0.6, 0.9):
+        f.vcyl(u, v, z, 0.22, 0.08, "steel", top="steelL", sides=20)
+    f.vcyl(u, v, 0.28, 0.21, 0.24, "dark", sides=20)
+    f.vcyl(u, v, 1.06, 0.1, 0.1, "steelL", top="plate", sides=14)
 
 
 def pd_drum(f, v):
-    """Point-defence bay: horizontal power/cooling drum on two feet, ribbed, feeding the column."""
+    """Point-defence bay: horizontal ribbed power drum on two feet."""
     _g("feeder")
-    z = 0.42
-    _feet(f, -0.85, -0.5, v, z, 0.3)
-    D.drum(f, -0.98, -0.36, v, z, 0.28, n=3, body="steelD", rib="steel", cap="steelL", sides=20)
-    _g("arm")
-    D.seg(f, (-0.33, v - 0.08, z), (-0.2, 0.36, z), 0.09, "steelL", 12, cap="steel", capstart="steel")
+    z = 0.36
+    for u in (-0.84, -0.5):
+        f.box(u, v, 0, 0.12, 0.34, z - 0.18, "steelD", top="steel")
+    D.drum(f, -0.95, -0.4, v, z, 0.22, n=3, body="steelD", rib="steel", cap="steelL", sides=20)
 
 
 def small_bay(kind):
-    """2x2 bay (laser / point defence): u, v in -1..1, full-height mount column in the middle."""
+    """2x2 bay (burst laser / point defence), u, v in -1..1: slim full-height column, gear in three corners only."""
     m = core.Mesh(f"bay_{kind}")
     f = Frame(m, 1, square=True)
-    if cmbkit.REC is not None:
-        cmbkit.REC.group = "deck"
-        cmbkit.REC.add({"kind": "box", "lo": [-1.0, -1.0, -0.05], "hi": [1.0, 1.0, 0.0], "src": "floor"})
-    _trunk(f, r=0.44, ribs=10)
-    _caps(f, ((0.72, -0.36), (0.42, -0.74)), r=0.15, h=0.8, rt=0.42)
-    _fins(f, -0.92, -0.42, -0.66, h=0.7, n=5)
-    _console(f, 0.72, 0.72, k=0.75)
+    _floor(-1.0, 1.0)
+    _column(f, 0.2)
+    _caps(f, ((0.68, -0.62),), r=0.16, h=0.8)
+    _console(f, 0.66, 0.66, k=0.7)
     if kind == "laser":
         emitter(f, -0.62, 0.62)
     else:
-        pd_drum(f, 0.68)
+        pd_drum(f, 0.66)
     return [m.build()] if cmbkit.REC is None else []
 
 
-BAYS.update({"driver": lambda: bay("H"), "laser": lambda: small_bay("laser"), "pd": lambda: small_bay("pd")})
+BAYS = {"driver": bay_driver, "laser": lambda: small_bay("laser"), "pd": lambda: small_bay("pd")}
 
 
 # ---- roof hatch + deploy frames ---------------------------------------------------------------------------------
@@ -198,9 +177,10 @@ def hatch(rh, opening, z0=TC.ZR, s=1.0):
     for sv in (-1, 1):
         o = sv * opening * rh * 1.02
         half = lambda r: [(r * math.cos(math.pi * k / n), sv * r * math.sin(math.pi * k / n) + o) for k in range(n + 1)]  # noqa: E731
-        prism(f, half(rh - 0.005), -0.08, -0.025, "steelD", top="steelD")
-        prism(f, half(rh * 0.74), -0.025, -0.01, "steel", top="steel")
-        f.box(0, o + sv * 0.03, -0.025, rh * 1.6, 0.06, 0.02, "dark")                       # seam lip
+        prism(f, half(rh - 0.005), -0.08, -0.025, "dark", top="dark")                        # dark armour leaves
+        inner = [(u, v + sv * 0.16) for u, v in half(rh * 0.7)]
+        prism(f, inner, -0.025, -0.01, "steelD", top="steelD")
+        cmbkit.hazard_strip(f, -rh * 0.9, rh * 0.9, o + sv * 0.06, -0.025, step=0.15, w=0.1, h=0.015)   # hazard seam
     ring = lambda r, z: [f.pt(r * math.cos(k * math.tau / 32), r * math.sin(k * math.tau / 32), z) for k in range(32)]  # noqa: E731
     A, B = ring(rh, -DEPTH), ring(rh, -0.02)
     for k in range(32):

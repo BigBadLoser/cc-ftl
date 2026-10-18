@@ -9,7 +9,8 @@ from sprites import cmbkit, overlap, turret_concepts as TC, turret_bays as TB  #
 ALLOW = [("table", "neck"), ("table", "drum"), ("neck", "breech"), ("neck", "cylinder"), ("neck", "motor"),
          ("breech", "barrel"), ("breech", "rods"), ("hoops", "rods"), ("barrel", "hoops"), ("barrel", "rods"), ("barrel", "brake"), ("barrel", "cylinder"),
          ("drum", "trunnion"), ("trunnion", "carriage"), ("carriage", "barrel"), ("carriage", "brake"),
-         ("motor", "cluster"), ("bus", "caps"), ("bus", "trunk"), ("arm", "feeder"), ("arm", "trunk"), ("hoopfoot", "feeder"), ("cheek", "table"), ("cheek", "neck")]
+         ("motor", "cluster"), ("bus", "caps"), ("bus", "trunk"), ("arm", "feeder"), ("arm", "trunk"), ("hoopfoot", "feeder"), ("cheek", "table"), ("cheek", "neck"),
+         ("cage", "spoke"), ("trunk", "spoke"), ("bus", "cage"), ("arm", "cage")]
 
 
 def check(name, build):

@@ -61,6 +61,10 @@ def place(rig, d=0, pitch=0.0, lift=0.0, z0=ZR, parts=("fixed", "head", "gun")):
 def vannulus(f, ro, ri, z0, z1, mat, top=None, sides=28):
     """Flat ring around the vertical axis (outer wall, inner wall, top): open in the middle."""
     P = lambda r, z, k: f.pt(r * math.cos(k * math.tau / sides), r * math.sin(k * math.tau / sides), z)  # noqa: E731
+    if cmbkit.REC is not None and cmbkit.REC.depth == 1:            # register a true ring for overlap.py
+        cmbkit.REC.custom = True
+        c = f.pt(0, 0, 0)
+        cmbkit.REC.add({"kind": "cyl", "axis": 2, "c": (c.x, c.y), "r": (ri, ro), "a": (z0, z1), "src": "vannulus"})
     for k in range(sides):
         j = (k + 1) % sides
         f.poly([P(ro, z0, k), P(ro, z0, j), P(ro, z1, j), P(ro, z1, k)], mat, flip=True)
