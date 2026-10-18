@@ -76,7 +76,9 @@ def validate(craft,core,setup,faction):
         return abs(sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(points,points[1:]+points[:1])))/2
     wing_area=2*(area(craft.TRANSPORT_WING)+area(craft.TRANSPORT_OUTER_WING))
     assert wing_area>9.0
-    design={"variant":"B / full-chord folding-wing utility shuttle / revision 10","legacyV4Preserved":True,
+    from review.transport_symmetry import audit
+    symmetry=audit(craft,core)
+    design={"variant":"B / full-chord folding-wing utility shuttle / revision 11","legacyV4Preserved":True,
             "parkedSize":[round(float(dims[1]),4),round(float(dims[0]),4),height],
             "pitDepth":pit,"topAboveDeck":round(height-pit,4),"roofTop":2.05,
             "clearanceToRoofTop":round(2.05-(height-pit),4),"flightSpan":craft.TRANSPORT_WING_SPAN,
@@ -87,7 +89,8 @@ def validate(craft,core,setup,faction):
             "rearSlopeDirection":"upper edge aft / lower hinge toward nose",
             "rearTopU":round(rear_u(2.03),4),"rearBottomU":round(rear_u(.70),4),
             "rearSlopeGeometryCheck":"passed",
-            "supportGeometry":"restored B5 thruster bodies and wing rests",
+            "supportGeometry":"B5 thruster bodies / identical short forward ends on both sides",
+            "bilateralSymmetry":symmetry,
             "wingPitchDegrees":round(math.degrees(actual_pitch),2),
             "wingPitchDirection":"leading edge lower / trailing edge higher",
             "wingLeadingEdgeSweepDegrees":round(math.degrees(math.atan2(2.25,2.66)),2),

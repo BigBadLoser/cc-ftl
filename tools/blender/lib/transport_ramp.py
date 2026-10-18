@@ -42,7 +42,7 @@ def loading_ramp(f,opening=0):
         panel(-.41,.41,.20+i*.19,.23+i*.19,.039,"steelD")
     panel(-.12,.12,RAMP_LENGTH-.21,RAMP_LENGTH-.12,.048,"steelD")
     for i in range(6):
-        panel(-.48+i*.16,-.33+i*.16,.035,.085,.044,"hazY" if i%2==0 else "hazK")
+        panel(-.475+i*.16,-.325+i*.16,.035,.085,.044,"hazY" if min(i,5-i)%2==0 else "hazK")
     # Traction ribs on the inner walking face become visible when lowered.
     panel(.44,-.44,.09,RAMP_LENGTH-.09,-.030,"plate")
     for i in range(6):

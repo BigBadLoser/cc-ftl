@@ -308,7 +308,7 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
 
     Parked/docked: broad outer wings fold 180 degrees flat over the aft hull.
     Flight span 7.2; each swept wing has a 2.75-unit local fore-aft envelope.
-    Revision 10: tapered nose walls also lean inward; circular hatch sits flush. ramp_open is a preview pose in [0,1].
+    Revision 11: mirrored nacelles and trim; the airlock is the only side exception. ramp_open is a preview pose in [0,1].
     Height about 2.765, suggested pit 1.80, leaving about .965 above deck.
     No interior, pad, pit or bay geometry is part of this vehicle builder.
     """
@@ -335,9 +335,8 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
     for side in (-1,1):
         # A continuous shoulder/nacelle blends the wing root into the engine.
         shoulder=[(-2.04,.30,1.40,.62,side*1.36),(-1.45,.52,1.52,.69,side*1.20),
-                (-.45,.45,1.56,.66,side*1.12),(.22,.24,1.52,.54,side*1.02),
-                (.65,.14,1.48,.29,side*.96)]
-        loft(f,shoulder[:-1] if side==-1 else shoulder,"gW1")
+                (-.45,.45,1.56,.66,side*1.12),(.22,.24,1.52,.54,side*1.02)]
+        loft(f,shoulder,"gW1")
         v=side*1.38
         f.hcyl(-2.22,-2.05,v,1.31,.30,"steelD",r1=.28,sides=12)
         f.hcyl(-2.19,-2.17,v,1.31,.23,"dark",sides=12,capstart="dark")
@@ -357,11 +356,11 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
     g=FlightFrame(lv,heading)
     for side in (-1,1):
         transport_wing(g,side,fold,True)
-        for chain in (((-2.04,1.66),(-1.45,1.72),(-.45,1.57),(.22,1.26),(.65,1.10)),
+        for chain in (((-2.04,1.66),(-1.45,1.72),(-.45,1.57),(.22,1.26)),
                       ((.50,1.05),(2.25,nose_width(2.25)),(2.45,.60))):
             paint=LeaningNoseFrame(lv,heading) if chain[0][0]==.50 else g
             for (u0,v0),(u1,v1) in zip(chain,chain[1:]):
-                if side==-1 and u0 in (.50,.22):
+                if side==-1 and u0==.50:
                     continue
                 g.poly([paint.pt(u0,side*(v0+.006),1.20),paint.pt(u1,side*(v1+.006),1.20),
                         paint.pt(u1,side*(v1+.006),1.30),paint.pt(u0,side*(v0+.006),1.30)],"mkS",flip=True)

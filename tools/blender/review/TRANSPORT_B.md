@@ -1,9 +1,16 @@
-# Transport B10 — tapered nose walls also lean inward
+# Transport B11 — mirror symmetry corrected and verified
 
-Concept B remains separate from the rejected original v4 shuttle. B9's full nose
-wall taper remains; the walls additionally lean inward by 6 degrees as they rise.
-The circular hatch is yawed and rolled to sit flush, preserving its round shape.
-Canopy, hatch ribs, wings, thruster bodies and rear ramp retain their shapes.
+Concept B remains separate from the rejected original v4 shuttle. The forward
+ends of both thruster fairings now match the shorter airlock-clear version.
+Their painted stripes match too. The rear ramp's small hazard patches are
+centred and painted in mirrored pairs. The one-sided hatch and its interrupted
+nose stripe are the only bilateral exceptions.
+
+B10's tapered/leaning nose, canopy, hatch, wings and main thruster bodies remain.
+The audit compares every raw polygon's geometry and paint with its reflection,
+without the hatch, in parked, flying, docked and lowered-ramp poses. Coordinates
+match within 0.00001 world units. A top-view silhouette also hides the hatch
+for visual inspection. Normal review views still show the hatch.
 
 ## Wing shape and attitude
 
@@ -14,7 +21,8 @@ removes area at the tips while preserving the broad overall reach.
 
 The entire wing assembly, including its hinge axis, is pitched -6 degrees:
 the leading edge is lower and the trailing edge rises aft, following the hull
-line. The wing rest itself uses B5's previous shape. A narrower paint break
+line. The wing rest retains B5's shape; both forward fairing ends stop at station 0.22
+to keep the hatch clear. A narrower paint break
 at the fold joins the visual shape into one swept wing per side.
 
 The outer panels still roll 180 degrees over the aft roof, with thickness
@@ -92,8 +100,8 @@ shader, preventing red/green illumination of nearby hull surfaces.
 
 ## Review artifacts
 
-Current files: `artifacts/shuttle-sweepback-r10/`. B9 remains under
-`artifacts/shuttle-sweepback-r9/` for the before/after comparison.
+Current files: `artifacts/shuttle-sweepback-r11/`. B10 remains under
+`artifacts/shuttle-sweepback-r10/` for the before/after comparison.
 
 - `transport-B-beauty.png`, `transport-B-preview.blend`: low-sample beauty
   and editable scene, showing tapered/leaning nose walls, the aligned hatch and swept wings.
@@ -105,18 +113,20 @@ Current files: `artifacts/shuttle-sweepback-r10/`. B9 remains under
 - `transport-B-ramp-1x.png`, `-3x.png`: rear three-quarter closed/lowered ramp.
 - `transport-B-silhouettes-1x.png`, `-3x.png`: folded/deployed forms and crew.
 - `transport-B-planform-1x.png`, `-3x.png`: top views with a 4x5 bay outline.
-- `transport-B-before-after-1x.png`, `-3x.png`: B9/B10 at the same heading/scale.
-- `transport-B-nose-plan-1x.png`, `-3x.png`: B9/B10 in top view, showing the
+- `transport-B-before-after-1x.png`, `-3x.png`: B10/B11 at the same heading/scale.
+- `transport-B-nose-plan-1x.png`, `-3x.png`: B10/B11 in top view, showing the
   taper along the full wall and the aligned circular hatch.
+- `transport-B-symmetry-1x.png`, `-3x.png`: top view beside the audit silhouette
+  with the hatch hidden and centre line marked.
 - `transport-B-export-keys-1x.png`, `-3x.png`: raw export-key colours.
 - `design.json`, `pixel-checks.json`: envelope, actual mesh wing pitch/sweep,
   measured nose wall lean, corrected rear slope, lowered-ramp ground check,
   hatch clearance, nozzle-only
-  glow, export keys, alpha and exact nearest-neighbour 3x checks.
+  glow, bilateral polygon/paint symmetry, export keys, alpha and exact nearest-neighbour 3x checks.
 
 ```sh
-blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r10"
-python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r10" --compose
+blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/transport_preview.py -- --out "$PWD/artifacts/shuttle-sweepback-r11"
+python3 tools/blender/review/transport_preview.py --out "$PWD/artifacts/shuttle-sweepback-r11" --compose
 ```
 
 One Blender process at a time, two threads, four sprite samples and eight
