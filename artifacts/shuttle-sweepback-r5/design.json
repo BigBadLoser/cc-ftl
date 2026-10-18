@@ -1,0 +1,54 @@
+{
+  "variant": "B / full-chord folding-wing utility shuttle / revision 5",
+  "legacyV4Preserved": true,
+  "parkedSize": [
+    3.8249,
+    4.93,
+    2.64
+  ],
+  "pitDepth": 1.7,
+  "topAboveDeck": 0.94,
+  "roofTop": 2.05,
+  "clearanceToRoofTop": 1.11,
+  "flightSpan": 7.2,
+  "deployedWingPlanArea": 10.3982,
+  "previousWingPlanArea": 11.4692,
+  "boardingOpeningHeight": 1.6,
+  "boardingOpeningShape": "circle",
+  "boardingOpeningDiameter": 1.6,
+  "rearFaceAngleFromVertical": 16.0,
+  "loadingRamp": "bottom-hinged / closed and lowered review poses",
+  "canopyFrontU": 2.43,
+  "canopyFrontTop": 1.58,
+  "foldedWingClearanceAheadOfDoorLeaf": 0.38,
+  "reviewFactionColors": {
+    "primary": [
+      82,
+      117,
+      147
+    ],
+    "secondary": [
+      199,
+      161,
+      94
+    ]
+  },
+  "wingFoldDegrees": 180,
+  "wingFoldPlane": "longitudinal roll / flat over aft roof",
+  "outerPanelFoldDegrees": 180,
+  "wingStorage": "outer panels stacked flat over aft hull",
+  "deployedWingChord": 2.7,
+  "doorLeafMinimumU": 0.6,
+  "loweredRampMinimumU": -3.5231,
+  "loweredRampGroundCheck": "passed",
+  "spriteSamples": 4,
+  "beautySamples": 8,
+  "glowingNozzleFaces": 26,
+  "previewOnly": true,
+  "renderedFlights": [
+    0,
+    2,
+    5
+  ],
+  "geometryChecks": "passed"
+}

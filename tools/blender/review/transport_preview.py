@@ -1,8 +1,8 @@
 """Concept B, preview only: one Blender process, four samples, no atlas writes.
 
 blender -b -t 2 --factory-startup --python-exit-code 1 --python \
-  tools/blender/review/transport_preview.py -- --out artifacts/shuttle-sweepback-r4
-python3 tools/blender/review/transport_preview.py --out artifacts/shuttle-sweepback-r4 --compose
+  tools/blender/review/transport_preview.py -- --out artifacts/shuttle-sweepback-r5
+python3 tools/blender/review/transport_preview.py --out artifacts/shuttle-sweepback-r5 --compose
 """
 import argparse
 import json
@@ -59,7 +59,7 @@ def room_geometry(core,depth):
     return [m.build()]
 
 
-def render(out,flight_only=False):
+def render(out,flight_only=False,validate_only=False):
     import bpy
     from sprites import core,post,shuttle_craft as craft
     post.select(True)
@@ -72,12 +72,17 @@ def render(out,flight_only=False):
         # Exact export-key paint is camera-visible ink, never a mesh light.
         # Avoid red/green spill onto the side faces of the stacked wing panels.
         core._mats["color"].cycles.emission_sampling="NONE"
+        nodes=core._mats["color"].node_tree
+        rays=nodes.nodes.new("ShaderNodeLightPath")
+        ink=next(n for n in nodes.nodes if n.type=="EMISSION")
+        nodes.links.new(rays.outputs["Is Camera Ray"],ink.inputs["Strength"])
     # Measure the new geometry, not the untouched original craft's constants.
     setup()
     parked=craft.transport_shuttle(0,"parked")
     q=np.concatenate([np.array([v.co[:] for v in ob.data.vertices]) for ob in parked])
     dims=np.ptp(q,axis=0)
-    assert dims[0]<=4.4+1e-5 and dims[1]<=3.9+1e-5
+    assert dims[0]<=5.0+1e-5 and dims[1]<=3.9+1e-5
+    assert np.abs(q[:,0]).max()<2.5 and np.abs(q[:,1]).max()<2
     assert abs(q[:,2].min())<1e-6 and abs(q[:,2].max()-craft.TRANSPORT_HEIGHT)<1e-5
     pit=craft.TRANSPORT_PIT
     assert q[:,2].max()-pit<2.05 and pit>dims[2]/2
@@ -90,8 +95,11 @@ def render(out,flight_only=False):
     moving=core.Mesh("review_folded_foils")
     for side in (-1,1):
         craft.transport_wing(FlightFrame(moving,0),side,craft.TRANSPORT_FOLD)
+    from lib.transport_hatch import HATCH_U,HATCH_RADIUS
+    from lib.transport_ramp import REAR_SLOPE
+    door_min=HATCH_U-HATCH_RADIUS
     moving_u=max(p[0] for p in moving.v)
-    assert moving_u<.97-.10
+    assert moving_u<door_min-.10
     assert craft.TRANSPORT_HATCH_HEIGHT>=1.60
     glow_faces=0
     for ob in flight:
@@ -101,25 +109,39 @@ def render(out,flight_only=False):
                 p=np.array([ob.data.vertices[i].co[:] for i in poly.vertices])
                 assert p[:,0].max()< -2.16 and np.abs(np.abs(p[:,1])-1.38).max()<.17
                 glow_faces+=1
+    # The lowered ramp reaches the landing datum and extends outside the stowed envelope.
+    setup()
+    lowered=craft.transport_shuttle(0,"parked",ramp_open=1)
+    ramp_q=np.concatenate([np.array([v.co[:] for v in ob.data.vertices]) for ob in lowered])
+    assert ramp_q[:,2].min()>=-1e-4 and ramp_q[:,0].min() < -3.4
     height=craft.TRANSPORT_HEIGHT
     def area(points):
         return abs(sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(points,points[1:]+points[:1])))/2
     wing_area=2*(area(craft.TRANSPORT_WING)+area(craft.TRANSPORT_OUTER_WING))
-    assert wing_area>3.4
-    design={"variant":"B / full-chord folding-wing utility shuttle / revision 4","legacyV4Preserved":True,
+    assert wing_area>10.0
+    design={"variant":"B / full-chord folding-wing utility shuttle / revision 5","legacyV4Preserved":True,
             "parkedSize":[round(float(dims[1]),4),round(float(dims[0]),4),height],
             "pitDepth":pit,"topAboveDeck":round(height-pit,4),"roofTop":2.05,
             "clearanceToRoofTop":round(2.05-(height-pit),4),"flightSpan":craft.TRANSPORT_WING_SPAN,
-            "deployedWingPlanArea":round(wing_area,4),"previousWingPlanArea":1.9493,
+            "deployedWingPlanArea":round(wing_area,4),"previousWingPlanArea":11.4692,
             "boardingOpeningHeight":craft.TRANSPORT_HATCH_HEIGHT,
-            "foldedWingClearanceAheadOfDoorLeaf":round(.97-moving_u,4),
+            "boardingOpeningShape":"circle","boardingOpeningDiameter":2*HATCH_RADIUS,
+            "rearFaceAngleFromVertical":round(math.degrees(math.atan(REAR_SLOPE)),2),
+            "loadingRamp":"bottom-hinged / closed and lowered review poses",
+            "canopyFrontU":2.43,"canopyFrontTop":1.58,
+            "foldedWingClearanceAheadOfDoorLeaf":round(door_min-moving_u,4),
             "reviewFactionColors":FACTION,
             "wingFoldDegrees":180,"wingFoldPlane":"longitudinal roll / flat over aft roof",
             "outerPanelFoldDegrees":180,"wingStorage":"outer panels stacked flat over aft hull",
-            "deployedWingChord":2.7,"doorLeafMinimumU":.97,
+            "deployedWingChord":2.7,"doorLeafMinimumU":round(door_min,4),
+            "loweredRampMinimumU":round(float(ramp_q[:,0].min()),4),"loweredRampGroundCheck":"passed",
             "spriteSamples":4,"beautySamples":8,"glowingNozzleFaces":glow_faces,
             "previewOnly":True,"renderedFlights":[0,2,5],"geometryChecks":"passed"}
     (out/"design.json").write_text(json.dumps(design,indent=2)+"\n")
+
+    if validate_only:
+        print("GEOMETRY CHECKS passed",flush=True)
+        return
 
     def sprite(sid,build,glow=False,top=False):
         setup()
@@ -157,6 +179,8 @@ def render(out,flight_only=False):
         sprite("folded-r2",lambda:craft.transport_shuttle(math.pi/2,"parked"))
         sprite("plan-folded",lambda:craft.transport_shuttle(math.pi/2,"parked"),top=True)
         sprite("plan-deployed",lambda:craft.transport_shuttle(math.pi/2,"fly"),top=True)
+        sprite("ramp-closed",lambda:craft.transport_shuttle(math.pi,"parked"))
+        sprite("ramp-lowered",lambda:craft.transport_shuttle(math.pi,"parked",ramp_open=1))
     (out/"preview.manifest.json").write_text(json.dumps(man,indent=2)+"\n")
     # One low-sample beauty, in the same process. This build has no OIDN support.
     setup(8)
@@ -250,60 +274,60 @@ def compose(out):
     C.over(cv,post.to_rgba(c,op),round(320+(3-.7)*32-an["x"]-1),round(270+(3+.7)*16-an["y"]-1))
     im=Image.fromarray(cv)
     d=ImageDraw.Draw(im)
-    d.text((18,15),"TRANSPORT / B4 — WINGS FOLDED",font=font(18),fill=(213,224,233))
+    d.text((18,15),"TRANSPORT / B5 — WINGS FOLDED",font=font(18),fill=(213,224,233))
     d.text((18,42),"Placeholder 4 x 5 pit / crew at deck level / 64 x 32 tiles",font=font(12),fill=(142,161,177))
     d.text((18,474),f"Height {design['parkedSize'][2]:.2f}  |  pit depth {design['pitDepth']:.2f}  |  top above deck {design['topAboveDeck']:.2f}",font=font(12),fill=(210,181,119))
     d.text((18,496),"Preview only. Bay geometry is a scale placeholder.",font=font(11),fill=(142,161,177))
     save("transport-B-parked",im)
-    flight=np.full((340,1080,4),BG,np.uint8)
+    flight=np.full((380,1200,4),BG,np.uint8)
     for col,direction in enumerate((0,2,5)):
-        paste(flight,f"fly-d{direction}",180+col*360,250)
+        paste(flight,f"fly-d{direction}",200+col*400,280)
     im=Image.fromarray(flight)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B4 — WINGS DEPLOYED",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B5 — WINGS DEPLOYED",font=font(18),fill=(213,224,233))
     for col,direction in enumerate((0,2,5)):
-        d.text((col*360+18,46),f"D{direction} / landing legs retracted",font=font(12),fill=(142,161,177))
-    d.text((18,317),"Flight span 7.20 / faction livery preview / nozzle-only glow",font=font(12),fill=(210,181,119))
+        d.text((col*400+18,46),f"D{direction} / landing legs retracted",font=font(12),fill=(142,161,177))
+    d.text((18,357),"Flight span 7.20 / faction livery preview / nozzle-only glow",font=font(12),fill=(210,181,119))
     save("transport-B-flight",im)
     # Same direction, anchors and pixel metric for both wing poses.
-    comparison=np.full((520,800,4),BG,np.uint8)
+    comparison=np.full((620,800,4),BG,np.uint8)
     for col,sid in enumerate(("folded-r2","fly-d2")):
-        paste(comparison,sid,180+col*400,232)
-        paste(comparison,sid,180+col*400,452,silhouette=True)
-    C.over(comparison,post.to_rgba(c,op),round(325-an["x"]-1),round(232-an["y"]-1))
+        paste(comparison,sid,180+col*400,270)
+        paste(comparison,sid,180+col*400,550,silhouette=True)
+    C.over(comparison,post.to_rgba(c,op),round(325-an["x"]-1),round(270-an["y"]-1))
     im=Image.fromarray(comparison)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B4 — FOLDED AND DEPLOYED",font=font(18),fill=(213,224,233))
-    for col,label in enumerate(("FOLDED / 1.60-high boarding opening","DEPLOYED / 7.20 span")):
+    d.text((18,14),"TRANSPORT / B5 — FOLDED AND DEPLOYED",font=font(18),fill=(213,224,233))
+    for col,label in enumerate(("FOLDED / 1.60 circular airlock hatch","DEPLOYED / 7.20 span")):
         d.text((18+col*400,48),label,font=font(12),fill=(142,161,177))
-    d.text((18,282),"Matching silhouettes / same heading / native 1x pixel scale",font=font(12),fill=(210,181,119))
-    d.text((294,250),"1.5 crew",font=font(10),fill=(142,161,177))
+    d.text((18,335),"Matching silhouettes / same heading / native 1x pixel scale",font=font(12),fill=(210,181,119))
+    d.text((294,294),"1.5 crew",font=font(10),fill=(142,161,177))
     save("transport-B-silhouettes",im)
-    keys=np.full((340,1080,4),BG,np.uint8)
+    keys=np.full((380,1200,4),BG,np.uint8)
     for col,direction in enumerate((0,2,5)):
-        paste(keys,f"fly-d{direction}",180+col*360,250,faction=False)
+        paste(keys,f"fly-d{direction}",200+col*400,280,faction=False)
     im=Image.fromarray(keys)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B4 — RAW EXPORT KEYS",font=font(18),fill=(213,224,233))
-    d.text((18,317),"Exact #ff0000 primary / #00ff00 secondary. Faction preview colours are presentation only.",font=font(12),fill=(142,161,177))
+    d.text((18,14),"TRANSPORT / B5 — RAW EXPORT KEYS",font=font(18),fill=(213,224,233))
+    d.text((18,357),"Exact #ff0000 primary / #00ff00 secondary. Faction preview colours are presentation only.",font=font(12),fill=(142,161,177))
     save("transport-B-export-keys",im)
-    previous=ROOT/"artifacts/shuttle-sweepback-r2"
+    previous=ROOT/"artifacts/shuttle-sweepback-r4"
     comparison_names=[]
     if (previous/"preview.manifest.json").exists():
         old=json.loads((previous/"preview.manifest.json").read_text())
-        before_after=np.full((300,800,4),BG,np.uint8)
+        before_after=np.full((340,800,4),BG,np.uint8)
         a=old["assets"]["fly-d2"]["anchor"]
         C.over(before_after,recolor(np.array(Image.open(previous/"fly-d2.png"))),
-               round(180-a["x"]),round(226-a["y"]))
+               round(180-a["x"]),round(260-a["y"]))
         C.add(before_after,np.array(Image.open(previous/"fly-d2.glow.png")),
-              round(180-a["x"]),round(226-a["y"]))
-        paste(before_after,"fly-d2",580,226)
+              round(180-a["x"]),round(260-a["y"]))
+        paste(before_after,"fly-d2",580,260)
         im=Image.fromarray(before_after)
         d=ImageDraw.Draw(im)
         d.text((18,14),"TRANSPORT / BEFORE AND AFTER",font=font(18),fill=(213,224,233))
-        d.text((18,47),"B2 / previous revision",font=font(12),fill=(142,161,177))
-        d.text((418,47),"B4 / full-chord wings and clear hatch",font=font(12),fill=(142,161,177))
-        d.text((18,277),"Same heading, pixel scale and review livery",font=font(12),fill=(210,181,119))
+        d.text((18,47),"B4 / previous revision",font=font(12),fill=(142,161,177))
+        d.text((418,47),"B5 / swept wings and circular hatch",font=font(12),fill=(142,161,177))
+        d.text((18,317),"Same heading, pixel scale and review livery",font=font(12),fill=(210,181,119))
         save("transport-B-before-after",im)
         comparison_names.append("transport-B-before-after")
     plan=np.full((360,880,4),BG,np.uint8)
@@ -311,13 +335,23 @@ def compose(out):
         paste(plan,sid,220+col*440,200)
     im=Image.fromarray(plan)
     d=ImageDraw.Draw(im)
-    d.text((18,14),"TRANSPORT / B4 — WING PLANFORM",font=font(18),fill=(213,224,233))
+    d.text((18,14),"TRANSPORT / B5 — WING PLANFORM",font=font(18),fill=(213,224,233))
     d.text((18,46),"FOLDED / 4 x 5 bay outline",font=font(12),fill=(142,161,177))
     d.text((458,46),"DEPLOYED / 2.70 fore-aft wing chord",font=font(12),fill=(142,161,177))
     px=64/math.sqrt(2)
     d.rectangle((220-2*px,200-2.5*px,220+2*px,200+2.5*px),outline=(142,161,177))
     d.text((18,335),"Outer panels fold flat over aft roof / 7.20 deployed span",font=font(12),fill=(210,181,119))
     save("transport-B-planform",im)
+    ramps=np.full((420,900,4),BG,np.uint8)
+    for col,sid in enumerate(("ramp-closed","ramp-lowered")):
+        paste(ramps,sid,220+col*450,260)
+    im=Image.fromarray(ramps)
+    d=ImageDraw.Draw(im)
+    d.text((18,14),"TRANSPORT / B5 — ANGLED REAR LOADING RAMP",font=font(18),fill=(213,224,233))
+    d.text((18,46),"CLOSED / sloped stern and bottom hinge",font=font(12),fill=(142,161,177))
+    d.text((468,46),"LOWERED / traction ribs and loading surface",font=font(12),fill=(142,161,177))
+    d.text((18,395),"Mechanism preview / interior stays opaque / lowered ramp extends beyond parked envelope",font=font(11),fill=(210,181,119))
+    save("transport-B-ramp",im)
     raw=np.array(Image.open(out/"folded-r0.png"))
     on=raw[...,3]>0
     colors=raw[on,:3]
@@ -327,7 +361,7 @@ def compose(out):
     for sid in man["assets"]:
         rgba=np.array(Image.open(out/(sid+".png")))
         assert set(np.unique(rgba[...,3])).issubset({0,255})
-    for name in ["transport-B-parked","transport-B-flight","transport-B-silhouettes","transport-B-export-keys","transport-B-planform"]+comparison_names:
+    for name in ["transport-B-parked","transport-B-flight","transport-B-silhouettes","transport-B-export-keys","transport-B-planform","transport-B-ramp"]+comparison_names:
         a=np.array(Image.open(out/(name+"-1x.png")))
         b=np.array(Image.open(out/(name+"-3x.png")))
         for dy in range(3):
@@ -342,6 +376,7 @@ if __name__=="__main__":
     p.add_argument("--out",type=Path,required=True)
     p.add_argument("--compose",action="store_true")
     p.add_argument("--flight-only",action="store_true")
+    p.add_argument("--validate-only",action="store_true")
     a=p.parse_args(sys.argv[sys.argv.index("--")+1:] if "--" in sys.argv else sys.argv[1:])
     a.out.mkdir(parents=True,exist_ok=True)
-    compose(a.out) if a.compose else render(a.out,a.flight_only)
+    compose(a.out) if a.compose else render(a.out,a.flight_only,a.validate_only)

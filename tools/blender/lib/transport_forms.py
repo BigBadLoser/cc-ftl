@@ -22,10 +22,10 @@ def section(width,center,height,side_height=.48):
             (-width,center-height*side_height),(-width,center+height*side_height)]
 
 
-def loft(f,stations,color,upper=None,front=None,omit=()):
+def loft(f,stations,color,upper=None,front=None,omit=(),aft_slope=0):
     """Stations: u, half-width, centre, half-height, optional offset/side-height."""
-    rings=[[f.pt(row[0],v+(row[4] if len(row)>4 else 0),z)
-            for v,z in section(*row[1:4],row[5] if len(row)>5 else .48)] for row in stations]
+    rings=[[f.pt(row[0]+((z-row[2])*aft_slope if k==0 else 0),v+(row[4] if len(row)>4 else 0),z)
+            for v,z in section(*row[1:4],row[5] if len(row)>5 else .48)] for k,row in enumerate(stations)]
     f.poly(rings[0],color,flip=True)
     f.poly(rings[-1][::-1],front or color,flip=True)
     for seg,(a,b) in enumerate(zip(rings,rings[1:])):
