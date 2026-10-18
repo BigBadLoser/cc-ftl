@@ -122,8 +122,8 @@ for _name, _fn in (("generic", generic), ("weapon", weapon), ("shield", shield),
 
 
 # ---- v7 variant studies (preview only; see roof_variants.py) ---------------------------------------------------
-DZ = 12 / core.ZPX        # raised armour belt (variant B): exactly 12 px higher, so belts are drawn with an anchor offset
-BEV = 0.14                # belt step bevel width (tiles)
+DZ = 4 / core.ZPX         # raised armour belt (variant B): one plate thickness, exactly 4 px, drawn with an anchor offset
+BEV = 0.05                # belt step bevel width (tiles)
 
 
 def variant_base(layout, col, u, v, variant="v6", patch=False, paint=None):
@@ -174,13 +174,13 @@ def belt_step(col, variant="v6"):
     from . import roof_variants as rv
     f = (rv.FAM_C if variant == "C" else rl.FAM)[col]
     m = core.Mesh(f"roof_step_{variant}{col}", flat=True)
-    zr = ZR + DZ * 0.35
+    zr = ZR + DZ * 0.25
     m.poly([core.G(0.5, -0.5, ZR), core.G(0.5, 0.5, ZR), core.G(0.5, 0.5, zr), core.G(0.5, -0.5, zr)], f["fe"])
     xb = 0.5 - BEV
     m.poly([core.G(0.5, -0.5, zr), core.G(0.5, 0.5, zr), core.G(xb, 0.5, ZR + DZ), core.G(xb, -0.5, ZR + DZ)], f["shd"])
-    m.poly([core.G(xb, -0.5, ZR + DZ + 0.002), core.G(xb, 0.5, ZR + DZ + 0.002), core.G(xb + 0.025, 0.5, ZR + DZ - 0.02),
-            core.G(xb + 0.025, -0.5, ZR + DZ - 0.02)], f["lit"])
-    m.poly([core.G(0.5, -0.5, ZR), core.G(0.5, 0.5, ZR), core.G(0.5, 0.5, ZR + 0.03), core.G(0.5, -0.5, ZR + 0.03)], f["k"])
+    m.poly([core.G(xb, -0.5, ZR + DZ + 0.002), core.G(xb, 0.5, ZR + DZ + 0.002), core.G(xb + 0.016, 0.5, ZR + DZ - 0.012),
+            core.G(xb + 0.016, -0.5, ZR + DZ - 0.012)], f["lit"])
+    m.poly([core.G(0.5, -0.5, ZR), core.G(0.5, 0.5, ZR), core.G(0.5, 0.5, ZR + 0.015), core.G(0.5, -0.5, ZR + 0.015)], f["k"])
     return [m.build()]
 
 

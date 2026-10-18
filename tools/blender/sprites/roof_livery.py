@@ -60,15 +60,12 @@ def _emblem(kind, q):
 
 
 MASKS = {
-    "full.P": lambda i, j: "P",
     "stripe.n": _stripe(True), "stripe.s": _stripe(False),
     "pin.n": lambda i, j: "S" if 19 <= j < 24 else None, "pin.s": lambda i, j: "S" if 8 <= j < 13 else None,
     "pinp.n": lambda i, j: "P" if 19 <= j < 24 else None, "pinp.s": lambda i, j: "P" if 8 <= j < 13 else None,
-    "band.n": lambda i, j: "S" if 3 <= j < 7 else "P" if j >= 9 else None,
     "chev.n": _chev(True), "chev.s": _chev(False),
     "saddle.w": lambda i, j: "S" if 2 <= i < 6 else "P" if i >= 8 else None,
     "saddle.e": lambda i, j: "S" if 26 <= i < 30 else "P" if i < 24 else None,
-    "flash.0": lambda i, j: "P" if i + j >= 34 else "S" if 28 <= i + j < 32 else None,   # swept aft end of the flash
     **{f"aft.{k}": (lambda k: lambda i, j: "P" if any(a <= k * GN + i < b for a, b in AFT) else None)(k)
        for k in range(3)},
     **{f"reg.{c}": _digit(c) for c in DIGITS},
@@ -80,7 +77,7 @@ SCHEMES = {
     "crimson": dict(motifs=("stripe", "chev", "reg"), P="#b0443a", S="#e2ddd0"),
     "ivory": dict(motifs=("saddle", "pinp", "em.dot"), P="#dcd8cc", S="#25272d"),
     "tide": dict(motifs=("aft", "saddle", "em.delta", "reg"), P="#2f8f8a", S="#e2ddd0"),
-    "sovereign": dict(motifs=("flash", "stripe", "em.cross"), P="#26282e", S="#e0b23e"),
+    "sovereign": dict(motifs=("stripe", "em.cross", "reg"), P="#26282e", S="#e0b23e"),
     "orchid": dict(motifs=("aft", "pins", "chev", "reg"), P="#74509e", S="#c3c8d2"),
 }
 
@@ -111,11 +108,6 @@ def plan(ship, scheme, seed=0, level=lambda x, y: 0):
             for y in range(H):
                 add(x0, y, "saddle.w")
                 add(x0 + 1, y, "saddle.e")
-        elif m == "flash":
-            T = xb + yc - 2                           # 2-row band on the S bow quarter, parallel to the spine
-            for y in (yc + 2, yc + 3):
-                for x in range(T - y, W):
-                    add(x, y, "flash.0" if x + y == T else "band.n" if y == yc + 2 else "full.P")
         elif m in ("stripe", "pins", "pinp"):
             end = xb - 2 if "chev" in mot else xb
             for x in range(xs, end + 1):

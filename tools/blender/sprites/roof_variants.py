@@ -6,11 +6,11 @@ A  livery   painted spine stripe along the ship's length with forward-pointing c
             role (grooves stay dark), so it reads as painted plating. Rule: the module grid origin is chosen per ship
             so the spine lands on rows v = 1..2 of one module row.
             Cost: stripe 64 + bow chevrons 64 + edge bars 32 (u = 3 bases) + registry digits 20 (decals) = ~+180.
-B  depth    ochre courses are raised armour belts (12 px higher: same base sprites, an anchor offset), with a
+B  depth    ochre courses are raised armour belts (4 px higher in v9, 12 in v7: same base sprites, an anchor offset), with a
             bevelled step on their E side, tall slab faces on their open S / E ends and a recessed trench in the
             blue-grey plating along both sides of each belt. In modules fully inside the hull, layouts 0 and 2 swap
             their big pocket for a raised blister.
-            Cost: step 1 + trench 2 + tall edges 2 = +5; blisters +64 (2 layouts x 2 colours x 16).
+            Cost: step 1 + trench 2 + tall edges 2 = +5; blisters +64 (2 layouts x 2 colours x 16). v9: 4 px raise.
 C  material stronger value range and saturation, cooler blue-grey and warmer ochre (own palette, replaces the v6
             one at no extra cost), one replacement plate in a slightly different tone in every third module
             ((mx + 2 my) % 3 == 0, plate fixed per layout), and a subtle ship-wide light gradient done as a runtime
@@ -122,15 +122,13 @@ def trench_cells(side, fam=FAM, col="b"):
     f = fam[col]
     out = {}
     for k in range(GN):
-        for d in range(12):
+        for d in range(6):                      # scaled to the 4 px belt: shadow, floor, far wall
             i = d if side == "w" else GN - 1 - d
-            if d < 3:
+            if d < 1:
                 c = "k"
-            elif d < 9:
+            elif d < 4:
                 c = "rl"
-            elif d < 11:
-                c = "k" if side == "w" else "shd"
             else:
-                c = "k"
+                c = "k" if side == "w" or d == 5 else "shd"
             out[(i, k)] = f[c]
     return out
