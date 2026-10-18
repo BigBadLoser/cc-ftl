@@ -18,7 +18,7 @@ OUT = Path(args[0])
 JOBS = args[1:] or ["bay", "shuttle"]
 OUT.mkdir(parents=True, exist_ok=True)
 SAMPLES = 16
-FRAMES = (0.0, 0.2, 0.66)
+FRAMES = (0.0, 0.05, 0.66)
 
 
 def render(tag, objs, kind, holdouts=()):
@@ -75,8 +75,8 @@ def main():
             render(f"shuttle_parked_r{rot}", shuttle_ob(rot) + hold, "prop", hold)
     if "t20" in JOBS:                                                  # shuttle still hanging while the gantry swings clear
         fresh()
-        hold = B.bay(0, 0.2)
-        render("shuttle_parked_r0_t20", shuttle_ob(0) + hold, "prop", hold)
+        hold = B.bay(0, 0.05)
+        render("shuttle_parked_r0_t5", shuttle_ob(0) + hold, "prop", hold)
 
 
 main()

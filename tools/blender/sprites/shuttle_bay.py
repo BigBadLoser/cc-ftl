@@ -209,38 +209,50 @@ def leaves(f, t):
 # folded wings cover the whole aft half (1.57 .. 1.81, nothing fits over them); the cabin spine is 1.45 over v 0.6..1.5 and
 # 1.33 mid-spine between the wing roots (v -0.3 .. 0.0); the nose drops to ~1.0 at v 2.1. The roof slab underside is 1.85.
 # A bridge beam BEAM_T thick fits at BEAM_Z0 .. 1.80 over the nose half, with latch arms down to hardpoint pads on the spine.
-BRIDGES = ((-0.1, 1.33, (-0.4, 0.0, 0.4)), (2.2, 0.98, (0.0,)))     # v, spine top z under it, latch u positions
-BEAM_Z0, BEAM_T = 1.60, 0.20
+BRIDGE_V = -0.1                       # the one bridge, over the mid-spine between the wing roots (spine top 1.33 there)
+SPINE_Z = 1.33
+BEAM_Z0, BEAM_T, BEAM_W = 1.55, 0.25, 0.36
 TOWER_TOP = 1.82
 
 
 def clamps(f, t):
-    """GANTRY: two bridges across the pit (towers on both side lips, a beam over the shuttle just under the roof slab) with
-    latch arms dropping onto hardpoint pads on the spine, so the shuttle hangs from above. Opening: the arms lift into the
-    beams (by t = 0.125), then the half-beams slide back into the towers (by t = 0.25). Nothing is above 1.82."""
+    """GANTRY (v13): one bridge across the pit (towers on both side lips, a beam just under the roof slab) with a CLAW at its
+    middle: a hub under the beam whose four fingers close round a socket on the spine between the wing roots. Opening: the
+    claw splays (t 0 .. 0.06), the hub lifts into the beam (.06 .. .12), the half-beams slide into the towers (.12 .. .25).
+    Everything is at or below 1.82."""
     _g("clamps")
-    k1 = min(1.0, t * 8.0)
-    k2 = min(1.0, max(0.0, (t - 0.12) * 8.0))
-    for vv, zt, lat in BRIDGES:
-        for sx in (-1, 1):
-            ut = sx * (OPEN[1] + 0.07)
-            f.box(ut, vv, PAD_T, 0.3, 0.42, 0.05, "steelD", top="hazK")
-            f.box(ut, vv, PAD_T + 0.05, 0.2, 0.28, TOWER_TOP - PAD_T - 0.11, "steelL", top="steel")
-            f.box(ut, vv, TOWER_TOP - 0.06, 0.26, 0.34, 0.06, "steelD", top="steel")
-            f.box(ut - sx * 0.101, vv, 0.5, 0.02, 0.1, 1.0, "arc", base=True)                        # inner lamp bar
-            L = (abs(ut) - 0.1) * (1.0 - k2)
-            if L > 0.05:
-                ub = ut - sx * (0.1 + L / 2)
-                f.box(ub, vv, BEAM_Z0, L, 0.3, BEAM_T, "steel", top="steelL")                          # half beam
-                f.box(ub, vv, BEAM_Z0 + BEAM_T, L, 0.06, 0.01, "hazY")
-                f.box(ub, vv - 0.151, BEAM_Z0 + 0.06, L - 0.1, 0.01, 0.08, "arc", base=True)
-        if k1 < 1.0:
-            for u in lat:
-                f.box(u, vv, zt, 0.34, 0.3, 0.05, "steelD", top="hazY")                                  # hardpoint pad on the spine
-                h = (BEAM_Z0 - zt - 0.05) * (1.0 - k1)
-                if h > 0.03:
-                    f.box(u, vv, BEAM_Z0 - h, 0.14, 0.14, h, "steelD")                                    # latch arm
-                    f.box(u, vv, zt + 0.05, 0.22, 0.22, 0.07 if h > 0.1 else 0.0, "steel", top="cyan")   # latch head
+    ko = min(1.0, t / 0.06)
+    kl = min(1.0, max(0.0, (t - 0.06) / 0.06))
+    k2 = min(1.0, max(0.0, (t - 0.12) / 0.13))
+    vv = BRIDGE_V
+    for sx in (-1, 1):
+        ut = sx * (OPEN[1] + 0.08)
+        f.box(ut, vv, PAD_T, 0.34, 0.5, 0.05, "steelD", top="hazK")
+        f.box(ut, vv, PAD_T + 0.05, 0.24, 0.38, TOWER_TOP - PAD_T - 0.11, "steelL", top="steel")
+        f.box(ut, vv, TOWER_TOP - 0.06, 0.3, 0.44, 0.06, "steelD", top="steel")
+        f.box(ut - sx * 0.121, vv, 0.4, 0.02, 0.14, 1.1, "arc", base=True)
+        L = (abs(ut) - 0.12) * (1.0 - k2)
+        if L > 0.05:
+            ub = ut - sx * (0.12 + L / 2)
+            f.box(ub, vv, BEAM_Z0, L, BEAM_W, BEAM_T, "steel", top="steelL")
+            f.box(ub, vv, BEAM_Z0 + BEAM_T, L, 0.08, 0.01, "hazY")
+            f.box(ub, vv - BEAM_W / 2 - 0.001, BEAM_Z0 + 0.08, L - 0.1, 0.01, 0.09, "arc", base=True)
+    if t > 0.14:
+        return
+    f.box(0.0, vv, SPINE_Z, 1.0, 0.86, 0.04, "steelD", top="steel")                                 # socket flange on the spine
+    f.box(0.0, vv, SPINE_Z + 0.04, 0.66, 0.54, 0.07, "steelL", top="cyan")                            # socket neck, lit
+    dz = 0.2 * kl                                                                                    # hub lift into the beam
+    zh = SPINE_Z + 0.14 + dz
+    f.box(0.0, vv, zh, 0.9, 0.5, 0.15, "steel", top="steelL")                                       # hub
+    f.box(0.0, vv - 0.251, zh + 0.04, 0.7, 0.01, 0.07, "cyan", base=True)
+    f.box(0.0, vv + 0.251, zh + 0.04, 0.7, 0.01, 0.07, "cyan", base=True)
+    f.box(0.0, vv, zh + 0.15, 0.5, 0.34, 0.06, "steelD", top="hazY")                                  # piston collar
+    d = 1.0 + 0.55 * ko
+    for sx in (-1, 1):                                                                               # four claw fingers
+        for sv in (-1, 1):
+            fx, fy = sx * 0.46 * d, vv + sv * 0.3 * d
+            f.box(fx, fy, SPINE_Z + 0.015 + dz * 0.0, 0.16, 0.14, zh - SPINE_Z - 0.015 + 0.03, "steelD", top="steelL")
+            f.box(fx - sx * 0.1, fy, SPINE_Z + 0.015, 0.14, 0.13, 0.05, "hazY", top="hazY")        # hooked foot
 
 
 def _wall(f, p, q, nin, t0, t1, d0, d1, z0, z1, mat, top=None):
