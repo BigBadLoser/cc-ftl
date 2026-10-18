@@ -2,7 +2,7 @@
 an optional beauty cell and the overlap check. shuttle_composite.py then lays them out on real floor tiles.
   blender -b --factory-startup --python tools/blender/review/shuttle_preview.py -- <out> [options]
 Options: --parked 0,1,2,3   --fly 0,1,2   --docked 0,1,2,3   --pit (parked r0 sunk in the placeholder pit)
-         --damaged   --cell   --check   --samples N (default 32)   --pit-depth D"""
+         --damaged   --cells parked.r2,fly.d5 (Blender beauty cells)   --check   --samples N (default 32)   --pit-depth D"""
 import sys
 from pathlib import Path
 import numpy as np
@@ -90,9 +90,11 @@ def main():
         pixel_sprite(f"docked.r{r}{sfx}", lambda r=r: S.shuttle(S.rot_heading(r), "docked", dmg))
     if "--pit" in args:
         pixel_sprite(f"pit.r0{sfx}", lambda: S.pit(PIT) + S.shuttle(S.rot_heading(0), "parked", dmg, dz=-PIT))
-    if "--cell" in args:
-        cell(f"parked.r0{sfx}", lambda: S.shuttle(S.rot_heading(0), "parked", dmg))
-        cell(f"fly.d5{sfx}", lambda: S.shuttle(S.fly_heading(5), "fly", dmg))
+    for tag in str(opt("--cells", "")).split(","):                                # e.g. --cells parked.r2,fly.d5
+        if tag:
+            state, k = tag.split(".")
+            heading = S.rot_heading(int(k[1])) if k[0] == "r" else S.fly_heading(int(k[1]))
+            cell(f"{tag}{sfx}", lambda: S.shuttle(heading, state, dmg))
 
 
 main()
