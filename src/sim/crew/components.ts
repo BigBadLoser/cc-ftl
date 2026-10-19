@@ -48,7 +48,7 @@ export type WorkCategory = (typeof WORK_CATEGORIES)[number];
 
 /** What a crew member is currently doing, shown in UI and used by render for animation. */
 /** 'inert': a robot shut down (no live AI core) or stunned. 'charging': a robot in its bay. */
-export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead' | 'inert' | 'charging';
+export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead' | 'inert' | 'charging' | 'eating';
 
 export interface Crew {
   name: string;
@@ -66,9 +66,11 @@ export const CrewC = defineComponent<Crew>('crew');
 export type Priorities = Record<WorkCategory, number>;
 export const PrioritiesC = defineComponent<Priorities>('priorities');
 
-/** Needs on a 0..100 scale where 100 = fully satisfied. Only rest in M2. */
+/** Needs on a 0..100 scale where 100 = fully satisfied. */
 export interface Needs {
   rest: number;
+  /** Hunger 0..100 (100 = fed) for species with SpeciesDef.hunger on the player's side; created on first use for old saves. */
+  hunger?: number;
   /** Battery 0..100 for species with SpeciesDef.charge (robots); absent otherwise. */
   charge?: number;
 }
@@ -179,3 +181,43 @@ export interface BedClaim {
   bed: number;
 }
 export const BedClaimC = defineComponent<BedClaim>('bedClaim');
+
+/**
+ * A hungry crew member on the way to eat (left = -1) or eating (left = ticks to go). `x, y` is the tile to stand on:
+ * a galley's access tile (`galley`) or a walkable tile beside a storage crate holding `item`. The ration is taken from
+ * storage when the meal starts, nutrition is added when it ends.
+ */
+export interface Eat {
+  x: number;
+  y: number;
+  galley: boolean;
+  item: string;
+  left: number;
+}
+export const EatC = defineComponent<Eat>('eat');
+
+/** One named reason for the mood score: `key` names it (the UI labels it), `value` is its points. */
+export interface MoodFactor {
+  key: string;
+  value: number;
+}
+
+/**
+ * Mood of a crew member with SpeciesDef.mood: `value` 0..100 (MOOD_BASE plus the factors), recomputed every few ticks
+ * by the mood system. The counters give the factors memory: seconds since a hot meal, since a sleep and what kind it
+ * was, and how long nobody has been near.
+ */
+export interface Mood {
+  value: number;
+  factors: MoodFactor[];
+  /** Seconds left of the hot-meal bonus. */
+  meal: number;
+  /** Seconds left of the sleep memory, and whether it was in a bed (1) or on the floor (-1). */
+  sleep: number;
+  bed: 1 | -1;
+  /** Consecutive seconds with no other crew nearby. */
+  alone: number;
+  /** True while the 'very unhappy' alert is armed (set on the way down, cleared once mood recovers). */
+  low: boolean;
+}
+export const MoodC = defineComponent<Mood>('mood');

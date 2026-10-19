@@ -1,4 +1,4 @@
-import { AllegianceC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
+import { AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 
 /**
@@ -49,6 +49,10 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       ship: (template: string, faction: Faction, x: number, y: number) => spawnShip(sim, sim.content.ships[template] as never, { faction, x, y }),
       /** Set a suit's tank (the air-warning shot). */
       suitAir: (crew: number, sec: number) => { const su = sim.world.get(crew, SuitC); if (su) su.air = sec; },
+      /** Set a crew member's hunger (0..100) and optionally rest (the needs shots). */
+      needs: (crew: number, hunger: number, rest?: number) => { const n = sim.world.get(crew, NeedsC); if (n) { n.hunger = hunger; if (rest !== undefined) n.rest = rest; } },
+      /** Mood readout. */
+      mood: (crew: number) => sim.world.get(crew, MoodC) ?? null,
     },
     dispatch: (cmd: Parameters<Sim['enqueue']>[0]) => sim.enqueue(cmd),
     vehicles: () => vehicleViews(sim),

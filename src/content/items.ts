@@ -10,6 +10,8 @@ export const items = {
   // Robot spare parts: mend robots (25 hp each), salvaged from robot wrecks.
   'item.parts': { name: 'Spare parts', tags: ['refined', 'components'], stackSize: 50 },
   'item.ice': { name: 'Ice', tags: ['raw', 'water'], stackSize: 50 },
+  // Food: hungry crew eat one from storage (+50 hunger). Printed at a galley from scrap. Flammable packaging.
+  'item.ration': { name: 'Ration', tags: ['food'], stackSize: 50, flammability: 0.2, food: { nutrition: 50 } },
   // Ammo for missile launchers. Explosive: loose missiles fuel fires.
   'item.missile': { name: 'Missile', tags: ['ammo'], stackSize: 20, flammability: 0.5 },
   // Crafted at the fabricator; a vehicle bay turns it into a stowed shuttle (vehicle.assign).

@@ -56,4 +56,6 @@ export * from './robots/components';
 export { hasLiveCore, isCoreLive, aiCores, isShutDown } from './robots/core';
 export { factionsHostile, isAiFaction } from './combat/factions';
 export { createCrew } from './crew/spawn';
+export { MOOD_LABELS, breakdownRisk, hasMood } from './crew/mood';
+export { foodOn } from './crew/eating';
 export { captureReady, isAiRun } from './capture/control';

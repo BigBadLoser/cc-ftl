@@ -1,6 +1,7 @@
 import { findFreeBed, releaseBedClaim } from '../crew/beds';
+import { goEat, wantsToEat } from '../crew/eating';
 import {
-  AssignmentC, BedClaimC, CarriedC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
+  AssignmentC, BedClaimC, CarriedC, CrewC, DraftedC, EatC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
   type Crew, type Job, type Path, type Position, type Priorities,
 } from '../crew/components';
 import { atJob, clearPath, isIncapacitated, jobGoal, isSettled, origin, releaseAssignment } from '../crew/helpers';
@@ -30,7 +31,7 @@ export function decideSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, PrioritiesC, PositionC, PathC, NeedsC)) {
     if (sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
     const crew = sim.world.get(id, CrewC) as Crew;
-    if (crew.activity === 'sleeping' || crew.activity === 'charging') continue;
+    if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') continue;
     const pos = sim.world.get(id, PositionC) as Position;
     const needs = sim.world.get(id, NeedsC) as { rest: number };
 
@@ -56,6 +57,9 @@ export function decideSystem(sim: Sim): void {
       goToSleep(sim, id, crew, pos);
       continue;
     }
+
+    // Hungry: walk to the galley (or a crate with food) and eat. No food or no way there: carry on, try again later.
+    if ((sim.world.has(id, EatC) || wantsToEat(sim, id, !!operating)) && !isCarrying(sim, id) && goEat(sim, id, crew, pos)) continue;
 
     if (assignment) {
       const job = sim.world.get(assignment.jobId, JobC);

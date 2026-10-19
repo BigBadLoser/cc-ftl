@@ -56,7 +56,7 @@ function setMode(sim: Sim, id: number, f: Fighter, mode: Fighter['mode']): void 
     releaseBedClaim(sim, id);
     dropCarried(sim, id);
     const crew = sim.world.get(id, CrewC) as Crew;
-    if (crew.activity === 'sleeping' || crew.activity === 'charging') crew.activity = 'idle';
+    if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') crew.activity = 'idle';
   } else if (mode === 'idle' && !sim.world.get(id, DraftedC)?.target) clearPath(sim, id);
   f.mode = mode;
   if (mode === 'idle') {

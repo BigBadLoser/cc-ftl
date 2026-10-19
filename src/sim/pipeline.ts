@@ -34,6 +34,7 @@ import { lightingSystem } from './systems/lighting';
 import { modulesSystem } from './systems/modules';
 import { movementSystem } from './systems/movement';
 import { needsSystem } from './systems/needs';
+import { moodSystem } from './systems/mood';
 import { operateJobsSystem } from './systems/operateJobs';
 import { powerSystem } from './systems/power';
 import { roomsSystem } from './systems/rooms';
@@ -108,6 +109,8 @@ export const pipeline: readonly System[] = [
   haulJobsSystem,
   // Needs before decisions, so a crew member who just got tired sleeps this tick.
   needsSystem,
+  // Mood reads the fresh needs and room conditions; the stat resolver uses it for work speed from the next tick.
+  moodSystem,
   // Decide before drafted/movement: new paths are walked the same tick.
   // Weapon fetching before decide: crew on an equip order must not be handed a job this tick.
   equipSystem,

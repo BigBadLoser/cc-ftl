@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-17.
+Last updated: 2026-10-19.
 
 ## Where things are
 
@@ -33,6 +33,25 @@ m4-combat + m4-assets + m4-ui to main.
 
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
+
+## Needs: hunger, food and mood (branch `needs`, based on `eva`; not merged; awaiting user review)
+
+Rules and values are in `docs/DESIGN.md` (Crew, "Needs and mood"). What exists:
+- **Sim:** `Needs.hunger` (lazily created for player-side crew of a species with `SpeciesDef.hunger`; robots have none),
+  `EatC` (trip and meal), `MoodC` (score, factors and memory counters). `crew/eating.ts` (`goEat`: galley else a crate with
+  food; `decide` calls it after the sleep check), `systems/needs.ts` (decay, meal countdown), `systems/mood.ts` (staggered
+  recompute), `crew/mood.ts` (factors, `moodModifiers` registered in `stats.ts` for work speed, `breakdownRisk` hook).
+  Starvation harm is in `vitals.ts`. Events `crew.ate`, `crew.starving`, `crew.moodLow`. No save version bump: everything is
+  optional or created on use.
+- **Content:** `item.ration` (`food: { nutrition: 50 }`), `recipe.ration` (2 scrap -> 3 rations, 40 work ticks), `module.galley`
+  (2x1, -3 power, `crafting` + `galley`, cost 8 metal + 3 electronics), human `hunger: { decayPerSec: 0.12 }` and `mood: true`.
+  `ShipTemplate` modules gained `orders` (the starter galley keeps 12 rations; the starter crate holds 12).
+- **UI:** hunger and mood bars with the factor list on the crew card, `crew.starving` (danger) and `crew.moodLow` alerts, the
+  galley in the module build menu. `?hook` `stage.needs(crew, hunger, rest?)` and `stage.mood(crew)` for screenshots.
+- **Art needed (placeholders now):** `module.galley` (+ `.active` while printing, rotations) is the fabricator tinted mint
+  through `fallback.ts`; rations draw as the plain crate (`item.ration.s/.m/.l/.held` and a UI icon); no eating pose (the crew
+  member stands idle at the galley's access tile); optional mood and hunger icons.
+- Not done: breakdowns, beauty or room quality, drafted crew eating on order, a "no food" alert, food for crew on shuttles.
 
 ## Shuttle bay (branch `opus-bay`, not merged; awaiting user approval of the in-game look)
 

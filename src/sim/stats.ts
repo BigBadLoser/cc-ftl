@@ -1,6 +1,7 @@
 import { CrewC } from './crew/components';
 import { environmentModifiers } from './crew/conditions';
 import { suitModifiers } from './eva/conditions';
+import { moodModifiers } from './crew/mood';
 import { roleSkillModifiers } from './crew/skills';
 import { chargeModifiers } from './robots/conditions';
 import type { Sim } from './sim';
@@ -21,7 +22,7 @@ export interface Modifier {
 export type ModifierSource = (sim: Sim, entity: number) => readonly Modifier[];
 
 /** Register sources here. Environment conditions today; traits and implants plug in later. */
-export const modifierSources: ModifierSource[] = [environmentModifiers, roleSkillModifiers, chargeModifiers, suitModifiers];
+export const modifierSources: ModifierSource[] = [environmentModifiers, roleSkillModifiers, chargeModifiers, suitModifiers, moodModifiers];
 
 /** Resolve a stat: species base from content, then all modifiers. Systems never stack on their own. */
 export function stat(sim: Sim, entity: number, name: StatName): number {

@@ -87,11 +87,13 @@ export const starterShip = {
     // Cargo (south-east room): crates along the south wall (rot 2 puts the access tile north), fabricator by the
     // door lane. The door at (17, 11) opens onto (17, 12) and (18, 12) stays clear: the way round the shuttle bay to its boarding tile (18, 16).
     { def: 'module.fabricator', x: 19, y: 12, rot: 0 },
+    // Galley (access tile (19, 15), beside the crates): keeps 12 rations in stock.
+    { def: 'module.galley', x: 19, y: 14, rot: 0, orders: [{ recipe: 'recipe.ration', mode: 'keep', target: 12 }] },
     {
       def: 'module.storage', x: 20, y: 17, rot: 2,
       stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }],
     },
-    { def: 'module.storage', x: 19, y: 17, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 8 }] },
+    { def: 'module.storage', x: 19, y: 17, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 8 }, { item: 'item.ration', count: 12 }] },
     { def: 'module.storage', x: 18, y: 17, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }] },
     { def: 'module.light', x: 15, y: 12, rot: 0 },
     { def: 'module.light', x: 14, y: 12, rot: 0 },

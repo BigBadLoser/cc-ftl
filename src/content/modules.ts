@@ -92,6 +92,24 @@ export const modules = {
     workstation: true,
     crafting: true,
   },
+  // Galley / food printer: prints rations from scrap (crafting) and is where hungry crew eat a hot meal (access tile).
+  // Placeholder art (fallback.ts): needs a real model, see docs/STATUS.md.
+  'module.galley': {
+    name: 'Galley',
+    asset: 'module.galley',
+    footprint: [2, 1],
+    solid: true,
+    access: [0, 1],
+    power: -3,
+    priority: 4,
+    flammability: 0.4,
+    maxHp: 90,
+    buildWork: 120,
+    cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 3 }],
+    workstation: true,
+    crafting: true,
+    galley: true,
+  },
   // A crate. Crew use it from any neighbouring tile; the access tile just keeps one side walkable.
   'module.storage': {
     name: 'Storage crate',

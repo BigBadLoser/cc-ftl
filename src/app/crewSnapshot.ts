@@ -1,8 +1,8 @@
 import {
   AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile,
   AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC,
-  ModuleC, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine,
-  storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, type Job, type Sim, type WorkCategory,
+  ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine,
+  storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory,
 } from '../sim';
 import type { UiCrew, UiFight } from '../ui/api';
 
@@ -107,6 +107,19 @@ function suitAtOf(sim: Sim, id: number): UiCrew['suitAt'] {
   return best && { id: best.id, free: best.free };
 }
 
+function hungerOf(sim: Sim, id: number): number | null {
+  const h = sim.world.get(id, NeedsC)?.hunger;
+  return h === undefined ? null : Math.round(h);
+}
+
+/** The mood score with its factors (largest effect first) and the work speed it costs. */
+function moodOf(sim: Sim, id: number): UiCrew['mood'] {
+  const m = sim.world.get(id, MoodC);
+  if (!m) return null;
+  const factors = m.factors.map((f) => ({ label: MOOD_LABELS[f.key] ?? f.key, value: f.value })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+  return { value: m.value, factors, workMult: m.value < MOOD_VERY_LOW ? MOOD_VERY_LOW_WORK_MULT : m.value < MOOD_LOW ? MOOD_LOW_WORK_MULT : 1 };
+}
+
 function fightOf(sim: Sim, id: number): UiFight | null {
   const f = sim.world.get(id, FighterC);
   if (!f) return null;
@@ -143,6 +156,8 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     role: role?.name ?? crew.role,
     activity: crew.activity,
     rest: Math.round(sim.world.get(id, NeedsC)?.rest ?? 100),
+    hunger: hungerOf(sim, id),
+    mood: moodOf(sim, id),
     drafted: sim.world.has(id, DraftedC),
     job,
     priorities: { ...(sim.world.get(id, PrioritiesC) ?? NONE) },
