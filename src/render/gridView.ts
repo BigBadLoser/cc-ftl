@@ -3,13 +3,13 @@ import type { Atlas, StaticSprite } from "./assets/loader";
 import type { Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
 import { hullRow } from "../sim/modules/footprint";
-import { airlockTiles } from "../sim/portals/airlock";
 import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
 import { lightTint, mulColor, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
+import { airlockDoorTiles } from "./airlockArt";
 import { addStatic } from "./sprites";
 import { floorChain, ghostVerts, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
@@ -97,24 +97,16 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     return out;
   }
 
-  /** Outer door tiles of the docking airlocks: the airlock's own hull block (moduleView) stands there, at every wall level. */
-  function airlockHull(): Set<number> {
-    const out = new Set<number>();
+  /** Door tiles of the docking airlocks (outer and inner): the airlock's own sprites (hull block, pod housing) stand there, at every wall level. */
+  function airlockDoorIdx(): Set<number> {
     const { world, modules } = host.overlayWorld;
-    for (const id of world.query(ModuleC)) {
-      const m = world.get(id, ModuleC);
-      const def = m && modules[m.def];
-      if (!m || !def?.airlock?.layout || m.gridId !== grid.id) continue;
-      const t = airlockTiles(def, m);
-      out.add(t.outer.y * grid.width + t.outer.x);
-    }
-    return out;
+    return new Set(airlockDoorTiles(world, modules, grid.id).map((t) => t.y * grid.width + t.x));
   }
 
   function rebuild(): void {
     clear();
     const replaced = engineHull();
-    const airlocks = airlockHull();
+    const airlocks = airlockDoorIdx();
     const gapAt = (x: number, y: number): boolean => mode === "up" && grid.inBounds(x, y) && replaced.has(y * grid.width + x);
     for (let y = 0; y < grid.height; y++)
       for (let x = 0; x < grid.width; x++) {
