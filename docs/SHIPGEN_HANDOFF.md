@@ -68,6 +68,8 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 | `civilGrammars.ts` | civilian topologies: freighter, liner, mining, station |
 | `civilFrames.ts` | civil frames: container frames, ore cages, truss bridges, rig booms, the liner's 2D hull |
 | `civilStations.ts` | ring and lattice stations |
+| `civilKit.ts` | civil joins, drive, `beside`, variant picks |
+| `civilShips.ts` | civil freighters, mining ships, crew bodies |
 | `scrapDonors.ts` | the donor registry and job pool; navy and drone donors cut from their own generators |
 | `scrapGrammars.ts` | salvage composition (heap, raft, chain), welding, improvised extras |
 | `salvage.ts` | cuts at seams, corner damage, outline ports, `freeze` |

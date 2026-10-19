@@ -95,7 +95,11 @@ export function taper(A: Arranger, style: TransitionStyle, rand: () => number): 
       if (!free(A, x, y) || cells.has(key(x, y))) continue;
       for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
         // A corner: the wider section's wall beside (x + dx), the narrower one's outer wall below (y + dy).
-        if (!solid(x + dx, y) || !solid(x, y + dy) || owner.get(key(x + dx, y)) === owner.get(key(x, y + dy))) continue;
+        const oa = owner.get(key(x + dx, y));
+        const ob = owner.get(key(x, y + dy));
+        if (!solid(x + dx, y) || !solid(x, y + dy) || oa === ob) continue;
+        const bare = (o: number | undefined): boolean => o !== undefined && !!A.placed[o]?.block.bare;
+        if (bare(oa) || bare(ob)) continue;
         let h = 0;
         while (h < style.max && solid(x + dx, y - dy * h) && free(A, x, y - dy * h)) h++;
         let r = 0;

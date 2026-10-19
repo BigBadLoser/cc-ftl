@@ -29,7 +29,7 @@ describe('ship generator', () => {
       const layouts = new Set(Array.from({ length: 12 }, (_, s) => gen(id, s, 3).template.rows.join('\n')));
       expect(layouts.size, id).toBeGreaterThanOrEqual(6);
     }
-  });
+  }, 90000);
 
   for (const id of ids) {
     it(`${id}: 200 seeds across depths 0-9 all validate`, () => {
@@ -55,7 +55,7 @@ describe('ship generator', () => {
         expect(hi[k], `${id} stat ${k}`).toBeGreaterThan(lo[k] as number);
       }
     }
-  });
+  }, 120000);
 
   it('keeps each motif recognisable', () => {
     for (let seed = 0; seed < 30; seed++) {

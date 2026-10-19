@@ -15,43 +15,58 @@ export const truss = (b: Builder, x: number, y: number, w: number, h: number, ke
   if (w > 0 && h > 0) b.cv.stamp(Array.from({ length: h }, () => '='.repeat(w)), x, y, key);
 };
 
+/** Freeze an open structure (human access): no transitions fair onto it. */
+const bareBlock = (b: Builder, kind: string, label: string, ports: Parameters<typeof blockFrom>[4]): Block => ({ ...blockFrom(b, kind, label, 'human', ports), bare: true });
+
 /** A container or hold: crates on all but one row (the aisle their crates are reached from). */
 const unit = (w: number, h: number): RoomSpec => ({ ...cargoSpec(w * Math.max(1, h - 1)), w, h });
 
 export interface FrameOpts {
-  /** Open rows between the two container rows: the containers hang from the rails, nothing runs between them. */
+  /** Open rows between the two container rows of a band: the containers hang from the rails, nothing between them. */
   lane: number;
   gap: number;
   cw: number;
   ch: number;
+  /** Container bands: 1 (two rails) or 2 (three rails, the middle one shared). */
+  bands?: number;
+  /** Offset the lower row of each band by half a container (staggered stacking). */
+  stagger?: boolean;
 }
 
 /**
- * Container frame: two thin crawlway rails (top and bottom) with containers slung from them, an open lane between the
- * rows (or back to back, lane 0), and a cross passage at the after end joining the rails. Ports: the cross passage's
- * east wall ('e') and ends ('n', 's'), the top rail's west end ('w').
+ * Container frame: thin crawlway rails with containers slung from them (each band a top-hung and a bottom-hung row,
+ * an open lane between them, or back to back with lane 0), and a cross passage at the after end joining the rails.
+ * Ports: the cross passage's east wall ('e') and ends ('n', 's'), the top rail's west end ('w').
  */
 export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
   const b = localBuilder(rng);
+  const bands = Math.max(1, Math.min(2, o.bands ?? 1));
   const per = o.cw * Math.max(1, o.ch - 1);
-  const k = Math.max(2, Math.ceil(crates / per));
-  const perRow = Math.ceil(k / 2);
+  const k = Math.max(2 * bands, Math.ceil(crates / per));
+  const perRow = Math.ceil(k / (2 * bands));
   const rowH = o.ch + 2;
-  const H = 3 + rowH + (o.lane > 0 ? o.lane - 1 + rowH : rowH - 2) + 2;
+  const pitch = 2 * rowH + (o.lane > 0 ? o.lane + 1 : 0);
+  const H = bands * pitch + 3;
   const oy = -Math.round(H / 2);
-  const L = o.gap + perRow * (o.cw + 1 + o.gap) + 2;
-  const top = b.place({ x: 0, y: oy, w: L, h: 3 }, 'hall');
-  const bot = b.place({ x: 0, y: oy + H - 3, w: L, h: 3 }, 'hall');
+  const step = o.cw + 1 + o.gap;
+  const sh = o.stagger ? Math.ceil(step / 2) : 0;
+  const L = o.gap + perRow * step + sh + 2;
+  const rails = Array.from({ length: bands + 1 }, (_, i) => b.place({ x: 0, y: oy + i * pitch, w: L, h: 3 }, 'hall'));
   const end = b.place({ x: L - 1, y: oy, w: 3, h: H }, 'hall');
-  if (top && bot && end) { b.door(top, end); b.door(bot, end); }
-  for (let i = 0, n = 0; i < perRow; i++) {
-    const x = o.gap + i * (o.cw + 1 + o.gap);
-    const t = n++ < k ? b.place({ x, y: oy + 2, w: o.cw + 2, h: rowH }, 'cargo', unit(o.cw, o.ch)) : null;
-    const u = n++ < k ? b.place({ x, y: oy + H - 3 - rowH + 1, w: o.cw + 2, h: rowH }, 'cargo', unit(o.cw, o.ch)) : null;
-    if (t && top) b.door(top, t);
-    if (u && bot) b.door(bot, u);
+  if (end) for (const r of rails) if (r) b.door(r, end);
+  let n = 0;
+  for (let band = 0; band < bands; band++) {
+    const up = rails[band];
+    const dn = rails[band + 1];
+    for (let i = 0; i < perRow; i++) {
+      const x = o.gap + i * step;
+      const t = n++ < k ? b.place({ x, y: oy + band * pitch + 2, w: o.cw + 2, h: rowH }, 'cargo', unit(o.cw, o.ch)) : null;
+      const u = n++ < k ? b.place({ x: x + sh, y: oy + (band + 1) * pitch - rowH + 1, w: o.cw + 2, h: rowH }, 'cargo', unit(o.cw, o.ch)) : null;
+      if (t && up) b.door(up, t);
+      if (u && dn) b.door(dn, u);
+    }
   }
-  return blockFrom(b, 'cargo', 'container frame', 'human', [
+  return bareBlock(b, 'cargo', `container frame ${bands + 1} rails`, [
     { id: 'e', side: 'e', x: L + 1, y: oy + 1, len: H - 2, access: 'human' }, { id: 'w', side: 'w', x: 0, y: oy + 1, len: 1, access: 'human' },
     { id: 'n', side: 'n', x: L, y: oy, len: 1, access: 'human' }, { id: 's', side: 's', x: L, y: oy + H - 1, len: 1, access: 'human' },
   ]);
@@ -61,34 +76,51 @@ export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
  * Ore cage: a row of ore holds hung under a crawlway rail, truss struts between them hanging below like teeth. Ports:
  * the rail's top wall ('n', long) and its east end ('e'). Mirror it to hang the holds above the rail.
  */
-export function oreCage(rng: Rng, crates: number, hw: number, hh: number, maxCols = 99): Block {
+export interface CageOpts {
+  hw: number;
+  hh: number;
+  /** Open columns between holds (1..4); teeth stand in gaps of 3 or more. */
+  gap: number;
+  /** A tooth in every `every`-th gap, `tooth` tiles below the holds. */
+  every: number;
+  tooth: number;
+}
+
+export function oreCage(rng: Rng, crates: number, o: CageOpts, maxCols = 99): Block {
   const b = localBuilder(rng);
-  const per = hw * Math.max(1, hh - 1);
+  const per = o.hw * Math.max(1, o.hh - 1);
   const cols = Math.max(2, Math.min(maxCols, Math.ceil(crates / per)));
-  // Pitch: a hold, an open gap, a strut hanging below the holds (teeth), another gap; the gaps open downward.
-  const P = hw + 5;
-  const W = cols * P + 2;
-  const oy = -Math.round((hh + 6) / 2);
+  // Pitch: a hold and its gap; teeth hang below the holds in wide gaps, so every gap opens downward.
+  const P = o.hw + 2 + o.gap;
+  const W = cols * P - o.gap + 2;
+  const oy = -Math.round((o.hh + 4 + o.tooth) / 2);
   const rail = b.place({ x: 0, y: oy, w: W, h: 3 }, 'hall');
   for (let i = 0; i < cols; i++) {
     const x = 1 + i * P;
-    const hold = b.place({ x, y: oy + 2, w: hw + 2, h: hh + 2 }, 'cargo', unit(hw, hh));
+    const hold = b.place({ x, y: oy + 2, w: o.hw + 2, h: o.hh + 2 }, 'cargo', unit(o.hw, o.hh));
     if (hold && rail) b.door(rail, hold);
-    if (i < cols - 1) truss(b, x + hw + 3, oy + 3, 1, hh + 3, `strut${i}`);
+    if (i < cols - 1 && o.gap >= 3 && i % o.every === 0) truss(b, x + o.hw + 2 + Math.floor(o.gap / 2), oy + 3, 1, o.hh + 1 + o.tooth, `tooth${i}`);
   }
-  return blockFrom(b, 'cargo', 'ore cage', 'human', [
+  return bareBlock(b, 'cargo', 'ore cage', [
     { id: 'n', side: 'n', x: 1, y: oy, len: W - 2, access: 'human' }, { id: 'e', side: 'e', x: W - 1, y: oy + 1, len: 1, access: 'human' },
   ]);
 }
 
-/** A truss bridge `len` long (tug to barge): a crawlway tube between truss chords, ports on its ends. */
-export function trussBridge(rng: Rng, len: number, chords: boolean): Block {
+/**
+ * A truss bridge `len` long (tug to cargo body): a crawlway tube between two truss chords `sp` rows out, open between,
+ * so the gap between the craft reads. Ports on the tube's ends.
+ */
+export function trussBridge(rng: Rng, len: number, sp: number): Block {
   const b = localBuilder(rng);
   b.place({ x: 0, y: -2, w: len, h: 3 }, 'hall');
-  if (chords) {
-    for (const y of [-3, 1]) for (let x = 1; x < len - 1; x++) if (x % 3 !== 0) truss(b, x, y, 1, 1, `chord${y}${x}`);
+  if (sp > 0) {
+    truss(b, 1, -3 - sp, len - 2, 1, 'chord');
+    truss(b, 1, 1 + sp, len - 2, 1, 'chord');
+    // Ties at the ends only (the gap between stays open).
+    truss(b, 1, -2 - sp, 1, sp, 'tie');
+    truss(b, len - 2, 1, 1, sp, 'tie');
   }
-  return blockFrom(b, 'beam', 'truss', 'human', [
+  return bareBlock(b, 'beam', 'truss', [
     { id: 'w', side: 'w', x: 0, y: -1, len: 1, access: 'human' }, { id: 'e', side: 'e', x: len - 1, y: -1, len: 1, access: 'human' },
   ]);
 }
@@ -107,15 +139,28 @@ export function boomRig(rng: Rng, out: number, len: number, spread: number, arms
     const y = -out - spread + Math.round((i * 2 * spread) / Math.max(1, arms - 1));
     truss(b, 0, y, reach - (i % 2 === 1 ? 2 : 0), 1, `arm${i}`);
   }
-  return blockFrom(b, 'beam', 'rig boom', 'external', [{ id: 's', side: 's', x: x0 + len, y: 0, len: 1, access: 'external' }]);
+  return { ...blockFrom(b, 'beam', 'rig boom', 'external', [{ id: 's', side: 's', x: x0 + len, y: 0, len: 1, access: 'external' }]), bare: true };
 }
 
 export type LinerShape = 'teardrop' | 'oval' | 'twin';
 
-/** Outer-room depth along the hull (t = 0 bow, 1 stern) for a shape: 0..1. */
-function profile(shape: LinerShape, t: number): number {
-  if (shape === 'teardrop') return t < 0.3 ? 0.4 + (0.6 * t) / 0.3 : Math.max(0, 1 - (t - 0.3) / 0.7);
-  if (shape === 'oval') return Math.pow(Math.sin(Math.PI * Math.min(1, Math.max(0, t))), 0.7);
+/** A liner outline: where it is fullest (0..1 along), how far the tail and nose fall (0..1), the depth swing, extra length. */
+export interface LinerForm {
+  peak: number;
+  tail: number;
+  nose: number;
+  amp: number;
+  extra: number;
+}
+
+/** Outer-room depth along the hull (t = 0 bow, 1 stern) for a shape and form: 0..1. */
+function profile(shape: LinerShape, t: number, f: LinerForm): number {
+  const c = Math.min(1, Math.max(0, t));
+  if (shape === 'teardrop') return c < f.peak ? f.nose + ((1 - f.nose) * c) / f.peak : 1 - ((1 - f.tail) * (c - f.peak)) / (1 - f.peak);
+  if (shape === 'oval') {
+    const s = c < f.peak ? Math.sin((Math.PI / 2) * (c / f.peak)) : Math.sin((Math.PI / 2) * ((1 - c) / (1 - f.peak)));
+    return (c < f.peak ? f.nose : f.tail) + (1 - (c < f.peak ? f.nose : f.tail)) * Math.pow(Math.max(0, s), 0.7);
+  }
   return 1;
 }
 
@@ -134,7 +179,7 @@ function fill(len: number, w: number, specs: RoomSpec[]): RoomSpec[] {
  * lounges, full depth, fore) between them; outer cabin rows whose depth follows the hull shape; cross corridors at the
  * ends. `twin`: the inner band splits along an open groove (two flat hulls joined aft), the lower hull shorter.
  */
-export function linerBody(rng: Rng, beds: number, lounges: RoomSpec[], shape: LinerShape, cabin: [number, number]): Builder | null {
+export function linerBody(rng: Rng, beds: number, lounges: RoomSpec[], shape: LinerShape, cabin: [number, number], form: LinerForm = { peak: 0.3, tail: 0, nose: 0.4, amp: 3, extra: 0 }): Builder | null {
   const b = localBuilder(rng);
   const [cw, ch] = cabin;
   const twin = shape === 'twin';
@@ -150,6 +195,8 @@ export function linerBody(rng: Rng, beds: number, lounges: RoomSpec[], shape: Li
     L = loungeRun + n * (cw + 1) + 1;
     if (2 * n + 2 * Math.floor((L - 1) / (cw + 1)) >= beds) break;
   }
+  n += form.extra;
+  L = loungeRun + n * (cw + 1) + 1;
   const off = twin ? rng.int(3, 6) : 0;
   const yA = -3 - Math.floor(Hm / 2);
   const bTop = yA + Hm + 3;
@@ -174,19 +221,23 @@ export function linerBody(rng: Rng, beds: number, lounges: RoomSpec[], shape: Li
     if (p) { b.door(A, p); b.door(B, p); }
     x += w + 1;
   });
-  if (twin) x += loungeRun;
-  for (let i = 0; i < n; i++, x += cw + 1) {
-    const top = b.place({ x, y: yA + 2, w: cw + 2, h: ch + 2 }, 'quarters', cabinSpec(ch));
-    const bot = x >= X0 + off ? b.place({ x, y: bTop - ch - 1, w: cw + 2, h: ch + 2 }, 'quarters', cabinSpec(ch)) : null;
-    if (top) b.door(A, top);
-    if (bot) b.door(B, bot);
-  }
   if (twin) {
-    // The twin's fore inner band (where the lounges' run is) holds more cabins; its lounges ride the upper hull's top.
-    for (let xi = X0; xi + cw + 1 <= X0 + loungeRun; xi += cw + 1) {
-      const top = b.place({ x: xi, y: yA + 2, w: cw + 2, h: ch + 2 }, 'quarters', cabinSpec(ch));
+    // Twin: each hull's inner cabin row runs its whole length (an unbroken groove between them, open at the bow).
+    const row = (corr: Part, y: number, x0: number, len: number): void => {
+      let at = x0;
+      for (const s of fill(len, cw, [])) {
+        const p = b.place({ x: at, y, w: s.w + 2, h: ch + 2 }, 'quarters', { ...cabinSpec(ch), w: s.w });
+        if (p) b.door(corr, p);
+        at += s.w + 1;
+      }
+    };
+    row(A, yA + 2, X0, L);
+    row(B, bTop - ch - 1, X0 + off, L - off);
+  } else {
+    for (let i = 0; i < n; i++, x += cw + 1) {
+      const top = b.place({ x, y: yA + 2, w: cw + 2, h: ch + 2 }, 'quarters', cabinSpec(ch));
+      const bot = b.place({ x, y: bTop - ch - 1, w: cw + 2, h: ch + 2 }, 'quarters', cabinSpec(ch));
       if (top) b.door(A, top);
-      const bot = xi >= X0 + off ? b.place({ x: xi, y: bTop - ch - 1, w: cw + 2, h: ch + 2 }, 'quarters', cabinSpec(ch)) : null;
       if (bot) b.door(B, bot);
     }
   }
@@ -196,7 +247,7 @@ export function linerBody(rng: Rng, beds: number, lounges: RoomSpec[], shape: Li
     let at = x0;
     for (const s of specs) {
       const t = (at - X0 + s.w / 2) / Math.max(1, L);
-      const h = Math.max(2, ch - 1 + Math.round(3 * profile(shape, t)));
+      const h = Math.max(2, ch - 1 + Math.round(form.amp * profile(shape, t, form)));
       const spec = { ...cabinSpec(h), w: s.w };
       b.strip(corr, side, [spec], at);
       at += s.w + 1;

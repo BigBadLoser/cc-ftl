@@ -42,6 +42,8 @@ export interface Block {
   exposed: { x: number; y: number }[];
   /** Where the block was built (salvage donors: navy, civil, drone, mining; 'scrap' for improvised parts). */
   donor?: string;
+  /** Open structure (frames, cages, trusses): transitions never fair onto it, so its gaps stay open. */
+  bare?: boolean;
 }
 
 interface Placed {
@@ -181,6 +183,7 @@ export class Arranger {
     const pports = P.block.ports.filter((p) => p.side === o.side && !P.used.has(p.id) && (!o.parentPort || p.id === o.parentPort));
     const cports = child.ports.filter((p) => p.side === OPP[o.side] && (!o.childPort || p.id === o.childPort));
     const horiz = o.side === 'n' || o.side === 's';
+    const east = o.xMax === undefined ? 0 : Math.max(...child.rows.map((r) => r.replace(/\.+$/, '').length));
     for (const pp of pports) {
       for (const cp of cports) {
         // Walls coincide on the port line; slide along it while the segments overlap.
@@ -192,7 +195,7 @@ export class Arranger {
           const X = horiz ? wx + d - cp.x + (o.shift ?? 0) : wx - cp.x;
           const Y = horiz ? wy - cp.y : wy + d - cp.y + (o.shift ?? 0);
           if (o.xMin !== undefined && X + west(child) < o.xMin) continue;
-          if (o.xMax !== undefined && X + Math.max(...child.rows.map((r) => r.replace(/\.+$/, '').length)) - 1 > o.xMax) continue;
+          if (o.xMax !== undefined && X + east - 1 > o.xMax) continue;
           const tiles = this.sharedOpenings(P, pp, child, cp, X, Y);
           if (tiles.length === 0 && o.doors !== 0) continue;
           const t = (d - lo) / Math.max(1, hi - lo);

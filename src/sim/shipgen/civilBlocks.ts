@@ -293,3 +293,22 @@ export function crossHub(rng: Rng, centre: RoomSpec, rooms: RoomSpec[], armIn: n
   }
   return b;
 }
+
+/** A bridge tower: a vertical shaft with rooms stacked either side of it, entered at its foot (an outboard superstructure). */
+export function tower(rng: Rng, rooms: RoomSpec[]): Builder | null {
+  const b = localBuilder(rng);
+  const w = rooms.filter((_, i) => i % 2 === 0);
+  const e = rooms.filter((_, i) => i % 2 === 1);
+  const along = (s: RoomSpec[]): number => s.reduce((t, r) => t + r.h + 1, 1);
+  const H = Math.max(along(w), along(e), 5);
+  const shaft = b.place({ x: 0, y: -H, w: 3, h: H + 1 }, 'hall');
+  if (!shaft) return null;
+  for (const [side, list] of [['w', w], ['e', e]] as const) {
+    let y = 0;
+    for (const r of list) {
+      if (!b.attach(shaft, side, r, y)) return null;
+      y += r.h + 1;
+    }
+  }
+  return b;
+}

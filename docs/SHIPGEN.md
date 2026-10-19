@@ -364,11 +364,12 @@ Same arranger, no sim changes. Files:
   of the pods on each rail, staggered when crowded); a ring that would sprawl past twice the core's length falls
   back to a collar. Its stub reaches past the ring, so the airlock and stores sit outside it.
 
-## Civilians (v19-v21): topologies, not one corridor run
+## Civilians (v19-v22): topologies, not one corridor run
 
 `civilGrammars.ts` (topologies) on the shared arranger, from `civilBlocks.ts` (the civil builders the scrappers also use as
 donors), `civilFrames.ts` (container frames, ore cages, truss bridges, rig booms, the liner's 2D hull) and
-`civilStations.ts` (ring and lattice stations). Content: `src/content/factions/civilian.ts`. Lightly armed: point
+`civilStations.ts` (ring and lattice stations). Code: `civilKit.ts` (joins, drive, `beside`, variant picks),
+`civilShips.ts` (freighters, mining, crew bodies), `civilGrammars.ts` (liners, stations, the family table). Content: `src/content/factions/civilian.ts`. Lightly armed: point
 defence, at most a single light gun and a small shield; never a battery.
 
 v20 joined every section corridor end to corridor end, so every ship was one straight run with blocks hung off it. In
@@ -394,8 +395,28 @@ join sideways or lengthways:
 - `beside` grafts a body flush with the host's after end on its outermost wall line; arranger `xMax` keeps it from
   overrunning the drive.
 
+v22 (variation inside each topology):
+
+- Crew body forms, drawn from the ship's variant (`salted`): `block` (habitat ring aft), `tower` (a bridge tower off one
+  flank, `tower` builder), `wide` (a square crew module aft), `slim` (all along the cockpit stub). Frame freighters also
+  draw the crew body's place: `aft`, `mid` (a second frame aft of it, the drive on that) or `flank` (the frame on the
+  axis, the crew block beside it flush aft). With the three drive styles the after halves rarely repeat.
+- Tug: a short tug (bridge and core only) pushing a much bigger three-rail barge on an open truss (chords two rows out,
+  no fairings, so the gap reads); quarters and airlocks ride a habitat at the barge's far end. Towing ahead is not
+  possible while engines only face +x (the barge would sit in the exhaust).
+- Container frames: two or three rails (one or two bands), container size, gap, lane and staggered stacking per ship.
+- Ore cages: tooth spacing and length, gap width, one flank or both.
+- Rings: size, lopsided rim weights, a thicker wall (rooms inside the ring's top and bottom runs), spokes 2-4.
+- Lattices: grid spread (wide or tall), cell spacing, missing cells (long tubes span them), module padding.
+- Stacks: 2-5 modules, offsets and sides, mast length and width.
+- Liners: peak position, nose and tail fall, depth swing, extra length; 0-3 blisters at seeded places. Twin hulls: each
+  hull's inner cabin row runs unbroken, so the groove is one clean slit.
+- `Block.bare` (frames, cages, trusses, rigs): `taper` never fairs onto them, so their gaps stay open.
+
 Metric `spine`: the share of corridor tiles within one tile of a single straight row or column. At d9 (12 seeds), v20 to
 v21: freighter 0.95 to 0.25, liner 0.95 to 0.42, mining 0.94 to 0.62 (struts seeds still 0.9-1.0), station 0.37 to 0.33.
+The viewer also counts near-duplicates (`dups`): same-family pairs whose normalised silhouettes have IoU above 0.9 and
+proportions within 10%. d9 v21 to v22: freighter 1 to 1, liner 4 to 1, mining 0 to 0, station 4 to 0.
 
 Taper: `{ slope 3, max 2, jitter 0, label 'fairing' }`.
 

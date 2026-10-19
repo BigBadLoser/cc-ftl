@@ -168,7 +168,18 @@ export function contactSheet(
   const cols = Math.min(count, Math.max(1, Math.floor(maxWidth / cellW)));
   const rowsN = Math.ceil(count / cols);
   const r = new Raster(cols * cellW + 8, rowsN * cellH + 30);
-  const sil = meanPairwise(ships.map((x) => silhouetteMask(x.g.template.rows)), silhouetteDistance);
+  const masks = ships.map((x) => silhouetteMask(x.g.template.rows));
+  const sil = meanPairwise(masks, silhouetteDistance);
+  // Near-duplicates: same-family pairs whose normalised silhouettes overlap with IoU above 0.9 and whose proportions
+  // are within 10%.
+  const dupPairs: string[] = [];
+  ships.forEach((p, i) => ships.slice(i + 1).forEach((q, k) => {
+    const j = i + 1 + k;
+    const ar = (g: GenResult): number => g.metrics?.aspect ?? g.width / g.height;
+    if (p.g.role === q.g.role && silhouetteDistance(masks[i] as Uint8Array, masks[j] as Uint8Array) < 0.1 && Math.abs(ar(p.g) / ar(q.g) - 1) < 0.1) dupPairs.push(`${p.seed}~${q.seed}`);
+  }));
+  const spines = ships.map((x) => x.g.metrics?.spine ?? 0);
+  const spine = spines.reduce((t, v) => t + v, 0) / Math.max(1, spines.length);
   const arch = meanPairwise(ships.map((x) => x.g.debug?.profile ?? x.g.topology), profileDistance);
   const sigs = ships.filter((x) => x.g.debug).map((x) => ({ fam: x.g.role, gram: x.g.topology.split(' ')[0], sig: adjacencySignature(x.g.debug!) }));
   const adj = meanPairwise(sigs, (p, q) => adjacencyDistance(p.sig, q.sig));
@@ -179,7 +190,7 @@ export function contactSheet(
   void within;
   const gIn = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.gram === p.gram).map((q) => adjacencyDistance(p.sig, q.sig)));
   const gX = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.gram !== p.gram).map((q) => adjacencyDistance(p.sig, q.sig)));
-  const adjText = `adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)}; within grammar ${mean(gIn).toFixed(2)}, across ${mean(gX).toFixed(2)})`;
+  const adjText = `adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)}; within grammar ${mean(gIn).toFixed(2)}, across ${mean(gX).toFixed(2)}) spine ${spine.toFixed(2)} dups ${dupPairs.length}`;
   r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1} ${view}  shape ${sil.toFixed(2)} sections ${arch.toFixed(2)} ${adjText}`, 8, 8, [230, 230, 230], 2);
   const text: string[] = [];
   ships.forEach(({ seed, g }, i) => {
@@ -192,5 +203,5 @@ export function contactSheet(
     (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : view === 'structure' ? drawStructure : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
     text.push(summary(g, seed), ascii(g), '');
   });
-  return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}, ${adjText}`, ...errors, ...text].join('\n') };
+  return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}, ${adjText}`, `near-duplicates: ${dupPairs.join(' ') || 'none'}`, ...errors, ...text].join('\n') };
 }
