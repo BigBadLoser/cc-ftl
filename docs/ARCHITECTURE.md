@@ -206,6 +206,17 @@ palette.json    the single palette, read by Blender scripts and the game
   only in the glow pass.
 - **Crew:** about 60 px tall at 1x, 8 directions (no mirroring, since characters are asymmetric),
   clips at fixed frame counts (idle 4, walk 8, work 6, and more as needed).
+- **EVA spacesuit** (`sprites/human_suit.py`): human layers in the existing slots, not wired yet.
+  - Layers:
+    - `torso.eva`, `legs.eva`, `arm.L.eva`, `arm.R.eva`;
+    - `arm.L.eva_cyber`: the engineer's suited cyber arm, with the sleeve to a sealed elbow ring;
+    - `gear.head.eva_helmet` and `gear.back.eva_pack`.
+  - A white hard shell, with the faction colour (`team.cloth`) on its panels and bands.
+  - While the helmet is worn, the runtime should skip the `hair` and `eyes` slots. The pack is hidden when
+    seated, like the engineer rig.
+  - Suit layers cut only against the body and each other, so they never cut ordinary clothing.
+  - New clip `eva_float` (4 frames) in every human sheet: drifting, tilted, legs trailing, with the pack's
+    thrust puffs on the glow sheet. Map an EVA state to it in `clipFor`; walking in a suit uses `walk`.
 - **Robot crew** (`sprites/robots.py`, `robot_kit.py`, `robot_render.py`): rigid parts on a joint rig, not skinned.
   - One body layer per type, in the crew layer format: `crew.robot.body.worker`, `crew.robot.body.repair` (hover
     drone) and `crew.robot_heavy.body.security`.

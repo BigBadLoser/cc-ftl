@@ -27,12 +27,22 @@
    "image": "sprites/crew.human.arm.L.cyber.png",
    "glow": "sprites/crew.human.arm.L.cyber.glow.png"
   },
+  "crew.human.arm.L.eva": {
+   "image": "sprites/crew.human.arm.L.eva.png"
+  },
+  "crew.human.arm.L.eva_cyber": {
+   "image": "sprites/crew.human.arm.L.eva_cyber.png",
+   "glow": "sprites/crew.human.arm.L.eva_cyber.glow.png"
+  },
   "crew.human.arm.L.flesh": {
    "image": "sprites/crew.human.arm.L.flesh.png"
   },
   "crew.human.arm.R.cyber": {
    "image": "sprites/crew.human.arm.R.cyber.png",
    "glow": "sprites/crew.human.arm.R.cyber.glow.png"
+  },
+  "crew.human.arm.R.eva": {
+   "image": "sprites/crew.human.arm.R.eva.png"
   },
   "crew.human.arm.R.flesh": {
    "image": "sprites/crew.human.arm.R.flesh.png"
@@ -51,8 +61,16 @@
    "image": "sprites/crew.human.gear.back.engineer_rig.png",
    "glow": "sprites/crew.human.gear.back.engineer_rig.glow.png"
   },
+  "crew.human.gear.back.eva_pack": {
+   "image": "sprites/crew.human.gear.back.eva_pack.png",
+   "glow": "sprites/crew.human.gear.back.eva_pack.glow.png"
+  },
   "crew.human.gear.belt.tool_belt": {
    "image": "sprites/crew.human.gear.belt.tool_belt.png"
+  },
+  "crew.human.gear.head.eva_helmet": {
+   "image": "sprites/crew.human.gear.head.eva_helmet.png",
+   "glow": "sprites/crew.human.gear.head.eva_helmet.glow.png"
   },
   "crew.human.gear.head.welding_goggles": {
    "image": "sprites/crew.human.gear.head.welding_goggles.png"
@@ -75,6 +93,12 @@
   },
   "crew.human.legs.cargo_pants": {
    "image": "sprites/crew.human.legs.cargo_pants.png"
+  },
+  "crew.human.legs.eva": {
+   "image": "sprites/crew.human.legs.eva.png"
+  },
+  "crew.human.torso.eva": {
+   "image": "sprites/crew.human.torso.eva.png"
   },
   "crew.human.torso.tee": {
    "image": "sprites/crew.human.torso.tee.png"
@@ -138,10 +162,10 @@
    "order": 51,
    "sheet": "crew.human.arm.L.cyber",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -178,6 +202,127 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    }
+   },
+   "glow": true
+  },
+  "crew.human.arm.L.eva": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "arm.L",
+   "order": 51,
+   "sheet": "crew.human.arm.L.eva",
+   "frameW": 104,
+   "frameH": 91,
+   "anchor": {
+    "x": 52,
+    "y": 76
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "start": 21,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "start": 25,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.arm.L.eva_cyber": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "arm.L",
+   "order": 51,
+   "sheet": "crew.human.arm.L.eva_cyber",
+   "frameW": 104,
+   "frameH": 91,
+   "anchor": {
+    "x": 52,
+    "y": 76
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "start": 21,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "start": 25,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    },
@@ -190,10 +335,10 @@
    "order": 51,
    "sheet": "crew.human.arm.L.flesh",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -230,6 +375,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -241,10 +392,10 @@
    "order": 50,
    "sheet": "crew.human.arm.R.cyber",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -282,9 +433,72 @@
      "frames": 6,
      "fps": 8,
      "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
     }
    },
    "glow": true
+  },
+  "crew.human.arm.R.eva": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "arm.R",
+   "order": 50,
+   "sheet": "crew.human.arm.R.eva",
+   "frameW": 104,
+   "frameH": 91,
+   "anchor": {
+    "x": 52,
+    "y": 76
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "start": 21,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "start": 25,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    }
+   }
   },
   "crew.human.arm.R.flesh": {
    "kind": "crew.layer",
@@ -293,10 +507,10 @@
    "order": 50,
    "sheet": "crew.human.arm.R.flesh",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -333,6 +547,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -344,10 +564,10 @@
    "order": 0,
    "sheet": "crew.human.body",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -384,6 +604,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -395,10 +621,10 @@
    "order": 10,
    "sheet": "crew.human.eyes.cyber",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -435,6 +661,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    },
@@ -447,10 +679,10 @@
    "order": 10,
    "sheet": "crew.human.eyes.organic",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -487,6 +719,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -498,10 +736,10 @@
    "order": 80,
    "sheet": "crew.human.gear.back.engineer_rig",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -538,6 +776,70 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    }
+   },
+   "glow": true
+  },
+  "crew.human.gear.back.eva_pack": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "gear.back",
+   "order": 80,
+   "sheet": "crew.human.gear.back.eva_pack",
+   "frameW": 104,
+   "frameH": 91,
+   "anchor": {
+    "x": 52,
+    "y": 76
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "start": 21,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "start": 25,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    },
@@ -550,10 +852,10 @@
    "order": 40,
    "sheet": "crew.human.gear.belt.tool_belt",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -591,8 +893,72 @@
      "frames": 6,
      "fps": 8,
      "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
     }
    }
+  },
+  "crew.human.gear.head.eva_helmet": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "gear.head",
+   "order": 70,
+   "sheet": "crew.human.gear.head.eva_helmet",
+   "frameW": 104,
+   "frameH": 91,
+   "anchor": {
+    "x": 52,
+    "y": 76
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "start": 21,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "start": 25,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    }
+   },
+   "glow": true
   },
   "crew.human.gear.head.welding_goggles": {
    "kind": "crew.layer",
@@ -601,10 +967,10 @@
    "order": 70,
    "sheet": "crew.human.gear.head.welding_goggles",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -641,6 +1007,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -652,10 +1024,10 @@
    "order": 60,
    "sheet": "crew.human.hair.mohawk",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -692,6 +1064,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -703,10 +1081,10 @@
    "order": 60,
    "sheet": "crew.human.hair.ponytail",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -743,6 +1121,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -754,10 +1138,10 @@
    "order": 60,
    "sheet": "crew.human.hair.shaved",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -794,6 +1178,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -805,10 +1195,10 @@
    "order": 60,
    "sheet": "crew.human.hair.short",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -845,6 +1235,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -856,10 +1252,10 @@
    "order": 65,
    "sheet": "crew.human.implant.temple.neural_jack",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -896,6 +1292,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    },
@@ -908,10 +1310,10 @@
    "order": 20,
    "sheet": "crew.human.legs.cargo_pants",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -948,6 +1350,126 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.legs.eva": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "legs",
+   "order": 20,
+   "sheet": "crew.human.legs.eva",
+   "frameW": 104,
+   "frameH": 91,
+   "anchor": {
+    "x": 52,
+    "y": 76
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "start": 21,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "start": 25,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.torso.eva": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "torso",
+   "order": 30,
+   "sheet": "crew.human.torso.eva",
+   "frameW": 104,
+   "frameH": 91,
+   "anchor": {
+    "x": 52,
+    "y": 76
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "start": 4,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "start": 12,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "start": 18,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "start": 21,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "start": 25,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -959,10 +1481,10 @@
    "order": 30,
    "sheet": "crew.human.torso.tee",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -999,6 +1521,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
@@ -1010,10 +1538,10 @@
    "order": 30,
    "sheet": "crew.human.torso.work_shirt",
    "frameW": 104,
-   "frameH": 86,
+   "frameH": 91,
    "anchor": {
     "x": 52,
-    "y": 71
+    "y": 76
    },
    "clips": {
     "idle": {
@@ -1050,6 +1578,12 @@
      "start": 25,
      "frames": 6,
      "fps": 8,
+     "loop": true
+    },
+    "eva_float": {
+     "start": 31,
+     "frames": 4,
+     "fps": 4,
      "loop": true
     }
    }
