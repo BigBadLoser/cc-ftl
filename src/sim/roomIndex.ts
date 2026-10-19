@@ -15,7 +15,7 @@ export function roomTiles(grid: Grid): ReadonlyMap<number, readonly number[]> {
   const hit = cache.get(grid);
   if (hit && hit.rev === rev) return hit.rooms;
   const rooms = new Map<number, number[]>();
-  const room = grid.raw('room');
+  const room = grid.load('room');
   for (let i = 0; i < room.length; i++) {
     const r = room[i] as number;
     if (r === 0) continue;

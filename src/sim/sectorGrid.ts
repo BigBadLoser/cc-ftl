@@ -7,18 +7,13 @@ import {
   type FieldSpec,
   type FieldType,
   type GridLike,
+  type Rect,
 } from './grid';
 
 /** Field name -> value a tile has when no chunk holds it (vacuum). */
 export type EmptySpec = Record<string, number>;
 
-/** A rectangle of tiles: top-left (x, y), size w x h. */
-export interface Rect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+export type { Rect };
 
 /** JSON-able snapshot of a SectorGrid. Chunks are sorted by key; revisions are not saved. */
 export interface SectorGridData {
@@ -185,8 +180,8 @@ export class SectorGrid implements GridLike {
     return this.dir.get(chunkKey(cx, cy))?.arrays[f];
   }
 
-  /** Scratch copy of a field over a rectangle (row-major, w*h). Missing chunks read as the empty value. */
-  load(field: string, rect: Rect): Float64Array {
+  /** Scratch copy of a field over a rectangle (default: the allocated extent; row-major, w*h). Missing chunks read empty. */
+  load(field: string, rect: Rect = this.extent()): Float64Array {
     const f = this.field(field);
     const { x, y, w, h } = rect;
     const out = new Float64Array(Math.max(0, w) * Math.max(0, h));

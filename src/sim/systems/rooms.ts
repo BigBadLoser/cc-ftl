@@ -1,5 +1,6 @@
 import { Struct } from '../structure';
 import type { Grid } from '../grid';
+import { regions } from '../regions';
 import type { Sim } from '../sim';
 
 /**
@@ -10,7 +11,7 @@ const seen = new WeakMap<Grid, number>();
 
 /** Flood-fill Floor tiles (4-neighbour) into rooms. Walls/doors separate rooms; doors get room 0. */
 export function roomsSystem(sim: Sim): void {
-  for (const grid of sim.grids.values()) {
+  for (const { grid } of regions(sim)) {
     if (!grid.has('struct') || !grid.has('room')) continue;
     const rev = grid.revision('struct');
     if (seen.get(grid) === rev) continue;
@@ -21,7 +22,8 @@ export function roomsSystem(sim: Sim): void {
 
 function recompute(grid: Grid): void {
   const { width, height } = grid;
-  const struct = grid.raw('struct');
+  const struct = grid.load('struct');
+  const before = grid.load('room');
   const labels = new Uint16Array(width * height);
   let next = 0;
   const stack: number[] = [];
@@ -52,7 +54,7 @@ function recompute(grid: Grid): void {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const v = labels[y * width + x] as number;
-      if (grid.get('room', x, y) !== v) grid.set('room', x, y, v);
+      if (before[y * width + x] !== v) grid.set('room', x, y, v);
     }
   }
 }

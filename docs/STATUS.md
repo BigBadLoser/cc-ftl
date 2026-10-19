@@ -264,7 +264,8 @@ The many-grids sector (one `Grid` per ship, cross-grid portals, per-grid scenes,
 
 **Progress:** step 1 on `main` (`GridLike`, `SectorGrid`, `GridWindow`, `ship` field and `SHIP_EMPTY`). Step 2 on branch
 `sector-2` (not merged): ships are stamped into `sim.sector.grid`, `sim.grids` holds windows, save v13 stores chunks and old
-saves are refused (no migrations).
+saves are refused (no migrations). Step 3 on `sector-2`: field systems loop over `regions(sim)` through `load()`/`set()`
+with per-region active tile lists (bit-identical results, pinned by hash tests).
 
 Planner's calls (the user can overrule):
 - 16x16 sparse chunks.

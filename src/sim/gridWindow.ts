@@ -1,4 +1,4 @@
-import { allocate, CHUNK_SIZE, type FieldArray, type FieldType, type GridLike } from './grid';
+import { allocate, CHUNK_SIZE, type FieldArray, type FieldType, type GridLike, type Rect } from './grid';
 import type { SectorGrid } from './sectorGrid';
 
 /**
@@ -54,6 +54,14 @@ export class GridWindow implements GridLike {
     }
     const x = cx * CHUNK_SIZE, y = cy * CHUNK_SIZE;
     return this.sumRevisions(field, x, y, Math.min(CHUNK_SIZE, this.width - x), Math.min(CHUNK_SIZE, this.height - y));
+  }
+
+  /**
+   * Scratch copy of a field over a local rectangle (default: the whole window). The rectangle may reach past the window
+   * (a padded region frame): those tiles read straight from the sector.
+   */
+  load(field: string, rect: Rect = { x: 0, y: 0, w: this.width, h: this.height }): Float64Array {
+    return this.sector.load(field, { x: this.ox + rect.x, y: this.oy + rect.y, w: rect.w, h: rect.h });
   }
 
   /** Temporary dense copy of a field, cached on the window revision. Refreshed in place; writes to it are lost. */

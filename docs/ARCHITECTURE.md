@@ -649,6 +649,16 @@ app compile unchanged. Save v13: `sector.grid` (chunks) plus `grids: {id, x, y, 
 version. Chunks are not released yet (occupancy off): a chunk with no structure left can still hold module or item ids,
 and nothing lifts ships until step 9. `content/ships/sectorEquiv.test.ts` pins state hashes recorded on the pre-refactor
 code (combat run, fire plus breach run) and checks a save round trip midway gives the identical state.
+Step 3 done (branch `sector-2`): `GridLike.load(field, rect?)` (dense grid, sector and window; a window rect may reach past
+the window). `regions(sim)` (`regions.ts`) lists the grids in ascending id, the fixed order every field system loops in.
+`atmosphere`, `temperature`, `smoke`, `fire`, `rooms`, `lighting`, `doors`, `alerts`, `autojobs`, `modules` (life support),
+`roomTiles` and `hullSum` read through `load()`/`get()` and write with `set()`; none of them calls `raw()`. `fieldFrame(grid)`
+(`diffusion.ts`) caches the struct snapshot and the **active tile list** (non-Space tiles plus their 4-adjacent Space) on the
+struct revision; diffusion links and the delta pass run over it in ascending order, so results are bit-identical to the full
+sweep (`diffusion.test.ts` checks this against a copy of the old sweep). Flat passes that must see every tile (zeroing gas
+on Space, write-back, fire and door scans) still read the whole loaded rectangle: a vacuum tile costs one array read there,
+never a link. `hullSum` is cached on the hp and struct revisions. Still on `raw()`: `crew/pathfind.ts`, `eva/route.ts` and
+the renderer (step 5b / 7).
 
 **Merges before the refactor (answer to the user's hold).**
 - Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**

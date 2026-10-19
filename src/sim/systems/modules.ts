@@ -21,16 +21,14 @@ export function modulesSystem(sim: Sim): void {
       const room = grid.get('room', m.x, m.y);
       const tiles = room ? roomTiles(grid).get(room) : undefined;
       const idx = tiles ?? [m.y * grid.width + m.x];
-      const o2 = grid.raw('o2');
-      const co2 = grid.raw('co2');
       const addO2 = ((def.o2PerSec ?? 0) / TICK_HZ) / idx.length;
       const scrub = ((def.co2ScrubPerSec ?? 0) / TICK_HZ) / idx.length;
       for (const i of idx) {
         const x = i % grid.width;
         const y = (i - x) / grid.width;
-        const cur = o2[i] as number;
+        const cur = grid.get('o2', x, y);
         if (addO2 > 0 && cur < NORMAL_O2 - GAS_EPSILON) grid.set('o2', x, y, Math.min(NORMAL_O2, cur + addO2));
-        const c = co2[i] as number;
+        const c = grid.get('co2', x, y);
         if (scrub > 0 && c > GAS_EPSILON) grid.set('co2', x, y, Math.max(0, c - scrub));
       }
     }

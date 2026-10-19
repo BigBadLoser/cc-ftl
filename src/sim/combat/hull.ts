@@ -1,14 +1,21 @@
 import type { Grid } from '../grid';
 import { Struct, bordersSpace } from '../structure';
 
-/** Sum of wall and door integrity on a grid. */
+const sums = new WeakMap<Grid, { hp: number; struct: number; sum: number }>();
+
+/** Sum of wall and door integrity on a grid. Cached until its `hp` or `struct` revision changes. */
 export function hullSum(grid: Grid): number {
-  const struct = grid.raw('struct');
-  const hp = grid.raw('hp');
+  const hpRev = grid.revision('hp');
+  const structRev = grid.revision('struct');
+  const hit = sums.get(grid);
+  if (hit && hit.hp === hpRev && hit.struct === structRev) return hit.sum;
+  const struct = grid.load('struct');
+  const hp = grid.load('hp');
   let sum = 0;
   for (let i = 0; i < struct.length; i++) {
     if (struct[i] === Struct.Wall || struct[i] === Struct.Door) sum += hp[i] as number;
   }
+  sums.set(grid, { hp: hpRev, struct: structRev, sum });
   return sum;
 }
 

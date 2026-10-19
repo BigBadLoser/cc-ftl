@@ -14,6 +14,14 @@ export interface GridData {
   fields: Record<string, { type: FieldType; data: string }>;
 }
 
+/** A rectangle of tiles: top-left (x, y), size w x h. */
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 /** Chunk edge length in tiles, for per-chunk revision tracking. */
 export const CHUNK_SIZE = 16;
 
@@ -32,6 +40,8 @@ export interface GridLike {
   set(field: string, x: number, y: number, value: number): void;
   revision(field: string): number;
   chunkRevision(field: string, cx: number, cy: number): number;
+  /** Scratch copy of a field over `rect` (default: the whole grid), row-major w*h. Writes to it change nothing. */
+  load(field: string, rect?: Rect): Float64Array;
   raw(field: string): Readonly<FieldArray>;
 }
 
@@ -142,6 +152,22 @@ export class DenseGrid implements GridLike {
       throw new RangeError(`Grid chunk (${cx}, ${cy}) out of bounds`);
     }
     return (this.chunkRevs.get(field) as Uint32Array)[cy * this.chunksX + cx] as number;
+  }
+
+  load(field: string, rect: Rect = { x: 0, y: 0, w: this.width, h: this.height }): Float64Array {
+    const arr = this.array(field);
+    const { x, y, w, h } = rect;
+    if (w > 0 && h > 0 && (!this.inBounds(x, y) || !this.inBounds(x + w - 1, y + h - 1))) {
+      throw new RangeError(`Grid: load rect (${x}, ${y}, ${w}x${h}) out of bounds`);
+    }
+    const out = new Float64Array(Math.max(0, w) * Math.max(0, h));
+    if (out.length === 0) return out;
+    if (x === 0 && w === this.width) {
+      out.set(arr.subarray(y * w, (y + h) * w));
+      return out;
+    }
+    for (let ty = 0; ty < h; ty++) out.set(arr.subarray((y + ty) * this.width + x, (y + ty) * this.width + x + w), ty * w);
+    return out;
   }
 
   /** Read-only access to a field's raw array, for renderers and overlays. Do not write to it. */

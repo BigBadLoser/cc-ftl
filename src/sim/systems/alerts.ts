@@ -1,4 +1,5 @@
 import type { Grid } from '../grid';
+import { regions } from '../regions';
 import { roomTiles } from '../roomIndex';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
@@ -20,7 +21,7 @@ const memory = new WeakMap<Grid, Memory>();
 /** Raise hull.breach, fire.started and o2.low once per room as conditions start (every few ticks). */
 export function alertsSystem(sim: Sim): void {
   if (sim.tick % ALERT_INTERVAL_TICKS !== 0) return;
-  for (const grid of sim.grids.values()) {
+  for (const { grid } of regions(sim)) {
     if (!grid.has('room') || !grid.has('o2') || !grid.has('fire')) continue;
     let mem = memory.get(grid);
     if (!mem) memory.set(grid, (mem = { breached: new Set(), burning: new Set(), lowO2: new Set() }));
@@ -30,10 +31,10 @@ export function alertsSystem(sim: Sim): void {
 
 function scan(sim: Sim, grid: Grid, mem: Memory): void {
   const { width, height } = grid;
-  const struct = grid.raw('struct');
-  const fire = grid.raw('fire');
-  const room = grid.raw('room');
-  const o2 = grid.raw('o2');
+  const struct = grid.load('struct');
+  const fire = grid.load('fire');
+  const room = grid.load('room');
+  const o2 = grid.load('o2');
   const breached = new Set<number>();
   const burning = new Map<number, number>();
   for (let i = 0; i < struct.length; i++) {
