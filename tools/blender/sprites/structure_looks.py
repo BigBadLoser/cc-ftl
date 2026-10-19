@@ -14,10 +14,10 @@ C = 1 / 32                       # one cell
 BASES = {
     "nv": dict(wall="#7f8c9b", hull="#435264", trim="#9d8644", floor="#3e4651", accent="#4f7fb8"),
     "dn": dict(wall="#2b3139", hull="#22272e", trim="#343c46", floor="#24292f"),
-    "c1": dict(wall="#b3ad9e", hull="#b1a68f", trim="#c8742e", floor="#4a4740"),
-    "c2": dict(wall="#98a898", hull="#6c8670", trim="#c4b277", floor="#3f4740"),
-    "c3": dict(wall="#c2c7cd", hull="#c6cbd1", trim="#3d6db0", floor="#454b53"),
-    "c4": dict(wall="#96968c", hull="#7a7c76", trim="#c49d27", floor="#44443f"),
+    "c1": dict(wall="#a8a395", hull="#a39a85", trim="#c8742e", floor="#57534b"),
+    "c2": dict(wall="#93a393", hull="#66806a", trim="#c4b277", floor="#4b544c"),
+    "c3": dict(wall="#b6bbc1", hull="#b6bcc3", trim="#3d6db0", floor="#51565d"),
+    "c4": dict(wall="#909086", hull="#74766f", trim="#c49d27", floor="#504f49"),
 }
 
 
@@ -109,15 +109,16 @@ class Drone(Faction):
         x = 1 if P.face == "x" else 0
         if not self.hull(P) and self.face(P) and P.z > ZS + 0.03:
             c = int(((P.s % 1) + 1) % 1 / C) % 16
-            if c in (0, 1, 2):
-                return self.t("W", 2 + x if c == 1 else 3 + x)               # frame members
-            for zc in (0.68, 1.0, 1.36, 1.62):
+            if c in (0, 1, 2, 3):
+                return ("steel", "gm", "gmD", "steelD")[c] if not x else ("gm", "gmD", "steelD", "steelD")[c]   # frame members
+            for zc, r in ((0.7, 0.05), (1.02, 0.065), (1.38, 0.05), (1.64, 0.04)):
                 d = P.z - zc
-                if -0.04 <= d < 0.04:
-                    if P.kind == "y" and zc == 1.0 and 0.3 <= P.s < 0.48 and abs(d) < 0.015:
+                if -r <= d < r:
+                    if P.kind == "y" and zc == 1.02 and 0.3 <= P.s < 0.48 and abs(d) < 0.015:
                         return "cyan"                                         # a status line on one conduit
-                    return self.t("W", 2 + x if d > 0.015 else (3 + x if d > -0.015 else 5))
-            return self.t("W", 6)                                             # the dark void between them
+                    lit = ("plate", "steelL", "steel") if not x else ("steelL", "steel", "steelD")
+                    return lit[0 if d > r * 0.4 else (1 if d > -r * 0.3 else 2)]   # a machined pipe, lit on top
+            return self.t("W", 6) if c % 8 else self.t("W", 5)                # the dark bay behind (a faint back rib)
         if self.hull(P) and self.face(P) and P.fam == "hull" and P.z > ZS + 0.05:
             if P.sprite.endswith(".v1") and P.kind == "y" and 0.1 <= P.s < 0.32 and abs(P.z - 1.75) < 0.015:
                 return "cyan"                                                 # status line, every third tile
@@ -139,20 +140,33 @@ class Civil(Faction):
         x = 1 if P.face == "x" else 0
         if self.face(P) and P.z > ZS + 0.03 and (P.fam in ("hull", "wall", "trim")):
             c = int(((P.s % 1) + 1) % 1 / C)
-            fam = "H" if self.hull(P) else "W"
-            if c == 0 or (not self.hull(P) and c == 16):
-                return self.t(fam, 5 + x)                                     # seams
-            if c == 1 or (not self.hull(P) and c == 17):
-                return self.t(fam, 1 + x)
-            if self.hull(P) and 0.95 <= P.z < 1.07:
-                return self.t("T", 2 + x if P.z >= 0.97 else 4 + x)           # the trim stripe
-            if not self.hull(P) and ZS + 0.03 <= P.z < ZS + 0.09:
+            z = P.z
+            if self.hull(P):
+                if 0.95 <= z < 1.07:
+                    return self.t("T", 2 + x if z >= 0.97 else 4 + x)         # the trim stripe
+                lower = z < 0.95
+                if c == 0 or (lower and c == 16) or abs(z - 1.55) < 0.015:
+                    return self.t("H", 5 + x)                                 # plate seams
+                if c == 1 or (lower and c == 17) or 0.015 <= z - 1.55 < 0.04:
+                    return self.t("H", 1 + x)
+                if lower:
+                    return self.t("H", 4 + x)                                 # a darker lower course
+                lift = -1 if P.sprite.endswith(".v1") and z > 1.55 else 0     # a newer plate on every third tile
+                return self.t("H", 3 + x + lift)
+            if c in (0, 16):
+                return self.t("W", 5 + x)                                     # two panels per tile
+            if c in (1, 17):
+                return self.t("W", 1 + x)
+            if ZS + 0.03 <= z < ZS + 0.09:
                 return self.t("T", 2 + x)                                     # kick stripe
-            return self.t(fam, 3 + x)
+            if self.full(P) and abs(z - 1.15) < 0.02:
+                return self.t("W", 1 + x)                                     # a thin rail
+            return self.t("W", 3 + x)
         if P.fam == "belly":
             if 0.12 <= P.z < 0.2:
                 return self.t("T", 3 + x)                                     # trim band under the rim
-            return self.t("H", 4 + x)
+            c = int(((P.s % 1) + 1) % 1 / C)
+            return self.t("H", 5 + x if c % 16 == 0 else 4 + x)
         return None
 
 
@@ -187,15 +201,17 @@ class Scrap(Look):
             full = ".full." in sprite or sprite.startswith("tile.hull") and ".low." not in sprite
             top = 1.85 if full else 0.755
             patches = []
-            for k in range(1 + (h("n") > 0.65)):
-                w, ht = 0.38 + 0.3 * h(k, "w"), (0.22 + 0.25 * h(k, "h")) * (1 if full else 0.45)
+            for k in range(1 + (h("n") > 0.85)):                                 # mostly one big plate per tile
+                if h(k, "skip") < 0.25:
+                    continue                                                      # ... and some tiles none
+                w, ht = 0.5 + 0.35 * h(k, "w"), (0.3 + 0.3 * h(k, "h")) * (1 if full else 0.45)
                 s0 = 0.05 + (0.9 - w) * h(k, "s")
                 z0 = ZS + 0.05 + max(0.0, top - ZS - 0.12 - ht) * h(k, "z")
                 donor = _donors()[int(h(k, "d") * len(_donors()))]
                 patches.append((s0, s0 + w, z0, z0 + ht, donor))
-            bolt = (0.1 + 0.7 * h("bs"), ZS + 0.1 + (top - ZS - 0.35) * h("bz")) if h("b") > 0.35 else None
+            bolt = (0.1 + 0.7 * h("bs"), ZS + 0.1 + (top - ZS - 0.35) * h("bz")) if h("b") > 0.7 else None
             streaks = [(0.08 + 0.84 * h(k, "rs"), ZS + 0.12 + (top - ZS - 0.2) * h(k, "rz"), 0.12 + 0.25 * h(k, "rl"))
-                       for k in range(1 + (h("rn") > 0.55))]
+                       for k in range(1 + (h("rn") > 0.8))]
             ribs = (0.15 + 0.4 * h("ibs"), ZS + 0.15) if (self.p == 3 and full) else None
             self._plan[sprite] = (patches, bolt, streaks, ribs, top)
         return self._plan[sprite]

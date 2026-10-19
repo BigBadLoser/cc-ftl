@@ -20,7 +20,7 @@ ROOM = ["##########",
         "#.....#   ",
         "#######   "]
 PRE = {"up": "full.", "cut": "", "low": "low."}
-LOOKS = [("default", None), ("navy", "navy"), ("drone", "drone"), ("civil v1", "civil.v1"), ("civil v2", "civil.v2"),
+LOOKS = [("default", None), ("navy", "navy"), ("drone", "drone"), ("civil v1", "civil.v1"), ("civil v2", "civil.v2"), ("civil v3", "civil.v3"), ("civil v4", "civil.v4"),
          ("scrap", "scrap")]
 
 
