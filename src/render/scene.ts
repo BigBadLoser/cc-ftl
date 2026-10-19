@@ -3,7 +3,6 @@ import { ShipC, type Ship } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
 import type { Grid } from '../sim/grid';
-import { ModuleC } from '../sim/modules/components';
 import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
 import { loadAtlas } from './assets/loader';
 import { createCamera, type Camera } from './camera';
@@ -139,11 +138,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     layer: SL.sorted,
     project: sectorArt,
     include: (v) => v.state !== 'stowed' || v.homeGrid === refId,
-    dock: (v) => {
-      const gridId = world.get(v.dock, ModuleC)?.gridId;
-      if (gridId === undefined || !scenes.has(gridId)) return null;
-      return { layer: W.low, project: sectorArt, depth: (sx, sy) => sx + sy - 1 };
-    },
+    low: { layer: W.low, project: sectorArt },
   });
 
   /** What crew views need to draw EVA: the tank size. */

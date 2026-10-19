@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Container, type IRenderLayer } from 'pixi.js';
 import { createWorldStack } from './worldLayers';
+import { frontDepth } from './shuttleView';
 
 const depthLayer = (root: Container) => root.children.find((c) => 'renderLayerChildren' in c) as unknown as IRenderLayer;
 const named = (name: string, z: number) => {
@@ -32,5 +33,14 @@ describe('world stack', () => {
     a.sorted.addChild(s);
     s.destroy();
     expect(depthLayer(W.root).renderLayerChildren).toHaveLength(0);
+  });
+});
+
+describe('frontDepth', () => {
+  it('adds the footprint reach toward the viewer to the centre depth', () => {
+    // Nose +y (heading pi/2): 2.4 along y, 1.0 across.
+    expect(frontDepth(10.5, 20.5, Math.PI / 2)).toBeCloseTo(30 + 2.4 + 1.0);
+    // Nose +x+y diagonal: the length reaches 2.4 * sqrt 2 forward, the width nothing.
+    expect(frontDepth(0.5, 0.5, Math.PI / 4)).toBeCloseTo(2.4 * Math.SQRT2);
   });
 });
