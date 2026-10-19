@@ -96,6 +96,53 @@ def craft_item(name, state, heading):
     return [_render(name, "prop", SC.transport_shuttle(heading, state), [], (1, 1))]
 
 
+# Docking tube (telescoping, from the shuttle's round side hatch to the airlock collar): four open rings sized to the hatch opening
+# (radius 0.80) that nest flush inside it when retracted (no sprite), a hazard mouth ring with lamp studs. One fixed length.
+HATCH_PLANE, HATCH_U, HATCH_Z = 0.80, 1.40, 1.30        # hatch outer plane (out from the centre line), along the nose, axis height
+TUBE_LENGTH = 1.1
+TUBE_FRAMES = (0.4, 0.75, 1.1)                          # extension of .f1 .f2 .f3
+TUBE_RADII = (0.78, 0.72, 0.66, 0.60)
+TUBE_SIDES = 24
+
+
+def _annulus(f, u, r0, r1, mat):
+    pts = lambda r: [f.pt(u, HATCH_U + r * math.cos(i * math.tau / TUBE_SIDES), HATCH_Z + r * math.sin(i * math.tau / TUBE_SIDES)) for i in range(TUBE_SIDES)]  # noqa: E731
+    a, b = pts(r0), pts(r1)
+    for i in range(TUBE_SIDES):
+        j = (i + 1) % TUBE_SIDES
+        f.poly([a[i], b[i], b[j], a[j]], mat, flip=True)
+
+
+def tube_objs(d, length):
+    """The tube at an extension `length` for a shuttle docked at a hull whose outward direction index is d (the dockside heading)."""
+    from . import core as _core
+    from lib.transport_forms import FlightFrame
+    heading = d * math.pi / 4 - math.pi / 2
+    m = _core.Mesh("dock_tube")
+    f = FlightFrame(m, heading - math.pi / 2)             # its u axis is the hatch normal (toward the hull)
+    n = len(TUBE_RADII)
+    ends = [HATCH_PLANE + length * (k + 1) / n for k in range(n)]
+    for k, (r, e, col) in enumerate(zip(TUBE_RADII, ends, ("gW1", "steelL", "steel", "steelD"))):
+        f.hcyl(HATCH_PLANE, e, HATCH_U, HATCH_Z, r, col, sides=TUBE_SIDES)
+        _annulus(f, e, TUBE_RADII[k + 1] if k < n - 1 else r - 0.05, r, "steelD")
+        f.hcyl(e, HATCH_PLANE, HATCH_U, HATCH_Z, r - 0.025, "dark", sides=TUBE_SIDES)               # the bore (reversed faces)
+    e = ends[-1]
+    _annulus(f, e + 0.001, TUBE_RADII[-1] - 0.06, TUBE_RADII[-1], "hazY")
+    for i in range(8):
+        a = i * math.tau / 8
+        f.box(e, HATCH_U + (TUBE_RADII[-1] - 0.03) * math.cos(a), HATCH_Z + (TUBE_RADII[-1] - 0.03) * math.sin(a), 0.045, 0.045, 0.045, "cyan", top="cyan")
+    return [m.build()]
+
+
+def tube_item(d, frame):
+    core.clear_scene_meshes()
+    post.select(True)
+    from lib import palette
+    for k, hx in LIVERY.items():
+        palette._data[k] = {"hex": hx}
+    return [_render(f"vehicle.shuttle.tube.d{d}.f{frame}", "prop", tube_objs(d, TUBE_FRAMES[frame - 1]), [], (1, 1))]
+
+
 def craft_jobs():
     """Flight art (family `shuttle`): vehicle.shuttle.fly.d0..d7 (wings spread, nozzles lit; d0 = +x, d2 = +y) and
     vehicle.shuttle.docked.d0/d2/d4/d6 (legs up, wings folded, nozzles dark, nose out: the lift off / settle pose in a bay) and
@@ -105,7 +152,8 @@ def craft_jobs():
     # Docked at an airlock: lying parallel to the hull with its side hatch toward it. d = the hull's outward direction; the
     # hatch (on the shuttle's -v flank) faces -d, so the nose points along (sin d, -cos d), heading d - 90 deg.
     side = [lambda d=d: craft_item(f"vehicle.shuttle.dockside.d{d}", "docked", d * math.pi / 4 - math.pi / 2) for d in (0, 2, 4, 6)]
-    return fly + docked + side
+    tube = [lambda d=d, i=i: tube_item(d, i) for d in (0, 2, 4, 6) for i in (1, 2, 3)]
+    return fly + docked + side + tube
 
 
 def jobs():
