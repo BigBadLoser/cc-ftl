@@ -187,7 +187,7 @@ palette.json    the single palette, read by Blender scripts and the game
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
-  crew, see below), `robot_bay`, `env` (props,
+  crew, see below), `aliens`, `robot_bay`, `env` (props,
   economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks) and `sol` (the engine, AI core and shield packs, rendered by
   their own scripts in `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
@@ -213,6 +213,15 @@ palette.json    the single palette, read by Blender scripts and the game
     (split at the waist).
   - `team.cloth` is the faction shell and `team.accent` the seam; the eye and charge cells glow.
   - Look previews: `ROBOT_QUICK`, `ROBOT_REST` and `ROBOT_ANIM` builds, composited by `review/robots_preview.py`.
+- **Aliens** (`sprites/alien.py`, `alien_render.py`, family `aliens`, not wired yet): the derelict infestation, built
+  on the robot rig kit. There is one sheet per creature in the crew layer format, with species `alien` and no gear:
+  - `crew.alien.body.hunter`: the swarm melee unit, about 1 tile.
+  - `crew.alien.body.brute`: the tank, about 1.5 tiles.
+  - `crew.alien.body.spitter`: ranged; its `attack` clip spits a glowing glob.
+  - Each sheet has 8 direction rows and the clips idle 4, run 6, attack 5, hurt 2 and dead 1 (the corpse that
+    stays on the floor).
+  - The look is dark violet chitin with lighter violet limbs and one lime accent; the eyes and sacs glow.
+  - Previews: `ALIEN_QUICK` and `ALIEN_ANIM` builds, composited by `review/alien_preview.py`.
 - **Robot bay** (`sprites/robot_bay.py`, family `robot_bay`): 1x2, in the robots' look (light shells over a dark frame,
   the status light as a single eye).
   - The cradle is the footprint's rotated (0, 0) tile (the sim's `rotateOffset`), and the tower is the rotated (0, 1)
