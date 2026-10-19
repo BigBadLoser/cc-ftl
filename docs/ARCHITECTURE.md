@@ -569,11 +569,9 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
   - Retention: keep archives that hold anything player-owned (prizes, stranded crew); drop the rest and regenerate them from
     the seed if revisited.
   - Jumping with own crew or vehicles away asks for confirmation (open question 2).
-- **Save format (v13, then v14).**
-  - `sector: { id, state, inCombat, lost?, grid: SectorGridData }` and `archives: SectorArchive[]`. `grids[]` is gone.
-  - v12 → v13 stamps each old grid at its ShipC `x, y`, writes `ship` owners and adds the ship offset to every coordinate
-    component (`gridId` kept for now).
-  - v13 → v14 drops the `gridId` fields and the portal entities.
+- **Save format.** `sector: { id, state, inCombat, lost?, grid: SectorGridData }` and `archives: SectorArchive[]`; `grids[]` is
+  gone. **No migrations (user decision, 2026-10-19):** this is a prototype, so each step that changes the save format just
+  bumps `SAVE_VERSION` and old saves are discarded.
 
 ### 5. Combat on one map
 
@@ -611,6 +609,16 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
 | Save size | Dense base64 per grid | Allocated chunks only | Under 1 MB typical |
 
 ### 7. Migration order
+
+**Amended (user, 2026-10-19).** The single shared tile store is confirmed: mining is planned, and building in open space,
+welding structures together and ships breaking apart may follow, which all need tiles of different structures on one grid.
+Saves are not migrated (see Save format). **Visible work goes first** so the one-map feel lands early:
+1. Step 0 (merges, including `shipgen` plus `trusses-int` via `genint`).
+2. Then, in parallel: step 1 (`SectorGrid` core, new code only) and the render steps that don't need chunks: 5a (one world
+   layer stack with `sectorPos` offsets), 5c (combat panel as camera pass B), 5d (picking in sector tiles), plus step 8
+   (`BodyC` vehicles; vehicles already fly in sector space) and the visibility rule (crew outside a hull always drawn).
+3. Then steps 2–4, 5b (chunk tile views), 6, 7, 9 and 10 as below.
+
 
 Each step keeps `npm run check` green and the game playable, and each is its own PR. Steps 1–4 change no behaviour or visuals
 and need no screenshots. Steps 5 and 9 are visual and need user screenshot approval.
