@@ -64,7 +64,7 @@ def scene(cv, A, pub, ox, oy, t=None):
         k = (t - 1) / 5
         bx, by = mx + 30 + (hx - mx - 30) * k, my + (hy - my) * k
         rot = np.degrees(np.arctan2(hy - my, hx - mx))
-        img, g, an = A.static(f"fx.laser_bolt.{t % 2}")
+        img, g, an = A.static(f"fx.laser_bolt.{t % 6}")
         im = Image.fromarray(img).rotate(-rot, resample=Image.NEAREST, expand=True)
         gi = Image.fromarray(g).rotate(-rot, resample=Image.NEAREST, expand=True) if g is not None else None
         cv.put(np.array(im), np.array(gi) if gi else None, int(bx - im.width / 2), int(by - im.height / 2))
@@ -107,6 +107,15 @@ def main():
         im = Image.fromarray(c.px[..., :3])
         clip.append(im.resize((im.width * 3, im.height * 3), Image.NEAREST))
     mp4(clip, out / "fx-clip.mp4", fps=12, loops=4)
+    bolt = []                                           # the bolt loop: a slow fly-by over the roof, then a close-up
+    for t in range(24):
+        c = Canvas(420, 170)
+        roof(c, pub, 210, 60, 4, 4)
+        c.static(A, f"fx.laser_bolt.{t % 6}", 40 + t * 15, 75)
+        c.static(A, f"fx.laser_bolt.{t % 6}", 210, 150)
+        im = Image.fromarray(c.px[..., :3])
+        bolt.append(im.resize((im.width * 4, im.height * 4), Image.NEAREST))
+    mp4(bolt, out / "fx-bolt.mp4", fps=12, loops=3)
     print("wrote", out)
 
 

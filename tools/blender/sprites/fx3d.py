@@ -96,14 +96,31 @@ def _spikes(f, c, n, r0, r1, w, color, rot=0.0):
 
 # ---- laser: bolt, muzzle flash, impact ------------------------------------------------------------------------------
 
+BOLT_FRAMES = 6
+
+
 def laser_bolt(k):
+    """A 6-frame loop: the core and sheath pulse, two strands twist round the core, bright nodes run from the head to
+    the tail, the head flares, and fragments shed off the tail and fall behind."""
     f = Fx(f"laser_bolt_{k}")
-    L = 1.0 + 0.08 * k
-    f.spindle(-L / 2, L / 2, 0.22, "fxC2", head=0.3)
-    f.spindle(-L / 2 + 0.08, L / 2 - 0.02, 0.13, "fxC1", head=0.3)
-    f.spindle(-L / 2 + 0.25 + 0.06 * k, L / 2 - 0.06, 0.055, "fxC0", head=0.25)
-    for j, (u, h) in enumerate(((-0.66, 0.08), (-0.8, 0.05))):              # a broken tail behind the bolt
-        f.spindle(u - 0.1 - 0.04 * k, u + 0.02, h, "fxC1" if j == 0 else "fxC2", head=0.5)
+    ph = k / BOLT_FRAMES
+    pulse = math.sin(ph * math.tau)
+    f.spindle(-0.5, 0.5, 0.22 + 0.03 * pulse, "fxC2", head=0.3)              # halo
+    f.spindle(-0.42, 0.48, 0.13 + 0.02 * math.sin(ph * math.tau + 1.5), "fxC1", head=0.3)
+    for s, col in ((0.0, "fxC0"), (0.5, "fxC1")):                            # two strands twisting round the core
+        pts = [(u, 0.075 * math.sin(math.tau * (u * 1.6 - ph - s)) * min(1.0, (0.48 - u) * 4)) for u in np.linspace(-0.4, 0.44, 11)]
+        for (u0, v0), (u1, v1) in zip(pts, pts[1:]):
+            f.streak(P(u0, v0), P(u1, v1), 0.05, 0.05, col)
+    f.spindle(-0.2 + 0.04 * pulse, 0.44, 0.06, "fxC0", head=0.25)            # the white core
+    for j in range(2):                                                       # nodes running head -> tail
+        u = 0.36 - ((ph + j / 2) % 1) * 0.72
+        f.flat([P(u + du, dv) for du, dv in ((-0.05, 0), (0, -0.045), (0.05, 0), (0, 0.045))], "fxC0")
+    r = 0.09 if k % 2 == 0 else 0.13                                          # head flare
+    _spikes(f, P(0.47, 0), 4, 0.0, r, 0.06, "fxC0", rot=math.pi / 4 * (k % 2))
+    for j in range(3):                                                       # fragments shed off the tail
+        a = (ph + j / 3) % 1
+        u, h = -0.52 - 0.34 * a, 0.09 * (1 - a) + 0.03
+        f.spindle(u - 0.1 * (1 - a) - 0.04, u + 0.02, h, "fxC1" if a < 0.45 else "fxC2", head=0.5)
     return f.build()
 
 
@@ -207,7 +224,7 @@ def explosion(k, size=1.0, seed=3):
 
 EXPLOSION_FRAMES = 12
 SPRITES = []
-for _name, _fn, _n in (("laser_bolt", laser_bolt, 2), ("muzzle.laser", muzzle_laser, 3), ("impact.laser", impact_laser, 6),
+for _name, _fn, _n in (("laser_bolt", laser_bolt, BOLT_FRAMES), ("muzzle.laser", muzzle_laser, 3), ("impact.laser", impact_laser, 6),
                        ("explosion", explosion, EXPLOSION_FRAMES)):
     SPRITES += [(f"fx.{_name}.{_k}", (1, 1), "fx", lambda f=_fn, k=_k: f(k)) for _k in range(_n)]
     SPRITES.append((f"fx.{_name}", (1, 1), "fx", lambda f=_fn: f(0)))
