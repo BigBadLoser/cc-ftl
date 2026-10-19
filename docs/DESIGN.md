@@ -245,3 +245,35 @@ FTL's decision-making with physical consequences, in a shared sector.
 - Mood and breakdown severity.
 - Lore specifics: factions, species list, story arcs.
 - Recoverable failure mode.
+
+## Generated ships
+
+Enemy ships are generated at encounter time from a **faction** (`src/content/factions/*.ts`, `satisfies FactionDef`).
+Each faction picks a building style, its **motif**; the generator (`src/sim/shipgen`) varies the layout within it.
+It is deterministic from a seed, which is stored on the ship (`Ship.gen`) together with the faction and depth; the
+grid itself is saved, so nothing is regenerated on load. The player's starter ship stays hand-made.
+
+- **Faction def:** motif id and art variants (hull, wall, roof, livery, signature modules; looked up by the renderer
+  later), hull grammar, chunk library, weighted room pool and required rooms, per-room fill, weapon and shield pools,
+  crew roles and species, doctrine and boarding, and a **budget scaled by sector depth** (pods, i.e. hull length,
+  weapons and heavy-weapon chance, shields, engines, reactor cap, point defence, crew).
+- **Silhouette:** a straight corridor along x with pods on both sides, the bow chunk at the west end and the engine
+  block at the camera-facing east end, plus bolted-on nubs. Chunks are hand-made ASCII (floor letters name rooms:
+  fixed roles or free slots).
+- **Rooms:** fixed-role letters keep their role (bridge, engine, reactor…); slots get the required roles first,
+  enough gun rooms for the weapon budget, then the weighted pool. Symmetric motifs give mirrored slots one role.
+- **Modules:** engines (rot 1, stern hull), helm and consoles, shuttle bay (boarders), airlock, AI core and point
+  defence, weapons, shields, beds and life support (living crews only), room fill, reactors to cover the demand, then
+  lights. Each placement hugs walls, keeps door sides, access tiles and chairs open, keeps a clear tile between
+  roof-mounted modules (turrets, dishes, masts) and keeps every walkable tile connected.
+- **Validation** repeats the layout tests' checks on the template (floor and hull placement, overlaps, chairs and
+  access, reachability, power, helm, engines on the stern, reactor). A failed layout is reseeded, up to 24 tries.
+- **Motifs so far:** *Scrapper raiders* (lopsided, nubs and gaps, crates, cheap guns, a shuttle; they board),
+  *Drones* (mirror-symmetric, one repeated pod, AI core, no beds or life support) and *Navy* (mirrored hull with a
+  tapered nose and broad engine block, rooms may differ side to side, heavy weapons and shields).
+- **Try it:** `npm run shipgen -- <faction|all> --from 1 --count 12 --depth 4` writes PNG contact sheets, ASCII dumps
+  and validation summaries to `tools/shipgen/out/`; `/tools/shipgen/` on the dev server rerolls live. In game,
+  the debug panel has *Gen scrapper / drone / navy*, and `?shipgen=1` (or `=navy`…) with `&depth=N` makes
+  *Spawn raider* generate one.
+- **Follow-ups:** drones are captured by disabling the AI core (needs a sim rule); a robot species (drone crews spawn
+  as humans and breathe for now); motif art variants; real sector encounters picking faction and depth.

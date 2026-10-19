@@ -6,8 +6,9 @@ import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { placementGapError } from '../regions';
 import { shipEntityOf, shipOf, spawnShip } from './ships';
+import { generateShip } from '../shipgen/generate';
 
-type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy'>;
+type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy' | 'debug.spawnGenerated'>;
 type Handler<T extends CombatCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 function reject(sim: Sim, command: string, reason: string): void {
@@ -32,6 +33,21 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const gap = placementGapError(sim, { x: cmd.x, y: cmd.y, w, h });
     if (gap) return reject(sim, cmd.type, gap);
     spawnShip(sim, template, { faction: template.faction ?? 'hostile', x: cmd.x, y: cmd.y, rest: 100 });
+  },
+  'debug.spawnGenerated': (sim, cmd) => {
+    const faction = sim.content.factions?.[cmd.faction];
+    if (!faction) return reject(sim, cmd.type, 'badFaction');
+    if (![cmd.cx, cmd.cy, cmd.depth].every(Number.isInteger) || cmd.depth < 0) return reject(sim, cmd.type, 'badValue');
+    const seed = cmd.seed === undefined ? sim.rng.int(0, 0x7fffffff) : cmd.seed >>> 0;
+    const gen = generateShip(faction, cmd.faction, seed, cmd.depth, sim.content.modules);
+    if (gen.problems.length > 0) return reject(sim, cmd.type, 'noLayout');
+    const x = Math.min(sim.sector.width - gen.width, Math.max(0, cmd.cx - (gen.width >> 1)));
+    const y = Math.min(sim.sector.height - gen.height, Math.max(0, cmd.cy - (gen.height >> 1)));
+    const gap = placementGapError(sim, { x, y, w: gen.width, h: gen.height });
+    if (gap) return reject(sim, cmd.type, gap);
+    const gridId = spawnShip(sim, gen.template, { faction: 'hostile', x, y, rest: 100 });
+    const ship = shipOf(sim, gridId);
+    if (ship) ship.gen = { faction: cmd.faction, seed, depth: cmd.depth };
   },
   'combat.setTarget': (sim, cmd) => {
     const ship = shipEntityOf(sim, cmd.shipGridId);

@@ -21,6 +21,7 @@ import { createCrewMarks } from './crewMarks';
 import { pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
 import { CrewC, PositionC } from '../sim/crew/components';
 import { AllegianceC } from '../sim/fight/components';
+import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
 import { createShipScene, type ShipScene } from './shipScene';
 
@@ -224,7 +225,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const wantsRoof = (s: Ship) => roofEnemies && s.faction === 'hostile' && s.state !== 'wreck' && !boarded(s.gridId);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: shipLivery(s), ...evaHost() });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);

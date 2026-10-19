@@ -7,6 +7,8 @@ export const Struct = {
   Floor: 1,
   Wall: 2,
   Door: 3,
+  /** A structural beam: solid, airtight, not walkable, no floor and no integrity (struts between assemblies). */
+  Beam: 4,
 } as const;
 export type StructKind = (typeof Struct)[keyof typeof Struct];
 

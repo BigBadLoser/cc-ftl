@@ -24,6 +24,8 @@ src/
   app/       wiring: boot, game loop, input, save/load, sim <-> render/ui bridge
 ```
 
+- `tools/shipgen` is a dev-only viewer for generated ship layouts (PNG contact sheets, ASCII, live page); nothing in
+  `src/` imports it.
 - `sim` imports nothing from the other folders, and nothing from pixi.js, svelte or the DOM.
 - `content` imports only types from `sim`. The sim receives content as a registry at boot, so tests can
   inject tiny fixtures.
@@ -189,8 +191,18 @@ palette.json    the single palette, read by Blender scripts and the game
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
   crew, see below), `robot_bay`, `env` (props,
   economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
-  bays), `roof` (plating, edges, livery masks) and `sol` (the engine, AI core and shield packs, rendered by
-  their own scripts in `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
+  bays), `roof` (plating, edges, livery masks), `struct` (structural beams) and `sol` (the engine, AI core
+  and shield packs, rendered by their own scripts in `tools/blender/experiments/` and packed by
+  `sprites/sol_pack.py`).
+- **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
+  - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
+    at the tile centre. The looks are `navy`, `drone`, `civil` and `scrap`, picked by faction.
+  - The straight masks 5 and 10 also have `.v1` and `.v2`; pick one by a tile hash so long runs vary.
+  - Overlays drawn on the same tile: `.flange.<n|e|s|w>` towards each hull-wall neighbour, and optionally
+    `.cap.<d>` on a free end.
+  - Beams top out about 0.6 high, so every wall view level uses the same sprites. A 2–3-thick beam reads as
+    twin trusses tied at each tile.
+  - Preview from a shipgen dump: `tools/blender/review/beams_preview.py <dir> <out> ship <txt> <seed> <look>`.
 - **Heights:** walls 1.85 tiles, roof top 2.05 (`walls.HF`, `walls.hull_top()`). The manifest carries
   them (`heights`) and `src/render/heights.ts` mirrors them (a test checks the two agree). Roof-mounted
   art (turrets, dishes, the AI mast) is modelled on the roof plane and anchored at floor level, so the

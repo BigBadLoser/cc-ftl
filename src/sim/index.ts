@@ -69,3 +69,4 @@ export { createCrew } from './crew/spawn';
 export { MOOD_LABELS, breakdownRisk, hasMood } from './crew/mood';
 export { foodOn } from './crew/eating';
 export { captureReady, isAiRun } from './capture/control';
+export * from './shipgen';

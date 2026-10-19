@@ -1,4 +1,5 @@
 import type { SectorGrid } from '../sectorGrid';
+import type { GenOrigin } from '../shipgen/types';
 import { defineComponent } from '../ecs';
 
 /** The sector all ships share. Saved with the game. */
@@ -41,6 +42,8 @@ export interface Ship {
   hullMax: number;
   /** 0..1 overall integrity: wall integrity (lightly weighted) plus module hp. Updated by the ship-state system. */
   integrity: number;
+  /** Set on generated ships: the faction, seed and depth they were generated from (the grid itself is saved). */
+  gen?: GenOrigin;
 }
 export const ShipC = defineComponent<Ship>('ship');
 

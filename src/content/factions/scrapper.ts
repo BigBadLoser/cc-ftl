@@ -1,0 +1,81 @@
+import type { FactionDef } from '../../sim';
+import { drones } from './drones';
+import { navy } from './navy';
+
+/**
+ * Scrapper raiders: improvised assemblies of salvaged sections (a freighter segment, a habitat, a gun deck…), each
+ * keeping its own corridor width and room proportions, joined by narrow offset connectors. A cockpit up front, a
+ * patched reactor and engine tug at the back, extra engines strapped on wherever they face open space, crates bolted
+ * on. Heavy storage, cheap guns; they board by shuttle.
+ */
+export const scrapper = {
+  name: 'Scrapper',
+  motif: 'motif.scrapper',
+  art: { hull: 'hull.patched', wall: 'wall.rusted', roof: 'roof.patchwork', livery: 'livery.scrapper', signature: ['module.vehicle_bay', 'module.storage'] },
+  architecture: {
+    roles: [
+      { id: 'raider', weight: { base: 4, perDepth: 0, max: 4 }, archetypes: [{ value: 'salvage', weight: 1 }] },
+      { id: 'hauler', weight: { base: 2, perDepth: 0, max: 2 }, archetypes: [{ value: 'salvage', weight: 1 }], bonus: { crates: 6, weapons: -1, size: 1 } },
+      { id: 'gunrunner', weight: { base: 0, perDepth: 0.4, max: 3 }, archetypes: [{ value: 'salvage', weight: 1 }], bonus: { weapons: 1, heavyPct: 15 } },
+    ],
+    symmetry: 0,
+    corridorWidth: [1, 2],
+    strutLength: [1, 4],
+    battery: 1,
+    // Salvaged navy bows: the navy's own nose chunks.
+    noses: navy.architecture.noses,
+  },
+  // Salvage families (assembly-driven): donor sections welded together, chosen by what the role needs.
+  // Improvised adapters: ragged steep plating welded into the steps between mismatched donors.
+  transition: { slope: 1, max: 3, jitter: 0.5, label: 'adapter plating' },
+  hullFamilies: [
+    {
+      // Raiders want guns and boarding: navy hulks and drone guns, airlocks, a shuttle bay.
+      id: 'raider', weight: { base: 4, perDepth: 0, max: 4 }, grammars: [{ value: 'heap', weight: 2 }, { value: 'chain', weight: 1 }, { value: 'raft', weight: 1 }],
+      anchors: [{ value: 'navyHulk', weight: 3 }, { value: 'habitat', weight: 2 }, { value: 'tug', weight: 1 }, { value: 'freighter', weight: 1 }, { value: 'station', weight: 1 }],
+      donors: { navyHulk: 3, droneSection: 2, navyBattery: 1, habitat: 2, station: 1, freighter: 1, podString: 1, tug: 2, navyDrive: 1, navyBow: 1 },
+      aspect: [1, 2.2], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
+    },
+    {
+      // Haulers want holds: freighters, barges and pod strings, a liner for the crew.
+      id: 'hauler', weight: { base: 2, perDepth: 0, max: 2 }, bonus: { crates: 6, weapons: -1 }, grammars: [{ value: 'raft', weight: 2 }, { value: 'chain', weight: 2 }, { value: 'heap', weight: 1 }],
+      anchors: [{ value: 'freighter', weight: 2 }, { value: 'barge', weight: 2 }, { value: 'liner', weight: 1 }],
+      donors: { freighter: 2, barge: 3, podString: 3, liner: 2, habitat: 1, navyBattery: 1, tug: 2, navyDrive: 1, navyBow: 1 },
+      aspect: [1.2, 3], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
+    },
+    {
+      // Gunrunners want weapons: batteries, drone sections, an old navy hull, a station module for the crew.
+      id: 'gunrunner', weight: { base: 0, perDepth: 0.4, max: 3 }, bonus: { weapons: 1, heavyPct: 15 }, grammars: [{ value: 'heap', weight: 2 }, { value: 'raft', weight: 1 }],
+      anchors: [{ value: 'navyHulk', weight: 2 }, { value: 'station', weight: 2 }, { value: 'freighter', weight: 1 }],
+      donors: { navyBattery: 3, droneSection: 3, navyHulk: 2, station: 2, habitat: 1, freighter: 1, navyDrive: 2, tug: 1, navyBow: 1 },
+      aspect: [1, 2.2], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
+    },
+  ],
+  // Navy and drone donors are cut from those factions' own generators.
+  salvage: { navy: { faction: navy, families: ['corvette', 'frigate'] }, drone: { faction: drones, families: ['picket', 'swarm'] } },
+  weapons: {
+    light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.incendiaryLauncher', weight: 2 }],
+    heavy: [{ value: 'module.massDriver', weight: 1 }],
+  },
+  shields: [{ value: 'module.shieldGenSmall', weight: 1 }],
+  stock: [{ item: 'item.scrap', min: 2, max: 8 }, { item: 'item.metal', min: 0, max: 4 }],
+  living: true,
+  aiCore: false,
+  crew: {
+    required: ['role.pilot', 'role.gunner', 'role.security', 'role.security'],
+    pool: [{ value: 'role.security', weight: 3 }, { value: 'role.engineer', weight: 2 }, { value: 'role.gunner', weight: 1 }],
+    species: ['species.human'],
+  },
+  doctrine: { targeting: 'random', boarding: { party: 2, afterSec: 60, losingBelow: 0.6, weapon: 'item.sidearm' } },
+  budget: {
+    weapons: { base: 1.6, perDepth: 0.35, max: 5 },
+    heavyPct: { base: 5, perDepth: 5, max: 40 },
+    shields: { base: 0, perDepth: 0.25, max: 2 },
+    engines: { base: 1, perDepth: 0.3, max: 3 },
+    reactors: { base: 2, perDepth: 0.3, max: 4 },
+    pointDefense: { base: 0, perDepth: 0, max: 0 },
+    crew: { base: 4, perDepth: 0.4, max: 8 },
+    crates: { base: 5, perDepth: 0.6, max: 14 },
+    size: { base: 0, perDepth: 0.5, max: 4 },
+  },
+} satisfies FactionDef;

@@ -8,7 +8,7 @@ import { spawnVehicle } from './vehicles/lifecycle';
 import { SHIP_FIELDS, Struct, writeStruct } from './structure';
 import { NORMAL_CO2, NORMAL_O2, NORMAL_TEMP, SPACE_TEMP } from './tuning';
 
-const CHARS: Record<string, number> = { '.': Struct.Space, '#': Struct.Wall, _: Struct.Floor, D: Struct.Door };
+const CHARS: Record<string, number> = { '.': Struct.Space, '#': Struct.Wall, _: Struct.Floor, D: Struct.Door, '=': Struct.Beam };
 
 /**
  * Build a dense ship grid from an ASCII template (local coordinates; `GridMap.stamp` places it in the sector).
