@@ -60,6 +60,12 @@ are already merged or superseded. Don't build on them.
   (`cargoTile`). Starter airlock now y = 9..11 (row y = 11 opened up, a light moved), raider y = 11..13 (shield gen and a light
   moved), rogue x = 8..10. The old 1xN line airlock form is still supported (no `layout`; portals tests use it).
 - Render: `airlockArt.ts` layers per tile, collar sequence on dock/undock, `?hook` gained `sim`, `dispatch`, `stage`.
+- Docked shuttle: lies parallel to the hull with its round side hatch (shuttle u 0.817 / v 1.40, axis z 1.30) on the collar's mating
+  face (`vehicle.shuttle.dockside.d0/2/4/6`, d = hull outward direction; legs up, wings folded). `shuttleView.ts` slides it in
+  alongside (heading turned parallel, offset `COLLAR_FACE + HATCH_V` out and `HATCH_U` back along the hull, axis at 0.95) and
+  swaps to the folded sprite half way. `vehicle.shuttle.docked.*` (nose out) stays for the bay lift off / settle.
+- Floor marks (keep-out, walk zone) are faint painted outlines now; cargo on an unloader is a larger crate standing out of the
+  chute mouth. Balance test limit restored to 0.975 (starter's north quarters door moved to (17, 8)).
 
 ## M4 art rework (session 2026-10-17, supersedes the m4-assets sheets)
 

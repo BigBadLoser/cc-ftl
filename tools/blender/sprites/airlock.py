@@ -6,8 +6,8 @@ Module frame (cmbkit.Frame, footprint centre at u = v = 0 on the pod's tile): u 
   u = 2               the docking collar: short ringed tube, the round iris hatch (the outer door) at its mouth
   u = 1   (hull row)  v = 0: the slate pass-through block with its cap slab, set into the hull; v = +-1: plain hull
   u = 0               v = 0: the pod (inner door facing inboard, windows on its sides); v = +-1: unloaders, back half
-  u = -1              v = 0: walk zone (green corner marks); v = +-1: unloaders, front half (chute facing inboard)
-  u = -2              v = 0: walk zone; v = +-1: keep-out (orange dashed square) in front of each chute
+  u = -1              v = 0: walk zone (faint corner marks); v = +-1: unloaders, front half (chute facing inboard)
+  u = -2              v = 0: walk zone; v = +-1: keep-out (faint painted square) in front of each chute
 
 Measured on the reference (its tile about 165 px wide, the same 2:1 projection): the pod about 0.9 deep, a tile
 wide, 1.45 tall, strongly rounded; the block a tile wide and about the pod's height under a 0.2 cap; the collar about
@@ -24,7 +24,7 @@ Sprites, per rotation r (each anchored at its own tile so the renderer sorts it 
                                                       docked: clamps on the shuttle hatch, seal light green
   module.airlock.unloader.r<r>.<back|front>           an unloader's two tiles (the same sprites on both sides)
   module.airlock.unloader.r<r>.front.loaded           the front tile with a crate on the chute's rollers
-  module.airlock.keepout.r<r>                         the dashed keep-out square in front of a chute
+  module.airlock.keepout.r<r>                         the faint keep-out square in front of a chute
   module.airlock.walk.r<r>                            the walk zone's corner marks (both tiles in front of the pod)
 The collar's mating face (where a shuttle's hatch meets it) is COLLAR_END, 0.7 past the hull row's outer edge."""
 import math
@@ -372,15 +372,17 @@ def _unloader_details():
 
 
 def _crate(f):
-    """A cargo crate on the chute's rollers, its front just out of the mouth: the game's crate look (rust body, steel
-    corner posts and a mid band)."""
-    cu, su, sv, sz, z0 = CU0 + 0.11, 0.3, 0.34, 0.26, 0.1
+    """A cargo crate on the chute's rollers, standing half out of the mouth so it reads from the camera: larger than the
+    game's crate (rust body, steel corner posts, a mid band and a hazard-yellow top strap, a lit tag)."""
+    cu, su, sv, sz, z0 = CU0 - 0.1, 0.42, 0.46, 0.36, 0.08
     f.box(cu, UV, z0, su, sv, sz, "rust", top="rustD")
     for du in (-1, 1):
         for dv in (-1, 1):
-            f.box(cu + du * (su / 2 - 0.02), UV + dv * (sv / 2 - 0.02), z0, 0.045, 0.045, sz + 0.008, "steel",
-                  top="steel")
-    f.box(cu, UV, z0 + sz * 0.45, su + 0.01, sv + 0.01, 0.03, "steel", top="steel")
+            f.box(cu + du * (su / 2 - 0.025), UV + dv * (sv / 2 - 0.025), z0, 0.06, 0.06, sz + 0.01, "steelL",
+                  top="steelL")
+    f.box(cu, UV, z0 + sz * 0.45, su + 0.012, sv + 0.012, 0.04, "steelL", top="steelL")
+    f.box(cu, UV, z0 + sz, su * 0.9, 0.08, 0.012, "hazY", top="hazY")
+    f.box(cu - su / 2 - 0.004, UV, z0 + sz * 0.7, 0.012, 0.12, 0.08, "lampY", top="lampY")
 
 
 def unloader(rot, half, loaded=False):
@@ -405,31 +407,33 @@ def unloader(rot, half, loaded=False):
 
 
 def keepout(rot):
-    """The keep-out square in front of a chute (built on the tile at u -2, v 1): orange dashes round the tile, inset.
-    Paint on the deck (no plate)."""
+    """The keep-out square in front of a chute (built on the tile at u -2, v 1): a faint painted outline with muted rust-hazard
+    corner brackets, inset. Paint on the deck (no plate), low contrast against the floor."""
     m = core.Mesh(f"airlock_keepout_{rot}")
     f = frame(m, rot)
-    uc, vc, ins, n, bw, z = -2.0, UV, 0.06, 4, 0.065, 0.004
+    uc, vc, ins, ln, bw, z = -2.0, UV, 0.07, 0.2, 0.03, 0.004
     lo, hi = -0.5 + ins, 0.5 - ins
-    step = (hi - lo) / n
-    for k in range(n):
-        t = lo + (k + 0.5) * step
-        for e in (lo + bw / 2, hi - bw / 2):
-            f.box(uc + e, vc + t, 0, bw, step * 0.66, z, "hivis", top="hivis")
-            f.box(uc + t, vc + e, 0, step * 0.66, bw, z, "hivis", top="hivis")
+    for e in (lo + bw / 2, hi - bw / 2):
+        f.box(uc + e, vc, 0, bw, hi - lo, z, "steel", top="steel")
+        f.box(uc, vc + e, 0, hi - lo, bw, z, "steel", top="steel")
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            cu, cv = uc + su * (hi - bw / 2), vc + sv * (hi - bw / 2)
+            f.box(cu - su * ln / 2, cv, 0, ln, bw * 1.8, z * 1.5, "rust", top="rust")
+            f.box(cu, cv - sv * ln / 2, 0, bw * 1.8, ln, z * 1.5, "rust", top="rust")
     return [m.build()]
 
 
 def walk(rot):
-    """The walk zone's marks (built on the tile at u -1, v 0): a green L at each corner. Paint on the deck."""
+    """The walk zone's marks (built on the tile at u -1, v 0): a faint steel-grey L at each corner. Paint on the deck."""
     m = core.Mesh(f"airlock_walk_{rot}")
     f = frame(m, rot)
-    uc, ins, ln, bw, z = -1.0, 0.08, 0.26, 0.06, 0.004
+    uc, ins, ln, bw, z = -1.0, 0.08, 0.2, 0.035, 0.004
     for su in (-1, 1):
         for sv in (-1, 1):
             cu, cv = uc + su * (0.5 - ins), sv * (0.5 - ins)
-            f.box(cu - su * ln / 2, cv, 0, ln, bw, z, "alG", top="alG")
-            f.box(cu, cv - sv * ln / 2, 0, bw, ln, z, "alG", top="alG")
+            f.box(cu - su * ln / 2, cv, 0, ln, bw, z, "steel", top="steel")
+            f.box(cu, cv - sv * ln / 2, 0, bw, ln, z, "steel", top="steel")
     return [m.build()]
 
 
