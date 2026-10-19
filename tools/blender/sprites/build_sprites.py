@@ -29,7 +29,7 @@ def main():
     what = argv[1] if len(argv) > 1 else "all"
     out.mkdir(parents=True, exist_ok=True)
     mpath = out / "manifest.json"
-    names = (["crew", "robots"] + list(families.ALL)) if what == "all" else what.split(",")
+    names = (["crew", "robots", "aliens"] + list(families.ALL)) if what == "all" else what.split(",")
     for name in names:
         m = pack.load_manifest(mpath, base())
         if name == "crew":
@@ -41,6 +41,11 @@ def main():
                                       frames={("idle", 0), ("walk", 2), ("work", 3), ("sit_idle", 0), ("sit_work", 0)} if quick else None)
             sheets, assets = crew_pack.pack(items, res, cols, out)
             pack.merge(m, "crew", sheets, assets, crew=True)
+        elif name == "aliens":
+            # ALIEN_QUICK=1: preview frames only (see alien_render.build); not for commits
+            from sprites import alien_render
+            sheets, assets = alien_render.build(out)
+            pack.merge(m, "aliens", sheets, assets)
         elif name == "robots":
             # ROBOT_QUICK=1: preview frames only (see robot_render.build); not for commits
             from sprites import robot_render
