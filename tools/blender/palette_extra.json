@@ -441,5 +441,17 @@
  "fxI2": {
   "hex": "#3b27b8",
   "emissive": 2.0
+ },
+ "fxH0": {
+  "hex": "#eafeff",
+  "emissive": 3.5
+ },
+ "fxH1": {
+  "hex": "#66e0ff",
+  "emissive": 2.6
+ },
+ "fxH2": {
+  "hex": "#2a7fa8",
+  "emissive": 1.6
  }
 }

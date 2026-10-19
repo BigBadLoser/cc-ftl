@@ -2,7 +2,8 @@
 turret, frame strips with today's fx for comparison, and a clip of each weapon firing in turn.
 
   python3 -I tools/blender/review/fx_preview.py <fx assets dir> <out dir>
-    -> fx-scenes-1x/3x.png (one panel per weapon), fx-strips-1x/3x.png (every frame), fx-clip.mp4, fx-shots.mp4
+    -> fx-scenes-1x/3x.png (one panel per weapon), fx-strips-1x/3x.png (every frame), fx-clip.mp4, fx-shots.mp4,
+       fx-env-1x/3x.png and fx-env.mp4 (tile fire, shield hits, debris, a ship breaking up)
 
 Fx are drawn like any sprite: colour over, glow added."""
 import sys
@@ -100,6 +101,63 @@ def strip(cv, A, ids, x, y, label, base=40):
     return x - x0
 
 
+def env(A, pub, out):
+    """Tile fire on a floor patch, shield hits, debris and the huge explosion: a still and a clip."""
+    cv = Canvas(1200, 560)
+    strip(cv, A, frames(A, "fire"), 8, 6, "fire on a tile (8-frame loop)", base=70)
+    y = 110
+    strip(cv, A, frames(A, "shield_hit"), 8, y, "shield hit", base=40)
+    y += 90
+    for v in "abc":
+        strip(cv, A, frames(A, f"debris.{v}"), 8 + "abc".index(v) * 300, y, f"debris {v} (tumble)", base=20)
+    y += 60
+    strip(cv, A, frames(A, "explosion_huge"), 8, y, "explosion_huge", base=150)
+    y += 220
+    strip(cv, pub, frames(pub, "fire"), 8, y, "today: fire", base=30)
+    cv.px = cv.px[:y + 70]
+    for s in (1, 3):
+        cv.save(out / f"fx-env-{s}x.png", s)
+    clip = []
+    burning = [(1, 1, 0), (2, 1, 3), (1, 2, 5), (2, 2, 2)]
+    for t in range(24):                                     # a burning room
+        c = Canvas(400, 230)
+        for y in range(4):
+            for x in range(4):
+                c.static(pub, "tile.floor.a", *iso(200, 60, x, y))
+        for x, y, o in sorted(burning, key=lambda b: b[0] + b[1]):
+            c.static(A, f"fx.fire.{(t + o) % 8}", *iso(200, 60, x, y))
+        c.labels.append((6, 4, "fire on tiles"))
+        clip.append(c)
+    for t in range(14):                                     # a bolt hitting the shield
+        c = Canvas(400, 230)
+        if t < 4:
+            rotated(c, A, f"fx.laser_bolt.{t % 6}", 60 + t * 35, 140 - t * 6, -10)
+        elif t - 4 < 6:
+            c.static(A, f"fx.shield_hit.{t - 4}", 200, 115)
+        c.labels.append((6, 4, "shield hit"))
+        clip.append(c)
+    rng = np.random.default_rng(4)
+    bits = [(rng.uniform(-1, 1) * 9, rng.uniform(-2.5, -0.5) * 4, "abc"[i % 3], int(rng.integers(0, 8))) for i in range(9)]
+    for t in range(30):                                     # a ship breaking up
+        c = Canvas(400, 230)
+        roof(c, pub, 200, 110, 5, 4)
+        for (dx, dy), t0, name in (((0, 0), 0, "explosion_huge"), ((-60, 10), 4, "explosion"), ((55, 18), 8, "explosion_large"),
+                                   ((10, 30), 13, "explosion")):
+            if 0 <= t - t0 < 12:
+                c.static(A, f"fx.{name}.{t - t0}", 216 + dx, 95 + dy)
+        for vx, vy, v, r0 in bits:
+            if 2 <= t < 26:
+                s = t - 2
+                c.static(A, f"fx.debris.{v}.{(r0 + s) % 8}", int(216 + vx * s), int(85 + vy * s + 0.35 * s * s))
+        c.labels.append((6, 4, "a ship breaking up"))
+        clip.append(c)
+    ims = []
+    for c in clip:
+        im = Image.fromarray(c.px[..., :3])
+        ims.append(im.resize((im.width * 3, im.height * 3), Image.NEAREST))
+    mp4(ims, out / "fx-env.mp4", fps=12, loops=1)
+
+
 def main():
     A, out = Assets(sys.argv[1]), Path(sys.argv[2])
     pub = Assets(ROOT / "public/assets")
@@ -152,6 +210,7 @@ def main():
         im = Image.fromarray(c.px[..., :3])
         shots.append(im.resize((im.width * 4, im.height * 4), Image.NEAREST))
     mp4(shots, out / "fx-shots.mp4", fps=12, loops=3)
+    env(A, pub, out)
     print("wrote", out)
 
 
