@@ -659,6 +659,15 @@ sweep (`diffusion.test.ts` checks this against a copy of the old sweep). Flat pa
 on Space, write-back, fire and door scans) still read the whole loaded rectangle: a vacuum tile costs one array read there,
 never a link. `hullSum` is cached on the hp and struct revisions. Still on `raw()`: `crew/pathfind.ts`, `eva/route.ts` and
 the renderer (step 5b / 7).
+Step 4 done (branch `sector-2`): `spawnShip` writes the new ShipC id into the `ship` layer of every non-Space tile it
+stamped (`stampOwner`). `writeStruct` and `damageStruct` call `syncOwner`: a tile turned to Space loses its owner, a new
+structure tile with none takes its first owned 4-neighbour's (E, W, S, N), so build jobs extend their ship. In `regions.ts`:
+`shipAt(sim, x, y)` (sector tiles), `shipFrame(ship)` (bbox plus `REGION_PAD` = 2), `regions(sim)` now gives each grid's
+ship id, sector bbox and padded frame, and `placementGapError(sim, bbox)` ('overlap' / 'tooClose' under `MIN_SHIP_GAP` = 12
+between padded frames). `debug.spawnEnemy` rejects with that reason and `spawnShip` throws on it, so `newGame` and every
+spawn obey the rule. The frame is derived, not stored on ShipC (the pad is a constant), so components and saves are
+unchanged. Field systems still run over the exact bbox: widening them to the padded frame changes results (vacuum tiles
+join the sweep) and belongs with step 6. Fixture grids set straight into `sim.grids` have no ShipC and owner 0.
 
 **Merges before the refactor (answer to the user's hold).**
 - Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**

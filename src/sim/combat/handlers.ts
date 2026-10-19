@@ -4,6 +4,7 @@ import type { Sim } from '../sim';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
+import { placementGapError } from '../regions';
 import { shipEntityOf, shipOf, spawnShip } from './ships';
 
 type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy'>;
@@ -28,12 +29,8 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (cmd.x < 0 || cmd.y < 0 || cmd.x + w > sim.sector.width || cmd.y + h > sim.sector.height) {
       return reject(sim, cmd.type, 'outOfBounds');
     }
-    for (const id of sim.world.query(ShipC)) {
-      const s = sim.world.get(id, ShipC);
-      if (s && cmd.x < s.x + s.width && s.x < cmd.x + w && cmd.y < s.y + s.height && s.y < cmd.y + h) {
-        return reject(sim, cmd.type, 'overlap');
-      }
-    }
+    const gap = placementGapError(sim, { x: cmd.x, y: cmd.y, w, h });
+    if (gap) return reject(sim, cmd.type, gap);
     spawnShip(sim, template, { faction: template.faction ?? 'hostile', x: cmd.x, y: cmd.y, rest: 100 });
   },
   'combat.setTarget': (sim, cmd) => {

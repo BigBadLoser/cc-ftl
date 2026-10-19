@@ -98,11 +98,33 @@ export function hasIntegrity(kind: number): boolean {
   return kind === Struct.Wall || kind === Struct.Door;
 }
 
-/** Write a tile's struct kind and reset its integrity to match (full for walls/doors, 0 otherwise). */
+/** Write a tile's struct kind and reset its integrity to match (full for walls/doors, 0 otherwise). Keeps the owner. */
 export function writeStruct(grid: GridLike, x: number, y: number, kind: number): void {
   if (grid.get('struct', x, y) !== kind) grid.set('struct', x, y, kind);
   const hp = hasIntegrity(kind) ? STRUCT_MAX_HP : 0;
   if (grid.has('hp') && grid.get('hp', x, y) !== hp) grid.set('hp', x, y, hp);
+  syncOwner(grid, x, y);
+}
+
+/**
+ * Keep the `ship` owner layer in step with a tile's struct kind: Space has no owner; a new structure tile with none takes
+ * the owner of its first owned 4-neighbour (E, W, S, N), so a build job extends the ship it is attached to.
+ */
+export function syncOwner(grid: GridLike, x: number, y: number): void {
+  if (!grid.has('ship')) return;
+  const owner = grid.get('ship', x, y);
+  if (grid.get('struct', x, y) === Struct.Space) {
+    if (owner !== 0) grid.set('ship', x, y, 0);
+    return;
+  }
+  if (owner !== 0) return;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const n = grid.inBounds(x + dx, y + dy) ? grid.get('ship', x + dx, y + dy) : 0;
+    if (n !== 0) {
+      grid.set('ship', x, y, n);
+      return;
+    }
+  }
 }
 
 /** True if any 4-neighbour of (x, y) is Space or lies outside the grid (the ship's outer boundary). */

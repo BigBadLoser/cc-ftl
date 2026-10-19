@@ -1,5 +1,5 @@
 import type { Grid } from '../grid';
-import { Struct, bordersSpace } from '../structure';
+import { Struct, bordersSpace, syncOwner } from '../structure';
 
 const sums = new WeakMap<Grid, { hp: number; struct: number; sum: number }>();
 
@@ -31,6 +31,7 @@ export function damageStruct(grid: Grid, x: number, y: number, amount: number): 
   grid.set('hp', x, y, 0);
   grid.set('struct', x, y, bordersSpace(grid, x, y) ? Struct.Space : Struct.Floor);
   grid.set('door', x, y, 0);
+  syncOwner(grid, x, y);
   return true;
 }
 
