@@ -17,8 +17,6 @@ import { wallLevel } from './tiles';
 import { createRoofView } from './roofView';
 import type { Livery } from './roofPlating';
 import { ROOF_H, wallTopPx } from './heights';
-import { ShipC } from '../sim/combat/components';
-import { iso } from './iso';
 import { createTargetMarks } from './targetMarks';
 import { createTurretView } from './turretView';
 
