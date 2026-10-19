@@ -1,9 +1,9 @@
 """Aliens: clips (poses on the alien rigs), rendering and packing into one sheet per creature, in the crew layer format
 (8 direction rows x all clip frames, feet anchor, glow twin sheet): `crew.alien.body.<kind>`, species `alien`.
 
-Clips: idle 4 (breathing, mandibles working, head sweeping), run 6 (tripod gait, low and leaning in), attack 5 (rear up
-with the scythes raised, lunge, slash down, recover), hurt 2 (recoil), dead 1 (flipped on its back, legs curled, glow
-out: a corpse that stays on the floor)."""
+Clips: idle 4, run 6 (tripod gait for six legs, diagonal pairs for four), attack 5, hurt 2 (recoil), dead 1 (a corpse
+that stays on the floor, glow out). Attacks: the hunter rears with its scythes raised, lunges and slashes down; the brute
+raises its right claw, slams it down and crushes; the spitter pumps its sac, jerks its head forward and spits a glob."""
 import math
 import os
 import numpy as np
@@ -14,24 +14,24 @@ from . import alien
 CLIPS = [("idle", 4, 4, True), ("run", 6, 12, True), ("attack", 5, 10, False), ("hurt", 2, 8, False), ("dead", 1, 1, False)]
 W, H, ORIGIN = 132, 124, (66, 84)
 TAU = math.tau
-TRIPOD = {("0", "R"): 0, ("1", "L"): 0, ("2", "R"): 0, ("0", "L"): 1, ("1", "R"): 1, ("2", "L"): 1}
 
 
 def _legs(rig, swing=0.0, lift=0.0, phase=0.0, curl=0.0):
-    """Every leg: `swing` (deg, forward), `lift` (deg) on the tripod in the air; phase 0..1 picks which tripod."""
-    for i in "012":
+    """Every leg: `swing` (deg, forward), `lift` (deg) on the leg set in the air (rig.gait); phase 0..1."""
+    for i in rig.legs:
         for side, sx in (("R", 1), ("L", -1)):
-            t = TAU * phase + (math.pi if TRIPOD[(i, side)] else 0.0)
+            t = TAU * phase + (math.pi if rig.gait[(i, side)] else 0.0)
             s = swing * math.sin(t)
             up = lift * max(0.0, math.cos(t))
             rig.rot(f"leg{i}_{side}", roll=sx * up + curl * sx, yaw=sx * s)
             rig.rot(f"knee{i}_{side}", roll=sx * (curl * 1.6 - up * 0.4))
 
 
-def _scythes(rig, raise_=0.0, blade=0.0, spread=0.0):
+def _scythes(rig, raise_=0.0, blade=0.0, spread=0.0, sides=("R", "L")):
     for side, sx in (("R", 1), ("L", -1)):
-        rig.rot(f"claw_{side}", pitch=-raise_, roll=-sx * spread)
-        rig.rot(f"blade_{side}", pitch=blade)
+        if side in sides:
+            rig.rot(f"claw_{side}", pitch=-raise_, roll=-sx * spread)
+            rig.rot(f"blade_{side}", pitch=blade)
 
 
 def _mand(rig, open_):
@@ -39,11 +39,11 @@ def _mand(rig, open_):
     rig.rot("mand_L", yaw=open_)
 
 
-def pose(rig, clip, i):
-    rig.rest()
-    alive = clip != "dead"
-    rig.show("glow", alive)
-    rig.show("glowoff", not alive)
+def _scale(rig, joint, k):
+    rig.joints[joint][0].scale = (k, k, k)
+
+
+def _hunter(rig, clip, i):
     r = rig.rot
     if clip == "idle":
         t = TAU * i / 4
@@ -89,6 +89,121 @@ def pose(rig, clip, i):
         _mand(rig, 4)
         _scythes(rig, raise_=-20, blade=60, spread=-10)
         _legs(rig, curl=-28)
+
+
+def _pincers(rig, open_, sides=("R", "L")):
+    for side in sides:
+        rig.rot(f"pincer_{side}", pitch=-open_)
+
+
+def _brute(rig, clip, i):
+    r = rig.rot
+    if clip == "idle":
+        t = TAU * i / 4
+        rig.shift("body", dz=0.01 * math.sin(t))
+        _scale(rig, "body", 1.0)
+        r("head", yaw=(0, 6, 0, -6)[i])
+        _mand(rig, 4 + 6 * max(0.0, math.sin(t)))
+        _scythes(rig, raise_=3 * math.sin(t), blade=0)
+        _pincers(rig, 6 + 10 * max(0.0, math.sin(t + 1)))
+        _legs(rig, swing=2, phase=i / 4)
+    elif clip == "run":
+        t = TAU * i / 6
+        rig.shift("body", dz=-0.02 + 0.02 * abs(math.sin(t)), df=0.02)
+        r("body", pitch=5, roll=4 * math.sin(t))
+        r("abdomen", pitch=-3 * math.sin(t))
+        _scythes(rig, raise_=-8 + 4 * math.sin(t), blade=8)
+        _pincers(rig, 4)
+        _legs(rig, swing=18, lift=16, phase=i / 6)
+    elif clip == "attack":
+        raise_, blade, pitch, df, dz, pin = ((50, -30, -10, -0.04, 0.03, 30), (85, -55, -18, -0.06, 0.06, 40),
+                                             (5, 20, 12, 0.16, -0.02, 30), (-25, 40, 16, 0.2, -0.04, 0),
+                                             (10, 0, 4, 0.06, 0.0, 10))[i]
+        rig.shift("body", df=df, dz=dz)
+        r("body", pitch=pitch)
+        r("abdomen", pitch=-pitch * 0.4)
+        r("head", pitch=-pitch * 0.3)
+        _mand(rig, 14)
+        _scythes(rig, raise_=raise_, blade=blade, sides=("R",))                                 # the right claw strikes
+        _scythes(rig, raise_=12, blade=-10, sides=("L",))
+        _pincers(rig, pin, ("R",))
+        _pincers(rig, 10, ("L",))
+        _legs(rig, swing=6 if i in (2, 3) else 2, phase=0.25)
+    elif clip == "hurt":
+        k = (1.0, 0.5)[i]
+        rig.shift("body", df=-0.05 * k, dz=0.02 * k)
+        r("body", pitch=-9 * k, roll=-5 * k)
+        r("head", pitch=-12 * k)
+        _scythes(rig, raise_=24 * k, blade=-14 * k, spread=10 * k)
+        _pincers(rig, 30 * k)
+        _legs(rig, swing=4, lift=6 * k)
+    elif clip == "dead":
+        r("body", roll=165, pitch=4)
+        r("head", pitch=16)
+        _scythes(rig, raise_=-25, blade=30, spread=-14)
+        _pincers(rig, 25)
+        _legs(rig, curl=-24)
+
+
+def _spitter(rig, clip, i):
+    r = rig.rot
+    rig.show("glob1", clip == "attack" and i == 2)
+    rig.show("glob2", clip == "attack" and i == 3)
+    if clip == "idle":
+        t = TAU * i / 4
+        rig.shift("body", dz=0.012 * math.sin(t))
+        _scale(rig, "sac", 1.0 + 0.06 * math.sin(t))
+        r("abdomen", pitch=3 * math.sin(t))
+        r("tail", pitch=-4 * math.sin(t))
+        r("head", yaw=(0, 12, 0, -12)[i])
+        _mand(rig, 4 + 6 * max(0.0, math.sin(t * 2)))
+        _legs(rig, swing=3, phase=i / 4)
+    elif clip == "run":
+        t = TAU * i / 6
+        rig.shift("body", dz=-0.03 + 0.02 * abs(math.sin(t)), df=0.02)
+        r("body", pitch=6, roll=3 * math.sin(t))
+        r("abdomen", pitch=-5 + 4 * math.sin(2 * t))
+        r("tail", pitch=4 * math.sin(2 * t))
+        _legs(rig, swing=26, lift=24, phase=i / 6)
+    elif clip == "attack":
+        sac, pitch, tail, head, df = ((1.15, -10, -12, -14, -0.03), (1.25, -14, -18, -20, -0.05),
+                                      (0.85, 8, 14, 16, 0.05), (0.9, 6, 10, 10, 0.04), (1.0, 2, 2, 2, 0.01))[i]
+        _scale(rig, "sac", sac)
+        rig.shift("body", df=df)
+        r("body", pitch=pitch)
+        r("tail", pitch=tail)
+        r("head", pitch=head)
+        _mand(rig, 20 if i in (2, 3) else 6)
+        _legs(rig, swing=3, phase=0.25)
+    elif clip == "hurt":
+        k = (1.0, 0.5)[i]
+        rig.shift("body", df=-0.06 * k, dz=0.02 * k)
+        r("body", pitch=-12 * k, roll=7 * k)
+        r("tail", pitch=-14 * k)
+        r("head", pitch=-14 * k, yaw=10 * k)
+        _mand(rig, 22 * k)
+        _legs(rig, swing=5, lift=10 * k)
+    elif clip == "dead":
+        _scale(rig, "sac", 0.75)
+        r("body", roll=95, pitch=4)
+        r("abdomen", pitch=20)
+        r("tail", pitch=30)
+        r("head", pitch=18)
+        _legs(rig, curl=-26)
+
+
+POSE = {"hunter": _hunter, "brute": _brute, "spitter": _spitter}
+
+
+def pose(rig, clip, i):
+    rig.rest()
+    for j in ("body", "sac"):
+        if j in rig.joints:
+            _scale(rig, j, 1.0)
+    alive = clip != "dead"
+    rig.show("glow", alive)
+    rig.show("glowoff", not alive)
+    POSE[rig.kind](rig, clip, i)
     rig.ground_attached()
 
 
@@ -143,15 +258,19 @@ def pack(kind, res, cols, outdir, log=print):
     return sheets, assets
 
 
-QUICK = {("idle", 0), ("run", 1), ("attack", 1), ("attack", 3), ("hurt", 0), ("dead", 0)}
+QUICK = {("idle", 0), ("run", 1), ("attack", 1), ("attack", 2), ("attack", 3), ("hurt", 0), ("dead", 0)}
 
 
 def build(outdir, kinds=None):
-    """ALIEN_QUICK=1: preview frames only, in SE, S, SW, NW (look iteration; never for commits)."""
-    quick = os.environ.get("ALIEN_QUICK")
+    """Look iteration only (never for commits): ALIEN_QUICK=1 renders the preview frames in SE, S, SW, NW; ALIEN_ANIM=1
+    every frame facing SE (the animation clips); ALIEN_KINDS=hunter,brute limits the creatures."""
+    quick, anim = os.environ.get("ALIEN_QUICK"), os.environ.get("ALIEN_ANIM")
+    if os.environ.get("ALIEN_KINDS"):
+        kinds = os.environ["ALIEN_KINDS"].split(",")
     sheets, assets = {}, {}
     for k in kinds or list(alien.BUILD):
-        res, cols = render_kind(k, dirs=(0, 1, 2, 4) if quick else range(8), frames=QUICK if quick else None)
+        dirs = (0,) if anim else (0, 1, 2, 4) if quick else range(8)
+        res, cols = render_kind(k, dirs=dirs, frames=QUICK if quick else None)
         s, a = pack(k, res, cols, outdir)
         sheets.update(s)
         assets.update(a)
