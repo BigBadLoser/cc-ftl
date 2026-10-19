@@ -276,6 +276,11 @@ air-layer rule by altitude, save v14). Vehicle screenshots match main pixel for 
 (scratchpad `sector8/new` vs `sector8/main`). Next: step 5 (render), after `genint` lands; `debug.spawnGenerated` from
 `genint` must call `placementGapError` like `debug.spawnEnemy`. Step 5 must pick up the TODO in `shuttleView.ts` (low bodies
 in the shared world layer, `alt` driving the lift).
+Branch `sector-5` (not merged, visual: needs the user's screenshot approval): render steps 5a (one world layer stack, regions
+as decorators at sector offsets, cross-ship depth sorting), 5c (combat panel as camera pass B into a texture; `miniScene`
+deleted), 5d (picking in sector tiles), the §5 visibility rule (crew outside a roofed hull always drawn) and the step 8 TODO
+(low bodies in the world layer). Not done: 5b (chunk tile views), `alt` driving the lift (it does not ramp). Screenshots and
+comparisons in the scratchpad `sector5/` (`main/`, `new/`, `cmp_*`).
 
 Planner's calls (the user can overrule):
 - 16x16 sparse chunks.

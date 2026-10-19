@@ -712,6 +712,33 @@ Step 8 done (branch `sector-8`):
   - `UiShuttles.targets[].gridId`.
 - Save v14. `sectorEquiv` folds `BodyC` back into the old `vehicle` shape before hashing, and both pre-refactor hashes still
   match, so sim behaviour is unchanged.
+Step 5a, 5c, 5d, the §5 visibility rule and the step 8 depth TODO done (branch `sector-5`; 5b still to do):
+- **One world stack** (`render/worldLayers.ts`): `createWorldStack()` holds shared layers (under, floor, decal, a depth
+  layer, fx, fxAdd, halo, ui, marks); `stack.region(halos)` gives each ShipScene a `Layers` whose containers sit inside them
+  at the region's sector offset (`setOrigin(ax, ay, depth)`). The depth layer is a Pixi `RenderLayer` sorted by
+  `zIndex + depth base of the child's parent` (a stable sort, ties keep add order), so the sorted sprites of every region and
+  of the sector-frame `low` container (low bodies) interleave. Views are unchanged: they still write region-local positions
+  and depth keys.
+- **Sector frame.** The art origin is sector tile (0, 0). `render/sectorPos.ts` (`regionOrigin`, `sectorPos`, `sectorArt`)
+  adds the ShipC origin until step 6, when it becomes the identity. Camera framing, focus, `fightFx`, `crewMarks`,
+  `sectorFx` and shuttles use it; the "camera ship's frame" (`ref`) is gone from the fx hosts.
+- **Pass B** (`render/combatPass.ts`): a second `createCamera` (new `setExactScale` for the quarter steps under 1), centred
+  and fitted on the target region, renders the stage into a `RenderTexture` the size of `CombatViewRect` (the texture is the
+  scissor: a GL scissor would also clip filter passes). The main pass draws that texture in place. `place(cam, target)`
+  positions the stack per pass, culls regions by their padded art box, and shows target marks only in pass B and UI layers
+  only in pass A. `miniScene` is deleted; the panel now shows the region's real livery, cutaway mode and the projectiles and
+  shuttles over it.
+- **Picking** (`scenePick.ts`): one sector tile under the point, answered by the region that owns it (regions never share
+  tiles); crew by the feet nearest the viewer across regions; the panel through camera B. Renderer API unchanged.
+- **Visibility** (`render/regionRules.ts`): `wantsRoof` (hostile, not a wreck, no player crew on the grid) and
+  `crewHidden(grid, roofed, x, y)`: crew are drawn unless on a Floor, Door or module tile of a roofed region. Status marks
+  follow the same rule.
+- **Vehicle depth** (`shuttleView.ts`): airborne bodies in the air layer; low bodies (docked, undocking, lifting out of the
+  bay until cruise, settling in) in the shared world layer. Docked keeps today's centre depth: with a front-corner key a body
+  along a far (west, north) hull passes the hull walls in front of it. In a pit the key is the footprint's front-most point
+  (`frontDepth`, half extents 2.4 x 1.0) + 0.5. The pixel lift still comes from `CRUISE_Z` / `DOCK_Z` / `PIT_Z`: `alt` switches
+  with the state and does not ramp.
+- Culling is per camera at region level (cheap). Chunk containers and per-chunk culling come with 5b.
 
 **Merges before the refactor (answer to the user's hold).**
 - Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**
