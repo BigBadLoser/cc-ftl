@@ -1,9 +1,10 @@
 """Species experiment (preview only): rock and slime crew bodies on the human rig, so every human clip drives them.
 
-  rock   faceted stone chunks, one or more per bone, fitted to the body's own verts for that bone and set slightly apart
-         over a magma core (the body itself, self-lit orange): the gaps between chunks read as glowing cracks.
-  slime  the body smoothed and puffed up into a see-through shell over a denser see-through goo (baked translucency,
-         core.py alpha / rim), with eyes and a few bits of gear floating inside.
+  rock   a plain rock person: the body itself bulked up per bone (heavy chest and shoulders, big fists, a small head),
+         collapse-decimated into big flat facets and jittered, stone colours in broad patches, a boulder on each
+         shoulder, deep-set eyes under a heavy brow.
+  slime  parked: a baked see-through shell over a dark core (core.py alpha / rim) reads as jelly but not as the
+         translucent slime wanted; that needs runtime transparency (engine work).
 
   blender -b --factory-startup --python tools/blender/experiments/species/species.py -- <out dir>
     -> <out>/<species>.npz: raw layer frames (rgba, glow) for SE / S / SW / NW x idle 0, walk 0-7, work 3"""
@@ -23,7 +24,6 @@ from sprites.human_base import Item  # noqa: E402
 
 FOLD = {"index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand", "thumb": "hand", "toe": "foot", "toe_end": "foot",
         "neck_01": "head", "clavicle": "arm", "root": "hips"}
-ROCK = ("rkL", "rkM", "rkM", "rkD")
 # rock bulk per bone (chunk radius over the body's own): a heavy chest and shoulders, big fists, a smaller head
 BULK = {"hips": 1.2, "spine": 1.3, "spine_02": 1.35, "spine_03": 1.45, "arm": 1.4, "forearm": 1.3, "hand": 1.7, "leg": 1.2,
         "shin": 1.2, "foot": 1.15, "head": 0.85}
@@ -99,50 +99,62 @@ def attach(m, arm, bone):
     return ob
 
 
+def facet(ob, ratio, rough, rng):
+    """Break a skinned mesh into big flat facets: collapse-decimate it (weights are interpolated), jitter the verts along
+    their normals, flat-shade. The armature modifier is set aside while the decimate is applied."""
+    arm_mod = [(m.name, m.object) for m in ob.modifiers if m.type == "ARMATURE"]
+    for m in list(ob.modifiers):
+        ob.modifiers.remove(m)
+    dec = ob.modifiers.new("dec", "DECIMATE")
+    dec.ratio = ratio
+    with bpy.context.temp_override(object=ob, active_object=ob):
+        bpy.ops.object.modifier_apply(modifier="dec")
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bm.normal_update()
+    for v in bm.verts:
+        v.co += v.normal * float(rng.uniform(-rough, rough))
+    bm.to_mesh(ob.data)
+    bm.free()
+    for poly in ob.data.polygons:
+        poly.use_smooth = False
+    for name, target in arm_mod:
+        ob.modifiers.new(name, "ARMATURE").object = target
+
+
+def stone(c, i):
+    """Stone colour by broad patches in space (lighter weathered faces, darker seams), not per-face noise."""
+    n = math.sin(c.x * 6 + 1.3) + math.sin(c.y * 5 - 0.7) + math.sin(c.z * 4 + 2.1)
+    return "rkL" if n > 1.6 else "rkD" if n < -1.8 else "rkM"
+
+
 def rock(arm, flesh):
-    """Chunks per bone over a magma core."""
+    """A plain rock person: the body bulked up per bone (heavy chest and shoulders, big fists, a small head), broken into
+    big flat facets, a boulder on each shoulder, dark eye sockets."""
     rng = np.random.default_rng(12)
-    body = weld(flesh, "species.rock.core")
-    P0 = bone_verts(body)                                                    # fit the chunks to the full body
-    swell = {k: 0.05 * (v - 1.0) for k, v in BULK.items() for k in (k, k + ".L", k + ".R")}
-    smooth_inflate(body, 2, -0.03, swell)                                    # the core sits just inside the stone
-    paint_all(body, "orange")
+    body = weld(flesh, "species.rock")
+    swell = {k: 0.1 * (v - 1.0) for k, v in BULK.items() for k in (k, k + ".L", k + ".R")}
+    smooth_inflate(body, 3, 0.01, swell)
+    facet(body, 0.08, 0.02, rng)
+    from sprites.human_base import paint
+    paint(body, stone)
     objs = [body]
-    for bone, P in P0.items():
-        if bone not in arm.data.bones or len(P) < 12:
-            continue
-        b = arm.data.bones[bone]
-        axis = np.array(b.tail_local - b.head_local)
-        if np.linalg.norm(axis) < 1e-4:
-            continue
-        axis /= np.linalg.norm(axis)
-        c0 = P.mean(0)
-        t = (P - c0) @ axis
-        lo, hi = np.percentile(t, 3), np.percentile(t, 97)
-        n = max(1, min(4, round((hi - lo) / 0.12)))
-        m = core.Mesh(f"rock.{bone}", selflit=True)
-        for k in range(n):
-            a, b_ = lo + (hi - lo) * k / n, lo + (hi - lo) * (k + 1) / n
-            sel = P[(t >= a) & (t <= b_)]
-            if len(sel) < 4:
-                continue
-            cen = sel.mean(0)
-            radial = sel - cen - np.outer((sel - cen) @ axis, axis)
-            r = (np.percentile(np.linalg.norm(radial, axis=1), 95) * 1.1 + 0.008) * BULK.get(bone.split(".")[0], 1.0)
-            half = (b_ - a) / 2 * 1.0 + 0.008
-            if bone == "head":                                               # the head: one round boulder
-                half = r = max(r, half) * 0.95
-            chunk(m, cen, axis, half, r, rng, ROCK[int(rng.integers(0, len(ROCK)))])
-        if bone.startswith("arm."):                                          # a shoulder boulder over the joint
-            sh = np.array(b.head_local) + np.array((0, 0.0, 0.05))
-            chunk(m, sh, axis, 0.1, 0.12, rng, "rkM")
-        if bone == "head":                                                   # ember eyes, set into the boulder
-            c = P.mean(0)
-            front = c[1] - np.percentile(np.abs(P[:, 1] - c[1]), 95) * 1.05 * BULK["head"]
-            for sx in (1, -1):
-                m.box((c[0] + sx * 0.042, -(front - 0.012), c[2] + 0.015), (0.035, 0.03, 0.018), "flameY")
-        objs.append(attach(m, arm, bone))
-    return Item("species", "rock", objs, glow=True)
+    P0 = bone_verts(body)
+    for side in ("L", "R"):                                                  # a boulder over each shoulder
+        b = arm.data.bones[f"arm.{side}"]
+        m = core.Mesh(f"rock.shoulder.{side}", selflit=True)
+        sh = np.array(b.head_local) + np.array((0.0, 0.0, 0.06))
+        chunk(m, sh, (0.3 if side == "L" else -0.3, 0.0, 1.0), 0.1, 0.11, rng, "rkM")
+        objs.append(attach(m, arm, f"arm.{side}"))
+    head = P0["head"]
+    hz = np.percentile(head[:, 2], 55)
+    hy, hx = front(head, hz)
+    eyes = core.Mesh("rock.eyes", selflit=True)
+    for sx in (1, -1):                                                       # deep-set eyes under a heavy brow
+        eyes.box((hx + sx * 0.045, -(hy + 0.004), hz), (0.04, 0.02, 0.028), "dark")
+        eyes.box((hx + sx * 0.045, -(hy - 0.012), hz + 0.03), (0.06, 0.04, 0.025), "rkM")
+    objs.append(attach(eyes, arm, "head"))
+    return Item("species", "rock", objs)
 
 
 def smooth_inflate(ob, iters, grow, extra=None):
