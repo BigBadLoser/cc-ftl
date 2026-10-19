@@ -73,6 +73,12 @@ export interface UiCrew {
   prisoner: boolean;
   inert: boolean;
   fight: UiFight | null;
+  /** The EVA suit being worn: seconds of air left of `max`, and whether the tank is low or the wearer is crossing open space. Null when not suited. */
+  /** Needs no air, so never wears a suit (robots). */
+  airless: boolean;
+  suit: { air: number; max: number; low: boolean; floating: boolean } | null;
+  /** The nearest airlock on their grid with a free suit (to put one on), the suits free there and the airlock's tile; null when none or they cannot wear one. */
+  suitAt: { id: number; free: number } | null;
 }
 
 export interface UiFight {
@@ -212,6 +218,7 @@ export interface UiStats {
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'crew.died' | 'crew.rescued'
   | 'job.missingMaterials' | 'storage.full' | 'production.done'
+  | 'suit.airLow' | 'suit.airOut'
   | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost';
 
 /** A weapon module of the player's ship. */

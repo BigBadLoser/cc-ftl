@@ -6,7 +6,7 @@ import {
 import { killCrew } from '../crew/death';
 import { releaseAssignment } from '../crew/helpers';
 import type { Grid } from '../grid';
-import { SuitC } from '../portals/components';
+import { hasSuitAir } from '../eva/suit';
 import { WreckC } from '../robots/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -16,7 +16,7 @@ import {
   TEMP_HARM_PER_SEC,
 } from '../tuning';
 
-/** Harm per second from the tile a crew member stands on: thin air, CO2, heat, cold and fire. `suited` (or airless) skips air and cold. */
+/** Harm per second from the tile a crew member stands on: thin air, CO2, heat, cold and fire. `suited` (with air in the tank) or airless skips thin air and CO2; a suit also insulates against cold. */
 function harmPerSec(grid: Grid, x: number, y: number, suited: boolean, airless: boolean): number {
   let harm = 0;
   const o2 = grid.get('o2', x, y);
@@ -25,7 +25,7 @@ function harmPerSec(grid: Grid, x: number, y: number, suited: boolean, airless: 
   if (!suited && !airless && o2 < O2_HARM_BELOW) harm += (O2_HARM_BELOW - o2) * O2_HARM_PER_SEC;
   if (!suited && !airless && co2 > CO2_HARM_ABOVE) harm += (co2 - CO2_HARM_ABOVE) * CO2_HARM_PER_SEC;
   if (temp > HOT_ABOVE) harm += (temp - HOT_ABOVE) * TEMP_HARM_PER_SEC;
-  if (!airless && temp < COLD_BELOW) harm += (COLD_BELOW - temp) * TEMP_HARM_PER_SEC;
+  if (!airless && !suited && temp < COLD_BELOW) harm += (COLD_BELOW - temp) * TEMP_HARM_PER_SEC;
   harm += (FIRE_CREW_DAMAGE * grid.get('fire', x, y)) / 255;
   return harm;
 }
@@ -48,7 +48,7 @@ export function vitalsSystem(sim: Sim): void {
 
     const species = sim.content.species[(sim.world.get(id, CrewC) as Crew).species];
     const airless = !!species?.airless;
-    const suited = sim.world.has(id, SuitC); // a suit has its own air: no breathing from the tile, no thin-air harm
+    const suited = hasSuitAir(sim, id); // a suit with air in its tank breathes for the wearer; an empty one is as good as none
     if (!suited && !airless) {
       grid.set('o2', pos.x, pos.y, Math.max(0, grid.get('o2', pos.x, pos.y) - BREATH_O2_PER_SEC / TICK_HZ));
       grid.set('co2', pos.x, pos.y, grid.get('co2', pos.x, pos.y) + BREATH_CO2_PER_SEC / TICK_HZ);

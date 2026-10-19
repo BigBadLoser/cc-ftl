@@ -1,3 +1,4 @@
+import { isSuited, suitDef } from '../eva/suit';
 import { stat } from '../stats';
 import type { HandWeaponDef } from '../registry';
 import type { Sim } from '../sim';
@@ -40,7 +41,8 @@ export function cooldownTicks(w: HandWeaponDef): number {
 
 /**
  * Chance to hit. Ranged: accuracy plus gunnery, scaled down with distance (to 1 - RANGE_FALLOFF at maximum range)
- * and by the target's cover. Melee: accuracy plus melee skill (adjacent, so no range or cover). Clamped to 5-95%.
+ * and by the target's cover. Melee: accuracy plus melee skill (adjacent, so no range or cover). A suit scales either by
+ * its accuracyMult. Clamped to 5-95%.
  */
 export function hitChance(sim: Sim, attacker: number, w: HandWeaponDef, dist: number, cover: Cover): number {
   const skill = stat(sim, attacker, w.kind === 'ranged' ? 'gunnery' : 'melee');
@@ -49,5 +51,6 @@ export function hitChance(sim: Sim, attacker: number, w: HandWeaponDef, dist: nu
     p *= 1 - RANGE_FALLOFF * Math.min(1, dist / w.range);
     p *= cover === 'full' ? COVER_FULL_MULT : cover === 'partial' ? COVER_PARTIAL_MULT : 1;
   }
+  if (isSuited(sim, attacker)) p *= suitDef(sim).accuracyMult; // a spacesuit is bulky: shots and blows land less often
   return Math.min(HIT_CHANCE_MAX, Math.max(HIT_CHANCE_MIN, p));
 }

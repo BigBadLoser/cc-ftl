@@ -1,7 +1,8 @@
 import {
+  AirlockC, CrossingC, PortalC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile,
   AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC,
   ModuleC, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine,
-  storageCount, Struct, wielded, type Job, type Sim, type WorkCategory,
+  storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, type Job, type Sim, type WorkCategory,
 } from '../sim';
 import type { UiCrew, UiFight } from '../ui/api';
 
@@ -68,6 +69,33 @@ function whereOf(sim: Sim, ctx: Ctx, id: number): { gridId: number; where: strin
   return { gridId: 0, where: v.state === 'stowed' ? 'Shuttle (in bay)' : dockShip ? `Shuttle at ${dockShip}` : 'Shuttle (flying)' };
 }
 
+/** The suit tank readout of a suited crew member. */
+function suitOf(sim: Sim, id: number): UiCrew['suit'] {
+  if (!sim.world.has(id, SuitC)) return null;
+  const max = suitDef(sim).airSec;
+  const air = suitAir(sim, id);
+  const crossing = sim.world.get(id, CrossingC);
+  return {
+    air: Math.round(air), max, low: air <= max * EVA_AIR_LOW_FRAC,
+    floating: !!crossing && sim.world.get(crossing.portal, PortalC)?.kind === 'eva',
+  };
+}
+
+/** The airlock on the crew member's grid, nearest by straight line, that has a free suit (null if none, or the body needs none). */
+function suitAtOf(sim: Sim, id: number): UiCrew['suitAt'] {
+  const pos = sim.world.get(id, PositionC);
+  if (!pos || sim.world.has(id, SuitC) || !needsAir(sim, id)) return null;
+  let best: { id: number; free: number; d: number } | null = null;
+  for (const lock of sim.world.query(AirlockC)) {
+    const at = suitTile(sim, lock);
+    const free = freeSuits(sim, lock);
+    if (!at || free <= 0 || sim.world.get(lock, ModuleC)?.gridId !== pos.gridId) continue;
+    const d = Math.hypot(at.x - pos.x, at.y - pos.y);
+    if (!best || d < best.d) best = { id: lock, free, d };
+  }
+  return best && { id: best.id, free: best.free };
+}
+
 function fightOf(sim: Sim, id: number): UiFight | null {
   const f = sim.world.get(id, FighterC);
   if (!f) return null;
@@ -124,6 +152,9 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     prisoner: sim.world.has(id, PrisonerC),
     inert: sim.world.has(id, InertC),
     fight: fightOf(sim, id),
+    airless: !needsAir(sim, id),
+    suit: suitOf(sim, id),
+    suitAt: suitAtOf(sim, id),
   };
 }
 

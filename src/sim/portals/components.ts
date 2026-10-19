@@ -44,9 +44,15 @@ export interface Crossing {
 }
 export const CrossingC = defineComponent<Crossing>('crossing');
 
-/** Marker: this crew member wears an EVA suit (own air supply, can use 'suit' portals). */
+/**
+ * This crew member wears an EVA suit (own air supply, can use 'suit' portals). `air` is seconds left in the tank and
+ * `airlock` the module entity it was taken from; both are absent on a suit made by `suit.set` (full tank, no home).
+ * Taking the suit off at an airlock returns it there with a full tank.
+ */
 export interface Suit {
   worn: true;
+  air?: number;
+  airlock?: number;
 }
 export const SuitC = defineComponent<Suit>('suit');
 
@@ -62,5 +68,7 @@ export interface Airlock {
   timer: number;
   /** Side someone wants open; written by crew waiting at a door and by airlock.cycle, consumed by the airlock system. */
   request: 'inner' | 'outer' | null;
+  /** Free suits stowed here. Absent (an old save) = the def's `airlock.suits`. */
+  suits?: number;
 }
 export const AirlockC = defineComponent<Airlock>('airlock');

@@ -94,6 +94,8 @@ interface RendererContent {
   modules: ModuleDefs & Readonly<Record<string, ModuleDef>>;
   items: Readonly<Record<string, ItemDef>>;
   weapons: Readonly<Record<string, WeaponDef>>;
+  /** The EVA suit, for the air bar over suited crew. */
+  suit?: { airSec: number };
 }
 
 /** Whole-number scale that fits a span into a box; below 1 it steps by quarters. */
@@ -162,6 +164,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
   });
 
+  /** What crew views need to draw EVA: ship placements (a crew member floating between two ships) and the tank size. */
+  const evaHost = () => ({ shipPos: (gridId: number) => shipOf(gridId) ?? null, suitAirSec: () => content.suit?.airSec ?? 240 });
   const pickHost = (): PickHost => ({ scenes, cam, ship: shipOf, refId });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ref: () => shipOf(refId) ?? null, ship: shipOf });
@@ -220,7 +224,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const wantsRoof = (s: Ship) => roofEnemies && s.faction === 'hostile' && s.state !== 'wreck' && !boarded(s.gridId);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: shipLivery(s) });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: shipLivery(s), ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
@@ -290,7 +294,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       miniScene = null;
     }
     if (!miniScene) {
-      miniScene = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: false, roofed: wantsRoof(ship) });
+      miniScene = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: false, roofed: wantsRoof(ship), ...evaHost() });
       miniRoot.addChild(miniScene.layers.world);
     }
     const sc = miniScene;

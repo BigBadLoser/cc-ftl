@@ -1,5 +1,6 @@
-import { CrewC, DraftedC, PathC, PositionC, type Drafted, type Path, type Position } from '../crew/components';
-import { hasRoute, isIncapacitated, origin } from '../crew/helpers';
+import { AssignmentC, CrewC, DraftedC, JobC, PathC, PositionC, type Drafted, type Path, type Position } from '../crew/components';
+import { atJob, hasRoute, isIncapacitated, jobGoal, origin, releaseAssignment } from '../crew/helpers';
+import { planWalk } from '../eva/route';
 import { planRoute } from '../portals/route';
 import type { Sim } from '../sim';
 
@@ -9,9 +10,20 @@ export function draftedSystem(sim: Sim): void {
     if (isIncapacitated(sim, id)) continue;
     const drafted = sim.world.get(id, DraftedC) as Drafted;
     const target = drafted.target;
-    if (!target) continue;
     const pos = sim.world.get(id, PositionC) as Position;
     const path = sim.world.get(id, PathC) as Path;
+    const errand = sim.world.get(id, AssignmentC);
+    if (errand) {
+      // A suit errand ordered by the player: keep walking to it, replanning if the path was cut off.
+      const job = sim.world.get(errand.jobId, JobC);
+      if (job && path.steps.length === 0 && !hasRoute(sim, id) && !atJob(origin(pos), job)) {
+        const plan = planWalk(sim, id, pos.gridId, origin(pos), jobGoal(job));
+        if (plan) path.steps = plan.steps;
+        else releaseAssignment(sim, id);
+      }
+      continue;
+    }
+    if (!target) continue;
     const o = origin(pos);
     const gridId = target.gridId ?? pos.gridId;
     const planned = drafted.planned;
@@ -23,7 +35,15 @@ export function draftedSystem(sim: Sim): void {
       delete drafted.planned;
       continue;
     }
-    // Target changed (or the path was cleared): replan from where the current step ends.
+    // Target changed (or the path was cleared): replan from where the current step ends. On the same grid the walk keeps
+    // out of thin air when it can (the order still stands if only a thin-air route exists).
+    const walk = gridId === pos.gridId ? planWalk(sim, id, gridId, o, target) : null;
+    if (walk) {
+      path.steps = walk.steps;
+      delete path.then;
+      drafted.planned = { x: target.x, y: target.y, gridId };
+      continue;
+    }
     const route = planRoute(sim, id, { gridId: pos.gridId, ...o }, { gridId, x: target.x, y: target.y });
     if (route) {
       path.steps = route.steps;

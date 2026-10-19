@@ -5,6 +5,7 @@ import { isTileWalkable } from '../modules/walk';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { stat } from '../stats';
+import { isSuited } from '../eva/suit';
 
 /** Advance crew along their paths. Diagonal steps take sqrt(2) longer. */
 export function movementSystem(sim: Sim): void {
@@ -15,7 +16,8 @@ export function movementSystem(sim: Sim): void {
     const path = sim.world.get(id, PathC) as Path;
     const grid = sim.grids.get(pos.gridId);
     if (!grid?.has('struct')) continue;
-    const walk = (x: number, y: number): boolean => isTileWalkable(sim, grid, x, y);
+    const suited = isSuited(sim, id);
+    const walk = (x: number, y: number): boolean => isTileWalkable(sim, grid, x, y, suited);
 
     if (!isSettled(pos) && !walk(pos.toX, pos.toY)) {
       // The tile we were stepping onto was built over: stop and let decide repath.

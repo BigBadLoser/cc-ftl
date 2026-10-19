@@ -46,6 +46,24 @@ export interface ContentRegistry {
   weapons?: Record<string, WeaponDef>;
   /** Vehicle content id (e.g. 'vehicle.shuttle') to definition. Absent = no vehicles. */
   vehicles?: Record<string, VehicleDef>;
+  /** The EVA spacesuit. Absent = DEFAULT_SUIT (tuning.ts). */
+  suit?: SuitDef;
+}
+
+/** The EVA spacesuit every non-airless crew member can wear (put on and taken off at an airlock). */
+export interface SuitDef {
+  /** Seconds of air in a full tank. It drains only while the wearer is in thin air or crossing open space. */
+  airSec: number;
+  /** Seconds to put the suit on / take it off at an airlock. */
+  donSec: number;
+  doffSec: number;
+  /** Stat multipliers while suited: walking and working are slower, hand-weapon hits land less often. */
+  moveMult: number;
+  workMult: number;
+  accuracyMult: number;
+  /** Open-space crossing between airlocks of different grids: tiles per second and the farthest reach (tiles between collars). */
+  floatSpeed: number;
+  floatRange: number;
 }
 
 /** A shuttle type. It is an entity in the sector, not a grid: no interior, crew aboard are hidden. */
@@ -291,7 +309,7 @@ export interface ModuleDef {
    * Placing it turns the door tiles into doors. Cycling takes `cycleSec` and moves the chamber's air to or from the ship,
    * so crew passing never vents the ship.
    */
-  airlock?: { cycleSec: number; layout?: AirlockLayout };
+  airlock?: { cycleSec: number; layout?: AirlockLayout; /** Spacesuits stowed in the airlock at build time (default 0). Crew put one on and take it off here. */ suits?: number };
   /**
    * Vehicle bay: a pit the vehicle sits in (solid, nothing walkable inside; it launches through hatch doors in the pit
    * floor). Holds one vehicle whose `VehicleDef.class` equals `class` ('shuttle' bays are 4x5; later 'pod' bays, 3x3, for

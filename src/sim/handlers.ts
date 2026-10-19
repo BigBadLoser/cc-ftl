@@ -3,6 +3,7 @@ import type { Command } from './commands';
 import { captureHandlers } from './capture/handlers';
 import { combatHandlers } from './combat/handlers';
 import { crewHandlers } from './crew/handlers';
+import { evaHandlers } from './eva/handlers';
 import { fightHandlers } from './fight/handlers';
 import { itemHandlers } from './items/handlers';
 import { moduleHandlers } from './modules/handlers';
@@ -24,6 +25,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...moduleHandlers,
   ...itemHandlers,
   ...portalHandlers,
+  ...evaHandlers,
   ...vehicleHandlers,
   ...robotHandlers,
   noop: () => {},

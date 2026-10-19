@@ -128,6 +128,10 @@ export interface Job {
   assemble?: { role: string };
   /** For 'craft' jobs: the recipe being made. */
   craft?: { recipe: string };
+  /** For suitUp: the job the crew member reserved first and picks up again once the suit is on. */
+  resume?: number;
+  /** For suitUp / suitOff: the crew member this personal errand belongs to (nobody else may take it). */
+  errandFor?: number;
 }
 export const JobC = defineComponent<Job>('job');
 
@@ -136,7 +140,9 @@ export type JobKind =
   /** mend: repair a damaged robot (`target`); salvage: strip a robot wreck (`target`); hack: take over an AI core (`target`). */
   | 'mend' | 'salvage' | 'hack'
   /** assemble: build a robot of `assemble.role` in the robot bay `target`. */
-  | 'assemble';
+  | 'assemble'
+  /** suitUp / suitOff: put on or take off an EVA suit at the airlock `target`; the crew member stands ON the airlock's inside tile. */
+  | 'suitUp' | 'suitOff';
 
 /** Hit points of a crew member. At 0 they are downed (see DownedC). */
 export interface Health {

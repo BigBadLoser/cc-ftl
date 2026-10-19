@@ -1,6 +1,8 @@
 import type { Sim } from './sim';
 import { airlockSystem } from './systems/airlock';
 import { portalSystem } from './systems/portals';
+import { evaLinksSystem } from './systems/evaLinks';
+import { suitsSystem } from './systems/suits';
 import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
@@ -88,6 +90,8 @@ export const pipeline: readonly System[] = [
   lightingSystem,
   // Alerts watch the finished environment; events only, nothing reads them.
   alertsSystem,
+  // Suit air drains on the final environment; vitals then sees which tanks ran dry.
+  suitsSystem,
   // Vitals after the environment is final: breathing, harm, downing, bleeding, dying.
   vitalsSystem,
   // Auto jobs after vitals, so a crew member who just went down gets a rescue job this tick.
@@ -115,6 +119,8 @@ export const pipeline: readonly System[] = [
   movementSystem,
   // Portal crossings after movement: crew who just reached a portal end start or finish a traversal.
   portalSystem,
+  // Open-space links between airlocks of different grids in range; queued as commands for next tick.
+  evaLinksSystem,
   carrySystem,
   // Vehicles after crew movement: embarking crew board on arrival, shuttles fly before this tick's shots are aimed.
   vehicleSystem,

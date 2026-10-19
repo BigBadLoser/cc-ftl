@@ -9,6 +9,8 @@
   const c = $derived(crew.find((x) => x.id === sel) ?? foes.find((x) => x.id === sel));
   const enemy = $derived(c?.side === 'enemy');
 
+  const airText = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+
   onMount(() => {
     const a = api.crew.subscribe((v) => (crew = v));
     const b = api.selectedCrew.subscribe((s) => (sel = s));
@@ -33,7 +35,9 @@
       {#if c.carriedBy}<dt>Carried by</dt><dd>{c.carriedBy}</dd>{/if}
       {#if c.carrying}<dt>Carrying</dt><dd>{c.carrying.count} {c.carrying.item.replace('item.', '')}</dd>{/if}
       <dt>Rest</dt><dd>{c.rest}%</dd>
+      {#if c.suit}<dt>Suit air</dt><dd data-testid="suit-air" class:bad={c.suit.low}>{c.suit.floating ? 'floating, ' : ''}{airText(c.suit.air)}{c.suit.low ? ' LOW' : ''}</dd>{/if}
     </dl>
+    {#if c.suit}<div class="bar air" class:low={c.suit.low} data-testid="suit-bar"><i style:width="{Math.round((c.suit.air / Math.max(1, c.suit.max)) * 100)}%"></i></div>{/if}
     <div class="bar hp" class:low={c.hp / c.maxHp < 0.4}><i style:width="{Math.round((c.hp / c.maxHp) * 100)}%"></i></div>
     {#if c.fight && c.fight.cooldown > 0}<div class="bar cd"><i style:width="{Math.round((c.fight.cooldown / Math.max(0.1, c.fight.cooldownMax)) * 100)}%"></i></div>{/if}
     {#if enemy}
@@ -56,8 +60,19 @@
       </div>
     {/if}
     {#if c.drafted}
+      {#if !c.airless}
+        <div class="btns one">
+          {#if c.suit}
+            <button data-testid="suit-off" onclick={() => api.dispatch({ type: 'eva.suitOff', crew: c.id })}>Take suit off</button>
+          {:else}
+            <button data-testid="suit-up" disabled={!c.suitAt} onclick={() => c.suitAt && api.dispatch({ type: 'eva.suitUp', crew: c.id, airlock: c.suitAt.id })}>
+              {c.suitAt ? `Put suit on (${c.suitAt.free} at airlock)` : 'Put suit on (no free suit)'}
+            </button>
+          {/if}
+        </div>
+      {/if}
       <div class="btns one"><button class:on={c.fight?.engage ?? true} data-testid="engage" onclick={() => api.dispatch({ type: 'crew.setEngage', id: c.id, engage: !(c.fight?.engage ?? true) })}>Fire at will: {(c.fight?.engage ?? true) ? 'on' : 'off'}</button></div>
-      <p class="hint">Tap a tile to move (any ship), tap a hostile to attack.</p>
+      <p class="hint">Tap a tile to move (any ship; crossing open space needs a suit), tap a hostile to attack.</p>
     {/if}
     {/if}
   </aside>
@@ -67,6 +82,8 @@
   .bad { color: #ff9a9a; }
   .hp > i { background: #4cd964; } .hp.low > i { background: #ff5a2d; }
   .rest { margin-top: 4px; }
+  .air { margin-top: 4px; } .air > i { background: var(--cyan); } .air.low > i { background: #ff5a2d; animation: blink 0.6s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0.35; } }
   aside { left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab)); width: 280px; max-height: calc(100vh - var(--hdr) - 130px); overflow-y: auto; }
   h2 { margin: 0 0 6px; font-size: 15px; color: var(--cyan); }
   h2 small { color: var(--dim); font-weight: normal; margin-left: 6px; }

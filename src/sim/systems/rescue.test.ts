@@ -95,6 +95,7 @@ describe('downed crew', () => {
     const sim = make();
     const victim = crew(sim, 2, 3, all(0));
     const medic = crew(sim, 6, 3, { ...all(4), medical: 1 });
+    sim.enqueue({ type: 'suit.set', crew: medic, worn: true }); // crew do not walk into vacuum bare: the medic goes in suited
     breach(sim);
     const bed = sim.world.query(ModuleC)[0] as number;
     let carried = false;

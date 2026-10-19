@@ -63,7 +63,7 @@ export function initAirlock(sim: Sim, grid: Grid, id: number): void {
   for (const c of t.chamber) writeStruct(grid, c.x, c.y, Struct.Floor);
   grid.set('door', t.outer.x, t.outer.y, 0);
   grid.set('door', t.inner.x, t.inner.y, 255);
-  sim.world.add(id, AirlockC, { state: 'inner', timer: 0, request: null });
+  sim.world.add(id, AirlockC, { state: 'inner', timer: 0, request: null, suits: def.airlock.suits ?? 0 });
 }
 
 /** Undo initAirlock when the module is removed: the outer door goes back to hull wall, the inner door to floor. */

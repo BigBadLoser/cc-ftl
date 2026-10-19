@@ -6,10 +6,10 @@
   let list = $state<UiAlert[]>([]);
   onMount(() => api.alerts.subscribe((a) => (list = a)));
 
-  const danger = new Set(['fire.started', 'hull.breach', 'crew.died', 'crew.downed', 'o2.low', 'combat.started', 'module.destroyed', 'ship.lost']);
+  const danger = new Set(['fire.started', 'hull.breach', 'crew.died', 'crew.downed', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'module.destroyed', 'ship.lost']);
   const good = new Set(['production.done', 'crew.rescued', 'ship.destroyed']);
   const icon: Record<string, string> = {
-    'fire.started': '🔥', 'hull.breach': '💨', 'power.shortage': '⚡', 'o2.low': 'O₂', 'crew.downed': '✚', 'crew.died': '✝',
+    'fire.started': '🔥', 'hull.breach': '💨', 'power.shortage': '⚡', 'o2.low': 'O₂', 'suit.airLow': 'O₂', 'suit.airOut': 'O₂', 'crew.downed': '✚', 'crew.died': '✝',
     'crew.rescued': '✔', 'combat.started': '⚔', 'module.destroyed': '✖', 'ship.destroyed': '★', 'ship.fled': '➚', 'ship.lost': '☠', 'job.missingMaterials': '▣', 'storage.full': '▣', 'production.done': '⚙',
   };
 </script>

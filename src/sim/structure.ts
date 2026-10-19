@@ -45,6 +45,16 @@ export function isWalkable(kind: number): boolean {
   return kind === Struct.Floor || kind === Struct.Door;
 }
 
+/**
+ * True if a suited crew member (and nobody else) can stand on this tile kind: the seam for the exterior surfaces of
+ * EVA (hull plating, beams). Nothing qualifies yet; `Struct.Beam` joins here when it lands, and every walk rule
+ * (pathfinder, movement, route planner) already asks for it when the walker wears a suit.
+ */
+export function isEvaWalkable(kind: number): boolean {
+  void kind;
+  return false;
+}
+
 /** Gas conductance of a tile: 0 walls and closed doors, 1 floor/space, a fraction for a partly open door. */
 export function gasConductance(kind: number, doorOpen: number): number {
   if (kind === Struct.Floor || kind === Struct.Space) return 1;

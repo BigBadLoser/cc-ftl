@@ -5,6 +5,7 @@ import { evictStack, refundCost, structCostKey } from '../items/stacks';
 import { footprintTiles } from '../modules/footprint';
 import { ModuleC } from '../modules/components';
 import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/spawn';
+import { performSuitJob } from '../eva/jobs';
 import { performAssemble } from '../robots/bay';
 import { performHack, performMend, performSalvage } from '../robots/jobs';
 import type { Sim } from '../sim';
@@ -43,6 +44,8 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'salvage': return performSalvage(sim, job, speed);
     case 'hack': return performHack(sim, crew, job, speed);
     case 'assemble': return performAssemble(sim, job, speed);
+    case 'suitUp':
+    case 'suitOff': return performSuitJob(sim, crew, job, speed);
   }
 }
 

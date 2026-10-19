@@ -83,12 +83,15 @@ export function findJobAt(sim: Sim, gridId: number, x: number, y: number): numbe
   return 0;
 }
 
-/** Where a crew member must be to work a job: adjacent to it, or ON its tile for operate jobs. */
+/** Jobs the crew member stands ON the tile of (consoles, and the suit tile of an airlock). */
+const ON_TILE_KINDS: readonly string[] = ['operate', 'suitUp', 'suitOff'];
+
+/** Where a crew member must be to work a job: adjacent to it, or ON its tile for operate and suit jobs. */
 export function atJob(pos: Tile, job: { kind: string; x: number; y: number }): boolean {
-  return job.kind === 'operate' ? pos.x === job.x && pos.y === job.y : isAdjacent(pos, job);
+  return ON_TILE_KINDS.includes(job.kind) ? pos.x === job.x && pos.y === job.y : isAdjacent(pos, job);
 }
 
 /** Path goal for reaching a job (see atJob). */
 export function jobGoal(job: { kind: string; x: number; y: number }): { x: number; y: number; adjacent: boolean } {
-  return { x: job.x, y: job.y, adjacent: job.kind !== 'operate' };
+  return { x: job.x, y: job.y, adjacent: !ON_TILE_KINDS.includes(job.kind) };
 }

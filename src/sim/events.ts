@@ -94,6 +94,11 @@ export type SimEvent =
   | { type: 'core.hacked'; moduleId: number; gridId: number; by: Faction }
   /** The player lost the game; `reason` is a short code ('captured'). */
   | { type: 'game.lost'; reason: string }
+  /** EVA: a crew member put on / took off a suit at `airlock` (a module); the tank hit the warning level / ran dry. */
+  | { type: 'suit.donned'; crew: number; airlock: number }
+  | { type: 'suit.doffed'; crew: number; airlock: number }
+  | { type: 'suit.airLow'; crew: number }
+  | { type: 'suit.airOut'; crew: number }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 

@@ -1,5 +1,6 @@
 import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
-import { isWalkable } from '../structure';
+import { EVA_THIN_AIR_BELOW } from '../tuning';
+import { isEvaWalkable, isWalkable } from '../structure';
 import type { Sim } from '../sim';
 
 export interface Tile {
@@ -19,26 +20,38 @@ const NEIGHBOURS: readonly (readonly [number, number])[] = [
   [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [-1, -1], [1, -1],
 ];
 
+/** Walker conditions for findPath. */
+export interface PathOpts {
+  /** Treat tiles with thin air (EVA_THIN_AIR_BELOW) as walls, except the start tile. */
+  avoidThin?: boolean;
+  /** The walker wears a spacesuit: exterior surfaces (isEvaWalkable) are walkable. */
+  suited?: boolean;
+}
+
 /**
  * A* on one grid. 8 directions, no corner cutting. Returns the steps after `from` (empty if
  * already at the goal) or null if unreachable. Ties break on f, then h, then tile index.
  * Takes gridId so portal-spanning paths can extend this later.
  */
-export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal): Tile[] | null {
+export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal, opts: PathOpts = {}): Tile[] | null {
   const grid = sim.grids.get(gridId);
   if (!grid?.has('struct') || !grid.inBounds(from.x, from.y) || !grid.inBounds(goal.x, goal.y)) return null;
   const { width, height } = grid;
   const struct = grid.raw('struct');
   const mods = grid.has('module') ? grid.raw('module') : null;
   const infos = new Map<number, WalkInfo>();
+  const o2 = opts.avoidThin && grid.has('o2') ? grid.raw('o2') : null;
   const walk = (i: number): boolean => {
-    if (!isWalkable(struct[i] as number)) return false;
+    const kind = struct[i] as number;
+    if (!isWalkable(kind) && !(opts.suited && isEvaWalkable(kind))) return false;
+    if (o2 && (o2[i] as number) < EVA_THIN_AIR_BELOW && i !== fromIndex) return false;
     const m = mods ? (mods[i] as number) : 0;
     if (m === 0) return true;
     let info = infos.get(m);
     if (!info) infos.set(m, (info = walkInfo(sim, m)));
     return !info.solid || info.open.has(Math.floor(i / width) * OPEN_KEY + (i % width));
   };
+  const fromIndex = from.y * width + from.x;
   const adj = goal.adjacent ? 1 : 0;
   const isGoal = (x: number, y: number): boolean =>
     adj ? Math.max(Math.abs(x - goal.x), Math.abs(y - goal.y)) === 1 : x === goal.x && y === goal.y;

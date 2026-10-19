@@ -207,3 +207,20 @@ export const EMPTY_CHARGE_MULT = 0.3;
 export const BAY_REPAIR_BELOW = 0.5;
 /** Hold: a hacker keeps a hacked core while within this many tiles (Chebyshev) of its footprint. */
 export const HACK_HOLD_RADIUS = 1;
+
+// --- EVA ---
+/** Air (kPa) under which a tile counts as thin: unsuited crew avoid it, a suit's tank is in use there. */
+export const EVA_THIN_AIR_BELOW = 8;
+/** The suit's warning fires when the tank falls to this fraction. */
+export const EVA_AIR_LOW_FRAC = 0.25;
+/** The default suit (content/suit.ts overrides it): a tank lasts 4 minutes, donning takes 5 s, a suited crew member is 20% slower. */
+export const DEFAULT_SUIT = {
+  airSec: 240, donSec: 5, doffSec: 3, moveMult: 0.8, workMult: 0.9, accuracyMult: 0.8, floatSpeed: 1.5, floatRange: 6,
+} as const;
+/** Extra path steps an automatic job that needs vacuum counts for when crew choose between jobs (they prefer no EVA). */
+export const EVA_JOB_PENALTY = 30;
+/** Planner weight per tile of an open-space crossing, plus a fixed part (an orthogonal step on a deck is 10). */
+export const EVA_COST_PER_TILE = 30;
+export const EVA_COST_BASE = 60;
+/** Ticks between refreshes of the open-space links between airlocks in range. */
+export const EVA_LINK_INTERVAL = 20;

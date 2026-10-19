@@ -31,6 +31,13 @@ const REASONS: Record<string, string> = {
   nothingEquipped: 'Nothing wielded',
   incapacitated: 'That crew member cannot move',
   badStruct: "Can't build that",
+  noSuit: 'That airlock has no free suit',
+  suited: 'Already wearing a suit',
+  notSuited: 'Not wearing a suit',
+  airless: 'This crew member needs no suit',
+  otherGrid: 'Go to that airlock\'s ship first',
+  unreachable: "Can't get to an airlock from here",
+  noAirlock: 'That airlock is not usable',
 };
 
 /** Plain-text version of a `command.rejected` reason code. */

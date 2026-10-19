@@ -30,6 +30,9 @@ export interface ShipSceneOptions {
   roofed: boolean;
   /** Roof livery (scheme and registry seed); none = plain plating. */
   livery?: Livery | null;
+  /** Sector position of a grid's top-left tile (crew floating between ships), and the seconds of air in a full suit tank. */
+  shipPos?(gridId: number): { x: number; y: number } | null;
+  suitAirSec?(): number;
 }
 
 /** One ship grid with all its views (tiles, modules, items, crew, fx), in its own layer stack. */
@@ -73,6 +76,8 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       return m && def ? { m, def } : null;
     },
     light: () => ({ data: grid.raw('light'), width: grid.width }),
+    shipPos: o.shipPos,
+    suitAirSec: o.suitAirSec,
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
   const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway) });

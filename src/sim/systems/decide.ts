@@ -1,10 +1,13 @@
 import { findFreeBed, releaseBedClaim } from '../crew/beds';
 import {
   AssignmentC, BedClaimC, CarriedC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
-  type Crew, type Path, type Position, type Priorities,
+  type Crew, type Job, type Path, type Position, type Priorities,
 } from '../crew/components';
 import { atJob, clearPath, isIncapacitated, jobGoal, isSettled, origin, releaseAssignment } from '../crew/helpers';
 import { findPath, type Tile } from '../crew/pathfind';
+import { findSuitSource, findSuitStow, isErrand, startErrand, type SuitSource } from '../eva/errands';
+import { planWalk } from '../eva/route';
+import { isSuited } from '../eva/suit';
 import { isOffDuty } from '../fight/relations';
 import { needsMaterials } from '../items/materials';
 import { dropCarried } from '../items/stacks';
@@ -14,7 +17,7 @@ import { operateAffinity } from '../combat/operators';
 import { goToBay, wantsBay } from '../robots/bay';
 import { canTakeRobotJob, heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
-import { OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW } from '../tuning';
+import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW } from '../tuning';
 
 /** Below this rest a non-drafted crew member drops everything and sleeps in place. */
 const SLEEP_BELOW = 20;
@@ -61,17 +64,41 @@ export function decideSystem(sim: Sim): void {
         continue;
       }
       const path = sim.world.get(id, PathC);
-      if (path && path.steps.length === 0 && !atJob(origin(pos), job)) {
-        const steps = findPath(sim, pos.gridId, origin(pos), jobGoal(job));
-        if (steps) path.steps = steps;
-        else releaseAssignment(sim, id);
-      }
+      if (path && path.steps.length === 0 && !atJob(origin(pos), job) && !routeToJob(sim, id, pos, assignment.jobId, job)) releaseAssignment(sim, id);
       continue;
     }
 
     dropCarried(sim, id); // a load left over from a lost haul job
-    if (!pickJob(sim, id, pos)) wander(sim, id, pos, crew);
+    if (!pickJob(sim, id, pos) && !stowSuit(sim, id, pos)) wander(sim, id, pos, crew);
   }
+}
+
+/**
+ * Walk to a reserved job. A job that can only be reached through thin air sends an unsuited crew member to fit a suit
+ * first (the job stays theirs and resumes afterwards); false when it cannot be reached at all or no suit can be had.
+ */
+function routeToJob(sim: Sim, id: number, pos: Position, jobId: number, job: Job): boolean {
+  const path = sim.world.get(id, PathC) as Path;
+  const plan = planWalk(sim, id, pos.gridId, origin(pos), jobGoal(job));
+  if (!plan) return false;
+  if (plan.thin && !isErrand(job)) {
+    const src = findSuitSource(sim, id, pos);
+    if (!src) return false;
+    startErrand(sim, id, 'suitUp', src, pos.gridId, jobId);
+    return true;
+  }
+  path.steps = plan.steps;
+  return true;
+}
+
+/** A suited crew member with nothing to do walks to an airlock and takes the suit off, so the suit is free for the next one. */
+function stowSuit(sim: Sim, id: number, pos: Position): boolean {
+  if (!isSuited(sim, id)) return false;
+  if (!isSettled(pos) || (sim.tick + id) % 20 !== 0) return true; // look for an airlock every second or so; meanwhile stand still
+  const src = findSuitStow(sim, id, pos);
+  if (!src) return false;
+  startErrand(sim, id, 'suitOff', src, pos.gridId);
+  return true;
 }
 
 /** True if the crew member is on a rescue job and holds the patient (they must not drop them to sleep). */
@@ -125,22 +152,26 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
   const prio = sim.world.get(crewId, PrioritiesC) as Priorities;
   const jobs = sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)?.reservedBy === 0);
   if (jobs.length === 0) return false;
+  let source: SuitSource | false | undefined; // the nearest suit, looked up the first time a thin-air job comes up
   for (let level = 1; level <= 4; level++) {
     const cats = WORK_CATEGORIES.filter((c) => prio[c] === level);
-    let best: { id: number; steps: Tile[]; score: number } | null = null;
+    let best: { id: number; steps: Tile[]; score: number; thin: boolean } | null = null;
     for (const jobId of jobs) {
       const job = sim.world.get(jobId, JobC);
-      if (!job || job.gridId !== pos.gridId || !cats.includes(job.category) || job.target === crewId || needsMaterials(job)) continue;
+      if (!job || job.gridId !== pos.gridId || !cats.includes(job.category) || job.target === crewId || needsMaterials(job) || isErrand(job)) continue;
       if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL) continue;
       if (!canTakeRobotJob(sim, crewId, job)) continue;
-      const steps = findPath(sim, pos.gridId, origin(pos), jobGoal(job));
-      const score = steps ? steps.length - operateAffinity(sim, crewId, job) : 0;
-      if (steps && (!best || score < best.score)) best = { id: jobId, steps, score };
+      const plan = planWalk(sim, crewId, pos.gridId, origin(pos), jobGoal(job));
+      // Prefer jobs that need no EVA; a thin-air job is only on offer when a suit can be had for it.
+      if (!plan || (plan.thin && !(source ??= findSuitSource(sim, crewId, pos) ?? false))) continue;
+      const score = plan.steps.length - operateAffinity(sim, crewId, job) + (plan.thin ? EVA_JOB_PENALTY : 0);
+      if (!best || score < best.score) best = { id: jobId, steps: plan.steps, score, thin: plan.thin };
     }
     if (best) {
       (sim.world.get(best.id, JobC) as { reservedBy: number }).reservedBy = crewId;
       sim.world.add(crewId, AssignmentC, { jobId: best.id });
       (sim.world.get(crewId, PathC) as { steps: Tile[] }).steps = best.steps;
+      if (best.thin && source) startErrand(sim, crewId, 'suitUp', source, pos.gridId, best.id);
       return true;
     }
   }

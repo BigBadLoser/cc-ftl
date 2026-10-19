@@ -26,14 +26,14 @@ export function airlockSystem(sim: Sim): void {
     if (a.state === 'toOuter' || a.state === 'toInner') {
       setDoors(grid, t, null);
       if (!working) continue;
-      pump(grid, t, a.state === 'toOuter', a.timer);
+      pump(grid, t, a.state === 'toOuter', a.timer, !!def.airlock.layout);
       a.timer--;
       if (a.timer <= 0) {
         a.timer = 0;
         a.state = a.state === 'toOuter' ? 'outer' : 'inner';
         sim.events.emit({ type: 'airlock.cycled', gridId: m.gridId, module: id, side: a.state });
       }
-    } else if (a.request && a.request !== a.state && working && !occupied(sim, m.gridId, a.state === 'inner' ? t.inner : t.outer)) {
+    } else if (a.request && a.request !== a.state && working && (def.airlock.layout || !occupied(sim, m.gridId, a.state === 'inner' ? t.inner : t.outer))) {
       a.state = a.request === 'outer' ? 'toOuter' : 'toInner';
       a.timer = Math.max(1, Math.round(def.airlock.cycleSec * TICK_HZ));
       a.request = null;
@@ -59,10 +59,13 @@ function setDoor(grid: Grid, p: { x: number; y: number }, value: number): void {
  * Move one tick's share of chamber air. Out: every chamber tile (and the outer door tile) hands its gas to the tile inside the inner door.
  * In: the chamber draws up to the inside tile's level from it. Mass moves tile to tile, so nothing is lost.
  */
-function pump(grid: Grid, t: ReturnType<typeof airlockTiles>, out: boolean, remaining: number): void {
+function pump(grid: Grid, t: ReturnType<typeof airlockTiles>, out: boolean, remaining: number, layout: boolean): void {
   const share = 1 / Math.max(1, remaining);
+  // A docking airlock has no chamber: its two door tiles (pod and hull hatch) are the lock, so crew waiting in either
+  // one never hold up a cycle (they ride it out between the shut doors).
+  const lock = layout ? [t.outer, t.inner] : [t.outer, ...t.chamber];
   for (const field of ['o2', 'co2'] as const) {
-    for (const c of [t.outer, ...t.chamber]) {
+    for (const c of lock) {
       const have = grid.get(field, c.x, c.y);
       const inside = grid.get(field, t.inside.x, t.inside.y);
       const move = out ? have * share : Math.max(0, inside - have) * share;

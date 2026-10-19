@@ -111,6 +111,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     if (!isTileWalkable(sim, grid, cmd.x, cmd.y)) return reject(sim, cmd.type, 'notWalkable');
     const fighter = sim.world.get(cmd.id, FighterC);
     if (fighter) fighter.ordered = 0; // a move order cancels an attack order
+    releaseAssignment(sim, cmd.id); // and a suit errand
     drafted.target = gridId === pos.gridId ? { x: cmd.x, y: cmd.y } : { x: cmd.x, y: cmd.y, gridId };
   },
 };

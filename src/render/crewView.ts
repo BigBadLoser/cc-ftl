@@ -1,6 +1,8 @@
 import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
+import { facingOf } from '../sim/crew/helpers';
+import { CrossingC, PortalC, SuitC } from '../sim/portals/components';
 import { CarryingC } from '../sim/items/components';
 import { BLEED_OUT_SECONDS } from '../sim/tuning';
 import type { ModuleDef } from '../sim/registry';
@@ -27,6 +29,10 @@ export interface CrewViewHost {
   target(): { gridId: number } | null;
   /** The module covering tile (x, y) of the shown grid, if any (to sort crew on a console's chair tile against its sprite). */
   moduleAt?(x: number, y: number): { m: Module; def: ModuleDef } | null;
+  /** Sector position (tiles) of any grid's top-left tile, to place a crew member crossing open space between two ships. */
+  shipPos?(gridId: number): { x: number; y: number } | null;
+  /** Seconds of air in a full suit tank (scales the air bar). */
+  suitAirSec?(): number;
 }
 
 export interface CrewView {
@@ -58,6 +64,10 @@ interface Slot {
   /** Art-px height used for picking, and whether the figure is lying down. */
   height: number;
   lying: boolean;
+  /** Which loadout the sprites were made for (a crew member putting a suit on or off gets new layers). */
+  suited: boolean;
+  airBg: Sprite;
+  airFill: Sprite;
 }
 
 const RED = 0xff3b3b;
@@ -79,7 +89,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
   function make(id: number): Slot | null {
     const crew = world.get(id, CrewC);
     if (!crew) return null;
-    const layers = crewLoadout(atlas, crew);
+    const suited = world.has(id, SuitC);
+    const layers = crewLoadout(atlas, crew, suited);
     const first = layers[0];
     if (!first) return null;
     const root = new Container();
@@ -106,7 +117,13 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     barBg.visible = false;
     const barFill = new Sprite(Texture.WHITE);
     barFill.visible = false;
-    root.addChild(shadow, ring, carryBack, body, carry, barBg, barFill);
+    const airBg = new Sprite(Texture.WHITE);
+    airBg.tint = 0x05070a;
+    airBg.alpha = 0.8;
+    airBg.visible = false;
+    const airFill = new Sprite(Texture.WHITE);
+    airFill.visible = false;
+    root.addChild(shadow, ring, carryBack, body, carry, barBg, barFill, airBg, airFill);
     const glows = layers
       .filter((l) => l.def.glow)
       .map((layer) => {
@@ -119,7 +136,25 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, shadow, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false };
+    return { root, parts, glows, ring, shadow, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false, suited, airBg, airFill };
+  }
+
+  /**
+   * Where a crew member crossing open space is, in this ship's tile frame: along the line from their airlock's outer door
+   * to the far ship's, by how much of the crossing is done (the sim keeps their Position on the source end until it ends).
+   */
+  function floatOf(id: number): { x: number; y: number; facing: number } | null {
+    const c = world.get(id, CrossingC);
+    const portal = c && world.get(c.portal, PortalC);
+    if (!c || !portal || portal.kind !== 'eva') return null;
+    const [from, to] = c.from === 'a' ? [portal.a, portal.b] : [portal.b, portal.a];
+    const a = host.shipPos?.(from.gridId);
+    const b = host.shipPos?.(to.gridId);
+    if (!a || !b) return null;
+    const k = 1 - c.ticks / Math.max(1, portal.ticks);
+    const ex = to.x + (b.x - a.x);
+    const ey = to.y + (b.y - a.y);
+    return { x: from.x + (ex - from.x) * k, y: from.y + (ey - from.y) * k, facing: facingOf(ex - from.x, ey - from.y) };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -167,13 +202,23 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         if (!pos || !crew || pos.gridId !== target.gridId) continue;
         seen.add(id);
         let s = slots.get(id);
+        if (s && s.suited !== world.has(id, SuitC)) {
+          drop(s); // suit on or off: new layers (the sprite is rebuilt in place on the next line)
+          slots.delete(id);
+          s = undefined;
+        }
         if (!s) {
           const made = make(id);
           if (!made) continue;
           slots.set(id, (s = made));
         }
-        const tx = pos.x + (pos.toX - pos.x) * pos.progress;
-        const ty = pos.y + (pos.toY - pos.y) * pos.progress;
+        let tx = pos.x + (pos.toX - pos.x) * pos.progress;
+        let ty = pos.y + (pos.toY - pos.y) * pos.progress;
+        const flight = floatOf(id);
+        if (flight) {
+          tx = flight.x;
+          ty = flight.y;
+        }
         const dist = Math.hypot(tx - s.x, ty - s.y);
         const k = 1 - Math.exp(-dt * SMOOTH);
         if (!s.placed || dist > 3) {
@@ -185,7 +230,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           s.y += (ty - s.y) * k;
         }
         const speed = dt > 0 ? (dist * k) / dt : 0;
-        const facing = ((pos.facing % 8) + 8) % 8;
+        const facing = flight ? flight.facing : ((pos.facing % 8) + 8) % 8;
         const dead = world.has(id, DeadC);
         const downed = world.get(id, DownedC);
         const carried = world.get(id, CarriedC);
@@ -198,7 +243,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const onOpen = !!at && openTilesOf(at.def, at.m.x, at.m.y, at.m.rot).some((t) => t.x === mx && t.y === my);
         const chair = at && at.def.console ? accessTile(at.def, at.m.x, at.m.y, at.m.rot) : null;
         const sitting = !!chair && chair.x === mx && chair.y === my && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips.sit_idle);
-        const clipName = hurtLying ? (s.parts.some((q) => q.layer.def.clips.wreck) ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : clipFor(crew.activity, speed > 0.3);
+        const clipName = hurtLying ? (s.parts.some((q) => q.layer.def.clips.wreck) ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : clipFor(crew.activity, speed > 0.3, !!flight);
         const docked = crew.activity === 'charging' && !!at?.def.robotBay && !hurtLying;
         const dir = (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
         s.shadow.visible = !sitting;
@@ -209,7 +254,10 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         // Downed, dead and carried crew hold the first frame of the sleep clip (no dedicated lying clip yet).
         if (!hurtLying) s.t += dt;
         s.lying = clipName === 'sleep';
-        for (const { layer, sprite } of s.parts) sprite.texture = layer.frame(dir, colOf(layer, clipName, s.t));
+        for (const { layer, sprite } of s.parts) {
+          sprite.texture = layer.frame(dir, colOf(layer, clipName, s.t));
+          sprite.visible = !(sitting && layer.def.slot === 'gear.back' && s.suited); // the pack would clip through the chair
+        }
         for (const g of s.glows) {
           const col = colOf(g.layer, clipName, s.t);
           g.sprite.texture = g.layer.glowFrame(dir, col) ?? g.sprite.texture;
@@ -245,6 +293,25 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           s.barFill.width = Math.max(1, Math.round(w * frac));
           s.barFill.height = 3;
           s.barFill.tint = downed ? (downed.stabilized ? 0x4cc3ff : 0xff2d2d) : frac > 0.5 ? 0x4cd964 : frac > 0.25 ? 0xf0c030 : 0xff5a2d;
+        }
+        // The suit's tank: a small bar over the head once it is in use (cyan, amber under half, flashing red under a quarter).
+        const suit = world.get(id, SuitC);
+        const airMax = host.suitAirSec?.() ?? 240;
+        const air = suit ? (suit.air ?? airMax) : 0;
+        const showAir = !!suit && !dead && (air < airMax - 0.01 || !!flight);
+        s.airBg.visible = s.airFill.visible = showAir;
+        if (showAir) {
+          const frac = Math.max(0, Math.min(1, air / airMax));
+          const w = 22;
+          const ay = (s.lying ? -34 : -s.height - 10) - (showBar ? 6 : 0);
+          s.airBg.position.set(-w / 2 - 1, ay - 1);
+          s.airBg.width = w + 2;
+          s.airBg.height = 4;
+          s.airFill.position.set(-w / 2, ay);
+          s.airFill.width = Math.max(frac > 0 ? 1 : 0, Math.round(w * frac));
+          s.airFill.height = 2;
+          const blink = frac < 0.25 && Math.floor(now / 250) % 2 === 0;
+          s.airFill.tint = blink ? 0xffffff : frac > 0.5 ? 0x22d3ee : frac > 0.25 ? 0xf0c030 : 0xff3b3b;
         }
         const drafted = world.has(id, DraftedC) || crew.activity === 'drafted';
         s.ring.visible = drafted || id === selected;

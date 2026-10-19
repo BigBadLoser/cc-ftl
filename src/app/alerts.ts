@@ -1,4 +1,4 @@
-import { CrewC, ModuleC, PositionC, ShipC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
+import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createStore, type Readable } from './store';
 
@@ -43,6 +43,7 @@ export function createAlerts(sim: Sim): Alerts {
     return null;
   };
 
+  const playerSuit = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
   /** Hostile ships and their crew raise no alerts of their own. */
   const foreign = (e: SimEvent): boolean => {
     if (e.type === 'fire.started' || e.type === 'hull.breach' || e.type === 'power.shortage' || e.type === 'o2.low') return e.gridId !== 1;
@@ -62,6 +63,8 @@ export function createAlerts(sim: Sim): Alerts {
       case 'o2.low': return { kind: e.type, key: `o${e.room}`, text: 'Low oxygen', at: roomCentre(sim.grids.get(e.gridId), e.room) };
       case 'crew.downed': return { kind: e.type, key: `d${e.crew}`, text: `${crewName(e.crew)} is down`, at: crewAt(e.crew) };
       case 'crew.died': return { kind: e.type, key: `x${e.crew}`, text: `${crewName(e.crew)} died`, at: crewAt(e.crew) };
+      case 'suit.airLow': return playerSuit(e.crew) ? { kind: e.type, key: `sa${e.crew}`, text: `${crewName(e.crew)}: suit air low`, at: crewAt(e.crew) } : null;
+      case 'suit.airOut': return playerSuit(e.crew) ? { kind: e.type, key: `sa${e.crew}`, text: `${crewName(e.crew)}: suit out of air!`, at: crewAt(e.crew) } : null;
       case 'crew.rescued': return { kind: e.type, key: `r${e.crew}`, text: `${crewName(e.crew)} rescued`, at: crewAt(e.crew) };
       case 'job.missingMaterials':
         return { kind: e.type, key: `m${e.x},${e.y}`, text: `Missing ${sim.content.items[e.item]?.name ?? e.item}`, at: { x: e.x, y: e.y } };

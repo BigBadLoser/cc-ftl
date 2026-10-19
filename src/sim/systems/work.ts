@@ -3,6 +3,7 @@ import {
 } from '../crew/components';
 import { atJob, clearPath, isIncapacitated, isSettled, releaseAssignment } from '../crew/helpers';
 import { performJob } from '../crew/jobWork';
+import { resumeAfter } from '../eva/errands';
 import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
@@ -42,5 +43,6 @@ export function workSystem(sim: Sim): void {
     sim.events.emit({ type: 'crew.jobDone', crew: id, kind: job.kind, gridId: job.gridId, x: job.x, y: job.y });
     crew.activity = 'idle';
     clearPath(sim, id);
+    resumeAfter(sim, id, job); // a suit errand hands the crew member back to the job it interrupted
   }
 }
