@@ -1,7 +1,9 @@
 import type { GalaxyFactionDef } from './defs';
 import { inDanger } from './defs';
 import { unit } from './hash';
-import { DANGER_MAX, DANGER_STEP, TERRITORY_CELL, TERRITORY_REACH } from './tuning';
+import { DANGER_MAX, DANGER_STEP, TERRITORY_CELL, TERRITORY_REACH, TERRITORY_SCALE } from './tuning';
+
+const CELL = TERRITORY_CELL * TERRITORY_SCALE;
 
 /** Weight of a territory seed claiming no faction (open space between the powers). */
 export const OPEN_SPACE_WEIGHT = 1.2;
@@ -19,7 +21,7 @@ interface TerritorySeed {
 }
 
 /**
- * Faction space as a deterministic field: one seed per TERRITORY_CELL cell (jittered, faction drawn by territory weight
+ * Faction space as a deterministic field: one seed per TERRITORY_CELL x TERRITORY_SCALE cell (jittered, faction drawn by territory weight
  * at the seed's danger tier, or open space), and a point belongs to the seed nearest relative to its reach. The start
  * cell's seed sits at (0, 0) and belongs to the `home` faction. Pure in (seed, cell), so chunks agree at the seams.
  */
@@ -36,8 +38,8 @@ export class TerritoryField {
     let s = this.seeds.get(key);
     if (!s) {
       const home = tx === 0 && ty === 0;
-      const x = home ? 0 : (tx - 0.5 + unit(this.seed, tx, ty, 11)) * TERRITORY_CELL;
-      const y = home ? 0 : (ty - 0.5 + unit(this.seed, tx, ty, 12)) * TERRITORY_CELL;
+      const x = home ? 0 : (tx - 0.5 + unit(this.seed, tx, ty, 11)) * CELL;
+      const y = home ? 0 : (ty - 0.5 + unit(this.seed, tx, ty, 12)) * CELL;
       const danger = dangerAt(x, y);
       let faction: string | null = null;
       if (home) faction = Object.keys(this.factions).find((id) => this.factions[id]?.home) ?? null;
@@ -50,7 +52,7 @@ export class TerritoryField {
         faction = (pool.find((p) => (roll -= p.weight) < 0) ?? pool[pool.length - 1])?.id ?? null;
       }
       const base = faction ? this.factions[faction]?.territory?.reach ?? TERRITORY_REACH : TERRITORY_REACH;
-      s = { x, y, faction, reach: base * (0.8 + 0.4 * unit(this.seed, tx, ty, 14)) };
+      s = { x, y, faction, reach: TERRITORY_SCALE * base * (0.8 + 0.4 * unit(this.seed, tx, ty, 14)) };
       this.seeds.set(key, s);
     }
     return s;
@@ -58,8 +60,8 @@ export class TerritoryField {
 
   /** The faction whose space holds (x, y), or null for open space. */
   factionAt(x: number, y: number): string | null {
-    const tx = Math.floor(x / TERRITORY_CELL + 0.5);
-    const ty = Math.floor(y / TERRITORY_CELL + 0.5);
+    const tx = Math.floor(x / CELL + 0.5);
+    const ty = Math.floor(y / CELL + 0.5);
     let best: TerritorySeed | null = null;
     let bestScore = Infinity;
     for (let dy = -2; dy <= 2; dy++) {

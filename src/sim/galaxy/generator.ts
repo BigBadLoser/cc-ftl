@@ -3,9 +3,10 @@ import type { GalaxyContent } from './defs';
 import { dist, isGabriel, isRelativeNeighbour, type Vec } from './geometry';
 import { strHash, unit } from './hash';
 import { buildSector, type BuiltSector, type SectorContext } from './sector';
+import { MacroField } from './macro';
 import { SiteField, type Site } from './sites';
 import { TerritoryField } from './territory';
-import { ANCHOR_CHANCE, CHUNK_CELLS, HYPERLANE_EXTRA, HYPERLANE_MAX, SITE_CELL } from './tuning';
+import { ANCHOR_CHANCE, CHUNK_CELLS, HYPERLANE_EXTRA, HYPERLANE_MAX, LANE_MAX_VOID, LANE_MIN_DENSITY, SITE_CELL } from './tuning';
 import type { ChunkData, EdgeData, NodeData } from './types';
 
 export const chunkKey = (cx: number, cy: number): string => `${cx},${cy}`;
@@ -35,16 +36,20 @@ export function chunkAt(x: number, y: number): { cx: number; cy: number } {
  * and a hyperlane that crosses a chunk border comes out identical from either side. Not saved: rebuilt on demand.
  */
 export class GalaxyGen implements SectorContext {
+  get territory(): MacroField {
+    return this.macro;
+  }
+
   readonly sites: SiteField;
-  readonly territory: TerritoryField;
+  readonly macro: MacroField;
   private sectors = new Map<string, BuiltSector>();
 
   constructor(
     readonly seed: number,
     readonly content: GalaxyContent | undefined,
   ) {
-    this.sites = new SiteField(seed);
-    this.territory = new TerritoryField(seed, content?.factions ?? {});
+    this.macro = new MacroField(seed, new TerritoryField(seed, content?.factions ?? {}));
+    this.sites = new SiteField(seed, this.macro);
   }
 
   chunkOf(site: Site): string {
@@ -76,6 +81,19 @@ export class GalaxyGen implements SectorContext {
     return best as NodeData;
   }
 
+  /** True unless a-b crosses more than LANE_MAX_VOID of void (density below LANE_MIN_DENSITY): lanes never span voids. */
+  private laneClear(a: Vec, b: Vec): boolean {
+    const steps = Math.ceil(dist(a, b) / 50);
+    const stepLen = dist(a, b) / steps;
+    let run = 0;
+    for (let k = 1; k < steps; k++) {
+      const t = k / steps;
+      run = this.macro.density(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t) < LANE_MIN_DENSITY ? run + stepLen : 0;
+      if (run > LANE_MAX_VOID) return false;
+    }
+    return true;
+  }
+
   /**
    * Hyperlanes of a sector. Candidates are the sites within HYPERLANE_MAX. A pair is linked when it is a relative
    * neighbourhood edge (the connected backbone; it contains the minimum spanning tree) or, with HYPERLANE_EXTRA chance
@@ -93,6 +111,7 @@ export class GalaxyGen implements SectorContext {
       const ha = strHash(a.id);
       const hb = strHash(b.id);
       if (!rng && !(isGabriel(a, b, pts) && unit(this.seed, ha, hb, 51) < HYPERLANE_EXTRA)) continue;
+      if (!this.laneClear(a, b)) continue;
       const len = dist(a, b) || 1;
       const ga = this.gateway(a, (b.x - a.x) / len, (b.y - a.y) / len);
       const gb = this.gateway(b, (a.x - b.x) / len, (a.y - b.y) / len);

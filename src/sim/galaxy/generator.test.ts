@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GalaxyGen, chunkKey } from './generator';
 import { convexOverlap, dist } from './geometry';
-import { HULL_GAP, SITE_MIN_DIST } from './tuning';
+import { HULL_GAP, SITE_SPACING } from './tuning';
 import type { ChunkData, EdgeData, SectorData } from './types';
 
 /** Chunks in a square of radius r around the origin, generated in the given order by a fresh generator. */
@@ -51,7 +51,7 @@ describe('galaxy generation', () => {
         const a = sectors[i] as SectorData;
         const b = sectors[j] as SectorData;
         const d = dist(a, b);
-        expect(d).toBeGreaterThanOrEqual(SITE_MIN_DIST - 1e-6);
+        expect(d).toBeGreaterThanOrEqual(SITE_SPACING.core - 1e-6);
         if (d > a.r + b.r + 200) continue;
         checked++;
         expect(a.r + b.r).toBeLessThanOrEqual(d - HULL_GAP + 1e-6);

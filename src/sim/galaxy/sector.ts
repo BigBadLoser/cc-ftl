@@ -4,7 +4,7 @@ import { inDanger, type GalaxyContent, type Weighted } from './defs';
 import { dist, gabrielEdges, paddedHull, spanningTree, type Vec } from './geometry';
 import { hash32, unit } from './hash';
 import type { Site } from './sites';
-import { dangerAt, type TerritoryField } from './territory';
+import { dangerAt } from './territory';
 import {
   CONTACT_MAX_CHANCE, CONTACT_PER_DANGER, HULL_PAD, NODE_DENSITY, NODE_MIN_DIST, NODES_PER_SECTOR, OPEN_STATION_CHANCE,
   ROUTE_EXTRA, TERRITORY_TRAFFIC,
@@ -15,7 +15,8 @@ import type { ContactSeed, EdgeData, NodeData, SectorData, StructureRef } from '
 export interface SectorContext {
   seed: number;
   content: GalaxyContent | undefined;
-  territory: TerritoryField;
+  /** Territory by position (the macro field: clusters carry factions). */
+  territory: { factionAt(x: number, y: number): string | null };
   chunkOf(site: Site): string;
 }
 
@@ -50,7 +51,9 @@ export function trafficPool(content: GalaxyContent | undefined, owner: string | 
 /** Node offsets inside the sector disc: Poisson-disk darts (the start sector's first node is pinned to its centre). */
 function scatter(rng: Rng, site: Site, start: boolean): Vec[] {
   const inner = Math.max(0, site.r - HULL_PAD);
-  const want = Math.max(NODES_PER_SECTOR.min, Math.min(NODES_PER_SECTOR.max, Math.round(NODE_DENSITY * site.r * site.r)));
+  // Richness varies per sector on top of density, so sector sizes differ even inside one cluster.
+  const per = (NODE_DENSITY.void + (NODE_DENSITY.core - NODE_DENSITY.void) * site.density) * (0.55 + 0.9 * rng.next());
+  const want = Math.max(NODES_PER_SECTOR.min, Math.min(NODES_PER_SECTOR.max, Math.round(per * site.r * site.r)));
   const pts: Vec[] = start ? [{ x: 0, y: 0 }] : [];
   for (let tries = want * 40; pts.length < want && tries > 0; tries--) {
     const a = rng.next() * Math.PI * 2;
