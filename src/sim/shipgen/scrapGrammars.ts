@@ -23,41 +23,68 @@ import type { DonorKind, FactionDef, ScrapGrammar } from './types';
  */
 
 const OPP: Record<Side, Side> = { n: 's', s: 'n', e: 'w', w: 'e' };
-const NEEDS: Need[] = ['command', 'hangar', 'crew', 'guns', 'crates', 'drive'];
 
-/** Donors for this ship: the anchor, one per job nobody carries yet, then extras the role likes. */
-function choose(c: Ctx): DonorKind[] {
-  const w = c.fam.donors ?? {};
-  const kinds = Object.keys(w) as DonorKind[];
-  const anchor = c.fam.anchors && c.fam.anchors.length > 0 ? pickWeighted(c.rng, c.fam.anchors) : 'freighter';
-  const out: DonorKind[] = [anchor];
-  for (const need of NEEDS) {
-    if (need === 'hangar' && c.plan.hangars.length === 0) continue;
-    if (out.some((k) => DONORS[k].serves.includes(need))) continue;
-    const opts = kinds.filter((k) => DONORS[k].serves.includes(need) && (w[k] ?? 0) > 0);
-    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
-  }
-  for (let n = c.rng.int(0, Math.floor((c.plan.size + 1) / 2)); n > 0; n--) {
-    const opts = kinds.filter((k) => (w[k] ?? 0) > 0 && out.filter((x) => x === k).length < 2 && !['navyBow', 'tug', 'navyDrive'].includes(k));
-    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
-  }
-  return out;
+/** Lengthwise donors a ship can be built along (a body with a bow end and a stern end). */
+const LINE: DonorKind[] = ['navyHulk', 'freighter', 'containerFrame', 'linerChunk', 'barge', 'liner'];
+/** Donors that only ever extend the anchor line (a bow, a drive). */
+const ENDS: DonorKind[] = ['navyBow', 'navyDrive', 'lightDrive', 'tug'];
+
+interface Cast {
+  anchor: DonorKind;
+  bow: DonorKind | null;
+  drive: DonorKind | null;
+  flanks: DonorKind[];
 }
 
-/** Build the chosen donors in order, each taking its share of the jobs; then patch in whatever is left. */
-function build(c: Ctx, f: FactionDef, kinds: DonorKind[], p: Pool): Block[] {
+/**
+ * The ship's cast: a lengthwise anchor (with a salvaged bow fore and a drive aft unless it brings its own), then a
+ * few big flank donors, one per job nobody carries yet and an extra or two at depth: 2 to 4 donors in all.
+ */
+function choose(c: Ctx): Cast {
+  const w = c.fam.donors ?? {};
+  const kinds = Object.keys(w) as DonorKind[];
+  const pick = (opts: DonorKind[]): DonorKind | null => (opts.length > 0 ? pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 1 }))) : null);
+  const anchors = (c.fam.anchors ?? []).filter((a) => LINE.includes(a.value));
+  const anchor = anchors.length > 0 ? pickWeighted(c.rng, anchors) : 'navyHulk';
+  const hulk = anchor === 'navyHulk';
+  const bow: DonorKind | null = hulk ? null : 'navyBow';
+  const drive: DonorKind | null = hulk ? null : pick(kinds.filter((k) => ['navyDrive', 'lightDrive', 'tug'].includes(k) && (w[k] ?? 0) > 0)) ?? 'lightDrive';
+  const cast: DonorKind[] = [anchor, ...(bow ? [bow] : []), ...(drive ? [drive] : [])];
+  const flanks: DonorKind[] = [];
+  const served = (n: Need): boolean => [...cast, ...flanks].some((k) => DONORS[k].serves.includes(n));
+  for (const need of ['hangar', 'guns', 'crew', 'crates'] as Need[]) {
+    if (need === 'hangar' && c.plan.hangars.length === 0) continue;
+    if (served(need)) continue;
+    const k = pick(kinds.filter((x) => DONORS[x].serves.includes(need) && (w[x] ?? 0) > 0 && !ENDS.includes(x)));
+    if (k) flanks.push(k);
+  }
+  const most = Math.min(3, 1 + Math.floor(c.plan.size / 2));
+  while (flanks.length < most && c.rng.chance(0.6)) {
+    const k = pick(kinds.filter((x) => (w[x] ?? 0) > 0 && !ENDS.includes(x) && !flanks.includes(x)));
+    if (!k) break;
+    flanks.push(k);
+  }
+  return { anchor, bow, drive, flanks };
+}
+
+/** Build the cast in order, each taking its share of the jobs; then patch in whatever is left. */
+function build(c: Ctx, f: FactionDef, cast: Cast, p: Pool): { anchor: Block | null; bow: Block | null; drive: Block | null; flanks: Block[] } {
+  const kinds = [cast.anchor, ...(cast.bow ? [cast.bow] : []), ...(cast.drive ? [cast.drive] : []), ...cast.flanks];
   for (const k of kinds) for (const n of DONORS[k].serves) p.share[n] = (p.share[n] ?? 0) + 1;
-  const cmd = kinds.filter((k) => DONORS[k].serves.includes('command'));
-  p.commandBy = cmd.includes('navyBow') ? 'navyBow' : cmd.length > 0 ? c.rng.pick(cmd) : null;
-  const out: Block[] = [];
-  for (const k of kinds) {
+  p.commandBy = cast.bow ?? (cast.anchor === 'navyHulk' ? 'navyHulk' : null);
+  const one = (k: DonorKind | null): Block | null => {
+    if (!k) return null;
     const save = clonePool(p);
     const b = DONORS[k].build(c, f, p);
     if (!b) restorePool(p, save);
-    else out.push(b);
     for (const n of DONORS[k].serves) p.share[n] = Math.max(0, (p.share[n] ?? 1) - 1);
-  }
-  return [...out, ...leftovers(c, f, p)];
+    return b;
+  };
+  const anchor = one(cast.anchor);
+  const bow = one(cast.bow);
+  const drive = one(cast.drive);
+  const flanks = cast.flanks.map(one).filter((b): b is Block => !!b);
+  return { anchor, bow, drive, flanks: [...flanks, ...leftovers(c, f, p)] };
 }
 
 /** Ways a donor may be turned: flipped top to bottom always, end to end only when nothing in it is directional. */
@@ -156,27 +183,94 @@ function improvise(c: Ctx, p: Pool): boolean {
   return true;
 }
 
-/** Compose: build the donors, place the anchor, weld the rest on as the grammar says. */
+/** Drawn cells of a placed block, in world coordinates. */
+function cells(c: Ctx, id: number): { x: number; y: number }[] {
+  const P = c.A.placed[id];
+  if (!P) return [];
+  const out: { x: number; y: number }[] = [];
+  P.block.rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] !== '.') out.push({ x: P.x + i, y: P.y + j }); });
+  return out;
+}
+
+/** Daylight: no other block (but the strut it hangs on) within `gap` tiles of the donor. */
+function clearOf(c: Ctx, id: number, strutId: number, gap: number): boolean {
+  const owner = new Map<number, number>();
+  c.A.placed.forEach((_, i) => { if (i !== id && i !== strutId) for (const t of cells(c, i)) owner.set(t.y * 100003 + t.x, i); });
+  for (const t of cells(c, id)) {
+    for (let dy = -gap; dy <= gap; dy++) for (let dx = -gap; dx <= gap; dx++) if (owner.has((t.y + dy) * 100003 + t.x + dx)) return false;
+  }
+  return true;
+}
+
+/** Hang a donor off `host` on a long strut, keeping daylight round it; undone if it crowds anything. */
+function hang(c: Ctx, host: number, v: Block, side: Side): number | null {
+  const horiz = side === 'e' || side === 'w';
+  // Short struts to the flanks (the donors ride close along the hull, daylight between), longer ones fore and aft.
+  const len = horiz ? c.rng.int(3, 3 + c.plan.size) : c.rng.int(3, 4);
+  const s = c.A.attach(host, strut(c.rng, len, horiz), { side, align: horiz ? 'mid' : c.rng.pick(['start', 'mid', 'end', 'any'] as const), kind: 'graft' });
+  if (s === null) return null;
+  const id = c.A.attach(s, v, { side, align: 'mid', kind: 'graft' }) ?? c.A.attach(s, v, { side, align: 'any', kind: 'graft' });
+  if (id !== null && clearOf(c, id, s, 2)) { c.parts.push('strut'); return id; }
+  if (id !== null) c.A.undoLast();
+  c.A.undoLast();
+  return null;
+}
+
+/**
+ * Compose: the anchor line (bow, anchor, drive) on the axis, then the flank donors hung off it on long struts
+ * (dorsal, ventral, or ahead of the bow), daylight round each; at most one flush weld (ragged adapters) per ship.
+ */
 function compose(c: Ctx, f: FactionDef, mode: ScrapGrammar): boolean {
   const p = poolOf(c.plan);
-  const blocks = build(c, f, choose(c), p);
-  const [anchor, ...rest] = blocks;
-  if (!anchor) return no(c, 'donors');
-  c.A.placeRoot(anchor);
+  const cast = choose(c);
+  const { anchor, bow, drive, flanks } = build(c, f, cast, p);
+  if (!anchor) return no(c, 'anchor');
+  const root = c.A.placeRoot(anchor);
   c.parts.push(mode, anchor.label);
-  // Drives last, so nothing has to keep clear of their exhaust while it is placed.
-  const order = [...shuffle(c.rng, rest.filter((b) => b.faceE.length === 0)), ...rest.filter((b) => b.faceE.length > 0)];
-  let last = 0;
-  for (const [i, b] of order.entries()) {
-    const all = shuffle(c.rng, hostsOf(c));
-    const sides = shuffle(c.rng, ['n', 's', 'e', 'w'] as Side[]);
+  const line = [root];
+  if (bow) {
+    const id = c.A.attach(root, bow, { side: 'w', align: 'mid', kind: 'graft' });
+    if (id === null) return no(c, 'bow');
+    line.unshift(id);
+  }
+  // A lengthwise donor among the flanks extends the line aft on a strut (a longer hull, sections strung on a truss).
+  let aft = root;
+  const ext = anchor.faceE.length === 0 ? flanks.findIndex((b) => /container frame|liner hull|ore barge|freighter/.test(b.label)) : -1;
+  if (ext >= 0 && flanks.length >= 2) {
+    const blk = flanks[ext] as Block;
+    const id = hang(c, root, blk, 'e') ?? hang(c, root, mirrorBlock(blk), 'e');
+    if (id !== null) { flanks.splice(ext, 1); line.push(id); aft = id; c.parts.push(`extended ${blk.label}`); }
+  }
+  if (drive && anchor.faceE.length === 0) {
+    const id = c.A.attach(aft, drive, { side: 'e', align: 'mid', kind: 'graft' }) ?? c.A.attach(aft, mirrorBlock(drive), { side: 'e', align: 'any', kind: 'graft' });
+    if (id === null) return no(c, 'drive');
+    line.push(id);
+  } else if (drive) flanks.push(drive);
+  // Flanks: biggest first, alternating dorsal and ventral (raft keeps them on one side), chain also reaches ahead.
+  const order = [...flanks].sort((x, y) => y.rows.length * (y.rows[0]?.length ?? 0) - x.rows.length * (x.rows[0]?.length ?? 0));
+  let side: Side = c.rng.chance(0.5) ? 'n' : 's';
+  let flush = 0;
+  for (const b of order) {
+    const sides: Side[] = mode === 'chain' ? [side, 'w', OPP[side]] : mode === 'raft' ? [side, OPP[side], 'w'] : [side, OPP[side], 'w'];
     let id: number | null = null;
-    if (mode === 'raft' && i === 0) id = weld(c, [0], b, shuffle(c.rng, ['n', 's'] as Side[]), c.rng.pick(['start', 'end'] as const));
-    else if (mode === 'chain') id = weld(c, [last, ...all.filter((h) => h !== last)], b, [...shuffle(c.rng, ['e', 'w'] as Side[]), 'n', 's']);
-    id ??= weld(c, all, b, sides);
-    if (id === null) return no(c, `weld ${b.label}`);
-    last = id;
+    let tries = 10;
+    for (const sd of sides) {
+      for (const h of sd === 'w' ? [line[0] as number] : shuffle(c.rng, line)) {
+        for (const v of variants(c, b)) {
+          if (id !== null || tries <= 0 || !v.ports.some((q) => q.side === OPP[sd])) continue;
+          tries--;
+          id = hang(c, h, v, sd);
+        }
+      }
+      if (id !== null) break;
+    }
+    if (id === null && flush < 1) {
+      id = weld(c, line, b, sides.filter((x) => x !== 'w'));
+      if (id !== null) { flush++; c.parts.push('flush'); }
+    }
+    if (id === null) return no(c, `hang ${b.label}`);
     c.parts.push(b.label);
+    if (mode !== 'raft') side = OPP[side];
   }
   return improvise(c, p);
 }

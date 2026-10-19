@@ -178,6 +178,31 @@ export function contactSheet(
     const ar = (g: GenResult): number => g.metrics?.aspect ?? g.width / g.height;
     if (p.g.role === q.g.role && silhouetteDistance(masks[i] as Uint8Array, masks[j] as Uint8Array) < 0.1 && Math.abs(ar(p.g) / ar(q.g) - 1) < 0.1) dupPairs.push(`${p.seed}~${q.seed}`);
   }));
+  // Salvage: big donor sections per ship (the anchor's bow and drive aside), and the narrowest daylight (tiles,
+  // Chebyshev) between two donor sections not welded to each other directly.
+  const isDonor = (a: { donor?: string; label: string }): boolean => !!a.donor && a.donor !== 'scrap' && !/bow|drive|tug/.test(a.label);
+  const salv = ships.filter((x) => x.g.debug && x.g.debug.assemblies.some(isDonor));
+  const donorCount = salv.map((x) => x.g.debug!.assemblies.filter(isDonor).length);
+  const gaps = salv.map(({ g }) => {
+    const d = g.debug!;
+    const ds = new Set(d.assemblies.filter((a) => a.donor && a.donor !== 'scrap').map((a) => a.id));
+    const joined = (a: number, b: number): boolean => d.joins.some((j) => (j.a === a && j.b === b) || (j.a === b && j.b === a));
+    let best = 5;
+    for (let y = 0; y < g.height; y++) for (let x = 0; x < g.width; x++) {
+      const a = d.asmOf[y * g.width + x] ?? -1;
+      if (!ds.has(a)) continue;
+      for (let r = 1; r < best; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        const xx = x + dx; const yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= g.width || yy >= g.height) continue;
+        const b = d.asmOf[yy * g.width + xx] ?? -1;
+        if (b !== a && ds.has(b) && !joined(a, b)) best = Math.min(best, r - 1);
+      }
+    }
+    return best;
+  });
+  const avg = (xs: number[]): number => (xs.length ? xs.reduce((t, v) => t + v, 0) / xs.length : 0);
+  const salvText = salv.length ? ` donors ${avg(donorCount).toFixed(1)} daylight ${avg(gaps).toFixed(1)} (min ${gaps.length ? Math.min(...gaps) : 0})` : '';
   const spines = ships.map((x) => x.g.metrics?.spine ?? 0);
   const spine = spines.reduce((t, v) => t + v, 0) / Math.max(1, spines.length);
   const arch = meanPairwise(ships.map((x) => x.g.debug?.profile ?? x.g.topology), profileDistance);
@@ -190,7 +215,7 @@ export function contactSheet(
   void within;
   const gIn = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.gram === p.gram).map((q) => adjacencyDistance(p.sig, q.sig)));
   const gX = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.gram !== p.gram).map((q) => adjacencyDistance(p.sig, q.sig)));
-  const adjText = `adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)}; within grammar ${mean(gIn).toFixed(2)}, across ${mean(gX).toFixed(2)}) spine ${spine.toFixed(2)} dups ${dupPairs.length}`;
+  const adjText = `adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)}; within grammar ${mean(gIn).toFixed(2)}, across ${mean(gX).toFixed(2)}) spine ${spine.toFixed(2)} dups ${dupPairs.length}${salvText}`;
   r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1} ${view}  shape ${sil.toFixed(2)} sections ${arch.toFixed(2)} ${adjText}`, 8, 8, [230, 230, 230], 2);
   const text: string[] = [];
   ships.forEach(({ seed, g }, i) => {

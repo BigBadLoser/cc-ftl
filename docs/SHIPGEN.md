@@ -358,6 +358,18 @@ Same arranger, no sim changes. Files:
 - Size: extra donors `0..(size + 1) / 2`, strut length 3..4 + size; d1 mean 51x33, d9 70x48 (v18: 48x38 and 76x44).
 - Seams: `plate` now fills only 1-tile hairlines (was 2), so strut daylight stays open.
 
+## Scrappers v24: an anchor ship with donors bolted on
+
+- Cast (`scrapGrammars.ts` `choose`): one lengthwise anchor (`LINE`: navy hulk, freighter, container frame, liner
+  hull chunk, barge, liner), a salvaged navy bow ahead of it and a drive aft (light drive, navy bank or tug) unless the
+  anchor is a navy hulk with its own; then flank donors, one per uncovered job (hangar, guns, crew, crates) and up to
+  `1 + size / 2` in all. A lengthwise flank (frame, liner chunk, barge, freighter) may extend the line aft on a strut.
+- Placement (`compose`, `hang`): the line on the axis, the drive placed before anything else; each flank hangs off
+  the line on a strut (3-4 tiles dorsal or ventral, longer fore and aft), and is undone unless it keeps two tiles of
+  daylight from every other block (`clearOf`). At most one flush weld per ship (ragged adapters) as the fallback.
+- Viewer metrics for salvage: `donors` (big donor sections per ship, bow and drive aside) and `daylight` (narrowest
+  gap, in tiles, between two donor sections not welded directly).
+
 ## Transitions (v18): tapered collars between sections
 
 - **`hullFill.ts` holds all the plating passes** that run after an arrangement: seam plates, enclosed-pocket
