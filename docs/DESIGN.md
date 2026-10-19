@@ -56,6 +56,31 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   stability, vulnerability to EMP/ion and hacking.
 - Relationships (friends, rivals, grief) later.
 
+### EVA and spacesuits
+
+- **Suits live at the airlock.** There is no locker module and no suit item. Each airlock holds a few suits (a content
+  value on the airlock def: 3 for the docking airlock). Crew put one on at the airlock's inside tile (about 5 s) and take
+  it off there on return (about 3 s), which stows it in *that* airlock. If an airlock has no free suit, nobody can start
+  an EVA through it.
+- **Automatic.** A crew member whose job can only be reached through thin air (breached or depressurised rooms) walks to
+  the nearest airlock with a free suit, suits up, does the job, and walks back to take the suit off once idle, so the suit
+  is free for the next one. They prefer jobs and routes that need no EVA, and never take a vacuum job when no suit is
+  free. Drafted crew do none of this on their own: the player orders **Put suit on** and **Take suit off**.
+- **Where EVA happens: always within one grid.** Ships never sit close to each other (they cannot move within a sector and
+  are never deployed near enough), so there is no ship-to-ship docking, thruster crossing or ship-to-ship walking. Shuttles
+  (and later cargo vehicles) do every transfer between grids.
+  - Walking through breached or depressurised rooms.
+  - Stepping out of an airlock onto the same grid's hull. Today the exterior is the ring of Space tiles touching the hull
+    (`isEvaWalkable` in `structure.ts`); suited crew drift along it with the `eva_float` clip. Beams (`Struct.Beam`) join
+    that rule when they land; every walk rule already asks for it when the walker wears a suit.
+- **Limits.**
+  - The tank lasts 4 game minutes of thin air (a breached room, the airlock, the hull outside). It does not drain in breathable air, and refills only when the
+    suit is stowed at an airlock.
+  - A tank that runs dry hurts exactly like vacuum without a suit. The crew card and an alert warn at 25%, and a bar flashes
+    over the wearer's head.
+  - A suited crew member walks 20% slower, works 10% slower and lands 20% fewer hand-weapon hits.
+- **Robots** never need suits: they do not breathe, and the suit commands refuse them.
+
 ### Robots and the rogue AI
 
 - **Robots** are a crew species with no needs (no air, food, sleep or mood) and no fear of vacuum or fire panic,

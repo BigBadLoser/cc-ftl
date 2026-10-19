@@ -1,4 +1,4 @@
-import { AllegianceC, CrewC, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, type Sim } from '../sim';
+import { AllegianceC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 
 /**
@@ -27,6 +27,16 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
         const p = sim.world.get(id, PositionC);
         return p && { id, enemy: sim.world.get(id, AllegianceC)?.faction !== 'player', down: sim.world.has(id, DownedC) || sim.world.has(id, SurrenderedC), gridId: p.gridId, ...r.screenOf(p.gridId, p.x, p.y) };
       }),
+    /** Name, role and suit tank of a crew member (the component keys are not reachable from a page script). */
+    crewInfo(id: number) {
+      const a = sim.world.get(id, AssignmentC);
+      const job = a && sim.world.get(a.jobId, JobC);
+      const p = sim.world.get(id, PositionC);
+      return {
+        name: sim.world.get(id, CrewC)?.name, role: sim.world.get(id, CrewC)?.role, suited: sim.world.has(id, SuitC), air: suitAir(sim, id),
+        gridId: p?.gridId, x: p?.x, y: p?.y, job: job ? `${job.kind} ${Math.round((job.progress / Math.max(1, job.work)) * 100)}%` : null,
+      };
+    },
     /** Queue a sim command (debug commands included) from a script. */
     /** The sim itself, so scripts can stage states no command reaches (docked shuttle with cargo). Debug only. */
     sim,
@@ -35,6 +45,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       spawn: (gridId: number, def: string, x: number, y: number, rot: number) => placementError(sim, gridId, def, x, y, rot) ?? spawnModule(sim, gridId, def, x, y, rot),
       remove: (id: number) => removeModule(sim, id),
       cargo: (vehicle: number, item: string, n: number) => cargoAdd(sim, vehicle, item, n),
+      /** Set a suit's tank (the air-warning shot). */
+      suitAir: (crew: number, sec: number) => { const su = sim.world.get(crew, SuitC); if (su) su.air = sec; },
     },
     dispatch: (cmd: Parameters<Sim['enqueue']>[0]) => sim.enqueue(cmd),
     vehicles: () => vehicleViews(sim),

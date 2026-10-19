@@ -1,4 +1,4 @@
-import { CrewC, DeadC, ModuleC, PositionC, roomTiles, type Sim } from '../sim';
+import { CrewC, DeadC, ModuleC, PositionC, airlockSuits, roomTiles, type Sim } from '../sim';
 import { buildRobotBay } from './robotSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import type { UiModule, UiModuleDef, UiStats } from '../ui/api';
@@ -16,6 +16,7 @@ export function buildModuleList(sim: Sim): UiModule[] {
       id, def: m.def, name: def.name, x: m.x, y: m.y, hp: Math.round(m.hp), maxHp: def.maxHp,
       priority: m.priority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
       storage: !!def.storage, crafting: !!def.crafting, bay: def.robotBay ? buildRobotBay(sim, id) : null,
+      suits: def.airlock ? { stowed: airlockSuits(sim, id), max: def.airlock.suits ?? 0 } : null,
     });
   }
   return out;

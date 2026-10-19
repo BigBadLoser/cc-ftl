@@ -3,6 +3,7 @@ import { isTileWalkable } from '../modules/walk';
 import { needsFrom } from '../items/materials';
 import { destroyJob, structCostKey } from '../items/stacks';
 import { FighterC } from '../fight/components';
+import { SuitC } from '../portals/components';
 import { Struct } from '../structure';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -108,7 +109,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     const gridId = cmd.gridId ?? pos.gridId;
     const grid = sim.grids.get(gridId);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
-    if (!isTileWalkable(sim, grid, cmd.x, cmd.y)) return reject(sim, cmd.type, 'notWalkable');
+    if (!isTileWalkable(sim, grid, cmd.x, cmd.y, sim.world.has(cmd.id, SuitC))) return reject(sim, cmd.type, 'notWalkable');
     const fighter = sim.world.get(cmd.id, FighterC);
     if (fighter) fighter.ordered = 0; // a move order cancels an attack order
     releaseAssignment(sim, cmd.id); // and a suit errand

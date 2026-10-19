@@ -28,6 +28,7 @@
       <dt>State</dt><dd data-testid="module-state" class:bad={!m.powered && m.power !== 0}>{stateOf(m)}</dd>
       <dt>Power</dt><dd>{power(m)}</dd>
       <dt>Health</dt><dd>{m.hp}/{m.maxHp}</dd>
+      {#if m.suits}<dt>EVA suits</dt><dd data-testid="airlock-suits">{m.suits.stowed} / {m.suits.max}</dd>{/if}
     </dl>
     <div class="bar hp" class:low={hpPct(m) < 40}><i style:width="{hpPct(m)}%"></i></div>
     {#if m.crafting}<FabPanel {api} id={m.id} def={m.def} />{/if}

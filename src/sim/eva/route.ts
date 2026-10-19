@@ -1,7 +1,7 @@
 import { findPath, type PathGoal, type Tile } from '../crew/pathfind';
 import type { Grid } from '../grid';
 import type { Sim } from '../sim';
-import { isEvaWalkable, isWalkable } from '../structure';
+import { isWalkable } from '../structure';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
 import { hasSuitAir, isSuited, needsAir } from './suit';
 
@@ -22,7 +22,7 @@ function gridHasThinAir(sim: Sim, grid: Grid): boolean {
     const o2 = grid.raw('o2');
     const struct = grid.raw('struct');
     for (let i = 0; i < o2.length; i++) {
-      if ((o2[i] as number) < EVA_THIN_AIR_BELOW && (isWalkable(struct[i] as number) || isEvaWalkable(struct[i] as number))) {
+      if ((o2[i] as number) < EVA_THIN_AIR_BELOW && isWalkable(struct[i] as number)) {
         thin = true;
         break;
       }

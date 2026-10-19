@@ -26,12 +26,11 @@ export function walkInfo(sim: Sim, id: number): WalkInfo {
 
 /**
  * Crew can stand here: walkable struct and no solid module. The one walkability rule for pathing. `suited`: the walker
- * wears a spacesuit, so exterior surfaces (isEvaWalkable) count too.
+ * wears a spacesuit, so the grid's exterior surface (isEvaWalkable) counts too.
  */
 export function isTileWalkable(sim: Sim, grid: Grid, x: number, y: number, suited = false): boolean {
   if (!grid.inBounds(x, y)) return false;
-  const kind = grid.get('struct', x, y);
-  if (!isWalkable(kind) && !(suited && isEvaWalkable(kind))) return false;
+  if (!isWalkable(grid.get('struct', x, y))) return suited && isEvaWalkable(grid, x, y);
   if (!grid.has('module')) return true;
   const id = grid.get('module', x, y);
   if (id === 0) return true;

@@ -24,7 +24,7 @@ const NEIGHBOURS: readonly (readonly [number, number])[] = [
 export interface PathOpts {
   /** Treat tiles with thin air (EVA_THIN_AIR_BELOW) as walls, except the start tile. */
   avoidThin?: boolean;
-  /** The walker wears a spacesuit: exterior surfaces (isEvaWalkable) are walkable. */
+  /** The walker wears a spacesuit: the exterior surface (isEvaWalkable) is walkable. */
   suited?: boolean;
 }
 
@@ -43,7 +43,7 @@ export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal, o
   const o2 = opts.avoidThin && grid.has('o2') ? grid.raw('o2') : null;
   const walk = (i: number): boolean => {
     const kind = struct[i] as number;
-    if (!isWalkable(kind) && !(opts.suited && isEvaWalkable(kind))) return false;
+    if (!isWalkable(kind) && !(opts.suited && isEvaWalkable(grid, i % width, Math.floor(i / width)))) return false;
     if (o2 && (o2[i] as number) < EVA_THIN_AIR_BELOW && i !== fromIndex) return false;
     const m = mods ? (mods[i] as number) : 0;
     if (m === 0) return true;

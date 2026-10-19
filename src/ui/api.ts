@@ -73,10 +73,10 @@ export interface UiCrew {
   prisoner: boolean;
   inert: boolean;
   fight: UiFight | null;
-  /** The EVA suit being worn: seconds of air left of `max`, and whether the tank is low or the wearer is crossing open space. Null when not suited. */
+  /** The EVA suit being worn: seconds of air left of `max`, and whether the tank is low or the wearer is outside on the hull. Null when not suited. */
   /** Needs no air, so never wears a suit (robots). */
   airless: boolean;
-  suit: { air: number; max: number; low: boolean; floating: boolean } | null;
+  suit: { air: number; max: number; low: boolean; outside: boolean } | null;
   /** The nearest airlock on their grid with a free suit (to put one on), the suits free there and the airlock's tile; null when none or they cannot wear one. */
   suitAt: { id: number; free: number } | null;
 }
@@ -116,6 +116,8 @@ export interface UiModule {
   crafting: boolean;
   /** Robot bay state (null for other modules). */
   bay: UiRobotBay | null;
+  /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
+  suits: { stowed: number; max: number } | null;
 }
 
 export interface UiRobotBay {

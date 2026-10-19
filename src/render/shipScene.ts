@@ -12,6 +12,7 @@ import { createItemView } from './itemView';
 import { createJobView } from './jobView';
 import { createLayers, type Layers } from './layers';
 import { ModuleC } from '../sim/modules/components';
+import { Struct } from '../sim/structure';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
 import { createRoofView } from './roofView';
@@ -30,8 +31,7 @@ export interface ShipSceneOptions {
   roofed: boolean;
   /** Roof livery (scheme and registry seed); none = plain plating. */
   livery?: Livery | null;
-  /** Sector position of a grid's top-left tile (crew floating between ships), and the seconds of air in a full suit tank. */
-  shipPos?(gridId: number): { x: number; y: number } | null;
+  /** The seconds of air in a full suit tank. */
   suitAirSec?(): number;
 }
 
@@ -76,7 +76,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       return m && def ? { m, def } : null;
     },
     light: () => ({ data: grid.raw('light'), width: grid.width }),
-    shipPos: o.shipPos,
+    isExterior: (x, y) => grid.inBounds(x, y) && grid.get('struct', x, y) === Struct.Space,
     suitAirSec: o.suitAirSec,
   });
   const jobView = createJobView(world, atlas, L, { target: inside });

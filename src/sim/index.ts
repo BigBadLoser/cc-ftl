@@ -40,7 +40,6 @@ export { planRoute, stepsCost, type Route, type Leg, type RouteGoal, type RouteS
 export { airlockTiles, airlockWorking, airlockDoorAt, keepOutTiles } from './portals/airlock';
 export { isSuited, suitAir, hasSuitAir, suitDef, airlockSuits, freeSuits, suitTile, needsAir, isThin } from './eva/suit';
 export { planWalk, type WalkPlan } from './eva/route';
-export { evaPairs, evaDoors, floatCost } from './eva/links';
 export * from './vehicles/components';
 export * from './fight/components';
 export { prizeValue } from './capture/prize';

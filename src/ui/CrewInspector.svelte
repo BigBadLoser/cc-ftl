@@ -35,7 +35,7 @@
       {#if c.carriedBy}<dt>Carried by</dt><dd>{c.carriedBy}</dd>{/if}
       {#if c.carrying}<dt>Carrying</dt><dd>{c.carrying.count} {c.carrying.item.replace('item.', '')}</dd>{/if}
       <dt>Rest</dt><dd>{c.rest}%</dd>
-      {#if c.suit}<dt>Suit air</dt><dd data-testid="suit-air" class:bad={c.suit.low}>{c.suit.floating ? 'floating, ' : ''}{airText(c.suit.air)}{c.suit.low ? ' LOW' : ''}</dd>{/if}
+      {#if c.suit}<dt>Suit air</dt><dd data-testid="suit-air" class:bad={c.suit.low}>{c.suit.outside ? 'outside, ' : ''}{airText(c.suit.air)}{c.suit.low ? ' LOW' : ''}</dd>{/if}
     </dl>
     {#if c.suit}<div class="bar air" class:low={c.suit.low} data-testid="suit-bar"><i style:width="{Math.round((c.suit.air / Math.max(1, c.suit.max)) * 100)}%"></i></div>{/if}
     <div class="bar hp" class:low={c.hp / c.maxHp < 0.4}><i style:width="{Math.round((c.hp / c.maxHp) * 100)}%"></i></div>

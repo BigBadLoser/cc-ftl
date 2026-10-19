@@ -1,7 +1,6 @@
 import type { Sim } from './sim';
 import { airlockSystem } from './systems/airlock';
 import { portalSystem } from './systems/portals';
-import { evaLinksSystem } from './systems/evaLinks';
 import { suitsSystem } from './systems/suits';
 import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
@@ -119,8 +118,6 @@ export const pipeline: readonly System[] = [
   movementSystem,
   // Portal crossings after movement: crew who just reached a portal end start or finish a traversal.
   portalSystem,
-  // Open-space links between airlocks of different grids in range; queued as commands for next tick.
-  evaLinksSystem,
   carrySystem,
   // Vehicles after crew movement: embarking crew board on arrival, shuttles fly before this tick's shots are aimed.
   vehicleSystem,

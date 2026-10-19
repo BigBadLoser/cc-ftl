@@ -8,7 +8,7 @@ import type { SimEvent } from '../events';
 import { hitChance } from '../fight/weapons';
 import { ModuleC } from '../modules/components';
 import { placementError, spawnModule } from '../modules/spawn';
-import { AirlockC, CrossingC, PortalC, SuitC } from '../portals/components';
+import { AirlockC, SuitC } from '../portals/components';
 import type { ContentRegistry, ModuleDef } from '../registry';
 import { deserialize, serialize } from '../save';
 import { gridFromTemplate } from '../ship';
@@ -16,6 +16,8 @@ import { Sim } from '../sim';
 import { stat } from '../stats';
 import { Struct } from '../structure';
 import { CREW_MAX_HP, DEFAULT_SUIT } from '../tuning';
+import { airlockTiles } from '../portals/airlock';
+import { isEvaWalkable } from '../structure';
 import { airlockSuits, suitAir } from './suit';
 import { planWalk } from './route';
 
@@ -272,91 +274,49 @@ describe('pathing', () => {
   });
 });
 
-describe('floating between ships', () => {
-  const portals = (sim: Sim): { kind: string; ticks: number; cost: number; requires: unknown[] }[] =>
-    sim.world.query(PortalC).map((id) => sim.world.get(id, PortalC)!);
-  /** Both ships, one suited drafted crew member ordered over to ship 2. */
-  function crossing(): { sim: Sim; c: number } {
-    const sim = world(2);
+describe('outside on the hull', () => {
+  const collar = (sim: Sim): { x: number; y: number } => airlockTiles(airlockDef, sim.world.get(airlockOf(sim, 1), ModuleC)!).collar!;
+
+  it('a suited crew member walks out through the airlock onto the hull, draining air, and back in', () => {
+    const sim = world();
     const c = crew(sim, 1, 6, 6, { drafted: true });
     sim.enqueue({ type: 'suit.set', crew: c, worn: true });
-    run(sim, 41); // the link system runs at tick 40
-    sim.enqueue({ type: 'crew.moveTo', id: c, x: 6, y: 6, gridId: 2 });
-    return { sim, c };
-  }
-
-  it('links airlocks within suit range, and drops the link when a ship drifts away', () => {
-    const sim = world(2);
-    run(sim, 45);
-    const [p] = portals(sim);
-    expect(portals(sim)).toHaveLength(1);
-    expect(p).toMatchObject({ kind: 'eva', ticks: Math.round((5 / DEFAULT_SUIT.floatSpeed) * 20), requires: [{ type: 'suit' }] });
-    const ship = sim.world.query(ShipC).map((id) => sim.world.get(id, ShipC)!).find((s) => s.gridId === 2)!;
-    ship.x += 10;
-    run(sim, 45);
-    expect(portals(sim)).toHaveLength(0);
-    expect(portals(world(1))).toHaveLength(0);
-  });
-
-  it('a suited crew member floats across, draining air, and arrives on the other ship', () => {
-    const { sim, c } = crossing();
-    const ev: SimEvent[] = [];
-    let floated = false;
-    for (let i = 0; i < 1500 && sim.world.get(c, PositionC)!.gridId === 1; i++) {
-      run(sim, 1, ev);
-      if (sim.world.has(c, CrossingC)) floated = true;
-    }
-    expect(floated).toBe(true);
-    run(sim, 200, ev);
-    expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 2, x: 6, y: 6 });
-    expect(ev.filter((e) => e.type === 'crew.crossed')).toEqual([expect.objectContaining({ kind: 'eva', fromGridId: 1, toGridId: 2 })]);
-    // The tank lost about the crossing time, not more (the airlocks hold air).
+    const out = { x: collar(sim).x, y: collar(sim).y + 1 }; // a hull-side tile beside the collar
+    sim.enqueue({ type: 'crew.moveTo', id: c, x: out.x, y: out.y });
+    run(sim, 20 * 30);
+    expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 1, x: out.x, y: out.y });
+    expect(sim.grids.get(1)!.get('struct', out.x, out.y)).toBe(Struct.Space);
     expect(suitAir(sim, c)).toBeLessThan(DEFAULT_SUIT.airSec);
-    expect(suitAir(sim, c)).toBeGreaterThan(DEFAULT_SUIT.airSec - 40);
     expect(sim.world.get(c, HealthC)!.hp).toBe(CREW_MAX_HP);
-    // Taking the suit off over there stows it in that airlock.
-    sim.enqueue({ type: 'eva.suitOff', crew: c });
-    run(sim, 300);
-    expect(sim.world.has(c, SuitC)).toBe(false);
-    expect(airlockSuits(sim, airlockOf(sim, 1))).toBe(3);
-    expect(airlockSuits(sim, airlockOf(sim, 2))).toBe(4);
+    sim.enqueue({ type: 'crew.moveTo', id: c, x: 6, y: 6 });
+    run(sim, 20 * 30);
+    expect(sim.world.get(c, PositionC)).toMatchObject({ x: 6, y: 6 });
   });
 
-  it('crew without a suit cannot cross open space', () => {
-    const sim = world(2);
+  it('crew without a suit cannot be ordered outside, and the exterior is only the ring touching the hull', () => {
+    const sim = world();
     const c = crew(sim, 1, 6, 6, { drafted: true });
-    run(sim, 41);
-    sim.enqueue({ type: 'crew.moveTo', id: c, x: 6, y: 6, gridId: 2 });
-    run(sim, 600);
-    expect(sim.world.get(c, PositionC)!.gridId).toBe(1);
-    expect(sim.world.get(c, DraftedC)!.target).toBeNull();
+    const at = collar(sim);
+    sim.enqueue({ type: 'crew.moveTo', id: c, x: at.x, y: at.y });
+    const ev = run(sim, 2);
+    expect(ev.some((e) => e.type === 'command.rejected' && (e as { reason: string }).reason === 'notWalkable')).toBe(true);
+    const g = sim.grids.get(1)!;
+    expect(isEvaWalkable(g, at.x, at.y)).toBe(true);
+    expect(isEvaWalkable(g, 0, 0)).toBe(true); // diagonal to the hull corner
+    expect(isEvaWalkable(g, 6, 6)).toBe(false); // floor
   });
 
-  it('an empty tank mid-crossing hurts like vacuum', () => {
-    const { sim, c } = crossing();
-    sim.world.get(c, SuitC)!.air = 1;
-    run(sim, 20 * 25);
-    expect(suitAir(sim, c)).toBe(0);
-    expect(sim.world.get(c, HealthC)!.hp).toBeLessThan(CREW_MAX_HP);
-  });
-
-  it('is deterministic, and a save taken mid-float continues the same', () => {
-    const a = crossing();
-    let n = 0;
-    while (!a.sim.world.has(a.c, CrossingC)) {
-      run(a.sim, 1);
-      n++;
-    }
-    run(a.sim, 10);
-    n += 10;
-    const saved = serialize(a.sim);
-    run(a.sim, 200);
-    const b = crossing();
-    run(b.sim, n + 200);
-    expect(serialize(b.sim)).toBe(serialize(a.sim));
-    const loaded = deserialize(saved, content);
-    expect(loaded.world.has(a.c, CrossingC)).toBe(true);
-    run(loaded, 200);
-    expect(serialize(loaded)).toBe(serialize(a.sim));
+  it('is deterministic', () => {
+    const go = (): string => {
+      const sim = world();
+      const c = crew(sim, 1, 6, 6, { drafted: true });
+      sim.enqueue({ type: 'suit.set', crew: c, worn: true });
+      sim.enqueue({ type: 'crew.moveTo', id: c, x: collar(sim).x, y: collar(sim).y });
+      run(sim, 400);
+      return serialize(sim);
+    };
+    expect(go()).toBe(go());
+    const sim = deserialize(go(), content);
+    expect(sim.world.query(SuitC)).toHaveLength(1);
   });
 });

@@ -164,8 +164,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
   });
 
-  /** What crew views need to draw EVA: ship placements (a crew member floating between two ships) and the tank size. */
-  const evaHost = () => ({ shipPos: (gridId: number) => shipOf(gridId) ?? null, suitAirSec: () => content.suit?.airSec ?? 240 });
+  /** What crew views need to draw EVA: the tank size. */
+  const evaHost = () => ({ suitAirSec: () => content.suit?.airSec ?? 240 });
   const pickHost = (): PickHost => ({ scenes, cam, ship: shipOf, refId });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ref: () => shipOf(refId) ?? null, ship: shipOf });

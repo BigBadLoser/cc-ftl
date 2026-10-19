@@ -61,9 +61,6 @@ export interface SuitDef {
   moveMult: number;
   workMult: number;
   accuracyMult: number;
-  /** Open-space crossing between airlocks of different grids: tiles per second and the farthest reach (tiles between collars). */
-  floatSpeed: number;
-  floatRange: number;
 }
 
 /** A shuttle type. It is an entity in the sector, not a grid: no interior, crew aboard are hidden. */

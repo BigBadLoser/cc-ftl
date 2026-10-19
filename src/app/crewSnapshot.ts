@@ -1,5 +1,5 @@
 import {
-  AirlockC, CrossingC, PortalC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile,
+  AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile,
   AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC,
   ModuleC, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine,
   storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, type Job, type Sim, type WorkCategory,
@@ -69,15 +69,20 @@ function whereOf(sim: Sim, ctx: Ctx, id: number): { gridId: number; where: strin
   return { gridId: 0, where: v.state === 'stowed' ? 'Shuttle (in bay)' : dockShip ? `Shuttle at ${dockShip}` : 'Shuttle (flying)' };
 }
 
+function isOutside(sim: Sim, id: number): boolean {
+  const p = sim.world.get(id, PositionC);
+  const g = p && sim.grids.get(p.gridId);
+  return !!g && g.inBounds(p.x, p.y) && g.get('struct', p.x, p.y) === Struct.Space;
+}
+
 /** The suit tank readout of a suited crew member. */
 function suitOf(sim: Sim, id: number): UiCrew['suit'] {
   if (!sim.world.has(id, SuitC)) return null;
   const max = suitDef(sim).airSec;
   const air = suitAir(sim, id);
-  const crossing = sim.world.get(id, CrossingC);
   return {
     air: Math.round(air), max, low: air <= max * EVA_AIR_LOW_FRAC,
-    floating: !!crossing && sim.world.get(crossing.portal, PortalC)?.kind === 'eva',
+    outside: isOutside(sim, id),
   };
 }
 
