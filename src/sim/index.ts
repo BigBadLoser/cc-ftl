@@ -55,5 +55,10 @@ export { spawnVehicle, destroyVehicle, damageVehicle } from './vehicles/lifecycl
 export * from './robots/components';
 export { hasLiveCore, isCoreLive, aiCores, isShutDown } from './robots/core';
 export { factionsHostile, isAiFaction } from './combat/factions';
+export * from './story/defs';
+export { ImplantsC, SkillXpC, XP_PER_LEVEL, type Implants, type SkillXp } from './story/components';
+export type { StoryState, ActiveEvent, Notice, Resolution, PhysicalEntry } from './story/state';
+export { choiceRequirements, unmetReasons, checkOdds, describeRequirement, meets, type Odds } from './story/requirements';
+export { poolFor, startEvent } from './story/engine';
 export { createCrew } from './crew/spawn';
 export { captureReady, isAiRun } from './capture/control';

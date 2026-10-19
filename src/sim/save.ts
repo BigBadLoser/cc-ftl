@@ -8,6 +8,7 @@ import { SHIP_FIELDS, Struct, STRUCT_MAX_HP } from './structure';
 import { PLAYER_START, SECTOR_HEIGHT, SECTOR_WIDTH } from './tuning';
 import { hullSum } from './combat/hull';
 import { initAtmosphere } from './ship';
+import { newStory, type StoryState } from './story/state';
 
 /** Current save format version. Bump it and add a migration whenever the shape changes. */
 export const SAVE_VERSION = 12;
@@ -21,6 +22,8 @@ export interface SaveData {
   world: WorldData;
   grids: GridData[];
   sector: Sector;
+  /** Event system state. Optional: saves from before it existed load with a fresh one (no version bump needed). */
+  story?: StoryState;
   pending: QueuedCommand[];
 }
 
@@ -156,6 +159,7 @@ export function serialize(sim: Sim): string {
     world: sim.world.serialize(),
     grids: [...sim.grids.values()].sort((a, b) => a.id - b.id).map((g) => g.serialize()),
     sector: sim.sector,
+    story: sim.story,
     pending: [...sim.commands.getPending()],
   };
   return JSON.stringify(data);
@@ -185,6 +189,7 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.world = World.deserialize(data.world);
   for (const g of data.grids) sim.grids.set(g.id, Grid.deserialize(g));
   sim.sector = data.sector;
+  sim.story = { ...newStory(data.seed), ...data.story };
   sim.commands.setPending(data.pending);
   return sim;
 }

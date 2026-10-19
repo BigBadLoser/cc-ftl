@@ -54,9 +54,15 @@ export function createAlerts(sim: Sim): Alerts {
     return false;
   };
 
-  function describe(e: SimEvent): { kind: UiAlertKind; key: string; text: string; at: UiAlert['at'] } | null {
+  function describe(e: SimEvent): { kind: UiAlertKind; key: string; text: string; at: UiAlert['at']; notice?: UiAlert['notice'] } | null {
     if (foreign(e)) return null;
     switch (e.type) {
+      case 'story.started': {
+        const def = sim.content.events?.[e.event];
+        if (!def || e.mode !== 'notice') return null;
+        const lead = e.notice > 0;
+        return { kind: lead ? 'story.lead' : 'story.notice', key: `ev${e.event}`, text: def.text, at: null, notice: { id: e.notice, lead, title: def.title } };
+      }
       case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire!', at: { x: e.x, y: e.y } };
       case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', at: roomCentre(sim.grids.get(e.gridId), e.room) };
       case 'power.shortage': return { kind: e.type, key: 'p', text: `Power shortage (${Math.round(e.supply)}/${Math.round(e.demand)})`, at: reactorAt() };
@@ -97,7 +103,11 @@ export function createAlerts(sim: Sim): Alerts {
   return {
     list: store,
     get: (id) => store.get().find((a) => a.id === id),
-    dismiss: remove,
+    dismiss(id) {
+      const n = store.get().find((a) => a.id === id)?.notice;
+      if (n?.lead) sim.enqueue({ type: 'story.dismissNotice', notice: n.id });
+      remove(id);
+    },
     onEvents(events) {
       for (const e of events) {
         const d = describe(e);
@@ -105,7 +115,7 @@ export function createAlerts(sim: Sim): Alerts {
         for (const [id, k] of keys) if (k === d.key) remove(id);
         const id = nextId++;
         keys.set(id, d.key);
-        store.update((l) => [{ id, kind: d.kind, text: d.text, at: d.at }, ...l].slice(0, MAX));
+        store.update((l) => [{ id, kind: d.kind, text: d.text, at: d.at, ...(d.notice ? { notice: d.notice } : {}) }, ...l].slice(0, MAX));
         setTimeout(() => remove(id), EXPIRE_MS);
       }
       for (const id of [...keys.keys()]) if (!store.get().some((a) => a.id === id)) keys.delete(id);

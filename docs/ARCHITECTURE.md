@@ -335,3 +335,49 @@ Each milestone ends with something playable or watchable in the browser.
   shuttle is lost (crew die) if its bay is destroyed.
 - Enemy boarding: `ShipTemplate.boarding` (doctrine flag -> `BoarderC`). Off for `ship.raider` (balance scenarios stay comparable);
   on for `ship.raiderBoarder`. See `systems/boardingAi.ts`.
+
+## Events (story), `src/sim/story/`
+
+Events are data (`EventDef`, `src/sim/story/defs.ts`; content in `src/content/events.ts`, `satisfies EventDef`, keyed `event.*`).
+The event system is **independent of grids and sectors**: the world enters only through `StoryContext` (`danger` tier, `faction`
+territory; plain parameters set with `story.setContext`) and leaves only through the stubbed `physical` effect.
+
+**State** (`StoryState`, `sim.story`, saved in `SaveData.story`, optional so old saves load without a version bump): flags and
+counters, reputation per faction, the open decision (`active`), a `queue` of due/delayed events, lead `notices`, `seen` counts
+(for `once`/`cooldownSec`), the last resolution, the `physical` outcome queue and its **own Rng** state (so events never disturb
+`sim.rng`; the roll sequence is deterministic and saved).
+
+**EventDef**
+- `mode`: `'decision'` (pauses the game in a modal) or `'notice'` (in-world, non-pausing alert; `effects` apply on arrival; `lead`
+  makes the notice open that decision when tapped; `expireSec`).
+- `triggers[]`: `arrival` (weight; drawn by `story.arrive`), `periodic` (weight; drawn every `periodicSec` outside combat while no
+  decision is open), `flag` (`flag`, `atLeast`, `delaySec`: queued when the flag first reaches the level), `chain` (only reached by a
+  `chain` effect or debug fire).
+- Pool filters: `danger {min,max}`, `factions[]` (null = open space), `eligible: Requirement[]`, `once`, `cooldownSec`. A draw sums
+  the weights of a def's triggers of that kind and picks by weight with the story Rng.
+- `choices[]` (`ChoiceDef`): `id`, `label`, `hint`, `requires: Requirement[]`, `cost: ItemQty[]` (required and spent), then either
+  `outcome` or `check` + `success`/`failure`. An `Outcome` is `{ text?, effects? }`.
+- `Requirement`: `species`, `implant`, `skill`, `module`, `item` (kept), `reputation` (min/max), `flag` (min/max; default "is set";
+  `max: 0` = "not set"), `crew`. Unmet choices show greyed with the reason (`describeRequirement`).
+- `SkillCheck {skill, difficulty, base=0.5, perLevel=0.1}`: odds = clamp(base + perLevel * (level - difficulty), 5%, 95%), the best
+  crew member (highest `stat`, ties lowest id) rolls; the odds label ("Repair skill 6 (Mara): 70%") is shown on the choice.
+- `EventEffect`: `items` (+/-, to/from player storage), `crewDamage`, `crewHeal`, `skillXp` (100 xp = 1 level via a stat modifier
+  source), `reputation`, `flag` (`set`/`add`/`clear`), `chain` (`delaySec`), `physical`. Crew effects take `who`: `random`
+  (default), `all`, `actor` (the skill-check roller).
+- `physical` outcomes (`derelict`, `boarders`, `fire`, `combat`) are only **recorded** in `story.physical` (capped log). The sector
+  layer will add a system that consumes and removes those entries; nothing else needs to change.
+
+**Commands** (`story.*`): `choose {choice}`, `fire {event}` (debug, ignores triggers and eligibility), `setContext {danger?, faction?,
+periodicSec?}` (periodic draws are off until `periodicSec > 0`; `main.ts` turns them on), `arrive`, `openNotice`, `dismissNotice`,
+`setFlag` (debug). **Events** (output only): `story.started {event, mode, notice}`, `story.resolved {event, choice, success}`,
+`story.effect {event, effect, text}`. `?hook` exposes `__cc.fireEvent(id)`, `setFlag`, `setContext`, `story()`.
+
+**Pipeline:** `storySystem` runs last: lapses notices, the periodic draw, starts due queued events. Everything else happens in
+command handlers. **UI:** `app/storySnapshot.ts` builds `UiStory`; the bridge pauses the game while a decision is open (and
+answering it, `chooseStory`, restores the speed); `ui/StoryModal.svelte` is a centred card on desktop and a bottom sheet at <= 600px;
+notices arrive through `alerts.ts` (`UiAlert.notice`).
+
+**Adding an event:** add an entry to `src/content/events.ts` (the content test checks that chains, leads, items, species, modules
+and flag triggers resolve and that every choice runs). For an arc, have one event set a flag and the next list a `flag` trigger
+(with `eligible` on the flag) or be reached by `chain`. Add a new effect or requirement kind in `defs.ts`, then `effects.ts` /
+`requirements.ts` (both switches are exhaustive).

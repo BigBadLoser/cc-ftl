@@ -7,6 +7,7 @@ import type { Grid } from './grid';
 import type { Sector } from './combat/components';
 import { pipeline } from './pipeline';
 import { Rng } from './rng';
+import { newStory, type StoryState } from './story/state';
 import { TICK_HZ } from './time';
 import { SECTOR_HEIGHT, SECTOR_WIDTH } from './tuning';
 
@@ -21,6 +22,8 @@ export class Sim {
   grids = new Map<number, Grid>();
   commands = new CommandQueue();
   events = new EventBuffer();
+  /** Event system state: flags, reputation, the open decision, queue (see story/). */
+  story: StoryState;
   sector: Sector = { width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false };
 
   constructor(
@@ -29,6 +32,7 @@ export class Sim {
     readonly content: ContentRegistry = { ships: {}, roles: {}, species: {}, modules: {}, crewNames: [], items: {}, recipes: {}, structCosts: {} },
   ) {
     this.rng = new Rng(seed);
+    this.story = newStory(seed);
   }
 
   /** Queue a command to apply at the start of the next tick. */

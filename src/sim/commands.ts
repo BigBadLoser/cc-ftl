@@ -100,6 +100,19 @@ export type Command =
   | { type: 'debug.setCharge'; value: number }
   /** Take the ship on `gridId` as a prize at once, its crew surrendering (the debug panel). */
   | { type: 'debug.capture'; gridId: number }
+  /** Event system: pick an option of the open decision. Rejected when none is open or its requirements are unmet. */
+  | { type: 'story.choose'; choice: string }
+  /** Debug: start an event by id, ignoring its triggers and eligibility. */
+  | { type: 'story.fire'; event: string }
+  /** Set the pool context (danger tier, faction territory) and/or the periodic draw interval in seconds (0 = off). */
+  | { type: 'story.setContext'; danger?: number; faction?: string | null; periodicSec?: number }
+  /** The player arrived somewhere: draw one event from the arrival pool for the current context. */
+  | { type: 'story.arrive' }
+  /** Open the decision a lead notice points at, or drop the notice. */
+  | { type: 'story.openNotice'; notice: number }
+  | { type: 'story.dismissNotice'; notice: number }
+  /** Debug: set a persistent flag/counter (0 clears it). */
+  | { type: 'story.setFlag'; flag: string; value: number }
   | { type: 'debug.spawnItems'; gridId: number; x: number; y: number; item: string; count: number };
 
 /** A command tagged with the tick at whose start it applies. */
