@@ -6,6 +6,7 @@
   weapons   roof turrets (8 aims, charged, stowed, deploy frames) and their floor bays, 4 rotations
   roof      roof plating modules, edges, inset and patch plates, livery masks, cut plates (roof_cuts.py)
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
+  derelict  derelict dressing: breached walls, scorch, debris, dead lights, infestation, AI scrap (derelict*.py)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -29,11 +30,14 @@ def jobs(name):
     if name == "robot_bay":
         from . import robot_bay
         return robot_bay.jobs(), True
+    if name == "derelict":
+        from . import derelict
+        return derelict.SPRITES, True
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
     raise KeyError(name)
 
 
-RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay")
+RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "derelict")
 ALL = RENDERED + ("sol",)
