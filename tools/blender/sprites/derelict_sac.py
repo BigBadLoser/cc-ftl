@@ -11,7 +11,7 @@ import math
 
 from . import core
 
-SKIN_ALPHA, SKIN_RIM = 0.5, 0.5
+SKIN_ALPHA, SKIN_RIM = 0.36, 0.6
 FLUID_ALPHA = 0.65
 PROF = [(0.0, 0.78), (0.1, 0.97), (0.26, 1.0), (0.46, 0.9), (0.64, 0.72), (0.8, 0.5), (0.92, 0.27), (1.0, 0.0)]
 
@@ -27,8 +27,9 @@ class Sac:
     """One sac's shape: centre, radius, height, lean (droop of the top), lumps and strand pinches."""
 
     def __init__(self, x, y, r, h, lean=(0.0, 0.0), lumps=((2, 0.06, 0.3), (3, 0.05, 1.9)), pinch=(110, 230, 350),
-                 fluid=0.42):
+                 fluid=0.42, veins=(0, 70, 150, 215)):
         self.x, self.y, self.r, self.h, self.lean = x, y, r, h, lean
+        self.veins = veins
         self.lumps, self.pinch, self.fluid = lumps, pinch, fluid
 
     def rad(self, u, v, k=1.0):
@@ -55,24 +56,48 @@ def _sheet(m, S, col, v0=0.0, v1=1.0, k=1.0, nu=22, nv=12, cap=None):
         m.poly([core.G(*S.p(u, v1, k)) for u in us[:-1]], cap)
 
 
+def _ball(m, c, r, col, n=8):
+    """A small UV sphere (rounded blobs, not cones)."""
+    for j in range(n // 2):
+        t0, t1 = math.pi * j / (n // 2) - math.pi / 2, math.pi * (j + 1) / (n // 2) - math.pi / 2
+        for i in range(n):
+            a0, a1 = 2 * math.pi * i / n, 2 * math.pi * (i + 1) / n
+            q = [(c[0] + r * math.cos(t) * math.cos(a), c[1] + r * math.cos(t) * math.sin(a), c[2] + r * math.sin(t))
+                 for t, a in ((t0, a0), (t0, a1), (t1, a1), (t1, a0))]
+            m.poly([core.G(*p) for p in q], col)
+
+
 def _embryo(m, S, size=1.0):
-    """A curled dark body near the middle of the sac, half above the fluid so it shows through the clear skin: a
-    hunched back, a head tucked down toward the camera, one glowing eye."""
+    """A curled foetus in the screen plane (so its C-shape reads from the camera): a big head at the top, the spine
+    curling down and round under it in shrinking blobs, two tucked limb nubs, one glowing eye."""
     r = S.r * size
-    for (dx, dy, z, rr) in ((0.0, 0.0, 0.36, 0.42), (0.18, 0.2, 0.3, 0.3), (0.3, 0.34, 0.2, 0.2), (-0.2, 0.1, 0.24, 0.24)):
-        m.cyl((S.x + S.lean[0] * 0.1 + dx * r, S.y + S.lean[1] * 0.1 + dy * r, S.h * z - r * rr * 0.8), r * rr,
-              r * rr * 1.7, "xnK", sides=10, rtop=r * rr * 0.55)
-    m.box((S.x + 0.36 * r, S.y + 0.42 * r, S.h * 0.22), (0.03, 0.03, 0.03), "xnG")
+    e1 = (1 / math.sqrt(2), -1 / math.sqrt(2))                      # screen-horizontal ground direction
+    fwd = S.r * 0.42 / math.sqrt(2)                                 # pressed toward the camera-facing skin
+    cx, cy, cz = S.x + S.lean[0] * 0.15 + fwd, S.y + S.lean[1] * 0.15 + fwd, S.h * 0.38
+    rho = r * 0.4
+
+    def at(phi, out=0.0):
+        return (cx + (rho + out) * math.cos(phi) * e1[0], cy + (rho + out) * math.cos(phi) * e1[1],
+                cz + (rho + out) * math.sin(phi))
+    _ball(m, at(math.radians(105)), r * 0.3, "xnK", 10)                                    # head
+    for k, deg in enumerate((60, 20, -20, -60, -100, -140, -175)):                        # spine, curling under
+        _ball(m, at(math.radians(deg)), r * (0.24 - 0.022 * k), "xnK")
+    for deg in (150, -10):                                                                 # tucked limbs
+        _ball(m, at(math.radians(deg), -rho * 0.55), r * 0.1, "xnK", 6)
+    hx, hy, hz = at(math.radians(105))
+    m.box((hx + 0.6 * r * 0.3, hy + 0.6 * r * 0.3, hz), (0.03, 0.03, 0.03), "xnG")       # its eye, toward the camera
 
 
-def _veins(m, S, azs, v1=0.85):
-    """Dark veins across the skin: a meridian each, wandering, with a short branch."""
+def _veins(m, S, azs, v1=0.8):
+    """Veins over the skin in a blood violet (a near-black line reads as a crack), thick at the foot and thinning as
+    they wander up a meridian, with one low-angle branch."""
     for az in azs:
         a = math.radians(az)
-        pts = [S.p(a + 0.18 * math.sin(j * 1.1 + az), 0.08 + (v1 - 0.08) * j / 9, 1.0, 0.006) for j in range(10)]
-        pts += [S.p(a + 0.35, 0.5, 1.0, 0.006), S.p(a + 0.55, 0.62, 1.0, 0.006)]
-        for (p0, p1) in list(zip(pts[:9], pts[1:10])) + [(pts[5], pts[10]), (pts[10], pts[11])]:
-            _rod(m, p0, p1, 0.024, "xnP")
+        pts = [S.p(a + 0.16 * math.sin(j * 1.2 + az), 0.06 + (v1 - 0.06) * j / 8, 1.0, 0.008) for j in range(9)]
+        br = [pts[3], S.p(a + 0.3, 0.42, 1.0, 0.008), S.p(a + 0.45, 0.56, 1.0, 0.008)]
+        for seg, w0 in ((pts, 0.042), (br, 0.028)):
+            for k, (p0, p1) in enumerate(zip(seg, seg[1:])):
+                _rod(m, p0, p1, max(0.022, w0 - 0.0028 * k), "xnV")
 
 
 def _rod(m, p0, p1, w, col):
@@ -125,8 +150,8 @@ def _layers(name, sacs, pad, big):
         _sheet(fluid, S, lambda u, v: "xnF" if v < S.fluid - 0.07 else "xnFL", 0.0, S.fluid, k=0.9, nv=6, cap="xnFL")
         _sheet(skin, S, "xnS")
         if k in big:
-            _embryo(solid, S, 0.9)
-            _veins(solid, S, (215,))
+            _embryo(solid, S, 1.05)
+            _veins(solid, S, S.veins)
         _glints(solid, S, ((112, 0.7, 0.05), (100, 0.6, 0.032), (125, 0.8, 0.032), (60, 0.42, 0.028)))
         _strands(solid, S)
     out = [solid.build(), fluid.build(), skin.build()]
@@ -137,9 +162,9 @@ def _layers(name, sacs, pad, big):
 
 def eggsac(n):
     if n == 1:
-        sacs = [Sac(-0.03, -0.03, 0.3, 0.62, (0.04, 0.02)),
-                Sac(0.25, 0.17, 0.13, 0.25, (0.02, 0.0), pinch=(200,), lumps=((2, 0.05, 1.0),), fluid=0.4)]
-        return _layers("eggsac_1", sacs, _pad("eggsac_1_pad", 0.0, 0.0, 0.46, 1), (0,))
+        sacs = [Sac(-0.04, -0.04, 0.4, 0.78, (0.04, 0.02)),
+                Sac(0.3, 0.22, 0.11, 0.2, (0.02, 0.0), pinch=(200,), lumps=((2, 0.05, 1.0),), fluid=0.4)]
+        return _layers("eggsac_1", sacs, _pad("eggsac_1_pad", 0.0, 0.0, 0.5, 1), (0,))
     cx, cy = -0.5, -0.5
     sacs = [Sac(cx - 0.12, cy - 0.12, 0.5, 0.95, (0.06, 0.03)),
             Sac(cx + 0.44, cy + 0.14, 0.28, 0.5, (0.05, 0.02), pinch=(90, 300), fluid=0.48),
