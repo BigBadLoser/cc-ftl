@@ -32,7 +32,7 @@ export const scrapper = {
     {
       // Raiders want guns and boarding: navy hulks and drone guns, airlocks, a shuttle bay.
       id: 'raider', weight: { base: 4, perDepth: 0, max: 4 }, grammars: [{ value: 'heap', weight: 2 }, { value: 'chain', weight: 1 }, { value: 'raft', weight: 1 }],
-      anchors: [{ value: 'navyHulk', weight: 3 }, { value: 'habitat', weight: 1 }, { value: 'tug', weight: 1 }, { value: 'freighter', weight: 1 }, { value: 'station', weight: 1 }, { value: 'ringPiece', weight: 1 }, { value: 'linerChunk', weight: 2 }, { value: 'crewTower', weight: 1 }, { value: 'containerFrame', weight: 1 }],
+      anchors: [{ value: 'navyHulk', weight: 1 }, { value: 'habitat', weight: 1 }, { value: 'tug', weight: 1 }, { value: 'freighter', weight: 1 }, { value: 'station', weight: 1 }, { value: 'ringPiece', weight: 1 }, { value: 'linerChunk', weight: 2 }, { value: 'crewTower', weight: 1 }, { value: 'containerFrame', weight: 1 }],
       donors: { navyHulk: 3, droneSection: 2, navyBattery: 1, habitat: 0, station: 0, freighter: 2, podString: 1, tug: 1, navyDrive: 1, navyBow: 1, containerFrame: 2, oreCage: 1, crewTower: 0, linerChunk: 3, ringPiece: 0, latticePiece: 0, lightDrive: 2, barge: 1 },
       aspect: [1.6, 2.8], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
@@ -46,7 +46,7 @@ export const scrapper = {
     {
       // Gunrunners want weapons: batteries, drone sections, an old navy hull, a station module for the crew.
       id: 'gunrunner', weight: { base: 0, perDepth: 0.4, max: 3 }, bonus: { weapons: 1, heavyPct: 15 }, grammars: [{ value: 'heap', weight: 2 }, { value: 'raft', weight: 1 }],
-      anchors: [{ value: 'navyHulk', weight: 2 }, { value: 'station', weight: 1 }, { value: 'freighter', weight: 1 }, { value: 'ringPiece', weight: 1 }, { value: 'latticePiece', weight: 1 }, { value: 'linerChunk', weight: 1 }, { value: 'containerFrame', weight: 1 }],
+      anchors: [{ value: 'navyHulk', weight: 1 }, { value: 'station', weight: 1 }, { value: 'freighter', weight: 1 }, { value: 'ringPiece', weight: 1 }, { value: 'latticePiece', weight: 1 }, { value: 'linerChunk', weight: 1 }, { value: 'containerFrame', weight: 1 }],
       donors: { navyBattery: 3, droneSection: 3, navyHulk: 2, station: 0, habitat: 0, freighter: 1, navyDrive: 1, tug: 1, navyBow: 1, crewTower: 0, ringPiece: 0, lightDrive: 2, linerChunk: 2, containerFrame: 1 },
       aspect: [1.6, 2.8], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },

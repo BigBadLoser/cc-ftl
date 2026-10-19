@@ -30,7 +30,7 @@ const LINE: DonorKind[] = ['navyHulk', 'freighter', 'containerFrame', 'linerChun
 /** Donors that only ever extend the anchor line (a bow, a drive). */
 const ENDS: DonorKind[] = ['navyBow', 'cockpitBow', 'linerBow', 'bluntBow', 'navyDrive', 'lightDrive', 'tug'];
 /** Salvaged bows, weighted: navy noses, a freighter cockpit, a liner nose, a blunt cut-off block. */
-const BOWS: { value: DonorKind; weight: number }[] = [{ value: 'navyBow', weight: 2 }, { value: 'cockpitBow', weight: 2 }, { value: 'linerBow', weight: 1 }, { value: 'bluntBow', weight: 1 }];
+const BOWS: { value: DonorKind; weight: number }[] = [{ value: 'navyBow', weight: 1 }, { value: 'cockpitBow', weight: 2 }, { value: 'linerBow', weight: 2 }, { value: 'bluntBow', weight: 2 }];
 
 interface Cast {
   anchor: DonorKind;
@@ -67,6 +67,12 @@ function choose(c: Ctx): Cast {
     if (!k) break;
     flanks.push(k);
   }
+  // Small salvage patches (a cargo pod string, a gun section) take a share of the jobs, so the big donors stay smaller
+  // than the anchor and the ship reads as salvage.
+  for (let k = c.rng.int(1, c.plan.size >= 3 ? 2 : 1); k > 0; k--) {
+    const pt = pick((['podString', 'navyBattery', 'droneSection'] as DonorKind[]).filter((x) => (w[x] ?? 0) > 0));
+    if (pt) flanks.push(pt);
+  }
   return { anchor, bow, drive, flanks };
 }
 
@@ -84,9 +90,15 @@ function build(c: Ctx, f: FactionDef, cast: Cast, p: Pool): { anchor: Block | nu
     return b;
   };
   const anchor = one(cast.anchor);
-  const bow = one(cast.bow);
   const drive = one(cast.drive);
   const flanks = cast.flanks.map(one).filter((b): b is Block => !!b);
+  // The bow last: salvage mixes origins, so an all-civil ship so far takes the blunt navy block.
+  let bowKind = cast.bow;
+  if (bowKind && [anchor, drive, ...flanks].every((b) => !b || b.donor === 'civil') && bowKind !== 'navyBow') {
+    bowKind = 'bluntBow';
+    p.commandBy = 'bluntBow';
+  }
+  const bow = one(bowKind);
   return { anchor, bow, drive, flanks: [...flanks, ...leftovers(c, f, p)] };
 }
 
@@ -193,6 +205,60 @@ function cells(c: Ctx, id: number): { x: number; y: number }[] {
   const out: { x: number; y: number }[] = [];
   P.block.rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] !== '.') out.push({ x: P.x + i, y: P.y + j }); });
   return out;
+}
+
+/** Major blocks: donors and the anchor line (not struts, braces, plates or scrap bolt-ons). */
+const major = (b: Block): boolean => !b.bare && b.kind !== 'plate' && !!b.donor && b.donor !== 'scrap';
+
+/** A flush-welded donor (placed at index `id`, its tube from `n0` on) touches no major block it is not welded to. */
+function touchesOnly(c: Ctx, id: number, n0: number): boolean {
+  const mine = new Set<number>([id]);
+  for (let i = n0; i < c.A.placed.length; i++) mine.add(i);
+  for (const j of c.A.joins) if (mine.has(j.a) || mine.has(j.b)) { mine.add(j.a); mine.add(j.b); }
+  const owner = new Map<number, number>();
+  c.A.placed.forEach((p, i) => { if (!mine.has(i) && major(p.block)) for (const t of cells(c, i)) owner.set(t.y * 100003 + t.x, i); });
+  for (const t of cells(c, id)) for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (owner.has((t.y + dy) * 100003 + t.x + dx)) return false;
+  return true;
+}
+
+/**
+ * Lengthwise ties: wherever two major blocks face each other across a fore-aft gap of 2 to 8 open tiles on some rows,
+ * and nothing joins them yet, span the gap with two or three parallel truss members (every third row, daylight
+ * between), so the eye runs from bow to drive along the hull.
+ */
+function ties(c: Ctx): number {
+  const owner = new Map<number, number>();
+  c.A.placed.forEach((p, i) => { if (major(p.block)) for (const t of cells(c, i)) owner.set(t.y * 100003 + t.x, i); });
+  const joined = (a: number, b: number): boolean => c.A.joins.some((j) => (j.a === a && j.b === b) || (j.a === b && j.b === a));
+  const free = (x: number, y: number): boolean => c.A.cell(x, y) === undefined && !c.A.reserved(x, y);
+  const box = c.A.box();
+  const pairs = new Map<string, { y: number; x0: number; x1: number }[]>();
+  for (let y = box.y0; y <= box.y1; y++) {
+    for (let x = box.x0; x <= box.x1; x++) {
+      const a = owner.get(y * 100003 + x);
+      if (a === undefined || !free(x + 1, y)) continue;
+      let n = 1;
+      while (n <= 9 && free(x + n, y)) n++;
+      const b = owner.get(y * 100003 + x + n);
+      if (n < 3 || n > 9 || b === undefined || b === a || joined(a, b)) continue;
+      const k = `${Math.min(a, b)}:${Math.max(a, b)}`;
+      pairs.set(k, [...(pairs.get(k) ?? []), { y, x0: x + 1, x1: x + n - 1 }]);
+    }
+  }
+  let made = 0;
+  for (const rows of pairs.values()) {
+    if (rows.length < 2) continue;
+    // Members on every third row from the middle of the overlap outwards, two or three of them.
+    const sorted = rows.sort((p, q) => p.y - q.y);
+    const mid = sorted[Math.floor(sorted.length / 2)] as { y: number };
+    const picks = sorted.filter((r) => (r.y - mid.y) % 3 === 0).sort((p, q) => Math.abs(p.y - mid.y) - Math.abs(q.y - mid.y)).slice(0, c.rng.int(2, 3));
+    if (picks.length < 2) continue;
+    for (const r of picks) {
+      const m = { ...member(r.x1 - r.x0 + 1, false), label: 'scrap: tie' };
+      if (c.A.canPlace(m, r.x0, r.y)) { c.A.place(m, r.x0, r.y); made++; }
+    }
+  }
+  return made;
 }
 
 /** Daylight: no other block (but the strut it hangs on) within `gap` tiles of the donor. */
@@ -320,8 +386,11 @@ function compose(c: Ctx, f: FactionDef, mode: ScrapGrammar): boolean {
       }
       if (id !== null) break;
     }
+    // A flush weld (ragged adapters) only as the one fallback, and only if it touches nothing but its host.
     if (id === null && flush < 1) {
+      const n0 = c.A.placed.length;
       id = weld(c, line, b, sides.filter((x) => x !== 'w'));
+      if (id !== null && !touchesOnly(c, id, n0)) { for (let k = c.A.placed.length; k > n0; k--) c.A.undoLast(); id = null; }
       if (id !== null) { flush++; c.parts.push('flush'); }
     }
     if (id === null) return no(c, `hang ${b.label}`);
@@ -339,6 +408,8 @@ function compose(c: Ctx, f: FactionDef, mode: ScrapGrammar): boolean {
     }
     c.parts.push('sponsons');
   }
+  const t = ties(c);
+  if (t > 0) c.parts.push(`ties ${t}`);
   return improvise(c, p);
 }
 

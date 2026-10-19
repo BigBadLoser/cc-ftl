@@ -383,6 +383,17 @@ Same arranger, no sim changes. Files:
   a battery section only for guns that find no place.
 - Viewer: `struts` (struts and braces per ship) and `aspect` join `donors` and `daylight` on salvage sheets.
 
+## Scrappers v26: lengthwise ties, salvage patches
+
+- Ties (`scrapGrammars.ts` `ties`): after the flanks hang, every pair of major blocks (donors and the anchor line, not
+  struts or plates) that face each other across a fore-aft gap of 2 to 8 open tiles over at least two rows, with no
+  join between them, gets two or three parallel horizontal truss members (every third row, daylight between).
+- Patches: 1-2 small salvage pieces (cargo pod string, gun battery, drone gun section) join the cast; they share the
+  jobs, so the big donors stay smaller. The viewer's `majors` counts donors of 200+ tiles of bounds.
+- Bows: navy nose 1, cockpit 2, liner nose 2, blunt block 2; the bow is built last, and an all-civil ship takes the
+  blunt navy block (salvage mixes origins). Navy hulk anchors weigh 1 (their own navy nose was the common oval bow).
+- Flush welds (still at most one) are undone unless they keep two tiles from every major block they are not welded to.
+
 ## Transitions (v18): tapered collars between sections
 
 - **`hullFill.ts` holds all the plating passes** that run after an arrangement: seam plates, enclosed-pocket
