@@ -190,7 +190,7 @@ palette.json    the single palette, read by Blender scripts and the game
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
   crew, see below), `robot_bay`, `env` (props,
-  economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
+  economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
   below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
@@ -276,7 +276,8 @@ palette.json    the single palette, read by Blender scripts and the game
     sides. `.loaded` shows a crate in the chute while unloading.
   - `keepout.r{n}` at (-2, ±1) and `walk.r{n}` at (-1, 0) and (-2, 0): deck marks, drawn with the floor.
 - **Combat fx v2 (`fx` family; `sprites/fx3d.py` lists it, built from `fxkit.py`, `fx_shots.py`, `fx_hits.py`, `fx_env.py`,
-  `fx_hand.py`; preview `review/fx_preview.py`). Art approved; final sheets not in `public/assets` yet, nothing wired.**
+  `fx_hand.py`; preview `review/fx_preview.py`). Sheets `fx.png` / `fx.glow.png` are in `public/assets`; renderer not
+  updated yet (see below).**
   Small 3D clusters rendered like any sprite: self-lit fire and energy (palette ramps `fxW..fxD`, laser `fxC*`, ion `fxI*`,
   shield `fxH*`, which feed the glow sheet) and lit smoke and metal. Frames are `fx.<name>.<n>`; `fx.<name>` is frame 0.
   - Ids (frames):
@@ -303,8 +304,11 @@ palette.json    the single palette, read by Blender scripts and the game
       flash is one sprite scaled up.
     - Wire muzzle flashes (barrel tip from the turret's aim) and per-weapon impacts in place of the shared
       `fx.pd_shot` flash and `fx.explosion_small`.
-    - Retire the old fx in `sprites/cfx.py` (env family) once the `fx` family ships; the particle sprites
-      (`fx.spark`, `fx.ember`, `fx.puff.*`, `fx.ice`) stay in env.
+  - The old fx (`sprites/cfx.py`, and `props.py`'s fire) are out of the env family's jobs; the `fx` family's entries replaced
+    theirs in the manifest. Their pixels stay in `env.png` until env is next rebuilt. The particle sprites (`fx.spark`,
+    `fx.ember`, `fx.puff.*`, `fx.ice`) stay in env.
+  - Until the renderer is updated, the shots and fire already show in game (same ids) but drawn the old way: additive,
+    single frame for the shots, the old one-sprite flash.
 
 ## UI
 
