@@ -157,7 +157,7 @@ export interface TransitionStyle {
 }
 
 /** Diagnostic metric bands: a generated ship outside a band is rejected and reseeded. */
-export type MetricId = 'compactness' | 'occupancy' | 'corridorRatio' | 'narrowLinks' | 'aspect' | 'beamShare';
+export type MetricId = 'compactness' | 'occupancy' | 'corridorRatio' | 'narrowLinks' | 'aspect' | 'beamShare' | 'spine';
 export type MetricBands = Partial<Record<MetricId, readonly [number, number]>>;
 
 export interface FactionDef {

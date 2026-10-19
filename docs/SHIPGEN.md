@@ -364,30 +364,43 @@ Same arranger, no sim changes. Files:
   of the pods on each rail, staggered when crowded); a ring that would sprawl past twice the core's length falls
   back to a collar. Its stub reaches past the ring, so the airlock and stores sit outside it.
 
-## Civilians (v19, v20): four families from the civil builders
+## Civilians (v19-v21): topologies, not one corridor run
 
-`civilGrammars.ts` on the shared arranger, built from `civilBlocks.ts` (the same builders the scrappers freeze as donors).
-Content: `src/content/factions/civilian.ts`. Lightly armed: point defence, at most a single light gun and a small shield; never a battery.
+`civilGrammars.ts` (topologies) on the shared arranger, from `civilBlocks.ts` (the civil builders the scrappers also use as
+donors), `civilFrames.ts` (container frames, ore cages, truss bridges, rig booms, the liner's 2D hull) and
+`civilStations.ts` (ring and lattice stations). Content: `src/content/factions/civilian.ts`. Lightly armed: point
+defence, at most a single light gun and a small shield; never a battery.
 
-- freighter: a cockpit (crew beside its stub), 1-3 spines of cargo containers (size 3-5, gap 2-3, optional stagger), the drive.
-- liner: a bow (plain, an observation dome, or a stepped pair of domes), 1-4 passenger segments, each drawing its own
-  form: `bulb` (the old liner segment), `band` (a cabin row and a lounge), `split` (cabins, lounge, cabins). Lounges are
-  1-2 rooms on a through corridor (one-sided ones are blisters) and sometimes carry small observation blisters.
-- mining: a cockpit, 1-3 ore-hold barges (2-4 hoppers each), the drive; the rig is one truss block: fore of the bow (a
-  cross piece with 2-4 arms, lengths even, chevron or forked), mid-ship (struts off a hold's flanks with arms sweeping
-  forward, sometimes raked aft), or both.
-- station: a hub (square, ring, or cross), 2-4 arms in seeded directions with an airlock at each end (north, south and
-  west airlocks; an east arm ends in the drive), cargo pods and the habitat part-way along an arm or on a free hub face,
-  never east. Station aspect target [1, 1.5]. Guns ride the modules (and the square hub), never through hub rooms.
-- drive (`drive` in civilBlocks): reactors either side of a short spine, engines at its end. Styles `nozzle` (one
-  engine room), `pair` (two stacked on a rail), `nacelles` (two on a rail with open rows between). `stern` picks the
-  first seeded style no taller than the block it joins, else the shortest: never the navy's tall bank.
+v20 joined every section corridor end to corridor end, so every ship was one straight run with blocks hung off it. In
+v21 each family draws a topology once per ship (`c.variant`, shared by all candidate arrangements), and most of them
+join sideways or lengthways:
 
-Sections join corridor end to corridor end (hall ports), so each train is one straight run.
-Taper: `{ slope 3, max 2, jitter 0, label 'fairing' }`. Commercial hulls are cheap and plain, so section changes get long,
-low fairings (at most two tiles), never the navy's armoured shoulders or scrapper jaggedness.
+- freighter: `frame` (containers slung from two crawlway rails with an open lane between them, the crew body and drive
+  aft), `offset` (the cargo mass beside the crew body, flush aft, reaching forward: asymmetric), `tug` (a crewed tug
+  pushing a big container body on a truss bridge).
+- liner: one wide 2D hull (`linerBody`): two long corridors, back-to-back cabins between them, lounges fore at full
+  depth, outer cabin rows whose depth follows the outline (`teardrop`, `oval`) or a flat `twin` hull (the inner band
+  split by a groove, the lower hull shorter). Cockpit fore, drive aft; an occasional bow dome as an accent.
+- mining: `cage` (a row of ore holds under a crawlway rail with truss teeth, beside the crew body, flush aft; sometimes
+  a bow rig), `boom` (the same cage, plus the rig on a long boom off the other flank reaching past the bow), `struts`
+  (v20's barges and rigs, a minority).
+- station: `ring` (rooms round a square corridor ring with an empty centre, a hub joined by 2-4 spokes), `lattice`
+  (single-room modules on a grid, linked by tubes along rows and one tube per row pair, beams elsewhere), `stack`
+  (station hub, habitat and pods offset along a north-south mast, airlocks at its ends).
+- The crew body (freighter, mining) is the cockpit (bridge, core, airlocks) plus a habitat-ring crew module aft.
+- Drive (`drive`): `nozzle`, `pair` or `nacelles`, the first no taller than its host. Stations carry thruster rooms
+  inside the ring or lattice instead (east-facing: the engine art and validator only allow +x); a stack's thruster sits
+  on an east-side module, so no station has a stern section.
+- `beside` grafts a body flush with the host's after end on its outermost wall line; arranger `xMax` keeps it from
+  overrunning the drive.
 
-Known weak spots: liners are lumpier than "long and smooth" (blisters and bulbs); stations always put the drive east.
+Metric `spine`: the share of corridor tiles within one tile of a single straight row or column. At d9 (12 seeds), v20 to
+v21: freighter 0.95 to 0.25, liner 0.95 to 0.42, mining 0.94 to 0.62 (struts seeds still 0.9-1.0), station 0.37 to 0.33.
+
+Taper: `{ slope 3, max 2, jitter 0, label 'fairing' }`.
+
+Known weak spots (v21 first preview): ring stations look alike; twin liners show an enclosed groove; the crew body is
+still a short run; tapers smear the cage's rail into the crew body.
 
 ## Diversity
 

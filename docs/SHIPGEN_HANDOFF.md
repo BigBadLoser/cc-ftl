@@ -65,7 +65,9 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 | `droneBlocks.ts` | sealed pods, crawls, the core room, beams, stores |
 | `droneGrammars.ts` | sockets, `frame` topologies (single, fork, twin, h, collar, ring, brace), drives, picket, lancer and swarm |
 | `civilBlocks.ts` | civil builders shared by the civilian generator and scrapper donors (freighter, habitat, liner, station, barge, pods, tug, containers, cockpit, drive, cabins, lounge, cross hub) |
-| `civilGrammars.ts` | civilian grammars: freighter, liner, mining, station |
+| `civilGrammars.ts` | civilian topologies: freighter, liner, mining, station |
+| `civilFrames.ts` | civil frames: container frames, ore cages, truss bridges, rig booms, the liner's 2D hull |
+| `civilStations.ts` | ring and lattice stations |
 | `scrapDonors.ts` | the donor registry and job pool; navy and drone donors cut from their own generators |
 | `scrapGrammars.ts` | salvage composition (heap, raft, chain), welding, improvised extras |
 | `salvage.ts` | cuts at seams, corner damage, outline ports, `freeze` |

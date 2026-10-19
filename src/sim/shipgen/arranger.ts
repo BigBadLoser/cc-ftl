@@ -65,6 +65,8 @@ export interface AttachOpts {
   doors?: number;
   /** The child's west wall may not lie west of this column (keeps side decks behind a nose). */
   xMin?: number;
+  /** The child's east wall may not lie east of this column (keeps a body beside a hull clear of its drive's end). */
+  xMax?: number;
 }
 
 const key = (x: number, y: number): number => (y + 4096) * 8192 + (x + 4096);
@@ -190,6 +192,7 @@ export class Arranger {
           const X = horiz ? wx + d - cp.x + (o.shift ?? 0) : wx - cp.x;
           const Y = horiz ? wy - cp.y : wy + d - cp.y + (o.shift ?? 0);
           if (o.xMin !== undefined && X + west(child) < o.xMin) continue;
+          if (o.xMax !== undefined && X + Math.max(...child.rows.map((r) => r.replace(/\.+$/, '').length)) - 1 > o.xMax) continue;
           const tiles = this.sharedOpenings(P, pp, child, cp, X, Y);
           if (tiles.length === 0 && o.doors !== 0) continue;
           const t = (d - lo) / Math.max(1, hi - lo);

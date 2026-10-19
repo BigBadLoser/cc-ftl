@@ -1,24 +1,28 @@
 import { mirrorBlock, type Block, type Side } from './arranger';
 import { blockFrom, hallBlock, localBuilder } from './blocks';
 import type { Builder } from './builder';
-import { barge, cabins, cockpit, containers, crossHub, drive, habitat, liner, lounge, podString, station, type DriveStyle } from './civilBlocks';
+import { barge, cockpit, drive, habitat, podString, station, type DriveStyle } from './civilBlocks';
+import { boomRig, containerFrame, linerBody, oreCage, truss, trussBridge, type LinerShape } from './civilFrames';
+import { latticeStation, ringStation } from './civilStations';
 import { dockBlock } from './navyBlocks';
 import { jobs, no, type Ctx } from './navyKit';
 import { mountGuns } from './navyMounts';
-import { dockSpec, type RoomSpec } from './plan';
+import { type RoomSpec } from './plan';
 import type { Rng } from '../rng';
 import { freeze } from './salvage';
 import type { CivilGrammar, FactionDef } from './types';
 
 /**
  * Civilian grammars on the shared arranger, from the shared civil builders (`civilBlocks.ts`, also the scrappers'
- * donors). Lightly armed: point defence in the core room, the odd single light gun on a sponson. Every civilian ends
- * in a light civil drive (`drive`), never the navy's tall bank.
- *   freighter  a cockpit, a long spine of cargo containers, the drive
- *   liner      a bow (plain, or an observation dome), a train of cabin rows and lounges (some with blisters), the drive
- *   mining     a cockpit, ore hopper barges, a beam rig: fore of the bow or mid-ship, sweeping forward
- *   station    a hub (square, ring or cross), two to four arms with airlocks at their ends, pods and habitat on arms or
- *              hub faces, a small drive on the east arm or face: no bow or stern to speak of
+ * donors) and the civil frames (`civilFrames.ts`, `civilStations.ts`). Lightly armed: point defence in the core room,
+ * the odd single light gun on a sponson. Each family has several topologies, drawn once per ship (`c.variant`), and
+ * most of them join sideways or lengthways (grafts and beams), not corridor end to corridor end:
+ *   freighter  frame (containers slung between beam rails, crew and drive aft), offset (the crew block beside the
+ *              cargo mass), tug (a crewed tug pushing a cargo body on a truss)
+ *   liner      one wide 2D hull (teardrop, oval, or a flat twin hull), cockpit fore, drive aft
+ *   mining     cage (an ore cage beside the crew block), boom (the rig on a long offset boom), struts (v20, minority)
+ *   station    ring (rooms round an empty centre, spokes to a hub), lattice (modules on a grid, tubes and beams),
+ *              stack (large modules offset along a mast); thrusters inside the structure, no bow or stern
  */
 
 const civil = (b: Builder | null, kind: string, label: string): Block | null => (b ? freeze(b, kind, label, 'civil') : null);
@@ -68,39 +72,6 @@ function dome(rng: Rng, w: number, h: number): Block | null {
   return b.place({ x: 0, y: -1 - Math.ceil(h / 2), w: w + 2, h: h + 2 }, 'support', { role: 'support', mods: [], w, h }) ? freeze(b, 'observation', 'observation dome', 'civil') : null;
 }
 
-/** An airlock on a west-facing arm end (entered from the east). */
-function westDock(rng: Rng): Block {
-  const b = localBuilder(rng);
-  b.place({ x: 0, y: -2, w: 6, h: 3 }, 'dock', { ...dockSpec(), w: 4, h: 1 });
-  return blockFrom(b, 'dock', 'dock', 'human', [{ id: 'e', side: 'e', x: 5, y: -1, len: 1, access: 'human' }]);
-}
-
-/** Freighter: a cockpit with the crew beside its stub, then cargo containers strung along a spine, the drive. */
-function freighter(c: Ctx): boolean {
-  const j = jobs(c.plan);
-  const bow = civil(cockpit(c.rng, c.plan.command, [...j.core, ...j.crew]), 'command', 'cockpit');
-  if (!bow) return no(c, 'cockpit');
-  const root = c.A.placeRoot(bow);
-  const crates = Math.max(4, cratesOf(j.stores));
-  // The container train: one to three spines (at least six crates each), container size, spacing and stacking
-  // drawn per ship.
-  const halves = c.rng.int(1, Math.max(1, Math.min(3, Math.floor(crates / 6))));
-  let host = root;
-  const spines: number[] = [];
-  const size = c.rng.int(3, 5);
-  // Gap 2+ leaves open space between containers (1 only doubles the wall).
-  const gap = c.rng.int(2, 3);
-  const stagger = c.rng.chance(0.4) ? Math.ceil((size + 1 + gap) / 2) : 0;
-  for (let i = 0; i < halves; i++) {
-    const sp = join(c, host, civil(containers(c.rng, Math.ceil(crates / halves), size, gap, stagger), 'cargo', 'containers'));
-    if (sp === null) return no(c, 'containers');
-    spines.push(sp);
-    host = sp;
-  }
-  c.parts.push(`containers ${crates}`);
-  return stern(c, host) && arms(c, spines, j.guns);
-}
-
 /** Liner bow: the cockpit alone, or with an observation dome (or a stepped pair of domes) ahead of it. */
 function linerBow(c: Ctx, root: number): boolean {
   const form = c.rng.pick(['plain', 'dome', 'stepped'] as const);
@@ -113,74 +84,6 @@ function linerBow(c: Ctx, root: number): boolean {
   const d2 = dome(c.rng, c.rng.int(2, 3), c.rng.int(2, Math.max(2, (d1?.rows.length ?? 5) - 4)));
   return (d2 !== null && c.A.attach(a, d2, { side: 'w', align: 'mid', doors: 1 }) !== null) || no(c, 'dome');
 }
-
-/** A lounge (one or two public rooms) on a through corridor, now and then with observation blisters on it. */
-function addLounge(c: Ctx, host: number, spec: RoomSpec): number | null {
-  const depth = c.rng.int(3, 6);
-  const rooms = spec.mods.length >= 2 && c.rng.chance(0.6)
-    ? [{ ...spec, mods: spec.mods.filter((_, i) => i % 2 === 0) }, { ...spec, mods: spec.mods.filter((_, i) => i % 2 === 1) }]
-    : [spec];
-  const lo = join(c, host, civil(lounge(c.rng, rooms, depth, rooms.length === 1 && c.rng.chance(0.5)), 'lounge', 'lounge'));
-  if (lo === null || !c.rng.chance(0.4)) return lo;
-  const w = c.rng.int(2, 4);
-  const h = c.rng.int(2, 3);
-  for (const side of c.rng.chance(0.6) ? (['n', 's'] as const) : ([c.rng.pick(['n', 's'] as const)])) {
-    const d = dome(c.rng, w, h);
-    if (d) c.A.attach(lo, side === 'n' ? d : mirrorBlock(d), { side, align: 'mid', doors: 1 });
-  }
-  return lo;
-}
-
-/** Liner: a bow, then passenger segments (cabin rows and lounges in seeded forms), the drive. */
-function linerHull(c: Ctx): boolean {
-  const j = jobs(c.plan);
-  const docks = j.crew.filter((r) => r.role === 'dock');
-  const bow = civil(cockpit(c.rng, c.plan.command, [...j.core, ...docks, ...j.stores]), 'command', 'cockpit');
-  if (!bow) return no(c, 'cockpit');
-  let host = c.A.placeRoot(bow);
-  if (!linerBow(c, host)) return false;
-  const quarters = c.plan.quarters;
-  const support = c.plan.support;
-  // One to four passenger segments; each draws its own form, cabin size and lounge.
-  const k = c.rng.int(1, Math.max(1, Math.min(4, quarters.length)));
-  const shipCabin: [number, number] = c.rng.pick([[2, 2], [2, 3], [3, 2]] as [number, number][]);
-  const segs: number[] = [];
-  const forms: string[] = [];
-  for (let i = 0; i < k; i++) {
-    const q = quarters.filter((_, n) => n % k === i);
-    const beds = Math.max(2, q.reduce((t, r) => t + r.mods.filter((m) => m === 'module.bed').length, 0));
-    const ls = q.flatMap((r) => r.mods.filter((m) => m !== 'module.bed'));
-    const cabin = c.rng.chance(0.3) ? c.rng.pick([[2, 2], [2, 3], [3, 2]] as [number, number][]) : shipCabin;
-    const bulb = c.rng.int(5, 9);
-    const spec: RoomSpec = { role: 'support', mods: [...ls, ...(support[i]?.mods ?? [])], w: c.rng.int(3, 5), h: bulb };
-    const form = c.rng.pick(['bulb', 'band', 'split'] as const);
-    forms.push(form);
-    let seg: number | null;
-    if (form === 'bulb') seg = join(c, host, civil(liner(c.rng, beds, spec, cabin, bulb), 'habitat', 'passenger segment'));
-    else {
-      const half = form === 'split' ? Math.ceil(beds / 2) : beds;
-      const row = join(c, host, civil(cabins(c.rng, half, cabin), 'habitat', 'cabin row'));
-      seg = row === null ? null : addLounge(c, row, spec);
-      if (seg !== null && form === 'split') seg = join(c, seg, civil(cabins(c.rng, beds - half, cabin), 'habitat', 'cabin row'));
-    }
-    if (seg === null) return no(c, 'segment');
-    segs.push(seg);
-    host = seg;
-  }
-  // Support rooms beyond the segments' lounges ride in extra lounges.
-  for (const s of support.slice(k)) {
-    const lo = addLounge(c, host, { ...s, w: Math.max(4, s.w) });
-    if (lo === null) return no(c, 'lounge');
-    host = lo;
-  }
-  c.parts.push(`segments ${forms.join('/')}`);
-  return stern(c, host) && arms(c, segs, j.guns);
-}
-
-/** Stamp a solid truss rectangle into a builder. */
-const truss = (b: Builder, x: number, y: number, w: number, h: number, key: string): void => {
-  b.cv.stamp(Array.from({ length: h }, () => '='.repeat(w)), x, y, key);
-};
 
 /**
  * Bow rig as one truss block: a cross piece and two to four arms reaching forward from it, lengths even, chevron
@@ -227,8 +130,8 @@ function midRig(c: Ctx, host: number): boolean {
   return true;
 }
 
-/** Mining ship: a cockpit, one to three barges of ore hoppers, the drive; the rig fore of the bow or mid-ship. */
-function mining(c: Ctx): boolean {
+/** Mining (v20 struts, a minority): a cockpit, ore barges in line, the rig fore of the bow or mid-ship. */
+function struts(c: Ctx): boolean {
   const j = jobs(c.plan);
   const bow = civil(cockpit(c.rng, c.plan.command, [...j.core, ...j.crew]), 'command', 'cockpit');
   if (!bow) return no(c, 'cockpit');
@@ -251,34 +154,177 @@ function mining(c: Ctx): boolean {
   return stern(c, host) && arms(c, holds, j.guns);
 }
 
-/** Station hub in a seeded shape: square (quadrant rooms on a cross corridor), ring, or cross (rooms along arms). */
-function hubBlock(c: Ctx, rooms: RoomSpec[]): Block | null {
-  const shape = c.rng.pick(['square', 'ring', 'cross'] as const);
-  c.parts.push(`hub ${shape}`);
-  const [cmd, ...rest] = rooms as [RoomSpec, ...RoomSpec[]];
-  if (shape === 'square') return civil(station(c.rng, rooms), 'command', 'station hub');
-  if (shape === 'ring') return civil(habitat(c.rng, cmd, rest.filter((_, i) => i % 2 === 0), rest.filter((_, i) => i % 2 === 1)), 'command', 'ring hub');
-  const arm = Math.max(3, ...rest.map((r) => Math.max(r.w, r.h))) + c.rng.int(0, 2);
-  return civil(crossHub(c.rng, cmd, rest, arm), 'command', 'cross hub');
+/** Pick a topology from the ship's variant draw (shared by every candidate arrangement of the ship). */
+function byVariant<T extends string>(c: Ctx, set: [T, number][]): T {
+  const total = set.reduce((t, [, w]) => t + w, 0);
+  let r = (c.variant ?? c.rng.next()) * total;
+  for (const [t, w] of set) if ((r -= w) < 0) return t;
+  return (set[set.length - 1] as [T, number])[0];
+}
+
+/** The crew block: the bridge with the crew rooms beside its stub. */
+function crewBlock(c: Ctx, rooms: RoomSpec[]): number | null {
+  const bow = civil(cockpit(c.rng, c.plan.command, rooms), 'command', 'cockpit');
+  return bow ? c.A.placeRoot(bow) : null;
 }
 
 /**
- * Station: a hub with two to four arms in seeded directions, an airlock at each arm's end (the east arm, if any, ends
- * in the drive); cargo pods and the habitat ride part-way along arms or straight on free hub faces.
+ * The compact crewed body: the cockpit (bridge, core, airlocks beside its stub) and, aft of it, the quarters and
+ * support rooms as a habitat ring module (2D, not a stub run). `aft` is the module the drive joins.
  */
-function stationHub(c: Ctx): boolean {
+function crewBody(c: Ctx): { root: number; aft: number } | null {
+  const j = jobs(c.plan);
+  const docks = j.crew.filter((r) => r.role === 'dock');
+  const crew = j.crew.filter((r) => r.role !== 'dock');
+  const root = crewBlock(c, [...j.core, ...docks]);
+  if (root === null || crew.length === 0) return root === null ? null : { root, aft: root };
+  const hub = crew.find((r) => r.role === 'support') ?? (crew[0] as RoomSpec);
+  const rest = crew.filter((r) => r !== hub);
+  const hab = join(c, root, civil(habitat(c.rng, hub, rest.filter((_, i) => i % 2 === 0), rest.filter((_, i) => i % 2 === 1)), 'habitat', 'crew module'));
+  return hab === null ? null : { root, aft: hab };
+}
+
+/**
+ * A cargo body beside a crewed block, flush with its after end (so the drive aft stays clear), on a seeded side; it
+ * is built hanging below its own port ('n'), mirrored for the north side. One door joins them.
+ */
+function beside(c: Ctx, host: number, blk: Block, flushOnly = false): number | null {
+  const first = c.rng.chance(0.5) ? 'n' : 's';
+  for (const side of [first, first === 'n' ? 's' : 'n'] as const) {
+    const b = side === 's' ? blk : mirrorBlock(blk);
+    // Flush aft: the body's last tile against the after end of the host's after-most port on that side.
+    // The host's outermost wall line on that side, its after-most port.
+    const out = (p: { y: number }): number => (side === 's' ? p.y : -p.y);
+    const hp = blockOf(c, host).ports.filter((p) => p.side === side).sort((p, q) => out(q) - out(p) || q.x + q.len - (p.x + p.len))[0];
+    const P = c.A.placed[host];
+    const xMax = P && hp ? P.x + hp.x + hp.len : undefined;
+    const flush = hp ? c.A.attach(host, b, { side, parentPort: hp.id, align: 'start', shift: hp.len - 1, doors: 1, ...(xMax !== undefined ? { xMax } : {}) }) : null;
+    if (flush !== null) return flush;
+    if (flushOnly) continue;
+    for (const align of ['end', 'mid', 'start'] as const) {
+      const id = c.A.attach(host, b, { side, align, doors: 1 });
+      if (id !== null) return id;
+    }
+  }
+  return null;
+}
+
+/** Join through a door (frame). */
+const frameJoin = (c: Ctx, host: number, blk: Block, side: Side): number | null => c.A.attach(host, blk, { side, align: 'mid', doors: 2 });
+
+/** Freighter: frame, offset bridge or tug and barge. */
+function freighter(c: Ctx): boolean {
+  const j = jobs(c.plan);
+  const crates = Math.max(6, cratesOf(j.stores));
+  const topo = byVariant(c, [['frame', 3], ['offset', 2], ['tug', 2]] as ['frame' | 'offset' | 'tug', number][]);
+  c.parts.push(topo);
+  const body = crewBody(c);
+  if (!body) return no(c, 'crew body');
+  const { root, aft } = body;
+  const cw = c.rng.int(3, 5);
+  const ch = c.rng.int(2, 3);
+  if (topo === 'frame') {
+    // Containers slung between two rails, an open lane between the rows, the crew block and drive aft.
+    const fr = containerFrame(c.rng, crates * 3, { lane: c.rng.int(1, 3), gap: c.rng.int(1, 2), cw, ch: ch + 1 });
+    if (frameJoin(c, root, fr, 'w') === null) return no(c, 'frame');
+    return stern(c, aft) && arms(c, [root, aft], j.guns);
+  }
+  if (!stern(c, aft)) return false;
+  // The cargo mass: containers packed two or three deep.
+  const mass = containerFrame(c.rng, crates * 3, { lane: 0, gap: c.rng.int(0, 1), cw, ch: ch + c.rng.int(1, 2) });
+  if (topo === 'offset') return (beside(c, aft, mass) !== null || no(c, 'cargo mass')) && arms(c, [root, aft], j.guns);
+  const t = frameJoin(c, root, trussBridge(c.rng, c.rng.int(5, 10), c.rng.chance(0.7)), 'w');
+  if (t === null || frameJoin(c, t, mass, 'w') === null) return no(c, 'barge');
+  return arms(c, [root, aft], j.guns);
+}
+
+/** Liner: one wide hull (cabins in 2D, lounges fore), a cockpit ahead of it, the drive aft. */
+function linerHull(c: Ctx): boolean {
+  const j = jobs(c.plan);
+  const docks = j.crew.filter((r) => r.role === 'dock');
+  const root = crewBlock(c, [...j.core, ...docks, ...j.stores]);
+  if (root === null) return no(c, 'cockpit');
+  const shape = byVariant(c, [['teardrop', 2], ['oval', 2], ['twin', 2]] as [LinerShape, number][]);
+  const beds = c.plan.quarters.reduce((t, r) => t + r.mods.filter((m) => m === 'module.bed').length, 0);
+  const ls = c.plan.quarters.flatMap((r) => r.mods.filter((m) => m !== 'module.bed'));
+  const lounges: RoomSpec[] = [{ role: 'support' as const, mods: ls, w: c.rng.int(3, 4), h: 3 }, ...c.plan.support.map((s) => ({ ...s, w: Math.max(3, s.w) }))].filter((r) => r.mods.length > 0);
+  const cabin = c.rng.pick([[2, 2], [3, 2], [2, 3]] as [number, number][]);
+  const body = join(c, root, civil(linerBody(c.rng, beds, lounges, shape, cabin), 'habitat', `${shape} hull`));
+  if (body === null) return no(c, 'hull');
+  c.parts.push(shape);
+  if (c.rng.chance(0.3) && !linerBow(c, root)) return false;
+  return stern(c, body) && arms(c, [body], j.guns);
+}
+
+/** Mining: an ore cage beside the crew block, the rig on a long offset boom, or (a minority) v20's struts. */
+function mining(c: Ctx): boolean {
+  const topo = byVariant(c, [['cage', 3], ['boom', 3], ['struts', 1]] as ['cage' | 'boom' | 'struts', number][]);
+  c.parts.push(topo);
+  if (topo === 'struts') return struts(c);
+  const j = jobs(c.plan);
+  const crates = Math.max(6, cratesOf(j.stores));
+  const body = crewBody(c);
+  if (!body) return no(c, 'crew body');
+  const { root, aft } = body;
+  // The cage hangs flush aft beside the crew body, as long as fits alongside it (never past the drive).
+  const hw = c.rng.int(2, 4);
+  const hh = c.rng.int(3, 4);
+  let cage: number | null = null;
+  for (let k = 12; k >= 2 && cage === null; k--) cage = beside(c, aft, oreCage(c.rng, crates * 3, hw, hh, k), true);
+  if (cage === null) return no(c, 'cage');
+  if (!stern(c, aft)) return false;
+  if (topo === 'cage') {
+    if (c.rng.chance(0.5) && !bowRig(c, root)) return false;
+    return arms(c, [root, aft], j.guns);
+  }
+  // Boom: the crew block with an ore cage beside it, the rig on a long boom off its other flank, reaching past the bow.
+  const spread = c.rng.int(2, 5);
+  const len = c.rng.int(10, 18);
+  const armsN = c.rng.int(2, 3);
+  const reach = c.rng.int(4, 8);
+  for (let out = c.rng.int(2, 4); out < 12; out += 2) {
+    const blk = boomRig(c.rng, out, len, spread, armsN, reach);
+    for (const side of ['n', 's'] as const) {
+      if (c.A.attach(root, side === 'n' ? blk : mirrorBlock(blk), { side, align: 'start', doors: 0, kind: 'beam' }) !== null) {
+        c.parts.push(`boom ${len}/${out}`);
+        return arms(c, [root, aft], j.guns);
+      }
+    }
+  }
+  return no(c, 'boom');
+}
+
+/** Station: ring, lattice or stack, picked by seed. */
+function stationHull(c: Ctx): boolean {
   const j = jobs(c.plan);
   const crew = j.crew.filter((r) => r.role !== 'dock');
+  const topo = byVariant(c, [['ring', 2], ['lattice', 2], ['stack', 2]] as ['ring' | 'lattice' | 'stack', number][]);
+  c.parts.push(topo);
+  if (topo === 'stack') return stack(c, crew);
+  const rooms = [...j.core, ...crew, ...j.stores];
+  if (topo === 'ring') {
+    const spokes = shuffle(c.rng, ['n', 's', 'w', 'e'] as Side[]).slice(0, c.rng.int(2, 4));
+    const b = civil(ringStation(c.rng, c.plan.command, rooms, c.plan.engines, c.plan.reactors, spokes), 'command', 'ring station');
+    if (!b) return no(c, 'ring');
+    return arms(c, [c.A.placeRoot(b)], j.guns);
+  }
+  const reactors: RoomSpec[] = [];
+  for (let k = c.plan.reactors; k > 0; k -= 2) reactors.push({ role: 'reactor', mods: Array<string>(Math.min(2, k)).fill('module.reactor'), w: 2 * Math.min(2, k) + 2, h: 4 });
+  const mods = shuffle(c.rng, [...rooms, ...reactors]);
+  const b = civil(latticeStation(c.rng, [c.plan.command, ...mods], c.plan.engines, c.rng.int(3, 5), c.rng.int(3, 5)), 'command', 'lattice station');
+  if (!b) return no(c, 'lattice');
+  return arms(c, [c.A.placeRoot(b)], j.guns);
+}
+
+/** Stack station: large modules offset along a north-south mast, airlocks at its ends, a thruster on an east module. */
+function stack(c: Ctx, crew: RoomSpec[]): boolean {
+  const j = jobs(c.plan);
   const hubRooms = [c.plan.command, ...j.core.slice(0, 2), ...crew.splice(0, 1)].slice(0, 4);
-  const hub = hubBlock(c, hubRooms);
-  if (!hub) return no(c, 'hub');
-  const root = c.A.placeRoot(hub);
-  const faces: Side[] = ['n', 's', 'w', 'e'];
-  const dirs = shuffle(c.rng, faces).slice(0, c.rng.int(2, 4));
   const mods: Block[] = [];
+  const hub = civil(station(c.rng, hubRooms), 'command', 'station hub');
   const pods = civil(podString(c.rng, Math.max(4, cratesOf(j.stores))), 'cargo', 'cargo pods');
-  if (!pods) return no(c, 'pods');
-  mods.push(pods);
+  if (!hub || !pods) return no(c, 'modules');
+  mods.push(hub, pods);
   if (crew.length > 0) {
     const hubR = crew.find((r) => r.role === 'support') ?? (crew[0] as RoomSpec);
     const rest = [...crew.filter((r) => r !== hubR), ...j.core.slice(2)];
@@ -286,44 +332,29 @@ function stationHub(c: Ctx): boolean {
     if (!hab) return no(c, 'habitat');
     mods.push(hab);
   }
-  // Each module goes on a free hub face or part-way along an arm.
-  const onArm = new Map<Side, Block>();
-  const onFace = new Map<Side, Block>();
-  for (const m of mods) {
-    // Never east: the drive keeps that side short, so the station grows no stern.
-    const free = faces.filter((f) => f !== 'e' && !dirs.includes(f) && !onFace.has(f));
-    const armsFree = dirs.filter((d) => d !== 'e' && !onArm.has(d));
-    if (free.length > 0 && (armsFree.length === 0 || c.rng.chance(0.5))) onFace.set(c.rng.pick(free), m);
-    else if (armsFree.length > 0) onArm.set(c.rng.pick(armsFree), m);
-  }
-  // Guns ride the modules (and the square hub, whose faces are corridor ends): never through the hub's rooms.
-  const hosts = hub.label.endsWith('station hub') ? [root] : [];
-  let eastEnd: number | null = null;
-  for (const [f, m] of onFace) {
-    const id = join(c, root, m, f);
+  const H = mods.reduce((t, m) => t + m.rows.length, 0);
+  const mast = hallBlock(c.rng, Math.ceil(H * 0.75) + c.rng.int(2, 6), 1, false);
+  for (const p of mast.ports) if (p.side === 'e' || p.side === 'w') p.multi = true;
+  const root = c.A.placeRoot(mast);
+  const order = shuffle(c.rng, mods);
+  const aligns = ['start', 'mid', 'end'] as const;
+  let side: Side = c.rng.chance(0.5) ? 'e' : 'w';
+  let east: number | null = null;
+  const hosts: number[] = [];
+  for (const [i, m] of order.entries()) {
+    const al = aligns[Math.min(2, Math.round((i * 2) / Math.max(1, order.length - 1)))] as 'start' | 'mid' | 'end';
+    const id = c.A.attach(root, m, { side, align: al }) ?? c.A.attach(root, m, { side: side === 'e' ? 'w' : 'e', align: al });
     if (id === null) return no(c, 'module');
     hosts.push(id);
-    if (f === 'e') eastEnd = id;
+    if ((c.A.placed[id]?.x ?? 0) > (c.A.placed[root]?.x ?? 0)) east = id;
+    side = side === 'e' ? 'w' : 'e';
   }
-  for (const d of dirs) {
-    const horiz = d === 'w' || d === 'e';
-    let tip = join(c, root, hallBlock(c.rng, d === 'e' ? c.rng.int(1, 3) : c.rng.int(2, 5), 1, horiz), d);
-    const m = onArm.get(d);
-    if (tip !== null && m) {
-      const id = join(c, tip, m, d);
-      if (id === null) return no(c, 'module');
-      hosts.push(id);
-      tip = join(c, id, hallBlock(c.rng, c.rng.int(1, 3), 1, horiz), d);
-    }
-    if (tip === null) return no(c, 'arm');
-    if (d === 'e') { eastEnd = tip; continue; }
-    const lock = d === 'n' ? dockBlock(c.rng) : d === 's' ? mirrorBlock(dockBlock(c.rng)) : westDock(c.rng);
-    if (c.A.attach(tip, lock, { side: d, align: 'mid', doors: 1 }) === null) return no(c, 'airlock');
+  for (const [d, lock] of [['n', dockBlock(c.rng)], ['s', mirrorBlock(dockBlock(c.rng))]] as const) {
+    if (c.A.attach(root, lock, { side: d, align: 'mid', doors: 1 }) === null) return no(c, 'airlock');
   }
-  c.parts.push(`arms ${dirs.join('')}`);
-  return stern(c, eastEnd ?? root) && arms(c, hosts, j.guns);
+  return (east !== null || no(c, 'east module')) && stern(c, east as number) && arms(c, hosts, j.guns);
 }
 
 export const CIVIL_GRAMMARS: Record<CivilGrammar, (c: Ctx, f: FactionDef) => boolean> = {
-  freighter: (c) => freighter(c), liner: (c) => linerHull(c), mining: (c) => mining(c), station: (c) => stationHub(c),
+  freighter: (c) => freighter(c), liner: (c) => linerHull(c), mining: (c) => mining(c), station: (c) => stationHull(c),
 };

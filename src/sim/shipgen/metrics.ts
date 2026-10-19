@@ -12,6 +12,8 @@ export function layoutMetrics(t: ShipTemplate, hallTile: (x: number, y: number) 
   const at = (x: number, y: number): string => t.rows[y]?.[x] ?? '.';
   let x0 = w; let y0 = h; let x1 = 0; let y1 = 0;
   let filled = 0; let floor = 0; let halls = 0; let narrow = 0; let beams = 0;
+  const hallRow = new Array<number>(h).fill(0);
+  const hallCol = new Array<number>(w).fill(0);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const c = at(x, y);
@@ -23,6 +25,8 @@ export function layoutMetrics(t: ShipTemplate, hallTile: (x: number, y: number) 
       floor++;
       if (!hallTile(x, y)) continue;
       halls++;
+      hallRow[y] = (hallRow[y] ?? 0) + 1;
+      hallCol[x] = (hallCol[x] ?? 0) + 1;
       const open = (dx: number, dy: number): boolean => at(x + dx, y + dy) === '_' || at(x + dx, y + dy) === 'D';
       if ((!open(0, -1) && !open(0, 1)) || (!open(-1, 0) && !open(1, 0))) narrow++;
     }
@@ -42,7 +46,17 @@ export function layoutMetrics(t: ShipTemplate, hallTile: (x: number, y: number) 
     narrowLinks: r(narrow / Math.max(1, halls)),
     aspect: r(bw / bh),
     beamShare: r(beams / Math.max(1, filled)),
+    spine: r(spineShare(hallRow, hallCol) / Math.max(1, halls)),
   };
+}
+
+/**
+ * Spine dominance: the most corridor tiles lying within one tile of a single straight line (a row or a column, a
+ * 3-wide band). A ship that is one corridor run with rooms hung off it scores near 1; rings, frames and 2D layouts low.
+ */
+function spineShare(rows: number[], cols: number[]): number {
+  const band = (xs: number[]): number => xs.reduce((best, _, i) => Math.max(best, (xs[i - 1] ?? 0) + (xs[i] ?? 0) + (xs[i + 1] ?? 0)), 0);
+  return Math.max(band(rows), band(cols));
 }
 
 /** The first metric outside its band, or null. */
