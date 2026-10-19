@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ModuleC, Struct, deserialize, newGame, serialize, type GridData, type Sim } from '../../sim';
+import { CrewC, ModuleC, Struct, deserialize, newGame, serialize, type Sim } from '../../sim';
 import { content } from '../index';
 
 const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
@@ -78,20 +78,6 @@ describe('starter ship', () => {
     run(sim, 300);
     run(loaded, 300);
     expect(serialize(loaded)).toBe(serialize(sim));
-  });
-
-  it('upgrades a version 1 save: new fields appear with normal air', () => {
-    const data = JSON.parse(serialize(newGame(3, content))) as { version: number; grids: GridData[] };
-    data.version = 1;
-    for (const grid of data.grids) {
-      for (const f of ['o2', 'co2', 'temp', 'fire', 'smoke', 'light', 'door', 'module']) delete grid.fields[f];
-    }
-    const sim = deserialize(JSON.stringify(data), content);
-    const g = sim.grids.get(1)!;
-    expect(g.get('o2', 2, 2)).toBe(21);
-    expect(g.get('o2', 0, 0)).toBe(0);
-    expect(g.has('module')).toBe(true);
-    run(sim, 20);
   });
 
   it('steps 1000 ticks in well under two seconds', () => {

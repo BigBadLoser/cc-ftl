@@ -1,7 +1,13 @@
+import type { SectorGrid } from '../sectorGrid';
 import { defineComponent } from '../ecs';
 
 /** The sector all ships share. Saved with the game. */
 export interface Sector {
+  /**
+   * Every tile of the sector: ships are stamped into it at their position (`sim.grids` holds windows onto it). Not plain
+   * data: the save writes it with `SectorGrid.serialize`.
+   */
+  grid: SectorGrid;
   /** Size in tiles. */
   width: number;
   height: number;

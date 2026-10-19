@@ -67,13 +67,12 @@ export function spawnCrew(sim: Sim, gridId: number, roles: readonly string[], re
   return out;
 }
 
-/** Create a ship from a template: grid, modules, ship + combat components and crew. Returns the grid id. */
+/** Create a ship from a template, stamped into the sector at (x, y): grid, modules, ship + combat components and crew. Returns the grid id. */
 export function spawnShip(
   sim: Sim, template: ShipTemplate, opts: { gridId?: number; faction: Faction; x: number; y: number; rest?: number },
 ): number {
   const gridId = opts.gridId ?? nextGridId(sim);
-  const grid = gridFromTemplate(gridId, template);
-  sim.grids.set(gridId, grid);
+  const grid = sim.grids.stamp(gridId, gridFromTemplate(gridId, template), opts.x, opts.y);
   spawnTemplateModules(sim, gridId, template);
   const ship = sim.world.createEntity();
   sim.world.add(ship, ShipC, {

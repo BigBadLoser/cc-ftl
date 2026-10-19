@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ShipC, deserialize, newGame, serialize, shipOf, type SimEvent } from '../../sim';
+import { CrewC, ShipC, newGame, shipOf, type SimEvent } from '../../sim';
 import { content } from '../index';
 
 describe('sector and ships', () => {
@@ -23,30 +23,5 @@ describe('sector and ships', () => {
     expect(sim.world.query(ShipC)).toHaveLength(2);
     expect(shipOf(sim, 2)?.faction).toBe('hostile');
     expect(sim.world.query(CrewC).length).toBe(10);
-  });
-
-  it('migrates a version 3 save', () => {
-    const sim = newGame(3, content);
-    const data = JSON.parse(serialize(sim)) as { version: number; sector?: unknown; world: { stores: Record<string, unknown> }; grids: { fields: Record<string, unknown> }[] };
-    data.version = 3;
-    delete data.sector;
-    delete data.world.stores.ship;
-    delete data.world.stores.combat;
-    for (const g of data.grids) delete g.fields.hp;
-    const loaded = deserialize(JSON.stringify(data), content);
-    expect(shipOf(loaded, 1)?.faction).toBe('player');
-    expect(loaded.grids.get(1)!.get('hp', 1, 1)).toBe(255);
-    expect(loaded.sector.width).toBeGreaterThan(0);
-    for (let i = 0; i < 20; i++) loaded.step();
-  });
-
-  it('migrates a version 4 save: weapons gain a turret aim', () => {
-    const sim = newGame(3, content);
-    const data = JSON.parse(serialize(sim)) as { version: number; world: { stores: Record<string, [number, Record<string, unknown>][]> } };
-    data.version = 4;
-    for (const e of data.world.stores.weapon ?? []) delete e[1].aim;
-    expect((data.world.stores.weapon ?? []).length).toBeGreaterThan(0);
-    const loaded = deserialize(JSON.stringify(data), content);
-    expect(serialize(loaded)).toBe(serialize(sim));
   });
 });

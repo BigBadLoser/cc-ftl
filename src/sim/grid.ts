@@ -61,10 +61,12 @@ export function fromBase64(type: FieldType, b64: string, n: number): FieldArray 
 }
 
 /**
- * A rectangular tile grid with named typed-array field layers. All writes go through set(),
+ * A dense rectangular tile grid with named typed-array field layers. All writes go through set(),
  * which bumps a per-field revision and a per-chunk revision so the renderer can diff cheaply.
+ * Since the sector grid (step 2) live ships are `GridWindow`s into `sim.sector.grid`; a dense grid is a build scratch
+ * (templates, tests) that `sim.grids.set` stamps into the sector.
  */
-export class Grid implements GridLike {
+export class DenseGrid implements GridLike {
   readonly chunksX: number;
   readonly chunksY: number;
   private readonly types = new Map<string, FieldType>();
@@ -157,10 +159,10 @@ export class Grid implements GridLike {
   }
 
   /** Rebuild a Grid from serialize() output. */
-  static deserialize(data: GridData): Grid {
+  static deserialize(data: GridData): DenseGrid {
     const spec: FieldSpec = {};
     for (const [name, f] of Object.entries(data.fields)) spec[name] = f.type;
-    const grid = new Grid(data.id, data.width, data.height, spec);
+    const grid = new DenseGrid(data.id, data.width, data.height, spec);
     for (const [name, f] of Object.entries(data.fields)) {
       grid.arrays.set(name, fromBase64(f.type, f.data, data.width * data.height));
     }
@@ -178,3 +180,10 @@ export class Grid implements GridLike {
     return y * this.width + x;
   }
 }
+
+/**
+ * `Grid` as a type is any grid systems and render see (`GridLike`: a dense grid or a window into the sector). As a value
+ * it builds a dense grid, so `new Grid(...)` keeps working. Both go away with `sim.grids` (sector step 7).
+ */
+export type Grid = GridLike;
+export const Grid = DenseGrid;

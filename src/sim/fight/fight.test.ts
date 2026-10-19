@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CrewC, DeadC, DownedC, DraftedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
+  CrewC, DeadC, DownedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
 import type { SimEvent } from '../events';
 import { shipOf, spawnShip } from '../combat/ships';
 import { storageCount } from '../items/storage';
-import { ModuleC } from '../modules/components';
 import type { ContentRegistry, ModuleDef, ShipTemplate } from '../registry';
-import { deserialize, migrate, serialize } from '../save';
+import { deserialize, serialize } from '../save';
 import { Sim } from '../sim';
 import { CREW_MAX_HP, SURRENDER_HP_FRAC } from '../tuning';
 import { AllegianceC, EquipC, FighterC, SurrenderedC } from './components';
@@ -360,18 +359,5 @@ describe('determinism and saves', () => {
     expect(serialize(b)).toBe(serialize(a));
     expect(serialize(reloaded)).toBe(serialize(a));
     expect(of(run(scenario(), 300), 'crew.attacked').length).toBeGreaterThan(0);
-  });
-
-  it('migrates a v8 save: crew gain the allegiance of their ship', () => {
-    const sim = scenario();
-    const raw = JSON.parse(serialize(sim)) as { version: number; world: { stores: Record<string, unknown> } };
-    raw.version = 8;
-    delete raw.world.stores['allegiance'];
-    const data = migrate(raw as never) as unknown as { version: number };
-    expect(data.version).toBe(12);
-    const old = deserialize(JSON.stringify(raw), content);
-    for (const id of old.world.query(CrewC)) expect(old.world.get(id, AllegianceC)?.faction).toBe('player');
-    expect(old.world.query(DraftedC)).toHaveLength(0);
-    expect(old.world.query(ModuleC)).toHaveLength(1);
   });
 });

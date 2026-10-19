@@ -641,6 +641,14 @@ and need no screenshots. Steps 5 and 9 are visual and need user screenshot appro
 `SectorGrid` (`sectorGrid.ts`) and `GridWindow` (`gridWindow.ts`) with tests; `SHIP_FIELDS.ship` and `SHIP_EMPTY` in
 `structure.ts`. Chunk revisions persist after a chunk is released, so a window's revision sum never goes backwards.
 `SectorGrid.raw()` throws (use `chunkData`/`load`); `GridWindow.chunkRevision` sums the sector chunks under a local chunk.
+Step 2 done (branch `sector-2`): `sim.sector.grid` is the one `SectorGrid`; `sim.grids` is a `GridMap` (`gridMap.ts`) of
+`GridWindow`s. `GridMap.stamp(id, dense, x, y)` copies a dense grid in (spawnShip stamps at the ShipC position, overlap is
+refused); `sim.grids.set(id, dense)` stamps at the next free spot on row y = 0, so fixtures that build a grid and set it keep
+working. As a type `Grid` now means `GridLike` (the dense class is `DenseGrid`, `Grid` stays its value alias), so render and
+app compile unchanged. Save v13: `sector.grid` (chunks) plus `grids: {id, x, y, w, h}[]`; `migrate` refuses any other
+version. Chunks are not released yet (occupancy off): a chunk with no structure left can still hold module or item ids,
+and nothing lifts ships until step 9. `content/ships/sectorEquiv.test.ts` pins state hashes recorded on the pre-refactor
+code (combat run, fire plus breach run) and checks a save round trip midway gives the identical state.
 
 **Merges before the refactor (answer to the user's hold).**
 - Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**

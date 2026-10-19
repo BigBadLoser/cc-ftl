@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   AllegianceC, CoreLinkC, CrewC, DeadC, DownedC, DraftedC, EquipC, HackedC, HealthC, InertC, ModuleC, PathC, PositionC,
-  PrisonerC, ShipC, StunC, WreckC, deserialize, isSubdued, migrate, newGame, serialize, shipEntityOf, storageCount, StorageC,
-  SAVE_VERSION, WeaponC, type ContentRegistry, type ModuleDef, type Sim, type SimEvent,
+  PrisonerC, ShipC, StunC, WreckC, deserialize, isSubdued, newGame, serialize, shipEntityOf, storageCount, StorageC,
+  WeaponC, type ContentRegistry, type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { wantsToSurrender } from '../../sim/fight/surrender';
@@ -51,9 +51,13 @@ function spawnRobot(sim: Sim, role = 'role.robot_worker', gridId = 1, at = playe
 /** Every tile of a grid to vacuum (no air, deep cold). */
 function vent(sim: Sim, gridId: number): void {
   const g = sim.grids.get(gridId)!;
-  g.raw('o2').fill(0);
-  g.raw('co2').fill(0);
-  g.raw('temp').fill(-150);
+  for (let y = 0; y < g.height; y++) {
+    for (let x = 0; x < g.width; x++) {
+      g.set('o2', x, y, 0);
+      g.set('co2', x, y, 0);
+      g.set('temp', x, y, -150);
+    }
+  }
 }
 
 describe('robot species', () => {
@@ -297,12 +301,5 @@ describe('determinism and saves', () => {
     run(a, 600);
     run(b, 600);
     expect(serialize(b)).toBe(serialize(a));
-  });
-
-  it('migrates a v10 save', () => {
-    const sim = setup();
-    const data = JSON.parse(serialize(sim)) as Record<string, unknown>;
-    data['version'] = 10;
-    expect(migrate(data)['version']).toBe(SAVE_VERSION);
   });
 });

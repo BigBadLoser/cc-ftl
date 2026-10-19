@@ -262,8 +262,9 @@ The many-grids sector (one `Grid` per ship, cross-grid portals, per-grid scenes,
   an airlock or bay, and crew can EVA off a hovering shuttle.
 - Ships are tile regions tagged by ship id. Capture, integrity, wrecks, AI, targeting, livery and roofing stay per ship.
 
-**Progress:** step 1 done on branch `sector-1` (`GridLike`, `SectorGrid`, `GridWindow`, `ship` field and `SHIP_EMPTY`; new code
-only, nothing uses it yet). Next: step 2.
+**Progress:** step 1 on `main` (`GridLike`, `SectorGrid`, `GridWindow`, `ship` field and `SHIP_EMPTY`). Step 2 on branch
+`sector-2` (not merged): ships are stamped into `sim.sector.grid`, `sim.grids` holds windows, save v13 stores chunks and old
+saves are refused (no migrations).
 
 Planner's calls (the user can overrule):
 - 16x16 sparse chunks.
