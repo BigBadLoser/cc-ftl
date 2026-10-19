@@ -15,6 +15,7 @@ import math
 from . import core
 from . import logistics
 from . import walls as W
+from .derelict_sac import SPRITES as SAC_SPRITES
 from .derelict_walls import SPRITES as WALL_SPRITES
 
 GN = 32
@@ -157,178 +158,6 @@ def eggs():
                        (0.17, 0.18, 0.65, False)):
         _egg(m, x, y, s, o)
     m.cyl((0.27, -0.24, 0), 0.06, 0.04, "xnM", sides=8, rtop=0.03, top="xnL")
-    return [m.build()]
-
-
-# Egg sacs: thin, wet membrane over sickly fluid. A slumped teardrop (widest near the deck, a soft tip), pale violet skin
-# above a fluid line, the green fluid below it with a dark embryo pressed against the skin, a few veins, a gloss spot.
-SAC = [(0.0, 0.8), (0.1, 0.98), (0.28, 1.0), (0.48, 0.9), (0.66, 0.72), (0.82, 0.48), (0.93, 0.26), (1.0, 0.08)]
-
-
-def _prof(t):
-    return _prof_at(SAC, t)
-
-
-def _prof_at(pts, t):
-    for (t0, a), (t1, b) in zip(pts, pts[1:]):
-        if t0 <= t <= t1:
-            return a + (b - a) * (t - t0) / (t1 - t0)
-    return pts[-1][1]
-
-
-def _surf(x, y, r, h, lean, t, az, out=1.0):
-    """A point on a sac's skin at height fraction t and azimuth az (degrees)."""
-    a = math.radians(az)
-    rr = r * _prof(t) * out
-    return x + lean[0] * t * t + rr * math.cos(a), y + lean[1] * t * t + rr * math.sin(a), h * t
-
-
-def _sac(m, x, y, r, h, fluid=0.55, lean=(0.0, 0.0), cut=None):
-    """The sac's skin as stacked frusta, split at the fluid line (a lit meniscus band), drooping by `lean` toward the
-    top; cut: torn open at this height fraction (the inside shows dark)."""
-    top = 1.0 if cut is None else cut
-    ts = sorted({t for t, _ in SAC if t < top} | {fluid, top} if fluid < top else {t for t, _ in SAC if t < top} | {top})
-    for t0, t1 in zip(ts, ts[1:]):
-        col = "xnF" if t1 <= fluid + 1e-6 else ("xnL" if t0 >= 0.82 else "xnS")
-        if t1 <= 0.1 + 1e-6:
-            col = "xnFD" if fluid > 0.1 else "xnD"
-        ox, oy = lean[0] * t0 * t0, lean[1] * t0 * t0
-        m.cyl((x + ox, y + oy, h * t0), r * _prof(t0), h * (t1 - t0) + 0.002, col, sides=14, rtop=r * _prof(t1))
-    if fluid < top:
-        ox, oy = lean[0] * fluid * fluid, lean[1] * fluid * fluid
-        m.cyl((x + ox, y + oy, h * fluid - 0.012), r * _prof(fluid) * 1.015, 0.024, "xnFL", sides=14)
-    if cut is not None:
-        ox, oy = lean[0] * cut * cut, lean[1] * cut * cut
-        m.cyl((x + ox, y + oy, h * cut - 0.01), r * _prof(cut) * 0.9, 0.012, "xnFD" if fluid >= cut else "xnK", sides=14)
-
-
-def _embryo(m, x, y, r, h, lean, t, az, size=1.0):
-    """A dark curled shape pressed against the skin inside the fluid, one glowing eye."""
-    a = math.radians(az)
-    for k, (dt, da, s) in enumerate(((0.0, 0, 0.36), (-0.08, 30, 0.24), (-0.13, 54, 0.15))):
-        px, py, pz = _surf(x, y, r, h, lean, t + dt, az + da)
-        rr = r * s * size
-        cx, cy = px - math.cos(a) * rr * 0.5, py - math.sin(a) * rr * 0.5
-        m.cyl((cx, cy, pz - rr * 0.8), rr, rr * 1.6, "xnK", sides=8, rtop=rr * 0.7)
-    px, py, pz = _surf(x, y, r, h, lean, t + 0.04, az - 12, 1.01)
-    m.box((px, py, pz), (0.03, 0.03, 0.03), "xnG")
-
-
-def _veins(m, x, y, r, h, lean, azs, t1=0.85):
-    for az in azs:
-        for k in range(8):
-            t = 0.12 + (t1 - 0.12) * k / 7
-            px, py, pz = _surf(x, y, r, h, lean, t, az + 14 * math.sin(k * 1.3 + az), 1.006)
-            m.box((px, py, pz), (0.026, 0.026, h * 0.11), "xnD" if t > 0.55 else "xnFD", rz=math.radians(az))
-
-
-def _gloss(m, x, y, r, h, lean, top=1.0):
-    """The wet highlight, up on the lit (+y, screen left) shoulder."""
-    for t, az, sz in ((0.66, 115, 0.055), (0.75, 105, 0.035)):
-        if t < top:
-            px, py, pz = _surf(x, y, r, h, lean, t, az, 1.012)
-            m.box((px, py, pz), (sz, sz, sz * 0.8), "xnH", rz=math.radians(az))
-
-
-def _flaps(m, x, y, r, h, lean, cut, droop, n=5):
-    """Limp torn skin round the tear, hanging outward by `droop` radians (past pi/2 they drape down the side)."""
-    ox, oy = lean[0] * cut * cut, lean[1] * cut * cut
-    zc, rc = h * cut, r * _prof(cut)
-    for k in range(n):
-        az = k * 2 * math.pi / n + 0.5
-        ca, sa = math.cos(az), math.sin(az)
-        L = h * (1 - cut) * (1.0 + 0.25 * math.sin(k * 2.1))
-        if math.cos(droop) < 0:
-            L = min(L, zc / -math.cos(droop) * 0.95)
-        bx, by = x + ox + rc * ca, y + oy + rc * sa
-        c = (bx + ca * math.sin(droop) * L / 2, by + sa * math.sin(droop) * L / 2, zc + math.cos(droop) * L / 2)
-        m.box(c, (2 * math.pi * rc / n * 0.85, 0.016, L), "xnS", rz=az - math.pi / 2, rx=-droop, taper=0.35)
-
-
-def _drip(m, x, y, r, h, lean, az, t0):
-    """Fluid leaking from a split: a dark slit, a drip trail down the skin."""
-    px, py, pz = _surf(x, y, r, h, lean, t0, az, 1.01)
-    m.box((px, py, pz), (0.03, 0.03, 0.08), "xnK", rz=math.radians(az))
-    for k in range(6):
-        t = t0 - (t0 * k / 6)
-        px, py, pz = _surf(x, y, r, h, lean, t, az + 4, 1.014)
-        m.box((px, py, pz), (0.032, 0.032, h * t0 / 6 + 0.01), "xnFL", rz=math.radians(az))
-
-
-def _base(name, cx, cy, r, w, puddle=0.0, pc=(0.0, 0.0)):
-    """The resin pad the sac grows from (a lobed membrane, dark crease), and a pool of spilled fluid of size `puddle`."""
-    parts = [(3, 0.18, 0.4), (5, 0.12, 1.3), (7, 0.06, 2.2)]
-    pparts = [(2, 0.2, 0.7), (3, 0.14, 2.0), (5, 0.08, 0.3)]
-
-    def fn(x, y):
-        if puddle > 0:
-            dp = blob(x, y, cx + pc[0], cy + pc[1], r * 0.95 * puddle + 0.12, pparts)
-            if dp < 1:
-                if dp > 0.84:
-                    return "xnFD"
-                return "xnFL" if (abs((x - y) * 6 % 1 - 0.5) < 0.08 and dp < 0.6) else "xnF"
-        d = blob(x, y, cx, cy, r, parts)
-        if d >= 1:
-            return None
-        if d > 0.86:
-            return "xnK"
-        return "xnM" if (d * 3.5) % 1 < 0.25 else "xnD"
-    x0, y0 = cx - w / 2 - 0.5, cy - w / 2 - 0.5
-    return decal(name, fn, z=0.004, x0=x0, y0=y0, w=w + 1, h=w + 1)
-
-
-STATES = ("intact", "cracked", "hatch0", "hatch1", "hatch2", "burst")
-PUDDLE = {"intact": 0.0, "cracked": 0.25, "hatch0": 0.35, "hatch1": 0.6, "hatch2": 0.85, "burst": 1.0}
-
-
-def _spawn_sac(m, x, y, r, h, lean, state):
-    """The sac the alien hatches from, in a damage / hatch state."""
-    if state in ("intact", "cracked", "hatch0"):
-        sw = 1.06 if state == "hatch0" else 1.0                      # it swells just before it splits
-        r, h = r * sw, h * sw
-        _sac(m, x, y, r, h, 0.58, lean)
-        _embryo(m, x, y, r, h, lean, 0.3, 50, 1.25 if state == "hatch0" else 1.0)
-        _veins(m, x, y, r, h, lean, (0, 150, 250))
-        _gloss(m, x, y, r, h, lean)
-        if state != "intact":
-            _drip(m, x, y, r, h, lean, 75, 0.62)
-        if state == "hatch0":
-            _drip(m, x, y, r, h, lean, 20, 0.7)
-        return
-    if state == "burst":                                             # deflated: a crumpled skin in its puddle
-        _sac(m, x, y, r * 1.1, h * 0.4, 0.12, lean, cut=0.8)
-        _flaps(m, x, y, r * 1.1, h * 0.4, lean, 0.8, 2.3)
-        return
-    cut, fl, droop = (0.66, 0.42, 0.9) if state == "hatch1" else (0.52, 0.26, 2.0)
-    _sac(m, x, y, r, h, fl, lean, cut=cut)
-    _veins(m, x, y, r, h, lean, (0, 150, 250), t1=cut - 0.05)
-    _gloss(m, x, y, r, h, lean, top=cut)
-    _flaps(m, x, y, r, h, lean, cut, droop)
-
-
-def eggsac(n, state="intact"):
-    """An alien egg sac: thin wet membrane over sickly fluid, an embryo curled inside, grown out of a resin pad (1x1,
-    or a 2x2 cluster of slumped sacs). Breaking it hatches an alien: cracked (it leaks), hatch0..2 (it swells, rips,
-    the skin falls open and the fluid floods out), burst (the deflated skin in its puddle)."""
-    pud = PUDDLE[state]
-    if n == 1:
-        m = _base(f"eggsac_1_{state}", 0.0, 0.0, 0.44, 1, pud, (0.14, 0.14))
-        _sac(m, 0.25, 0.17, 0.13, 0.24, 0.5, (0.02, 0.0))
-        _gloss(m, 0.25, 0.17, 0.13, 0.24, (0.02, 0.0))
-        _spawn_sac(m, -0.03, -0.03, 0.3, 0.6, (0.04, 0.02), state)
-        return [m.build()]
-    cx, cy = -0.5, -0.5
-    m = _base(f"eggsac_2_{state}", cx, cy, 0.95, 2, pud, (0.3, 0.3))
-    for (x, y, r, h, fl, lean, emb) in ((cx + 0.32, cy - 0.44, 0.2, 0.36, 0.5, (0.03, 0.03), False),
-                                        (cx + 0.44, cy + 0.12, 0.28, 0.5, 0.6, (0.05, 0.02), True),
-                                        (cx - 0.04, cy + 0.46, 0.24, 0.42, 0.55, (0.02, 0.05), False)):
-        _sac(m, x, y, r, h, fl, lean)
-        if emb:
-            _embryo(m, x, y, r, h, lean, 0.3, 45, 0.9)
-            _veins(m, x, y, r, h, lean, (10, 200))
-        _gloss(m, x, y, r, h, lean)
-        _seg(m, (cx - 0.1, cy - 0.1), (x, y), 0.0, 0.07, "xnD")                  # resin strands between them
-    _spawn_sac(m, cx - 0.12, cy - 0.12, 0.5, 0.92, (0.06, 0.03), state)
     return [m.build()]
 
 
@@ -529,10 +358,7 @@ SPRITES += [(f"decay.scorch.floor.v{_v}", (1, 1), "block", lambda v=_v: scorch_f
 SPRITES += [(f"decay.burnt.{_w}x{_h}", (_w, _h), "block", lambda w=_w, h=_h: burnt(w, h))
             for _w, _h in ((1, 1), (2, 1), (1, 2), (2, 2))]
 SPRITES += [(f"decay.growth.floor.v{_v}", (1, 1), "block", lambda v=_v: growth_floor(v)) for _v in range(3)]
-for _n in (1, 2):
-    for _st in STATES:
-        SPRITES.append((f"decay.eggsac.{_n}x{_n}{'' if _st == 'intact' else '.' + _st}", (_n, _n), "prop",
-                        lambda n=_n, st=_st: eggsac(n, st)))
+SPRITES += SAC_SPRITES
 SPRITES += [("decay.eggs", (1, 1), "prop", eggs),
             ("decay.debris.plates", (1, 1), "prop", debris_plates),
             ("decay.debris.cables", (1, 1), "prop", debris_cables),
