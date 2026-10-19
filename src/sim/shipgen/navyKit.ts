@@ -189,11 +189,33 @@ export function propulsion(c: Ctx, aft: number, mode: HullFamilyDef['propulsion'
 
 /** Twin drives at the east ends of two mirrored hulls ('start': pushed outboard, leaving the gap between open aft). */
 export function twinDrives(c: Ctx, hulls: [number, number], mode: HullFamilyDef['propulsion'][number], align: 'start' | 'mid' = 'mid'): boolean {
-  const e = Math.max(1, Math.ceil(c.plan.engines / 2));
-  const r = Math.max(1, Math.ceil(c.plan.reactors / 2));
-  const blk = mode === 'cluster' ? clusterBlock(c.rng, e, r) : bankBlock(c.rng, e, r);
-  c.parts.push(`twin ${mode}`);
-  return (!!blk && !!c.A.attachMirrored(hulls[0], hulls[1], blk, { side: 'e', align })) || no(c, 'twin drives');
+  // A mirrored *identical* drive module rounds odd engine/reactor budgets up
+  // on both sides (e.g. 3 planned engines becomes 4). Keep the existing
+  // mirrored silhouette for even budgets, but split odd budgets exactly.
+  const E = c.plan.engines;
+  const R = c.plan.reactors;
+  const e = Math.ceil(E / 2);
+  const r = Math.ceil(R / 2);
+  if (E % 2 === 0 && R % 2 === 0) {
+    const blk = mode === 'cluster' ? clusterBlock(c.rng, e, r) : bankBlock(c.rng, e, r);
+    c.parts.push(`twin ${mode}`);
+    return (!!blk && !!c.A.attachMirrored(hulls[0], hulls[1], blk, { side: 'e', align })) || no(c, 'twin drives');
+  }
+  // The bank grammar supports odd module totals without doubling them. This
+  // also makes the two nacelles intentionally different in size, but retains
+  // the same paired hull architecture and their exhaust clearance.
+  const split = (engines: number, reactors: number) =>
+    mode === 'cluster' && reactors % 2 === 0
+      ? clusterBlock(c.rng, engines, reactors)
+      : bankBlock(c.rng, engines, reactors);
+  const n = split(e, r);
+  const s = split(Math.floor(E / 2), Math.floor(R / 2));
+  if (!n || !s || E < 2) return no(c, 'split drive budget');
+  const first = c.A.attach(hulls[0], n, { side: 'e', align });
+  if (first === null) return no(c, 'split north drive');
+  if (c.A.attach(hulls[1], s, { side: 'e', align }) === null) return no(c, 'split south drive');
+  c.parts.push(`twin split ${mode}`);
+  return true;
 }
 
 export { mirrorBlock };
