@@ -364,21 +364,30 @@ Same arranger, no sim changes. Files:
   of the pods on each rail, staggered when crowded); a ring that would sprawl past twice the core's length falls
   back to a collar. Its stub reaches past the ring, so the airlock and stores sit outside it.
 
-## Civilians (v19): four families from the civil builders
+## Civilians (v19, v20): four families from the civil builders
 
 `civilGrammars.ts` on the shared arranger, built from `civilBlocks.ts` (the same builders the scrappers freeze as donors).
 Content: `src/content/factions/civilian.ts`. Lightly armed: point defence, at most a single light gun and a small shield; never a battery.
 
 - freighter: a cockpit (crew beside its stub), 1-3 spines of cargo containers (size 3-5, gap 2-3, optional stagger), the drive.
-- liner: a cockpit, 1-3 passenger segments (lounge bulb plus cabin rows; cabin size and bulb drawn per ship), the drive.
-- mining: an exposed beam rig fore (a cross piece and 2-3 arms), the cockpit, 1-2 ore-hold barges, the drive.
-- station: a square hub, docking arms n and s with airlocks, cargo pods w, a habitat ring and small drive e.
+- liner: a bow (plain, an observation dome, or a stepped pair of domes), 1-4 passenger segments, each drawing its own
+  form: `bulb` (the old liner segment), `band` (a cabin row and a lounge), `split` (cabins, lounge, cabins). Lounges are
+  1-2 rooms on a through corridor (one-sided ones are blisters) and sometimes carry small observation blisters.
+- mining: a cockpit, 1-3 ore-hold barges (2-4 hoppers each), the drive; the rig is one truss block: fore of the bow (a
+  cross piece with 2-4 arms, lengths even, chevron or forked), mid-ship (struts off a hold's flanks with arms sweeping
+  forward, sometimes raked aft), or both.
+- station: a hub (square, ring, or cross), 2-4 arms in seeded directions with an airlock at each end (north, south and
+  west airlocks; an east arm ends in the drive), cargo pods and the habitat part-way along an arm or on a free hub face,
+  never east. Station aspect target [1, 1.5]. Guns ride the modules (and the square hub), never through hub rooms.
+- drive (`drive` in civilBlocks): reactors either side of a short spine, engines at its end. Styles `nozzle` (one
+  engine room), `pair` (two stacked on a rail), `nacelles` (two on a rail with open rows between). `stern` picks the
+  first seeded style no taller than the block it joins, else the shortest: never the navy's tall bank.
 
 Sections join corridor end to corridor end (hall ports), so each train is one straight run.
 Taper: `{ slope 3, max 2, jitter 0, label 'fairing' }`. Commercial hulls are cheap and plain, so section changes get long,
 low fairings (at most two tiles), never the navy's armoured shoulders or scrapper jaggedness.
 
-Known weak spots: low within-family variety (stations especially), and every family shares the navy `bankBlock` stern.
+Known weak spots: liners are lumpier than "long and smooth" (blisters and bulbs); stations always put the drive east.
 
 ## Diversity
 

@@ -64,7 +64,7 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 | `navyGrammars.ts` | the other navy grammars (decks, wings, citadel, twin hull, carrier island, flight deck) and the GRAMMARS table |
 | `droneBlocks.ts` | sealed pods, crawls, the core room, beams, stores |
 | `droneGrammars.ts` | sockets, `frame` topologies (single, fork, twin, h, collar, ring, brace), drives, picket, lancer and swarm |
-| `civilBlocks.ts` | civil builders shared by the civilian generator and scrapper donors (freighter, habitat, liner, station, barge, pods, tug, containers, cockpit) |
+| `civilBlocks.ts` | civil builders shared by the civilian generator and scrapper donors (freighter, habitat, liner, station, barge, pods, tug, containers, cockpit, drive, cabins, lounge, cross hub) |
 | `civilGrammars.ts` | civilian grammars: freighter, liner, mining, station |
 | `scrapDonors.ts` | the donor registry and job pool; navy and drone donors cut from their own generators |
 | `scrapGrammars.ts` | salvage composition (heap, raft, chain), welding, improvised extras |

@@ -1,5 +1,5 @@
 import { localBuilder } from './blocks';
-import type { Builder } from './builder';
+import type { Builder, Rect, Side } from './builder';
 import { cargoSpec, engineSpec, reactorSpec, type RoomSpec } from './plan';
 import type { Rng } from '../rng';
 
@@ -16,6 +16,10 @@ import type { Rng } from '../rng';
  *   tug        a stubby hull with a reactor, an ore hopper and one big engine aft
  *   containers cargo containers strung along a 1-wide spine, gaps between them
  *   cockpit    a blunt bridge room on a short corridor stub
+ *   drive      a light civil drive: reactors either side of a short spine, engines aft (nozzle, pair or nacelles)
+ *   cabins     a cabin row: one-bed cabins both sides of a 1-wide spine
+ *   lounge     a lounge band: public rooms either side of a through corridor (a blister when one-sided)
+ *   cross hub  a plus: the bridge at the crossing of two corridors, rooms out along the arms
  */
 
 /** Salvaged reactor rooms are patched up around whatever doors the welds cut: a spare column and row. */
@@ -91,9 +95,9 @@ export function station(rng: Rng, rooms: RoomSpec[]): Builder | null {
 }
 
 /** Ore barge: a catwalk over a row of deep hoppers, each no deeper than the last (the sawtooth keel). */
-export function barge(rng: Rng, crates: number): Builder | null {
+export function barge(rng: Rng, crates: number, count?: number): Builder | null {
   const b = localBuilder(rng);
-  const k = Math.max(2, Math.min(4, Math.ceil(crates / 4)));
+  const k = count ?? Math.max(2, Math.min(4, Math.ceil(crates / 4)));
   let d = rng.int(5, 6);
   let left = crates;
   const hoppers: RoomSpec[] = [];
@@ -186,5 +190,106 @@ export function cockpit(rng: Rng, command: RoomSpec, beside: RoomSpec[]): Builde
   if (!room || !stub || !b.door(room, stub)) return null;
   b.strip(stub, 'n', beside.filter((_, i) => i % 2 === 0), command.w + 1);
   b.strip(stub, 's', beside.filter((_, i) => i % 2 === 1), command.w + 1);
+  return b;
+}
+
+export type DriveStyle = 'nozzle' | 'pair' | 'nacelles';
+
+/** Make the specs of both sides run the same length (the shorter side's first room widens). */
+function level(a: RoomSpec[], b: RoomSpec[]): void {
+  const d = run(a) - run(b);
+  const short = d > 0 ? b : a;
+  if (d !== 0 && short[0]) short[0] = { ...short[0], w: short[0].w + Math.abs(d) };
+}
+
+/**
+ * Light civil drive, never the navy's tall transverse bank: the reactors either side of a short spine, the engines
+ * at its end. `nozzle` one engine room holding every engine; `pair` two engine rooms stacked on a short rail;
+ * `nacelles` two engine rooms out on the rail's ends with open space between them. One engine is always a nozzle.
+ */
+export function drive(rng: Rng, engines: number, reactors: number, style: DriveStyle): Builder | null {
+  const b = localBuilder(rng);
+  const E = Math.max(1, engines);
+  const n: RoomSpec[] = reactors > 0 ? [reactorSpec(Math.ceil(reactors / 2))] : [];
+  const s: RoomSpec[] = reactors > 1 ? [reactorSpec(Math.floor(reactors / 2))] : [];
+  if (n.length > 0 && s.length > 0) level(n, s);
+  const W = Math.max(4, run(n), run(s)) + rng.int(0, 2);
+  const sp = b.place({ x: 0, y: -2, w: W, h: 3 }, 'hall');
+  if (!sp) return null;
+  b.strip(sp, 'n', n, 0);
+  b.strip(sp, 's', s, 0);
+  if (style === 'nozzle' || E < 2) {
+    const e = engineSpec(E, 'w');
+    const eng = b.place({ x: W - 1, y: -2 - Math.floor((e.h - 1) / 2), w: e.w + 2, h: e.h + 2 }, 'engine', e);
+    return eng && b.door(sp, eng) ? b : null;
+  }
+  // Two engine rooms on a rail: stacked (gap -1, a shared wall) or nacelles with open rows between.
+  const gap = style === 'pair' ? -1 : rng.int(1, 3);
+  const top = engineSpec(Math.ceil(E / 2), 'w');
+  const bot = engineSpec(Math.floor(E / 2), 'w');
+  const nb = -1 - Math.ceil(gap / 2);
+  const a = nb - top.h - 1;
+  const sb = nb + gap + 1;
+  const rail = b.place({ x: W - 1, y: a, w: 3, h: sb + bot.h + 2 - a }, 'hall');
+  const en = b.place({ x: W + 1, y: a, w: top.w + 2, h: top.h + 2 }, 'engine', top);
+  const es = b.place({ x: W + 1, y: sb, w: bot.w + 2, h: bot.h + 2 }, 'engine', bot);
+  if (!rail || !en || !es || !b.door(sp, rail) || !b.door(rail, en) || !b.door(rail, es)) return null;
+  return b;
+}
+
+/** A cabin row: one-bed cabins of `cabin` size both sides of a 1-wide spine. */
+export function cabins(rng: Rng, beds: number, cabin: [number, number]): Builder | null {
+  const b = localBuilder(rng);
+  const all = Array.from({ length: Math.max(2, beds) }, (): RoomSpec => ({ role: 'quarters', mods: ['module.bed'], w: cabin[0], h: cabin[1] }));
+  const n = all.slice(0, Math.ceil(all.length / 2));
+  const s = all.slice(n.length);
+  const sp = b.place({ x: 0, y: -2, w: Math.max(run(n), run(s)) + 2, h: 3 }, 'hall');
+  if (!sp) return null;
+  b.strip(sp, 'n', n, 1);
+  b.strip(sp, 's', s, 1);
+  return b;
+}
+
+/** A lounge band: public rooms either side of a through corridor, `depth` deep; one-sided, a blister. */
+export function lounge(rng: Rng, rooms: RoomSpec[], depth: number, oneSided = false): Builder | null {
+  const b = localBuilder(rng);
+  const fit = rooms.map((r) => ({ ...r, w: Math.max(r.w, 3), h: Math.max(depth, 2) }));
+  const n = oneSided ? fit : fit.filter((_, i) => i % 2 === 0);
+  const s = oneSided ? [] : fit.filter((_, i) => i % 2 === 1);
+  const sp = b.place({ x: 0, y: -2, w: Math.max(5, run(n), run(s)) + 2, h: 3 }, 'hall');
+  if (!sp) return null;
+  b.strip(sp, 'n', n, 1);
+  b.strip(sp, 's', s, 1);
+  return b;
+}
+
+/** Cross hub: the bridge at the crossing of two corridors, the other rooms out along the arms (two per arm). */
+export function crossHub(rng: Rng, centre: RoomSpec, rooms: RoomSpec[], armIn: number): Builder | null {
+  const b = localBuilder(rng);
+  const arm = Math.max(4, armIn);
+  const C = Math.max(centre.w, centre.h);
+  const half = Math.floor(C / 2);
+  const mid = b.place({ x: -half - 1, y: -half - 2, w: C + 2, h: C + 2 }, centre.role, { ...centre, w: C, h: C });
+  if (!mid) return null;
+  const cy = mid.y + Math.floor(mid.h / 2);
+  const cx = mid.x + Math.floor(mid.w / 2);
+  const arms = {
+    w: b.place({ x: mid.x - arm - 1, y: cy - 1, w: arm + 2, h: 3 }, 'hall'),
+    e: b.place({ x: mid.x + mid.w - 1, y: cy - 1, w: arm + 2, h: 3 }, 'hall'),
+    n: b.place({ x: cx - 1, y: mid.y - arm - 1, w: 3, h: arm + 2 }, 'hall'),
+    s: b.place({ x: cx - 1, y: mid.y + mid.h - 1, w: 3, h: arm + 2 }, 'hall'),
+  };
+  for (const a of Object.values(arms)) if (!a || !b.door(mid, a)) return null;
+  // Rooms flank the arms next to the crossing: east-west arms first, then the north-south ones (mirror-symmetric).
+  const order: ['w' | 'e' | 'n' | 's', Side][] = [['w', 'n'], ['e', 'n'], ['w', 's'], ['e', 's'], ['n', 'w'], ['n', 'e'], ['s', 'w'], ['s', 'e']];
+  for (let i = 0; i < Math.min(order.length, rooms.length); i++) {
+    const [k, side] = order[i] as ['w' | 'e' | 'n' | 's', Side];
+    const a = arms[k] as Rect;
+    const len = k === 'w' || k === 'e' ? a.w : a.h;
+    const r = rooms[i] as RoomSpec;
+    const d = Math.max(4, Math.min(Math.max(r.w, r.h), len - 2));
+    const along = k === 'w' || k === 'n' ? len - d - 2 : 0;
+    if (!b.attach(a, side, { ...r, w: d, h: d }, Math.max(0, along))) return null;
+  }
   return b;
 }

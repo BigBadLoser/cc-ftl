@@ -40,7 +40,7 @@ export const civilian = {
     },
     {
       id: 'station', weight: { base: 1, perDepth: 0.2, max: 3 }, bonus: { crew: 2 }, grammars: [{ value: 'station', weight: 1 }],
-      aspect: [0.8, 1.6], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
+      aspect: [1, 1.5], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
   ],
   weapons: {
