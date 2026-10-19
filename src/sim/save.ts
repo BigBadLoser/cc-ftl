@@ -12,8 +12,10 @@ import { newStory, type StoryState } from './story/state';
  * this is a prototype): a save of any other version is refused and the game starts fresh.
  * v13 (sector grid step 2): the sector's tiles are one `SectorGrid` (`sector.grid`, chunks), `grids` keeps only each
  * grid's window rectangle.
+ * v14 (step 8): vehicles keep position, heading and altitude in `BodyC`; `VehicleC.homeShip` and `hover` are ShipC ids;
+ * `EvaFloatC.sx/sy` is the hatch point in sector tiles.
  */
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

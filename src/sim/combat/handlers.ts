@@ -40,7 +40,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     let target: Target | null = null;
     if (cmd.targetVehicle !== undefined) {
       const v = sim.world.get(cmd.targetVehicle, VehicleC);
-      if (!v || v.state === 'stowed' || v.homeGrid === cmd.shipGridId) return reject(sim, cmd.type, 'badTarget');
+      if (!v || v.state === 'stowed' || v.homeShip === ship) return reject(sim, cmd.type, 'badTarget');
       target = { gridId: 0, moduleId: 0, vehicle: cmd.targetVehicle };
     } else if (cmd.targetGridId !== 0) {
       if (cmd.targetGridId === cmd.shipGridId || !shipOf(sim, cmd.targetGridId)) return reject(sim, cmd.type, 'badTarget');

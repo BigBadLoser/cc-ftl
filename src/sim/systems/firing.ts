@@ -1,3 +1,4 @@
+import { BodyC } from '../body';
 import { consumeAmmo } from '../combat/ammo';
 import { CombatC, IonC, ProjectileC, WeaponC, type Target } from '../combat/components';
 import { aimDirection, turretPosition } from '../combat/geometry';
@@ -58,7 +59,7 @@ function launchNext(
   if (def.ammo && !consumeAmmo(sim, gridId, def.ammo)) return void (w.shotsLeft = 0);
   const from = turretPosition(sim, moduleId);
   const alive = sim.world.get(target.moduleId, ModuleC)?.gridId === target.gridId;
-  const vehicle = target.vehicle ? sim.world.get(target.vehicle, VehicleC) : undefined;
+  const vehicle = target.vehicle && sim.world.has(target.vehicle, VehicleC) ? sim.world.get(target.vehicle, BodyC) : undefined;
   const to = vehicle ?? turretPosition(sim, alive ? target.moduleId : 0) ?? centerOf(sim, target.gridId);
   if (!from || !to) return void (w.shotsLeft = 0);
   w.aim = aimDirection(to.x - from.x, to.y - from.y);

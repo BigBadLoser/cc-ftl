@@ -1,4 +1,4 @@
-import { shipOf } from '../combat/ships';
+import { gridOfShip, shipOf } from '../combat/ships';
 import type { Faction, Ship } from '../combat/components';
 import { CrewC, PositionC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
@@ -28,7 +28,7 @@ export function shipCrew(sim: Sim, ship: Ship): number[] {
     }
     const aboard = sim.world.get(id, AboardC);
     const v = aboard && sim.world.get(aboard.vehicle, VehicleC);
-    if (v && v.homeGrid === ship.gridId) out.push(id);
+    if (v && gridOfShip(sim, v.homeShip) === ship.gridId) out.push(id);
   }
   return out;
 }

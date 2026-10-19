@@ -1,3 +1,4 @@
+import { BodyC } from '../body';
 import { ProjectileC } from '../combat/components';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
@@ -11,7 +12,7 @@ export function projectileSystem(sim: Sim): void {
   for (const id of sim.world.query(ProjectileC)) {
     const p = sim.world.get(id, ProjectileC);
     if (!p || p.t >= 1) continue;
-    const v = p.target.vehicle ? sim.world.get(p.target.vehicle, VehicleC) : undefined;
+    const v = p.target.vehicle && sim.world.has(p.target.vehicle, VehicleC) ? sim.world.get(p.target.vehicle, BodyC) : undefined;
     if (v) {
       home(p, v);
       continue;

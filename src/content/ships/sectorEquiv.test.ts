@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { deserialize, newGame, serialize, Struct, windowShipMismatches, type Sim } from '../../sim';
+import {
+  deserialize, gridOfShip, newGame, serialize, Struct, windowShipMismatches, type Body, type Sim, type Vehicle,
+} from '../../sim';
 import { content } from '../index';
 
 /** Grid fields that existed before the sector refactor (the `ship` owner layer is new and left out). */
@@ -12,11 +14,30 @@ function fnv(s: string, h = 0x811c9dc5): number {
 }
 
 /**
- * A save-format-independent hash of the sim: tick, rng, every entity and component, and each grid's legacy fields read
- * tile by tile in local coordinates (grids in id order). Recorded on the pre-refactor code; must never change.
+ * The world as the pre-refactor code stored it. Step 8 moved vehicle position and heading onto `BodyC` and `homeGrid` to
+ * `homeShip`: fold them back into the old `vehicle` component, in its old key order, and drop the `body` store (altitude is
+ * new and derived from the state). Anything else that changed would still change the hash.
+ */
+function legacyWorld(sim: Sim): unknown {
+  const data = sim.world.serialize();
+  const stores = { ...data.stores };
+  const bodies = new Map((stores.body ?? []) as [number, Body][]);
+  delete stores.body;
+  stores.vehicle = (stores.vehicle ?? []).map(([id, raw]) => {
+    const { def, homeShip, home, state, hp, ...rest } = raw as Vehicle;
+    const b = bodies.get(id) as Body;
+    return [id, { def, homeGrid: gridOfShip(sim, homeShip), home, state, x: b.x, y: b.y, heading: b.heading, hp, ...rest }];
+  });
+  return { ...data, stores };
+}
+
+/**
+ * A save-format-independent hash of the sim: tick, rng, every entity and component (in their pre-refactor shape, see
+ * `legacyWorld`), and each grid's legacy fields read tile by tile in local coordinates (grids in id order). Recorded on the
+ * pre-refactor code; must never change.
  */
 function stateHash(sim: Sim, events: string): string {
-  let h = fnv(`${sim.tick}|${sim.rng.getState()}|${JSON.stringify(sim.world.serialize())}|${events}`);
+  let h = fnv(`${sim.tick}|${sim.rng.getState()}|${JSON.stringify(legacyWorld(sim))}|${events}`);
   for (const id of [...sim.grids.keys()].sort((a, b) => a - b)) {
     const g = sim.grids.get(id)!;
     const vals: number[] = [id, g.width, g.height];

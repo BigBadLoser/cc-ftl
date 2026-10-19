@@ -66,7 +66,7 @@ function stage(sim: Sim, partySize = 2): { party: number[]; raiders: number[] } 
   return { party, raiders };
 }
 const capture = (sim: Sim): SimEvent[] => run(sim, 400, () => ship(sim, 2).state === 'prize');
-const vehicleOf = (sim: Sim, gridId: number): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeGrid === gridId)!;
+const vehicleOf = (sim: Sim, gridId: number): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === shipEntityOf(sim, gridId))!;
 
 describe('capturing a ship', () => {
   it('a boarding party subdues the raider crew and holds the helm: captured', () => {

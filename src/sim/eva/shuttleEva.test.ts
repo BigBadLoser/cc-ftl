@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ALT, BodyC } from '../body';
 import { CombatC, ShipC } from '../combat/components';
 import {
   CrewC, DraftedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
@@ -113,8 +114,9 @@ function setup(): { sim: Sim; v: number; pilot: number; a: number; b: number; ta
   const b = crew(sim, 1, 6, 4);
   const v = sim.world.createEntity();
   sim.world.add(v, VehicleC, {
-    def: 'vehicle.shuttle', homeGrid: 1, home: 0, state: 'flying', x: 40, y: 30, heading: 0, hp: 90, pilot, passengers: [a, b], dest: null, dock: 0, cargo: [],
+    def: 'vehicle.shuttle', homeShip: shipIdOf(sim, 1), home: 0, state: 'flying', hp: 90, pilot, passengers: [a, b], dest: null, dock: 0, cargo: [],
   });
+  sim.world.add(v, BodyC, { x: 40, y: 30, heading: 0, alt: ALT.cruise });
   for (const c of [pilot, a, b]) {
     sim.world.remove(c, PositionC);
     sim.world.remove(c, PathC);
@@ -122,16 +124,17 @@ function setup(): { sim: Sim; v: number; pilot: number; a: number; b: number; ta
   }
   return { sim, v, pilot, a, b, target: 2 };
 }
+const shipIdOf = (sim: Sim, gridId: number): number => sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)!.gridId === gridId)!;
 const reasons = (ev: SimEvent[]): string[] => ev.filter((e) => e.type === 'command.rejected').map((e) => (e as { reason: string }).reason);
 
 describe('EVA from a hovering shuttle', () => {
   it('hovers a couple of tiles off the target hull, then puts passengers out in suits that float to the hull', () => {
     const { sim, v, a, b, pilot } = setup();
-    sim.enqueue({ type: 'vehicle.hover', vehicle: v, gridId: 2 });
+    sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: shipIdOf(sim, 2) });
     run(sim, 20 * 30);
     const veh = sim.world.get(v, VehicleC)!;
-    expect(veh).toMatchObject({ hover: 2, dest: null });
-    expect(veh.x).toBeCloseTo(100 - 4.5); // 4.5 tiles off the west side of ship 2
+    expect(veh).toMatchObject({ hover: shipIdOf(sim, 2), dest: null });
+    expect(sim.world.get(v, BodyC)!.x).toBeCloseTo(100 - 4.5); // 4.5 tiles off the west side of ship 2
     sim.enqueue({ type: 'eva.out', vehicle: v });
     const ev = run(sim, 1);
     expect(reasons(ev)).toEqual([]);
@@ -145,9 +148,14 @@ describe('EVA from a hovering shuttle', () => {
       const p = sim.world.get(c, PositionC)!;
       expect(sim.grids.get(2)!.get('struct', p.x, p.y)).toBe(Struct.Space);
     }
+    // The drift runs in sector space: from the shuttle's hull-facing side (2.6 tiles off its body) to the landing tile.
+    const body = sim.world.get(v, BodyC)!;
+    const f = sim.world.get(a, EvaFloatC)!;
+    expect(Math.hypot(f.sx - body.x, f.sy - body.y)).toBeCloseTo(2.6);
     const p0 = { ...sim.world.get(a, PositionC)! };
+    expect(f.sx).toBeLessThan(100 + p0.x + 0.5); // ship 2's tile p0 is at sector x 100 + p0.x + 0.5, east of the hatch
     run(sim, 10);
-    expect(sim.world.get(a, PositionC)).toMatchObject({ x: p0.x, y: p0.y }); // frozen while drifting
+    expect(sim.world.get(a, PositionC)).toMatchObject({ gridId: 2, x: p0.x, y: p0.y }); // frozen while drifting, no grid change
     run(sim, 20 * 6);
     expect(sim.world.has(a, EvaFloatC)).toBe(false);
     expect(suitAir(sim, a)).toBeLessThan(DEFAULT_SUIT.airSec);
@@ -159,12 +167,17 @@ describe('EVA from a hovering shuttle', () => {
 
   it('crew float back, board and stow the suit; a third suit does not exist', () => {
     const { sim, v, a, b } = setup();
-    sim.enqueue({ type: 'vehicle.hover', vehicle: v, gridId: 2 });
+    sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: shipIdOf(sim, 2) });
     run(sim, 20 * 30);
     sim.enqueue({ type: 'eva.out', vehicle: v, crew: a });
     run(sim, 20 * 8);
     sim.enqueue({ type: 'crew.draft', id: a, drafted: true });
     sim.enqueue({ type: 'eva.board', crew: a, vehicle: v });
+    run(sim, 1);
+    const back = sim.world.get(a, EvaFloatC)!;
+    const body = sim.world.get(v, BodyC)!;
+    expect(back.mode).toBe('back');
+    expect(Math.hypot(back.sx - body.x, back.sy - body.y)).toBeCloseTo(2.6);
     const ev = run(sim, 20 * 8);
     expect(reasons(ev)).toEqual([]);
     const veh = sim.world.get(v, VehicleC)!;
@@ -181,14 +194,14 @@ describe('EVA from a hovering shuttle', () => {
     const { sim, v } = setup();
     sim.enqueue({ type: 'eva.out', vehicle: v });
     expect(reasons(run(sim, 1))).toEqual(['notHovering']);
-    sim.enqueue({ type: 'vehicle.hover', vehicle: v, gridId: 2 });
+    sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: shipIdOf(sim, 2) });
     run(sim, 20 * 30);
     const veh = sim.world.get(v, VehicleC)!;
     veh.suits = 0;
     sim.enqueue({ type: 'eva.out', vehicle: v });
     expect(reasons(run(sim, 1))).toEqual(['noSuit']);
     veh.suits = 2;
-    veh.x -= 10; // drifted off
+    sim.world.get(v, BodyC)!.x -= 10; // drifted off
     sim.enqueue({ type: 'eva.out', vehicle: v });
     expect(reasons(run(sim, 1))).toEqual(['outOfRange']);
   });
@@ -196,7 +209,7 @@ describe('EVA from a hovering shuttle', () => {
   it('is deterministic', () => {
     const go = (): string => {
       const { sim, v } = setup();
-      sim.enqueue({ type: 'vehicle.hover', vehicle: v, gridId: 2 });
+      sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: shipIdOf(sim, 2) });
       run(sim, 20 * 30);
       sim.enqueue({ type: 'eva.out', vehicle: v });
       run(sim, 100);

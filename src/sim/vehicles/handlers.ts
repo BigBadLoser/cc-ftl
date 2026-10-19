@@ -8,7 +8,8 @@ import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
 import { airlockWorking } from '../portals/airlock';
 import { AirlockC } from '../portals/components';
-import { shipOf } from '../combat/ships';
+import { BodyC } from '../body';
+import { gridOfShip, shipById, shipOf } from '../combat/ships';
 import { outsideCrew } from '../eva/shuttle';
 import type { Sim } from '../sim';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
@@ -34,7 +35,8 @@ function launch(sim: Sim, id: number, v: Vehicle): string | null {
   if (!bayWorking(sim, v.home)) return 'bayDown';
   v.state = 'flying';
   v.dest = null;
-  sim.events.emit({ type: 'vehicle.launched', vehicle: id, gridId: v.homeGrid, x: v.x, y: v.y });
+  const b = sim.world.get(id, BodyC);
+  sim.events.emit({ type: 'vehicle.launched', vehicle: id, gridId: gridOfShip(sim, v.homeShip), x: b?.x ?? 0, y: b?.y ?? 0 });
   return null;
 }
 
@@ -125,14 +127,14 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     const v = sim.world.get(cmd.vehicle, VehicleC);
     if (!v) return reject(sim, cmd.type, 'noVehicle');
     if (v.state === 'docked') return reject(sim, cmd.type, 'docked');
-    const ship = shipOf(sim, cmd.gridId);
-    if (!ship || ship.state === 'fled' || cmd.gridId === v.homeGrid) return reject(sim, cmd.type, 'badTarget');
+    const ship = shipById(sim, cmd.ship);
+    if (!ship || ship.state === 'fled' || cmd.ship === v.homeShip) return reject(sim, cmd.type, 'badTarget');
     if (!vehicleDefOf(sim, v)?.eva) return reject(sim, cmd.type, 'noEva');
     if (outsideCrew(sim, cmd.vehicle).length > 0) return reject(sim, cmd.type, 'crewOutside');
     const err = v.state === 'stowed' ? launch(sim, cmd.vehicle, v) : null;
     if (err) return reject(sim, cmd.type, err);
     v.hover = 0;
-    v.dest = { type: 'hover', gridId: cmd.gridId };
+    v.dest = { type: 'hover', ship: cmd.ship };
   },
   'vehicle.undock': (sim, cmd) => {
     const v = sim.world.get(cmd.vehicle, VehicleC);

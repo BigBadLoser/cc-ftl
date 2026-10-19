@@ -3,6 +3,8 @@ import type { World } from '../sim/ecs';
 import { ModuleC } from '../sim/modules/components';
 import { hullOutward, hullSide } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
+import { BodyC, isAirborne } from '../sim/body';
+import { ShipC } from '../sim/combat/components';
 import { VehicleC, type Vehicle } from '../sim/vehicles/components';
 import type { Atlas, StaticSprite } from './assets/loader';
 import { Z_PX } from './heights';
@@ -31,19 +33,26 @@ const HOLD_OFF = 1.1;
 const CATCH_MS = 1500;
 const EIGHTH = Math.PI / 4;
 
+/** What the host is told about a vehicle: its state, its dock airlock and its home ship's grid (scenes are per grid until step 5). */
+export interface ShuttleRef {
+  state: Vehicle['state'];
+  dock: number;
+  homeGrid: number;
+}
+
 export interface ShuttleViewHost {
-  /** Where the shuttles are drawn. The container must sort by zIndex. */
+  /** Where the shuttles are drawn: the air layer, over every tile and roof. The container must sort by zIndex. */
   layer: Container;
   /** Sector position (tiles) to art px in this layer's frame. */
   project(sx: number, sy: number): Pt;
   /** Which vehicles this view draws (flying, docked, and the one just leaving or settling in a bay). */
-  include(v: Vehicle): boolean;
+  include(v: ShuttleRef): boolean;
   /**
-   * Where a docked vehicle is drawn: its airlock ship's own sorted layer, in that ship's frame, so the hull, walls and the
-   * airlock's collar sort against the shuttle by depth (it is behind the ship at a far hull, in front at a near one).
-   * `project` maps sector tiles to that layer's art px, `depth` gives the zIndex. Null: the sector layer.
+   * Where a body at hull height or lower is drawn: its airlock ship's own sorted layer, in that ship's frame, so the hull,
+   * walls and the airlock's collar sort against the shuttle by depth (it is behind the ship at a far hull, in front at a near
+   * one). `project` maps sector tiles to that layer's art px, `depth` gives the zIndex. Null: the air layer.
    */
-  dock?(v: Vehicle): { layer: Container; project(sx: number, sy: number): Pt; depth(sx: number, sy: number): number } | null;
+  dock?(v: ShuttleRef): { layer: Container; project(sx: number, sy: number): Pt; depth(sx: number, sy: number): number } | null;
 }
 
 export interface ShuttleView {
@@ -98,7 +107,7 @@ const ease = (k: number): number => {
 };
 
 /**
- * Draws shuttles (VehicleC entities) with the pipeline sprites in the sector layer: `vehicle.shuttle.fly.d<0..7>` in flight
+ * Draws shuttles (VehicleC entities, placed by their BodyC) with the pipeline sprites in the sector layer: `vehicle.shuttle.fly.d<0..7>` in flight
  * (nearest heading), `vehicle.shuttle.dockside.d<k>` at an airlock (lying along the hull, side hatch against the collar) and
  * `vehicle.shuttle.docked.d<k>` for the lift off the pit floor and the settle back into it, timed to the bay's door frames (vehicleBayArt). A shuttle parked in its bay is the bay's
  * own layer. Renderer only; it never writes the sim.
@@ -149,9 +158,11 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
     update(dt) {
       const now = performance.now();
       const seen = new Set<number>();
-      for (const id of world.query(VehicleC)) {
+      for (const id of world.query(VehicleC, BodyC)) {
         const v = world.get(id, VehicleC);
-        if (!v) continue;
+        const b = world.get(id, BodyC);
+        if (!v || !b) continue;
+        const ref: ShuttleRef = { state: v.state, dock: v.dock, homeGrid: world.get(v.homeShip, ShipC)?.gridId ?? 0 };
         let t = tracks.get(id);
         if (!t) {
           const root = new Container();
@@ -166,7 +177,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           tube.visible = false;
           root.addChild(body, glow, tube);
           host.layer.addChild(root);
-          t = { root, body, glow, key: '', x: v.x, y: v.y, heading: v.heading, state: v.state, z: CRUISE_Z, pose: null, slot: null, dockedAt: -Infinity, undockedAt: -Infinity, tube, tubeBody, tubeGlow, tubeBehind: false, launched: -Infinity, landed: -Infinity, trail: [] };
+          t = { root, body, glow, key: '', x: b.x, y: b.y, heading: b.heading, state: v.state, z: CRUISE_Z, pose: null, slot: null, dockedAt: -Infinity, undockedAt: -Infinity, tube, tubeBody, tubeGlow, tubeBehind: false, launched: -Infinity, landed: -Infinity, trail: [] };
           tracks.set(id, t);
         }
         if (t.state !== v.state) {
@@ -185,7 +196,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         const undocking = v.state !== 'docked' && v.state !== 'stowed' && !!t.pose && sinceUndock < UNDOCK_DONE_MS + CATCH_MS;
         const launching = v.state !== 'stowed' && sinceLaunch < LAUNCH_LIFT.end * BAY_FRAME_MS + CATCH_MS;
         const landing = v.state === 'stowed' && sinceLand < RETURN_LAND.end * BAY_FRAME_MS;
-        const visible = host.include(v) && (v.state !== 'stowed' ? !(sinceLaunch < LAUNCH_LIFT.start * BAY_FRAME_MS) : landing);
+        const visible = host.include(ref) && (v.state !== 'stowed' ? !(sinceLaunch < LAUNCH_LIFT.start * BAY_FRAME_MS) : landing);
         if (!visible) {
           t.root.visible = false;
           seen.add(id);
@@ -196,25 +207,25 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
 
         // Position: the sim's, smoothed; after take-off, held over the pit while the doors open, then catching up.
         const k = 1 - Math.exp(-dt * 14);
-        let px = v.x;
-        let py = v.y;
+        let px = b.x;
+        let py = b.y;
         if (launching || undocking) {
           // Held on the spot (over the open pit / alongside the hull) while the bay doors open or the tube retracts, then it
           // catches up with the sim, which has already sent it on its way.
-          t.trail.push({ t: now, x: v.x, y: v.y });
+          t.trail.push({ t: now, x: b.x, y: b.y });
           const lag = launching ? LAUNCH_LIFT.start * BAY_FRAME_MS : UNDOCK_SLIDE_AT_MS;
           const since = launching ? sinceLaunch : sinceUndock;
           const delay = lag * (1 - ease((since - lag) / CATCH_MS));
           const at = now - delay;
           while (t.trail.length > 2 && (t.trail[1] as Sample).t <= at) t.trail.shift();
           const a = t.trail[0] as Sample;
-          const b = t.trail[1] ?? a;
-          const f = b.t > a.t ? Math.max(0, Math.min(1, (at - a.t) / (b.t - a.t))) : 0;
-          px = a.x + (b.x - a.x) * f;
-          py = a.y + (b.y - a.y) * f;
+          const n = t.trail[1] ?? a;
+          const f = n.t > a.t ? Math.max(0, Math.min(1, (at - a.t) / (n.t - a.t))) : 0;
+          px = a.x + (n.x - a.x) * f;
+          py = a.y + (n.y - a.y) * f;
           [t.x, t.y] = [px, py];
-        } else if (Math.hypot(v.x - t.x, v.y - t.y) > 3) [t.x, t.y] = [v.x, v.y];
-        else [t.x, t.y] = [t.x + (v.x - t.x) * k, t.y + (v.y - t.y) * k];
+        } else if (Math.hypot(b.x - t.x, b.y - t.y) > 3) [t.x, t.y] = [b.x, b.y];
+        else [t.x, t.y] = [t.x + (b.x - t.x) * k, t.y + (b.y - t.y) * k];
 
         // Heading: smoothed toward the movement heading (docked / docking: parallel to the hull; settling into a bay: its parking
         // heading).
@@ -222,7 +233,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         const prog: DockProgress | null =
           t.pose && v.state === 'docked' ? dockProgress(now - t.dockedAt) : t.pose && undocking ? undockProgress(sinceUndock) : null;
         if (t.pose && !prog && v.state !== 'docked') t.pose = null;
-        const target = landing ? parkedIndex(bayRot(v)) * EIGHTH : t.pose && prog && prog.slide > 0.01 ? t.pose.d * EIGHTH - Math.PI / 2 : v.heading;
+        const target = landing ? parkedIndex(bayRot(v)) * EIGHTH : t.pose && prog && prog.slide > 0.01 ? t.pose.d * EIGHTH - Math.PI / 2 : b.heading;
         const dh = Math.atan2(Math.sin(target - t.heading), Math.cos(target - t.heading));
         t.heading += dh * (1 - Math.exp(-dt * 10));
 
@@ -274,7 +285,14 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           }
         }
 
-        if (v.state === 'docked') t.slot = host.dock?.(v) ?? null;
+        // Depth rule (ARCHITECTURE "Sector grid" §3): an airborne body (above the roofs) is drawn in the air layer, sorted by
+        // x + y; one at hull height or lower sorts with the ship's tiles by depth. Undocking keeps the ship layer while the tube
+        // retracts and the shuttle slides out (render timing; the sim has it airborne already).
+        // TODO(step 5, scene.ts): the host can only place a low body in its dock airlock's ship layer, so a low body that is not
+        // docked (a stowed one settling into its pit) still falls back to the air layer. With one shared world layer, give every
+        // low body the world layer at the depth of its front-most footprint point + 0.5 (like the engine bell), and let `b.alt`
+        // drive the lift (`z`) instead of CRUISE_Z / DOCK_Z / PIT_Z.
+        if (!isAirborne(b)) t.slot = host.dock?.(ref) ?? null;
         else if (!undocking) t.slot = null;
         const slot = t.slot;
         const layer = slot?.layer ?? host.layer;

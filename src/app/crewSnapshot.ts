@@ -3,6 +3,7 @@ import {
   AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC,
   ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine,
   storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory,
+  shipEntityOf,
 } from '../sim';
 import type { UiCrew, UiFight } from '../ui/api';
 
@@ -72,7 +73,8 @@ function whereOf(sim: Sim, ctx: Ctx, id: number): { gridId: number; where: strin
 function evaShuttleOf(sim: Sim, id: number): number | null {
   const vid = sim.world.get(id, SuitC)?.vehicle;
   const v = vid ? sim.world.get(vid, VehicleC) : undefined;
-  return vid && v && v.state === 'flying' && !v.dest && v.hover === sim.world.get(id, PositionC)?.gridId ? vid : null;
+  const pos = sim.world.get(id, PositionC);
+  return vid && v && pos && v.state === 'flying' && !v.dest && !!v.hover && v.hover === shipEntityOf(sim, pos.gridId) ? vid : null;
 }
 
 function isOutside(sim: Sim, id: number): boolean {

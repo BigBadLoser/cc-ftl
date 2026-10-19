@@ -24,6 +24,12 @@ export function tileFrame(sim: Sim, gridId: number, sx: number, sy: number): { x
   return s ? { x: sx - s.x - 0.5, y: sy - s.y - 0.5 } : null;
 }
 
+/** The sector position of the centre of a grid's tile (x, y) (the inverse of `tileFrame`), or null if the ship is gone. */
+export function tileCentre(sim: Sim, gridId: number, x: number, y: number): { x: number; y: number } | null {
+  const s = shipOf(sim, gridId);
+  return s ? { x: s.x + x + 0.5, y: s.y + y + 0.5 } : null;
+}
+
 /** The `n` exterior tiles of a grid nearest to a point of its tile frame (ties by row, then column). */
 export function nearestExterior(sim: Sim, gridId: number, at: { x: number; y: number }, n: number): { x: number; y: number; d: number }[] {
   const grid = sim.grids.get(gridId);

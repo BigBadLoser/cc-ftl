@@ -1,4 +1,4 @@
-import { shipOf } from '../combat/ships';
+import { shipById, shipOf } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { accessTile, hullOutward, hullSide, rotatedSize } from '../modules/footprint';
 import { airlockTiles } from '../portals/airlock';
@@ -79,12 +79,12 @@ export function bayWorking(sim: Sim, bay: number): boolean {
 }
 
 /**
- * Where a shuttle holds station beside a grid: `gap` tiles off the side of the ship's bounding box that faces `from`,
- * level with the nearest point of that side (never off a corner, so the hull stays within a short float). A point
- * inside the box leaves through its nearest side. Null if the ship is gone.
+ * Where a shuttle holds station beside a ship (ShipC entity id): `gap` tiles off the side of the ship's bounding box that
+ * faces `from`, level with the nearest point of that side (never off a corner, so the hull stays within a short float). A
+ * point inside the box leaves through its nearest side. Null if the ship is gone.
  */
-export function hoverPoint(sim: Sim, gridId: number, gap: number, from: { x: number; y: number }): { x: number; y: number } | null {
-  const s = shipOf(sim, gridId);
+export function hoverPoint(sim: Sim, ship: number, gap: number, from: { x: number; y: number }): { x: number; y: number } | null {
+  const s = shipById(sim, ship);
   if (!s) return null;
   const nx = Math.min(s.x + s.width, Math.max(s.x, from.x));
   const ny = Math.min(s.y + s.height, Math.max(s.y, from.y));

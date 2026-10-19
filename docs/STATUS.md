@@ -266,8 +266,13 @@ The many-grids sector (one `Grid` per ship, cross-grid portals, per-grid scenes,
 `sector-2` (not merged): ships are stamped into `sim.sector.grid`, `sim.grids` holds windows, save v13 stores chunks and old
 saves are refused (no migrations). Step 3 on `sector-2`: field systems loop over `regions(sim)` through `load()`/`set()`
 with per-region active tile lists (bit-identical results, pinned by hash tests). Step 4 on `sector-2`: `ship` owner layer (stamp and
-build), `shipAt`, `shipFrame` (`REGION_PAD`), `regions(sim)` and the `MIN_SHIP_GAP` rule in spawns. Next: step 5 (render),
-after `genint` lands; `debug.spawnGenerated` from `genint` must call `placementGapError` like `debug.spawnEnemy`.
+build), `shipAt`, `shipFrame` (`REGION_PAD`), `regions(sim)` and the `MIN_SHIP_GAP` rule in spawns. Steps 1–4 are on `main`.
+Branch `sector-8` (not merged): step 6 fixture prep (multi-ship fixtures stamped at their ShipC, `windowShipMismatches`
+asserted) and step 8 (`BodyC` vehicle bodies, `homeShip`, `hover`/`vehicle.hover` by ship id, EVA drift in sector space,
+air-layer rule by altitude, save v14). Vehicle screenshots match main pixel for pixel apart from real-time animation phases
+(scratchpad `sector8/new` vs `sector8/main`). Next: step 5 (render), after `genint` lands; `debug.spawnGenerated` from
+`genint` must call `placementGapError` like `debug.spawnEnemy`. Step 5 must pick up the TODO in `shuttleView.ts` (low bodies
+in the shared world layer, `alt` driving the lift).
 
 Planner's calls (the user can overrule):
 - 16x16 sparse chunks.

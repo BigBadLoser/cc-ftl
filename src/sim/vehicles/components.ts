@@ -2,29 +2,25 @@ import { defineComponent } from '../ecs';
 import type { ItemQty } from '../registry';
 
 /**
- * 'stowed': inside its home bay (not targetable, not on the sector map). 'flying': in the sector at (x, y). 'docked':
+ * 'stowed': inside its home bay (not targetable, not on the sector map). 'flying': free in the sector (its BodyC). 'docked':
  * latched to an airlock's outer door, at the dock point just outside it.
  */
 export type VehicleState = 'stowed' | 'flying' | 'docked';
 
 /** Where a flying vehicle is headed. `bay` is its home bay. */
-export type VehicleDest = { type: 'dock'; airlock: number } | { type: 'bay' } | { type: 'hover'; gridId: number };
+export type VehicleDest = { type: 'dock'; airlock: number } | { type: 'bay' } | { type: 'hover'; ship: number };
 
 /**
  * A shuttle: an entity, never a grid. It has no tiles; crew who embark are hidden (see AboardC) and listed in `pilot` /
- * `passengers`. Position is in sector tiles.
+ * `passengers`. Its position, heading and altitude are its BodyC (sector tiles); this holds the state machine.
  */
 export interface Vehicle {
   /** VehicleDef content id. */
   def: string;
-  /** Grid of the ship it belongs to, and the bay module it is assigned to (0 if the bay is gone). */
-  homeGrid: number;
+  /** The ShipC entity of the ship it belongs to, and the bay module it is assigned to (0 if the bay is gone). */
+  homeShip: number;
   home: number;
   state: VehicleState;
-  x: number;
-  y: number;
-  /** Direction of the last movement, radians (atan2 of dy, dx in sector space). Renderer-readable. */
-  heading: number;
   hp: number;
   /** Crew member flying it, or 0. Required to launch. */
   pilot: number;
@@ -35,7 +31,7 @@ export interface Vehicle {
   dock: number;
   /** Hauled items aboard (see VehicleDef.cargo). */
   cargo: ItemQty[];
-  /** Grid it holds station beside (a few tiles off its hull) while flying with no destination, else 0/absent. */
+  /** ShipC entity it holds station beside (a few tiles off its hull) while flying with no destination, else 0/absent. */
   hover?: number;
   /** EVA suits stowed aboard. Absent = the def's `eva.suits`. */
   suits?: number;

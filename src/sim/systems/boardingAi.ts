@@ -1,3 +1,4 @@
+import { gridOfShip } from '../combat/ships';
 import { ShipC } from '../combat/components';
 import { isAiFaction } from '../combat/factions';
 import { DeadC, PositionC } from '../crew/components';
@@ -87,7 +88,7 @@ function start(sim: Sim, gridId: number, b: Boarder, weapon?: string): void {
   let vehicle = 0;
   for (const vid of sim.world.query(VehicleC)) {
     const v = sim.world.get(vid, VehicleC);
-    if (v?.homeGrid === gridId && v.state === 'stowed') {
+    if (v && gridOfShip(sim, v.homeShip) === gridId && v.state === 'stowed') {
       vehicle = vid;
       break;
     }

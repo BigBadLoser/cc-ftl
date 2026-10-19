@@ -15,7 +15,7 @@ import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { createRenderer, type Renderer } from './render/scene';
 import { content } from './content';
-import { newGame, ShipC, VehicleC } from './sim';
+import { BodyC, newGame, ShipC } from './sim';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
@@ -100,8 +100,8 @@ const api: UiApi = {
   story: bridge.story,
   chooseStory: bridge.chooseStory,
   focusShuttle: (id) => {
-    const v = sim.world.get(id, VehicleC);
-    if (v) renderer?.focusSector(v.x, v.y);
+    const b = sim.world.get(id, BodyC);
+    if (b) renderer?.focusSector(b.x, b.y);
   },
   setCombatView: (view) => renderer?.setCombatView(view),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,

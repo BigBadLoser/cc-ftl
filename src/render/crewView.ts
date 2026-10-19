@@ -2,6 +2,7 @@ import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
 import { EvaFloatC } from '../sim/eva/components';
+import { ShipC } from '../sim/combat/components';
 import { facingOf } from '../sim/crew/helpers';
 import { SuitC } from '../sim/portals/components';
 import { CarryingC } from '../sim/items/components';
@@ -84,6 +85,15 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
   const tex = diamondTextures();
   let selected: number | null = null;
   let last = performance.now();
+
+  /** Sector top-left of a grid's ship (a render-side offset until step 6 flips coordinates), or null. */
+  function shipOrigin(gridId: number): { x: number; y: number } | null {
+    for (const sid of world.query(ShipC)) {
+      const s = world.get(sid, ShipC);
+      if (s?.gridId === gridId) return s;
+    }
+    return null;
+  }
 
   function make(id: number): Slot | null {
     const crew = world.get(id, CrewC);
@@ -195,12 +205,15 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         }
         let tx = pos.x + (pos.toX - pos.x) * pos.progress;
         let ty = pos.y + (pos.toY - pos.y) * pos.progress;
-        // Drifting between a hovering shuttle and this hull: along the line to the shuttle's hatch (EvaFloat), facing the way it goes.
+        // Drifting between a hovering shuttle and this hull: along the line to the shuttle's hatch (EvaFloat, sector tiles; drawn
+        // in this grid's tile frame until the coordinate flip), facing the way it goes.
         const drift = world.get(id, EvaFloatC);
         let driftFacing = -1;
-        if (drift) {
+        const origin = drift ? shipOrigin(target.gridId) : null;
+        if (drift && origin) {
           const k = 1 - drift.ticks / Math.max(1, drift.total);
-          const [ax, ay, bx, by] = drift.mode === 'out' ? [drift.fx, drift.fy, pos.x, pos.y] : [pos.x, pos.y, drift.fx, drift.fy];
+          const [hx, hy] = [drift.sx - origin.x - 0.5, drift.sy - origin.y - 0.5];
+          const [ax, ay, bx, by] = drift.mode === 'out' ? [hx, hy, pos.x, pos.y] : [pos.x, pos.y, hx, hy];
           tx = ax + (bx - ax) * k;
           ty = ay + (by - ay) * k;
           driftFacing = facingOf(bx - ax, by - ay);

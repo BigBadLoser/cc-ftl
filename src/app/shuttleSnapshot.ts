@@ -41,7 +41,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
       pilot: crewRef(sim, v.pilot), passengers: v.passengers.map((c) => crewRef(sim, c)).filter((c): c is UiShuttleCrew => !!c),
       destination: v.destination, dockShip: dockM ? shipName(sim, dockM.gridId) : null, bay: v.bay,
       boardable: boardingTile(sim, v.id) !== null,
-      hoverShip: v.hovering ? shipName(sim, v.hovering) : null,
+      hoverShip: v.hoveringGrid ? shipName(sim, v.hoveringGrid) : null,
       suits: vehicleSuits(sim, sim.world.get(v.id, VehicleC) as never),
       canEva: v.state === 'flying' && !v.destination && v.hovering !== 0 && v.passengers.length > 0 && vehicleSuits(sim, sim.world.get(v.id, VehicleC) as never) > 0,
     });
@@ -62,7 +62,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
   const targets: UiShuttles['targets'] = [];
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s && s.gridId !== PLAYER && s.state !== 'fled') targets.push({ gridId: s.gridId, name: s.name });
+    if (s && s.gridId !== PLAYER && s.state !== 'fled') targets.push({ gridId: s.gridId, ship: id, name: s.name });
   }
   return { shuttles, airlocks, targets, roster, bays };
 }

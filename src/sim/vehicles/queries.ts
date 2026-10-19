@@ -1,3 +1,5 @@
+import { BodyC } from '../body';
+import { gridOfShip, shipById } from '../combat/ships';
 import type { Sim } from '../sim';
 import { VehicleC, type VehicleState } from './components';
 import { vehicleDefOf } from './lifecycle';
@@ -8,19 +10,23 @@ export interface VehicleView {
   def: string;
   asset: string;
   state: VehicleState;
-  /** Sector position (tiles) and heading (radians). Stowed vehicles sit at their bay's centre. */
+  /** Its body: sector position (tiles), heading (radians) and altitude (tiles). Stowed vehicles sit at their bay's centre. */
   x: number;
   y: number;
   heading: number;
+  alt: number;
   hp: number;
   maxHp: number;
+  /** ShipC entity of its home ship, and that ship's grid (kept for the UI's grid-keyed snapshots until step 7). */
+  homeShip: number;
   homeGrid: number;
   /** Module id of the bay, or of the airlock it is docked at / flying to (0 = none). */
   bay: number;
   dockedAt: number;
   destination: 'dock' | 'bay' | 'hover' | null;
-  /** Grid it hovers beside (0 = none). */
+  /** Ship (ShipC entity) it hovers beside, and that ship's grid (0 = none). */
   hovering: number;
+  hoveringGrid: number;
   pilot: number;
   passengers: readonly number[];
 }
@@ -28,13 +34,15 @@ export interface VehicleView {
 /** Every vehicle, ascending id. */
 export function vehicleViews(sim: Sim): VehicleView[] {
   const out: VehicleView[] = [];
-  for (const id of sim.world.query(VehicleC)) {
+  for (const id of sim.world.query(VehicleC, BodyC)) {
     const v = sim.world.get(id, VehicleC);
-    if (!v) continue;
+    const b = sim.world.get(id, BodyC);
+    if (!v || !b) continue;
+    const hovering = shipById(sim, v.hover ?? 0) ? (v.hover as number) : 0;
     out.push({
-      id, def: v.def, asset: vehicleDefOf(sim, v)?.asset ?? '', state: v.state, x: v.x, y: v.y, heading: v.heading, hp: v.hp,
-      maxHp: vehicleDefOf(sim, v)?.maxHp ?? v.hp, homeGrid: v.homeGrid, bay: v.home, dockedAt: v.dock,
-      destination: v.dest?.type ?? null, pilot: v.pilot, passengers: v.passengers, hovering: v.hover ?? 0,
+      id, def: v.def, asset: vehicleDefOf(sim, v)?.asset ?? '', state: v.state, x: b.x, y: b.y, heading: b.heading, alt: b.alt, hp: v.hp,
+      maxHp: vehicleDefOf(sim, v)?.maxHp ?? v.hp, homeShip: v.homeShip, homeGrid: gridOfShip(sim, v.homeShip), bay: v.home, dockedAt: v.dock,
+      destination: v.dest?.type ?? null, pilot: v.pilot, passengers: v.passengers, hovering, hoveringGrid: gridOfShip(sim, hovering),
     });
   }
   return out;

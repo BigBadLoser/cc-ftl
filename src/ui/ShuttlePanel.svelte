@@ -81,7 +81,7 @@
         <div class="sub">Hover beside (EVA)</div>
         <div class="chips" data-testid="hover-list">
           {#each data.targets as t (t.gridId)}
-            <button data-testid="hover-{t.gridId}" onclick={() => api.dispatch({ type: 'vehicle.hover', vehicle: s.id, gridId: t.gridId })}>{t.name}</button>
+            <button data-testid="hover-{t.gridId}" onclick={() => api.dispatch({ type: 'vehicle.hover', vehicle: s.id, ship: t.ship })}>{t.name}</button>
           {:else}
             <span class="none">No other ship in the sector.</span>
           {/each}

@@ -8,7 +8,7 @@ import type { ShipTemplate } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
-import { BoarderC } from '../vehicles/components';
+import { BoarderC, VehicleC } from '../vehicles/components';
 import { CombatC, IonC, ShipC, type Combat, type Faction, type Ship } from './components';
 import { hullSum } from './hull';
 
@@ -21,6 +21,16 @@ export function shipEntityOf(sim: Sim, gridId: number): number {
 /** The ship of a grid, or undefined. */
 export function shipOf(sim: Sim, gridId: number): Ship | undefined {
   return sim.world.get(shipEntityOf(sim, gridId), ShipC);
+}
+
+/** The ship with this ShipC entity id (the ship id), or undefined. */
+export function shipById(sim: Sim, ship: number): Ship | undefined {
+  return ship ? sim.world.get(ship, ShipC) : undefined;
+}
+
+/** Grid id of a ship id, or 0 if it is gone (for code that still keys on grids until step 7). */
+export function gridOfShip(sim: Sim, ship: number): number {
+  return shipById(sim, ship)?.gridId ?? 0;
 }
 
 /** Lowest grid id not in use. */
@@ -88,6 +98,11 @@ export function spawnShip(
     width: grid.width, height: grid.height, hullMax: hullSum(grid), integrity: 1,
   });
   stampOwner(grid, ship);
+  // Template vehicles were spawned with the modules, before their ship existed: they belong to it now.
+  for (const vid of sim.world.query(VehicleC)) {
+    const v = sim.world.get(vid, VehicleC);
+    if (v && !v.homeShip && sim.world.get(v.home, ModuleC)?.gridId === gridId) v.homeShip = ship;
+  }
   const layers = shieldCapacity(sim, gridId, false);
   const combat: Combat = {
     hold: false, volley: false, target: null, doctrine: template.doctrine ?? 'random', ftl: 0,

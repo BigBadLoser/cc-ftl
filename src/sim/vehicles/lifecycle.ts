@@ -1,4 +1,5 @@
-import { shipOf } from '../combat/ships';
+import { ALT, BodyC } from '../body';
+import { shipById, shipEntityOf, shipOf } from '../combat/ships';
 import { releaseBedClaim } from '../crew/beds';
 import {
   CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PathC, PositionC, type Crew,
@@ -28,7 +29,7 @@ export function occupants(v: Vehicle): number[] {
 
 /** Faction of the ship a vehicle belongs to. */
 export function vehicleFaction(sim: Sim, v: Vehicle): string {
-  return shipOf(sim, v.homeGrid)?.faction ?? 'neutral';
+  return shipById(sim, v.homeShip)?.faction ?? 'neutral';
 }
 
 /** Sector tiles per tick: content speed, faster with the pilot's piloting skill (stat resolver). */
@@ -39,18 +40,22 @@ export function vehicleSpeedPerTick(sim: Sim, v: Vehicle): number {
   return (def.speed * (1 + SKILL_STEP * skill)) / TICK_HZ;
 }
 
-/** Create a stowed vehicle in a bay (assumes the bay is empty). Returns the entity. */
+/**
+ * Create a stowed vehicle in a bay (assumes the bay is empty), its body at the bay centre. Returns the entity. At game start
+ * the ship entity may not exist yet: `homeShip` is then 0 and `spawnShip` fills it in (and the vehicle system pins the body).
+ */
 export function spawnVehicle(sim: Sim, defId: string, bay: number): number {
   const def = sim.content.vehicles?.[defId];
   const bm = sim.world.get(bay, VehicleBayC);
-  const c = bayCenter(sim, bay) ?? { x: 0, y: 0 }; // the ship entity may not exist yet at game start; the vehicle system re-syncs it
+  const c = bayCenter(sim, bay) ?? { x: 0, y: 0 };
   const mod = sim.world.get(bay, ModuleC);
   if (!def || !bm || !mod || sim.content.modules[mod.def]?.vehicleBay?.class !== def.class) throw new Error(`spawnVehicle: bad def "${defId}" or bay ${bay}`);
   const id = sim.world.createEntity();
   sim.world.add(id, VehicleC, {
-    def: defId, homeGrid: mod.gridId, home: bay, state: 'stowed', x: c.x, y: c.y, heading: 0, hp: def.maxHp,
+    def: defId, homeShip: shipEntityOf(sim, mod.gridId), home: bay, state: 'stowed', hp: def.maxHp,
     pilot: 0, passengers: [], dest: null, dock: 0, cargo: [],
   });
+  sim.world.add(id, BodyC, { x: c.x, y: c.y, heading: 0, alt: ALT.stowed });
   bm.vehicle = id;
   return id;
 }
@@ -106,7 +111,8 @@ export function destroyVehicle(sim: Sim, id: number): void {
   }
   const bay = sim.world.get(v.home, VehicleBayC);
   if (bay && bay.vehicle === id) bay.vehicle = 0;
-  sim.events.emit({ type: 'vehicle.destroyed', vehicle: id, state: v.state, x: v.x, y: v.y });
+  const b = sim.world.get(id, BodyC);
+  sim.events.emit({ type: 'vehicle.destroyed', vehicle: id, state: v.state, x: b?.x ?? 0, y: b?.y ?? 0 });
   sim.world.destroyEntity(id);
 }
 
@@ -154,15 +160,15 @@ export function releaseBayVehicle(sim: Sim, bay: number, gridId: number, x: numb
   b.vehicle = 0;
 }
 
-/** Fly-to point of a destination, or null if it is gone. */
-export function destPoint(sim: Sim, v: Vehicle): { x: number; y: number } | null {
+/** Fly-to point of a destination from where the body is, or null if it is gone. */
+export function destPoint(sim: Sim, v: Vehicle, from: { x: number; y: number }): { x: number; y: number } | null {
   if (v.dest?.type === 'dock') return dockPoint(sim, v.dest.airlock);
-  if (v.dest?.type === 'hover') return hoverPoint(sim, v.dest.gridId, vehicleDefOf(sim, v)?.eva?.hoverGap ?? 2, v);
+  if (v.dest?.type === 'hover') return hoverPoint(sim, v.dest.ship, vehicleDefOf(sim, v)?.eva?.hoverGap ?? 2, from);
   if (v.dest?.type === 'bay') return bayCenter(sim, v.home);
   return null;
 }
 
-/** Leave a dock: the vehicle hovers at the dock point. */
+/** Leave a dock: the body is freed where it is (the dock point) and the vehicle hovers there. */
 export function undock(sim: Sim, id: number, v: Vehicle): void {
   const airlock = v.dock;
   const gridId = sim.world.get(airlock, ModuleC)?.gridId ?? 0;

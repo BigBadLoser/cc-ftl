@@ -1,15 +1,16 @@
 import { defineComponent } from '../ecs';
 
 /**
- * A suited crew member drifting between a hovering shuttle and a ship's hull. `out`: they left the hatch and land on
- * their Position tile; `back`: they leave that tile for the hatch and board when it ends. (fx, fy) is the shuttle's
- * hatch in the tile frame of their grid (it can lie outside the grid). Movement is frozen while `ticks` run down from `total`.
+ * A suited crew member drifting between a hovering shuttle and a ship's hull, a straight line in sector space (no grid
+ * change: their Position is the hull tile all along). `out`: they left the hatch and land on their Position tile; `back`:
+ * they leave that tile for the hatch and board when it ends. (sx, sy) is the shuttle's hatch side in sector tiles.
+ * Movement is frozen while `ticks` run down from `total`.
  */
 export interface EvaFloat {
   mode: 'out' | 'back';
   vehicle: number;
-  fx: number;
-  fy: number;
+  sx: number;
+  sy: number;
   ticks: number;
   total: number;
 }

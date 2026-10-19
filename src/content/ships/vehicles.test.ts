@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AboardC, CrewC, DeadC, DownedC, ModuleC, PositionC, VehicleBayC, VehicleC, destroyVehicle, deserialize, newGame, serialize,
+  AboardC, BodyC, CrewC, DeadC, DownedC, ModuleC, PositionC, VehicleBayC, VehicleC, destroyVehicle, deserialize, newGame, serialize,
   accessTile, boardingTile, footprintTiles, isTileWalkable, rotatedSize, storageAdd, vehicleViews, type ContentRegistry, type ModuleDef, type Sim, type SimEvent,
-  windowShipMismatches,
+  windowShipMismatches, shipEntityOf,
 } from '../../sim';
 import { content } from '../index';
 
@@ -18,7 +18,7 @@ const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<Si
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 
 const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
-const shuttleOf = (sim: Sim, gridId: number): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeGrid === gridId)!;
+const shuttleOf = (sim: Sim, gridId: number): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === shipEntityOf(sim, gridId))!;
 const airlockOf = (sim: Sim, gridId: number): number =>
   sim.world.query(ModuleC).find((i) => sim.world.get(i, ModuleC)!.gridId === gridId && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
 /** Switch off every weapon of a grid (so a raider cannot shoot the shuttle). */
@@ -113,12 +113,12 @@ describe('shuttle round trip', () => {
       embark(sim, [c], shuttle);
       sim.enqueue({ type: 'vehicle.launch', vehicle: shuttle });
       run(sim, 2);
-      const x0 = sim.world.get(shuttle, VehicleC)!.x;
+      const x0 = sim.world.get(shuttle, BodyC)!.x;
       const bay = sim.world.query(VehicleBayC)[0] as number;
       expect(bay).toBeGreaterThan(0);
       sim.world.get(shuttle, VehicleC)!.dest = { type: 'dock', airlock: airlockOf(sim, 1) };
       run(sim, 20);
-      return Math.hypot(sim.world.get(shuttle, VehicleC)!.x - x0, 0);
+      return Math.hypot(sim.world.get(shuttle, BodyC)!.x - x0, 0);
     };
     expect(fly('role.pilot')).toBeGreaterThan(fly('role.medic'));
   });

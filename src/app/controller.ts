@@ -1,5 +1,5 @@
 import {
-  AboardC, AllegianceC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isWalkable, placementError, rotatedSize, type Sim, type SimEvent,
+  AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, footprintTiles, isWalkable, placementError, rotatedSize, type Sim, type SimEvent,
 } from '../sim';
 import type { Renderer } from '../render/scene';
 import type { UiBuildKind, UiToolState } from '../ui/api';
@@ -68,8 +68,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         if (s?.gridId === p.gridId) return r?.focusSector(s.x + p.x + (p.toX - p.x) * p.progress + 0.5, s.y + p.y + (p.toY - p.y) * p.progress + 0.5);
       }
     }
-    const v = sim.world.get(sim.world.get(id, AboardC)?.vehicle ?? 0, VehicleC);
-    if (v) r?.focusSector(v.x, v.y);
+    const b = sim.world.get(sim.world.get(id, AboardC)?.vehicle ?? 0, BodyC);
+    if (b) r?.focusSector(b.x, b.y);
   };
   const isPlayerCrew = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
   const selectCrew = (id: number | null, focus = false) => {

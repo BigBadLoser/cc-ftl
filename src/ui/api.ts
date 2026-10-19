@@ -364,7 +364,8 @@ export interface UiShuttles {
   /** Airlocks of other ships a shuttle can dock at. */
   airlocks: UiShuttleAirlock[];
   /** Other ships a shuttle can hover beside for EVA: grid id and name. */
-  targets: { gridId: number; name: string }[];
+  /** Ships a shuttle can hover beside: grid (UI key) and ShipC entity id (the `vehicle.hover` command's `ship`). */
+  targets: { gridId: number; ship: number; name: string }[];
   /** Crew on the player's ship who could climb in. */
   roster: UiShuttleCrew[];
   /** The player's vehicle bays (module ids) and whether each is empty. */

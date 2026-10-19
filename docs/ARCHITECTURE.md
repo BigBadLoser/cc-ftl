@@ -668,6 +668,38 @@ between padded frames). `debug.spawnEnemy` rejects with that reason and `spawnSh
 spawn obey the rule. The frame is derived, not stored on ShipC (the pad is a constant), so components and saves are
 unchanged. Field systems still run over the exact bbox: widening them to the padded frame changes results (vacuum tiles
 join the sweep) and belongs with step 6. Fixture grids set straight into `sim.grids` have no ShipC and owner 0.
+Step 6 fixture prep (branch `sector-8`): the multi-ship fixtures that build their own grids (`eva.test.ts`,
+`shuttleEva.test.ts`) stamp each grid at its ShipC position with `sim.grids.stamp`; the content fixtures (vehicles, capture,
+combat, sector) already go through `spawnShip`. `windowShipMismatches(sim)` (`regions.ts`) lists every ship whose window
+origin or size disagrees with its ShipC; those fixtures and the `sectorEquiv` combat run assert it is empty. A temporary
+check in `Sim.step` over the whole suite found only the two EVA fixtures. The portals fixtures keep the row-0 auto placement:
+they have no ShipC, so nothing can disagree, and they go in step 7. No recorded hash changed.
+Step 8 done (branch `sector-8`):
+- `BodyC { x, y, heading, alt }` (`sim/body.ts`) holds vehicle position, heading and altitude. `VehicleC` lost `x`, `y`,
+  `heading` and `homeGrid`; it has `homeShip` (the ShipC entity id), `dest: { type: 'hover', ship }` and `hover` (ship id).
+- `vehicle.hover { vehicle, ship }` takes a ship id. The UI's hover targets carry both the grid (key and test id) and the ship.
+- The vehicle system pins a stowed body to `bayCenter` at `ALT.stowed` and a docked one to `dockPoint` at `ALT.docked` every
+  tick. Undock frees the body where it is. Flying bodies sit at `ALT.cruise`, above `ALT.roof`.
+- Altitude switches with the state and does not ramp. The lift out of the bay and the dock slide are render timing, and a sim
+  ramp would move the layer switch off the art's frames.
+- `spawnVehicle` runs before its ship's ShipC exists (template modules spawn first). `spawnShip` then fills in `homeShip`.
+- `EvaFloatC.sx/sy` is the hatch point in sector tiles. `eva.out` and `eva.board` compute the drift in sector space from the
+  body, and the crew's `Position` stays on the hull tile with no grid change. `crewView` converts the hatch point to the
+  grid's frame (a render-side offset until step 6).
+- Render: `shuttleView` reads `BodyC`. Its host gets a `ShuttleRef { state, dock, homeGrid }`, so `scene.ts` is unchanged.
+  The layer is now chosen by altitude: an airborne body (`isAirborne`) goes in the air layer (the sector layer, above every
+  ship), and a low one in its dock airlock's ship layer by depth. Undocking keeps the ship layer through the retract and slide.
+  TODO (step 5): a low body that is not docked still falls back to the air layer, because the host knows only dock slots.
+  The pixel lift still comes from `CRUISE_Z`, `DOCK_Z` and `PIT_Z`, not from `alt`.
+- `dockSequence.ts` and `vehicleBayArt.ts` read no positions (timing, and the bay's stowed state), so they needed no change.
+- `gridId` fields kept for unflipped code:
+  - `VehicleView.homeGrid` / `hoveringGrid` (`shuttleSnapshot` keys on the player grid).
+  - `ShuttleRef.homeGrid` (`scene.ts` keeps one scene per grid).
+  - `DockPoint.gridId`, and `boardingTile` / `cargoTile` results (crew `Position` is still grid-local).
+  - Every vehicle event (`vehicle.launched/docked/undocked`, `crew.disembarked`).
+  - `UiShuttles.targets[].gridId`.
+- Save v14. `sectorEquiv` folds `BodyC` back into the old `vehicle` shape before hashing, and both pre-refactor hashes still
+  match, so sim behaviour is unchanged.
 
 **Merges before the refactor (answer to the user's hold).**
 - Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**
