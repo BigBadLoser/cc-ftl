@@ -5,6 +5,7 @@ chain and today's id as the fallback; scrap picks p1..p4 per tile by hash.
 
   python3 -I tools/blender/review/structure_preview.py ids                      -> the default ids the room uses
   python3 -I tools/blender/review/structure_preview.py <structure assets> <out> -> structure-<look>-1x.png / -3x.png"""
+import re
 import sys
 from pathlib import Path
 
@@ -19,6 +20,7 @@ ROOM = ["##########",
         "#...#.####",
         "#.....#   ",
         "#######   "]
+ALT = re.compile(r"^tile\.(hull\.(full\.)?|wall\.full\.)m\d+$")      # structure.ALT
 PRE = {"up": "full.", "cut": "", "low": "low."}
 LOOKS = [("default", None), ("navy", "navy"), ("drone", "drone"), ("civil v1", "civil.v1"), ("civil v2", "civil.v2"), ("civil v3", "civil.v3"), ("civil v4", "civil.v4"),
          ("scrap", "scrap")]
@@ -89,10 +91,16 @@ def floor_id(x, y):
 
 
 def chain(did, seg, x, y):
-    """Faction id first (scrap: p1..p4 by tile hash), then the default; `.v1` falls back to the plain id too."""
+    """Faction id first (scrap: p1..p4 by tile hash), then the default; `.v1` falls back to the plain id too. Alt
+    pieces (`.a1`..`.a3`, by tile hash) go in front."""
     if seg == "scrap":
         seg = f"scrap.p{1 + (tile_hash(x, y) >> 4) % 4}"
     ids = []
+    plain = did[:-3] if did.endswith(".v1") else did
+    n = (tile_hash(x, y) >> 12) % 8
+    if seg and 1 <= n <= 3 and ALT.match(plain):
+        f, rest = plain.split(".", 2)[1], plain.split(".", 2)[2]
+        ids.append(f"tile.{f}.{seg}.{rest}.a{n}")
     for d in ([did, did[:-3]] if did.endswith(".v1") else [did]):
         if seg:
             f, rest = d.split(".", 2)[1], d.split(".", 2)[2]
@@ -144,6 +152,34 @@ def draw_room(cv, S, pub, ox, oy, seg, level):
             put(did, x, y)
 
 
+def alt_strip(S, pub, out):
+    """Per look: a far hull run and an interior wall run, plain then a1..a3 (cutaway and walls up)."""
+    W, H = 300, 230
+    cv = Canvas(W * 2, H * (len(LOOKS) - 2))
+    for k, (label, seg) in enumerate(LOOKS[1:-1]):
+        for j, level in enumerate(("cut", "up")):
+            ox, oy = j * W + 150, k * H + 70
+            pre = "full." if level == "up" else ""
+            for y in range(5):
+                for x in range(4):
+                    if y:
+                        cv.static(S, f"tile.floor.{seg}.a", *iso(ox, oy, x, y))
+            draw = [(x, 0, f"tile.hull.{seg}.{pre}m10") for x in range(4)]
+            draw += [(4, y, f"tile.wall.{seg}.{pre}m5") for y in range(1, 5)]
+            for x, y, aid in sorted(draw, key=lambda d: d[0] + d[1]):
+                n = x if y == 0 else y - 1
+                aid = aid + (f".a{n}" if n else "")
+                for A in (S, pub):
+                    if aid in A.m["assets"]:
+                        cv.static(A, aid, *iso(ox, oy, x, y))
+                        break
+                else:
+                    cv.static(S, aid.rsplit(".a", 1)[0], *iso(ox, oy, x, y))
+            cv.labels.append((j * W + 8, k * H + 6, f"{label} - {'cutaway' if level == 'cut' else 'walls up'}: plain, a1, a2, a3"))
+    for s in (1, 3):
+        cv.save(out / f"structure-alts-{s}x.png", s)
+
+
 def main():
     if sys.argv[1] == "ids":
         print(",".join(used_ids()))
@@ -160,6 +196,7 @@ def main():
         name = label.replace(" ", "-")
         for s in (1, 3):
             cv.save(out / f"structure-{name}-{s}x.png", s)
+    alt_strip(S, pub, out)
     print("wrote", out)
 
 

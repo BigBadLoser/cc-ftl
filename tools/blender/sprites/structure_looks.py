@@ -1,13 +1,15 @@
-"""Faction looks for the structure tiles (restyle.Look subclasses): navy, drone, civil v1..v4, and the scrap post-pass.
+"""Faction looks for the structure tiles (restyle.Look subclasses): navy, drone, civil v1..v4 (the scrap post-pass is in
+structure_scrap).
 
 Every look keeps the default tile geometry; it maps the default colour roles to its own ramps and paints a few pattern
 overlays in surface coordinates (restyle.Poly: kind, s, z). Heights used below (tiles): skirt top 0.555, cut walls
 0.755, full walls 1.85, far hull 2.05, the ghost belly from 0.3 down to -1.5."""
 import math
 
-from .restyle import Look, hashf, hexgrid, ramp
+from .restyle import Look, hexgrid, ramp
 
 ZS = 0.555                       # skirt top (walls.skirt_top())
+ZD = ZS + 0.37 * (2.05 - ZS)     # top of the far hull's lower (drawer) course (wallart.hull_inner_face)
 C = 1 / 32                       # one cell
 
 # base colours per look: wall (interior partitions), hull (far hull, belly), trim (accent plates, stripes), floor
@@ -37,6 +39,33 @@ FLOOR_STEP = {"steelL": 1, "plate": 1, "steel": 3, "steelD": 4, "grime": 4, "dar
               "plateA": 3, "plateB": 3, "plateC": 4}
 
 
+def alt_of(P):
+    """The alt variant (1..3) of the sprite being painted, 0 for a plain piece."""
+    tail = P.sprite.rsplit(".", 1)[-1]
+    return int(tail[1]) if len(tail) == 2 and tail[0] == "a" and tail[1].isdigit() else 0
+
+
+def cell_of(s):
+    return int(s * 32 + 1e-6)
+
+
+def in_rect(s, z, r):
+    return r[0] <= s < r[1] and r[2] <= z < r[3]
+
+
+def frame(s, z, r, w=1.5 * C, dz=0.03):
+    """Where (s, z) sits in rect r: None outside, "top" / "bot" / "side" on its rim, "in" inside."""
+    if not in_rect(s, z, r):
+        return None
+    if r[3] - z < dz:
+        return "top"
+    if z - r[2] < dz:
+        return "bot"
+    if s - r[0] < w or r[1] - s < w:
+        return "side"
+    return "in"
+
+
 class Faction(Look):
     pre = ""
 
@@ -50,7 +79,37 @@ class Faction(Look):
         if P.sprite.startswith("tile.floor"):
             k = FLOOR_STEP.get(P.name)
             return self.t("F", k) if k is not None else P.name
+        n = alt_of(P)
+        if n and self.face(P) and P.z > ZS + 0.05:
+            f = self.alt(P, n, ((P.s % 1) + 1) % 1, 1 if P.face == "x" else 0)
+            if f:
+                return f
         return super().paint(P)
+
+    def alt(self, P, n, s, x):
+        """Alt variant n's feature at (s, z), or None for the plain look. Features stay off the tile edges."""
+        return None
+
+    def vent(self, s, z, r, fam, x):
+        """A recessed slatted vent in rect r: a lit lower lip, a dark rim, slats every 0.05."""
+        f = frame(s, z, r)
+        if f is None:
+            return None
+        if f == "bot":
+            return self.t(fam, 1 + x)
+        if f in ("top", "side"):
+            return self.t(fam, 6)
+        return self.t(fam, 6) if (z - r[2]) % 0.05 < 0.022 else self.t(fam, 4 + x)
+
+    def plate(self, s, z, r, fam, step, x, bolts=True):
+        """A raised plate in rect r: lit top rim, shaded bottom and sides, corner bolts."""
+        f = frame(s, z, r)
+        if f is None:
+            return None
+        if bolts and f == "in" and (s - r[0] < 3.5 * C or r[1] - s < 3.5 * C) and (z - r[2] < 0.065 or r[3] - z < 0.065):
+            return "steelL" if not x else "steel"
+        return {"top": self.t(fam, step - 2 + x), "bot": self.t(fam, step + 2), "side": self.t(fam, step + 1),
+                "in": self.t(fam, step + x)}[f]
 
     @staticmethod
     def full(P):
@@ -74,6 +133,9 @@ class Navy(Faction):
         x = 1 if P.face == "x" else 0
         if not self.hull(P) and self.face(P) and self.full(P) and 1.08 <= P.z < 1.13:
             return "nvA"                                                     # the accent stripe on the rail
+        n = alt_of(P)
+        if n and self.hull(P) and self.face(P) and P.fam == "wall" and ZS + 0.03 <= P.z < ZD - 0.04:
+            return self.drawers(((P.s % 1) + 1) % 1, P.z, n, x)
         if self.hull(P) and self.face(P) and P.fam == "hull" and P.z > ZS + 0.05:
             s, z = ((P.s % 1) + 1) % 1, P.z
             rows = (1.2,) if self.full(P) or P.z > 0.8 else ()
@@ -99,6 +161,55 @@ class Navy(Faction):
                     return self.t("H", 6)                                     # its shadow
         return None
 
+    def drawers(self, s, z, n, x):
+        """The hull's lower course on alt n: one long box (1), a plain course round the hatch (2), three narrow boxes
+        (3), instead of the default two boxes per tile."""
+        if cell_of(s) == 0:
+            return self.t("W", 4 + x)                                         # the tile seam
+        boxes = {1: ((0.06, 0.94),), 2: (), 3: ((0.05, 0.31), (0.37, 0.63), (0.69, 0.95))}[n]
+        z0, z1 = ZS + 0.1, ZD - 0.12
+        for s0, s1 in boxes:
+            if s0 <= s < s1 and z0 <= z < z1:
+                if z1 - z < 0.035 or s - s0 < C:
+                    return self.t("W", 1 + x)
+                if z - z0 < 0.03 or s1 - s < C:
+                    return self.t("W", 4 + x)
+                if n == 1 and abs(z - (z0 + z1) / 2) < 0.02 and (0.2 <= s < 0.35 or 0.65 <= s < 0.8):
+                    return self.t("W", 4 + x)                                 # two pull slots
+                return self.t("W", 2 + x)
+        return self.t("W", 3 + x)
+
+    def alt(self, P, n, s, x):
+        z = P.z
+        if self.hull(P):
+            if P.fam not in ("hull", "wall"):
+                return None
+            if n == 2:
+                return self.plate(s, z, (0.3, 0.7, 0.64, 1.0), "W", 4, x)      # a bolted service hatch in the lower course
+            if P.fam != "hull" or z < 1.25:
+                return None
+            if n == 1:
+                return self.vent(s, z, (0.3, 0.7, 1.38, 1.62), "H", x)          # an intake grille
+            f = frame(s, z, (0.56, 0.84, 1.36, 1.62))
+            if f == "in" and 1.44 <= z < 1.54 and int(s / C) % 3 != 2:
+                return "medRed" if not x else "rustD"                        # a red warning stencil on a plate
+            return self.plate(s, z, (0.56, 0.84, 1.36, 1.62), "H", 2, x, bolts=False)
+        if not self.full(P) or z < 0.62:
+            return None
+        if n == 1:
+            return self.vent(s, z, (0.2, 0.44, 1.4, 1.62), "W", x)              # an air vent above the rail
+        if n == 2:                                                            # a wall terminal: dark screen, blue bar
+            f = frame(s, z, (0.56, 0.82, 1.22, 1.46))
+            if f in ("in",) and 1.33 <= z < 1.37 and s < 0.74:
+                return "nvA"
+            if f == "in":
+                return "dark" if not x else "black"
+            return self.t("W", 5 + x) if f else None
+        f = frame(s, z, (0.3, 0.48, 0.66, 0.98))                              # a red fire cabinet below the rail
+        if f == "in":
+            return "medRed" if not x or z > 0.9 else "rustD"
+        return ("rustD" if f != "top" else "medRed") if f else None
+
 
 HEX_R = 1 / (2 * math.sqrt(3))           # two hexes per tile width, so the inlay tiles seamlessly from tile to tile
 
@@ -108,9 +219,12 @@ class Drone(Faction):
     on the hull; a few short cyan status lines (glow), no stencils."""
     pre = "dn"
 
-    def hex(self, P, fill):
-        """Big hex plates (HEX_R): a dark seam, a lit upper rim and a shaded lower rim, the plate face."""
+    def hex(self, P, fill, merge=None):
+        """Big hex plates (HEX_R): a dark seam, a lit upper rim and a shaded lower rim, the plate face. `merge`: (s, z)
+        of a vertical edge to leave out, joining two hexes into one long plate."""
         s = ((P.s % 1) + 1) % 1
+        if merge and abs(s - merge[0]) < 0.065 and abs(P.z - merge[1]) < HEX_R / 2 - 0.02:
+            return self.t("H", fill)
         d = hexgrid(s, P.z, HEX_R)
         if d < 0.03:
             return self.t("H", 6)
@@ -132,12 +246,51 @@ class Drone(Faction):
                     lit = ("plate", "steelL", "steel") if not x else ("steelL", "steel", "steelD")
                     return lit[0 if d > r * 0.4 else (1 if d > -r * 0.3 else 2)]   # a machined pipe, lit on top
             return self.t("W", 6) if c % 8 else self.t("W", 5)                # the dark bay behind (a faint back rib)
-        if self.hull(P) and self.face(P) and P.fam == "hull" and P.z > ZS + 0.05:
+        if self.hull(P) and self.face(P) and P.fam in ("hull", "wall", "trim") and P.z > ZS + 0.05:
             if P.sprite.endswith(".v1") and P.kind == "y" and 0.1 <= P.s < 0.32 and abs(P.z - 1.75) < 0.015:
                 return "cyan"                                                 # status line, every third tile
-            return self.hex(P, 3 + x)
+            return self.hex(P, 3 + x, {1: (0.25, 0.866), 2: (0.75, 0.866), 3: (0.5, 1.299)}.get(alt_of(P)))
         if P.fam == "belly":
             return self.hex(P, 4 + x)
+        return None
+
+    def alt(self, P, n, s, x):
+        z = P.z
+        if self.hull(P):
+            if P.fam not in ("hull", "wall", "trim"):
+                return None
+            cs, cz = ((0.75, 1.299), (0.25, 1.299), (0.5, 1.732))[n - 1]
+            if math.hypot(s - cs, z - cz) > HEX_R or hexgrid(s, z, HEX_R) < 0.065:
+                return None                                                   # keep every seam and rim
+            ds, dz = s - cs, z - cz
+            if n == 1:                                                        # a status eye
+                if abs(ds) < 2 * C and abs(dz) < 0.03:
+                    return "cyan"
+                return self.t("H", 5 + x) if abs(ds) < 3.5 * C and abs(dz) < 0.05 else None
+            if n == 2:                                                        # a vent hex
+                if abs(ds) < 0.15:
+                    return self.t("H", 6) if (dz + 1) % 0.05 < 0.022 else self.t("H", 2 + x)
+                return None
+            if abs(ds) < 1.5 * C and dz < 0.09:                               # an open hex with a cable in it
+                return "steelD" if not x else "gmD"
+            return self.t("H", 6)
+        if not self.full(P) or z < 0.62:
+            return None
+        c = int(s / C) % 16
+        if c in (0, 1, 2, 3):
+            return None
+        if n == 1 and 0.55 <= s < 0.63 and 0.6 <= z < 1.8:                    # a cable bundle down the bay
+            k = int((s - 0.55) / C)
+            return ("gm", "gmD", "steelD")[min(k, 2)] if not x else ("gmD", "steelD", "steelD")[min(k, 2)]
+        if n == 2:                                                            # a node box with a status light
+            f = frame(s, z, (0.4, 0.62, 1.12, 1.3))
+            if f == "in" and abs(s - 0.51) < 1.5 * C and abs(z - 1.21) < 0.02:
+                return "cyan"
+            if f:
+                return {"top": "steel", "bot": "steelD", "side": "gmD", "in": "gm"}[f]
+            return None
+        if n == 3 and 0.3 <= s < 0.7 and abs(z - 1.38) < 0.05:               # a missing pipe section: brackets, dark
+            return "steelD" if s < 0.34 or s >= 0.66 else self.t("W", 6)
         return None
 
 
@@ -155,12 +308,13 @@ class Civil(Faction):
             c = int(((P.s % 1) + 1) % 1 / C)
             z = P.z
             if self.hull(P):
+                mids = {1: (21,), 2: (11, 21), 3: (8, 24)}.get(alt_of(P), (16,))   # lower plate layouts per alt
                 if 0.95 <= z < 1.07:
                     return self.t("T", 2 + x if z >= 0.97 else 4 + x)         # the trim stripe
                 lower = z < 0.95
-                if c == 0 or (lower and c == 16) or abs(z - 1.55) < 0.015:
+                if c == 0 or (lower and c in mids) or abs(z - 1.55) < 0.015:
                     return self.t("H", 5 + x)                                 # plate seams
-                if c == 1 or (lower and c == 17) or 0.015 <= z - 1.55 < 0.04:
+                if c == 1 or (lower and c - 1 in mids) or 0.015 <= z - 1.55 < 0.04:
                     return self.t("H", 1 + x)
                 if lower:
                     return self.t("H", 4 + x)                                 # a darker lower course
@@ -182,104 +336,35 @@ class Civil(Faction):
             return self.t("H", 5 + x if c % 16 == 0 else 4 + x)
         return None
 
-
-# ---- scrap: a post-pass over any look ----------------------------------------------------------------------------
-
-DONORS = None
-
-
-def _donors():
-    global DONORS
-    if DONORS is None:
-        DONORS = [Navy(), Civil(2), Civil(4), Drone()]                       # close in value to the hulls they patch
-    return DONORS
-
-
-class Scrap(Look):
-    """Patched and rusted, made from another look (default when `base` is None): salvaged plates in other factions'
-    colours with welded seams, bolted patches, rust streaks, the occasional exposed rib bay. Per-sprite variant p (1..4)
-    reseeds every choice, so a run does not repeat. Shapes are big and few; no texture noise.
-
-    Works on any builder through restyle (tiles here; module sprites the same way: their box faces are big, so a patch
-    there swaps whole faces to a donor colour and rust takes the lower faces)."""
-
-    def __init__(self, p, base=None):
-        self.p, self.base = p, base
-        self._plan = {}
-
-    def plan(self, sprite):
-        if sprite not in self._plan:
-            key = sprite.replace(f".scrap.p{self.p}", "")
-            h = lambda *a: hashf(key, self.p, *a)  # noqa: E731
-            full = ".full." in sprite or sprite.startswith("tile.hull") and ".low." not in sprite
-            top = 1.85 if full else 0.755
-            patches = []
-            for k in range(1 + (h("n") > 0.85)):                                 # mostly one big plate per tile
-                if h(k, "skip") < 0.25:
-                    continue                                                      # ... and some tiles none
-                w, ht = 0.5 + 0.35 * h(k, "w"), (0.3 + 0.3 * h(k, "h")) * (1 if full else 0.45)
-                s0 = 0.05 + (0.9 - w) * h(k, "s")
-                z0 = ZS + 0.05 + max(0.0, top - ZS - 0.12 - ht) * h(k, "z")
-                donor = _donors()[int(h(k, "d") * len(_donors()))]
-                patches.append((s0, s0 + w, z0, z0 + ht, donor))
-            bolt = (0.1 + 0.7 * h("bs"), ZS + 0.1 + (top - ZS - 0.35) * h("bz")) if h("b") > 0.7 else None
-            streaks = [(0.08 + 0.84 * h(k, "rs"), ZS + 0.12 + (top - ZS - 0.2) * h(k, "rz"), 0.12 + 0.25 * h(k, "rl"))
-                       for k in range(1 + (h("rn") > 0.8))]
-            ribs = (0.15 + 0.4 * h("ibs"), ZS + 0.15) if (self.p == 3 and full) else None
-            self._plan[sprite] = (patches, bolt, streaks, ribs, top)
-        return self._plan[sprite]
-
-    def paint(self, P):
-        name = self.base.paint(P) if self.base else P.name
-        if P.sprite.startswith("tile.floor") or P.kind == "top":
-            return name
-        patches, bolt, streaks, ribs, top = self.plan(P.sprite)
-        s, z = ((P.s % 1) + 1) % 1, P.z
-        if P.fam == "belly":
-            z = ZS + (0.3 - P.z) / 1.8 * (top - ZS)                           # map the belly's height onto the face's
-        dark = name.endswith(("6", "5", "K")) or "K" in name[-2:]
-        for sc, z0, L in streaks:                                             # rust streaks run down from a seam
-            if abs(s - sc) < 1.6 * C * (1 - 0.4 * (z0 - z) / L) and z0 - L <= z < z0:
-                return "rustD" if dark else "rust"
-            if P.kind.startswith("slope") and abs(s - sc) < 1.6 * C and z0 - L < ZS + 0.05 and z > ZS - 0.15:
-                return "rustD"                                                # ... a streak reaching the skirt stains its top
-        if not self.face_like(P):
-            return name
-        if ribs and ribs[0] <= s < ribs[0] + 0.3 and ribs[1] <= z < ribs[1] + 0.5:
-            c = int((s - ribs[0]) / C)
-            return "gm" if c % 6 in (0, 1) else ("steel" if c % 6 == 2 else "dark")      # exposed ribs
-        for s0, s1, z0, z1, donor in patches:
-            if s0 <= s < s1 and z0 <= z < z1:
-                e = min(s - s0, s1 - s, z - z0, z1 - z)
-                if e < 1.5 * C:
-                    return "steelL" if (s - s0 < 1.5 * C or z1 - z < 1.5 * C) else "rustD"   # weld bead / burn
-                if (s - s0 < 3.5 * C or s1 - s < 3.5 * C) and (z - z0 < 0.06 or z1 - z < 0.06):
-                    return "plate"                                                # corner bolts
-                t = donor.tone(P.fam or "hull", P.face, P.role or "M")
-                return (t[:-1] + str(min(6, int(t[-1]) + 1))) if t else name     # a step darker: an old plate
-        if bolt and bolt[0] <= s < bolt[0] + 0.16 and bolt[1] <= z < bolt[1] + 0.16:
-            cs, cz = s - bolt[0], z - bolt[1]
-            if (cs < 2.5 * C or cs > 0.16 - 2.5 * C) and (cz < 0.04 or cz > 0.12):
-                return "steelL"                                               # bolts
-            return "steel" if P.face == "y" else "steelD"
-        return name
-
-    @staticmethod
-    def face_like(P):
-        return P.kind in ("y", "x") or P.fam == "belly"
-
-
-def look(name):
-    """navy | drone | civil.v1..v4 | scrap.p1..p4 (from the default look)."""
-    if name == "navy":
-        return Navy()
-    if name == "drone":
-        return Drone()
-    if name.startswith("civil.v"):
-        return Civil(int(name[-1]))
-    if name.startswith("scrap.p"):
-        return Scrap(int(name[-1]))
-    raise KeyError(name)
-
-
-LOOKS = ("navy", "drone", "civil.v1", "civil.v2", "civil.v3", "civil.v4", "scrap.p1", "scrap.p2", "scrap.p3", "scrap.p4")
+    def alt(self, P, n, s, x):
+        z = P.z
+        if self.hull(P):
+            if P.fam not in ("hull", "wall", "trim"):
+                return None
+            if n == 1:                                                        # a porthole on the upper plate
+                r = math.hypot((s - 0.5) * 1.0, (z - 1.3) * 1.15)
+                if r < 0.11:
+                    star = abs(s - 0.46) < C and abs(z - 1.33) < 0.02 or abs(s - 0.56) < C and abs(z - 1.26) < 0.015
+                    return "lens" if star else ("dark" if not x else "black")
+                if r < 0.145:
+                    return self.t("T", 2 + x) if z > 1.3 else self.t("T", 4 + x)
+                return None
+            if n == 2:                                                        # a registry plate with a few text lines
+                f = frame(s, z, (0.3, 0.7, 1.24, 1.44))
+                if f == "in" and int((z - 1.24) / 0.035) % 2 == 1 and 0.36 <= s < 0.6 + 0.04 * (z > 1.35):
+                    return self.t("T", 5 + x)
+                return {"top": self.t("T", 1 + x), "bot": self.t("T", 4 + x), "side": self.t("T", 3 + x),
+                        "in": self.t("T", 2 + x)}[f] if f else None
+            return self.vent(s, z, (0.36, 0.64, 0.66, 0.86), "H", x)           # a vent in the lower course
+        if not self.full(P) and n != 3 or z < 0.6:
+            return None
+        if n == 1:                                                            # a notice board with two sheets
+            f = frame(s, z, (0.18, 0.46, 1.24, 1.6))
+            if f == "in" and (in_rect(s, z, (0.22, 0.32, 1.3, 1.52)) or in_rect(s, z, (0.35, 0.43, 1.36, 1.55))):
+                return "medWhite" if not x else "plate"
+            if f == "in":
+                return "leather"
+            return self.t("T", 3 + x) if f else None
+        if n == 2:
+            return self.vent(s, z, (0.6, 0.82, 1.3, 1.48), "W", x)             # an air vent
+        return self.vent(s, z, (0.42, 0.6, 0.66, 0.76), "W", x)                # a kick vent at floor level
