@@ -1,0 +1,32 @@
+# Starter project memory (add these entries in Project settings > Memory, or ask a thread to remember them)
+
+- **World model:**
+  - One big grid per node. Ships, stations, derelicts and asteroids are regions of it, tagged by owner (ship id).
+  - Ships never move inside a node and never dock with each other. Distance only changes projectile travel time.
+  - On a jump, your ship and anything docked to it come along; captured prizes stay behind.
+  - Mining, building in open space, welding structures together and ships breaking apart are planned, which is why the grid is shared.
+- **Vehicles** (shuttles, later pods and cargo carriers) are free-moving entities (`BodyC`), not grids.
+  - They dock sideways, with the side hatch extending a 4-ring tube to the airlock collar.
+  - They carry all crew and cargo transfers.
+  - EVA happens from a hovering shuttle onto a target hull, or around your own hull. Suits are stocked at airlocks and shuttles.
+- **Starmap:**
+  - An endless galaxy of sectors made of nodes, linked by hyperlanes.
+  - Travel costs fuel plus FTL charge.
+  - Nodes have fixed structures. "Combat node" is not a type: any node becomes one while enemies are present, including when one jumps in.
+- **Economy:**
+  - Credits are the currency, plus item-for-item barter.
+  - You trade with stations and with ships in the same node by hailing them.
+  - Goods are delivered by shuttle to the airlock unloaders.
+- **Factions:**
+  - Corporations (Meridian, Helix, Vantor) and the Concord Navy (government), with more to come.
+  - Also Free Traders, the Scrapper Clans (pirates) and the Rogue AI (drones).
+  - Standing comes from reputation.
+- **Dropped:** teleporters and prisoners.
+- **Hunger and events** are good enough for now. They grow with content.
+- **UI direction:**
+  - Desktop first, with cohesion as the priority.
+  - A top bar, a crew roster on the left, one bottom context panel, one right drawer, an action bar, alert toasts, shared styling.
+- **Ship generator:**
+  - Assembly-driven, with a shared arranger and modular, tunable grammars.
+  - Every ship must be one connected structure.
+  - Scrappers are salvage built from donors joined by struts: lengthwise ties and diagonal or dogleg corner struts.
