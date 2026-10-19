@@ -27,6 +27,7 @@ export interface ShipTemplate {
 }
 
 import type { EventDef } from './story/defs';
+import type { GalaxyContent } from './galaxy/defs';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -55,6 +56,8 @@ export interface ContentRegistry {
   suit?: SuitDef;
   /** Faction content id (e.g. 'faction.scrapper') to definition, for generated ships. Absent = none. */
   factions?: Record<string, FactionDef>;
+  /** Starmap content: galaxy factions (territory, standings), node structures, sector names. Absent = a bare galaxy. */
+  galaxy?: GalaxyContent;
 }
 
 /** The EVA spacesuit every non-airless crew member can wear (put on and taken off at an airlock). */
@@ -157,6 +160,8 @@ export interface ItemDef {
   hand?: HandWeaponDef;
   /** Present = hungry crew eat it from storage: eating one restores `nutrition` hunger points (0..100 scale). */
   food?: { nutrition: number };
+  /** Base price in credits. Stores (trade) price from it; absent = not traded. */
+  price?: number;
 }
 
 /** A hand weapon (sidearm, rifle, blade) carried by crew. Ranged ones need line of sight; melee ones need adjacency. */

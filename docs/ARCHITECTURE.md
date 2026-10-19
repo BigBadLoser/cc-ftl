@@ -114,7 +114,7 @@ field systems read.
 - This one mechanism covers boarding, away teams, derelicts, captured ships and future fleets.
 
 **Galaxy.**
-- Chunked and seeded, generated on demand.
+- Chunked and seeded, generated on demand (see "Starmap" below).
 - Only the local area simulates at full fidelity. Distant places are abstract until visited.
 
 ## Content
@@ -362,7 +362,8 @@ counters, reputation per faction, the open decision (`active`), a `queue` of due
 **EventDef**
 - `mode`: `'decision'` (pauses the game in a modal) or `'notice'` (in-world, non-pausing alert; `effects` apply on arrival; `lead`
   makes the notice open that decision when tapped; `expireSec`).
-- `triggers[]`: `arrival` (weight; drawn by `story.arrive`), `periodic` (weight; drawn every `periodicSec` outside combat while no
+- `triggers[]`: `arrival` (weight; drawn by `story.arrive` and on every starmap jump), `transit` (weight; drawn instead of an
+  arrival after crossing an anchored hyperlane), `periodic` (weight; drawn every `periodicSec` outside combat while no
   decision is open), `flag` (`flag`, `atLeast`, `delaySec`: queued when the flag first reaches the level), `chain` (only reached by a
   `chain` effect or debug fire).
 - Pool filters: `danger {min,max}`, `factions[]` (null = open space), `eligible: Requirement[]`, `once`, `cooldownSec`. A draw sums
@@ -393,6 +394,106 @@ notices arrive through `alerts.ts` (`UiAlert.notice`).
 and flag triggers resolve and that every choice runs). For an arc, have one event set a flag and the next list a `flag` trigger
 (with `eligible` on the flag) or be reached by `chain`. Add a new effect or requirement kind in `defs.ts`, then `effects.ts` /
 `requirements.ts` (both switches are exhaustive).
+
+## Starmap (galaxy), `src/sim/galaxy/`
+
+**Terms (user decision, 2026-10-19).** A **node** is one playable location (one grid; older code and docs call this a
+"sector", a later rename fixes them). A **sector** is a group of nodes. Sectors are joined by **hyperlanes**; nodes inside a
+sector by **routes**.
+
+**Model** (`galaxy/types.ts`). Generated data is immutable and a pure function of (seed, content, chunk):
+`ChunkData { sectors, nodes, edges }`; `SectorData` (site, radius, padded hull, name, faction, danger), `NodeData`
+(position, danger, territory faction, `structures: {def, owner}[]` descriptors, `resources` hint, `contacts` present at
+generation), `EdgeData` (`route` or `hyperlane`, length, `fuel`, `charge`, `time`, optional mid-lane `anchor`). The mutable
+`GalaxyState` (`sim.galaxy`) holds the current node, generated chunks, `discovered` / `visited` (node -> tick), per-node
+`NodeState { contacts }` (created on first use from the generated contacts), its own Rng (arrival rolls never touch
+`sim.rng`), the next arrival tick, jump count, travel days and a `rev` counter for the view. `galaxyIndex(g)` is a derived
+lookup (nodes, sectors, edges, adjacency in edge-id order), cached per chunk count and never saved.
+
+**Generation pipeline** (`sites.ts`, `territory.ts`, `sector.ts`, `generator.ts`). Reference: the old project's
+`starmap/generator` (read only, nothing ported). Space is cut into global **site cells** (`SITE_CELL` = 320 units; cell 0
+is centred on the start), grouped into **chunks** of `CHUNK_CELLS` x `CHUNK_CELLS` cells (1280 units). Per cell:
+1. **Candidate:** a jittered point and a priority from `hash32(seed, gx, gy, salt)`. The start cell's candidate is pinned
+   at (0, 0) with the top priority.
+2. **Matérn II thinning** (blue noise): a candidate survives unless a higher-priority *candidate* lies within
+   `SITE_MIN_DIST`. Reading candidates, not survivors, keeps the test local: no chains across the map.
+3. **Relaxation:** survivors push apart from survivors within `RELAX_RANGE` (one step, at most `SITE_MAX_SHIFT`). The moved
+   point is kept only if it stays `SITE_MIN_DIST` from every neighbour's raw *and* moved point, so the minimum distance
+   holds whichever one each neighbour keeps.
+4. **Radius:** random in `SECTOR_RADIUS`, capped at (nearest site - `HULL_GAP`) / 2. Nodes lie within radius - `HULL_PAD`
+   and hulls are padded by `HULL_PAD`, so **neighbouring hulls never overlap, by construction, also across chunk borders**.
+5. **Nodes:** Poisson-disk darts inside the disc (`NODE_MIN_DIST`, count ~ `NODE_DENSITY` x r², clamped
+   `NODES_PER_SECTOR`). The start sector's node 0 is the start node at the origin (`START_NODE` = `s.0.0.n0`).
+6. **Routes:** the Gabriel graph of the nodes (a planar subset of Delaunay without long slivers), trimmed to its minimum
+   spanning tree plus `ROUTE_EXTRA` of the other Gabriel edges (per-edge hash).
+7. **Hyperlanes:** for sector sites within `HYPERLANE_MAX`, a pair is linked when it is a **relative neighbourhood** edge
+   (the connected backbone: the RNG contains the minimum spanning tree, and unlike a global MST it is decidable from local
+   points only) or, with `HYPERLANE_EXTRA` chance from a symmetric pair hash, a Gabriel edge (the "Delaunay-neighbour
+   extras"). Each lane joins the two **gateway** nodes facing each other (furthest along the direction, slightly
+   favouring the rim). `ANCHOR_CHANCE` of lanes carry a mid-lane anchor.
+8. **Contents:** territory faction at the site, danger by distance, one station of the owner's `stations` kinds (or a
+   free traders' station in open space at `OPEN_STATION_CHANCE`), asteroid fields and old derelicts by per-node chance
+   (`StructureDef.chance` + `perDanger` x danger), contacts at `CONTACT_PER_DANGER` x danger. The start node always has a
+   trade station.
+
+**Chunk seams.** Every stage reads a bounded neighbourhood of cells and nothing else, so any cell's result is the same
+whichever chunk asks first. A chunk holds the sectors whose *cell* lies in it, their routes, and every hyperlane touching
+them; a hyperlane between two chunks is stored in both and is identical (both RNG and Gabriel tests only depend on sites
+within |ab| of both ends, which both ends' candidate lists contain; the extra-edge hash is symmetric). `GalaxyGen`
+(`galaxyGen(seed, content)`) memoises the pure functions; it is a cache and is never saved. Tests generate chunks in row,
+reverse and spiral order (and a lone far chunk first) and compare, check the minimum site distance and hull overlap
+across a 7x7 chunk area, and check that the inner 5x5 chunks are all reachable from the start.
+
+**Danger and territory.** `danger = min(DANGER_MAX, floor(distance from start / DANGER_STEP))` (650 units, about two sector
+spacings). Territory is a field of **faction seeds**, one per `TERRITORY_CELL` (1100) cell, its faction drawn by
+`GalaxyFactionDef.territory.weight` among factions whose danger range admits the seed's tier (plus `OPEN_SPACE_WEIGHT` for
+nobody), reach `territory.reach` (default `TERRITORY_REACH`) x 0.8..1.2. A sector belongs to the seed nearest relative to
+reach, if within it. The start cell's seed sits at the origin and belongs to the `home` faction (the navy).
+
+**Lazy frontier.** `ensureAround(sim, node)` generates every chunk within `FRONTIER_RING` (1) of the node's chunk on each
+arrival; discovery generates any chunk a hyperlane leads into. The save stores only the chunk keys (`GalaxySave`) and
+regenerates them on load (`SaveData.galaxy` is optional like `story`: no version bump).
+
+**Travel** (`travel.ts`, `route.ts`, `costs.ts`). Costs by length: fuel = ceil(length / `ROUTE_UNITS_PER_FUEL` (90)) for
+routes, ceil(length / `HYPERLANE_UNITS_PER_FUEL` (220)) for hyperlanes (cheaper per distance); FTL charge = 10 + 0.12 x
+length (max 30 s) for routes, a full charge (`FTL_CHARGE_SEC`, 40 s) for hyperlanes; days = length / 40 (routes) or / 110.
+The FTL charge is the existing `CombatC.ftl` (a pilot at a powered helm charges it). `planStarRoute(g, from, to)` is
+Dijkstra on fuel, ties on time then node id, over discovered nodes. `galaxy.jump { to }` takes **one edge**: it checks
+the edge, the charge and the fuel in player storage (`item.fuel`), spends both, then `enterNode`:
+- generate the frontier, mark visited, run the sensor scan (`SENSOR_HOPS` = 3 jumps);
+- set `story.context` (danger, territory faction) for events; arrivals read the node's danger as the generator depth;
+- restart the arrival clock, spawn the node's **hostile** contacts (standing tier hostile) through `generateShip` +
+  `spawnShip`, placed by `arrivalSpot` (rings around the player's ship, first spot passing `placementGapError`);
+- draw a story event: the `transit` pool after an anchored hyperlane (a new `EventTrigger` kind), else `arrival`; none
+  when enemies wait.
+- **Hook for sector refactor step 9** (in `enterNode`): lift the player's ship plus docked vehicles, archive the node left
+  behind, generate or restore the new node's grid with its `structures`, open the deploy modal. Until then the sector
+  grid is not swapped.
+
+**No combat nodes.** A node becomes a fight when hostile ships are there: generated contacts, or an **arrival** while
+you stay (`galaxySystem`, `arrivals.ts`): every `ARRIVAL_EVERY_SEC` (60 s), chance `ARRIVAL_PER_DANGER` x danger (cap
+`ARRIVAL_MAX_CHANCE`; x1.5 in hostile territory, x0.4 in friendly), up to `MAX_HOSTILE_CONTACTS`, the faction drawn from
+the node's traffic pool (factions with `traffic` at that danger, the owner weighted up), filtered to hostile ones. A
+contact whose ship is wrecked, fled or captured is dropped. Danger 0 never rolls.
+
+**Factions and standings** (`standing.ts`, content `src/content/galaxy.ts`). A `GalaxyFactionDef` names its generator
+styles (`ships`, weights over `content.factions`), combat side (`combatFaction`: the rogue AI is `rogue`), territory,
+stations, traffic, `baseStanding` and `relations`. Its id is the `sim.story.reputation` key. `standing = baseStanding +
+reputation + STANDING_SPILLOVER (0.25) x sum(relation x other's reputation)`; tiers hostile below `HOSTILE_BELOW` (-2),
+friendly from `FRIENDLY_AT` (3); `alwaysHostile` overrides. Trade and any other module reads standings through
+`standing` / `tierOf` / `standings`.
+
+**View.** `app/starmapSnapshot.ts` builds `UiStarmap` (rebuilt on `galaxy.rev`, fuel and charge refreshed) and the route
+preview; `ui/StarmapView.svelte` (SVG: pan, pinch and wheel zoom, hulls tinted by territory, danger rings and labels,
+structure badges, hostile rings within sensor range, route preview) and `StarmapPanel.svelte` (node card, costs,
+affordability, Jump). Debug: `debug.galaxyReveal {radius}`, `debug.galaxyTeleport {node}`, `debug.chargeFtl`.
+`node tools/starmap/overview.js --radius 3` writes an SVG overview of (2r+1)² chunks straight from the generator.
+
+**Tuning** (`galaxy/tuning.ts`): denser galaxy: lower `SITE_MIN_DIST` (more sites survive) or `SITE_CELL`; bigger
+sectors: `SECTOR_RADIUS` (capped by spacing anyway); busier sectors: `NODE_DENSITY`, `NODE_MIN_DIST`; more loops:
+`ROUTE_EXTRA`, `HYPERLANE_EXTRA`; longer reach between sectors: `HYPERLANE_MAX` (keep it above the largest gap or the
+backbone can split); faster danger ramp: `DANGER_STEP`; bigger faction blobs: `TERRITORY_CELL` / reach; jump prices:
+`*_UNITS_PER_FUEL`, `ROUTE_CHARGE`; pressure while staying: `ARRIVAL_*`.
 
 ## Sector grid (planned)
 

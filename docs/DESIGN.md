@@ -27,6 +27,8 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   may come later.
 - **Endless galaxy**, procedurally generated in chunks. **Danger tiers** rise as you push outward; the
   pressure comes from choosing to go deeper for better loot, species and tech, not from a chasing fleet.
+- **Terms:** a **node** is one playable location (one grid with its structures and ships; older text says "sector" for
+  it). A **sector** is a group of nodes, and sectors are connected by **hyperlanes**. See "Starmap and factions" below.
 - **Long-term goals:** faction wars that move territory, story arcs that unlock with depth, end-tier
   threats (boss fleets, anomalies).
 - **Real-time with pause**, adjustable speed.
@@ -145,9 +147,11 @@ Cybernetic implants are everywhere. Neon is both mood and information.
 
 FTL's decision-making with physical consequences, in a shared sector.
 
-- **Sectors:** a sector is a playable space holding ships, stations, asteroids and derelicts, each its
-  own grid at a world position. On entering a sector, a **deploy modal** (a simplified sector map)
+- **Nodes** (called "sectors" in older text): a node is a playable space holding ships, stations,
+  asteroids and derelicts. On entering a node, a **deploy modal** (a simplified map of the node)
   lets you choose where your ship sits relative to the other objects.
+- **No combat nodes:** a node becomes a fight when hostile ships are there, including a hostile ship
+  that jumps into your node while you stay.
 - **No movement, no maneuvering, no firing arcs.** Distance only affects **projectile travel time**,
   so a far deployment gives more time to react (shields, point defence). There is no accuracy penalty.
 - **Combat overlay:** the camera stays on your ship, and an overlay panel shows the enemy ship live,
@@ -196,9 +200,36 @@ FTL's decision-making with physical consequences, in a shared sector.
 - Outcomes can be **physical**: spawn a derelict to explore, a fire, a boarding party, a combat.
 - **Persistent flags and arcs:** the pirate you spared comes back; the corp you robbed puts out a bounty.
 - **Skill checks show their odds.**
-- Event pools are weighted by danger tier and faction territory.
+- Event pools are weighted by danger tier and faction territory (the current node's, set on every jump).
 - **Presentation:** decisions pause in a modal; flavour and optional leads arrive in-world and can be
   ignored.
+
+## Starmap and factions
+
+- **Galaxy:** endless, generated in chunks as you push outward. Sectors are blobs of 5 to 14 nodes linked by routes;
+  hyperlanes join neighbouring sectors between gateway nodes that face each other. Some hyperlanes carry a mid-lane
+  event (the story's `transit` pool).
+- **Danger** rises with distance from the start: one tier about every two sectors outward (tiers 0 to 9). Danger sets
+  enemy generation depth, event pools and how often hostile ships show up.
+- **Node contents:** fixed structures (asteroid fields, trade, military and research stations, old derelicts), the
+  territory faction, a resources hint and the ships present. Structures are descriptors until nodes become grids.
+- **Travel:** every jump, a route inside a sector or a hyperlane, costs **fuel** (an item, sold at trade stations) and
+  **FTL charge** (a pilot at the helm charges the drive). Longer jumps cost more; hyperlanes are cheaper per distance but
+  need a full charge. The route planner picks the least fuel, then the shortest time, through space you have seen.
+- **Sensors** show nodes within 3 jumps; ships are only seen inside sensor range. Unexplored space shows as faint
+  sectors.
+- **Arrivals:** while you stay at a node, hostile ships may jump in (more often at higher danger and in hostile
+  territory; never at danger 0).
+- **Factions:** the Concord Navy (government, holds the core where you start), corporations (Meridian Combine: trade;
+  Helix Biosystems: research; Vantor Heavy Industries: mining and industry), the Free Traders (civilians, no territory),
+  the Scrapper Clans (pirates) and the Rogue AI (drones; always hostile). Territory comes from faction seeds: the navy
+  near the start, corporations in the middle band, pirates and the rogue AI farther out. Generator styles: navy and
+  corporate ships use navy hulls, traders and industry the civilian kit, pirates the scrappers, the rogue AI the drones.
+- **Standing** = base standing + event reputation + a share of reputation with related factions (helping the navy hurts
+  you with pirates). Hostile below -2, friendly from 3. Hostile factions' ships attack; trade prices and hailing read
+  the same standing.
+- The starmap is its own full-screen view (a full-screen sheet on phones): pan and zoom, tap a node for its card, the
+  route and its costs, and a Jump button for the next hop.
 
 ## Economy
 

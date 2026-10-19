@@ -8,6 +8,8 @@ import { buildCombat } from './combatSnapshot';
 import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildStory } from './storySnapshot';
+import { buildStarmap, planStarmapRoute, starmapStatus } from './starmapSnapshot';
+import type { UiStarmap, UiStarRoute } from '../ui/starmapApi';
 import { createStore, type Readable } from './store';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
@@ -58,6 +60,9 @@ export interface Bridge {
   shuttles: Readable<UiShuttles>;
   prizes: Readable<UiPrize[]>;
   story: Readable<UiStory>;
+  /** The generated starmap (geometry rebuilt when the galaxy changes; fuel and charge kept fresh). */
+  starmap: Readable<UiStarmap>;
+  planRoute(to: string): UiStarRoute | null;
   /** Pick an option of the open event decision and resume the speed the game was on. */
   chooseStory(choice: string): void;
   setSelected(tile: TileRef | null): void;
@@ -98,6 +103,8 @@ export function createBridge(sim: Sim): Bridge {
   const prizes = createStore<UiPrize[]>([]);
   const story = createStore<UiStory>({ active: null, last: null });
   let lastStory = '';
+  const starmap = createStore<UiStarmap>(buildStarmap(sim));
+  let starFrame = 0;
   /** Speed to return to when the open decision is answered (null = no decision is holding the game). */
   let heldSpeed: Speed | null = null;
   let lastPrizes = '';
@@ -210,6 +217,14 @@ export function createBridge(sim: Sim): Bridge {
       applySpeed(0);
     }
   };
+  /** Starmap: full rebuild on a galaxy revision, otherwise only the fuel and FTL figures (about six times a second). */
+  const refreshStarmap = () => {
+    if (starFrame++ % 10) return;
+    const cur = starmap.get();
+    if (cur.rev !== sim.galaxy.rev) return starmap.set(buildStarmap(sim));
+    const st = starmapStatus(sim);
+    if (st.fuel !== cur.fuel || st.charge !== cur.charge || st.current !== cur.current) starmap.set({ ...cur, ...st });
+  };
   const applySpeed = (speed: Speed) => {
     loop?.setSpeed(speed);
     store.update((s) => ({ ...s, speed, paused: speed === 0 }));
@@ -235,6 +250,8 @@ export function createBridge(sim: Sim): Bridge {
     shuttles,
     prizes,
     story,
+    starmap,
+    planRoute: (to) => planStarmapRoute(sim, to),
     chooseStory(choice) {
       sim.enqueue({ type: 'story.choose', choice });
       const back = heldSpeed;
@@ -264,6 +281,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshPrizes();
       refreshCombat();
       refreshStory();
+      refreshStarmap();
     },
   };
 }

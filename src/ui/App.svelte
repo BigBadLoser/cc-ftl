@@ -18,6 +18,7 @@
   import StockDrawer from './StockDrawer.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
+  import StarmapView from './StarmapView.svelte';
   import './theme.css';
 
   let { api }: { api: UiApi } = $props();
@@ -33,6 +34,7 @@
   let combatOpen = $state(false);
   let wasInCombat = false;
   let shuttleOpen = $state(false);
+  let mapOpen = $state(false);
   let prizeOpen = $state(false);
   let prizes = $state<UiPrize[]>([]);
   let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
@@ -89,6 +91,7 @@
       api.togglePause();
     } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
     else if (e.key === '`') debug = !debug;
+    else if (e.key === 'm' && !mapOpen) mapOpen = true;
     else if (e.key === 'Escape') stockOpen = false;
   }
 
@@ -118,6 +121,7 @@
   <StatsChips {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} />
   <span class="brk"></span>
   <span class="acts">
+    <button class:on={mapOpen} data-testid="starmap-open" onclick={() => (mapOpen = !mapOpen)}><span class="long">Map</span><span class="short" aria-label="Starmap">✦</span></button>
     {#if shuttles.bays.length}
       <button class:on={shuttleOpen} data-testid="shuttle-open" onclick={() => { shuttleOpen = !shuttleOpen; if (shuttleOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><span class="long">Shuttle</span><span class="short" aria-label="Shuttle">🚀</span></button>
     {/if}
@@ -159,6 +163,7 @@
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 <AlertList {api} />
+{#if mapOpen}<StarmapView {api} onClose={() => (mapOpen = false)} />{/if}
 <StoryModal {api} />
 <ErrorOverlay {api} />
 

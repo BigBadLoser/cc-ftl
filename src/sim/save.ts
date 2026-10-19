@@ -6,6 +6,8 @@ import type { ContentRegistry } from './registry';
 import { SectorGrid, type SectorGridData } from './sectorGrid';
 import { Sim } from './sim';
 import { newStory, type StoryState } from './story/state';
+import { loadGalaxy, newGalaxy, saveGalaxy, type GalaxySave } from './galaxy/state';
+import { startGalaxy } from './galaxy/travel';
 
 /**
  * Current save format version. Bump it whenever the shape changes. Saves are not migrated (user decision, 2026-10-19:
@@ -29,6 +31,8 @@ export interface SaveData {
   sector: Omit<Sector, 'grid'> & { grid: SectorGridData };
   /** Event system state. Optional: saves from before it existed load with a fresh one (no version bump needed). */
   story?: StoryState;
+  /** Starmap state with its chunks as keys (regenerated from the seed). Optional like `story`: no version bump. */
+  galaxy?: GalaxySave;
   pending: QueuedCommand[];
 }
 
@@ -43,6 +47,7 @@ export function serialize(sim: Sim): string {
     grids: sim.grids.rects(),
     sector: { ...sim.sector, grid: sim.sector.grid.serialize() },
     story: sim.story,
+    galaxy: saveGalaxy(sim.galaxy),
     pending: [...sim.commands.getPending()],
   };
   return JSON.stringify(data);
@@ -65,6 +70,11 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
   sim.grids.restore(data.grids);
   sim.story = { ...newStory(data.seed), ...data.story };
+  if (data.galaxy) sim.galaxy = loadGalaxy(sim, data.galaxy);
+  else {
+    sim.galaxy = newGalaxy(data.seed);
+    startGalaxy(sim);
+  }
   sim.commands.setPending(data.pending);
   return sim;
 }

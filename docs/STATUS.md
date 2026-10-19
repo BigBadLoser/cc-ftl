@@ -49,6 +49,31 @@ Design in `docs/DESIGN.md` (Exploration & events); schema and "adding an event" 
   effects use all player-ship storage (grid-independent); crew skill xp is new (`SkillXpC` + a stat modifier source).
 - Debug: `?hook` then `__cc.fireEvent('event.distress_call')`.
 
+## M6 starmap and factions (branch `starmap`, worktree `/home/user/cc-ftl-starmap`; not merged; awaiting user review)
+
+Terms (user decision): a **node** is one playable grid/location (old code and docs say "sector"; a later rename fixes them),
+a **sector** is a group of nodes, sectors are joined by **hyperlanes**. Design in `docs/DESIGN.md` ("Starmap and
+factions"); model, generation pipeline, seams and tuning in `docs/ARCHITECTURE.md` ("Starmap").
+- **Sim** (`src/sim/galaxy/`): endless chunked generator (Matérn-thinned, relaxed blue-noise sector sites per global cell;
+  Poisson-disk nodes; Gabriel + spanning-tree routes; relative-neighbourhood + Gabriel-extra hyperlanes between gateway
+  nodes; territory seeds; danger by distance). `sim.galaxy` (current node, chunks, discovery, contacts, own Rng), saved as
+  chunk keys and regenerated (`SaveData.galaxy`, optional, no version bump). `galaxy.jump {to}` (one edge; fuel +
+  FTL charge), `planStarRoute` (Dijkstra on fuel, ties on time), sensor range 3 jumps, arrival rolls (`galaxySystem`),
+  hostile contacts spawned through `generateShip` + `spawnShip` and the gap rule, standings over `story.reputation`
+  (`galaxy/standing.ts`, shared with trade). New story trigger `transit` (anchored hyperlanes). Debug commands
+  `debug.galaxyReveal`, `debug.galaxyTeleport`, `debug.chargeFtl`.
+- **Content:** `item.fuel` (`price: 6`; `ItemDef.price` is the trade hook), 16 fuel in the starter crate,
+  `src/content/galaxy.ts` (7 factions, 5 structure kinds, sector names). Events: `'corp'` became `'meridian'`; four
+  events gained `transit` triggers. `main.ts` no longer forces danger 1 / no faction: the start node sets the context.
+- **UI:** `Map` button (key `m`), `StarmapView.svelte` + `StarmapPanel.svelte` (full screen; bottom sheet card on phones).
+- **Hook for sector step 9:** `enterNode` in `galaxy/travel.ts` (lift, archive, stamp the new node's grid with its
+  structures, deploy modal). Until then the sector grid is not swapped on a jump.
+- `sectorEquiv.test.ts` runs on a legacy content copy (no starter fuel) and ignores `galaxy.*` events; both pinned hashes
+  still match, so the galaxy does not disturb the sim.
+- Dev tool: `node tools/starmap/overview.js --seed 1 --radius 3` (SVG overview of many chunks).
+- Open for the user: see the report (fuel/charge prices, sensor range, arrival rate, faction roster and colours, jump in
+  combat allowed as the flee, map closes or stays after a jump).
+
 ## Needs: hunger, food and mood (branch `needs`, based on `eva`; not merged; awaiting user review)
 
 Rules and values are in `docs/DESIGN.md` (Crew, "Needs and mood"). What exists:

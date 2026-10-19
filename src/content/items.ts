@@ -12,6 +12,9 @@ export const items = {
   'item.ice': { name: 'Ice', tags: ['raw', 'water'], stackSize: 50 },
   // Food: hungry crew eat one from storage (+50 hunger). Printed at a galley from scrap. Flammable packaging.
   'item.ration': { name: 'Ration', tags: ['food'], stackSize: 50, flammability: 0.2, food: { nutrition: 50 } },
+  // Starship fuel: every jump on the starmap burns some (more for long routes; hyperlanes are cheaper per distance).
+  // Trade stations sell it. Volatile: a loose stack on a burning tile feeds the fire.
+  'item.fuel': { name: 'Fuel', tags: ['fuel'], stackSize: 50, flammability: 0.7, price: 6 },
   // Ammo for missile launchers. Explosive: loose missiles fuel fires.
   'item.missile': { name: 'Missile', tags: ['ammo'], stackSize: 20, flammability: 0.5 },
   // Crafted at the fabricator; a vehicle bay turns it into a stowed shuttle (vehicle.assign).

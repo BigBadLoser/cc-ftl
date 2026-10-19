@@ -52,6 +52,7 @@ import { boardingAiSystem } from './systems/boardingAi';
 import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
 import { storySystem } from './systems/story';
+import { galaxySystem } from './systems/galaxy';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
 export type System = (sim: Sim) => void;
@@ -157,6 +158,9 @@ export const pipeline: readonly System[] = [
   shipStateSystem,
   // Capture last: it reads this tick's crew states (downed, surrendered, positions) and may end combat for the next.
   captureSystem,
+  // Starmap after ship state (contacts of wrecked or fled ships are dropped) and before events: an arrival spawns its
+  // ship for the next tick's systems.
+  galaxySystem,
   // Events last: periodic draws, due chains and lapsing notices read the finished tick. Reads no grid state.
   storySystem,
 ];
