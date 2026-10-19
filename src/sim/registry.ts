@@ -61,6 +61,9 @@ export interface SuitDef {
   moveMult: number;
   workMult: number;
   accuracyMult: number;
+  /** Drifting between a hovering shuttle and a ship's hull: tiles per second, and the farthest gap (tiles) it can cross. */
+  floatSpeed: number;
+  floatRange: number;
 }
 
 /** A shuttle type. It is an entity in the sector, not a grid: no interior, crew aboard are hidden. */
@@ -79,6 +82,8 @@ export interface VehicleDef {
   evasion: number;
   /** Cargo hold: total item units it carries besides its crew (hauled in and out at its boarding tile). Absent = none. */
   cargo?: number;
+  /** EVA from a hovering shuttle: suits stowed aboard (the hatch works like an airlock for them) and how far off a target's hull it holds station (tiles). */
+  eva?: { suits: number; hoverGap: number };
 }
 
 /** One typed result of a weapon impact. All are applied by combat/effects.ts. */

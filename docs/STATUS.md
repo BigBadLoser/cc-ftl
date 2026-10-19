@@ -58,13 +58,14 @@ Design is in `docs/DESIGN.md` (Crew, "EVA and spacesuits"). What exists:
   - `SuitC` carries `air` (seconds) and the `airlock` it came from. `AirlockC.suits` counts the suits stowed (def value `airlock.suits`).
   - Suit up / off are personal `suitUp` / `suitOff` jobs at the airlock's inside tile (`errands.ts`, `jobs.ts`), swept by `systems/suits.ts` when nobody carries them.
   - `planWalk` (`route.ts`) prefers a path that keeps out of thin air (`findPath` option `avoidThin`) and flags one that cannot (`thin`). `decide` uses it: a job that needs thin air sends the crew member for a suit first and resumes the job (`Job.resume`).
-  - EVA is within one grid (user decision: ships are never close, shuttles do all transfers; no ship-to-ship docking exists). `isEvaWalkable(grid, x, y)` lets suited crew onto the Space ring touching the hull; beams join later.
+  - Ships are never close (user decision): no ship-to-ship docking or crossing. `isEvaWalkable(grid, x, y)` lets suited crew onto the Space ring touching a hull; beams join later.
+  - Cross-grid EVA starts at a shuttle: `vehicle.hover {vehicle, gridId}` (dest `hover`, `hoverPoint` in `vehicles/geometry.ts`, then `Vehicle.hover`), `eva.out {vehicle, crew?}` (suits from `Vehicle.suits` / def `eva.suits`, crew land on the nearest exterior tile within `floatRange` and drift there under `EvaFloatC`) and `eva.board {crew, vehicle}` (float back, board, suit stowed; `systems/evaFloat.ts`). The shuttle refuses to move while crew are out. Shuttle panel: Hover beside, Crew out (EVA); crew card: Back to shuttle.
   - `systems/suits.ts` drains the tank in thin air (rooms, airlock, hull outside). `vitals` treats a dry tank as no suit. `eva/conditions.ts` slows suited crew, `fight/weapons.ts` scales hit chance.
   - Commands: `eva.suitUp {crew, airlock}`, `eva.suitOff {crew, airlock?}` (drafted crew). `suit.set` stays as the debug/test shortcut. Events: `suit.donned`, `suit.doffed`, `suit.airLow`, `suit.airOut`.
   - Docking airlock cycling no longer waits for crew standing in its two door tiles (the lock has no chamber), and pumps both door tiles. Without this crew could not leave through the new layout.
 - **Content values** (`src/content/suit.ts`): 240 s of air, 5 s to put on, 3 s to take off, move x0.8, work x0.9, accuracy x0.8, `module.airlock` holds 3 suits.
-- **Render:** `crewLoadout(atlas, crew, suited)` swaps in the EVA layers (no hair or eyes); `eva_float` plays while a suited crew member is on an exterior tile; a tank bar over the wearer. **UI:** Put suit on / Take suit off in the drafted crew card, suit air readout and bar, `suit.airLow` / `suit.airOut` alerts.
-- **Debug hook** (`?hook`): `stage.suitAir`, `crewInfo`.
+- **Render:** `crewLoadout(atlas, crew, suited)` swaps in the EVA layers (no hair or eyes); `eva_float` plays on exterior tiles and while drifting (interpolated between the hatch and the hull); a tank bar over the wearer. **UI:** Put suit on / Take suit off in the drafted crew card, suit air readout and bar, `suit.airLow` / `suit.airOut` alerts.
+- **Debug hook** (`?hook`): `stage.suitAir`, `crewInfo` (plus `dispatch` / `sim` for `vehicle.hover` and `eva.out`).
 - Not done: beams (seam only), jobs on the hull exterior, suit use by the enemy AI, art for the suit-up pose (crew stand idle), a tooltip for the free-suit count on the airlock inspector.
 
 ## Docking airlock (branch `airlock-int`, not merged; awaiting user approval of the in-game look)

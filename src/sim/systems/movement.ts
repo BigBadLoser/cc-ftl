@@ -5,13 +5,14 @@ import { isTileWalkable } from '../modules/walk';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { stat } from '../stats';
+import { EvaFloatC } from '../eva/components';
 import { isSuited } from '../eva/suit';
 
 /** Advance crew along their paths. Diagonal steps take sqrt(2) longer. */
 export function movementSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, PositionC, PathC)) {
     const crew = sim.world.get(id, CrewC) as Crew;
-    if (crew.activity === 'sleeping' || isIncapacitated(sim, id)) continue;
+    if (crew.activity === 'sleeping' || isIncapacitated(sim, id) || sim.world.has(id, EvaFloatC)) continue; // drifting: frozen
     const pos = sim.world.get(id, PositionC) as Position;
     const path = sim.world.get(id, PathC) as Path;
     const grid = sim.grids.get(pos.gridId);

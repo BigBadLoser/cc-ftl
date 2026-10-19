@@ -8,7 +8,7 @@ import type { ItemQty } from '../registry';
 export type VehicleState = 'stowed' | 'flying' | 'docked';
 
 /** Where a flying vehicle is headed. `bay` is its home bay. */
-export type VehicleDest = { type: 'dock'; airlock: number } | { type: 'bay' };
+export type VehicleDest = { type: 'dock'; airlock: number } | { type: 'bay' } | { type: 'hover'; gridId: number };
 
 /**
  * A shuttle: an entity, never a grid. It has no tiles; crew who embark are hidden (see AboardC) and listed in `pilot` /
@@ -35,6 +35,10 @@ export interface Vehicle {
   dock: number;
   /** Hauled items aboard (see VehicleDef.cargo). */
   cargo: ItemQty[];
+  /** Grid it holds station beside (a few tiles off its hull) while flying with no destination, else 0/absent. */
+  hover?: number;
+  /** EVA suits stowed aboard. Absent = the def's `eva.suits`. */
+  suits?: number;
 }
 export const VehicleC = defineComponent<Vehicle>('vehicle');
 

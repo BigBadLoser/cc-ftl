@@ -90,7 +90,7 @@ export function createBridge(sim: Sim): Bridge {
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
-  const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], roster: [], bays: [] });
+  const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
   const prizes = createStore<UiPrize[]>([]);
   let lastPrizes = '';
   let lastShuttles = '';

@@ -45,6 +45,12 @@ export type Command =
   | { type: 'eva.suitUp'; crew: number; airlock: number }
   /** Drafted, suited crew walk to an airlock (default: the nearest on their grid) and take the suit off; it returns there with a full tank. */
   | { type: 'eva.suitOff'; crew: number; airlock?: number }
+  /** Fly a shuttle to hold station a few tiles off another ship's hull (launching a stowed one first). Needs a pilot. */
+  | { type: 'vehicle.hover'; vehicle: number; gridId: number }
+  /** Crew aboard a hovering shuttle (default: all passengers) put on suits from its stock and float out to the target's hull. */
+  | { type: 'eva.out'; vehicle: number; crew?: number }
+  /** A drafted, suited crew member on the hull floats back to the hovering shuttle, boards and stows the suit. */
+  | { type: 'eva.board'; crew: number; vehicle: number }
   /** Turn one shuttle item from a storage module on the bay's ship into a shuttle stowed in the (empty) bay. */
   | { type: 'vehicle.assign'; bay: number; item?: string }
   /** Walk a crew member to the vehicle's boarding tile (bay access tile, or the docked airlock's inside tile) and climb in. */

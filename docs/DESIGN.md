@@ -66,13 +66,20 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   the nearest airlock with a free suit, suits up, does the job, and walks back to take the suit off once idle, so the suit
   is free for the next one. They prefer jobs and routes that need no EVA, and never take a vacuum job when no suit is
   free. Drafted crew do none of this on their own: the player orders **Put suit on** and **Take suit off**.
-- **Where EVA happens: always within one grid.** Ships never sit close to each other (they cannot move within a sector and
-  are never deployed near enough), so there is no ship-to-ship docking, thruster crossing or ship-to-ship walking. Shuttles
-  (and later cargo vehicles) do every transfer between grids.
+- **Where EVA happens.** Ships never sit close to each other (they cannot move within a sector and are never deployed near
+  enough), so **there is no ship-to-ship docking, thruster crossing or walking between ships**. Shuttles (and later cargo
+  vehicles) carry crew and cargo between grids. EVA is:
   - Walking through breached or depressurised rooms.
   - Stepping out of an airlock onto the same grid's hull. Today the exterior is the ring of Space tiles touching the hull
     (`isEvaWalkable` in `structure.ts`); suited crew drift along it with the `eva_float` clip. Beams (`Struct.Beam`) join
-    that rule when they land; every walk rule already asks for it when the walker wears a suit.
+    that rule when they land. Suited crew come back in through the airlock, or through a breach.
+  - **From a hovering shuttle.** A shuttle can fly to another ship or a derelict and hold station a couple of tiles off its
+    hull (`vehicle.hover`) without docking. Its hatch works like an airlock for suits: the shuttle stows a few (a vehicle
+    def value, 3), passengers suit up aboard and go out (`eva.out`), float (`eva_float`) across the gap to the nearest hull
+    tile, then move on that grid like any suited crew: onto the hull, in through a breach or a depressurised room, or in
+    through its airlock from outside. They return the same way: the player orders `eva.board` and they float back to the
+    hatch, climb in and the suit is stowed. The float is short on purpose (4 tiles at most, 1.5 tiles/s), so the shuttle
+    has to get close. The shuttle cannot leave while crew are outside.
 - **Limits.**
   - The tank lasts 4 game minutes of thin air (a breached room, the airlock, the hull outside). It does not drain in breathable air, and refills only when the
     suit is stowed at an airlock.

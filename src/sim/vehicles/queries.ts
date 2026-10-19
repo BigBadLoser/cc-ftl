@@ -18,7 +18,9 @@ export interface VehicleView {
   /** Module id of the bay, or of the airlock it is docked at / flying to (0 = none). */
   bay: number;
   dockedAt: number;
-  destination: 'dock' | 'bay' | null;
+  destination: 'dock' | 'bay' | 'hover' | null;
+  /** Grid it hovers beside (0 = none). */
+  hovering: number;
   pilot: number;
   passengers: readonly number[];
 }
@@ -32,7 +34,7 @@ export function vehicleViews(sim: Sim): VehicleView[] {
     out.push({
       id, def: v.def, asset: vehicleDefOf(sim, v)?.asset ?? '', state: v.state, x: v.x, y: v.y, heading: v.heading, hp: v.hp,
       maxHp: vehicleDefOf(sim, v)?.maxHp ?? v.hp, homeGrid: v.homeGrid, bay: v.home, dockedAt: v.dock,
-      destination: v.dest?.type ?? null, pilot: v.pilot, passengers: v.passengers,
+      destination: v.dest?.type ?? null, pilot: v.pilot, passengers: v.passengers, hovering: v.hover ?? 0,
     });
   }
   return out;

@@ -53,6 +53,8 @@ export interface Suit {
   worn: true;
   air?: number;
   airlock?: number;
+  /** The hovering shuttle whose hatch it was fitted at (stowed back there). */
+  vehicle?: number;
 }
 export const SuitC = defineComponent<Suit>('suit');
 

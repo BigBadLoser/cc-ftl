@@ -3,13 +3,13 @@
   import type { UiApi, UiShuttles } from './api';
 
   let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
-  let data = $state<UiShuttles>({ shuttles: [], airlocks: [], roster: [], bays: [] });
+  let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
   onMount(() => api.shuttles.subscribe((v) => (data = v)));
 
   const where = (s: UiShuttles['shuttles'][number]) =>
     s.state === 'stowed' ? 'Parked in bay'
       : s.state === 'docked' ? `Docked at ${s.dockShip ?? 'airlock'}`
-        : s.destination === 'dock' ? 'Flying to dock' : s.destination === 'bay' ? 'Returning to bay' : 'Hovering';
+        : s.destination === 'hover' ? 'Flying to hover' : s.hoverShip ? `Hovering beside ${s.hoverShip}` : s.destination === 'dock' ? 'Flying to dock' : s.destination === 'bay' ? 'Returning to bay' : 'Hovering';
   const seatsLeft = (s: UiShuttles['shuttles'][number]) => s.capacity + 1 - (s.pilot ? 1 : 0) - s.passengers.length;
   const embark = (crew: number, vehicle: number) => api.dispatch({ type: 'vehicle.embark', crew, vehicle });
   const free = (s: UiShuttles['shuttles'][number]) => data.roster.filter((c) => !c.boarding || c.boarding === s.id);
@@ -69,11 +69,24 @@
         {#if s.state !== 'stowed'}
           <button data-testid="shuttle-return" onclick={() => api.dispatch({ type: 'vehicle.return', vehicle: s.id })}>Return to bay</button>
         {/if}
+        {#if s.canEva}
+          <button data-testid="shuttle-eva" onclick={() => api.dispatch({ type: 'eva.out', vehicle: s.id })}>Crew out (EVA, {s.suits} suits)</button>
+        {/if}
         {#if s.boardable && (s.passengers.length || s.pilot)}
           <button data-testid="shuttle-disembark" onclick={() => api.dispatch({ type: 'vehicle.disembark', vehicle: s.id })}>Passengers out</button>
         {/if}
       </div>
 
+      {#if s.state !== 'docked' && s.pilot}
+        <div class="sub">Hover beside (EVA)</div>
+        <div class="chips" data-testid="hover-list">
+          {#each data.targets as t (t.gridId)}
+            <button data-testid="hover-{t.gridId}" onclick={() => api.dispatch({ type: 'vehicle.hover', vehicle: s.id, gridId: t.gridId })}>{t.name}</button>
+          {:else}
+            <span class="none">No other ship in the sector.</span>
+          {/each}
+        </div>
+      {/if}
       {#if s.state !== 'docked'}
         <div class="sub">Dock at</div>
         <div class="chips" data-testid="dock-list">

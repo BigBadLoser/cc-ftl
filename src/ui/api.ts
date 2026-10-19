@@ -76,6 +76,8 @@ export interface UiCrew {
   /** The EVA suit being worn: seconds of air left of `max`, and whether the tank is low or the wearer is outside on the hull. Null when not suited. */
   /** Needs no air, so never wears a suit (robots). */
   airless: boolean;
+  /** The hovering shuttle this suited crew member came out of (they can float back to it), or null. */
+  evaShuttle: number | null;
   suit: { air: number; max: number; low: boolean; outside: boolean } | null;
   /** The nearest airlock on their grid with a free suit (to put one on), the suits free there and the airlock's tile; null when none or they cannot wear one. */
   suitAt: { id: number; free: number } | null;
@@ -299,7 +301,12 @@ export interface UiShuttle {
   capacity: number;
   pilot: UiShuttleCrew | null;
   passengers: UiShuttleCrew[];
-  destination: 'dock' | 'bay' | null;
+  destination: 'dock' | 'bay' | 'hover' | null;
+  /** Name of the ship it hovers beside, or null. */
+  hoverShip: string | null;
+  /** EVA suits aboard, and whether crew can go out now (hovering, a suit free, passengers aboard). */
+  suits: number;
+  canEva: boolean;
   /** Name of the ship it is docked at, or null. */
   dockShip: string | null;
   /** Module id of its home bay. */
@@ -333,6 +340,8 @@ export interface UiShuttles {
   shuttles: UiShuttle[];
   /** Airlocks of other ships a shuttle can dock at. */
   airlocks: UiShuttleAirlock[];
+  /** Other ships a shuttle can hover beside for EVA: grid id and name. */
+  targets: { gridId: number; name: string }[];
   /** Crew on the player's ship who could climb in. */
   roster: UiShuttleCrew[];
   /** The player's vehicle bays (module ids) and whether each is empty. */

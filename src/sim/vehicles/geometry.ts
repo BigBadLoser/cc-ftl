@@ -77,3 +77,24 @@ export function bayWorking(sim: Sim, bay: number): boolean {
   const m = sim.world.get(bay, ModuleC);
   return !!m && m.hp > 0 && m.enabled && sim.world.has(bay, VehicleBayC);
 }
+
+/**
+ * Where a shuttle holds station beside a grid: the point `gap` tiles off the ship's bounding box nearest to `from`
+ * (a point already inside the padded box is pushed out through its nearest side). Null if the ship is gone.
+ */
+export function hoverPoint(sim: Sim, gridId: number, gap: number, from: { x: number; y: number }): { x: number; y: number } | null {
+  const s = shipOf(sim, gridId);
+  if (!s) return null;
+  const x0 = s.x - gap;
+  const y0 = s.y - gap;
+  const x1 = s.x + s.width + gap;
+  const y1 = s.y + s.height + gap;
+  const x = Math.min(x1, Math.max(x0, from.x));
+  const y = Math.min(y1, Math.max(y0, from.y));
+  if (x > x0 && x < x1 && y > y0 && y < y1) {
+    const d = [x - x0, x1 - x, y - y0, y1 - y];
+    const m = d.indexOf(Math.min(...d));
+    return m === 0 ? { x: x0, y } : m === 1 ? { x: x1, y } : m === 2 ? { x, y: y0 } : { x, y: y1 };
+  }
+  return { x, y };
+}

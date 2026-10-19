@@ -14,7 +14,7 @@ import { stat } from '../stats';
 import { BLEED_OUT_SECONDS, SKILL_STEP } from '../tuning';
 import { TICK_HZ } from '../time';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
-import { bayCenter, boardingTile, dockPoint } from './geometry';
+import { bayCenter, boardingTile, dockPoint, hoverPoint } from './geometry';
 
 /** The content def of a vehicle entity, or undefined. */
 export function vehicleDefOf(sim: Sim, v: Vehicle): VehicleDef | undefined {
@@ -157,6 +157,7 @@ export function releaseBayVehicle(sim: Sim, bay: number, gridId: number, x: numb
 /** Fly-to point of a destination, or null if it is gone. */
 export function destPoint(sim: Sim, v: Vehicle): { x: number; y: number } | null {
   if (v.dest?.type === 'dock') return dockPoint(sim, v.dest.airlock);
+  if (v.dest?.type === 'hover') return hoverPoint(sim, v.dest.gridId, vehicleDefOf(sim, v)?.eva?.hoverGap ?? 2, v);
   if (v.dest?.type === 'bay') return bayCenter(sim, v.home);
   return null;
 }

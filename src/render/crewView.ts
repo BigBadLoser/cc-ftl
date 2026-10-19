@@ -1,6 +1,8 @@
 import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
+import { EvaFloatC } from '../sim/eva/components';
+import { facingOf } from '../sim/crew/helpers';
 import { SuitC } from '../sim/portals/components';
 import { CarryingC } from '../sim/items/components';
 import { BLEED_OUT_SECONDS } from '../sim/tuning';
@@ -193,10 +195,20 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           if (!made) continue;
           slots.set(id, (s = made));
         }
-        const tx = pos.x + (pos.toX - pos.x) * pos.progress;
-        const ty = pos.y + (pos.toY - pos.y) * pos.progress;
+        let tx = pos.x + (pos.toX - pos.x) * pos.progress;
+        let ty = pos.y + (pos.toY - pos.y) * pos.progress;
+        // Drifting between a hovering shuttle and this hull: along the line to the shuttle's hatch (EvaFloat), facing the way it goes.
+        const drift = world.get(id, EvaFloatC);
+        let driftFacing = -1;
+        if (drift) {
+          const k = 1 - drift.ticks / Math.max(1, drift.total);
+          const [ax, ay, bx, by] = drift.mode === 'out' ? [drift.fx, drift.fy, pos.x, pos.y] : [pos.x, pos.y, drift.fx, drift.fy];
+          tx = ax + (bx - ax) * k;
+          ty = ay + (by - ay) * k;
+          driftFacing = facingOf(bx - ax, by - ay);
+        }
         // A suited crew member outside the hull (on a Space tile) drifts on the pack's thrusters: the eva_float clip.
-        const flight = !!host.isExterior?.(Math.round(s.x), Math.round(s.y)) && world.has(id, SuitC);
+        const flight = !!drift || (!!host.isExterior?.(Math.round(s.x), Math.round(s.y)) && world.has(id, SuitC));
         const dist = Math.hypot(tx - s.x, ty - s.y);
         const k = 1 - Math.exp(-dt * SMOOTH);
         if (!s.placed || dist > 3) {
@@ -208,7 +220,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           s.y += (ty - s.y) * k;
         }
         const speed = dt > 0 ? (dist * k) / dt : 0;
-        const facing = ((pos.facing % 8) + 8) % 8;
+        const facing = driftFacing >= 0 ? driftFacing : ((pos.facing % 8) + 8) % 8;
         const dead = world.has(id, DeadC);
         const downed = world.get(id, DownedC);
         const carried = world.get(id, CarriedC);

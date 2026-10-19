@@ -79,6 +79,8 @@ function fly(sim: Sim, id: number, v: Vehicle): void {
     v.state = 'docked';
     v.dock = dest.airlock;
     sim.events.emit({ type: 'vehicle.docked', vehicle: id, gridId, airlock: dest.airlock });
+  } else if (dest.type === 'hover') {
+    v.hover = dest.gridId;
   } else {
     v.state = 'stowed';
     sim.events.emit({ type: 'vehicle.stowed', vehicle: id, bay: v.home });

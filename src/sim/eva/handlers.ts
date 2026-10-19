@@ -2,9 +2,15 @@ import type { Command } from '../commands';
 import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
 import { isIncapacitated, releaseAssignment } from '../crew/helpers';
 import type { Sim } from '../sim';
+import { CrewC as CrewKey, type Crew } from '../crew/components';
+import { SuitC } from '../portals/components';
+import { VehicleC } from '../vehicles/components';
+import { occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
+import { EvaFloatC } from './components';
+import { floatTicks, nearestExterior, tileFrame, vehicleSuits } from './shuttle';
 import { startErrand, findSuitStow } from './errands';
 import { planWalk } from './route';
-import { airlockUsable, freeSuits, isSuited, needsAir, suitTile } from './suit';
+import { airlockUsable, freeSuits, isSuited, needsAir, suitDef, suitTile } from './suit';
 import { ModuleC } from '../modules/components';
 
 type EvaCommandType = Extract<Command['type'], `eva.${string}`>;
@@ -54,6 +60,49 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     }
     if (!airlock || !steps) return reject(sim, cmd.type, 'unreachable');
     errand(sim, cmd.crew, 'suitOff', airlock, steps, pos.gridId);
+  },
+  'eva.out': (sim, cmd) => {
+    const v = sim.world.get(cmd.vehicle, VehicleC);
+    if (!v) return reject(sim, cmd.type, 'noVehicle');
+    if (v.state !== 'flying' || v.dest || !v.hover) return reject(sim, cmd.type, 'notHovering');
+    const aboard = cmd.crew === undefined ? [...v.passengers] : [cmd.crew];
+    if (aboard.some((c) => !occupants(v).includes(c))) return reject(sim, cmd.type, 'notAboard');
+    const going = aboard.filter((c) => needsAir(sim, c) && !sim.world.has(c, DeadC));
+    if (going.length === 0) return reject(sim, cmd.type, 'airless');
+    const frame = tileFrame(sim, v.hover, v.x, v.y);
+    const spots = frame ? nearestExterior(sim, v.hover, frame, going.length) : [];
+    if (!frame || spots.length === 0) return reject(sim, cmd.type, 'noHull');
+    if ((spots[0] as { d: number }).d > suitDef(sim).floatRange) return reject(sim, cmd.type, 'outOfRange');
+    if (vehicleSuits(sim, v) <= 0) return reject(sim, cmd.type, 'noSuit');
+    going.slice(0, Math.min(going.length, vehicleSuits(sim, v), spots.length)).forEach((crew, i) => {
+      const spot = spots[i] as { x: number; y: number; d: number };
+      v.suits = vehicleSuits(sim, v) - 1;
+      unboardCrew(sim, crew, cmd.vehicle, { gridId: v.hover as number, x: spot.x, y: spot.y });
+      if (!sim.world.has(crew, DraftedC)) sim.world.add(crew, DraftedC, { target: null });
+      (sim.world.get(crew, CrewKey) as Crew).activity = 'drafted';
+      sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec, vehicle: cmd.vehicle });
+      const ticks = floatTicks(sim, spot.d);
+      sim.world.add(crew, EvaFloatC, { mode: 'out', vehicle: cmd.vehicle, fx: frame.x, fy: frame.y, ticks, total: ticks });
+      sim.events.emit({ type: 'suit.donned', crew, airlock: 0 });
+    });
+  },
+  'eva.board': (sim, cmd) => {
+    if (!ready(sim, cmd.type, cmd.crew)) return;
+    const v = sim.world.get(cmd.vehicle, VehicleC);
+    const pos = sim.world.get(cmd.crew, PositionC)!;
+    if (!v) return reject(sim, cmd.type, 'noVehicle');
+    if (!isSuited(sim, cmd.crew)) return reject(sim, cmd.type, 'notSuited');
+    if (v.state !== 'flying' || v.dest || v.hover !== pos.gridId) return reject(sim, cmd.type, 'notHovering');
+    if (occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return reject(sim, cmd.type, 'full');
+    const frame = tileFrame(sim, pos.gridId, v.x, v.y);
+    const d = frame ? Math.hypot(frame.x - pos.x, frame.y - pos.y) : Infinity;
+    if (!frame || d > suitDef(sim).floatRange) return reject(sim, cmd.type, 'outOfRange');
+    releaseAssignment(sim, cmd.crew);
+    const drafted = sim.world.get(cmd.crew, DraftedC)!;
+    drafted.target = null;
+    delete drafted.planned;
+    const ticks = floatTicks(sim, d);
+    sim.world.add(cmd.crew, EvaFloatC, { mode: 'back', vehicle: cmd.vehicle, fx: frame.x, fy: frame.y, ticks, total: ticks });
   },
 };
 

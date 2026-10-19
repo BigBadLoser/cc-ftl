@@ -62,7 +62,9 @@
     {#if c.drafted}
       {#if !c.airless}
         <div class="btns one">
-          {#if c.suit}
+          {#if c.suit && c.evaShuttle}
+            <button data-testid="eva-board" onclick={() => c.evaShuttle && api.dispatch({ type: 'eva.board', crew: c.id, vehicle: c.evaShuttle })}>Back to shuttle</button>
+          {:else if c.suit}
             <button data-testid="suit-off" onclick={() => api.dispatch({ type: 'eva.suitOff', crew: c.id })}>Take suit off</button>
           {:else}
             <button data-testid="suit-up" disabled={!c.suitAt} onclick={() => c.suitAt && api.dispatch({ type: 'eva.suitUp', crew: c.id, airlock: c.suitAt.id })}>

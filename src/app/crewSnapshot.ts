@@ -69,6 +69,12 @@ function whereOf(sim: Sim, ctx: Ctx, id: number): { gridId: number; where: strin
   return { gridId: 0, where: v.state === 'stowed' ? 'Shuttle (in bay)' : dockShip ? `Shuttle at ${dockShip}` : 'Shuttle (flying)' };
 }
 
+function evaShuttleOf(sim: Sim, id: number): number | null {
+  const vid = sim.world.get(id, SuitC)?.vehicle;
+  const v = vid ? sim.world.get(vid, VehicleC) : undefined;
+  return vid && v && v.state === 'flying' && !v.dest && v.hover === sim.world.get(id, PositionC)?.gridId ? vid : null;
+}
+
 function isOutside(sim: Sim, id: number): boolean {
   const p = sim.world.get(id, PositionC);
   const g = p && sim.grids.get(p.gridId);
@@ -158,6 +164,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     inert: sim.world.has(id, InertC),
     fight: fightOf(sim, id),
     airless: !needsAir(sim, id),
+    evaShuttle: evaShuttleOf(sim, id),
     suit: suitOf(sim, id),
     suitAt: suitAtOf(sim, id),
   };

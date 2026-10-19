@@ -9,6 +9,7 @@ import { isTileWalkable } from '../modules/walk';
 import { airlockWorking } from '../portals/airlock';
 import { AirlockC } from '../portals/components';
 import { shipOf } from '../combat/ships';
+import { outsideCrew } from '../eva/shuttle';
 import type { Sim } from '../sim';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
 import { bayWorking, boardingTile } from './geometry';
@@ -114,9 +115,24 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     const v = sim.world.get(cmd.vehicle, VehicleC);
     if (!v) return reject(sim, cmd.type, 'noVehicle');
     if (v.state === 'docked') return reject(sim, cmd.type, 'docked');
+    if (outsideCrew(sim, cmd.vehicle).length > 0) return reject(sim, cmd.type, 'crewOutside');
+    v.hover = 0;
     const err = dockError(sim, cmd.vehicle, cmd.airlock) ?? (v.state === 'stowed' ? launch(sim, cmd.vehicle, v) : null);
     if (err) return reject(sim, cmd.type, err);
     v.dest = { type: 'dock', airlock: cmd.airlock };
+  },
+  'vehicle.hover': (sim, cmd) => {
+    const v = sim.world.get(cmd.vehicle, VehicleC);
+    if (!v) return reject(sim, cmd.type, 'noVehicle');
+    if (v.state === 'docked') return reject(sim, cmd.type, 'docked');
+    const ship = shipOf(sim, cmd.gridId);
+    if (!ship || ship.state === 'fled' || cmd.gridId === v.homeGrid) return reject(sim, cmd.type, 'badTarget');
+    if (!vehicleDefOf(sim, v)?.eva) return reject(sim, cmd.type, 'noEva');
+    if (outsideCrew(sim, cmd.vehicle).length > 0) return reject(sim, cmd.type, 'crewOutside');
+    const err = v.state === 'stowed' ? launch(sim, cmd.vehicle, v) : null;
+    if (err) return reject(sim, cmd.type, err);
+    v.hover = 0;
+    v.dest = { type: 'hover', gridId: cmd.gridId };
   },
   'vehicle.undock': (sim, cmd) => {
     const v = sim.world.get(cmd.vehicle, VehicleC);
@@ -130,6 +146,8 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     if (!v) return reject(sim, cmd.type, 'noVehicle');
     if (v.state === 'stowed') return reject(sim, cmd.type, 'stowed');
     if (!bayWorking(sim, v.home)) return reject(sim, cmd.type, 'noBay');
+    if (outsideCrew(sim, cmd.vehicle).length > 0) return reject(sim, cmd.type, 'crewOutside');
+    v.hover = 0;
     if (v.state === 'docked') {
       if (!v.pilot) return reject(sim, cmd.type, 'noPilot');
       undock(sim, cmd.vehicle, v);
