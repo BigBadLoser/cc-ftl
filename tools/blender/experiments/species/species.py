@@ -25,8 +25,8 @@ from sprites.human_base import Item  # noqa: E402
 FOLD = {"index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand", "thumb": "hand", "toe": "foot", "toe_end": "foot",
         "neck_01": "head", "clavicle": "arm", "root": "hips"}
 # rock bulk per bone (chunk radius over the body's own): a heavy chest and shoulders, big fists, a smaller head
-BULK = {"hips": 1.2, "spine": 1.3, "spine_02": 1.35, "spine_03": 1.45, "arm": 1.4, "forearm": 1.3, "hand": 1.7, "leg": 1.2,
-        "shin": 1.2, "foot": 1.15, "head": 0.85}
+BULK = {"hips": 1.3, "spine": 1.3, "spine_02": 1.35, "spine_03": 1.45, "arm": 1.4, "forearm": 1.3, "hand": 1.7, "leg": 1.45,
+        "shin": 1.4, "foot": 1.3, "head": 0.85}
 
 
 def fold(name):
@@ -122,10 +122,41 @@ def facet(ob, ratio, rough, rng):
         ob.modifiers.new(name, "ARMATURE").object = target
 
 
-def stone(c, i):
-    """Stone colour by broad patches in space (lighter weathered faces, darker seams), not per-face noise."""
+def squarify(ob, arm, k=0.9):
+    """Square off the body's cross-sections: each vertex is pushed toward a box round its leading bone (lateral and
+    front axes), so limbs and torso become blocky slabs instead of round tubes."""
+    names = {g.index: g.name for g in ob.vertex_groups}
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    dl = bm.verts.layers.deform.active
+    for v in bm.verts:
+        g = v[dl] if dl else {}
+        if not g:
+            continue
+        bone = arm.data.bones.get(fold(names[max(g.items(), key=lambda kv: kv[1])[0]]))
+        if bone is None or (bone.tail_local - bone.head_local).length < 1e-4:
+            continue
+        a = (bone.tail_local - bone.head_local).normalized()
+        h = bone.head_local
+        r = v.co - (h + a * (v.co - h).dot(a))
+        e1 = Vector((1, 0, 0)) if abs(a.x) < 0.7 else Vector((0, 1, 0))
+        e1 = (e1 - a * e1.dot(a)).normalized()
+        e2 = a.cross(e1)
+        x, y = r.dot(e1), r.dot(e2)
+        m, L = max(abs(x), abs(y)), math.hypot(x, y)
+        if m > 1e-6:
+            v.co += r * ((L / m) ** k - 1.0)
+    bm.to_mesh(ob.data)
+    bm.free()
+
+
+def stone(c, i, nz):
+    """Stone colour by which way the facet faces (tops light, undersides dark: true in every direction the body turns),
+    with broad weathered patches over it."""
+    tone = 0 if nz > 0.45 else 2 if nz < -0.3 else 1
     n = math.sin(c.x * 6 + 1.3) + math.sin(c.y * 5 - 0.7) + math.sin(c.z * 4 + 2.1)
-    return "rkL" if n > 1.6 else "rkD" if n < -1.8 else "rkM"
+    tone = max(0, tone - 1) if n > 1.7 else min(2, tone + 1) if n < -1.9 else tone
+    return ("rkL", "rkM", "rkD")[tone]
 
 
 def rock(arm, flesh):
@@ -135,9 +166,11 @@ def rock(arm, flesh):
     body = weld(flesh, "species.rock")
     swell = {k: 0.1 * (v - 1.0) for k, v in BULK.items() for k in (k, k + ".L", k + ".R")}
     smooth_inflate(body, 3, 0.01, swell)
-    facet(body, 0.08, 0.02, rng)
+    squarify(body, arm)
+    facet(body, 0.045, 0.015, rng)
     from sprites.human_base import paint
-    paint(body, stone)
+    nz = [poly.normal.z for poly in body.data.polygons]
+    paint(body, lambda c, i: stone(c, i, nz[i]))
     objs = [body]
     P0 = bone_verts(body)
     for side in ("L", "R"):                                                  # a boulder over each shoulder
