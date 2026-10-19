@@ -1,10 +1,9 @@
 import { CrewC } from '../crew/components';
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
-import { totalStock } from '../items/stock';
 import type { ChoiceDef, EventDef, Requirement, SkillCheck } from './defs';
 import { flagValue, reputationOf } from './state';
-import { bestAt, hasImplant, playerCrew, playerModules } from './world';
+import { bestAt, hasImplant, playerCrew, playerModules, playerStock } from './world';
 
 const SKILL_LABEL: Record<string, string> = {
   gunnery: 'Gunnery', piloting: 'Piloting', shielding: 'Shielding', melee: 'Melee', repair: 'Repair', hacking: 'Hacking',
@@ -22,7 +21,7 @@ export function meets(sim: Sim, req: Requirement): boolean {
     case 'implant': return playerCrew(sim).some((id) => hasImplant(sim, id, req.implant));
     case 'skill': return (bestAt(sim, req.skill)?.level ?? 0) >= req.level;
     case 'module': return playerModules(sim, req.def).length >= (req.count ?? 1);
-    case 'item': return totalStock(sim, req.item) >= req.count;
+    case 'item': return playerStock(sim, req.item) >= req.count;
     case 'reputation': {
       const v = reputationOf(story, req.faction);
       return v >= (req.min ?? -Infinity) && v <= (req.max ?? Infinity);

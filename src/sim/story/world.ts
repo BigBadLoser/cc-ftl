@@ -1,7 +1,8 @@
 import { CrewC, DeadC } from '../crew/components';
 import { ShipC } from '../combat/components';
 import { AllegianceC, SurrenderedC } from '../fight/components';
-import { StorageC } from '../items/components';
+import { ItemStackC, StorageC } from '../items/components';
+import { storageCount } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import type { SkillName } from '../registry';
 import type { Sim } from '../sim';
@@ -59,3 +60,15 @@ export function bestAt(sim: Sim, skill: SkillName): { crew: number; level: numbe
 }
 
 export const hasImplant = (sim: Sim, crew: number, implant: string): boolean => !!sim.world.get(crew, ImplantsC)?.list.includes(implant);
+
+/** Units of an item on player ships only: their storage modules plus loose stacks. Other ships' stock never counts. */
+export function playerStock(sim: Sim, item: string): number {
+  let n = 0;
+  for (const id of playerStorages(sim)) n += storageCount(sim, id, item);
+  const grids = playerGrids(sim);
+  for (const id of sim.world.query(ItemStackC)) {
+    const s = sim.world.get(id, ItemStackC);
+    if (s?.item === item && grids.has(s.gridId)) n += s.count;
+  }
+  return n;
+}
