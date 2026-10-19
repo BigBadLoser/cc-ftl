@@ -268,8 +268,8 @@ The navy's structural helpers carry over:
 - **No helm:** the AI core is the bridge for validation (as on the robots branch). One weapons console stays,
   because weapons only charge with a manned console. Crews are human placeholders until the robots branch merges.
   The AI core is the boarding target; validation makes it reachable over the crawlways from the airlock.
-- **Beams in game** draw with an isolated, clearly marked placeholder (`src/render/beamPlaceholder.ts`) until strut
-  sprites exist. In the viewer, beam tiles are magenta.
+- **Beams in game** draw with the `struct` sprites (`src/render/beamArt.ts`: mask, variants, caps, hull flanges; look by
+  the ship's `gen.faction`, default civil). In the viewer, beam tiles are magenta.
 - **Generator follow-ups:**
   - beams are buried under pod walls; trusses should stay visible along their length;
   - small drones have a high corridor share;

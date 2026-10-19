@@ -15,6 +15,7 @@ import type { ModuleDefs } from './moduleView';
 import { isTargetable } from './moduleArt';
 import { ROOF_H } from './heights';
 import { liveryFor } from './roofArt';
+import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
 import { createShipScene, type ShipScene } from './shipScene';
 
@@ -173,7 +174,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const wantsRoof = (s: Ship) => roofEnemies && s.faction === 'hostile' && s.state !== 'wreck';
 
   function addScene(s: Ship, grid: Grid): ShipScene {
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: liveryFor(s.faction, s.name) });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: liveryFor(s.faction, s.name), beamLook: beamLookFor(s.gen?.faction) });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);

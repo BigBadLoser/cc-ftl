@@ -192,7 +192,7 @@ palette.json    the single palette, read by Blender scripts and the game
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams) and `sol` (the engine, AI core
   and shield packs, rendered by their own scripts in `tools/blender/experiments/` and packed by
   `sprites/sol_pack.py`).
-- **Beams (`struct`, `sprites/struct.py`, not wired yet):** these replace `src/render/beamPlaceholder.ts`.
+- **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
     at the tile centre. The looks are `navy`, `drone`, `civil` and `scrap`, picked by faction.
   - The straight masks 5 and 10 also have `.v1` and `.v2`; pick one by a tile hash so long runs vary.
