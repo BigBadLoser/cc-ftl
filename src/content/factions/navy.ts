@@ -71,7 +71,7 @@ export const navy = {
     },
     {
       id: 'frigate', weight: { base: 3, perDepth: 0, max: 3 },
-      depth: { battery: [3, 5], core: [3, 4], habitat: [3, 3], cargo: [3, 4] }, batteryCols: [1, 2], sponsonChance: 0.5, sectionRooms: 3, grammars: [{ value: 'componentFrigate', weight: 5 }, { value: 'spineWings', weight: 1 }], aspect: [3, 4], propulsion: ['wingPods', 'nacelles', 'cluster'],
+      depth: { battery: [3, 5], core: [3, 4], habitat: [3, 3], cargo: [3, 4] }, batteryCols: [1, 2], sponsonChance: 0.5, sectionRooms: 3, grammars: [{ value: 'componentFrigate', weight: 1 }], aspect: [3, 4], propulsion: ['wingPods', 'nacelles', 'cluster'],
     },
     {
       id: 'cruiser', weight: { base: -1, perDepth: 0.5, max: 4 }, bonus: { weapons: 2, shields: 1, crew: 2 },
