@@ -183,6 +183,7 @@ export function contactSheet(
   const isDonor = (a: { donor?: string; label: string }): boolean => !!a.donor && a.donor !== 'scrap' && !/bow|drive|tug/.test(a.label);
   const strutsPer = (d: NonNullable<GenResult['debug']>): number => d.assemblies.filter((a) => /scrap: (strut|brace)/.test(a.label)).length;
   const tiesPer = (d: NonNullable<GenResult['debug']>): number => d.assemblies.filter((a) => /scrap: tie/.test(a.label)).length;
+  const cornersPer = (d: NonNullable<GenResult['debug']>, k: string): number => d.assemblies.filter((a) => a.label === `scrap: ${k}`).length;
   const majorsPer = (d: NonNullable<GenResult['debug']>): number => d.assemblies.filter((a) => isDonor(a) && a.w * a.h >= 200).length;
   const salv = ships.filter((x) => x.g.debug && x.g.debug.assemblies.some(isDonor));
   const donorCount = salv.map((x) => x.g.debug!.assemblies.filter(isDonor).length);
@@ -206,7 +207,7 @@ export function contactSheet(
   });
   const avg = (xs: number[]): number => (xs.length ? xs.reduce((t, v) => t + v, 0) / xs.length : 0);
   const aspects = salv.map((x) => x.g.metrics?.aspect ?? 0);
-  const salvText = salv.length ? ` donors ${avg(donorCount).toFixed(1)} daylight ${avg(gaps).toFixed(1)} (min ${gaps.length ? Math.min(...gaps) : 0}) majors ${avg(salv.map((x) => majorsPer(x.g.debug!))).toFixed(1)} struts ${avg(salv.map((x) => strutsPer(x.g.debug!))).toFixed(1)} ties ${avg(salv.map((x) => tiesPer(x.g.debug!))).toFixed(1)} aspect ${avg(aspects).toFixed(2)}` : '';
+  const salvText = salv.length ? ` donors ${avg(donorCount).toFixed(1)} daylight ${avg(gaps).toFixed(1)} (min ${gaps.length ? Math.min(...gaps) : 0}) majors ${avg(salv.map((x) => majorsPer(x.g.debug!))).toFixed(1)} struts ${avg(salv.map((x) => strutsPer(x.g.debug!))).toFixed(1)} ties ${avg(salv.map((x) => tiesPer(x.g.debug!))).toFixed(1)} diagonals ${avg(salv.map((x) => cornersPer(x.g.debug!, 'diagonal'))).toFixed(1)} doglegs ${avg(salv.map((x) => cornersPer(x.g.debug!, 'dogleg'))).toFixed(1)} aspect ${avg(aspects).toFixed(2)}` : '';
   const spines = ships.map((x) => x.g.metrics?.spine ?? 0);
   const spine = spines.reduce((t, v) => t + v, 0) / Math.max(1, spines.length);
   const arch = meanPairwise(ships.map((x) => x.g.debug?.profile ?? x.g.topology), profileDistance);

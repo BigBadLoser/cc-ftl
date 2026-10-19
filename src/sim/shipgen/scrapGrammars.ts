@@ -261,6 +261,115 @@ function ties(c: Ctx): number {
   return made;
 }
 
+/** A bare truss along an arbitrary path of cells (a diagonal staircase or a dogleg). */
+function pathMember(path: { x: number; y: number }[], label: string): { blk: Block; X: number; Y: number } {
+  const X = Math.min(...path.map((q) => q.x));
+  const Y = Math.min(...path.map((q) => q.y));
+  const W = Math.max(...path.map((q) => q.x)) - X + 1;
+  const H = Math.max(...path.map((q) => q.y)) - Y + 1;
+  const set = new Set(path.map((q) => `${q.x - X},${q.y - Y}`));
+  const rows = Array.from({ length: H }, (_, j) => Array.from({ length: W }, (_, i) => (set.has(`${i},${j}`) ? '=' : '.')).join(''));
+  return { blk: { kind: 'beam', label, access: 'external', rows, legend: new Map(), ports: [], faceE: [], origin: { x: 0, y: 0 }, exposed: [], donor: 'scrap', bare: true }, X, Y };
+}
+
+/**
+ * Corner struts: between two major blocks whose nearest cells are diagonal to each other (no overlap in x or y, so
+ * neither a hanging strut nor a lengthwise tie can join them) within 8 tiles of open space, and nothing linking them
+ * yet: a 45-degree stepped diagonal truss, or failing that a dogleg (lengthwise, then turning). One or two per ship,
+ * the loosest blocks first; the path keeps a tile clear of every other block.
+ */
+function corners(c: Ctx): { diagonal: number; dogleg: number } {
+  const ids = c.A.placed.map((_, i) => i).filter((i) => major((c.A.placed[i] as { block: Block }).block));
+  const owner = new Map<number, number>();
+  for (const i of ids) for (const t of cells(c, i)) owner.set(t.y * 100003 + t.x, i);
+  // Occupied by anything but bare structure (struts may run alongside one another).
+  const bareCells = new Set<number>();
+  c.A.placed.forEach((p, i) => { if (p.block.bare) for (const t of cells(c, i)) bareCells.add(t.y * 100003 + t.x); });
+  const anyAt = (x: number, y: number): boolean => c.A.cell(x, y) !== undefined && !bareCells.has(y * 100003 + x);
+  const free = (x: number, y: number): boolean => c.A.cell(x, y) === undefined && !c.A.reserved(x, y);
+  // Links: direct joins, or a bare piece (strut, brace, tie) touching both.
+  const touch = new Map<number, Set<number>>();
+  c.A.placed.forEach((p, i) => {
+    if (!p.block.bare) return;
+    const t = new Set<number>();
+    for (const q of cells(c, i)) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) { const o = owner.get((q.y + dy) * 100003 + q.x + dx); if (o !== undefined) t.add(o); }
+    touch.set(i, t);
+  });
+  const linked = (a: number, b: number): boolean => c.A.joins.some((j) => (j.a === a && j.b === b) || (j.a === b && j.b === a)) || [...touch.values()].some((t) => t.has(a) && t.has(b));
+  const degree = (a: number): number => ids.filter((b) => b !== a && linked(a, b)).length;
+  const ext = new Map(ids.map((i) => [i, extent(c, i)]));
+  type Cand = { a: number; b: number; path: { x: number; y: number }[]; kind: 'diagonal' | 'dogleg'; score: number };
+  const cands: Cand[] = [];
+  for (const a of ids) for (const b of ids) {
+    if (b <= a || linked(a, b)) continue;
+    const A = ext.get(a) as ReturnType<typeof extent>;
+    const B = ext.get(b) as ReturnType<typeof extent>;
+    const gx = Math.max(B.x0 - A.x1, A.x0 - B.x1) - 1;
+    const gy = Math.max(B.y0 - A.y1, A.y0 - B.y1) - 1;
+    if (Math.max(gx, gy) > 9 || Math.max(gx, gy) < 1) continue;
+    // The nearest few pairs of cells (by Chebyshev distance) between the two blocks, corner to corner only (blocks
+    // facing each other squarely get hanging struts and ties instead).
+    const qs = cells(c, b);
+    const near: { p: { x: number; y: number }; q: { x: number; y: number }; d: number }[] = [];
+    for (const p of cells(c, a)) for (const q of qs) {
+      const d = Math.max(Math.abs(p.x - q.x), Math.abs(p.y - q.y));
+      if (d <= 10 && Math.abs(q.x - p.x) >= 2 && Math.abs(q.y - p.y) >= 2) near.push({ p, q, d });
+    }
+    near.sort((u, v) => u.d - v.d);
+    for (const best of near.filter((_, i) => i % 7 === 0).slice(0, 6)) {
+    const { p, q } = best;
+    const sx = Math.sign(q.x - p.x);
+    const sy = Math.sign(q.y - p.y);
+    const crowded = (x: number, y: number, path: { x: number; y: number }[]): boolean => {
+      for (let ey = -1; ey <= 1; ey++) for (let ex = -1; ex <= 1; ex++) {
+        if (!anyAt(x + ex, y + ey)) continue;
+        const o = owner.get((y + ey) * 100003 + x + ex);
+        if (o === a || o === b || path.some((t) => t.x === x + ex && t.y === y + ey)) continue;
+        return true;
+      }
+      return false;
+    };
+    const walk = (mode: 'diagonal' | 'diagonalY' | 'xy' | 'yx'): { x: number; y: number }[] | null => {
+      const out: { x: number; y: number }[] = [];
+      let x = p.x;
+      let y = p.y;
+      for (let k = 0; k < 30; k++) {
+        const dx = q.x - x;
+        const dy = q.y - y;
+        const goX = mode === 'diagonal' ? dx !== 0 && (dy === 0 || k % 2 === 0) : mode === 'diagonalY' ? dx !== 0 && (dy === 0 || k % 2 === 1) : mode === 'xy' ? dx !== 0 : dy === 0;
+        const nx = goX ? x + sx : x;
+        const ny = goX ? y : y + sy;
+        if (nx === q.x && ny === q.y) return out.length > 0 ? out : null;
+        if (!free(nx, ny) || crowded(nx, ny, out)) return null;
+        out.push({ x: nx, y: ny });
+        x = nx;
+        y = ny;
+      }
+      return null;
+    };
+    const diag = walk('diagonal') ?? walk('diagonalY');
+    const path = diag ?? walk('xy') ?? walk('yx');
+    if (!path) continue;
+    cands.push({ a, b, path, kind: diag ? 'diagonal' : 'dogleg', score: Math.min(degree(a), degree(b)) * 10 + path.length });
+    break;
+    }
+  }
+  const out = { diagonal: 0, dogleg: 0 };
+  const used = new Set<number>();
+  const target = 2;
+  for (const k of cands.sort((x, y) => x.score - y.score)) {
+    if (out.diagonal + out.dogleg >= target) break;
+    if (used.has(k.a) && used.has(k.b)) continue;
+    const m = pathMember(k.path, `scrap: ${k.kind}`);
+    if (!c.A.canPlace(m.blk, m.X, m.Y)) continue;
+    c.A.place(m.blk, m.X, m.Y);
+    used.add(k.a);
+    used.add(k.b);
+    out[k.kind]++;
+  }
+  return out;
+}
+
 /** Daylight: no other block (but the strut it hangs on) within `gap` tiles of the donor. */
 function clearOf(c: Ctx, id: number, strutId: number, gap: number): boolean {
   const owner = new Map<number, number>();
@@ -410,6 +519,8 @@ function compose(c: Ctx, f: FactionDef, mode: ScrapGrammar): boolean {
   }
   const t = ties(c);
   if (t > 0) c.parts.push(`ties ${t}`);
+  const k = corners(c);
+  if (k.diagonal + k.dogleg > 0) c.parts.push(`corners ${k.diagonal}/${k.dogleg}`);
   return improvise(c, p);
 }
 

@@ -394,6 +394,15 @@ Same arranger, no sim changes. Files:
   blunt navy block (salvage mixes origins). Navy hulk anchors weigh 1 (their own navy nose was the common oval bow).
 - Flush welds (still at most one) are undone unless they keep two tiles from every major block they are not welded to.
 
+## Scrappers v27: corner struts
+
+- Corners (`scrapGrammars.ts` `corners`, after `ties`): between two major blocks that sit corner to corner (their
+  nearest cells differ by 2+ tiles in both x and y) within about 9 tiles of open space, and with nothing linking them
+  (no join, no strut, brace or tie touching both), a bare truss along a 45-degree staircase (`diagonal`), or failing
+  that an L (`dogleg`: lengthwise, then turning). The path keeps a tile clear of every other block (struts aside).
+  At most two per ship, the loosest blocks (fewest links) and shortest paths first.
+- Viewer: `diagonals` and `doglegs` per ship on salvage sheets.
+
 ## Transitions (v18): tapered collars between sections
 
 - **`hullFill.ts` holds all the plating passes** that run after an arrangement: seam plates, enclosed-pocket
