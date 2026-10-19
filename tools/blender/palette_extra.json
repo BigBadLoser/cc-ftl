@@ -429,5 +429,17 @@
  },
  "fxSD": {
   "hex": "#454244"
+ },
+ "fxI0": {
+  "hex": "#d6e2ff",
+  "emissive": 4.0
+ },
+ "fxI1": {
+  "hex": "#4f72ff",
+  "emissive": 3.0
+ },
+ "fxI2": {
+  "hex": "#3b27b8",
+  "emissive": 2.0
  }
 }
