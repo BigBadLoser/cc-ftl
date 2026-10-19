@@ -29,6 +29,8 @@ export interface CrewViewHost {
   light?(): { data: ArrayLike<number>; width: number } | null;
   /** Id of the grid being shown, or null when nothing is shown. */
   target(): { gridId: number } | null;
+  /** Crew on this tile are not drawn (the interior of a roofed region). */
+  hidden?(x: number, y: number): boolean;
   /** The module covering tile (x, y) of the shown grid, if any (to sort crew on a console's chair tile against its sprite). */
   moduleAt?(x: number, y: number): { m: Module; def: ModuleDef } | null;
   /** Seconds of air in a full suit tank (scales the air bar). */
@@ -190,7 +192,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
       for (const id of world.query(CrewC, PositionC)) {
         const pos = world.get(id, PositionC);
         const crew = world.get(id, CrewC);
-        if (!pos || !crew || pos.gridId !== target.gridId) continue;
+        if (!pos || !crew || pos.gridId !== target.gridId || host.hidden?.(pos.x, pos.y)) continue;
         seen.add(id);
         let s = slots.get(id);
         if (s && s.suited !== world.has(id, SuitC)) {

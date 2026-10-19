@@ -1,5 +1,5 @@
 import { autoDetectRenderer, Container } from 'pixi.js';
-import { CombatC, ShipC, WeaponC, type Ship } from '../sim/combat/components';
+import { ShipC, type Ship } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
 import type { Grid } from '../sim/grid';
@@ -21,8 +21,7 @@ import { createShuttleView } from './shuttleView';
 import { createFightFx } from './fightFx';
 import { createCrewMarks } from './crewMarks';
 import { localTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
-import { CrewC, PositionC } from '../sim/crew/components';
-import { AllegianceC } from '../sim/fight/components';
+import { targetedModules, wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
 import { createShipScene, type ShipScene } from './shipScene';
@@ -154,7 +153,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const pickHost = (): PickHost => ({ scenes, cam, origin });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf });
-  const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id) => scenes.has(id) && !scenes.get(id)?.isRoofed() });
+  const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
   function shipOf(gridId: number): Ship | undefined {
     for (const id of world.query(ShipC)) {
@@ -187,17 +186,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   /** A ship's roof livery; the debug URL parameter `?bow=east|west` forces the end the bow motifs take. */
   const bowParam = new URLSearchParams(window.location.search).get('bow');
   const shipLivery = (s: Ship) => ({ ...liveryFor(s.faction, s.name), ...(bowParam ? { bowWest: bowParam === 'west' } : {}) });
-  /** True while any of the player's crew stand on this grid (boarders): its interior is shown so they can be ordered about. */
-  const boarded = (gridId: number) => {
-    for (const id of world.query(CrewC, PositionC)) {
-      if (world.get(id, PositionC)?.gridId === gridId && world.get(id, AllegianceC)?.faction === 'player') return true;
-    }
-    return false;
-  };
-  const wantsRoof = (s: Ship) => roofEnemies && s.faction === 'hostile' && s.state !== 'wreck' && !boarded(s.gridId);
+  const roofFor = (s: Ship) => wantsRoof(world, s, roofEnemies);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: wantsRoof(s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
@@ -223,28 +215,13 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         sc.dispose();
         scenes.delete(s.gridId);
         addScene(s, grid);
-      } else if (sc.isRoofed() !== wantsRoof(s)) sc.setRoofed(wantsRoof(s));
+      } else if (sc.isRoofed() !== roofFor(s)) sc.setRoofed(roofFor(s));
     }
     for (const [id, sc] of scenes) {
       if (live.has(id)) continue;
       sc.dispose();
       scenes.delete(id);
     }
-  }
-
-  /** Module ids on the enemy grid that the player's ship (or one of its weapons) is aiming at. */
-  function targetedModules(gridId: number): Set<number> {
-    const out = new Set<number>();
-    for (const id of world.query(ShipC, CombatC)) {
-      if (world.get(id, ShipC)?.gridId !== refId) continue;
-      const t = world.get(id, CombatC)?.target;
-      if (t?.gridId === gridId && t.moduleId) out.add(t.moduleId);
-    }
-    for (const id of world.query(WeaponC, ModuleC)) {
-      const t = world.get(id, WeaponC)?.target;
-      if (t?.gridId === gridId && t.moduleId && world.get(id, ModuleC)?.gridId === refId) out.add(t.moduleId);
-    }
-    return out;
   }
 
   /** Art px box of a region (padded for the roof, turrets, bells and docked bodies), for culling per camera. */
@@ -298,7 +275,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         const o = origin(id);
         const p = iso(o.x, o.y);
         sc.layers.setOrigin(p.x, p.y, o.x + o.y);
-        sc.setMarks(id === shown, id === shown ? targetedModules(id) : NONE);
+        sc.setMarks(id === shown, id === shown ? targetedModules(world, refId, id) : NONE);
         sc.update(dt);
       }
       shuttles.update(dt);

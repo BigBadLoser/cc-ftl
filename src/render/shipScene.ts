@@ -18,6 +18,7 @@ import { createRoofView } from './roofView';
 import type { Livery } from './roofPlating';
 import { ROOF_H, wallTopPx } from './heights';
 import { createTargetMarks } from './targetMarks';
+import { crewHidden } from './regionRules';
 import { createTurretView } from './turretView';
 import { DEFAULT_BEAM_LOOK, type BeamLook } from './beamArt';
 
@@ -46,6 +47,8 @@ export interface ShipScene {
   /** Roofed ships hide their interior: roof over the rooms, full-height walls, no crew or items. */
   setRoofed(roofed: boolean): void;
   isRoofed(): boolean;
+  /** True if crew standing on tile (x, y) are hidden: an interior tile of this region while it is roofed (§5). */
+  hidesCrewAt(x: number, y: number): boolean;
   /** The user's wall-height mode (a roofed ship always draws full-height walls). */
   setCutaway(mode: CutawayMode): void;
   /** Outline targetable modules (and the `targeted` module ids) with roof-height diamonds. */
@@ -70,7 +73,8 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const inside = () => (roofed ? null : { grid });
   const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK });
   const crewView = createCrewView(world, atlas, L, {
-    target: () => (roofed ? null : { grid, gridId: grid.id }),
+    target: () => ({ gridId: grid.id }),
+    hidden: (x, y) => crewHidden(grid, roofed, x, y),
     emergency: () => emergency,
     moduleAt: (x, y) => {
       const id = grid.inBounds(x, y) ? grid.get('module', x, y) : 0;
@@ -123,6 +127,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       turretView.setRoofed(r);
     },
     isRoofed: () => roofed,
+    hidesCrewAt: (x, y) => crewHidden(grid, roofed, x, y),
     setCutaway(m) {
       cutaway = m;
       applyMode();

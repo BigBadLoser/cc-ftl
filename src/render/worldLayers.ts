@@ -139,16 +139,19 @@ export function createWorldStack(): WorldStack {
       ui.addChild(parts.ui);
       marks.addChild(parts.marks);
       const all = Object.values(parts);
-      const blur = new BlurFilter({ strength: 1.5 * scale, quality: 3 });
-      blurs.add(blur);
-      parts.halo.filters = [blur];
+      // Halos (Quality High, the player's ship only) blur; other regions never make the filter.
+      const blur = halos ? new BlurFilter({ strength: 1.5 * scale, quality: 3 }) : null;
+      if (blur) {
+        blurs.add(blur);
+        parts.halo.filters = [blur];
+      }
       parts.halo.blendMode = 'add';
       parts.fxAdd.blendMode = 'add';
       parts.halo.visible = halos;
       let visible = true;
       const haloAt = (z: number): Container => {
         const c = new Container();
-        c.filters = [blur];
+        if (blur) c.filters = [blur];
         c.blendMode = 'add';
         c.zIndex = z;
         parts.sorted.addChild(c);
@@ -191,7 +194,7 @@ export function createWorldStack(): WorldStack {
           return visible;
         },
         dispose() {
-          blurs.delete(blur);
+          if (blur) blurs.delete(blur);
           for (const c of all) c.destroy({ children: true });
         },
       };
