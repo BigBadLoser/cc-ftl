@@ -124,13 +124,16 @@ def _hull(mask, level, near, o):
 
 
 def airlock_parts(rot, hull, st, level):
-    """(depth, asset id, gx, gy) for one airlock in state st = (outer, inner, light, docked); keep-out marks first
+    """(depth, asset id, gx, gy) for one airlock in state st = (outer, inner, light, docked); floor marks first
     (deck level, depth -1000)."""
     o, i, light, docked = st
     T = lambda u, v: tile(rot, hull, u, v)  # noqa: E731
     d = lambda t, k: t[0] + t[1] + k  # noqa: E731
-    out = [(-1000, f"module.airlock.keepout.r{rot}.{n}", *T(-1, v)) for n, v in (("l", -1), ("m", 0), ("r", 1))]
-    out += [(d(T(0, v), 0.01), f"module.airlock.unloader.r{rot}", *T(0, v)) for v in (-1, 1)]
+    out = [(-1000, f"module.airlock.walk.r{rot}", *T(u, 0)) for u in (-1, -2)]
+    out += [(-1000, f"module.airlock.keepout.r{rot}", *T(-2, v)) for v in (-1, 1)]
+    for v in (-1, 1):
+        out += [(d(T(0, v), 0.01), f"module.airlock.unloader.r{rot}.back", *T(0, v)),
+                (d(T(-1, v), 0.01), f"module.airlock.unloader.r{rot}.front", *T(-1, v))]
     out += [(d(T(0, 0), 0.01), f"module.airlock.housing.r{rot}.{i}", *T(0, 0)),
             (d(T(0, 0), 0.012), f"module.airlock.light.r{rot}.{light}", *T(0, 0)),
             (d(T(1, 0), 0.01), f"module.airlock.hull.r{rot}.{level}", *T(1, 0)),
