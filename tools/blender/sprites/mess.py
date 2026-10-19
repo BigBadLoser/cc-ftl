@@ -20,11 +20,13 @@ def table(rot, meal):
     m = core.Mesh(f"mess_table_{rot}_{int(meal)}")
     F = _Frame(m, (2, 1), rot)
     for a in (-0.55, 0.55):
-        F.cyl(a, 0.0, 0.0, 0.22, 0.03, "steelD", top="steel", sides=10)                     # pedestal feet
+        F.cyl(a, 0.0, 0.0, 0.18, 0.03, "steel", top="steelL", sides=10)                     # pedestal feet
         F.cyl(a, 0.0, 0.03, 0.06, 0.55, "steelL", top="steel", sides=8)
     F.box(0.0, 0.0, 0.26, (1.1, 0.08, 0.06), "gm")                                          # stretcher
-    F.box(0.0, 0.0, 0.56, (1.86, 0.84, 0.04), "lvW2", top="lvW", bevel=0.012)               # cream edge band
-    F.box(0.0, 0.0, 0.6, (1.82, 0.8, 0.03), "steel", top="steelL", bevel=0.008)              # stainless top
+    F.box(0.0, 0.0, 0.55, (1.86, 0.84, 0.04), "lvW2", top="lvW", bevel=0.012)               # cream edge band
+    F.box(0.0, 0.0, 0.59, (1.84, 0.82, 0.04), "gmD", top="gm", bevel=0.008)                  # a darker rim
+    F.box(0.0, 0.0, 0.6, (1.74, 0.72, 0.03), "plate", top="plate")                           # light stainless top
+    F.box(0.0, 0.0, 0.63, (1.74, 0.02, 0.002), "steelL")                                     # centre seam
     F.box(0.0, 0.0, 0.63, (0.22, 0.12, 0.04), "gm", top="steel", bevel=0.006)               # condiment caddy
     F.cyl(-0.05, 0.0, 0.67, 0.025, 0.1, "medRed", top="lvW", sides=6)
     F.cyl(0.05, 0.0, 0.67, 0.025, 0.08, "hazY", top="lvW", sides=6)
@@ -48,7 +50,7 @@ def chair(rot, part="full"):
     m = core.Mesh(f"chair_{rot}_{part}")
     F = _Frame(m, (1, 1), rot)
     if part != "back":
-        F.cyl(0.0, 0.02, 0.0, 0.2, 0.03, "steelD", top="steel", sides=10)                   # pedestal foot
+        F.cyl(0.0, 0.02, 0.0, 0.14, 0.03, "steel", top="steelL", sides=10)                  # pedestal foot
         F.cyl(0.0, 0.02, 0.03, 0.045, 0.24, "steelL", top="steel", sides=8)
         F.box(0.0, 0.0, 0.27, (0.44, 0.42, 0.08), "lvW2", top="lvW", bevel=0.025)            # moulded seat
         F.box(0.0, -0.01, 0.35, (0.36, 0.34, 0.04), "lvR", top="lvR")                        # seat pad: top 0.39
