@@ -484,8 +484,23 @@ function compose(c: Ctx, f: FactionDef, mode: ScrapGrammar): boolean {
   for (const b of order) {
     const sides: Side[] = mode === 'chain' ? [side, 'w', OPP[side]] : mode === 'raft' ? [side, OPP[side], 'w'] : [side, OPP[side], 'w'];
     let id: number | null = null;
+    // One dominant donor can be fused directly to the primary salvage body. Other
+    // donors retain exposed struts, so the vessel has a recognizable mass and
+    // still reads as improvised machinery. Never stamp onto existing modules.
+    if (flush === 0 && b.rows.length >= 7 && c.rng.chance(0.72)) {
+      for (const sd of sides.filter((x) => x !== 'w')) {
+        const host = line[c.rng.int(0, line.length - 1)] as number;
+        for (const v of variants(c, b)) {
+          if (!v.ports.some((q) => q.side === OPP[sd])) continue;
+          id = c.A.attach(host, v, { side: sd, align: 'mid', kind: 'graft' });
+          if (id !== null) { flush++; c.parts.push('primary hull graft'); break; }
+        }
+        if (id !== null) break;
+      }
+    }
     let tries = 10;
     for (const sd of sides) {
+      if (id !== null) break;
       for (const h of sd === 'w' ? [line[0] as number] : shuffle(c.rng, line)) {
         for (const v of variants(c, b)) {
           if (id !== null || tries <= 0 || !v.ports.some((q) => q.side === OPP[sd])) continue;
