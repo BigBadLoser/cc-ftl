@@ -9,7 +9,7 @@
   vehicle_bay the shuttle bay (pit, doors, gangway, claws) and the shuttle parked in it, 4 rotations (vehicle_bay.py)
   shuttle   the flying shuttle: 8 fly headings and 4 docked poses (vehicle_bay.py craft_jobs)
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
-  galley    the galley (food printer, 2x1, four rotations, idle / active) and the ration item (galley.py)
+  galley    the food pack: galley (food printer), rations, mess table and chair (galley.py, mess.py)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -43,8 +43,8 @@ def jobs(name):
         from . import vehicle_bay
         return vehicle_bay.craft_jobs(), True
     if name == "galley":
-        from . import galley
-        return galley.SPRITES, True
+        from . import galley, mess
+        return galley.SPRITES + mess.SPRITES, True
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
