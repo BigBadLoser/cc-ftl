@@ -112,7 +112,7 @@ function twinHull(c: Ctx, f: FactionDef): boolean {
 }
 
 /** Carrier: a hangar block with hull decks along it (real volume), an offset island, nacelles aft. */
-function carrierIsland(c: Ctx): boolean {
+function carrierIsland(c: Ctx, f: FactionDef): boolean {
   const j = jobs(c.plan);
   const hb = section(c, { kind: 'hangar', top: [], bottom: [], sponson: false, centre: c.plan.hangars, extra: [[], []] });
   if (!hb) return no(c, 'hangar');
@@ -120,7 +120,19 @@ function carrierIsland(c: Ctx): boolean {
   c.parts.push('hangar');
   const [bowGuns, ...more] = bands('battery', j.guns, 2);
   const bow = bowGuns ? section(c, bowGuns) : null;
-  if (bow && c.A.attach(root, bow, { side: 'w' }) === null) return no(c, 'bow');
+  const bowId = bow ? c.A.attach(root, bow, { side: 'w' }) : null;
+  if (bow && bowId === null) return no(c, 'bow');
+  // The island contains the actual command room. An unarmed forepeak gives
+  // this broad hangar hull a proper prow without duplicating a helm or guns.
+  const forePlan = {
+    ...c.plan,
+    command: { ...c.plan.command, role: 'cargo' as const, mods: [], stock: true },
+    weapons: [],
+  };
+  const nose = noseBlock(c.rng, pickNose(new Builder(c.rng), f, forePlan));
+  const prow = nose ? { ...nose, kind: 'forepeak', label: 'forepeak' } : null;
+  if (!prow || c.A.attach(bowId ?? root, prow, { side: 'w' }) === null) return no(c, 'forepeak');
+  c.parts.push('forepeak');
   // Crew, core, stores and the remaining guns in hull decks along the hangar: they give it real volume.
   const decks = deckPair(c, root, root, 'hull', [...j.crew, ...j.core, ...j.stores, ...more.flatMap((s: SectionPlan) => [...s.top, ...s.bottom])], 'start', { xMin: spanOf(c, [root]).xMin });
   if (!decks) return no(c, 'hull decks');
@@ -165,5 +177,5 @@ function flightDeck(c: Ctx, f: FactionDef): boolean {
 }
 
 export const GRAMMARS: Record<NavyGrammar, (c: Ctx, f: FactionDef) => boolean> = {
-  linear: linearHull, deckPair: deckPairGrammar, spineWings, citadelFlanked, twinHull, componentFrigate, componentBattleship, carrierIsland: (c) => carrierIsland(c), flightDeck,
+  linear: linearHull, deckPair: deckPairGrammar, spineWings, citadelFlanked, twinHull, componentFrigate, componentBattleship, carrierIsland, flightDeck,
 };
