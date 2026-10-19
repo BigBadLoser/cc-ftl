@@ -4443,14 +4443,14 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 612,
+    "x": 453,
     "y": 183,
     "w": 54,
-    "h": 26
+    "h": 28
    },
    "anchor": {
     "x": 27,
-    "y": 13
+    "y": 14
    },
    "footprint": [
     1,
@@ -4461,14 +4461,14 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 667,
+    "x": 508,
     "y": 183,
     "w": 54,
-    "h": 26
+    "h": 28
    },
    "anchor": {
     "x": 27,
-    "y": 13
+    "y": 14
    },
    "footprint": [
     1,
@@ -4479,14 +4479,14 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 722,
+    "x": 563,
     "y": 183,
     "w": 54,
-    "h": 26
+    "h": 28
    },
    "anchor": {
     "x": 27,
-    "y": 13
+    "y": 14
    },
    "footprint": [
     1,
@@ -4497,14 +4497,14 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 777,
+    "x": 618,
     "y": 183,
     "w": 54,
-    "h": 26
+    "h": 28
    },
    "anchor": {
     "x": 27,
-    "y": 13
+    "y": 14
    },
    "footprint": [
     1,
@@ -4515,7 +4515,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 832,
+    "x": 893,
     "y": 183,
     "w": 13,
     "h": 7
@@ -4534,7 +4534,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 846,
+    "x": 907,
     "y": 183,
     "w": 13,
     "h": 7
@@ -4553,7 +4553,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 860,
+    "x": 921,
     "y": 183,
     "w": 13,
     "h": 7
@@ -4572,7 +4572,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 874,
+    "x": 935,
     "y": 183,
     "w": 13,
     "h": 7
@@ -4591,7 +4591,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 888,
+    "x": 949,
     "y": 183,
     "w": 13,
     "h": 7
@@ -4610,7 +4610,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 902,
+    "x": 963,
     "y": 183,
     "w": 13,
     "h": 7
@@ -4629,7 +4629,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 916,
+    "x": 977,
     "y": 183,
     "w": 13,
     "h": 7
@@ -4648,7 +4648,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 930,
+    "x": 991,
     "y": 183,
     "w": 13,
     "h": 7
@@ -4667,7 +4667,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 160,
+    "x": 229,
     "y": 183,
     "w": 55,
     "h": 51
@@ -4685,8 +4685,8 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1995,
-    "y": 114,
+    "x": 123,
+    "y": 183,
     "w": 52,
     "h": 53
    },
@@ -4706,11 +4706,11 @@
    "frame": {
     "x": 1,
     "y": 183,
-    "w": 52,
-    "h": 53
+    "w": 60,
+    "h": 54
    },
    "anchor": {
-    "x": 26,
+    "x": 34,
     "y": 40
    },
    "footprint": [
@@ -4723,7 +4723,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 272,
+    "x": 341,
     "y": 183,
     "w": 55,
     "h": 46
@@ -4761,11 +4761,11 @@
    "frame": {
     "x": 1836,
     "y": 114,
-    "w": 52,
+    "w": 60,
     "h": 58
    },
    "anchor": {
-    "x": 26,
+    "x": 34,
     "y": 45
    },
    "footprint": [
@@ -4777,7 +4777,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 328,
+    "x": 397,
     "y": 183,
     "w": 55,
     "h": 46
@@ -4795,7 +4795,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1889,
+    "x": 1897,
     "y": 114,
     "w": 52,
     "h": 58
@@ -4813,9 +4813,9 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1942,
+    "x": 1950,
     "y": 114,
-    "w": 52,
+    "w": 60,
     "h": 58
    },
    "anchor": {
@@ -4831,7 +4831,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 216,
+    "x": 285,
     "y": 183,
     "w": 55,
     "h": 51
@@ -4849,7 +4849,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 54,
+    "x": 176,
     "y": 183,
     "w": 52,
     "h": 53
@@ -4868,10 +4868,10 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 107,
+    "x": 62,
     "y": 183,
-    "w": 52,
-    "h": 53
+    "w": 60,
+    "h": 54
    },
    "anchor": {
     "x": 26,
@@ -4887,13 +4887,13 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 384,
+    "x": 673,
     "y": 183,
-    "w": 56,
+    "w": 54,
     "h": 28
    },
    "anchor": {
-    "x": 28,
+    "x": 27,
     "y": 14
    },
    "footprint": [
@@ -4905,13 +4905,13 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 441,
+    "x": 728,
     "y": 183,
-    "w": 56,
+    "w": 54,
     "h": 28
    },
    "anchor": {
-    "x": 28,
+    "x": 27,
     "y": 14
    },
    "footprint": [
@@ -4923,13 +4923,13 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 498,
+    "x": 783,
     "y": 183,
-    "w": 56,
+    "w": 54,
     "h": 28
    },
    "anchor": {
-    "x": 28,
+    "x": 27,
     "y": 14
    },
    "footprint": [
@@ -4941,13 +4941,13 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 555,
+    "x": 838,
     "y": 183,
-    "w": 56,
+    "w": 54,
     "h": 28
    },
    "anchor": {
-    "x": 28,
+    "x": 27,
     "y": 14
    },
    "footprint": [
@@ -35299,7 +35299,7 @@
    "kind": "static",
    "sheet": "shuttle",
    "frame": {
-    "x": 534,
+    "x": 1101,
     "y": 223,
     "w": 241,
     "h": 155
@@ -35317,7 +35317,7 @@
    "kind": "static",
    "sheet": "shuttle",
    "frame": {
-    "x": 1,
+    "x": 330,
     "y": 223,
     "w": 237,
     "h": 157
@@ -35325,6 +35325,78 @@
    "anchor": {
     "x": 138,
     "y": 129
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.dockside.d0": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 568,
+    "y": 223,
+    "w": 237,
+    "h": 157
+   },
+   "anchor": {
+    "x": 138,
+    "y": 129
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.dockside.d2": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 1075,
+    "y": 1,
+    "w": 241,
+    "h": 202
+   },
+   "anchor": {
+    "x": 138,
+    "y": 177
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.dockside.d4": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 1317,
+    "y": 1,
+    "w": 237,
+    "h": 202
+   },
+   "anchor": {
+    "x": 99,
+    "y": 177
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.dockside.d6": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 1343,
+    "y": 223,
+    "w": 241,
+    "h": 155
+   },
+   "anchor": {
+    "x": 103,
+    "y": 127
    },
    "footprint": [
     1,
@@ -35353,8 +35425,8 @@
    "kind": "static",
    "sheet": "shuttle",
    "frame": {
-    "x": 1525,
-    "y": 1,
+    "x": 1,
+    "y": 223,
     "w": 328,
     "h": 186
    },
@@ -35389,7 +35461,7 @@
    "kind": "static",
    "sheet": "shuttle",
    "frame": {
-    "x": 1075,
+    "x": 1555,
     "y": 1,
     "w": 224,
     "h": 187
@@ -35407,7 +35479,7 @@
    "kind": "static",
    "sheet": "shuttle",
    "frame": {
-    "x": 776,
+    "x": 1585,
     "y": 223,
     "w": 298,
     "h": 154
@@ -35426,8 +35498,8 @@
    "kind": "static",
    "sheet": "shuttle",
    "frame": {
-    "x": 1075,
-    "y": 223,
+    "x": 1,
+    "y": 410,
     "w": 328,
     "h": 149
    },
@@ -35445,7 +35517,7 @@
    "kind": "static",
    "sheet": "shuttle",
    "frame": {
-    "x": 239,
+    "x": 806,
     "y": 223,
     "w": 294,
     "h": 157
@@ -35464,7 +35536,7 @@
    "kind": "static",
    "sheet": "shuttle",
    "frame": {
-    "x": 1300,
+    "x": 1780,
     "y": 1,
     "w": 224,
     "h": 187

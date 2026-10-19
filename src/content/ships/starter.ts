@@ -18,7 +18,7 @@ export const starterShip = {
     '.#______#_____#______#______#.',
     '.#______#_____#______#______#.',
     '.#______#_____#______#______#.',
-    '.####D#####D######D###______#.',
+    '.####D#####D#####D####______#.',
     '.#___________________D______#.',
     '.#___________________D______#.',
     '.#___D#####D#####D####______#.',
@@ -47,7 +47,7 @@ export const starterShip = {
     { def: 'module.light', x: 22, y: 17, rot: 0 },
     { def: 'module.light', x: 27, y: 9, rot: 0 },
     { def: 'module.light', x: 22, y: 10, rot: 0 },
-    // Quarters (north-east room): four beds; the door at (18, 8) opens onto the free row y = 7.
+    // Quarters (north-east room): four beds; the door at (17, 8) opens onto the free row y = 7.
     { def: 'module.bed', x: 19, y: 2, rot: 3 },
     { def: 'module.bed', x: 17, y: 2, rot: 3 },
     { def: 'module.bed', x: 19, y: 3, rot: 3 },

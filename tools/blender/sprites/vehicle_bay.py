@@ -98,10 +98,14 @@ def craft_item(name, state, heading):
 
 def craft_jobs():
     """Flight art (family `shuttle`): vehicle.shuttle.fly.d0..d7 (wings spread, nozzles lit; d0 = +x, d2 = +y) and
-    vehicle.shuttle.docked.d0/d2/d4/d6 (legs up, wings folded, nozzles dark, nose out: the rear ramp meets the airlock)."""
+    vehicle.shuttle.docked.d0/d2/d4/d6 (legs up, wings folded, nozzles dark, nose out: the lift off / settle pose in a bay) and
+    vehicle.shuttle.dockside.d0/d2/d4/d6 (the same pose lying along the hull, side hatch toward it, at an airlock)."""
     fly = [lambda d=d: craft_item(f"vehicle.shuttle.fly.d{d}", "fly", d * math.pi / 4) for d in range(8)]
     docked = [lambda d=d: craft_item(f"vehicle.shuttle.docked.d{d}", "docked", d * math.pi / 4) for d in (0, 2, 4, 6)]
-    return fly + docked
+    # Docked at an airlock: lying parallel to the hull with its side hatch toward it. d = the hull's outward direction; the
+    # hatch (on the shuttle's -v flank) faces -d, so the nose points along (sin d, -cos d), heading d - 90 deg.
+    side = [lambda d=d: craft_item(f"vehicle.shuttle.dockside.d{d}", "docked", d * math.pi / 4 - math.pi / 2) for d in (0, 2, 4, 6)]
+    return fly + docked + side
 
 
 def jobs():

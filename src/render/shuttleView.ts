@@ -12,14 +12,19 @@ import { BAY_FRAME_MS, LAUNCH_LIFT, RETURN_LAND } from './vehicleBayArt';
 /** Altitude (tiles over the deck) of a shuttle in flight and at a dock, and of its belly on the pit floor. */
 const CRUISE_Z = 0.4;
 const PIT_Z = -0.95;
-/** Altitude at a dock: the shuttle settles to the deck so its rear ramp meets the collar's hatch (axis 0.95 up). */
-const DOCK_Z = 0;
 /**
- * The docked shuttle's centre lies this far beyond the dock point (sector tiles). The dock point is the centre of the airlock's
- * collar tile; the collar's mating face is 0.2 past it (tools/blender/sprites/airlock.py COLLAR_END), and the transport shuttle's
- * rear ramp is 1.95 behind its centre (shuttle_craft.py transport_shuttle), so the ramp meets the collar's hatch.
+ * Docked at an airlock the shuttle lies parallel to the hull, side hatch toward it (`vehicle.shuttle.dockside.d<k>`, k = the
+ * hull's outward direction). The round hatch is at (HATCH_U along the nose, HATCH_V out from the centre line, axis 1.30 up) on the
+ * shuttle's -v flank (shuttle_craft.py / tools/blender/review/TRANSPORT_B.md); the collar's mating face is COLLAR_FACE past the dock
+ * point (the collar tile's centre; tools/blender/sprites/airlock.py COLLAR_END) with its axis 0.95 up. So the shuttle's centre lies
+ * COLLAR_FACE + HATCH_V out from the dock point and HATCH_U back along the hull, and at DOCK_Z (axis 0.95 = DOCK_Z + 1.30).
  */
-const DOCK_REACH = 2.15;
+const HATCH_U = 1.4;
+const HATCH_V = 0.817;
+const COLLAR_FACE = 0.2;
+const DOCK_Z = 0.95 - 1.3;
+/** Seconds-scale rate (per second) at which the shuttle slides alongside the hull once docked, and back out on undocking. */
+const DOCK_RATE = 2.2;
 /** After taking off, a shuttle waits LAG ms on the spot (the doors open under it), then catches up with the sim over CATCH ms. */
 const CATCH_MS = 1500;
 const EIGHTH = Math.PI / 4;
@@ -67,6 +72,9 @@ interface Track {
   state: Vehicle['state'];
   /** Eased altitude for flying and docked (settles when it docks, rises when it leaves). */
   z: number;
+  /** 0 in flight .. 1 docked alongside the hull (eases in and out), and the pose it is blending to or from. */
+  dock: number;
+  pose: { d: number; dx: number; dy: number } | null;
   /** performance.now() of the last launch (stowed to out) and landing (out to stowed); -Infinity if none. */
   launched: number;
   landed: number;
@@ -82,8 +90,8 @@ const ease = (k: number): number => {
 
 /**
  * Draws shuttles (VehicleC entities) with the pipeline sprites in the sector layer: `vehicle.shuttle.fly.d<0..7>` in flight
- * (nearest heading), `vehicle.shuttle.docked.d<k>` at an airlock (nose out, rear against the door) and for the lift off the pit
- * floor and the settle back into it, timed to the bay's door frames (vehicleBayArt). A shuttle parked in its bay is the bay's
+ * (nearest heading), `vehicle.shuttle.dockside.d<k>` at an airlock (lying along the hull, side hatch against the collar) and
+ * `vehicle.shuttle.docked.d<k>` for the lift off the pit floor and the settle back into it, timed to the bay's door frames (vehicleBayArt). A shuttle parked in its bay is the bay's
  * own layer. Renderer only; it never writes the sim.
  */
 export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<Record<string, ModuleDef>>, host: ShuttleViewHost): ShuttleView {
@@ -98,13 +106,19 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
 
   const bayRot = (v: Vehicle): number => world.get(v.home, ModuleC)?.rot ?? 0;
 
-  /** Dock pose: heading index (nose out) and the offset of the shuttle centre from the dock point. */
+  /** Dock pose: the hull's outward direction index d (0, 2, 4, 6) and the full offset of the shuttle centre from the dock point. */
   function dockPose(v: Vehicle): { d: number; dx: number; dy: number } | null {
     const m = world.get(v.dock, ModuleC);
     const def = m && modules[m.def];
     if (!m || !def) return null;
     const out = hullOutward(hullSide(def, m.rot) ?? 'n');
-    return { d: headingIndex(Math.atan2(out.y, out.x)), dx: out.x * DOCK_REACH, dy: out.y * DOCK_REACH };
+    const d = headingIndex(Math.atan2(out.y, out.x));
+    // The nose points along the hull: (sin d, -cos d) = (out.y, -out.x).
+    return {
+      d,
+      dx: out.x * (COLLAR_FACE + HATCH_V) - out.y * HATCH_U,
+      dy: out.y * (COLLAR_FACE + HATCH_V) + out.x * HATCH_U,
+    };
   }
 
   function show(t: Track, sprite: StaticSprite | undefined, glowAlpha: number): boolean {
@@ -137,7 +151,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           glow.blendMode = 'add';
           root.addChild(body, glow);
           host.layer.addChild(root);
-          t = { root, body, glow, key: '', x: v.x, y: v.y, heading: v.heading, state: v.state, z: CRUISE_Z, launched: -Infinity, landed: -Infinity, trail: [] };
+          t = { root, body, glow, key: '', x: v.x, y: v.y, heading: v.heading, state: v.state, z: CRUISE_Z, dock: 0, pose: null, launched: -Infinity, landed: -Infinity, trail: [] };
           tracks.set(id, t);
         }
         if (t.state !== v.state) {
@@ -181,23 +195,26 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         else [t.x, t.y] = [t.x + (v.x - t.x) * k, t.y + (v.y - t.y) * k];
 
         // Heading: smoothed toward the movement heading (or, settling into a bay, toward its parking heading).
-        const target = landing ? parkedIndex(bayRot(v)) * EIGHTH : v.heading;
+        if (v.state === 'docked') t.pose = dockPose(v) ?? t.pose;
+        t.dock += ((v.state === 'docked' && t.pose ? 1 : 0) - t.dock) * (1 - Math.exp(-dt * DOCK_RATE));
+        if (t.dock < 0.005 && v.state !== 'docked') [t.dock, t.pose] = [0, null];
+        const target = landing ? parkedIndex(bayRot(v)) * EIGHTH : t.pose && v.state === 'docked' ? t.pose.d * EIGHTH - Math.PI / 2 : v.heading;
         const dh = Math.atan2(Math.sin(target - t.heading), Math.cos(target - t.heading));
         t.heading += dh * (1 - Math.exp(-dt * 10));
 
         let sprite: StaticSprite | undefined;
         let z = CRUISE_Z;
-        t.z += ((v.state === 'docked' ? DOCK_Z : CRUISE_Z) - t.z) * (1 - Math.exp(-dt * 5));
+        t.z += (CRUISE_Z - t.z) * (1 - Math.exp(-dt * 5));
         let off = { dx: 0, dy: 0 };
         let thrust = v.dest ? 1 : 0.45;
-        if (v.state === 'docked') {
-          const pose = dockPose(v);
-          if (pose) {
-            sprite = atlas.stat(`vehicle.shuttle.docked.d${pose.d}`);
-            off = pose;
-          }
-          z = t.z;
-          thrust = 0;
+        if (t.pose && t.dock > 0.01) {
+          // Docking: the flying shuttle turns parallel to the hull while sliding alongside; at half way the folded, legs-up
+          // sprite lying along the hull takes over. Undocking runs backwards.
+          const e = ease(t.dock);
+          sprite = atlas.stat(e >= 0.5 ? `vehicle.shuttle.dockside.d${t.pose.d}` : `vehicle.shuttle.fly.d${headingIndex(t.heading)}`);
+          off = { dx: t.pose.dx * e, dy: t.pose.dy * e };
+          z = CRUISE_Z + (DOCK_Z - CRUISE_Z) * e;
+          thrust = e >= 0.5 ? 0 : v.state === 'docked' ? 0.45 : 1;
         } else if (launching && sinceLaunch < (LAUNCH_LIFT.end * BAY_FRAME_MS)) {
           // Lifting off the pit floor in the parked pose (legs up, wings folded), then spreading the wings at altitude.
           const f = ease((sinceLaunch - LAUNCH_LIFT.start * BAY_FRAME_MS) / ((LAUNCH_LIFT.end - LAUNCH_LIFT.start) * BAY_FRAME_MS));
