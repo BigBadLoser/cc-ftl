@@ -335,11 +335,16 @@ def collar(rot, p, docked):
 # ---- inboard: unloaders and floor marks ---------------------------------------------------------------------------
 
 UV, UHW = 1.0, 0.3                 # unloader centre v (built on the +v side; symmetric), half width
-UNLOADER = (                       # (u/z outline, half width, body, top): back block, body, chute frame, hood
-    ([(-0.3, 0), (-0.3, 0.5), (-0.04, 0.68), (0.36, 0.68), (0.46, 0.58), (0.46, 0)], UHW, CREAM, CREAM_T),
-    ([(-1.06, 0), (-1.06, 0.5), (-0.3, 0.5), (-0.3, 0)], UHW - 0.02, CREAM, CREAM_T),
-    ([(-1.46, 0), (-1.46, 0.5), (-1.06, 0.5), (-1.06, 0)], UHW + 0.01, SLATE_T, SLATE_L),
-    ([(-1.42, 0.5), (-1.32, 0.88), (-0.98, 0.88), (-0.9, 0.5)], UHW, CREAM, CREAM_T),
+CW, CU0, CU1, CB = 0.23, -1.46, -1.06, -1.12   # chute: inner half width, mouth, back of the frame, inner back wall
+UNLOADER = (                       # (u/z outline, v0, v1 about UV, body, top)
+    ([(-0.3, 0), (-0.3, 0.5), (-0.04, 0.68), (0.36, 0.68), (0.46, 0.58), (0.46, 0)], -UHW, UHW, CREAM, CREAM_T),
+    ([(-1.06, 0), (-1.06, 0.5), (-0.3, 0.5), (-0.3, 0)], 0.02 - UHW, UHW - 0.02, CREAM, CREAM_T),     # body
+    ([(CU0, 0), (CU0, 0.5), (CU1, 0.5), (CU1, 0)], -UHW - 0.01, -CW, SLATE_T, SLATE_L),              # chute walls
+    ([(CU0, 0), (CU0, 0.5), (CU1, 0.5), (CU1, 0)], CW, UHW + 0.01, SLATE_T, SLATE_L),
+    ([(CU0, 0.41), (CU0, 0.5), (CU1, 0.5), (CU1, 0.41)], -CW, CW, SLATE_T, SLATE_L),                # roof
+    ([(CU0, 0), (CU0, 0.07), (CU1, 0.07), (CU1, 0)], -CW, CW, SLATE_K, SLATE),                      # floor sill
+    ([(CB, 0.07), (CB, 0.41), (CU1, 0.41), (CU1, 0.07)], -CW, CW, SLATE, SLATE),                    # back wall
+    ([(-1.42, 0.5), (-1.32, 0.88), (-0.98, 0.88), (-0.9, 0.5)], -UHW, UHW, CREAM, CREAM_T),         # hood
 )
 
 
@@ -348,11 +353,14 @@ def _unloader_details():
     out = [(0.16, UV, 0.68, 0.3, 0.42, 0.02, CREAM_D),                                             # top panel
            (0.16, UV - 0.1, 0.7, 0.05, 0.05, 0.006, CREAM_S), (0.16, UV + 0.1, 0.7, 0.05, 0.05, 0.006, CREAM_S),
            (0.465, UV, 0.04, 0.01, 2 * UHW - 0.06, 0.08, RED),                                     # back base red
-           (-1.465, UV, 0.06, 0.012, 2 * UHW - 0.12, 0.38, "dark"),                                # chute opening
-           (-1.47, UV, 0.06, 0.008, 2 * UHW - 0.16, 0.06, SLATE_K),
-           (-1.38, UV, 0.56, 0.03, 2 * UHW - 0.18, 0.22, "dark"),                                  # hood visor
-           (-1.4, UV - 0.06, 0.66, 0.012, 0.05, 0.03, "lampY"), (-1.4, UV + 0.04, 0.7, 0.012, 0.05, 0.03, "lampY"),
-           (-1.4, UV - 0.02, 0.6, 0.012, 0.05, 0.03, "lampY")]
+           (CB - 0.006, UV, 0.16, 0.01, 2 * CW - 0.06, 0.03, SLATE_K),                              # chute inside:
+           (CB - 0.006, UV, 0.28, 0.01, 2 * CW - 0.06, 0.03, SLATE_K),                              # back wall slats
+           (-1.3, UV, 0.395, 0.2, 2 * CW - 0.14, 0.012, "glassL"),                                 # light panel
+           (CU0 - 0.004, UV, 0.44, 0.012, 2 * CW + 0.04, 0.03, SLATE_L)]                           # mouth lip
+    out += [(u, UV, 0.07, 0.045, 2 * CW - 0.04, 0.03, "steelL") for u in (-1.41, -1.33, -1.25, -1.17)]   # rollers
+    out += [(-1.38, UV, 0.56, 0.03, 2 * UHW - 0.18, 0.22, "dark"),                                # hood visor
+            (-1.4, UV - 0.06, 0.66, 0.012, 0.05, 0.03, "lampY"), (-1.4, UV + 0.04, 0.7, 0.012, 0.05, 0.03, "lampY"),
+            (-1.4, UV - 0.02, 0.6, 0.012, 0.05, 0.03, "lampY")]
     for s in (-1, 1):
         sv = UV + s * (UHW + 0.004)
         out += [(0.08, sv, 0.04, 0.72, 0.008, 0.08, RED),                                         # base red
@@ -364,16 +372,16 @@ def _unloader_details():
 
 def unloader(rot, half):
     """An unloader along u at v = 1 (the -v side is the same sprite), cut at u = -0.5 into its two tiles: a taller
-    back block against the hull, a lower body with vents, and at the inboard end a slate chute frame (its dark mouth
-    facing the keep-out square) under a hood with a dark visor and amber lights; red trim low on the sides and on the
-    hood."""
+    back block against the hull, a lower body with vents, and at the inboard end a hollow slate chute open toward the
+    keep-out square (a roller bed on its floor, a light panel overhead, a slatted back wall) under a hood with a dark
+    visor and amber lights; red trim low on the sides and on the hood."""
     m = core.Mesh(f"airlock_unloader_{rot}_{half}")
     f = frame(m, rot)
     lo, hi = (-0.5, 0.5) if half == "back" else (-1.5, -0.5)
-    for shape, hw, col, top in UNLOADER:
+    for shape, v0, v1, col, top in UNLOADER:
         part = _clip(shape, lo, hi)
         if len(part) >= 3:
-            prism(f, part, UV - hw, UV + hw, col, top)
+            prism(f, part, UV + v0, UV + v1, col, top)
     for u, v, z, su, sv, sz, col in _unloader_details():
         if lo <= u < hi:
             f.box(u, v, z, su, sv, sz, col, top=col)
