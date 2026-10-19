@@ -191,6 +191,25 @@ palette.json    the single palette, read by Blender scripts and the game
   economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks) and `sol` (the engine, AI core and shield packs, rendered by
   their own scripts in `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
+- **Faction structure looks** (`sprites/restyle.py`, `structure_looks.py`, `structure.py`, family `structure`; preview
+  only, no full build yet): the default wall, hull and floor tiles rebuilt per faction. Geometry, masks, heights,
+  ghosts and cutaway are unchanged; only the surfaces differ.
+  - Ids: the default id with a look segment after the family, `tile.<fam>.<look>.<rest>`:
+    - `<look>` is `navy`, `drone`, `civil.v1`..`civil.v4` (pick one per ship), or `scrap.p1`..`scrap.p4` (pick one per
+      tile by `tileHash`).
+    - Examples: `tile.hull.navy.full.m10.v1`, `tile.wall.civil.v2.low.end.s`, `tile.hull.scrap.p3.belly.o1.m10`,
+      `tile.hull.drone.drop.e`, `tile.floor.navy.a`.
+    - Doors and the hull ghosts (`tile.hull.o*`, `tile.hull.ghost.*`) have no look sets: they read the same everywhere.
+  - Wiring (`src/render/tiles.ts`): pass the ship's look into `wallPieces` and `floorChain`. Every chain then tries
+    the look id first and keeps today's ids as the fallback:
+    - `[look + v, look, base + v, base]`, where the look id is the base id with `.<look>` inserted after the family.
+    - Faction to look, like `beamLookFor`: navy -> `navy`, drones -> `drone`, civilian -> `civil.v<n>` by ship
+      hash, scrapper -> `scrap.p<n>` by tile hash.
+  - `restyle.restyled(look, key)` repaints any builder's polygons by colour role and surface position, so the scrap
+    pass (`structure_looks.Scrap(p, base)`) can wrap module builders too. Their faces are coarser, so patches swap
+    whole faces to a donor colour and rust takes the lower faces.
+  - Preview: `review/structure_preview.py` (a Python port of `wallPieces`), with STRUCT_IDS and STRUCT_LOOKS to narrow
+    the build.
 - **Heights:** walls 1.85 tiles, roof top 2.05 (`walls.HF`, `walls.hull_top()`). The manifest carries
   them (`heights`) and `src/render/heights.ts` mirrors them (a test checks the two agree). Roof-mounted
   art (turrets, dishes, the AI mast) is modelled on the roof plane and anchored at floor level, so the
