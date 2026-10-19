@@ -191,6 +191,16 @@ palette.json    the single palette, read by Blender scripts and the game
   economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks) and `sol` (the engine, AI core and shield packs, rendered by
   their own scripts in `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
+- **Food pack** (`sprites/galley.py`, `mess.py`, family `galley`; sheets built):
+  - `module.galley.r<r>[.active]` (2x1). The access tile is in front of the printer tower's hatch. The amber light
+    shows only in `.active`. `module.galley` is the r0 copy that `fallback.ts` falls back to.
+  - `item.ration.{s|m|l|held}`: meal trays that show their food. The UI icon is cut from `.m` (`app/itemIcons.ts`).
+  - `module.mess_table.r<r>[.meal]` (2x1). `.meal` has trays and cups set on it for while crew eat.
+  - `module.chair.r<r>` (1x1). The seat top is at `human_sit.SEAT_Z`, so the `sit_*` clips fit. A seated crew
+    member faces `mess.SEAT_DIR[r]`, as at consoles.
+  - `module.chair.front.r0` and `.r3`: the backrest alone. Draw it over a seated crew member (crew at K + 0.02,
+    overlay at K + 0.03, as console fronts).
+  - Not in the sim yet: tables, chairs and sitting to eat.
 - **Heights:** walls 1.85 tiles, roof top 2.05 (`walls.HF`, `walls.hull_top()`). The manifest carries
   them (`heights`) and `src/render/heights.ts` mirrors them (a test checks the two agree). Roof-mounted
   art (turrets, dishes, the AI mast) is modelled on the roof plane and anchored at floor level, so the
