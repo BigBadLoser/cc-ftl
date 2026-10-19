@@ -52,6 +52,7 @@ import { boardingAiSystem } from './systems/boardingAi';
 import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
 import { storySystem } from './systems/story';
+import { tradeSystem } from './systems/trade';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
 export type System = (sim: Sim) => void;
@@ -128,6 +129,8 @@ export const pipeline: readonly System[] = [
   carrySystem,
   // Vehicles after crew movement: embarking crew board on arrival, shuttles fly before this tick's shots are aimed.
   vehicleSystem,
+  // Trade deliveries read this tick's arrivals and issue next tick's flight orders; crew then haul the cargo.
+  tradeSystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.
   workSystem,
   // --- Combat (see each system's notes). State first: it decides whether consoles are needed next tick.

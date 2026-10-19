@@ -10,6 +10,7 @@ import { moduleHandlers } from './modules/handlers';
 import { portalHandlers } from './portals/handlers';
 import { robotHandlers } from './robots/handlers';
 import { storyHandlers } from './story/handlers';
+import { tradeHandlers } from './trade/handlers';
 import { vehicleHandlers } from './vehicles/handlers';
 import { FIRE_START_INTENSITY } from './tuning';
 import { Struct, writeStruct } from './structure';
@@ -30,6 +31,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...vehicleHandlers,
   ...robotHandlers,
   ...storyHandlers,
+  ...tradeHandlers,
   noop: () => {},
   'debug.spawnMarker': (sim, cmd) => {
     const entity = sim.world.createEntity();

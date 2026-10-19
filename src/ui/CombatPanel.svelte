@@ -4,7 +4,7 @@
   import CombatPlayer from './CombatPlayer.svelte';
   import ShipMeters from './ShipMeters.svelte';
 
-  let { api, combat, onClose }: { api: UiApi; combat: UiCombat; onClose: () => void } = $props();
+  let { api, combat, onClose, onHail }: { api: UiApi; combat: UiCombat; onClose: () => void; onHail: (ship: number) => void } = $props();
 
   let expanded = $state(false);
   let viewEl: HTMLDivElement | undefined = $state();
@@ -65,6 +65,7 @@
     <button class="grip" aria-label={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} onclick={() => (expanded = !expanded)}>{expanded ? '⌄' : '⌃'}</button>
     <strong>Combat</strong>
     <span class="sp"></span>
+    {#if enemy}<button title="Call them on the radio: only ships that are not hostile answer" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}>Hail</button>{/if}
     <button title="Center the camera between the ships" onclick={() => api.focusFight(enemy?.gridId ?? null)}>Frame</button>
     <button aria-label="Close combat panel" data-testid="combat-close" onclick={onClose}>×</button>
   </header>

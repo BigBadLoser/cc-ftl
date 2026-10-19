@@ -33,7 +33,7 @@ function snapOf(sim: Sim, id: number): UiShipCombat | null {
   const need = shieldRechargeSec(sim, ship.gridId);
   const t = c.target;
   return {
-    gridId: ship.gridId, name: ship.name, state: ship.state, integrity: round(ship.integrity),
+    gridId: ship.gridId, ship: id, name: ship.name, state: ship.state, integrity: round(ship.integrity),
     shield: { layers: c.shield.layers, max: c.shield.max, progress: Number.isFinite(need) ? round(Math.min(1, c.shield.timer / need)) : 0 },
     evasion: round(c.evasion), hold: c.hold, ftl: round(c.ftl, 1), ftlMax: FTL_CHARGE_SEC,
     target: t ? { gridId: t.gridId, moduleId: t.moduleId, label: label(sim, t) ?? '' } : null,

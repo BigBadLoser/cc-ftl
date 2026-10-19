@@ -1,3 +1,4 @@
+import type { Faction } from '../combat/components';
 import type { ItemQty, ShipTemplate } from '../registry';
 
 /**
@@ -162,6 +163,8 @@ export type MetricBands = Partial<Record<MetricId, readonly [number, number]>>;
 
 export interface FactionDef {
   name: string;
+  /** Combat side of the ships it spawns (debug.spawnGenerated). Default 'hostile'; civilians are 'neutral'. */
+  side?: Faction;
   /** Building style id; also the art lookup key. */
   motif: string;
   /** Art variants for the renderer (looked up later; no art is generated here). */
@@ -192,6 +195,8 @@ export interface GenOrigin {
   faction: string;
   seed: number;
   depth: number;
+  /** The ship role / hull family it was built as ('freighter', 'station'...). Optional: older saves lack it. */
+  role?: string;
 }
 
 /** One room of a generated layout. */

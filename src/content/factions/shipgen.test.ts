@@ -261,7 +261,8 @@ describe('ship generator', () => {
   it('debug.spawnGenerated stores the origin on the ship, survives a save, and rejects unknown factions', () => {
     const { sim, gridId } = spawned('faction.navy', 1234, 5);
     const ship = sim.world.query(ShipC).map((i) => sim.world.get(i, ShipC)!).find((s) => s.gridId === gridId)!;
-    expect(ship.gen).toEqual({ faction: 'faction.navy', seed: 1234, depth: 5 });
+    expect(ship.gen).toMatchObject({ faction: 'faction.navy', seed: 1234, depth: 5 });
+    expect(typeof ship.gen?.role).toBe('string');
     expect(ship.faction).toBe('hostile');
     const loaded = deserialize(serialize(sim), content);
     expect(serialize(loaded)).toBe(serialize(sim));

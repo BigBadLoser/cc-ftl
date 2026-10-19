@@ -8,6 +8,7 @@ import type { Sector } from './combat/components';
 import { pipeline } from './pipeline';
 import { Rng } from './rng';
 import { newStory, type StoryState } from './story/state';
+import { newTrade, type TradeState } from './trade/types';
 import { TICK_HZ } from './time';
 import { SECTOR_HEIGHT, SECTOR_WIDTH } from './tuning';
 
@@ -25,6 +26,8 @@ export class Sim {
   events = new EventBuffer();
   /** Event system state: flags, reputation, the open decision, queue (see story/). */
   story: StoryState;
+  /** Trade state: the player's credits, hails, offers and deals (see trade/). NPC wallets and stock are `TraderC` components. */
+  trade: TradeState;
   sector: Sector = { grid: newSectorGrid(), width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false };
 
   constructor(
@@ -34,6 +37,7 @@ export class Sim {
   ) {
     this.rng = new Rng(seed);
     this.story = newStory(seed);
+    this.trade = newTrade();
   }
 
   /** Queue a command to apply at the start of the next tick. */

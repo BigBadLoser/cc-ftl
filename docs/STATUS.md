@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-19.
+Last updated: 2026-10-19 (trade branch added).
 
 **Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
 map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
@@ -36,6 +36,26 @@ m4-combat + m4-assets + m4-ui to main.
 
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
+
+## Trade (branch `trade`, based on `main` at 160e20b; not merged; awaiting user approval of the in-game look)
+
+Model, commands, price rules and "how to add a trader or a price" are in `docs/ARCHITECTURE.md` ("Trade"); player-facing rules in
+`docs/DESIGN.md` (Economy, "Trade"). New terminology (user decision): **node** (one playable location, formerly "sector"), **sector**
+(a group of nodes), **hyperlanes** link sectors. What exists:
+- **Sim** (`src/sim/trade/`, `systems/trade.ts`): player credits, `TraderC` wallets and seeded stock, `ItemDef.price`, price model
+  (spread x faction x trader kind x tag x reputation), hail rule (relation + reputation, guns-on refuse), offers with barter, deals with
+  escrow and a delivery state machine on the existing vehicle commands and cargo hauling, events, save (`SaveData.trade`, optional: no
+  version bump).
+- **Content** (`src/content/trade.ts`): start 500 credits, item prices, trader kinds `freighter liner mining station` (civilian) and the
+  placeholders `corp navy pirate raider`, faction stances. `FactionDef.side` makes generated civilians `neutral`; `GenOrigin.role`
+  records the hull family.
+- **UI:** Trade button, ship list with Hail, trade window (bottom sheet on phones), credits chip, Hail in the combat panel, trade line
+  in the shuttle panel, trade alerts. `?hook` + `?shipgen=civilian` then "Trade" in the top bar.
+- **Decisions to review:** who flies (above); the instant station fallback is TEMPORARY; a hostile-side ship in combat always refuses
+  (its guns lock on you at once), so the reputation thaw only applies to non-shooting ships; payment is escrowed at accept; a run
+  carries 40 units; trade commands tick the sim once while paused; credits live in `sim.trade`, not on a ship, so they survive a ship swap.
+- **Not done:** hyperlane/sector prices, restocking over time, NPC-to-NPC trade, selling floor stacks (storage only), several runs for
+  a big deal, per-faction shuttle livery, art for credits and the trade window (plain UI).
 
 ## Event system (branch `events`, based on `eva`; not merged; awaiting user approval of the in-game look)
 

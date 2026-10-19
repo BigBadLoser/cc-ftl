@@ -43,6 +43,25 @@ const REASONS: Record<string, string> = {
   otherGrid: 'Go to that airlock\'s ship first',
   unreachable: "Can't get to an airlock from here",
   noAirlock: 'That airlock is not usable',
+  // Trade
+  noTrader: 'Nobody there to trade with',
+  notAnswered: 'They have not answered your hail',
+  empty: 'Choose something to trade first',
+  badLine: 'That is not a valid quantity',
+  noPrice: 'They will not trade in that',
+  theyLack: 'They do not have that much',
+  noItems: 'You do not have that much in storage',
+  unbalanced: 'A barter has to be even: add more from your side',
+  noFunds: 'Not enough credits',
+  theyBroke: 'They cannot afford to pay that',
+  noRoom: 'Not enough storage room for that',
+  dealOpen: 'A delivery with them is already under way',
+  noOffer: 'That offer is gone',
+  noDeal: 'No such deal',
+  inTransit: 'The shuttle has already left',
+  tooBig: 'Too much for one shuttle hold',
+  noCourier: 'No shuttle to carry the goods: fit one in a bay',
+  courierBusy: 'Your shuttle is busy: it needs an empty hold and no other job',
 };
 
 /** Plain-text version of a `command.rejected` reason code. */

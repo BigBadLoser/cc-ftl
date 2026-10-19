@@ -206,6 +206,24 @@ FTL's decision-making with physical consequences, in a shared sector.
   station, time), hauling via the job system.
 - **Start light:** scrap plus 3–4 resources and a few recipes. Full chains (mining → refining →
   crafting, food) are added later as data.
+- **Terminology:** a **node** is one playable grid or location, a **sector** is a group of nodes, and sectors are linked by
+  **hyperlanes**.
+
+### Trade
+
+- **Credits** are a separate currency, shown in the top bar. You can also **barter**: items for items, no credits.
+- You trade with **stations** and with **ships in the same node** by **hailing** them. Non-hostile ships answer; hostile ones refuse.
+  Whether a ship answers depends on its faction's relation to you plus your reputation with that faction (the reputation events
+  already track), and a ship with its guns on you never answers.
+- Prices: every item has a base price. A trader sells above it and buys below it (so a round trip loses money), tilted by the
+  faction, the kind of trader (freighter, liner, mining ship, station; corp, navy and pirates are placeholders) and your reputation:
+  friends sell cheaper and pay more.
+- Traders hold stock and a wallet that are fixed by the world seed and the ship, not by when you hail them.
+- **Goods travel by shuttle.** Once you accept, a shuttle carries the cargo between the two ships' airlocks: the seller sends its
+  shuttle if it has one, otherwise yours goes over (it flies itself: no pilot or crew needed). Your own crew load and unload it at the docking
+  airlock's unloaders. **Payment settles on delivery**; until then the credits are held in escrow. A shuttle shot down on the way
+  voids the deal (credits back, goods lost).
+- Stations have no grid yet, so their deliveries are instant (temporary).
 
 ## Art direction
 
