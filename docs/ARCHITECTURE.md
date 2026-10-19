@@ -209,6 +209,9 @@ palette.json    the single palette, read by Blender scripts and the game
   - Props (one tile, no footprint):
     - debris: `decay.debris.{plates,cables,pipe,chunks,crate,junction}`; `.junction.spark` is the arc
       frame, so alternate it with `.junction`.
+    - `decay.eggsac.{1x1|2x2}`: breakable egg sacs (1x1 and 2x2 footprints) that hatch an alien. The states are
+      `.cracked` (damaged, glowing splits), then `.hatch0`, `.hatch1` and `.hatch2` (it swells, splits and peels
+      open; play these when it breaks and spawn the alien on `.hatch2`), then `.burst`, the emptied husk that stays.
     - `decay.eggs`, `decay.ai.scrap`, and `decay.ai.cables.{x|y}`, which tiles along a run.
     - `module.light.off` (alternate with `module.light` for a flicker) and `module.light.broken`.
     - `module.fabricator[.rN].dormant`: dark, with a red standby light.

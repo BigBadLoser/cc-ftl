@@ -160,18 +160,27 @@ def eggs():
     return [m.build()]
 
 
-def _lobe(m, x, y, r, h, k=0.0, pore=False):
-    """A membrane lobe: an egg-shaped stack of frusta (widest a third of the way up) in alternating bands, with a dark
-    constriction ring and, on the big lobes, a glowing pore on top."""
+def _rad(r, t):
+    """Lobe radius at height fraction t: egg-shaped, widest a third of the way up."""
+    return r * max(0.3, math.sqrt(max(0.0, 1 - ((t - 0.35) / 0.66) ** 2)))
+
+
+def _lobe(m, x, y, r, h, k=0.0, pore=False, cut=None):
+    """A membrane lobe: an egg-shaped stack of frusta in alternating bands, with a dark constriction ring and, on the
+    big lobes, a glowing pore on top. cut: build only up to this height fraction (a torn-open lobe)."""
     n = 7
     cols = ("xnK", "xnD", "xnM", "xnD", "xnM", "xnL", "xnL")
-    rad = lambda t: r * max(0.3, math.sqrt(max(0.0, 1 - ((t - 0.35) / 0.66) ** 2)))  # noqa: E731
     for i in range(n):
         t0, t1 = i / n, (i + 1) / n
-        m.cyl((x, y, h * t0), rad(t0), h / n + 0.002, cols[i], sides=10, rtop=rad(t1), rz=k)
-    m.cyl((x, y, h * 0.55), rad(0.55) * 1.03, 0.03, "xnK", sides=10, rz=k)                        # constriction ring
+        if cut is not None and t0 >= cut:
+            break
+        t1 = min(t1, cut) if cut is not None else t1
+        m.cyl((x, y, h * t0), _rad(r, t0), h * (t1 - t0) + 0.002, cols[i], sides=10, rtop=_rad(r, t1), rz=k)
+    if cut is not None:
+        return
+    m.cyl((x, y, h * 0.55), _rad(r, 0.55) * 1.03, 0.03, "xnK", sides=10, rz=k)                    # constriction ring
     if pore:
-        rt = rad(1.0)
+        rt = _rad(r, 1.0)
         m.cyl((x, y, h), rt * 0.95, 0.03, "xnK", sides=10, rtop=rt * 0.7)
         m.cyl((x, y, h + 0.005), rt * 0.55, 0.03, "xnG", sides=8, rtop=rt * 0.35)
 
@@ -202,22 +211,74 @@ def _base(name, cx, cy, r, w):
     return decal(name, fn, z=0.004, x0=x0, y0=y0, w=w, h=w)
 
 
-def eggsac(n):
+def _seams(m, x, y, r, h, n_open):
+    """Glowing splits down the top of a lobe about to burst (cracked: short, hatching: long)."""
+    for a in (20, 110, 200, 290):
+        ar = math.radians(a)
+        for t in (0.92, 0.8, 0.68, 0.56)[:n_open]:
+            rr = _rad(r, t) * 1.01
+            m.box((x + rr * math.cos(ar), y + rr * math.sin(ar), h * t), (0.035, 0.035, h * 0.13), "xnG", rz=ar)
+
+
+def _petals(m, x, y, r, h, cut, lean, n=6):
+    """The torn membrane above the cut, split into petals leaning outward by `lean` radians (0 = closed)."""
+    zc, rc = h * cut, _rad(r, cut)
+    L = h * (1 - cut) * 1.15
+    w = 2 * math.pi * rc / n * 0.9
+    for k in range(n):
+        az = k * 2 * math.pi / n + 0.3
+        ca, sa = math.cos(az), math.sin(az)
+        bx, by = x + rc * ca, y + rc * sa
+        c = (bx + ca * math.sin(lean) * L / 2, by + sa * math.sin(lean) * L / 2, zc + math.cos(lean) * L / 2)
+        m.box(c, (w, 0.03, L), "xnM", rz=az - math.pi / 2, rx=-lean, taper=0.45)
+        tip = (bx + ca * math.sin(lean) * L, by + sa * math.sin(lean) * L, zc + math.cos(lean) * L)
+        m.box(tip, (w * 0.35, 0.035, 0.05), "xnL", rz=az - math.pi / 2, rx=-lean)
+
+
+def _hollow(m, x, y, r, h, cut, goo):
+    """The emptied inside of a torn lobe: a dark cavity, a little lime slime left in it (glow when fresh)."""
+    rc = _rad(r, cut)
+    m.cyl((x, y, h * cut - 0.02), rc * 0.92, 0.025, "xnK", sides=10)
+    if goo:
+        m.cyl((x + rc * 0.2, y + rc * 0.1, h * cut - 0.004), rc * 0.35, 0.012, "xnG", sides=8)
+
+
+STATES = ("intact", "cracked", "hatch0", "hatch1", "hatch2", "burst")
+
+
+def _spawn_lobe(m, x, y, r, h, state, eggs):
+    """The lobe the alien hatches from, in a damage / hatch state."""
+    cut = 0.6
+    if state in ("intact", "cracked", "hatch0"):
+        sw = 1.08 if state == "hatch0" else 1.0                  # it swells just before it splits
+        _lobe(m, x, y, r * sw, h * sw, pore=True)
+        _glow_eggs(m, x, y, r * sw, h * sw, eggs)
+        if state != "intact":
+            _seams(m, x, y, r * sw, h * sw, 2 if state == "cracked" else 4)
+        return
+    lean = {"hatch1": 0.45, "hatch2": 1.0, "burst": 1.45}[state]
+    _lobe(m, x, y, r, h, cut=cut)
+    _glow_eggs(m, x, y, r, h, [e for e in eggs if e[1] < cut - 0.12])
+    _hollow(m, x, y, r, h, cut, state != "burst")
+    _petals(m, x, y, r, h, cut, lean)
+
+
+def eggsac(n, state="intact"):
     """An alien egg sac: a swollen, banded membrane mass with eggs glowing through it and a lit pore on top, grown out
-    of a resin pad on the deck (1x1, or a 2x2 hive mass with satellite lobes and loose eggs at its foot)."""
+    of a resin pad on the deck (1x1, or a 2x2 hive mass with satellite lobes and loose eggs at its foot). Breaking it
+    hatches an alien: cracked (glowing splits), hatch0..2 (it swells, splits, peels open), burst (the emptied husk)."""
     if n == 1:
-        m = _base("eggsac_1", 0.0, 0.0, 0.46, 1)
-        _lobe(m, -0.03, -0.03, 0.3, 0.64, pore=True)
+        m = _base(f"eggsac_1_{state}", 0.0, 0.0, 0.46, 1)
         _lobe(m, 0.22, 0.15, 0.15, 0.32, 0.4)
-        _glow_eggs(m, -0.03, -0.03, 0.3, 0.64, ((80, 0.3, 0.06), (30, 0.52, 0.05), (125, 0.48, 0.05)))
+        _spawn_lobe(m, -0.03, -0.03, 0.3, 0.64, state, ((80, 0.3, 0.06), (30, 0.52, 0.05), (125, 0.48, 0.05)))
         return [m.build()]
     cx, cy = -0.5, -0.5
-    m = _base("eggsac_2", cx, cy, 0.98, 2)
-    _lobe(m, cx - 0.1, cy - 0.12, 0.55, 1.05, pore=True)
+    m = _base(f"eggsac_2_{state}", cx, cy, 0.98, 2)
+    _spawn_lobe(m, cx - 0.1, cy - 0.12, 0.55, 1.05, state,
+                ((70, 0.28, 0.08), (22, 0.5, 0.07), (112, 0.55, 0.07), (48, 0.74, 0.06)))
     _lobe(m, cx + 0.42, cy + 0.08, 0.3, 0.62, 0.3, pore=True)
     _lobe(m, cx - 0.02, cy + 0.42, 0.26, 0.5, 0.7)
     _lobe(m, cx + 0.3, cy - 0.45, 0.22, 0.42, 0.2)
-    _glow_eggs(m, cx - 0.1, cy - 0.12, 0.55, 1.05, ((70, 0.28, 0.08), (22, 0.5, 0.07), (112, 0.55, 0.07), (48, 0.74, 0.06)))
     _glow_eggs(m, cx + 0.42, cy + 0.08, 0.3, 0.62, ((60, 0.4, 0.055),))
     for x, y, s, o in ((cx + 0.55, cy + 0.55, 0.75, False), (cx + 0.3, cy + 0.72, 0.6, True), (cx + 0.75, cy + 0.28, 0.6, False)):
         _egg(m, x, y, s, o)
@@ -421,8 +482,10 @@ SPRITES += [(f"decay.scorch.floor.v{_v}", (1, 1), "block", lambda v=_v: scorch_f
 SPRITES += [(f"decay.burnt.{_w}x{_h}", (_w, _h), "block", lambda w=_w, h=_h: burnt(w, h))
             for _w, _h in ((1, 1), (2, 1), (1, 2), (2, 2))]
 SPRITES += [(f"decay.growth.floor.v{_v}", (1, 1), "block", lambda v=_v: growth_floor(v)) for _v in range(3)]
-SPRITES += [("decay.eggsac.1x1", (1, 1), "prop", lambda: eggsac(1)),
-            ("decay.eggsac.2x2", (2, 2), "prop", lambda: eggsac(2))]
+for _n in (1, 2):
+    for _st in STATES:
+        SPRITES.append((f"decay.eggsac.{_n}x{_n}{'' if _st == 'intact' else '.' + _st}", (_n, _n), "prop",
+                        lambda n=_n, st=_st: eggsac(n, st)))
 SPRITES += [("decay.eggs", (1, 1), "prop", eggs),
             ("decay.debris.plates", (1, 1), "prop", debris_plates),
             ("decay.debris.cables", (1, 1), "prop", debris_cables),
