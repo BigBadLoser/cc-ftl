@@ -20,6 +20,7 @@
   import StockDrawer from './StockDrawer.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
+  import Icon, { type IconName } from './Icon.svelte';
   import './theme.css';
 
   let { api }: { api: UiApi } = $props();
@@ -99,11 +100,11 @@
     else if (e.key === 'Escape') stockOpen = false;
   }
 
-  const speeds: { label: string; speed: 0 | 1 | 2 | 3 }[] = [
-    { label: '⏸', speed: 0 },
-    { label: '1×', speed: 1 },
-    { label: '2×', speed: 2 },
-    { label: '3×', speed: 3 },
+  const speeds: { label: string; icon: IconName; speed: 0 | 1 | 2 | 3 }[] = [
+    { label: 'Pause', icon: 'pause', speed: 0 },
+    { label: '1×', icon: 'play', speed: 1 },
+    { label: '2×', icon: 'fast', speed: 2 },
+    { label: '3×', icon: 'faster', speed: 3 },
   ];
 </script>
 
@@ -112,32 +113,35 @@
 <canvas bind:this={canvas}></canvas>
 
 <header>
-  <span class="tick">Tick {snap?.tick ?? 0}</span>
-  <span class="speeds">
-    {#each speeds as s (s.speed)}
-      <button class:on={snap?.speed === s.speed} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}>{s.label}</button>
-    {/each}
-  </span>
-  <span class="views">
-    <button onclick={cycleWalls}>Walls<span class="long">: {cutLabel[cutaway]}</span></button>
-    <OverlayPicker {api} />
-  </span>
-  <StatsChips {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} />
-  <span class="brk"></span>
+  <!-- Left: global views and actions as icon tiles. Centre: the always-relevant crew and resources. Right: time. -->
   <span class="acts">
+    <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={20} /></button>
+    <OverlayPicker {api} />
     {#if shuttles.bays.length}
-      <button class:on={shuttleOpen} data-testid="shuttle-open" onclick={() => { shuttleOpen = !shuttleOpen; if (shuttleOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><span class="long">Shuttle</span><span class="short" aria-label="Shuttle">🚀</span></button>
+      <button class="tile" class:on={shuttleOpen} title="Shuttle" aria-label="Shuttle" data-testid="shuttle-open" onclick={() => { shuttleOpen = !shuttleOpen; if (shuttleOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><Icon name="shuttle" size={20} /></button>
     {/if}
     {#if trade.partners.length}
-      <button class:on={tradeOpen} data-testid="trade-open" onclick={() => { tradeOpen = !tradeOpen; if (tradeOpen) { api.selectCrew(null); if (phone()) { combatOpen = false; shuttleOpen = false; } } }}><span class="long">Trade</span><span class="short" aria-label="Trade">₵</span></button>
+      <button class="tile" class:on={tradeOpen} title="Trade" aria-label="Trade" data-testid="trade-open" onclick={() => { tradeOpen = !tradeOpen; if (tradeOpen) { api.selectCrew(null); if (phone()) { combatOpen = false; shuttleOpen = false; } } }}><Icon name="trade" size={20} /></button>
     {/if}
     {#if prizes.length}
-      <button class:on={prizeOpen} data-testid="prize-open" onclick={() => { prizeOpen = !prizeOpen; if (prizeOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><span class="long">Prizes</span><span class="short" aria-label="Prizes">★</span></button>
+      <button class="tile" class:on={prizeOpen} title="Prizes" aria-label="Prizes" data-testid="prize-open" onclick={() => { prizeOpen = !prizeOpen; if (prizeOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><Icon name="prize" size={20} /></button>
     {/if}
     {#if combat.inCombat && !combatOpen}
-      <button class="fight" data-testid="combat-open" onclick={() => { combatOpen = true; if (phone()) { shuttleOpen = false; prizeOpen = false; } }}>⚔<span class="long"> Combat</span></button>
+      <button class="tile fight" title="Combat" aria-label="Combat" data-testid="combat-open" onclick={() => { combatOpen = true; if (phone()) { shuttleOpen = false; prizeOpen = false; } }}><Icon name="combat" size={20} /></button>
     {/if}
-  <button class:on={debug} onclick={() => (debug = !debug)}>Debug</button>
+    <button class="tile" class:on={debug} title="Debug" aria-label="Debug" onclick={() => (debug = !debug)}><Icon name="debug" size={20} /></button>
+  </span>
+  <span class="mid">
+    <CrewBar {api} />
+    <StatsChips {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} />
+  </span>
+  <span class="time">
+    <span class="tick">T {snap?.tick ?? 0}</span>
+    <span class="speeds">
+      {#each speeds as s (s.speed)}
+        <button class="tile" class:on={snap?.speed === s.speed} title={s.label} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
+      {/each}
+    </span>
   </span>
 </header>
 
@@ -150,7 +154,6 @@
 {#if combat.inCombat && combatOpen}
   <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onHail={(ship) => { tradeWith = ship; }} />
 {/if}
-<CrewBar {api} />
 <ToolBar {api} />
 {#if priorities}
   <PriorityGrid {api} onClose={() => (priorities = false)} />
@@ -180,27 +183,27 @@
 <style>
   canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
   header {
-    position: fixed; top: 0; left: 0; right: 0;
-    display: flex; align-items: center; gap: 8px; justify-content: space-between;
-    padding: calc(8px + var(--sat)) calc(8px + var(--sar)) 8px calc(8px + var(--sal));
-    background: linear-gradient(var(--panel), transparent);
+    position: fixed; top: 0; left: 0; right: 0; z-index: 3; pointer-events: none;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 8px;
+    padding: calc(8px + var(--sat)) calc(8px + var(--sar)) 0 calc(8px + var(--sal));
   }
-  .toast { position: fixed; left: 50%; top: calc(var(--hdr) + 100px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); border-radius: 8px; pointer-events: none; z-index: 9; }
+  header > * { pointer-events: auto; }
+  .toast { position: fixed; left: 50%; top: calc(var(--hdr) + 100px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); pointer-events: none; z-index: 9; }
   /* The phone sheet leaves a transparent window for the enemy view; keep other overlays out of it. */
   @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
-  .fight { border-color: var(--red); color: #ffd0d0; }
-  .short { display: none; }
-  .acts { display: flex; gap: 8px; align-items: center; }
-  .brk { display: none; }
-  .tick { color: var(--cyan); min-width: 5.5em; }
-  .speeds, .views { display: flex; gap: 4px; }
+  .fight { border-color: var(--red); color: var(--red); }
+  .acts { justify-self: start; display: grid; grid-template-columns: repeat(4, 40px); gap: 2px; }
+  .mid { display: flex; gap: 6px; align-items: start; min-width: 0; }
+  .time { justify-self: end; display: grid; gap: 2px; justify-items: end; }
+  .tick { font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 3px 6px; background: var(--panel); border: 1px solid var(--line); }
+  .speeds { display: flex; gap: 2px; }
   @media (max-width: 600px) {
-    .tick { display: none; } .long { display: none; } .short { display: inline; }
-    header { padding-bottom: 4px; gap: 4px; flex-wrap: wrap; justify-content: flex-start; }
-    header button { min-width: 32px; min-height: 34px; padding: 0 8px; font-size: 12px; }
-    .views { margin-left: auto; }
-    /* Row 1: speeds and views. Row 2: stats chips and the action buttons. */
-    .brk { display: block; flex-basis: 100%; height: 0; order: 8; }
-    .acts { order: 10; margin-left: auto; gap: 4px; }
+    /* Row 1: actions and time. Row 2: resources. Row 3: crew. */
+    header { grid-template-columns: 1fr auto; gap: 4px; padding-top: calc(4px + var(--sat)); }
+    .acts { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 36px; }
+    .acts :global(button.tile), .speeds :global(button.tile) { width: 36px; height: 36px; }
+    .mid { grid-column: 1 / -1; grid-row: 2; flex-direction: column-reverse; gap: 4px; }
+    .time { grid-template-columns: auto auto; align-items: center; }
+    .tick { display: none; }
   }
 </style>

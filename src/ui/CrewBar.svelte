@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiCrew } from './api';
+  import Icon, { type IconName } from './Icon.svelte';
 
   let { api }: { api: UiApi } = $props();
   let crew = $state<UiCrew[]>([]);
@@ -17,33 +18,64 @@
   const draftAll = () => {
     for (const c of crew.filter(ready)) if (c.drafted === allDrafted) api.dispatch({ type: 'crew.draft', id: c.id, drafted: !allDrafted });
   };
-  const status = (c: UiCrew) =>
-    c.dead ? 'Dead' : c.downed ? 'Downed' : c.surrendered ? (c.prisoner ? 'Prisoner' : 'Surrendered') : c.inert ? 'Inert' : c.fight && c.fight.mode !== 'idle' ? (c.fight.mode === 'flee' ? 'Fleeing' : 'Fighting') : null;
-  const line = (c: UiCrew) => (c.away || c.gridId === 0 ? c.where : (status(c) ?? (c.drafted ? 'Drafted' : c.job ? 'Working' : c.activity)));
+  /** What the crew member is doing, as one status icon and a tooltip. */
+  function status(c: UiCrew): { icon: IconName; label: string; tone: 'ok' | 'warn' | 'bad' | 'dim' } {
+    if (c.dead) return { icon: 'skull', label: 'Dead', tone: 'bad' };
+    if (c.downed) return { icon: 'downed', label: c.downed.stabilized ? 'Downed (stable)' : 'Downed', tone: 'bad' };
+    if (c.away || c.gridId === 0) return { icon: 'away', label: c.where, tone: 'warn' };
+    if (c.fight && c.fight.mode !== 'idle') return { icon: 'target', label: c.fight.mode === 'flee' ? 'Fleeing' : 'Fighting', tone: 'bad' };
+    if (c.drafted) return { icon: 'draft', label: 'Drafted', tone: 'warn' };
+    if (c.hunger !== null && c.hunger < 10) return { icon: 'food', label: 'Starving', tone: 'bad' };
+    switch (c.activity) {
+      case 'sleeping': return { icon: 'sleep', label: 'Sleeping', tone: 'dim' };
+      case 'eating': return { icon: 'food', label: 'Eating', tone: 'ok' };
+      case 'charging': return { icon: 'bolt', label: 'Charging', tone: 'ok' };
+      case 'working': return { icon: 'wrench', label: c.job ?? 'Working', tone: 'ok' };
+      case 'walking': return { icon: c.job ? 'wrench' : 'walk', label: c.job ?? 'Walking', tone: 'ok' };
+      default: return { icon: 'idle', label: 'Idle', tone: 'dim' };
+    }
+  }
+  const pct = (v: number) => `${Math.max(0, Math.min(100, Math.round(v)))}%`;
+  /** Needs attention: hungry, badly hurt, or down. */
+  const trouble = (c: UiCrew) => !c.dead && (c.downed !== null || (c.hunger !== null && c.hunger < 35) || c.hp < c.maxHp * 0.5);
 </script>
 
 <nav data-testid="crewbar">
   {#each crew as c (c.id)}
-    <button class="chip" class:on={sel === c.id} class:away={c.away} class:bad={c.downed || c.dead} data-testid="crew-chip" onclick={() => api.selectCrew(c.id, true)}>
+    {@const s = status(c)}
+    <button class="card" class:on={sel === c.id} class:warn={trouble(c)} class:bad={c.downed || c.dead} title="{c.name} · {s.label}" data-testid="crew-chip" onclick={() => api.selectCrew(c.id, true)}>
+      <span class="st {s.tone}"><Icon name={s.icon} size={16} /></span>
       <span class="name">{c.name}</span>
-      <span class="act" data-testid="crew-line">{line(c)}</span>
-      <span class="bar" class:hurt={c.hp < c.maxHp}><i style:width="{c.hp < c.maxHp ? Math.round((c.hp / c.maxHp) * 100) : c.rest}%"></i></span>
+      <span class="role">{c.role}</span>
+      <span class="bars">
+        <i class="hp"><b style:width={pct((c.hp / c.maxHp) * 100)}></b></i>
+        <i class="rest"><b style:width={pct(c.rest)}></b></i>
+        {#if c.hunger !== null}<i class="hunger"><b style:width={pct(c.hunger)}></b></i>{/if}
+      </span>
+      <span class="sr" data-testid="crew-line">{s.label}</span>
     </button>
   {/each}
-  <button class="chip all" class:on={allDrafted && crew.length > 0} data-testid="draft-all" onclick={draftAll}>{allDrafted ? 'Stand down' : 'Draft all'}</button>
+  <button class="tile all" class:on={allDrafted && crew.length > 0} title={allDrafted ? 'Stand down' : 'Draft all'} aria-label={allDrafted ? 'Stand down' : 'Draft all'} data-testid="draft-all" onclick={draftAll}><Icon name="draft" size={20} /></button>
 </nav>
+
 <style>
-  nav {
-    position: fixed; left: 0; right: 0; top: calc(var(--hdr) + var(--sat)); display: flex; gap: 6px; overflow-x: auto;
-    padding: 0 calc(8px + var(--sar)) 4px calc(8px + var(--sal)); pointer-events: none; scrollbar-width: none;
+  nav { display: flex; gap: 3px; align-items: stretch; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .card {
+    position: relative; flex: none; width: 82px; height: 76px; padding: 6px 6px 5px; min-height: 0;
+    display: grid; grid-template-rows: auto auto 1fr auto; justify-items: start; text-align: left; background: var(--panel);
   }
-  .chip { flex: none; display: grid; gap: 1px; width: 104px; padding: 3px 8px; text-align: left; line-height: 1.2; pointer-events: auto; background: var(--panel); min-height: 0; }
-  .chip.all { width: auto; align-content: center; padding: 0 12px; }
-  .chip.away { border-color: var(--amber); }
-  .chip.bad { border-color: var(--red); }
-  .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .act { font-size: 11px; color: var(--dim); text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .away .act { color: var(--amber); }
-  .chip .bar { margin-top: 2px; }
-  .bar.hurt > i { background: #ff9d3a; }
+  .card.warn { border-color: var(--amber); }
+  .card.bad { border-color: var(--red); }
+  .card.on { border-color: var(--cyan); box-shadow: inset 0 0 0 1px var(--cyan); }
+  .st { position: absolute; top: 5px; right: 5px; }
+  .st.ok { color: var(--green); } .st.warn { color: var(--amber); } .st.bad { color: var(--red); } .st.dim { color: var(--dim); }
+  .name { font: 600 14px/1.1 var(--head-font); color: var(--cyan); letter-spacing: 0.02em; max-width: 54px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .role { font: 11px/1.2 var(--head-font); color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; }
+  .bars { align-self: end; display: grid; gap: 2px; width: 100%; }
+  .bars i { display: block; height: 3px; background: #061020; }
+  .bars b { display: block; height: 100%; }
+  .hp b { background: var(--hp); } .rest b { background: var(--rest); } .hunger b { background: var(--hunger); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .all { height: auto; align-self: stretch; }
+  @media (max-width: 600px) { .card { width: 62px; height: 58px; padding: 4px; } .name { font-size: 12px; max-width: 42px; } .role { display: none; } }
 </style>
