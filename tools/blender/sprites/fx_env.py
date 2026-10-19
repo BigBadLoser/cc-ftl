@@ -4,7 +4,11 @@ level for fire, the hit point on the shield for shield hits, the chunk's centre 
   shield_hit     a hex lattice lights up round the hit and a ripple runs out across it, then fades        6 frames
   debris.<v>     a torn hull plate (v = a, b, c), tumbling: one frame per eighth of a turn               8 frames each
   fire           flames on a floor tile: low lobes with tongues licking up, embers, a wisp of smoke      8-frame loop
-                 (fxView loops it and scales it by the tile's fire intensity)"""
+                 (fxView loops it and scales it by the tile's fire intensity)
+  shield_edge    a short piece of the bubble's rim, shimmering (the renderer lays copies round the ellipse,
+                 turned to its tangent)                                                                 4-frame loop
+  decal.scorch.<n>  a soot burn on a floor or roof plate (n = 0..2), static
+  decal.breach      a hull breach: a hole with plating petals bent up round it, static"""
 import math
 
 import numpy as np
@@ -105,5 +109,59 @@ def fire_tile(k, n=8):
     return f.build()
 
 
+def shield_edge(k, n=4):
+    """A piece of the bubble's rim along +u: a bright edge line, a haze inside it, hex tiles flickering along it."""
+    f = Fx(f"shield_edge_{k}")
+    L = 0.6
+    f.flat([P(-L / 2, -0.06), P(L / 2, -0.06), P(L / 2, 0.0), P(-L / 2, 0.0)], "fxH2")
+    f.streak(P(-L / 2, 0.02), P(L / 2, 0.02), 0.045, 0.045, "fxH1")
+    for j in range(5):                                                       # hex tiles, a pulse running along
+        u = -L / 2 + 0.06 + j * 0.12
+        on = (j - k) % n == 0
+        r = 0.04 if on else 0.028
+        f.flat([P(u + r * math.cos(a), -0.08 + r * math.sin(a), 0.02) for a in (math.pi / 6 + m * math.pi / 3 for m in range(6))],
+               "fxH0" if on else "fxH1")
+    return f.build()
+
+
+def scorch(v):
+    """A soot burn on a plate: an irregular dark blot, soot streaks thrown outward, a thin heat stain at the edge."""
+    f = Fx(f"scorch_{v}")
+    rng = np.random.default_rng(20 + v)
+    z = Vector((0, 0, 0.004))
+    n = 11
+    rad = [rng.uniform(0.13, 0.27) for _ in range(n)]
+    ring = [Vector((math.cos(i * math.tau / n) * r, math.sin(i * math.tau / n) * r, 0)) for i, r in enumerate(rad)]
+    f.m.poly([z * 1 + p * 1.12 for p in ring], "rustD")                     # the heat-stained rim
+    f.m.poly([z * 2 + p for p in ring], "grime")
+    f.m.poly([z * 3 + p * 0.6 for p in ring], "black")
+    for _ in range(5):                                                       # soot streaks
+        a = rng.uniform(0, math.tau)
+        d = Vector((math.cos(a), math.sin(a), 0))
+        s = Vector((-d.y, d.x, 0)) * 0.035
+        f.m.poly([z * 4 + d * 0.14 + s, z * 4 + d * rng.uniform(0.32, 0.42), z * 4 + d * 0.14 - s], "grime")
+    return f.build()
+
+
+def breach():
+    """A hole torn through the plating, with the plate's petals bent up and out round it."""
+    f = Fx("breach")
+    rng = np.random.default_rng(33)
+    n = 9
+    rim = [Vector((math.cos(i * math.tau / n) * r, math.sin(i * math.tau / n) * r, 0.012))
+           for i, r in enumerate(rng.uniform(0.15, 0.22, n))]
+    f.m.poly([Vector((p.x * 1.5, p.y * 1.5, 0.004)) for p in rim], "grime")  # soot round it
+    f.m.poly(rim, "black")                                                   # the hole
+    for i in range(n):                                                       # petals: bent up and out from the rim
+        a, b = rim[i], rim[(i + 1) % n]
+        if i % 3 == 2:
+            continue
+        mid = (a + b) / 2
+        out = mid.normalized() * rng.uniform(0.07, 0.12) + Vector((0, 0, rng.uniform(0.05, 0.1)))
+        f.m.poly([a, b, mid + out], "steelL" if out.z > 0.07 else "steel")
+    return f.build()
+
+
 ENV = (("shield_hit", shield_hit, 6), ("fire", fire_tile, 8),
-       ("debris.a", lambda k: debris("a", k), 8), ("debris.b", lambda k: debris("b", k), 8), ("debris.c", lambda k: debris("c", k), 8))
+       ("debris.a", lambda k: debris("a", k), 8), ("debris.b", lambda k: debris("b", k), 8), ("debris.c", lambda k: debris("c", k), 8),
+       ("shield_edge", shield_edge, 4), ("decal.scorch", scorch, 3), ("decal.breach", lambda k: breach(), 1))

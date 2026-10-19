@@ -1,5 +1,6 @@
 """Combat fx v2 (family `fx`): explosions, and the sprite list of the whole family (fx_shots: projectiles, fx_hits:
-muzzle flashes and impacts, fx_env: shield hits, debris, tile fire). Built from fxkit, rendered like every other sprite.
+muzzle flashes and impacts, fx_env: shield hits, debris, tile fire, decals, fx_hand: crew weapons). Built from fxkit,
+rendered like every other sprite.
 
 Explosions, 12 frames each, one look at four sizes: flash, fireball, fire breaking up into smoke, smoke thinning out.
   fx.explosion_small  0.55   point-defence intercepts, small hits
@@ -11,6 +12,7 @@ import numpy as np
 from mathutils import Vector
 
 from .fx_env import ENV
+from .fx_hand import HAND
 from .fx_hits import HITS
 from .fx_shots import SHOTS
 from .fxkit import N, U, UP, Fx, fire, spikes
@@ -69,6 +71,6 @@ def explosion(k, size=1.0, seed=3):
 EXPLOSION_FRAMES = 12
 SIZES = (("explosion_small", 0.55), ("explosion", 1.0), ("explosion_large", 1.4), ("explosion_huge", 2.2))
 SPRITES = []
-for _name, _fn, _n in SHOTS + HITS + ENV + tuple((n, lambda k, s=s: explosion(k, s), EXPLOSION_FRAMES) for n, s in SIZES):
+for _name, _fn, _n in SHOTS + HITS + ENV + HAND + tuple((n, lambda k, s=s: explosion(k, s), EXPLOSION_FRAMES) for n, s in SIZES):
     SPRITES += [(f"fx.{_name}.{_k}", (1, 1), "fx", lambda f=_fn, k=_k: f(k)) for _k in range(_n)]
     SPRITES.append((f"fx.{_name}", (1, 1), "fx", lambda f=_fn: f(0)))

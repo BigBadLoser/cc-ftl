@@ -3,7 +3,8 @@ turret, frame strips with today's fx for comparison, and a clip of each weapon f
 
   python3 -I tools/blender/review/fx_preview.py <fx assets dir> <out dir>
     -> fx-scenes-1x/3x.png (one panel per weapon), fx-strips-1x/3x.png (every frame), fx-clip.mp4, fx-shots.mp4,
-       fx-env-1x/3x.png and fx-env.mp4 (tile fire, shield hits, debris, a ship breaking up)
+       fx-env-1x/3x.png and fx-env.mp4 (tile fire, shield hits, debris, a ship breaking up),
+       fx-hand-1x/3x.png and fx-hand.mp4 (crew fights: shots, hits, a miss, a blade swing; shield edge, decals)
 
 Fx are drawn like any sprite: colour over, glow added."""
 import sys
@@ -13,7 +14,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from robots_preview import Assets, Canvas, iso, mp4  # noqa: E402
+from robots_preview import DIRS, Assets, Canvas, human, iso, mp4  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 ROOF_PX = 80                                            # roof plating height above the floor anchor (2.05 tiles)
@@ -158,6 +159,63 @@ def env(A, pub, out):
     mp4(ims, out / "fx-env.mp4", fps=12, loops=1)
 
 
+MUZZLE_PX, BODY_PX = 37, 29                             # gun and chest height above the feet (fightFx MUZZLE_Z, BODY_Z)
+FIGHT = [("sidearm", "hand.muzzle.sidearm", "hand.tracer", "hand.hit"), ("rifle, a miss", "hand.muzzle.rifle", "hand.tracer", "hand.ricochet"),
+         ("ion pistol", "hand.muzzle.ion", "hand.tracer.ion", "hand.hit_ion"), ("on a robot or cover", "hand.muzzle.rifle", "hand.tracer", "hand.hit_spark"),
+         ("blade", None, None, "hand.hit")]
+
+
+def hand(A, pub, out):
+    """Two crew on a floor patch trading fire, each weapon in turn; strips of every hand fx, the shield edge and decals."""
+    cv = Canvas(1100, 330)
+    y, x = 6, 8
+    for name in ("hand.muzzle.sidearm", "hand.muzzle.rifle", "hand.muzzle.ion", "hand.tracer", "hand.tracer.ion", "hand.hit",
+                 "hand.hit_spark", "hand.hit_ion", "hand.ricochet", "hand.slash"):
+        x += strip(cv, A, frames(A, name), x, y, name[5:], base=20) + 16
+        if x > 900:
+            x, y = 8, y + 60
+    y += 70
+    strip(cv, A, frames(A, "shield_edge"), 8, y, "shield edge (loop)", base=20)
+    for i, name in enumerate(("decal.scorch.0", "decal.scorch.1", "decal.scorch.2", "decal.breach.0")):
+        cv.static(pub, "tile.floor.a", 300 + i * 90, y + 50)
+        cv.static(A, f"fx.{name}", 300 + i * 90, y + 50)
+    cv.labels.append((300, y, "scorch 0-2, breach (on floor tiles)"))
+    cv.px = cv.px[:y + 90]
+    for s in (1, 3):
+        cv.save(out / f"fx-hand-{s}x.png", s)
+    ims = []
+    for label, mz, tr, ht in FIGHT:
+        for t in range(14):
+            c = Canvas(360, 250)
+            for gy in range(4):
+                for gx in range(5):
+                    c.static(pub, "tile.floor.a", *iso(140, 100, gx, gy))
+            ax, ay = iso(140, 100, 0.5, 0.5)
+            bx, by = iso(140, 100, 3.5, 1.5) if mz else iso(140, 100, 1.5, 0.5)
+            ax, ay, bx, by = int(ax), int(ay), int(bx), int(by)
+            c.char(human(pub, DIRS["SE"]), ax, ay)
+            c.char(human(pub, DIRS["NW"]), bx, by)
+            mx, my, hx, hy = ax + 8, ay - MUZZLE_PX, bx, by - BODY_PX
+            if "miss" in label:
+                hx, hy = bx + 26, by + 10                                    # the round strikes the floor behind
+            deg = np.degrees(np.arctan2(hy - my, hx - mx))
+            if mz and t < 3:
+                rotated(c, A, f"fx.{mz}.{t}", mx, my, deg)
+            if tr and 1 <= t <= 3:
+                k = t / 3
+                fr = frames(A, tr)
+                rotated(c, A, fr[t % len(fr)], mx + (hx - mx) * k, my + (hy - my) * k, deg)
+            if not mz and t < 4:
+                rotated(c, A, f"fx.hand.slash.{t}", hx - 6, hy, deg)
+            t0 = 4 if mz else 2
+            if t0 <= t < t0 + 4:
+                c.static(A, f"fx.{ht}.{t - t0}", hx, hy)
+            c.labels.append((6, 4, label))
+            im = Image.fromarray(c.px[..., :3])
+            ims.append(im.resize((im.width * 3, im.height * 3), Image.NEAREST))
+    mp4(ims, out / "fx-hand.mp4", fps=10, loops=1)
+
+
 def main():
     A, out = Assets(sys.argv[1]), Path(sys.argv[2])
     pub = Assets(ROOT / "public/assets")
@@ -211,6 +269,7 @@ def main():
         shots.append(im.resize((im.width * 4, im.height * 4), Image.NEAREST))
     mp4(shots, out / "fx-shots.mp4", fps=12, loops=3)
     env(A, pub, out)
+    hand(A, pub, out)
     print("wrote", out)
 
 
