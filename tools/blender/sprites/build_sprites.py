@@ -37,8 +37,15 @@ def main():
             arm, items = hr.build_items()
             # CREW_QUICK=1: only the frames crew_check.py shows, in SE, S, SW, NW (fast iteration; not for commits)
             quick = os.environ.get("CREW_QUICK")
-            res, cols = hr.render_all(arm, items, dirs=(0, 1, 2, 4) if quick else range(8),
-                                      frames={("idle", 0), ("walk", 2), ("work", 3), ("sit_idle", 0), ("sit_work", 0)} if quick else None)
+            dirs = (0, 1, 2, 4) if quick else range(8)
+            frames = {("idle", 0), ("walk", 2), ("work", 3), ("sit_idle", 0), ("sit_work", 0)} if quick else None
+            # Look iteration only (not for commits): CREW_DIRS=1,7,5  CREW_FRAMES=idle:0,walk:2  CREW_ONLY=eva,body
+            if os.environ.get("CREW_DIRS"):
+                dirs = [int(d) for d in os.environ["CREW_DIRS"].split(",")]
+            if os.environ.get("CREW_FRAMES"):
+                frames = {(c, int(n)) for c, n in (x.split(":") for x in os.environ["CREW_FRAMES"].split(","))}
+            only = os.environ["CREW_ONLY"].split(",") if os.environ.get("CREW_ONLY") else None
+            res, cols = hr.render_all(arm, items, dirs=dirs, frames=frames, only=only)
             sheets, assets = crew_pack.pack(items, res, cols, out)
             pack.merge(m, "crew", sheets, assets, crew=True)
         elif name == "robots":
