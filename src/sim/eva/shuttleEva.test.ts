@@ -96,7 +96,7 @@ const drain = (sim: Sim): void => {
 const vacuum = new WeakMap<Sim, number[][]>();
 
 
-const shuttleDef = { name: 'S', class: 'shuttle', asset: 's', speed: 5, maxHp: 90, capacity: 4, evasion: 0, eva: { suits: 2, hoverGap: 2 } };
+const shuttleDef = { name: 'S', class: 'shuttle', asset: 's', speed: 5, maxHp: 90, capacity: 4, evasion: 0, eva: { suits: 2, hoverGap: 3 } };
 content.vehicles = { 'vehicle.shuttle': shuttleDef };
 
 /** Ships 1 and 2 far apart (ship 2 at sector (100, 50)); a shuttle of ship 1 flying with a pilot and two passengers. */
@@ -129,7 +129,7 @@ describe('EVA from a hovering shuttle', () => {
     run(sim, 20 * 30);
     const veh = sim.world.get(v, VehicleC)!;
     expect(veh).toMatchObject({ hover: 2, dest: null });
-    expect(veh.x).toBeCloseTo(100 - 2); // 2 tiles off the west side of ship 2
+    expect(veh.x).toBeCloseTo(100 - 3); // 3 tiles off the west side of ship 2
     sim.enqueue({ type: 'eva.out', vehicle: v });
     const ev = run(sim, 1);
     expect(reasons(ev)).toEqual([]);

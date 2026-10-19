@@ -1,4 +1,4 @@
-import { AllegianceC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, type Sim } from '../sim';
+import { AllegianceC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 
 /**
@@ -45,6 +45,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       spawn: (gridId: number, def: string, x: number, y: number, rot: number) => placementError(sim, gridId, def, x, y, rot) ?? spawnModule(sim, gridId, def, x, y, rot),
       remove: (id: number) => removeModule(sim, id),
       cargo: (vehicle: number, item: string, n: number) => cargoAdd(sim, vehicle, item, n),
+      /** Spawn a whole ship from a content template at sector (x, y) (staging a neutral target for shuttle EVA shots); returns its grid id. */
+      ship: (template: string, faction: Faction, x: number, y: number) => spawnShip(sim, sim.content.ships[template] as never, { faction, x, y }),
       /** Set a suit's tank (the air-warning shot). */
       suitAir: (crew: number, sec: number) => { const su = sim.world.get(crew, SuitC); if (su) su.air = sec; },
     },
