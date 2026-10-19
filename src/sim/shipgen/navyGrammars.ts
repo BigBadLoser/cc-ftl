@@ -214,7 +214,13 @@ function flightDeck(c: Ctx, f: FactionDef): boolean {
   const [guns, ...more] = bands('battery', j.guns, 2);
   const bays = bands('hangar', c.plan.hangars, 2);
   const aft = order(c.rng, bands('core', [...j.core, ...j.stores], c.fam.sectionRooms));
-  const secs = [...(guns ? [guns] : []), ...bays, ...aft];
+  // Vary the major flight-deck assembly: some hulls place engineering between
+  // hangar groups instead of concentrating it entirely aft.
+  const splitEngineering = bays.length >= 2 && aft.length >= 2 && c.rng.chance(0.5);
+  const pivot = splitEngineering ? c.rng.int(1, bays.length - 1) : bays.length;
+  const secs = splitEngineering
+    ? [...(guns ? [guns] : []), ...bays.slice(0, pivot), aft[0] as SectionPlan, ...bays.slice(pivot), ...aft.slice(1)]
+    : [...(guns ? [guns] : []), ...bays, ...aft];
   evenDepth(c, ['core', 'cargo']);
   c.depth.hangar = Math.max(c.depth.hangar ?? 0, ...c.plan.hangars.map((h) => h.h));
   const ids = chain(c, root, secs, (guns ? 1 : 0) + bays.length);
@@ -222,7 +228,8 @@ function flightDeck(c: Ctx, f: FactionDef): boolean {
   if (!propulsion(c, ids[ids.length - 1] as number, pick(c, c.fam.propulsion))) return false;
   c.parts.push('flight deck');
   // Hull decks along the aft (core) sections, behind the hangars; the remaining guns ride in them.
-  const deckIds = ids.slice((guns ? 1 : 0) + bays.length);
+  const aftStart = (guns ? 1 : 0) + bays.length + (splitEngineering ? 1 : 0);
+  const deckIds = ids.slice(aftStart);
   const rest = [...j.crew, ...more.flatMap((s: SectionPlan) => [...s.top, ...s.bottom])];
   if (deckIds.length === 0 || rest.length === 0) return true;
   return !!deckPair(c, deckIds[0] as number, deckIds[0] as number, 'hull', rest, 'start', spanOf(c, deckIds)) || no(c, 'hull decks');
