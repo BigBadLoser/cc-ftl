@@ -57,6 +57,9 @@
     <button data-testid="dbg-revive-reactor" onclick={reviveReactor}>Restore reactor</button>
     <button data-testid="dbg-spawn-raider" onclick={() => api.spawnRaider()}>Spawn raider</button>
     <button data-testid="dbg-spawn-boarder" onclick={() => api.spawnRaider(true)}>Spawn raider (boarders)</button>
+    <button data-testid="dbg-spawn-scrapper" onclick={() => api.spawnGenerated('faction.scrapper')}>Gen scrapper</button>
+    <button data-testid="dbg-spawn-drones" onclick={() => api.spawnGenerated('faction.drones')}>Gen drone</button>
+    <button data-testid="dbg-spawn-navy" onclick={() => api.spawnGenerated('faction.navy')}>Gen navy</button>
     <button class:on={!roofed} data-testid="dbg-roof" onclick={toggleRoof}>{roofed ? 'Unroof enemies' : 'Roof enemies'}</button>
     <button disabled={!tile} onclick={() => spawnBot('role.robot_worker')}>Worker bot on tile</button>
     <button disabled={!tile} onclick={() => spawnBot('role.robot_repair')}>Repair bot on tile</button>

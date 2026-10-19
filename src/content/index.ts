@@ -9,6 +9,7 @@ import { weapons } from './weapons';
 import { vehicles } from './vehicles';
 import { species } from './species';
 import { suit } from './suit';
+import { factions } from './factions';
 import { raiderBoarder, raiderBoarderId, raiderShip, raiderShipId } from './ships/raider';
 import { events } from './events';
 import { starterShip, starterShipId } from './ships/starter';
@@ -27,4 +28,5 @@ export const content = {
   vehicles,
   suit,
   events,
+  factions,
 } satisfies ContentRegistry;

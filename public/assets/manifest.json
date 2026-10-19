@@ -141,6 +141,10 @@
    "image": "sprites/shuttle.png",
    "glow": "sprites/shuttle.glow.png"
   },
+  "struct": {
+   "image": "sprites/struct.png",
+   "glow": "sprites/struct.glow.png"
+  },
   "vehicle_bay": {
    "image": "sprites/vehicle_bay.png",
    "glow": "sprites/vehicle_bay.glow.png"
@@ -30522,6 +30526,2040 @@
     2
    ],
    "glow": true
+  },
+  "struct.beam.civil.cap.e": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1744,
+    "y": 46,
+    "w": 24,
+    "h": 34
+   },
+   "anchor": {
+    "x": 6,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.cap.n": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1542,
+    "y": 46,
+    "w": 24,
+    "h": 35
+   },
+   "anchor": {
+    "x": 6,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.cap.s": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1769,
+    "y": 46,
+    "w": 24,
+    "h": 34
+   },
+   "anchor": {
+    "x": 18,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.cap.w": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1567,
+    "y": 46,
+    "w": 24,
+    "h": 35
+   },
+   "anchor": {
+    "x": 18,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.flange.e": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 383,
+    "y": 46,
+    "w": 31,
+    "h": 39
+   },
+   "anchor": {
+    "x": 6,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.flange.n": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 222,
+    "y": 46,
+    "w": 31,
+    "h": 40
+   },
+   "anchor": {
+    "x": 6,
+    "y": 40
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.flange.s": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 415,
+    "y": 46,
+    "w": 31,
+    "h": 39
+   },
+   "anchor": {
+    "x": 25,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.flange.w": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 254,
+    "y": 46,
+    "w": 31,
+    "h": 40
+   },
+   "anchor": {
+    "x": 25,
+    "y": 40
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m0": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1794,
+    "y": 46,
+    "w": 26,
+    "h": 34
+   },
+   "anchor": {
+    "x": 13,
+    "y": 30
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 447,
+    "y": 46,
+    "w": 35,
+    "h": 39
+   },
+   "anchor": {
+    "x": 13,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m10": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 171,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m10.v1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 216,
+    "y": 1,
+    "w": 48,
+    "h": 43
+   },
+   "anchor": {
+    "x": 26,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m10.v2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 265,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m11": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 310,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m12": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 355,
+    "y": 1,
+    "w": 35,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m13": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 391,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m14": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 436,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m15": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 481,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 953,
+    "y": 46,
+    "w": 35,
+    "h": 38
+   },
+   "anchor": {
+    "x": 13,
+    "y": 30
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m3": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 526,
+    "y": 1,
+    "w": 35,
+    "h": 43
+   },
+   "anchor": {
+    "x": 13,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m4": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 989,
+    "y": 46,
+    "w": 35,
+    "h": 38
+   },
+   "anchor": {
+    "x": 22,
+    "y": 30
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m5": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 562,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m5.v1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 607,
+    "y": 1,
+    "w": 48,
+    "h": 43
+   },
+   "anchor": {
+    "x": 26,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m5.v2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 656,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m6": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1025,
+    "y": 46,
+    "w": 44,
+    "h": 38
+   },
+   "anchor": {
+    "x": 22,
+    "y": 30
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m7": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 701,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m8": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 483,
+    "y": 46,
+    "w": 35,
+    "h": 39
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.civil.m9": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 519,
+    "y": 46,
+    "w": 44,
+    "h": 39
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.cap.e": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1981,
+    "y": 46,
+    "w": 19,
+    "h": 33
+   },
+   "anchor": {
+    "x": 3,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.cap.n": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 2001,
+    "y": 46,
+    "w": 19,
+    "h": 33
+   },
+   "anchor": {
+    "x": 3,
+    "y": 33
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.cap.s": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 2021,
+    "y": 46,
+    "w": 19,
+    "h": 33
+   },
+   "anchor": {
+    "x": 16,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.cap.w": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1,
+    "y": 90,
+    "w": 19,
+    "h": 33
+   },
+   "anchor": {
+    "x": 16,
+    "y": 33
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.flange.e": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1070,
+    "y": 46,
+    "w": 26,
+    "h": 38
+   },
+   "anchor": {
+    "x": 3,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.flange.n": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 564,
+    "y": 46,
+    "w": 26,
+    "h": 39
+   },
+   "anchor": {
+    "x": 3,
+    "y": 39
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.flange.s": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1097,
+    "y": 46,
+    "w": 26,
+    "h": 38
+   },
+   "anchor": {
+    "x": 23,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.flange.w": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 591,
+    "y": 46,
+    "w": 26,
+    "h": 39
+   },
+   "anchor": {
+    "x": 23,
+    "y": 39
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.m0": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 21,
+    "y": 90,
+    "w": 16,
+    "h": 31
+   },
+   "anchor": {
+    "x": 8,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1326,
+    "y": 46,
+    "w": 27,
+    "h": 37
+   },
+   "anchor": {
+    "x": 8,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m10": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 746,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.m10.v1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 785,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m10.v2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 824,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.m11": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 863,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m12": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 902,
+    "y": 1,
+    "w": 27,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m13": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 930,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m14": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 969,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m15": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1008,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1354,
+    "y": 46,
+    "w": 27,
+    "h": 37
+   },
+   "anchor": {
+    "x": 8,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m3": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1047,
+    "y": 1,
+    "w": 27,
+    "h": 43
+   },
+   "anchor": {
+    "x": 8,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m4": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1382,
+    "y": 46,
+    "w": 27,
+    "h": 37
+   },
+   "anchor": {
+    "x": 19,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m5": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1075,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.m5.v1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1114,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m5.v2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1153,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.drone.m6": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1410,
+    "y": 46,
+    "w": 38,
+    "h": 37
+   },
+   "anchor": {
+    "x": 19,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m7": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1192,
+    "y": 1,
+    "w": 38,
+    "h": 43
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m8": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1449,
+    "y": 46,
+    "w": 27,
+    "h": 37
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.drone.m9": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1477,
+    "y": 46,
+    "w": 38,
+    "h": 37
+   },
+   "anchor": {
+    "x": 19,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "struct.beam.navy.cap.e": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1821,
+    "y": 46,
+    "w": 24,
+    "h": 34
+   },
+   "anchor": {
+    "x": 6,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.cap.n": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1592,
+    "y": 46,
+    "w": 24,
+    "h": 35
+   },
+   "anchor": {
+    "x": 6,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.cap.s": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1846,
+    "y": 46,
+    "w": 24,
+    "h": 34
+   },
+   "anchor": {
+    "x": 18,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.cap.w": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1617,
+    "y": 46,
+    "w": 24,
+    "h": 35
+   },
+   "anchor": {
+    "x": 18,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.flange.e": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 618,
+    "y": 46,
+    "w": 31,
+    "h": 39
+   },
+   "anchor": {
+    "x": 6,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.flange.n": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 286,
+    "y": 46,
+    "w": 31,
+    "h": 40
+   },
+   "anchor": {
+    "x": 6,
+    "y": 40
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.flange.s": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 650,
+    "y": 46,
+    "w": 31,
+    "h": 39
+   },
+   "anchor": {
+    "x": 25,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.flange.w": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 318,
+    "y": 46,
+    "w": 31,
+    "h": 40
+   },
+   "anchor": {
+    "x": 25,
+    "y": 40
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m0": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1871,
+    "y": 46,
+    "w": 28,
+    "h": 34
+   },
+   "anchor": {
+    "x": 14,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1124,
+    "y": 46,
+    "w": 36,
+    "h": 38
+   },
+   "anchor": {
+    "x": 14,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m10": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1231,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m10.v1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1276,
+    "y": 1,
+    "w": 46,
+    "h": 43
+   },
+   "anchor": {
+    "x": 24,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m10.v2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1323,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m11": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1368,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m12": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1413,
+    "y": 1,
+    "w": 36,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m13": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1450,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m14": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1495,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m15": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1540,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 682,
+    "y": 46,
+    "w": 36,
+    "h": 39
+   },
+   "anchor": {
+    "x": 14,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m3": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1585,
+    "y": 1,
+    "w": 36,
+    "h": 43
+   },
+   "anchor": {
+    "x": 14,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m4": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 719,
+    "y": 46,
+    "w": 36,
+    "h": 39
+   },
+   "anchor": {
+    "x": 22,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m5": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1622,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m5.v1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1667,
+    "y": 1,
+    "w": 47,
+    "h": 43
+   },
+   "anchor": {
+    "x": 25,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m5.v2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1715,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m6": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 756,
+    "y": 46,
+    "w": 44,
+    "h": 39
+   },
+   "anchor": {
+    "x": 22,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m7": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1760,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m8": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1161,
+    "y": 46,
+    "w": 36,
+    "h": 38
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.navy.m9": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1198,
+    "y": 46,
+    "w": 44,
+    "h": 38
+   },
+   "anchor": {
+    "x": 22,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.cap.e": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1900,
+    "y": 46,
+    "w": 25,
+    "h": 34
+   },
+   "anchor": {
+    "x": 7,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.cap.n": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1642,
+    "y": 46,
+    "w": 25,
+    "h": 35
+   },
+   "anchor": {
+    "x": 7,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.cap.s": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1926,
+    "y": 46,
+    "w": 25,
+    "h": 34
+   },
+   "anchor": {
+    "x": 18,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.cap.w": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1516,
+    "y": 46,
+    "w": 25,
+    "h": 36
+   },
+   "anchor": {
+    "x": 18,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.flange.e": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 801,
+    "y": 46,
+    "w": 32,
+    "h": 39
+   },
+   "anchor": {
+    "x": 7,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.flange.n": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 350,
+    "y": 46,
+    "w": 32,
+    "h": 40
+   },
+   "anchor": {
+    "x": 7,
+    "y": 40
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.flange.s": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 834,
+    "y": 46,
+    "w": 32,
+    "h": 39
+   },
+   "anchor": {
+    "x": 25,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.flange.w": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 189,
+    "y": 46,
+    "w": 32,
+    "h": 41
+   },
+   "anchor": {
+    "x": 25,
+    "y": 40
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m0": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1952,
+    "y": 46,
+    "w": 28,
+    "h": 34
+   },
+   "anchor": {
+    "x": 13,
+    "y": 30
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1668,
+    "y": 46,
+    "w": 36,
+    "h": 35
+   },
+   "anchor": {
+    "x": 13,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m10": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1805,
+    "y": 1,
+    "w": 46,
+    "h": 43
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m10.v1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1852,
+    "y": 1,
+    "w": 46,
+    "h": 43
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m10.v2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1899,
+    "y": 1,
+    "w": 46,
+    "h": 43
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m11": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1946,
+    "y": 1,
+    "w": 46,
+    "h": 43
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m12": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 38,
+    "h": 44
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m13": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 40,
+    "y": 1,
+    "w": 46,
+    "h": 44
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m14": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1993,
+    "y": 1,
+    "w": 46,
+    "h": 43
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m15": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1,
+    "y": 46,
+    "w": 46,
+    "h": 43
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1243,
+    "y": 46,
+    "w": 35,
+    "h": 38
+   },
+   "anchor": {
+    "x": 12,
+    "y": 30
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m3": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 87,
+    "y": 1,
+    "w": 36,
+    "h": 44
+   },
+   "anchor": {
+    "x": 13,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m4": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 867,
+    "y": 46,
+    "w": 38,
+    "h": 39
+   },
+   "anchor": {
+    "x": 23,
+    "y": 30
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m5": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 48,
+    "y": 46,
+    "w": 46,
+    "h": 43
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m5.v1": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 95,
+    "y": 46,
+    "w": 46,
+    "h": 43
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m5.v2": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 124,
+    "y": 1,
+    "w": 46,
+    "h": 44
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m6": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1279,
+    "y": 46,
+    "w": 46,
+    "h": 38
+   },
+   "anchor": {
+    "x": 23,
+    "y": 30
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m7": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 142,
+    "y": 46,
+    "w": 46,
+    "h": 43
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m8": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 1705,
+    "y": 46,
+    "w": 38,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "struct.beam.scrap.m9": {
+   "kind": "static",
+   "sheet": "struct",
+   "frame": {
+    "x": 906,
+    "y": 46,
+    "w": 46,
+    "h": 39
+   },
+   "anchor": {
+    "x": 23,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
   },
   "tile.door.x": {
    "kind": "static",

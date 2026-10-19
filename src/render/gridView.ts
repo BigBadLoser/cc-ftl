@@ -11,6 +11,7 @@ import { lightTint, mulColor, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
+import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { floorChain, ghostVerts, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
@@ -28,6 +29,8 @@ export interface GridViewHost {
   /** True when the ship has no running power source (emergency lighting). */
   emergency(): boolean;
   overlayWorld: OverlayWorld;
+  /** Beam look of this ship (by faction); default civil. */
+  beamLook?(): BeamLook;
 }
 
 /** Air thinner than this (kPa) is vacuum and gets a cold cast. */
@@ -120,6 +123,18 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       for (let x = 0; x < grid.width; x++) {
         const k = kindAt(x, y);
         if (k === Struct.Space) continue;
+        if (k === Struct.Beam) {
+          // Low open truss, the same in every wall view level; sprites sit at the tile's depth, overlays just above.
+          const ids = beamIds(kindAt, x, y, host.beamLook?.() ?? DEFAULT_BEAM_LOOK);
+          ids.forEach((id, i) => {
+            const s = atlas.stat(id);
+            if (!s) return;
+            const made = addStatic(L, s, x, y, depthKey(x, y) + i * 0.001, L.sorted);
+            owned.push(...made);
+            tinted.push({ spr: made[0] as Sprite, idx: y * grid.width + x, wall: true, solid: false });
+          });
+          continue;
+        }
         const idx = y * grid.width + x;
         // A near-hull ghost replaces the floor plate under it (not under an engine: its bulkhead stands on the deck).
         // An engine's hull row is the hull wall in cutaway / low (the same ghost as the hull around it); with the walls

@@ -19,6 +19,7 @@ import type { Livery } from './roofPlating';
 import { ROOF_H, wallTopPx } from './heights';
 import { createTargetMarks } from './targetMarks';
 import { createTurretView } from './turretView';
+import { DEFAULT_BEAM_LOOK, type BeamLook } from './beamArt';
 
 export interface ShipSceneOptions {
   world: World;
@@ -32,6 +33,8 @@ export interface ShipSceneOptions {
   livery?: Livery | null;
   /** The seconds of air in a full suit tank. */
   suitAirSec?(): number;
+  /** Look of the ship's structural beams; default civil. */
+  beamLook?: BeamLook;
 }
 
 /** One ship grid with all its views (tiles, modules, items, crew, fx), in its own layer stack. */
@@ -64,7 +67,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   let marksOn = false;
   let targeted: ReadonlySet<number> = new Set();
   const inside = () => (roofed ? null : { grid });
-  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules } });
+  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK });
   const crewView = createCrewView(world, atlas, L, {
     target: () => (roofed ? null : { grid, gridId: grid.id }),
     emergency: () => emergency,

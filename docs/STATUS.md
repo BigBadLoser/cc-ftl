@@ -3,6 +3,9 @@
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
 Last updated: 2026-10-19.
 
+**Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
+map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
+
 ## Where things are
 
 **On `main`** (live at https://cc-ftl.bigbadloser.workers.dev):
