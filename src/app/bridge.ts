@@ -1,12 +1,13 @@
 import { ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiStory, UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
 import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
+import { buildStory } from './storySnapshot';
 import { createStore, type Readable } from './store';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
@@ -56,6 +57,9 @@ export interface Bridge {
   combat: Readable<UiCombat>;
   shuttles: Readable<UiShuttles>;
   prizes: Readable<UiPrize[]>;
+  story: Readable<UiStory>;
+  /** Pick an option of the open event decision and resume the speed the game was on. */
+  chooseStory(choice: string): void;
   setSelected(tile: TileRef | null): void;
   setHovered(tile: TileRef | null): void;
   dispatch(cmd: Command): void;
@@ -92,6 +96,10 @@ export function createBridge(sim: Sim): Bridge {
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
   const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
   const prizes = createStore<UiPrize[]>([]);
+  const story = createStore<UiStory>({ active: null, last: null });
+  let lastStory = '';
+  /** Speed to return to when the open decision is answered (null = no decision is holding the game). */
+  let heldSpeed: Speed | null = null;
   let lastPrizes = '';
   let lastShuttles = '';
   let lastCombat = '';
@@ -190,10 +198,27 @@ export function createBridge(sim: Sim): Bridge {
   let loop: Loop | undefined;
   let lastSpeed: Speed = 1;
 
-  const setSpeed = (speed: Speed) => {
-    if (speed !== 0) lastSpeed = speed;
+  /** An open event decision pauses the game; answering it restores the speed. */
+  const refreshStory = () => {
+    const snap = buildStory(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastStory) return;
+    lastStory = key;
+    story.set(snap);
+    if (snap.active && heldSpeed === null) {
+      heldSpeed = loop?.getSpeed() ?? 1;
+      applySpeed(0);
+    }
+  };
+  const applySpeed = (speed: Speed) => {
     loop?.setSpeed(speed);
     store.update((s) => ({ ...s, speed, paused: speed === 0 }));
+  };
+
+  const setSpeed = (speed: Speed) => {
+    if (heldSpeed !== null) return; // a decision is open: only answering it resumes play
+    if (speed !== 0) lastSpeed = speed;
+    applySpeed(speed);
   };
 
   return {
@@ -209,6 +234,13 @@ export function createBridge(sim: Sim): Bridge {
     combat,
     shuttles,
     prizes,
+    story,
+    chooseStory(choice) {
+      sim.enqueue({ type: 'story.choose', choice });
+      const back = heldSpeed;
+      heldSpeed = null;
+      if (back !== null) applySpeed(back === 0 ? lastSpeed : back);
+    },
     setSelected(t) {
       selected = t;
       refreshInspect();
@@ -231,6 +263,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshShuttles();
       refreshPrizes();
       refreshCombat();
+      refreshStory();
     },
   };
 }

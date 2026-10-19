@@ -25,6 +25,8 @@ export interface ShipTemplate {
   boarding?: { party: number; afterSec: number; losingBelow: number; /** Hand weapon (item id) issued to the party when it leaves. */ weapon?: string };
 }
 
+import type { EventDef } from './story/defs';
+
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
   ships: Record<string, ShipTemplate>;
@@ -46,6 +48,8 @@ export interface ContentRegistry {
   weapons?: Record<string, WeaponDef>;
   /** Vehicle content id (e.g. 'vehicle.shuttle') to definition. Absent = no vehicles. */
   vehicles?: Record<string, VehicleDef>;
+  /** Event content (story/defs.ts) by id. Absent = no events. */
+  events?: Record<string, EventDef>;
   /** The EVA spacesuit. Absent = DEFAULT_SUIT (tuning.ts). */
   suit?: SuitDef;
 }

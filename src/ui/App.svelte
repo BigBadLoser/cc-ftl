@@ -17,6 +17,7 @@
   import StatsChips from './StatsChips.svelte';
   import StockDrawer from './StockDrawer.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
+  import StoryModal from './StoryModal.svelte';
   import './theme.css';
 
   let { api }: { api: UiApi } = $props();
@@ -158,6 +159,7 @@
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 <AlertList {api} />
+<StoryModal {api} />
 <ErrorOverlay {api} />
 
 <style>

@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-17.
+Last updated: 2026-10-19.
 
 ## Where things are
 
@@ -33,6 +33,18 @@ m4-combat + m4-assets + m4-ui to main.
 
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
+
+## Event system (branch `events`, based on `eva`; not merged; awaiting user approval of the in-game look)
+
+Design in `docs/DESIGN.md` (Exploration & events); schema and "adding an event" in `docs/ARCHITECTURE.md` (Events). Sim in
+`src/sim/story/` (no grids or sectors: context is a parameter, physical outcomes are stubbed into `story.physical`), content in
+`src/content/events.ts` (11 starter events), UI `StoryModal.svelte` (centre card / phone bottom sheet) plus notices through alerts.
+- Decisions pause the game (bridge holds the speed until `chooseStory`). Periodic draws are off until `story.setContext {periodicSec}`;
+  `main.ts` sets one draw per 3 min, danger 1, no faction.
+- Open: physical outcomes are not realised (after the sector refactor add a system that consumes `story.physical`); no implant system
+  exists (`ImplantsC` is a placeholder events read); reputation lives only in `story.reputation`; `item` requirements and `items`
+  effects use all player-ship storage (grid-independent); crew skill xp is new (`SkillXpC` + a stat modifier source).
+- Debug: `?hook` then `__cc.fireEvent('event.distress_call')`.
 
 ## Shuttle bay (branch `opus-bay`, not merged; awaiting user approval of the in-game look)
 

@@ -97,6 +97,8 @@ const api: UiApi = {
   combat: bridge.combat,
   shuttles: bridge.shuttles,
   prizes: bridge.prizes,
+  story: bridge.story,
+  chooseStory: bridge.chooseStory,
   focusShuttle: (id) => {
     const v = sim.world.get(id, VehicleC);
     if (v) renderer?.focusSector(v.x, v.y);
@@ -142,5 +144,8 @@ const api: UiApi = {
       .catch((e: unknown) => errorLog.push(e));
   },
 };
+
+// Periodic events: one draw about every 3 minutes of play. Danger tier and territory are parameters until sectors are redone.
+bridge.dispatch({ type: 'story.setContext', danger: 1, faction: null, periodicSec: 180 });
 
 mount(App, { target, props: { api } });

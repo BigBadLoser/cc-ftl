@@ -51,6 +51,11 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       suitAir: (crew: number, sec: number) => { const su = sim.world.get(crew, SuitC); if (su) su.air = sec; },
     },
     dispatch: (cmd: Parameters<Sim['enqueue']>[0]) => sim.enqueue(cmd),
+    /** Events: start one by id (ignores triggers and eligibility), set a flag, set the pool context. */
+    fireEvent: (event: string) => sim.enqueue({ type: 'story.fire', event }),
+    setFlag: (flag: string, value = 1) => sim.enqueue({ type: 'story.setFlag', flag, value }),
+    setContext: (danger: number, faction: string | null = null) => sim.enqueue({ type: 'story.setContext', danger, faction }),
+    story: () => sim.story,
     vehicles: () => vehicleViews(sim),
     ships: () => [...sim.world.query(ShipC)].map((id) => sim.world.get(id, ShipC)),
     events: () => seen,

@@ -219,10 +219,29 @@ export interface UiStats {
   o2: number | null;
 }
 
+/** One option of an open decision. `reasons` explain why it is greyed out; `odds` is the skill check, if any. */
+export interface UiStoryChoice {
+  id: string;
+  label: string;
+  hint: string | null;
+  enabled: boolean;
+  reasons: string[];
+  odds: { pct: number; label: string } | null;
+  /** Items it spends, e.g. "20x Scrap". */
+  cost: string[];
+}
+
+/** The event system as the UI sees it: the open decision (the game pauses on it) and the last result. */
+export interface UiStory {
+  active: { event: string; title: string; text: string; choices: UiStoryChoice[] } | null;
+  last: { tick: number; title: string; choice: string; success: boolean | null; text: string; lines: string[] } | null;
+}
+
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'crew.died' | 'crew.rescued'
   | 'job.missingMaterials' | 'storage.full' | 'production.done'
   | 'suit.airLow' | 'suit.airOut'
+  | 'story.notice' | 'story.lead'
   | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost';
 
 /** A weapon module of the player's ship. */
@@ -362,6 +381,8 @@ export interface UiAlert {
   text: string;
   /** Where the camera goes when tapped, or null if unknown. */
   at: { x: number; y: number } | null;
+  /** Event notices: the sim notice id (tap opens its lead when `lead`), and a title shown above the text. */
+  notice?: { id: number; lead: boolean; title: string };
 }
 
 export interface UiLegend {
@@ -421,6 +442,10 @@ export interface UiApi {
   selectModule(id: number | null): void;
   stats: Subscribable<UiStats>;
   alerts: Subscribable<UiAlert[]>;
+  /** The open event decision and the last result. */
+  story: Subscribable<UiStory>;
+  /** Pick an option of the open decision and resume play. */
+  chooseStory(choice: string): void;
   combat: Subscribable<UiCombat>;
   shuttles: Subscribable<UiShuttles>;
   prizes: Subscribable<UiPrize[]>;

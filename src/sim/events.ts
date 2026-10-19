@@ -1,5 +1,6 @@
 import type { Faction } from './combat/components';
 import type { JobKind } from './crew/components';
+import type { EventEffect } from './story/defs';
 import type { PortalEnd, PortalKind } from './portals/components';
 
 /** Outbound notifications for UI and audio. */
@@ -99,6 +100,10 @@ export type SimEvent =
   | { type: 'suit.doffed'; crew: number; airlock: number }
   | { type: 'suit.airLow'; crew: number }
   | { type: 'suit.airOut'; crew: number }
+  /** Event system: an event started (`notice` is the notice id for notices with a lead, else 0), a choice resolved it, an effect was applied (`text` '' = nothing to show). */
+  | { type: 'story.started'; event: string; mode: 'decision' | 'notice'; notice: number }
+  | { type: 'story.resolved'; event: string; choice: string; success: boolean | null }
+  | { type: 'story.effect'; event: string; effect: EventEffect['type']; text: string }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 
