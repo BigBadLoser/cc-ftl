@@ -265,6 +265,13 @@ The many-grids sector (one `Grid` per ship, cross-grid portals, per-grid scenes,
   an airlock or bay, and crew can EVA off a hovering shuttle.
 - Ships are tile regions tagged by ship id. Capture, integrity, wrecks, AI, targeting, livery and roofing stay per ship.
 
+**Progress:** step 1 on `main` (`GridLike`, `SectorGrid`, `GridWindow`, `ship` field and `SHIP_EMPTY`). Step 2 on branch
+`sector-2` (not merged): ships are stamped into `sim.sector.grid`, `sim.grids` holds windows, save v13 stores chunks and old
+saves are refused (no migrations). Step 3 on `sector-2`: field systems loop over `regions(sim)` through `load()`/`set()`
+with per-region active tile lists (bit-identical results, pinned by hash tests). Step 4 on `sector-2`: `ship` owner layer (stamp and
+build), `shipAt`, `shipFrame` (`REGION_PAD`), `regions(sim)` and the `MIN_SHIP_GAP` rule in spawns. Next: step 5 (render),
+after `genint` lands; `debug.spawnGenerated` from `genint` must call `placementGapError` like `debug.spawnEnemy`.
+
 Planner's calls (the user can overrule):
 - 16x16 sparse chunks.
 - A `ship` owner layer.

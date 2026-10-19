@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CarryingC, ModuleC, ProductionC, SAVE_VERSION, StorageC, deserialize, newGame, serialize, storageCount, totalStock, type Sim,
+  CarryingC, ModuleC, ProductionC, StorageC, deserialize, newGame, serialize, storageCount, totalStock, type Sim,
 } from '../../sim';
 import { content } from '../index';
 
@@ -58,21 +58,6 @@ describe('starter economy', () => {
     run(b, 600);
     expect(serialize(b)).toBe(serialize(a));
     expect(storageCount(b, b.world.query(StorageC)[0] as number, 'item.metal')).toBeGreaterThan(0);
-  });
-
-  it('migrates a v2 save: item field added, crafting priority defaulted', () => {
-    const sim = newGame(3, content);
-    run(sim, 5);
-    const data = JSON.parse(serialize(sim)) as { version: number; grids: { fields: Record<string, unknown> }[]; world: { stores: Record<string, [number, Record<string, number>][]> } };
-    data.version = 2;
-    for (const g of data.grids) {
-      delete g.fields['item'];
-    }
-    for (const [, p] of data.world.stores['priorities'] ?? []) delete p['crafting'];
-    const loaded = deserialize(JSON.stringify(data), content);
-    expect(SAVE_VERSION).toBe(12);
-    expect(loaded.grids.get(1)?.has('item')).toBe(true);
-    run(loaded, 20);
   });
 
   it('runs 1000 busy ticks in under 4 seconds', () => {

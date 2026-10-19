@@ -3,7 +3,7 @@ import { CommandQueue, type Command } from './commands';
 import { World } from './ecs';
 import { EventBuffer } from './events';
 import { commandHandlers } from './handlers';
-import type { Grid } from './grid';
+import { GridMap, newSectorGrid } from './gridMap';
 import type { Sector } from './combat/components';
 import { pipeline } from './pipeline';
 import { Rng } from './rng';
@@ -19,12 +19,13 @@ export class Sim {
   tick = 0;
   rng: Rng;
   world = new World();
-  grids = new Map<number, Grid>();
+  /** Grid id -> window onto `sector.grid` in the grid's local coordinates (sector refactor: goes away in step 7). */
+  grids = new GridMap(() => this.sector.grid);
   commands = new CommandQueue();
   events = new EventBuffer();
   /** Event system state: flags, reputation, the open decision, queue (see story/). */
   story: StoryState;
-  sector: Sector = { width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false };
+  sector: Sector = { grid: newSectorGrid(), width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false };
 
   constructor(
     /** World seed: drives galaxy generation; saved with the game. */

@@ -5,7 +5,7 @@ import type { SimEvent } from '../events';
 import { ModuleC } from '../modules/components';
 import { spawnModule, removeModule } from '../modules/spawn';
 import type { ContentRegistry, ModuleDef } from '../registry';
-import { deserialize, migrate, serialize } from '../save';
+import { deserialize, serialize } from '../save';
 import { gridFromTemplate } from '../ship';
 import { Sim } from '../sim';
 import { Struct } from '../structure';
@@ -251,16 +251,5 @@ describe('determinism and saves', () => {
     run(copy, 400);
     expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 2, x: 5, y: 6 });
     expect(serialize(copy)).toBe(serialize(sim));
-  });
-
-  it('migrates a v6 save', () => {
-    const sim = world();
-    const raw = JSON.parse(serialize(sim)) as { version: number; world: { stores: Record<string, unknown> } };
-    raw.version = 6;
-    delete raw.world.stores['portal'];
-    delete raw.world.stores['airlock'];
-    const data = migrate(raw as never) as unknown as { version: number; world: { stores: Record<string, unknown> } };
-    expect(data.version).toBe(12);
-    expect(deserialize(JSON.stringify(raw), content).world.query(PortalC)).toHaveLength(0);
   });
 });

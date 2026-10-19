@@ -1,5 +1,6 @@
 import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
+import { regions } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { LIGHT_FALLOFF } from '../tuning';
@@ -10,11 +11,11 @@ import { LIGHT_FALLOFF } from '../tuning';
  * linearly with distance. Door tiles (room 0) take the brightest light of their neighbours.
  */
 export function lightingSystem(sim: Sim): void {
-  for (const grid of sim.grids.values()) {
+  for (const { grid } of regions(sim)) {
     if (!grid.has('light') || !grid.has('room')) continue;
     const { width, height } = grid;
     const next = new Uint8Array(width * height);
-    const room = grid.raw('room');
+    const room = grid.load('room');
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
       const light = m && sim.content.modules[m.def]?.light;
@@ -34,7 +35,7 @@ export function lightingSystem(sim: Sim): void {
       }
     }
     spillThroughDoors(grid, next);
-    const light = grid.raw('light');
+    const light = grid.load('light');
     for (let i = 0; i < next.length; i++) {
       if (light[i] !== next[i]) {
         const x = i % width;
@@ -47,8 +48,8 @@ export function lightingSystem(sim: Sim): void {
 /** Open doorways borrow the brightest adjacent room tile, so crew crossing a door are not blacked out. */
 function spillThroughDoors(grid: Grid, next: Uint8Array): void {
   const { width, height } = grid;
-  const struct = grid.raw('struct');
-  const door = grid.raw('door');
+  const struct = grid.load('struct');
+  const door = grid.load('door');
   for (let i = 0; i < next.length; i++) {
     if (struct[i] !== Struct.Door || (door[i] as number) === 0) continue;
     const x = i % width;

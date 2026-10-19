@@ -1,6 +1,7 @@
 import { ItemStackC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import type { Grid } from '../grid';
+import { regions } from '../regions';
 import type { Sim } from '../sim';
 import { stochasticRound } from '../stochastic';
 import { TICK_HZ } from '../time';
@@ -33,10 +34,11 @@ const o2Factor = (o2: number): number => Math.max(0, Math.min(1, (o2 - FIRE_MIN_
  * intensity x fuel x oxygen. Without oxygen the fire collapses. Crew damage is in vitals.
  */
 export function fireSystem(sim: Sim): void {
-  for (const grid of sim.grids.values()) {
+  for (const { grid } of regions(sim)) {
     if (!grid.has('fire') || !grid.has('o2')) continue;
     const { width, height } = grid;
-    const fire = grid.raw('fire');
+    // A snapshot: this loop only writes the tile it is on, and spreads are applied after it.
+    const fire = grid.load('fire');
     const ignite: number[] = [];
     for (let i = 0; i < fire.length; i++) {
       const f = fire[i] as number;

@@ -4,6 +4,7 @@ import type { Sim } from '../sim';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
+import { placementGapError } from '../regions';
 import { shipEntityOf, shipOf, spawnShip } from './ships';
 import { generateShip } from '../shipgen/generate';
 
@@ -19,15 +20,6 @@ function moduleOnGrid(sim: Sim, id: number, gridId: number): boolean {
   return sim.world.get(id, ModuleC)?.gridId === gridId;
 }
 
-/** True if a w x h box at sector (x, y) overlaps any ship. */
-function overlapsShip(sim: Sim, x: number, y: number, w: number, h: number): boolean {
-  for (const id of sim.world.query(ShipC)) {
-    const s = sim.world.get(id, ShipC);
-    if (s && x < s.x + s.width && s.x < x + w && y < s.y + s.height && s.y < y + h) return true;
-  }
-  return false;
-}
-
 export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
   'debug.spawnEnemy': (sim, cmd) => {
     const template = sim.content.ships[cmd.template];
@@ -38,7 +30,8 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (cmd.x < 0 || cmd.y < 0 || cmd.x + w > sim.sector.width || cmd.y + h > sim.sector.height) {
       return reject(sim, cmd.type, 'outOfBounds');
     }
-    if (overlapsShip(sim, cmd.x, cmd.y, w, h)) return reject(sim, cmd.type, 'overlap');
+    const gap = placementGapError(sim, { x: cmd.x, y: cmd.y, w, h });
+    if (gap) return reject(sim, cmd.type, gap);
     spawnShip(sim, template, { faction: template.faction ?? 'hostile', x: cmd.x, y: cmd.y, rest: 100 });
   },
   'debug.spawnGenerated': (sim, cmd) => {
@@ -50,7 +43,8 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (gen.problems.length > 0) return reject(sim, cmd.type, 'noLayout');
     const x = Math.min(sim.sector.width - gen.width, Math.max(0, cmd.cx - (gen.width >> 1)));
     const y = Math.min(sim.sector.height - gen.height, Math.max(0, cmd.cy - (gen.height >> 1)));
-    if (overlapsShip(sim, x, y, gen.width, gen.height)) return reject(sim, cmd.type, 'overlap');
+    const gap = placementGapError(sim, { x, y, w: gen.width, h: gen.height });
+    if (gap) return reject(sim, cmd.type, gap);
     const gridId = spawnShip(sim, gen.template, { faction: 'hostile', x, y, rest: 100 });
     const ship = shipOf(sim, gridId);
     if (ship) ship.gen = { faction: cmd.faction, seed, depth: cmd.depth };

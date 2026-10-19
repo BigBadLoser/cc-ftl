@@ -4,6 +4,7 @@ import { origin, releaseAssignment } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
 import { keepRobotJob, robotJobs } from '../robots/jobs';
 import type { Sim } from '../sim';
+import { regions } from '../regions';
 
 /** Work value for jobs that finish by condition (fire out, hp full, patient delivered), not by progress. */
 const CONDITIONAL_WORK = 1;
@@ -39,9 +40,9 @@ export function autoJobsSystem(sim: Sim): void {
     else seen.add(jobKey(job));
   }
 
-  for (const grid of sim.grids.values()) {
+  for (const { grid } of regions(sim)) {
     if (!grid.has('fire')) continue;
-    const fire = grid.raw('fire');
+    const fire = grid.load('fire');
     for (let i = 0; i < fire.length; i++) {
       if (fire[i] === 0) continue;
       const x = i % grid.width;

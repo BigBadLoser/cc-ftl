@@ -581,11 +581,9 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
   - Retention: keep archives that hold anything player-owned (prizes, stranded crew); drop the rest and regenerate them from
     the seed if revisited.
   - Jumping with own crew or vehicles away asks for confirmation (open question 2).
-- **Save format (v13, then v14).**
-  - `sector: { id, state, inCombat, lost?, grid: SectorGridData }` and `archives: SectorArchive[]`. `grids[]` is gone.
-  - v12 → v13 stamps each old grid at its ShipC `x, y`, writes `ship` owners and adds the ship offset to every coordinate
-    component (`gridId` kept for now).
-  - v13 → v14 drops the `gridId` fields and the portal entities.
+- **Save format.** `sector: { id, state, inCombat, lost?, grid: SectorGridData }` and `archives: SectorArchive[]`; `grids[]` is
+  gone. **No migrations (user decision, 2026-10-19):** this is a prototype, so each step that changes the save format just
+  bumps `SAVE_VERSION` and old saves are discarded.
 
 ### 5. Combat on one map
 
@@ -624,6 +622,16 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
 
 ### 7. Migration order
 
+**Amended (user, 2026-10-19).** The single shared tile store is confirmed: mining is planned, and building in open space,
+welding structures together and ships breaking apart may follow, which all need tiles of different structures on one grid.
+Saves are not migrated (see Save format). **Visible work goes first** so the one-map feel lands early:
+1. Step 0 (merges, including `shipgen` plus `trusses-int` via `genint`).
+2. Then, in parallel: step 1 (`SectorGrid` core, new code only) and the render steps that don't need chunks: 5a (one world
+   layer stack with `sectorPos` offsets), 5c (combat panel as camera pass B), 5d (picking in sector tiles), plus step 8
+   (`BodyC` vehicles; vehicles already fly in sector space) and the visibility rule (crew outside a hull always drawn).
+3. Then steps 2–4, 5b (chunk tile views), 6, 7, 9 and 10 as below.
+
+
 Each step keeps `npm run check` green and the game playable, and each is its own PR. Steps 1–4 change no behaviour or visuals
 and need no screenshots. Steps 5 and 9 are visual and need user screenshot approval.
 
@@ -640,6 +648,38 @@ and need no screenshots. Steps 5 and 9 are visual and need user screenshot appro
 | 8 | `BodyC` for vehicles; `homeShip`, `hover: ship`; EVA float in sector space; air layer depth rule | n/a | M |
 | 9 | Packets: `liftShip`, `stampShip`, translation table, `SectorArchive`; `sector.deploy` and the deploy modal; jump with docked vehicles | n/a | L (M6 work) |
 | 10 | Performance: settled-region sleep, reduced cadence for wrecks, a bench test with a 10-ship sector | n/a | M |
+
+**Progress.** Step 1 done (branch `sector-1`, new code only): `GridLike` in `grid.ts` (`Grid` implements it);
+`SectorGrid` (`sectorGrid.ts`) and `GridWindow` (`gridWindow.ts`) with tests; `SHIP_FIELDS.ship` and `SHIP_EMPTY` in
+`structure.ts`. Chunk revisions persist after a chunk is released, so a window's revision sum never goes backwards.
+`SectorGrid.raw()` throws (use `chunkData`/`load`); `GridWindow.chunkRevision` sums the sector chunks under a local chunk.
+Step 2 done (branch `sector-2`): `sim.sector.grid` is the one `SectorGrid`; `sim.grids` is a `GridMap` (`gridMap.ts`) of
+`GridWindow`s. `GridMap.stamp(id, dense, x, y)` copies a dense grid in (spawnShip stamps at the ShipC position, overlap is
+refused); `sim.grids.set(id, dense)` stamps at the next free spot on row y = 0, so fixtures that build a grid and set it keep
+working. As a type `Grid` now means `GridLike` (the dense class is `DenseGrid`, `Grid` stays its value alias), so render and
+app compile unchanged. Save v13: `sector.grid` (chunks) plus `grids: {id, x, y, w, h}[]`; `migrate` refuses any other
+version. Chunks are not released yet (occupancy off): a chunk with no structure left can still hold module or item ids,
+and nothing lifts ships until step 9. `content/ships/sectorEquiv.test.ts` pins state hashes recorded on the pre-refactor
+code (combat run, fire plus breach run) and checks a save round trip midway gives the identical state.
+Step 3 done (branch `sector-2`): `GridLike.load(field, rect?)` (dense grid, sector and window; a window rect may reach past
+the window). `regions(sim)` (`regions.ts`) lists the grids in ascending id, the fixed order every field system loops in.
+`atmosphere`, `temperature`, `smoke`, `fire`, `rooms`, `lighting`, `doors`, `alerts`, `autojobs`, `modules` (life support),
+`roomTiles` and `hullSum` read through `load()`/`get()` and write with `set()`; none of them calls `raw()`. `fieldFrame(grid)`
+(`diffusion.ts`) caches the struct snapshot and the **active tile list** (non-Space tiles plus their 4-adjacent Space) on the
+struct revision; diffusion links and the delta pass run over it in ascending order, so results are bit-identical to the full
+sweep (`diffusion.test.ts` checks this against a copy of the old sweep). Flat passes that must see every tile (zeroing gas
+on Space, write-back, fire and door scans) still read the whole loaded rectangle: a vacuum tile costs one array read there,
+never a link. `hullSum` is cached on the hp and struct revisions. Still on `raw()`: `crew/pathfind.ts`, `eva/route.ts` and
+the renderer (step 5b / 7).
+Step 4 done (branch `sector-2`): `spawnShip` writes the new ShipC id into the `ship` layer of every non-Space tile it
+stamped (`stampOwner`). `writeStruct` and `damageStruct` call `syncOwner`: a tile turned to Space loses its owner, a new
+structure tile with none takes its first owned 4-neighbour's (E, W, S, N), so build jobs extend their ship. In `regions.ts`:
+`shipAt(sim, x, y)` (sector tiles), `shipFrame(ship)` (bbox plus `REGION_PAD` = 2), `regions(sim)` now gives each grid's
+ship id, sector bbox and padded frame, and `placementGapError(sim, bbox)` ('overlap' / 'tooClose' under `MIN_SHIP_GAP` = 12
+between padded frames). `debug.spawnEnemy` rejects with that reason and `spawnShip` throws on it, so `newGame` and every
+spawn obey the rule. The frame is derived, not stored on ShipC (the pad is a constant), so components and saves are
+unchanged. Field systems still run over the exact bbox: widening them to the padded frame changes results (vacuum tiles
+join the sweep) and belongs with step 6. Fixture grids set straight into `sim.grids` have no ShipC and owner 0.
 
 **Merges before the refactor (answer to the user's hold).**
 - Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**

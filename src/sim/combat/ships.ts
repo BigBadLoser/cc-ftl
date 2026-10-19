@@ -2,6 +2,7 @@ import { createCrew } from '../crew/spawn';
 import { ModuleC } from '../modules/components';
 import { isDeployed } from '../modules/deploy';
 import { isTileWalkable } from '../modules/walk';
+import { placementGapError, stampOwner } from '../regions';
 import { gridFromTemplate, spawnTemplateModules } from '../ship';
 import type { ShipTemplate } from '../registry';
 import type { Sim } from '../sim';
@@ -67,19 +68,26 @@ export function spawnCrew(sim: Sim, gridId: number, roles: readonly string[], re
   return out;
 }
 
-/** Create a ship from a template: grid, modules, ship + combat components and crew. Returns the grid id. */
+/**
+ * Create a ship from a template, stamped into the sector at (x, y): grid, modules, ship + combat components and crew; its
+ * tiles are owned by the new ShipC. Returns the grid id. Throws if it would overlap another grid or break MIN_SHIP_GAP
+ * (commands check `placementGapError` first and reject).
+ */
 export function spawnShip(
   sim: Sim, template: ShipTemplate, opts: { gridId?: number; faction: Faction; x: number; y: number; rest?: number },
 ): number {
   const gridId = opts.gridId ?? nextGridId(sim);
-  const grid = gridFromTemplate(gridId, template);
-  sim.grids.set(gridId, grid);
+  const dense = gridFromTemplate(gridId, template);
+  const gap = placementGapError(sim, { x: opts.x, y: opts.y, w: dense.width, h: dense.height });
+  if (gap) throw new Error(`spawnShip "${template.name}" at (${opts.x}, ${opts.y}): ${gap}`);
+  const grid = sim.grids.stamp(gridId, dense, opts.x, opts.y);
   spawnTemplateModules(sim, gridId, template);
   const ship = sim.world.createEntity();
   sim.world.add(ship, ShipC, {
     gridId, name: template.name, faction: opts.faction, state: 'active', x: opts.x, y: opts.y,
     width: grid.width, height: grid.height, hullMax: hullSum(grid), integrity: 1,
   });
+  stampOwner(grid, ship);
   const layers = shieldCapacity(sim, gridId, false);
   const combat: Combat = {
     hold: false, volley: false, target: null, doctrine: template.doctrine ?? 'random', ftl: 0,

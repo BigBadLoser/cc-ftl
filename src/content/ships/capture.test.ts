@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AboardC, AllegianceC, CaptureProgressC, CombatC, CrewC, DeadC, DownedC, DraftedC, EquipC, HealthC, ItemStackC, ModuleC, PathC, PositionC,
-  PrisonerC, PrizeC, ShipC, SurrenderedC, VehicleC, WeaponC, accessTile, cargoCount, deserialize, migrate, newGame, serialize, shipEntityOf,
+  PrisonerC, PrizeC, ShipC, SurrenderedC, VehicleC, WeaponC, accessTile, cargoCount, deserialize, newGame, serialize, shipEntityOf,
   storageCount, StorageC, type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
@@ -253,16 +253,5 @@ describe('determinism and saves', () => {
     run(d, 200);
     expect(serialize(d)).toBe(serialize(a));
     expect(d.world.get(shipEntityOf(d, 2), PrizeC)).toEqual(a.world.get(shipEntityOf(a, 2), PrizeC));
-  });
-
-  it('migrates a v9 save: shuttles gain an empty hold', () => {
-    const sim = setup();
-    const data = JSON.parse(serialize(sim)) as { version: number; world: { stores: Record<string, [number, Record<string, unknown>][]> } };
-    data.version = 9;
-    for (const e of data.world.stores['vehicle']!) delete e[1]['cargo'];
-    const moved = migrate(data as unknown as Record<string, unknown>) as typeof data;
-    expect(moved.version).toBe(12);
-    expect(moved.world.stores['vehicle']!.every((e) => Array.isArray(e[1]['cargo']))).toBe(true);
-    run(deserialize(JSON.stringify(moved), content), 5);
   });
 });

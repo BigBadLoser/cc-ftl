@@ -4,7 +4,7 @@ export type FieldType = 'u8' | 'u16' | 'u32' | 'f32';
 /** Field name -> storage type, passed at Grid construction. */
 export type FieldSpec = Record<string, FieldType>;
 
-type FieldArray = Uint8Array | Uint16Array | Uint32Array | Float32Array;
+export type FieldArray = Uint8Array | Uint16Array | Uint32Array | Float32Array;
 
 /** JSON-able snapshot of a Grid. Revisions are not saved; they restart at 0. */
 export interface GridData {
@@ -14,17 +14,45 @@ export interface GridData {
   fields: Record<string, { type: FieldType; data: string }>;
 }
 
+/** A rectangle of tiles: top-left (x, y), size w x h. */
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 /** Chunk edge length in tiles, for per-chunk revision tracking. */
 export const CHUNK_SIZE = 16;
 
-function allocate(type: FieldType, n: number): FieldArray {
+/**
+ * What systems and render use of a tile grid. Implemented by the dense `Grid` and by `GridWindow`, a rectangle of a
+ * `SectorGrid` in local coordinates. `raw` is a temporary escape hatch: on a window it is a dense copy.
+ */
+export interface GridLike {
+  readonly id: number;
+  readonly width: number;
+  readonly height: number;
+  has(field: string): boolean;
+  fieldNames(): string[];
+  inBounds(x: number, y: number): boolean;
+  get(field: string, x: number, y: number): number;
+  set(field: string, x: number, y: number, value: number): void;
+  revision(field: string): number;
+  chunkRevision(field: string, cx: number, cy: number): number;
+  /** Scratch copy of a field over `rect` (default: the whole grid), row-major w*h. Writes to it change nothing. */
+  load(field: string, rect?: Rect): Float64Array;
+  raw(field: string): Readonly<FieldArray>;
+}
+
+export function allocate(type: FieldType, n: number): FieldArray {
   if (type === 'u8') return new Uint8Array(n);
   if (type === 'u16') return new Uint16Array(n);
   if (type === 'u32') return new Uint32Array(n);
   return new Float32Array(n);
 }
 
-function toBase64(arr: FieldArray): string {
+export function toBase64(arr: FieldArray): string {
   const bytes = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
   let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) {
@@ -33,7 +61,7 @@ function toBase64(arr: FieldArray): string {
   return btoa(bin);
 }
 
-function fromBase64(type: FieldType, b64: string, n: number): FieldArray {
+export function fromBase64(type: FieldType, b64: string, n: number): FieldArray {
   const bin = atob(b64);
   const arr = allocate(type, n);
   const bytes = new Uint8Array(arr.buffer);
@@ -43,10 +71,12 @@ function fromBase64(type: FieldType, b64: string, n: number): FieldArray {
 }
 
 /**
- * A rectangular tile grid with named typed-array field layers. All writes go through set(),
+ * A dense rectangular tile grid with named typed-array field layers. All writes go through set(),
  * which bumps a per-field revision and a per-chunk revision so the renderer can diff cheaply.
+ * Since the sector grid (step 2) live ships are `GridWindow`s into `sim.sector.grid`; a dense grid is a build scratch
+ * (templates, tests) that `sim.grids.set` stamps into the sector.
  */
-export class Grid {
+export class DenseGrid implements GridLike {
   readonly chunksX: number;
   readonly chunksY: number;
   private readonly types = new Map<string, FieldType>();
@@ -124,6 +154,22 @@ export class Grid {
     return (this.chunkRevs.get(field) as Uint32Array)[cy * this.chunksX + cx] as number;
   }
 
+  load(field: string, rect: Rect = { x: 0, y: 0, w: this.width, h: this.height }): Float64Array {
+    const arr = this.array(field);
+    const { x, y, w, h } = rect;
+    if (w > 0 && h > 0 && (!this.inBounds(x, y) || !this.inBounds(x + w - 1, y + h - 1))) {
+      throw new RangeError(`Grid: load rect (${x}, ${y}, ${w}x${h}) out of bounds`);
+    }
+    const out = new Float64Array(Math.max(0, w) * Math.max(0, h));
+    if (out.length === 0) return out;
+    if (x === 0 && w === this.width) {
+      out.set(arr.subarray(y * w, (y + h) * w));
+      return out;
+    }
+    for (let ty = 0; ty < h; ty++) out.set(arr.subarray((y + ty) * this.width + x, (y + ty) * this.width + x + w), ty * w);
+    return out;
+  }
+
   /** Read-only access to a field's raw array, for renderers and overlays. Do not write to it. */
   raw(field: string): Readonly<FieldArray> {
     return this.array(field);
@@ -139,10 +185,10 @@ export class Grid {
   }
 
   /** Rebuild a Grid from serialize() output. */
-  static deserialize(data: GridData): Grid {
+  static deserialize(data: GridData): DenseGrid {
     const spec: FieldSpec = {};
     for (const [name, f] of Object.entries(data.fields)) spec[name] = f.type;
-    const grid = new Grid(data.id, data.width, data.height, spec);
+    const grid = new DenseGrid(data.id, data.width, data.height, spec);
     for (const [name, f] of Object.entries(data.fields)) {
       grid.arrays.set(name, fromBase64(f.type, f.data, data.width * data.height));
     }
@@ -160,3 +206,10 @@ export class Grid {
     return y * this.width + x;
   }
 }
+
+/**
+ * `Grid` as a type is any grid systems and render see (`GridLike`: a dense grid or a window into the sector). As a value
+ * it builds a dense grid, so `new Grid(...)` keeps working. Both go away with `sim.grids` (sector step 7).
+ */
+export type Grid = GridLike;
+export const Grid = DenseGrid;

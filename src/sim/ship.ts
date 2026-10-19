@@ -1,5 +1,5 @@
 import type { ShipTemplate } from './registry';
-import { Grid } from './grid';
+import { DenseGrid, type GridLike } from './grid';
 import { ProductionC } from './items/components';
 import { storageAdd } from './items/storage';
 import { spawnModule } from './modules/spawn';
@@ -11,13 +11,14 @@ import { NORMAL_CO2, NORMAL_O2, NORMAL_TEMP, SPACE_TEMP } from './tuning';
 const CHARS: Record<string, number> = { '.': Struct.Space, '#': Struct.Wall, _: Struct.Floor, D: Struct.Door, '=': Struct.Beam };
 
 /**
- * Build a ship grid from an ASCII template. Throws on unknown characters, naming row/col (0-based).
+ * Build a dense ship grid from an ASCII template (local coordinates; `GridMap.stamp` places it in the sector).
+ * Throws on unknown characters, naming row/col (0-based).
  * Floors and doors start with normal air and temperature; space is vacuum at SPACE_TEMP.
  */
-export function gridFromTemplate(id: number, t: ShipTemplate): Grid {
+export function gridFromTemplate(id: number, t: ShipTemplate): DenseGrid {
   const width = Math.max(1, ...t.rows.map((r) => r.length));
   const height = Math.max(1, t.rows.length);
-  const grid = new Grid(id, width, height, SHIP_FIELDS);
+  const grid = new DenseGrid(id, width, height, SHIP_FIELDS);
   t.rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
       const kind = CHARS[row[x] as string];
@@ -34,7 +35,7 @@ export function gridFromTemplate(id: number, t: ShipTemplate): Grid {
 }
 
 /** Set a tile's gas and temperature to the normal value for its struct kind. */
-export function initAtmosphere(grid: Grid, x: number, y: number): void {
+export function initAtmosphere(grid: GridLike, x: number, y: number): void {
   const kind = grid.get('struct', x, y);
   const air = kind === Struct.Floor || kind === Struct.Door;
   grid.set('o2', x, y, air ? NORMAL_O2 : 0);

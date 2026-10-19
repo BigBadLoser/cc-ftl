@@ -138,6 +138,10 @@ export const ITEM_BURN_PER_SEC = 6;
 // --- Combat ---
 export const SECTOR_WIDTH = 200;
 export const SECTOR_HEIGHT = 120;
+/** Tiles a region's frame reaches beyond its bbox: the EVA ring plus one tile of vacuum for venting. */
+export const REGION_PAD = 2;
+/** Least gap in tiles between two ships' padded frames (ships are never close: user rule). */
+export const MIN_SHIP_GAP = 12;
 /** Where the player's ship sits in a new sector (top-left tile). */
 export const PLAYER_START = { x: 20, y: 50 } as const;
 /** Seconds of piloted, powered engines to charge the FTL drive. */

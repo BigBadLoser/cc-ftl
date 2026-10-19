@@ -1,7 +1,7 @@
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { AirlockC } from '../portals/components';
+import { regions } from '../regions';
 import type { Sim } from '../sim';
-import type { Grid } from '../grid';
 import { Struct } from '../structure';
 import { DOOR_CLOSE_PER_TICK } from '../tuning';
 
@@ -11,11 +11,12 @@ import { DOOR_CLOSE_PER_TICK } from '../tuning';
  * still swinging shut still leaks. Non-door tiles are kept at 0 (a door that was deconstructed).
  */
 export function doorsSystem(sim: Sim): void {
-  for (const grid of sim.grids.values()) {
+  for (const { grid } of regions(sim)) {
     if (!grid.has('door') || !grid.has('struct')) continue;
     const { width } = grid;
-    const struct = grid.raw('struct');
-    const door = grid.raw('door');
+    const struct = grid.load('struct');
+    const door = grid.load('door');
+    const modules = grid.has('module') ? grid.load('module') : null;
     const used = new Set<number>();
     for (const id of sim.world.query(CrewC, PositionC)) {
       const p = sim.world.get(id, PositionC);
@@ -25,7 +26,7 @@ export function doorsSystem(sim: Sim): void {
     }
     for (let i = 0; i < struct.length; i++) {
       const cur = door[i] as number;
-      if (struct[i] === Struct.Door && isAirlockDoor(sim, grid, i)) continue; // the airlock system owns these
+      if (struct[i] === Struct.Door && isAirlockDoor(sim, modules, i)) continue; // the airlock system owns these
       let next = cur;
       if (struct[i] !== Struct.Door) next = 0;
       else if (used.has(i)) next = 255;
@@ -38,8 +39,8 @@ export function doorsSystem(sim: Sim): void {
   }
 }
 
-function isAirlockDoor(sim: Sim, grid: Grid, i: number): boolean {
-  if (!grid.has('module')) return false;
-  const id = grid.raw('module')[i] as number;
+function isAirlockDoor(sim: Sim, modules: Float64Array | null, i: number): boolean {
+  if (!modules) return false;
+  const id = modules[i] as number;
   return id !== 0 && sim.world.has(id, AirlockC);
 }
