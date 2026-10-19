@@ -23,6 +23,7 @@ from . import human_base as hb
 from .human_base import SCALE, build_skinned, import_base
 from . import human_gear as hg
 from . import human_sit as hs
+from . import human_meal as meal
 from . import human_suit as suit
 
 SS = core.SS
@@ -31,7 +32,7 @@ ORDER = {"body": 0, "eyes": 10, "legs": 20, "torso": 30, "gear.belt": 40, "arm.R
 UNION_SLOTS = ("arm.L", "arm.R")
 # (clip, frames, fps, loop)
 CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("sleep", 3, 2, True), ("sit_idle", 4, 3, True), ("sit_work", 6, 8, True),
-         ("eva_float", 4, 4, True)]
+         ("eva_float", 4, 4, True)] + meal.CLIPS
 # sim facing d: 0 = grid +x, CCW in grid space, 2 = grid +y. Character faces Blender -Y at azimuth 0, and Blender
 # y = -grid y, so the azimuth about +Z that faces grid angle phi=45*d deg is theta = 90 - phi.
 THETA = [90 - 45 * d for d in range(8)]
@@ -44,6 +45,7 @@ SLEEP_PHASE = (0.0, 1.0, 0.0)   # breathing: chest scale amount per sleep frame,
 HIDDEN_A = 12                   # alpha of a chair-occluded pixel (sit clips): the crew filter draws it as nothing, no outline/rim
 SIT_HIDE = ("gear.back",)       # slots left empty in the sit clips (the engineer rig would sit inside the backrest)
 _CHAIR = []
+_MESS_CHAIR = []
 _PUFFS = set()                  # eva_float: nozzles puffing in the frame being rendered
 
 
@@ -120,7 +122,7 @@ def clip_frames():
             for i in range(n):
                 yield clip, i, "idle_Armature", 0
             continue
-        act = bpy.data.actions[f"{clip}_Armature"]
+        act = bpy.data.actions[f"{meal.BASE.get(clip, clip)}_Armature"]
         lo, hi = act.frame_range
         for i in range(n):
             f = hi if clip == "sleep" else lo + (hi - lo) * i / n
@@ -175,7 +177,10 @@ def pose_frame(arm, clip, i, name, f):
     for b in pb:
         b.scale = (1, 1, 1)
     arm.location = (0, 0, 0)
-    br = hs.apply(arm, i, SCALE, clip) if clip.startswith("sit") else 0.0
+    if clip in meal.BASE or clip == "sit_eat":
+        br = meal.apply(arm, clip, i, SCALE)
+    else:
+        br = hs.apply(arm, i, SCALE, clip) if clip.startswith("sit") else 0.0
     if clip == "eva_float":
         br = suit.float_pose(arm, i, SCALE)
     pb["spine_03"].scale = (TORSO_W, 1 + 0.03 * br, 1 + 0.03 * br)
@@ -295,6 +300,16 @@ def chair_holdout():
     return _CHAIR[0]
 
 
+def mess_chair_holdout():
+    """The mess chair (mess.chair) as sit_eat's holdout, facing the azimuth-0 way (grid +y, its rotation 2)."""
+    if not _MESS_CHAIR:
+        from . import mess
+        ob = mess.chair(2)[0]
+        ob.is_holdout, ob.hide_render = True, True
+        _MESS_CHAIR.append(ob)
+    return _MESS_CHAIR[0]
+
+
 def render_all(arm, items, dirs=range(8), clips=None, only=None, frames=None, log=print):
     """-> {item index: {(d, col): (rgba, glow)}}, plus the column list."""
     cols = [(clip, i) for clip, n, _, _ in CLIPS for i in range(n)]
@@ -314,7 +329,9 @@ def render_all(arm, items, dirs=range(8), clips=None, only=None, frames=None, lo
             head = head_px(arm)
             col = cols.index((clip, i))
             sit = clip.startswith("sit")
-            chair = chair_holdout()
+            for c in _CHAIR + _MESS_CHAIR:
+                c.hide_render = True
+            chair = mess_chair_holdout() if clip == "sit_eat" else chair_holdout()
             chair.hide_render, chair.rotation_euler = not sit, arm.rotation_euler
             for k in todo:
                 if sit and items[k].slot in SIT_HIDE:
