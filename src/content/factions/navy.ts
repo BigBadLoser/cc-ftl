@@ -63,7 +63,7 @@ export const navy = {
   },
   // Hull families (assembly-driven): standard sections, family proportions.
   // Integrated transitions: regular stepped tapers (two tiles along per tile of height) where section widths change.
-  transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },
+  transition: { slope: 2, max: 4, jitter: 0, driveShoulders: true, label: 'taper' },
   hullFamilies: [
     {
       id: 'corvette', weight: { base: 5, perDepth: -0.5, max: 5 }, bonus: { weapons: -1, crew: -3, crates: -3, shields: -1, engines: -1 },

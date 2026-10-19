@@ -130,3 +130,67 @@ export function taper(A: Arranger, style: TransitionStyle, rand: () => number): 
   }
   return addPlate(A, [...cells.values()], style.label);
 }
+
+/**
+ * Plate a shallow, V-shaped recess where a Navy hull narrows to the aft drive.
+ * This only shapes the OUTSIDE of a connected fore/aft hull join. It never
+ * expands a room or bridges separate twin hulls, and observes gun, airlock,
+ * and engine-exhaust reservations. The normal taper handles other joins.
+ */
+export function fairDriveNecks(A: Arranger, maxRun = 14): number {
+  const fair = new Map<number, Cell>();
+  const skin = (x: number, center: number, side: -1 | 1): number | null => {
+    // A corridor or central structure must exist at the attachment axis.
+    let y = center;
+    if (A.cell(x, y) === undefined && A.cell(x, y + 1) !== undefined) y++;
+    if (A.cell(x, y) === undefined) return null;
+    while (Math.abs(y - center) <= 14 && A.cell(x, y + side) !== undefined) y += side;
+    return y;
+  };
+  for (const join of A.joins) {
+    const parent = A.placed[join.a];
+    const child = A.placed[join.b];
+    if (!parent || !child || child.block.kind !== 'drive' || parent.block.kind === 'hull') continue;
+    if (join.tiles.length === 0) continue;
+    const x0 = Math.round(join.tiles.reduce((sum, p) => sum + p.x, 0) / join.tiles.length);
+    const cy = Math.round(join.tiles.reduce((sum, p) => sum + p.y, 0) / join.tiles.length);
+    const shoulderX = x0 - 3;
+    // A fore/aft join, not an outboard engine pod or diagonal graft.
+    if (child.x < parent.x + 2 || child.x > parent.x + Math.max(...parent.block.rows.map((r) => r.length)) + 2) continue;
+    for (const side of [-1, 1] as const) {
+      const start = skin(shoulderX, cy, side);
+      if (start === null) continue;
+      const profile: { x: number; y: number }[] = [];
+      for (let x = shoulderX + 1; x <= shoulderX + maxRun; x++) {
+        const y = skin(x, cy, side);
+        if (y === null) break;
+        profile.push({ x, y });
+        // The far-side shoulder has returned to the parent hull's width.
+        if (profile.length >= 2 && side * (y - start) >= -1 &&
+            profile.slice(0, -1).some((p) => side * (p.y - start) <= -3)) break;
+      }
+      if (profile.length < 2) continue;
+      const end = profile[profile.length - 1] as { x: number; y: number };
+      if (side * (end.y - start) < -1) continue;
+      if (!profile.some((p) => side * (p.y - start) <= -3)) continue;
+      const run = end.x - shoulderX;
+      // Keep intentionally long engineering necks legible: only round their
+      // corners. Short one-column notches can be plated right across.
+      const maxFill = run >= 8 ? 2 : run >= 6 ? 3 : 6;
+      for (const { x, y } of profile.slice(0, -1)) {
+        const toward = Math.min(x - shoulderX, end.x - x);
+        // The V's shallow shoulders look engineered, rather than a flat
+        // rectangular slab joining the full depth of both assemblies.
+        const inset = Math.floor(toward / 2);
+        const target = start - side * inset;
+        const count = Math.min(maxFill, Math.max(0, side * (target - y)));
+        for (let n = 1; n <= count; n++) {
+          const yy = y + side * n;
+          if (!free(A, x, yy)) break;
+          fair.set(key(x, yy), { x, y: yy });
+        }
+      }
+    }
+  }
+  return addPlate(A, [...fair.values()], 'stern shoulder');
+}

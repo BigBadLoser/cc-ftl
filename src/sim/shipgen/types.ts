@@ -155,6 +155,8 @@ export interface TransitionStyle {
   max: number;
   /** 0 for regular stairs; up to 1 for ragged, improvised plating. */
   jitter: number;
+  /** Add shallow armor shoulders around fore/aft propulsion joins. */
+  driveShoulders?: boolean;
   label: string;
 }
 
