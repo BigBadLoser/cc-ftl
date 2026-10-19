@@ -215,7 +215,7 @@ export const EVA_THIN_AIR_BELOW = 8;
 export const EVA_AIR_LOW_FRAC = 0.25;
 /** The default suit (content/suit.ts overrides it): a tank lasts 4 minutes, donning takes 5 s, a suited crew member is 20% slower. */
 export const DEFAULT_SUIT = {
-  airSec: 240, donSec: 5, doffSec: 3, moveMult: 0.8, workMult: 0.9, accuracyMult: 0.8, floatSpeed: 1.5, floatRange: 4,
+  airSec: 240, donSec: 5, doffSec: 3, moveMult: 0.8, workMult: 0.9, accuracyMult: 0.8, floatSpeed: 1.5, floatRange: 6,
 } as const;
 /** Extra path steps an automatic job that needs vacuum counts for when crew choose between jobs (they prefer no EVA). */
 export const EVA_JOB_PENALTY = 30;

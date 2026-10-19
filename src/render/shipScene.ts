@@ -12,7 +12,6 @@ import { createItemView } from './itemView';
 import { createJobView } from './jobView';
 import { createLayers, type Layers } from './layers';
 import { ModuleC } from '../sim/modules/components';
-import { Struct } from '../sim/structure';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
 import { createRoofView } from './roofView';
@@ -76,7 +75,6 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       return m && def ? { m, def } : null;
     },
     light: () => ({ data: grid.raw('light'), width: grid.width }),
-    isExterior: (x, y) => grid.inBounds(x, y) && grid.get('struct', x, y) === Struct.Space,
     suitAirSec: o.suitAirSec,
   });
   const jobView = createJobView(world, atlas, L, { target: inside });

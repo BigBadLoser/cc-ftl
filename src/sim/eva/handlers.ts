@@ -81,8 +81,9 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
       if (!sim.world.has(crew, DraftedC)) sim.world.add(crew, DraftedC, { target: null });
       (sim.world.get(crew, CrewKey) as Crew).activity = 'drafted';
       sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec, vehicle: cmd.vehicle });
-      const ticks = floatTicks(sim, spot.d);
-      sim.world.add(crew, EvaFloatC, { mode: 'out', vehicle: cmd.vehicle, fx: frame.x, fy: frame.y, ticks, total: ticks });
+      const start = hatchFace(frame, spot);
+      const ticks = floatTicks(sim, Math.hypot(spot.x - start.x, spot.y - start.y));
+      sim.world.add(crew, EvaFloatC, { mode: 'out', vehicle: cmd.vehicle, fx: start.x, fy: start.y, ticks, total: ticks });
       sim.events.emit({ type: 'suit.donned', crew, airlock: 0 });
     });
   },
@@ -101,8 +102,9 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     const drafted = sim.world.get(cmd.crew, DraftedC)!;
     drafted.target = null;
     delete drafted.planned;
-    const ticks = floatTicks(sim, d);
-    sim.world.add(cmd.crew, EvaFloatC, { mode: 'back', vehicle: cmd.vehicle, fx: frame.x, fy: frame.y, ticks, total: ticks });
+    const face = hatchFace(frame, pos);
+    const ticks = floatTicks(sim, Math.hypot(pos.x - face.x, pos.y - face.y));
+    sim.world.add(cmd.crew, EvaFloatC, { mode: 'back', vehicle: cmd.vehicle, fx: face.x, fy: face.y, ticks, total: ticks });
   },
 };
 
@@ -113,4 +115,13 @@ function errand(sim: Sim, crew: number, kind: 'suitUp' | 'suitOff', airlock: num
   drafted.target = null;
   delete drafted.planned;
   startErrand(sim, crew, kind, { airlock, steps }, gridId);
+}
+
+/** The point of the shuttle's hull-facing side (2.6 tiles from its centre toward the hull tile): drifting crew start and end there, in view rather than under the sprite. */
+function hatchFace(frame: { x: number; y: number }, to: { x: number; y: number }): { x: number; y: number } {
+  const dx = to.x - frame.x;
+  const dy = to.y - frame.y;
+  const d = Math.hypot(dx, dy);
+  const k = d > 0 ? Math.min(2.6, Math.max(0, d - 0.5)) / d : 0;
+  return { x: frame.x + dx * k, y: frame.y + dy * k };
 }

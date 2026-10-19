@@ -73,12 +73,12 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   - Stepping out of an airlock onto the same grid's hull. Today the exterior is the ring of Space tiles touching the hull
     (`isEvaWalkable` in `structure.ts`); suited crew drift along it with the `eva_float` clip. Beams (`Struct.Beam`) join
     that rule when they land. Suited crew come back in through the airlock, or through a breach.
-  - **From a hovering shuttle.** A shuttle can fly to another ship or a derelict and hold station 3 tiles off its
+  - **From a hovering shuttle.** A shuttle can fly to another ship or a derelict and hold station 4.5 tiles off its
     hull (`vehicle.hover`) without docking. Its hatch works like an airlock for suits: the shuttle stows a few (a vehicle
     def value, 3), passengers suit up aboard and go out (`eva.out`), float (`eva_float`) across the gap to the nearest hull
     tile, then move on that grid like any suited crew: onto the hull, in through a breach or a depressurised room, or in
     through its airlock from outside. They return the same way: the player orders `eva.board` and they float back to the
-    hatch, climb in and the suit is stowed. The float is short on purpose (4 tiles at most, 1.5 tiles/s), so the shuttle
+    hatch, climb in and the suit is stowed. The float is short on purpose (6 tiles at most, 1.5 tiles/s), so the shuttle
     has to get close. The shuttle cannot leave while crew are outside.
 - **Limits.**
   - The tank lasts 4 game minutes of thin air (a breached room, the airlock, the hull outside). It does not drain in breathable air, and refills only when the

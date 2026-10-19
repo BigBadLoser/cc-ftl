@@ -16,6 +16,8 @@ export interface PathGoal extends Tile {
 // Integer costs (x10) keep the search exact and tie-breaking deterministic.
 const ORTHO = 10;
 const DIAG = 14;
+/** Exterior (EVA) tiles cost this many times a deck tile, so suited crew only route outside when inside is no reasonable way. */
+export const EXTERIOR_COST = 4;
 const NEIGHBOURS: readonly (readonly [number, number])[] = [
   [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [-1, -1], [1, -1],
 ];
@@ -91,7 +93,8 @@ export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal, o
       if (closed[ni] || !walk(ni)) continue;
       const diagonal = dx !== 0 && dy !== 0;
       if (diagonal && (!walk(cy * width + nx) || !walk(ny * width + cx))) continue;
-      const ng = (g[cur] as number) + (diagonal ? DIAG : ORTHO);
+      const step = (diagonal ? DIAG : ORTHO) * (isWalkable(struct[ni] as number) ? 1 : EXTERIOR_COST);
+      const ng = (g[cur] as number) + step;
       if (g[ni] !== -1 && ng >= (g[ni] as number)) continue;
       g[ni] = ng;
       parent[ni] = cur;

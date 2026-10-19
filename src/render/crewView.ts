@@ -30,8 +30,6 @@ export interface CrewViewHost {
   target(): { gridId: number } | null;
   /** The module covering tile (x, y) of the shown grid, if any (to sort crew on a console's chair tile against its sprite). */
   moduleAt?(x: number, y: number): { m: Module; def: ModuleDef } | null;
-  /** True if tile (x, y) of the shown grid is open space (a suited crew member there is outside the hull). */
-  isExterior?(x: number, y: number): boolean;
   /** Seconds of air in a full suit tank (scales the air bar). */
   suitAirSec?(): number;
 }
@@ -208,7 +206,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           driftFacing = facingOf(bx - ax, by - ay);
         }
         // A suited crew member outside the hull (on a Space tile) drifts on the pack's thrusters: the eva_float clip.
-        const flight = !!drift || (!!host.isExterior?.(Math.round(s.x), Math.round(s.y)) && world.has(id, SuitC));
+        const flight = !!drift; // eva_float only while drifting between the shuttle and the hull
         const dist = Math.hypot(tx - s.x, ty - s.y);
         const k = 1 - Math.exp(-dt * SMOOTH);
         if (!s.placed || dist > 3) {

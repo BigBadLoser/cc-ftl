@@ -306,6 +306,24 @@ describe('outside on the hull', () => {
     expect(isEvaWalkable(g, 6, 6)).toBe(false); // floor
   });
 
+  it('suited crew keep to the inside unless it is far longer: an inside route up to ~3x longer still wins', () => {
+    const sim = world();
+    const c = crew(sim, 1, 2, 2);
+    sim.enqueue({ type: 'suit.set', crew: c, worn: true });
+    for (let x = 2; x <= 10; x++) sim.enqueue({ type: 'debug.setStruct', gridId: 1, x, y: 3, kind: Struct.Wall });
+    for (const y of [2, 4]) sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 1, y, kind: Struct.Space }); // breaches: a short way round outside
+    run(sim, 2);
+    const g = sim.grids.get(1)!;
+    const outside = (steps: { x: number; y: number }[]): boolean => steps.some((s) => g.get('struct', s.x, s.y) === Struct.Space);
+    const inside = planWalk(sim, c, 1, { x: 2, y: 2 }, { x: 2, y: 4 })!;
+    expect(outside(inside.steps)).toBe(false);
+    expect(inside.steps.length).toBeGreaterThan(14); // about 3x the 6 steps outside
+    // With the inside way shut, the route goes outside.
+    sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 11, y: 3, kind: Struct.Wall });
+    run(sim, 2);
+    expect(outside(planWalk(sim, c, 1, { x: 2, y: 2 }, { x: 2, y: 4 })!.steps)).toBe(true);
+  });
+
   it('is deterministic', () => {
     const go = (): string => {
       const sim = world();
