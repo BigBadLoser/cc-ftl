@@ -12,7 +12,7 @@ import math
 from . import core
 
 SKIN_ALPHA, SKIN_RIM = 0.36, 0.6
-FLUID_ALPHA = 0.65
+FLUID_ALPHA = 0.55
 PROF = [(0.0, 0.78), (0.1, 0.97), (0.26, 1.0), (0.46, 0.9), (0.64, 0.72), (0.8, 0.5), (0.92, 0.27), (1.0, 0.0)]
 
 
@@ -27,7 +27,7 @@ class Sac:
     """One sac's shape: centre, radius, height, lean (droop of the top), lumps and strand pinches."""
 
     def __init__(self, x, y, r, h, lean=(0.0, 0.0), lumps=((2, 0.06, 0.3), (3, 0.05, 1.9)), pinch=(110, 230, 350),
-                 fluid=0.42, veins=(0, 70, 150, 215)):
+                 fluid=0.7, veins=(0, 70, 150, 215)):
         self.x, self.y, self.r, self.h, self.lean = x, y, r, h, lean
         self.veins = veins
         self.lumps, self.pinch, self.fluid = lumps, pinch, fluid
@@ -68,22 +68,22 @@ def _ball(m, c, r, col, n=8):
 
 
 def _embryo(m, S, size=1.0):
-    """A curled foetus in the screen plane (so its C-shape reads from the camera): a big head at the top, the spine
+    """A curled foetus (dark fluid green: its shadow in the fluid) in the screen plane (so its C-shape reads from the camera): a big head at the top, the spine
     curling down and round under it in shrinking blobs, two tucked limb nubs, one glowing eye."""
     r = S.r * size
     e1 = (1 / math.sqrt(2), -1 / math.sqrt(2))                      # screen-horizontal ground direction
-    fwd = S.r * 0.42 / math.sqrt(2)                                 # pressed toward the camera-facing skin
-    cx, cy, cz = S.x + S.lean[0] * 0.15 + fwd, S.y + S.lean[1] * 0.15 + fwd, S.h * 0.38
-    rho = r * 0.4
+    fwd = S.r * 0.5 / math.sqrt(2)                                  # just in front of the fluid's surface, under the skin
+    cx, cy, cz = S.x + S.lean[0] * 0.1 + fwd, S.y + S.lean[1] * 0.1 + fwd, S.h * 0.32
+    rho = r * 0.36
 
     def at(phi, out=0.0):
         return (cx + (rho + out) * math.cos(phi) * e1[0], cy + (rho + out) * math.cos(phi) * e1[1],
                 cz + (rho + out) * math.sin(phi))
-    _ball(m, at(math.radians(105)), r * 0.3, "xnK", 10)                                    # head
+    _ball(m, at(math.radians(105)), r * 0.3, "xnFD", 10)                                    # head
     for k, deg in enumerate((60, 20, -20, -60, -100, -140, -175)):                        # spine, curling under
-        _ball(m, at(math.radians(deg)), r * (0.24 - 0.022 * k), "xnK")
+        _ball(m, at(math.radians(deg)), r * (0.24 - 0.022 * k), "xnFD")
     for deg in (150, -10):                                                                 # tucked limbs
-        _ball(m, at(math.radians(deg), -rho * 0.55), r * 0.1, "xnK", 6)
+        _ball(m, at(math.radians(deg), -rho * 0.55), r * 0.1, "xnFD", 6)
     hx, hy, hz = at(math.radians(105))
     m.box((hx + 0.6 * r * 0.3, hy + 0.6 * r * 0.3, hz), (0.03, 0.03, 0.03), "xnG")       # its eye, toward the camera
 
@@ -147,7 +147,7 @@ def _layers(name, sacs, pad, big):
     fluid = core.Mesh(f"{name}_fluid", flat=True)
     skin = core.Mesh(f"{name}_skin")
     for k, S in enumerate(sacs):
-        _sheet(fluid, S, lambda u, v: "xnF" if v < S.fluid - 0.07 else "xnFL", 0.0, S.fluid, k=0.9, nv=6, cap="xnFL")
+        _sheet(fluid, S, lambda u, v: "xnFL" if v < S.fluid - 0.06 else "xnA", 0.0, S.fluid, k=0.8, nv=8, cap="xnA")
         _sheet(skin, S, "xnS")
         if k in big:
             _embryo(solid, S, 1.05)
@@ -163,13 +163,13 @@ def _layers(name, sacs, pad, big):
 def eggsac(n):
     if n == 1:
         sacs = [Sac(-0.04, -0.04, 0.4, 0.78, (0.04, 0.02)),
-                Sac(0.3, 0.22, 0.11, 0.2, (0.02, 0.0), pinch=(200,), lumps=((2, 0.05, 1.0),), fluid=0.4)]
+                Sac(0.3, 0.22, 0.11, 0.2, (0.02, 0.0), pinch=(200,), lumps=((2, 0.05, 1.0),), fluid=0.6)]
         return _layers("eggsac_1", sacs, _pad("eggsac_1_pad", 0.0, 0.0, 0.5, 1), (0,))
     cx, cy = -0.5, -0.5
     sacs = [Sac(cx - 0.12, cy - 0.12, 0.5, 0.95, (0.06, 0.03)),
-            Sac(cx + 0.44, cy + 0.14, 0.28, 0.5, (0.05, 0.02), pinch=(90, 300), fluid=0.48),
-            Sac(cx - 0.04, cy + 0.47, 0.24, 0.42, (0.02, 0.05), pinch=(0, 220), fluid=0.38),
-            Sac(cx + 0.33, cy - 0.44, 0.2, 0.36, (0.03, 0.03), pinch=(180,), fluid=0.44)]
+            Sac(cx + 0.44, cy + 0.14, 0.28, 0.5, (0.05, 0.02), pinch=(90, 300), fluid=0.66),
+            Sac(cx - 0.04, cy + 0.47, 0.24, 0.42, (0.02, 0.05), pinch=(0, 220), fluid=0.6),
+            Sac(cx + 0.33, cy - 0.44, 0.2, 0.36, (0.03, 0.03), pinch=(180,), fluid=0.64)]
     return _layers("eggsac_2", sacs, _pad("eggsac_2_pad", cx, cy, 0.95, 2), (0, 1))
 
 
