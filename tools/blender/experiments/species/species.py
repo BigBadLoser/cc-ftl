@@ -25,8 +25,9 @@ from sprites.human_base import Item  # noqa: E402
 FOLD = {"index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand", "thumb": "hand", "toe": "foot", "toe_end": "foot",
         "neck_01": "head", "clavicle": "arm", "root": "hips"}
 # rock bulk per bone (chunk radius over the body's own): a heavy chest and shoulders, big fists, a smaller head
-BULK = {"hips": 1.3, "spine": 1.3, "spine_02": 1.35, "spine_03": 1.45, "arm": 1.4, "forearm": 1.3, "hand": 1.7, "leg": 1.45,
-        "shin": 1.4, "foot": 1.3, "head": 0.85}
+BULK = {"hips": 1.25, "spine": 1.3, "spine_02": 1.35, "spine_03": 1.45, "arm": 1.15, "forearm": 1.1, "hand": 1.5, "leg": 1.3,
+        "shin": 1.25, "foot": 1.2, "head": 0.85}
+LIGHT_PARTS = ("spine", "spine_02", "spine_03", "head", "neck_01", "hips")   # a lighter chest and head; limbs a step darker
 
 
 def fold(name):
@@ -87,6 +88,19 @@ def chunk(m, centre, axis, half, rad, rng, color):
             pts.append(Vector(centre) + a * (co.z * half) + p1 * (co.x * rad) + p2 * (co.y * rad))
         m.poly(pts, color)
     bm.free()
+
+
+def prism(m, base, direction, r, length, color, sides=6):
+    """A pointed crystal: a hexagonal prism from `base` along `direction`, capped with a point."""
+    a = Vector(direction).normalized()
+    p1 = a.orthogonal().normalized()
+    p2 = a.cross(p1)
+    b0, b1, tip = Vector(base), Vector(base) + a * length * 0.7, Vector(base) + a * length
+    ring = [p1 * math.cos(k * math.tau / sides) + p2 * math.sin(k * math.tau / sides) for k in range(sides)]
+    for k in range(sides):
+        d0, d1 = ring[k], ring[(k + 1) % sides]
+        m.poly([b0 + d0 * r, b0 + d1 * r, b1 + d1 * r, b1 + d0 * r], color)
+        m.poly([b1 + d0 * r, b1 + d1 * r, tip], color)
 
 
 def attach(m, arm, bone):
@@ -150,10 +164,30 @@ def squarify(ob, arm, k=0.9):
     bm.free()
 
 
-def stone(c, i, nz):
+def poly_parts(ob):
+    """Per face: the bone that leads its verts, and how much the face straddles two bones (0..1, joints high)."""
+    names = {g.index: g.name for g in ob.vertex_groups}
+    out = []
+    for poly in ob.data.polygons:
+        acc = {}
+        for vi in poly.vertices:
+            for g in ob.data.vertices[vi].groups:
+                b = fold(names[g.group]).split(".")[0]
+                b = "torso" if b in LIGHT_PARTS else b                       # the spine chain blends everywhere: one part
+                acc[b] = acc.get(b, 0.0) + g.weight
+        tot = sum(acc.values()) or 1.0
+        lead = max(acc, key=acc.get) if acc else ""
+        out.append((lead, 1.0 - acc.get(lead, 0.0) / tot))
+    return out
+
+
+def stone(c, i, nz, part, joint):
     """Stone colour by which way the facet faces (tops light, undersides dark: true in every direction the body turns),
-    with broad weathered patches over it."""
-    tone = 0 if nz > 0.45 else 2 if nz < -0.3 else 1
+    a step darker on the limbs than the chest and head, dark crevices at the joints, broad weathered patches."""
+    if joint > 0.42:
+        return "rkK"
+    facing = 0 if nz > 0.45 else 2 if nz < -0.3 else 1
+    tone = (0, 0, 1)[facing] if part == "torso" else (1, 2, 2)[facing]
     n = math.sin(c.x * 6 + 1.3) + math.sin(c.y * 5 - 0.7) + math.sin(c.z * 4 + 2.1)
     tone = max(0, tone - 1) if n > 1.7 else min(2, tone + 1) if n < -1.9 else tone
     return ("rkL", "rkM", "rkD")[tone]
@@ -170,7 +204,8 @@ def rock(arm, flesh):
     facet(body, 0.045, 0.015, rng)
     from sprites.human_base import paint
     nz = [poly.normal.z for poly in body.data.polygons]
-    paint(body, lambda c, i: stone(c, i, nz[i]))
+    parts = poly_parts(body)
+    paint(body, lambda c, i: stone(c, i, nz[i], *parts[i]))
     objs = [body]
     P0 = bone_verts(body)
     for side in ("L", "R"):                                                  # a boulder over each shoulder
@@ -179,6 +214,13 @@ def rock(arm, flesh):
         sh = np.array(b.head_local) + np.array((0.0, 0.0, 0.06))
         chunk(m, sh, (0.3 if side == "L" else -0.3, 0.0, 1.0), 0.1, 0.11, rng, "rkM")
         objs.append(attach(m, arm, f"arm.{side}"))
+    for bone, base, d, ln in (("arm.L", (0.0, 0.0, 0.12), (0.4, 0.1, 1.0), 0.13), ("arm.L", (0.05, 0.04, 0.08), (0.9, 0.2, 0.6), 0.09),
+                              ("arm.R", (0.0, 0.0, 0.12), (-0.4, 0.1, 1.0), 0.12), ("arm.R", (-0.05, 0.04, 0.09), (-0.9, 0.3, 0.6), 0.08),
+                              ("spine_03", (0.05, 0.12, 0.0), (0.3, 0.8, 0.7), 0.12), ("spine_03", (-0.06, 0.13, -0.06), (-0.4, 0.9, 0.5), 0.09)):
+        b = arm.data.bones[bone]                                             # crystals in the team accent colour
+        m = core.Mesh(f"rock.crystal.{bone}.{base[0]}", selflit=True)
+        prism(m, np.array(b.head_local if bone.startswith("arm") else b.tail_local) + np.array(base), d, 0.032, ln, "team.accent")
+        objs.append(attach(m, arm, bone))
     head = P0["head"]
     hz = np.percentile(head[:, 2], 55)
     hy, hx = front(head, hz)

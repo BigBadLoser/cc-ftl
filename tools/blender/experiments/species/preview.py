@@ -19,6 +19,7 @@ BG = (14, 17, 22)
 OUTLINE_MUL, OUTLINE_ADD = 0.42, np.array([4, 5, 10.0])
 RIM, RIM_MIX = np.array([120, 205, 255.0]), 0.38
 HUMAN = {"team.skin": (232, 190, 150), "team.hair": (70, 48, 34), "team.cloth": (60, 96, 150), "team.accent": (200, 150, 40)}
+SPECIES = {"team.skin": (150, 140, 130), "team.hair": (90, 80, 70), "team.cloth": (60, 96, 150), "team.accent": (70, 200, 210)}
 LAYERS = ["body", "legs.cargo_pants", "gear.belt.tool_belt", "eyes.organic", "hair.short", "arm.L.flesh", "arm.R.flesh", "torso.tee"]
 DIRS = [("SE", 0), ("S", 1), ("SW", 2), ("NW", 4)]
 FRAMES = [("idle", 0), ("walk", 2), ("work", 3)]
@@ -42,7 +43,7 @@ def human(man, assets, d, clip, frame):
 def raw(npz, d, clip, frame):
     cv, gl = np.zeros((140, 120, 4), np.uint8), np.zeros((140, 120, 4), np.uint8)
     key = f"{d}_{clip}_{frame}"
-    compose.over(cv, npz[key], 60 - FEET[0], 120 - FEET[1])
+    compose.over(cv, compose.remap_keys(npz[key], SPECIES), 60 - FEET[0], 120 - FEET[1])
     if key + "_glow" in npz:
         compose.over(gl, npz[key + "_glow"], 60 - FEET[0], 120 - FEET[1])
     return cv, gl
@@ -79,6 +80,22 @@ def cell(layers, floor):
     return base[28:128, 22:98, :3]
 
 
+QUICK = [("SE", 0, "idle", 0), ("S", 1, "idle", 0), ("SW", 2, "walk", 2), ("NW", 4, "work", 3)]
+
+
+def quick(man, assets, floor, kinds, out):
+    """One small image: human above each species, four key frames, at 1x beside 3x."""
+    rows = [np.hstack([cell(human(man, assets, d, c, i) if npz is None else raw(npz, d, c, i), floor) for _, d, c, i in QUICK])
+            for _, npz in kinds]
+    sheet = np.vstack(rows)
+    im1 = Image.fromarray(sheet)
+    im3 = im1.resize((sheet.shape[1] * 3, sheet.shape[0] * 3), Image.NEAREST)
+    canvas = Image.new("RGB", (im1.width + 8 + im3.width, im3.height), BG)
+    canvas.paste(im1, (0, 0))
+    canvas.paste(im3, (im1.width + 8, 0))
+    canvas.save(out / "species-quick.png")
+
+
 def main():
     rawdir, out = Path(sys.argv[1]), Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
@@ -89,6 +106,10 @@ def main():
     img = np.array(Image.open(assets / man["sheets"][a["sheet"]]["image"]).convert("RGBA"))
     floor = (img[f["y"]:f["y"] + f["h"], f["x"]:f["x"] + f["w"]], a["anchor"])
     kinds = [("human", None), ("rock", np.load(rawdir / "rock.npz")), ("slime", np.load(rawdir / "slime.npz"))]
+    if len(sys.argv) > 3 and sys.argv[3] == "quick":
+        quick(man, assets, floor, kinds[:2], out)
+        print("wrote", out / "species-quick.png")
+        return
     blocks = []
     for name, npz in kinds:
         rows = []
