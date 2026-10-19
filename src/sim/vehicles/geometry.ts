@@ -79,22 +79,23 @@ export function bayWorking(sim: Sim, bay: number): boolean {
 }
 
 /**
- * Where a shuttle holds station beside a grid: the point `gap` tiles off the ship's bounding box nearest to `from`
- * (a point already inside the padded box is pushed out through its nearest side). Null if the ship is gone.
+ * Where a shuttle holds station beside a grid: `gap` tiles off the side of the ship's bounding box that faces `from`,
+ * level with the nearest point of that side (never off a corner, so the hull stays within a short float). A point
+ * inside the box leaves through its nearest side. Null if the ship is gone.
  */
 export function hoverPoint(sim: Sim, gridId: number, gap: number, from: { x: number; y: number }): { x: number; y: number } | null {
   const s = shipOf(sim, gridId);
   if (!s) return null;
-  const x0 = s.x - gap;
-  const y0 = s.y - gap;
-  const x1 = s.x + s.width + gap;
-  const y1 = s.y + s.height + gap;
-  const x = Math.min(x1, Math.max(x0, from.x));
-  const y = Math.min(y1, Math.max(y0, from.y));
-  if (x > x0 && x < x1 && y > y0 && y < y1) {
-    const d = [x - x0, x1 - x, y - y0, y1 - y];
+  const nx = Math.min(s.x + s.width, Math.max(s.x, from.x));
+  const ny = Math.min(s.y + s.height, Math.max(s.y, from.y));
+  let dx = from.x - nx;
+  let dy = from.y - ny;
+  if (dx === 0 && dy === 0) {
+    // Inside: the nearest side.
+    const d = [from.x - s.x, s.x + s.width - from.x, from.y - s.y, s.y + s.height - from.y];
     const m = d.indexOf(Math.min(...d));
-    return m === 0 ? { x: x0, y } : m === 1 ? { x: x1, y } : m === 2 ? { x, y: y0 } : { x, y: y1 };
+    [dx, dy] = m === 0 ? [-1, 0] : m === 1 ? [1, 0] : m === 2 ? [0, -1] : [0, 1];
   }
-  return { x, y };
+  if (Math.abs(dx) >= Math.abs(dy)) return { x: dx >= 0 ? s.x + s.width + gap : s.x - gap, y: ny };
+  return { x: nx, y: dy >= 0 ? s.y + s.height + gap : s.y - gap };
 }

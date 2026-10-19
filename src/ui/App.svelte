@@ -34,7 +34,7 @@
   let shuttleOpen = $state(false);
   let prizeOpen = $state(false);
   let prizes = $state<UiPrize[]>([]);
-  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], roster: [], bays: [] });
+  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
 
   let cutaway = $state<UiCutaway>('auto');
   let selMod = $state<number | null>(null);
