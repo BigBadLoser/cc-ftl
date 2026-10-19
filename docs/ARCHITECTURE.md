@@ -235,6 +235,20 @@ palette.json    the single palette, read by Blender scripts and the game
     palette-swap key colours.
   - Every asset has a manifest entry with its id, sheet, frames, anchor, footprint and layers.
     Content refers to assets by manifest id only.
+- **Airlock (`airlock` family, `sprites/airlock.py`, not wired yet):** the art is 3 wide along the hull and
+  3 deep inboard plus the hull row and a collar outside, larger than today's 1x4 sim footprint. Every part
+  is a 1x1 sprite anchored at its own tile, in module coordinates (u outward, v along the hull, the pod at
+  u = v = 0):
+  - `housing.r{n}.{closed,f1,f2,open}`: the pod and its inner door, at (0, 0). Never cut.
+  - `light.r{n}.{red,green}`: the cycle light on the pod's top, drawn just above the pod.
+  - `hull.r{n}.{up,cut,low}`: the pass-through block at (1, 0), replacing the hull tile. The plain hull either
+    side keeps its normal tiles.
+  - `collar.r{n}.{closed,f1,f2,open}[.docked]`: the collar and iris hatch (the outer door) at (2, 0), sorted
+    like the engine bell (depth of the tile beyond the hull + 0.5). The mating face is 0.7 past the hull
+    row's outer edge, so the docked shuttle moves out to meet it.
+  - `unloader.r{n}.back` at (0, ±1) and `unloader.r{n}.front[.loaded]` at (-1, ±1): the same sprites on both
+    sides. `.loaded` shows a crate in the chute while unloading.
+  - `keepout.r{n}` at (-2, ±1) and `walk.r{n}` at (-1, 0) and (-2, 0): deck marks, drawn with the floor.
 
 ## UI
 

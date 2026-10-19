@@ -4,6 +4,7 @@
   walls     floors, walls, hull, doors (walls.LEVELS view levels)        (sheet walls)
   consoles  helm / weapons / shield consoles, 4 rotations, desk-front overlays for seated crew
   weapons   roof turrets (8 aims, charged, stowed, deploy frames) and their floor bays, 4 rotations
+  airlock   the airlock: outer bulkhead + door, inner door, chamber walls per view level, cycle lights, docking collar
   roof      roof plating modules, edges, inset and patch plates, livery masks, cut plates (roof_cuts.py)
   vehicle_bay the shuttle bay (pit, doors, gangway, claws) and the shuttle parked in it, 4 rotations (vehicle_bay.py)
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
@@ -33,11 +34,14 @@ def jobs(name):
     if name == "vehicle_bay":
         from . import vehicle_bay
         return vehicle_bay.jobs(), True
+    if name == "airlock":
+        from . import airlock
+        return airlock.jobs(), True
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
     raise KeyError(name)
 
 
-RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay")
+RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "airlock")
 ALL = RENDERED + ("sol",)
