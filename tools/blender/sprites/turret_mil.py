@@ -21,48 +21,89 @@ _g, G = TC._g, TC.G
 
 # ---- turrets ------------------------------------------------------------------------------------------------------
 
+def _uz(f, shape, v0, v1, mat, top):
+    """Extrude a convex u/z outline across v in [v0, v1], faces wound outward (sides facing up take top)."""
+    from mathutils import Vector
+    uc = sum(u for u, _ in shape) / len(shape)
+    zc = sum(z for _, z in shape) / len(shape)
+
+    def face(pts, ref, col):
+        P = [Vector(f.pt(*q)) for q in pts]
+        n = (P[1] - P[0]).cross(P[2] - P[0])
+        if n.dot(sum(P, Vector()) / len(P) - Vector(f.pt(*ref))) < 0:
+            P = P[::-1]
+        f.poly(P, col, flip=False)
+    mid = (uc, (v0 + v1) / 2, zc)
+    for i in range(len(shape)):
+        (ua, za), (ub, zb) = shape[i], shape[(i + 1) % len(shape)]
+        up = (za + zb) / 2 > zc and abs(zb - za) < abs(ub - ua) + 1e-6
+        face([(ua, v0, za), (ub, v0, zb), (ub, v1, zb), (ua, v1, za)], mid, top if up else mat)
+    face([(u, v0, z) for u, z in shape], (uc, v1, zc), mat)
+    face([(u, v1, z) for u, z in shape], (uc, v0, zc), mat)
+
+
 def missile(hot):
-    col, R, BZ, PU = "red", 0.92, 0.84, -0.1
+    """An armoured launcher with a sloped glacis over a 2 x 3 grid of round tubes, between angled yoke armour; a ribbed
+    magazine drum on the deck behind feeds it through a segmented chute. Charged: tube rims and the glacis strip lit
+    red, warheads seated in the tubes."""
+    col, R, BZ, PU = "red", 0.92, 0.82, -0.12
     rig = TC.Rig("missile", (PU, BZ), 1.3)
     TC.coaming(rig.f("fixed"), R)
     h = rig.f("head")
     TC.turntable(h, R, hot, col)
     _g("yoke")
-    h.vcyl(PU, 0, 0.29, 0.34, 0.12, "steel", top="steelL", sides=20)
-    for sv in (-1, 1):                                                                        # yoke cheeks
-        h.box(PU, sv * 0.66, 0.29, 0.5, 0.1, BZ - 0.29 + 0.2, "steelD", top="steel")
-        h.box(PU, sv * 0.66, BZ - 0.18, 0.56, 0.13, 0.08, "steel", top="steelL")
+    h.vcyl(PU, 0, 0.29, 0.5, 0.08, "steelD", top="steel", sides=24)
+    for sv in (-1, 1):                                                                        # angled yoke armour
+        _uz(h, [(-0.5, 0.3), (-0.5, 0.86), (-0.22, 1.08), (0.22, 1.08), (0.44, 0.8), (0.44, 0.3)],
+            sv * 0.6, sv * 0.74, "steelD", "steel")
+        _uz(h, [(-0.36, 0.42), (-0.36, 0.84), (-0.16, 0.98), (0.16, 0.98), (0.3, 0.78), (0.3, 0.42)],
+            sv * 0.74, sv * 0.77, "steel", "steelL")
+        h.box(0.2, sv * 0.775, 0.5, 0.08, 0.01, 0.06, G(hot, col), base=False)                   # yoke status lamp
+    _g("magazine")
+    D.seg(h, (-0.78, -0.44, 0.52), (-0.78, 0.44, 0.52), 0.21, "steelD", 18, cap="steel", capstart="steel")
+    for dv in (-0.3, -0.1, 0.1, 0.3):
+        D.seg(h, (-0.78, dv - 0.03, 0.52), (-0.78, dv + 0.03, 0.52), 0.23, "steel", 18, cap="steelL", capstart="steelL")
+    for su in (-1, 1):
+        h.box(-0.78 + su * 0.12, 0, 0.29, 0.06, 0.8, 0.1, "steelD", top="steel")                # drum cradle
     _g("chute")
-    for k in range(5):                                                                        # ammo feed chute
-        t = k / 4
-        u, z = -0.62 - 0.22 * math.sin(t * math.pi / 2), 0.36 + (BZ - 0.5) * t
-        h.box(u, -0.3, z, 0.16, 0.2, 0.11, "steelD" if k % 2 else "steel", top="steelL")
+    for k in range(5):                                                                        # feed chute
+        t = (k + 0.5) / 5
+        u, z = -0.66 + 0.36 * t, 0.66 + (BZ - 0.36 - 0.66) * math.sin(t * math.pi / 2)
+        h.box(u, 0, z, 0.1, 0.26, 0.1, "steelL" if k % 2 else "steel", top="plate")
     g = rig.f("gun")
     _g("trunnion")
-    D.seg(g, (PU, -0.74, BZ), (PU, 0.74, BZ), 0.13, "steelL", 14, cap="plate", capstart="plate")
+    D.seg(g, (PU, -0.82, BZ), (PU, 0.82, BZ), 0.13, "steelL", 14, cap="plate", capstart="plate")
     _g("box")
-    u0, u1, hw, hz = -0.8, 0.58, 0.54, 0.4
-    g.box((u0 + u1) / 2, 0, BZ - hz, u1 - u0, 2 * hw, 2 * hz, "steelD", top="steel")             # launcher box
-    g.box((u0 + u1) / 2 - 0.06, 0, BZ + hz, u1 - u0 - 0.3, 2 * hw - 0.16, 0.05, "steel", top="steelL")   # top plate
-    for sv in (-1, 1):                                                                        # side armour + ribs
-        g.box((u0 + u1) / 2, sv * (hw + 0.025), BZ - hz + 0.06, u1 - u0 - 0.12, 0.05, 2 * hz - 0.12, "steel", top="steelL")
-        for u in (-0.5, -0.05, 0.36):
-            g.box(u, sv * (hw + 0.06), BZ - hz + 0.04, 0.06, 0.03, 2 * hz - 0.08, "steelL", top="plate")
-    g.box(u1 + 0.02, 0, BZ - hz, 0.05, 2 * hw, 2 * hz, "steel", top="steelL")                 # front plate
-    cmbkit.hazard_strip(g, u0 + 0.12, u1 - 0.1, 0, BZ + hz + 0.05, step=0.12, w=0.06, h=0.015)
+    u0, u1, hw, zb, zt = -0.7, 0.62, 0.52, BZ - 0.36, BZ + 0.4
+    _uz(g, [(u0, zb), (u0, zt - 0.1), (u0 + 0.12, zt), (u1 - 0.32, zt), (u1, zt - 0.16), (u1, zb)],
+        -hw, hw, "steel", "steelL")                                                            # launcher, glacis
+    for sv in (-1, 1):                                                                        # side armour panels
+        _uz(g, [(u0 + 0.08, zb + 0.05), (u0 + 0.08, zt - 0.12), (u1 - 0.36, zt - 0.06), (u1 - 0.06, zt - 0.2),
+                (u1 - 0.06, zb + 0.05)], sv * hw, sv * (hw + 0.04), "steelL", "plate")
+        for u in (-0.42, 0.0):
+            g.box(u, sv * (hw + 0.05), zb + 0.08, 0.05, 0.02, zt - zb - 0.24, "steelL", top="plate")   # ribs
+    gl = math.atan2(0.16, 0.32)
+    g.box(u1 - 0.24, 0, zt - 0.03, 0.05, 0.72, 0.014, G(hot, col), pitch=-gl, pu=u1 - 0.24, pz=zt - 0.03, base=False)
+    g.box(u0 + 0.5, 0, zt, 0.42, 0.5, 0.025, "steel", top="steelL")                            # top hatch
+    for dv in (-0.16, 0.16):
+        g.box(u0 + 0.5, dv, zt + 0.025, 0.2, 0.03, 0.03, "steelL", top="plate")                # hatch handles
+    cmbkit.hazard_strip(g, u0 + 0.18, u0 + 0.78, 0.36, zt, step=0.1, w=0.05, h=0.012)
+    _g("sensor")
+    g.hcyl(u0 + 0.36, u1 - 0.28, -0.36, zt + 0.08, 0.075, "steel", sides=12, cap="lens", capstart="steelL")
+    g.box(u0 + 0.6, -0.36, zt, 0.12, 0.06, 0.04, "steelD", top="steel")
     _g("tubes")
-    for v in (-0.34, 0.0, 0.34):
-        for dz in (-0.19, 0.19):
-            z = BZ + dz
-            g.hcyl(u1 + 0.04, u1 + 0.13, v, z, 0.14, "steelL", sides=16, cap="steel")       # tube collar
-            D.annulus(g, u1 + 0.13, u1 + 0.15, v, z, 0.14, 0.1, "steel", G(hot, col), sides=16)   # lit rim
-            g.hcyl(u1 + 0.08, u1 + 0.14, v, z, 0.1, "dark", sides=16, cap="dark")            # bore
+    g.box(u1 + 0.01, 0, zb + 0.03, 0.02, 2 * hw - 0.1, zt - zb - 0.22, "dark", top="dark")      # recessed tube face
+    for v in (-0.33, 0.0, 0.33):
+        for dz in (-0.17, 0.17):
+            z = BZ - 0.04 + dz
+            g.hcyl(u1, u1 + 0.12, v, z, 0.135, "steel", sides=18, cap="steelL")                 # tube collar
+            D.annulus(g, u1 + 0.12, u1 + 0.15, v, z, 0.135, 0.095, "steelL", G(hot, col), sides=18)   # lit rim
+            g.hcyl(u1 + 0.06, u1 + 0.13, v, z, 0.095, "dark", sides=16, cap="dark")             # bore
             if hot:
-                g.hcyl(u1 + 0.1, u1 + 0.145, v, z, 0.055, "medRed", r1=0.025, sides=12)       # warhead nose
+                g.hcyl(u1 + 0.09, u1 + 0.15, v, z, 0.06, "medRed", r1=0.02, sides=12)          # warhead nose
     _g("rear")
-    for v in (-0.3, 0.0, 0.3):                                                                # backblast vents
-        g.box(u0 - 0.01, v, BZ - 0.12, 0.02, 0.18, 0.24, "dark")
-    g.vcyl(-0.48, 0.3, BZ + hz + 0.05, 0.11, 0.1, "steel", top="lens", sides=12)              # sensor dome
+    for k in range(5):                                                                        # backblast louvres
+        g.box(u0 - 0.012, 0, zb + 0.08 + k * 0.1, 0.02, 2 * hw - 0.2, 0.04, "dark")
     return rig
 
 
@@ -191,29 +232,51 @@ def _rack(f, u, v, n=3):
     f.box(u, v, 0.9, 0.92, 0.44, 0.04, "steelD", top="steel")
 
 
+def _crates(f, u, v):
+    """Warhead crates: two stacked steel cases with red bands and hazard labels, a third across the top."""
+    _g("crates")
+    for z, du, sz in ((0.0, 0.0, 0.3), (0.3, 0.02, 0.26)):
+        f.box(u + du, v, z, 0.5, 0.38, sz, "gm", top="steelL")
+        f.box(u + du, v, z + sz * 0.45, 0.51, 0.39, 0.05, "medRed", top="medRed")
+        for dv in (-0.15, 0.15):
+            f.box(u + du + 0.255, v + dv, z + 0.04, 0.012, 0.04, sz - 0.08, "steelD", top="steelD")
+    f.box(u - 0.04, v, 0.56, 0.24, 0.42, 0.16, "steel", top="plate")
+    f.box(u + 0.085, v, 0.6, 0.006, 0.18, 0.08, "hazY", top="hazY")
+
+
 def bay_missile(rot=0):
-    """3x3: the column with an ammo hoist (rails up to the roof, a missile riding it), two missile racks along the
-    back corners, a loader cart, capacitor caps and the console."""
+    """3x3: the column; an open hoist tower beside it (four posts and cross-ties round a rail, a missile riding up on its
+    cradle, a feed arm over to the column top); two missile racks along the back; a loader cart; warhead crates."""
     m = core.Mesh("bay_missile")
     f = Frame(m, (1 + rot) % 4, square=True)
     TB._floor(-1.5, 1.5)
     TB._column(f, 0.3)
     _g("hoist")
-    for dv in (-0.16, 0.16):
-        f.box(0.42, dv, 0, 0.06, 0.06, TC.ZR - 0.1, "steelL", top="plate")
-    f.box(0.42, 0, 0, 0.18, 0.44, 0.08, "steelD", top="steel")
-    f.box(0.52, 0, 0.9, 0.06, 0.36, 0.06, "steel", top="steelL")                              # cradle
-    _missile_body(f, 0.6, 0, 0.62, ln=0.9, axis="z")
-    _rack(f, -0.9, -1.1)
-    _rack(f, -0.9, 1.1, n=2)
+    hu, top = 0.68, TC.ZR - 0.06
+    f.box(hu, 0, 0, 0.5, 0.5, 0.08, "steelD", top="steel")
+    for du in (-0.2, 0.2):
+        for dv in (-0.2, 0.2):
+            f.box(hu + du, dv, 0.08, 0.06, 0.06, top - 0.08, "steel", top="steelL")             # posts
+    for z in (0.75, 1.45):
+        for du in (-0.2, 0.2):
+            f.box(hu + du, 0, z, 0.06, 0.46, 0.05, "steelD", top="steel")                      # cross-ties
+        for dv in (-0.2, 0.2):
+            f.box(hu, dv, z, 0.46, 0.06, 0.05, "steelD", top="steel")
+    f.box(hu, 0, top - 0.06, 0.52, 0.52, 0.08, "steelD", top="steel")                          # head frame
+    f.box(hu + 0.17, 0, 0.08, 0.04, 0.08, top - 0.16, "steelL", top="plate")                    # guide rail
+    f.box(hu + 0.08, 0, 0.5, 0.14, 0.26, 0.05, "steel", top="steelL")                          # cradle
+    _missile_body(f, hu, 0, 0.55, ln=0.95, axis="z")
+    D.rail(f, (hu - 0.26, 0, top - 0.02), (0.36, 0, top - 0.02), 0.08, "steel")                # feed arm
+    _rack(f, -0.95, -1.05)
+    _rack(f, -0.95, 1.05, n=2)
     _g("cart")
-    f.box(0.9, 1.1, 0.08, 0.7, 0.34, 0.12, "steel", top="steelL")
+    f.box(0.95, -1.08, 0.08, 0.7, 0.34, 0.12, "steel", top="steelL")
     for du in (-0.26, 0.26):
         for dv in (-0.14, 0.14):
-            f.vcyl(0.9 + du, 1.1 + dv, 0, 0.05, 0.08, "dark", top="steelD", sides=10)
-    _missile_body(f, 0.9, 1.1, 0.3)
-    TB._caps(f, ((1.2, -1.2), (1.2, -0.74)), r=0.16)
-    TB._console(f, 1.18, 0.2, 0.8)
+            f.vcyl(0.95 + du, -1.08 + dv, 0, 0.05, 0.08, "dark", top="steelD", sides=10)
+    f.box(0.6, -1.08, 0.2, 0.04, 0.3, 0.3, "steelD", top="steel")                              # push bar
+    _missile_body(f, 0.95, -1.08, 0.3)
+    _crates(f, 1.0, 1.02)
     return [m.build()] if cmbkit.REC is None else []
 
 
@@ -239,17 +302,47 @@ def _tank(f, u, v, h=0.95):
         f.vcyl(u, v, z + 0.05, 0.226, 0.03, "hazK", sides=20)
 
 
+def _transformer(f, u, v):
+    """Ion bay: a squat ribbed power transformer with three stacked insulator posts and a feed cable to the column."""
+    _g("transformer")
+    f.box(u, v, 0, 0.46, 0.46, 0.06, "steelD", top="steel")
+    f.box(u, v, 0.06, 0.34, 0.34, 0.46, "steelD", top="steel")
+    for k in range(4):
+        d = -0.12 + k * 0.08
+        for su, sv in ((1, 0), (0, 1)):
+            f.box(u + su * 0.18 + (1 - su) * d, v + sv * 0.18 + (1 - sv) * d, 0.1, 0.03 if su else 0.04,
+                  0.04 if su else 0.03, 0.36, "steel", top="steelL")
+    for dv in (-0.1, 0.0, 0.1):
+        for k in range(3):
+            f.vcyl(u - 0.06 + abs(dv) * 0.6, v + dv, 0.52 + k * 0.06, 0.045 - k * 0.006, 0.04, "plate", top="steelL",
+                   sides=10)
+    D.seg(f, (u - 0.17, v - 0.1, 0.4), (0.14, 0.14, 0.9), 0.035, "gm", 8)
+
+
+def _bottles(f, u, v):
+    """Incendiary bay: fire-suppression bottles, three red cylinders with domed tops and valve heads, strapped."""
+    _g("bottles")
+    f.box(u, v, 0, 0.42, 0.42, 0.05, "steelD", top="steel")
+    for du, dv in ((-0.09, -0.09), (0.09, -0.09), (0.0, 0.1)):
+        f.vcyl(u + du, v + dv, 0.05, 0.085, 0.62, "medRed", sides=14, top="medRed")
+        f.vcyl(u + du, v + dv, 0.67, 0.085, 0.06, "medRed", rtop=0.04, sides=14)
+        f.vcyl(u + du, v + dv, 0.73, 0.03, 0.06, "steelL", top="plate", sides=8)
+    for z in (0.2, 0.5):
+        f.box(u, v, z, 0.36, 0.36, 0.04, "steel", top="steelL", taper=1.0)
+
+
 def small_bay(kind, rot=0):
     """2x2 ion / incendiary bay, u, v in -1..1: the slim full-height column, gear in three corners."""
     m = core.Mesh(f"bay_{kind}")
     f = Frame(m, (1 + rot) % 4, square=True)
     TB._floor(-1.0, 1.0)
     TB._column(f, 0.2)
-    TB._console(f, 0.66, 0.66, k=0.7)
     if kind == "ion":
+        _transformer(f, 0.66, 0.66)
         coil_tower(f, -0.62, 0.62)
         TB._caps(f, ((0.68, -0.62),), r=0.16, h=0.8)
     else:
+        _bottles(f, 0.66, 0.66)
         _tank(f, -0.62, 0.62)
         _tank(f, -0.62, -0.08, h=0.8)
         _g("pump")
