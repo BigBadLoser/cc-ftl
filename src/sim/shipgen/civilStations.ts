@@ -41,7 +41,7 @@ export function ringStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], engines:
   top.push(docks[0] as RoomSpec);
   bot.push(docks[1] as RoomSpec);
   const east: RoomSpec[] = [];
-  for (let i = 0; i < Math.max(1, engines); i++) east.push(engineSpec(1, 'w'));
+  for (let i = 0; i < engines; i++) east.push(engineSpec(1, 'w'));
   for (let k = reactors; k > 0; k -= 2) east.push({ ...reactorSpec(Math.min(2, k)), w: 3, h: 2 * Math.min(2, k) + 1 });
   const along = (specs: RoomSpec[]): number => specs.reduce((t, r) => t + r.h + 1, 1);
   const hw = Math.max(hub.w, hub.h);
@@ -112,7 +112,7 @@ export function latticeStation(rng: Rng, modsIn: RoomSpec[], engines: number, o:
   const b = localBuilder(rng);
   const { gx, gy } = o;
   const mods = modsIn.map((r) => ({ ...r, w: r.w + rng.int(0, o.pad), h: r.h + rng.int(0, Math.min(1, o.pad)) }));
-  const eng = Array.from({ length: Math.max(1, engines) }, () => engineSpec(1, 'w'));
+  const eng = Array.from({ length: engines }, () => engineSpec(1, 'w'));
   const C = Math.max(2, Math.round(Math.sqrt((mods.length + eng.length) * o.spread)));
   // Rows fill west to east; a thruster closes each of the first rows (east-most there, so it faces open space).
   const grid: (RoomSpec | null)[][] = [];

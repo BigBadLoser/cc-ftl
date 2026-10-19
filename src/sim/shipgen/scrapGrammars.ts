@@ -1,5 +1,9 @@
 import { mirrorBlock, mirrorX, type Block, type Side } from './arranger';
-import { hallBlock } from './blocks';
+import { blockFrom, hallBlock, localBuilder } from './blocks';
+import { drive } from './civilBlocks';
+import { truss } from './civilFrames';
+import { freeze } from './salvage';
+import type { Rng } from '../rng';
 import { plate } from './hullFill';
 import { storeRoom } from './droneBlocks';
 import { dockBlock, podBlock } from './navyBlocks';
@@ -33,7 +37,7 @@ function choose(c: Ctx): DonorKind[] {
     const opts = kinds.filter((k) => DONORS[k].serves.includes(need) && (w[k] ?? 0) > 0);
     if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
   }
-  for (let n = c.rng.int(0, 1 + Math.floor(c.plan.size / 2)); n > 0; n--) {
+  for (let n = c.rng.int(0, Math.floor((c.plan.size + 1) / 2)); n > 0; n--) {
     const opts = kinds.filter((k) => (w[k] ?? 0) > 0 && out.filter((x) => x === k).length < 2 && !['navyBow', 'tug', 'navyDrive'].includes(k));
     if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
   }
@@ -63,9 +67,51 @@ function variants(c: Ctx, b: Block): Block[] {
   return shuffle(c.rng, v);
 }
 
-/** Weld `child` onto one of `hosts` (in order) on one of `sides`: flush first, then through a short scrap tube. */
+/**
+ * A scrap strut: a crawl tube with a truss chord along it, `len` long, bridging two donors so each keeps its outline (a
+ * visible seam between them, never a merged mass).
+ */
+function strut(rng: Rng, len: number, horiz: boolean): Block {
+  const b = localBuilder(rng);
+  if (horiz) {
+    b.place({ x: 0, y: -2, w: len + 2, h: 3 }, 'hall');
+    truss(b, 1, rng.chance(0.5) ? -3 : 1, len, 1, 'chord');
+  } else {
+    b.place({ x: -2, y: 0, w: 3, h: len + 2 }, 'hall');
+    truss(b, rng.chance(0.5) ? -3 : 1, 1, 1, len, 'chord');
+  }
+  const ports = horiz
+    ? [{ id: 'w', side: 'w' as const, x: 0, y: -1, len: 1, access: 'human' as const }, { id: 'e', side: 'e' as const, x: len + 1, y: -1, len: 1, access: 'human' as const }]
+    : [{ id: 'n', side: 'n' as const, x: -1, y: 0, len: 1, access: 'human' as const }, { id: 's', side: 's' as const, x: -1, y: len + 1, len: 1, access: 'human' as const }];
+  return { ...blockFrom(b, 'beam', 'strut', 'human', ports), donor: 'scrap', label: 'scrap: strut', bare: true };
+}
+
+/** Weld `child` onto `host` through a strut on `side`. */
+function strutWeld(c: Ctx, h: number, v: Block, side: Side): number | null {
+  const s = c.A.attach(h, strut(c.rng, c.rng.int(3, 4 + c.plan.size), side === 'e' || side === 'w'), { side, align: 'any', kind: 'graft' });
+  if (s === null) return null;
+  const id = c.A.attach(s, v, { side, align: 'mid', kind: 'graft' }) ?? c.A.attach(s, v, { side, align: 'any', kind: 'graft' });
+  if (id === null) c.A.undoLast();
+  else c.parts.push('strut');
+  return id;
+}
+
+/**
+ * Weld `child` onto one of `hosts` (in order) on one of `sides`. Most donors hang off struts (each keeps its outline);
+ * some weld flush (the ragged adapters fill those seams); a short scrap tube is the last resort.
+ */
 function weld(c: Ctx, hosts: number[], child: Block, sides: Side[], align: 'any' | 'start' | 'end' = 'any'): number | null {
   const vs = variants(c, child);
+  if (!child.label.startsWith('scrap') && c.rng.chance(0.85)) {
+    // A few tries only: a failed strut is undone, and undoing rebuilds the arrangement.
+    let tries = 8;
+    for (const h of hosts) for (const side of sides) for (const v of vs) {
+      if (tries <= 0 || !v.ports.some((p) => p.side === OPP[side])) continue;
+      tries--;
+      const id = strutWeld(c, h, v, side);
+      if (id !== null) return id;
+    }
+  }
   for (const tube of [false, true]) {
     for (const h of hosts) {
       for (const side of sides) {
@@ -94,7 +140,9 @@ const hostsOf = (c: Ctx): number[] => c.A.placed.map((_, i) => i).filter((i) => 
 /** Strap the extra engines on as pods, bolt on crates and airlocks, plate the seams. */
 function improvise(c: Ctx, p: Pool): boolean {
   for (; p.engines > 0; p.engines--) {
-    const pod = { ...podBlock(c.rng, 1), donor: 'scrap', label: 'scrap: strapped engine' };
+    // A strapped engine: a nozzle on a stub of spine (the light civil drive's smallest form), not a bare slab.
+    const nb = drive(c.rng, 1, 0, 'nozzle');
+    const pod = nb ? { ...freeze(nb, 'drive', 'strapped engine', 'scrap'), label: 'scrap: strapped engine' } : { ...podBlock(c.rng, 1), donor: 'scrap', label: 'scrap: strapped engine' };
     if (weld(c, shuffle(c.rng, hostsOf(c)), pod, ['n', 's']) === null) return no(c, 'strapped engine');
     c.parts.push('strapped engine');
   }
@@ -103,7 +151,8 @@ function improvise(c: Ctx, p: Pool): boolean {
     if (weld(c, shuffle(c.rng, hostsOf(c)), { ...storeRoom(c.rng, n), donor: 'scrap', label: 'scrap: crates' }, ['n', 's', 'w']) !== null) p.crates -= n;
   }
   for (; p.docks > 0; p.docks--) weld(c, shuffle(c.rng, hostsOf(c)), { ...dockBlock(c.rng), donor: 'scrap', label: 'scrap: airlock' }, ['n', 's']);
-  if (plate(c.A, 2) > 0) c.parts.push('plates');
+  // Plate only hairline seams: wider gaps are the struts' daylight, and keep the donors apart.
+  if (plate(c.A, 1) > 0) c.parts.push('plates');
   return true;
 }
 

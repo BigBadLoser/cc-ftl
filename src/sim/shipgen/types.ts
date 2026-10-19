@@ -108,7 +108,8 @@ export type CivilGrammar = 'freighter' | 'liner' | 'mining' | 'station';
 /** Salvage donor sections: navy and drone ones are cut from those factions' own generators, the rest are hand-made. */
 export type DonorKind =
   | 'navyBow' | 'navyDrive' | 'navyBattery' | 'navyHulk' | 'droneSection'
-  | 'freighter' | 'habitat' | 'liner' | 'station' | 'barge' | 'podString' | 'tug';
+  | 'freighter' | 'habitat' | 'liner' | 'station' | 'barge' | 'podString' | 'tug'
+  | 'containerFrame' | 'oreCage' | 'crewTower' | 'linerChunk' | 'ringPiece' | 'latticePiece' | 'lightDrive';
 
 /** Standard functional sections of a navy hull (one per kind of job). */
 export type SectionKind = 'command' | 'battery' | 'core' | 'habitat' | 'cargo' | 'hangar' | 'drive';

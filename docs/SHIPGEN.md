@@ -345,6 +345,19 @@ Same arranger, no sim changes. Files:
 
 - Per-donor livery and wear art (hull tint, rust, patch plates) from the sprite pipeline.
 
+## Scrappers v23: civilian donors on struts
+
+- New donors from the civilian builders (`scrapDonors.ts`): `containerFrame`, `oreCage`, `crewTower`, `linerChunk`
+  (a cut of the 2D liner hull), `ringPiece` and `latticePiece` (station pieces without thrusters), `lightDrive`; the
+  navy and drone donors stay. Families weight them (`scrapper.ts`): raiders take towers, rings and liner chunks as
+  anchors, haulers container frames, gunrunners ring and lattice pieces.
+- Welding (`scrapGrammars.ts` `weld`): about 85% of donors hang off a scrap strut (a crawl tube wrapped in truss
+  chords, 3 to 4 + plan size long, `bare` so no fairing fills it); the rest weld flush and get the ragged 45-degree
+  adapters; a short tube is the last resort. Donors keep their outlines and the seams show.
+- Strapped engines are light-drive nozzles on a stub; patched reactors carry cooling fins.
+- Size: extra donors `0..(size + 1) / 2`, strut length 3..4 + size; d1 mean 51x33, d9 70x48 (v18: 48x38 and 76x44).
+- Seams: `plate` now fills only 1-tile hairlines (was 2), so strut daylight stays open.
+
 ## Transitions (v18): tapered collars between sections
 
 - **`hullFill.ts` holds all the plating passes** that run after an arrangement: seam plates, enclosed-pocket

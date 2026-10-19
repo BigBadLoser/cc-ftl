@@ -32,22 +32,22 @@ export const scrapper = {
     {
       // Raiders want guns and boarding: navy hulks and drone guns, airlocks, a shuttle bay.
       id: 'raider', weight: { base: 4, perDepth: 0, max: 4 }, grammars: [{ value: 'heap', weight: 2 }, { value: 'chain', weight: 1 }, { value: 'raft', weight: 1 }],
-      anchors: [{ value: 'navyHulk', weight: 3 }, { value: 'habitat', weight: 2 }, { value: 'tug', weight: 1 }, { value: 'freighter', weight: 1 }, { value: 'station', weight: 1 }],
-      donors: { navyHulk: 3, droneSection: 2, navyBattery: 1, habitat: 2, station: 1, freighter: 1, podString: 1, tug: 2, navyDrive: 1, navyBow: 1 },
+      anchors: [{ value: 'navyHulk', weight: 3 }, { value: 'habitat', weight: 1 }, { value: 'tug', weight: 1 }, { value: 'freighter', weight: 1 }, { value: 'station', weight: 1 }, { value: 'ringPiece', weight: 1 }, { value: 'linerChunk', weight: 1 }, { value: 'crewTower', weight: 1 }],
+      donors: { navyHulk: 3, droneSection: 2, navyBattery: 1, habitat: 1, station: 1, freighter: 1, podString: 1, tug: 1, navyDrive: 1, navyBow: 1, containerFrame: 1, oreCage: 1, crewTower: 2, linerChunk: 1, ringPiece: 1, latticePiece: 1, lightDrive: 2 },
       aspect: [1, 2.2], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
     {
       // Haulers want holds: freighters, barges and pod strings, a liner for the crew.
       id: 'hauler', weight: { base: 2, perDepth: 0, max: 2 }, bonus: { crates: 6, weapons: -1 }, grammars: [{ value: 'raft', weight: 2 }, { value: 'chain', weight: 2 }, { value: 'heap', weight: 1 }],
-      anchors: [{ value: 'freighter', weight: 2 }, { value: 'barge', weight: 2 }, { value: 'liner', weight: 1 }],
-      donors: { freighter: 2, barge: 3, podString: 3, liner: 2, habitat: 1, navyBattery: 1, tug: 2, navyDrive: 1, navyBow: 1 },
+      anchors: [{ value: 'freighter', weight: 2 }, { value: 'barge', weight: 1 }, { value: 'liner', weight: 1 }, { value: 'containerFrame', weight: 2 }, { value: 'linerChunk', weight: 1 }],
+      donors: { freighter: 2, barge: 2, podString: 2, liner: 1, habitat: 1, navyBattery: 1, tug: 1, navyDrive: 1, navyBow: 1, containerFrame: 3, oreCage: 2, crewTower: 1, latticePiece: 1, lightDrive: 2 },
       aspect: [1.2, 3], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
     {
       // Gunrunners want weapons: batteries, drone sections, an old navy hull, a station module for the crew.
       id: 'gunrunner', weight: { base: 0, perDepth: 0.4, max: 3 }, bonus: { weapons: 1, heavyPct: 15 }, grammars: [{ value: 'heap', weight: 2 }, { value: 'raft', weight: 1 }],
-      anchors: [{ value: 'navyHulk', weight: 2 }, { value: 'station', weight: 2 }, { value: 'freighter', weight: 1 }],
-      donors: { navyBattery: 3, droneSection: 3, navyHulk: 2, station: 2, habitat: 1, freighter: 1, navyDrive: 2, tug: 1, navyBow: 1 },
+      anchors: [{ value: 'navyHulk', weight: 2 }, { value: 'station', weight: 1 }, { value: 'freighter', weight: 1 }, { value: 'ringPiece', weight: 1 }, { value: 'latticePiece', weight: 1 }],
+      donors: { navyBattery: 3, droneSection: 3, navyHulk: 2, station: 1, habitat: 1, freighter: 1, navyDrive: 1, tug: 1, navyBow: 1, crewTower: 1, ringPiece: 1, lightDrive: 2 },
       aspect: [1, 2.2], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
   ],

@@ -5,7 +5,9 @@ import type { Ctx } from './navyKit';
 import { arrangeHull } from './navyLayouts';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
 import { cutSeam, freeze, notch, survivors } from './salvage';
-import { barge, freighter, habitat, liner, podString, reactorRoom, station, tug } from './civilBlocks';
+import { barge, drive, freighter, habitat, liner, podString, reactorRoom, station, tower, tug } from './civilBlocks';
+import { containerFrame, linerBody, oreCage, truss } from './civilFrames';
+import { latticeStation, ringStation } from './civilStations';
 import { pickNose } from './topoNavy';
 import type { DonorKind, FactionDef } from './types';
 
@@ -230,6 +232,62 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
   }) },
   barge: { serves: ['crates'], build: civil('mining', 'ore barge', 0.4, (c, p, t) => barge(c.rng, takeCrates(p, t, 6))) },
   podString: { serves: ['crates'], build: civil('civil', 'cargo pods', 0.2, (c, p, t) => podString(c.rng, takeCrates(p, t, 4))) },
+  // Civilian generator pieces (v23): frames, cages, towers, liner hull chunks, station ring and lattice pieces, drives.
+  containerFrame: { serves: ['crates'], build: (c, _f, p) => {
+    const n = Math.max(6, partOf(p, 'crates', p.crates, 6));
+    p.crates = Math.max(0, p.crates - n);
+    const cw = c.rng.int(3, 4);
+    const fr = containerFrame(c.rng, n, { lane: c.rng.int(0, 2), gap: c.rng.int(0, 1), cw, ch: c.rng.int(3, 4), bands: 1, stagger: c.rng.chance(0.3) });
+    return { ...fr, donor: 'civil', label: 'civil: container frame' };
+  } },
+  oreCage: { serves: ['crates'], build: (c, _f, p) => {
+    const n = Math.max(6, partOf(p, 'crates', p.crates, 6));
+    p.crates = Math.max(0, p.crates - n);
+    const cg = oreCage(c.rng, n, { hw: c.rng.int(2, 3), hh: c.rng.int(3, 4), gap: c.rng.pick([1, 3]), every: 1, tooth: c.rng.int(1, 3) }, 6);
+    return { ...cg, donor: 'mining', label: 'mining: ore cage' };
+  } },
+  crewTower: { serves: ['crew', 'command'], build: civil('civil', 'crew tower', 0, (c, p, t) => {
+    const rooms = [...takeCmd(p, 'crewTower', t), ...part(p, 'crew', p.quarters), ...p.support.splice(0, 1)];
+    if (rooms.length === 0) return null;
+    t.specs.push(...rooms.filter((r) => !t.specs.includes(r)));
+    return tower(c.rng, rooms);
+  }) },
+  linerChunk: { serves: ['crew'], build: civil('civil', 'liner hull', 0.6, (c, p, t) => {
+    const q = part(p, 'crew', p.quarters);
+    if (q.length === 0) return null;
+    const sup = p.support.splice(0, 1);
+    const ls = q.flatMap((r) => r.mods.filter((m) => m !== 'module.bed'));
+    const lounges: RoomSpec[] = [{ role: 'support' as const, mods: [...ls, ...sup.flatMap((s) => s.mods)], w: 4, h: 3 }].filter((r) => r.mods.length > 0);
+    t.specs.push(...q, ...sup);
+    const beds = q.reduce((n, r) => n + r.mods.filter((m) => m === 'module.bed').length, 0);
+    const form = { peak: 0.3, tail: c.rng.pick([0, 0.3]), nose: c.rng.pick([0.2, 0.5]), amp: c.rng.int(2, 3), extra: 0 };
+    return linerBody(c.rng, beds, lounges, c.rng.pick(['teardrop', 'oval'] as const), [2, 2], form);
+  }) },
+  ringPiece: { serves: ['crew', 'command'], build: civil('civil', 'station ring', 0.5, (c, p, t) => {
+    const cmd = takeCmd(p, 'ringPiece', t);
+    const crew = [...part(p, 'crew', p.quarters), ...p.support.splice(0, 1)];
+    const hub = cmd[0] ?? crew.shift();
+    if (!hub) return null;
+    t.specs.push(...crew, ...(cmd[0] ? [] : [hub]));
+    p.docks = Math.max(0, p.docks - 2);
+    const o = { extra: c.rng.int(0, 2), weight: [1, 1, 1.6], inner: false };
+    return ringStation(c.rng, hub, crew, 0, 0, c.rng.chance(0.5) ? ['w', 'e'] : ['n', 's'], o);
+  }) },
+  latticePiece: { serves: ['crew'], build: civil('civil', 'station lattice', 0.4, (c, p, t) => {
+    const mods = [...part(p, 'crew', p.quarters), ...p.support.splice(0, 1), ...p.core.splice(0, 1)];
+    if (mods.length < 2) { p.quarters.push(...mods.filter((r) => r.role === 'quarters')); p.support.push(...mods.filter((r) => r.role === 'support')); p.core.push(...mods.filter((r) => r.role !== 'quarters' && r.role !== 'support')); return null; }
+    t.specs.push(...mods);
+    p.docks = Math.max(0, p.docks - 2);
+    return latticeStation(c.rng, mods, 0, { gx: c.rng.int(3, 5), gy: c.rng.int(3, 4), spread: 1.3, holes: 0, pad: 0 });
+  }) },
+  lightDrive: { serves: ['drive'], build: civil('civil', 'light drive', 0, (c, p, t) => {
+    t.engines = Math.min(p.engines, c.rng.int(1, 2));
+    t.reactors = Math.max(0, Math.min(2, p.reactors));
+    if (t.engines === 0) return null;
+    p.engines -= t.engines;
+    p.reactors -= t.reactors;
+    return drive(c.rng, t.engines, t.reactors, c.rng.pick(['nozzle', 'pair', 'nacelles'] as const));
+  }) },
   tug: { serves: ['drive'], build: civil('mining', 'tug', 0, (c, p, t) => {
     t.engines = Math.min(1, p.engines);
     t.reactors = Math.max(1, Math.min(2, p.reactors));
@@ -256,7 +314,12 @@ export function leftovers(c: Ctx, f: FactionDef, p: Pool): Block[] {
   if (p.core.length > 0) add('station');
   const rr = p.reactors > 0 ? reactorRoom(c.rng, p.reactors) : null;
   if (rr) {
-    out.push(freeze(rr, 'reactor', 'patched reactor', 'scrap'));
+    // Cooling fins on the patched reactor, so it reads as a reactor pod, not a slab.
+    for (let x = 1; x <= 2 * p.reactors + 2; x += 2) {
+      const len = c.rng.int(1, 3);
+      truss(rr, x, -4 - len, 1, len, `fin${x}`);
+    }
+    out.push({ ...freeze(rr, 'reactor', 'patched reactor', 'scrap'), bare: true });
     p.reactors = 0;
   }
   return out;

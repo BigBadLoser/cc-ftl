@@ -156,10 +156,8 @@ the structure and silhouette sheets.
    - Cause: the taper stops at exhaust rays or doesn't find the step (`hullFill.ts` `taper`; the drive attached in
      `navyKit.ts` `propulsion`).
    - Done: no slot on the depth-9 silhouettes, and engines still validate.
-2. **Scrapper size scaling.**
-   - Symptom: depth-1 scrappers are almost as big as depth-9 ones.
-   - Cause: every job gets a donor and donors have minimum sizes (`scrapGrammars.ts` `choose`, `scrapDonors.ts`).
-   - Done: depth-1 sheets visibly smaller, while the at-least-three-donor-kinds test still holds.
+2. **Scrapper size scaling.** DONE in the v23 scrapper donor pass (owned by that pass; do not take it).
+   - Extras scale with plan size, struts grow with depth: d1 mean 51x33, d9 70x48 (v18: 48x38, 76x44 by area 1.8x; now 2x).
 3. **Navy carrier length.**
    - Symptom: carriers come out at about 2.3 against a 2.8–3.6 target.
    - Cause: the central hangar block and two deck layers (`navyGrammars.ts` `carrierIsland`, `flightDeck`).
@@ -173,14 +171,10 @@ the structure and silhouette sheets.
    - Cause: `frame` prongs give inner faces when `sep >= 6`, and the sockets fall back to direct placement
      (`socketed`).
    - Done: pods stay ordered on the prongs (staggered at most).
-6. **Scrapper grey slabs.**
-   - Symptom: patched reactors and strapped engines read as plain slabs.
-   - Cause: `civilBlocks.ts` `reactorRoom`, and `podBlock` used for strapped engines.
-   - Done: those pieces have a recognisable shape.
-7. **Scrapper blobs.**
-   - Symptom: heaps of four or more donors merge into one blob.
-   - Cause: welding onto any host on any face (`scrapGrammars.ts` `compose`).
-   - Done: donors are still distinguishable on the structure sheet.
+6. **Scrapper grey slabs.** DONE in the v23 scrapper donor pass: patched reactors carry cooling fins, strapped
+   engines are light-drive nozzles on a stub.
+7. **Scrapper blobs.** DONE in the v23 scrapper donor pass: most donors hang off truss struts (`strut`, bare, never
+   faired), so each keeps its outline; flush welds keep the ragged adapters.
 8. **Taper plating draws as solid grey walls** in the detail view.
    - This is a tools concern (`tools/shipgen/draw.ts`), not sim. Optionally draw `plate` blocks as a lighter
      armour tone.
@@ -196,6 +190,11 @@ the structure and silhouette sheets.
 - No metric average regressing beyond its healthy range; first-attempt success not worse.
 - Before and after sheets (silhouette plus the relevant detail or structure view) attached to the change.
 - `npm run check` green.
+
+## Scrapper ownership
+
+The v23 scrapper donor pass owns `scrapGrammars.ts`, `scrapDonors.ts` and `src/content/factions/scrapper.ts` until it
+lands on `main`. Codex should not take scrapper backlog items until then; items 2, 6 and 7 are done by it.
 
 ## Coordination with the civilian work
 
