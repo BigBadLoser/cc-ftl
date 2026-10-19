@@ -100,10 +100,23 @@ class Navy(Faction):
         return None
 
 
+HEX_R = 1 / (2 * math.sqrt(3))           # two hexes per tile width, so the inlay tiles seamlessly from tile to tile
+
+
 class Drone(Faction):
     """Machine-built, uninhabited: near-black machined panels; interior walls are open frames and conduits; a hex inlay
     on the hull; a few short cyan status lines (glow), no stencils."""
     pre = "dn"
+
+    def hex(self, P, fill):
+        """Big hex plates (HEX_R): a dark seam, a lit upper rim and a shaded lower rim, the plate face."""
+        s = ((P.s % 1) + 1) % 1
+        d = hexgrid(s, P.z, HEX_R)
+        if d < 0.03:
+            return self.t("H", 6)
+        if d < 0.065:
+            return self.t("H", fill - 2) if hexgrid(s, P.z + 0.04, HEX_R) < d else self.t("H", fill + 1)
+        return self.t("H", fill)
 
     def overlay(self, P):
         x = 1 if P.face == "x" else 0
@@ -122,9 +135,9 @@ class Drone(Faction):
         if self.hull(P) and self.face(P) and P.fam == "hull" and P.z > ZS + 0.05:
             if P.sprite.endswith(".v1") and P.kind == "y" and 0.1 <= P.s < 0.32 and abs(P.z - 1.75) < 0.015:
                 return "cyan"                                                 # status line, every third tile
-            return self.t("H", 5 + x) if hexgrid(P.s, P.z, 0.11) < 0.022 else self.t("H", 3 + x)
+            return self.hex(P, 3 + x)
         if P.fam == "belly":
-            return self.t("H", 5 + x) if hexgrid(P.s, P.z, 0.11) < 0.022 else self.t("H", 4 + x)
+            return self.hex(P, 4 + x)
         return None
 
 
