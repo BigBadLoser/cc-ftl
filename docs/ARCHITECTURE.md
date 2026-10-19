@@ -210,7 +210,8 @@ palette.json    the single palette, read by Blender scripts and the game
     - debris: `decay.debris.{plates,cables,pipe,chunks,crate,junction}`; `.junction.spark` is the arc
       frame, so alternate it with `.junction`.
     - `decay.eggsac.{1x1|2x2}`: breakable egg sacs (1x1 and 2x2 footprints) that hatch an alien. They are thin
-      membranes over fluid, with the see-through skin baked in by the render (`derelict_sac.py`). The states are:
+      membranes over fluid, with the see-through skin baked in by the render (`derelict_sac.py`, its own family
+      `eggsac`; these sheets are built and committed). The states are:
       - `.cracked`: leaking.
       - `.hatch0`, `.hatch1`, `.hatch2`: it swells, rips open and falls open. Play these when it breaks and spawn
         the alien on `.hatch2`.

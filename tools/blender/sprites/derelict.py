@@ -15,7 +15,6 @@ import math
 from . import core
 from . import logistics
 from . import walls as W
-from .derelict_sac import SPRITES as SAC_SPRITES
 from .derelict_walls import SPRITES as WALL_SPRITES
 
 GN = 32
@@ -358,7 +357,6 @@ SPRITES += [(f"decay.scorch.floor.v{_v}", (1, 1), "block", lambda v=_v: scorch_f
 SPRITES += [(f"decay.burnt.{_w}x{_h}", (_w, _h), "block", lambda w=_w, h=_h: burnt(w, h))
             for _w, _h in ((1, 1), (2, 1), (1, 2), (2, 2))]
 SPRITES += [(f"decay.growth.floor.v{_v}", (1, 1), "block", lambda v=_v: growth_floor(v)) for _v in range(3)]
-SPRITES += SAC_SPRITES
 SPRITES += [("decay.eggs", (1, 1), "prop", eggs),
             ("decay.debris.plates", (1, 1), "prop", debris_plates),
             ("decay.debris.cables", (1, 1), "prop", debris_cables),

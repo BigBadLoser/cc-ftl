@@ -7,6 +7,7 @@
   roof      roof plating modules, edges, inset and patch plates, livery masks, cut plates (roof_cuts.py)
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
   derelict  derelict dressing: breached walls, scorch, debris, dead lights, infestation, AI scrap (derelict*.py)
+  eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -30,6 +31,9 @@ def jobs(name):
     if name == "robot_bay":
         from . import robot_bay
         return robot_bay.jobs(), True
+    if name == "eggsac":
+        from . import derelict_sac
+        return derelict_sac.SPRITES, True
     if name == "derelict":
         from . import derelict
         return derelict.SPRITES, True
@@ -39,5 +43,5 @@ def jobs(name):
     raise KeyError(name)
 
 
-RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "derelict")
+RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "derelict", "eggsac")
 ALL = RENDERED + ("sol",)

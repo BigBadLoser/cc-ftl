@@ -90,6 +90,10 @@
    "image": "sprites/crew.robot_heavy.body.security.png",
    "glow": "sprites/crew.robot_heavy.body.security.glow.png"
   },
+  "eggsac": {
+   "image": "sprites/eggsac.png",
+   "glow": "sprites/eggsac.glow.png"
+  },
   "engine": {
    "image": "sprites/engine.png",
    "glow": "sprites/engine.glow.png"
@@ -1178,6 +1182,232 @@
      "loop": false
     }
    },
+   "glow": true
+  },
+  "decay.eggsac.1x1": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 895,
+    "y": 1,
+    "w": 58,
+    "h": 43
+   },
+   "anchor": {
+    "x": 30,
+    "y": 32
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "decay.eggsac.1x1.burst": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 954,
+    "y": 1,
+    "w": 63,
+    "h": 37
+   },
+   "anchor": {
+    "x": 30,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "decay.eggsac.1x1.cracked": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 836,
+    "y": 1,
+    "w": 58,
+    "h": 44
+   },
+   "anchor": {
+    "x": 30,
+    "y": 32
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "decay.eggsac.1x1.hatch0": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 777,
+    "y": 1,
+    "w": 58,
+    "h": 48
+   },
+   "anchor": {
+    "x": 30,
+    "y": 34
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "decay.eggsac.1x1.hatch1": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 658,
+    "y": 1,
+    "w": 58,
+    "h": 49
+   },
+   "anchor": {
+    "x": 30,
+    "y": 34
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "decay.eggsac.1x1.hatch2": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 717,
+    "y": 1,
+    "w": 59,
+    "h": 49
+   },
+   "anchor": {
+    "x": 30,
+    "y": 32
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "decay.eggsac.2x2": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 328,
+    "y": 1,
+    "w": 108,
+    "h": 61
+   },
+   "anchor": {
+    "x": 56,
+    "y": 57
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "decay.eggsac.2x2.burst": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 546,
+    "y": 1,
+    "w": 111,
+    "h": 52
+   },
+   "anchor": {
+    "x": 56,
+    "y": 41
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "decay.eggsac.2x2.cracked": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 437,
+    "y": 1,
+    "w": 108,
+    "h": 61
+   },
+   "anchor": {
+    "x": 56,
+    "y": 57
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "decay.eggsac.2x2.hatch0": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 219,
+    "y": 1,
+    "w": 108,
+    "h": 63
+   },
+   "anchor": {
+    "x": 56,
+    "y": 59
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "decay.eggsac.2x2.hatch1": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 108,
+    "h": 64
+   },
+   "anchor": {
+    "x": 56,
+    "y": 60
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "decay.eggsac.2x2.hatch2": {
+   "kind": "static",
+   "sheet": "eggsac",
+   "frame": {
+    "x": 110,
+    "y": 1,
+    "w": 108,
+    "h": 64
+   },
+   "anchor": {
+    "x": 56,
+    "y": 57
+   },
+   "footprint": [
+    2,
+    2
+   ],
    "glow": true
   },
   "fx.ember": {
