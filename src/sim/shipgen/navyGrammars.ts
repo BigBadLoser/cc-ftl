@@ -117,7 +117,7 @@ function twinHull(c: Ctx, f: FactionDef): boolean {
  * aft engine section; the original symmetric layout remains available. This
  * changes the positions of major hull masses without inventing empty sections.
  */
-function offsetCarrierDecks(c: Ctx, root: number, rooms: RoomSpec[]): [number, number] | null {
+function offsetCarrierDecks(c: Ctx, root: number, rooms: RoomSpec[], withDrives = true): [number, number] | null {
   const [a, b] = pairUp(shuffle(c.rng, [...rooms]));
   // Move one substantial functional compartment to one bank, so the two decks
   // have distinct lengths and don't just mirror one another.
@@ -151,11 +151,11 @@ function offsetCarrierDecks(c: Ctx, root: number, rooms: RoomSpec[]): [number, n
   if (two === null) return null;
   const e = Math.max(1, Math.ceil(c.plan.engines / 2));
   const r = Math.max(1, Math.ceil(c.plan.reactors / 2));
-  for (const host of [one, two]) {
+  if (withDrives) for (const host of [one, two]) {
     const block = c.rng.chance(0.5) ? bankBlock(c.rng, e, r) : clusterBlock(c.rng, e, r);
     if (!block || c.A.attach(host, block, { side: 'e' }) === null) return null;
   }
-  c.parts.push('offset hull banks');
+  c.parts.push(withDrives ? 'offset hull banks' : 'offset flight decks');
   return side0 === 'n' ? [one, two] : [two, one];
 }
 
@@ -232,7 +232,13 @@ function flightDeck(c: Ctx, f: FactionDef): boolean {
   const deckIds = ids.slice(aftStart);
   const rest = [...j.crew, ...more.flatMap((s: SectionPlan) => [...s.top, ...s.bottom])];
   if (deckIds.length === 0 || rest.length === 0) return true;
-  return !!deckPair(c, deckIds[0] as number, deckIds[0] as number, 'hull', rest, 'start', spanOf(c, deckIds)) || no(c, 'hull decks');
+  // Redistribute existing cabins between two outboard decks while preserving
+  // the central flight-deck spine and its single propulsion bank.
+  const staggered = (c.variant ?? 0) < 0.48 && rest.length >= 6;
+  const attached = staggered
+    ? offsetCarrierDecks(c, deckIds[0] as number, rest, false)
+    : deckPair(c, deckIds[0] as number, deckIds[0] as number, 'hull', rest, 'start', spanOf(c, deckIds));
+  return !!attached || no(c, 'hull decks');
 }
 
 export const GRAMMARS: Record<NavyGrammar, (c: Ctx, f: FactionDef) => boolean> = {

@@ -62,7 +62,7 @@ export function arrangeHull(
   if (!best) return why || 'no feasible arrangement';
   // Small enclosed pockets (between a drive and a deck end, between welded hulls) are plated over.
   // Transitions in the faction's style where sections of different widths meet, then small pockets plated over.
-  if (f.transition && taper(best.A, f.transition, () => rng.next()) > 0) best.c.parts.push('tapered');
+  if (f.transition && taper(best.A, fam.id === 'carrier' ? { ...f.transition, max: 2, slope: 1 } : f.transition, () => rng.next()) > 0) best.c.parts.push('tapered');
   if (f.transition?.driveShoulders && fairDriveNecks(best.A) > 0) best.c.parts.push('stern fairing');
   if (fillHoles(best.A, 16) > 0) best.c.parts.push('filled');
   const b = new Builder(rng, -1);
