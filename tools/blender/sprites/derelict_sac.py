@@ -173,16 +173,17 @@ def _flaps(m, S, droop, n=6):
         back = max(0.0, -math.cos(um - math.radians(45)))                 # flaps on the far side, folding away from
         L = (S.h * (1 - v) * (0.9 + 0.3 * math.sin(k * 2.3)) + 0.06) * (1 - 0.6 * back)   # us, would stand up on screen
         dk = droop * (0.85 + 0.25 * math.sin(k * 1.7 + 0.4))              # each flap hangs a little differently
-        rows = []
-        for j in range(5):
-            t = j / 4
+        rows, n_r = [], 6
+        for j in range(n_r + 1):
+            t = j / n_r
+            half = (u1 - u0) / 2 * max(0.04, math.cos(t * math.pi / 2) ** 0.7)    # a rounded tongue, not a strip
             row = []
-            for u in (u0 + (u1 - u0) * 0.5 * t * 0.6, u1 - (u1 - u0) * 0.5 * t * 0.6):
+            for u in (um - half, um + half):
                 x, y, z = S.p(u, v)
                 for i in range(j):                                      # walk the curl out to step j
-                    th = 0.6 + (dk - 0.6) * (i + 0.5) / 4
-                    x, y = x + math.cos(u) * math.sin(th) * L / 4, y + math.sin(u) * math.sin(th) * L / 4
-                    z = max(0.01, z + math.cos(th) * L / 4)
+                    th = 0.6 + (dk - 0.6) * (i + 0.5) / n_r
+                    x, y = x + math.cos(u) * math.sin(th) * L / n_r, y + math.sin(u) * math.sin(th) * L / n_r
+                    z = max(0.01, z + math.cos(th) * L / n_r)
                 row.append((x, y, z))
             rows.append(row)
         for r0, r1 in zip(rows, rows[1:]):
