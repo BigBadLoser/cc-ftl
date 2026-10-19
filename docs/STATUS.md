@@ -51,6 +51,16 @@ are already merged or superseded. Don't build on them.
   `RETURN_LAND` in `vehicleBayArt.ts`; the lifting sprite is drawn over the near lip, not cut by it).
 - Missing: per-faction livery (the player's blue/ochre is baked; the export keys mkP/mkS have no runtime remap), pod bays.
 
+## Docking airlock (branch `airlock-int`, not merged; awaiting user approval of the in-game look)
+
+- `module.airlock` is footprint [3, 4] (`hullEdge: 'n'`, solid with open tiles) with `airlock.layout`: pod (inner door) (1,1), hull tile
+  and outer door (1,0), inside tile (1,2), collar (1,-1) outside the footprint, two unloaders (body tiles, chute, keep-out
+  tile). Keep-out tiles stay walkable; other modules cannot be built on them (they are in the footprint).
+- Dock point = the collar tile's centre. Cargo hauls to and from a docked shuttle use the keep-out tile nearest the storage
+  (`cargoTile`). Starter airlock now y = 9..11 (row y = 11 opened up, a light moved), raider y = 11..13 (shield gen and a light
+  moved), rogue x = 8..10. The old 1xN line airlock form is still supported (no `layout`; portals tests use it).
+- Render: `airlockArt.ts` layers per tile, collar sequence on dock/undock, `?hook` gained `sim`, `dispatch`, `stage`.
+
 ## M4 art rework (session 2026-10-17, supersedes the m4-assets sheets)
 
 The user did not approve the first m4-assets sheets: modules were far too small. Agreed direction:

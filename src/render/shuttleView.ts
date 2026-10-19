@@ -12,8 +12,14 @@ import { BAY_FRAME_MS, LAUNCH_LIFT, RETURN_LAND } from './vehicleBayArt';
 /** Altitude (tiles over the deck) of a shuttle in flight and at a dock, and of its belly on the pit floor. */
 const CRUISE_Z = 0.4;
 const PIT_Z = -0.95;
-/** The docked shuttle's centre lies this far beyond the dock point (sector tiles), so its rear ramp meets the door. */
-const DOCK_REACH = 1.5;
+/** Altitude at a dock: the shuttle settles to the deck so its rear ramp meets the collar's hatch (axis 0.95 up). */
+const DOCK_Z = 0;
+/**
+ * The docked shuttle's centre lies this far beyond the dock point (sector tiles). The dock point is the centre of the airlock's
+ * collar tile; the collar's mating face is 0.2 past it (tools/blender/sprites/airlock.py COLLAR_END), and the transport shuttle's
+ * rear ramp is 1.95 behind its centre (shuttle_craft.py transport_shuttle), so the ramp meets the collar's hatch.
+ */
+const DOCK_REACH = 2.15;
 /** After taking off, a shuttle waits LAG ms on the spot (the doors open under it), then catches up with the sim over CATCH ms. */
 const CATCH_MS = 1500;
 const EIGHTH = Math.PI / 4;
@@ -25,6 +31,12 @@ export interface ShuttleViewHost {
   project(sx: number, sy: number): Pt;
   /** Which vehicles this view draws (flying, docked, and the one just leaving or settling in a bay). */
   include(v: Vehicle): boolean;
+  /**
+   * Where a docked vehicle is drawn: its airlock ship's own sorted layer, in that ship's frame, so the hull, walls and the
+   * airlock's collar sort against the shuttle by depth (it is behind the ship at a far hull, in front at a near one).
+   * `project` maps sector tiles to that layer's art px, `depth` gives the zIndex. Null: the sector layer.
+   */
+  dock?(v: Vehicle): { layer: Container; project(sx: number, sy: number): Pt; depth(sx: number, sy: number): number } | null;
 }
 
 export interface ShuttleView {
@@ -53,6 +65,8 @@ interface Track {
   y: number;
   heading: number;
   state: Vehicle['state'];
+  /** Eased altitude for flying and docked (settles when it docks, rises when it leaves). */
+  z: number;
   /** performance.now() of the last launch (stowed to out) and landing (out to stowed); -Infinity if none. */
   launched: number;
   landed: number;
@@ -78,7 +92,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
   function drop(id: number): void {
     const t = tracks.get(id);
     if (!t) return;
-    t.root.destroy({ children: true });
+    if (!t.root.destroyed) t.root.destroy({ children: true });
     tracks.delete(id);
   }
 
@@ -123,7 +137,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           glow.blendMode = 'add';
           root.addChild(body, glow);
           host.layer.addChild(root);
-          t = { root, body, glow, key: '', x: v.x, y: v.y, heading: v.heading, state: v.state, launched: -Infinity, landed: -Infinity, trail: [] };
+          t = { root, body, glow, key: '', x: v.x, y: v.y, heading: v.heading, state: v.state, z: CRUISE_Z, launched: -Infinity, landed: -Infinity, trail: [] };
           tracks.set(id, t);
         }
         if (t.state !== v.state) {
@@ -173,6 +187,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
 
         let sprite: StaticSprite | undefined;
         let z = CRUISE_Z;
+        t.z += ((v.state === 'docked' ? DOCK_Z : CRUISE_Z) - t.z) * (1 - Math.exp(-dt * 5));
         let off = { dx: 0, dy: 0 };
         let thrust = v.dest ? 1 : 0.45;
         if (v.state === 'docked') {
@@ -181,6 +196,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
             sprite = atlas.stat(`vehicle.shuttle.docked.d${pose.d}`);
             off = pose;
           }
+          z = t.z;
           thrust = 0;
         } else if (launching && sinceLaunch < (LAUNCH_LIFT.end * BAY_FRAME_MS)) {
           // Lifting off the pit floor in the parked pose (legs up, wings folded), then spreading the wings at altitude.
@@ -193,12 +209,18 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           z = CRUISE_Z + (PIT_Z - CRUISE_Z) * f;
           sprite = f > 0 ? atlas.stat(`vehicle.shuttle.docked.d${parkedIndex(bayRot(v))}`) : atlas.stat(`vehicle.shuttle.fly.d${headingIndex(t.heading)}`);
           thrust = f > 0 ? 0 : 0.45;
-        } else sprite = atlas.stat(`vehicle.shuttle.fly.d${headingIndex(t.heading)}`);
+        } else {
+          sprite = atlas.stat(`vehicle.shuttle.fly.d${headingIndex(t.heading)}`);
+          z = t.z;
+        }
         if (!show(t, sprite, thrust === 0 ? 0 : 0.55 + 0.45 * thrust)) t.root.visible = false;
 
-        const p = host.project(t.x + off.dx, t.y + off.dy);
+        const slot = v.state === 'docked' ? host.dock?.(v) ?? null : null;
+        const layer = slot?.layer ?? host.layer;
+        if (t.root.parent !== layer) layer.addChild(t.root);
+        const p = (slot?.project ?? host.project)(t.x + off.dx, t.y + off.dy);
         t.root.position.set(Math.round(p.x), Math.round(p.y - z * Z_PX));
-        t.root.zIndex = t.x + t.y;
+        t.root.zIndex = slot ? slot.depth(t.x + off.dx, t.y + off.dy) : t.x + t.y;
       }
       for (const id of [...tracks.keys()]) if (!seen.has(id)) drop(id);
     },

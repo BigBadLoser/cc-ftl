@@ -149,6 +149,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return iso(sx - r.x - 0.5, sy - r.y - 0.5);
     },
     include: (v) => v.state !== 'stowed' || v.homeGrid === refId,
+    dock: (v) => {
+      const gridId = world.get(v.dock, ModuleC)?.gridId;
+      const ship = gridId === undefined ? undefined : shipOf(gridId);
+      const sc = gridId === undefined ? undefined : scenes.get(gridId);
+      if (!ship || !sc) return null;
+      return {
+        layer: sc.layers.sorted,
+        project: (sx, sy) => iso(sx - ship.x - 0.5, sy - ship.y - 0.5),
+        depth: (sx, sy) => sx - ship.x - 0.5 + (sy - ship.y - 0.5),
+      };
+    },
   });
 
   const pickHost = (): PickHost => ({ scenes, cam, ship: shipOf, refId });

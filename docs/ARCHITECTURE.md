@@ -235,8 +235,11 @@ palette.json    the single palette, read by Blender scripts and the game
     palette-swap key colours.
   - Every asset has a manifest entry with its id, sheet, frames, anchor, footprint and layers.
     Content refers to assets by manifest id only.
-- **Airlock (`airlock` family, `sprites/airlock.py`, not wired yet):** the art is 3 wide along the hull and
-  3 deep inboard plus the hull row and a collar outside, larger than today's 1x4 sim footprint. Every part
+- **Airlock (`airlock` family, `sprites/airlock.py`, wired in `render/airlockArt.ts`; sim footprint `[3, 4]`, layout in
+  `ModuleDef.airlock.layout`):** 3 wide along the hull, the hull row plus 3 rows inboard, and a collar one tile outside the
+  footprint (the dock point). Pod = inner door, hull tile = outer door, keep-out tiles = where crew work the unloaders' chutes.
+  Only the hull block follows the wall level; everything else is drawn whole at every level. A docked shuttle is drawn in its
+  airlock ship's sorted layer (`shuttleView` `dock`), 2.15 tiles past the dock point, settled to the deck. Every part
   is a 1x1 sprite anchored at its own tile, in module coordinates (u outward, v along the hull, the pod at
   u = v = 0):
   - `housing.r{n}.{closed,f1,f2,open}`: the pod and its inner door, at (0, 0). Never cut.

@@ -41,7 +41,7 @@ export { airlockTiles, airlockWorking, airlockDoorAt, keepOutTiles } from './por
 export * from './vehicles/components';
 export * from './fight/components';
 export { prizeValue } from './capture/prize';
-export { cargoCount, cargoSpace, cargoOf } from './vehicles/cargo';
+export { cargoCount, cargoSpace, cargoOf, cargoAdd } from './vehicles/cargo';
 export { isHostile, isSubdued, isCombatReady, isInvader } from './fight/relations';
 export { sightLine, rayCells, type Cover } from './fight/los';
 export { wielded, hitChance, handDefOf } from './fight/weapons';

@@ -1,4 +1,4 @@
-import { AllegianceC, CrewC, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, type Sim } from '../sim';
+import { AllegianceC, CrewC, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 
 /**
@@ -11,13 +11,13 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     screenOf: (gridId: number, x: number, y: number) => r.screenOf(gridId, x, y),
     /** Modules of a def: grid, origin and access tile. */
     modules(def: string) {
-      const out: { gridId: number; x: number; y: number; ax: number; ay: number }[] = [];
+      const out: { id: number; gridId: number; x: number; y: number; ax: number; ay: number }[] = [];
       for (const id of sim.world.query(ModuleC)) {
         const m = sim.world.get(id, ModuleC);
         const d = m && sim.content.modules[m.def];
         if (!m || !d || m.def !== def) continue;
         const a = accessTile(d, m.x, m.y, m.rot) ?? { x: m.x, y: m.y };
-        out.push({ gridId: m.gridId, x: m.x, y: m.y, ax: a.x, ay: a.y });
+        out.push({ id, gridId: m.gridId, x: m.x, y: m.y, ax: a.x, ay: a.y });
       }
       return out;
     },
@@ -27,6 +27,17 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
         const p = sim.world.get(id, PositionC);
         return p && { id, enemy: sim.world.get(id, AllegianceC)?.faction !== 'player', down: sim.world.has(id, DownedC) || sim.world.has(id, SurrenderedC), gridId: p.gridId, ...r.screenOf(p.gridId, p.x, p.y) };
       }),
+    /** Queue a sim command (debug commands included) from a script. */
+    /** The sim itself, so scripts can stage states no command reaches (docked shuttle with cargo). Debug only. */
+    sim,
+    /** Scenery for screenshots: spawn (no placement checks beyond the error returned) or remove a module. */
+    stage: {
+      spawn: (gridId: number, def: string, x: number, y: number, rot: number) => placementError(sim, gridId, def, x, y, rot) ?? spawnModule(sim, gridId, def, x, y, rot),
+      remove: (id: number) => removeModule(sim, id),
+      cargo: (vehicle: number, item: string, n: number) => cargoAdd(sim, vehicle, item, n),
+    },
+    dispatch: (cmd: Parameters<Sim['enqueue']>[0]) => sim.enqueue(cmd),
+    vehicles: () => vehicleViews(sim),
     ships: () => [...sim.world.query(ShipC)].map((id) => sim.world.get(id, ShipC)),
     events: () => seen,
   };
