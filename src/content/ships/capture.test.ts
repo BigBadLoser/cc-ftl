@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AboardC, AllegianceC, CaptureProgressC, CombatC, CrewC, DeadC, DownedC, DraftedC, EquipC, HealthC, ItemStackC, ModuleC, PathC, PositionC,
   PrisonerC, PrizeC, ShipC, SurrenderedC, VehicleC, WeaponC, accessTile, cargoCount, deserialize, newGame, serialize, shipEntityOf,
-  storageCount, StorageC, type ModuleDef, type Sim, type SimEvent,
+  storageCount, StorageC, windowShipMismatches, type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
 
@@ -37,6 +37,7 @@ function setup(seed = 1, armed = false): Sim {
   const sim = newGame(seed, content);
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
   run(sim, 5);
+  expect(windowShipMismatches(sim)).toEqual([]);
   if (!armed) {
     for (const i of sim.world.query(WeaponC)) if (sim.world.get(i, ModuleC)!.gridId === 2) sim.world.get(i, ModuleC)!.enabled = false;
   }

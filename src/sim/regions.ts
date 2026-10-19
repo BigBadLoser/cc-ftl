@@ -79,3 +79,22 @@ export function placementGapError(sim: Sim, bbox: Rect): 'overlap' | 'tooClose' 
   }
   return close ? 'tooClose' : null;
 }
+
+/**
+ * Ships whose grid window is not where their `ShipC` says (window origin != ShipC x, y, or a different size), as readable
+ * messages; empty when every window agrees. Ships without a window (lifted, or a fixture ShipC with no grid) are skipped.
+ * The coordinate flip (step 6) relies on this holding everywhere, so tests assert it.
+ */
+export function windowShipMismatches(sim: Sim): string[] {
+  const out: string[] = [];
+  for (const id of sim.world.query(ShipC)) {
+    const s = sim.world.get(id, ShipC) as Ship;
+    const g = sim.grids.get(s.gridId);
+    if (!g) continue;
+    const [ox, oy] = g instanceof GridWindow ? [g.ox, g.oy] : [0, 0];
+    if (ox !== s.x || oy !== s.y || g.width !== s.width || g.height !== s.height) {
+      out.push(`ship ${id} (grid ${s.gridId}): ShipC ${s.x},${s.y} ${s.width}x${s.height}, window ${ox},${oy} ${g.width}x${g.height}`);
+    }
+  }
+  return out;
+}

@@ -3,7 +3,7 @@ import { ShipC } from './combat/components';
 import { damageStruct } from './combat/hull';
 import { spawnShip } from './combat/ships';
 import type { ContentRegistry, ShipTemplate } from './registry';
-import { regions, shipAt, shipFrame } from './regions';
+import { regions, shipAt, shipFrame, windowShipMismatches } from './regions';
 import { deserialize, serialize } from './save';
 import { gridFromTemplate } from './ship';
 import { Sim } from './sim';
@@ -84,5 +84,20 @@ describe('MIN_SHIP_GAP', () => {
     spawnShip(sim, BOX, { gridId: 1, faction: 'player', x: 0, y: 0 });
     expect(() => spawnShip(sim, BOX, { faction: 'hostile', x: nearest - 1, y: 0 })).toThrow(/tooClose/);
     expect(() => spawnShip(sim, BOX, { faction: 'hostile', x: 0, y: 30 })).not.toThrow();
+  });
+});
+
+describe('windowShipMismatches', () => {
+  it('is empty when every window sits at its ShipC, and names a ship whose window disagrees', () => {
+    const sim = new Sim(1, content);
+    spawnShip(sim, BOX, { faction: 'player', x: 0, y: 0 });
+    spawnShip(sim, BOX, { faction: 'hostile', x: 60, y: 30 });
+    expect(windowShipMismatches(sim)).toEqual([]);
+    // A fixture grid auto-placed on row 0 with a ShipC claiming another position is exactly the bug it catches.
+    sim.grids.set(3, gridFromTemplate(3, BOX));
+    const ship = sim.world.createEntity();
+    sim.world.add(ship, ShipC, { gridId: 3, name: 'x', faction: 'player', state: 'active', x: 200, y: 5, width: 5, height: 4, hullMax: 0, integrity: 1 });
+    expect(windowShipMismatches(sim)).toHaveLength(1);
+    expect(windowShipMismatches(sim)[0]).toContain('grid 3');
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deserialize, newGame, serialize, Struct, type Sim } from '../../sim';
+import { deserialize, newGame, serialize, Struct, windowShipMismatches, type Sim } from '../../sim';
 import { content } from '../index';
 
 /** Grid fields that existed before the sector refactor (the `ship` owner layer is new and left out). */
@@ -67,6 +67,7 @@ describe('sector refactor equivalence', () => {
     const sim = combat(3);
     const log: string[] = [];
     run(sim, 2400, log);
+    expect(windowShipMismatches(sim)).toEqual([]);
     expect(stateHash(sim, log.join(','))).toBe(EXPECTED.combat);
   });
 

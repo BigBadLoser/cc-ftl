@@ -12,6 +12,7 @@ import { AirlockC, SuitC } from '../portals/components';
 import type { ContentRegistry, ModuleDef } from '../registry';
 import { deserialize, serialize } from '../save';
 import { gridFromTemplate } from '../ship';
+import { windowShipMismatches } from '../regions';
 import { Sim } from '../sim';
 import { stat } from '../stats';
 import { Struct } from '../structure';
@@ -51,22 +52,27 @@ function ring(): string[] {
   return rows;
 }
 
-/** Ship 1 at sector (20, 20) with its airlock on the east hull, ship 2 (optional) 5 tiles away with its airlock on the west hull. */
-function world(ships = 1, gap = 5): Sim {
+/**
+ * Ship 1 stamped at sector (20, 20) with its airlock on the east hull, ship 2 (optional) `gap` tiles away (or at `at2`) with its
+ * airlock on the west hull. Each window sits at its ShipC position.
+ */
+function world(ships = 1, gap = 5, at2?: { x: number; y: number }): Sim {
   const sim = new Sim(7, content);
   const rots = [1, 3];
   for (let g = 1; g <= ships; g++) {
-    sim.grids.set(g, gridFromTemplate(g, { name: `s${g}`, rows: ring() }));
+    const origin = g === 1 ? { x: 20, y: 20 } : (at2 ?? { x: 20 + (g - 1) * (14 + gap - 1), y: 20 });
+    sim.grids.stamp(g, gridFromTemplate(g, { name: `s${g}`, rows: ring() }), origin.x, origin.y);
     const rot = rots[g - 1] as number;
     const at = rot === 1 ? { x: 9, y: 5 } : { x: 1, y: 5 };
     expect(placementError(sim, g, 'airlock', at.x, at.y, rot)).toBeNull();
     spawnModule(sim, g, 'airlock', at.x, at.y, rot);
     const ship = sim.world.createEntity();
     sim.world.add(ship, ShipC, {
-      gridId: g, name: `s${g}`, faction: 'player', state: 'active', x: 20 + (g - 1) * (14 + gap - 1), y: 20, width: 14, height: 14, hullMax: 0, integrity: 1,
+      gridId: g, name: `s${g}`, faction: 'player', state: 'active', x: origin.x, y: origin.y, width: 14, height: 14, hullMax: 0, integrity: 1,
     });
     sim.world.add(ship, CombatC, { hold: false, volley: false, target: null, doctrine: 'random', ftl: 0, shield: { layers: 0, max: 0, timer: 0 }, evasion: 0, aiTimer: 0 });
   }
+  expect(windowShipMismatches(sim)).toEqual([]);
   return sim;
 }
 function crew(sim: Sim, gridId: number, x: number, y: number, o: { drafted?: boolean; species?: string; prio?: Priorities } = {}): number {

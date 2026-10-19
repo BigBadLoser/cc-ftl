@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, CrewC, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, shipEntityOf, shipOf,
+  CombatC, CrewC, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, shipEntityOf, shipOf, windowShipMismatches,
   type ContentRegistry, type ShipTemplate, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
@@ -56,6 +56,7 @@ function duel(weapon: string, target: ShipTemplate, opts: { crew?: string[]; ext
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.target', x: 100, y: 50 });
   sim.step(); // the enemy exists now, so tests can look up its module ids
   sim.events.drain();
+  expect(windowShipMismatches(sim)).toEqual([]);
   return sim;
 }
 

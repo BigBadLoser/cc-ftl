@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AboardC, CrewC, DeadC, DownedC, ModuleC, PositionC, VehicleBayC, VehicleC, destroyVehicle, deserialize, newGame, serialize,
   accessTile, boardingTile, footprintTiles, isTileWalkable, rotatedSize, storageAdd, vehicleViews, type ContentRegistry, type ModuleDef, type Sim, type SimEvent,
+  windowShipMismatches,
 } from '../../sim';
 import { content } from '../index';
 
@@ -33,6 +34,7 @@ function setup(seed = 1, reg: ContentRegistry = content, enemy = 'ship.raider'):
   const sim = newGame(seed, reg);
   sim.enqueue({ type: 'debug.spawnEnemy', template: enemy, x: 100, y: 50 });
   run(sim, 5);
+  expect(windowShipMismatches(sim)).toEqual([]);
   return sim;
 }
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
