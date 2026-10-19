@@ -44,7 +44,7 @@ describe('galaxy generation', () => {
 
   it('keeps sector sites apart and hulls from overlapping, across chunk borders too', () => {
     const sectors: SectorData[] = [...build(5, 3).values()].flatMap((c) => c.sectors);
-    expect(sectors.length).toBeGreaterThan(200);
+    expect(sectors.length).toBeGreaterThan(150);
     let checked = 0;
     for (let i = 0; i < sectors.length; i++) {
       for (let j = i + 1; j < sectors.length; j++) {
@@ -58,7 +58,7 @@ describe('galaxy generation', () => {
         expect(convexOverlap(a.hull, b.hull), `${a.id} / ${b.id}`).toBe(false);
       }
     }
-    expect(checked).toBeGreaterThan(300);
+    expect(checked).toBeGreaterThan(100);
   });
 
   it('connects every sector inside and the whole region through hyperlanes', () => {

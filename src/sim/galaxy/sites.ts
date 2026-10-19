@@ -1,8 +1,9 @@
 import { dist, type Vec } from './geometry';
-import { density, keepChance } from './density';
+import { coreness, density, keepChance, lerp } from './density';
 import { unit } from './hash';
 import {
-  HULL_GAP, RELAX_RANGE, RELAX_STEP, SECTOR_RADIUS, SITE_CELL, SITE_MAX_SHIFT, SITE_MIN_DIST,
+  HULL_GAP, RELAX_RANGE, RELAX_STEP, SECTOR_RADIUS_CORE, SECTOR_RADIUS_FRINGE, SECTOR_RADIUS_MAX, SITE_CELL, SITE_MAX_SHIFT,
+  SITE_MIN_DIST, SITE_SPACING_FRINGE,
 } from './tuning';
 
 /** A sector site: its global cell, final position and radius. */
@@ -13,6 +14,8 @@ export interface Site {
   x: number;
   y: number;
   r: number;
+  /** Coreness of the density field here, in [0, 1]: 1 in dense cores, 0 at the fringe of a void. */
+  core: number;
 }
 
 interface Candidate {
@@ -32,7 +35,8 @@ export const sectorId = (gx: number, gy: number): string => `s.${gx}.${gy}`;
  * order), in four memoised stages:
  * 1. **Candidate:** one jittered point and a random priority per cell. The start cell's candidate is pinned at (0, 0)
  *    with the top priority.
- * 2. **Thinning (Matérn II):** a candidate survives unless a higher-priority candidate lies within SITE_MIN_DIST. The
+ * 2. **Thinning (Matérn II):** a candidate survives unless a higher-priority candidate lies within the larger of the
+ *    two candidates' spacings (SITE_MIN_DIST at the core, SITE_SPACING_FRINGE at the fringe). The
  *    test reads only candidates, never other survivors, so it is local and order-free.
  * 3. **Relaxation:** survivors push apart from survivors within RELAX_RANGE (one step, at most SITE_MAX_SHIFT). The moved
  *    point is kept only if it is still SITE_MIN_DIST from every neighbour's raw *and* moved point, so the minimum
@@ -46,6 +50,7 @@ export class SiteField {
   private moved = new Map<number, Vec>();
   private fin = new Map<number, Vec>();
   private sites = new Map<number, Site | null>();
+  private cores = new Map<number, number>();
 
   constructor(readonly seed: number) {}
 
@@ -65,11 +70,27 @@ export class SiteField {
     return c;
   }
 
+  /** Coreness of the density field at the cell's candidate. */
+  core(gx: number, gy: number): number {
+    const k = cellKey(gx, gy);
+    let v = this.cores.get(k);
+    if (v === undefined) {
+      const c = this.candidate(gx, gy);
+      v = coreness(density(this.seed, c.x, c.y));
+      this.cores.set(k, v);
+    }
+    return v;
+  }
+
+  /** The room a candidate needs: SITE_MIN_DIST at the core, up to SITE_SPACING_FRINGE at the fringe. */
+  private spacing(gx: number, gy: number): number {
+    return lerp(SITE_SPACING_FRINGE, SITE_MIN_DIST, this.core(gx, gy));
+  }
+
   /** Stage 1b: did the cell's candidate survive density thinning? Only present candidates compete in stage 2. */
   private present(gx: number, gy: number): boolean {
     if (gx === 0 && gy === 0) return true;
-    const c = this.candidate(gx, gy);
-    return unit(this.seed, gx, gy, 5) < keepChance(density(this.seed, c.x, c.y));
+    return unit(this.seed, gx, gy, 5) < keepChance(this.core(gx, gy));
   }
 
   /** Stage 2: does the cell hold a site? */
@@ -79,13 +100,14 @@ export class SiteField {
     if (v === undefined) {
       const c = this.candidate(gx, gy);
       v = this.present(gx, gy);
-      const reach = Math.ceil(SITE_MIN_DIST / SITE_CELL) + 1;
+      const reach = Math.ceil(SITE_SPACING_FRINGE / SITE_CELL) + 1;
       for (let dy = -reach; dy <= reach && v; dy++) {
         for (let dx = -reach; dx <= reach; dx++) {
           if (dx === 0 && dy === 0) continue;
           if (!this.present(gx + dx, gy + dy)) continue;
           const o = this.candidate(gx + dx, gy + dy);
-          if (dist(c, o) >= SITE_MIN_DIST) continue;
+          // Symmetric: the pair needs the larger of the two spacings, so either cell reaches the same answer.
+          if (dist(c, o) >= Math.max(this.spacing(gx, gy), this.spacing(gx + dx, gy + dy))) continue;
           if (o.pri > c.pri || (o.pri === c.pri && cellKey(gx + dx, gy + dy) > k)) {
             v = false;
             break;
@@ -174,12 +196,15 @@ export class SiteField {
         const p = this.position(gx, gy);
         const raw = this.candidate(gx, gy);
         let nn = Infinity;
-        for (const n of this.keptNear(raw.x, raw.y, 2 * SECTOR_RADIUS.max + HULL_GAP + 2 * SITE_MAX_SHIFT)) {
+        for (const n of this.keptNear(raw.x, raw.y, 2 * SECTOR_RADIUS_MAX + HULL_GAP + 2 * SITE_MAX_SHIFT)) {
           if (n.gx === gx && n.gy === gy) continue;
           nn = Math.min(nn, dist(p, this.position(n.gx, n.gy)));
         }
-        const want = SECTOR_RADIUS.min + unit(this.seed, gx, gy, 4) * (SECTOR_RADIUS.max - SECTOR_RADIUS.min);
-        s = { gx, gy, id: sectorId(gx, gy), x: p.x, y: p.y, r: Math.min(want, (nn - HULL_GAP) / 2) };
+        const core = this.core(gx, gy);
+        const lo = lerp(SECTOR_RADIUS_FRINGE.min, SECTOR_RADIUS_CORE.min, core);
+        const hi = lerp(SECTOR_RADIUS_FRINGE.max, SECTOR_RADIUS_CORE.max, core);
+        const want = lo + unit(this.seed, gx, gy, 4) * (hi - lo);
+        s = { gx, gy, id: sectorId(gx, gy), x: p.x, y: p.y, r: Math.min(want, (nn - HULL_GAP) / 2), core };
       }
       this.sites.set(k, s);
     }

@@ -35,8 +35,14 @@ export function density(seed: number, x: number, y: number): number {
   return Math.max(sum / norm, DENSITY_CORE * fade(Math.min(1, 2 * home)));
 }
 
-/** Chance a sector candidate survives at this density: DENSITY_FLOOR in voids, rising smoothly to 1 at the core. */
-export function keepChance(d: number): number {
-  const t = Math.min(1, Math.max(0, (d - DENSITY_VOID) / (DENSITY_CORE - DENSITY_VOID)));
-  return DENSITY_FLOOR + (1 - DENSITY_FLOOR) * fade(t);
+/** Coreness in [0, 1]: 0 at or below DENSITY_VOID, 1 at or above DENSITY_CORE, smooth between. */
+export function coreness(d: number): number {
+  return fade(Math.min(1, Math.max(0, (d - DENSITY_VOID) / (DENSITY_CORE - DENSITY_VOID))));
 }
+
+/** Chance a sector candidate survives at this coreness: DENSITY_FLOOR in voids, 1 at the core. */
+export function keepChance(core: number): number {
+  return DENSITY_FLOOR + (1 - DENSITY_FLOOR) * core;
+}
+
+export const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;

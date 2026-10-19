@@ -13,21 +13,28 @@ export const SITE_MIN_DIST = 230;
 export const RELAX_RANGE = 380;
 export const RELAX_STEP = 0.35;
 export const SITE_MAX_SHIFT = 60;
-/** Sector radius range; the radius is also capped so neighbouring hulls keep HULL_GAP between them. */
-export const SECTOR_RADIUS = { min: 95, max: 150 } as const;
+/** Fringe sites (low density) need this much room instead of SITE_MIN_DIST; spacing blends between the two by coreness. */
+export const SITE_SPACING_FRINGE = 440;
+/** Sector radius ranges at the core and at the fringe, blended by coreness; the radius is also capped so neighbouring
+ * hulls keep HULL_GAP between them. */
+export const SECTOR_RADIUS_CORE = { min: 95, max: 135 } as const;
+export const SECTOR_RADIUS_FRINGE = { min: 160, max: 220 } as const;
+export const SECTOR_RADIUS_MAX = 220;
 export const HULL_GAP = 34;
 /** Hull padding around the outer nodes (nodes stay inside radius - HULL_PAD). */
 export const HULL_PAD = 16;
 
 /** Nodes: Poisson-disk darts inside the sector disc. Count ~ NODE_DENSITY x r^2, clamped. */
-export const NODE_MIN_DIST = 40;
-export const NODE_DENSITY = 0.00062;
-export const NODES_PER_SECTOR = { min: 5, max: 14 } as const;
+export const NODE_MIN_DIST = 30;
+/** Node density per unit^2 at the core and at the fringe, blended by coreness. */
+export const NODE_DENSITY_CORE = 0.0012;
+export const NODE_DENSITY_FRINGE = 0.0006;
+export const NODES_PER_SECTOR = { min: 8, max: 26 } as const;
 /** Routes inside a sector: the spanning tree of the Gabriel graph plus this share of its other edges. */
 export const ROUTE_EXTRA = 0.3;
 
 /** Hyperlanes: sector pairs closer than this (site to site) may be linked. */
-export const HYPERLANE_MAX = 1500;
+export const HYPERLANE_MAX = 1800;
 /** Relative-neighbourhood edges (the backbone, contains the spanning tree) plus this share of the other Gabriel edges. */
 export const HYPERLANE_EXTRA = 0.3;
 /** Chance a hyperlane carries a mid-lane event anchor. */
@@ -80,10 +87,10 @@ export const FRIENDLY_AT = 3;
 
 /** Density field: fractal noise with features about DENSITY_SCALE units across. Below DENSITY_VOID a candidate site
  * survives with DENSITY_FLOOR chance (sparse stepping stones), above DENSITY_CORE always. */
-export const DENSITY_SCALE = 2600;
+export const DENSITY_SCALE = 3200;
 export const DENSITY_OCTAVES = 3;
-export const DENSITY_VOID = 0.4;
-export const DENSITY_CORE = 0.58;
-export const DENSITY_FLOOR = 0.1;
+export const DENSITY_VOID = 0.46;
+export const DENSITY_CORE = 0.62;
+export const DENSITY_FLOOR = 0.04;
 /** Radius around the start that is lifted towards core density. */
 export const DENSITY_HOME = 1400;
