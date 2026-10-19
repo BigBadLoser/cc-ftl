@@ -75,6 +75,40 @@ function spineWings(c: Ctx, f: FactionDef): boolean {
   return !!deckPair(c, host, host, 'crew', j.crew, 'end', { xMin: spanOf(c, ids).xMin }) || no(c, 'wing decks');
 }
 
+/**
+ * Broad frigate: restores the older designed broad-hull read, but with the newer profile system. A slim spine carries
+ * the nose, core and stores; long outboard hull decks run aft along it and use one shared profile so the whole ship
+ * reads as one shouldered warship instead of a chain of separate modules.
+ */
+function broadFrigate(c: Ctx, f: FactionDef): boolean {
+  const root = nose(c, f);
+  if (root === null) return no(c, 'nose');
+  const j = jobs(c.plan);
+  const guns = bands('battery', j.guns, 2);
+  const bow = guns[0] ?? null;
+  const deckGuns = guns.slice(1).flatMap((s) => [...s.top, ...s.bottom]);
+  const per = slim(c);
+  const spineRooms = [...j.core, ...j.stores];
+  const deckRooms = [...j.crew];
+  balance(spineRooms, deckRooms, per);
+  const spine = [...(bow ? [bow] : []), ...order(c.rng, bands('core', spineRooms, per))];
+  // The hull carries the designed mass; keep the spine one step deeper than the decks so the shoulders step out from it.
+  evenDepth(c, ['battery', 'core', 'cargo'], 1);
+  const ids = chain(c, root, spine, bow ? 1 : Math.max(0, spine.length - 1));
+  if (!ids) return false;
+  const aft = ids[ids.length - 1] as number;
+  if (!propulsion(c, aft, c.rng.chance(0.7) ? 'cluster' : c.rng.pick(c.fam.propulsion.filter((x) => x !== 'wingPods')))) return false;
+  const hullStart = ids.slice(Math.min(bow ? 1 : 0, ids.length - 1));
+  const span = spanOf(c, hullStart.length > 0 ? hullStart : ids);
+  const lo = Math.max(c.depth.habitat ?? 3, 3);
+  const hi = Math.max(lo + 1, Math.min(5, (c.depth.core ?? lo + 1) + (c.rng.chance(0.35) ? 1 : 0)));
+  const profile = rollProfile(() => c.rng.next(), lo, hi, [0.4, 0.78]);
+  const hull = [...deckRooms, ...deckGuns];
+  if (hull.length === 0) return true;
+  c.parts.push('broad hull');
+  return !!deckPair(c, hullStart[0] ?? aft, hullStart[0] ?? aft, 'hull', hull, 'end', { span: span.span, xMin: span.xMin, profile }) || no(c, 'broad hull');
+}
+
 /** Cruiser: a citadel flanked by long parallel sections, nose fore, one drive aft. */
 function citadelFlanked(c: Ctx, f: FactionDef): boolean {
   const j = jobs(c.plan);
@@ -242,5 +276,5 @@ function flightDeck(c: Ctx, f: FactionDef): boolean {
 }
 
 export const GRAMMARS: Record<NavyGrammar, (c: Ctx, f: FactionDef) => boolean> = {
-  linear: linearHull, deckPair: deckPairGrammar, spineWings, citadelFlanked, twinHull, componentFrigate, componentBattleship, carrierIsland, flightDeck,
+  linear: linearHull, deckPair: deckPairGrammar, spineWings, broadFrigate, citadelFlanked, twinHull, componentFrigate, componentBattleship, carrierIsland, flightDeck,
 };

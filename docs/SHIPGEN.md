@@ -500,3 +500,9 @@ Three views, in both the CLI sheets (`--views all`) and the phone page (View sel
   dotted by access kind; ports green when matched, red when not.
 
 Each ship shows its family, its section profile and its metrics.
+
+## Broad-hull Navy frigates
+
+Restored broad shouldered frigates as an alternative to narrow modular escorts. The `broadFrigate` grammar uses the existing nose, band sections, mirrored `deckPair`, `rollProfile`, and propulsion interfaces. It integrates crew and secondary guns into a paired outer hull rather than treating every frigate as a long central spine with sponsons. Family weight favors the broad hull (4:2:1 broad/component/legacy wings) while retaining thinner variations.
+
+Local TypeScript-loader sheet validation: 12 frigates at each of difficulties 1, 4, and 9; 40 additional difficulty-9 frigates; plus all factions, 12 seeds at difficulties 1, 4, and 9. All 184 generated layouts passed. Full project lint/Vitest were not run.
