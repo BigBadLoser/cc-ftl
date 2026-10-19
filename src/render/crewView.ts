@@ -38,8 +38,8 @@ export interface CrewViewHost {
 export interface CrewView {
   update(): void;
   setSelectedCrew(id: number | null): void;
-  /** Crew entity under an art-px point, or null. */
-  pick(ax: number, ay: number): number | null;
+  /** Crew entity under an art-px point (the one whose feet are lowest on screen) and its feet's art y, or null. */
+  pick(ax: number, ay: number): { id: number; y: number } | null;
   count(): number;
   dispose(): void;
 }
@@ -343,7 +343,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           best = id;
         }
       }
-      return best;
+      return best === null ? null : { id: best, y: bestY };
     },
     count: () => slots.size,
     dispose() {

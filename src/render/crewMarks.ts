@@ -12,7 +12,6 @@ import { Z_PX } from './heights';
 import { iso } from './iso';
 
 export interface CrewMarksHost {
-  ref(): { x: number; y: number } | null;
   ship(gridId: number): Ship | undefined;
   /** False for roofed ships (their interior is hidden). */
   visible(gridId: number): boolean;
@@ -31,15 +30,13 @@ export function createCrewMarks(world: World, parent: Container, host: CrewMarks
   return {
     update() {
       g.clear();
-      const r = host.ref();
-      if (!r) return;
       for (const id of world.query(CrewC, PositionC)) {
         const pos = world.get(id, PositionC);
         const ship = pos && host.ship(pos.gridId);
         if (!pos || !ship || !host.visible(pos.gridId) || world.has(id, DeadC)) continue;
         const gx = pos.x + (pos.toX - pos.x) * pos.progress;
         const gy = pos.y + (pos.toY - pos.y) * pos.progress;
-        const p = iso(ship.x - r.x + gx, ship.y - r.y + gy);
+        const p = iso(ship.x + gx, ship.y + gy);
         const mine = world.get(id, AllegianceC)?.faction === 'player';
         const hp = world.get(id, HealthC);
         const downed = world.has(id, DownedC);
