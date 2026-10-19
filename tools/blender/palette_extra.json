@@ -391,5 +391,43 @@
  },
  "alG": {
   "hex": "#35b562"
+ },
+ "fxW": {
+  "hex": "#fffbe6",
+  "emissive": 3.5
+ },
+ "fxY": {
+  "hex": "#ffd84a",
+  "emissive": 3.0
+ },
+ "fxO": {
+  "hex": "#ff8a1e",
+  "emissive": 2.6
+ },
+ "fxR": {
+  "hex": "#e0431c",
+  "emissive": 2.2
+ },
+ "fxD": {
+  "hex": "#8c2414",
+  "emissive": 1.2
+ },
+ "fxC0": {
+  "hex": "#eaffff",
+  "emissive": 4.0
+ },
+ "fxC1": {
+  "hex": "#3ff0ff",
+  "emissive": 3.0
+ },
+ "fxC2": {
+  "hex": "#0c8fb8",
+  "emissive": 1.8
+ },
+ "fxS": {
+  "hex": "#6e6b6b"
+ },
+ "fxSD": {
+  "hex": "#454244"
  }
 }
