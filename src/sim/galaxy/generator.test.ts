@@ -58,7 +58,7 @@ describe('galaxy generation', () => {
         expect(convexOverlap(a.hull, b.hull), `${a.id} / ${b.id}`).toBe(false);
       }
     }
-    expect(checked).toBeGreaterThan(500);
+    expect(checked).toBeGreaterThan(300);
   });
 
   it('connects every sector inside and the whole region through hyperlanes', () => {

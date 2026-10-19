@@ -27,7 +27,7 @@ export const NODES_PER_SECTOR = { min: 5, max: 14 } as const;
 export const ROUTE_EXTRA = 0.3;
 
 /** Hyperlanes: sector pairs closer than this (site to site) may be linked. */
-export const HYPERLANE_MAX = 820;
+export const HYPERLANE_MAX = 1500;
 /** Relative-neighbourhood edges (the backbone, contains the spanning tree) plus this share of the other Gabriel edges. */
 export const HYPERLANE_EXTRA = 0.3;
 /** Chance a hyperlane carries a mid-lane event anchor. */
@@ -77,3 +77,13 @@ export const MAX_HOSTILE_CONTACTS = 2;
 export const STANDING_SPILLOVER = 0.25;
 export const HOSTILE_BELOW = -2;
 export const FRIENDLY_AT = 3;
+
+/** Density field: fractal noise with features about DENSITY_SCALE units across. Below DENSITY_VOID a candidate site
+ * survives with DENSITY_FLOOR chance (sparse stepping stones), above DENSITY_CORE always. */
+export const DENSITY_SCALE = 2600;
+export const DENSITY_OCTAVES = 3;
+export const DENSITY_VOID = 0.4;
+export const DENSITY_CORE = 0.58;
+export const DENSITY_FLOOR = 0.1;
+/** Radius around the start that is lifted towards core density. */
+export const DENSITY_HOME = 1400;

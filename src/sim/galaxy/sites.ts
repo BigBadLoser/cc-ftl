@@ -1,4 +1,5 @@
 import { dist, type Vec } from './geometry';
+import { density, keepChance } from './density';
 import { unit } from './hash';
 import {
   HULL_GAP, RELAX_RANGE, RELAX_STEP, SECTOR_RADIUS, SITE_CELL, SITE_MAX_SHIFT, SITE_MIN_DIST,
@@ -64,17 +65,25 @@ export class SiteField {
     return c;
   }
 
+  /** Stage 1b: did the cell's candidate survive density thinning? Only present candidates compete in stage 2. */
+  private present(gx: number, gy: number): boolean {
+    if (gx === 0 && gy === 0) return true;
+    const c = this.candidate(gx, gy);
+    return unit(this.seed, gx, gy, 5) < keepChance(density(this.seed, c.x, c.y));
+  }
+
   /** Stage 2: does the cell hold a site? */
   accepted(gx: number, gy: number): boolean {
     const k = cellKey(gx, gy);
     let v = this.kept.get(k);
     if (v === undefined) {
       const c = this.candidate(gx, gy);
-      v = true;
+      v = this.present(gx, gy);
       const reach = Math.ceil(SITE_MIN_DIST / SITE_CELL) + 1;
       for (let dy = -reach; dy <= reach && v; dy++) {
         for (let dx = -reach; dx <= reach; dx++) {
           if (dx === 0 && dy === 0) continue;
+          if (!this.present(gx + dx, gy + dy)) continue;
           const o = this.candidate(gx + dx, gy + dy);
           if (dist(c, o) >= SITE_MIN_DIST) continue;
           if (o.pri > c.pri || (o.pri === c.pri && cellKey(gx + dx, gy + dy) > k)) {
