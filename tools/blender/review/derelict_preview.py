@@ -113,7 +113,9 @@ def room(D, pub, level, decayed):
     sc.add("decay.debris.junction.spark", 7, 0, 0.5)
     sc.add("decay.debris.pipe", 4, 1, 0.5)
     sc.add("decay.debris.chunks", 1, 3, 0.5)
-    sc.add("decay.eggs", 0, 5, 0.5)
+    sc.add("decay.eggsac.2x2", 1, 5, 0.5)
+    sc.add("decay.eggsac.1x1", 3, 5, 0.5)
+    sc.add("decay.eggs", 7, 1, 0.5)
     sc.add("decay.breach.roof", 4, 2, 0.001, layer="roof")
     sc.add("decay.scorch.roof.v0", 6, 1, 0.001, layer="roof")
     sc.add("decay.scorch.roof.v1", 1, 4, 0.001, layer="roof")
@@ -168,7 +170,7 @@ def main():
 
 PARTS = ["decay.breach.floor.v0", "decay.breach.floor.v1", "decay.breach.floor.v2", "decay.scorch.floor.v0",
          "decay.scorch.floor.v1", "decay.scorch.floor.v2", "decay.growth.floor.v0", "decay.growth.floor.v1",
-         "decay.growth.floor.v2", "decay.eggs", "decay.debris.plates", "decay.debris.cables", "decay.debris.junction.spark",
+         "decay.growth.floor.v2", "decay.eggs", "decay.eggsac.1x1", "decay.debris.plates", "decay.debris.cables", "decay.debris.junction.spark",
          "decay.debris.pipe", "decay.debris.chunks", "decay.debris.crate", "module.light", "module.light.off",
          "module.light.broken", "decay.ai.scrap", "decay.ai.cables.x", "decay.burnt.1x1"]
 
