@@ -1,6 +1,6 @@
 import { Builder } from './builder';
 import { blockFrom, localBuilder } from './blocks';
-import { noseBlock } from './navyBlocks';
+import { bankBlock, clusterBlock, deckBlock, noseBlock } from './navyBlocks';
 import { bands, chain, deckPair, evenDepth, jobs, mirrorBlock, no, order, propulsion, section, spanOf, twinDrives, type Ctx, type SectionPlan } from './navyKit';
 import { componentBattleship, componentFrigate, linearHull } from './components';
 import { rollProfile } from './profile';
@@ -8,6 +8,7 @@ import { pickNose } from './topoNavy';
 import type { FactionDef, NavyGrammar } from './types';
 import type { RoomSpec } from './plan';
 import { pairUp } from './topoNavy';
+import { shuffle } from './plan';
 import { runLen } from './topoParts';
 
 /**
@@ -111,6 +112,53 @@ function twinHull(c: Ctx, f: FactionDef): boolean {
   return twinDrives(c, hulls, pick(c, c.fam.propulsion), 'start');
 }
 
+/**
+ * A hangar with unequal outboard decks. Each bank carries its own functions and
+ * aft engine section; the original symmetric layout remains available. This
+ * changes the positions of major hull masses without inventing empty sections.
+ */
+function offsetCarrierDecks(c: Ctx, root: number, rooms: RoomSpec[]): [number, number] | null {
+  const [a, b] = pairUp(shuffle(c.rng, [...rooms]));
+  // Move one substantial functional compartment to one bank, so the two decks
+  // have distinct lengths and don't just mirror one another.
+  if (b.length < 2) return null;
+  const extra = c.rng.int(1, Math.min(2, b.length - 1));
+  a.push(...b.splice(0, extra));
+  // A compact carrier should not have one unsupported forty-tile prong.
+  // Rebalance large room groups until the two sides differ by at most ~10 tiles.
+  const len = (xs: RoomSpec[]): number => xs.reduce((n, r) => n + r.w + 1, 0);
+  for (let guard = 0; guard < 8 && len(a) - len(b) > 10 && a.length > 2; guard++) {
+    const moved = a.pop();
+    if (moved) b.unshift(moved);
+  }
+  const side0 = (c.variant ?? 0) < 0.5 ? 'n' : 's';
+  const side1 = side0 === 'n' ? 's' : 'n';
+  const min = spanOf(c, [root]).xMin;
+  const d = c.depth.habitat ?? 3;
+  const attachDeck = (specs: RoomSpec[], side: 'n' | 's', align: 'start' | 'end'): number | null => {
+    const raw = deckBlock(c.rng, 'hull', specs, d);
+    if (!raw) return null;
+    const blk = side === 'n' ? raw : mirrorBlock(raw);
+    for (const port of c.A.free(root, side)) {
+      const id = c.A.attach(root, blk, { side, parentPort: port.id, align, xMin: min, doors: 1 });
+      if (id !== null) return id;
+    }
+    return null;
+  };
+  const one = attachDeck(a, side0, 'end');
+  if (one === null) return null;
+  const two = attachDeck(b, side1, 'end');
+  if (two === null) return null;
+  const e = Math.max(1, Math.ceil(c.plan.engines / 2));
+  const r = Math.max(1, Math.ceil(c.plan.reactors / 2));
+  for (const host of [one, two]) {
+    const block = c.rng.chance(0.5) ? bankBlock(c.rng, e, r) : clusterBlock(c.rng, e, r);
+    if (!block || c.A.attach(host, block, { side: 'e' }) === null) return null;
+  }
+  c.parts.push('offset hull banks');
+  return side0 === 'n' ? [one, two] : [two, one];
+}
+
 /** Carrier: a hangar block with hull decks along it (real volume), an offset island, nacelles aft. */
 function carrierIsland(c: Ctx, f: FactionDef): boolean {
   const j = jobs(c.plan);
@@ -134,10 +182,14 @@ function carrierIsland(c: Ctx, f: FactionDef): boolean {
   if (!prow || c.A.attach(bowId ?? root, prow, { side: 'w' }) === null) return no(c, 'forepeak');
   c.parts.push('forepeak');
   // Crew, core, stores and the remaining guns in hull decks along the hangar: they give it real volume.
-  const decks = deckPair(c, root, root, 'hull', [...j.crew, ...j.core, ...j.stores, ...more.flatMap((s: SectionPlan) => [...s.top, ...s.bottom])], 'start', { xMin: spanOf(c, [root]).xMin });
+  const rooms = [...j.crew, ...j.core, ...j.stores, ...more.flatMap((s: SectionPlan) => [...s.top, ...s.bottom])];
+  const offset = (c.variant ?? 0) < 0.55 && rooms.length >= 6;
+  const decks = offset
+    ? offsetCarrierDecks(c, root, rooms)
+    : deckPair(c, root, root, 'hull', rooms, 'start', { xMin: spanOf(c, [root]).xMin });
   if (!decks) return no(c, 'hull decks');
-  // Drives at the aft ends of both hull decks, pushed outboard: the hangar well behind the hangar stays open aft.
-  if (!twinDrives(c, decks, pick(c, c.fam.propulsion), 'start')) return false;
+  // Separate banks are already fitted at the ends of staggered hull decks.
+  if (!offset && !twinDrives(c, decks, pick(c, c.fam.propulsion), 'start')) return false;
   // The island: the command room grafted straight onto one hull deck's outer wall, off-centre (no stalk).
   const ib = localBuilder(c.rng);
   const cmd = c.plan.command;
