@@ -133,7 +133,8 @@ def airlock_parts(rot, hull, st, level):
     out += [(-1000, f"module.airlock.keepout.r{rot}", *T(-2, v)) for v in (-1, 1)]
     for v in (-1, 1):
         out += [(d(T(0, v), 0.01), f"module.airlock.unloader.r{rot}.back", *T(0, v)),
-                (d(T(-1, v), 0.01), f"module.airlock.unloader.r{rot}.front", *T(-1, v))]
+                (d(T(-1, v), 0.01), f"module.airlock.unloader.r{rot}.front" + (".loaded" if v > 0 else ""),
+                 *T(-1, v))]
     out += [(d(T(0, 0), 0.01), f"module.airlock.housing.r{rot}.{i}", *T(0, 0)),
             (d(T(0, 0), 0.012), f"module.airlock.light.r{rot}.{light}", *T(0, 0)),
             (d(T(1, 0), 0.01), f"module.airlock.hull.r{rot}.{level}", *T(1, 0)),

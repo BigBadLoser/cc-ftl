@@ -23,6 +23,7 @@ Sprites, per rotation r (each anchored at its own tile so the renderer sorts it 
                                                       collar and iris hatch (sort by the tile beyond the hull row);
                                                       docked: clamps on the shuttle hatch, seal light green
   module.airlock.unloader.r<r>.<back|front>           an unloader's two tiles (the same sprites on both sides)
+  module.airlock.unloader.r<r>.front.loaded           the front tile with a crate on the chute's rollers
   module.airlock.keepout.r<r>                         the dashed keep-out square in front of a chute
   module.airlock.walk.r<r>                            the walk zone's corner marks (both tiles in front of the pod)
 The collar's mating face (where a shuttle's hatch meets it) is COLLAR_END, 0.7 past the hull row's outer edge."""
@@ -370,12 +371,25 @@ def _unloader_details():
     return out
 
 
-def unloader(rot, half):
+def _crate(f):
+    """A cargo crate on the chute's rollers, its front just out of the mouth: the game's crate look (rust body, steel
+    corner posts and a mid band)."""
+    cu, su, sv, sz, z0 = CU0 + 0.11, 0.3, 0.34, 0.26, 0.1
+    f.box(cu, UV, z0, su, sv, sz, "rust", top="rustD")
+    for du in (-1, 1):
+        for dv in (-1, 1):
+            f.box(cu + du * (su / 2 - 0.02), UV + dv * (sv / 2 - 0.02), z0, 0.045, 0.045, sz + 0.008, "steel",
+                  top="steel")
+    f.box(cu, UV, z0 + sz * 0.45, su + 0.01, sv + 0.01, 0.03, "steel", top="steel")
+
+
+def unloader(rot, half, loaded=False):
     """An unloader along u at v = 1 (the -v side is the same sprite), cut at u = -0.5 into its two tiles: a taller
     back block against the hull, a lower body with vents, and at the inboard end a hollow slate chute open toward the
     keep-out square (a roller bed on its floor, a light panel overhead, a slatted back wall) under a hood with a dark
-    visor and amber lights; red trim low on the sides and on the hood."""
-    m = core.Mesh(f"airlock_unloader_{rot}_{half}")
+    visor and amber lights; red trim low on the sides and on the hood. loaded: a crate sits on the rollers (the front
+    half only)."""
+    m = core.Mesh(f"airlock_unloader_{rot}_{half}_{int(loaded)}")
     f = frame(m, rot)
     lo, hi = (-0.5, 0.5) if half == "back" else (-1.5, -0.5)
     for shape, v0, v1, col, top in UNLOADER:
@@ -385,6 +399,8 @@ def unloader(rot, half):
     for u, v, z, su, sv, sz, col in _unloader_details():
         if lo <= u < hi:
             f.box(u, v, z, su, sv, sz, col, top=col)
+    if loaded:
+        _crate(f)
     return [m.build()]
 
 
@@ -446,6 +462,7 @@ def items(rot):
         add(f"{ID}.light.r{rot}.{col}", "fx", lambda c=col: lights(rot, c), 0)
     add(f"{ID}.unloader.r{rot}.back", "prop", lambda: unloader(rot, "back"), 0, UV)
     add(f"{ID}.unloader.r{rot}.front", "prop", lambda: unloader(rot, "front"), -1, UV)
+    add(f"{ID}.unloader.r{rot}.front.loaded", "prop", lambda: unloader(rot, "front", True), -1, UV)
     add(f"{ID}.keepout.r{rot}", "block", lambda: keepout(rot), -2, UV)
     add(f"{ID}.walk.r{rot}", "block", lambda: walk(rot), -1, 0)
     return out
