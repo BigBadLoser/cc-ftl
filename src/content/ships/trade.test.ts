@@ -108,7 +108,32 @@ describe('trade, end to end', () => {
     expect(serialize(loaded)).toBe(serialize(sim));
   });
 
-  it('refuses a sale until the player shuttle has a pilot, and a hold that is too small', () => {
+  it('a trade run with no crew aboard completes end to end', () => {
+    const { sim, ship } = withCivilian('mining');
+    const shuttle = sim.world.query(VehicleC)[0] as number;
+    expect(sim.world.get(shuttle, VehicleC)!.pilot).toBe(0);
+    const crate = sim.world.query(StorageC).find((i) => sim.world.get(i, ModuleC)!.gridId === 1)!;
+    storageAdd(sim, crate, 'item.electronics', 10);
+    const have = stored(sim, 'item.electronics');
+    sim.enqueue({ type: 'trade.hail', ship });
+    run(sim, 2);
+    const credits = sim.trade.credits;
+    sim.enqueue({ type: 'trade.offer', ship, give: [{ item: 'item.electronics', count: 10 }], get: [{ item: 'item.ice', count: 5 }] });
+    const offered = ofType(run(sim, 2), 'trade.offered')[0]!;
+    sim.enqueue({ type: 'trade.accept', offer: offered.offer });
+    expect(ofType(run(sim, 2), 'trade.dealMade')[0]).toMatchObject({ courier: 'you' });
+    const events = run(sim, 8000);
+    expect(ofType(events, 'trade.settled')).toHaveLength(1);
+    expect(ofType(events, 'trade.failed')).toHaveLength(0);
+    expect(stored(sim, 'item.electronics')).toBe(have - 10);
+    expect(sim.trade.credits).toBe(credits - offered.balance);
+    const v = sim.world.get(shuttle, VehicleC)!;
+    expect(v.state).toBe('stowed');
+    expect(v.autopilot).toBe(false);
+    expect(v.pilot).toBe(0);
+  });
+
+  it('refuses a hold that is too small', () => {
     const { sim, ship } = withCivilian('mining');
     const crate = sim.world.query(StorageC).find((i) => sim.world.get(i, ModuleC)!.gridId === 1)!;
     storageAdd(sim, crate, 'item.scrap', 90);
@@ -122,8 +147,6 @@ describe('trade, end to end', () => {
       sim.enqueue({ type: 'trade.accept', offer });
       return ofType(run(sim, 2), 'command.rejected').map((e) => e.reason);
     };
-    expect(reasons(sell(5))).toEqual(['noPilot']);
-    crewPilot(sim);
     expect(reasons(sell(80))).toEqual(['tooBig']);
     expect(sim.trade.deals).toHaveLength(0);
     expect(sim.trade.credits).toBe(500);

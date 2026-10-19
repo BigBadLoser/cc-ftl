@@ -220,7 +220,7 @@ FTL's decision-making with physical consequences, in a shared sector.
   friends sell cheaper and pay more.
 - Traders hold stock and a wallet that are fixed by the world seed and the ship, not by when you hail them.
 - **Goods travel by shuttle.** Once you accept, a shuttle carries the cargo between the two ships' airlocks: the seller sends its
-  shuttle if it has one, otherwise yours goes over (it needs a pilot aboard). Your own crew load and unload it at the docking
+  shuttle if it has one, otherwise yours goes over (it flies itself: no pilot or crew needed). Your own crew load and unload it at the docking
   airlock's unloaders. **Payment settles on delivery**; until then the credits are held in escrow. A shuttle shot down on the way
   voids the deal (credits back, goods lost).
 - Stations have no grid yet, so their deliveries are instant (temporary).

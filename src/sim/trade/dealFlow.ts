@@ -26,6 +26,7 @@ export function advanceDeals(sim: Sim): void {
   for (const d of [...sim.trade.deals]) {
     if (isLive(d)) step(sim, d);
     else if (d.courier === 'them' && d.vehicle) dismissCourier(sim, d);
+    else if (d.courier === 'you' && d.vehicle && d.phase === 'done') parkCourier(sim, d);
   }
 }
 
@@ -143,4 +144,12 @@ function instant(sim: Sim, d: Deal): void {
   for (const l of d.get) giveToPlayer(sim, l.item, l.count);
   sim.events.emit({ type: 'trade.delivered', deal: d.id, ship: d.ship, to: 'player' });
   settleDeal(sim, d);
+}
+
+/** The player's shuttle flies itself home after a run; once it is stowed (or gone) it is a normal crewed shuttle again. */
+function parkCourier(sim: Sim, d: Deal): void {
+  const v = sim.world.get(d.vehicle, VehicleC);
+  if (v && v.state !== 'stowed') return;
+  if (v) v.autopilot = false;
+  d.vehicle = 0;
 }

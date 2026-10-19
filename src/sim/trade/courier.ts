@@ -46,10 +46,6 @@ function playerCourier(sim: Sim, units: number): { vehicle: number } | { error: 
       error = 'courierBusy';
       continue;
     }
-    if (!v.pilot) {
-      if (error === 'noCourier') error = 'noPilot';
-      continue;
-    }
     if (units > cap) return { error: 'tooBig' };
     return { vehicle: id };
   }

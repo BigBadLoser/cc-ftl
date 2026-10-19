@@ -31,7 +31,7 @@
   const route = $derived(giveUnits > 0 ? p?.out : p?.in);
 
   const REASONS: Record<string, string> = {
-    noCourier: 'No shuttle to carry it: fit one in a bay', noPilot: 'Put a pilot in your shuttle first (Shuttle panel)',
+    noCourier: 'No shuttle to carry it: fit one in a bay',
     courierBusy: 'Your shuttle is busy', noAirlock: 'No free working airlock to dock at', noShip: 'No ship',
   };
   const refusal: Record<string, string> = {

@@ -37,6 +37,8 @@ export interface Vehicle {
   suits?: number;
   /** Trade: the hold is sealed outbound cargo (being loaded or flown to a buyer); the cargo planner must not unload it. */
   outbound?: boolean;
+  /** Trade: the shuttle is on a trade run and flies itself, so launching, undocking and returning need no pilot. Cleared when it is back in its bay. */
+  autopilot?: boolean;
 }
 export const VehicleC = defineComponent<Vehicle>('vehicle');
 

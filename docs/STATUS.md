@@ -55,7 +55,7 @@ Model, commands, price rules and "how to add a trader or a price" are in `docs/A
   (its guns lock on you at once), so the reputation thaw only applies to non-shooting ships; payment is escrowed at accept; a run
   carries 40 units; trade commands tick the sim once while paused; credits live in `sim.trade`, not on a ship, so they survive a ship swap.
 - **Not done:** hyperlane/sector prices, restocking over time, NPC-to-NPC trade, selling floor stacks (storage only), several runs for
-  a big deal, an automatic pilot, per-faction shuttle livery, art for credits and the trade window (plain UI).
+  a big deal, per-faction shuttle livery, art for credits and the trade window (plain UI).
 
 ## Event system (branch `events`, based on `eva`; not merged; awaiting user approval of the in-game look)
 

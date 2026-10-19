@@ -30,6 +30,7 @@ export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: Courie
     held: Math.abs(pay), courier: plan.courier, phase: 'dispatch', vehicle: plan.vehicle, airlock: plan.airlock, timer: 0, tick: sim.tick,
   };
   const v = plan.vehicle ? sim.world.get(plan.vehicle, VehicleC) : undefined;
+  if (v && deal.courier === 'you') v.autopilot = true;
   if (v && deal.give.length > 0) v.outbound = true;
   sim.trade.deals.push(deal);
   sim.trade.offers = sim.trade.offers.filter((o) => o.id !== offer.id);
@@ -77,7 +78,10 @@ export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void 
   d.reason = reason;
   d.timer = 0;
   const v = d.vehicle ? sim.world.get(d.vehicle, VehicleC) : undefined;
-  if (v) v.outbound = false;
+  if (v) {
+    v.outbound = false;
+    v.autopilot = false;
+  }
   sim.events.emit({ type: 'trade.failed', deal: d.id, ship: d.ship, reason });
   trimHistory(sim);
 }

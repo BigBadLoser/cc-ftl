@@ -435,7 +435,7 @@ accept adds the courier ones `noCourier noPilot courierBusy noAirlock tooBig dea
 commands while paused so the window answers at once.
 
 **Delivery (who flies, decided and documented).** `planCourier` picks:
-1. Goods the **player hands over** always go on the **player's shuttle** (it needs a pilot aboard, an empty hold, and a free working
+1. Goods the **player hands over** always go on the **player's shuttle** (it flies itself, no pilot or crew needed: `Vehicle.autopilot` lifts the pilot rules for the run only; it needs an empty hold and a free working
    airlock on the player's ship).
 2. Goods **from the trader** come on the **trader's own shuttle** if its kind has `shuttle: true` (a real `VehicleC` spawned at its ship,
    no crew, `home: 0`, despawned when it is back); otherwise the **player's shuttle goes over** to fetch them.
