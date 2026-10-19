@@ -5,7 +5,7 @@ import type { Ctx } from './navyKit';
 import { arrangeHull } from './navyLayouts';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
 import { cutSeam, freeze, notch, survivors } from './salvage';
-import { barge, drive, freighter, habitat, liner, podString, reactorRoom, station, tower, tug } from './civilBlocks';
+import { barge, cockpit, drive, freighter, habitat, liner, podString, reactorRoom, station, tower, tug } from './civilBlocks';
 import { containerFrame, linerBody, oreCage, truss } from './civilFrames';
 import { latticeStation, ringStation } from './civilStations';
 import { pickNose } from './topoNavy';
@@ -191,6 +191,8 @@ const takeCrates = (p: Pool, t: { crates: number }, min: number): number => {
   t.crates = n;
   return n;
 };
+/** Support rooms for a crew donor: all that are left when it is the last crew donor, else one. */
+const sup = (p: Pool): RoomSpec[] => p.support.splice(0, (p.share.crew ?? 1) <= 1 ? p.support.length : 1);
 const docks = (p: Pool, n: number): RoomSpec[] => { const k = Math.min(n, p.docks); p.docks -= k; return Array.from({ length: k }, dockSpec); };
 
 export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
@@ -207,7 +209,7 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
   }) },
   habitat: { serves: ['crew', 'command'], build: civil('civil', 'habitat ring', 0.25, (c, p, t) => {
     const cmd = takeCmd(p, 'habitat', t);
-    const crew = [...part(p, 'crew', p.quarters), ...p.support.splice(0, 1)];
+    const crew = [...part(p, 'crew', p.quarters), ...sup(p)];
     const hub = crew.find((r) => r.role === 'support') ?? crew[0] ?? cmd[0];
     if (!hub) return null;
     const rest = [...cmd, ...crew].filter((r) => r !== hub);
@@ -218,11 +220,11 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
   liner: { serves: ['crew'], build: civil('civil', 'liner segment', 0.5, (c, p, t) => {
     const q = part(p, 'crew', p.quarters);
     if (q.length === 0) return null;
-    const sup = p.support.splice(0, 1);
+    const extra = sup(p);
     const ls = q.flatMap((r) => r.mods.filter((m) => m !== 'module.bed'));
-    const lounge: RoomSpec = { role: 'support', mods: [...ls, ...sup.flatMap((s) => s.mods)], w: 4, h: 7 };
+    const lounge: RoomSpec = { role: 'support', mods: [...ls, ...extra.flatMap((s) => s.mods)], w: 4 + 2 * extra.length, h: 7 };
     // The cabins and lounge hold the quarters' beds and life support; settle by module.
-    t.specs.push(...q, ...sup);
+    t.specs.push(...q, ...extra);
     return liner(c.rng, q.reduce((n, r) => n + r.mods.filter((m) => m === 'module.bed').length, 0), lounge);
   }) },
   station: { serves: ['crew', 'command'], build: civil('civil', 'station module', 0.3, (c, p, t) => {
@@ -232,6 +234,33 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
   }) },
   barge: { serves: ['crates'], build: civil('mining', 'ore barge', 0.4, (c, p, t) => barge(c.rng, takeCrates(p, t, 6))) },
   podString: { serves: ['crates'], build: civil('civil', 'cargo pods', 0.2, (c, p, t) => podString(c.rng, takeCrates(p, t, 4))) },
+  // Bows (v25): a civil freighter cockpit, a liner nose (an observation dome ahead of the bridge), a blunt cut-off
+  // block; the navy bow stays one of them.
+  cockpitBow: { serves: ['command'], build: civil('civil', 'cockpit bow', 0, (c, p, t) => {
+    const cmd = takeCmd(p, 'cockpitBow', t);
+    if (cmd.length === 0) return null;
+    const beside = p.core.splice(0, 2);
+    t.specs.push(...beside);
+    return cockpit(c.rng, cmd[0] as RoomSpec, beside);
+  }) },
+  linerBow: { serves: ['command'], build: civil('civil', 'liner bow', 0, (c, p, t) => {
+    const cmd = takeCmd(p, 'linerBow', t);
+    if (cmd.length === 0) return null;
+    const beside = p.core.splice(0, 2);
+    t.specs.push(...beside);
+    const b = cockpit(c.rng, cmd[0] as RoomSpec, beside);
+    const bridge = b?.parts[0];
+    if (!b || !bridge) return null;
+    b.attach(bridge, 'w', { role: 'support', mods: [], w: c.rng.int(2, 4), h: Math.max(2, bridge.h - 2 - 2 * c.rng.int(0, 1)) }, 1 + c.rng.int(0, 1));
+    return b;
+  }) },
+  bluntBow: { serves: ['command'], build: civil('navy', 'blunt bow', 0, (c, p, t) => {
+    const cmd = takeCmd(p, 'bluntBow', t);
+    if (cmd.length === 0) return null;
+    const rooms = [...cmd, ...p.core.splice(0, 3)];
+    t.specs.push(...rooms.slice(1));
+    return station(c.rng, rooms);
+  }) },
   // Civilian generator pieces (v23): frames, cages, towers, liner hull chunks, station ring and lattice pieces, drives.
   containerFrame: { serves: ['crates'], build: (c, _f, p) => {
     const n = Math.max(6, partOf(p, 'crates', p.crates, 6));
@@ -247,7 +276,7 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
     return { ...cg, donor: 'mining', label: 'mining: ore cage' };
   } },
   crewTower: { serves: ['crew', 'command'], build: civil('civil', 'crew tower', 0, (c, p, t) => {
-    const rooms = [...takeCmd(p, 'crewTower', t), ...part(p, 'crew', p.quarters), ...p.support.splice(0, 1)];
+    const rooms = [...takeCmd(p, 'crewTower', t), ...part(p, 'crew', p.quarters), ...sup(p)];
     if (rooms.length === 0) return null;
     t.specs.push(...rooms.filter((r) => !t.specs.includes(r)));
     return tower(c.rng, rooms);
@@ -255,17 +284,17 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
   linerChunk: { serves: ['crew'], build: civil('civil', 'liner hull', 0.6, (c, p, t) => {
     const q = part(p, 'crew', p.quarters);
     if (q.length === 0) return null;
-    const sup = p.support.splice(0, 1);
+    const extra = sup(p);
     const ls = q.flatMap((r) => r.mods.filter((m) => m !== 'module.bed'));
-    const lounges: RoomSpec[] = [{ role: 'support' as const, mods: [...ls, ...sup.flatMap((s) => s.mods)], w: 4, h: 3 }].filter((r) => r.mods.length > 0);
-    t.specs.push(...q, ...sup);
+    const lounges: RoomSpec[] = [{ role: 'support' as const, mods: ls, w: 4, h: 3 }, ...extra.map((r) => ({ ...r, w: Math.max(3, r.w) }))].filter((r) => r.mods.length > 0);
+    t.specs.push(...q, ...extra);
     const beds = q.reduce((n, r) => n + r.mods.filter((m) => m === 'module.bed').length, 0);
     const form = { peak: 0.3, tail: c.rng.pick([0, 0.3]), nose: c.rng.pick([0.2, 0.5]), amp: c.rng.int(2, 3), extra: 0 };
     return linerBody(c.rng, beds, lounges, c.rng.pick(['teardrop', 'oval'] as const), [2, 2], form);
   }) },
   ringPiece: { serves: ['crew', 'command'], build: civil('civil', 'station ring', 0.5, (c, p, t) => {
     const cmd = takeCmd(p, 'ringPiece', t);
-    const crew = [...part(p, 'crew', p.quarters), ...p.support.splice(0, 1)];
+    const crew = [...part(p, 'crew', p.quarters), ...sup(p)];
     const hub = cmd[0] ?? crew.shift();
     if (!hub) return null;
     t.specs.push(...crew, ...(cmd[0] ? [] : [hub]));
@@ -274,7 +303,7 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
     return ringStation(c.rng, hub, crew, 0, 0, c.rng.chance(0.5) ? ['w', 'e'] : ['n', 's'], o);
   }) },
   latticePiece: { serves: ['crew'], build: civil('civil', 'station lattice', 0.4, (c, p, t) => {
-    const mods = [...part(p, 'crew', p.quarters), ...p.support.splice(0, 1), ...p.core.splice(0, 1)];
+    const mods = [...part(p, 'crew', p.quarters), ...sup(p), ...p.core.splice(0, 1)];
     if (mods.length < 2) { p.quarters.push(...mods.filter((r) => r.role === 'quarters')); p.support.push(...mods.filter((r) => r.role === 'support')); p.core.push(...mods.filter((r) => r.role !== 'quarters' && r.role !== 'support')); return null; }
     t.specs.push(...mods);
     p.docks = Math.max(0, p.docks - 2);
@@ -309,7 +338,7 @@ export function leftovers(c: Ctx, f: FactionDef, p: Pool): Block[] {
   if (p.command) add('navyBow');
   if (p.command) add('habitat');
   if (p.hangars.length > 0) add('freighter');
-  if (p.guns.length > 0) add('navyBattery');
+  // Leftover guns are mounted on the hull by the composer (sponsons), never a whole extra battery section.
   if (p.quarters.length > 0 || p.support.length > 0) add('habitat');
   if (p.core.length > 0) add('station');
   const rr = p.reactors > 0 ? reactorRoom(c.rng, p.reactors) : null;

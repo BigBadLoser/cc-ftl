@@ -109,7 +109,8 @@ export type CivilGrammar = 'freighter' | 'liner' | 'mining' | 'station';
 export type DonorKind =
   | 'navyBow' | 'navyDrive' | 'navyBattery' | 'navyHulk' | 'droneSection'
   | 'freighter' | 'habitat' | 'liner' | 'station' | 'barge' | 'podString' | 'tug'
-  | 'containerFrame' | 'oreCage' | 'crewTower' | 'linerChunk' | 'ringPiece' | 'latticePiece' | 'lightDrive';
+  | 'containerFrame' | 'oreCage' | 'crewTower' | 'linerChunk' | 'ringPiece' | 'latticePiece' | 'lightDrive'
+  | 'cockpitBow' | 'linerBow' | 'bluntBow';
 
 /** Standard functional sections of a navy hull (one per kind of job). */
 export type SectionKind = 'command' | 'battery' | 'core' | 'habitat' | 'cargo' | 'hangar' | 'drive';

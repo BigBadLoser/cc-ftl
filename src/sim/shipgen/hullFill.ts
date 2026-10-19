@@ -72,9 +72,18 @@ function enclosed(A: Arranger): Cell[][] {
 /** Enclosed space cells in all (scoring pressure against courtyards). */
 export const holes = (A: Arranger): number => enclosed(A).reduce((t, r) => t + r.length, 0);
 
-/** Plate over enclosed pockets of at most `max` cells (never one a gun or airlock must see out of). */
+/**
+ * Plate over enclosed pockets of at most `max` cells (never one a gun or airlock must see out of, nor daylight between
+ * the members of bare structure: struts, braces, frames).
+ */
 export function fillHoles(A: Arranger, max: number): number {
-  return addPlate(A, enclosed(A).filter((r) => r.length <= max && !r.some((c) => A.reserved(c.x, c.y))).flat(), 'filled pocket');
+  const bare = new Set<number>();
+  for (const p of A.placed) {
+    if (!p.block.bare) continue;
+    p.block.rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] !== '.') bare.add(key(p.x + i, p.y + j)); });
+  }
+  const byBare = (r: Cell[]): boolean => bare.size > 0 && r.some((c) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => bare.has(key(c.x + (dx as number), c.y + (dy as number)))));
+  return addPlate(A, enclosed(A).filter((r) => r.length <= max && !r.some((c) => A.reserved(c.x, c.y)) && !byBare(r)).flat(), 'filled pocket');
 }
 
 /**

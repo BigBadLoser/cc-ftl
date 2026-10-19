@@ -370,6 +370,19 @@ Same arranger, no sim changes. Files:
 - Viewer metrics for salvage: `donors` (big donor sections per ship, bow and drive aside) and `daylight` (narrowest
   gap, in tiles, between two donor sections not welded directly).
 
+## Scrappers v25: braced joins, flat donors, varied bows
+
+- Braces (`scrapGrammars.ts` `brace`): after a donor hangs on its strut, two more parallel truss members span the same
+  gap wherever host and donor face each other across open space (3+ tiles from the strut and each other, so daylight
+  shows between them). Members are bare one-tile beams; `fillHoles` now leaves pockets beside bare structure open.
+- Flatter donors: family weights favour liner chunks, container frames, barges and freighters; habitats, crew towers,
+  station and ring pieces are off the flank list (still donors elsewhere, e.g. as anchors are filtered to lengthwise).
+- Bows (`BOWS`): navy nose 2, freighter cockpit 2 (`cockpitBow`), liner nose 1 (`linerBow`: a dome ahead of the
+  bridge), blunt cut-off block 1 (`bluntBow`). Bows take up to two core rooms (no leftover station module).
+- Leftovers: the last crew donor takes every support room; leftover guns go on the hull as sponsons (`mountGuns`),
+  a battery section only for guns that find no place.
+- Viewer: `struts` (struts and braces per ship) and `aspect` join `donors` and `daylight` on salvage sheets.
+
 ## Transitions (v18): tapered collars between sections
 
 - **`hullFill.ts` holds all the plating passes** that run after an arrangement: seam plates, enclosed-pocket

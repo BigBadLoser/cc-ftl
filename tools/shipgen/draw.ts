@@ -181,6 +181,7 @@ export function contactSheet(
   // Salvage: big donor sections per ship (the anchor's bow and drive aside), and the narrowest daylight (tiles,
   // Chebyshev) between two donor sections not welded to each other directly.
   const isDonor = (a: { donor?: string; label: string }): boolean => !!a.donor && a.donor !== 'scrap' && !/bow|drive|tug/.test(a.label);
+  const strutsPer = (d: NonNullable<GenResult['debug']>): number => d.assemblies.filter((a) => /scrap: (strut|brace)/.test(a.label)).length;
   const salv = ships.filter((x) => x.g.debug && x.g.debug.assemblies.some(isDonor));
   const donorCount = salv.map((x) => x.g.debug!.assemblies.filter(isDonor).length);
   const gaps = salv.map(({ g }) => {
@@ -202,7 +203,8 @@ export function contactSheet(
     return best;
   });
   const avg = (xs: number[]): number => (xs.length ? xs.reduce((t, v) => t + v, 0) / xs.length : 0);
-  const salvText = salv.length ? ` donors ${avg(donorCount).toFixed(1)} daylight ${avg(gaps).toFixed(1)} (min ${gaps.length ? Math.min(...gaps) : 0})` : '';
+  const aspects = salv.map((x) => x.g.metrics?.aspect ?? 0);
+  const salvText = salv.length ? ` donors ${avg(donorCount).toFixed(1)} daylight ${avg(gaps).toFixed(1)} (min ${gaps.length ? Math.min(...gaps) : 0}) struts ${avg(salv.map((x) => strutsPer(x.g.debug!))).toFixed(1)} aspect ${avg(aspects).toFixed(2)}` : '';
   const spines = ships.map((x) => x.g.metrics?.spine ?? 0);
   const spine = spines.reduce((t, v) => t + v, 0) / Math.max(1, spines.length);
   const arch = meanPairwise(ships.map((x) => x.g.debug?.profile ?? x.g.topology), profileDistance);

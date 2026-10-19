@@ -8,7 +8,8 @@ import { plate } from './hullFill';
 import { storeRoom } from './droneBlocks';
 import { dockBlock, podBlock } from './navyBlocks';
 import { no, type Ctx } from './navyKit';
-import { pickWeighted, shuffle } from './plan';
+import { pickWeighted, shuffle, weaponSpec } from './plan';
+import { mountGuns } from './navyMounts';
 import { DONORS, leftovers, poolOf, clonePool, restorePool, type Need, type Pool } from './scrapDonors';
 import type { DonorKind, FactionDef, ScrapGrammar } from './types';
 
@@ -27,7 +28,9 @@ const OPP: Record<Side, Side> = { n: 's', s: 'n', e: 'w', w: 'e' };
 /** Lengthwise donors a ship can be built along (a body with a bow end and a stern end). */
 const LINE: DonorKind[] = ['navyHulk', 'freighter', 'containerFrame', 'linerChunk', 'barge', 'liner'];
 /** Donors that only ever extend the anchor line (a bow, a drive). */
-const ENDS: DonorKind[] = ['navyBow', 'navyDrive', 'lightDrive', 'tug'];
+const ENDS: DonorKind[] = ['navyBow', 'cockpitBow', 'linerBow', 'bluntBow', 'navyDrive', 'lightDrive', 'tug'];
+/** Salvaged bows, weighted: navy noses, a freighter cockpit, a liner nose, a blunt cut-off block. */
+const BOWS: { value: DonorKind; weight: number }[] = [{ value: 'navyBow', weight: 2 }, { value: 'cockpitBow', weight: 2 }, { value: 'linerBow', weight: 1 }, { value: 'bluntBow', weight: 1 }];
 
 interface Cast {
   anchor: DonorKind;
@@ -47,7 +50,7 @@ function choose(c: Ctx): Cast {
   const anchors = (c.fam.anchors ?? []).filter((a) => LINE.includes(a.value));
   const anchor = anchors.length > 0 ? pickWeighted(c.rng, anchors) : 'navyHulk';
   const hulk = anchor === 'navyHulk';
-  const bow: DonorKind | null = hulk ? null : 'navyBow';
+  const bow: DonorKind | null = hulk ? null : pickWeighted(c.rng, BOWS);
   const drive: DonorKind | null = hulk ? null : pick(kinds.filter((k) => ['navyDrive', 'lightDrive', 'tug'].includes(k) && (w[k] ?? 0) > 0)) ?? 'lightDrive';
   const cast: DonorKind[] = [anchor, ...(bow ? [bow] : []), ...(drive ? [drive] : [])];
   const flanks: DonorKind[] = [];
@@ -202,6 +205,55 @@ function clearOf(c: Ctx, id: number, strutId: number, gap: number): boolean {
   return true;
 }
 
+/** A bare truss member `len` long (a column when `vertical`). */
+const member = (len: number, vertical: boolean): Block => ({
+  kind: 'beam', label: 'scrap: brace', access: 'external', rows: vertical ? Array<string>(len).fill('=') : ['='.repeat(len)],
+  legend: new Map(), ports: [], faceE: [], origin: { x: 0, y: 0 }, exposed: [], donor: 'scrap', bare: true,
+});
+
+/** Drawn extent of a placed block. */
+function extent(c: Ctx, id: number): { x0: number; y0: number; x1: number; y1: number } {
+  const t = cells(c, id);
+  return { x0: Math.min(...t.map((q) => q.x)), y0: Math.min(...t.map((q) => q.y)), x1: Math.max(...t.map((q) => q.x)), y1: Math.max(...t.map((q) => q.y)) };
+}
+
+/**
+ * Extra members across a strut's gap: one or two parallel truss beams beside it (spaced to leave daylight between),
+ * reaching from the host's wall to the donor's wherever both face each other across open space.
+ */
+function brace(c: Ctx, s: number, host: number, donor: number, vertical: boolean): number {
+  const st = extent(c, s);
+  const h = extent(c, host);
+  const d = extent(c, donor);
+  const free = (x: number, y: number): boolean => c.A.cell(x, y) === undefined && !c.A.reserved(x, y);
+  // Along the join: columns (vertical struts) or rows (horizontal ones) both blocks span.
+  const [lo, hi] = vertical ? [Math.max(h.x0, d.x0), Math.min(h.x1, d.x1)] : [Math.max(h.y0, d.y0), Math.min(h.y1, d.y1)];
+  const mid = vertical ? (st.x0 + st.x1) / 2 : (st.y0 + st.y1) / 2;
+  const want = 2;
+  const cands = shuffle(c.rng, Array.from({ length: Math.max(0, hi - lo - 1) }, (_, i) => lo + 1 + i).filter((u) => Math.abs(u - mid) >= 3));
+  const used: number[] = [];
+  for (const u of cands) {
+    if (used.length >= want || used.some((v) => Math.abs(v - u) < 3)) continue;
+    // Walk the gap across from the strut's span, out to the first occupied cell each way (at most 3 past it).
+    const [a0, a1] = vertical ? [st.y0, st.y1] : [st.x0, st.x1];
+    const at = (k: number): [number, number] => (vertical ? [u, k] : [k, u]);
+    let top = a0 + 1;
+    while (top > a0 - 3 && free(...at(top - 1))) top--;
+    let bot = a1 - 1;
+    while (bot < a1 + 3 && free(...at(bot + 1))) bot++;
+    if (free(...at(top - 1)) || free(...at(bot + 1)) || bot < top) continue;
+    let ok = true;
+    for (let k = top; k <= bot && ok; k++) ok = free(...at(k));
+    if (!ok) continue;
+    const m = member(bot - top + 1, vertical);
+    const [X, Y] = at(top);
+    if (!c.A.canPlace(m, X, Y)) continue;
+    c.A.place(m, X, Y);
+    used.push(u);
+  }
+  return used.length;
+}
+
 /** Hang a donor off `host` on a long strut, keeping daylight round it; undone if it crowds anything. */
 function hang(c: Ctx, host: number, v: Block, side: Side): number | null {
   const horiz = side === 'e' || side === 'w';
@@ -210,7 +262,11 @@ function hang(c: Ctx, host: number, v: Block, side: Side): number | null {
   const s = c.A.attach(host, strut(c.rng, len, horiz), { side, align: horiz ? 'mid' : c.rng.pick(['start', 'mid', 'end', 'any'] as const), kind: 'graft' });
   if (s === null) return null;
   const id = c.A.attach(s, v, { side, align: 'mid', kind: 'graft' }) ?? c.A.attach(s, v, { side, align: 'any', kind: 'graft' });
-  if (id !== null && clearOf(c, id, s, 2)) { c.parts.push('strut'); return id; }
+  if (id !== null && clearOf(c, id, s, 2)) {
+    const n = brace(c, s, host, id, !horiz);
+    c.parts.push(n > 0 ? `strut+${n}` : 'strut');
+    return id;
+  }
   if (id !== null) c.A.undoLast();
   c.A.undoLast();
   return null;
@@ -271,6 +327,17 @@ function compose(c: Ctx, f: FactionDef, mode: ScrapGrammar): boolean {
     if (id === null) return no(c, `hang ${b.label}`);
     c.parts.push(b.label);
     if (mode !== 'raft') side = OPP[side];
+  }
+  // Guns no donor carried go on the hull as sponsons; only what finds no place there gets a battery section.
+  if (p.guns.length > 0) {
+    const left = mountGuns(c, line.map((h) => ({ n: h, s: h })), p.guns.map((m) => weaponSpec(c.defs, [m])), { cluster: 'spread' });
+    p.guns = left.flatMap((r) => r.mods);
+    if (p.guns.length > 0) {
+      p.share = {};
+      const bat = DONORS.navyBattery.build(c, f, p);
+      if (!bat || (hang(c, line[0] as number, bat, side) ?? hang(c, line[line.length - 1] as number, bat, OPP[side])) === null) return no(c, 'guns');
+    }
+    c.parts.push('sponsons');
   }
   return improvise(c, p);
 }
