@@ -1,5 +1,5 @@
 import type { ShipTemplate } from './registry';
-import { Grid } from './grid';
+import { Grid, type GridLike } from './grid';
 import { ProductionC } from './items/components';
 import { storageAdd } from './items/storage';
 import { spawnModule } from './modules/spawn';
@@ -34,7 +34,7 @@ export function gridFromTemplate(id: number, t: ShipTemplate): Grid {
 }
 
 /** Set a tile's gas and temperature to the normal value for its struct kind. */
-export function initAtmosphere(grid: Grid, x: number, y: number): void {
+export function initAtmosphere(grid: GridLike, x: number, y: number): void {
   const kind = grid.get('struct', x, y);
   const air = kind === Struct.Floor || kind === Struct.Door;
   grid.set('o2', x, y, air ? NORMAL_O2 : 0);

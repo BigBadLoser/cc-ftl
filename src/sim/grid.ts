@@ -4,7 +4,7 @@ export type FieldType = 'u8' | 'u16' | 'u32' | 'f32';
 /** Field name -> storage type, passed at Grid construction. */
 export type FieldSpec = Record<string, FieldType>;
 
-type FieldArray = Uint8Array | Uint16Array | Uint32Array | Float32Array;
+export type FieldArray = Uint8Array | Uint16Array | Uint32Array | Float32Array;
 
 /** JSON-able snapshot of a Grid. Revisions are not saved; they restart at 0. */
 export interface GridData {
@@ -17,14 +17,32 @@ export interface GridData {
 /** Chunk edge length in tiles, for per-chunk revision tracking. */
 export const CHUNK_SIZE = 16;
 
-function allocate(type: FieldType, n: number): FieldArray {
+/**
+ * What systems and render use of a tile grid. Implemented by the dense `Grid` and by `GridWindow`, a rectangle of a
+ * `SectorGrid` in local coordinates. `raw` is a temporary escape hatch: on a window it is a dense copy.
+ */
+export interface GridLike {
+  readonly id: number;
+  readonly width: number;
+  readonly height: number;
+  has(field: string): boolean;
+  fieldNames(): string[];
+  inBounds(x: number, y: number): boolean;
+  get(field: string, x: number, y: number): number;
+  set(field: string, x: number, y: number, value: number): void;
+  revision(field: string): number;
+  chunkRevision(field: string, cx: number, cy: number): number;
+  raw(field: string): Readonly<FieldArray>;
+}
+
+export function allocate(type: FieldType, n: number): FieldArray {
   if (type === 'u8') return new Uint8Array(n);
   if (type === 'u16') return new Uint16Array(n);
   if (type === 'u32') return new Uint32Array(n);
   return new Float32Array(n);
 }
 
-function toBase64(arr: FieldArray): string {
+export function toBase64(arr: FieldArray): string {
   const bytes = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
   let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) {
@@ -33,7 +51,7 @@ function toBase64(arr: FieldArray): string {
   return btoa(bin);
 }
 
-function fromBase64(type: FieldType, b64: string, n: number): FieldArray {
+export function fromBase64(type: FieldType, b64: string, n: number): FieldArray {
   const bin = atob(b64);
   const arr = allocate(type, n);
   const bytes = new Uint8Array(arr.buffer);
@@ -46,7 +64,7 @@ function fromBase64(type: FieldType, b64: string, n: number): FieldArray {
  * A rectangular tile grid with named typed-array field layers. All writes go through set(),
  * which bumps a per-field revision and a per-chunk revision so the renderer can diff cheaply.
  */
-export class Grid {
+export class Grid implements GridLike {
   readonly chunksX: number;
   readonly chunksY: number;
   private readonly types = new Map<string, FieldType>();

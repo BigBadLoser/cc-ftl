@@ -1,4 +1,5 @@
-import type { FieldSpec, Grid } from './grid';
+import type { FieldSpec, GridLike } from './grid';
+import { SPACE_TEMP } from './tuning';
 
 /** Structural kind of a tile, stored in the `struct` field. Materials/variants come later. */
 export const Struct = {
@@ -38,7 +39,29 @@ export const SHIP_FIELDS = {
   item: 'u32',
   /** Integrity of structural tiles (wall, door) 0..255. At 0 the tile breaches (see combat/breach.ts). */
   hp: 'u8',
+  /** Entity id of the owning `ShipC` for non-Space tiles (0 = none). Written by stamping; read by the sector grid. */
+  ship: 'u32',
 } as const satisfies FieldSpec;
+
+/**
+ * Empty value of each field: what an unallocated sector chunk reads as (vacuum). Every SHIP_FIELDS key must be present;
+ * `SectorGrid` does not store a tile equal to it unless its chunk already exists.
+ */
+export const SHIP_EMPTY = {
+  struct: Struct.Space,
+  room: 0,
+  o2: 0,
+  co2: 0,
+  temp: SPACE_TEMP,
+  fire: 0,
+  smoke: 0,
+  light: 0,
+  door: 0,
+  module: 0,
+  item: 0,
+  hp: 0,
+  ship: 0,
+} as const satisfies Record<keyof typeof SHIP_FIELDS, number>;
 
 /** True if crew can stand on this tile kind (ignores modules: see modules/walk.ts). */
 export function isWalkable(kind: number): boolean {
@@ -50,7 +73,7 @@ export function isWalkable(kind: number): boolean {
  * ring of Space tiles touching the hull (8-neighbour) that the pack's thrusters let them drift along. Beams (`Struct.Beam`)
  * join here when they land. Every walk rule (pathfinder, movement, move orders) asks for it when the walker wears a suit.
  */
-export function isEvaWalkable(grid: Grid, x: number, y: number): boolean {
+export function isEvaWalkable(grid: GridLike, x: number, y: number): boolean {
   if (!grid.inBounds(x, y) || grid.get('struct', x, y) !== Struct.Space) return false;
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
@@ -76,14 +99,14 @@ export function hasIntegrity(kind: number): boolean {
 }
 
 /** Write a tile's struct kind and reset its integrity to match (full for walls/doors, 0 otherwise). */
-export function writeStruct(grid: Grid, x: number, y: number, kind: number): void {
+export function writeStruct(grid: GridLike, x: number, y: number, kind: number): void {
   if (grid.get('struct', x, y) !== kind) grid.set('struct', x, y, kind);
   const hp = hasIntegrity(kind) ? STRUCT_MAX_HP : 0;
   if (grid.has('hp') && grid.get('hp', x, y) !== hp) grid.set('hp', x, y, hp);
 }
 
 /** True if any 4-neighbour of (x, y) is Space or lies outside the grid (the ship's outer boundary). */
-export function bordersSpace(grid: Grid, x: number, y: number): boolean {
+export function bordersSpace(grid: GridLike, x: number, y: number): boolean {
   for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
     const nx = x + dx;
     const ny = y + dy;
