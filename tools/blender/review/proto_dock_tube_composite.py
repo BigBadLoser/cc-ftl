@@ -20,9 +20,9 @@ SHEET = np.array(Image.open(ROOT / "public/assets/sprites/airlock.png").convert(
 GLOW = np.array(Image.open(ROOT / "public/assets/sprites/airlock.glow.png").convert("RGBA"))
 Z_PX = 16 * math.sqrt(6)
 HATCH_U, HATCH_V, COLLAR_FACE, DOCK_Z = 1.40, 0.817, 0.2, 0.95 - 1.3
-GAP = 1.0                                   # how much further out than flush the shuttle holds off
+GAP = 0.5                                   # how much further out than flush the shuttle holds off (= the tube's one length)
 CASES = {"west": (4, 3, (-1, 0)), "north": (6, 0, (0, -1))}      # name -> (d, airlock rotation, outward)
-STEPS = ("tube retracted", "tube extending", "tube extending", "tube mated, collar clamps")
+STEPS = ("tube retracted (nothing on the hull)", "tube extending", "tube extending", "tube mated, collar clamps")
 
 
 def sprite(aid):
@@ -54,7 +54,7 @@ def frame_image(name, i):
     sx, sy = cx + (dx - dy) * 32, cy + (dx + dy) * 16 - DOCK_Z * Z_PX
     layer = np.zeros_like(game)
     layer[..., 3] = 255
-    for tag in (f"dock_d{d}", f"tube_d{d}_{i}"):
+    for tag in (f"dock_d{d}",) + ((f"tube_d{d}_{i}",) if i else ()):
         r, g, an = npz(tag)
         put(layer, r, g, an, sx, sy)
     bg = game[..., :3].astype(int).sum(-1) < 34

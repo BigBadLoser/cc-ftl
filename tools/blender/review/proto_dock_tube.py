@@ -18,29 +18,39 @@ OUT = Path(sys.argv[sys.argv.index("--") + 1])
 OUT.mkdir(parents=True, exist_ok=True)
 for k, hx in VB.LIVERY.items():
     palette._data[k] = {"hex": hx}
-HATCH_SURF, HATCH_U, HATCH_Z = 0.80, 1.40, 1.30      # hatch surface (out from the centre line), along the nose, axis height
-LENGTHS = (0.1, 0.4, 0.7, 1.0)                        # extension from the hatch surface: retracted .. mated
-RADII = (0.77, 0.68, 0.59)                            # nested segments, outermost first
-BASE = 0.3                                            # the outer segment's fixed length
+HATCH_SURF, HATCH_U, HATCH_Z = 0.80, 1.40, 1.30      # hatch outer plane (out from the centre line), along the nose, axis height
+LENGTHS = (0.0, 0.18, 0.34, 0.5)                      # extension from the hatch plane: retracted (no sprite) .. mated (one fixed length)
+RADII = (0.78, 0.70, 0.62)                            # nested rings sized to the hatch opening (radius 0.80), outermost first
+SIDES = 24
+
+
+def _annulus(f, u, r0, r1, mat, v, z):
+    """Flat ring at u between radii r0 < r1 (facing +u)."""
+    a = [f.pt(u, v + r0 * math.cos(i * math.tau / SIDES), z + r0 * math.sin(i * math.tau / SIDES)) for i in range(SIDES)]
+    b = [f.pt(u, v + r1 * math.cos(i * math.tau / SIDES), z + r1 * math.sin(i * math.tau / SIDES)) for i in range(SIDES)]
+    for i in range(SIDES):
+        j = (i + 1) % SIDES
+        f.poly([a[i], b[i], b[j], a[j]], mat, flip=True)
 
 
 def tube(heading, length):
-    """The telescoping tube from the hatch toward the hull, in a frame whose u axis is the hatch normal."""
+    """The telescoping tube from the hatch toward the hull, in a frame whose u axis is the hatch normal. Open rings, no end
+    discs: three nested shells that slide out of the hatch opening (ring k reaches k/3 of the length), a hazard mouth ring
+    with lamp studs on the innermost and a dark bore."""
     m = core.Mesh("dock_tube")
     f = FlightFrame(m, heading - math.pi / 2)
-    u0 = HATCH_SURF - 0.04
-    rest = max(0.0, length - BASE)
-    ends = (u0 + BASE, u0 + BASE + rest / 2, u0 + BASE + rest)
-    mats = (("gW1", "steelL"), ("steelL", "steel"), ("steel", "steelD"))
-    for k, (r, e, (col, cap)) in enumerate(zip(RADII, ends, mats)):
-        f.hcyl(u0 + 0.02 * k, e, HATCH_U, HATCH_Z, r, col, sides=20, cap=cap)
-        f.hcyl(e - 0.012, e, HATCH_U, HATCH_Z, r + 0.015, "steelD", sides=20, cap="steelD")          # seam ring at each joint
+    u0 = HATCH_SURF
+    ends = [u0 + length * (k + 1) / 3 for k in range(3)]
+    cols = ("gW1", "steelL", "steel")
+    for k, (r, e, col) in enumerate(zip(RADII, ends, cols)):
+        f.hcyl(u0, e, HATCH_U, HATCH_Z, r, col, sides=SIDES)
+        _annulus(f, e, (RADII[k + 1] if k < 2 else r - 0.06), r, "steelD", HATCH_U, HATCH_Z)           # the step to the next ring / mouth lip
+        f.hcyl(e, u0, HATCH_U, HATCH_Z, r - 0.025, "dark", sides=SIDES)                                  # inside (reversed faces): the bore
     e = ends[-1]
-    f.hcyl(e, e + 0.07, HATCH_U, HATCH_Z, RADII[-1] + 0.02, "hazY", sides=20, cap="hazY")             # mouth ring
-    f.hcyl(e + 0.07, e + 0.09, HATCH_U, HATCH_Z, RADII[-1] - 0.06, "dark", sides=20, cap="dark")      # gasket
-    for i in range(8):                                                                            # lamp studs round the mouth
+    _annulus(f, e + 0.001, RADII[-1] - 0.06, RADII[-1], "hazY", HATCH_U, HATCH_Z)                       # hazard mouth ring
+    for i in range(8):
         a = i * math.tau / 8
-        f.box(e + 0.04, HATCH_U + (RADII[-1] + 0.02) * math.cos(a), HATCH_Z + (RADII[-1] + 0.02) * math.sin(a), 0.05, 0.05, 0.05, "cyan", top="cyan")
+        f.box(e, HATCH_U + (RADII[-1] - 0.03) * math.cos(a), HATCH_Z + (RADII[-1] - 0.03) * math.sin(a), 0.045, 0.045, 0.045, "cyan", top="cyan")
     return [m.build()]
 
 
@@ -52,6 +62,8 @@ for d in (4, 6):
     it = VB._render(f"dock_d{d}", "prop", SC.transport_shuttle(h, "docked"), [], (1, 1))
     np.savez(OUT / f"dock_d{d}.npz", rgba=it["rgba"], g=it["g"], ax=it["ax"], ay=it["ay"])
     for i, L in enumerate(LENGTHS):
+        if L == 0.0:
+            continue
         core.clear_scene_meshes()
         post.select(True)
         it = VB._render(f"tube_d{d}_{i}", "prop", tube(h, L), [], (1, 1))
