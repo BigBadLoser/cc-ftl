@@ -17,7 +17,7 @@ import math
 
 from .robot_kit import Rig
 
-K, D, M, L, A, GLOW = "xnK", "xnD", "xnM", "xnL", "xnA", "xnG"
+K, D, M, L, P, A, GLOW = "xnK", "xnD", "xnM", "xnL", "xnP", "xnA", "xnG"     # P: the lit limb tone
 
 
 def _leg(rig, body, i, side, f, splay, bz, reach=0.6, kh=0.2, kr=0.3, r=0.03, foot=0.02, pad=False):
@@ -32,16 +32,16 @@ def _leg(rig, body, i, side, f, splay, bz, reach=0.6, kh=0.2, kr=0.3, r=0.03, fo
     toe = (fx, ff, 0.0)
     h = rig.joint(f"leg{i}_{side}", body, hip)
     k = rig.joint(f"knee{i}_{side}", h, knee)
-    rig.part(h).ball(hip, r * 1.5, M)
-    rig.part(h).limb(hip, knee, r, D)
-    rig.part(k).ball(knee, r * 1.25, L)
+    rig.part(h).ball(hip, r * 1.5, D)
+    rig.part(h).limb(hip, knee, r, P)                                  # limbs well lighter than the body,
+    rig.part(k).ball(knee, r * 1.25, K)                                # a dark joint between the segments
     mid = tuple(knee[j] + (toe[j] - knee[j]) * 0.75 for j in range(3))
-    rig.part(k).limb(knee, mid, r * 0.85, D)
+    rig.part(k).limb(knee, mid, r * 0.85, L)
     if pad:
-        rig.part(k).strut(mid, toe, r * 0.8, K, taper=1.2)
-        rig.part(k).ball(toe, r * 0.9, K)
+        rig.part(k).strut(mid, toe, r * 0.8, D, taper=1.2)
+        rig.part(k).ball(toe, r * 0.9, D)
     else:
-        rig.part(k).strut(mid, toe, foot, K, taper=0.2)
+        rig.part(k).strut(mid, toe, foot, D, taper=0.2)
 
 
 def _glowing(rig, joint, c, r):
@@ -80,10 +80,10 @@ def _scythe(rig, body, side, bz):
     sh, el, tip = (sx * 0.13, 0.2, bz + 0.1), (sx * 0.2, 0.3, bz + 0.42), (sx * 0.18, 0.66, bz + 0.1)
     s = rig.joint(f"claw_{side}", body, sh)
     e = rig.joint(f"blade_{side}", s, el)
-    rig.part(s).ball(sh, 0.06, M)
-    rig.part(s).plate(sh, el, 0.09, 0.08, D, taper=0.75, r=0.025, top=L)
-    rig.part(e).ball(el, 0.055, L)
-    rig.part(e).plate(el, tip, 0.06, 0.1, D, taper=0.5, r=0.015)
+    rig.part(s).ball(sh, 0.06, D)
+    rig.part(s).plate(sh, el, 0.09, 0.08, P, taper=0.75, r=0.025, top=P)
+    rig.part(e).ball(el, 0.055, K)
+    rig.part(e).plate(el, tip, 0.06, 0.1, L, taper=0.5, r=0.015)
     rig.part(e).plate((el[0], el[1] + 0.05, el[2] - 0.05), (tip[0], tip[1] - 0.02, tip[2] - 0.04), 0.035, 0.07, A,
                       taper=0.35, r=0.008)
     rig.part(e).strut(tip, (tip[0], tip[1] - 0.1, tip[2] - 0.1), 0.03, A, taper=0.15)
@@ -93,18 +93,18 @@ def hunter():
     rig = Rig("hunter")
     rig.kind, bz = "hunter", 0.3
     b = rig.joint("body", "root", (0, 0, bz))
-    rig.part(b).ball((0, 0.04, bz), (0.17, 0.22, 0.13), M)
+    rig.part(b).ball((0, 0.04, bz), (0.17, 0.22, 0.13), D)
     for f, z, w in ((0.12, 0.1, 0.15), (-0.02, 0.12, 0.17), (-0.14, 0.09, 0.15)):            # carapace plates
-        rig.part(b).plate((0, f - 0.07, bz + z - 0.02), (0, f + 0.07, bz + z), w * 2, 0.06, D, taper=0.8, r=0.03, top=L)
+        rig.part(b).plate((0, f - 0.07, bz + z - 0.02), (0, f + 0.07, bz + z), w * 2, 0.06, K, taper=0.8, r=0.03, top=M)
     for f in (0.1, -0.04):                                                                  # dorsal spines
         rig.part(b).strut((0, f, bz + 0.14), (0, f - 0.06, bz + 0.27), 0.03, L, taper=0.3)
         rig.part(b).ball((0, f - 0.06, bz + 0.27), 0.014, A)
     ab = rig.joint("abdomen", b, (0, -0.18, bz))
     for k, (f, z, r) in enumerate(((-0.3, bz - 0.04, (0.16, 0.15, 0.12)), (-0.47, bz - 0.1, (0.12, 0.12, 0.09)),
                                    (-0.6, bz - 0.16, (0.08, 0.09, 0.06)))):
-        rig.part(ab).ball((0, f, z), r, M if k % 2 == 0 else D)
-        rig.part(ab).plate((0, f + 0.05, z + r[2] * 0.7), (0, f - 0.05, z + r[2] * 0.6), r[0] * 1.6, 0.04, D,
-                           taper=0.8, r=0.02, top=L)
+        rig.part(ab).ball((0, f, z), r, D if k % 2 == 0 else K)
+        rig.part(ab).plate((0, f + 0.05, z + r[2] * 0.7), (0, f - 0.05, z + r[2] * 0.6), r[0] * 1.6, 0.04, K,
+                           taper=0.8, r=0.02, top=M)
     rig.part(ab).strut((0, -0.66, bz - 0.18), (0, -0.8, bz - 0.26), 0.035, K, taper=0.2)
     for f, z in ((-0.3, bz - 0.06), (-0.46, bz - 0.12)):
         for sx in (1, -1):
@@ -135,17 +135,17 @@ def _crusher(rig, body, side, bz):
     sh, el, wr = (sx * 0.26, 0.24, bz + 0.04), (sx * 0.44, 0.36, bz + 0.26), (sx * 0.4, 0.6, bz + 0.22)
     s = rig.joint(f"claw_{side}", body, sh)
     e = rig.joint(f"blade_{side}", s, el)
-    rig.part(s).ball(sh, 0.09, M)
-    rig.part(s).plate(sh, el, 0.14, 0.13, D, taper=0.85, r=0.04, top=L)
-    rig.part(e).ball(el, 0.08, L)
-    rig.part(e).plate(el, wr, 0.2, 0.18, D, taper=1.2, r=0.05, top=L)                       # claw hand
+    rig.part(s).ball(sh, 0.09, D)
+    rig.part(s).plate(sh, el, 0.14, 0.13, L, taper=0.85, r=0.04, top=P)
+    rig.part(e).ball(el, 0.08, K)
+    rig.part(e).plate(el, wr, 0.2, 0.18, L, taper=1.2, r=0.05, top=P)                       # claw hand
     jaw0, jaw1 = (wr[0], wr[1] + 0.02, wr[2] - 0.07), (wr[0] - sx * 0.02, wr[1] + 0.3, wr[2] - 0.1)
-    rig.part(e).plate(jaw0, jaw1, 0.11, 0.09, D, taper=0.4, r=0.02)                          # fixed lower jaw
+    rig.part(e).plate(jaw0, jaw1, 0.11, 0.09, M, taper=0.4, r=0.02)                          # fixed lower jaw
     rig.part(e).plate((jaw0[0], jaw0[1], jaw0[2] + 0.04), (jaw1[0], jaw1[1] - 0.02, jaw1[2] + 0.03), 0.04, 0.03, A,
                       taper=0.4, r=0.01)
     p = rig.joint(f"pincer_{side}", e, (wr[0], wr[1] + 0.04, wr[2] + 0.06))
     f0, f1 = (wr[0], wr[1] + 0.04, wr[2] + 0.06), (wr[0] - sx * 0.02, wr[1] + 0.32, wr[2] + 0.0)
-    rig.part(p).plate(f0, f1, 0.11, 0.09, D, taper=0.4, r=0.02, top=L)                       # hinged finger
+    rig.part(p).plate(f0, f1, 0.11, 0.09, M, taper=0.4, r=0.02, top=L)                       # hinged finger
     rig.part(p).plate((f0[0], f0[1] + 0.02, f0[2] - 0.035), (f1[0], f1[1] - 0.02, f1[2] - 0.03), 0.04, 0.03, A,
                       taper=0.4, r=0.01)
 
@@ -154,13 +154,13 @@ def brute():
     rig = Rig("brute")
     rig.kind, bz = "brute", 0.36
     b = rig.joint("body", "root", (0, 0, bz))
-    rig.part(b).ball((0, 0.0, bz), (0.3, 0.34, 0.2), M)                                       # carapace core
+    rig.part(b).ball((0, 0.0, bz), (0.3, 0.34, 0.2), D)                                       # carapace core
     for f, z, w, dz in ((0.16, 0.13, 0.27, 0.0), (-0.16, 0.12, 0.29, 0.0)):                 # armour plates, front/back
-        rig.part(b).plate((0, f - 0.1, bz + z - 0.03), (0, f + 0.1, bz + z + dz), w * 2, 0.09, D, taper=0.85, r=0.05,
-                          top=L)
+        rig.part(b).plate((0, f - 0.1, bz + z - 0.03), (0, f + 0.1, bz + z + dz), w * 2, 0.09, K, taper=0.85, r=0.05,
+                          top=M)
     for sx in (1, -1):                                                                       # flank plates
-        rig.part(b).plate((sx * 0.27, -0.2, bz + 0.02), (sx * 0.27, 0.2, bz + 0.04), 0.08, 0.2, D, taper=0.9, r=0.04,
-                          top=L)
+        rig.part(b).plate((sx * 0.27, -0.2, bz + 0.02), (sx * 0.27, 0.2, bz + 0.04), 0.08, 0.2, K, taper=0.9, r=0.04,
+                          top=M)
     _sac(rig, b, (0, -0.02, bz + 0.16), (0.15, 0.16, 0.1),
          ((0, 50), (90, 45), (180, 50), (270, 45), (45, 75), (225, 75)))                     # back sac
     for k in range(3):                                                                       # sac ribs
@@ -170,8 +170,8 @@ def brute():
         rig.part(b).strut((sx * 0.22, 0.1, bz + 0.12), (sx * 0.3, 0.06, bz + 0.3), 0.04, L, taper=0.25)
         rig.part(b).ball((sx * 0.3, 0.06, bz + 0.3), 0.016, A)
     ab = rig.joint("abdomen", b, (0, -0.3, bz))
-    rig.part(ab).ball((0, -0.42, bz - 0.06), (0.22, 0.17, 0.15), M)                          # armoured rump
-    rig.part(ab).plate((0, -0.34, bz + 0.07), (0, -0.52, bz + 0.02), 0.4, 0.07, D, taper=0.8, r=0.04, top=L)
+    rig.part(ab).ball((0, -0.42, bz - 0.06), (0.22, 0.17, 0.15), D)                          # armoured rump
+    rig.part(ab).plate((0, -0.34, bz + 0.07), (0, -0.52, bz + 0.02), 0.4, 0.07, K, taper=0.8, r=0.04, top=M)
     h = rig.joint("head", b, (0, 0.3, bz - 0.02))
     rig.part(h).ball((0, 0.38, bz - 0.03), (0.13, 0.12, 0.09), D)
     rig.part(h).plate((0, 0.3, bz + 0.06), (0, 0.47, bz + 0.02), 0.24, 0.06, K, taper=0.6, r=0.025, top=L)   # brow
@@ -198,8 +198,8 @@ def spitter():
     rig = Rig("spitter")
     rig.kind, bz = "spitter", 0.34
     b = rig.joint("body", "root", (0, 0, bz))
-    rig.part(b).ball((0, 0.02, bz), (0.16, 0.2, 0.12), M)
-    rig.part(b).plate((0, -0.1, bz + 0.09), (0, 0.14, bz + 0.11), 0.26, 0.06, D, taper=0.8, r=0.03, top=L)
+    rig.part(b).ball((0, 0.02, bz), (0.16, 0.2, 0.12), D)
+    rig.part(b).plate((0, -0.1, bz + 0.09), (0, 0.14, bz + 0.11), 0.26, 0.06, K, taper=0.8, r=0.03, top=M)
     ab = rig.joint("abdomen", b, (0, -0.14, bz + 0.04))                                      # tail rising up and over
     segs = ((0, -0.2, bz + 0.1, 0.08), (0, -0.26, bz + 0.24, 0.075), (0, -0.24, bz + 0.38, 0.07))
     for k, (x, f, z, r) in enumerate(segs):
