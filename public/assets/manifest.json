@@ -113,6 +113,10 @@
    "image": "sprites/shields.png",
    "glow": "sprites/shields.glow.png"
   },
+  "shuttle": {
+   "image": "sprites/shuttle.png",
+   "glow": "sprites/shuttle.glow.png"
+  },
   "vehicle_bay": {
    "image": "sprites/vehicle_bay.png",
    "glow": "sprites/vehicle_bay.glow.png"
@@ -34719,6 +34723,225 @@
    "footprint": [
     2,
     2
+   ]
+  },
+  "vehicle.shuttle.docked.d0": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 595,
+    "y": 1,
+    "w": 241,
+    "h": 202
+   },
+   "anchor": {
+    "x": 138,
+    "y": 177
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.docked.d2": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 837,
+    "y": 1,
+    "w": 237,
+    "h": 202
+   },
+   "anchor": {
+    "x": 99,
+    "y": 177
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.docked.d4": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 534,
+    "y": 223,
+    "w": 241,
+    "h": 155
+   },
+   "anchor": {
+    "x": 103,
+    "y": 127
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.docked.d6": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 1,
+    "y": 223,
+    "w": 237,
+    "h": 157
+   },
+   "anchor": {
+    "x": 138,
+    "y": 129
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.fly.d0": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 298,
+    "h": 221
+   },
+   "anchor": {
+    "x": 195,
+    "y": 196
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.fly.d1": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 1525,
+    "y": 1,
+    "w": 328,
+    "h": 186
+   },
+   "anchor": {
+    "x": 164,
+    "y": 157
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.fly.d2": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 300,
+    "y": 1,
+    "w": 294,
+    "h": 221
+   },
+   "anchor": {
+    "x": 99,
+    "y": 196
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.fly.d3": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 1075,
+    "y": 1,
+    "w": 224,
+    "h": 187
+   },
+   "anchor": {
+    "x": 112,
+    "y": 181
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.shuttle.fly.d4": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 776,
+    "y": 223,
+    "w": 298,
+    "h": 154
+   },
+   "anchor": {
+    "x": 103,
+    "y": 126
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.shuttle.fly.d5": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 1075,
+    "y": 223,
+    "w": 328,
+    "h": 149
+   },
+   "anchor": {
+    "x": 164,
+    "y": 130
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.shuttle.fly.d6": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 239,
+    "y": 223,
+    "w": 294,
+    "h": 157
+   },
+   "anchor": {
+    "x": 195,
+    "y": 129
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.shuttle.fly.d7": {
+   "kind": "static",
+   "sheet": "shuttle",
+   "frame": {
+    "x": 1300,
+    "y": 1,
+    "w": 224,
+    "h": 187
+   },
+   "anchor": {
+    "x": 112,
+    "y": 181
+   },
+   "footprint": [
+    1,
+    1
    ]
   },
   "vehicle.shuttle.parked.r0": {

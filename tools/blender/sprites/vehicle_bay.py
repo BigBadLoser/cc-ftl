@@ -4,6 +4,8 @@ The bay model is shuttle_bay.py (pit, doors, gangway, claw towers and arms), the
 The shuttle hangs in the claws, feet at shuttle_bay.FEET_Z (pit floor + LIFT 0.85), nose +v at r0 so its side hatch faces the
 long +u side (the access side), heading +90 deg per rotation. Both are drawn from the footprint's front-most tile.
 
+Flight art lives in the `shuttle` family (craft_jobs): vehicle.shuttle.fly.d0..d7, vehicle.shuttle.docked.d0/2/4/6.
+
 Sprites, per rotation r (bay frame = the sim's rotated footprint):
   module.vehicle_bay.r<r>               shuttle home: doors closed, claws gripping, gate lamps green
   module.vehicle_bay.r<r>.empty         shuttle away: doors closed, claws folded, lamps off
@@ -81,6 +83,25 @@ def shuttle_item(rot, state):
     hold = B.bay(rot, **PARKED[state])
     objs = shuttle_objs(rot) + hold
     return [_render(f"{SHUTTLE}.r{rot}" + (f".{state}" if state else ""), "prop", objs, hold, footprint(rot))]
+
+
+def craft_item(name, state, heading):
+    """The shuttle alone (no bay), origin = its centre with the feet / belly plane at z 0, for the sector view."""
+    core.clear_scene_meshes()
+    post.select(True)
+    from lib import palette
+    from . import shuttle_craft as SC
+    for k, hx in LIVERY.items():
+        palette._data[k] = {"hex": hx}
+    return [_render(name, "prop", SC.transport_shuttle(heading, state), [], (1, 1))]
+
+
+def craft_jobs():
+    """Flight art (family `shuttle`): vehicle.shuttle.fly.d0..d7 (wings spread, nozzles lit; d0 = +x, d2 = +y) and
+    vehicle.shuttle.docked.d0/d2/d4/d6 (legs up, wings folded, nozzles dark, nose out: the rear ramp meets the airlock)."""
+    fly = [lambda d=d: craft_item(f"vehicle.shuttle.fly.d{d}", "fly", d * math.pi / 4) for d in range(8)]
+    docked = [lambda d=d: craft_item(f"vehicle.shuttle.docked.d{d}", "docked", d * math.pi / 4) for d in (0, 2, 4, 6)]
+    return fly + docked
 
 
 def jobs():

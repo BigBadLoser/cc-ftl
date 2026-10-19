@@ -64,6 +64,12 @@ export interface ModuleLayer {
   out?: boolean;
   /** Real art is cut into screen strips, one per footprint diagonal, each sorted by its front-most tile (a pit crew walk around). */
   strips?: boolean;
+  /** One sprite on this tile (the airlock's parts are 1x1 sprites each anchored at their own tile), not at the footprint's front tile. */
+  at?: { x: number; y: number };
+  /** With `at`: a deck mark, sorted under everything standing on the floor. */
+  flat?: boolean;
+  /** Stays drawn on a roofed ship (hull block, collar); the other parts are under the roof. */
+  roofVisible?: boolean;
 }
 
 /** Depth offset of a seated operator over the console's key, and of the desk-front overlay over it. */
@@ -125,6 +131,12 @@ export function glowKey(layer: ModuleLayer, key: number): number {
  * show, like the hull around it. Drawn at its front tile they would paint over the roof.
  */
 export function layerKey(def: ModuleDef, m: Module, layer: ModuleLayer, i: number, roofed: boolean, key: number): number {
+  if (layer.at) {
+    // Parts on their own tile: a deck mark is flat, the collar hangs outside the hull like a bell, the rest sort by their tile.
+    if (layer.flat) return depthKey(layer.at.x, layer.at.y) - 0.5;
+    if (layer.out) return depthKey(layer.at.x, layer.at.y) + 0.5;
+    return key + (layer.dz ?? i * 0.001);
+  }
   if (layer.out) {
     // The bell hangs outside the hull toward space: it draws over the hull behind it and under anything nearer.
     const row = hullRow(def, m.x, m.y, m.rot);

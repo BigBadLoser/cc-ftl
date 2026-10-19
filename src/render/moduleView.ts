@@ -10,7 +10,9 @@ import { iso, depthKey, TILE_W } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
+import { airlockLayers, createCollarAnimator, dockedAt } from './airlockArt';
 import { robotBayLayers } from './robotBayArt';
+import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, vehicleBayLayers } from './vehicleBayArt';
 import { craftProgress, glowKey, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
 
@@ -22,6 +24,8 @@ export interface ModuleViewHost {
   emergency(): boolean;
   /** Roofed ships hide their interior: only the engines (hull sections, and the machines under the roof) are drawn. */
   roofed(): boolean;
+  /** The wall view level of the art; only the airlock's hull block follows it (the airlock itself never cuts away). */
+  level(): WallLevel;
 }
 
 export interface ModuleView {
@@ -109,6 +113,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
   const mods = new Map<number, Entry>();
   const lastProgress = new Map<number, { value: number; at: number }>();
   const bayAnim = createBayAnimator();
+  const collarAnim = createCollarAnimator();
 
   function dropEntry(e: Entry): void {
     for (const p of e.parts) {
@@ -159,6 +164,11 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     layers.forEach(({ layer, art }, i) => {
       const s = art.s;
       const key = (tx: number, ty: number) => layerKey(def, m, layer, i, roofed, moduleKey(def, tx, ty));
+      if (layer.at) {
+        const k = key(layer.at.x, layer.at.y);
+        out.push(makePart(s, layer.at.x, layer.at.y, false, k, art.tint, glowKey(layer, k)));
+        return;
+      }
       if (art.fallback && art.perTile) {
         // A stand-in covers the footprint tile by tile (never the walkable open tiles, nor the hull row for the machine).
         const skip = new Set((layer.tiles === 'hull' ? [] : openTilesOf(def, m.x, m.y, m.rot)).map((t) => `${t.x},${t.y}`));
@@ -229,14 +239,19 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const on = m.powered && m.enabled && m.hp > 0;
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
         const roofed = host.roofed();
-        const layers = (def.robotBay ? robotBayLayers(world, id, m, def, now) : def.vehicleBay ? vehicleBayLayers(m, def, bayAnim.stepOf(id, shuttleHome(world, id), now)) : moduleLayers(world, id, m, def, active, true)).flatMap((layer) => {
-          if (roofed && layer.tiles !== 'hull' && !(def.hullEdge && layer.tiles === 'rest')) return [];
+        const level = host.level();
+        const raw = def.robotBay ? robotBayLayers(world, id, m, def, now)
+          : def.vehicleBay ? vehicleBayLayers(m, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
+          : def.airlock?.layout ? airlockLayers(world, id, m, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
+          : moduleLayers(world, id, m, def, active, true);
+        const layers = raw.flatMap((layer) => {
+          if (roofed && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
           const art = resolveArt(atlas, layer.chain, layer.key);
           return art ? [{ layer, art }] : [];
         });
         if (!layers.length) continue;
         live.add(id);
-        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${roofed ? 1 : 0}|${layers.map((l) => l.art.s.tex.uid).join(',')}`;
+        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${roofed ? 1 : 0}|${level}|${layers.map((l) => l.art.s.tex.uid).join(',')}`;
         let e = mods.get(id);
         if (e && e.sig !== sig) {
           dropEntry(e);
@@ -260,6 +275,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       dropEntry(e);
       mods.delete(id);
       bayAnim.forget(id);
+      collarAnim.forget(id);
     }
   }
 

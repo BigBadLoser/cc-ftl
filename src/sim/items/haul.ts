@@ -8,14 +8,14 @@ import { deliverToJob } from './materials';
 import { dropCarried, spillItems, takeFromStack } from './stacks';
 import { storageAdd, storageTake } from './storage';
 import { cargoAdd, cargoTake } from '../vehicles/cargo';
-import { boardingTile } from '../vehicles/geometry';
+import { cargoTile } from '../vehicles/geometry';
 
 /** Where the haul's destination is (module anchor or the target job's tile), or null if it is gone. */
 export function destinationTile(sim: Sim, job: Job): { x: number; y: number } | null {
   const dst = job.haul?.dst;
   if (!dst) return null;
   if (dst.kind === 'vehicle') {
-    const t = boardingTile(sim, dst.id);
+    const t = cargoTile(sim, dst.id, { x: job.x, y: job.y });
     return t && t.gridId === job.gridId ? { x: t.x, y: t.y } : null;
   }
   const at = dst.kind === 'job' ? sim.world.get(dst.id, JobC) : sim.world.get(dst.id, ModuleC);

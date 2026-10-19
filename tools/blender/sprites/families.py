@@ -7,6 +7,7 @@
   airlock   the airlock: outer bulkhead + door, inner door, chamber walls per view level, cycle lights, docking collar
   roof      roof plating modules, edges, inset and patch plates, livery masks, cut plates (roof_cuts.py)
   vehicle_bay the shuttle bay (pit, doors, gangway, claws) and the shuttle parked in it, 4 rotations (vehicle_bay.py)
+  shuttle   the flying shuttle: 8 fly headings and 4 docked poses (vehicle_bay.py craft_jobs)
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
@@ -37,11 +38,14 @@ def jobs(name):
     if name == "airlock":
         from . import airlock
         return airlock.jobs(), True
+    if name == "shuttle":
+        from . import vehicle_bay
+        return vehicle_bay.craft_jobs(), True
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
     raise KeyError(name)
 
 
-RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "airlock")
+RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock")
 ALL = RENDERED + ("sol",)

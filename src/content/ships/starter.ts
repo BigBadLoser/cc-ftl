@@ -21,7 +21,7 @@ export const starterShip = {
     '.####D#####D######D###______#.',
     '.#___________________D______#.',
     '.#___________________D______#.',
-    '.####D#####D#####D####______#.',
+    '.#___D#####D#####D####______#.',
     '.#______#____#_______#______#.',
     '.#______#____#_______#______#.',
     '.#______#____#_______#______#.',
@@ -62,7 +62,7 @@ export const starterShip = {
     { def: 'module.lifeSupport', x: 15, y: 9, rot: 3 },
     { def: 'module.light', x: 15, y: 10, rot: 0 },
     { def: 'module.light', x: 9, y: 9, rot: 0 },
-    { def: 'module.light', x: 3, y: 10, rot: 0 },
+    { def: 'module.light', x: 6, y: 10, rot: 0 },
     // Bridge (nose, north-west): shield console (chair (6, 3), open floor (7, 3)), weapons console (chair (2, 3)),
     // helm (chair (5, 6), reached from the south), life support along the south wall.
     { def: 'module.shieldConsole', x: 5, y: 2, rot: 0 },
@@ -98,7 +98,8 @@ export const starterShip = {
     { def: 'module.light', x: 20, y: 15, rot: 0 },
     // Shuttle bay (pit x 14..17, y 13..17, boarding tile (18, 16) east of it) with the ship's shuttle.
     { def: 'module.vehicle_bay', x: 14, y: 13, rot: 0, vehicle: 'vehicle.shuttle' },
-    // Airlock on the west hull, corridor row y = 9 (outer door (1, 9), inside tile (5, 9)).
+    // Docking airlock on the west hull, y = 9..11 (hull tile and outer door (1, 10), collar (0, 10), pod (2, 10), inside tile
+    // (3, 10), unloaders at y = 9 and 11 with their keep-out tiles at (4, 9) and (4, 11)). Row y = 11 is open floor there.
     { def: 'module.airlock', x: 1, y: 9, rot: 3 },
   ],
 } satisfies ShipTemplate;

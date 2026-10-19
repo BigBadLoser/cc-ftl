@@ -13,11 +13,11 @@ import { createJobView } from './jobView';
 import { createLayers, type Layers } from './layers';
 import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
+import { wallLevel } from './tiles';
 import { createRoofView } from './roofView';
 import type { Livery } from './roofPlating';
 import { ROOF_H, wallTopPx } from './heights';
 import { ShipC } from '../sim/combat/components';
-import { createShuttleView } from './shuttlePlaceholder';
 import { iso } from './iso';
 import { createTargetMarks } from './targetMarks';
 import { createTurretView } from './turretView';
@@ -77,7 +77,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     light: () => ({ data: grid.raw('light'), width: grid.width }),
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway) });
   const itemView = createItemView(world, atlas, L, items, { target: inside, emergency: () => emergency });
   const fxView = createFxView(atlas, L, { target: inside });
   const particles = createParticles(atlas, L);
@@ -85,37 +85,6 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const turretView = createTurretView(world, atlas, L, grid, modules);
   const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null);
   const wallHeight = () => wallTopPx(roofed ? 'up' : cutaway);
-  // PLACEHOLDER shuttle parked in this ship's bay (see shuttlePlaceholder.ts): only while the manifest has no real parked
-  // shuttle art (`vehicle.shuttle.parked.r<rot>`, drawn by the bay's own layers, see vehicleBayArt.ts).
-  const parkedArt = () => !!atlas.stat('vehicle.shuttle.parked.r0');
-  const shipPos = () => {
-    for (const id of world.query(ShipC)) {
-      const sh = world.get(id, ShipC);
-      if (sh?.gridId === grid.id) return sh;
-    }
-    return undefined;
-  };
-  const bayOf = (home: number) => {
-    const m = world.get(home, ModuleC);
-    const d = m && modules[m.def];
-    return m && d ? { m, w: m.rot % 2 ? d.footprint[1] : d.footprint[0], h: m.rot % 2 ? d.footprint[0] : d.footprint[1] } : null;
-  };
-  const shuttles = createShuttleView(world, {
-    layer: L.sorted,
-    project: (sx, sy) => {
-      const sh = shipPos();
-      return iso(sx - (sh?.x ?? 0) - 0.5, sy - (sh?.y ?? 0) - 0.5);
-    },
-    include: (v) => v.state === 'stowed' && v.homeGrid === grid.id && !roofed && !parkedArt(),
-    heading: (v) => {
-      const b = bayOf(v.home);
-      return b && b.w > b.h ? 0 : Math.PI / 2;
-    },
-    depth: (v) => {
-      const b = bayOf(v.home);
-      return b ? b.m.x + b.w - 1 + b.m.y + b.h - 1 + 0.5 : 0;
-    },
-  });
   const damage = createDamageView(grid, L, wallHeight);
   const marks = createTargetMarks(grid, world, modules, L);
   const applyMode = () => view.setCutaway(roofed ? 'up' : cutaway, !roofed);
@@ -139,7 +108,6 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       crewView.update();
       roof.update();
       turretView.update();
-      shuttles.update(dt);
       damage.update();
       marks.update(marksOn, targeted, roofed ? ROOF_H : 0);
     },
@@ -163,7 +131,6 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     pickModule: (ax, ay) => moduleView.pick(ax, ay),
     sprites: () => particles.count() + L.floor.children.length + L.sorted.children.length + L.decal.children.length,
     dispose() {
-      shuttles.dispose();
       marks.dispose();
       damage.dispose();
       roof.dispose();

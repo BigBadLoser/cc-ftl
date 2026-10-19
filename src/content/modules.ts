@@ -142,11 +142,28 @@ export const modules = {
     heatPerSec: 4, flammability: 0.2, maxHp: 160, buildWork: 320, engine: { evasionPerPower: 0.02 }, hullEdge: 'n',
     cost: [{ item: 'item.metal', count: 24 }, { item: 'item.electronics', count: 8 }],
   },
-  // 1 wide, 4 deep, on the hull. Rotation 0: row 0 is the outer door on the hull line (the wall tile becomes a door), rows
-  // 1-2 the chamber, row 3 the inner door. Cycles in 4 s, pumping the chamber's air back into the ship.
+  // Docking airlock, 3 wide along the hull, hull row plus 3 inboard (footprint [3, 4], hullEdge 'n'; art: airlock family in
+  // tools/blender/sprites/airlock.py). Rotation 0 (cols 0-2, rows 0-3, row 0 on the hull line):
+  //   row -1  (1,-1)      docking collar, outside the footprint, one tile past the hull (the shuttle's rear ramp meets it)
+  //   row 0   (1,0)       hull tile with the outer door (the collar's iris hatch); (0,0) and (2,0) stay plain hull wall
+  //   row 1   (1,1)       the pod, the inner door;  (0,1) (2,1) unloader back halves
+  //   row 2   (1,2)       inside tile, walkable: where passengers land;  (0,2) (2,2) unloader fronts, the chutes
+  //   row 3   (1,3)       walkable;  (0,3) (2,3) keep-out tiles: walkable, where crew work the chutes, nothing else builds here
+  // Cycles in 4 s, pumping the outer door tile's air back into the ship.
   'module.airlock': {
-    name: 'Airlock', asset: 'module.airlock', footprint: [1, 4], solid: false, power: -2, priority: 2,
-    flammability: 0.1, maxHp: 120, buildWork: 200, hullEdge: 'n', airlock: { cycleSec: 4 },
+    name: 'Airlock', asset: 'module.airlock', footprint: [3, 4], solid: true,
+    openTiles: [[1, 0], [1, 1], [1, 2], [1, 3], [0, 3], [2, 3]],
+    power: -2, priority: 2, flammability: 0.1, maxHp: 120, buildWork: 200, hullEdge: 'n',
+    airlock: {
+      cycleSec: 4,
+      layout: {
+        outer: [1, 0], inner: [1, 1], inside: [1, 2], collar: [1, -1],
+        unloaders: [
+          { tiles: [[0, 1], [0, 2]], chute: [0, 2], stand: [0, 3] },
+          { tiles: [[2, 1], [2, 2]], chute: [2, 2], stand: [2, 3] },
+        ],
+      },
+    },
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 6 }],
   },
   // 8 power -> 2 layers, one back every 10 s. Sits anywhere inside the ship.

@@ -31,8 +31,8 @@ export const rogueShipyard = {
     { def: 'module.reactor', x: 2, y: 2, rot: 0 },
     { def: 'module.aiCore', x: 2, y: 7, rot: 0 },
     { def: 'module.robotFabricator', x: 5, y: 2, rot: 0 },
-    // Airlock on the north hull: outer door (9, 1), inside tile (9, 5).
-    { def: 'module.airlock', x: 9, y: 1, rot: 0 },
+    // Docking airlock on the north hull, x = 8..10: outer door (9, 1), inside tile (9, 3), keep-out tiles (8, 4) and (10, 4).
+    { def: 'module.airlock', x: 8, y: 1, rot: 0 },
     { def: 'module.weaponsConsole', x: 12, y: 2, rot: 0 },
     { def: 'module.burstLaser', x: 15, y: 9, rot: 0 },
     { def: 'module.storage', x: 6, y: 10, rot: 0, stock: [{ item: 'item.sidearm', count: 2 }, { item: 'item.parts', count: 10 }] },

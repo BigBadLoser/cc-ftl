@@ -3,6 +3,7 @@ import type { Atlas, StaticSprite } from "./assets/loader";
 import type { Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
 import { hullRow } from "../sim/modules/footprint";
+import { airlockTiles } from "../sim/portals/airlock";
 import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
@@ -96,9 +97,24 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     return out;
   }
 
+  /** Outer door tiles of the docking airlocks: the airlock's own hull block (moduleView) stands there, at every wall level. */
+  function airlockHull(): Set<number> {
+    const out = new Set<number>();
+    const { world, modules } = host.overlayWorld;
+    for (const id of world.query(ModuleC)) {
+      const m = world.get(id, ModuleC);
+      const def = m && modules[m.def];
+      if (!m || !def?.airlock?.layout || m.gridId !== grid.id) continue;
+      const t = airlockTiles(def, m);
+      out.add(t.outer.y * grid.width + t.outer.x);
+    }
+    return out;
+  }
+
   function rebuild(): void {
     clear();
     const replaced = engineHull();
+    const airlocks = airlockHull();
     const gapAt = (x: number, y: number): boolean => mode === "up" && grid.inBounds(x, y) && replaced.has(y * grid.width + x);
     for (let y = 0; y < grid.height; y++)
       for (let x = 0; x < grid.width; x++) {
@@ -117,7 +133,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         }
         if (k === Struct.Floor) continue;
         // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
-        if (gapAt(x, y)) continue;
+        if (gapAt(x, y) || airlocks.has(idx)) continue;
         for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts, gapAt)) {
           const s = atlas.firstOf(piece.chain);
           if (!s) continue;

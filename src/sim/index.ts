@@ -8,7 +8,7 @@ export type { VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTem
 export { gridFromTemplate, spawnTemplateModules } from './ship';
 export { ModuleC, DeployC, type Module, type Deploy } from './modules/components';
 export { isDeployed } from './modules/deploy';
-export { footprintTiles, accessTile, rotatedSize, openTilesOf, hullRow, hullSide } from './modules/footprint';
+export { footprintTiles, accessTile, rotatedSize, openTilesOf, hullRow, hullSide, hullOutward, inFootprint } from './modules/footprint';
 export { spawnModule, removeModule, placementError } from './modules/spawn';
 export { isTileWalkable } from './modules/walk';
 export { roomTiles } from './roomIndex';
@@ -37,7 +37,7 @@ export { aimDirection, turretPosition } from './combat/geometry';
 export * from './portals/components';
 export { createPortal, removePortal, portalUsable, portalError, allPortals, PORTAL_DEFAULTS } from './portals/graph';
 export { planRoute, stepsCost, type Route, type Leg, type RouteGoal, type RouteStart } from './portals/route';
-export { airlockTiles, airlockWorking, airlockDoorAt } from './portals/airlock';
+export { airlockTiles, airlockWorking, airlockDoorAt, keepOutTiles } from './portals/airlock';
 export * from './vehicles/components';
 export * from './fight/components';
 export { prizeValue } from './capture/prize';
@@ -46,7 +46,7 @@ export { isHostile, isSubdued, isCombatReady, isInvader } from './fight/relation
 export { sightLine, rayCells, type Cover } from './fight/los';
 export { wielded, hitChance, handDefOf } from './fight/weapons';
 export { vehicleViews, vehiclesInSector, type VehicleView } from './vehicles/queries';
-export { boardingTile, dockPoint, bayCenter } from './vehicles/geometry';
+export { boardingTile, cargoTile, dockPoint, bayCenter } from './vehicles/geometry';
 export { spawnVehicle, destroyVehicle, damageVehicle } from './vehicles/lifecycle';
 export * from './robots/components';
 export { hasLiveCore, isCoreLive, aiCores, isShutDown } from './robots/core';

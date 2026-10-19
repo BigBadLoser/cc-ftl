@@ -7,7 +7,11 @@ import { VehicleBayC, VehicleC } from './components';
 
 export interface DockPoint {
   gridId: number;
-  /** Sector position just outside the outer door. */
+  /**
+   * Sector position of the docking point: the centre of the collar's tile (the tile one past the hull row; the tile past the
+   * outer door for a plain airlock). A docked shuttle sits nose out with its rear ramp against the collar's door; the
+   * renderer holds its body further out (shuttleView DOCK_REACH).
+   */
   x: number;
   y: number;
   /** The ship tile past the inner door where passengers come in. */
@@ -22,7 +26,25 @@ export function dockPoint(sim: Sim, airlock: number): DockPoint | null {
   if (!m || !def?.airlock || !ship) return null;
   const t = airlockTiles(def, m);
   const out = hullOutward(hullSide(def, m.rot) ?? 'n');
-  return { gridId: m.gridId, x: ship.x + t.outer.x + 0.5 + out.x, y: ship.y + t.outer.y + 0.5 + out.y, inside: t.inside };
+  const c = t.collar ?? { x: t.outer.x + out.x, y: t.outer.y + out.y };
+  return { gridId: m.gridId, x: ship.x + c.x + 0.5, y: ship.y + c.y + 0.5, inside: t.inside };
+}
+
+/**
+ * Where crew work a docked vehicle's cargo: the keep-out tile in front of one of the airlock's unloaders. `near` picks the
+ * closest one (default the first); a plain airlock has none, so the boarding tile serves.
+ */
+export function cargoTile(sim: Sim, vehicle: number, near?: { x: number; y: number }): { gridId: number; x: number; y: number } | null {
+  const v = sim.world.get(vehicle, VehicleC);
+  const m = v?.state === 'docked' ? sim.world.get(v.dock, ModuleC) : undefined;
+  const def = m && sim.content.modules[m.def];
+  const stands = m && def?.airlock ? airlockTiles(def, m).unloaders.map((u) => u.stand) : [];
+  if (m && stands.length > 0) {
+    const d = (t: { x: number; y: number }): number => (near ? Math.abs(t.x - near.x) + Math.abs(t.y - near.y) : 0);
+    const best = stands.reduce((a, b) => (d(b) < d(a) ? b : a));
+    return { gridId: m.gridId, ...best };
+  }
+  return boardingTile(sim, vehicle);
 }
 
 /** Where crew stand to board or leave a vehicle: its bay's access tile (stowed) or the docked airlock's inside tile. */

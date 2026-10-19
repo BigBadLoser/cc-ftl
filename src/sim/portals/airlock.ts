@@ -7,8 +7,9 @@ import { Struct, writeStruct } from '../structure';
 import { AirlockC, type Airlock } from './components';
 
 /**
- * Airlock geometry. A module with `airlock` has footprint [1, n] (n >= 3) and `hullEdge: 'n'`. Local row 0 is the outer
- * door (on the hull line, Space beyond), the last row is the inner door, rows between are the chamber.
+ * Airlock geometry. A module with `airlock` has `hullEdge: 'n'`. Plain form: footprint [1, n] (n >= 3), local row 0 the outer
+ * door, the last row the inner door, rows between the chamber. With `airlock.layout` (the docking airlock) the roles come from
+ * the layout: the pod is the inner door, the hull tile the outer door, and the collar lies outside the footprint.
  */
 export interface AirlockTiles {
   outer: Tile;
@@ -16,22 +17,40 @@ export interface AirlockTiles {
   chamber: Tile[];
   /** The ship tile just inside the inner door. */
   inside: Tile;
+  /** The docking collar tile, one tile past the hull row (null for a plain airlock). */
+  collar: Tile | null;
+  /** Cargo unloaders: solid body tiles, the chute tile, and the keep-out tile crew stand on to work it. */
+  unloaders: { tiles: Tile[]; chute: Tile; stand: Tile }[];
 }
 
 export function airlockTiles(def: ModuleDef, m: Pick<Module, 'x' | 'y' | 'rot'>): AirlockTiles {
-  const rows = def.footprint[1];
-  const at = (row: number): Tile => {
-    const o = rotateOffset(def, m.rot, 0, row);
+  const at = (col: number, row: number): Tile => {
+    const o = rotateOffset(def, m.rot, col, row);
     return { x: m.x + o.x, y: m.y + o.y };
   };
+  const layout = def.airlock?.layout;
+  if (layout) {
+    return {
+      outer: at(...layout.outer), inner: at(...layout.inner), chamber: [], inside: at(...layout.inside), collar: at(...layout.collar),
+      unloaders: layout.unloaders.map((u) => ({ tiles: u.tiles.map((t) => at(...t)), chute: at(...u.chute), stand: at(...u.stand) })),
+    };
+  }
+  const rows = def.footprint[1];
   const out = hullOutward(hullSide(def, m.rot) ?? 'n');
-  const inner = at(rows - 1);
+  const inner = at(0, rows - 1);
   return {
-    outer: at(0),
+    outer: at(0, 0),
     inner,
-    chamber: Array.from({ length: rows - 2 }, (_, i) => at(i + 1)),
+    chamber: Array.from({ length: rows - 2 }, (_, i) => at(0, i + 1)),
     inside: { x: inner.x - out.x, y: inner.y - out.y },
+    collar: null,
+    unloaders: [],
   };
+}
+
+/** Tiles where the airlock's unloaders hand cargo over: the keep-out tiles crew stand on. */
+export function keepOutTiles(def: ModuleDef, m: Pick<Module, 'x' | 'y' | 'rot'>): Tile[] {
+  return airlockTiles(def, m).unloaders.map((u) => u.stand);
 }
 
 /** Make a freshly spawned airlock module's tiles real: outer and inner doors, floor chamber. */

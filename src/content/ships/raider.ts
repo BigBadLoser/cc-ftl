@@ -44,14 +44,15 @@ export const raiderShip = {
     // Weapon deck (south): two light weapons and the small shield generator. The door at (8, 8) stays clear.
     { def: 'module.burstLaser', x: 12, y: 10, rot: 0 },
     { def: 'module.burstLaser', x: 9, y: 10, rot: 0 },
-    { def: 'module.shieldGenSmall', x: 4, y: 10, rot: 0 },
+    { def: 'module.shieldGenSmall', x: 6, y: 10, rot: 0 },
     { def: 'module.light', x: 7, y: 13, rot: 0 },
-    { def: 'module.light', x: 2, y: 13, rot: 0 },
+    { def: 'module.light', x: 6, y: 13, rot: 0 },
     { def: 'module.light', x: 14, y: 13, rot: 0 },
     // Shuttle bay in the bridge room (pit x 2..5, y 3..7, boarding tile (6, 6) east of it) with its shuttle.
     { def: 'module.vehicle_bay', x: 2, y: 3, rot: 0, vehicle: 'vehicle.shuttle' },
-    // Airlock on the west hull, weapon deck (outer door (1, 12), inside tile (5, 12)).
-    { def: 'module.airlock', x: 1, y: 12, rot: 3 },
+    // Docking airlock on the west hull, weapon deck y = 11..13 (hull tile and outer door (1, 12), inside tile (3, 12), keep-out tiles
+    // (4, 11) and (4, 13)).
+    { def: 'module.airlock', x: 1, y: 11, rot: 3 },
   ],
 } satisfies ShipTemplate;
 

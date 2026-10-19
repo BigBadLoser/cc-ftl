@@ -215,6 +215,23 @@ export interface SpeciesDef {
 }
 
 /**
+ * Tile roles of an airlock with a docking collar, as [col, row] offsets in the unrotated footprint (row 0 is the hull row;
+ * rows count inboard, cols run along the hull). The collar lies outside the footprint, one tile beyond the hull row.
+ */
+export interface AirlockLayout {
+  /** The pod: the inner door. */
+  inner: readonly [number, number];
+  /** The hull tile with the outer door (the iris hatch of the collar behind it). */
+  outer: readonly [number, number];
+  /** Walkable tile in front of the inner door: where passengers board and land. */
+  inside: readonly [number, number];
+  /** The docking collar, one tile past the hull row. Not in the footprint. */
+  collar: readonly [number, number];
+  /** Cargo unloaders: solid body tiles, the chute tile where a crate shows, and the keep-out tile crew stand on to work it. */
+  unloaders: readonly { tiles: readonly (readonly [number, number])[]; chute: readonly [number, number]; stand: readonly [number, number] }[];
+}
+
+/**
  * A placeable ship module. `footprint` is [w, h] at rotation 0; (x, y) of a placed module is the
  * top-left of its rotated bounding box. Offsets (`access`) are in rotation-0 local tiles.
  */
@@ -269,11 +286,12 @@ export interface ModuleDef {
    */
   hullEdge?: 'n' | 'e' | 's' | 'w';
   /**
-   * Airlock: footprint [1, n] with n >= 3 and `hullEdge: 'n'`. Local row 0 is the outer door (on the hull line), the last
-   * row the inner door, the rows between the chamber. Placing it turns those tiles into doors and floor. Cycling takes
-   * `cycleSec` and moves the chamber's air to or from the ship, so crew passing never vents the ship.
+   * Airlock, `hullEdge: 'n'`. Without `layout` it is a 1-wide line: local row 0 is the outer door (on the hull line), the last
+   * row the inner door, the rows between the chamber. With `layout` the tile roles are given explicitly (see AirlockLayout).
+   * Placing it turns the door tiles into doors. Cycling takes `cycleSec` and moves the chamber's air to or from the ship,
+   * so crew passing never vents the ship.
    */
-  airlock?: { cycleSec: number };
+  airlock?: { cycleSec: number; layout?: AirlockLayout };
   /**
    * Vehicle bay: a pit the vehicle sits in (solid, nothing walkable inside; it launches through hatch doors in the pit
    * floor). Holds one vehicle whose `VehicleDef.class` equals `class` ('shuttle' bays are 4x5; later 'pod' bays, 3x3, for

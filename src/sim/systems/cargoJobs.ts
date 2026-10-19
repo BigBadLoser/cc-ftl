@@ -6,7 +6,7 @@ import type { Sim } from '../sim';
 import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
 import { cargoSpace } from '../vehicles/cargo';
 import { VehicleC } from '../vehicles/components';
-import { boardingTile } from '../vehicles/geometry';
+import { boardingTile, cargoTile } from '../vehicles/geometry';
 
 /** Units already promised to a vehicle's hold by pending hauls. */
 function promised(res: Reservations, vehicle: number): number {
@@ -19,7 +19,7 @@ function promised(res: Reservations, vehicle: number): number {
  * Shuttle cargo hauling, planned like the other hauls (it runs before the floor-clearing planner so it gets first
  * claim). LOAD: loose stacks on a prize ship go to a shuttle stowed or docked on that grid (nowhere else to put them).
  * UNLOAD: a shuttle with cargo at a boarding tile on a live player ship is emptied into the nearest storage that
- * accepts each item. Crew do the walking as ordinary 'hauling' jobs; the pilot stays at the controls.
+ * accepts each item. At a docking airlock both go through its unloaders: crew work the keep-out tile in front of a chute. Crew do the walking as ordinary 'hauling' jobs; the pilot stays at the controls.
  */
 export function cargoJobsSystem(sim: Sim): void {
   if (sim.tick % PLAN_INTERVAL !== 0) return;
@@ -43,9 +43,11 @@ export function cargoJobsSystem(sim: Sim): void {
       for (const q of v.cargo) {
         const avail = q.count - (res.out.get(refKey('vehicle', id, q.item)) ?? 0);
         if (avail <= 0) continue;
-        const dest = nearestStorageFor(sim, at.gridId, q.item, at, res);
+        // Cargo comes out through the airlock's unloaders: crew take it at the keep-out tile nearest the storage.
+        const dest = nearestStorageFor(sim, at.gridId, q.item, cargoTile(sim, id) ?? at, res);
         if (!dest) continue;
-        const src = { ref: { kind: 'vehicle' as const, id }, x: at.x, y: at.y, avail };
+        const stand = cargoTile(sim, id, dest) ?? at;
+        const src = { ref: { kind: 'vehicle' as const, id }, x: stand.x, y: stand.y, avail };
         makeHaul(sim, res, 'hauling', at.gridId, src, dest.ref, q.item, Math.min(avail, dest.room, DEFAULT_CARRY_CAPACITY));
       }
     }
