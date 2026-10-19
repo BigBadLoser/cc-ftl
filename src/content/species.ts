@@ -26,6 +26,9 @@ export const species = {
     // Rest drains in a few minutes so sleeping is easy to observe while testing.
     restDecay: 0.6,
     carryCapacity: 20,
+    // Fed to hungry in about 9 minutes (hungry crew eat below 35), starving after about 14.
+    hunger: { decayPerSec: 0.12 },
+    mood: true,
   },
   // Robot crew (the rogue AI faction; player-built in robot bays). Variants are roles (role.robot_*).
   'species.robot': robot,

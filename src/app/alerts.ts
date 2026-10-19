@@ -71,6 +71,8 @@ export function createAlerts(sim: Sim): Alerts {
       case 'crew.died': return { kind: e.type, key: `x${e.crew}`, text: `${crewName(e.crew)} died`, at: crewAt(e.crew) };
       case 'suit.airLow': return playerSuit(e.crew) ? { kind: e.type, key: `sa${e.crew}`, text: `${crewName(e.crew)}: suit air low`, at: crewAt(e.crew) } : null;
       case 'suit.airOut': return playerSuit(e.crew) ? { kind: e.type, key: `sa${e.crew}`, text: `${crewName(e.crew)}: suit out of air!`, at: crewAt(e.crew) } : null;
+      case 'crew.starving': return playerSuit(e.crew) ? { kind: e.type, key: `st${e.crew}`, text: `${crewName(e.crew)} is starving`, at: crewAt(e.crew) } : null;
+      case 'crew.moodLow': return playerSuit(e.crew) ? { kind: e.type, key: `ml${e.crew}`, text: `${crewName(e.crew)} is very unhappy`, at: crewAt(e.crew) } : null;
       case 'crew.rescued': return { kind: e.type, key: `r${e.crew}`, text: `${crewName(e.crew)} rescued`, at: crewAt(e.crew) };
       case 'job.missingMaterials':
         return { kind: e.type, key: `m${e.x},${e.y}`, text: `Missing ${sim.content.items[e.item]?.name ?? e.item}`, at: { x: e.x, y: e.y } };

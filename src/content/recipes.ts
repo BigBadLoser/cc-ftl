@@ -30,6 +30,14 @@ export const recipes = {
     outputs: [{ item: 'item.polymer', count: 1 }],
     work: 80,
   },
+  // The galley's recipe: reclaimed scrap becomes nutrient paste bars.
+  'recipe.ration': {
+    name: 'Print rations',
+    station: 'module.galley',
+    inputs: [{ item: 'item.scrap', count: 2 }],
+    outputs: [{ item: 'item.ration', count: 3 }],
+    work: 40,
+  },
   'recipe.missile': {
     name: 'Assemble missiles',
     station: 'module.fabricator',

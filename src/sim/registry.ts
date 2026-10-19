@@ -8,7 +8,7 @@ export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair
 export interface ShipTemplate {
   name: string;
   /** Modules to place at game start; `rot` is quarter turns clockwise (0..3). */
-  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string }[];
+  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string }[];
   /** '.' space, '#' wall, '_' floor, 'D' door. Rows may differ in length; short rows pad with space. */
   rows: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
@@ -152,6 +152,8 @@ export interface ItemDef {
   vehicle?: string;
   /** Present = crew can equip it and fight with it. */
   hand?: HandWeaponDef;
+  /** Present = hungry crew eat it from storage: eating one restores `nutrition` hunger points (0..100 scale). */
+  food?: { nutrition: number };
 }
 
 /** A hand weapon (sidearm, rifle, blade) carried by crew. Ranged ones need line of sight; melee ones need adjacency. */
@@ -236,6 +238,10 @@ export interface SpeciesDef {
    * at 0 it crawls (EMPTY_CHARGE_MULT).
    */
   charge?: { drainPerSec: number; busyMult: number; lowBelow: number };
+  /** Gets hungry: Needs.hunger (100 = fed) falls this much per second (half while asleep). Absent = never eats (robots). */
+  hunger?: { decayPerSec: number };
+  /** Has moods (MoodC: a score built from named factors that slows work when low). Absent = no mood (robots). */
+  mood?: true;
 }
 
 /**
@@ -296,6 +302,8 @@ export interface ModuleDef {
   /** Construction work in ticks at workSpeed 1. */
   buildWork: number;
   bed?: true;
+  /** A galley: hungry crew eat on its access tile (a hot meal lifts mood). Pairs with `crafting` for a food printer. */
+  galley?: true;
   workstation?: true;
   /** Materials to build it; deconstructing refunds DECON_REFUND of them. */
   cost?: ItemQty[];

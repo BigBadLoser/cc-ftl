@@ -20,6 +20,11 @@ export type SimEvent =
   | { type: 'crew.rescued'; crew: number; by: number }
   | { type: 'crew.fellAsleep'; crew: number }
   | { type: 'crew.wokeUp'; crew: number }
+  | { type: 'crew.ate'; crew: number; item: string; galley: boolean }
+  /** Hunger just hit zero: the crew member now loses health slowly. */
+  | { type: 'crew.starving'; crew: number }
+  /** Mood fell below MOOD_VERY_LOW (re-arms once it recovers above MOOD_LOW). */
+  | { type: 'crew.moodLow'; crew: number; mood: number }
   /** A crew member deposited items into a storage module (`to` 'storage') or onto a job (`to` 'job'). */
   | { type: 'item.hauled'; crew: number; item: string; count: number; gridId: number; x: number; y: number; to: 'floor' | 'storage' | 'job' | 'vehicle' }
   /** A job lacks materials and no stock exists to fetch (debounced per job). */

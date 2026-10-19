@@ -44,6 +44,10 @@ export interface UiCrew {
   activity: string;
   /** 0..100, 100 = fully rested. */
   rest: number;
+  /** 0..100, 100 = fed; null for crew that never eat (robots, enemies). */
+  hunger: number | null;
+  /** Mood 0..100 with its reasons (label and points, biggest first) and what it does to work; null for crew without moods. */
+  mood: { value: number; factors: { label: string; value: number }[]; workMult: number } | null;
   drafted: boolean;
   /** Human-readable current job, or null. */
   job: string | null;
@@ -240,7 +244,7 @@ export interface UiStory {
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'crew.died' | 'crew.rescued'
   | 'job.missingMaterials' | 'storage.full' | 'production.done'
-  | 'suit.airLow' | 'suit.airOut'
+  | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
   | 'story.notice' | 'story.lead'
   | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost';
 

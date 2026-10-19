@@ -1,6 +1,6 @@
 import { releaseBed, releaseBedClaim } from '../crew/beds';
 import {
-  CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC,
+  CrewC, DeadC, DownedC, DraftedC, HealthC, NeedsC, PositionC,
   type Crew, type Downed, type Health, type Position,
 } from '../crew/components';
 import { killCrew } from '../crew/death';
@@ -13,7 +13,7 @@ import { TICK_HZ } from '../time';
 import {
   BED_HEAL_PER_SEC, BLEED_OUT_SECONDS, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, CO2_HARM_ABOVE, CO2_HARM_PER_SEC,
   COLD_BELOW, FIRE_CREW_DAMAGE, GET_UP_HP, HOT_ABOVE, O2_HARM_BELOW, O2_HARM_PER_SEC, REGEN_PER_SEC,
-  TEMP_HARM_PER_SEC,
+  STARVE_HARM_PER_SEC, TEMP_HARM_PER_SEC,
 } from '../tuning';
 
 /** Harm per second from the tile a crew member stands on: thin air, CO2, heat, cold and fire. `suited` (with air in the tank) or airless skips thin air and CO2; a suit also insulates against cold. */
@@ -35,7 +35,7 @@ function harmPerSec(grid: Grid, x: number, y: number, suited: boolean, airless: 
  * are downed and bleed out unless a rescuer stabilizes them in a bed, where they heal and
  * eventually get up. A downed crew whose air is still lethal keeps bleeding even in a bed.
  * Crew without a Health component are ignored. Species flags: `airless` bodies neither breathe nor mind thin air, CO2 or
- * cold; `mechanical` ones never regenerate (crew mend them); `wreck` ones are wrecked at 0 hp instead of going down.
+ * cold, and starve at zero hunger (a slow harm); `mechanical` ones never regenerate (crew mend them); `wreck` ones are wrecked at 0 hp instead of going down.
  */
 export function vitalsSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, HealthC, PositionC)) {
@@ -54,7 +54,7 @@ export function vitalsSystem(sim: Sim): void {
       grid.set('co2', pos.x, pos.y, grid.get('co2', pos.x, pos.y) + BREATH_CO2_PER_SEC / TICK_HZ);
     }
 
-    const harm = harmPerSec(grid, pos.x, pos.y, suited, airless);
+    const harm = harmPerSec(grid, pos.x, pos.y, suited, airless) + ((sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0);
     if (!downed) {
       if (health.hp <= 0) {
         // Already at 0 (combat damage): go down without regenerating first.

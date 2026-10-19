@@ -84,6 +84,35 @@ export const REGEN_PER_SEC = 0.1;
 /** Sleeping in a bed recovers rest this much faster than sleeping on the floor. */
 export const BED_REST_MULT = 2;
 
+// --- Hunger and mood ---
+/** Hungry crew (not drafted, not mid-job unless operating) go and eat below this hunger (0..100, 100 = fed). */
+export const HUNGER_EAT_BELOW = 35;
+/** Operators of a console keep their post until hunger is this low. */
+export const HUNGER_EAT_URGENT = 10;
+/** Seconds a meal takes once the crew member is at the galley or the crate. */
+export const EAT_SEC = 4;
+/** Hp per second lost at zero hunger. Slow: a full-health crew member lasts about 33 minutes. */
+export const STARVE_HARM_PER_SEC = 0.05;
+/** Hunger decays at this fraction of the normal rate while asleep. */
+export const HUNGER_SLEEP_MULT = 0.5;
+/** Mood is 0..100 from a neutral base plus named factors. */
+export const MOOD_BASE = 50;
+/** Ticks between mood recomputes per crew member (staggered by id). */
+export const MOOD_INTERVAL = 10;
+/** Below this mood work slows (x MOOD_LOW_WORK_MULT); below MOOD_VERY_LOW it slows more and an alert fires. */
+export const MOOD_LOW = 35;
+export const MOOD_VERY_LOW = 20;
+export const MOOD_LOW_WORK_MULT = 0.85;
+export const MOOD_VERY_LOW_WORK_MULT = 0.7;
+/** Open question hook: mood below this makes a crew member a breakdown risk (nothing happens yet, see crew/mood.ts). */
+export const MOOD_BREAKDOWN_BELOW = 10;
+/** Seconds a hot galley meal, a night in a bed or a night on the floor keeps affecting mood. */
+export const MOOD_MEAL_SEC = 300;
+export const MOOD_SLEEP_SEC = 600;
+/** Another living crew member within this many tiles counts as company; alone this many seconds is lonely. */
+export const MOOD_COMPANY_RADIUS = 7;
+export const MOOD_LONELY_SEC = 120;
+
 // --- Stat conditions ---
 export const O2_LOW_WORK_BELOW = 16;
 export const DARK_MOVE_MULT = 0.8;

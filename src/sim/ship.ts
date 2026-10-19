@@ -1,5 +1,6 @@
 import type { ShipTemplate } from './registry';
 import { Grid } from './grid';
+import { ProductionC } from './items/components';
 import { storageAdd } from './items/storage';
 import { spawnModule } from './modules/spawn';
 import type { Sim } from './sim';
@@ -47,5 +48,7 @@ export function spawnTemplateModules(sim: Sim, gridId: number, t: ShipTemplate):
     const id = spawnModule(sim, gridId, m.def, m.x, m.y, m.rot);
     for (const q of m.stock ?? []) storageAdd(sim, id, q.item, q.count);
     if (m.vehicle) spawnVehicle(sim, m.vehicle, id);
+    const production = sim.world.get(id, ProductionC);
+    for (const o of m.orders ?? []) production?.orders.push({ ...o, done: 0 });
   }
 }

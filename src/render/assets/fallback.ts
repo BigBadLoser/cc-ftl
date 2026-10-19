@@ -43,6 +43,8 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.shield_console': { ids: CONSOLE, tint: 0x8ad8ff, perTile: true },
   'module.helm': { ids: CONSOLE, tint: 0xa8ff9a, perTile: true },
   'module.ai_core': { ids: CONSOLE, tint: 0xd9a8ff, perTile: true },
+  // Galley / food printer: the fabricator tinted mint green until it has its own model (art list in docs/STATUS.md).
+  'module.galley': { ids: ['module.fabricator'], tint: 0x8affc0 },
   // Roof turret: a crate with a barrel nub pointing along the aim (see turretView).
   'turret.generic': { ids: CRATE, tint: 0xd0d8e8 },
   'turret.generic.charged': { ids: CRATE, tint: 0xfff0b0 },

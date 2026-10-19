@@ -48,7 +48,24 @@ Cybernetic implants are everywhere. Neon is both mood and information.
 - **Autonomous by default** (utility-scored jobs with reservations), **Battle Stations** toggle swaps
   priorities for combat, **drafting** gives direct control.
 - **Needs and mood** (hunger, rest, social, comfort, stability). How dramatic breakdowns get is still
-  open.
+  open. What exists:
+  - **Hunger** (0..100, 100 = fed) falls 0.12 per second (half while asleep): hungry below 35 after about 9
+    minutes, zero after about 14. Hungry crew drop their job and go to the **galley** (a powered `module.galley`, which
+    is also a food printer), else to a crate that holds food, take one **ration** from storage and eat for 4 s (+50).
+    Operators of a console hold their post until hunger is under 10. No food or no way there: they carry on and look
+    again every second. At zero hunger they lose 0.05 hp per second (no regeneration) and an alert fires.
+  - **Food** is data: an item with `food: { nutrition }`. `item.ration` is printed at the galley from scrap
+    (`recipe.ration`, 2 scrap makes 3 rations); use the usual make-N / keep-N orders. The starter ship has 12 rations and
+    a galley that keeps 12 in stock.
+  - **Mood** (0..100) is 50 plus named factors, shown on the crew card as "Hungry -10, Company +3". Factors: hunger
+    (starving -25, hungry -10, peckish -3, well fed +4), rest (exhausted -15, tired -8, rested +4), a hot galley meal
+    +6 for 5 minutes, the last sleep in a bed +5 or on the floor -6 for 10 minutes, the room (dark -5, stale air -8, thin
+    air -20, smoke -6, too hot or cold -6) and a light social term (company within 7 tiles +3, alone for 2 minutes
+    -4). Under 35 work speed is x0.85, under 20 it is x0.7 and a "very unhappy" alert fires once.
+  - **Robots** (any species without `hunger` / `mood`) neither eat nor have moods; enemy crews are exempt too.
+  - **Open:** breakdowns. `breakdownRisk()` (mood under 10) is the hook; nothing calls it yet. Also open: beauty and
+    room quality as a comfort factor, friends and rivals, whether drafted crew should starve quietly (they do now: they
+    never stop to eat while drafted).
 - **Danger awareness:** crew read tile fields (fire, vacuum, heat) and avoid or flee unless their job,
   species or gear allows.
 - **Species** are base bodies (organic, synthetic, hybrid) with real sim effects (no breathing, fire
