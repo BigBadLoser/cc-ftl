@@ -51,6 +51,9 @@ def galley(rot, active):
     # counter: cream cabinet, stainless top, a red trim line under the lip, door seams and a dark kick recess
     F.box(0.0, -0.04, 0.06, (1.9, 0.78, 0.56), "lvW2", top="lvW", bevel=0.015)
     F.box(0.0, -0.06, 0.0, (1.84, 0.7, 0.06), "dark")
+    for a in (-0.6, 0.0, 0.6):                                                               # back: service panels
+        F.box(a, -0.435, 0.16, (0.46, 0.012, 0.36), "lvWS")
+    F.box(0.3, -0.44, 0.3, (0.3, 0.02, 0.12), "gm")                                          # a vent
     F.box(0.0, -0.03, 0.62, (1.96, 0.86, 0.05), "steel", top="steelL", bevel=0.012)
     F.box(0.0, 0.365, 0.56, (1.9, 0.012, 0.03), "medRed")
     for a in (-0.3, 0.3):
@@ -60,13 +63,14 @@ def galley(rot, active):
     # printer tower at the left end: rounded cream housing, arched dispenser hatch, a menu screen, a vent on top
     tx = -0.56
     F.box(tx, -0.15, 0.67, (0.74, 0.56, 0.78), "lvW2", top="lvW", bevel=0.06)
-    F.box(tx, 0.135, 0.72, (0.46, 0.03, 0.36), "gm", bevel=0.01)                            # hatch frame
-    F.box(tx, 0.14, 0.75, (0.38, 0.03, 0.29), "dark")                                       # the opening
-    F.box(tx, 0.12, 0.76, (0.34, 0.012, 0.25), "lampY" if active else "steelD")              # its lit back wall
-    F.box(tx, 0.14, 1.04, (0.38, 0.03, 0.05), "gm", rx=0.0)                                 # arch top
-    F.box(tx, 0.137, 1.14, (0.36, 0.02, 0.16), "dark")                                      # menu screen
+    F.box(tx, 0.135, 0.68, (0.56, 0.03, 0.4), "lampY" if active else "gm", bevel=0.01)      # hatch frame (lit rim)
+    F.box(tx, 0.14, 0.71, (0.48, 0.03, 0.33), "dark")                                       # the opening
+    F.box(tx, 0.12, 0.72, (0.44, 0.012, 0.29), "lampY" if active else "steelD")              # its lit back wall
+    F.box(tx, 0.18, 1.08, (0.56, 0.1, 0.06), "lvW2", top="lvW", bevel=0.02)                  # a brow over the hatch
+    F.box(tx, 0.235, 1.09, (0.46, 0.012, 0.03), "lampY" if active else "steelD")             # its warm light strip
+    F.box(tx, 0.137, 1.18, (0.36, 0.02, 0.14), "dark")                                      # menu screen
     for k in range(3):
-        F.box(tx - 0.08 + k * 0.08, 0.14, 1.18 - k * 0.0, (0.05, 0.012, 0.03 + 0.02 * (k % 2)),
+        F.box(tx - 0.08 + k * 0.08, 0.14, 1.21, (0.05, 0.012, 0.03 + 0.02 * (k % 2)),
               "orange" if active else "steelD")
     for k in range(4):
         F.box(tx, -0.15 - 0.15 + k * 0.1, 1.44, (0.5, 0.04, 0.02), "gmD")                    # vent slats
@@ -78,12 +82,14 @@ def galley(rot, active):
             F.cyl(tx + da, -0.15, z, r, r * 1.2, "medWhite", sides=8, rtop=r * 0.6)          # steam
     else:
         _tray(F, tx, 0.43, 0.62, food=True)                                                # one waiting on the ledge
-    # paste canisters at the back right: cream caps, a window showing each paste's colour
+    # paste vats at the back right: glass jars full of coloured paste, steel bands and caps
     for k, (a, col) in enumerate(((0.06, "hivis"), (0.34, "pcb"), (0.62, "rust"))):
-        F.cyl(a, -0.3, 0.67, 0.12, 0.5, "steelL", top="lvW", sides=12)
-        F.cyl(a, -0.3, 1.17, 0.125, 0.05, "gm", top="steel", sides=12)
-        F.box(a + 0.0, -0.3 + 0.115, 0.74, (0.07, 0.02, 0.34), col)
-    F.box(0.34, -0.3, 0.98, (0.62, 0.04, 0.04), "gm")                                       # a feed pipe
+        F.cyl(a, -0.3, 0.67, 0.13, 0.08, "gm", top="steel", sides=12)
+        F.cyl(a, -0.3, 0.75, 0.12, 0.34, col, sides=12)
+        F.cyl(a, -0.3, 1.09, 0.12, 0.08, "glassL", top="glassL", sides=12)                 # the air above the paste
+        F.cyl(a, -0.3, 1.17, 0.135, 0.06, "gm", top="steelL", sides=12)
+        F.box(a - 0.05, -0.3 + 0.09, 0.8, (0.03, 0.02, 0.24), "lvWL")                        # a gloss on the glass
+    F.box(0.34, -0.3, 1.23, (0.62, 0.05, 0.05), "gm")                                       # a feed pipe over them
     # stacked clean trays and a cup stack on the open counter
     for k in range(4):
         F.box(0.42, 0.14, 0.67 + k * 0.035, (0.26, 0.2, 0.03), "medWhite" if k % 2 == 0 else "lvW", top="lvWL",
