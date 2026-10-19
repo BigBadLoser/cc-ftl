@@ -3,6 +3,7 @@
   env       props, economy modules, items, combat fx and projectiles      (sheet env)
   walls     floors, walls, hull, doors (walls.LEVELS view levels)        (sheet walls)
   consoles  helm / weapons / shield consoles, 4 rotations, desk-front overlays for seated crew
+  struct    structural beams (truss tiles by connection mask, caps, hull flanges), one set per faction look
   weapons   roof turrets (8 aims, charged, stowed, deploy frames) and their floor bays, 4 rotations
   roof      roof plating modules, edges, inset and patch plates, livery masks
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
@@ -22,6 +23,9 @@ def jobs(name):
     if name == "consoles":
         from . import consoles
         return consoles.jobs(), True
+    if name == "struct":
+        from . import struct
+        return struct.jobs(), True
     if name == "weapons":
         from . import turrets
         return turrets.SPRITES, True
@@ -31,5 +35,5 @@ def jobs(name):
     raise KeyError(name)
 
 
-RENDERED = ("env", "walls", "consoles", "weapons", "roof")
+RENDERED = ("env", "walls", "consoles", "weapons", "roof", "struct")
 ALL = RENDERED + ("sol",)
