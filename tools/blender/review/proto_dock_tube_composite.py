@@ -15,12 +15,13 @@ from sprites import compose  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 W, C, OUT = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
-MAN = json.loads((ROOT / "public/assets/manifest.json").read_text())
-SHEET = np.array(Image.open(ROOT / "public/assets/sprites/airlock.png").convert("RGBA"))
-GLOW = np.array(Image.open(ROOT / "public/assets/sprites/airlock.glow.png").convert("RGBA"))
+A = Path(sys.argv[4]) if len(sys.argv) > 4 else ROOT / "public/assets"      # asset dir with the airlock sheet (a scratch build)
+MAN = json.loads((A / "manifest.json").read_text())
+SHEET = np.array(Image.open(A / "sprites/airlock.png").convert("RGBA"))
+GLOW = np.array(Image.open(A / "sprites/airlock.glow.png").convert("RGBA"))
 Z_PX = 16 * math.sqrt(6)
 HATCH_U, HATCH_V, COLLAR_FACE, DOCK_Z = 1.40, 0.817, 0.2, 0.95 - 1.3
-GAP = 0.5                                   # how much further out than flush the shuttle holds off (= the tube's one length)
+GAP = 1.1                                   # how much further out than flush the shuttle holds off (= the tube's one length)
 CASES = {"west": (4, 3, (-1, 0)), "north": (6, 0, (0, -1))}      # name -> (d, airlock rotation, outward)
 STEPS = ("tube retracted (nothing on the hull)", "tube extending", "tube extending", "tube mated, collar clamps")
 

@@ -19,8 +19,8 @@ OUT.mkdir(parents=True, exist_ok=True)
 for k, hx in VB.LIVERY.items():
     palette._data[k] = {"hex": hx}
 HATCH_SURF, HATCH_U, HATCH_Z = 0.80, 1.40, 1.30      # hatch outer plane (out from the centre line), along the nose, axis height
-LENGTHS = (0.0, 0.18, 0.34, 0.5)                      # extension from the hatch plane: retracted (no sprite) .. mated (one fixed length)
-RADII = (0.78, 0.70, 0.62)                            # nested rings sized to the hatch opening (radius 0.80), outermost first
+LENGTHS = (0.0, 0.4, 0.75, 1.1)                       # extension from the hatch plane: retracted (no sprite) .. mated (one fixed length)
+RADII = (0.78, 0.72, 0.66, 0.60)                      # four nested rings sized to the hatch opening (radius 0.80), outermost first
 SIDES = 24
 
 
@@ -35,16 +35,17 @@ def _annulus(f, u, r0, r1, mat, v, z):
 
 def tube(heading, length):
     """The telescoping tube from the hatch toward the hull, in a frame whose u axis is the hatch normal. Open rings, no end
-    discs: three nested shells that slide out of the hatch opening (ring k reaches k/3 of the length), a hazard mouth ring
+    discs: four nested shells that slide out of the hatch opening (ring k reaches k/4 of the length), a hazard mouth ring
     with lamp studs on the innermost and a dark bore."""
     m = core.Mesh("dock_tube")
     f = FlightFrame(m, heading - math.pi / 2)
     u0 = HATCH_SURF
-    ends = [u0 + length * (k + 1) / 3 for k in range(3)]
-    cols = ("gW1", "steelL", "steel")
+    n = len(RADII)
+    ends = [u0 + length * (k + 1) / n for k in range(n)]
+    cols = ("gW1", "steelL", "steel", "steelD")
     for k, (r, e, col) in enumerate(zip(RADII, ends, cols)):
         f.hcyl(u0, e, HATCH_U, HATCH_Z, r, col, sides=SIDES)
-        _annulus(f, e, (RADII[k + 1] if k < 2 else r - 0.06), r, "steelD", HATCH_U, HATCH_Z)           # the step to the next ring / mouth lip
+        _annulus(f, e, (RADII[k + 1] if k < n - 1 else r - 0.05), r, "steelD", HATCH_U, HATCH_Z)           # the step to the next ring / mouth lip
         f.hcyl(e, u0, HATCH_U, HATCH_Z, r - 0.025, "dark", sides=SIDES)                                  # inside (reversed faces): the bore
     e = ends[-1]
     _annulus(f, e + 0.001, RADII[-1] - 0.06, RADII[-1], "hazY", HATCH_U, HATCH_Z)                       # hazard mouth ring

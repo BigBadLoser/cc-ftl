@@ -41,7 +41,7 @@ UI, UB = -0.42, 0.5                # pod: inboard face, back (against the block)
 PW, PH, RC, RT = 0.46, 1.45, 0.2, 0.12    # pod half width, height, corner radius, top edge round-off
 DW, DH = 0.25, 1.3                 # inner door half width, height
 BW, BH, CAP = 0.46, 1.35, 0.2      # block half width, height, cap slab thickness
-ZC, RH, RR = 0.95, 0.44, 0.62      # collar axis height, hatch radius, mouth ring outer radius
+ZC, RH, RR = 0.95, 0.52, 0.62      # collar axis height, hatch (bore) radius, mouth ring outer radius: a thin ring about 0.1 wide
 CREAM, CREAM_T, CREAM_D, CREAM_S = "lvW", "lvWL", "lvW2", "lvWS"
 RED = "medRed"
 SLATE, SLATE_T, SLATE_K, SLATE_L = "hbD", "hbM", "hbK", "hbL"
@@ -309,6 +309,9 @@ def collar(rot, p, docked):
         a0, a1 = k * math.tau / 16, (k + 1) * math.tau / 16
         _tube(f, um, ue, _sector(RH, RR, a0, a1), GREY, GREY_T, cap=GREY_T)
     f.hcyl(ue - 0.1, ue - 0.095, 0, ZC, RH + 0.01, "dark", sides=16, cap="dark")                  # behind the hatch
+    if p >= 1.0:                                                                                 # open: a dark bore the tube's mouth reads through
+        f.hcyl(ue, u0 + 0.07, 0, ZC, RH - 0.01, "dark", sides=16)
+        f.hcyl(ue - 0.14, ue - 0.135, 0, ZC, RH - 0.01, "dark", sides=16, cap="dark")
     f.box(um + 0.08, 0, ZC + RR - 0.03, 0.12, 0.14, 0.07, RED, top=RED)                             # red marker
     if p < 1.0:                                                                                  # iris blades
         r0, tw = RH * p, 0.55 * p
@@ -318,6 +321,10 @@ def collar(rot, p, docked):
             _tube(f, ue - 0.09, ue - 0.05, _sector(r0, RH + 0.01, a0, a1, tw), col, col, cap=col)
         if p == 0.0:
             f.hcyl(ue - 0.06, ue - 0.03, 0, ZC, 0.08, "steelD", sides=8, cap=RED)                  # hub
+    if docked:                                                                                   # a slightly darker clamp ring round the mouth
+        for k in range(16):
+            a0, a1 = k * math.tau / 16, (k + 1) * math.tau / 16
+            _tube(f, ue, ue + 0.05, _sector(RH, RR + 0.03, a0, a1), "steelD", "steelD", cap="steelD")
     lamp = "green" if docked else "steelD"
     f.box(u0 + 0.03, 0, ZC + RR + 0.02, 0.06, 0.1, 0.04, lamp, top=lamp)                            # seal light
     for k in range(4):                                                                           # clamps

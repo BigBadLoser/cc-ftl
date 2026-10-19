@@ -81,6 +81,11 @@ Design is in `docs/DESIGN.md` (Crew, "EVA and spacesuits"). What exists:
   face (`vehicle.shuttle.dockside.d0/2/4/6`, d = hull outward direction; legs up, wings folded). `shuttleView.ts` slides it in
   alongside (heading turned parallel, offset `COLLAR_FACE + HATCH_V` out and `HATCH_U` back along the hull, axis at 0.95) and
   swaps to the folded sprite half way. `vehicle.shuttle.docked.*` (nose out) stays for the bay lift off / settle.
+- Docking tube: the shuttle holds off `HOLD_OFF` = 1.1 tiles from the flush position and extends a 4-ring telescoping tube from its
+  side hatch to the collar (`vehicle.shuttle.tube.d<k>.f1..f3`, same origin as `dockside`; nothing drawn when retracted). Sequence
+  (`dockSequence.ts`): slide alongside (wings fold half way) 1.4 s, tube f1..f3, then the collar clamps (`airlockArt` delays its
+  `.docked` frames by `DOCK_CLAMP_DELAY_MS`); undocking is the reverse (collar unclamps, tube retracts, slide out). Collar: thin 0.1 mouth ring,
+  dark bore in the open frames, darker clamp ring when docked. Ships never dock with each other (they cannot move), so one fixed tube length.
 - Floor marks (keep-out, walk zone) are faint painted outlines now; cargo on an unloader is a larger crate standing out of the
   chute mouth. Balance test limit restored to 0.975 (starter's north quarters door moved to (17, 8)).
 

@@ -8,6 +8,7 @@ import { cargoCount } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
 import { AirlockC, type Airlock } from '../sim/portals/components';
 import type { ModuleLayer } from './moduleArt';
+import { DOCK_CLAMP_DELAY_MS } from './dockSequence';
 import { BAY_FRAME_MS } from './vehicleBayArt';
 import type { WallLevel } from './tiles';
 
@@ -74,10 +75,11 @@ export function createCollarAnimator(): { stepOf(airlock: number, docked: boolea
       let t = tracks.get(airlock);
       if (!t) tracks.set(airlock, (t = { docked, anim: null }));
       if (t.docked !== docked) {
-        t.anim = { seq: docked ? DOCK_SEQ : UNDOCK_SEQ, start: now };
+        t.anim = { seq: docked ? DOCK_SEQ : UNDOCK_SEQ, start: docked ? now + DOCK_CLAMP_DELAY_MS : now };  // the collar clamps once the tube has mated
         t.docked = docked;
       }
       if (t.anim) {
+        if (now < t.anim.start) return null;
         const s = t.anim.seq[Math.floor((now - t.anim.start) / BAY_FRAME_MS)];
         if (s) return s;
         t.anim = null;
