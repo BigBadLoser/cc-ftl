@@ -399,6 +399,11 @@ Merge advice:
 
 ## Shipped
 
+- **2026-10-19:** merged to `main`: `eva` (shuttle bay, shuttle flight and side docking with the extending tube, docking
+  airlock with unloaders, EVA and spacesuits), `weapons-int` (missile launcher, ion cannon, incendiary launcher), `events`
+  (event system, 11 starter events), `needs` (hunger, galley and rations, mood) and the `sector-plan` docs. The "not merged"
+  notes in the branch sections below predate this. Not merged yet: `shipgen` and `trusses-int` (merge before step 5 of the
+  sector plan). Sector size stays an open question (1000x600 is a working guess, not a decision).
 - **2026-10-18:** M4 art merged to `main` (bdde1e9). It covers:
   - consoles and seated crew;
   - the S, H and R weapons;
