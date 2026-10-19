@@ -137,7 +137,8 @@ export function boomRig(rng: Rng, out: number, len: number, spread: number, arms
   truss(b, reach, -out - spread, 1, 2 * spread + 1, 'cross');
   for (let i = 0; i < arms; i++) {
     const y = -out - spread + Math.round((i * 2 * spread) / Math.max(1, arms - 1));
-    truss(b, 0, y, reach - (i % 2 === 1 ? 2 : 0), 1, `arm${i}`);
+    // Every other arm is shorter at its tip, never at the root: it still meets the cross piece.
+    truss(b, i % 2 === 1 ? 2 : 0, y, reach - (i % 2 === 1 ? 2 : 0), 1, `arm${i}`);
   }
   return { ...blockFrom(b, 'beam', 'rig boom', 'external', [{ id: 's', side: 's', x: x0 + len, y: 0, len: 1, access: 'external' }]), bare: true };
 }

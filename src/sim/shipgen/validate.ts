@@ -110,7 +110,33 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
     }
     if (reached < total) problems.push(`unreachable: ${total - reached} walkable tiles`);
   }
+  // One structure: hull, walls, floors, doors and beams all 4-connected (no pod or beam floating a tile off).
+  const parts = structureParts(cells, w, h);
+  if (parts > 1) problems.push(`disconnected: ${parts} separate structures`);
   const freeFloor = cells.filter((c, i) => c === '_' && !solid[i]).length;
   if ((t.crew ?? []).length > freeFloor) problems.push('no room for the crew');
   return problems;
+}
+
+/** Count 4-connected components of non-space cells (`.` is space). */
+export function structureParts(cells: string[], w: number, h: number): number {
+  const seen = new Uint8Array(w * h);
+  let parts = 0;
+  for (let s = 0; s < w * h; s++) {
+    if (seen[s] || cells[s] === '.' || cells[s] === undefined) continue;
+    parts++;
+    const stack = [s];
+    seen[s] = 1;
+    while (stack.length > 0) {
+      const i = stack.pop() as number;
+      const x = i % w;
+      const y = Math.floor(i / w);
+      for (const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]] as const) {
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        const j = ny * w + nx;
+        if (!seen[j] && cells[j] !== '.') { seen[j] = 1; stack.push(j); }
+      }
+    }
+  }
+  return parts;
 }

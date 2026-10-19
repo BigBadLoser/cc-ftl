@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ModuleC, ShipC, Struct, accessTile, deserialize, footprintTiles, generateShip, hullRow, isTileWalkable, newGame,
-  adjacencyDistance, adjacencySignature, meanPairwise, openTilesOf, serialize, silhouetteDistance, silhouetteMask, type FactionDef, type GenResult, type ModuleDef, type Sim,
+  adjacencyDistance, adjacencySignature, meanPairwise, openTilesOf, serialize, silhouetteDistance, silhouetteMask, structureParts, type FactionDef, type GenResult, type ModuleDef, type Sim,
 } from '../../sim';
 import { content } from '../index';
 import { factions } from './index';
@@ -23,6 +23,23 @@ function spawned(faction: string, seed: number, depth: number): { sim: Sim; grid
 }
 
 describe('ship generator', () => {
+  it('every ship is one connected structure (hull, walls, floors, beams 4-connected), first attempt mostly', () => {
+    for (const id of ids) {
+      let reseeded = 0;
+      for (const depth of [1, 4, 9]) {
+        for (let seed = 1; seed <= 12; seed++) {
+          const g = gen(id, seed, depth);
+          const w = Math.max(...g.template.rows.map((r) => r.length));
+          const cells = g.template.rows.flatMap((r) => Array.from({ length: w }, (_, x) => r[x] ?? '.'));
+          expect(structureParts(cells, w, g.template.rows.length), `${id} seed ${seed} depth ${depth}`).toBe(1);
+          if (g.failures.some((f) => f.includes('disconnected'))) reseeded++;
+        }
+      }
+      // Gaps are fixed at the source, not by reseeding.
+      expect(reseeded, `${id} reseeds for disconnection`).toBeLessThanOrEqual(1);
+    }
+  }, 240000);
+
   it('is deterministic: same faction, seed and depth give the same template; seeds vary the layout', () => {
     for (const id of ids) {
       expect(gen(id, 77, 3).template).toEqual(gen(id, 77, 3).template);
