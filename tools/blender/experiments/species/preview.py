@@ -2,7 +2,8 @@
 (species.py's raw frames), composited like the runtime (palette swap for the human, the crew filter's outline and rim,
 additive glow) on floor tiles, SE / S / SW / NW x idle, walk, work.
 
-  python3 -I tools/blender/experiments/species/preview.py <raw dir> <out dir>   -> species-1x.png, species-3x.png"""
+  python3 -I tools/blender/experiments/species/preview.py <raw dir> <out dir>
+    -> species-1x.png, species-3x.png, species-walk.mp4 (human / rock / slime rows, SE S SW NW)"""
 import json
 import sys
 from pathlib import Path
@@ -102,6 +103,22 @@ def main():
         for k, (name, _) in enumerate(kinds):
             dr.text((k * (blocks[0].shape[1] + 6) * s + 4, 2), name, fill=(230, 230, 240))
         im.save(out / f"species-{s}x.png")
+    walk = []                                           # the walk cycle, every direction, as a clip
+    for i in range(8):
+        row = []
+        for name, npz in kinds:
+            row.append(np.hstack([cell(human(man, assets, d, "walk", i) if npz is None else raw(npz, d, "walk", i), floor)
+                                  for _, d in DIRS]))
+        fr = np.vstack(row)
+        walk.append(Image.fromarray(fr).resize((fr.shape[1] * 3, fr.shape[0] * 3), Image.NEAREST))
+    import subprocess
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        for k, im in enumerate(walk * 4):
+            im.save(f"{d}/f{k:04d}.png")
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", "10", "-i", f"{d}/f%04d.png", "-c:v", "libx264",
+                        "-pix_fmt", "yuv420p", "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-crf", "18", str(out / "species-walk.mp4")],
+                       check=True)
     print("wrote", out)
 
 
