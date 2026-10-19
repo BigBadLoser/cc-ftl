@@ -82,14 +82,17 @@ def _arm_push(off):
     return push
 
 
+SHELL = "medWhite"           # the suit's hard white shell; faction colour (team.*) on panels and bands
+
+
 def _torso_col(c):
     if Z(0.92) < c.z < Z(1.0):
-        return "gm"                                                         # waist seal
+        return "gm"                                                         # waist bearing ring
     if c.y < 0 and abs(c.x) < 0.13 and Z(1.12) < c.z < Z(1.3):
-        return "team.accent"                                                # chest panel
-    if abs(c.x) > 0.2 and c.z > Z(1.33):
-        return "team.accent"                                                # shoulder yokes
-    return "team.cloth"
+        return "team.cloth"                                                 # chest panel
+    if abs(c.x) > 0.24 and c.z > Z(1.3):
+        return "gm"                                                         # shoulder bearing rings
+    return SHELL
 
 
 def _legs_col(c):
@@ -98,19 +101,23 @@ def _legs_col(c):
     if c.z < Z(0.24):
         return "gmD"                                                        # boots
     if Z(0.44) < c.z < Z(0.53):
-        return "team.accent"                                                # knee bands
-    return "team.cloth"
+        return "team.cloth"                                                 # knee bands
+    if Z(0.8) < c.z < Z(0.85):
+        return "gm"                                                         # thigh bearing rings
+    return SHELL
 
 
 def _arm_col(c):
     ax = abs(c.x)
     if ax > 0.72:
-        return "gmD"                                                        # glove
+        return "gm"                                                         # glove
     if ax > 0.67:
-        return "team.accent"                                                # cuff
+        return "gmD"                                                        # wrist bearing ring
     if 0.47 < ax < 0.53:
         return "gm"                                                         # elbow joint
-    return "team.cloth"
+    if 0.34 < ax < 0.41:
+        return "team.cloth"                                                 # upper-arm band
+    return SHELL
 
 
 def _rigid(arm, slot, name, build, **kw):
@@ -163,28 +170,34 @@ def build_suit(arm, body):
     for s, sx in (("L", 1), ("R", -1)):
         sh = rs.on(f"shin.{s}")
         sh.box((sx * 0.12, -0.02, 0.12), (0.15, 0.2, 0.18), "gmD", bevel=0.03)
-        sh.box((sx * 0.12, -0.02, 0.215), (0.16, 0.21, 0.035), "team.accent", bevel=0.01)
+        sh.box((sx * 0.12, -0.02, 0.215), (0.16, 0.21, 0.035), "gm", bevel=0.01)
     legs.objs += rs.build()
 
     def helmet(rs):
         h = rs.on("head")
-        h.box((0, 0.005, 1.585), (0.33, 0.34, 0.34), "team.cloth", bevel=0.15)                # shell
-        h.box((0, -0.15, 1.565), (0.25, 0.06, 0.17), "lens", bevel=0.05)                      # visor
+        h.box((0, 0.005, 1.585), (0.33, 0.34, 0.34), SHELL, bevel=0.15)                       # shell
+        h.box((0, -0.15, 1.565), (0.25, 0.06, 0.17), "brass", bevel=0.05)                     # gold visor
         h.box((0, -0.178, 1.635), (0.16, 0.012, 0.012), "cyan")                               # HUD line (faint glow)
         for sx in (-1, 1):
-            h.box((sx * 0.165, 0.0, 1.57), (0.03, 0.09, 0.09), "gm", bevel=0.012)             # ear pucks
+            h.box((sx * 0.165, 0.0, 1.57), (0.03, 0.09, 0.09), "team.cloth", bevel=0.012)     # ear pucks
+        h.box((-0.13, -0.08, 1.68), (0.05, 0.07, 0.04), "gm", bevel=0.01)                     # helmet lamp
+        h.box((-0.13, -0.118, 1.68), (0.035, 0.01, 0.025), "lens")
     items.append(_rigid(arm, "gear.head", "eva_helmet", helmet, glow=True))
 
     def pack(rs):
         sp = rs.on("spine_03")
-        sp.box((0, 0.2, 1.21), (0.32, 0.15, 0.4), "gm", bevel=0.03)                          # frame
-        for sx in (-1, 1):
-            sp.cyl((sx * 0.075, 0.27, 1.04), 0.065, 0.36, "team.accent", sides=10)            # tanks
-        sp.box((0, 0.285, 1.33), (0.28, 0.02, 0.06), "gmD")
-        sp.box((0.1, 0.287, 1.33), (0.03, 0.012, 0.03), "cyan")                               # pack lights
-        sp.box((-0.1, 0.287, 1.33), (0.03, 0.012, 0.03), "red")
-        for sx in (-1, 1):
-            sp.cyl((sx * 0.13, 0.2, 0.97), 0.035, 0.05, "steelD", sides=8)                   # thruster nozzles
+        sp.box((0, 0.21, 1.2), (0.34, 0.17, 0.44), SHELL, bevel=0.04)                         # hard-shell pack
+        sp.box((0, 0.297, 1.2), (0.3, 0.012, 0.012), "gm")                                    # panel seams
+        sp.box((0, 0.297, 1.06), (0.012, 0.012, 0.24), "gm")
+        sp.box((0, 0.298, 1.28), (0.3, 0.012, 0.05), "team.cloth")                            # faction band
+        for k in range(3):                                                                     # vent grille
+            sp.box((0.09, 0.297, 1.05 + k * 0.045), (0.1, 0.012, 0.018), "dark")
+        sp.box((-0.09, 0.297, 1.36), (0.03, 0.012, 0.03), "cyan")                             # pack lights
+        sp.box((-0.04, 0.297, 1.36), (0.03, 0.012, 0.03), "red")
+        for sx in (-1, 1):                                                                     # corner thruster quads
+            for z in (1.0, 1.4):
+                sp.box((sx * 0.18, 0.25, z), (0.04, 0.06, 0.05), "gmD", bevel=0.008)
+            sp.cyl((sx * 0.13, 0.2, 0.95), 0.035, 0.05, "steelD", sides=8)                   # main nozzles
     it = _rigid(arm, "gear.back", "eva_pack", pack, glow=True)
     for k, sx in enumerate((-1, 1)):
         rs = RigidSet(arm)
