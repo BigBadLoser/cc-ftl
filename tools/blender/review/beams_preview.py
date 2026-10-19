@@ -2,7 +2,10 @@
 free end, capped end, hull-wall flange) beside a small hull-walled room with a storage module and a crew member.
 
   python3 -I tools/blender/review/beams_preview.py <struct assets dir> <out dir>
-    -> beams-1x.png / beams-3x.png"""
+    -> beams-1x.png / beams-3x.png (every look)
+  python3 -I tools/blender/review/beams_preview.py <struct assets dir> <out dir> ship <shipgen .txt> <seed> <look>
+    -> ship-<look>-<seed>.png: a generated ship from tools/shipgen's ASCII dump ('#' hull, '=' beam, '.' space, other
+       characters floor), far hull full and near hull ghosted, beams by mask with flanges where they meet the hull"""
 import json
 import sys
 from pathlib import Path
@@ -125,13 +128,63 @@ def scene(cv, st, pub, look, ox, oy):
     cv.labels.append((ox - 60, oy - 120, f"look: {look}"))
 
 
+def read_ship(txt, seed):
+    lines, on = [], False
+    for ln in Path(txt).read_text().splitlines():
+        if ln.startswith(f"seed {seed}:"):
+            on = True
+            continue
+        if on:
+            if not ln or ln.startswith("seed "):
+                break
+            lines.append(ln)
+    return {(x, y): c for y, ln in enumerate(lines) for x, c in enumerate(ln)}
+
+
+def ship(st, pub, out, txt, seed, look):
+    g = read_ship(txt, seed)
+    W = max(x for x, _ in g) + 1
+    H = max(y for _, y in g) + 1
+    hull = {p for p, c in g.items() if c == "#"}
+    beams = {p for p, c in g.items() if c == "="}
+    inside = {p for p, c in g.items() if c not in "#=."}
+    cv = Canvas((W + H) * 32 + 80, (W + H) * 16 + 160)
+    ox, oy = H * 32 + 40, 120
+    for x, y in inside:
+        cv.static(pub, "tile.floor.a", *iso(ox, oy, x, y))
+    draw = []
+    for x, y in hull:
+        near = (x, y - 1) in inside or (x - 1, y) in inside
+        mk = mask(hull, x, y)
+        draw.append((x + y, pub, f"tile.hull.ghost.m{mk}" if near else f"tile.hull.full.m{mk}", x, y))
+    for x, y in beams:
+        mk = mask(beams, x, y)
+        aid = f"struct.beam.{look}.m{mk}"
+        if mk in (5, 10) and (x * 7 + y * 3) % 3:
+            aid += f".v{(x * 7 + y * 3) % 3}"
+        draw.append((x + y, st, aid, x, y))
+        for d, (dx, dy) in (("n", (0, -1)), ("e", (1, 0)), ("s", (0, 1)), ("w", (-1, 0))):
+            if (x + dx, y + dy) in hull:
+                draw.append((x + y + 0.001, st, f"struct.beam.{look}.flange.{d}", x, y))
+    for _, A, aid, x, y in sorted(draw, key=lambda t: t[0]):
+        if A.has(aid):
+            cv.static(A, aid, *iso(ox, oy, x, y))
+    cv.labels.append((10, 10, f"{Path(txt).stem} seed {seed}, look {look}"))
+    cv.save(out / f"ship-{look}-{seed}.png", 1)
+
+
 def main():
     st, out = Assets(sys.argv[1]), Path(sys.argv[2])
     pub = Assets(ROOT / "public/assets")
     out.mkdir(parents=True, exist_ok=True)
-    cv = Canvas(1060, 470)
-    scene(cv, st, pub, "drone", 200, 150)
-    scene(cv, st, pub, "civil", 700, 150)
+    if len(sys.argv) > 3 and sys.argv[3] == "ship":
+        ship(st, pub, out, sys.argv[4], int(sys.argv[5]), sys.argv[6])
+        print("wrote", out)
+        return
+    looks = ("navy", "drone", "civil", "scrap")
+    cv = Canvas(1000, 420 * 2)
+    for i, look in enumerate(looks):
+        scene(cv, st, pub, look, 200 + (i % 2) * 500, 150 + (i // 2) * 420)
     for s in (1, 3):
         cv.save(out / f"beams-{s}x.png", s)
     print("wrote", out)
