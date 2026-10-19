@@ -14,21 +14,26 @@ export interface BayStep {
 }
 
 const step = (bay: string, shuttle: string | null = null): BayStep => ({ bay, shuttle });
-const HOLD = 2;
+const HOLD = 8;
 
 /**
- * Launch: the claws fold back (shuttle still parked), the shuttle leaves, the launch doors slide open, hold, close.
- * Return: the doors open, hold, close, the shuttle is back and the claws close on it. (Sprites: vehicleBay art ids, see
- * tools/blender/sprites/vehicle_bay.py.)
+ * Launch: the claws fold back, the doors slide open under the still parked shuttle, it lifts out (the sector-layer shuttle
+ * sprite takes over at LAUNCH_LIFT.start, see shuttleView), hold open, close. Return: the doors open, the shuttle settles
+ * into the pit (RETURN_LAND), the doors close and the claws close on the parked shuttle. Indices are animation frames
+ * (BAY_FRAME_MS each); sprites: vehicleBay art ids, see tools/blender/sprites/vehicle_bay.py.
  */
 export const LAUNCH: readonly BayStep[] = [
   step('fold.f0', 'fold.f0'), step('fold.f1', 'fold.f1'),
-  step('open.f0'), step('open.f1'), step('open.f2'), ...Array<BayStep>(HOLD).fill(step('open.f2')), step('open.f1'), step('open.f0'),
+  step('open.f0', 'fold.f1'), step('open.f1', 'fold.f1'), step('open.f2', 'fold.f1'),
+  ...Array.from({ length: HOLD }, () => step('open.f2')), step('open.f1'), step('open.f0'),
 ];
 export const RETURN: readonly BayStep[] = [
-  step('open.f0'), step('open.f1'), step('open.f2'), ...Array<BayStep>(HOLD).fill(step('open.f2')), step('open.f1'), step('open.f0'),
+  step('open.f0'), step('open.f1'), step('open.f2'), ...Array.from({ length: HOLD }, () => step('open.f2')), step('open.f1'), step('open.f0'),
   step('fold.f1', 'fold.f1'), step('fold.f0', 'fold.f0'),
 ];
+/** Frame ranges in which the shuttle is drawn by the sector layer: lifting off the pit floor, settling back into it. */
+export const LAUNCH_LIFT = { start: 5, end: 12 };
+export const RETURN_LAND = { start: 3, end: 13 };
 
 /** The steady state: the shuttle home in its claws, or the empty bay. */
 export const steady = (home: boolean): BayStep => (home ? step('', '') : step('empty'));

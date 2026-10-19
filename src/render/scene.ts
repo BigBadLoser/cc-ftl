@@ -15,7 +15,7 @@ import type { ModuleDefs } from './moduleView';
 import { isTargetable } from './moduleArt';
 import { ROOF_H } from './heights';
 import { liveryFor } from './roofArt';
-import { createShuttleView } from './shuttlePlaceholder';
+import { createShuttleView } from './shuttleView';
 import { createFightFx } from './fightFx';
 import { createCrewMarks } from './crewMarks';
 import { pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
@@ -140,15 +140,15 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const sectorParticles = createParticles(atlas, SL);
   const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules }, { ref: () => shipOf(refId) ?? null });
 
-  // PLACEHOLDER shuttles out in space (flying or docked), in the camera ship's frame (see shuttlePlaceholder.ts).
-  const shuttles = createShuttleView(world, {
+  // Shuttles in the camera ship's frame: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera
+  // ship's bay. A shuttle parked in a bay is the bay's own layer (vehicleBayArt).
+  const shuttles = createShuttleView(world, atlas, content.modules, {
     layer: SL.sorted,
     project: (sx, sy) => {
       const r = shipOf(refId) ?? { x: 0, y: 0 };
       return iso(sx - r.x - 0.5, sy - r.y - 0.5);
     },
-    include: (v) => v.state !== 'stowed',
-    depth: (v) => v.x + v.y,
+    include: (v) => v.state !== 'stowed' || v.homeGrid === refId,
   });
 
   const pickHost = (): PickHost => ({ scenes, cam, ship: shipOf, refId });

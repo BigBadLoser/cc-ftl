@@ -43,9 +43,13 @@ are already merged or superseded. Don't build on them.
   per rotation `module.vehicle_bay.r<r>[.empty|.fold.f0-1|.open.f0-2]` and `vehicle.shuttle.parked.r<r>[.fold.f0-1]`
   (40 sprites). The parked shuttle is rendered with the bay as a holdout and drawn after it, feet 0.85 above the pit
   floor (`shuttle_bay.FEET_Z`). Both are cut into depth strips per footprint diagonal in `moduleView` (`ModuleLayer.strips`).
-- `vehicleBayArt.ts` plays launch / return sequences (claws fold, doors open) when the vehicle leaves or returns. The old
-  placeholder shuttle is only drawn while `vehicle.shuttle.parked.r0` is missing from the manifest.
-- Missing: shuttle fly directions (flying shuttles are still the placeholder), per-faction livery (player colours baked), pod bays.
+- `vehicleBayArt.ts` plays launch / return sequences (claws fold, doors open) when the vehicle leaves or returns.
+- Flight art: family `shuttle` (`vehicle_bay.craft_jobs`): `vehicle.shuttle.fly.d0..d7` (wings spread, nozzle glow; d0 = +x, d2 = +y)
+  and `vehicle.shuttle.docked.d0/2/4/6` (legs up, wings folded, nose out). `shuttleView.ts` (replaces the old placeholder box)
+  draws them in the sector layer: nearest of 8 headings in flight, docked sprite offset 1.5 tiles beyond the dock point (rear
+  against the door), and the lift off / settle into the pit floor over the bay's open-door frames (timed by `LAUNCH_LIFT` /
+  `RETURN_LAND` in `vehicleBayArt.ts`; the lifting sprite is drawn over the near lip, not cut by it).
+- Missing: per-faction livery (the player's blue/ochre is baked; the export keys mkP/mkS have no runtime remap), pod bays.
 
 ## M4 art rework (session 2026-10-17, supersedes the m4-assets sheets)
 
