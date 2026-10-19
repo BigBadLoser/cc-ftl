@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCombat, UiCutaway, UiPrize, UiShuttles, UiSnapshot, UiToolState } from './api';
+  import type { UiApi, UiCombat, UiCutaway, UiPrize, UiShuttles, UiSnapshot, UiToolState, UiTrade } from './api';
   import CombatPanel from './CombatPanel.svelte';
   import PrizePanel from './PrizePanel.svelte';
   import ShuttlePanel from './ShuttlePanel.svelte';
+  import TradeList from './TradeList.svelte';
+  import TradeWindow from './TradeWindow.svelte';
   import DebugPanel from './DebugPanel.svelte';
   import TileInspector from './TileInspector.svelte';
   import CrewBar from './CrewBar.svelte';
@@ -34,6 +36,10 @@
   let wasInCombat = false;
   let shuttleOpen = $state(false);
   let prizeOpen = $state(false);
+  let tradeOpen = $state(false);
+  /** Partner (ship or station entity id) whose trade window is open, or null. */
+  let tradeWith = $state<number | null>(null);
+  let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   let prizes = $state<UiPrize[]>([]);
   let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
 
@@ -62,6 +68,7 @@
         if (m !== null && shuttles.bays.some((b) => b.id === m)) shuttleOpen = true;
       }),
       api.shuttles.subscribe((v) => (shuttles = v)),
+      api.trade.subscribe((v) => (trade = v)),
       api.prizes.subscribe((v) => {
         if (v.length > prizes.length) {
           prizeOpen = true; // a ship was just taken
@@ -121,6 +128,9 @@
     {#if shuttles.bays.length}
       <button class:on={shuttleOpen} data-testid="shuttle-open" onclick={() => { shuttleOpen = !shuttleOpen; if (shuttleOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><span class="long">Shuttle</span><span class="short" aria-label="Shuttle">🚀</span></button>
     {/if}
+    {#if trade.partners.length}
+      <button class:on={tradeOpen} data-testid="trade-open" onclick={() => { tradeOpen = !tradeOpen; if (tradeOpen) { api.selectCrew(null); if (phone()) { combatOpen = false; shuttleOpen = false; } } }}><span class="long">Trade</span><span class="short" aria-label="Trade">₵</span></button>
+    {/if}
     {#if prizes.length}
       <button class:on={prizeOpen} data-testid="prize-open" onclick={() => { prizeOpen = !prizeOpen; if (prizeOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><span class="long">Prizes</span><span class="short" aria-label="Prizes">★</span></button>
     {/if}
@@ -138,7 +148,7 @@
   <DebugPanel {api} {snap} />
 {/if}
 {#if combat.inCombat && combatOpen}
-  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} />
+  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onHail={(ship) => { tradeWith = ship; }} />
 {/if}
 <CrewBar {api} />
 <ToolBar {api} />
@@ -148,6 +158,8 @@
   <BuildModules {api} />
 {:else if selCrew !== null}
   <CrewInspector {api} onPriorities={() => (priorities = true)} />
+{:else if tradeOpen && tradeWith === null}
+  <TradeList {api} onClose={() => (tradeOpen = false)} onOpen={(ship) => (tradeWith = ship)} />
 {:else if prizeOpen}
   <PrizePanel {api} onClose={() => (prizeOpen = false)} />
 {:else if shuttleOpen && (selMod === null || shuttles.bays.some((b) => b.id === selMod))}
@@ -159,6 +171,9 @@
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 <AlertList {api} />
+{#if tradeWith !== null}
+  <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
+{/if}
 <StoryModal {api} />
 <ErrorOverlay {api} />
 

@@ -119,6 +119,7 @@ const api: UiApi = {
   alerts: controller.alerts.list,
   combat: bridge.combat,
   shuttles: bridge.shuttles,
+  trade: bridge.trade,
   prizes: bridge.prizes,
   story: bridge.story,
   chooseStory: bridge.chooseStory,

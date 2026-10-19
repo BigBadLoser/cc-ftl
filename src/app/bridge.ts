@@ -1,12 +1,13 @@
 import { ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiStory, UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiTrade, UiStory, UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
 import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
+import { buildTrade } from './tradeSnapshot';
 import { buildStory } from './storySnapshot';
 import { createStore, type Readable } from './store';
 
@@ -56,6 +57,7 @@ export interface Bridge {
   fabs: Readable<UiFab[]>;
   combat: Readable<UiCombat>;
   shuttles: Readable<UiShuttles>;
+  trade: Readable<UiTrade>;
   prizes: Readable<UiPrize[]>;
   story: Readable<UiStory>;
   /** Pick an option of the open event decision and resume the speed the game was on. */
@@ -95,6 +97,8 @@ export function createBridge(sim: Sim): Bridge {
   const fabs = createStore<UiFab[]>([]);
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
   const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
+  const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
+  let lastTrade = '';
   const prizes = createStore<UiPrize[]>([]);
   const story = createStore<UiStory>({ active: null, last: null });
   let lastStory = '';
@@ -187,6 +191,14 @@ export function createBridge(sim: Sim): Bridge {
     lastShuttles = key;
     shuttles.set(snap);
   };
+  const refreshTrade = () => {
+    if (combatFrame % 3) return;
+    const snap = buildTrade(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastTrade) return;
+    lastTrade = key;
+    trade.set(snap);
+  };
   const refreshPrizes = () => {
     if (combatFrame % 3) return;
     const snap = buildPrizes(sim);
@@ -233,6 +245,7 @@ export function createBridge(sim: Sim): Bridge {
     fabs,
     combat,
     shuttles,
+    trade,
     prizes,
     story,
     chooseStory(choice) {
@@ -249,7 +262,11 @@ export function createBridge(sim: Sim): Bridge {
       hovered = t;
       refreshInspect();
     },
-    dispatch: (cmd) => sim.enqueue(cmd),
+    dispatch(cmd) {
+      sim.enqueue(cmd);
+      // Trade offers are answered at once even with the game paused: the window would otherwise wait for time to run.
+      if (cmd.type.startsWith('trade.') && store.get().paused) loop?.flush();
+    },
     setSpeed,
     togglePause: () => setSpeed(store.get().paused ? lastSpeed : 0),
     attachLoop(l) {
@@ -261,6 +278,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshCrew();
       refreshShip();
       refreshShuttles();
+      refreshTrade();
       refreshPrizes();
       refreshCombat();
       refreshStory();

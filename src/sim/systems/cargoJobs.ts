@@ -20,6 +20,7 @@ function promised(res: Reservations, vehicle: number): number {
  * claim). LOAD: loose stacks on a prize ship go to a shuttle stowed or docked on that grid (nowhere else to put them).
  * UNLOAD: a shuttle with cargo at a boarding tile on a live player ship is emptied into the nearest storage that
  * accepts each item. At a docking airlock both go through its unloaders: crew work the keep-out tile in front of a chute. Crew do the walking as ordinary 'hauling' jobs; the pilot stays at the controls.
+ * A hold sealed by a trade (`Vehicle.outbound`: goods waiting to be sold) is never unloaded here; the trade system loads it.
  */
 export function cargoJobsSystem(sim: Sim): void {
   if (sim.tick % PLAN_INTERVAL !== 0) return;
@@ -39,7 +40,7 @@ export function cargoJobsSystem(sim: Sim): void {
         const src = { ref: { kind: 'floor' as const, id: sid }, x: s.x, y: s.y, avail };
         makeHaul(sim, res, 'hauling', at.gridId, src, { kind: 'vehicle', id }, s.item, Math.min(avail, room, DEFAULT_CARRY_CAPACITY));
       }
-    } else if (ship.faction === 'player' && (ship.state === 'active' || ship.state === 'disabled')) {
+    } else if (ship.faction === 'player' && (ship.state === 'active' || ship.state === 'disabled') && !v.outbound) {
       for (const q of v.cargo) {
         const avail = q.count - (res.out.get(refKey('vehicle', id, q.item)) ?? 0);
         if (avail <= 0) continue;

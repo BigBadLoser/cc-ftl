@@ -1,4 +1,4 @@
-import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
+import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createStore, type Readable } from './store';
 
@@ -43,6 +43,7 @@ export function createAlerts(sim: Sim): Alerts {
     return null;
   };
 
+  const traderName = (id: number) => sim.world.get(id, TraderC)?.name ?? 'trader';
   const playerSuit = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
   /** Hostile ships and their crew raise no alerts of their own. */
   const foreign = (e: SimEvent): boolean => {
@@ -92,6 +93,12 @@ export function createAlerts(sim: Sim): Alerts {
           ? { kind: 'ship.lost', key: 'sl', text: 'Your ship is destroyed', at: null }
           : { kind: e.type, key: `sd${e.gridId}`, text: `${s?.name ?? 'Ship'} destroyed`, at: null };
       }
+      case 'trade.hailAnswered': return { kind: 'trade', key: `th${e.ship}`, text: `${e.name} answers your hail`, at: null };
+      case 'trade.hailRefused': return { kind: 'trade', key: `th${e.ship}`, text: `${e.name} will not talk to you`, at: null };
+      case 'trade.dealMade': return { kind: 'trade', key: `td${e.deal}`, text: `Deal made with ${traderName(e.ship)}`, at: null };
+      case 'trade.delivered': return { kind: 'trade', key: `td${e.deal}`, text: e.to === 'player' ? `Cargo from ${traderName(e.ship)} has arrived` : `Cargo delivered to ${traderName(e.ship)}`, at: null };
+      case 'trade.settled': return { kind: 'trade', key: `td${e.deal}`, text: `Deal settled${e.credits ? `: ${e.credits > 0 ? '-' : '+'}${Math.abs(e.credits)} credits` : ''}`, at: null };
+      case 'trade.failed': return { kind: 'trade', key: `td${e.deal}`, text: `Deal with ${traderName(e.ship)} called off`, at: null };
       case 'ship.fled': return { kind: e.type, key: `sf${e.gridId}`, text: `${shipName(e.gridId)?.name ?? 'Ship'} jumped away`, at: null };
       default: return null;
     }

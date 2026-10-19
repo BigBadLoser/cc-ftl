@@ -245,7 +245,7 @@ export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'crew.died' | 'crew.rescued'
   | 'job.missingMaterials' | 'storage.full' | 'production.done'
   | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
-  | 'story.notice' | 'story.lead'
+  | 'story.notice' | 'story.lead' | 'trade'
   | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost';
 
 /** A weapon module of the player's ship. */
@@ -283,6 +283,8 @@ export interface UiShipModule {
 
 export interface UiShipCombat {
   gridId: number;
+  /** ShipC entity id (the `ship` of trade commands). */
+  ship: number;
   name: string;
   state: 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
   /** 0..1 hull and module integrity. */
@@ -332,6 +334,8 @@ export interface UiShuttle {
   canEva: boolean;
   /** Name of the ship it is docked at, or null. */
   dockShip: string | null;
+  /** The trade run it is on (status text and the partner's name), or null. */
+  trade: { status: string; partner: string } | null;
   /** Module id of its home bay. */
   bay: number;
   /** Crew can climb in or out here right now (stowed in the bay, or docked). */
@@ -357,6 +361,74 @@ export interface UiPrize {
   value: number;
   prisoners: { id: number; name: string; role: string; hp: number; maxHp: number; state: 'downed' | 'surrendered' }[];
   crewAboard: number;
+}
+
+/** One item row of the trade window: stock on both sides and the unit prices. */
+export interface UiTradeLine {
+  item: string;
+  name: string;
+  /** Units in the trader's stock / in the player's storage. */
+  theirs: number;
+  mine: number;
+  /** Credits per unit: what they charge the player, and what they pay the player. */
+  sell: number;
+  buy: number;
+}
+
+export interface UiTradeOffer {
+  id: number;
+  give: { item: string; count: number }[];
+  get: { item: string; count: number }[];
+  barter: boolean;
+  /** > 0 the player pays, < 0 they pay. */
+  balance: number;
+}
+
+/** A ship or station the player can hail. */
+export interface UiTradePartner {
+  id: number;
+  gridId: number;
+  name: string;
+  kind: 'ship' | 'station';
+  /** Trader kind ('Freighter'), or '' if it has no trade profile. */
+  role: string;
+  trades: boolean;
+  hail: 'none' | 'answered' | 'refused';
+  /** Why a refused hail was refused ('hostile', 'weaponsHot', 'silent', 'noTrade'). */
+  reason: string;
+  wallet: number;
+  rep: number;
+  lines: UiTradeLine[];
+  /** How a delivery would go: who flies ('them' | 'you' | 'instant') or the reject code that stops it, for goods going out / coming in. */
+  out: { courier: string; error: string };
+  in: { courier: string; error: string };
+  /** Units a shuttle hold takes. */
+  holdCap: number;
+  offer: UiTradeOffer | null;
+  distance: number;
+}
+
+export interface UiTradeDeal {
+  id: number;
+  ship: number;
+  partner: string;
+  phase: string;
+  status: string;
+  courier: string;
+  give: string;
+  get: string;
+  balance: number;
+  barter: boolean;
+  vehicle: number;
+  live: boolean;
+  cancellable: boolean;
+  flying: boolean;
+}
+
+export interface UiTrade {
+  credits: number;
+  partners: UiTradePartner[];
+  deals: UiTradeDeal[];
 }
 
 export interface UiShuttles {
@@ -452,6 +524,8 @@ export interface UiApi {
   /** Pick an option of the open decision and resume play. */
   chooseStory(choice: string): void;
   combat: Subscribable<UiCombat>;
+  /** Credits, hailable ships and stations, and the running deliveries. */
+  trade: Subscribable<UiTrade>;
   shuttles: Subscribable<UiShuttles>;
   prizes: Subscribable<UiPrize[]>;
   /** Center the camera on a shuttle (any state). */

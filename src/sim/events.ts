@@ -109,6 +109,16 @@ export type SimEvent =
   | { type: 'story.started'; event: string; mode: 'decision' | 'notice'; notice: number }
   | { type: 'story.resolved'; event: string; choice: string; success: boolean | null }
   | { type: 'story.effect'; event: string; effect: EventEffect['type']; text: string }
+  /** Trade: a hail was answered or refused (`reason`: 'hostile', 'weaponsHot', 'silent', 'noTrade'); an offer was priced; a deal was made (`courier`: who flies). */
+  | { type: 'trade.hailAnswered'; ship: number; name: string }
+  | { type: 'trade.hailRefused'; ship: number; name: string; reason: string }
+  | { type: 'trade.offered'; offer: number; ship: number; balance: number }
+  | { type: 'trade.dealMade'; deal: number; ship: number; courier: 'them' | 'you' | 'instant'; balance: number }
+  /** The cargo arrived: `to` 'trader' when the shuttle handed the player's goods over, 'player' when it docked with theirs. */
+  | { type: 'trade.delivered'; deal: number; ship: number; to: 'trader' | 'player' }
+  /** The deal's credits were paid out (`credits`: positive = the player paid, negative = the player was paid, 0 = barter). */
+  | { type: 'trade.settled'; deal: number; ship: number; credits: number }
+  | { type: 'trade.failed'; deal: number; ship: number; reason: string }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 

@@ -6,6 +6,7 @@ import type { ContentRegistry } from './registry';
 import { SectorGrid, type SectorGridData } from './sectorGrid';
 import { Sim } from './sim';
 import { newStory, type StoryState } from './story/state';
+import { newTrade, type TradeState } from './trade/types';
 
 /**
  * Current save format version. Bump it whenever the shape changes. Saves are not migrated (user decision, 2026-10-19:
@@ -29,6 +30,8 @@ export interface SaveData {
   sector: Omit<Sector, 'grid'> & { grid: SectorGridData };
   /** Event system state. Optional: saves from before it existed load with a fresh one (no version bump needed). */
   story?: StoryState;
+  /** Trade state. Optional like `story`: older saves load with an empty one. */
+  trade?: TradeState;
   pending: QueuedCommand[];
 }
 
@@ -43,6 +46,7 @@ export function serialize(sim: Sim): string {
     grids: sim.grids.rects(),
     sector: { ...sim.sector, grid: sim.sector.grid.serialize() },
     story: sim.story,
+    trade: sim.trade,
     pending: [...sim.commands.getPending()],
   };
   return JSON.stringify(data);
@@ -65,6 +69,7 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
   sim.grids.restore(data.grids);
   sim.story = { ...newStory(data.seed), ...data.story };
+  sim.trade = { ...newTrade(), ...data.trade };
   sim.commands.setPending(data.pending);
   return sim;
 }

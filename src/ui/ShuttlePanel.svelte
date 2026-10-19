@@ -29,6 +29,7 @@
         {s.name} <small data-testid="shuttle-state">{where(s)}</small>
         <button class="mini" title="Center the camera" onclick={() => api.focusShuttle(s.id)}>Find</button>
       </h3>
+      {#if s.trade}<div class="trade" data-testid="shuttle-trade">Trade run for {s.trade.partner}: {s.trade.status}</div>{/if}
       <div class="bar hp"><i style:width="{Math.round((s.hp / Math.max(1, s.maxHp)) * 100)}%"></i></div>
 
       <div class="crew">
@@ -116,6 +117,7 @@
   h3 { margin: 4px 0; font-size: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   h3 small { color: var(--dim); font-weight: normal; flex: 1; }
   .mini { min-height: 28px; min-width: 0; padding: 0 8px; font-size: 12px; }
+  .trade { color: var(--amber); font-size: 12px; margin: 2px 0 4px; }
   .hp > i { background: #4cd964; }
   .crew { margin: 8px 0; display: grid; gap: 4px; }
   .slot { display: flex; align-items: center; gap: 8px; }

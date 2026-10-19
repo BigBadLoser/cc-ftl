@@ -8,6 +8,7 @@ import type { FactionDef } from '../../sim';
  */
 export const civilian = {
   name: 'Civilian',
+  side: 'neutral',
   motif: 'motif.civilian',
   art: { hull: 'hull.clean', wall: 'wall.clean', roof: 'roof.grid', livery: 'livery.navy', signature: ['module.storage', 'module.bed'] },
   architecture: {
