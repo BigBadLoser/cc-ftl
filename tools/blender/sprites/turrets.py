@@ -10,13 +10,23 @@ Turrets are modelled on the roof top (turret_concepts.ZR = walls.hull_top()) aro
 the bay centre at floor level: the renderer adds no roof lift for them. Bays are anchored at the front-most tile."""
 from mathutils import Matrix
 
+import os
+
 from . import core
 from . import turret_bays as TB
 from . import turret_concepts as TC
+from . import turret_mil  # noqa: F401  (registers the missile launcher, ion cannon and incendiary launcher)
 
 # stem -> (bay key, turret builder, race radius in rig units, footprint side)
-PICKS = {"burst_laser": ("laser", 0.62, 2), "mass_driver": ("driver", 0.92, 3), "point_defense": ("pd", 0.64, 2)}
-DESIGN = {"laser": ("S", "laser"), "driver": ("H", "driver"), "pd": ("R", "laser")}
+PICKS = {"burst_laser": ("laser", 0.62, 2), "mass_driver": ("driver", 0.92, 3), "point_defense": ("pd", 0.64, 2),
+         "missile_launcher": ("missile", 0.92, 3), "ion_cannon": ("ion", 0.64, 2),
+         "incendiary_launcher": ("incendiary", 0.64, 2)}
+DESIGN = {"laser": ("S", "laser"), "driver": ("H", "driver"), "pd": ("R", "laser"), "missile": ("M", "missile"),
+          "ion": ("M", "ion"), "incendiary": ("M", "incendiary")}
+# Look iteration only, never for commits: WEAPONS_ONLY=stem,stem limits the stems; WEAPONS_QUICK=1 renders just the
+# preview set (aims 1, 3, 6, aim 1 charged, stowed, bay r0).
+ONLY = [s for s in os.environ.get("WEAPONS_ONLY", "").split(",") if s]
+QUICK = bool(os.environ.get("WEAPONS_QUICK"))
 
 
 def _shift(objs, n):
@@ -33,14 +43,16 @@ def turret(key, hot, d):
 
 SPRITES = []
 for _stem, (_key, _r, _n) in PICKS.items():
+    if ONLY and _stem not in ONLY:
+        continue
     _fp = (_n, _n)
-    for _d in range(8):
+    for _d in ((1, 3, 6) if QUICK else range(8)):
         SPRITES.append((f"turret.{_stem}.d{_d}", _fp, "prop", lambda k=_key, d=_d: turret(k, False, d)))
-        if _key != "pd":
+        if _key != "pd" and (not QUICK or _d == 1):
             SPRITES.append((f"turret.{_stem}.d{_d}.charged", _fp, "prop", lambda k=_key, d=_d: turret(k, True, d)))
     _des, _kind = DESIGN[_key]
     SPRITES.append((f"turret.{_stem}.stowed", _fp, "prop", lambda a=_des, b=_kind, r=_r: TB.deploy(a, -1, b, r)))
-    for _f in range(5):
+    for _f in (() if QUICK else range(5)):
         SPRITES.append((f"turret.{_stem}.deploy.f{_f}", _fp, "prop", lambda a=_des, b=_kind, r=_r, f=_f: TB.deploy(a, f, b, r)))
-    for _rot in range(4):
+    for _rot in ((0,) if QUICK else range(4)):
         SPRITES.append((f"module.{_stem}.bay.r{_rot}", _fp, "prop", lambda k=_key, rot=_rot, n=_n: _shift(TB.BAYS[k](rot), n)))
