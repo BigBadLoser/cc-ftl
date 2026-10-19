@@ -191,7 +191,7 @@ palette.json    the single palette, read by Blender scripts and the game
   economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks) and `sol` (the engine, AI core and shield packs, rendered by
   their own scripts in `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
-- **Derelict dressing (`derelict`, `sprites/derelict.py` and `derelict_walls.py`, not wired yet):** drawn
+- **Derelict dressing (`derelict`, `sprites/derelict.py` and `derelict_walls.py`; sheets built, not wired yet):** drawn
   over or in place of the normal tiles on a derelict.
   - Breaches: `tile.{wall|hull}.{full.|}m<mask>.breach` replaces the wall piece. The tear meets the same
     edge height on every side, so breached runs join. Where the -x / -y neighbour is intact, also draw
