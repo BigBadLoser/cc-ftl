@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-17.
+Last updated: 2026-10-19.
 
 ## Where things are
 
@@ -217,6 +217,50 @@ portal graph across grids, cross-grid pathing, crew grid membership, airlock mod
   rifle, two sidearms and a blade.
 - **Derelicts:** combat wrecks plus event-spawned derelicts with hazards, loot and hostile aliens.
 
+## Sector grid decision (user, 2026-10-19; plan on branch `sector-plan`)
+
+The many-grids sector (one `Grid` per ship, cross-grid portals, per-grid scenes, docking by gridId) was always temporary.
+**Each sector becomes one large chunked grid with everything placed on it.** The plan is "Sector grid (planned)" in
+`docs/ARCHITECTURE.md`. User answers:
+- Sectors are big with no fixed limit. Distance should feel like distance (shuttle trips and shots take noticeable time)
+  without being tedious.
+- Ships never move or dock with each other; deployment places them.
+- An FTL jump takes the player's ship plus anything docked to it (bay or airlock vehicles). Captured prizes stay behind.
+- The combat panel stays, as a second camera on the same map.
+- Vehicles (shuttles, later pods and cargo carriers) are free entities with continuous position and heading. They attach to
+  an airlock or bay, and crew can EVA off a hovering shuttle.
+- Ships are tile regions tagged by ship id. Capture, integrity, wrecks, AI, targeting, livery and roofing stay per ship.
+
+Planner's calls (the user can overrule):
+- 16x16 sparse chunks.
+- A `ship` owner layer.
+- `ShipC` entity id = ship id.
+- Sector coordinates everywhere at runtime; templates and shipgen stay local and get stamped.
+- Field systems per padded region.
+- Portals retired (except airlock and suit helpers).
+- `BodyC` for vehicles.
+- Packets for stamp, lift and archive.
+- A 10-step migration behind a `GridWindow` adapter.
+
+Merge advice:
+- Merge `eva` (after look approval) and `weapons-int` to main now.
+- Integrate `shipgen` + `trusses-int` before the render step (5).
+- Holding everything recreates a flag-day merge.
+
+**Open questions for the user:**
+1. **Distances.** Proposed: deploy 60–200 tiles apart, sectors about 1000x600 in practice. At today's speeds, 200 tiles is
+   40 s by shuttle and 7–17 s for shots. Raise shuttle speed (5 → 8 tiles/s)?
+2. **Jumping with crew or a shuttle away** (boarding party, hovering EVA): refuse, confirm and leave them in the archive, or
+   recall first?
+3. **A hostile shuttle docked at your airlock at jump time:** it comes along (its boarders with it), or is cut loose and left
+   behind?
+4. **Left-behind sectors:** keep only those with something of yours (prizes, stranded crew), keep the last N, or keep all?
+5. **A shot landing on a ship it wasn't aimed at:** hit that ship (proposed: the tile owner takes it) or pass through?
+6. **Merges:** approve the `eva` look and merge `eva` + `weapons-int` to main before the refactor, or keep the hold and run
+   the refactor on one integration branch?
+7. **Combat panel on phones:** OK for the second camera to refresh at half rate if needed?
+8. **Teleporters:** delete the portal graph now and re-add them later as same-grid links (proposed), or keep it?
+
 ## Decisions log (beyond DESIGN.md)
 
 - **Workflow:**
@@ -352,4 +396,5 @@ portal graph across grids, cross-grid pathing, crew grid membership, airlock mod
   - airlock and bay art;
   - EVA;
   - derelicts: alien-infested wrecks, and rogue AI shipyards for the AI faction.
+- **Sector grid refactor** (before M6; plan in `docs/ARCHITECTURE.md`, "Sector grid (planned)").
 - **M6:** galaxy and sectors. Deploy modal, events, stores, factions.
