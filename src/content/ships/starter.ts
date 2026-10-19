@@ -18,10 +18,10 @@ export const starterShip = {
     '.#______#_____#______#______#.',
     '.#______#_____#______#______#.',
     '.#______#_____#______#______#.',
-    '.####D#####D#####D####______#.',
+    '.######D###D#####D####______#.',
     '.#___________________D______#.',
     '.#___________________D______#.',
-    '.#___D#####D#####D####______#.',
+    '.#_____D###D#####D####______#.',
     '.#______#____#_______#______#.',
     '.#______#____#_______#______#.',
     '.#______#____#_______#______#.',
@@ -71,13 +71,13 @@ export const starterShip = {
     { def: 'module.lifeSupport', x: 2, y: 7, rot: 3 },
     { def: 'module.light', x: 7, y: 7, rot: 0 },
     { def: 'module.light', x: 2, y: 5, rot: 0 },
-    // Weapon bays (nose, south): two burst lasers (2x2), missile launcher (3x3) around the lane x = 5.
-    { def: 'module.burstLaser', x: 6, y: 12, rot: 0 },
-    { def: 'module.burstLaser', x: 6, y: 15, rot: 0 },
+    // Weapon bays (nose, south): two burst lasers (2x2), missile launcher (3x3); the door at (7, 11) opens onto the lane x = 7.
+    { def: 'module.burstLaser', x: 5, y: 12, rot: 0 },
+    { def: 'module.burstLaser', x: 5, y: 15, rot: 0 },
     { def: 'module.missileLauncher', x: 2, y: 12, rot: 0 },
     { def: 'module.lifeSupport', x: 2, y: 16, rot: 3 },
-    { def: 'module.light', x: 5, y: 17, rot: 0 },
-    { def: 'module.light', x: 5, y: 13, rot: 0 },
+    { def: 'module.light', x: 7, y: 17, rot: 0 },
+    { def: 'module.light', x: 7, y: 13, rot: 0 },
     // AI room (south, middle): AI core (2x2); the door at (11, 11) stays clear.
     { def: 'module.aiCore', x: 10, y: 13, rot: 0 },
     // Point defence (2x2) south of the core; the AI core operates it. Lane x = 12 stays clear.
