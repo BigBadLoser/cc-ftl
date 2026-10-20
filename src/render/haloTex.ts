@@ -1,0 +1,41 @@
+import { BlurFilter, Container, Rectangle, Sprite, type Renderer, type Texture } from 'pixi.js';
+
+/** Art px of blur (sigma) baked into a halo texture; matches the old live filter at zoom 1. */
+export const HALO_BLUR = 1.5;
+/** Transparent border added on every side so the blur is not clipped. */
+export const HALO_PAD = 6;
+
+let renderer: Renderer | null = null;
+const cache = new WeakMap<Texture, Texture>();
+
+/** Give the halo bake its renderer (Quality High only). */
+export function initHalos(r: Renderer): void {
+  renderer = r;
+}
+
+/** The pre-blurred, padded copy of a glow texture, baked on first use. Position it HALO_PAD px up-left of its glow. */
+export function haloTex(glow: Texture): Texture {
+  const hit = cache.get(glow);
+  if (hit) return hit;
+  if (!renderer) throw new Error('initHalos was not called');
+  const w = glow.frame.width + 2 * HALO_PAD;
+  const h = glow.frame.height + 2 * HALO_PAD;
+  const src = new Sprite(glow);
+  src.position.set(HALO_PAD, HALO_PAD);
+  const box = new Container();
+  box.addChild(src);
+  box.filters = [new BlurFilter({ strength: HALO_BLUR, quality: 3 })];
+  const tex = renderer.generateTexture({ target: box, frame: new Rectangle(0, 0, w, h), resolution: 1 });
+  box.destroy({ children: true });
+  cache.set(glow, tex);
+  return tex;
+}
+
+/** A glow's halo as an additive sprite for position (x, y) of the glow (x is the sprite origin; `flip` mirrors it). */
+export function makeHalo(glow: Texture, x: number, y: number, flip = false): Sprite {
+  const h = new Sprite(haloTex(glow));
+  h.blendMode = 'add';
+  h.position.set(flip ? x + HALO_PAD : x - HALO_PAD, y - HALO_PAD);
+  if (flip) h.scale.x = -1;
+  return h;
+}

@@ -2,6 +2,7 @@ import { Sprite, type Container } from 'pixi.js';
 import type { StaticSprite } from './assets/loader';
 import type { Layers } from './layers';
 import { iso } from './iso';
+import { makeHalo } from './haloTex';
 
 /**
  * Place a static asset so its anchor sits on tile (gx, gy)'s floor centre (front-most footprint tile).
@@ -24,9 +25,9 @@ export function addStatic(L: Layers, s: StaticSprite, gx: number, gy: number, ke
     parent.addChild(g);
     out.push(g);
     if (L.halos) {
-      const h = new Sprite(s.glow);
-      h.position.set(x, y);
-      L.halo.addChild(h);
+      const h = makeHalo(s.glow, x, y);
+      h.zIndex = key + 0.015;
+      parent.addChild(h);
       out.push(h);
     }
   }

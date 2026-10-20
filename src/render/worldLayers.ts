@@ -1,4 +1,4 @@
-import { BlurFilter, Container, RenderLayer, type IRenderLayer } from 'pixi.js';
+import { Container, RenderLayer, type IRenderLayer } from 'pixi.js';
 import type { Layers } from './layers';
 
 /**
@@ -7,7 +7,7 @@ import type { Layers } from './layers';
  * The depth-sorted sprites of every region (walls, props, crew, low bodies) render through one `DepthLayer`, ordered by
  * `zIndex + region depth`, so one ship's sprites sort against another's and against bodies outside any hull.
  *
- * Bottom to top: under, floor, decal, sorted, fx, fxAdd, halo, ui, marks. Flat layers keep a sub-container per region,
+ * Bottom to top: under, floor, decal, sorted, fx, fxAdd, ui, marks. Flat layers keep a sub-container per region,
  * sorted by the region's depth.
  */
 export interface WorldStack {
@@ -98,7 +98,6 @@ export function createWorldStack(): WorldStack {
   const fx = flat();
   const fxAdd = flat();
   fxAdd.blendMode = 'add';
-  const halo = flat();
   const ui = flat();
   const marks = flat();
   marks.visible = false;
@@ -107,16 +106,14 @@ export function createWorldStack(): WorldStack {
   const low = new Container();
   depthBase.set(low, 0);
   feed(low, depth);
-  root.addChild(under, floor, decal, depth, fx, fxAdd, halo, ui, marks, anchors, low);
+  root.addChild(under, floor, decal, depth, fx, fxAdd, ui, marks, anchors, low);
   let scale = 1;
-  const blurs = new Set<BlurFilter>();
 
   return {
     root,
     low,
     setScale(sc) {
       scale = sc;
-      for (const b of blurs) b.strength = 1.5 * sc;
     },
     setUiVisible(on) {
       ui.visible = on;
@@ -125,7 +122,7 @@ export function createWorldStack(): WorldStack {
       marks.visible = on;
     },
     region(halos) {
-      const parts = { under: flat(), floor: new Container(), decal: new Container(), sorted: new Container(), fx: new Container(), fxAdd: new Container(), halo: new Container(), ui: new Container(), marks: new Container() };
+      const parts = { under: flat(), floor: new Container(), decal: new Container(), sorted: new Container(), fx: new Container(), fxAdd: new Container(), ui: new Container(), marks: new Container() };
       parts.under.sortableChildren = true;
       depthBase.set(parts.sorted, 0);
       feed(parts.sorted, depth);
@@ -135,28 +132,11 @@ export function createWorldStack(): WorldStack {
       anchors.addChild(parts.sorted);
       fx.addChild(parts.fx);
       fxAdd.addChild(parts.fxAdd);
-      halo.addChild(parts.halo);
       ui.addChild(parts.ui);
       marks.addChild(parts.marks);
       const all = Object.values(parts);
-      // Halos (Quality High, the player's ship only) blur; other regions never make the filter.
-      const blur = halos ? new BlurFilter({ strength: 1.5 * scale, quality: 3 }) : null;
-      if (blur) {
-        blurs.add(blur);
-        parts.halo.filters = [blur];
-      }
-      parts.halo.blendMode = 'add';
       parts.fxAdd.blendMode = 'add';
-      parts.halo.visible = halos;
       let visible = true;
-      const haloAt = (z: number): Container => {
-        const c = new Container();
-        if (blur) c.filters = [blur];
-        c.blendMode = 'add';
-        c.zIndex = z;
-        parts.sorted.addChild(c);
-        return c;
-      };
       return {
         world: parts.sorted,
         under: parts.under,
@@ -165,11 +145,9 @@ export function createWorldStack(): WorldStack {
         sorted: parts.sorted,
         fx: parts.fx,
         fxAdd: parts.fxAdd,
-        halo: parts.halo,
         ui: parts.ui,
         marks: parts.marks,
         halos,
-        haloAt,
         get scale() {
           return scale;
         },
@@ -187,14 +165,12 @@ export function createWorldStack(): WorldStack {
         setVisible(on) {
           if (on === visible) return;
           visible = on;
-          for (const c of all) if (c !== parts.halo) c.visible = on;
-          parts.halo.visible = on && halos;
+          for (const c of all) c.visible = on;
         },
         get visible() {
           return visible;
         },
         dispose() {
-          if (blur) blurs.delete(blur);
           for (const c of all) c.destroy({ children: true });
         },
       };
