@@ -12,6 +12,16 @@ import math
 from .modkit import K, sprites
 
 MATTRESS = 0.22
+PULSE = [(-0.13, 0.0), (-0.03, 0.0), (-0.01, 0.03), (0.01, -0.04), (0.035, 0.09), (0.06, -0.05), (0.075, 0.0),
+         (0.13, 0.0)]                                                                 # a heartbeat, one beat
+
+
+def trace(put, pts, d=0.014):
+    """A 1-voxel line through pts [(a, b)]: put(a, b) places one dot."""
+    for (a0, b0), (a1, b1) in zip(pts, pts[1:]):
+        n = max(1, int(math.hypot(a1 - a0, b1 - b0) / d))
+        for i in range(n + 1):
+            put(a0 + (a1 - a0) * i / n, b0 + (b1 - b0) * i / n)
 
 
 def med_bed(state, rot):
@@ -39,22 +49,18 @@ def med_bed(state, rot):
     k.box(0, L / 2 + 0.005, 0.18, 0.04, 0.02, 0.12, "medRed")
     v0 = -L / 2 - 0.0                                                                 # vitals tower at the head
     k.box(0.22, v0 + 0.06, 0.0, 0.26, 0.14, 1.0, "medWhite", top="plate", bevel=0.015)
-    k.box(0.22, v0 + 0.14, 0.62, 0.32, 0.06, 0.26, "gmD", bevel=0.01)                    # monitor bezel
-    k.box(0.22, v0 + 0.175, 0.65, 0.26, 0.02, 0.2, "dark")                               # screen
+    k.box(0.2, v0 + 0.14, 0.58, 0.4, 0.06, 0.32, "gmD", bevel=0.01)                      # monitor bezel
+    k.box(0.2, v0 + 0.175, 0.61, 0.34, 0.02, 0.26, "dark")                               # screen
     if on:                                                                            # a heartbeat trace
-        pts = [(-0.1, 0.0), (-0.05, 0.0), (-0.03, 0.06), (-0.01, -0.06), (0.01, 0.08), (0.03, 0.0), (0.1, 0.0)]
-        for (a0, b0), (a1, b1) in zip(pts, pts[1:]):
-            n = max(1, int(math.hypot(a1 - a0, b1 - b0) / 0.012))
-            for i in range(n + 1):
-                t = i / n
-                k.box(0.22 + a0 + (a1 - a0) * t, v0 + 0.19, 0.74 + b0 + (b1 - b0) * t, 0.016, 0.012, 0.016, "green")
-        k.box(0.32, v0 + 0.19, 0.84, 0.03, 0.012, 0.03, "cyan")
+        trace(lambda a, b: k.box(0.2 + a * 1.2, v0 + 0.19, 0.72 + b, 0.016, 0.012, 0.016, "green"), PULSE)
+        k.box(0.32, v0 + 0.19, 0.81, 0.04, 0.012, 0.03, "cyan")
     for j, col in enumerate(("green" if on else "dark", "cyan" if on else "dark")):   # status lights on the tower
         k.box(0.15 + j * 0.12, v0 + 0.135, 0.42, 0.05, 0.012, 0.04, col)
-    k.cyl(-0.3, v0 + 0.08, 0.0, 0.03, 1.3, "steelL", sides=6)                           # IV pole
-    k.box(-0.3, v0 + 0.08, 1.24, 0.16, 0.03, 0.03, "steelL")
-    k.box(-0.36, v0 + 0.08, 1.02, 0.1, 0.05, 0.18, "glassL", bevel=0.02)                 # IV bag
-    k.box(-0.36, v0 + 0.08, 1.0, 0.03, 0.03, 0.04, "medRed")
+    k.cyl(-0.3, v0 + 0.08, 0.0, 0.03, 1.1, "steelL", sides=6)                           # IV pole
+    k.box(-0.3, v0 + 0.08, 1.06, 0.18, 0.03, 0.03, "steelL")
+    k.box(-0.37, v0 + 0.08, 0.8, 0.13, 0.07, 0.24, "glassL", bevel=0.025)                # IV bag
+    k.box(-0.37, v0 + 0.08, 0.82, 0.135, 0.075, 0.12, "iceB", bevel=0.02)                # its fluid
+    k.box(-0.37, v0 + 0.08, 0.74, 0.03, 0.03, 0.06, "medRed")
     return k.build()
 
 
@@ -74,17 +80,12 @@ def med_console(state, rot):
         p = [c0[i] + nrm[i] * 0.04 + up[i] * du for i in range(3)]
         k.box(u, p[1], p[2] - h / 2, w, 0.02, h, col, rx=th)
     on_screen(0, 0.5, 0.32, 0.0, "dark")
-    if on:                                                                            # the patient readout: a body
-        for u, w, h, du in ((-0.13, 0.05, 0.05, 0.1), (-0.13, 0.09, 0.11, 0.025), (-0.15, 0.03, 0.11, -0.085),
-                            (-0.11, 0.03, 0.11, -0.085)):                             # scan, a trace, vitals bars
-            on_screen(u, w, h, du, "cyan")
-        pts = [(0.0, 0.08), (0.04, 0.08), (0.06, 0.13), (0.08, 0.03), (0.1, 0.1), (0.12, 0.08), (0.19, 0.08)]
-        for (a0, b0), (a1, b1) in zip(pts, pts[1:]):
-            n = max(1, int(math.hypot(a1 - a0, b1 - b0) / 0.012))
-            for i in range(n + 1):
-                on_screen(a0 + (a1 - a0) * i / n, 0.016, 0.016, b0 + (b1 - b0) * i / n, "green")
-        for j, w in enumerate((0.16, 0.1)):
-            on_screen(0.02 + w / 2, w, 0.03, -0.04 - j * 0.06, "green" if j else "cyan")
+    if on:                                                                            # the patient readout: a cross,
+        on_screen(-0.13, 0.14, 0.05, 0.065, "green")                                  # vitals bars, a pulse line
+        on_screen(-0.13, 0.05, 0.14, 0.065, "green")
+        for j, w in enumerate((0.17, 0.1)):
+            on_screen(0.03 + w / 2, w, 0.035, 0.1 - j * 0.065, "cyan")
+        trace(lambda a, b: on_screen(a * 1.6, 0.016, 0.016, b * 0.55 - 0.1, "green"), PULSE)
     k.box(0, -0.015, 0.21, 0.14, 0.02, 0.04, "medRed")                                   # red cross on the pedestal
     k.box(0, -0.015, 0.16, 0.04, 0.02, 0.14, "medRed")
     k.box(-0.33, -0.05, 0.36, 0.06, 0.12, 0.22, "gm", top="steelL")                      # scanner wand holster
