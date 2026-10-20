@@ -19,8 +19,8 @@ function gridHasThinAir(sim: Sim, grid: Grid): boolean {
   if (hit && hit.tick === sim.tick) return hit.thin;
   let thin = false;
   if (grid.has('o2')) {
-    const o2 = grid.raw('o2');
-    const struct = grid.raw('struct');
+    const o2 = grid.load('o2');
+    const struct = grid.load('struct');
     for (let i = 0; i < o2.length; i++) {
       if ((o2[i] as number) < EVA_THIN_AIR_BELOW && isWalkable(struct[i] as number)) {
         thin = true;

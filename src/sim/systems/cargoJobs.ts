@@ -1,3 +1,4 @@
+import { gridIdAt } from '../regions';
 import { shipOf } from '../combat/ships';
 import { ItemStackC } from '../items/components';
 import { makeHaul } from '../items/plan';
@@ -33,7 +34,7 @@ export function cargoJobsSystem(sim: Sim): void {
     if (ship.state === 'prize') {
       for (const sid of sim.world.query(ItemStackC)) {
         const s = sim.world.get(sid, ItemStackC);
-        if (!s || s.gridId !== at.gridId) continue;
+        if (!s || gridIdAt(sim, s.x, s.y) !== at.gridId) continue;
         const avail = s.count - (res.out.get(refKey('floor', sid, s.item)) ?? 0);
         const room = cargoSpace(sim, v) - promised(res, id);
         if (avail <= 0 || room <= 0) continue;

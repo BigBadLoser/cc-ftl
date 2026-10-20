@@ -5,7 +5,6 @@ import type { ItemQty } from '../registry';
 export interface ItemStack {
   item: string;
   count: number;
-  gridId: number;
   x: number;
   y: number;
   /** Tick of the last 'storage.full' warning for this stack (debounce). */

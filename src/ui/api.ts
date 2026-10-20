@@ -110,8 +110,11 @@ export interface UiModule {
   id: number;
   def: string;
   name: string;
+  /** Sector tile of the top-left footprint tile (what commands take). */
   x: number;
   y: number;
+  /** The same tile in its ship's local tiles, for the readouts. */
+  local: { x: number; y: number };
   hp: number;
   maxHp: number;
   priority: number;
@@ -352,6 +355,7 @@ export interface UiShuttleAirlock {
   working: boolean;
   /** Another shuttle is docked or headed there. */
   busy: boolean;
+  /** The airlock's tile in its ship's local tiles (readout only). */
   x: number;
   y: number;
 }

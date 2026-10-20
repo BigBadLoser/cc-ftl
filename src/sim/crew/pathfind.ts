@@ -40,10 +40,10 @@ export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal, o
   if (!grid?.has('struct') || !grid.inBounds(from.x, from.y) || !grid.inBounds(goal.x, goal.y)) return null;
   const { width, height, x0, y0 } = grid;
   // The search runs on window indices, i = (y - y0) * width + (x - x0): the tie-break order is the same in any frame.
-  const struct = grid.raw('struct');
-  const mods = grid.has('module') ? grid.raw('module') : null;
+  const struct = grid.load('struct');
+  const mods = grid.has('module') ? grid.load('module') : null;
   const infos = new Map<number, WalkInfo>();
-  const o2 = opts.avoidThin && grid.has('o2') ? grid.raw('o2') : null;
+  const o2 = opts.avoidThin && grid.has('o2') ? grid.load('o2') : null;
   const walk = (i: number): boolean => {
     const kind = struct[i] as number;
     const x = x0 + (i % width), y = y0 + Math.floor(i / width);

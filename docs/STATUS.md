@@ -344,6 +344,11 @@ unchanged (positions mapped back to local before hashing). See ARCHITECTURE "Ste
 up, overlap cut, combat panel picked) in the scratchpad `s6/` (`cmp.txt`): starter identical, the rest differ only in
 time-driven pulses that differ between two main runs too.
 
+Branch `sector-7a` (not merged, no visual change): first slice of step 7 (cleanup). `ItemStack.gridId` is gone (owner read from
+the `ship` layer via `gridIdAt`), `crew/pathfind.ts` and `eva/route.ts` use `load()` (no `raw()` left in `src` outside tests and
+`GridWindow`), module / job / airlock readouts show ship-local tiles. Save v16. Hashes unchanged. Step 7 is split into 7a-7d,
+see ARCHITECTURE "Step 7 split". Next: 7b (Module, Job, Drafted, Position).
+
 **EVA on the hull roof (user decision, 2026-10-20; not built):** EVA crew outside a ship must not walk the hull ring at
 floor level (the tiles just outside the hull walls): there they look as if standing on air, and walking along wall faces
 would need a sideways walk animation we don't want for now. Instead EVA crew walk on top of the **hull roof**, pathing

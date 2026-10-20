@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AboardC, AllegianceC, CaptureProgressC, CombatC, CrewC, DeadC, DownedC, DraftedC, EquipC, HealthC, ItemStackC, ModuleC, PathC, PositionC,
-  PrisonerC, PrizeC, ShipC, SurrenderedC, VehicleC, WeaponC, accessTile, cargoCount, deserialize, newGame, serialize, shipEntityOf,
+  PrisonerC, PrizeC, ShipC, gridIdAt, SurrenderedC, VehicleC, WeaponC, accessTile, cargoCount, deserialize, newGame, serialize, shipEntityOf,
   storageCount, StorageC, windowShipMismatches, type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
@@ -217,7 +217,7 @@ describe('salvage and cargo', () => {
     expect(sim.world.get(shuttle, VehicleC)!.state).toBe('docked');
     const before = metal();
     sim.enqueue({ type: 'job.deconstructModule', gridId: 2, x: tm.x, y: tm.y });
-    run(sim, 3000, () => cargoCount(sim.world.get(shuttle, VehicleC)!) > 0 && !sim.world.query(ItemStackC).some((i) => sim.world.get(i, ItemStackC)!.gridId === 2));
+    run(sim, 3000, () => cargoCount(sim.world.get(shuttle, VehicleC)!) > 0 && !sim.world.query(ItemStackC).some((i) => gridIdAt(sim, sim.world.get(i, ItemStackC)!.x, sim.world.get(i, ItemStackC)!.y) === 2));
     expect(sim.world.has(target, ModuleC)).toBe(false);
     const hold = sim.world.get(shuttle, VehicleC)!.cargo;
     expect(cargoCount(sim.world.get(shuttle, VehicleC)!)).toBeGreaterThan(0);

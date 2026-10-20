@@ -1,3 +1,4 @@
+import { gridIdAt } from '../regions';
 import { CrewC, JobC, PositionC } from '../crew/components';
 import { releaseAssignment } from '../crew/helpers';
 import type { ItemQty } from '../registry';
@@ -52,7 +53,7 @@ export function spillItems(sim: Sim, gridId: number, x: number, y: number, item:
     } else {
       const add = Math.min(left, max);
       const id = sim.world.createEntity();
-      sim.world.add(id, ItemStackC, { item, count: add, gridId, x: tx, y: ty });
+      sim.world.add(id, ItemStackC, { item, count: add, x: tx, y: ty });
       grid.set('item', tx, ty, id);
       left -= add;
     }
@@ -67,7 +68,7 @@ export function takeFromStack(sim: Sim, stackId: number, n: number): number {
   const take = Math.min(n, s.count);
   s.count -= take;
   if (s.count <= 0) {
-    const grid = sim.grids.get(s.gridId);
+    const grid = sim.grids.get(gridIdAt(sim, s.x, s.y));
     if (grid?.has('item') && grid.get('item', s.x, s.y) === stackId) grid.set('item', s.x, s.y, 0);
     sim.world.destroyEntity(stackId);
   }

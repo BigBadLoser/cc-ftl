@@ -54,6 +54,16 @@ export function shipAt(sim: Sim, x: number, y: number): number {
   return sim.sector.grid.get('ship', x, y);
 }
 
+/** The grid id of the ship owning the sector tile (x, y), or 0 (Space, or no grid holds it). Bridges to gridId-keyed code until step 7 ends. */
+export function gridIdAt(sim: Sim, x: number, y: number): number {
+  const ship = shipAt(sim, x, y);
+  const owned = ship === 0 ? 0 : sim.world.get(ship, ShipC)?.gridId ?? 0;
+  if (owned !== 0) return owned;
+  // A fixture grid with no ship (and no owner layer): the lowest-id grid whose rectangle holds the tile.
+  for (const id of [...sim.grids.keys()].sort((a, b) => a - b)) if ((sim.grids.get(id) as GridLike).inBounds(x, y)) return id;
+  return 0;
+}
+
 /** Write `ship` as the owner of every non-Space tile of a grid (stamping a ship into the sector). */
 export function stampOwner(grid: GridLike, ship: number): void {
   for (let y = grid.y0; y < grid.y0 + grid.height; y++) {

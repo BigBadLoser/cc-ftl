@@ -1,3 +1,4 @@
+import { gridIdAt } from '../regions';
 import { CrewC, HealthC } from '../crew/components';
 import { ItemStackC } from '../items/components';
 import { spillItems, takeFromStack } from '../items/stacks';
@@ -47,7 +48,7 @@ export function takeItems(sim: Sim, item: string, count: number): number {
   for (const id of sim.world.query(ItemStackC)) {
     if (left <= 0) break;
     const s = sim.world.get(id, ItemStackC);
-    if (s?.item === item && grids.has(s.gridId)) left -= takeFromStack(sim, id, left);
+    if (s?.item === item && grids.has(gridIdAt(sim, s.x, s.y))) left -= takeFromStack(sim, id, left);
   }
   return count - left;
 }

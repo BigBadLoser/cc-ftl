@@ -17,8 +17,9 @@ import { newTrade, type TradeState } from './trade/types';
  * `EvaFloatC.sx/sy` is the hatch point in sector tiles.
  * v15 (step 6, the coordinate flip): every component position (crew, paths, modules, jobs, items, ...) is a sector tile;
  * the shape is unchanged but the meaning is not, so v14 saves are refused.
+ * v16 (step 7a): `ItemStack` drops `gridId` (the owning ship is read from the `ship` layer at the stack's tile).
  */
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

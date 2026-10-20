@@ -1,3 +1,4 @@
+import { gridIdAt } from '../regions';
 import { CrewC, DeadC } from '../crew/components';
 import { ShipC } from '../combat/components';
 import { AllegianceC, SurrenderedC } from '../fight/components';
@@ -68,7 +69,7 @@ export function playerStock(sim: Sim, item: string): number {
   const grids = playerGrids(sim);
   for (const id of sim.world.query(ItemStackC)) {
     const s = sim.world.get(id, ItemStackC);
-    if (s?.item === item && grids.has(s.gridId)) n += s.count;
+    if (s?.item === item && grids.has(gridIdAt(sim, s.x, s.y))) n += s.count;
   }
   return n;
 }
