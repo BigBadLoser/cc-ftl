@@ -141,7 +141,7 @@ Design is in `docs/DESIGN.md` (Crew, "EVA and spacesuits"). What exists:
   - `SuitC` carries `air` (seconds) and the `airlock` it came from. `AirlockC.suits` counts the suits stowed (def value `airlock.suits`).
   - Suit up / off are personal `suitUp` / `suitOff` jobs at the airlock's inside tile (`errands.ts`, `jobs.ts`), swept by `systems/suits.ts` when nobody carries them.
   - `planWalk` (`route.ts`) prefers a path that keeps out of thin air (`findPath` option `avoidThin`) and flags one that cannot (`thin`). `decide` uses it: a job that needs thin air sends the crew member for a suit first and resumes the job (`Job.resume`).
-  - Ships are never close (user decision): no ship-to-ship docking or crossing. `isEvaWalkable(grid, x, y)` lets suited crew onto the Space ring touching a hull; beams join later.
+  - Ships are never close (user decision): no ship-to-ship docking or crossing. `isEvaWalkable(grid, x, y)` lets suited crew onto the Space ring touching a hull (to be replaced by walking on the hull roof, see "EVA on the hull roof").
   - Cross-grid EVA starts at a shuttle: `vehicle.hover {vehicle, gridId}` (dest `hover`, `hoverPoint` in `vehicles/geometry.ts`, then `Vehicle.hover`), `eva.out {vehicle, crew?}` (suits from `Vehicle.suits` / def `eva.suits`, crew land on the nearest exterior tile within `floatRange` and drift there under `EvaFloatC`) and `eva.board {crew, vehicle}` (float back, board, suit stowed; `systems/evaFloat.ts`). The shuttle refuses to move while crew are out. Shuttle panel: Hover beside, Crew out (EVA); crew card: Back to shuttle.
   - `systems/suits.ts` drains the tank in thin air (rooms, airlock, hull outside). `vitals` treats a dry tank as no suit. `eva/conditions.ts` slows suited crew, `fight/weapons.ts` scales hit chance.
   - Commands: `eva.suitUp {crew, airlock}`, `eva.suitOff {crew, airlock?}` (drafted crew). `suit.set` stays as the debug/test shortcut. Events: `suit.donned`, `suit.doffed`, `suit.airLow`, `suit.airOut`.
@@ -337,6 +337,19 @@ Branch `sector-5b` (not merged, needs the user's screenshot approval): step 5b, 
 cracks, flames, atmosphere emitters and the field overlay read `SectorGrid` chunks (`render/regionTiles.ts`), keyed and
 rebuilt per sector chunk; see ARCHITECTURE "Step 5b done". Step 5 is complete apart from per-chunk culling and `alt` driving
 the lift. Comparison vs main in the scratchpad `s5b/` (`cmp.txt`).
+Branch `sector-6` (not merged): step 6, the coordinate flip. Every component holds sector tiles; windows read sector
+coordinates and keep their rectangle as bounds; geometry sums and `sectorPos` are gone, and a lint guards against new
+ones. Region tile art stays ship-local, placed at the region's top-left. Save v15. Both `sectorEquiv` hashes are
+unchanged (positions mapped back to local before hashing). See ARCHITECTURE "Step 6 done". Screenshots vs main (starter
+up, overlap cut, combat panel picked) in the scratchpad `s6/` (`cmp.txt`): starter identical, the rest differ only in
+time-driven pulses that differ between two main runs too.
+
+**EVA on the hull roof (user decision, 2026-10-20; not built):** EVA crew outside a ship must not walk the hull ring at
+floor level (the tiles just outside the hull walls): there they look as if standing on air, and walking along wall faces
+would need a sideways walk animation we don't want for now. Instead EVA crew walk on top of the **hull roof**, pathing
+over roof tiles at roof height. This replaces the old plan of walkable beams on the hull ring. On a ship drawn without its
+roof (cutaway, e.g. the player ship), show the roof tiles just around an EVA crew member if that is cheap and reads well;
+otherwise the crew float at roof height over the cutaway.
 
 **Vehicle bay departure decision (user, 2026-10-20; for a later vehicle step, not built):** the bay doors are at the
 **bottom** of the pit. A departing shuttle drops down out of the pit through the bottom doors, flies clear of the ship's

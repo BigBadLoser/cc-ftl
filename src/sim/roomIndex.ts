@@ -7,7 +7,7 @@ interface Cached {
 const cache = new WeakMap<Grid, Cached>();
 
 /**
- * Tile indices (y * width + x, ascending) of every room, keyed by room id. Cached per grid until
+ * Tile indices of every room, keyed by room id: ascending `(y - y0) * width + (x - x0)` (the order of `grid.load()`). Cached per grid until
  * the `room` field changes, so systems can share it without calling each other. Read-only.
  */
 export function roomTiles(grid: Grid): ReadonlyMap<number, readonly number[]> {

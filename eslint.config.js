@@ -51,6 +51,21 @@ export default tseslint.config(
     rules: { 'no-restricted-globals': 'off' },
   },
   {
+    // Step 6 (coordinate flip): positions are sector tiles everywhere, so no ship-origin or window-origin sums in the sim.
+    files: ['src/sim/**/*.ts'],
+    ignores: ['src/sim/gridWindow.ts', 'src/sim/gridMap.ts', 'src/sim/shipgen/**', 'src/sim/**/*.test.ts'], // shipgen is template-local
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "BinaryExpression[operator=/^[-+]$/][left.type='MemberExpression'][left.object.name=/^(ship|s|sh)$/][left.property.name=/^[xy]$/][right.type='MemberExpression'][right.property.name=/^[xy]$/]",
+          message: 'Positions are sector tiles: no ship-origin + local sums (step 6).',
+        },
+        { selector: "BinaryExpression[operator=/^[-+]$/] > MemberExpression[property.name=/^o[xy]$/]", message: 'Grids read sector tiles: no window-origin sums (step 6).' },
+      ],
+    },
+  },
+  {
     files: ['src/content/**/*.ts'],
     rules: noImports(pixiNames, [...pixiPat, ...sveltePat, ...pat(['render', 'ui', 'app'])]),
   },

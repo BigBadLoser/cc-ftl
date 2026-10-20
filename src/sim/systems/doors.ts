@@ -21,8 +21,8 @@ export function doorsSystem(sim: Sim): void {
     for (const id of sim.world.query(CrewC, PositionC)) {
       const p = sim.world.get(id, PositionC);
       if (!p || p.gridId !== grid.id || sim.world.has(id, DeadC)) continue;
-      used.add(p.y * width + p.x);
-      used.add(p.toY * width + p.toX);
+      used.add((p.y - grid.y0) * width + (p.x - grid.x0));
+      used.add((p.toY - grid.y0) * width + (p.toX - grid.x0));
     }
     for (let i = 0; i < struct.length; i++) {
       const cur = door[i] as number;
@@ -33,7 +33,7 @@ export function doorsSystem(sim: Sim): void {
       else if (cur > 0) next = Math.max(0, cur - DOOR_CLOSE_PER_TICK);
       if (next !== cur) {
         const x = i % width;
-        grid.set('door', x, (i - x) / width, next);
+        grid.set('door', grid.x0 + x, grid.y0 + (i - x) / width, next);
       }
     }
   }

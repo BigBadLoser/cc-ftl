@@ -73,7 +73,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const inside = () => (roofed ? null : { grid });
   const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK });
   const crewView = createCrewView(world, atlas, L, {
-    target: () => ({ gridId: grid.id }),
+    target: () => ({ gridId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),
     emergency: () => emergency,
     moduleAt: (x, y) => {
@@ -82,7 +82,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       const def = m && modules[m.def];
       return m && def ? { m, def } : null;
     },
-    light: () => ({ data: grid.raw('light'), width: grid.width }),
+    light: (x, y) => (grid.inBounds(x, y) ? grid.get('light', x, y) : 0),
     suitAirSec: o.suitAirSec,
   });
   const jobView = createJobView(world, atlas, L, { target: inside });

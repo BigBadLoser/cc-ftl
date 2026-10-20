@@ -47,19 +47,19 @@ export function buildStats(sim: Sim): UiStats {
   let o2: number | null = null;
   const grid = sim.grids.get(GRID);
   if (grid) {
-    const room = grid.raw('room');
-    const o2f = grid.raw('o2');
     const rooms = new Set<number>();
     for (const id of sim.world.query(CrewC, PositionC)) {
       const p = sim.world.get(id, PositionC);
       if (!p || p.gridId !== GRID || sim.world.has(id, DeadC) || !grid.inBounds(p.x, p.y)) continue;
-      const r = room[p.y * grid.width + p.x] as number;
+      const r = grid.get('room', p.x, p.y);
       if (r) rooms.add(r);
     }
     let sum = 0;
     for (const r of rooms) {
       const tiles = roomTiles(grid).get(r) ?? [];
-      sum += tiles.reduce((a, i) => a + (o2f[i] as number), 0) / Math.max(1, tiles.length);
+      // roomTiles indices run from the grid's top-left (x0, y0).
+      const o2At = (i: number) => grid.get('o2', grid.x0 + (i % grid.width), grid.y0 + Math.floor(i / grid.width));
+      sum += tiles.reduce((a, i) => a + o2At(i), 0) / Math.max(1, tiles.length);
     }
     if (rooms.size) o2 = sum / rooms.size;
   }

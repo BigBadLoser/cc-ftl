@@ -54,7 +54,7 @@ function recompute(grid: Grid): void {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const v = labels[y * width + x] as number;
-      if (before[y * width + x] !== v) grid.set('room', x, y, v);
+      if (before[y * width + x] !== v) grid.set('room', grid.x0 + x, grid.y0 + y, v);
     }
   }
 }

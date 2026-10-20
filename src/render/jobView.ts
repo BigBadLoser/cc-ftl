@@ -81,16 +81,18 @@ export function createJobView(
             ? [j]
             : [];
         });
-        // Pending walls and doors count as neighbours so a drawn line gets the right orientation.
+        // Pending walls and doors count as neighbours so a drawn line gets the right orientation. Jobs are in sector tiles;
+        // sprites and tile art are region-local (x0, y0 = the region's top-left), like the tile views.
+        const { x0, y0 } = grid;
         const pending = new Map<number, number>();
         for (const j of jobs)
-          if (j.kind === "build") pending.set(j.y * grid.width + j.x, j.struct);
+          if (j.kind === "build") pending.set((j.y - y0) * grid.width + (j.x - x0), j.struct);
         const kindAt: KindAt = (x, y) => {
-          if (!grid.inBounds(x, y)) return Struct.Space;
+          if (!grid.inBounds(x0 + x, y0 + y)) return Struct.Space;
           const p = pending.get(y * grid.width + x);
           return p === Struct.Wall || p === Struct.Door
             ? p
-            : grid.get("struct", x, y);
+            : grid.get("struct", x0 + x, y0 + y);
         };
         for (const j of jobs) {
           const build = j.kind === "build";
@@ -98,12 +100,13 @@ export function createJobView(
           const frac = j.work > 0 ? Math.min(1, j.progress / j.work) : 0;
           const tint = build ? BUILD : DECON;
           const alpha = build ? 0.3 + 0.5 * frac : 0.65;
-          const key = depthKey(j.x, j.y) + 0.02;
+          const lx = j.x - x0, ly = j.y - y0;
+          const key = depthKey(lx, ly) + 0.02;
           if (kind === Struct.Floor)
-            draw([floorChain(j.x, j.y)], j.x, j.y, tint, alpha, key - 0.9);
+            draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
           else if (kind === Struct.Wall || kind === Struct.Door) {
-            for (const pc of wallPieces(kindAt, j.x, j.y, kind, "down", false))
-              draw([pc.chain], j.x, j.y, tint, alpha, key + pc.order * 0.001);
+            for (const pc of wallPieces(kindAt, lx, ly, kind, "down", false))
+              draw([pc.chain], lx, ly, tint, alpha, key + pc.order * 0.001);
           }
         }
       }

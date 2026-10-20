@@ -45,8 +45,11 @@ export function initAtmosphere(grid: GridLike, x: number, y: number): void {
 
 /** Place a template's modules on a grid that is already in `sim.grids`. */
 export function spawnTemplateModules(sim: Sim, gridId: number, t: ShipTemplate): void {
+  // Template modules are ship-local; the grid reads sector coordinates from its top-left (x0, y0).
+  const g = sim.grids.get(gridId);
+  const ox = g?.x0 ?? 0, oy = g?.y0 ?? 0;
   for (const m of t.modules ?? []) {
-    const id = spawnModule(sim, gridId, m.def, m.x, m.y, m.rot);
+    const id = spawnModule(sim, gridId, m.def, ox + m.x, oy + m.y, m.rot);
     for (const q of m.stock ?? []) storageAdd(sim, id, q.item, q.count);
     if (m.vehicle) spawnVehicle(sim, m.vehicle, id);
     const production = sim.world.get(id, ProductionC);

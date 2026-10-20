@@ -228,19 +228,20 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       const { grid } = t;
       const emergency = host.emergency();
       const pulse = emergency ? pulsePhase(now) : -1;
-      const light = grid.raw('light');
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
         if (!m || !def || m.gridId !== grid.id) continue;
         const on = m.powered && m.enabled && m.hp > 0;
+        // Modules are in sector tiles; their art is built region-local (the region's containers sit at its sector offset).
+        const lm: Module = { ...m, x: m.x - grid.x0, y: m.y - grid.y0 };
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
         const roofed = host.roofed();
         const level = host.level();
-        const raw = def.robotBay ? robotBayLayers(world, id, m, def, now)
-          : def.vehicleBay ? vehicleBayLayers(m, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
-          : def.airlock?.layout ? airlockLayers(world, id, m, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
-          : moduleLayers(world, id, m, def, active, true);
+        const raw = def.robotBay ? robotBayLayers(world, id, lm, def, now)
+          : def.vehicleBay ? vehicleBayLayers(lm, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
+          : def.airlock?.layout ? airlockLayers(world, id, lm, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
+          : moduleLayers(world, id, lm, def, active, true);
         const layers = raw.flatMap((layer) => {
           if (roofed && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
           const art = resolveArt(atlas, layer.chain, layer.key);
@@ -254,10 +255,10 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           dropEntry(e);
           e = undefined;
         }
-        if (!e) mods.set(id, (e = { sig, parts: build(m, def, layers, roofed) }));
+        if (!e) mods.set(id, (e = { sig, parts: build(lm, def, layers, roofed) }));
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
-        for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? (light[f.y * grid.width + f.x] as number) : 0;
+        for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
         const base = lightTint(lsum / Math.max(1, tiles.length), false, pulse);
         const tint = on ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
         for (const p of e.parts) {

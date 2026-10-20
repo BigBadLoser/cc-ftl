@@ -27,7 +27,7 @@ export function dockPoint(sim: Sim, airlock: number): DockPoint | null {
   const t = airlockTiles(def, m);
   const out = hullOutward(hullSide(def, m.rot) ?? 'n');
   const c = t.collar ?? { x: t.outer.x + out.x, y: t.outer.y + out.y };
-  return { gridId: m.gridId, x: ship.x + c.x + 0.5, y: ship.y + c.y + 0.5, inside: t.inside };
+  return { gridId: m.gridId, x: c.x + 0.5, y: c.y + 0.5, inside: t.inside };
 }
 
 /**
@@ -69,7 +69,7 @@ export function bayCenter(sim: Sim, bay: number): { x: number; y: number } | nul
   const ship = m && shipOf(sim, m.gridId);
   if (!m || !def?.vehicleBay || !ship) return null;
   const [w, h] = rotatedSize(def, m.rot);
-  return { x: ship.x + m.x + w / 2, y: ship.y + m.y + h / 2 };
+  return { x: m.x + w / 2, y: m.y + h / 2 };
 }
 
 /** True if the module is a bay that is intact and enabled. */

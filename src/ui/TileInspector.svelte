@@ -24,7 +24,7 @@
 
 {#if info}
   <div data-testid="inspector">
-    <PanelHead icon="grid" title="Tile {info.x}, {info.y}" sub="grid {info.gridId}" {onBack} />
+    <PanelHead icon="grid" title="Tile {info.local.x}, {info.local.y}" sub="grid {info.gridId}" {onBack} />
     <dl>
       <dt>Struct</dt><dd data-testid="inspect-struct">{info.structName}</dd>
       <dt>Room</dt><dd data-testid="inspect-room">{info.room || 'none'}</dd>

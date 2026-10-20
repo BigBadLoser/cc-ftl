@@ -5,6 +5,7 @@ import {
 } from '../../sim';
 import { MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT } from '../../sim/tuning';
 import { content } from '../index';
+import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
 
 const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 const humans = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => sim.world.get(id, CrewC)?.species === 'species.human');
@@ -176,7 +177,7 @@ describe('mood', () => {
 describe('robots and determinism', () => {
   it('robots neither get hungry nor have moods', () => {
     const sim = newGame(3, content);
-    sim.enqueue({ type: 'debug.spawnCrew', gridId: 1, x: 9, y: 9, role: 'role.robot_worker' });
+    sim.enqueue({ type: 'debug.spawnCrew', gridId: 1, x: P0.x + 9, y: P0.y + 9, role: 'role.robot_worker' });
     run(sim, 30 * TICK_HZ);
     const robot = sim.world.query(CrewC).find((id) => sim.world.get(id, CrewC)?.species === 'species.robot') as number;
     expect(robot).toBeDefined();

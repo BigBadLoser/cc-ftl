@@ -166,7 +166,7 @@ describe('weapons', () => {
       const g = sim.grids.get(2)!;
       let sum = 0;
       let n = 0;
-      for (let y = 1; y <= 5; y++) for (let x = 1; x <= 12; x++) { sum += g.get('o2', x, y); n++; }
+      for (let y = 1; y <= 5; y++) for (let x = 1; x <= 12; x++) { sum += g.get('o2', g.x0 + x, g.y0 + y); n++; }
       return sum / n;
     };
     run(sim, 20);
@@ -352,7 +352,7 @@ describe('enemy AI, endings', () => {
       if (m.gridId === 2) m.hp = m.def === 'module.reactor' ? 100 : m.def === 'module.vehicle_bay' ? 60 : 0; // bay hp tuned so integrity stays between wreck and flee
     }
     const g2 = sim.grids.get(2)!;
-    for (let y = 0; y < g2.height; y++) for (let x = 0; x < g2.width; x++) if (g2.get('struct', x, y) === 2) g2.set('hp', x, y, 80); // walls at about a third
+    for (let y = g2.y0; y < g2.y0 + g2.height; y++) for (let x = g2.x0; x < g2.x0 + g2.width; x++) if (g2.get('struct', x, y) === 2) g2.set('hp', x, y, 80); // walls at about a third
     combatOf(sim, 2).ftl = 40;
     const events = run(sim, 100);
     expect(ofType(events, 'ship.fled').map((e) => e.gridId)).toEqual([2]);

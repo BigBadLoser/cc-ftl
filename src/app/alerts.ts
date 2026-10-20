@@ -29,8 +29,8 @@ export function createAlerts(sim: Sim): Alerts {
     let sx = 0;
     let sy = 0;
     for (const i of tiles) {
-      sx += i % grid.width;
-      sy += Math.floor(i / grid.width);
+      sx += grid.x0 + (i % grid.width);
+      sy += grid.y0 + Math.floor(i / grid.width);
     }
     return { x: sx / tiles.length, y: sy / tiles.length };
   };

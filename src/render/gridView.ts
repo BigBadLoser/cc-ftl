@@ -120,7 +120,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       if (!m || !def?.hullEdge || m.gridId !== grid.id) continue;
       // The bulkhead spans the row's inner tiles; the two end tiles keep their hull wall (the sprite stops inside them).
       const row = hullRow(def, m.x, m.y, m.rot).sort((a, b) => a.x + a.y - (b.x + b.y));
-      for (const t of row.slice(1, -1)) out.add(t.y * width + t.x);
+      for (const t of row.slice(1, -1)) out.add((t.y - grid.y0) * width + (t.x - grid.x0)); // region-local index
     }
     return out;
   }
@@ -134,7 +134,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const def = m && modules[m.def];
       if (!m || !def?.airlock?.layout || m.gridId !== grid.id) continue;
       const t = airlockTiles(def, m);
-      out.add(t.outer.y * width + t.outer.x);
+      out.add((t.outer.y - grid.y0) * width + (t.outer.x - grid.x0)); // region-local index
     }
     return out;
   }
@@ -269,8 +269,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     }
   }
 
+  // Selection, hover and build previews come in sector tiles; the markers draw region-local.
+  const loc = (t: { x: number; y: number }) => ({ x: t.x - grid.x0, y: t.y - grid.y0 });
   return {
-    ...markers,
+    setSelection: (t) => markers.setSelection(t === null ? null : Array.isArray(t) ? t.map(loc) : loc(t as { x: number; y: number })),
+    setHover: (t) => markers.setHover(t && loc(t)),
+    setPreview: (tiles, valid) => markers.setPreview(tiles.map(loc), valid),
     grid,
     update() {
       const mr = grid.revision("module");

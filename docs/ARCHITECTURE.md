@@ -858,6 +858,35 @@ Step 5b done (branch `sector-5b`): chunk tile views.
 - Fixed on the way: a roof rebuild no longer deletes the roof parts (on main, any struct change on a ship removed its
   AI-core / shield-generator roof part until a power state changed).
 
+Step 6 done (branch `sector-6`): the coordinate flip.
+- Every component position is a sector tile: `Position` (and `toX/toY`), `Path` steps, `ModuleC`, `JobC`, `ItemStackC`, job
+  and drafted targets, and the events that carry tiles (`fire.started`, `projectile.hit/miss`). `spawnTemplateModules`
+  translates the ship-local template by the grid's top-left, so spawning stamps sector coordinates.
+- Windows are the identity: `GridWindow.get/set(x, y)` read sector tile (x, y); the window keeps only its rectangle as
+  bounds (`inBounds`, the edge checks of `isEvaWalkable`, `bordersSpace`, `network`), so behaviour at a ship's edge is
+  unchanged. `sim.grids.get(id)` still works for any id. `GridLike` gained `x0, y0` (the bounds' top-left; 0 for a dense
+  grid). Decided here rather than the plan's "whole sector" window: an unbounded window would change edge behaviour.
+- `load()` defaults to the window rectangle and returns it row-major from (x0, y0); field systems keep their index math and
+  add (x0, y0) where they turn an index into a tile (`writeBack`, fire, rooms, lighting, doors, alerts, autojobs, life
+  support). `roomTiles` indices count from (x0, y0). A* runs on window indices, so tie-breaking is unchanged.
+- Geometry sums are gone: `moduleCenter`, `dockPoint`, `bayCenter`, impacts, `tileFrame` / `tileCentre`, the crew floor scan
+  and `nearestExterior`. Lint (`no-restricted-syntax` in `src/sim`, outside `gridWindow`, `gridMap` and shipgen) rejects
+  `ship.x + m.x`-style sums and `ox` / `oy` sums. Bbox centres (`ship.x + ship.width / 2`) are sector sums and stay.
+- Render: `sectorPos` is deleted (sector tiles are plain `iso(x, y)`); `fightFx`, `crewMarks`, `sectorFx`, focus,
+  `screenOf` and tile picking work in sector tiles. One offset stays on purpose: a region's tile art (floors, walls, roof
+  livery and plan, chunk views) is built in ship-local tiles, because floor variants and the livery gradient depend on the
+  tile position and must not change when step 9 restamps a ship elsewhere. The region's containers sit at its top-left
+  (`regionOrigin(grid)`), and entity views (crew, modules, items, jobs, turrets, target marks, particles, markers)
+  subtract it when they place sprites. Depth keys are therefore unchanged.
+- The inspector readouts show ship-local tiles (`UiInspect.local`); commands take sector tiles.
+- 5b leftovers: `moduleView` light, the crew light reader in `shipScene` and `app/moduleSnapshot` (room, o2) use `get`.
+  `raw()` is left only in `crew/pathfind.ts` and `eva/route.ts` (window-indexed, step 7).
+- Save v15 (same shape, new meaning). `sectorEquiv` maps positions back to grid-local tiles before hashing (ShipC was
+  sector already); both pre-refactor hashes still match. Tests: single-ship fixtures sit at (0, 0) (`fight`, `eva`);
+  newGame tests add `PLAYER_START`; `portals` adds its grids' row-0 offsets; window, map, region and chunk tests use
+  sector tiles.
+- `gridId` stays as a dead tag (step 7).
+
 **Merges before the refactor (answer to the user's hold).**
 - Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**
   Reasons:

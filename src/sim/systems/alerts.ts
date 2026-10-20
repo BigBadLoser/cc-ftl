@@ -54,7 +54,7 @@ function scan(sim: Sim, grid: Grid, mem: Memory): void {
   for (const [r, i] of burning) {
     if (!mem.burning.has(r)) {
       const x = i % width;
-      sim.events.emit({ type: 'fire.started', gridId: grid.id, room: r, x, y: (i - x) / width });
+      sim.events.emit({ type: 'fire.started', gridId: grid.id, room: r, x: grid.x0 + x, y: grid.y0 + (i - x) / width });
     }
   }
   mem.breached = breached;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, newGame, openTilesOf, type Sim } from '../sim';
+import { ModuleC, newGame, openTilesOf, PLAYER_START, type Sim } from '../sim';
 import { cradleOf } from '../sim/robots/bay';
 import { content } from '../content';
 import { buildRobotBay } from './robotSnapshot';
@@ -8,12 +8,13 @@ const run = (sim: Sim, n: number) => {
   for (let i = 0; i < n; i++) sim.step();
   sim.events.drain();
 };
+/** Place a bay at starter-ship tile (x, y) (the ship is stamped at PLAYER_START). */
 const place = (sim: Sim, x: number, y: number, rot: number): number => {
-  sim.enqueue({ type: 'debug.spawnModule', gridId: 1, x, y, def: 'module.robotBay', rot });
+  sim.enqueue({ type: 'debug.spawnModule', gridId: 1, x: PLAYER_START.x + x, y: PLAYER_START.y + y, def: 'module.robotBay', rot });
   run(sim, 2);
   return sim.world.query(ModuleC).find((i) => {
     const m = sim.world.get(i, ModuleC)!;
-    return m.def === 'module.robotBay' && m.x === x && m.y === y;
+    return m.def === 'module.robotBay' && m.x === PLAYER_START.x + x && m.y === PLAYER_START.y + y;
   })!;
 };
 
@@ -42,8 +43,8 @@ describe('robot bay snapshot', () => {
     const m = sim.world.get(bay, ModuleC)!;
     const def = content.modules['module.robotBay'];
     expect(cradleOf(sim, bay)).toEqual(openTilesOf(def, m.x, m.y, m.rot)[0]);
-    expect(cradleOf(sim, bay)).toEqual({ x: 13, y: 6 });
+    expect(cradleOf(sim, bay)).toEqual({ x: PLAYER_START.x + 13, y: PLAYER_START.y + 6 });
     m.rot = 2; // rotated half a turn: the cradle moves to the other end of the 1x2
-    expect(cradleOf(sim, bay)).toEqual({ x: 13, y: 7 });
+    expect(cradleOf(sim, bay)).toEqual({ x: PLAYER_START.x + 13, y: PLAYER_START.y + 7 });
   });
 });

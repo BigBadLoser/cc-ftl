@@ -83,8 +83,9 @@ export function createItemView(world: World, atlas: Atlas, L: Layers, items: Ite
           }
           entries.set(id, (e = { spr, glow, src }));
         }
-        place(e, st.x, st.y);
-        const key = depthKey(st.x, st.y) - 0.4;
+        // Stacks are in sector tiles; sprites are region-local (the region's containers sit at its sector offset).
+        place(e, st.x - grid.x0, st.y - grid.y0);
+        const key = depthKey(st.x - grid.x0, st.y - grid.y0) - 0.4;
         e.spr.zIndex = key;
         if (e.glow) e.glow.zIndex = key + 0.01;
         const lv = grid.inBounds(st.x, st.y) ? grid.get('light', st.x, st.y) : 0;

@@ -16,10 +16,10 @@ describe('GridMap', () => {
     expect(win).toBeInstanceOf(GridWindow);
     expect(sim.grids.get(4)).toBe(win);
     expect([win.width, win.height]).toEqual([5, 4]);
-    expect(win.get('struct', 2, 2)).toBe(Struct.Door);
+    expect(win.get('struct', 32, -5)).toBe(Struct.Door); // windows read sector tiles
     expect(sim.sector.grid.get('struct', 32, -5)).toBe(Struct.Door);
     expect(sim.sector.grid.get('o2', 31, -6)).toBeGreaterThan(20);
-    win.set('fire', 1, 1, 9);
+    win.set('fire', 31, -6, 9);
     expect(sim.sector.grid.get('fire', 31, -6)).toBe(9);
   });
 
@@ -36,7 +36,7 @@ describe('GridMap', () => {
     sim.grids.set(1, gridFromTemplate(1, { name: 'a', rows: ROWS }));
     sim.grids.set(2, gridFromTemplate(2, { name: 'b', rows: ROWS }));
     expect(sim.grids.rects()).toEqual([{ id: 1, x: 0, y: 0, w: 5, h: 4 }, { id: 2, x: 37, y: 0, w: 5, h: 4 }]);
-    expect(sim.grids.get(2)?.get('struct', 1, 1)).toBe(Struct.Floor);
+    expect(sim.grids.get(2)?.get('struct', 38, 1)).toBe(Struct.Floor);
   });
 
   it('spawnShip stamps at the ship position and a save round trip keeps every tile', () => {
@@ -46,11 +46,11 @@ describe('GridMap', () => {
     expect(sim.grids.rects()).toEqual([{ id: gridId, x: ship.x, y: ship.y, w: ship.width, h: ship.height }]);
     const grid = sim.grids.get(gridId)!;
     for (let y = 0; y < grid.height; y++) {
-      for (let x = 0; x < grid.width; x++) expect(sim.sector.grid.get('struct', 40 + x, 12 + y)).toBe(grid.get('struct', x, y));
+      for (let x = 0; x < grid.width; x++) expect(sim.sector.grid.get('struct', 40 + x, 12 + y)).toBe(grid.get('struct', 40 + x, 12 + y));
     }
-    grid.set('smoke', 2, 1, 77);
+    grid.set('smoke', 42, 13, 77);
     const loaded = deserialize(serialize(sim), sim.content);
-    expect(loaded.grids.get(gridId)?.get('smoke', 2, 1)).toBe(77);
+    expect(loaded.grids.get(gridId)?.get('smoke', 42, 13)).toBe(77);
     expect(serialize(loaded)).toBe(serialize(sim));
   });
 });

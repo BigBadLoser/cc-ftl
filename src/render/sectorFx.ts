@@ -84,7 +84,8 @@ export function createSectorFx(
   };
   /** Sector point (tile units, a tile's centre is at +0.5) -> art px in the sector frame. */
   const secArt = sectorArt;
-  const tileArt = (s: Ship, x: number, y: number) => secArt(s.x + x + 0.5, s.y + y + 0.5);
+  /** Centre of sector tile (x, y). */
+  const tileArt = (x: number, y: number) => secArt(x + 0.5, y + 0.5);
   const colorOf = (weapon: string) => WEAPON_COLOR[weapon] ?? 0xffffff;
 
   function flash(assetId: string, x: number, y: number, scale: number, peak = 1): void {
@@ -133,7 +134,7 @@ export function createSectorFx(
           const s = m && ship(m.gridId);
           if (!m || !def || !s) continue;
           const [w, h] = rotatedSize(def, m.rot);
-          const c = secArt(s.x + m.x + w / 2, s.y + m.y + h / 2);
+          const c = secArt(m.x + w / 2, m.y + h / 2);
           particles.burst(burst(colorOf(e.weapon), 60), c.x, c.y - MUZZLE_H, 8, 6);
           flash('fx.pd_shot', c.x, c.y - MUZZLE_H, 2);
         } else if (e.type === 'projectile.shieldHit') {
@@ -142,7 +143,7 @@ export function createSectorFx(
         } else if (e.type === 'projectile.hit') {
           const s = ship(e.gridId);
           if (!s) continue;
-          const c = tileArt(s, e.x, e.y);
+          const c = tileArt(e.x, e.y);
           const col = colorOf(e.weapon);
           particles.burst(burst(col, 90), c.x, c.y - 10, 14, 8);
           particles.burst(burst(0xffffff, 60), c.x, c.y - 10, 6, 6);

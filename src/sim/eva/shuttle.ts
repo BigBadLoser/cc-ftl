@@ -18,16 +18,14 @@ export function outsideCrew(sim: Sim, vehicle: number): number[] {
   return sim.world.query(SuitC, CrewC, PositionC).filter((id) => !sim.world.has(id, DeadC) && sim.world.get(id, SuitC)?.vehicle === vehicle);
 }
 
-/** A sector position in the tile frame of a grid (tile (x, y) is centred at sector (ship.x + x + 0.5, ship.y + y + 0.5)). */
+/** A sector position in tile units (tile (x, y) is centred at sector (x + 0.5, y + 0.5)), or null if the grid has no ship. */
 export function tileFrame(sim: Sim, gridId: number, sx: number, sy: number): { x: number; y: number } | null {
-  const s = shipOf(sim, gridId);
-  return s ? { x: sx - s.x - 0.5, y: sy - s.y - 0.5 } : null;
+  return shipOf(sim, gridId) ? { x: sx - 0.5, y: sy - 0.5 } : null;
 }
 
 /** The sector position of the centre of a grid's tile (x, y) (the inverse of `tileFrame`), or null if the ship is gone. */
 export function tileCentre(sim: Sim, gridId: number, x: number, y: number): { x: number; y: number } | null {
-  const s = shipOf(sim, gridId);
-  return s ? { x: s.x + x + 0.5, y: s.y + y + 0.5 } : null;
+  return shipOf(sim, gridId) ? { x: x + 0.5, y: y + 0.5 } : null;
 }
 
 /** The `n` exterior tiles of a grid nearest to a point of its tile frame (ties by row, then column). */
@@ -35,8 +33,8 @@ export function nearestExterior(sim: Sim, gridId: number, at: { x: number; y: nu
   const grid = sim.grids.get(gridId);
   if (!grid?.has('struct')) return [];
   const out: { x: number; y: number; d: number }[] = [];
-  for (let y = 0; y < grid.height; y++) {
-    for (let x = 0; x < grid.width; x++) {
+  for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
       if (grid.get('struct', x, y) === Struct.Space && isEvaWalkable(grid, x, y)) out.push({ x, y, d: Math.hypot(x - at.x, y - at.y) });
     }
   }

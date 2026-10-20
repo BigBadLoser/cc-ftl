@@ -28,15 +28,18 @@ const content: ContentRegistry = {
 const SHIP = [
   '.........', '....#....', '...#_#...', '...#_#...', '.###_###.', '.#_____#.', '.#_____#.', '.#######.',
 ];
+/** Sector x of grid g's left edge: `sim.grids.set` stamps the fixture grids along row 0, 32 tiles apart (grid 1 at 0). */
+const X = (g: number): number => (g - 1) * ((SHIP[0] as string).length + 32);
+const X2 = X(2), X3 = X(3);
 const LEFT = { gridId: 1, x: 4, y: 1 };
-const RIGHT = { gridId: 2, x: 4, y: 1 };
+const RIGHT = { gridId: 2, x: X2 + 4, y: 1 };
 const all4: Priorities = { firefighting: 4, medical: 4, operating: 4, repair: 4, construction: 4, hauling: 4, crafting: 4, cooking: 4 };
 
 function world(grids = 2): Sim {
   const sim = new Sim(5, content);
   for (let g = 1; g <= grids; g++) {
     sim.grids.set(g, gridFromTemplate(g, { name: `s${g}`, rows: SHIP }));
-    spawnModule(sim, g, 'airlock', 4, 1, 0);
+    spawnModule(sim, g, 'airlock', X(g) + 4, 1, 0); // grids read sector tiles
   }
   return sim;
 }
@@ -78,7 +81,7 @@ function journey(sim: Sim): number {
   link(sim);
   run(sim, 2);
   sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
-  sim.enqueue({ type: 'crew.moveTo', id: c, x: 5, y: 6, gridId: 2 });
+  sim.enqueue({ type: 'crew.moveTo', id: c, x: X2 + 5, y: 6, gridId: 2 });
   return c;
 }
 
@@ -128,7 +131,7 @@ describe('portals', () => {
     const c = journey(sim);
     const events = run(sim, 700);
     const pos = sim.world.get(c, PositionC)!;
-    expect(pos).toMatchObject({ gridId: 2, x: 5, y: 6 });
+    expect(pos).toMatchObject({ gridId: 2, x: X2 + 5, y: 6 });
     expect(events.filter((e) => e.type === 'crew.crossed')).toEqual([
       expect.objectContaining({ crew: c, fromGridId: 1, toGridId: 2, kind: 'airlock' }),
     ]);
@@ -154,9 +157,9 @@ describe('portals', () => {
   it('fails cleanly when unlinked, unsuited or unpowered', () => {
     const sim = world();
     const c = crew(sim, 1, 3, 6);
-    expect(planRoute(sim, c, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: 5, y: 6 })).toBeNull();
+    expect(planRoute(sim, c, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: X2 + 5, y: 6 })).toBeNull();
     sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
-    sim.enqueue({ type: 'crew.moveTo', id: c, x: 5, y: 6, gridId: 2 });
+    sim.enqueue({ type: 'crew.moveTo', id: c, x: X2 + 5, y: 6, gridId: 2 });
     run(sim, 100);
     expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 1, x: 3, y: 6 });
     expect(sim.world.get(c, DraftedC)!.target).toBeNull();
@@ -164,11 +167,11 @@ describe('portals', () => {
     link(sim);
     run(sim, 2);
     const bare = crew(sim, 1, 3, 6, false);
-    expect(planRoute(sim, bare, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: 5, y: 6 })).toBeNull(); // no suit
-    expect(planRoute(sim, c, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: 5, y: 6 })).not.toBeNull();
+    expect(planRoute(sim, bare, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: X2 + 5, y: 6 })).toBeNull(); // no suit
+    expect(planRoute(sim, c, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: X2 + 5, y: 6 })).not.toBeNull();
     sim.world.get(airlocks(sim)[1]!, ModuleC)!.enabled = false;
     sim.step();
-    expect(planRoute(sim, c, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: 5, y: 6 })).toBeNull(); // far airlock is off
+    expect(planRoute(sim, c, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: X2 + 5, y: 6 })).toBeNull(); // far airlock is off
   });
 
   it('drops the journey if the link is cut mid-way', () => {
@@ -185,10 +188,10 @@ describe('portals', () => {
     const sim = world();
     const events: SimEvent[] = [];
     const rejected = (): string[] => events.filter((e) => e.type === 'command.rejected').map((e) => (e as { reason: string }).reason);
-    sim.enqueue({ type: 'portal.link', kind: 'airlock', a: LEFT, b: { gridId: 2, x: 4, y: 4 } }); // inner door
-    sim.enqueue({ type: 'portal.link', kind: 'airlock', a: LEFT, b: { gridId: 2, x: 2, y: 5 } }); // plain floor
+    sim.enqueue({ type: 'portal.link', kind: 'airlock', a: LEFT, b: { gridId: 2, x: X2 + 4, y: 4 } }); // inner door
+    sim.enqueue({ type: 'portal.link', kind: 'airlock', a: LEFT, b: { gridId: 2, x: X2 + 2, y: 5 } }); // plain floor
     sim.enqueue({ type: 'portal.link', kind: 'eva', a: LEFT, b: { gridId: 9, x: 0, y: 0 } });
-    sim.enqueue({ type: 'portal.link', kind: 'eva', a: LEFT, b: { gridId: 2, x: 4, y: 0 } }); // space
+    sim.enqueue({ type: 'portal.link', kind: 'eva', a: LEFT, b: { gridId: 2, x: X2 + 4, y: 0 } }); // space
     sim.enqueue({ type: 'portal.link', kind: 'airlock', a: LEFT, b: RIGHT });
     sim.enqueue({ type: 'portal.link', kind: 'airlock', a: RIGHT, b: LEFT });
     run(sim, 2, events);
@@ -201,14 +204,14 @@ describe('portals', () => {
     const sim = world(3);
     // 1 <-> 2 costly eva, 1 <-> 3 and 3 <-> 2 by cheap teleporters.
     sim.enqueue({ type: 'portal.link', kind: 'eva', a: LEFT, b: RIGHT });
-    sim.enqueue({ type: 'portal.link', kind: 'teleporter', a: { gridId: 1, x: 2, y: 5 }, b: { gridId: 3, x: 2, y: 5 } });
-    sim.enqueue({ type: 'portal.link', kind: 'teleporter', a: { gridId: 3, x: 6, y: 5 }, b: { gridId: 2, x: 6, y: 5 } });
+    sim.enqueue({ type: 'portal.link', kind: 'teleporter', a: { gridId: 1, x: 2, y: 5 }, b: { gridId: 3, x: X3 + 2, y: 5 } });
+    sim.enqueue({ type: 'portal.link', kind: 'teleporter', a: { gridId: 3, x: X3 + 6, y: 5 }, b: { gridId: 2, x: X2 + 6, y: 5 } });
     run(sim, 2);
-    const route = planRoute(sim, 0, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: 5, y: 6 })!;
+    const route = planRoute(sim, 0, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: X2 + 5, y: 6 })!;
     expect(route.then).toHaveLength(2);
     expect(route.then.map((l) => sim.world.get(l.portal, PortalC)!.kind)).toEqual(['teleporter', 'teleporter']);
-    expect(route.then[1]!.steps.at(-1)).toEqual({ x: 5, y: 6 });
-    expect(planRoute(sim, 0, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: 5, y: 6 })).toEqual(route);
+    expect(route.then[1]!.steps.at(-1)).toEqual({ x: X2 + 5, y: 6 });
+    expect(planRoute(sim, 0, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: X2 + 5, y: 6 })).toEqual(route);
   });
 
   it('caches per-grid legs and drops them when the grid changes', () => {
@@ -249,7 +252,7 @@ describe('determinism and saves', () => {
     expect(serialize(copy)).toBe(serialize(sim));
     run(sim, 400);
     run(copy, 400);
-    expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 2, x: 5, y: 6 });
+    expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 2, x: X2 + 5, y: 6 });
     expect(serialize(copy)).toBe(serialize(sim));
   });
 });
