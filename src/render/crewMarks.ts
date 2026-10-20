@@ -3,7 +3,7 @@
  * hurt crew, a red cross on the downed, a white flag on those who surrendered, and a red (hostile) or green (yours)
  * foot diamond. Replace with sprite icons later; delete this file then.
  */
-import { gridIdAtTile } from './regionRules';
+import { shipIdAtTile } from './regionRules';
 import { Container, Graphics } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CrewC, DeadC, DownedC, HealthC, PositionC } from '../sim/crew/components';
@@ -13,9 +13,9 @@ import { Z_PX } from './heights';
 import { iso } from './iso';
 
 export interface CrewMarksHost {
-  ship(gridId: number): Ship | undefined;
+  ship(shipId: number): Ship | undefined;
   /** False where the crew view hides crew (on the interior of a roofed region, or a region not drawn). */
-  visible(gridId: number, x: number, y: number): boolean;
+  visible(shipId: number, x: number, y: number): boolean;
 }
 
 export interface CrewMarks {
@@ -33,8 +33,8 @@ export function createCrewMarks(world: World, parent: Container, host: CrewMarks
       g.clear();
       for (const id of world.query(CrewC, PositionC)) {
         const pos = world.get(id, PositionC);
-        const ship = pos && host.ship(gridIdAtTile(world, pos.x, pos.y));
-        if (!pos || !ship || !host.visible(gridIdAtTile(world, pos.x, pos.y), pos.x, pos.y) || world.has(id, DeadC)) continue;
+        const ship = pos && host.ship(shipIdAtTile(world, pos.x, pos.y));
+        if (!pos || !ship || !host.visible(shipIdAtTile(world, pos.x, pos.y), pos.x, pos.y) || world.has(id, DeadC)) continue;
         const gx = pos.x + (pos.toX - pos.x) * pos.progress;
         const gy = pos.y + (pos.toY - pos.y) * pos.progress;
         const p = iso(gx, gy); // sector tiles

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CrewC, DeadC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, StorageC, deserialize, newGame, placementError, serialize,
-  spawnModule, removeModule, findPath, stat, storageAdd, storageCount, type Sim, type SimEvent, shipEntityOf
-} from '../../sim';
+import { CrewC, DeadC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, StorageC, deserialize, newGame, placementError, serialize, spawnModule, removeModule, findPath, stat, storageAdd, storageCount, type Sim, type SimEvent } from '../../sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { content } from '../index';
-import { gridIdOf } from '../../sim/regions';
+import { shipIdOf, shipGrid } from '../../sim/regions';
+import { shipIds } from '../../sim/regions';
+
+/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
+const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -17,9 +18,9 @@ const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[]
 };
 const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
-const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => gridIdOf(sim, sim.world.get(i, PositionC)) === gridId);
+const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, shipId));
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
-const storages = (sim: Sim): number[] => sim.world.query(StorageC).filter((s) => gridIdOf(sim, sim.world.get(s, ModuleC)) === 1);
+const storages = (sim: Sim): number[] => sim.world.query(StorageC).filter((s) => shipIdOf(sim, sim.world.get(s, ModuleC)) === shipIds(sim)[0] as number);
 const stock = (sim: Sim, item: string): number => storages(sim).reduce((n, s) => n + storageCount(sim, s, item), 0);
 const charge = (sim: Sim, id: number): number => sim.world.get(id, NeedsC)!.charge!;
 const killEngineers = (sim: Sim): void => {
@@ -33,15 +34,15 @@ function setup(seed = 1): Sim {
 }
 /** Place `n` robot bays on the first free spots of the player ship. */
 function bays(sim: Sim, n = 1): number[] {
-  const grid = sim.grids.get(1)!;
+  const grid = shipGrid(sim, shipIds(sim)[0] as number)!;
   const out: number[] = [];
   for (let y = grid.y0; y < grid.y0 + grid.height && out.length < n; y++) {
     for (let x = grid.x0; x < grid.x0 + grid.width && out.length < n; x++) {
-      if (placementError(sim, 1, 'module.robotBay', x, y, 0) !== null) continue;
+      if (placementError(sim, nth(sim, 1), 'module.robotBay', x, y, 0) !== null) continue;
       // The cradle must be reachable from the crew's room (the tower blocks its south side).
       const at = sim.world.get(crewOn(sim, 1)[0]!, PositionC)!;
-      const id = spawnModule(sim, 1, 'module.robotBay', x, y, 0);
-      if (findPath(sim, 1, { x: at.x, y: at.y }, { x, y })) out.push(id);
+      const id = spawnModule(sim, 'module.robotBay', x, y, 0);
+      if (findPath(sim, nth(sim, 1), { x: at.x, y: at.y }, { x, y })) out.push(id);
       else removeModule(sim, id);
     }
   }
@@ -50,7 +51,7 @@ function bays(sim: Sim, n = 1): number[] {
 }
 function spawnRobot(sim: Sim, role = 'role.robot_worker'): number {
   const p = sim.world.get(crewOn(sim, 1)[0]!, PositionC)!;
-  sim.enqueue({ type: 'debug.spawnCrew', ship: shipEntityOf(sim, 1), x: p.x, y: p.y, role });
+  sim.enqueue({ type: 'debug.spawnCrew', ship: nth(sim, 1), x: p.x, y: p.y, role });
   run(sim, 1);
   return Math.max(...sim.world.query(CrewC));
 }
@@ -65,7 +66,7 @@ describe('robot variants', () => {
     expect(sim.world.get(worker, HealthC)!.max).toBe(120);
     expect(stat(sim, sec, 'moveSpeed')).toBeLessThan(stat(sim, worker, 'moveSpeed'));
     const at = sim.world.get(sec, PositionC)!;
-    applyEffects(sim, { gridId: 1, x: at.x, y: at.y, projectile: 0, weapon: 'test' }, [{ type: 'crewDamage', amount: 10 }]);
+    applyEffects(sim, { shipId: nth(sim, 1), x: at.x, y: at.y, projectile: 0, weapon: 'test' }, [{ type: 'crewDamage', amount: 10 }]);
     expect(sim.world.get(sec, HealthC)!.hp).toBeCloseTo(193);
     expect(sim.world.get(worker, HealthC)!.hp).toBeCloseTo(110);
   });
@@ -154,7 +155,7 @@ describe('robot assembly', () => {
     const out = run(sim, 4000, () => sim.world.query(CrewC).some((c) => roleOf(sim, c) === 'role.robot_worker'));
     const made = sim.world.query(CrewC).find((c) => roleOf(sim, c) === 'role.robot_worker')!;
     expect(made).toBeDefined();
-    expect(of(out, 'robot.assembled')).toEqual([{ type: 'robot.assembled', crew: made, bay, ship: shipEntityOf(sim, 1) }]);
+    expect(of(out, 'robot.assembled')).toEqual([{ type: 'robot.assembled', crew: made, bay, ship: nth(sim, 1) }]);
     expect(sim.world.get(bay!, ModuleC)!.reservedBy).toBe(made);
     expect(before.parts - stock(sim, 'item.parts')).toBe(6);
     expect(before.metal - stock(sim, 'item.metal')).toBe(10);

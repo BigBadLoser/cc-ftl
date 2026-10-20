@@ -17,7 +17,8 @@ import { StorageC } from '../items/components';
 import { SkillXpC, ImplantsC } from './components';
 import { checkOdds, describeRequirement, meets, unmetReasons } from './requirements';
 import { playerCrew, skillOf } from './world';
-import { gridIdOf } from '../regions';
+import { shipIdOf } from '../regions';
+import { shipIds } from '../regions';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'Crate', asset: 'm', footprint: [1, 1], solid: true, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -49,7 +50,7 @@ const rows = ['##########', '#________#', '#________#', '#________#', '#########
 /** A sim with the player's ship (grid 1, one crate) and crew of the given roles. */
 export function storySim(events: Record<string, EventDef>, roles: string[] = ['role.engineer', 'role.rookie'], seed = 7): Sim {
   const sim = new Sim(seed, baseContent(events));
-  spawnShip(sim, { name: 'P', rows, modules: [{ def: 'module.crate', x: 7, y: 1, rot: 0 }] }, { gridId: 1, faction: 'player', x: 0, y: 0 });
+  spawnShip(sim, { name: 'P', rows, modules: [{ def: 'module.crate', x: 7, y: 1, rot: 0 }] }, { faction: 'player', x: 0, y: 0 });
   roles.forEach((r, i) => createCrew(sim, 1, r, { x: 1 + i, y: 2 }, { faction: 'player', name: i === 0 ? 'Mara' : `C${i}` }));
   return sim;
 }
@@ -213,8 +214,8 @@ describe('choose', () => {
 describe('item stock is the player ship only', () => {
   it('ignores items on enemy ships for requirements and costs, and never spends them', () => {
     const sim = storySim({ e: decision([{ id: 'pay', label: 'pay', cost: [{ item: 'item.scrap', count: 5 }], outcome: {} }]) });
-    spawnShip(sim, { name: 'H', rows: ['#####', '#___#', '#####'], modules: [{ def: 'module.crate', x: 1, y: 1, rot: 0 }] }, { gridId: 2, faction: 'hostile', x: 30, y: 30 });
-    const enemyCrate = sim.world.query(StorageC, ModuleC).find((id) => gridIdOf(sim, sim.world.get(id, ModuleC)) === 2) as number;
+    spawnShip(sim, { name: 'H', rows: ['#####', '#___#', '#####'], modules: [{ def: 'module.crate', x: 1, y: 1, rot: 0 }] }, { faction: 'hostile', x: 30, y: 30 });
+    const enemyCrate = sim.world.query(StorageC, ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === shipIds(sim)[1] as number) as number;
     storageAdd(sim, enemyCrate, 'item.scrap', 50);
     expect(meets(sim, { kind: 'item', item: 'item.scrap', count: 1 })).toBe(false);
     fire(sim, 'e');

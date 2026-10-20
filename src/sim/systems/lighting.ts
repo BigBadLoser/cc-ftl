@@ -1,6 +1,6 @@
 import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
-import { regions , gridIdOf } from '../regions';
+import { regions , shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { LIGHT_FALLOFF } from '../tuning';
@@ -19,7 +19,7 @@ export function lightingSystem(sim: Sim): void {
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
       const light = m && sim.content.modules[m.def]?.light;
-      if (!m || !light || gridIdOf(sim, m) !== grid.id || !m.powered || m.hp <= 0) continue;
+      if (!m || !light || shipIdOf(sim, m) !== grid.id || !m.powered || m.hp <= 0) continue;
       // Index the loaded window from its top-left: (mx, my) is the module's tile relative to (x0, y0).
       const mx = m.x - grid.x0, my = m.y - grid.y0;
       const home = room[my * width + mx] as number;

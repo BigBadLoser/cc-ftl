@@ -1,4 +1,4 @@
-import { gridIdAt, shipIdOf } from '../regions';
+import { shipIdAt, shipIdOf } from '../regions';
 import { ItemStackC } from '../items/components';
 import { makeHaul, warnDue } from '../items/plan';
 import { nearestStorageFor, refKey, reservations } from '../items/stock';
@@ -18,7 +18,7 @@ export function haulJobsSystem(sim: Sim): void {
     if (!stack) continue;
     const avail = stack.count - (res.out.get(refKey('floor', id, stack.item)) ?? 0);
     if (avail <= 0) continue;
-    const dest = nearestStorageFor(sim, gridIdAt(sim, stack.x, stack.y), stack.item, stack, res);
+    const dest = nearestStorageFor(sim, shipIdAt(sim, stack.x, stack.y), stack.item, stack, res);
     if (!dest) {
       if (warnDue(sim, stack)) {
         sim.events.emit({ type: 'storage.full', ship: shipIdOf(sim, stack), x: stack.x, y: stack.y, item: stack.item });
@@ -26,6 +26,6 @@ export function haulJobsSystem(sim: Sim): void {
       continue;
     }
     const src = { ref: { kind: 'floor' as const, id }, x: stack.x, y: stack.y, avail };
-    makeHaul(sim, res, 'hauling', gridIdAt(sim, stack.x, stack.y), src, dest.ref, stack.item, Math.min(avail, dest.room, DEFAULT_CARRY_CAPACITY));
+    makeHaul(sim, res, 'hauling', shipIdAt(sim, stack.x, stack.y), src, dest.ref, stack.item, Math.min(avail, dest.room, DEFAULT_CARRY_CAPACITY));
   }
 }

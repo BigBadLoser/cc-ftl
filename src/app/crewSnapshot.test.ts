@@ -1,8 +1,9 @@
-import { gridIdOf } from '../sim/regions';
+import { shipIdOf, shipGrid } from '../sim/regions';
 import { describe, expect, it } from 'vitest';
-import { CrewC, PositionC, newGame, shipEntityOf, type Sim } from '../sim';
+import { CrewC, PositionC, newGame, type Sim } from '../sim';
 import { content } from '../content';
 import { buildCrewLists } from './crewSnapshot';
+import { shipIds } from '../sim/regions';
 
 const run = (sim: Sim, n: number) => {
   for (let i = 0; i < n; i++) sim.step();
@@ -25,9 +26,9 @@ describe('buildCrewLists', () => {
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
     run(sim, 5);
     expect(buildCrewLists(sim).hostiles).toHaveLength(0);
-    const id = sim.world.query(CrewC).find((c) => gridIdOf(sim, sim.world.get(c, PositionC)) === 1)!;
+    const id = sim.world.query(CrewC).find((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === shipIds(sim)[0] as number)!;
     const pos = sim.world.get(id, PositionC)!;
-    const raider = sim.grids.get(2)!;
+    const raider = shipGrid(sim, shipIds(sim)[1] as number)!;
     pos.x = pos.toX = raider.x0 + 1; // as if it had landed on the raider
     pos.y = pos.toY = raider.y0 + 1;
     const { crew, hostiles } = buildCrewLists(sim);
@@ -35,6 +36,6 @@ describe('buildCrewLists', () => {
     expect(me.away).toBe(true);
     expect(me.where).toBe('Raider');
     expect(hostiles.length).toBeGreaterThan(0);
-    expect(hostiles.every((h) => h.side === 'enemy' && h.ship === shipEntityOf(sim, 2))).toBe(true);
+    expect(hostiles.every((h) => h.side === 'enemy' && h.ship === shipIds(sim)[1])).toBe(true);
   });
 });

@@ -4,8 +4,8 @@ import type { Sim } from '../sim';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
-import { placementGapError , gridIdOf } from '../regions';
-import { gridOfShip, shipById, shipOf, spawnShip } from './ships';
+import { placementGapError , shipIdOf } from '../regions';
+import { shipById, spawnShip } from './ships';
 import { generateShip } from '../shipgen/generate';
 import { ruin } from '../shipgen/ruin';
 import { applyRuin } from './derelict';
@@ -18,8 +18,8 @@ function reject(sim: Sim, command: string, reason: string): void {
 }
 
 /** True if the module entity lies on the grid. */
-function moduleOnGrid(sim: Sim, id: number, gridId: number): boolean {
-  return gridIdOf(sim, sim.world.get(id, ModuleC)) === gridId;
+function moduleOnGrid(sim: Sim, id: number, shipId: number): boolean {
+  return shipIdOf(sim, sim.world.get(id, ModuleC)) === shipId;
 }
 
 export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
@@ -47,8 +47,8 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const y = Math.min(sim.sector.height - gen.height, Math.max(0, cmd.cy - (gen.height >> 1)));
     const gap = placementGapError(sim, { x, y, w: gen.width, h: gen.height });
     if (gap) return reject(sim, cmd.type, gap);
-    const gridId = spawnShip(sim, gen.template, { faction: faction.side ?? 'hostile', x, y, rest: 100 });
-    const ship = shipOf(sim, gridId);
+    const shipId = spawnShip(sim, gen.template, { faction: faction.side ?? 'hostile', x, y, rest: 100 });
+    const ship = shipById(sim, shipId);
     if (ship) ship.gen = { faction: cmd.faction, seed, depth: cmd.depth, role: gen.role };
   },
   'debug.spawnDerelict': (sim, cmd) => {
@@ -80,7 +80,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
       target = { ship: 0, moduleId: 0, vehicle: cmd.targetVehicle };
     } else if (cmd.targetShip !== 0) {
       if (cmd.targetShip === cmd.ship || !shipById(sim, cmd.targetShip)) return reject(sim, cmd.type, 'badTarget');
-      if (cmd.targetModuleId !== 0 && !moduleOnGrid(sim, cmd.targetModuleId, gridOfShip(sim, cmd.targetShip))) return reject(sim, cmd.type, 'badTarget');
+      if (cmd.targetModuleId !== 0 && !moduleOnGrid(sim, cmd.targetModuleId, cmd.targetShip)) return reject(sim, cmd.type, 'badTarget');
       target = { ship: cmd.targetShip, moduleId: cmd.targetModuleId };
     }
     if (cmd.weaponId === null) {
@@ -88,7 +88,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
       return;
     }
     const weapon = sim.world.get(cmd.weaponId, WeaponC);
-    if (!weapon || !moduleOnGrid(sim, cmd.weaponId, gridOfShip(sim, cmd.ship))) return reject(sim, cmd.type, 'noWeapon');
+    if (!weapon || !moduleOnGrid(sim, cmd.weaponId, cmd.ship)) return reject(sim, cmd.type, 'noWeapon');
     weapon.target = target;
   },
   'combat.setHold': (sim, cmd) => {

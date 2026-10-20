@@ -1,5 +1,5 @@
-import { gridIdAt } from '../regions';
-import { shipOf } from '../combat/ships';
+import { shipIdAt } from '../regions';
+
 import { ItemStackC } from '../items/components';
 import { makeHaul } from '../items/plan';
 import { nearestStorageFor, refKey, reservations, type Reservations } from '../items/stock';
@@ -8,6 +8,7 @@ import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
 import { cargoSpace } from '../vehicles/cargo';
 import { VehicleC } from '../vehicles/components';
 import { boardingTile, cargoTile } from '../vehicles/geometry';
+import { shipById } from '../combat/ships';
 
 /** Units already promised to a vehicle's hold by pending hauls. */
 function promised(res: Reservations, vehicle: number): number {
@@ -29,28 +30,28 @@ export function cargoJobsSystem(sim: Sim): void {
   for (const id of sim.world.query(VehicleC)) {
     const v = sim.world.get(id, VehicleC);
     const at = v && boardingTile(sim, id);
-    const ship = at && shipOf(sim, at.gridId);
+    const ship = at && shipById(sim, at.shipId);
     if (!v || !at || !ship) continue;
     if (ship.state === 'prize') {
       for (const sid of sim.world.query(ItemStackC)) {
         const s = sim.world.get(sid, ItemStackC);
-        if (!s || gridIdAt(sim, s.x, s.y) !== at.gridId) continue;
+        if (!s || shipIdAt(sim, s.x, s.y) !== at.shipId) continue;
         const avail = s.count - (res.out.get(refKey('floor', sid, s.item)) ?? 0);
         const room = cargoSpace(sim, v) - promised(res, id);
         if (avail <= 0 || room <= 0) continue;
         const src = { ref: { kind: 'floor' as const, id: sid }, x: s.x, y: s.y, avail };
-        makeHaul(sim, res, 'hauling', at.gridId, src, { kind: 'vehicle', id }, s.item, Math.min(avail, room, DEFAULT_CARRY_CAPACITY));
+        makeHaul(sim, res, 'hauling', at.shipId, src, { kind: 'vehicle', id }, s.item, Math.min(avail, room, DEFAULT_CARRY_CAPACITY));
       }
     } else if (ship.faction === 'player' && (ship.state === 'active' || ship.state === 'disabled') && !v.outbound) {
       for (const q of v.cargo) {
         const avail = q.count - (res.out.get(refKey('vehicle', id, q.item)) ?? 0);
         if (avail <= 0) continue;
         // Cargo comes out through the airlock's unloaders: crew take it at the keep-out tile nearest the storage.
-        const dest = nearestStorageFor(sim, at.gridId, q.item, cargoTile(sim, id) ?? at, res);
+        const dest = nearestStorageFor(sim, at.shipId, q.item, cargoTile(sim, id) ?? at, res);
         if (!dest) continue;
         const stand = cargoTile(sim, id, dest) ?? at;
         const src = { ref: { kind: 'vehicle' as const, id }, x: stand.x, y: stand.y, avail };
-        makeHaul(sim, res, 'hauling', at.gridId, src, dest.ref, q.item, Math.min(avail, dest.room, DEFAULT_CARRY_CAPACITY));
+        makeHaul(sim, res, 'hauling', at.shipId, src, dest.ref, q.item, Math.min(avail, dest.room, DEFAULT_CARRY_CAPACITY));
       }
     }
   }

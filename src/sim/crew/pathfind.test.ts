@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { gridFromTemplate } from '../ship';
+import { stampShip } from '../combat/ships';
 import { Sim } from '../sim';
 import { findPath } from './pathfind';
 
 function sim(rows: string[]): Sim {
   const s = new Sim(1);
-  s.grids.set(1, gridFromTemplate(1, { name: 't', rows }));
+  stampShip(s, { name: 't', rows }, { faction: 'player', state: 'prize', x: 0, y: 0 });
   return s;
 }
 

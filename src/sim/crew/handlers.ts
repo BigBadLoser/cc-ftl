@@ -1,11 +1,11 @@
-import { gridIdOf } from '../regions';
-import { gridOfShip } from '../combat/ships';
+import { shipIdOf, shipGrid } from '../regions';
+
 import type { Command } from '../commands';
 import { isTileWalkable } from '../modules/walk';
 import { needsFrom } from '../items/materials';
 import { destroyJob, structCostKey } from '../items/stacks';
 import { FighterC } from '../fight/components';
-import { SuitC } from '../portals/components';
+import { SuitC } from '../eva/components';
 import { Struct } from '../structure';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -30,7 +30,7 @@ function reject(sim: Sim, command: string, reason: string): void {
   sim.events.emit({ type: 'command.rejected', command, reason });
 }
 
-function createJob(sim: Sim, kind: 'build' | 'deconstruct', gridId: number, x: number, y: number, struct: number, work: number): void {
+function createJob(sim: Sim, kind: 'build' | 'deconstruct', shipId: number, x: number, y: number, struct: number, work: number): void {
   const id = sim.world.createEntity();
   const key = kind === 'build' ? structCostKey(struct) : undefined;
   const needs = needsFrom(key ? sim.content.structCosts[key] : undefined);
@@ -41,11 +41,11 @@ function createJob(sim: Sim, kind: 'build' | 'deconstruct', gridId: number, x: n
 }
 
 /** Shared validation: tile exists on a ship grid and has no job yet. Returns the current struct or -1. */
-function checkTile(sim: Sim, type: string, gridId: number, x: number, y: number): number {
-  const grid = sim.grids.get(gridId);
+function checkTile(sim: Sim, type: string, shipId: number, x: number, y: number): number {
+  const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct')) return reject(sim, type, 'badGrid'), -1;
   if (!grid.inBounds(x, y)) return reject(sim, type, 'outOfBounds'), -1;
-  if (findJobAt(sim, gridId, x, y)) return reject(sim, type, 'jobExists'), -1;
+  if (findJobAt(sim, shipId, x, y)) return reject(sim, type, 'jobExists'), -1;
   return grid.get('struct', x, y);
 }
 
@@ -58,20 +58,20 @@ function crewOf(sim: Sim, type: string, id: number): Crew | undefined {
 export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
   'job.build': (sim, cmd) => {
     if (!BUILDABLE.includes(cmd.struct)) return reject(sim, cmd.type, 'badStruct');
-    const current = checkTile(sim, cmd.type, gridOfShip(sim, cmd.ship), cmd.x, cmd.y);
+    const current = checkTile(sim, cmd.type, cmd.ship, cmd.x, cmd.y);
     if (current < 0) return;
     if (current === cmd.struct) return reject(sim, cmd.type, 'sameStruct');
-    if (sim.grids.get(gridOfShip(sim, cmd.ship))?.get('module', cmd.x, cmd.y)) return reject(sim, cmd.type, 'moduleHere');
-    createJob(sim, 'build', gridOfShip(sim, cmd.ship), cmd.x, cmd.y, cmd.struct, BUILD_TICKS[cmd.struct] as number);
+    if (shipGrid(sim, cmd.ship)?.get('module', cmd.x, cmd.y)) return reject(sim, cmd.type, 'moduleHere');
+    createJob(sim, 'build', cmd.ship, cmd.x, cmd.y, cmd.struct, BUILD_TICKS[cmd.struct] as number);
   },
   'job.deconstruct': (sim, cmd) => {
-    const current = checkTile(sim, cmd.type, gridOfShip(sim, cmd.ship), cmd.x, cmd.y);
+    const current = checkTile(sim, cmd.type, cmd.ship, cmd.x, cmd.y);
     if (current < 0) return;
     if (current !== Struct.Wall && current !== Struct.Door) return reject(sim, cmd.type, 'nothingToDeconstruct');
-    createJob(sim, 'deconstruct', gridOfShip(sim, cmd.ship), cmd.x, cmd.y, Struct.Floor, DECONSTRUCT_TICKS);
+    createJob(sim, 'deconstruct', cmd.ship, cmd.x, cmd.y, Struct.Floor, DECONSTRUCT_TICKS);
   },
   'job.cancel': (sim, cmd) => {
-    const jobId = findJobAt(sim, gridOfShip(sim, cmd.ship), cmd.x, cmd.y);
+    const jobId = findJobAt(sim, cmd.ship, cmd.x, cmd.y);
     if (!jobId) return reject(sim, cmd.type, 'noJob');
     destroyJob(sim, jobId); // delivered materials fall to the floor; hauls aimed at it are dropped by haulCleanup
   },
@@ -108,8 +108,8 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     const drafted = sim.world.get(cmd.id, DraftedC);
     const pos = sim.world.get(cmd.id, PositionC);
     if (!drafted || !pos) return reject(sim, cmd.type, 'notDrafted');
-    const gridId = cmd.ship !== undefined ? gridOfShip(sim, cmd.ship) : gridIdOf(sim, pos);
-    const grid = sim.grids.get(gridId);
+    const shipId = cmd.ship !== undefined ? cmd.ship : shipIdOf(sim, pos);
+    const grid = shipGrid(sim, shipId);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
     if (!isTileWalkable(sim, grid, cmd.x, cmd.y, sim.world.has(cmd.id, SuitC))) return reject(sim, cmd.type, 'notWalkable');
     const fighter = sim.world.get(cmd.id, FighterC);

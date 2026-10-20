@@ -222,11 +222,6 @@ export class SectorGrid implements GridLike {
     return this.dir.size;
   }
 
-  /** Not available on a sector: use chunkData() or load(). Exists only to satisfy GridLike. */
-  raw(field: string): Readonly<FieldArray> {
-    throw new Error(`SectorGrid has no dense raw("${field}"); use chunkData() or load()`);
-  }
-
   /** JSON-able snapshot: chunks sorted by key, field data as base64. Round trips byte-identically. */
   serialize(): SectorGridData {
     const empty: EmptySpec = {};

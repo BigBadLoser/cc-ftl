@@ -4,6 +4,7 @@ import type { Sim } from '../sim';
 import { isWalkable } from '../structure';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
 import { hasSuitAir, isSuited, needsAir } from './suit';
+import { shipGrid } from '../regions';
 
 /** A walk on one grid. `thin`: it crosses thin air and the walker has no suit for it. */
 export interface WalkPlan {
@@ -37,16 +38,16 @@ function gridHasThinAir(sim: Sim, grid: Grid): boolean {
  * anywhere. Everyone else first looks for a path that keeps out of thin air (the prefer-no-EVA rule); if only a thin-air
  * path exists they get it with `thin` set, so the caller can send them for a suit or let a player's order stand.
  */
-export function planWalk(sim: Sim, crew: number, gridId: number, from: Tile, goal: PathGoal): WalkPlan | null {
-  const grid = sim.grids.get(gridId);
+export function planWalk(sim: Sim, crew: number, shipId: number, from: Tile, goal: PathGoal): WalkPlan | null {
+  const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct')) return null;
   const suited = hasSuitAir(sim, crew);
   if (suited || !needsAir(sim, crew) || !gridHasThinAir(sim, grid)) {
-    const steps = findPath(sim, gridId, from, goal, { suited: isSuited(sim, crew) });
+    const steps = findPath(sim, shipId, from, goal, { suited: isSuited(sim, crew) });
     return steps && { steps, thin: false };
   }
-  const clean = findPath(sim, gridId, from, goal, { avoidThin: true });
+  const clean = findPath(sim, shipId, from, goal, { avoidThin: true });
   if (clean) return { steps: clean, thin: false };
-  const steps = findPath(sim, gridId, from, goal);
+  const steps = findPath(sim, shipId, from, goal);
   return steps && { steps, thin: true };
 }

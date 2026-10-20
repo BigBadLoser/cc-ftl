@@ -1,22 +1,30 @@
 import { describe, expect, it } from 'vitest';
+
 import { CrewC, HealthC, PathC, PositionC } from '../crew/components';
+
 import type { ContentRegistry, ModuleDef } from '../registry';
-import { gridFromTemplate, spawnTemplateModules } from '../ship';
+import { spawnTemplateModules } from '../ship';
 import { roomTiles } from '../roomIndex';
+
 import { Sim } from '../sim';
-import { ShipC } from '../combat/components';
-import { shipEntityOf } from '../combat/ships';
+
+import { stampShip } from '../combat/ships';
+
+import type { ShipTemplate } from '../registry';
+
 import type { SimEvent } from '../events';
 import { Struct } from '../structure';
+
 import { ModuleC } from '../modules/components';
+
 import { CREW_MAX_HP } from '../tuning';
 
-/** A fixture grid has no ship; commands address ships, so give it an inert one (a prize is skipped by every ship system). */
-function fixtureShip(sim: Sim, gridId: number): void {
-  const g = sim.grids.get(gridId)!;
-  sim.world.add(sim.world.createEntity(), ShipC, {
-    gridId, name: 'fixture', faction: 'player', state: 'prize', x: g.x0, y: g.y0, width: g.width, height: g.height, hullMax: 0, integrity: 1,
-  });
+import { shipGrid } from '../regions';
+
+
+/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
+function fixtureShip(sim: Sim, t: ShipTemplate): number {
+  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
 }
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
@@ -56,15 +64,14 @@ const modules = [
 
 function make(withModules = true): Sim {
   const sim = new Sim(5, content);
-  sim.grids.set(1, gridFromTemplate(1, { name: 't', rows }));
-  fixtureShip(sim, 1);
+  fixtureShip(sim, { name: 't', rows });
   if (withModules) spawnTemplateModules(sim, 1, { name: 't', rows, modules });
   return sim;
 }
 const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 const secs = (s: number) => s * 20;
 function avgO2(sim: Sim, x0: number, x1: number): number {
-  const g = sim.grids.get(1)!;
+  const g = shipGrid(sim, 1)!;
   let sum = 0;
   let n = 0;
   for (let y = 2; y <= 4; y++) for (let x = x0; x <= x1; x++) { sum += g.get('o2', x, y); n++; }
@@ -88,13 +95,13 @@ describe('atmosphere', () => {
     run(sim, secs(30));
     expect(left(sim)).toBeCloseTo(21, 1);
     expect(right(sim)).toBeCloseTo(21, 1);
-    expect(sim.grids.get(1)!.get('o2', 0, 0)).toBe(0);
+    expect(shipGrid(sim, 1)!.get('o2', 0, 0)).toBe(0);
   });
 
   it('a hull breach vents its room, a closed door protects the next, an open door does not', () => {
     const sim = make();
     const events: SimEvent[] = [];
-    sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), x: 1, y: 3, kind: Struct.Floor });
+    sim.enqueue({ type: 'debug.setStruct', ship: 1, x: 1, y: 3, kind: Struct.Floor });
     run(sim, secs(40));
     events.push(...sim.events.drain());
     expect(left(sim)).toBeLessThan(5);
@@ -111,11 +118,11 @@ describe('atmosphere', () => {
 
   it('conserves gas between sealed rooms while a door is held open', () => {
     const sim = make(false);
-    const g = sim.grids.get(1)!;
+    const g = shipGrid(sim, 1)!;
     for (let y = 2; y <= 4; y++) for (let x = 6; x <= 8; x++) g.set('o2', x, y, 0);
     const guard = breathing(sim, 5, 3);
     sim.world.remove(guard, HealthC);
-    const total = () => { let t = 0; for (const v of g.raw('o2')) t += v; return t; };
+    const total = () => { let t = 0; for (const v of g.load('o2')) t += v; return t; };
     const before = total();
     run(sim, secs(20));
     expect(total()).toBeCloseTo(before, 1);
@@ -125,14 +132,14 @@ describe('atmosphere', () => {
   it('grid reports rooms for the two compartments', () => {
     const sim = make();
     sim.step();
-    expect(roomTiles(sim.grids.get(1)!).size).toBe(2);
+    expect(roomTiles(shipGrid(sim, 1)!).size).toBe(2);
   });
 });
 
 describe('power', () => {
   it('disabling the reactor unpowers life support and lights; air thins slowly and light goes out', () => {
     const sim = make();
-    const g = sim.grids.get(1)!;
+    const g = shipGrid(sim, 1)!;
     breathing(sim, 3, 3);
     run(sim, 10);
     expect(g.get('light', 3, 3)).toBeGreaterThan(40);
@@ -155,8 +162,7 @@ describe('power', () => {
   it('a shortage cuts the lowest priority first (ties go to the lower id)', () => {
     const weak: ContentRegistry = { ...content, modules: { ...content.modules, reactor: mod({ footprint: [2, 2], power: 7 }) } };
     const sim = new Sim(5, weak);
-    sim.grids.set(1, gridFromTemplate(1, { name: 't', rows }));
-    fixtureShip(sim, 1);
+    fixtureShip(sim, { name: 't', rows });
     spawnTemplateModules(sim, 1, { name: 't', rows, modules });
     const ids = sim.world.query(ModuleC);
     const byDef = (d: string) => ids.filter((i) => sim.world.get(i, ModuleC)!.def === d);

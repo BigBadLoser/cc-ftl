@@ -4,7 +4,7 @@ import { origin, releaseAssignment } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
 import { keepRobotJob, robotJobs } from '../robots/jobs';
 import type { Sim } from '../sim';
-import { regions , gridIdOf } from '../regions';
+import { regions, shipIdOf, shipGrid } from '../regions';
 
 /** Work value for jobs that finish by condition (fire out, hp full, patient delivered), not by progress. */
 const CONDITIONAL_WORK = 1;
@@ -62,7 +62,7 @@ export function autoJobsSystem(sim: Sim): void {
     const downed = sim.world.get(id, DownedC);
     const pos = sim.world.get(id, PositionC);
     if (!downed || !pos || downed.stabilized || seen.has(`rescue:${id}`)) continue;
-    if (!downed.bed && !findFreeBed(sim, gridIdOf(sim, pos), origin(pos))) continue; // nowhere to take them
+    if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), origin(pos))) continue; // nowhere to take them
     addJob(sim, { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed });
   }
   robotJobs(sim, seen, (job) => addJob(sim, job));
@@ -73,7 +73,7 @@ function jobKey(job: Job): string {
 }
 
 function keepExtinguish(sim: Sim, job: Job): boolean {
-  const grid = sim.grids.get(gridIdOf(sim, job));
+  const grid = shipGrid(sim, shipIdOf(sim, job));
   return !!grid?.has('fire') && grid.inBounds(job.x, job.y) && grid.get('fire', job.x, job.y) > 0;
 }
 

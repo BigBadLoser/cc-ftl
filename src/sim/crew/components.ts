@@ -24,11 +24,6 @@ export const PositionC = defineComponent<Position>('position');
 /** Remaining path (excluding the current tile), consumed by the movement system. */
 export interface Path {
   steps: { x: number; y: number }[];
-  /**
-   * Cross-grid journeys: when `steps` run out the crew member crosses `then[0].portal` and walks `then[0].steps` on the
-   * far grid, and so on (see portals/route.ts and the portal system). Absent or empty = a single-grid path.
-   */
-  then?: { portal: number; steps: { x: number; y: number }[] }[];
 }
 export const PathC = defineComponent<Path>('path');
 
@@ -77,7 +72,7 @@ export const NeedsC = defineComponent<Needs>('needs');
 
 /** Present while the player controls this crew member directly. */
 export interface Drafted {
-  /** Ordered destination (a sector tile), if any. The grid it is on comes from the tile (`gridIdAt`). */
+  /** Ordered destination (a sector tile), if any. The grid it is on comes from the tile (`shipIdAt`). */
   target: { x: number; y: number } | null;
   /** The target the current route was planned for (so a changed target is noticed). */
   planned?: { x: number; y: number };

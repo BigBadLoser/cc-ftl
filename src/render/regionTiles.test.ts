@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Texture, type Container } from 'pixi.js';
 import { World } from '../sim/ecs';
-import { GridWindow } from '../sim/gridWindow';
-import { newSectorGrid } from '../sim/gridMap';
+import { ShipGrid } from '../sim/shipGrid';
+import { newSectorGrid } from '../sim/stamp';
 import { Struct } from '../sim/structure';
 import type { Atlas, StaticSprite } from './assets/loader';
 import { createGridView } from './gridView';
@@ -11,14 +11,14 @@ import { createChunkViews, regionTiles, type ChunkRef } from './regionTiles';
 import { ghostVerts, ghostVertsIn } from './tiles';
 
 /** A w x h hull ring with floor inside, stamped at sector (ox, oy), plus a few interior walls and a door. */
-function ship(ox: number, oy: number, w = 40, h = 20): GridWindow {
+function ship(ox: number, oy: number, w = 40, h = 20): ShipGrid {
   const sector = newSectorGrid();
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
       const edge = x === 0 || y === 0 || x === w - 1 || y === h - 1;
       sector.set('struct', ox + x, oy + y, edge ? Struct.Wall : x === 12 ? (y === 8 ? Struct.Door : Struct.Wall) : Struct.Floor);
     }
-  return new GridWindow(1, sector, ox, oy, w, h);
+  return new ShipGrid(1, sector, ox, oy, w, h);
 }
 
 // Markers and the field overlay bake canvas textures (no DOM in tests); the tile sprites are what is under test.

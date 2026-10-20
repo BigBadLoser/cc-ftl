@@ -1,6 +1,5 @@
 import type { Faction } from './combat/components';
 import type { WorkCategory } from './crew/components';
-import type { PortalKind, PortalRequirement } from './portals/components';
 import type { ItemQty } from './registry';
 
 /** Every way to change the sim from outside. Add new variants here. */
@@ -30,14 +29,8 @@ export type Command =
   | { type: 'crew.equip'; id: number; item: string }
   /** Drop the wielded weapon at the crew member's feet. */
   | { type: 'crew.unequip'; id: number }
-  /** Walk a drafted crew member to a tile, on another grid if `ship` is given and portals lead there. */
+  /** Walk a drafted crew member to a tile (on `ship` if given; another ship is out of reach). */
   | { type: 'crew.moveTo'; id: number; x: number; y: number; ship?: number }
-  /** Link two tiles through a portal. `cost`/`ticks` default by kind; ends on an airlock's outer door attach to that airlock. */
-  | {
-      type: 'portal.link'; kind: PortalKind; a: { gridId: number; x: number; y: number }; b: { gridId: number; x: number; y: number };
-      cost?: number; ticks?: number; requires?: PortalRequirement[]; oneWay?: boolean;
-    }
-  | { type: 'portal.unlink'; id: number }
   /** Ask an airlock module to open its `to` side (it cycles when the open doorway is clear). */
   | { type: 'airlock.cycle'; moduleId: number; to: 'inner' | 'outer' }
   /** Give or take a crew member's EVA suit. */

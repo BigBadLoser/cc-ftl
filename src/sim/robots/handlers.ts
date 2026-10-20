@@ -1,6 +1,6 @@
 import { factionsHostile } from '../combat/factions';
-import { gridOfShip } from '../combat/ships';
-import { shipOf } from '../combat/ships';
+
+
 import { skillOf } from '../combat/operators';
 import type { Command } from '../commands';
 import { AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, type Path } from '../crew/components';
@@ -17,7 +17,8 @@ import { HACK_SEC } from '../tuning';
 import { HackedC } from './components';
 import { assemblyAt, bayFree, cradleOf, isBay } from './bay';
 import { destroyJob } from '../items/stacks';
-import { gridIdOf } from '../regions';
+import { shipIdOf, shipGrid } from '../regions';
+import { shipById } from '../combat/ships';
 
 type RobotCommand = 'crew.hack' | 'debug.spawnCrew' | 'module.assembleRobot' | 'module.cancelAssembly' | 'debug.setCharge';
 type Handler<T extends RobotCommand> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -36,11 +37,11 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     const def = m && sim.content.modules[m.def];
     if (!m || !def?.aiCore || m.hp <= 0) return reject(sim, cmd.type, 'badTarget');
     if (sim.world.get(cmd.module, HackedC)?.hacker) return reject(sim, cmd.type, 'alreadyHacked');
-    if (!factionsHostile(sim.world.get(cmd.id, AllegianceC)?.faction, shipOf(sim, gridIdOf(sim, m))?.faction)) return reject(sim, cmd.type, 'notHostile');
-    if (gridIdOf(sim, pos) !== gridIdOf(sim, m)) return reject(sim, cmd.type, 'notAboard');
+    if (!factionsHostile(sim.world.get(cmd.id, AllegianceC)?.faction, shipById(sim, shipIdOf(sim, m))?.faction)) return reject(sim, cmd.type, 'notHostile');
+    if (shipIdOf(sim, pos) !== shipIdOf(sim, m)) return reject(sim, cmd.type, 'notAboard');
     let plan: { x: number; y: number; steps: { x: number; y: number }[] } | null = null;
     for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
-      const steps = findPath(sim, gridIdOf(sim, pos), origin(pos), { x: t.x, y: t.y, adjacent: true });
+      const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: t.x, y: t.y, adjacent: true });
       if (steps && (!plan || steps.length < plan.steps.length)) plan = { x: t.x, y: t.y, steps };
     }
     if (!plan) return reject(sim, cmd.type, 'unreachable');
@@ -87,9 +88,9 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     }
   },
   'debug.spawnCrew': (sim, cmd) => {
-    const grid = sim.grids.get(gridOfShip(sim, cmd.ship));
+    const grid = shipGrid(sim, cmd.ship);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y) || !isTileWalkable(sim, grid, cmd.x, cmd.y)) return reject(sim, cmd.type, 'notWalkable');
-    const faction = cmd.faction ?? shipOf(sim, gridOfShip(sim, cmd.ship))?.faction ?? 'player';
-    if (!createCrew(sim, gridOfShip(sim, cmd.ship), cmd.role, { x: cmd.x, y: cmd.y }, { faction, rest: 100 })) return reject(sim, cmd.type, 'badRole');
+    const faction = cmd.faction ?? shipById(sim, cmd.ship)?.faction ?? 'player';
+    if (!createCrew(sim, cmd.ship, cmd.role, { x: cmd.x, y: cmd.y }, { faction, rest: 100 })) return reject(sim, cmd.type, 'badRole');
   },
 };

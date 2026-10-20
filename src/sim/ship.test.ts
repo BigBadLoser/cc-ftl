@@ -4,7 +4,7 @@ import { Struct } from './structure';
 
 describe('gridFromTemplate', () => {
   it('parses dims and chars, padding short rows', () => {
-    const g = gridFromTemplate(1, { name: 't', rows: ['#D#', '_.', ''] });
+    const g = gridFromTemplate({ name: 't', rows: ['#D#', '_.', ''] });
     expect([g.width, g.height]).toEqual([3, 3]);
     expect(g.get('struct', 0, 0)).toBe(Struct.Wall);
     expect(g.get('struct', 1, 0)).toBe(Struct.Door);
@@ -13,6 +13,6 @@ describe('gridFromTemplate', () => {
     expect(g.get('struct', 2, 2)).toBe(Struct.Space);
   });
   it('throws with row/col on unknown char', () => {
-    expect(() => gridFromTemplate(1, { name: 't', rows: ['##', '#x'] })).toThrow(/row 1, col 1/);
+    expect(() => gridFromTemplate({ name: 't', rows: ['##', '#x'] })).toThrow(/row 1, col 1/);
   });
 });

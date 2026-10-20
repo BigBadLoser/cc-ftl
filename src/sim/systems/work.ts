@@ -7,7 +7,7 @@ import { resumeAfter } from '../eva/errands';
 import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
-import { gridIdOf, shipIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 
 /**
  * Crew adjacent to their job's tile do one tick of work on it (what that means per job kind is in
@@ -31,7 +31,7 @@ export function workSystem(sim: Sim): void {
       crew.activity !== 'sleeping' &&
       path.steps.length === 0 &&
       isSettled(pos) &&
-      gridIdOf(sim, pos) === gridIdOf(sim, job) &&
+      shipIdOf(sim, pos) === shipIdOf(sim, job) &&
       atJob(pos, job);
     if (!ready) {
       if (crew.activity === 'working') crew.activity = 'idle';

@@ -1,19 +1,30 @@
 import { ShipC, type Ship } from './combat/components';
 import type { GridLike, Rect } from './grid';
+import { shipGridOf, type ShipGrid } from './shipGrid';
 import type { Sim } from './sim';
 import { Struct } from './structure';
 import { MIN_SHIP_GAP, REGION_PAD } from './tuning';
 
-/** One structure in the sector that field systems run over: a grid window and the ship that owns it (if any). */
+/** One ship's structure in the sector, what field systems run over: the shared sector grid and the ship's rectangle. */
 export interface Region {
-  gridId: number;
-  grid: GridLike;
-  /** The `ShipC` entity of the grid, or 0 (a fixture grid with no ship). */
+  /** The `ShipC` entity (the ship id). */
   ship: number;
-  /** The grid's rectangle in sector tiles (exactly its template bbox; the grid reads sector coordinates). */
+  /** The ship's bounded view of the sector grid (exactly `bbox`). */
+  grid: ShipGrid;
+  /** The ship's rectangle in sector tiles (exactly its template bbox). */
   bbox: Rect;
   /** `bbox` grown by REGION_PAD on every side: the EVA ring and one tile of venting vacuum. */
   frame: Rect;
+}
+
+/** Every ship id (ShipC entity), ascending: the order ships were created in. */
+export function shipIds(sim: Sim): number[] {
+  return [...sim.world.query(ShipC)].sort((a, b) => a - b);
+}
+
+/** The bounded view of ship `ship` over the sector grid (its ShipC rectangle), or undefined for no such ship. */
+export function shipGrid(sim: Sim, ship: number): ShipGrid | undefined {
+  return shipGridOf(sim.sector.grid, sim.world, ship);
 }
 
 /** A rectangle grown by `by` tiles on every side. */
@@ -26,27 +37,33 @@ export function intersects(a: Rect, b: Rect): boolean {
   return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 }
 
+/** A ship's rectangle in sector tiles: ShipC x, y, width, height. Every per-ship bound (EVA ring, space adjacency, power networks) is read from it. */
+export function shipRect(ship: Ship): Rect {
+  return { x: ship.x, y: ship.y, w: ship.width, h: ship.height };
+}
+
+/** True if the (integer) tile lies inside the rectangle. */
+export function inRect(r: Rect, x: number, y: number): boolean {
+  return Number.isInteger(x) && Number.isInteger(y) && x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
+}
+
 /** A ship's padded frame in sector tiles: its bbox (ShipC x, y, width, height) plus REGION_PAD. */
 export function shipFrame(ship: Ship): Rect {
-  return padded({ x: ship.x, y: ship.y, w: ship.width, h: ship.height }, REGION_PAD);
+  return padded(shipRect(ship), REGION_PAD);
 }
 
 /**
- * Every region, in ascending grid id: the fixed order field systems iterate in (never Map insertion order, so a load or
- * a different spawn order cannot reorder rng draws). Grids and their ships spawn with ascending ids, so this is also
- * ShipC query order, and the order systems always ran in.
+ * Every region, in ascending ship id: the fixed order field systems iterate in (never Map insertion order, so a load or
+ * a different spawn order cannot reorder rng draws). Ships spawn with ascending ids, which is the order systems always ran in.
  */
 export function regions(sim: Sim): Region[] {
-  const ships = new Map<number, number>();
-  for (const id of sim.world.query(ShipC)) {
-    const gridId = sim.world.get(id, ShipC)?.gridId;
-    if (gridId !== undefined && !ships.has(gridId)) ships.set(gridId, id);
+  const out: Region[] = [];
+  for (const ship of [...sim.world.query(ShipC)].sort((a, b) => a - b)) {
+    const s = sim.world.get(ship, ShipC) as Ship;
+    const bbox = shipRect(s);
+    out.push({ ship, grid: shipGridOf(sim.sector.grid, sim.world, ship) as ShipGrid, bbox, frame: padded(bbox, REGION_PAD) });
   }
-  return [...sim.grids.keys()].sort((a, b) => a - b).map((gridId) => {
-    const grid = sim.grids.get(gridId) as GridLike;
-    const bbox = { x: grid.x0, y: grid.y0, w: grid.width, h: grid.height };
-    return { gridId, grid, ship: ships.get(gridId) ?? 0, bbox, frame: padded(bbox, REGION_PAD) };
-  });
+  return out;
 }
 
 /** The `ShipC` entity owning the sector tile (x, y), or 0 (Space, or structure no ship owns). */
@@ -54,43 +71,39 @@ export function shipAt(sim: Sim, x: number, y: number): number {
   return sim.sector.grid.get('ship', x, y);
 }
 
-/** The grid id of the ship owning the sector tile (x, y), else of the grid whose rectangle or EVA ring holds it, or 0 (open Space). Bridges to gridId-keyed code until step 7 ends. */
-export function gridIdAt(sim: Sim, x: number, y: number): number {
-  const ship = shipAt(sim, x, y);
-  const owned = ship === 0 ? 0 : sim.world.get(ship, ShipC)?.gridId ?? 0;
-  if (owned !== 0) return owned;
-  // No owner: Space inside a grid's rectangle (or a fixture grid with no ship), else the EVA ring around one (its padded
-  // frame; frames never overlap). The lowest id wins a tie, as sorted iteration did.
+/**
+ * The ship id at the sector tile (x, y): the owner layer; else the lowest-id ship whose rectangle holds it (Space inside a
+ * bbox), else the lowest-id ship whose padded frame (the EVA ring) does (frames never overlap); else 0 (open Space).
+ */
+export function shipIdAt(sim: Sim, x: number, y: number): number {
+  const owner = shipAt(sim, x, y);
+  if (owner !== 0) return owner;
   let rect = 0;
   let ring = 0;
-  for (const [id, g] of sim.grids) {
-    if (g.inBounds(x, y)) {
+  for (const id of sim.world.query(ShipC)) {
+    const s = sim.world.get(id, ShipC) as Ship;
+    if (inRect(shipRect(s), x, y)) {
       if (rect === 0 || id < rect) rect = id;
-    } else if (ring === 0 || id < ring) {
-      if (x >= g.x0 - REGION_PAD && x < g.x0 + g.width + REGION_PAD && y >= g.y0 - REGION_PAD && y < g.y0 + g.height + REGION_PAD) ring = id;
-    }
+    } else if ((ring === 0 || id < ring) && inRect(shipFrame(s), x, y)) ring = id;
   }
   return rect !== 0 ? rect : ring;
 }
 
-/** The `ShipC` entity id of the ship whose grid `gridId` is, or 0. */
-export function shipOfGrid(sim: Sim, gridId: number): number {
-  if (gridId === 0) return 0;
-  for (const id of sim.world.query(ShipC)) if (sim.world.get(id, ShipC)?.gridId === gridId) return id;
-  return 0;
-}
-
-/** The ship id (`ShipC` entity) of the ship a placed thing stands on, by the same rule as `gridIdOf`; 0 for none. */
+/** The ship id of the ship a placed thing (anything with a sector tile `x`, `y`) stands on, by the rule of `shipIdAt`; 0 for none. */
 export function shipIdOf(sim: Sim, at: { x: number; y: number } | undefined): number {
-  if (!at) return 0;
-  const owner = shipAt(sim, at.x, at.y);
-  return owner !== 0 ? owner : shipOfGrid(sim, gridIdAt(sim, at.x, at.y));
+  return at ? shipIdAt(sim, at.x, at.y) : 0;
 }
 
-/** Write `ship` as the owner of every non-Space tile of a grid (stamping a ship into the sector). */
-export function stampOwner(grid: GridLike, ship: number): void {
-  for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
-    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+/** True if the tile lies inside the rectangle of ship `ship` (false for no such ship). The bound every on-ship rule uses. */
+export function inShip(sim: Sim, ship: number, x: number, y: number): boolean {
+  const s = ship ? sim.world.get(ship, ShipC) : undefined;
+  return !!s && inRect(shipRect(s), x, y);
+}
+
+/** Write `ship` as the owner of every non-Space tile of its rectangle (stamping a ship into the sector). */
+export function stampOwner(grid: GridLike, ship: number, rect: Rect): void {
+  for (let y = rect.y; y < rect.y + rect.h; y++) {
+    for (let x = rect.x; x < rect.x + rect.w; x++) {
       if (grid.get('struct', x, y) !== Struct.Space && grid.get('ship', x, y) !== ship) grid.set('ship', x, y, ship);
     }
   }
@@ -108,28 +121,4 @@ export function placementGapError(sim: Sim, bbox: Rect): 'overlap' | 'tooClose' 
     if (intersects(reach, r.frame)) close = true;
   }
   return close ? 'tooClose' : null;
-}
-
-/**
- * Ships whose grid window is not where their `ShipC` says (window origin != ShipC x, y, or a different size), as readable
- * messages; empty when every window agrees. Ships without a window (lifted, or a fixture ShipC with no grid) are skipped.
- * The coordinate flip (step 6) relies on this holding everywhere, so tests assert it.
- */
-export function windowShipMismatches(sim: Sim): string[] {
-  const out: string[] = [];
-  for (const id of sim.world.query(ShipC)) {
-    const s = sim.world.get(id, ShipC) as Ship;
-    const g = sim.grids.get(s.gridId);
-    if (!g) continue;
-    const ox = g.x0, oy = g.y0;
-    if (ox !== s.x || oy !== s.y || g.width !== s.width || g.height !== s.height) {
-      out.push(`ship ${id} (grid ${s.gridId}): ShipC ${s.x},${s.y} ${s.width}x${s.height}, window ${ox},${oy} ${g.width}x${g.height}`);
-    }
-  }
-  return out;
-}
-
-/** The grid id of the ship a placed thing (a module, anything with a sector tile `x`, `y`) stands on; 0 for none. */
-export function gridIdOf(sim: Sim, at: { x: number; y: number } | undefined): number {
-  return at ? gridIdAt(sim, at.x, at.y) : 0;
 }

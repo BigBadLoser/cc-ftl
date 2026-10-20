@@ -1,8 +1,9 @@
-import { shipOf } from '../combat/ships';
+
 import { DeployC, ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { gridIdOf } from '../regions';
+import { shipIdOf } from '../regions';
+import { shipById } from '../combat/ships';
 
 /**
  * Roof parts (weapon turrets, shield dishes, AI sensor masts, point-defence turrets) move toward a target of 1 (out) or 0 (stowed) at
@@ -19,7 +20,7 @@ export function deploySystem(sim: Sim): void {
       d = { amount: 0 };
       sim.world.add(id, DeployC, d);
     }
-    const state = shipOf(sim, gridIdOf(sim, m))?.state;
+    const state = shipById(sim, shipIdOf(sim, m))?.state;
     const alive = m.powered && m.hp > 0 && state !== 'wreck' && state !== 'fled';
     const wanted = def.aiCore ? alive : alive && sim.sector.inCombat;
     const step = 1 / (Math.max(def.deploySec, 0.05) * TICK_HZ);

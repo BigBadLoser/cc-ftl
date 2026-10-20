@@ -1,28 +1,49 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ShipC } from '../combat/components';
+
+import { CombatC } from '../combat/components';
 import {
   CrewC, DraftedC, HealthC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
+
 import { findPath } from '../crew/pathfind';
+
 import type { SimEvent } from '../events';
 import { hitChance } from '../fight/weapons';
+
 import { ModuleC } from '../modules/components';
+
 import { placementError, spawnModule } from '../modules/spawn';
-import { AirlockC, SuitC } from '../portals/components';
+
+import { SuitC } from './components';
+
+import { AirlockC } from '../modules/airlock';
+
 import type { ContentRegistry, ModuleDef } from '../registry';
 import { deserialize, serialize } from '../save';
-import { gridFromTemplate } from '../ship';
-import { windowShipMismatches } from '../regions';
+
+import { stampShip } from '../combat/ships';
+
+import { shipGrid } from '../regions';
+
 import { Sim } from '../sim';
-import { shipEntityOf } from '../combat/ships';
+
+
 import { stat } from '../stats';
+
 import { Struct } from '../structure';
+
 import { CREW_MAX_HP, DEFAULT_SUIT } from '../tuning';
-import { airlockTiles } from '../portals/airlock';
+
+import { airlockTiles } from '../modules/airlock';
+
 import { isEvaWalkable } from '../structure';
+
 import { airlockSuits, suitAir } from './suit';
+
 import { planWalk } from './route';
-import { gridIdOf } from '../regions';
+
+import { shipIdOf } from '../regions';
+
 
 // The docking airlock of content/modules.ts, powered by nothing (power 0 counts as running).
 const airlockDef: ModuleDef = {
@@ -61,23 +82,24 @@ function ring(): string[] {
 function world(ships = 1, gap = 5, at2?: { x: number; y: number }): Sim {
   const sim = new Sim(7, content);
   const rots = [1, 3];
+  const origins: { x: number; y: number }[] = [];
+  // Ships first, so their ids are 1 and 2 (the first entities); then each airlock.
   for (let g = 1; g <= ships; g++) {
     const origin = g === 1 ? { x: 0, y: 0 } : (at2 ?? { x: (g - 1) * (14 + gap - 1), y: 0 });
-    sim.grids.stamp(g, gridFromTemplate(g, { name: `s${g}`, rows: ring() }), origin.x, origin.y);
+    origins.push(origin);
+    const ship = stampShip(sim, { name: `s${g}`, rows: ring() }, { faction: 'player', x: origin.x, y: origin.y });
+    sim.world.add(ship, CombatC, { hold: false, volley: false, target: null, doctrine: 'random', ftl: 0, shield: { layers: 0, max: 0, timer: 0 }, evasion: 0, aiTimer: 0 });
+  }
+  for (let g = 1; g <= ships; g++) {
+    const origin = origins[g - 1] as { x: number; y: number };
     const rot = rots[g - 1] as number;
     const at = rot === 1 ? { x: origin.x + 9, y: origin.y + 5 } : { x: origin.x + 1, y: origin.y + 5 }; // sector tiles
     expect(placementError(sim, g, 'airlock', at.x, at.y, rot)).toBeNull();
-    spawnModule(sim, g, 'airlock', at.x, at.y, rot);
-    const ship = sim.world.createEntity();
-    sim.world.add(ship, ShipC, {
-      gridId: g, name: `s${g}`, faction: 'player', state: 'active', x: origin.x, y: origin.y, width: 14, height: 14, hullMax: 0, integrity: 1,
-    });
-    sim.world.add(ship, CombatC, { hold: false, volley: false, target: null, doctrine: 'random', ftl: 0, shield: { layers: 0, max: 0, timer: 0 }, evasion: 0, aiTimer: 0 });
+    spawnModule(sim, 'airlock', at.x, at.y, rot);
   }
-  expect(windowShipMismatches(sim)).toEqual([]);
   return sim;
 }
-function crew(sim: Sim, gridId: number, x: number, y: number, o: { drafted?: boolean; species?: string; prio?: Priorities } = {}): number {
+function crew(sim: Sim, shipId: number, x: number, y: number, o: { drafted?: boolean; species?: string; prio?: Priorities } = {}): number {
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name: 'T', role: 'r', species: o.species ?? 'species.human', appearanceSeed: 1, activity: 'idle' });
   sim.world.add(id, PositionC, { x, y, toX: x, toY: y, progress: 0, facing: 0 });
@@ -97,12 +119,12 @@ function run(sim: Sim, n: number, events: SimEvent[] = []): SimEvent[] {
   }
   return events;
 }
-const airlockOf = (sim: Sim, gridId: number): number => sim.world.query(AirlockC).find((id) => gridIdOf(sim, sim.world.get(id, ModuleC)) === gridId) as number;
+const airlockOf = (sim: Sim, shipId: number): number => sim.world.query(AirlockC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === shipId) as number;
 /** Hold the vented patches empty and the rest of the ship at full pressure (a breach plus working life support). */
 const drain = (sim: Sim): void => {
   const patch = vacuum.get(sim);
   if (!patch) return;
-  const g = sim.grids.get(1)!;
+  const g = shipGrid(sim, 1)!;
   for (let y = 2; y < 12; y++) for (let x = 2; x < 12; x++) g.set('o2', x, y, patch.some(([px, py]) => px === x && py === y) ? 0 : 21);
 };
 const vacuum = new WeakMap<Sim, number[][]>();
@@ -245,11 +267,11 @@ describe('pathing', () => {
     const c = crew(sim, 1, 3, 3);
     vent(sim, 3, 7, 7, 11);
     run(sim, 2);
-    sim.enqueue({ type: 'job.build', ship: shipEntityOf(sim, 1), x: 5, y: 9, struct: Struct.Wall });
+    sim.enqueue({ type: 'job.build', ship: 1, x: 5, y: 9, struct: Struct.Wall });
     const ev = run(sim, 20 * 60);
     expect(ev.filter((e) => e.type === 'suit.donned')).toHaveLength(1);
     expect(ev.some((e) => e.type === 'crew.jobDone')).toBe(true);
-    expect(sim.grids.get(1)!.get('struct', 5, 9)).toBe(Struct.Wall);
+    expect(shipGrid(sim, 1)!.get('struct', 5, 9)).toBe(Struct.Wall);
     expect(sim.world.get(c, HealthC)!.hp).toBe(CREW_MAX_HP);
     run(sim, 20 * 30, ev);
     expect(ev.filter((e) => e.type === 'suit.doffed')).toHaveLength(1);
@@ -263,8 +285,8 @@ describe('pathing', () => {
     const c = crew(sim, 1, 5, 6);
     vent(sim, 3, 7, 7, 11);
     run(sim, 2);
-    sim.enqueue({ type: 'job.build', ship: shipEntityOf(sim, 1), x: 5, y: 9, struct: Struct.Wall }); // 2 steps away, deep in the vacuum
-    sim.enqueue({ type: 'job.build', ship: shipEntityOf(sim, 1), x: 10, y: 3, struct: Struct.Wall }); // 5 steps away, clean air
+    sim.enqueue({ type: 'job.build', ship: 1, x: 5, y: 9, struct: Struct.Wall }); // 2 steps away, deep in the vacuum
+    sim.enqueue({ type: 'job.build', ship: 1, x: 10, y: 3, struct: Struct.Wall }); // 5 steps away, clean air
     run(sim, 3);
     const mine = [...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)!).find((j) => j.reservedBy === c);
     expect(mine && [mine.x, mine.y]).toEqual([10, 3]);
@@ -274,9 +296,9 @@ describe('pathing', () => {
     const d = crew(sim2, 1, 5, 6);
     vent(sim2, 3, 7, 7, 11);
     run(sim2, 2);
-    sim2.enqueue({ type: 'job.build', ship: shipEntityOf(sim2, 1), x: 5, y: 9, struct: Struct.Wall });
+    sim2.enqueue({ type: 'job.build', ship: 1, x: 5, y: 9, struct: Struct.Wall });
     run(sim2, 20 * 20);
-    expect(sim2.grids.get(1)!.get('struct', 5, 9)).not.toBe(Struct.Wall);
+    expect(shipGrid(sim2, 1)!.get('struct', 5, 9)).not.toBe(Struct.Wall);
     expect(sim2.world.get(d, HealthC)!.hp).toBe(CREW_MAX_HP);
     expect(lock).toBeGreaterThan(0);
   });
@@ -293,8 +315,8 @@ describe('outside on the hull', () => {
     sim.enqueue({ type: 'crew.moveTo', id: c, x: out.x, y: out.y });
     run(sim, 20 * 30);
     expect(sim.world.get(c, PositionC)).toMatchObject({ x: out.x, y: out.y });
-    expect(gridIdOf(sim, sim.world.get(c, PositionC))).toBe(1);
-    expect(sim.grids.get(1)!.get('struct', out.x, out.y)).toBe(Struct.Space);
+    expect(shipIdOf(sim, sim.world.get(c, PositionC))).toBe(1);
+    expect(shipGrid(sim, 1)!.get('struct', out.x, out.y)).toBe(Struct.Space);
     expect(suitAir(sim, c)).toBeLessThan(DEFAULT_SUIT.airSec);
     expect(sim.world.get(c, HealthC)!.hp).toBe(CREW_MAX_HP);
     sim.enqueue({ type: 'crew.moveTo', id: c, x: 6, y: 6 });
@@ -309,7 +331,7 @@ describe('outside on the hull', () => {
     sim.enqueue({ type: 'crew.moveTo', id: c, x: at.x, y: at.y });
     const ev = run(sim, 2);
     expect(ev.some((e) => e.type === 'command.rejected' && (e as { reason: string }).reason === 'notWalkable')).toBe(true);
-    const g = sim.grids.get(1)!;
+    const g = shipGrid(sim, 1)!;
     expect(isEvaWalkable(g, at.x, at.y)).toBe(true);
     expect(isEvaWalkable(g, 0, 0)).toBe(true); // diagonal to the hull corner
     expect(isEvaWalkable(g, 6, 6)).toBe(false); // floor
@@ -319,16 +341,16 @@ describe('outside on the hull', () => {
     const sim = world();
     const c = crew(sim, 1, 2, 2);
     sim.enqueue({ type: 'suit.set', crew: c, worn: true });
-    for (let x = 2; x <= 10; x++) sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), x, y: 3, kind: Struct.Wall });
-    for (const y of [2, 4]) sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), x: 1, y, kind: Struct.Space }); // breaches: a short way round outside
+    for (let x = 2; x <= 10; x++) sim.enqueue({ type: 'debug.setStruct', ship: 1, x, y: 3, kind: Struct.Wall });
+    for (const y of [2, 4]) sim.enqueue({ type: 'debug.setStruct', ship: 1, x: 1, y, kind: Struct.Space }); // breaches: a short way round outside
     run(sim, 2);
-    const g = sim.grids.get(1)!;
+    const g = shipGrid(sim, 1)!;
     const outside = (steps: { x: number; y: number }[]): boolean => steps.some((s) => g.get('struct', s.x, s.y) === Struct.Space);
     const inside = planWalk(sim, c, 1, { x: 2, y: 2 }, { x: 2, y: 4 })!;
     expect(outside(inside.steps)).toBe(false);
     expect(inside.steps.length).toBeGreaterThan(14); // about 3x the 6 steps outside
     // With the inside way shut, the route goes outside.
-    sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), x: 11, y: 3, kind: Struct.Wall });
+    sim.enqueue({ type: 'debug.setStruct', ship: 1, x: 11, y: 3, kind: Struct.Wall });
     run(sim, 2);
     expect(outside(planWalk(sim, c, 1, { x: 2, y: 2 }, { x: 2, y: 4 })!.steps)).toBe(true);
   });

@@ -1,5 +1,5 @@
 import { ALT, BodyC } from '../body';
-import { shipById, shipEntityOf, shipOf } from '../combat/ships';
+import { shipById } from '../combat/ships';
 import { releaseBedClaim } from '../crew/beds';
 import {
   CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PathC, PositionC, type Crew,
@@ -8,7 +8,7 @@ import { killCrew } from '../crew/death';
 import { releaseAssignment } from '../crew/helpers';
 import { spillItems } from '../items/stacks';
 import { ModuleC } from '../modules/components';
-import { CrossingC } from '../portals/components';
+
 import type { VehicleDef } from '../registry';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
@@ -16,7 +16,7 @@ import { BLEED_OUT_SECONDS, SKILL_STEP } from '../tuning';
 import { TICK_HZ } from '../time';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
 import { bayCenter, boardingTile, dockPoint, hoverPoint } from './geometry';
-import { gridIdOf, shipIdOf, shipOfGrid } from '../regions';
+import { shipIdOf } from '../regions';
 
 /** The content def of a vehicle entity, or undefined. */
 export function vehicleDefOf(sim: Sim, v: Vehicle): VehicleDef | undefined {
@@ -53,7 +53,7 @@ export function spawnVehicle(sim: Sim, defId: string, bay: number): number {
   if (!def || !bm || !mod || sim.content.modules[mod.def]?.vehicleBay?.class !== def.class) throw new Error(`spawnVehicle: bad def "${defId}" or bay ${bay}`);
   const id = sim.world.createEntity();
   sim.world.add(id, VehicleC, {
-    def: defId, homeShip: shipEntityOf(sim, gridIdOf(sim, mod)), home: bay, state: 'stowed', hp: def.maxHp,
+    def: defId, homeShip: (shipIdOf(sim, mod)), home: bay, state: 'stowed', hp: def.maxHp,
     pilot: 0, passengers: [], dest: null, dock: 0, cargo: [],
   });
   sim.world.add(id, BodyC, { x: c.x, y: c.y, heading: 0, alt: ALT.stowed });
@@ -66,7 +66,7 @@ export function boardCrew(sim: Sim, crew: number, vehicle: number): 'pilot' | 'p
   const v = sim.world.get(vehicle, VehicleC) as Vehicle;
   releaseAssignment(sim, crew);
   releaseBedClaim(sim, crew);
-  for (const key of [EmbarkOrderC, DraftedC, PositionC, PathC, CrossingC, CarriedC]) sim.world.remove(crew, key);
+  for (const key of [EmbarkOrderC, DraftedC, PositionC, PathC, CarriedC]) sim.world.remove(crew, key);
   sim.world.add(crew, AboardC, { vehicle });
   (sim.world.get(crew, CrewC) as Crew).activity = 'idle';
   const role = v.pilot === 0 ? 'pilot' : 'passenger';
@@ -80,17 +80,17 @@ export function boardCrew(sim: Sim, crew: number, vehicle: number): 'pilot' | 'p
  * Put a crew member back on a grid tile. Crew landing on a ship of another faction than their vehicle's are drafted
  * (they stand where they land until ordered), so enemy boarders do not wander off to do the defenders' chores.
  */
-export function unboardCrew(sim: Sim, crew: number, vehicle: number, at: { gridId: number; x: number; y: number }): void {
+export function unboardCrew(sim: Sim, crew: number, vehicle: number, at: { shipId: number; x: number; y: number }): void {
   const v = sim.world.get(vehicle, VehicleC) as Vehicle;
   if (v.pilot === crew) v.pilot = 0;
   v.passengers = v.passengers.filter((c) => c !== crew);
   sim.world.remove(crew, AboardC);
   sim.world.add(crew, PositionC, { x: at.x, y: at.y, toX: at.x, toY: at.y, progress: 0, facing: 0 });
   sim.world.add(crew, PathC, { steps: [] });
-  const intruder = shipOf(sim, at.gridId)?.faction !== vehicleFaction(sim, v);
+  const intruder = shipById(sim, at.shipId)?.faction !== vehicleFaction(sim, v);
   if (intruder) sim.world.add(crew, DraftedC, { target: null });
   (sim.world.get(crew, CrewC) as Crew).activity = intruder ? 'drafted' : 'idle';
-  sim.events.emit({ type: 'crew.disembarked', crew, vehicle, ship: shipOfGrid(sim, at.gridId), x: at.x, y: at.y });
+  sim.events.emit({ type: 'crew.disembarked', crew, vehicle, ship: at.shipId, x: at.x, y: at.y });
 }
 
 /**
@@ -144,7 +144,7 @@ export function vehicleLostWithBay(sim: Sim, id: number): void {
 }
 
 /** Drop the hangar's shuttle when a bay module is removed (deconstructed): crew step out, the shuttle becomes an item. */
-export function releaseBayVehicle(sim: Sim, bay: number, gridId: number, x: number, y: number): void {
+export function releaseBayVehicle(sim: Sim, bay: number, shipId: number, x: number, y: number): void {
   const b = sim.world.get(bay, VehicleBayC);
   const v = b && sim.world.get(b.vehicle, VehicleC);
   if (!b || !v) return;
@@ -152,7 +152,7 @@ export function releaseBayVehicle(sim: Sim, bay: number, gridId: number, x: numb
     const at = boardingTile(sim, b.vehicle);
     for (const crew of occupants(v)) if (at) unboardCrew(sim, crew, b.vehicle, at);
     const item = Object.entries(sim.content.items).find(([, d]) => d.vehicle === v.def)?.[0];
-    if (item) spillItems(sim, gridId, x, y, item, 1);
+    if (item) spillItems(sim, shipId, x, y, item, 1);
     sim.world.destroyEntity(b.vehicle);
   } else {
     v.home = 0;
