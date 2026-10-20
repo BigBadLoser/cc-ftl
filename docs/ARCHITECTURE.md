@@ -147,8 +147,10 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
 **Crew.**
 - Composited at runtime from **sprite layers**: a species body plus slot layers (hair, eyes, arms,
   implants, clothing, gear).
-- Every layer has the same frame layout (8 directions x clip frames) and the same anchor, so the layers
-  always line up.
+- Every layer has the same fixed frame size and anchor (`tools/blender/sprites/crew_spec.py`), and one sheet
+  per clip (8 directions x that clip's frames), so the layers always line up and a new item or clip never
+  touches existing sheets. A layer lacking a clip falls back to idle, or is hidden for the seated clips
+  (`resolveClip` in `src/render/loadout.ts`).
 - Layers are rendered in Blender with the rest of the character as a **holdout**, so the hidden parts
   are already cut out. Layers then stack in a fixed order in every direction.
 - Which layers to use comes from sim components (species, role gear, implants, injuries, appearance
@@ -218,6 +220,20 @@ palette.json    the single palette, read by Blender scripts and the game
   only in the glow pass.
 - **Crew:** about 60 px tall at 1x, 8 directions (no mirroring, since characters are asymmetric),
   clips at fixed frame counts (idle 4, walk 8, work 6, and more as needed).
+  - **Sheets:** one per item and clip, `crew.human.torso.tee.walk` (+ `.glow` twin). The manifest layer
+    `crew.human.torso.tee` lists its clips, each with its `sheet`. Every layer uses one fixed frame (128x120, feet
+    anchor 64,94; `crew_spec.py`), so the frame never depends on what was rendered.
+  - **Render cache and incremental builds** (`crew_build.py`, `crew_cache.py`, `crew_digest.py`; details in
+    `tools/blender/README.md`): `npm run sprites -- -- public/assets crew` renders only the entries the gitignored
+    cache (`.cache/sprites/crew`) lacks. One entry is one item, clip, direction and frame, keyed by a hash of the
+    item's geometry, its holdout items' geometry, the clip, and the global inputs (rig, base, render code, settings,
+    frame size). `--item`, `--clip`, `--force` and `--plan` narrow or force it.
+  - **Cost of changes:** a new item or clip renders only itself. Changing a default item re-renders the layers
+    above it (they hold it out). A rig, base, render-setting or frame-size change re-renders all crew.
+  - **Rigid gear, later:** rigid, non-deforming gear (the pack, helmet, goggles) could be rendered once per
+    direction and attached to the body's head/back anchor per frame at runtime, instead of being rendered per
+    clip. The fixed frame and per-clip sheets make that a local change (a layer would list a `rigid` sheet and
+    per-frame anchor offsets in its clips), but it is not built.
 - **EVA spacesuit** (`sprites/human_suit.py`): human layers in the existing slots, not wired yet.
   - Layers:
     - `torso.eva`, `legs.eva`, `arm.L.eva`, `arm.R.eva`;
@@ -227,7 +243,7 @@ palette.json    the single palette, read by Blender scripts and the game
   - While the helmet is worn, the runtime should skip the `hair` and `eyes` slots. The pack is hidden when
     seated, like the engineer rig.
   - Suit layers cut only against the body and each other, so they never cut ordinary clothing.
-  - New clip `eva_float` (4 frames) in every human sheet: drifting, tilted, legs trailing, with the pack's
+  - New clip `eva_float` (4 frames) on the body and the suit layers only: drifting, tilted, legs trailing, with the pack's
     thrust puffs on the glow sheet. Map an EVA state to it in `clipFor`; walking in a suit uses `walk`.
 - **Robot crew** (`sprites/robots.py`, `robot_kit.py`, `robot_render.py`): rigid parts on a joint rig, not skinned.
   - One body layer per type, in the crew layer format: `crew.robot.body.worker`, `crew.robot.body.repair` (hover

@@ -49,7 +49,7 @@ class Assets:
 
     def frame(self, aid, d, clip, i):
         a = self.m["assets"][aid]
-        sh = self.m["sheets"][a["sheet"]]
+        sh = self.m["sheets"][a["clips"][clip].get("sheet", a.get("sheet"))]
         col, fw, fh = a["clips"][clip]["start"] + i, a["frameW"], a["frameH"]
         sl = (slice(d * fh, (d + 1) * fh), slice(col * fw, (col + 1) * fw))
         return self.img(sh["image"])[sl], (self.img(sh["glow"])[sl] if "glow" in sh else None), a["anchor"]

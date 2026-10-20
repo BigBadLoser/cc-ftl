@@ -1,5 +1,5 @@
 import { Assets, Rectangle, Texture } from 'pixi.js';
-import { MANIFEST_VERSION, type LayerAsset, type Manifest, type StaticAsset } from './manifest';
+import { MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest, type StaticAsset } from './manifest';
 
 /** Base URL of the asset folder. `VITE_ASSET_BASE` only relocates it (used to point at a fixture). */
 export function assetBase(): string {
@@ -19,8 +19,10 @@ export interface StaticSprite {
 
 export interface LayerSprite {
   def: LayerAsset;
-  frame(dir: number, col: number): Texture;
-  glowFrame(dir: number, col: number): Texture | null;
+  /** Frame `col` (= clip.start + frame index) of direction `dir` in the clip's sheet. */
+  frame(clip: ClipDef, dir: number, col: number): Texture;
+  /** Same cell of the clip's glow sheet, or null if that sheet has no glow. */
+  glowFrame(clip: ClipDef, dir: number, col: number): Texture | null;
 }
 
 export interface Atlas {
@@ -84,17 +86,21 @@ export async function loadAtlas(base = assetBase()): Promise<Atlas> {
     };
   };
   const makeLayer = (id: string, a: LayerAsset): LayerSprite => {
-    const s = sheet(a.sheet);
-    const cut = (src: Texture, tag: string, dir: number, col: number): Texture => {
-      const key = `${id}|${tag}|${dir}|${col}`;
+    const cut = (clip: ClipDef, tag: 'i' | 'g', dir: number, col: number): Texture | null => {
+      const name = clip.sheet ?? a.sheet;
+      if (!name) throw new Error(`Layer "${id}" has no sheet for a clip`);
+      const s = sheet(name);
+      const src = tag === 'i' ? s.image : s.glow;
+      if (!src) return null;
+      const key = `${name}|${tag}|${dir}|${col}`;
       let t = cache.get(key);
       if (!t) cache.set(key, (t = sub(src, col * a.frameW, dir * a.frameH, a.frameW, a.frameH)));
       return t;
     };
     return {
       def: a,
-      frame: (dir, col) => cut(s.image, 'i', dir, col),
-      glowFrame: (dir, col) => (a.glow && s.glow ? cut(s.glow, 'g', dir, col) : null),
+      frame: (clip, dir, col) => cut(clip, 'i', dir, col) as Texture,
+      glowFrame: (clip, dir, col) => cut(clip, 'g', dir, col),
     };
   };
 

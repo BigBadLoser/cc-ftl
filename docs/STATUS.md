@@ -37,6 +37,35 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
+## Crew sprite pipeline (branch `crew-pipeline`, from `main`; not merged; awaiting user review)
+
+Details in `tools/blender/README.md` (Crew layers, Incremental builds) and `docs/ARCHITECTURE.md` (Asset pipeline, Crew).
+- **Per-clip sheets:** `crew.human.torso.tee.walk` (+ `.glow`), one per item and clip; layer ids are unchanged and the manifest
+  layer lists `clips.<name> = {sheet, start: 0, frames, fps, loop}`. Items only get the clips they need (no `sit_*` for
+  `gear.back`, `eva_float` only for body and suit). Runtime: `resolveClip` (`src/render/loadout.ts`): a missing clip plays idle,
+  a missing `sit_idle` hides the layer (a standing pose would clip through the chair), `sit_work` falls back to `sit_idle`.
+  Robots keep their single-sheet format (`LayerAsset.sheet`, clip without `sheet`); the loader handles both.
+- **Fixed frame:** `crew_spec.py`, 128x120, feet anchor (64, 94) (was a union box of 104x91 / 52,76). Current gear needs 76 above,
+  15 below, 52 to each side. Changing it re-renders all crew.
+- **Render cache:** `.cache/sprites/crew` (gitignored). `npm run sprites -- -- public/assets crew [--item S] [--clip C] [--force] [--plan]`
+  renders only misses and prints hits/misses. Keys cover the item's geometry digest, its holdout items, the clip (its own pose code
+  only) and the global inputs (rig, GLB, render code, palette, frame). Item registry `human_items.py` and clip table
+  `crew_clips.py` are outside the global hash on purpose. A changed default item re-renders the layers above it (inherent).
+- **Numbers (4 cores):** old full crew build 40m15s (7400 frames). New full build 29-38m (6296 frames; the spread is machine
+  load); re-run 100% hits 2-4 s; new dummy item 65 s (248 frames); new dummy clip on all items 94 s (400 frames); one forced
+  item+clip 17 s. Reverting a dummy returns the manifest byte for byte.
+- **Not pixel-identical to the old sheets, and cannot be:** Cycles hashes its per-pixel sample jitter from the pixel position in the
+  canvas, so the larger canvas (art shifted 12/18 px) re-rolls shading: 0.01% of pixels change silhouette, 14.7% of opaque pixels
+  one shade band (silhouettes and look unchanged; `crew_check.py` sheets and in-game screenshots match). Rebuilding the OLD code
+  reproduces the committed sheets exactly. Compare tool: `tools/blender/review/crew_sheet_compare.py <old dir> <new dir>`.
+- **Bug fixed on the way:** `human_base.Regions` picked the dominant bone of a face with `max(set(...))`, so ties depended on the
+  string hash seed and the body/arm/torso geometry differed between processes (4 faces). Now sorted: builds are deterministic.
+- **Sampling-noise caveat:** a single entry re-rendered in another process after a scene change can differ at a few pixels; the cache
+  is the source of truth.
+- **Follow-up (not built):** render rigid, non-deforming gear once per direction and attach it per frame at runtime
+  (needs per-frame attachment offsets in the clip data); robots on the same per-clip layout and fixed frame; lazy loading of
+  clip sheets (now about 200 crew images load up front).
+
 ## Event system (branch `events`, based on `eva`; not merged; awaiting user approval of the in-game look)
 
 Design in `docs/DESIGN.md` (Exploration & events); schema and "adding an event" in `docs/ARCHITECTURE.md` (Events). Sim in
