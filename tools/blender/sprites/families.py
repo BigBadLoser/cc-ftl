@@ -15,6 +15,7 @@
   galley    the food pack: galley (food printer), rations, mess table and chair (galley.py, mess.py)
   derelict  derelict dressing: breached walls, scorch, debris, dead lights, infestation, AI scrap (derelict*.py)
   damage    .damaged / .destroyed of the modules (damage.py: a pass over each module's own idle build)
+  damage_sol  the same for Sol's packs (engine, AI core, shield generators), in a Blender job per pack (sol_damage.py)
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   storage_set lockers, racks, pallets, containers, tanks, cold stores, armories: 3 fills x 4 rotations (storage_set.py;
             MODPACK_ROTS=1 renders r0 only, for quick previews)
@@ -84,4 +85,4 @@ def jobs(name):
 
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "structure", "galley", "derelict", "eggsac")
-ALL = RENDERED + ("sol",)
+ALL = RENDERED + ("sol", "damage_sol")

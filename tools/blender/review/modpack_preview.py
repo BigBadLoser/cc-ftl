@@ -104,12 +104,42 @@ def damage(P, pub, out):
     grid(P, pub, out, rows[half:], ("intact", "damaged", "damaged.flicker", "destroyed"), "damage-b")
 
 
+SOL_ROWS = [("engine", (4, 5), [("module.engine.hull.r0", False), ("module.engine.machine.r0", True),
+                                ("module.engine.bell.r0", True)]),
+            ("AI core", (2, 2), [("module.ai_core.r0", True)]),
+            ("shield gen", (2, 3), [("module.shield_gen.r0", True)]),
+            ("shield gen small", (2, 2), [("module.shield_gen_small.r0", True)])]
+
+
+def sol(P, pub, out):
+    """Sol's packs: each cell layers the parts (the engine's hull wall stays intact)."""
+    cols = ("intact", "damaged", "damaged.flicker", "destroyed")
+    CW, CH = 520, 420
+    cv = Canvas(CW * len(cols) + 140, CH * len(SOL_ROWS))
+    for i, (label, (w, d), parts) in enumerate(SOL_ROWS):
+        for j, col in enumerate(cols):
+            ox, oy = 140 + j * CW + CW // 2 - (w - d) * 16 - 40, i * CH + 230 - (w + d) * 8
+            for gx in range(-1, w + 1):
+                for gy in range(-1, d + 1):
+                    cv.static(pub, "tile.floor.a", *iso(ox, oy, gx, gy))
+            for aid, dmg in parts:
+                ids = [aid] if col == "intact" or not dmg else [f"{aid}.{col}", f"{aid}.damaged"]
+                A, a = _find(P, pub, ids)
+                if A:
+                    cv.static(A, a, *iso(ox, oy, w - 1, d - 1))
+            if i == 0:
+                cv.labels.append((140 + j * CW + CW // 2 - 30, 4, col))
+        cv.labels.append((6, i * CH + CH // 2, label))
+    cv.save(out / "sol-2x.png", 2)
+    cv.save(out / "sol-1x.png", 1)
+
+
 def main():
     P, out, which = Assets(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
     pub = Assets(ROOT / "public/assets")
     out.mkdir(parents=True, exist_ok=True)
-    if which == "damage":
-        damage(P, pub, out)
+    if which in ("damage", "sol"):
+        (damage if which == "damage" else sol)(P, pub, out)
         print("wrote", out)
         return
     mods, states, crew_at = SETS[which]

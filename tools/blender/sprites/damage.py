@@ -152,6 +152,15 @@ def _slump(ob, rnd, lo, hi, lean):
     me.update()
 
 
+def _grid(c, nv):
+    """A Blender-space hit (point, normal) in the grid frame (core.G flips y)."""
+    return Vector((c.x, -c.y, c.z)), Vector((nv.x, -nv.y, nv.z))
+
+
+def _grid_box(lo, hi):
+    return Vector((lo.x, -hi.y, lo.z)), Vector((hi.x, -lo.y, hi.z))
+
+
 def _orient(nv):
     """(rz, sizes order) to lay a thin box flat against a face of normal nv: its thin axis along nv."""
     if abs(nv.z) > 0.7:
@@ -159,8 +168,10 @@ def _orient(nv):
     return math.atan2(nv.y, nv.x), True
 
 
-def _hole(objs, c, nv, electric, rnd, r=0.22):
-    """Punch the panel out round the hit and set a dark cavity behind it (live wire stubs in an electrical module)."""
+def _hole(objs, hw, hg, electric, rnd, r=0.22):
+    """Punch the panel out round the hit and set a dark cavity behind it (live wire stubs in an electrical module).
+    hw: the hit in Blender space (to find the faces), hg: the same hit in the grid frame core.Mesh builds in."""
+    c, nv = hw
     for ob in objs:
         me = ob.data
         mw = ob.matrix_world
@@ -174,9 +185,11 @@ def _hole(objs, c, nv, electric, rnd, r=0.22):
         bm.free()
         me.update()
     m = core.Mesh("hole")
+    c, nv = hg
     rz, side = _orient(nv)
     q = c - nv * 0.06
-    m.box(tuple(q), (0.08, 0.38, 0.38) if side else (0.38, 0.38, 0.08), "dark", rz=rz)
+    e = r * 1.7
+    m.box(tuple(q), (0.08, e, e) if side else (e, e, 0.08), "dark", rz=rz)
     if electric:                                                            # wire stubs out of the cavity
         for k in range(2):
             e = c + nv * 0.05 + Vector((0, 0, -0.04 + k * 0.08))
@@ -184,8 +197,9 @@ def _hole(objs, c, nv, electric, rnd, r=0.22):
     return m.build()
 
 
-def _flap(objs, c, nv, rnd):
-    """A panel of the module's own colour bent out at the hit."""
+def _flap(objs, hw, hg, rnd):
+    """A panel of the module's own colour bent out at the hit (hw / hg: as _hole)."""
+    c = hw[0]
     best, col = 9.0, None
     for ob in objs:
         cen, _, att = _faces(ob)
@@ -194,6 +208,7 @@ def _flap(objs, c, nv, rnd):
             if d < best and att["Glow"][i].max() < 0.001:
                 best, col = d, att["Col"][i].copy()
     m = core.Mesh("flap")
+    c, nv = hg
     rz, side = _orient(nv)
     m.box(tuple(c + nv * 0.07 + Vector((0, 0, 0.04))), (0.04, 0.34, 0.3) if side else (0.34, 0.3, 0.04),
           "steelD", rz=rz, rx=-0.75 if side else 0.6)
@@ -255,32 +270,35 @@ def _debris(lo, hi, rnd, n=9):
     return m.build()
 
 
-def apply(objs, level, sid, electric=True):
+def apply(objs, level, sid, electric=True, debris=True):
     """Damage the built objects of one sprite in place; returns the object list (with the added parts).
     level: damaged, damaged.flicker (the same damage, every surviving light dimmed, no sparks) or destroyed."""
-    objs = [o for o in objs if o.type == "MESH" and len(o.data.polygons)]
+    keep = [o for o in objs if not (o.type == "MESH" and "Col" in o.data.color_attributes and len(o.data.polygons))]
+    objs = [o for o in objs if o not in keep]                                # only palette meshes take damage
     seed = sid.replace(".damaged.flicker", ".damaged")                      # the flicker frame repeats the damage
     rnd = random.Random(zlib.crc32(seed.encode()))
     lo, hi = _bbox(objs)
-    out = list(objs)
+    out = list(objs) + keep
     if level.startswith("damaged"):
         area = (hi.x - lo.x) * (hi.y - lo.y)
-        hits = _hits(objs, rnd, 3 + (area > 1.5) + (area > 3.0), lo, hi)                # more hits on bigger modules
+        hits = _hits(objs, rnd, min(8, 3 + int(area / 1.5)), lo, hi)                     # more hits on bigger modules
+        k = min(2.2, max(1.0, math.sqrt(area) / 1.5))                                      # and bigger damage
         for ob in objs:
-            _dent(ob, hits, rnd)
-            _scorch(ob, hits, rnd)
+            _dent(ob, hits, rnd, r=0.38 * k, depth=0.14 * k)
+            _scorch(ob, hits, rnd, r=0.55 * k)
+        hg = [_grid(c, nv) for c, nv in hits]                              # core.Mesh builds in the grid frame
         if hits:
-            out.append(_hole(objs, *hits[0], electric, rnd))
+            out.append(_hole(objs, hits[0], hg[0], electric, rnd, r=0.22 * k))
         if len(hits) > 1:
-            out.append(_flap(objs, *hits[1], rnd))
+            out.append(_flap(objs, hits[1], hg[1], rnd))
         if electric and hits:
-            sp = _sparks(*hits[0], rnd)
+            sp = _sparks(*hg[0], rnd)
             if level == "damaged":
                 out.append(sp)
             else:
                 bpy.data.objects.remove(sp, do_unlink=True)
         elif sid.startswith("module.storage"):
-            out.append(_spill(lo, hi, rnd))
+            out.append(_spill(*_grid_box(lo, hi), rnd))
         if level == "damaged.flicker":
             _dim(objs)
     else:
@@ -288,13 +306,14 @@ def apply(objs, level, sid, electric=True):
         for ob in objs:
             _slump(ob, rnd, lo, hi, lean)
             _char(ob, rnd)
-        out.append(_debris(lo, hi, rnd))
+        if debris:
+            out.append(_debris(*_grid_box(lo, hi), rnd))
     bpy.context.view_layer.update()
     return out
 
 
-def wrap(builder, level, sid, electric=True):
-    return lambda: apply(builder(), level, sid, electric)
+def wrap(builder, level, sid, electric=True, debris=True):
+    return lambda: apply(builder(), level, sid, electric, debris)
 
 
 # ---- jobs -----------------------------------------------------------------------------------------------------------
