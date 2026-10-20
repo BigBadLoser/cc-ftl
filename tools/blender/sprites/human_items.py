@@ -1,6 +1,7 @@
 """Assembles the human layer items (the item registry). Adding an item = add its builder to human_base/human_gear/
 human_suit and list it here. Deliberately outside the render-cache code hash: an item's geometry digest (crew_digest.py)
 decides what re-renders, so editing this file re-renders only items whose geometry changed."""
+import os
 import bpy
 from . import core
 from . import human_base as hb
@@ -12,6 +13,9 @@ from . import crew_clips as clips
 
 
 def build_items():
+    if os.environ.get("CREW_BASE", "v2") == "v2":   # the game-size base (human_v2); CREW_BASE=old builds the realistic one
+        from . import human_v2_items
+        return human_v2_items.build_items()
     core.setup_scene()
     arm = import_base()
     body = bpy.data.objects["skin@body.team.skin"]
