@@ -80,6 +80,9 @@ export function shuttleHome(world: World, bay: number): boolean {
 export const bayId = (asset: string, rot: number, state: string): string => `${asset}.r${rot}${state ? `.${state}` : ''}`;
 export const parkedId = (rot: number, state: string): string => `vehicle.shuttle.parked.r${rot}${state ? `.${state}` : ''}`;
 
+/** The parked shuttle sorts over the bay's own glow and halo (key + 0.01 / 0.015), so the pit's lights never paint over it. */
+export const PARKED_DZ = 0.019;
+
 /**
  * Sprite layers of a vehicle bay, bottom first: the bay (pit, doors, gangway, towers and claws), then the shuttle parked in
  * it, rendered with that bay state as a holdout, so it is drawn after the bay and only shows where it is in front of it. Both
@@ -88,6 +91,6 @@ export const parkedId = (rot: number, state: string): string => `vehicle.shuttle
 export function vehicleBayLayers(m: Module, def: ModuleDef, s: BayStep): ModuleLayer[] {
   const a = def.asset;
   const out: ModuleLayer[] = [{ chain: [bayId(a, m.rot, s.bay), bayId(a, m.rot, ''), a], key: a, tiles: 'all', strips: true }];
-  if (s.shuttle !== null) out.push({ chain: [parkedId(m.rot, s.shuttle), parkedId(m.rot, '')], key: 'vehicle.shuttle.parked', tiles: 'all', strips: true });
+  if (s.shuttle !== null) out.push({ chain: [parkedId(m.rot, s.shuttle), parkedId(m.rot, '')], key: 'vehicle.shuttle.parked', tiles: 'all', strips: true, dz: PARKED_DZ });
   return out;
 }
