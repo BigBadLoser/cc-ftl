@@ -8,8 +8,8 @@ import { PD_CHANCE, PD_WINDOW, VEHICLE_PD_CHANCE, VEHICLE_PD_DAMAGE, VEHICLE_PD_
 import { VehicleC } from '../vehicles/components';
 import { dockPoint } from '../vehicles/geometry';
 import { damageVehicle, vehicleFaction } from '../vehicles/lifecycle';
-import { shipById, shipOf } from '../combat/ships';
-import { gridIdOf } from '../regions';
+import { gridOfShip, shipById, shipOf } from '../combat/ships';
+import { gridIdOf, shipOfGrid } from '../regions';
 
 /**
  * Point defence: each interceptable shot (missiles) gets one roll per working point-defence module on the target
@@ -43,7 +43,7 @@ export function pointDefenceSystem(sim: Sim): void {
     for (const g of guns) {
       if (!sim.rng.chance(PD_CHANCE)) continue;
       track(sim, g, p.x, p.y);
-      sim.events.emit({ type: 'projectile.intercepted', projectile: id, weapon: p.weapon, gridId: defender });
+      sim.events.emit({ type: 'projectile.intercepted', projectile: id, weapon: p.weapon, ship: shipOfGrid(sim, defender) });
       sim.world.destroyEntity(id);
       break;
     }
@@ -52,10 +52,10 @@ export function pointDefenceSystem(sim: Sim): void {
 }
 
 /** The grid whose point defence covers a shot's target: the ship itself, or a shuttle's home ship when it is close. */
-function defenderGrid(sim: Sim, t: { gridId: number; vehicle?: number }): number {
+function defenderGrid(sim: Sim, t: { ship: number; vehicle?: number }): number {
   const v = t.vehicle ? sim.world.get(t.vehicle, VehicleC) : undefined;
   const b = t.vehicle ? sim.world.get(t.vehicle, BodyC) : undefined;
-  if (!t.vehicle) return t.gridId;
+  if (!t.vehicle) return gridOfShip(sim, t.ship);
   const ship = v && shipById(sim, v.homeShip);
   if (!v || !b || !ship || Math.hypot(b.x - (ship.x + ship.width / 2), b.y - (ship.y + ship.height / 2)) > VEHICLE_PD_RANGE) return 0;
   return ship.gridId;

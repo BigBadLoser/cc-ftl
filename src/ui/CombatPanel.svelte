@@ -13,22 +13,22 @@
 
   const enemy = $derived<UiShipCombat | undefined>(combat.enemies.find((e) => e.state === 'active' || e.state === 'disabled') ?? combat.enemies[0]);
   const me = $derived(combat.player);
-  const aimed = $derived(me?.target && enemy && me.target.gridId === enemy.gridId ? me.target.moduleId : 0);
+  const aimed = $derived(me?.target && enemy && me.target.ship === enemy.ship ? me.target.moduleId : 0);
   const targets = $derived((enemy?.modules ?? []).filter((m) => m.kind !== 'other'));
 
   // A new hostile ship starts as the ship-wide target, so weapons fire without the player having to find the first tap.
   let autoAimed = 0;
   $effect(() => {
-    if (me && enemy && enemy.state !== 'wreck' && !me.target && autoAimed !== enemy.gridId) {
-      autoAimed = enemy.gridId;
-      api.dispatch({ type: 'combat.setTarget', shipGridId: me.gridId, weaponId: null, targetGridId: enemy.gridId, targetModuleId: 0 });
+    if (me && enemy && enemy.state !== 'wreck' && !me.target && autoAimed !== enemy.ship) {
+      autoAimed = enemy.ship;
+      api.dispatch({ type: 'combat.setTarget', ship: me.ship, weaponId: null, targetShip: enemy.ship, targetModuleId: 0 });
     }
   });
 
   function aim(moduleId: number) {
     if (!me || !enemy) return;
     picked = moduleId;
-    api.dispatch({ type: 'combat.setTarget', shipGridId: me.gridId, weaponId: null, targetGridId: enemy.gridId, targetModuleId: moduleId });
+    api.dispatch({ type: 'combat.setTarget', ship: me.ship, weaponId: null, targetShip: enemy.ship, targetModuleId: moduleId });
   }
   function tap(e: MouseEvent) {
     const hit = api.pickCombat(e.clientX, e.clientY);
@@ -46,10 +46,10 @@
       return;
     }
     const r = viewEl.getBoundingClientRect();
-    const key = `${enemy.gridId}|${r.left}|${r.top}|${r.width}|${r.height}`;
+    const key = `${enemy.ship}|${r.left}|${r.top}|${r.width}|${r.height}`;
     if (key === last) return;
     last = key;
-    api.setCombatView({ gridId: enemy.gridId, rect: { x: r.left, y: r.top, w: r.width, h: r.height } });
+    api.setCombatView({ ship: enemy.ship, rect: { x: r.left, y: r.top, w: r.width, h: r.height } });
   }
   onMount(() => {
     raf = requestAnimationFrame(track);
@@ -66,7 +66,7 @@
     <strong>Combat</strong>
     <span class="sp"></span>
     {#if enemy}<button title="Call them on the radio: only ships that are not hostile answer" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}>Hail</button>{/if}
-    <button title="Center the camera between the ships" onclick={() => api.focusFight(enemy?.gridId ?? null)}>Frame</button>
+    <button title="Center the camera between the ships" onclick={() => api.focusFight(enemy?.ship ?? null)}>Frame</button>
     <button aria-label="Close combat panel" data-testid="combat-close" onclick={onClose}>×</button>
   </header>
 

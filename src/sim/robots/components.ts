@@ -2,11 +2,12 @@ import { defineComponent } from '../ecs';
 import type { Faction } from '../combat/components';
 
 /**
- * A robot run by an AI core: it acts only while the ship on grid `gridId` (its home) has a live AI core (intact,
+ * A robot run by an AI core: it acts only while the ship `ship` (its home) has a live AI core (intact,
  * powered, not hacked) and still belongs to the robot's faction. Given to core-linked species spawned on rogue ships.
  */
 export interface CoreLink {
-  gridId: number;
+  /** Home ship (`ShipC` entity id). */
+  ship: number;
   /** The faction the robot was built for; a held hack lends it to the hacker's side, and it returns to this. */
   faction: Faction;
 }

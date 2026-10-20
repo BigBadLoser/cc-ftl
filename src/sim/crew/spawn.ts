@@ -1,5 +1,6 @@
 import type { Faction } from '../combat/components';
 import { AllegianceC } from '../fight/components';
+import { shipOfGrid } from '../regions';
 import { CoreLinkC } from '../robots/components';
 import type { Sim } from '../sim';
 import { CREW_MAX_HP } from '../tuning';
@@ -33,6 +34,6 @@ export function createCrew(
   const hp = species.maxHp ?? CREW_MAX_HP;
   sim.world.add(id, HealthC, { hp, max: hp });
   sim.world.add(id, AllegianceC, { faction: opts.faction });
-  if (species.coreLinked && opts.faction === 'rogue') sim.world.add(id, CoreLinkC, { gridId, faction: 'rogue' });
+  if (species.coreLinked && opts.faction === 'rogue') sim.world.add(id, CoreLinkC, { ship: shipOfGrid(sim, gridId), faction: 'rogue' });
   return id;
 }

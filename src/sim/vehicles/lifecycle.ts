@@ -16,7 +16,7 @@ import { BLEED_OUT_SECONDS, SKILL_STEP } from '../tuning';
 import { TICK_HZ } from '../time';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
 import { bayCenter, boardingTile, dockPoint, hoverPoint } from './geometry';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipIdOf, shipOfGrid } from '../regions';
 
 /** The content def of a vehicle entity, or undefined. */
 export function vehicleDefOf(sim: Sim, v: Vehicle): VehicleDef | undefined {
@@ -90,7 +90,7 @@ export function unboardCrew(sim: Sim, crew: number, vehicle: number, at: { gridI
   const intruder = shipOf(sim, at.gridId)?.faction !== vehicleFaction(sim, v);
   if (intruder) sim.world.add(crew, DraftedC, { target: null });
   (sim.world.get(crew, CrewC) as Crew).activity = intruder ? 'drafted' : 'idle';
-  sim.events.emit({ type: 'crew.disembarked', crew, vehicle, gridId: at.gridId, x: at.x, y: at.y });
+  sim.events.emit({ type: 'crew.disembarked', crew, vehicle, ship: shipOfGrid(sim, at.gridId), x: at.x, y: at.y });
 }
 
 /**
@@ -172,10 +172,9 @@ export function destPoint(sim: Sim, v: Vehicle, from: { x: number; y: number }):
 /** Leave a dock: the body is freed where it is (the dock point) and the vehicle hovers there. */
 export function undock(sim: Sim, id: number, v: Vehicle): void {
   const airlock = v.dock;
-  const gridId = gridIdOf(sim, sim.world.get(airlock, ModuleC)) ?? 0;
   v.state = 'flying';
   v.dock = 0;
   v.dest = null;
-  sim.events.emit({ type: 'vehicle.undocked', vehicle: id, gridId, airlock });
+  sim.events.emit({ type: 'vehicle.undocked', vehicle: id, ship: shipIdOf(sim, sim.world.get(airlock, ModuleC)), airlock });
 }
 

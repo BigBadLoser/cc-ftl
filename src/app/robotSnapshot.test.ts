@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, newGame, openTilesOf, PLAYER_START, type Sim } from '../sim';
+import { ModuleC, newGame, openTilesOf, PLAYER_START, type Sim, shipEntityOf } from '../sim';
 import { cradleOf } from '../sim/robots/bay';
 import { content } from '../content';
 import { buildRobotBay } from './robotSnapshot';
@@ -10,7 +10,7 @@ const run = (sim: Sim, n: number) => {
 };
 /** Place a bay at starter-ship tile (x, y) (the ship is stamped at PLAYER_START). */
 const place = (sim: Sim, x: number, y: number, rot: number): number => {
-  sim.enqueue({ type: 'debug.spawnModule', gridId: 1, x: PLAYER_START.x + x, y: PLAYER_START.y + y, def: 'module.robotBay', rot });
+  sim.enqueue({ type: 'debug.spawnModule', ship: shipEntityOf(sim, 1), x: PLAYER_START.x + x, y: PLAYER_START.y + y, def: 'module.robotBay', rot });
   run(sim, 2);
   return sim.world.query(ModuleC).find((i) => {
     const m = sim.world.get(i, ModuleC)!;

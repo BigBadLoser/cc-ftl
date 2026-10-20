@@ -20,18 +20,17 @@
 
   type Kind = 'hostile' | 'prize' | 'station' | 'ship';
   const icons: Record<Kind, IconName> = { hostile: 'skull', prize: 'prize', station: 'station', ship: 'ship' };
-  /** Stations have no grid (gridId 0), so they are keyed by minus their entity id. */
-  const key = (p: { id: number; gridId: number }) => (p.gridId > 0 ? p.gridId : -p.id);
-  /** Every other grid in the node, once, with the most specific kind winning. */
+  /** Every other ship or station in the node, once, with the most specific kind winning. Keyed by entity id (a station's is its trader's). */
   const nodes = $derived.by(() => {
-    const out: { gridId: number; name: string; kind: Kind }[] = [];
-    const add = (gridId: number, name: string, kind: Kind) => {
-      if (gridId !== 1 && gridId !== 0 && !out.some((o) => o.gridId === gridId)) out.push({ gridId, name, kind });
+    const out: { ship: number; name: string; kind: Kind }[] = [];
+    const home = combat.player?.ship ?? 0;
+    const add = (ship: number, name: string, kind: Kind) => {
+      if (ship !== home && ship !== 0 && !out.some((o) => o.ship === ship)) out.push({ ship, name, kind });
     };
-    for (const p of prizes) add(p.gridId, p.name, 'prize');
-    for (const e of combat.enemies) add(e.gridId, e.name, 'hostile');
-    for (const p of trade.partners) add(key(p), p.name, p.kind);
-    for (const t of shuttles.targets) add(t.gridId, t.name, 'ship');
+    for (const p of prizes) add(p.ship, p.name, 'prize');
+    for (const e of combat.enemies) add(e.ship, e.name, 'hostile');
+    for (const p of trade.partners) add(p.id, p.name, p.kind);
+    for (const t of shuttles.targets) add(t.ship, t.name, 'ship');
     return out;
   });
 </script>
@@ -39,8 +38,8 @@
 <!-- What else is in this node. Click to jump the camera to it and open its panel. -->
 {#if nodes.length}
   <span class="nodes" data-testid="nodes">
-    {#each nodes as n (n.gridId)}
-      <button class="tile" class:on={selected === n.gridId} class:foe={n.kind === 'hostile'} title="{n.name} ({n.kind})" aria-label={n.name} data-testid="node-{n.gridId}" data-kind={n.kind} onclick={() => api.selectGrid(n.gridId)}><Icon name={icons[n.kind]} size={20} /></button>
+    {#each nodes as n (n.ship)}
+      <button class="tile" class:on={selected === n.ship} class:foe={n.kind === 'hostile'} title="{n.name} ({n.kind})" aria-label={n.name} data-testid="node-{n.ship}" data-kind={n.kind} onclick={() => api.selectShip(n.ship)}><Icon name={icons[n.kind]} size={20} /></button>
     {/each}
   </span>
 {/if}

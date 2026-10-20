@@ -1,4 +1,4 @@
-import { CrewC, DeadC, ModuleC, PositionC, airlockSuits, roomTiles, type Sim } from '../sim';
+import { CrewC, DeadC, ModuleC, PositionC, airlockSuits, roomTiles, shipEntityOf, type Sim } from '../sim';
 import { buildRobotBay } from './robotSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import type { UiModule, UiModuleDef, UiStats } from '../ui/api';
@@ -15,12 +15,13 @@ export function localOf(sim: Sim, gridId: number, x: number, y: number): { x: nu
 /** Plain-data module list for the UI. Reads the sim, never mutates it. */
 export function buildModuleList(sim: Sim): UiModule[] {
   const out: UiModule[] = [];
+  const home = shipEntityOf(sim, GRID);
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (!m || !def || gridIdOf(sim, m) !== GRID) continue;
     out.push({
-      id, def: m.def, name: def.name, x: m.x, y: m.y, local: localOf(sim, gridIdOf(sim, m), m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp,
+      id, ship: home, def: m.def, name: def.name, x: m.x, y: m.y, local: localOf(sim, gridIdOf(sim, m), m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp,
       priority: m.priority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
       storage: !!def.storage, crafting: !!def.crafting, bay: def.robotBay ? buildRobotBay(sim, id) : null,
       suits: def.airlock ? { stowed: airlockSuits(sim, id), max: def.airlock.suits ?? 0 } : null,

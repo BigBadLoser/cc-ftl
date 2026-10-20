@@ -1,4 +1,5 @@
 import type { Faction } from '../combat/components';
+import { gridOfShip } from '../combat/ships';
 import { CrewC, DeadC, DraftedC, PositionC, type Crew } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { AllegianceC, PrisonerC } from '../fight/components';
@@ -40,11 +41,12 @@ export function robotsSystem(sim: Sim): void {
       sim.world.remove(id, InertC);
       continue;
     }
-    const link = sim.world.get(id, CoreLinkC) as { gridId: number; faction: Faction };
-    const key = `${link.gridId}:${link.faction}`;
+    const link = sim.world.get(id, CoreLinkC) as { ship: number; faction: Faction };
+    const home = gridOfShip(sim, link.ship);
+    const key = `${link.ship}:${link.faction}`;
     let on = live.get(key);
-    if (on === undefined) live.set(key, (on = hasLiveCore(sim, link.gridId, link.faction)));
-    const owner = on ? link.faction : sim.world.has(id, PrisonerC) ? undefined : held.get(link.gridId);
+    if (on === undefined) live.set(key, (on = hasLiveCore(sim, home, link.faction)));
+    const owner = on ? link.faction : sim.world.has(id, PrisonerC) ? undefined : held.get(home);
     const allegiance = sim.world.get(id, AllegianceC);
     const inert = sim.world.has(id, InertC);
     if (!owner) {

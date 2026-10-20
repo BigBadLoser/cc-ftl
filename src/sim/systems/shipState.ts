@@ -49,10 +49,10 @@ export function shipStateSystem(sim: Sim): void {
     const disabled = ableCrew(sim, ship.gridId) === 0 || (sources > 0 && running === 0);
     if (disabled && ship.state === 'active') {
       ship.state = 'disabled';
-      sim.events.emit({ type: 'ship.disabled', gridId: ship.gridId });
+      sim.events.emit({ type: 'ship.disabled', ship: id });
     } else if (!disabled && ship.state === 'disabled') {
       ship.state = 'active';
-      sim.events.emit({ type: 'ship.recovered', gridId: ship.gridId });
+      sim.events.emit({ type: 'ship.recovered', ship: id });
     }
   }
 }

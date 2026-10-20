@@ -14,6 +14,7 @@ import { deserialize, serialize } from '../save';
 import { gridFromTemplate } from '../ship';
 import { windowShipMismatches } from '../regions';
 import { Sim } from '../sim';
+import { shipEntityOf } from '../combat/ships';
 import { stat } from '../stats';
 import { Struct } from '../structure';
 import { CREW_MAX_HP, DEFAULT_SUIT } from '../tuning';
@@ -244,7 +245,7 @@ describe('pathing', () => {
     const c = crew(sim, 1, 3, 3);
     vent(sim, 3, 7, 7, 11);
     run(sim, 2);
-    sim.enqueue({ type: 'job.build', gridId: 1, x: 5, y: 9, struct: Struct.Wall });
+    sim.enqueue({ type: 'job.build', ship: shipEntityOf(sim, 1), x: 5, y: 9, struct: Struct.Wall });
     const ev = run(sim, 20 * 60);
     expect(ev.filter((e) => e.type === 'suit.donned')).toHaveLength(1);
     expect(ev.some((e) => e.type === 'crew.jobDone')).toBe(true);
@@ -262,8 +263,8 @@ describe('pathing', () => {
     const c = crew(sim, 1, 5, 6);
     vent(sim, 3, 7, 7, 11);
     run(sim, 2);
-    sim.enqueue({ type: 'job.build', gridId: 1, x: 5, y: 9, struct: Struct.Wall }); // 2 steps away, deep in the vacuum
-    sim.enqueue({ type: 'job.build', gridId: 1, x: 10, y: 3, struct: Struct.Wall }); // 5 steps away, clean air
+    sim.enqueue({ type: 'job.build', ship: shipEntityOf(sim, 1), x: 5, y: 9, struct: Struct.Wall }); // 2 steps away, deep in the vacuum
+    sim.enqueue({ type: 'job.build', ship: shipEntityOf(sim, 1), x: 10, y: 3, struct: Struct.Wall }); // 5 steps away, clean air
     run(sim, 3);
     const mine = [...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)!).find((j) => j.reservedBy === c);
     expect(mine && [mine.x, mine.y]).toEqual([10, 3]);
@@ -273,7 +274,7 @@ describe('pathing', () => {
     const d = crew(sim2, 1, 5, 6);
     vent(sim2, 3, 7, 7, 11);
     run(sim2, 2);
-    sim2.enqueue({ type: 'job.build', gridId: 1, x: 5, y: 9, struct: Struct.Wall });
+    sim2.enqueue({ type: 'job.build', ship: shipEntityOf(sim2, 1), x: 5, y: 9, struct: Struct.Wall });
     run(sim2, 20 * 20);
     expect(sim2.grids.get(1)!.get('struct', 5, 9)).not.toBe(Struct.Wall);
     expect(sim2.world.get(d, HealthC)!.hp).toBe(CREW_MAX_HP);
@@ -318,8 +319,8 @@ describe('outside on the hull', () => {
     const sim = world();
     const c = crew(sim, 1, 2, 2);
     sim.enqueue({ type: 'suit.set', crew: c, worn: true });
-    for (let x = 2; x <= 10; x++) sim.enqueue({ type: 'debug.setStruct', gridId: 1, x, y: 3, kind: Struct.Wall });
-    for (const y of [2, 4]) sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 1, y, kind: Struct.Space }); // breaches: a short way round outside
+    for (let x = 2; x <= 10; x++) sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), x, y: 3, kind: Struct.Wall });
+    for (const y of [2, 4]) sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), x: 1, y, kind: Struct.Space }); // breaches: a short way round outside
     run(sim, 2);
     const g = sim.grids.get(1)!;
     const outside = (steps: { x: number; y: number }[]): boolean => steps.some((s) => g.get('struct', s.x, s.y) === Struct.Space);
@@ -327,7 +328,7 @@ describe('outside on the hull', () => {
     expect(outside(inside.steps)).toBe(false);
     expect(inside.steps.length).toBeGreaterThan(14); // about 3x the 6 steps outside
     // With the inside way shut, the route goes outside.
-    sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 11, y: 3, kind: Struct.Wall });
+    sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), x: 11, y: 3, kind: Struct.Wall });
     run(sim, 2);
     expect(outside(planWalk(sim, c, 1, { x: 2, y: 2 }, { x: 2, y: 4 })!.steps)).toBe(true);
   });

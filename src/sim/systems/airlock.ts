@@ -5,7 +5,7 @@ import { airlockTiles, airlockWorking } from '../portals/airlock';
 import { AirlockC, type Airlock } from '../portals/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipIdOf } from '../regions';
 
 /**
  * Airlock cycling. The two doors are never open together. A requested side only starts to cycle once the doorway that
@@ -32,7 +32,7 @@ export function airlockSystem(sim: Sim): void {
       if (a.timer <= 0) {
         a.timer = 0;
         a.state = a.state === 'toOuter' ? 'outer' : 'inner';
-        sim.events.emit({ type: 'airlock.cycled', gridId: gridIdOf(sim, m), module: id, side: a.state });
+        sim.events.emit({ type: 'airlock.cycled', ship: shipIdOf(sim, m), module: id, side: a.state });
       }
     } else if (a.request && a.request !== a.state && working && (def.airlock.layout || !occupied(sim, gridIdOf(sim, m), a.state === 'inner' ? t.inner : t.outer))) {
       a.state = a.request === 'outer' ? 'toOuter' : 'toInner';

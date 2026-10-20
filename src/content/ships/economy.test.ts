@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CarryingC, ModuleC, ProductionC, StorageC, deserialize, newGame, serialize, storageCount, totalStock, type Sim,
+  CarryingC, ModuleC, ProductionC, StorageC, deserialize, newGame, serialize, storageCount, totalStock, type Sim, shipEntityOf
 } from '../../sim';
 import { content } from '../index';
 import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
@@ -12,8 +12,8 @@ const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((i
 function busy(): Sim {
   const sim = newGame(11, content);
   sim.enqueue({ type: 'production.add', moduleId: find(sim, 'module.fabricator'), recipe: 'recipe.metal', mode: 'count', target: 3 });
-  sim.enqueue({ type: 'debug.spawnItems', gridId: 1, x: P0.x + 9, y: P0.y + 10, item: 'item.scrap', count: 30 });
-  sim.enqueue({ type: 'job.build', gridId: 1, x: P0.x + 12, y: P0.y + 6, struct: 2 });
+  sim.enqueue({ type: 'debug.spawnItems', ship: shipEntityOf(sim, 1), x: P0.x + 9, y: P0.y + 10, item: 'item.scrap', count: 30 });
+  sim.enqueue({ type: 'job.build', ship: shipEntityOf(sim, 1), x: P0.x + 12, y: P0.y + 6, struct: 2 });
   return sim;
 }
 

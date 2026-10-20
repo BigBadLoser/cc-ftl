@@ -11,7 +11,7 @@ import { openTilesOf } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { BAY_REPAIR_BELOW } from '../tuning';
 import { speciesOf } from './core';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipIdOf } from '../regions';
 
 /** True if the module is a robot bay. */
 export function isBay(sim: Sim, id: number): boolean {
@@ -116,7 +116,7 @@ export function performAssemble(sim: Sim, job: Job, speed: number): WorkResult {
   if (!robot) return 'done';
   bay.reservedBy = robot;
   consumeDelivered(job);
-  sim.events.emit({ type: 'robot.assembled', crew: robot, bay: job.target ?? 0, gridId: gridIdOf(sim, bay) });
+  sim.events.emit({ type: 'robot.assembled', crew: robot, bay: job.target ?? 0, ship: shipIdOf(sim, bay) });
   return 'done';
 }
 

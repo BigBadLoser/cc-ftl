@@ -117,7 +117,7 @@ export function spawnShip(
     });
   }
   spawnCrew(sim, gridId, template.crew ?? [], opts.rest);
-  sim.events.emit({ type: 'ship.spawned', gridId, faction: opts.faction });
+  sim.events.emit({ type: 'ship.spawned', ship, faction: opts.faction });
   return gridId;
 }
 

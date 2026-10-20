@@ -83,9 +83,9 @@ describe('capturing a ship', () => {
     expect(subdued()).toBe(true);
     expect(ship(sim, 2).state).toBe('active'); // nobody holds the helm yet
     const helm = helmTile(sim, 2);
-    sim.enqueue({ type: 'crew.moveTo', id: party[0]!, x: helm.x, y: helm.y, gridId: 2 });
+    sim.enqueue({ type: 'crew.moveTo', id: party[0]!, x: helm.x, y: helm.y, ship: shipEntityOf(sim, 2) });
     out.push(...run(sim, 900, () => ship(sim, 2).state === 'prize'));
-    expect(of(out, 'ship.captured')).toEqual([{ type: 'ship.captured', gridId: 2, by: 'player', from: 'hostile' }]);
+    expect(of(out, 'ship.captured')).toEqual([{ type: 'ship.captured', ship: shipEntityOf(sim, 2), by: 'player', from: 'hostile' }]);
     expect(ship(sim, 2)).toMatchObject({ state: 'prize', faction: 'player' });
     for (const c of raiders) expect(sim.world.has(c, DeadC) || sim.world.has(c, PrisonerC)).toBe(true);
     expect(sim.world.get(shipEntityOf(sim, 2), PrizeC)!.hullValue).toBeGreaterThan(0);
@@ -134,7 +134,7 @@ describe('capturing a ship', () => {
     expect(of(out, 'combat.ended')).toHaveLength(1);
     expect(sim.sector.inCombat).toBe(false);
     const after = run(sim, 600);
-    expect(of(after, 'weapon.fired').filter((e) => e.gridId === 2)).toHaveLength(0);
+    expect(of(after, 'weapon.fired').filter((e) => e.ship === shipEntityOf(sim, 2))).toHaveLength(0);
     for (const i of sim.world.query(WeaponC)) {
       if (gridIdOf(sim, sim.world.get(i, ModuleC)) === 2) expect(sim.world.get(i, WeaponC)).toMatchObject({ charge: 0, shotsLeft: 0 });
     }
@@ -167,15 +167,15 @@ describe('capturing a ship', () => {
   it('scuttling a prize turns it into a wreck, once nobody of ours is aboard', () => {
     const sim = setup();
     const { party } = stage(sim);
-    sim.enqueue({ type: 'ship.scuttle', gridId: 1 });
+    sim.enqueue({ type: 'ship.scuttle', ship: shipEntityOf(sim, 1) });
     expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ command: 'ship.scuttle', reason: 'notPrize' });
     capture(sim);
-    sim.enqueue({ type: 'ship.scuttle', gridId: 2 });
+    sim.enqueue({ type: 'ship.scuttle', ship: shipEntityOf(sim, 2) });
     expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'crewAboard' });
     for (const c of party) teleport(sim, c, 1, 5, 5);
-    sim.enqueue({ type: 'ship.scuttle', gridId: 2 });
+    sim.enqueue({ type: 'ship.scuttle', ship: shipEntityOf(sim, 2) });
     const out = run(sim, 2);
-    expect(of(out, 'ship.destroyed')).toEqual([{ type: 'ship.destroyed', gridId: 2 }]);
+    expect(of(out, 'ship.destroyed')).toEqual([{ type: 'ship.destroyed', ship: shipEntityOf(sim, 2) }]);
     expect(ship(sim, 2).state).toBe('wreck');
     expect(sim.world.has(shipEntityOf(sim, 2), PrizeC)).toBe(false);
     expect(crewOn(sim, 2).every((c) => sim.world.has(c, DeadC))).toBe(true);
@@ -217,7 +217,7 @@ describe('salvage and cargo', () => {
     run(sim, 1200, () => sim.world.get(shuttle, VehicleC)!.state === 'docked');
     expect(sim.world.get(shuttle, VehicleC)!.state).toBe('docked');
     const before = metal();
-    sim.enqueue({ type: 'job.deconstructModule', gridId: 2, x: tm.x, y: tm.y });
+    sim.enqueue({ type: 'job.deconstructModule', ship: shipEntityOf(sim, 2), x: tm.x, y: tm.y });
     run(sim, 3000, () => cargoCount(sim.world.get(shuttle, VehicleC)!) > 0 && !sim.world.query(ItemStackC).some((i) => gridIdAt(sim, sim.world.get(i, ItemStackC)!.x, sim.world.get(i, ItemStackC)!.y) === 2));
     expect(sim.world.has(target, ModuleC)).toBe(false);
     const hold = sim.world.get(shuttle, VehicleC)!.cargo;

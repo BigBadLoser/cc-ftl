@@ -8,6 +8,7 @@ import { storageCount } from '../items/storage';
 import type { ContentRegistry, ModuleDef, ShipTemplate } from '../registry';
 import { deserialize, serialize } from '../save';
 import { Sim } from '../sim';
+import { shipEntityOf } from '../combat/ships';
 import { CREW_MAX_HP, SURRENDER_HP_FRAC } from '../tuning';
 import { AllegianceC, EquipC, FighterC, SurrenderedC } from './components';
 import { sightLine } from './los';
@@ -125,7 +126,7 @@ describe('line of sight and cover', () => {
     expect(sightLine(sim, g, { x: 2, y: 2 }, { x: 5, y: 3 }).cover).toBe('none'); // beside the crate, not behind it
     expect(sightLine(sim, g, { x: 2, y: 2 }, { x: 6, y: 1 }).cover).toBe('none');
     const door = make(split());
-    door.enqueue({ type: 'debug.setField', gridId: 1, x: 10, y: 2, field: 'door', value: 255 });
+    door.enqueue({ type: 'debug.setField', ship: shipEntityOf(door, 1), x: 10, y: 2, field: 'door', value: 255 });
     run(door, 1);
     expect(sightLine(door, grid(door), { x: 4, y: 2 }, { x: 11, y: 2 }).cover).toBe('partial'); // doorway in front of the target
   });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CrewC, DeadC, DownedC, ModuleC, PositionC, newGame, shipOf, type Sim, type SimEvent,
+  CrewC, DeadC, DownedC, ModuleC, PositionC, newGame, shipOf, type Sim, type SimEvent, shipEntityOf
 } from '../../sim';
 import { content } from '../index';
 import { gridIdOf } from '../../sim/regions';
@@ -48,12 +48,12 @@ function fight(seed: number, mode: 'manned' | 'unmanned', minutes: number): Resu
     }) ?? 0;
   for (let t = 0; t < minutes * 60 * TPS; t++) {
     if (mode === 'manned' && t % 100 === 1) {
-      sim.enqueue({ type: 'combat.setTarget', shipGridId: 1, weaponId: null, targetGridId: 2, targetModuleId: raiderReactor() });
+      sim.enqueue({ type: 'combat.setTarget', ship: shipEntityOf(sim, 1), weaponId: null, targetShip: shipEntityOf(sim, 2), targetModuleId: raiderReactor() });
     }
     sim.step();
     const events: SimEvent[] = sim.events.drain();
     for (const e of events) {
-      if (e.type === 'module.destroyed' && e.gridId === 1) r.destroyed++;
+      if (e.type === 'module.destroyed' && e.ship === shipEntityOf(sim, 1)) r.destroyed++;
       if (e.type === 'crew.downed' && gridIdOf(sim, sim.world.get(e.crew, PositionC)) === 1) r.firstDownSec = Math.min(r.firstDownSec, t / TPS);
     }
     r.minIntegrity = Math.min(r.minIntegrity, shipOf(sim, 1)?.integrity ?? 1);

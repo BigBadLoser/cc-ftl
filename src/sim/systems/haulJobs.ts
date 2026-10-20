@@ -1,4 +1,4 @@
-import { gridIdAt } from '../regions';
+import { gridIdAt, shipIdOf } from '../regions';
 import { ItemStackC } from '../items/components';
 import { makeHaul, warnDue } from '../items/plan';
 import { nearestStorageFor, refKey, reservations } from '../items/stock';
@@ -21,7 +21,7 @@ export function haulJobsSystem(sim: Sim): void {
     const dest = nearestStorageFor(sim, gridIdAt(sim, stack.x, stack.y), stack.item, stack, res);
     if (!dest) {
       if (warnDue(sim, stack)) {
-        sim.events.emit({ type: 'storage.full', gridId: gridIdAt(sim, stack.x, stack.y), x: stack.x, y: stack.y, item: stack.item });
+        sim.events.emit({ type: 'storage.full', ship: shipIdOf(sim, stack), x: stack.x, y: stack.y, item: stack.item });
       }
       continue;
     }

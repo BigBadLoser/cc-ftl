@@ -14,14 +14,14 @@
     helm: 'Unmanned: no evasion, no escape',
   };
 
-  const setHold = (hold: boolean) => api.dispatch({ type: 'combat.setHold', gridId: me.gridId, hold });
-  const volley = () => api.dispatch({ type: 'combat.fireVolley', gridId: me.gridId });
-  const flee = () => api.dispatch({ type: 'combat.flee', gridId: me.gridId });
+  const setHold = (hold: boolean) => api.dispatch({ type: 'combat.setHold', ship: me.ship, hold });
+  const volley = () => api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
+  const flee = () => api.dispatch({ type: 'combat.flee', ship: me.ship });
   const aimWeapon = (weaponId: number, moduleId: number) => {
-    if (enemy) api.dispatch({ type: 'combat.setTarget', shipGridId: me.gridId, weaponId, targetGridId: enemy.gridId, targetModuleId: moduleId });
+    if (enemy) api.dispatch({ type: 'combat.setTarget', ship: me.ship, weaponId, targetShip: enemy.ship, targetModuleId: moduleId });
   };
   const clearWeapon = (weaponId: number) =>
-    api.dispatch({ type: 'combat.setTarget', shipGridId: me.gridId, weaponId, targetGridId: 0, targetModuleId: 0 });
+    api.dispatch({ type: 'combat.setTarget', ship: me.ship, weaponId, targetShip: 0, targetModuleId: 0 });
   const pickedName = $derived(enemy?.modules.find((m) => m.id === picked)?.name ?? 'whole ship');
 </script>
 

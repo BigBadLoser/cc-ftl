@@ -9,7 +9,7 @@ import { isTileWalkable } from '../modules/walk';
 import { airlockWorking } from '../portals/airlock';
 import { AirlockC } from '../portals/components';
 import { BodyC } from '../body';
-import { gridOfShip, shipById, shipOf } from '../combat/ships';
+import { shipById, shipOf } from '../combat/ships';
 import { outsideCrew } from '../eva/shuttle';
 import type { Sim } from '../sim';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
@@ -37,7 +37,7 @@ function launch(sim: Sim, id: number, v: Vehicle): string | null {
   v.state = 'flying';
   v.dest = null;
   const b = sim.world.get(id, BodyC);
-  sim.events.emit({ type: 'vehicle.launched', vehicle: id, gridId: gridOfShip(sim, v.homeShip), x: b?.x ?? 0, y: b?.y ?? 0 });
+  sim.events.emit({ type: 'vehicle.launched', vehicle: id, ship: v.homeShip, x: b?.x ?? 0, y: b?.y ?? 0 });
   return null;
 }
 

@@ -8,6 +8,8 @@ import type { ContentRegistry, ModuleDef } from '../registry';
 import { deserialize, serialize } from '../save';
 import { gridFromTemplate } from '../ship';
 import { Sim } from '../sim';
+import { ShipC } from '../combat/components';
+import { shipEntityOf } from '../combat/ships';
 import { Struct } from '../structure';
 import { CREW_MAX_HP } from '../tuning';
 import { AirlockC, CrossingC as CrossingKey, PortalC } from './components';
@@ -15,6 +17,14 @@ import { airlockTiles } from './airlock';
 import { cachedPath } from './pathCache';
 import { planRoute } from './route';
 import { gridIdOf } from '../regions';
+
+/** A fixture grid has no ship; commands address ships, so give it an inert one (a prize is skipped by every ship system). */
+function fixtureShip(sim: Sim, gridId: number): void {
+  const g = sim.grids.get(gridId)!;
+  sim.world.add(sim.world.createEntity(), ShipC, {
+    gridId, name: 'fixture', faction: 'player', state: 'prize', x: g.x0, y: g.y0, width: g.width, height: g.height, hullMax: 0, integrity: 1,
+  });
+}
 
 const airlockDef: ModuleDef = {
   name: 'Airlock', asset: 'a', footprint: [1, 4], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20,
@@ -40,6 +50,7 @@ function world(grids = 2): Sim {
   const sim = new Sim(5, content);
   for (let g = 1; g <= grids; g++) {
     sim.grids.set(g, gridFromTemplate(g, { name: `s${g}`, rows: SHIP }));
+    fixtureShip(sim, g);
     spawnModule(sim, g, 'airlock', X(g) + 4, 1, 0); // grids read sector tiles
   }
   return sim;
@@ -82,7 +93,7 @@ function journey(sim: Sim): number {
   link(sim);
   run(sim, 2);
   sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
-  sim.enqueue({ type: 'crew.moveTo', id: c, x: X2 + 5, y: 6, gridId: 2 });
+  sim.enqueue({ type: 'crew.moveTo', id: c, x: X2 + 5, y: 6, ship: shipEntityOf(sim, 2) });
   return c;
 }
 
@@ -135,13 +146,13 @@ describe('portals', () => {
     expect(pos).toMatchObject({ x: X2 + 5, y: 6 });
     expect(gridIdOf(sim, pos)).toBe(2);
     expect(events.filter((e) => e.type === 'crew.crossed')).toEqual([
-      expect.objectContaining({ crew: c, fromGridId: 1, toGridId: 2, kind: 'airlock' }),
+      expect.objectContaining({ crew: c, fromShip: shipEntityOf(sim, 1), toShip: shipEntityOf(sim, 2), kind: 'airlock' }),
     ]);
     expect(sim.world.get(c, DraftedC)!.target).toBeNull();
     expect(sim.world.get(c, PathC)!.then).toBeUndefined();
     expect(events.filter((e) => e.type === 'airlock.cycled').length).toBe(3); // A out, B out, B back in
     // And back again.
-    sim.enqueue({ type: 'crew.moveTo', id: c, x: 3, y: 6, gridId: 1 });
+    sim.enqueue({ type: 'crew.moveTo', id: c, x: 3, y: 6, ship: shipEntityOf(sim, 1) });
     run(sim, 700);
     expect(sim.world.get(c, PositionC)).toMatchObject({ x: 3, y: 6 });
     expect(gridIdOf(sim, sim.world.get(c, PositionC))).toBe(1);
@@ -162,7 +173,7 @@ describe('portals', () => {
     const c = crew(sim, 1, 3, 6);
     expect(planRoute(sim, c, { gridId: 1, x: 3, y: 6 }, { gridId: 2, x: X2 + 5, y: 6 })).toBeNull();
     sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
-    sim.enqueue({ type: 'crew.moveTo', id: c, x: X2 + 5, y: 6, gridId: 2 });
+    sim.enqueue({ type: 'crew.moveTo', id: c, x: X2 + 5, y: 6, ship: shipEntityOf(sim, 2) });
     run(sim, 100);
     expect(sim.world.get(c, PositionC)).toMatchObject({ x: 3, y: 6 });
     expect(gridIdOf(sim, sim.world.get(c, PositionC))).toBe(1);

@@ -7,7 +7,7 @@ import {
 } from '../sim';
 import type { UiCrew, UiFight } from '../ui/api';
 import { localOf } from './moduleSnapshot';
-import { gridIdOf } from '../sim/regions';
+import { gridIdOf, shipIdOf, shipOfGrid } from '../sim/regions';
 
 const STRUCT_LABEL: Record<number, string> = Object.fromEntries(Object.entries(Struct).map(([k, v]) => [v, k.toLowerCase()]));
 const NONE = Object.fromEntries(WORK_CATEGORIES.map((c) => [c, 0])) as Record<WorkCategory, number>;
@@ -174,7 +174,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     carriedBy: carrier ? (sim.world.get(carrier.carrier, CrewC)?.name ?? null) : null,
     carrying: sim.world.get(id, CarryingC) ?? null,
     side,
-    gridId: loc.gridId,
+    ship: shipOfGrid(sim, loc.gridId),
     where: loc.where,
     away: loc.gridId !== HOME,
     weapon: w.item === 'unarmed' ? null : { item: w.item, name: sim.content.items[w.item]?.name ?? w.item, ranged: w.def.kind === 'ranged', damage: w.def.damage, range: w.def.range },
@@ -203,11 +203,11 @@ export function buildCrewLists(sim: Sim): { crew: UiCrew[]; hostiles: UiCrew[] }
       const c = card(sim, ctx, id, 'player');
       if (!c) continue;
       crew.push(c);
-      if (c.gridId) occupied.add(c.gridId);
+      if (c.ship) occupied.add(c.ship);
     } else enemies.push(id);
   }
   for (const id of enemies) {
-    const g = gridIdOf(sim, sim.world.get(id, PositionC));
+    const g = shipIdOf(sim, sim.world.get(id, PositionC));
     if (!g || !occupied.has(g) || sim.world.has(id, DeadC)) continue;
     const c = card(sim, ctx, id, 'enemy');
     if (c) hostiles.push(c);

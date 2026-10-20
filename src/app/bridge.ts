@@ -1,4 +1,4 @@
-import { ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
+import { ItemStackC, Struct, gridOfShip, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
 import type { UiTrade, UiStory, UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
@@ -26,13 +26,16 @@ export interface Snapshot {
 }
 
 export interface TileRef {
-  gridId: number;
+  /** ShipC entity id of the ship the tile belongs to. */
+  ship: number;
   x: number;
   y: number;
 }
 
 /** Plain-data description of one tile, for the inspector. */
 export interface InspectSnapshot extends TileRef {
+  /** The ship's grid number, for the readout only. */
+  grid: number;
   /** The tile in its ship's local tiles (from the grid's top-left), for the readouts; `x`, `y` are sector tiles. */
   local: { x: number; y: number };
   structName: string;
@@ -121,15 +124,17 @@ export function createBridge(sim: Sim): Bridge {
 
   const refreshInspect = () => {
     const ref = selected ?? hovered;
-    const grid = ref ? sim.grids.get(ref.gridId) : undefined;
+    const gridId = ref ? gridOfShip(sim, ref.ship) : 0;
+    const grid = sim.grids.get(gridId);
     let snap: InspectSnapshot | null = null;
     if (ref && grid?.inBounds(ref.x, ref.y)) {
       const fields = grid.fieldNames().map((name) => ({ name, value: grid.get(name, ref.x, ref.y) }));
       const struct = fields.find((f) => f.name === 'struct')?.value ?? 0;
-      const sid = stackAt(sim, ref.gridId, ref.x, ref.y);
+      const sid = stackAt(sim, gridId, ref.x, ref.y);
       const st = sid ? sim.world.get(sid, ItemStackC) : undefined;
       snap = {
         ...ref,
+        grid: gridId,
         local: { x: ref.x - grid.x0, y: ref.y - grid.y0 },
         stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count } : null,
         structName: STRUCT_NAMES[struct] ?? `Unknown(${struct})`,

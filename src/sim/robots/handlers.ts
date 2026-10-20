@@ -1,4 +1,5 @@
 import { factionsHostile } from '../combat/factions';
+import { gridOfShip } from '../combat/ships';
 import { shipOf } from '../combat/ships';
 import { skillOf } from '../combat/operators';
 import type { Command } from '../commands';
@@ -86,9 +87,9 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     }
   },
   'debug.spawnCrew': (sim, cmd) => {
-    const grid = sim.grids.get(cmd.gridId);
+    const grid = sim.grids.get(gridOfShip(sim, cmd.ship));
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y) || !isTileWalkable(sim, grid, cmd.x, cmd.y)) return reject(sim, cmd.type, 'notWalkable');
-    const faction = cmd.faction ?? shipOf(sim, cmd.gridId)?.faction ?? 'player';
-    if (!createCrew(sim, cmd.gridId, cmd.role, { x: cmd.x, y: cmd.y }, { faction, rest: 100 })) return reject(sim, cmd.type, 'badRole');
+    const faction = cmd.faction ?? shipOf(sim, gridOfShip(sim, cmd.ship))?.faction ?? 'player';
+    if (!createCrew(sim, gridOfShip(sim, cmd.ship), cmd.role, { x: cmd.x, y: cmd.y }, { faction, rest: 100 })) return reject(sim, cmd.type, 'badRole');
   },
 };

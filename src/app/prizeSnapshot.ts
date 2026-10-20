@@ -22,7 +22,7 @@ export function buildPrizes(sim: Sim): UiPrize[] {
         });
       } else if (sim.world.get(c, AllegianceC)?.faction === 'player') aboard++;
     }
-    out.push({ gridId: ship.gridId, name: ship.name, from: prize.from, value: prizeValue(sim, ship.gridId), prisoners, crewAboard: aboard });
+    out.push({ ship: id, name: ship.name, from: prize.from, value: prizeValue(sim, ship.gridId), prisoners, crewAboard: aboard });
   }
   return out;
 }

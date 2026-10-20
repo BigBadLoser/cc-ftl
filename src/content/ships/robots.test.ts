@@ -50,7 +50,7 @@ const playerTile = (sim: Sim): { x: number; y: number } => {
   return { x: p.x, y: p.y };
 };
 function spawnRobot(sim: Sim, role = 'role.robot_worker', gridId = 1, at = playerTile(sim)): number {
-  sim.enqueue({ type: 'debug.spawnCrew', gridId, x: at.x, y: at.y, role });
+  sim.enqueue({ type: 'debug.spawnCrew', ship: shipEntityOf(sim, gridId), x: at.x, y: at.y, role });
   run(sim, 1);
   return Math.max(...sim.world.query(CrewC));
 }
@@ -162,7 +162,7 @@ describe('AI control and capture', () => {
     expect(robots).toHaveLength(3);
     for (const r of robots) {
       expect(sim.world.get(r, AllegianceC)!.faction).toBe('rogue');
-      expect(sim.world.get(r, CoreLinkC)!.gridId).toBe(2);
+      expect(sim.world.get(r, CoreLinkC)!.ship).toBe(shipEntityOf(sim, 2));
       expect(sim.world.has(r, InertC)).toBe(false);
     }
     sim.world.get(core(sim), ModuleC)!.enabled = false;
@@ -190,7 +190,7 @@ describe('AI control and capture', () => {
     c.hp = 0;
     const out = run(sim, 400, () => ship(sim, 2).state === 'prize');
     expect(ship(sim, 2)).toMatchObject({ state: 'prize', faction: 'player' });
-    expect(of(out, 'ship.captured')).toEqual([{ type: 'ship.captured', gridId: 2, by: 'player', from: 'rogue' }]);
+    expect(of(out, 'ship.captured')).toEqual([{ type: 'ship.captured', ship: shipEntityOf(sim, 2), by: 'player', from: 'rogue' }]);
   });
 
   it('inert robots are taken prisoner on capture and stay down', () => {
@@ -259,7 +259,7 @@ describe('robot fabricator', () => {
     expect(made).toHaveLength(2);
     expect(robotsOn(sim, 2)).toHaveLength(start + 2);
     expect(made.map((r) => roleOf(sim, r))).toEqual(['role.robot_worker', 'role.robot_security']);
-    for (const r of made) expect(sim.world.get(r, CoreLinkC)!.gridId).toBe(2);
+    for (const r of made) expect(sim.world.get(r, CoreLinkC)!.ship).toBe(shipEntityOf(sim, 2));
     sim.world.get(made[0]!, HealthC)!.hp = 0; // wrecked: the slot frees up
     expect(of(run(sim, 60), 'robot.fabricated')).toHaveLength(1);
     sim.world.get(core(sim), ModuleC)!.enabled = false;

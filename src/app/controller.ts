@@ -1,6 +1,6 @@
-import { gridIdOf } from '../sim/regions';
+import { gridIdOf, shipOfGrid } from '../sim/regions';
 import {
-  AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, footprintTiles, isWalkable, placementError, rotatedSize, type Sim, type SimEvent,
+  AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, footprintTiles, gridOfShip, isWalkable, placementError, rotatedSize, shipEntityOf, type Sim, type SimEvent,
 } from '../sim';
 import type { Renderer } from '../render/scene';
 import type { UiBuildKind, UiToolState } from '../ui/api';
@@ -19,10 +19,10 @@ export interface Controller {
   tool: Readable<UiToolState>;
   selectedCrew: Readable<number | null>;
   selectedModule: Readable<number | null>;
-  /** Another grid (ship or station) picked from the node strip, or null. */
-  selectedGrid: Readable<number | null>;
-  /** Select another grid and frame it in the camera (null clears). A negative id is a station (no grid): minus its entity id, no camera move. */
-  selectGrid(gridId: number | null): void;
+  /** Another ship or station picked from the node strip (a ShipC or trader entity id), or null. */
+  selectedShip: Readable<number | null>;
+  /** Select another ship or station and frame a ship in the camera (null clears). A station has no ship, so the camera stays. */
+  selectShip(ship: number | null): void;
   alerts: Alerts;
   toast: Readable<string | null>;
   setTool(state: Partial<UiToolState>): void;
@@ -41,7 +41,9 @@ export interface Controller {
 export function createController(sim: Sim, bridge: Bridge): Controller {
   const tool = createStore<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
   const modSel = createStore<number | null>(null);
-  const gridSel = createStore<number | null>(null);
+  const shipSel = createStore<number | null>(null);
+  /** The player's ship (home grid 1) as a ShipC entity id. */
+  const homeShip = () => shipEntityOf(sim, GRID);
   const alerts = createAlerts(sim);
   let modPos: Tile | null = null;
   const crewSel = createStore<number | null>(null);
@@ -59,12 +61,12 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   };
 
   const selectTile = (t: Tile | null) => {
-    gridSel.set(null);
+    shipSel.set(null);
     crewSel.set(null);
     modSel.set(null);
     r?.setSelectedCrew(null);
     r?.setSelection(t);
-    bridge.setSelected(t ? { gridId: GRID, ...t } : null);
+    bridge.setSelected(t ? { ship: homeShip(), ...t } : null);
   };
   /** Center the camera on a crew member: on their ship, or on the shuttle they ride. */
   const focusCrew = (id: number) => {
@@ -82,7 +84,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const selectCrew = (id: number | null, focus = false) => {
     if (id === null) return selectTile(null);
     modSel.set(null);
-    gridSel.set(null);
+    shipSel.set(null);
     crewSel.set(id);
     r?.setSelection(null);
     bridge.setSelected(null);
@@ -101,7 +103,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const def = m && sim.content.modules[m.def];
     if (id === null || !m || !def) return selectTile(null);
     crewSel.set(null);
-    gridSel.set(null);
+    shipSel.set(null);
     r?.setSelectedCrew(null);
     bridge.setSelected(null);
     modSel.set(id);
@@ -157,9 +159,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const { tool: t, build } = tool.get();
     if (t === 'build' && build === 'module') return;
     for (const { x, y } of shape()) {
-      if (t === 'build' && build !== 'module') sim.enqueue({ type: 'job.build', gridId: GRID, x, y, struct: BUILD_STRUCT[build] });
-      else if (t === 'deconstruct') sim.enqueue({ type: 'job.deconstruct', gridId: GRID, x, y });
-      else if (t === 'cancel') sim.enqueue({ type: 'job.cancel', gridId: GRID, x, y });
+      if (t === 'build' && build !== 'module') sim.enqueue({ type: 'job.build', ship: homeShip(), x, y, struct: BUILD_STRUCT[build] });
+      else if (t === 'deconstruct') sim.enqueue({ type: 'job.deconstruct', ship: homeShip(), x, y });
+      else if (t === 'cancel') sim.enqueue({ type: 'job.cancel', ship: homeShip(), x, y });
     }
     paintStart = paintEnd = null;
     refreshPreview();
@@ -173,7 +175,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const plan = modulePlan();
     if (!plan) return;
     if (plan.error) showToast(rejectionMessage(plan.error));
-    else sim.enqueue({ type: 'job.buildModule', gridId: GRID, x: plan.at.x, y: plan.at.y, def: plan.def, rot: tool.get().rot });
+    else sim.enqueue({ type: 'job.buildModule', ship: homeShip(), x: plan.at.x, y: plan.at.y, def: plan.def, rot: tool.get().rot });
   };
   const rotate = () => setTool({ rot: (tool.get().rot + 1) % 4 });
 
@@ -181,11 +183,12 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     tool,
     alerts,
     selectedModule: modSel,
-    selectedGrid: gridSel,
-    selectGrid(gridId) {
+    selectedShip: shipSel,
+    selectShip(ship) {
       selectTile(null);
-      if (gridId === null) return;
-      gridSel.set(gridId);
+      if (ship === null) return;
+      shipSel.set(ship);
+      const gridId = gridOfShip(sim, ship); // a station has no ship component, so no grid
       if (gridId > 0) r?.frameShips([gridId]);
     },
     selectedCrew: crewSel,
@@ -232,13 +235,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           const ag = any && sim.grids.get(any.gridId);
           if (any && ag && sel !== null && sim.world.has(sel, DraftedC) && isWalkable(ag.get('struct', any.x, any.y))) {
             const here = gridIdOf(sim, sim.world.get(sel, PositionC));
-            sim.enqueue({ type: 'crew.moveTo', id: sel, x: any.x, y: any.y, ...(here !== any.gridId ? { gridId: any.gridId } : {}) });
+            sim.enqueue({ type: 'crew.moveTo', id: sel, x: any.x, y: any.y, ...(here !== any.gridId ? { ship: shipOfGrid(sim, any.gridId) } : {}) });
           } else selectTile(tile);
         },
         onHover(t) {
           hover = t;
           if (!paintStart) modPos = null;
-          bridge.setHovered(t ? { gridId: GRID, ...t } : null);
+          bridge.setHovered(t ? { ship: homeShip(), ...t } : null);
           refreshPreview();
         },
         paintMode: () => tool.get().tool !== 'select',

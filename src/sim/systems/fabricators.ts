@@ -11,7 +11,7 @@ import { FabricatorC, type Fabricator } from '../robots/components';
 import { hasLiveCore } from '../robots/core';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipIdOf } from '../regions';
 
 /**
  * Robot fabricators (ModuleDef.robotFabricator): the seed of rogue AI shipyards. While intact, powered and on a ship
@@ -50,7 +50,7 @@ function build(sim: Sim, id: number, m: Module, def: ModuleDef, st: Fabricator, 
   st.timer = 0;
   st.count++;
   st.made.push(robot);
-  sim.events.emit({ type: 'robot.fabricated', crew: robot, moduleId: id, gridId: gridIdOf(sim, m) });
+  sim.events.emit({ type: 'robot.fabricated', crew: robot, moduleId: id, ship: shipIdOf(sim, m) });
 }
 
 /** The access tile if it is free, else the first free walkable tile in rings (up to 3) around the footprint. */

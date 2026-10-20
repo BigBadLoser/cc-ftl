@@ -1,4 +1,4 @@
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipOfGrid } from '../regions';
 import { CrewC, DeadC, PathC, PositionC, type Path, type Position } from '../crew/components';
 import { isIncapacitated, isSettled } from '../crew/helpers';
 import { isTileWalkable } from '../modules/walk';
@@ -88,6 +88,6 @@ function finish(sim: Sim, id: number, pos: Position, path: Path, portal: Portal,
   if (path.then?.length === 0) delete path.then;
   sim.events.emit({
     type: 'crew.crossed', crew: id, portal: portalId, kind: portal.kind,
-    fromGridId: source.gridId, toGridId: dest.gridId, x: dest.x, y: dest.y,
+    fromShip: shipOfGrid(sim, source.gridId), toShip: shipOfGrid(sim, dest.gridId), x: dest.x, y: dest.y,
   });
 }

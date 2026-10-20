@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  deserialize, gridIdAt, gridOfShip, newGame, serialize, Struct, windowShipMismatches, type Body, type Drafted, type Module, type Sim, type Vehicle,
+  deserialize, gridIdAt, gridOfShip, newGame, serialize, shipEntityOf, Struct, windowShipMismatches, type Body, type Drafted, type Module, type Sim, type Vehicle,
 } from '../../sim';
 import { content } from '../index';
 
@@ -55,6 +55,24 @@ function legacyWorld(sim: Sim): unknown {
     if (d.planned) out.planned = { ...d.planned, gridId: grid(d.planned) };
     return [id, out];
   });
+  // Step 7c: targets, projectile origins and robot home links hold ship ids; the old code held grid ids, under the old key
+  // names (`gridId`, `fromGridId`), in the same key positions.
+  const gridKeyed = (o: Record<string, unknown>, from: string, to: string): Record<string, unknown> =>
+    Object.fromEntries(Object.entries(o).map(([k, v]) => (k === from ? [to, gridOfShip(sim, v as number)] : [k, v])));
+  const target = (t: unknown): unknown => (t ? gridKeyed(t as Record<string, unknown>, 'ship', 'gridId') : t);
+  stores.combat = (stores.combat ?? []).map(([id, raw]) => {
+    const c = raw as Record<string, unknown>;
+    return [id, { ...c, target: target(c.target) }];
+  });
+  stores.weapon = (stores.weapon ?? []).map(([id, raw]) => {
+    const w = raw as Record<string, unknown>;
+    return [id, { ...w, target: target(w.target), volleyTarget: target(w.volleyTarget) }];
+  });
+  stores.projectile = (stores.projectile ?? []).map(([id, raw]) => {
+    const p = gridKeyed(raw as Record<string, unknown>, 'fromShip', 'fromGridId');
+    return [id, { ...p, target: target(p.target) }];
+  });
+  stores.coreLink = (stores.coreLink ?? []).map(([id, raw]) => [id, gridKeyed(raw as Record<string, unknown>, 'ship', 'gridId')]);
   // Step 6 stores sector tiles in every component; the old code stored grid-local ones. Subtract each grid's origin.
   const origin = (gridId: number): [number, number] => {
     const g = sim.grids.get(gridId);
@@ -127,8 +145,8 @@ function disaster(seed: number): Sim {
       }
     }
   }
-  sim.enqueue({ type: 'debug.ignite', gridId: 1, ...fire! });
-  sim.enqueue({ type: 'debug.setStruct', gridId: 1, ...breach!, kind: Struct.Space });
+  sim.enqueue({ type: 'debug.ignite', ship: shipEntityOf(sim, 1), ...fire! });
+  sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), ...breach!, kind: Struct.Space });
   return sim;
 }
 

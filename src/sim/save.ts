@@ -18,8 +18,10 @@ import { newTrade, type TradeState } from './trade/types';
  * v15 (step 6, the coordinate flip): every component position (crew, paths, modules, jobs, items, ...) is a sector tile;
  * the shape is unchanged but the meaning is not, so v14 saves are refused.
  * v16 (step 7a): `ItemStack` drops `gridId` (the owning ship is read from the `ship` layer at the stack's tile).
+ * v17/v18 (steps 7b, 7b2): module, job, drafted and position drop `gridId`.
+ * v19 (step 7c): `Target.ship`, `Projectile.fromShip` and `CoreLink.ship` are ShipC entity ids (were grid ids).
  */
-export const SAVE_VERSION = 18;
+export const SAVE_VERSION = 19;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

@@ -32,7 +32,7 @@
   let combatOpen = $state(false);
   let wasInCombat = false;
   let overviewOpen = $state(false);
-  let selGrid = $state<number | null>(null);
+  let selShip = $state<number | null>(null);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
   let prizes = $state<UiPrize[]>([]);
@@ -54,11 +54,11 @@
     const unsubs = [
       api.snapshot.subscribe((s) => (snap = s)),
       api.toast.subscribe((t) => (toast = t)),
-      api.selectedGrid.subscribe((g) => (selGrid = g)),
+      api.selectedShip.subscribe((g) => (selShip = g)),
       api.prizes.subscribe((v) => {
         if (v.length > prizes.length) {
-          const fresh = v.find((x) => !prizes.some((o) => o.gridId === x.gridId));
-          if (fresh) api.selectGrid(fresh.gridId); // a ship was just taken: show it
+          const fresh = v.find((x) => !prizes.some((o) => o.ship === x.ship));
+          if (fresh) api.selectShip(fresh.ship); // a ship was just taken: show it
         }
         prizes = v;
       }),
@@ -111,7 +111,7 @@
   />
   <span class="mid">
     <CrewBar {api} />
-    <NodeStrip {api} selected={selGrid} />
+    <NodeStrip {api} selected={selShip} />
   </span>
   <span class="time">
     <span class="tick">T {snap?.tick ?? 0}</span>

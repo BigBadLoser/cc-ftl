@@ -48,7 +48,7 @@ const modulesOf = (sim: Sim, gridId: number, def: string): number[] =>
   sim.world.query(ModuleC).filter((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId && sim.world.get(i, ModuleC)!.def === def);
 const combatOf = (sim: Sim, gridId: number) => sim.world.get(shipEntityOf(sim, gridId), CombatC)!;
 const aim = (sim: Sim, from: number, to: number, moduleId = 0): void =>
-  sim.enqueue({ type: 'combat.setTarget', shipGridId: from, weaponId: null, targetGridId: to, targetModuleId: moduleId });
+  sim.enqueue({ type: 'combat.setTarget', ship: shipEntityOf(sim, from), weaponId: null, targetShip: shipEntityOf(sim, to), targetModuleId: moduleId });
 
 /** Player gun ship (grid 1) facing a hostile target template (grid 2). */
 function duel(weapon: string, target: ShipTemplate, opts: { crew?: string[]; extra?: Mod[]; seed?: number } = {}): Sim {
@@ -100,11 +100,11 @@ describe('combat start and consoles', () => {
   it('hold fire keeps weapons charged until combat.fireVolley', () => {
     const sim = duel('module.burstLaser', dummyNoShield);
     aim(sim, 1, 2);
-    sim.enqueue({ type: 'combat.setHold', gridId: 1, hold: true });
+    sim.enqueue({ type: 'combat.setHold', ship: shipEntityOf(sim, 1), hold: true });
     expect(ofType(run(sim, 600), 'weapon.fired')).toHaveLength(0);
     const [laser] = modulesOf(sim, 1, 'module.burstLaser') as [number];
     expect(sim.world.get(laser, WeaponC)!.charge).toBe(1);
-    sim.enqueue({ type: 'combat.fireVolley', gridId: 1 });
+    sim.enqueue({ type: 'combat.fireVolley', ship: shipEntityOf(sim, 1) });
     expect(ofType(run(sim, 40), 'weapon.fired')).toHaveLength(3);
     expect(sim.world.get(laser, WeaponC)!.charge).toBeLessThan(0.4);
   });
@@ -146,7 +146,7 @@ describe('weapons', () => {
     expect(ofType(events, 'projectile.shieldHit').length).toBeGreaterThanOrEqual(1);
     expect(combatOf(sim, 2).shield.layers).toBe(0);
     // Recharge: one layer after rechargeSec (12 s) without further volleys (hold fire).
-    sim.enqueue({ type: 'combat.setHold', gridId: 1, hold: true });
+    sim.enqueue({ type: 'combat.setHold', ship: shipEntityOf(sim, 1), hold: true });
     run(sim, 2);
     const weapon = modulesOf(sim, 1, 'module.burstLaser')[0] as number;
     sim.world.get(weapon, WeaponC)!.charge = 0;
@@ -241,6 +241,7 @@ describe('weapons', () => {
     const gen = modulesOf(sim, 1, 'module.shieldGen')[0] as number;
     sim.enqueue({ type: 'module.setEnabled', id: gen, enabled: false });
     const fab = modulesOf(sim, 1, 'module.fabricator')[0] as number;
+    sim.step(); // the raider exists once the spawn command has run: commands name it by ship id
     aim(sim, 2, 1, fab);
     const events = run(sim, 20 * 60);
     expect(ofType(events, 'fire.started').length).toBeGreaterThan(0);
@@ -318,7 +319,7 @@ describe('enemy AI, endings', () => {
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
     const events = run(sim, 20 * 400);
     expect(shipOf(sim, 1)?.state).toBe('wreck');
-    expect(ofType(events, 'ship.destroyed').map((e) => e.gridId)).toEqual([1]);
+    expect(ofType(events, 'ship.destroyed').map((e) => e.ship)).toEqual([shipEntityOf(sim, 1)]);
     expect(ofType(events, 'module.destroyed').length).toBeGreaterThan(0);
     expect(ofType(events, 'combat.ended')).toHaveLength(1);
     for (const id of sim.world.query(CrewC)) {
@@ -330,15 +331,15 @@ describe('enemy AI, endings', () => {
   it('flee needs a charged FTL drive and takes the ship out of the fight', () => {
     const sim = newGame(1, content);
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
-    sim.enqueue({ type: 'combat.flee', gridId: 1 });
+    sim.enqueue({ type: 'combat.flee', ship: shipEntityOf(sim, 1) });
     const early = run(sim, 2);
     expect(early.some((e) => e.type === 'command.rejected' && e.reason === 'notCharged')).toBe(true);
     run(sim, 20 * 25);
     expect(combatOf(sim, 1).ftl).toBeGreaterThan(5);
     combatOf(sim, 1).ftl = 40;
-    sim.enqueue({ type: 'combat.flee', gridId: 1 });
+    sim.enqueue({ type: 'combat.flee', ship: shipEntityOf(sim, 1) });
     const events = run(sim, 40);
-    expect(ofType(events, 'ship.fled')).toEqual([{ type: 'ship.fled', gridId: 1 }]);
+    expect(ofType(events, 'ship.fled')).toEqual([{ type: 'ship.fled', ship: shipEntityOf(sim, 1) }]);
     expect(shipOf(sim, 1)?.state).toBe('fled');
     expect(ofType(events, 'combat.ended')).toHaveLength(1);
     expect(sim.sector.inCombat).toBe(false);
@@ -356,7 +357,7 @@ describe('enemy AI, endings', () => {
     for (let y = g2.y0; y < g2.y0 + g2.height; y++) for (let x = g2.x0; x < g2.x0 + g2.width; x++) if (g2.get('struct', x, y) === 2) g2.set('hp', x, y, 80); // walls at about a third
     combatOf(sim, 2).ftl = 40;
     const events = run(sim, 100);
-    expect(ofType(events, 'ship.fled').map((e) => e.gridId)).toEqual([2]);
+    expect(ofType(events, 'ship.fled').map((e) => e.ship)).toEqual([shipEntityOf(sim, 2)]);
   });
 });
 
@@ -369,7 +370,7 @@ describe('determinism, saves, performance', { timeout: 30000 }, () => {
   const fightSim = (seed: number): Sim => {
     const sim = newGame(seed, content);
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
-    sim.enqueue({ type: 'combat.setHold', gridId: 1, hold: false });
+    sim.enqueue({ type: 'combat.setHold', ship: shipEntityOf(sim, 1), hold: false });
     return sim;
   };
   const withTargets = (sim: Sim): Sim => {

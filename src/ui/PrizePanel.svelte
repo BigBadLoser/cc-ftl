@@ -2,15 +2,15 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiPrize } from './api';
 
-  let { api, gridId }: { api: UiApi; gridId: number } = $props();
+  let { api, ship }: { api: UiApi; ship: number } = $props();
   let prizes = $state<UiPrize[]>([]);
   let confirm = $state(0);
   onMount(() => api.prizes.subscribe((v) => (prizes = v)));
 </script>
 
 <div data-testid="prize-panel" aria-label="Prize">
-  {#each prizes.filter((x) => x.gridId === gridId) as p (p.gridId)}
-    <section data-testid="prize-{p.gridId}">
+  {#each prizes.filter((x) => x.ship === ship) as p (p.ship)}
+    <section data-testid="prize-{p.ship}">
       <h3>{p.name} <small>taken from {p.from}</small></h3>
       <div class="row"><span class="dim">Prize value</span><span data-testid="prize-value">{p.value}</span></div>
       <div class="row"><span class="dim">Your crew aboard</span><span>{p.crewAboard}</span></div>
@@ -22,13 +22,13 @@
           <li class="dim">None.</li>
         {/each}
       </ul>
-      {#if confirm === p.gridId}
+      {#if confirm === p.ship}
         <div class="btns">
-          <button class="warn" data-testid="scuttle-confirm" onclick={() => { api.dispatch({ type: 'ship.scuttle', gridId: p.gridId }); confirm = 0; }}>Scuttle for real</button>
+          <button class="warn" data-testid="scuttle-confirm" onclick={() => { api.dispatch({ type: 'ship.scuttle', ship: p.ship }); confirm = 0; }}>Scuttle for real</button>
           <button onclick={() => (confirm = 0)}>Keep it</button>
         </div>
       {:else}
-        <button class="warn full" data-testid="scuttle" onclick={() => (confirm = p.gridId)}>Scuttle</button>
+        <button class="warn full" data-testid="scuttle" onclick={() => (confirm = p.ship)}>Scuttle</button>
         {#if p.crewAboard > 0}<p class="hint">Move your crew off first: scuttling is refused while they are aboard.</p>{/if}
       {/if}
     </section>

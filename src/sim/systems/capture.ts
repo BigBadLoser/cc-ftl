@@ -50,7 +50,7 @@ export function captureSystem(sim: Sim): void {
     } else {
       sim.world.remove(id, CaptureProgressC);
       sim.sector.lost = 'captured';
-      sim.events.emit({ type: 'ship.captured', gridId: ship.gridId, by: attacker, from: ship.faction });
+      sim.events.emit({ type: 'ship.captured', ship: id, by: attacker, from: ship.faction });
       sim.events.emit({ type: 'game.lost', reason: 'captured' });
       return;
     }

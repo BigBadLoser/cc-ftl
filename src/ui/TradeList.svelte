@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiTrade } from './api';
 
-  let { api, gridId, onOpen }: { api: UiApi; gridId: number; onOpen: (ship: number) => void } = $props();
+  let { api, ship, onOpen }: { api: UiApi; ship: number; onOpen: (ship: number) => void } = $props();
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   onMount(() => api.trade.subscribe((t) => (trade = t)));
 
@@ -10,7 +10,7 @@
     api.dispatch({ type: 'trade.hail', ship });
     onOpen(ship);
   }
-  const mine = $derived(trade.partners.filter((p) => (p.gridId > 0 ? p.gridId : -p.id) === gridId));
+  const mine = $derived(trade.partners.filter((p) => p.id === ship));
   const live = $derived(trade.deals.filter((d) => d.live && mine.some((p) => p.id === d.ship)));
 </script>
 

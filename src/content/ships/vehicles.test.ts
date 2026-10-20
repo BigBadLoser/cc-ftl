@@ -62,14 +62,14 @@ describe('shuttle round trip', () => {
     sim.enqueue({ type: 'vehicle.dock', vehicle: shuttle, airlock: airlockOf(sim, 2) });
     const out = run(sim, 600);
     expect(of(out, 'vehicle.launched')).toHaveLength(1);
-    expect(of(out, 'vehicle.docked')[0]).toMatchObject({ vehicle: shuttle, gridId: 2 });
+    expect(of(out, 'vehicle.docked')[0]).toMatchObject({ vehicle: shuttle, ship: shipEntityOf(sim, 2) });
     expect(v().state).toBe('docked');
 
     sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle });
     sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle, crew: v().pilot });
     const landed = of(run(sim, 3), 'crew.disembarked');
     expect(landed).toHaveLength(2);
-    expect(landed.every((e) => e.gridId === 2)).toBe(true);
+    expect(landed.every((e) => e.ship === shipEntityOf(sim, 2))).toBe(true);
     expect(gridIdOf(sim, sim.world.get(pilot, PositionC))).toBe(2);
 
     const back = of(embark(sim, [pilot, medic], shuttle), 'crew.embarked');
@@ -141,7 +141,7 @@ describe('shuttle combat', () => {
 
   it('a stowed shuttle cannot be targeted', () => {
     const sim = setup();
-    sim.enqueue({ type: 'combat.setTarget', shipGridId: 2, weaponId: null, targetGridId: 0, targetModuleId: 0, targetVehicle: shuttleOf(sim, 1) });
+    sim.enqueue({ type: 'combat.setTarget', ship: shipEntityOf(sim, 2), weaponId: null, targetShip: 0, targetModuleId: 0, targetVehicle: shuttleOf(sim, 1) });
     expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'badTarget' });
   });
 
@@ -221,10 +221,10 @@ describe('enemy boarding AI', () => {
     const out = run(sim, 20 * 80);
     expect(of(out, 'vehicle.launched').length).toBeGreaterThan(0);
     const dock = of(out, 'vehicle.docked')[0];
-    expect(dock).toMatchObject({ gridId: 1, airlock: airlockOf(sim, 1) });
+    expect(dock).toMatchObject({ ship: shipEntityOf(sim, 1), airlock: airlockOf(sim, 1) });
     const landed = of(out, 'crew.disembarked');
     expect(landed.length).toBeGreaterThanOrEqual(2);
-    expect(landed.every((e) => e.gridId === 1)).toBe(true);
+    expect(landed.every((e) => e.ship === shipEntityOf(sim, 1))).toBe(true);
     for (const e of landed) expect(gridIdOf(sim, sim.world.get(e.crew, PositionC))).toBe(1);
   });
 
@@ -239,7 +239,7 @@ describe('enemy boarding AI', () => {
     expect(landed.length).toBeGreaterThanOrEqual(2);
     const shots = of(out, 'crew.attacked').filter((e) => landed.includes(e.crew));
     expect(shots.length).toBeGreaterThan(0);
-    expect(shots.every((e) => e.weapon === 'item.sidearm' && e.gridId === 1)).toBe(true);
+    expect(shots.every((e) => e.weapon === 'item.sidearm' && e.ship === shipEntityOf(sim, 1))).toBe(true);
   });
 
   it('is deterministic, and survives a save and load mid-flight', () => {

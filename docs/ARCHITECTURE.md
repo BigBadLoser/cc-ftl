@@ -896,7 +896,7 @@ hashes must still match) and bumps `SAVE_VERSION` only if the save shape changes
 |---|---|---|
 | **7a** (done on `sector-7a`, save v16) | `ItemStack.gridId` removed (membership from the `ship` layer through `gridIdAt`, falling back to the window rectangle for ship-less fixture grids); the last two `raw()` users (`crew/pathfind.ts`, `eva/route.ts`) read `load()` instead. Local-tile readouts for module, job and airlock labels | Items need no per-ship bounds and no portal; `raw()` goes first so 7d can delete it |
 | **7b** (done: `sector-7b`, save v17: Module, Job, Drafted; **7b2** on `sector-7b2`, save v18: `Position.gridId`) | `ModuleC.gridId`, `JobC.gridId` (+ `Drafted.target/planned.gridId`), `Position.gridId`: the "which ship is this entity on" answers become `shipAt` / `gridIdAt` at the entity's tile. Largest slice; split by component if it passes about 600 lines | Position is read by nearly every system, so it goes after the small components have set the pattern |
-| **7c** | Ship-keyed ids: `Target.gridId`, `Projectile.fromGridId`, `CoreLink.gridId`, `Ship.gridId` -> the `ShipC` entity id; commands, events and UI snapshots switch from grid ids to ship ids (`gridId` fields in `commands.ts`, `events.ts`, `ui/api.ts`, `app/*Snapshot`) | One mechanical rename across the API surface, after the components no longer need the grid id |
+| **7c** (done on `sector-7c`, save v19) | Ship-keyed ids: `Target.gridId`, `Projectile.fromGridId`, `CoreLink.gridId`, `Ship.gridId` -> the `ShipC` entity id; commands, events and UI snapshots switch from grid ids to ship ids (`gridId` fields in `commands.ts`, `events.ts`, `ui/api.ts`, `app/*Snapshot`) | One mechanical rename across the API surface, after the components no longer need the grid id |
 | **7d** | Delete `sim.grids`, `GridWindow` (+ `raw`), cross-grid portals (`portals/graph`, `route`, `pathCache`, `Path.then`, `systems/portals`), move `SuitC` and `AirlockC` to `eva/` and `modules/airlock.ts`. Per-ship bounds (EVA ring, `bordersSpace`, `network`, power out-of-bounds) move to `ShipC` frames (`shipFrame`) here. Lint guard against `.gridId` and `sim.grids` in `src/sim`; final save bump if the shape changed | Last, because the window rectangle is what keeps edge behaviour identical until then |
 
 **7b notes.** `gridIdOf(sim, at)` (`sim/regions.ts`) is `gridIdAt` at `at.x, at.y` (0 for none). `gridIdAt` now has three steps: the
@@ -915,6 +915,16 @@ new was added. Their location is the vehicle's `BodyC`; `unboardCrew` adds a til
 `Sim`, so `gridIdAtTile(world, x, y)` (`render/regionRules.ts`) is the twin of `gridIdAt` over the `ShipC` rectangles and padded
 frames. Commands, events and snapshots keep their `gridId` fields (filled from the lookups) until 7c. `sectorEquiv.test.ts`
 re-adds `gridId` as the first key of `position` rows in `legacyWorld`; both hashes are unchanged.
+
+**7c notes (save v19).** `Target.ship`, `Projectile.fromShip` and `CoreLink.ship` hold `ShipC` entity ids. Commands and events name a
+ship by `ship` (`gridId` is gone from `commands.ts` and `events.ts` except `portal.link`, whose endpoints are grids until 7d).
+`Ship.gridId` stays as the ship-to-window link; handlers turn `cmd.ship` into a grid with `gridOfShip(sim, ship)` and emitters turn a
+grid into a ship with `shipOfGrid(sim, gridId)` or, from a tile, `shipIdOf(sim, at)` (same rule as `gridIdOf`, so EVA ring cases
+agree). Helpers that take a `gridId` (`stackAt`, `randomModule`, `targetableShip`, ...) are unchanged and go in 7d. The UI is keyed by
+ship id everywhere (`selectShip`, `UiCrew.ship`, `node-{ship}`); a station, which has no `ShipC`, uses its trader entity id from the
+same id space. The tile inspector still prints "grid N" through a readout-only `UiInspect.grid`. Render keeps its grid-keyed
+interfaces and the app layer converts. `sectorEquiv.test.ts` maps `ship` back to `gridId` / `fromGridId` in `legacyWorld`. Tests that
+queue a command naming a ship that a queued spawn command creates must step first (the id does not exist at enqueue time).
 
 Leftovers that 7a deliberately keeps: every `gridId` parameter of the helpers (`stackAt`, `nearestStorageFor`, `makeHaul`,
 ...) and `sim.grids.get(...)` lookups; they go with 7b-7d.
