@@ -1,0 +1,153 @@
+import { Container, RenderTexture, Sprite, type Renderer as PixiRenderer } from 'pixi.js';
+import type { Ship } from '../sim/combat/components';
+import type { World } from '../sim/ecs';
+import type { Grid } from '../sim/grid';
+import { ModuleC } from '../sim/modules/components';
+import type { ModuleDef } from '../sim/registry';
+import { createCamera, type Camera } from './camera';
+import { ROOF_H } from './heights';
+import { iso, TILE_H, TILE_W } from './iso';
+import { isTargetable } from './moduleArt';
+import { localTileAt } from './scenePick';
+import type { Origin } from './sectorPos';
+
+/** Where the combat overlay shows the enemy ship: a rectangle of the canvas in CSS px. */
+export interface CombatViewRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+const PANEL_BG = 0x04070b;
+
+/** Whole-number scale that fits a span into a box; below 1 it steps by quarters. */
+function fitScale(boxW: number, boxH: number, spanW: number, spanH: number): number {
+  const s = Math.min(boxW / spanW, boxH / spanH);
+  return s >= 1 ? Math.min(3, Math.floor(s)) : Math.max(0.25, Math.floor(s * 4) / 4);
+}
+
+export interface CombatPassHost {
+  world: World;
+  modules: Readonly<Record<string, ModuleDef>>;
+  ship(gridId: number): Ship | undefined;
+  grid(gridId: number): Grid | undefined;
+  origin(gridId: number): Origin;
+  /** True if the shown region is roofed (the view is lifted to the roof top). */
+  roofed(gridId: number): boolean;
+  /** Device px per CSS px of the canvas. */
+  ratio(): number;
+  /**
+   * Draw the stage for a camera: `cam` places the world, `target` is the region shown in the panel (null: the main pass).
+   * The host positions its layers, culls, and toggles the per-pass layers (target marks in pass B only).
+   */
+  place(cam: Camera, target: number | null): void;
+}
+
+/**
+ * The combat panel as camera pass B (ARCHITECTURE "Sector grid" §5): a second camera, centred and fitted on the target
+ * region, renders the same world stack into a texture the size of `CombatViewRect`, which the main pass shows in place
+ * (the texture is the scissor). No second sprite set.
+ */
+export interface CombatPass {
+  /** The panel's sprite: add it to the stage above the world. */
+  readonly sprite: Sprite;
+  set(view: { gridId: number; rect: CombatViewRect } | null): void;
+  /** The region shown, or null. */
+  target(): number | null;
+  /** Render pass B (before the main pass). */
+  render(gl: PixiRenderer, stage: Container): void;
+  /** Module (0 = the hull itself) under a canvas-relative position inside the panel, or null if outside the ship. */
+  pick(sx: number, sy: number): { moduleId: number } | null;
+  dispose(): void;
+}
+
+export function createCombatPass(h: CombatPassHost): CombatPass {
+  const cam = createCamera(3);
+  const sprite = new Sprite();
+  sprite.visible = false;
+  let rt: RenderTexture | null = null;
+  let view: { gridId: number; rect: CombatViewRect } | null = null;
+  let geom: { x: number; y: number; w: number; h: number; lift: number } | null = null;
+
+  function shown(): { ship: Ship; grid: Grid } | null {
+    const ship = view && h.ship(view.gridId);
+    const grid = view && h.grid(view.gridId);
+    return ship && grid && ship.state !== 'fled' ? { ship, grid } : null;
+  }
+
+  return {
+    sprite,
+    set(v) {
+      view = v;
+      if (!v) geom = null;
+    },
+    target: () => (shown() && view ? view.gridId : null),
+    render(gl, stage) {
+      const s = shown();
+      if (!s || !view) {
+        geom = null;
+        sprite.visible = false;
+        return;
+      }
+      const k = h.ratio();
+      const x = Math.round(view.rect.x * k);
+      const y = Math.round(view.rect.y * k);
+      const w = Math.max(1, Math.round(view.rect.w * k));
+      const ht = Math.max(1, Math.round(view.rect.h * k));
+      const lift = h.roofed(view.gridId) ? ROOF_H : 0;
+      const { ship } = s;
+      const spanW = (ship.width + ship.height) * (TILE_W / 2) + TILE_W;
+      const spanH = (ship.width + ship.height) * (TILE_H / 2) + TILE_H * 2 + lift;
+      const o = h.origin(view.gridId);
+      const c = iso(o.x + ship.width / 2 - 0.5, o.y + ship.height / 2 - 0.5);
+      // Device px straight in (ratio 1): the camera's canvas is the panel rectangle.
+      cam.resize(w, ht, 1);
+      cam.setExactScale(fitScale(w - 8, ht - 8, spanW, spanH));
+      cam.centerOn(c.x, c.y - lift / 2);
+      geom = { x, y, w, h: ht, lift };
+      if (!rt || rt.width !== w || rt.height !== ht) {
+        rt?.destroy(true);
+        rt = RenderTexture.create({ width: w, height: ht, resolution: 1 });
+        sprite.texture = rt;
+      }
+      sprite.visible = false;
+      h.place(cam, view.gridId);
+      gl.render({ container: stage, target: rt, clear: true, clearColor: PANEL_BG });
+      sprite.position.set(x, y);
+      sprite.visible = true;
+    },
+    pick(sx, sy) {
+      const g = geom;
+      const grid = view && h.grid(view.gridId);
+      if (!g || !view || !grid) return null;
+      const k = h.ratio();
+      const dx = sx * k - g.x;
+      const dy = sy * k - g.y;
+      if (dx < 0 || dy < 0 || dx >= g.w || dy >= g.h) return null;
+      const a = cam.toArt(dx, dy);
+      const t = localTileAt(h.origin(view.gridId), { x: a.x, y: a.y + g.lift });
+      if (!grid.inBounds(t.x, t.y)) return null;
+      // The nearest targetable module within a tile (tiles are small on a phone).
+      const targetable = (def: string) => { const md = h.modules[def]; return !!md && isTargetable(md); };
+      let best = 0;
+      let bestD = Infinity;
+      for (let ty = t.y - 1; ty <= t.y + 1; ty++)
+        for (let tx = t.x - 1; tx <= t.x + 1; tx++) {
+          if (!grid.inBounds(tx, ty)) continue;
+          const id = grid.get('module', tx, ty);
+          const m = id ? h.world.get(id, ModuleC) : undefined;
+          const d = Math.hypot(tx - t.x, ty - t.y);
+          if (m && (d === 0 || targetable(m.def)) && d < bestD) {
+            best = id;
+            bestD = d;
+          }
+        }
+      return { moduleId: best };
+    },
+    dispose() {
+      rt?.destroy(true);
+      sprite.destroy();
+    },
+  };
+}

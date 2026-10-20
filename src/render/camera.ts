@@ -18,6 +18,8 @@ export interface Camera {
   /** Continuous zoom factor from wheel/pinch/keys, accumulated into integer steps. */
   zoomAt(factor: number, sx: number, sy: number): void;
   setZoom(zoom: number, sx?: number, sy?: number): void;
+  /** Set an exact device-px-per-art-px scale (may be fractional; the combat panel fits a ship with it). */
+  setExactScale(scale: number): void;
   centerOn(ax: number, ay: number): void;
   /** CSS px (canvas-relative) -> art px. */
   toArt(sx: number, sy: number): { x: number; y: number };
@@ -89,6 +91,9 @@ export function createCamera(maxZoom: number): Camera {
       zoom = z;
       cx = a.x - (px - w / 2) / scale();
       cy = a.y - (py - h / 2) / scale();
+    },
+    setExactScale(s) {
+      zoom = s;
     },
     centerOn(ax, ay) {
       cx = ax;

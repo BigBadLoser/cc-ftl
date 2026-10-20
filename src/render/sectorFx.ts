@@ -8,14 +8,9 @@ import type { ModuleDef, WeaponDef } from '../sim/registry';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
 import { IMPACT_H, MUZZLE_H } from './heights';
-import { iso } from './iso';
+import { sectorArt } from './sectorPos';
 import type { Layers } from './layers';
 import type { EmitterDef, Particles } from './fx/particles';
-
-export interface SectorFxHost {
-  /** Sector position of the ship the camera follows (the origin of the sector layer), or null. */
-  ref(): { x: number; y: number } | null;
-}
 
 export interface SectorFx {
   onEvents(events: readonly SimEvent[]): void;
@@ -71,7 +66,7 @@ const TRACER_LIFE = 0.2;
  */
 export function createSectorFx(
   world: World, atlas: Atlas, L: Layers, particles: Particles,
-  content: { weapons: Readonly<Record<string, WeaponDef>>; modules: Readonly<Record<string, ModuleDef>> }, host: SectorFxHost,
+  content: { weapons: Readonly<Record<string, WeaponDef>>; modules: Readonly<Record<string, ModuleDef>> },
 ): SectorFx {
   const shots = new Map<number, { spr: Sprite; x: number; y: number }>();
   const flashes: Flash[] = [];
@@ -87,11 +82,8 @@ export function createSectorFx(
     }
     return undefined;
   };
-  /** Sector point (tile units, a tile's centre is at +0.5) -> art px in the camera ship's frame. */
-  const secArt = (sx: number, sy: number) => {
-    const r = host.ref() ?? { x: 0, y: 0 };
-    return iso(sx - r.x - 0.5, sy - r.y - 0.5);
-  };
+  /** Sector point (tile units, a tile's centre is at +0.5) -> art px in the sector frame. */
+  const secArt = sectorArt;
   const tileArt = (s: Ship, x: number, y: number) => secArt(s.x + x + 0.5, s.y + y + 0.5);
   const colorOf = (weapon: string) => WEAPON_COLOR[weapon] ?? 0xffffff;
 

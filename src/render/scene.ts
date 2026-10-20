@@ -1,26 +1,26 @@
-import { autoDetectRenderer, Container, Sprite, Texture } from 'pixi.js';
-import { CombatC, ShipC, WeaponC, type Ship } from '../sim/combat/components';
+import { autoDetectRenderer, Container } from 'pixi.js';
+import { ShipC, type Ship } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
 import type { Grid } from '../sim/grid';
-import { ModuleC } from '../sim/modules/components';
 import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
 import { loadAtlas } from './assets/loader';
-import { createCamera } from './camera';
+import { createCamera, type Camera } from './camera';
+import { createCombatPass, type CombatViewRect } from './combatPass';
 import type { CutawayMode } from './gridView';
-import { iso, tileAt, TILE_H, TILE_W } from './iso';
+import { iso, TILE_H, TILE_W } from './iso';
 import { createParticles } from './fx/particles';
 import { createLayers } from './layers';
+import { createWorldStack } from './worldLayers';
+import { regionOrigin, sectorArt } from './sectorPos';
 import type { ModuleDefs } from './moduleView';
-import { isTargetable } from './moduleArt';
 import { ROOF_H } from './heights';
 import { liveryFor } from './roofArt';
 import { createShuttleView } from './shuttleView';
 import { createFightFx } from './fightFx';
 import { createCrewMarks } from './crewMarks';
-import { pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
-import { CrewC, PositionC } from '../sim/crew/components';
-import { AllegianceC } from '../sim/fight/components';
+import { localTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
+import { targetedModules, wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
 import { createShipScene, type ShipScene } from './shipScene';
@@ -37,13 +37,7 @@ export interface RenderInfo {
 
 type Tile = { x: number; y: number };
 
-/** Where the combat overlay shows the enemy ship: a rectangle of the canvas in CSS px. */
-export interface CombatViewRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+export type { CombatViewRect };
 
 export interface Renderer {
   render(alpha: number): void;
@@ -99,12 +93,6 @@ interface RendererContent {
   suit?: { airSec: number };
 }
 
-/** Whole-number scale that fits a span into a box; below 1 it steps by quarters. */
-function fitScale(boxW: number, boxH: number, spanW: number, spanH: number): number {
-  const s = Math.min(boxW / spanW, boxH / spanH);
-  return s >= 1 ? Math.min(3, Math.floor(s)) : Math.max(0.25, Math.floor(s * 4) / 4);
-}
-
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
 export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality, world: World, content: RendererContent): Promise<Renderer> {
   const high = quality === 'high';
@@ -121,7 +109,6 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     powerPreference: 'high-performance',
   });
   const stage = new Container();
-  stage.sortableChildren = true;
   const cam = createCamera(high ? 3 : 2);
   const scenes = new Map<number, ShipScene>();
   let grids: ReadonlyMap<number, Grid> = new Map();
@@ -136,54 +123,32 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let previewValid = true;
   let lastFrame = performance.now();
 
-  // The sector layer: combat fx above every ship, in the camera ship's frame.
+  // One world layer stack for every region (ship), in the sector frame: art origin = sector tile (0, 0).
+  const W = createWorldStack();
+  stage.addChild(W.root);
+  // The air layer: combat fx and flying bodies above every ship and roof, in the same frame.
   const SL = createLayers(false);
-  SL.world.zIndex = 1e9;
   stage.addChild(SL.world);
   const sectorParticles = createParticles(atlas, SL);
-  const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules }, { ref: () => shipOf(refId) ?? null });
+  const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules });
 
-  // Shuttles in the camera ship's frame: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera
-  // ship's bay. A shuttle parked in a bay is the bay's own layer (vehicleBayArt).
+  // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle
+  // parked in a bay is the bay's own layer (vehicleBayArt).
   const shuttles = createShuttleView(world, atlas, content.modules, {
     layer: SL.sorted,
-    project: (sx, sy) => {
-      const r = shipOf(refId) ?? { x: 0, y: 0 };
-      return iso(sx - r.x - 0.5, sy - r.y - 0.5);
-    },
+    project: sectorArt,
     include: (v) => v.state !== 'stowed' || v.homeGrid === refId,
-    dock: (v) => {
-      const gridId = world.get(v.dock, ModuleC)?.gridId;
-      const ship = gridId === undefined ? undefined : shipOf(gridId);
-      const sc = gridId === undefined ? undefined : scenes.get(gridId);
-      if (!ship || !sc) return null;
-      return {
-        layer: sc.layers.sorted,
-        project: (sx, sy) => iso(sx - ship.x - 0.5, sy - ship.y - 0.5),
-        depth: (sx, sy) => sx - ship.x - 0.5 + (sy - ship.y - 0.5),
-      };
-    },
+    low: { layer: W.low, project: sectorArt },
   });
 
   /** What crew views need to draw EVA: the tank size. */
   const evaHost = () => ({ suitAirSec: () => content.suit?.airSec ?? 240 });
-  const pickHost = (): PickHost => ({ scenes, cam, ship: shipOf, refId });
+  const origin = (gridId: number) => regionOrigin(world, gridId);
+  const NONE: ReadonlySet<number> = new Set();
+  const pickHost = (): PickHost => ({ scenes, cam, origin });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
-  const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ref: () => shipOf(refId) ?? null, ship: shipOf });
-  const crewMarks = createCrewMarks(world, SL.ui, { ref: () => shipOf(refId) ?? null, ship: shipOf, visible: (id) => scenes.has(id) && !scenes.get(id)?.isRoofed() });
-
-  // The combat overlay: a second scene of the shown ship, scaled into a rectangle of the canvas, drawn in the same pass.
-  const miniRoot = new Container();
-  const miniBg = new Sprite(Texture.WHITE);
-  miniBg.tint = 0x04070b;
-    miniRoot.addChild(miniBg);
-  miniRoot.zIndex = 2e9;
-  miniRoot.visible = false;
-  stage.addChild(miniRoot);
-  let mini: { gridId: number; rect: CombatViewRect } | null = null;
-  /** The overlay's own scene for the shown ship (a second set of sprites, so the main pass is the only pass). */
-  let miniScene: ShipScene | null = null;
-  let miniGeom: { x: number; y: number; w: number; h: number; scale: number; ox: number; oy: number; lift: number } | null = null;
+  const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf });
+  const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
   function shipOf(gridId: number): Ship | undefined {
     for (const id of world.query(ShipC)) {
@@ -204,7 +169,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const WALL_RISE = ROOF_H;
 
   function frame(grid: Grid): void {
-    const c = iso(grid.width / 2 - 0.5, grid.height / 2 - 0.5);
+    const o = origin(grid.id);
+    const c = iso(o.x + grid.width / 2 - 0.5, o.y + grid.height / 2 - 0.5);
     cam.centerOn(c.x, c.y - 8 - WALL_RISE / 2);
     const spanW = (grid.width + grid.height) * (TILE_W / 2) + TILE_W;
     const spanH = (grid.width + grid.height) * (TILE_H / 2) + TILE_H * 2 + WALL_RISE;
@@ -215,17 +181,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   /** A ship's roof livery; the debug URL parameter `?bow=east|west` forces the end the bow motifs take. */
   const bowParam = new URLSearchParams(window.location.search).get('bow');
   const shipLivery = (s: Ship) => ({ ...liveryFor(s.faction, s.name), ...(bowParam ? { bowWest: bowParam === 'west' } : {}) });
-  /** True while any of the player's crew stand on this grid (boarders): its interior is shown so they can be ordered about. */
-  const boarded = (gridId: number) => {
-    for (const id of world.query(CrewC, PositionC)) {
-      if (world.get(id, PositionC)?.gridId === gridId && world.get(id, AllegianceC)?.faction === 'player') return true;
-    }
-    return false;
-  };
-  const wantsRoof = (s: Ship) => roofEnemies && s.faction === 'hostile' && s.state !== 'wreck' && !boarded(s.gridId);
+  const roofFor = (s: Ship) => wantsRoof(world, s, roofEnemies);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: high && grid.id === refId, roofed: wantsRoof(s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
@@ -234,7 +193,6 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       sc.view.setPreview(preview, previewValid);
     }
     sc.setSelectedCrew(selectedCrew);
-    stage.addChild(sc.layers.world);
     scenes.set(grid.id, sc);
     return sc;
   }
@@ -252,7 +210,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         sc.dispose();
         scenes.delete(s.gridId);
         addScene(s, grid);
-      } else if (sc.isRoofed() !== wantsRoof(s)) sc.setRoofed(wantsRoof(s));
+      } else if (sc.isRoofed() !== roofFor(s)) sc.setRoofed(roofFor(s));
     }
     for (const [id, sc] of scenes) {
       if (live.has(id)) continue;
@@ -261,67 +219,44 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     }
   }
 
-  /** Module ids on the enemy grid that the player's ship (or one of its weapons) is aiming at. */
-  function targetedModules(gridId: number): Set<number> {
-    const out = new Set<number>();
-    for (const id of world.query(ShipC, CombatC)) {
-      if (world.get(id, ShipC)?.gridId !== refId) continue;
-      const t = world.get(id, CombatC)?.target;
-      if (t?.gridId === gridId && t.moduleId) out.add(t.moduleId);
-    }
-    for (const id of world.query(WeaponC, ModuleC)) {
-      const t = world.get(id, WeaponC)?.target;
-      if (t?.gridId === gridId && t.moduleId && world.get(id, ModuleC)?.gridId === refId) out.add(t.moduleId);
-    }
-    return out;
+  /** Art px box of a region (padded for the roof, turrets, bells and docked bodies), for culling per camera. */
+  function regionInView(id: number, grid: Grid, c: Camera): boolean {
+    const o = origin(id);
+    const P = 4;
+    const x0 = iso(o.x - P, o.y + grid.height + P).x;
+    const x1 = iso(o.x + grid.width + P, o.y - P).x;
+    const y0 = iso(o.x - P, o.y - P).y - ROOF_H - 64;
+    const y1 = iso(o.x + grid.width + P, o.y + grid.height + P).y + 32;
+    const vx0 = -c.originX / c.scale;
+    const vy0 = -c.originY / c.scale;
+    return x1 >= vx0 && x0 <= vx0 + c.w / c.scale && y1 >= vy0 && y0 <= vy0 + c.h / c.scale;
   }
 
-  function drawMini(dt: number): void {
-    const ship = mini && shipOf(mini.gridId);
-    const grid = mini && grids.get(mini.gridId);
-    if (!mini || !ship || !grid || ship.state === 'fled') {
-      miniGeom = null;
-      miniRoot.visible = false;
-      if (miniScene) {
-        miniRoot.removeChild(miniScene.layers.world);
-        miniScene.dispose();
-        miniScene = null;
-      }
-      return;
-    }
-    if (miniScene && miniScene.grid !== grid) {
-      miniRoot.removeChild(miniScene.layers.world);
-      miniScene.dispose();
-      miniScene = null;
-    }
-    if (!miniScene) {
-      miniScene = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, halos: false, roofed: wantsRoof(ship), ...evaHost() });
-      miniRoot.addChild(miniScene.layers.world);
-    }
-    const sc = miniScene;
-    if (sc.isRoofed() !== wantsRoof(ship)) sc.setRoofed(wantsRoof(ship));
-    sc.setMarks(true, targetedModules(mini.gridId));
-    sc.update(dt);
-    const k = ratio();
-    const x = Math.round(mini.rect.x * k);
-    const y = Math.round(mini.rect.y * k);
-    const w = Math.max(1, Math.round(mini.rect.w * k));
-    const h = Math.max(1, Math.round(mini.rect.h * k));
-    const lift = sc.isRoofed() ? ROOF_H : 0;
-    const spanW = (ship.width + ship.height) * (TILE_W / 2) + TILE_W;
-    const spanH = (ship.width + ship.height) * (TILE_H / 2) + TILE_H * 2 + lift;
-    const scale = fitScale(w - 8, h - 8, spanW, spanH);
-    const c = iso(ship.width / 2 - 0.5, ship.height / 2 - 0.5);
-    const ox = Math.round(x + w / 2 - c.x * scale);
-    const oy = Math.round(y + h / 2 - (c.y - lift / 2) * scale);
-    miniGeom = { x, y, w, h, scale, ox, oy, lift };
-    miniBg.position.set(x, y);
-    miniBg.width = w;
-    miniBg.height = h;
-    sc.layers.setScale(scale);
-    sc.layers.world.position.set(ox, oy);
-    miniRoot.visible = true;
+  /** Place the world for a camera pass: the main pass (target null) or the combat panel (pass B, showing `target`). */
+  function place(c: Camera, target: number | null): void {
+    const any = shipOf(refId) !== undefined;
+    for (const [id, sc] of scenes) sc.layers.setVisible(any && regionInView(id, sc.grid, c));
+    W.setUiVisible(target === null);
+    W.setMarksVisible(target !== null);
+    SL.ui.visible = target === null;
+    W.root.scale.set(c.scale);
+    W.root.position.set(c.originX, c.originY);
+    SL.setScale(c.scale);
+    SL.world.position.set(c.originX, c.originY);
   }
+
+  // The combat panel: camera pass B over the same world stack, into a texture shown above the main pass.
+  const pass = createCombatPass({
+    world,
+    modules: content.modules,
+    ship: shipOf,
+    grid: (id) => scenes.get(id)?.grid,
+    origin,
+    roofed: (id) => scenes.get(id)?.isRoofed() ?? false,
+    ratio,
+    place,
+  });
+  stage.addChild(pass.sprite);
 
   return {
     render(alpha) {
@@ -329,25 +264,22 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       const now = performance.now();
       const dt = Math.min(0.1, (now - lastFrame) / 1000);
       lastFrame = now;
-      const ref = shipOf(refId);
+      W.setScale(cam.scale);
+      const shown = pass.target();
       for (const [id, sc] of scenes) {
-        const s = shipOf(id);
-        const L = sc.layers;
+        const o = origin(id);
+        const p = iso(o.x, o.y);
+        sc.layers.setOrigin(p.x, p.y, o.x + o.y);
+        sc.setMarks(id === shown, id === shown ? targetedModules(world, refId, id) : NONE);
         sc.update(dt);
-        const off = ref && s ? iso(s.x - ref.x, s.y - ref.y) : { x: 0, y: 0 };
-        L.setScale(cam.scale);
-        L.world.position.set(cam.originX + off.x * cam.scale, cam.originY + off.y * cam.scale);
-        L.world.zIndex = s ? s.x + s.y : 0;
-        L.world.visible = ref !== undefined;
       }
       shuttles.update(dt);
       fightFx.update(dt);
       crewMarks.update();
       fx.update(dt, alpha);
       sectorParticles.update(dt);
-      SL.setScale(cam.scale);
-      SL.world.position.set(cam.originX, cam.originY);
-      drawMini(dt);
+      pass.render(gl, stage);
+      place(cam, null);
       gl.render({ container: stage });
     },
     resize,
@@ -386,12 +318,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       scenes.get(refId)?.view.setPreview(tiles, valid);
     },
     focusTile(x, y) {
-      const p = iso(x, y);
+      const o = origin(refId);
+      const p = iso(o.x + x, o.y + y);
       cam.centerOn(p.x, p.y - 8);
     },
     focusSector(x, y) {
-      const r = shipOf(refId) ?? { x: 0, y: 0 };
-      const p = iso(x - r.x - 0.5, y - r.y - 0.5);
+      const p = sectorArt(x, y);
       cam.centerOn(p.x, p.y);
     },
     frameShips(ids) {
@@ -402,7 +334,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         const s = shipOf(id);
         if (!s) continue;
         for (const [tx, ty] of [[0, 0], [s.width, 0], [0, s.height], [s.width, s.height]] as const) {
-          const p = iso(s.x + tx - r.x - 0.5, s.y + ty - r.y - 0.5);
+          const p = sectorArt(s.x + tx, s.y + ty);
           x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y - ROOF_H); y1 = Math.max(y1, p.y);
         }
       }
@@ -420,8 +352,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     pickTile(sx, sy) {
       const grid = scenes.get(refId)?.grid;
       if (!grid) return null;
-      const a = cam.toArt(sx, sy);
-      const t = tileAt(a.x, a.y);
+      const t = localTileAt(origin(refId), cam.toArt(sx, sy));
       return grid.inBounds(t.x, t.y) ? t : null;
     },
     pickCrew: (sx, sy) => pickCrewAcross(pickHost(), sx, sy),
@@ -429,7 +360,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     screenOf: (gridId, x, y) => screenOfTile(pickHost(), ratio(), gridId, x, y),
     pickModule(sx, sy) {
       const a = cam.toArt(sx, sy);
-      return scenes.get(refId)?.pickModule(a.x, a.y) ?? null;
+      const o = origin(refId);
+      const p = iso(o.x, o.y);
+      return scenes.get(refId)?.pickModule(a.x - p.x, a.y - p.y) ?? null;
     },
     setSelectedCrew(id) {
       selectedCrew = id;
@@ -439,44 +372,15 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       fx.onEvents(events);
       fightFx.onEvents(events);
     },
-    setCombatView(v) {
-      mini = v;
-      if (!v) miniGeom = null;
-    },
-    pickCombat(sx, sy) {
-      const g = miniGeom;
-      const sc = miniScene;
-      if (!g || !sc) return null;
-      const k = ratio();
-      const dx = sx * k;
-      const dy = sy * k;
-      if (dx < g.x || dy < g.y || dx >= g.x + g.w || dy >= g.y + g.h) return null;
-      const t = tileAt((dx - g.ox) / g.scale, (dy - g.oy) / g.scale + g.lift);
-      if (!sc.grid.inBounds(t.x, t.y)) return null;
-      // The nearest targetable module within a tile (tiles are small on a phone).
-      let best = 0;
-      let bestD = Infinity;
-      for (let ty = t.y - 1; ty <= t.y + 1; ty++)
-        for (let tx = t.x - 1; tx <= t.x + 1; tx++) {
-          if (!sc.grid.inBounds(tx, ty)) continue;
-          const id = sc.grid.get('module', tx, ty);
-          const m = id ? world.get(id, ModuleC) : undefined;
-          const d = Math.hypot(tx - t.x, ty - t.y);
-          const targetable = (def: string) => { const md = content.modules[def]; return !!md && isTargetable(md); };
-          if (m && (d === 0 || targetable(m.def)) && d < bestD) {
-            best = id;
-            bestD = d;
-          }
-        }
-      return { moduleId: best };
-    },
+    setCombatView: (v) => pass.set(v),
+    pickCombat: (sx, sy) => pass.pick(sx, sy),
     dispose() {
       shuttles.dispose();
       fightFx.dispose();
       crewMarks.dispose();
       fx.dispose();
       sectorParticles.dispose();
-      miniScene?.dispose();
+      pass.dispose();
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
       gl.destroy();
