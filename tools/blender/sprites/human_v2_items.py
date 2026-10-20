@@ -30,7 +30,7 @@ def eyes(A, R):
     b = Build()
     c = R.head_c
     for sx in (1, -1):                                         # two dark eyes, ~2 x 3 px: they show which way the head faces
-        b.blob(c + Vector((sx * 0.08, -R.HY + 0.012, -0.015)), 0.032, 0.02, 0.04, W("head"), exp=2.2, nlat=6)
+        b.blob(c + Vector((sx * 0.065, -R.HY + 0.01, -0.03)), 0.028, 0.02, 0.036, W("head"), exp=2.4, nlat=6)
     return Item("eyes", "organic", [b.mesh("v2.eyes", A, flat("dark"))], default=True)
 
 
@@ -89,8 +89,8 @@ def _hair_cap(b, R, back=-0.16):
 
     def keep(p):
         r = p - c
-        return r.z > 0.07 or (r.y > 0.04 and r.z > back) or (r.y > -0.07 and r.z > -0.03 and abs(r.x) > 0.16)
-    b.blob(c + Vector((0, 0.01, 0.03)), R.HX + 0.03, R.HY + 0.03, R.HZ + 0.03, W("head"), keep=keep)
+        return r.z > 0.1 or (r.y > 0.04 and r.z > back) or (r.y > -0.02 and r.z > 0.0 and abs(r.x) > R.HX)
+    b.blob(c + Vector((0, 0.025, 0.035)), R.HX + 0.025, R.HY + 0.012, R.HZ + 0.02, W("head"), exp=3.4, keep=keep)
 
 
 def hair_short(A, R):

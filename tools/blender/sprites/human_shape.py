@@ -7,13 +7,13 @@ pushed out and a slimmer waist so there is a gap between the arms and the torso.
 +x = character left, arms out horizontally (T-pose at ARM_Z). Pure numpy apart from `apply`."""
 import numpy as np
 
-HEAD_K = 1.5                       # head about the neck
-LEG_Z, TORSO_Z = 0.70, 0.90        # height scale of the legs (below the hips) and the torso
-ARM_LEN, ARM_K, HAND_K = 0.72, 1.45, 1.8
-SHOULDER = 0.12                    # arms pushed outward: hanging arms clear the chest (a gap between arm and torso)
+HEAD_K = 1.3                       # head about the neck
+LEG_Z, TORSO_Z = 0.80, 0.92        # height scale of the legs (below the hips) and the torso
+ARM_LEN, ARM_K, HAND_K = 0.82, 1.3, 1.4
+SHOULDER = 0.07                    # arms pushed outward: hanging arms clear the chest (a gap between arm and torso)
 WAIST = 0.1                        # waist slimmed by this fraction
 LEG_K, FOOT_K, FOOT_Z = 1.35, 1.15, 1.25   # feet: the leg thickening carries on into them, x FOOT_K on top
-GROW = 1.08                        # whole figure, so it keeps about its old height in the frame
+GROW = 1.04                        # whole figure, so it keeps about its old height in the frame
 ARM_Y, ARM_Z = 0.07, 1.25          # T-pose arm axis (y, z)
 LEG_X, LEG_Y = 0.114, 0.036        # leg axis
 NECK = 1.36                        # head pivot height (rest)

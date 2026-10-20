@@ -87,7 +87,7 @@ class Build:
         self.cap(rings[0], self.point(lo, wt), flip=True)
         self.cap(rings[-1], self.point(hi, wt))
 
-    def loft(self, rings, exp=2.6, cap_lo=True, cap_hi=True):
+    def loft(self, rings, exp=3.0, cap_lo=True, cap_hi=True):
         """A body of horizontal rings: [(centre, half x, half y, weights)], bottom to top."""
         ids = [self.ring(c, Vector((1, 0, 0)), Vector((0, 1, 0)), hx, hy, wt, exp=exp) for c, hx, hy, wt in rings]
         for r0, r1 in zip(ids, ids[1:]):
@@ -179,7 +179,7 @@ class Rig:
         hb, ht = self.h["head"], self.t["head"]
         self.neck = self.h["neck_01"]
         self.head_c = Vector((0.0, hb.y - 0.01, ht.z + 0.02))   # head centre
-        self.HX, self.HY, self.HZ = 0.21, 0.2, 0.22             # head half extents
+        self.HX, self.HY, self.HZ = 0.165, 0.165, 0.19          # head half extents
         self.hips = self.h["hips"]
         self.chest = self.h["spine_03"]
         self.shoulder_z = self.h["arm.L"].z
@@ -190,12 +190,12 @@ class Rig:
 def torso(b, R, grow=0.0, lo=None, hi=None):
     """The torso loft from the crotch to the shoulders, grown by `grow`, clipped to lo <= z <= hi (hem lines)."""
     hz, cz, sz = R.hips.z, R.chest.z, R.shoulder_z
-    rings = [((0, 0.02, hz - 0.1), 0.18, 0.12, W("hips")),
-             ((0, 0.02, hz), 0.2, 0.13, W("hips")),
-             ((0, 0.02, R.h["spine_02"].z), 0.18, 0.12, blend("spine", "spine_02", 0.5)),
-             ((0, 0.02, cz + 0.04), 0.23, 0.14, blend("spine_02", "spine_03", 0.7)),
-             ((0, 0.03, sz - 0.02), 0.25, 0.14, W("spine_03")),
-             ((0, 0.03, sz + 0.06), 0.15, 0.11, W("spine_03"))]
+    rings = [((0, 0.02, hz - 0.1), 0.16, 0.11, W("hips")),
+             ((0, 0.02, hz), 0.175, 0.115, W("hips")),
+             ((0, 0.02, R.h["spine_02"].z), 0.16, 0.105, blend("spine", "spine_02", 0.5)),
+             ((0, 0.02, cz + 0.04), 0.2, 0.125, blend("spine_02", "spine_03", 0.7)),
+             ((0, 0.03, sz - 0.02), 0.215, 0.12, W("spine_03")),
+             ((0, 0.03, sz + 0.06), 0.12, 0.09, W("spine_03"))]
     rings = [(Vector(c), hx + grow, hy + grow, w) for c, hx, hy, w in rings]
     zs = [r[0].z for r in rings]
 
@@ -213,28 +213,27 @@ def arm(b, R, side, grow=0.0, upper=1.0, fore=True, hand=True):
     """Shoulder ball, upper arm, forearm, mitten hand; upper < 1 stops the upper arm part-way (short sleeves)."""
     s = side
     sh, el, wr = R.h[f"arm.{s}"], R.t[f"arm.{s}"], R.t[f"forearm.{s}"]
-    b.blob(sh + Vector((0, 0, 0.0)), 0.1 + grow, 0.1 + grow, 0.1 + grow, W(f"arm.{s}"), exp=2.2, nlat=8)
-    b.tube(sh, sh + (el - sh) * upper, 0.085 + grow, 0.08 + grow, W(f"arm.{s}"), round_ends=upper >= 1)
+    b.tube(sh, sh + (el - sh) * upper, 0.075 + grow, 0.066 + grow, W(f"arm.{s}"), round_ends=upper >= 1)
     if fore:
-        b.tube(el, wr, 0.08 + grow, 0.075 + grow, W(f"forearm.{s}"))
+        b.tube(el, wr, 0.066 + grow, 0.055 + grow, W(f"forearm.{s}"))
     if hand:
         d = (R.t[f"hand.{s}"] - R.h[f"hand.{s}"]).normalized()
-        b.blob(wr + d * 0.12, 0.105 + grow, 0.08 + grow, 0.095 + grow, W(f"hand.{s}"), exp=2.4, nlat=8)
+        b.blob(wr + d * 0.07, 0.07 + grow, 0.055 + grow, 0.065 + grow, W(f"hand.{s}"), exp=2.6, nlat=8)
 
 
 def leg(b, R, side, grow=0.0, foot=True, boot=0.0):
     s = side
     hp, kn, an = R.h[f"leg.{s}"], R.t[f"leg.{s}"], R.t[f"shin.{s}"]
-    b.tube(hp, kn, 0.11 + grow, 0.095 + grow, W(f"leg.{s}"))
-    b.tube(kn, an, 0.095 + grow, 0.085 + grow, W(f"shin.{s}"))
+    b.tube(hp, kn, 0.095 + grow, 0.078 + grow, W(f"leg.{s}"))
+    b.tube(kn, an, 0.078 + grow, 0.064 + grow, W(f"shin.{s}"))
     if foot:
         toe = R.t[f"toe.{s}"]
         c = Vector(((an.x + toe.x) / 2, (an.y + toe.y) / 2 - 0.01, 0.075 + boot / 2))
-        b.blob(c, 0.09 + grow + boot, 0.125 + grow + boot, 0.075 + boot / 2, W(f"foot.{s}"), exp=2.6, nlat=8)
+        b.blob(c, 0.072 + grow + boot, 0.11 + grow + boot, 0.06 + boot / 2, W(f"foot.{s}"), exp=3.0, nlat=8)
 
 
 def head(b, R, grow=0.0, keep=None):
-    b.blob(R.head_c, R.HX + grow, R.HY + grow, R.HZ + grow, W("head"), exp=2.6, keep=keep)
+    b.blob(R.head_c, R.HX + grow, R.HY + grow, R.HZ + grow, W("head"), exp=3.4, keep=keep)
 
 
 def flat(colour):
