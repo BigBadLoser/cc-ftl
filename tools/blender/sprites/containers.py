@@ -22,13 +22,13 @@ from . import damage
 from .modkit import K
 
 H, M = 2.0, 0.06                          # height (per size, set by _size); gap to the footprint edge
-HEIGHT = {"2x3": 2.0, "3x5": 3.0}
+HEIGHT = {"2x4": 2.0, "3x6": 3.0}
 ZC = 0.34                                 # the truss's mid height (struct: chords 0.1 .. 0.58): containers hang
 Z_OFF = ZC - H / 2                        # centred on it, half below the beam line in open space
 FR, FRD, CAST = "gm", "gmD", "dark"       # frame, its darker face, corner castings
 SH, SHL, SHD = "plate", "sole", "steelL"  # shell plating: body, rib crests, seams
 BAND = ("sole", "steelD")                 # the neutral default under the livery (P, S)
-SIZES = {"2x3": (2, 3), "3x5": (3, 5)}
+SIZES = {"2x4": (2, 4), "3x6": (3, 6)}
 ENDS = {0: ("s", "n"), 1: ("e", "w")}     # per rotation: doors toward the camera, doors away
 BAND_Z = (0.42 * H, 0.62 * H)
 
@@ -203,34 +203,54 @@ def livery(size, rot, end):
 
 def clamp(side):
     """At the middle tile of the clamped side, level with the beam; built with the spine at local -v (r0 n, r1 e, r2 s,
-    r3 w), the truss's centre line one tile in at v = -1. A bolted saddle wrapped round the truss, a box-section arm,
-    a collar plate pressed on the door end round its socket (a locking boss in it), four rams tying saddle to collar."""
-    k = K(f"clamp_{side}", (1, 1), {"n": 0, "e": 1, "s": 2, "w": 3}[side])
-    e = -0.5 + M                                                                     # the door end's face
-    vb = -1.0                                                                        # the truss's centre line
-    c = e - 0.08                                                                     # the collar's outer face
-    for z in (ZC + 0.26, ZC - 0.32):                                                 # saddle: a sleeve round the
-        k.box(0, vb, z, 0.84, 0.6, 0.06, FRD, top=FR)                                  # truss, bolted through
-    for dv in (0.3, -0.3):
-        k.box(0, vb + dv, ZC - 0.32, 0.84, 0.06, 0.64, FR, top=FR)
-        for su in (-1, 1):
-            for z in (ZC - 0.2, ZC + 0.14):
-                k.box(su * 0.32, vb + dv + (0.035 if dv > 0 else -0.035), z, 0.07, 0.02, 0.07, SHD)
-    k.box(0, vb - 0.335, ZC - 0.08, 0.5, 0.012, 0.12, "hazY")                           # a hazard tag on it
-    k.box(0, (vb + 0.33 + c) / 2, ZC - 0.22, 0.46, c - vb - 0.33, 0.44, FR, top=SHD)   # box-section arm
-    k.box(0, e - 0.04, ZC - 0.5, 0.9, 0.08, 1.0, FRD, top=FR)                          # collar on the door end
-    for z in (ZC - 0.48, ZC + 0.42):                                                 # hazard edges top and bottom
-        for i in range(8):
-            k.box(-0.39 + i * 0.111, c - 0.004, z, 0.055, 0.012, 0.06, "hazY" if i % 2 else "hazK")
-    k.box(0, c - 0.02, ZC - 0.17, 0.34, 0.04, 0.34, FR, top=SHD)                       # locking boss
-    k.box(0, c - 0.042, ZC - 0.09, 0.18, 0.02, 0.18, CAST)
-    for su in (-1, 1):                                                               # rams, saddle to collar
-        for z in (ZC + 0.2, ZC - 0.28):
-            k.box(su * 0.3, (vb + 0.33 + c) / 2, z - 0.045, 0.09, c - vb - 0.33, 0.09, FR, top=SHD)
-            k.box(su * 0.3, c - 0.05, z - 0.03, 0.05, 0.1, 0.06, "steelL")
-    k.box(0.3, vb - 0.33, ZC + 0.12, 0.08, 0.04, 0.06, FRD)                             # engaged light
-    k.box(0.3, vb - 0.352, ZC + 0.13, 0.045, 0.02, 0.04, "green")
-    return k.build()
+    r3 w), the truss's centre line one tile in. robot_kit parts (character x = -u, f = v): a dark static sleeve bolted
+    round the truss; on hinge discs above and below it two pairs of hazard-yellow claws arching out round the sleeve
+    and hooking back onto the door end's socket pin, worked by exposed rams (dark barrels, bright rods); a hose loop
+    over the top; a small latch collar on the door end round the socket."""
+    import math
+
+    import bpy
+
+    from .robot_kit import Rig
+    rig = Rig(f"clamp_{side}")
+    p = rig.part("root")
+    e, vb = -0.5 + M, -1.0                                                           # door end face, truss centre
+    p.rbox((0, vb, ZC), (0.56, 0.5, 0.56), FRD, r=0.04, top=FR)                       # the sleeve
+    for f in (vb + 0.255, vb - 0.255):
+        for x in (-0.2, 0.2):
+            for z in (ZC - 0.17, ZC + 0.17):
+                p.box((x, f, z), (0.06, 0.02, 0.06), SHD)                               # its bolts
+    p.box((0, vb - 0.26, ZC - 0.04), (0.36, 0.012, 0.09), "hazY")                       # tag on the far face
+    p.box((0.18, vb - 0.26, ZC + 0.16), (0.06, 0.02, 0.05), "green")                     # engaged light
+    p.rbox((0, e - 0.03, ZC - 0.02), (0.56, 0.06, 0.6), FRD, r=0.03, top=FR)              # latch collar on the door
+    for z in (ZC - 0.3, ZC + 0.26):                                                  # end, hazard edges
+        for i in range(5):
+            p.box((-0.2 + i * 0.1, e - 0.065, z), (0.05, 0.012, 0.05), "hazY" if i % 2 else "hazK")
+    for sz in (1, -1):                                                               # claws over and under the
+        hz = ZC + sz * 0.33                                                          # sleeve, onto the socket pin
+        p.rbox((0, vb + 0.1, ZC + sz * 0.3), (0.5, 0.16, 0.08), FR, r=0.02)                # hinge bracket
+        p.cyl((0, vb + 0.12, hz), 0.08, 0.52, FRD, axis="x", top=SHD)                    # hinge disc
+        for x in (-0.16, 0.16):
+            h, apex, tip = (x, vb + 0.12, hz), (x, -0.72, ZC + sz * 0.6), (x, -0.5, ZC + sz * 0.1)
+            p.plate(h, apex, 0.12, 0.1, "hazY", taper=0.9, r=0.025)                     # the claw arching out,
+            p.plate(apex, tip, 0.11, 0.09, "hazY", taper=0.65, r=0.02)                  # hooking back in
+            p.box(tip, (0.1, 0.06, 0.05), CAST)                                          # its pad on the pin
+            p.box(apex, (0.13, 0.05, 0.05), "hazK")                                      # a black knuckle band
+        for x in (-0.3, 0.3):                                                        # its ram
+            r0, r1 = (x, vb + 0.05, ZC + sz * 0.12), (x, -0.74, ZC + sz * 0.48)
+            m = tuple(r0[i] + (r1[i] - r0[i]) * 0.55 for i in range(3))
+            p.strut(r0, m, 0.04, FRD)
+            p.strut(m, r1, 0.02, "steelL")
+            p.cyl(r1, 0.035, 0.06, FRD, axis="x")
+    pts = [(0.24, vb + 0.02, ZC + 0.28)] + [(0.24, vb + 0.2 + 0.18 * t, ZC + 0.3 + 0.2 * math.sin(math.pi * t))
+                                          for t in (0.25, 0.5, 0.75)] + [(0.24, -0.66, ZC + 0.42)]
+    for a, b in zip(pts, pts[1:]):                                                   # the hose loop
+        p.strut(a, b, 0.025, CAST)
+    p.box((0.24, vb + 0.29, ZC + 0.49), (0.06, 0.06, 0.03), "medRed")
+    rig.build()
+    rig.root.rotation_euler = (0, 0, -{"n": 0, "e": 1, "s": 2, "w": 3}[side] * math.pi / 2)   # turned like modkit.K
+    bpy.context.view_layer.update()
+    return rig.objects()
 
 
 def _jobs_for(size, rot, end, variant, state):
