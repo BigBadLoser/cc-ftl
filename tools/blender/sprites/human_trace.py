@@ -6,8 +6,6 @@ station the section's centre and its half extents across the bone (front/back an
 smoothed so muscle bumps go. The torso (hips, spine chain, clavicles) and the head (neck and head) are sliced
 horizontally the same way, with skin weights per slice from the bones its verts follow. Rest space: z up, feet at 0,
 front = -y, +x = character left, arms out in a T."""
-import math
-
 import numpy as np
 from mathutils import Vector
 
@@ -18,8 +16,7 @@ LIMBS = ("arm", "forearm", "hand", "leg", "shin", "foot")
 UPPER_K = (1.12, 1.45, 1.12)          # upper arm thickness against the traced arm: shoulder, bicep, elbow
 FORE_K = (1.08, 1.02, 0.95)           # forearm: elbow, a third down, wrist
 HEAD_W, HEAD_H = 0.84, 1.14           # head width and height against the traced head
-HAND_LEN = 0.145                      # wrist to the curled finger ends (the traced hand, fingers out, is 0.26)
-KNUCKLE = 4 / 6                       # where the knuckles are along it (on a section: human_v2_items paints a line)
+HAND_LEN = 0.17                       # wrist to the curled finger ends (the traced hand, fingers out, is 0.26)
 
 
 def fold(name):
@@ -203,9 +200,9 @@ def shape_hand(secs, head):
         f = min(1.0, max(0.0, (t - ts[k]) / (ts[k + 1] - ts[k])))
         c = Vector(secs[k][0]).lerp(Vector(secs[k + 1][0]), f)
         u = t / HAND_LEN
-        curl = 0.03 * max(0.0, (u - 0.6) / 0.4) ** 2                        # the fingers bend down under the palm
-        width = 0.038 + 0.016 * min(1.0, u / KNUCKLE) - 0.012 * max(0.0, (u - KNUCKLE) / (1 - KNUCKLE))
-        thick = 0.028 + 0.008 * min(1.0, u / 0.6) + 0.006 * math.exp(-((u - KNUCKLE) / 0.12) ** 2)  # knuckle ridge
+        curl = 0.035 * max(0.0, (u - 0.5) / 0.5) ** 2                       # the fingers bend down under the palm
+        width = 0.038 + 0.016 * min(1.0, u / 0.7) - 0.01 * max(0.0, (u - 0.7) / 0.3)
+        thick = 0.028 + 0.008 * min(1.0, u / 0.6)
         out.append((c - e2 * curl, e1, e2, width, thick))
     return out
 
