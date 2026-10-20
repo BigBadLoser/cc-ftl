@@ -1,6 +1,7 @@
 """Cargo containers (family `containers`): sealed exterior shells, no interior, clamped by a short end to a truss spine
 and detachable, so every side is finished. modkit local frame (u across the width, v along the length, z up), turned
-and anchored at the front-most footprint tile like every module. H high (2.0: trial, see the review).
+and anchored at the front-most footprint tile like every module. H high, hung centred on the truss's mid height
+(ZC): half the box is below the beam line, in open space.
 
 Shell: a reinforced corner frame (posts, rails, corner castings), corrugated long sides with a smooth livery band, a
 ribbed roof with four lifting eyes, a ribbed blank end and the door end (twin doors, locking bars, hinges, the clamp
@@ -21,6 +22,8 @@ from . import damage
 from .modkit import K
 
 H, M = 2.0, 0.06                          # height; gap to the footprint edge (neighbours stay apart)
+ZC = 0.34                                 # the truss's mid height (struct: chords 0.1 .. 0.58): containers hang
+Z_OFF = ZC - H / 2                        # centred on it, half below the beam line in open space
 FR, FRD, CAST = "gm", "gmD", "dark"       # frame, its darker face, corner castings
 SH, SHL, SHD = "plate", "sole", "steelL"  # shell plating: body, rib crests, seams
 BAND = ("sole", "steelD")                 # the neutral default under the livery (P, S)
@@ -89,11 +92,11 @@ def _end(k, sv, u0, v0, doors, patched=False):
             k.box(u + su * 0.04, sv * (v0 + 0.005), 0.45 * H, 0.1, 0.02, 0.03, FRD)
         for z in (0.2, H / 2 - 0.04, H - 0.26):                                      # hinges at the outer edges
             k.box(su * (u0 - 0.13), sv * (v0 + 0.0), z, 0.05, 0.03, 0.08, FRD)
-    k.box(0, sv * (v0 + 0.01), H - 0.25, 0.32, 0.05, 0.14, FRD, top=FR)               # clamp socket, its pin
-    k.box(0, sv * (v0 + 0.035), H - 0.2, 0.1, 0.02, 0.05, SHD)
+    k.box(0, sv * (v0 + 0.01), H / 2 - 0.1, 0.34, 0.05, 0.2, FRD, top=FR)              # clamp socket at mid height
+    k.box(0, sv * (v0 + 0.035), H / 2 - 0.03, 0.12, 0.02, 0.06, SHD)                    # (the beam's), its pin
     if patched:                                                                      # welded shut
-        k.box(0, sv * (v0 + 0.02), 0.5 * H, 2 * u0 - 0.3, 0.03, 0.06, "rust", top="rustD")
-        k.box(0, sv * (v0 + 0.03), 0.5 * H - 0.03, 2 * u0 - 0.26, 0.012, 0.012, CAST)
+        k.box(0, sv * (v0 + 0.02), 0.3 * H, 2 * u0 - 0.3, 0.03, 0.06, "rust", top="rustD")
+        k.box(0, sv * (v0 + 0.03), 0.3 * H - 0.03, 2 * u0 - 0.26, 0.012, 0.012, CAST)
 
 
 def _roof(k, u0, v0, door_sv, light, variant):
@@ -166,7 +169,13 @@ def shell(size, rot, end, variant=0, state=""):
         _wear(k, u0, v0, rnd)
     if state == "patched":
         _patches(k, u0, v0, random.Random(17 + variant))
-    return k.build()
+    return _hang(k.build())
+
+
+def _hang(objs):
+    for o in objs:
+        o.location.z += Z_OFF
+    return objs
 
 
 def livery(size, rot, end):
@@ -179,24 +188,28 @@ def livery(size, rot, end):
     k.m.flat = True
     for su in (-1, 1):
         _band(k, su, W / 2 - M + 0.003, L / 2 - M, ("mkP", "mkS"))
-    return objs + k.build()
+    return objs + _hang(k.build())
 
 
 def clamp(side):
-    """At the middle tile of the clamped side; built with the spine at local -v (r0 n, r1 e, r2 s, r3 w)."""
+    """At the middle tile of the clamped side, level with the beam; built with the spine at local -v (r0 n, r1 e, r2 s,
+    r3 w): a mount on the truss, two rams across to a latch plate locked in the door end's socket, claws above and
+    below the socket."""
     k = K(f"clamp_{side}", (1, 1), {"n": 0, "e": 1, "s": 2, "w": 3}[side])
     e = -0.5 + M                                                                     # the door end's face
-    k.box(0, -0.62, 0.0, 0.56, 0.16, 0.66, FRD, top=FR)                                # mount on the spine side
-    k.box(0, -0.53, 0.12, 0.44, 0.04, 0.4, "hazY")
+    k.box(0, -0.62, ZC - 0.26, 0.5, 0.16, 0.52, FRD, top=FR)                           # mount on the truss
+    k.box(0, -0.535, ZC - 0.2, 0.42, 0.012, 0.4, "hazY")
     for i in range(4):
-        k.box(-0.15 + i * 0.1, -0.51, 0.14, 0.05, 0.012, 0.36, "hazK")
-    for su in (-1, 1):                                                               # jaws over the top edge
-        k.box(su * 0.2, -0.46, H - 0.03, 0.09, 0.4, 0.1, "hazY", top="hazY")
-        k.box(su * 0.2, e + 0.15, H - 0.12, 0.09, 0.07, 0.16, CAST)
-        k.box(su * 0.2, -0.6, 0.66, 0.11, 0.12, H - 0.62, FR)                           # their hydraulic rams
-    k.box(0, e - 0.06, H - 0.27, 0.26, 0.14, 0.16, FR, top=SHD)                          # latch in the socket
-    k.box(0, -0.62, 0.66, 0.08, 0.08, 0.05, FRD)
-    k.box(0, -0.62, 0.7, 0.045, 0.045, 0.03, "green")                                    # engaged light
+        k.box(-0.15 + i * 0.1, -0.528, ZC - 0.18, 0.05, 0.012, 0.36, "hazK")
+    for su in (-1, 1):                                                               # hydraulic rams across
+        k.box(su * 0.16, -0.48, ZC - 0.05, 0.08, 0.16, 0.08, FR, top=SHD)
+        k.box(su * 0.16, -0.4, ZC - 0.035, 0.05, 0.08, 0.05, "steelL")
+    k.box(0, e - 0.03, ZC - 0.1, 0.3, 0.08, 0.2, FR, top=SHD)                           # latch plate in the socket
+    for dz in (0.14, -0.2):                                                          # claws over and under it
+        k.box(0, e - 0.02, ZC + dz, 0.4, 0.14, 0.06, "hazY", top="hazY")
+        k.box(0, e + 0.05, ZC + dz - (0.03 if dz > 0 else -0.03), 0.4, 0.03, 0.06, CAST)
+    k.box(0, -0.62, ZC + 0.26, 0.08, 0.08, 0.05, FRD)
+    k.box(0, -0.62, ZC + 0.3, 0.045, 0.045, 0.03, "green")                                # engaged light
     return k.build()
 
 
