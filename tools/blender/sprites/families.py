@@ -21,6 +21,7 @@
             MODPACK_ROTS=1 renders r0 only, for quick previews)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
+  hydroponics  the hydroponics bay, .grow0 .. .grow3, each also .active (hydroponics.py; MODPACK_ROTS as storage_set)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -77,6 +78,10 @@ def jobs(name):
         import os
         from . import battery
         return battery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
+    if name == "hydroponics":
+        import os
+        from . import hydroponics
+        return hydroponics.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
     if name == "damage":
         import os
         from . import damage
