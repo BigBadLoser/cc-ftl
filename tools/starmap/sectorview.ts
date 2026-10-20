@@ -12,9 +12,6 @@ export const factions = content.galaxy.factions as Record<string, { name: string
 const structures = content.galaxy.structures as Record<string, { kind: string } | undefined>;
 
 /** Soft field around a sector's nodes and routes, contoured with marching squares into closed loops (an SVG path). */
-/** Loops smaller than this share of the largest one are dropped (holes and specks). */
-const MIN_LOOP = 0.12;
-
 export function fluidBorder(nodes: P[], links: [P, P][], sig: number, step: number, map: (p: P) => P): string {
   const thr = 0.42;
   const xs = nodes.map((p) => p[0]);
@@ -68,7 +65,7 @@ export function fluidBorder(nodes: P[], links: [P, P][], sig: number, step: numb
     for (const p of sg) adj.set(key(p), [...(adj.get(key(p)) ?? []), k]);
   });
   const used = new Set<number>();
-  const loops: P[][] = [];
+  let d = '';
   for (let k = 0; k < segs.length; k++) {
     if (used.has(k)) continue;
     used.add(k);
@@ -81,23 +78,6 @@ export function fluidBorder(nodes: P[], links: [P, P][], sig: number, step: numb
       const sg = segs[nxt]!;
       cur = key(sg[0]) === key(cur) ? sg[1] : sg[0];
       loop.push(cur);
-    }
-    loops.push(loop);
-  }
-  // Drop small holes and specks (under MIN_LOOP of the largest loop's area), then smooth what is left (Chaikin).
-  const area = (l: P[]) => Math.abs(l.reduce((t, p, i) => { const q = l[(i + 1) % l.length]!; return t + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
-  const big = Math.max(0, ...loops.map(area));
-  let d = '';
-  for (let loop of loops) {
-    if (area(loop) < big * MIN_LOOP) continue;
-    for (let it = 0; it < 3; it++) {
-      const next: P[] = [];
-      for (let i = 0; i < loop.length; i++) {
-        const p = loop[i]!;
-        const q = loop[(i + 1) % loop.length]!;
-        next.push([p[0] * 0.75 + q[0] * 0.25, p[1] * 0.75 + q[1] * 0.25], [p[0] * 0.25 + q[0] * 0.75, p[1] * 0.25 + q[1] * 0.75]);
-      }
-      loop = next;
     }
     d += 'M' + loop.map((p) => map(p).map((v) => v.toFixed(1)).join(' ')).join(' L') + 'Z';
   }
@@ -167,7 +147,7 @@ export function localView(seed: number, sectorId = 's.0.0'): { svg: string; stat
     const links = [...edges.values()].filter((e) => e.kind === 'route' && sectorOf(e.a) === s.id)
       .map((e): [P, P] => [[nodes.get(e.a)!.x, nodes.get(e.a)!.y], [nodes.get(e.b)!.x, nodes.get(e.b)!.y]]);
     const [fo, so] = r === 'here' ? [0.12, 0.85] : r === 'near' ? [0.06, 0.5] : [0.025, 0.22];
-    const d = fluidBorder(pts, links, 62, 5, map);
+    const d = fluidBorder(pts, links, 44, 5, map);
     out.push(`<path d="${d}" fill="${col}" fill-opacity="${fo}" stroke="${col}" stroke-opacity="${so}" stroke-width="${r === 'here' ? 2 : 1.4}" fill-rule="evenodd"/>`);
   }
   // Central bodies.

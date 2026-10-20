@@ -69,7 +69,7 @@ export function regionView(seed: number, sectorId = 's.0.0', span = 7000): strin
   for (const [id, list] of byRegion) {
     const inner = links.filter((l) => l.a.region === id && l.b.region === id).map((l): [P, P] => [[l.a.x, l.a.y], [l.b.x, l.b.y]]);
     const col = colOf(list[0]!.faction);
-    const d = fluidBorder(list.map((s): P => [s.x, s.y]), inner, 340, 40, map);
+    const d = fluidBorder(list.map((s): P => [s.x, s.y]), inner, 260, 40, map);
     out.push(`<path d="${d}" fill="${col}" fill-opacity="0.07" stroke="${col}" stroke-opacity="0.45" stroke-width="1.5" fill-rule="evenodd"/>`);
   }
   // Lanes between sectors: gates bright and thick, rifts dotted.
