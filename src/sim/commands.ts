@@ -18,6 +18,8 @@ export type Command =
   | { type: 'job.deconstructModule'; ship: number; x: number; y: number }
   | { type: 'module.setPriority'; id: number; priority: number }
   | { type: 'module.setEnabled'; id: number; enabled: boolean }
+  /** Unclamp a container module from its ship: its tiles leave the ship and it drifts off as a free body with its stock. */
+  | { type: 'container.detach'; id: number }
   | { type: 'debug.ignite'; ship: number; x: number; y: number }
   | { type: 'debug.setField'; ship: number; x: number; y: number; field: string; value: number }
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }

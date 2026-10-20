@@ -100,6 +100,31 @@ export interface RuinDecal {
   art: string;
 }
 
+/**
+ * A container of the wreck. sealed: clamped, shell whole, stock kept. breached: clamped, shell holed, stock partly or
+ * wholly lost. destroyed: clamped wreckage, stock gone. torn: ripped off the frame, a free body drifting near the wreck
+ * (`x, y` its centre, ship-local, possibly outside the rows; `vx, vy` tiles/s, `spin` rad/s) that the spawn path creates.
+ */
+export interface RuinContainer {
+  def: string;
+  rot: number;
+  fate: 'sealed' | 'breached' | 'destroyed' | 'torn';
+  /** Its door end, the short end that was clamped to the frame. */
+  clamp: 'n' | 'e' | 's' | 'w';
+  /** Index into the ruined template's `modules` (clamped fates only). */
+  index?: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  spin: number;
+  /** Hit points as a fraction of max. */
+  hp: number;
+  /** Sealed, but only just: welded patch plates over old holes (scrapper boxes; art `.patched`, falls back to `.damaged`). */
+  patched?: boolean;
+  stock: { item: string; count: number }[];
+}
+
 export interface RuinMeta {
   seed: number;
   cause: RuinCause;
@@ -119,6 +144,7 @@ export interface RuinMeta {
   caches: RuinCache[];
   hooks: RuinHook[];
   decals: RuinDecal[];
+  containers: RuinContainer[];
 }
 
 export interface RuinResult {

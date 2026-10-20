@@ -586,3 +586,31 @@ Open: CombatPanel still old style; phone hides the crew row while the combat she
 - **Next (user decision): sealed, detachable cargo containers** as their own ship component with their own exterior. Freighter
   frames become trusses plus clamped containers; a detached container becomes a free body (like shuttles) carrying its
   stock. Not walk-in (walk-in plus detachable would need grid surgery).
+
+## Cargo containers (branch `shipgen-containers`; not merged; awaiting user review of the look)
+
+- **Component** (`src/sim/containers`): a container is a module with `ModuleDef.container` (`container.2x3` cap 7,
+  90 hp; `container.3x5` cap 18, 160 hp; solid, full cover, no power). Cargo doors are on a short end, and that end
+  always clamps to the frame (user decision; shipgen validation enforces it). They stand on Beam tiles, tagged
+  `ContainerC` (def, rot, clamp side, state clamped / drifting, hp, last ship, drift). Haulers skip it (sealed).
+  Combat reuses module damage; at 0 hp its stock is lost. `container.detach` (and `detachContainer`) frees its tiles
+  (Space, no owner, no module) and turns the same entity into an inert drifting `BodyC` with its `StorageC`, seeded
+  velocity away from the ship's centre; `containerDriftSystem` moves it and damps it to rest (12 s time constant, a few
+  tiles), so it stays in the node as loot. Save v22.
+- **Shipgen**: container cells (`containerCells.ts`, symbol chars per size and turn) survive blocks, mirrors and
+  arranging; `generate` turns them into `=` plus container modules with stock (`extractContainers`). `containerFrame` is
+  a beam, truss or crawl-tube spine with containers on both faces, short end on the spine (sizes mixed, more on long
+  rows; gaps, stagger, empty slots seeded). The tug's barge and the mid frame keep a walkable crawl tube (crew must reach the far end). Validation:
+  containers must sit on `=` and touch the frame on their clamp side.
+- **Scrapper**: the pod-string donor (and the old non-section civilian grammar) is a crawl tube with containers clamped
+  on both walls (`civilBlocks.podString`); scrapper strings mix sizes, gaps and empty slots. The tube stays walkable.
+  About 25-35% of scrappers carry one (donor weights in `content/factions/scrapper.ts`; ~40% at depth 4). Salvage
+  cuts and notches never slice a container.
+- **Ruins** (`ruinContainers.ts`): some torn off (and any a shear cuts off) as `meta.containers` bodies near the wreck,
+  spaced a tile clear of the wreck and each other, spawned by `applyRuin`; the rest sealed, breached (stock partly lost,
+  under half hp) or destroyed (stock gone). Scrapper boxes are breached more often and sealed ones often `patched`.
+- **Render**: placeholder drawn boxes (0.8 tiles tall, under the hull wall) with a yellow clamp until art lands (ids in ARCHITECTURE "Cargo containers").
+- **Debug**: `?genAt=dx,dy` places generated ships and derelicts away from the player's ship (big freighters otherwise
+  collide with it and are refused).
+- User answers (2026-10-20): containers are pre-stocked for now, no player building, no UI yet; the truss / crawl mix
+  is fine. Later: pick-up, towing, cutting open.

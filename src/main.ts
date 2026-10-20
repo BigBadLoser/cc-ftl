@@ -59,6 +59,8 @@ function focusFight(ship: number | null): void {
 const params = new URLSearchParams(location.search);
 const shipgenFlag = params.get('shipgen');
 const genDepth = Math.max(0, Math.floor(Number(params.get('depth') ?? 2)) || 0);
+/** `?genAt=dx,dy`: where a generated ship's centre goes, in tiles from the player's ship's centre (default 18,22). */
+const genAt = (params.get('genAt') ?? '18,22').split(',').map((v) => Math.round(Number(v) || 0)) as [number, number];
 
 /** Debug: generate a ship of `faction` (random if omitted) and put it where a raider would go. */
 function spawnGenerated(faction?: string): void {
@@ -66,8 +68,8 @@ function spawnGenerated(faction?: string): void {
   const ids = Object.keys(content.factions);
   const id = faction ?? ids[Math.floor(Math.random() * ids.length)];
   if (!mine || !id) return;
-  const cx = Math.round(mine.x + mine.width / 2 + 18);
-  const cy = Math.round(mine.y + mine.height / 2 + 22);
+  const cx = Math.round(mine.x + mine.width / 2 + genAt[0]);
+  const cy = Math.round(mine.y + mine.height / 2 + (genAt[1] ?? 22));
   bridge.dispatch({ type: 'debug.spawnGenerated', faction: id, depth: genDepth, seed: (Math.random() * 0x7fffffff) >>> 0, cx, cy });
 }
 
@@ -84,7 +86,7 @@ function spawnDerelict(faction?: string): void {
   const intensity = params.has('ruin') ? Math.max(0, Math.min(1, Number(params.get('ruin')) || 0)) : 0.5;
   bridge.dispatch({
     type: 'debug.spawnDerelict', faction: id, depth: genDepth, seed: (Math.random() * 0x7fffffff) >>> 0, intensity,
-    cx: Math.round(mine.x + mine.width / 2 + 18), cy: Math.round(mine.y + mine.height / 2 + 22),
+    cx: Math.round(mine.x + mine.width / 2 + genAt[0]), cy: Math.round(mine.y + mine.height / 2 + (genAt[1] ?? 22)),
     ...(cause === 'combat' || cause === 'decay' ? { cause } : {}),
   });
 }

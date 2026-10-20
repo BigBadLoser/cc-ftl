@@ -13,6 +13,7 @@ import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
 import { salvage } from './topoSalvage';
 import { validateTemplate } from './validate';
+import { extractContainers } from './containerCells';
 import type { ArchetypeId, FactionDef, GenResult, GenRoom, RoomRole, ShipRoleDef } from './types';
 
 /** Attempts before giving up on a seed (each reseeds deterministically). */
@@ -169,6 +170,13 @@ function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: n
   };
 }
 
+/** A container's cargo: the faction's stock list, scaled up by the container's capacity (storage caps what fits). */
+function stockOf(rng: Rng, f: FactionDef, def: ModuleDef | undefined): { stock?: { item: string; count: number }[] } {
+  const k = Math.ceil((def?.storage?.capacity ?? 0) / 3);
+  const stock = f.stock.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) * k })).filter((s) => s.count > 0);
+  return stock.length > 0 ? { stock } : {};
+}
+
 /** Pick a ship role (weights scaled by depth) and one of its archetypes. */
 function pickRole(rng: Rng, f: FactionDef, depth: number): { role: ShipRoleDef; archetype: ArchetypeId } {
   const roles = f.architecture.roles.map((r) => ({ value: r, weight: scaled(r.weight, depth) }));
@@ -213,11 +221,13 @@ export function generateAttempt(
   const { rows: drawn, labels: roomOf, width, height, ox, oy } = b.cv.crop();
   const labels = b.cv.labels;
   const roles = labels.map((l) => b.chunkRoles.get(`${l.chunk}:${l.letter}`) ?? roleOfLetter(l.letter) ?? 'cargo');
-  const rows = pruneDoors(drawn, roomOf, width, roles);
+  const { rows: framed, containers } = extractContainers(drawn);
+  const rows = pruneDoors(framed, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
   const d = fitOut(rng, f, rows, roomOf, roles, specs, defs);
   const template = toTemplate(f, role, factionId, seed, plan, rows, d);
+  template.modules = [...(template.modules ?? []), ...containers.map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs);
   const metrics = layoutMetrics(template, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', defs);
   const bad = metricViolation(metrics, f.metrics);

@@ -102,6 +102,15 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let airlocks = new Set<number>();
 
   const kindAt = tiles.kindAt;
+  // Beam tiles under a cargo container are its seat, not frame: no beam sprite there, and the frame's beams end at it.
+  const boxAt = (x: number, y: number): boolean => {
+    const gx = x + grid.x0, gy = y + grid.y0;
+    if (!grid.inBounds(gx, gy)) return false;
+    const id = grid.get("module", gx, gy);
+    const m = id ? host.overlayWorld.world.get(id, ModuleC) : undefined;
+    return !!(m && host.overlayWorld.modules[m.def]?.container);
+  };
+  const frameKindAt = (x: number, y: number): number => (kindAt(x, y) === Struct.Beam && boxAt(x, y) ? Struct.Space : kindAt(x, y));
 
   function clearChunk(v: TileChunk): void {
     for (const s of v.owned) s.destroy();
@@ -177,8 +186,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           const k = struct[ci] as number;
           if (k === Struct.Space) continue;
           if (k === Struct.Beam) {
+            if (boxAt(x, y)) continue;
             // Low open truss, the same in every wall view level; sprites sit at the tile's depth, overlays just above.
-            const ids = beamIds(kindAt, x, y, host.beamLook?.() ?? DEFAULT_BEAM_LOOK);
+            const ids = beamIds(frameKindAt, x, y, host.beamLook?.() ?? DEFAULT_BEAM_LOOK);
             ids.forEach((id, i) => {
               const s = atlas.stat(id);
               if (!s) return;

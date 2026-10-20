@@ -1,3 +1,4 @@
+import { isContainerCell } from './containerCells';
 import type { ChunkDef, RoomRole } from './types';
 
 const ROLES: Record<string, RoomRole> = {
@@ -62,8 +63,11 @@ export class Canvas {
         const k = this.idx(ox + i, oy + j);
         if (k < 0) return false;
         const cur = this.cells[k] as string;
-        if (c === '#' || c === 'D' || c === '=') {
-          if (cur === '_') return false;
+        // A container lands only on space; walls and doors never land on a container (beams just pass under it).
+        if (isContainerCell(c)) {
+          if (cur !== '.') return false;
+        } else if (c === '#' || c === 'D' || c === '=') {
+          if (cur === '_' || (c !== '=' && isContainerCell(cur))) return false;
         } else if (cur !== '.') return false;
       }
     }
@@ -75,7 +79,8 @@ export class Canvas {
         if (c === '.') continue;
         const k = this.idx(ox + i, oy + j);
         const cur = this.cells[k] as string;
-        if (c === '#') {
+        if (isContainerCell(c)) this.cells[k] = c;
+        else if (c === '#') {
           if (cur !== 'D') this.cells[k] = '#';
         } else if (c === '=') {
           if (cur === '.') this.cells[k] = '=';

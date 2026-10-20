@@ -5,7 +5,8 @@ import { StorageC } from '../sim/items/components';
 import type { Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { depthKey } from './iso';
-import { hullOutward, hullRow, hullSide } from '../sim/modules/footprint';
+import { hullOutward, hullRow, hullSide, rotatedSize } from '../sim/modules/footprint';
+import { ContainerC } from '../sim/containers/components';
 
 /** Storage reads 'full' from this share of its slots upward. */
 const FULL_SHARE = 0.75;
@@ -48,6 +49,26 @@ export function moduleAssets(world: World, id: number, m: Module, def: ModuleDef
   const state = def.storage ? `.${storageFill(world, id)}` : active ? '.active' : '';
   const rot = `.r${m.rot}`;
   return [`${def.asset}${rot}${state}`, `${def.asset}${rot}`, `${def.asset}${state}`, def.asset];
+}
+
+/**
+ * Art ids of a container shell, most specific first, and its stand-in key: damaged under half hp, destroyed at 0. The
+ * door end (the clamped short end, `n e s w`) picks the sprite: `container.<W>x<H>.r<N>.<end>[.state]` first.
+ */
+export function containerChain(def: ModuleDef, rot: number, hp: number, end = 'n'): { chain: string[]; key: string } {
+  const a = def.asset;
+  const state = hp <= 0 ? '.destroyed' : hp < def.maxHp / 2 ? '.damaged' : '';
+  const r = `.r${rot}`;
+  return { chain: [`${a}${r}.${end}${state}`, `${a}${r}.${end}`, `${a}${r}${state}`, `${a}${r}`, `${a}${state}`, a], key: `${a}${state}` };
+}
+
+/** The footprint tile in the middle of a container's clamped side (where the clamp mark sits). */
+function clampTile(def: ModuleDef, m: Module, side: string): { x: number; y: number } {
+  const [w, h] = rotatedSize(def, m.rot);
+  if (side === 'n') return { x: m.x + (w >> 1), y: m.y };
+  if (side === 's') return { x: m.x + (w >> 1), y: m.y + h - 1 };
+  if (side === 'w') return { x: m.x, y: m.y + (h >> 1) };
+  return { x: m.x + w - 1, y: m.y + (h >> 1) };
 }
 
 /** Which footprint tiles a stand-in sprite of a layer is repeated on (real art is one sprite per layer). */
@@ -99,6 +120,13 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
 export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false): ModuleLayer[] {
   const a = def.asset;
   const r = `.r${m.rot}`;
+  if (def.container) {
+    // The shell (`container.<W>x<H>[.rN][.damaged|.destroyed]`) and the clamp gripping it on the frame side.
+    const box = world.get(id, ContainerC);
+    const shell = containerChain(def, m.rot, m.hp, box?.clamp ?? 'n');
+    const at = clampTile(def, m, box?.clamp ?? 'n');
+    return [{ ...shell, tiles: 'all' }, { chain: [`container.clamp.${box?.clamp ?? 'n'}`, 'container.clamp'], key: 'container.clamp', tiles: 'all', at, dz: 0.04 }];
+  }
   if (def.hullEdge) {
     const burn = active ? ['.active'] : [];
     const variant = (part: string) => [...burn.map((b) => `${a}.${part}${r}${b}`), `${a}.${part}${r}`];

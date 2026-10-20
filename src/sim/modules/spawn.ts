@@ -12,6 +12,7 @@ import { dismantleAirlock, initAirlock } from './airlock';
 import { VehicleBayC } from '../vehicles/components';
 import { releaseBayVehicle } from '../vehicles/lifecycle';
 import { shipIdOf, shipGrid } from '../regions';
+import { initContainer } from '../containers/detach';
 
 /** Create a module entity and claim its footprint in the grid. Assumes placement was validated. */
 export function spawnModule(sim: Sim, defId: string, x: number, y: number, rot: number): number {
@@ -30,6 +31,7 @@ export function spawnModule(sim: Sim, defId: string, x: number, y: number, rot: 
   if (def.vehicleBay) sim.world.add(id, VehicleBayC, { vehicle: 0 });
   for (const t of footprintTiles(def, x, y, rot)) grid.set('module', t.x, t.y, id);
   if (def.airlock) initAirlock(sim, grid, id);
+  if (def.container) initContainer(sim, id);
   return id;
 }
 

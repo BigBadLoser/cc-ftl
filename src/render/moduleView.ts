@@ -11,6 +11,8 @@ import { iso, depthKey, TILE_W } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
+import { boxState, containerBox } from './containerBox';
+import { ContainerC } from '../sim/containers/components';
 import { airlockLayers, createCollarAnimator, dockedAt } from './airlockArt';
 import { robotBayLayers } from './robotBayArt';
 import type { WallLevel } from './tiles';
@@ -94,6 +96,9 @@ function cut(tex: Texture, x0: number, x1: number): Texture {
   if (!t) m.set(k, (t = new Texture({ source: tex.source, frame: new Rectangle(tex.frame.x + x0, tex.frame.y, x1 - x0, tex.frame.height) })));
   return t;
 }
+
+/** Light tint of exterior pieces (containers) that room lighting never reaches. */
+const EXTERIOR_TINT = 0xd8dce6;
 
 /** A craft job counts as running while its progress moved within this many ms. */
 const ACTIVE_MS = 400;
@@ -243,7 +248,15 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           : def.airlock?.layout ? airlockLayers(world, id, lm, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
           : moduleLayers(world, id, lm, def, active, true);
         const layers = raw.flatMap((layer) => {
-          if (roofed && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
+          // Containers ride outside the hull: never under a roof.
+          if (roofed && !def.container && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
+          if (def.container && !atlas.firstOf(layer.chain)) {
+            // PLACEHOLDER until the container sheets land: a drawn box (with its own clamp mark) for the shell, no clamp layer.
+            if (layer.at) return [];
+            const [bw, bh] = rotatedSize(def, m.rot);
+            const box = containerBox(bw, bh, boxState(m.hp, def.maxHp), world.get(id, ContainerC)?.clamp ?? 'n');
+            return [{ layer, art: { s: box, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }];
+          }
           const art = resolveArt(atlas, layer.chain, layer.key);
           return art ? [{ layer, art }] : [];
         });
@@ -259,8 +272,9 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
         for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
-        const base = lightTint(lsum / Math.max(1, tiles.length), false, pulse);
-        const tint = on ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
+        // A container is outside, lit by the sky like the hull (no room light reaches it), and never "off".
+        const base = def.container ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, tiles.length), false, pulse);
+        const tint = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
         for (const p of e.parts) {
           p.spr.tint = mulColor(tint, p.art);
           for (const g of [p.glow, p.halo]) if (g) g.visible = on;

@@ -1,3 +1,4 @@
+import { isContainerCell } from './containerCells';
 import type { Builder } from './builder';
 import type { RoomSpec } from './plan';
 import type { AccessKind, AsmRecord, CompDebug, JoinKind, JoinRecord, PortRecord, RoomRole } from './types';
@@ -72,7 +73,9 @@ export interface AttachOpts {
 }
 
 const key = (x: number, y: number): number => (y + 4096) * 8192 + (x + 4096);
-const isFloor = (c: string | undefined): boolean => c !== undefined && c !== '#' && c !== 'D' && c !== '.' && c !== '=';
+const isFloor = (c: string | undefined): boolean => c !== undefined && c !== '#' && c !== 'D' && c !== '.' && c !== '=' && !isContainerCell(c);
+/** Cells nothing else may share: floor and containers. */
+const isSolid = (c: string | undefined): boolean => isFloor(c) || isContainerCell(c);
 
 /** A port id with its north/south marker swapped ('hn' <-> 'hs', 'rn0' <-> 'rs0'); ids track their sides. */
 export const flipId = (id: string): string => id.replace(/[ns]/, (m) => (m === 'n' ? 's' : 'n'));
@@ -137,7 +140,7 @@ export class Arranger {
         const x = X + i;
         const y = Y + j;
         const e = this.at(x, y);
-        if (e !== undefined && (isFloor(c) || isFloor(e))) return false;
+        if (e !== undefined && (isSolid(c) || isSolid(e))) return false;
         for (const r of this.rays) if (x > r.x && y >= r.y0 && y <= r.y1) return false;
         if (this.open.has(key(x, y))) return false;
       }
@@ -167,7 +170,7 @@ export class Arranger {
         if (c === '.') continue;
         const k = key(X + i, Y + j);
         const cur = this.occ.get(k);
-        if (!isFloor(cur) && cur !== 'D' && !(c === '=' && cur === '#')) this.occ.set(k, c === 'D' ? 'D' : isFloor(c) ? c : c === '=' ? '=' : '#');
+        if (!isSolid(cur) && cur !== 'D' && !(c === '=' && cur === '#')) this.occ.set(k, c === 'D' ? 'D' : isSolid(c) ? c : c === '=' ? '=' : '#');
       }
     }
     for (const f of b.faceE) this.rays.push({ x: X + f.x, y0: Y + f.y0, y1: Y + f.y1 });

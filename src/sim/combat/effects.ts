@@ -1,3 +1,5 @@
+import { ContainerC } from '../containers/components';
+import { StorageC } from '../items/components';
 import { shipIdOf, shipGrid } from '../regions';
 import { CrewC, DeadC, DownedC, HealthC, PositionC } from '../crew/components';
 import { origin } from '../crew/helpers';
@@ -88,7 +90,13 @@ function moduleDamage(sim: Sim, at: Impact, amount: number, radius: number): voi
     const m = sim.world.get(id, ModuleC);
     if (!m || m.hp <= 0) continue;
     m.hp = Math.max(0, m.hp - amount);
-    if (m.hp === 0) sim.events.emit({ type: 'module.destroyed', moduleId: id, def: m.def, ship: at.shipId });
+    const box = sim.world.get(id, ContainerC);
+    if (box) box.hp = m.hp;
+    if (m.hp !== 0) continue;
+    // A destroyed container's shell is torn open: its stock is lost to space.
+    const store = box && sim.world.get(id, StorageC);
+    if (store) store.stacks = [];
+    sim.events.emit({ type: 'module.destroyed', moduleId: id, def: m.def, ship: at.shipId });
   }
 }
 

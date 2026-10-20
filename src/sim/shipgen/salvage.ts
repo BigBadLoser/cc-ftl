@@ -1,3 +1,4 @@
+import { isContainerCell } from './containerCells';
 import type { Arranger, Block, BlockPort, Side } from './arranger';
 import { blockFrom } from './blocks';
 import type { Builder } from './builder';
@@ -59,6 +60,8 @@ export function cutSeam(b: Builder, rng: Rng, keep: 'w' | 'e', minKeep = 0.45, m
       // A door in the seam would leave the room behind it shut.
       const inner = roomAt(b, keep === 'w' ? X - 1 : X + 1, y);
       if (b.cv.at(X, y) === 'D' && inner && inner.role !== 'hall') ok = false;
+      // Never through a sealed container: it goes whole or stays whole.
+      if (isContainerCell(b.cv.at(X, y))) ok = false;
       const r = roomAt(b, X, y);
       if (!r) continue;
       if (r.role === 'hall') hall++;
@@ -111,7 +114,7 @@ export function notch(b: Builder, rng: Rng, k: number, defs: Record<string, { fo
     const ring: [number, number][] = [];
     for (let j = 0; j <= k; j++) for (let i = 0; i <= k; i++) if (i === k || j === k) ring.push([c.x - c.dx * i, c.y - c.dy * j]);
     const touched = [...cut, ...ring];
-    if (touched.some(([x, y]) => b.cv.at(x, y) === 'D' || b.cv.at(x, y) === '=')) continue;
+    if (touched.some(([x, y]) => b.cv.at(x, y) === 'D' || b.cv.at(x, y) === '=' || isContainerCell(b.cv.at(x, y)))) continue;
     const rooms = new Set<number>();
     let ok = true;
     for (const [x, y] of touched) {

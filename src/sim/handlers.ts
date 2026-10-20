@@ -3,6 +3,7 @@ import { MarkerC } from './components';
 import type { Command } from './commands';
 import { captureHandlers } from './capture/handlers';
 import { combatHandlers } from './combat/handlers';
+import { containerHandlers } from './containers/handlers';
 import { crewHandlers } from './crew/handlers';
 import { evaHandlers } from './eva/handlers';
 import { fightHandlers } from './fight/handlers';
@@ -26,6 +27,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...combatHandlers,
   ...captureHandlers,
   ...moduleHandlers,
+  ...containerHandlers,
   ...itemHandlers,
   ...evaHandlers,
   ...vehicleHandlers,
