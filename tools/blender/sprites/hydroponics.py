@@ -58,8 +58,10 @@ def hydroponics(state, rot):
         k.cyl(u, v, z, 0.055, 0.02, "gmD", sides=8)
         _plant(k, u, v, z + 0.01, stage, random.Random(i * 7 + 3))
     for su in (-1, 1):                                                                # the light bar: posts at
-        k.box(su * 0.9, -0.34, 0.42, 0.06, 0.06, 0.92, "steelD", top="steel")          # the back, arms forward
-        k.box(su * 0.9, -0.17, 1.3, 0.06, 0.4, 0.05, "steelD")
+        k.box(su * 0.9, -0.34, 0.42, 0.06, 0.06, 0.8, "steelD", top="steel")           # the back, arms forward
+        for i in range(11):                                                           # with a chamfered corner
+            k.box(su * 0.9, -0.34 + i * 0.011, 1.2 + i * 0.011, 0.06, 0.06, 0.06, "steelD", top="steel")
+        k.box(su * 0.9, -0.105, 1.3, 0.06, 0.27, 0.05, "steelD", top="steel")
     k.box(0, 0, 1.2, 1.9, 0.18, 0.1, "gm", top="steelL", bevel=0.01)
     lit = "magenta" if on else "blueGrey"
     k.box(0, 0.095, 1.2, 1.8, 0.012, 0.07, lit)                                           # strip on the front face
