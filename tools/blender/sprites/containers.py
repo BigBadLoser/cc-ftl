@@ -203,23 +203,33 @@ def livery(size, rot, end):
 
 def clamp(side):
     """At the middle tile of the clamped side, level with the beam; built with the spine at local -v (r0 n, r1 e, r2 s,
-    r3 w): a mount on the truss, two rams across to a latch plate locked in the door end's socket, claws above and
-    below the socket."""
+    r3 w), the truss's centre line one tile in at v = -1. A bolted saddle wrapped round the truss, a box-section arm,
+    a collar plate pressed on the door end round its socket (a locking boss in it), four rams tying saddle to collar."""
     k = K(f"clamp_{side}", (1, 1), {"n": 0, "e": 1, "s": 2, "w": 3}[side])
     e = -0.5 + M                                                                     # the door end's face
-    k.box(0, -0.62, ZC - 0.26, 0.5, 0.16, 0.52, FRD, top=FR)                           # mount on the truss
-    k.box(0, -0.535, ZC - 0.2, 0.42, 0.012, 0.4, "hazY")
-    for i in range(4):
-        k.box(-0.15 + i * 0.1, -0.528, ZC - 0.18, 0.05, 0.012, 0.36, "hazK")
-    for su in (-1, 1):                                                               # hydraulic rams across
-        k.box(su * 0.16, -0.48, ZC - 0.05, 0.08, 0.16, 0.08, FR, top=SHD)
-        k.box(su * 0.16, -0.4, ZC - 0.035, 0.05, 0.08, 0.05, "steelL")
-    k.box(0, e - 0.03, ZC - 0.1, 0.3, 0.08, 0.2, FR, top=SHD)                           # latch plate in the socket
-    for dz in (0.14, -0.2):                                                          # claws over and under it
-        k.box(0, e - 0.02, ZC + dz, 0.4, 0.14, 0.06, "hazY", top="hazY")
-        k.box(0, e + 0.05, ZC + dz - (0.03 if dz > 0 else -0.03), 0.4, 0.03, 0.06, CAST)
-    k.box(0, -0.62, ZC + 0.26, 0.08, 0.08, 0.05, FRD)
-    k.box(0, -0.62, ZC + 0.3, 0.045, 0.045, 0.03, "green")                                # engaged light
+    vb = -1.0                                                                        # the truss's centre line
+    c = e - 0.08                                                                     # the collar's outer face
+    for z in (ZC + 0.26, ZC - 0.32):                                                 # saddle: a sleeve round the
+        k.box(0, vb, z, 0.84, 0.6, 0.06, FRD, top=FR)                                  # truss, bolted through
+    for dv in (0.3, -0.3):
+        k.box(0, vb + dv, ZC - 0.32, 0.84, 0.06, 0.64, FR, top=FR)
+        for su in (-1, 1):
+            for z in (ZC - 0.2, ZC + 0.14):
+                k.box(su * 0.32, vb + dv + (0.035 if dv > 0 else -0.035), z, 0.07, 0.02, 0.07, SHD)
+    k.box(0, vb - 0.335, ZC - 0.08, 0.5, 0.012, 0.12, "hazY")                           # a hazard tag on it
+    k.box(0, (vb + 0.33 + c) / 2, ZC - 0.22, 0.46, c - vb - 0.33, 0.44, FR, top=SHD)   # box-section arm
+    k.box(0, e - 0.04, ZC - 0.5, 0.9, 0.08, 1.0, FRD, top=FR)                          # collar on the door end
+    for z in (ZC - 0.48, ZC + 0.42):                                                 # hazard edges top and bottom
+        for i in range(8):
+            k.box(-0.39 + i * 0.111, c - 0.004, z, 0.055, 0.012, 0.06, "hazY" if i % 2 else "hazK")
+    k.box(0, c - 0.02, ZC - 0.17, 0.34, 0.04, 0.34, FR, top=SHD)                       # locking boss
+    k.box(0, c - 0.042, ZC - 0.09, 0.18, 0.02, 0.18, CAST)
+    for su in (-1, 1):                                                               # rams, saddle to collar
+        for z in (ZC + 0.2, ZC - 0.28):
+            k.box(su * 0.3, (vb + 0.33 + c) / 2, z - 0.045, 0.09, c - vb - 0.33, 0.09, FR, top=SHD)
+            k.box(su * 0.3, c - 0.05, z - 0.03, 0.05, 0.1, 0.06, "steelL")
+    k.box(0.3, vb - 0.33, ZC + 0.12, 0.08, 0.04, 0.06, FRD)                             # engaged light
+    k.box(0.3, vb - 0.352, ZC + 0.13, 0.045, 0.02, 0.04, "green")
     return k.build()
 
 
