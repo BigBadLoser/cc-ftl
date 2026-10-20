@@ -1,74 +1,100 @@
-"""Cryo pod (family `cryo`): 1x2, idle / `.active` / `.empty`, four rotations. Local frame and placement: modkit.K
-(front = +v).
+"""Cryo pod (family `cryo`): 1x2, idle / `.active` / `.empty`, four rotations. A pod first, built in the robots'
+language (robot_kit primitives, as the robot bay): crisp light shell plates and dark seams over a dark exposed frame,
+hinge discs at the mounts, pistons, a single round status light under a small wedge brow, flush cells for the only
+other glow.
 
-An upright capsule reclined back on a plinth, the long glass lid on its front, cyan lights down the lid frame, a vented
-top unit, hoses out the back, a status panel on the front step.
-  idle    closed, unpowered: dark glass
-  active  occupied and frozen: the glass frosted over, a figure faintly behind it, the lights on
-  empty   open: the glass retracted into the sides, the padded couch inside, the panel showing ready"""
+Built in the robot_kit character frame with x = -u and f = +v of the module frame (modkit: front = +v, origin at the
+middle of the footprint), then turned and placed like modkit.K, so it lines up with every other module.
+
+A pill-shaped capsule standing on the back tile, hung in a dark frame yoke by two big hinge discs, sitting in a dark
+cradle on a plinth with light skirt plates; pistons and coolant lines behind; a tapered dark-glass canopy plate on its
+front, the status light above it; the front tile is the access step with four life-support cells.
+  idle    closed, unpowered: dark glass, light and cells off
+  active  occupied and frozen: the canopy frosted, a figure faintly behind it, light and cells cyan
+  empty   the canopy swung open on its side hinge, the lined interior and couch, light green (ready)"""
 import math
 
-from .modkit import K, sprites
+import bpy
 
-A = 0.3                       # recline from vertical
-L = 1.62                      # capsule length
-V0, Z0 = 0.42, 0.14           # bottom centre of the capsule front face
+from . import core
+from .modkit import sprites
+from .robot_kit import Rig
 
-
-def _at(t, s):
-    """(v, z) of a point t up the capsule axis and s out of its front face."""
-    return V0 - t * math.sin(A) + s * math.cos(A), Z0 + t * math.cos(A) + s * math.sin(A)
-
-
-def _part(k, u, t, s, su, sn, sl, col, top=None, bevel=0.0, taper=1.0):
-    """A box centred t up the axis and s out, sized su across, sn along the face normal, sl along the axis."""
-    v, z = _at(t, s)
-    k.box(u, v, z - sl / 2, su, sn, sl, col, top=top, rx=A, bevel=bevel, taper=taper)
+SHELL, SHELL_D, FRAME, FRAME_L = "sole", "plate", "dark", "steelD"
+FB = -0.45                                # capsule centre line (back tile)
+Z0, Z1 = 0.46, 1.34                       # capsule body between its two domes
+CW, CD = 0.62, 0.56                       # capsule width, depth
+CF = FB + CD / 2                          # its front
+HX = 0.22                                 # canopy hinge, across
 
 
-def _rod(k, u, p0, p1, r, col):
-    """A square rod from (v, z) p0 to p1."""
-    dv, dz = p1[0] - p0[0], p1[1] - p0[1]
-    n = math.hypot(dv, dz)
-    k.box(u, (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2 - n / 2, r, r, n + r, col, rx=math.atan2(-dv, dz))
+def _canopy(rig, st):
+    """The canopy plate on its hinge joint: rim, tapered glass (frosted, a figure behind it when frozen), hinge knuckles."""
+    j = rig.joint("canopy", "root", (HX, CF + 0.035, 0))
+    p = rig.part(j)
+    zc = (Z0 + Z1) / 2
+    p.rbox((0, CF + 0.035, zc), (0.44, 0.04, 1.1), SHELL_D, r=0.12, taper=1.12)                # rim
+    glass = "iceB" if st == "active" else FRAME
+    p.rbox((0, CF + 0.055, zc), (0.32, 0.03, 0.96), glass, r=0.1, taper=1.22)                  # glass
+    if st == "active":                                                                         # a figure, frost
+        for x, z, w, h, col in ((0, zc + 0.32, 0.09, 0.12, "glassL"), (0, zc + 0.1, 0.18, 0.28, "glassL"),
+                                (0, zc - 0.2, 0.12, 0.28, "glassL"), (-0.1, zc - 0.36, 0.1, 0.14, "medWhite"),
+                                (0.11, zc + 0.36, 0.1, 0.12, "medWhite"), (0.13, zc - 0.05, 0.05, 0.22, "medWhite"),
+                                (-0.12, zc + 0.2, 0.06, 0.1, "medWhite")):
+            p.box((x, CF + 0.072, z), (w, 0.01, h), col)
+    for z in (Z0 + 0.1, Z1 - 0.1):                                                             # hinge knuckles
+        p.cyl((HX + 0.015, CF + 0.035, z), 0.035, 0.1, FRAME_L)
+    return j
 
 
 def cryo(state, rot):
+    core.clear_scene_meshes()
     on, empty = state == "active", state == "empty"
-    k = K(f"cryo_{state}_{rot}", (1, 2), rot)
-    k.box(0, -0.05, 0.0, 0.86, 1.5, 0.14, "gmD", top="gm", bevel=0.01)                   # plinth
-    k.box(0, 0.78, 0.0, 0.7, 0.36, 0.08, "steel", top="steelL", bevel=0.01)              # front step
-    k.box(0, 0.62, 0.14, 0.5, 0.12, 0.2, "steelD", top="steel", rx=-0.5)                  # status panel
-    k.box(0, 0.67, 0.19, 0.36, 0.012, 0.1, ("cyan" if on else "green" if empty else "dark"), rx=-0.5)
-    for su in (-1, 1):                                                                # hoses: from the back of the
-        b = _at(1.05, -0.36)                                                          # shell, bending down into
-        m = (b[0] - 0.12, b[1] - 0.35)                                                # the plinth
-        _rod(k, su * 0.22, b, m, 0.07, "gm")
-        _rod(k, su * 0.22, m, (m[0] - 0.02, 0.1), 0.07, "gm")
-    _part(k, 0, L / 2, -0.17, 0.82, 0.34, L, "plate", top="medWhite", bevel=0.09)      # the shell, rounded
-    _part(k, 0, L - 0.04, -0.14, 0.7, 0.3, 0.2, "gm", top="steelL", bevel=0.06, taper=0.8)   # top unit
-    for i in range(3):                                                                # its vents
-        _part(k, 0, L - 0.14 + i * 0.05, 0.035, 0.48, 0.012, 0.025, "gmD")
-    _part(k, 0, 0.82, 0.03, 0.7, 0.05, 1.26, "steel", top="steelL")                     # lid frame
-    if empty:                                                                         # open: the glass retracted
-        _part(k, 0, 0.82, 0.04, 0.56, 0.05, 1.1, "steelL")                              # into the sides, the couch
-        _part(k, 0, 0.74, 0.07, 0.4, 0.06, 0.9, "navy", top="navy", bevel=0.02)
-        _part(k, 0, 1.28, 0.08, 0.28, 0.07, 0.16, "iceB", top="iceB", bevel=0.02)       # headrest
-        for t in (0.45, 0.9):                                                         # restraint straps
-            _part(k, 0, t, 0.105, 0.42, 0.012, 0.04, "steelD")
-        for su in (-1, 1):
-            _part(k, su * 0.26, 0.82, 0.06, 0.05, 0.03, 1.1, "glassD")
-    else:
-        _part(k, 0, 0.82, 0.06, 0.56, 0.02, 1.1, "iceB" if on else "glassD")            # the glass
-        if on:                                                                        # frost and a figure behind it
-            _part(k, 0, 1.12, 0.072, 0.18, 0.01, 0.2, "glassL")                         # head
-            _part(k, 0, 0.82, 0.072, 0.34, 0.01, 0.4, "glassL")                         # shoulders, chest
-            for u, t, w, h in ((-0.2, 0.4, 0.14, 0.3), (0.18, 1.3, 0.16, 0.2), (0.0, 0.32, 0.3, 0.1),
-                               (-0.22, 1.25, 0.1, 0.24), (0.21, 0.7, 0.1, 0.3)):
-                _part(k, u, t, 0.074, w, 0.01, h, "medWhite")
-    for su in (-1, 1):                                                                # lights down the frame
-        _part(k, su * 0.37, 0.82, 0.04, 0.04, 0.04, 1.1, "cyan" if on else "steelD")
-    return k.build()
+    light = {"idle": FRAME_L, "active": "cyan", "empty": "green"}[state]
+    rig = Rig(f"cryo_{state}_{rot}")
+    p = rig.part("root")
+    p.rbox((0, FB, 0.08), (0.86, 0.82, 0.16), FRAME, r=0.05, taper=0.94)                       # plinth
+    for sx in (-1, 1):
+        p.rbox((sx * 0.42, FB, 0.09), (0.05, 0.7, 0.12), SHELL, r=0.02, taper=0.8)              # its skirt plates
+    for k in range(2):                                                                         # vented front
+        p.box((0, FB + 0.41, 0.06 + k * 0.05), (0.5, 0.02, 0.025), FRAME_L)
+    p.rbox((0, FB, 0.26), (0.5, 0.46, 0.2), FRAME, r=0.08, taper=1.2)                          # cradle cup
+    p.ball((0, FB, Z0), (CW / 2, CD / 2, 0.24), SHELL, rot=(180, 0, 0), z0=0.0)                # the capsule: domes,
+    p.rbox((0, FB, (Z0 + Z1) / 2), (CW, CD, Z1 - Z0), SHELL, r=0.25)                           # body,
+    p.ball((0, FB, Z1), (CW / 2, CD / 2, 0.24), SHELL, z0=0.0)
+    for z in (Z0 + 0.04, Z1 - 0.04):                                                           # seam bands
+        p.rbox((0, FB, z), (CW + 0.015, CD + 0.015, 0.03), FRAME, r=0.25)
+    p.rbox((0, CF - 0.006, (Z0 + Z1) / 2), (0.42, 0.02, 1.04), SHELL_D, r=0.1)                 # lined interior,
+    p.rbox((0, CF + 0.004, (Z0 + Z1) / 2 - 0.05), (0.26, 0.02, 0.76), "navy", r=0.08)          # couch,
+    p.rbox((0, CF + 0.006, Z1 - 0.1), (0.16, 0.02, 0.1), "navy", r=0.04)                       # headrest
+    for sx in (-1, 1):                                                                         # the yoke: uprights
+        p.rbox((sx * 0.4, FB, 0.55), (0.08, 0.14, 0.78), FRAME, r=0.03)                         # with shell plates,
+        p.rbox((sx * 0.445, FB, 0.52), (0.035, 0.16, 0.54), SHELL, r=0.015, taper=0.8)          # hinge discs holding
+        p.cyl((sx * 0.37, FB, 0.95), 0.1, 0.1, FRAME_L, axis="x", top=FRAME)                    # the capsule
+        p.cyl((sx * 0.43, FB, 0.95), 0.06, 0.03, SHELL_D, axis="x")
+    for sx in (-1, 1):                                                                         # pistons behind,
+        a, b = (sx * 0.2, FB - 0.4, 0.16), (sx * 0.2, FB - 0.24, 0.62)
+        m = tuple(a[i] + (b[i] - a[i]) * 0.55 for i in range(3))
+        p.strut(a, m, 0.04, FRAME_L)
+        p.strut(m, b, 0.025, SHELL_D)
+    for sx in (-1, 1):                                                                         # coolant lines
+        p.strut((sx * 0.08, FB - 0.25, 1.28), (sx * 0.08, FB - 0.38, 0.16), 0.03, FRAME)
+    zt = Z1 + 0.13                                                                             # the status light under
+    p.rbox((0, CF - 0.07, zt), (0.2, 0.1, 0.08), FRAME, r=0.025, taper=0.7)                    # a small wedge brow
+    p.rbox((0, CF - 0.075, zt + 0.06), (0.3, 0.12, 0.04), SHELL, r=0.02, taper=0.8)
+    rig.part("root").ball((0, CF - 0.03, zt), (0.04, 0.02, 0.032), light)
+    p.rbox((0, 0.18, 0.03), (0.62, 0.76, 0.06), SHELL_D, r=0.04, top=SHELL)                    # access step
+    for k in range(4):                                                                         # life-support cells
+        p.box((-0.15 + k * 0.1, 0.562, 0.03), (0.07, 0.02, 0.035), "cyan" if on else FRAME)
+    canopy = _canopy(rig, state)
+    rig.build()
+    if empty:                                                                                  # swung open on its hinge
+        rig.joints[canopy][0].rotation_euler = (0, 0, -math.radians(105))
+    w, d = (1, 2) if rot % 2 == 0 else (2, 1)                                                  # place like modkit.K
+    rig.root.rotation_euler = (0, 0, -rot * math.pi / 2)
+    rig.root.location = (-(w - 1) / 2, (d - 1) / 2, 0)
+    bpy.context.view_layer.update()
+    return rig.objects()
 
 
 def jobs(rots=range(4)):
