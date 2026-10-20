@@ -1,6 +1,7 @@
-"""Quick crew look check (about a minute): one outfit (QUICK_OUTFIT: comma-separated layer ids), a few directions, idle frame 0, through the real layer render, then
-old vs new composited like the runtime crew filter on floor tiles with a wall behind, at 1x and 4x. For iterating on the
-base; the full sheets come from `npm run sprites -- -- <dir> crew`.
+"""Quick crew look check (about a minute): one outfit (QUICK_OUTFIT: comma-separated layer ids), a few directions and
+frames (QUICK_FRAMES), through the real layer render, then old vs new composited like the runtime crew filter on floor
+tiles with a wall behind, at 1x and 4x. For iterating on the base; the full sheets come from
+`npm run sprites -- -- <dir> crew`.
 
   CREW_BASE=v2 blender -b --factory-startup --python tools/blender/review/crew_quick.py -- <raw.npz>    (render)
   python3 -I tools/blender/review/crew_quick.py <raw.npz> <out.png>                                    (composite)"""
