@@ -1,7 +1,7 @@
 import type { GalaxyContent } from './defs';
 import { hash32, unit } from './hash';
 import type { Terrain } from './terrain';
-import type { TerritoryField } from './territory';
+import { dangerAt, type TerritoryField } from './territory';
 import {
   LANE_MIN_DENSITY, MIN_REGION_SECTORS, REGION_BORDER_WOBBLE, REGION_CELL, REGION_REACH, REGION_RIFT_COST, REGION_SEED_DENSITY, WILD_GAP, WILD_MATES, WILD_VOID,
 } from './tuning';
@@ -15,7 +15,11 @@ export interface Region {
   y: number;
   name: string;
   faction: string | null;
+  /** What to expect there (regionType): core, border, corporate, trade, pirate, machine, frontier or rich. */
+  type: RegionType;
 }
+
+export type RegionType = 'core' | 'border' | 'corporate' | 'trade' | 'pirate' | 'machine' | 'frontier' | 'rich';
 
 const JITTER = 0.35;
 const RING = Math.ceil(REGION_REACH / REGION_CELL + 0.5 + JITTER);
@@ -53,11 +57,27 @@ export class RegionField {
         const x = home ? 0 : (rx + (unit(this.seed, rx, ry, k, 81) * 2 - 1) * JITTER) * REGION_CELL;
         const y = home ? 0 : (ry + (unit(this.seed, rx, ry, k, 82) * 2 - 1) * JITTER) * REGION_CELL;
         if (!home && this.terrain.density(x, y) < REGION_SEED_DENSITY) continue;
-        r = { id: `g.${rx}.${ry}`, rx, ry, x, y, name: this.nameOf(rx, ry), faction: this.territory.factionAt(x, y) };
+        const faction = this.territory.factionAt(x, y);
+        r = { id: `g.${rx}.${ry}`, rx, ry, x, y, name: this.nameOf(rx, ry), faction, type: this.typeOf(faction, x, y) };
       }
       this.regions.set(key, r);
     }
     return r;
+  }
+
+  /**
+   * A region's type, from its owner's kind, its danger and its terrain: a government's safe space is its core and its
+   * dangerous space a border march; unclaimed dense space is rich (and contested), sparse space frontier.
+   */
+  private typeOf(faction: string | null, x: number, y: number): RegionType {
+    const kind = faction ? this.content?.factions[faction]?.kind : undefined;
+    const danger = dangerAt(x, y);
+    if (kind === 'government') return danger <= 2 ? 'core' : 'border';
+    if (kind === 'corporation') return 'corporate';
+    if (kind === 'civilian') return 'trade';
+    if (kind === 'pirates') return 'pirate';
+    if (kind === 'rogue') return 'machine';
+    return this.terrain.density(x, y) > 0.6 ? 'rich' : 'frontier';
   }
 
   private nameOf(rx: number, ry: number): string {

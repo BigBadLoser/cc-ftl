@@ -82,7 +82,7 @@ export class GalaxyGen implements SectorContext {
     if (!s) {
       s = buildSector(this, site, this.regions.isHub(site.x, site.y));
       const region = this.regions.regionAt(site.x, site.y);
-      if (region) s.sector.region = region.id;
+      if (region) Object.assign(s.sector, { region: region.id, regionName: region.name, regionType: region.type });
       this.sectors.set(site.id, s);
     }
     return s;
@@ -194,7 +194,7 @@ export class GalaxyGen implements SectorContext {
     const ga = this.gateway(a, (b.x - a.x) / len, (b.y - a.y) / len);
     const gb = this.gateway(b, (a.x - b.x) / len, (a.y - b.y) / len);
     const length = dist(ga, gb);
-    const edge: EdgeData = { id: `h:${a.id}|${b.id}`, a: ga.id, b: gb.id, kind: 'hyperlane', length, ...jumpCosts('hyperlane', length) };
+    const edge: EdgeData = { id: `h:${a.id}|${b.id}`, a: ga.id, b: gb.id, kind: 'hyperlane', length, ...jumpCosts('hyperlane', length, gate) };
     if (gate) edge.gate = true;
     if (rift) edge.rift = true;
     if (unit(this.seed, strHash(a.id), strHash(b.id), 52) < ANCHOR_CHANCE) edge.anchor = true;

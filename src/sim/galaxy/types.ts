@@ -55,6 +55,11 @@ export interface SectorData {
   hub?: true;
   /** The layout style its nodes were shaped by (layout.ts). */
   layout?: string;
+  /** The body at its centre (its landmark): kind, position and drawn radius. */
+  body?: { kind: string; x: number; y: number; r: number };
+  /** Its region's name and type (what to expect there: core, trade, pirate, frontier...). */
+  regionName?: string;
+  regionType?: string;
 }
 
 export type EdgeKind = 'route' | 'hyperlane';

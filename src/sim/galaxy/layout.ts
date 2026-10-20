@@ -1,6 +1,6 @@
 import type { Rng } from '../rng';
 import type { Vec } from './geometry';
-import { LAYOUT_LOOSENESS, LAYOUT_WEIGHTS } from './tuning';
+import { BODY_WEIGHTS, LAYOUT_LOOSENESS, LAYOUT_WEIGHTS } from './tuning';
 
 /**
  * Sector layout styles. A style does not place nodes; it is a weight over the sector disc (unit coordinates) that node
@@ -98,4 +98,49 @@ export function pickLayout(rng: Rng, hub: boolean, start: boolean): Layout {
   const loose = LAYOUT_LOOSENESS.min + rng.next() * (LAYOUT_LOOSENESS.max - LAYOUT_LOOSENESS.min);
   const fn = shape(style, rng);
   return { style, weight: (p) => loose + (1 - loose) * fn(p) };
+}
+
+/** What sits at a sector's centre: its landmark. Nodes keep clear of it and lean to an orbit band around it. */
+export type BodyKind = 'star' | 'red_dwarf' | 'blue_giant' | 'gas_giant' | 'nebula' | 'black_hole';
+
+export interface Body {
+  kind: BodyKind;
+  /** Offset from the sector centre (map units; non-zero only in the start sector, whose centre holds the start node). */
+  dx: number;
+  dy: number;
+  /** Drawn radius and the keep-out radius nodes stay outside (map units). */
+  r: number;
+  clear: number;
+}
+
+/** Radius and extra keep-out per body kind (map units). */
+const BODY_SIZE: Record<BodyKind, { r: number; clear: number }> = {
+  star: { r: 22, clear: 34 }, red_dwarf: { r: 14, clear: 26 }, blue_giant: { r: 30, clear: 44 },
+  gas_giant: { r: 20, clear: 30 }, nebula: { r: 48, clear: 10 }, black_hole: { r: 12, clear: 62 },
+};
+
+/** Pick a sector's central body by BODY_WEIGHTS. The start sector's body sits off-centre, clear of the start node. */
+export function pickBody(rng: Rng, inner: number, start: boolean): Body {
+  const entries = Object.entries(BODY_WEIGHTS) as [BodyKind, number][];
+  let roll = rng.next() * entries.reduce((t, [, w]) => t + w, 0);
+  const kind = (entries.find(([, w]) => (roll -= w) < 0) ?? entries[0]!)[0];
+  const a = rng.next() * Math.PI * 2;
+  const off = start ? inner * 0.5 : 0;
+  return { kind, dx: Math.cos(a) * off, dy: Math.sin(a) * off, ...BODY_SIZE[kind] };
+}
+
+/**
+ * The body's pull on node placement, in unit-disc coordinates: zero inside the keep-out, then a mild preference for an
+ * orbit band around it, so sectors read as places around a centre without being forced into rings.
+ */
+export function bodyWeight(body: Body, inner: number): (p: Vec) => number {
+  const bx = body.dx / inner;
+  const by = body.dy / inner;
+  const keep = (body.r + body.clear) / inner;
+  const orbit = keep + 0.3;
+  return (p) => {
+    const d = Math.hypot(p.x - bx, p.y - by);
+    if (d < keep) return 0;
+    return 0.55 + 0.45 * gauss(d - orbit, 0.3);
+  };
 }

@@ -43,6 +43,9 @@ export const GATE_SECOND = 0.45;
 export const GATE_THIRD = 0.12;
 export const GATE_SPREAD = 900;
 export const NO_GATE = 0.5;
+/** Crossing a gate costs this much extra fuel and this many times the travel days. */
+export const GATE_FUEL = 2;
+export const GATE_TIME = 2;
 
 /**
  * Sector sites: one candidate per cell, alive with a chance rising from DENSITY_MIN to DENSITY_FULL density. Survivors
@@ -68,6 +71,8 @@ export const NODES_PER_SECTOR = { min: 6, max: 12 } as const;
 /** Layout style weights (a hub is always 'spokes', the start sector a 'cloud'), and the looseness blended into a style. */
 export const LAYOUT_WEIGHTS = { cloud: 3, streak: 2, clumps: 1.5, ring: 1, fork: 1.5, corridor: 1 } as const;
 export const LAYOUT_LOOSENESS = { min: 0.08, max: 0.4 } as const;
+/** Central bodies (layout.ts), by weight. */
+export const BODY_WEIGHTS = { star: 5, red_dwarf: 3, blue_giant: 1, gas_giant: 2, nebula: 1.5, black_hole: 0.5 } as const;
 /** Routes inside a sector: the spanning tree of the Gabriel graph plus this share of its other edges. */
 export const ROUTE_EXTRA = 0.15;
 

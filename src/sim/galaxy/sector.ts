@@ -3,7 +3,7 @@ import { jumpCosts } from './costs';
 import { inDanger, type GalaxyContent, type Weighted } from './defs';
 import { dist, gabrielEdges, paddedHull, spanningTree, type Vec } from './geometry';
 import { hash32, unit } from './hash';
-import { pickLayout, type Layout } from './layout';
+import { bodyWeight, pickBody, pickLayout, type Body, type Layout } from './layout';
 import type { Site } from './sites';
 import { dangerAt } from './territory';
 import {
@@ -50,17 +50,18 @@ export function trafficPool(content: GalaxyContent | undefined, owner: string | 
 }
 
 /**
- * Node offsets inside the sector disc: Poisson-disk darts accepted against the sector's layout weight (see layout.ts),
- * so the style shapes the sector without fixing it. Count from NODES_PER_SECTOR by density and chance (a hub gets the
+ * Node offsets inside the sector disc: Poisson-disk darts accepted against the sector's layout weight times its body's
+ * pull (see layout.ts), so style and body shape the sector without fixing it. Count from NODES_PER_SECTOR by density and chance (a hub gets the
  * most); spacing grows with the room per node. The start sector's first node is pinned to its centre.
  */
-function scatter(rng: Rng, site: Site, start: boolean, layout: Layout): Vec[] {
+function scatter(rng: Rng, site: Site, start: boolean, layout: Layout, body: Body): Vec[] {
   const inner = Math.max(0, site.r - HULL_PAD);
   const { min, max } = NODES_PER_SECTOR;
   const t = layout.style === 'spokes' ? 1 : Math.max(0, Math.min(1, 0.2 + 0.45 * site.density + (rng.next() - 0.5) * 0.7));
   const want = Math.round(min + (max - min) * t);
   const spacing = Math.max(NODE_MIN_DIST, (NODE_SPACING * inner) / Math.sqrt(want));
   const pts: Vec[] = start ? [{ x: 0, y: 0 }] : [];
+  const pull = bodyWeight(body, inner);
   for (let pass = 0; pass < 2 && pts.length < want; pass++) {
     // A second pass relaxes the spacing a little when the style left too few spots.
     const gap = pass === 0 ? spacing : NODE_MIN_DIST;
@@ -68,7 +69,7 @@ function scatter(rng: Rng, site: Site, start: boolean, layout: Layout): Vec[] {
       const a = rng.next() * Math.PI * 2;
       const d = Math.sqrt(rng.next());
       const u = { x: Math.cos(a) * d, y: Math.sin(a) * d };
-      if (rng.next() >= layout.weight(u)) continue;
+      if (rng.next() >= layout.weight(u) * pull(u)) continue;
       const p = { x: u.x * inner, y: u.y * inner };
       if (pts.every((q) => dist(p, q) >= gap)) pts.push(p);
     }
@@ -122,7 +123,8 @@ export function buildSector(ctx: SectorContext, site: Site, hub = false): BuiltS
   const start = site.gx === 0 && site.gy === 0;
   const rng = new Rng(hash32(ctx.seed, site.gx, site.gy, 21));
   const layout = pickLayout(rng, hub, start);
-  const pts = scatter(rng, site, start, layout);
+  const body = pickBody(rng, Math.max(0, site.r - HULL_PAD), start);
+  const pts = scatter(rng, site, start, layout, body);
   const faction = ctx.territory.factionAt(site.x, site.y);
   const danger = dangerAt(site.x, site.y);
   const name = sectorName(ctx.seed, site, ctx.content);
@@ -155,7 +157,7 @@ export function buildSector(ctx: SectorContext, site: Site, hub = false): BuiltS
   }
   const sector: SectorData = {
     id: site.id, chunk: ctx.chunkOf(site), x: site.x, y: site.y, r: site.r, name: name.full, faction, danger,
-    nodes: nodes.map((n) => n.id), hull: paddedHull(pts, HULL_PAD), layout: layout.style, ...(hub ? { hub: true as const } : {}),
+    nodes: nodes.map((n) => n.id), hull: paddedHull(pts, HULL_PAD), layout: layout.style, body: { kind: body.kind, x: site.x + body.dx, y: site.y + body.dy, r: body.r }, ...(hub ? { hub: true as const } : {}),
   };
   return { sector, nodes, routes };
 }
