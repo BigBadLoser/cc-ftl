@@ -1,7 +1,7 @@
 """Hydroponics bay (family `hydroponics`): 2x1, `.grow0` .. `.grow3`, each also `.active` (grow lights on), four
 rotations. Local frame and placement: modkit.K (front = +v).
 
-A trough on legs with a reservoir under it and two rows of net cups in the grow raft. grow0: seed plugs; grow1:
+A trough on legs with a reservoir under it and two rows of net cups set in a soil bed. grow0: seed plugs; grow1:
 sprouts; grow2: leafy clumps; grow3: full plants, some fruiting. A light bar on two posts runs over the trough: its
 magenta strips light with `.active`. Plants are seeded per cup, so every stage keeps the same layout."""
 import math
@@ -17,7 +17,7 @@ LEAF = ("alG", "xnFL", "alG", "xnF")
 
 def _plant(k, u, v, z, stage, rnd):
     if stage == 0:
-        k.box(u, v, z, 0.05, 0.05, 0.03, "rustD")                                       # seed plug
+        k.box(u, v, z, 0.05, 0.05, 0.03, "ochD")                                        # seed plug
         return
     if stage == 1:
         for a in (0.5, 0.5 + math.pi):                                                # two seed leaves
@@ -52,7 +52,7 @@ def hydroponics(state, rot):
     k.box(0.35, 0.235, 0.12, 0.1, 0.012, 0.05, "green" if on else "dark")
     k.box(0, 0, 0.42, 1.86, 0.8, 0.2, "steelL", top="plate", bevel=0.015)                # trough
     k.box(0, 0, 0.47, 1.87, 0.81, 0.05, "navy")                                          # its band
-    k.box(0, 0, 0.6, 1.76, 0.7, 0.03, "plate", top="medWhite")                            # grow raft (foam)
+    k.box(0, 0, 0.6, 1.76, 0.7, 0.03, "rustD", top="leather")                             # the bed: soil
     z = 0.63
     for i, (u, v) in enumerate(CUPS):
         k.cyl(u, v, z, 0.055, 0.02, "gmD", sides=8)
