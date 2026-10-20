@@ -59,9 +59,10 @@ def _hits(objs, rnd, n, lo, hi):
     cands = []
     h = hi.z - lo.z
     for ob in objs:
-        cen, nrm, _ = _faces(ob)
-        for c, nv in zip(cen, nrm):
-            if c.z > lo.z + h * 0.3 and (nv.x + nv.y > 0.5 or nv.z > 0.7):
+        cen, nrm, att = _faces(ob)
+        for i, (c, nv) in enumerate(zip(cen, nrm)):                         # not on screens and lights: they
+            if (c.z > lo.z + h * 0.3 and (nv.x + nv.y > 0.5 or nv.z > 0.7)   # stay on to flicker
+                    and att["Glow"][i].max() < 0.001):
                 cands.append((c.copy(), nv.copy()))
     rnd.shuffle(cands)
     out = []
@@ -73,7 +74,7 @@ def _hits(objs, rnd, n, lo, hi):
     return out
 
 
-def _dent(ob, hits, rnd, r=0.3, depth=0.08):
+def _dent(ob, hits, rnd, r=0.38, depth=0.14):
     me = ob.data
     mwi = ob.matrix_world.inverted()
     for v in me.vertices:
@@ -98,7 +99,7 @@ def _scorch(ob, hits, rnd, r=0.55):
                 f = max(f, (1 - d / r) ** 0.45)
         if f > 0:
             col[i] = col[i] * (1 - 0.95 * f) + CHAR * 0.95 * f
-            if f > 0.3:
+            if f > 0.6:
                 slf[i] = 0
                 glw[i] = 0
     lit = [i for i in range(len(cen)) if glw[i].max() > 0.001]          # about half the lights dead, in clusters
@@ -108,7 +109,7 @@ def _scorch(ob, hits, rnd, r=0.55):
             key = (round(cen[i].x / 0.3), round(cen[i].y / 0.3), round(cen[i].z / 0.3))
             cells.setdefault(key, []).append(i)
         for key in sorted(cells):
-            if rnd.random() < 0.55:
+            if rnd.random() < 0.25:                                     # most stay lit: the flicker frame
                 for i in cells[key]:
                     col[i] = glw[i] * 0.12 + CHAR * 0.3
                     glw[i] = 0
@@ -151,6 +152,57 @@ def _slump(ob, rnd, lo, hi, lean):
     me.update()
 
 
+def _orient(nv):
+    """(rz, sizes order) to lay a thin box flat against a face of normal nv: its thin axis along nv."""
+    if abs(nv.z) > 0.7:
+        return 0.0, False
+    return math.atan2(nv.y, nv.x), True
+
+
+def _hole(objs, c, nv, electric, rnd, r=0.22):
+    """Punch the panel out round the hit and set a dark cavity behind it (live wire stubs in an electrical module)."""
+    for ob in objs:
+        me = ob.data
+        mw = ob.matrix_world
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        rot = mw.to_3x3()
+        kill = [f for f in bm.faces if ((mw @ f.calc_center_median()) - c).length < r
+                and (rot @ f.normal).normalized().dot(nv) > 0.6]
+        bmesh.ops.delete(bm, geom=kill, context="FACES_ONLY")
+        bm.to_mesh(me)
+        bm.free()
+        me.update()
+    m = core.Mesh("hole")
+    rz, side = _orient(nv)
+    q = c - nv * 0.06
+    m.box(tuple(q), (0.08, 0.38, 0.38) if side else (0.38, 0.38, 0.08), "dark", rz=rz)
+    if electric:                                                            # wire stubs out of the cavity
+        for k in range(2):
+            e = c + nv * 0.05 + Vector((0, 0, -0.04 + k * 0.08))
+            m.box(tuple(e), (0.04, 0.04, 0.04), ("orange", "steelL")[k])
+    return m.build()
+
+
+def _flap(objs, c, nv, rnd):
+    """A panel of the module's own colour bent out at the hit."""
+    best, col = 9.0, None
+    for ob in objs:
+        cen, _, att = _faces(ob)
+        for i, fc in enumerate(cen):
+            d = (fc - c).length
+            if d < best and att["Glow"][i].max() < 0.001:
+                best, col = d, att["Col"][i].copy()
+    m = core.Mesh("flap")
+    rz, side = _orient(nv)
+    m.box(tuple(c + nv * 0.07 + Vector((0, 0, 0.04))), (0.04, 0.34, 0.3) if side else (0.34, 0.3, 0.04),
+          "steelD", rz=rz, rx=-0.75 if side else 0.6)
+    ob = m.build()
+    if col is not None:
+        core.set_attr(ob.data, "Col", [col] * len(ob.data.polygons))
+    return ob
+
+
 def _sparks(c, nv, rnd):
     m = core.Mesh("sparks")
     for _ in range(9):                                                      # a burst of bright chips off the hit
@@ -158,14 +210,34 @@ def _sparks(c, nv, rnd):
         p = c + nv * 0.05 + d * rnd.uniform(0.06, 0.26)
         s = rnd.uniform(0.04, 0.065)
         m.box(tuple(p), (s, s, s), rnd.choice(("flameW", "flameY", "flameY", "arc")))
-    t = Vector((-nv.y, nv.x, 0)).normalized() if abs(nv.z) < 0.9 else Vector((1, 0, 0))
-    a = math.atan2(t.y, t.x)                                                # a torn panel flap peeled out of the hit
-    m.box(tuple(c + nv * 0.12 + t * 0.08 + Vector((0, 0, 0.06))), (0.24, 0.03, 0.2), "steelD", top="dark",
-          rz=a, rx=-0.7)
     base = c + nv * 0.04                                                    # a cut cable hanging out, live end
     m.box(tuple(base - Vector((0, 0, 0.12))), (0.035, 0.035, 0.24), "dark", base=False)
     m.box(tuple(base - Vector((0, 0, 0.26))), (0.05, 0.05, 0.05), "orange")
     return m.build()
+
+
+def _spill(lo, hi, rnd, n=4):
+    """A little cargo knocked out onto the floor (non-electrical modules)."""
+    m = core.Mesh("spill")
+    for _ in range(n):
+        x = rnd.uniform(lo.x, hi.x + 0.15)
+        y = rnd.uniform(hi.y - 0.1, hi.y + 0.2)
+        s = rnd.uniform(0.12, 0.2)
+        m.box((x, y, 0.0), (s, s, s * 0.7), rnd.choice(("steel", "rust", "hivis", "plate")), top="plate",
+              base=True, rz=rnd.uniform(0, math.pi), bevel=0.01)
+    return m.build()
+
+
+def _dim(objs):
+    """The flicker frame: every light still lit goes dim."""
+    for ob in objs:
+        _, _, att = _faces(ob)
+        g = att["Glow"]
+        lit = g.max(axis=1) > 0.001
+        att["Col"][lit] = g[lit] * 0.15 + CHAR * 0.3
+        g[lit] = 0
+        att["Self"][lit] = 0
+        _set(ob, att)
 
 
 def _debris(lo, hi, rnd, n=9):
@@ -183,19 +255,34 @@ def _debris(lo, hi, rnd, n=9):
     return m.build()
 
 
-def apply(objs, level, sid):
-    """Damage the built objects of one sprite in place; returns the object list (with sparks / debris added)."""
+def apply(objs, level, sid, electric=True):
+    """Damage the built objects of one sprite in place; returns the object list (with the added parts).
+    level: damaged, damaged.flicker (the same damage, every surviving light dimmed, no sparks) or destroyed."""
     objs = [o for o in objs if o.type == "MESH" and len(o.data.polygons)]
-    rnd = random.Random(zlib.crc32(sid.encode()))
+    seed = sid.replace(".damaged.flicker", ".damaged")                      # the flicker frame repeats the damage
+    rnd = random.Random(zlib.crc32(seed.encode()))
     lo, hi = _bbox(objs)
     out = list(objs)
-    if level == "damaged":
-        hits = _hits(objs, rnd, 3, lo, hi)
+    if level.startswith("damaged"):
+        area = (hi.x - lo.x) * (hi.y - lo.y)
+        hits = _hits(objs, rnd, 3 + (area > 1.5) + (area > 3.0), lo, hi)                # more hits on bigger modules
         for ob in objs:
             _dent(ob, hits, rnd)
             _scorch(ob, hits, rnd)
         if hits:
-            out.append(_sparks(*hits[0], rnd))
+            out.append(_hole(objs, *hits[0], electric, rnd))
+        if len(hits) > 1:
+            out.append(_flap(objs, *hits[1], rnd))
+        if electric and hits:
+            sp = _sparks(*hits[0], rnd)
+            if level == "damaged":
+                out.append(sp)
+            else:
+                bpy.data.objects.remove(sp, do_unlink=True)
+        elif sid.startswith("module.storage"):
+            out.append(_spill(lo, hi, rnd))
+        if level == "damaged.flicker":
+            _dim(objs)
     else:
         lean = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), 0)).normalized()
         for ob in objs:
@@ -206,8 +293,8 @@ def apply(objs, level, sid):
     return out
 
 
-def wrap(builder, level, sid):
-    return lambda: apply(builder(), level, sid)
+def wrap(builder, level, sid, electric=True):
+    return lambda: apply(builder(), level, sid, electric)
 
 
 # ---- jobs -----------------------------------------------------------------------------------------------------------
@@ -218,38 +305,43 @@ def _rid(base, rot, rotates):
 
 
 def bases(rots=range(4)):
-    """[(asset id stem, footprint, builder, palette extra)] for the idle sprite of every damageable module."""
+    """[(asset id stem, footprint, builder, palette extra, electric)] for the idle sprite of every damageable module.
+    Storage is not electrical (no sparks, wires or flicker) except the cold store and the armory's lock."""
     from . import consoles, galley, logistics, props, robot_bay, storage_set
     from . import console_proto as C
     out = []
     env = {s[0]: s for s in props.SPRITES}
     for aid in ("module.console", "module.bed", "module.life_support", "module.reactor", "module.light"):
         _, fp, _, fn = env[aid]
-        out.append((aid, fp, fn, False))
+        out.append((aid, fp, fn, False, aid != "module.bed"))
     for name, aid in consoles.IDS.items():
         nu, nv = C.FOOT[name]
         for r in rots:
             fp = (nv, nu) if r % 2 == 0 else (nu, nv)
-            out.append((_rid(aid, r, True), fp, lambda n=name, r=r: C.console(n, r, False), True))
+            out.append((_rid(aid, r, True), fp, lambda n=name, r=r: C.console(n, r, False), True, True))
     for r in rots:
-        out.append((f"module.galley.r{r}", (2, 1) if r % 2 == 0 else (1, 2), lambda r=r: galley.galley(r, False), True))
+        out.append((f"module.galley.r{r}", (2, 1) if r % 2 == 0 else (1, 2), lambda r=r: galley.galley(r, False), True,
+                    True))
         out.append((f"module.fabricator.r{r}", (2, 1) if r % 2 == 0 else (1, 2),
-                    lambda r=r: logistics.fabricator(False, r), False))
-        out.append((f"module.robot_bay.r{r}", (2, 1) if r % 2 else (1, 2), lambda r=r: robot_bay.build(r, ""), True))
-    out.append(("module.storage", (1, 1), lambda: logistics.storage("partial"), False))
+                    lambda r=r: logistics.fabricator(False, r), False, True))
+        out.append((f"module.robot_bay.r{r}", (2, 1) if r % 2 else (1, 2), lambda r=r: robot_bay.build(r, ""), True,
+                    True))
+    out.append(("module.storage", (1, 1), lambda: logistics.storage("partial"), False, False))
     for name, (fp, fn) in storage_set.BUILDERS.items():
         for r in rots:
             f = fp if r % 2 == 0 else (fp[1], fp[0])
-            out.append((f"module.storage_{name}.r{r}", f, lambda fn=fn, r=r: fn("partial", r), True))
+            out.append((f"module.storage_{name}.r{r}", f, lambda fn=fn, r=r: fn("partial", r), True,
+                        name in ("cold", "armory")))
     return out
 
 
 def jobs(rots=range(4)):
-    """Sprite jobs for `.damaged` and `.destroyed` of every base, and the palette pick per id."""
+    """Sprite jobs for `.damaged` and `.destroyed` of every base (plus `.damaged.flicker`, the frame the game alternates
+    with `.damaged`, for electrical modules), and the palette pick per id."""
     out, extra = [], {}
-    for stem, fp, fn, ex in bases(rots):
-        for level in DMG:
+    for stem, fp, fn, ex, electric in bases(rots):
+        for level in DMG + (("damaged.flicker",) if electric else ()):
             sid = f"{stem}.{level}"
-            out.append((sid, fp, "prop", wrap(fn, level, sid)))
+            out.append((sid, fp, "prop", wrap(fn, level, sid, electric)))
             extra[sid] = ex
     return out, (lambda sid: extra.get(sid, True))

@@ -100,8 +100,8 @@ def damage(P, pub, out):
         return f
     rows = [(lab, fp, ids(aid, rot)) for lab, fp, aid, rot in DMG_ROWS]
     half = (len(rows) + 1) // 2
-    grid(P, pub, out, rows[:half], ("intact", "damaged", "destroyed"), "damage-a")
-    grid(P, pub, out, rows[half:], ("intact", "damaged", "destroyed"), "damage-b")
+    grid(P, pub, out, rows[:half], ("intact", "damaged", "damaged.flicker", "destroyed"), "damage-a")
+    grid(P, pub, out, rows[half:], ("intact", "damaged", "damaged.flicker", "destroyed"), "damage-b")
 
 
 def main():
