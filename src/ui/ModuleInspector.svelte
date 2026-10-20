@@ -25,7 +25,7 @@
 
 {#if m}
   <div data-testid="module-inspector">
-    <PanelHead icon="module" title={m.name} sub="{m.x},{m.y}" {onBack} />
+    <PanelHead icon="module" title={m.name} sub="{m.local.x},{m.local.y}" {onBack} />
     <dl>
       <dt>State</dt><dd data-testid="module-state" class:bad={!m.powered && m.power !== 0}>{stateOf(m)}</dd>
       <dt>Power</dt><dd>{power(m)}</dd>

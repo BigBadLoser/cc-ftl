@@ -6,6 +6,7 @@ import {
   shipEntityOf,
 } from '../sim';
 import type { UiCrew, UiFight } from '../ui/api';
+import { localOf } from './moduleSnapshot';
 
 const STRUCT_LABEL: Record<number, string> = Object.fromEntries(Object.entries(Struct).map(([k, v]) => [v, k.toLowerCase()]));
 const NONE = Object.fromEntries(WORK_CATEGORIES.map((c) => [c, 0])) as Record<WorkCategory, number>;
@@ -145,7 +146,8 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
   const j = a && sim.world.get(a.jobId, JobC);
   if (j) {
     const pct = Math.round((j.progress / Math.max(1, j.work)) * 100);
-    job = `${jobLabel(sim, j)} at ${j.x},${j.y} (${pct}%)`;
+    const at = localOf(sim, j.gridId, j.x, j.y);
+    job = `${jobLabel(sim, j)} at ${at.x},${at.y} (${pct}%)`;
   }
   const hp = sim.world.get(id, HealthC);
   const downed = sim.world.get(id, DownedC);

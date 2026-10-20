@@ -53,7 +53,7 @@ export { cargoCount, cargoSpace, cargoOf, cargoAdd } from './vehicles/cargo';
 export { isHostile, isSubdued, isCombatReady, isInvader } from './fight/relations';
 export { sightLine, rayCells, type Cover } from './fight/los';
 export { wielded, hitChance, handDefOf } from './fight/weapons';
-export { regions, shipAt, shipFrame, windowShipMismatches, type Region } from './regions';
+export { gridIdAt, regions, shipAt, shipFrame, windowShipMismatches, type Region } from './regions';
 export { vehicleViews, vehiclesInSector, type VehicleView } from './vehicles/queries';
 export { boardingTile, cargoTile, dockPoint, bayCenter } from './vehicles/geometry';
 export { spawnVehicle, destroyVehicle, damageVehicle } from './vehicles/lifecycle';

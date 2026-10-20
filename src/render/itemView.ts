@@ -63,7 +63,7 @@ export function createItemView(world: World, atlas: Atlas, L: Layers, items: Ite
       const pulse = host.emergency() ? pulsePhase(performance.now()) : -1;
       for (const id of world.query(ItemStackC)) {
         const st = world.get(id, ItemStackC);
-        if (!st || st.gridId !== grid.id) continue;
+        if (!st || !grid.inBounds(st.x, st.y)) continue;
         const src = atlas.firstOf(stackAssets(st.item, st.count, items[st.item]?.stackSize ?? 50));
         if (!src) continue;
         live.add(id);

@@ -887,6 +887,21 @@ Step 6 done (branch `sector-6`): the coordinate flip.
   sector tiles.
 - `gridId` stays as a dead tag (step 7).
 
+### Step 7 split (planned 2026-10-20)
+
+Step 7 is split into four slices. Each keeps `npm run check` green, changes no behaviour (the `sectorEquiv` and state
+hashes must still match) and bumps `SAVE_VERSION` only if the save shape changes.
+
+| Slice | Content | Why this order |
+|---|---|---|
+| **7a** (done on `sector-7a`, save v16) | `ItemStack.gridId` removed (membership from the `ship` layer through `gridIdAt`, falling back to the window rectangle for ship-less fixture grids); the last two `raw()` users (`crew/pathfind.ts`, `eva/route.ts`) read `load()` instead. Local-tile readouts for module, job and airlock labels | Items need no per-ship bounds and no portal; `raw()` goes first so 7d can delete it |
+| **7b** | `ModuleC.gridId`, `JobC.gridId` (+ `Drafted.target/planned.gridId`), `Position.gridId`: the "which ship is this entity on" answers become `shipAt` / `gridIdAt` at the entity's tile. Largest slice; split by component if it passes about 600 lines | Position is read by nearly every system, so it goes after the small components have set the pattern |
+| **7c** | Ship-keyed ids: `Target.gridId`, `Projectile.fromGridId`, `CoreLink.gridId`, `Ship.gridId` -> the `ShipC` entity id; commands, events and UI snapshots switch from grid ids to ship ids (`gridId` fields in `commands.ts`, `events.ts`, `ui/api.ts`, `app/*Snapshot`) | One mechanical rename across the API surface, after the components no longer need the grid id |
+| **7d** | Delete `sim.grids`, `GridWindow` (+ `raw`), cross-grid portals (`portals/graph`, `route`, `pathCache`, `Path.then`, `systems/portals`), move `SuitC` and `AirlockC` to `eva/` and `modules/airlock.ts`. Per-ship bounds (EVA ring, `bordersSpace`, `network`, power out-of-bounds) move to `ShipC` frames (`shipFrame`) here. Lint guard against `.gridId` and `sim.grids` in `src/sim`; final save bump if the shape changed | Last, because the window rectangle is what keeps edge behaviour identical until then |
+
+Leftovers that 7a deliberately keeps: every `gridId` parameter of the helpers (`stackAt`, `nearestStorageFor`, `makeHaul`,
+...) and `sim.grids.get(...)` lookups; they go with 7b-7d.
+
 **Merges before the refactor (answer to the user's hold).**
 - Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**
   Reasons:

@@ -1,3 +1,4 @@
+import { gridIdAt } from '../regions';
 import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
@@ -47,7 +48,7 @@ export function sourcesOf(sim: Sim, gridId: number, item: string, res: Reservati
   const out: Located[] = [];
   for (const id of sim.world.query(ItemStackC)) {
     const s = sim.world.get(id, ItemStackC);
-    if (!s || s.item !== item || s.gridId !== gridId) continue;
+    if (!s || s.item !== item || gridIdAt(sim, s.x, s.y) !== gridId) continue;
     const avail = s.count - (res.out.get(refKey('floor', id, item)) ?? 0);
     if (avail > 0) out.push({ ref: { kind: 'floor', id }, x: s.x, y: s.y, avail });
   }

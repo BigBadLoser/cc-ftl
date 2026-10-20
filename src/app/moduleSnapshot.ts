@@ -5,6 +5,12 @@ import type { UiModule, UiModuleDef, UiStats } from '../ui/api';
 
 const GRID = 1;
 
+/** A sector tile in its grid's local tiles (from the grid's top-left), for readouts. */
+export function localOf(sim: Sim, gridId: number, x: number, y: number): { x: number; y: number } {
+  const g = sim.grids.get(gridId);
+  return { x: x - (g?.x0 ?? 0), y: y - (g?.y0 ?? 0) };
+}
+
 /** Plain-data module list for the UI. Reads the sim, never mutates it. */
 export function buildModuleList(sim: Sim): UiModule[] {
   const out: UiModule[] = [];
@@ -13,7 +19,7 @@ export function buildModuleList(sim: Sim): UiModule[] {
     const def = m && sim.content.modules[m.def];
     if (!m || !def || m.gridId !== GRID) continue;
     out.push({
-      id, def: m.def, name: def.name, x: m.x, y: m.y, hp: Math.round(m.hp), maxHp: def.maxHp,
+      id, def: m.def, name: def.name, x: m.x, y: m.y, local: localOf(sim, m.gridId, m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp,
       priority: m.priority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
       storage: !!def.storage, crafting: !!def.crafting, bay: def.robotBay ? buildRobotBay(sim, id) : null,
       suits: def.airlock ? { stowed: airlockSuits(sim, id), max: def.airlock.suits ?? 0 } : null,

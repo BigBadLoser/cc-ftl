@@ -2,6 +2,7 @@ import {
   AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, TraderC, vehicleSuits,
   vehicleViews, type Sim,
 } from '../sim';
+import { localOf } from './moduleSnapshot';
 import type { UiShuttle, UiShuttleCrew, UiShuttles } from '../ui/api';
 
 const PLAYER = 1;
@@ -40,7 +41,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
     if (!m || m.gridId === PLAYER) continue;
     const ship = [...sim.world.query(ShipC)].map((s) => sim.world.get(s, ShipC)).find((s) => s?.gridId === m.gridId);
     if (!ship || ship.state === 'fled') continue;
-    airlocks.push({ id, gridId: m.gridId, ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id), x: m.x, y: m.y });
+    airlocks.push({ id, gridId: m.gridId, ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id), ...localOf(sim, m.gridId, m.x, m.y) });
   }
   const shuttles: UiShuttles['shuttles'] = [];
   for (const v of vehicleViews(sim)) {
