@@ -212,6 +212,9 @@ export function roomFill(lay: Layout, room: number): number {
   return used / Math.max(1, tiles.length);
 }
 
+/** Holds up to this many floor tiles take a straight walkway from their door. */
+const SMALL_HOLD = 16;
+
 /**
  * Reserve the draw's walkway (see Arrangement.walkway) as protected tiles: a spine through the middle of the room
  * along one axis, plus the shortest floor path from it to each door and each already protected tile.
@@ -226,7 +229,15 @@ export function reserveWalkway(lay: Layout, room: number, d: RoomDraw): void {
   const alongX = d.arr.walkway === 'long' ? longX : !longX;
   // The spine: the middle row (or column), nudged toward the mirror side on even depths.
   const mid = alongX ? Math.floor((b.y0 + b.y1 + (d.mirror ? 1 : 0)) / 2) : Math.floor((b.x0 + b.x1 + (d.mirror ? 1 : 0)) / 2);
-  const path = new Set<number>(tiles.filter((i) => (alongX ? Math.floor(i / lay.w) : i % lay.w) === mid));
+  let path = new Set<number>(tiles.filter((i) => (alongX ? Math.floor(i / lay.w) : i % lay.w) === mid));
+  // A small hold (a container pod) packs tighter with its walkway running straight in from the door instead.
+  const doorIn = tiles.map((i) => ({ i, n: lay.neighbours(i).find((n) => lay.cells[n] === 'D') })).find((t) => t.n !== undefined);
+  if (tiles.length <= SMALL_HOLD && doorIn) {
+    const step = doorIn.i - (doorIn.n as number);
+    const line = new Set<number>();
+    for (let c = doorIn.i; inRoom.has(c); c += step) line.add(c);
+    path = line;
+  }
   if (path.size === 0) return;
   const goals: number[] = [];
   for (const i of tiles) {
@@ -307,7 +318,7 @@ export function furnish(
     const n = s.once ? 1 : s.count === 'fill' ? 40 : s.count;
     for (let k = 0; k < n; k++) {
       if (s.count === 'fill' && roomFill(lay, room) >= (s.upTo ?? d.recipe.fill)) return;
-      if (draw > power.spare) return;
+      if (draw > 0 && draw > power.spare) return;
       const pm = placeStep(lay, rng, room, d, si, rotsOf(id));
       if (!pm) return;
       power.spare -= draw;

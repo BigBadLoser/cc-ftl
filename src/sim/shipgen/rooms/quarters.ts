@@ -31,5 +31,22 @@ export const quarters = {
         { mod: ['module.chair', 'module.storage_locker'], count: 'fill', wall: 'any', face: 'in' },
       ],
     },
+    {
+      name: 'studio', weight: 1, steps: [
+        { mod: 'module.lifeSupport', count: 'spec', wall: 'any' },
+        { mod: 'module.bed', count: 'spec', wall: 'end', row: true },
+        { mod: 'module.bed', count: 1, unless: 'module.bed', wall: 'end' },
+        { mod: 'module.mess_table', count: 1, wall: 'long', with: { mod: 'module.chair', n: 1 } },
+        { mod: ['module.hydroponics', 'module.storage_locker'], count: 1, wall: 'any' },
+      ],
+    },
+    {
+      name: 'locker room', weight: 1, steps: [
+        { mod: 'module.lifeSupport', count: 'spec', wall: 'any' },
+        { mod: 'module.bed', count: 'spec', wall: 'long', row: true },
+        { mod: 'module.bed', count: 1, unless: 'module.bed', wall: 'long' },
+        { mod: 'module.storage_locker', count: 'fill', wall: 'any', row: true },
+      ],
+    },
   ],
 } as const satisfies RoomRecipe;

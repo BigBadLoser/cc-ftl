@@ -12,11 +12,13 @@ export const weapons = {
   arrangements: [
     around('loader', 2, [
       { mod: 'module.storage_rack', count: 2, wall: 'any', row: true },
-      { mod: 'module.battery', count: 2, wall: 'any', row: true },
+      { mod: 'module.battery', count: 1, wall: 'any' },
+      { mod: 'module.storage_locker', count: 1, wall: 'any' },
     ]),
     around('duty', 1, [
       { mod: 'module.console', count: 1, wall: 'any', face: 'in' },
-      { mod: ['module.storage_locker', 'module.battery'], count: 3, wall: 'any', row: true },
+      { mod: 'module.battery', count: 1, wall: 'any' },
+      { mod: ['module.storage_locker', 'module.storage_rack'], count: 2, wall: 'any', row: true },
     ]),
   ],
 } as const satisfies RoomRecipe;
@@ -24,11 +26,14 @@ export const weapons = {
 export const shields = {
   fill: 0.6,
   arrangements: [
-    around('banks', 2, [{ mod: 'module.battery', count: 4, wall: 'any', row: true }]),
-    around('monitor', 1, [
-      { mod: 'module.console', count: 1, wall: 'any' },
+    around('banks', 2, [
       { mod: 'module.battery', count: 2, wall: 'any', row: true },
       { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
+    ]),
+    around('monitor', 1, [
+      { mod: 'module.console', count: 1, wall: 'any' },
+      { mod: 'module.battery', count: 1, wall: 'any' },
+      { mod: 'module.storage_rack', count: 1, wall: 'any' },
     ]),
   ],
 } as const satisfies RoomRecipe;
@@ -38,11 +43,13 @@ export const engines = {
   arrangements: [
     around('control', 2, [
       { mod: 'module.console', count: 1, wall: 'fore' },
-      { mod: 'module.battery', count: 3, wall: 'any', row: true },
+      { mod: 'module.battery', count: 1, wall: 'any' },
+      { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
     ]),
     around('workshop', 1, [
       { mod: 'module.storage_rack', count: 1, wall: 'long' },
-      { mod: ['module.storage_locker', 'module.battery'], count: 3, wall: 'any', row: true },
+      { mod: 'module.battery', count: 1, wall: 'any' },
+      { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
     ]),
   ],
 } as const satisfies RoomRecipe;
@@ -69,7 +76,7 @@ export const hangar = {
     ]),
     around('pallets', 1, [
       { mod: 'module.storage_pallet', count: 2, wall: 'any' },
-      { mod: ['module.storage', 'module.battery'], count: 'fill', wall: 'any', row: true },
+      { mod: ['module.storage', 'module.storage_locker'], count: 'fill', wall: 'any', row: true },
     ]),
   ],
 } as const satisfies RoomRecipe;
