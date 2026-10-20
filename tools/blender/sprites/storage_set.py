@@ -167,13 +167,15 @@ def container(fill, rot):
 def tank(fill, rot):
     k = K(f"storage_tank_{fill}_{rot}", (2, 2), rot)
     F, R, z0, H = 1.7, 0.6, 0.18, 1.22
+    TOP = z0 + H + 0.2                                                                # the dome's top
     for su in (-1, 1):                                                                # skid: base rails, corner posts
         k.box(su * (F / 2 - 0.05), 0, 0.0, 0.1, F, 0.1, "gmD", top="gm")
         k.box(0, su * (F / 2 - 0.05), 0.0, F, 0.1, 0.1, "gmD", top="gm")
         for sv in (-1, 1):
-            k.box(su * (F / 2 - 0.06), sv * (F / 2 - 0.06), 0.0, 0.13, 0.13, 0.78, "gm", top="steelL", bevel=0.01)
-        k.box(su * (F / 2 - 0.06), 0, 0.66, 0.09, F - 0.1, 0.09, "gmD", top="gm")       # top rails tie the posts
-        k.box(0, su * (F / 2 - 0.06), 0.66, F - 0.1, 0.09, 0.09, "gmD", top="gm")
+            k.box(su * (F / 2 - 0.06), sv * (F / 2 - 0.06), 0.0, 0.13, 0.13, TOP + 0.06, "gm", top="steelL",
+                  bevel=0.01)                                                        # posts the full height
+        k.box(su * (F / 2 - 0.06), 0, TOP - 0.04, 0.1, F - 0.1, 0.1, "gmD", top="gm")   # top rails at the dome
+        k.box(0, su * (F / 2 - 0.06), TOP - 0.04, F - 0.1, 0.1, 0.1, "gmD", top="gm")
     for j in range(5):                                                                # hazard stripes on the front rail
         k.box(-0.5 + j * 0.25, F / 2 - 0.0, 0.02, 0.1, 0.02, 0.06, "hazY" if j % 2 == 0 else "hazK")
     k.box(0, 0, 0.1, F - 0.2, 0.12, 0.08, "gmD")                                      # saddle under the vessel
@@ -189,9 +191,10 @@ def tank(fill, rot):
     for a in range(4):
         ang = a * math.pi / 2 + math.pi / 4
         k.cyl(-0.16 + math.cos(ang) * 0.13, -0.12 + math.sin(ang) * 0.13, z0 + H + 0.2, 0.025, 0.03, "steelL", sides=6)
-    k.cyl(0.24, 0.1, z0 + H + 0.08, 0.05, 0.3, "gm", top="steelL", sides=8)           # relief valve stack
-    k.cyl(0.24, 0.1, z0 + H + 0.38, 0.08, 0.06, "medRed", sides=8)
-    g = math.pi / 4                                                                   # gauge on the camera-facing diagonal
+    k.cyl(0.24, 0.1, z0 + H + 0.08, 0.05, 0.18, "gm", top="steelL", sides=8)          # relief valve stack
+    k.cyl(0.24, 0.1, z0 + H + 0.26, 0.08, 0.06, "medRed", sides=8)
+    g = math.pi / 2 + 0.32                                                            # gauge on the front face, clear of
+                                                                                      # the front corner post
     ca, sa = math.cos(g), math.sin(g)
     gr = R + 0.13
     for z in (z0 + 0.22, z0 + H - 0.2):                                               # brackets
@@ -209,7 +212,7 @@ def tank(fill, rot):
         col = ("red" if fill == "empty" else "orange" if fill == "partial" else "green") if lit else "dark"
         k.box(ca * (gr + 0.04) + sa * 0.1, sa * (gr + 0.04) - ca * 0.1, z0 + H - 0.32 - j * 0.12, 0.09, 0.04, 0.09,
               col, rz=g)
-    a = g + 1.1                                                                       # outlet line and valve wheel
+    a = 0.3                                                                           # outlet line and valve wheel
     ou, ov = math.cos(a) * (R + 0.08), math.sin(a) * (R + 0.08)
     k.box(ou, ov, 0.1, 0.1, 0.1, z0 + 0.3, "gm", top="steelL")
     k.box(ou, ov, z0 + 0.24, 0.16, 0.16, 0.08, "steelL")
