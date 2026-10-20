@@ -13,7 +13,7 @@ FOLD = {"index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand", "thu
 TORSO = ("hips", "spine", "spine_02", "spine_03", "clavicle.L", "clavicle.R")
 HEAD = ("neck_01", "head")
 LIMBS = ("arm", "forearm", "hand", "leg", "shin", "foot")
-ARM_K = 0.85                          # arm thickness against the traced arm
+ARM_K = 0.95                          # arm thickness against the traced arm
 
 
 def fold(name):
@@ -113,31 +113,39 @@ def stack(by, bones, z0, z1, step=0.04):
     return [(Vector((0.0, float(y), float(z))), float(a), float(b), r[5]) for z, y, a, b, r in zip(zs, cy, hx, hy, rows)]
 
 
-def tidy_torso(rows, h, arm_r):
+def tidy_torso(rows, h, arm_r, leg_out):
     """The traced torso tidied for game size: a straight back from the seat to the shoulder blades (the traced seat and
     small of the back curve the spine in a side view), a pinched waist, room under the arms (the hanging upper arm,
-    radius arm_r, clears the ribs instead of merging into one slab) and shoulders that slope down to the neck instead of
-    shrugging up to the chin."""
+    radius arm_r, clears the ribs instead of merging into one slab), a rounded shoulder from the neck out over the top
+    of the arm (no shrug up to the chin, no dip where the arm meets it) and a pelvis as wide as the thigh tops (leg_out:
+    the outside of the thigh), so the legs come out of the hips instead of bulging out under them."""
+    hz = h["leg.L"].z
+    r0 = rows[0]
+    rows = [(Vector((0.0, r0[0].y, z)), r0[1], r0[2], r0[3]) for z in (hz - 0.07, hz - 0.035, hz)] + list(rows)
+    narrow = {0: 0.07, 1: 0.035}                                             # in to the crotch below the hip joints
     zs = np.array([r[0].z for r in rows])
     front = np.array([r[0].y - r[2] for r in rows])
     back = np.array([r[0].y + r[2] for r in rows])
     hx = np.array([r[1] for r in rows])
     sz, ax, nz = h["arm.L"].z, abs(h["arm.L"].x), h["neck_01"].z
     kb = int(np.argmax(np.where(zs < sz, back, -1)))                        # the shoulder blades
-    kw = int(np.argmin(np.where(zs < sz - 0.1, hx, 9)))                     # the waist
+    kw = int(np.argmin(np.where((zs < sz - 0.1) & (zs > hz + 0.1), hx, 9)))  # the waist
     b0 = back[kw] + 0.008
     for k in range(kb):
         back[k] = b0 + (back[kb] - b0) * (zs[k] - zs[0]) / (zs[kb] - zs[0])
     hx = hx * (1 - 0.1 * np.exp(-((zs - zs[kw]) / 0.07) ** 2))
     under = ax - arm_r - 0.045                                               # clear of the hanging arm, sleeves on
-    top, sh = 0.115, ax - 0.005                                              # at the base of the neck; over the joint
+    top, sh, s0 = 0.115, ax - 0.01, sz - 0.01                               # neck base; shoulder (over the joint)
+    ease = lambda t: t * t * (3 - 2 * t)  # noqa: E731
     for k, z in enumerate(zs):
-        if z < sz - 0.08:
+        if z < hz + 0.08:                                                    # pelvis: out to the thighs
+            hx[k] = hx[k] + (leg_out - 0.01 - hx[k]) * ease(min(1.0, (hz + 0.08 - z) / 0.08)) - narrow.get(k, 0.0)
+        elif z < sz - 0.09:
             hx[k] = min(hx[k], under)
-        elif z < sz:                                                         # out to the top of the arm: one slope from
-            hx[k] = under + (sh - under) * (z - sz + 0.08) / 0.08           # the neck over the shoulder, no pad
-        else:
-            hx[k] = sh + (top - sh) * (z - sz) / (nz - sz)
+        elif z < s0:
+            hx[k] = under + (sh - under) * ease((z - sz + 0.09) / (s0 - sz + 0.09))
+        else:                                                                # a round shoulder in to the neck
+            hx[k] = top + (sh - top) * np.sqrt(max(0.0, 1 - ((z - s0) / (nz - s0)) ** 2))
     return [(Vector((0.0, float(f + b) / 2, float(z))), float(x), float(b - f) / 2, r[3])
             for z, f, b, x, r in zip(zs, front, back, hx, rows)]
 
@@ -145,6 +153,16 @@ def tidy_torso(rows, h, arm_r):
 def thin(secs, k=ARM_K):
     """Slimmer arms than the traced (muscled) ones, so a hanging arm reads apart from the body."""
     return [(c, e1, e2, r1 * k, r2 * k) for c, e1, e2, r1, r2 in secs]
+
+
+def to_joint(secs, head):
+    """The traced thigh starts a hand's width below the hip (the verts above it follow the pelvis): carry its first
+    section up to the joint, so the leg comes out of the inside of the pelvis instead of ending in a cap under it."""
+    c, e1, e2, r1, r2 = secs[0]
+    a = (Vector(secs[-1][0]) - Vector(c)).normalized()
+    d = (Vector(c) - Vector(head)).dot(a)
+    n = max(1, int(d / 0.045))
+    return [(Vector(c) - a * (d * k / n), e1, e2, r1, r2) for k in range(n, 0, -1)] + list(secs)
 
 
 def wrist(secs, head):
@@ -173,12 +191,14 @@ def measure(arm, body):
         out["limb"][f"forearm.{s}"] = thin(limb(by[f"forearm.{s}"], h[f"forearm.{s}"], t[f"forearm.{s}"], round_=True,
                                                 axis=True))
         out["limb"][f"hand.{s}"] = wrist(limb(by[f"hand.{s}"], h[f"hand.{s}"], t[f"hand.{s}"], step=0.03), h[f"hand.{s}"])
-        out["limb"][f"leg.{s}"] = limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"])
+        out["limb"][f"leg.{s}"] = to_joint(limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"]), h[f"leg.{s}"])
         out["limb"][f"shin.{s}"] = limb(by[f"shin.{s}"], h[f"shin.{s}"], t[f"shin.{s}"])
         out["limb"][f"foot.{s}"] = limb(by[f"foot.{s}"], h[f"foot.{s}"], t[f"toe.{s}"], step=0.035)
     hz = max(b[:, 2].max() for k, b in by.items() if k == "head")
     tz = by["hips"][:, 2].min()
-    out["torso"] = tidy_torso(stack(by, TORSO, tz, h["neck_01"].z), h, out["limb"]["arm.L"][1][3])
+    lg = out["limb"]["leg.L"][0]
+    out["torso"] = tidy_torso(stack(by, TORSO, tz, h["neck_01"].z, step=0.025), h, out["limb"]["arm.L"][1][3],
+                              abs(lg[0].x) + lg[3])
     # the head alone (the neck is a tube): a slice through both the jaw and the neck turns the chin into a cone
     out["head"] = stack(by, ("head",), by["head"][:, 2].min() + 0.01, hz - 0.01, step=0.03)
     return out

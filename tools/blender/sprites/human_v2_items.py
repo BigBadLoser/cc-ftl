@@ -51,18 +51,19 @@ def tee(A, R):
 
 
 def work_shirt(A, R):
-    """Long sleeves, a hi-vis band round the chest and darker cuffs."""
+    """The hi-vis work vest, as on the old base: sleeveless (bare arms), a scoop neck, a hi-vis band round the chest and
+    hi-vis shoulder straps."""
     b = Build()
-    torso(b, R, grow=0.022, lo=R.hips.z + 0.09)                          # the hem sits above the pants' waistband
-    for s in "LR":
-        arm(b, R, s, grow=0.022, hand=False)
-    cz = R.chest.z
-    wrist = abs(R.t["forearm.L"].x) - 0.07
+    nz, sz = R.neck.z, R.shoulder_z
+    scoop = lambda c: not (c.z > nz - 0.04 and abs(c.x) < 0.1)  # noqa: E731
+    torso(b, R, grow=0.016, lo=R.hips.z + 0.09, keep=scoop, cuts=(R.chest.z + 0.03, R.chest.z + 0.09, sz - 0.03))
 
     def col(c, n):
-        if cz + 0.02 < c.z < cz + 0.1 and abs(c.x) < 0.3:
+        if R.chest.z + 0.03 < c.z < R.chest.z + 0.09:
             return "hivis"
-        return "team.cloth*0.8" if abs(c.x) > wrist else "team.cloth"
+        if c.z > sz - 0.03 and 0.07 < abs(c.x) < 0.14:
+            return "hivis"
+        return "team.cloth"
     return Item("torso", "work_shirt", [b.mesh("v2.work_shirt", A, col)], default=True)
 
 

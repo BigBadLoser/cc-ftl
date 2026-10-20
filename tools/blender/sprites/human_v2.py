@@ -218,9 +218,10 @@ class Rig:
 
 # ---- body parts (shared by the body and the shells) -----------------------------------------------------------------
 
-def torso(b, R, grow=0.0, lo=None, hi=None, cuts=()):
+def torso(b, R, grow=0.0, lo=None, hi=None, cuts=(), keep=None):
     """The traced torso from the crotch to the shoulders, grown by `grow`, clipped to lo <= z <= hi (hem lines); cuts:
-    extra rings at those heights, so a colour edge (a waistband) lands on a ring instead of across a tall face."""
+    extra rings at those heights, so a colour edge (a waistband) lands on a ring instead of across a tall face; keep:
+    trims faces (a neckline)."""
     rings = [(c, hx + grow, hy + grow, w) for c, hx, hy, w in R.T["torso"]]
     zs = [r[0].z for r in rings]
 
@@ -232,7 +233,7 @@ def torso(b, R, grow=0.0, lo=None, hi=None, cuts=()):
     lo, hi = zs[0] if lo is None else lo, zs[-1] if hi is None else hi
     mid = [r for r in rings if lo < r[0].z < hi] + [at(z) for z in cuts if lo < z < hi]
     clip = [at(lo)] + sorted(mid, key=lambda r: r[0].z) + [at(hi)]
-    b.loft(clip)
+    b.loft(clip, keep=keep)
 
 
 def chain(b, R, bones, grow=0.0, t0=0.0, t1=1.0, exp=2.4):
