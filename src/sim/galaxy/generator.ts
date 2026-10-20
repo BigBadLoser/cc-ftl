@@ -104,14 +104,6 @@ export class GalaxyGen implements SectorContext {
     return best as NodeData;
   }
 
-  /**
-   * Sites that become sectors: those in a region. A site its region would only reach across the void, or too far from
-   * its region-mates (RegionField's wild test), is not generated, so every sector sits inside a region.
-   */
-  private live(x: number, y: number, range: number): Site[] {
-    return this.sites.sitesNear(x, y, range).filter((s) => this.regions.regionAt(s.x, s.y));
-  }
-
   /** True when a-b stays out of the void: no stretch over LANE_MAX_VOID below LANE_MIN_DENSITY, and short enough. */
   private clear(a: Site, b: Site): boolean {
     return dist(a, b) <= HYPERLANE_MAX && this.terrain.voidRun(a.x, a.y, b.x, b.y, LANE_MIN_DENSITY).longest <= LANE_MAX_VOID;
@@ -126,7 +118,7 @@ export class GalaxyGen implements SectorContext {
     let out = this.cands.get(site.id);
     if (!out) {
       out = [];
-      const near = this.live(site.x, site.y, RIFT_MAX);
+      const near = this.sites.sitesNear(site.x, site.y, RIFT_MAX);
       for (const o of near) {
         if (o.id === site.id) continue;
         const [a, b] = site.id < o.id ? [site, o] : [o, site];
@@ -146,7 +138,7 @@ export class GalaxyGen implements SectorContext {
     let out = this.cross.get(key);
     if (!out) {
       out = [];
-      for (const s of this.live(a.x, a.y, REGION_REACH)) {
+      for (const s of this.sites.sitesNear(a.x, a.y, REGION_REACH)) {
         if (this.regions.regionAt(s.x, s.y) !== a) continue;
         for (const { site: o, rift } of this.candidates(s)) {
           if (this.regions.regionAt(o.x, o.y) !== b) continue;
@@ -211,13 +203,20 @@ export class GalaxyGen implements SectorContext {
 
   /**
    * Hyperlanes of a sector. Inside its region, a spanning tree of the region's backbone (see treeEdge) plus LOOP_CHANCE
-   * of the other backbone links as loops: some choice, some chokepoints. Across a border, only the gates.
+   * of the other backbone links as loops: some choice, some chokepoints. Across a border, only the gates. A wild
+   * sector (no region) keeps its relative-neighbour lanes, which never cut the frontier off.
    */
   hyperlanes(site: Site): EdgeData[] {
     const out: EdgeData[] = [];
     const mine = this.regions.regionAt(site.x, site.y);
-    if (!mine) return out;
     const cands = this.candidates(site);
+    const near = this.sites.sitesNear(site.x, site.y, RIFT_MAX);
+    for (const { site: other, rift } of cands) {
+      if (mine && this.regions.regionAt(other.x, other.y)) continue;
+      const [a, b] = site.id < other.id ? [site, other] : [other, site];
+      if (isRelativeNeighbour(a, b, near)) out.push(this.lane(a, b, false, rift));
+    }
+    if (!mine) return out;
     for (const other of this.regionLinks(site)) {
       const [a, b] = site.id < other.id ? [site, other] : [other, site];
       if (!this.treeEdge(a, b) && unit(this.seed, strHash(a.id), strHash(b.id), 51) >= LOOP_CHANCE) continue;
@@ -244,7 +243,7 @@ export class GalaxyGen implements SectorContext {
     let out = this.links.get(site.id);
     if (!out) {
       const mine = this.regions.regionAt(site.x, site.y);
-      const same = this.live(site.x, site.y, RIFT_MAX).filter((o) => this.regions.regionAt(o.x, o.y) === mine);
+      const same = this.sites.sitesNear(site.x, site.y, RIFT_MAX).filter((o) => this.regions.regionAt(o.x, o.y) === mine);
       out = same.filter((o) => o.id !== site.id && isRelativeNeighbour(site, o, same));
       this.links.set(site.id, out);
     }
@@ -287,7 +286,7 @@ export class GalaxyGen implements SectorContext {
     for (let gy = cy * CHUNK_CELLS; gy < (cy + 1) * CHUNK_CELLS; gy++) {
       for (let gx = cx * CHUNK_CELLS; gx < (cx + 1) * CHUNK_CELLS; gx++) {
         const site = this.sites.site(gx, gy);
-        if (!site || !this.regions.regionAt(site.x, site.y)) continue;
+        if (!site) continue;
         const built = this.sector(site);
         data.sectors.push(built.sector);
         data.nodes.push(...built.nodes);

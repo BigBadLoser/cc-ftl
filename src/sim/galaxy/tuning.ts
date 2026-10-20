@@ -32,14 +32,14 @@ export const REGION_RIFT_COST = 14;
 /** Regions smaller than this are absorbed by their neighbours. */
 export const MIN_REGION_SECTORS = 4;
 /** Wild space: sectors a region reaches only over more than WILD_VOID of void, or with fewer than WILD_MATES region-mates within WILD_GAP. */
-export const WILD_VOID = 500;
+export const WILD_VOID = 300;
 export const WILD_GAP = 1150;
-export const WILD_MATES = 1;
+export const WILD_MATES = 2;
 /**
  * Gates: neighbouring regions keep 1 crossing lane, plus a second and third with these chances, picked shortest first
  * and at least GATE_SPREAD apart. A border with a detour through a third region closes with NO_GATE chance.
  */
-export const GATE_SECOND = 0.7;
+export const GATE_SECOND = 0.45;
 export const GATE_THIRD = 0.12;
 export const GATE_SPREAD = 900;
 export const NO_GATE = 0.5;
@@ -82,11 +82,11 @@ export const HYPERLANE_MAX = 1200;
 export const LANE_MIN_DENSITY = 0.05;
 export const LANE_MAX_VOID = 380;
 /** Rift lanes: relative-neighbour pairs up to this far apart may cross the void (so no island is stranded). */
-export const RIFT_MAX = 3600;
+export const RIFT_MAX = 2800;
 /** Gate picking treats a rift lane as this much longer, so clear crossings win. */
 export const RIFT_GATE_PENALTY = 2000;
 /** Inside a region: a local spanning tree of the backbone plus this share of the other backbone links (loops). */
-export const LOOP_CHANCE = 0.6;
+export const LOOP_CHANCE = 0.2;
 /** Chance a hyperlane carries a mid-lane event anchor. */
 export const ANCHOR_CHANCE = 0.35;
 
