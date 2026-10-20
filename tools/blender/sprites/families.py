@@ -24,6 +24,7 @@
   hydroponics  the hydroponics bay, .grow0 .. .grow3, each also .active (hydroponics.py; MODPACK_ROTS as storage_set)
   workbench the workbench, idle and .active (workbench.py; MODPACK_ROTS as storage_set)
   ops_consoles  comms and sensor consoles, seated 2x2, with desk-front overlays (console_ops.py; MODPACK_ROTS as above)
+  wallprops pieces on a wall run's face: pipes, cable tray, conduit, vents, panels, signs, a terminal (wallprops.py)
   clutter   floor clutter props: barrels, crates, potted plants, a toppled chair, a tool cart (clutter.py)
   cryo      the cryo pod, idle / .active (frozen, occupied) / .empty (open) (cryo.py; MODPACK_ROTS as above)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
@@ -98,6 +99,11 @@ def jobs(name):
         import os
         from . import cryo
         return cryo.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
+    if name == "wallprops":
+        import os
+        from . import wallprops
+        fams = os.environ.get("WALLPROP_FAMS", "wall,hull").split(",")
+        return [j for j in wallprops.SPRITES if j[0].split(".")[-2] in fams], True
     if name == "clutter":
         from . import clutter
         return clutter.SPRITES, True
