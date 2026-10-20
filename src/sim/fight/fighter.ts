@@ -18,7 +18,7 @@ import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
 import { shipIdOf } from '../regions';
 import { EggSacC } from '../aliens/components';
-import { sacTile } from '../aliens/target';
+import { sacInReach, sacTile } from '../aliens/target';
 import { StunC } from '../robots/components';
 import { haltCrew } from '../robots/halt';
 import { TICK_HZ } from '../time';
@@ -117,8 +117,10 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     .filter((o) => o !== id && isHostile(sim, id, o) && isCombatReady(sim, o))
     .map((o) => ({ id: o, pos: sim.world.get(o, PositionC) as Position }))
     .sort((a, b) => dist(pos, a.pos) - dist(pos, b.pos) || a.id - b.id);
+  // Drafted, armed crew with no order shoot an egg sac they can already hit (never walking to one), unless a hostile is in view.
+  const autoSac = controlled && !f.ordered && f.engage && isArmed(sim, id) ? sacInReach(sim, grid, shipIdOf(sim, pos), pos, wielded(sim, id).def) : null;
 
-  if (foes.length === 0 && !sac) {
+  if (foes.length === 0 && !sac && !autoSac) {
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
     if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
@@ -152,7 +154,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   if (controlled) {
     const ordered = f.ordered ? foes.find((o) => o.id === f.ordered) : undefined;
     if (f.ordered && !ordered && !sac) f.ordered = 0;
-    target = ordered ?? (sac ? { id: f.ordered, pos: sac } : f.engage && canFight ? seen : undefined);
+    target = ordered ?? (sac ? { id: f.ordered, pos: sac } : f.engage && canFight ? seen ?? autoSac ?? undefined : undefined);
   } else if (creatureTurn(sim, grid, id, f, pos, seen, foes)) return;
   else if (canFight) target = seen ?? (hunter ? foes[0] : undefined);
   else if (seen && !sim.content.species[crew.species]?.fearless) return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));

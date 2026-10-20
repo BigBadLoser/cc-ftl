@@ -48,9 +48,11 @@ export function createAlerts(sim: Sim): Alerts {
 
   const traderName = (id: number) => sim.world.get(id, TraderC)?.name ?? 'trader';
   const playerSuit = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
-  /** Hostile ships and their crew raise no alerts of their own. */
+  /** Hostile ships and their crew raise no alerts of their own (a player crew member going down anywhere does). */
   const foreign = (e: SimEvent): boolean => {
     if (e.type === 'fire.started' || e.type === 'hull.breach' || e.type === 'power.shortage' || e.type === 'o2.low') return e.ship !== home();
+    // The player's own crew going down is news wherever they are (an away team on a derelict or an enemy ship).
+    if (e.type === 'crew.downed' && playerSuit(e.crew)) return false;
     if (e.type === 'crew.downed' || e.type === 'crew.died' || e.type === 'crew.rescued') {
       return shipIdOf(sim, sim.world.get(e.crew, PositionC)) !== home();
     }

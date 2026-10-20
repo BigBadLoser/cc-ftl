@@ -1,4 +1,7 @@
 import type { Position } from '../crew/components';
+import { sightLine } from '../fight/los';
+import type { Grid } from '../grid';
+import type { HandWeaponDef } from '../registry';
 import type { Sim } from '../sim';
 import { EggSacC, type EggSac } from './components';
 
@@ -31,4 +34,26 @@ export function sacTile(sim: Sim, id: number, shipId: number, from: { x: number;
     }
   }
   return { x: best, y: bestY, toX: best, toY: bestY, progress: 0, facing: 0 };
+}
+
+/**
+ * The nearest live egg sac on ship `shipId` that `weapon` can hit from `from` without moving: a ranged weapon within
+ * range and with a clear line, a melee one adjacent. Null if none. (Drafted, armed crew shoot such sacs on their own.)
+ */
+export function sacInReach(sim: Sim, grid: Grid, shipId: number, from: Position, weapon: HandWeaponDef): { id: number; pos: Position } | null {
+  let best: { id: number; pos: Position } | null = null;
+  let bestD = Infinity;
+  for (const id of sim.world.query(EggSacC)) {
+    const pos = sacTile(sim, id, shipId, from);
+    if (!pos) continue;
+    const d = Math.hypot(pos.x - from.x, pos.y - from.y);
+    if (d >= bestD) continue;
+    const reach = weapon.kind === 'ranged'
+      ? d <= weapon.range && sightLine(sim, grid, from, pos).visible
+      : Math.max(Math.abs(pos.x - from.x), Math.abs(pos.y - from.y)) <= 1;
+    if (!reach) continue;
+    best = { id, pos };
+    bestD = d;
+  }
+  return best;
 }

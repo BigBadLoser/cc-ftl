@@ -141,6 +141,28 @@ describe('egg sacs', () => {
     expect(aliens(sim)).toHaveLength(0);
   });
 
+  it('drafted, armed crew shoot a sac they can already hit, without walking to one; undrafted or out of reach, nothing', () => {
+    const { sim, wreck } = make();
+    const near = laySac(sim, wreck, 9, 2, 1, false);
+    const far = laySac(sim, wreck, 27, 2, 1, false);
+    const idle = person(sim, 2, 3, 'role.civ', 'item.rifle');
+    run(sim, 3 * TICK_HZ);
+    expect(sac(sim, near).hp).toBe(sac(sim, near).max); // not drafted: no auto fire
+    sim.enqueue({ type: 'crew.draft', id: idle, drafted: true });
+    const ev = run(sim, 2 * TICK_HZ, () => sac(sim, near).hp < sac(sim, near).max);
+    expect(of(ev, 'crew.attacked').some((e) => e.crew === idle && e.target === near)).toBe(true);
+    expect(sim.world.get(idle, PositionC)).toMatchObject({ x: 2, y: 3 });
+    expect(sac(sim, far).hp).toBe(sac(sim, far).max);
+    // A sac out of reach (beyond rifle range): no shot and no walk.
+    const b = make();
+    laySac(b.sim, b.wreck, 27, 2, 1, false);
+    const c = person(b.sim, 2, 3, 'role.civ', 'item.rifle');
+    b.sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
+    const ev2 = run(b.sim, 3 * TICK_HZ);
+    expect(of(ev2, 'crew.attacked')).toHaveLength(0);
+    expect(b.sim.world.get(c, PositionC)).toMatchObject({ x: 2, y: 3 });
+  });
+
   it('a nest lays new sacs while a non-alien is aboard, up to its cap', () => {
     const { sim, wreck } = make();
     sim.world.add(sim.world.createEntity(), NestC, { ship: wreck, x: 25, y: 2, timer: 0, laid: 0 });

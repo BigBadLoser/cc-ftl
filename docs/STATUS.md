@@ -61,11 +61,10 @@ are already merged or superseded. Don't build on them.
   (attack / hurt / dead clips). Placeholder: the spit glob (drawn in code, and the hit lands at once in the sim).
 - **Pipeline fix**: `crew_pack.union_box` was dropped by the per-clip crew refactor although `robot_render` and
   `alien_render` import it; restored (the robots family builds again too).
-- **Open questions**: numbers and difficulty (sense radius, brood size, nest rate and cap, alien stats, hatch weights);
-  should aliens board the player's ship or shuttles, or follow crew through airlocks; should drafted crew auto-target
-  sacs (now only on order); should the spit be a real travelling projectile in the sim (now instant, glob is visual);
-  should light repel aliens; knockdown shows the crew member as "Inert" (shared robot stun state); `crew.downed` alerts are
-  still suppressed for crew away from the home ship (existing rule), so a crew member downed on a derelict raises none.
+- **User answers (2026-10-20)**: numbers stay; aliens stay on their derelict (no airlocks, shuttles or the player's ship);
+  the spit stays visual-only; no light avoidance yet. Done: drafted, armed crew with no order shoot an egg sac they can
+  already hit (in range and sight; they never walk to one) when no hostile is in view; a brute's knockdown reads
+  "Knocked down" (robots keep "Inert"); "is down" alerts fire for player crew anywhere, not only aboard the home ship.
 - Debug: `?shipgen=derelict:civilian&ruin=0.6&cause=decay&genAt=0,45&hook`, Spawn raider, then
   `__cc.aliens(shipId)` lists sacs and aliens; `debug.spawnCrew` with `faction: 'player'` on the wreck sets them off.
 
