@@ -43,4 +43,19 @@ export const species = {
     designation: 'SX',
     wreck: [{ item: 'item.parts', count: 5 }, { item: 'item.scrap', count: 10 }],
   },
+  // Derelict alien (hatched from egg sacs; faction 'alien'). Fast, melee only, moderate hp. It does not breathe, so it
+  // crosses vented, airless decks freely (cold and thin air do nothing to it; heat and fire still do).
+  'species.alien': {
+    name: 'Alien',
+    moveSpeed: 3.6,
+    workSpeed: 0,
+    restDecay: 0,
+    carryCapacity: 0,
+    maxHp: 60,
+    designation: 'XN',
+    airless: true,
+    fearless: true,
+    natural: { kind: 'melee', range: 1, damage: 9, cooldownSec: 0.9, accuracy: 0.75 },
+    creature: { fleeBelow: 0.25 },
+  },
 } satisfies Record<string, SpeciesDef>;

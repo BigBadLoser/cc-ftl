@@ -51,4 +51,11 @@ export const roles = {
     priorities: { firefighting: 1, medical: 0, operating: 4, repair: 1, construction: 2, hauling: 3, crafting: 4, cooking: 0 },
     skills: { repair: 3 },
   },
+  // --- Creatures. No work at all: the alien system and crew combat drive them. ---
+  'role.alien': {
+    name: 'Alien',
+    species: 'species.alien',
+    priorities: { firefighting: 0, medical: 0, operating: 0, repair: 0, construction: 0, hauling: 0, crafting: 0, cooking: 0 },
+    skills: { melee: 2 },
+  },
 } satisfies Record<string, RoleDef>;

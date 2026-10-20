@@ -250,6 +250,13 @@ export interface SpeciesDef {
   hunger?: { decayPerSec: number };
   /** Has moods (MoodC: a score built from named factors that slows work when low). Absent = no mood (robots). */
   mood?: true;
+  /** The body's own weapon (claws, teeth), used when nothing is equipped instead of bare fists. */
+  natural?: HandWeaponDef;
+  /**
+   * A wild creature (aliens): no jobs, needs or colony AI; it idles near where it hatched, hunts what it sees, and runs
+   * from its foes under `fleeBelow` of its max hp. At 0 hp it dies at once (no downed state, no rescue).
+   */
+  creature?: { fleeBelow: number };
 }
 
 /**

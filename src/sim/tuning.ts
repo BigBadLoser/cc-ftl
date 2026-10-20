@@ -254,3 +254,30 @@ export const DEFAULT_SUIT = {
 } as const;
 /** Extra path steps an automatic job that needs vacuum counts for when crew choose between jobs (they prefer no EVA). */
 export const EVA_JOB_PENALTY = 30;
+
+// --- Aliens on derelicts (src/sim/aliens). Placeholder numbers; see docs/STATUS.md "Aliens" for the open questions.
+/** Egg sac hp by footprint (1x1, 2x2). */
+export const SAC_HP: readonly number[] = [0, 30, 60];
+/** A non-alien within this many tiles with a clear line of sight disturbs a dormant sac. */
+export const SAC_SENSE = 3;
+/** Ticks between proximity checks. */
+export const SAC_CHECK_TICKS = 5;
+/** Seconds per hatch stage (.hatch0, .hatch1); the alien comes out on .hatch2, which then lasts this long before .burst. */
+export const SAC_STAGE_SEC = 1.2;
+/** A hatching sac sets off dormant sacs within this many tiles after a random delay of MIN..MAX seconds. */
+export const SAC_CHAIN_RADIUS = 6;
+export const SAC_CHAIN_MIN_SEC = 1;
+export const SAC_CHAIN_MAX_SEC = 3;
+/** Fire on a sac's tile hurts it this much per second at full intensity. */
+export const SAC_FIRE_DAMAGE = 10;
+/** Chance a dormant sac spawns cracked and leaking (a look only). */
+export const SAC_LEAK_CHANCE = 0.3;
+/** Aliens per hatched sac, by footprint (1x1, 2x2). */
+export const SAC_BROOD: readonly number[] = [0, 1, 2];
+/** A nest lays a sac every this many seconds while a non-alien is aboard, at most NEST_MAX_SACS, within NEST_RADIUS. */
+export const NEST_LAY_SEC = 60;
+export const NEST_MAX_SACS = 3;
+export const NEST_RADIUS = 4;
+/** Idle aliens wander within this many tiles of where they hatched (per-tick chance of a stroll). */
+export const ALIEN_ROAM = 4;
+export const ALIEN_WANDER_CHANCE = 0.01;
