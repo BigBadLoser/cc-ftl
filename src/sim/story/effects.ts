@@ -1,4 +1,4 @@
-import { gridIdAt , gridIdOf } from '../regions';
+import { shipIdAt , shipIdOf } from '../regions';
 import { CrewC, HealthC } from '../crew/components';
 import { ItemStackC } from '../items/components';
 import { spillItems, takeFromStack } from '../items/stacks';
@@ -10,7 +10,7 @@ import { SkillXpC } from './components';
 import type { CrewTarget, EventEffect } from './defs';
 import { describeQty } from './requirements';
 import { PHYSICAL_LOG_MAX, flagValue, reputationOf, withRng } from './state';
-import { playerCrew, playerGrids, playerStorages } from './world';
+import { playerCrew, playerShips, playerStorages } from './world';
 
 /** Who an effect applies to and the event it belongs to. */
 export interface EffectCtx {
@@ -36,7 +36,7 @@ export function giveItems(sim: Sim, item: string, count: number): number {
   const stores = playerStorages(sim);
   for (const id of stores) left -= storageAdd(sim, id, item, left);
   const first = stores[0] === undefined ? undefined : sim.world.get(stores[0], ModuleC);
-  if (left > 0 && first) left = spillItems(sim, gridIdOf(sim, first), first.x, first.y, item, left);
+  if (left > 0 && first) left = spillItems(sim, shipIdOf(sim, first), first.x, first.y, item, left);
   return left;
 }
 
@@ -44,11 +44,11 @@ export function giveItems(sim: Sim, item: string, count: number): number {
 export function takeItems(sim: Sim, item: string, count: number): number {
   let left = count;
   for (const id of playerStorages(sim)) left -= storageTake(sim, id, item, left);
-  const grids = playerGrids(sim);
+  const grids = playerShips(sim);
   for (const id of sim.world.query(ItemStackC)) {
     if (left <= 0) break;
     const s = sim.world.get(id, ItemStackC);
-    if (s?.item === item && grids.has(gridIdAt(sim, s.x, s.y))) left -= takeFromStack(sim, id, left);
+    if (s?.item === item && grids.has(shipIdAt(sim, s.x, s.y))) left -= takeFromStack(sim, id, left);
   }
   return count - left;
 }

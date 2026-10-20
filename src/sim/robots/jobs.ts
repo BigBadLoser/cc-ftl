@@ -1,5 +1,5 @@
 import { ammoCount, consumeAmmo } from '../combat/ammo';
-import { shipOf } from '../combat/ships';
+
 import { skillOf } from '../combat/operators';
 import { AssignmentC, CarriedC, DeadC, DraftedC, HealthC, JobC, PositionC, type Job, type Position } from '../crew/components';
 import { origin } from '../crew/helpers';
@@ -12,22 +12,23 @@ import { TICK_HZ } from '../time';
 import { MEND_PER_SEC, SALVAGE_SEC, SKILL_STEP } from '../tuning';
 import { HackedC, WreckC } from './components';
 import { speciesOf } from './core';
-import { gridIdOf, shipIdOf } from '../regions';
+import { shipIdOf } from '../regions';
+import { shipById } from '../combat/ships';
 
 type NewJob = Partial<Job> & Pick<Job, 'category' | 'kind' | 'x' | 'y'>;
 
 /** The first of a mechanical body's repair items the grid's storage holds, or null. */
-function mendItem(sim: Sim, gridId: number, crew: number): string | null {
-  for (const item of speciesOf(sim, crew)?.mechanical?.items ?? []) if (ammoCount(sim, gridId, item) > 0) return item;
+function mendItem(sim: Sim, shipId: number, crew: number): string | null {
+  for (const item of speciesOf(sim, crew)?.mechanical?.items ?? []) if (ammoCount(sim, shipId, item) > 0) return item;
   return null;
 }
 
 /** True while a robot still needs mending on the job's grid and its ship has the parts. */
-function mendWanted(sim: Sim, robot: number, gridId: number): boolean {
+function mendWanted(sim: Sim, robot: number, shipId: number): boolean {
   const hp = sim.world.get(robot, HealthC);
   const pos = sim.world.get(robot, PositionC);
-  return !!hp && !!pos && gridIdOf(sim, pos) === gridId && hp.hp < hp.max && !sim.world.has(robot, DeadC)
-    && !!speciesOf(sim, robot)?.mechanical && mendItem(sim, gridId, robot) !== null;
+  return !!hp && !!pos && shipIdOf(sim, pos) === shipId && hp.hp < hp.max && !sim.world.has(robot, DeadC)
+    && !!speciesOf(sim, robot)?.mechanical && mendItem(sim, shipId, robot) !== null;
 }
 
 /**
@@ -37,7 +38,7 @@ function mendWanted(sim: Sim, robot: number, gridId: number): boolean {
 export function keepRobotJob(sim: Sim, jobId: number, job: Job): boolean | null {
   const target = job.target ?? 0;
   if (job.kind === 'mend') {
-    if (!mendWanted(sim, target, gridIdOf(sim, job))) return false;
+    if (!mendWanted(sim, target, shipIdOf(sim, job))) return false;
     const o = origin(sim.world.get(target, PositionC) as Position);
     job.x = o.x;
     job.y = o.y;
@@ -58,13 +59,13 @@ export function keepRobotJob(sim: Sim, jobId: number, job: Job): boolean | null 
 export function robotJobs(sim: Sim, seen: Set<string>, add: (job: NewJob) => void): void {
   for (const id of sim.world.query(HealthC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || seen.has(`mend:${id}`) || !mendWanted(sim, id, gridIdOf(sim, pos))) continue;
+    if (!pos || seen.has(`mend:${id}`) || !mendWanted(sim, id, shipIdOf(sim, pos))) continue;
     const o = origin(pos);
     add({ category: 'repair', kind: 'mend', x: o.x, y: o.y, target: id });
   }
   for (const id of sim.world.query(WreckC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || seen.has(`salvage:${id}`) || shipOf(sim, gridIdOf(sim, pos))?.faction !== 'player') continue;
+    if (!pos || seen.has(`salvage:${id}`) || shipById(sim, shipIdOf(sim, pos))?.faction !== 'player') continue;
     add({ category: 'hauling', kind: 'salvage', x: pos.x, y: pos.y, target: id, work: SALVAGE_SEC * TICK_HZ });
   }
 }
@@ -95,8 +96,8 @@ export function performMend(sim: Sim, crew: number, job: Job, speed: number): Wo
   const mech = speciesOf(sim, robot)?.mechanical;
   if (!hp || !mech || sim.world.has(robot, DeadC) || hp.hp >= hp.max) return 'done';
   if (job.progress <= 0) {
-    const item = mendItem(sim, gridIdOf(sim, job), robot);
-    if (!item || !consumeAmmo(sim, gridIdOf(sim, job), item)) return 'wait';
+    const item = mendItem(sim, shipIdOf(sim, job), robot);
+    if (!item || !consumeAmmo(sim, shipIdOf(sim, job), item)) return 'wait';
     job.progress += mech.hpPerItem;
   }
   const rate = (MEND_PER_SEC * speed * (1 + SKILL_STEP * skillOf(sim, crew, 'repair'))) / TICK_HZ;
@@ -113,7 +114,7 @@ export function performSalvage(sim: Sim, job: Job, speed: number): WorkResult {
   if (!pos || !sim.world.has(wreck, WreckC)) return 'done';
   job.progress = Math.min(job.work, job.progress + speed);
   if (job.progress < job.work) return 'working';
-  for (const q of speciesOf(sim, wreck)?.wreck ?? []) spillItems(sim, gridIdOf(sim, pos), pos.x, pos.y, q.item, q.count);
+  for (const q of speciesOf(sim, wreck)?.wreck ?? []) spillItems(sim, shipIdOf(sim, pos), pos.x, pos.y, q.item, q.count);
   sim.events.emit({ type: 'robot.salvaged', crew: wreck, ship: shipIdOf(sim, pos), x: pos.x, y: pos.y });
   sim.world.destroyEntity(wreck);
   return 'done';

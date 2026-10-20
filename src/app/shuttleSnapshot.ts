@@ -1,12 +1,9 @@
-import {
-  AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, shipEntityOf, TraderC, vehicleSuits,
-  vehicleViews, type Sim,
-} from '../sim';
+import { AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
 import { localOf } from './moduleSnapshot';
 import type { UiShuttle, UiShuttleCrew, UiShuttles } from '../ui/api';
-import { gridIdOf } from '../sim/regions';
+import { shipIdOf } from '../sim/regions';
+import { homeShip } from '../sim/index';
 
-const PLAYER = 1;
 
 /** The live trade deal this shuttle is flying, as a status line. */
 function tradeRun(sim: Sim, vehicle: number): UiShuttle['trade'] {
@@ -24,25 +21,23 @@ function crewRef(sim: Sim, id: number): UiShuttleCrew | null {
   return c ? { id, name: c.name, role: sim.content.roles[c.role]?.name ?? c.role, boarding: sim.world.get(id, EmbarkOrderC)?.vehicle ?? 0 } : null;
 }
 
-function shipName(sim: Sim, gridId: number): string {
-  for (const id of sim.world.query(ShipC)) {
-    const s = sim.world.get(id, ShipC);
-    if (s?.gridId === gridId) return s.name;
-  }
-  return 'Ship';
+function shipName(sim: Sim, shipId: number): string {
+  return sim.world.get(shipId, ShipC)?.name ?? 'Ship';
 }
 
 /** Plain-data shuttle state for the shuttle panel: the player's shuttles, free crew, bays and dockable airlocks. Reads the sim only. */
 export function buildShuttles(sim: Sim): UiShuttles {
+  const PLAYER = homeShip(sim);
   const airlocks: UiShuttles['airlocks'] = [];
   const claimed = new Set<number>();
   for (const v of vehicleViews(sim)) if (v.dockedAt) claimed.add(v.dockedAt);
   for (const id of sim.world.query(AirlockC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || gridIdOf(sim, m) === PLAYER) continue;
-    const ship = [...sim.world.query(ShipC)].map((s) => sim.world.get(s, ShipC)).find((s) => s?.gridId === gridIdOf(sim, m));
+    if (!m || shipIdOf(sim, m) === PLAYER) continue;
+    const shipId = shipIdOf(sim, m);
+    const ship = sim.world.get(shipId, ShipC);
     if (!ship || ship.state === 'fled') continue;
-    airlocks.push({ id, shipId: shipEntityOf(sim, ship.gridId), ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id), ...localOf(sim, gridIdOf(sim, m), m.x, m.y) });
+    airlocks.push({ id, shipId, ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id), ...localOf(sim, shipIdOf(sim, m), m.x, m.y) });
   }
   const shuttles: UiShuttles['shuttles'] = [];
   for (const v of vehicleViews(sim)) {
@@ -52,7 +47,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
     shuttles.push({
       id: v.id, name: def?.name ?? 'Shuttle', state: v.state, hp: Math.round(v.hp), maxHp: v.maxHp, capacity: def?.capacity ?? 0,
       pilot: crewRef(sim, v.pilot), passengers: v.passengers.map((c) => crewRef(sim, c)).filter((c): c is UiShuttleCrew => !!c),
-      destination: v.destination, dockShip: dockM ? shipName(sim, gridIdOf(sim, dockM)) : null, bay: v.bay,
+      destination: v.destination, dockShip: dockM ? shipName(sim, shipIdOf(sim, dockM)) : null, bay: v.bay,
       boardable: boardingTile(sim, v.id) !== null,
       trade: tradeRun(sim, v.id),
       hoverShip: v.hoveringGrid ? shipName(sim, v.hoveringGrid) : null,
@@ -64,19 +59,19 @@ export function buildShuttles(sim: Sim): UiShuttles {
   for (const id of sim.world.query(CrewC)) {
     if (sim.world.has(id, DeadC) || sim.world.has(id, AboardC)) continue;
     const pos = sim.world.get(id, PositionC);
-    if (gridIdOf(sim, pos) !== PLAYER) continue;
+    if (shipIdOf(sim, pos) !== PLAYER) continue;
     const ref = crewRef(sim, id);
     if (ref) roster.push(ref);
   }
   const bays: UiShuttles['bays'] = [];
   for (const id of sim.world.query(VehicleBayC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (gridIdOf(sim, m) === PLAYER) bays.push({ id, empty: !sim.world.get(id, VehicleBayC)?.vehicle });
+    if (shipIdOf(sim, m) === PLAYER) bays.push({ id, empty: !sim.world.get(id, VehicleBayC)?.vehicle });
   }
   const targets: UiShuttles['targets'] = [];
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s && s.gridId !== PLAYER && s.state !== 'fled') targets.push({ ship: id, name: s.name });
+    if (s && id !== PLAYER && s.state !== 'fled') targets.push({ ship: id, name: s.name });
   }
   return { shuttles, airlocks, targets, roster, bays };
 }

@@ -3,7 +3,7 @@
  * melee, a hit flash with the damage number, and MISS text. Real fx sprites (muzzle, impact, tracer) come later from
  * the sprite pipeline; replace this file then.
  */
-import { gridIdAtTile } from './regionRules';
+import { shipIdAtTile } from './regionRules';
 import { Container, Graphics, Text } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
@@ -13,7 +13,7 @@ import { Z_PX } from './heights';
 import { iso, type Pt } from './iso';
 
 export interface FightFxHost {
-  ship(gridId: number): Ship | undefined;
+  ship(shipId: number): Ship | undefined;
 }
 
 export interface FightFx {
@@ -40,16 +40,16 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
   const flashes: Flash[] = [];
   const floaters: Floater[] = [];
 
-  /** Sector tile (fractional) on ship `gridId` at height z -> art px in the sector layer's frame (null if the ship is gone). */
-  const at = (gridId: number, gx: number, gy: number, z: number): Pt | null => {
-    if (!host.ship(gridId)) return null;
+  /** Sector tile (fractional) on ship `shipId` at height z -> art px in the sector layer's frame (null if the ship is gone). */
+  const at = (shipId: number, gx: number, gy: number, z: number): Pt | null => {
+    if (!host.ship(shipId)) return null;
     const p = iso(gx, gy);
     return { x: p.x, y: p.y - z * Z_PX };
   };
-  const gridOf = (ship: number): number => world.get(ship, ShipC)?.gridId ?? 0;
+  const gridOf = (ship: number): number => world.has(ship, ShipC) ? ship : 0;
   const crewAt = (id: number, z: number): Pt | null => {
     const p = world.get(id, PositionC);
-    return p ? at(gridIdAtTile(world, p.x, p.y), p.x + (p.toX - p.x) * p.progress, p.y + (p.toY - p.y) * p.progress, z) : null;
+    return p ? at(shipIdAtTile(world, p.x, p.y), p.x + (p.toX - p.x) * p.progress, p.y + (p.toY - p.y) * p.progress, z) : null;
   };
   const say = (text: string, p: Pt, fill: number) => {
     const t = new Text({ text, resolution: Math.max(1, scale()), style: { fontFamily: 'monospace', fontSize: 11, fontWeight: 'bold', fill, stroke: { color: 0x05080d, width: 2 } } });

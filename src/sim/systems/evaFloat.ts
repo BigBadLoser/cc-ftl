@@ -2,7 +2,7 @@ import { CrewC, DeadC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { EvaFloatC } from '../eva/components';
 import { vehicleSuits } from '../eva/shuttle';
-import { SuitC } from '../portals/components';
+import { SuitC } from '../eva/components';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { boardCrew, occupants, vehicleDefOf } from '../vehicles/lifecycle';

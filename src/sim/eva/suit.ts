@@ -1,9 +1,10 @@
-import { gridIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 import { CrewC, JobC, PositionC, type Job } from '../crew/components';
 import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
-import { airlockTiles } from '../portals/airlock';
-import { AirlockC, SuitC } from '../portals/components';
+import { airlockTiles } from '../modules/airlock';
+import { SuitC } from './components';
+import { AirlockC } from '../modules/airlock';
 import type { Sim } from '../sim';
 import type { SuitDef } from '../registry';
 import { DEFAULT_SUIT, EVA_THIN_AIR_BELOW } from '../tuning';
@@ -91,8 +92,8 @@ export function doffSuit(sim: Sim, crew: number, airlock: number): boolean {
   return true;
 }
 
-/** Grid id and tile of a crew member (the tile they stand on). */
-export function crewTile(sim: Sim, crew: number): { gridId: number; x: number; y: number } | null {
+/** Ship id and tile of a crew member (the tile they stand on). */
+export function crewTile(sim: Sim, crew: number): { shipId: number; x: number; y: number } | null {
   const p = sim.world.get(crew, PositionC);
-  return p ? { gridId: gridIdOf(sim, p), x: p.x, y: p.y } : null;
+  return p ? { shipId: shipIdOf(sim, p), x: p.x, y: p.y } : null;
 }

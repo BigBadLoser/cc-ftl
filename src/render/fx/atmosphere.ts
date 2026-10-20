@@ -1,4 +1,4 @@
-import { gridIdAtTile } from '../regionRules';
+import { shipIdAtTile } from '../regionRules';
 import type { World } from '../../sim/ecs';
 import { AssignmentC, CrewC, JobC, PositionC } from '../../sim/crew/components';
 import type { Grid } from '../../sim/grid';
@@ -89,7 +89,7 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
       for (const id of world.query(CrewC, PositionC)) {
         const crew = world.get(id, CrewC);
         const pos = world.get(id, PositionC);
-        if (!crew || !pos || gridIdAtTile(world, pos.x, pos.y) !== grid.id || crew.activity !== 'working') continue;
+        if (!crew || !pos || shipIdAtTile(world, pos.x, pos.y) !== grid.id || crew.activity !== 'working') continue;
         const a = world.get(id, AssignmentC);
         const job = a && world.get(a.jobId, JobC);
         if (!job || !WELD_JOBS.has(job.kind)) continue;

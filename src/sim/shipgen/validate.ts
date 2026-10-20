@@ -1,4 +1,4 @@
-import { airlockTiles } from '../portals/airlock';
+import { airlockTiles } from '../modules/airlock';
 import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, openTilesOf } from '../modules/footprint';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { roofMounted } from './layout';

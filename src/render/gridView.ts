@@ -3,7 +3,7 @@ import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
 import { hullRow } from "../sim/modules/footprint";
-import { airlockTiles } from "../sim/portals/airlock";
+import { airlockTiles } from "../sim/modules/airlock";
 import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";

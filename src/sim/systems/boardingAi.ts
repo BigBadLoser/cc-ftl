@@ -1,18 +1,18 @@
-import { gridOfShip } from '../combat/ships';
+
 import { ShipC } from '../combat/components';
 import { isAiFaction } from '../combat/factions';
 import { DeadC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { EquipC } from '../fight/components';
 import { ModuleC } from '../modules/components';
-import { airlockWorking } from '../portals/airlock';
-import { AirlockC } from '../portals/components';
+import { airlockWorking } from '../modules/airlock';
+import { AirlockC } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { BOARDING_LOAD_TICKS, BOARDING_MIN_HOME } from '../tuning';
 import { BoarderC, EmbarkOrderC, VehicleC, type Boarder } from '../vehicles/components';
 import { dockError } from '../vehicles/handlers';
 import { vehicleDefOf } from '../vehicles/lifecycle';
-import { gridIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 
 /**
  * Enemy boarding doctrine (ships whose template has `boarding`; see BoarderC). Deterministic, command-only:
@@ -31,7 +31,7 @@ export function boardingAiSystem(sim: Sim): void {
     if (b.state === 'idle') {
       if (!sim.sector.inCombat) continue;
       b.timer++;
-      if (b.timer >= b.afterTicks || losing(sim, ship.gridId, ship.integrity, b.losingBelow)) start(sim, ship.gridId, b, b.weapon);
+      if (b.timer >= b.afterTicks || losing(sim, id, ship.integrity, b.losingBelow)) start(sim, id, b, b.weapon);
     } else if (!v) {
       b.state = 'done';
     } else if (b.state === 'loading') {
@@ -61,12 +61,12 @@ export function boardingAiSystem(sim: Sim): void {
   }
 }
 
-function losing(sim: Sim, gridId: number, integrity: number, below: number): boolean {
+function losing(sim: Sim, shipId: number, integrity: number, below: number): boolean {
   let total = 0;
   let working = 0;
   for (const mid of sim.world.query(ModuleC)) {
     const m = sim.world.get(mid, ModuleC);
-    if (!m || gridIdOf(sim, m) !== gridId || !sim.content.modules[m.def]?.weapon) continue;
+    if (!m || shipIdOf(sim, m) !== shipId || !sim.content.modules[m.def]?.weapon) continue;
     total++;
     if (m.hp > 0) working++;
   }
@@ -79,17 +79,17 @@ function pickAirlock(sim: Sim, vehicle: number): number {
     const s = sim.world.get(sid, ShipC);
     if (s?.faction !== 'player' || (s.state !== 'active' && s.state !== 'disabled')) continue;
     for (const mid of sim.world.query(AirlockC)) {
-      if (gridIdOf(sim, sim.world.get(mid, ModuleC)) === s.gridId && airlockWorking(sim, mid) && !dockError(sim, vehicle, mid)) return mid;
+      if (shipIdOf(sim, sim.world.get(mid, ModuleC)) === sid && airlockWorking(sim, mid) && !dockError(sim, vehicle, mid)) return mid;
     }
   }
   return 0;
 }
 
-function start(sim: Sim, gridId: number, b: Boarder, weapon?: string): void {
+function start(sim: Sim, shipId: number, b: Boarder, weapon?: string): void {
   let vehicle = 0;
   for (const vid of sim.world.query(VehicleC)) {
     const v = sim.world.get(vid, VehicleC);
-    if (v && gridOfShip(sim, v.homeShip) === gridId && v.state === 'stowed') {
+    if (v && v.homeShip === shipId && v.state === 'stowed') {
       vehicle = vid;
       break;
     }
@@ -97,7 +97,7 @@ function start(sim: Sim, gridId: number, b: Boarder, weapon?: string): void {
   const v = vehicle ? sim.world.get(vehicle, VehicleC) : undefined;
   if (!v || !pickAirlock(sim, vehicle)) return; // nothing to fly or nowhere to land yet: try again next tick
   const able = sim.world.query(PositionC).filter((c) =>
-    gridIdOf(sim, sim.world.get(c, PositionC)) === gridId && !sim.world.has(c, DeadC) && !isIncapacitated(sim, c));
+    shipIdOf(sim, sim.world.get(c, PositionC)) === shipId && !sim.world.has(c, DeadC) && !isIncapacitated(sim, c));
   const n = Math.min(b.party, (vehicleDefOf(sim, v)?.capacity ?? 0) + 1, able.length - BOARDING_MIN_HOME);
   if (n < 1) {
     b.state = 'done';

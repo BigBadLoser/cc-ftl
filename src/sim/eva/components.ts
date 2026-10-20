@@ -15,3 +15,17 @@ export interface EvaFloat {
   total: number;
 }
 export const EvaFloatC = defineComponent<EvaFloat>('evaFloat');
+
+/**
+ * This crew member wears an EVA suit (own air supply, can walk the hull). `air` is seconds left in the tank and
+ * `airlock` the module entity it was taken from; both are absent on a suit made by `suit.set` (full tank, no home).
+ * Taking the suit off at an airlock returns it there with a full tank.
+ */
+export interface Suit {
+  worn: true;
+  air?: number;
+  airlock?: number;
+  /** The hovering shuttle whose hatch it was fitted at (stowed back there). */
+  vehicle?: number;
+}
+export const SuitC = defineComponent<Suit>('suit');

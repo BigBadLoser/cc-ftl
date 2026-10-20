@@ -1,5 +1,5 @@
-import { shipIdOf } from '../sim/regions';
-import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, gridOfShip, roomTiles, shipEntityOf, type Grid, type Sim, type SimEvent } from '../sim';
+import { shipIdOf, shipGrid } from '../sim/regions';
+import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createStore, type Readable } from './store';
 
@@ -36,7 +36,7 @@ export function createAlerts(sim: Sim): Alerts {
     return { x: sx / tiles.length, y: sy / tiles.length };
   };
   /** The player's ship (home grid 1), as a ShipC entity id. */
-  const home = () => shipEntityOf(sim, 1);
+  const home = () => 1;
   const shipName = (ship: number) => sim.world.get(ship, ShipC);
   const reactorAt = () => {
     for (const id of sim.world.query(ModuleC)) {
@@ -67,9 +67,9 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: lead ? 'story.lead' : 'story.notice', key: `ev${e.event}`, text: def.text, at: null, notice: { id: e.notice, lead, title: def.title } };
       }
       case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire!', at: { x: e.x, y: e.y } };
-      case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', at: roomCentre(sim.grids.get(gridOfShip(sim, e.ship)), e.room) };
+      case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', at: roomCentre(shipGrid(sim, e.ship), e.room) };
       case 'power.shortage': return { kind: e.type, key: 'p', text: `Power shortage (${Math.round(e.supply)}/${Math.round(e.demand)})`, at: reactorAt() };
-      case 'o2.low': return { kind: e.type, key: `o${e.room}`, text: 'Low oxygen', at: roomCentre(sim.grids.get(gridOfShip(sim, e.ship)), e.room) };
+      case 'o2.low': return { kind: e.type, key: `o${e.room}`, text: 'Low oxygen', at: roomCentre(shipGrid(sim, e.ship), e.room) };
       case 'crew.downed': return { kind: e.type, key: `d${e.crew}`, text: `${crewName(e.crew)} is down`, at: crewAt(e.crew) };
       case 'crew.died': return { kind: e.type, key: `x${e.crew}`, text: `${crewName(e.crew)} died`, at: crewAt(e.crew) };
       case 'suit.airLow': return playerSuit(e.crew) ? { kind: e.type, key: `sa${e.crew}`, text: `${crewName(e.crew)}: suit air low`, at: crewAt(e.crew) } : null;

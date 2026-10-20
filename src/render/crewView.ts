@@ -1,4 +1,4 @@
-import { gridIdAtTile } from './regionRules';
+import { shipIdAtTile } from './regionRules';
 import { HALO_PAD, haloTex } from './haloTex';
 import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
@@ -6,7 +6,7 @@ import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '.
 import { EvaFloatC } from '../sim/eva/components';
 import { ShipC } from '../sim/combat/components';
 import { facingOf } from '../sim/crew/helpers';
-import { SuitC } from '../sim/portals/components';
+import { SuitC } from '../sim/eva/components';
 import { CarryingC } from '../sim/items/components';
 import { BLEED_OUT_SECONDS } from '../sim/tuning';
 import type { ModuleDef } from '../sim/registry';
@@ -34,7 +34,7 @@ export interface CrewViewHost {
    * The grid being shown and the sector top-left (ox, oy) of its region, or null when nothing is shown. Positions are
    * sector tiles; sprites are placed region-local (minus ox, oy) in the region's containers.
    */
-  target(): { gridId: number; ox: number; oy: number } | null;
+  target(): { shipId: number; ox: number; oy: number } | null;
   /** Crew on this tile are not drawn (the interior of a roofed region). */
   hidden?(x: number, y: number): boolean;
   /** The module covering tile (x, y) of the shown grid, if any (to sort crew on a console's chair tile against its sprite). */
@@ -95,9 +95,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
   let last = performance.now();
 
   /** True if a grid has a ship (an EVA drift is drawn only while it does). */
-  function hasShip(gridId: number): boolean {
-    for (const sid of world.query(ShipC)) if (world.get(sid, ShipC)?.gridId === gridId) return true;
-    return false;
+  function hasShip(shipId: number): boolean {
+    return world.has(shipId, ShipC);
   }
 
   function make(id: number): Slot | null {
@@ -194,7 +193,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
       for (const id of world.query(CrewC, PositionC)) {
         const pos = world.get(id, PositionC);
         const crew = world.get(id, CrewC);
-        if (!pos || !crew || gridIdAtTile(world, pos.x, pos.y) !== target.gridId || host.hidden?.(pos.x, pos.y)) continue;
+        if (!pos || !crew || shipIdAtTile(world, pos.x, pos.y) !== target.shipId || host.hidden?.(pos.x, pos.y)) continue;
         seen.add(id);
         let s = slots.get(id);
         if (s && s.suited !== world.has(id, SuitC)) {
@@ -213,7 +212,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         // whose tile centres are at +0.5), facing the way it goes.
         const drift = world.get(id, EvaFloatC);
         let driftFacing = -1;
-        if (drift && hasShip(target.gridId)) {
+        if (drift && hasShip(target.shipId)) {
           const k = 1 - drift.ticks / Math.max(1, drift.total);
           const [hx, hy] = [drift.sx - 0.5, drift.sy - 0.5];
           const [ax, ay, bx, by] = drift.mode === 'out' ? [hx, hy, pos.x, pos.y] : [pos.x, pos.y, hx, hy];

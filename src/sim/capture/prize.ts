@@ -1,6 +1,6 @@
 import { CaptureProgressC, CombatC, PrizeC, ShipC, WeaponC, type Faction, type Ship } from '../combat/components';
 import { hullSum } from '../combat/hull';
-import { shipEntityOf } from '../combat/ships';
+
 import { wreckShip } from '../combat/wreck';
 import { CrewC, DeadC, DownedC, DraftedC, PathC, PositionC, type Crew } from '../crew/components';
 import { releaseAssignment } from '../crew/helpers';
@@ -10,19 +10,19 @@ import { ModuleC } from '../modules/components';
 import { InertC } from '../robots/components';
 import type { Sim } from '../sim';
 import { PRIZE_VALUE_PER_COST, PRIZE_VALUE_PER_WALL_HP } from '../tuning';
-import { gridIdOf } from '../regions';
+import { shipIdOf, shipGrid } from '../regions';
 
 /** Hull value estimate of a grid: module build costs scaled by hp, plus wall integrity. For a future ship broker. */
-export function prizeValue(sim: Sim, gridId: number): number {
+export function prizeValue(sim: Sim, shipId: number): number {
   let value = 0;
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    const def = m && gridIdOf(sim, m) === gridId ? sim.content.modules[m.def] : undefined;
+    const def = m && shipIdOf(sim, m) === shipId ? sim.content.modules[m.def] : undefined;
     if (!m || !def) continue;
     const cost = (def.cost ?? []).reduce((n, q) => n + q.count, 0);
     value += cost * PRIZE_VALUE_PER_COST * Math.max(0, m.hp) / Math.max(1, def.maxHp);
   }
-  const grid = sim.grids.get(gridId);
+  const grid = shipGrid(sim, shipId);
   if (grid?.has('hp')) value += hullSum(grid) * PRIZE_VALUE_PER_WALL_HP;
   return Math.round(value);
 }
@@ -43,22 +43,22 @@ function imprison(sim: Sim, crew: number, ship: number): void {
 }
 
 /** Flip a ship to the player as an inactive prize: weapons dead, AI off, its subdued crew become prisoners. */
-export function capturePrize(sim: Sim, ship: Ship): void {
+export function capturePrize(sim: Sim, entity: number): void {
+  const ship = sim.world.get(entity, ShipC) as Ship;
   const from: Faction = ship.faction;
   ship.faction = 'player';
   ship.state = 'prize';
-  const entity = shipEntityOf(sim, ship.gridId);
   sim.world.remove(entity, CaptureProgressC);
-  sim.world.add(entity, PrizeC, { capturedTick: sim.tick, from, hullValue: prizeValue(sim, ship.gridId) });
+  sim.world.add(entity, PrizeC, { capturedTick: sim.tick, from, hullValue: prizeValue(sim, entity) });
   for (const id of sim.world.query(WeaponC)) {
     const w = sim.world.get(id, WeaponC);
-    if (w && gridIdOf(sim, sim.world.get(id, ModuleC)) === ship.gridId) Object.assign(w, { charge: 0, shotsLeft: 0, target: null, volleyTarget: null });
+    if (w && shipIdOf(sim, sim.world.get(id, ModuleC)) === entity) Object.assign(w, { charge: 0, shotsLeft: 0, target: null, volleyTarget: null });
   }
   const combat = sim.world.get(entity, CombatC);
   if (combat) Object.assign(combat, { target: null, volley: false, hold: true });
   for (const id of sim.world.query(CrewC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (gridIdOf(sim, pos) !== ship.gridId) continue;
+    if (shipIdOf(sim, pos) !== entity) continue;
     const faction = sim.world.get(id, AllegianceC)?.faction;
     if (faction === from) {
       if (sim.world.has(id, SurrenderedC) || sim.world.has(id, DownedC) || sim.world.has(id, InertC)) imprison(sim, id, entity);
@@ -70,15 +70,15 @@ export function capturePrize(sim: Sim, ship: Ship): void {
 }
 
 /** Scuttle a prize into a derelict wreck. Returns a reject reason, or null. */
-export function scuttle(sim: Sim, gridId: number): string | null {
-  const entity = shipEntityOf(sim, gridId);
+export function scuttle(sim: Sim, shipId: number): string | null {
+  const entity = shipId;
   const ship = sim.world.get(entity, ShipC);
   if (!ship || ship.state !== 'prize') return 'notPrize';
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (gridIdOf(sim, sim.world.get(id, PositionC)) === gridId && sim.world.get(id, AllegianceC)?.faction === 'player'
+    if (shipIdOf(sim, sim.world.get(id, PositionC)) === shipId && sim.world.get(id, AllegianceC)?.faction === 'player'
       && !sim.world.has(id, PrisonerC) && !sim.world.has(id, DeadC)) return 'crewAboard';
   }
   sim.world.remove(entity, PrizeC);
-  wreckShip(sim, ship);
+  wreckShip(sim, entity);
   return null;
 }

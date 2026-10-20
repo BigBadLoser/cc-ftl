@@ -73,7 +73,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const inside = () => (roofed ? null : { grid });
   const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK });
   const crewView = createCrewView(world, atlas, L, {
-    target: () => ({ gridId: grid.id, ox: grid.x0, oy: grid.y0 }),
+    target: () => ({ shipId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),
     emergency: () => emergency,
     moduleAt: (x, y) => {

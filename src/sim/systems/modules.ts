@@ -4,7 +4,7 @@ import { roomTiles } from '../roomIndex';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { GAS_EPSILON, NORMAL_O2 } from '../tuning';
-import { gridIdOf } from '../regions';
+import { shipIdOf, shipGrid } from '../regions';
 
 /**
  * Running modules act on the grid fields: life support adds oxygen and scrubs CO2 across its
@@ -15,7 +15,7 @@ export function modulesSystem(sim: Sim): void {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    const grid = m && sim.grids.get(gridIdOf(sim, m));
+    const grid = m && shipGrid(sim, shipIdOf(sim, m));
     if (!m || !def || !grid?.has('o2') || !m.powered || m.hp <= 0) continue;
 
     if (def.o2PerSec || def.co2ScrubPerSec) {

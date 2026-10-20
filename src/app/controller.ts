@@ -1,7 +1,5 @@
-import { gridIdOf, shipOfGrid } from '../sim/regions';
-import {
-  AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, footprintTiles, gridOfShip, isWalkable, placementError, rotatedSize, shipEntityOf, type Sim, type SimEvent,
-} from '../sim';
+import { shipIdOf, shipGrid } from '../sim/regions';
+import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, footprintTiles, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
 import type { UiBuildKind, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
@@ -9,8 +7,8 @@ import type { InputHandlers, Tile } from './input';
 import { createAlerts, type Alerts } from './alerts';
 import { rejectionMessage } from './messages';
 import { createStore, type Readable } from './store';
+import { homeShip } from '../sim/index';
 
-const GRID = 1;
 const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door };
 const TOAST_MS = 2500;
 
@@ -43,7 +41,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const modSel = createStore<number | null>(null);
   const shipSel = createStore<number | null>(null);
   /** The player's ship (home grid 1) as a ShipC entity id. */
-  const homeShip = () => shipEntityOf(sim, GRID);
+  const homeShipId = () => homeShip(sim);
   const alerts = createAlerts(sim);
   let modPos: Tile | null = null;
   const crewSel = createStore<number | null>(null);
@@ -66,16 +64,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     modSel.set(null);
     r?.setSelectedCrew(null);
     r?.setSelection(t);
-    bridge.setSelected(t ? { ship: homeShip(), ...t } : null);
+    bridge.setSelected(t ? { ship: homeShipId(), ...t } : null);
   };
   /** Center the camera on a crew member: on their ship, or on the shuttle they ride. */
   const focusCrew = (id: number) => {
     const p = sim.world.get(id, PositionC);
     if (p) {
-      for (const sid of sim.world.query(ShipC)) {
-        const s = sim.world.get(sid, ShipC);
-        if (s?.gridId === gridIdOf(sim, p)) return r?.focusSector(p.x + (p.toX - p.x) * p.progress + 0.5, p.y + (p.toY - p.y) * p.progress + 0.5);
-      }
+      if (sim.world.has(shipIdOf(sim, p), ShipC)) return r?.focusSector(p.x + (p.toX - p.x) * p.progress + 0.5, p.y + (p.toY - p.y) * p.progress + 0.5);
     }
     const b = sim.world.get(sim.world.get(id, AboardC)?.vehicle ?? 0, BodyC);
     if (b) r?.focusSector(b.x, b.y);
@@ -120,7 +115,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const at = modPos ?? hover;
     const def = t.moduleDef ? sim.content.modules[t.moduleDef] : undefined;
     if (!at || !def || !t.moduleDef) return null;
-    return { tiles: footprintTiles(def, at.x, at.y, t.rot), at, def: t.moduleDef, error: placementError(sim, GRID, t.moduleDef, at.x, at.y, t.rot) };
+    return { tiles: footprintTiles(def, at.x, at.y, t.rot), at, def: t.moduleDef, error: placementError(sim, homeShip(sim), t.moduleDef, at.x, at.y, t.rot) };
   };
 
   /** Tiles covered by the current drag: a line for wall/door, a rectangle otherwise. */
@@ -159,9 +154,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const { tool: t, build } = tool.get();
     if (t === 'build' && build === 'module') return;
     for (const { x, y } of shape()) {
-      if (t === 'build' && build !== 'module') sim.enqueue({ type: 'job.build', ship: homeShip(), x, y, struct: BUILD_STRUCT[build] });
-      else if (t === 'deconstruct') sim.enqueue({ type: 'job.deconstruct', ship: homeShip(), x, y });
-      else if (t === 'cancel') sim.enqueue({ type: 'job.cancel', ship: homeShip(), x, y });
+      if (t === 'build' && build !== 'module') sim.enqueue({ type: 'job.build', ship: homeShipId(), x, y, struct: BUILD_STRUCT[build] });
+      else if (t === 'deconstruct') sim.enqueue({ type: 'job.deconstruct', ship: homeShipId(), x, y });
+      else if (t === 'cancel') sim.enqueue({ type: 'job.cancel', ship: homeShipId(), x, y });
     }
     paintStart = paintEnd = null;
     refreshPreview();
@@ -175,7 +170,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const plan = modulePlan();
     if (!plan) return;
     if (plan.error) showToast(rejectionMessage(plan.error));
-    else sim.enqueue({ type: 'job.buildModule', ship: homeShip(), x: plan.at.x, y: plan.at.y, def: plan.def, rot: tool.get().rot });
+    else sim.enqueue({ type: 'job.buildModule', ship: homeShipId(), x: plan.at.x, y: plan.at.y, def: plan.def, rot: tool.get().rot });
   };
   const rotate = () => setTool({ rot: (tool.get().rot + 1) % 4 });
 
@@ -188,8 +183,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       selectTile(null);
       if (ship === null) return;
       shipSel.set(ship);
-      const gridId = gridOfShip(sim, ship); // a station has no ship component, so no grid
-      if (gridId > 0) r?.frameShips([gridId]);
+      const shipId = ship; // a station has no ship component, so no grid
+      if (shipId > 0) r?.frameShips([shipId]);
     },
     selectedCrew: crewSel,
     selectModule,
@@ -216,7 +211,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           const crewId = renderer.pickCrew(sx, sy);
           if (crewId !== null) return isPlayerCrew(crewId) ? selectCrew(crewId) : crewSel.get() !== null && sim.world.has(crewSel.get() as number, DraftedC) ? attack(crewId) : selectCrew(crewId);
           const tile = renderer.pickTile(sx, sy);
-          const grid0 = sim.grids.get(GRID);
+          const grid0 = shipGrid(sim, homeShip(sim));
           const modHere = tile && grid0 ? grid0.get('module', tile.x, tile.y) : 0;
           let modId = modHere;
           if (!modId && tile) {
@@ -232,16 +227,16 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           if (modId) return selectModule(modId);
           const sel = crewSel.get();
           const any = renderer.pickTileAny(sx, sy);
-          const ag = any && sim.grids.get(any.gridId);
+          const ag = any && shipGrid(sim, any.shipId);
           if (any && ag && sel !== null && sim.world.has(sel, DraftedC) && isWalkable(ag.get('struct', any.x, any.y))) {
-            const here = gridIdOf(sim, sim.world.get(sel, PositionC));
-            sim.enqueue({ type: 'crew.moveTo', id: sel, x: any.x, y: any.y, ...(here !== any.gridId ? { ship: shipOfGrid(sim, any.gridId) } : {}) });
+            const here = shipIdOf(sim, sim.world.get(sel, PositionC));
+            sim.enqueue({ type: 'crew.moveTo', id: sel, x: any.x, y: any.y, ...(here !== any.shipId ? { ship: any.shipId } : {}) });
           } else selectTile(tile);
         },
         onHover(t) {
           hover = t;
           if (!paintStart) modPos = null;
-          bridge.setHovered(t ? { ship: homeShip(), ...t } : null);
+          bridge.setHovered(t ? { ship: homeShipId(), ...t } : null);
           refreshPreview();
         },
         paintMode: () => tool.get().tool !== 'select',

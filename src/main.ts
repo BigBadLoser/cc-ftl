@@ -15,7 +15,9 @@ import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { createRenderer, type Renderer } from './render/scene';
 import { content } from './content';
-import { BodyC, gridOfShip, newGame, ShipC } from './sim';
+import { BodyC, newGame, ShipC } from './sim';
+import { shipGrid } from './sim/regions';
+import { homeShip } from './sim/index';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
@@ -47,7 +49,7 @@ bridge.attachLoop(loop);
 
 /** Frame the player's ship and a hostile one (or only the player's ship) in the camera. */
 function focusFight(ship: number | null): void {
-  renderer?.frameShips(ship === null ? [1] : [1, gridOfShip(sim, ship)]);
+  renderer?.frameShips(ship === null ? [1] : [1, ship]);
 }
 
 /**
@@ -60,7 +62,7 @@ const genDepth = Math.max(0, Math.floor(Number(params.get('depth') ?? 2)) || 0);
 
 /** Debug: generate a ship of `faction` (random if omitted) and put it where a raider would go. */
 function spawnGenerated(faction?: string): void {
-  const mine = shipOfGrid(1);
+  const mine = homeShipC();
   const ids = Object.keys(content.factions);
   const id = faction ?? ids[Math.floor(Math.random() * ids.length)];
   if (!mine || !id) return;
@@ -76,7 +78,7 @@ function spawnRaider(boarders = false): void {
     spawnGenerated(shipgenFlag === '1' || shipgenFlag === 'true' ? undefined : `faction.${shipgenFlag.replace(/^faction\./, '')}`);
     return;
   }
-  const mine = shipOfGrid(1);
+  const mine = homeShipC();
   const t = content.ships[template];
   if (!mine || !t) return;
   const w = Math.max(...t.rows.map((r) => r.length));
@@ -88,12 +90,8 @@ function spawnRaider(boarders = false): void {
   bridge.dispatch({ type: 'debug.spawnEnemy', template, x, y });
 }
 
-function shipOfGrid(gridId: number) {
-  for (const id of sim.world.query(ShipC)) {
-    const s = sim.world.get(id, ShipC);
-    if (s?.gridId === gridId) return s;
-  }
-  return undefined;
+function homeShipC() {
+  return sim.world.get(homeShip(sim), ShipC);
 }
 
 const api: UiApi = {
@@ -129,7 +127,7 @@ const api: UiApi = {
     const b = sim.world.get(id, BodyC);
     if (b) renderer?.focusSector(b.x, b.y);
   },
-  setCombatView: (view) => renderer?.setCombatView(view && { gridId: gridOfShip(sim, view.ship), rect: view.rect }),
+  setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, rect: view.rect }),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   focusFight: (ship) => focusFight(ship),
@@ -161,8 +159,8 @@ const api: UiApi = {
       .then((r) => {
         renderer = r;
         if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
-        r.setGrids(sim.grids);
-        const grid = sim.grids.get(1);
+        r.setSector(sim.sector.grid);
+        const grid = shipGrid(sim, homeShip(sim));
         if (grid) r.setGrid(grid);
         attachInput(canvas, r, controller.attach(r));
         window.addEventListener('resize', () => r.resize());

@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CarryingC, boardingTile, newGame, ModuleC, PositionC, Sim, Struct, StorageC, shipOf, VehicleC, airlockTiles, cargoCount, cargoTile, dockPoint, findPath,
-  footprintTiles, gridFromTemplate, hullOutward, hullRow, hullSide, inFootprint, isTileWalkable, keepOutTiles, placementError,
-  spawnModule, storageCount, type ModuleDef,
-} from '../../sim';
+import { CarryingC, boardingTile, newGame, ModuleC, PositionC, Sim, Struct, StorageC, VehicleC, airlockTiles, cargoCount, cargoTile, dockPoint, findPath, footprintTiles, stampShip, hullOutward, hullRow, hullSide, inFootprint, isTileWalkable, keepOutTiles, placementError, spawnModule, storageCount, type ModuleDef } from '../../sim';
 import { content } from '../index';
 import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
-import { gridIdOf } from '../../sim/regions';
+import { shipIdOf, shipGrid } from '../../sim/regions';
+import { shipById } from '../../sim/combat/ships';
+import { shipIds } from '../../sim/regions';
 
 const def = content.modules['module.airlock'] as ModuleDef;
 const at = { x: 6, y: 6 };
@@ -19,7 +17,7 @@ function ring(): Sim {
   rows.push('.' + '#'.repeat(12) + '.');
   rows.push('.'.repeat(14));
   const sim = new Sim(1, content);
-  sim.grids.set(1, gridFromTemplate(1, { name: 'ring', rows }));
+  stampShip(sim, { name: 'ring', rows }, { faction: 'player', state: 'prize', x: 0, y: 0 });
   return sim;
 }
 
@@ -65,10 +63,10 @@ describe('airlock footprint', () => {
       const spots = placements(sim, rot);
       expect(spots.length).toBeGreaterThan(0);
       const { x, y } = spots[Math.floor(spots.length / 2)] as { x: number; y: number };
-      const id = spawnModule(sim, 1, 'module.airlock', x, y, rot);
+      const id = spawnModule(sim, 'module.airlock', x, y, rot);
       const m = sim.world.get(id, ModuleC)!;
       const t = airlockTiles(def, m);
-      const grid = sim.grids.get(1)!;
+      const grid = shipGrid(sim, shipIds(sim)[0] as number)!;
       const collar = t.collar!;
       expect(grid.get('struct', collar.x, collar.y)).toBe(Struct.Space);
       expect(grid.get('module', collar.x, collar.y)).toBe(0);
@@ -85,9 +83,9 @@ describe('airlock footprint', () => {
       const sim = ring();
       const spots = placements(sim, rot);
       const { x, y } = spots[Math.floor(spots.length / 2)] as { x: number; y: number };
-      const id = spawnModule(sim, 1, 'module.airlock', x, y, rot);
+      const id = spawnModule(sim, 'module.airlock', x, y, rot);
       const t = airlockTiles(def, sim.world.get(id, ModuleC)!);
-      const grid = sim.grids.get(1)!;
+      const grid = shipGrid(sim, shipIds(sim)[0] as number)!;
       for (const p of [t.inside, ...keepOutTiles(def, sim.world.get(id, ModuleC)!)]) expect(isTileWalkable(sim, grid, p.x, p.y)).toBe(true);
       for (const u of t.unloaders) for (const p of u.tiles) expect(isTileWalkable(sim, grid, p.x, p.y)).toBe(false);
       // From the middle of the room crew can walk to the inside tile, both keep-out tiles and the inner door.
@@ -104,7 +102,7 @@ describe('airlock footprint', () => {
       const sim = ring();
       const spots = placements(sim, rot);
       const { x, y } = spots[Math.floor(spots.length / 2)] as { x: number; y: number };
-      const id = spawnModule(sim, 1, 'module.airlock', x, y, rot);
+      const id = spawnModule(sim, 'module.airlock', x, y, rot);
       for (const p of keepOutTiles(def, sim.world.get(id, ModuleC)!)) {
         expect(placementError(sim, 1, 'module.light', p.x, p.y, 0)).toBe('occupied');
         expect(placementError(sim, 1, 'module.storage', p.x, p.y, 0)).toBe('occupied');
@@ -121,22 +119,22 @@ describe('airlock footprint', () => {
 describe('starter ship airlock', () => {
   it('fits, with its collar outside the west hull', () => {
     const sim = newGame(1, content);
-    const id = sim.world.query(ModuleC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1 && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
+    const id = sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
     const t = airlockTiles(def, sim.world.get(id, ModuleC)!);
     expect(t.collar).toEqual({ x: P0.x + 0, y: P0.y + 10 });
     expect(t.outer).toEqual({ x: P0.x + 1, y: P0.y + 10 });
     expect(t.inside).toEqual({ x: P0.x + 3, y: P0.y + 10 });
-    expect(sim.grids.get(1)!.get('struct', P0.x + 0, P0.y + 10)).toBe(Struct.Space);
+    expect(shipGrid(sim, shipIds(sim)[0] as number)!.get('struct', P0.x + 0, P0.y + 10)).toBe(Struct.Space);
     // The dock point is the collar tile's centre, in sector tiles.
-    const ship = shipOf(sim, 1)!;
-    expect(dockPoint(sim, id)).toMatchObject({ gridId: 1, x: ship.x + 0.5, y: ship.y + 10.5, inside: t.inside });
+    const ship = shipById(sim, shipIds(sim)[0] as number)!;
+    expect(dockPoint(sim, id)).toMatchObject({ shipId: shipIds(sim)[0], x: ship.x + 0.5, y: ship.y + 10.5, inside: t.inside });
   });
 });
 
 describe('cargo through the unloaders', () => {
   it('a docked shuttle is unloaded at the keep-out tiles and the crew haul it to storage', () => {
     const sim = newGame(1, content);
-    const airlock = sim.world.query(ModuleC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1 && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
+    const airlock = sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
     const shuttle = sim.world.query(VehicleC)[0] as number;
     const v = sim.world.get(shuttle, VehicleC)!;
     const p = dockPoint(sim, airlock)!;
@@ -144,7 +142,7 @@ describe('cargo through the unloaders', () => {
     const stands = keepOutTiles(def, sim.world.get(airlock, ModuleC)!);
     const stored = (): number => sim.world.query(StorageC).reduce((n, i) => n + storageCount(sim, i, 'item.parts'), 0);
     const before = stored();
-    expect(cargoTile(sim, shuttle)).toMatchObject({ gridId: 1, ...stands[0] });
+    expect(cargoTile(sim, shuttle)).toMatchObject({ shipId: shipIds(sim)[0], ...stands[0] });
     // Every pickup from the hold happens with the hauler at a keep-out tile (crew work a job tile from where they stand beside it).
     const pickups = new Set<string>();
     let last = cargoCount(v);
@@ -171,7 +169,7 @@ describe('cargo through the unloaders', () => {
 
   it('hands out the keep-out tile nearest a point, and the boarding tile while stowed', () => {
     const sim = newGame(1, content);
-    const airlock = sim.world.query(ModuleC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1 && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
+    const airlock = sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
     const shuttle = sim.world.query(VehicleC)[0] as number;
     const v = sim.world.get(shuttle, VehicleC)!;
     const stands = keepOutTiles(def, sim.world.get(airlock, ModuleC)!);

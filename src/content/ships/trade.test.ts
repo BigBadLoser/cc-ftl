@@ -4,7 +4,8 @@ import {
   type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
-import { gridIdOf } from '../../sim/regions';
+import { shipIdOf } from '../../sim/regions';
+import { shipIds } from '../../sim/regions';
 
 const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -33,7 +34,7 @@ export function withCivilian(role: string, gameSeed = 1): { sim: Sim; ship: numb
 /** The starter's engineer climbs into the shuttle as pilot. */
 function crewPilot(sim: Sim): number {
   const shuttle = sim.world.query(VehicleC)[0] as number;
-  const crew = sim.world.query(CrewC).find((c) => gridIdOf(sim, sim.world.get(c, PositionC)) === 1) as number;
+  const crew = sim.world.query(CrewC).find((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === shipIds(sim)[0] as number) as number;
   sim.enqueue({ type: 'vehicle.embark', crew, vehicle: shuttle });
   run(sim, 400);
   expect(sim.world.get(shuttle, VehicleC)!.pilot).toBe(crew);
@@ -78,7 +79,7 @@ describe('trade, end to end', () => {
     const { sim, ship } = withCivilian('mining');
     const shuttle = crewPilot(sim);
     // Stock the starter with electronics to sell.
-    const crate = sim.world.query(StorageC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1)!;
+    const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number)!;
     storageAdd(sim, crate, 'item.electronics', 10);
     const have = stored(sim, 'item.electronics');
     sim.enqueue({ type: 'trade.hail', ship });
@@ -113,7 +114,7 @@ describe('trade, end to end', () => {
     const { sim, ship } = withCivilian('mining');
     const shuttle = sim.world.query(VehicleC)[0] as number;
     expect(sim.world.get(shuttle, VehicleC)!.pilot).toBe(0);
-    const crate = sim.world.query(StorageC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1)!;
+    const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number)!;
     storageAdd(sim, crate, 'item.electronics', 10);
     const have = stored(sim, 'item.electronics');
     sim.enqueue({ type: 'trade.hail', ship });
@@ -136,7 +137,7 @@ describe('trade, end to end', () => {
 
   it('refuses a hold that is too small', () => {
     const { sim, ship } = withCivilian('mining');
-    const crate = sim.world.query(StorageC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1)!;
+    const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number)!;
     storageAdd(sim, crate, 'item.scrap', 90);
     sim.enqueue({ type: 'trade.hail', ship });
     run(sim, 2);
@@ -156,7 +157,7 @@ describe('trade, end to end', () => {
   it('calling off a deal before the shuttle leaves restores everything; one in transit cannot be recalled', () => {
     const { sim, ship } = withCivilian('mining');
     const shuttle = crewPilot(sim);
-    const crate = sim.world.query(StorageC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1)!;
+    const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number)!;
     storageAdd(sim, crate, 'item.electronics', 10);
     sim.enqueue({ type: 'trade.hail', ship });
     run(sim, 2);
