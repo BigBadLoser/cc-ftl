@@ -13,7 +13,7 @@ follow module.storage: orange empty, cyan partial, magenta full.
   armory     2x1 secure weapon and suit locker behind a grille, a lock light (red locked, green open)"""
 import math
 
-from .modkit import K, crate, lamp, sprites
+from .modkit import K, case, crate, lamp, sack, sprites
 
 FILLS = ("empty", "partial", "full")
 LAMP = {"empty": "orange", "partial": "cyan", "full": "magenta"}
@@ -35,13 +35,16 @@ def locker(fill, rot):
     k.box(0, vc - 0.02, 0.08, W - 0.08, D - 0.06, 0.02, "dark")                       # floor of the bay
     for z in (0.5, 0.95):                                                             # shelves
         k.box(0, vc - 0.02, z, W - 0.08, D - 0.08, 0.03, "gm", top="steelL")
-    k.box(0, vb + 0.05, 0.1, W - 0.1, 0.02, H - 0.16, "steelD")                       # back wall inside
-    items = {"empty": [],
-             "partial": [(-0.18, 0.53, 0.18, "medWhite"), (0.12, 0.98, 0.2, "hivis")],
-             "full": [(-0.2, 0.1, 0.26, "rust"), (0.15, 0.1, 0.24, "navy"), (-0.18, 0.53, 0.18, "medWhite"),
-                      (0.14, 0.53, 0.22, "pcb"), (-0.12, 0.98, 0.22, "hivis"), (0.18, 0.98, 0.16, "steel")]}[fill]
-    for u, z, s, col in items:
-        crate(k, u, vc - 0.03, z, s, col)
+    k.box(0, vb + 0.05, 0.1, W - 0.1, 0.02, H - 0.16, "steel")                        # back wall inside
+    if fill != "empty":                                                              # cases on the shelves, a sack below
+        case(k, -0.15, vc - 0.03, 0.53, 0.34, 0.26, 0.14, "gm")
+        case(k, 0.12, vc - 0.03, 0.98, 0.3, 0.26, 0.16, "hivis")
+    if fill == "full":
+        case(k, 0.14, vc - 0.03, 0.53, 0.28, 0.26, 0.2, "navy")
+        case(k, -0.16, vc - 0.03, 0.98, 0.3, 0.26, 0.12, "medWhite")
+        case(k, -0.16, vc - 0.03, 1.1, 0.3, 0.26, 0.12, "gm")
+        sack(k, -0.15, vc - 0.02, 0.1, 0.16, 0.36, "jacket")
+        sack(k, 0.16, vc - 0.02, 0.1, 0.15, 0.32, "steel")
     ang = {"empty": (1.9, 1.9), "partial": (0.0, 1.75), "full": (0.0, 0.0)}[fill]   # (+u door, -u door)
     for side, a in zip((1, -1), ang):                                                # doors hinged at the outer edges
         k.door(side * (W / 2 - 0.02), vf, 0.06, W / 2 - 0.03, H - 0.14, 0.03, "steel", a, side, top="steelL")
@@ -59,13 +62,13 @@ def locker(fill, rot):
 
 def rack(fill, rot):
     k = K(f"storage_rack_{fill}_{rot}", (2, 1), rot)
-    L, D, H = 1.8, 0.62, 1.35
+    L, D, H = 1.8, 0.62, 1.12
     for su in (-1, 0, 1):                                                             # uprights
         for sv in (-1, 1):
             k.box(su * (L / 2 - 0.03), sv * (D / 2 - 0.03), 0.0, 0.06, 0.06, H, "gm", top="steelL")
-    shelves = (0.08, 0.52, 0.96)
-    for z in shelves + (H - 0.03,):                                                   # shelf decks
-        k.box(0, 0, z, L, D, 0.03, "steelD", top="plate" if z < H - 0.1 else "steelL")
+    shelves = (0.08, 0.55, 1.02)                                                      # the top shelf is open to the
+    for z in shelves:                                                                 # sky, so it is never in shade
+        k.box(0, 0, z, L, D, 0.03, "steelD", top="plate")
         k.box(0, D / 2 - 0.01, z - 0.04, L, 0.02, 0.07, "hazY" if z == shelves[0] else "gmD")  # front lip
     for s in (-1, 1):                                                                 # cross bracing on the ends
         k.box(s * (L / 2 - 0.03), 0, 0.3, 0.03, D - 0.06, 0.03, "gmD", rx=0.0)
@@ -75,8 +78,15 @@ def rack(fill, rot):
     for zi, z in enumerate(shelves):
         for si, (u, rz) in enumerate(slots):
             if (zi, si) in keep:
-                s = 0.34 if si % 2 == 0 else 0.3
-                crate(k, u, 0.0, z + 0.03, s, CARGO[(zi * 4 + si) % len(CARGO)], rz=0.1 * ((zi + si) % 3 - 1))
+                col = CARGO[(zi * 4 + si) % len(CARGO)]
+                if zi == 0:                                                         # crates low, cases and sacks higher
+                    crate(k, u, 0.0, z + 0.03, 0.36, col, rz=0.06 * ((si % 3) - 1))
+                elif (zi + si) % 3 == 0:
+                    sack(k, u, 0.0, z + 0.03, 0.15, 0.34, ("jacket", "steel")[si % 2])
+                else:
+                    case(k, u, 0.0, z + 0.03, 0.36, 0.4, 0.15 + 0.05 * (si % 2), col)
+                    if si % 2:
+                        case(k, u, 0.0, z + 0.23, 0.3, 0.36, 0.12, "gm")
     if fill == "empty":                                                               # one box knocked on the floor
         crate(k, 0.35, D / 2 + 0.22, 0.0, 0.3, "rust", rz=0.6)
     return k.build()
@@ -99,7 +109,7 @@ def pallet(fill, rot):
         for i, (u, v) in enumerate(grid):
             if fill == "partial" and i in (2, 5, 8):
                 continue
-            crate(k, u, v, z0 + L * 0.43, s, CARGO[(i + L) % len(CARGO)], h=0.42, rz=0.05 * ((i + L) % 3 - 1))
+            crate(k, u, v, z0 + L * 0.43, s, ("steel", "rust", "steel", "hivis")[(i + 2 * L) % 4], h=0.42, rz=0.04 * ((i + L) % 3 - 1))
     if fill == "full":                                                                # straps over the stack
         for u in (-0.3, 0.3):
             k.box(u, 0, z0 + 3 * 0.43, 0.06, 1.56, 0.02, "strap")
@@ -137,8 +147,8 @@ def container(fill, rot):
     for i in range(load):                                                              # crates, loaded toward the doors
         u = -0.38 if i % 2 == 0 else 0.38
         v = L / 2 - 0.45 - (i // 2) * 0.62
-        crate(k, u, v, 0.1, 0.62, CARGO[i % len(CARGO)], h=0.55)
-        crate(k, u, v, 0.65, 0.56, CARGO[(i + 3) % len(CARGO)], h=0.5)
+        crate(k, u, v, 0.1, 0.62, ("rust", "steel", "pcb")[i % 3], h=0.55)
+        crate(k, u, v, 0.65, 0.56, ("steel", "navy", "rust")[i % 3], h=0.5)
     ang = {"empty": (2.0, 2.0), "partial": (0.0, 1.9), "full": (0.0, 0.0)}[fill]    # (+u door, -u door)
     for side, a in zip((1, -1), ang):
         k.door(side * (W / 2 - 0.04), vf - 0.02, 0.08, W / 2 - 0.04, H - 0.22, 0.04, body, a, side, top=rib)

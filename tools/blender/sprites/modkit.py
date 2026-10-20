@@ -44,11 +44,45 @@ class K:
         return [self.m.build()]
 
 
-def crate(k, u, v, z, s, col, rz=0.0, h=None, strap="strap"):
-    """A cargo crate (s wide, h tall) with a strap band round it."""
+# ---- cargo: shared by the storage set (shelves, pallets, containers) -----------------------------------------------
+# body colour -> its frame / rib colour
+FRAME = {"rust": "rustD", "steel": "steelD", "navy": "gmD", "pcb": "gmD", "hivis": "rustD", "medWhite": "steel",
+         "gm": "gmD", "plate": "steel"}
+
+
+def crate(k, u, v, z, s, col, rz=0.0, h=None, strap=None):
+    """A freight crate s wide, h tall: a framed lid and base lip, two ribs round the sides, a label on the front."""
     h = h or s * 0.85
-    k.box(u, v, z, s, s, h, col, top="plate", bevel=0.012, rz=rz)
-    k.box(u, v, z + h * 0.45, s + 0.012, s + 0.012, 0.035, strap, rz=rz)
+    fr = FRAME.get(col, "gmD")
+    k.box(u, v, z, s, s, h, col, top=col, bevel=0.02, rz=rz)
+    k.box(u, v, z, s + 0.02, s + 0.02, 0.05, fr, rz=rz)                                # base lip
+    k.box(u, v, z + h - 0.05, s + 0.02, s + 0.02, 0.05, fr, top="plate", rz=rz)        # lid rim
+    k.box(u, v, z + h - 0.01, s - 0.14, s - 0.14, 0.02, col, rz=rz)                    # lid panel
+    if h > 0.3:
+        for t in (0.36, 0.64):                                                         # side ribs
+            k.box(u, v, z + h * t - 0.02, s + 0.014, s + 0.014, 0.04, fr, rz=rz)
+    ca, sa = math.cos(rz + 0.0), math.sin(rz + 0.0)
+    d = s / 2 + 0.008                                                                  # label on the front (+v) face
+    k.box(u - sa * d, v + ca * d, z + h * 0.42, s * 0.36, 0.012, h * 0.18, "plate", rz=rz)
+
+
+def case(k, u, v, z, w, d, h, col="gm", rz=0.0):
+    """A flat hard case (parts, tools, ammo): a lid seam, two latches and a handle on the front."""
+    k.box(u, v, z, w, d, h, col, top=col, bevel=0.02, rz=rz)
+    k.box(u, v, z + h * 0.62, w + 0.014, d + 0.014, 0.035, FRAME.get(col, "gmD"), rz=rz)   # lid seam
+    ca, sa = math.cos(rz), math.sin(rz)
+    f = d / 2 + 0.012
+    for e in (-1, 1):                                                                  # latches
+        x = e * w * 0.3
+        k.box(u + ca * x - sa * f, v + sa * x + ca * f, z + h * 0.5, 0.06, 0.02, h * 0.3, "brass", rz=rz)
+    k.box(u - sa * (f + 0.01), v + ca * (f + 0.01), z + h * 0.72, w * 0.3, 0.025, 0.04, "steelL", rz=rz)  # handle
+
+
+def sack(k, u, v, z, r, h, col="jacket"):
+    """A bundled soft sack: a fat round body cinched at the neck, a tied top."""
+    k.cyl(u, v, z, r, h * 0.7, col, top=col, sides=10)
+    k.cyl(u, v, z + h * 0.7, r, h * 0.2, col, rtop=r * 0.45, sides=10)
+    k.cyl(u, v, z + h * 0.88, r * 0.32, h * 0.12, "strap", sides=8)
 
 
 def lamp(k, u, v, z, col, s=0.08):
