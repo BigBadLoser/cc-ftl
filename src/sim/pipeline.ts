@@ -47,6 +47,7 @@ import { fabricatorSystem } from './systems/fabricators';
 import { robotBaySystem } from './systems/robotBays';
 import { workSystem } from './systems/work';
 import { vehicleSystem } from './systems/vehicles';
+import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
 import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
@@ -126,6 +127,8 @@ export const pipeline: readonly System[] = [
   carrySystem,
   // Vehicles after crew movement: embarking crew board on arrival, shuttles fly before this tick's shots are aimed.
   vehicleSystem,
+  // Detached containers drift on their own velocity (inert bodies; nothing else moves them).
+  containerDriftSystem,
   // Trade deliveries read this tick's arrivals and issue next tick's flight orders; crew then haul the cargo.
   tradeSystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.

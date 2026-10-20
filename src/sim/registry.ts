@@ -9,7 +9,7 @@ export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair
 export interface ShipTemplate {
   name: string;
   /** Modules to place at game start; `rot` is quarter turns clockwise (0..3). */
-  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string }[];
+  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w' }[];
   /** '.' space, '#' wall, '_' floor, 'D' door, '=' beam. Rows may differ in length; short rows pad with space. */
   rows: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
@@ -371,4 +371,10 @@ export interface ModuleDef {
   roofAsset?: string;
   /** Has a roof part that folds away: seconds for a full deploy (or stow). Absent = always out. */
   deploySec?: number;
+  /**
+   * A sealed cargo container (see sim/containers): one solid object on Beam tiles, clamped to a frame, with its own shell
+   * and a storage inventory (`storage`). Not a room, no interior: crew never walk to it and haulers skip it. It can be
+   * detached (`container.detach`) into a free drifting body carrying its stock.
+   */
+  container?: true;
 }

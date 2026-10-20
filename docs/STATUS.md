@@ -586,3 +586,24 @@ Open: CombatPanel still old style; phone hides the crew row while the combat she
 - **Next (user decision): sealed, detachable cargo containers** as their own ship component with their own exterior. Freighter
   frames become trusses plus clamped containers; a detached container becomes a free body (like shuttles) carrying its
   stock. Not walk-in (walk-in plus detachable would need grid surgery).
+
+## Cargo containers (branch `shipgen-containers`; not merged; awaiting user review of the look)
+
+- **Component** (`src/sim/containers`): a container is a module with `ModuleDef.container` (`container.3x3` cap 10,
+  `container.3x5` cap 18, `container.5x5` cap 30; solid, full cover, no power), standing on Beam tiles, tagged
+  `ContainerC` (def, rot, clamp side, state clamped / drifting, hp, last ship, drift). Haulers skip it (sealed).
+  Combat reuses module damage; at 0 hp its stock is lost. `container.detach` (and `detachContainer`) frees its tiles
+  (Space, no owner, no module) and turns the same entity into an inert drifting `BodyC` with its `StorageC`, seeded
+  velocity away from the ship's centre; `containerDriftSystem` moves it. Save v22.
+- **Shipgen**: container cells (`containerCells.ts`, symbol chars per size and turn) survive blocks, mirrors and
+  arranging; `generate` turns them into `=` plus container modules with stock (`extractContainers`). `containerFrame` is
+  a beam, truss or crawl-tube spine with containers on both faces (sizes, gaps, stagger, missing slots, shallow boxes
+  seeded). The tug's barge and the mid frame keep a walkable crawl tube (crew must reach the far end). Validation:
+  containers must sit on `=` and touch the frame on their clamp side.
+- **Ruins** (`ruinContainers.ts`): some torn off (and any a shear cuts off) as `meta.containers` bodies near the wreck,
+  spawned by `applyRuin`; the rest sealed, breached (stock partly lost, `.damaged` art) or destroyed (stock gone).
+- **Render**: placeholder drawn boxes with a yellow clamp until art lands (ids in ARCHITECTURE "Cargo containers").
+- **Debug**: `?genAt=dx,dy` places generated ships and derelicts away from the player's ship (big freighters otherwise
+  collide with it and are refused).
+- Open: what fills containers and who unloads them, player building, UI for them (select, detach button), scrapper
+  pod strings (still walk-in rooms), pick-up / towing / cutting open.

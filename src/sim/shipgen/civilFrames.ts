@@ -2,6 +2,7 @@ import type { Block } from './arranger';
 import { blockFrom, localBuilder } from './blocks';
 import type { Builder, Part } from './builder';
 import { cargoSpec, type RoomSpec } from './plan';
+import { containerChar } from './containerCells';
 import type { Rng } from '../rng';
 
 /**
@@ -22,54 +23,83 @@ const bareBlock = (b: Builder, kind: string, label: string, ports: Parameters<ty
 const unit = (w: number, h: number): RoomSpec => ({ ...cargoSpec(w * Math.max(1, h - 1)), w, h });
 
 export interface FrameOpts {
-  /** Open rows between the two container rows of a band: the containers hang from the rails, nothing between them. */
+  /** Spine build: 0 a single beam, 1+ an open truss (two chords, ties between) the containers clamp to. */
   lane: number;
+  /** Open columns of spine between neighbouring containers. */
   gap: number;
+  /** Container length along the spine and depth across it (3 or 5 each). */
   cw: number;
   ch: number;
-  /** Container bands: 1 (two rails) or 2 (three rails, the middle one shared). */
+  /** Container bands: 1 or 2 spines, each with a row of containers on both faces. */
   bands?: number;
   /** Offset the lower row of each band by half a container (staggered stacking). */
   stagger?: boolean;
+  /** The spine is a walkable crawl tube (a tug's barge: the far end is crewed) instead of beams. */
+  crawl?: boolean;
+  /** Chance a slot is left empty (never the first of a row). */
+  missing?: number;
 }
 
+/** Stamp one container (`w` along x, `h` across) with its top-left at (x, y); false if no size fits or it clashes. */
+const stampContainer = (b: Builder, x: number, y: number, w: number, h: number, key: string): boolean => {
+  const ch = containerChar(w, h);
+  return ch !== null && b.cv.stamp(Array.from({ length: h }, () => ch.repeat(w)), x, y, key);
+};
+
 /**
- * Container frame: thin crawlway rails with containers slung from them (each band a top-hung and a bottom-hung row,
- * an open lane between them, or back to back with lane 0), and a cross passage at the after end joining the rails.
- * Ports: the cross passage's east wall ('e') and ends ('n', 's'), the top rail's west end ('w').
+ * Container frame: a container ship's cargo section. Each band is a spine (a beam, an open truss, or a crawl tube) with
+ * sealed containers clamped along both faces; a cross passage at the after end joins the spines and the crew body.
+ * Containers are not rooms: they are drawn as container cells and become container modules on Beam tiles.
+ * Ports: the cross passage's east wall ('e') and ends ('n', 's'); a crawl spine's west end ('w').
  */
 export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
   const b = localBuilder(rng);
   const bands = Math.max(1, Math.min(2, o.bands ?? 1));
-  const per = o.cw * Math.max(1, o.ch - 1);
-  const k = Math.max(2 * bands, Math.ceil(crates / per));
+  const Lc = o.cw >= 5 ? 5 : 3;
+  const D = o.ch >= 5 ? 5 : 3;
+  const T = o.crawl || o.lane > 0 ? 3 : 1;
+  const k = Math.max(2 * bands, Math.min(24, Math.ceil(crates / ((Lc * D) / 4))));
   const perRow = Math.ceil(k / (2 * bands));
-  const rowH = o.ch + 2;
-  const pitch = 2 * rowH + (o.lane > 0 ? o.lane + 1 : 0);
-  const H = bands * pitch + 3;
-  const oy = -Math.round(H / 2);
-  const step = o.cw + 1 + o.gap;
+  const step = Lc + o.gap;
   const sh = o.stagger ? Math.ceil(step / 2) : 0;
-  const L = o.gap + perRow * step + sh + 2;
-  const rails = Array.from({ length: bands + 1 }, (_, i) => b.place({ x: 0, y: oy + i * pitch, w: L, h: 3 }, 'hall'));
+  const L = 1 + perRow * step - o.gap + sh + 2;
+  const pitch = 2 * D + T + 1;
+  const H = bands * pitch - 1;
+  const oy = -Math.round(H / 2);
   const end = b.place({ x: L - 1, y: oy, w: 3, h: H }, 'hall');
-  if (end) for (const r of rails) if (r) b.door(r, end);
-  let n = 0;
+  const spineY = (band: number): number => oy + band * pitch + D;
   for (let band = 0; band < bands; band++) {
-    const up = rails[band];
-    const dn = rails[band + 1];
-    for (let i = 0; i < perRow; i++) {
-      const x = o.gap + i * step;
-      const t = n++ < k ? b.place({ x, y: oy + band * pitch + 2, w: o.cw + 2, h: rowH }, 'cargo', unit(o.cw, o.ch)) : null;
-      const u = n++ < k ? b.place({ x: x + sh, y: oy + (band + 1) * pitch - rowH + 1, w: o.cw + 2, h: rowH }, 'cargo', unit(o.cw, o.ch)) : null;
-      if (t && up) b.door(up, t);
-      if (u && dn) b.door(dn, u);
+    const y = spineY(band);
+    if (o.crawl) {
+      const tube = b.place({ x: 0, y, w: L, h: 3 }, 'hall');
+      if (tube && end) b.door(tube, end);
+    } else if (T === 1) truss(b, 0, y, L - 1, 1, `spine${band}`);
+    else {
+      truss(b, 0, y, L - 1, 1, `chordN${band}`);
+      truss(b, 0, y + 2, L - 1, 1, `chordS${band}`);
+      for (let x = 0; x < L - 1; x += step) truss(b, x, y + 1, 1, 1, `tie${band}.${x}`);
+      truss(b, L - 2, y + 1, 1, 1, `tie${band}.end`);
     }
+    let n = 0;
+    for (const [row, off] of [[0, 0], [1, sh]] as const) {
+      for (let i = 0; i < perRow; i++) {
+        if (i > 0 && rng.chance(o.missing ?? 0)) continue;
+        // Now and then a shallower box among deep ones: still flush against the spine.
+        const d = D === 5 && rng.chance(0.25) ? 3 : D;
+        const x = 1 + off + i * step;
+        const top = row === 0;
+        stampContainer(b, x, top ? y - d : y + T, Lc, d, `box${band}.${row}.${i}`);
+        n++;
+      }
+    }
+    if (n === 0) truss(b, 1, y - 1, 1, 1, 'stub');
   }
-  return bareBlock(b, 'cargo', `container frame ${bands + 1} rails`, [
-    { id: 'e', side: 'e', x: L + 1, y: oy + 1, len: H - 2, access: 'human' }, { id: 'w', side: 'w', x: 0, y: oy + 1, len: 1, access: 'human' },
+  const ports: Parameters<typeof blockFrom>[4] = [
+    { id: 'e', side: 'e', x: L + 1, y: oy + 1, len: H - 2, access: 'human' },
     { id: 'n', side: 'n', x: L, y: oy, len: 1, access: 'human' }, { id: 's', side: 's', x: L, y: oy + H - 1, len: 1, access: 'human' },
-  ]);
+  ];
+  if (o.crawl) ports.push({ id: 'w', side: 'w', x: 0, y: spineY(0) + 1, len: 1, access: 'human' });
+  return bareBlock(b, 'cargo', `container frame ${bands} ${o.crawl ? 'crawl' : T === 1 ? 'beam' : 'truss'}`, ports);
 }
 
 /**

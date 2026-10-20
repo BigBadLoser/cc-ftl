@@ -126,6 +126,21 @@ export const modules = {
     storage: { capacity: 8 },
   },
 
+  // Sealed cargo containers (sim/containers): solid boxes on Beam tiles clamped to a freighter's frame, no interior.
+  // Footprint W x H at rotation 0 (art `container.<W>x<H>`); one storage slot per tile and a bit.
+  'container.3x3': {
+    name: 'Cargo container (small)', asset: 'container.3x3', footprint: [3, 3], solid: true, cover: 'full', power: 0,
+    flammability: 0.1, maxHp: 120, buildWork: 300, cost: [{ item: 'item.metal', count: 18 }], storage: { capacity: 10 }, container: true,
+  },
+  'container.3x5': {
+    name: 'Cargo container', asset: 'container.3x5', footprint: [3, 5], solid: true, cover: 'full', power: 0,
+    flammability: 0.1, maxHp: 160, buildWork: 420, cost: [{ item: 'item.metal', count: 26 }], storage: { capacity: 18 }, container: true,
+  },
+  'container.5x5': {
+    name: 'Cargo container (large)', asset: 'container.5x5', footprint: [5, 5], solid: true, cover: 'full', power: 0,
+    flammability: 0.1, maxHp: 220, buildWork: 600, cost: [{ item: 'item.metal', count: 40 }], storage: { capacity: 30 }, container: true,
+  },
+
   // --- Combat. Offsets are (x, y) from the footprint's top-left at rotation 0; crew face south at rotation 0. ---
   // Weapons are a floor bay plus a roof turret: the bay sits anywhere under the roof; the turret aims (Weapon.aim).
   // Light weapons 2x2, heavy 3x3.

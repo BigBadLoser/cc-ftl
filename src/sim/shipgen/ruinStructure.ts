@@ -1,5 +1,6 @@
 import { at, components, heavy, isHull, modTiles, put, touchesSpace } from './ruinGrid';
 import type { RuinCtx } from './ruinTypes';
+import { tearOff } from './ruinContainers';
 
 /**
  * Structural damage. Combat wrecks take a few clustered impacts on one flank: hull blown out, inner walls and doors torn,
@@ -138,6 +139,8 @@ function keepLargest(c: RuinCtx): void {
 
 /** Modules that lost a footprint tile to space went with it. */
 function dropLostModules(c: RuinCtx): void {
+  // A container that lost tiles (or its whole frame) was torn off, not lost: it drifts beside the wreck.
+  c.modules.forEach((m, i) => { if (c.defs[m.def]?.container && modTiles(c, i).some((t) => at(c, t.x, t.y) === '.')) tearOff(c, i); });
   c.modules = c.modules.filter((_, i) => modTiles(c, i).every((t) => at(c, t.x, t.y) !== '.'));
   // Breaches on vanished tiles are no longer meaningful as dressing for hull/wall; keep floor holes adjacent to the hull.
   c.meta.breaches = c.meta.breaches.filter((b) => b.kind === 'floor' ? N8Solid(c, b.x, b.y) : N8Solid(c, b.x, b.y) || at(c, b.x, b.y) !== '.');

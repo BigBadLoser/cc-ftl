@@ -6,6 +6,8 @@ import type { RuinMeta } from '../shipgen/ruinTypes';
 import { shipGrid, shipIdOf } from '../regions';
 import { DoorJam } from '../structure';
 import { ShipC } from './components';
+import { spawnDriftingContainer } from '../containers/detach';
+import { ContainerC } from '../containers/components';
 
 /**
  * Apply a ruin pass's meta to a freshly stamped derelict (`stampShip`, so no crew, combat or AI): module hp, power,
@@ -29,6 +31,8 @@ export function applyRuin(sim: Sim, shipId: number, template: ShipTemplate, meta
     const def = m && sim.content.modules[m.def];
     if (!m || !def) continue;
     m.hp = Math.round(def.maxHp * r.hp);
+    const box = sim.world.get(id as number, ContainerC);
+    if (box) box.hp = m.hp;
     hp += r.hp;
     // Power off: every source is shut down. Emergency: sources run, but only lights and life support stay switched on.
     if (def.power > 0) m.enabled = meta.power === 'emergency' && r.state !== 'destroyed';
@@ -50,6 +54,11 @@ export function applyRuin(sim: Sim, shipId: number, template: ShipTemplate, meta
     grid.set('door', ox + d.x, oy + d.y, d.state === 'stuckOpen' ? 255 : 0);
   }
   for (const it of [...meta.items, ...meta.caches.flatMap((k) => k.items)]) spillItems(sim, shipId, ox + it.x, oy + it.y, it.item, it.count);
+  // Torn-off containers drift near the wreck as free bodies with what stock they kept.
+  for (const k of meta.containers ?? []) {
+    if (k.fate !== 'torn' || !sim.content.modules[k.def]?.container) continue;
+    spawnDriftingContainer(sim, { def: k.def, rot: k.rot, x: ox + k.x, y: oy + k.y, vx: k.vx, vy: k.vy, spin: k.spin, hp: k.hp, ship: shipId, stock: k.stock });
+  }
   const ship = sim.world.get(shipId, ShipC);
   if (ship) {
     ship.state = 'wreck';

@@ -1,3 +1,4 @@
+import { ContainerC } from '../containers/components';
 import { shipIdAt , shipIdOf } from '../regions';
 import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
@@ -54,7 +55,8 @@ export function sourcesOf(sim: Sim, shipId: number, item: string, res: Reservati
   }
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || shipIdOf(sim, m) !== shipId) continue;
+    // Sealed containers are never reached by crew (their stock moves by unloader or shuttle, later).
+    if (!m || shipIdOf(sim, m) !== shipId || sim.world.has(id, ContainerC)) continue;
     const avail = storageCount(sim, id, item) - (res.out.get(refKey('storage', id, item)) ?? 0);
     if (avail > 0) out.push({ ref: { kind: 'storage', id }, x: m.x, y: m.y, avail });
   }
@@ -81,7 +83,7 @@ export function nearestStorageFor(sim: Sim, shipId: number, item: string, at: { 
   let bestD = Infinity;
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || shipIdOf(sim, m) !== shipId) continue;
+    if (!m || shipIdOf(sim, m) !== shipId || sim.world.has(id, ContainerC)) continue;
     const room = storageSpace(sim, id, item) - (res.incoming.get(refKey('storage', id, item)) ?? 0);
     const d = dist2(m.x, m.y, at.x, at.y);
     if (room > 0 && d < bestD) {

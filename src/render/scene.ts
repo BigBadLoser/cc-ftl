@@ -20,6 +20,7 @@ import type { ModuleDefs } from './moduleView';
 import { ROOF_H } from './heights';
 import { liveryFor } from './roofArt';
 import { createShuttleView } from './shuttleView';
+import { createContainerBodyView } from './containerBodyView';
 import { createFightFx } from './fightFx';
 import { createCrewMarks } from './crewMarks';
 import { sectorTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
@@ -144,6 +145,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     include: (v) => v.state !== 'stowed' || v.homeGrid === refId,
     low: { layer: W.low, project: sectorArt },
   });
+
+  // Detached containers: inert bodies at hull height, sorted with the ships' tiles.
+  const boxes = createContainerBodyView(world, atlas, content.modules, { layer: W.low, project: sectorArt });
 
   /** What crew views need to draw EVA: the tank size. */
   const evaHost = () => ({ suitAirSec: () => content.suit?.airSec ?? 240 });
@@ -279,6 +283,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         sc.update(dt);
       }
       shuttles.update(dt);
+      boxes.update();
       fightFx.update(dt);
       crewMarks.update();
       fx.update(dt, alpha);
@@ -380,6 +385,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     pickCombat: (sx, sy) => pass.pick(sx, sy),
     dispose() {
       shuttles.dispose();
+      boxes.dispose();
       fightFx.dispose();
       crewMarks.dispose();
       fx.dispose();

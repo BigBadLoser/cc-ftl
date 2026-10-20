@@ -206,6 +206,16 @@ palette.json    the single palette, read by Blender scripts and the game
   - Beams top out about 0.6 high, so every wall view level uses the same sprites. A 2–3-thick beam reads as
     twin trusses tied at each tile.
   - Preview from a shipgen dump: `tools/blender/review/beams_preview.py <dir> <out> ship <txt> <seed> <look>`.
+- **Cargo containers (no sheet yet; placeholder boxes drawn by `src/render/containerBox.ts`):** sealed container modules
+  (`ModuleDef.container`, `src/sim/containers`) stand on Beam tiles clamped to a freighter frame. Ids the renderer asks
+  for, most specific first (`moduleArt.containerChain`), anchored at the footprint's front tile like any module:
+  - `container.<W>x<H>.r<N>[.damaged|.destroyed]`, then `container.<W>x<H>.r<N>`, `container.<W>x<H>[.damaged|.destroyed]`,
+    `container.<W>x<H>`. Sizes today: `3x3`, `3x5` (also drawn turned, r1 = 5 along x), `5x5`. A non-square size without
+    its `.r1` sprite is mirrored. `.damaged` under half hp, `.destroyed` at 0.
+  - `container.clamp.<n|e|s|w>`, then `container.clamp`: the clamp gripping the frame, one sprite at the middle tile of
+    the clamped side (a separate layer so one clamp sprite serves every size).
+  - A detached container (a free body, `render/containerBodyView.ts`) uses the same shell ids, no clamp, at the body's
+    position. The beam sprites under a container are skipped (its seat), and frame beams end at it.
 - **Faction structure looks** (`sprites/restyle.py`, `structure_looks.py`, `structure_scrap.py`, `structure.py`,
   family `structure`; preview only, no full build yet): the default wall, hull and floor tiles rebuilt per faction.
   Geometry, masks, heights, ghosts and cutaway are unchanged; only the surfaces differ.

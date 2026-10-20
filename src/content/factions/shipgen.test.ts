@@ -225,7 +225,8 @@ describe('ship generator', () => {
           if (!def.airlock) {
             for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
               const onWall = wall.some((w) => w.x === t.x && w.y === t.y);
-              expect(grid.get('struct', t.x, t.y), `${m.def} at ${t.x},${t.y}`).toBe(onWall ? Struct.Wall : Struct.Floor);
+              // Containers stand on their frame's Beam tiles, sealed (no floor).
+              expect(grid.get('struct', t.x, t.y), `${m.def} at ${t.x},${t.y}`).toBe(def.container ? Struct.Beam : onWall ? Struct.Wall : Struct.Floor);
             }
           }
           const at = accessTile(def, m.x, m.y, m.rot);

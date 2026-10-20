@@ -5,6 +5,7 @@ import { hooksStage } from './ruinHooks';
 import { lootStage } from './ruinLoot';
 import { structureStage } from './ruinStructure';
 import { systemsStage } from './ruinSystems';
+import { stockStage, tearStage } from './ruinContainers';
 import type { RuinCause, RuinCtx, RuinOpts, RuinResult } from './ruinTypes';
 
 /**
@@ -13,7 +14,7 @@ import type { RuinCause, RuinCtx, RuinOpts, RuinResult } from './ruinTypes';
  * ones slot into RUIN_STAGES. What the template rows cannot hold goes into `meta` (see ruinTypes.ts), which the
  * spawn path applies (combat/derelict.ts).
  */
-export const RUIN_STAGES: readonly ((c: RuinCtx) => void)[] = [structureStage, systemsStage, atmosphereStage, lootStage, hooksStage];
+export const RUIN_STAGES: readonly ((c: RuinCtx) => void)[] = [tearStage, structureStage, systemsStage, stockStage, atmosphereStage, lootStage, hooksStage];
 
 export function ruin(template: ShipTemplate, seed: number, opts: RuinOpts): RuinResult {
   const rng = new Rng(seed ^ 0x5eed0de1);
@@ -29,7 +30,7 @@ export function ruin(template: ShipTemplate, seed: number, opts: RuinOpts): Ruin
     intensity, infest: opts.infest ?? 'alien', origin: opts.origin ?? '',
     meta: {
       seed, cause, intensity, impacts: [], breaches: [], sheared: 0, modules: [], power: 'off', doors: [], rooms: [],
-      fires: [], items: [], caches: [], hooks: [], decals: [],
+      fires: [], items: [], caches: [], hooks: [], decals: [], containers: [],
     },
   };
   for (const stage of RUIN_STAGES) stage(c);

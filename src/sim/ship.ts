@@ -1,6 +1,7 @@
 import { ShipC } from './combat/components';
 import type { ShipTemplate } from './registry';
 import { DenseGrid, type GridLike } from './grid';
+import { ContainerC } from './containers/components';
 import { ProductionC } from './items/components';
 import { storageAdd } from './items/storage';
 import { spawnModule } from './modules/spawn';
@@ -56,6 +57,8 @@ export function placeTemplateModules(sim: Sim, t: ShipTemplate, ox: number, oy: 
     const id = spawnModule(sim, m.def, ox + m.x, oy + m.y, m.rot);
     for (const q of m.stock ?? []) storageAdd(sim, id, q.item, q.count);
     if (m.vehicle) spawnVehicle(sim, m.vehicle, id);
+    const box = sim.world.get(id, ContainerC);
+    if (box && m.clamp) box.clamp = m.clamp;
     const production = sim.world.get(id, ProductionC);
     for (const o of m.orders ?? []) production?.orders.push({ ...o, done: 0 });
   }

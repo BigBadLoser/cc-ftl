@@ -118,6 +118,7 @@ export function drawShip(r: Raster, g: GenResult, ox: number, oy: number, s: num
     }
     const [w, h] = rotatedSize(def, m.rot);
     const px = ox + m.x * s; const py = oy + m.y * s;
+    if (def.container) { drawContainer(r, px, py, w, h, s, (m as { clamp?: string }).clamp ?? 'n', (m.stock ?? []).length > 0); continue; }
     if (def.solid) for (const t of footprintTiles(def, m.x, m.y, m.rot)) r.rect(ox + t.x * s + 2, oy + t.y * s + 2, s - 4, s - 4, style.c.map((v) => v * 0.35) as RGB);
     r.frame(px + 1, py + 1, w * s - 2, h * s - 2, style.c, def.weapon || def.engine ? 2 : 1);
     if (def.weapon) { // a cross marks weapons (their roof turret sits over the footprint)
@@ -135,6 +136,25 @@ export function drawShip(r: Raster, g: GenResult, ox: number, oy: number, s: num
       r.rect(px + (s >> 1) - 1 + dx * (s >> 2), py + (s >> 1) - 1 + dy * (s >> 2), 3, 3, style.c);
     }
   }
+}
+
+/**
+ * A sealed container: a solid tinted box over its footprint (orange when stocked, grey when empty), ribbed across its
+ * length, a dark shell edge, and a yellow clamp bar on the side that grips the frame.
+ */
+export function drawContainer(r: Raster, px: number, py: number, w: number, h: number, s: number, clamp: string, full: boolean, tint: RGB = full ? [214, 128, 54] : [120, 124, 132]): void {
+  const W = w * s; const H = h * s;
+  r.rect(px + 1, py + 1, W - 2, H - 2, tint);
+  const rib = tint.map((v) => v * 0.72) as RGB;
+  if (w >= h) for (let x = px + 3; x < px + W - 3; x += 3) r.rect(x, py + 2, 1, H - 4, rib);
+  else for (let y = py + 3; y < py + H - 3; y += 3) r.rect(px + 2, y, W - 4, 1, rib);
+  r.frame(px + 1, py + 1, W - 2, H - 2, [40, 30, 24], 1);
+  const c: RGB = [255, 220, 60];
+  const t = Math.max(2, s >> 2);
+  if (clamp === 'n') r.rect(px + 2, py, W - 4, t, c);
+  else if (clamp === 's') r.rect(px + 2, py + H - t, W - 4, t, c);
+  else if (clamp === 'w') r.rect(px, py + 2, t, H - 4, c);
+  else r.rect(px + W - t, py + 2, t, H - 4, c);
 }
 
 export function ascii(g: GenResult): string {

@@ -121,7 +121,8 @@ function crewBody(c: Ctx): { root: number; aft: number } | null {
 
 /** Container frame options drawn per ship: grid shape, rail count, stacking. */
 const frameOpts = (c: Ctx, lane: number): Parameters<typeof containerFrame>[2] => ({
-  lane, gap: c.rng.int(0, 2), cw: c.rng.int(3, 5), ch: c.rng.int(3, 4), bands: c.rng.chance(0.4) ? 2 : 1, stagger: c.rng.chance(0.3),
+  lane, gap: c.rng.int(0, 2), cw: c.rng.pick([3, 5]), ch: c.rng.pick([3, 5, 5]), bands: c.rng.chance(0.4) ? 2 : 1, stagger: c.rng.chance(0.3),
+  missing: c.rng.pick([0, 0.08, 0.15]),
 });
 
 /** Freighter: frame (crew body aft, mid or on the flank), offset bridge, or tug and barge. */
@@ -146,7 +147,7 @@ export function freighter(c: Ctx): boolean {
     if (frameJoin(c, body.root, containerFrame(c.rng, crates * (pos === 'mid' ? 2 : 3), frameOpts(c, c.rng.int(0, 3))), 'w') === null) return no(c, 'frame');
     let aft = body.aft;
     if (pos === 'mid') {
-      const b2 = frameJoin(c, aft, containerFrame(c.rng, crates * 2, frameOpts(c, c.rng.int(0, 3))), 'e');
+      const b2 = frameJoin(c, aft, containerFrame(c.rng, crates * 2, { ...frameOpts(c, c.rng.int(0, 3)), crawl: true }), 'e');
       if (b2 === null) return no(c, 'aft frame');
       aft = b2;
     }
@@ -172,7 +173,7 @@ function tug(c: Ctx, crates: number): boolean {
   if (root === null) return no(c, 'tug');
   if (!stern(c, root)) return false;
   const t = frameJoin(c, root, trussBridge(c.rng, c.rng.int(10, 16), 2), 'w');
-  const o = { ...frameOpts(c, c.rng.int(0, 2)), bands: 2, cw: c.rng.int(4, 5) };
+  const o = { ...frameOpts(c, c.rng.int(0, 2)), bands: 2, cw: 5, crawl: true };
   const barge = t === null ? null : frameJoin(c, t, containerFrame(c.rng, crates * 5, o), 'w');
   if (barge === null) return no(c, 'barge');
   if (crew.length > 0) {

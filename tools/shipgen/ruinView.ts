@@ -9,7 +9,8 @@ import { content } from '../../src/content';
 import { footprintTiles, type ModuleDef } from '../../src/sim';
 import { ruin } from '../../src/sim/shipgen/ruin';
 import type { RuinCause, RuinResult } from '../../src/sim/shipgen/ruinTypes';
-import { gen, Raster } from './draw';
+import { drawContainer, gen, Raster } from './draw';
+import { rotatedSize } from '../../src/sim/modules/footprint';
 
 type RGB = [number, number, number];
 const defs = content.modules as Record<string, ModuleDef>;
@@ -52,7 +53,7 @@ export function drawRuin(r: Raster, before: string[], res: RuinResult, ox: numbe
   for (const m of meta.modules) {
     const tm = t.modules?.[m.index];
     const def = tm && defs[tm.def];
-    if (!tm || !def) continue;
+    if (!tm || !def || def.container) continue;
     const c = STATE[m.state] as RGB;
     if (tm.def === 'module.light') { r.rect(ox + tm.x * s + (s >> 1) - 1, oy + tm.y * s + (s >> 1) - 1, 3, 3, m.state === 'destroyed' ? c : meta.power === 'off' ? [80, 80, 60] : [255, 250, 200]); continue; }
     const tiles = footprintTiles(def, tm.x, tm.y, tm.rot);
@@ -66,6 +67,24 @@ export function drawRuin(r: Raster, before: string[], res: RuinResult, ox: numbe
     r.frame(px + 1, py + 1, ww - 2, hh - 2, c, 1);
     const l = label(tm.def);
     if (l.length * 4 <= ww - 2) r.text(l, px + 3, py + 3, c);
+  }
+  // Containers: sealed orange, breached rust with a red frame, destroyed dark with a cross; torn ones drift outside the
+  // hull (cyan frame, a tick along their drift).
+  for (const k of meta.containers) {
+    const def = defs[k.def];
+    if (!def) continue;
+    const [w, h] = rotatedSize(def, k.rot);
+    const px = Math.round(ox + (k.x - w / 2) * s), py = Math.round(oy + (k.y - h / 2) * s);
+    const tint: RGB = k.fate === 'destroyed' ? [52, 34, 28] : k.fate === 'breached' ? [150, 74, 40] : k.stock.length ? [214, 128, 54] : [120, 124, 132];
+    const tm = k.index !== undefined ? t.modules?.[k.index] : undefined;
+    drawContainer(r, px, py, w, h, s, (tm as { clamp?: string } | undefined)?.clamp ?? 'none', k.stock.length > 0, tint);
+    if (k.fate === 'breached') r.frame(px, py, w * s, h * s, [255, 60, 50], 2);
+    if (k.fate === 'destroyed') for (let q = 2; q < Math.min(w, h) * s - 2; q++) { r.rect(px + q, py + q, 1, 1, [240, 60, 60]); r.rect(px + w * s - 1 - q, py + q, 1, 1, [240, 60, 60]); }
+    if (k.fate === 'torn') {
+      r.frame(px, py, w * s, h * s, [60, 230, 255], 1);
+      const cx = px + (w * s) / 2, cy = py + (h * s) / 2, sp = Math.hypot(k.vx, k.vy) || 1;
+      for (let q = 0; q < 2 * s; q++) r.rect(Math.round(cx + (k.vx / sp) * q), Math.round(cy + (k.vy / sp) * q), 2, 2, [60, 230, 255]);
+    }
   }
   for (const f of meta.fires) r.rect(ox + f.x * s + 2, oy + f.y * s + 2, s - 4, s - 4, [255, 120, 20]);
   for (const it of meta.items) r.rect(ox + it.x * s + (s >> 1) - 1, oy + it.y * s + (s >> 1) - 1, 3, 3, it.count === 1 ? [80, 230, 255] : [235, 235, 235]);
@@ -89,8 +108,10 @@ export function drawRuin(r: Raster, before: string[], res: RuinResult, ox: numbe
 /** Sheet: one faction, one cause; rows are intensities, columns seeds. */
 export function ruinSheet(faction: string, from: number, count: number, depth: number, s: number, cause: RuinCause, levels: number[]): { raster: Raster; text: string } {
   const ships = Array.from({ length: count }, (_, i) => ({ seed: from + i, g: gen(faction, from + i, depth) }));
-  const cellW = Math.max(...ships.map((x) => x.g.width)) * s + 16;
-  const cellH = Math.max(...ships.map((x) => x.g.height)) * s + 24;
+  // A margin round each ship for torn-off containers drifting beside it.
+  const M = 9;
+  const cellW = (Math.max(...ships.map((x) => x.g.width)) + 2 * M) * s + 16;
+  const cellH = (Math.max(...ships.map((x) => x.g.height)) + 2 * M) * s + 24;
   const r = new Raster(count * cellW + 70, levels.length * cellH + 40);
   r.text(`${faction} ruin ${cause}  O open F force E eva  magenta eggsac/nest  cyan robot/weapon  gold cache`, 8, 8, [230, 230, 230], 2);
   const text: string[] = [];
@@ -102,8 +123,8 @@ export function ruinSheet(faction: string, from: number, count: number, depth: n
       const ox = 60 + i * cellW, oy = 40 + row * cellH;
       const dead = m.modules.filter((q) => q.state === 'destroyed').length;
       r.text(`#${seed} ${m.power} lost ${m.sheared} br ${m.breaches.length} x${dead}/${m.modules.length}`, ox, oy, [200, 200, 200]);
-      drawRuin(r, g.template.rows, res, ox, oy + 10, s);
-      text.push(`seed ${seed} I${lv} ${cause}: ${JSON.stringify({ power: m.power, sheared: m.sheared, breaches: m.breaches.length, destroyed: dead, modules: m.modules.length, rooms: m.rooms.map((q) => q.air[0]).join(''), caches: m.caches.map((k) => k.access), hooks: m.hooks.length, fires: m.fires.length })}`, res.template.rows.join('\n'), '');
+      drawRuin(r, g.template.rows, res, ox + M * s, oy + 10 + M * s, s);
+      text.push(`seed ${seed} I${lv} ${cause}: ${JSON.stringify({ power: m.power, sheared: m.sheared, breaches: m.breaches.length, destroyed: dead, modules: m.modules.length, rooms: m.rooms.map((q) => q.air[0]).join(''), caches: m.caches.map((k) => k.access), hooks: m.hooks.length, fires: m.fires.length, containers: m.containers.map((q) => q.fate[0]).join('') })}`, res.template.rows.join('\n'), '');
     });
   });
   return { raster: r, text: text.join('\n') };

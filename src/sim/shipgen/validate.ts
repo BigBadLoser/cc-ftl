@@ -35,7 +35,7 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
       const onWall = wall.some((q) => q.x === tile.x && q.y === tile.y);
       if (onWall) {
         if (at(tile.x, tile.y) !== '#' || at(tile.x + out.x, tile.y + out.y) !== '.') problems.push(`${name}: not on the hull`);
-      } else if (at(tile.x, tile.y) !== '_') problems.push(`${name}: off the floor at ${tile.x},${tile.y}`);
+      } else if (def.container ? at(tile.x, tile.y) !== '=' : at(tile.x, tile.y) !== '_') problems.push(`${name}: off the ${def.container ? 'frame' : 'floor'} at ${tile.x},${tile.y}`);
       if (tile.x < 0 || tile.y < 0 || tile.x >= w || tile.y >= h) continue;
       if (occ[i] !== -1) problems.push(`${name}: overlaps ${mods[occ[i] as number]?.def}`);
       occ[i] = k;
@@ -43,6 +43,7 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
     }
     if (def.engine && side !== 'e') problems.push(`${name}: engine not on the stern hull`);
     if (def.vehicleBay && !m.vehicle) problems.push(`${name}: bay without a vehicle`);
+    if (def.container && !clampedToFrame(at, def, m)) problems.push(`${name}: not clamped to a frame`);
   });
   // The airlocks' tiles turn into doors and chamber floor on spawn.
   for (const m of mods) {
@@ -139,4 +140,17 @@ export function structureParts(cells: string[], w: number, h: number): number {
     }
   }
   return parts;
+}
+
+/** A container's clamp side touches frame beams that are not its own footprint (beams outside it, or a frame tile). */
+function clampedToFrame(at: (x: number, y: number) => string, def: ModuleDef, m: { x: number; y: number; rot: number; clamp?: 'n' | 'e' | 's' | 'w' }): boolean {
+  const tiles = footprintTiles(def, m.x, m.y, m.rot);
+  const xs = tiles.map((t) => t.x);
+  const ys = tiles.map((t) => t.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const side = m.clamp ?? 'n';
+  const edge: [number, number][] = side === 'n' || side === 's'
+    ? Array.from({ length: x1 - x0 + 1 }, (_, i) => [x0 + i, side === 'n' ? y0 - 1 : y1 + 1])
+    : Array.from({ length: y1 - y0 + 1 }, (_, j) => [side === 'w' ? x0 - 1 : x1 + 1, y0 + j]);
+  return edge.some(([x, y]) => at(x, y) !== '.');
 }

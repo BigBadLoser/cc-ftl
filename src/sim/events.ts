@@ -47,6 +47,8 @@ export type SimEvent =
   | { type: 'projectile.intercepted'; projectile: number; weapon: string; ship: number }
   /** A module reached 0 hp from combat damage. */
   | { type: 'module.destroyed'; moduleId: number; def: string; ship: number }
+  /** A container left its ship as a free body (same entity id); x, y are its body position in sector tiles. */
+  | { type: 'container.detached'; container: number; ship: number; x: number; y: number }
   /** Ship state changes. 'destroyed' = became a wreck. */
   | { type: 'ship.disabled'; ship: number }
   | { type: 'ship.recovered'; ship: number }
