@@ -1,5 +1,6 @@
 import type { Atlas, LayerSprite } from './assets/loader';
 import { hash } from './assets/palette';
+import type { ClipDef, LayerAsset } from './assets/manifest';
 import type { Crew } from '../sim/crew/components';
 
 /**
@@ -50,4 +51,27 @@ export function clipFor(activity: string, moving: boolean, floating = false): st
   if (activity === 'charging') return 'charge';
   if (activity === 'walking' || moving) return 'walk';
   return activity === 'working' ? 'work' : 'idle';
+}
+
+/**
+ * Clips to try, after the requested one, when a layer has no sheet for it. A layer lacking a clip is normal (sheets are
+ * per item and clip, and new clips are added without re-rendering old items), so every clip has a rule:
+ * - default: the layer's idle frames (never a hole in the body; right for eva_float, charge, wreck... on a layer that
+ *   does not need to move differently);
+ * - `sit_idle`: nothing, so the layer is hidden. Seated poses are fitted to the chair; a standing pose would clip through
+ *   it. The engineer rig and EVA pack have no sit sheets for exactly this reason;
+ * - `sit_work`: the layer's sit_idle.
+ */
+const CLIP_FALLBACK: Readonly<Record<string, readonly string[]>> = {
+  sit_idle: [],
+  sit_work: ['sit_idle'],
+};
+
+/** The clip a layer plays for a requested clip name, or undefined if the layer is not drawn for it. */
+export function resolveClip(def: LayerAsset, clip: string): ClipDef | undefined {
+  for (const name of [clip, ...(CLIP_FALLBACK[clip] ?? ['idle'])]) {
+    const c = def.clips[name];
+    if (c) return c;
+  }
+  return undefined;
 }

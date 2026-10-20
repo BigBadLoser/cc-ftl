@@ -116,7 +116,7 @@ class Regions:
         fdom = []
         for p in self.me.polygons:
             ds = [part_kind(dom[v]) for v in p.vertices]
-            fdom.append(max(set(ds), key=ds.count))
+            fdom.append(max(sorted(set(ds)), key=ds.count))   # sorted: ties must not depend on the string hash seed
         self.z = np.array([p.center.z for p in self.me.polygons])
         self.x = np.array([p.center.x for p in self.me.polygons])
         self.y = np.array([p.center.y for p in self.me.polygons])

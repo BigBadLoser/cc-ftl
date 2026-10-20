@@ -32,8 +32,14 @@
     <button class:on={me.hold} aria-pressed={me.hold} data-testid="combat-hold" onclick={() => setHold(!me.hold)}>
       {me.hold ? 'Holding fire' : 'Hold fire'}
     </button>
-    <button class="go" disabled={!ready} data-testid="combat-volley" onclick={volley}>Fire volley</button>
+    <button
+      class="go"
+      disabled={!ready}
+      title={ready ? 'Fire every charged weapon now' : me.hold ? 'Waiting for a weapon to charge' : 'Hold fire to charge a volley: weapons otherwise fire as soon as they charge'}
+      data-testid="combat-volley"
+      onclick={volley}>Fire volley</button>
   </div>
+  {#if !ready && !me.hold}<div class="hint" data-testid="combat-volley-hint">Hold fire to charge a volley</div>{/if}
   {#if me.target}<div class="tgt">Target: {me.target.label || 'whole ship'}</div>{/if}
 
   <div class="weapons" data-testid="combat-weapons">
@@ -81,6 +87,7 @@
   .go { background: #0e4a56; border-color: var(--cyan); }
   .go:disabled { background: var(--panel-2); border-color: var(--line); }
   .tgt { font-size: 12px; color: var(--amber); }
+  .hint { font-size: 11px; color: var(--dim, #8aa); }
   .weapons { display: grid; gap: 6px; }
   .w { padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 4px; }
   .w.off { opacity: 0.6; }

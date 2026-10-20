@@ -18,6 +18,10 @@ export interface Controller {
   tool: Readable<UiToolState>;
   selectedCrew: Readable<number | null>;
   selectedModule: Readable<number | null>;
+  /** Another grid (ship or station) picked from the node strip, or null. */
+  selectedGrid: Readable<number | null>;
+  /** Select another grid and frame it in the camera (null clears). A negative id is a station (no grid): minus its entity id, no camera move. */
+  selectGrid(gridId: number | null): void;
   alerts: Alerts;
   toast: Readable<string | null>;
   setTool(state: Partial<UiToolState>): void;
@@ -36,6 +40,7 @@ export interface Controller {
 export function createController(sim: Sim, bridge: Bridge): Controller {
   const tool = createStore<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
   const modSel = createStore<number | null>(null);
+  const gridSel = createStore<number | null>(null);
   const alerts = createAlerts(sim);
   let modPos: Tile | null = null;
   const crewSel = createStore<number | null>(null);
@@ -53,6 +58,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   };
 
   const selectTile = (t: Tile | null) => {
+    gridSel.set(null);
     crewSel.set(null);
     modSel.set(null);
     r?.setSelectedCrew(null);
@@ -75,6 +81,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const selectCrew = (id: number | null, focus = false) => {
     if (id === null) return selectTile(null);
     modSel.set(null);
+    gridSel.set(null);
     crewSel.set(id);
     r?.setSelection(null);
     bridge.setSelected(null);
@@ -93,6 +100,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const def = m && sim.content.modules[m.def];
     if (id === null || !m || !def) return selectTile(null);
     crewSel.set(null);
+    gridSel.set(null);
     r?.setSelectedCrew(null);
     bridge.setSelected(null);
     modSel.set(id);
@@ -172,6 +180,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     tool,
     alerts,
     selectedModule: modSel,
+    selectedGrid: gridSel,
+    selectGrid(gridId) {
+      selectTile(null);
+      if (gridId === null) return;
+      gridSel.set(gridId);
+      if (gridId > 0) r?.frameShips([gridId]);
+    },
     selectedCrew: crewSel,
     selectModule,
     focusAlert(id) {

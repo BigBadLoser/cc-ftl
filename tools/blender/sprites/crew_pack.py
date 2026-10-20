@@ -1,60 +1,111 @@
-"""Packs rendered human layers into per-layer sheets (8 direction rows x all clip frames) + glow twins, and returns
-the manifest fragments. All layers share one frame size and anchor so they stack exactly."""
+"""Packs cached crew renders into one sheet per (item, clip) + glow twins, and merges them into the manifest.
+
+Sheet `crew.human.torso.tee.walk` = 8 direction rows x that clip's frames, every cell the fixed crew frame (crew_spec).
+A layer's manifest asset lists its clips, each with the sheet it lives in (`clips.walk.sheet`, `start` is always 0)."""
+import json
 import numpy as np
-from . import human_render as hr
+from . import crew_cache as cc
+from . import crew_spec as cs
 from . import post
 
 KEY_COLORS = {"team.skin": "#ff00ff", "team.hair": "#00ff00", "team.cloth": "#ffff00", "team.accent": "#00ffff"}
 
 
-def union_box(res):
-    box = None
-    for frames in res.values():
-        for rgba, g in frames.values():
-            op = rgba[..., 3] > 0
-            if g is not None:
-                op = op | (g[..., 3] > 0)
-            if not op.any():
-                continue
-            b = post.crop_box(op)
-            box = b if box is None else (min(box[0], b[0]), min(box[1], b[1]), max(box[2], b[2]), max(box[3], b[3]))
-    return box
+def _packed_path():
+    return cc.root() / "packed.json"
 
 
-def pack(items, res, cols, outdir, log=print):
-    """Writes sprites/crew.human.*.png (+ .glow.png). Returns (sheets, assets) manifest maps."""
-    x0, y0, x1, y1 = union_box(res)
-    cw, ch = int(x1 - x0), int(y1 - y0)
-    ax, ay = hr.ORIGIN[0] + 1 - x0, hr.ORIGIN[1] + 1 - y0
-    clips, start = {}, 0
-    for clip, n, fps, loop in hr.CLIPS:
-        clips[clip] = {"start": start, "frames": n, "fps": fps, "loop": loop}
-        start += n
-    sheets, assets, total = {}, {}, 0
+def pack(items, entries, outdir, log=print):
+    """entries: (item index, clip, d, i, key, path) for every wanted cell. Writes sprites/<item>.<clip>.png (+ .glow.png),
+    skipping sheets whose entry keys are unchanged since they were last written to this outdir.
+    -> (sheets, assets) manifest fragments."""
+    by = {}
+    for e in entries:
+        by.setdefault((e[0], e[1]), []).append(e)
+    meta = {c: (n, fps, loop) for c, n, fps, loop in cs.CLIPS}
+    pp = _packed_path()
+    seen = json.loads(pp.read_text()) if pp.exists() else {}
+    sheets, assets, wrote, kept = {}, {}, 0, 0
     (outdir / "sprites").mkdir(parents=True, exist_ok=True)
-    for k, it in enumerate(items):
-        sheet = np.zeros((8 * ch, len(cols) * cw, 4), np.uint8)
-        glow = np.zeros_like(sheet)
-        for (d, col), (rgba, g) in res[k].items():
-            sl = (slice(d * ch, (d + 1) * ch), slice(col * cw, (col + 1) * cw))
-            sheet[sl] = rgba[y0:y1, x0:x1]
-            if g is not None:
-                glow[sl] = g[y0:y1, x0:x1]
-        has_glow = bool(glow[..., 3].any())
-        path = f"sprites/{it.id}.png"
-        post.write_png(outdir / path, sheet)
-        total += (outdir / path).stat().st_size
-        sd = {"image": path}
+    for (k, clip), es in sorted(by.items()):
+        it = items[k]
+        n, fps, loop = meta[clip]
+        sid = f"{it.id}.{clip}"
+        es.sort(key=lambda e: (e[2], e[3]))
+        skey = cc.digest(*[e[4] for e in es])
+        img, gl = f"sprites/{sid}.png", f"sprites/{sid}.glow.png"
+        tag = f"{outdir.resolve()}::{sid}"
+        cached = seen.get(tag)
+        if cached and cached["key"] == skey and (outdir / img).exists() and (not cached["glow"] or (outdir / gl).exists()):
+            has_glow = cached["glow"]
+            kept += 1
+        else:
+            sheet = np.zeros((8 * cs.FRAME_H, n * cs.FRAME_W, 4), np.uint8)
+            glow = np.zeros_like(sheet)
+            for _, _, d, i, _, path in es:
+                rgba, g = cc.load(path)
+                sl = (slice(d * cs.FRAME_H, (d + 1) * cs.FRAME_H), slice(i * cs.FRAME_W, (i + 1) * cs.FRAME_W))
+                sheet[sl] = rgba
+                if g is not None:
+                    glow[sl] = g
+            has_glow = bool(glow[..., 3].any())
+            post.write_png(outdir / img, sheet)
+            if has_glow:
+                post.write_png(outdir / gl, glow)
+            elif (outdir / gl).exists():
+                (outdir / gl).unlink()
+            seen[tag] = {"key": skey, "glow": has_glow}
+            wrote += 1
+        sd = {"image": img}
         if has_glow:
-            gp = f"sprites/{it.id}.glow.png"
-            post.write_png(outdir / gp, glow)
-            total += (outdir / gp).stat().st_size
-            sd["glow"] = gp
-        sheets[it.id] = sd
-        a = {"kind": "crew.layer", "species": "human", "slot": it.slot, "order": it.order, "sheet": it.id,
-             "frameW": cw, "frameH": ch, "anchor": {"x": int(ax), "y": int(ay)}, "clips": clips}
+            sd["glow"] = gl
+        sheets[sid] = sd
+        a = assets.setdefault(it.id, {"kind": "crew.layer", "species": "human", "slot": it.slot, "order": it.order,
+                                      "frameW": cs.FRAME_W, "frameH": cs.FRAME_H, "anchor": {"x": cs.ANCHOR[0], "y": cs.ANCHOR[1]},
+                                      "clips": {}})
+        a["clips"][clip] = {"sheet": sid, "start": 0, "frames": n, "fps": fps, "loop": loop}
         if has_glow:
             a["glow"] = True
-        assets[it.id] = a
-    log(f"CREW cell {cw}x{ch} anchor {ax},{ay} sheet {len(cols) * cw}x{8 * ch} layers {len(items)} bytes {total}")
+    pp.parent.mkdir(parents=True, exist_ok=True)
+    pp.write_text(json.dumps(seen, indent=0))
+    for a in assets.values():
+        a["clips"] = dict(sorted(a["clips"].items(), key=lambda kv: [c for c, *_ in cs.CLIPS].index(kv[0])))
+    log(f"CREW sheets {len(sheets)} (written {wrote}, up to date {kept}); frame {cs.FRAME_W}x{cs.FRAME_H} anchor {cs.ANCHOR}")
     return sheets, assets
+
+
+def merge(manifest, sheets, assets, full, outdir):
+    """full: replace every human layer (and drop stale human crew sheet files). Otherwise update only the given layers' clips."""
+    human = lambda a: a["kind"] == "crew.layer" and a.get("species") == "human"  # noqa: E731
+    if full:
+        old = {s for a in manifest["assets"].values() if human(a) for s in _sheets_of(a)}
+        manifest["assets"] = {k: a for k, a in manifest["assets"].items() if not human(a)}
+        for s in old:
+            manifest["sheets"].pop(s, None)
+    for lid, a in assets.items():
+        cur = manifest["assets"].get(lid)
+        if cur and not full:
+            for c, cd in a["clips"].items():
+                old = cur["clips"].get(c)
+                if old and old["sheet"] != cd["sheet"]:
+                    manifest["sheets"].pop(old["sheet"], None)
+            cur["clips"].update(a["clips"])
+            cur["clips"] = dict(sorted(cur["clips"].items(), key=lambda kv: [c for c, *_ in cs.CLIPS].index(kv[0])))
+            glow = cur.get("glow") or a.get("glow")
+            cur.update({k: v for k, v in a.items() if k != "clips"})
+            if glow:
+                cur["glow"] = True
+        else:
+            manifest["assets"][lid] = a
+    manifest["sheets"].update(sheets)
+    if full:
+        keep = {s for a in manifest["assets"].values() for s in _sheets_of(a)}
+        for f in (outdir / "sprites").glob("crew.human.*.png"):
+            sid = f.name[:-len(".glow.png")] if f.name.endswith(".glow.png") else f.name[:-len(".png")]
+            if sid not in keep:
+                f.unlink()
+    return manifest
+
+
+def _sheets_of(a):
+    return {c.get("sheet", a.get("sheet")) for c in a.get("clips", {}).values()} | ({a["sheet"]} if a.get("sheet") else set())

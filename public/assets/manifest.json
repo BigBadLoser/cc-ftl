@@ -23,88 +23,514 @@
    "image": "sprites/consoles.png",
    "glow": "sprites/consoles.glow.png"
   },
-  "crew.human.arm.L.cyber": {
-   "image": "sprites/crew.human.arm.L.cyber.png",
-   "glow": "sprites/crew.human.arm.L.cyber.glow.png"
+  "crew.human.arm.L.cyber.idle": {
+   "image": "sprites/crew.human.arm.L.cyber.idle.png",
+   "glow": "sprites/crew.human.arm.L.cyber.idle.glow.png"
   },
-  "crew.human.arm.L.eva": {
-   "image": "sprites/crew.human.arm.L.eva.png"
+  "crew.human.arm.L.cyber.sit_idle": {
+   "image": "sprites/crew.human.arm.L.cyber.sit_idle.png",
+   "glow": "sprites/crew.human.arm.L.cyber.sit_idle.glow.png"
   },
-  "crew.human.arm.L.eva_cyber": {
-   "image": "sprites/crew.human.arm.L.eva_cyber.png",
-   "glow": "sprites/crew.human.arm.L.eva_cyber.glow.png"
+  "crew.human.arm.L.cyber.sit_work": {
+   "image": "sprites/crew.human.arm.L.cyber.sit_work.png",
+   "glow": "sprites/crew.human.arm.L.cyber.sit_work.glow.png"
   },
-  "crew.human.arm.L.flesh": {
-   "image": "sprites/crew.human.arm.L.flesh.png"
+  "crew.human.arm.L.cyber.sleep": {
+   "image": "sprites/crew.human.arm.L.cyber.sleep.png",
+   "glow": "sprites/crew.human.arm.L.cyber.sleep.glow.png"
   },
-  "crew.human.arm.R.cyber": {
-   "image": "sprites/crew.human.arm.R.cyber.png",
-   "glow": "sprites/crew.human.arm.R.cyber.glow.png"
+  "crew.human.arm.L.cyber.walk": {
+   "image": "sprites/crew.human.arm.L.cyber.walk.png",
+   "glow": "sprites/crew.human.arm.L.cyber.walk.glow.png"
   },
-  "crew.human.arm.R.eva": {
-   "image": "sprites/crew.human.arm.R.eva.png"
+  "crew.human.arm.L.cyber.work": {
+   "image": "sprites/crew.human.arm.L.cyber.work.png",
+   "glow": "sprites/crew.human.arm.L.cyber.work.glow.png"
   },
-  "crew.human.arm.R.flesh": {
-   "image": "sprites/crew.human.arm.R.flesh.png"
+  "crew.human.arm.L.eva.eva_float": {
+   "image": "sprites/crew.human.arm.L.eva.eva_float.png"
   },
-  "crew.human.body": {
-   "image": "sprites/crew.human.body.png"
+  "crew.human.arm.L.eva.idle": {
+   "image": "sprites/crew.human.arm.L.eva.idle.png"
   },
-  "crew.human.eyes.cyber": {
-   "image": "sprites/crew.human.eyes.cyber.png",
-   "glow": "sprites/crew.human.eyes.cyber.glow.png"
+  "crew.human.arm.L.eva.sit_idle": {
+   "image": "sprites/crew.human.arm.L.eva.sit_idle.png"
   },
-  "crew.human.eyes.organic": {
-   "image": "sprites/crew.human.eyes.organic.png"
+  "crew.human.arm.L.eva.sit_work": {
+   "image": "sprites/crew.human.arm.L.eva.sit_work.png"
   },
-  "crew.human.gear.back.engineer_rig": {
-   "image": "sprites/crew.human.gear.back.engineer_rig.png",
-   "glow": "sprites/crew.human.gear.back.engineer_rig.glow.png"
+  "crew.human.arm.L.eva.sleep": {
+   "image": "sprites/crew.human.arm.L.eva.sleep.png"
   },
-  "crew.human.gear.back.eva_pack": {
-   "image": "sprites/crew.human.gear.back.eva_pack.png",
-   "glow": "sprites/crew.human.gear.back.eva_pack.glow.png"
+  "crew.human.arm.L.eva.walk": {
+   "image": "sprites/crew.human.arm.L.eva.walk.png"
   },
-  "crew.human.gear.belt.tool_belt": {
-   "image": "sprites/crew.human.gear.belt.tool_belt.png"
+  "crew.human.arm.L.eva.work": {
+   "image": "sprites/crew.human.arm.L.eva.work.png"
   },
-  "crew.human.gear.head.eva_helmet": {
-   "image": "sprites/crew.human.gear.head.eva_helmet.png",
-   "glow": "sprites/crew.human.gear.head.eva_helmet.glow.png"
+  "crew.human.arm.L.eva_cyber.eva_float": {
+   "image": "sprites/crew.human.arm.L.eva_cyber.eva_float.png",
+   "glow": "sprites/crew.human.arm.L.eva_cyber.eva_float.glow.png"
   },
-  "crew.human.gear.head.welding_goggles": {
-   "image": "sprites/crew.human.gear.head.welding_goggles.png"
+  "crew.human.arm.L.eva_cyber.idle": {
+   "image": "sprites/crew.human.arm.L.eva_cyber.idle.png",
+   "glow": "sprites/crew.human.arm.L.eva_cyber.idle.glow.png"
   },
-  "crew.human.hair.mohawk": {
-   "image": "sprites/crew.human.hair.mohawk.png"
+  "crew.human.arm.L.eva_cyber.sit_idle": {
+   "image": "sprites/crew.human.arm.L.eva_cyber.sit_idle.png",
+   "glow": "sprites/crew.human.arm.L.eva_cyber.sit_idle.glow.png"
   },
-  "crew.human.hair.ponytail": {
-   "image": "sprites/crew.human.hair.ponytail.png"
+  "crew.human.arm.L.eva_cyber.sit_work": {
+   "image": "sprites/crew.human.arm.L.eva_cyber.sit_work.png",
+   "glow": "sprites/crew.human.arm.L.eva_cyber.sit_work.glow.png"
   },
-  "crew.human.hair.shaved": {
-   "image": "sprites/crew.human.hair.shaved.png"
+  "crew.human.arm.L.eva_cyber.sleep": {
+   "image": "sprites/crew.human.arm.L.eva_cyber.sleep.png",
+   "glow": "sprites/crew.human.arm.L.eva_cyber.sleep.glow.png"
   },
-  "crew.human.hair.short": {
-   "image": "sprites/crew.human.hair.short.png"
+  "crew.human.arm.L.eva_cyber.walk": {
+   "image": "sprites/crew.human.arm.L.eva_cyber.walk.png",
+   "glow": "sprites/crew.human.arm.L.eva_cyber.walk.glow.png"
   },
-  "crew.human.implant.temple.neural_jack": {
-   "image": "sprites/crew.human.implant.temple.neural_jack.png",
-   "glow": "sprites/crew.human.implant.temple.neural_jack.glow.png"
+  "crew.human.arm.L.eva_cyber.work": {
+   "image": "sprites/crew.human.arm.L.eva_cyber.work.png",
+   "glow": "sprites/crew.human.arm.L.eva_cyber.work.glow.png"
   },
-  "crew.human.legs.cargo_pants": {
-   "image": "sprites/crew.human.legs.cargo_pants.png"
+  "crew.human.arm.L.flesh.idle": {
+   "image": "sprites/crew.human.arm.L.flesh.idle.png"
   },
-  "crew.human.legs.eva": {
-   "image": "sprites/crew.human.legs.eva.png"
+  "crew.human.arm.L.flesh.sit_idle": {
+   "image": "sprites/crew.human.arm.L.flesh.sit_idle.png"
   },
-  "crew.human.torso.eva": {
-   "image": "sprites/crew.human.torso.eva.png"
+  "crew.human.arm.L.flesh.sit_work": {
+   "image": "sprites/crew.human.arm.L.flesh.sit_work.png"
   },
-  "crew.human.torso.tee": {
-   "image": "sprites/crew.human.torso.tee.png"
+  "crew.human.arm.L.flesh.sleep": {
+   "image": "sprites/crew.human.arm.L.flesh.sleep.png"
   },
-  "crew.human.torso.work_shirt": {
-   "image": "sprites/crew.human.torso.work_shirt.png"
+  "crew.human.arm.L.flesh.walk": {
+   "image": "sprites/crew.human.arm.L.flesh.walk.png"
+  },
+  "crew.human.arm.L.flesh.work": {
+   "image": "sprites/crew.human.arm.L.flesh.work.png"
+  },
+  "crew.human.arm.R.cyber.idle": {
+   "image": "sprites/crew.human.arm.R.cyber.idle.png",
+   "glow": "sprites/crew.human.arm.R.cyber.idle.glow.png"
+  },
+  "crew.human.arm.R.cyber.sit_idle": {
+   "image": "sprites/crew.human.arm.R.cyber.sit_idle.png",
+   "glow": "sprites/crew.human.arm.R.cyber.sit_idle.glow.png"
+  },
+  "crew.human.arm.R.cyber.sit_work": {
+   "image": "sprites/crew.human.arm.R.cyber.sit_work.png",
+   "glow": "sprites/crew.human.arm.R.cyber.sit_work.glow.png"
+  },
+  "crew.human.arm.R.cyber.sleep": {
+   "image": "sprites/crew.human.arm.R.cyber.sleep.png",
+   "glow": "sprites/crew.human.arm.R.cyber.sleep.glow.png"
+  },
+  "crew.human.arm.R.cyber.walk": {
+   "image": "sprites/crew.human.arm.R.cyber.walk.png",
+   "glow": "sprites/crew.human.arm.R.cyber.walk.glow.png"
+  },
+  "crew.human.arm.R.cyber.work": {
+   "image": "sprites/crew.human.arm.R.cyber.work.png",
+   "glow": "sprites/crew.human.arm.R.cyber.work.glow.png"
+  },
+  "crew.human.arm.R.eva.eva_float": {
+   "image": "sprites/crew.human.arm.R.eva.eva_float.png"
+  },
+  "crew.human.arm.R.eva.idle": {
+   "image": "sprites/crew.human.arm.R.eva.idle.png"
+  },
+  "crew.human.arm.R.eva.sit_idle": {
+   "image": "sprites/crew.human.arm.R.eva.sit_idle.png"
+  },
+  "crew.human.arm.R.eva.sit_work": {
+   "image": "sprites/crew.human.arm.R.eva.sit_work.png"
+  },
+  "crew.human.arm.R.eva.sleep": {
+   "image": "sprites/crew.human.arm.R.eva.sleep.png"
+  },
+  "crew.human.arm.R.eva.walk": {
+   "image": "sprites/crew.human.arm.R.eva.walk.png"
+  },
+  "crew.human.arm.R.eva.work": {
+   "image": "sprites/crew.human.arm.R.eva.work.png"
+  },
+  "crew.human.arm.R.flesh.idle": {
+   "image": "sprites/crew.human.arm.R.flesh.idle.png"
+  },
+  "crew.human.arm.R.flesh.sit_idle": {
+   "image": "sprites/crew.human.arm.R.flesh.sit_idle.png"
+  },
+  "crew.human.arm.R.flesh.sit_work": {
+   "image": "sprites/crew.human.arm.R.flesh.sit_work.png"
+  },
+  "crew.human.arm.R.flesh.sleep": {
+   "image": "sprites/crew.human.arm.R.flesh.sleep.png"
+  },
+  "crew.human.arm.R.flesh.walk": {
+   "image": "sprites/crew.human.arm.R.flesh.walk.png"
+  },
+  "crew.human.arm.R.flesh.work": {
+   "image": "sprites/crew.human.arm.R.flesh.work.png"
+  },
+  "crew.human.body.eva_float": {
+   "image": "sprites/crew.human.body.eva_float.png"
+  },
+  "crew.human.body.idle": {
+   "image": "sprites/crew.human.body.idle.png"
+  },
+  "crew.human.body.sit_idle": {
+   "image": "sprites/crew.human.body.sit_idle.png"
+  },
+  "crew.human.body.sit_work": {
+   "image": "sprites/crew.human.body.sit_work.png"
+  },
+  "crew.human.body.sleep": {
+   "image": "sprites/crew.human.body.sleep.png"
+  },
+  "crew.human.body.walk": {
+   "image": "sprites/crew.human.body.walk.png"
+  },
+  "crew.human.body.work": {
+   "image": "sprites/crew.human.body.work.png"
+  },
+  "crew.human.eyes.cyber.idle": {
+   "image": "sprites/crew.human.eyes.cyber.idle.png",
+   "glow": "sprites/crew.human.eyes.cyber.idle.glow.png"
+  },
+  "crew.human.eyes.cyber.sit_idle": {
+   "image": "sprites/crew.human.eyes.cyber.sit_idle.png",
+   "glow": "sprites/crew.human.eyes.cyber.sit_idle.glow.png"
+  },
+  "crew.human.eyes.cyber.sit_work": {
+   "image": "sprites/crew.human.eyes.cyber.sit_work.png",
+   "glow": "sprites/crew.human.eyes.cyber.sit_work.glow.png"
+  },
+  "crew.human.eyes.cyber.sleep": {
+   "image": "sprites/crew.human.eyes.cyber.sleep.png",
+   "glow": "sprites/crew.human.eyes.cyber.sleep.glow.png"
+  },
+  "crew.human.eyes.cyber.walk": {
+   "image": "sprites/crew.human.eyes.cyber.walk.png",
+   "glow": "sprites/crew.human.eyes.cyber.walk.glow.png"
+  },
+  "crew.human.eyes.cyber.work": {
+   "image": "sprites/crew.human.eyes.cyber.work.png",
+   "glow": "sprites/crew.human.eyes.cyber.work.glow.png"
+  },
+  "crew.human.eyes.organic.idle": {
+   "image": "sprites/crew.human.eyes.organic.idle.png"
+  },
+  "crew.human.eyes.organic.sit_idle": {
+   "image": "sprites/crew.human.eyes.organic.sit_idle.png"
+  },
+  "crew.human.eyes.organic.sit_work": {
+   "image": "sprites/crew.human.eyes.organic.sit_work.png"
+  },
+  "crew.human.eyes.organic.sleep": {
+   "image": "sprites/crew.human.eyes.organic.sleep.png"
+  },
+  "crew.human.eyes.organic.walk": {
+   "image": "sprites/crew.human.eyes.organic.walk.png"
+  },
+  "crew.human.eyes.organic.work": {
+   "image": "sprites/crew.human.eyes.organic.work.png"
+  },
+  "crew.human.gear.back.engineer_rig.idle": {
+   "image": "sprites/crew.human.gear.back.engineer_rig.idle.png",
+   "glow": "sprites/crew.human.gear.back.engineer_rig.idle.glow.png"
+  },
+  "crew.human.gear.back.engineer_rig.sleep": {
+   "image": "sprites/crew.human.gear.back.engineer_rig.sleep.png",
+   "glow": "sprites/crew.human.gear.back.engineer_rig.sleep.glow.png"
+  },
+  "crew.human.gear.back.engineer_rig.walk": {
+   "image": "sprites/crew.human.gear.back.engineer_rig.walk.png",
+   "glow": "sprites/crew.human.gear.back.engineer_rig.walk.glow.png"
+  },
+  "crew.human.gear.back.engineer_rig.work": {
+   "image": "sprites/crew.human.gear.back.engineer_rig.work.png",
+   "glow": "sprites/crew.human.gear.back.engineer_rig.work.glow.png"
+  },
+  "crew.human.gear.back.eva_pack.eva_float": {
+   "image": "sprites/crew.human.gear.back.eva_pack.eva_float.png",
+   "glow": "sprites/crew.human.gear.back.eva_pack.eva_float.glow.png"
+  },
+  "crew.human.gear.back.eva_pack.idle": {
+   "image": "sprites/crew.human.gear.back.eva_pack.idle.png",
+   "glow": "sprites/crew.human.gear.back.eva_pack.idle.glow.png"
+  },
+  "crew.human.gear.back.eva_pack.sleep": {
+   "image": "sprites/crew.human.gear.back.eva_pack.sleep.png",
+   "glow": "sprites/crew.human.gear.back.eva_pack.sleep.glow.png"
+  },
+  "crew.human.gear.back.eva_pack.walk": {
+   "image": "sprites/crew.human.gear.back.eva_pack.walk.png",
+   "glow": "sprites/crew.human.gear.back.eva_pack.walk.glow.png"
+  },
+  "crew.human.gear.back.eva_pack.work": {
+   "image": "sprites/crew.human.gear.back.eva_pack.work.png",
+   "glow": "sprites/crew.human.gear.back.eva_pack.work.glow.png"
+  },
+  "crew.human.gear.belt.tool_belt.idle": {
+   "image": "sprites/crew.human.gear.belt.tool_belt.idle.png"
+  },
+  "crew.human.gear.belt.tool_belt.sit_idle": {
+   "image": "sprites/crew.human.gear.belt.tool_belt.sit_idle.png"
+  },
+  "crew.human.gear.belt.tool_belt.sit_work": {
+   "image": "sprites/crew.human.gear.belt.tool_belt.sit_work.png"
+  },
+  "crew.human.gear.belt.tool_belt.sleep": {
+   "image": "sprites/crew.human.gear.belt.tool_belt.sleep.png"
+  },
+  "crew.human.gear.belt.tool_belt.walk": {
+   "image": "sprites/crew.human.gear.belt.tool_belt.walk.png"
+  },
+  "crew.human.gear.belt.tool_belt.work": {
+   "image": "sprites/crew.human.gear.belt.tool_belt.work.png"
+  },
+  "crew.human.gear.head.eva_helmet.eva_float": {
+   "image": "sprites/crew.human.gear.head.eva_helmet.eva_float.png",
+   "glow": "sprites/crew.human.gear.head.eva_helmet.eva_float.glow.png"
+  },
+  "crew.human.gear.head.eva_helmet.idle": {
+   "image": "sprites/crew.human.gear.head.eva_helmet.idle.png",
+   "glow": "sprites/crew.human.gear.head.eva_helmet.idle.glow.png"
+  },
+  "crew.human.gear.head.eva_helmet.sit_idle": {
+   "image": "sprites/crew.human.gear.head.eva_helmet.sit_idle.png",
+   "glow": "sprites/crew.human.gear.head.eva_helmet.sit_idle.glow.png"
+  },
+  "crew.human.gear.head.eva_helmet.sit_work": {
+   "image": "sprites/crew.human.gear.head.eva_helmet.sit_work.png",
+   "glow": "sprites/crew.human.gear.head.eva_helmet.sit_work.glow.png"
+  },
+  "crew.human.gear.head.eva_helmet.sleep": {
+   "image": "sprites/crew.human.gear.head.eva_helmet.sleep.png",
+   "glow": "sprites/crew.human.gear.head.eva_helmet.sleep.glow.png"
+  },
+  "crew.human.gear.head.eva_helmet.walk": {
+   "image": "sprites/crew.human.gear.head.eva_helmet.walk.png",
+   "glow": "sprites/crew.human.gear.head.eva_helmet.walk.glow.png"
+  },
+  "crew.human.gear.head.eva_helmet.work": {
+   "image": "sprites/crew.human.gear.head.eva_helmet.work.png",
+   "glow": "sprites/crew.human.gear.head.eva_helmet.work.glow.png"
+  },
+  "crew.human.gear.head.welding_goggles.idle": {
+   "image": "sprites/crew.human.gear.head.welding_goggles.idle.png"
+  },
+  "crew.human.gear.head.welding_goggles.sit_idle": {
+   "image": "sprites/crew.human.gear.head.welding_goggles.sit_idle.png"
+  },
+  "crew.human.gear.head.welding_goggles.sit_work": {
+   "image": "sprites/crew.human.gear.head.welding_goggles.sit_work.png"
+  },
+  "crew.human.gear.head.welding_goggles.sleep": {
+   "image": "sprites/crew.human.gear.head.welding_goggles.sleep.png"
+  },
+  "crew.human.gear.head.welding_goggles.walk": {
+   "image": "sprites/crew.human.gear.head.welding_goggles.walk.png"
+  },
+  "crew.human.gear.head.welding_goggles.work": {
+   "image": "sprites/crew.human.gear.head.welding_goggles.work.png"
+  },
+  "crew.human.hair.mohawk.idle": {
+   "image": "sprites/crew.human.hair.mohawk.idle.png"
+  },
+  "crew.human.hair.mohawk.sit_idle": {
+   "image": "sprites/crew.human.hair.mohawk.sit_idle.png"
+  },
+  "crew.human.hair.mohawk.sit_work": {
+   "image": "sprites/crew.human.hair.mohawk.sit_work.png"
+  },
+  "crew.human.hair.mohawk.sleep": {
+   "image": "sprites/crew.human.hair.mohawk.sleep.png"
+  },
+  "crew.human.hair.mohawk.walk": {
+   "image": "sprites/crew.human.hair.mohawk.walk.png"
+  },
+  "crew.human.hair.mohawk.work": {
+   "image": "sprites/crew.human.hair.mohawk.work.png"
+  },
+  "crew.human.hair.ponytail.idle": {
+   "image": "sprites/crew.human.hair.ponytail.idle.png"
+  },
+  "crew.human.hair.ponytail.sit_idle": {
+   "image": "sprites/crew.human.hair.ponytail.sit_idle.png"
+  },
+  "crew.human.hair.ponytail.sit_work": {
+   "image": "sprites/crew.human.hair.ponytail.sit_work.png"
+  },
+  "crew.human.hair.ponytail.sleep": {
+   "image": "sprites/crew.human.hair.ponytail.sleep.png"
+  },
+  "crew.human.hair.ponytail.walk": {
+   "image": "sprites/crew.human.hair.ponytail.walk.png"
+  },
+  "crew.human.hair.ponytail.work": {
+   "image": "sprites/crew.human.hair.ponytail.work.png"
+  },
+  "crew.human.hair.shaved.idle": {
+   "image": "sprites/crew.human.hair.shaved.idle.png"
+  },
+  "crew.human.hair.shaved.sit_idle": {
+   "image": "sprites/crew.human.hair.shaved.sit_idle.png"
+  },
+  "crew.human.hair.shaved.sit_work": {
+   "image": "sprites/crew.human.hair.shaved.sit_work.png"
+  },
+  "crew.human.hair.shaved.sleep": {
+   "image": "sprites/crew.human.hair.shaved.sleep.png"
+  },
+  "crew.human.hair.shaved.walk": {
+   "image": "sprites/crew.human.hair.shaved.walk.png"
+  },
+  "crew.human.hair.shaved.work": {
+   "image": "sprites/crew.human.hair.shaved.work.png"
+  },
+  "crew.human.hair.short.idle": {
+   "image": "sprites/crew.human.hair.short.idle.png"
+  },
+  "crew.human.hair.short.sit_idle": {
+   "image": "sprites/crew.human.hair.short.sit_idle.png"
+  },
+  "crew.human.hair.short.sit_work": {
+   "image": "sprites/crew.human.hair.short.sit_work.png"
+  },
+  "crew.human.hair.short.sleep": {
+   "image": "sprites/crew.human.hair.short.sleep.png"
+  },
+  "crew.human.hair.short.walk": {
+   "image": "sprites/crew.human.hair.short.walk.png"
+  },
+  "crew.human.hair.short.work": {
+   "image": "sprites/crew.human.hair.short.work.png"
+  },
+  "crew.human.implant.temple.neural_jack.idle": {
+   "image": "sprites/crew.human.implant.temple.neural_jack.idle.png",
+   "glow": "sprites/crew.human.implant.temple.neural_jack.idle.glow.png"
+  },
+  "crew.human.implant.temple.neural_jack.sit_idle": {
+   "image": "sprites/crew.human.implant.temple.neural_jack.sit_idle.png",
+   "glow": "sprites/crew.human.implant.temple.neural_jack.sit_idle.glow.png"
+  },
+  "crew.human.implant.temple.neural_jack.sit_work": {
+   "image": "sprites/crew.human.implant.temple.neural_jack.sit_work.png",
+   "glow": "sprites/crew.human.implant.temple.neural_jack.sit_work.glow.png"
+  },
+  "crew.human.implant.temple.neural_jack.sleep": {
+   "image": "sprites/crew.human.implant.temple.neural_jack.sleep.png",
+   "glow": "sprites/crew.human.implant.temple.neural_jack.sleep.glow.png"
+  },
+  "crew.human.implant.temple.neural_jack.walk": {
+   "image": "sprites/crew.human.implant.temple.neural_jack.walk.png",
+   "glow": "sprites/crew.human.implant.temple.neural_jack.walk.glow.png"
+  },
+  "crew.human.implant.temple.neural_jack.work": {
+   "image": "sprites/crew.human.implant.temple.neural_jack.work.png",
+   "glow": "sprites/crew.human.implant.temple.neural_jack.work.glow.png"
+  },
+  "crew.human.legs.cargo_pants.idle": {
+   "image": "sprites/crew.human.legs.cargo_pants.idle.png"
+  },
+  "crew.human.legs.cargo_pants.sit_idle": {
+   "image": "sprites/crew.human.legs.cargo_pants.sit_idle.png"
+  },
+  "crew.human.legs.cargo_pants.sit_work": {
+   "image": "sprites/crew.human.legs.cargo_pants.sit_work.png"
+  },
+  "crew.human.legs.cargo_pants.sleep": {
+   "image": "sprites/crew.human.legs.cargo_pants.sleep.png"
+  },
+  "crew.human.legs.cargo_pants.walk": {
+   "image": "sprites/crew.human.legs.cargo_pants.walk.png"
+  },
+  "crew.human.legs.cargo_pants.work": {
+   "image": "sprites/crew.human.legs.cargo_pants.work.png"
+  },
+  "crew.human.legs.eva.eva_float": {
+   "image": "sprites/crew.human.legs.eva.eva_float.png"
+  },
+  "crew.human.legs.eva.idle": {
+   "image": "sprites/crew.human.legs.eva.idle.png"
+  },
+  "crew.human.legs.eva.sit_idle": {
+   "image": "sprites/crew.human.legs.eva.sit_idle.png"
+  },
+  "crew.human.legs.eva.sit_work": {
+   "image": "sprites/crew.human.legs.eva.sit_work.png"
+  },
+  "crew.human.legs.eva.sleep": {
+   "image": "sprites/crew.human.legs.eva.sleep.png"
+  },
+  "crew.human.legs.eva.walk": {
+   "image": "sprites/crew.human.legs.eva.walk.png"
+  },
+  "crew.human.legs.eva.work": {
+   "image": "sprites/crew.human.legs.eva.work.png"
+  },
+  "crew.human.torso.eva.eva_float": {
+   "image": "sprites/crew.human.torso.eva.eva_float.png"
+  },
+  "crew.human.torso.eva.idle": {
+   "image": "sprites/crew.human.torso.eva.idle.png"
+  },
+  "crew.human.torso.eva.sit_idle": {
+   "image": "sprites/crew.human.torso.eva.sit_idle.png"
+  },
+  "crew.human.torso.eva.sit_work": {
+   "image": "sprites/crew.human.torso.eva.sit_work.png"
+  },
+  "crew.human.torso.eva.sleep": {
+   "image": "sprites/crew.human.torso.eva.sleep.png"
+  },
+  "crew.human.torso.eva.walk": {
+   "image": "sprites/crew.human.torso.eva.walk.png"
+  },
+  "crew.human.torso.eva.work": {
+   "image": "sprites/crew.human.torso.eva.work.png"
+  },
+  "crew.human.torso.tee.idle": {
+   "image": "sprites/crew.human.torso.tee.idle.png"
+  },
+  "crew.human.torso.tee.sit_idle": {
+   "image": "sprites/crew.human.torso.tee.sit_idle.png"
+  },
+  "crew.human.torso.tee.sit_work": {
+   "image": "sprites/crew.human.torso.tee.sit_work.png"
+  },
+  "crew.human.torso.tee.sleep": {
+   "image": "sprites/crew.human.torso.tee.sleep.png"
+  },
+  "crew.human.torso.tee.walk": {
+   "image": "sprites/crew.human.torso.tee.walk.png"
+  },
+  "crew.human.torso.tee.work": {
+   "image": "sprites/crew.human.torso.tee.work.png"
+  },
+  "crew.human.torso.work_shirt.idle": {
+   "image": "sprites/crew.human.torso.work_shirt.idle.png"
+  },
+  "crew.human.torso.work_shirt.sit_idle": {
+   "image": "sprites/crew.human.torso.work_shirt.sit_idle.png"
+  },
+  "crew.human.torso.work_shirt.sit_work": {
+   "image": "sprites/crew.human.torso.work_shirt.sit_work.png"
+  },
+  "crew.human.torso.work_shirt.sleep": {
+   "image": "sprites/crew.human.torso.work_shirt.sleep.png"
+  },
+  "crew.human.torso.work_shirt.walk": {
+   "image": "sprites/crew.human.torso.work_shirt.walk.png"
+  },
+  "crew.human.torso.work_shirt.work": {
+   "image": "sprites/crew.human.torso.work_shirt.work.png"
   },
   "crew.robot.body.repair": {
    "image": "sprites/crew.robot.body.repair.png",
@@ -164,54 +590,53 @@
    "species": "human",
    "slot": "arm.L",
    "order": 51,
-   "sheet": "crew.human.arm.L.cyber",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.arm.L.cyber.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.arm.L.cyber.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.arm.L.cyber.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.arm.L.cyber.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.arm.L.cyber.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.arm.L.cyber.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    },
@@ -222,52 +647,58 @@
    "species": "human",
    "slot": "arm.L",
    "order": 51,
-   "sheet": "crew.human.arm.L.eva",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.arm.L.eva.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.arm.L.eva.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.arm.L.eva.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.arm.L.eva.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.arm.L.eva.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.arm.L.eva.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "eva_float": {
-     "start": 31,
+     "sheet": "crew.human.arm.L.eva.eva_float",
+     "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
@@ -279,52 +710,58 @@
    "species": "human",
    "slot": "arm.L",
    "order": 51,
-   "sheet": "crew.human.arm.L.eva_cyber",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.arm.L.eva_cyber.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.arm.L.eva_cyber.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.arm.L.eva_cyber.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.arm.L.eva_cyber.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.arm.L.eva_cyber.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.arm.L.eva_cyber.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "eva_float": {
-     "start": 31,
+     "sheet": "crew.human.arm.L.eva_cyber.eva_float",
+     "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
@@ -337,54 +774,53 @@
    "species": "human",
    "slot": "arm.L",
    "order": 51,
-   "sheet": "crew.human.arm.L.flesh",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.arm.L.flesh.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.arm.L.flesh.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.arm.L.flesh.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.arm.L.flesh.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.arm.L.flesh.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.arm.L.flesh.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -394,54 +830,53 @@
    "species": "human",
    "slot": "arm.R",
    "order": 50,
-   "sheet": "crew.human.arm.R.cyber",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.arm.R.cyber.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.arm.R.cyber.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.arm.R.cyber.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.arm.R.cyber.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.arm.R.cyber.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.arm.R.cyber.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    },
@@ -452,52 +887,58 @@
    "species": "human",
    "slot": "arm.R",
    "order": 50,
-   "sheet": "crew.human.arm.R.eva",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.arm.R.eva.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.arm.R.eva.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.arm.R.eva.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.arm.R.eva.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.arm.R.eva.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.arm.R.eva.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "eva_float": {
-     "start": 31,
+     "sheet": "crew.human.arm.R.eva.eva_float",
+     "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
@@ -509,54 +950,53 @@
    "species": "human",
    "slot": "arm.R",
    "order": 50,
-   "sheet": "crew.human.arm.R.flesh",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.arm.R.flesh.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.arm.R.flesh.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.arm.R.flesh.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.arm.R.flesh.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.arm.R.flesh.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.arm.R.flesh.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -566,52 +1006,58 @@
    "species": "human",
    "slot": "body",
    "order": 0,
-   "sheet": "crew.human.body",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.body.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.body.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.body.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.body.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.body.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.body.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "eva_float": {
-     "start": 31,
+     "sheet": "crew.human.body.eva_float",
+     "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
@@ -623,54 +1069,53 @@
    "species": "human",
    "slot": "eyes",
    "order": 10,
-   "sheet": "crew.human.eyes.cyber",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.eyes.cyber.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.eyes.cyber.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.eyes.cyber.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.eyes.cyber.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.eyes.cyber.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.eyes.cyber.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    },
@@ -681,54 +1126,53 @@
    "species": "human",
    "slot": "eyes",
    "order": 10,
-   "sheet": "crew.human.eyes.organic",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.eyes.organic.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.eyes.organic.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.eyes.organic.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.eyes.organic.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.eyes.organic.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.eyes.organic.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -738,54 +1182,39 @@
    "species": "human",
    "slot": "gear.back",
    "order": 80,
-   "sheet": "crew.human.gear.back.engineer_rig",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.gear.back.engineer_rig.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.gear.back.engineer_rig.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.gear.back.engineer_rig.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.gear.back.engineer_rig.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
-     "loop": true
-    },
-    "sit_idle": {
-     "start": 21,
-     "frames": 4,
-     "fps": 3,
-     "loop": true
-    },
-    "sit_work": {
-     "start": 25,
-     "frames": 6,
-     "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    },
@@ -796,52 +1225,44 @@
    "species": "human",
    "slot": "gear.back",
    "order": 80,
-   "sheet": "crew.human.gear.back.eva_pack",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.gear.back.eva_pack.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.gear.back.eva_pack.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.gear.back.eva_pack.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.gear.back.eva_pack.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
-    "sit_idle": {
-     "start": 21,
-     "frames": 4,
-     "fps": 3,
-     "loop": true
-    },
-    "sit_work": {
-     "start": 25,
-     "frames": 6,
-     "fps": 8,
-     "loop": true
-    },
     "eva_float": {
-     "start": 31,
+     "sheet": "crew.human.gear.back.eva_pack.eva_float",
+     "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
@@ -854,54 +1275,53 @@
    "species": "human",
    "slot": "gear.belt",
    "order": 40,
-   "sheet": "crew.human.gear.belt.tool_belt",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.gear.belt.tool_belt.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.gear.belt.tool_belt.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.gear.belt.tool_belt.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.gear.belt.tool_belt.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.gear.belt.tool_belt.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.gear.belt.tool_belt.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -911,52 +1331,58 @@
    "species": "human",
    "slot": "gear.head",
    "order": 70,
-   "sheet": "crew.human.gear.head.eva_helmet",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.gear.head.eva_helmet.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.gear.head.eva_helmet.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.gear.head.eva_helmet.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.gear.head.eva_helmet.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.gear.head.eva_helmet.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.gear.head.eva_helmet.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "eva_float": {
-     "start": 31,
+     "sheet": "crew.human.gear.head.eva_helmet.eva_float",
+     "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
@@ -969,54 +1395,53 @@
    "species": "human",
    "slot": "gear.head",
    "order": 70,
-   "sheet": "crew.human.gear.head.welding_goggles",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.gear.head.welding_goggles.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.gear.head.welding_goggles.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.gear.head.welding_goggles.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.gear.head.welding_goggles.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.gear.head.welding_goggles.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.gear.head.welding_goggles.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -1026,54 +1451,53 @@
    "species": "human",
    "slot": "hair",
    "order": 60,
-   "sheet": "crew.human.hair.mohawk",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.hair.mohawk.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.hair.mohawk.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.hair.mohawk.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.hair.mohawk.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.hair.mohawk.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.hair.mohawk.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -1083,54 +1507,53 @@
    "species": "human",
    "slot": "hair",
    "order": 60,
-   "sheet": "crew.human.hair.ponytail",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.hair.ponytail.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.hair.ponytail.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.hair.ponytail.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.hair.ponytail.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.hair.ponytail.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.hair.ponytail.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -1140,54 +1563,53 @@
    "species": "human",
    "slot": "hair",
    "order": 60,
-   "sheet": "crew.human.hair.shaved",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.hair.shaved.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.hair.shaved.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.hair.shaved.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.hair.shaved.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.hair.shaved.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.hair.shaved.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -1197,54 +1619,53 @@
    "species": "human",
    "slot": "hair",
    "order": 60,
-   "sheet": "crew.human.hair.short",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.hair.short.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.hair.short.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.hair.short.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.hair.short.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.hair.short.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.hair.short.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -1254,54 +1675,53 @@
    "species": "human",
    "slot": "implant.temple",
    "order": 65,
-   "sheet": "crew.human.implant.temple.neural_jack",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.implant.temple.neural_jack.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.implant.temple.neural_jack.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.implant.temple.neural_jack.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.implant.temple.neural_jack.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.implant.temple.neural_jack.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.implant.temple.neural_jack.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    },
@@ -1312,54 +1732,53 @@
    "species": "human",
    "slot": "legs",
    "order": 20,
-   "sheet": "crew.human.legs.cargo_pants",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.legs.cargo_pants.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.legs.cargo_pants.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.legs.cargo_pants.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.legs.cargo_pants.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.legs.cargo_pants.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.legs.cargo_pants.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -1369,52 +1788,58 @@
    "species": "human",
    "slot": "legs",
    "order": 20,
-   "sheet": "crew.human.legs.eva",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.legs.eva.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.legs.eva.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.legs.eva.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.legs.eva.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.legs.eva.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.legs.eva.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "eva_float": {
-     "start": 31,
+     "sheet": "crew.human.legs.eva.eva_float",
+     "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
@@ -1426,52 +1851,58 @@
    "species": "human",
    "slot": "torso",
    "order": 30,
-   "sheet": "crew.human.torso.eva",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.torso.eva.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.torso.eva.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.torso.eva.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.torso.eva.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.torso.eva.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.torso.eva.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "eva_float": {
-     "start": 31,
+     "sheet": "crew.human.torso.eva.eva_float",
+     "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
@@ -1483,54 +1914,53 @@
    "species": "human",
    "slot": "torso",
    "order": 30,
-   "sheet": "crew.human.torso.tee",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.torso.tee.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.torso.tee.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.torso.tee.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.torso.tee.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.torso.tee.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.torso.tee.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }
@@ -1540,54 +1970,53 @@
    "species": "human",
    "slot": "torso",
    "order": 30,
-   "sheet": "crew.human.torso.work_shirt",
-   "frameW": 104,
-   "frameH": 91,
+   "frameW": 128,
+   "frameH": 120,
    "anchor": {
-    "x": 52,
-    "y": 76
+    "x": 64,
+    "y": 94
    },
    "clips": {
     "idle": {
+     "sheet": "crew.human.torso.work_shirt.idle",
      "start": 0,
      "frames": 4,
      "fps": 4,
      "loop": true
     },
     "walk": {
-     "start": 4,
+     "sheet": "crew.human.torso.work_shirt.walk",
+     "start": 0,
      "frames": 8,
      "fps": 10,
      "loop": true
     },
     "work": {
-     "start": 12,
+     "sheet": "crew.human.torso.work_shirt.work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
      "loop": true
     },
     "sleep": {
-     "start": 18,
+     "sheet": "crew.human.torso.work_shirt.sleep",
+     "start": 0,
      "frames": 3,
      "fps": 2,
      "loop": true
     },
     "sit_idle": {
-     "start": 21,
+     "sheet": "crew.human.torso.work_shirt.sit_idle",
+     "start": 0,
      "frames": 4,
      "fps": 3,
      "loop": true
     },
     "sit_work": {
-     "start": 25,
+     "sheet": "crew.human.torso.work_shirt.sit_work",
+     "start": 0,
      "frames": 6,
      "fps": 8,
-     "loop": true
-    },
-    "eva_float": {
-     "start": 31,
-     "frames": 4,
-     "fps": 4,
      "loop": true
     }
    }

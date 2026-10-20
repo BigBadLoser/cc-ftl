@@ -1,6 +1,6 @@
 # cc-ftl
 
-Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). Read `docs/STATUS.md`
+Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). Read `docs/HANDOFF.md` and `docs/STATUS.md`
 (current state, branches, decisions) first, then
 `docs/DESIGN.md` and `docs/ARCHITECTURE.md` before non-trivial work.
 
@@ -43,3 +43,10 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   (`<branch>-cc-ftl.bigbadloser.workers.dev`) are unreliable, so finished, verified work goes to `main`.
 - Visual changes: send the user the screenshots (default and zoomed-in) and get their approval before
   merging to `main`. Don't merge visual work on the strength of your own review alone.
+
+- Models: subagents default to Sonnet; if a task warrants Opus, say so and get the user's sign-off first.
+- Reference repos (e.g. `bigbadloser/space-web-game`) are design reference only; never port code from them.
+- No save migrations while this is a prototype: bump `SAVE_VERSION` instead.
+- Terminology: a **node** is one playable grid, a **sector** is a group of nodes, **hyperlanes** link sectors (older code
+  says "sector" for a node; a rename is pending).
+- Don't `pkill -f` (it can kill your own shell); stop processes by PID.

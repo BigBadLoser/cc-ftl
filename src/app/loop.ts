@@ -49,6 +49,8 @@ export interface Loop {
   stop(): void;
   setSpeed(speed: Speed): void;
   getSpeed(): Speed;
+  /** Run one tick now (even paused) so queued commands apply: trade offers answer while the game is paused. */
+  flush(): void;
   readonly alpha: number;
 }
 
@@ -112,6 +114,11 @@ export function createLoop(opts: LoopOptions): Loop {
       speed = s;
     },
     getSpeed: () => speed,
+    flush() {
+      sim.step();
+      const events = sim.events.drain();
+      if (events.length) opts.onEvents?.(events);
+    },
     get alpha() {
       return alpha;
     },

@@ -147,8 +147,10 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
 **Crew.**
 - Composited at runtime from **sprite layers**: a species body plus slot layers (hair, eyes, arms,
   implants, clothing, gear).
-- Every layer has the same frame layout (8 directions x clip frames) and the same anchor, so the layers
-  always line up.
+- Every layer has the same fixed frame size and anchor (`tools/blender/sprites/crew_spec.py`), and one sheet
+  per clip (8 directions x that clip's frames), so the layers always line up and a new item or clip never
+  touches existing sheets. A layer lacking a clip falls back to idle, or is hidden for the seated clips
+  (`resolveClip` in `src/render/loadout.ts`).
 - Layers are rendered in Blender with the rest of the character as a **holdout**, so the hidden parts
   are already cut out. Layers then stack in a fixed order in every direction.
 - Which layers to use comes from sim components (species, role gear, implants, injuries, appearance
@@ -218,6 +220,20 @@ palette.json    the single palette, read by Blender scripts and the game
   only in the glow pass.
 - **Crew:** about 60 px tall at 1x, 8 directions (no mirroring, since characters are asymmetric),
   clips at fixed frame counts (idle 4, walk 8, work 6, and more as needed).
+  - **Sheets:** one per item and clip, `crew.human.torso.tee.walk` (+ `.glow` twin). The manifest layer
+    `crew.human.torso.tee` lists its clips, each with its `sheet`. Every layer uses one fixed frame (128x120, feet
+    anchor 64,94; `crew_spec.py`), so the frame never depends on what was rendered.
+  - **Render cache and incremental builds** (`crew_build.py`, `crew_cache.py`, `crew_digest.py`; details in
+    `tools/blender/README.md`): `npm run sprites -- -- public/assets crew` renders only the entries the gitignored
+    cache (`.cache/sprites/crew`) lacks. One entry is one item, clip, direction and frame, keyed by a hash of the
+    item's geometry, its holdout items' geometry, the clip, and the global inputs (rig, base, render code, settings,
+    frame size). `--item`, `--clip`, `--force` and `--plan` narrow or force it.
+  - **Cost of changes:** a new item or clip renders only itself. Changing a default item re-renders the layers
+    above it (they hold it out). A rig, base, render-setting or frame-size change re-renders all crew.
+  - **Rigid gear, later:** rigid, non-deforming gear (the pack, helmet, goggles) could be rendered once per
+    direction and attached to the body's head/back anchor per frame at runtime, instead of being rendered per
+    clip. The fixed frame and per-clip sheets make that a local change (a layer would list a `rigid` sheet and
+    per-frame anchor offsets in its clips), but it is not built.
 - **EVA spacesuit** (`sprites/human_suit.py`): human layers in the existing slots, not wired yet.
   - Layers:
     - `torso.eva`, `legs.eva`, `arm.L.eva`, `arm.R.eva`;
@@ -227,7 +243,7 @@ palette.json    the single palette, read by Blender scripts and the game
   - While the helmet is worn, the runtime should skip the `hair` and `eyes` slots. The pack is hidden when
     seated, like the engineer rig.
   - Suit layers cut only against the body and each other, so they never cut ordinary clothing.
-  - New clip `eva_float` (4 frames) in every human sheet: drifting, tilted, legs trailing, with the pack's
+  - New clip `eva_float` (4 frames) on the body and the suit layers only: drifting, tilted, legs trailing, with the pack's
     thrust puffs on the glow sheet. Map an EVA state to it in `clipFor`; walking in a suit uses `walk`.
 - **Robot crew** (`sprites/robots.py`, `robot_kit.py`, `robot_render.py`): rigid parts on a joint rig, not skinned.
   - One body layer per type, in the crew layer format: `crew.robot.body.worker`, `crew.robot.body.repair` (hover
@@ -393,6 +409,78 @@ notices arrive through `alerts.ts` (`UiAlert.notice`).
 and flag triggers resolve and that every choice runs). For an arc, have one event set a flag and the next list a `flag` trigger
 (with `eligible` on the flag) or be reached by `chain`. Add a new effect or requirement kind in `defs.ts`, then `effects.ts` /
 `requirements.ts` (both switches are exhaustive).
+
+## Trade, `src/sim/trade/`
+
+**Terminology (user decision, 2026-10-19):** a **node** is one playable grid or location (what older text and code call a "sector"); a
+**sector** is a group of nodes; sectors are linked by **hyperlanes**. New code and docs say "node". Trade only needs "ships in the same
+node", which is every ship in `sim.sector` today.
+
+**Model.** Credits are a separate currency (`sim.trade.credits`, the player's; NPC wallets are `TraderC.credits`). Barter swaps items for
+items. A **trade partner** is any entity with a `TraderC` (wallet + stock): a ship (`ShipC`) or a station (no grid yet). You deal with
+partners in the same node by **hailing** them; goods are **delivered by shuttle** between airlocks; **payment settles on delivery**.
+
+**State** (`TradeState`, `sim.trade`, saved in `SaveData.trade`, optional so old saves load without a version bump): `credits`, `hails`,
+pending `offers`, `deals` (live ones plus the last 8 finished), `nextId`. `TraderC` is created on the first hail (`ensureTrader`), never by
+a snapshot. Its stock and wallet are rolled from `hash(world seed, ship.gen.seed or entity id, profile)` with their own Rng, so they do not
+depend on when the ship is hailed and never touch `sim.rng`.
+
+**Content** (`ContentRegistry.trade`, `src/content/trade.ts`; item prices are `ItemDef.price`, an item with no price is not for sale):
+- `spread {sell, buy}` and `repStep`/`repMax`: a trader sells at base x 1.25 and buys at base x 0.6 before modifiers.
+- `factions`: `TradeFactionDef` by generator faction id (`faction.civilian`) or combat side (`side.hostile`): `relation`, the `reputation`
+  key into `story.reputation`, optional `sell`/`buy` multipliers. This table stands in for the faction system being built separately.
+- `traders`: `TraderDef` by `trader.*` id (ship roles and station kinds): `match {faction?, role?, side?}` (most specific wins; the role is
+  `ShipC.gen.role`, stored by `debug.spawnGenerated`), `shuttle` (sends its own), `sell`/`buy`, per-tag `tagMods`, wallet range, stock lines.
+
+**Price of one unit** (`pricing.ts`) = base x spread x faction x trader kind x item-tag mods x reputation, rounded, minimum 1. Reputation
+shifts by `repStep` per point (capped at `repMax`): friends are sold to cheaper and bought from dearer. A buy price never exceeds the
+same item's sell price. `quote(give, get)` gives `balance = getValue - giveValue`: > 0 the player pays, < 0 they pay the player, 0 is an
+even barter. A `barter` offer moves no credits and needs `balance <= 0` (a surplus is a gift).
+
+**Hailing** (`hailVerdict`): a ship answers unless it is a wreck/fled (`silent`), its guns are locked on a player ship (`weaponsHot`, so
+a hostile ship in combat always refuses), or `faction.relation + trader.relation + reputation[faction.reputation] < 0` (`hostile`).
+Civilians start at +2 (they talk until you are at -3 with `traders`), navy at 0, pirates at -2 (they talk once you hold +2 with
+`pirates`, only when not shooting), drones at -9 (never). `debug.spawnGenerated` now spawns a faction with `FactionDef.side` (civilians:
+`'neutral'`, others `'hostile'`), so a civilian ship does not start a fight.
+
+**Commands** (events out): `trade.hail {ship}` (`trade.hailAnswered` / `trade.hailRefused {reason}`), `trade.offer {ship, give, get,
+barter?}` (validated and priced, becomes a pending offer, `trade.offered`; one offer per partner), `trade.accept {offer}`
+(`trade.dealMade {courier}`), `trade.cancel {id}` (an offer, or a deal still in `dispatch`/`load`), `debug.spawnStation {profile, name?}`,
+`debug.setCredits`. Offer rejects: `noTrader notAnswered empty badLine noPrice theyLack noItems unbalanced noFunds theyBroke noRoom`;
+accept adds the courier ones `noCourier noPilot courierBusy noAirlock tooBig dealOpen`. `bridge.dispatch` runs one tick for `trade.*`
+commands while paused so the window answers at once.
+
+**Delivery (who flies, decided and documented).** `planCourier` picks:
+1. Goods the **player hands over** always go on the **player's shuttle** (it flies itself, no pilot or crew needed: `Vehicle.autopilot` lifts the pilot rules for the run only; it needs an empty hold and a free working
+   airlock on the player's ship).
+2. Goods **from the trader** come on the **trader's own shuttle** if its kind has `shuttle: true` (a real `VehicleC` spawned at its ship,
+   no crew, `home: 0`, despawned when it is back); otherwise the **player's shuttle goes over** to fetch them.
+3. A partner with no `ShipC` (a station) uses the **instant fallback**: the goods change hands on the next tick. **TEMPORARY**: remove it
+   when stations are grids with airlocks and shuttles (the deal then takes branch 1 or 2 unchanged).
+One run carries at most the shuttle hold (`VehicleDef.cargo`, 40 units) each way.
+
+A **deal** (`Deal`) holds the payer's credits in **escrow** from accept (the player's if `balance > 0`, else the trader's) and takes the
+goods the trader sells out of its stock. `systems/trade.ts` (after `vehicleSystem`) runs each deal's phases in `trade/dealFlow.ts`, issuing
+ordinary vehicle commands (applied next tick, like the boarding AI):
+`dispatch` (player shuttle `vehicle.dock`s at the player's airlock; skipped for a buy) -> `load` (crew haul the goods from storage into the
+docked shuttle through the airlock unloaders; the hold is sealed with `Vehicle.outbound` so `cargoJobsSystem` does not unload it) -> `out`
+(`undock`, `vehicle.hover` beside the trader's ship) -> `exchange` (`exchangeSec`: the player's goods go into the trader's stock, what was
+bought goes into the hold; `trade.delivered {to: 'trader'}`) -> `back` (`vehicle.dock` at the player's airlock; `trade.delivered {to:
+'player'}`) -> `unload` (crew haul it out through the unloaders into storage, existing `cargoJobsSystem`) -> **settled** when the hold is
+empty (`trade.settled`: the escrow is paid to the other side). A sale with nothing coming back settles at the exchange and the shuttle
+returns to its bay. Failures (`trade.failed {reason}`: `cancelled`, `lost` shuttle destroyed, `noDock`, `loadTimeout`, `flightTimeout`)
+refund the escrow and put unsent goods back in the trader's stock; goods already flown on a destroyed shuttle are lost.
+
+**UI.** `app/tradeSnapshot.ts` builds `UiTrade` (credits, hailable ships/stations with their lines, prices and delivery probe, deals);
+`TradeList.svelte` (ships in range, Hail) and `TradeWindow.svelte` (two columns, quantities, totals, barter box, offer/accept; a bottom
+sheet with You/Them tabs on phones), a Hail button in `CombatPanel`, a credits chip in `StatsChips`, trade status in `ShuttlePanel`, trade
+alerts in `alerts.ts`.
+
+**Adding a trader:** add a `TraderDef` to `trade.traders` in `src/content/trade.ts` with a `match` (a `faction` and `role` to catch a
+generated ship kind, or a `side`); the content test checks that its stock items exist and are priced. **Adding a price:** set `price` on
+the `ItemDef` (the content test fails for an unpriced item); tilt it per trader with `tagMods` or per faction with `sell`/`buy`.
+**A new faction:** add a `TradeFactionDef` keyed by its faction id. When the real faction system arrives, replace `tradeFactionOf`,
+`profileFor` and the `relation + reputation` rule in `trade/traders.ts`; everything else reads those.
 
 ## Sector grid (planned)
 

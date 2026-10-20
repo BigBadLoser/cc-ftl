@@ -1,10 +1,21 @@
 import {
-  AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, vehicleSuits,
+  AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, TraderC, vehicleSuits,
   vehicleViews, type Sim,
 } from '../sim';
-import type { UiShuttleCrew, UiShuttles } from '../ui/api';
+import type { UiShuttle, UiShuttleCrew, UiShuttles } from '../ui/api';
 
 const PLAYER = 1;
+
+/** The live trade deal this shuttle is flying, as a status line. */
+function tradeRun(sim: Sim, vehicle: number): UiShuttle['trade'] {
+  const d = sim.trade.deals.find((x) => x.vehicle === vehicle && x.phase !== 'done' && x.phase !== 'failed');
+  if (!d) return null;
+  const status: Record<string, string> = {
+    dispatch: 'Heading to the airlock to load', load: 'Crew loading the cargo', out: 'Flying the cargo over', exchange: 'Swapping cargo',
+    back: 'Bringing the goods home', unload: 'Crew unloading the cargo',
+  };
+  return { status: status[d.phase] ?? d.phase, partner: sim.world.get(d.ship, TraderC)?.name ?? 'Trader' };
+}
 
 function crewRef(sim: Sim, id: number): UiShuttleCrew | null {
   const c = id ? sim.world.get(id, CrewC) : undefined;
@@ -41,6 +52,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
       pilot: crewRef(sim, v.pilot), passengers: v.passengers.map((c) => crewRef(sim, c)).filter((c): c is UiShuttleCrew => !!c),
       destination: v.destination, dockShip: dockM ? shipName(sim, dockM.gridId) : null, bay: v.bay,
       boardable: boardingTile(sim, v.id) !== null,
+      trade: tradeRun(sim, v.id),
       hoverShip: v.hoveringGrid ? shipName(sim, v.hoveringGrid) : null,
       suits: vehicleSuits(sim, sim.world.get(v.id, VehicleC) as never),
       canEva: v.state === 'flying' && !v.destination && v.hovering !== 0 && v.passengers.length > 0 && vehicleSuits(sim, sim.world.get(v.id, VehicleC) as never) > 0,

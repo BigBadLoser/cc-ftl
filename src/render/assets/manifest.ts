@@ -40,9 +40,14 @@ export interface StaticAsset {
   glow?: boolean;
 }
 
-/** One animation clip inside a layer sheet. */
+/** One animation clip of a layer. */
 export interface ClipDef {
-  /** Column of the first frame. */
+  /**
+   * Sheet holding this clip (8 direction rows x `frames` columns), a key of `Manifest.sheets`. Crew layers have one
+   * sheet per clip, so adding a clip or an item never touches the others. Absent: the layer's single `sheet`.
+   */
+  sheet?: string;
+  /** Column of the first frame in that sheet (0 for per-clip sheets). */
   start: number;
   frames: number;
   fps: number;
@@ -51,8 +56,8 @@ export interface ClipDef {
 
 /**
  * One crew sprite layer (body, hair, arm.L, shirt, gear...). All layers of a species share
- * frameW/frameH/anchor/clips so they stack exactly. Sheet layout: row = direction (0..7),
- * column = clip.start + frame. Direction d matches sim Position.facing d
+ * frameW/frameH/anchor so they stack exactly; each lists the clips it has (not every layer has every clip).
+ * Sheet layout: row = direction (0..7), column = clip.start + frame. Direction d matches sim Position.facing d
  * (0 = grid +x, counter-clockwise in grid space, 2 = grid +y).
  */
 export interface LayerAsset {
@@ -62,7 +67,8 @@ export interface LayerAsset {
   slot: string;
   /** Stack order (low drawn first). Holdout rendering makes one fixed order valid in all directions. */
   order: number;
-  sheet: string;
+  /** Single sheet holding every clip (robots); crew layers name a sheet per clip instead (`ClipDef.sheet`). */
+  sheet?: string;
   frameW: number;
   frameH: number;
   anchor: Anchor;

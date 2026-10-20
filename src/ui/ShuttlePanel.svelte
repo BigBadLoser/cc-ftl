@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiShuttles } from './api';
+  import PanelHead from './PanelHead.svelte';
 
-  let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
+  let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
   let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
   onMount(() => api.shuttles.subscribe((v) => (data = v)));
 
@@ -16,11 +17,8 @@
   const walking = (s: UiShuttles['shuttles'][number]) => data.roster.filter((c) => c.boarding === s.id);
 </script>
 
-<aside class="sheet" data-testid="shuttle-panel" aria-label="Shuttles">
-  <header>
-    <strong>Shuttles</strong>
-    <button aria-label="Close shuttle panel" data-testid="shuttle-close" onclick={onClose}>×</button>
-  </header>
+<div data-testid="shuttle-panel" aria-label="Shuttles">
+  <PanelHead icon="shuttle" title="Shuttles" {onBack} />
 
   {#each data.shuttles as s (s.id)}
     {@const left = seatsLeft(s)}
@@ -29,6 +27,7 @@
         {s.name} <small data-testid="shuttle-state">{where(s)}</small>
         <button class="mini" title="Center the camera" onclick={() => api.focusShuttle(s.id)}>Find</button>
       </h3>
+      {#if s.trade}<div class="trade" data-testid="shuttle-trade">Trade run for {s.trade.partner}: {s.trade.status}</div>{/if}
       <div class="bar hp"><i style:width="{Math.round((s.hp / Math.max(1, s.maxHp)) * 100)}%"></i></div>
 
       <div class="crew">
@@ -107,15 +106,13 @@
   {#each data.bays.filter((b) => b.empty) as b (b.id)}
     <button class="assign" data-testid="assign-{b.id}" onclick={() => api.dispatch({ type: 'vehicle.assign', bay: b.id })}>Fit a shuttle from storage</button>
   {/each}
-</aside>
+</div>
 
 <style>
-  aside { left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab)); width: 310px; max-height: calc(100vh - var(--hdr) - 24px); overflow-y: auto; }
-  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; color: var(--cyan); }
-  header button { min-height: 32px; min-width: 32px; padding: 0 8px; }
   h3 { margin: 4px 0; font-size: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   h3 small { color: var(--dim); font-weight: normal; flex: 1; }
   .mini { min-height: 28px; min-width: 0; padding: 0 8px; font-size: 12px; }
+  .trade { color: var(--amber); font-size: 12px; margin: 2px 0 4px; }
   .hp > i { background: #4cd964; }
   .crew { margin: 8px 0; display: grid; gap: 4px; }
   .slot { display: flex; align-items: center; gap: 8px; }
@@ -130,5 +127,4 @@
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
   .none { color: var(--dim); margin: 4px 0; }
   .assign { width: 100%; margin-top: 8px; }
-  @media (max-width: 600px) { aside { width: auto; left: 0; bottom: 0; max-height: 46vh; z-index: 8; } }
 </style>

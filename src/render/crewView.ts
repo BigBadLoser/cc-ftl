@@ -13,6 +13,7 @@ import { accessTile, footprintTiles, openTilesOf } from '../sim/modules/footprin
 import { moduleKey } from './moduleView';
 import { SEAT_DZ } from './moduleArt';
 import type { Atlas, LayerSprite } from './assets/loader';
+import type { ClipDef } from './assets/manifest';
 import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
 import { diamondTextures } from './diamonds';
@@ -20,7 +21,7 @@ import { heldAssets } from './itemView';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
 import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
-import { clipFor, crewLoadout } from './loadout';
+import { clipFor, crewLoadout, resolveClip } from './loadout';
 
 export interface CrewViewHost {
   /** True when the ship has no running power source (emergency lighting). */
@@ -257,15 +258,20 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         // Downed, dead and carried crew hold the first frame of the sleep clip (no dedicated lying clip yet).
         if (!hurtLying) s.t += dt;
         s.lying = clipName === 'sleep';
+        // A layer without a sheet for the clip is drawn with its fallback or hidden (see resolveClip).
         for (const { layer, sprite } of s.parts) {
-          sprite.texture = layer.frame(dir, colOf(layer, clipName, s.t));
-          sprite.visible = !(sitting && layer.def.slot === 'gear.back' && s.suited); // the pack would clip through the chair
+          const c = resolveClip(layer.def, clipName);
+          sprite.visible = !!c;
+          if (c) sprite.texture = layer.frame(c, dir, colOf(c, s.t));
         }
         for (const g of s.glows) {
-          const col = colOf(g.layer, clipName, s.t);
-          g.sprite.texture = g.layer.glowFrame(dir, col) ?? g.sprite.texture;
+          const c = resolveClip(g.layer.def, clipName);
+          const tex = c ? g.layer.glowFrame(c, dir, colOf(c, s.t)) : null;
+          g.sprite.texture = tex ?? Texture.EMPTY;
+          g.sprite.visible = !!tex;
           if (g.halo) {
             g.halo.texture = g.sprite.texture;
+            g.halo.visible = !!tex;
             const p = iso(s.x, s.y);
             g.halo.position.set(Math.round(p.x) - g.layer.def.anchor.x, Math.round(p.y) - g.layer.def.anchor.y);
           }
@@ -355,10 +361,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
   };
 }
 
-/** Column in the layer's sheet for a clip at time t (falls back to idle if the layer lacks the clip). */
-function colOf(layer: LayerSprite, clip: string, t: number): number {
-  const c = layer.def.clips[clip] ?? layer.def.clips.idle;
-  if (!c) return 0;
+/** Column in the clip's sheet at time t. */
+function colOf(c: ClipDef, t: number): number {
   const f = Math.floor(t * c.fps);
   return c.start + (c.loop ? f % c.frames : Math.min(c.frames - 1, f));
 }

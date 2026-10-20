@@ -2,9 +2,10 @@
   import { onMount } from 'svelte';
   import { Struct } from '../sim';
   import type { UiApi, UiInspect } from './api';
+  import PanelHead from './PanelHead.svelte';
   import ItemIcon from './ItemIcon.svelte';
 
-  let { api }: { api: UiApi } = $props();
+  let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
   let info = $state<UiInspect | null>(null);
 
   onMount(() => api.inspect.subscribe((i) => (info = i)));
@@ -22,8 +23,8 @@
 </script>
 
 {#if info}
-  <aside data-testid="inspector">
-    <h2>Tile {info.x}, {info.y} <small>grid {info.gridId}{info.selected ? '' : ' (hover)'}</small></h2>
+  <div data-testid="inspector">
+    <PanelHead icon="grid" title="Tile {info.x}, {info.y}" sub="grid {info.gridId}" {onBack} />
     <dl>
       <dt>Struct</dt><dd data-testid="inspect-struct">{info.structName}</dd>
       <dt>Room</dt><dd data-testid="inspect-room">{info.room || 'none'}</dd>
@@ -43,24 +44,16 @@
         {/each}
       </div>
     {/if}
-  </aside>
+  </div>
 {/if}
 
 <style>
-  aside {
-    position: fixed; left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab));
-    width: 240px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px;
-    pointer-events: auto;
-  }
-  h2 { margin: 0 0 6px; font-size: 14px; color: var(--cyan); }
-  h2 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
   dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; margin: 0 0 8px; font-variant-numeric: tabular-nums; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; }
   dd.stack { display: flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--text); }
-  .dbg { color: var(--dim); font-size: 12px; margin-bottom: 4px; }
-  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .dbg { color: var(--dim); font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   @media (max-width: 600px) {
-    aside { left: 0; right: 0; bottom: 0; width: auto; border-radius: 14px 14px 0 0; border-width: 1px 0 0; padding: 10px 14px calc(10px + var(--sab)); }
     .btns { grid-template-columns: repeat(4, 1fr); }
     .btns button { padding: 0 4px; font-size: 12px; }
   }

@@ -4,7 +4,7 @@
   import CombatPlayer from './CombatPlayer.svelte';
   import ShipMeters from './ShipMeters.svelte';
 
-  let { api, combat, onClose }: { api: UiApi; combat: UiCombat; onClose: () => void } = $props();
+  let { api, combat, onClose, onHail }: { api: UiApi; combat: UiCombat; onClose: () => void; onHail: (ship: number) => void } = $props();
 
   let expanded = $state(false);
   let viewEl: HTMLDivElement | undefined = $state();
@@ -65,6 +65,7 @@
     <button class="grip" aria-label={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} onclick={() => (expanded = !expanded)}>{expanded ? '⌄' : '⌃'}</button>
     <strong>Combat</strong>
     <span class="sp"></span>
+    {#if enemy}<button title="Call them on the radio: only ships that are not hostile answer" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}>Hail</button>{/if}
     <button title="Center the camera between the ships" onclick={() => api.focusFight(enemy?.gridId ?? null)}>Frame</button>
     <button aria-label="Close combat panel" data-testid="combat-close" onclick={onClose}>×</button>
   </header>
@@ -98,7 +99,7 @@
   .combat {
 
     position: fixed; z-index: 7; display: flex; flex-direction: column; overflow: hidden;
-    right: calc(8px + var(--sar)); top: calc(var(--hdr) + 8px + var(--sat)); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
+    right: calc(8px + var(--sar)); top: max(calc(var(--hdr) + 8px + var(--sat)), calc(var(--alerts-h, 0px) + 88px + var(--sat))); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
     border: 1px solid var(--line); border-radius: 10px;
   }
   header { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--line); background: var(--panel); }
@@ -125,8 +126,6 @@
     .grip { display: inline-block; }
     .view { height: 26vh; }
     .expanded .view { height: 38vh; }
-    .targets { flex-wrap: nowrap; overflow-x: auto; }
-    .targets button { flex: none; }
     .scroll { padding-bottom: calc(8px + var(--sab)); }
   }
 </style>

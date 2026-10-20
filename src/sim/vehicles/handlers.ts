@@ -31,7 +31,7 @@ function seats(sim: Sim, v: Vehicle): number {
 /** Start a stowed vehicle's flight at its bay. Returns a reject reason, or null. */
 function launch(sim: Sim, id: number, v: Vehicle): string | null {
   if (v.state !== 'stowed') return 'notStowed';
-  if (!v.pilot) return 'noPilot';
+  if (!v.pilot && !v.autopilot) return 'noPilot';
   if (!bayWorking(sim, v.home)) return 'bayDown';
   v.state = 'flying';
   v.dest = null;
@@ -140,7 +140,7 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     const v = sim.world.get(cmd.vehicle, VehicleC);
     if (!v) return reject(sim, cmd.type, 'noVehicle');
     if (v.state !== 'docked') return reject(sim, cmd.type, 'notDocked');
-    if (!v.pilot) return reject(sim, cmd.type, 'noPilot');
+    if (!v.pilot && !v.autopilot) return reject(sim, cmd.type, 'noPilot');
     undock(sim, cmd.vehicle, v);
   },
   'vehicle.return': (sim, cmd) => {
@@ -151,7 +151,7 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     if (outsideCrew(sim, cmd.vehicle).length > 0) return reject(sim, cmd.type, 'crewOutside');
     v.hover = 0;
     if (v.state === 'docked') {
-      if (!v.pilot) return reject(sim, cmd.type, 'noPilot');
+      if (!v.pilot && !v.autopilot) return reject(sim, cmd.type, 'noPilot');
       undock(sim, cmd.vehicle, v);
     }
     v.dest = { type: 'bay' };

@@ -1,6 +1,7 @@
 import type { Faction } from './combat/components';
 import type { WorkCategory } from './crew/components';
 import type { PortalKind, PortalRequirement } from './portals/components';
+import type { ItemQty } from './registry';
 
 /** Every way to change the sim from outside. Add new variants here. */
 export type Command =
@@ -118,6 +119,22 @@ export type Command =
   | { type: 'story.dismissNotice'; notice: number }
   /** Debug: set a persistent flag/counter (0 clears it). */
   | { type: 'story.setFlag'; flag: string; value: number }
+  /** Call a ship (or station) in the node. Non-hostile ones answer (see trade/traders.ts `hailVerdict`), hostile ones refuse. */
+  | { type: 'trade.hail'; ship: number }
+  /**
+   * Propose an exchange with an answering trader: `give` items from the player's storage, `get` items from its stock. The
+   * credit balance (get priced at its sell prices minus give at its buy prices) is paid by whoever owes it; `barter` swaps items
+   * only and needs the balance to be <= 0.
+   */
+  | { type: 'trade.offer'; ship: number; give: ItemQty[]; get: ItemQty[]; barter?: boolean }
+  /** Take a priced offer: escrow the credits, set the goods aside and start the delivery. */
+  | { type: 'trade.accept'; offer: number }
+  /** Withdraw an offer, or call off a deal whose shuttle has not left yet. `id` is the offer or deal id. */
+  | { type: 'trade.cancel'; id: number }
+  /** Spawn a trading station (an entity with a wallet and stock but no grid; deliveries use the instant fallback). */
+  | { type: 'debug.spawnStation'; profile: string; name?: string }
+  /** Set the player's credits. */
+  | { type: 'debug.setCredits'; value: number }
   | { type: 'debug.spawnItems'; gridId: number; x: number; y: number; item: string; count: number };
 
 /** A command tagged with the tick at whose start it applies. */
