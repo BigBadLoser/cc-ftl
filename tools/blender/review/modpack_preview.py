@@ -46,10 +46,72 @@ def room(cv, P, pub, ox, oy, mods, state, crew_at, nx, ny, label):
     cv.labels.append((ox - 40, oy - 110, label))
 
 
+def _find(P, pub, ids):
+    for aid in ids:
+        for A in (P, pub):
+            if aid in A.m["assets"]:
+                return A, aid
+    return None, None
+
+
+def grid(P, pub, out, rows, cols, name, cell=(260, 230)):
+    """One row per module (r0), one column per state; each cell a floor patch with walls behind and the sprite on it."""
+    CW, CH = cell
+    cv = Canvas(CW * len(cols) + 140, CH * len(rows))
+    for i, (label, (w, d), ids_for) in enumerate(rows):
+        for j, col in enumerate(cols):
+            ox, oy = 140 + j * CW + CW // 2 - (w - d) * 16, i * CH + 100 - (w + d) * 8
+            for gx in range(-1, w + 1):
+                for gy in range(-1, d + 1):
+                    cv.static(pub, "tile.floor.a", *iso(ox, oy, gx, gy))
+            for gx in range(-1, w + 1):
+                cv.static(pub, "tile.wall.full.m10", *iso(ox, oy, gx, -2))
+            for gy in range(-1, d + 1):
+                cv.static(pub, "tile.wall.full.m5", *iso(ox, oy, -2, gy))
+            A, aid = _find(P, pub, ids_for(col))
+            if A:
+                cv.static(A, aid, *iso(ox, oy, w - 1, d - 1))
+            if i == 0:
+                cv.labels.append((140 + j * CW + CW // 2 - 30, 4, col))
+        cv.labels.append((6, i * CH + CH // 2, label))
+    cv.save(out / f"{name}-2x.png", 2)
+    cv.save(out / f"{name}-1x.png", 1)
+
+
+DMG_ROWS = [("console", (1, 1), "module.console", False), ("helm", (2, 1), "module.helm", True),
+            ("weapons con.", (2, 2), "module.weapons_console", True), ("shield con.", (2, 1), "module.shield_console", True),
+            ("bed", (1, 2), "module.bed", False), ("galley", (2, 1), "module.galley", True),
+            ("life support", (1, 2), "module.life_support", False), ("reactor", (2, 2), "module.reactor", False),
+            ("fabricator", (2, 1), "module.fabricator", True), ("light", (1, 1), "module.light", False),
+            ("robot bay", (1, 2), "module.robot_bay", True), ("crate", (1, 1), "module.storage", False),
+            ("locker", (1, 1), "module.storage_locker", True), ("rack", (2, 1), "module.storage_rack", True),
+            ("pallet", (2, 2), "module.storage_pallet", True), ("tank", (2, 2), "module.storage_tank", True),
+            ("cold", (2, 1), "module.storage_cold", True), ("armory", (2, 1), "module.storage_armory", True),
+            ("container", (2, 3), "module.storage_container", True)]
+
+
+def damage(P, pub, out):
+    def ids(aid, rot):
+        def f(col):
+            stem = f"{aid}.r0" if rot else aid
+            if col == "intact":
+                return [stem, f"{aid}.partial", f"{stem}.partial", aid]
+            return [f"{stem}.{col}"]
+        return f
+    rows = [(lab, fp, ids(aid, rot)) for lab, fp, aid, rot in DMG_ROWS]
+    half = (len(rows) + 1) // 2
+    grid(P, pub, out, rows[:half], ("intact", "damaged", "destroyed"), "damage-a")
+    grid(P, pub, out, rows[half:], ("intact", "damaged", "destroyed"), "damage-b")
+
+
 def main():
     P, out, which = Assets(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
     pub = Assets(ROOT / "public/assets")
     out.mkdir(parents=True, exist_ok=True)
+    if which == "damage":
+        damage(P, pub, out)
+        print("wrote", out)
+        return
     mods, states, crew_at = SETS[which]
     nx = max(g + w for _, (w, _), g in mods) + 1
     ny = max(d for _, (_, d), _ in mods) + 1
