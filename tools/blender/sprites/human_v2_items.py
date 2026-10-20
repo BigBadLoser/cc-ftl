@@ -37,14 +37,18 @@ def eyes(A, R):
 
 
 def flesh_arm(A, R, s):
-    """A bare arm, with a darker crease line in the crook of the elbow and round the wrist (shading, not shape: a pinch
-    is too small to read at game size)."""
+    """A bare arm, with a darker crease line in the crook of the elbow, round the wrist and across the back of the hand
+    past the knuckles (shading, not shape: a pinch is too small to read at game size)."""
     b = Build()
     arm(b, R, s)
     ex, wx = abs(R.h[f"forearm.{s}"].x), abs(R.h[f"hand.{s}"].x)
+    hs = R.T["limb"][f"hand.{s}"]
+    kx = abs(hs[round(human_trace.KNUCKLE * (len(hs) - 1))][0].x)           # the knuckle section
 
     def col(c, n):
         if abs(abs(c.x) - ex) < CREASE and n.y < -0.2 or abs(abs(c.x) - wx) < CREASE:
+            return "team.skin*0.5"
+        if 0 < abs(c.x) - kx < 0.014 and n.z > 0.3:                         # a line just past the knuckles, back of hand
             return "team.skin*0.5"
         return "team.skin"
     return Item(f"arm.{s}", "flesh", [b.mesh(f"v2.arm.{s}", A, col)], default=True)
