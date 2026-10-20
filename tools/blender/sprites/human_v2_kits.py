@@ -75,8 +75,8 @@ def armor_vest(A, R):
 
 
 def tactical_helmet(A, R):
-    """A gunmetal helmet that sits above the brows (the face stays visible), with a dark rim round its edge and a
-    team-colour stripe over the top."""
+    """A gunmetal helmet that sits above the brows (the face stays visible), with a dark rim round its edge, a
+    team-colour stripe over the top and a tinted visor flipped up on the front."""
     b = Build()
     c = R.head_c
     rim = 0.035
@@ -85,9 +85,16 @@ def tactical_helmet(A, R):
         r = p - c
         return r.z > rim or r.y > -0.02 and r.z > -0.04
     head(b, R, grow=0.03, keep=keep)
+    head(b, R, grow=0.05, keep=lambda p: (p - c).y < -0.06 and 0.05 < (p - c).z < 0.125)   # the visor, flipped up
+    for sx in (1, -1):                                                       # its hinges
+        b.blob(c + Vector((sx * (R.HX + 0.045), -0.01, 0.06)), 0.018, 0.03, 0.03, W("head"), exp=2.4, nlat=6)
 
     def col(p, n):
         r = p - c
+        if r.y < -0.06 and 0.05 < r.z < 0.125 and (p - c).length > R.HY + 0.035:
+            return "lens"
+        if abs(p.x) > R.HX + 0.03:
+            return "gmD"
         if abs(p.x) < 0.025 and r.z > 0.07:
             return "team.cloth"
         if r.y < -0.02 and r.z < rim + 0.03 or r.y >= -0.02 and r.z < -0.01:
