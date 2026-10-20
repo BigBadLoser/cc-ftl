@@ -192,10 +192,10 @@ palette.json    the single palette, read by Blender scripts and the game
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
   crew, see below), `robot_bay`, `env` (props,
-  economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
-  bays), `roof` (plating, edges, livery masks), `struct` (structural beams) and `sol` (the engine, AI core
-  and shield packs, rendered by their own scripts in `tools/blender/experiments/` and packed by
-  `sprites/sol_pack.py`).
+  economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
+  bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
+  below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
+  `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
     at the tile centre. The looks are `navy`, `drone`, `civil` and `scrap`, picked by faction.
@@ -291,6 +291,40 @@ palette.json    the single palette, read by Blender scripts and the game
   - `unloader.r{n}.back` at (0, ±1) and `unloader.r{n}.front[.loaded]` at (-1, ±1): the same sprites on both
     sides. `.loaded` shows a crate in the chute while unloading.
   - `keepout.r{n}` at (-2, ±1) and `walk.r{n}` at (-1, 0) and (-2, 0): deck marks, drawn with the floor.
+- **Combat fx v2 (`fx` family; `sprites/fx3d.py` lists it, built from `fxkit.py`, `fx_shots.py`, `fx_hits.py`, `fx_env.py`,
+  `fx_hand.py`; preview `review/fx_preview.py`). Sheets `fx.png` / `fx.glow.png` are in `public/assets`; renderer not
+  updated yet (see below).**
+  Small 3D clusters rendered like any sprite: self-lit fire and energy (palette ramps `fxW..fxD`, laser `fxC*`, ion `fxI*`,
+  shield `fxH*`, which feed the glow sheet) and lit smoke and metal. Frames are `fx.<name>.<n>`; `fx.<name>` is frame 0.
+  - Ids (frames):
+    - Shots, looping, pointing screen-right (rotate along the flight): `laser_bolt` 6, `mass_slug` 4, `missile` 4,
+      `ion_bolt` 6, `fire_shell` 4, `pd_shot` 2. Same ids as the old shots, so `WeaponDef.projectileAsset` is unchanged.
+    - Muzzle flashes, at the barrel tip, pointing screen-right: `muzzle.laser` 3, `muzzle.mass` 4, `muzzle.missile` 4,
+      `muzzle.ion` 3, `muzzle.fire` 3, `muzzle.pd` 3.
+    - Impacts, anchored at the hit point on the plate (roof height on a roofed ship): `impact.laser` 6, `impact.mass` 8 (the
+      breach), `impact.ion` 6, `impact.fire` 7. Missiles use `explosion_large`, point-defence intercepts `explosion_small`.
+    - Explosions, 12 frames each: `explosion_small`, `explosion`, `explosion_large`, `explosion_huge` (a ship breaking up:
+      chain several at staggered times and positions, and throw `debris.{a,b,c}`, 8 tumble frames each, under gravity).
+    - `ion_disabled` 4 (loop, drawn at roof height over a module ion has disabled), `shield_hit` 6 (at the point a shot
+      meets the bubble), `shield_edge` 4 (loop: a rim piece to lay round the bubble's ellipse, turned to its tangent,
+      replacing the drawn ellipse).
+    - `fire` 8 (loop on a burning floor tile): same ids as the old fire, so `fxView` picks it up as is.
+    - `decal.scorch.{0,1,2}`, `decal.breach`: static marks in the floor plane for damaged floor or roof tiles.
+    - Crew fights (replace what `fightFx.ts` draws): `hand.muzzle.{sidearm,rifle,ion}` 3, `hand.tracer` 2, `hand.tracer.ion` 4,
+      `hand.hit` 4 (a body), `hand.hit_spark` 4 (a robot or cover), `hand.hit_ion` 4, `hand.ricochet` 4 (a miss, on the floor
+      or a wall), `hand.slash` 4 (melee, pointing at the target).
+  - Renderer changes the art needs:
+    - Draw fx like other sprites (normal blend) with the glow sheet added on top. Today `sectorFx` draws shots and flashes
+      with `blendMode 'add'`, which makes smoke and debris vanish.
+    - Play frames: shots loop (about 12 fps), muzzles, impacts and explosions play once (about 12 fps), then go. Today a
+      flash is one sprite scaled up.
+    - Wire muzzle flashes (barrel tip from the turret's aim) and per-weapon impacts in place of the shared
+      `fx.pd_shot` flash and `fx.explosion_small`.
+  - The old fx (`sprites/cfx.py`, and `props.py`'s fire) are out of the env family's jobs; the `fx` family's entries replaced
+    theirs in the manifest. Their pixels stay in `env.png` until env is next rebuilt. The particle sprites (`fx.spark`,
+    `fx.ember`, `fx.puff.*`, `fx.ice`) stay in env.
+  - Until the renderer is updated, the shots and fire already show in game (same ids) but drawn the old way: additive,
+    single frame for the shots, the old one-sprite flash.
 
 ## UI
 
