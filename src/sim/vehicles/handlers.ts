@@ -9,13 +9,13 @@ import { isTileWalkable } from '../modules/walk';
 import { airlockWorking } from '../modules/airlock';
 import { AirlockC } from '../modules/airlock';
 import { BodyC } from '../body';
-import { shipById, shipOf } from '../combat/ships';
+import { shipById } from '../combat/ships';
 import { outsideCrew } from '../eva/shuttle';
 import type { Sim } from '../sim';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
 import { bayWorking, boardingTile } from './geometry';
 import { occupants, spawnVehicle, unboardCrew, undock, vehicleDefOf } from './lifecycle';
-import { gridIdOf } from '../regions';
+import { shipIdOf, shipGrid } from '../regions';
 
 type VehicleCommandType = Extract<Command['type'], `vehicle.${string}`>;
 type Handler<T extends VehicleCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -46,7 +46,7 @@ export function dockError(sim: Sim, id: number, airlock: number): string | null 
   const m = sim.world.get(airlock, ModuleC);
   if (!m || !sim.world.has(airlock, AirlockC)) return 'noAirlock';
   if (!airlockWorking(sim, airlock)) return 'airlockDown';
-  if (shipOf(sim, gridIdOf(sim, m))?.state === 'fled') return 'badTarget';
+  if (shipById(sim, shipIdOf(sim, m))?.state === 'fled') return 'badTarget';
   for (const other of sim.world.query(VehicleC)) {
     const o = sim.world.get(other, VehicleC) as Vehicle;
     if (other !== id && (o.dock === airlock || (o.dest?.type === 'dock' && o.dest.airlock === airlock))) return 'occupied';
@@ -62,7 +62,7 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     if (bay.vehicle) return reject(sim, cmd.type, 'bayFull');
     if (m.hp <= 0) return reject(sim, cmd.type, 'bayDown');
     for (const sid of sim.world.query(StorageC)) {
-      if (gridIdOf(sim, sim.world.get(sid, ModuleC)) !== gridIdOf(sim, m)) continue;
+      if (shipIdOf(sim, sim.world.get(sid, ModuleC)) !== shipIdOf(sim, m)) continue;
       const stacks = sim.world.get(sid, StorageC)?.stacks ?? [];
       for (const st of stacks) {
         const defId = sim.content.items[st.item]?.vehicle;
@@ -101,7 +101,7 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     const at = boardingTile(sim, cmd.vehicle);
     if (!at) return reject(sim, cmd.type, 'notBoardable');
     if (v.state === 'docked' && !airlockWorking(sim, v.dock)) return reject(sim, cmd.type, 'airlockDown');
-    const grid = sim.grids.get(at.gridId);
+    const grid = shipGrid(sim, at.shipId);
     if (!grid || !isTileWalkable(sim, grid, at.x, at.y)) return reject(sim, cmd.type, 'notWalkable');
     if (cmd.crew !== undefined && !occupants(v).includes(cmd.crew)) return reject(sim, cmd.type, 'notAboard');
     // Without a named crew member the passengers leave and the pilot stays at the controls.

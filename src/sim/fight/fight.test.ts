@@ -3,18 +3,20 @@ import {
   CrewC, DeadC, DownedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
 import type { SimEvent } from '../events';
-import { shipOf, spawnShip } from '../combat/ships';
+import { spawnShip, shipById } from '../combat/ships';
 import { storageCount } from '../items/storage';
 import type { ContentRegistry, ModuleDef, ShipTemplate } from '../registry';
 import { deserialize, serialize } from '../save';
 import { Sim } from '../sim';
-import { shipEntityOf } from '../combat/ships';
+
 import { CREW_MAX_HP, SURRENDER_HP_FRAC } from '../tuning';
 import { AllegianceC, EquipC, FighterC, SurrenderedC } from './components';
 import { sightLine } from './los';
 import { isSubdued } from './relations';
 import { hitChance, wielded } from './weapons';
 import { StorageC } from '../items/components';
+import { shipGrid } from '../regions';
+import { shipIds } from '../regions';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -73,7 +75,7 @@ const flat = (v: number): Priorities => ({
 
 function make(template: ShipTemplate = hall(), seed = 5): Sim {
   const sim = new Sim(seed, content);
-  spawnShip(sim, template, { gridId: 1, faction: 'player', x: 0, y: 0 }); // at the origin: local tiles are sector tiles
+  spawnShip(sim, template, { faction: 'player', x: 0, y: 0 }); // at the origin: local tiles are sector tiles
   return sim;
 }
 function person(
@@ -101,7 +103,7 @@ function run(sim: Sim, limit: number, stop: () => boolean = () => false): SimEve
 const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 const hp = (sim: Sim, id: number): number => sim.world.get(id, HealthC)!.hp;
-const grid = (sim: Sim) => sim.grids.get(1)!;
+const grid = (sim: Sim) => shipGrid(sim, shipIds(sim)[0] as number)!;
 
 describe('line of sight and cover', () => {
   it('is blocked by walls, closed doors and solid modules, and passes open doors', () => {
@@ -126,7 +128,7 @@ describe('line of sight and cover', () => {
     expect(sightLine(sim, g, { x: 2, y: 2 }, { x: 5, y: 3 }).cover).toBe('none'); // beside the crate, not behind it
     expect(sightLine(sim, g, { x: 2, y: 2 }, { x: 6, y: 1 }).cover).toBe('none');
     const door = make(split());
-    door.enqueue({ type: 'debug.setField', ship: shipEntityOf(door, 1), x: 10, y: 2, field: 'door', value: 255 });
+    door.enqueue({ type: 'debug.setField', ship: shipIds(door)[0] as number, x: 10, y: 2, field: 'door', value: 255 });
     run(door, 1);
     expect(sightLine(door, grid(door), { x: 4, y: 2 }, { x: 11, y: 2 }).cover).toBe('partial'); // doorway in front of the target
   });
@@ -263,7 +265,7 @@ describe('crew combat', () => {
     expect([p.x, p.y]).toEqual([20, 3]); // the console's access tile
     // Defenders arrive; the boarder turns on them and takes no more chores.
     const defender = person(sim, 4, 3, 'player', 'role.sec', 'item.rifle');
-    expect(shipOf(sim, 1)?.faction).toBe('player');
+    expect(shipById(sim, shipIds(sim)[0] as number)?.faction).toBe('player');
     const ev = run(sim, 20 * 10);
     expect(of(ev, 'crew.attacked').some((e) => e.crew === boarder && e.target === defender)).toBe(true);
   });

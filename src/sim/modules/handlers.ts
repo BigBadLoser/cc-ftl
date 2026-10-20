@@ -1,5 +1,5 @@
 import type { Command } from '../commands';
-import { gridOfShip } from '../combat/ships';
+
 import { JobC } from '../crew/components';
 import { findJobAt } from '../crew/helpers';
 import type { Sim } from '../sim';
@@ -8,6 +8,7 @@ import { AirlockC, requestAirlock } from './airlock';
 import { ModuleC } from './components';
 import { placementError, spawnModule } from './spawn';
 import { needsFrom } from '../items/materials';
+import { shipGrid } from '../regions';
 
 type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPriority' | 'module.setEnabled' | 'debug.spawnModule' | 'airlock.cycle';
 type Handler<T extends ModuleCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -25,9 +26,9 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     requestAirlock(sim, cmd.moduleId, cmd.to);
   },
   'job.buildModule': (sim, cmd) => {
-    const err = placementError(sim, gridOfShip(sim, cmd.ship), cmd.def, cmd.x, cmd.y, cmd.rot);
+    const err = placementError(sim, cmd.ship, cmd.def, cmd.x, cmd.y, cmd.rot);
     if (err) return reject(sim, cmd.type, err);
-    if (findJobAt(sim, gridOfShip(sim, cmd.ship), cmd.x, cmd.y)) return reject(sim, cmd.type, 'jobExists');
+    if (findJobAt(sim, cmd.ship, cmd.x, cmd.y)) return reject(sim, cmd.type, 'jobExists');
     const def = sim.content.modules[cmd.def];
     const needs = needsFrom(def?.cost);
     const id = sim.world.createEntity();
@@ -38,7 +39,7 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     });
   },
   'job.deconstructModule': (sim, cmd) => {
-    const grid = sim.grids.get(gridOfShip(sim, cmd.ship));
+    const grid = shipGrid(sim, cmd.ship);
     if (!grid?.has('module')) return reject(sim, cmd.type, 'badGrid');
     if (!grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
     const target = grid.get('module', cmd.x, cmd.y);
@@ -61,9 +62,9 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     m.priority = cmd.priority;
   },
   'debug.spawnModule': (sim, cmd) => {
-    const err = placementError(sim, gridOfShip(sim, cmd.ship), cmd.def, cmd.x, cmd.y, cmd.rot);
+    const err = placementError(sim, cmd.ship, cmd.def, cmd.x, cmd.y, cmd.rot);
     if (err) return reject(sim, cmd.type, err);
-    spawnModule(sim, gridOfShip(sim, cmd.ship), cmd.def, cmd.x, cmd.y, cmd.rot);
+    spawnModule(sim, cmd.def, cmd.x, cmd.y, cmd.rot);
   },
   'module.setEnabled': (sim, cmd) => {
     const m = sim.world.get(cmd.id, ModuleC);

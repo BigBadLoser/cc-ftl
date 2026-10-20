@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { hullSum } from './combat/hull';
 import { conductanceMap, diffuseStep, fieldFrame } from './diffusion';
 import { DenseGrid, type GridLike } from './grid';
-import { GridMap, newSectorGrid } from './gridMap';
+import { ShipGrid } from './shipGrid';
+import { newSectorGrid, stampGrid } from './stamp';
 import { gridFromTemplate } from './ship';
 import { Struct, gasConductance } from './structure';
 
@@ -57,7 +58,7 @@ const ROWS = [
 
 describe('active-list diffusion', () => {
   it('matches the full sweep exactly, tick after tick', () => {
-    const grid = gridFromTemplate(1, { name: 't', rows: ROWS });
+    const grid = gridFromTemplate({ name: 't', rows: ROWS });
     grid.set('door', 5, 3, 120);
     const frame = fieldFrame(grid);
     const cond = conductanceMap(grid, frame);
@@ -75,7 +76,7 @@ describe('active-list diffusion', () => {
   });
 
   it('lists only structure and the vacuum touching it', () => {
-    const frame = fieldFrame(gridFromTemplate(1, { name: 't', rows: ROWS }));
+    const frame = fieldFrame(gridFromTemplate({ name: 't', rows: ROWS }));
     const solid = ROWS.join('').split('').filter((c) => c !== '.').length;
     expect(frame.active.length).toBeGreaterThan(solid);
     expect(frame.active.length).toBeLessThan(ROWS.length * 30 * 0.65);
@@ -85,7 +86,7 @@ describe('active-list diffusion', () => {
   });
 
   it('rebuilds when the structure changes', () => {
-    const grid = gridFromTemplate(1, { name: 't', rows: ROWS });
+    const grid = gridFromTemplate({ name: 't', rows: ROWS });
     const before = fieldFrame(grid);
     expect(fieldFrame(grid)).toBe(before);
     grid.set('struct', 15, 7, Struct.Floor);
@@ -101,8 +102,8 @@ describe('load', () => {
     expect([...dense.load('smoke', { x: 1, y: 1, w: 2, h: 1 })]).toEqual([0, 50]);
     expect(() => dense.load('smoke', { x: -1, y: 0, w: 2, h: 1 })).toThrow(RangeError);
     const sector = newSectorGrid();
-    const grids = new GridMap(() => sector);
-    const win = grids.stamp(1, gridFromTemplate(1, { name: 't', rows: ['#_#'] }), 10, 10);
+    stampGrid(sector, gridFromTemplate({ name: 't', rows: ['#_#'] }), 10, 10);
+    const win = new ShipGrid(1, sector, 10, 10, 3, 1);
     win.set('smoke', 11, 10, 7);
     expect([...win.load('smoke')]).toEqual([0, 7, 0]);
     expect([...win.load('struct', { x: 9, y: 10, w: 5, h: 1 })]).toEqual([0, 2, 1, 2, 0]);
@@ -111,7 +112,7 @@ describe('load', () => {
 
 describe('hullSum', () => {
   it('is cached on the hp and struct revisions', () => {
-    const grid = gridFromTemplate(1, { name: 't', rows: ['###', '#_#', '###'] });
+    const grid = gridFromTemplate({ name: 't', rows: ['###', '#_#', '###'] });
     expect(hullSum(grid)).toBe(8 * 255);
     grid.set('hp', 0, 0, 5);
     expect(hullSum(grid)).toBe(7 * 255 + 5);

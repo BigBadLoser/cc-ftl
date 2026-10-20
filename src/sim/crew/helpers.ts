@@ -5,7 +5,7 @@ import {
 
 import { InertC, StunC } from '../robots/components';
 import type { Tile } from './pathfind';
-import { gridIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 
 // Facing index per unit step: 0 = +x, counter-clockwise in grid space, 2 = +y.
 const FACING_TABLE: Record<string, number> = {
@@ -62,11 +62,11 @@ export function isIncapacitated(sim: Sim, crew: number): boolean {
 }
 
 /** True if any living crew member stands on, or is stepping onto, the tile. */
-export function isTileOccupied(sim: Sim, gridId: number, x: number, y: number): boolean {
+export function isTileOccupied(sim: Sim, shipId: number, x: number, y: number): boolean {
   for (const id of sim.world.query(CrewC, PositionC)) {
     if (sim.world.has(id, DeadC)) continue;
     const p = sim.world.get(id, PositionC) as Position;
-    if (gridIdOf(sim, p) !== gridId) continue;
+    if (shipIdOf(sim, p) !== shipId) continue;
     if ((p.x === x && p.y === y) || (p.toX === x && p.toY === y)) return true;
   }
   return false;
@@ -75,10 +75,10 @@ export function isTileOccupied(sim: Sim, gridId: number, x: number, y: number): 
 const PLAYER_JOB_KINDS: readonly string[] = ['build', 'deconstruct', 'module', 'moduleDecon'];
 
 /** The player-made job (build, deconstruct, module blueprint) at a tile, or 0. */
-export function findJobAt(sim: Sim, gridId: number, x: number, y: number): number {
+export function findJobAt(sim: Sim, shipId: number, x: number, y: number): number {
   for (const id of sim.world.query(JobC)) {
     const j = sim.world.get(id, JobC);
-    if (j && gridIdOf(sim, j) === gridId && j.x === x && j.y === y && PLAYER_JOB_KINDS.includes(j.kind)) return id;
+    if (j && shipIdOf(sim, j) === shipId && j.x === x && j.y === y && PLAYER_JOB_KINDS.includes(j.kind)) return id;
   }
   return 0;
 }

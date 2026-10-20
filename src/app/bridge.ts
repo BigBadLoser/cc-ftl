@@ -1,4 +1,4 @@
-import { ItemStackC, Struct, gridOfShip, stackAt, type Command, type Sim } from '../sim';
+import { ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
 import type { UiTrade, UiStory, UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
@@ -10,6 +10,7 @@ import { buildShuttles } from './shuttleSnapshot';
 import { buildTrade } from './tradeSnapshot';
 import { buildStory } from './storySnapshot';
 import { createStore, type Readable } from './store';
+import { shipGrid } from '../sim/regions';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
 export interface Snapshot {
@@ -124,17 +125,17 @@ export function createBridge(sim: Sim): Bridge {
 
   const refreshInspect = () => {
     const ref = selected ?? hovered;
-    const gridId = ref ? gridOfShip(sim, ref.ship) : 0;
-    const grid = sim.grids.get(gridId);
+    const shipId = ref ? ref.ship : 0;
+    const grid = shipGrid(sim, shipId);
     let snap: InspectSnapshot | null = null;
     if (ref && grid?.inBounds(ref.x, ref.y)) {
       const fields = grid.fieldNames().map((name) => ({ name, value: grid.get(name, ref.x, ref.y) }));
       const struct = fields.find((f) => f.name === 'struct')?.value ?? 0;
-      const sid = stackAt(sim, gridId, ref.x, ref.y);
+      const sid = stackAt(sim, shipId, ref.x, ref.y);
       const st = sid ? sim.world.get(sid, ItemStackC) : undefined;
       snap = {
         ...ref,
-        grid: gridId,
+        grid: shipId,
         local: { x: ref.x - grid.x0, y: ref.y - grid.y0 },
         stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count } : null,
         structName: STRUCT_NAMES[struct] ?? `Unknown(${struct})`,

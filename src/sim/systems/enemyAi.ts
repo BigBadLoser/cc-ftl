@@ -1,4 +1,4 @@
-import { gridOfShip } from '../combat/ships';
+
 import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
 import { factionsHostile, isAiFaction } from '../combat/factions';
 import { modulesOnGrid, randomModule } from '../combat/targets';
@@ -44,7 +44,7 @@ export function enemyAiSystem(sim: Sim): void {
     const hp = t && sim.world.get(t.moduleId, ModuleC)?.hp;
     if (t && t.ship === foe && t.moduleId !== 0 && (hp ?? 0) > 0) continue;
     combat.aiTimer = AI_RETARGET_TICKS;
-    sim.enqueue({ type: 'combat.setTarget', ship: id, weaponId: null, targetShip: foe, targetModuleId: pick(sim, combat, gridOfShip(sim, foe)) });
+    sim.enqueue({ type: 'combat.setTarget', ship: id, weaponId: null, targetShip: foe, targetModuleId: pick(sim, combat, foe) });
   }
 }
 
@@ -69,19 +69,19 @@ function firstFoe(sim: Sim, faction: Ship['faction']): number {
   return other;
 }
 
-function pick(sim: Sim, combat: Combat, gridId: number): number {
+function pick(sim: Sim, combat: Combat, shipId: number): number {
   const has = (key: 'weapon' | 'shieldGen') => (mid: number): boolean => {
     const m = sim.world.get(mid, ModuleC);
     return !!m && m.hp > 0 && !!sim.content.modules[m.def]?.[key];
   };
   if (combat.doctrine === 'weapons') {
-    const id = randomModule(sim, gridId, has('weapon'));
+    const id = randomModule(sim, shipId, has('weapon'));
     if (id && has('weapon')(id)) return id;
   } else if (combat.doctrine === 'shields') {
-    const id = randomModule(sim, gridId, has('shieldGen'));
+    const id = randomModule(sim, shipId, has('shieldGen'));
     if (id && has('shieldGen')(id)) return id;
   } else {
-    const live = modulesOnGrid(sim, gridId).filter((mid) => (sim.world.get(mid, ModuleC)?.hp ?? 0) > 0);
+    const live = modulesOnGrid(sim, shipId).filter((mid) => (sim.world.get(mid, ModuleC)?.hp ?? 0) > 0);
     const weight = (mid: number): number => sim.content.modules[sim.world.get(mid, ModuleC)?.def ?? '']?.maxHp ?? 1;
     const total = live.reduce((s, mid) => s + weight(mid), 0);
     let roll = sim.rng.next() * total;
@@ -90,5 +90,5 @@ function pick(sim: Sim, combat: Combat, gridId: number): number {
       if (roll < 0) return mid;
     }
   }
-  return randomModule(sim, gridId);
+  return randomModule(sim, shipId);
 }

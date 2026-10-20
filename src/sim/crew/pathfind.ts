@@ -2,6 +2,7 @@ import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
 import { isEvaWalkable, isWalkable } from '../structure';
 import type { Sim } from '../sim';
+import { shipGrid } from '../regions';
 
 export interface Tile {
   x: number;
@@ -33,10 +34,10 @@ export interface PathOpts {
 /**
  * A* on one grid. 8 directions, no corner cutting. Returns the steps after `from` (empty if
  * already at the goal) or null if unreachable. Ties break on f, then h, then tile index.
- * Takes gridId so portal-spanning paths can extend this later.
+ * Takes shipId so portal-spanning paths can extend this later.
  */
-export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal, opts: PathOpts = {}): Tile[] | null {
-  const grid = sim.grids.get(gridId);
+export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, opts: PathOpts = {}): Tile[] | null {
+  const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct') || !grid.inBounds(from.x, from.y) || !grid.inBounds(goal.x, goal.y)) return null;
   const { width, height, x0, y0 } = grid;
   // The search runs on window indices, i = (y - y0) * width + (x - x0): the tie-break order is the same in any frame.

@@ -1,5 +1,5 @@
 import type { Faction } from '../combat/components';
-import { gridOfShip } from '../combat/ships';
+
 import { CrewC, DeadC, DraftedC, PositionC, type Crew } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { AllegianceC, PrisonerC } from '../fight/components';
@@ -11,7 +11,7 @@ import { hasLiveCore } from '../robots/core';
 import { haltCrew } from '../robots/halt';
 import type { Sim } from '../sim';
 import { HACK_HOLD_RADIUS } from '../tuning';
-import { gridIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 
 /**
  * Robot control, right after power (cores are live only while powered this tick). Stuns run out. Hacked cores lose
@@ -32,8 +32,8 @@ export function robotsSystem(sim: Sim): void {
   for (const id of sim.world.query(HackedC, ModuleC)) {
     const h = sim.world.get(id, HackedC) as Hacked;
     if (h.hacker && !holding(sim, h.hacker, id)) h.hacker = 0;
-    const gridId = gridIdOf(sim, sim.world.get(id, ModuleC));
-    if (h.hacker && !held.has(gridId)) held.set(gridId, h.by);
+    const shipId = shipIdOf(sim, sim.world.get(id, ModuleC));
+    if (h.hacker && !held.has(shipId)) held.set(shipId, h.by);
   }
   const live = new Map<string, boolean>();
   for (const id of sim.world.query(CoreLinkC, CrewC)) {
@@ -42,7 +42,7 @@ export function robotsSystem(sim: Sim): void {
       continue;
     }
     const link = sim.world.get(id, CoreLinkC) as { ship: number; faction: Faction };
-    const home = gridOfShip(sim, link.ship);
+    const home = link.ship;
     const key = `${link.ship}:${link.faction}`;
     let on = live.get(key);
     if (on === undefined) live.set(key, (on = hasLiveCore(sim, home, link.faction)));
@@ -77,7 +77,7 @@ function holding(sim: Sim, hacker: number, core: number): boolean {
   const m = sim.world.get(core, ModuleC);
   const pos = sim.world.get(hacker, PositionC);
   const def = m && sim.content.modules[m.def];
-  if (!m || !def || !pos || gridIdOf(sim, pos) !== gridIdOf(sim, m) || !isCombatReady(sim, hacker) || isIncapacitated(sim, hacker)) return false;
+  if (!m || !def || !pos || shipIdOf(sim, pos) !== shipIdOf(sim, m) || !isCombatReady(sim, hacker) || isIncapacitated(sim, hacker)) return false;
   const [w, h] = rotatedSize(def, m.rot);
   const dx = Math.max(m.x - pos.x, 0, pos.x - (m.x + w - 1));
   const dy = Math.max(m.y - pos.y, 0, pos.y - (m.y + h - 1));

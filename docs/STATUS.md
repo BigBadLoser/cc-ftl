@@ -371,6 +371,13 @@ Save v19. Both `sectorEquiv` hashes unchanged (`legacyWorld` writes `gridId` / `
 Fixture grids that had no ship now get an inert one (`fixtureShip`, a prize) so commands can name them.
 Headless smoke on the built game: 0 page errors, starter ship visible; a raider spawned through the debug hook shows as `node-{shipId}` in the strip, clicking it opens the selection panel with the Frame fight button, the combat panel opens by itself and auto-targets the raider, and picking a module (chip or tap in the ship view) sets `Target { ship, moduleId }`. Next: 7d.
 
+Branch `sector-7d` (not merged, no visual change): the final cleanup slice of step 7. `sim.grids`, `GridMap`, `GridWindow` (+ `raw`), the
+cross-grid portals and `Path.then` are gone; `SuitC` lives in `eva/components.ts` and `AirlockC` in `modules/airlock.ts`; `Ship.gridId` is
+gone, so every id in the sim, app and renderer is the `ShipC` entity id. A ship's bounds are its `ShipC` rectangle, read through
+`ShipGrid` (`shipGrid(sim, ship)`: a derived view of `sim.sector.grid`, not registered or saved). Lint rejects `.gridId` and `.grids` in
+`src/sim`. Save v20. Both `sectorEquiv` hashes unchanged. Ship-less fixture grids need `stampShip` (a prize `ShipC` at the origin). Tests that
+named ships 1 and 2 use `nth(sim, n)`. See ARCHITECTURE "Step 7 split" and "7d notes". **Step 7 is done.** Next: step 9 (lifting ships).
+
 **EVA on the hull roof (user decision, 2026-10-20; not built):** EVA crew outside a ship must not walk the hull ring at
 floor level (the tiles just outside the hull walls): there they look as if standing on air, and walking along wall faces
 would need a sideways walk animation we don't want for now. Instead EVA crew walk on top of the **hull roof**, pathing

@@ -1,4 +1,4 @@
-import { gridIdOf } from '../regions';
+import { shipIdOf, shipGrid } from '../regions';
 import { hasSuitAir } from '../eva/suit';
 import { AllegianceC } from '../fight/components';
 import type { Modifier, ModifierSource } from '../stats';
@@ -66,7 +66,7 @@ export function moodFactors(sim: Sim, id: number, m: Mood): MoodFactor[] {
   if (m.sleep > 0) add(m.bed > 0 ? 'bed' : 'floor', m.bed > 0 ? 5 : -6);
 
   const pos = sim.world.get(id, PositionC);
-  const grid = pos && sim.grids.get(gridIdOf(sim, pos));
+  const grid = pos && shipGrid(sim, shipIdOf(sim, pos));
   if (pos && grid?.has('light') && grid.inBounds(pos.x, pos.y)) {
     if (grid.get('light', pos.x, pos.y) < LIGHT_DARK_BELOW) add('dark', -5);
     if (!hasSuitAir(sim, id)) {
@@ -90,7 +90,7 @@ export function hasCompany(sim: Sim, id: number): boolean {
   for (const other of sim.world.query(CrewC, PositionC)) {
     if (other === id || sim.world.has(other, DeadC) || !hasMood(sim, other)) continue;
     const p = sim.world.get(other, PositionC);
-    if (p && gridIdOf(sim, p) === gridIdOf(sim, pos) && Math.max(Math.abs(p.x - pos.x), Math.abs(p.y - pos.y)) <= MOOD_COMPANY_RADIUS) return true;
+    if (p && shipIdOf(sim, p) === shipIdOf(sim, pos) && Math.max(Math.abs(p.x - pos.x), Math.abs(p.y - pos.y)) <= MOOD_COMPANY_RADIUS) return true;
   }
   return false;
 }

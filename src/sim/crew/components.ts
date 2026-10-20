@@ -72,7 +72,7 @@ export const NeedsC = defineComponent<Needs>('needs');
 
 /** Present while the player controls this crew member directly. */
 export interface Drafted {
-  /** Ordered destination (a sector tile), if any. The grid it is on comes from the tile (`gridIdAt`). */
+  /** Ordered destination (a sector tile), if any. The grid it is on comes from the tile (`shipIdAt`). */
   target: { x: number; y: number } | null;
   /** The target the current route was planned for (so a changed target is noticed). */
   planned?: { x: number; y: number };

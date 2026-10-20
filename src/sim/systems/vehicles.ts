@@ -7,7 +7,7 @@ import type { Sim } from '../sim';
 import { EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter, boardingTile, dockPoint } from '../vehicles/geometry';
 import { boardCrew, destPoint, occupants, undock, vehicleDefOf, vehicleLostWithBay, vehicleSpeedPerTick } from '../vehicles/lifecycle';
-import { gridIdOf, shipIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 
 /**
  * Vehicles. (1) Crew with an embark order who stand on the vehicle's boarding tile climb in (hidden, off the grid).
@@ -27,7 +27,7 @@ export function vehicleSystem(sim: Sim): void {
       sim.world.remove(crew, EmbarkOrderC);
       continue;
     }
-    if (isSettled(pos) && gridIdOf(sim, pos) === at.gridId && pos.x === at.x && pos.y === at.y) {
+    if (isSettled(pos) && shipIdOf(sim, pos) === at.shipId && pos.x === at.x && pos.y === at.y) {
       sim.world.remove(crew, EmbarkOrderC);
       if (occupants(v).length < (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) boardCrew(sim, crew, order.vehicle);
       else sim.events.emit({ type: 'command.rejected', command: 'vehicle.embark', reason: 'full' });

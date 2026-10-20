@@ -1,4 +1,4 @@
-import { gridIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { AirlockC } from '../modules/airlock';
 import { regions } from '../regions';
@@ -21,7 +21,7 @@ export function doorsSystem(sim: Sim): void {
     const used = new Set<number>();
     for (const id of sim.world.query(CrewC, PositionC)) {
       const p = sim.world.get(id, PositionC);
-      if (!p || gridIdOf(sim, p) !== grid.id || sim.world.has(id, DeadC)) continue;
+      if (!p || shipIdOf(sim, p) !== grid.id || sim.world.has(id, DeadC)) continue;
       used.add((p.y - grid.y0) * width + (p.x - grid.x0));
       used.add((p.toY - grid.y0) * width + (p.toX - grid.x0));
     }

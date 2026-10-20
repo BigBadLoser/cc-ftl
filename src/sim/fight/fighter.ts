@@ -16,17 +16,17 @@ import { armorOf } from '../robots/core';
 import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
-import { gridIdOf, shipIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 
 /** Combat-ready crew with an allegiance, grouped by grid, each list in ascending id order. */
 export function combatReadyUnits(sim: Sim): Map<number, number[]> {
   const out = new Map<number, number[]>();
   for (const id of sim.world.query(AllegianceC, PositionC)) {
     if (!isCombatReady(sim, id)) continue;
-    const gridId = gridIdOf(sim, sim.world.get(id, PositionC));
-    const list = out.get(gridId);
+    const shipId = shipIdOf(sim, sim.world.get(id, PositionC));
+    const list = out.get(shipId);
     if (list) list.push(id);
-    else out.set(gridId, [id]);
+    else out.set(shipId, [id]);
   }
   return out;
 }
@@ -72,7 +72,7 @@ function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: numb
   const moved = !f.goal || f.goal.x !== goal.x || f.goal.y !== goal.y;
   const idle = path.steps.length === 0 && isSettled(pos);
   if (!idle && !(moved && sim.tick - f.planned >= CHASE_REPLAN_TICKS)) return;
-  const steps = findPath(sim, gridIdOf(sim, pos), origin(pos), { ...goal, adjacent });
+  const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { ...goal, adjacent });
   f.planned = sim.tick;
   f.goal = { x: goal.x, y: goal.y };
   if (steps) {
@@ -81,13 +81,13 @@ function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: numb
 }
 
 /** The grid's bridge if it has one (so boarders go hold it, which captures the ship), else its nearest console: a boarder's objective, as an access tile. */
-function consoleObjective(sim: Sim, gridId: number, from: Position): { x: number; y: number } | null {
+function consoleObjective(sim: Sim, shipId: number, from: Position): { x: number; y: number } | null {
   let best: { x: number; y: number } | null = null;
   let bestD = Infinity;
   for (const mid of sim.world.query(ModuleC)) {
     const m = sim.world.get(mid, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def?.console || gridIdOf(sim, m) !== gridId || m.hp <= 0) continue;
+    if (!m || !def?.console || shipIdOf(sim, m) !== shipId || m.hp <= 0) continue;
     const at = accessTile(def, m.x, m.y, m.rot);
     const d = (at ? Math.hypot(at.x - from.x, at.y - from.y) : Infinity) + (def.bridge || def.console === 'helm' ? 0 : 1000);
     if (at && d < bestD) {
@@ -115,7 +115,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
     if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
-      const goal = consoleObjective(sim, gridIdOf(sim, pos), pos);
+      const goal = consoleObjective(sim, shipIdOf(sim, pos), pos);
       if (goal && (pos.x !== goal.x || pos.y !== goal.y)) walkTo(sim, id, f, pos, goal, false);
     }
     return;

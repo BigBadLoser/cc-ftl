@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
-  deserialize, gridIdAt, gridOfShip, newGame, serialize, shipEntityOf, Struct, windowShipMismatches, type Body, type Drafted, type Module, type Sim, type Vehicle,
+  deserialize, homeShip as homeShipOf, newGame, serialize, shipGrid, shipIdAt, shipIds, Struct, type Body, type Drafted, type Module, type Sim, type Vehicle,
 } from '../../sim';
 import { content } from '../index';
+
+/**
+ * The pre-refactor grid id of a ship id: grids and ships were created together with ascending ids, so a ship's grid id was its
+ * 1-based place in ship-id order. 0 for no ship. (Step 7d removed grid ids; the hashes were recorded with them.)
+ */
+const ordinal = (sim: Sim, ship: number): number => shipIds(sim).indexOf(ship) + 1;
+const gridIdAt = (sim: Sim, x: number, y: number): number => ordinal(sim, shipIdAt(sim, x, y));
+const gridOfShip = (sim: Sim, ship: number): number => ordinal(sim, ship);
 
 /** Grid fields that existed before the sector refactor (the `ship` owner layer is new and left out). */
 const FIELDS = ['struct', 'room', 'o2', 'co2', 'temp', 'fire', 'smoke', 'light', 'door', 'module', 'item', 'hp'];
@@ -28,6 +36,8 @@ function legacyWorld(sim: Sim): unknown {
     const b = bodies.get(id) as Body;
     return [id, { def, homeGrid: gridOfShip(sim, homeShip), home, state, x: b.x, y: b.y, heading: b.heading, hp, ...rest }];
   });
+  // Step 7d drops `gridId` from ShipC: it was the first key.
+  stores.ship = (stores.ship ?? []).map(([id, raw]) => [id, { gridId: ordinal(sim, id), ...(raw as object) }]);
   // Step 7b drops `gridId` from the module component (the ship under its tile says it): put it back after `def`.
   stores.module = (stores.module ?? []).map(([id, raw]) => {
     const { def, ...rest } = raw as Module;
@@ -75,7 +85,7 @@ function legacyWorld(sim: Sim): unknown {
   stores.coreLink = (stores.coreLink ?? []).map(([id, raw]) => [id, gridKeyed(raw as Record<string, unknown>, 'ship', 'gridId')]);
   // Step 6 stores sector tiles in every component; the old code stored grid-local ones. Subtract each grid's origin.
   const origin = (gridId: number): [number, number] => {
-    const g = sim.grids.get(gridId);
+    const g = shipGrid(sim, shipIds(sim)[gridId - 1] ?? 0);
     return g ? [g.x0, g.y0] : [0, 0];
   };
   const posGrid = new Map(((stores.position ?? []) as [number, { gridId: number }][]).map(([id, p]) => [id, p.gridId]));
@@ -104,9 +114,9 @@ function legacyWorld(sim: Sim): unknown {
  */
 function stateHash(sim: Sim, events: string): string {
   let h = fnv(`${sim.tick}|${sim.rng.getState()}|${JSON.stringify(legacyWorld(sim))}|${events}`);
-  for (const id of [...sim.grids.keys()].sort((a, b) => a - b)) {
-    const g = sim.grids.get(id)!;
-    const vals: number[] = [id, g.width, g.height];
+  for (const [i, ship] of shipIds(sim).entries()) {
+    const g = shipGrid(sim, ship)!;
+    const vals: number[] = [i + 1, g.width, g.height];
     for (const f of FIELDS) {
       for (let y = 0; y < g.height; y++) for (let x = 0; x < g.width; x++) vals.push(g.get(f, g.x0 + x, g.y0 + y));
     }
@@ -132,7 +142,7 @@ function combat(seed: number): Sim {
 /** Starter ship with a fire in the first floor tile from the centre and a hull breach on the first outer wall. */
 function disaster(seed: number): Sim {
   const sim = newGame(seed, content);
-  const g = sim.grids.get(1)!;
+  const g = shipGrid(sim, homeShipOf(sim))!;
   let fire: { x: number; y: number } | null = null;
   let breach: { x: number; y: number } | null = null;
   const at = (x: number, y: number) => g.get('struct', g.x0 + x, g.y0 + y);
@@ -145,8 +155,8 @@ function disaster(seed: number): Sim {
       }
     }
   }
-  sim.enqueue({ type: 'debug.ignite', ship: shipEntityOf(sim, 1), ...fire! });
-  sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), ...breach!, kind: Struct.Space });
+  sim.enqueue({ type: 'debug.ignite', ship: homeShipOf(sim), ...fire! });
+  sim.enqueue({ type: 'debug.setStruct', ship: homeShipOf(sim), ...breach!, kind: Struct.Space });
   return sim;
 }
 
@@ -155,7 +165,6 @@ describe('sector refactor equivalence', () => {
     const sim = combat(3);
     const log: string[] = [];
     run(sim, 2400, log);
-    expect(windowShipMismatches(sim)).toEqual([]);
     expect(stateHash(sim, log.join(','))).toBe(EXPECTED.combat);
   });
 

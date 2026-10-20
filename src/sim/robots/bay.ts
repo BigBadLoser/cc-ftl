@@ -1,5 +1,5 @@
 import { ammoCount, consumeAmmo } from '../combat/ammo';
-import { shipOf } from '../combat/ships';
+
 import { CrewC, DeadC, HealthC, JobC, NeedsC, PathC, PositionC, type Crew, type Job, type Path, type Position } from '../crew/components';
 import { clearPath, isSettled, origin } from '../crew/helpers';
 import type { WorkResult } from '../crew/jobWork';
@@ -11,7 +11,8 @@ import { openTilesOf } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { BAY_REPAIR_BELOW } from '../tuning';
 import { speciesOf } from './core';
-import { gridIdOf, shipIdOf } from '../regions';
+import { shipIdOf } from '../regions';
+import { shipById } from '../combat/ships';
 
 /** True if the module is a robot bay. */
 export function isBay(sim: Sim, id: number): boolean {
@@ -52,8 +53,8 @@ export function homeBay(sim: Sim, robot: number): number {
 }
 
 /** The first of a robot's repair items its grid's storage holds, or null. */
-export function repairItem(sim: Sim, robot: number, gridId: number): string | null {
-  for (const item of speciesOf(sim, robot)?.mechanical?.items ?? []) if (ammoCount(sim, gridId, item) > 0) return item;
+export function repairItem(sim: Sim, robot: number, shipId: number): string | null {
+  for (const item of speciesOf(sim, robot)?.mechanical?.items ?? []) if (ammoCount(sim, shipId, item) > 0) return item;
   return null;
 }
 
@@ -64,7 +65,7 @@ export function wantsBay(sim: Sim, robot: number): boolean {
   if ((sim.world.get(robot, NeedsC)?.charge ?? 100) < battery.lowBelow) return true;
   const hp = sim.world.get(robot, HealthC);
   const pos = sim.world.get(robot, PositionC);
-  return !!hp && !!pos && hp.hp < hp.max * BAY_REPAIR_BELOW && repairItem(sim, robot, gridIdOf(sim, pos)) !== null;
+  return !!hp && !!pos && hp.hp < hp.max * BAY_REPAIR_BELOW && repairItem(sim, robot, shipIdOf(sim, pos)) !== null;
 }
 
 /**
@@ -74,7 +75,7 @@ export function wantsBay(sim: Sim, robot: number): boolean {
 export function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): boolean {
   let bay = homeBay(sim, robot);
   const home = bay ? sim.world.get(bay, ModuleC) : undefined;
-  if (home && gridIdOf(sim, home) !== gridIdOf(sim, pos)) return false; // its home is on another grid: no squatting here
+  if (home && shipIdOf(sim, home) !== shipIdOf(sim, pos)) return false; // its home is on another grid: no squatting here
   if (home && home.hp <= 0) {
     home.reservedBy = 0; // wrecked home: find another
     bay = 0;
@@ -83,8 +84,8 @@ export function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): boo
     let best = Infinity;
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
-      if (!m || gridIdOf(sim, m) !== gridIdOf(sim, pos) || !bayFree(sim, id)) continue;
-      const steps = findPath(sim, gridIdOf(sim, pos), origin(pos), cradleOf(sim, id));
+      if (!m || shipIdOf(sim, m) !== shipIdOf(sim, pos) || !bayFree(sim, id)) continue;
+      const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), cradleOf(sim, id));
       if (steps && steps.length < best) [bay, best] = [id, steps.length];
     }
     if (!bay) return false;
@@ -99,7 +100,7 @@ export function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): boo
     return true;
   }
   if (path.steps.length > 0 || !isSettled(pos)) return true;
-  const steps = findPath(sim, gridIdOf(sim, pos), origin(pos), { x: m.x, y: m.y });
+  const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: m.x, y: m.y });
   if (!steps || steps.length === 0) return false;
   path.steps = steps;
   return true;
@@ -112,7 +113,7 @@ export function performAssemble(sim: Sim, job: Job, speed: number): WorkResult {
   if (!bay || bay.hp <= 0 || !role) return 'done';
   job.progress = Math.min(job.work, job.progress + speed);
   if (job.progress < job.work) return 'working';
-  const robot = createCrew(sim, gridIdOf(sim, bay), role, cradleOf(sim, job.target ?? 0), { faction: shipOf(sim, gridIdOf(sim, bay))?.faction ?? 'player' });
+  const robot = createCrew(sim, shipIdOf(sim, bay), role, cradleOf(sim, job.target ?? 0), { faction: shipById(sim, shipIdOf(sim, bay))?.faction ?? 'player' });
   if (!robot) return 'done';
   bay.reservedBy = robot;
   consumeDelivered(job);
@@ -121,8 +122,8 @@ export function performAssemble(sim: Sim, job: Job, speed: number): WorkResult {
 }
 
 /** Take one repair item for a bay's credit; returns hp bought (0 when the ship has none). */
-export function buyRepair(sim: Sim, robot: number, gridId: number): number {
-  const item = repairItem(sim, robot, gridId);
-  if (!item || !consumeAmmo(sim, gridId, item)) return 0;
+export function buyRepair(sim: Sim, robot: number, shipId: number): number {
+  const item = repairItem(sim, robot, shipId);
+  if (!item || !consumeAmmo(sim, shipId, item)) return 0;
   return speciesOf(sim, robot)?.mechanical?.hpPerItem ?? 0;
 }

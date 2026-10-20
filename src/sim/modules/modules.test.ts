@@ -1,24 +1,32 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   BedClaimC, CrewC, HealthC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
+
 import { findPath } from '../crew/pathfind';
+
 import type { SimEvent } from '../events';
 import type { ContentRegistry, ModuleDef } from '../registry';
-import { gridFromTemplate, spawnTemplateModules } from '../ship';
+import { spawnTemplateModules } from '../ship';
 import { Sim } from '../sim';
-import { ShipC } from '../combat/components';
-import { shipEntityOf } from '../combat/ships';
+
+import { stampShip } from '../combat/ships';
+
+import type { ShipTemplate } from '../registry';
+
 import { CREW_MAX_HP } from '../tuning';
+
 import { ModuleC } from './components';
+
 import { accessTile, footprintTiles } from './footprint';
 
-/** A fixture grid has no ship; commands address ships, so give it an inert one (a prize is skipped by every ship system). */
-function fixtureShip(sim: Sim, gridId: number): void {
-  const g = sim.grids.get(gridId)!;
-  sim.world.add(sim.world.createEntity(), ShipC, {
-    gridId, name: 'fixture', faction: 'player', state: 'prize', x: g.x0, y: g.y0, width: g.width, height: g.height, hullMax: 0, integrity: 1,
-  });
+import { shipGrid } from '../regions';
+
+
+/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
+function fixtureShip(sim: Sim, t: ShipTemplate): number {
+  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
 }
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
@@ -46,8 +54,7 @@ const rows = ['.......', '.#####.', '.#___#.', '.#___#.', '.#___#.', '.#####.', 
 
 function make(): Sim {
   const sim = new Sim(2, content);
-  sim.grids.set(1, gridFromTemplate(1, { name: 't', rows }));
-  fixtureShip(sim, 1);
+  fixtureShip(sim, { name: 't', rows });
   return sim;
 }
 function crew(sim: Sim, x: number, y: number, p: Priorities = all(4), rest = 100): number {
@@ -81,17 +88,17 @@ describe('modules', () => {
   it('are built by a construction job, claim their tiles and block pathing', () => {
     const sim = make();
     const id = crew(sim, 2, 4, construction);
-    sim.enqueue({ type: 'job.buildModule', ship: shipEntityOf(sim, 1), x: 3, y: 3, def: 'block', rot: 0 });
+    sim.enqueue({ type: 'job.buildModule', ship: 1, x: 3, y: 3, def: 'block', rot: 0 });
     const events: SimEvent[] = [];
     run(sim, 3);
     expect(sim.world.query(JobC)).toHaveLength(1);
-    expect(sim.grids.get(1)!.get('module', 3, 3)).toBe(0); // only a blueprint so far
+    expect(shipGrid(sim, 1)!.get('module', 3, 3)).toBe(0); // only a blueprint so far
     for (let i = 0; i < 400 && modulesOf(sim, 'block').length === 0; i++) {
       sim.step();
       events.push(...sim.events.drain());
     }
     const [block] = modulesOf(sim, 'block') as [number];
-    const g = sim.grids.get(1)!;
+    const g = shipGrid(sim, 1)!;
     expect([g.get('module', 3, 3), g.get('module', 4, 3), g.get('module', 2, 3)]).toEqual([block, block, 0]);
     expect(sim.world.get(block, ModuleC)).toMatchObject({ hp: 100, enabled: true, rot: 0 });
     expect(events.some((e) => e.type === 'crew.jobDone' && e.kind === 'module')).toBe(true);
@@ -107,23 +114,23 @@ describe('modules', () => {
   it('wait for crew to step off the footprint before appearing', () => {
     const sim = make();
     const id = crew(sim, 3, 3, construction);
-    sim.enqueue({ type: 'job.buildModule', ship: shipEntityOf(sim, 1), x: 3, y: 3, def: 'block', rot: 0 });
+    sim.enqueue({ type: 'job.buildModule', ship: 1, x: 3, y: 3, def: 'block', rot: 0 });
     run(sim, 200);
     expect(modulesOf(sim, 'block')).toHaveLength(1);
     const p = sim.world.get(id, PositionC)!;
-    expect(sim.grids.get(1)!.get('module', p.x, p.y)).toBe(0);
+    expect(shipGrid(sim, 1)!.get('module', p.x, p.y)).toBe(0);
   });
 
   it('are deconstructed by a job and free their tiles', () => {
     const sim = make();
     crew(sim, 2, 4, construction);
-    sim.enqueue({ type: 'job.buildModule', ship: shipEntityOf(sim, 1), x: 3, y: 3, def: 'block', rot: 0 });
+    sim.enqueue({ type: 'job.buildModule', ship: 1, x: 3, y: 3, def: 'block', rot: 0 });
     run(sim, 300);
     expect(modulesOf(sim, 'block')).toHaveLength(1);
-    sim.enqueue({ type: 'job.deconstructModule', ship: shipEntityOf(sim, 1), x: 4, y: 3 }); // any footprint tile
+    sim.enqueue({ type: 'job.deconstructModule', ship: 1, x: 4, y: 3 }); // any footprint tile
     run(sim, 300);
     expect(modulesOf(sim, 'block')).toHaveLength(0);
-    expect(sim.grids.get(1)!.get('module', 3, 3)).toBe(0);
+    expect(shipGrid(sim, 1)!.get('module', 3, 3)).toBe(0);
     expect(findPath(sim, 1, { x: 2, y: 3 }, { x: 3, y: 3 })).not.toBeNull();
   });
 
@@ -131,7 +138,7 @@ describe('modules', () => {
     const sim = make();
     const reasons = (): string[] => sim.events.drain().flatMap((e) => (e.type === 'command.rejected' ? [e.reason] : []));
     const build = (x: number, y: number, def = 'block', rot = 0) =>
-      sim.enqueue({ type: 'job.buildModule', ship: shipEntityOf(sim, 1), x, y, def, rot });
+      sim.enqueue({ type: 'job.buildModule', ship: 1, x, y, def, rot });
     build(1, 1); // on a wall
     build(4, 2); // second tile off the room
     build(2, 2, 'nope');
@@ -143,7 +150,7 @@ describe('modules', () => {
     build(3, 2); // overlaps the first blueprint
     sim.step();
     expect(reasons()).toEqual(['jobExists']);
-    sim.enqueue({ type: 'job.deconstructModule', ship: shipEntityOf(sim, 1), x: 2, y: 2 });
+    sim.enqueue({ type: 'job.deconstructModule', ship: 1, x: 2, y: 2 });
     sim.enqueue({ type: 'module.setPriority', id: 999, priority: 2 });
     sim.step();
     expect(reasons()).toEqual(['noModule', 'noModule']);
