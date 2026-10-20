@@ -197,6 +197,16 @@ palette.json    the single palette, read by Blender scripts and the game
   below), `structure` (faction tile looks, see below), `galley`
   (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
+- **Wall corner fills (`walls`, the 47-tile blob set):** wall and hull pieces are picked by the 4-neighbour mask
+  (N1 E2 S4 W8) plus corner bits (`tiles.ts` `wallCorners`: NE 1, SE 2, SW 4, NW 8, set when both arms beside the
+  corner connect and the two edge tiles and the diagonal are all wall; a door breaks the block). Ids:
+  `tile.wall.{full.|low.|}m<mask>c<bits>`, `tile.hull.{full.|}m<mask>c<bits>[.v1]`, end faces
+  `tile.{fam}.{pre}end.{s|e}.c<bits>` (only the fills reaching that edge) and the rear ghost
+  `tile.hull.ghost.m{6|7|14|15}c2[.r*]`. Each set bit fills that quadrant (`walls.Strip` `corners`), so a thick block
+  is one mass: black cut tops, wall height inside interior walls, hull-top height inside the hull with the walls up.
+  Every chain ends with the plain `m<mask>` id. Default look only for now: faction looks and breaches use the plain
+  pieces. Walls with no floor round them take their light from up to 6 tiles away (`gridView` `wallLight`), so a thick
+  block's top is lit evenly.
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
     at the tile centre. The looks are `navy`, `drone`, `civil` and `scrap`, picked by faction.

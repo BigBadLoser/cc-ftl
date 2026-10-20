@@ -52,7 +52,7 @@ describe("wall autotiling", () => {
     expect(ids(ring, 2, 1, W, "up")).toEqual(["hull.full.m10", "hull.full.end.e"]);
     expect(ids(ring, 2, 1, W, "auto")).toEqual(["hull.m10", "hull.end.e"]);
     expect(ids(ring, 2, 1, W, "down")).toEqual(["hull.ghost.m10"]);
-    expect(ids(grid([[S, S, S, S], [S, F, F, S], [S, F, W, W], [S, S, W, W]]), 2, 2, W, "down")).toEqual(["hull.ghost.m6.r9"]);
+    expect(ids(grid([[S, S, S, S], [S, F, F, S], [S, F, W, W], [S, S, W, W]]), 2, 2, W, "down")).toEqual(["hull.ghost.m6c2.r9"]);
     expect(ids(ring, 1, 1, W, "down")).toEqual(["hull.ghost.m6"]);
     expect(ids(ring, 2, 1, W, "up", false)).toEqual(["hull.full.m10"]);
     expect(ids(ring, 2, 3, W, "auto", false)).toEqual(["hull.m10"]);

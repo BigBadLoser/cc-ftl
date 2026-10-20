@@ -48,6 +48,24 @@ export function wallMask(kindAt: KindAt, x: number, y: number): number {
   );
 }
 
+/**
+ * Corner fills (walls.py corner_sets): bit 1 = NE, 2 = SE, 4 = SW, 8 = NW. A bit is set when both arms beside that
+ * corner are connected and all three tiles round it (the two edge neighbours and the diagonal) are solid wall: a door
+ * breaks a thick block. The piece then fills that quadrant, so a thick block is one mass instead of posts and pits.
+ */
+export function wallCorners(kindAt: KindAt, x: number, y: number, mask: number): number {
+  const wall = (dx: number, dy: number) => kindAt(x + dx, y + dy) === Struct.Wall;
+  let c = 0;
+  if ((mask & 3) === 3 && wall(0, -1) && wall(1, 0) && wall(1, -1)) c |= 1;
+  if ((mask & 6) === 6 && wall(1, 0) && wall(0, 1) && wall(1, 1)) c |= 2;
+  if ((mask & 12) === 12 && wall(0, 1) && wall(-1, 0) && wall(-1, 1)) c |= 4;
+  if ((mask & 9) === 9 && wall(-1, 0) && wall(0, -1) && wall(-1, -1)) c |= 8;
+  return c;
+}
+
+/** `c<bits>`, or "" for none. */
+const cs = (c: number) => (c ? `c${c}` : "");
+
 /** Wall view level of the art (tools/blender/sprites/walls.py LEVELS) for a cutaway mode. */
 export type WallLevel = "up" | "cut" | "low";
 export const wallLevel = (mode: CutawayMode): WallLevel => (mode === "up" ? "up" : mode === "down" ? "low" : "cut");
@@ -118,14 +136,22 @@ export function wallPieces(
   if (selfGhost && hull && level === "low") {
     // The rear ghost traces its sloped skirt; `.r<1|8|9>` = which unconnected N / W sides face a room, not space.
     const room = (isRoom(kindAt(x, y - 1)) ? 1 : 0) | (isRoom(kindAt(x - 1, y)) ? 8 : 0);
+    // `c2`: the SE diagonal is solid too (a thick block), so the slope does not dip toward it.
     const id = `tile.hull.ghost.m${mask}`;
-    return [{ chain: room ? [`${id}.r${room}`, id] : [id], order: 0 }];
+    const legacy = room ? [`${id}.r${room}`, id] : [id];
+    const se = (mask & 6) === 6 && wallCorners(kindAt, x, y, mask) & 2;
+    return [{ chain: se ? [...legacy.map((i) => i.replace(id, `${id}c2`)), ...legacy] : legacy, order: 0 }];
   }
+  // Corner fills (wallCorners): `m<mask>c<bits>` first, today's `m<mask>` last, so partial art falls back cleanly.
+  const c = wallCorners(kindAt, x, y, mask);
   const fam = hull ? "hull" : "wall";
-  const base = `tile.${fam}.${PRE[level]}m${mask}`;
-  const out: Piece[] = [{ chain: [base + v, base], order: 0 }];
-  if (mask & 4 && ((ghosts && ghostAt(kindAt, x, y + 1, level)) || gap(x, y + 1))) out.push({ chain: [`tile.${fam}.${PRE[level]}end.s`], order: 1 });
-  if (mask & 2 && ((ghosts && ghostAt(kindAt, x + 1, y, level)) || gap(x + 1, y))) out.push({ chain: [`tile.${fam}.${PRE[level]}end.e`], order: 1 });
+  const pre = `tile.${fam}.${PRE[level]}`;
+  const base = `${pre}m${mask}`;
+  const chain = c ? [...new Set([`${base}c${c}${v}`, `${base}c${c}`, base + v, base])] : [base + v, base];
+  const out: Piece[] = [{ chain, order: 0 }];
+  const end = (side: string, bits: number) => (bits ? [`${pre}end.${side}.${cs(bits)}`, `${pre}end.${side}`] : [`${pre}end.${side}`]);
+  if (mask & 4 && ((ghosts && ghostAt(kindAt, x, y + 1, level)) || gap(x, y + 1))) out.push({ chain: end("s", c & 6), order: 1 });
+  if (mask & 2 && ((ghosts && ghostAt(kindAt, x + 1, y, level)) || gap(x + 1, y))) out.push({ chain: end("e", c & 3), order: 1 });
   return out;
 }
 
