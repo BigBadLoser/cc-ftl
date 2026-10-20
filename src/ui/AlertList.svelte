@@ -6,7 +6,7 @@
   let { api }: { api: UiApi } = $props();
   let list = $state<UiAlert[]>([]);
   let h = $state(0);
-  /** The combat panel starts below the notifications. */
+  /** The combat panel starts below the notifications (and the event log above them). */
   $effect(() => {
     document.documentElement.style.setProperty('--alerts-h', `${h}px`);
   });
@@ -40,7 +40,7 @@
 
 <style>
   /* Notifications queue under the time controls, stacked downward. */
-  .alerts { position: fixed; z-index: 4; right: calc(8px + var(--sar)); top: calc(var(--sat) + 80px); display: grid; gap: 2px; width: min(260px, calc(100vw - 110px)); pointer-events: none; }
+  .alerts { position: fixed; z-index: 4; right: calc(8px + var(--sar)); top: calc(var(--sat) + 80px + var(--log-h, 0px)); display: grid; gap: 2px; width: min(260px, calc(100vw - 110px)); pointer-events: none; }
   .alert { display: flex; pointer-events: auto; background: var(--panel); border: 1px solid var(--amber); border-left-width: 3px; }
   .alert.danger { border-color: var(--red); }
   .alert.good { border-color: var(--green); }
@@ -56,5 +56,5 @@
   .ic { display: inline-flex; color: var(--amber); }
   .danger .ic { color: var(--red); } .good .ic { color: var(--green); }
   .more { color: var(--dim); font-size: 12px; padding-left: 4px; }
-  @media (max-width: 600px) { .alerts { right: auto; left: 8px; width: calc(100vw - 62px - var(--sar)); top: calc(var(--hdr) + var(--sat) + 6px); } :global(html[data-combat]) .alerts { display: none; } }
+  @media (max-width: 600px) { .alerts { right: auto; left: 8px; width: calc(100vw - 62px - var(--sar)); top: calc(var(--hdr) + var(--sat) + 6px + var(--log-h, 0px)); } :global(html[data-combat]) .alerts { display: none; } }
 </style>

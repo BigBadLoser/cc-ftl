@@ -11,6 +11,7 @@
   import PriorityGrid from './PriorityGrid.svelte';
   import ToolBar from './ToolBar.svelte';
   import AlertList from './AlertList.svelte';
+  import EventLog from './EventLog.svelte';
   import BuildModules from './BuildModules.svelte';
   import OverlayPicker from './OverlayPicker.svelte';
   import NodeStrip from './NodeStrip.svelte';
@@ -101,7 +102,7 @@
 <canvas bind:this={canvas}></canvas>
 
 <header>
-  <!-- Left: global screens. Centre: crew and what else is in the node. Right: time, with a log above it later and notifications below. -->
+  <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
   <NavStrip
     {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.length > 0} combatOpen={combat.inCombat && combatOpen}
     onOverview={() => (overviewOpen = !overviewOpen)}
@@ -148,6 +149,7 @@
   <SelectionPanel {api} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} />
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
+<EventLog {api} />
 <AlertList {api} />
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
@@ -168,7 +170,7 @@
   @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
   header > :global(.strip) { grid-column: 1; justify-self: start; }
   .mid { grid-column: 2; display: flex; gap: 6px; align-items: start; min-width: 0; }
-  .time { grid-column: 3; justify-self: end; display: grid; gap: 2px; justify-items: end; }
+  .time { grid-column: 3; justify-self: end; display: grid; gap: 2px; justify-items: end; margin-top: var(--log-h, 0px); }
   .tick { font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 3px 6px; background: var(--panel); border: 1px solid var(--line); }
   .speeds { display: flex; gap: 2px; }
   @media (max-width: 600px) {
@@ -177,7 +179,7 @@
     .speeds :global(button.tile) { width: 36px; height: 36px; }
     .mid { grid-column: 1 / -1; grid-row: 2; flex-direction: column-reverse; gap: 4px; }
     header > :global(.strip) { grid-row: 1; }
-    .time { grid-column: 2; grid-row: 1; grid-template-columns: auto auto; align-items: center; justify-self: end; }
+    .time { margin-top: 0; grid-column: 2; grid-row: 1; grid-template-columns: auto auto; align-items: center; justify-self: end; }
     .tick { display: none; }
   }
 </style>

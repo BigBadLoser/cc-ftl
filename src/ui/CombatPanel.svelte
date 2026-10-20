@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { UiApi, UiCombat, UiShipCombat } from './api';
   import CombatPlayer from './CombatPlayer.svelte';
+  import Icon from './Icon.svelte';
   import ShipMeters from './ShipMeters.svelte';
 
   let { api, combat, onClose, onHail }: { api: UiApi; combat: UiCombat; onClose: () => void; onHail: (ship: number) => void } = $props();
@@ -61,13 +62,13 @@
 </script>
 
 <section class="combat" class:expanded data-testid="combat-panel" aria-label="Combat">
-  <header>
-    <button class="grip" aria-label={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} onclick={() => (expanded = !expanded)}>{expanded ? '⌄' : '⌃'}</button>
-    <strong>Combat</strong>
-    <span class="sp"></span>
-    {#if enemy}<button title="Call them on the radio: only ships that are not hostile answer" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}>Hail</button>{/if}
-    <button title="Center the camera between the ships" onclick={() => api.focusFight(enemy?.ship ?? null)}>Frame</button>
-    <button aria-label="Close combat panel" data-testid="combat-close" onclick={onClose}>×</button>
+  <header class="ph">
+    <button class="tile grip" title={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} aria-label={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} onclick={() => (expanded = !expanded)}><Icon name={expanded ? 'chevDown' : 'chevUp'} size={18} /></button>
+    <span class="ico"><Icon name="combat" size={18} /></span>
+    <span class="t">Combat</span>
+    {#if enemy}<button class="tile" title="Hail: call them on the radio. Only ships that are not hostile answer" aria-label="Hail" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}><Icon name="hail" size={18} /></button>{/if}
+    <button class="tile" title="Frame: center the camera between the ships" aria-label="Frame" onclick={() => api.focusFight(enemy?.ship ?? null)}><Icon name="frame" size={18} /></button>
+    <button class="tile x" title="Close combat panel" aria-label="Close combat panel" data-testid="combat-close" onclick={onClose}><Icon name="close" size={16} /></button>
   </header>
 
   {#if enemy}
@@ -78,11 +79,12 @@
       </div>
 
       <div class="targets" role="group" aria-label="Targets">
-        <button class:on={aimed === 0 && !!me?.target} onclick={() => aim(0)}>Whole ship</button>
+        <button class="t whole" class:on={aimed === 0 && !!me?.target} onclick={() => aim(0)} title="Aim at the whole ship" aria-label="Whole ship"><Icon name="target" size={14} /><span>Whole ship</span></button>
         {#each targets as m (m.id)}
-          <button class:on={aimed === m.id} class:dead={m.hp <= 0} class="t {m.kind}" onclick={() => aim(m.id)} title="{m.name} {m.hp}/{m.maxHp}">
-            {m.name}{m.ion ? ' ⚡' : ''}
-            <span class="bar"><i style="width:{Math.round((m.hp / Math.max(1, m.maxHp)) * 100)}%"></i></span>
+          {@const pct = Math.round((m.hp / Math.max(1, m.maxHp)) * 100)}
+          <button class:on={aimed === m.id} class:dead={m.hp <= 0} class:hurt={pct < 35} class="t {m.kind}" onclick={() => aim(m.id)} title="{m.name} {m.hp}/{m.maxHp}">
+            <span class="nm">{m.name}{#if m.ion}<span class="ion"><Icon name="bolt" size={11} /></span>{/if}</span>
+            <span class="bar"><i style="width:{pct}%"></i></span>
           </button>
         {/each}
       </div>
@@ -97,33 +99,41 @@
 <style>
   /* The page canvas shows through .view (the enemy ship is drawn there), so every other part paints its own background. */
   .combat {
-
     position: fixed; z-index: 7; display: flex; flex-direction: column; overflow: hidden;
-    right: calc(8px + var(--sar)); top: max(calc(var(--hdr) + 8px + var(--sat)), calc(var(--alerts-h, 0px) + 88px + var(--sat))); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
-    border: 1px solid var(--line); border-radius: 10px;
+    right: calc(8px + var(--sar)); top: max(calc(var(--hdr) + 8px + var(--sat)), calc(var(--alerts-h, 0px) + var(--log-h, 0px) + 88px + var(--sat))); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
+    border: 1px solid var(--line-hi); border-radius: 0;
   }
-  header { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--line); background: var(--panel); }
-  header button { min-height: 32px; min-width: 32px; padding: 0 8px; }
-  .grip { display: none; }
-  .sp { flex: 1; }
+  header.ph { margin: 0; padding: 0 0 0 10px; display: flex; align-items: center; gap: 8px; min-height: 32px; flex: none; }
+  header .ico { display: inline-flex; color: var(--cyan); }
+  header .t { flex: 1; min-width: 0; }
+  header button.tile { width: 32px; height: 32px; border-width: 0 0 0 1px; background: #0a3a52; color: #fff; }
+  header button.tile:hover { background: var(--panel-3); }
+  .grip { display: none !important; }
   .top { flex: none; }
   .viewbox { position: relative; padding: 8px; }
-  .view { height: 236px; border-radius: 6px; cursor: crosshair; box-shadow: 0 0 0 8px var(--panel), inset 0 0 0 1px var(--line); }
+  .view { height: 220px; cursor: crosshair; box-shadow: 0 0 0 8px var(--panel), inset 0 0 0 1px var(--line); }
   .enemy { padding: 8px 10px 0; background: var(--panel); }
   .targets { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 8px 8px; background: var(--panel); }
-  .targets button { min-height: 34px; min-width: 0; padding: 2px 8px; font-size: 12px; display: grid; gap: 2px; text-align: left; }
+  .targets button { min-height: 0; min-width: 0; padding: 3px 7px 4px; font-size: 12px; display: grid; gap: 3px; text-align: left; background: var(--panel-2); border-left: 3px solid var(--line); }
+  .targets button.on { background: var(--panel-3); border-color: var(--cyan); border-left-color: var(--cyan); color: #fff; }
+  .targets .whole { display: inline-flex; align-items: center; gap: 5px; color: var(--cyan); }
+  .targets .whole span { color: var(--text); }
+  .targets .nm { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .targets .ion { color: var(--amber); display: inline-flex; }
   .targets .bar { height: 3px; }
-  .targets .t.weapon { border-left: 3px solid #e06a5c; }
-  .targets .t.shield { border-left: 3px solid #4cc4e6; }
-  .targets .t.engine { border-left: 3px solid #e0a040; }
+  .targets .hurt .bar > i { background: var(--red); }
+  .targets .t.weapon { border-left-color: var(--red); }
+  .targets .t.shield { border-left-color: var(--cyan); }
+  .targets .t.engine { border-left-color: var(--amber); }
   .targets .dead { opacity: 0.45; }
   .scroll { flex: 1; overflow-y: auto; padding: 8px; background: var(--panel); border-top: 1px solid var(--line); }
   .none { color: var(--dim); margin: 0; padding: 10px; background: var(--panel); }
+  @media (min-width: 601px) and (max-height: 860px) { .view { height: 170px; } }
   @media (max-width: 600px) {
-    .combat { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-width: none; height: 62vh; border-radius: 14px 14px 0 0; border-width: 1px 0 0; transition: height 0.18s; }
+    .combat { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-width: none; height: 62vh; border-width: 1px 0 0; transition: height 0.18s; }
     .combat.expanded { height: calc(100vh - 12px - var(--sat)); }
-    header { border-radius: 14px 14px 0 0; }
-    .grip { display: inline-block; }
+    header.ph { padding-left: 0; }
+    .grip { display: inline-flex !important; }
     .view { height: 26vh; }
     .expanded .view { height: 38vh; }
     .scroll { padding-bottom: calc(8px + var(--sab)); }

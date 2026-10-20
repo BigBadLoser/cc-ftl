@@ -259,6 +259,22 @@ export type UiAlertKind =
   | 'story.notice' | 'story.lead' | 'trade'
   | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost';
 
+export type UiLogKind =
+  | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
+  | 'ship.fled' | 'ship.captured' | 'hail' | 'trade' | 'production' | 'container' | 'story' | 'lost';
+
+/** One happening in the event log (history, not an ongoing state like an alert). */
+export interface UiLogEntry {
+  id: number;
+  /** Sim tick it happened on. */
+  tick: number;
+  kind: UiLogKind;
+  tone: 'info' | 'good' | 'warn' | 'bad';
+  text: string;
+  /** How many times in a row this happened (same text as the entry before). */
+  count: number;
+}
+
 /** A weapon module of the player's ship. */
 export interface UiWeapon {
   id: number;
@@ -535,6 +551,8 @@ export interface UiApi {
   selectShip(ship: number | null): void;
   stats: Subscribable<UiStats>;
   alerts: Subscribable<UiAlert[]>;
+  /** Recent happenings, newest first. */
+  log: Subscribable<UiLogEntry[]>;
   /** The open event decision and the last result. */
   story: Subscribable<UiStory>;
   /** Pick an option of the open decision and resume play. */
