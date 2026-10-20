@@ -69,9 +69,31 @@ function spawnGenerated(faction?: string): void {
   bridge.dispatch({ type: 'debug.spawnGenerated', faction: id, depth: genDepth, seed: (Math.random() * 0x7fffffff) >>> 0, cx, cy });
 }
 
+/**
+ * Debug: `?shipgen=derelict` (or `derelict:scrapper`) makes "Spawn raider" spawn a ruined derelict instead; `?ruin=0.8`
+ * sets the intensity and `?cause=combat|decay` the cause (both rolled per seed otherwise).
+ */
+function spawnDerelict(faction?: string): void {
+  const mine = shipOfGrid(1);
+  const ids = Object.keys(content.factions);
+  const id = faction ? `faction.${faction.replace(/^faction\./, '')}` : ids[Math.floor(Math.random() * ids.length)];
+  if (!mine || !id) return;
+  const cause = params.get('cause');
+  const intensity = params.has('ruin') ? Math.max(0, Math.min(1, Number(params.get('ruin')) || 0)) : 0.5;
+  bridge.dispatch({
+    type: 'debug.spawnDerelict', faction: id, depth: genDepth, seed: (Math.random() * 0x7fffffff) >>> 0, intensity,
+    cx: Math.round(mine.x + mine.width / 2 + 18), cy: Math.round(mine.y + mine.height / 2 + 22),
+    ...(cause === 'combat' || cause === 'decay' ? { cause } : {}),
+  });
+}
+
 /** Debug: put a raider a fair distance from the player's ship (diagonally, so a fight fits on a phone screen too). */
 function spawnRaider(boarders = false): void {
   const template = boarders ? 'ship.raiderBoarder' : 'ship.raider';
+  if (shipgenFlag?.startsWith('derelict')) {
+    spawnDerelict(shipgenFlag.split(':')[1]);
+    return;
+  }
   if (shipgenFlag) {
     spawnGenerated(shipgenFlag === '1' || shipgenFlag === 'true' ? undefined : `faction.${shipgenFlag.replace(/^faction\./, '')}`);
     return;
