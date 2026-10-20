@@ -14,7 +14,9 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { floorChain, ghostVertsIn, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { floorChain, ghostVertsIn, replacesFloor, solidMass, wallPieces, type CutawayMode } from "./tiles";
+import { addHullCap } from "./hullCap";
+import { wallTopPx } from "./heights";
 
 export type { CutawayMode };
 
@@ -64,7 +66,7 @@ interface TileChunk {
   c: ChunkRef;
   /** The chunk's floor plates (a container in the floor layer, so plates keep chunk order across rebuilds). */
   floor: Container;
-  owned: Sprite[];
+  owned: Container[];
   tinted: Tinted[];
   doors: Door[];
   doorKey: number;
@@ -212,6 +214,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: false, solid: false });
           }
           if (k === Struct.Floor) continue;
+          // Part of a thick block of hull: one flat cap at the wall view's top height, no wall pieces (ghosts = not roofed: a roof covers it).
+          if (ghosts && k === Struct.Wall && solidMass(kindAt, x, y)) {
+            const made = addHullCap(L, atlas, x, y, depthKey(x, y) + 0.0005, (mx, my) => solidMass(kindAt, mx, my), wallTopPx(mode));
+            owned.push(...made);
+            continue;
+          }
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (gapAt(x, y) || airlocks.has(idx)) continue;
           for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts, gapAt)) {

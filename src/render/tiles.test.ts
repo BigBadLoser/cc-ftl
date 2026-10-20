@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Struct } from "../sim/structure";
-import { floorChain, ghostVerts, outward, replacesFloor, tileHash, wallMask, wallPieces, type CutawayMode } from "./tiles";
+import { floorChain, ghostVerts, outward, replacesFloor, solidMass, tileHash, wallMask, wallPieces, type CutawayMode } from "./tiles";
 
 const W = Struct.Wall;
 const F = Struct.Floor;
@@ -119,5 +119,23 @@ describe("floors", () => {
     expect(set.size).toBeLessThanOrEqual(3);
     expect([...set].filter((v) => v === "tile.floor.a").length).toBe(1);
     expect(tileHash(1, 2)).toBe(tileHash(1, 2));
+  });
+});
+
+describe("thick hull mass", () => {
+  const block = grid([
+    [F, F, F, F, F, F],
+    [F, W, W, W, F, F],
+    [F, W, W, W, F, F],
+    [F, F, F, F, F, F],
+  ]);
+  it("marks wall tiles in a 2x2 square of wall as mass", () => {
+    for (const [x, y] of [[1, 1], [2, 1], [3, 1], [1, 2], [3, 2]] as const) expect(solidMass(block, x, y)).toBe(true);
+    expect(solidMass(block, 0, 0)).toBe(false);
+  });
+  it("leaves one-tile partitions, crossings and doors alone", () => {
+    const cross = grid([[F, W, F], [W, W, W], [F, W, F]]);
+    for (const [x, y] of [[1, 0], [0, 1], [1, 1], [2, 1], [1, 2]] as const) expect(solidMass(cross, x, y)).toBe(false);
+    expect(solidMass(grid([[W, D], [W, W]]), 1, 0)).toBe(false);
   });
 });

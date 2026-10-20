@@ -38,6 +38,19 @@ export interface Piece {
   under?: boolean;
 }
 
+/**
+ * A wall tile of a thick block of hull: it lies in a 2x2 square of wall tiles, so the hull is more than one tile thick
+ * there. It draws as part of one solid mass (`addHullCap`), not as separate thin wall pieces. A one-tile partition, even a
+ * crossing or a T, is never mass; doors are not (they stay in the run). The near hull (a ghost rim, `outward`) is left alone.
+ */
+export function solidMass(kindAt: KindAt, x: number, y: number): boolean {
+  if (kindAt(x, y) !== Struct.Wall || outward(kindAt, x, y) > 0) return false;
+  const W = (px: number, py: number) => kindAt(px, py) === Struct.Wall;
+  for (const [dx, dy] of [[0, 0], [-1, 0], [0, -1], [-1, -1]] as const)
+    if (W(x + dx, y + dy) && W(x + dx + 1, y + dy) && W(x + dx, y + dy + 1) && W(x + dx + 1, y + dy + 1)) return true;
+  return false;
+}
+
 /** Neighbour mask: bit 1 = N (-y), 2 = E (+x), 4 = S (+y), 8 = W (-x). Walls, hull and doors connect. */
 export function wallMask(kindAt: KindAt, x: number, y: number): number {
   return (

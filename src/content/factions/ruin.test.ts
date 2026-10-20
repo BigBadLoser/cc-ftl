@@ -68,6 +68,16 @@ describe('derelict ruin pass', () => {
     }
   });
 
+  it('records hull and wall breaches only on the torn edge, bordering a standing wall', () => {
+    for (const f of FACTIONS) for (const cause of CAUSES) for (const seed of [1, 2, 3]) {
+      const r = ruined(f, seed, 0.8, cause);
+      const at = (x: number, y: number): string => r.template.rows[y]?.[x] ?? '.';
+      for (const b of r.meta.breaches) {
+        if (b.kind === 'floor') continue;
+        expect([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(b.x + (dx as number), b.y + (dy as number)) === '#' || at(b.x + (dx as number), b.y + (dy as number)) === 'D')).toBe(true);
+      }
+    }
+  });
   it('puts every cache where a boarding party can reach it (open, through a jammed door, or by EVA)', () => {
     const access: Record<string, number> = {};
     for (const f of FACTIONS) for (const cause of CAUSES) for (const lv of [0.2, 0.5, 0.95]) for (let seed = 1; seed <= 6; seed++) {

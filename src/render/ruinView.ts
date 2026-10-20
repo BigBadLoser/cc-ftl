@@ -29,6 +29,9 @@ export interface RuinView {
   dispose(): void;
 }
 
+/** Scorched-dark multiply tint of the torn skirt placeholder. */
+const TORN = 0x7a6a64;
+
 interface Spark {
   spr: Sprite;
   on: Texture;
@@ -73,6 +76,7 @@ export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World
         continue;
       }
       const base = depthKey(b.x, b.y) + off;
+      if (wallMask(kindAt, b.x, b.y) === 0) continue; // only the torn edge: it must border a standing wall
       const fam = b.art.includes('hull') ? 'hull' : 'wall';
       const mask = wallMask(kindAt, b.x, b.y);
       put([`tile.${fam}.${pre}m${mask}.breach`, `tile.${fam}.m${mask}.breach`], b.x, b.y, base + 0.001);
@@ -138,10 +142,29 @@ export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World
     }
   }
 
+  /**
+   * Floor whose hull or skirt was torn away: its front edge (space at +y / +x) would float, so the deck gets the hull's
+   * belly under it (`tile.hull.belly.o*`, the underside of the near hull) scorched dark. PLACEHOLDER until a torn skirt
+   * exists: art ids wanted `decay.skirt.torn.o1|o2|o3` (belly of a floor edge, ragged, per exposed side).
+   */
+  function tornSkirts(): void {
+    for (let y = 0; y < tiles.height; y++)
+      for (let x = 0; x < tiles.width; x++) {
+        if (kindAt(x, y) !== Struct.Floor) continue;
+        const o = (kindAt(x, y + 1) === Struct.Space ? 1 : 0) | (kindAt(x + 1, y) === Struct.Space ? 2 : 0);
+        if (!o) continue;
+        const m = wallMask(kindAt, x, y);
+        const base = o === 1 ? 'tile.hull.belly.o1.m8' : o === 2 ? 'tile.hull.belly.o2.m1' : 'tile.hull.belly.o3.m0';
+        const spr = put([`decay.skirt.torn.o${o}`, `tile.hull.belly.o${o}.m${m}`, base], x, y, depthKey(x, y), L.under);
+        if (spr) spr.tint = TORN;
+      }
+  }
+
   function rebuild(ruin: ShipRuin): void {
     clear();
     // Roofed ships sort their walls a little earlier (gridView), so the dressing does too.
     const off = roofed ? -0.15 : 0;
+    tornSkirts();
     breachPieces(ruin, off);
     wallFaces(ruin, off);
     props(ruin);
