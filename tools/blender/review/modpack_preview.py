@@ -5,6 +5,7 @@ along the back wall, a crew member for scale, the way the runtime draws them (gl
     set: storage -> storage-1x.png (one room per fill) and storage-3x-<fill>.png
          medbay  -> medbay-1x.png and medbay-3x-{idle,active}.png (the old bed for comparison; .active: a patient lying
                     on each bed, a medic working the console)
+         row <asset id> <w> <d> <state,state,...>  -> row-<asset>-3x.png: one room, the module once per state in a row
 Floor, walls and the crew member come from public/assets."""
 import sys
 from pathlib import Path
@@ -165,10 +166,39 @@ def medbay(P, pub, out, face=7):
     Image.fromarray(np.vstack([c.px[..., :3] for c in rooms])).save(out / "medbay-1x.png")
 
 
+def row(P, pub, out, aid, fp, states):
+    """One room with the module once per state along the back wall (r0), a crew member for scale."""
+    w, d = fp
+    nx, ny = len(states) * (w + 1) + 1, d + 2
+    W, H = (nx + ny) * 32 + 80, (nx + ny) * 16 + 170
+    cv = Canvas(W, H)
+    ox, oy = ny * 32 + 40, 140
+    for gx in range(nx):
+        for gy in range(ny):
+            cv.static(pub, "tile.floor.a", *iso(ox, oy, gx, gy))
+    cv.static(pub, "tile.wall.full.m6", *iso(ox, oy, -1, -1))
+    for gx in range(nx):
+        cv.static(pub, "tile.wall.full.m10", *iso(ox, oy, gx, -1))
+    for gy in range(ny):
+        cv.static(pub, "tile.wall.full.m5", *iso(ox, oy, -1, gy))
+    for i, st in enumerate(states):
+        gx = i * (w + 1) + 1
+        cv.static(P, f"{aid}.{st}", *iso(ox, oy, gx + w - 1, d - 1))
+        x, y = iso(ox, oy, gx + w - 1, d - 1)
+        cv.labels.append((x - 20, y + 30, st))
+    cv.char(human(pub, 1), *iso(ox, oy, nx - 1, d + 1))
+    cv.save(out / f"row-{aid}-3x.png", 3)
+    cv.save(out / f"row-{aid}-1x.png", 1)
+
+
 def main():
     P, out, which = Assets(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
     pub = Assets(ROOT / "public/assets")
     out.mkdir(parents=True, exist_ok=True)
+    if which == "row":
+        row(P, pub, out, sys.argv[4], (int(sys.argv[5]), int(sys.argv[6])), sys.argv[7].split(","))
+        print("wrote", out)
+        return
     if which == "medbay":
         medbay(P, pub, out, int(sys.argv[4]) if len(sys.argv) > 4 else 7)
         print("wrote", out)
