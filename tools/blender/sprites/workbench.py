@@ -44,10 +44,13 @@ def workbench(state, rot):
     k.box(0.75, -0.06, TOP + 0.64, 0.24, 0.18, 0.13, "gm", top="steelL", taper=0.55)   # its shade
     k.box(0.75, -0.06, TOP + 0.63, 0.2, 0.15, 0.012, "lampY" if on else "steelL")
     k.box(0.75, 0.03, TOP + 0.63, 0.2, 0.012, 0.05, "lampY" if on else "steelL")       # its lit lip
-    k.box(0.78, 0.1, TOP, 0.2, 0.16, 0.08, "steelD", top="steel")                      # vise
-    k.box(0.78, 0.1, TOP + 0.08, 0.22, 0.04, 0.1, "steel")
-    k.box(0.78, 0.2, TOP + 0.08, 0.22, 0.04, 0.1, "steel")
-    k.box(0.78, 0.26, TOP + 0.12, 0.03, 0.12, 0.03, "steelL")
+    k.box(0.78, 0.13, TOP, 0.2, 0.22, 0.08, "polyB", top="polyB")                      # vise: blue body,
+    k.box(0.78, 0.07, TOP + 0.08, 0.22, 0.05, 0.1, "polyB", top="steelL")               # steel-faced jaws
+    k.box(0.78, 0.2, TOP + 0.08, 0.22, 0.05, 0.1, "polyB", top="steelL")
+    k.box(0.78, 0.27, TOP + 0.12, 0.035, 0.14, 0.035, "gmD")                            # its screw, and the
+    k.box(0.78, 0.335, TOP + 0.1, 0.2, 0.035, 0.035, "steelD")                          # T-handle across it
+    for su in (-1, 1):
+        k.box(0.78 + su * 0.1, 0.335, TOP + 0.09, 0.05, 0.05, 0.05, "medRed", bevel=0.015)
     k.box(-0.15, 0.06, TOP + 0.012, 0.36, 0.26, 0.1, "plate", top="medWhite", bevel=0.01)  # the device, opened up:
     k.box(-0.15, 0.06, TOP + 0.112, 0.28, 0.18, 0.012, "pcb")                          # its board, its lid
     k.box(-0.15, -0.12, TOP + 0.03, 0.36, 0.03, 0.22, "plate", rx=-0.4)
