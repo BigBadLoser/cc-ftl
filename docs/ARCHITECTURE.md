@@ -195,7 +195,7 @@ palette.json    the single palette, read by Blender scripts and the game
   economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
   below), `structure` (faction tile looks, see below), `galley`
-  (the food pack, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
+  (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
@@ -245,6 +245,35 @@ palette.json    the single palette, read by Blender scripts and the game
     `review/meal_poses_preview.py`) are pose code only: they were written against the old crew renderer and are not in
     the clip table yet. To ship them: add `crew_spec.CLIPS` rows and `crew_clips.POSES` entries (`sit_eat` needs the
     mess chair as its holdout instead of the console chair), re-render the crew, and play them from `loadout.clipFor`.
+- **Derelict dressing (`derelict`, `sprites/derelict.py` and `derelict_walls.py`; sheets built, not wired yet):** drawn
+  over or in place of the normal tiles on a derelict.
+  - Breaches: `tile.{wall|hull}.{full.|}m<mask>.breach` replaces the wall piece. The tear meets the same
+    edge height on every side, so breached runs join. Where the -x / -y neighbour is intact, also draw
+    `tile.{fam}.{full.|}breach.end.{w|n}`. In the cutaway, partitions need no end piece. Floor:
+    `decay.breach.floor.v0..2`. Roof: `decay.breach.roof`.
+  - Overlays drawn right after the tile they dress:
+    - `decay.scorch.floor.v0..2` and `decay.growth.floor.v0..2` (alien membrane; nodules on the glow
+      sheet).
+    - `decay.burnt.<w>x<h>`: a char ring round a burnt-out module. Also darken the module by about half.
+    - On a straight run's camera-facing face, where axis `x` is a run along x and `y` along y:
+      `decay.scorch.{wall|hull}.<axis>.<level>.v0|v1`, `decay.growth.{wall|hull}.<axis>.<level>`,
+      `decay.striplight.{wall|hull}.<axis>` (dim red, on the skirt, every level), and `.high` on the
+      face (walls up only).
+    - On the roof: `decay.scorch.roof.v0|v1`.
+  - Props (one tile, no footprint):
+    - debris: `decay.debris.{plates,cables,pipe,chunks,crate,junction}`; `.junction.spark` is the arc
+      frame, so alternate it with `.junction`.
+    - `decay.eggsac.{1x1|2x2}`: breakable egg sacs (1x1 and 2x2 footprints) that hatch an alien. They are thin
+      membranes over fluid, with the see-through skin baked in by the render (`derelict_sac.py`, its own family
+      `eggsac`; these sheets are built and committed). The states are:
+      - `.cracked`: leaking.
+      - `.hatch0`, `.hatch1`, `.hatch2`: it swells, rips open and falls open. Play these when it breaks and spawn
+        the alien on `.hatch2`.
+      - `.burst`: the deflated skin, left in its puddle.
+    - `decay.eggs`, `decay.ai.scrap`, and `decay.ai.cables.{x|y}`, which tiles along a run.
+    - `module.light.off` (alternate with `module.light` for a flicker) and `module.light.broken`.
+    - `module.fabricator[.rN].dormant`: dark, with a red standby light.
+  - Preview: `tools/blender/review/derelict_preview.py <assets> <out>`.
 - **Heights:** walls 1.85 tiles, roof top 2.05 (`walls.HF`, `walls.hull_top()`). The manifest carries
   them (`heights`) and `src/render/heights.ts` mirrors them (a test checks the two agree). Roof-mounted
   art (turrets, dishes, the AI mast) is modelled on the roof plane and anchored at floor level, so the

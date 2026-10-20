@@ -13,6 +13,8 @@
   fx        combat fx v2 (fx3d.py): bolts, muzzle flashes, impacts, explosions as lit 3D clusters
   structure faction looks of the wall, hull and floor tiles: navy, drone, civil v1..v4, scrap p1..p4 (structure.py)
   galley    the food pack: galley (food printer), rations, mess table and chair (galley.py, mess.py)
+  derelict  derelict dressing: breached walls, scorch, debris, dead lights, infestation, AI scrap (derelict*.py)
+  eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -57,6 +59,12 @@ def jobs(name):
     if name == "galley":
         from . import galley, mess
         return galley.SPRITES + mess.SPRITES, True
+    if name == "eggsac":
+        from . import derelict_sac
+        return derelict_sac.SPRITES, True
+    if name == "derelict":
+        from . import derelict
+        return derelict.SPRITES, True
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
@@ -64,5 +72,5 @@ def jobs(name):
 
 
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
-            "structure", "galley")
+            "structure", "galley", "derelict", "eggsac")
 ALL = RENDERED + ("sol",)
