@@ -10,8 +10,12 @@ socket); a small status light on the roof by the door end (glow layer).
 Ids (the renderer's chain, render/moduleArt.containerChain; the game mirrors the sides not rendered):
   container.<W>x<H>.r<N>.<end>[.v1|.v2][.damaged|.destroyed|.patched]   end: the door (clamped) end; per size and
       rotation one with the doors toward the camera (r0 .s, r1 .e) and one away (r0 .n, r1 .w)
-  container.<W>x<H>.r<N>.<end>.lv      livery mask (key colours mkP / mkS) over the bands, recoloured per faction
-  container.<W>x<H>                    fallback: r0, doors toward the camera
+  <shell id>.paint                     paint overlay: the painted plating alone (sides, ends, doors, roof) in its lit
+      neutral greys, the rest a holdout. The game tints it with the livery's primary colour P, keeping the shading:
+      out = P * lum(px) / lum(plate #6f7b87), drawn over the shell
+  container.<W>x<H>.r<N>.<end>.lv      livery mask (key colours mkP / mkS) over the trim bands, recoloured per faction
+      (S the band, P its pinstripe), drawn over the paint; then any .logo.<company> (containers_logo.py)
+  container.<W>x<H>[.paint]            fallback: r0, doors toward the camera
   container.clamp.<n|e|s|w>, container.clamp   the clamp at the middle tile of the clamped side, gripping the door end
 Variants v0 (no suffix), v1 (stencil code on the roof, hazard roof edge), v2 (flat panelled sides and roof, wear), picked
 by a hash. States: damaged / destroyed by the damage pass (no sparks, no debris: in space; destroyed has no light),
@@ -22,12 +26,13 @@ from . import damage
 from .modkit import K
 
 H, M = 2.0, 0.06                          # height (per size, set by _size); gap to the footprint edge
+PAINT = "_paint"                          # name tag of the painted-surface mesh
 HEIGHT = {"2x4": 2.0, "3x6": 3.0}
 ZC = 0.34                                 # the truss's mid height (struct: chords 0.1 .. 0.58): containers hang
 Z_OFF = ZC - H / 2                        # centred on it, half below the beam line in open space
 FR, FRD, CAST = "gm", "gmD", "dark"       # frame, its darker face, corner castings
 SH, SHL, SHD = "plate", "sole", "steelL"  # shell plating: body, rib crests, seams
-BAND = ("sole", "steelD")                 # the neutral default under the livery (P, S)
+BAND = ("sole", "steelD")                 # the neutral default trim under the livery (S, its P pinstripe)
 SIZES = {"2x4": (2, 4), "3x6": (3, 6)}
 ENDS = {0: ("s", "n"), 1: ("e", "w")}     # per rotation: doors toward the camera, doors away
 BAND_Z = (0.42 * H, 0.62 * H)
@@ -60,7 +65,8 @@ def _frame(k, u0, v0):
 
 
 def _side(k, su, u0, v0, panelled, band=True):
-    """A long side at u = su * u0: corrugation (or flat panels), the livery band across its middle."""
+    """A long side at u = su * u0: corrugation (or flat panels), the livery band across its middle. k is the painted
+    mesh here (the whole side takes the livery's primary colour), the band the trim."""
     k.box(su * (u0 - 0.04), 0, 0.09, 0.05, 2 * v0 - 0.18, H - 0.18, SH, top=SH)
     span = 2 * v0 - 0.24
     if panelled:                                                                     # flat panels, recessed seams
@@ -78,21 +84,23 @@ def _side(k, su, u0, v0, panelled, band=True):
 
 
 def _band(k, su, u0, v0, cols):
-    p, s = cols
-    k.box(su * (u0 - 0.004), 0, BAND_Z[0], 0.012, 2 * v0 - 0.5, BAND_Z[1] - BAND_Z[0], p, top=p)
-    k.box(su * (u0 + 0.002), 0, BAND_Z[0] + 0.02, 0.012, 2 * v0 - 0.5, 0.04, s, top=s)
+    """The trim band (cols[0]: the livery's secondary colour) with a pinstripe in the primary (cols[1])."""
+    b, pin = cols
+    k.box(su * (u0 - 0.004), 0, BAND_Z[0], 0.012, 2 * v0 - 0.5, BAND_Z[1] - BAND_Z[0], b, top=b)
+    k.box(su * (u0 + 0.002), 0, BAND_Z[0] + 0.03, 0.012, 2 * v0 - 0.5, 0.04, pin, top=pin)
 
 
-def _end(k, sv, u0, v0, doors, patched=False):
+def _end(k, kp, sv, u0, v0, doors, patched=False):
+    """An end: its panel (and the door leaves) painted (kp), the door hardware bare (k)."""
     v = sv * (v0 - 0.04)
-    k.box(0, v, 0.09, 2 * u0 - 0.18, 0.05, H - 0.18, SH, top=SH)
+    kp.box(0, v, 0.09, 2 * u0 - 0.18, 0.05, H - 0.18, SH, top=SH)
     ve = sv * (v0 - 0.012)
     if not doors:                                                                    # blank end: ribs across
         n = int((2 * u0 - 0.24) / 0.13)
         for i in range(n):
-            k.box(-u0 + 0.12 + (i + 0.5) * (2 * u0 - 0.24) / n, ve, 0.1, 0.06, 0.03, H - 0.2, SHL, top=SHL)
+            kp.box(-u0 + 0.12 + (i + 0.5) * (2 * u0 - 0.24) / n, ve, 0.1, 0.06, 0.03, H - 0.2, SHL, top=SHL)
         return
-    k.box(0, ve, 0.1, 0.02, 0.02, H - 0.2, SHD)                                       # the split between the leaves
+    kp.box(0, ve, 0.1, 0.02, 0.02, H - 0.2, SHD)                                      # the split between the leaves
     for su in (-1, 1):
         for x in (0.3, 0.7):                                                         # locking bars, cam handles
             u = su * x * (u0 - 0.1)
@@ -107,16 +115,17 @@ def _end(k, sv, u0, v0, doors, patched=False):
         k.box(0, sv * (v0 + 0.03), 0.3 * H - 0.03, 2 * u0 - 0.26, 0.012, 0.012, CAST)
 
 
-def _roof(k, u0, v0, door_sv, light, variant):
-    k.box(0, 0, H - 0.07, 2 * u0 - 0.16, 2 * v0 - 0.16, 0.05, SH, top=SH)
+def _roof(k, kp, u0, v0, door_sv, light, variant):
+    kp.box(0, 0, H - 0.07, 2 * u0 - 0.16, 2 * v0 - 0.16, 0.05, SH, top=SH)
     if variant == 2:                                                                 # panelled roof: seams across
         n = max(2, round((2 * v0 - 0.3) / 0.7))
         for i in range(1, n):
-            k.box(0, -v0 + 0.15 + i * (2 * v0 - 0.3) / n, H - 0.024, 2 * u0 - 0.3, 0.03, 0.006, SHD)
+            kp.box(0, -v0 + 0.15 + i * (2 * v0 - 0.3) / n, H - 0.024, 2 * u0 - 0.3, 0.03, 0.006, SHD)
     else:
         n = int((2 * v0 - 0.3) / 0.22)
         for i in range(n):                                                           # roof ribs across
-            k.box(0, -v0 + 0.15 + (i + 0.5) * (2 * v0 - 0.3) / n, H - 0.03, 2 * u0 - 0.3, 0.05, 0.015, SHL, top=SHL)
+            kp.box(0, -v0 + 0.15 + (i + 0.5) * (2 * v0 - 0.3) / n, H - 0.03, 2 * u0 - 0.3, 0.05, 0.015, SHL,
+                   top=SHL)
     for su in (-1, 1):                                                               # lifting eyes on the castings
         for sv in (-1, 1):
             k.box(su * (u0 - 0.05), sv * (v0 - 0.05), H, 0.07, 0.03, 0.05, SHD)
@@ -162,23 +171,35 @@ def shell(size, rot, end, variant=0, state=""):
     _size(size)
     W, L = SIZES[size]
     k = K(f"container_{size}_{rot}_{end}_{variant}_{state}", (W, L), rot)
+    kp = K(f"container_{size}_{rot}_{end}_{variant}_{state}{PAINT}", (W, L), rot)     # the painted surfaces
     u0, v0 = W / 2 - M, L / 2 - M
     ds = _door_sign(rot, end)
     rnd = random.Random(hash((size, variant)) & 0xffff)
     _frame(k, u0, v0)
     for su in (-1, 1):
-        _side(k, su, u0, v0, panelled=variant == 2)
-    _end(k, ds, u0, v0, True, patched=state == "patched")
-    _end(k, -ds, u0, v0, False)
+        _side(kp, su, u0, v0, panelled=variant == 2, band=False)
+        _band(k, su, u0, v0, BAND)
+    _end(k, kp, ds, u0, v0, True, patched=state == "patched")
+    _end(k, kp, -ds, u0, v0, False)
     light = None if state == "destroyed" else ("orange" if state in ("damaged", "patched") else "green")
-    _roof(k, u0, v0, ds, light, variant)
+    _roof(k, kp, u0, v0, ds, light, variant)
     if variant == 1:
         _stencil(k, -ds, u0, v0, rnd)
     if variant == 2:
         _wear(k, u0, v0, rnd)
     if state == "patched":
         _patches(k, u0, v0, random.Random(17 + variant))
-    return _hang(k.build())
+    return _hang(k.build() + kp.build())
+
+
+def painted(build):
+    """The paint overlay of a shell build: the painted surfaces alone (lit, in their neutral greys), everything else a
+    holdout. The game multiplies it by the livery's primary colour (see the module docstring)."""
+    objs = build()
+    for o in objs:
+        if PAINT not in o.name:
+            o.is_holdout = True
+    return objs
 
 
 def _hang(objs):
@@ -197,7 +218,7 @@ def livery(size, rot, end):
     k = K(f"container_lv_{size}_{rot}_{end}", (W, L), rot)
     k.m.flat = True
     for su in (-1, 1):
-        _band(k, su, W / 2 - M + 0.003, L / 2 - M, ("mkP", "mkS"))
+        _band(k, su, W / 2 - M + 0.003, L / 2 - M, ("mkS", "mkP"))
     return objs + _hang(k.build())
 
 
@@ -254,13 +275,15 @@ def clamp(side):
 
 
 def _jobs_for(size, rot, end, variant, state):
+    """The shell sprite and its paint overlay (<id>.paint, from the same build, damage included)."""
     sid = f"container.{size}.r{rot}.{end}" + (f".v{variant}" if variant else "")
+    sid += f".{state}" if state else ""
     W, L = SIZES[size]
     fp = (W, L) if rot % 2 == 0 else (L, W)
+    build = lambda: shell(size, rot, end, variant, state)  # noqa: E731
     if state in ("damaged", "destroyed"):
-        return (f"{sid}.{state}", fp, "prop",
-                damage.wrap(lambda: shell(size, rot, end, variant, state), state, f"{sid}.{state}", False, False))
-    return (sid + (f".{state}" if state else ""), fp, "prop", lambda: shell(size, rot, end, variant, state))
+        build = damage.wrap(build, state, sid, False, False)
+    return [(sid, fp, "prop", build), (f"{sid}.paint", fp, "block", lambda: painted(build))]
 
 
 def jobs(sizes=tuple(SIZES), rots=(0, 1), states=("", "damaged", "destroyed", "patched"), variants=(0, 1, 2)):
@@ -274,10 +297,11 @@ def jobs(sizes=tuple(SIZES), rots=(0, 1), states=("", "damaged", "destroyed", "p
                     for st in states:
                         if st in ("destroyed", "patched") and v:
                             continue                                                 # those don't vary
-                        out.append(_jobs_for(size, rot, end, v, st))
+                        out += _jobs_for(size, rot, end, v, st)
                 out.append((f"container.{size}.r{rot}.{end}.lv", fp, "block",
                             lambda s=size, r=rot, e=end: livery(s, r, e)))
         out.append((f"container.{size}", (W, L), "prop", lambda s=size: shell(s, 0, "s")))
+        out.append((f"container.{size}.paint", (W, L), "block", lambda s=size: painted(lambda: shell(s, 0, "s"))))
     for side in "nesw":
         out.append((f"container.clamp.{side}", (1, 1), "prop", lambda s=side: clamp(s)))
     out.append(("container.clamp", (1, 1), "prop", lambda: clamp("n")))

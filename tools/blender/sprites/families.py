@@ -11,8 +11,8 @@
   shuttle   the flying shuttle: 8 fly headings and 4 docked poses (vehicle_bay.py craft_jobs)
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
   fx        combat fx v2 (fx3d.py): bolts, muzzle flashes, impacts, explosions as lit 3D clusters
-  containers  cargo containers 2x3 / 3x5: shells per rotation and door end, variants, damaged / destroyed / patched,
-            livery masks, clamps (containers.py; CONT_SIZES / CONT_ROTS / CONT_STATES / CONT_VARIANTS narrow it)
+  containers  cargo containers 2x4 / 3x6: shells per rotation and door end, variants, damaged / destroyed / patched,
+            paint overlays, livery masks, company logos, clamps (containers.py; CONT_SIZES / CONT_ROTS / CONT_STATES / CONT_VARIANTS narrow it)
   structure faction looks of the wall, hull and floor tiles: navy, drone, civil v1..v4, scrap p1..p4 (structure.py)
   galley    the food pack: galley (food printer), rations, mess table and chair (galley.py, mess.py)
   derelict  derelict dressing: breached walls, scorch, debris, dead lights, infestation, AI scrap (derelict*.py)
