@@ -115,6 +115,8 @@ const api: UiApi = {
   storages: bridge.storages,
   fabs: bridge.fabs,
   selectedModule: controller.selectedModule,
+  selectedGrid: controller.selectedGrid,
+  selectGrid: controller.selectGrid,
   stats: bridge.stats,
   alerts: controller.alerts.list,
   combat: bridge.combat,

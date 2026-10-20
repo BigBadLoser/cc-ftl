@@ -517,6 +517,10 @@ export interface UiApi {
   fabs: Subscribable<UiFab[]>;
   selectedModule: Subscribable<number | null>;
   selectModule(id: number | null): void;
+  /** Another grid (ship or station) picked from the node strip; the selection panel drills into it. */
+  selectedGrid: Subscribable<number | null>;
+  /** Select another grid and move the camera to it (null clears). A negative id is a station (no grid): minus its entity id, no camera move. */
+  selectGrid(gridId: number | null): void;
   stats: Subscribable<UiStats>;
   alerts: Subscribable<UiAlert[]>;
   /** The open event decision and the last result. */

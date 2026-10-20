@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiModule } from './api';
+  import Icon from './Icon.svelte';
+  import PanelHead from './PanelHead.svelte';
   import FabPanel from './FabPanel.svelte';
   import RobotBayPanel from './RobotBayPanel.svelte';
   import StoragePanel from './StoragePanel.svelte';
 
-  let { api }: { api: UiApi } = $props();
+  let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
   let mods = $state<UiModule[]>([]);
   let sel = $state<number | null>(null);
   const m = $derived(mods.find((x) => x.id === sel));
@@ -22,8 +24,8 @@
 </script>
 
 {#if m}
-  <aside class="sheet" class:wide={m.crafting || m.storage} data-testid="module-inspector">
-    <h2>{m.name} <small>{m.x},{m.y}</small></h2>
+  <div data-testid="module-inspector">
+    <PanelHead icon="module" title={m.name} sub="{m.x},{m.y}" {onBack} />
     <dl>
       <dt>State</dt><dd data-testid="module-state" class:bad={!m.powered && m.power !== 0}>{stateOf(m)}</dd>
       <dt>Power</dt><dd>{power(m)}</dd>
@@ -45,28 +47,21 @@
       </div>
     {/if}
     <div class="btns">
-      <button class:on={m.enabled} data-testid="toggle-enabled" onclick={() => api.dispatch({ type: 'module.setEnabled', id: m.id, enabled: !m.enabled })}>
-        {m.enabled ? 'Enabled' : 'Disabled'}
-      </button>
-      <button class="warn" data-testid="deconstruct-module" onclick={() => { api.dispatch({ type: 'job.deconstructModule', gridId: 1, x: m.x, y: m.y }); api.selectModule(null); }}>Deconstruct</button>
+      <button class="tile" class:on={m.enabled} title={m.enabled ? 'Enabled (click to disable)' : 'Disabled (click to enable)'} aria-label={m.enabled ? 'Disable' : 'Enable'} data-testid="toggle-enabled" onclick={() => api.dispatch({ type: 'module.setEnabled', id: m.id, enabled: !m.enabled })}><Icon name="power" size={20} /></button>
+      <button class="tile warn" title="Deconstruct" aria-label="Deconstruct" data-testid="deconstruct-module" onclick={() => { api.dispatch({ type: 'job.deconstructModule', gridId: 1, x: m.x, y: m.y }); api.selectModule(null); }}><Icon name="trash" size={20} /></button>
     </div>
-  </aside>
+  </div>
 {/if}
 
 <style>
-  aside { left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab)); width: 260px; max-height: calc(100vh - var(--hdr) - 24px); overflow-y: auto; }
-  aside.wide { width: 340px; }
-  h2 { margin: 0 0 6px; font-size: 15px; color: var(--cyan); }
-  h2 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; }
   dd.bad { color: #ff9a9a; }
-  .hp > i { background: #4cd964; } .hp.low > i { background: #ff5a2d; }
+  .hp > i { background: var(--hp); } .hp.low > i { background: #ff5a2d; }
   .row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; gap: 8px; }
   .lbl { color: var(--dim); }
-  .prio { display: flex; gap: 4px; }
+  .prio { display: flex; gap: 2px; }
   .prio button { min-width: 36px; padding: 0; }
-  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
-  .warn { border-color: #7a2a2a; }
-  @media (max-width: 600px) { aside, aside.wide { width: auto; left: 0; bottom: 0; max-height: 62vh; } }
+  .btns { display: flex; gap: 4px; margin-top: 10px; }
+  .warn { border-color: #7a2a2a; color: var(--red); }
 </style>

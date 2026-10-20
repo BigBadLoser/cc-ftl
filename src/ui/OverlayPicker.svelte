@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { UiApi, UiLegend } from './api';
+  import Icon from './Icon.svelte';
 
   let { api }: { api: UiApi } = $props();
   let open = $state(false);
@@ -14,9 +15,7 @@
 </script>
 
 <div class="wrap">
-  <button class:on={current !== null} data-testid="overlay-btn" onclick={() => (open = !open)}>
-    Overlay<span class="long">: {api.overlayList.find((o) => o.id === current)?.label ?? 'Off'}</span>
-  </button>
+  <button class="tile" class:on={current !== null} title="Overlay: {api.overlayList.find((o) => o.id === current)?.label ?? 'Off'}" aria-label="Overlay" data-testid="overlay-btn" onclick={() => (open = !open)}><Icon name="overlay" size={20} /></button>
   {#if open}
     <div class="menu" data-testid="overlay-menu">
       <button class:on={current === null} onclick={() => pick(null)}>Off</button>
@@ -35,12 +34,11 @@
 {/if}
 
 <style>
-  @media (max-width: 600px) { .long { display: none; } .menu { right: -60px; } }
   .wrap { position: relative; }
-  .menu { position: absolute; top: 44px; right: 0; z-index: 8; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; width: 190px; }
+  .menu { position: absolute; bottom: 38px; right: 0; z-index: 8; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 6px; background: var(--panel); border: 1px solid var(--line); width: 190px; }
   .menu button { padding: 0 6px; }
-  .legend { position: fixed; z-index: 4; left: 50%; transform: translateX(-50%); top: calc(var(--hdr) + var(--sat) + 4px); display: grid; gap: 2px; padding: 5px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; min-width: 150px; pointer-events: none; }
-  .grad { display: block; height: 8px; border-radius: 4px; }
+  .legend { position: fixed; z-index: 4; left: 50%; transform: translateX(-50%); top: calc(var(--hdr) + var(--sat) + 4px); display: grid; gap: 2px; padding: 5px 10px; background: var(--panel); border: 1px solid var(--line); font-size: 12px; min-width: 150px; pointer-events: none; }
+  .grad { display: block; height: 8px; }
   .ends { display: flex; justify-content: space-between; color: var(--dim); gap: 12px; }
-  @media (max-width: 600px) { .legend { top: calc(50px + var(--sat)); left: auto; right: 8px; transform: none; min-width: 120px; padding: 3px 8px; } }
+  @media (max-width: 600px) { .menu { bottom: auto; right: 40px; top: 0; } .legend { top: calc(50px + var(--sat)); left: auto; right: 8px; transform: none; min-width: 120px; padding: 3px 8px; } }
 </style>
