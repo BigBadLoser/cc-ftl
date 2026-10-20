@@ -7,7 +7,7 @@ import { airlockTiles } from "../sim/modules/airlock";
 import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
-import { lightTint, mulColor, pulsePhase } from "./lightTint";
+import { dim, lightTint, mulColor, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
@@ -30,6 +30,8 @@ export interface GridView extends Markers {
 export interface GridViewHost {
   /** True when the ship has no running power source (emergency lighting). */
   emergency(): boolean;
+  /** Brightness factor of a derelict's tiles (1 = normal). */
+  dim?(): number;
   overlayWorld: OverlayWorld;
   /** Beam look of this ship (by faction); default civil. */
   beamLook?(): BeamLook;
@@ -252,7 +254,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
 
   function updateTints(v: TileChunk, pulse: number): void {
     if (!v.tinted.length) return;
-    const key = `${tiles.key("light", v.c, 1)}|${tiles.rev("o2", v.c)}|${tiles.rev("hp", v.c)}|${pulse}`;
+    const wd = host.dim?.() ?? 1;
+    const key = `${tiles.key("light", v.c, 1)}|${tiles.rev("o2", v.c)}|${tiles.rev("hp", v.c)}|${pulse}|${wd}`;
     if (key === v.tintKey) return;
     v.tintKey = key;
     const light = tiles.data("light", v.c);
@@ -274,7 +277,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     };
     for (const t of v.tinted) {
       const lv = t.wall ? wallLight(t.x, t.y) : at(light, t.ci);
-      const lit = lightTint(lv, !t.wall && at(o2, t.ci) < VACUUM_O2, pulse);
+      const lit = dim(lightTint(lv, !t.wall && at(o2, t.ci) < VACUUM_O2, pulse), wd);
       t.spr.tint = t.solid ? mulColor(lit, damageTint(at(hp, t.ci))) : lit;
     }
   }
@@ -304,7 +307,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         frameKey = "";
       }
       const pulse = host.emergency() ? pulsePhase(performance.now()) : -1;
-      const fk = `${grid.revision("door")}|${grid.revision("light")}|${grid.revision("o2")}|${grid.revision("hp")}|${pulse}`;
+      const fk = `${host.dim?.() ?? 1}|${grid.revision("door")}|${grid.revision("light")}|${grid.revision("o2")}|${grid.revision("hp")}|${pulse}`;
       if (fk !== frameKey) {
         frameKey = fk;
         for (const v of chunks.views()) {

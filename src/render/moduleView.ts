@@ -13,11 +13,12 @@ import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
 import { boxState, containerBox } from './containerBox';
 import { ContainerC } from '../sim/containers/components';
+import type { ShipRuin } from '../sim/combat/components';
 import { airlockLayers, createCollarAnimator, dockedAt } from './airlockArt';
 import { robotBayLayers } from './robotBayArt';
 import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, vehicleBayLayers } from './vehicleBayArt';
-import { craftProgress, glowKey, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
+import { craftProgress, moduleAssets, glowKey, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -25,10 +26,14 @@ export interface ModuleViewHost {
   target(): { grid: Grid } | null;
   /** True when the ship has no running power source (emergency lighting). */
   emergency(): boolean;
+  /** Brightness factor of a derelict (1 = normal): its modules and glows are dimmed by it. */
+  dim?(): number;
   /** Roofed ships hide their interior: only the engines (hull sections, and the machines under the roof) are drawn. */
   roofed(): boolean;
   /** The wall view level of the art; only the airlock's hull block follows it (the airlock itself never cuts away). */
   level(): WallLevel;
+  /** The derelict dressing of this ship, if it is one (module art overrides and wreck darkening). */
+  ruin?(): ShipRuin | undefined;
 }
 
 export interface ModuleView {
@@ -96,6 +101,11 @@ function cut(tex: Texture, x0: number, x1: number): Texture {
   if (!t) m.set(k, (t = new Texture({ source: tex.source, frame: new Rectangle(tex.frame.x + x0, tex.frame.y, x1 - x0, tex.frame.height) })));
   return t;
 }
+
+const grey = (f: number): number => {
+  const c = Math.round(255 * f);
+  return (c << 16) | (c << 8) | c;
+};
 
 /** Light tint of exterior pieces (containers) that room lighting never reaches. */
 const EXTERIOR_TINT = 0xd8dce6;
@@ -223,6 +233,32 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     return now - (lastProgress.get(id)?.at ?? -Infinity) < ACTIVE_MS;
   }
 
+  /** The ruin records of the current derelict by local module tile (rebuilt when the ship's ruin data changes). */
+  let ruinData: ShipRuin | undefined;
+  let ruinMods = new Map<string, ShipRuin['modules'][number]>();
+  /**
+   * What a derelict's ruin does to a module's look: extra art ids to try first (state-suffix art, a ruin override such as a
+   * broken light or a dormant fabricator, flickering) and a darkening factor when it has no art of its own.
+   */
+  function ruinLook(id: number, m: Module, def: ModuleDefs[string], on: boolean, now: number): { chain: string[]; dark: number } {
+    const none = { chain: [] as string[], dark: 1 };
+    const ruin = host.ruin?.();
+    if (!ruin) return none;
+    if (ruin !== ruinData) {
+      ruinData = ruin;
+      ruinMods = new Map(ruin.modules.map((r) => [`${r.x},${r.y}`, r]));
+    }
+    const t = host.target();
+    const r = t && ruinMods.get(`${m.x - t.grid.x0},${m.y - t.grid.y0}`);
+    if (!r) return none;
+    const state = r.state === 'destroyed' ? (m.hp <= 0 ? 'destroyed' : '') : r.state === 'damaged' ? (m.hp < def.maxHp ? 'damaged' : '') : '';
+    const art = r.art && !r.art.startsWith('decay.') && (state === 'destroyed' || !on) && (r.state !== 'damaged' || state === 'damaged' || !on) ? r.art : undefined;
+    const blip = r.flicker && Math.floor(now / 170 + m.x * 7 + m.y * 3) % 3 === 0;
+    const chain = art && !blip ? [art] : [];
+    if (state && !art) chain.push(...moduleAssets(world, id, m, def, false).map((id) => `${id}.${state}`));
+    return { chain, dark: state === 'destroyed' ? 0.5 : state === 'damaged' ? 0.8 : 1 };
+  }
+
   function update(): void {
     const t = host.target();
     const live = new Set<number>();
@@ -247,7 +283,9 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           : def.vehicleBay ? vehicleBayLayers(lm, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
           : def.airlock?.layout ? airlockLayers(world, id, lm, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
           : moduleLayers(world, id, lm, def, active, true);
-        const layers = raw.flatMap((layer) => {
+        const wreck = ruinLook(id, m, def, on, now);
+        const withRuin = wreck.chain.length ? raw.map((l, i) => (i === 0 ? { ...l, chain: [...wreck.chain, ...l.chain] } : l)) : raw;
+        const layers = withRuin.flatMap((layer) => {
           // Containers ride outside the hull: never under a roof.
           if (roofed && !def.container && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
           if (def.container && !atlas.firstOf(layer.chain)) {
@@ -274,10 +312,14 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
         // A container is outside, lit by the sky like the hull (no room light reaches it), and never "off".
         const base = def.container ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, tiles.length), false, pulse);
-        const tint = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
+        const wd = host.dim?.() ?? 1;
+        const lit0 = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
+        const lit = wd < 1 && !def.container ? dim(lit0, wd) : lit0;
+        // A wreck without its own damaged / destroyed art is darkened instead.
+        const tint = wreck.dark < 1 && !wreck.chain.some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
         for (const p of e.parts) {
           p.spr.tint = mulColor(tint, p.art);
-          for (const g of [p.glow, p.halo]) if (g) g.visible = on;
+          for (const g of [p.glow, p.halo]) if (g) { g.visible = on; g.alpha = wd < 1 ? wd * 0.7 : 1; }
           if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }
       }

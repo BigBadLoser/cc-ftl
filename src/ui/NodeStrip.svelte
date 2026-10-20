@@ -18,8 +18,8 @@
     return () => u.forEach((f) => f());
   });
 
-  type Kind = 'hostile' | 'prize' | 'station' | 'ship';
-  const icons: Record<Kind, IconName> = { hostile: 'skull', prize: 'prize', station: 'station', ship: 'ship' };
+  type Kind = 'hostile' | 'prize' | 'station' | 'ship' | 'derelict';
+  const icons: Record<Kind, IconName> = { hostile: 'skull', prize: 'prize', station: 'station', ship: 'ship', derelict: 'derelict' };
   /** Every other ship or station in the node, once, with the most specific kind winning. Keyed by entity id (a station's is its trader's). */
   const nodes = $derived.by(() => {
     const out: { ship: number; name: string; kind: Kind }[] = [];
@@ -27,6 +27,7 @@
     const add = (ship: number, name: string, kind: Kind) => {
       if (ship !== home && ship !== 0 && !out.some((o) => o.ship === ship)) out.push({ ship, name, kind });
     };
+    for (const t of shuttles.targets) if (t.derelict) add(t.ship, t.name, 'derelict');
     for (const p of prizes) add(p.ship, p.name, 'prize');
     for (const e of combat.enemies) add(e.ship, e.name, 'hostile');
     for (const p of trade.partners) add(p.id, p.name, p.kind);

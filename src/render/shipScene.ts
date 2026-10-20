@@ -15,6 +15,9 @@ import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
 import { createRoofView } from './roofView';
+import { createRuinView } from './ruinView';
+import { createJamMarks } from './jamMarks';
+import { ShipC } from '../sim/combat/components';
 import type { Livery } from './roofPlating';
 import { ROOF_H, wallTopPx } from './heights';
 import { createTargetMarks } from './targetMarks';
@@ -69,9 +72,13 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   let cutaway: CutawayMode = 'auto';
   let emergency = false;
   let marksOn = false;
+  /** A derelict's look: 1 for a live ship, dimmer for a wreck running on emergency lights, darker still with none. */
+  let wreckDim = 1;
+  let wreckEmergency = false;
+  let wreckTick = 0;
   let targeted: ReadonlySet<number> = new Set();
   const inside = () => (roofed ? null : { grid });
-  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK });
+  const view = createGridView(grid, atlas, L, { emergency: () => emergency, dim: () => wreckDim, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK });
   const crewView = createCrewView(world, atlas, L, {
     target: () => ({ shipId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),
@@ -86,7 +93,9 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     suitAirSec: o.suitAirSec,
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway) });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, dim: () => wreckDim, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin });
+  const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency);
+  const jamMarks = createJamMarks(grid, atlas, L);
   const itemView = createItemView(world, atlas, L, items, { target: inside, emergency: () => emergency });
   const fxView = createFxView(atlas, L, { target: inside });
   const particles = createParticles(atlas, L);
@@ -96,7 +105,11 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const wallHeight = () => wallTopPx(roofed ? 'up' : cutaway);
   const damage = createDamageView(grid, L, wallHeight);
   const marks = createTargetMarks(grid, world, modules, L.marks);
-  const applyMode = () => view.setCutaway(roofed ? 'up' : cutaway, !roofed);
+  const applyMode = () => {
+    view.setCutaway(roofed ? 'up' : cutaway, !roofed);
+    ruinView.setLevel(wallLevel(roofed ? 'up' : cutaway));
+    ruinView.setRoofed(roofed);
+  };
   applyMode();
   roof.setVisible(roofed);
   turretView.setRoofed(roofed);
@@ -107,7 +120,17 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     view,
     update(dt) {
       emergency = shipHasPower(world, modules, grid) === false;
+      if (world.get(grid.id, ShipC)?.ruin && (wreckTick++ & 15) === 0) {
+        wreckEmergency = false;
+        for (const id of world.query(ModuleC)) {
+          const m = world.get(id, ModuleC);
+          if (m && modules[m.def]?.light && grid.inBounds(m.x, m.y) && m.powered && m.hp > 0) wreckEmergency = true;
+        }
+        wreckDim = wreckEmergency ? 0.62 : 0.42;
+      }
       view.update();
+      ruinView.update();
+      jamMarks.update();
       moduleView.update();
       itemView.update();
       fxView.update();
@@ -144,6 +167,8 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       marks.dispose();
       damage.dispose();
       roof.dispose();
+      ruinView.dispose();
+      jamMarks.dispose();
       turretView.dispose();
       crewView.dispose();
       moduleView.dispose();

@@ -581,7 +581,7 @@ Open: CombatPanel still old style; phone hides the crew row while the combat she
   `src/content/furniture.ts` (several have no art yet). User note: **room generation gets reworked once the new modules from
   the art thread land** (storage set, medbay, battery, hydroponics, workbench, comms and sensor consoles, cryo pods).
 - **Ruins** (`src/sim/shipgen/ruin*.ts`, `src/sim/combat/derelict.ts`): `ruin(template, seed, opts)`, jammed doors
-  (`jam` field, `job.forceDoor`), `debug.spawnDerelict` / `?shipgen=derelict`. Not done: derelict art wiring, a Force door UI
+  (`jam` field, `job.forceDoor`), `debug.spawnDerelict` / `?shipgen=derelict`. Done on `derelict-ingame`: derelict art wiring (`ShipC.ruin`, save v23), a Force door UI
   action, a jammed-door marker.
 - **Next (user decision): sealed, detachable cargo containers** as their own ship component with their own exterior. Freighter
   frames become trusses plus clamped containers; a detached container becomes a free body (like shuttles) carrying its
