@@ -5,6 +5,11 @@
 
   let { api }: { api: UiApi } = $props();
   let list = $state<UiAlert[]>([]);
+  let h = $state(0);
+  /** The combat panel starts below the notifications. */
+  $effect(() => {
+    document.documentElement.style.setProperty('--alerts-h', `${h}px`);
+  });
   onMount(() => api.alerts.subscribe((a) => (list = a)));
 
   const danger = new Set(['fire.started', 'hull.breach', 'crew.died', 'crew.downed', 'crew.starving', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'module.destroyed', 'ship.lost']);
@@ -15,7 +20,7 @@
   };
 </script>
 
-<div class="alerts" data-testid="alerts">
+<div class="alerts" data-testid="alerts" bind:clientHeight={h}>
   {#each list.slice(0, 4) as a (a.id)}
     <div class="alert" class:danger={danger.has(a.kind)} class:good={good.has(a.kind)} data-testid="alert" data-kind={a.kind}>
       {#if a.notice}
@@ -36,7 +41,6 @@
 <style>
   /* Notifications queue under the time controls, stacked downward. */
   .alerts { position: fixed; z-index: 4; right: calc(8px + var(--sar)); top: calc(var(--sat) + 80px); display: grid; gap: 2px; width: min(260px, calc(100vw - 110px)); pointer-events: none; }
-  :global(html[data-combat]) .alerts { right: calc(388px + var(--sar)); top: calc(var(--hdr) + var(--sat) + 8px); }
   .alert { display: flex; pointer-events: auto; background: var(--panel); border: 1px solid var(--amber); border-left-width: 3px; }
   .alert.danger { border-color: var(--red); }
   .alert.good { border-color: var(--green); }

@@ -90,5 +90,5 @@
   .cell.warn { border-color: var(--amber); color: var(--amber); }
   .meters { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
   .hint { margin: 8px 0 0; color: var(--dim); font-size: 12px; display: flex; align-items: center; gap: 6px; min-height: 18px; }
-  @media (max-width: 600px) { .sel, .sel.wide { width: auto; left: 0; right: calc(46px + var(--sar)); bottom: 0; max-height: 52vh; } }
+  @media (max-width: 600px) { :global(html[data-combat]) .sel { display: none; } .sel, .sel.wide { width: auto; left: 0; right: calc(46px + var(--sar)); bottom: 0; max-height: 52vh; } }
 </style>

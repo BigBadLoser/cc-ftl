@@ -39,7 +39,7 @@
     wall: 'M3 5h18v14H3zM3 12h18M9 5v7M15 12v7',
     floor: 'M3 12l9-5 9 5-9 5zM3 12v3l9 5 9-5v-3',
     door: 'M6 21V4h12v17M3 21h18M15 12h.01',
-    module: 'M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10',
+    module: 'M7 7h10v10H7zM10 10h4v4h-4zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4',
     ship: 'M3 12l5-6h11l2 6-2 6H8z',
     person: 'M12 3.5a3.5 3.5 0 1 0 0 .1M5 21c0-4 3-7 7-7s7 3 7 7',
     smile: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 14c1 2 7 2 8 0M9 9.5h.01M15 9.5h.01',

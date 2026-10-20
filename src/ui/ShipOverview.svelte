@@ -55,5 +55,5 @@
   button.cell { cursor: pointer; } button.cell.on { border-color: var(--cyan); background: var(--panel-3); }
   .cell.bad { border-color: var(--red); color: var(--red); }
   .meters { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
-  @media (max-width: 600px) { .over { bottom: auto; left: 8px; right: calc(46px + var(--sar)); width: auto; border-width: 1px; padding: 10px; } }
+  @media (max-width: 600px) { :global(html[data-combat]) .over { display: none; } .over { bottom: auto; left: 8px; right: calc(46px + var(--sar)); width: auto; border-width: 1px; padding: 10px; } }
 </style>

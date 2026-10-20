@@ -48,5 +48,5 @@
   .m { font-size: 12px; color: var(--dim); }
   .m b { color: var(--cyan); font-weight: 600; margin-left: 4px; }
   .hint { margin: 6px 0 0; color: var(--dim); font-size: 12px; }
-  @media (max-width: 600px) { aside { width: auto; left: 0; right: calc(46px + var(--sar)); bottom: 0; max-height: 62vh; } .list { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { :global(html[data-combat]) aside { display: none; } aside { width: auto; left: 0; right: calc(46px + var(--sar)); bottom: 0; max-height: 62vh; } .list { grid-template-columns: repeat(2, 1fr); } }
 </style>
