@@ -166,7 +166,7 @@ def container(fill, rot):
 
 def tank(fill, rot):
     k = K(f"storage_tank_{fill}_{rot}", (2, 2), rot)
-    F, R, z0, H = 1.7, 0.6, 0.18, 1.22
+    F, R, z0, H = 1.7, 0.7, 0.18, 1.28
     TOP = z0 + H + 0.2                                                                # the dome's top
     for su in (-1, 1):                                                                # skid: base rails, corner posts
         k.box(su * (F / 2 - 0.05), 0, 0.0, 0.1, F, 0.1, "gmD", top="gm")
@@ -196,9 +196,9 @@ def tank(fill, rot):
     g = math.pi / 2 + 0.32                                                            # gauge on the front face, clear of
                                                                                       # the front corner post
     ca, sa = math.cos(g), math.sin(g)
-    gr = R + 0.13
+    gr = R + 0.09
     for z in (z0 + 0.22, z0 + H - 0.2):                                               # brackets
-        k.box(ca * (R + 0.06), sa * (R + 0.06), z, 0.14, 0.05, 0.05, "gm", rz=g)
+        k.box(ca * (R + 0.04), sa * (R + 0.04), z, 0.1, 0.05, 0.05, "gm", rz=g)
     k.box(ca * gr, sa * gr, z0 + 0.18, 0.12, 0.12, H - 0.3, "gmD", top="gm", rz=g)    # gauge housing
     gh = H - 0.46
     level = {"empty": 0.08, "partial": 0.5, "full": 0.94}[fill]
@@ -211,7 +211,7 @@ def tank(fill, rot):
     k.box(ca * gr, sa * gr, z0 + H - 0.12, 0.14, 0.14, 0.05, "gmD", rz=g)              # on top of the gauge housing
     k.box(ca * gr, sa * gr, z0 + H - 0.07, 0.1, 0.1, 0.08, col, rz=g)
     a = 0.3                                                                           # outlet line and valve wheel
-    ou, ov = math.cos(a) * (R + 0.08), math.sin(a) * (R + 0.08)
+    ou, ov = math.cos(a) * (R + 0.03), math.sin(a) * (R + 0.03)
     k.box(ou, ov, 0.1, 0.1, 0.1, z0 + 0.3, "gm", top="steelL")
     k.box(ou, ov, z0 + 0.24, 0.16, 0.16, 0.08, "steelL")
     k.cyl(ou, ov, z0 + 0.32, 0.12, 0.04, "brass", sides=10)
