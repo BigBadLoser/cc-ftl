@@ -1,0 +1,105 @@
+import type { GalaxyContent } from './defs';
+import { hash32, unit } from './hash';
+import type { Terrain } from './terrain';
+import type { TerritoryField } from './territory';
+import {
+  LANE_MIN_DENSITY, REGION_BORDER_WOBBLE, REGION_CELL, REGION_REACH, REGION_RIFT_COST, REGION_SEED_DENSITY,
+} from './tuning';
+
+/** A region (province): a named group of sectors around a seed, owned by one faction or by nobody. */
+export interface Region {
+  id: string;
+  rx: number;
+  ry: number;
+  x: number;
+  y: number;
+  name: string;
+  faction: string | null;
+}
+
+const JITTER = 0.35;
+const RING = Math.ceil(REGION_REACH / REGION_CELL + 0.5 + JITTER);
+const cellOf = (v: number): number => Math.floor(v / REGION_CELL + 0.5);
+
+/**
+ * Regions over the terrain: one seed per REGION_CELL cell, placed on dense ground (a cell over a rift has none). A
+ * point belongs to the seed it is cheapest to reach, where distance is wobbled by noise and every unit of void on the
+ * way costs REGION_RIFT_COST extra, so borders follow the rifts. All of it reads a bounded ring of cells: chunk-safe.
+ */
+export class RegionField {
+  private regions = new Map<string, Region | null>();
+  private owner = new Map<string, Region | null>();
+
+  constructor(
+    readonly seed: number,
+    private readonly terrain: Terrain,
+    private readonly territory: TerritoryField,
+    private readonly content: GalaxyContent | undefined,
+  ) {}
+
+  region(rx: number, ry: number): Region | null {
+    const key = `${rx},${ry}`;
+    let r = this.regions.get(key);
+    if (r === undefined) {
+      r = null;
+      for (let k = 0; k < 4 && !r; k++) {
+        const home = rx === 0 && ry === 0;
+        const x = home ? 0 : (rx + (unit(this.seed, rx, ry, k, 81) * 2 - 1) * JITTER) * REGION_CELL;
+        const y = home ? 0 : (ry + (unit(this.seed, rx, ry, k, 82) * 2 - 1) * JITTER) * REGION_CELL;
+        if (!home && this.terrain.density(x, y) < REGION_SEED_DENSITY) continue;
+        r = { id: `g.${rx}.${ry}`, rx, ry, x, y, name: this.nameOf(rx, ry), faction: this.territory.factionAt(x, y) };
+      }
+      this.regions.set(key, r);
+    }
+    return r;
+  }
+
+  private nameOf(rx: number, ry: number): string {
+    const pre = this.content?.names.prefix ?? [];
+    const suf = this.content?.names.suffix ?? [];
+    if (!pre.length || !suf.length) return `g.${rx}.${ry}`;
+    return `${pre[hash32(this.seed, rx, ry, 83) % pre.length]} ${suf[hash32(this.seed, rx, ry, 84) % suf.length]}`;
+  }
+
+  /** Regions whose seed cell lies within `ring` cells of the cell holding (x, y). */
+  near(x: number, y: number, ring = RING): Region[] {
+    const out: Region[] = [];
+    const cx = cellOf(x);
+    const cy = cellOf(y);
+    for (let dy = -ring; dy <= ring; dy++) {
+      for (let dx = -ring; dx <= ring; dx++) {
+        const r = this.region(cx + dx, cy + dy);
+        if (r) out.push(r);
+      }
+    }
+    return out;
+  }
+
+  /** Cost of reaching (x, y) from a region's seed. */
+  cost(r: Region, x: number, y: number): number {
+    const d = Math.hypot(x - r.x, y - r.y);
+    if (d > REGION_REACH) return Infinity;
+    const wob = 1 + REGION_BORDER_WOBBLE * (this.terrain.wobble(x, y, 1400, hash32(r.rx, r.ry) % 997) - 0.5) * 2;
+    return d * wob + REGION_RIFT_COST * this.terrain.voidRun(r.x, r.y, x, y, LANE_MIN_DENSITY, 100).total;
+  }
+
+  /** The region a point (a sector site) belongs to, or null when no seed reaches it. Memoised by exact position. */
+  regionAt(x: number, y: number): Region | null {
+    const key = `${x},${y}`;
+    let best = this.owner.get(key);
+    if (best === undefined) {
+      best = null;
+      let score = Infinity;
+      for (const r of this.near(x, y)) {
+        const c = this.cost(r, x, y);
+        if (c < score) {
+          score = c;
+          best = r;
+        }
+      }
+      this.owner.set(key, best);
+    }
+    return best;
+  }
+
+}

@@ -1,5 +1,5 @@
 /**
- * Dev-only large-scale galaxy metrics (nothing in src/ imports this): clusters, corridors, chokepoints, route choice,
+ * Dev-only large-scale galaxy metrics (nothing in src/ imports this): regions, gates, chokepoints, route choice,
  * dead ends and voids, measured on the sector graph inside an inner disc so chunk-border effects stay out.
  */
 import { galaxyGen, type EdgeData, type SectorData } from '../../src/sim';
@@ -121,43 +121,42 @@ export function metrics(seed: number, radius: number): Record<string, number> {
   m.nodesPerSectorCV = cv(nps);
   m.radiusCV = cv(innerSectors.map((s) => s.r));
 
-  // Cluster transitions along rays.
+  // Region transitions along rays.
   let trans = 0;
   const rays = 16;
   for (let k = 0; k < rays; k++) {
     const ang = (k / rays) * Math.PI * 2;
     let last: string | null = null;
-    for (let d = 0; d <= innerR; d += 50) {
-      const c = gen.macro.clusterAt(Math.cos(ang) * d, Math.sin(ang) * d);
-      if (c && c.id !== last) trans++;
-      if (c) last = c.id;
+    for (let d = 0; d <= innerR; d += 100) {
+      const r = gen.regions.regionAt(Math.round(Math.cos(ang) * d), Math.round(Math.sin(ang) * d));
+      if (r && r.id !== last) trans++;
+      if (r) last = r.id;
     }
   }
-  m.clustersPer10k = (trans / (rays * innerR)) * 10000;
+  m.regionsPer10k = (trans / (rays * innerR)) * 10000;
 
-  // Clusters with centre in the inner disc.
-  const clusters = new Map<string, ReturnType<typeof gen.macro.clustersNear>[number]>();
-  for (const c of gen.macro.clustersNear(0, 0, innerR + 1500)) if (Math.hypot(c.x, c.y) <= innerR) clusters.set(c.id, c);
-  const counts = new Map<string, number>([...clusters.keys()].map((id) => [id, 0]));
-  let unclustered = 0;
-  for (const s of innerSectors) {
-    const c = gen.macro.clusterAt(s.x, s.y);
-    if (!c) unclustered++;
-    else if (counts.has(c.id)) counts.set(c.id, counts.get(c.id)! + 1);
+  // Regions by their inner sectors; gates per bordering pair (pairs joined by at least one gate lane).
+  const counts = new Map<string, number>();
+  for (const s of innerSectors) if (s.region) counts.set(s.region, (counts.get(s.region) ?? 0) + 1);
+  m.regions = counts.size;
+  m.sectorsPerRegion = mean([...counts.values()]);
+  m.regionSizeCV = cv([...counts.values()]);
+  m.regionless = innerSectors.length ? innerSectors.filter((s) => !s.region).length / innerSectors.length : 0;
+  const pairGates = new Map<string, number>();
+  const hyper = [...hl.values()].filter((e) => {
+    const sa = sectors.get(nodeSector.get(e.a) ?? '');
+    return !!sa && Math.hypot(sa.x, sa.y) <= innerR;
+  });
+  for (const e of hyper) {
+    if (!e.gate) continue;
+    const ra = sectors.get(nodeSector.get(e.a) ?? '')?.region;
+    const rb = sectors.get(nodeSector.get(e.b) ?? '')?.region;
+    if (!ra || !rb) continue;
+    const key = [ra, rb].sort().join('|');
+    pairGates.set(key, (pairGates.get(key) ?? 0) + 1);
   }
-  m.clusters = clusters.size;
-  m.clusterSizeCV = cv([...counts.values()]);
-  m.unclustered = innerSectors.length ? unclustered / innerSectors.length : 0;
-
-  const pairCorr = new Map<string, Set<string>>();
-  for (const c of clusters.values()) {
-    for (const co of gen.macro.corridors(c)) {
-      const key = [co.a.id, co.b.id].sort().join('|');
-      if (!pairCorr.has(key)) pairCorr.set(key, new Set());
-      pairCorr.get(key)!.add(co.id);
-    }
-  }
-  m.corridorsPerPair = mean([...pairCorr.values()].map((s) => s.size));
+  m.gatesPerPair = mean([...pairGates.values()]);
+  m.gateShare = hyper.length ? hyper.filter((e) => e.gate).length / hyper.length : 0;
 
   // Bridges, degrees, reachability.
   const br = bridges(n, adj);

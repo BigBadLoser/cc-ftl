@@ -1,11 +1,11 @@
 import { dist, type Vec } from './geometry';
 import { unit } from './hash';
-import { station, type MacroField } from './macro';
+import type { Terrain } from './terrain';
 import {
-  CORRIDOR_JITTER, CORRIDOR_SNAP, DENSITY_FULL, DENSITY_MIN, HULL_GAP, SECTOR_RADIUS, SITE_CELL, SITE_SPACING,
+  DENSITY_FULL, DENSITY_MIN, HULL_GAP, SECTOR_RADIUS, SITE_CELL, SITE_SPACING,
 } from './tuning';
 
-/** A sector site: its global cell, position, radius and the macro density it grew in (0 void .. 1 dense core). */
+/** A sector site: its global cell, position, radius and the terrain density it grew in (0 void .. 1 dense core). */
 export interface Site {
   gx: number;
   gy: number;
@@ -38,17 +38,17 @@ const smooth = (e0: number, e1: number, v: number): number => {
   const t = Math.max(0, Math.min(1, (v - e0) / (e1 - e0)));
   return t * t * (3 - 2 * t);
 };
-/** How far a candidate can sit from its cell centre per axis (jitter plus corridor snapping). */
-const DRIFT = SITE_CELL / 2 + CORRIDOR_SNAP + CORRIDOR_JITTER;
+/** How far a candidate can sit from its cell centre per axis. */
+const DRIFT = SITE_CELL / 2;
 /** Cells the widest pair spacing can span. */
 const REACH = Math.ceil((SITE_SPACING.void + 2 * DRIFT) / SITE_CELL);
 const R_MAX = SECTOR_RADIUS.void * 1.15;
 
 /**
- * Endless sector sites inside the macro structure, computed per global cell from the seed alone (no chunk ever looks
+ * Endless sector sites on the terrain, computed per global cell from the seed alone (no chunk ever looks
  * at generation order), in three memoised stages:
- * 1. **Candidate:** one jittered point and a random priority per cell. Near a corridor axis it snaps onto the axis, so
- *    corridors grow a chain of sectors. It is alive with a chance rising with the macro density there (void: none).
+ * 1. **Candidate:** one jittered point and a random priority per cell, alive with a chance rising with the terrain
+ *    density there (void: none).
  *    The start cell's candidate is pinned at (0, 0), alive, with the top priority.
  * 2. **Thinning (Matérn II):** a live candidate survives unless a higher-priority live candidate lies within their
  *    pair spacing (dense cores pack tighter). The test reads only candidates, never survivors: local and order-free.
@@ -63,7 +63,7 @@ export class SiteField {
 
   constructor(
     readonly seed: number,
-    readonly macro: MacroField,
+    readonly terrain: Terrain,
   ) {}
 
   candidate(gx: number, gy: number): Candidate {
@@ -73,17 +73,9 @@ export class SiteField {
       const u = (salt: number) => unit(this.seed, gx, gy, salt);
       if (gx === 0 && gy === 0) c = { x: 0, y: 0, pri: 2, density: 1, alive: true, spacing: SITE_SPACING.core };
       else {
-        let x = (gx - 0.5 + u(1)) * SITE_CELL;
-        let y = (gy - 0.5 + u(2)) * SITE_CELL;
-        const own = this.macro.dominant(x, y).d;
-        const k2 = this.macro.corridorAt(x, y);
-        if (k2.corridor && k2.near.d <= CORRIDOR_SNAP && own < k2.d + 0.1) {
-          const at = station(k2.corridor, k2.near.s);
-          const side = (u(5) * 2 - 1) * CORRIDOR_JITTER;
-          x = at.px - at.dy * side;
-          y = at.py + at.dx * side;
-        }
-        const density = this.macro.density(x, y);
+        const x = (gx - 0.5 + u(1)) * SITE_CELL;
+        const y = (gy - 0.5 + u(2)) * SITE_CELL;
+        const density = this.terrain.density(x, y);
         const alive = density >= DENSITY_MIN && u(4) < smooth(DENSITY_MIN, DENSITY_FULL, density);
         c = { x, y, pri: u(3), density, alive, spacing: lerp(SITE_SPACING.void, SITE_SPACING.core, density) };
       }

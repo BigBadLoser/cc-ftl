@@ -7,39 +7,37 @@
 export const SITE_CELL = 320;
 /** Cells per chunk side: a chunk is CHUNK_CELLS x CHUNK_CELLS cells (1280 units). */
 export const CHUNK_CELLS = 4;
-/**
- * Macro structure (macro.ts): clusters on a coarse grid of MACRO_CELL cells (CLUSTER_CHANCE of cells hold one), joined
- * by corridors across the void. Radii are skewed towards small; stretch and wobble make the shapes irregular.
- */
-export const MACRO_CELL = 3600;
-export const CLUSTER_CHANCE = 0.8;
-export const CLUSTER_RADIUS = { min: 800, max: 1900 } as const;
-export const CLUSTER_STRETCH = { min: 1, max: 1.5 } as const;
-export const CLUSTER_WOBBLE = 0.25;
-/** Clusters closer than this may be linked: relative-neighbourhood links plus LINK_EXTRA of the other Gabriel links. */
-export const LINK_MAX = 7600;
-export const LINK_EXTRA = 0.45;
-/** Chance a linked pair gets a second corridor (a second crossing, offset sideways). */
-export const SECOND_CORRIDOR = 0.3;
-/** Corridor density on its axis, fading to zero at CORRIDOR_WIDTH from it. */
-export const CORRIDOR_DENSITY = 0.42;
-export const CORRIDOR_WIDTH = 150;
-/** Density at which a point belongs to its cluster (for territory and metrics). */
-export const CLAIM_DENSITY = 0.25;
+/** Terrain (terrain.ts): noise features are about TERRAIN_SCALE units across; density is cached on this lattice. */
+export const TERRAIN_SCALE = 5200;
+export const TERRAIN_LATTICE = 40;
 
 /**
- * Sector sites: one candidate per cell, alive with a chance rising from DENSITY_MIN to DENSITY_FULL density. Near a
- * corridor axis the candidate snaps onto it. Survivors are thinned so sites keep SITE_SPACING apart (core spacing at
+ * Regions (regions.ts): one seed per REGION_CELL cell on ground at least REGION_SEED_DENSITY dense. A sector joins the
+ * seed cheapest to reach within REGION_REACH: distance (wobbled by +-REGION_BORDER_WOBBLE) plus REGION_RIFT_COST per
+ * unit of void crossed.
+ */
+export const REGION_CELL = 3800;
+export const REGION_REACH = 5600;
+export const REGION_SEED_DENSITY = 0.35;
+export const REGION_BORDER_WOBBLE = 0.2;
+export const REGION_RIFT_COST = 14;
+/**
+ * Gates: neighbouring regions keep 1 crossing lane, plus a second and third with these chances, picked shortest first
+ * and at least GATE_SPREAD apart. A border with a detour through a third region closes with NO_GATE chance.
+ */
+export const GATE_SECOND = 0.45;
+export const GATE_THIRD = 0.12;
+export const GATE_SPREAD = 900;
+export const NO_GATE = 0.5;
+
+/**
+ * Sector sites: one candidate per cell, alive with a chance rising from DENSITY_MIN to DENSITY_FULL density. Survivors
+ * are thinned so sites keep SITE_SPACING apart (core spacing at
  * density 1, void spacing at 0; a pair uses the mean of both).
  */
 export const DENSITY_MIN = 0.12;
 export const DENSITY_FULL = 0.35;
 export const SITE_SPACING = { core: 360, void: 640 } as const;
-/** Corridor snapping: candidates within this distance of an axis move onto it (plus a little sideways jitter). */
-export const CORRIDOR_SNAP = 300;
-/** Corridor stations (one sector each) every this many units along the axis. */
-export const CORRIDOR_STEP = 580;
-export const CORRIDOR_JITTER = 30;
 /** Sector radius by density (core to void), +-15% at random, capped so neighbouring hulls keep HULL_GAP. */
 export const SECTOR_RADIUS = { core: 160, void: 270 } as const;
 export const HULL_GAP = 34;
@@ -56,10 +54,14 @@ export const ROUTE_EXTRA = 0.3;
 /** Hyperlanes: sector pairs closer than this (site to site) may be linked. */
 export const HYPERLANE_MAX = 1200;
 /** A hyperlane may not cross void: no stretch longer than LANE_MAX_VOID with density below LANE_MIN_DENSITY. */
-export const LANE_MIN_DENSITY = 0.06;
-export const LANE_MAX_VOID = 260;
+export const LANE_MIN_DENSITY = 0.05;
+export const LANE_MAX_VOID = 380;
+/** Rift lanes: relative-neighbour pairs up to this far apart may cross the void (so no island is stranded). */
+export const RIFT_MAX = 2800;
+/** Gate picking treats a rift lane as this much longer, so clear crossings win. */
+export const RIFT_GATE_PENALTY = 2000;
 /** Relative-neighbourhood edges (the backbone, contains the spanning tree) plus this share of the other Gabriel edges. */
-export const HYPERLANE_EXTRA = 0.3;
+export const HYPERLANE_EXTRA = 0.5;
 /** Chance a hyperlane carries a mid-lane event anchor. */
 export const ANCHOR_CHANCE = 0.35;
 
@@ -78,11 +80,11 @@ export const DANGER_MAX = 9;
 
 /**
  * Territory: one faction seed per cell of this size; a point belongs to the nearest seed within its reach. Read at
- * cluster centres, so whole clusters change hands; TERRITORY_SCALE scales cells and reaches (content reaches included).
+ * region seeds, so whole regions change hands; TERRITORY_SCALE scales cells and reaches (content reaches included).
  */
 export const TERRITORY_CELL = 1100;
 export const TERRITORY_REACH = 760;
-export const TERRITORY_SCALE = 4.5;
+export const TERRITORY_SCALE = 3;
 /** Chance a sector with no territory still has a (free traders') station. */
 export const OPEN_STATION_CHANCE = 0.3;
 

@@ -49,6 +49,8 @@ export interface SectorData {
   nodes: string[];
   /** Padded convex hull of the nodes, counter-clockwise. */
   hull: Vec[];
+  /** The region (province) it belongs to: `g.<rx>.<ry>`. */
+  region?: string;
 }
 
 export type EdgeKind = 'route' | 'hyperlane';
@@ -67,6 +69,10 @@ export interface EdgeData {
   time: number;
   /** A mid-lane anchor: crossing draws from the story's 'transit' pool. */
   anchor?: true;
+  /** A hyperlane crossing a region border (one of the few gates between two regions). */
+  gate?: true;
+  /** A long jump across the void (a rift lane). */
+  rift?: true;
 }
 
 export interface ChunkData {

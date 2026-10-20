@@ -1,13 +1,30 @@
 import { jumpCosts } from './costs';
 import type { GalaxyContent } from './defs';
-import { dist, isGabriel, isRelativeNeighbour, type Vec } from './geometry';
+import { dist, isGabriel, isRelativeNeighbour } from './geometry';
 import { strHash, unit } from './hash';
 import { buildSector, type BuiltSector, type SectorContext } from './sector';
-import { MacroField } from './macro';
+import { RegionField, type Region } from './regions';
 import { SiteField, type Site } from './sites';
+import { Terrain } from './terrain';
 import { TerritoryField } from './territory';
-import { ANCHOR_CHANCE, CHUNK_CELLS, HYPERLANE_EXTRA, HYPERLANE_MAX, LANE_MAX_VOID, LANE_MIN_DENSITY, SITE_CELL } from './tuning';
+import {
+  ANCHOR_CHANCE, CHUNK_CELLS, GATE_SECOND, GATE_SPREAD, GATE_THIRD, HYPERLANE_EXTRA, HYPERLANE_MAX, LANE_MAX_VOID,
+  LANE_MIN_DENSITY, NO_GATE, REGION_CELL, REGION_REACH, RIFT_GATE_PENALTY, RIFT_MAX, SITE_CELL,
+} from './tuning';
 import type { ChunkData, EdgeData, NodeData } from './types';
+
+interface Candidate {
+  site: Site;
+  /** Crosses the void (a rift lane). */
+  rift: boolean;
+}
+
+interface Crossing {
+  id: string;
+  len: number;
+  mx: number;
+  my: number;
+}
 
 export const chunkKey = (cx: number, cy: number): string => `${cx},${cy}`;
 /** The chunk of a global site cell. */
@@ -36,20 +53,23 @@ export function chunkAt(x: number, y: number): { cx: number; cy: number } {
  * and a hyperlane that crosses a chunk border comes out identical from either side. Not saved: rebuilt on demand.
  */
 export class GalaxyGen implements SectorContext {
-  get territory(): MacroField {
-    return this.macro;
-  }
-
+  readonly terrain: Terrain;
+  readonly regions: RegionField;
   readonly sites: SiteField;
-  readonly macro: MacroField;
+  /** Territory by position: the faction of the region there. */
+  readonly territory = { factionAt: (x: number, y: number): string | null => this.regions.regionAt(x, y)?.faction ?? null };
   private sectors = new Map<string, BuiltSector>();
+  private cands = new Map<string, Candidate[]>();
+  private gateSets = new Map<string, Set<string>>();
+  private cross = new Map<string, Crossing[]>();
 
   constructor(
     readonly seed: number,
     readonly content: GalaxyContent | undefined,
   ) {
-    this.macro = new MacroField(seed, new TerritoryField(seed, content?.factions ?? {}));
-    this.sites = new SiteField(seed, this.macro);
+    this.terrain = new Terrain(seed);
+    this.regions = new RegionField(seed, this.terrain, new TerritoryField(seed, content?.factions ?? {}), content);
+    this.sites = new SiteField(seed, this.terrain);
   }
 
   chunkOf(site: Site): string {
@@ -60,6 +80,8 @@ export class GalaxyGen implements SectorContext {
     let s = this.sectors.get(site.id);
     if (!s) {
       s = buildSector(this, site);
+      const region = this.regions.regionAt(site.x, site.y);
+      if (region) s.sector.region = region.id;
       this.sectors.set(site.id, s);
     }
     return s;
@@ -81,44 +103,126 @@ export class GalaxyGen implements SectorContext {
     return best as NodeData;
   }
 
-  /** True unless a-b crosses more than LANE_MAX_VOID of void (density below LANE_MIN_DENSITY): lanes never span voids. */
-  private laneClear(a: Vec, b: Vec): boolean {
-    const steps = Math.ceil(dist(a, b) / 50);
-    const stepLen = dist(a, b) / steps;
-    let run = 0;
-    for (let k = 1; k < steps; k++) {
-      const t = k / steps;
-      run = this.macro.density(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t) < LANE_MIN_DENSITY ? run + stepLen : 0;
-      if (run > LANE_MAX_VOID) return false;
-    }
-    return true;
+  /** True when a-b stays out of the void: no stretch over LANE_MAX_VOID below LANE_MIN_DENSITY, and short enough. */
+  private clear(a: Site, b: Site): boolean {
+    return dist(a, b) <= HYPERLANE_MAX && this.terrain.voidRun(a.x, a.y, b.x, b.y, LANE_MIN_DENSITY).longest <= LANE_MAX_VOID;
   }
 
   /**
-   * Hyperlanes of a sector. Candidates are the sites within HYPERLANE_MAX. A pair is linked when it is a relative
-   * neighbourhood edge (the connected backbone; it contains the minimum spanning tree) or, with HYPERLANE_EXTRA chance
-   * from a symmetric pair hash, a Gabriel edge. Both tests read only sites within |ab| of each end, which both ends'
-   * candidate lists contain, so the answer is the same from either sector.
+   * Lane candidates of a site: Gabriel pairs that stay out of the void, plus **rift lanes**: relative neighbourhood
+   * pairs (within RIFT_MAX) that cross it. The relative neighbourhood graph is connected, so no island of sectors is
+   * ever stranded. The tests read only sites within |ab| of each end, which both ends' lists hold: symmetric.
+   */
+  private candidates(site: Site): Candidate[] {
+    let out = this.cands.get(site.id);
+    if (!out) {
+      out = [];
+      const near = this.sites.sitesNear(site.x, site.y, RIFT_MAX);
+      for (const o of near) {
+        if (o.id === site.id) continue;
+        const [a, b] = site.id < o.id ? [site, o] : [o, site];
+        if (this.clear(a, b)) {
+          if (isGabriel(a, b, near)) out.push({ site: o, rift: false });
+        } else if (isRelativeNeighbour(a, b, near)) out.push({ site: o, rift: true });
+      }
+      this.cands.set(site.id, out);
+    }
+    return out;
+  }
+
+  /** Crossing candidates between two regions (lane id, length, midpoint), shortest first. Reads sites near a's seed. */
+  private crossings(ra: Region, rb: Region): Crossing[] {
+    const [a, b] = ra.id < rb.id ? [ra, rb] : [rb, ra];
+    const key = `${a.id}|${b.id}`;
+    let out = this.cross.get(key);
+    if (!out) {
+      out = [];
+      for (const s of this.sites.sitesNear(a.x, a.y, REGION_REACH)) {
+        if (this.regions.regionAt(s.x, s.y) !== a) continue;
+        for (const { site: o, rift } of this.candidates(s)) {
+          if (this.regions.regionAt(o.x, o.y) !== b) continue;
+          const id = s.id < o.id ? `${s.id}|${o.id}` : `${o.id}|${s.id}`;
+          out.push({ id, len: dist(s, o) + (rift ? RIFT_GATE_PENALTY : 0), mx: (s.x + o.x) / 2, my: (s.y + o.y) / 2 });
+        }
+      }
+      out.sort((p, q) => p.len - q.len || (p.id < q.id ? -1 : 1));
+      this.cross.set(key, out);
+    }
+    return out;
+  }
+
+  /**
+   * May the border between two touching regions close? Only when a third region touches both through two shorter
+   * borders (by seed distance), so there is always a way around: the kept borders contain a spanning tree of the
+   * touching regions, the same argument that makes relative neighbourhood graphs connected.
+   */
+  private detour(a: Region, b: Region): boolean {
+    const dab = dist(a, b);
+    const ring = Math.ceil((2 * REGION_REACH) / REGION_CELL) + 1;
+    return this.regions.near((a.x + b.x) / 2, (a.y + b.y) / 2, ring).some((c) => c !== a && c !== b
+      && Math.max(dist(a, c), dist(b, c)) < dab && this.crossings(a, c).length > 0 && this.crossings(b, c).length > 0);
+  }
+
+  /**
+   * The gates between two neighbouring regions: lane ids (`a|b`) of the crossing candidates kept. One, plus a second
+   * and third by chance, picked shortest first and GATE_SPREAD apart; none (NO_GATE chance) when a detour exists, so
+   * some borders are closed and you go around. Pure in the two regions' surroundings: the same from both sides.
+   */
+  private gates(ra: Region, rb: Region): Set<string> {
+    const [a, b] = ra.id < rb.id ? [ra, rb] : [rb, ra];
+    const key = `${a.id}|${b.id}`;
+    let out = this.gateSets.get(key);
+    if (!out) {
+      out = new Set();
+      const u = (salt: number) => unit(this.seed, a.rx, a.ry, b.rx, b.ry, salt);
+      const want = u(91) < NO_GATE && this.detour(a, b) ? 0 : 1 + (u(92) < GATE_SECOND ? 1 : 0) + (u(93) < GATE_THIRD ? 1 : 0);
+      const picked: Crossing[] = [];
+      for (const c of this.crossings(a, b)) {
+        if (picked.length >= want) break;
+        if (picked.every((p) => Math.hypot(p.mx - c.mx, p.my - c.my) >= GATE_SPREAD)) picked.push(c);
+      }
+      for (const p of picked) out.add(p.id);
+      this.gateSets.set(key, out);
+    }
+    return out;
+  }
+
+  /** The lane between two sites (gateway nodes facing each other). */
+  private lane(a: Site, b: Site, gate: boolean, rift: boolean): EdgeData {
+    const len = dist(a, b) || 1;
+    const ga = this.gateway(a, (b.x - a.x) / len, (b.y - a.y) / len);
+    const gb = this.gateway(b, (a.x - b.x) / len, (a.y - b.y) / len);
+    const length = dist(ga, gb);
+    const edge: EdgeData = { id: `h:${a.id}|${b.id}`, a: ga.id, b: gb.id, kind: 'hyperlane', length, ...jumpCosts('hyperlane', length) };
+    if (gate) edge.gate = true;
+    if (rift) edge.rift = true;
+    if (unit(this.seed, strHash(a.id), strHash(b.id), 52) < ANCHOR_CHANCE) edge.anchor = true;
+    return edge;
+  }
+
+  /**
+   * Hyperlanes of a sector. Inside its region, the relative neighbourhood graph of the region's own sites (connected,
+   * rift lanes included) plus HYPERLANE_EXTRA of the other clear Gabriel candidates. Across a border, only the gates.
    */
   hyperlanes(site: Site): EdgeData[] {
-    const near = this.sites.sitesNear(site.x, site.y, HYPERLANE_MAX);
     const out: EdgeData[] = [];
-    for (const other of near) {
+    const mine = this.regions.regionAt(site.x, site.y);
+    const same = this.sites.sitesNear(site.x, site.y, RIFT_MAX).filter((o) => this.regions.regionAt(o.x, o.y) === mine);
+    const cands = new Map(this.candidates(site).map((c) => [c.site.id, c]));
+    for (const other of same) {
       if (other.id === site.id) continue;
       const [a, b] = site.id < other.id ? [site, other] : [other, site];
-      const pts: Vec[] = near;
-      const rng = isRelativeNeighbour(a, b, pts);
-      const ha = strHash(a.id);
-      const hb = strHash(b.id);
-      if (!rng && !(isGabriel(a, b, pts) && unit(this.seed, ha, hb, 51) < HYPERLANE_EXTRA)) continue;
-      if (!this.laneClear(a, b)) continue;
-      const len = dist(a, b) || 1;
-      const ga = this.gateway(a, (b.x - a.x) / len, (b.y - a.y) / len);
-      const gb = this.gateway(b, (a.x - b.x) / len, (a.y - b.y) / len);
-      const length = dist(ga, gb);
-      const edge: EdgeData = { id: `h:${a.id}|${b.id}`, a: ga.id, b: gb.id, kind: 'hyperlane', length, ...jumpCosts('hyperlane', length) };
-      if (unit(this.seed, ha, hb, 52) < ANCHOR_CHANCE) edge.anchor = true;
-      out.push(edge);
+      const cand = cands.get(other.id);
+      const extra = !!cand && !cand.rift && unit(this.seed, strHash(a.id), strHash(b.id), 51) < HYPERLANE_EXTRA;
+      if (!extra && !isRelativeNeighbour(a, b, same)) continue;
+      out.push(this.lane(a, b, false, !this.clear(a, b)));
+    }
+    if (!mine) return out;
+    for (const { site: other, rift } of cands.values()) {
+      const theirs = this.regions.regionAt(other.x, other.y);
+      if (!theirs || theirs === mine) continue;
+      const [a, b] = site.id < other.id ? [site, other] : [other, site];
+      if (this.gates(mine, theirs).has(`${a.id}|${b.id}`)) out.push(this.lane(a, b, true, rift));
     }
     return out;
   }
