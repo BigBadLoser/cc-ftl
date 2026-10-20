@@ -254,10 +254,35 @@ def chain(b, R, bones, grow=0.0, t0=0.0, t1=1.0, exp=2.4):
         if k + 1 < len(bones):                                               # the last section of this bone blends forward
             c, e1, e2, r1, r2, _ = rows[-1]
             rows[-1] = (c, e1, e2, r1, r2, {bone: 0.5, bones[k + 1]: 0.5})
-    rows = transport(rows)
+    rows = transport(creases(rows))
     n = len(rows)
     k0, k1 = int(round(t0 * (n - 1))), int(round(t1 * (n - 1)))
     b.sweep(rows[k0:max(k1, k0 + 1) + 1], grow=grow, exp=exp, round_ends=True)
+
+
+CREASE = 0.022                        # half width of the ring pair either side of a joint (a crease line lands there)
+
+
+def creases(rows):
+    """Two extra sections either side of each joint section (the one skinned to two bones), CREASE from it, so a joint
+    crease can be painted as a thin line instead of across a whole section's length."""
+    out = []
+    for k, r in enumerate(rows):
+        if len(r[5]) == 2 and 0 < k < len(rows) - 1:
+            for nb, sign in ((rows[k - 1], -1), (rows[k + 1], 1)):
+                t = min(0.5, CREASE / max(1e-6, (nb[0] - r[0]).length))
+                w = {b: x * (1 - t) + nb[5].get(b, 0.0) * t for b, x in r[5].items()}
+                for b, x in nb[5].items():
+                    w.setdefault(b, x * t)
+                ins = (r[0].lerp(nb[0], t), r[1], r[2], r[3] + (nb[3] - r[3]) * t, r[4] + (nb[4] - r[4]) * t, w)
+                if sign < 0:
+                    out.append(ins)
+                else:
+                    joint, after = r, ins
+            out += [joint, after]
+        else:
+            out.append(r)
+    return out
 
 
 def transport(rows):

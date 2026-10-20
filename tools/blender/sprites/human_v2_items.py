@@ -11,7 +11,7 @@ from . import crew_clips as clips
 from . import human_render as hr
 from . import human_trace
 from .human_base import SCALE, Item, import_base
-from .human_v2 import PUFF, SHELL, Build, Rig, W, arm, flat, head, leg, torso
+from .human_v2 import CREASE, PUFF, SHELL, Build, Rig, W, arm, flat, head, leg, torso
 
 
 def body(A, R):
@@ -37,9 +37,17 @@ def eyes(A, R):
 
 
 def flesh_arm(A, R, s):
+    """A bare arm, with a darker crease line in the crook of the elbow and round the wrist (shading, not shape: a pinch
+    is too small to read at game size)."""
     b = Build()
     arm(b, R, s)
-    return Item(f"arm.{s}", "flesh", [b.mesh(f"v2.arm.{s}", A, flat("team.skin"))], default=True)
+    ex, wx = abs(R.h[f"forearm.{s}"].x), abs(R.h[f"hand.{s}"].x)
+
+    def col(c, n):
+        if abs(abs(c.x) - ex) < CREASE and n.y < -0.2 or abs(abs(c.x) - wx) < CREASE:
+            return "team.skin*0.5"
+        return "team.skin"
+    return Item(f"arm.{s}", "flesh", [b.mesh(f"v2.arm.{s}", A, col)], default=True)
 
 
 def tee(A, R):
