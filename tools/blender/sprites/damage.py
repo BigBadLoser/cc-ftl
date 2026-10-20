@@ -54,14 +54,15 @@ def _bbox(objs):
     return lo, hi
 
 
-def _hits(objs, rnd, n, lo, hi):
-    """n hit points on faces that face the camera (+x, +y or up) in the upper two thirds of the model."""
+def _hits(objs, rnd, n, lo, hi, band=None):
+    """n hit points on faces that face the camera (+x, +y or up) in the upper two thirds of the model (or in the band
+    (z0, z1))."""
     cands = []
-    h = hi.z - lo.z
+    z0, z1 = (lo.z + (hi.z - lo.z) * 0.3, hi.z + 1) if band is None else band
     for ob in objs:
         cen, nrm, att = _faces(ob)
         for i, (c, nv) in enumerate(zip(cen, nrm)):                         # not on screens and lights: they
-            if (c.z > lo.z + h * 0.3 and (nv.x + nv.y > 0.5 or nv.z > 0.7)   # stay on to flicker
+            if (z0 < c.z < z1 and (nv.x + nv.y > 0.5 or nv.z > 0.7)   # stay on to flicker
                     and att["Glow"][i].max() < 0.001):
                 cands.append((c.copy(), nv.copy()))
     rnd.shuffle(cands)
@@ -270,6 +271,10 @@ def _debris(lo, hi, rnd, n=9):
     return m.build()
 
 
+HIT_BAND = {"module.med_bed": (0.15, 0.45)}  # low modules with a tall, finely built part at the back: hits in this
+                                            # height band (the bed itself), not anywhere 1/3 up
+
+
 def apply(objs, level, sid, electric=True, debris=True):
     """Damage the built objects of one sprite in place; returns the object list (with the added parts).
     level: damaged, damaged.flicker (the same damage, every surviving light dimmed, no sparks) or destroyed."""
@@ -281,7 +286,8 @@ def apply(objs, level, sid, electric=True, debris=True):
     out = list(objs) + keep
     if level.startswith("damaged"):
         area = (hi.x - lo.x) * (hi.y - lo.y)
-        hits = _hits(objs, rnd, min(8, 3 + int(area / 1.5)), lo, hi)                     # more hits on bigger modules
+        band = next((b for p, b in HIT_BAND.items() if sid.startswith(p)), None)
+        hits = _hits(objs, rnd, min(8, 3 + int(area / 1.5)), lo, hi, band)               # more hits on bigger modules
         k = min(2.2, max(1.0, math.sqrt(area) / 1.5))                                      # and bigger damage
         for ob in objs:
             _dent(ob, hits, rnd, r=0.38 * k, depth=0.14 * k)
@@ -326,7 +332,7 @@ def _rid(base, rot, rotates):
 def bases(rots=range(4)):
     """[(asset id stem, footprint, builder, palette extra, electric)] for the idle sprite of every damageable module.
     Storage is not electrical (no sparks, wires or flicker) except the cold store and the armory's lock."""
-    from . import consoles, galley, logistics, props, robot_bay, storage_set
+    from . import consoles, galley, logistics, medbay, props, robot_bay, storage_set
     from . import console_proto as C
     out = []
     env = {s[0]: s for s in props.SPRITES}
@@ -351,14 +357,23 @@ def bases(rots=range(4)):
             f = fp if r % 2 == 0 else (fp[1], fp[0])
             out.append((f"module.storage_{name}.r{r}", f, lambda fn=fn, r=r: fn("partial", r), True,
                         name in ("cold", "armory")))
+    for name, fp, fn in (("med_bed", (1, 2), medbay.med_bed), ("med_console", (1, 1), medbay.med_console)):
+        for r in rots:
+            f = fp if r % 2 == 0 else (fp[1], fp[0])
+            out.append((f"module.{name}.r{r}", f, lambda fn=fn, r=r: fn("idle", r), True, True))
     return out
 
 
 def jobs(rots=range(4)):
     """Sprite jobs for `.damaged` and `.destroyed` of every base (plus `.damaged.flicker`, the frame the game alternates
-    with `.damaged`, for electrical modules), and the palette pick per id."""
+    with `.damaged`, for electrical modules), and the palette pick per id. DAMAGE_ONLY=<text> keeps only the modules
+    whose id contains it, for quick previews."""
+    import os
+    only = os.environ.get("DAMAGE_ONLY", "")
     out, extra = [], {}
     for stem, fp, fn, ex, electric in bases(rots):
+        if only not in stem:
+            continue
         for level in DMG + (("damaged.flicker",) if electric else ()):
             sid = f"{stem}.{level}"
             out.append((sid, fp, "prop", wrap(fn, level, sid, electric)))
