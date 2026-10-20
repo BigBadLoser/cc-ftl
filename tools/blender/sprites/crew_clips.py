@@ -69,7 +69,7 @@ def centre_on_origin(arm):
     """Lying poses are ~1.7 tiles long: shift the armature so the body's mid-point sits on the world origin (+lift)."""
     arm.location = (0, 0, 0)
     bpy.context.view_layer.update()
-    ob = next(o for o in bpy.data.objects if o.name.startswith("skin@body"))
+    ob = next(o for o in bpy.data.objects if o.name.startswith(("skin@body", "v2.body")))   # old or v2 base
     dg = bpy.context.evaluated_depsgraph_get()
     e = ob.evaluated_get(dg)
     me = e.to_mesh()

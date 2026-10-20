@@ -1,6 +1,6 @@
 """Sprite families: each one renders into its own sheet(s) (see pack.py), so families rebuild independently.
 
-  env       props, economy modules, items, combat fx and projectiles      (sheet env)
+  env       props, economy modules, items, the particle sprites            (sheet env)
   walls     floors, walls, hull, doors (walls.LEVELS view levels)        (sheet walls)
   consoles  helm / weapons / shield consoles, 4 rotations, desk-front overlays for seated crew
   struct    structural beams (truss tiles by connection mask, caps, hull flanges), one set per faction look
@@ -10,6 +10,11 @@
   vehicle_bay the shuttle bay (pit, doors, gangway, claws) and the shuttle parked in it, 4 rotations (vehicle_bay.py)
   shuttle   the flying shuttle: 8 fly headings and 4 docked poses (vehicle_bay.py craft_jobs)
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
+  fx        combat fx v2 (fx3d.py): bolts, muzzle flashes, impacts, explosions as lit 3D clusters
+  structure faction looks of the wall, hull and floor tiles: navy, drone, civil v1..v4, scrap p1..p4 (structure.py)
+  galley    the food pack: galley (food printer), rations, mess table and chair (galley.py, mess.py)
+  derelict  derelict dressing: breached walls, scorch, debris, dead lights, infestation, AI scrap (derelict*.py)
+  eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -17,10 +22,10 @@ Crew layers are built separately (`crew`)."""
 def jobs(name):
     """(jobs, extra) for a family rendered through env_build.render_jobs; `extra` = palette selection."""
     if name == "env":
-        from . import props, logistics, cfx
+        from . import props, logistics
         from . import items as itemart
-        fx = {s[0] for s in cfx.SPRITES}
-        return props.SPRITES + logistics.SPRITES + itemart.SPRITES + cfx.SPRITES, lambda sid: sid in fx
+        props_ = [s for s in props.SPRITES if not s[0].startswith("fx.fire.")]    # combat fx and tile fire: family fx
+        return props_ + logistics.SPRITES + itemart.SPRITES, False
     if name == "walls":
         from . import envtiles
         return envtiles.SPRITES, lambda sid: not sid.startswith("tile.floor")
@@ -45,11 +50,28 @@ def jobs(name):
     if name == "shuttle":
         from . import vehicle_bay
         return vehicle_bay.craft_jobs(), True
+    if name == "fx":
+        from . import fx3d
+        return fx3d.SPRITES, True
+    if name == "structure":
+        from . import structure
+        return structure.jobs(), True
+    if name == "galley":
+        from . import galley, mess
+        return galley.SPRITES + mess.SPRITES, True
+    if name == "eggsac":
+        from . import derelict_sac
+        return derelict_sac.SPRITES, True
+    if name == "derelict":
+        from . import derelict
+        return derelict.SPRITES, True
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
     raise KeyError(name)
 
 
-RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct")
+# `structure` is preview-only (no full build yet): build it by name, it is not part of `all`.
+RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
+            "fx", "galley", "derelict", "eggsac")
 ALL = RENDERED + ("sol",)

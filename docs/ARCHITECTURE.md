@@ -192,10 +192,11 @@ palette.json    the single palette, read by Blender scripts and the game
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
   crew, see below), `robot_bay`, `env` (props,
-  economy modules, items, fx), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
-  bays), `roof` (plating, edges, livery masks), `struct` (structural beams) and `sol` (the engine, AI core
-  and shield packs, rendered by their own scripts in `tools/blender/experiments/` and packed by
-  `sprites/sol_pack.py`).
+  economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
+  bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
+  below), `structure` (faction tile looks, see below), `galley`
+  (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
+  `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
     at the tile centre. The looks are `navy`, `drone`, `civil` and `scrap`, picked by faction.
@@ -205,6 +206,74 @@ palette.json    the single palette, read by Blender scripts and the game
   - Beams top out about 0.6 high, so every wall view level uses the same sprites. A 2–3-thick beam reads as
     twin trusses tied at each tile.
   - Preview from a shipgen dump: `tools/blender/review/beams_preview.py <dir> <out> ship <txt> <seed> <look>`.
+- **Faction structure looks** (`sprites/restyle.py`, `structure_looks.py`, `structure_scrap.py`, `structure.py`,
+  family `structure`; preview only, no full build yet): the default wall, hull and floor tiles rebuilt per faction.
+  Geometry, masks, heights, ghosts and cutaway are unchanged; only the surfaces differ.
+  - Ids: the default id with a look segment after the family, `tile.<fam>.<look>.<rest>`:
+    - `<look>` is `navy`, `drone`, `civil.v1`..`civil.v4` (pick one per ship), or `scrap.p1`..`scrap.p4` (pick one per
+      tile by `tileHash`).
+    - Examples: `tile.hull.navy.full.m10.v1`, `tile.wall.civil.v2.low.end.s`, `tile.hull.scrap.p3.belly.o1.m10`,
+      `tile.hull.drone.drop.e`, `tile.floor.navy.a`.
+    - Doors and the hull ghosts (`tile.hull.o*`, `tile.hull.ghost.*`) have no look sets: they read the same everywhere.
+  - Wiring (`src/render/tiles.ts`): pass the ship's look into `wallPieces` and `floorChain`. Every chain then tries
+    the look id first and keeps today's ids as the fallback:
+    - `[look + v, look, base + v, base]`, where the look id is the base id with `.<look>` inserted after the family.
+    - Faction to look, like `beamLookFor`: navy -> `navy`, drones -> `drone`, civilian -> `civil.v<n>` by ship
+      hash, scrapper -> `scrap.p<n>` by tile hash.
+  - Alts: the far hull (`tile.hull.<look>.m*`, `tile.hull.<look>.full.m*`) and the full interior walls
+    (`tile.wall.<look>.full.m*`) of every look but scrap also come as `<look id>.a1`..`.a3`: one small feature in the
+    middle of the tile (vent, hatch, porthole, terminal, status light) and, on the hull, a different layout for the
+    lower plates (navy drawer boxes, civil seams, merged drone hexes). Edges are untouched, so alts tile with the plain
+    pieces. The far hull is full height in every view level, so its cut and up alts match. Pick by `tileHash` (the
+    preview uses `(hash >> 12) % 8` in 1..3, else plain) and put the alt id in front of the chain, ahead of `.v1`.
+  - `restyle.restyled(look, key)` repaints any builder's polygons by colour role and surface position, so the scrap
+    pass (`structure_scrap.Scrap(p, base)`) can wrap module builders too. Their faces are coarser, so patches swap
+    whole faces to a donor colour and rust takes the lower faces.
+  - Preview: `review/structure_preview.py` (a Python port of `wallPieces`), with STRUCT_IDS and STRUCT_LOOKS to narrow
+    the build. It also writes `structure-alts-*.png`: plain and a1..a3 side by side per look.
+- **Food pack** (`sprites/galley.py`, `mess.py`, family `galley`; sheets built):
+  - `module.galley.r<r>[.active]` (2x1). The access tile is in front of the printer tower's hatch. The amber light
+    shows only in `.active`. `module.galley` is the r0 copy that `fallback.ts` falls back to.
+  - `item.ration.{s|m|l|held}`: meal trays that show their food. The UI icon is cut from `.m` (`app/itemIcons.ts`).
+  - `module.mess_table.r<r>[.meal]` (2x1). `.meal` has trays and cups set on it for while crew eat.
+  - `module.chair.r<r>` (1x1). The seat top is at `human_sit.SEAT_Z`, so the `sit_*` clips fit. A seated crew
+    member faces `mess.SEAT_DIR[r]`, as at consoles.
+  - `module.chair.front.r0` and `.r3`: the backrest alone. Draw it over a seated crew member (crew at K + 0.02,
+    overlay at K + 0.03, as console fronts).
+  - Not in the sim yet: tables, chairs and sitting to eat.
+  - Meal and haul poses (`sprites/human_meal.py`: `carry`, `carry_idle`, `eat`, `sit_eat`; preview
+    `review/meal_poses_preview.py`) are pose code only: they were written against the old crew renderer and are not in
+    the clip table yet. To ship them: add `crew_spec.CLIPS` rows and `crew_clips.POSES` entries (`sit_eat` needs the
+    mess chair as its holdout instead of the console chair), re-render the crew, and play them from `loadout.clipFor`.
+- **Derelict dressing (`derelict`, `sprites/derelict.py` and `derelict_walls.py`; sheets built, not wired yet):** drawn
+  over or in place of the normal tiles on a derelict.
+  - Breaches: `tile.{wall|hull}.{full.|}m<mask>.breach` replaces the wall piece. The tear meets the same
+    edge height on every side, so breached runs join. Where the -x / -y neighbour is intact, also draw
+    `tile.{fam}.{full.|}breach.end.{w|n}`. In the cutaway, partitions need no end piece. Floor:
+    `decay.breach.floor.v0..2`. Roof: `decay.breach.roof`.
+  - Overlays drawn right after the tile they dress:
+    - `decay.scorch.floor.v0..2` and `decay.growth.floor.v0..2` (alien membrane; nodules on the glow
+      sheet).
+    - `decay.burnt.<w>x<h>`: a char ring round a burnt-out module. Also darken the module by about half.
+    - On a straight run's camera-facing face, where axis `x` is a run along x and `y` along y:
+      `decay.scorch.{wall|hull}.<axis>.<level>.v0|v1`, `decay.growth.{wall|hull}.<axis>.<level>`,
+      `decay.striplight.{wall|hull}.<axis>` (dim red, on the skirt, every level), and `.high` on the
+      face (walls up only).
+    - On the roof: `decay.scorch.roof.v0|v1`.
+  - Props (one tile, no footprint):
+    - debris: `decay.debris.{plates,cables,pipe,chunks,crate,junction}`; `.junction.spark` is the arc
+      frame, so alternate it with `.junction`.
+    - `decay.eggsac.{1x1|2x2}`: breakable egg sacs (1x1 and 2x2 footprints) that hatch an alien. They are thin
+      membranes over fluid, with the see-through skin baked in by the render (`derelict_sac.py`, its own family
+      `eggsac`; these sheets are built and committed). The states are:
+      - `.cracked`: leaking.
+      - `.hatch0`, `.hatch1`, `.hatch2`: it swells, rips open and falls open. Play these when it breaks and spawn
+        the alien on `.hatch2`.
+      - `.burst`: the deflated skin, left in its puddle.
+    - `decay.eggs`, `decay.ai.scrap`, and `decay.ai.cables.{x|y}`, which tiles along a run.
+    - `module.light.off` (alternate with `module.light` for a flicker) and `module.light.broken`.
+    - `module.fabricator[.rN].dormant`: dark, with a red standby light.
+  - Preview: `tools/blender/review/derelict_preview.py <assets> <out>`.
 - **Heights:** walls 1.85 tiles, roof top 2.05 (`walls.HF`, `walls.hull_top()`). The manifest carries
   them (`heights`) and `src/render/heights.ts` mirrors them (a test checks the two agree). Roof-mounted
   art (turrets, dishes, the AI mast) is modelled on the roof plane and anchored at floor level, so the
@@ -291,6 +360,40 @@ palette.json    the single palette, read by Blender scripts and the game
   - `unloader.r{n}.back` at (0, ±1) and `unloader.r{n}.front[.loaded]` at (-1, ±1): the same sprites on both
     sides. `.loaded` shows a crate in the chute while unloading.
   - `keepout.r{n}` at (-2, ±1) and `walk.r{n}` at (-1, 0) and (-2, 0): deck marks, drawn with the floor.
+- **Combat fx v2 (`fx` family; `sprites/fx3d.py` lists it, built from `fxkit.py`, `fx_shots.py`, `fx_hits.py`, `fx_env.py`,
+  `fx_hand.py`; preview `review/fx_preview.py`). Sheets `fx.png` / `fx.glow.png` are in `public/assets`; renderer not
+  updated yet (see below).**
+  Small 3D clusters rendered like any sprite: self-lit fire and energy (palette ramps `fxW..fxD`, laser `fxC*`, ion `fxI*`,
+  shield `fxH*`, which feed the glow sheet) and lit smoke and metal. Frames are `fx.<name>.<n>`; `fx.<name>` is frame 0.
+  - Ids (frames):
+    - Shots, looping, pointing screen-right (rotate along the flight): `laser_bolt` 6, `mass_slug` 4, `missile` 4,
+      `ion_bolt` 6, `fire_shell` 4, `pd_shot` 2. Same ids as the old shots, so `WeaponDef.projectileAsset` is unchanged.
+    - Muzzle flashes, at the barrel tip, pointing screen-right: `muzzle.laser` 3, `muzzle.mass` 4, `muzzle.missile` 4,
+      `muzzle.ion` 3, `muzzle.fire` 3, `muzzle.pd` 3.
+    - Impacts, anchored at the hit point on the plate (roof height on a roofed ship): `impact.laser` 6, `impact.mass` 8 (the
+      breach), `impact.ion` 6, `impact.fire` 7. Missiles use `explosion_large`, point-defence intercepts `explosion_small`.
+    - Explosions, 12 frames each: `explosion_small`, `explosion`, `explosion_large`, `explosion_huge` (a ship breaking up:
+      chain several at staggered times and positions, and throw `debris.{a,b,c}`, 8 tumble frames each, under gravity).
+    - `ion_disabled` 4 (loop, drawn at roof height over a module ion has disabled), `shield_hit` 6 (at the point a shot
+      meets the bubble), `shield_edge` 4 (loop: a rim piece to lay round the bubble's ellipse, turned to its tangent,
+      replacing the drawn ellipse).
+    - `fire` 8 (loop on a burning floor tile): same ids as the old fire, so `fxView` picks it up as is.
+    - `decal.scorch.{0,1,2}`, `decal.breach`: static marks in the floor plane for damaged floor or roof tiles.
+    - Crew fights (replace what `fightFx.ts` draws): `hand.muzzle.{sidearm,rifle,ion}` 3, `hand.tracer` 2, `hand.tracer.ion` 4,
+      `hand.hit` 4 (a body), `hand.hit_spark` 4 (a robot or cover), `hand.hit_ion` 4, `hand.ricochet` 4 (a miss, on the floor
+      or a wall), `hand.slash` 4 (melee, pointing at the target).
+  - Renderer changes the art needs:
+    - Draw fx like other sprites (normal blend) with the glow sheet added on top. Today `sectorFx` draws shots and flashes
+      with `blendMode 'add'`, which makes smoke and debris vanish.
+    - Play frames: shots loop (about 12 fps), muzzles, impacts and explosions play once (about 12 fps), then go. Today a
+      flash is one sprite scaled up.
+    - Wire muzzle flashes (barrel tip from the turret's aim) and per-weapon impacts in place of the shared
+      `fx.pd_shot` flash and `fx.explosion_small`.
+  - The old fx (`sprites/cfx.py`, and `props.py`'s fire) are out of the env family's jobs; the `fx` family's entries replaced
+    theirs in the manifest. Their pixels stay in `env.png` until env is next rebuilt. The particle sprites (`fx.spark`,
+    `fx.ember`, `fx.puff.*`, `fx.ice`) stay in env.
+  - Until the renderer is updated, the shots and fire already show in game (same ids) but drawn the old way: additive,
+    single frame for the shots, the old one-sprite flash.
 
 ## UI
 

@@ -17,8 +17,9 @@ def _xf(rot):
     return lambda u, v: (v, u), True
 
 
-def fabricator(active, rot):
-    m = core.Mesh(f"fabricator_{rot}_{int(active)}")
+def fabricator(active, rot, dormant=False):
+    """dormant: a dead ship's fabricator, every light off but a dim red standby lamp (derelict.py)."""
+    m = core.Mesh(f"fabricator_{rot}_{int(active)}{'_d' if dormant else ''}")
     T, swap = _xf(rot)
 
     def box(u, v, z, su, sv, sz, color, top=None, bevel=0.0):
@@ -34,9 +35,9 @@ def fabricator(active, rot):
     box(CU, -0.3, 0.1, 1.86, 0.3, 0.72, "steelD", "steel", 0.015)                 # rear housing
     for k in range(5):                                                            # vent slats on the housing front
         box(CU + 0.55 + k * 0.1, -0.148, 0.5, 0.05, 0.012, 0.26, "dark")
-    box(CU, -0.148, 0.62, 1.7, 0.012, 0.03, "cyan")                               # trim line (glow)
+    box(CU, -0.148, 0.62, 1.7, 0.012, 0.03, "steelD" if dormant else "cyan")     # trim line (glow)
     box(-1.12, -0.148, 0.2, 0.42, 0.012, 0.26, "dark")                            # control panel
-    for k, col in enumerate(("magenta", "cyan", "cyan")):
+    for k, col in enumerate(("steelD",) * 3 if dormant else ("magenta", "cyan", "cyan")):
         box(-1.28 + k * 0.12, -0.138, 0.3, 0.06, 0.012, 0.04, col)
     box(CU, 0.1, 0.1, 1.5, 0.5, 0.24, "steel", "steelL", 0.015)                   # work bed
     box(CU, 0.1, 0.34, 1.36, 0.38, 0.012, "dark")                                 # bed surface
@@ -47,7 +48,7 @@ def fabricator(active, rot):
     cyl(-0.2, 0.1, 0.38, 0.03, 0.08, "steelL", "plate", rtop=0.06)                # nozzle
     box(-0.2, 0.1, 0.34, 0.05, 0.05, 0.04, "orange" if active else "steelD")      # nozzle tip
     box(0.38, 0.4, 0.1, 0.08, 0.08, 0.34, "gmD", "gm")                            # light post
-    box(0.38, 0.4, 0.44, 0.11, 0.11, 0.08, "orange" if active else "cyan")        # status light
+    box(0.38, 0.4, 0.44, 0.11, 0.11, 0.08, "orange" if active else "emR" if dormant else "cyan")   # status light
     if active:
         box(-0.2, 0.1, 0.34, 0.34, 0.2, 0.05, "steelL", "orange")                 # glowing work piece
         for (du, dv, z, s) in ((0.1, 0.0, 0.44, 0.04), (-0.08, 0.16, 0.52, 0.03), (0.0, -0.06, 0.38, 0.03), (-0.34, 0.12, 0.46, 0.03)):

@@ -82,18 +82,23 @@ def owned(sheet, family):
     return sheet == family or re.fullmatch(re.escape(family) + r"\.\d+", sheet) is not None
 
 
+def sheets_of(a):
+    """The sheets an asset draws from: its one sheet, or (crew layers, one sheet per clip) every clip's."""
+    return {a["sheet"]} if "sheet" in a else {c["sheet"] for c in a.get("clips", {}).values()}
+
+
 def merge(manifest, family, sheets, assets, crew=False):
     """Replace the family's sheets/assets (crew=True: every human crew layer; robot layers belong to `robots`) in
     manifest (in place)."""
     drop = {s for s in manifest["sheets"] if owned(s, family)}
     human = lambda a: a["kind"] == "crew.layer" and a.get("species") == "human"  # noqa: E731
     if crew:
-        drop |= {a["sheet"] for a in manifest["assets"].values() if human(a)}
+        drop |= {s for a in manifest["assets"].values() if human(a) for s in sheets_of(a)}
     manifest["assets"] = {k: a for k, a in manifest["assets"].items()
-                          if a["sheet"] not in drop and k not in assets and not (crew and human(a))}
+                          if not (sheets_of(a) & drop) and k not in assets and not (crew and human(a))}
     for s in drop:
         manifest["sheets"].pop(s, None)
-    used = {a["sheet"] for a in manifest["assets"].values()}
+    used = {s for a in manifest["assets"].values() for s in sheets_of(a)}
     manifest["sheets"] = {k: v for k, v in manifest["sheets"].items() if k in used}
     manifest["sheets"].update(sheets)
     manifest["assets"].update(assets)
