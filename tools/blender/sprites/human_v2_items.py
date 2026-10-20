@@ -58,10 +58,12 @@ def flesh_arm(A, R, s):
 
 
 def tee(A, R):
+    """A plain sleeveless tee in the team colour. No sleeves: the arm layers draw over the torso layer (so an arm can
+    swing in front of the body), which would always hide a torso-layer sleeve under the bare arm."""
     b = Build()
-    torso(b, R, grow=0.02, lo=R.hips.z + 0.09)
-    for s in "LR":
-        arm(b, R, s, grow=0.022, upper=0.55, fore=False, hand=False)
+    nz = R.neck.z
+    crew_neck = lambda c: not (c.z > nz - 0.02 and abs(c.x) < 0.09 and c.y < R.neck.y - 0.02)  # noqa: E731
+    torso(b, R, grow=0.02, lo=R.hips.z + 0.09, keep=crew_neck)
     return Item("torso", "tee", [b.mesh("v2.tee", A, flat("team.cloth"))])
 
 
