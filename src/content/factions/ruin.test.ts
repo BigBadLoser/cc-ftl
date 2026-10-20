@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, PositionC, ShipC, generateShip, newGame, structureParts, type FactionDef, type ModuleDef } from '../../sim';
+import { CrewC, PositionC, ShipC, footprintTiles, generateShip, newGame, openTilesOf, structureParts, type FactionDef, type ModuleDef } from '../../sim';
 import { shipGrid, shipIdOf } from '../../sim/regions';
 import { ruin } from '../../sim/shipgen/ruin';
 import type { RuinCause, RuinResult } from '../../sim/shipgen/ruinTypes';
@@ -12,12 +12,22 @@ const CAUSES: RuinCause[] = ['combat', 'decay'];
 const ruined = (f: string, seed: number, intensity: number, cause?: RuinCause): RuinResult =>
   ruin(generateShip(factions[f as keyof typeof factions] as FactionDef, f, seed, 2, defs).template, seed, { defs, intensity, ...(cause ? { cause } : {}) });
 
-/** Walkable tiles reached from every walkable tile touching space (breach entries) or beside an airlock, doors all passable. */
+/**
+ * Walkable tiles reached from every walkable tile touching space (breach entries) or beside an airlock, doors all passable
+ * (a jammed one can be forced) and solid modules blocking.
+ */
 function reach(r: RuinResult): Set<number> {
   const rows = r.template.rows;
   const w = Math.max(...rows.map((x) => x.length));
   const at = (x: number, y: number): string => rows[y]?.[x] ?? '.';
-  const walk = (x: number, y: number): boolean => at(x, y) === '_' || at(x, y) === 'D';
+  const solid = new Set<number>();
+  for (const m of r.template.modules ?? []) {
+    const def = defs[m.def];
+    if (!def?.solid) continue;
+    const open = new Set(openTilesOf(def, m.x, m.y, m.rot).map((t) => t.y * w + t.x));
+    for (const t of footprintTiles(def, m.x, m.y, m.rot)) if (!open.has(t.y * w + t.x)) solid.add(t.y * w + t.x);
+  }
+  const walk = (x: number, y: number): boolean => x >= 0 && x < w && (at(x, y) === '_' || at(x, y) === 'D') && !solid.has(y * w + x);
   const n4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
   const q: number[] = [];
   const seen = new Set<number>();
@@ -89,13 +99,15 @@ describe('derelict ruin pass', () => {
     const crew = sim.world.query(CrewC, PositionC).filter((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === id);
     expect(crew).toEqual([]);
     const grid = shipGrid(sim, id)!;
-    let vac = 0, thin = 0;
+    let vac = 0, thin = 0, jammed = 0;
     for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+      if (grid.get('jam', x, y) !== 0) jammed++;
       if (grid.get('struct', x, y) !== 1) continue;
       if (grid.get('o2', x, y) < 1) vac++;
       else if (grid.get('o2', x, y) < 20) thin++;
     }
     expect(vac).toBeGreaterThan(0);
     expect(thin).toBeGreaterThan(0);
+    expect(jammed).toBeGreaterThan(0);
   });
 });

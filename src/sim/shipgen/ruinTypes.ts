@@ -19,6 +19,8 @@ export interface RuinOpts {
   defs: Record<string, ModuleDef>;
   /** Who lives in the wreck later: aliens (egg sacs, nests) or a rogue AI (robot spawns). Default 'alien'. */
   infest?: 'alien' | 'robot' | 'none';
+  /** Faction id the ship came from (alien hooks: old derelicts, or civilian / scrapper wrecks of any age). */
+  origin?: string;
 }
 
 export type ModuleRuin = 'intact' | 'damaged' | 'destroyed';
@@ -134,5 +136,6 @@ export interface RuinCtx {
   modules: NonNullable<ShipTemplate['modules']>;
   intensity: number;
   infest: 'alien' | 'robot' | 'none';
+  origin: string;
   meta: RuinMeta;
 }

@@ -72,7 +72,7 @@ export function isTileOccupied(sim: Sim, shipId: number, x: number, y: number): 
   return false;
 }
 
-const PLAYER_JOB_KINDS: readonly string[] = ['build', 'deconstruct', 'module', 'moduleDecon'];
+const PLAYER_JOB_KINDS: readonly string[] = ['build', 'deconstruct', 'module', 'moduleDecon', 'forceDoor'];
 
 /** The player-made job (build, deconstruct, module blueprint) at a tile, or 0. */
 export function findJobAt(sim: Sim, shipId: number, x: number, y: number): number {

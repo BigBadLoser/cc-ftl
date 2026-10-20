@@ -97,7 +97,7 @@ export function ruinSheet(faction: string, from: number, count: number, depth: n
   levels.forEach((lv, row) => {
     r.text(`I${lv}`, 4, 40 + row * cellH + 14, [230, 230, 230], 2);
     ships.forEach(({ seed, g }, i) => {
-      const res = ruin(g.template, seed, { intensity: lv, cause, defs, infest: faction.includes('drone') ? 'robot' : 'alien' });
+      const res = ruin(g.template, seed, { intensity: lv, cause, defs, origin: faction, infest: faction.includes('drone') ? 'robot' : 'alien' });
       const m = res.meta;
       const ox = 60 + i * cellW, oy = 40 + row * cellH;
       const dead = m.modules.filter((q) => q.state === 'destroyed').length;

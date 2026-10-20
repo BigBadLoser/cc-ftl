@@ -1,4 +1,4 @@
-import { footprintTiles } from '../modules/footprint';
+import { footprintTiles, openTilesOf } from '../modules/footprint';
 import type { RuinCtx } from './ruinTypes';
 
 /** Tile helpers for the ruin stages, over the padded char grid. */
@@ -107,4 +107,24 @@ export function shuffle<T>(c: RuinCtx, xs: T[]): T[] {
     [xs[i], xs[j]] = [xs[j] as T, xs[i] as T];
   }
   return xs;
+}
+
+/** Extra weight at the top of the intensity range: 0 up to 0.5, then rising to 1 at 1 (so 0.9 is clearly devastating). */
+export function heavy(c: RuinCtx): number {
+  return Math.max(0, (c.intensity - 0.5) / 0.5);
+}
+
+/** 1 on tiles a solid module blocks (its open tiles excepted), as the walk rules see them. */
+export function solidMap(c: RuinCtx): Uint8Array {
+  const out = new Uint8Array(c.width * c.height);
+  c.modules.forEach((m, i) => {
+    const def = c.defs[m.def];
+    if (!def?.solid) return;
+    const open = new Set(openTilesOf(def, m.x, m.y, m.rot).map((t) => t.y * c.width + t.x));
+    for (const t of modTiles(c, i)) {
+      const k = t.y * c.width + t.x;
+      if (t.x >= 0 && t.y >= 0 && t.x < c.width && t.y < c.height && !open.has(k)) out[k] = 1;
+    }
+  });
+  return out;
 }

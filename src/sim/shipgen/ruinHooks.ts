@@ -5,6 +5,8 @@ import type { RuinCtx } from './ruinTypes';
  * Hooks for later (data only): where aliens could nest (egg sacs in dark sealed rooms, a nest in the biggest one, with
  * growth creeping round it) or where a rogue AI's robots would come from (beside fabricators, robot bays and cores).
  */
+const ALIEN_WRECKS = ['civilian', 'scrapper'];
+
 export function hooksStage(c: RuinCtx): void {
   if (c.infest === 'none') return;
   const mods = moduleMap(c);
@@ -24,6 +26,8 @@ export function hooksStage(c: RuinCtx): void {
     }
     return;
   }
+  // Aliens move into old derelicts, and into civilian and scrapper wrecks of any age; a fresh navy wreck has none yet.
+  if (c.meta.cause === 'combat' && !ALIEN_WRECKS.some((f) => c.origin.endsWith(f))) return;
   const nest = sealed[0];
   if (nest) {
     const t = nest.tiles.filter(floor)[Math.floor(nest.tiles.length / 2) % Math.max(1, nest.tiles.filter(floor).length)];

@@ -1,5 +1,5 @@
 import { rotatedSize } from '../modules/footprint';
-import { at, modTiles, moduleMap } from './ruinGrid';
+import { at, heavy, modTiles, moduleMap } from './ruinGrid';
 import type { ModuleRuin, RuinCtx, RuinModule } from './ruinTypes';
 
 /**
@@ -17,10 +17,10 @@ export function systemsStage(c: RuinCtx): void {
     let pDestroy: number, pDamage: number;
     if (combat) {
       const hot = near <= 1 ? 0.85 : near <= 3 ? 0.45 : 0;
-      pDestroy = Math.min(0.95, hot * (0.5 + c.intensity) + 0.08 * c.intensity);
+      pDestroy = Math.min(0.95, hot * (0.5 + c.intensity) + 0.08 * c.intensity + 0.4 * heavy(c));
       pDamage = 0.25 + 0.5 * c.intensity;
     } else {
-      pDestroy = 0.05 + 0.3 * c.intensity + (near <= 1 ? 0.2 : 0);
+      pDestroy = 0.05 + 0.3 * c.intensity + 0.3 * heavy(c) + (near <= 1 ? 0.2 : 0);
       pDamage = 0.35 + 0.5 * c.intensity;
     }
     const roll = c.rng.next();

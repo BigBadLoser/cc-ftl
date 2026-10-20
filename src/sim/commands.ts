@@ -9,6 +9,8 @@ export type Command =
   | { type: 'debug.setStruct'; ship: number; x: number; y: number; kind: number }
   | { type: 'job.build'; ship: number; x: number; y: number; struct: number }
   | { type: 'job.deconstruct'; ship: number; x: number; y: number }
+  /** Have crew force a jammed door (`jam` field) at (x, y) free: a timed construction job worked from beside it. */
+  | { type: 'job.forceDoor'; ship: number; x: number; y: number }
   | { type: 'job.cancel'; ship: number; x: number; y: number }
   /** Blueprint a module; (x, y) is the top-left of the rotated footprint, rot = quarter turns clockwise. */
   | { type: 'job.buildModule'; ship: number; x: number; y: number; def: string; rot: number }

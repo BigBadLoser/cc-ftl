@@ -1,4 +1,4 @@
-import { at, components, isHull, modTiles, put, touchesSpace } from './ruinGrid';
+import { at, components, heavy, isHull, modTiles, put, touchesSpace } from './ruinGrid';
 import type { RuinCtx } from './ruinTypes';
 
 /**
@@ -11,7 +11,7 @@ export function structureStage(c: RuinCtx): void {
   if (c.meta.cause === 'combat') impacts(c);
   else decay(c);
   keepLargest(c);
-  if (c.intensity >= (c.meta.cause === 'combat' ? 0.6 : 0.8) && c.rng.chance(0.4 + c.intensity * 0.5)) {
+  if (c.intensity >= (c.meta.cause === 'combat' ? 0.6 : 0.75) && c.rng.chance(0.4 + c.intensity * 0.55)) {
     // A shear (with whatever it cuts loose) may take at most MAX_SHEAR of the hull; otherwise try a shallower cut once.
     const solid = (): number => c.cells.filter((ch) => ch !== '.').length;
     const before = solid();
@@ -19,7 +19,7 @@ export function structureStage(c: RuinCtx): void {
     for (const depth of [1, 0.5]) {
       shear(c, depth);
       keepLargest(c);
-      if (solid() >= before * (1 - MAX_SHEAR)) break;
+      if (solid() >= before * (1 - maxShear(c))) break;
       c.cells.splice(0, c.cells.length, ...snap.cells);
       c.meta.sheared = snap.sheared;
     }
@@ -51,16 +51,16 @@ function breakTile(c: RuinCtx, x: number, y: number, floorToo: boolean): void {
 function impacts(c: RuinCtx): void {
   const hull = hullTiles(c);
   if (hull.length === 0) return;
-  const n = 1 + Math.round(c.intensity * 3 + c.rng.next() * 0.8);
+  const n = 1 + Math.round(c.intensity * 3 + heavy(c) * 3 + c.rng.next() * 0.8);
   const first = c.rng.pick(hull);
   const fx = first % c.width, fy = (first - fx) / c.width;
   // The volley came from one flank: later hits land near the first one, along the same side.
-  const spread = Math.max(4, Math.round(Math.max(c.width, c.height) * 0.35));
+  const spread = Math.max(4, Math.round(Math.max(c.width, c.height) * (0.35 + 0.4 * heavy(c))));
   const near = hull.filter((i) => Math.abs((i % c.width) - fx) + Math.abs(Math.floor(i / c.width) - fy) <= spread);
   for (let k = 0; k < n; k++) {
     const i = k === 0 ? first : c.rng.pick(near);
     const x = i % c.width, y = (i - x) / c.width;
-    const r = 1.2 + c.intensity * 2.6 + c.rng.next() * 1.5;
+    const r = 1.2 + c.intensity * 2.6 + heavy(c) * 1.2 + c.rng.next() * 1.5;
     c.meta.impacts.push({ x, y, r: Math.round(r * 10) / 10 });
     blast(c, x, y, r);
   }
@@ -80,7 +80,7 @@ function blast(c: RuinCtx, cx: number, cy: number, r: number): void {
 
 function decay(c: RuinCtx): void {
   const hull = hullTiles(c);
-  const n = Math.max(1, Math.round(hull.length * (0.015 + 0.07 * c.intensity)));
+  const n = Math.max(1, Math.round(hull.length * (0.015 + 0.07 * c.intensity + 0.12 * heavy(c))));
   for (let k = 0; k < n; k++) {
     const i = c.rng.pick(hull);
     const x = i % c.width, y = (i - x) / c.width;
@@ -88,7 +88,7 @@ function decay(c: RuinCtx): void {
     c.meta.impacts.push({ x, y, r: 1 });
     breakTile(c, x, y, false);
     // Rot spreads a tile or two along the skin, and sometimes eats the deck plate inside.
-    const run = c.rng.int(0, Math.round(1 + c.intensity * 2));
+    const run = c.rng.int(0, Math.round(1 + c.intensity * 2 + heavy(c) * 3));
     let px = x, py = y;
     for (let s = 0; s < run; s++) {
       const step = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).find(([dx, dy]) => isHull(c, px + dx, py + dy));
@@ -105,19 +105,19 @@ function decay(c: RuinCtx): void {
 }
 
 /** Shear off one end (bow or stern, or a flank on a broad hull) along a ragged line. */
-/** Most of the hull (fraction of its tiles) a shear may take. */
-const MAX_SHEAR = 0.3;
+/** Most of the hull (fraction of its tiles) a shear may take: 30%, rising to 50% at full intensity. */
+const maxShear = (c: RuinCtx): number => 0.3 + 0.2 * heavy(c);
 
 function shear(c: RuinCtx, depth: number): void {
   const along = c.width >= c.height;
   const len = along ? c.width : c.height;
   const cross = along ? c.height : c.width;
-  const frac = (0.12 + c.rng.next() * (0.08 + c.intensity * 0.1)) * depth;
+  const frac = (0.12 + c.rng.next() * (0.08 + c.intensity * 0.1) + heavy(c) * 0.15) * depth;
   const fromLow = c.rng.chance(0.5);
   let cut = Math.round(len * frac);
   let removed = 0;
   for (let k = 0; k < cross; k++) {
-    cut = Math.max(2, Math.min(Math.round(len * 0.35), cut + c.rng.int(-1, 1)));
+    cut = Math.max(2, Math.min(Math.round(len * (0.35 + 0.15 * heavy(c))), cut + c.rng.int(-1, 1)));
     for (let t = 0; t < cut; t++) {
       const a = fromLow ? t : len - 1 - t;
       const [x, y] = along ? [a, k] : [k, a];

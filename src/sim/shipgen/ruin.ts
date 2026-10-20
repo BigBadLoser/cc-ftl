@@ -26,7 +26,7 @@ export function ruin(template: ShipTemplate, seed: number, opts: RuinOpts): Ruin
   const c: RuinCtx = {
     rng, defs: opts.defs, width, height, cells,
     modules: (template.modules ?? []).map((m) => ({ ...m, ...(m.stock ? { stock: m.stock.map((s) => ({ ...s })) } : {}) })),
-    intensity, infest: opts.infest ?? 'alien',
+    intensity, infest: opts.infest ?? 'alien', origin: opts.origin ?? '',
     meta: {
       seed, cause, intensity, impacts: [], breaches: [], sheared: 0, modules: [], power: 'off', doors: [], rooms: [],
       fires: [], items: [], caches: [], hooks: [], decals: [],

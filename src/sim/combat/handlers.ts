@@ -59,7 +59,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const gen = generateShip(faction, cmd.faction, seed, cmd.depth, sim.content.modules);
     if (gen.problems.length > 0) return reject(sim, cmd.type, 'noLayout');
     const infest = faction.living ? 'alien' : 'robot';
-    const { template, meta } = ruin(gen.template, seed, { defs: sim.content.modules, intensity: cmd.intensity ?? 0.5, infest, ...(cmd.cause ? { cause: cmd.cause } : {}) });
+    const { template, meta } = ruin(gen.template, seed, { defs: sim.content.modules, intensity: cmd.intensity ?? 0.5, infest, origin: cmd.faction, ...(cmd.cause ? { cause: cmd.cause } : {}) });
     const x = Math.min(sim.sector.width - gen.width, Math.max(0, cmd.cx - (gen.width >> 1)));
     const y = Math.min(sim.sector.height - gen.height, Math.max(0, cmd.cy - (gen.height >> 1)));
     const gap = placementGapError(sim, { x, y, w: gen.width, h: gen.height });

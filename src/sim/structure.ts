@@ -35,6 +35,8 @@ export const SHIP_FIELDS = {
   light: 'u8',
   /** Door openness 0 (closed) .. 255 (open). Only meaningful on Door tiles. */
   door: 'u8',
+  /** A jammed door (DoorJam): held open or shut whatever crew do, until forced (job 'forceDoor'). Door tiles only. */
+  jam: 'u8',
   /** Entity id of the module occupying the tile (0 = none). Written by module spawn/remove. */
   module: 'u32',
   /** Entity id of the loose item stack lying on the tile (0 = none). At most one stack per tile. */
@@ -59,11 +61,15 @@ export const SHIP_EMPTY = {
   smoke: 0,
   light: 0,
   door: 0,
+  jam: 0,
   module: 0,
   item: 0,
   hp: 0,
   ship: 0,
 } as const satisfies Record<keyof typeof SHIP_FIELDS, number>;
+
+/** Jam state of a door tile (`jam` field). A jammed-shut door blocks walking; neither kind moves until forced. */
+export const DoorJam = { None: 0, Open: 1, Shut: 2 } as const;
 
 /** True if crew can stand on this tile kind (ignores modules: see modules/walk.ts). */
 export function isWalkable(kind: number): boolean {
@@ -105,6 +111,7 @@ export function writeStruct(grid: GridLike, x: number, y: number, kind: number):
   if (grid.get('struct', x, y) !== kind) grid.set('struct', x, y, kind);
   const hp = hasIntegrity(kind) ? STRUCT_MAX_HP : 0;
   if (grid.has('hp') && grid.get('hp', x, y) !== hp) grid.set('hp', x, y, hp);
+  if (grid.has('jam') && grid.get('jam', x, y) !== 0) grid.set('jam', x, y, 0);
   syncOwner(grid, x, y);
 }
 

@@ -4,12 +4,13 @@ import type { Sim } from '../sim';
 import { spillItems } from '../items/stacks';
 import type { RuinMeta } from '../shipgen/ruinTypes';
 import { shipGrid, shipIdOf } from '../regions';
+import { DoorJam } from '../structure';
 import { ShipC } from './components';
 
 /**
- * Apply a ruin pass's meta to a freshly stamped derelict (`stampShip`, so no crew, combat or AI): module hp, power, jammed-open doors, starting air and
- * fires, loose loot and caches. The ship becomes an inert wreck. Data the sim has no state for yet (stuck-shut doors,
- * dressing art, hooks) stays in the meta for the renderer and later systems.
+ * Apply a ruin pass's meta to a freshly stamped derelict (`stampShip`, so no crew, combat or AI): module hp, power,
+ * jammed doors (`jam`), starting air and fires, loose loot and caches. The ship becomes an inert wreck. Data the sim has
+ * no state for yet (dressing art, hooks) stays in the meta for the renderer and later systems.
  */
 export function applyRuin(sim: Sim, shipId: number, template: ShipTemplate, meta: RuinMeta): void {
   const grid = shipGrid(sim, shipId);
@@ -43,7 +44,11 @@ export function applyRuin(sim: Sim, shipId: number, template: ShipTemplate, meta
     }
   }
   for (const f of meta.fires) grid.set('fire', ox + f.x, oy + f.y, f.level);
-  for (const d of meta.doors) if (d.state === 'stuckOpen') grid.set('door', ox + d.x, oy + d.y, 255);
+  for (const d of meta.doors) {
+    if (d.state === 'free') continue;
+    grid.set('jam', ox + d.x, oy + d.y, d.state === 'stuckOpen' ? DoorJam.Open : DoorJam.Shut);
+    grid.set('door', ox + d.x, oy + d.y, d.state === 'stuckOpen' ? 255 : 0);
+  }
   for (const it of [...meta.items, ...meta.caches.flatMap((k) => k.items)]) spillItems(sim, shipId, ox + it.x, oy + it.y, it.item, it.count);
   const ship = sim.world.get(shipId, ShipC);
   if (ship) {
