@@ -11,6 +11,7 @@ from . import core
 from . import crew_clips as clips
 from . import human_render as hr
 from . import human_base as hb
+from . import human_gear as hg
 from . import human_suit as suit
 from . import human_trace
 from .human_base import SCALE, Item, import_base
@@ -31,16 +32,30 @@ def body(A, R):
     return Item("body", "", [b.mesh("v2.body", A, col)], default=True)
 
 
-def eyes(A, R):
+def eyes(A, R, cyber=False):
+    """Two dark eyes and brows in the hair colour. cyber: the right eye (x < 0) is a gunmetal implant with a cyan lens."""
     b = Build()
     c = R.head_c
     for sx in (1, -1):                                         # two dark eyes, ~2 x 3 px: they show which way the head faces
+        if cyber and sx < 0:
+            continue
         b.blob(Vector((sx * 0.048, R.front + 0.018, c.z + 0.0)), 0.022, 0.012, 0.028, W("head"), exp=2.4, nlat=6)
     brow = c.z + 0.052
     for sx in (1, -1):                                         # brows, in the hair colour, a little wider than the eyes
         b.blob(Vector((sx * 0.05, R.front + 0.016, brow)), 0.034, 0.012, 0.012, W("head"), exp=2.6, nlat=6)
-    col = lambda p, n: "team.hair" if p.z > brow - 0.02 else "dark"  # noqa: E731
-    return Item("eyes", "organic", [b.mesh("v2.eyes", A, col)], default=True)
+    if cyber:
+        eye = Vector((-0.048, R.front + 0.012, c.z))
+        b.blob(eye, 0.032, 0.016, 0.034, W("head"), exp=3.0, nlat=6)
+        b.blob(eye + Vector((0, -0.014, 0)), 0.018, 0.008, 0.018, W("head"), exp=2.4, nlat=6)
+
+    def col(p, n):
+        if p.z > brow - 0.02:
+            return "team.hair"
+        if cyber and p.x < -0.01:
+            return "cyan" if p.y < R.front - 0.004 else "gmD"
+        return "dark"
+    return Item("eyes", "cyber" if cyber else "organic", [b.mesh("v2.eyes" + (".cyber" if cyber else ""), A, col)],
+                default=not cyber, glow=cyber)
 
 
 def flesh_arm(A, R, s):
@@ -112,8 +127,8 @@ def cargo_pants(A, R):
 HAIR_GROW, HAIR_FRONT, HAIR_SIDE = 0.01, 0.07, 0.02      # a close cap; hairline height at the front and the sides
 
 
-def _hair_cap(b, R, back=-0.15):
-    grow, front, side = HAIR_GROW, HAIR_FRONT, HAIR_SIDE
+def _hair_cap(b, R, back=-0.15, grow=HAIR_GROW):
+    front, side = HAIR_FRONT, HAIR_SIDE
     c = R.head_c
 
     def keep(p):
@@ -151,6 +166,55 @@ def _fit_helmet(it, R, margin=0.07, wide=1.06, deep=1.12):
         ob.data.update()
 
 
+def hair_shaved(A, R):
+    b = Build()
+    _hair_cap(b, R, grow=0.004)
+    return Item("hair", "shaved", [b.mesh("v2.hair.shaved", A, flat("team.hair*0.55"))])
+
+
+def tool_belt(A, R):
+    """A leather band round the waist over the shirt hem; the buckle and pouches are the old ones (human_gear)."""
+    b = Build()
+    torso(b, R, grow=0.04, lo=R.hips.z + 0.035, hi=R.hips.z + 0.1)
+    it = Item("gear.belt", "tool_belt", [b.mesh("v2.tool_belt", A, flat("leather"))], default=True)
+    hg.belt_extra(A, it)
+    return it
+
+
+def _to_v2_head(items, R):
+    """Rigid head gear is modelled on the old head: carry it onto the v2 head (human_trace.oval: narrower, and taller up
+    from the chin)."""
+    z0 = R.T["head"][0][0].z
+    for it in items:
+        for ob in it.objs:
+            if ob.name.startswith("gear.head"):
+                for v in ob.data.vertices:
+                    v.co.x *= human_trace.HEAD_W
+                    v.co.z = z0 + (v.co.z - z0) * human_trace.HEAD_H
+                ob.data.update()
+
+
+CYBER_K = {"arm": 1.25, "forearm": 1.1, "hand": 1.0}                 # cyber arm thickness, to match the v2 flesh arm
+
+
+def _cyber_bulk(items, A):
+    """The old cyber arm matched the old (thinner) arm: thicken it about each bone's line like the v2 arm."""
+    B = A.data.bones
+    for it in items:
+        for ob in it.objs:
+            part, _, rest = ob.name[len("gear."):].partition(".")
+            if not ob.name.startswith("gear.") or part not in CYBER_K:
+                continue
+            bone = B[f"{part}.{rest[0]}"]
+            h, t = bone.head_local, bone.tail_local
+            ax = (t - h).normalized()
+            for v in ob.data.vertices:
+                d = v.co - h
+                on = h + ax * d.dot(ax)
+                v.co = on + (v.co - on) * CYBER_K[part]
+            ob.data.update()
+
+
 def build_items():
     core.setup_scene()
     A = import_base()
@@ -161,18 +225,24 @@ def build_items():
     for ob in [o for o in bpy.data.objects if o.type == "MESH" and o.name not in keep]:
         bpy.data.objects.remove(ob, do_unlink=True)
     R = Rig(A, T)
-    items = [body(A, R), eyes(A, R), flesh_arm(A, R, "L"), flesh_arm(A, R, "R"), tee(A, R), work_shirt(A, R),
-             cargo_pants(A, R), hair_short(A, R), hair_ponytail(A, R)] + eva
+    gear = [hg.hair_mohawk(A), hg.jack(A), hg.goggles(A), hg.engineer_rig(A), hg.cyber_arm(A, "L"),
+            hg.cyber_arm(A, "R")]                                            # the old rigid gear (same rig)
+    belt = tool_belt(A, R)
+    items = [body(A, R), eyes(A, R), eyes(A, R, cyber=True), flesh_arm(A, R, "L"), flesh_arm(A, R, "R"), tee(A, R),
+             work_shirt(A, R), cargo_pants(A, R), hair_short(A, R), hair_ponytail(A, R), hair_shaved(A, R),
+             belt] + gear + eva
     for it in items:
         it.order = hr.ORDER[it.slot]
     for act in bpy.data.actions:       # we drive bone scale ourselves (torso width, breathing)
         for fc in [f for f in act.fcurves if f.data_path.endswith("scale")]:
             act.fcurves.remove(fc)
-    for it in eva:
+    for it in eva + gear + [belt]:
         for ob in it.objs:
             ob.parent = A
     clips.capture_idle_arms(A)
-    hb.warp_gear(eva)                                                        # the suit's rigid parts, as the old build
+    hb.warp_gear(eva + gear + [belt])                                        # rigid parts, as the old build
+    _to_v2_head(gear, R)
+    _cyber_bulk(gear, A)
     _fit_helmet(next(it for it in eva if it.slot == "gear.head"), R)
     A.rotation_mode = "XYZ"
     A.scale = (SCALE,) * 3
