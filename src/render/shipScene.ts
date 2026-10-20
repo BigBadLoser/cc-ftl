@@ -10,7 +10,7 @@ import { createFxView } from './fxView';
 import { createGridView, type CutawayMode, type GridView } from './gridView';
 import { createItemView } from './itemView';
 import { createJobView } from './jobView';
-import { createLayers, type Layers } from './layers';
+import type { RegionLayers } from './worldLayers';
 import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
@@ -18,6 +18,7 @@ import { createRoofView } from './roofView';
 import type { Livery } from './roofPlating';
 import { ROOF_H, wallTopPx } from './heights';
 import { createTargetMarks } from './targetMarks';
+import { crewHidden } from './regionRules';
 import { createTurretView } from './turretView';
 import { DEFAULT_BEAM_LOOK, type BeamLook } from './beamArt';
 
@@ -26,8 +27,8 @@ export interface ShipSceneOptions {
   atlas: Atlas;
   modules: ModuleDefs;
   items: Readonly<Record<string, ItemDef>>;
-  /** Blurred glow halos (Quality High); only worth it on the player's ship. */
-  halos: boolean;
+  /** The region's layers in the shared world stack (`WorldStack.region`); the scene owns and disposes them. */
+  layers: RegionLayers;
   roofed: boolean;
   /** Roof livery (scheme and registry seed); none = plain plating. */
   livery?: Livery | null;
@@ -37,21 +38,24 @@ export interface ShipSceneOptions {
   beamLook?: BeamLook;
 }
 
-/** One ship grid with all its views (tiles, modules, items, crew, fx), in its own layer stack. */
+/** One ship grid with all its views (tiles, modules, items, crew, fx): a region decorator of the shared world stack. */
 export interface ShipScene {
   readonly grid: Grid;
-  readonly layers: Layers;
+  readonly layers: RegionLayers;
   readonly view: GridView;
   update(dt: number): void;
   /** Roofed ships hide their interior: roof over the rooms, full-height walls, no crew or items. */
   setRoofed(roofed: boolean): void;
   isRoofed(): boolean;
+  /** True if crew standing on tile (x, y) are hidden: an interior tile of this region while it is roofed (§5). */
+  hidesCrewAt(x: number, y: number): boolean;
   /** The user's wall-height mode (a roofed ship always draws full-height walls). */
   setCutaway(mode: CutawayMode): void;
   /** Outline targetable modules (and the `targeted` module ids) with roof-height diamonds. */
   setMarks(show: boolean, targeted: ReadonlySet<number>): void;
   setSelectedCrew(id: number | null): void;
-  pickCrew(ax: number, ay: number): number | null;
+  /** Crew under a region-local art point, with its feet's art y (the nearest to the viewer wins across regions). */
+  pickCrew(ax: number, ay: number): { id: number; y: number } | null;
   pickModule(ax: number, ay: number): number | null;
   /** Display objects drawn, for the debug stats. */
   sprites(): number;
@@ -60,7 +64,7 @@ export interface ShipScene {
 
 export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const { world, atlas, modules, items } = o;
-  const L = createLayers(o.halos);
+  const L = o.layers;
   let roofed = o.roofed;
   let cutaway: CutawayMode = 'auto';
   let emergency = false;
@@ -69,7 +73,8 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const inside = () => (roofed ? null : { grid });
   const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK });
   const crewView = createCrewView(world, atlas, L, {
-    target: () => (roofed ? null : { grid, gridId: grid.id }),
+    target: () => ({ gridId: grid.id }),
+    hidden: (x, y) => crewHidden(grid, roofed, x, y),
     emergency: () => emergency,
     moduleAt: (x, y) => {
       const id = grid.inBounds(x, y) ? grid.get('module', x, y) : 0;
@@ -90,7 +95,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null);
   const wallHeight = () => wallTopPx(roofed ? 'up' : cutaway);
   const damage = createDamageView(grid, L, wallHeight);
-  const marks = createTargetMarks(grid, world, modules, L);
+  const marks = createTargetMarks(grid, world, modules, L.marks);
   const applyMode = () => view.setCutaway(roofed ? 'up' : cutaway, !roofed);
   applyMode();
   roof.setVisible(roofed);
@@ -122,6 +127,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       turretView.setRoofed(r);
     },
     isRoofed: () => roofed,
+    hidesCrewAt: (x, y) => crewHidden(grid, roofed, x, y),
     setCutaway(m) {
       cutaway = m;
       applyMode();
@@ -146,7 +152,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       particles.dispose();
       jobView.dispose();
       view.dispose();
-      L.world.destroy({ children: true });
+      L.dispose();
     },
   };
 }

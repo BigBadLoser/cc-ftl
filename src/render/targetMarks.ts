@@ -1,4 +1,4 @@
-import { Sprite } from 'pixi.js';
+import { Sprite, type Container } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ModuleC } from '../sim/modules/components';
@@ -7,7 +7,6 @@ import { diamondTextures } from './diamonds';
 import { iso } from './iso';
 import { isTargetable } from './moduleArt';
 import type { ModuleDefs } from './moduleView';
-import type { Layers } from './layers';
 
 const TARGETABLE = 0x4fd6ee;
 const TARGETED = 0xffc83d;
@@ -19,7 +18,7 @@ export interface TargetMarks {
 }
 
 /** Diamond outlines over module footprints: how the combat overlay shows what can be targeted and what is. */
-export function createTargetMarks(grid: Grid, world: World, defs: ModuleDefs, L: Layers): TargetMarks {
+export function createTargetMarks(grid: Grid, world: World, defs: ModuleDefs, parent: Container): TargetMarks {
   const tex = diamondTextures().outline;
   const pool: Sprite[] = [];
   return {
@@ -38,7 +37,7 @@ export function createTargetMarks(grid: Grid, world: World, defs: ModuleDefs, L:
             if (!s) {
               s = new Sprite(tex);
               s.anchor.set(0.5);
-              L.ui.addChild(s);
+              parent.addChild(s);
               pool[n] = s;
             }
             n++;

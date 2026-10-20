@@ -27,13 +27,16 @@ const HATCH_U = 1.4;
 const HATCH_V = 0.817;
 const COLLAR_FACE = 0.2;
 const DOCK_Z = 0.95 - 1.3;
+/** Half length (along the nose) and half width of the shuttle's footprint in tiles (shuttle_craft.py, wings folded). */
+const HALF_LEN = 2.4;
+const HALF_W = 1.0;
 /** The shuttle holds off this much further from the hull than flush; its docking tube (one fixed length) bridges the gap to the collar. */
 const HOLD_OFF = 1.1;
 /** After taking off, a shuttle waits LAG ms on the spot (the doors open under it), then catches up with the sim over CATCH ms. */
 const CATCH_MS = 1500;
 const EIGHTH = Math.PI / 4;
 
-/** What the host is told about a vehicle: its state, its dock airlock and its home ship's grid (scenes are per grid until step 5). */
+/** What the host is told about a vehicle: its state, its dock airlock and its home ship's grid (the camera ship's bay filter). */
 export interface ShuttleRef {
   state: Vehicle['state'];
   dock: number;
@@ -48,11 +51,12 @@ export interface ShuttleViewHost {
   /** Which vehicles this view draws (flying, docked, and the one just leaving or settling in a bay). */
   include(v: ShuttleRef): boolean;
   /**
-   * Where a body at hull height or lower is drawn: its airlock ship's own sorted layer, in that ship's frame, so the hull,
-   * walls and the airlock's collar sort against the shuttle by depth (it is behind the ship at a far hull, in front at a near
-   * one). `project` maps sector tiles to that layer's art px, `depth` gives the zIndex. Null: the air layer.
+   * Where a body at hull height or lower is drawn: the shared world layer (a sector-frame container whose children sort with
+   * every region's tiles, walls, modules and crew by depth), so the hull, walls and an airlock's collar sort against the
+   * shuttle (it is behind the ship at a far hull, in front at a near one) and anything in front of a bay covers a shuttle
+   * lifting out of it. `project` maps sector tiles to its art px; the zIndex is a sector depth (x + y in tiles).
    */
-  dock?(v: ShuttleRef): { layer: Container; project(sx: number, sy: number): Pt; depth(sx: number, sy: number): number } | null;
+  low: { layer: Container; project(sx: number, sy: number): Pt };
 }
 
 export interface ShuttleView {
@@ -85,7 +89,8 @@ interface Track {
   z: number;
   /** The dock pose it is docked in (or leaving), and when the sim docked / undocked it (performance.now(); -Infinity if never). */
   pose: { d: number; dx: number; dy: number } | null;
-  slot: ReturnType<NonNullable<ShuttleViewHost['dock']>>;
+  /** Drawn in the shared world layer (a low body) rather than the air layer. */
+  low: boolean;
   dockedAt: number;
   undockedAt: number;
   /** The docking tube: its sprites and which side of the shuttle sprite they sit on (near hulls: behind it). */
@@ -98,6 +103,18 @@ interface Track {
   landed: number;
   /** Recent sim positions, for the launch delay. */
   trail: Sample[];
+}
+
+/**
+ * Depth key (x + y in tiles, as `depthKey`) of the front-most point of a shuttle's footprint centred on sector point (sx, sy).
+ * A body in a bay pit uses it (+ 0.5, like an engine bell), so the near lip stays behind it and the rows in front cover it.
+ * A docked body keeps its centre's depth: it lies along the hull outside it, and at a far hull (west, north) its front corner
+ * would pass the hull walls in front of it.
+ */
+export function frontDepth(sx: number, sy: number, heading: number): number {
+  const c = Math.cos(heading);
+  const s = Math.sin(heading);
+  return sx + sy - 1 + HALF_LEN * Math.abs(c + s) + HALF_W * Math.abs(c - s);
 }
 
 /** Smoothstep 0..1. */
@@ -177,7 +194,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           tube.visible = false;
           root.addChild(body, glow, tube);
           host.layer.addChild(root);
-          t = { root, body, glow, key: '', x: b.x, y: b.y, heading: b.heading, state: v.state, z: CRUISE_Z, pose: null, slot: null, dockedAt: -Infinity, undockedAt: -Infinity, tube, tubeBody, tubeGlow, tubeBehind: false, launched: -Infinity, landed: -Infinity, trail: [] };
+          t = { root, body, glow, key: '', x: b.x, y: b.y, heading: b.heading, state: v.state, z: CRUISE_Z, pose: null, low: false, dockedAt: -Infinity, undockedAt: -Infinity, tube, tubeBody, tubeGlow, tubeBehind: false, launched: -Infinity, landed: -Infinity, trail: [] };
           tracks.set(id, t);
         }
         if (t.state !== v.state) {
@@ -286,20 +303,18 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         }
 
         // Depth rule (ARCHITECTURE "Sector grid" §3): an airborne body (above the roofs) is drawn in the air layer, sorted by
-        // x + y; one at hull height or lower sorts with the ship's tiles by depth. Undocking keeps the ship layer while the tube
-        // retracts and the shuttle slides out (render timing; the sim has it airborne already).
-        // TODO(step 5, scene.ts): the host can only place a low body in its dock airlock's ship layer, so a low body that is not
-        // docked (a stowed one settling into its pit) still falls back to the air layer. With one shared world layer, give every
-        // low body the world layer at the depth of its front-most footprint point + 0.5 (like the engine bell), and let `b.alt`
-        // drive the lift (`z`) instead of CRUISE_Z / DOCK_Z / PIT_Z.
-        if (!isAirborne(b)) t.slot = host.dock?.(ref) ?? null;
-        else if (!undocking) t.slot = null;
-        const slot = t.slot;
-        const layer = slot?.layer ?? host.layer;
+        // x + y; one at hull height or lower sorts in the shared world layer. Undocking keeps the world layer while the tube
+        // retracts and the shuttle slides out, and the lift out of the bay is low until it reaches cruise (render timing; the sim
+        // has it airborne already). The pixel lift still comes from CRUISE_Z / DOCK_Z / PIT_Z: `b.alt` switches with the state
+        // and does not ramp, so it cannot drive the art.
+        const lifting = launching && sinceLaunch < LAUNCH_LIFT.end * BAY_FRAME_MS;
+        t.low = !isAirborne(b) || undocking || lifting;
+        const layer = t.low ? host.low.layer : host.layer;
         if (t.root.parent !== layer) layer.addChild(t.root);
-        const p = (slot?.project ?? host.project)(t.x + off.dx, t.y + off.dy);
+        const [sx, sy] = [t.x + off.dx, t.y + off.dy];
+        const p = (t.low ? host.low.project : host.project)(sx, sy);
         t.root.position.set(Math.round(p.x), Math.round(p.y - z * Z_PX));
-        t.root.zIndex = slot ? slot.depth(t.x + off.dx, t.y + off.dy) : t.x + t.y;
+        t.root.zIndex = !t.low ? sx + sy : t.pose ? sx + sy - 1 : frontDepth(sx, sy, t.heading) + 0.5;
       }
       for (const id of [...tracks.keys()]) if (!seen.has(id)) drop(id);
     },

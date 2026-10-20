@@ -12,8 +12,6 @@ import { Z_PX } from './heights';
 import { iso, type Pt } from './iso';
 
 export interface FightFxHost {
-  /** Camera ship's sector position (the origin of the sector layer). */
-  ref(): { x: number; y: number } | null;
   ship(gridId: number): Ship | undefined;
 }
 
@@ -44,9 +42,8 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
   /** Grid tile (fractional) on ship `gridId` at height z -> art px in the sector layer's frame. */
   const at = (gridId: number, gx: number, gy: number, z: number): Pt | null => {
     const s = host.ship(gridId);
-    const r = host.ref();
-    if (!s || !r) return null;
-    const p = iso(s.x - r.x + gx, s.y - r.y + gy);
+    if (!s) return null;
+    const p = iso(s.x + gx, s.y + gy);
     return { x: p.x, y: p.y - z * Z_PX };
   };
   const crewAt = (id: number, z: number): Pt | null => {
