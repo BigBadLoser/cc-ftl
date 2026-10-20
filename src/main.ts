@@ -76,7 +76,7 @@ function spawnGenerated(faction?: string): void {
  * sets the intensity and `?cause=combat|decay` the cause (both rolled per seed otherwise).
  */
 function spawnDerelict(faction?: string): void {
-  const mine = shipOfGrid(1);
+  const mine = homeShipC();
   const ids = Object.keys(content.factions);
   const id = faction ? `faction.${faction.replace(/^faction\./, '')}` : ids[Math.floor(Math.random() * ids.length)];
   if (!mine || !id) return;

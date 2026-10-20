@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CrewC, PositionC, ShipC, generateShip, newGame, structureParts, type FactionDef, type ModuleDef } from '../../sim';
-import { gridIdOf } from '../../sim/regions';
+import { shipGrid, shipIdOf } from '../../sim/regions';
 import { ruin } from '../../sim/shipgen/ruin';
 import type { RuinCause, RuinResult } from '../../sim/shipgen/ruinTypes';
 import { content } from '../index';
@@ -82,12 +82,13 @@ describe('derelict ruin pass', () => {
     const sim = newGame(1, content);
     sim.enqueue({ type: 'debug.spawnDerelict', faction: 'faction.navy', seed: 3, depth: 2, cx: 130, cy: 70, intensity: 0.8, cause: 'combat' });
     sim.step();
-    const ship = sim.world.query(ShipC).map((i) => sim.world.get(i, ShipC)!).find((s) => s.gridId !== 1);
+    const id = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)?.faction === 'neutral') ?? 0;
+    const ship = sim.world.get(id, ShipC);
     expect(ship?.state).toBe('wreck');
     expect(ship?.faction).toBe('neutral');
-    const crew = sim.world.query(CrewC, PositionC).filter((id) => gridIdOf(sim, sim.world.get(id, PositionC)) === ship?.gridId);
+    const crew = sim.world.query(CrewC, PositionC).filter((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === id);
     expect(crew).toEqual([]);
-    const grid = sim.grids.get(ship!.gridId)!;
+    const grid = shipGrid(sim, id)!;
     let vac = 0, thin = 0;
     for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
       if (grid.get('struct', x, y) !== 1) continue;

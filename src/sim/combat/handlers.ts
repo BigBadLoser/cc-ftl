@@ -5,7 +5,7 @@ import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { placementGapError , shipIdOf } from '../regions';
-import { shipById, spawnShip } from './ships';
+import { shipById, spawnShip, stampShip } from './ships';
 import { generateShip } from '../shipgen/generate';
 import { ruin } from '../shipgen/ruin';
 import { applyRuin } from './derelict';
@@ -64,9 +64,9 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const y = Math.min(sim.sector.height - gen.height, Math.max(0, cmd.cy - (gen.height >> 1)));
     const gap = placementGapError(sim, { x, y, w: gen.width, h: gen.height });
     if (gap) return reject(sim, cmd.type, gap);
-    const gridId = spawnShip(sim, template, { faction: 'neutral', x, y, rest: 100 });
-    applyRuin(sim, gridId, template, meta);
-    const ship = shipOf(sim, gridId);
+    const shipId = stampShip(sim, template, { faction: 'neutral', x, y, state: 'wreck' });
+    applyRuin(sim, shipId, template, meta);
+    const ship = shipById(sim, shipId);
     if (ship) ship.gen = { faction: cmd.faction, seed, depth: cmd.depth, role: gen.role };
   },
   'combat.setTarget': (sim, cmd) => {
