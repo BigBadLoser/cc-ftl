@@ -194,7 +194,8 @@ palette.json    the single palette, read by Blender scripts and the game
   crew, see below), `robot_bay`, `env` (props,
   economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
-  below), `structure` (faction tile looks, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
+  below), `structure` (faction tile looks, see below), `galley`
+  (the food pack, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
@@ -230,6 +231,20 @@ palette.json    the single palette, read by Blender scripts and the game
     whole faces to a donor colour and rust takes the lower faces.
   - Preview: `review/structure_preview.py` (a Python port of `wallPieces`), with STRUCT_IDS and STRUCT_LOOKS to narrow
     the build. It also writes `structure-alts-*.png`: plain and a1..a3 side by side per look.
+- **Food pack** (`sprites/galley.py`, `mess.py`, family `galley`; sheets built):
+  - `module.galley.r<r>[.active]` (2x1). The access tile is in front of the printer tower's hatch. The amber light
+    shows only in `.active`. `module.galley` is the r0 copy that `fallback.ts` falls back to.
+  - `item.ration.{s|m|l|held}`: meal trays that show their food. The UI icon is cut from `.m` (`app/itemIcons.ts`).
+  - `module.mess_table.r<r>[.meal]` (2x1). `.meal` has trays and cups set on it for while crew eat.
+  - `module.chair.r<r>` (1x1). The seat top is at `human_sit.SEAT_Z`, so the `sit_*` clips fit. A seated crew
+    member faces `mess.SEAT_DIR[r]`, as at consoles.
+  - `module.chair.front.r0` and `.r3`: the backrest alone. Draw it over a seated crew member (crew at K + 0.02,
+    overlay at K + 0.03, as console fronts).
+  - Not in the sim yet: tables, chairs and sitting to eat.
+  - Meal and haul poses (`sprites/human_meal.py`: `carry`, `carry_idle`, `eat`, `sit_eat`; preview
+    `review/meal_poses_preview.py`) are pose code only: they were written against the old crew renderer and are not in
+    the clip table yet. To ship them: add `crew_spec.CLIPS` rows and `crew_clips.POSES` entries (`sit_eat` needs the
+    mess chair as its holdout instead of the console chair), re-render the crew, and play them from `loadout.clipFor`.
 - **Heights:** walls 1.85 tiles, roof top 2.05 (`walls.HF`, `walls.hull_top()`). The manifest carries
   them (`heights`) and `src/render/heights.ts` mirrors them (a test checks the two agree). Roof-mounted
   art (turrets, dishes, the AI mast) is modelled on the roof plane and anchored at floor level, so the

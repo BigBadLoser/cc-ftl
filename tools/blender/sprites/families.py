@@ -12,6 +12,7 @@
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
   fx        combat fx v2 (fx3d.py): bolts, muzzle flashes, impacts, explosions as lit 3D clusters
   structure faction looks of the wall, hull and floor tiles: navy, drone, civil v1..v4, scrap p1..p4 (structure.py)
+  galley    the food pack: galley (food printer), rations, mess table and chair (galley.py, mess.py)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -53,6 +54,9 @@ def jobs(name):
     if name == "structure":
         from . import structure
         return structure.jobs(), True
+    if name == "galley":
+        from . import galley, mess
+        return galley.SPRITES + mess.SPRITES, True
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
@@ -60,5 +64,5 @@ def jobs(name):
 
 
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
-            "structure")
+            "structure", "galley")
 ALL = RENDERED + ("sol",)
