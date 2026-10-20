@@ -333,6 +333,10 @@ merged in (new UI, per-clip crew sheets; no conflicts, `selectGrid` and the node
 `frameShips`). Screenshots and comparisons vs main in the scratchpad `sector5b/` (`main/`, `new/`, `cmp_*`, `cmp.txt`
 explains every difference). The user confirmed the cross-ship wall ordering in the overlap scene is correct on sector-5.
 Known side effect: lamp halos draw over a low (lifting or settling) shuttle, as they already did over a docked one.
+Branch `sector-5b` (not merged, needs the user's screenshot approval): step 5b, chunk tile views. Floors, walls, doors, roofs,
+cracks, flames, atmosphere emitters and the field overlay read `SectorGrid` chunks (`render/regionTiles.ts`), keyed and
+rebuilt per sector chunk; see ARCHITECTURE "Step 5b done". Step 5 is complete apart from per-chunk culling and `alt` driving
+the lift. Comparison vs main in the scratchpad `s5b/` (`cmp.txt`).
 
 **Vehicle bay departure decision (user, 2026-10-20; for a later vehicle step, not built):** the bay doors are at the
 **bottom** of the pit. A departing shuttle drops down out of the pit through the bottom doors, flies clear of the ship's

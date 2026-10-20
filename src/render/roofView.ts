@@ -1,10 +1,11 @@
 import { Sprite, type Filter } from 'pixi.js';
 import type { World } from '../sim/ecs';
-import type { Grid } from '../sim/grid';
+import { CHUNK_SIZE, type Grid } from '../sim/grid';
 import { ModuleC } from '../sim/modules/components';
 import { footprintTiles, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
-import { buildRoofPlating, hasRoofArt, type Livery, type RoofPiece } from './roofPlating';
+import { buildRoofPlating, hasRoofArt, roofPlan, type Livery, type RoofPiece, type RoofPlan } from './roofPlating';
+import { createChunkViews, regionTiles, type ChunkRef } from './regionTiles';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
 import { DEPLOY_FRAMES, RISE_PX, deployId, deployStage } from './deployArt';
@@ -26,6 +27,13 @@ export interface RoofView {
   dispose(): void;
 }
 
+/** The roof plating of one sector chunk of the region. */
+interface RoofChunk {
+  c: ChunkRef;
+  pieces: RoofPiece[];
+  fireKey: number;
+}
+
 /** A roof part (shield generator, AI core): one sprite per footprint tile for stand-ins, else one at the front tile. */
 interface PartSprite {
   spr: Sprite;
@@ -38,13 +46,21 @@ interface PartSprite {
  * livery, edges) over every interior tile, with the roof parts of shield generators and the AI core
  * (`ModuleDef.roofAsset`, `.active` while powered, deploy frames) on top, so they can be told apart and targeted.
  * On a cutaway ship (not roofed) the generic roof is hidden and the parts stay as ghosts (faint, with a light outline).
- * Rebuilt when the structure or the module layout changes; tiles on fire glow.
+ * The plating is one view per sector chunk (step 5b), rebuilt when the chunk's struct block, its module tiles or its
+ * share of the livery plan change; tiles on fire glow.
  */
 export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World, defs: Readonly<Record<string, ModuleDef>>, livery: Livery | null = null): RoofView {
-  let pieces: RoofPiece[] = [];
+  const tiles = regionTiles(grid);
+  const { width: W, height: H } = tiles;
+  const chunks = createChunkViews<RoofChunk>((v) => clearChunk(v));
+  let plan: RoofPlan = new Map();
+  /** The plan's share per chunk (`cx,cy` -> its masks), compared in the chunk keys. */
+  let planKeys = new Map<string, string>();
+  let planRev = -1;
+  /** Region-wide gates for the per-chunk keys (struct and module, fire). */
   let key = '';
-  let visible = true;
   let fireRev = -1;
+  let visible = true;
   let partKey = '';
   let partSprites: PartSprite[] = [];
 
@@ -87,24 +103,53 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
     }
   }
 
-  function clear(): void {
-    clearParts();
-    for (const p of pieces) for (const o of p.objs) o.destroy();
-    pieces = [];
+  function clearChunk(v: RoofChunk): void {
+    for (const p of v.pieces) for (const o of p.objs) o.destroy();
+    v.pieces = [];
   }
 
-  function rebuild(): void {
-    clear();
+  function clear(): void {
+    clearParts();
+    chunks.clear();
+  }
+
+  function replan(): void {
+    const r = grid.revision('struct');
+    if (r === planRev) return;
+    planRev = r;
+    plan = roofPlan(tiles.kindAt, W, H, atlas, livery);
+    planKeys = new Map();
+    for (const [k, masks] of plan) {
+      const [x, y] = k.split(',').map(Number) as [number, number];
+      const ck = `${Math.floor((tiles.ox + x) / CHUNK_SIZE)},${Math.floor((tiles.oy + y) / CHUNK_SIZE)}`;
+      planKeys.set(ck, `${planKeys.get(ck) ?? ''}${k}:${masks.map((m) => `${m.mask}/${m.motif}`).join('+')};`);
+    }
+  }
+
+  function buildChunk(c: ChunkRef, old: RoofChunk | undefined): RoofChunk {
+    const v = old ?? { c, pieces: [], fireKey: -1 };
+    clearChunk(v);
+    v.fireKey = -1;
     // Stand-in roof parts replace the plates above their module; real parts sit on the plating.
     const real = hasRoofArt(atlas);
-    pieces = buildRoofPlating(grid, atlas, L, livery, (x, y) => {
+    v.pieces = buildRoofPlating(tiles.kindAt, W, H, atlas, L, livery, plan, (x, y) => {
       if (real) return false;
       const mod = grid.get('module', x, y);
       return !!(mod && defs[world.get(mod, ModuleC)?.def ?? '']?.roofAsset);
-    });
-    for (const p of pieces) for (const o of p.objs) o.visible = visible;
-    for (const p of pieces) for (const o of p.tinted) (o as Sprite).tint = p.tint;
-    fireRev = -1;
+    }, tiles.chunkRect(c));
+    for (const p of v.pieces) for (const o of p.objs) o.visible = visible;
+    return v;
+  }
+
+  function updateFire(v: RoofChunk): void {
+    const fr = tiles.rev('fire', v.c);
+    if (fr === v.fireKey) return;
+    v.fireKey = fr;
+    for (const p of v.pieces) {
+      const x = p.idx % W;
+      const lit = tiles.get('fire', x, (p.idx - x) / W) > 0;
+      for (const o of p.tinted) (o as Sprite).tint = lit ? mulColor(p.tint, FIRE_TINT) : p.tint;
+    }
   }
 
   return {
@@ -112,7 +157,9 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       const k = `${grid.revision('struct')}|${grid.revision('module')}`;
       if (k !== key) {
         key = k;
-        rebuild();
+        replan();
+        chunks.sync(tiles.chunks(), (c) => `${tiles.key('struct', c)}|${tiles.rev('module', c)}|${planKeys.get(`${c.cx},${c.cy}`) ?? ''}`, buildChunk);
+        fireRev = -1;
       }
       let pk = '';
       for (const id of world.query(ModuleC)) {
@@ -125,16 +172,16 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       }
       for (const p of partSprites) setGhostZoom(p.ghost, L.scale);
       const fr = grid.revision('fire');
-      if (fr === fireRev) return;
-      fireRev = fr;
-      const fire = grid.raw('fire');
-      for (const p of pieces) for (const o of p.tinted) (o as Sprite).tint = (fire[p.idx] as number) > 0 ? mulColor(p.tint, FIRE_TINT) : p.tint;
+      if (fr !== fireRev) {
+        fireRev = fr;
+        for (const v of chunks.views()) updateFire(v);
+      }
     },
     setVisible(v) {
       visible = v;
       partKey = ''; // stowed parts appear on roofed ships only: rebuild
       for (const p of partSprites) p.spr.filters = v ? [] : [p.ghost];
-      for (const p of pieces) for (const o of p.objs) o.visible = v;
+      for (const c of chunks.views()) for (const p of c.pieces) for (const o of p.objs) o.visible = v;
     },
     dispose: clear,
   };

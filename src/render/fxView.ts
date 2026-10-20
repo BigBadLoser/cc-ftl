@@ -3,6 +3,7 @@ import type { Grid } from '../sim/grid';
 import { Struct } from '../sim/structure';
 import type { Atlas, StaticSprite } from './assets/loader';
 import { depthKey, iso } from './iso';
+import { regionTiles } from './regionTiles';
 import type { Layers } from './layers';
 
 export interface FxViewHost {
@@ -50,16 +51,11 @@ export function createFxView(atlas: Atlas, L: Layers, host: FxViewHost): FxView 
       const t = host.target();
       const now = performance.now() / 1000;
       if (t && frames.length) {
-        const { grid } = t;
-        const struct = grid.raw('struct');
-        const fire = grid.raw('fire');
-        const w = grid.width;
-        for (let i = 0; i < struct.length; i++) {
-          const kind = struct[i];
-          if (kind !== Struct.Floor && kind !== Struct.Door) continue;
-          const x = i % w;
-          const y = (i - x) / w;
-          const fv = fire[i] as number;
+        const tiles = regionTiles(t.grid);
+        tiles.scan((x, y, i, ci, c) => {
+          const kind = tiles.data('struct', c)?.[ci];
+          if (kind !== Struct.Floor && kind !== Struct.Door) return;
+          const fv = (tiles.data('fire', c)?.[ci] ?? 0) as number;
           if (fv > 0) {
             const f = frames[(Math.floor(now * FIRE_FPS) + i * 5) % frames.length] as StaticSprite;
             const sc = 0.45 + 0.8 * Math.min(1, fv / 255);
@@ -78,7 +74,7 @@ export function createFxView(atlas: Atlas, L: Layers, host: FxViewHost): FxView 
               slot.glow.zIndex = depthKey(x, y) + 0.31;
             } else slot.glow.visible = false;
           }
-        }
+        });
       }
       for (let i = nf; i < fires.length; i++) {
         const f = fires[i] as FireSlot;

@@ -59,7 +59,6 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
   return {
     update() {
       const live = new Set<number>();
-      const light = grid.raw('light');
       const turretIds = [...world.query(ModuleC, WeaponC), ...world.query(ModuleC, PointDefenseC)];
       for (const id of turretIds) {
         const m = world.get(id, ModuleC);
@@ -91,7 +90,7 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         t.spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - lift + (1 - art.rise) * RISE_PX));
         const lx = Math.min(grid.width - 1, Math.max(0, Math.round(cx)));
         const ly = Math.min(grid.height - 1, Math.max(0, Math.round(cy)));
-        t.spr.tint = mulColor(lightTint(light[ly * grid.width + lx] as number, false, -1), art.tint);
+        t.spr.tint = mulColor(lightTint(grid.get('light', lx, ly), false, -1), art.tint);
         // The front tile of the bay, +0.93: over the roof tiles of the footprint, behind the next tile row.
         t.root.zIndex = depthKey(m.x + bw - 1, m.y + bh - 1) + 0.93;
         if (art.fallback && out) {

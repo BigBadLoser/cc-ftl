@@ -5,6 +5,7 @@ import { footprintTiles } from '../../sim/modules/footprint';
 import { ModuleC } from '../../sim/modules/components';
 import { Struct } from '../../sim/structure';
 import { iso } from '../iso';
+import { regionTiles } from '../regionTiles';
 import type { ModuleDefs } from '../moduleView';
 import type { EmitterDef, Particles } from './particles';
 
@@ -44,36 +45,28 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
       const t = host.target();
       if (!t) return;
       const { grid } = t;
-      const { width: w, height: h } = grid;
-      const struct = grid.raw('struct');
-      const fire = grid.raw('fire');
-      const smoke = grid.raw('smoke');
-      const o2 = grid.raw('o2');
-      for (let i = 0; i < struct.length; i++) {
-        const k = struct[i];
-        if (k !== Struct.Floor && k !== Struct.Door) continue;
-        const x = i % w;
-        const y = (i - x) / w;
-        const c = iso(x, y);
-        const sv = smoke[i] as number;
-        if (sv >= 18) particles.emit(`s${i}`, SMOKE, c.x, c.y - 10, 0.4 + (sv / 255) * 2.4, dt, 18);
-        const fv = fire[i] as number;
-        if (fv > 0) particles.emit(`e${i}`, EMBER, c.x, c.y - 6, (fv / 255) * 5 + 0.6, dt, 14);
-        const air = o2[i] as number;
+      const tiles = regionTiles(grid);
+      tiles.scan((x, y, i, ci, c) => {
+        const k = tiles.data('struct', c)?.[ci];
+        if (k !== Struct.Floor && k !== Struct.Door) return;
+        const cc = iso(x, y);
+        const sv = (tiles.data('smoke', c)?.[ci] ?? 0) as number;
+        if (sv >= 18) particles.emit(`s${i}`, SMOKE, cc.x, cc.y - 10, 0.4 + (sv / 255) * 2.4, dt, 18);
+        const fv = (tiles.data('fire', c)?.[ci] ?? 0) as number;
+        if (fv > 0) particles.emit(`e${i}`, EMBER, cc.x, cc.y - 6, (fv / 255) * 5 + 0.6, dt, 14);
+        const air = (tiles.data('o2', c)?.[ci] ?? 0) as number;
         if (air > 0.5) {
           for (let d = 0; d < 4; d++) {
             const [dx, dy] = DIRS[d] as readonly [number, number];
-            const nx = x + dx;
-            const ny = y + dy;
-            if (nx < 0 || ny < 0 || nx >= w || ny >= h || struct[ny * w + nx] === Struct.Space) {
+            if (tiles.kindAt(x + dx, y + dy) === Struct.Space) {
               const v = VENT[d] as (typeof VENT)[number];
               const rate = 3 + 7 * Math.min(1, air / 21);
-              particles.emit(`va${i}.${d}`, v.air, c.x, c.y - 4, rate, dt, 8);
-              particles.emit(`vi${i}.${d}`, v.ice, c.x, c.y - 4, rate * 0.25, dt, 8);
+              particles.emit(`va${i}.${d}`, v.air, cc.x, cc.y - 4, rate, dt, 8);
+              particles.emit(`vi${i}.${d}`, v.ice, cc.x, cc.y - 4, rate * 0.25, dt, 8);
             }
           }
         }
-      }
+      });
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
