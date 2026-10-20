@@ -574,3 +574,15 @@ notifications below (`AlertList`). Bottom left: one `SelectionPanel` (ship by de
 grid with Hail/Trade and prizes). Bottom right: tool dock (select, build, deconstruct, cancel, walls, overlays, debug).
 Open: CombatPanel still old style; phone hides the crew row while the combat sheet is open; station subtitle reads
 "Station · station"; debug "Spawn raider" default spot is rejected; stations select by negative grid id (no camera move).
+
+## Shipgen rooms and ruins (merged to `main` with user approval)
+
+- **Rooms** (`src/sim/shipgen/rooms/`): data-driven recipes per room type, door pruning, furniture defs in
+  `src/content/furniture.ts` (several have no art yet). User note: **room generation gets reworked once the new modules from
+  the art thread land** (storage set, medbay, battery, hydroponics, workbench, comms and sensor consoles, cryo pods).
+- **Ruins** (`src/sim/shipgen/ruin*.ts`, `src/sim/combat/derelict.ts`): `ruin(template, seed, opts)`, jammed doors
+  (`jam` field, `job.forceDoor`), `debug.spawnDerelict` / `?shipgen=derelict`. Not done: derelict art wiring, a Force door UI
+  action, a jammed-door marker.
+- **Next (user decision): sealed, detachable cargo containers** as their own ship component with their own exterior. Freighter
+  frames become trusses plus clamped containers; a detached container becomes a free body (like shuttles) carrying its
+  stock. Not walk-in (walk-in plus detachable would need grid surgery).
