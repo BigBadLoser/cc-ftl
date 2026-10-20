@@ -1,4 +1,4 @@
-import { BlurFilter, Container } from 'pixi.js';
+import { Container } from 'pixi.js';
 
 /** Draw layers, bottom to top. Everything depth-sorted (walls, props, crew, glow) shares `sorted`. */
 export interface Layers {
@@ -14,12 +14,8 @@ export interface Layers {
   fx: Container;
   /** Additive particles (embers, sparks). */
   fxAdd: Container;
-  /** Blurred additive copy of glow sprites (Quality High only). */
-  halo: Container;
   /** Selection, hover and build-preview markers. */
   ui: Container;
-  /** A blurred additive halo group depth sorted into `sorted` at `z` (a console's glow, which must stay under the seated crew); Quality High only. */
-  haloAt(z: number): Container;
   readonly halos: boolean;
   /** Device px per art px (integer camera zoom). */
   readonly scale: number;
@@ -36,23 +32,10 @@ export function createLayers(halos: boolean): Layers {
   const fx = new Container();
   const fxAdd = new Container();
   fxAdd.blendMode = 'add';
-  const halo = new Container();
   const ui = new Container();
   sorted.sortableChildren = true;
   let scale = 1;
-  const blur = new BlurFilter({ strength: 4, quality: 3 });
-  halo.filters = [blur];
-  halo.blendMode = 'add';
-  halo.visible = halos;
-  world.addChild(under, floor, decal, sorted, fx, fxAdd, halo, ui);
-  const haloAt = (z: number): Container => {
-    const c = new Container();
-    c.filters = [blur];
-    c.blendMode = 'add';
-    c.zIndex = z;
-    sorted.addChild(c);
-    return c;
-  };
+  world.addChild(under, floor, decal, sorted, fx, fxAdd, ui);
   return {
     world,
     under,
@@ -61,17 +44,14 @@ export function createLayers(halos: boolean): Layers {
     sorted,
     fx,
     fxAdd,
-    halo,
     ui,
     halos,
-    haloAt,
     get scale() {
       return scale;
     },
     setScale(sc) {
       scale = sc;
       world.scale.set(sc);
-      blur.strength = 1.5 * sc;
     },
   };
 }
