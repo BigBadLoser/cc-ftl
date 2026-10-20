@@ -51,11 +51,11 @@ def tee(A, R):
 
 
 def work_shirt(A, R):
-    """The hi-vis work vest, as on the old base: sleeveless (bare arms), a scoop neck, a hi-vis band round the chest and
-    hi-vis shoulder straps."""
+    """The hi-vis work vest, as on the old base: sleeveless (bare arms), a scoop neck at the front, a hi-vis band round the
+    chest and hi-vis shoulder straps."""
     b = Build()
     nz, sz = R.neck.z, R.shoulder_z
-    scoop = lambda c: not (c.z > nz - 0.04 and abs(c.x) < 0.1)  # noqa: E731
+    scoop = lambda c: not (c.z > nz - 0.04 and abs(c.x) < 0.1 and c.y < R.neck.y - 0.02)  # noqa: E731  front only
     torso(b, R, grow=0.016, lo=R.hips.z + 0.09, keep=scoop, cuts=(R.chest.z + 0.03, R.chest.z + 0.09, sz - 0.03))
 
     def col(c, n):
