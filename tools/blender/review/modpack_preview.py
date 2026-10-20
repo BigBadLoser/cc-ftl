@@ -6,6 +6,7 @@ along the back wall, a crew member for scale, the way the runtime draws them (gl
          medbay  -> medbay-1x.png and medbay-3x-{idle,active}.png (the old bed for comparison; .active: a patient lying
                     on each bed, a medic working the console)
          row <asset id> <w> <d> <state,state,...>  -> row-<asset>-3x.png: one room, the module once per state in a row
+         props <id,id,...> [name]  -> props-<name>-3x.png: one-tile props spaced along a room, a crew member for scale
 Floor, walls and the crew member come from public/assets."""
 import sys
 from pathlib import Path
@@ -191,10 +192,39 @@ def row(P, pub, out, aid, fp, states):
     cv.save(out / f"row-{aid}-1x.png", 1)
 
 
+def props(P, pub, out, ids, name):
+    """One-tile props, one per other tile along the back of a room, two rows deep."""
+    per = (len(ids) + 1) // 2
+    nx, ny = per * 2 + 1, 5
+    W, H = (nx + ny) * 32 + 80, (nx + ny) * 16 + 170
+    cv = Canvas(W, H)
+    ox, oy = ny * 32 + 40, 140
+    for gx in range(nx):
+        for gy in range(ny):
+            cv.static(pub, "tile.floor.a", *iso(ox, oy, gx, gy))
+    cv.static(pub, "tile.wall.full.m6", *iso(ox, oy, -1, -1))
+    for gx in range(nx):
+        cv.static(pub, "tile.wall.full.m10", *iso(ox, oy, gx, -1))
+    for gy in range(ny):
+        cv.static(pub, "tile.wall.full.m5", *iso(ox, oy, -1, gy))
+    draws = []
+    for i, aid in enumerate(ids):
+        gx, gy = (i % per) * 2 + 1, (i // per) * 2 + 1
+        draws.append((gx + gy, lambda a=aid, p=iso(ox, oy, gx, gy): cv.static(P, a, *p)))
+    draws.append((nx - 1 + 3 + 0.5, lambda: cv.char(human(pub, 1), *iso(ox, oy, nx - 1, 3))))
+    for _, fn in sorted(draws, key=lambda t: t[0]):
+        fn()
+    cv.save(out / f"props-{name}-3x.png", 3)
+
+
 def main():
     P, out, which = Assets(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
     pub = Assets(ROOT / "public/assets")
     out.mkdir(parents=True, exist_ok=True)
+    if which == "props":
+        props(P, pub, out, sys.argv[4].split(","), sys.argv[5] if len(sys.argv) > 5 else "set")
+        print("wrote", out)
+        return
     if which == "row":
         row(P, pub, out, sys.argv[4], (int(sys.argv[5]), int(sys.argv[6])), sys.argv[7].split(","))
         print("wrote", out)
