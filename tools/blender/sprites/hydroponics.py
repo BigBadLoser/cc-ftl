@@ -3,7 +3,7 @@ rotations. Local frame and placement: modkit.K (front = +v).
 
 A trough on legs with a reservoir under it and two rows of net cups set in a soil bed. grow0: seed plugs; grow1:
 sprouts; grow2: leafy clumps; grow3: full plants, some fruiting. A light bar on two posts runs over the trough: its
-magenta strips light with `.active`. Plants are seeded per cup, so every stage keeps the same layout."""
+magenta strips (front and back) light with `.active`. Plants are seeded per cup, so every stage keeps the same layout."""
 import math
 import random
 
@@ -58,16 +58,18 @@ def hydroponics(state, rot):
         k.cyl(u, v, z, 0.055, 0.02, "gmD", sides=8)
         _plant(k, u, v, z + 0.01, stage, random.Random(i * 7 + 3))
     for su in (-1, 1):                                                                # the light bar: posts at
-        k.box(su * 0.9, -0.34, 0.42, 0.06, 0.06, 0.8, "steelD", top="steel")           # the back, arms forward
-        for i in range(11):                                                           # with a chamfered corner
-            k.box(su * 0.9, -0.34 + i * 0.011, 1.2 + i * 0.011, 0.06, 0.06, 0.06, "steelD", top="steel")
-        k.box(su * 0.9, -0.105, 1.3, 0.06, 0.27, 0.05, "steelD", top="steel")
+        u = su * 0.985                                                                # the back, just outside the
+        k.box(u, -0.34, 0.42, 0.06, 0.06, 0.72, "steelD", top="steel")                 # bar's ends; arms forward
+        (v0, z0), (v1, z1) = (-0.34, 1.14), (-0.2, 1.25)                              # at the bar's height, into
+        a = math.atan2(z1 - z0, v1 - v0)                                              # its end caps; one angled
+        k.box(u, (v0 + v1) / 2, (z0 + z1) / 2 - 0.03, 0.06, math.hypot(v1 - v0, z1 - z0) + 0.05, 0.06,   # strut
+              "steelD", top="steel", rx=a)
+        k.box(u, -0.09, 1.22, 0.06, 0.22, 0.06, "steelD", top="steel")
+        k.box(su * 0.955, 0, 1.19, 0.04, 0.2, 0.12, "gmD")                              # end cap
     k.box(0, 0, 1.2, 1.9, 0.18, 0.1, "gm", top="steelL", bevel=0.01)
     lit = "magenta" if on else "blueGrey"
     k.box(0, 0.095, 1.2, 1.8, 0.012, 0.07, lit)                                           # strip on the front face
     k.box(0, -0.095, 1.2, 1.8, 0.012, 0.07, lit)                                          # and the back
-    for su in (-1, 1):
-        k.box(su * 0.955, 0, 1.2, 0.012, 0.14, 0.07, lit)                                 # and the ends
     return k.build()
 
 
