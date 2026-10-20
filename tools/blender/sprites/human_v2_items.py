@@ -17,7 +17,9 @@ from .human_v2 import PUFF, SHELL, Build, Rig, W, arm, flat, head, leg, torso
 def body(A, R):
     b = Build()
     head(b, R)
-    b.tube(R.neck, R.h["head"], 0.08, 0.08, W("neck_01"))
+    hb = R.T["head"][0][0]                                                   # the neck: under the jaw, not behind it
+    b.tube(Vector((0, R.neck.y - 0.02, R.neck.z - 0.02)), Vector((0, hb.y + 0.05, hb.z + 0.03)), 0.07, 0.065,
+           W("neck_01"))
     torso(b, R)
     for s in "LR":
         leg(b, R, s)
@@ -42,18 +44,18 @@ def flesh_arm(A, R, s):
 
 def tee(A, R):
     b = Build()
-    torso(b, R, grow=0.025, lo=R.h["spine"].z - 0.02)
+    torso(b, R, grow=0.02, lo=R.hips.z + 0.09)
     for s in "LR":
-        arm(b, R, s, grow=0.03, upper=0.55, fore=False, hand=False)
+        arm(b, R, s, grow=0.022, upper=0.55, fore=False, hand=False)
     return Item("torso", "tee", [b.mesh("v2.tee", A, flat("team.cloth"))])
 
 
 def work_shirt(A, R):
     """Long sleeves, a hi-vis band round the chest and darker cuffs."""
     b = Build()
-    torso(b, R, grow=0.03, lo=R.hips.z - 0.02)
+    torso(b, R, grow=0.022, lo=R.hips.z + 0.09)                          # the hem sits above the pants' waistband
     for s in "LR":
-        arm(b, R, s, grow=0.03, hand=False)
+        arm(b, R, s, grow=0.022, hand=False)
     cz = R.chest.z
     wrist = abs(R.t["forearm.L"].x) - 0.07
 
@@ -67,24 +69,24 @@ def work_shirt(A, R):
 def cargo_pants(A, R):
     """Pants with a dark waistband, a big pocket on each thigh, chunky boots."""
     b = Build()
-    torso(b, R, grow=0.02, lo=R.hips.z - 0.11, hi=R.hips.z + 0.06)
+    top = R.hips.z + 0.11
+    torso(b, R, grow=0.018, lo=R.hips.z - 0.11, hi=top, cuts=(top - 0.075, top - 0.065))
     for s in "LR":
-        leg(b, R, s, grow=0.02, boot=0.02)
-    top = R.hips.z + 0.06
+        leg(b, R, s, grow=0.018, boot=0.02)
     k0, k1 = R.t["leg.L"].z + 0.06, R.h["leg.L"].z - 0.1
 
     def col(c, n):
         if c.z < 0.17:
             return "boot"
-        if c.z > top - 0.05:
-            return "leather"
+        if c.z > top - 0.065:
+            return "rust"                                                   # the waistband: a belt line under the hem
         if k0 < c.z < k1 and n.x * (1 if c.x > 0 else -1) > 0.55:
             return "pocket"
         return "pants"
     return Item("legs", "cargo_pants", [b.mesh("v2.cargo_pants", A, col)], default=True)
 
 
-def _hair_cap(b, R, back=-0.12):
+def _hair_cap(b, R, back=-0.15):
     c = R.head_c
 
     def keep(p):
@@ -101,7 +103,7 @@ def hair_short(A, R):
 
 def hair_ponytail(A, R):
     b = Build()
-    _hair_cap(b, R, back=-0.1)
+    _hair_cap(b, R, back=-0.13)
     c = R.head_c
     b.tube(c + Vector((0, R.HY + 0.02, 0.04)), c + Vector((0, R.HY + 0.1, -0.17)), 0.055, 0.04, W("head"))
     return Item("hair", "ponytail", [b.mesh("v2.hair.ponytail", A, flat("team.hair"))])

@@ -13,6 +13,7 @@ FOLD = {"index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand", "thu
 TORSO = ("hips", "spine", "spine_02", "spine_03", "clavicle.L", "clavicle.R")
 HEAD = ("neck_01", "head")
 LIMBS = ("arm", "forearm", "hand", "leg", "shin", "foot")
+ARM_K = 0.85                          # arm thickness against the traced arm
 
 
 def fold(name):
@@ -112,6 +113,40 @@ def stack(by, bones, z0, z1, step=0.04):
     return [(Vector((0.0, float(y), float(z))), float(a), float(b), r[5]) for z, y, a, b, r in zip(zs, cy, hx, hy, rows)]
 
 
+def tidy_torso(rows, h, arm_r):
+    """The traced torso tidied for game size: a straight back from the seat to the shoulder blades (the traced seat and
+    small of the back curve the spine in a side view), a pinched waist, room under the arms (the hanging upper arm,
+    radius arm_r, clears the ribs instead of merging into one slab) and shoulders that slope down to the neck instead of
+    shrugging up to the chin."""
+    zs = np.array([r[0].z for r in rows])
+    front = np.array([r[0].y - r[2] for r in rows])
+    back = np.array([r[0].y + r[2] for r in rows])
+    hx = np.array([r[1] for r in rows])
+    sz, ax, nz = h["arm.L"].z, abs(h["arm.L"].x), h["neck_01"].z
+    kb = int(np.argmax(np.where(zs < sz, back, -1)))                        # the shoulder blades
+    kw = int(np.argmin(np.where(zs < sz - 0.1, hx, 9)))                     # the waist
+    b0 = back[kw] + 0.008
+    for k in range(kb):
+        back[k] = b0 + (back[kb] - b0) * (zs[k] - zs[0]) / (zs[kb] - zs[0])
+    hx = hx * (1 - 0.1 * np.exp(-((zs - zs[kw]) / 0.07) ** 2))
+    under = ax - arm_r - 0.045                                               # clear of the hanging arm, sleeves on
+    top, sh = 0.115, ax - 0.005                                              # at the base of the neck; over the joint
+    for k, z in enumerate(zs):
+        if z < sz - 0.08:
+            hx[k] = min(hx[k], under)
+        elif z < sz:                                                         # out to the top of the arm: one slope from
+            hx[k] = under + (sh - under) * (z - sz + 0.08) / 0.08           # the neck over the shoulder, no pad
+        else:
+            hx[k] = sh + (top - sh) * (z - sz) / (nz - sz)
+    return [(Vector((0.0, float(f + b) / 2, float(z))), float(x), float(b - f) / 2, r[3])
+            for z, f, b, x, r in zip(zs, front, back, hx, rows)]
+
+
+def thin(secs, k=ARM_K):
+    """Slimmer arms than the traced (muscled) ones, so a hanging arm reads apart from the body."""
+    return [(c, e1, e2, r1 * k, r2 * k) for c, e1, e2, r1, r2 in secs]
+
+
 def wrist(secs, head):
     """The hand's traced offset (the palm hangs below and in front of the bone) eased in from zero at the wrist, so it
     carries on from the forearm without a step."""
@@ -133,15 +168,17 @@ def measure(arm, body):
     t = {b.name: Vector(b.tail_local) for b in B}
     out = {"limb": {}}
     for s in "LR":
-        out["limb"][f"arm.{s}"] = limb(by[f"arm.{s}"], h[f"arm.{s}"], t[f"arm.{s}"], round_=True, lo_pad=-0.03, axis=True)
-        out["limb"][f"forearm.{s}"] = limb(by[f"forearm.{s}"], h[f"forearm.{s}"], t[f"forearm.{s}"], round_=True, axis=True)
+        out["limb"][f"arm.{s}"] = thin(limb(by[f"arm.{s}"], h[f"arm.{s}"], t[f"arm.{s}"], round_=True, lo_pad=-0.03,
+                                            axis=True))
+        out["limb"][f"forearm.{s}"] = thin(limb(by[f"forearm.{s}"], h[f"forearm.{s}"], t[f"forearm.{s}"], round_=True,
+                                                axis=True))
         out["limb"][f"hand.{s}"] = wrist(limb(by[f"hand.{s}"], h[f"hand.{s}"], t[f"hand.{s}"], step=0.03), h[f"hand.{s}"])
         out["limb"][f"leg.{s}"] = limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"])
         out["limb"][f"shin.{s}"] = limb(by[f"shin.{s}"], h[f"shin.{s}"], t[f"shin.{s}"])
         out["limb"][f"foot.{s}"] = limb(by[f"foot.{s}"], h[f"foot.{s}"], t[f"toe.{s}"], step=0.035)
     hz = max(b[:, 2].max() for k, b in by.items() if k == "head")
     tz = by["hips"][:, 2].min()
-    out["torso"] = stack(by, TORSO, tz, h["neck_01"].z + 0.02)
+    out["torso"] = tidy_torso(stack(by, TORSO, tz, h["neck_01"].z), h, out["limb"]["arm.L"][1][3])
     # the head alone (the neck is a tube): a slice through both the jaw and the neck turns the chin into a cone
     out["head"] = stack(by, ("head",), by["head"][:, 2].min() + 0.01, hz - 0.01, step=0.03)
     return out

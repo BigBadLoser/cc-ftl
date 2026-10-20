@@ -218,8 +218,9 @@ class Rig:
 
 # ---- body parts (shared by the body and the shells) -----------------------------------------------------------------
 
-def torso(b, R, grow=0.0, lo=None, hi=None):
-    """The traced torso from the crotch to the shoulders, grown by `grow`, clipped to lo <= z <= hi (hem lines)."""
+def torso(b, R, grow=0.0, lo=None, hi=None, cuts=()):
+    """The traced torso from the crotch to the shoulders, grown by `grow`, clipped to lo <= z <= hi (hem lines); cuts:
+    extra rings at those heights, so a colour edge (a waistband) lands on a ring instead of across a tall face."""
     rings = [(c, hx + grow, hy + grow, w) for c, hx, hy, w in R.T["torso"]]
     zs = [r[0].z for r in rings]
 
@@ -229,7 +230,8 @@ def torso(b, R, grow=0.0, lo=None, hi=None):
         t = (z - r0[0].z) / (r1[0].z - r0[0].z)
         return (r0[0].lerp(r1[0], t), r0[1] + (r1[1] - r0[1]) * t, r0[2] + (r1[2] - r0[2]) * t, r0[3] if t < 0.5 else r1[3])
     lo, hi = zs[0] if lo is None else lo, zs[-1] if hi is None else hi
-    clip = [at(lo)] + [r for r in rings if lo < r[0].z < hi] + [at(hi)]
+    mid = [r for r in rings if lo < r[0].z < hi] + [at(z) for z in cuts if lo < z < hi]
+    clip = [at(lo)] + sorted(mid, key=lambda r: r[0].z) + [at(hi)]
     b.loft(clip)
 
 
