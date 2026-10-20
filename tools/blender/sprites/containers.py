@@ -1,6 +1,6 @@
 """Cargo containers (family `containers`): sealed exterior shells, no interior, clamped by a short end to a truss spine
 and detachable, so every side is finished. modkit local frame (u across the width, v along the length, z up), turned
-and anchored at the front-most footprint tile like every module. About 0.8 high, under the hull wall.
+and anchored at the front-most footprint tile like every module. H high (2.0: trial, see the review).
 
 Shell: a reinforced corner frame (posts, rails, corner castings), corrugated long sides with a smooth livery band, a
 ribbed roof with four lifting eyes, a ribbed blank end and the door end (twin doors, locking bars, hinges, the clamp
@@ -20,13 +20,13 @@ import random
 from . import damage
 from .modkit import K
 
-H, M = 0.8, 0.06                          # height; gap to the footprint edge (neighbours stay apart)
+H, M = 2.0, 0.06                          # height; gap to the footprint edge (neighbours stay apart)
 FR, FRD, CAST = "gm", "gmD", "dark"       # frame, its darker face, corner castings
 SH, SHL, SHD = "plate", "sole", "steelL"  # shell plating: body, rib crests, seams
 BAND = ("sole", "steelD")                 # the neutral default under the livery (P, S)
 SIZES = {"2x3": (2, 3), "3x5": (3, 5)}
 ENDS = {0: ("s", "n"), 1: ("e", "w")}     # per rotation: doors toward the camera, doors away
-BAND_Z = (0.34, 0.56)
+BAND_Z = (0.42 * H, 0.62 * H)
 
 
 def _door_sign(rot, end):
@@ -86,14 +86,14 @@ def _end(k, sv, u0, v0, doors, patched=False):
         for x in (0.3, 0.7):                                                         # locking bars, cam handles
             u = su * x * (u0 - 0.1)
             k.box(u, sv * (v0 - 0.0), 0.12, 0.03, 0.03, H - 0.24, SHD)
-            k.box(u + su * 0.04, sv * (v0 + 0.005), 0.36, 0.1, 0.02, 0.03, FRD)
-        for z in (0.2, H - 0.26):                                                    # hinges at the outer edges
+            k.box(u + su * 0.04, sv * (v0 + 0.005), 0.45 * H, 0.1, 0.02, 0.03, FRD)
+        for z in (0.2, H / 2 - 0.04, H - 0.26):                                      # hinges at the outer edges
             k.box(su * (u0 - 0.13), sv * (v0 + 0.0), z, 0.05, 0.03, 0.08, FRD)
     k.box(0, sv * (v0 + 0.01), H - 0.25, 0.32, 0.05, 0.14, FRD, top=FR)               # clamp socket, its pin
     k.box(0, sv * (v0 + 0.035), H - 0.2, 0.1, 0.02, 0.05, SHD)
     if patched:                                                                      # welded shut
-        k.box(0, sv * (v0 + 0.02), 0.4, 2 * u0 - 0.3, 0.03, 0.06, "rust", top="rustD")
-        k.box(0, sv * (v0 + 0.03), 0.37, 2 * u0 - 0.26, 0.012, 0.012, CAST)
+        k.box(0, sv * (v0 + 0.02), 0.5 * H, 2 * u0 - 0.3, 0.03, 0.06, "rust", top="rustD")
+        k.box(0, sv * (v0 + 0.03), 0.5 * H - 0.03, 2 * u0 - 0.26, 0.012, 0.012, CAST)
 
 
 def _roof(k, u0, v0, door_sv, light, variant):
@@ -133,15 +133,15 @@ def _wear(k, u0, v0, rnd):
     for _ in range(8):
         su = rnd.choice((-1, 1))
         k.box(su * (u0 + 0.003), rnd.uniform(-v0 + 0.3, v0 - 0.3), 0.1, 0.008, rnd.uniform(0.1, 0.35),
-              rnd.uniform(0.06, 0.2), "grime")
+              rnd.uniform(0.06, 0.2) * H / 0.8, "grime")
 
 
 def _patches(k, u0, v0, rnd):
     stock = ("rust", "gm", "steelD", "navy")
     for i in range(4):
         su = rnd.choice((-1, 1))
-        v, z = rnd.uniform(-v0 + 0.35, v0 - 0.35), rnd.uniform(0.15, 0.45)
-        w, h = rnd.uniform(0.25, 0.5), rnd.uniform(0.18, 0.3)
+        v, z = rnd.uniform(-v0 + 0.35, v0 - 0.35), rnd.uniform(0.15, 0.6) * H / 0.8
+        w, h = rnd.uniform(0.25, 0.5), rnd.uniform(0.25, 0.45)
         k.box(su * (u0 + 0.008), v, z, 0.02, w + 0.03, h + 0.03, CAST)                   # weld bead
         k.box(su * (u0 + 0.016), v, z + 0.015, 0.02, w, h, stock[i % 4], top=stock[i % 4])
     k.box(0, rnd.uniform(-v0 + 0.4, v0 - 0.4), H - 0.02, 0.5, 0.4, 0.025, "rust", top="rustD")   # a roof patch
