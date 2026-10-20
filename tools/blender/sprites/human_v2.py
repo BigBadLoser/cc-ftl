@@ -311,6 +311,11 @@ def arm(b, R, side, grow=0.0, upper=1.0, fore=True, hand=True):
         chain(b, R, bones, grow, t1=upper * (n_up - 1) / (n - 1))
     else:
         chain(b, R, bones, grow)
+    if hand:                                                                 # the thumb, along the front of the hand
+        t0, t1 = R.h[f"thumb_1.{s}"], R.t[f"thumb_2.{s}"]
+        ax = (R.t[f"hand.{s}"] - R.h[f"hand.{s}"]).normalized()
+        tip = t0.lerp(t1, 0.5) + ax * 0.02                                  # short and laid in along the hand
+        b.tube(t0 - ax * 0.015, tip, 0.024 + grow, 0.02 + grow, W(f"hand.{s}"))
 
 
 def leg(b, R, side, grow=0.0, foot=True, boot=0.0):
