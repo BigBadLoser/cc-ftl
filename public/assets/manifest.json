@@ -199,28 +199,22 @@
    "image": "sprites/crew.human.body.work.png"
   },
   "crew.human.eyes.cyber.idle": {
-   "image": "sprites/crew.human.eyes.cyber.idle.png",
-   "glow": "sprites/crew.human.eyes.cyber.idle.glow.png"
+   "image": "sprites/crew.human.eyes.cyber.idle.png"
   },
   "crew.human.eyes.cyber.sit_idle": {
-   "image": "sprites/crew.human.eyes.cyber.sit_idle.png",
-   "glow": "sprites/crew.human.eyes.cyber.sit_idle.glow.png"
+   "image": "sprites/crew.human.eyes.cyber.sit_idle.png"
   },
   "crew.human.eyes.cyber.sit_work": {
-   "image": "sprites/crew.human.eyes.cyber.sit_work.png",
-   "glow": "sprites/crew.human.eyes.cyber.sit_work.glow.png"
+   "image": "sprites/crew.human.eyes.cyber.sit_work.png"
   },
   "crew.human.eyes.cyber.sleep": {
-   "image": "sprites/crew.human.eyes.cyber.sleep.png",
-   "glow": "sprites/crew.human.eyes.cyber.sleep.glow.png"
+   "image": "sprites/crew.human.eyes.cyber.sleep.png"
   },
   "crew.human.eyes.cyber.walk": {
-   "image": "sprites/crew.human.eyes.cyber.walk.png",
-   "glow": "sprites/crew.human.eyes.cyber.walk.glow.png"
+   "image": "sprites/crew.human.eyes.cyber.walk.png"
   },
   "crew.human.eyes.cyber.work": {
-   "image": "sprites/crew.human.eyes.cyber.work.png",
-   "glow": "sprites/crew.human.eyes.cyber.work.glow.png"
+   "image": "sprites/crew.human.eyes.cyber.work.png"
   },
   "crew.human.eyes.organic.idle": {
    "image": "sprites/crew.human.eyes.organic.idle.png"
@@ -265,8 +259,7 @@
    "glow": "sprites/crew.human.gear.back.eva_pack.idle.glow.png"
   },
   "crew.human.gear.back.eva_pack.sleep": {
-   "image": "sprites/crew.human.gear.back.eva_pack.sleep.png",
-   "glow": "sprites/crew.human.gear.back.eva_pack.sleep.glow.png"
+   "image": "sprites/crew.human.gear.back.eva_pack.sleep.png"
   },
   "crew.human.gear.back.eva_pack.walk": {
    "image": "sprites/crew.human.gear.back.eva_pack.walk.png",
@@ -275,6 +268,18 @@
   "crew.human.gear.back.eva_pack.work": {
    "image": "sprites/crew.human.gear.back.eva_pack.work.png",
    "glow": "sprites/crew.human.gear.back.eva_pack.work.glow.png"
+  },
+  "crew.human.gear.back.medkit.idle": {
+   "image": "sprites/crew.human.gear.back.medkit.idle.png"
+  },
+  "crew.human.gear.back.medkit.sleep": {
+   "image": "sprites/crew.human.gear.back.medkit.sleep.png"
+  },
+  "crew.human.gear.back.medkit.walk": {
+   "image": "sprites/crew.human.gear.back.medkit.walk.png"
+  },
+  "crew.human.gear.back.medkit.work": {
+   "image": "sprites/crew.human.gear.back.medkit.work.png"
   },
   "crew.human.gear.belt.tool_belt.idle": {
    "image": "sprites/crew.human.gear.belt.tool_belt.idle.png"
@@ -322,6 +327,60 @@
    "image": "sprites/crew.human.gear.head.eva_helmet.work.png",
    "glow": "sprites/crew.human.gear.head.eva_helmet.work.glow.png"
   },
+  "crew.human.gear.head.headset.idle": {
+   "image": "sprites/crew.human.gear.head.headset.idle.png"
+  },
+  "crew.human.gear.head.headset.sit_idle": {
+   "image": "sprites/crew.human.gear.head.headset.sit_idle.png"
+  },
+  "crew.human.gear.head.headset.sit_work": {
+   "image": "sprites/crew.human.gear.head.headset.sit_work.png"
+  },
+  "crew.human.gear.head.headset.sleep": {
+   "image": "sprites/crew.human.gear.head.headset.sleep.png"
+  },
+  "crew.human.gear.head.headset.walk": {
+   "image": "sprites/crew.human.gear.head.headset.walk.png"
+  },
+  "crew.human.gear.head.headset.work": {
+   "image": "sprites/crew.human.gear.head.headset.work.png"
+  },
+  "crew.human.gear.head.tactical_helmet.idle": {
+   "image": "sprites/crew.human.gear.head.tactical_helmet.idle.png"
+  },
+  "crew.human.gear.head.tactical_helmet.sit_idle": {
+   "image": "sprites/crew.human.gear.head.tactical_helmet.sit_idle.png"
+  },
+  "crew.human.gear.head.tactical_helmet.sit_work": {
+   "image": "sprites/crew.human.gear.head.tactical_helmet.sit_work.png"
+  },
+  "crew.human.gear.head.tactical_helmet.sleep": {
+   "image": "sprites/crew.human.gear.head.tactical_helmet.sleep.png"
+  },
+  "crew.human.gear.head.tactical_helmet.walk": {
+   "image": "sprites/crew.human.gear.head.tactical_helmet.walk.png"
+  },
+  "crew.human.gear.head.tactical_helmet.work": {
+   "image": "sprites/crew.human.gear.head.tactical_helmet.work.png"
+  },
+  "crew.human.gear.head.visor_cap.idle": {
+   "image": "sprites/crew.human.gear.head.visor_cap.idle.png"
+  },
+  "crew.human.gear.head.visor_cap.sit_idle": {
+   "image": "sprites/crew.human.gear.head.visor_cap.sit_idle.png"
+  },
+  "crew.human.gear.head.visor_cap.sit_work": {
+   "image": "sprites/crew.human.gear.head.visor_cap.sit_work.png"
+  },
+  "crew.human.gear.head.visor_cap.sleep": {
+   "image": "sprites/crew.human.gear.head.visor_cap.sleep.png"
+  },
+  "crew.human.gear.head.visor_cap.walk": {
+   "image": "sprites/crew.human.gear.head.visor_cap.walk.png"
+  },
+  "crew.human.gear.head.visor_cap.work": {
+   "image": "sprites/crew.human.gear.head.visor_cap.work.png"
+  },
   "crew.human.gear.head.welding_goggles.idle": {
    "image": "sprites/crew.human.gear.head.welding_goggles.idle.png"
   },
@@ -339,6 +398,42 @@
   },
   "crew.human.gear.head.welding_goggles.work": {
    "image": "sprites/crew.human.gear.head.welding_goggles.work.png"
+  },
+  "crew.human.hair.bun.idle": {
+   "image": "sprites/crew.human.hair.bun.idle.png"
+  },
+  "crew.human.hair.bun.sit_idle": {
+   "image": "sprites/crew.human.hair.bun.sit_idle.png"
+  },
+  "crew.human.hair.bun.sit_work": {
+   "image": "sprites/crew.human.hair.bun.sit_work.png"
+  },
+  "crew.human.hair.bun.sleep": {
+   "image": "sprites/crew.human.hair.bun.sleep.png"
+  },
+  "crew.human.hair.bun.walk": {
+   "image": "sprites/crew.human.hair.bun.walk.png"
+  },
+  "crew.human.hair.bun.work": {
+   "image": "sprites/crew.human.hair.bun.work.png"
+  },
+  "crew.human.hair.long.idle": {
+   "image": "sprites/crew.human.hair.long.idle.png"
+  },
+  "crew.human.hair.long.sit_idle": {
+   "image": "sprites/crew.human.hair.long.sit_idle.png"
+  },
+  "crew.human.hair.long.sit_work": {
+   "image": "sprites/crew.human.hair.long.sit_work.png"
+  },
+  "crew.human.hair.long.sleep": {
+   "image": "sprites/crew.human.hair.long.sleep.png"
+  },
+  "crew.human.hair.long.walk": {
+   "image": "sprites/crew.human.hair.long.walk.png"
+  },
+  "crew.human.hair.long.work": {
+   "image": "sprites/crew.human.hair.long.work.png"
   },
   "crew.human.hair.mohawk.idle": {
    "image": "sprites/crew.human.hair.mohawk.idle.png"
@@ -475,6 +570,24 @@
   "crew.human.legs.eva.work": {
    "image": "sprites/crew.human.legs.eva.work.png"
   },
+  "crew.human.torso.armor_vest.idle": {
+   "image": "sprites/crew.human.torso.armor_vest.idle.png"
+  },
+  "crew.human.torso.armor_vest.sit_idle": {
+   "image": "sprites/crew.human.torso.armor_vest.sit_idle.png"
+  },
+  "crew.human.torso.armor_vest.sit_work": {
+   "image": "sprites/crew.human.torso.armor_vest.sit_work.png"
+  },
+  "crew.human.torso.armor_vest.sleep": {
+   "image": "sprites/crew.human.torso.armor_vest.sleep.png"
+  },
+  "crew.human.torso.armor_vest.walk": {
+   "image": "sprites/crew.human.torso.armor_vest.walk.png"
+  },
+  "crew.human.torso.armor_vest.work": {
+   "image": "sprites/crew.human.torso.armor_vest.work.png"
+  },
   "crew.human.torso.eva.eva_float": {
    "image": "sprites/crew.human.torso.eva.eva_float.png"
   },
@@ -495,6 +608,60 @@
   },
   "crew.human.torso.eva.work": {
    "image": "sprites/crew.human.torso.eva.work.png"
+  },
+  "crew.human.torso.flight_vest.idle": {
+   "image": "sprites/crew.human.torso.flight_vest.idle.png"
+  },
+  "crew.human.torso.flight_vest.sit_idle": {
+   "image": "sprites/crew.human.torso.flight_vest.sit_idle.png"
+  },
+  "crew.human.torso.flight_vest.sit_work": {
+   "image": "sprites/crew.human.torso.flight_vest.sit_work.png"
+  },
+  "crew.human.torso.flight_vest.sleep": {
+   "image": "sprites/crew.human.torso.flight_vest.sleep.png"
+  },
+  "crew.human.torso.flight_vest.walk": {
+   "image": "sprites/crew.human.torso.flight_vest.walk.png"
+  },
+  "crew.human.torso.flight_vest.work": {
+   "image": "sprites/crew.human.torso.flight_vest.work.png"
+  },
+  "crew.human.torso.harness.idle": {
+   "image": "sprites/crew.human.torso.harness.idle.png"
+  },
+  "crew.human.torso.harness.sit_idle": {
+   "image": "sprites/crew.human.torso.harness.sit_idle.png"
+  },
+  "crew.human.torso.harness.sit_work": {
+   "image": "sprites/crew.human.torso.harness.sit_work.png"
+  },
+  "crew.human.torso.harness.sleep": {
+   "image": "sprites/crew.human.torso.harness.sleep.png"
+  },
+  "crew.human.torso.harness.walk": {
+   "image": "sprites/crew.human.torso.harness.walk.png"
+  },
+  "crew.human.torso.harness.work": {
+   "image": "sprites/crew.human.torso.harness.work.png"
+  },
+  "crew.human.torso.medic_vest.idle": {
+   "image": "sprites/crew.human.torso.medic_vest.idle.png"
+  },
+  "crew.human.torso.medic_vest.sit_idle": {
+   "image": "sprites/crew.human.torso.medic_vest.sit_idle.png"
+  },
+  "crew.human.torso.medic_vest.sit_work": {
+   "image": "sprites/crew.human.torso.medic_vest.sit_work.png"
+  },
+  "crew.human.torso.medic_vest.sleep": {
+   "image": "sprites/crew.human.torso.medic_vest.sleep.png"
+  },
+  "crew.human.torso.medic_vest.walk": {
+   "image": "sprites/crew.human.torso.medic_vest.walk.png"
+  },
+  "crew.human.torso.medic_vest.work": {
+   "image": "sprites/crew.human.torso.medic_vest.work.png"
   },
   "crew.human.torso.tee.idle": {
    "image": "sprites/crew.human.torso.tee.idle.png"
@@ -1118,8 +1285,7 @@
      "fps": 8,
      "loop": true
     }
-   },
-   "glow": true
+   }
   },
   "crew.human.eyes.organic": {
    "kind": "crew.layer",
@@ -1270,6 +1436,48 @@
    },
    "glow": true
   },
+  "crew.human.gear.back.medkit": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "gear.back",
+   "order": 80,
+   "frameW": 128,
+   "frameH": 120,
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "clips": {
+    "idle": {
+     "sheet": "crew.human.gear.back.medkit.idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "sheet": "crew.human.gear.back.medkit.walk",
+     "start": 0,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "sheet": "crew.human.gear.back.medkit.work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "sheet": "crew.human.gear.back.medkit.sleep",
+     "start": 0,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    }
+   }
+  },
   "crew.human.gear.belt.tool_belt": {
    "kind": "crew.layer",
    "species": "human",
@@ -1390,6 +1598,174 @@
    },
    "glow": true
   },
+  "crew.human.gear.head.headset": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "gear.head",
+   "order": 70,
+   "frameW": 128,
+   "frameH": 120,
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "clips": {
+    "idle": {
+     "sheet": "crew.human.gear.head.headset.idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "sheet": "crew.human.gear.head.headset.walk",
+     "start": 0,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "sheet": "crew.human.gear.head.headset.work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "sheet": "crew.human.gear.head.headset.sleep",
+     "start": 0,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "sheet": "crew.human.gear.head.headset.sit_idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "sheet": "crew.human.gear.head.headset.sit_work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.gear.head.tactical_helmet": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "gear.head",
+   "order": 70,
+   "frameW": 128,
+   "frameH": 120,
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "clips": {
+    "idle": {
+     "sheet": "crew.human.gear.head.tactical_helmet.idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "sheet": "crew.human.gear.head.tactical_helmet.walk",
+     "start": 0,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "sheet": "crew.human.gear.head.tactical_helmet.work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "sheet": "crew.human.gear.head.tactical_helmet.sleep",
+     "start": 0,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "sheet": "crew.human.gear.head.tactical_helmet.sit_idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "sheet": "crew.human.gear.head.tactical_helmet.sit_work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.gear.head.visor_cap": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "gear.head",
+   "order": 70,
+   "frameW": 128,
+   "frameH": 120,
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "clips": {
+    "idle": {
+     "sheet": "crew.human.gear.head.visor_cap.idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "sheet": "crew.human.gear.head.visor_cap.walk",
+     "start": 0,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "sheet": "crew.human.gear.head.visor_cap.work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "sheet": "crew.human.gear.head.visor_cap.sleep",
+     "start": 0,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "sheet": "crew.human.gear.head.visor_cap.sit_idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "sheet": "crew.human.gear.head.visor_cap.sit_work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
   "crew.human.gear.head.welding_goggles": {
    "kind": "crew.layer",
    "species": "human",
@@ -1439,6 +1815,118 @@
     },
     "sit_work": {
      "sheet": "crew.human.gear.head.welding_goggles.sit_work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.hair.bun": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "hair",
+   "order": 60,
+   "frameW": 128,
+   "frameH": 120,
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "clips": {
+    "idle": {
+     "sheet": "crew.human.hair.bun.idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "sheet": "crew.human.hair.bun.walk",
+     "start": 0,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "sheet": "crew.human.hair.bun.work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "sheet": "crew.human.hair.bun.sleep",
+     "start": 0,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "sheet": "crew.human.hair.bun.sit_idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "sheet": "crew.human.hair.bun.sit_work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.hair.long": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "hair",
+   "order": 60,
+   "frameW": 128,
+   "frameH": 120,
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "clips": {
+    "idle": {
+     "sheet": "crew.human.hair.long.idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "sheet": "crew.human.hair.long.walk",
+     "start": 0,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "sheet": "crew.human.hair.long.work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "sheet": "crew.human.hair.long.sleep",
+     "start": 0,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "sheet": "crew.human.hair.long.sit_idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "sheet": "crew.human.hair.long.sit_work",
      "start": 0,
      "frames": 6,
      "fps": 8,
@@ -1846,6 +2334,62 @@
     }
    }
   },
+  "crew.human.torso.armor_vest": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "torso",
+   "order": 30,
+   "frameW": 128,
+   "frameH": 120,
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "clips": {
+    "idle": {
+     "sheet": "crew.human.torso.armor_vest.idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "sheet": "crew.human.torso.armor_vest.walk",
+     "start": 0,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "sheet": "crew.human.torso.armor_vest.work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "sheet": "crew.human.torso.armor_vest.sleep",
+     "start": 0,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "sheet": "crew.human.torso.armor_vest.sit_idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "sheet": "crew.human.torso.armor_vest.sit_work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
   "crew.human.torso.eva": {
    "kind": "crew.layer",
    "species": "human",
@@ -1905,6 +2449,174 @@
      "start": 0,
      "frames": 4,
      "fps": 4,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.torso.flight_vest": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "torso",
+   "order": 30,
+   "frameW": 128,
+   "frameH": 120,
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "clips": {
+    "idle": {
+     "sheet": "crew.human.torso.flight_vest.idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "sheet": "crew.human.torso.flight_vest.walk",
+     "start": 0,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "sheet": "crew.human.torso.flight_vest.work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "sheet": "crew.human.torso.flight_vest.sleep",
+     "start": 0,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "sheet": "crew.human.torso.flight_vest.sit_idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "sheet": "crew.human.torso.flight_vest.sit_work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.torso.harness": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "torso",
+   "order": 30,
+   "frameW": 128,
+   "frameH": 120,
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "clips": {
+    "idle": {
+     "sheet": "crew.human.torso.harness.idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "sheet": "crew.human.torso.harness.walk",
+     "start": 0,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "sheet": "crew.human.torso.harness.work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "sheet": "crew.human.torso.harness.sleep",
+     "start": 0,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "sheet": "crew.human.torso.harness.sit_idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "sheet": "crew.human.torso.harness.sit_work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  "crew.human.torso.medic_vest": {
+   "kind": "crew.layer",
+   "species": "human",
+   "slot": "torso",
+   "order": 30,
+   "frameW": 128,
+   "frameH": 120,
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "clips": {
+    "idle": {
+     "sheet": "crew.human.torso.medic_vest.idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "walk": {
+     "sheet": "crew.human.torso.medic_vest.walk",
+     "start": 0,
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "work": {
+     "sheet": "crew.human.torso.medic_vest.work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
+     "loop": true
+    },
+    "sleep": {
+     "sheet": "crew.human.torso.medic_vest.sleep",
+     "start": 0,
+     "frames": 3,
+     "fps": 2,
+     "loop": true
+    },
+    "sit_idle": {
+     "sheet": "crew.human.torso.medic_vest.sit_idle",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true
+    },
+    "sit_work": {
+     "sheet": "crew.human.torso.medic_vest.sit_work",
+     "start": 0,
+     "frames": 6,
+     "fps": 8,
      "loop": true
     }
    }
