@@ -1,4 +1,5 @@
-import { Container, Rectangle, Sprite, Texture } from 'pixi.js';
+import { makeHalo } from './haloTex';
+import { Rectangle, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ModuleC, type Module } from '../sim/modules/components';
@@ -63,8 +64,6 @@ function alphaOf(tex: Texture): Uint8ClampedArray | null {
 interface Part {
   spr: Sprite;
   glow: Sprite | null;
-  /** Halo group sorted under the crew (a console's desk front), destroyed with the part. */
-  under: Container | null;
   halo: Sprite | null;
   /** Art-px rectangle the sprite covers. */
   rect: { x0: number; y0: number; x1: number; y1: number };
@@ -120,11 +119,10 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       p.spr.destroy();
       p.glow?.destroy();
       p.halo?.destroy();
-      p.under?.destroy();
     }
   }
 
-  function makePart(s: StaticSprite, tx: number, ty: number, flip: boolean, key: number, art = 0xffffff, glowKey = key + 0.01, haloUnder = false): Part {
+  function makePart(s: StaticSprite, tx: number, ty: number, flip: boolean, key: number, art = 0xffffff, glowKey = key + 0.01): Part {
     const p = iso(tx, ty);
     const w = s.tex.width;
     const h = s.tex.height;
@@ -141,20 +139,19 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     L.sorted.addChild(spr);
     let glow: Sprite | null = null;
     let halo: Sprite | null = null;
-    let under: Container | null = null;
     if (s.glow) {
       glow = mk(s.glow);
       glow.blendMode = 'add';
       glow.zIndex = glowKey;
       L.sorted.addChild(glow);
       if (L.halos) {
-        halo = mk(s.glow);
-        if (haloUnder) (under = L.haloAt(glowKey)).addChild(halo);
-        else L.halo.addChild(halo);
+        halo = makeHalo(s.glow, x, y, flip);
+        halo.zIndex = glowKey + 0.005;
+        L.sorted.addChild(halo);
       }
     }
     const x0 = flip ? x - w : x;
-    return { spr, glow, halo, under, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key, flip, art };
+    return { spr, glow, halo, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key, flip, art };
   }
 
   function build(m: Module, def: ModuleDefs[string], layers: { layer: ModuleLayer; art: Art }[], roofed: boolean): Part[] {
@@ -204,7 +201,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       // A quarter turn of a non-square footprint without its own sprite is drawn mirrored.
       const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
       const k = key(m.x + w - 1, m.y + h - 1);
-      out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k), !!def.console));
+      out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k)));
     });
     return out;
   }

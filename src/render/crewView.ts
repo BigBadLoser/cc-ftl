@@ -1,3 +1,4 @@
+import { HALO_PAD, haloTex } from './haloTex';
 import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
@@ -144,7 +145,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         sprite.position.set(-layer.def.anchor.x, -layer.def.anchor.y);
         root.addChild(sprite);
         let halo: Sprite | null = null;
-        if (L.halos && !layer.def.slot.startsWith('arm')) L.halo.addChild((halo = new Sprite())); // cyber arm: no halo
+        if (L.halos && !layer.def.slot.startsWith('arm')) {
+          halo = new Sprite(); // cyber arm: no halo
+          halo.blendMode = 'add';
+          root.addChild(halo); // in the crew's own depth slot, drawn just over its glow
+        }
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
@@ -270,10 +275,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           g.sprite.texture = tex ?? Texture.EMPTY;
           g.sprite.visible = !!tex;
           if (g.halo) {
-            g.halo.texture = g.sprite.texture;
             g.halo.visible = !!tex;
-            const p = iso(s.x, s.y);
-            g.halo.position.set(Math.round(p.x) - g.layer.def.anchor.x, Math.round(p.y) - g.layer.def.anchor.y);
+            if (tex) {
+              g.halo.texture = haloTex(tex);
+              g.halo.position.set(-g.layer.def.anchor.x - HALO_PAD, -g.layer.def.anchor.y - HALO_PAD);
+            }
           }
         }
         const p = iso(s.x, s.y);

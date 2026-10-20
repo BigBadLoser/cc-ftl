@@ -11,6 +11,7 @@ import type { CutawayMode } from './gridView';
 import { iso, TILE_H, TILE_W } from './iso';
 import { createParticles } from './fx/particles';
 import { createLayers } from './layers';
+import { initHalos } from './haloTex';
 import { createWorldStack } from './worldLayers';
 import { regionOrigin, sectorArt } from './sectorPos';
 import type { ModuleDefs } from './moduleView';
@@ -108,6 +109,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     preference: 'webgl',
     powerPreference: 'high-performance',
   });
+  if (high) initHalos(gl);
   const stage = new Container();
   const cam = createCamera(high ? 3 : 2);
   const scenes = new Map<number, ShipScene>();

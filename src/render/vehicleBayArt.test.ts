@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BAY_FRAME_MS, LAUNCH, LAUNCH_LIFT, RETURN, RETURN_LAND, bayId, createBayAnimator, parkedId, steady } from './vehicleBayArt';
+import { BAY_FRAME_MS, LAUNCH, LAUNCH_LIFT, RETURN, RETURN_LAND, bayId, createBayAnimator, parkedId, steady, PARKED_DZ, vehicleBayLayers } from './vehicleBayArt';
 
 describe('vehicle bay art ids', () => {
   it('name the bay state and the shuttle parked in it', () => {
@@ -42,5 +42,16 @@ describe('bay animator', () => {
     a.stepOf(2, false, 0);
     expect(a.stepOf(2, false, 10_000)).toEqual({ bay: 'empty', shuttle: null });
     expect(a.stepOf(1, true, 10_000)).toEqual({ bay: '', shuttle: '' });
+  });
+});
+
+describe('bay glow depth', () => {
+  it('sorts the parked shuttle over the bay layer glow and halo', () => {
+    const def = { asset: 'module.vehicle_bay' } as never;
+    const layers = vehicleBayLayers({ rot: 0 } as never, def, { bay: '', shuttle: '' } as never);
+    expect(layers).toHaveLength(2);
+    // Bay glow at key + 0.01 and its halo at + 0.015 (moduleView); the shuttle layer sits above both.
+    expect(layers[1]?.dz).toBe(PARKED_DZ);
+    expect(PARKED_DZ).toBeGreaterThan(0.015);
   });
 });

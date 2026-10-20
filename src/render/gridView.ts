@@ -11,6 +11,7 @@ import { lightTint, mulColor, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
+import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { floorChain, ghostVerts, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
@@ -184,7 +185,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const [spr, glow, halo] = d.objs;
       if (spr) spr.texture = s.tex;
       if (glow && s.glow) glow.texture = s.glow;
-      if (halo && s.glow) halo.texture = s.glow;
+      if (halo && s.glow) halo.texture = haloTex(s.glow);
     }
   }
 
