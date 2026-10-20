@@ -60,7 +60,6 @@ export function createItemView(world: World, atlas: Atlas, L: Layers, items: Ite
     const live = new Set<number>();
     if (t) {
       const { grid } = t;
-      const light = grid.raw('light');
       const pulse = host.emergency() ? pulsePhase(performance.now()) : -1;
       for (const id of world.query(ItemStackC)) {
         const st = world.get(id, ItemStackC);
@@ -88,7 +87,7 @@ export function createItemView(world: World, atlas: Atlas, L: Layers, items: Ite
         const key = depthKey(st.x, st.y) - 0.4;
         e.spr.zIndex = key;
         if (e.glow) e.glow.zIndex = key + 0.01;
-        const lv = grid.inBounds(st.x, st.y) ? (light[st.y * grid.width + st.x] as number) : 0;
+        const lv = grid.inBounds(st.x, st.y) ? grid.get('light', st.x, st.y) : 0;
         e.spr.tint = lightTint(lv, false, pulse);
       }
     }

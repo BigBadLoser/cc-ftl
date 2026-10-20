@@ -549,7 +549,7 @@ and about 270 in 30 test files.
 |---|---|---|
 | `render/scene.ts` (484) | `scenes: Map<gridId, ShipScene>`, `refId` camera ship, `miniScene` (second sprite set for the combat panel), `frame(grid)`, `frameShips(gridIds)` | L |
 | `render/shipScene.ts` (151) | One layer stack per ship: cross-ship depth sorting impossible | M |
-| `render/gridView.ts` (231) | Rebuilds a whole grid's tile sprites on any `struct` revision | M–L |
+| `render/gridView.ts` (231) | Rebuilds a whole grid's tile sprites on any `struct` revision (5b: per chunk) | M–L |
 | `render/scenePick.ts` (59) | Front-to-back loop over scenes with per-ship offsets | S (shrinks) |
 | `render/camera.ts` | One camera | S |
 | `render/sectorFx.ts`, `fightFx.ts`, `crewMarks.ts`, `targetMarks.ts`, `shuttleView.ts` (dock vs sector layer), `airlockArt.ts`, `vehicleBayArt.ts` | Draw in "the camera ship's frame" with per-ship offsets | M |
@@ -826,7 +826,29 @@ Step 5a, 5c, 5d, the §5 visibility rule and the step 8 depth TODO done (branch 
   along a far (west, north) hull passes the hull walls in front of it. In a pit the key is the footprint's front-most point
   (`frontDepth`, half extents 2.4 x 1.0) + 0.5. The pixel lift still comes from `CRUISE_Z` / `DOCK_Z` / `PIT_Z`: `alt` switches
   with the state and does not ramp.
-- Culling is per camera at region level (cheap). Chunk containers and per-chunk culling come with 5b.
+- Culling is per camera at region level (cheap). Per-chunk culling is not built (see 5b).
+
+Step 5b done (branch `sector-5b`): chunk tile views.
+- `render/regionTiles.ts`: `regionTiles(grid)` reads a region's tiles straight from the `SectorGrid` chunks (`chunkData`,
+  `chunkRevision`) under its window rectangle, in local coordinates (`kindAt`, `get`, a row-major `scan` over allocated
+  chunks, `chunks(pad)`, `chunkRect`, `rev(field, chunk, ring)` = sum of chunk revisions over the (2 ring + 1)² block;
+  chunk revisions only grow, so the sum is a change detector). A plain dense grid (fixtures) is wrapped at (0, 0).
+  `createChunkViews` keeps one view per sector chunk, rebuilding a chunk only when its key changes.
+- Per-chunk views: `gridView` (floors, walls, hull, doors, beams, ghost verts; key = cutaway mode, ghosts, beam look,
+  `struct` over the 3 x 3 block, and the engine / airlock hull tiles within 2 tiles; one chunk ring past the region for the
+  ghost verts at its -x / -y edges; doors per chunk on `door`, tints per chunk on `light` (3 x 3), `o2`, `hp`),
+  `roofView` (plating; key = `struct` 3 x 3, the chunk's `module`, and its share of the region-wide livery plan, which is
+  recomputed on the region's struct revision; fire tint per chunk) and `damageView` (one crack `Graphics` per chunk).
+  Each chunk's floor plates live in their own container in the floor layer, so plate order is stable across rebuilds;
+  walls, roofs and the rest stay direct children of the region's sorted container (they sort against crew and other
+  regions in the depth layer). `ghostVertsIn` gives a chunk its exact share of the ghost verts.
+- No more `raw()` in the per-tile layers: `overlay`, `fxView` (flames) and `fx/atmosphere` scan chunks; `itemView` and
+  `turretView` read light with `get`. Still on `raw('light')` (point reads, left to avoid clashing with the halo work):
+  `moduleView` and the crew light host in `shipScene`; `app/moduleSnapshot` reads `room` / `o2` by `raw`.
+- Not built: per-chunk culling (regions are culled per camera; chunk floor containers would allow it for the floor, but
+  sorted sprites cannot sit in chunk containers without leaving the shared depth layer).
+- Fixed on the way: a roof rebuild no longer deletes the roof parts (on main, any struct change on a ship removed its
+  AI-core / shield-generator roof part until a power state changed).
 
 **Merges before the refactor (answer to the user's hold).**
 - Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**

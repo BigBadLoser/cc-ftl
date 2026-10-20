@@ -6,6 +6,7 @@ import type { ModuleDef } from '../sim/registry';
 import { Struct } from '../sim/structure';
 import { diamondTextures } from './diamonds';
 import { iso } from './iso';
+import { regionTiles } from './regionTiles';
 import { overlayDef, rampAt, type OverlayDef } from './overlayDefs';
 
 function hsl(h: number, s: number, l: number): number {
@@ -38,6 +39,7 @@ const ALPHA = 0.42;
 export function createOverlay(grid: Grid, parent: Container, ow: OverlayWorld): Overlay {
   const layer = new Container();
   parent.addChild(layer);
+  const tiles = regionTiles(grid);
   const tex = diamondTextures().fill;
   const pool: (Sprite | undefined)[] = [];
   let def: OverlayDef | undefined;
@@ -68,7 +70,6 @@ export function createOverlay(grid: Grid, parent: Container, ow: OverlayWorld): 
   }
 
   function paint(d: OverlayDef): void {
-    const struct = grid.raw('struct');
     const used = new Set<number>();
     const put = (i: number, color: number) => {
       const s = sprite(i);
@@ -77,26 +78,25 @@ export function createOverlay(grid: Grid, parent: Container, ow: OverlayWorld): 
       used.add(i);
     };
     if (d.special === 'power') {
-      const mod = grid.raw('module');
-      for (let i = 0; i < mod.length; i++) {
-        const id = mod[i] as number;
-        if (!id) continue;
+      tiles.scan((_x, _y, i, ci, c) => {
+        const id = (tiles.data('module', c)?.[ci] ?? 0) as number;
+        if (!id) return;
         const m = ow.world.get(id, ModuleC);
         const power = m ? (ow.modules[m.def]?.power ?? 0) : 0;
-        if (!m || power === 0) continue;
+        if (!m || power === 0) return;
         const on = m.powered && m.enabled && m.hp > 0;
         put(i, on ? (power > 0 ? 0x4ce0ff : 0x4cd964) : 0xe5322d);
-      }
+      }, true);
     } else {
       const room = d.special === 'room';
-      const data = grid.raw(room ? 'room' : d.id);
-      for (let i = 0; i < data.length; i++) {
-        const s = struct[i];
-        if (s !== Struct.Floor && s !== Struct.Door) continue;
-        const v = data[i] as number;
-        if (room ? v === 0 : d.hideZero && v <= 0) continue;
+      const field = room ? 'room' : d.id;
+      tiles.scan((_x, _y, i, ci, c) => {
+        const s = tiles.data('struct', c)?.[ci];
+        if (s !== Struct.Floor && s !== Struct.Door) return;
+        const v = (tiles.data(field, c)?.[ci] ?? 0) as number;
+        if (room ? v === 0 : d.hideZero && v <= 0) return;
         put(i, room ? roomColor(v) : rampAt(d, v));
-      }
+      });
     }
     for (let i = 0; i < pool.length; i++) {
       const s = pool[i];

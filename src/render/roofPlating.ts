@@ -1,11 +1,10 @@
 import { Sprite, type Container } from 'pixi.js';
-import type { Grid } from '../sim/grid';
-import { Struct } from '../sim/structure';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
 import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { createLiveryMesh } from './livery';
+import type { KindAt } from './tiles';
 import { cutHides, cutSuffix, liveryPlan, motifColours, roofCovers, roofCut, roofGradient, roofTile, type RoofCut } from './roofArt';
 
 /** One roof tile's display objects (base, livery, edges), tinted together. */
@@ -34,28 +33,45 @@ const grey = (k: number): number => {
 /** True when the manifest has the production roof plating (the roof family). */
 export const hasRoofArt = (atlas: Atlas): boolean => !!atlas.stat('roof.c0b.00');
 
+/** Livery masks per roof tile (`x,y` -> masks); empty without the roof family or a livery. */
+export type RoofPlan = ReadonlyMap<string, readonly { mask: string; motif: string }[]>;
+
 /**
- * The roof plating over every roofed tile (`roofCovers`; `skip` drops tiles under stand-in roof parts):
- * the module-rule base sprite (roofArt.roofTile), the ship's livery masks recoloured by the livery shader, and an edge
- * overlay on each open side, at roof depth (+0.9 .. +0.91). Without the roof family it falls back to the stand-in plate.
+ * The livery plan of a whole region: motifs are laid out over the ship's full plates, so it is computed once per region
+ * (per struct revision) and each chunk view takes its tiles' share of it.
  */
-export function buildRoofPlating(grid: Grid, atlas: Atlas, L: Layers, livery: Livery | null, skip: (x: number, y: number) => boolean): RoofPiece[] {
-  const struct = grid.raw('struct');
-  const { width: W, height: H } = grid;
-  const kindAt = (x: number, y: number): number => (x < 0 || y < 0 || x >= W || y >= H ? Struct.Space : (struct[y * W + x] as number));
+export function roofPlan(kindAt: KindAt, W: number, H: number, atlas: Atlas, livery: Livery | null): RoofPlan {
+  const real = hasRoofArt(atlas);
+  // Livery paints the full plates only (a mask would overhang a cut plate).
+  return real && livery ? liveryPlan(W, H, (x, y) => roofCovers(kindAt, x, y) && !roofCut(kindAt, x, y), livery.scheme, livery.seed, (m) => !!atlas.stat(`roof.lv.${m}`), !!livery.bowWest) : new Map();
+}
+
+/** Tiles of a rectangle, [x0, x1) x [y0, y1) in region-local tiles. */
+export interface TileRect {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+/**
+ * The roof plating over every roofed tile of `rect` (`roofCovers`; `skip` drops tiles under stand-in roof parts) of a
+ * W x H region whose tiles `kindAt` reads (Space outside it): the module-rule base sprite (roofArt.roofTile), the ship's
+ * livery masks (`plan`) recoloured by the livery shader, and an edge overlay on each open side, at roof depth
+ * (+0.9 .. +0.91). Without the roof family it falls back to the stand-in plate.
+ */
+export function buildRoofPlating(kindAt: KindAt, W: number, H: number, atlas: Atlas, L: Layers, livery: Livery | null, plan: RoofPlan, skip: (x: number, y: number) => boolean, rect: TileRect = { x0: 0, y0: 0, x1: W, y1: H }): RoofPiece[] {
   const roofed = (x: number, y: number): boolean => roofCovers(kindAt, x, y);
   const cutOf = (x: number, y: number): RoofCut => roofCut(kindAt, x, y);
   const real = hasRoofArt(atlas);
-  // Livery paints the full plates only (a mask would overhang a cut plate).
-  const plan = real && livery ? liveryPlan(W, H, (x, y) => roofed(x, y) && !cutOf(x, y), livery.scheme, livery.seed, (m) => !!atlas.stat(`roof.lv.${m}`), !!livery.bowWest) : new Map();
   const out: RoofPiece[] = [];
   const place = <T extends Container>(o: T, z: number): T => {
     o.zIndex = z;
     L.sorted.addChild(o);
     return o;
   };
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = Math.max(0, rect.y0); y < Math.min(H, rect.y1); y++)
+    for (let x = Math.max(0, rect.x0); x < Math.min(W, rect.x1); x++) {
       if (!roofed(x, y) || skip(x, y)) continue;
       const p = iso(x, y);
       const z = depthKey(x, y);

@@ -134,6 +134,18 @@ export function wallPieces(
  * corners where the near hull's silhouette turns or ends (walls pass 12, complib.ghost_verts).
  */
 export function ghostVerts(kindAt: KindAt, width: number, height: number): { x: number; y: number }[] {
+  return vertsOver(kindAt, 0, 0, width, height);
+}
+
+/**
+ * The ghost verts whose tile lies in [x0, x1) x [y0, y1) (one chunk view's share). A vert at tile (x, y) only depends
+ * on the hull tiles in [x, x + 1] x [y, y + 1], so the sweep reaches one tile past the rectangle's +x / +y sides.
+ */
+export function ghostVertsIn(kindAt: KindAt, x0: number, y0: number, x1: number, y1: number): { x: number; y: number }[] {
+  return vertsOver(kindAt, x0, y0, x1 + 1, y1 + 1).filter((t) => t.x >= x0 && t.y >= y0 && t.x < x1 && t.y < y1);
+}
+
+function vertsOver(kindAt: KindAt, x0: number, y0: number, x1: number, y1: number): { x: number; y: number }[] {
   const seg = new Map<string, { x: number; y: number; dirs: Set<string>; n: number }>();
   const put = (px: number, py: number, d: string) => {
     const k = `${px},${py}`;
@@ -142,8 +154,8 @@ export function ghostVerts(kindAt: KindAt, width: number, height: number): { x: 
     e.n++;
     seg.set(k, e);
   };
-  for (let y = 0; y < height; y++)
-    for (let x = 0; x < width; x++) {
+  for (let y = y0; y < y1; y++)
+    for (let x = x0; x < x1; x++) {
       if (kindAt(x, y) !== Struct.Wall || !touchesSpace(kindAt, x, y)) continue;
       const o = outward(kindAt, x, y);
       const m = wallMask(kindAt, x, y);

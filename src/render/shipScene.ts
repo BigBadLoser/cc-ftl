@@ -139,7 +139,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     setSelectedCrew: (id) => crewView.setSelectedCrew(id),
     pickCrew: (ax, ay) => crewView.pick(ax, ay),
     pickModule: (ax, ay) => moduleView.pick(ax, ay),
-    sprites: () => particles.count() + L.floor.children.length + L.sorted.children.length + L.decal.children.length,
+    sprites: () => particles.count() + L.floor.children.reduce((n, c) => n + c.children.length, 0) + L.sorted.children.length + L.decal.children.length,
     dispose() {
       marks.dispose();
       damage.dispose();
