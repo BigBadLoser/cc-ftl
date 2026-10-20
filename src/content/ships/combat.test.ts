@@ -4,6 +4,7 @@ import {
   type ContentRegistry, type ShipTemplate, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
+import { gridIdOf } from '../../sim/regions';
 
 type Mod = NonNullable<ShipTemplate['modules']>[number];
 
@@ -44,7 +45,7 @@ const run = (sim: Sim, n: number): SimEvent[] => {
 const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 const modulesOf = (sim: Sim, gridId: number, def: string): number[] =>
-  sim.world.query(ModuleC).filter((i) => sim.world.get(i, ModuleC)!.gridId === gridId && sim.world.get(i, ModuleC)!.def === def);
+  sim.world.query(ModuleC).filter((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId && sim.world.get(i, ModuleC)!.def === def);
 const combatOf = (sim: Sim, gridId: number) => sim.world.get(shipEntityOf(sim, gridId), CombatC)!;
 const aim = (sim: Sim, from: number, to: number, moduleId = 0): void =>
   sim.enqueue({ type: 'combat.setTarget', shipGridId: from, weaponId: null, targetGridId: to, targetModuleId: moduleId });
@@ -349,7 +350,7 @@ describe('enemy AI, endings', () => {
     run(sim, 400);
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC)!;
-      if (m.gridId === 2) m.hp = m.def === 'module.reactor' ? 100 : m.def === 'module.vehicle_bay' ? 60 : 0; // bay hp tuned so integrity stays between wreck and flee
+      if (gridIdOf(sim, m) === 2) m.hp = m.def === 'module.reactor' ? 100 : m.def === 'module.vehicle_bay' ? 60 : 0; // bay hp tuned so integrity stays between wreck and flee
     }
     const g2 = sim.grids.get(2)!;
     for (let y = g2.y0; y < g2.y0 + g2.height; y++) for (let x = g2.x0; x < g2.x0 + g2.width; x++) if (g2.get('struct', x, y) === 2) g2.set('hp', x, y, 80); // walls at about a third

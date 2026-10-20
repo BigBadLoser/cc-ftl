@@ -19,6 +19,7 @@ import { goToBay, wantsBay } from '../robots/bay';
 import { canTakeRobotJob, heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW } from '../tuning';
+import { gridIdOf } from '../regions';
 
 /** Below this rest a non-drafted crew member drops everything and sleeps in place. */
 const SLEEP_BELOW = 20;
@@ -162,7 +163,7 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
     let best: { id: number; steps: Tile[]; score: number; thin: boolean } | null = null;
     for (const jobId of jobs) {
       const job = sim.world.get(jobId, JobC);
-      if (!job || job.gridId !== pos.gridId || !cats.includes(job.category) || job.target === crewId || needsMaterials(job) || isErrand(job)) continue;
+      if (!job || gridIdOf(sim, job) !== pos.gridId || !cats.includes(job.category) || job.target === crewId || needsMaterials(job) || isErrand(job)) continue;
       if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL) continue;
       if (!canTakeRobotJob(sim, crewId, job)) continue;
       const plan = planWalk(sim, crewId, pos.gridId, origin(pos), jobGoal(job));

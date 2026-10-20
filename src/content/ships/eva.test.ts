@@ -4,6 +4,7 @@ import {
   type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
+import { gridIdOf } from '../../sim/regions';
 
 const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -14,7 +15,7 @@ const run = (sim: Sim, n: number): SimEvent[] => {
   return out;
 };
 const airlockOf = (sim: Sim, gridId: number): number =>
-  sim.world.query(AirlockC).find((i) => sim.world.get(i, ModuleC)!.gridId === gridId)!;
+  sim.world.query(AirlockC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId)!;
 const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 

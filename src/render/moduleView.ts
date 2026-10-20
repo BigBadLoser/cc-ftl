@@ -99,10 +99,10 @@ function cut(tex: Texture, x0: number, x1: number): Texture {
 const ACTIVE_MS = 400;
 
 /** True if any enabled power source of the grid is running. */
-export function shipHasPower(world: World, defs: ModuleDefs, gridId: number): boolean {
+export function shipHasPower(world: World, defs: ModuleDefs, grid: { inBounds(x: number, y: number): boolean }): boolean {
   for (const id of world.query(ModuleC)) {
     const m = world.get(id, ModuleC);
-    if (m && m.gridId === gridId && m.powered && m.enabled && m.hp > 0 && (defs[m.def]?.power ?? 0) > 0) return true;
+    if (m && grid.inBounds(m.x, m.y) && m.powered && m.enabled && m.hp > 0 && (defs[m.def]?.power ?? 0) > 0) return true;
   }
   return false;
 }
@@ -231,7 +231,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
-        if (!m || !def || m.gridId !== grid.id) continue;
+        if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
         const on = m.powered && m.enabled && m.hp > 0;
         // Modules are in sector tiles; their art is built region-local (the region's containers sit at its sector offset).
         const lm: Module = { ...m, x: m.x - grid.x0, y: m.y - grid.y0 };

@@ -6,6 +6,7 @@ import {
 } from '../../sim';
 import { content } from '../index';
 import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
+import { gridIdOf } from '../../sim/regions';
 
 const def = content.modules['module.airlock'] as ModuleDef;
 const at = { x: 6, y: 6 };
@@ -120,7 +121,7 @@ describe('airlock footprint', () => {
 describe('starter ship airlock', () => {
   it('fits, with its collar outside the west hull', () => {
     const sim = newGame(1, content);
-    const id = sim.world.query(ModuleC).find((i) => sim.world.get(i, ModuleC)!.gridId === 1 && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
+    const id = sim.world.query(ModuleC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1 && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
     const t = airlockTiles(def, sim.world.get(id, ModuleC)!);
     expect(t.collar).toEqual({ x: P0.x + 0, y: P0.y + 10 });
     expect(t.outer).toEqual({ x: P0.x + 1, y: P0.y + 10 });
@@ -135,7 +136,7 @@ describe('starter ship airlock', () => {
 describe('cargo through the unloaders', () => {
   it('a docked shuttle is unloaded at the keep-out tiles and the crew haul it to storage', () => {
     const sim = newGame(1, content);
-    const airlock = sim.world.query(ModuleC).find((i) => sim.world.get(i, ModuleC)!.gridId === 1 && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
+    const airlock = sim.world.query(ModuleC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1 && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
     const shuttle = sim.world.query(VehicleC)[0] as number;
     const v = sim.world.get(shuttle, VehicleC)!;
     const p = dockPoint(sim, airlock)!;
@@ -170,7 +171,7 @@ describe('cargo through the unloaders', () => {
 
   it('hands out the keep-out tile nearest a point, and the boarding tile while stowed', () => {
     const sim = newGame(1, content);
-    const airlock = sim.world.query(ModuleC).find((i) => sim.world.get(i, ModuleC)!.gridId === 1 && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
+    const airlock = sim.world.query(ModuleC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1 && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
     const shuttle = sim.world.query(VehicleC)[0] as number;
     const v = sim.world.get(shuttle, VehicleC)!;
     const stands = keepOutTiles(def, sim.world.get(airlock, ModuleC)!);

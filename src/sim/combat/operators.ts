@@ -4,6 +4,7 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { stat, type StatName } from '../stats';
 import { IonC } from './components';
+import { gridIdOf } from '../regions';
 
 export type ConsoleKind = 'weapons' | 'shields' | 'helm';
 
@@ -28,7 +29,7 @@ export function operatorOf(sim: Sim, moduleId: number): number {
     const pos = sim.world.get(job.reservedBy, PositionC);
     const crew = sim.world.get(job.reservedBy, CrewC);
     if (!pos || !crew || crew.activity === 'sleeping' || isIncapacitated(sim, job.reservedBy)) continue;
-    if (isSettled(pos) && pos.x === job.x && pos.y === job.y && pos.gridId === job.gridId) return job.reservedBy;
+    if (isSettled(pos) && pos.x === job.x && pos.y === job.y && pos.gridId === gridIdOf(sim, job)) return job.reservedBy;
   }
   return 0;
 }
@@ -37,7 +38,7 @@ export function operatorOf(sim: Sim, moduleId: number): number {
 export function mannedConsole(sim: Sim, gridId: number, kind: ConsoleKind): { module: number; crew: number } | null {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId !== gridId || sim.content.modules[m.def]?.console !== kind) continue;
+    if (!m || gridIdOf(sim, m) !== gridId || sim.content.modules[m.def]?.console !== kind) continue;
     if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC)) continue;
     const crew = operatorOf(sim, id);
     if (crew) return { module: id, crew };

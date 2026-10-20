@@ -33,7 +33,7 @@ function createJob(sim: Sim, kind: 'build' | 'deconstruct', gridId: number, x: n
   const key = kind === 'build' ? structCostKey(struct) : undefined;
   const needs = needsFrom(key ? sim.content.structCosts[key] : undefined);
   sim.world.add(id, JobC, {
-    category: 'construction', kind, gridId, x, y, struct, work, progress: 0, reservedBy: 0,
+    category: 'construction', kind, x, y, struct, work, progress: 0, reservedBy: 0,
     ...(needs ? { needs, delivered: [] } : {}),
   });
 }
@@ -113,6 +113,6 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     const fighter = sim.world.get(cmd.id, FighterC);
     if (fighter) fighter.ordered = 0; // a move order cancels an attack order
     releaseAssignment(sim, cmd.id); // and a suit errand
-    drafted.target = gridId === pos.gridId ? { x: cmd.x, y: cmd.y } : { x: cmd.x, y: cmd.y, gridId };
+    drafted.target = { x: cmd.x, y: cmd.y };
   },
 };

@@ -5,6 +5,7 @@ import {
 } from '../../sim';
 import { content } from '../index';
 import { factions } from './index';
+import { gridIdOf } from '../../sim/regions';
 
 const defs = content.modules as Record<string, ModuleDef>;
 const ids = Object.keys(factions) as (keyof typeof factions)[];
@@ -218,7 +219,7 @@ describe('ship generator', () => {
         let demand = 0;
         for (const mid of sim.world.query(ModuleC)) {
           const m = sim.world.get(mid, ModuleC)!;
-          if (m.gridId !== gridId) continue;
+          if (gridIdOf(sim, m) !== gridId) continue;
           const def = defs[m.def] as ModuleDef;
           const wall = hullRow(def, m.x, m.y, m.rot);
           if (!def.airlock) {

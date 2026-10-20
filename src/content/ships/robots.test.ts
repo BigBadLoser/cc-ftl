@@ -7,6 +7,7 @@ import {
 import { applyEffects } from '../../sim/combat/effects';
 import { wantsToSurrender } from '../../sim/fight/surrender';
 import { content } from '../index';
+import { gridIdOf } from '../../sim/regions';
 
 const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -21,7 +22,7 @@ const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<Si
 const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
 const robotsOn = (sim: Sim, gridId: number): number[] => crewOn(sim, gridId).filter((i) => sim.world.get(i, CrewC)!.species.startsWith('species.robot'));
 const modulesOf = (sim: Sim, gridId: number, def: string): number[] =>
-  sim.world.query(ModuleC).filter((i) => sim.world.get(i, ModuleC)!.gridId === gridId && sim.world.get(i, ModuleC)!.def === def);
+  sim.world.query(ModuleC).filter((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId && sim.world.get(i, ModuleC)!.def === def);
 const ship = (sim: Sim, gridId: number) => sim.world.get(shipEntityOf(sim, gridId), ShipC)!;
 const teleport = (sim: Sim, id: number, gridId: number, x: number, y: number): void => {
   sim.world.add(id, PositionC, { gridId, x, y, toX: x, toY: y, progress: 0, facing: 0 });
@@ -40,7 +41,7 @@ function setup(seed = 1, c: ContentRegistry = content): Sim {
   const sim = newGame(seed, c);
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.rogueShipyard', x: 100, y: 50 });
   run(sim, 3);
-  for (const i of sim.world.query(WeaponC)) if (sim.world.get(i, ModuleC)!.gridId === 2) sim.world.get(i, ModuleC)!.enabled = false;
+  for (const i of sim.world.query(WeaponC)) if (gridIdOf(sim, sim.world.get(i, ModuleC)) === 2) sim.world.get(i, ModuleC)!.enabled = false;
   return sim;
 }
 /** A tile of grid 1 a player crew member stands on (walkable floor). */
@@ -94,7 +95,7 @@ describe('robot species', () => {
     const robot = spawnRobot(sim);
     sim.world.add(robot, DraftedC, { target: null }); // stands still to be mended
     sim.world.get(robot, HealthC)!.hp = 50;
-    const metal = (): number => sim.world.query(StorageC).filter((s) => sim.world.get(s, ModuleC)!.gridId === 1)
+    const metal = (): number => sim.world.query(StorageC).filter((s) => gridIdOf(sim, sim.world.get(s, ModuleC)) === 1)
       .reduce((n, s) => n + storageCount(sim, s, 'item.metal'), 0);
     const before = metal();
     const out = run(sim, 2400, () => sim.world.get(robot, HealthC)!.hp >= 120);
@@ -279,7 +280,7 @@ describe('determinism and saves', () => {
   /** A boarding party in a firefight with the robots, the core live, the fabricator running. */
   function fight(seed: number): Sim {
     const sim = setup(seed);
-    for (const i of sim.world.query(WeaponC)) if (sim.world.get(i, ModuleC)!.gridId === 2) sim.world.get(i, ModuleC)!.enabled = true;
+    for (const i of sim.world.query(WeaponC)) if (gridIdOf(sim, sim.world.get(i, ModuleC)) === 2) sim.world.get(i, ModuleC)!.enabled = true;
     const party = crewOn(sim, 1).slice(0, 3);
     party.forEach((p, i) => {
       teleport(sim, p, 2, ...local(sim, 2, 9, 6 + i));

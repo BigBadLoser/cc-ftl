@@ -5,6 +5,7 @@ import {
 import { CrossingC } from '../portals/components';
 import { InertC, StunC } from '../robots/components';
 import type { Tile } from './pathfind';
+import { gridIdOf } from '../regions';
 
 // Facing index per unit step: 0 = +x, counter-clockwise in grid space, 2 = +y.
 const FACING_TABLE: Record<string, number> = {
@@ -78,7 +79,7 @@ const PLAYER_JOB_KINDS: readonly string[] = ['build', 'deconstruct', 'module', '
 export function findJobAt(sim: Sim, gridId: number, x: number, y: number): number {
   for (const id of sim.world.query(JobC)) {
     const j = sim.world.get(id, JobC);
-    if (j && j.gridId === gridId && j.x === x && j.y === y && PLAYER_JOB_KINDS.includes(j.kind)) return id;
+    if (j && gridIdOf(sim, j) === gridId && j.x === x && j.y === y && PLAYER_JOB_KINDS.includes(j.kind)) return id;
   }
   return 0;
 }

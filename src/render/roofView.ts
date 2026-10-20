@@ -75,7 +75,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
     for (const id of world.query(ModuleC)) {
       const m = world.get(id, ModuleC);
       const def = m && defs[m.def];
-      if (!m || !def?.roofAsset || m.gridId !== grid.id) continue;
+      if (!m || !def?.roofAsset || !grid.inBounds(m.x, m.y)) continue;
       const on = m.powered && m.enabled && m.hp > 0;
       const stage = def.deploySec === undefined ? DEPLOY_FRAMES : deployStage(world, id);
       if (stage < 0 && !visible) continue; // stowed on the player's cutaway ship: nothing, no ghost
@@ -166,7 +166,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       let pk = '';
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
-        if (m && m.gridId === grid.id && defs[m.def]?.roofAsset) pk += `${id}:${m.x},${m.y},${m.rot}:${m.powered && m.enabled && m.hp > 0 ? 1 : 0}:${defs[m.def]?.deploySec === undefined ? '' : deployStage(world, id)};`;
+        if (m && grid.inBounds(m.x, m.y) && defs[m.def]?.roofAsset) pk += `${id}:${m.x},${m.y},${m.rot}:${m.powered && m.enabled && m.hp > 0 ? 1 : 0}:${defs[m.def]?.deploySec === undefined ? '' : deployStage(world, id)};`;
       }
       if (pk !== partKey) {
         partKey = pk;

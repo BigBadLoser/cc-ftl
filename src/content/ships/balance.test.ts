@@ -3,6 +3,7 @@ import {
   CrewC, DeadC, DownedC, ModuleC, PositionC, newGame, shipOf, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
+import { gridIdOf } from '../../sim/regions';
 
 const TPS = 20;
 
@@ -43,7 +44,7 @@ function fight(seed: number, mode: 'manned' | 'unmanned', minutes: number): Resu
   const raiderReactor = (): number =>
     sim.world.query(ModuleC).find((i) => {
       const m = sim.world.get(i, ModuleC)!;
-      return m.gridId === 2 && m.def === 'module.reactor' && m.hp > 0;
+      return gridIdOf(sim, m) === 2 && m.def === 'module.reactor' && m.hp > 0;
     }) ?? 0;
   for (let t = 0; t < minutes * 60 * TPS; t++) {
     if (mode === 'manned' && t % 100 === 1) {

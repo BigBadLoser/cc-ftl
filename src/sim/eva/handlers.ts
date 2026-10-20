@@ -14,6 +14,7 @@ import { startErrand, findSuitStow } from './errands';
 import { planWalk } from './route';
 import { airlockUsable, freeSuits, isSuited, needsAir, suitDef, suitTile } from './suit';
 import { ModuleC } from '../modules/components';
+import { gridIdOf } from '../regions';
 
 type EvaCommandType = Extract<Command['type'], `eva.${string}`>;
 type Handler<T extends EvaCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -38,7 +39,7 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     if (isSuited(sim, cmd.crew)) return reject(sim, cmd.type, 'suited');
     const at = suitTile(sim, cmd.airlock);
     if (!at || !airlockUsable(sim, cmd.airlock)) return reject(sim, cmd.type, 'noAirlock');
-    if (sim.world.get(cmd.airlock, ModuleC)?.gridId !== pos.gridId) return reject(sim, cmd.type, 'otherGrid');
+    if (gridIdOf(sim, sim.world.get(cmd.airlock, ModuleC)) !== pos.gridId) return reject(sim, cmd.type, 'otherGrid');
     if (freeSuits(sim, cmd.airlock) <= 0) return reject(sim, cmd.type, 'noSuit');
     const plan = planWalk(sim, cmd.crew, pos.gridId, { x: pos.toX, y: pos.toY }, at);
     if (!plan) return reject(sim, cmd.type, 'unreachable');
@@ -53,7 +54,7 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     if (airlock) {
       const at = suitTile(sim, airlock);
       if (!at || !airlockUsable(sim, airlock)) return reject(sim, cmd.type, 'noAirlock');
-      if (sim.world.get(airlock, ModuleC)?.gridId !== pos.gridId) return reject(sim, cmd.type, 'otherGrid');
+      if (gridIdOf(sim, sim.world.get(airlock, ModuleC)) !== pos.gridId) return reject(sim, cmd.type, 'otherGrid');
       steps = planWalk(sim, cmd.crew, pos.gridId, { x: pos.toX, y: pos.toY }, at)?.steps ?? null;
     } else {
       const src = findSuitStow(sim, cmd.crew, pos);

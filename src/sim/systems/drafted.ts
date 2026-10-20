@@ -3,6 +3,7 @@ import { atJob, hasRoute, isIncapacitated, jobGoal, origin, releaseAssignment } 
 import { planWalk } from '../eva/route';
 import { planRoute } from '../portals/route';
 import type { Sim } from '../sim';
+import { gridIdAt } from '../regions';
 
 /** Drafted crew walk to their ordered target (across grids, through portals) and never take jobs. */
 export function draftedSystem(sim: Sim): void {
@@ -25,11 +26,11 @@ export function draftedSystem(sim: Sim): void {
     }
     if (!target) continue;
     const o = origin(pos);
-    const gridId = target.gridId ?? pos.gridId;
+    const gridId = gridIdAt(sim, target.x, target.y) || pos.gridId; // open Space: stay on the crew member's own grid
     const planned = drafted.planned;
     if (hasRoute(sim, id)) {
       // Still walking: keep going while the route was planned for this target; a new target replans below.
-      if (planned && planned.x === target.x && planned.y === target.y && planned.gridId === gridId) continue;
+      if (planned && planned.x === target.x && planned.y === target.y) continue;
     } else if (pos.gridId === gridId && o.x === target.x && o.y === target.y) {
       drafted.target = null; // arrived
       delete drafted.planned;
@@ -41,7 +42,7 @@ export function draftedSystem(sim: Sim): void {
     if (walk) {
       path.steps = walk.steps;
       delete path.then;
-      drafted.planned = { x: target.x, y: target.y, gridId };
+      drafted.planned = { x: target.x, y: target.y };
       continue;
     }
     const route = planRoute(sim, id, { gridId: pos.gridId, ...o }, { gridId, x: target.x, y: target.y });
@@ -49,7 +50,7 @@ export function draftedSystem(sim: Sim): void {
       path.steps = route.steps;
       if (route.then.length > 0) path.then = route.then;
       else delete path.then;
-      drafted.planned = { x: target.x, y: target.y, gridId };
+      drafted.planned = { x: target.x, y: target.y };
     } else {
       drafted.target = null;
       delete drafted.planned;

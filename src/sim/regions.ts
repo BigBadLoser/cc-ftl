@@ -54,14 +54,23 @@ export function shipAt(sim: Sim, x: number, y: number): number {
   return sim.sector.grid.get('ship', x, y);
 }
 
-/** The grid id of the ship owning the sector tile (x, y), or 0 (Space, or no grid holds it). Bridges to gridId-keyed code until step 7 ends. */
+/** The grid id of the ship owning the sector tile (x, y), else of the grid whose rectangle or EVA ring holds it, or 0 (open Space). Bridges to gridId-keyed code until step 7 ends. */
 export function gridIdAt(sim: Sim, x: number, y: number): number {
   const ship = shipAt(sim, x, y);
   const owned = ship === 0 ? 0 : sim.world.get(ship, ShipC)?.gridId ?? 0;
   if (owned !== 0) return owned;
-  // A fixture grid with no ship (and no owner layer): the lowest-id grid whose rectangle holds the tile.
-  for (const id of [...sim.grids.keys()].sort((a, b) => a - b)) if ((sim.grids.get(id) as GridLike).inBounds(x, y)) return id;
-  return 0;
+  // No owner: Space inside a grid's rectangle (or a fixture grid with no ship), else the EVA ring around one (its padded
+  // frame; frames never overlap). The lowest id wins a tie, as sorted iteration did.
+  let rect = 0;
+  let ring = 0;
+  for (const [id, g] of sim.grids) {
+    if (g.inBounds(x, y)) {
+      if (rect === 0 || id < rect) rect = id;
+    } else if (ring === 0 || id < ring) {
+      if (x >= g.x0 - REGION_PAD && x < g.x0 + g.width + REGION_PAD && y >= g.y0 - REGION_PAD && y < g.y0 + g.height + REGION_PAD) ring = id;
+    }
+  }
+  return rect !== 0 ? rect : ring;
 }
 
 /** Write `ship` as the owner of every non-Space tile of a grid (stamping a ship into the sector). */
@@ -104,4 +113,9 @@ export function windowShipMismatches(sim: Sim): string[] {
     }
   }
   return out;
+}
+
+/** The grid id of the ship a placed thing (a module, anything with a sector tile `x`, `y`) stands on; 0 for none. */
+export function gridIdOf(sim: Sim, at: { x: number; y: number } | undefined): number {
+  return at ? gridIdAt(sim, at.x, at.y) : 0;
 }

@@ -5,6 +5,7 @@ import { hullSum } from '../combat/hull';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { SHIP_STATE_INTERVAL, WRECK_BELOW } from '../tuning';
+import { gridIdOf } from '../regions';
 
 /** One wall tile's weight in the integrity score, relative to one module hp (a full wall tile counts as 1.3). */
 const WALL_WEIGHT = 0.005;
@@ -30,7 +31,7 @@ export function shipStateSystem(sim: Sim): void {
     let running = 0;
     for (const mid of sim.world.query(ModuleC)) {
       const m = sim.world.get(mid, ModuleC);
-      const def = m && m.gridId === ship.gridId ? sim.content.modules[m.def] : undefined;
+      const def = m && gridIdOf(sim, m) === ship.gridId ? sim.content.modules[m.def] : undefined;
       if (!m || !def) continue;
       modHp += m.hp;
       modMax += def.maxHp;

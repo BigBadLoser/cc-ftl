@@ -29,7 +29,7 @@ export function createTargetMarks(grid: Grid, world: World, defs: ModuleDefs, pa
         for (const id of world.query(ModuleC)) {
           const m = world.get(id, ModuleC);
           const def = m && defs[m.def];
-          if (!m || !def || m.gridId !== grid.id) continue;
+          if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
           const hit = targeted.has(id);
           if (!hit && !isTargetable(def)) continue;
           for (const t of footprintTiles(def, m.x, m.y, m.rot)) {

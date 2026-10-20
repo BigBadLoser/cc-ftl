@@ -2,6 +2,7 @@ import {
   CombatC, CrewC, IonC, ModuleC, ShipC, WeaponC, ammoCount, operatorOf, shieldRechargeSec, FTL_CHARGE_SEC, type Sim, type Target,
 } from '../sim';
 import type { UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
+import { gridIdOf } from '../sim/regions';
 
 const round = (v: number, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
 
@@ -18,7 +19,7 @@ function modulesOf(sim: Sim, gridId: number): UiShipModule[] {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def || m.gridId !== gridId) continue;
+    if (!m || !def || gridIdOf(sim, m) !== gridId) continue;
     const kind = def.weapon ? 'weapon' : def.shieldGen ? 'shield' : def.engine ? 'engine' : 'other';
     if (kind === 'other' && !def.console) continue;
     out.push({ id, name: def.name, kind, hp: Math.round(m.hp), maxHp: def.maxHp, ion: sim.world.has(id, IonC) });
@@ -56,7 +57,7 @@ export function buildCombat(sim: Sim, playerGrid = 1): UiCombat {
       for (const mid of sim.world.query(ModuleC)) {
         const m = sim.world.get(mid, ModuleC);
         const def = m && sim.content.modules[m.def];
-        if (!m || !def || m.gridId !== playerGrid) continue;
+        if (!m || !def || gridIdOf(sim, m) !== playerGrid) continue;
         const w = sim.world.get(mid, WeaponC);
         if (w && def.weapon) {
           const ammo = sim.content.weapons?.[def.weapon]?.ammo;

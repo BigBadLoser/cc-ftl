@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  deserialize, gridOfShip, newGame, serialize, Struct, windowShipMismatches, type Body, type Sim, type Vehicle,
+  deserialize, gridIdAt, gridOfShip, newGame, serialize, Struct, windowShipMismatches, type Body, type Drafted, type Module, type Sim, type Vehicle,
 } from '../../sim';
 import { content } from '../index';
 
@@ -27,6 +27,28 @@ function legacyWorld(sim: Sim): unknown {
     const { def, homeShip, home, state, hp, ...rest } = raw as Vehicle;
     const b = bodies.get(id) as Body;
     return [id, { def, homeGrid: gridOfShip(sim, homeShip), home, state, x: b.x, y: b.y, heading: b.heading, hp, ...rest }];
+  });
+  // Step 7b drops `gridId` from the module component (the ship under its tile says it): put it back after `def`.
+  stores.module = (stores.module ?? []).map(([id, raw]) => {
+    const { def, ...rest } = raw as Module;
+    return [id, { def, gridId: gridIdAt(sim, rest.x, rest.y), ...rest }];
+  });
+  // Jobs: `gridId` sat just before `x` in the key order.
+  stores.job = (stores.job ?? []).map(([id, raw]) => {
+    const j = raw as Record<string, unknown>;
+    const gridId = gridIdAt(sim, j.x as number, j.y as number);
+    return [id, Object.fromEntries(Object.entries(j).flatMap(([k, v]) => (k === 'x' ? [['gridId', gridId], [k, v]] : [[k, v]])))];
+  });
+  // Drafted: `planned` always carried its grid; `target` only when it was not the crew member's own grid.
+  const crewGrid = new Map(((stores.position ?? []) as [number, { gridId: number }][]).map(([id, p]) => [id, p.gridId]));
+  stores.drafted = (stores.drafted ?? []).map(([id, raw]) => {
+    const d = raw as Drafted;
+    const own = crewGrid.get(id) ?? 0;
+    const grid = (t: { x: number; y: number }): number => gridIdAt(sim, t.x, t.y) || own;
+    const out: Record<string, unknown> = { ...d };
+    if (d.target) out.target = grid(d.target) === own ? d.target : { ...d.target, gridId: grid(d.target) };
+    if (d.planned) out.planned = { ...d.planned, gridId: grid(d.planned) };
+    return [id, out];
   });
   // Step 6 stores sector tiles in every component; the old code stored grid-local ones. Subtract each grid's origin.
   const origin = (gridId: number): [number, number] => {

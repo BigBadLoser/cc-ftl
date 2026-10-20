@@ -77,7 +77,7 @@ export function createJobView(
         const jobs = [...world.query(JobC)].flatMap((id) => {
           const j = world.get(id, JobC);
           // Only struct jobs paint tiles; haul, craft and module jobs have no floor of their own to tint.
-          return j && (j.kind === "build" || j.kind === "deconstruct") && j.gridId === grid.id && grid.inBounds(j.x, j.y)
+          return j && (j.kind === "build" || j.kind === "deconstruct") && grid.inBounds(j.x, j.y)
             ? [j]
             : [];
         });

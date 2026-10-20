@@ -3,6 +3,7 @@ import type { Sim } from '../sim';
 import { WeaponC, type Combat, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { shipOf } from './ships';
+import { gridIdOf } from '../regions';
 
 /** True if the ship can still be shot at (exists, not a fled ship or a prize). Wrecks stay targetable but are not worth it for the AI. */
 export function targetableShip(sim: Sim, gridId: number): boolean {
@@ -18,7 +19,7 @@ export function targetableVehicle(sim: Sim, id: number): boolean {
 
 /** Module ids on a grid, ascending. */
 export function modulesOnGrid(sim: Sim, gridId: number): number[] {
-  return sim.world.query(ModuleC).filter((i) => sim.world.get(i, ModuleC)?.gridId === gridId) as number[];
+  return sim.world.query(ModuleC).filter((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId) as number[];
 }
 
 /**
@@ -31,7 +32,7 @@ export function resolveTarget(sim: Sim, weaponId: number, combat: Combat): Targe
   if (t?.vehicle) return targetableVehicle(sim, t.vehicle) ? t : null;
   if (!t || !targetableShip(sim, t.gridId)) return null;
   const m = t.moduleId ? sim.world.get(t.moduleId, ModuleC) : undefined;
-  if (m && m.gridId === t.gridId) return t;
+  if (m && gridIdOf(sim, m) === t.gridId) return t;
   return { gridId: t.gridId, moduleId: randomModule(sim, t.gridId) };
 }
 

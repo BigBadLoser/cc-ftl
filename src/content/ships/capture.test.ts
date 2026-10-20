@@ -5,6 +5,7 @@ import {
   storageCount, StorageC, windowShipMismatches, type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
+import { gridIdOf } from '../../sim/regions';
 
 const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -19,7 +20,7 @@ const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<Si
 const defOf = (sim: Sim, id: number): ModuleDef => content.modules[sim.world.get(id, ModuleC)!.def as keyof typeof content.modules] as ModuleDef;
 const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
 const modulesOf = (sim: Sim, gridId: number, def: string): number[] =>
-  sim.world.query(ModuleC).filter((i) => sim.world.get(i, ModuleC)!.gridId === gridId && sim.world.get(i, ModuleC)!.def === def);
+  sim.world.query(ModuleC).filter((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId && sim.world.get(i, ModuleC)!.def === def);
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 const ship = (sim: Sim, gridId: number) => sim.world.get(shipEntityOf(sim, gridId), ShipC)!;
 const teleport = (sim: Sim, id: number, gridId: number, x: number, y: number): void => {
@@ -39,7 +40,7 @@ function setup(seed = 1, armed = false): Sim {
   run(sim, 5);
   expect(windowShipMismatches(sim)).toEqual([]);
   if (!armed) {
-    for (const i of sim.world.query(WeaponC)) if (sim.world.get(i, ModuleC)!.gridId === 2) sim.world.get(i, ModuleC)!.enabled = false;
+    for (const i of sim.world.query(WeaponC)) if (gridIdOf(sim, sim.world.get(i, ModuleC)) === 2) sim.world.get(i, ModuleC)!.enabled = false;
   }
   return sim;
 }
@@ -135,7 +136,7 @@ describe('capturing a ship', () => {
     const after = run(sim, 600);
     expect(of(after, 'weapon.fired').filter((e) => e.gridId === 2)).toHaveLength(0);
     for (const i of sim.world.query(WeaponC)) {
-      if (sim.world.get(i, ModuleC)!.gridId === 2) expect(sim.world.get(i, WeaponC)).toMatchObject({ charge: 0, shotsLeft: 0 });
+      if (gridIdOf(sim, sim.world.get(i, ModuleC)) === 2) expect(sim.world.get(i, WeaponC)).toMatchObject({ charge: 0, shotsLeft: 0 });
     }
     expect(sim.world.get(shipEntityOf(sim, 2), CombatC)!.target).toBeNull();
     expect(ship(sim, 2).state).toBe('prize');
@@ -203,7 +204,7 @@ describe('salvage and cargo', () => {
     const sim = setup();
     const { party } = stage(sim);
     capture(sim);
-    const metal = (): number => sim.world.query(StorageC).filter((i) => sim.world.get(i, ModuleC)!.gridId === 1)
+    const metal = (): number => sim.world.query(StorageC).filter((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1)
       .reduce((n, i) => n + storageCount(sim, i, 'item.metal'), 0);
     const target = modulesOf(sim, 2, 'module.burstLaser')[0]!;
     const tm = sim.world.get(target, ModuleC)!;

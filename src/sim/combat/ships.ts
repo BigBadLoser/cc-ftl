@@ -2,7 +2,7 @@ import { createCrew } from '../crew/spawn';
 import { ModuleC } from '../modules/components';
 import { isDeployed } from '../modules/deploy';
 import { isTileWalkable } from '../modules/walk';
-import { placementGapError, stampOwner } from '../regions';
+import { placementGapError, stampOwner , gridIdOf } from '../regions';
 import { gridFromTemplate, spawnTemplateModules } from '../ship';
 import type { ShipTemplate } from '../registry';
 import type { Sim } from '../sim';
@@ -45,7 +45,7 @@ export function shieldCapacity(sim: Sim, gridId: number, powered: boolean): numb
   let layers = 0;
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    const gen = m && m.gridId === gridId ? sim.content.modules[m.def]?.shieldGen : undefined;
+    const gen = m && gridIdOf(sim, m) === gridId ? sim.content.modules[m.def]?.shieldGen : undefined;
     if (!m || !gen || m.hp <= 0 || !m.enabled || (powered && !m.powered)) continue;
     if (powered && (sim.world.has(id, IonC) || !isDeployed(sim, id))) continue;
     layers += Math.floor(Math.abs(sim.content.modules[m.def]?.power ?? 0) * gen.layersPerPower);
@@ -101,7 +101,7 @@ export function spawnShip(
   // Template vehicles were spawned with the modules, before their ship existed: they belong to it now.
   for (const vid of sim.world.query(VehicleC)) {
     const v = sim.world.get(vid, VehicleC);
-    if (v && !v.homeShip && sim.world.get(v.home, ModuleC)?.gridId === gridId) v.homeShip = ship;
+    if (v && !v.homeShip && gridIdOf(sim, sim.world.get(v.home, ModuleC)) === gridId) v.homeShip = ship;
   }
   const layers = shieldCapacity(sim, gridId, false);
   const combat: Combat = {
@@ -126,7 +126,7 @@ export function shieldRechargeSec(sim: Sim, gridId: number): number {
   let best = Infinity;
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    const gen = m && m.gridId === gridId ? sim.content.modules[m.def]?.shieldGen : undefined;
+    const gen = m && gridIdOf(sim, m) === gridId ? sim.content.modules[m.def]?.shieldGen : undefined;
     if (m && gen && m.powered && m.hp > 0 && !sim.world.has(id, IonC)) best = Math.min(best, gen.rechargeSec);
   }
   return best;

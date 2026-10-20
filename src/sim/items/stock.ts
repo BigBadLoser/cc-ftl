@@ -1,4 +1,4 @@
-import { gridIdAt } from '../regions';
+import { gridIdAt , gridIdOf } from '../regions';
 import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
@@ -54,7 +54,7 @@ export function sourcesOf(sim: Sim, gridId: number, item: string, res: Reservati
   }
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId !== gridId) continue;
+    if (!m || gridIdOf(sim, m) !== gridId) continue;
     const avail = storageCount(sim, id, item) - (res.out.get(refKey('storage', id, item)) ?? 0);
     if (avail > 0) out.push({ ref: { kind: 'storage', id }, x: m.x, y: m.y, avail });
   }
@@ -81,7 +81,7 @@ export function nearestStorageFor(sim: Sim, gridId: number, item: string, at: { 
   let bestD = Infinity;
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId !== gridId) continue;
+    if (!m || gridIdOf(sim, m) !== gridId) continue;
     const room = storageSpace(sim, id, item) - (res.incoming.get(refKey('storage', id, item)) ?? 0);
     const d = dist2(m.x, m.y, at.x, at.y);
     if (room > 0 && d < bestD) {

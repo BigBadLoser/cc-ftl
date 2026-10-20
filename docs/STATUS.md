@@ -349,6 +349,10 @@ the `ship` layer via `gridIdAt`), `crew/pathfind.ts` and `eva/route.ts` use `loa
 `GridWindow`), module / job / airlock readouts show ship-local tiles. Save v16. Hashes unchanged. Step 7 is split into 7a-7d,
 see ARCHITECTURE "Step 7 split". Next: 7b (Module, Job, Drafted, Position).
 
+Branch `sector-7b` (not merged, no visual change): 7b, first half. `ModuleC.gridId`, `JobC.gridId` and `Drafted.target/planned.gridId`
+are gone (membership from the tile via `gridIdOf` / `gridIdAt`); `Position.gridId` is left for **7b2**. Save v17. Both `sectorEquiv`
+hashes unchanged (the test's `legacyWorld` writes `gridId` back into module rows). See ARCHITECTURE "Step 7 split".
+
 **EVA on the hull roof (user decision, 2026-10-20; not built):** EVA crew outside a ship must not walk the hull ring at
 floor level (the tiles just outside the hull walls): there they look as if standing on air, and walking along wall faces
 would need a sideways walk animation we don't want for now. Instead EVA crew walk on top of the **hull roof**, pathing

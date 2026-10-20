@@ -5,6 +5,7 @@ import { airlockTiles, airlockWorking } from '../portals/airlock';
 import { AirlockC, type Airlock } from '../portals/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
+import { gridIdOf } from '../regions';
 
 /**
  * Airlock cycling. The two doors are never open together. A requested side only starts to cycle once the doorway that
@@ -18,7 +19,7 @@ export function airlockSystem(sim: Sim): void {
     const a = sim.world.get(id, AirlockC) as Airlock;
     const m = sim.world.get(id, ModuleC)!;
     const def = sim.content.modules[m.def];
-    const grid = sim.grids.get(m.gridId);
+    const grid = sim.grids.get(gridIdOf(sim, m));
     if (!def?.airlock || !grid) continue;
     const t = airlockTiles(def, m);
     const working = airlockWorking(sim, id);
@@ -31,9 +32,9 @@ export function airlockSystem(sim: Sim): void {
       if (a.timer <= 0) {
         a.timer = 0;
         a.state = a.state === 'toOuter' ? 'outer' : 'inner';
-        sim.events.emit({ type: 'airlock.cycled', gridId: m.gridId, module: id, side: a.state });
+        sim.events.emit({ type: 'airlock.cycled', gridId: gridIdOf(sim, m), module: id, side: a.state });
       }
-    } else if (a.request && a.request !== a.state && working && (def.airlock.layout || !occupied(sim, m.gridId, a.state === 'inner' ? t.inner : t.outer))) {
+    } else if (a.request && a.request !== a.state && working && (def.airlock.layout || !occupied(sim, gridIdOf(sim, m), a.state === 'inner' ? t.inner : t.outer))) {
       a.state = a.request === 'outer' ? 'toOuter' : 'toInner';
       a.timer = Math.max(1, Math.round(def.airlock.cycleSec * TICK_HZ));
       a.request = null;

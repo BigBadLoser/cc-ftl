@@ -9,6 +9,7 @@ import { VehicleC } from '../vehicles/components';
 import { dockPoint } from '../vehicles/geometry';
 import { damageVehicle, vehicleFaction } from '../vehicles/lifecycle';
 import { shipById, shipOf } from '../combat/ships';
+import { gridIdOf } from '../regions';
 
 /**
  * Point defence: each interceptable shot (missiles) gets one roll per working point-defence module on the target
@@ -28,8 +29,8 @@ export function pointDefenceSystem(sim: Sim): void {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (!m || !def || !workingModule(sim, id)) continue;
-    if (def.aiCore) coreByGrid.set(m.gridId, true);
-    if (def.pointDefense) gunsByGrid.set(m.gridId, [...(gunsByGrid.get(m.gridId) ?? []), id]);
+    if (def.aiCore) coreByGrid.set(gridIdOf(sim, m), true);
+    if (def.pointDefense) gunsByGrid.set(gridIdOf(sim, m), [...(gunsByGrid.get(gridIdOf(sim, m)) ?? []), id]);
   }
   for (const id of [...sim.world.query(ProjectileC)]) {
     const p = sim.world.get(id, ProjectileC);

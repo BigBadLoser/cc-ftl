@@ -4,7 +4,7 @@ import type { Sim } from '../sim';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
-import { placementGapError } from '../regions';
+import { placementGapError , gridIdOf } from '../regions';
 import { shipEntityOf, shipOf, spawnShip } from './ships';
 import { generateShip } from '../shipgen/generate';
 
@@ -17,7 +17,7 @@ function reject(sim: Sim, command: string, reason: string): void {
 
 /** True if the module entity lies on the grid. */
 function moduleOnGrid(sim: Sim, id: number, gridId: number): boolean {
-  return sim.world.get(id, ModuleC)?.gridId === gridId;
+  return gridIdOf(sim, sim.world.get(id, ModuleC)) === gridId;
 }
 
 export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {

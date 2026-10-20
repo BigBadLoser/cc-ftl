@@ -78,10 +78,10 @@ export const NeedsC = defineComponent<Needs>('needs');
 
 /** Present while the player controls this crew member directly. */
 export interface Drafted {
-  /** Ordered destination, if any. `gridId` absent = the grid the crew member was on when ordered. */
-  target: { x: number; y: number; gridId?: number } | null;
+  /** Ordered destination (a sector tile), if any. The grid it is on comes from the tile (`gridIdAt`). */
+  target: { x: number; y: number } | null;
   /** The target the current route was planned for (so a changed target is noticed). */
-  planned?: { x: number; y: number; gridId: number };
+  planned?: { x: number; y: number };
 }
 export const DraftedC = defineComponent<Drafted>('drafted');
 
@@ -101,7 +101,6 @@ export interface Job {
    * operator stands ON; the job never finishes, it is dropped when the console is not needed).
    */
   kind: JobKind;
-  gridId: number;
   x: number;
   y: number;
   /** For build jobs: the StructKind to place. */

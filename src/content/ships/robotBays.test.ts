@@ -5,6 +5,7 @@ import {
 } from '../../sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { content } from '../index';
+import { gridIdOf } from '../../sim/regions';
 
 const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -18,7 +19,7 @@ const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<Si
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
-const storages = (sim: Sim): number[] => sim.world.query(StorageC).filter((s) => sim.world.get(s, ModuleC)!.gridId === 1);
+const storages = (sim: Sim): number[] => sim.world.query(StorageC).filter((s) => gridIdOf(sim, sim.world.get(s, ModuleC)) === 1);
 const stock = (sim: Sim, item: string): number => storages(sim).reduce((n, s) => n + storageCount(sim, s, item), 0);
 const charge = (sim: Sim, id: number): number => sim.world.get(id, NeedsC)!.charge!;
 const killEngineers = (sim: Sim): void => {

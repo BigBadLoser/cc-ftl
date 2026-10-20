@@ -10,6 +10,7 @@ import { EAT_SEC, HUNGER_EAT_BELOW, HUNGER_EAT_URGENT } from '../tuning';
 import { EatC, NeedsC, PathC, type Crew, type Path, type Position } from './components';
 import { clearPath, isSettled, origin, releaseAssignment } from './helpers';
 import { findPath, type Tile } from './pathfind';
+import { gridIdOf } from '../regions';
 
 /** The food item (an item def with `food`) of which the grid's storage holds the most nutritious unit, or null. */
 export function foodOn(sim: Sim, gridId: number): string | null {
@@ -34,7 +35,7 @@ function pickSpot(sim: Sim, gridId: number, from: Tile, item: string): { x: numb
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def || m.gridId !== gridId || m.hp <= 0) continue;
+    if (!m || !def || gridIdOf(sim, m) !== gridId || m.hp <= 0) continue;
     if (def.galley && m.enabled && m.powered) {
       const at = accessTile(def, m.x, m.y, m.rot);
       const steps = at && findPath(sim, gridId, from, at);

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { DeployC, ModuleC, WeaponC, isDeployed, newGame, shieldCapacity, type Sim } from '../../sim';
 import { content } from '../index';
+import { gridIdOf } from '../../sim/regions';
 
 const mods = (sim: Sim, gridId: number, def: string): number[] =>
-  sim.world.query(ModuleC).filter((i) => sim.world.get(i, ModuleC)!.gridId === gridId && sim.world.get(i, ModuleC)!.def === def);
+  sim.world.query(ModuleC).filter((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId && sim.world.get(i, ModuleC)!.def === def);
 const amount = (sim: Sim, id: number): number => sim.world.get(id, DeployC)?.amount ?? 0;
 const run = (sim: Sim, n: number): void => {
   for (let i = 0; i < n; i++) sim.step();
@@ -25,7 +26,7 @@ describe('deployable roof parts', () => {
   it('weapons and shields stay stowed in peace, deploy in combat in deploySec, and stow when it ends', () => {
     const sim = newGame(1, content);
     const gens = mods(sim, 1, 'module.shieldGen').concat(mods(sim, 1, 'module.shieldGenSmall'));
-    const weapons = sim.world.query(WeaponC).filter((i) => sim.world.get(i, ModuleC)!.gridId === 1);
+    const weapons = sim.world.query(WeaponC).filter((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1);
     expect(weapons.length).toBeGreaterThan(0);
     run(sim, 100);
     for (const id of [...gens, ...weapons]) expect(amount(sim, id)).toBe(0);
@@ -43,7 +44,7 @@ describe('deployable roof parts', () => {
     const sim = newGame(1, content);
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
     run(sim, 60);
-    const w = sim.world.query(WeaponC).find((i) => sim.world.get(i, ModuleC)!.gridId === 1)!;
+    const w = sim.world.query(WeaponC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1)!;
     expect(amount(sim, w)).toBe(1);
     sim.world.get(w, ModuleC)!.hp = 0;
     run(sim, 20);
@@ -56,7 +57,7 @@ describe('deployable roof parts', () => {
     const sim = newGame(1, content);
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
     sim.step();
-    const weapons = sim.world.query(WeaponC).filter((i) => sim.world.get(i, ModuleC)!.gridId === 2);
+    const weapons = sim.world.query(WeaponC).filter((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 2);
     expect(weapons.length).toBeGreaterThan(0);
     for (let i = 0; i < 38; i++) {
       sim.step();

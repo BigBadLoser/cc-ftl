@@ -12,8 +12,9 @@ import { TICK_HZ } from '../time';
 import { MEND_PER_SEC, SALVAGE_SEC, SKILL_STEP } from '../tuning';
 import { HackedC, WreckC } from './components';
 import { speciesOf } from './core';
+import { gridIdOf } from '../regions';
 
-type NewJob = Partial<Job> & Pick<Job, 'category' | 'kind' | 'gridId' | 'x' | 'y'>;
+type NewJob = Partial<Job> & Pick<Job, 'category' | 'kind' | 'x' | 'y'>;
 
 /** The first of a mechanical body's repair items the grid's storage holds, or null. */
 function mendItem(sim: Sim, gridId: number, crew: number): string | null {
@@ -36,7 +37,7 @@ function mendWanted(sim: Sim, robot: number, gridId: number): boolean {
 export function keepRobotJob(sim: Sim, jobId: number, job: Job): boolean | null {
   const target = job.target ?? 0;
   if (job.kind === 'mend') {
-    if (!mendWanted(sim, target, job.gridId)) return false;
+    if (!mendWanted(sim, target, gridIdOf(sim, job))) return false;
     const o = origin(sim.world.get(target, PositionC) as Position);
     job.x = o.x;
     job.y = o.y;
@@ -59,12 +60,12 @@ export function robotJobs(sim: Sim, seen: Set<string>, add: (job: NewJob) => voi
     const pos = sim.world.get(id, PositionC);
     if (!pos || seen.has(`mend:${id}`) || !mendWanted(sim, id, pos.gridId)) continue;
     const o = origin(pos);
-    add({ category: 'repair', kind: 'mend', gridId: pos.gridId, x: o.x, y: o.y, target: id });
+    add({ category: 'repair', kind: 'mend', x: o.x, y: o.y, target: id });
   }
   for (const id of sim.world.query(WreckC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
     if (!pos || seen.has(`salvage:${id}`) || shipOf(sim, pos.gridId)?.faction !== 'player') continue;
-    add({ category: 'hauling', kind: 'salvage', gridId: pos.gridId, x: pos.x, y: pos.y, target: id, work: SALVAGE_SEC * TICK_HZ });
+    add({ category: 'hauling', kind: 'salvage', x: pos.x, y: pos.y, target: id, work: SALVAGE_SEC * TICK_HZ });
   }
 }
 
@@ -94,8 +95,8 @@ export function performMend(sim: Sim, crew: number, job: Job, speed: number): Wo
   const mech = speciesOf(sim, robot)?.mechanical;
   if (!hp || !mech || sim.world.has(robot, DeadC) || hp.hp >= hp.max) return 'done';
   if (job.progress <= 0) {
-    const item = mendItem(sim, job.gridId, robot);
-    if (!item || !consumeAmmo(sim, job.gridId, item)) return 'wait';
+    const item = mendItem(sim, gridIdOf(sim, job), robot);
+    if (!item || !consumeAmmo(sim, gridIdOf(sim, job), item)) return 'wait';
     job.progress += mech.hpPerItem;
   }
   const rate = (MEND_PER_SEC * speed * (1 + SKILL_STEP * skillOf(sim, crew, 'repair'))) / TICK_HZ;
@@ -127,6 +128,6 @@ export function performHack(sim: Sim, crew: number, job: Job, speed: number): Wo
   if (job.progress < job.work) return 'working';
   const by = sim.world.get(crew, AllegianceC)?.faction ?? 'player';
   sim.world.add(core, HackedC, { by, tick: sim.tick, hacker: crew });
-  sim.events.emit({ type: 'core.hacked', moduleId: core, gridId: m.gridId, by });
+  sim.events.emit({ type: 'core.hacked', moduleId: core, gridId: gridIdOf(sim, m), by });
   return 'done';
 }

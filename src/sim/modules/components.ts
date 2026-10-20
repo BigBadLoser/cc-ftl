@@ -4,7 +4,6 @@ import { defineComponent } from '../ecs';
 export interface Module {
   /** Content id, e.g. 'module.reactor'. */
   def: string;
-  gridId: number;
   /** Top-left tile of the rotated footprint. */
   x: number;
   y: number;

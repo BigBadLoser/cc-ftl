@@ -5,6 +5,7 @@ import {
   windowShipMismatches, shipEntityOf,
 } from '../../sim';
 import { content } from '../index';
+import { gridIdOf } from '../../sim/regions';
 
 const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -20,13 +21,13 @@ const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<Si
 const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
 const shuttleOf = (sim: Sim, gridId: number): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === shipEntityOf(sim, gridId))!;
 const airlockOf = (sim: Sim, gridId: number): number =>
-  sim.world.query(ModuleC).find((i) => sim.world.get(i, ModuleC)!.gridId === gridId && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
+  sim.world.query(ModuleC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
 /** Switch off every weapon of a grid (so a raider cannot shoot the shuttle). */
 function disarm(sim: Sim, gridId: number): void {
   for (const i of sim.world.query(ModuleC)) {
     const m = sim.world.get(i, ModuleC)!;
     if (!(content.modules[m.def as keyof typeof content.modules] as ModuleDef).weapon) continue;
-    if (m.gridId === gridId) m.enabled = false; // disabled rather than broken: the crew cannot repair it
+    if (gridIdOf(sim, m) === gridId) m.enabled = false; // disabled rather than broken: the crew cannot repair it
   }
 }
 /** Starter (grid 1) facing an optional raider (grid 2) 80 tiles away. */
@@ -175,7 +176,7 @@ describe('shuttle combat', () => {
     const sim = setup();
     for (const i of sim.world.query(ModuleC)) {
       const m = sim.world.get(i, ModuleC)!;
-      if (m.gridId === 1 && m.def === 'module.aiCore') m.enabled = false;
+      if (gridIdOf(sim, m) === 1 && m.def === 'module.aiCore') m.enabled = false;
     }
     const shuttle = shuttleOf(sim, 2);
     embark(sim, crewOn(sim, 2).slice(0, 1), shuttle);
@@ -266,10 +267,10 @@ describe('shuttle bay pit', () => {
     const sim = newGame(1, content);
     const bay = sim.world.query(VehicleBayC)[0] as number;
     const m = sim.world.get(bay, ModuleC)!;
-    const grid = sim.grids.get(m.gridId)!;
+    const grid = sim.grids.get(gridIdOf(sim, m))!;
     for (const t of footprintTiles(bayDef, m.x, m.y, m.rot)) expect(isTileWalkable(sim, grid, t.x, t.y)).toBe(false);
     const at = boardingTile(sim, shuttleOf(sim, 1));
-    expect(at).toEqual({ gridId: m.gridId, x: m.x + 4, y: m.y + 3 });
+    expect(at).toEqual({ gridId: gridIdOf(sim, m), x: m.x + 4, y: m.y + 3 });
     expect(isTileWalkable(sim, grid, at!.x, at!.y)).toBe(true);
   });
 

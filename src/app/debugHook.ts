@@ -1,5 +1,6 @@
 import { AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
+import { gridIdOf } from '../sim/regions';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -17,7 +18,7 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
         const d = m && sim.content.modules[m.def];
         if (!m || !d || m.def !== def) continue;
         const a = accessTile(d, m.x, m.y, m.rot) ?? { x: m.x, y: m.y };
-        out.push({ id, gridId: m.gridId, x: m.x, y: m.y, ax: a.x, ay: a.y });
+        out.push({ id, gridId: gridIdOf(sim, m), x: m.x, y: m.y, ax: a.x, ay: a.y });
       }
       return out;
     },

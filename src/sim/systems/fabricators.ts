@@ -11,6 +11,7 @@ import { FabricatorC, type Fabricator } from '../robots/components';
 import { hasLiveCore } from '../robots/core';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
+import { gridIdOf } from '../regions';
 
 /**
  * Robot fabricators (ModuleDef.robotFabricator): the seed of rogue AI shipyards. While intact, powered and on a ship
@@ -23,9 +24,9 @@ export function fabricatorSystem(sim: Sim): void {
     const m = sim.world.get(id, ModuleC) as Module;
     const def = sim.content.modules[m.def];
     const fab = def?.robotFabricator;
-    const ship = fab ? shipOf(sim, m.gridId) : undefined;
+    const ship = fab ? shipOf(sim, gridIdOf(sim, m)) : undefined;
     if (!def || !fab || !ship || fab.roles.length === 0) continue;
-    if (m.hp <= 0 || !m.powered || !hasLiveCore(sim, m.gridId, ship.faction)) continue;
+    if (m.hp <= 0 || !m.powered || !hasLiveCore(sim, gridIdOf(sim, m), ship.faction)) continue;
     let st = sim.world.get(id, FabricatorC);
     if (!st) sim.world.add(id, FabricatorC, (st = { timer: 0, made: [], count: 0 }));
     st.made = st.made.filter((r) => sim.world.has(r, CrewC) && !sim.world.has(r, DeadC));
@@ -44,19 +45,19 @@ export function fabricatorSystem(sim: Sim): void {
 function build(sim: Sim, id: number, m: Module, def: ModuleDef, st: Fabricator, faction: Faction, role: string): void {
   const tile = spawnTile(sim, m, def);
   if (!tile) return; // blocked: try again next tick
-  const robot = createCrew(sim, m.gridId, role, tile, { faction });
+  const robot = createCrew(sim, gridIdOf(sim, m), role, tile, { faction });
   if (!robot) return;
   st.timer = 0;
   st.count++;
   st.made.push(robot);
-  sim.events.emit({ type: 'robot.fabricated', crew: robot, moduleId: id, gridId: m.gridId });
+  sim.events.emit({ type: 'robot.fabricated', crew: robot, moduleId: id, gridId: gridIdOf(sim, m) });
 }
 
 /** The access tile if it is free, else the first free walkable tile in rings (up to 3) around the footprint. */
 function spawnTile(sim: Sim, m: Module, def: ModuleDef): { x: number; y: number } | null {
-  const grid = sim.grids.get(m.gridId);
+  const grid = sim.grids.get(gridIdOf(sim, m));
   if (!grid?.has('struct')) return null;
-  const free = (x: number, y: number): boolean => grid.inBounds(x, y) && isTileWalkable(sim, grid, x, y) && !isTileOccupied(sim, m.gridId, x, y);
+  const free = (x: number, y: number): boolean => grid.inBounds(x, y) && isTileWalkable(sim, grid, x, y) && !isTileOccupied(sim, gridIdOf(sim, m), x, y);
   const at = accessTile(def, m.x, m.y, m.rot);
   if (at && free(at.x, at.y)) return at;
   const [w, h] = rotatedSize(def, m.rot);

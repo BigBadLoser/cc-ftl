@@ -11,6 +11,7 @@ import { openTilesOf } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { BAY_REPAIR_BELOW } from '../tuning';
 import { speciesOf } from './core';
+import { gridIdOf } from '../regions';
 
 /** True if the module is a robot bay. */
 export function isBay(sim: Sim, id: number): boolean {
@@ -73,7 +74,7 @@ export function wantsBay(sim: Sim, robot: number): boolean {
 export function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): boolean {
   let bay = homeBay(sim, robot);
   const home = bay ? sim.world.get(bay, ModuleC) : undefined;
-  if (home && home.gridId !== pos.gridId) return false; // its home is on another grid: no squatting here
+  if (home && gridIdOf(sim, home) !== pos.gridId) return false; // its home is on another grid: no squatting here
   if (home && home.hp <= 0) {
     home.reservedBy = 0; // wrecked home: find another
     bay = 0;
@@ -82,7 +83,7 @@ export function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): boo
     let best = Infinity;
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
-      if (!m || m.gridId !== pos.gridId || !bayFree(sim, id)) continue;
+      if (!m || gridIdOf(sim, m) !== pos.gridId || !bayFree(sim, id)) continue;
       const steps = findPath(sim, pos.gridId, origin(pos), cradleOf(sim, id));
       if (steps && steps.length < best) [bay, best] = [id, steps.length];
     }
@@ -111,11 +112,11 @@ export function performAssemble(sim: Sim, job: Job, speed: number): WorkResult {
   if (!bay || bay.hp <= 0 || !role) return 'done';
   job.progress = Math.min(job.work, job.progress + speed);
   if (job.progress < job.work) return 'working';
-  const robot = createCrew(sim, bay.gridId, role, cradleOf(sim, job.target ?? 0), { faction: shipOf(sim, bay.gridId)?.faction ?? 'player' });
+  const robot = createCrew(sim, gridIdOf(sim, bay), role, cradleOf(sim, job.target ?? 0), { faction: shipOf(sim, gridIdOf(sim, bay))?.faction ?? 'player' });
   if (!robot) return 'done';
   bay.reservedBy = robot;
   consumeDelivered(job);
-  sim.events.emit({ type: 'robot.assembled', crew: robot, bay: job.target ?? 0, gridId: bay.gridId });
+  sim.events.emit({ type: 'robot.assembled', crew: robot, bay: job.target ?? 0, gridId: gridIdOf(sim, bay) });
   return 'done';
 }
 

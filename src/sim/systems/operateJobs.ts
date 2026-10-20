@@ -5,6 +5,7 @@ import { shipOf } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
 import type { Sim } from '../sim';
+import { gridIdOf } from '../regions';
 
 /**
  * Opens one 'operate' job (category operating) per console while it is needed and drops it when it is not.
@@ -33,7 +34,7 @@ export function operateJobsSystem(sim: Sim): void {
     if (!m || !at) continue;
     const job = sim.world.createEntity();
     sim.world.add(job, JobC, {
-      category: 'operating', kind: 'operate', gridId: m.gridId, x: at.x, y: at.y, struct: 0, work: 1, progress: 0,
+      category: 'operating', kind: 'operate', x: at.x, y: at.y, struct: 0, work: 1, progress: 0,
       reservedBy: 0, target: id,
     });
   }
@@ -43,6 +44,6 @@ function consoleNeeded(sim: Sim, id: number): boolean {
   const m = sim.world.get(id, ModuleC);
   if (!m || !sim.sector.inCombat || !sim.content.modules[m.def]?.console) return false;
   if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC)) return false;
-  return shipOf(sim, m.gridId)?.state === 'active';
+  return shipOf(sim, gridIdOf(sim, m))?.state === 'active';
 }
 

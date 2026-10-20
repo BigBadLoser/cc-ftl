@@ -7,6 +7,7 @@ import {
 } from '../sim';
 import type { UiCrew, UiFight } from '../ui/api';
 import { localOf } from './moduleSnapshot';
+import { gridIdOf } from '../sim/regions';
 
 const STRUCT_LABEL: Record<number, string> = Object.fromEntries(Object.entries(Struct).map(([k, v]) => [v, k.toLowerCase()]));
 const NONE = Object.fromEntries(WORK_CATEGORIES.map((c) => [c, 0])) as Record<WorkCategory, number>;
@@ -53,7 +54,7 @@ function armsOn(sim: Sim, ctx: Ctx, gridId: number) {
     let count = 0;
     for (const sid of sim.world.query(StorageC, ModuleC)) {
       const m = sim.world.get(sid, ModuleC);
-      if (m && m.gridId === gridId && m.hp > 0) count += storageCount(sim, sid, item);
+      if (m && gridIdOf(sim, m) === gridId && m.hp > 0) count += storageCount(sim, sid, item);
     }
     if (count > 0) out.push({ item, name: def.name, count });
   }
@@ -67,7 +68,7 @@ function whereOf(sim: Sim, ctx: Ctx, id: number): { gridId: number; where: strin
   const aboard = sim.world.get(id, AboardC);
   const v = aboard && sim.world.get(aboard.vehicle, VehicleC);
   if (!v) return { gridId: 0, where: 'Unknown' };
-  const dockShip = v.state === 'docked' ? ctx.ships.get(sim.world.get(v.dock, ModuleC)?.gridId ?? 0) : null;
+  const dockShip = v.state === 'docked' ? ctx.ships.get(gridIdOf(sim, sim.world.get(v.dock, ModuleC)) ?? 0) : null;
   return { gridId: 0, where: v.state === 'stowed' ? 'Shuttle (in bay)' : dockShip ? `Shuttle at ${dockShip}` : 'Shuttle (flying)' };
 }
 
@@ -103,7 +104,7 @@ function suitAtOf(sim: Sim, id: number): UiCrew['suitAt'] {
   for (const lock of sim.world.query(AirlockC)) {
     const at = suitTile(sim, lock);
     const free = freeSuits(sim, lock);
-    if (!at || free <= 0 || sim.world.get(lock, ModuleC)?.gridId !== pos.gridId) continue;
+    if (!at || free <= 0 || gridIdOf(sim, sim.world.get(lock, ModuleC)) !== pos.gridId) continue;
     const d = Math.hypot(at.x - pos.x, at.y - pos.y);
     if (!best || d < best.d) best = { id: lock, free, d };
   }
@@ -146,7 +147,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
   const j = a && sim.world.get(a.jobId, JobC);
   if (j) {
     const pct = Math.round((j.progress / Math.max(1, j.work)) * 100);
-    const at = localOf(sim, j.gridId, j.x, j.y);
+    const at = localOf(sim, gridIdOf(sim, j), j.x, j.y);
     job = `${jobLabel(sim, j)} at ${at.x},${at.y} (${pct}%)`;
   }
   const hp = sim.world.get(id, HealthC);

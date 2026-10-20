@@ -7,6 +7,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { planWalk } from './route';
 import { airlockUsable, freeSuits, isThin, suitDef, suitTile } from './suit';
+import { gridIdOf } from '../regions';
 
 /** An airlock to fit or stow a suit at, with the walk to its suit tile. */
 export interface SuitSource {
@@ -20,7 +21,7 @@ export function isErrand(job: Job): boolean {
 }
 
 function onGrid(sim: Sim, airlock: number, gridId: number): boolean {
-  return sim.world.get(airlock, ModuleC)?.gridId === gridId;
+  return gridIdOf(sim, sim.world.get(airlock, ModuleC)) === gridId;
 }
 
 /**
@@ -62,7 +63,7 @@ export function startErrand(sim: Sim, crew: number, kind: 'suitUp' | 'suitOff', 
   const def = suitDef(sim);
   const id = sim.world.createEntity();
   sim.world.add(id, JobC, {
-    category: 'operating', kind, gridId, x: at.x, y: at.y, struct: 0, progress: 0, reservedBy: crew,
+    category: 'operating', kind, x: at.x, y: at.y, struct: 0, progress: 0, reservedBy: crew,
     work: Math.max(1, Math.round((kind === 'suitUp' ? def.donSec : def.doffSec) * TICK_HZ)),
     target: src.airlock, errandFor: crew, ...(resume ? { resume } : {}),
   });

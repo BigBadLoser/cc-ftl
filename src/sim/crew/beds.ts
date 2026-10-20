@@ -2,6 +2,7 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { BedClaimC } from './components';
 import { findPath, type Tile } from './pathfind';
+import { gridIdOf } from '../regions';
 
 /** A reachable free bed and the steps to it. */
 export interface BedPlan {
@@ -17,7 +18,7 @@ export function findFreeBed(sim: Sim, gridId: number, from: Tile, adjacent = fal
   let best: BedPlan | null = null;
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId !== gridId || m.reservedBy !== 0 || m.hp <= 0) continue;
+    if (!m || gridIdOf(sim, m) !== gridId || m.reservedBy !== 0 || m.hp <= 0) continue;
     if (!sim.content.modules[m.def]?.bed) continue;
     const steps = findPath(sim, gridId, from, { x: m.x, y: m.y, adjacent });
     if (steps && (!best || steps.length < best.steps.length)) best = { bed: id, steps };

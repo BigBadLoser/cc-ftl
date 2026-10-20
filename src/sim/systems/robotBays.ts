@@ -6,6 +6,7 @@ import { buyRepair, cradleOf, homeBay, repairItem } from '../robots/bay';
 import { speciesOf } from '../robots/core';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
+import { gridIdOf } from '../regions';
 
 /**
  * Robot bays. A robot 'charging' in the cradle of its home bay gets `chargePerSec` battery and `repairPerSec` hp per
@@ -21,7 +22,7 @@ export function robotBaySystem(sim: Sim): void {
     const bayId = homeBay(sim, id);
     const bay = sim.world.get(bayId, ModuleC);
     const def = bay && sim.content.modules[bay.def]?.robotBay;
-    if (!bay || !def || bay.hp <= 0 || bay.gridId !== pos.gridId || cradleOf(sim, bayId).x !== pos.x || cradleOf(sim, bayId).y !== pos.y || !isSettled(pos)) {
+    if (!bay || !def || bay.hp <= 0 || gridIdOf(sim, bay) !== pos.gridId || cradleOf(sim, bayId).x !== pos.x || cradleOf(sim, bayId).y !== pos.y || !isSettled(pos)) {
       crew.activity = 'idle';
       continue;
     }
@@ -33,11 +34,11 @@ export function robotBaySystem(sim: Sim): void {
     if (!st) sim.world.add(bayId, RobotBayC, (st = { credit: 0 }));
     let whole = !hp || hp.hp >= hp.max || !speciesOf(sim, id)?.mechanical;
     if (!whole && hp) {
-      if (st.credit <= 0) st.credit += buyRepair(sim, id, bay.gridId);
+      if (st.credit <= 0) st.credit += buyRepair(sim, id, gridIdOf(sim, bay));
       const amount = Math.min(st.credit, hp.max - hp.hp, def.repairPerSec / TICK_HZ);
       hp.hp += amount;
       st.credit -= amount;
-      whole = hp.hp >= hp.max || (st.credit <= 0 && repairItem(sim, id, bay.gridId) === null);
+      whole = hp.hp >= hp.max || (st.credit <= 0 && repairItem(sim, id, gridIdOf(sim, bay)) === null);
     }
     if (needs.charge >= 100 && whole) {
       crew.activity = 'idle';
