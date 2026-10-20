@@ -166,7 +166,7 @@ def container(fill, rot):
 
 def tank(fill, rot):
     k = K(f"storage_tank_{fill}_{rot}", (2, 2), rot)
-    F, R, z0, H = 1.7, 0.7, 0.18, 1.28
+    F, R, z0, H = 1.7, 0.74, 0.18, 1.28                                               # R: tangent to the side rails
     TOP = z0 + H + 0.2                                                                # the dome's top
     for su in (-1, 1):                                                                # skid: base rails, corner posts
         k.box(su * (F / 2 - 0.05), 0, 0.0, 0.1, F, 0.1, "gmD", top="gm")
@@ -178,6 +178,16 @@ def tank(fill, rot):
         k.box(0, su * (F / 2 - 0.06), TOP - 0.04, F - 0.1, 0.1, 0.1, "gmD", top="gm")
     for j in range(5):                                                                # hazard stripes on the front rail
         k.box(-0.5 + j * 0.25, F / 2 - 0.0, 0.02, 0.1, 0.02, 0.06, "hazY" if j % 2 == 0 else "hazK")
+    pc = F / 2 - 0.06                                                                 # corner post centre
+    for su in (-1, 1):                                                                # mounts: each corner post braced
+        for sv in (-1, 1):                                                            # to the shell, low and high
+            a = math.atan2(sv, su)
+            d0 = R - 0.02
+            d1 = math.hypot(pc, pc) - 0.05
+            cm = (d0 + d1) / 2
+            for z in (z0 + 0.12, z0 + H - 0.2):
+                k.box(math.cos(a) * cm, math.sin(a) * cm, z, d1 - d0, 0.08, 0.1, "gmD", top="gm", rz=a)
+            k.box(math.cos(a) * (R + 0.01), math.sin(a) * (R + 0.01), z0 + 0.08, 0.06, 0.2, H - 0.12, "steel", rz=a)
     k.box(0, 0, 0.1, F - 0.2, 0.12, 0.08, "gmD")                                      # saddle under the vessel
     k.box(0, 0, 0.1, 0.12, F - 0.2, 0.08, "gmD")
     k.cyl(0, 0, z0 - 0.04, R * 0.85, 0.06, "gmD", sides=16)                           # foot ring
