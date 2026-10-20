@@ -13,8 +13,8 @@ FOLD = {"index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand", "thu
 TORSO = ("hips", "spine", "spine_02", "spine_03", "clavicle.L", "clavicle.R")
 HEAD = ("neck_01", "head")
 LIMBS = ("arm", "forearm", "hand", "leg", "shin", "foot")
-UPPER_K = (1.5, 1.12)                 # upper arm thickness against the traced arm, shoulder to elbow
-FORE_K = (1.08, 0.95)                 # forearm, elbow to wrist
+UPPER_K = (1.12, 1.45, 1.12)          # upper arm thickness against the traced arm: shoulder, bicep, elbow
+FORE_K = (1.08, 1.02, 0.95)           # forearm: elbow, a third down, wrist
 
 
 def fold(name):
@@ -136,7 +136,7 @@ def tidy_torso(rows, h, arm_r, leg_out):
         back[k] = b0 + (back[kb] - b0) * (zs[k] - zs[0]) / (zs[kb] - zs[0])
     hx = hx * (1 - 0.1 * np.exp(-((zs - zs[kw]) / 0.07) ** 2))
     under = ax - arm_r - 0.025                                               # clear of the hanging arm
-    top, sh, s0 = 0.115, ax + 0.01, sz                                      # neck base; shoulder (over the joint)
+    top, sh, s0 = 0.115, ax - 0.005, sz                                    # neck base; shoulder (over the joint)
     ease = lambda t: t * t * (3 - 2 * t)  # noqa: E731
     for k, z in enumerate(zs):
         if z < hz + 0.08:                                                    # pelvis: out to the thighs
@@ -151,12 +151,19 @@ def tidy_torso(rows, h, arm_r, leg_out):
             for z, f, b, x, r in zip(zs, front, back, hx, rows)]
 
 
-def bulk(secs, k0, k1):
-    """Arm thickness against the traced arm, k0 at the top of the part to k1 at the bottom: a beefy shoulder and bicep
-    tapering to the elbow."""
+def bulk(secs, ks):
+    """Arm thickness against the traced arm along the part: ks = (top, peak, bottom), the peak a third of the way down,
+    eased between (for the upper arm: in towards the shoulder, full at the bicep, tapering to the elbow)."""
     n = max(1, len(secs) - 1)
-    return [(c, e1, e2, r1 * (k0 + (k1 - k0) * i / n), r2 * (k0 + (k1 - k0) * i / n))
-            for i, (c, e1, e2, r1, r2) in enumerate(secs)]
+    k0, kp, k1 = ks
+
+    def k(t):
+        if t < 1 / 3:
+            u = t * 3
+            return k0 + (kp - k0) * (1 - (1 - u) ** 2)                      # rounds out from the shoulder
+        u = (t - 1 / 3) * 1.5
+        return kp + (k1 - kp) * u * u * (3 - 2 * u)
+    return [(c, e1, e2, r1 * k(i / n), r2 * k(i / n)) for i, (c, e1, e2, r1, r2) in enumerate(secs)]
 
 
 def to_joint(secs, head):
@@ -191,9 +198,9 @@ def measure(arm, body):
     out = {"limb": {}}
     for s in "LR":
         out["limb"][f"arm.{s}"] = bulk(limb(by[f"arm.{s}"], h[f"arm.{s}"], t[f"arm.{s}"], round_=True, lo_pad=-0.07,
-                                            axis=True), *UPPER_K)          # starts low: its dome meets the shoulder
+                                            axis=True), UPPER_K)          # starts low: its dome meets the shoulder
         out["limb"][f"forearm.{s}"] = bulk(limb(by[f"forearm.{s}"], h[f"forearm.{s}"], t[f"forearm.{s}"], round_=True,
-                                                axis=True), *FORE_K)
+                                                axis=True), FORE_K)
         out["limb"][f"hand.{s}"] = wrist(limb(by[f"hand.{s}"], h[f"hand.{s}"], t[f"hand.{s}"], step=0.03), h[f"hand.{s}"])
         out["limb"][f"leg.{s}"] = to_joint(limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"]), h[f"leg.{s}"])
         out["limb"][f"shin.{s}"] = limb(by[f"shin.{s}"], h[f"shin.{s}"], t[f"shin.{s}"])
