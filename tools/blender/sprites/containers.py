@@ -13,20 +13,24 @@ Ids (the renderer's chain, render/moduleArt.containerChain; the game mirrors the
   <shell id>.paint                     paint overlay: the painted plating alone (sides, ends, doors, roof) in its lit
       neutral greys, the rest a holdout. The game tints it with the livery's primary colour P, keeping the shading:
       out = P * lum(px) / lum(plate #6f7b87), drawn over the shell
-  container.<W>x<H>.r<N>.<end>.lv      livery mask (key colours mkP / mkS) over the trim bands, recoloured per faction
-      (S the band, P its pinstripe), drawn over the paint; then any .logo.<company> (containers_logo.py)
-  container.<W>x<H>[.paint]            fallback: r0, doors toward the camera
+  <shell id>.lv                        livery mask (key colours mkP / mkS) over the trim bands, recoloured per faction
+      (S the band, P its pinstripe), drawn over the paint
+  <shell id>.logo.<company>            then a company logo (containers_logo.py), picked by hash; intact and damaged
+      shells only (patched: the scrappers' X replaces the brand; destroyed: burnt off)
+  Every overlay is rendered from its shell's own build, so dents, holes and welded plates cover it as on the shell.
+  container.<W>x<H>[.paint|.lv]        fallback: r0, doors toward the camera
   container.clamp.<n|e|s|w>, container.clamp   the clamp at the middle tile of the clamped side, gripping the door end
-Variants v0 (no suffix), v1 (stencil code on the roof, hazard roof edge), v2 (flat panelled sides and roof, wear), picked
-by a hash. States: damaged / destroyed by the damage pass (no sparks, no debris: in space; destroyed has no light),
-patched: welded plates of mismatched stock, a bar welded across the doors."""
+Variants v0 (no suffix), v1 (stencil code on the roof, hazard roof edge), v2 (flat panelled sides and roof, wear),
+picked by a hash. States: damaged / destroyed by the damage pass (no sparks, no debris: in space; destroyed has no
+light), patched: a scrapper box (containers_scrap.py), welded shut, salvage plates, their tags."""
 import random
 
 from . import damage
 from .modkit import K
 
 H, M = 2.0, 0.06                          # height (per size, set by _size); gap to the footprint edge
-PAINT = "_paint"                          # name tag of the painted-surface mesh
+PAINT, BANDS, LOGO = "_paint", ("_bandS", "_bandP"), "_logo"   # name tags: painted plating, the trim, a logo panel
+MODE = {"company": None}                  # set while building a logo overlay: shell() adds that company's panels
 HEIGHT = {"2x4": 2.0, "3x6": 3.0}
 ZC = 0.34                                 # the truss's mid height (struct: chords 0.1 .. 0.58): containers hang
 Z_OFF = ZC - H / 2                        # centred on it, half below the beam line in open space
@@ -36,6 +40,7 @@ BAND = ("sole", "steelD")                 # the neutral default trim under the l
 SIZES = {"2x4": (2, 4), "3x6": (3, 6)}
 ENDS = {0: ("s", "n"), 1: ("e", "w")}     # per rotation: doors toward the camera, doors away
 BAND_Z = (0.42 * H, 0.62 * H)
+LOGOS = True                              # families.py turns the logo overlays off with CONT_LOGOS=0
 
 
 def _size(size):
@@ -64,7 +69,7 @@ def _frame(k, u0, v0):
                 k.box(su * (u0 - 0.05), sv * (v0 - 0.05), z, 0.12, 0.12, 0.11, CAST, top=FRD)
 
 
-def _side(k, su, u0, v0, panelled, band=True):
+def _side(k, su, u0, v0, panelled):
     """A long side at u = su * u0: corrugation (or flat panels), the livery band across its middle. k is the painted
     mesh here (the whole side takes the livery's primary colour), the band the trim."""
     k.box(su * (u0 - 0.04), 0, 0.09, 0.05, 2 * v0 - 0.18, H - 0.18, SH, top=SH)
@@ -79,15 +84,13 @@ def _side(k, su, u0, v0, panelled, band=True):
             v = -span / 2 + (i + 0.5) * span / n
             for z0, z1 in ((0.1, BAND_Z[0]), (BAND_Z[1], H - 0.1)):
                 k.box(su * (u0 - 0.015), v, z0, 0.03, 0.06, z1 - z0, SHL, top=SHL)
-    if band:
-        _band(k, su, u0, v0, BAND)
 
 
-def _band(k, su, u0, v0, cols):
-    """The trim band (cols[0]: the livery's secondary colour) with a pinstripe in the primary (cols[1])."""
-    b, pin = cols
-    k.box(su * (u0 - 0.004), 0, BAND_Z[0], 0.012, 2 * v0 - 0.5, BAND_Z[1] - BAND_Z[0], b, top=b)
-    k.box(su * (u0 + 0.002), 0, BAND_Z[0] + 0.03, 0.012, 2 * v0 - 0.5, 0.04, pin, top=pin)
+def _band(kb, kq, su, u0, v0):
+    """The trim band (kb, the livery's secondary colour) with a pinstripe in the primary (kq)."""
+    b, pin = BAND
+    kb.box(su * (u0 - 0.004), 0, BAND_Z[0], 0.012, 2 * v0 - 0.5, BAND_Z[1] - BAND_Z[0], b, top=b)
+    kq.box(su * (u0 + 0.002), 0, BAND_Z[0] + 0.03, 0.012, 2 * v0 - 0.5, 0.04, pin, top=pin)
 
 
 def _end(k, kp, sv, u0, v0, doors, patched=False):
@@ -110,9 +113,9 @@ def _end(k, kp, sv, u0, v0, doors, patched=False):
             k.box(su * (u0 - 0.13), sv * (v0 + 0.0), z, 0.05, 0.03, 0.08, FRD)
     k.box(0, sv * (v0 + 0.01), H / 2 - 0.1, 0.34, 0.05, 0.2, FRD, top=FR)              # clamp socket at mid height
     k.box(0, sv * (v0 + 0.035), H / 2 - 0.03, 0.12, 0.02, 0.06, SHD)                    # (the beam's), its pin
-    if patched:                                                                      # welded shut
-        k.box(0, sv * (v0 + 0.02), 0.3 * H, 2 * u0 - 0.3, 0.03, 0.06, "rust", top="rustD")
-        k.box(0, sv * (v0 + 0.03), 0.3 * H - 0.03, 2 * u0 - 0.26, 0.012, 0.012, CAST)
+    if patched:
+        from .containers_scrap import welded
+        welded(k, sv, u0, v0)
 
 
 def _roof(k, kp, u0, v0, door_sv, light, variant):
@@ -156,29 +159,20 @@ def _wear(k, u0, v0, rnd):
               rnd.uniform(0.06, 0.2) * H / 0.8, "grime")
 
 
-def _patches(k, u0, v0, rnd):
-    stock = ("rust", "gm", "steelD", "navy")
-    for i in range(4):
-        su = rnd.choice((-1, 1))
-        v, z = rnd.uniform(-v0 + 0.35, v0 - 0.35), rnd.uniform(0.15, 0.6) * H / 0.8
-        w, h = rnd.uniform(0.25, 0.5), rnd.uniform(0.25, 0.45)
-        k.box(su * (u0 + 0.008), v, z, 0.02, w + 0.03, h + 0.03, CAST)                   # weld bead
-        k.box(su * (u0 + 0.016), v, z + 0.015, 0.02, w, h, stock[i % 4], top=stock[i % 4])
-    k.box(0, rnd.uniform(-v0 + 0.4, v0 - 0.4), H - 0.02, 0.5, 0.4, 0.025, "rust", top="rustD")   # a roof patch
-
-
 def shell(size, rot, end, variant=0, state=""):
     _size(size)
     W, L = SIZES[size]
     k = K(f"container_{size}_{rot}_{end}_{variant}_{state}", (W, L), rot)
-    kp = K(f"container_{size}_{rot}_{end}_{variant}_{state}{PAINT}", (W, L), rot)     # the painted surfaces
+    name = f"container_{size}_{rot}_{end}_{variant}_{state}"
+    kp = K(name + PAINT, (W, L), rot)                                                # the painted surfaces
+    kb, kq = (K(name + t, (W, L), rot) for t in BANDS)                               # the trim
     u0, v0 = W / 2 - M, L / 2 - M
     ds = _door_sign(rot, end)
-    rnd = random.Random(hash((size, variant)) & 0xffff)
+    rnd = random.Random(f"{size}.{variant}")                                         # stable run to run
     _frame(k, u0, v0)
     for su in (-1, 1):
-        _side(kp, su, u0, v0, panelled=variant == 2, band=False)
-        _band(k, su, u0, v0, BAND)
+        _side(kp, su, u0, v0, panelled=variant == 2)
+        _band(kb, kq, su, u0, v0)
     _end(k, kp, ds, u0, v0, True, patched=state == "patched")
     _end(k, kp, -ds, u0, v0, False)
     light = None if state == "destroyed" else ("orange" if state in ("damaged", "patched") else "green")
@@ -187,9 +181,16 @@ def shell(size, rot, end, variant=0, state=""):
         _stencil(k, -ds, u0, v0, rnd)
     if variant == 2:
         _wear(k, u0, v0, rnd)
+        from .containers_scrap import weathered
+        weathered(k, ds, u0, v0, random.Random(f"{size}.{end}.wear"), amt=0.35, welded=False)
     if state == "patched":
-        _patches(k, u0, v0, random.Random(17 + variant))
-    return _hang(k.build() + kp.build())
+        from .containers_scrap import patches
+        patches(k, ds, u0, v0, random.Random(f"{size}.{end}.{variant}"))                  # each box its own
+    objs = k.build() + kp.build() + kb.build() + kq.build()
+    if MODE["company"]:
+        from .containers_logo import panels
+        objs += panels(size, rot, MODE["company"])
+    return _hang(objs)
 
 
 def painted(build):
@@ -208,18 +209,34 @@ def _hang(objs):
     return objs
 
 
-def livery(size, rot, end):
-    """The mask: the bands in key colours, the shell itself a holdout (it hides the bands' far side, draws nothing)."""
-    objs = shell(size, rot, end)
-    _size(size)
+def keyed(build):
+    """The livery mask of a shell build: the trim alone in flat key colours (mkS band, mkP pinstripe; repainted after
+    any damage pass, its dents kept), everything else a holdout."""
+    from . import core
+    objs = build()
     for o in objs:
-        o.is_holdout = True
-    W, L = SIZES[size]
-    k = K(f"container_lv_{size}_{rot}_{end}", (W, L), rot)
-    k.m.flat = True
-    for su in (-1, 1):
-        _band(k, su, W / 2 - M + 0.003, L / 2 - M, ("mkS", "mkP"))
-    return objs + _hang(k.build())
+        tag = next((t for t in BANDS if t in o.name), None)
+        if tag is None:
+            o.is_holdout = True
+            continue
+        n = len(o.data.polygons)
+        core.set_attr(o.data, "Col", [(0, 0, 0)] * n)
+        core.set_attr(o.data, "Self", [core.lin("mkS" if tag == BANDS[0] else "mkP")] * n)
+        core.set_attr(o.data, "Glow", [(0, 0, 0)] * n)
+    return objs
+
+
+def branded(build, company):
+    """A company logo overlay of a shell build: its panels alone (flat, damaged with the shell), the rest a holdout."""
+    MODE["company"] = company
+    try:
+        objs = build()
+    finally:
+        MODE["company"] = None
+    for o in objs:
+        if LOGO not in o.name:
+            o.is_holdout = True
+    return objs
 
 
 def clamp(side):
@@ -275,7 +292,8 @@ def clamp(side):
 
 
 def _jobs_for(size, rot, end, variant, state):
-    """The shell sprite and its paint overlay (<id>.paint, from the same build, damage included)."""
+    """The shell sprite and its overlays from the same build (damage included): <id>.paint, <id>.lv and, but on
+    patched and destroyed boxes (the scrappers' X replaces the brand; charred), <id>.logo.<company>."""
     sid = f"container.{size}.r{rot}.{end}" + (f".v{variant}" if variant else "")
     sid += f".{state}" if state else ""
     W, L = SIZES[size]
@@ -283,7 +301,12 @@ def _jobs_for(size, rot, end, variant, state):
     build = lambda: shell(size, rot, end, variant, state)  # noqa: E731
     if state in ("damaged", "destroyed"):
         build = damage.wrap(build, state, sid, False, False)
-    return [(sid, fp, "prop", build), (f"{sid}.paint", fp, "block", lambda: painted(build))]
+    out = [(sid, fp, "prop", build), (f"{sid}.paint", fp, "block", lambda: painted(build)),
+           (f"{sid}.lv", fp, "block", lambda: keyed(build))]
+    if LOGOS and state in ("", "damaged"):
+        from .containers_logo import COMPANIES
+        out += [(f"{sid}.logo.{co}", fp, "block", lambda c=co: branded(build, c)) for co in COMPANIES]
+    return out
 
 
 def jobs(sizes=tuple(SIZES), rots=(0, 1), states=("", "damaged", "destroyed", "patched"), variants=(0, 1, 2)):
@@ -291,17 +314,15 @@ def jobs(sizes=tuple(SIZES), rots=(0, 1), states=("", "damaged", "destroyed", "p
     for size in sizes:
         W, L = SIZES[size]
         for rot in rots:
-            fp = (W, L) if rot % 2 == 0 else (L, W)
             for end in ENDS[rot]:
                 for v in variants:
                     for st in states:
                         if st in ("destroyed", "patched") and v:
                             continue                                                 # those don't vary
                         out += _jobs_for(size, rot, end, v, st)
-                out.append((f"container.{size}.r{rot}.{end}.lv", fp, "block",
-                            lambda s=size, r=rot, e=end: livery(s, r, e)))
         out.append((f"container.{size}", (W, L), "prop", lambda s=size: shell(s, 0, "s")))
         out.append((f"container.{size}.paint", (W, L), "block", lambda s=size: painted(lambda: shell(s, 0, "s"))))
+        out.append((f"container.{size}.lv", (W, L), "block", lambda s=size: keyed(lambda: shell(s, 0, "s"))))
     for side in "nesw":
         out.append((f"container.clamp.{side}", (1, 1), "prop", lambda s=side: clamp(s)))
     out.append(("container.clamp", (1, 1), "prop", lambda: clamp("n")))

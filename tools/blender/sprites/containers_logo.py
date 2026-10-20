@@ -1,7 +1,8 @@
 """Shipping company logos for the cargo containers (family `containers`): painted panels on both long sides above the
 livery band, as overlay sprites in fixed colours (a company's colours are its own, over any faction's livery):
 
-  container.<W>x<H>.r<N>.<end>.logo.<company>   the shell is a holdout (it hides the far side's panel, draws nothing)
+  <shell id>.logo.<company>   built with the shell (containers.branded), which is a holdout: it hides the far side's
+                               panel and draws nothing; damage dents, scorches and holes the panel with it
 
 The game mirrors container sprites for the sides it does not render, so every logo is symmetric about its middle and
 reads the same mirrored. Each is an emblem with marks either side out to the panel's ends:
@@ -52,7 +53,7 @@ def halvard(x, y, X, Y, R, gs):
 def meridian(x, y, X, Y, R, gs):
     ring = abs((X / 1.25) ** 2 + (Y / 0.34) ** 2 - 1) < 0.28
     disc = math.hypot(X, Y) <= 0.62
-    if ring and (Y < 0 or not disc):                                              # the ring in front below, behind above
+    if ring and (Y < 0 or not disc):                                              # the ring: in front below
         return "hazY"
     if disc:
         return "iceB" if X * 0.4 + Y > 0.25 else "medWhite"                         # a highlight cap
@@ -123,13 +124,10 @@ def _cell(company, nu, nv):
     return fn
 
 
-def logo(size, rot, end, company):
-    objs = C.shell(size, rot, end)
-    C._size(size)
-    for o in objs:
-        o.is_holdout = True
+def panels(size, rot, company):
+    """The company's panels on both long sides, for containers.shell (which sizes, hangs and damages them)."""
     W, L = C.SIZES[size]
-    k = K(f"container_logo_{size}_{rot}_{end}_{company}", (W, L), rot)
+    k = K(f"container_{size}_{rot}{C.LOGO}_{company}", (W, L), rot)
     k.m.flat = True
     u0 = W / 2 - C.M
     hp = round(min(0.8, 0.82 * (C.H - 0.12 - C.BAND_Z[1])) * GN) / GN               # most of the face above the band
@@ -140,17 +138,7 @@ def logo(size, rot, end, company):
         uf = su * (u0 + 0.008)
         a, b = k.p(uf, -su * lp / 2), k.p(uf, su * lp / 2)                           # reads left to right outside
         k.m.pattern((a[0], a[1], z0), (b[0] - a[0], b[1] - a[1], 0), (0, 0, hp), nu, nv, _cell(company, nu, nv))
-    return objs + C._hang(k.build())
+    return k.build()
 
 
-def jobs(sizes, rots):
-    out = []
-    for size in sizes:
-        W, L = C.SIZES[size]
-        for rot in rots:
-            fp = (W, L) if rot % 2 == 0 else (L, W)
-            for end in C.ENDS[rot]:
-                for co in LOGOS:
-                    out.append((f"container.{size}.r{rot}.{end}.logo.{co}", fp, "block",
-                                lambda s=size, r=rot, e=end, c=co: logo(s, r, e, c)))
-    return out
+COMPANIES = tuple(LOGOS)

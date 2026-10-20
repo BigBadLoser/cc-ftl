@@ -59,13 +59,13 @@ def jobs(name):
         import os
         from . import containers
         sel = lambda var, d: tuple(os.environ[var].split(",")) if os.environ.get(var) else d  # noqa: E731
-        from . import containers_logo
+        containers.LOGOS = os.environ.get("CONT_LOGOS", "1") == "1"
         sizes, rots = sel("CONT_SIZES", tuple(containers.SIZES)), tuple(int(r) for r in sel("CONT_ROTS", ("0", "1")))
         jobs = containers.jobs(sizes=sizes, rots=rots,
                                states=tuple("" if s == "intact" else s for s in
                                             sel("CONT_STATES", ("intact", "damaged", "destroyed", "patched"))),
                                variants=tuple(int(v) for v in sel("CONT_VARIANTS", ("0", "1", "2"))))
-        return jobs + (containers_logo.jobs(sizes, rots) if os.environ.get("CONT_LOGOS", "1") == "1" else []), True
+        return jobs, True
     if name == "structure":
         from . import structure
         return structure.jobs(), True
