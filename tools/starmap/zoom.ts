@@ -63,14 +63,20 @@ export function regionView(seed: number, sectorId = 's.0.0', span = 7000): strin
   };
   const out = frame(seed);
   const links = sectorLinks(w);
-  // Regions as fluid areas over their sectors and the lanes inside them.
+  // Regions as fluid areas hugging their sectors' actual nodes, routes and the clear lanes between them (rift lanes are
+  // left out, so an outline never stretches across the void).
   const byRegion = new Map<string, SectorData[]>();
   for (const s of w.sectors.values()) if (s.region && on(s)) byRegion.set(s.region, [...(byRegion.get(s.region) ?? []), s]);
-  for (const [id, list] of byRegion) {
-    const inner = links.filter((l) => l.a.region === id && l.b.region === id).map((l): [P, P] => [[l.a.x, l.a.y], [l.b.x, l.b.y]]);
+  const xy = (id: string): P => [w.nodes.get(id)!.x, w.nodes.get(id)!.y];
+  for (const list of byRegion.values()) {
+    const members = new Set(list.map((s) => s.id));
+    const pts = list.flatMap((s) => s.nodes.filter((n) => w.nodes.has(n)).map(xy));
+    const inner = [...w.edges.values()]
+      .filter((e) => !e.rift && members.has(w.nodes.get(e.a)?.sector ?? '') && members.has(w.nodes.get(e.b)?.sector ?? ''))
+      .map((e): [P, P] => [xy(e.a), xy(e.b)]);
     const col = colOf(list[0]!.faction);
-    const d = fluidBorder(list.map((s): P => [s.x, s.y]), inner, 260, 40, map);
-    out.push(`<path d="${d}" fill="${col}" fill-opacity="0.07" stroke="${col}" stroke-opacity="0.45" stroke-width="1.5" fill-rule="evenodd"/>`);
+    const d = fluidBorder(pts, inner, 80, 22, map);
+    out.push(`<path d="${d}" fill="${col}" fill-opacity="0.08" stroke="${col}" stroke-opacity="0.55" stroke-width="1.5" fill-rule="evenodd"/>`);
   }
   // Lanes between sectors: gates bright and thick, rifts dotted.
   for (const { a, b, e } of links) {
@@ -123,12 +129,6 @@ export function galaxyView(seed: number, sectorId = 's.0.0', span = 26000): stri
     r.y = r.list.reduce((t, s) => t + s.y, 0) / r.list.length;
   }
   const out = frame(seed);
-  // Wild sectors as faint dust.
-  for (const s of w.sectors.values()) {
-    if (s.region) continue;
-    const [x, y] = map([s.x, s.y]);
-    out.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.6" fill="#64748b" opacity="0.6"/>`);
-  }
   const gates = new Map<string, { a: string; b: string; n: number; rift: boolean }>();
   for (const { a, b, e } of sectorLinks(w)) {
     if (!e.gate || !a.region || !b.region) continue;
@@ -158,7 +158,7 @@ export function galaxyView(seed: number, sectorId = 's.0.0', span = 26000): stri
     out.push(`<text x="${x.toFixed(1)}" y="${(y + rad + 14).toFixed(1)}" text-anchor="middle" ${font} font-size="11" letter-spacing="2" fill="${col}" stroke="#05070d" stroke-width="3" paint-order="stroke">${(s0.regionName ?? '').toUpperCase()}</text>`);
     out.push(`<text x="${x.toFixed(1)}" y="${(y + rad + 27).toFixed(1)}" text-anchor="middle" ${font} font-size="9" fill="#94a3b8" stroke="#05070d" stroke-width="3" paint-order="stroke">${REGION_TYPE[s0.regionType ?? ''] ?? ''}</text>`);
   }
-  out.push(`<text x="24" y="${H - 22}" ${font} font-size="13" letter-spacing="2" fill="#94a3b8">ZOOM 3/3 (regions)  ·  lines: gates between regions (thicker = more)  ·  dots: wild sectors</text>`);
+  out.push(`<text x="24" y="${H - 22}" ${font} font-size="13" letter-spacing="2" fill="#94a3b8">ZOOM 3/3 (regions)  ·  lines: gates between regions (thicker = more)</text>`);
   out.push('</svg>');
   return out.join('\n');
 }

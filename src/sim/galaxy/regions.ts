@@ -204,9 +204,11 @@ export class RegionField {
 
   /**
    * Wild space: a sector its region only reaches across the void (more than WILD_VOID of it on the way from the seed),
-   * or with fewer than WILD_MATES other sectors of that region within WILD_GAP. It belongs to no region and no faction: frontier.
+   * or with fewer than WILD_MATES other sectors of that region within WILD_GAP. Such a site gets no region, and the
+   * generator drops it (no sector outside a region). The start sector is never wild.
    */
   private wild(r: Region, x: number, y: number): boolean {
+    if (x === 0 && y === 0) return false;
     if (this.terrain.voidRun(r.x, r.y, x, y, LANE_MIN_DENSITY, 100).total > WILD_VOID) return true;
     const mates = this.sites.sitesNear(x, y, WILD_GAP).filter((o) => (o.x !== x || o.y !== y) && this.claim(o.x, o.y) === r);
     return mates.length < WILD_MATES;
