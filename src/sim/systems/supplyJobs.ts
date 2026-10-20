@@ -4,7 +4,7 @@ import { makeHaul, warnDue } from '../items/plan';
 import { nearestSource, refKey, reservations } from '../items/stock';
 import type { Sim } from '../sim';
 import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
-import { gridIdOf, shipIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 
 const MAX_HAULS_PER_ITEM = 8;
 
@@ -23,7 +23,7 @@ export function supplyJobsSystem(sim: Sim): void {
     for (const need of missingMaterials(job)) {
       let lack = need.count - (res.incoming.get(refKey('job', jobId, need.item)) ?? 0);
       for (let i = 0; i < MAX_HAULS_PER_ITEM && lack > 0; i++) {
-        const src = nearestSource(sim, gridIdOf(sim, job), need.item, job, res);
+        const src = nearestSource(sim, shipIdOf(sim, job), need.item, job, res);
         if (!src) {
           if (warnDue(sim, job)) {
             sim.events.emit({ type: 'job.missingMaterials', job: jobId, ship: shipIdOf(sim, job), x: job.x, y: job.y, item: need.item });
@@ -32,7 +32,7 @@ export function supplyJobsSystem(sim: Sim): void {
         }
         const n = Math.min(lack, src.avail, DEFAULT_CARRY_CAPACITY);
         const category = job.kind === 'craft' ? 'crafting' : 'construction';
-        makeHaul(sim, res, category, gridIdOf(sim, job), src, { kind: 'job', id: jobId }, need.item, n);
+        makeHaul(sim, res, category, shipIdOf(sim, job), src, { kind: 'job', id: jobId }, need.item, n);
         lack -= n;
       }
     }

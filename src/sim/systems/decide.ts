@@ -19,7 +19,7 @@ import { goToBay, wantsBay } from '../robots/bay';
 import { canTakeRobotJob, heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW } from '../tuning';
-import { gridIdOf } from '../regions';
+import { shipIdOf, shipGrid } from '../regions';
 
 /** Below this rest a non-drafted crew member drops everything and sleeps in place. */
 const SLEEP_BELOW = 20;
@@ -84,12 +84,12 @@ export function decideSystem(sim: Sim): void {
  */
 function routeToJob(sim: Sim, id: number, pos: Position, jobId: number, job: Job): boolean {
   const path = sim.world.get(id, PathC) as Path;
-  const plan = planWalk(sim, id, gridIdOf(sim, pos), origin(pos), jobGoal(job));
+  const plan = planWalk(sim, id, shipIdOf(sim, pos), origin(pos), jobGoal(job));
   if (!plan) return false;
   if (plan.thin && !isErrand(job)) {
     const src = findSuitSource(sim, id, pos);
     if (!src) return false;
-    startErrand(sim, id, 'suitUp', src, gridIdOf(sim, pos), jobId);
+    startErrand(sim, id, 'suitUp', src, shipIdOf(sim, pos), jobId);
     return true;
   }
   path.steps = plan.steps;
@@ -102,7 +102,7 @@ function stowSuit(sim: Sim, id: number, pos: Position): boolean {
   if (!isSettled(pos) || (sim.tick + id) % 20 !== 0) return true; // look for an airlock every second or so; meanwhile stand still
   const src = findSuitStow(sim, id, pos);
   if (!src) return false;
-  startErrand(sim, id, 'suitOff', src, gridIdOf(sim, pos));
+  startErrand(sim, id, 'suitOff', src, shipIdOf(sim, pos));
   return true;
 }
 
@@ -128,14 +128,14 @@ function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
   if (claim && bed) {
     if (isSettled(pos) && pos.x === bed.x && pos.y === bed.y) return fallAsleep(sim, id, crew);
     if (path.steps.length > 0 || !isSettled(pos)) return; // still walking to the bed
-    const steps = findPath(sim, gridIdOf(sim, pos), origin(pos), { x: bed.x, y: bed.y });
+    const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: bed.x, y: bed.y });
     if (steps && steps.length > 0) {
       path.steps = steps;
       return;
     }
     releaseBedClaim(sim, id); // unreachable: sleep on the floor instead
   } else {
-    const plan = findFreeBed(sim, gridIdOf(sim, pos), origin(pos));
+    const plan = findFreeBed(sim, shipIdOf(sim, pos), origin(pos));
     if (plan) {
       (sim.world.get(plan.bed, ModuleC) as { reservedBy: number }).reservedBy = id;
       sim.world.add(id, BedClaimC, { bed: plan.bed });
@@ -163,10 +163,10 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
     let best: { id: number; steps: Tile[]; score: number; thin: boolean } | null = null;
     for (const jobId of jobs) {
       const job = sim.world.get(jobId, JobC);
-      if (!job || gridIdOf(sim, job) !== gridIdOf(sim, pos) || !cats.includes(job.category) || job.target === crewId || needsMaterials(job) || isErrand(job)) continue;
+      if (!job || shipIdOf(sim, job) !== shipIdOf(sim, pos) || !cats.includes(job.category) || job.target === crewId || needsMaterials(job) || isErrand(job)) continue;
       if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL) continue;
       if (!canTakeRobotJob(sim, crewId, job)) continue;
-      const plan = planWalk(sim, crewId, gridIdOf(sim, pos), origin(pos), jobGoal(job));
+      const plan = planWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job));
       // Prefer jobs that need no EVA; a thin-air job is only on offer when a suit can be had for it.
       if (!plan || (plan.thin && !(source ??= findSuitSource(sim, crewId, pos) ?? false))) continue;
       const score = plan.steps.length - operateAffinity(sim, crewId, job) + (plan.thin ? EVA_JOB_PENALTY : 0);
@@ -176,7 +176,7 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
       (sim.world.get(best.id, JobC) as { reservedBy: number }).reservedBy = crewId;
       sim.world.add(crewId, AssignmentC, { jobId: best.id });
       (sim.world.get(crewId, PathC) as { steps: Tile[] }).steps = best.steps;
-      if (best.thin && source) startErrand(sim, crewId, 'suitUp', source, gridIdOf(sim, pos), best.id);
+      if (best.thin && source) startErrand(sim, crewId, 'suitUp', source, shipIdOf(sim, pos), best.id);
       return true;
     }
   }
@@ -189,7 +189,7 @@ function wander(sim: Sim, id: number, pos: Position, crew: Crew): void {
   if (!path || path.steps.length > 0 || !isSettled(pos)) return;
   if (crew.activity !== 'idle') crew.activity = 'idle';
   if (!sim.rng.chance(WANDER_CHANCE)) return;
-  const grid = sim.grids.get(gridIdOf(sim, pos));
+  const grid = shipGrid(sim, shipIdOf(sim, pos));
   if (!grid?.has('room')) return;
   const room = grid.get('room', pos.x, pos.y);
   if (room === 0) return;
@@ -197,7 +197,7 @@ function wander(sim: Sim, id: number, pos: Position, crew: Crew): void {
   const ty = pos.y + sim.rng.int(-WANDER_RADIUS, WANDER_RADIUS);
   if ((tx === pos.x && ty === pos.y) || !grid.inBounds(tx, ty)) return;
   if (!isTileWalkable(sim, grid, tx, ty) || grid.get('room', tx, ty) !== room) return;
-  const steps = findPath(sim, gridIdOf(sim, pos), { x: pos.x, y: pos.y }, { x: tx, y: ty });
+  const steps = findPath(sim, shipIdOf(sim, pos), { x: pos.x, y: pos.y }, { x: tx, y: ty });
   if (steps && steps.length <= 2 * WANDER_RADIUS) path.steps = steps;
   else clearPath(sim, id);
 }

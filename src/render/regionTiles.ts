@@ -1,5 +1,5 @@
 import { CHUNK_SIZE, type FieldArray, type Grid } from '../sim/grid';
-import { GridWindow } from '../sim/gridWindow';
+import { ShipGrid } from '../sim/shipGrid';
 import { Struct } from '../sim/structure';
 
 /**
@@ -76,7 +76,7 @@ export const inChunk = (sx: number, sy: number): number => (sy - chunkOf(sy) * C
 export function regionTiles(grid: Grid): RegionTiles {
   let t = cache.get(grid);
   if (!t) {
-    t = grid instanceof GridWindow ? createRegionTiles(grid.sector, grid.ox, grid.oy, grid.width, grid.height) : createRegionTiles(denseChunks(grid), 0, 0, grid.width, grid.height);
+    t = grid instanceof ShipGrid ? createRegionTiles(grid.sector, grid.x0, grid.y0, grid.width, grid.height) : createRegionTiles(denseChunks(grid), 0, 0, grid.width, grid.height);
     cache.set(grid, t);
   }
   return t;

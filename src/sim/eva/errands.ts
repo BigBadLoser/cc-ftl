@@ -2,12 +2,12 @@ import { AssignmentC, JobC, PathC, type Job, type Position } from '../crew/compo
 import { origin } from '../crew/helpers';
 import type { Tile } from '../crew/pathfind';
 import { ModuleC } from '../modules/components';
-import { AirlockC } from '../portals/components';
+import { AirlockC } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { planWalk } from './route';
 import { airlockUsable, freeSuits, isThin, suitDef, suitTile } from './suit';
-import { gridIdOf } from '../regions';
+import { shipIdOf, shipGrid } from '../regions';
 
 /** An airlock to fit or stow a suit at, with the walk to its suit tile. */
 export interface SuitSource {
@@ -20,8 +20,8 @@ export function isErrand(job: Job): boolean {
   return job.kind === 'suitUp' || job.kind === 'suitOff';
 }
 
-function onGrid(sim: Sim, airlock: number, gridId: number): boolean {
-  return gridIdOf(sim, sim.world.get(airlock, ModuleC)) === gridId;
+function onGrid(sim: Sim, airlock: number, shipId: number): boolean {
+  return shipIdOf(sim, sim.world.get(airlock, ModuleC)) === shipId;
 }
 
 /**
@@ -32,8 +32,8 @@ export function findSuitSource(sim: Sim, crew: number, pos: Position): SuitSourc
   let best: SuitSource | null = null;
   for (const id of sim.world.query(AirlockC)) {
     const at = suitTile(sim, id);
-    if (!at || !airlockUsable(sim, id) || freeSuits(sim, id) <= 0 || !onGrid(sim, id, gridIdOf(sim, pos))) continue;
-    const plan = planWalk(sim, crew, gridIdOf(sim, pos), origin(pos), at);
+    if (!at || !airlockUsable(sim, id) || freeSuits(sim, id) <= 0 || !onGrid(sim, id, shipIdOf(sim, pos))) continue;
+    const plan = planWalk(sim, crew, shipIdOf(sim, pos), origin(pos), at);
     if (!plan || plan.thin) continue;
     if (!best || plan.steps.length < best.steps.length) best = { airlock: id, steps: plan.steps };
   }
@@ -42,12 +42,12 @@ export function findSuitSource(sim: Sim, crew: number, pos: Position): SuitSourc
 
 /** The nearest airlock on the grid whose suit tile has breathable air, to take the suit off at. */
 export function findSuitStow(sim: Sim, crew: number, pos: Position): SuitSource | null {
-  const grid = sim.grids.get(gridIdOf(sim, pos));
+  const grid = shipGrid(sim, shipIdOf(sim, pos));
   let best: SuitSource | null = null;
   for (const id of sim.world.query(AirlockC)) {
     const at = suitTile(sim, id);
-    if (!grid || !at || !airlockUsable(sim, id) || !onGrid(sim, id, gridIdOf(sim, pos)) || isThin(grid, at.x, at.y)) continue;
-    const plan = planWalk(sim, crew, gridIdOf(sim, pos), origin(pos), at);
+    if (!grid || !at || !airlockUsable(sim, id) || !onGrid(sim, id, shipIdOf(sim, pos)) || isThin(grid, at.x, at.y)) continue;
+    const plan = planWalk(sim, crew, shipIdOf(sim, pos), origin(pos), at);
     if (plan && (!best || plan.steps.length < best.steps.length)) best = { airlock: id, steps: plan.steps };
   }
   return best;
@@ -58,7 +58,7 @@ export function findSuitStow(sim: Sim, crew: number, pos: Position): SuitSource 
  * `resume` is a job they already reserved; it stays theirs and is picked up again when the suit is on. Does not touch
  * the crew member's other assignment (callers release it first when they want to).
  */
-export function startErrand(sim: Sim, crew: number, kind: 'suitUp' | 'suitOff', src: SuitSource, gridId: number, resume?: number): number {
+export function startErrand(sim: Sim, crew: number, kind: 'suitUp' | 'suitOff', src: SuitSource, shipId: number, resume?: number): number {
   const at = suitTile(sim, src.airlock) as Tile;
   const def = suitDef(sim);
   const id = sim.world.createEntity();
@@ -68,8 +68,7 @@ export function startErrand(sim: Sim, crew: number, kind: 'suitUp' | 'suitOff', 
     target: src.airlock, errandFor: crew, ...(resume ? { resume } : {}),
   });
   sim.world.add(crew, AssignmentC, { jobId: id });
-  (sim.world.get(crew, PathC) as { steps: Tile[]; then?: unknown }).steps = [...src.steps];
-  delete (sim.world.get(crew, PathC) as { then?: unknown }).then;
+  (sim.world.get(crew, PathC) as { steps: Tile[] }).steps = [...src.steps];
   return id;
 }
 

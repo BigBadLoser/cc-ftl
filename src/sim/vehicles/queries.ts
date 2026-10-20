@@ -1,5 +1,5 @@
 import { BodyC } from '../body';
-import { gridOfShip, shipById } from '../combat/ships';
+import { shipById } from '../combat/ships';
 import type { Sim } from '../sim';
 import { VehicleC, type VehicleState } from './components';
 import { vehicleDefOf } from './lifecycle';
@@ -41,8 +41,8 @@ export function vehicleViews(sim: Sim): VehicleView[] {
     const hovering = shipById(sim, v.hover ?? 0) ? (v.hover as number) : 0;
     out.push({
       id, def: v.def, asset: vehicleDefOf(sim, v)?.asset ?? '', state: v.state, x: b.x, y: b.y, heading: b.heading, alt: b.alt, hp: v.hp,
-      maxHp: vehicleDefOf(sim, v)?.maxHp ?? v.hp, homeShip: v.homeShip, homeGrid: gridOfShip(sim, v.homeShip), bay: v.home, dockedAt: v.dock,
-      destination: v.dest?.type ?? null, pilot: v.pilot, passengers: v.passengers, hovering, hoveringGrid: gridOfShip(sim, hovering),
+      maxHp: vehicleDefOf(sim, v)?.maxHp ?? v.hp, homeShip: v.homeShip, homeGrid: v.homeShip, bay: v.home, dockedAt: v.dock,
+      destination: v.dest?.type ?? null, pilot: v.pilot, passengers: v.passengers, hovering, hoveringGrid: hovering,
     });
   }
   return out;

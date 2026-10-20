@@ -1,7 +1,6 @@
 import type { Faction } from './combat/components';
 import type { JobKind } from './crew/components';
 import type { EventEffect } from './story/defs';
-import type { PortalEnd, PortalKind } from './portals/components';
 
 /** Outbound notifications for UI and audio. */
 export type SimEvent =
@@ -53,10 +52,6 @@ export type SimEvent =
   | { type: 'ship.recovered'; ship: number }
   | { type: 'ship.destroyed'; ship: number }
   | { type: 'ship.fled'; ship: number }
-  /** A crew member finished crossing a portal and now stands at (x, y) on ship `toShip`. */
-  | { type: 'crew.crossed'; crew: number; portal: number; kind: PortalKind; fromShip: number; toShip: number; x: number; y: number }
-  | { type: 'portal.linked'; portal: number; kind: PortalKind; a: PortalEnd; b: PortalEnd }
-  | { type: 'portal.unlinked'; portal: number }
   /** An airlock finished a cycle; `side` is the door now open. */
   | { type: 'airlock.cycled'; ship: number; module: number; side: 'inner' | 'outer' }
   /** A shuttle left its bay (home ship `ship`) at sector position (x, y). */

@@ -9,7 +9,7 @@ import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { VehicleC } from '../vehicles/components';
 import { damageVehicle, vehicleDefOf } from '../vehicles/lifecycle';
-import { gridIdOf } from '../regions';
+import { shipIdOf, shipGrid } from '../regions';
 
 /**
  * Resolves projectiles that arrived. Order: target gone -> miss; evasion roll (ship evasion) -> miss; shield
@@ -29,8 +29,7 @@ export function impactSystem(sim: Sim): void {
     }
     const shipId = p.target.ship;
     const ship = shipById(sim, shipId);
-    const gridId = ship?.gridId ?? 0;
-    const grid = sim.grids.get(gridId);
+    const grid = shipGrid(sim, shipId);
     const combat = sim.world.get(shipId, CombatC);
     const base = { projectile: id, weapon: p.weapon, ship: shipId };
     if (!def || !ship || !grid || !combat || ship.state === 'fled') {
@@ -47,7 +46,7 @@ export function impactSystem(sim: Sim): void {
       continue;
     }
     const mod = sim.world.get(p.target.moduleId, ModuleC);
-    const modDef = mod && gridIdOf(sim, mod) === gridId ? sim.content.modules[mod.def] : undefined;
+    const modDef = mod && shipIdOf(sim, mod) === shipId ? sim.content.modules[mod.def] : undefined;
     const aimed = mod && modDef
       ? footprintTiles(modDef, mod.x, mod.y, mod.rot)
       : [{ x: Math.floor(p.x1), y: Math.floor(p.y1) }];
@@ -59,7 +58,7 @@ export function impactSystem(sim: Sim): void {
       continue;
     }
     sim.events.emit({ type: 'projectile.hit', ...base, x, y, moduleId: grid.get('module', x, y) });
-    applyEffects(sim, { gridId, x, y, projectile: id, weapon: p.weapon }, def.effects);
+    applyEffects(sim, { shipId, x, y, projectile: id, weapon: p.weapon }, def.effects);
   }
 }
 

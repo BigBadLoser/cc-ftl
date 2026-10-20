@@ -12,7 +12,7 @@ export interface PickHost {
   scenes: ReadonlyMap<number, ShipScene>;
   cam: Camera;
   /** Sector top-left of a grid's region (tiles): where its region-local art sits. */
-  origin(gridId: number): Origin;
+  origin(shipId: number): Origin;
 }
 
 /** The sector tile under an art point (sector frame). */
@@ -21,13 +21,13 @@ export function sectorTileAt(a: Pt): Pt {
 }
 
 /** The ship tile (any region) under a canvas-relative CSS px position. Space tiles do not count. */
-export function pickTileAcross(h: PickHost, sx: number, sy: number): { gridId: number; x: number; y: number } | null {
+export function pickTileAcross(h: PickHost, sx: number, sy: number): { shipId: number; x: number; y: number } | null {
   const a = h.cam.toArt(sx, sy);
   // Regions never share tiles (padded frames keep a gap), so at most one owns the sector tile.
   for (const [id, sc] of h.scenes) {
     if (!sc.layers.visible) continue;
     const t = sectorTileAt(a);
-    if (sc.grid.inBounds(t.x, t.y) && sc.grid.get('struct', t.x, t.y) !== Struct.Space) return { gridId: id, x: t.x, y: t.y };
+    if (sc.grid.inBounds(t.x, t.y) && sc.grid.get('struct', t.x, t.y) !== Struct.Space) return { shipId: id, x: t.x, y: t.y };
   }
   return null;
 }
@@ -50,7 +50,7 @@ export function pickCrewAcross(h: PickHost, sx: number, sy: number): number | nu
   return best;
 }
 
-/** Canvas-relative CSS px of a sector tile's centre (for tooling and focus; `gridId` is kept for the callers). */
+/** Canvas-relative CSS px of a sector tile's centre (for tooling and focus; `shipId` is kept for the callers). */
 export function screenOfTile(h: PickHost, ratio: number, _gridId: number, x: number, y: number): { x: number; y: number } {
   const p = iso(x, y);
   return { x: (h.cam.originX + p.x * h.cam.scale) / ratio, y: (h.cam.originY + p.y * h.cam.scale) / ratio };

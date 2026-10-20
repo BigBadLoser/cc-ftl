@@ -15,16 +15,16 @@ export function shieldSystem(sim: Sim): void {
     const ship = sim.world.get(id, ShipC);
     const s = sim.world.get(id, CombatC)?.shield;
     if (!ship || !s) continue;
-    s.max = ship.state === 'wreck' || ship.state === 'fled' || ship.state === 'prize' ? 0 : shieldCapacity(sim, ship.gridId, true);
+    s.max = ship.state === 'wreck' || ship.state === 'fled' || ship.state === 'prize' ? 0 : shieldCapacity(sim, id, true);
     if (s.layers > s.max) s.layers = s.max;
     if (s.layers >= s.max) {
       s.timer = 0;
       continue;
     }
-    const op = mannedConsole(sim, ship.gridId, 'shields');
+    const op = mannedConsole(sim, id, 'shields');
     const rate = 1 + (op ? SHIELD_OPERATED_BONUS + SKILL_STEP * skillOf(sim, op.crew, 'shielding') : 0);
     s.timer += rate / TICK_HZ;
-    if (s.timer >= shieldRechargeSec(sim, ship.gridId)) {
+    if (s.timer >= shieldRechargeSec(sim, id)) {
       s.layers++;
       s.timer = 0;
     }

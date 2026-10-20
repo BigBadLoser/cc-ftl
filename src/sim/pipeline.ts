@@ -1,6 +1,5 @@
 import type { Sim } from './sim';
 import { airlockSystem } from './systems/airlock';
-import { portalSystem } from './systems/portals';
 import { suitsSystem } from './systems/suits';
 import { evaFloatSystem } from './systems/evaFloat';
 import { alertsSystem } from './systems/alerts';
@@ -122,8 +121,6 @@ export const pipeline: readonly System[] = [
   crewCombatSystem,
   // Movement before carry (carried crew copy their carrier's fresh position) and work.
   movementSystem,
-  // Portal crossings after movement: crew who just reached a portal end start or finish a traversal.
-  portalSystem,
   // Suited crew drifting between a hovering shuttle and a hull land or climb aboard.
   evaFloatSystem,
   carrySystem,

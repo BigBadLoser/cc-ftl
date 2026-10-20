@@ -1,4 +1,4 @@
-import { gridIdOf } from '../regions';
+import { shipIdOf, shipGrid } from '../regions';
 import type { Modifier, ModifierSource } from '../stats';
 import {
   DARK_MOVE_MULT, DARK_WORK_MULT, LIGHT_DARK_BELOW, LOW_O2_WORK_MULT, O2_LOW_WORK_BELOW,
@@ -13,7 +13,7 @@ const NONE: readonly Modifier[] = [];
  */
 export const environmentModifiers: ModifierSource = (sim, entity) => {
   const pos = sim.world.get(entity, PositionC);
-  const grid = pos ? sim.grids.get(gridIdOf(sim, pos)) : undefined;
+  const grid = pos ? shipGrid(sim, shipIdOf(sim, pos)) : undefined;
   if (!pos || !grid?.has('light') || !grid.inBounds(pos.x, pos.y)) return NONE;
   const out: Modifier[] = [];
   if (grid.get('light', pos.x, pos.y) < LIGHT_DARK_BELOW) {

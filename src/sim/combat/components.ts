@@ -5,7 +5,7 @@ import { defineComponent } from '../ecs';
 /** The sector all ships share. Saved with the game. */
 export interface Sector {
   /**
-   * Every tile of the sector: ships are stamped into it at their position (`sim.grids` holds windows onto it). Not plain
+   * Every tile of the sector: ships are stamped into it at their position (a ship's bounded view of it is `shipGrid(sim, ship)`, read from its ShipC rectangle). Not plain
    * data: the save writes it with `SectorGrid.serialize`.
    */
   grid: SectorGrid;
@@ -28,7 +28,6 @@ export type ShipState = 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
 
 /** A ship (one per grid): identity, world placement and lifecycle state. */
 export interface Ship {
-  gridId: number;
   name: string;
   faction: Faction;
   state: ShipState;

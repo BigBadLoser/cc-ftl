@@ -1,13 +1,13 @@
-import { shipById, shipOf } from '../combat/ships';
+import { shipById } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { accessTile, hullOutward, hullSide, rotatedSize } from '../modules/footprint';
-import { airlockTiles } from '../portals/airlock';
+import { airlockTiles } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { VehicleBayC, VehicleC } from './components';
-import { gridIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 
 export interface DockPoint {
-  gridId: number;
+  shipId: number;
   /**
    * Sector position of the docking point: the centre of the collar's tile (the tile one past the hull row; the tile past the
    * outer door for a plain airlock). A docked shuttle sits nose out with its rear ramp against the collar's door; the
@@ -23,19 +23,19 @@ export interface DockPoint {
 export function dockPoint(sim: Sim, airlock: number): DockPoint | null {
   const m = sim.world.get(airlock, ModuleC);
   const def = m && sim.content.modules[m.def];
-  const ship = m && shipOf(sim, gridIdOf(sim, m));
+  const ship = m && shipById(sim, shipIdOf(sim, m));
   if (!m || !def?.airlock || !ship) return null;
   const t = airlockTiles(def, m);
   const out = hullOutward(hullSide(def, m.rot) ?? 'n');
   const c = t.collar ?? { x: t.outer.x + out.x, y: t.outer.y + out.y };
-  return { gridId: gridIdOf(sim, m), x: c.x + 0.5, y: c.y + 0.5, inside: t.inside };
+  return { shipId: shipIdOf(sim, m), x: c.x + 0.5, y: c.y + 0.5, inside: t.inside };
 }
 
 /**
  * Where crew work a docked vehicle's cargo: the keep-out tile in front of one of the airlock's unloaders. `near` picks the
  * closest one (default the first); a plain airlock has none, so the boarding tile serves.
  */
-export function cargoTile(sim: Sim, vehicle: number, near?: { x: number; y: number }): { gridId: number; x: number; y: number } | null {
+export function cargoTile(sim: Sim, vehicle: number, near?: { x: number; y: number }): { shipId: number; x: number; y: number } | null {
   const v = sim.world.get(vehicle, VehicleC);
   const m = v?.state === 'docked' ? sim.world.get(v.dock, ModuleC) : undefined;
   const def = m && sim.content.modules[m.def];
@@ -43,31 +43,31 @@ export function cargoTile(sim: Sim, vehicle: number, near?: { x: number; y: numb
   if (m && stands.length > 0) {
     const d = (t: { x: number; y: number }): number => (near ? Math.abs(t.x - near.x) + Math.abs(t.y - near.y) : 0);
     const best = stands.reduce((a, b) => (d(b) < d(a) ? b : a));
-    return { gridId: gridIdOf(sim, m), ...best };
+    return { shipId: shipIdOf(sim, m), ...best };
   }
   return boardingTile(sim, vehicle);
 }
 
 /** Where crew stand to board or leave a vehicle: its bay's access tile (stowed) or the docked airlock's inside tile. */
-export function boardingTile(sim: Sim, vehicle: number): { gridId: number; x: number; y: number } | null {
+export function boardingTile(sim: Sim, vehicle: number): { shipId: number; x: number; y: number } | null {
   const v = sim.world.get(vehicle, VehicleC);
   if (!v) return null;
   if (v.state === 'docked') {
     const p = dockPoint(sim, v.dock);
-    return p ? { gridId: p.gridId, ...p.inside } : null;
+    return p ? { shipId: p.shipId, ...p.inside } : null;
   }
   if (v.state !== 'stowed') return null;
   const m = sim.world.get(v.home, ModuleC);
   const def = m && sim.content.modules[m.def];
   const t = m && def && accessTile(def, m.x, m.y, m.rot);
-  return m && t ? { gridId: gridIdOf(sim, m), x: t.x, y: t.y } : null;
+  return m && t ? { shipId: shipIdOf(sim, m), x: t.x, y: t.y } : null;
 }
 
 /** Centre of a bay in sector tiles, or null. */
 export function bayCenter(sim: Sim, bay: number): { x: number; y: number } | null {
   const m = sim.world.get(bay, ModuleC);
   const def = m && sim.content.modules[m.def];
-  const ship = m && shipOf(sim, gridIdOf(sim, m));
+  const ship = m && shipById(sim, shipIdOf(sim, m));
   if (!m || !def?.vehicleBay || !ship) return null;
   const [w, h] = rotatedSize(def, m.rot);
   return { x: m.x + w / 2, y: m.y + h / 2 };

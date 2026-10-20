@@ -1,3 +1,4 @@
+import { ShipC } from './combat/components';
 import type { ShipTemplate } from './registry';
 import { DenseGrid, type GridLike } from './grid';
 import { ProductionC } from './items/components';
@@ -11,14 +12,14 @@ import { NORMAL_CO2, NORMAL_O2, NORMAL_TEMP, SPACE_TEMP } from './tuning';
 const CHARS: Record<string, number> = { '.': Struct.Space, '#': Struct.Wall, _: Struct.Floor, D: Struct.Door, '=': Struct.Beam };
 
 /**
- * Build a dense ship grid from an ASCII template (local coordinates; `GridMap.stamp` places it in the sector).
+ * Build a dense ship grid from an ASCII template (local coordinates; `stampGrid` places it in the sector).
  * Throws on unknown characters, naming row/col (0-based).
  * Floors and doors start with normal air and temperature; space is vacuum at SPACE_TEMP.
  */
-export function gridFromTemplate(id: number, t: ShipTemplate): DenseGrid {
+export function gridFromTemplate(t: ShipTemplate): DenseGrid {
   const width = Math.max(1, ...t.rows.map((r) => r.length));
   const height = Math.max(1, t.rows.length);
-  const grid = new DenseGrid(id, width, height, SHIP_FIELDS);
+  const grid = new DenseGrid(0, width, height, SHIP_FIELDS);
   t.rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
       const kind = CHARS[row[x] as string];
@@ -43,13 +44,16 @@ export function initAtmosphere(grid: GridLike, x: number, y: number): void {
   grid.set('temp', x, y, kind === Struct.Space ? SPACE_TEMP : NORMAL_TEMP);
 }
 
-/** Place a template's modules on a grid that is already in `sim.grids`. */
-export function spawnTemplateModules(sim: Sim, gridId: number, t: ShipTemplate): void {
-  // Template modules are ship-local; the grid reads sector coordinates from its top-left (x0, y0).
-  const g = sim.grids.get(gridId);
-  const ox = g?.x0 ?? 0, oy = g?.y0 ?? 0;
+/** Place a template's modules on a ship that is already stamped: its ShipC says where its top-left tile is. */
+export function spawnTemplateModules(sim: Sim, ship: number, t: ShipTemplate): void {
+  const s = sim.world.get(ship, ShipC);
+  placeTemplateModules(sim, t, s?.x ?? 0, s?.y ?? 0);
+}
+
+/** Place a template's modules for a ship whose top-left tile is (ox, oy). Template modules are ship-local; they are stamped in sector tiles. */
+export function placeTemplateModules(sim: Sim, t: ShipTemplate, ox: number, oy: number): void {
   for (const m of t.modules ?? []) {
-    const id = spawnModule(sim, gridId, m.def, ox + m.x, oy + m.y, m.rot);
+    const id = spawnModule(sim, m.def, ox + m.x, oy + m.y, m.rot);
     for (const q of m.stock ?? []) storageAdd(sim, id, q.item, q.count);
     if (m.vehicle) spawnVehicle(sim, m.vehicle, id);
     const production = sim.world.get(id, ProductionC);

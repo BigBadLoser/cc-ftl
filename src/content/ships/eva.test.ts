@@ -4,7 +4,11 @@ import {
   type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
-import { gridIdOf } from '../../sim/regions';
+import { shipIdOf, shipGrid } from '../../sim/regions';
+import { shipIds } from '../../sim/regions';
+
+/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
+const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -14,9 +18,9 @@ const run = (sim: Sim, n: number): SimEvent[] => {
   }
   return out;
 };
-const airlockOf = (sim: Sim, gridId: number): number =>
-  sim.world.query(AirlockC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId)!;
-const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => gridIdOf(sim, sim.world.get(i, PositionC)) === gridId);
+const airlockOf = (sim: Sim, shipId: number): number =>
+  sim.world.query(AirlockC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId))!;
+const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, shipId));
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 
 describe('EVA content', () => {
@@ -41,11 +45,11 @@ describe('EVA content', () => {
 
     const collar = airlockTiles(content.modules['module.airlock'] as ModuleDef, sim.world.get(lock, ModuleC)!).collar!;
     const out = { x: collar.x, y: collar.y + 1 };
-    expect(isTileWalkable(sim, sim.grids.get(1)!, out.x, out.y, true)).toBe(true);
+    expect(isTileWalkable(sim, shipGrid(sim, shipIds(sim)[0] as number)!, out.x, out.y, true)).toBe(true);
     sim.enqueue({ type: 'crew.moveTo', id: eng, x: out.x, y: out.y });
     run(sim, 20 * 40);
     expect(sim.world.get(eng, PositionC)).toMatchObject({ x: out.x, y: out.y });
-    expect(gridIdOf(sim, sim.world.get(eng, PositionC))).toBe(1);
+    expect(shipIdOf(sim, sim.world.get(eng, PositionC))).toBe(nth(sim, 1));
     expect(suitAir(sim, eng)).toBeLessThan(content.suit.airSec);
     expect(sim.world.get(eng, HealthC)!.hp).toBe(sim.world.get(eng, HealthC)!.max);
   });

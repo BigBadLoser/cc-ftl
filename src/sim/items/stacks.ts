@@ -1,4 +1,4 @@
-import { gridIdAt } from '../regions';
+import { shipIdAt, shipGrid } from '../regions';
 import { CrewC, JobC, PositionC } from '../crew/components';
 import { releaseAssignment } from '../crew/helpers';
 import type { ItemQty } from '../registry';
@@ -6,7 +6,7 @@ import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { DECON_REFUND } from '../tuning';
 import { CarryingC, ItemStackC } from './components';
-import { gridIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 
 const SPILL_RADIUS = 6;
 /** Fallback when content has no def for an item id. */
@@ -17,8 +17,8 @@ export function stackSizeOf(sim: Sim, item: string): number {
 }
 
 /** Entity id of the loose stack on a tile, or 0. */
-export function stackAt(sim: Sim, gridId: number, x: number, y: number): number {
-  const grid = sim.grids.get(gridId);
+export function stackAt(sim: Sim, shipId: number, x: number, y: number): number {
+  const grid = shipGrid(sim, shipId);
   return grid?.has('item') && grid.inBounds(x, y) ? grid.get('item', x, y) : 0;
 }
 
@@ -33,8 +33,8 @@ SPIRAL.sort((a, b) => (a.dx ** 2 + a.dy ** 2) - (b.dx ** 2 + b.dy ** 2) || a.dy 
  * Put items on the floor at the nearest tile with room: bare floor (no module, no door) that is
  * empty or holds the same item below its stack size. Returns how many units found no room (lost).
  */
-export function spillItems(sim: Sim, gridId: number, x: number, y: number, item: string, count: number): number {
-  const grid = sim.grids.get(gridId);
+export function spillItems(sim: Sim, shipId: number, x: number, y: number, item: string, count: number): number {
+  const grid = shipGrid(sim, shipId);
   if (!grid?.has('item')) return count;
   const max = stackSizeOf(sim, item);
   let left = count;
@@ -69,7 +69,7 @@ export function takeFromStack(sim: Sim, stackId: number, n: number): number {
   const take = Math.min(n, s.count);
   s.count -= take;
   if (s.count <= 0) {
-    const grid = sim.grids.get(gridIdAt(sim, s.x, s.y));
+    const grid = shipGrid(sim, shipIdAt(sim, s.x, s.y));
     if (grid?.has('item') && grid.get('item', s.x, s.y) === stackId) grid.set('item', s.x, s.y, 0);
     sim.world.destroyEntity(stackId);
   }
@@ -77,13 +77,13 @@ export function takeFromStack(sim: Sim, stackId: number, n: number): number {
 }
 
 /** Move a stack off a tile that just became unusable (wall built, module placed) to the nearest free one. */
-export function evictStack(sim: Sim, gridId: number, x: number, y: number): void {
-  const id = stackAt(sim, gridId, x, y);
+export function evictStack(sim: Sim, shipId: number, x: number, y: number): void {
+  const id = stackAt(sim, shipId, x, y);
   const s = id ? sim.world.get(id, ItemStackC) : undefined;
   if (!s) return;
   const { item, count } = s;
   takeFromStack(sim, id, count);
-  spillItems(sim, gridId, x, y, item, count);
+  spillItems(sim, shipId, x, y, item, count);
 }
 
 /** A crew member puts down whatever they carry, at their feet or the nearest free tile. */
@@ -92,14 +92,14 @@ export function dropCarried(sim: Sim, crew: number): void {
   if (!c) return;
   sim.world.remove(crew, CarryingC);
   const p = sim.world.get(crew, PositionC);
-  if (p && sim.world.has(crew, CrewC)) spillItems(sim, gridIdOf(sim, p), p.toX, p.toY, c.item, c.count);
+  if (p && sim.world.has(crew, CrewC)) spillItems(sim, shipIdOf(sim, p), p.toX, p.toY, c.item, c.count);
 }
 
 /** Drop a cost list scaled by DECON_REFUND (rounded down) on or near a tile. */
-export function refundCost(sim: Sim, gridId: number, x: number, y: number, cost: ItemQty[] | undefined): void {
+export function refundCost(sim: Sim, shipId: number, x: number, y: number, cost: ItemQty[] | undefined): void {
   for (const q of cost ?? []) {
     const n = Math.floor(q.count * DECON_REFUND);
-    if (n > 0) spillItems(sim, gridId, x, y, q.item, n);
+    if (n > 0) spillItems(sim, shipId, x, y, q.item, n);
   }
 }
 
@@ -107,7 +107,7 @@ export function refundCost(sim: Sim, gridId: number, x: number, y: number, cost:
 export function destroyJob(sim: Sim, jobId: number): void {
   const job = sim.world.get(jobId, JobC);
   if (!job) return;
-  for (const q of job.delivered ?? []) spillItems(sim, gridIdOf(sim, job), job.x, job.y, q.item, q.count);
+  for (const q of job.delivered ?? []) spillItems(sim, shipIdOf(sim, job), job.x, job.y, q.item, q.count);
   job.delivered = [];
   if (job.reservedBy) releaseAssignment(sim, job.reservedBy);
   sim.world.destroyEntity(jobId);
