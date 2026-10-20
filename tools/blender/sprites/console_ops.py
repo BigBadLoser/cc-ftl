@@ -9,7 +9,6 @@ Both: the desk along the back row, the chair in one front tile, the station's si
 import math
 
 from . import console_proto as C
-from . import detail as D
 from .console_proto import _g, desk, screen, strip, tdisc, tline, ybox
 
 
@@ -29,30 +28,33 @@ def comms(f, st):
     screen(f, 0.62, -0.45, 0, 0.9, 0.58, 0.65, col, st, wave + ticks, lean=-0.14, d=0.1)
     chans = [(-0.15, 1.0 - i * 0.5, 0.65 - 0.2 * (i % 2), 0.035, "a") for i in range(3)]               # channel list,
     screen(f, 0.62, 0.5, 0, 0.62, 0.46, 0.65, col, st, chans + [(0.5, 1.0, 0.08, 0.035, "w")], lean=-0.14, d=0.1)
-    _g("mic")                                                                      # gooseneck mic on the desk
-    f.vcyl(0.2, -0.05, 0.65, 0.06, 0.03, "steelD", sides=8)
-    D.seg(f, (0.2, -0.05, 0.68), (0.14, -0.1, 0.84), 0.018, "gm", 6)
-    D.seg(f, (0.14, -0.1, 0.84), (0.02, -0.18, 0.9), 0.018, "gm", 6)
-    ybox(f, 0.0, -0.19, 0.87, 0.07, 0.06, 0.06, "dark", top="gmD")
-    _g("rack")                                                                     # radio rack in the side tile
-    ru, rv = -0.45, 0.55
-    ybox(f, ru, rv, 0.0, 0.62, 0.62, 1.0, "steelD", top="plate")
-    for k in range(3):                                                             # rack units on the entry face
-        z = 0.16 + k * 0.27
-        ybox(f, ru - 0.31, rv, z, 0.02, 0.56, 0.22, "gm", top="gm")
-        ybox(f, ru - 0.325, rv - 0.1, z + 0.07, 0.012, 0.26, 0.08, ("orange", "flameY", "orange")[k] if st else "dark")
+    _g("mic")                                                                      # broadcast mic on a desk stand:
+    f.vcyl(0.18, 0.08, 0.65, 0.1, 0.04, "steel", top="steelL", sides=10)           # base with an on-air light,
+    ybox(f, 0.1, 0.08, 0.69, 0.04, 0.08, 0.025, "orange" if st else "rustD")        # stem, an upright capsule with a
+    f.vcyl(0.18, 0.08, 0.69, 0.02, 0.1, "steelL", sides=6)                          # steel band and grille cap
+    f.vcyl(0.18, 0.08, 0.79, 0.07, 0.17, "dark", rtop=0.07, sides=10)
+    f.vcyl(0.18, 0.08, 0.86, 0.075, 0.03, "steelL", sides=10)
+    f.vcyl(0.18, 0.08, 0.96, 0.07, 0.04, "steel", top="steelL", rtop=0.045, sides=10)
+    _g("rack")                                                                     # radio rack in the side tile,
+    ru, rv, rh = -0.45, 0.55, 0.62                                                 # about desk height
+    ybox(f, ru, rv, 0.0, 0.62, 0.62, rh, "steelD", top="plate")
+    for k in range(2):                                                             # rack units on the entry face
+        z = 0.1 + k * 0.25
+        ybox(f, ru - 0.31, rv, z, 0.02, 0.56, 0.21, "gm", top="gm")
+        ybox(f, ru - 0.325, rv - 0.1, z + 0.065, 0.012, 0.26, 0.08, ("orange", "flameY")[k] if st else "dark")
         for j in range(2):
             ybox(f, ru - 0.33, rv + 0.12 + j * 0.1, z + 0.06, 0.03, 0.06, 0.06, "steelL" if j else "plate")
-    for k in range(3):                                                             # and on the side the chair faces
-        ybox(f, ru, rv - 0.31, 0.2 + k * 0.27, 0.5, 0.012, 0.06, ("lampY", "orange", "lampY")[k] if st else "gmD")
+    for k in range(2):                                                             # and on the side the chair faces
+        ybox(f, ru, rv - 0.31, 0.18 + k * 0.25, 0.5, 0.012, 0.06, ("lampY", "orange")[k] if st else "gmD")
     _g("antenna")
-    f.vcyl(ru + 0.1, rv + 0.1, 1.0, 0.04, 0.24, "gm", sides=6)                     # dish on a mast
-    tdisc(f, ru + 0.1, rv + 0.1, 1.32, 0.6, 0.2, 0.04, "gmD", "steelL", 0.0)      # (a positive tilt: the face
+    du, dv = ru - 0.12, rv + 0.14                                                  # dish on a mast at the outer
+    f.vcyl(du, dv, rh, 0.04, 0.14, "gm", sides=6)                                  # corner, clear of the desk
+    tdisc(f, du, dv, rh + 0.22, 0.6, 0.18, 0.04, "gmD", "steelL", 0.0)             # (a positive tilt: the face
                                                                                   # must point at the camera)
-    tdisc(f, ru + 0.1, rv + 0.1, 1.32, 0.6, 0.04, 0.03, "orange" if st else "rustD", "orange" if st else "rustD",
+    tdisc(f, du, dv, rh + 0.22, 0.6, 0.04, 0.03, "orange" if st else "rustD", "orange" if st else "rustD",
           0.0, dz=0.06, sides=8)
-    f.vcyl(ru - 0.18, rv - 0.18, 1.0, 0.012, 0.42, "steelL", sides=4)
-    f.vcyl(ru - 0.18, rv - 0.18, 1.42, 0.025, 0.025, "orange" if st else "rustD", sides=6)
+    f.vcyl(ru + 0.2, rv + 0.2, rh, 0.012, 0.4, "steelL", sides=4)                  # whip at the back corner
+    f.vcyl(ru + 0.2, rv + 0.2, rh + 0.4, 0.025, 0.025, "orange" if st else "rustD", sides=6)
     C.chair(f, *C.CHAIR["comms"], st)
 
 
