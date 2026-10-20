@@ -328,8 +328,17 @@ in the shared world layer, `alt` driving the lift).
 Branch `sector-5` (not merged, visual: needs the user's screenshot approval): render steps 5a (one world layer stack, regions
 as decorators at sector offsets, cross-ship depth sorting), 5c (combat panel as camera pass B into a texture; `miniScene`
 deleted), 5d (picking in sector tiles), the §5 visibility rule (crew outside a roofed hull always drawn) and the step 8 TODO
-(low bodies in the world layer). Not done: 5b (chunk tile views), `alt` driving the lift (it does not ramp). Screenshots and
-comparisons in the scratchpad `sector5/` (`main/`, `new/`, `cmp_*`).
+(low bodies in the world layer). Not done: 5b (chunk tile views), `alt` driving the lift (it does not ramp). `origin/main`
+merged in (new UI, per-clip crew sheets; no conflicts, `selectGrid` and the node strip frame through the sector-frame
+`frameShips`). Screenshots and comparisons vs main in the scratchpad `sector5b/` (`main/`, `new/`, `cmp_*`, `cmp.txt`
+explains every difference). The user confirmed the cross-ship wall ordering in the overlap scene is correct on sector-5.
+Known side effect: lamp halos draw over a low (lifting or settling) shuttle, as they already did over a docked one.
+
+**Vehicle bay departure decision (user, 2026-10-20; for a later vehicle step, not built):** the bay doors are at the
+**bottom** of the pit. A departing shuttle drops down out of the pit through the bottom doors, flies clear of the ship's
+underside, then rises to flying altitude and goes on to its destination. Return is the reverse: approach below the hull, rise
+up through the bottom doors, settle into the pit. This replaces today's lift up out of the top and turn over the ship, so the
+heading while hovering over the bay is moot, and the `alt` lift-ramp work should follow this path.
 
 Planner's calls (the user can overrule):
 - 16x16 sparse chunks.
