@@ -9,6 +9,7 @@ import { Struct } from '../sim/structure';
 import type { Atlas } from './assets/loader';
 import { depthKey } from './iso';
 import type { Layers } from './layers';
+import { mulColor } from './lightTint';
 import { regionTiles } from './regionTiles';
 import { outward, tileHash, touchesSpace, wallMask, type WallLevel } from './tiles';
 import { addStatic } from './sprites';
@@ -39,7 +40,7 @@ interface Spark {
   phase: number;
 }
 
-export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World, defs: Readonly<Record<string, ModuleDef>>, emergency: () => boolean = () => false): RuinView {
+export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World, defs: Readonly<Record<string, ModuleDef>>, emergency: () => boolean = () => false, light?: { tintAt(x: number, y: number, wall: boolean): number; tintKey(): string }): RuinView {
   const tiles = regionTiles(grid);
   const kindAt = tiles.kindAt;
   const flat = new Container();
@@ -50,19 +51,24 @@ export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World
   let roofed = false;
   let key = '';
   let em = false;
+  /** Sprites lit like the tile under them (gridView's tint path): wall-like or floor-like, times a fixed multiply. */
+  let lit: { spr: Sprite; x: number; y: number; wall: boolean; mul: number }[] = [];
+  let litKey = '';
 
   function clear(): void {
     for (const s of owned) s.destroy();
     owned = [];
     sparks = [];
+    lit = [];
   }
 
   /** Put an asset (first existing id) on tile (x, y); returns its main sprite. */
-  function put(chain: string[], x: number, y: number, k: number, parent?: Container): Sprite | undefined {
+  function put(chain: string[], x: number, y: number, k: number, parent?: Container, tint: 'floor' | 'wall' | 'none' = 'floor', mul = 0xffffff): Sprite | undefined {
     const s = atlas.firstOf(chain);
     if (!s) return undefined;
     const made = addStatic(L, s, x, y, k, parent ?? L.sorted);
     owned.push(...made);
+    if (tint !== 'none' && made[0]) lit.push({ spr: made[0], x, y, wall: tint === 'wall', mul });
     return made[0];
   }
 
@@ -79,11 +85,11 @@ export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World
       if (wallMask(kindAt, b.x, b.y) === 0) continue; // only the torn edge: it must border a standing wall
       const fam = b.art.includes('hull') ? 'hull' : 'wall';
       const mask = wallMask(kindAt, b.x, b.y);
-      put([`tile.${fam}.${pre}m${mask}.breach`, `tile.${fam}.m${mask}.breach`], b.x, b.y, base + 0.001);
+      put([`tile.${fam}.${pre}m${mask}.breach`, `tile.${fam}.m${mask}.breach`], b.x, b.y, base + 0.001, undefined, 'wall');
       // Where the -x / -y neighbour is intact the tear needs an end face; cut partitions have none.
       if (fam === 'wall' && level !== 'up') continue;
-      if (kindAt(b.x - 1, b.y) === Struct.Wall) put([`tile.${fam}.${pre}breach.end.w`, `tile.${fam}.breach.end.w`], b.x, b.y, base + 0.002);
-      if (kindAt(b.x, b.y - 1) === Struct.Wall) put([`tile.${fam}.${pre}breach.end.n`, `tile.${fam}.breach.end.n`], b.x, b.y, base + 0.002);
+      if (kindAt(b.x - 1, b.y) === Struct.Wall) put([`tile.${fam}.${pre}breach.end.w`, `tile.${fam}.breach.end.w`], b.x, b.y, base + 0.002, undefined, 'wall');
+      if (kindAt(b.x, b.y - 1) === Struct.Wall) put([`tile.${fam}.${pre}breach.end.n`, `tile.${fam}.breach.end.n`], b.x, b.y, base + 0.002, undefined, 'wall');
     }
   }
 
@@ -102,11 +108,11 @@ export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World
         const hot = ruin.impacts.some((p) => Math.hypot(x - p.x, y - p.y) <= p.r + 1.2);
         const grown = nests.some((n) => Math.hypot(x - n.x, y - n.y) <= 3.5);
         if (em && (x + y) % 2 === 0) {
-          put([`decay.striplight.${fam}.${axis}`], x, y, base + 0.004);
-          if (level === 'up') put([`decay.striplight.${fam}.${axis}.high`], x, y, base + 0.004);
+          put([`decay.striplight.${fam}.${axis}`], x, y, base + 0.004, undefined, 'none');
+          if (level === 'up') put([`decay.striplight.${fam}.${axis}.high`], x, y, base + 0.004, undefined, 'none');
         }
-        if (hot && ruin.cause === 'combat' && h % 3 !== 0) put([`decay.scorch.${fam}.${axis}.${level}.v${(h >> 4) & 1}`], x, y, base + 0.003);
-        else if (grown && h % 2 === 0) put([`decay.growth.${fam}.${axis}.${level}`], x, y, base + 0.003);
+        if (hot && ruin.cause === 'combat' && h % 3 !== 0) put([`decay.scorch.${fam}.${axis}.${level}.v${(h >> 4) & 1}`], x, y, base + 0.003, undefined, 'wall');
+        else if (grown && h % 2 === 0) put([`decay.growth.${fam}.${axis}.${level}`], x, y, base + 0.003, undefined, 'wall');
       }
   }
 
@@ -155,8 +161,8 @@ export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World
         if (!o) continue;
         const m = wallMask(kindAt, x, y);
         const base = o === 1 ? 'tile.hull.belly.o1.m8' : o === 2 ? 'tile.hull.belly.o2.m1' : 'tile.hull.belly.o3.m0';
-        const spr = put([`decay.skirt.torn.o${o}`, `tile.hull.belly.o${o}.m${m}`, base], x, y, depthKey(x, y), L.under);
-        if (spr) spr.tint = TORN;
+        put([`decay.skirt.torn.o${o}`, `tile.hull.belly.o${o}.m${m}`, base], x, y, depthKey(x, y), L.under, 'floor', TORN);
+        
       }
   }
 
@@ -184,6 +190,12 @@ export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World
       if (k !== key) {
         key = k;
         rebuild(ruin);
+        litKey = '';
+      }
+      const lk = light?.tintKey() ?? '';
+      if (light && lk !== litKey) {
+        litKey = lk;
+        for (const t of lit) t.spr.tint = mulColor(light.tintAt(t.x, t.y, t.wall), t.mul);
       }
       const now = performance.now();
       for (const s of sparks) s.spr.texture = Math.floor(now / 140 + s.phase) % 5 === 0 ? s.on : s.off;

@@ -92,7 +92,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
   const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin });
-  const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency);
+  const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency, view);
   const jamMarks = createJamMarks(grid, atlas, L);
   const itemView = createItemView(world, atlas, L, items, { target: inside, emergency: () => emergency });
   const fxView = createFxView(atlas, L, { target: inside });
