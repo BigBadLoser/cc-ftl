@@ -3,6 +3,8 @@ along the back wall, a crew member for scale, the way the runtime draws them (gl
 
   python3 -I tools/blender/review/modpack_preview.py <pack assets dir> <out dir> <set>
     set: storage -> storage-1x.png (one room per fill) and storage-3x-<fill>.png
+         medbay  -> medbay-1x.png and medbay-3x-{idle,active}.png (the old bed for comparison; .active: a patient lying
+                    on each bed, a medic working the console)
 Floor, walls and the crew member come from public/assets."""
 import sys
 from pathlib import Path
@@ -40,7 +42,7 @@ def room(cv, P, pub, ox, oy, mods, state, crew_at, nx, ny, label):
         draws.append((fx + fy, lambda s=src, a=f"{aid}.{state}", p=iso(ox, oy, fx, fy): cv.static(s, a, *p)))
     cx, cy = crew_at
     pair = human(pub, 1)
-    draws.append((cx + cy + 0.5, lambda p=iso(ox, oy, cx, cy): cv.put(pair[0], pair[1], p[0] - 64, p[1] - 94)))
+    draws.append((cx + cy + 0.5, lambda p=iso(ox, oy, cx, cy): cv.char(pair, *p)))
     for _, fn in sorted(draws, key=lambda t: t[0]):
         fn()
     cv.labels.append((ox - 40, oy - 110, label))
@@ -134,10 +136,43 @@ def sol(P, pub, out):
     cv.save(out / "sol-1x.png", 1)
 
 
+def medbay(P, pub, out, face=7):
+    """Bed (old), med bed, med console along the back wall; idle and active rooms."""
+    nx, ny = 6, 3
+    W, H = (nx + ny) * 32 + 80, (nx + ny) * 16 + 170
+    rooms = []
+    for st in ("idle", "active"):
+        cv = Canvas(W, H)
+        ox, oy = ny * 32 + 40, 140
+        for gx in range(nx):
+            for gy in range(ny):
+                cv.static(pub, "tile.floor.a", *iso(ox, oy, gx, gy))
+        cv.static(pub, "tile.wall.full.m6", *iso(ox, oy, -1, -1))
+        for gx in range(nx):
+            cv.static(pub, "tile.wall.full.m10", *iso(ox, oy, gx, -1))
+        for gy in range(ny):
+            cv.static(pub, "tile.wall.full.m5", *iso(ox, oy, -1, gy))
+        on = st == "active"
+        for A, aid, gx in ((pub, "module.bed", 0), (P, f"module.med_bed.{st}", 2)):
+            cv.static(A, aid, *iso(ox, oy, gx, 1))
+            if on:
+                cv.char(human(pub, 2, "sleep", 0), *map(int, iso(ox, oy, gx, 0.5)))
+        cv.static(P, f"module.med_console.{st}", *iso(ox, oy, 4, 0))
+        cv.char(human(pub, face, "work" if on else "idle", 2 if on else 0), *iso(ox, oy, 4, 1))
+        cv.labels.append((ox - 40, oy - 110, st))
+        cv.save(out / f"medbay-3x-{st}.png", 3)
+        rooms.append(cv)
+    Image.fromarray(np.vstack([c.px[..., :3] for c in rooms])).save(out / "medbay-1x.png")
+
+
 def main():
     P, out, which = Assets(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
     pub = Assets(ROOT / "public/assets")
     out.mkdir(parents=True, exist_ok=True)
+    if which == "medbay":
+        medbay(P, pub, out, int(sys.argv[4]) if len(sys.argv) > 4 else 7)
+        print("wrote", out)
+        return
     if which in ("damage", "sol"):
         (damage if which == "damage" else sol)(P, pub, out)
         print("wrote", out)

@@ -19,6 +19,7 @@
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   storage_set lockers, racks, pallets, containers, tanks, cold stores, armories: 3 fills x 4 rotations (storage_set.py;
             MODPACK_ROTS=1 renders r0 only, for quick previews)
+  medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -67,6 +68,10 @@ def jobs(name):
         import os
         from . import storage_set
         return storage_set.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
+    if name == "medbay":
+        import os
+        from . import medbay
+        return medbay.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
     if name == "damage":
         import os
         from . import damage
