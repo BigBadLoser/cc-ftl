@@ -8,7 +8,6 @@ import { createAlerts, type Alerts } from './alerts';
 import { rejectionMessage } from './messages';
 import { createStore, type Readable } from './store';
 import { homeShip } from '../sim/index';
-import { DoorJam } from '../sim/structure';
 
 const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door };
 const TOAST_MS = 2500;
@@ -234,10 +233,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
             const here = shipIdOf(sim, sim.world.get(sel, PositionC));
             sim.enqueue({ type: 'crew.moveTo', id: sel, x: any.x, y: any.y, ...(here !== any.shipId ? { ship: any.shipId } : {}) });
           } else if (!tile && any && any.shipId !== homeShipId() && sim.world.get(any.shipId, ShipC)?.ruin) {
-            // A derelict: a jammed door opens its tile panel (Force door), anywhere else its ship panel.
-            const jammed = ag && ag.get('struct', any.x, any.y) === Struct.Door && ag.get('jam', any.x, any.y) !== DoorJam.None;
-            if (jammed) selectTile({ x: any.x, y: any.y }, any.shipId);
-            else selectShip(any.shipId);
+            // A derelict tile selects like one of your own (its panel offers Force door on jammed doors); the ship panel is on the node strip.
+            selectTile({ x: any.x, y: any.y }, any.shipId);
           } else selectTile(tile);
         },
         onHover(t) {

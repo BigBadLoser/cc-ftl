@@ -7,16 +7,14 @@ import { airlockTiles } from "../sim/modules/airlock";
 import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
-import { dim, lightTint, mulColor, pulsePhase } from "./lightTint";
+import { lightTint, mulColor, pulsePhase } from "./lightTint";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { floorChain, ghostVertsIn, replacesFloor, solidMass, wallPieces, type CutawayMode } from "./tiles";
-import { addHullCap } from "./hullCap";
-import { wallTopPx } from "./heights";
+import { floorChain, ghostVertsIn, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
 
@@ -32,8 +30,6 @@ export interface GridView extends Markers {
 export interface GridViewHost {
   /** True when the ship has no running power source (emergency lighting). */
   emergency(): boolean;
-  /** Brightness factor of a derelict's tiles (1 = normal). */
-  dim?(): number;
   overlayWorld: OverlayWorld;
   /** Beam look of this ship (by faction); default civil. */
   beamLook?(): BeamLook;
@@ -66,7 +62,7 @@ interface TileChunk {
   c: ChunkRef;
   /** The chunk's floor plates (a container in the floor layer, so plates keep chunk order across rebuilds). */
   floor: Container;
-  owned: Container[];
+  owned: Sprite[];
   tinted: Tinted[];
   doors: Door[];
   doorKey: number;
@@ -214,12 +210,6 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: false, solid: false });
           }
           if (k === Struct.Floor) continue;
-          // Part of a thick block of hull: one flat cap at the wall view's top height, no wall pieces (ghosts = not roofed: a roof covers it).
-          if (ghosts && k === Struct.Wall && solidMass(kindAt, x, y)) {
-            const made = addHullCap(L, atlas, x, y, depthKey(x, y) + 0.0005, (mx, my) => solidMass(kindAt, mx, my), wallTopPx(mode));
-            owned.push(...made);
-            continue;
-          }
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (gapAt(x, y) || airlocks.has(idx)) continue;
           for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts, gapAt)) {
@@ -262,8 +252,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
 
   function updateTints(v: TileChunk, pulse: number): void {
     if (!v.tinted.length) return;
-    const wd = host.dim?.() ?? 1;
-    const key = `${tiles.key("light", v.c, 1)}|${tiles.rev("o2", v.c)}|${tiles.rev("hp", v.c)}|${pulse}|${wd}`;
+    const key = `${tiles.key("light", v.c, 1)}|${tiles.rev("o2", v.c)}|${tiles.rev("hp", v.c)}|${pulse}`;
     if (key === v.tintKey) return;
     v.tintKey = key;
     const light = tiles.data("light", v.c);
@@ -285,7 +274,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     };
     for (const t of v.tinted) {
       const lv = t.wall ? wallLight(t.x, t.y) : at(light, t.ci);
-      const lit = dim(lightTint(lv, !t.wall && at(o2, t.ci) < VACUUM_O2, pulse), wd);
+      const lit = lightTint(lv, !t.wall && at(o2, t.ci) < VACUUM_O2, pulse);
       t.spr.tint = t.solid ? mulColor(lit, damageTint(at(hp, t.ci))) : lit;
     }
   }
@@ -315,7 +304,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         frameKey = "";
       }
       const pulse = host.emergency() ? pulsePhase(performance.now()) : -1;
-      const fk = `${host.dim?.() ?? 1}|${grid.revision("door")}|${grid.revision("light")}|${grid.revision("o2")}|${grid.revision("hp")}|${pulse}`;
+      const fk = `${grid.revision("door")}|${grid.revision("light")}|${grid.revision("o2")}|${grid.revision("hp")}|${pulse}`;
       if (fk !== frameKey) {
         frameKey = fk;
         for (const v of chunks.views()) {

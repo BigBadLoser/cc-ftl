@@ -26,8 +26,6 @@ export interface ModuleViewHost {
   target(): { grid: Grid } | null;
   /** True when the ship has no running power source (emergency lighting). */
   emergency(): boolean;
-  /** Brightness factor of a derelict (1 = normal): its modules and glows are dimmed by it. */
-  dim?(): number;
   /** Roofed ships hide their interior: only the engines (hull sections, and the machines under the roof) are drawn. */
   roofed(): boolean;
   /** The wall view level of the art; only the airlock's hull block follows it (the airlock itself never cuts away). */
@@ -312,14 +310,12 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
         // A container is outside, lit by the sky like the hull (no room light reaches it), and never "off".
         const base = def.container ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, tiles.length), false, pulse);
-        const wd = host.dim?.() ?? 1;
-        const lit0 = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
-        const lit = wd < 1 && !def.container ? dim(lit0, wd) : lit0;
+        const lit = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
         // A wreck without its own damaged / destroyed art is darkened instead.
         const tint = wreck.dark < 1 && !wreck.chain.some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
         for (const p of e.parts) {
           p.spr.tint = mulColor(tint, p.art);
-          for (const g of [p.glow, p.halo]) if (g) { g.visible = on; g.alpha = wd < 1 ? wd * 0.7 : 1; }
+          for (const g of [p.glow, p.halo]) if (g) g.visible = on;
           if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }
       }
