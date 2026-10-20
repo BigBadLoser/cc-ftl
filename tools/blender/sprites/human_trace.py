@@ -50,8 +50,10 @@ def frame(axis):
     return a, e2.cross(a), e2
 
 
-def limb(P, head, tail, step=0.045, lo_pad=0.0, hi_pad=0.0):
-    """Sections of one limb part: [(centre, e1, e2, r1, r2)] from head to tail."""
+def limb(P, head, tail, step=0.045, lo_pad=0.0, hi_pad=0.0, round_=False):
+    """Sections of one limb part: [(centre, e1, e2, r1, r2)] from head to tail. The centre line is fitted straight and
+    the radii as a smooth taper (a quadratic over the length), so the old muscle bulges go; round_: circular sections
+    (the radius is the mean of the two), so a roll of the bone in a clip does not show."""
     a, e1, e2 = frame(Vector(tail) - Vector(head))
     h = np.array(head)
     t = (P - h) @ np.array(a)
@@ -72,7 +74,12 @@ def limb(P, head, tail, step=0.045, lo_pad=0.0, hi_pad=0.0):
         prev = (ti, (u0 + u1) / 2, (w0 + w1) / 2, (u1 - u0) / 2, (w1 - w0) / 2)
         rows.append(prev)
     R = np.array(rows)
-    cu, cw, r1, r2 = (smooth(R[:, k]) for k in range(1, 5))
+    ts = R[:, 0]
+    cu, cw = (np.polyval(np.polyfit(ts, R[:, k], 1), ts) for k in (1, 2))
+    deg = 1 if round_ or len(ts) <= 3 else 2                                 # arms: a straight taper (no deltoid bulge)
+    r1, r2 = (np.polyval(np.polyfit(ts, R[:, k], deg), ts) for k in (3, 4))
+    if round_:
+        r1 = r2 = (r1 + r2) / 2
     out = []
     for ti, a0, b0, x1, x2 in zip(R[:, 0], cu, cw, r1, r2):
         c = Vector(h) + a * float(ti) + e1 * float(a0) + e2 * float(b0)
@@ -112,8 +119,8 @@ def measure(arm, body):
     t = {b.name: Vector(b.tail_local) for b in B}
     out = {"limb": {}}
     for s in "LR":
-        out["limb"][f"arm.{s}"] = limb(by[f"arm.{s}"], h[f"arm.{s}"], t[f"arm.{s}"])
-        out["limb"][f"forearm.{s}"] = limb(by[f"forearm.{s}"], h[f"forearm.{s}"], t[f"forearm.{s}"])
+        out["limb"][f"arm.{s}"] = limb(by[f"arm.{s}"], h[f"arm.{s}"], t[f"arm.{s}"], round_=True, lo_pad=-0.03)
+        out["limb"][f"forearm.{s}"] = limb(by[f"forearm.{s}"], h[f"forearm.{s}"], t[f"forearm.{s}"], round_=True)
         out["limb"][f"hand.{s}"] = limb(by[f"hand.{s}"], h[f"hand.{s}"], t[f"hand.{s}"], step=0.03)
         out["limb"][f"leg.{s}"] = limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"])
         out["limb"][f"shin.{s}"] = limb(by[f"shin.{s}"], h[f"shin.{s}"], t[f"shin.{s}"])

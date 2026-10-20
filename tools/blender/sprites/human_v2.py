@@ -250,9 +250,26 @@ def chain(b, R, bones, grow=0.0, t0=0.0, t1=1.0, exp=2.4):
         if k + 1 < len(bones):                                               # the last section of this bone blends forward
             c, e1, e2, r1, r2, _ = rows[-1]
             rows[-1] = (c, e1, e2, r1, r2, {bone: 0.5, bones[k + 1]: 0.5})
+    rows = transport(rows)
     n = len(rows)
     k0, k1 = int(round(t0 * (n - 1))), int(round(t1 * (n - 1)))
     b.sweep(rows[k0:max(k1, k0 + 1) + 1], grow=grow, exp=exp, round_ends=True)
+
+
+def transport(rows):
+    """One ring orientation carried down the whole chain (parallel transport along its centre line), so neighbouring
+    rings line up vertex for vertex and the surface does not twist where one bone's sections meet the next."""
+    out = []
+    e1 = None
+    for k, (c, _, _, r1, r2, w) in enumerate(rows):
+        nxt = rows[min(k + 1, len(rows) - 1)][0]
+        prv = rows[max(k - 1, 0)][0]
+        a = (nxt - prv).normalized()
+        if e1 is None:
+            e1 = rows[0][1]
+        e1 = (e1 - a * e1.dot(a)).normalized()
+        out.append((c, e1, a.cross(e1), r1, r2, w))
+    return out
 
 
 def arm(b, R, side, grow=0.0, upper=1.0, fore=True, hand=True):
@@ -272,7 +289,7 @@ def leg(b, R, side, grow=0.0, foot=True, boot=0.0):
     chain(b, R, [f"leg.{s}", f"shin.{s}"], grow)
     if foot:
         secs = R.T["limb"][f"foot.{s}"]
-        b.sweep([(c, e1, e2, r1, r2, W(f"foot.{s}")) for c, e1, e2, r1, r2 in secs], grow=grow + boot, exp=3.0)
+        b.sweep(transport([(c, e1, e2, r1, r2, W(f"foot.{s}")) for c, e1, e2, r1, r2 in secs]), grow=grow + boot, exp=3.0)
 
 
 def head(b, R, grow=0.0, keep=None):
