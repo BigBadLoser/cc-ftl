@@ -66,8 +66,8 @@ export const LANE_MAX_VOID = 380;
 export const RIFT_MAX = 2800;
 /** Gate picking treats a rift lane as this much longer, so clear crossings win. */
 export const RIFT_GATE_PENALTY = 2000;
-/** Relative-neighbourhood edges (the backbone, contains the spanning tree) plus this share of the other Gabriel edges. */
-export const HYPERLANE_EXTRA = 0.5;
+/** Inside a region: a local spanning tree of the backbone plus this share of the other backbone links (loops). */
+export const LOOP_CHANCE = 0.2;
 /** Chance a hyperlane carries a mid-lane event anchor. */
 export const ANCHOR_CHANCE = 0.35;
 

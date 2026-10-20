@@ -8,8 +8,8 @@ import { SiteField, type Site } from './sites';
 import { Terrain } from './terrain';
 import { TerritoryField } from './territory';
 import {
-  ANCHOR_CHANCE, CHUNK_CELLS, GATE_SECOND, GATE_SPREAD, GATE_THIRD, HYPERLANE_EXTRA, HYPERLANE_MAX, LANE_MAX_VOID,
-  LANE_MIN_DENSITY, NO_GATE, REGION_CELL, REGION_REACH, RIFT_GATE_PENALTY, RIFT_MAX, SITE_CELL,
+  ANCHOR_CHANCE, CHUNK_CELLS, GATE_SECOND, GATE_SPREAD, GATE_THIRD, HYPERLANE_MAX, LANE_MAX_VOID,
+  LANE_MIN_DENSITY, LOOP_CHANCE, NO_GATE, REGION_CELL, REGION_REACH, RIFT_GATE_PENALTY, RIFT_MAX, SITE_CELL,
 } from './tuning';
 import type { ChunkData, EdgeData, NodeData } from './types';
 
@@ -62,6 +62,7 @@ export class GalaxyGen implements SectorContext {
   private cands = new Map<string, Candidate[]>();
   private gateSets = new Map<string, Set<string>>();
   private cross = new Map<string, Crossing[]>();
+  private links = new Map<string, Site[]>();
 
   constructor(
     readonly seed: number,
@@ -201,36 +202,74 @@ export class GalaxyGen implements SectorContext {
   }
 
   /**
-   * Hyperlanes of a sector. Inside its region, the relative neighbourhood graph of the region's own sites (connected,
-   * rift lanes included) plus HYPERLANE_EXTRA of the other clear Gabriel candidates. Across a border, only the gates.
-   * A wild sector (no region) keeps every candidate lane, so the frontier is never cut off.
+   * Hyperlanes of a sector. Inside its region, a spanning tree of the region's backbone (see treeEdge) plus LOOP_CHANCE
+   * of the other backbone links as loops: some choice, some chokepoints. Across a border, only the gates. A wild
+   * sector (no region) keeps its relative-neighbour lanes, which never cut the frontier off.
    */
   hyperlanes(site: Site): EdgeData[] {
     const out: EdgeData[] = [];
     const mine = this.regions.regionAt(site.x, site.y);
-    const cands = new Map(this.candidates(site).map((c) => [c.site.id, c]));
-    for (const { site: other, rift } of cands.values()) {
+    const cands = this.candidates(site);
+    const near = this.sites.sitesNear(site.x, site.y, RIFT_MAX);
+    for (const { site: other, rift } of cands) {
       if (mine && this.regions.regionAt(other.x, other.y)) continue;
       const [a, b] = site.id < other.id ? [site, other] : [other, site];
-      out.push(this.lane(a, b, false, rift));
+      if (isRelativeNeighbour(a, b, near)) out.push(this.lane(a, b, false, rift));
     }
     if (!mine) return out;
-    const same = this.sites.sitesNear(site.x, site.y, RIFT_MAX).filter((o) => this.regions.regionAt(o.x, o.y) === mine);
-    for (const other of same) {
-      if (other.id === site.id) continue;
+    for (const other of this.regionLinks(site)) {
       const [a, b] = site.id < other.id ? [site, other] : [other, site];
-      const cand = cands.get(other.id);
-      const extra = !!cand && !cand.rift && unit(this.seed, strHash(a.id), strHash(b.id), 51) < HYPERLANE_EXTRA;
-      if (!extra && !isRelativeNeighbour(a, b, same)) continue;
+      if (!this.treeEdge(a, b) && unit(this.seed, strHash(a.id), strHash(b.id), 51) >= LOOP_CHANCE) continue;
       out.push(this.lane(a, b, false, !this.clear(a, b)));
     }
-    for (const { site: other, rift } of cands.values()) {
+    for (const { site: other, rift } of cands) {
       const theirs = this.regions.regionAt(other.x, other.y);
       if (!theirs || theirs === mine) continue;
       const [a, b] = site.id < other.id ? [site, other] : [other, site];
       if (this.gates(mine, theirs).has(`${a.id}|${b.id}`)) out.push(this.lane(a, b, true, rift));
     }
     return out;
+  }
+
+  /** Relative neighbourhood links of a site among its own region's sites (a connected backbone per region). */
+  private regionLinks(site: Site): Site[] {
+    let out = this.links.get(site.id);
+    if (!out) {
+      const mine = this.regions.regionAt(site.x, site.y);
+      const same = this.sites.sitesNear(site.x, site.y, RIFT_MAX).filter((o) => this.regions.regionAt(o.x, o.y) === mine);
+      out = same.filter((o) => o.id !== site.id && isRelativeNeighbour(site, o, same));
+      this.links.set(site.id, out);
+    }
+    return out;
+  }
+
+  /**
+   * Is a-b a spanning-tree link of its region? Yes unless a path of strictly shorter backbone links (ties by id) joins
+   * a and b inside the disc of radius 2.5|ab| around their midpoint. A dropped link always has such a detour, so by
+   * induction on length the kept links still connect the region; the disc keeps the test local and symmetric.
+   */
+  private treeEdge(a: Site, b: Site): boolean {
+    const len = dist(a, b);
+    const mx = (a.x + b.x) / 2;
+    const my = (a.y + b.y) / 2;
+    const shorter = (p: Site, q: Site) => {
+      const d = dist(p, q);
+      if (d !== len) return d < len;
+      const k = p.id < q.id ? `${p.id}|${q.id}` : `${q.id}|${p.id}`;
+      return k < `${a.id}|${b.id}`;
+    };
+    const seen = new Set([a.id]);
+    const todo = [a];
+    while (todo.length) {
+      const p = todo.pop() as Site;
+      for (const q of this.regionLinks(p)) {
+        if (seen.has(q.id) || Math.hypot(q.x - mx, q.y - my) > 2.5 * len || !shorter(p, q)) continue;
+        if (q.id === b.id) return false;
+        seen.add(q.id);
+        todo.push(q);
+      }
+    }
+    return true;
   }
 
   /** Generate one chunk: its sectors (sites whose cell is in it), their nodes and routes, and their hyperlanes. */
