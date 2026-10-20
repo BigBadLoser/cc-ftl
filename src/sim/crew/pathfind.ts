@@ -1,6 +1,6 @@
 import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
-import { isEvaWalkable, isWalkable } from '../structure';
+import { DoorJam, isEvaWalkable, isWalkable } from '../structure';
 import type { Sim } from '../sim';
 import { shipGrid } from '../regions';
 
@@ -43,12 +43,14 @@ export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, o
   // The search runs on window indices, i = (y - y0) * width + (x - x0): the tie-break order is the same in any frame.
   const struct = grid.load('struct');
   const mods = grid.has('module') ? grid.load('module') : null;
+  const jam = grid.has('jam') ? grid.load('jam') : null;
   const infos = new Map<number, WalkInfo>();
   const o2 = opts.avoidThin && grid.has('o2') ? grid.load('o2') : null;
   const walk = (i: number): boolean => {
     const kind = struct[i] as number;
     const x = x0 + (i % width), y = y0 + Math.floor(i / width);
     if (!isWalkable(kind) && !(opts.suited && isEvaWalkable(grid, x, y))) return false;
+    if (jam && jam[i] === DoorJam.Shut) return false;
     if (o2 && (o2[i] as number) < EVA_THIN_AIR_BELOW && i !== fromIndex) return false;
     const m = mods ? (mods[i] as number) : 0;
     if (m === 0) return true;

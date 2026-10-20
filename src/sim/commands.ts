@@ -9,6 +9,8 @@ export type Command =
   | { type: 'debug.setStruct'; ship: number; x: number; y: number; kind: number }
   | { type: 'job.build'; ship: number; x: number; y: number; struct: number }
   | { type: 'job.deconstruct'; ship: number; x: number; y: number }
+  /** Have crew force a jammed door (`jam` field) at (x, y) free: a timed construction job worked from beside it. */
+  | { type: 'job.forceDoor'; ship: number; x: number; y: number }
   | { type: 'job.cancel'; ship: number; x: number; y: number }
   /** Blueprint a module; (x, y) is the top-left of the rotated footprint, rot = quarter turns clockwise. */
   | { type: 'job.buildModule'; ship: number; x: number; y: number; def: string; rot: number }
@@ -75,6 +77,11 @@ export type Command =
    * RNG) and spawn it centred on sector tile (cx, cy), clamped into the sector. The origin is stored on the ship.
    */
   | { type: 'debug.spawnGenerated'; faction: string; depth: number; seed?: number; cx: number; cy: number }
+  /**
+   * Like debug.spawnGenerated, then run the derelict ruin pass (shipgen/ruin.ts) over it with `seed` and spawn the result as
+   * an inert wreck: no crew, no AI, state 'wreck', neutral side. `intensity` 0..1 (default 0.5); `cause` default rolled.
+   */
+  | { type: 'debug.spawnDerelict'; faction: string; depth: number; seed?: number; cx: number; cy: number; intensity?: number; cause?: 'combat' | 'decay' }
   /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetShip 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetShip 0) aims at a shuttle in flight or docked. */
   | { type: 'combat.setTarget'; ship: number; weaponId: number | null; targetShip: number; targetModuleId: number; targetVehicle?: number }
   /** Hold fire: weapons charge but only fire on combat.fireVolley. */

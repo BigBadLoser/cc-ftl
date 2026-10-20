@@ -1,6 +1,6 @@
 import type { Grid } from '../grid';
 import type { Sim } from '../sim';
-import { isEvaWalkable, isWalkable } from '../structure';
+import { DoorJam, isEvaWalkable, isWalkable } from '../structure';
 import { ModuleC } from './components';
 import { openTilesOf } from './footprint';
 
@@ -31,6 +31,7 @@ export function walkInfo(sim: Sim, id: number): WalkInfo {
 export function isTileWalkable(sim: Sim, grid: Grid, x: number, y: number, suited = false): boolean {
   if (!grid.inBounds(x, y)) return false;
   if (!isWalkable(grid.get('struct', x, y))) return suited && isEvaWalkable(grid, x, y);
+  if (grid.has('jam') && grid.get('jam', x, y) === DoorJam.Shut) return false;
   if (!grid.has('module')) return true;
   const id = grid.get('module', x, y);
   if (id === 0) return true;

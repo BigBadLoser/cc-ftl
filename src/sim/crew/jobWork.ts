@@ -10,7 +10,7 @@ import { performAssemble } from '../robots/bay';
 import { performHack, performMend, performSalvage } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { Struct, writeStruct } from '../structure';
+import { DoorJam, Struct, writeStruct } from '../structure';
 import { stochasticRound } from '../stochastic';
 import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC } from '../tuning';
 import { findFreeBed } from './beds';
@@ -47,6 +47,11 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'assemble': return performAssemble(sim, job, speed);
     case 'suitUp':
     case 'suitOff': return performSuitJob(sim, crew, job, speed);
+    case 'forceDoor': return timed(job, speed, () => {
+      const grid = shipGrid(sim, shipIdOf(sim, job));
+      if (grid?.has('jam') && grid.inBounds(job.x, job.y) && grid.get('jam', job.x, job.y) !== DoorJam.None) grid.set('jam', job.x, job.y, DoorJam.None);
+      return 'done';
+    });
   }
 }
 

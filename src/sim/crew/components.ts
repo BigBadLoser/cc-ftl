@@ -137,7 +137,9 @@ export type JobKind =
   /** assemble: build a robot of `assemble.role` in the robot bay `target`. */
   | 'assemble'
   /** suitUp / suitOff: put on or take off an EVA suit at the airlock `target`; the crew member stands ON the airlock's inside tile. */
-  | 'suitUp' | 'suitOff';
+  | 'suitUp' | 'suitOff'
+  /** forceDoor: free a jammed door at (x, y) (player-ordered, worked from beside it). */
+  | 'forceDoor';
 
 /** Hit points of a crew member. At 0 they are downed (see DownedC). */
 export interface Health {
