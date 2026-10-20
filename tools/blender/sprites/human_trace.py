@@ -136,7 +136,7 @@ def tidy_torso(rows, h, arm_r, leg_out):
         back[k] = b0 + (back[kb] - b0) * (zs[k] - zs[0]) / (zs[kb] - zs[0])
     hx = hx * (1 - 0.1 * np.exp(-((zs - zs[kw]) / 0.07) ** 2))
     under = ax - arm_r - 0.025                                               # clear of the hanging arm
-    top, sh, s0 = 0.115, ax - 0.01, sz - 0.01                               # neck base; shoulder (over the joint)
+    top, sh, s0 = 0.115, ax + 0.01, sz                                      # neck base; shoulder (over the joint)
     ease = lambda t: t * t * (3 - 2 * t)  # noqa: E731
     for k, z in enumerate(zs):
         if z < hz + 0.08:                                                    # pelvis: out to the thighs
@@ -190,8 +190,8 @@ def measure(arm, body):
     t = {b.name: Vector(b.tail_local) for b in B}
     out = {"limb": {}}
     for s in "LR":
-        out["limb"][f"arm.{s}"] = bulk(limb(by[f"arm.{s}"], h[f"arm.{s}"], t[f"arm.{s}"], round_=True, lo_pad=-0.03,
-                                            axis=True), *UPPER_K)
+        out["limb"][f"arm.{s}"] = bulk(limb(by[f"arm.{s}"], h[f"arm.{s}"], t[f"arm.{s}"], round_=True, lo_pad=-0.07,
+                                            axis=True), *UPPER_K)          # starts low: its dome meets the shoulder
         out["limb"][f"forearm.{s}"] = bulk(limb(by[f"forearm.{s}"], h[f"forearm.{s}"], t[f"forearm.{s}"], round_=True,
                                                 axis=True), *FORE_K)
         out["limb"][f"hand.{s}"] = wrist(limb(by[f"hand.{s}"], h[f"hand.{s}"], t[f"hand.{s}"], step=0.03), h[f"hand.{s}"])
