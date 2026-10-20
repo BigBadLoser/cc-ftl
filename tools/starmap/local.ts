@@ -101,8 +101,8 @@ export function localView(seed: number, sectorId = 's.0.0'): { svg: string; stat
   if (!here) throw new Error(`no sector ${sectorId}`);
   const lanes = [...edges.values()].filter((e) => e.kind === 'hyperlane' && (nodes.get(e.a)?.sector === here.id || nodes.get(e.b)?.sector === here.id));
   const nearIds = new Set([here.id, ...lanes.flatMap((e) => [nodes.get(e.a)?.sector ?? '', nodes.get(e.b)?.sector ?? ''])]);
-    // Default zoom: centred on your sector, which fills about a third of the screen height; neighbours sit at the edges.
-  const k = (H * 0.36) / (2 * here.r + 60);
+    // Default zoom: centred on your sector, which fills most of the screen height; neighbours are exits at the edges.
+  const k = (H * 0.62) / (2 * here.r + 60);
   const ox = W / 2 - here.x * k;
   const oy = H / 2 - here.y * k;
   const map = (p: P): P => [p[0] * k + ox, p[1] * k + oy];
@@ -126,7 +126,7 @@ export function localView(seed: number, sectorId = 's.0.0'): { svg: string; stat
     const links = [...edges.values()].filter((e) => e.kind === 'route' && sectorOf(e.a) === s.id)
       .map((e): [P, P] => [[nodes.get(e.a)!.x, nodes.get(e.a)!.y], [nodes.get(e.b)!.x, nodes.get(e.b)!.y]]);
     const [fo, so] = r === 'here' ? [0.12, 0.85] : r === 'near' ? [0.06, 0.5] : [0.025, 0.22];
-    const d = fluidBorder(pts, links, 30, 4, map);
+    const d = fluidBorder(pts, links, 44, 5, map);
     out.push(`<path d="${d}" fill="${col}" fill-opacity="${fo}" stroke="${col}" stroke-opacity="${so}" stroke-width="${r === 'here' ? 2 : 1.4}" fill-rule="evenodd"/>`);
   }
   // Lanes: routes inside sectors, hyperlanes between them.

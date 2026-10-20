@@ -59,12 +59,12 @@ export const HULL_GAP = 34;
 export const HULL_PAD = 16;
 
 /**
- * Nodes: Poisson-disk darts inside the sector disc, shaped by the sector's layout style (layout.ts). 8-18 per sector;
+ * Nodes: Poisson-disk darts inside the sector disc, shaped by the sector's layout style (layout.ts). 6-12 per sector;
  * spacing is NODE_SPACING x inner radius / sqrt(count), never below NODE_MIN_DIST.
  */
-export const NODE_MIN_DIST = 48;
-export const NODE_SPACING = 0.95;
-export const NODES_PER_SECTOR = { min: 8, max: 18 } as const;
+export const NODE_MIN_DIST = 64;
+export const NODE_SPACING = 1.25;
+export const NODES_PER_SECTOR = { min: 6, max: 12 } as const;
 /** Layout style weights (a hub is always 'spokes', the start sector a 'cloud'), and the looseness blended into a style. */
 export const LAYOUT_WEIGHTS = { cloud: 3, streak: 2, clumps: 1.5, ring: 1, fork: 1.5, corridor: 1 } as const;
 export const LAYOUT_LOOSENESS = { min: 0.08, max: 0.4 } as const;
