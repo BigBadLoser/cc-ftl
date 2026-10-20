@@ -15,6 +15,8 @@
   galley    the food pack: galley (food printer), rations, mess table and chair (galley.py, mess.py)
   derelict  derelict dressing: breached walls, scorch, debris, dead lights, infestation, AI scrap (derelict*.py)
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
+  storage_set lockers, racks, pallets, containers, tanks, cold stores, armories: 3 fills x 4 rotations (storage_set.py;
+            MODPACK_ROTS=1 renders r0 only, for quick previews)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -59,6 +61,10 @@ def jobs(name):
     if name == "galley":
         from . import galley, mess
         return galley.SPRITES + mess.SPRITES, True
+    if name == "storage_set":
+        import os
+        from . import storage_set
+        return storage_set.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
     if name == "eggsac":
         from . import derelict_sac
         return derelict_sac.SPRITES, True
