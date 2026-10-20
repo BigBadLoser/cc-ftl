@@ -332,7 +332,7 @@ def _rid(base, rot, rotates):
 def bases(rots=range(4)):
     """[(asset id stem, footprint, builder, palette extra, electric)] for the idle sprite of every damageable module.
     Storage is not electrical (no sparks, wires or flicker) except the cold store and the armory's lock."""
-    from . import battery, consoles, galley, hydroponics, logistics, medbay, props, robot_bay, storage_set, workbench
+    from . import battery, consoles, cryo, galley, hydroponics, logistics, medbay, props, robot_bay, storage_set, workbench
     from . import console_proto as C
     out = []
     env = {s[0]: s for s in props.SPRITES}
@@ -360,7 +360,8 @@ def bases(rots=range(4)):
     for name, fp, fn, st in (("med_bed", (1, 2), medbay.med_bed, "idle"), ("med_console", (1, 1), medbay.med_console,
                               "idle"), ("battery", (1, 2), battery.battery, "charge2"),
                              ("hydroponics", (2, 1), hydroponics.hydroponics, "grow2"),
-                             ("workbench", (2, 1), workbench.workbench, "idle")):
+                             ("workbench", (2, 1), workbench.workbench, "idle"),
+                             ("cryo_pod", (1, 2), cryo.cryo, "idle")):
         for r in rots:
             f = fp if r % 2 == 0 else (fp[1], fp[0])
             out.append((f"module.{name}.r{r}", f, lambda fn=fn, r=r, st=st: fn(st, r), True, True))

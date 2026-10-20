@@ -24,6 +24,7 @@
   hydroponics  the hydroponics bay, .grow0 .. .grow3, each also .active (hydroponics.py; MODPACK_ROTS as storage_set)
   workbench the workbench, idle and .active (workbench.py; MODPACK_ROTS as storage_set)
   ops_consoles  comms and sensor consoles, seated 2x2, with desk-front overlays (console_ops.py; MODPACK_ROTS as above)
+  cryo      the cryo pod, idle / .active (frozen, occupied) / .empty (open) (cryo.py; MODPACK_ROTS as above)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
 Crew layers are built separately (`crew`)."""
 
@@ -92,6 +93,10 @@ def jobs(name):
         import os
         from . import consoles
         return consoles.jobs(("comms", "sensor"), range(int(os.environ.get("MODPACK_ROTS", 4)))), True
+    if name == "cryo":
+        import os
+        from . import cryo
+        return cryo.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
     if name == "damage":
         import os
         from . import damage

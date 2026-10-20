@@ -186,7 +186,7 @@ def row(P, pub, out, aid, fp, states):
         cv.static(P, f"{aid}.{st}", *iso(ox, oy, gx + w - 1, d - 1))
         x, y = iso(ox, oy, gx + w - 1, d - 1)
         cv.labels.append((x - 20, y + 30, st))
-    cv.char(human(pub, 1), *iso(ox, oy, nx - 1, d + 1))
+    cv.char(human(pub, 1), *iso(ox, oy, nx, d + 1))
     cv.save(out / f"row-{aid}-3x.png", 3)
     cv.save(out / f"row-{aid}-1x.png", 1)
 
