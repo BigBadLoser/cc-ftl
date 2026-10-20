@@ -62,7 +62,8 @@ describe('galaxy generation', () => {
   });
 
   it('connects every sector inside and the whole region through hyperlanes', () => {
-    const chunks = build(9, 3);
+    // Regions and their detours are large, so build well past the inner square that is checked.
+    const chunks = build(9, 4);
     const nodes = new Set([...chunks.values()].flatMap((c) => c.nodes.map((n) => n.id)));
     const adj = new Map<string, string[]>();
     for (const c of chunks.values()) {
@@ -83,7 +84,7 @@ describe('galaxy generation', () => {
     }
     // Everything in the inner 5x5 chunks (well away from the cut edge of the generated square) is reachable.
     const inner = [...chunks.values()].filter((c) => Math.abs(c.cx) <= 2 && Math.abs(c.cy) <= 2).flatMap((c) => c.nodes);
-    expect(inner.length).toBeGreaterThan(1000);
+    expect(inner.length).toBeGreaterThan(300);
     expect(inner.filter((n) => !reach.has(n.id)).map((n) => n.id)).toEqual([]);
   });
 

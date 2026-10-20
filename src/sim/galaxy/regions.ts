@@ -33,6 +33,7 @@ export class RegionField {
   private base = new Map<string, Region | null>();
   private keep = new Map<string, boolean>();
   private claimed = new Map<string, Region | null>();
+  private hubs = new Map<string, { x: number; y: number } | null>();
 
   constructor(
     readonly seed: number,
@@ -139,6 +140,35 @@ export class RegionField {
       this.owner.set(key, best);
     }
     return best;
+  }
+
+  /**
+   * A region's hub: of its sectors within REGION_REACH of the seed, the one scoring best on terrain density minus
+   * distance from the seed. Null for a region left with no sectors.
+   */
+  hub(r: Region): { x: number; y: number } | null {
+    let h = this.hubs.get(r.id);
+    if (h === undefined) {
+      h = null;
+      let best = -Infinity;
+      for (const s of this.sites.sitesNear(r.x, r.y, REGION_REACH)) {
+        if (this.regionAt(s.x, s.y) !== r) continue;
+        const score = this.terrain.density(s.x, s.y) - Math.hypot(s.x - r.x, s.y - r.y) / REGION_REACH;
+        if (score > best) {
+          best = score;
+          h = s;
+        }
+      }
+      this.hubs.set(r.id, h);
+    }
+    return h;
+  }
+
+  /** True when the site at (x, y) is its region's hub. */
+  isHub(x: number, y: number): boolean {
+    const r = this.regionAt(x, y);
+    const h = r ? this.hub(r) : null;
+    return !!h && h.x === x && h.y === y;
   }
 
   /** The cheapest kept seed (before the wild test). */

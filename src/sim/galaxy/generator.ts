@@ -80,7 +80,7 @@ export class GalaxyGen implements SectorContext {
   sector(site: Site): BuiltSector {
     let s = this.sectors.get(site.id);
     if (!s) {
-      s = buildSector(this, site);
+      s = buildSector(this, site, this.regions.isHub(site.x, site.y));
       const region = this.regions.regionAt(site.x, site.y);
       if (region) s.sector.region = region.id;
       this.sectors.set(site.id, s);
@@ -221,6 +221,13 @@ export class GalaxyGen implements SectorContext {
       const [a, b] = site.id < other.id ? [site, other] : [other, site];
       if (!this.treeEdge(a, b) && unit(this.seed, strHash(a.id), strHash(b.id), 51) >= LOOP_CHANCE) continue;
       out.push(this.lane(a, b, false, !this.clear(a, b)));
+    }
+    // A hub is a crossroads: it keeps every clear lane to its region-mates.
+    for (const { site: other, rift } of cands) {
+      if (rift || this.regions.regionAt(other.x, other.y) !== mine) continue;
+      if (!this.regions.isHub(site.x, site.y) && !this.regions.isHub(other.x, other.y)) continue;
+      const [a, b] = site.id < other.id ? [site, other] : [other, site];
+      out.push(this.lane(a, b, false, false));
     }
     for (const { site: other, rift } of cands) {
       const theirs = this.regions.regionAt(other.x, other.y);

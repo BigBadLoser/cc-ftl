@@ -51,6 +51,8 @@ export interface SectorData {
   hull: Vec[];
   /** The region (province) it belongs to: `g.<rx>.<ry>`. */
   region?: string;
+  /** Its region's hub: the crossroads sector (more nodes, more lanes). */
+  hub?: true;
 }
 
 export type EdgeKind = 'route' | 'hyperlane';

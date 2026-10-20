@@ -6,7 +6,7 @@ import { hash32, unit } from './hash';
 import type { Site } from './sites';
 import { dangerAt } from './territory';
 import {
-  CONTACT_MAX_CHANCE, CONTACT_PER_DANGER, HULL_PAD, NODE_DENSITY, NODE_MIN_DIST, NODES_PER_SECTOR, OPEN_STATION_CHANCE,
+  CONTACT_MAX_CHANCE, CONTACT_PER_DANGER, HUB_NODES, HULL_PAD, NODE_DENSITY, NODE_MIN_DIST, NODES_PER_SECTOR, OPEN_STATION_CHANCE,
   ROUTE_EXTRA, TERRITORY_TRAFFIC,
 } from './tuning';
 import type { ContactSeed, EdgeData, NodeData, SectorData, StructureRef } from './types';
@@ -49,11 +49,11 @@ export function trafficPool(content: GalaxyContent | undefined, owner: string | 
 }
 
 /** Node offsets inside the sector disc: Poisson-disk darts (the start sector's first node is pinned to its centre). */
-function scatter(rng: Rng, site: Site, start: boolean): Vec[] {
+function scatter(rng: Rng, site: Site, start: boolean, hub: boolean): Vec[] {
   const inner = Math.max(0, site.r - HULL_PAD);
   // Richness varies per sector on top of density, so sector sizes differ even inside one cluster.
   const per = (NODE_DENSITY.void + (NODE_DENSITY.core - NODE_DENSITY.void) * site.density) * (0.55 + 0.9 * rng.next());
-  const want = Math.max(NODES_PER_SECTOR.min, Math.min(NODES_PER_SECTOR.max, Math.round(per * site.r * site.r)));
+  const want = Math.max(NODES_PER_SECTOR.min, Math.min(NODES_PER_SECTOR.max, Math.round(per * site.r * site.r * (hub ? HUB_NODES : 1))));
   const pts: Vec[] = start ? [{ x: 0, y: 0 }] : [];
   for (let tries = want * 40; pts.length < want && tries > 0; tries--) {
     const a = rng.next() * Math.PI * 2;
@@ -102,11 +102,14 @@ function structuresFor(rng: Rng, ctx: SectorContext, nodes: readonly Vec[], fact
   return out;
 }
 
-/** Build one sector from its site: nodes (positions, names, structures, ships present) and the routes between them. */
-export function buildSector(ctx: SectorContext, site: Site): BuiltSector {
+/**
+ * Build one sector from its site: nodes (positions, names, structures, ships present) and the routes between them. A hub
+ * (its region's crossroads) gets HUB_NODES times the nodes.
+ */
+export function buildSector(ctx: SectorContext, site: Site, hub = false): BuiltSector {
   const start = site.gx === 0 && site.gy === 0;
   const rng = new Rng(hash32(ctx.seed, site.gx, site.gy, 21));
-  const pts = scatter(rng, site, start);
+  const pts = scatter(rng, site, start, hub);
   const faction = ctx.territory.factionAt(site.x, site.y);
   const danger = dangerAt(site.x, site.y);
   const name = sectorName(ctx.seed, site, ctx.content);
@@ -139,7 +142,7 @@ export function buildSector(ctx: SectorContext, site: Site): BuiltSector {
   }
   const sector: SectorData = {
     id: site.id, chunk: ctx.chunkOf(site), x: site.x, y: site.y, r: site.r, name: name.full, faction, danger,
-    nodes: nodes.map((n) => n.id), hull: paddedHull(pts, HULL_PAD),
+    nodes: nodes.map((n) => n.id), hull: paddedHull(pts, HULL_PAD), ...(hub ? { hub: true as const } : {}),
   };
   return { sector, nodes, routes };
 }

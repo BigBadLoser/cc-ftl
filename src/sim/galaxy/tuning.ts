@@ -7,9 +7,17 @@
 export const SITE_CELL = 320;
 /** Cells per chunk side: a chunk is CHUNK_CELLS x CHUNK_CELLS cells (1280 units). */
 export const CHUNK_CELLS = 4;
-/** Terrain (terrain.ts): noise features are about TERRAIN_SCALE units across; density is cached on this lattice. */
+/**
+ * Terrain (terrain.ts): noise features are about TERRAIN_SCALE units across. Density is cached on a fine lattice for site
+ * placement and a coarse one for void checks along lines.
+ */
 export const TERRAIN_SCALE = 5200;
 export const TERRAIN_LATTICE = 40;
+export const TERRAIN_COARSE = 160;
+/** Directional terrain: filament noise is averaged over +-2 steps of this length (in noise units) along the flow. */
+export const TERRAIN_STREAK = 0.09;
+/** The large-scale tide (dense core expanses vs sparse rim) has features about this many units across. */
+export const TERRAIN_TIDE_SCALE = 26000;
 
 /**
  * Regions (regions.ts): one seed per REGION_CELL cell on ground at least REGION_SEED_DENSITY dense. A sector joins the
@@ -54,6 +62,8 @@ export const HULL_PAD = 16;
 export const NODE_MIN_DIST = 40;
 export const NODE_DENSITY = { core: 0.0011, void: 0.00025 } as const;
 export const NODES_PER_SECTOR = { min: 8, max: 42 } as const;
+/** A region's hub sector gets this many times the nodes (clamped to NODES_PER_SECTOR.max). */
+export const HUB_NODES = 1.6;
 /** Routes inside a sector: the spanning tree of the Gabriel graph plus this share of its other edges. */
 export const ROUTE_EXTRA = 0.3;
 

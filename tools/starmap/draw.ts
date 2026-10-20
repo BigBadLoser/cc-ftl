@@ -75,6 +75,7 @@ export function overview(seed: number, radius: number, scale = 0.25): Overview {
     out.push(`<circle cx="${X(n.x)}" cy="${X(n.y)}" r="${(n.contacts.length ? 1.6 : 1.1) * Math.min(1, scale / 0.12 + 0.5)}" fill="${fill}"${n.contacts.length ? ' stroke="#ef4444"' : ''}/>`);
   }
   out.push(`<circle cx="${X(0)}" cy="${X(0)}" r="5" fill="none" stroke="#22d3ee" stroke-width="2"/>`);
+  for (const c of chunks) for (const s of c.sectors) if (s.hub) out.push(`<circle cx="${X(s.x)}" cy="${X(s.y)}" r="${(s.r * scale + 4).toFixed(1)}" fill="none" stroke="#f8fafc" stroke-opacity="0.8" stroke-width="1.5"/>`);
   // Region borders: each sector's Voronoi cell (clipped to a disc around it); cell edges facing a sector of another
   // region are drawn. Solid where the owner changes, dashed between two regions of the same owner.
   const all = chunks.flatMap((c) => c.sectors);
