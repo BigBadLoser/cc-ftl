@@ -87,8 +87,9 @@ class Build:
         self.cap(rings[0], self.point(lo, wt), flip=True)
         self.cap(rings[-1], self.point(hi, wt))
 
-    def loft(self, rings, exp=3.0, cap_lo=True, cap_hi=True):
+    def loft(self, rings, exp=3.0, cap_lo=True, cap_hi=True, keep=None):
         """A body of horizontal rings: [(centre, half x, half y, weights)], bottom to top."""
+        f0 = len(self.f)
         ids = [self.ring(c, Vector((1, 0, 0)), Vector((0, 1, 0)), hx, hy, wt, exp=exp) for c, hx, hy, wt in rings]
         for r0, r1 in zip(ids, ids[1:]):
             self.bridge(r0, r1)
@@ -96,6 +97,30 @@ class Build:
             self.cap(ids[0], self.point(rings[0][0], rings[0][3]), flip=True)
         if cap_hi:
             self.cap(ids[-1], self.point(rings[-1][0], rings[-1][3]))
+        if keep:
+            self.f[f0:] = [f for f in self.f[f0:] if keep(sum((self.v[i] for i in f), Vector()) / len(f))]
+
+    def sweep(self, rings, grow=0.0, exp=2.4, keep=None, round_ends=True):
+        """Sections [(centre, e1, e2, r1, r2, weights)] joined in order, grown by `grow`, ends closed (rounded: an extra
+        smaller ring just past each end). keep(face centre) -> bool trims faces."""
+        f0 = len(self.f)
+        ids = []
+        if round_ends:
+            c, e1, e2, r1, r2, wt = rings[0]
+            ax = (rings[0][0] - rings[1][0]).normalized()
+            ids.append(self.ring(c + ax * (0.6 * min(r1, r2)), e1, e2, (r1 + grow) * 0.6, (r2 + grow) * 0.6, wt, exp=exp))
+        for c, e1, e2, r1, r2, wt in rings:
+            ids.append(self.ring(c, e1, e2, r1 + grow, r2 + grow, wt, exp=exp))
+        if round_ends:
+            c, e1, e2, r1, r2, wt = rings[-1]
+            ax = (rings[-1][0] - rings[-2][0]).normalized()
+            ids.append(self.ring(c + ax * (0.6 * min(r1, r2)), e1, e2, (r1 + grow) * 0.6, (r2 + grow) * 0.6, wt, exp=exp))
+        for r0, r1_ in zip(ids, ids[1:]):
+            self.bridge(r0, r1_)
+        self.cap(ids[0], self.point(sum((self.v[i] for i in ids[0]), Vector()) / len(ids[0]), rings[0][5]), flip=True)
+        self.cap(ids[-1], self.point(sum((self.v[i] for i in ids[-1]), Vector()) / len(ids[-1]), rings[-1][5]))
+        if keep:
+            self.f[f0:] = [f for f in self.f[f0:] if keep(sum((self.v[i] for i in f), Vector()) / len(f))]
 
     def blob(self, centre, hx, hy, hz, wt, exp=2.8, nlat=10, keep=None):
         """A rounded box (superellipsoid) of half extents hx, hy, hz. keep(face centre) -> bool trims faces."""
@@ -170,36 +195,35 @@ def reshape_rig(arm):
 
 
 class Rig:
-    """Rest positions of the bones the body is built on."""
+    """Rest bone positions and the traced sections (human_trace.measure) the body is built from."""
 
-    def __init__(self, arm):
+    def __init__(self, arm, T):
         B = arm.data.bones
         self.h = {b.name: Vector(b.head_local) for b in B}
         self.t = {b.name: Vector(b.tail_local) for b in B}
-        hb, ht = self.h["head"], self.t["head"]
+        self.T = T
         self.neck = self.h["neck_01"]
-        self.head_c = Vector((0.0, hb.y - 0.01, ht.z + 0.02))   # head centre
-        self.HX, self.HY, self.HZ = 0.165, 0.165, 0.19          # head half extents
         self.hips = self.h["hips"]
         self.chest = self.h["spine_03"]
         self.shoulder_z = self.h["arm.L"].z
+        hr = [r for r in T["head"] if "head" in r[3] and r[3]["head"] > 0.5]
+        zs = [r[0].z for r in hr]
+        self.HX = max(r[1] for r in hr)
+        self.HY = max(r[2] for r in hr)
+        self.HZ = (max(zs) - min(zs)) / 2 + 0.015
+        mid = hr[len(hr) // 2]
+        self.head_c = Vector((0.0, mid[0].y, (max(zs) + min(zs)) / 2))
+        self.front = min(r[0].y - r[2] for r in hr)                # the face plane (most forward point of the head)
 
 
 # ---- body parts (shared by the body and the shells) -----------------------------------------------------------------
 
 def torso(b, R, grow=0.0, lo=None, hi=None):
-    """The torso loft from the crotch to the shoulders, grown by `grow`, clipped to lo <= z <= hi (hem lines)."""
-    hz, cz, sz = R.hips.z, R.chest.z, R.shoulder_z
-    rings = [((0, 0.02, hz - 0.1), 0.16, 0.11, W("hips")),
-             ((0, 0.02, hz), 0.175, 0.115, W("hips")),
-             ((0, 0.02, R.h["spine_02"].z), 0.16, 0.105, blend("spine", "spine_02", 0.5)),
-             ((0, 0.02, cz + 0.04), 0.2, 0.125, blend("spine_02", "spine_03", 0.7)),
-             ((0, 0.03, sz - 0.02), 0.215, 0.12, W("spine_03")),
-             ((0, 0.03, sz + 0.06), 0.12, 0.09, W("spine_03"))]
-    rings = [(Vector(c), hx + grow, hy + grow, w) for c, hx, hy, w in rings]
+    """The traced torso from the crotch to the shoulders, grown by `grow`, clipped to lo <= z <= hi (hem lines)."""
+    rings = [(c, hx + grow, hy + grow, w) for c, hx, hy, w in R.T["torso"]]
     zs = [r[0].z for r in rings]
 
-    def at(z):                                                               # a ring interpolated at height z
+    def at(z):                                                               # a section interpolated at height z
         k = max(0, min(len(rings) - 2, int(np.searchsorted(zs, z)) - 1))
         r0, r1 = rings[k], rings[k + 1]
         t = (z - r0[0].z) / (r1[0].z - r0[0].z)
@@ -209,31 +233,53 @@ def torso(b, R, grow=0.0, lo=None, hi=None):
     b.loft(clip)
 
 
+def chain(b, R, bones, grow=0.0, t0=0.0, t1=1.0, exp=2.4):
+    """A limb swept as ONE surface through the traced sections of consecutive bones (shoulder to wrist, hip to ankle),
+    each section skinned to its bone, the two sections either side of a joint shared half and half so it bends
+    smoothly; t0..t1 clips it to that fraction of the sections (sleeves, hems)."""
+    rows = []
+    for k, bone in enumerate(bones):
+        secs = R.T["limb"][bone]
+        if k:
+            secs = secs[1:]                                                  # the joint section is the previous bone's last
+        for j, (c, e1, e2, r1, r2) in enumerate(secs):
+            w = W(bone)
+            if k and j == 0:
+                w = {bones[k - 1]: 0.5, bone: 0.5}
+            rows.append((c, e1, e2, r1, r2, w))
+        if k + 1 < len(bones):                                               # the last section of this bone blends forward
+            c, e1, e2, r1, r2, _ = rows[-1]
+            rows[-1] = (c, e1, e2, r1, r2, {bone: 0.5, bones[k + 1]: 0.5})
+    n = len(rows)
+    k0, k1 = int(round(t0 * (n - 1))), int(round(t1 * (n - 1)))
+    b.sweep(rows[k0:max(k1, k0 + 1) + 1], grow=grow, exp=exp, round_ends=True)
+
+
 def arm(b, R, side, grow=0.0, upper=1.0, fore=True, hand=True):
-    """Shoulder ball, upper arm, forearm, mitten hand; upper < 1 stops the upper arm part-way (short sleeves)."""
+    """upper < 1: only that fraction of the upper arm (short sleeves); fore / hand: carry on through them."""
     s = side
-    sh, el, wr = R.h[f"arm.{s}"], R.t[f"arm.{s}"], R.t[f"forearm.{s}"]
-    b.tube(sh, sh + (el - sh) * upper, 0.075 + grow, 0.066 + grow, W(f"arm.{s}"), round_ends=upper >= 1)
-    if fore:
-        b.tube(el, wr, 0.066 + grow, 0.055 + grow, W(f"forearm.{s}"))
-    if hand:
-        d = (R.t[f"hand.{s}"] - R.h[f"hand.{s}"]).normalized()
-        b.blob(wr + d * 0.07, 0.07 + grow, 0.055 + grow, 0.065 + grow, W(f"hand.{s}"), exp=2.6, nlat=8)
+    bones = [f"arm.{s}"] + ([f"forearm.{s}"] if fore else []) + ([f"hand.{s}"] if hand else [])
+    if upper < 1:
+        n_up = len(R.T["limb"][f"arm.{s}"])
+        n = sum(len(R.T["limb"][x]) for x in bones) - (len(bones) - 1)
+        chain(b, R, bones, grow, t1=upper * (n_up - 1) / (n - 1))
+    else:
+        chain(b, R, bones, grow)
 
 
 def leg(b, R, side, grow=0.0, foot=True, boot=0.0):
     s = side
-    hp, kn, an = R.h[f"leg.{s}"], R.t[f"leg.{s}"], R.t[f"shin.{s}"]
-    b.tube(hp, kn, 0.095 + grow, 0.078 + grow, W(f"leg.{s}"))
-    b.tube(kn, an, 0.078 + grow, 0.064 + grow, W(f"shin.{s}"))
+    chain(b, R, [f"leg.{s}", f"shin.{s}"], grow)
     if foot:
-        toe = R.t[f"toe.{s}"]
-        c = Vector(((an.x + toe.x) / 2, (an.y + toe.y) / 2 - 0.01, 0.075 + boot / 2))
-        b.blob(c, 0.072 + grow + boot, 0.11 + grow + boot, 0.06 + boot / 2, W(f"foot.{s}"), exp=3.0, nlat=8)
+        secs = R.T["limb"][f"foot.{s}"]
+        b.sweep([(c, e1, e2, r1, r2, W(f"foot.{s}")) for c, e1, e2, r1, r2 in secs], grow=grow + boot, exp=3.0)
 
 
 def head(b, R, grow=0.0, keep=None):
-    b.blob(R.head_c, R.HX + grow, R.HY + grow, R.HZ + grow, W("head"), exp=3.4, keep=keep)
+    rings = [(c, hx + grow, hy + grow, w) for c, hx, hy, w in R.T["head"]]
+    top = rings[-1]
+    rings.append((top[0] + Vector((0, 0, 0.012 + grow)), top[1] * 0.55, top[2] * 0.55, top[3]))   # rounded crown
+    b.loft(rings, exp=2.8, keep=keep)
 
 
 def flat(colour):

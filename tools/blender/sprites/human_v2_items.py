@@ -9,9 +9,9 @@ from mathutils import Vector
 from . import core
 from . import crew_clips as clips
 from . import human_render as hr
-from . import human_shape
+from . import human_trace
 from .human_base import SCALE, Item, import_base
-from .human_v2 import PUFF, SHELL, Build, Rig, W, arm, flat, head, leg, reshape_rig, torso
+from .human_v2 import PUFF, SHELL, Build, Rig, W, arm, flat, head, leg, torso
 
 
 def body(A, R):
@@ -30,7 +30,7 @@ def eyes(A, R):
     b = Build()
     c = R.head_c
     for sx in (1, -1):                                         # two dark eyes, ~2 x 3 px: they show which way the head faces
-        b.blob(c + Vector((sx * 0.065, -R.HY + 0.01, -0.03)), 0.028, 0.02, 0.036, W("head"), exp=2.4, nlat=6)
+        b.blob(Vector((sx * 0.048, R.front + 0.018, c.z + 0.0)), 0.022, 0.012, 0.028, W("head"), exp=2.4, nlat=6)
     return Item("eyes", "organic", [b.mesh("v2.eyes", A, flat("dark"))], default=True)
 
 
@@ -84,13 +84,13 @@ def cargo_pants(A, R):
     return Item("legs", "cargo_pants", [b.mesh("v2.cargo_pants", A, col)], default=True)
 
 
-def _hair_cap(b, R, back=-0.16):
+def _hair_cap(b, R, back=-0.12):
     c = R.head_c
 
     def keep(p):
         r = p - c
-        return r.z > 0.1 or (r.y > 0.04 and r.z > back) or (r.y > -0.02 and r.z > 0.0 and abs(r.x) > R.HX)
-    b.blob(c + Vector((0, 0.025, 0.035)), R.HX + 0.025, R.HY + 0.012, R.HZ + 0.02, W("head"), exp=3.4, keep=keep)
+        return r.z > 0.045 or (r.y > 0.02 and r.z > back) or (r.y > -0.04 and r.z > -0.03 and abs(r.x) > R.HX - 0.02)
+    head(b, R, grow=0.022, keep=keep)
 
 
 def hair_short(A, R):
@@ -103,7 +103,7 @@ def hair_ponytail(A, R):
     b = Build()
     _hair_cap(b, R, back=-0.1)
     c = R.head_c
-    b.tube(c + Vector((0, R.HY + 0.03, 0.05)), c + Vector((0, R.HY + 0.12, -0.2)), 0.07, 0.05, W("head"))
+    b.tube(c + Vector((0, R.HY + 0.02, 0.04)), c + Vector((0, R.HY + 0.1, -0.17)), 0.055, 0.04, W("head"))
     return Item("hair", "ponytail", [b.mesh("v2.hair.ponytail", A, flat("team.hair"))])
 
 
@@ -199,25 +199,18 @@ def eva_pack(A, R):
 def build_items():
     core.setup_scene()
     A = import_base()
-    for ob in [o for o in bpy.data.objects if o.type == "MESH"]:            # the realistic base mesh is not used
+    T = human_trace.measure(A, bpy.data.objects["skin@body.team.skin"])   # trace the realistic base, then drop it
+    for ob in [o for o in bpy.data.objects if o.type == "MESH"]:
         bpy.data.objects.remove(ob, do_unlink=True)
-    reshape_rig(A)
-    R = Rig(A)
+    R = Rig(A, T)
     items = [body(A, R), eyes(A, R), flesh_arm(A, R, "L"), flesh_arm(A, R, "R"), tee(A, R), work_shirt(A, R),
              cargo_pants(A, R), hair_short(A, R), hair_ponytail(A, R), eva_torso(A, R), eva_arm(A, R, "L"),
              eva_arm(A, R, "R"), eva_legs(A, R), eva_helmet(A, R), eva_pack(A, R)]
     for it in items:
         it.order = hr.ORDER[it.slot]
-    hip_k = human_shape.LEG_Z * human_shape.GROW
     for act in bpy.data.actions:       # we drive bone scale ourselves (torso width, breathing)
         for fc in [f for f in act.fcurves if f.data_path.endswith("scale")]:
             act.fcurves.remove(fc)
-        for fc in act.fcurves:         # hip drops / seat heights in the clips: scaled with the shorter legs
-            if fc.data_path == 'pose.bones["hips"].location':
-                for k in fc.keyframe_points:
-                    k.co[1] *= hip_k
-                    k.handle_left[1] *= hip_k
-                    k.handle_right[1] *= hip_k
     clips.capture_idle_arms(A)
     A.rotation_mode = "XYZ"
     A.scale = (SCALE,) * 3
