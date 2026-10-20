@@ -41,16 +41,19 @@ def medic_vest(A, R):
 
 
 def medkit(A, R):
-    """A grey case on the back (it has to read against the white vest) with a big red cross."""
+    """A red medic pack on the back with a white cross (red on white reads against the white vest, where a white or grey
+    case did not), a little smaller and lower than a backpack, with a dark lid seam."""
     b = Build()
-    c = Vector((0, R.chest.y + 0.22, R.chest.z + 0.05))
-    b.blob(c, 0.13, 0.06, 0.14, W("spine_03"), exp=4.0, nlat=8)
+    c = Vector((0, R.chest.y + 0.21, R.chest.z - 0.01))
+    b.blob(c, 0.105, 0.055, 0.12, W("spine_03"), exp=4.0, nlat=8)
 
     def col(p, n):
         r = p - c
-        if n.y > 0.5 and (abs(r.x) < 0.035 and abs(r.z) < 0.1 or abs(r.z) < 0.035 and abs(r.x) < 0.1):
-            return "medRed"
-        return "plate"
+        if n.y > 0.5 and (abs(r.x) < 0.028 and abs(r.z) < 0.075 or abs(r.z) < 0.028 and abs(r.x) < 0.075):
+            return "medWhite"
+        if r.z > 0.085:
+            return "rustD"                                                  # the lid
+        return "medRed"
     return Item("gear.back", "medkit", [b.mesh("v2.medkit", A, col)])
 
 
@@ -72,13 +75,24 @@ def armor_vest(A, R):
 
 
 def tactical_helmet(A, R):
-    """A gunmetal helmet down to the brows and over the ears, a team-colour stripe over the top."""
+    """A gunmetal helmet that sits above the brows (the face stays visible), with a dark rim round its edge and a
+    team-colour stripe over the top."""
     b = Build()
     c = R.head_c
-    head(b, R, grow=0.035, keep=lambda p: (p - c).z > 0.0 or (p - c).y > -0.02 and (p - c).z > -0.08)
+    rim = 0.035
+
+    def keep(p):
+        r = p - c
+        return r.z > rim or r.y > -0.02 and r.z > -0.04
+    head(b, R, grow=0.03, keep=keep)
 
     def col(p, n):
-        return "team.cloth" if abs(p.x) < 0.025 and (p - c).z > 0.06 else "gmD"
+        r = p - c
+        if abs(p.x) < 0.025 and r.z > 0.07:
+            return "team.cloth"
+        if r.y < -0.02 and r.z < rim + 0.03 or r.y >= -0.02 and r.z < -0.01:
+            return "gmD"                                                    # the rim
+        return "gm"
     return Item("gear.head", "tactical_helmet", [b.mesh("v2.tactical_helmet", A, col)])
 
 
