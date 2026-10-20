@@ -6,7 +6,7 @@ other glow.
 Built in the robot_kit character frame with x = -u and f = +v of the module frame (modkit: front = +v, origin at the
 middle of the footprint), then turned and placed like modkit.K, so it lines up with every other module.
 
-A pill-shaped capsule standing on the back tile, hung in a dark frame yoke by two big hinge discs, sitting in a dark
+A pill-shaped capsule on the back tile, hung in a dark frame yoke by two big hinge discs and leaning back a little, sitting in a dark
 cradle on a plinth with light skirt plates; pistons and coolant lines behind; a tapered dark-glass canopy plate on its
 front, the status light above it; the front tile is the access step with four life-support cells.
   idle    closed, unpowered: dark glass, light and cells off
@@ -24,6 +24,7 @@ SHELL, SHELL_D, FRAME, FRAME_L = "sole", "plate", "dark", "steelD"
 FB = -0.45                                # capsule centre line (back tile)
 Z0, Z1 = 0.46, 1.34                       # capsule body between its two domes
 CW, CD = 0.62, 0.56                       # capsule width, depth
+PIVOT, TILT = 0.95, math.radians(12)     # the yoke's hinge discs; the capsule leans back about them
 A, B = CW / 2, CD / 2                     # the capsule's elliptical section
 CF = FB + B                               # its front
 DOOR = math.radians(50)                   # the door's half-arc round the front
@@ -45,7 +46,7 @@ def _band(p, phi, s0, s1, z0, z1, col, top=None, n=14):
 def _door(rig, st):
     """The door: a curved section of the shell between the seam bands, a curved window set in it (frosted, a figure
     behind it when frozen), on its hinge joint."""
-    j = rig.joint("door", "root", (HX, FB + HF, 0))
+    j = rig.joint("door", "pod", (HX, FB + HF, 0))
     p = rig.part(j)
     _band(p, DOOR, 1.025, 1.065, Z0 + 0.07, Z1 - 0.07, SHELL, top=SHELL_D)                    # the door
     glass = "iceB" if st == "active" else FRAME
@@ -61,6 +62,12 @@ def _door(rig, st):
     for z in (Z0 + 0.16, Z1 - 0.16):                                                           # hinge knuckles
         p.cyl((HX, FB + HF, z), 0.03, 0.1, FRAME_L)
     return j
+
+
+def _tilt(x, f, z):
+    """A character-frame point on the capsule, as it stands leaning back TILT about the hinge discs."""
+    df, dz = f - FB, z - PIVOT
+    return x, FB + df * math.cos(TILT) - dz * math.sin(TILT), PIVOT + df * math.sin(TILT) + dz * math.cos(TILT)
 
 
 def _cut(p, sg):
@@ -84,40 +91,43 @@ def cryo(state, rot):
         p.rbox((sx * 0.42, FB, 0.09), (0.05, 0.7, 0.12), SHELL, r=0.02, taper=0.8)              # its skirt plates
     for k in range(2):                                                                         # vented front
         p.box((0, FB + 0.41, 0.06 + k * 0.05), (0.5, 0.02, 0.025), FRAME_L)
-    p.rbox((0, FB, 0.26), (0.5, 0.46, 0.2), FRAME, r=0.08, taper=1.2)                          # cradle cup
-    p.ball((0, FB, Z0), (CW / 2, CD / 2, 0.24), SHELL, rot=(180, 0, 0), z0=0.0)                # the capsule: domes,
+    p.rbox((0, FB + 0.07, 0.26), (0.5, 0.46, 0.2), FRAME, r=0.08, taper=1.2)                   # cradle cup
+    pod = rig.joint("pod", "root", (0, FB, PIVOT))                                             # the capsule, on the
+    q = rig.part(pod)                                                                          # yoke's hinge discs:
+    q.ball((0, FB, Z0), (CW / 2, CD / 2, 0.24), SHELL, rot=(180, 0, 0), z0=0.0)                # domes,
     ell = [(A * math.cos(math.tau * i / 28), B * math.sin(math.tau * i / 28)) for i in range(28)]
-    p._loft(ell, Z1 - Z0, SHELL, None, 1.0, p._xf((0, FB, (Z0 + Z1) / 2), None, "z"))       # body,
-    p.ball((0, FB, Z1), (CW / 2, CD / 2, 0.24), SHELL, z0=0.0)
+    q._loft(ell, Z1 - Z0, SHELL, None, 1.0, q._xf((0, FB, (Z0 + Z1) / 2), None, "z"))       # body,
+    q.ball((0, FB, Z1), (CW / 2, CD / 2, 0.24), SHELL, z0=0.0)
     ring = [(A * 1.02 * math.cos(math.tau * i / 28), B * 1.02 * math.sin(math.tau * i / 28)) for i in range(28)]
     for z in (Z0 + 0.035, Z1 - 0.035):                                                         # seam bands
-        p._loft(ring, 0.03, FRAME, None, 1.0, p._xf((0, FB, z), None, "z"))
+        q._loft(ring, 0.03, FRAME, None, 1.0, q._xf((0, FB, z), None, "z"))
     for sg in (-1, 1):                                                                         # the door's cut lines
-        _cut(p, sg)
-    _band(p, DOOR, 1.0, 1.008, Z0 + 0.06, Z1 - 0.06, SHELL_D)                                  # lined interior,
-    _band(p, math.radians(28), 1.008, 1.022, Z0 + 0.1, Z1 - 0.24, "navy")                       # couch,
-    _band(p, math.radians(18), 1.008, 1.024, Z1 - 0.21, Z1 - 0.1, "navy")                       # headrest
+        _cut(q, sg)
+    _band(q, DOOR, 1.0, 1.008, Z0 + 0.06, Z1 - 0.06, SHELL_D)                                  # lined interior,
+    _band(q, math.radians(28), 1.008, 1.022, Z0 + 0.1, Z1 - 0.24, "navy")                       # couch,
+    _band(q, math.radians(18), 1.008, 1.024, Z1 - 0.21, Z1 - 0.1, "navy")                       # headrest
     for sx in (-1, 1):                                                                         # the yoke: uprights
         p.rbox((sx * 0.4, FB, 0.55), (0.08, 0.14, 0.78), FRAME, r=0.03)                         # with shell plates,
         p.rbox((sx * 0.445, FB, 0.52), (0.035, 0.16, 0.54), SHELL, r=0.015, taper=0.8)          # hinge discs holding
         p.cyl((sx * 0.37, FB, 0.95), 0.1, 0.1, FRAME_L, axis="x", top=FRAME)                    # the capsule
         p.cyl((sx * 0.43, FB, 0.95), 0.06, 0.03, SHELL_D, axis="x")
     for sx in (-1, 1):                                                                         # pistons behind,
-        a, b = (sx * 0.2, FB - 0.4, 0.16), (sx * 0.2, FB - 0.24, 0.62)
+        a, b = (sx * 0.2, FB - 0.4, 0.16), _tilt(sx * 0.2, FB - 0.24, 0.62)
         m = tuple(a[i] + (b[i] - a[i]) * 0.55 for i in range(3))
         p.strut(a, m, 0.04, FRAME_L)
         p.strut(m, b, 0.025, SHELL_D)
     for sx in (-1, 1):                                                                         # coolant lines
-        p.strut((sx * 0.08, FB - 0.25, 1.28), (sx * 0.08, FB - 0.38, 0.16), 0.03, FRAME)
+        p.strut(_tilt(sx * 0.08, FB - 0.25, 1.28), (sx * 0.08, FB - 0.4, 0.16), 0.03, FRAME)
     zt = Z1 + 0.13                                                                             # the status light under
-    p.rbox((0, CF - 0.07, zt), (0.2, 0.1, 0.08), FRAME, r=0.025, taper=0.7)                    # a small wedge brow
-    p.rbox((0, CF - 0.075, zt + 0.06), (0.3, 0.12, 0.04), SHELL, r=0.02, taper=0.8)
-    rig.part("root").ball((0, CF - 0.03, zt), (0.04, 0.02, 0.032), light)
+    q.rbox((0, CF - 0.07, zt), (0.2, 0.1, 0.08), FRAME, r=0.025, taper=0.7)                    # a small wedge brow
+    q.rbox((0, CF - 0.075, zt + 0.06), (0.3, 0.12, 0.04), SHELL, r=0.02, taper=0.8)
+    rig.part(pod).ball((0, CF - 0.03, zt), (0.04, 0.02, 0.032), light)
     p.rbox((0, 0.18, 0.03), (0.62, 0.76, 0.06), SHELL_D, r=0.04, top=SHELL)                    # access step
     for k in range(4):                                                                         # life-support cells
         p.box((-0.15 + k * 0.1, 0.562, 0.03), (0.07, 0.02, 0.035), "cyan" if on else FRAME)
     door = _door(rig, state)
     rig.build()
+    rig.joints[pod][0].rotation_euler = (-TILT, 0, 0)                                          # leaning back
     if empty:                                                                                  # swung open on its hinge
         rig.joints[door][0].rotation_euler = (0, 0, -math.radians(100))
     w, d = (1, 2) if rot % 2 == 0 else (2, 1)                                                  # place like modkit.K
