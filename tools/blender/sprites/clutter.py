@@ -1,5 +1,5 @@
 """Floor clutter (family `clutter`): one-tile props with no footprint, drawn on the floor tile they stand on (modkit
-local frame, origin = the tile centre at floor level).
+local frame, origin = the tile centre at floor level), each in four rotations: <id> is r0, <id>.r1 .. .r3 the others.
 
   prop.barrel / .hazard / .chem   a steel drum, a hazard-yellow one, a navy chemical drum
   prop.barrels                    three drums, one lying on its side
@@ -34,36 +34,38 @@ def _drum(k, u, v, kind):
         k.box(u, v + DR + 0.01, 0.32, 0.07, 0.012, 0.05, "medRed")
 
 
-def _drum_lying(u, v, kind, rz):
+def _drum_lying(u, v, kind, rz, rot):
     """A drum on its side (robot_kit's true cylinders), long axis turned rz in the local frame."""
     from .robot_kit import Rig
     body, band, top = DRUM[kind]
     rig = Rig(f"drum_{kind}")
     p = rig.part("root")
-    rot = (0, 0, -math.degrees(rz))                                                   # character x = -u
+    turn = (0, 0, -math.degrees(rz))                                                  # character x = -u
     ca, sa = math.cos(rz), math.sin(rz)
-    p.cyl((-u, v, DR), DR, DH, body, axis="x", rot=rot, top=top, sides=16)
+    p.cyl((-u, v, DR), DR, DH, body, axis="x", rot=turn, top=top, sides=16)
     for t in (-0.15, 0.15):
-        p.cyl((-(u + ca * t), v + sa * t, DR), DR + 0.006, 0.035, band, axis="x", rot=rot, sides=16)
+        p.cyl((-(u + ca * t), v + sa * t, DR), DR + 0.006, 0.035, band, axis="x", rot=turn, sides=16)
     rig.build()
+    rig.root.rotation_euler = (0, 0, -rot * math.pi / 2)                              # turned like modkit.K
+    bpy.context.view_layer.update()
     return rig.objects()
 
 
-def barrel(kind=""):
-    k = K(f"barrel_{kind}", (1, 1))
+def barrel(kind, rot):
+    k = K(f"barrel_{kind}_{rot}", (1, 1), rot)
     _drum(k, 0, 0, kind)
     return k.build()
 
 
-def barrels():
-    k = K("barrels", (1, 1))
+def barrels(rot):
+    k = K(f"barrels_{rot}", (1, 1), rot)
     _drum(k, -0.2, -0.2, "")
     _drum(k, 0.24, -0.22, "chem")
-    return k.build() + _drum_lying(0.0, 0.28, "hazard", 0.35)
+    return k.build() + _drum_lying(0.0, 0.28, "hazard", 0.35, rot)
 
 
-def crates():
-    k = K("crates", (1, 1))
+def crates(rot):
+    k = K(f"crates_{rot}", (1, 1), rot)
     crate(k, -0.12, -0.12, 0.0, 0.46, "steel", rz=0.2)
     crate(k, 0.22, 0.16, 0.0, 0.4, "rust", rz=-0.35)
     crate(k, -0.1, -0.1, 0.46 * 0.85, 0.28, "hivis", rz=0.6)
@@ -79,8 +81,8 @@ def _leaves(k, u, v, z, n, s, h, rnd, cols=("alG", "xnFL", "xnF")):
               cols[i % len(cols)], rz=a, rx=rnd.uniform(-0.5, 0.5))
 
 
-def plant(kind):
-    k = K(f"plant_{kind}", (1, 1))
+def plant(kind, rot):
+    k = K(f"plant_{kind}_{rot}", (1, 1), rot)
     rnd = random.Random(7 if kind == "bush" else 11)
     k.cyl(0, 0, 0.0, 0.17, 0.3, "plate", top="leather", sides=12, rtop=0.21)            # pot, soil
     k.cyl(0, 0, 0.27, 0.215, 0.04, "steelL", sides=12)                                  # its rim
@@ -99,10 +101,10 @@ def plant(kind):
     return k.build()
 
 
-def chair_toppled():
+def chair_toppled(rot):
     objs = mess.chair(0)
     for o in objs:                                                                    # on its side, turned a little
-        o.rotation_euler = (0, math.pi / 2 - 0.1, 0.5)
+        o.rotation_euler = (0, math.pi / 2 - 0.1, 0.5 - rot * math.pi / 2)
     bpy.context.view_layer.update()
     zmin = min((o.matrix_world @ v.co).z for o in objs for v in o.data.vertices)
     for o in objs:
@@ -111,8 +113,8 @@ def chair_toppled():
     return objs
 
 
-def toolcart():
-    k = K("toolcart", (1, 1))
+def toolcart(rot):
+    k = K(f"toolcart_{rot}", (1, 1), rot)
     for su in (-1, 1):                                                                # casters
         for sv in (-1, 1):
             k.box(su * 0.26, sv * 0.17, 0.0, 0.05, 0.05, 0.08, "dark")
@@ -133,12 +135,9 @@ def toolcart():
     return k.build()
 
 
-SPRITES = [("prop.barrel", (1, 1), "prop", lambda: barrel("")),
-           ("prop.barrel.hazard", (1, 1), "prop", lambda: barrel("hazard")),
-           ("prop.barrel.chem", (1, 1), "prop", lambda: barrel("chem")),
-           ("prop.barrels", (1, 1), "prop", barrels),
-           ("prop.crates", (1, 1), "prop", crates),
-           ("prop.plant.bush", (1, 1), "prop", lambda: plant("bush")),
-           ("prop.plant.palm", (1, 1), "prop", lambda: plant("palm")),
-           ("prop.chair.toppled", (1, 1), "prop", chair_toppled),
-           ("prop.toolcart", (1, 1), "prop", toolcart)]
+BUILD = {"prop.barrel": lambda r: barrel("", r), "prop.barrel.hazard": lambda r: barrel("hazard", r),
+         "prop.barrel.chem": lambda r: barrel("chem", r), "prop.barrels": barrels, "prop.crates": crates,
+         "prop.plant.bush": lambda r: plant("bush", r), "prop.plant.palm": lambda r: plant("palm", r),
+         "prop.chair.toppled": chair_toppled, "prop.toolcart": toolcart}
+SPRITES = [(aid + ("" if r == 0 else f".r{r}"), (1, 1), "prop", lambda f=f, r=r: f(r))
+           for aid, f in BUILD.items() for r in range(4)]
