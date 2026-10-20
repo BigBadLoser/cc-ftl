@@ -14,7 +14,7 @@ const opt = (name, def) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 ? args[i + 1] : def;
 };
-const seeds = opt('seeds', '1,2,3,4').split(',').map(Number);
+const seeds = opt('seeds', '1').split(',').map(Number);
 const radius = Number(opt('radius', 5));
 const scale = Number(opt('scale', 0.07));
 const out = resolve(opt('out', 'tools/starmap/out'));
@@ -33,7 +33,7 @@ try {
 } finally {
   await server.close();
 }
-const html = `<html><body style="margin:0;background:#000;display:grid;grid-template-columns:repeat(2,max-content);gap:6px">
+const html = `<html><body style="margin:0;background:#000;display:grid;grid-template-columns:repeat(${Math.min(2, seeds.length)},max-content);gap:6px">
 <style>figure{margin:0;position:relative}figcaption{position:absolute;left:8px;top:6px;color:#cbd5e1;font:16px sans-serif}</style>
 ${cells.join('\n')}</body></html>`;
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/opt/pw-browsers/chromium' });
