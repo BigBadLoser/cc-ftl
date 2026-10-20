@@ -1,4 +1,4 @@
-"""Quick crew look check (about a minute): one outfit, a few directions, idle frame 0, through the real layer render, then
+"""Quick crew look check (about a minute): one outfit (QUICK_OUTFIT: comma-separated layer ids), a few directions, idle frame 0, through the real layer render, then
 old vs new composited like the runtime crew filter on floor tiles with a wall behind, at 1x and 4x. For iterating on the
 base; the full sheets come from `npm run sprites -- -- <dir> crew`.
 
@@ -12,7 +12,8 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "tools/blender"))
-OUTFIT = ["body", "eyes.organic", "legs.cargo_pants", "torso.work_shirt", "arm.L.flesh", "arm.R.flesh", "hair.short"]
+OUTFIT = __import__("os").environ.get(
+    "QUICK_OUTFIT", "body,eyes.organic,legs.cargo_pants,torso.work_shirt,arm.L.flesh,arm.R.flesh,hair.short").split(",")
 DIRS = (0, 1, 2, 4)                                              # SE, S, SW, NW
 FRAMES = [tuple(f.split(":")) for f in __import__("os").environ.get("QUICK_FRAMES", "idle:0,walk:2").split(",")]
 
