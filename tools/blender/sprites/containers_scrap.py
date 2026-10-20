@@ -76,9 +76,18 @@ def weathered(k, ds, u0, v0, rnd, amt=1.0, welded=True):
                 _streak(end, rnd.uniform(-u0 + 0.2, u0 - 0.2), z - 0.08, rnd.uniform(0.12, 0.3) * H, rnd)
         for _ in range(q(3)):
             _flake(end, rnd.uniform(-u0 + 0.2, u0 - 0.2), rnd.uniform(0.15, 0.9) * H, 0.1, rnd)
-    for _ in range(q(v0 * 2)):                                                       # rust blooms on the roof
-        u, v = rnd.choice((-1, 1)) * (u0 - rnd.uniform(0.12, 0.3)), rnd.uniform(-v0 + 0.2, v0 - 0.2)
-        _flake(lambda a, b, w, h, col, u=u: k.box(u + b, a, H - 0.018, h, w, 0.006, col), v, 0, 0.14, rnd)
+    def top(a, b, w, h, col):                                                        # the roof: a along v, b along u
+        k.box(b, a, H - 0.008, h, w, 0.006, col)
+    for su in (-1, 1):                                                               # stains running in along the
+        b0 = su * (u0 - 0.12)                                                        # ribs from both long edges
+        for _ in range(q(v0 * 2.5)):
+            _streak(lambda a, zz, ww, hh, col, su=su, b0=b0: top(a, b0 - su * (1.0 - zz), ww, hh, col),
+                    rnd.uniform(-v0 + 0.2, v0 - 0.2), 1.0, rnd.uniform(0.25, 0.75) * u0, rnd)
+        for sv in (-1, 1):                                                           # round the castings and eyes
+            for _ in range(q(2)):
+                _flake(top, sv * (v0 - rnd.uniform(0.12, 0.3)), su * (u0 - rnd.uniform(0.12, 0.25)), 0.12, rnd)
+    for _ in range(q(v0 * 3)):                                                       # flaking across it
+        _flake(top, rnd.uniform(-v0 + 0.2, v0 - 0.2), rnd.uniform(-u0 + 0.2, u0 - 0.2), rnd.uniform(0.1, 0.18), rnd)
 
 
 def welded(k, sv, u0, v0):

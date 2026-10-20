@@ -20,7 +20,7 @@ Ids (the renderer's chain, render/moduleArt.containerChain; the game mirrors the
   Every overlay is rendered from its shell's own build, so dents, holes and welded plates cover it as on the shell.
   container.<W>x<H>[.paint|.lv]        fallback: r0, doors toward the camera
   container.clamp.<n|e|s|w>, container.clamp   the clamp at the middle tile of the clamped side, gripping the door end
-Variants v0 (no suffix), v1 (stencil code on the roof, hazard roof edge), v2 (flat panelled sides and roof, wear),
+Variants v0 (no suffix), v1 (stencil code on the roof, hazard roof edge), v2 (flat panelled sides and roof, rust),
 picked by a hash. States: damaged / destroyed by the damage pass (no sparks, no debris: in space; destroyed has no
 light), patched: a scrapper box (containers_scrap.py), welded shut, salvage plates, their tags."""
 import random
@@ -152,13 +152,6 @@ def _stencil(k, sv, u0, v0, rnd):
     k.box(0, v - sv * 0.18, H - 0.018, 2 * u0 - 0.5, 0.05, 0.01, "medWhite")
 
 
-def _wear(k, u0, v0, rnd):
-    for _ in range(8):
-        su = rnd.choice((-1, 1))
-        k.box(su * (u0 + 0.003), rnd.uniform(-v0 + 0.3, v0 - 0.3), 0.1, 0.008, rnd.uniform(0.1, 0.35),
-              rnd.uniform(0.06, 0.2) * H / 0.8, "grime")
-
-
 def shell(size, rot, end, variant=0, state=""):
     _size(size)
     W, L = SIZES[size]
@@ -180,9 +173,8 @@ def shell(size, rot, end, variant=0, state=""):
     if variant == 1:
         _stencil(k, -ds, u0, v0, rnd)
     if variant == 2:
-        _wear(k, u0, v0, rnd)
         from .containers_scrap import weathered
-        weathered(k, ds, u0, v0, random.Random(f"{size}.{end}.wear"), amt=0.35, welded=False)
+        weathered(k, ds, u0, v0, random.Random(f"{size}.{end}.wear"), amt=0.5, welded=False)
     if state == "patched":
         from .containers_scrap import patches
         patches(k, ds, u0, v0, random.Random(f"{size}.{end}.{variant}"))                  # each box its own
