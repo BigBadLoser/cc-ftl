@@ -32,6 +32,8 @@ THETA = [90 - 45 * d for d in range(8)]
 TORSO_W = 1.1
 SAT = 1.3                       # clothing saturation
 CLOTHES = (("torso",), ("legs",), ("gear.belt",))
+CLEAN_SLOTS = ("body", "legs", "torso", "hair", "arm.L", "arm.R")
+SAMPLES = 16                    # crew Cycles samples (core's 4 leaves band-flip noise); set in crew_build
 HIDDEN_A = 12                   # alpha of a chair-occluded pixel (sit clips): the crew filter draws it as nothing, no outline/rim
 _CHAIR = []
 _PUFFS = set()                  # eva_float: nozzles puffing in the frame being rendered
@@ -161,6 +163,9 @@ def render_item(item, items, head, with_glow=True, chair=None):
     if chair is not None:
         hidden = np.pad(free & ~op, 1)
     c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
+    if item.slot in CLEAN_SLOTS and item.name != "cyber":       # flat shading + clean silhouette (small gear details excluded)
+        c = post.clean_colour(c, op)
+        c, op = post.clean_alpha(c, op)
     g = None
     if item.glow and with_glow:
         set_state(items, [item], hold)

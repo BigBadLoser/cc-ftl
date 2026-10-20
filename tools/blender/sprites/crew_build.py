@@ -60,6 +60,7 @@ def build(out, opts, log=_log):
     # pixels depends on what else is in the scene, so the scene must not depend on which clips this run renders.
     hr.chair_holdout()
     sc = bpy.context.scene
+    sc.cycles.samples = hr.SAMPLES
     rig = dg.rig_digest(arm)
     idig = {it.id: dg.item_digest(it) for it in items}
     fdig = cc.files_digest([p for p in GLOBAL_FILES if p.exists()])

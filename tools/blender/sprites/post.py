@@ -74,9 +74,9 @@ def _lut():
 
 LUT = _lut()
 
-# 4 shade bands: the top two of the 5 ramp steps merge (steps 0..3 are used; step 4, the lightest key, is only produced
-# by the skin highlight in human_render).
-BAND = (0, 1, 2, 3, 3)
+# 3 shade bands (shadow / mid / light = ramp steps 0 / 2 / 3): steps 0+1 merge and steps 3+4 merge. Step 4 is only
+# produced by the skin highlight in human_render.
+BAND = (0, 0, 2, 3, 3)
 
 
 def _band_map():
@@ -179,6 +179,55 @@ def outline(rgb, opaque, quant, vertical_only=False):
         col = snap_base(col)
     rgb = np.where(ring[..., None], col, rgb).astype(np.uint8)
     return rgb, op | ring
+
+
+def _nb(a, dy, dx, fill=0):
+    """out[y,x] = a[y+dy,x+dx]; outside the array = fill."""
+    h, w = a.shape[:2]
+    p = np.pad(a, ((1, 1), (1, 1)) + ((0, 0),) * (a.ndim - 2), constant_values=fill)
+    return p[1 + dy:1 + dy + h, 1 + dx:1 + dx + w]
+
+
+N4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
+N8 = N4 + ((1, 1), (1, -1), (-1, 1), (-1, -1))
+
+
+def _code(rgb):
+    return (rgb[..., 0].astype(np.int64) << 16) | (rgb[..., 1].astype(np.int64) << 8) | rgb[..., 2]
+
+
+def _mode_colour(rgb, op):
+    """Most common colour among the opaque 8-neighbours of every pixel (ties: first neighbour)."""
+    code = _code(rgb)
+    nbc = np.stack([np.where(_nb(op, dy, dx), _nb(code, dy, dx, -1), -1) for dy, dx in N8])
+    cnt = np.stack([((nbc == c[None]) & (c[None] >= 0)).sum(0) for c in nbc])
+    pick = np.take_along_axis(nbc, cnt.argmax(0)[None], 0)[0]
+    pick = np.where(pick < 0, code, pick)
+    return np.stack([(pick >> 16) & 255, (pick >> 8) & 255, pick & 255], -1).astype(np.uint8)
+
+
+def clean_alpha(rgb, op, passes=2):
+    """Silhouette cleanup: drop opaque pixels with <= 1 opaque 4-neighbour (strays, spikes) and fill transparent pixels with
+    >= 3 opaque 4-neighbours (1 px notches) with the most common neighbouring colour."""
+    rgb, op = rgb.copy(), op.copy()
+    for _ in range(passes):
+        n = sum(_nb(op, dy, dx).astype(int) for dy, dx in N4)
+        drop, fill = op & (n <= 1), ~op & (n >= 3)
+        if fill.any():
+            rgb[fill] = _mode_colour(rgb, op)[fill]
+        op = (op & ~drop) | fill
+    return rgb, op
+
+
+def clean_colour(rgb, op):
+    """Flat-shading cleanup: an opaque pixel whose colour appears at most once among its opaque 8-neighbours takes the
+    neighbourhood's most common colour (removes 1 px shade speckle and band-edge sampling noise)."""
+    code = _code(rgb)
+    same = sum((_nb(op, dy, dx) & (_nb(code, dy, dx, -1) == code)).astype(int) for dy, dx in N8)
+    odd = op & (same <= 1)
+    out = rgb.copy()
+    out[odd] = _mode_colour(rgb, op)[odd]
+    return out
 
 
 def glow_down(rgb, S, thresh=3):

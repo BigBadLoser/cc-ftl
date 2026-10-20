@@ -8,9 +8,9 @@ export interface CrewPalette {
   accent: number;
 }
 
-const SKIN = [0xf1c9a5, 0xe0ac84, 0xc68a62, 0x9c6a48, 0x7a4c33, 0x56321f];
-const HAIR = [0x1c1612, 0x3b2a1c, 0x6b4426, 0xa8763a, 0xd9b45a, 0x8a8f99, 0x7a2e24, 0x2b3f66];
-const CLOTH = [0xc2552d, 0x3f7fbf, 0x4f9a5e, 0x9a5fbf, 0xc9a13a, 0x6a7380, 0xbf4f7c, 0x3aa6a0];
+const SKIN = [0xf5d0ac, 0xe8b48a, 0xd09468, 0xb07c54, 0x8f6040, 0x6e4430];
+const HAIR = [0x2a2018, 0x4e3624, 0x8a5a2e, 0xc8903f, 0xf0d070, 0xc4cad4, 0xb03c2c, 0x3f5fa8];
+const CLOTH = [0xe8582c, 0x3f8cf0, 0x3fbf5a, 0xb45ff0, 0xf0c030, 0xe8ecf4, 0xe04a8a, 0x2fd0c0];
 const ACCENT = [0xffd23a, 0x37d2e8, 0xff6a4a, 0xa8e05a];
 
 /** Small deterministic integer hash (render-side only; never touches the sim RNG). */
@@ -56,7 +56,7 @@ void main(void) {
  * Crew composite shader, run once on a crew member's stacked layers:
  *  - palette swap: a pixel that is s*K for a key colour K becomes the crew colour on the shade ramp (the same ramp as
  *    tools/blender compose.shade: cooler shadows, warmer lights), then the light tint;
- *  - ONE 1 px outline around the combined alpha: a darkened version of the adjacent pixel's colour;
+ *  - ONE 1 px outline around the combined alpha: a fixed near-black (OUTLINE), so crew separate from any floor;
  *  - a thin cool rim on the left silhouette edge.
  * Neighbours are sampled `uZoom` px away (one art px at the camera's integer zoom), so everything stays on the art grid.
  */
@@ -72,6 +72,9 @@ uniform float uCount;
 uniform float uZoom;
 uniform vec3 uTint;
 const float MULT[5] = float[5](0.42, 0.62, 0.82, 1.0, 1.22);
+// Near-black outline (#0a0f16), independent of the clothing colour.
+const vec3 OUTLINE = vec3(10.0, 15.0, 22.0) / 255.0;
+const float LIFT = 1.25;
 const vec3 RIM = vec3(0.47, 0.8, 1.0);
 // Sit clips mark crew pixels hidden behind the chair with a faint alpha: drawn as nothing, and no outline or rim along the cut.
 const float HIDDEN = 0.01;
@@ -89,9 +92,10 @@ vec3 swapColor(vec4 c) {
     if (float(i) >= uCount) break;
     vec3 k = uKeys[i].rgb;
     float s = dot(p, k) / dot(k, k);
-    if (s > 0.3 && s < 1.4 && length(p - s * k) < 0.14 * max(s, 0.5)) return clamp(ramp(uRepl[i].rgb, s), 0.0, 1.0);
+    if (s > 0.25 && s < 1.4 && length(p - s * k) < 0.14 * max(s, 0.5)) return clamp(ramp(uRepl[i].rgb, s), 0.0, 1.0);
   }
-  return p;
+  // Fixed-colour crew parts (pants, boots, tee): lifted a little so dark clothing keeps value separation from the floor.
+  return min(p * LIFT + 0.015, 1.0);
 }
 
 void main(void) {
@@ -109,17 +113,15 @@ void main(void) {
     finalColor = vec4(0.0);
     return;
   }
-  vec3 sum = vec3(0.0);
   float n = 0.0;
   vec2 offs[4] = vec2[4](vec2(st.x, 0.0), vec2(-st.x, 0.0), vec2(0.0, st.y), vec2(0.0, -st.y));
   for (int i = 0; i < 4; i++) {
     vec4 q = texture(uTexture, vTextureCoord + offs[i]);
     if (q.a > 0.5) {
-      sum += swapColor(q);
       n += 1.0;
     }
   }
-  if (n > 0.0) finalColor = vec4(clamp(sum / n * 0.42 + vec3(4.0, 5.0, 10.0) / 255.0, 0.0, 1.0) * uTint, 1.0);
+  if (n > 0.0) finalColor = vec4(OUTLINE * uTint, 1.0);
   else finalColor = vec4(0.0);
 }`;
 
