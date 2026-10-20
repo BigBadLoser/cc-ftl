@@ -25,6 +25,7 @@ FB = -0.45                                # capsule centre line (back tile)
 Z0, Z1 = 0.46, 1.34                       # capsule body between its two domes
 CW, CD = 0.62, 0.56                       # capsule width, depth
 PIVOT, TILT = 0.95, math.radians(12)     # the yoke's hinge discs; the capsule leans back about them
+RIM, DEEP = 0.08, 0.3                     # solid band above and below the cavity; its back wall (section scale)
 A, B = CW / 2, CD / 2                     # the capsule's elliptical section
 CF = FB + B                               # its front
 DOOR = math.radians(50)                   # the door's half-arc round the front
@@ -64,6 +65,23 @@ def _door(rig, st):
     return j
 
 
+def _hollow(p, n=10):
+    """The capsule's middle section: the shell round the back and sides, open at the front behind the door into a
+    cavity with side walls and a curved back wall at DEEP (a shade darker than the shell). Corners get their own vertices, so the
+    smooth shading keeps them crisp."""
+    lo, hi = math.pi / 2 - DOOR, math.pi / 2 + DOOR
+    pt = lambda t, s: (A * s * math.cos(t), B * s * math.sin(t))                      # noqa: E731
+    outer = [pt(hi + (2 * math.pi - 2 * DOOR) * i / (3 * n), 1.0) for i in range(3 * n + 1)]
+    inner = [pt(lo + 2 * DOOR * i / n, DEEP) for i in range(n + 1)]
+    segs = [(outer, SHELL), ([outer[-1], inner[0]], "steelL"), (inner, "steelL"), ([inner[-1], outer[0]], "steelL")]
+    z0, z1 = Z0 + RIM, Z1 - RIM
+    xf = p._xf((0, FB, (z0 + z1) / 2), None, "z")
+    for pts, col in segs:                                                             # each run on its own verts
+        a, b = p._ring(pts, -(z1 - z0) / 2, 1.0, xf), p._ring(pts, (z1 - z0) / 2, 1.0, xf)
+        for i in range(len(pts) - 1):
+            p._face([a + i, a + i + 1, b + i + 1, b + i], col, col == SHELL)
+
+
 def _tilt(x, f, z):
     """A character-frame point on the capsule, as it stands leaning back TILT about the hinge discs."""
     df, dz = f - FB, z - PIVOT
@@ -96,16 +114,21 @@ def cryo(state, rot):
     q = rig.part(pod)                                                                          # yoke's hinge discs:
     q.ball((0, FB, Z0), (CW / 2, CD / 2, 0.24), SHELL, rot=(180, 0, 0), z0=0.0)                # domes,
     ell = [(A * math.cos(math.tau * i / 28), B * math.sin(math.tau * i / 28)) for i in range(28)]
-    q._loft(ell, Z1 - Z0, SHELL, None, 1.0, q._xf((0, FB, (Z0 + Z1) / 2), None, "z"))       # body,
+    for z0, z1 in ((Z0, Z0 + RIM), (Z1 - RIM, Z1)):                                           # body: solid bands
+        q._loft(ell, z1 - z0, SHELL, SHELL_D, 1.0, q._xf((0, FB, (z0 + z1) / 2), None, "z"))  # (the cavity's floor
+    _hollow(q)                                                                                 # and ceiling), hollow
+                                                                                               # between them
     q.ball((0, FB, Z1), (CW / 2, CD / 2, 0.24), SHELL, z0=0.0)
     ring = [(A * 1.02 * math.cos(math.tau * i / 28), B * 1.02 * math.sin(math.tau * i / 28)) for i in range(28)]
     for z in (Z0 + 0.035, Z1 - 0.035):                                                         # seam bands
         q._loft(ring, 0.03, FRAME, None, 1.0, q._xf((0, FB, z), None, "z"))
     for sg in (-1, 1):                                                                         # the door's cut lines
         _cut(q, sg)
-    _band(q, DOOR, 1.0, 1.008, Z0 + 0.06, Z1 - 0.06, SHELL_D)                                  # lined interior,
-    _band(q, math.radians(28), 1.008, 1.022, Z0 + 0.1, Z1 - 0.24, "navy")                       # couch,
-    _band(q, math.radians(18), 1.008, 1.024, Z1 - 0.21, Z1 - 0.1, "navy")                       # headrest
+    _band(q, math.radians(30), DEEP, DEEP + 0.16, Z0 + RIM + 0.06, Z1 - RIM - 0.2, "navy")      # in the cavity: the
+    _band(q, math.radians(20), DEEP, DEEP + 0.2, Z1 - RIM - 0.17, Z1 - RIM - 0.05, "navy")      # padded couch,
+    for z in (Z0 + 0.42, Z0 + 0.66):                                                           # headrest, straps,
+        _band(q, math.radians(31), DEEP + 0.16, DEEP + 0.18, z, z + 0.04, FRAME_L)
+    _band(q, math.radians(36), DEEP, 0.92, Z0 + RIM, Z0 + RIM + 0.05, SHELL)                    # a footrest ledge
     for sx in (-1, 1):                                                                         # the yoke: uprights
         p.rbox((sx * 0.4, FB, 0.55), (0.08, 0.14, 0.78), FRAME, r=0.03)                         # with shell plates,
         p.rbox((sx * 0.445, FB, 0.52), (0.035, 0.16, 0.54), SHELL, r=0.015, taper=0.8)          # hinge discs holding
