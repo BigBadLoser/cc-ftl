@@ -3,6 +3,21 @@ import { hash } from './assets/palette';
 import type { ClipDef, LayerAsset } from './assets/manifest';
 import type { Crew } from '../sim/crew/components';
 
+/** Role gear: the top a role wears instead of the tee, eye and left-arm variants, and the gear on top. `hat`: the kit
+ * has head gear that tall hair (mohawk, bun) would poke through, so those are left out of the hair pick. */
+interface Kit { torso: string; gear: string[]; eyes?: string; armL?: string; hat?: boolean }
+const KITS: Record<string, Kit> = {
+  'role.engineer': {
+    torso: 'work_shirt', eyes: 'cyber', armL: 'cyber',
+    gear: ['gear.belt.tool_belt', 'gear.back.engineer_rig', 'gear.head.welding_goggles'],
+  },
+  'role.medic': { torso: 'medic_vest', gear: ['gear.back.medkit'] },
+  'role.security': { torso: 'armor_vest', gear: ['gear.head.tactical_helmet'], hat: true },
+  'role.gunner': { torso: 'harness', gear: ['gear.head.headset'] },
+  'role.pilot': { torso: 'flight_vest', gear: ['gear.head.visor_cap'], hat: true },
+};
+const TALL_HAIR = ['hair.mohawk', 'hair.bun'];
+
 /**
  * Which sprite layers a crew member wears, from sim data (species, role, appearance seed).
  * Ids that the manifest lacks are skipped, so partial asset sets still render. A suited crew member wears the EVA suit
@@ -16,17 +31,17 @@ export function crewLoadout(atlas: Atlas, crew: Crew, suited = false): LayerSpri
   // Species without art yet borrow the human layers as a placeholder until their sheets exist.
   const sp = atlas.layer(`crew.${own}.body`) ? own : 'human';
   const p = `crew.${sp}.`;
-  const engineer = crew.role === 'role.engineer';
-  const hair = atlas.ids(`${p}hair.`);
-  const ids = suited ? suitIds(p, engineer) : [
+  const kit = KITS[crew.role];
+  const hair = atlas.ids(`${p}hair.`).filter((id) => !kit?.hat || !TALL_HAIR.some((t) => id === p + t));
+  const ids = suited ? suitIds(p, crew.role === 'role.engineer') : [
     `${p}body`,
-    `${p}eyes.${engineer ? 'cyber' : 'organic'}`,
+    `${p}eyes.${kit?.eyes ?? 'organic'}`,
     hair.length ? (hair[hash(crew.appearanceSeed, 10) % hair.length] as string) : '',
-    `${p}arm.L.${engineer ? 'cyber' : 'flesh'}`,
+    `${p}arm.L.${kit?.armL ?? 'flesh'}`,
     `${p}arm.R.flesh`,
-    `${p}torso.${engineer ? 'work_shirt' : 'tee'}`,
+    `${p}torso.${kit?.torso ?? 'tee'}`,
     `${p}legs.cargo_pants`,
-    ...(engineer ? [`${p}gear.belt.tool_belt`, `${p}gear.back.engineer_rig`, `${p}gear.head.welding_goggles`] : []),
+    ...(kit?.gear ?? []).map((g) => p + g),
   ];
   const out: LayerSprite[] = [];
   for (const id of ids) {

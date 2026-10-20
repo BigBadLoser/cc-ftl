@@ -51,8 +51,10 @@ _mats = {}
 _state = {}
 
 
-def _material(kind):
-    m = bpy.data.materials.new(kind)
+def _material(kind, alpha=None, rim=0.0):
+    """The shared attribute-driven material for a pass (kind color / glow). alpha: a see-through variant (a mix with a
+    transparent shader, opacity alpha, rising by rim toward grazing angles), baked into the sprite by the render."""
+    m = bpy.data.materials.new(kind if alpha is None else f"{kind}_a{alpha}_r{rim}")
     m.use_nodes = True
     nt = m.node_tree
     nt.nodes.clear()
@@ -75,6 +77,21 @@ def _material(kind):
         e = nt.nodes.new("ShaderNodeEmission")
         nt.links.new(attr("Glow"), e.inputs["Color"])
         nt.links.new(e.outputs[0], out.inputs["Surface"])
+    if alpha is not None:
+        shader = out.inputs["Surface"].links[0].from_socket
+        tr = nt.nodes.new("ShaderNodeBsdfTransparent")
+        lw = nt.nodes.new("ShaderNodeLayerWeight")
+        lw.inputs["Blend"].default_value = 0.3
+        fac = nt.nodes.new("ShaderNodeMath")
+        fac.operation, fac.use_clamp = "MULTIPLY_ADD", True
+        nt.links.new(lw.outputs["Facing"], fac.inputs[0])
+        fac.inputs[1].default_value, fac.inputs[2].default_value = rim, alpha
+        mix = nt.nodes.new("ShaderNodeMixShader")
+        nt.links.new(fac.outputs[0], mix.inputs["Fac"])
+        nt.links.new(tr.outputs[0], mix.inputs[1])
+        nt.links.new(shader, mix.inputs[2])
+        nt.links.new(mix.outputs[0], out.inputs["Surface"])
+    m.blend_method = "BLEND" if alpha is not None else m.blend_method
     return m
 
 
@@ -87,6 +104,7 @@ def setup_scene():
     c.filter_width = 0.01
     c.max_bounces = 0
     c.diffuse_bounces = 0
+    c.transparent_max_bounces = 12            # see-through (alpha) materials only; opaque art never uses it
     sc.render.film_transparent = True
     sc.render.image_settings.file_format = "PNG"
     sc.render.image_settings.color_mode = "RGBA"
@@ -114,6 +132,7 @@ def setup_scene():
     w.use_nodes = True
     sc.world = w
     _state.update(scene=sc, cam=cam, sun=sun, world=w)
+    _mats.clear()
     _mats["color"], _mats["glow"] = _material("color"), _material("glow")
     set_ambient(0.15)
 
@@ -253,9 +272,14 @@ class Mesh:
 def _set_pass(which):
     sun = _state["sun"]
     sun.hide_render = which == "glow"
+    kind = "color" if which == "color" else "glow"
     for ob in bpy.data.objects:
         if ob.type == "MESH" and ob.data.materials:
-            ob.data.materials[0] = _mats["color" if which == "color" else "glow"]
+            a = ob.get("alpha")
+            key = kind if a is None else (kind, a, ob.get("rim", 0.0))
+            if key not in _mats:
+                _mats[key] = _material(kind, a, ob.get("rim", 0.0))
+            ob.data.materials[0] = _mats[key]
     bg = _state["world"].node_tree.nodes["Background"]
     bg.inputs["Strength"].default_value = 1.0 if which == "color" else 0.0
 
