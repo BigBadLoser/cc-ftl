@@ -127,7 +127,7 @@ def container(fill, rot):
     k = K(f"storage_container_{fill}_{rot}", (2, 3), rot)
     W, L, H = 1.7, 2.8, 1.62
     vf = L / 2
-    body, rib = "rust", "rustD"
+    body, rib = "navy", "blueGrey"
     k.box(0, -0.04, 0.0, W, L - 0.08, 0.08, "gmD")                                    # floor frame
     k.box(0, -L / 2 + 0.04, 0.0, W, 0.08, H, body)                                    # back wall
     for s in (-1, 1):
@@ -142,7 +142,7 @@ def container(fill, rot):
             k.box(su * (W / 2 - 0.04), sv * (L / 2 - 0.08) - 0.04, 0.0, 0.1, 0.1, H, "gmD", top="gm")
     k.box(0, vf - 0.12, H - 0.12, W, 0.1, 0.12, "gmD")                                # door header
     k.box(0, -0.04, 0.08, W - 0.12, L - 0.2, 0.02, "steelD")                          # inside floor
-    k.box(0, -L / 2 + 0.1, 0.1, W - 0.12, 0.02, H - 0.2, "rustD")                     # inside back
+    k.box(0, -L / 2 + 0.1, 0.1, W - 0.12, 0.02, H - 0.2, "gmD")                       # inside back
     load = {"empty": 0, "partial": 3, "full": 6}[fill]
     for i in range(load):                                                              # crates, loaded toward the doors
         u = -0.38 if i % 2 == 0 else 0.38

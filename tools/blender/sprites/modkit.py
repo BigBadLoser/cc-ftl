@@ -56,12 +56,16 @@ def crate(k, u, v, z, s, col, rz=0.0, h=None, strap=None):
     fr = FRAME.get(col, "gmD")
     k.box(u, v, z, s, s, h, col, top=col, bevel=0.02, rz=rz)
     k.box(u, v, z, s + 0.02, s + 0.02, 0.05, fr, rz=rz)                                # base lip
-    k.box(u, v, z + h - 0.05, s + 0.02, s + 0.02, 0.05, fr, top="plate", rz=rz)        # lid rim
-    k.box(u, v, z + h - 0.01, s - 0.14, s - 0.14, 0.02, col, rz=rz)                    # lid panel
+    k.box(u, v, z + h - 0.05, s + 0.02, s + 0.02, 0.07, fr, top=fr, rz=rz)            # lid frame
+    k.box(u, v, z + h - 0.01, s - 0.12, s - 0.12, 0.04, col, top=col, rz=rz)           # inset lid
+    ca, sa = math.cos(rz), math.sin(rz)
+    for e in (-1, 1):                                                                  # two battens across the lid
+        x = e * s * 0.22
+        k.box(u + ca * x, v + sa * x, z + h + 0.01, 0.06, s - 0.1, 0.03, fr, top="steelL", rz=rz)
+    k.box(u, v, z + h + 0.02, s * 0.22, s * 0.3, 0.012, "plate", rz=rz)                 # stencil plate
     if h > 0.3:
         for t in (0.36, 0.64):                                                         # side ribs
             k.box(u, v, z + h * t - 0.02, s + 0.014, s + 0.014, 0.04, fr, rz=rz)
-    ca, sa = math.cos(rz + 0.0), math.sin(rz + 0.0)
     d = s / 2 + 0.008                                                                  # label on the front (+v) face
     k.box(u - sa * d, v + ca * d, z + h * 0.42, s * 0.36, 0.012, h * 0.18, "plate", rz=rz)
 
