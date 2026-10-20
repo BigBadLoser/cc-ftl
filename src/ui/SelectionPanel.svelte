@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiCombat, UiCrew, UiInspect, UiModule, UiShuttles, UiStats } from './api';
+  import GridPanel from './GridPanel.svelte';
   import CrewInspector from './CrewInspector.svelte';
   import Icon from './Icon.svelte';
   import ModuleInspector from './ModuleInspector.svelte';
@@ -9,7 +10,7 @@
   import ShipMeters from './ShipMeters.svelte';
   import TileInspector from './TileInspector.svelte';
 
-  let { api, onPriorities }: { api: UiApi; onPriorities: () => void } = $props();
+  let { api, onPriorities, onTrade }: { api: UiApi; onPriorities: () => void; onTrade: (ship: number) => void } = $props();
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
   let mods = $state<UiModule[]>([]);
@@ -19,6 +20,7 @@
   let info = $state<UiInspect | null>(null);
   let selCrew = $state<number | null>(null);
   let selMod = $state<number | null>(null);
+  let selGrid = $state<number | null>(null);
 
   onMount(() => {
     const u = [
@@ -31,6 +33,7 @@
       api.inspect.subscribe((v) => (info = v)),
       api.selectedCrew.subscribe((v) => (selCrew = v)),
       api.selectedModule.subscribe((v) => (selMod = v)),
+      api.selectedGrid.subscribe((v) => (selGrid = v)),
     ];
     return () => u.forEach((f) => f());
   });
@@ -48,7 +51,9 @@
 </script>
 
 <aside class="sheet sel" class:wide data-testid="selection-panel">
-  {#if hasCrew}
+  {#if selGrid !== null}
+    <GridPanel {api} gridId={selGrid} onBack={back} {onTrade} />
+  {:else if hasCrew}
     <CrewInspector {api} {onPriorities} onBack={back} />
   {:else if mod && bays.some((b) => b.id === mod.id)}
     <ShuttlePanel {api} onBack={back} />

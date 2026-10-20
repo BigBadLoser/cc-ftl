@@ -45,6 +45,11 @@
     smile: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 14c1 2 7 2 8 0M9 9.5h.01M15 9.5h.01',
     grid: 'M4 4h16v16H4zM4 12h16M12 4v16',
     room: 'M4 4h16v16H4zM4 10h6V4',
+    hull: 'M12 2c3 3 6 8 6 13l-2 3H8l-2-3c0-5 3-10 6-13zM9 21h6M12 8v6',
+    station: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM2 12h4M18 12h4',
+    derelict: 'M3 17l5-9 4 5 3-4 6 8zM3 17h18',
+    alert: 'M12 3l10 18H2zM12 10v5M12 18h.01',
+    fire: 'M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z',
   } as const;
   export type IconName = keyof typeof ICONS;
 </script>
