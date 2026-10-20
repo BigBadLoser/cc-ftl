@@ -6,7 +6,7 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, drawRoom, furnish, placeStep, specStep, type RoomDraw } from './rooms';
+import { RECIPES, drawRoom, pruneDoors, furnish, placeStep, specStep, type RoomDraw } from './rooms';
 import { Layout } from './layout';
 import { pickWeighted, planShip, scaled, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -95,13 +95,6 @@ function fitOut(
   if (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3) return { ...out, error: 'weapons do not fit' };
   if ((placed['module.reactor'] ?? 0) < (wanted['module.reactor'] ?? 0)) return { ...out, error: 'reactors do not fit' };
   for (let room = 0; room < roles.length; room++) lightRoom(lay, rng, room);
-  for (let room = 0; room < roles.length; room++) {
-    const d = drawOf(room);
-    if (!d) continue;
-    const before = lay.modules.length;
-    furnish(lay, rng, room, d, rots);
-    for (let i = before; i < lay.modules.length; i++) stockUp(i, specs[room]);
-  }
   let supply = 0;
   let demand = 0;
   for (const m of lay.modules) { const p = (defs[m.def] as ModuleDef).power; if (p > 0) supply += p; else demand -= p; }
@@ -113,6 +106,15 @@ function fitOut(
     supply += reactor.power;
   }
   if (supply < demand) return { ...out, error: 'not enough power' };
+  // Furnishing: recipe extras that draw power (a galley) only while the planned reactors cover them.
+  const power = { spare: supply - demand };
+  for (let room = 0; room < roles.length; room++) {
+    const d = drawOf(room);
+    if (!d) continue;
+    const before = lay.modules.length;
+    furnish(lay, rng, room, d, rots, power);
+    for (let i = before; i < lay.modules.length; i++) stockUp(i, specs[room]);
+  }
   return out;
 }
 
@@ -178,9 +180,10 @@ export function generateAttempt(
   }
   if (!topology) return `${archetype}: structure clash`;
   b.cv.fixDoors();
-  const { rows, labels: roomOf, width, height, ox, oy } = b.cv.crop();
+  const { rows: drawn, labels: roomOf, width, height, ox, oy } = b.cv.crop();
   const labels = b.cv.labels;
   const roles = labels.map((l) => b.chunkRoles.get(`${l.chunk}:${l.letter}`) ?? roleOfLetter(l.letter) ?? 'cargo');
+  const rows = pruneDoors(drawn, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
   const d = fitOut(rng, f, rows, roomOf, roles, specs, defs);

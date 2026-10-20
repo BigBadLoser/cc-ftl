@@ -161,6 +161,75 @@ export function summary(g: GenResult, seed: number): string {
     (g.failures.length > 0 ? ` [rejected: ${g.failures.join(', ')}]` : '');
 }
 
+/** Mean door openings (runs of touching door tiles) per non-hall room. */
+export function doorsPerRoom(g: GenResult): number {
+  const rows = g.template.rows;
+  const at = (x: number, y: number): string => rows[y]?.[x] ?? '.';
+  const seen = new Set<number>();
+  const count = new Map<number, number>();
+  for (let y = 0; y < g.height; y++) {
+    for (let x = 0; x < g.width; x++) {
+      if (at(x, y) !== 'D' || seen.has(y * g.width + x)) continue;
+      const rooms = new Set<number>();
+      const stack = [[x, y] as [number, number]];
+      seen.add(y * g.width + x);
+      while (stack.length > 0) {
+        const [cx, cy] = stack.pop() as [number, number];
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+          const nx = cx + dx; const ny = cy + dy;
+          const c = at(nx, ny);
+          if (c === 'D' && !seen.has(ny * g.width + nx)) { seen.add(ny * g.width + nx); stack.push([nx, ny]); }
+          if (c === '_') rooms.add(g.roomOf[ny * g.width + nx] ?? -1);
+        }
+      }
+      for (const r of rooms) count.set(r, (count.get(r) ?? 0) + 1);
+    }
+  }
+  const rooms = g.rooms.filter((r) => r.role !== 'hall' && r.tiles.length > 0);
+  return rooms.reduce((t, r) => t + (count.get(r.id) ?? 0), 0) / Math.max(1, rooms.length);
+}
+
+/** Room interiors as role, size and module layout relative to the room's corner (lights left out). */
+function interiors(g: GenResult): { key: string; sig: string }[] {
+  const out: { key: string; sig: string }[] = [];
+  for (const room of g.rooms) {
+    if (room.role === 'hall' || room.tiles.length === 0) continue;
+    const xs = room.tiles.map((i) => i % g.width); const ys = room.tiles.map((i) => Math.floor(i / g.width));
+    const x0 = Math.min(...xs); const y0 = Math.min(...ys);
+    const mods = (g.template.modules ?? []).filter((m) => m.def !== 'module.light' && g.roomOf[m.y * g.width + m.x] === room.id);
+    if (mods.length === 0) continue;
+    out.push({
+      key: `${room.role} ${Math.max(...xs) - x0}x${Math.max(...ys) - y0} ${room.tiles.length}`,
+      sig: mods.map((m) => `${m.def}@${m.x - x0},${m.y - y0},${m.rot}`).sort().join(' '),
+    });
+  }
+  return out;
+}
+
+/**
+ * Interior repetition: of the furnished rooms that have a same-role, same-shape twin on another ship of the sheet,
+ * the share laid out identically to one of them.
+ */
+export function interiorDups(gs: GenResult[]): { share: number; rooms: number; byRole: string } {
+  const all = gs.map(interiors);
+  let twins = 0; let same = 0;
+  const per = new Map<string, [number, number]>();
+  all.forEach((rs, i) => {
+    for (const r of rs) {
+      const others = all.flatMap((o, j) => (j === i ? [] : o.filter((q) => q.key === r.key)));
+      if (others.length === 0) continue;
+      twins++;
+      const dup = others.some((q) => q.sig === r.sig);
+      if (dup) same++;
+      const role = r.key.split(' ')[0] as string;
+      const p = per.get(role) ?? [0, 0];
+      per.set(role, [p[0] + (dup ? 1 : 0), p[1] + 1]);
+    }
+  });
+  const byRole = [...per].sort().map(([k, [a, b]]) => `${k} ${a}/${b}`).join(', ');
+  return { share: twins ? same / twins : 0, rooms: twins, byRole };
+}
+
 /** A contact sheet of seeds [from, from + count) for one faction at one depth. */
 export function contactSheet(
   faction: string, from: number, count: number, depth: number, s = 10, maxWidth = 1800, view: View = 'detail',
@@ -203,7 +272,11 @@ export function contactSheet(
   void within;
   const gIn = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.gram === p.gram).map((q) => adjacencyDistance(p.sig, q.sig)));
   const gX = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.gram !== p.gram).map((q) => adjacencyDistance(p.sig, q.sig)));
-  const adjText = `adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)}; within grammar ${mean(gIn).toFixed(2)}, across ${mean(gX).toFixed(2)}) spine ${spine.toFixed(2)} dups ${dupPairs.length}`;
+  const dpr = ships.reduce((t, x) => t + doorsPerRoom(x.g), 0) / ships.length;
+  const occ = ships.reduce((t, x) => t + (x.g.metrics?.occupancy ?? 0), 0) / ships.length;
+  const idup = interiorDups(ships.map((x) => x.g));
+  const roomText = `occupancy ${occ.toFixed(2)} doors/room ${dpr.toFixed(2)} interior dups ${(idup.share * 100).toFixed(0)}% of ${idup.rooms}`;
+  const adjText = `${roomText} adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)}; within grammar ${mean(gIn).toFixed(2)}, across ${mean(gX).toFixed(2)}) spine ${spine.toFixed(2)} dups ${dupPairs.length}`;
   r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1} ${view}  shape ${sil.toFixed(2)} sections ${arch.toFixed(2)} ${adjText}`, 8, 8, [230, 230, 230], 2);
   const text: string[] = [];
   ships.forEach(({ seed, g }, i) => {
@@ -216,5 +289,5 @@ export function contactSheet(
     (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : view === 'structure' ? drawStructure : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
     text.push(summary(g, seed), ascii(g), '');
   });
-  return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}, ${adjText}`, `near-duplicates: ${dupPairs.join(' ') || 'none'}`, ...errors, ...text].join('\n') };
+  return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}, ${adjText}`, `near-duplicates: ${dupPairs.join(' ') || 'none'}`, `interior dups by role: ${idup.byRole}`, ...errors, ...text].join('\n') };
 }

@@ -32,6 +32,16 @@ export interface Step {
   clear?: number;
   /** Prefer lining up with the room's earlier modules of the same id (rows of beds, racks in aisles). */
   row?: boolean;
+  /** Repeats snap to a lattice through the room's first one, this pitch apart: tables in tidy rows and columns. */
+  grid?: readonly [number, number];
+  /** Skip the step when the room already holds a module of this id. */
+  unless?: string;
+  /** Place at most one of these on the whole ship (one galley per ship). */
+  once?: boolean;
+  /** Skip the step in rooms with fewer floor tiles than this. */
+  minFloor?: number;
+  /** Companions set around each placed module, facing it: chairs at a table. Up to `n`, on its long sides first. */
+  with?: { mod: string; n: number };
   /** Rotations to try (default: the module's generator rotations). */
   rots?: readonly number[];
 }

@@ -151,11 +151,14 @@ export function placeStep(lay: Layout, rng: Rng, room: number, d: RoomDraw, si: 
   if (tiles.length === 0) return null;
   const b = boxOf(lay, tiles);
   const cands: { pm: PlacedModule; v: number }[] = [];
+  const first = s.grid ? roomModules(lay, room).find((m) => m.def === id) : undefined;
+  const onGrid = (x: number, y: number): boolean => !first || !s.grid
+    || (((x - first.x) % s.grid[0]) + s.grid[0]) % s.grid[0] === 0 && (((y - first.y) % s.grid[1]) + s.grid[1]) % s.grid[1] === 0;
   for (const rot of rotsFor(s, d, baseRots)) {
     const [w, h] = rotatedSize(def, rot);
     for (let y = b.y0 - h; y <= b.y1 + 1; y++) {
       for (let x = b.x0 - w; x <= b.x1 + 1; x++) {
-        if (lay.fitError(id, x, y, rot, room)) continue;
+        if (!onGrid(x, y) || (first && first.rot !== rot) || lay.fitError(id, x, y, rot, room)) continue;
         // Extras and fill keep to their wall: furniture does not float in the walkway.
         if (s.count !== 'spec' && s.wall && wallScore(lay, room, b, x, y, w, h, s.wall, d.mirror) < 0.5) continue;
         cands.push({ pm: { def: id, x, y, rot }, v: score(lay, rng, room, b, d, s, id, x, y, rot) });
@@ -194,16 +197,54 @@ export function keepDoorApproach(lay: Layout, room: number): void {
   }
 }
 
+/** Set companions (chairs) around a placed module, each turned to face it; long sides first, in rng order. */
+function companions(lay: Layout, rng: Rng, room: number, host: PlacedModule, id: string, n: number): void {
+  const def = lay.defs[host.def] as ModuleDef;
+  const [w, h] = rotatedSize(def, host.rot);
+  const spots: { x: number; y: number; rot: number; long: boolean }[] = [];
+  for (let i = 0; i < w; i++) {
+    spots.push({ x: host.x + i, y: host.y - 1, rot: 2, long: w >= h }, { x: host.x + i, y: host.y + h, rot: 0, long: w >= h });
+  }
+  for (let j = 0; j < h; j++) {
+    spots.push({ x: host.x - 1, y: host.y + j, rot: 1, long: h > w }, { x: host.x + w, y: host.y + j, rot: 3, long: h > w });
+  }
+  const order = spots.map((p) => ({ p, k: (p.long ? 0 : 10) + rng.next() })).sort((a, b) => a.k - b.k).map((o) => o.p);
+  let placed = 0;
+  const base = lay.unreached();
+  for (const p of order) {
+    if (placed >= n) return;
+    if (lay.fitError(id, p.x, p.y, p.rot, room)) continue;
+    lay.push({ def: id, x: p.x, y: p.y, rot: p.rot });
+    if (lay.unreached() > base) { lay.pop(); continue; }
+    placed++;
+  }
+}
+
+/** True if the step should be skipped in this room. */
+function skip(lay: Layout, room: number, s: Step, id: string): boolean {
+  if (s.minFloor && lay.roomTiles(room).length < s.minFloor) return true;
+  if (s.unless && roomModules(lay, room).some((m) => m.def === s.unless)) return true;
+  return !!s.once && lay.modules.some((m) => m.def === id);
+}
+
 /** Run the draw's extra and fill steps in order (the planned modules are already in). */
-export function furnish(lay: Layout, rng: Rng, room: number, d: RoomDraw, rotsOf: (id: string) => readonly number[]): void {
+export function furnish(
+  lay: Layout, rng: Rng, room: number, d: RoomDraw, rotsOf: (id: string) => readonly number[], power: { spare: number },
+): void {
   keepDoorApproach(lay, room);
   d.arr.steps.forEach((s, si) => {
     if (s.count === 'spec') return;
     const id = d.picks[si] as string;
-    const n = s.count === 'fill' ? 40 : s.count;
+    if (skip(lay, room, s, id)) return;
+    const draw = Math.max(0, -(lay.defs[id]?.power ?? 0));
+    const n = s.once ? 1 : s.count === 'fill' ? 40 : s.count;
     for (let k = 0; k < n; k++) {
       if (s.count === 'fill' && roomFill(lay, room) >= d.recipe.fill) return;
-      if (!placeStep(lay, rng, room, d, si, rotsOf(id))) return;
+      if (draw > power.spare) return;
+      const pm = placeStep(lay, rng, room, d, si, rotsOf(id));
+      if (!pm) return;
+      power.spare -= draw;
+      if (s.with) companions(lay, rng, room, pm, s.with.mod, s.with.n);
     }
   });
 }
