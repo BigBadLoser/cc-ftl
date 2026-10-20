@@ -14,6 +14,7 @@ import { AirlockC, CrossingC as CrossingKey, PortalC } from './components';
 import { airlockTiles } from './airlock';
 import { cachedPath } from './pathCache';
 import { planRoute } from './route';
+import { gridIdOf } from '../regions';
 
 const airlockDef: ModuleDef = {
   name: 'Airlock', asset: 'a', footprint: [1, 4], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20,
@@ -67,7 +68,7 @@ function run(sim: Sim, n: number, events: SimEvent[] = []): SimEvent[] {
     for (const id of airlocks(sim)) {
       const m = sim.world.get(id, ModuleC)!;
       const t = airlockTiles(airlockDef, m);
-      const g = sim.grids.get(m.gridId)!;
+      const g = sim.grids.get(gridIdOf(sim, m))!;
       expect(g.get('door', t.inner.x, t.inner.y) === 255 && g.get('door', t.outer.x, t.outer.y) === 255).toBe(false);
     }
   }

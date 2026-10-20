@@ -106,7 +106,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     layers: L,
     view,
     update(dt) {
-      emergency = shipHasPower(world, modules, grid.id) === false;
+      emergency = shipHasPower(world, modules, grid) === false;
       view.update();
       moduleView.update();
       itemView.update();

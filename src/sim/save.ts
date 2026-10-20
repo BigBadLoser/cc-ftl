@@ -19,7 +19,7 @@ import { newTrade, type TradeState } from './trade/types';
  * the shape is unchanged but the meaning is not, so v14 saves are refused.
  * v16 (step 7a): `ItemStack` drops `gridId` (the owning ship is read from the `ship` layer at the stack's tile).
  */
-export const SAVE_VERSION = 16;
+export const SAVE_VERSION = 17;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

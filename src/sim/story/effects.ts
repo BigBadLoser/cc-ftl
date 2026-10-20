@@ -1,4 +1,4 @@
-import { gridIdAt } from '../regions';
+import { gridIdAt , gridIdOf } from '../regions';
 import { CrewC, HealthC } from '../crew/components';
 import { ItemStackC } from '../items/components';
 import { spillItems, takeFromStack } from '../items/stacks';
@@ -36,7 +36,7 @@ export function giveItems(sim: Sim, item: string, count: number): number {
   const stores = playerStorages(sim);
   for (const id of stores) left -= storageAdd(sim, id, item, left);
   const first = stores[0] === undefined ? undefined : sim.world.get(stores[0], ModuleC);
-  if (left > 0 && first) left = spillItems(sim, first.gridId, first.x, first.y, item, left);
+  if (left > 0 && first) left = spillItems(sim, gridIdOf(sim, first), first.x, first.y, item, left);
   return left;
 }
 

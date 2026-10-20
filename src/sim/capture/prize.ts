@@ -10,13 +10,14 @@ import { ModuleC } from '../modules/components';
 import { InertC } from '../robots/components';
 import type { Sim } from '../sim';
 import { PRIZE_VALUE_PER_COST, PRIZE_VALUE_PER_WALL_HP } from '../tuning';
+import { gridIdOf } from '../regions';
 
 /** Hull value estimate of a grid: module build costs scaled by hp, plus wall integrity. For a future ship broker. */
 export function prizeValue(sim: Sim, gridId: number): number {
   let value = 0;
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    const def = m && m.gridId === gridId ? sim.content.modules[m.def] : undefined;
+    const def = m && gridIdOf(sim, m) === gridId ? sim.content.modules[m.def] : undefined;
     if (!m || !def) continue;
     const cost = (def.cost ?? []).reduce((n, q) => n + q.count, 0);
     value += cost * PRIZE_VALUE_PER_COST * Math.max(0, m.hp) / Math.max(1, def.maxHp);
@@ -51,7 +52,7 @@ export function capturePrize(sim: Sim, ship: Ship): void {
   sim.world.add(entity, PrizeC, { capturedTick: sim.tick, from, hullValue: prizeValue(sim, ship.gridId) });
   for (const id of sim.world.query(WeaponC)) {
     const w = sim.world.get(id, WeaponC);
-    if (w && sim.world.get(id, ModuleC)?.gridId === ship.gridId) Object.assign(w, { charge: 0, shotsLeft: 0, target: null, volleyTarget: null });
+    if (w && gridIdOf(sim, sim.world.get(id, ModuleC)) === ship.gridId) Object.assign(w, { charge: 0, shotsLeft: 0, target: null, volleyTarget: null });
   }
   const combat = sim.world.get(entity, CombatC);
   if (combat) Object.assign(combat, { target: null, volley: false, hold: true });

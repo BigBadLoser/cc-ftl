@@ -33,6 +33,11 @@ export function isInterior(grid: Grid, x: number, y: number): boolean {
 /** Crew are drawn unless they stand on an interior tile of a roofed region (so crew outside a hull always are). */
 export const crewHidden = (grid: Grid, roofed: boolean, x: number, y: number): boolean => roofed && isInterior(grid, Math.round(x), Math.round(y));
 
+/** True if the sector tile of `at` lies inside the ship's rectangle (the ship it stands on: ships never overlap). */
+export function onShip(ship: Ship, at: { x: number; y: number }): boolean {
+  return at.x >= ship.x && at.x < ship.x + ship.width && at.y >= ship.y && at.y < ship.y + ship.height;
+}
+
 /** Module ids on `gridId` that the camera ship (or one of its weapons) is aiming at: the panel's amber marks. */
 export function targetedModules(world: World, refId: number, gridId: number): Set<number> {
   const out = new Set<number>();
@@ -41,9 +46,11 @@ export function targetedModules(world: World, refId: number, gridId: number): Se
     const t = world.get(id, CombatC)?.target;
     if (t?.gridId === gridId && t.moduleId) out.add(t.moduleId);
   }
+  const ref = [...world.query(ShipC)].map((id) => world.get(id, ShipC)).find((s) => s?.gridId === refId);
   for (const id of world.query(WeaponC, ModuleC)) {
     const t = world.get(id, WeaponC)?.target;
-    if (t?.gridId === gridId && t.moduleId && world.get(id, ModuleC)?.gridId === refId) out.add(t.moduleId);
+    const m = world.get(id, ModuleC);
+    if (ref && m && t?.gridId === gridId && t.moduleId && onShip(ref, m)) out.add(t.moduleId);
   }
   return out;
 }

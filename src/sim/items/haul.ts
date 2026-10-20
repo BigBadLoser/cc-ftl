@@ -9,6 +9,7 @@ import { dropCarried, spillItems, takeFromStack } from './stacks';
 import { storageAdd, storageTake } from './storage';
 import { cargoAdd, cargoTake } from '../vehicles/cargo';
 import { cargoTile } from '../vehicles/geometry';
+import { gridIdOf } from '../regions';
 
 /** Where the haul's destination is (module anchor or the target job's tile), or null if it is gone. */
 export function destinationTile(sim: Sim, job: Job): { x: number; y: number } | null {
@@ -16,7 +17,7 @@ export function destinationTile(sim: Sim, job: Job): { x: number; y: number } | 
   if (!dst) return null;
   if (dst.kind === 'vehicle') {
     const t = cargoTile(sim, dst.id, { x: job.x, y: job.y });
-    return t && t.gridId === job.gridId ? { x: t.x, y: t.y } : null;
+    return t && t.gridId === gridIdOf(sim, job) ? { x: t.x, y: t.y } : null;
   }
   const at = dst.kind === 'job' ? sim.world.get(dst.id, JobC) : sim.world.get(dst.id, ModuleC);
   return at ? { x: at.x, y: at.y } : null;
@@ -61,7 +62,7 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
   if (carrying.count > moved) spillItems(sim, pos.gridId, pos.toX, pos.toY, h.item, carrying.count - moved);
   sim.world.remove(crew, CarryingC);
   if (moved > 0) {
-    sim.events.emit({ type: 'item.hauled', crew, item: h.item, count: moved, gridId: job.gridId, x: job.x, y: job.y, to: h.dst.kind });
+    sim.events.emit({ type: 'item.hauled', crew, item: h.item, count: moved, gridId: gridIdOf(sim, job), x: job.x, y: job.y, to: h.dst.kind });
   }
   return 'done';
 }

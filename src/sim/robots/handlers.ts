@@ -16,6 +16,7 @@ import { HACK_SEC } from '../tuning';
 import { HackedC } from './components';
 import { assemblyAt, bayFree, cradleOf, isBay } from './bay';
 import { destroyJob } from '../items/stacks';
+import { gridIdOf } from '../regions';
 
 type RobotCommand = 'crew.hack' | 'debug.spawnCrew' | 'module.assembleRobot' | 'module.cancelAssembly' | 'debug.setCharge';
 type Handler<T extends RobotCommand> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -34,8 +35,8 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     const def = m && sim.content.modules[m.def];
     if (!m || !def?.aiCore || m.hp <= 0) return reject(sim, cmd.type, 'badTarget');
     if (sim.world.get(cmd.module, HackedC)?.hacker) return reject(sim, cmd.type, 'alreadyHacked');
-    if (!factionsHostile(sim.world.get(cmd.id, AllegianceC)?.faction, shipOf(sim, m.gridId)?.faction)) return reject(sim, cmd.type, 'notHostile');
-    if (pos.gridId !== m.gridId) return reject(sim, cmd.type, 'notAboard');
+    if (!factionsHostile(sim.world.get(cmd.id, AllegianceC)?.faction, shipOf(sim, gridIdOf(sim, m))?.faction)) return reject(sim, cmd.type, 'notHostile');
+    if (pos.gridId !== gridIdOf(sim, m)) return reject(sim, cmd.type, 'notAboard');
     let plan: { x: number; y: number; steps: { x: number; y: number }[] } | null = null;
     for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
       const steps = findPath(sim, pos.gridId, origin(pos), { x: t.x, y: t.y, adjacent: true });
@@ -54,7 +55,7 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     (sim.world.get(cmd.id, CrewC) as { activity: string }).activity = 'drafted';
     const job = sim.world.createEntity();
     sim.world.add(job, JobC, {
-      category: 'operating', kind: 'hack', gridId: m.gridId, x: plan.x, y: plan.y, struct: 0,
+      category: 'operating', kind: 'hack', x: plan.x, y: plan.y, struct: 0,
       work: Math.round(HACK_SEC * TICK_HZ), progress: 0, reservedBy: cmd.id, target: cmd.module,
     });
     sim.world.add(cmd.id, AssignmentC, { jobId: job });
@@ -68,7 +69,7 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     if (!bayFree(sim, cmd.moduleId)) return reject(sim, cmd.type, 'bayTaken');
     const job = sim.world.createEntity();
     sim.world.add(job, JobC, {
-      category: 'crafting', kind: 'assemble', gridId: m.gridId, ...cradleOf(sim, cmd.moduleId), struct: 0, work: plan.work, progress: 0,
+      category: 'crafting', kind: 'assemble', ...cradleOf(sim, cmd.moduleId), struct: 0, work: plan.work, progress: 0,
       reservedBy: 0, target: cmd.moduleId, assemble: { role: cmd.role },
       ...(plan.cost.length > 0 ? { needs: plan.cost.map((q) => ({ ...q })), delivered: [] } : {}),
     });

@@ -2,6 +2,7 @@ import { CrewC, DeadC, ModuleC, PositionC, airlockSuits, roomTiles, type Sim } f
 import { buildRobotBay } from './robotSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import type { UiModule, UiModuleDef, UiStats } from '../ui/api';
+import { gridIdOf } from '../sim/regions';
 
 const GRID = 1;
 
@@ -17,9 +18,9 @@ export function buildModuleList(sim: Sim): UiModule[] {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def || m.gridId !== GRID) continue;
+    if (!m || !def || gridIdOf(sim, m) !== GRID) continue;
     out.push({
-      id, def: m.def, name: def.name, x: m.x, y: m.y, local: localOf(sim, m.gridId, m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp,
+      id, def: m.def, name: def.name, x: m.x, y: m.y, local: localOf(sim, gridIdOf(sim, m), m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp,
       priority: m.priority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
       storage: !!def.storage, crafting: !!def.crafting, bay: def.robotBay ? buildRobotBay(sim, id) : null,
       suits: def.airlock ? { stowed: airlockSuits(sim, id), max: def.airlock.suits ?? 0 } : null,
@@ -46,7 +47,7 @@ export function buildStats(sim: Sim): UiStats {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def || m.gridId !== GRID || !m.enabled || m.hp <= 0) continue;
+    if (!m || !def || gridIdOf(sim, m) !== GRID || !m.enabled || m.hp <= 0) continue;
     if (def.power > 0) supply += def.power;
     else demand -= def.power;
   }

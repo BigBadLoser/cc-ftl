@@ -2,6 +2,7 @@ import { CombatC, ShipC, WeaponC, type Target } from '../combat/components';
 import { targetableShip, targetableVehicle } from '../combat/targets';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
+import { gridIdOf } from '../regions';
 
 /**
  * Keeps targets valid: a target whose ship left or fled is cleared; one whose module is gone or destroyed
@@ -24,5 +25,5 @@ function fix(sim: Sim, t: Target | null): Target | null {
   if (!targetableShip(sim, t.gridId)) return null;
   if (t.moduleId === 0) return t;
   const m = sim.world.get(t.moduleId, ModuleC);
-  return m && m.gridId === t.gridId && m.hp > 0 ? t : { gridId: t.gridId, moduleId: 0 };
+  return m && gridIdOf(sim, m) === t.gridId && m.hp > 0 ? t : { gridId: t.gridId, moduleId: 0 };
 }

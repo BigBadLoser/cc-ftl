@@ -5,6 +5,7 @@ import { ModuleC } from '../modules/components';
 import type { SpeciesDef } from '../registry';
 import type { Sim } from '../sim';
 import { HackedC, InertC, StunC } from './components';
+import { gridIdOf } from '../regions';
 
 /** The species def of a crew member, if known. */
 export function speciesOf(sim: Sim, crew: number): SpeciesDef | undefined {
@@ -16,7 +17,7 @@ export function speciesOf(sim: Sim, crew: number): SpeciesDef | undefined {
 export function aiCores(sim: Sim, gridId: number): number[] {
   return sim.world.query(ModuleC).filter((id) => {
     const m = sim.world.get(id, ModuleC);
-    return !!m && m.gridId === gridId && !!sim.content.modules[m.def]?.aiCore;
+    return !!m && gridIdOf(sim, m) === gridId && !!sim.content.modules[m.def]?.aiCore;
   });
 }
 

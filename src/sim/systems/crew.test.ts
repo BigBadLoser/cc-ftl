@@ -98,7 +98,7 @@ describe('crew jobs', () => {
     build(sim2, 2, 3); // near, construction (level 3)
     const far = sim2.world.createEntity();
     sim2.world.add(far, JobC, {
-      category: 'repair', kind: 'build', gridId: 1, x: 7, y: 3, struct: Struct.Wall, work: 40, progress: 0, reservedBy: 0,
+      category: 'repair', kind: 'build', x: 7, y: 3, struct: Struct.Wall, work: 40, progress: 0, reservedBy: 0,
     });
     run(sim2, 2);
     expect(sim2.world.get(c, AssignmentC)?.jobId).toBe(far);

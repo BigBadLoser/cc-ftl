@@ -1,4 +1,4 @@
-import { gridIdAt } from '../regions';
+import { gridIdAt , gridIdOf } from '../regions';
 import { CrewC, DeadC } from '../crew/components';
 import { ShipC } from '../combat/components';
 import { AllegianceC, SurrenderedC } from '../fight/components';
@@ -32,14 +32,14 @@ export function playerModules(sim: Sim, def?: string): number[] {
   const grids = playerGrids(sim);
   return sim.world.query(ModuleC).filter((id) => {
     const m = sim.world.get(id, ModuleC);
-    return !!m && grids.has(m.gridId) && (def === undefined || m.def === def);
+    return !!m && grids.has(gridIdOf(sim, m)) && (def === undefined || m.def === def);
   });
 }
 
 /** Storage modules on player ships, ascending id. */
 export function playerStorages(sim: Sim): number[] {
   const grids = playerGrids(sim);
-  return sim.world.query(StorageC, ModuleC).filter((id) => grids.has(sim.world.get(id, ModuleC)?.gridId ?? -1));
+  return sim.world.query(StorageC, ModuleC).filter((id) => grids.has(gridIdOf(sim, sim.world.get(id, ModuleC)) ?? -1));
 }
 
 export function skillOf(sim: Sim, crew: number, skill: SkillName): number {

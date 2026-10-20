@@ -5,6 +5,7 @@ import {
 } from '../sim';
 import { content } from './index';
 import { withCivilian } from './ships/trade.test';
+import { gridIdOf } from '../sim/regions';
 
 const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -193,7 +194,7 @@ describe('offers', () => {
 
   it('barter balance: item for item, the trader must not lose; the surplus is a gift', () => {
     const { sim, station } = withStation();
-    const crate = sim.world.query(StorageC).find((i) => sim.world.get(i, ModuleC)!.gridId === 1)!;
+    const crate = sim.world.query(StorageC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1)!;
     storageAdd(sim, crate, 'item.electronics', 20);
     const start = playerItems(sim, 'item.electronics');
     const offer = (give: number, get: number): { error: string[]; balance?: number } => {

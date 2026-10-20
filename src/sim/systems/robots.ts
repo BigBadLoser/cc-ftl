@@ -10,6 +10,7 @@ import { hasLiveCore } from '../robots/core';
 import { haltCrew } from '../robots/halt';
 import type { Sim } from '../sim';
 import { HACK_HOLD_RADIUS } from '../tuning';
+import { gridIdOf } from '../regions';
 
 /**
  * Robot control, right after power (cores are live only while powered this tick). Stuns run out. Hacked cores lose
@@ -30,7 +31,7 @@ export function robotsSystem(sim: Sim): void {
   for (const id of sim.world.query(HackedC, ModuleC)) {
     const h = sim.world.get(id, HackedC) as Hacked;
     if (h.hacker && !holding(sim, h.hacker, id)) h.hacker = 0;
-    const gridId = (sim.world.get(id, ModuleC) as { gridId: number }).gridId;
+    const gridId = gridIdOf(sim, sim.world.get(id, ModuleC));
     if (h.hacker && !held.has(gridId)) held.set(gridId, h.by);
   }
   const live = new Map<string, boolean>();
@@ -74,7 +75,7 @@ function holding(sim: Sim, hacker: number, core: number): boolean {
   const m = sim.world.get(core, ModuleC);
   const pos = sim.world.get(hacker, PositionC);
   const def = m && sim.content.modules[m.def];
-  if (!m || !def || !pos || pos.gridId !== m.gridId || !isCombatReady(sim, hacker) || isIncapacitated(sim, hacker)) return false;
+  if (!m || !def || !pos || pos.gridId !== gridIdOf(sim, m) || !isCombatReady(sim, hacker) || isIncapacitated(sim, hacker)) return false;
   const [w, h] = rotatedSize(def, m.rot);
   const dx = Math.max(m.x - pos.x, 0, pos.x - (m.x + w - 1));
   const dy = Math.max(m.y - pos.y, 0, pos.y - (m.y + h - 1));

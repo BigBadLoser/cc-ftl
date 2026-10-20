@@ -64,7 +64,7 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const m = world.get(id, ModuleC);
         const w: { aim: number; charge?: number } | undefined = world.get(id, WeaponC) ?? world.get(id, PointDefenseC);
         const def = m && defs[m.def];
-        if (!m || !w || !def || m.gridId !== grid.id) continue;
+        if (!m || !w || !def || !grid.inBounds(m.x, m.y)) continue;
         const stage = def.deploySec === undefined ? DEPLOY_FRAMES : deployStage(world, id);
         // Stowed: a hatch on a roofed (enemy) ship, nothing at all on the player's cutaway ship.
         if (stage < 0 && !roofed) continue;

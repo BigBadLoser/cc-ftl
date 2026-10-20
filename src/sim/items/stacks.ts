@@ -6,6 +6,7 @@ import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { DECON_REFUND } from '../tuning';
 import { CarryingC, ItemStackC } from './components';
+import { gridIdOf } from '../regions';
 
 const SPILL_RADIUS = 6;
 /** Fallback when content has no def for an item id. */
@@ -106,7 +107,7 @@ export function refundCost(sim: Sim, gridId: number, x: number, y: number, cost:
 export function destroyJob(sim: Sim, jobId: number): void {
   const job = sim.world.get(jobId, JobC);
   if (!job) return;
-  for (const q of job.delivered ?? []) spillItems(sim, job.gridId, job.x, job.y, q.item, q.count);
+  for (const q of job.delivered ?? []) spillItems(sim, gridIdOf(sim, job), job.x, job.y, q.item, q.count);
   job.delivered = [];
   if (job.reservedBy) releaseAssignment(sim, job.reservedBy);
   sim.world.destroyEntity(jobId);

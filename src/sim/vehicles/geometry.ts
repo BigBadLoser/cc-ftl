@@ -4,6 +4,7 @@ import { accessTile, hullOutward, hullSide, rotatedSize } from '../modules/footp
 import { airlockTiles } from '../portals/airlock';
 import type { Sim } from '../sim';
 import { VehicleBayC, VehicleC } from './components';
+import { gridIdOf } from '../regions';
 
 export interface DockPoint {
   gridId: number;
@@ -22,12 +23,12 @@ export interface DockPoint {
 export function dockPoint(sim: Sim, airlock: number): DockPoint | null {
   const m = sim.world.get(airlock, ModuleC);
   const def = m && sim.content.modules[m.def];
-  const ship = m && shipOf(sim, m.gridId);
+  const ship = m && shipOf(sim, gridIdOf(sim, m));
   if (!m || !def?.airlock || !ship) return null;
   const t = airlockTiles(def, m);
   const out = hullOutward(hullSide(def, m.rot) ?? 'n');
   const c = t.collar ?? { x: t.outer.x + out.x, y: t.outer.y + out.y };
-  return { gridId: m.gridId, x: c.x + 0.5, y: c.y + 0.5, inside: t.inside };
+  return { gridId: gridIdOf(sim, m), x: c.x + 0.5, y: c.y + 0.5, inside: t.inside };
 }
 
 /**
@@ -42,7 +43,7 @@ export function cargoTile(sim: Sim, vehicle: number, near?: { x: number; y: numb
   if (m && stands.length > 0) {
     const d = (t: { x: number; y: number }): number => (near ? Math.abs(t.x - near.x) + Math.abs(t.y - near.y) : 0);
     const best = stands.reduce((a, b) => (d(b) < d(a) ? b : a));
-    return { gridId: m.gridId, ...best };
+    return { gridId: gridIdOf(sim, m), ...best };
   }
   return boardingTile(sim, vehicle);
 }
@@ -59,14 +60,14 @@ export function boardingTile(sim: Sim, vehicle: number): { gridId: number; x: nu
   const m = sim.world.get(v.home, ModuleC);
   const def = m && sim.content.modules[m.def];
   const t = m && def && accessTile(def, m.x, m.y, m.rot);
-  return m && t ? { gridId: m.gridId, x: t.x, y: t.y } : null;
+  return m && t ? { gridId: gridIdOf(sim, m), x: t.x, y: t.y } : null;
 }
 
 /** Centre of a bay in sector tiles, or null. */
 export function bayCenter(sim: Sim, bay: number): { x: number; y: number } | null {
   const m = sim.world.get(bay, ModuleC);
   const def = m && sim.content.modules[m.def];
-  const ship = m && shipOf(sim, m.gridId);
+  const ship = m && shipOf(sim, gridIdOf(sim, m));
   if (!m || !def?.vehicleBay || !ship) return null;
   const [w, h] = rotatedSize(def, m.rot);
   return { x: m.x + w / 2, y: m.y + h / 2 };

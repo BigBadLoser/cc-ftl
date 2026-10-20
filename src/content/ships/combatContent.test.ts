@@ -3,6 +3,7 @@ import {
   ModuleC, Struct, footprintTiles, hullRow, isTileWalkable, newGame, openTilesOf, accessTile, findPath, type Sim,
 } from '../../sim';
 import { content } from '../index';
+import { gridIdOf } from '../../sim/regions';
 
 function spawned(shipId: string): Sim {
   const sim = newGame(1, content);
@@ -21,7 +22,7 @@ describe('combat content', () => {
       let demand = 0;
       for (const id of sim.world.query(ModuleC)) {
         const m = sim.world.get(id, ModuleC)!;
-        if (m.gridId !== gridId) continue;
+        if (gridIdOf(sim, m) !== gridId) continue;
         const def = content.modules[m.def as keyof typeof content.modules] as import('../../sim').ModuleDef;
         const wall = hullRow(def, m.x, m.y, m.rot);
         for (const t of footprintTiles(def, m.x, m.y, m.rot)) {

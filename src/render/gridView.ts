@@ -117,7 +117,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     for (const id of world.query(ModuleC)) {
       const m = world.get(id, ModuleC);
       const def = m && modules[m.def];
-      if (!m || !def?.hullEdge || m.gridId !== grid.id) continue;
+      if (!m || !def?.hullEdge || !grid.inBounds(m.x, m.y)) continue;
       // The bulkhead spans the row's inner tiles; the two end tiles keep their hull wall (the sprite stops inside them).
       const row = hullRow(def, m.x, m.y, m.rot).sort((a, b) => a.x + a.y - (b.x + b.y));
       for (const t of row.slice(1, -1)) out.add((t.y - grid.y0) * width + (t.x - grid.x0)); // region-local index
@@ -132,7 +132,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     for (const id of world.query(ModuleC)) {
       const m = world.get(id, ModuleC);
       const def = m && modules[m.def];
-      if (!m || !def?.airlock?.layout || m.gridId !== grid.id) continue;
+      if (!m || !def?.airlock?.layout || !grid.inBounds(m.x, m.y)) continue;
       const t = airlockTiles(def, m);
       out.add((t.outer.y - grid.y0) * width + (t.outer.x - grid.x0)); // region-local index
     }

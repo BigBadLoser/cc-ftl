@@ -895,9 +895,19 @@ hashes must still match) and bumps `SAVE_VERSION` only if the save shape changes
 | Slice | Content | Why this order |
 |---|---|---|
 | **7a** (done on `sector-7a`, save v16) | `ItemStack.gridId` removed (membership from the `ship` layer through `gridIdAt`, falling back to the window rectangle for ship-less fixture grids); the last two `raw()` users (`crew/pathfind.ts`, `eva/route.ts`) read `load()` instead. Local-tile readouts for module, job and airlock labels | Items need no per-ship bounds and no portal; `raw()` goes first so 7d can delete it |
-| **7b** | `ModuleC.gridId`, `JobC.gridId` (+ `Drafted.target/planned.gridId`), `Position.gridId`: the "which ship is this entity on" answers become `shipAt` / `gridIdAt` at the entity's tile. Largest slice; split by component if it passes about 600 lines | Position is read by nearly every system, so it goes after the small components have set the pattern |
+| **7b** (first half done on `sector-7b`, save v17: Module, Job, Drafted; **7b2** = `Position.gridId` only) | `ModuleC.gridId`, `JobC.gridId` (+ `Drafted.target/planned.gridId`), `Position.gridId`: the "which ship is this entity on" answers become `shipAt` / `gridIdAt` at the entity's tile. Largest slice; split by component if it passes about 600 lines | Position is read by nearly every system, so it goes after the small components have set the pattern |
 | **7c** | Ship-keyed ids: `Target.gridId`, `Projectile.fromGridId`, `CoreLink.gridId`, `Ship.gridId` -> the `ShipC` entity id; commands, events and UI snapshots switch from grid ids to ship ids (`gridId` fields in `commands.ts`, `events.ts`, `ui/api.ts`, `app/*Snapshot`) | One mechanical rename across the API surface, after the components no longer need the grid id |
 | **7d** | Delete `sim.grids`, `GridWindow` (+ `raw`), cross-grid portals (`portals/graph`, `route`, `pathCache`, `Path.then`, `systems/portals`), move `SuitC` and `AirlockC` to `eva/` and `modules/airlock.ts`. Per-ship bounds (EVA ring, `bordersSpace`, `network`, power out-of-bounds) move to `ShipC` frames (`shipFrame`) here. Lint guard against `.gridId` and `sim.grids` in `src/sim`; final save bump if the shape changed | Last, because the window rectangle is what keeps edge behaviour identical until then |
+
+**7b notes.** `gridIdOf(sim, at)` (`sim/regions.ts`) is `gridIdAt` at `at.x, at.y` (0 for none). `gridIdAt` now has three steps: the
+`ship` owner layer; else the lowest-id grid whose rectangle holds the tile (Space inside a bbox, ship-less fixture grids); else the
+grid whose padded frame (EVA ring) holds it. The ring step keeps jobs on a downed EVA crew member (rescue) and drafted targets
+in the ring on the grid they had before. Frames never overlap, so the answer is unique. Drafted targets: `gridId` was set only
+for cross-grid orders; it is now `gridIdAt(target) || pos.gridId` (open Space stays on the crew member's own grid). The render
+side asks the grid object (`grid.inBounds(m.x, m.y)`; `onShip(ship, at)` in `render/regionRules.ts`) because it holds no `sim`.
+`sectorEquiv.test.ts` re-adds `gridId` to module rows (after `def`) in `legacyWorld`, as it does for vehicles. Not done (7b2):
+`Position.gridId` (about 100 reads; crew aboard a shuttle have gridId 0, EVA crew sit in the ring, so it needs the same
+ring rule and a decision for shuttle passengers). Job/module `gridId` parameters of helpers (`stackAt`, `makeHaul`, ...) stay until 7d.
 
 Leftovers that 7a deliberately keeps: every `gridId` parameter of the helpers (`stackAt`, `nearestStorageFor`, `makeHaul`,
 ...) and `sim.grids.get(...)` lookups; they go with 7b-7d.

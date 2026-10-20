@@ -16,6 +16,7 @@ import { BLEED_OUT_SECONDS, SKILL_STEP } from '../tuning';
 import { TICK_HZ } from '../time';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
 import { bayCenter, boardingTile, dockPoint, hoverPoint } from './geometry';
+import { gridIdOf } from '../regions';
 
 /** The content def of a vehicle entity, or undefined. */
 export function vehicleDefOf(sim: Sim, v: Vehicle): VehicleDef | undefined {
@@ -52,7 +53,7 @@ export function spawnVehicle(sim: Sim, defId: string, bay: number): number {
   if (!def || !bm || !mod || sim.content.modules[mod.def]?.vehicleBay?.class !== def.class) throw new Error(`spawnVehicle: bad def "${defId}" or bay ${bay}`);
   const id = sim.world.createEntity();
   sim.world.add(id, VehicleC, {
-    def: defId, homeShip: shipEntityOf(sim, mod.gridId), home: bay, state: 'stowed', hp: def.maxHp,
+    def: defId, homeShip: shipEntityOf(sim, gridIdOf(sim, mod)), home: bay, state: 'stowed', hp: def.maxHp,
     pilot: 0, passengers: [], dest: null, dock: 0, cargo: [],
   });
   sim.world.add(id, BodyC, { x: c.x, y: c.y, heading: 0, alt: ALT.stowed });
@@ -171,7 +172,7 @@ export function destPoint(sim: Sim, v: Vehicle, from: { x: number; y: number }):
 /** Leave a dock: the body is freed where it is (the dock point) and the vehicle hovers there. */
 export function undock(sim: Sim, id: number, v: Vehicle): void {
   const airlock = v.dock;
-  const gridId = sim.world.get(airlock, ModuleC)?.gridId ?? 0;
+  const gridId = gridIdOf(sim, sim.world.get(airlock, ModuleC)) ?? 0;
   v.state = 'flying';
   v.dock = 0;
   v.dest = null;

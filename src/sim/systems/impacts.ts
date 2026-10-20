@@ -9,6 +9,7 @@ import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { VehicleC } from '../vehicles/components';
 import { damageVehicle, vehicleDefOf } from '../vehicles/lifecycle';
+import { gridIdOf } from '../regions';
 
 /**
  * Resolves projectiles that arrived. Order: target gone -> miss; evasion roll (ship evasion) -> miss; shield
@@ -45,7 +46,7 @@ export function impactSystem(sim: Sim): void {
       continue;
     }
     const mod = sim.world.get(p.target.moduleId, ModuleC);
-    const modDef = mod && mod.gridId === gridId ? sim.content.modules[mod.def] : undefined;
+    const modDef = mod && gridIdOf(sim, mod) === gridId ? sim.content.modules[mod.def] : undefined;
     const aimed = mod && modDef
       ? footprintTiles(modDef, mod.x, mod.y, mod.rot)
       : [{ x: Math.floor(p.x1), y: Math.floor(p.y1) }];

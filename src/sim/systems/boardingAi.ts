@@ -12,6 +12,7 @@ import { BOARDING_LOAD_TICKS, BOARDING_MIN_HOME } from '../tuning';
 import { BoarderC, EmbarkOrderC, VehicleC, type Boarder } from '../vehicles/components';
 import { dockError } from '../vehicles/handlers';
 import { vehicleDefOf } from '../vehicles/lifecycle';
+import { gridIdOf } from '../regions';
 
 /**
  * Enemy boarding doctrine (ships whose template has `boarding`; see BoarderC). Deterministic, command-only:
@@ -65,7 +66,7 @@ function losing(sim: Sim, gridId: number, integrity: number, below: number): boo
   let working = 0;
   for (const mid of sim.world.query(ModuleC)) {
     const m = sim.world.get(mid, ModuleC);
-    if (!m || m.gridId !== gridId || !sim.content.modules[m.def]?.weapon) continue;
+    if (!m || gridIdOf(sim, m) !== gridId || !sim.content.modules[m.def]?.weapon) continue;
     total++;
     if (m.hp > 0) working++;
   }
@@ -78,7 +79,7 @@ function pickAirlock(sim: Sim, vehicle: number): number {
     const s = sim.world.get(sid, ShipC);
     if (s?.faction !== 'player' || (s.state !== 'active' && s.state !== 'disabled')) continue;
     for (const mid of sim.world.query(AirlockC)) {
-      if (sim.world.get(mid, ModuleC)?.gridId === s.gridId && airlockWorking(sim, mid) && !dockError(sim, vehicle, mid)) return mid;
+      if (gridIdOf(sim, sim.world.get(mid, ModuleC)) === s.gridId && airlockWorking(sim, mid) && !dockError(sim, vehicle, mid)) return mid;
     }
   }
   return 0;

@@ -11,6 +11,7 @@ import { TICK_HZ } from '../time';
 import { AboardC, VehicleC } from '../vehicles/components';
 import { CoreLinkC } from '../robots/components';
 import { aiCores, isCoreLive } from '../robots/core';
+import { gridIdOf } from '../regions';
 
 /**
  * The crew of a ship: everyone with the ship's allegiance who stands on its grid or rides one of its shuttles, plus
@@ -59,7 +60,7 @@ function bridges(sim: Sim, ship: Ship): { id: number; x: number; y: number; hold
   const aiRun = isAiRun(sim, ship);
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    const def = m && m.gridId === gridId ? sim.content.modules[m.def] : undefined;
+    const def = m && gridIdOf(sim, m) === gridId ? sim.content.modules[m.def] : undefined;
     if (!m || !def || (!def.bridge && def.console !== 'helm' && !(aiRun && def.aiCore))) continue;
     const at = accessTile(def, m.x, m.y, m.rot) ?? { x: m.x, y: m.y };
     out.push({ id, x: at.x, y: at.y, holdSec: def.bridge?.holdSec ?? CAPTURE_HOLD_SEC, radius: def.bridge?.radius ?? CAPTURE_BRIDGE_RADIUS });

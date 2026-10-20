@@ -21,6 +21,7 @@ import { airlockTiles } from '../portals/airlock';
 import { isEvaWalkable } from '../structure';
 import { airlockSuits, suitAir } from './suit';
 import { planWalk } from './route';
+import { gridIdOf } from '../regions';
 
 // The docking airlock of content/modules.ts, powered by nothing (power 0 counts as running).
 const airlockDef: ModuleDef = {
@@ -95,7 +96,7 @@ function run(sim: Sim, n: number, events: SimEvent[] = []): SimEvent[] {
   }
   return events;
 }
-const airlockOf = (sim: Sim, gridId: number): number => sim.world.query(AirlockC).find((id) => sim.world.get(id, ModuleC)!.gridId === gridId) as number;
+const airlockOf = (sim: Sim, gridId: number): number => sim.world.query(AirlockC).find((id) => gridIdOf(sim, sim.world.get(id, ModuleC)) === gridId) as number;
 /** Hold the vented patches empty and the rest of the ship at full pressure (a breach plus working life support). */
 const drain = (sim: Sim): void => {
   const patch = vacuum.get(sim);

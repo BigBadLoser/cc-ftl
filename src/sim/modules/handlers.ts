@@ -25,7 +25,7 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     const needs = needsFrom(def?.cost);
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, {
-      category: 'construction', kind: 'module', gridId: cmd.gridId, x: cmd.x, y: cmd.y, struct: 0,
+      category: 'construction', kind: 'module', x: cmd.x, y: cmd.y, struct: 0,
       work: def?.buildWork ?? TICK_HZ, progress: 0, reservedBy: 0, module: { def: cmd.def, rot: cmd.rot },
       ...(needs ? { needs, delivered: [] } : {}),
     });
@@ -43,7 +43,7 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     const work = Math.round((sim.content.modules[m.def]?.buildWork ?? TICK_HZ) * DECON_FRACTION);
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, {
-      category: 'construction', kind: 'moduleDecon', gridId: cmd.gridId, x: m.x, y: m.y, struct: 0,
+      category: 'construction', kind: 'moduleDecon', x: m.x, y: m.y, struct: 0,
       work, progress: 0, reservedBy: 0, target,
     });
   },

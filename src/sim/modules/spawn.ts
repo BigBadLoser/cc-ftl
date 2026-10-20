@@ -12,6 +12,7 @@ import { dismantleAirlock, initAirlock } from '../portals/airlock';
 import { removePortalsOfAirlock } from '../portals/graph';
 import { VehicleBayC } from '../vehicles/components';
 import { releaseBayVehicle } from '../vehicles/lifecycle';
+import { gridIdOf } from '../regions';
 
 /** Create a module entity and claim its footprint in the grid. Assumes placement was validated. */
 export function spawnModule(sim: Sim, gridId: number, defId: string, x: number, y: number, rot: number): number {
@@ -20,7 +21,7 @@ export function spawnModule(sim: Sim, gridId: number, defId: string, x: number, 
   if (!def || !grid) throw new Error(`spawnModule: unknown def "${defId}" or grid ${gridId}`);
   const id = sim.world.createEntity();
   sim.world.add(id, ModuleC, {
-    def: defId, gridId, x, y, rot, hp: def.maxHp, priority: def.priority ?? DEFAULT_PRIORITY,
+    def: defId, x, y, rot, hp: def.maxHp, priority: def.priority ?? DEFAULT_PRIORITY,
     enabled: true, powered: false, reservedBy: 0,
   });
   if (def.storage) sim.world.add(id, StorageC, { capacity: def.storage.capacity, filter: null, stacks: [] });
@@ -38,7 +39,7 @@ export function removeModule(sim: Sim, id: number): void {
   const m = sim.world.get(id, ModuleC);
   if (!m) return;
   const def = sim.content.modules[m.def];
-  const grid = sim.grids.get(m.gridId);
+  const grid = sim.grids.get(gridIdOf(sim, m));
   if (def && grid) {
     if (def.airlock) {
       dismantleAirlock(sim, grid, id);
@@ -48,8 +49,8 @@ export function removeModule(sim: Sim, id: number): void {
       if (grid.inBounds(t.x, t.y) && grid.get('module', t.x, t.y) === id) grid.set('module', t.x, t.y, 0);
     }
   }
-  if (def?.vehicleBay) releaseBayVehicle(sim, id, m.gridId, m.x, m.y);
-  for (const st of sim.world.get(id, StorageC)?.stacks ?? []) spillItems(sim, m.gridId, m.x, m.y, st.item, st.count);
+  if (def?.vehicleBay) releaseBayVehicle(sim, id, gridIdOf(sim, m), m.x, m.y);
+  for (const st of sim.world.get(id, StorageC)?.stacks ?? []) spillItems(sim, gridIdOf(sim, m), m.x, m.y, st.item, st.count);
   sim.world.destroyEntity(id);
 }
 
@@ -92,7 +93,7 @@ export function placementError(sim: Sim, gridId: number, defId: string, x: numbe
   }
   for (const jobId of sim.world.query(JobC)) {
     const j = sim.world.get(jobId, JobC);
-    if (j?.kind !== 'module' || j.gridId !== gridId || !j.module) continue;
+    if (j?.kind !== 'module' || gridIdOf(sim, j) !== gridId || !j.module) continue;
     const other = sim.content.modules[j.module.def];
     if (!other) continue;
     const theirs = footprintTiles(other, j.x, j.y, j.module.rot);

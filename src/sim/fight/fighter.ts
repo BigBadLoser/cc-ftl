@@ -16,6 +16,7 @@ import { armorOf } from '../robots/core';
 import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
+import { gridIdOf } from '../regions';
 
 /** Combat-ready crew with an allegiance, grouped by grid, each list in ascending id order. */
 export function combatReadyUnits(sim: Sim): Map<number, number[]> {
@@ -87,7 +88,7 @@ function consoleObjective(sim: Sim, gridId: number, from: Position): { x: number
   for (const mid of sim.world.query(ModuleC)) {
     const m = sim.world.get(mid, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def?.console || m.gridId !== gridId || m.hp <= 0) continue;
+    if (!m || !def?.console || gridIdOf(sim, m) !== gridId || m.hp <= 0) continue;
     const at = accessTile(def, m.x, m.y, m.rot);
     const d = (at ? Math.hypot(at.x - from.x, at.y - from.y) : Infinity) + (def.bridge || def.console === 'helm' ? 0 : 1000);
     if (at && d < bestD) {

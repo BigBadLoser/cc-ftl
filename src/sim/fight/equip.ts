@@ -9,6 +9,7 @@ import { footprintTiles } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { EquipC, EquipOrderC } from './components';
 import { handDefOf } from './weapons';
+import { gridIdOf } from '../regions';
 
 /** The nearest storage module on the grid holding `item`, or 0. */
 function nearestStock(sim: Sim, gridId: number, at: { x: number; y: number }, item: string): number {
@@ -16,7 +17,7 @@ function nearestStock(sim: Sim, gridId: number, at: { x: number; y: number }, it
   let bestD = Infinity;
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId !== gridId || m.hp <= 0 || storageCount(sim, id, item) <= 0) continue;
+    if (!m || gridIdOf(sim, m) !== gridId || m.hp <= 0 || storageCount(sim, id, item) <= 0) continue;
     const d = Math.max(Math.abs(m.x - at.x), Math.abs(m.y - at.y));
     if (d < bestD) {
       best = id;
@@ -30,7 +31,7 @@ function nearestStock(sim: Sim, gridId: number, at: { x: number; y: number }, it
 function atStorage(sim: Sim, pos: Position, storage: number): boolean {
   const m = sim.world.get(storage, ModuleC);
   const def = m && sim.content.modules[m.def];
-  if (!m || !def || m.gridId !== pos.gridId) return false;
+  if (!m || !def || gridIdOf(sim, m) !== pos.gridId) return false;
   return footprintTiles(def, m.x, m.y, m.rot).some((t) => Math.max(Math.abs(t.x - pos.x), Math.abs(t.y - pos.y)) <= 1);
 }
 

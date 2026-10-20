@@ -10,7 +10,7 @@ export function makeHaul(
 ): number {
   const id = sim.world.createEntity();
   sim.world.add(id, JobC, {
-    category, kind: 'haul', gridId, x: src.x, y: src.y, struct: 0, work: 1, progress: 0, reservedBy: 0,
+    category, kind: 'haul', x: src.x, y: src.y, struct: 0, work: 1, progress: 0, reservedBy: 0,
     haul: { item, count, phase: 'pickup', src: src.ref, dst },
   });
   const out = refKey(src.ref.kind, src.ref.id, item);

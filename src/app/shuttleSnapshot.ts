@@ -4,6 +4,7 @@ import {
 } from '../sim';
 import { localOf } from './moduleSnapshot';
 import type { UiShuttle, UiShuttleCrew, UiShuttles } from '../ui/api';
+import { gridIdOf } from '../sim/regions';
 
 const PLAYER = 1;
 
@@ -38,10 +39,10 @@ export function buildShuttles(sim: Sim): UiShuttles {
   for (const v of vehicleViews(sim)) if (v.dockedAt) claimed.add(v.dockedAt);
   for (const id of sim.world.query(AirlockC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId === PLAYER) continue;
-    const ship = [...sim.world.query(ShipC)].map((s) => sim.world.get(s, ShipC)).find((s) => s?.gridId === m.gridId);
+    if (!m || gridIdOf(sim, m) === PLAYER) continue;
+    const ship = [...sim.world.query(ShipC)].map((s) => sim.world.get(s, ShipC)).find((s) => s?.gridId === gridIdOf(sim, m));
     if (!ship || ship.state === 'fled') continue;
-    airlocks.push({ id, gridId: m.gridId, ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id), ...localOf(sim, m.gridId, m.x, m.y) });
+    airlocks.push({ id, gridId: gridIdOf(sim, m), ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id), ...localOf(sim, gridIdOf(sim, m), m.x, m.y) });
   }
   const shuttles: UiShuttles['shuttles'] = [];
   for (const v of vehicleViews(sim)) {
@@ -51,7 +52,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
     shuttles.push({
       id: v.id, name: def?.name ?? 'Shuttle', state: v.state, hp: Math.round(v.hp), maxHp: v.maxHp, capacity: def?.capacity ?? 0,
       pilot: crewRef(sim, v.pilot), passengers: v.passengers.map((c) => crewRef(sim, c)).filter((c): c is UiShuttleCrew => !!c),
-      destination: v.destination, dockShip: dockM ? shipName(sim, dockM.gridId) : null, bay: v.bay,
+      destination: v.destination, dockShip: dockM ? shipName(sim, gridIdOf(sim, dockM)) : null, bay: v.bay,
       boardable: boardingTile(sim, v.id) !== null,
       trade: tradeRun(sim, v.id),
       hoverShip: v.hoveringGrid ? shipName(sim, v.hoveringGrid) : null,
@@ -70,7 +71,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
   const bays: UiShuttles['bays'] = [];
   for (const id of sim.world.query(VehicleBayC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (m?.gridId === PLAYER) bays.push({ id, empty: !sim.world.get(id, VehicleBayC)?.vehicle });
+    if (gridIdOf(sim, m) === PLAYER) bays.push({ id, empty: !sim.world.get(id, VehicleBayC)?.vehicle });
   }
   const targets: UiShuttles['targets'] = [];
   for (const id of sim.world.query(ShipC)) {

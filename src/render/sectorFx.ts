@@ -11,6 +11,7 @@ import { IMPACT_H, MUZZLE_H } from './heights';
 import { sectorArt } from './sectorPos';
 import type { Layers } from './layers';
 import type { EmitterDef, Particles } from './fx/particles';
+import { onShip } from './regionRules';
 
 export interface SectorFx {
   onEvents(events: readonly SimEvent[]): void;
@@ -75,6 +76,13 @@ export function createSectorFx(
   const lines = new Graphics();
   L.ui.addChild(lines);
 
+  const shipAtTile = (at: { x: number; y: number }): Ship | undefined => {
+    for (const id of world.query(ShipC)) {
+      const s = world.get(id, ShipC);
+      if (s && onShip(s, at)) return s;
+    }
+    return undefined;
+  };
   const ship = (gridId: number): Ship | undefined => {
     for (const id of world.query(ShipC)) {
       const s = world.get(id, ShipC);
@@ -131,7 +139,7 @@ export function createSectorFx(
         if (e.type === 'weapon.fired') {
           const m = world.get(e.weaponId, ModuleC);
           const def = m && content.modules[m.def];
-          const s = m && ship(m.gridId);
+          const s = m && shipAtTile(m);
           if (!m || !def || !s) continue;
           const [w, h] = rotatedSize(def, m.rot);
           const c = secArt(m.x + w / 2, m.y + h / 2);

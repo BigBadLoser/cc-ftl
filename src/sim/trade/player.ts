@@ -6,6 +6,7 @@ import { airlockWorking } from '../portals/airlock';
 import { AirlockC } from '../portals/components';
 import type { Sim } from '../sim';
 import { dockError } from '../vehicles/handlers';
+import { gridIdOf } from '../regions';
 
 /** The player's ship (ShipC entity): the lowest-id live ship of the player faction, or 0. */
 export function playerShip(sim: Sim): number {
@@ -19,7 +20,7 @@ export function playerShip(sim: Sim): number {
 /** Storage modules on the player's ship, ascending id. */
 function playerStorages(sim: Sim): number[] {
   const grid = sim.world.get(playerShip(sim), ShipC)?.gridId;
-  return [...sim.world.query(StorageC, ModuleC)].filter((id) => sim.world.get(id, ModuleC)?.gridId === grid).sort((a, b) => a - b);
+  return [...sim.world.query(StorageC, ModuleC)].filter((id) => gridIdOf(sim, sim.world.get(id, ModuleC)) === grid).sort((a, b) => a - b);
 }
 
 /** Units of an item in the player's storage. */
@@ -52,7 +53,7 @@ export function storagesHolding(sim: Sim, item: string): { id: number; gridId: n
   for (const id of playerStorages(sim)) {
     const m = sim.world.get(id, ModuleC);
     const count = storageCount(sim, id, item);
-    if (m && count > 0) out.push({ id, gridId: m.gridId, x: m.x, y: m.y, count });
+    if (m && count > 0) out.push({ id, gridId: gridIdOf(sim, m), x: m.x, y: m.y, count });
   }
   return out;
 }
@@ -61,7 +62,7 @@ export function storagesHolding(sim: Sim, item: string): { id: number; gridId: n
 export function freeAirlock(sim: Sim, vehicle: number, prefer = 0): number {
   const grid = sim.world.get(playerShip(sim), ShipC)?.gridId;
   const ids = [...sim.world.query(AirlockC, ModuleC)]
-    .filter((id) => sim.world.get(id, ModuleC)?.gridId === grid && airlockWorking(sim, id))
+    .filter((id) => gridIdOf(sim, sim.world.get(id, ModuleC)) === grid && airlockWorking(sim, id))
     .sort((a, b) => (a === prefer ? -1 : b === prefer ? 1 : a - b));
   return ids.find((id) => dockError(sim, vehicle, id) === null) ?? 0;
 }

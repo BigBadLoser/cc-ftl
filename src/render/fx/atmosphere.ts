@@ -70,7 +70,7 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
-        if (!m || !def || m.gridId !== grid.id) continue;
+        if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let cx = 0;
         let cy = 0;

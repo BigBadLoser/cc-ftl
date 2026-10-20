@@ -17,6 +17,7 @@ import { StorageC } from '../items/components';
 import { SkillXpC, ImplantsC } from './components';
 import { checkOdds, describeRequirement, meets, unmetReasons } from './requirements';
 import { playerCrew, skillOf } from './world';
+import { gridIdOf } from '../regions';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'Crate', asset: 'm', footprint: [1, 1], solid: true, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -213,7 +214,7 @@ describe('item stock is the player ship only', () => {
   it('ignores items on enemy ships for requirements and costs, and never spends them', () => {
     const sim = storySim({ e: decision([{ id: 'pay', label: 'pay', cost: [{ item: 'item.scrap', count: 5 }], outcome: {} }]) });
     spawnShip(sim, { name: 'H', rows: ['#####', '#___#', '#####'], modules: [{ def: 'module.crate', x: 1, y: 1, rot: 0 }] }, { gridId: 2, faction: 'hostile', x: 30, y: 30 });
-    const enemyCrate = sim.world.query(StorageC, ModuleC).find((id) => sim.world.get(id, ModuleC)?.gridId === 2) as number;
+    const enemyCrate = sim.world.query(StorageC, ModuleC).find((id) => gridIdOf(sim, sim.world.get(id, ModuleC)) === 2) as number;
     storageAdd(sim, enemyCrate, 'item.scrap', 50);
     expect(meets(sim, { kind: 'item', item: 'item.scrap', count: 1 })).toBe(false);
     fire(sim, 'e');
