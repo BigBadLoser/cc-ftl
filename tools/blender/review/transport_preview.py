@@ -214,7 +214,7 @@ def compose(out):
     items=sorted((shipped["assets"]["crew.human."+n] for n in names),key=lambda a:a["order"])
     for a in items:
         fw,fh=a["frameW"],a["frameH"]
-        sh=np.array(Image.open(assets/shipped["sheets"][a["sheet"]]["image"]))
+        sh=np.array(Image.open(assets/shipped["sheets"][a["clips"]["idle"].get("sheet",a.get("sheet"))]["image"]))
         frame=a["clips"]["idle"]["start"]
         fr=sh[3*fh:4*fh,frame*fw:(frame+1)*fw]
         fr=C.remap_keys(fr,{"team.skin":(212,156,116),"team.cloth":(114,132,95),"team.hair":(58,42,30),"team.accent":(201,162,39)})

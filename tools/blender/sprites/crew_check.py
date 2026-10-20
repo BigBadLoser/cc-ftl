@@ -34,16 +34,19 @@ SHIFT = lambda a, dy, dx: np.roll(a, (dy, dx), (0, 1))  # noqa: E731
 
 
 def stack(man, assets, char, d, clip, frame):
-    cv = np.zeros((140, 120, 4), np.uint8)
+    cv = np.zeros((150, 140, 4), np.uint8)
     gl = np.zeros_like(cv)
     for lid in sorted(LAYERS[char], key=lambda i: man["assets"]["crew.human." + i]["order"]):
         a = man["assets"]["crew.human." + lid]
-        sh = man["sheets"][a["sheet"]]
+        cd = a["clips"].get(clip) or (None if clip.startswith("sit") else a["clips"]["idle"])
+        if cd is None:                                       # no sheet for a seated clip: the layer is hidden (like the runtime)
+            continue
+        sh = man["sheets"][cd.get("sheet", a.get("sheet"))]
         img = np.array(Image.open(assets / sh["image"]).convert("RGBA"))
-        col = a["clips"][clip]["start"] + frame
+        col = cd["start"] + frame
         fw, fh = a["frameW"], a["frameH"]
         sl = (slice(d * fh, (d + 1) * fh), slice(col * fw, (col + 1) * fw))
-        x, y = 60 - a["anchor"]["x"], 120 - a["anchor"]["y"]
+        x, y = 70 - a["anchor"]["x"], 120 - a["anchor"]["y"]
         lay = compose.remap_keys(img[sl], COLOURS[char])
         hid = (lay[..., 3] > 0) & (lay[..., 3] < 128)       # sit clips: pixels hidden behind the chair (faint alpha)
         if hid.any():
@@ -83,17 +86,17 @@ def tile(man, assets):
 
 def cell(man, assets, char, d, clip, frame, floor):
     cv, gl = stack(man, assets, char, d, clip, frame)
-    base = np.zeros((140, 120, 4), np.uint8)
+    base = np.zeros((150, 140, 4), np.uint8)
     base[..., :3], base[..., 3] = BG, 255
     t, an = floor
     for gx in (-1, 0, 1):
         for gy in (-1, 0, 1):
-            compose.over(base, t, 60 + (gx - gy) * 32 - an["x"], 120 + (gx + gy) * 16 - an["y"])
+            compose.over(base, t, 70 + (gx - gy) * 32 - an["x"], 120 + (gx + gy) * 16 - an["y"])
     rgb, op = outline_rim(cv)
     cv[..., :3], cv[..., 3] = rgb, op * 255
     compose.over(base, cv, 0, 0)
     compose.add(base, gl, 0, 0, 1.5)
-    return base[28:128, 22:98, :3]
+    return base[28:128, 32:108, :3]
 
 
 def main():

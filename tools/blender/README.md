@@ -14,17 +14,55 @@ The older GLB pipeline below (`build.py`, `crew/`, `lib/`) is kept as source for
 - Camera: ortho, yaw 45, elevation 30, tile 64x32; SS 4 supersample, mode-downsample, palette quantization, binary alpha.
 - Modules: `core.py` scene/mesh builder/render, `post.py` numpy (palette, team keys, outlines, PNG), `props.py`
   environment models, `env_build.py` atlas + static entries, `human_base.py`/`human_gear.py` crew items,
-  `human_render.py` layer rendering, `crew_pack.py` sheets + layer entries, `compose.py` shared compositing,
+  `human_render.py` layer rendering, `human_items.py` the crew item registry, `crew_spec.py` frame size/clips/order,
+  `crew_clips.py` per-clip pose code, `crew_build.py`/`crew_cache.py`/`crew_digest.py` the incremental crew build and its
+  render cache, `crew_pack.py` per-clip sheets + layer entries, `compose.py` shared compositing,
   `contact_sheet.py` verification image (room + junction test).
 - Verify: `blender -b --factory-startup --python tools/blender/sprites/contact_sheet.py -- [assets] [outdir]`.
 
 ### Crew layers
-One sheet per item, id `crew.human.<slot>[.<item>]`; rows = sim facing d (0 = grid +x, counter-clockwise in grid
+One sheet per item AND clip: `crew.human.<slot>[.<item>].<clip>`, for example `crew.human.torso.tee.walk` (+ `.glow` twin
+when that clip has glow pixels). Rows = sim facing d (0 = grid +x, counter-clockwise in grid
 space, 2 = grid +y), i.e. d=0 SE, 1 S, 2 SW, 3 W, 4 NW, 5 N, 6 NE, 7 E on screen. Blender azimuth theta = 90 - 45*d
-(character faces -Y at 0, grid y = -Blender y). Columns: idle 4, walk 8, work 6, sleep 3. All layers share frame
-size and anchor (feet; sleep frames are centred on the anchor and lifted 0.22 tile for a bed).
+(character faces -Y at 0, grid y = -Blender y). Columns = that clip's frames: idle 4, walk 8, work 6, sleep 3, sit_idle 4,
+sit_work 6, eva_float 4. The manifest layer `crew.human.torso.tee` lists its clips, each with its `sheet`
+(`clips.walk = {sheet, start: 0, frames, fps, loop}`). An item only has the clips it needs: no `sit_*` for `gear.back`
+(rig/pack would sit inside the chair), `eva_float` only for the body and the suit. The runtime falls back to idle for a
+clip a layer lacks, and hides the layer for `sit_idle` (`resolveClip` in `src/render/loadout.ts`).
+All layers share ONE fixed frame (`crew_spec.py`: 128x120, feet anchor (64, 94); the largest current gear needs 76 above,
+15 below, 52 to each side), so a new item never changes another item's sheets. Sleep frames are centred on the anchor
+and lifted 0.22 tile for a bed.
 Stack order (`order`): body 0, eyes 10, legs 20, torso 30, gear.belt 40, arm.R 50, arm.L 51, hair 60,
 implant.temple 65, gear.head 70, gear.back 80.
+
+#### Incremental builds and the render cache
+`npm run sprites -- -- public/assets crew` renders only what the cache lacks (`<repo>/.cache/sprites/crew`, gitignored,
+`$SPRITE_CACHE` to move it), then packs. Options after `crew`:
+`--item S[,S]` (substring of the layer id, e.g. `torso.tee`), `--clip C[,C]` (e.g. `walk`), `--force` (ignore the cache for the
+selected entries), `--plan` (print the hit/miss report and render nothing). With `--item`/`--clip` only those sheets are
+rebuilt and merged into the manifest; without, every human layer is rebuilt from the cache (stale sheet files removed).
+The build prints cache hits and misses per sheet and in total. One cache entry = one raw render keyed by item, clip,
+direction, frame plus a hash of: the item's geometry digest (`crew_digest.py`: vertices, colour/glow attributes,
+weights, parenting, flags), the geometry digests of its holdout items (the default items of lower slots), the clip
+(name, frame count; for `sit_*` and `eva_float` also the files that pose them), and the global inputs: the rig digest,
+the base GLB, Blender version, `core.py`, `post.py`, `human_render.py`, the palette files and the frame constants. A clip's
+key covers only its own table row and the source of its own pose functions (`crew_clips.py`) plus the files they lean on.
+
+When a full re-render is unavoidable: a rig or base change (GLB, bones, base clips), anything in `core.py`/`post.py`/
+`human_render.py` that touches pixels (render settings, palette, finishing, saturation, holdout rules), the frame
+constants, or Blender. Changing a DEFAULT item (e.g. cargo pants) re-renders every layer above it, because those were
+rendered with it as a holdout; that is inherent and the cache tracks it, so it costs exactly the layers above.
+
+Cheap changes: a new item = write its builder (`human_gear.py` etc.) and list it in `human_items.build_items` (that file
+is not hashed; geometry digests decide): only the new item renders (~250 frames, about a minute) and nothing else
+changes. A new clip = add a row to `crew_spec.CLIPS` and a `Pose` entry to `crew_clips.POSES` (`items=` limits which items
+get it); every item renders that clip once, existing clips stay cached. Tweaking one item's geometry re-renders that item
+plus the layers it holds out. Do NOT put clip-specific pose code in `human_render.py`: it is hashed for every clip.
+
+Sampling noise: Cycles hashes its per-pixel sample jitter from the pixel's position in the render canvas, and a few shade
+bands and edge pixels flip with it. Moving the canvas (changing the frame constants) or even the scene contents re-rolls
+about 15% of the opaque pixels by one band. It is why the cache, not a re-render, is the source of truth: the same inputs
+always give the same cached pixels, but a re-render of one entry in another process can differ at a few pixels.
 
 Holdout: when a layer is rendered, the default items of all LOWER slots are Cycles holdout objects, so the layer is cut
 wherever a lower layer is nearer; one fixed order is then correct in all directions. There is NO per-layer outline:

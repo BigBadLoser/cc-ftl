@@ -46,7 +46,7 @@ class Assets:
 
     def frame(self, aid, d, clip, i):
         a = self.m["assets"][aid]
-        sh = self.m["sheets"][a["sheet"]]
+        sh = self.m["sheets"][a["clips"][clip].get("sheet", a.get("sheet"))]
         col = a["clips"][clip]["start"] + i
         fw, fh = a["frameW"], a["frameH"]
         sl = (slice(d * fh, (d + 1) * fh), slice(col * fw, (col + 1) * fw))

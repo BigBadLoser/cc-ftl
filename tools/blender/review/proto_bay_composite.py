@@ -53,7 +53,7 @@ def crew(sc, cx, cy, d=0, cloth=(114, 132, 95)):
     cols = {"team.skin": (212, 156, 116), "team.hair": (70, 48, 34), "team.cloth": cloth, "team.accent": (200, 150, 40)}
     arr, an = None, None
     for a in sorted((MAN["assets"][f"crew.human.{p}"] for p in parts), key=lambda a: a["order"]):
-        sh = np.array(Image.open(AS / MAN["sheets"][a["sheet"]]["image"]).convert("RGBA"))
+        sh = np.array(Image.open(AS / MAN["sheets"][a["clips"]["idle"].get("sheet", a.get("sheet"))]["image"]).convert("RGBA"))
         c, fw, fh = a["clips"]["idle"], a["frameW"], a["frameH"]
         if arr is None:
             arr = np.zeros((fh, fw, 4), np.uint8)
