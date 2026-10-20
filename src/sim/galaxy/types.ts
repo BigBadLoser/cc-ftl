@@ -53,6 +53,8 @@ export interface SectorData {
   region?: string;
   /** Its region's hub: the crossroads sector (more nodes, more lanes). */
   hub?: true;
+  /** The layout style its nodes were shaped by (layout.ts). */
+  layout?: string;
 }
 
 export type EdgeKind = 'route' | 'hyperlane';

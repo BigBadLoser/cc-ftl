@@ -3,10 +3,11 @@ import { jumpCosts } from './costs';
 import { inDanger, type GalaxyContent, type Weighted } from './defs';
 import { dist, gabrielEdges, paddedHull, spanningTree, type Vec } from './geometry';
 import { hash32, unit } from './hash';
+import { pickLayout, type Layout } from './layout';
 import type { Site } from './sites';
 import { dangerAt } from './territory';
 import {
-  CONTACT_MAX_CHANCE, CONTACT_PER_DANGER, HUB_NODES, HULL_PAD, NODE_DENSITY, NODE_MIN_DIST, NODES_PER_SECTOR, OPEN_STATION_CHANCE,
+  CONTACT_MAX_CHANCE, CONTACT_PER_DANGER, HULL_PAD, NODE_MIN_DIST, NODE_SPACING, NODES_PER_SECTOR, OPEN_STATION_CHANCE,
   ROUTE_EXTRA, TERRITORY_TRAFFIC,
 } from './tuning';
 import type { ContactSeed, EdgeData, NodeData, SectorData, StructureRef } from './types';
@@ -48,18 +49,29 @@ export function trafficPool(content: GalaxyContent | undefined, owner: string | 
   return pool;
 }
 
-/** Node offsets inside the sector disc: Poisson-disk darts (the start sector's first node is pinned to its centre). */
-function scatter(rng: Rng, site: Site, start: boolean, hub: boolean): Vec[] {
+/**
+ * Node offsets inside the sector disc: Poisson-disk darts accepted against the sector's layout weight (see layout.ts),
+ * so the style shapes the sector without fixing it. Count from NODES_PER_SECTOR by density and chance (a hub gets the
+ * most); spacing grows with the room per node. The start sector's first node is pinned to its centre.
+ */
+function scatter(rng: Rng, site: Site, start: boolean, layout: Layout): Vec[] {
   const inner = Math.max(0, site.r - HULL_PAD);
-  // Richness varies per sector on top of density, so sector sizes differ even inside one cluster.
-  const per = (NODE_DENSITY.void + (NODE_DENSITY.core - NODE_DENSITY.void) * site.density) * (0.55 + 0.9 * rng.next());
-  const want = Math.max(NODES_PER_SECTOR.min, Math.min(NODES_PER_SECTOR.max, Math.round(per * site.r * site.r * (hub ? HUB_NODES : 1))));
+  const { min, max } = NODES_PER_SECTOR;
+  const t = layout.style === 'spokes' ? 1 : Math.max(0, Math.min(1, 0.2 + 0.45 * site.density + (rng.next() - 0.5) * 0.7));
+  const want = Math.round(min + (max - min) * t);
+  const spacing = Math.max(NODE_MIN_DIST, (NODE_SPACING * inner) / Math.sqrt(want));
   const pts: Vec[] = start ? [{ x: 0, y: 0 }] : [];
-  for (let tries = want * 40; pts.length < want && tries > 0; tries--) {
-    const a = rng.next() * Math.PI * 2;
-    const d = inner * Math.sqrt(rng.next());
-    const p = { x: Math.cos(a) * d, y: Math.sin(a) * d };
-    if (pts.every((q) => dist(p, q) >= NODE_MIN_DIST)) pts.push(p);
+  for (let pass = 0; pass < 2 && pts.length < want; pass++) {
+    // A second pass relaxes the spacing a little when the style left too few spots.
+    const gap = pass === 0 ? spacing : NODE_MIN_DIST;
+    for (let tries = want * 120; pts.length < want && tries > 0; tries--) {
+      const a = rng.next() * Math.PI * 2;
+      const d = Math.sqrt(rng.next());
+      const u = { x: Math.cos(a) * d, y: Math.sin(a) * d };
+      if (rng.next() >= layout.weight(u)) continue;
+      const p = { x: u.x * inner, y: u.y * inner };
+      if (pts.every((q) => dist(p, q) >= gap)) pts.push(p);
+    }
   }
   if (!pts.length) pts.push({ x: 0, y: 0 });
   return pts.map((p) => ({ x: site.x + p.x, y: site.y + p.y }));
@@ -104,12 +116,13 @@ function structuresFor(rng: Rng, ctx: SectorContext, nodes: readonly Vec[], fact
 
 /**
  * Build one sector from its site: nodes (positions, names, structures, ships present) and the routes between them. A hub
- * (its region's crossroads) gets HUB_NODES times the nodes.
+ * (its region's crossroads) lays out as spokes with the most nodes.
  */
 export function buildSector(ctx: SectorContext, site: Site, hub = false): BuiltSector {
   const start = site.gx === 0 && site.gy === 0;
   const rng = new Rng(hash32(ctx.seed, site.gx, site.gy, 21));
-  const pts = scatter(rng, site, start, hub);
+  const layout = pickLayout(rng, hub, start);
+  const pts = scatter(rng, site, start, layout);
   const faction = ctx.territory.factionAt(site.x, site.y);
   const danger = dangerAt(site.x, site.y);
   const name = sectorName(ctx.seed, site, ctx.content);
@@ -142,7 +155,7 @@ export function buildSector(ctx: SectorContext, site: Site, hub = false): BuiltS
   }
   const sector: SectorData = {
     id: site.id, chunk: ctx.chunkOf(site), x: site.x, y: site.y, r: site.r, name: name.full, faction, danger,
-    nodes: nodes.map((n) => n.id), hull: paddedHull(pts, HULL_PAD), ...(hub ? { hub: true as const } : {}),
+    nodes: nodes.map((n) => n.id), hull: paddedHull(pts, HULL_PAD), layout: layout.style, ...(hub ? { hub: true as const } : {}),
   };
   return { sector, nodes, routes };
 }

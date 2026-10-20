@@ -58,14 +58,18 @@ export const HULL_GAP = 34;
 /** Hull padding around the outer nodes (nodes stay inside radius - HULL_PAD). */
 export const HULL_PAD = 16;
 
-/** Nodes: Poisson-disk darts inside the sector disc. Count ~ density-scaled NODE_DENSITY x r^2, clamped. */
-export const NODE_MIN_DIST = 40;
-export const NODE_DENSITY = { core: 0.0011, void: 0.00025 } as const;
-export const NODES_PER_SECTOR = { min: 8, max: 42 } as const;
-/** A region's hub sector gets this many times the nodes (clamped to NODES_PER_SECTOR.max). */
-export const HUB_NODES = 1.6;
+/**
+ * Nodes: Poisson-disk darts inside the sector disc, shaped by the sector's layout style (layout.ts). 8-18 per sector;
+ * spacing is NODE_SPACING x inner radius / sqrt(count), never below NODE_MIN_DIST.
+ */
+export const NODE_MIN_DIST = 48;
+export const NODE_SPACING = 0.95;
+export const NODES_PER_SECTOR = { min: 8, max: 18 } as const;
+/** Layout style weights (a hub is always 'spokes', the start sector a 'cloud'), and the looseness blended into a style. */
+export const LAYOUT_WEIGHTS = { cloud: 3, streak: 2, clumps: 1.5, ring: 1, fork: 1.5, corridor: 1 } as const;
+export const LAYOUT_LOOSENESS = { min: 0.08, max: 0.4 } as const;
 /** Routes inside a sector: the spanning tree of the Gabriel graph plus this share of its other edges. */
-export const ROUTE_EXTRA = 0.3;
+export const ROUTE_EXTRA = 0.15;
 
 /** Hyperlanes: sector pairs closer than this (site to site) may be linked. */
 export const HYPERLANE_MAX = 1200;

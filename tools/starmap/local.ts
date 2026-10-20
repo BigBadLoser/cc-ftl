@@ -101,15 +101,10 @@ export function localView(seed: number, sectorId = 's.0.0'): { svg: string; stat
   if (!here) throw new Error(`no sector ${sectorId}`);
   const lanes = [...edges.values()].filter((e) => e.kind === 'hyperlane' && (nodes.get(e.a)?.sector === here.id || nodes.get(e.b)?.sector === here.id));
   const nearIds = new Set([here.id, ...lanes.flatMap((e) => [nodes.get(e.a)?.sector ?? '', nodes.get(e.b)?.sector ?? ''])]);
-  const shown = [...sectors.values()].filter((s) => nearIds.has(s.id));
-  // Fit the view to the shown sectors, then include any other sector whose centre falls in it (dimmed).
-  const minX = Math.min(...shown.map((s) => s.x - s.r)) - 120;
-  const maxX = Math.max(...shown.map((s) => s.x + s.r)) + 120;
-  const minY = Math.min(...shown.map((s) => s.y - s.r)) - 120;
-  const maxY = Math.max(...shown.map((s) => s.y + s.r)) + 120;
-  const k = Math.min(W / (maxX - minX), H / (maxY - minY));
-  const ox = (W - (maxX - minX) * k) / 2 - minX * k;
-  const oy = (H - (maxY - minY) * k) / 2 - minY * k;
+    // Default zoom: centred on your sector, which fills about a third of the screen height; neighbours sit at the edges.
+  const k = (H * 0.36) / (2 * here.r + 60);
+  const ox = W / 2 - here.x * k;
+  const oy = H / 2 - here.y * k;
   const map = (p: P): P => [p[0] * k + ox, p[1] * k + oy];
   const inView = [...sectors.values()].filter((s) => {
     const [x, y] = map([s.x, s.y]);
@@ -131,7 +126,7 @@ export function localView(seed: number, sectorId = 's.0.0'): { svg: string; stat
     const links = [...edges.values()].filter((e) => e.kind === 'route' && sectorOf(e.a) === s.id)
       .map((e): [P, P] => [[nodes.get(e.a)!.x, nodes.get(e.a)!.y], [nodes.get(e.b)!.x, nodes.get(e.b)!.y]]);
     const [fo, so] = r === 'here' ? [0.12, 0.85] : r === 'near' ? [0.06, 0.5] : [0.025, 0.22];
-    const d = fluidBorder(pts, links, 26, 4, map);
+    const d = fluidBorder(pts, links, 30, 4, map);
     out.push(`<path d="${d}" fill="${col}" fill-opacity="${fo}" stroke="${col}" stroke-opacity="${so}" stroke-width="${r === 'here' ? 2 : 1.4}" fill-rule="evenodd"/>`);
   }
   // Lanes: routes inside sectors, hyperlanes between them.
@@ -154,7 +149,7 @@ export function localView(seed: number, sectorId = 's.0.0'): { svg: string; stat
   for (const s of inView) {
     const r = role(s);
     const stroke = r === 'here' ? '#e2e8f0' : r === 'near' ? '#94a3b8' : '#475569';
-    const rad = r === 'here' ? 4.5 : 3;
+    const rad = r === 'here' ? 6 : 4.5;
     for (const id of s.nodes) {
       const n = nodes.get(id);
       if (!n) continue;
@@ -167,11 +162,32 @@ export function localView(seed: number, sectorId = 's.0.0'): { svg: string; stat
       }
       if (r === 'here' && n.contacts.length) out.push(`<path d="M${(x - 4).toFixed(1)} ${(y - 9).toFixed(1)} l4 -7 l4 7z" fill="#ef4444"/>`);
     }
-    const [lx, ly] = map([s.x, s.y - s.r]);
+    const [lx0, ly0] = map([s.x, s.y - s.r]);
+    // Keep neighbour labels on screen (pinned to the edge nearest the sector).
+    const lx = Math.max(90, Math.min(W - 90, lx0));
+    const ly = Math.max(30, Math.min(H - 24, ly0));
     const fac = s.faction ? factions[s.faction]?.name ?? s.faction : 'unclaimed';
     const label = r === 'here' ? '#22d3ee' : r === 'near' ? '#cbd5e1' : '#64748b';
     out.push(`<text x="${lx.toFixed(1)}" y="${(ly - 14).toFixed(1)}" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="${r === 'here' ? 15 : 13}" letter-spacing="3" fill="${label}">${s.name.toUpperCase()}</text>`);
-    if (r !== 'far') out.push(`<text x="${lx.toFixed(1)}" y="${(ly + 2).toFixed(1)}" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="11" letter-spacing="1" fill="#64748b">${fac} · danger ${s.danger}${s.hub ? ' · hub' : ''}</text>`);
+    if (r !== 'far') out.push(`<text x="${lx.toFixed(1)}" y="${(ly + 2).toFixed(1)}" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="11" letter-spacing="1" fill="#64748b">${fac} · danger ${s.danger} · ${s.layout ?? ''}${s.hub ? ' (hub)' : ''}</text>`);
+  }
+  // Exit labels where a lane from your sector leaves the screen (its neighbour is off-screen).
+  for (const e of lanes) {
+    const a = nodes.get(e.a)!;
+    const b = nodes.get(e.b)!;
+    const [inner, outer] = a.sector === here.id ? [a, b] : [b, a];
+    const [ix, iy] = map([inner.x, inner.y]);
+    const [ex, ey] = map([outer.x, outer.y]);
+    if (ex > 0 && ex < W && ey > 0 && ey < H) continue;
+    const t = Math.min(...[(0 + 24 - ix) / (ex - ix), (W - 24 - ix) / (ex - ix), (0 + 24 - iy) / (ey - iy), (H - 24 - iy) / (ey - iy)].filter((v) => v > 0));
+    const x = ix + (ex - ix) * t;
+    const y = iy + (ey - iy) * t;
+    const n = sectors.get(outer.sector)!;
+    const fac = n.faction ? factions[n.faction]?.name ?? n.faction : 'unclaimed';
+    const anchor = x > W - 200 ? 'end' : x < 200 ? 'start' : 'middle';
+    const ty = y < 60 ? y + 22 : y - 22;
+    out.push(`<text x="${x.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${anchor}" font-family="Trebuchet MS,sans-serif" font-size="13" letter-spacing="2" fill="#e2e8f0">→ ${n.name.toUpperCase()}</text>`);
+    out.push(`<text x="${x.toFixed(1)}" y="${(ty + 15).toFixed(1)}" text-anchor="${anchor}" font-family="Trebuchet MS,sans-serif" font-size="11" fill="#64748b">${fac} · danger ${n.danger}${e.rift ? ' · rift' : ''}</text>`);
   }
   const start = nodes.get(`${here.id}.n0`);
   if (start) {

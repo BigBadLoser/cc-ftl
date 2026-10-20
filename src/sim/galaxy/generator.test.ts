@@ -84,7 +84,7 @@ describe('galaxy generation', () => {
     }
     // Everything in the inner 5x5 chunks (well away from the cut edge of the generated square) is reachable.
     const inner = [...chunks.values()].filter((c) => Math.abs(c.cx) <= 2 && Math.abs(c.cy) <= 2).flatMap((c) => c.nodes);
-    expect(inner.length).toBeGreaterThan(300);
+    expect(inner.length).toBeGreaterThan(150);
     expect(inner.filter((n) => !reach.has(n.id)).map((n) => n.id)).toEqual([]);
   });
 
