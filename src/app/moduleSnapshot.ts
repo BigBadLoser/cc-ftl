@@ -57,7 +57,7 @@ export function buildStats(sim: Sim): UiStats {
     const rooms = new Set<number>();
     for (const id of sim.world.query(CrewC, PositionC)) {
       const p = sim.world.get(id, PositionC);
-      if (!p || p.gridId !== GRID || sim.world.has(id, DeadC) || !grid.inBounds(p.x, p.y)) continue;
+      if (!p || gridIdOf(sim, p) !== GRID || sim.world.has(id, DeadC) || !grid.inBounds(p.x, p.y)) continue;
       const r = grid.get('room', p.x, p.y);
       if (r) rooms.add(r);
     }

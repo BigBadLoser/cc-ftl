@@ -6,6 +6,7 @@ import { AllegianceC } from '../sim/fight/components';
 import type { Grid } from '../sim/grid';
 import { ModuleC } from '../sim/modules/components';
 import { Struct } from '../sim/structure';
+import { REGION_PAD } from '../sim/tuning';
 
 /**
  * Roofing and visibility per region (ARCHITECTURE "Sector grid" §5), read from ShipC and the tiles. Renderer only.
@@ -14,7 +15,7 @@ import { Struct } from '../sim/structure';
 /** True while any of the player's crew stand in this region's frame (boarders, or EVA crew on its hull). */
 export function boarded(world: World, gridId: number): boolean {
   for (const id of world.query(CrewC, PositionC)) {
-    if (world.get(id, PositionC)?.gridId === gridId && world.get(id, AllegianceC)?.faction === 'player') return true;
+    if ((p => !!p && gridIdAtTile(world, p.x, p.y) === gridId)(world.get(id, PositionC)) && world.get(id, AllegianceC)?.faction === 'player') return true;
   }
   return false;
 }
@@ -53,4 +54,23 @@ export function targetedModules(world: World, refId: number, gridId: number): Se
     if (ref && m && t?.gridId === gridId && t.moduleId && onShip(ref, m)) out.add(t.moduleId);
   }
   return out;
+}
+
+/**
+ * The grid id of the ship a placed thing stands on, from the ShipC rectangles (renderer twin of the sim's `gridIdAt`; it has no
+ * `Sim`): the lowest-id ship whose rectangle holds the tile, else the ship whose padded frame (the EVA ring) does, else 0.
+ */
+export function gridIdAtTile(world: World, x: number, y: number): number {
+  let rect = 0;
+  let ring = 0;
+  for (const sid of world.query(ShipC)) {
+    const s = world.get(sid, ShipC);
+    if (!s) continue;
+    if (x >= s.x && x < s.x + s.width && y >= s.y && y < s.y + s.height) {
+      if (rect === 0 || s.gridId < rect) rect = s.gridId;
+    } else if (x >= s.x - REGION_PAD && x < s.x + s.width + REGION_PAD && y >= s.y - REGION_PAD && y < s.y + s.height + REGION_PAD) {
+      if (ring === 0 || s.gridId < ring) ring = s.gridId;
+    }
+  }
+  return rect !== 0 ? rect : ring;
 }

@@ -23,8 +23,8 @@ export function shipCrew(sim: Sim, ship: Ship): number[] {
     if (sim.world.get(id, AllegianceC)?.faction !== ship.faction) continue;
     const pos = sim.world.get(id, PositionC);
     if (pos) {
-      const here = shipOf(sim, pos.gridId);
-      if (pos.gridId === ship.gridId || (here && here.faction !== ship.faction)) out.push(id);
+      const here = shipOf(sim, gridIdOf(sim, pos));
+      if (gridIdOf(sim, pos) === ship.gridId || (here && here.faction !== ship.faction)) out.push(id);
       continue;
     }
     const aboard = sim.world.get(id, AboardC);
@@ -78,7 +78,7 @@ export function bridgeHoldTicks(sim: Sim, ship: Ship, attacker: Faction): number
   if (list.length === 0) return null;
   for (const id of sim.world.query(CrewC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || pos.gridId !== ship.gridId || sim.world.get(id, AllegianceC)?.faction !== attacker || !isCombatReady(sim, id)) continue;
+    if (!pos || gridIdOf(sim, pos) !== ship.gridId || sim.world.get(id, AllegianceC)?.faction !== attacker || !isCombatReady(sim, id)) continue;
     for (const b of list) {
       if (Math.max(Math.abs(pos.x - b.x), Math.abs(pos.y - b.y)) <= b.radius) return Math.round(b.holdSec * TICK_HZ);
     }

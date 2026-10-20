@@ -64,7 +64,7 @@ function armsOn(sim: Sim, ctx: Ctx, gridId: number) {
 
 function whereOf(sim: Sim, ctx: Ctx, id: number): { gridId: number; where: string } {
   const pos = sim.world.get(id, PositionC);
-  if (pos) return { gridId: pos.gridId, where: ctx.ships.get(pos.gridId) ?? 'Ship' };
+  if (pos) return { gridId: gridIdOf(sim, pos), where: ctx.ships.get(gridIdOf(sim, pos)) ?? 'Ship' };
   const aboard = sim.world.get(id, AboardC);
   const v = aboard && sim.world.get(aboard.vehicle, VehicleC);
   if (!v) return { gridId: 0, where: 'Unknown' };
@@ -76,12 +76,12 @@ function evaShuttleOf(sim: Sim, id: number): number | null {
   const vid = sim.world.get(id, SuitC)?.vehicle;
   const v = vid ? sim.world.get(vid, VehicleC) : undefined;
   const pos = sim.world.get(id, PositionC);
-  return vid && v && pos && v.state === 'flying' && !v.dest && !!v.hover && v.hover === shipEntityOf(sim, pos.gridId) ? vid : null;
+  return vid && v && pos && v.state === 'flying' && !v.dest && !!v.hover && v.hover === shipEntityOf(sim, gridIdOf(sim, pos)) ? vid : null;
 }
 
 function isOutside(sim: Sim, id: number): boolean {
   const p = sim.world.get(id, PositionC);
-  const g = p && sim.grids.get(p.gridId);
+  const g = p && sim.grids.get(gridIdOf(sim, p));
   return !!g && g.inBounds(p.x, p.y) && g.get('struct', p.x, p.y) === Struct.Space;
 }
 
@@ -104,7 +104,7 @@ function suitAtOf(sim: Sim, id: number): UiCrew['suitAt'] {
   for (const lock of sim.world.query(AirlockC)) {
     const at = suitTile(sim, lock);
     const free = freeSuits(sim, lock);
-    if (!at || free <= 0 || gridIdOf(sim, sim.world.get(lock, ModuleC)) !== pos.gridId) continue;
+    if (!at || free <= 0 || gridIdOf(sim, sim.world.get(lock, ModuleC)) !== gridIdOf(sim, pos)) continue;
     const d = Math.hypot(at.x - pos.x, at.y - pos.y);
     if (!best || d < best.d) best = { id: lock, free, d };
   }
@@ -129,9 +129,9 @@ function fightOf(sim: Sim, id: number): UiFight | null {
   if (!f) return null;
   const pos = sim.world.get(id, PositionC);
   const tpos = f.target ? sim.world.get(f.target, PositionC) : undefined;
-  const grid = pos && sim.grids.get(pos.gridId);
+  const grid = pos && sim.grids.get(gridIdOf(sim, pos));
   let cover: UiFight['cover'] = null;
-  if (pos && tpos && grid && tpos.gridId === pos.gridId) cover = sightLine(sim, grid, { x: tpos.x, y: tpos.y }, { x: pos.x, y: pos.y }).cover;
+  if (pos && tpos && grid && gridIdOf(sim, tpos) === gridIdOf(sim, pos)) cover = sightLine(sim, grid, { x: tpos.x, y: tpos.y }, { x: pos.x, y: pos.y }).cover;
   return {
     mode: f.mode, engage: f.engage, target: f.target ? (sim.world.get(f.target, CrewC)?.name ?? null) : null, targetId: f.target,
     ordered: f.ordered !== 0, cooldown: Math.round((f.cooldown / TICK_HZ) * 10) / 10, cooldownMax: wielded(sim, id).def.cooldownSec, cover,
@@ -207,7 +207,7 @@ export function buildCrewLists(sim: Sim): { crew: UiCrew[]; hostiles: UiCrew[] }
     } else enemies.push(id);
   }
   for (const id of enemies) {
-    const g = sim.world.get(id, PositionC)?.gridId;
+    const g = gridIdOf(sim, sim.world.get(id, PositionC));
     if (!g || !occupied.has(g) || sim.world.has(id, DeadC)) continue;
     const c = card(sim, ctx, id, 'enemy');
     if (c) hostiles.push(c);

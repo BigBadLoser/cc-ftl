@@ -1,3 +1,4 @@
+import { gridIdOf } from '../regions';
 import type { Command } from '../commands';
 import { isTileWalkable } from '../modules/walk';
 import { needsFrom } from '../items/materials';
@@ -106,7 +107,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     const drafted = sim.world.get(cmd.id, DraftedC);
     const pos = sim.world.get(cmd.id, PositionC);
     if (!drafted || !pos) return reject(sim, cmd.type, 'notDrafted');
-    const gridId = cmd.gridId ?? pos.gridId;
+    const gridId = cmd.gridId ?? gridIdOf(sim, pos);
     const grid = sim.grids.get(gridId);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
     if (!isTileWalkable(sim, grid, cmd.x, cmd.y, sim.world.has(cmd.id, SuitC))) return reject(sim, cmd.type, 'notWalkable');

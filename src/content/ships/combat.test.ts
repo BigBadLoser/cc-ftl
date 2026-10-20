@@ -322,7 +322,7 @@ describe('enemy AI, endings', () => {
     expect(ofType(events, 'module.destroyed').length).toBeGreaterThan(0);
     expect(ofType(events, 'combat.ended')).toHaveLength(1);
     for (const id of sim.world.query(CrewC)) {
-      if (sim.world.get(id, PositionC)!.gridId === 1) expect(sim.world.get(id, CrewC)!.activity).toBe('dead');
+      if (gridIdOf(sim, sim.world.get(id, PositionC)) === 1) expect(sim.world.get(id, CrewC)!.activity).toBe('dead');
     }
     expect(sim.grids.has(1)).toBe(true);
   });

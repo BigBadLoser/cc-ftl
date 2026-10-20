@@ -76,7 +76,7 @@ function world(ships = 1, gap = 5, at2?: { x: number; y: number }): Sim {
 function crew(sim: Sim, gridId: number, x: number, y: number, o: { drafted?: boolean; species?: string; prio?: Priorities } = {}): number {
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name: 'T', role: 'r', species: o.species ?? 'species.human', appearanceSeed: 1, activity: 'idle' });
-  sim.world.add(id, PositionC, { gridId, x, y, toX: x, toY: y, progress: 0, facing: 0 });
+  sim.world.add(id, PositionC, { x, y, toX: x, toY: y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...(o.prio ?? all4) });
   sim.world.add(id, NeedsC, { rest: 100 });
@@ -143,7 +143,7 @@ describe('EVA from a hovering shuttle', () => {
     expect(veh.passengers).toEqual([]);
     expect(veh.pilot).toBe(pilot);
     for (const c of [a, b]) {
-      expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 2 });
+      expect(gridIdOf(sim, sim.world.get(c, PositionC))).toBe(2);
       expect(sim.world.get(c, SuitC)).toMatchObject({ worn: true, vehicle: v });
       expect(sim.world.has(c, EvaFloatC)).toBe(true);
       const p = sim.world.get(c, PositionC)!;
@@ -156,7 +156,8 @@ describe('EVA from a hovering shuttle', () => {
     const p0 = { ...sim.world.get(a, PositionC)! };
     expect(f.sx).toBeLessThan(100 + p0.x + 0.5); // ship 2's tile p0 is at sector x 100 + p0.x + 0.5, east of the hatch
     run(sim, 10);
-    expect(sim.world.get(a, PositionC)).toMatchObject({ gridId: 2, x: p0.x, y: p0.y }); // frozen while drifting, no grid change
+    expect(sim.world.get(a, PositionC)).toMatchObject({ x: p0.x, y: p0.y }); // frozen while drifting, no grid change
+    expect(gridIdOf(sim, sim.world.get(a, PositionC))).toBe(2);
     run(sim, 20 * 6);
     expect(sim.world.has(a, EvaFloatC)).toBe(false);
     expect(suitAir(sim, a)).toBeLessThan(DEFAULT_SUIT.airSec);

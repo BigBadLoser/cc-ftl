@@ -23,7 +23,7 @@ interface Result {
   seconds: number;
 }
 
-const playerCrew = (sim: Sim): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === 1);
+const playerCrew = (sim: Sim): number[] => sim.world.query(CrewC).filter((i) => gridIdOf(sim, sim.world.get(i, PositionC)) === 1);
 const downCount = (sim: Sim, dead = false): number =>
   playerCrew(sim).filter((i) => sim.world.has(i, DeadC) || (!dead && sim.world.has(i, DownedC))).length;
 
@@ -54,7 +54,7 @@ function fight(seed: number, mode: 'manned' | 'unmanned', minutes: number): Resu
     const events: SimEvent[] = sim.events.drain();
     for (const e of events) {
       if (e.type === 'module.destroyed' && e.gridId === 1) r.destroyed++;
-      if (e.type === 'crew.downed' && sim.world.get(e.crew, PositionC)?.gridId === 1) r.firstDownSec = Math.min(r.firstDownSec, t / TPS);
+      if (e.type === 'crew.downed' && gridIdOf(sim, sim.world.get(e.crew, PositionC)) === 1) r.firstDownSec = Math.min(r.firstDownSec, t / TPS);
     }
     r.minIntegrity = Math.min(r.minIntegrity, shipOf(sim, 1)?.integrity ?? 1);
     if (t === 2 * 60 * TPS) r.downAt2 = downCount(sim);

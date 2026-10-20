@@ -1,3 +1,4 @@
+import { gridIdOf } from '../regions';
 import { CrewC, DeadC, PathC, PositionC, type Path, type Position } from '../crew/components';
 import { isIncapacitated, isSettled } from '../crew/helpers';
 import { isTileWalkable } from '../modules/walk';
@@ -39,7 +40,7 @@ export function portalSystem(sim: Sim): void {
     const leg = path.then?.[0];
     if (!leg || path.steps.length > 0 || !isSettled(pos)) continue;
     const portal = sim.world.get(leg.portal, PortalC);
-    const from = portal && endAt(portal, pos);
+    const from = portal && endAt(sim, portal, pos);
     if (!portal || !from || !portalUsable(sim, portal, id)) {
       delete path.then;
       continue;
@@ -51,8 +52,8 @@ export function portalSystem(sim: Sim): void {
 }
 
 /** Which end of the portal the crew member stands on, if they may enter from it. */
-function endAt(portal: Portal, pos: Position): 'a' | 'b' | null {
-  const at = (e: PortalEnd): boolean => e.gridId === pos.gridId && e.x === pos.x && e.y === pos.y;
+function endAt(sim: Sim, portal: Portal, pos: Position): 'a' | 'b' | null {
+  const at = (e: PortalEnd): boolean => e.gridId === gridIdOf(sim, pos) && e.x === pos.x && e.y === pos.y;
   if (at(portal.a)) return 'a';
   if (!portal.oneWay && at(portal.b)) return 'b';
   return null;
@@ -80,7 +81,6 @@ function finish(sim: Sim, id: number, pos: Position, path: Path, portal: Portal,
     return;
   }
   const source = from === 'a' ? portal.a : portal.b;
-  pos.gridId = dest.gridId;
   pos.x = pos.toX = dest.x;
   pos.y = pos.toY = dest.y;
   pos.progress = 0;

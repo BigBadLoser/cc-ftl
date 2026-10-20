@@ -1,3 +1,4 @@
+import { gridIdOf } from '../sim/regions';
 import {
   AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, footprintTiles, isWalkable, placementError, rotatedSize, type Sim, type SimEvent,
 } from '../sim';
@@ -71,7 +72,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (p) {
       for (const sid of sim.world.query(ShipC)) {
         const s = sim.world.get(sid, ShipC);
-        if (s?.gridId === p.gridId) return r?.focusSector(p.x + (p.toX - p.x) * p.progress + 0.5, p.y + (p.toY - p.y) * p.progress + 0.5);
+        if (s?.gridId === gridIdOf(sim, p)) return r?.focusSector(p.x + (p.toX - p.x) * p.progress + 0.5, p.y + (p.toY - p.y) * p.progress + 0.5);
       }
     }
     const b = sim.world.get(sim.world.get(id, AboardC)?.vehicle ?? 0, BodyC);
@@ -230,7 +231,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           const any = renderer.pickTileAny(sx, sy);
           const ag = any && sim.grids.get(any.gridId);
           if (any && ag && sel !== null && sim.world.has(sel, DraftedC) && isWalkable(ag.get('struct', any.x, any.y))) {
-            const here = sim.world.get(sel, PositionC)?.gridId;
+            const here = gridIdOf(sim, sim.world.get(sel, PositionC));
             sim.enqueue({ type: 'crew.moveTo', id: sel, x: any.x, y: any.y, ...(here !== any.gridId ? { gridId: any.gridId } : {}) });
           } else selectTile(tile);
         },

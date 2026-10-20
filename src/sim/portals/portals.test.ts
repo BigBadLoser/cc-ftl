@@ -47,7 +47,7 @@ function world(grids = 2): Sim {
 function crew(sim: Sim, gridId: number, x: number, y: number, suit = true): number {
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name: 'T', role: 'r', species: 'species.human', appearanceSeed: 1, activity: 'idle' });
-  sim.world.add(id, PositionC, { gridId, x, y, toX: x, toY: y, progress: 0, facing: 0 });
+  sim.world.add(id, PositionC, { x, y, toX: x, toY: y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...all4 });
   sim.world.add(id, NeedsC, { rest: 100 });
@@ -132,7 +132,8 @@ describe('portals', () => {
     const c = journey(sim);
     const events = run(sim, 700);
     const pos = sim.world.get(c, PositionC)!;
-    expect(pos).toMatchObject({ gridId: 2, x: X2 + 5, y: 6 });
+    expect(pos).toMatchObject({ x: X2 + 5, y: 6 });
+    expect(gridIdOf(sim, pos)).toBe(2);
     expect(events.filter((e) => e.type === 'crew.crossed')).toEqual([
       expect.objectContaining({ crew: c, fromGridId: 1, toGridId: 2, kind: 'airlock' }),
     ]);
@@ -142,7 +143,8 @@ describe('portals', () => {
     // And back again.
     sim.enqueue({ type: 'crew.moveTo', id: c, x: 3, y: 6, gridId: 1 });
     run(sim, 700);
-    expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 1, x: 3, y: 6 });
+    expect(sim.world.get(c, PositionC)).toMatchObject({ x: 3, y: 6 });
+    expect(gridIdOf(sim, sim.world.get(c, PositionC))).toBe(1);
   });
 
   it('keeps both ships sealed while crew cross', () => {
@@ -162,7 +164,8 @@ describe('portals', () => {
     sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
     sim.enqueue({ type: 'crew.moveTo', id: c, x: X2 + 5, y: 6, gridId: 2 });
     run(sim, 100);
-    expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 1, x: 3, y: 6 });
+    expect(sim.world.get(c, PositionC)).toMatchObject({ x: 3, y: 6 });
+    expect(gridIdOf(sim, sim.world.get(c, PositionC))).toBe(1);
     expect(sim.world.get(c, DraftedC)!.target).toBeNull();
 
     link(sim);
@@ -181,7 +184,7 @@ describe('portals', () => {
     run(sim, 60);
     sim.enqueue({ type: 'portal.unlink', id: portalIds(sim)[0]! });
     run(sim, 500);
-    expect(sim.world.get(c, PositionC)!.gridId).toBe(1);
+    expect(gridIdOf(sim, sim.world.get(c, PositionC))).toBe(1);
     expect(sim.world.get(c, PathC)!.then).toBeUndefined();
   });
 
@@ -246,14 +249,15 @@ describe('determinism and saves', () => {
     let mid = 0;
     for (let i = 0; i < 700 && !mid; i++) {
       run(sim, 1);
-      if (sim.world.get(c, PositionC)!.gridId === 1 && sim.world.get(c, PathC)!.then?.length && sim.world.has(c, CrossingKey)) mid = i;
+      if (gridIdOf(sim, sim.world.get(c, PositionC)) === 1 && sim.world.get(c, PathC)!.then?.length && sim.world.has(c, CrossingKey)) mid = i;
     }
     expect(mid).toBeGreaterThan(0);
     const copy = deserialize(serialize(sim), content);
     expect(serialize(copy)).toBe(serialize(sim));
     run(sim, 400);
     run(copy, 400);
-    expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 2, x: X2 + 5, y: 6 });
+    expect(sim.world.get(c, PositionC)).toMatchObject({ x: X2 + 5, y: 6 });
+    expect(gridIdOf(sim, sim.world.get(c, PositionC))).toBe(2);
     expect(serialize(copy)).toBe(serialize(sim));
   });
 });

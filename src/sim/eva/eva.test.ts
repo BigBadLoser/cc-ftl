@@ -79,7 +79,7 @@ function world(ships = 1, gap = 5, at2?: { x: number; y: number }): Sim {
 function crew(sim: Sim, gridId: number, x: number, y: number, o: { drafted?: boolean; species?: string; prio?: Priorities } = {}): number {
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name: 'T', role: 'r', species: o.species ?? 'species.human', appearanceSeed: 1, activity: 'idle' });
-  sim.world.add(id, PositionC, { gridId, x, y, toX: x, toY: y, progress: 0, facing: 0 });
+  sim.world.add(id, PositionC, { x, y, toX: x, toY: y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...(o.prio ?? all4) });
   sim.world.add(id, NeedsC, { rest: 100 });
@@ -291,7 +291,8 @@ describe('outside on the hull', () => {
     const out = { x: collar(sim).x, y: collar(sim).y + 1 }; // a hull-side tile beside the collar
     sim.enqueue({ type: 'crew.moveTo', id: c, x: out.x, y: out.y });
     run(sim, 20 * 30);
-    expect(sim.world.get(c, PositionC)).toMatchObject({ gridId: 1, x: out.x, y: out.y });
+    expect(sim.world.get(c, PositionC)).toMatchObject({ x: out.x, y: out.y });
+    expect(gridIdOf(sim, sim.world.get(c, PositionC))).toBe(1);
     expect(sim.grids.get(1)!.get('struct', out.x, out.y)).toBe(Struct.Space);
     expect(suitAir(sim, c)).toBeLessThan(DEFAULT_SUIT.airSec);
     expect(sim.world.get(c, HealthC)!.hp).toBe(CREW_MAX_HP);

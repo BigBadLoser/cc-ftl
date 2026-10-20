@@ -28,7 +28,7 @@ function setup(seed = 1): { sim: Sim; v: number } {
   run(sim, 2);
   for (const i of sim.world.query(WeaponC)) if (gridIdOf(sim, sim.world.get(i, ModuleC)) === 2) sim.world.get(i, ModuleC)!.enabled = false;
   const v = shuttleOf(sim);
-  const pilot = sim.world.query(CrewC).find((c) => sim.world.get(c, CrewC)!.role === 'role.pilot' && sim.world.get(c, PositionC)?.gridId === 1)!;
+  const pilot = sim.world.query(CrewC).find((c) => sim.world.get(c, CrewC)!.role === 'role.pilot' && gridIdOf(sim, sim.world.get(c, PositionC)) === 1)!;
   sim.enqueue({ type: 'vehicle.embark', crew: pilot, vehicle: v });
   run(sim, 400);
   expect(sim.world.get(v, VehicleC)!.pilot).toBe(pilot);

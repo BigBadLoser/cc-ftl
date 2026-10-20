@@ -350,8 +350,13 @@ the `ship` layer via `gridIdAt`), `crew/pathfind.ts` and `eva/route.ts` use `loa
 see ARCHITECTURE "Step 7 split". Next: 7b (Module, Job, Drafted, Position).
 
 Branch `sector-7b` (not merged, no visual change): 7b, first half. `ModuleC.gridId`, `JobC.gridId` and `Drafted.target/planned.gridId`
-are gone (membership from the tile via `gridIdOf` / `gridIdAt`); `Position.gridId` is left for **7b2**. Save v17. Both `sectorEquiv`
+are gone (membership from the tile via `gridIdOf` / `gridIdAt`); `Position.gridId` was left for 7b2. Save v17. Both `sectorEquiv`
 hashes unchanged (the test's `legacyWorld` writes `gridId` back into module rows). See ARCHITECTURE "Step 7 split".
+
+Branch `sector-7b2` (not merged, no visual change): `Position.gridId` is gone (about 100 reads now `gridIdOf(sim, pos)`; render uses
+`gridIdAtTile(world, x, y)`). Shuttle passengers need nothing new: they have no `Position` and carry `AboardC`; disembark gives
+them a tile again. Save v18. Both `sectorEquiv` hashes unchanged (`legacyWorld` writes `gridId` back as the first `position` key).
+Headless smoke: starter loads with 0 page errors; embark, launch, dock, disembark brings the pilot back on a tile. Next: 7c.
 
 **EVA on the hull roof (user decision, 2026-10-20; not built):** EVA crew outside a ship must not walk the hull ring at
 floor level (the tiles just outside the hull walls): there they look as if standing on air, and walking along wall faces

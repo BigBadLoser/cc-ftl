@@ -36,10 +36,10 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     if (!m || !def?.aiCore || m.hp <= 0) return reject(sim, cmd.type, 'badTarget');
     if (sim.world.get(cmd.module, HackedC)?.hacker) return reject(sim, cmd.type, 'alreadyHacked');
     if (!factionsHostile(sim.world.get(cmd.id, AllegianceC)?.faction, shipOf(sim, gridIdOf(sim, m))?.faction)) return reject(sim, cmd.type, 'notHostile');
-    if (pos.gridId !== gridIdOf(sim, m)) return reject(sim, cmd.type, 'notAboard');
+    if (gridIdOf(sim, pos) !== gridIdOf(sim, m)) return reject(sim, cmd.type, 'notAboard');
     let plan: { x: number; y: number; steps: { x: number; y: number }[] } | null = null;
     for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
-      const steps = findPath(sim, pos.gridId, origin(pos), { x: t.x, y: t.y, adjacent: true });
+      const steps = findPath(sim, gridIdOf(sim, pos), origin(pos), { x: t.x, y: t.y, adjacent: true });
       if (steps && (!plan || steps.length < plan.steps.length)) plan = { x: t.x, y: t.y, steps };
     }
     if (!plan) return reject(sim, cmd.type, 'unreachable');

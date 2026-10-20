@@ -23,7 +23,6 @@ export function carrySystem(sim: Sim): void {
       continue;
     }
     const pos = sim.world.get(id, PositionC) as Position;
-    pos.gridId = carrier.gridId;
     pos.x = carrier.x;
     pos.y = carrier.y;
     pos.toX = carrier.toX;

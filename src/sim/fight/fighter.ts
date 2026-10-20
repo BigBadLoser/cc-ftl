@@ -23,7 +23,7 @@ export function combatReadyUnits(sim: Sim): Map<number, number[]> {
   const out = new Map<number, number[]>();
   for (const id of sim.world.query(AllegianceC, PositionC)) {
     if (!isCombatReady(sim, id)) continue;
-    const gridId = (sim.world.get(id, PositionC) as Position).gridId;
+    const gridId = gridIdOf(sim, sim.world.get(id, PositionC));
     const list = out.get(gridId);
     if (list) list.push(id);
     else out.set(gridId, [id]);
@@ -72,7 +72,7 @@ function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: numb
   const moved = !f.goal || f.goal.x !== goal.x || f.goal.y !== goal.y;
   const idle = path.steps.length === 0 && isSettled(pos);
   if (!idle && !(moved && sim.tick - f.planned >= CHASE_REPLAN_TICKS)) return;
-  const steps = findPath(sim, pos.gridId, origin(pos), { ...goal, adjacent });
+  const steps = findPath(sim, gridIdOf(sim, pos), origin(pos), { ...goal, adjacent });
   f.planned = sim.tick;
   f.goal = { x: goal.x, y: goal.y };
   if (steps) {
@@ -116,7 +116,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
     if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
-      const goal = consoleObjective(sim, pos.gridId, pos);
+      const goal = consoleObjective(sim, gridIdOf(sim, pos), pos);
       if (goal && (pos.x !== goal.x || pos.y !== goal.y)) walkTo(sim, id, f, pos, goal, false);
     }
     return;
@@ -184,7 +184,7 @@ function attack(
   pos.facing = facingOf(tpos.x - pos.x, tpos.y - pos.y, pos.facing);
   sim.events.emit({
     type: 'crew.attacked', crew: id, target: targetId, weapon: weapon.item, ranged: weapon.def.kind === 'ranged',
-    gridId: pos.gridId, x: pos.x, y: pos.y, tx: tpos.x, ty: tpos.y,
+    gridId: gridIdOf(sim, pos), x: pos.x, y: pos.y, tx: tpos.x, ty: tpos.y,
   });
   if (!sim.rng.chance(hitChance(sim, id, weapon.def, d, cover))) {
     sim.events.emit({ type: 'crew.miss', crew: id, target: targetId, cover });

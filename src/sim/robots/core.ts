@@ -48,7 +48,7 @@ export function freeze(pos: Position): void {
 
 /** Crew on a grid, ascending ids. */
 export function crewOnGrid(sim: Sim, gridId: number): number[] {
-  return sim.world.query(CrewC, PositionC).filter((id) => sim.world.get(id, PositionC)?.gridId === gridId);
+  return sim.world.query(CrewC, PositionC).filter((id) => gridIdOf(sim, sim.world.get(id, PositionC)) === gridId);
 }
 
 /** Damage fraction a crew member's body ignores (SpeciesDef.armor, 0..1). */

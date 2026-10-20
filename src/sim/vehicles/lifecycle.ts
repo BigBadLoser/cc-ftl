@@ -85,7 +85,7 @@ export function unboardCrew(sim: Sim, crew: number, vehicle: number, at: { gridI
   if (v.pilot === crew) v.pilot = 0;
   v.passengers = v.passengers.filter((c) => c !== crew);
   sim.world.remove(crew, AboardC);
-  sim.world.add(crew, PositionC, { gridId: at.gridId, x: at.x, y: at.y, toX: at.x, toY: at.y, progress: 0, facing: 0 });
+  sim.world.add(crew, PositionC, { x: at.x, y: at.y, toX: at.x, toY: at.y, progress: 0, facing: 0 });
   sim.world.add(crew, PathC, { steps: [] });
   const intruder = shipOf(sim, at.gridId)?.faction !== vehicleFaction(sim, v);
   if (intruder) sim.world.add(crew, DraftedC, { target: null });

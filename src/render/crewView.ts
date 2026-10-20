@@ -1,3 +1,4 @@
+import { gridIdAtTile } from './regionRules';
 import { HALO_PAD, haloTex } from './haloTex';
 import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
@@ -193,7 +194,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
       for (const id of world.query(CrewC, PositionC)) {
         const pos = world.get(id, PositionC);
         const crew = world.get(id, CrewC);
-        if (!pos || !crew || pos.gridId !== target.gridId || host.hidden?.(pos.x, pos.y)) continue;
+        if (!pos || !crew || gridIdAtTile(world, pos.x, pos.y) !== target.gridId || host.hidden?.(pos.x, pos.y)) continue;
         seen.add(id);
         let s = slots.get(id);
         if (s && s.suited !== world.has(id, SuitC)) {

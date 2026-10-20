@@ -16,7 +16,7 @@ const run = (sim: Sim, n: number): SimEvent[] => {
 };
 const airlockOf = (sim: Sim, gridId: number): number =>
   sim.world.query(AirlockC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId)!;
-const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
+const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => gridIdOf(sim, sim.world.get(i, PositionC)) === gridId);
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 
 describe('EVA content', () => {
@@ -44,7 +44,8 @@ describe('EVA content', () => {
     expect(isTileWalkable(sim, sim.grids.get(1)!, out.x, out.y, true)).toBe(true);
     sim.enqueue({ type: 'crew.moveTo', id: eng, x: out.x, y: out.y });
     run(sim, 20 * 40);
-    expect(sim.world.get(eng, PositionC)).toMatchObject({ gridId: 1, x: out.x, y: out.y });
+    expect(sim.world.get(eng, PositionC)).toMatchObject({ x: out.x, y: out.y });
+    expect(gridIdOf(sim, sim.world.get(eng, PositionC))).toBe(1);
     expect(suitAir(sim, eng)).toBeLessThan(content.suit.airSec);
     expect(sim.world.get(eng, HealthC)!.hp).toBe(sim.world.get(eng, HealthC)!.max);
   });

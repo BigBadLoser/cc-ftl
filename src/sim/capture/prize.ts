@@ -58,7 +58,7 @@ export function capturePrize(sim: Sim, ship: Ship): void {
   if (combat) Object.assign(combat, { target: null, volley: false, hold: true });
   for (const id of sim.world.query(CrewC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (pos?.gridId !== ship.gridId) continue;
+    if (gridIdOf(sim, pos) !== ship.gridId) continue;
     const faction = sim.world.get(id, AllegianceC)?.faction;
     if (faction === from) {
       if (sim.world.has(id, SurrenderedC) || sim.world.has(id, DownedC) || sim.world.has(id, InertC)) imprison(sim, id, ship.gridId);
@@ -75,7 +75,7 @@ export function scuttle(sim: Sim, gridId: number): string | null {
   const ship = sim.world.get(entity, ShipC);
   if (!ship || ship.state !== 'prize') return 'notPrize';
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (sim.world.get(id, PositionC)?.gridId === gridId && sim.world.get(id, AllegianceC)?.faction === 'player'
+    if (gridIdOf(sim, sim.world.get(id, PositionC)) === gridId && sim.world.get(id, AllegianceC)?.faction === 'player'
       && !sim.world.has(id, PrisonerC) && !sim.world.has(id, DeadC)) return 'crewAboard';
   }
   sim.world.remove(entity, PrizeC);

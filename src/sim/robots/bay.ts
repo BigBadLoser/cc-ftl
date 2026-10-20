@@ -64,7 +64,7 @@ export function wantsBay(sim: Sim, robot: number): boolean {
   if ((sim.world.get(robot, NeedsC)?.charge ?? 100) < battery.lowBelow) return true;
   const hp = sim.world.get(robot, HealthC);
   const pos = sim.world.get(robot, PositionC);
-  return !!hp && !!pos && hp.hp < hp.max * BAY_REPAIR_BELOW && repairItem(sim, robot, pos.gridId) !== null;
+  return !!hp && !!pos && hp.hp < hp.max * BAY_REPAIR_BELOW && repairItem(sim, robot, gridIdOf(sim, pos)) !== null;
 }
 
 /**
@@ -74,7 +74,7 @@ export function wantsBay(sim: Sim, robot: number): boolean {
 export function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): boolean {
   let bay = homeBay(sim, robot);
   const home = bay ? sim.world.get(bay, ModuleC) : undefined;
-  if (home && gridIdOf(sim, home) !== pos.gridId) return false; // its home is on another grid: no squatting here
+  if (home && gridIdOf(sim, home) !== gridIdOf(sim, pos)) return false; // its home is on another grid: no squatting here
   if (home && home.hp <= 0) {
     home.reservedBy = 0; // wrecked home: find another
     bay = 0;
@@ -83,8 +83,8 @@ export function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): boo
     let best = Infinity;
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
-      if (!m || gridIdOf(sim, m) !== pos.gridId || !bayFree(sim, id)) continue;
-      const steps = findPath(sim, pos.gridId, origin(pos), cradleOf(sim, id));
+      if (!m || gridIdOf(sim, m) !== gridIdOf(sim, pos) || !bayFree(sim, id)) continue;
+      const steps = findPath(sim, gridIdOf(sim, pos), origin(pos), cradleOf(sim, id));
       if (steps && steps.length < best) [bay, best] = [id, steps.length];
     }
     if (!bay) return false;
@@ -99,7 +99,7 @@ export function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): boo
     return true;
   }
   if (path.steps.length > 0 || !isSettled(pos)) return true;
-  const steps = findPath(sim, pos.gridId, origin(pos), { x: m.x, y: m.y });
+  const steps = findPath(sim, gridIdOf(sim, pos), origin(pos), { x: m.x, y: m.y });
   if (!steps || steps.length === 0) return false;
   path.steps = steps;
   return true;

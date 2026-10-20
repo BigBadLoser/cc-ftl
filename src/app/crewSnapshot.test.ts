@@ -1,3 +1,4 @@
+import { gridIdOf } from '../sim/regions';
 import { describe, expect, it } from 'vitest';
 import { CrewC, PositionC, newGame, type Sim } from '../sim';
 import { content } from '../content';
@@ -24,9 +25,11 @@ describe('buildCrewLists', () => {
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
     run(sim, 5);
     expect(buildCrewLists(sim).hostiles).toHaveLength(0);
-    const id = sim.world.query(CrewC).find((c) => sim.world.get(c, PositionC)?.gridId === 1)!;
+    const id = sim.world.query(CrewC).find((c) => gridIdOf(sim, sim.world.get(c, PositionC)) === 1)!;
     const pos = sim.world.get(id, PositionC)!;
-    pos.gridId = 2; // as if it had landed on the raider
+    const raider = sim.grids.get(2)!;
+    pos.x = pos.toX = raider.x0 + 1; // as if it had landed on the raider
+    pos.y = pos.toY = raider.y0 + 1;
     const { crew, hostiles } = buildCrewLists(sim);
     const me = crew.find((c) => c.id === id)!;
     expect(me.away).toBe(true);

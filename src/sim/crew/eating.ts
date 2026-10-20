@@ -60,7 +60,7 @@ function pickSpot(sim: Sim, gridId: number, from: Tile, item: string): { x: numb
 export function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
   let eat = sim.world.get(id, EatC);
   if (eat && eat.left >= 0) return true;
-  const item = eat?.item && ammoCount(sim, pos.gridId, eat.item) > 0 ? eat.item : foodOn(sim, pos.gridId);
+  const item = eat?.item && ammoCount(sim, gridIdOf(sim, pos), eat.item) > 0 ? eat.item : foodOn(sim, gridIdOf(sim, pos));
   if (!item) {
     sim.world.remove(id, EatC);
     return false;
@@ -68,7 +68,7 @@ export function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean 
   const path = sim.world.get(id, PathC) as Path;
   if (!eat) {
     if ((sim.tick + id) % 20 !== 0) return false; // look for a spot once a second, not every tick
-    const spot = pickSpot(sim, pos.gridId, origin(pos), item);
+    const spot = pickSpot(sim, gridIdOf(sim, pos), origin(pos), item);
     if (!spot) return false;
     releaseAssignment(sim, id);
     dropCarried(sim, id);
@@ -77,7 +77,7 @@ export function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean 
   }
   if (!isSettled(pos) || path.steps.length > 0) return true; // still walking
   if (pos.x === eat.x && pos.y === eat.y) {
-    if (!consumeAmmo(sim, pos.gridId, item)) {
+    if (!consumeAmmo(sim, gridIdOf(sim, pos), item)) {
       sim.world.remove(id, EatC);
       return false;
     }
@@ -87,7 +87,7 @@ export function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean 
     crew.activity = 'eating';
     return true;
   }
-  const steps = findPath(sim, pos.gridId, origin(pos), { x: eat.x, y: eat.y });
+  const steps = findPath(sim, gridIdOf(sim, pos), origin(pos), { x: eat.x, y: eat.y });
   if (!steps || steps.length === 0) {
     sim.world.remove(id, EatC);
     return false;

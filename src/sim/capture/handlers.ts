@@ -1,3 +1,4 @@
+import { gridIdOf } from '../regions';
 import { shipEntityOf } from '../combat/ships';
 import { ShipC } from '../combat/components';
 import type { Command } from '../commands';
@@ -17,7 +18,7 @@ export const captureHandlers: { [T in CaptureCommandType]: (sim: Sim, cmd: Extra
     const ship = sim.world.get(shipEntityOf(sim, cmd.gridId), ShipC);
     if (!ship || ship.faction === 'player' || ship.state === 'wreck') return;
     for (const id of sim.world.query(CrewC, PositionC)) {
-      if (sim.world.get(id, PositionC)?.gridId === cmd.gridId && sim.world.get(id, AllegianceC)?.faction === ship.faction && !sim.world.has(id, SurrenderedC)) {
+      if (gridIdOf(sim, sim.world.get(id, PositionC)) === cmd.gridId && sim.world.get(id, AllegianceC)?.faction === ship.faction && !sim.world.has(id, SurrenderedC)) {
         sim.world.add(id, SurrenderedC, { tick: sim.tick });
       }
     }

@@ -32,8 +32,8 @@ export function findSuitSource(sim: Sim, crew: number, pos: Position): SuitSourc
   let best: SuitSource | null = null;
   for (const id of sim.world.query(AirlockC)) {
     const at = suitTile(sim, id);
-    if (!at || !airlockUsable(sim, id) || freeSuits(sim, id) <= 0 || !onGrid(sim, id, pos.gridId)) continue;
-    const plan = planWalk(sim, crew, pos.gridId, origin(pos), at);
+    if (!at || !airlockUsable(sim, id) || freeSuits(sim, id) <= 0 || !onGrid(sim, id, gridIdOf(sim, pos))) continue;
+    const plan = planWalk(sim, crew, gridIdOf(sim, pos), origin(pos), at);
     if (!plan || plan.thin) continue;
     if (!best || plan.steps.length < best.steps.length) best = { airlock: id, steps: plan.steps };
   }
@@ -42,12 +42,12 @@ export function findSuitSource(sim: Sim, crew: number, pos: Position): SuitSourc
 
 /** The nearest airlock on the grid whose suit tile has breathable air, to take the suit off at. */
 export function findSuitStow(sim: Sim, crew: number, pos: Position): SuitSource | null {
-  const grid = sim.grids.get(pos.gridId);
+  const grid = sim.grids.get(gridIdOf(sim, pos));
   let best: SuitSource | null = null;
   for (const id of sim.world.query(AirlockC)) {
     const at = suitTile(sim, id);
-    if (!grid || !at || !airlockUsable(sim, id) || !onGrid(sim, id, pos.gridId) || isThin(grid, at.x, at.y)) continue;
-    const plan = planWalk(sim, crew, pos.gridId, origin(pos), at);
+    if (!grid || !at || !airlockUsable(sim, id) || !onGrid(sim, id, gridIdOf(sim, pos)) || isThin(grid, at.x, at.y)) continue;
+    const plan = planWalk(sim, crew, gridIdOf(sim, pos), origin(pos), at);
     if (plan && (!best || plan.steps.length < best.steps.length)) best = { airlock: id, steps: plan.steps };
   }
   return best;

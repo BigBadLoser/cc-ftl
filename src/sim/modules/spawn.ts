@@ -110,7 +110,7 @@ export function footprintBlockedByCrew(sim: Sim, gridId: number, defId: string, 
   const tiles = footprintTiles(def, x, y, rot).filter((t) => !open.some((o) => o.x === t.x && o.y === t.y));
   for (const id of sim.world.query(CrewC, PositionC)) {
     const p = sim.world.get(id, PositionC);
-    if (!p || p.gridId !== gridId) continue;
+    if (!p || gridIdOf(sim, p) !== gridId) continue;
     if (tiles.some((t) => (t.x === p.x && t.y === p.y) || (t.x === p.toX && t.y === p.toY))) return true;
   }
   return false;

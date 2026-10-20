@@ -18,7 +18,7 @@ const run = (sim: Sim, n: number): SimEvent[] => {
 const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 
-const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
+const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => gridIdOf(sim, sim.world.get(i, PositionC)) === gridId);
 const shuttleOf = (sim: Sim, gridId: number): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === shipEntityOf(sim, gridId))!;
 const airlockOf = (sim: Sim, gridId: number): number =>
   sim.world.query(ModuleC).find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === gridId && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
@@ -70,7 +70,7 @@ describe('shuttle round trip', () => {
     const landed = of(run(sim, 3), 'crew.disembarked');
     expect(landed).toHaveLength(2);
     expect(landed.every((e) => e.gridId === 2)).toBe(true);
-    expect(sim.world.get(pilot, PositionC)?.gridId).toBe(2);
+    expect(gridIdOf(sim, sim.world.get(pilot, PositionC))).toBe(2);
 
     const back = of(embark(sim, [pilot, medic], shuttle), 'crew.embarked');
     expect(back).toHaveLength(2);
@@ -82,8 +82,8 @@ describe('shuttle round trip', () => {
     sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle });
     sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle, crew: pilot });
     run(sim, 3);
-    expect(sim.world.get(pilot, PositionC)?.gridId).toBe(1);
-    expect(sim.world.get(medic, PositionC)?.gridId).toBe(1);
+    expect(gridIdOf(sim, sim.world.get(pilot, PositionC))).toBe(1);
+    expect(gridIdOf(sim, sim.world.get(medic, PositionC))).toBe(1);
   });
 
   it('holds a pilot plus the content capacity and refuses more', () => {
@@ -156,7 +156,7 @@ describe('shuttle combat', () => {
     expect(sim.world.get(shuttle, VehicleC)!.state).toBe('docked');
     destroyVehicle(sim, shuttle);
     for (const c of crew) {
-      expect(sim.world.get(c, PositionC)?.gridId).toBe(2);
+      expect(gridIdOf(sim, sim.world.get(c, PositionC))).toBe(2);
       expect(sim.world.has(c, DownedC)).toBe(true);
     }
   });
@@ -225,7 +225,7 @@ describe('enemy boarding AI', () => {
     const landed = of(out, 'crew.disembarked');
     expect(landed.length).toBeGreaterThanOrEqual(2);
     expect(landed.every((e) => e.gridId === 1)).toBe(true);
-    for (const e of landed) expect(sim.world.get(e.crew, PositionC)?.gridId).toBe(1);
+    for (const e of landed) expect(gridIdOf(sim, sim.world.get(e.crew, PositionC))).toBe(1);
   });
 
   it('armed boarders fight the defenders once ashore, and nobody else takes chores from them', () => {

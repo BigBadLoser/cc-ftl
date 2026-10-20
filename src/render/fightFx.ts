@@ -3,6 +3,7 @@
  * melee, a hit flash with the damage number, and MISS text. Real fx sprites (muzzle, impact, tracer) come later from
  * the sprite pipeline; replace this file then.
  */
+import { gridIdAtTile } from './regionRules';
 import { Container, Graphics, Text } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
@@ -47,7 +48,7 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
   };
   const crewAt = (id: number, z: number): Pt | null => {
     const p = world.get(id, PositionC);
-    return p ? at(p.gridId, p.x + (p.toX - p.x) * p.progress, p.y + (p.toY - p.y) * p.progress, z) : null;
+    return p ? at(gridIdAtTile(world, p.x, p.y), p.x + (p.toX - p.x) * p.progress, p.y + (p.toY - p.y) * p.progress, z) : null;
   };
   const say = (text: string, p: Pt, fill: number) => {
     const t = new Text({ text, resolution: Math.max(1, scale()), style: { fontFamily: 'monospace', fontSize: 11, fontWeight: 'bold', fill, stroke: { color: 0x05080d, width: 2 } } });

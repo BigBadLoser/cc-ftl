@@ -23,7 +23,7 @@ export function createCrew(
     : (sim.content.crewNames[sim.rng.int(0, Math.max(0, sim.content.crewNames.length - 1))] ?? 'Crew'));
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name, role: roleId, species: speciesId, appearanceSeed: sim.rng.int(0, 0x7fffffff), activity: 'idle' });
-  sim.world.add(id, PositionC, { gridId, x: tile.x, y: tile.y, toX: tile.x, toY: tile.y, progress: 0, facing: 0 });
+  sim.world.add(id, PositionC, { x: tile.x, y: tile.y, toX: tile.x, toY: tile.y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...role.priorities });
   // Species without rest decay (robots) keep a full Needs record: the decision system reads it, nothing drains it.
