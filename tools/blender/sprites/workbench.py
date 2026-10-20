@@ -23,20 +23,22 @@ def workbench(state, rot):
         k.box(0.2 + i * 0.22, 0.05, 0.2, 0.18, 0.26, 0.12, col, bevel=0.01)
     k.box(0, 0, TOP - 0.06, 1.9, 0.76, 0.06, "steel", top="steelL", bevel=0.01)       # bench top
     k.box(-0.2, 0.06, TOP, 1.2, 0.5, 0.012, "navy")                                   # work mat
-    k.box(0, -0.4, TOP, 1.9, 0.06, 0.72, "plate", top="steelL")                        # pegboard
+    k.box(0, -0.4, TOP, 1.9, 0.06, 0.72, "ochM", top="ochL")                           # pegboard (hardboard)
+    k.box(0, -0.38, TOP, 1.92, 0.08, 0.07, "gmD", top="gm")                             # rail at its foot
+    k.box(0, -0.4, TOP + 0.72, 1.94, 0.08, 0.04, "gmD", top="gm")                       # and its cap
     for i in range(9):
         for j in range(3):
-            k.box(-0.8 + i * 0.2, -0.366, TOP + 0.18 + j * 0.18, 0.025, 0.012, 0.025, "gmD")
-    for u, h, col in ((-0.75, 0.26, "steelD"), (-0.62, 0.2, "gmD"), (-0.5, 0.3, "hivis"), (-0.36, 0.22, "steelD")):
+            k.box(-0.8 + i * 0.2, -0.366, TOP + 0.18 + j * 0.18, 0.025, 0.012, 0.025, "ochD")
+    for u, h, col in ((-0.75, 0.26, "steelD"), (-0.62, 0.2, "gmD"), (-0.5, 0.3, "polyB"), (-0.36, 0.22, "steelD")):
         k.box(u, -0.355, TOP + 0.62 - h, 0.035, 0.02, h, col)                        # hanging tools: spanners,
-        k.box(u, -0.355, TOP + 0.62 - h - 0.02, 0.07, 0.02, 0.05, col)                  # screwdrivers, a hi-vis one
-    k.box(-0.15, -0.355, TOP + 0.36, 0.14, 0.02, 0.06, "rust")                         # hammer head
-    k.box(-0.15, -0.355, TOP + 0.18, 0.03, 0.02, 0.2, "steelD")
-    k.box(0.35, -0.36, TOP + 0.3, 0.3, 0.03, 0.22, "gmD", bevel=0.01)                  # diagnostics screen
-    k.box(0.35, -0.343, TOP + 0.32, 0.25, 0.012, 0.17, "dark")
+        k.box(u, -0.355, TOP + 0.62 - h - 0.02, 0.07, 0.02, 0.05, col)                  # screwdrivers, a blue one
+    k.box(-0.15, -0.355, TOP + 0.36, 0.14, 0.02, 0.06, "gmD")                          # hammer head
+    k.box(-0.15, -0.355, TOP + 0.18, 0.03, 0.02, 0.2, "rustD")
+    k.box(0.15, -0.36, TOP + 0.3, 0.3, 0.03, 0.22, "gmD", bevel=0.01)                  # diagnostics screen
+    k.box(0.15, -0.343, TOP + 0.32, 0.25, 0.012, 0.17, "dark")
     if on:
         for j in range(3):
-            k.box(0.3 + 0.04 * j, -0.335, TOP + 0.36 + j * 0.035, 0.14 - 0.03 * j, 0.012, 0.022, "green")
+            k.box(0.1 + 0.04 * j, -0.335, TOP + 0.36 + j * 0.035, 0.14 - 0.03 * j, 0.012, 0.022, "green")
     k.box(0.75, -0.37, TOP + 0.6, 0.04, 0.04, 0.2, "steelD")                           # lamp arm: up, then
     k.box(0.75, -0.24, TOP + 0.76, 0.04, 0.3, 0.04, "steelD")                          # forward over the mat
     k.box(0.75, -0.06, TOP + 0.64, 0.24, 0.18, 0.13, "gm", top="steelL", taper=0.55)   # its shade
