@@ -6,7 +6,7 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, drawRoom, pruneDoors, furnish, placeStep, specStep, type RoomDraw } from './rooms';
+import { RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
 import { Layout } from './layout';
 import { pickWeighted, planShip, scaled, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -65,7 +65,11 @@ function fitOut(
   const drawOf = (room: number): RoomDraw | null => {
     const recipe = RECIPES[roles[room] as RoomRole];
     if (!recipe || specs[room]?.sealed) return null;
-    if (!draws.has(room)) draws.set(room, drawRoom(rng, recipe));
+    if (!draws.has(room)) {
+      const d = drawRoom(rng, recipe);
+      draws.set(room, d);
+      reserveWalkway(lay, room, d);
+    }
     return draws.get(room) as RoomDraw;
   };
   const rots = (id: string): number[] => rotsOf(id, defs[id] as ModuleDef);
@@ -75,10 +79,18 @@ function fitOut(
       out.stock.set(idx, f.stock.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
     }
   };
+  // Planned modules per room and def, for steps that place only a share of them.
+  const planned = new Map<string, number>();
+  for (const j of jobs) planned.set(`${j.room} ${j.def}`, (planned.get(`${j.room} ${j.def}`) ?? 0) + 1);
+  const done = new Map<string, number>();
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
     const d = drawOf(j.room);
     const si = d ? specStep(d, j.def) : -1;
+    const share = d && si >= 0 ? d.arr.steps[si]?.share : undefined;
+    const k = `${j.room} ${j.def}`;
+    if (share !== undefined && (done.get(k) ?? 0) >= Math.max(1, Math.ceil((planned.get(k) ?? 0) * share))) { wanted[j.def] = (wanted[j.def] ?? 1) - 1; continue; }
+    done.set(k, (done.get(k) ?? 0) + 1);
     const pm = (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
       ?? placeOne(lay, rng, j.def, [j.room], { spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) });
     if (!pm) continue;
@@ -94,27 +106,45 @@ function fitOut(
   const guns = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.weapon).reduce((t, [, n]) => t + n, 0);
   if (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3) return { ...out, error: 'weapons do not fit' };
   if ((placed['module.reactor'] ?? 0) < (wanted['module.reactor'] ?? 0)) return { ...out, error: 'reactors do not fit' };
-  for (let room = 0; room < roles.length; room++) lightRoom(lay, rng, room);
+  // Rooms with a recipe are lit after they are furnished, so lamps take the walkways the furniture leaves.
+  for (let room = 0; room < roles.length; room++) if (!drawOf(room)) lightRoom(lay, rng, room);
   let supply = 0;
   let demand = 0;
   for (const m of lay.modules) { const p = (defs[m.def] as ModuleDef).power; if (p > 0) supply += p; else demand -= p; }
+  // Lamps the furnished rooms will need (a trial lighting, taken back: they are lit after furnishing), plus a margin.
+  const recipeRooms = roles.map((_, i) => i).filter((i) => drawOf(i));
+  let lamps = 0;
+  for (const room of recipeRooms) {
+    const n = lay.modules.length;
+    lightRoom(lay, rng, room);
+    lamps += lay.modules.length - n;
+    while (lay.modules.length > n) lay.pop();
+  }
+  const lampPower = -((defs['module.light'] as ModuleDef | undefined)?.power ?? 0);
+  demand += lamps * lampPower;
+  // Furniture can push a lamp off its first-choice tile: keep a lamp per furnished room in hand.
+  const margin = recipeRooms.length * lampPower;
   // Short of power after lighting: squeeze extra reactors into engineering or stores.
   const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || r === 'cargo' || r === 'support' ? i : -1)).filter((i) => i >= 0);
   const reactor = defs['module.reactor'];
-  for (let k = 0; k < 3 && supply < demand && reactor; k++) {
+  for (let k = 0; k < 3 && supply < demand + margin && reactor; k++) {
     if (!placeOne(lay, rng, 'module.reactor', spare)) break;
     supply += reactor.power;
   }
   if (supply < demand) return { ...out, error: 'not enough power' };
-  // Furnishing: recipe extras that draw power (a galley) only while the planned reactors cover them.
-  const power = { spare: supply - demand };
-  for (let room = 0; room < roles.length; room++) {
-    const d = drawOf(room);
-    if (!d) continue;
+  // Furnishing: recipe extras that draw power (a galley) only while the planned reactors cover them, with a margin
+  // kept for the lamps those rooms still need.
+  const power = { spare: supply - demand - margin };
+  for (const room of recipeRooms) {
+    const d = drawOf(room) as RoomDraw;
     const before = lay.modules.length;
     furnish(lay, rng, room, d, rots, power);
     for (let i = before; i < lay.modules.length; i++) stockUp(i, specs[room]);
+    lightRoom(lay, rng, room);
   }
+  let draw = 0;
+  for (const m of lay.modules) draw -= Math.min(0, (defs[m.def] as ModuleDef).power);
+  if (supply < draw) return { ...out, error: 'not enough power' };
   return out;
 }
 

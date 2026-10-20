@@ -20,6 +20,16 @@ export interface Step {
   count: 'spec' | number | 'fill';
   /** Walls the footprint should back onto (preferred, not required). */
   wall?: Wall;
+  /** A second-choice wall, scored lower (the helm backs onto a long wall when the fore wall has a door). */
+  wall2?: Wall;
+  /** Prefer the room's end or side toward this direction (the helm toward the bow). */
+  toward?: Dir;
+  /** Pack: prefer touching walls and other modules on as many sides as possible (cargo holds). */
+  pack?: boolean;
+  /** For 'fill': this step's own fill target instead of the recipe's (mess tables fill a big hall). */
+  upTo?: number;
+  /** For 'spec': place only this share of the planned modules (rounded up); fill steps use the rest of the room. */
+  share?: number;
   /** Which way the module's front (access side, or a chair's seat) must point. 'in' faces the room's middle. */
   face?: Dir | 'in';
   /** Turn to face the nearest module of this id (consoles facing the helm, chairs facing a table). */
@@ -32,7 +42,7 @@ export interface Step {
   clear?: number;
   /** Prefer lining up with the room's earlier modules of the same id (rows of beds, racks in aisles). */
   row?: boolean;
-  /** Repeats snap to a lattice through the room's first one, this pitch apart: tables in tidy rows and columns. */
+  /** Repeats prefer a lattice through the room's first one, this pitch apart: tables in tidy rows and columns. */
   grid?: readonly [number, number];
   /** Skip the step when the room already holds a module of this id. */
   unless?: string;
@@ -49,6 +59,11 @@ export interface Step {
 export interface Arrangement {
   name: string;
   weight: number;
+  /**
+   * Reserve one clear walkway before anything goes in: a spine along the room's long axis (or across it, 'cross'),
+   * joined by the shortest floor path to every door and every protected tile (airlock insides, unloader stands).
+   */
+  walkway?: 'long' | 'cross';
   steps: readonly Step[];
 }
 

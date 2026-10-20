@@ -6,25 +6,28 @@ export const bridge = {
   arrangements: [
     {
       name: 'arc', weight: 2, steps: [
-        { mod: 'module.helm', count: 'spec', wall: 'fore', face: 'fore', centre: 'y' },
+        { mod: 'module.helm', count: 'spec', wall: 'fore', wall2: 'any', toward: 'fore', face: 'fore', centre: 'y' },
         { mod: 'module.weaponsConsole', count: 'spec', wall: 'port', face: 'fore', near: 'module.helm' },
         { mod: 'module.shieldConsole', count: 'spec', wall: 'stbd', face: 'fore', near: 'module.helm' },
-        { mod: ['module.storage_locker', 'module.battery'], count: 'fill', wall: 'aft', row: true },
+        { mod: 'module.console', count: 2, face: 'fore', toward: 'fore', near: 'module.helm' },
+        { mod: ['module.storage_locker', 'module.battery'], count: 'fill', wall: 'any', row: true },
       ],
     },
     {
       name: 'row', weight: 1, steps: [
-        { mod: 'module.helm', count: 'spec', wall: 'fore', face: 'fore', centre: 'y' },
+        { mod: 'module.helm', count: 'spec', wall: 'fore', wall2: 'any', toward: 'fore', face: 'fore', centre: 'y' },
         { mod: 'module.weaponsConsole', count: 'spec', face: 'fore', centre: 'y', clear: 1 },
         { mod: 'module.shieldConsole', count: 'spec', face: 'fore', near: 'module.weaponsConsole' },
-        { mod: 'module.storage_locker', count: 'fill', wall: 'long', row: true },
+        { mod: 'module.console', count: 3, face: 'fore', row: true, near: 'module.weaponsConsole' },
+        { mod: 'module.storage_locker', count: 'fill', wall: 'any', row: true },
       ],
     },
     {
       name: 'stations', weight: 1, steps: [
-        { mod: 'module.helm', count: 'spec', wall: 'fore', face: 'fore', centre: 'y' },
+        { mod: 'module.helm', count: 'spec', wall: 'fore', wall2: 'any', toward: 'fore', face: 'fore', centre: 'y' },
         { mod: 'module.weaponsConsole', count: 'spec', wall: 'port', face: 'port' },
         { mod: 'module.shieldConsole', count: 'spec', wall: 'stbd', face: 'stbd' },
+        { mod: 'module.console', count: 4, wall: 'long', row: true },
         { mod: ['module.battery', 'module.storage_locker'], count: 'fill', wall: 'any', row: true },
       ],
     },

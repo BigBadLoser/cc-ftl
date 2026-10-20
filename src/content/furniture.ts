@@ -29,6 +29,11 @@ export const furniture = {
     name: 'Cargo pallet', asset: 'module.storage_pallet', footprint: [2, 2], solid: true, access: [0, 2], power: 0,
     flammability: 0.3, maxHp: 100, buildWork: 80, cost: [{ item: 'item.metal', count: 8 }], storage: { capacity: 24 },
   },
+  // A freight container, opened from the doors on one long side. Cargo holds pack them around their walkway.
+  'module.cargo_container': {
+    name: 'Cargo container', asset: 'module.cargo_container', footprint: [3, 2], solid: true, access: [1, 2], power: 0,
+    flammability: 0.2, maxHp: 160, buildWork: 120, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 40 },
+  },
   // A sickbay cot (walkable, like a bed). No healing mechanic yet.
   'module.med_bed': {
     name: 'Medical bed', asset: 'module.med_bed', footprint: [1, 2], solid: false, power: 0, flammability: 0.4,

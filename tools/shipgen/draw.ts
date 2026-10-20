@@ -70,7 +70,7 @@ const MOD: Record<string, { label: string; c: RGB }> = {
   'module.light': { label: '', c: [255, 250, 200] },
   'module.galley': { label: 'GAL', c: [255, 190, 120] }, 'module.mess_table': { label: 'TB', c: [235, 205, 160] },
   'module.chair': { label: 'h', c: [235, 205, 160] }, 'module.storage_locker': { label: 'L', c: [170, 190, 210] },
-  'module.storage_rack': { label: 'RK', c: [210, 160, 90] }, 'module.storage_pallet': { label: 'PAL', c: [210, 160, 90] },
+  'module.storage_rack': { label: 'RK', c: [210, 160, 90] }, 'module.storage_pallet': { label: 'PAL', c: [210, 160, 90] }, 'module.cargo_container': { label: 'CTR', c: [230, 140, 70] },
   'module.med_bed': { label: 'MED', c: [255, 140, 140] }, 'module.battery': { label: 'BT', c: [240, 220, 60] },
   'module.hydroponics': { label: 'HY', c: [110, 230, 90] }, 'module.console': { label: 'CN', c: [90, 170, 255] },
 };

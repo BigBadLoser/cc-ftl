@@ -77,6 +77,19 @@ function wallScore(lay: Layout, room: number, b: Box, x: number, y: number, w: n
   return side(wall);
 }
 
+/** Rim tiles of a footprint that touch another module (lights left out). */
+function touching(lay: Layout, x: number, y: number, w: number, h: number): number {
+  let n = 0;
+  const hit = (i: number, j: number): void => {
+    if (!lay.inBounds(i, j)) return;
+    const o = lay.occ[j * lay.w + i] as number;
+    if (o >= 0 && lay.modules[o]?.def !== 'module.light') n++;
+  };
+  for (let i = x; i < x + w; i++) { hit(i, y - 1); hit(i, y + h); }
+  for (let j = y; j < y + h; j++) { hit(x - 1, j); hit(x + w, j); }
+  return n / (2 * (w + h));
+}
+
 /** Score one candidate placement for a step (higher is better). */
 function score(lay: Layout, rng: Rng, room: number, b: Box, d: RoomDraw, s: Step, id: string, x: number, y: number, rot: number): number {
   const def = lay.defs[id] as ModuleDef;
@@ -88,6 +101,19 @@ function score(lay: Layout, rng: Rng, room: number, b: Box, d: RoomDraw, s: Step
   if (sides.some((k) => k < 0)) v -= 6;
   v += 0.4 * sides.reduce((t, k) => t + Math.max(0, k), 0);
   if (s.wall) v += 5 * wallScore(lay, room, b, x, y, w, h, s.wall, d.mirror);
+  if (s.wall2) v += 3 * wallScore(lay, room, b, x, y, w, h, s.wall2, d.mirror);
+  if (s.toward) {
+    const t = flip(s.toward, d.mirror);
+    const span = Math.max(1, t === 'fore' || t === 'aft' ? b.x1 - b.x0 : b.y1 - b.y0);
+    const off = t === 'fore' ? x - b.x0 : t === 'aft' ? b.x1 - (x + w - 1) : t === 'port' ? y - b.y0 : b.y1 - (y + h - 1);
+    v -= 4 * off / span;
+  }
+  if (s.pack) {
+    v += 1.2 * sides.reduce((t, k) => t + Math.max(0, k), 0) + 0.8 * touching(lay, x, y, w, h);
+    // Opened from the walkway, not from floor that could hold the next crate.
+    const a = accessTile(def, x, y, rot);
+    if (a && lay.inBounds(a.x, a.y)) v += lay.keep[a.y * lay.w + a.x] ? 4 : 0;
+  }
   if (s.face === 'in' && accessTile(def, x, y, rot)) v += toward(cx, cy, b.cx, b.cy) === rot ? 3 : 0;
   if (s.centre) {
     if (s.centre !== 'y') v -= 1.2 * Math.abs(cx - b.cx);
@@ -186,6 +212,47 @@ export function roomFill(lay: Layout, room: number): number {
   return used / Math.max(1, tiles.length);
 }
 
+/**
+ * Reserve the draw's walkway (see Arrangement.walkway) as protected tiles: a spine through the middle of the room
+ * along one axis, plus the shortest floor path from it to each door and each already protected tile.
+ */
+export function reserveWalkway(lay: Layout, room: number, d: RoomDraw): void {
+  if (!d.arr.walkway) return;
+  const tiles = lay.roomTiles(room);
+  if (tiles.length === 0) return;
+  const b = boxOf(lay, tiles);
+  const inRoom = new Set(tiles);
+  const longX = b.x1 - b.x0 >= b.y1 - b.y0;
+  const alongX = d.arr.walkway === 'long' ? longX : !longX;
+  // The spine: the middle row (or column), nudged toward the mirror side on even depths.
+  const mid = alongX ? Math.floor((b.y0 + b.y1 + (d.mirror ? 1 : 0)) / 2) : Math.floor((b.x0 + b.x1 + (d.mirror ? 1 : 0)) / 2);
+  const path = new Set<number>(tiles.filter((i) => (alongX ? Math.floor(i / lay.w) : i % lay.w) === mid));
+  if (path.size === 0) return;
+  const goals: number[] = [];
+  for (const i of tiles) {
+    if (lay.keep[i]) goals.push(i);
+    else if (lay.neighbours(i).some((n) => lay.cells[n] === 'D')) goals.push(i);
+  }
+  for (const g of goals) {
+    if (path.has(g)) continue;
+    // Breadth-first from the goal to the nearest path tile, through the room's free floor.
+    const prev = new Map<number, number>([[g, -1]]);
+    const queue = [g];
+    let hit = -1;
+    for (let q = 0; q < queue.length && hit < 0; q++) {
+      const c = queue[q] as number;
+      for (const n of lay.neighbours(c)) {
+        if (prev.has(n) || !inRoom.has(n) || !lay.walkable(n)) continue;
+        prev.set(n, c);
+        if (path.has(n)) { hit = n; break; }
+        queue.push(n);
+      }
+    }
+    for (let c = hit; c >= 0; c = prev.get(c) ?? -1) path.add(c);
+  }
+  for (const i of path) if (lay.walkable(i)) lay.keep[i] = (lay.keep[i] as number) + 1;
+}
+
 /** Keep the tile two steps in from each door clear too, so a door opens onto a walkway, not a module's side. */
 export function keepDoorApproach(lay: Layout, room: number): void {
   for (const i of lay.roomTiles(room)) {
@@ -239,7 +306,7 @@ export function furnish(
     const draw = Math.max(0, -(lay.defs[id]?.power ?? 0));
     const n = s.once ? 1 : s.count === 'fill' ? 40 : s.count;
     for (let k = 0; k < n; k++) {
-      if (s.count === 'fill' && roomFill(lay, room) >= d.recipe.fill) return;
+      if (s.count === 'fill' && roomFill(lay, room) >= (s.upTo ?? d.recipe.fill)) return;
       if (draw > power.spare) return;
       const pm = placeStep(lay, rng, room, d, si, rotsOf(id));
       if (!pm) return;
