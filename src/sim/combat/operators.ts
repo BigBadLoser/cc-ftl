@@ -29,7 +29,7 @@ export function operatorOf(sim: Sim, moduleId: number): number {
     const pos = sim.world.get(job.reservedBy, PositionC);
     const crew = sim.world.get(job.reservedBy, CrewC);
     if (!pos || !crew || crew.activity === 'sleeping' || isIncapacitated(sim, job.reservedBy)) continue;
-    if (isSettled(pos) && pos.x === job.x && pos.y === job.y && pos.gridId === gridIdOf(sim, job)) return job.reservedBy;
+    if (isSettled(pos) && pos.x === job.x && pos.y === job.y && gridIdOf(sim, pos) === gridIdOf(sim, job)) return job.reservedBy;
   }
   return 0;
 }

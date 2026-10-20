@@ -26,7 +26,7 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     crew: () =>
       [...sim.world.query(CrewC, PositionC)].map((id) => {
         const p = sim.world.get(id, PositionC);
-        return p && { id, enemy: sim.world.get(id, AllegianceC)?.faction !== 'player', down: sim.world.has(id, DownedC) || sim.world.has(id, SurrenderedC), gridId: p.gridId, ...r.screenOf(p.gridId, p.x, p.y) };
+        return p && { id, enemy: sim.world.get(id, AllegianceC)?.faction !== 'player', down: sim.world.has(id, DownedC) || sim.world.has(id, SurrenderedC), gridId: gridIdOf(sim, p), ...r.screenOf(gridIdOf(sim, p), p.x, p.y) };
       }),
     /** Name, role and suit tank of a crew member (the component keys are not reachable from a page script). */
     crewInfo(id: number) {
@@ -35,7 +35,7 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       const p = sim.world.get(id, PositionC);
       return {
         name: sim.world.get(id, CrewC)?.name, role: sim.world.get(id, CrewC)?.role, suited: sim.world.has(id, SuitC), air: suitAir(sim, id),
-        gridId: p?.gridId, x: p?.x, y: p?.y, job: job ? `${job.kind} ${Math.round((job.progress / Math.max(1, job.work)) * 100)}%` : null,
+        gridId: p ? gridIdOf(sim, p) : undefined, x: p?.x, y: p?.y, job: job ? `${job.kind} ${Math.round((job.progress / Math.max(1, job.work)) * 100)}%` : null,
       };
     },
     /** Queue a sim command (debug commands included) from a script. */

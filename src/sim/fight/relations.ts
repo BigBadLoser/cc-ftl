@@ -1,3 +1,4 @@
+import { gridIdOf } from '../regions';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../crew/components';
 import { factionsHostile } from '../combat/factions';
 import { shipOf } from '../combat/ships';
@@ -27,7 +28,7 @@ export function isCombatReady(sim: Sim, crew: number): boolean {
 export function isInvader(sim: Sim, crew: number): boolean {
   const faction = sim.world.get(crew, AllegianceC)?.faction;
   const pos = sim.world.get(crew, PositionC);
-  const ship = pos && shipOf(sim, pos.gridId);
+  const ship = pos && shipOf(sim, gridIdOf(sim, pos));
   return !!faction && !!ship && ship.faction !== faction;
 }
 

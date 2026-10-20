@@ -33,6 +33,11 @@ function legacyWorld(sim: Sim): unknown {
     const { def, ...rest } = raw as Module;
     return [id, { def, gridId: gridIdAt(sim, rest.x, rest.y), ...rest }];
   });
+  // Step 7b2 drops `gridId` from Position (the tile says it): it was the first key.
+  stores.position = (stores.position ?? []).map(([id, raw]) => {
+    const pos = raw as Record<string, unknown>;
+    return [id, { gridId: gridIdAt(sim, pos.x as number, pos.y as number), ...pos }];
+  });
   // Jobs: `gridId` sat just before `x` in the key order.
   stores.job = (stores.job ?? []).map(([id, raw]) => {
     const j = raw as Record<string, unknown>;

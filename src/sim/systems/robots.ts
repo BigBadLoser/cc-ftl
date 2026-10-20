@@ -75,7 +75,7 @@ function holding(sim: Sim, hacker: number, core: number): boolean {
   const m = sim.world.get(core, ModuleC);
   const pos = sim.world.get(hacker, PositionC);
   const def = m && sim.content.modules[m.def];
-  if (!m || !def || !pos || pos.gridId !== gridIdOf(sim, m) || !isCombatReady(sim, hacker) || isIncapacitated(sim, hacker)) return false;
+  if (!m || !def || !pos || gridIdOf(sim, pos) !== gridIdOf(sim, m) || !isCombatReady(sim, hacker) || isIncapacitated(sim, hacker)) return false;
   const [w, h] = rotatedSize(def, m.rot);
   const dx = Math.max(m.x - pos.x, 0, pos.x - (m.x + w - 1));
   const dy = Math.max(m.y - pos.y, 0, pos.y - (m.y + h - 1));

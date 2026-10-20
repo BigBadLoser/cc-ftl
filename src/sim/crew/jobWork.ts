@@ -121,7 +121,7 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
   if (!carried) {
     let bed = sim.world.get(job.bed ?? 0, ModuleC)?.reservedBy === patient ? (job.bed as number) : 0;
     if (!bed) {
-      const plan = findFreeBed(sim, me.gridId, origin(me));
+      const plan = findFreeBed(sim, gridIdOf(sim, me), origin(me));
       if (!plan) return 'wait';
       bed = plan.bed;
       (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = patient;

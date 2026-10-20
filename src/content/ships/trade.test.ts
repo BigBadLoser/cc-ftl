@@ -33,7 +33,7 @@ export function withCivilian(role: string, gameSeed = 1): { sim: Sim; ship: numb
 /** The starter's engineer climbs into the shuttle as pilot. */
 function crewPilot(sim: Sim): number {
   const shuttle = sim.world.query(VehicleC)[0] as number;
-  const crew = sim.world.query(CrewC).find((c) => sim.world.get(c, PositionC)?.gridId === 1) as number;
+  const crew = sim.world.query(CrewC).find((c) => gridIdOf(sim, sim.world.get(c, PositionC)) === 1) as number;
   sim.enqueue({ type: 'vehicle.embark', crew, vehicle: shuttle });
   run(sim, 400);
   expect(sim.world.get(shuttle, VehicleC)!.pilot).toBe(crew);

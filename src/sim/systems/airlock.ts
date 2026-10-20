@@ -81,7 +81,7 @@ function occupied(sim: Sim, gridId: number, tile: { x: number; y: number }): boo
   for (const id of sim.world.query(CrewC, PositionC)) {
     if (sim.world.has(id, DeadC)) continue;
     const p = sim.world.get(id, PositionC)!;
-    if (p.gridId === gridId && ((p.x === tile.x && p.y === tile.y) || (p.toX === tile.x && p.toY === tile.y))) return true;
+    if (gridIdOf(sim, p) === gridId && ((p.x === tile.x && p.y === tile.y) || (p.toX === tile.x && p.toY === tile.y))) return true;
   }
   return false;
 }

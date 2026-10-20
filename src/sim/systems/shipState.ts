@@ -60,7 +60,7 @@ export function shipStateSystem(sim: Sim): void {
 function ableCrew(sim: Sim, gridId: number): number {
   let n = 0;
   for (const id of sim.world.query(CrewC, HealthC, PositionC)) {
-    if (sim.world.get(id, PositionC)?.gridId === gridId && !sim.world.has(id, DeadC) && !sim.world.has(id, DownedC)) n++;
+    if (gridIdOf(sim, sim.world.get(id, PositionC)) === gridId && !sim.world.has(id, DeadC) && !sim.world.has(id, DownedC)) n++;
   }
   return n;
 }

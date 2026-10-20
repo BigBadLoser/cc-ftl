@@ -1,3 +1,4 @@
+import { gridIdOf } from '../regions';
 import { CrewC, DeadC, DownedC, HealthC, PositionC } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
@@ -94,7 +95,7 @@ function moduleDamage(sim: Sim, at: Impact, amount: number, radius: number): voi
 function crewDamage(sim: Sim, at: Impact, amount: number, radius: number): void {
   for (const id of sim.world.query(CrewC, HealthC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || pos.gridId !== at.gridId || sim.world.has(id, DeadC) || sim.world.has(id, DownedC)) continue;
+    if (!pos || gridIdOf(sim, pos) !== at.gridId || sim.world.has(id, DeadC) || sim.world.has(id, DownedC)) continue;
     const o = origin(pos);
     if (Math.max(Math.abs(o.x - at.x), Math.abs(o.y - at.y)) > radius) continue;
     const health = sim.world.get(id, HealthC);
@@ -129,7 +130,7 @@ function drainShield(sim: Sim, at: Impact, layers: number): boolean {
 function stunNear(sim: Sim, at: Impact, radius: number): void {
   for (const id of sim.world.query(CrewC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || pos.gridId !== at.gridId || sim.world.has(id, DeadC)) continue;
+    if (!pos || gridIdOf(sim, pos) !== at.gridId || sim.world.has(id, DeadC)) continue;
     const o = origin(pos);
     if (Math.max(Math.abs(o.x - at.x), Math.abs(o.y - at.y)) <= radius) stunCrew(sim, id);
   }

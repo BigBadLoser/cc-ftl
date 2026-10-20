@@ -26,7 +26,7 @@ function mendItem(sim: Sim, gridId: number, crew: number): string | null {
 function mendWanted(sim: Sim, robot: number, gridId: number): boolean {
   const hp = sim.world.get(robot, HealthC);
   const pos = sim.world.get(robot, PositionC);
-  return !!hp && !!pos && pos.gridId === gridId && hp.hp < hp.max && !sim.world.has(robot, DeadC)
+  return !!hp && !!pos && gridIdOf(sim, pos) === gridId && hp.hp < hp.max && !sim.world.has(robot, DeadC)
     && !!speciesOf(sim, robot)?.mechanical && mendItem(sim, gridId, robot) !== null;
 }
 
@@ -58,13 +58,13 @@ export function keepRobotJob(sim: Sim, jobId: number, job: Job): boolean | null 
 export function robotJobs(sim: Sim, seen: Set<string>, add: (job: NewJob) => void): void {
   for (const id of sim.world.query(HealthC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || seen.has(`mend:${id}`) || !mendWanted(sim, id, pos.gridId)) continue;
+    if (!pos || seen.has(`mend:${id}`) || !mendWanted(sim, id, gridIdOf(sim, pos))) continue;
     const o = origin(pos);
     add({ category: 'repair', kind: 'mend', x: o.x, y: o.y, target: id });
   }
   for (const id of sim.world.query(WreckC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || seen.has(`salvage:${id}`) || shipOf(sim, pos.gridId)?.faction !== 'player') continue;
+    if (!pos || seen.has(`salvage:${id}`) || shipOf(sim, gridIdOf(sim, pos))?.faction !== 'player') continue;
     add({ category: 'hauling', kind: 'salvage', x: pos.x, y: pos.y, target: id, work: SALVAGE_SEC * TICK_HZ });
   }
 }
@@ -113,8 +113,8 @@ export function performSalvage(sim: Sim, job: Job, speed: number): WorkResult {
   if (!pos || !sim.world.has(wreck, WreckC)) return 'done';
   job.progress = Math.min(job.work, job.progress + speed);
   if (job.progress < job.work) return 'working';
-  for (const q of speciesOf(sim, wreck)?.wreck ?? []) spillItems(sim, pos.gridId, pos.x, pos.y, q.item, q.count);
-  sim.events.emit({ type: 'robot.salvaged', crew: wreck, gridId: pos.gridId, x: pos.x, y: pos.y });
+  for (const q of speciesOf(sim, wreck)?.wreck ?? []) spillItems(sim, gridIdOf(sim, pos), pos.x, pos.y, q.item, q.count);
+  sim.events.emit({ type: 'robot.salvaged', crew: wreck, gridId: gridIdOf(sim, pos), x: pos.x, y: pos.y });
   sim.world.destroyEntity(wreck);
   return 'done';
 }

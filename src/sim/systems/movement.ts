@@ -1,3 +1,4 @@
+import { gridIdOf } from '../regions';
 import { CrewC, DraftedC, PathC, PositionC, type Crew, type Path, type Position } from '../crew/components';
 import { facingOf, hasRoute, isIncapacitated, isSettled } from '../crew/helpers';
 import { airlockDoorAt, requestAirlock } from '../portals/airlock';
@@ -15,7 +16,7 @@ export function movementSystem(sim: Sim): void {
     if (crew.activity === 'sleeping' || isIncapacitated(sim, id) || sim.world.has(id, EvaFloatC)) continue; // drifting: frozen
     const pos = sim.world.get(id, PositionC) as Position;
     const path = sim.world.get(id, PathC) as Path;
-    const grid = sim.grids.get(pos.gridId);
+    const grid = sim.grids.get(gridIdOf(sim, pos));
     if (!grid?.has('struct')) continue;
     const suited = isSuited(sim, id);
     const walk = (x: number, y: number): boolean => isTileWalkable(sim, grid, x, y, suited);

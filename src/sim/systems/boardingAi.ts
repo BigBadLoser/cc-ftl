@@ -97,7 +97,7 @@ function start(sim: Sim, gridId: number, b: Boarder, weapon?: string): void {
   const v = vehicle ? sim.world.get(vehicle, VehicleC) : undefined;
   if (!v || !pickAirlock(sim, vehicle)) return; // nothing to fly or nowhere to land yet: try again next tick
   const able = sim.world.query(PositionC).filter((c) =>
-    sim.world.get(c, PositionC)?.gridId === gridId && !sim.world.has(c, DeadC) && !isIncapacitated(sim, c));
+    gridIdOf(sim, sim.world.get(c, PositionC)) === gridId && !sim.world.has(c, DeadC) && !isIncapacitated(sim, c));
   const n = Math.min(b.party, (vehicleDefOf(sim, v)?.capacity ?? 0) + 1, able.length - BOARDING_MIN_HOME);
   if (n < 1) {
     b.state = 'done';

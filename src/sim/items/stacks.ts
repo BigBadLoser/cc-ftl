@@ -92,7 +92,7 @@ export function dropCarried(sim: Sim, crew: number): void {
   if (!c) return;
   sim.world.remove(crew, CarryingC);
   const p = sim.world.get(crew, PositionC);
-  if (p && sim.world.has(crew, CrewC)) spillItems(sim, p.gridId, p.toX, p.toY, c.item, c.count);
+  if (p && sim.world.has(crew, CrewC)) spillItems(sim, gridIdOf(sim, p), p.toX, p.toY, c.item, c.count);
 }
 
 /** Drop a cost list scaled by DECON_REFUND (rounded down) on or near a tile. */

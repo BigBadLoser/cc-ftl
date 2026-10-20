@@ -64,7 +64,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
   for (const id of sim.world.query(CrewC)) {
     if (sim.world.has(id, DeadC) || sim.world.has(id, AboardC)) continue;
     const pos = sim.world.get(id, PositionC);
-    if (pos?.gridId !== PLAYER) continue;
+    if (gridIdOf(sim, pos) !== PLAYER) continue;
     const ref = crewRef(sim, id);
     if (ref) roster.push(ref);
   }

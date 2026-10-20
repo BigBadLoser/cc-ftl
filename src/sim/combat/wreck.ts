@@ -11,7 +11,7 @@ export function wreckShip(sim: Sim, ship: Ship): void {
   ship.state = 'wreck';
   ship.integrity = Math.min(ship.integrity, WRECK_BELOW);
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (sim.world.get(id, PositionC)?.gridId === ship.gridId) killCrew(sim, id);
+    if (gridIdOf(sim, sim.world.get(id, PositionC)) === ship.gridId) killCrew(sim, id);
   }
   for (const id of sim.world.query(WeaponC)) {
     const w = sim.world.get(id, WeaponC);

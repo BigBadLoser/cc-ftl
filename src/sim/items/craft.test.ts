@@ -45,7 +45,7 @@ function setup(scrap: number): { sim: Sim; fab: number; store: number; out: numb
   storageAdd(sim, store, 'scrap', scrap);
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name: 'T', role: 'r', species: 'species.human', appearanceSeed: 1, activity: 'idle' });
-  sim.world.add(id, PositionC, { gridId: 1, x: 5, y: 3, toX: 5, toY: 3, progress: 0, facing: 0 });
+  sim.world.add(id, PositionC, { x: 5, y: 3, toX: 5, toY: 3, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...all(4), hauling: 1, crafting: 1 });
   sim.world.add(id, NeedsC, { rest: 100 });

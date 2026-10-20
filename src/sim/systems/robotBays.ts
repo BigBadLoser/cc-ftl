@@ -22,7 +22,7 @@ export function robotBaySystem(sim: Sim): void {
     const bayId = homeBay(sim, id);
     const bay = sim.world.get(bayId, ModuleC);
     const def = bay && sim.content.modules[bay.def]?.robotBay;
-    if (!bay || !def || bay.hp <= 0 || gridIdOf(sim, bay) !== pos.gridId || cradleOf(sim, bayId).x !== pos.x || cradleOf(sim, bayId).y !== pos.y || !isSettled(pos)) {
+    if (!bay || !def || bay.hp <= 0 || gridIdOf(sim, bay) !== gridIdOf(sim, pos) || cradleOf(sim, bayId).x !== pos.x || cradleOf(sim, bayId).y !== pos.y || !isSettled(pos)) {
       crew.activity = 'idle';
       continue;
     }

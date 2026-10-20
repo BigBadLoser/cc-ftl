@@ -1,3 +1,4 @@
+import { gridIdOf } from '../sim/regions';
 import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createStore, type Readable } from './store';
@@ -49,7 +50,7 @@ export function createAlerts(sim: Sim): Alerts {
   const foreign = (e: SimEvent): boolean => {
     if (e.type === 'fire.started' || e.type === 'hull.breach' || e.type === 'power.shortage' || e.type === 'o2.low') return e.gridId !== 1;
     if (e.type === 'crew.downed' || e.type === 'crew.died' || e.type === 'crew.rescued') {
-      const g = sim.world.get(e.crew, PositionC)?.gridId;
+      const g = gridIdOf(sim, sim.world.get(e.crew, PositionC));
       return g !== undefined && g !== 1;
     }
     return false;

@@ -31,7 +31,7 @@ export function workSystem(sim: Sim): void {
       crew.activity !== 'sleeping' &&
       path.steps.length === 0 &&
       isSettled(pos) &&
-      pos.gridId === gridIdOf(sim, job) &&
+      gridIdOf(sim, pos) === gridIdOf(sim, job) &&
       atJob(pos, job);
     if (!ready) {
       if (crew.activity === 'working') crew.activity = 'idle';

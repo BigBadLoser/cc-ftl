@@ -39,11 +39,11 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     if (isSuited(sim, cmd.crew)) return reject(sim, cmd.type, 'suited');
     const at = suitTile(sim, cmd.airlock);
     if (!at || !airlockUsable(sim, cmd.airlock)) return reject(sim, cmd.type, 'noAirlock');
-    if (gridIdOf(sim, sim.world.get(cmd.airlock, ModuleC)) !== pos.gridId) return reject(sim, cmd.type, 'otherGrid');
+    if (gridIdOf(sim, sim.world.get(cmd.airlock, ModuleC)) !== gridIdOf(sim, pos)) return reject(sim, cmd.type, 'otherGrid');
     if (freeSuits(sim, cmd.airlock) <= 0) return reject(sim, cmd.type, 'noSuit');
-    const plan = planWalk(sim, cmd.crew, pos.gridId, { x: pos.toX, y: pos.toY }, at);
+    const plan = planWalk(sim, cmd.crew, gridIdOf(sim, pos), { x: pos.toX, y: pos.toY }, at);
     if (!plan) return reject(sim, cmd.type, 'unreachable');
-    errand(sim, cmd.crew, 'suitUp', cmd.airlock, plan.steps, pos.gridId);
+    errand(sim, cmd.crew, 'suitUp', cmd.airlock, plan.steps, gridIdOf(sim, pos));
   },
   'eva.suitOff': (sim, cmd) => {
     if (!ready(sim, cmd.type, cmd.crew)) return;
@@ -54,15 +54,15 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     if (airlock) {
       const at = suitTile(sim, airlock);
       if (!at || !airlockUsable(sim, airlock)) return reject(sim, cmd.type, 'noAirlock');
-      if (gridIdOf(sim, sim.world.get(airlock, ModuleC)) !== pos.gridId) return reject(sim, cmd.type, 'otherGrid');
-      steps = planWalk(sim, cmd.crew, pos.gridId, { x: pos.toX, y: pos.toY }, at)?.steps ?? null;
+      if (gridIdOf(sim, sim.world.get(airlock, ModuleC)) !== gridIdOf(sim, pos)) return reject(sim, cmd.type, 'otherGrid');
+      steps = planWalk(sim, cmd.crew, gridIdOf(sim, pos), { x: pos.toX, y: pos.toY }, at)?.steps ?? null;
     } else {
       const src = findSuitStow(sim, cmd.crew, pos);
       airlock = src?.airlock ?? 0;
       steps = src?.steps ?? null;
     }
     if (!airlock || !steps) return reject(sim, cmd.type, 'unreachable');
-    errand(sim, cmd.crew, 'suitOff', airlock, steps, pos.gridId);
+    errand(sim, cmd.crew, 'suitOff', airlock, steps, gridIdOf(sim, pos));
   },
   'eva.out': (sim, cmd) => {
     const v = sim.world.get(cmd.vehicle, VehicleC);
@@ -100,9 +100,9 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     const pos = sim.world.get(cmd.crew, PositionC)!;
     if (!v || !body) return reject(sim, cmd.type, 'noVehicle');
     if (!isSuited(sim, cmd.crew)) return reject(sim, cmd.type, 'notSuited');
-    if (v.state !== 'flying' || v.dest || !v.hover || v.hover !== shipEntityOf(sim, pos.gridId)) return reject(sim, cmd.type, 'notHovering');
+    if (v.state !== 'flying' || v.dest || !v.hover || v.hover !== shipEntityOf(sim, gridIdOf(sim, pos))) return reject(sim, cmd.type, 'notHovering');
     if (occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return reject(sim, cmd.type, 'full');
-    const at = tileCentre(sim, pos.gridId, pos.x, pos.y);
+    const at = tileCentre(sim, gridIdOf(sim, pos), pos.x, pos.y);
     const d = at ? Math.hypot(body.x - at.x, body.y - at.y) : Infinity;
     if (!at || d > suitDef(sim).floatRange) return reject(sim, cmd.type, 'outOfRange');
     releaseAssignment(sim, cmd.crew);

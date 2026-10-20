@@ -27,7 +27,7 @@ export function vehicleSystem(sim: Sim): void {
       sim.world.remove(crew, EmbarkOrderC);
       continue;
     }
-    if (isSettled(pos) && pos.gridId === at.gridId && pos.x === at.x && pos.y === at.y) {
+    if (isSettled(pos) && gridIdOf(sim, pos) === at.gridId && pos.x === at.x && pos.y === at.y) {
       sim.world.remove(crew, EmbarkOrderC);
       if (occupants(v).length < (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) boardCrew(sim, crew, order.vehicle);
       else sim.events.emit({ type: 'command.rejected', command: 'vehicle.embark', reason: 'full' });

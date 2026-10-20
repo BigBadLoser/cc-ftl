@@ -67,7 +67,7 @@ export function isTileOccupied(sim: Sim, gridId: number, x: number, y: number): 
   for (const id of sim.world.query(CrewC, PositionC)) {
     if (sim.world.has(id, DeadC)) continue;
     const p = sim.world.get(id, PositionC) as Position;
-    if (p.gridId !== gridId) continue;
+    if (gridIdOf(sim, p) !== gridId) continue;
     if ((p.x === x && p.y === y) || (p.toX === x && p.toY === y)) return true;
   }
   return false;

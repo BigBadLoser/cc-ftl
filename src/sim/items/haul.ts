@@ -59,7 +59,7 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     const target = sim.world.get(h.dst.id, JobC);
     moved = target ? deliverToJob(target, h.item, carrying.count) : 0;
   }
-  if (carrying.count > moved) spillItems(sim, pos.gridId, pos.toX, pos.toY, h.item, carrying.count - moved);
+  if (carrying.count > moved) spillItems(sim, gridIdOf(sim, pos), pos.toX, pos.toY, h.item, carrying.count - moved);
   sim.world.remove(crew, CarryingC);
   if (moved > 0) {
     sim.events.emit({ type: 'item.hauled', crew, item: h.item, count: moved, gridId: gridIdOf(sim, job), x: job.x, y: job.y, to: h.dst.kind });

@@ -17,7 +17,7 @@ const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[]
 };
 const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
-const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
+const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => gridIdOf(sim, sim.world.get(i, PositionC)) === gridId);
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 const storages = (sim: Sim): number[] => sim.world.query(StorageC).filter((s) => gridIdOf(sim, sim.world.get(s, ModuleC)) === 1);
 const stock = (sim: Sim, item: string): number => storages(sim).reduce((n, s) => n + storageCount(sim, s, item), 0);

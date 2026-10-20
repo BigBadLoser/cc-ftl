@@ -1,3 +1,4 @@
+import { gridIdOf } from '../regions';
 import { releaseBed, releaseBedClaim } from '../crew/beds';
 import {
   CrewC, DeadC, DownedC, DraftedC, HealthC, NeedsC, PositionC,
@@ -41,7 +42,7 @@ export function vitalsSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, HealthC, PositionC)) {
     if (sim.world.has(id, DeadC)) continue;
     const pos = sim.world.get(id, PositionC) as Position;
-    const grid = sim.grids.get(pos.gridId);
+    const grid = sim.grids.get(gridIdOf(sim, pos));
     if (!grid?.has('o2') || !grid.inBounds(pos.x, pos.y)) continue;
     const health = sim.world.get(id, HealthC) as Health;
     const downed = sim.world.get(id, DownedC);

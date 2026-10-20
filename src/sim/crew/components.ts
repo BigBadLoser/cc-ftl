@@ -9,7 +9,6 @@ import type { ItemQty } from '../registry';
 
 /** Where an entity is. While moving, it is between (x, y) and (toX, toY) with progress 0..1. */
 export interface Position {
-  gridId: number;
   x: number;
   y: number;
   /** Next tile while moving; equals (x, y) when standing still. */
