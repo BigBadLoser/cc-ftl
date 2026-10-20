@@ -1,4 +1,5 @@
 import type { ModuleDef } from '../sim';
+import { furniture } from './furniture';
 
 /**
  * Ship modules. Power is in units per second (+ supply, - draw). Footprints are [w, h] at
@@ -252,4 +253,5 @@ export const modules = {
     power: -1, priority: 4, flammability: 0.1, maxHp: 200, buildWork: 400, vehicleBay: { class: 'shuttle' },
     cost: [{ item: 'item.metal', count: 32 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }],
   },
+  ...furniture,
 } satisfies Record<string, ModuleDef>;

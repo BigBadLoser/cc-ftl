@@ -4,7 +4,7 @@
  */
 import { content } from '../../src/content';
 import {
-  adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, type GenResult, type ModuleDef, type RoomRole,
+  accessTile, adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, type GenResult, type ModuleDef, type RoomRole,
 } from '../../src/sim';
 import { drawAssemblies, drawSilhouette, drawStructure } from './views';
 
@@ -68,6 +68,11 @@ const MOD: Record<string, { label: string; c: RGB }> = {
   'module.storage': { label: 'C', c: [200, 170, 110] }, 'module.fabricator': { label: 'FAB', c: [200, 170, 110] },
   'module.vehicle_bay': { label: 'BAY', c: [180, 180, 210] }, 'module.airlock': { label: 'A', c: [255, 255, 255] },
   'module.light': { label: '', c: [255, 250, 200] },
+  'module.galley': { label: 'GAL', c: [255, 190, 120] }, 'module.mess_table': { label: 'TB', c: [235, 205, 160] },
+  'module.chair': { label: 'h', c: [235, 205, 160] }, 'module.storage_locker': { label: 'L', c: [170, 190, 210] },
+  'module.storage_rack': { label: 'RK', c: [210, 160, 90] }, 'module.storage_pallet': { label: 'PAL', c: [210, 160, 90] },
+  'module.med_bed': { label: 'MED', c: [255, 140, 140] }, 'module.battery': { label: 'BT', c: [240, 220, 60] },
+  'module.hydroponics': { label: 'HY', c: [110, 230, 90] }, 'module.console': { label: 'CN', c: [90, 170, 255] },
 };
 
 const defs = content.modules as Record<string, ModuleDef>;
@@ -120,7 +125,15 @@ export function drawShip(r: Raster, g: GenResult, ox: number, oy: number, s: num
     }
     if (def.engine) r.rect(px + w * s - 2, py + 2, 4, h * s - 4, [255, 200, 80]); // the bell side
     const label = style.label;
-    if (label && label.length * 4 <= w * s) r.text(label, px + 3, py + 3, style.c);
+    const fs = s >= 24 ? 2 : 1;
+    if (label && label.length * 4 * fs <= w * s) r.text(label, px + 3, py + 3, style.c, fs);
+    // The access tile (where crew stand to use it, or a seat's facing edge): a small square in the module's colour.
+    const a = accessTile(def, m.x, m.y, m.rot);
+    if (a) r.rect(ox + a.x * s + (s >> 1) - 2, oy + a.y * s + (s >> 1) - 2, 4, 4, style.c);
+    else if (m.def === 'module.chair') {
+      const [dx, dy] = [[0, -1], [1, 0], [0, 1], [-1, 0]][m.rot] as [number, number];
+      r.rect(px + (s >> 1) - 1 + dx * (s >> 2), py + (s >> 1) - 1 + dy * (s >> 2), 3, 3, style.c);
+    }
   }
 }
 

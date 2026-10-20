@@ -5,7 +5,8 @@ import type { Arranger } from './arranger';
 import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
-import { lightRoom, placeOne } from './fit';
+import { lightRoom, placeOne, rotsOf } from './fit';
+import { RECIPES, drawRoom, furnish, placeStep, specStep, type RoomDraw } from './rooms';
 import { Layout } from './layout';
 import { pickWeighted, planShip, scaled, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -59,15 +60,31 @@ function fitOut(
   jobs.sort((a, b) => (a.spec.sealed ? 0 : 1) - (b.spec.sealed ? 0 : 1) || rank(a.def, defs[a.def] as ModuleDef) - rank(b.def, defs[b.def] as ModuleDef));
   const placed: Record<string, number> = {};
   const wanted: Record<string, number> = {};
+  // Rooms with a recipe draw their arrangement once; their planned modules go where the recipe says.
+  const draws = new Map<number, RoomDraw>();
+  const drawOf = (room: number): RoomDraw | null => {
+    const recipe = RECIPES[roles[room] as RoomRole];
+    if (!recipe || specs[room]?.sealed) return null;
+    if (!draws.has(room)) draws.set(room, drawRoom(rng, recipe));
+    return draws.get(room) as RoomDraw;
+  };
+  const rots = (id: string): number[] => rotsOf(id, defs[id] as ModuleDef);
+  const stockUp = (idx: number, spec: RoomSpec | undefined): void => {
+    const id = lay.modules[idx]?.def as string;
+    if (spec?.stock && defs[id]?.storage) {
+      out.stock.set(idx, f.stock.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
+    }
+  };
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
-    const pm = placeOne(lay, rng, j.def, [j.room], { spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) });
+    const d = drawOf(j.room);
+    const si = d ? specStep(d, j.def) : -1;
+    const pm = (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
+      ?? placeOne(lay, rng, j.def, [j.room], { spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) });
     if (!pm) continue;
     placed[j.def] = (placed[j.def] ?? 0) + 1;
     const idx = lay.modules.length - 1;
-    if (j.spec.stock && defs[j.def]?.storage) {
-      out.stock.set(idx, f.stock.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
-    }
+    stockUp(idx, j.spec);
     if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(idx);
   }
   const missing = (id: string): boolean => (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0;
@@ -78,6 +95,13 @@ function fitOut(
   if (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3) return { ...out, error: 'weapons do not fit' };
   if ((placed['module.reactor'] ?? 0) < (wanted['module.reactor'] ?? 0)) return { ...out, error: 'reactors do not fit' };
   for (let room = 0; room < roles.length; room++) lightRoom(lay, rng, room);
+  for (let room = 0; room < roles.length; room++) {
+    const d = drawOf(room);
+    if (!d) continue;
+    const before = lay.modules.length;
+    furnish(lay, rng, room, d, rots);
+    for (let i = before; i < lay.modules.length; i++) stockUp(i, specs[room]);
+  }
   let supply = 0;
   let demand = 0;
   for (const m of lay.modules) { const p = (defs[m.def] as ModuleDef).power; if (p > 0) supply += p; else demand -= p; }

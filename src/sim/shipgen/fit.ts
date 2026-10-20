@@ -10,6 +10,8 @@ export function rotsOf(defId: string, def: ModuleDef): number[] {
   if (defId === 'module.bed') return [1, 3, 0];
   if (defId === 'module.lifeSupport') return [0, 1, 3];
   if (defId === 'module.storage') return [0, 2];
+  if (defId === 'module.mess_table' || defId === 'module.med_bed' || defId === 'module.hydroponics') return [0, 1];
+  if (def.console || def.galley || def.storage || defId === 'module.chair') return [0, 1, 2, 3];
   return [0];
 }
 
