@@ -1,6 +1,8 @@
 import { AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdOf, shipGrid } from '../sim/regions';
+import { AlienC, EggSacC } from '../sim/aliens/components';
+import { DeadC } from '../sim/crew/components';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -57,6 +59,18 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
         name: sim.world.get(id, CrewC)?.name, role: sim.world.get(id, CrewC)?.role, suited: sim.world.has(id, SuitC), air: suitAir(sim, id),
         shipId: p ? shipIdOf(sim, p) : undefined, x: p?.x, y: p?.y, job: job ? `${job.kind} ${Math.round((job.progress / Math.max(1, job.work)) * 100)}%` : null,
       };
+    },
+    /** Egg sacs on a ship (state, stage, hp) and the aliens on it, for derelict scripts. */
+    aliens(shipId: number) {
+      const sacs = sim.world.query(EggSacC).flatMap((id) => {
+        const s = sim.world.get(id, EggSacC);
+        return s && s.ship === shipId ? [{ id, x: s.x, y: s.y, size: s.size, state: s.state, stage: s.stage, hp: s.hp, leaking: s.leaking }] : [];
+      });
+      const aliens = sim.world.query(AlienC, PositionC).flatMap((id) => {
+        const p = sim.world.get(id, PositionC);
+        return p && shipIdOf(sim, p) === shipId ? [{ id, role: sim.world.get(id, CrewC)?.role, x: p.x, y: p.y, dead: sim.world.has(id, DeadC) }] : [];
+      });
+      return { sacs, aliens };
     },
     /** Queue a sim command (debug commands included) from a script. */
     /** The sim itself, so scripts can stage states no command reaches (docked shuttle with cargo). Debug only. */

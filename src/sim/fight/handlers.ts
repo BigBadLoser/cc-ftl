@@ -5,6 +5,8 @@ import type { Sim } from '../sim';
 import { FighterC, type Fighter } from './components';
 import { dropWeapon, orderEquip } from './equip';
 import { isCombatReady, isHostile } from './relations';
+import { EggSacC } from '../aliens/components';
+import { sacAlive } from '../aliens/target';
 
 type FightCommand = 'crew.attack' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip';
 type Handler<T extends FightCommand> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -27,7 +29,8 @@ export const fightHandlers: { [T in FightCommand]: Handler<T> } = {
     if (!sim.world.has(cmd.id, CrewC)) return reject(sim, cmd.type, 'noCrew');
     const drafted = sim.world.get(cmd.id, DraftedC);
     if (!drafted) return reject(sim, cmd.type, 'notDrafted');
-    if (!isCombatReady(sim, cmd.target) || !isHostile(sim, cmd.id, cmd.target)) return reject(sim, cmd.type, 'badTarget');
+    const sac = sim.world.get(cmd.target, EggSacC);
+    if (sac ? !sacAlive(sac) : !isCombatReady(sim, cmd.target) || !isHostile(sim, cmd.id, cmd.target)) return reject(sim, cmd.type, 'badTarget');
     fighter(sim, cmd.id).ordered = cmd.target;
     drafted.target = null; // attacking replaces a walk order
     delete drafted.planned;

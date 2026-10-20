@@ -128,6 +128,9 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   Rogue ships and shipyards also have robot bays, where their robots recharge.
 - **Derelicts come in two kinds:**
   - Scrapper and other wrecks are abandoned and infested with hostile aliens.
+    Egg sacs hatch when disturbed (a crew member close by in sight, damage, or a neighbour hatching); hunters (fast
+    melee), brutes (tough, knock crew down) and spitters (ranged, keep away) come out. Aliens don't need air, so vented
+    decks don't stop them; they stay on their own wreck. Crew can destroy sacs before they hatch.
   - AI-faction derelicts are rogue AI shipyards and factories (fabricators, cores, robots).
 - **Combat drones** (a launched weapon class) come later. They will build on the AI core's tier and the EMP effect.
 

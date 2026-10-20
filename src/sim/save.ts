@@ -24,7 +24,7 @@ import { newTrade, type TradeState } from './trade/types';
  * v22: cargo containers (`ContainerC`; a detached one is a free BodyC entity with its StorageC and no ModuleC).
  * v23: `ShipC.ruin` (a derelict's dressing data for the renderer: breach, decal and hook art, module art overrides).
  */
-export const SAVE_VERSION = 23;
+export const SAVE_VERSION = 24;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

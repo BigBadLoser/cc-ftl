@@ -37,6 +37,38 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
+## Aliens on derelicts (branch `aliens`, based on `derelict-ingame` plus `art/alien`; not merged; awaiting user review)
+
+- **Sim** (`src/sim/aliens/`, `systems/eggSacs.ts`, `systems/aliens.ts`): `applyRuin` turns the ruin pass's `eggsac` and
+  `nest` hooks into `EggSacC` / `NestC` entities (navy combat wrecks still get no alien hooks). A dormant sac (some spawn
+  `leaking`, the cracked look) hatches when disturbed: a non-alien within 3 tiles with line of sight, any damage (crew
+  attacks, fire), or a neighbour hatching within 6 tiles (1-3 s delay). Stages hatch0 -> hatch1 -> hatch2 (1.2 s each);
+  the brood comes out on hatch2 (1 alien per 1x1, 2 per 2x2), then it bursts. Crew can attack a sac (`crew.attack` with
+  the sac id; tapping a sac with drafted crew selected) and destroy it before hatch2: no brood. A nest lays a sac every
+  60 s while a non-alien is aboard, at most 3.
+- **Aliens** are crew entities of faction `alien` (at war with everyone) with no priorities or needs, so only crew combat
+  and the alien system run them. `AlienC` leashes them to the ship they hatched on (paths are planned on that grid only;
+  idle ones roam within 4 tiles of where they hatched). They never count as invaders (no console objective, no capture).
+  They are airless (cross vented decks; decision: aliens do not need air, heat and fire still hurt). At 0 hp they die
+  outright and leave a corpse (`SpeciesDef.creature`). Natural weapons: `SpeciesDef.natural`.
+  - Hunter (weight 7): fast (3.6), 60 hp, claws 9 dmg / 0.9 s.
+  - Brute (weight 2): slow (2.1), 180 hp, armour 0.2, crush 18 dmg / 1.7 s, 35% knockdown (2.5 s stun).
+  - Spitter (weight 1): 45 hp, spit 8 dmg range 7 / 2.4 s, backs off from foes within 4 tiles while reloading.
+  - All flee from visible foes when badly hurt (`creature.fleeBelow`).
+- **UI**: aliens are in the hostiles list, light the combat button, and the first hatch on a ship raises "Hostile
+  creatures aboard <ship>". Save v24.
+- **Render**: real sac art by state (`eggSacView.ts`); aliens through the crew view with the `art/alien` sheets
+  (attack / hurt / dead clips). Placeholder: the spit glob (drawn in code, and the hit lands at once in the sim).
+- **Pipeline fix**: `crew_pack.union_box` was dropped by the per-clip crew refactor although `robot_render` and
+  `alien_render` import it; restored (the robots family builds again too).
+- **Open questions**: numbers and difficulty (sense radius, brood size, nest rate and cap, alien stats, hatch weights);
+  should aliens board the player's ship or shuttles, or follow crew through airlocks; should drafted crew auto-target
+  sacs (now only on order); should the spit be a real travelling projectile in the sim (now instant, glob is visual);
+  should light repel aliens; knockdown shows the crew member as "Inert" (shared robot stun state); `crew.downed` alerts are
+  still suppressed for crew away from the home ship (existing rule), so a crew member downed on a derelict raises none.
+- Debug: `?shipgen=derelict:civilian&ruin=0.6&cause=decay&genAt=0,45&hook`, Spawn raider, then
+  `__cc.aliens(shipId)` lists sacs and aliens; `debug.spawnCrew` with `faction: 'player'` on the wreck sets them off.
+
 ## Trade (branch `trade`, based on `main` at 160e20b; not merged; awaiting user approval of the in-game look)
 
 Model, commands, price rules and "how to add a trader or a price" are in `docs/ARCHITECTURE.md` ("Trade"); player-facing rules in

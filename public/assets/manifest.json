@@ -23,6 +23,18 @@
    "image": "sprites/consoles.png",
    "glow": "sprites/consoles.glow.png"
   },
+  "crew.alien.body.brute": {
+   "image": "sprites/crew.alien.body.brute.png",
+   "glow": "sprites/crew.alien.body.brute.glow.png"
+  },
+  "crew.alien.body.hunter": {
+   "image": "sprites/crew.alien.body.hunter.png",
+   "glow": "sprites/crew.alien.body.hunter.glow.png"
+  },
+  "crew.alien.body.spitter": {
+   "image": "sprites/crew.alien.body.spitter.png",
+   "glow": "sprites/crew.alien.body.spitter.glow.png"
+  },
   "crew.human.arm.L.cyber.idle": {
    "image": "sprites/crew.human.arm.L.cyber.idle.png",
    "glow": "sprites/crew.human.arm.L.cyber.idle.glow.png"
@@ -768,6 +780,144 @@
   }
  },
  "assets": {
+  "crew.alien.body.brute": {
+   "kind": "crew.layer",
+   "species": "alien",
+   "slot": "body",
+   "order": 0,
+   "sheet": "crew.alien.body.brute",
+   "frameW": 114,
+   "frameH": 95,
+   "anchor": {
+    "x": 57,
+    "y": 75
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "run": {
+     "start": 4,
+     "frames": 6,
+     "fps": 12,
+     "loop": true
+    },
+    "attack": {
+     "start": 10,
+     "frames": 5,
+     "fps": 10,
+     "loop": false
+    },
+    "hurt": {
+     "start": 15,
+     "frames": 2,
+     "fps": 8,
+     "loop": false
+    },
+    "dead": {
+     "start": 17,
+     "frames": 1,
+     "fps": 1,
+     "loop": false
+    }
+   },
+   "glow": true
+  },
+  "crew.alien.body.hunter": {
+   "kind": "crew.layer",
+   "species": "alien",
+   "slot": "body",
+   "order": 0,
+   "sheet": "crew.alien.body.hunter",
+   "frameW": 88,
+   "frameH": 80,
+   "anchor": {
+    "x": 44,
+    "y": 60
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "run": {
+     "start": 4,
+     "frames": 6,
+     "fps": 12,
+     "loop": true
+    },
+    "attack": {
+     "start": 10,
+     "frames": 5,
+     "fps": 10,
+     "loop": false
+    },
+    "hurt": {
+     "start": 15,
+     "frames": 2,
+     "fps": 8,
+     "loop": false
+    },
+    "dead": {
+     "start": 17,
+     "frames": 1,
+     "fps": 1,
+     "loop": false
+    }
+   },
+   "glow": true
+  },
+  "crew.alien.body.spitter": {
+   "kind": "crew.layer",
+   "species": "alien",
+   "slot": "body",
+   "order": 0,
+   "sheet": "crew.alien.body.spitter",
+   "frameW": 88,
+   "frameH": 82,
+   "anchor": {
+    "x": 44,
+    "y": 66
+   },
+   "clips": {
+    "idle": {
+     "start": 0,
+     "frames": 4,
+     "fps": 4,
+     "loop": true
+    },
+    "run": {
+     "start": 4,
+     "frames": 6,
+     "fps": 12,
+     "loop": true
+    },
+    "attack": {
+     "start": 10,
+     "frames": 5,
+     "fps": 10,
+     "loop": false
+    },
+    "hurt": {
+     "start": 15,
+     "frames": 2,
+     "fps": 8,
+     "loop": false
+    },
+    "dead": {
+     "start": 17,
+     "frames": 1,
+     "fps": 1,
+     "loop": false
+    }
+   },
+   "glow": true
+  },
   "crew.human.arm.L.cyber": {
    "kind": "crew.layer",
    "species": "human",

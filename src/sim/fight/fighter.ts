@@ -17,6 +17,11 @@ import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
 import { shipIdOf } from '../regions';
+import { EggSacC } from '../aliens/components';
+import { sacTile } from '../aliens/target';
+import { StunC } from '../robots/components';
+import { haltCrew } from '../robots/halt';
+import { TICK_HZ } from '../time';
 
 /** Combat-ready crew with an allegiance, grouped by grid, each list in ascending id order. */
 export function combatReadyUnits(sim: Sim): Map<number, number[]> {
@@ -106,12 +111,14 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   if (f.cooldown > 0) f.cooldown--;
   const controlled = isPlayerControlled(sim, id);
   const invader = isInvader(sim, id);
+  // A player order to attack an egg sac (not crew, so not among the foes): its footprint tile nearest to us.
+  const sac = controlled && f.ordered ? sacTile(sim, f.ordered, shipIdOf(sim, pos), pos) : null;
   const foes = units
     .filter((o) => o !== id && isHostile(sim, id, o) && isCombatReady(sim, o))
     .map((o) => ({ id: o, pos: sim.world.get(o, PositionC) as Position }))
     .sort((a, b) => dist(pos, a.pos) - dist(pos, b.pos) || a.id - b.id);
 
-  if (foes.length === 0) {
+  if (foes.length === 0 && !sac) {
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
     if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
@@ -144,9 +151,10 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   let target: (typeof foes)[number] | undefined;
   if (controlled) {
     const ordered = f.ordered ? foes.find((o) => o.id === f.ordered) : undefined;
-    if (f.ordered && !ordered) f.ordered = 0;
-    target = ordered ?? (f.engage && canFight ? seen : undefined);
-  } else if (canFight) target = seen ?? (hunter ? foes[0] : undefined);
+    if (f.ordered && !ordered && !sac) f.ordered = 0;
+    target = ordered ?? (sac ? { id: f.ordered, pos: sac } : f.engage && canFight ? seen : undefined);
+  } else if (creatureTurn(sim, grid, id, f, pos, seen, foes)) return;
+  else if (canFight) target = seen ?? (hunter ? foes[0] : undefined);
   else if (seen && !sim.content.species[crew.species]?.fearless) return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
 
   if (!target) {
@@ -175,6 +183,21 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   attack(sim, id, f, target.id, target.pos, pos, weapon, d, cover);
 }
 
+/**
+ * A creature's own call before it engages: run from the foes it can see when badly hurt, and (ranged creatures with
+ * `keepAway`) back off from a foe that is too close while the next shot charges. True if it fled this tick.
+ */
+function creatureTurn(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, seen: { pos: Position } | undefined, foes: readonly { pos: Position }[]): boolean {
+  const creature = sim.content.species[(sim.world.get(id, CrewC) as Crew).species]?.creature;
+  if (!creature || !seen) return false;
+  const hp = sim.world.get(id, HealthC);
+  const hurt = !!hp && hp.hp < hp.max * creature.fleeBelow;
+  const crowded = !!creature.keepAway && f.cooldown > 0 && dist(pos, seen.pos) < creature.keepAway;
+  if (!hurt && !crowded) return false;
+  flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
+  return true;
+}
+
 function attack(
   sim: Sim, id: number, f: Fighter, targetId: number, tpos: Position, pos: Position,
   weapon: ReturnType<typeof wielded>, d: number, cover: Cover,
@@ -189,11 +212,23 @@ function attack(
     sim.events.emit({ type: 'crew.miss', crew: id, target: targetId, cover });
     return;
   }
+  const sac = sim.world.get(targetId, EggSacC);
+  if (sac) {
+    sac.hp = Math.max(0, sac.hp - weapon.def.damage); // the egg sac system sees the damage next tick
+    sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage: weapon.def.damage, hp: sac.hp, cover });
+    return;
+  }
   const health = sim.world.get(targetId, HealthC);
   const damage = weapon.def.damage * (1 - armorOf(sim, targetId));
   if (health) health.hp = Math.max(0, health.hp - damage); // vitals downs them next tick
   sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage, hp: health?.hp ?? 0, cover });
   if (weapon.def.ion) stunCrew(sim, targetId);
+  if (weapon.def.knockdownChance && health && health.hp > 0 && sim.rng.chance(weapon.def.knockdownChance)) {
+    const until = sim.tick + Math.round((weapon.def.knockdownSec ?? 2) * TICK_HZ);
+    sim.world.add(targetId, StunC, { until: Math.max(until, sim.world.get(targetId, StunC)?.until ?? 0) });
+    haltCrew(sim, targetId);
+    sim.events.emit({ type: 'crew.knockedDown', crew: targetId, by: id, until });
+  }
 }
 
 /** Unarmed non-fighters run from hostiles they can see: replan every FLEE_REPLAN_TICKS or when the path runs out. */

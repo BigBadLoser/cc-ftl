@@ -8,6 +8,7 @@ import { createAlerts, type Alerts } from './alerts';
 import { rejectionMessage } from './messages';
 import { createStore, type Readable } from './store';
 import { homeShip } from '../sim/index';
+import { EggSacC } from '../sim/aliens/components';
 
 const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door };
 const TOAST_MS = 2500;
@@ -210,6 +211,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       return {
         onTap(sx, sy) {
           const crewId = renderer.pickCrew(sx, sy);
+          if (crewId !== null && sim.world.has(crewId, EggSacC)) return attack(crewId); // an egg sac: only ever a target
           if (crewId !== null) return isPlayerCrew(crewId) ? selectCrew(crewId) : crewSel.get() !== null && sim.world.has(crewSel.get() as number, DraftedC) ? attack(crewId) : selectCrew(crewId);
           const tile = renderer.pickTile(sx, sy);
           const grid0 = shipGrid(sim, homeShip(sim));

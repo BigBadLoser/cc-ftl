@@ -7,6 +7,7 @@ import {
   ACCURACY_PER_SKILL, COVER_FULL_MULT, COVER_PARTIAL_MULT, HIT_CHANCE_MAX, HIT_CHANCE_MIN, RANGE_FALLOFF, UNARMED,
 } from '../tuning';
 import { EquipC } from './components';
+import { CrewC } from '../crew/components';
 import type { Cover } from './los';
 
 /** What a crew member hits with: the equipped item's stats, or bare hands. */
@@ -23,10 +24,14 @@ export function handDefOf(sim: Sim, item: string): HandWeaponDef | undefined {
   return sim.content.items[item]?.hand;
 }
 
+/** The equipped weapon, else the body's own (SpeciesDef.natural: claws, spit), else bare hands. */
 export function wielded(sim: Sim, crew: number): Wielded {
   const item = sim.world.get(crew, EquipC)?.weapon;
   const def = item ? handDefOf(sim, item) : undefined;
-  return item && def ? { item, def } : { item: 'unarmed', def: FISTS };
+  if (item && def) return { item, def };
+  const species = sim.world.get(crew, CrewC)?.species;
+  const natural = species ? sim.content.species[species]?.natural : undefined;
+  return natural ? { item: natural.id, def: natural } : { item: 'unarmed', def: FISTS };
 }
 
 /** True if the crew member holds a real weapon. */

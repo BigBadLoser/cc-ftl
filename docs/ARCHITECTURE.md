@@ -191,7 +191,7 @@ palette.json    the single palette, read by Blender scripts and the game
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
-  crew, see below), `robot_bay`, `env` (props,
+  crew, see below), `aliens`, `robot_bay`, `env` (props,
   economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
   below), `structure` (faction tile looks, see below), `galley`
@@ -284,6 +284,8 @@ palette.json    the single palette, read by Blender scripts and the game
       - `.cracked`: leaking.
       - `.hatch0`, `.hatch1`, `.hatch2`: it swells, rips open and falls open. Play these when it breaks and spawn
         the alien on `.hatch2`.
+      - Wired: sacs are sim entities (`EggSacC`), drawn by `render/eggSacView.ts` from their state; ruin hooks of kind
+        `eggsac` are no longer static dressing.
       - `.burst`: the deflated skin, left in its puddle.
     - `decay.eggs`, `decay.ai.scrap`, and `decay.ai.cables.{x|y}`, which tiles along a run.
     - `module.light.off` (alternate with `module.light` for a flicker) and `module.light.broken`.
@@ -336,6 +338,21 @@ palette.json    the single palette, read by Blender scripts and the game
     (split at the waist).
   - `team.cloth` is the faction shell and `team.accent` the seam; the eye and charge cells glow.
   - Look previews: `ROBOT_QUICK`, `ROBOT_REST` and `ROBOT_ANIM` builds, composited by `review/robots_preview.py`.
+- **Aliens** (`sprites/alien.py`, `alien_render.py`, family `aliens`; wired on branch `aliens`): the derelict infestation, built
+  on the robot rig kit. There is one sheet per creature in the crew layer format, with species `alien` and no gear:
+  - `crew.alien.body.hunter`: the swarm melee unit, about 1 tile.
+  - `crew.alien.body.brute`: the tank, about 1.5 tiles.
+  - `crew.alien.body.spitter`: ranged; its `attack` clip spits a glowing glob.
+  - Each sheet has 8 direction rows and the clips idle 4, run 6, attack 5, hurt 2 and dead 1 (the corpse that
+    stays on the floor).
+  - The look is dark violet chitin with lighter violet limbs and one lime accent; the eyes and sacs glow.
+  - Previews: `ALIEN_QUICK` and `ALIEN_ANIM` builds, composited by `review/alien_preview.py`.
+  - Wiring: species `species.alien_<kind>` wears `crew.alien.body.<kind>` (`render/loadout.ts`), through the crew view's
+    single-sheet layer path like robots. `walk` falls back to `run`; an attack (the fight cooldown restarting) plays
+    `attack` once, a hit plays `hurt` once, and a dead alien lies as its `dead` frame. The spitter's glob is still drawn
+    in code (`render/fightFx.ts`, weapon `spit`); a glob sprite (`fx.alien.glob`, plus an impact splash) is wanted.
+  - Sim: `src/sim/aliens/` (egg sacs, nests, aliens) and `systems/eggSacs.ts` / `systems/aliens.ts`; content
+    `content/species.ts` (the three species), `content/roles.ts` (`role.alien_*`) and `content/creatures.ts` (hatch weights).
 - **Robot bay** (`sprites/robot_bay.py`, family `robot_bay`): 1x2, in the robots' look (light shells over a dark frame,
   the status light as a single eye).
   - The cradle is the footprint's rotated (0, 0) tile (the sim's `rotateOffset`), and the tower is the rotated (0, 1)

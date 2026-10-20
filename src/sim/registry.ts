@@ -58,6 +58,14 @@ export interface ContentRegistry {
   factions?: Record<string, FactionDef>;
   /** Trade: prices' spread, faction stances and trader profiles. Absent = nobody trades. */
   trade?: TradeDef;
+  /** Derelict infestations: what hatches from egg sacs. Absent = sacs hatch nothing. */
+  creatures?: CreatureDefs;
+}
+
+/** Derelict creatures (content/creatures.ts). */
+export interface CreatureDefs {
+  /** What an egg sac hatches, by weight: a role id (of a `creature` species). */
+  hatch: readonly { role: string; weight: number }[];
 }
 
 /** The EVA spacesuit every non-airless crew member can wear (put on and taken off at an airlock). */
@@ -177,6 +185,9 @@ export interface HandWeaponDef {
   accuracy: number;
   /** Ion weapon: a hit also stuns an ion-vulnerable target (SpeciesDef.ionStunSec). */
   ion?: true;
+  /** A hit knocks the target down (stunned, StunC) for `knockdownSec` with this chance. */
+  knockdownChance?: number;
+  knockdownSec?: number;
 }
 
 export interface RecipeDef {
@@ -250,13 +261,14 @@ export interface SpeciesDef {
   hunger?: { decayPerSec: number };
   /** Has moods (MoodC: a score built from named factors that slows work when low). Absent = no mood (robots). */
   mood?: true;
-  /** The body's own weapon (claws, teeth), used when nothing is equipped instead of bare fists. */
-  natural?: HandWeaponDef;
+  /** The body's own weapon (claws, spit), used instead of bare fists when nothing is equipped. `id` names it in events and the UI. */
+  natural?: HandWeaponDef & { id: string };
   /**
    * A wild creature (aliens): no jobs, needs or colony AI; it idles near where it hatched, hunts what it sees, and runs
-   * from its foes under `fleeBelow` of its max hp. At 0 hp it dies at once (no downed state, no rescue).
+   * from its foes under `fleeBelow` of its max hp. `keepAway`: a ranged creature backs off from foes closer than this
+   * many tiles. At 0 hp it dies at once (no downed state, no rescue).
    */
-  creature?: { fleeBelow: number };
+  creature?: { fleeBelow: number; keepAway?: number };
 }
 
 /**

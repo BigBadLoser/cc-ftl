@@ -8,11 +8,12 @@ import { DoorJam } from '../structure';
 import { ShipC, type ShipRuin } from './components';
 import { spawnDriftingContainer } from '../containers/detach';
 import { ContainerC } from '../containers/components';
+import { spawnInfestation } from '../aliens/spawn';
 
 /**
  * Apply a ruin pass's meta to a freshly stamped derelict (`stampShip`, so no crew, combat or AI): module hp, power,
- * jammed doors (`jam`), starting air and fires, loose loot and caches. The ship becomes an inert wreck. Data the sim has
- * no state for yet (dressing art, hooks) stays in the meta for the renderer and later systems.
+ * jammed doors (`jam`), starting air and fires, loose loot and caches. The ship becomes an inert wreck. Alien hooks become egg sac and
+ * nest entities; data the sim has no state for (dressing art, robot spawns) stays in the meta for the renderer.
  */
 export function applyRuin(sim: Sim, shipId: number, template: ShipTemplate, meta: RuinMeta): void {
   const grid = shipGrid(sim, shipId);
@@ -59,6 +60,8 @@ export function applyRuin(sim: Sim, shipId: number, template: ShipTemplate, meta
     if (k.fate !== 'torn' || !sim.content.modules[k.def]?.container) continue;
     spawnDriftingContainer(sim, { def: k.def, rot: k.rot, clamp: k.clamp, x: ox + k.x, y: oy + k.y, vx: k.vx, vy: k.vy, spin: k.spin, hp: k.hp, ship: shipId, stock: k.stock });
   }
+  // Alien hooks become egg sac and nest entities (aliens/components); the robot spawns stay data for later.
+  spawnInfestation(sim, shipId, meta.hooks, ox, oy);
   const ship = sim.world.get(shipId, ShipC);
   if (ship) {
     ship.state = 'wreck';
@@ -80,7 +83,8 @@ function renderRuin(template: ShipTemplate, meta: RuinMeta): ShipRuin {
     impacts: meta.impacts.map((p) => ({ ...p })),
     breaches: meta.breaches.map((b) => ({ ...b })),
     decals: meta.decals.map((d) => ({ ...d })),
-    hooks: meta.hooks.filter((h) => h.art).map((h) => ({ x: h.x, y: h.y, size: h.size, art: h.art })),
+    // Egg sacs are entities with their own state (drawn from EggSacC); nests and AI spawns stay static dressing.
+    hooks: meta.hooks.filter((h) => h.art && h.kind !== 'eggsac').map((h) => ({ x: h.x, y: h.y, size: h.size, art: h.art })),
     modules,
   };
 }

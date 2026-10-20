@@ -83,6 +83,7 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: e.type, key: `s${e.x},${e.y}`, text: `Storage full (${sim.content.items[e.item]?.name ?? e.item})`, at: { x: e.x, y: e.y } };
       case 'production.done':
         return { kind: e.type, key: `pd${e.module}`, text: `${sim.content.recipes[e.recipe]?.name ?? 'Batch'} done`, at: { x: e.x, y: e.y } };
+      case 'eggsac.hatched': return { kind: 'creatures.aboard', key: `ca${e.ship}`, text: `Hostile creatures aboard ${shipName(e.ship)?.name ?? 'the wreck'}`, at: { x: e.x, y: e.y } };
       case 'combat.started': return { kind: e.type, key: 'cs', text: 'Hostile ship in range: combat!', at: null };
       case 'module.destroyed': {
         const s = shipName(e.ship);

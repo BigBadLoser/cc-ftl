@@ -16,6 +16,7 @@ import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
 import { createRoofView } from './roofView';
 import { createRuinView } from './ruinView';
+import { createEggSacView } from './eggSacView';
 import { createJamMarks } from './jamMarks';
 import { ShipC } from '../sim/combat/components';
 import type { Livery } from './roofPlating';
@@ -94,6 +95,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin });
   const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency, view);
   const jamMarks = createJamMarks(grid, atlas, L);
+  const sacView = createEggSacView(grid, world, atlas, L, (x, y, wall) => view.tintAt(x, y, wall));
   const itemView = createItemView(world, atlas, L, items, { target: inside, emergency: () => emergency });
   const fxView = createFxView(atlas, L, { target: inside });
   const particles = createParticles(atlas, L);
@@ -129,6 +131,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       view.update();
       ruinView.update();
       jamMarks.update();
+      sacView.update();
       moduleView.update();
       itemView.update();
       fxView.update();
@@ -158,7 +161,12 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       targeted = t;
     },
     setSelectedCrew: (id) => crewView.setSelectedCrew(id),
-    pickCrew: (ax, ay) => crewView.pick(ax, ay),
+    pickCrew: (ax, ay) => {
+      // Crew (aliens included) and live egg sacs (attack targets): the one nearest the viewer wins. Hidden when roofed.
+      const c = crewView.pick(ax, ay);
+      const s = roofed ? null : sacView.pick(ax, ay);
+      return c && s ? (s.y > c.y ? s : c) : (c ?? s);
+    },
     pickModule: (ax, ay) => moduleView.pick(ax, ay),
     sprites: () => particles.count() + L.floor.children.reduce((n, c) => n + c.children.length, 0) + L.sorted.children.length + L.decal.children.length,
     dispose() {
@@ -167,6 +175,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       roof.dispose();
       ruinView.dispose();
       jamMarks.dispose();
+      sacView.dispose();
       turretView.dispose();
       crewView.dispose();
       moduleView.dispose();

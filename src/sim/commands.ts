@@ -25,7 +25,7 @@ export type Command =
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }
-  /** Drafted crew attack this hostile crew member (walking into range first) until it is subdued. Cleared by crew.moveTo. */
+  /** Drafted crew attack this hostile crew member or egg sac (walking into range first) until it is subdued or burst. Cleared by crew.moveTo. */
   | { type: 'crew.attack'; id: number; target: number }
   /** Drafted crew shoot at the nearest visible hostile on their own (default on), or hold fire. */
   | { type: 'crew.setEngage'; id: number; engage: boolean }
