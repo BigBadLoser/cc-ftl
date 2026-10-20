@@ -68,8 +68,8 @@ export class GalaxyGen implements SectorContext {
     readonly content: GalaxyContent | undefined,
   ) {
     this.terrain = new Terrain(seed);
-    this.regions = new RegionField(seed, this.terrain, new TerritoryField(seed, content?.factions ?? {}), content);
     this.sites = new SiteField(seed, this.terrain);
+    this.regions = new RegionField(seed, this.terrain, this.sites, new TerritoryField(seed, content?.factions ?? {}), content);
   }
 
   chunkOf(site: Site): string {
@@ -203,12 +203,19 @@ export class GalaxyGen implements SectorContext {
   /**
    * Hyperlanes of a sector. Inside its region, the relative neighbourhood graph of the region's own sites (connected,
    * rift lanes included) plus HYPERLANE_EXTRA of the other clear Gabriel candidates. Across a border, only the gates.
+   * A wild sector (no region) keeps every candidate lane, so the frontier is never cut off.
    */
   hyperlanes(site: Site): EdgeData[] {
     const out: EdgeData[] = [];
     const mine = this.regions.regionAt(site.x, site.y);
-    const same = this.sites.sitesNear(site.x, site.y, RIFT_MAX).filter((o) => this.regions.regionAt(o.x, o.y) === mine);
     const cands = new Map(this.candidates(site).map((c) => [c.site.id, c]));
+    for (const { site: other, rift } of cands.values()) {
+      if (mine && this.regions.regionAt(other.x, other.y)) continue;
+      const [a, b] = site.id < other.id ? [site, other] : [other, site];
+      out.push(this.lane(a, b, false, rift));
+    }
+    if (!mine) return out;
+    const same = this.sites.sitesNear(site.x, site.y, RIFT_MAX).filter((o) => this.regions.regionAt(o.x, o.y) === mine);
     for (const other of same) {
       if (other.id === site.id) continue;
       const [a, b] = site.id < other.id ? [site, other] : [other, site];
@@ -217,7 +224,6 @@ export class GalaxyGen implements SectorContext {
       if (!extra && !isRelativeNeighbour(a, b, same)) continue;
       out.push(this.lane(a, b, false, !this.clear(a, b)));
     }
-    if (!mine) return out;
     for (const { site: other, rift } of cands.values()) {
       const theirs = this.regions.regionAt(other.x, other.y);
       if (!theirs || theirs === mine) continue;

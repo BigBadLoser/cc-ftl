@@ -3,7 +3,7 @@ import { hash32, unit } from './hash';
 import type { Terrain } from './terrain';
 import type { TerritoryField } from './territory';
 import {
-  LANE_MIN_DENSITY, REGION_BORDER_WOBBLE, REGION_CELL, REGION_REACH, REGION_RIFT_COST, REGION_SEED_DENSITY,
+  LANE_MIN_DENSITY, MIN_REGION_SECTORS, REGION_BORDER_WOBBLE, REGION_CELL, REGION_REACH, REGION_RIFT_COST, REGION_SEED_DENSITY, WILD_GAP, WILD_MATES, WILD_VOID,
 } from './tuning';
 
 /** A region (province): a named group of sectors around a seed, owned by one faction or by nobody. */
@@ -24,15 +24,20 @@ const cellOf = (v: number): number => Math.floor(v / REGION_CELL + 0.5);
 /**
  * Regions over the terrain: one seed per REGION_CELL cell, placed on dense ground (a cell over a rift has none). A
  * point belongs to the seed it is cheapest to reach, where distance is wobbled by noise and every unit of void on the
- * way costs REGION_RIFT_COST extra, so borders follow the rifts. All of it reads a bounded ring of cells: chunk-safe.
+ * way costs REGION_RIFT_COST extra, so borders follow the rifts. A seed that would get fewer than MIN_REGION_SECTORS
+ * sectors is dropped and its sectors join their next-cheapest region. All of it reads a bounded ring of cells: chunk-safe.
  */
 export class RegionField {
   private regions = new Map<string, Region | null>();
   private owner = new Map<string, Region | null>();
+  private base = new Map<string, Region | null>();
+  private keep = new Map<string, boolean>();
+  private claimed = new Map<string, Region | null>();
 
   constructor(
     readonly seed: number,
     private readonly terrain: Terrain,
+    private readonly sites: { sitesNear(x: number, y: number, range: number): readonly { x: number; y: number }[] },
     private readonly territory: TerritoryField,
     private readonly content: GalaxyContent | undefined,
   ) {}
@@ -83,23 +88,78 @@ export class RegionField {
     return d * wob + REGION_RIFT_COST * this.terrain.voidRun(r.x, r.y, x, y, LANE_MIN_DENSITY, 100).total;
   }
 
-  /** The region a point (a sector site) belongs to, or null when no seed reaches it. Memoised by exact position. */
+  /** The cheapest seed to reach (x, y) among those passing `ok`. */
+  private cheapest(x: number, y: number, ok: (r: Region) => boolean): Region | null {
+    let best: Region | null = null;
+    let score = Infinity;
+    for (const r of this.near(x, y)) {
+      if (!ok(r)) continue;
+      const c = this.cost(r, x, y);
+      if (c < score) {
+        score = c;
+        best = r;
+      }
+    }
+    return best;
+  }
+
+  /** First pass: the cheapest seed of all. */
+  private baseAt(x: number, y: number): Region | null {
+    const key = `${x},${y}`;
+    let r = this.base.get(key);
+    if (r === undefined) {
+      r = this.cheapest(x, y, () => true);
+      this.base.set(key, r);
+    }
+    return r;
+  }
+
+  /** A region keeps its seed when the first pass gives it at least MIN_REGION_SECTORS sectors (the start's always does). */
+  private kept(r: Region): boolean {
+    let v = this.keep.get(r.id);
+    if (v === undefined) {
+      let n = 0;
+      for (const s of this.sites.sitesNear(r.x, r.y, REGION_REACH)) if (this.baseAt(s.x, s.y) === r) n++;
+      v = (r.rx === 0 && r.ry === 0) || n >= MIN_REGION_SECTORS;
+      this.keep.set(r.id, v);
+    }
+    return v;
+  }
+
+  /**
+   * The region a point (a sector site) belongs to: the cheapest kept seed, so tiny regions are absorbed by their
+   * neighbours. Null when no seed reaches it. Memoised by exact position.
+   */
   regionAt(x: number, y: number): Region | null {
     const key = `${x},${y}`;
     let best = this.owner.get(key);
     if (best === undefined) {
-      best = null;
-      let score = Infinity;
-      for (const r of this.near(x, y)) {
-        const c = this.cost(r, x, y);
-        if (c < score) {
-          score = c;
-          best = r;
-        }
-      }
+      best = this.claim(x, y);
+      if (best && this.wild(best, x, y)) best = null;
       this.owner.set(key, best);
     }
     return best;
+  }
+
+  /** The cheapest kept seed (before the wild test). */
+  private claim(x: number, y: number): Region | null {
+    const key = `${x},${y}`;
+    let r = this.claimed.get(key);
+    if (r === undefined) {
+      r = this.cheapest(x, y, (q) => this.kept(q)) ?? this.baseAt(x, y);
+      this.claimed.set(key, r);
+    }
+    return r;
+  }
+
+  /**
+   * Wild space: a sector its region only reaches across the void (more than WILD_VOID of it on the way from the seed),
+   * or with fewer than WILD_MATES other sectors of that region within WILD_GAP. It belongs to no region and no faction: frontier.
+   */
+  private wild(r: Region, x: number, y: number): boolean {
+    if (this.terrain.voidRun(r.x, r.y, x, y, LANE_MIN_DENSITY, 100).total > WILD_VOID) return true;
+    const mates = this.sites.sitesNear(x, y, WILD_GAP).filter((o) => (o.x !== x || o.y !== y) && this.claim(o.x, o.y) === r);
+    return mates.length < WILD_MATES;
   }
 
 }

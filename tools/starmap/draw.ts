@@ -2,7 +2,7 @@
  * Dev-only galaxy overview (nothing in src/ imports this): generate a square of chunks straight from the generator
  * and draw sectors, hulls (tinted by territory), routes, hyperlanes, structures and danger rings as one SVG.
  */
-import { galaxyGen, type ChunkData, type EdgeData, type NodeData } from '../../src/sim';
+import { galaxyGen, type ChunkData, type EdgeData, type NodeData, type SectorData } from '../../src/sim';
 import { content } from '../../src/content';
 
 export interface Overview {
@@ -75,25 +75,62 @@ export function overview(seed: number, radius: number, scale = 0.25): Overview {
     out.push(`<circle cx="${X(n.x)}" cy="${X(n.y)}" r="${(n.contacts.length ? 1.6 : 1.1) * Math.min(1, scale / 0.12 + 0.5)}" fill="${fill}"${n.contacts.length ? ' stroke="#ef4444"' : ''}/>`);
   }
   out.push(`<circle cx="${X(0)}" cy="${X(0)}" r="5" fill="none" stroke="#22d3ee" stroke-width="2"/>`);
-  // Region names at the centroid of their sectors.
-  const byRegion = new Map<string, { x: number; y: number; n: number }>();
-  for (const c of chunks) {
-    for (const s of c.sectors) {
-      if (!s.region) continue;
-      const r = byRegion.get(s.region) ?? { x: 0, y: 0, n: 0 };
-      r.x += s.x;
-      r.y += s.y;
-      r.n++;
-      byRegion.set(s.region, r);
+  // Region borders: each sector's Voronoi cell (clipped to a disc around it); cell edges facing a sector of another
+  // region are drawn. Solid where the owner changes, dashed between two regions of the same owner.
+  const all = chunks.flatMap((c) => c.sectors);
+  const CELL_R = 620;
+  for (const a of all) {
+    let poly: { x: number; y: number; from: SectorData | null }[] = [];
+    for (let k = 0; k < 24; k++) {
+      const t = (k / 24) * Math.PI * 2;
+      poly.push({ x: a.x + Math.cos(t) * CELL_R, y: a.y + Math.sin(t) * CELL_R, from: null });
+    }
+    for (const b of all) {
+      if (b === a || Math.hypot(b.x - a.x, b.y - a.y) > 2 * CELL_R) continue;
+      // Keep the half-plane closer to a than to b; tag new edges with b.
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      const nx = b.x - a.x;
+      const ny = b.y - a.y;
+      const side = (p: { x: number; y: number }) => (p.x - mx) * nx + (p.y - my) * ny;
+      const next: typeof poly = [];
+      for (let i = 0; i < poly.length; i++) {
+        const p = poly[i]!;
+        const q = poly[(i + 1) % poly.length]!;
+        const sp = side(p);
+        const sq = side(q);
+        if (sp <= 0) next.push(p);
+        if ((sp <= 0) !== (sq <= 0)) {
+          const t = sp / (sp - sq);
+          next.push({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t, from: sp <= 0 ? b : p.from });
+        }
+      }
+      poly = next;
+    }
+    // Vertex i starts the edge to i+1; `from` on the vertex after a cut names the neighbour across that edge.
+    for (let i = 0; i < poly.length; i++) {
+      const p = poly[i]!;
+      const q = poly[(i + 1) % poly.length]!;
+      const b = p.from;
+      if (!b || b.region === a.region || b.id < a.id) continue;
+      const same = a.faction === b.faction;
+      out.push(`<line x1="${X(p.x)}" y1="${X(p.y)}" x2="${X(q.x)}" y2="${X(q.y)}" stroke="#e2e8f0" stroke-opacity="${same ? 0.35 : 0.6}" stroke-width="1.6"${same ? ' stroke-dasharray="5 5"' : ''} stroke-linecap="round"/>`);
     }
   }
-  for (const [id, r] of byRegion) {
-    if (r.n < 4) continue;
+  // Region names under the sector nearest each region's centroid.
+  const members = new Map<string, SectorData[]>();
+  for (const s of all) if (s.region) members.set(s.region, [...(members.get(s.region) ?? []), s]);
+  for (const [id, list] of members) {
+    if (list.length < 3) continue;
+    const cx = list.reduce((t, s) => t + s.x, 0) / list.length;
+    const cy = list.reduce((t, s) => t + s.y, 0) / list.length;
+    const at = list.reduce((m, s) => (Math.hypot(s.x - cx, s.y - cy) < Math.hypot(m.x - cx, m.y - cy) ? s : m));
     const [, rx, ry] = id.split('.').map(Number);
     const reg = gen.regions.region(rx as number, ry as number);
     if (!reg) continue;
-    const col = reg.faction ? content.galaxy.factions[reg.faction as keyof typeof content.galaxy.factions]?.color ?? '#cbd5e1' : '#94a3b8';
-    out.push(`<text x="${X(r.x / r.n)}" y="${X(r.y / r.n)}" fill="${col}" fill-opacity="0.85" font-family="Georgia,serif" font-size="13" letter-spacing="2" text-anchor="middle" style="font-variant:small-caps">${reg.name}</text>`);
+    const col = reg.faction ? content.galaxy.factions[reg.faction as keyof typeof content.galaxy.factions]?.color ?? '#cbd5e1' : '#cbd5e1';
+    const ty = Number(X(at.y + at.r)) + 15;
+    out.push(`<text x="${X(at.x)}" y="${ty.toFixed(1)}" fill="${col}" stroke="#070b12" stroke-width="3" paint-order="stroke" font-family="Georgia,serif" font-size="14" letter-spacing="2" text-anchor="middle" style="font-variant:small-caps">${reg.name}</text>`);
   }
   out.push('</svg>');
   const sectors = chunks.reduce((t, c) => t + c.sectors.length, 0);

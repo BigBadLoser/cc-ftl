@@ -21,6 +21,12 @@ export const REGION_REACH = 5600;
 export const REGION_SEED_DENSITY = 0.35;
 export const REGION_BORDER_WOBBLE = 0.2;
 export const REGION_RIFT_COST = 14;
+/** Regions smaller than this are absorbed by their neighbours. */
+export const MIN_REGION_SECTORS = 4;
+/** Wild space: sectors a region reaches only over more than WILD_VOID of void, or with fewer than WILD_MATES region-mates within WILD_GAP. */
+export const WILD_VOID = 300;
+export const WILD_GAP = 1150;
+export const WILD_MATES = 2;
 /**
  * Gates: neighbouring regions keep 1 crossing lane, plus a second and third with these chances, picked shortest first
  * and at least GATE_SPREAD apart. A border with a detour through a third region closes with NO_GATE chance.
@@ -85,6 +91,8 @@ export const DANGER_MAX = 9;
 export const TERRITORY_CELL = 1100;
 export const TERRITORY_REACH = 760;
 export const TERRITORY_SCALE = 3;
+/** Extra reach on top of TERRITORY_SCALE, so less space between the powers is left unclaimed. */
+export const TERRITORY_REACH_BOOST = 1.35;
 /** Chance a sector with no territory still has a (free traders') station. */
 export const OPEN_STATION_CHANCE = 0.3;
 

@@ -1,7 +1,7 @@
 import type { GalaxyFactionDef } from './defs';
 import { inDanger } from './defs';
 import { unit } from './hash';
-import { DANGER_MAX, DANGER_STEP, TERRITORY_CELL, TERRITORY_REACH, TERRITORY_SCALE } from './tuning';
+import { DANGER_MAX, DANGER_STEP, TERRITORY_CELL, TERRITORY_REACH, TERRITORY_REACH_BOOST, TERRITORY_SCALE } from './tuning';
 
 const CELL = TERRITORY_CELL * TERRITORY_SCALE;
 
@@ -52,7 +52,7 @@ export class TerritoryField {
         faction = (pool.find((p) => (roll -= p.weight) < 0) ?? pool[pool.length - 1])?.id ?? null;
       }
       const base = faction ? this.factions[faction]?.territory?.reach ?? TERRITORY_REACH : TERRITORY_REACH;
-      s = { x, y, faction, reach: TERRITORY_SCALE * base * (0.8 + 0.4 * unit(this.seed, tx, ty, 14)) };
+      s = { x, y, faction, reach: TERRITORY_SCALE * TERRITORY_REACH_BOOST * base * (0.8 + 0.4 * unit(this.seed, tx, ty, 14)) };
       this.seeds.set(key, s);
     }
     return s;
