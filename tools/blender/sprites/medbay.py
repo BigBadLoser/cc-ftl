@@ -62,12 +62,12 @@ def med_bed(state, rot):
     k.box(-0.37, v0 + 0.08, 0.82, 0.135, 0.075, 0.12, "iceB", bevel=0.02)                # its fluid
     k.box(-0.37, v0 + 0.08, 0.74, 0.03, 0.03, 0.06, "medRed")
     if on:                                                                            # the line to the patient's arm
-        for i in range(13):                                                           # down along the pole,
-            k.box(-0.37, v0 + 0.1, 0.72 - i * 0.025, 0.02, 0.02, 0.02, "iceB")
-        p0, p1, p2 = (-0.37, v0 + 0.1, 0.42), (-0.5, v0 + 0.36, 0.22), (-0.33, v0 + 0.62, MATTRESS + 0.05)
-        for i in range(21):                                                           # then a loose loop over
-            t = i / 20                                                                # to the bed
-            q = [(1 - t) ** 2 * p0[j] + 2 * t * (1 - t) * p1[j] + t * t * p2[j] for j in range(3)]
+        cp = ((-0.37, v0 + 0.1, 0.72), (-0.37, v0 + 0.1, 0.25), (-0.52, v0 + 0.42, 0.1),     # hangs down from the
+              (-0.33, v0 + 0.62, MATTRESS + 0.05))                                    # bag, sags, rises over
+        for i in range(41):                                                           # the rail (a cubic)
+            t = i / 40
+            w = ((1 - t) ** 3, 3 * t * (1 - t) ** 2, 3 * t * t * (1 - t), t ** 3)
+            q = [sum(w[m] * cp[m][j] for m in range(4)) for j in range(3)]
             k.box(q[0], q[1], q[2], 0.02, 0.02, 0.02, "iceB")
     return k.build()
 
