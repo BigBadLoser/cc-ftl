@@ -52,8 +52,8 @@ def med_bed(state, rot):
     k.box(0.2, v0 + 0.14, 0.58, 0.4, 0.06, 0.32, "gmD", bevel=0.01)                      # monitor bezel
     k.box(0.2, v0 + 0.175, 0.61, 0.34, 0.02, 0.26, "dark")                               # screen
     if on:                                                                            # a heartbeat trace
-        trace(lambda a, b: k.box(0.2 + a * 1.2, v0 + 0.19, 0.72 + b, 0.016, 0.012, 0.016, "green"), PULSE)
-        k.box(0.32, v0 + 0.19, 0.81, 0.04, 0.012, 0.03, "cyan")
+        ekg = [(-0.15, 0.0), (-0.07, 0.0), (-0.02, 0.1), (0.04, -0.06), (0.08, 0.0), (0.15, 0.0)]
+        trace(lambda a, b: k.box(0.2 + a, v0 + 0.19, 0.71 + b, 0.014, 0.012, 0.014, "green"), ekg)
     for j, col in enumerate(("green" if on else "dark", "cyan" if on else "dark")):   # status lights on the tower
         k.box(0.15 + j * 0.12, v0 + 0.135, 0.42, 0.05, 0.012, 0.04, col)
     k.cyl(-0.3, v0 + 0.08, 0.0, 0.03, 1.1, "steelL", sides=6)                           # IV pole
@@ -61,6 +61,12 @@ def med_bed(state, rot):
     k.box(-0.37, v0 + 0.08, 0.8, 0.13, 0.07, 0.24, "glassL", bevel=0.025)                # IV bag
     k.box(-0.37, v0 + 0.08, 0.82, 0.135, 0.075, 0.12, "iceB", bevel=0.02)                # its fluid
     k.box(-0.37, v0 + 0.08, 0.74, 0.03, 0.03, 0.06, "medRed")
+    if on:                                                                            # the line to the patient's arm
+        p0, p1, p2 = (-0.37, v0 + 0.08, 0.74), (-0.6, v0 + 0.3, 0.1), (-0.33, v0 + 0.62, MATTRESS + 0.05)
+        for i in range(29):
+            t = i / 28
+            q = [(1 - t) ** 2 * p0[j] + 2 * t * (1 - t) * p1[j] + t * t * p2[j] for j in range(3)]
+            k.box(q[0], q[1], q[2], 0.02, 0.02, 0.02, "iceB")
     return k.build()
 
 
