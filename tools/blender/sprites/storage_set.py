@@ -207,11 +207,9 @@ def tank(fill, rot):
     for t in range(5):                                                                # tick marks beside the glass
         k.box(ca * (gr + 0.02) - sa * 0.08, sa * (gr + 0.02) + ca * 0.08, z0 + 0.26 + gh * t / 4, 0.05, 0.03, 0.025,
               "steelL", rz=g)
-    for j in range(3):                                                                # fill lights: 1 / 2 / 3 lit
-        lit = j < {"empty": 1, "partial": 2, "full": 3}[fill]
-        col = ("red" if fill == "empty" else "orange" if fill == "partial" else "green") if lit else "dark"
-        k.box(ca * (gr + 0.04) + sa * 0.1, sa * (gr + 0.04) - ca * 0.1, z0 + H - 0.32 - j * 0.12, 0.09, 0.04, 0.09,
-              col, rz=g)
+    col = {"empty": "red", "partial": "orange", "full": "green"}[fill]               # one fill light, same size always
+    k.box(ca * gr, sa * gr, z0 + H - 0.12, 0.14, 0.14, 0.05, "gmD", rz=g)              # on top of the gauge housing
+    k.box(ca * gr, sa * gr, z0 + H - 0.07, 0.1, 0.1, 0.08, col, rz=g)
     a = 0.3                                                                           # outlet line and valve wheel
     ou, ov = math.cos(a) * (R + 0.08), math.sin(a) * (R + 0.08)
     k.box(ou, ov, 0.1, 0.1, 0.1, z0 + 0.3, "gm", top="steelL")
