@@ -8,7 +8,7 @@ clothing is a shell over the same forms with flat colour regions and hard colour
 (0.05 units; 1 unit is ~38 px at 1x).
 
 Items (same slots and ids as before): body, eyes.organic, arm.L/R.flesh, torso.tee, torso.work_shirt, legs.cargo_pants,
-hair.short, hair.ponytail, and the EVA suit (torso.eva, legs.eva, arm.L/R.eva, gear.head.eva_helmet, gear.back.eva_pack).
+hair.short, hair.ponytail. The EVA suit is the old base's (human_suit, cut from the same rig's body).
 Coordinates: Blender rest space of the armature (z up, feet at 0, front = -y, +x = character left, arms out in a T)."""
 import math
 
@@ -20,9 +20,7 @@ from . import human_shape
 from .human_base import paint
 
 SHIN_SLANT = 0.25                     # how much of the base's backward shin slant is kept in the rest pose
-PUFF = "eva_puff"                     # the suit's thrust puff objects (human_suit.PUFF, read by the render)
 N_RING = 16
-SHELL = "medWhite"
 
 
 # ---- mesh builder --------------------------------------------------------------------------------------------------

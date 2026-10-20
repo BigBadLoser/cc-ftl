@@ -4,14 +4,17 @@ human_items uses in place of the old build when CREW_BASE is v2 (the default on 
 Colour roles as before: team.skin / team.hair / team.cloth / team.accent are the palette-swap keys; fixed parts use
 plain palette colours. Flat colour regions with hard edges; nothing smaller than ~2 px."""
 import bpy
+import numpy as np
 from mathutils import Vector
 
 from . import core
 from . import crew_clips as clips
 from . import human_render as hr
+from . import human_base as hb
+from . import human_suit as suit
 from . import human_trace
 from .human_base import SCALE, Item, import_base
-from .human_v2 import CREASE, PUFF, SHELL, Build, Rig, W, arm, flat, head, leg, torso
+from .human_v2 import CREASE, Build, Rig, W, arm, flat, head, leg, torso
 
 
 def body(A, R):
@@ -23,8 +26,8 @@ def body(A, R):
     torso(b, R)
     for s in "LR":
         leg(b, R, s)
-    crotch = R.hips.z - 0.03
-    col = lambda c, n: "boot" if c.z < 0.15 else "pants" if c.z < crotch else "team.skin"  # noqa: E731
+    waist = R.hips.z + 0.12                                                  # shorts to the belt line: a gap between
+    col = lambda c, n: "boot" if c.z < 0.15 else "pants" if c.z < waist else "team.skin"  # noqa: E731  # pieces shows dark
     return Item("body", "", [b.mesh("v2.body", A, col)], default=True)
 
 
@@ -131,111 +134,44 @@ def hair_ponytail(A, R):
     return Item("hair", "ponytail", [b.mesh("v2.hair.ponytail", A, flat("team.hair"))])
 
 
-# ---- EVA suit ------------------------------------------------------------------------------------------------------
-
-def eva_torso(A, R):
-    b = Build()
-    torso(b, R, grow=0.06)
-    sz, cz = R.shoulder_z, R.chest.z
-    b.tube(Vector((0, 0.03, sz + 0.04)), Vector((0, 0.03, sz + 0.11)), 0.19, 0.19, W("spine_03"), round_ends=False)  # collar
-    b.blob(Vector((0, R.chest.y - 0.2, cz + 0.06)), 0.11, 0.04, 0.08, W("spine_03"), exp=3.0, nlat=6)        # control unit
-
-    def col(c, n):
-        if c.z > sz + 0.035 and abs(c.x) < 0.2:
-            return "gm"
-        if c.y < R.chest.y - 0.17 and abs(c.x) < 0.12 and cz - 0.03 < c.z < cz + 0.15:
-            return "gmD"
-        return "team.cloth" if cz - 0.1 < c.z < cz - 0.03 else SHELL
-    return Item("torso", "eva", [b.mesh("v2.eva.torso", A, col)])
-
-
-def eva_arm(A, R, s):
-    b = Build()
-    arm(b, R, s, grow=0.045, hand=False)
-    arm(b, R, s, grow=0.03, upper=0.0, fore=False)                          # gloves, a size up from the hand
-    sh = abs(R.h[f"arm.{s}"].x)
-    wrist = abs(R.t[f"forearm.{s}"].x) - 0.02
-
-    def col(c, n):
-        if abs(c.x) > wrist:
-            return "gmD"
-        return "team.cloth" if sh + 0.14 < abs(c.x) < sh + 0.2 else SHELL
-    return Item(f"arm.{s}", "eva", [b.mesh(f"v2.eva.arm.{s}", A, col)])
-
-
-def eva_legs(A, R):
-    b = Build()
-    torso(b, R, grow=0.06, lo=R.hips.z - 0.11, hi=R.hips.z + 0.04)
-    for s in "LR":
-        leg(b, R, s, grow=0.045, boot=0.04)
-    kz = R.t["leg.L"].z
-
-    def col(c, n):
-        if c.z < 0.21:
-            return "gmD"
-        return "team.cloth" if abs(c.z - kz) < 0.035 else SHELL
-    return Item("legs", "eva", [b.mesh("v2.eva.legs", A, col)])
-
-
-def eva_helmet(A, R):
-    b = Build()
-    head(b, R, grow=0.07)
-    c = R.head_c
-    for sx in (1, -1):                                                       # ear pucks
-        b.blob(c + Vector((sx * (R.HX + 0.08), 0.0, -0.01)), 0.03, 0.07, 0.07, W("head"), exp=2.4, nlat=6)
-
-    def col(c2, n):
-        r = c2 - c
-        if abs(r.x) > R.HX + 0.05:
-            return "team.cloth"
-        if n.y < -0.5 and -0.13 < r.z < 0.08:
-            return "brass"                                                  # gold visor
-        return SHELL
-    return Item("gear.head", "eva_helmet", [b.mesh("v2.eva.helmet", A, col)], glow=True)
-
-
-def eva_pack(A, R):
-    b = Build()
-    ch = R.chest
-    c = Vector((0, ch.y + 0.27, ch.z + 0.03))
-    b.blob(c, 0.21, 0.09, 0.23, W("spine_03"), exp=3.2)
-    for sx in (1, -1):                                                       # nozzles
-        b.tube(c + Vector((sx * 0.12, 0.0, -0.22)), c + Vector((sx * 0.12, 0.0, -0.3)), 0.04, 0.05, W("spine_03"))
-
-    def col(p, n):
-        if p.z < c.z - 0.22:
-            return "steelD"
-        if n.y > 0.5 and c.z + 0.1 < p.z < c.z + 0.16:
-            return "team.cloth"                                             # faction band
-        if n.y > 0.5 and c.z - 0.02 < p.z < c.z + 0.04 and 0.06 < p.x < 0.12:
-            return "cyan"                                                   # pack light
-        return SHELL
-    objs = [b.mesh("v2.eva.pack", A, col)]
-    for k, sx in enumerate((-1, 1)):                                         # thrust puffs (eva_float only)
-        p = Build()
-        p.tube(c + Vector((sx * 0.12, 0.0, -0.3)), c + Vector((sx * 0.12, 0.0, -0.46)), 0.05, 0.02, W("spine_03"))
-        ob = p.mesh(f"v2.eva.puff.{k}", A, flat("arc"))
-        ob[PUFF] = k
-        objs.append(ob)
-    return Item("gear.back", "eva_pack", objs, glow=True)
+def _fit_helmet(it, R, margin=0.07, wide=1.06, deep=1.12):
+    """The old helmet over the taller v2 head: stretched up from its rim until the crown clears the head by `margin`,
+    and a little wider and deeper (the shell is nearly round: the squarer forehead pokes through its front), so the head
+    does not show through the shell or the visor."""
+    top = max(r[0].z for r in R.T["head"]) + 0.012
+    cos = [np.array([v.co[:] for v in ob.data.vertices]) for ob in it.objs]
+    allc = np.vstack(cos)
+    lo, hi = allc.min(0), allc.max(0)
+    base = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
+    k = np.array([wide, deep, max(1.0, (top + margin - lo[2]) / (hi[2] - lo[2]))])
+    for ob, co in zip(it.objs, cos):
+        ob.data.vertices.foreach_set("co", ((co - base) * k + base).ravel())
+        ob.data.update()
 
 
 def build_items():
     core.setup_scene()
     A = import_base()
-    T = human_trace.measure(A, bpy.data.objects["skin@body.team.skin"])   # trace the realistic base, then drop it
-    for ob in [o for o in bpy.data.objects if o.type == "MESH"]:
+    src = bpy.data.objects["skin@body.team.skin"]
+    T = human_trace.measure(A, src)                                          # trace the realistic base, then drop it
+    eva = suit.build_suit(A, src)                                           # the EVA suit as on the old base (same rig)
+    keep = {ob.name for it in eva for ob in it.objs}
+    for ob in [o for o in bpy.data.objects if o.type == "MESH" and o.name not in keep]:
         bpy.data.objects.remove(ob, do_unlink=True)
     R = Rig(A, T)
     items = [body(A, R), eyes(A, R), flesh_arm(A, R, "L"), flesh_arm(A, R, "R"), tee(A, R), work_shirt(A, R),
-             cargo_pants(A, R), hair_short(A, R), hair_ponytail(A, R), eva_torso(A, R), eva_arm(A, R, "L"),
-             eva_arm(A, R, "R"), eva_legs(A, R), eva_helmet(A, R), eva_pack(A, R)]
+             cargo_pants(A, R), hair_short(A, R), hair_ponytail(A, R)] + eva
     for it in items:
         it.order = hr.ORDER[it.slot]
     for act in bpy.data.actions:       # we drive bone scale ourselves (torso width, breathing)
         for fc in [f for f in act.fcurves if f.data_path.endswith("scale")]:
             act.fcurves.remove(fc)
+    for it in eva:
+        for ob in it.objs:
+            ob.parent = A
     clips.capture_idle_arms(A)
+    hb.warp_gear(eva)                                                        # the suit's rigid parts, as the old build
+    _fit_helmet(next(it for it in eva if it.slot == "gear.head"), R)
     A.rotation_mode = "XYZ"
     A.scale = (SCALE,) * 3
     A.data.pose_position = "POSE"
