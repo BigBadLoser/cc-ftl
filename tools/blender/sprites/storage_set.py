@@ -162,36 +162,58 @@ def container(fill, rot):
     return k.build()
 
 
-# ---- tank: 2x2 upright tank with a sight-glass gauge -------------------------------------------------------------
+# ---- tank: 2x2 pressure vessel in a skid frame, a sight-glass level gauge ----------------------------------------
 
 def tank(fill, rot):
     k = K(f"storage_tank_{fill}_{rot}", (2, 2), rot)
-    R, z0, H = 0.66, 0.16, 1.2
-    for a in range(4):                                                                # cradle legs and ring
-        ang = math.pi / 4 + a * math.pi / 2
-        k.box(math.cos(ang) * 0.55, math.sin(ang) * 0.55, 0.0, 0.14, 0.14, z0 + 0.1, "gmD", top="gm")
-    k.cyl(0, 0, z0 - 0.02, R + 0.04, 0.1, "gmD", top="gm", sides=16)
-    k.cyl(0, 0, z0, R, H, "plate", top="steelL", sides=16)                            # shell
-    for z in (z0 + 0.25, z0 + H - 0.25):
-        k.cyl(0, 0, z, R + 0.02, 0.07, "gm", top="steelL", sides=16)                   # bands
-    k.cyl(0, 0, z0 + H, R, 0.16, "steelL", rtop=R * 0.55, sides=16)                    # dome
-    k.cyl(0, 0, z0 + H + 0.16, 0.16, 0.12, "gm", top="steelL", sides=8)                # top fitting
-    lamp_col = {"empty": "red", "partial": "orange", "full": "green"}[fill]
-    k.cyl(0, 0, z0 + H + 0.28, 0.07, 0.06, lamp_col, sides=8)                          # fill lamp
+    F, R, z0, H = 1.7, 0.6, 0.18, 1.22
+    for su in (-1, 1):                                                                # skid: base rails, corner posts
+        k.box(su * (F / 2 - 0.05), 0, 0.0, 0.1, F, 0.1, "gmD", top="gm")
+        k.box(0, su * (F / 2 - 0.05), 0.0, F, 0.1, 0.1, "gmD", top="gm")
+        for sv in (-1, 1):
+            k.box(su * (F / 2 - 0.06), sv * (F / 2 - 0.06), 0.0, 0.13, 0.13, 0.78, "gm", top="steelL", bevel=0.01)
+        k.box(su * (F / 2 - 0.06), 0, 0.66, 0.09, F - 0.1, 0.09, "gmD", top="gm")       # top rails tie the posts
+        k.box(0, su * (F / 2 - 0.06), 0.66, F - 0.1, 0.09, 0.09, "gmD", top="gm")
+    for j in range(5):                                                                # hazard stripes on the front rail
+        k.box(-0.5 + j * 0.25, F / 2 - 0.0, 0.02, 0.1, 0.02, 0.06, "hazY" if j % 2 == 0 else "hazK")
+    k.box(0, 0, 0.1, F - 0.2, 0.12, 0.08, "gmD")                                      # saddle under the vessel
+    k.box(0, 0, 0.1, 0.12, F - 0.2, 0.08, "gmD")
+    k.cyl(0, 0, z0 - 0.04, R * 0.85, 0.06, "gmD", sides=16)                           # foot ring
+    k.cyl(0, 0, z0, R, H, "plate", top="plate", sides=16)                             # shell
+    for z in (z0 + 0.1, z0 + H - 0.14):                                               # weld bands
+        k.cyl(0, 0, z, R + 0.015, 0.05, "steel", sides=16)
+    k.cyl(0, 0, z0 + 0.5, R + 0.02, 0.2, "polyB", sides=16)                           # contents band
+    k.cyl(0, 0, z0 + H, R, 0.12, "plate", rtop=R * 0.78, sides=16)                    # dome, in two steps
+    k.cyl(0, 0, z0 + H + 0.12, R * 0.78, 0.08, "plate", rtop=R * 0.45, sides=16)
+    k.cyl(-0.16, -0.12, z0 + H + 0.14, 0.17, 0.08, "gm", top="steelL", sides=10)       # manway hatch
+    for a in range(4):
+        ang = a * math.pi / 2 + math.pi / 4
+        k.cyl(-0.16 + math.cos(ang) * 0.13, -0.12 + math.sin(ang) * 0.13, z0 + H + 0.2, 0.025, 0.03, "steelL", sides=6)
+    k.cyl(0.24, 0.1, z0 + H + 0.08, 0.05, 0.3, "gm", top="steelL", sides=8)           # relief valve stack
+    k.cyl(0.24, 0.1, z0 + H + 0.38, 0.08, 0.06, "medRed", sides=8)
     g = math.pi / 4                                                                   # gauge on the camera-facing diagonal
-    gu, gv = math.cos(g) * (R + 0.03), math.sin(g) * (R + 0.03)
-    k.box(gu, gv, z0 + 0.18, 0.13, 0.13, H - 0.36, "gmD", rz=g)                         # gauge frame
-    level = {"empty": 0.1, "partial": 0.5, "full": 0.92}[fill]
+    ca, sa = math.cos(g), math.sin(g)
+    gr = R + 0.13
+    for z in (z0 + 0.22, z0 + H - 0.2):                                               # brackets
+        k.box(ca * (R + 0.06), sa * (R + 0.06), z, 0.14, 0.05, 0.05, "gm", rz=g)
+    k.box(ca * gr, sa * gr, z0 + 0.18, 0.12, 0.12, H - 0.3, "gmD", top="gm", rz=g)    # gauge housing
     gh = H - 0.46
-    gu2, gv2 = math.cos(g) * (R + 0.08), math.sin(g) * (R + 0.08)
-    k.box(gu2, gv2, z0 + 0.23, 0.08, 0.04, gh, "dark", rz=g)                           # empty glass
-    k.box(gu2 + 0.005, gv2 + 0.005, z0 + 0.23, 0.08, 0.045, gh * level, "cyan", rz=g)  # the fluid column
-    for s in (-1, 1):                                                                 # piping to the floor
-        a = g + s * 0.9
-        k.box(math.cos(a) * (R + 0.06), math.sin(a) * (R + 0.06), 0.0, 0.1, 0.1, z0 + 0.4, "gm", top="steelL")
-    k.box(math.cos(g + 0.9) * (R + 0.06), math.sin(g + 0.9) * (R + 0.06), z0 + 0.32, 0.16, 0.16, 0.06, "brass")
-    for a in (0.0, math.pi / 2 + 0.4):                                                # hazard stripe plates
-        k.box(math.cos(a) * (R + 0.01), math.sin(a) * (R + 0.01), z0 + 0.5, 0.06, 0.3, 0.16, "hazY", rz=a)
+    level = {"empty": 0.08, "partial": 0.5, "full": 0.94}[fill]
+    k.box(ca * (gr + 0.03), sa * (gr + 0.03), z0 + 0.26, 0.07, 0.07, gh, "glassD", rz=g)   # the sight glass
+    k.box(ca * (gr + 0.035), sa * (gr + 0.035), z0 + 0.26, 0.07, 0.072, gh * level, "cyan", rz=g)   # fluid column
+    for t in range(5):                                                                # tick marks beside the glass
+        k.box(ca * (gr + 0.02) - sa * 0.08, sa * (gr + 0.02) + ca * 0.08, z0 + 0.26 + gh * t / 4, 0.05, 0.03, 0.025,
+              "steelL", rz=g)
+    for j in range(3):                                                                # fill lights: 1 / 2 / 3 lit
+        lit = j < {"empty": 1, "partial": 2, "full": 3}[fill]
+        col = ("red" if fill == "empty" else "orange" if fill == "partial" else "green") if lit else "dark"
+        k.box(ca * (gr + 0.04) + sa * 0.1, sa * (gr + 0.04) - ca * 0.1, z0 + H - 0.32 - j * 0.12, 0.09, 0.04, 0.09,
+              col, rz=g)
+    a = g + 1.1                                                                       # outlet line and valve wheel
+    ou, ov = math.cos(a) * (R + 0.08), math.sin(a) * (R + 0.08)
+    k.box(ou, ov, 0.1, 0.1, 0.1, z0 + 0.3, "gm", top="steelL")
+    k.box(ou, ov, z0 + 0.24, 0.16, 0.16, 0.08, "steelL")
+    k.cyl(ou, ov, z0 + 0.32, 0.12, 0.04, "brass", sides=10)
     return k.build()
 
 
