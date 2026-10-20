@@ -50,10 +50,11 @@ def frame(axis):
     return a, e2.cross(a), e2
 
 
-def limb(P, head, tail, step=0.045, lo_pad=0.0, hi_pad=0.0, round_=False):
+def limb(P, head, tail, step=0.045, lo_pad=0.0, hi_pad=0.0, round_=False, axis=False):
     """Sections of one limb part: [(centre, e1, e2, r1, r2)] from head to tail. The centre line is fitted straight and
     the radii as a smooth taper (a quadratic over the length), so the old muscle bulges go; round_: circular sections
-    (the radius is the mean of the two), so a roll of the bone in a clip does not show."""
+    (the radius is the mean of the two), so a roll of the bone in a clip does not show; axis: the centre on the bone line
+    itself, so consecutive parts meet at the joint (a traced centre drifts with the muscle and steps at the elbow)."""
     a, e1, e2 = frame(Vector(tail) - Vector(head))
     h = np.array(head)
     t = (P - h) @ np.array(a)
@@ -75,7 +76,7 @@ def limb(P, head, tail, step=0.045, lo_pad=0.0, hi_pad=0.0, round_=False):
         rows.append(prev)
     R = np.array(rows)
     ts = R[:, 0]
-    cu, cw = (np.polyval(np.polyfit(ts, R[:, k], 1), ts) for k in (1, 2))
+    cu, cw = (np.polyval(np.polyfit(ts, R[:, k], 1), ts) * (0.0 if axis else 1.0) for k in (1, 2))
     deg = 1 if round_ or len(ts) <= 3 else 2                                 # arms: a straight taper (no deltoid bulge)
     r1, r2 = (np.polyval(np.polyfit(ts, R[:, k], deg), ts) for k in (3, 4))
     if round_:
@@ -111,6 +112,19 @@ def stack(by, bones, z0, z1, step=0.04):
     return [(Vector((0.0, float(y), float(z))), float(a), float(b), r[5]) for z, y, a, b, r in zip(zs, cy, hx, hy, rows)]
 
 
+def wrist(secs, head):
+    """The hand's traced offset (the palm hangs below and in front of the bone) eased in from zero at the wrist, so it
+    carries on from the forearm without a step."""
+    n = len(secs)
+    out = []
+    for k, (c, e1, e2, r1, r2) in enumerate(secs):
+        a = (Vector(c) - Vector(head))
+        ax = (Vector(secs[-1][0]) - Vector(secs[0][0])).normalized()
+        on = Vector(head) + ax * a.dot(ax)
+        out.append((on.lerp(Vector(c), min(1.0, k / max(1, n // 2))), e1, e2, r1, r2))
+    return out
+
+
 def measure(arm, body):
     """Everything human_v2 builds on, from the base body mesh (`body`, still with its arms) and the rest bones."""
     by = verts_by_bone(body)
@@ -119,14 +133,15 @@ def measure(arm, body):
     t = {b.name: Vector(b.tail_local) for b in B}
     out = {"limb": {}}
     for s in "LR":
-        out["limb"][f"arm.{s}"] = limb(by[f"arm.{s}"], h[f"arm.{s}"], t[f"arm.{s}"], round_=True, lo_pad=-0.03)
-        out["limb"][f"forearm.{s}"] = limb(by[f"forearm.{s}"], h[f"forearm.{s}"], t[f"forearm.{s}"], round_=True)
-        out["limb"][f"hand.{s}"] = limb(by[f"hand.{s}"], h[f"hand.{s}"], t[f"hand.{s}"], step=0.03)
+        out["limb"][f"arm.{s}"] = limb(by[f"arm.{s}"], h[f"arm.{s}"], t[f"arm.{s}"], round_=True, lo_pad=-0.03, axis=True)
+        out["limb"][f"forearm.{s}"] = limb(by[f"forearm.{s}"], h[f"forearm.{s}"], t[f"forearm.{s}"], round_=True, axis=True)
+        out["limb"][f"hand.{s}"] = wrist(limb(by[f"hand.{s}"], h[f"hand.{s}"], t[f"hand.{s}"], step=0.03), h[f"hand.{s}"])
         out["limb"][f"leg.{s}"] = limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"])
         out["limb"][f"shin.{s}"] = limb(by[f"shin.{s}"], h[f"shin.{s}"], t[f"shin.{s}"])
         out["limb"][f"foot.{s}"] = limb(by[f"foot.{s}"], h[f"foot.{s}"], t[f"toe.{s}"], step=0.035)
     hz = max(b[:, 2].max() for k, b in by.items() if k == "head")
     tz = by["hips"][:, 2].min()
     out["torso"] = stack(by, TORSO, tz, h["neck_01"].z + 0.02)
-    out["head"] = stack(by, HEAD, h["neck_01"].z - 0.02, hz - 0.01, step=0.03)
+    # the head alone (the neck is a tube): a slice through both the jaw and the neck turns the chin into a cone
+    out["head"] = stack(by, ("head",), by["head"][:, 2].min() + 0.01, hz - 0.01, step=0.03)
     return out
