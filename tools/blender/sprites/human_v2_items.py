@@ -95,13 +95,17 @@ def cargo_pants(A, R):
     return Item("legs", "cargo_pants", [b.mesh("v2.cargo_pants", A, col)], default=True)
 
 
+HAIR_GROW, HAIR_FRONT, HAIR_SIDE = 0.01, 0.07, 0.02      # a close cap; hairline height at the front and the sides
+
+
 def _hair_cap(b, R, back=-0.15):
+    grow, front, side = HAIR_GROW, HAIR_FRONT, HAIR_SIDE
     c = R.head_c
 
     def keep(p):
         r = p - c
-        return r.z > 0.045 or (r.y > 0.02 and r.z > back) or (r.y > -0.04 and r.z > -0.03 and abs(r.x) > R.HX - 0.02)
-    head(b, R, grow=0.022, keep=keep)
+        return r.z > front or (r.y > 0.02 and r.z > back) or (r.y > -0.04 and r.z > side and abs(r.x) > R.HX - 0.02)
+    head(b, R, grow=grow, keep=keep)
 
 
 def hair_short(A, R):

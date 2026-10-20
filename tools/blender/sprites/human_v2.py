@@ -321,11 +321,24 @@ def leg(b, R, side, grow=0.0, foot=True, boot=0.0):
         b.sweep(transport([(c, e1, e2, r1, r2, W(f"foot.{s}")) for c, e1, e2, r1, r2 in secs]), grow=grow + boot, exp=3.0)
 
 
+HEAD_EXP = 3.6                        # squarer sections (2: round)
+HEAD_TOP = 0.35                       # how much of the traced cranium's rounding off is taken out (a flatter top)
+HEAD_JAW = 0.4                        # likewise for the narrowing to the chin (a squarer jaw)
+HEAD_CROWN = 0.7
+
+
 def head(b, R, grow=0.0, keep=None):
-    rings = [(c, hx + grow, hy + grow, w) for c, hx, hy, w in R.T["head"]]
+    exp, k_top, k_jaw, crown = HEAD_EXP, HEAD_TOP, HEAD_JAW, HEAD_CROWN
+    T = R.T["head"]
+    km = max(range(len(T)), key=lambda i: T[i][1])                          # the widest section
+    mx, my = T[km][1], max(r[2] for r in T)
+    rings = []
+    for i, (c, hx, hy, w) in enumerate(T):
+        k = k_top if i > km else k_jaw
+        rings.append((c, hx + (mx - hx) * k + grow, hy + (my - hy) * k * (i > km) + grow, w))
     top = rings[-1]
-    rings.append((top[0] + Vector((0, 0, 0.012 + grow)), top[1] * 0.55, top[2] * 0.55, top[3]))   # rounded crown
-    b.loft(rings, exp=2.8, keep=keep)
+    rings.append((top[0] + Vector((0, 0, 0.012 + grow)), top[1] * crown, top[2] * crown, top[3]))   # rounded crown
+    b.loft(rings, exp=exp, keep=keep)
 
 
 def flat(colour):

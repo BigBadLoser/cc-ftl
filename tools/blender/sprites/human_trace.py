@@ -15,6 +15,7 @@ HEAD = ("neck_01", "head")
 LIMBS = ("arm", "forearm", "hand", "leg", "shin", "foot")
 UPPER_K = (1.12, 1.45, 1.12)          # upper arm thickness against the traced arm: shoulder, bicep, elbow
 FORE_K = (1.08, 1.02, 0.95)           # forearm: elbow, a third down, wrist
+HEAD_W, HEAD_H = 0.84, 1.14           # head width and height against the traced head
 
 
 def fold(name):
@@ -176,6 +177,12 @@ def to_joint(secs, head):
     return [(Vector(c) - a * (d * k / n), e1, e2, r1, r2) for k in range(n, 0, -1)] + list(secs)
 
 
+def oval(rows):
+    """The traced head made narrower (HEAD_W) and taller (HEAD_H, up from the chin): an oval from the front, not a ball."""
+    z0 = rows[0][0].z
+    return [(Vector((c.x, c.y, z0 + (c.z - z0) * HEAD_H)), hx * HEAD_W, hy, wt) for c, hx, hy, wt in rows]
+
+
 def wrist(secs, head):
     """The hand's traced offset (the palm hangs below and in front of the bone) eased in from zero at the wrist, so it
     carries on from the forearm without a step."""
@@ -211,5 +218,5 @@ def measure(arm, body):
     out["torso"] = tidy_torso(stack(by, TORSO, tz, h["neck_01"].z, step=0.025), h, out["limb"]["arm.L"][-2][3],
                               abs(lg[0].x) + lg[3])
     # the head alone (the neck is a tube): a slice through both the jaw and the neck turns the chin into a cone
-    out["head"] = stack(by, ("head",), by["head"][:, 2].min() + 0.01, hz - 0.01, step=0.03)
+    out["head"] = oval(stack(by, ("head",), by["head"][:, 2].min() + 0.01, hz - 0.01, step=0.03))
     return out
