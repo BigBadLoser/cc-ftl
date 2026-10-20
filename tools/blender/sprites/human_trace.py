@@ -13,8 +13,8 @@ FOLD = {"index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand", "thu
 TORSO = ("hips", "spine", "spine_02", "spine_03", "clavicle.L", "clavicle.R")
 HEAD = ("neck_01", "head")
 LIMBS = ("arm", "forearm", "hand", "leg", "shin", "foot")
-UPPER_K = (1.12, 1.45, 1.12)          # upper arm thickness against the traced arm: shoulder, bicep, elbow
-FORE_K = (1.08, 1.02, 0.95)           # forearm: elbow, a third down, wrist
+UPPER_K = (1.12, 1.45, 0.95)          # upper arm thickness against the traced arm: shoulder, bicep, elbow (pinched)
+FORE_K = (0.95, 1.32, 0.8)            # forearm: elbow, the muscle a third down, a narrow wrist
 
 
 def fold(name):
