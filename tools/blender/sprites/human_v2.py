@@ -101,20 +101,21 @@ class Build:
             self.f[f0:] = [f for f in self.f[f0:] if keep(sum((self.v[i] for i in f), Vector()) / len(f))]
 
     def sweep(self, rings, grow=0.0, exp=2.4, keep=None, round_ends=True):
-        """Sections [(centre, e1, e2, r1, r2, weights)] joined in order, grown by `grow`, ends closed (rounded: an extra
-        smaller ring just past each end). keep(face centre) -> bool trims faces."""
+        """Sections [(centre, e1, e2, r1, r2, weights)] joined in order, grown by `grow`, ends closed (rounded: a dome of
+        smaller rings past each end). keep(face centre) -> bool trims faces."""
         f0 = len(self.f)
-        ids = []
-        if round_ends:
-            c, e1, e2, r1, r2, wt = rings[0]
-            ax = (rings[0][0] - rings[1][0]).normalized()
-            ids.append(self.ring(c + ax * (0.6 * min(r1, r2)), e1, e2, (r1 + grow) * 0.6, (r2 + grow) * 0.6, wt, exp=exp))
+        dome = (35, 65) if round_ends else ()                               # a domed end: rings round a quarter circle
+
+        def end(row, other):
+            c, e1, e2, r1, r2, wt = row
+            ax = (c - other).normalized()
+            d = 0.8 * (min(r1, r2) + grow)
+            return [self.ring(c + ax * (d * math.sin(math.radians(a))), e1, e2, (r1 + grow) * math.cos(math.radians(a)),
+                              (r2 + grow) * math.cos(math.radians(a)), wt, exp=exp) for a in dome]
+        ids = end(rings[0], rings[1][0])[::-1]
         for c, e1, e2, r1, r2, wt in rings:
             ids.append(self.ring(c, e1, e2, r1 + grow, r2 + grow, wt, exp=exp))
-        if round_ends:
-            c, e1, e2, r1, r2, wt = rings[-1]
-            ax = (rings[-1][0] - rings[-2][0]).normalized()
-            ids.append(self.ring(c + ax * (0.6 * min(r1, r2)), e1, e2, (r1 + grow) * 0.6, (r2 + grow) * 0.6, wt, exp=exp))
+        ids += end(rings[-1], rings[-2][0])
         for r0, r1_ in zip(ids, ids[1:]):
             self.bridge(r0, r1_)
         self.cap(ids[0], self.point(sum((self.v[i] for i in ids[0]), Vector()) / len(ids[0]), rings[0][5]), flip=True)
