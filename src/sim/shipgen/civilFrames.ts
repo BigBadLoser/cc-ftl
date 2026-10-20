@@ -27,7 +27,7 @@ export interface FrameOpts {
   lane: number;
   /** Open columns of spine between neighbouring containers. */
   gap: number;
-  /** Container length along the spine and depth across it (3 or 5 each). */
+  /** The usual container on this frame, short (door) end along the spine by length out from it: 2 x 3 or 3 x 5. */
   cw: number;
   ch: number;
   /** Container bands: 1 or 2 spines, each with a row of containers on both faces. */
@@ -55,14 +55,30 @@ const stampContainer = (b: Builder, x: number, y: number, w: number, h: number, 
 export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
   const b = localBuilder(rng);
   const bands = Math.max(1, Math.min(2, o.bands ?? 1));
-  const Lc = o.cw >= 5 ? 5 : 3;
-  const D = o.ch >= 5 ? 5 : 3;
+  // Containers clamp by their short (door) end: 2 or 3 along the spine, 3 or 5 out from it.
+  const base: Box = o.cw === 2 ? [2, 3] : [3, 5];
+  const other: Box = base[0] === 2 ? [3, 5] : [2, 3];
   const T = o.crawl || o.lane > 0 ? 3 : 1;
-  const k = Math.max(2 * bands, Math.min(24, Math.ceil(crates / ((Lc * D) / 4))));
+  const k = Math.max(2 * bands, Math.min(24, Math.ceil(crates / ((base[0] * base[1]) / 4))));
   const perRow = Math.ceil(k / (2 * bands));
-  const step = Lc + o.gap;
-  const sh = o.stagger ? Math.ceil(step / 2) : 0;
-  const L = 1 + perRow * step - o.gap + sh + 2;
+  // Long rows mix in the other size and leave the odd slot empty, so a spine never reads as one repeated box.
+  const mix = Math.min(0.45, 0.12 + 0.04 * perRow);
+  const missing = Math.max(o.missing ?? 0, perRow >= 5 ? 0.1 : 0);
+  const sh = o.stagger ? Math.ceil((base[0] + o.gap) / 2) : 0;
+  const rows: { x: number; box: Box }[][] = [];
+  let L = 0;
+  for (let r = 0; r < 2 * bands; r++) {
+    const row: { x: number; box: Box }[] = [];
+    let x = 1 + (r % 2 === 1 ? sh : 0);
+    for (let i = 0; i < perRow; i++) {
+      const box = rng.chance(mix) ? other : base;
+      if (!(i > 0 && rng.chance(missing))) row.push({ x, box });
+      x += box[0] + o.gap;
+    }
+    rows.push(row);
+    L = Math.max(L, x - o.gap + 2);
+  }
+  const D = 5;
   const pitch = 2 * D + T + 1;
   const H = bands * pitch - 1;
   const oy = -Math.round(H / 2);
@@ -77,19 +93,14 @@ export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
     else {
       truss(b, 0, y, L - 1, 1, `chordN${band}`);
       truss(b, 0, y + 2, L - 1, 1, `chordS${band}`);
-      for (let x = 0; x < L - 1; x += step) truss(b, x, y + 1, 1, 1, `tie${band}.${x}`);
+      for (let x = 0; x < L - 1; x += 4) truss(b, x, y + 1, 1, 1, `tie${band}.${x}`);
       truss(b, L - 2, y + 1, 1, 1, `tie${band}.end`);
     }
     let n = 0;
-    for (const [row, off] of [[0, 0], [1, sh]] as const) {
-      for (let i = 0; i < perRow; i++) {
-        if (i > 0 && rng.chance(o.missing ?? 0)) continue;
-        // Now and then a shallower box among deep ones: still flush against the spine.
-        const d = D === 5 && rng.chance(0.25) ? 3 : D;
-        const x = 1 + off + i * step;
-        const top = row === 0;
-        stampContainer(b, x, top ? y - d : y + T, Lc, d, `box${band}.${row}.${i}`);
-        n++;
+    for (const top of [true, false]) {
+      for (const { x, box } of rows[2 * band + (top ? 0 : 1)] ?? []) {
+        const [w, d] = box;
+        if (stampContainer(b, x, top ? y - d : y + T, w, d, `box${band}.${top ? 0 : 1}.${x}`)) n++;
       }
     }
     if (n === 0) truss(b, 1, y - 1, 1, 1, 'stub');
@@ -101,6 +112,9 @@ export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
   if (o.crawl) ports.push({ id: 'w', side: 'w', x: 0, y: spineY(0) + 1, len: 1, access: 'human' });
   return bareBlock(b, 'cargo', `container frame ${bands} ${o.crawl ? 'crawl' : T === 1 ? 'beam' : 'truss'}`, ports);
 }
+
+/** A container footprint as laid on a horizontal spine: [along the spine (the short, door end), out from it]. */
+type Box = [number, number];
 
 /**
  * Ore cage: a row of ore holds hung under a crawlway rail, truss struts between them hanging below like teeth. Ports:

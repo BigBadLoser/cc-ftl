@@ -40,10 +40,10 @@ export function createContainerBodyView(world: World, atlas: Atlas, defs: Readon
         const b = world.get(id, BodyC);
         const def = c && defs[c.def];
         if (!c || !b || !def || c.state !== 'drifting') continue;
-        const { chain, key } = containerChain(def, c.rot, c.hp);
+        const { chain, key } = containerChain(def, c.rot, c.hp, c.clamp);
         const [w, h] = rotatedSize(def, c.rot);
         // PLACEHOLDER: the drawn box (no clamp: it is loose) until the container sheets land.
-        const art = resolveArt(atlas, chain, key) ?? { s: containerBox(w, h, boxState(c.hp, def.maxHp), ''), tint: 0xffffff, perTile: false };
+        const art = resolveArt(atlas, chain, key) ?? { s: containerBox(w, h, boxState(c.hp, def.maxHp), c.clamp, false), tint: 0xffffff, perTile: false };
         seen.add(id);
         const sig = `${c.def}|${c.rot}|${key}|${art.s.tex.uid}`;
         let v = views.get(id);

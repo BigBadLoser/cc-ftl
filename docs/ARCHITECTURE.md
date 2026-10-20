@@ -209,9 +209,14 @@ palette.json    the single palette, read by Blender scripts and the game
 - **Cargo containers (no sheet yet; placeholder boxes drawn by `src/render/containerBox.ts`):** sealed container modules
   (`ModuleDef.container`, `src/sim/containers`) stand on Beam tiles clamped to a freighter frame. Ids the renderer asks
   for, most specific first (`moduleArt.containerChain`), anchored at the footprint's front tile like any module:
-  - `container.<W>x<H>.r<N>[.damaged|.destroyed]`, then `container.<W>x<H>.r<N>`, `container.<W>x<H>[.damaged|.destroyed]`,
-    `container.<W>x<H>`. Sizes today: `3x3`, `3x5` (also drawn turned, r1 = 5 along x), `5x5`. A non-square size without
-    its `.r1` sprite is mirrored. `.damaged` under half hp, `.destroyed` at 0.
+  - A container's cargo doors are on one short end, and that end always faces the frame it is clamped to (the clamp
+    side; shipgen validation enforces it). The door end is part of the id: `container.<W>x<H>.r<N>.<n|e|s|w>`, with
+    the doors drawn on that end (on r0 spines today: `.n` hangs below a spine, `.s` stands on one).
+  - `container.<W>x<H>.r<N>.<end>[.damaged|.destroyed]`, then `container.<W>x<H>.r<N>.<end>`,
+    `container.<W>x<H>.r<N>[.damaged|.destroyed]`, then `container.<W>x<H>.r<N>`, `container.<W>x<H>[.damaged|.destroyed]`,
+    `container.<W>x<H>`. Sizes: `container.2x3` and `container.3x5`. On today's spines (along x) they stand at r0, the
+    short end on the spine; r1 is for a spine running along y. `.damaged` under half hp, `.destroyed` at 0. Ruins also name
+    `.patched` (a scrapper box welded shut, `RuinContainer.patched`) in their meta; the renderer shows it as `.damaged`.
   - `container.clamp.<n|e|s|w>`, then `container.clamp`: the clamp gripping the frame, one sprite at the middle tile of
     the clamped side (a separate layer so one clamp sprite serves every size).
   - A detached container (a free body, `render/containerBodyView.ts`) uses the same shell ids, no clamp, at the body's

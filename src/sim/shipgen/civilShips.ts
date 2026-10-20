@@ -120,8 +120,13 @@ function crewBody(c: Ctx): { root: number; aft: number } | null {
 
 
 /** Container frame options drawn per ship: grid shape, rail count, stacking. */
-const frameOpts = (c: Ctx, lane: number): Parameters<typeof containerFrame>[2] => ({
-  lane, gap: c.rng.int(0, 2), cw: c.rng.pick([3, 5]), ch: c.rng.pick([3, 5, 5]), bands: c.rng.chance(0.4) ? 2 : 1, stagger: c.rng.chance(0.3),
+const frameOpts = (c: Ctx, lane: number): Parameters<typeof containerFrame>[2] => {
+  // The usual container: its short (door) end on the spine, 3x5 mostly, 2x3 now and then (the other size mixes in).
+  const [cw, ch] = c.rng.pick([[3, 5], [3, 5], [2, 3]] as const);
+  return frameOptsOf(c, lane, cw, ch);
+};
+const frameOptsOf = (c: Ctx, lane: number, cw: number, ch: number): Parameters<typeof containerFrame>[2] => ({
+  lane, gap: c.rng.int(0, 2), cw, ch, bands: c.rng.chance(0.4) ? 2 : 1, stagger: c.rng.chance(0.3),
   missing: c.rng.pick([0, 0.08, 0.15]),
 });
 
@@ -173,7 +178,7 @@ function tug(c: Ctx, crates: number): boolean {
   if (root === null) return no(c, 'tug');
   if (!stern(c, root)) return false;
   const t = frameJoin(c, root, trussBridge(c.rng, c.rng.int(10, 16), 2), 'w');
-  const o = { ...frameOpts(c, c.rng.int(0, 2)), bands: 2, cw: 5, crawl: true };
+  const o = { ...frameOptsOf(c, c.rng.int(0, 2), 3, 5), bands: 2, crawl: true };
   const barge = t === null ? null : frameJoin(c, t, containerFrame(c.rng, crates * 5, o), 'w');
   if (barge === null) return no(c, 'barge');
   if (crew.length > 0) {

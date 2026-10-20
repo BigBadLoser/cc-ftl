@@ -68,7 +68,7 @@ export function drawRuin(r: Raster, before: string[], res: RuinResult, ox: numbe
     const l = label(tm.def);
     if (l.length * 4 <= ww - 2) r.text(l, px + 3, py + 3, c);
   }
-  // Containers: sealed orange, breached rust with a red frame, destroyed dark with a cross; torn ones drift outside the
+  // Containers: sealed orange (grey patch plate and frame: patched), breached rust with a red frame, destroyed dark with a cross; torn ones drift outside the
   // hull (cyan frame, a tick along their drift).
   for (const k of meta.containers) {
     const def = defs[k.def];
@@ -79,6 +79,7 @@ export function drawRuin(r: Raster, before: string[], res: RuinResult, ox: numbe
     const tm = k.index !== undefined ? t.modules?.[k.index] : undefined;
     drawContainer(r, px, py, w, h, s, (tm as { clamp?: string } | undefined)?.clamp ?? 'none', k.stock.length > 0, tint);
     if (k.fate === 'breached') r.frame(px, py, w * s, h * s, [255, 60, 50], 2);
+    if (k.patched) { r.rect(px + 3, py + 3, s, s, [150, 156, 166]); r.frame(px + 1, py + 1, w * s - 2, h * s - 2, [150, 156, 166], 1); }
     if (k.fate === 'destroyed') for (let q = 2; q < Math.min(w, h) * s - 2; q++) { r.rect(px + q, py + q, 1, 1, [240, 60, 60]); r.rect(px + w * s - 1 - q, py + q, 1, 1, [240, 60, 60]); }
     if (k.fate === 'torn') {
       r.frame(px, py, w * s, h * s, [60, 230, 255], 1);

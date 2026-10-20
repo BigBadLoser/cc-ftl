@@ -4,6 +4,7 @@ import { ContainerC } from '../../sim/containers/components';
 import { applyRuin } from '../../sim/combat/derelict';
 import { applyEffects } from '../../sim/combat/effects';
 import { ruin } from '../../sim/shipgen/ruin';
+import { rotatedSize } from '../../sim/modules/footprint';
 import { Struct } from '../../sim/structure';
 import { content } from '../index';
 import { factions } from './index';
@@ -32,7 +33,8 @@ describe('cargo containers', () => {
         for (const t of footprintTiles(defs[m.def] as ModuleDef, m.x, m.y, m.rot)) expect(g.template.rows[t.y]?.[t.x]).toBe('=');
       }
       expect(ks.some((m) => m.stock?.length)).toBe(true);
-      // No container rooms: cargo rooms left are the crew body's own stores, not 3x3 pods.
+      // Only the two container sizes, and no walk-in pods: cargo rooms left are the crew body's own stores.
+      expect(ks.every((m) => m.def === 'container.2x3' || m.def === 'container.3x5')).toBe(true);
       expect(g.rooms.filter((r) => r.role === 'cargo').length).toBeLessThan(ks.length);
     }
   });
@@ -66,8 +68,16 @@ describe('cargo containers', () => {
     }
     const b0 = { ...sim.world.get(id, BodyC)! };
     for (let i = 0; i < 60; i++) sim.step();
-    const b1 = sim.world.get(id, BodyC)!;
+    const b1 = { ...sim.world.get(id, BodyC)! };
     expect(Math.hypot(b1.x - b0.x, b1.y - b0.y)).toBeGreaterThan(0.05);
+    // Damped: it comes to rest a few tiles out and stays (loot in the node).
+    for (let i = 0; i < 60 * 120; i++) sim.step();
+    const box = sim.world.get(id, ContainerC)!;
+    expect(box.vx === 0 && box.vy === 0).toBe(true);
+    const rest = { ...sim.world.get(id, BodyC)! };
+    expect(Math.hypot(rest.x - b0.x, rest.y - b0.y)).toBeLessThan(8);
+    for (let i = 0; i < 60; i++) sim.step();
+    expect(sim.world.get(id, BodyC)!.x).toBe(rest.x);
     // A second detach is refused.
     sim.events.drain();
     sim.enqueue({ type: 'container.detach', id });
@@ -106,15 +116,43 @@ describe('cargo containers', () => {
       applyRuin(sim, ship, r.template, r.meta);
       const bodies = sim.world.query(ContainerC, BodyC).filter((i) => sim.world.get(i, ContainerC)!.state === 'drifting');
       expect(bodies.length).toBe(ks.filter((k) => k.fate === 'torn').length);
+      // Torn-off boxes never overlap each other.
+      const tornK = ks.filter((k) => k.fate === 'torn');
+      const rect = (k: (typeof tornK)[number]) => { const [w, h] = rotatedSize(defs[k.def] as ModuleDef, k.rot); return { x0: k.x - w / 2, x1: k.x + w / 2, y0: k.y - h / 2, y1: k.y + h / 2 }; };
+      for (const [i, a] of tornK.entries()) for (const b of tornK.slice(i + 1)) {
+        const p = rect(a), q = rect(b);
+        expect(p.x1 <= q.x0 || q.x1 <= p.x0 || p.y1 <= q.y0 || q.y1 <= p.y0, `seed ${seed} torn overlap`).toBe(true);
+      }
       const s = sim.world.get(ship, ShipC)!;
       for (const b of bodies.map((i) => sim.world.get(i, BodyC)!)) {
-        expect(b.x).toBeGreaterThan(s.x - 20);
-        expect(b.x).toBeLessThan(s.x + s.width + 20);
-        expect(b.y).toBeGreaterThan(s.y - 20);
-        expect(b.y).toBeLessThan(s.y + s.height + 20);
+        expect(b.x).toBeGreaterThan(s.x - 32);
+        expect(b.x).toBeLessThan(s.x + s.width + 32);
+        expect(b.y).toBeGreaterThan(s.y - 32);
+        expect(b.y).toBeLessThan(s.y + s.height + 32);
       }
     }
     expect(torn).toBeGreaterThan(0);
     expect(clamped).toBeGreaterThan(0);
+  });
+
+  it('scrapper pod strings are sealed containers on a walkable tube, scrappier in ruins', () => {
+    const scrap = factions['faction.scrapper'] as FactionDef;
+    let found = 0;
+    let rough = 0;
+    let all = 0;
+    for (const seed of [2, 3, 14, 18]) {
+      const g = generateShip(scrap, 'faction.scrapper', seed, 2, defs);
+      expect(g.problems, `seed ${seed}`).toEqual([]);
+      const ks = boxes(g.template);
+      if (ks.length === 0) continue;
+      found++;
+      for (const m of ks) for (const t of footprintTiles(defs[m.def] as ModuleDef, m.x, m.y, m.rot)) expect(g.template.rows[t.y]?.[t.x]).toBe('=');
+      for (const k of ruin(g.template, seed, { defs, intensity: 0.5, cause: 'combat', origin: 'faction.scrapper' }).meta.containers) {
+        all++;
+        if (k.fate !== 'sealed' || k.patched) rough++;
+      }
+    }
+    expect(found).toBeGreaterThan(0);
+    expect(rough / Math.max(1, all)).toBeGreaterThan(0.4);
   });
 });

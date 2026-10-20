@@ -109,6 +109,8 @@ export interface RuinContainer {
   def: string;
   rot: number;
   fate: 'sealed' | 'breached' | 'destroyed' | 'torn';
+  /** Its door end, the short end that was clamped to the frame. */
+  clamp: 'n' | 'e' | 's' | 'w';
   /** Index into the ruined template's `modules` (clamped fates only). */
   index?: number;
   x: number;
@@ -118,6 +120,8 @@ export interface RuinContainer {
   spin: number;
   /** Hit points as a fraction of max. */
   hp: number;
+  /** Sealed, but only just: welded patch plates over old holes (scrapper boxes; art `.patched`, falls back to `.damaged`). */
+  patched?: boolean;
   stock: { item: string; count: number }[];
 }
 

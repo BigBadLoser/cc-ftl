@@ -13,10 +13,10 @@ export interface ContainerKind {
 }
 
 export const CONTAINER_CHARS: Readonly<Record<string, ContainerKind>> = {
-  '%': { def: 'container.3x3', rot: 0, w: 3, h: 3 },
+  '%': { def: 'container.2x3', rot: 0, w: 2, h: 3 },
+  '^': { def: 'container.2x3', rot: 1, w: 3, h: 2 },
   '&': { def: 'container.3x5', rot: 0, w: 3, h: 5 },
   '+': { def: 'container.3x5', rot: 1, w: 5, h: 3 },
-  '*': { def: 'container.5x5', rot: 0, w: 5, h: 5 },
 };
 
 export const isContainerCell = (c: string | undefined): boolean => c !== undefined && c in CONTAINER_CHARS;
@@ -37,8 +37,8 @@ export interface PlacedContainer {
 
 /**
  * Find every container in finished rows and turn its cells into beams. Containers of one char are equal rectangles, so
- * the first unclaimed cell in row-major order is always a container's top-left. The clamp is the side touching the most
- * frame cells, beams or a crawl tube's wall (ties: n, s, w, e).
+ * the first unclaimed cell in row-major order is always a container's top-left. The clamp is the short end (where the cargo
+ * doors are) touching the most frame cells, beams or a crawl tube's wall (ties: n before s, w before e).
  */
 export function extractContainers(rows: string[]): { rows: string[]; containers: PlacedContainer[] } {
   const cells = rows.map((r) => [...r]);
@@ -51,12 +51,19 @@ export function extractContainers(rows: string[]): { rows: string[]; containers:
       const ch = at(x, y);
       const k = CONTAINER_CHARS[ch];
       if (!k || claimed.has(y * W + x)) continue;
+      // A box cut short (a salvage cut through it) is not a container any more: its remains are frame wreckage.
+      let whole = true;
+      for (let j = 0; j < k.h && whole; j++) for (let i = 0; i < k.w && whole; i++) whole = at(x + i, y + j) === ch && !claimed.has((y + j) * W + x + i);
+      if (!whole) { claimed.add(y * W + x); continue; }
       for (let j = 0; j < k.h; j++) for (let i = 0; i < k.w; i++) claimed.add((y + j) * W + x + i);
       // Frame cells: beams, or a crawl tube's wall; never space or another container.
       const count = (pts: [number, number][]): number => pts.filter(([a, b]) => at(a, b) !== '.' && !isContainerCell(at(a, b))).length;
-      const sides: [PlacedContainer['clamp'], number][] = [
+      // Only a short end can clamp: the cargo doors are there, facing the frame.
+      const across = k.w < k.h;
+      const sides: [PlacedContainer['clamp'], number][] = across ? [
         ['n', count(Array.from({ length: k.w }, (_, i) => [x + i, y - 1]))],
         ['s', count(Array.from({ length: k.w }, (_, i) => [x + i, y + k.h]))],
+      ] : [
         ['w', count(Array.from({ length: k.h }, (_, j) => [x - 1, y + j]))],
         ['e', count(Array.from({ length: k.h }, (_, j) => [x + k.w, y + j]))],
       ];

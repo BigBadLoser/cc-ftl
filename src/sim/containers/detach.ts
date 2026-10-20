@@ -12,6 +12,10 @@ import { ContainerC, type ClampSide } from './components';
 /** Drift speed range of a freshly detached container, tiles per second, and its largest spin (rad/s). */
 export const DETACH_SPEED: readonly [number, number] = [0.15, 0.35];
 export const DETACH_SPIN = 0.15;
+/** Drift damping time constant (seconds): a container loses about two thirds of its speed every this long. */
+export const DRIFT_DAMP_SEC = 12;
+/** Below this speed (tiles/s, or rad/s for spin) a drifting container is at rest. */
+export const DRIFT_STOP = 0.004;
 
 /** Tag a freshly spawned container module (spawnModule calls it for `container` defs). */
 export function initContainer(sim: Sim, id: number, clamp: ClampSide = 'n'): void {
@@ -64,12 +68,12 @@ export function detachContainer(sim: Sim, id: number): boolean {
  * drift and stock. Returns its entity id.
  */
 export function spawnDriftingContainer(
-  sim: Sim, o: { def: string; rot: number; x: number; y: number; vx: number; vy: number; spin: number; hp: number; ship: number; stock: { item: string; count: number }[] },
+  sim: Sim, o: { def: string; rot: number; clamp?: ClampSide; x: number; y: number; vx: number; vy: number; spin: number; hp: number; ship: number; stock: { item: string; count: number }[] },
 ): number {
   const def = sim.content.modules[o.def];
   if (!def?.container) throw new Error(`spawnDriftingContainer: "${o.def}" is not a container`);
   const id = sim.world.createEntity();
-  sim.world.add(id, ContainerC, { def: o.def, rot: o.rot, clamp: 'n', state: 'drifting', hp: Math.round(def.maxHp * o.hp), ship: o.ship, vx: o.vx, vy: o.vy, spin: o.spin });
+  sim.world.add(id, ContainerC, { def: o.def, rot: o.rot, clamp: o.clamp ?? 'n', state: 'drifting', hp: Math.round(def.maxHp * o.hp), ship: o.ship, vx: o.vx, vy: o.vy, spin: o.spin });
   sim.world.add(id, BodyC, { x: o.x, y: o.y, heading: 0, alt: ALT.docked });
   sim.world.add(id, StorageC, { capacity: def.storage?.capacity ?? 0, filter: null, stacks: o.stock.map((q) => ({ ...q })) });
   return id;

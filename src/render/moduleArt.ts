@@ -51,11 +51,15 @@ export function moduleAssets(world: World, id: number, m: Module, def: ModuleDef
   return [`${def.asset}${rot}${state}`, `${def.asset}${rot}`, `${def.asset}${state}`, def.asset];
 }
 
-/** Art ids of a container shell, most specific first, and its stand-in key: damaged under half hp, destroyed at 0. */
-export function containerChain(def: ModuleDef, rot: number, hp: number): { chain: string[]; key: string } {
+/**
+ * Art ids of a container shell, most specific first, and its stand-in key: damaged under half hp, destroyed at 0. The
+ * door end (the clamped short end, `n e s w`) picks the sprite: `container.<W>x<H>.r<N>.<end>[.state]` first.
+ */
+export function containerChain(def: ModuleDef, rot: number, hp: number, end = 'n'): { chain: string[]; key: string } {
   const a = def.asset;
   const state = hp <= 0 ? '.destroyed' : hp < def.maxHp / 2 ? '.damaged' : '';
-  return { chain: [`${a}.r${rot}${state}`, `${a}.r${rot}`, `${a}${state}`, a], key: `${a}${state}` };
+  const r = `.r${rot}`;
+  return { chain: [`${a}${r}.${end}${state}`, `${a}${r}.${end}`, `${a}${r}${state}`, `${a}${r}`, `${a}${state}`, a], key: `${a}${state}` };
 }
 
 /** The footprint tile in the middle of a container's clamped side (where the clamp mark sits). */
@@ -119,7 +123,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
   if (def.container) {
     // The shell (`container.<W>x<H>[.rN][.damaged|.destroyed]`) and the clamp gripping it on the frame side.
     const box = world.get(id, ContainerC);
-    const shell = containerChain(def, m.rot, m.hp);
+    const shell = containerChain(def, m.rot, m.hp, box?.clamp ?? 'n');
     const at = clampTile(def, m, box?.clamp ?? 'n');
     return [{ ...shell, tiles: 'all' }, { chain: [`container.clamp.${box?.clamp ?? 'n'}`, 'container.clamp'], key: 'container.clamp', tiles: 'all', at, dz: 0.04 }];
   }

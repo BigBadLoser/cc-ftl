@@ -57,7 +57,7 @@ export function applyRuin(sim: Sim, shipId: number, template: ShipTemplate, meta
   // Torn-off containers drift near the wreck as free bodies with what stock they kept.
   for (const k of meta.containers ?? []) {
     if (k.fate !== 'torn' || !sim.content.modules[k.def]?.container) continue;
-    spawnDriftingContainer(sim, { def: k.def, rot: k.rot, x: ox + k.x, y: oy + k.y, vx: k.vx, vy: k.vy, spin: k.spin, hp: k.hp, ship: shipId, stock: k.stock });
+    spawnDriftingContainer(sim, { def: k.def, rot: k.rot, clamp: k.clamp, x: ox + k.x, y: oy + k.y, vx: k.vx, vy: k.vy, spin: k.spin, hp: k.hp, ship: shipId, stock: k.stock });
   }
   const ship = sim.world.get(shipId, ShipC);
   if (ship) {

@@ -229,7 +229,7 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
     return rooms.length >= 2 ? station(c.rng, rooms) : null;
   }) },
   barge: { serves: ['crates'], build: civil('mining', 'ore barge', 0.4, (c, p, t) => barge(c.rng, takeCrates(p, t, 6))) },
-  podString: { serves: ['crates'], build: civil('civil', 'cargo pods', 0.2, (c, p, t) => podString(c.rng, takeCrates(p, t, 4))) },
+  podString: { serves: ['crates'], build: civil('civil', 'cargo pods', 0.2, (c, p, t) => podString(c.rng, takeCrates(p, t, 4), true)) },
   tug: { serves: ['drive'], build: civil('mining', 'tug', 0, (c, p, t) => {
     t.engines = Math.min(1, p.engines);
     t.reactors = Math.max(1, Math.min(2, p.reactors));

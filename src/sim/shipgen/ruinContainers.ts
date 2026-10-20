@@ -1,5 +1,5 @@
 import { rotatedSize } from '../modules/footprint';
-import { modTiles, put } from './ruinGrid';
+import { at, modTiles, put } from './ruinGrid';
 import type { RuinContainer, RuinCtx } from './ruinTypes';
 
 /**
@@ -34,11 +34,18 @@ export function tearOff(c: RuinCtx, i: number): void {
   const x0 = m.x + w / 2, y0 = m.y + h / 2;
   // Pushed off along the line from the wreck's centre, a few tiles clear of where it hung, still drifting slowly.
   const a = Math.atan2(y0 - c.height / 2, x0 - c.width / 2) + (c.rng.next() - 0.5) * 0.9;
-  const off = 2 + Math.max(w, h) / 2 + c.rng.next() * 5;
   const speed = 0.03 + c.rng.next() * 0.08;
   for (const t of modTiles(c, i)) put(c, t.x, t.y, '.');
+  // Out along the line until it is clear of the wreck and of every container torn off before it (a tile apart).
+  let off = 2 + Math.max(w, h) / 2 + c.rng.next() * 4;
+  let x = x0 + Math.cos(a) * off, y = y0 + Math.sin(a) * off;
+  for (let n = 0; n < 40 && !clear(c, x, y, w, h); n++) {
+    off += 1;
+    x = x0 + Math.cos(a) * off;
+    y = y0 + Math.sin(a) * off;
+  }
   c.meta.containers.push({
-    def: m.def, rot: m.rot, fate: 'torn', x: round2(x0 + Math.cos(a) * off), y: round2(y0 + Math.sin(a) * off),
+    def: m.def, rot: m.rot, clamp: m.clamp ?? 'n', fate: 'torn', x: round2(x), y: round2(y),
     vx: round2(Math.cos(a) * speed), vy: round2(Math.sin(a) * speed), spin: round2((c.rng.next() - 0.5) * 0.2),
     hp: round2(0.3 + c.rng.next() * 0.6),
     // Torn loose, the shell mostly held: some stock lost through the ripped clamp side.
@@ -47,14 +54,22 @@ export function tearOff(c: RuinCtx, i: number): void {
 }
 
 export function stockStage(c: RuinCtx): void {
+  // Scrapper boxes were second-hand to begin with: breached more often, and the sealed ones are often patch jobs.
+  const scrap = c.origin.includes('scrapper');
   for (const r of c.meta.modules) {
     const m = c.modules[r.index];
     if (!m || !c.defs[m.def]?.container) continue;
     let fate: RuinContainer['fate'] = 'sealed';
     if (r.state === 'destroyed') fate = 'destroyed';
-    else if (r.state === 'damaged' && c.rng.chance(0.6)) fate = 'breached';
+    else if (r.state === 'damaged' && c.rng.chance(scrap ? 0.85 : 0.6)) fate = 'breached';
+    else if (scrap && r.state === 'intact' && c.rng.chance(0.3)) fate = 'breached';
+    const patched = scrap && fate === 'sealed' && c.rng.chance(0.4);
+    if (patched) { r.hp = Math.min(r.hp, 0.45); r.state = 'damaged'; r.salvage = 'repair'; r.art = `${c.defs[m.def]?.asset ?? m.def}.patched`; }
     if (fate === 'destroyed') delete m.stock;
     else if (fate === 'breached') {
+      // A holed shell reads as damaged (under half hp) whatever the systems roll gave it.
+      r.hp = Math.min(r.hp, 0.45);
+      if (r.state === 'intact') { r.state = 'damaged'; r.salvage = 'repair'; }
       const left = (m.stock ?? []).map((s) => ({ item: s.item, count: Math.floor(s.count * c.rng.next() * 0.5) })).filter((s) => s.count > 0);
       if (left.length > 0) m.stock = left; else delete m.stock;
       r.art = `${c.defs[m.def]?.asset ?? m.def}.damaged`;
@@ -62,10 +77,21 @@ export function stockStage(c: RuinCtx): void {
     if (fate === 'destroyed') r.art = `${c.defs[m.def]?.asset ?? m.def}.destroyed`;
     const [w, h] = rotatedSize(c.defs[m.def] as NonNullable<(typeof c.defs)[string]>, m.rot);
     c.meta.containers.push({
-      def: m.def, rot: m.rot, fate, index: r.index, x: m.x + w / 2, y: m.y + h / 2, vx: 0, vy: 0, spin: 0, hp: r.hp,
+      def: m.def, rot: m.rot, clamp: m.clamp ?? 'n', fate, index: r.index, x: m.x + w / 2, y: m.y + h / 2, vx: 0, vy: 0, spin: 0, hp: r.hp, ...(patched ? { patched } : {}),
       stock: (m.stock ?? []).map((s) => ({ ...s })),
     });
   }
 }
 
 const round2 = (v: number): number => Math.round(v * 100) / 100;
+
+/** True if a box `w` x `h` centred on (x, y), plus a tile all round, touches no structure and no other torn container. */
+function clear(c: RuinCtx, x: number, y: number, w: number, h: number): boolean {
+  const x0 = x - w / 2 - 1, x1 = x + w / 2 + 1, y0 = y - h / 2 - 1, y1 = y + h / 2 + 1;
+  for (let ty = Math.floor(y0); ty < Math.ceil(y1); ty++) for (let tx = Math.floor(x0); tx < Math.ceil(x1); tx++) if (at(c, tx, ty) !== '.') return false;
+  return c.meta.containers.every((k) => {
+    if (k.fate !== 'torn') return true;
+    const [kw, kh] = rotatedSize(c.defs[k.def] as NonNullable<(typeof c.defs)[string]>, k.rot);
+    return x1 <= k.x - kw / 2 || x0 >= k.x + kw / 2 || y1 <= k.y - kh / 2 || y0 >= k.y + kh / 2;
+  });
+}
