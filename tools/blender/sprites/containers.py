@@ -1,6 +1,6 @@
 """Cargo containers (family `containers`): sealed exterior shells, no interior, clamped by a short end to a truss spine
 and detachable, so every side is finished. modkit local frame (u across the width, v along the length, z up), turned
-and anchored at the front-most footprint tile like every module. H high, hung centred on the truss's mid height
+and anchored at the front-most footprint tile like every module. HEIGHT per size, hung centred on the truss's mid height
 (ZC): half the box is below the beam line, in open space.
 
 Shell: a reinforced corner frame (posts, rails, corner castings), corrugated long sides with a smooth livery band, a
@@ -21,7 +21,8 @@ import random
 from . import damage
 from .modkit import K
 
-H, M = 2.0, 0.06                          # height; gap to the footprint edge (neighbours stay apart)
+H, M = 2.0, 0.06                          # height (per size, set by _size); gap to the footprint edge
+HEIGHT = {"2x3": 2.0, "3x5": 3.0}
 ZC = 0.34                                 # the truss's mid height (struct: chords 0.1 .. 0.58): containers hang
 Z_OFF = ZC - H / 2                        # centred on it, half below the beam line in open space
 FR, FRD, CAST = "gm", "gmD", "dark"       # frame, its darker face, corner castings
@@ -30,6 +31,13 @@ BAND = ("sole", "steelD")                 # the neutral default under the livery
 SIZES = {"2x3": (2, 3), "3x5": (3, 5)}
 ENDS = {0: ("s", "n"), 1: ("e", "w")}     # per rotation: doors toward the camera, doors away
 BAND_Z = (0.42 * H, 0.62 * H)
+
+
+def _size(size):
+    """Set the height and what follows from it for one size (the builders read these module values)."""
+    global H, Z_OFF, BAND_Z
+    H = HEIGHT[size]
+    Z_OFF, BAND_Z = ZC - H / 2, (0.42 * H, 0.62 * H)
 
 
 def _door_sign(rot, end):
@@ -151,6 +159,7 @@ def _patches(k, u0, v0, rnd):
 
 
 def shell(size, rot, end, variant=0, state=""):
+    _size(size)
     W, L = SIZES[size]
     k = K(f"container_{size}_{rot}_{end}_{variant}_{state}", (W, L), rot)
     u0, v0 = W / 2 - M, L / 2 - M
@@ -181,6 +190,7 @@ def _hang(objs):
 def livery(size, rot, end):
     """The mask: the bands in key colours, the shell itself a holdout (it hides the bands' far side, draws nothing)."""
     objs = shell(size, rot, end)
+    _size(size)
     for o in objs:
         o.is_holdout = True
     W, L = SIZES[size]
