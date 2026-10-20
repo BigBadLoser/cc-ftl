@@ -7,18 +7,18 @@ import type { ItemQty } from './registry';
 export type Command =
   | { type: 'noop' }
   | { type: 'debug.spawnMarker'; x: number; y: number }
-  | { type: 'debug.setStruct'; gridId: number; x: number; y: number; kind: number }
-  | { type: 'job.build'; gridId: number; x: number; y: number; struct: number }
-  | { type: 'job.deconstruct'; gridId: number; x: number; y: number }
-  | { type: 'job.cancel'; gridId: number; x: number; y: number }
+  | { type: 'debug.setStruct'; ship: number; x: number; y: number; kind: number }
+  | { type: 'job.build'; ship: number; x: number; y: number; struct: number }
+  | { type: 'job.deconstruct'; ship: number; x: number; y: number }
+  | { type: 'job.cancel'; ship: number; x: number; y: number }
   /** Blueprint a module; (x, y) is the top-left of the rotated footprint, rot = quarter turns clockwise. */
-  | { type: 'job.buildModule'; gridId: number; x: number; y: number; def: string; rot: number }
+  | { type: 'job.buildModule'; ship: number; x: number; y: number; def: string; rot: number }
   /** Deconstruct the module covering tile (x, y). */
-  | { type: 'job.deconstructModule'; gridId: number; x: number; y: number }
+  | { type: 'job.deconstructModule'; ship: number; x: number; y: number }
   | { type: 'module.setPriority'; id: number; priority: number }
   | { type: 'module.setEnabled'; id: number; enabled: boolean }
-  | { type: 'debug.ignite'; gridId: number; x: number; y: number }
-  | { type: 'debug.setField'; gridId: number; x: number; y: number; field: string; value: number }
+  | { type: 'debug.ignite'; ship: number; x: number; y: number }
+  | { type: 'debug.setField'; ship: number; x: number; y: number; field: string; value: number }
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }
@@ -30,8 +30,8 @@ export type Command =
   | { type: 'crew.equip'; id: number; item: string }
   /** Drop the wielded weapon at the crew member's feet. */
   | { type: 'crew.unequip'; id: number }
-  /** Walk a drafted crew member to a tile, on another grid if `gridId` is given and portals lead there. */
-  | { type: 'crew.moveTo'; id: number; x: number; y: number; gridId?: number }
+  /** Walk a drafted crew member to a tile, on another grid if `ship` is given and portals lead there. */
+  | { type: 'crew.moveTo'; id: number; x: number; y: number; ship?: number }
   /** Link two tiles through a portal. `cost`/`ticks` default by kind; ends on an airlock's outer door attach to that airlock. */
   | {
       type: 'portal.link'; kind: PortalKind; a: { gridId: number; x: number; y: number }; b: { gridId: number; x: number; y: number };
@@ -82,16 +82,16 @@ export type Command =
    * RNG) and spawn it centred on sector tile (cx, cy), clamped into the sector. The origin is stored on the ship.
    */
   | { type: 'debug.spawnGenerated'; faction: string; depth: number; seed?: number; cx: number; cy: number }
-  /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetGridId 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetGridId 0) aims at a shuttle in flight or docked. */
-  | { type: 'combat.setTarget'; shipGridId: number; weaponId: number | null; targetGridId: number; targetModuleId: number; targetVehicle?: number }
+  /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetShip 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetShip 0) aims at a shuttle in flight or docked. */
+  | { type: 'combat.setTarget'; ship: number; weaponId: number | null; targetShip: number; targetModuleId: number; targetVehicle?: number }
   /** Hold fire: weapons charge but only fire on combat.fireVolley. */
-  | { type: 'combat.setHold'; gridId: number; hold: boolean }
+  | { type: 'combat.setHold'; ship: number; hold: boolean }
   /** Fire every charged weapon of the ship now. */
-  | { type: 'combat.fireVolley'; gridId: number }
+  | { type: 'combat.fireVolley'; ship: number }
   /** Jump away with a fully charged FTL drive. */
-  | { type: 'combat.flee'; gridId: number }
+  | { type: 'combat.flee'; ship: number }
   /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
-  | { type: 'ship.scuttle'; gridId: number }
+  | { type: 'ship.scuttle'; ship: number }
   /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */
   | { type: 'crew.hack'; id: number; module: number }
   /** Queue assembly of a robot of `role` (a role with `assemble`) in a free robot bay; the bay becomes its home. */
@@ -99,13 +99,13 @@ export type Command =
   /** Cancel the assembly running in a robot bay (delivered materials drop to the floor). */
   | { type: 'module.cancelAssembly'; moduleId: number }
   /** Spawn one crew member of `role` (robot variants included) on a walkable tile; faction defaults to the grid's ship. */
-  | { type: 'debug.spawnCrew'; gridId: number; x: number; y: number; role: string; faction?: Faction }
+  | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction }
   /** Place a finished module without a build job (the debug panel); rejected when placement is invalid. */
-  | { type: 'debug.spawnModule'; gridId: number; x: number; y: number; def: string; rot: number }
+  | { type: 'debug.spawnModule'; ship: number; x: number; y: number; def: string; rot: number }
   /** Set the battery (0..100) of every battery robot (the debug panel). */
   | { type: 'debug.setCharge'; value: number }
-  /** Take the ship on `gridId` as a prize at once, its crew surrendering (the debug panel). */
-  | { type: 'debug.capture'; gridId: number }
+  /** Take the ship `ship` as a prize at once, its crew surrendering (the debug panel). */
+  | { type: 'debug.capture'; ship: number }
   /** Event system: pick an option of the open decision. Rejected when none is open or its requirements are unmet. */
   | { type: 'story.choose'; choice: string }
   /** Debug: start an event by id, ignoring its triggers and eligibility. */
@@ -135,7 +135,7 @@ export type Command =
   | { type: 'debug.spawnStation'; profile: string; name?: string }
   /** Set the player's credits. */
   | { type: 'debug.setCredits'; value: number }
-  | { type: 'debug.spawnItems'; gridId: number; x: number; y: number; item: string; count: number };
+  | { type: 'debug.spawnItems'; ship: number; x: number; y: number; item: string; count: number };
 
 /** A command tagged with the tick at whose start it applies. */
 export interface QueuedCommand {

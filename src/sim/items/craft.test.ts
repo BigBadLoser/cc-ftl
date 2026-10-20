@@ -5,9 +5,19 @@ import { spawnModule } from '../modules/spawn';
 import type { ContentRegistry, ModuleDef } from '../registry';
 import { gridFromTemplate } from '../ship';
 import { Sim } from '../sim';
+import { ShipC } from '../combat/components';
+import { shipEntityOf } from '../combat/ships';
 import { ItemStackC, ProductionC } from './components';
 import { storageAdd, storageCount } from './storage';
 import { totalStock } from './stock';
+
+/** A fixture grid has no ship; commands address ships, so give it an inert one (a prize is skipped by every ship system). */
+function fixtureShip(sim: Sim, gridId: number): void {
+  const g = sim.grids.get(gridId)!;
+  sim.world.add(sim.world.createEntity(), ShipC, {
+    gridId, name: 'fixture', faction: 'player', state: 'prize', x: g.x0, y: g.y0, width: g.width, height: g.height, hullMax: 0, integrity: 1,
+  });
+}
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -38,6 +48,7 @@ const all = (v: number): Priorities => ({
 function setup(scrap: number): { sim: Sim; fab: number; store: number; out: number } {
   const sim = new Sim(5, content);
   sim.grids.set(1, gridFromTemplate(1, { name: 't', rows }));
+  fixtureShip(sim, 1);
   spawnModule(sim, 1, 'reactor', 12, 4, 0);
   const fab = spawnModule(sim, 1, 'fab', 3, 1, 0);
   const store = spawnModule(sim, 1, 'storage', 9, 1, 0);
@@ -134,11 +145,11 @@ describe('production.edit', () => {
 describe('fire and items', () => {
   it('a flammable stack on a burning tile burns away, a non-flammable one does not', () => {
     const { sim } = setup(0);
-    sim.enqueue({ type: 'debug.spawnItems', gridId: 1, x: 6, y: 4, item: 'poly', count: 30 });
-    sim.enqueue({ type: 'debug.spawnItems', gridId: 1, x: 7, y: 4, item: 'scrap', count: 30 });
+    sim.enqueue({ type: 'debug.spawnItems', ship: shipEntityOf(sim, 1), x: 6, y: 4, item: 'poly', count: 30 });
+    sim.enqueue({ type: 'debug.spawnItems', ship: shipEntityOf(sim, 1), x: 7, y: 4, item: 'scrap', count: 30 });
     run(sim, 1);
-    sim.enqueue({ type: 'debug.setField', gridId: 1, x: 6, y: 4, field: 'fire', value: 255 });
-    sim.enqueue({ type: 'debug.setField', gridId: 1, x: 7, y: 4, field: 'fire', value: 255 });
+    sim.enqueue({ type: 'debug.setField', ship: shipEntityOf(sim, 1), x: 6, y: 4, field: 'fire', value: 255 });
+    sim.enqueue({ type: 'debug.setField', ship: shipEntityOf(sim, 1), x: 7, y: 4, field: 'fire', value: 255 });
     run(sim, 40);
     expect(totalStock(sim, 'poly')).toBeLessThan(30);
     expect(totalStock(sim, 'scrap')).toBe(30);

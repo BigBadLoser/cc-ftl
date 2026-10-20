@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CrewC, DeadC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, StorageC, deserialize, newGame, placementError, serialize,
-  spawnModule, removeModule, findPath, stat, storageAdd, storageCount, type Sim, type SimEvent,
+  spawnModule, removeModule, findPath, stat, storageAdd, storageCount, type Sim, type SimEvent, shipEntityOf
 } from '../../sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { content } from '../index';
@@ -50,7 +50,7 @@ function bays(sim: Sim, n = 1): number[] {
 }
 function spawnRobot(sim: Sim, role = 'role.robot_worker'): number {
   const p = sim.world.get(crewOn(sim, 1)[0]!, PositionC)!;
-  sim.enqueue({ type: 'debug.spawnCrew', gridId: 1, x: p.x, y: p.y, role });
+  sim.enqueue({ type: 'debug.spawnCrew', ship: shipEntityOf(sim, 1), x: p.x, y: p.y, role });
   run(sim, 1);
   return Math.max(...sim.world.query(CrewC));
 }
@@ -154,7 +154,7 @@ describe('robot assembly', () => {
     const out = run(sim, 4000, () => sim.world.query(CrewC).some((c) => roleOf(sim, c) === 'role.robot_worker'));
     const made = sim.world.query(CrewC).find((c) => roleOf(sim, c) === 'role.robot_worker')!;
     expect(made).toBeDefined();
-    expect(of(out, 'robot.assembled')).toEqual([{ type: 'robot.assembled', crew: made, bay, gridId: 1 }]);
+    expect(of(out, 'robot.assembled')).toEqual([{ type: 'robot.assembled', crew: made, bay, ship: shipEntityOf(sim, 1) }]);
     expect(sim.world.get(bay!, ModuleC)!.reservedBy).toBe(made);
     expect(before.parts - stock(sim, 'item.parts')).toBe(6);
     expect(before.metal - stock(sim, 'item.metal')).toBe(10);

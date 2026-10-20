@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CrewC, DownedC, EatC, HealthC, ModuleC, MoodC, NeedsC, StorageC, TICK_HZ, deserialize, newGame, serialize, stat, totalStock,
-  type Sim, type SimEvent,
+  type Sim, type SimEvent, shipEntityOf
 } from '../../sim';
 import { MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT } from '../../sim/tuning';
 import { content } from '../index';
@@ -177,7 +177,7 @@ describe('mood', () => {
 describe('robots and determinism', () => {
   it('robots neither get hungry nor have moods', () => {
     const sim = newGame(3, content);
-    sim.enqueue({ type: 'debug.spawnCrew', gridId: 1, x: P0.x + 9, y: P0.y + 9, role: 'role.robot_worker' });
+    sim.enqueue({ type: 'debug.spawnCrew', ship: shipEntityOf(sim, 1), x: P0.x + 9, y: P0.y + 9, role: 'role.robot_worker' });
     run(sim, 30 * TICK_HZ);
     const robot = sim.world.query(CrewC).find((id) => sim.world.get(id, CrewC)?.species === 'species.robot') as number;
     expect(robot).toBeDefined();

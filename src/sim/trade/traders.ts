@@ -94,8 +94,7 @@ function aimingAtPlayer(sim: Sim, id: number): boolean {
   const t = c?.target;
   if (!t) return false;
   if (t.vehicle) return false;
-  const target = [...sim.world.query(ShipC)].map((s) => sim.world.get(s, ShipC)).find((s) => s?.gridId === t.gridId);
-  return target?.faction === 'player';
+  return sim.world.get(t.ship, ShipC)?.faction === 'player';
 }
 
 /**

@@ -8,7 +8,7 @@ import { Container, Graphics, Text } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
 import { PositionC } from '../sim/crew/components';
-import type { Ship } from '../sim/combat/components';
+import { ShipC, type Ship } from '../sim/combat/components';
 import { Z_PX } from './heights';
 import { iso, type Pt } from './iso';
 
@@ -46,6 +46,7 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
     const p = iso(gx, gy);
     return { x: p.x, y: p.y - z * Z_PX };
   };
+  const gridOf = (ship: number): number => world.get(ship, ShipC)?.gridId ?? 0;
   const crewAt = (id: number, z: number): Pt | null => {
     const p = world.get(id, PositionC);
     return p ? at(gridIdAtTile(world, p.x, p.y), p.x + (p.toX - p.x) * p.progress, p.y + (p.toY - p.y) * p.progress, z) : null;
@@ -62,8 +63,8 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
     onEvents(events) {
       for (const e of events) {
         if (e.type === 'crew.attacked') {
-          const a = at(e.gridId, e.x, e.y, MUZZLE_Z);
-          const b = at(e.gridId, e.tx, e.ty, BODY_Z);
+          const a = at(gridOf(e.ship), e.x, e.y, MUZZLE_Z);
+          const b = at(gridOf(e.ship), e.tx, e.ty, BODY_Z);
           if (!a || !b) continue;
           tracers.push({ a, b, age: 0, ranged: e.ranged });
           flashes.push({ x: e.ranged ? a.x : b.x, y: e.ranged ? a.y : b.y, age: 0, life: 0.2, color: 0xfff1a8, r: e.ranged ? 6 : 8 });

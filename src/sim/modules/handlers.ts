@@ -1,4 +1,5 @@
 import type { Command } from '../commands';
+import { gridOfShip } from '../combat/ships';
 import { JobC } from '../crew/components';
 import { findJobAt } from '../crew/helpers';
 import type { Sim } from '../sim';
@@ -18,9 +19,9 @@ function reject(sim: Sim, command: string, reason: string): void {
 
 export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
   'job.buildModule': (sim, cmd) => {
-    const err = placementError(sim, cmd.gridId, cmd.def, cmd.x, cmd.y, cmd.rot);
+    const err = placementError(sim, gridOfShip(sim, cmd.ship), cmd.def, cmd.x, cmd.y, cmd.rot);
     if (err) return reject(sim, cmd.type, err);
-    if (findJobAt(sim, cmd.gridId, cmd.x, cmd.y)) return reject(sim, cmd.type, 'jobExists');
+    if (findJobAt(sim, gridOfShip(sim, cmd.ship), cmd.x, cmd.y)) return reject(sim, cmd.type, 'jobExists');
     const def = sim.content.modules[cmd.def];
     const needs = needsFrom(def?.cost);
     const id = sim.world.createEntity();
@@ -31,7 +32,7 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     });
   },
   'job.deconstructModule': (sim, cmd) => {
-    const grid = sim.grids.get(cmd.gridId);
+    const grid = sim.grids.get(gridOfShip(sim, cmd.ship));
     if (!grid?.has('module')) return reject(sim, cmd.type, 'badGrid');
     if (!grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
     const target = grid.get('module', cmd.x, cmd.y);
@@ -54,9 +55,9 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     m.priority = cmd.priority;
   },
   'debug.spawnModule': (sim, cmd) => {
-    const err = placementError(sim, cmd.gridId, cmd.def, cmd.x, cmd.y, cmd.rot);
+    const err = placementError(sim, gridOfShip(sim, cmd.ship), cmd.def, cmd.x, cmd.y, cmd.rot);
     if (err) return reject(sim, cmd.type, err);
-    spawnModule(sim, cmd.gridId, cmd.def, cmd.x, cmd.y, cmd.rot);
+    spawnModule(sim, gridOfShip(sim, cmd.ship), cmd.def, cmd.x, cmd.y, cmd.rot);
   },
   'module.setEnabled': (sim, cmd) => {
     const m = sim.world.get(cmd.id, ModuleC);

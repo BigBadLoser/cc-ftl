@@ -1,5 +1,5 @@
-import { gridIdOf } from '../sim/regions';
-import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
+import { shipIdOf } from '../sim/regions';
+import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, gridOfShip, roomTiles, shipEntityOf, type Grid, type Sim, type SimEvent } from '../sim';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createStore, type Readable } from './store';
 
@@ -35,7 +35,9 @@ export function createAlerts(sim: Sim): Alerts {
     }
     return { x: sx / tiles.length, y: sy / tiles.length };
   };
-  const shipName = (gridId: number) => [...sim.world.query(ShipC)].map((id) => sim.world.get(id, ShipC)).find((s) => s?.gridId === gridId);
+  /** The player's ship (home grid 1), as a ShipC entity id. */
+  const home = () => shipEntityOf(sim, 1);
+  const shipName = (ship: number) => sim.world.get(ship, ShipC);
   const reactorAt = () => {
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
@@ -48,10 +50,9 @@ export function createAlerts(sim: Sim): Alerts {
   const playerSuit = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
   /** Hostile ships and their crew raise no alerts of their own. */
   const foreign = (e: SimEvent): boolean => {
-    if (e.type === 'fire.started' || e.type === 'hull.breach' || e.type === 'power.shortage' || e.type === 'o2.low') return e.gridId !== 1;
+    if (e.type === 'fire.started' || e.type === 'hull.breach' || e.type === 'power.shortage' || e.type === 'o2.low') return e.ship !== home();
     if (e.type === 'crew.downed' || e.type === 'crew.died' || e.type === 'crew.rescued') {
-      const g = gridIdOf(sim, sim.world.get(e.crew, PositionC));
-      return g !== undefined && g !== 1;
+      return shipIdOf(sim, sim.world.get(e.crew, PositionC)) !== home();
     }
     return false;
   };
@@ -66,9 +67,9 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: lead ? 'story.lead' : 'story.notice', key: `ev${e.event}`, text: def.text, at: null, notice: { id: e.notice, lead, title: def.title } };
       }
       case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire!', at: { x: e.x, y: e.y } };
-      case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', at: roomCentre(sim.grids.get(e.gridId), e.room) };
+      case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', at: roomCentre(sim.grids.get(gridOfShip(sim, e.ship)), e.room) };
       case 'power.shortage': return { kind: e.type, key: 'p', text: `Power shortage (${Math.round(e.supply)}/${Math.round(e.demand)})`, at: reactorAt() };
-      case 'o2.low': return { kind: e.type, key: `o${e.room}`, text: 'Low oxygen', at: roomCentre(sim.grids.get(e.gridId), e.room) };
+      case 'o2.low': return { kind: e.type, key: `o${e.room}`, text: 'Low oxygen', at: roomCentre(sim.grids.get(gridOfShip(sim, e.ship)), e.room) };
       case 'crew.downed': return { kind: e.type, key: `d${e.crew}`, text: `${crewName(e.crew)} is down`, at: crewAt(e.crew) };
       case 'crew.died': return { kind: e.type, key: `x${e.crew}`, text: `${crewName(e.crew)} died`, at: crewAt(e.crew) };
       case 'suit.airLow': return playerSuit(e.crew) ? { kind: e.type, key: `sa${e.crew}`, text: `${crewName(e.crew)}: suit air low`, at: crewAt(e.crew) } : null;
@@ -84,15 +85,15 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: e.type, key: `pd${e.module}`, text: `${sim.content.recipes[e.recipe]?.name ?? 'Batch'} done`, at: { x: e.x, y: e.y } };
       case 'combat.started': return { kind: e.type, key: 'cs', text: 'Hostile ship in range: combat!', at: null };
       case 'module.destroyed': {
-        const s = shipName(e.gridId);
+        const s = shipName(e.ship);
         if (s?.faction !== 'player') return null;
         return { kind: e.type, key: `md${e.moduleId}`, text: `${sim.content.modules[e.def]?.name ?? 'Module'} destroyed`, at: null };
       }
       case 'ship.destroyed': {
-        const s = shipName(e.gridId);
+        const s = shipName(e.ship);
         return s?.faction === 'player'
           ? { kind: 'ship.lost', key: 'sl', text: 'Your ship is destroyed', at: null }
-          : { kind: e.type, key: `sd${e.gridId}`, text: `${s?.name ?? 'Ship'} destroyed`, at: null };
+          : { kind: e.type, key: `sd${e.ship}`, text: `${s?.name ?? 'Ship'} destroyed`, at: null };
       }
       case 'trade.hailAnswered': return { kind: 'trade', key: `th${e.ship}`, text: `${e.name} answers your hail`, at: null };
       case 'trade.hailRefused': return { kind: 'trade', key: `th${e.ship}`, text: `${e.name} will not talk to you`, at: null };
@@ -100,7 +101,7 @@ export function createAlerts(sim: Sim): Alerts {
       case 'trade.delivered': return { kind: 'trade', key: `td${e.deal}`, text: e.to === 'player' ? `Cargo from ${traderName(e.ship)} has arrived` : `Cargo delivered to ${traderName(e.ship)}`, at: null };
       case 'trade.settled': return { kind: 'trade', key: `td${e.deal}`, text: `Deal settled${e.credits ? `: ${e.credits > 0 ? '-' : '+'}${Math.abs(e.credits)} credits` : ''}`, at: null };
       case 'trade.failed': return { kind: 'trade', key: `td${e.deal}`, text: `Deal with ${traderName(e.ship)} called off`, at: null };
-      case 'ship.fled': return { kind: e.type, key: `sf${e.gridId}`, text: `${shipName(e.gridId)?.name ?? 'Ship'} jumped away`, at: null };
+      case 'ship.fled': return { kind: e.type, key: `sf${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Ship'} jumped away`, at: null };
       default: return null;
     }
   }

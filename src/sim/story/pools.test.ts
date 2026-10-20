@@ -7,6 +7,7 @@ import type { SimEvent } from '../events';
 import { createCrew } from '../crew/spawn';
 import type { ContentRegistry, ModuleDef } from '../registry';
 import { Sim } from '../sim';
+import { shipEntityOf } from '../combat/ships';
 import { storageAdd } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { StorageC } from '../items/components';
@@ -122,7 +123,7 @@ describe('triggers over time', () => {
     expect(sim.sector.inCombat).toBe(true);
     run(sim, 60 * TICK_HZ);
     expect(sim.story.active).toBeNull();
-    sim.enqueue({ type: 'debug.capture', gridId: foe });
+    sim.enqueue({ type: 'debug.capture', ship: shipEntityOf(sim, foe) });
     run(sim, 2);
     expect(sim.sector.inCombat).toBe(false);
     run(sim, 2);

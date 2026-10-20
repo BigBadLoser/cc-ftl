@@ -4,7 +4,7 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { WRECK_BELOW } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Ship } from './components';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipOfGrid } from '../regions';
 
 /** Make a ship a derelict wreck (terminal): its crew dies, weapons and shields go dead, the grid stays. */
 export function wreckShip(sim: Sim, ship: Ship): void {
@@ -27,5 +27,5 @@ export function wreckShip(sim: Sim, ship: Ship): void {
       c.evasion = 0;
     }
   }
-  sim.events.emit({ type: 'ship.destroyed', gridId: ship.gridId });
+  sim.events.emit({ type: 'ship.destroyed', ship: shipOfGrid(sim, ship.gridId) });
 }

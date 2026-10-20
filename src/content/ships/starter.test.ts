@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ModuleC, PLAYER_START, Struct, deserialize, newGame, serialize, type Sim } from '../../sim';
+import { CrewC, ModuleC, PLAYER_START, Struct, deserialize, newGame, serialize, type Sim, shipEntityOf } from '../../sim';
 import { content } from '../index';
 
 /** Sector tile of a starter-ship tile (the player ship is stamped at PLAYER_START). */
@@ -52,7 +52,7 @@ describe('starter ship', () => {
     const g = sim.grids.get(1)!;
     const quarters = ROOM_TILES(sim, g.get('room', at(10, 6).x, at(10, 6).y));
     const neighbour = ROOM_TILES(sim, g.get('room', at(19, 6).x, at(19, 6).y));
-    sim.enqueue({ type: 'debug.setStruct', gridId: 1, ...at(11, 1), kind: Struct.Floor }); // north hull, space beyond
+    sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), ...at(11, 1), kind: Struct.Floor }); // north hull, space beyond
     run(sim, 20 * 90);
     expect(meanO2(sim, quarters)).toBeLessThan(5);
     expect(meanO2(sim, neighbour)).toBeGreaterThan(18);
@@ -61,9 +61,9 @@ describe('starter ship', () => {
   it('is deterministic: same seed and commands give the same save', () => {
     const go = (): string => {
       const sim = newGame(42, content);
-      sim.enqueue({ type: 'debug.ignite', gridId: 1, ...at(10, 6) });
+      sim.enqueue({ type: 'debug.ignite', ship: shipEntityOf(sim, 1), ...at(10, 6) });
       run(sim, 400);
-      sim.enqueue({ type: 'debug.setStruct', gridId: 1, ...at(11, 1), kind: Struct.Floor });
+      sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), ...at(11, 1), kind: Struct.Floor });
       run(sim, 800);
       return serialize(sim);
     };
@@ -72,7 +72,7 @@ describe('starter ship', () => {
 
   it('round-trips a save taken mid-fire and keeps simulating identically', () => {
     const sim = newGame(7, content);
-    sim.enqueue({ type: 'debug.ignite', gridId: 1, ...at(10, 6) });
+    sim.enqueue({ type: 'debug.ignite', ship: shipEntityOf(sim, 1), ...at(10, 6) });
     run(sim, 160);
     const json = serialize(sim);
     const loaded = deserialize(json, content);
@@ -84,7 +84,7 @@ describe('starter ship', () => {
 
   it('steps 1000 ticks in well under two seconds', () => {
     const sim = newGame(1, content);
-    sim.enqueue({ type: 'debug.ignite', gridId: 1, ...at(10, 6) });
+    sim.enqueue({ type: 'debug.ignite', ship: shipEntityOf(sim, 1), ...at(10, 6) });
     const start = performance.now();
     run(sim, 1000);
     const ms = performance.now() - start;

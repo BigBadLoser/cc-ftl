@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, unitPrice, quote, hailVerdict, reputationWith, playerItems,
+  CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, unitPrice, quote, hailVerdict, reputationWith, playerItems, shipEntityOf,
   type Sim, type SimEvent,
 } from '../sim';
 import { content } from './index';
@@ -152,7 +152,7 @@ describe('hailing', () => {
     expect(hailVerdict(sim, ship)).toMatchObject({ answers: false, reason: 'hostile' });
     sim.story.reputation['traders'] = 0;
     expect(hailVerdict(sim, ship).answers).toBe(true);
-    sim.world.get(ship, CombatC)!.target = { gridId: 1, moduleId: 0 };
+    sim.world.get(ship, CombatC)!.target = { ship: shipEntityOf(sim, 1), moduleId: 0 };
     expect(hailVerdict(sim, ship)).toMatchObject({ answers: false, reason: 'weaponsHot' });
   });
 

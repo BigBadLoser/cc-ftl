@@ -47,11 +47,12 @@ export interface Ship {
 }
 export const ShipC = defineComponent<Ship>('ship');
 
-/** A weapon target: a ship grid and optionally one of its modules (0 = any module), or a vehicle. */
+/** A weapon target: a ship and optionally one of its modules (0 = any module), or a vehicle. */
 export interface Target {
-  gridId: number;
+  /** The target ship's `ShipC` entity id. */
+  ship: number;
   moduleId: number;
-  /** Set (with gridId 0, moduleId 0) when the target is a shuttle in flight or docked. */
+  /** Set (with ship 0, moduleId 0) when the target is a shuttle in flight or docked. */
   vehicle?: number;
 }
 
@@ -107,8 +108,8 @@ export const PointDefenseC = defineComponent<PointDefense>('pointDefense');
 export interface Projectile {
   /** WeaponDef id. */
   weapon: string;
-  /** Firing ship grid and weapon module. */
-  fromGridId: number;
+  /** Firing ship (`ShipC` entity id) and weapon module. */
+  fromShip: number;
   fromModuleId: number;
   target: Target;
   /** Launch and destination points. */

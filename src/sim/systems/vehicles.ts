@@ -7,7 +7,7 @@ import type { Sim } from '../sim';
 import { EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter, boardingTile, dockPoint } from '../vehicles/geometry';
 import { boardCrew, destPoint, occupants, undock, vehicleDefOf, vehicleLostWithBay, vehicleSpeedPerTick } from '../vehicles/lifecycle';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipIdOf } from '../regions';
 
 /**
  * Vehicles. (1) Crew with an embark order who stand on the vehicle's boarding tile climb in (hidden, off the grid).
@@ -82,11 +82,10 @@ function fly(sim: Sim, id: number, v: Vehicle, b: Body): void {
   b.y = to.y;
   v.dest = null;
   if (dest.type === 'dock') {
-    const gridId = gridIdOf(sim, sim.world.get(dest.airlock, ModuleC)) ?? 0;
     v.state = 'docked';
     v.dock = dest.airlock;
     b.alt = ALT.docked;
-    sim.events.emit({ type: 'vehicle.docked', vehicle: id, gridId, airlock: dest.airlock });
+    sim.events.emit({ type: 'vehicle.docked', vehicle: id, ship: shipIdOf(sim, sim.world.get(dest.airlock, ModuleC)), airlock: dest.airlock });
   } else if (dest.type === 'hover') {
     v.hover = dest.ship;
   } else {

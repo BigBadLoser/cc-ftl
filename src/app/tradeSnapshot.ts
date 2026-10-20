@@ -43,7 +43,7 @@ export function buildTrade(sim: Sim): UiTrade {
     }
     const offer = sim.trade.offers.find((o) => o.ship === id);
     partners.push({
-      id, gridId: ship?.gridId ?? 0, name: trader?.name ?? ship?.name ?? 'Station', kind: ship ? 'ship' : 'station',
+      id, name: trader?.name ?? ship?.name ?? 'Station', kind: ship ? 'ship' : 'station',
       role: profile ? (sim.content.trade?.traders[profile]?.name ?? '') : '', trades: profile !== null,
       hail: !hail ? 'none' : hail.answered && answered ? 'answered' : 'refused', reason: hail && !answered ? (hail.reason || 'hostile') : '',
       wallet: trader?.credits ?? 0, rep: trader ? reputationWith(sim, id) : 0, lines,

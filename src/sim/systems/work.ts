@@ -7,7 +7,7 @@ import { resumeAfter } from '../eva/errands';
 import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipIdOf } from '../regions';
 
 /**
  * Crew adjacent to their job's tile do one tick of work on it (what that means per job kind is in
@@ -41,7 +41,7 @@ export function workSystem(sim: Sim): void {
     if (performJob(sim, id, job, stat(sim, id, 'workSpeed')) !== 'done') continue;
     sim.world.remove(id, AssignmentC);
     destroyJob(sim, assignment.jobId);
-    sim.events.emit({ type: 'crew.jobDone', crew: id, kind: job.kind, gridId: gridIdOf(sim, job), x: job.x, y: job.y });
+    sim.events.emit({ type: 'crew.jobDone', crew: id, kind: job.kind, ship: shipIdOf(sim, job), x: job.x, y: job.y });
     crew.activity = 'idle';
     clearPath(sim, id);
     resumeAfter(sim, id, job); // a suit errand hands the crew member back to the job it interrupted

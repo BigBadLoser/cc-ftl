@@ -16,7 +16,7 @@ import { armorOf } from '../robots/core';
 import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipIdOf } from '../regions';
 
 /** Combat-ready crew with an allegiance, grouped by grid, each list in ascending id order. */
 export function combatReadyUnits(sim: Sim): Map<number, number[]> {
@@ -184,7 +184,7 @@ function attack(
   pos.facing = facingOf(tpos.x - pos.x, tpos.y - pos.y, pos.facing);
   sim.events.emit({
     type: 'crew.attacked', crew: id, target: targetId, weapon: weapon.item, ranged: weapon.def.kind === 'ranged',
-    gridId: gridIdOf(sim, pos), x: pos.x, y: pos.y, tx: tpos.x, ty: tpos.y,
+    ship: shipIdOf(sim, pos), x: pos.x, y: pos.y, tx: tpos.x, ty: tpos.y,
   });
   if (!sim.rng.chance(hitChance(sim, id, weapon.def, d, cover))) {
     sim.events.emit({ type: 'crew.miss', crew: id, target: targetId, cover });

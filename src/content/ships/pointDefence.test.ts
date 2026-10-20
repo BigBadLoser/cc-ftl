@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, PointDefenseC, newGame, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
+import { ModuleC, PointDefenseC, newGame, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent, shipEntityOf } from '../../sim';
 import { content } from '../index';
 import { gridIdOf } from '../../sim/regions';
 
@@ -38,7 +38,7 @@ function intercepts(template: ShipTemplate, seed = 1): { fired: number; hit: num
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.shoot', x: 100, y: 50 });
   sim.step();
   const target = [...sim.world.query(ModuleC)].find((i) => gridIdOf(sim, sim.world.get(i, ModuleC)) === 1)!;
-  sim.enqueue({ type: 'combat.setTarget', shipGridId: 2, weaponId: null, targetGridId: 1, targetModuleId: target });
+  sim.enqueue({ type: 'combat.setTarget', ship: shipEntityOf(sim, 2), weaponId: null, targetShip: shipEntityOf(sim, 1), targetModuleId: target });
   const events: SimEvent[] = [];
   for (let i = 0; i < 20 * 120; i++) { sim.step(); events.push(...sim.events.drain()); }
   return {

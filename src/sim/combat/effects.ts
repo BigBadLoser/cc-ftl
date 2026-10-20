@@ -88,7 +88,7 @@ function moduleDamage(sim: Sim, at: Impact, amount: number, radius: number): voi
     const m = sim.world.get(id, ModuleC);
     if (!m || m.hp <= 0) continue;
     m.hp = Math.max(0, m.hp - amount);
-    if (m.hp === 0) sim.events.emit({ type: 'module.destroyed', moduleId: id, def: m.def, gridId: at.gridId });
+    if (m.hp === 0) sim.events.emit({ type: 'module.destroyed', moduleId: id, def: m.def, ship: shipEntityOf(sim, at.gridId) });
   }
 }
 
@@ -122,7 +122,7 @@ function drainShield(sim: Sim, at: Impact, layers: number): boolean {
   const combat = sim.world.get(shipEntityOf(sim, at.gridId), CombatC);
   if (!combat || combat.shield.layers <= 0) return false;
   combat.shield.layers = Math.max(0, combat.shield.layers - layers);
-  sim.events.emit({ type: 'projectile.shieldHit', projectile: at.projectile, weapon: at.weapon, gridId: at.gridId, layers: combat.shield.layers });
+  sim.events.emit({ type: 'projectile.shieldHit', projectile: at.projectile, weapon: at.weapon, ship: shipEntityOf(sim, at.gridId), layers: combat.shield.layers });
   return true;
 }
 

@@ -28,7 +28,7 @@ export function prizeValue(sim: Sim, gridId: number): number {
 }
 
 /** Hold a surrendered or downed crew member in place as a prisoner (they stay subdued even if they recover). */
-function imprison(sim: Sim, crew: number, gridId: number): void {
+function imprison(sim: Sim, crew: number, ship: number): void {
   releaseAssignment(sim, crew);
   sim.world.remove(crew, DraftedC);
   const f = sim.world.get(crew, FighterC);
@@ -39,7 +39,7 @@ function imprison(sim: Sim, crew: number, gridId: number): void {
   if (!sim.world.has(crew, SurrenderedC)) sim.world.add(crew, SurrenderedC, { tick: sim.tick });
   sim.world.add(crew, PrisonerC, { tick: sim.tick });
   (sim.world.get(crew, CrewC) as Crew).activity = sim.world.has(crew, DownedC) ? 'downed' : sim.world.has(crew, InertC) ? 'inert' : 'idle';
-  sim.events.emit({ type: 'crew.imprisoned', crew, gridId });
+  sim.events.emit({ type: 'crew.imprisoned', crew, ship });
 }
 
 /** Flip a ship to the player as an inactive prize: weapons dead, AI off, its subdued crew become prisoners. */
@@ -61,12 +61,12 @@ export function capturePrize(sim: Sim, ship: Ship): void {
     if (gridIdOf(sim, pos) !== ship.gridId) continue;
     const faction = sim.world.get(id, AllegianceC)?.faction;
     if (faction === from) {
-      if (sim.world.has(id, SurrenderedC) || sim.world.has(id, DownedC) || sim.world.has(id, InertC)) imprison(sim, id, ship.gridId);
+      if (sim.world.has(id, SurrenderedC) || sim.world.has(id, DownedC) || sim.world.has(id, InertC)) imprison(sim, id, entity);
     } else if (faction === 'player') {
       sim.world.remove(id, DraftedC); // the boarders go back to work (salvage) instead of standing at attention
     }
   }
-  sim.events.emit({ type: 'ship.captured', gridId: ship.gridId, by: 'player', from });
+  sim.events.emit({ type: 'ship.captured', ship: entity, by: 'player', from });
 }
 
 /** Scuttle a prize into a derelict wreck. Returns a reject reason, or null. */

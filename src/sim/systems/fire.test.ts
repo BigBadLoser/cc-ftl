@@ -7,7 +7,17 @@ import { ModuleC } from '../modules/components';
 import type { ContentRegistry, ModuleDef } from '../registry';
 import { gridFromTemplate, spawnTemplateModules } from '../ship';
 import { Sim } from '../sim';
+import { ShipC } from '../combat/components';
+import { shipEntityOf } from '../combat/ships';
 import { CREW_MAX_HP } from '../tuning';
+
+/** A fixture grid has no ship; commands address ships, so give it an inert one (a prize is skipped by every ship system). */
+function fixtureShip(sim: Sim, gridId: number): void {
+  const g = sim.grids.get(gridId)!;
+  sim.world.add(sim.world.createEntity(), ShipC, {
+    gridId, name: 'fixture', faction: 'player', state: 'prize', x: g.x0, y: g.y0, width: g.width, height: g.height, hullMax: 0, integrity: 1,
+  });
+}
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -33,6 +43,7 @@ const crates = [{ def: 'crate', x: 2, y: 2, rot: 0 }, { def: 'crate', x: 3, y: 2
 function make(): Sim {
   const sim = new Sim(11, content);
   sim.grids.set(1, gridFromTemplate(1, { name: 't', rows }));
+  fixtureShip(sim, 1);
   spawnTemplateModules(sim, 1, { name: 't', rows, modules: crates });
   return sim;
 }
@@ -60,7 +71,7 @@ describe('fire', () => {
   it('spreads over flammable modules, eats oxygen, makes smoke and heat, and damages modules', () => {
     const sim = make();
     const events: SimEvent[] = [];
-    sim.enqueue({ type: 'debug.ignite', gridId: 1, x: 3, y: 2 });
+    sim.enqueue({ type: 'debug.ignite', ship: shipEntityOf(sim, 1), x: 3, y: 2 });
     run(sim, secs(20));
     events.push(...sim.events.drain());
     const g = sim.grids.get(1)!;
@@ -76,7 +87,7 @@ describe('fire', () => {
   it('is put out by a crew member on a firefighting job', () => {
     const sim = make();
     crew(sim, 3, 4);
-    sim.enqueue({ type: 'debug.ignite', gridId: 1, x: 3, y: 2 });
+    sim.enqueue({ type: 'debug.ignite', ship: shipEntityOf(sim, 1), x: 3, y: 2 });
     run(sim, 2);
     expect(sim.world.query(JobC).some((j) => sim.world.get(j, JobC)!.kind === 'extinguish')).toBe(true);
     run(sim, secs(60));
@@ -90,14 +101,14 @@ describe('fire', () => {
     const sim = make();
     const g = sim.grids.get(1)!;
     for (let y = 2; y <= 4; y++) for (let x = 2; x <= 4; x++) g.set('o2', x, y, 6);
-    sim.enqueue({ type: 'debug.ignite', gridId: 1, x: 3, y: 2 });
+    sim.enqueue({ type: 'debug.ignite', ship: shipEntityOf(sim, 1), x: 3, y: 2 });
     run(sim, secs(5));
     expect(burning(sim)).toBe(0);
   });
 
   it('burns itself out in a sealed room by using up the oxygen', () => {
     const sim = make();
-    sim.enqueue({ type: 'debug.ignite', gridId: 1, x: 3, y: 2 });
+    sim.enqueue({ type: 'debug.ignite', ship: shipEntityOf(sim, 1), x: 3, y: 2 });
     run(sim, secs(120));
     expect(burning(sim)).toBe(0);
     expect(meanO2(sim)).toBeLessThan(13);
@@ -107,7 +118,7 @@ describe('fire', () => {
   it('saves and loads mid-fire without diverging', async () => {
     const { serialize, deserialize } = await import('../save');
     const sim = make();
-    sim.enqueue({ type: 'debug.ignite', gridId: 1, x: 3, y: 2 });
+    sim.enqueue({ type: 'debug.ignite', ship: shipEntityOf(sim, 1), x: 3, y: 2 });
     run(sim, secs(8));
     const loaded = deserialize(serialize(sim), content);
     expect(serialize(loaded)).toBe(serialize(sim));

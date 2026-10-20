@@ -12,7 +12,7 @@ import { TICK_HZ } from '../time';
 import { MEND_PER_SEC, SALVAGE_SEC, SKILL_STEP } from '../tuning';
 import { HackedC, WreckC } from './components';
 import { speciesOf } from './core';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipIdOf } from '../regions';
 
 type NewJob = Partial<Job> & Pick<Job, 'category' | 'kind' | 'x' | 'y'>;
 
@@ -114,7 +114,7 @@ export function performSalvage(sim: Sim, job: Job, speed: number): WorkResult {
   job.progress = Math.min(job.work, job.progress + speed);
   if (job.progress < job.work) return 'working';
   for (const q of speciesOf(sim, wreck)?.wreck ?? []) spillItems(sim, gridIdOf(sim, pos), pos.x, pos.y, q.item, q.count);
-  sim.events.emit({ type: 'robot.salvaged', crew: wreck, gridId: gridIdOf(sim, pos), x: pos.x, y: pos.y });
+  sim.events.emit({ type: 'robot.salvaged', crew: wreck, ship: shipIdOf(sim, pos), x: pos.x, y: pos.y });
   sim.world.destroyEntity(wreck);
   return 'done';
 }
@@ -128,6 +128,6 @@ export function performHack(sim: Sim, crew: number, job: Job, speed: number): Wo
   if (job.progress < job.work) return 'working';
   const by = sim.world.get(crew, AllegianceC)?.faction ?? 'player';
   sim.world.add(core, HackedC, { by, tick: sim.tick, hacker: crew });
-  sim.events.emit({ type: 'core.hacked', moduleId: core, gridId: gridIdOf(sim, m), by });
+  sim.events.emit({ type: 'core.hacked', moduleId: core, ship: shipIdOf(sim, m), by });
   return 'done';
 }

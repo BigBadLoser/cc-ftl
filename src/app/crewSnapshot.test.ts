@@ -1,6 +1,6 @@
 import { gridIdOf } from '../sim/regions';
 import { describe, expect, it } from 'vitest';
-import { CrewC, PositionC, newGame, type Sim } from '../sim';
+import { CrewC, PositionC, newGame, shipEntityOf, type Sim } from '../sim';
 import { content } from '../content';
 import { buildCrewLists } from './crewSnapshot';
 
@@ -35,6 +35,6 @@ describe('buildCrewLists', () => {
     expect(me.away).toBe(true);
     expect(me.where).toBe('Raider');
     expect(hostiles.length).toBeGreaterThan(0);
-    expect(hostiles.every((h) => h.side === 'enemy' && h.gridId === 2)).toBe(true);
+    expect(hostiles.every((h) => h.side === 'enemy' && h.ship === shipEntityOf(sim, 2))).toBe(true);
   });
 });

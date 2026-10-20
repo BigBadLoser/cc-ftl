@@ -4,10 +4,20 @@ import type { ContentRegistry, ModuleDef } from '../registry';
 import { gridFromTemplate, spawnTemplateModules } from '../ship';
 import { roomTiles } from '../roomIndex';
 import { Sim } from '../sim';
+import { ShipC } from '../combat/components';
+import { shipEntityOf } from '../combat/ships';
 import type { SimEvent } from '../events';
 import { Struct } from '../structure';
 import { ModuleC } from '../modules/components';
 import { CREW_MAX_HP } from '../tuning';
+
+/** A fixture grid has no ship; commands address ships, so give it an inert one (a prize is skipped by every ship system). */
+function fixtureShip(sim: Sim, gridId: number): void {
+  const g = sim.grids.get(gridId)!;
+  sim.world.add(sim.world.createEntity(), ShipC, {
+    gridId, name: 'fixture', faction: 'player', state: 'prize', x: g.x0, y: g.y0, width: g.width, height: g.height, hullMax: 0, integrity: 1,
+  });
+}
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: true, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -47,6 +57,7 @@ const modules = [
 function make(withModules = true): Sim {
   const sim = new Sim(5, content);
   sim.grids.set(1, gridFromTemplate(1, { name: 't', rows }));
+  fixtureShip(sim, 1);
   if (withModules) spawnTemplateModules(sim, 1, { name: 't', rows, modules });
   return sim;
 }
@@ -83,7 +94,7 @@ describe('atmosphere', () => {
   it('a hull breach vents its room, a closed door protects the next, an open door does not', () => {
     const sim = make();
     const events: SimEvent[] = [];
-    sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 1, y: 3, kind: Struct.Floor });
+    sim.enqueue({ type: 'debug.setStruct', ship: shipEntityOf(sim, 1), x: 1, y: 3, kind: Struct.Floor });
     run(sim, secs(40));
     events.push(...sim.events.drain());
     expect(left(sim)).toBeLessThan(5);
@@ -145,6 +156,7 @@ describe('power', () => {
     const weak: ContentRegistry = { ...content, modules: { ...content.modules, reactor: mod({ footprint: [2, 2], power: 7 }) } };
     const sim = new Sim(5, weak);
     sim.grids.set(1, gridFromTemplate(1, { name: 't', rows }));
+    fixtureShip(sim, 1);
     spawnTemplateModules(sim, 1, { name: 't', rows, modules });
     const ids = sim.world.query(ModuleC);
     const byDef = (d: string) => ids.filter((i) => sim.world.get(i, ModuleC)!.def === d);

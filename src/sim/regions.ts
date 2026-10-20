@@ -73,6 +73,20 @@ export function gridIdAt(sim: Sim, x: number, y: number): number {
   return rect !== 0 ? rect : ring;
 }
 
+/** The `ShipC` entity id of the ship whose grid `gridId` is, or 0. */
+export function shipOfGrid(sim: Sim, gridId: number): number {
+  if (gridId === 0) return 0;
+  for (const id of sim.world.query(ShipC)) if (sim.world.get(id, ShipC)?.gridId === gridId) return id;
+  return 0;
+}
+
+/** The ship id (`ShipC` entity) of the ship a placed thing stands on, by the same rule as `gridIdOf`; 0 for none. */
+export function shipIdOf(sim: Sim, at: { x: number; y: number } | undefined): number {
+  if (!at) return 0;
+  const owner = shipAt(sim, at.x, at.y);
+  return owner !== 0 ? owner : shipOfGrid(sim, gridIdAt(sim, at.x, at.y));
+}
+
 /** Write `ship` as the owner of every non-Space tile of a grid (stamping a ship into the sector). */
 export function stampOwner(grid: GridLike, ship: number): void {
   for (let y = grid.y0; y < grid.y0 + grid.height; y++) {

@@ -3,7 +3,7 @@ import { ModuleC, type Module } from '../modules/components';
 import { networkOf } from '../modules/network';
 import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipIdOf } from '../regions';
 
 interface Member {
   id: number;
@@ -66,5 +66,5 @@ function allocate(sim: Sim, members: Member[]): void {
     }
   }
   const first = members[0];
-  if (lostPower && first) sim.events.emit({ type: 'power.shortage', gridId: gridIdOf(sim, first.m), supply, demand });
+  if (lostPower && first) sim.events.emit({ type: 'power.shortage', ship: shipIdOf(sim, first.m), supply, demand });
 }

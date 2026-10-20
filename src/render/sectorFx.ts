@@ -83,13 +83,7 @@ export function createSectorFx(
     }
     return undefined;
   };
-  const ship = (gridId: number): Ship | undefined => {
-    for (const id of world.query(ShipC)) {
-      const s = world.get(id, ShipC);
-      if (s?.gridId === gridId) return s;
-    }
-    return undefined;
-  };
+  const ship = (id: number): Ship | undefined => world.get(id, ShipC);
   /** Sector point (tile units, a tile's centre is at +0.5) -> art px in the sector frame. */
   const secArt = sectorArt;
   /** Centre of sector tile (x, y). */
@@ -146,10 +140,10 @@ export function createSectorFx(
           particles.burst(burst(colorOf(e.weapon), 60), c.x, c.y - MUZZLE_H, 8, 6);
           flash('fx.pd_shot', c.x, c.y - MUZZLE_H, 2);
         } else if (e.type === 'projectile.shieldHit') {
-          const s = ship(e.gridId);
+          const s = ship(e.ship);
           if (s) bubble(s);
         } else if (e.type === 'projectile.hit') {
-          const s = ship(e.gridId);
+          const s = ship(e.ship);
           if (!s) continue;
           const c = tileArt(e.x, e.y);
           const col = colorOf(e.weapon);
@@ -157,7 +151,7 @@ export function createSectorFx(
           particles.burst(burst(0xffffff, 60), c.x, c.y - 10, 6, 6);
           flash('fx.explosion_small', c.x, c.y - 10, 1);
         } else if (e.type === 'projectile.intercepted') {
-          const s = ship(e.gridId);
+          const s = ship(e.ship);
           const last = shots.get(e.projectile);
           if (!s || !last) continue;
           const from = secArt(s.x + s.width / 2, s.y + s.height / 2);

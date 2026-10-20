@@ -15,7 +15,7 @@ import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { createRenderer, type Renderer } from './render/scene';
 import { content } from './content';
-import { BodyC, newGame, ShipC } from './sim';
+import { BodyC, gridOfShip, newGame, ShipC } from './sim';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
@@ -46,8 +46,8 @@ const loop = createLoop({
 bridge.attachLoop(loop);
 
 /** Frame the player's ship and a hostile one (or only the player's ship) in the camera. */
-function focusFight(gridId: number | null): void {
-  renderer?.frameShips(gridId === null ? [1] : [1, gridId]);
+function focusFight(ship: number | null): void {
+  renderer?.frameShips(ship === null ? [1] : [1, gridOfShip(sim, ship)]);
 }
 
 /**
@@ -115,8 +115,8 @@ const api: UiApi = {
   storages: bridge.storages,
   fabs: bridge.fabs,
   selectedModule: controller.selectedModule,
-  selectedGrid: controller.selectedGrid,
-  selectGrid: controller.selectGrid,
+  selectedShip: controller.selectedShip,
+  selectShip: controller.selectShip,
   stats: bridge.stats,
   alerts: controller.alerts.list,
   combat: bridge.combat,
@@ -129,10 +129,10 @@ const api: UiApi = {
     const b = sim.world.get(id, BodyC);
     if (b) renderer?.focusSector(b.x, b.y);
   },
-  setCombatView: (view) => renderer?.setCombatView(view),
+  setCombatView: (view) => renderer?.setCombatView(view && { gridId: gridOfShip(sim, view.ship), rect: view.rect }),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
-  focusFight: (gridId) => focusFight(gridId),
+  focusFight: (ship) => focusFight(ship),
   spawnRaider: (boarders) => spawnRaider(boarders),
   spawnGenerated: (faction) => spawnGenerated(faction),
   overlayList,

@@ -358,6 +358,19 @@ Branch `sector-7b2` (not merged, no visual change): `Position.gridId` is gone (a
 them a tile again. Save v18. Both `sectorEquiv` hashes unchanged (`legacyWorld` writes `gridId` back as the first `position` key).
 Headless smoke: starter loads with 0 page errors; embark, launch, dock, disembark brings the pilot back on a tile. Next: 7c.
 
+Branch `sector-7c` (not merged, no visual change): ship-keyed ids, done in one slice (sim and UI together; no split needed).
+`Target.ship`, `Projectile.fromShip` and `CoreLink.ship` are `ShipC` entity ids; every command and event `gridId` field is now `ship`
+(`combat.setTarget` takes `ship` / `targetShip`; `weapon.fired` has `targetShip`; `crew.crossed` has `fromShip` / `toShip`;
+`portal.link` keeps its grids: portals go in 7d). UI snapshots and the `UiApi` are keyed by ship id: `selectShip` / `selectedShip`
+(renamed from `selectGrid`), `setCombatView({ ship })`, `focusFight(ship)`, the node strip's `node-{shipId}` and `hover-{shipId}`
+testids, `UiCrew.ship`, `UiPrize.ship`, `UiModule.ship`. **Stations** (no `ShipC`) are keyed by their trader entity id, in the same
+id space as ships (before: minus the entity id); `UiTradePartner.id` is that key. `Ship.gridId` itself stays: it is the link from a
+ship to its `sim.grids` entry, which 7d removes; `gridOfShip` / `shipOfGrid` / `shipIdOf` (`sim/regions.ts`) convert at the edges.
+Render keeps grid-keyed interfaces (`frameShips`, `setCombatView`, `pickTileAny`); `app/controller.ts` and `main.ts` convert.
+Save v19. Both `sectorEquiv` hashes unchanged (`legacyWorld` writes `gridId` / `fromGridId` back under the old key names).
+Fixture grids that had no ship now get an inert one (`fixtureShip`, a prize) so commands can name them.
+Headless smoke on the built game: 0 page errors, starter ship visible; a raider spawned through the debug hook shows as `node-{shipId}` in the strip, clicking it opens the selection panel with the Frame fight button, the combat panel opens by itself and auto-targets the raider, and picking a module (chip or tap in the ship view) sets `Target { ship, moduleId }`. Next: 7d.
+
 **EVA on the hull roof (user decision, 2026-10-20; not built):** EVA crew outside a ship must not walk the hull ring at
 floor level (the tiles just outside the hull walls): there they look as if standing on air, and walking along wall faces
 would need a sideways walk animation we don't want for now. Instead EVA crew walk on top of the **hull roof**, pathing

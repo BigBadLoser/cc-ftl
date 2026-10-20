@@ -18,13 +18,13 @@
   ];
 
   function setKind(kind: number) {
-    if (info?.selected) api.dispatch({ type: 'debug.setStruct', gridId: info.gridId, x: info.x, y: info.y, kind });
+    if (info?.selected) api.dispatch({ type: 'debug.setStruct', ship: info.ship, x: info.x, y: info.y, kind });
   }
 </script>
 
 {#if info}
   <div data-testid="inspector">
-    <PanelHead icon="grid" title="Tile {info.local.x}, {info.local.y}" sub="grid {info.gridId}" {onBack} />
+    <PanelHead icon="grid" title="Tile {info.local.x}, {info.local.y}" sub="grid {info.grid}" {onBack} />
     <dl>
       <dt>Struct</dt><dd data-testid="inspect-struct">{info.structName}</dd>
       <dt>Room</dt><dd data-testid="inspect-room">{info.room || 'none'}</dd>

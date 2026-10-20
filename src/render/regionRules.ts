@@ -42,16 +42,19 @@ export function onShip(ship: Ship, at: { x: number; y: number }): boolean {
 /** Module ids on `gridId` that the camera ship (or one of its weapons) is aiming at: the panel's amber marks. */
 export function targetedModules(world: World, refId: number, gridId: number): Set<number> {
   const out = new Set<number>();
+  const shipIdOfGrid = (g: number): number => [...world.query(ShipC)].find((id) => world.get(id, ShipC)?.gridId === g) ?? 0;
+  const refShip = shipIdOfGrid(refId);
+  const targetShip = shipIdOfGrid(gridId);
   for (const id of world.query(ShipC, CombatC)) {
-    if (world.get(id, ShipC)?.gridId !== refId) continue;
+    if (id !== refShip) continue;
     const t = world.get(id, CombatC)?.target;
-    if (t?.gridId === gridId && t.moduleId) out.add(t.moduleId);
+    if (t && t.ship === targetShip && t.moduleId) out.add(t.moduleId);
   }
   const ref = [...world.query(ShipC)].map((id) => world.get(id, ShipC)).find((s) => s?.gridId === refId);
   for (const id of world.query(WeaponC, ModuleC)) {
     const t = world.get(id, WeaponC)?.target;
     const m = world.get(id, ModuleC);
-    if (ref && m && t?.gridId === gridId && t.moduleId && onShip(ref, m)) out.add(t.moduleId);
+    if (ref && m && t && t.ship === targetShip && t.moduleId && onShip(ref, m)) out.add(t.moduleId);
   }
   return out;
 }

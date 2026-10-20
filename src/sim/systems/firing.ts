@@ -3,7 +3,7 @@ import { consumeAmmo } from '../combat/ammo';
 import { CombatC, IonC, ProjectileC, WeaponC, type Target } from '../combat/components';
 import { aimDirection, turretPosition } from '../combat/geometry';
 import { operatorSkill } from '../combat/operators';
-import { shipEntityOf, shipOf } from '../combat/ships';
+import { gridOfShip, shipEntityOf, shipOf } from '../combat/ships';
 import { resolveTarget } from '../combat/targets';
 import { ModuleC } from '../modules/components';
 import { VehicleC } from '../vehicles/components';
@@ -12,7 +12,7 @@ import { isDeployed } from '../modules/deploy';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { MIN_SPREAD_FACTOR, SPREAD_PER_GUNNERY } from '../tuning';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipOfGrid } from '../regions';
 
 /**
  * Launches shots. A charged weapon fires a volley at its resolved target when the ship is not on hold (or on
@@ -59,9 +59,10 @@ function launchNext(
   if (!target) return void (w.shotsLeft = 0);
   if (def.ammo && !consumeAmmo(sim, gridId, def.ammo)) return void (w.shotsLeft = 0);
   const from = turretPosition(sim, moduleId);
-  const alive = gridIdOf(sim, sim.world.get(target.moduleId, ModuleC)) === target.gridId;
+  const targetGrid = gridOfShip(sim, target.ship);
+  const alive = gridIdOf(sim, sim.world.get(target.moduleId, ModuleC)) === targetGrid;
   const vehicle = target.vehicle && sim.world.has(target.vehicle, VehicleC) ? sim.world.get(target.vehicle, BodyC) : undefined;
-  const to = vehicle ?? turretPosition(sim, alive ? target.moduleId : 0) ?? centerOf(sim, target.gridId);
+  const to = vehicle ?? turretPosition(sim, alive ? target.moduleId : 0) ?? centerOf(sim, targetGrid);
   if (!from || !to) return void (w.shotsLeft = 0);
   w.aim = aimDirection(to.x - from.x, to.y - from.y);
   const dist = Math.max(1, Math.hypot(to.x - from.x, to.y - from.y));
@@ -69,12 +70,12 @@ function launchNext(
   const spread = def.spread * Math.max(MIN_SPREAD_FACTOR, 1 - SPREAD_PER_GUNNERY * skill);
   const projectile = sim.world.createEntity();
   sim.world.add(projectile, ProjectileC, {
-    weapon, fromGridId: gridId, fromModuleId: moduleId, target: { ...target },
+    weapon, fromShip: shipOfGrid(sim, gridId), fromModuleId: moduleId, target: { ...target },
     x0: from.x, y0: from.y, x1: to.x, y1: to.y, x: from.x, y: from.y, t: 0, dt: def.speed / dist / TICK_HZ,
     spread, pdRolled: false,
   });
   sim.events.emit({
-    type: 'weapon.fired', gridId, weaponId: moduleId, weapon, projectile, targetGridId: target.gridId, targetModuleId: target.moduleId,
+    type: 'weapon.fired', ship: shipOfGrid(sim, gridId), weaponId: moduleId, weapon, projectile, targetShip: target.ship, targetModuleId: target.moduleId,
   });
 }
 

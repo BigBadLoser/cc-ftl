@@ -1,5 +1,5 @@
 import {
-  AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, TraderC, vehicleSuits,
+  AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, shipEntityOf, TraderC, vehicleSuits,
   vehicleViews, type Sim,
 } from '../sim';
 import { localOf } from './moduleSnapshot';
@@ -42,7 +42,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
     if (!m || gridIdOf(sim, m) === PLAYER) continue;
     const ship = [...sim.world.query(ShipC)].map((s) => sim.world.get(s, ShipC)).find((s) => s?.gridId === gridIdOf(sim, m));
     if (!ship || ship.state === 'fled') continue;
-    airlocks.push({ id, gridId: gridIdOf(sim, m), ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id), ...localOf(sim, gridIdOf(sim, m), m.x, m.y) });
+    airlocks.push({ id, shipId: shipEntityOf(sim, ship.gridId), ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id), ...localOf(sim, gridIdOf(sim, m), m.x, m.y) });
   }
   const shuttles: UiShuttles['shuttles'] = [];
   for (const v of vehicleViews(sim)) {
@@ -76,7 +76,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
   const targets: UiShuttles['targets'] = [];
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s && s.gridId !== PLAYER && s.state !== 'fled') targets.push({ gridId: s.gridId, ship: id, name: s.name });
+    if (s && s.gridId !== PLAYER && s.state !== 'fled') targets.push({ ship: id, name: s.name });
   }
   return { shuttles, airlocks, targets, roster, bays };
 }

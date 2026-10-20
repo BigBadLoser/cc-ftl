@@ -9,7 +9,7 @@ import { dropCarried, spillItems, takeFromStack } from './stacks';
 import { storageAdd, storageTake } from './storage';
 import { cargoAdd, cargoTake } from '../vehicles/cargo';
 import { cargoTile } from '../vehicles/geometry';
-import { gridIdOf } from '../regions';
+import { gridIdOf, shipIdOf } from '../regions';
 
 /** Where the haul's destination is (module anchor or the target job's tile), or null if it is gone. */
 export function destinationTile(sim: Sim, job: Job): { x: number; y: number } | null {
@@ -62,7 +62,7 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
   if (carrying.count > moved) spillItems(sim, gridIdOf(sim, pos), pos.toX, pos.toY, h.item, carrying.count - moved);
   sim.world.remove(crew, CarryingC);
   if (moved > 0) {
-    sim.events.emit({ type: 'item.hauled', crew, item: h.item, count: moved, gridId: gridIdOf(sim, job), x: job.x, y: job.y, to: h.dst.kind });
+    sim.events.emit({ type: 'item.hauled', crew, item: h.item, count: moved, ship: shipIdOf(sim, job), x: job.x, y: job.y, to: h.dst.kind });
   }
   return 'done';
 }
