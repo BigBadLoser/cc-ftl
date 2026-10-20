@@ -200,7 +200,7 @@ describe('ship generator', () => {
     sim.step();
     const grid = [...sim.grids.values()].find((x) => x.id !== 1)!;
     let seen = 0;
-    for (let y = 0; y < grid.height; y++) for (let x = 0; x < grid.width; x++) {
+    for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
       if (grid.get('struct', x, y) !== Struct.Beam) continue;
       seen++;
       expect(isTileWalkable(sim, grid, x, y)).toBe(false);
@@ -234,13 +234,14 @@ describe('ship generator', () => {
         }
         expect(demand).toBeLessThanOrEqual(supply);
         // Flood from the first door over walkable tiles: everything walkable is reached.
-        const walk = (x: number, y: number) => grid.inBounds(x, y) && isTileWalkable(sim, grid, x, y);
+        // Local tiles (lx, ly) from the grid's top-left; the grid reads sector tiles.
+        const walk = (x: number, y: number) => grid.inBounds(grid.x0 + x, grid.y0 + y) && isTileWalkable(sim, grid, grid.x0 + x, grid.y0 + y);
         let start = -1;
         let total = 0;
         for (let y = 0; y < grid.height; y++) for (let x = 0; x < grid.width; x++) {
           if (!walk(x, y)) continue;
           total++;
-          if (start < 0 && grid.get('struct', x, y) === Struct.Door) start = y * grid.width + x;
+          if (start < 0 && grid.get('struct', grid.x0 + x, grid.y0 + y) === Struct.Door) start = y * grid.width + x;
         }
         const seen = new Set([start]);
         const stack = [start];

@@ -38,14 +38,14 @@ describe('ship owner layer', () => {
     spawnShip(sim, BOX, { gridId: 1, faction: 'player', x: 10, y: 20 });
     const a = shipIdOf(sim, 1);
     const grid = sim.grids.get(1)!;
-    writeStruct(grid, 4, 2, Struct.Wall); // built onto the east wall
+    writeStruct(grid, 14, 22, Struct.Wall); // built onto the east wall (grids read sector tiles)
     expect(shipAt(sim, 14, 22)).toBe(a);
-    writeStruct(grid, 4, 2, Struct.Space);
+    writeStruct(grid, 14, 22, Struct.Space);
     expect(shipAt(sim, 14, 22)).toBe(0);
-    writeStruct(grid, 0, 0, Struct.Floor); // touches no owned tile
+    writeStruct(grid, 10, 20, Struct.Floor); // touches no owned tile
     expect(shipAt(sim, 10, 20)).toBe(0);
-    expect(damageStruct(grid, 1, 1, 999)).toBe(true); // corner wall borders space: breaches to Space
-    expect(grid.get('struct', 1, 1)).toBe(Struct.Space);
+    expect(damageStruct(grid, 11, 21, 999)).toBe(true); // corner wall borders space: breaches to Space
+    expect(grid.get('struct', 11, 21)).toBe(Struct.Space);
     expect(shipAt(sim, 11, 21)).toBe(0);
   });
 });

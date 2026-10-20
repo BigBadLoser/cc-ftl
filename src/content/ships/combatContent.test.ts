@@ -42,13 +42,13 @@ describe('combat content', () => {
       const sim = spawned(shipId);
       const grid = sim.grids.get(gridId)!;
       let start: { x: number; y: number } | null = null;
-      for (let y = 0; y < grid.height && !start; y++) {
-        for (let x = 0; x < grid.width && !start; x++) if (grid.get('struct', x, y) === Struct.Door) start = { x, y };
+      for (let y = grid.y0; y < grid.y0 + grid.height && !start; y++) {
+        for (let x = grid.x0; x < grid.x0 + grid.width && !start; x++) if (grid.get('struct', x, y) === Struct.Door) start = { x, y };
       }
       expect(start).not.toBeNull();
       const stuck: string[] = [];
-      for (let y = 0; y < grid.height; y++) {
-        for (let x = 0; x < grid.width; x++) {
+      for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+        for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
           if (isTileWalkable(sim, grid, x, y) && !findPath(sim, gridId, start!, { x, y })) stuck.push(`${x},${y}`);
         }
       }

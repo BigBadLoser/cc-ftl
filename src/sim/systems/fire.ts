@@ -36,15 +36,15 @@ const o2Factor = (o2: number): number => Math.max(0, Math.min(1, (o2 - FIRE_MIN_
 export function fireSystem(sim: Sim): void {
   for (const { grid } of regions(sim)) {
     if (!grid.has('fire') || !grid.has('o2')) continue;
-    const { width, height } = grid;
+    const { width, height, x0, y0 } = grid;
     // A snapshot: this loop only writes the tile it is on, and spreads are applied after it.
     const fire = grid.load('fire');
     const ignite: number[] = [];
     for (let i = 0; i < fire.length; i++) {
       const f = fire[i] as number;
       if (f === 0) continue;
-      const x = i % width;
-      const y = (i - x) / width;
+      const x = x0 + (i % width);
+      const y = y0 + Math.floor(i / width);
       const kind = grid.get('struct', x, y);
       if (kind !== Struct.Floor && kind !== Struct.Door) {
         grid.set('fire', x, y, 0);
@@ -61,16 +61,16 @@ export function fireSystem(sim: Sim): void {
       for (const [dx, dy] of NEIGHBOURS) {
         const nx = x + dx;
         const ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+        if (nx < x0 || ny < y0 || nx >= x0 + width || ny >= y0 + height) continue;
         const nk = grid.get('struct', nx, ny);
         if (grid.get('fire', nx, ny) !== 0 || gasConductance(nk, grid.get('door', nx, ny)) <= 0 || nk === Struct.Space) continue;
         const chance = (FIRE_SPREAD_PER_SEC / TICK_HZ) * (f / 255) * fuelAt(sim, grid, nx, ny) * o2Factor(grid.get('o2', nx, ny));
-        if (chance > 0 && sim.rng.chance(chance)) ignite.push(ny * width + nx);
+        if (chance > 0 && sim.rng.chance(chance)) ignite.push((ny - y0) * width + (nx - x0));
       }
     }
     for (const i of ignite) {
-      const x = i % width;
-      const y = (i - x) / width;
+      const x = x0 + (i % width);
+      const y = y0 + Math.floor(i / width);
       if (grid.get('fire', x, y) === 0) grid.set('fire', x, y, FIRE_START_INTENSITY);
     }
   }

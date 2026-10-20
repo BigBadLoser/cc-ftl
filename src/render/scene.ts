@@ -13,14 +13,14 @@ import { createParticles } from './fx/particles';
 import { createLayers } from './layers';
 import { initHalos } from './haloTex';
 import { createWorldStack } from './worldLayers';
-import { regionOrigin, sectorArt } from './sectorPos';
+import { regionOrigin, sectorArt, type Origin } from './sectorPos';
 import type { ModuleDefs } from './moduleView';
 import { ROOF_H } from './heights';
 import { liveryFor } from './roofArt';
 import { createShuttleView } from './shuttleView';
 import { createFightFx } from './fightFx';
 import { createCrewMarks } from './crewMarks';
-import { localTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
+import { sectorTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
 import { targetedModules, wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
@@ -145,7 +145,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
 
   /** What crew views need to draw EVA: the tank size. */
   const evaHost = () => ({ suitAirSec: () => content.suit?.airSec ?? 240 });
-  const origin = (gridId: number) => regionOrigin(world, gridId);
+  // Where a region's ship-local art sits: its grid's sector top-left ((0, 0) for a grid that is not shown).
+  const ZERO: Origin = { x: 0, y: 0 };
+  const origin = (gridId: number): Origin => {
+    const g = scenes.get(gridId)?.grid ?? grids.get(gridId);
+    return g ? regionOrigin(g) : ZERO;
+  };
   const NONE: ReadonlySet<number> = new Set();
   const pickHost = (): PickHost => ({ scenes, cam, origin });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
@@ -320,8 +325,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       scenes.get(refId)?.view.setPreview(tiles, valid);
     },
     focusTile(x, y) {
-      const o = origin(refId);
-      const p = iso(o.x + x, o.y + y);
+      const p = iso(x, y); // a sector tile
       cam.centerOn(p.x, p.y - 8);
     },
     focusSector(x, y) {
@@ -354,7 +358,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     pickTile(sx, sy) {
       const grid = scenes.get(refId)?.grid;
       if (!grid) return null;
-      const t = localTileAt(origin(refId), cam.toArt(sx, sy));
+      const t = sectorTileAt(cam.toArt(sx, sy));
       return grid.inBounds(t.x, t.y) ? t : null;
     },
     pickCrew: (sx, sy) => pickCrewAcross(pickHost(), sx, sy),

@@ -75,7 +75,7 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
         let cx = 0;
         let cy = 0;
         for (const f of tiles) {
-          const p = iso(f.x, f.y);
+          const p = iso(f.x - grid.x0, f.y - grid.y0); // modules are in sector tiles, particles region-local
           cx += p.x / tiles.length;
           cy += p.y / tiles.length;
         }
@@ -92,7 +92,7 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
         const a = world.get(id, AssignmentC);
         const job = a && world.get(a.jobId, JobC);
         if (!job || !WELD_JOBS.has(job.kind)) continue;
-        const p = iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress);
+        const p = iso(pos.x + (pos.toX - pos.x) * pos.progress - grid.x0, pos.y + (pos.toY - pos.y) * pos.progress - grid.y0);
         particles.emit(`w${id}`, WELD, p.x + 6, p.y - 16, 14, dt, 4);
       }
     },

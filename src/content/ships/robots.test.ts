@@ -27,6 +27,11 @@ const teleport = (sim: Sim, id: number, gridId: number, x: number, y: number): v
   sim.world.add(id, PositionC, { gridId, x, y, toX: x, toY: y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
 };
+/** Sector tile of tile (lx, ly) of a grid, in its local tiles (from the grid's top-left). */
+const local = (sim: Sim, gridId: number, lx: number, ly: number): [number, number] => {
+  const g = sim.grids.get(gridId)!;
+  return [g.x0 + lx, g.y0 + ly];
+};
 const core = (sim: Sim): number => modulesOf(sim, 2, 'module.aiCore')[0]!;
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 
@@ -51,8 +56,8 @@ function spawnRobot(sim: Sim, role = 'role.robot_worker', gridId = 1, at = playe
 /** Every tile of a grid to vacuum (no air, deep cold). */
 function vent(sim: Sim, gridId: number): void {
   const g = sim.grids.get(gridId)!;
-  for (let y = 0; y < g.height; y++) {
-    for (let x = 0; x < g.width; x++) {
+  for (let y = g.y0; y < g.y0 + g.height; y++) {
+    for (let x = g.x0; x < g.x0 + g.width; x++) {
       g.set('o2', x, y, 0);
       g.set('co2', x, y, 0);
       g.set('temp', x, y, -150);
@@ -223,7 +228,7 @@ describe('AI control and capture', () => {
     }
     sim.enqueue({ type: 'crew.hack', id: crewOn(sim, 1)[0]!, module: core(sim) });
     expect(of(run(sim, 1), 'command.rejected')).toHaveLength(1); // held: nothing to hack
-    teleport(sim, eng, 2, 15, 5); // the hacker walks away: the hold breaks
+    teleport(sim, eng, 2, ...local(sim, 2, 15, 5)); // the hacker walks away: the hold breaks
     run(sim, 2);
     expect(sim.world.get(core(sim), HackedC)!.hacker).toBe(0);
     for (const r of robots) {
@@ -277,7 +282,7 @@ describe('determinism and saves', () => {
     for (const i of sim.world.query(WeaponC)) if (sim.world.get(i, ModuleC)!.gridId === 2) sim.world.get(i, ModuleC)!.enabled = true;
     const party = crewOn(sim, 1).slice(0, 3);
     party.forEach((p, i) => {
-      teleport(sim, p, 2, 9, 6 + i);
+      teleport(sim, p, 2, ...local(sim, 2, 9, 6 + i));
       sim.world.add(p, EquipC, { weapon: i === 0 ? 'item.ion_pistol' : 'item.rifle' });
       sim.world.add(p, DraftedC, { target: null });
     });

@@ -1,6 +1,5 @@
 import { ShipC, type Ship } from './combat/components';
 import type { GridLike, Rect } from './grid';
-import { GridWindow } from './gridWindow';
 import type { Sim } from './sim';
 import { Struct } from './structure';
 import { MIN_SHIP_GAP, REGION_PAD } from './tuning';
@@ -11,7 +10,7 @@ export interface Region {
   grid: GridLike;
   /** The `ShipC` entity of the grid, or 0 (a fixture grid with no ship). */
   ship: number;
-  /** The grid's rectangle in sector tiles (today exactly its template bbox). */
+  /** The grid's rectangle in sector tiles (exactly its template bbox; the grid reads sector coordinates). */
   bbox: Rect;
   /** `bbox` grown by REGION_PAD on every side: the EVA ring and one tile of venting vacuum. */
   frame: Rect;
@@ -45,9 +44,7 @@ export function regions(sim: Sim): Region[] {
   }
   return [...sim.grids.keys()].sort((a, b) => a - b).map((gridId) => {
     const grid = sim.grids.get(gridId) as GridLike;
-    const bbox = grid instanceof GridWindow
-      ? { x: grid.ox, y: grid.oy, w: grid.width, h: grid.height }
-      : { x: 0, y: 0, w: grid.width, h: grid.height };
+    const bbox = { x: grid.x0, y: grid.y0, w: grid.width, h: grid.height };
     return { gridId, grid, ship: ships.get(gridId) ?? 0, bbox, frame: padded(bbox, REGION_PAD) };
   });
 }
@@ -59,8 +56,8 @@ export function shipAt(sim: Sim, x: number, y: number): number {
 
 /** Write `ship` as the owner of every non-Space tile of a grid (stamping a ship into the sector). */
 export function stampOwner(grid: GridLike, ship: number): void {
-  for (let y = 0; y < grid.height; y++) {
-    for (let x = 0; x < grid.width; x++) {
+  for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
       if (grid.get('struct', x, y) !== Struct.Space && grid.get('ship', x, y) !== ship) grid.set('ship', x, y, ship);
     }
   }
@@ -91,7 +88,7 @@ export function windowShipMismatches(sim: Sim): string[] {
     const s = sim.world.get(id, ShipC) as Ship;
     const g = sim.grids.get(s.gridId);
     if (!g) continue;
-    const [ox, oy] = g instanceof GridWindow ? [g.ox, g.oy] : [0, 0];
+    const ox = g.x0, oy = g.y0;
     if (ox !== s.x || oy !== s.y || g.width !== s.width || g.height !== s.height) {
       out.push(`ship ${id} (grid ${s.gridId}): ShipC ${s.x},${s.y} ${s.width}x${s.height}, window ${ox},${oy} ${g.width}x${g.height}`);
     }

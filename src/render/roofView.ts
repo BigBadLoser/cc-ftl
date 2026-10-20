@@ -87,7 +87,9 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       const art = resolveArt(atlas, chain, key);
       if (!art) continue;
       const [w, h] = rotatedSize(def, m.rot);
-      const spots = art.fallback && art.perTile ? footprintTiles(def, m.x, m.y, m.rot) : [{ x: m.x + w - 1, y: m.y + h - 1 }];
+      // Modules are in sector tiles; roof parts are placed region-local like the plating.
+      const lx = m.x - grid.x0, ly = m.y - grid.y0;
+      const spots = art.fallback && art.perTile ? footprintTiles(def, lx, ly, m.rot) : [{ x: lx + w - 1, y: ly + h - 1 }];
       for (const t of spots) {
         const p = iso(t.x, t.y);
         const spr = new Sprite(art.s.tex);
@@ -134,7 +136,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
     const real = hasRoofArt(atlas);
     v.pieces = buildRoofPlating(tiles.kindAt, W, H, atlas, L, livery, plan, (x, y) => {
       if (real) return false;
-      const mod = grid.get('module', x, y);
+      const mod = tiles.get('module', x, y); // local tile
       return !!(mod && defs[world.get(mod, ModuleC)?.def ?? '']?.roofAsset);
     }, tiles.chunkRect(c));
     for (const p of v.pieces) for (const o of p.objs) o.visible = visible;

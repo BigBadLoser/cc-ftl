@@ -27,10 +27,13 @@ import { clipFor, crewLoadout, resolveClip } from './loadout';
 export interface CrewViewHost {
   /** True when the ship has no running power source (emergency lighting). */
   emergency?(): boolean;
-  /** Light field of the shown grid, with its width, or null. */
-  light?(): { data: ArrayLike<number>; width: number } | null;
-  /** Id of the grid being shown, or null when nothing is shown. */
-  target(): { gridId: number } | null;
+  /** Light level at a sector tile of the shown grid (0 outside it). */
+  light?(x: number, y: number): number;
+  /**
+   * The grid being shown and the sector top-left (ox, oy) of its region, or null when nothing is shown. Positions are
+   * sector tiles; sprites are placed region-local (minus ox, oy) in the region's containers.
+   */
+  target(): { gridId: number; ox: number; oy: number } | null;
   /** Crew on this tile are not drawn (the interior of a roofed region). */
   hidden?(x: number, y: number): boolean;
   /** The module covering tile (x, y) of the shown grid, if any (to sort crew on a console's chair tile against its sprite). */
@@ -90,13 +93,10 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
   let selected: number | null = null;
   let last = performance.now();
 
-  /** Sector top-left of a grid's ship (a render-side offset until step 6 flips coordinates), or null. */
-  function shipOrigin(gridId: number): { x: number; y: number } | null {
-    for (const sid of world.query(ShipC)) {
-      const s = world.get(sid, ShipC);
-      if (s?.gridId === gridId) return s;
-    }
-    return null;
+  /** True if a grid has a ship (an EVA drift is drawn only while it does). */
+  function hasShip(gridId: number): boolean {
+    for (const sid of world.query(ShipC)) if (world.get(sid, ShipC)?.gridId === gridId) return true;
+    return false;
   }
 
   function make(id: number): Slot | null {
@@ -157,12 +157,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
-    const l = host.light?.();
-    let lv = 255;
-    if (l) {
-      const i = Math.round(ty) * l.width + Math.round(tx);
-      lv = (l.data[i] as number | undefined) ?? 0;
-    }
+    const lv = host.light ? host.light(Math.round(tx), Math.round(ty)) : 255;
     const emergency = host.emergency?.() ?? false;
     let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(performance.now()) : -1);
     if (dead) tint = mulColor(tint, 0x7c7c7c);
@@ -213,14 +208,13 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         }
         let tx = pos.x + (pos.toX - pos.x) * pos.progress;
         let ty = pos.y + (pos.toY - pos.y) * pos.progress;
-        // Drifting between a hovering shuttle and this hull: along the line to the shuttle's hatch (EvaFloat, sector tiles; drawn
-        // in this grid's tile frame until the coordinate flip), facing the way it goes.
+        // Drifting between a hovering shuttle and this hull: along the line to the shuttle's hatch (EvaFloat, sector tiles,
+        // whose tile centres are at +0.5), facing the way it goes.
         const drift = world.get(id, EvaFloatC);
         let driftFacing = -1;
-        const origin = drift ? shipOrigin(target.gridId) : null;
-        if (drift && origin) {
+        if (drift && hasShip(target.gridId)) {
           const k = 1 - drift.ticks / Math.max(1, drift.total);
-          const [hx, hy] = [drift.sx - origin.x - 0.5, drift.sy - origin.y - 0.5];
+          const [hx, hy] = [drift.sx - 0.5, drift.sy - 0.5];
           const [ax, ay, bx, by] = drift.mode === 'out' ? [hx, hy, pos.x, pos.y] : [pos.x, pos.y, hx, hy];
           tx = ax + (bx - ax) * k;
           ty = ay + (by - ay) * k;
@@ -282,13 +276,15 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
             }
           }
         }
-        const p = iso(s.x, s.y);
+        // Region-local art position and depth (the region's containers sit at its sector offset).
+        const lx = s.x - target.ox, ly = s.y - target.oy;
+        const p = iso(lx, ly);
         // A carried body hangs at the carrier's side, drawn just over them.
         s.root.position.set(Math.round(p.x) + (carried ? 9 : 0), Math.round(p.y) + (carried ? -13 : 0));
-        let z = depthKey(s.x, s.y) + (carried ? 0.02 : 0);
+        let z = depthKey(lx, ly) + (carried ? 0.02 : 0);
         if (at && onOpen) {
           const f = footprintTiles(at.def, at.m.x, at.m.y, at.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
-          z = Math.max(z, moduleKey(at.def, f.x, f.y) + SEAT_DZ);
+          z = Math.max(z, moduleKey(at.def, f.x - target.ox, f.y - target.oy) + SEAT_DZ);
         }
         s.root.zIndex = z;
         applyLight(s, pos.x, pos.y, dead);

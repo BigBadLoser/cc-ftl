@@ -33,7 +33,7 @@ describe('region tiles', () => {
     const g = ship(21, -7);
     const t = regionTiles(g);
     for (let y = -2; y < g.height + 2; y++)
-      for (let x = -2; x < g.width + 2; x++) expect(t.kindAt(x, y)).toBe(g.inBounds(x, y) ? g.get('struct', x, y) : Struct.Space);
+      for (let x = -2; x < g.width + 2; x++) expect(t.kindAt(x, y)).toBe(g.inBounds(g.x0 + x, g.y0 + y) ? g.get('struct', g.x0 + x, g.y0 + y) : Struct.Space);
     // Sector x 21..60, y -7..12: chunks 1..3 by -1..0; a pad adds chunks only where it crosses a chunk edge.
     expect(t.chunks().map(key)).toEqual(['1,-1', '2,-1', '3,-1', '1,0', '2,0', '3,0']);
     expect(t.chunks(1).length).toBe(6);
@@ -49,7 +49,7 @@ describe('region tiles', () => {
       seen.push(i);
     });
     const dense: number[] = [];
-    for (let y = 0; y < g.height; y++) for (let x = 0; x < g.width; x++) if (g.get('struct', x, y) !== Struct.Space) dense.push(y * g.width + x);
+    for (let y = 0; y < g.height; y++) for (let x = 0; x < g.width; x++) if (g.get('struct', g.x0 + x, g.y0 + y) !== Struct.Space) dense.push(y * g.width + x);
     expect(seen).toEqual(dense);
   });
 
@@ -80,8 +80,8 @@ describe('region tiles', () => {
   it('splits the ghost verts exactly between chunks', () => {
     const g = ship(3, 5, 37, 23);
     const t = regionTiles(g);
-    g.set('struct', 20, 22, Struct.Floor); // a notch in the near hull
-    g.set('struct', 20, 21, Struct.Floor);
+    g.set('struct', 23, 27, Struct.Floor); // a notch in the near hull (local 20, 22; windows take sector tiles)
+    g.set('struct', 23, 26, Struct.Floor);
     const all = ghostVerts(t.kindAt, g.width, g.height).map((v) => `${v.x},${v.y}`).sort();
     const parts = t.chunks(1).flatMap((c) => {
       const r = t.chunkRect(c);
@@ -147,7 +147,7 @@ describe('grid view per chunk', () => {
     view.update();
     const far = new Set(L.floor.children[0]?.children); // chunk (0, 0): sector x 0..15
     const sortedBefore = new Set(L.sorted.children);
-    g.set('struct', 45, 10, Struct.Wall); // sector (50, 13): chunk (3, 0)
+    g.set('struct', 50, 13, Struct.Wall); // local (45, 10): chunk (3, 0)
     view.update();
     // Chunk (0, 0) is three chunks from the write: its plates are the same objects.
     expect(new Set(L.floor.children[0]?.children)).toEqual(far);

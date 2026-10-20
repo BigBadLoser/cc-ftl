@@ -45,8 +45,8 @@ export function autoJobsSystem(sim: Sim): void {
     const fire = grid.load('fire');
     for (let i = 0; i < fire.length; i++) {
       if (fire[i] === 0) continue;
-      const x = i % grid.width;
-      const y = (i - x) / grid.width;
+      const x = grid.x0 + (i % grid.width);
+      const y = grid.y0 + Math.floor(i / grid.width);
       if (!seen.has(`extinguish:${grid.id}:${x}:${y}`)) {
         addJob(sim, { category: 'firefighting', kind: 'extinguish', gridId: grid.id, x, y });
       }

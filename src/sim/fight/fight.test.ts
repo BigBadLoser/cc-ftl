@@ -72,7 +72,7 @@ const flat = (v: number): Priorities => ({
 
 function make(template: ShipTemplate = hall(), seed = 5): Sim {
   const sim = new Sim(seed, content);
-  spawnShip(sim, template, { gridId: 1, faction: 'player', x: 20, y: 50 });
+  spawnShip(sim, template, { gridId: 1, faction: 'player', x: 0, y: 0 }); // at the origin: local tiles are sector tiles
   return sim;
 }
 function person(

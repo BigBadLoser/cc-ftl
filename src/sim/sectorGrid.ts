@@ -105,6 +105,14 @@ export class SectorGrid implements GridLike {
     return { x: x0 * CHUNK_SIZE, y: y0 * CHUNK_SIZE, w: (x1 - x0 + 1) * CHUNK_SIZE, h: (y1 - y0 + 1) * CHUNK_SIZE };
   }
 
+  get x0(): number {
+    return this.extent().x;
+  }
+
+  get y0(): number {
+    return this.extent().y;
+  }
+
   get width(): number {
     return this.extent().w;
   }

@@ -39,11 +39,10 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
   const flashes: Flash[] = [];
   const floaters: Floater[] = [];
 
-  /** Grid tile (fractional) on ship `gridId` at height z -> art px in the sector layer's frame. */
+  /** Sector tile (fractional) on ship `gridId` at height z -> art px in the sector layer's frame (null if the ship is gone). */
   const at = (gridId: number, gx: number, gy: number, z: number): Pt | null => {
-    const s = host.ship(gridId);
-    if (!s) return null;
-    const p = iso(s.x + gx, s.y + gy);
+    if (!host.ship(gridId)) return null;
+    const p = iso(gx, gy);
     return { x: p.x, y: p.y - z * Z_PX };
   };
   const crewAt = (id: number, z: number): Pt | null => {

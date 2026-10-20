@@ -74,7 +74,7 @@
       </div>
       {#if combat.player}<div class="meters"><ShipMeters ship={combat.player} compact /></div>{/if}
       <p class="hint" data-testid="sum-hover">
-        {#if hover}<Icon name="grid" size={14} />{hover.x}, {hover.y} {hover.structName}{hover.room ? ` · room ${hover.room}` : ''}{:else}Select crew, a module or a tile.{/if}
+        {#if hover}<Icon name="grid" size={14} />{hover.local.x}, {hover.local.y} {hover.structName}{hover.room ? ` · room ${hover.room}` : ''}{:else}Select crew, a module or a tile.{/if}
       </p>
     </div>
   {/if}

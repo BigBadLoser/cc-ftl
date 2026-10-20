@@ -15,8 +15,10 @@ import { newTrade, type TradeState } from './trade/types';
  * grid's window rectangle.
  * v14 (step 8): vehicles keep position, heading and altitude in `BodyC`; `VehicleC.homeShip` and `hover` are ShipC ids;
  * `EvaFloatC.sx/sy` is the hatch point in sector tiles.
+ * v15 (step 6, the coordinate flip): every component position (crew, paths, modules, jobs, items, ...) is a sector tile;
+ * the shape is unchanged but the meaning is not, so v14 saves are refused.
  */
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

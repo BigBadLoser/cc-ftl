@@ -103,9 +103,9 @@ describe('load', () => {
     const sector = newSectorGrid();
     const grids = new GridMap(() => sector);
     const win = grids.stamp(1, gridFromTemplate(1, { name: 't', rows: ['#_#'] }), 10, 10);
-    win.set('smoke', 1, 0, 7);
+    win.set('smoke', 11, 10, 7);
     expect([...win.load('smoke')]).toEqual([0, 7, 0]);
-    expect([...win.load('struct', { x: -1, y: 0, w: 5, h: 1 })]).toEqual([0, 2, 1, 2, 0]);
+    expect([...win.load('struct', { x: 9, y: 10, w: 5, h: 1 })]).toEqual([0, 2, 1, 2, 0]);
   });
 });
 

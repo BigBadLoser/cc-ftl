@@ -27,8 +27,11 @@ export interface UiStack {
 
 export interface UiInspect {
   gridId: number;
+  /** Sector tile (what commands take). */
   x: number;
   y: number;
+  /** The same tile in its ship's local tiles (from the grid's top-left), for the readouts. */
+  local: { x: number; y: number };
   /** The loose item stack on the tile, or null. */
   stack: UiStack | null;
   structName: string;

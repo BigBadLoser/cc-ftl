@@ -5,6 +5,7 @@ import {
   spawnModule, storageCount, type ModuleDef,
 } from '../../sim';
 import { content } from '../index';
+import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
 
 const def = content.modules['module.airlock'] as ModuleDef;
 const at = { x: 6, y: 6 };
@@ -121,10 +122,10 @@ describe('starter ship airlock', () => {
     const sim = newGame(1, content);
     const id = sim.world.query(ModuleC).find((i) => sim.world.get(i, ModuleC)!.gridId === 1 && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
     const t = airlockTiles(def, sim.world.get(id, ModuleC)!);
-    expect(t.collar).toEqual({ x: 0, y: 10 });
-    expect(t.outer).toEqual({ x: 1, y: 10 });
-    expect(t.inside).toEqual({ x: 3, y: 10 });
-    expect(sim.grids.get(1)!.get('struct', 0, 10)).toBe(Struct.Space);
+    expect(t.collar).toEqual({ x: P0.x + 0, y: P0.y + 10 });
+    expect(t.outer).toEqual({ x: P0.x + 1, y: P0.y + 10 });
+    expect(t.inside).toEqual({ x: P0.x + 3, y: P0.y + 10 });
+    expect(sim.grids.get(1)!.get('struct', P0.x + 0, P0.y + 10)).toBe(Struct.Space);
     // The dock point is the collar tile's centre, in sector tiles.
     const ship = shipOf(sim, 1)!;
     expect(dockPoint(sim, id)).toMatchObject({ gridId: 1, x: ship.x + 0.5, y: ship.y + 10.5, inside: t.inside });

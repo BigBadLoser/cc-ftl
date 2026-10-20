@@ -71,7 +71,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (p) {
       for (const sid of sim.world.query(ShipC)) {
         const s = sim.world.get(sid, ShipC);
-        if (s?.gridId === p.gridId) return r?.focusSector(s.x + p.x + (p.toX - p.x) * p.progress + 0.5, s.y + p.y + (p.toY - p.y) * p.progress + 0.5);
+        if (s?.gridId === p.gridId) return r?.focusSector(p.x + (p.toX - p.x) * p.progress + 0.5, p.y + (p.toY - p.y) * p.progress + 0.5);
       }
     }
     const b = sim.world.get(sim.world.get(id, AboardC)?.vehicle ?? 0, BodyC);

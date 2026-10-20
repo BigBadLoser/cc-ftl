@@ -8,7 +8,7 @@ import { createCamera, type Camera } from './camera';
 import { ROOF_H } from './heights';
 import { iso, TILE_H, TILE_W } from './iso';
 import { isTargetable } from './moduleArt';
-import { localTileAt } from './scenePick';
+import { sectorTileAt } from './scenePick';
 import type { Origin } from './sectorPos';
 
 /** Where the combat overlay shows the enemy ship: a rectangle of the canvas in CSS px. */
@@ -126,7 +126,7 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
       const dy = sy * k - g.y;
       if (dx < 0 || dy < 0 || dx >= g.w || dy >= g.h) return null;
       const a = cam.toArt(dx, dy);
-      const t = localTileAt(h.origin(view.gridId), { x: a.x, y: a.y + g.lift });
+      const t = sectorTileAt({ x: a.x, y: a.y + g.lift });
       if (!grid.inBounds(t.x, t.y)) return null;
       // The nearest targetable module within a tile (tiles are small on a phone).
       const targetable = (def: string) => { const md = h.modules[def]; return !!md && isTargetable(md); };

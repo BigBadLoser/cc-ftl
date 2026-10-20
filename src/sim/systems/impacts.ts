@@ -48,12 +48,12 @@ export function impactSystem(sim: Sim): void {
     const modDef = mod && mod.gridId === gridId ? sim.content.modules[mod.def] : undefined;
     const aimed = mod && modDef
       ? footprintTiles(modDef, mod.x, mod.y, mod.rot)
-      : [{ x: Math.floor(p.x1 - ship.x), y: Math.floor(p.y1 - ship.y) }];
+      : [{ x: Math.floor(p.x1), y: Math.floor(p.y1) }];
     const aim = sim.rng.pick(aimed);
     const x = aim.x + Math.round(gauss(sim) * p.spread);
     const y = aim.y + Math.round(gauss(sim) * p.spread);
     if (!grid.inBounds(x, y) || grid.get('struct', x, y) === Struct.Space) {
-      sim.events.emit({ type: 'projectile.miss', ...base, reason: 'space', x: ship.x + x + 0.5, y: ship.y + y + 0.5 });
+      sim.events.emit({ type: 'projectile.miss', ...base, reason: 'space', x: x + 0.5, y: y + 0.5 });
       continue;
     }
     sim.events.emit({ type: 'projectile.hit', ...base, x, y, moduleId: grid.get('module', x, y) });

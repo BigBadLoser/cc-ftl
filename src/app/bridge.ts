@@ -33,6 +33,8 @@ export interface TileRef {
 
 /** Plain-data description of one tile, for the inspector. */
 export interface InspectSnapshot extends TileRef {
+  /** The tile in its ship's local tiles (from the grid's top-left), for the readouts; `x`, `y` are sector tiles. */
+  local: { x: number; y: number };
   structName: string;
   /** The loose item stack on the tile, or null. */
   stack: { item: string; name: string; count: number } | null;
@@ -128,6 +130,7 @@ export function createBridge(sim: Sim): Bridge {
       const st = sid ? sim.world.get(sid, ItemStackC) : undefined;
       snap = {
         ...ref,
+        local: { x: ref.x - grid.x0, y: ref.y - grid.y0 },
         stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count } : null,
         structName: STRUCT_NAMES[struct] ?? `Unknown(${struct})`,
         room: fields.find((f) => f.name === 'room')?.value ?? 0,

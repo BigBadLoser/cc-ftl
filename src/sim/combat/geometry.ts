@@ -10,7 +10,7 @@ export function moduleCenter(sim: Sim, moduleId: number): { x: number; y: number
   const ship = m && shipOf(sim, m.gridId);
   if (!m || !def || !ship) return null;
   const [w, h] = rotatedSize(def, m.rot);
-  return { x: ship.x + m.x + w / 2, y: ship.y + m.y + h / 2 };
+  return { x: m.x + w / 2, y: m.y + h / 2 };
 }
 
 /** Roughly normal noise with sigma 1, from three uniform draws (Irwin-Hall), via sim.rng. */

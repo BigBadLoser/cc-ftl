@@ -31,6 +31,12 @@ export const CHUNK_SIZE = 16;
  */
 export interface GridLike {
   readonly id: number;
+  /**
+   * Top-left of the grid's bounds in its own coordinates: 0 for a dense grid, the region's sector top-left for a sector
+   * window (step 6: windows use sector coordinates). Tiles run x0 .. x0 + width - 1, y0 .. y0 + height - 1.
+   */
+  readonly x0: number;
+  readonly y0: number;
   readonly width: number;
   readonly height: number;
   has(field: string): boolean;
@@ -77,6 +83,8 @@ export function fromBase64(type: FieldType, b64: string, n: number): FieldArray 
  * (templates, tests) that `sim.grids.set` stamps into the sector.
  */
 export class DenseGrid implements GridLike {
+  readonly x0 = 0;
+  readonly y0 = 0;
   readonly chunksX: number;
   readonly chunksY: number;
   private readonly types = new Map<string, FieldType>();

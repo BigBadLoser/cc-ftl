@@ -34,8 +34,8 @@ function setup(seed = 1): Sim {
 function bays(sim: Sim, n = 1): number[] {
   const grid = sim.grids.get(1)!;
   const out: number[] = [];
-  for (let y = 0; y < grid.height && out.length < n; y++) {
-    for (let x = 0; x < grid.width && out.length < n; x++) {
+  for (let y = grid.y0; y < grid.y0 + grid.height && out.length < n; y++) {
+    for (let x = grid.x0; x < grid.x0 + grid.width && out.length < n; x++) {
       if (placementError(sim, 1, 'module.robotBay', x, y, 0) !== null) continue;
       // The cradle must be reachable from the crew's room (the tower blocks its south side).
       const at = sim.world.get(crewOn(sim, 1)[0]!, PositionC)!;

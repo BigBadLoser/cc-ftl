@@ -81,8 +81,10 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         let t = turrets.get(id);
         if (!t) turrets.set(id, (t = make()));
         const [bw, bh] = rotatedSize(def, m.rot);
-        const cx = m.x + (bw - 1) / 2;
-        const cy = m.y + (bh - 1) / 2;
+        // Modules are in sector tiles; the turret is placed region-local (minus the region's top-left).
+        const mx = m.x - grid.x0, my = m.y - grid.y0;
+        const cx = mx + (bw - 1) / 2;
+        const cy = my + (bh - 1) / 2;
         const p = iso(cx, cy);
         t.spr.texture = art.s.tex;
         // Real turret art is modelled on the roof plane (anchor = bay centre on the floor); stand-ins are lifted to it.
@@ -90,9 +92,9 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         t.spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - lift + (1 - art.rise) * RISE_PX));
         const lx = Math.min(grid.width - 1, Math.max(0, Math.round(cx)));
         const ly = Math.min(grid.height - 1, Math.max(0, Math.round(cy)));
-        t.spr.tint = mulColor(lightTint(grid.get('light', lx, ly), false, -1), art.tint);
+        t.spr.tint = mulColor(lightTint(grid.get('light', grid.x0 + lx, grid.y0 + ly), false, -1), art.tint);
         // The front tile of the bay, +0.93: over the roof tiles of the footprint, behind the next tile row.
-        t.root.zIndex = depthKey(m.x + bw - 1, m.y + bh - 1) + 0.93;
+        t.root.zIndex = depthKey(mx + bw - 1, my + bh - 1) + 0.93;
         if (art.fallback && out) {
           while (t.barrel.length < BARREL_AT.length) {
             const dot = new Sprite();

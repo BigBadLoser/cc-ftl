@@ -53,17 +53,17 @@ function ring(): string[] {
 }
 
 /**
- * Ship 1 stamped at sector (20, 20) with its airlock on the east hull, ship 2 (optional) `gap` tiles away (or at `at2`) with its
+ * Ship 1 stamped at the sector origin (so its local tiles are sector tiles) with its airlock on the east hull, ship 2 (optional) `gap` tiles away (or at `at2`) with its
  * airlock on the west hull. Each window sits at its ShipC position.
  */
 function world(ships = 1, gap = 5, at2?: { x: number; y: number }): Sim {
   const sim = new Sim(7, content);
   const rots = [1, 3];
   for (let g = 1; g <= ships; g++) {
-    const origin = g === 1 ? { x: 20, y: 20 } : (at2 ?? { x: 20 + (g - 1) * (14 + gap - 1), y: 20 });
+    const origin = g === 1 ? { x: 0, y: 0 } : (at2 ?? { x: (g - 1) * (14 + gap - 1), y: 0 });
     sim.grids.stamp(g, gridFromTemplate(g, { name: `s${g}`, rows: ring() }), origin.x, origin.y);
     const rot = rots[g - 1] as number;
-    const at = rot === 1 ? { x: 9, y: 5 } : { x: 1, y: 5 };
+    const at = rot === 1 ? { x: origin.x + 9, y: origin.y + 5 } : { x: origin.x + 1, y: origin.y + 5 }; // sector tiles
     expect(placementError(sim, g, 'airlock', at.x, at.y, rot)).toBeNull();
     spawnModule(sim, g, 'airlock', at.x, at.y, rot);
     const ship = sim.world.createEntity();

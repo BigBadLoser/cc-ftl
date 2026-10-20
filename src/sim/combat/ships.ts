@@ -57,8 +57,8 @@ export function spawnCrew(sim: Sim, gridId: number, roles: readonly string[], re
   const grid = sim.grids.get(gridId);
   if (!grid) return [];
   const floor: { x: number; y: number }[] = [];
-  for (let y = 0; y < grid.height; y++) {
-    for (let x = 0; x < grid.width; x++) {
+  for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
       if (grid.get('struct', x, y) === Struct.Floor && isTileWalkable(sim, grid, x, y)) floor.push({ x, y });
     }
   }

@@ -28,12 +28,33 @@ function legacyWorld(sim: Sim): unknown {
     const b = bodies.get(id) as Body;
     return [id, { def, homeGrid: gridOfShip(sim, homeShip), home, state, x: b.x, y: b.y, heading: b.heading, hp, ...rest }];
   });
+  // Step 6 stores sector tiles in every component; the old code stored grid-local ones. Subtract each grid's origin.
+  const origin = (gridId: number): [number, number] => {
+    const g = sim.grids.get(gridId);
+    return g ? [g.x0, g.y0] : [0, 0];
+  };
+  const posGrid = new Map(((stores.position ?? []) as [number, { gridId: number }][]).map(([id, p]) => [id, p.gridId]));
+  for (const [name, rows] of Object.entries(stores)) {
+    stores[name] = (rows as [number, Record<string, unknown>][]).map(([id, c]) => {
+      if (name === 'path') {
+        const [ox, oy] = origin(posGrid.get(id) ?? 0);
+        const steps = (c.steps as { x: number; y: number }[]).map((t) => ({ ...t, x: t.x - ox, y: t.y - oy }));
+        return [id, { ...c, steps }];
+      }
+      if (name === 'ship' || typeof c.gridId !== 'number' || typeof c.x !== 'number') return [id, c]; // ShipC x, y were sector already
+      const [ox, oy] = origin(c.gridId);
+      const out: Record<string, unknown> = { ...c, x: (c.x as number) - ox, y: (c.y as number) - oy };
+      if (typeof c.toX === 'number') Object.assign(out, { toX: c.toX - ox, toY: (c.toY as number) - oy });
+      return [id, out];
+    });
+  }
   return { ...data, stores };
 }
 
 /**
  * A save-format-independent hash of the sim: tick, rng, every entity and component (in their pre-refactor shape, see
- * `legacyWorld`), and each grid's legacy fields read tile by tile in local coordinates (grids in id order). Recorded on the
+ * `legacyWorld`, with positions back in grid-local tiles), and each grid's legacy fields read tile by tile in local order
+ * from its top-left (grids in id order). Recorded on the
  * pre-refactor code; must never change.
  */
 function stateHash(sim: Sim, events: string): string {
@@ -42,7 +63,7 @@ function stateHash(sim: Sim, events: string): string {
     const g = sim.grids.get(id)!;
     const vals: number[] = [id, g.width, g.height];
     for (const f of FIELDS) {
-      for (let y = 0; y < g.height; y++) for (let x = 0; x < g.width; x++) vals.push(g.get(f, x, y));
+      for (let y = 0; y < g.height; y++) for (let x = 0; x < g.width; x++) vals.push(g.get(f, g.x0 + x, g.y0 + y));
     }
     h = fnv(vals.join(','), h);
   }
@@ -69,12 +90,13 @@ function disaster(seed: number): Sim {
   const g = sim.grids.get(1)!;
   let fire: { x: number; y: number } | null = null;
   let breach: { x: number; y: number } | null = null;
+  const at = (x: number, y: number) => g.get('struct', g.x0 + x, g.y0 + y);
   for (let y = 0; y < g.height; y++) {
     for (let x = 0; x < g.width; x++) {
-      const k = g.get('struct', x, y);
-      if (!fire && k === Struct.Floor && y >= g.height / 2 && x >= g.width / 2) fire = { x, y };
-      if (!breach && k === Struct.Wall && x > 0 && g.get('struct', x - 1, y) === Struct.Space && g.get('struct', x + 1, y) === Struct.Floor) {
-        breach = { x, y };
+      const k = at(x, y);
+      if (!fire && k === Struct.Floor && y >= g.height / 2 && x >= g.width / 2) fire = { x: g.x0 + x, y: g.y0 + y };
+      if (!breach && k === Struct.Wall && x > 0 && at(x - 1, y) === Struct.Space && at(x + 1, y) === Struct.Floor) {
+        breach = { x: g.x0 + x, y: g.y0 + y };
       }
     }
   }

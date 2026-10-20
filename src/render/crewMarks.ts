@@ -36,7 +36,7 @@ export function createCrewMarks(world: World, parent: Container, host: CrewMarks
         if (!pos || !ship || !host.visible(pos.gridId, pos.x, pos.y) || world.has(id, DeadC)) continue;
         const gx = pos.x + (pos.toX - pos.x) * pos.progress;
         const gy = pos.y + (pos.toY - pos.y) * pos.progress;
-        const p = iso(ship.x + gx, ship.y + gy);
+        const p = iso(gx, gy); // sector tiles
         const mine = world.get(id, AllegianceC)?.faction === 'player';
         const hp = world.get(id, HealthC);
         const downed = world.has(id, DownedC);
