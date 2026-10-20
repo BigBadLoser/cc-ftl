@@ -323,7 +323,7 @@ def leg(b, R, side, grow=0.0, foot=True, boot=0.0):
     chain(b, R, [f"leg.{s}", f"shin.{s}"], grow)
     if foot:
         secs = R.T["limb"][f"foot.{s}"]
-        b.sweep(transport([(c, e1, e2, r1, r2, W(f"foot.{s}")) for c, e1, e2, r1, r2 in secs]), grow=grow + boot, exp=3.0)
+        b.sweep(transport([(c, e1, e2, r1, r2, W(f"foot.{s}")) for c, e1, e2, r1, r2 in secs]), grow=grow + boot, exp=2.6)
 
 
 HEAD_EXP = 3.6                        # squarer sections (2: round)

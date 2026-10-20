@@ -15,6 +15,7 @@ HEAD = ("neck_01", "head")
 LIMBS = ("arm", "forearm", "hand", "leg", "shin", "foot")
 UPPER_K = (1.12, 1.45, 1.12)          # upper arm thickness against the traced arm: shoulder, bicep, elbow
 FORE_K = (1.08, 1.02, 0.95)           # forearm: elbow, a third down, wrist
+SHIN_K = (1.0, 1.14, 0.88)            # lower leg: knee, the calf a third down, a narrower ankle
 HEAD_W, HEAD_H = 0.84, 1.14           # head width and height against the traced head
 HAND_LEN = 0.17                       # wrist to the curled finger ends (the traced hand, fingers out, is 0.26)
 
@@ -235,8 +236,8 @@ def measure(arm, body):
         out["limb"][f"hand.{s}"] = shape_hand(wrist(limb(by[f"hand.{s}"], h[f"hand.{s}"], t[f"hand.{s}"], step=0.03),
                                                     h[f"hand.{s}"]), h[f"hand.{s}"])
         out["limb"][f"leg.{s}"] = to_joint(limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"]), h[f"leg.{s}"])
-        out["limb"][f"shin.{s}"] = limb(by[f"shin.{s}"], h[f"shin.{s}"], t[f"shin.{s}"])
-        out["limb"][f"foot.{s}"] = limb(by[f"foot.{s}"], h[f"foot.{s}"], t[f"toe.{s}"], step=0.035)
+        out["limb"][f"shin.{s}"] = bulk(limb(by[f"shin.{s}"], h[f"shin.{s}"], t[f"shin.{s}"]), SHIN_K)
+        out["limb"][f"foot.{s}"] = limb(by[f"foot.{s}"], h[f"foot.{s}"], t[f"toe.{s}"], step=0.035)[:-1]   # toe shorter
     hz = max(b[:, 2].max() for k, b in by.items() if k == "head")
     tz = by["hips"][:, 2].min()
     lg = out["limb"]["leg.L"][0]

@@ -33,7 +33,11 @@ def eyes(A, R):
     c = R.head_c
     for sx in (1, -1):                                         # two dark eyes, ~2 x 3 px: they show which way the head faces
         b.blob(Vector((sx * 0.048, R.front + 0.018, c.z + 0.0)), 0.022, 0.012, 0.028, W("head"), exp=2.4, nlat=6)
-    return Item("eyes", "organic", [b.mesh("v2.eyes", A, flat("dark"))], default=True)
+    brow = c.z + 0.052
+    for sx in (1, -1):                                         # brows, in the hair colour, a little wider than the eyes
+        b.blob(Vector((sx * 0.05, R.front + 0.016, brow)), 0.034, 0.012, 0.012, W("head"), exp=2.6, nlat=6)
+    col = lambda p, n: "team.hair" if p.z > brow - 0.02 else "dark"  # noqa: E731
+    return Item("eyes", "organic", [b.mesh("v2.eyes", A, col)], default=True)
 
 
 def flesh_arm(A, R, s):
@@ -83,10 +87,15 @@ def cargo_pants(A, R):
     for s in "LR":
         leg(b, R, s, grow=0.018, boot=0.02)
     k0, k1 = R.t["leg.L"].z + 0.06, R.h["leg.L"].z - 0.1
+    kz = R.t["leg.L"].z
 
     def col(c, n):
+        if c.z < 0.035:
+            return "steelD"                                                 # a dark sole edge
         if c.z < 0.17:
             return "boot"
+        if abs(c.z - kz) < CREASE:
+            return "steelD"                                                 # a crease line round the knee
         if c.z > top - 0.065:
             return "rust"                                                   # the waistband: a belt line under the hem
         if k0 < c.z < k1 and n.x * (1 if c.x > 0 else -1) > 0.55:
