@@ -56,6 +56,13 @@ export interface RegionTiles {
    * are not allocated are skipped whole.
    */
   scan(fn: (lx: number, ly: number, idx: number, ci: number, c: ChunkRef) => void, all?: boolean): void;
+  /**
+   * Change key of `field` for a view of chunk `c` whose tiles look up to `margin` (at most 16) tiles past it: the chunk's
+   * own revision plus a hash of the margin strip in the neighbouring chunks (region tiles only). A write deep inside a
+   * neighbour leaves it alone, so a tile edit rebuilds one chunk unless it is near a chunk edge. The hash is recomputed
+   * only when a neighbour's revision moves.
+   */
+  key(field: string, c: ChunkRef, margin?: number): string;
   /** `chunkData` of a field, or undefined for an unallocated chunk. */
   data(field: string, c: ChunkRef): Readonly<FieldArray> | undefined;
 }
@@ -84,6 +91,25 @@ export function createRegionTiles(src: ChunkSource, ox: number, oy: number, widt
     const d = src.chunkData(field, chunkOf(sx), chunkOf(sy));
     return d ? (d[inChunk(sx, sy)] as number) : src.emptyValue(field);
   };
+  const strips = new Map<string, { rev: number; hash: number }>();
+  const strip = (field: string, c: ChunkRef, m: number): number => {
+    const k = `${field}|${m}|${c.cx},${c.cy}`;
+    const rev = self.rev(field, c, 1) - src.chunkRevision(field, c.cx, c.cy);
+    const e = strips.get(k);
+    if (e && e.rev === rev) return e.hash;
+    const r = self.chunkRect(c);
+    let h = 0x811c9dc5;
+    for (let y = r.y0 - m; y < r.y1 + m; y++)
+      for (let x = r.x0 - m; x < r.x1 + m; x++) {
+        if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1) {
+          x = r.x1 - 1; // skip the chunk's own tiles
+          continue;
+        }
+        h = Math.imul(h ^ (get(field, x, y) * 2654435761 + 1), 16777619) >>> 0;
+      }
+    strips.set(k, { rev, hash: h });
+    return h;
+  };
   const self: RegionTiles = {
     src,
     ox,
@@ -107,6 +133,7 @@ export function createRegionTiles(src: ChunkSource, ox: number, oy: number, widt
       return sum;
     },
     data: (field, { cx, cy }) => src.chunkData(field, cx, cy),
+    key: (field, c, margin = 2) => `${src.chunkRevision(field, c.cx, c.cy)}:${strip(field, c, margin)}`,
     scan(fn, all = false) {
       const cx0 = chunkOf(ox), cx1 = chunkOf(ox + width - 1);
       for (let ly = 0; ly < height; ly++) {

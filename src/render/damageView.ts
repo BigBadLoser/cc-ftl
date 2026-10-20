@@ -21,6 +21,7 @@ export interface DamageView {
 export function createDamageView(grid: Grid, L: Layers, wallH: () => number): DamageView {
   const tiles = regionTiles(grid);
   const chunks = createChunkViews<Graphics>((g) => g.destroy());
+  let key = '';
 
   function draw(c: ChunkRef, old: Graphics | undefined): Graphics {
     const g = old ?? L.fx.addChild(new Graphics());
@@ -57,7 +58,10 @@ export function createDamageView(grid: Grid, L: Layers, wallH: () => number): Da
   return {
     update() {
       const h = wallH();
-      chunks.sync(tiles.chunks(), (c) => `${tiles.rev('hp', c)}|${tiles.rev('struct', c, 1)}|${h}`, draw);
+      const k = `${grid.revision('hp')}|${grid.revision('struct')}|${h}`;
+      if (k === key) return;
+      key = k;
+      chunks.sync(tiles.chunks(), (c) => `${tiles.rev('hp', c)}|${tiles.key('struct', c, 1)}|${h}`, draw);
     },
     dispose() {
       chunks.clear();

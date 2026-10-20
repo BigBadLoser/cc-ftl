@@ -79,9 +79,9 @@ function damageTint(hp: number): number {
 }
 
 /**
- * Floors, walls, hull and doors of one region, as one view per sector chunk (step 5b): a chunk is rebuilt when the
- * struct revision of its 3 x 3 chunk block changes (a tile's sprites look up to two tiles away), when the engine / airlock
- * hull tiles near it change, or when the cutaway mode does. Doors and tints update per chunk on their own revisions.
+ * Floors, walls, hull and doors of one region, as one view per sector chunk (step 5b): a chunk is rebuilt when its own
+ * struct changes or the two-tile strip around it does (a tile's sprites look up to two tiles away; `RegionTiles.key`),
+ * when the engine / airlock hull tiles near it change, or when the cutaway mode does. Doors and tints update per chunk on their own revisions.
  */
 export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridViewHost): GridView {
   const markers = createMarkers(L.ui);
@@ -95,6 +95,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let mode: CutawayMode = "auto";
   let ghosts = true;
   let modRev = -1;
+  /** Region-wide gates for the per-chunk keys: the build inputs, and the door / tint inputs. */
+  let builtKey = "";
+  let frameKey = "";
   let replaced = new Set<number>();
   let airlocks = new Set<number>();
 
@@ -239,7 +242,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
 
   function updateTints(v: TileChunk, pulse: number): void {
     if (!v.tinted.length) return;
-    const key = `${tiles.rev("light", v.c, 1)}|${tiles.rev("o2", v.c)}|${tiles.rev("hp", v.c)}|${pulse}`;
+    const key = `${tiles.key("light", v.c, 1)}|${tiles.rev("o2", v.c)}|${tiles.rev("hp", v.c)}|${pulse}`;
     if (key === v.tintKey) return;
     v.tintKey = key;
     const light = tiles.data("light", v.c);
@@ -278,12 +281,22 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       }
       const look = host.beamLook?.() ?? DEFAULT_BEAM_LOOK;
       const base = `${mode}|${ghosts}|${look}`;
-      // One chunk ring past the region: ghost verts sit a tile outside its -x / -y edges.
-      chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.rev("struct", c, 1)}|${specialsNear(c)}`, buildChunk);
+      // Per-chunk keys only when something in the region moved (tiles outside it read as Space, so its revision covers
+      // every input). One chunk ring past the region: ghost verts sit a tile outside its -x / -y edges.
+      const built = `${base}|${grid.revision("struct")}|${mr}`;
+      if (built !== builtKey) {
+        builtKey = built;
+        chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c)}|${specialsNear(c)}`, buildChunk);
+        frameKey = "";
+      }
       const pulse = host.emergency() ? pulsePhase(performance.now()) : -1;
-      for (const v of chunks.views()) {
-        updateDoors(v);
-        updateTints(v, pulse);
+      const fk = `${grid.revision("door")}|${grid.revision("light")}|${grid.revision("o2")}|${grid.revision("hp")}|${pulse}`;
+      if (fk !== frameKey) {
+        frameKey = fk;
+        for (const v of chunks.views()) {
+          updateDoors(v);
+          updateTints(v, pulse);
+        }
       }
       overlay.update();
     },

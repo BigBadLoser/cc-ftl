@@ -62,6 +62,21 @@ describe('region tiles', () => {
     expect(changed).toEqual(['1,0', '2,0', '3,0', '1,1', '2,1', '3,1']);
   });
 
+  it('a chunk view key moves for its own tiles and its two-tile margin only', () => {
+    const g = ship(0, 0, 60, 40);
+    const t = regionTiles(g);
+    const keys = () => new Map(t.chunks().map((c) => [key(c), t.key('struct', c)]));
+    const moved = (write: () => void) => {
+      const before = keys();
+      write();
+      const after = keys();
+      return [...after].filter(([k, v]) => before.get(k) !== v).map(([k]) => k);
+    };
+    expect(moved(() => g.set('struct', 40, 8, Struct.Wall))).toEqual(['2,0']); // deep inside chunk (2, 0)
+    expect(moved(() => g.set('struct', 33, 8, Struct.Wall))).toEqual(['1,0', '2,0']); // 2 tiles from its west edge
+    expect(moved(() => g.set('struct', 47, 15, Struct.Wall))).toEqual(['2,0', '3,0', '2,1', '3,1']); // the SE corner
+  });
+
   it('splits the ghost verts exactly between chunks', () => {
     const g = ship(3, 5, 37, 23);
     const t = regionTiles(g);

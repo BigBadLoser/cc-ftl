@@ -832,13 +832,17 @@ Step 5b done (branch `sector-5b`): chunk tile views.
 - `render/regionTiles.ts`: `regionTiles(grid)` reads a region's tiles straight from the `SectorGrid` chunks (`chunkData`,
   `chunkRevision`) under its window rectangle, in local coordinates (`kindAt`, `get`, a row-major `scan` over allocated
   chunks, `chunks(pad)`, `chunkRect`, `rev(field, chunk, ring)` = sum of chunk revisions over the (2 ring + 1)² block;
-  chunk revisions only grow, so the sum is a change detector). A plain dense grid (fixtures) is wrapped at (0, 0).
-  `createChunkViews` keeps one view per sector chunk, rebuilding a chunk only when its key changes.
+  chunk revisions only grow, so the sum is a change detector), and `key(field, chunk, margin)`: the chunk's own revision
+  plus a hash of the `margin`-tile strip around it, so an edit deep inside a chunk rebuilds that chunk alone and one near
+  an edge also rebuilds the neighbours it reaches. A plain dense grid (fixtures) is wrapped at (0, 0). `createChunkViews`
+  keeps one view per sector chunk, rebuilding a chunk only when its key changes. Each view first gates on the region's
+  window revisions, so a frame with no change does no per-chunk work.
 - Per-chunk views: `gridView` (floors, walls, hull, doors, beams, ghost verts; key = cutaway mode, ghosts, beam look,
-  `struct` over the 3 x 3 block, and the engine / airlock hull tiles within 2 tiles; one chunk ring past the region for the
-  ghost verts at its -x / -y edges; doors per chunk on `door`, tints per chunk on `light` (3 x 3), `o2`, `hp`),
-  `roofView` (plating; key = `struct` 3 x 3, the chunk's `module`, and its share of the region-wide livery plan, which is
-  recomputed on the region's struct revision; fire tint per chunk) and `damageView` (one crack `Graphics` per chunk).
+  `struct` with a 2-tile margin, and the engine / airlock hull tiles within 2 tiles; one chunk ring past the region for
+  the ghost verts at its -x / -y edges; doors per chunk on `door`, tints per chunk on `light` (1-tile margin), `o2`, `hp`),
+  `roofView` (plating; key = `struct` with a 2-tile margin, the chunk's `module`, and its share of the region-wide livery
+  plan, which is recomputed on the region's struct revision; fire tint per chunk) and `damageView` (one crack `Graphics`
+  per chunk, `struct` with a 1-tile margin).
   Each chunk's floor plates live in their own container in the floor layer, so plate order is stable across rebuilds;
   walls, roofs and the rest stay direct children of the region's sorted container (they sort against crew and other
   regions in the depth layer). `ghostVertsIn` gives a chunk its exact share of the ghost verts.
@@ -847,6 +851,10 @@ Step 5b done (branch `sector-5b`): chunk tile views.
   `moduleView` and the crew light host in `shipScene`; `app/moduleSnapshot` reads `room` / `o2` by `raw`.
 - Not built: per-chunk culling (regions are culled per camera; chunk floor containers would allow it for the floor, but
   sorted sprites cannot sit in chunk containers without leaving the shared depth layer).
+- Measured (headless Chromium, swiftshader; JS time of the frame after a one-tile struct write, median): starter 11.4–12 ms
+  on main, 5.8–6.4 ms on 5b; with 4x CPU throttle at phone size 49–52 ms vs 23–25 ms. Steady frames unchanged (2.1–2.3 vs
+  2.3–2.4 ms desktop, 8.8–10 vs 9.2–10.1 ms phone). What remains of a rebuild is mostly Pixi (render-layer detach on
+  destroy, the depth sort, collecting renderables).
 - Fixed on the way: a roof rebuild no longer deletes the roof parts (on main, any struct change on a ship removed its
   AI-core / shield-generator roof part until a power state changed).
 

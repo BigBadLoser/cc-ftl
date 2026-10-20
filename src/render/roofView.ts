@@ -57,6 +57,9 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
   /** The plan's share per chunk (`cx,cy` -> its masks), compared in the chunk keys. */
   let planKeys = new Map<string, string>();
   let planRev = -1;
+  /** Region-wide gates for the per-chunk keys (struct and module, fire). */
+  let key = '';
+  let fireRev = -1;
   let visible = true;
   let partKey = '';
   let partSprites: PartSprite[] = [];
@@ -151,8 +154,13 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
 
   return {
     update() {
-      replan();
-      chunks.sync(tiles.chunks(), (c) => `${tiles.rev('struct', c, 1)}|${tiles.rev('module', c)}|${planKeys.get(`${c.cx},${c.cy}`) ?? ''}`, buildChunk);
+      const k = `${grid.revision('struct')}|${grid.revision('module')}`;
+      if (k !== key) {
+        key = k;
+        replan();
+        chunks.sync(tiles.chunks(), (c) => `${tiles.key('struct', c)}|${tiles.rev('module', c)}|${planKeys.get(`${c.cx},${c.cy}`) ?? ''}`, buildChunk);
+        fireRev = -1;
+      }
       let pk = '';
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
@@ -163,7 +171,11 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
         rebuildParts();
       }
       for (const p of partSprites) setGhostZoom(p.ghost, L.scale);
-      for (const v of chunks.views()) updateFire(v);
+      const fr = grid.revision('fire');
+      if (fr !== fireRev) {
+        fireRev = fr;
+        for (const v of chunks.views()) updateFire(v);
+      }
     },
     setVisible(v) {
       visible = v;
