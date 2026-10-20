@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiCrew } from './api';
+  import Icon, { type IconName } from './Icon.svelte';
+  import PanelHead from './PanelHead.svelte';
 
-  let { api, onPriorities }: { api: UiApi; onPriorities: () => void } = $props();
+  let { api, onPriorities, onBack }: { api: UiApi; onPriorities: () => void; onBack: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
   let sel = $state<number | null>(null);
@@ -20,46 +22,52 @@
   });
 </script>
 
+{#snippet meter(icon: IconName, label: string, pct: number, cls: string, low: boolean, text: string, tid: string, barTid?: string)}
+  <div class="m {cls}" class:low title={label} data-testid={barTid}>
+    <Icon name={icon} size={16} />
+    <span class="bar"><i style:width="{Math.max(0, Math.min(100, Math.round(pct)))}%"></i></span>
+    <span class="mv" data-testid={tid}>{text}</span>
+  </div>
+{/snippet}
+
 {#if c}
-  <aside class="sheet" data-testid="crew-inspector">
-    <h2 class:foe={enemy}>{c.name} <small>{c.role}{enemy ? ', hostile' : ''}</small></h2>
+  <div data-testid="crew-inspector">
+    <PanelHead icon={enemy ? 'skull' : 'person'} title={c.name} sub="{c.role}{enemy ? ' · hostile' : ''}" foe={enemy} {onBack} />
+    <div class="meters">
+      {@render meter('heart', 'Health', (c.hp / c.maxHp) * 100, 'hp', c.hp / c.maxHp < 0.4, c.dead ? 'dead' : `${c.hp}/${c.maxHp}`, 'crew-health')}
+      {#if c.suit}{@render meter('o2', 'Suit air', (c.suit.air / Math.max(1, c.suit.max)) * 100, 'air', c.suit.low, `${c.suit.outside ? 'outside, ' : ''}${airText(c.suit.air)}${c.suit.low ? ' LOW' : ''}`, 'suit-air', 'suit-bar')}{/if}
+      {#if !enemy}
+        {@render meter('sleep', 'Rest', c.rest, 'rest', false, `${c.rest}%`, 'crew-rest')}
+        {#if c.hunger !== null}{@render meter('food', 'Hunger', c.hunger, 'food', c.hunger < 35, c.hunger <= 0 ? 'starving' : c.hunger < 35 ? 'hungry' : `${c.hunger}% fed`, 'crew-hunger', 'hunger-bar')}{/if}
+        {#if c.mood}{@render meter('smile', 'Mood', c.mood.value, 'mood', c.mood.value < 35, `${c.mood.value} ${moodWord(c.mood.value)}`, 'crew-mood', 'mood-bar')}{/if}
+      {/if}
+      {#if c.fight && c.fight.cooldown > 0}<div class="bar cd"><i style:width="{Math.round((c.fight.cooldown / Math.max(0.1, c.fight.cooldownMax)) * 100)}%"></i></div>{/if}
+    </div>
     <dl>
       <dt>Where</dt><dd data-testid="crew-where">{c.where}</dd>
+      <dt>Activity</dt><dd data-testid="crew-activity">{c.drafted ? 'drafted' : c.activity}{c.job ? ` · ${c.job}` : ''}</dd>
       <dt>Weapon</dt><dd data-testid="crew-weapon">{c.weapon ? `${c.weapon.name} (${c.weapon.damage} dmg${c.weapon.ranged ? `, range ${c.weapon.range}` : ', melee'})` : 'bare hands'}</dd>
       {#if c.surrendered}<dt>Status</dt><dd class="bad">{c.prisoner ? 'prisoner' : 'surrendered'}</dd>{/if}
-      {#if c.fight && c.fight.mode !== 'idle'}<dt>Fight</dt><dd data-testid="crew-fight">{c.fight.mode === 'flee' ? 'fleeing' : `${c.fight.ordered ? 'ordered on' : 'engaging'} ${c.fight.target ?? '...'}`}</dd>{/if}
-      {#if c.fight && c.fight.cover}<dt>Cover</dt><dd>{c.fight.cover}</dd>{/if}
-      <dt>Activity</dt><dd data-testid="crew-activity">{c.drafted ? 'drafted' : c.activity}</dd>
-      <dt>Job</dt><dd>{c.job ?? 'none'}</dd>
-      <dt>Health</dt><dd data-testid="crew-health">{c.dead ? 'dead' : `${c.hp}/${c.maxHp}`}</dd>
+      {#if c.fight && c.fight.mode !== 'idle'}<dt>Fight</dt><dd data-testid="crew-fight">{c.fight.mode === 'flee' ? 'fleeing' : `${c.fight.ordered ? 'ordered on' : 'engaging'} ${c.fight.target ?? '...'}`}{c.fight.cover ? ` · ${c.fight.cover}` : ''}</dd>{/if}
       {#if c.downed}<dt>Bleeding out</dt><dd data-testid="crew-bleed" class="bad">{c.downed.stabilized ? 'stabilized' : `${c.downed.bleed}s`}</dd>{/if}
       {#if c.carriedBy}<dt>Carried by</dt><dd>{c.carriedBy}</dd>{/if}
       {#if c.carrying}<dt>Carrying</dt><dd>{c.carrying.count} {c.carrying.item.replace('item.', '')}</dd>{/if}
-      <dt>Rest</dt><dd>{c.rest}%</dd>
-      {#if c.hunger !== null}<dt>Hunger</dt><dd data-testid="crew-hunger" class:bad={c.hunger < 35}>{c.hunger <= 0 ? 'starving' : c.hunger < 35 ? 'hungry' : `${c.hunger}% fed`}</dd>{/if}
-      {#if c.mood}<dt>Mood</dt><dd data-testid="crew-mood" class:bad={c.mood.value < 35}>{c.mood.value} {moodWord(c.mood.value)}</dd>{/if}
-      {#if c.suit}<dt>Suit air</dt><dd data-testid="suit-air" class:bad={c.suit.low}>{c.suit.outside ? 'outside, ' : ''}{airText(c.suit.air)}{c.suit.low ? ' LOW' : ''}</dd>{/if}
     </dl>
-    {#if c.suit}<div class="bar air" class:low={c.suit.low} data-testid="suit-bar"><i style:width="{Math.round((c.suit.air / Math.max(1, c.suit.max)) * 100)}%"></i></div>{/if}
-    <div class="bar hp" class:low={c.hp / c.maxHp < 0.4}><i style:width="{Math.round((c.hp / c.maxHp) * 100)}%"></i></div>
-    {#if c.fight && c.fight.cooldown > 0}<div class="bar cd"><i style:width="{Math.round((c.fight.cooldown / Math.max(0.1, c.fight.cooldownMax)) * 100)}%"></i></div>{/if}
     {#if enemy}
       <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={c.dead || c.surrendered || !!c.downed} onclick={() => api.attack(c.id)}>Attack</button></div>
     {:else}
-    <div class="bar rest" title="Rest"><i style:width="{c.rest}%"></i></div>
-    {#if c.hunger !== null}<div class="bar food" class:low={c.hunger < 35} title="Hunger" data-testid="hunger-bar"><i style:width="{c.hunger}%"></i></div>{/if}
-    {#if c.mood}
-      <div class="bar mood" class:low={c.mood.value < 35} title="Mood" data-testid="mood-bar"><i style:width="{c.mood.value}%"></i></div>
-      <ul class="why" data-testid="mood-reasons">
-        {#each c.mood.factors as f (f.label)}<li class:neg={f.value < 0}><span>{f.label}</span><b>{f.value > 0 ? '+' : '\u2212'}{Math.abs(f.value)}</b></li>{/each}
-        {#if c.mood.workMult < 1}<li class="neg"><span>Work speed</span><b>x{c.mood.workMult}</b></li>{/if}
-      </ul>
+    {#if c.mood && (c.mood.factors.length || c.mood.workMult < 1)}
+      <details class="why-box">
+        <summary>Mood details</summary>
+        <ul class="why" data-testid="mood-reasons">
+          {#each c.mood.factors as f (f.label)}<li class:neg={f.value < 0}><span>{f.label}</span><b>{f.value > 0 ? '+' : '\u2212'}{Math.abs(f.value)}</b></li>{/each}
+          {#if c.mood.workMult < 1}<li class="neg"><span>Work speed</span><b>x{c.mood.workMult}</b></li>{/if}
+        </ul>
+      </details>
     {/if}
     <div class="btns">
-      <button class:on={c.drafted} data-testid="draft" onclick={() => api.dispatch({ type: 'crew.draft', id: c.id, drafted: !c.drafted })}>
-        {c.drafted ? 'Undraft' : 'Draft'} (R)
-      </button>
-      <button data-testid="open-priorities" onclick={onPriorities}>Priorities</button>
+      <button class="tile" class:on={c.drafted} title="{c.drafted ? 'Undraft' : 'Draft'} (R)" aria-label={c.drafted ? 'Undraft' : 'Draft'} data-testid="draft" onclick={() => api.dispatch({ type: 'crew.draft', id: c.id, drafted: !c.drafted })}><Icon name="draft" size={20} /></button>
+      <button class="tile" title="Work priorities" aria-label="Priorities" data-testid="open-priorities" onclick={onPriorities}><Icon name="list" size={20} /></button>
     </div>
     {#if c.arms.length || c.weapon}
       <div class="sub">Weapon</div>
@@ -88,33 +96,34 @@
       <p class="hint">Tap a tile to move (any ship; crossing open space needs a suit), tap a hostile to attack.</p>
     {/if}
     {/if}
-  </aside>
+  </div>
 {/if}
 
 <style>
   .bad { color: #ff9a9a; }
-  .hp > i { background: #4cd964; } .hp.low > i { background: #ff5a2d; }
-  .rest { margin-top: 4px; }
-  .food { margin-top: 4px; } .food > i { background: #e0a23a; } .food.low > i { background: #ff5a2d; }
-  .mood { margin-top: 4px; } .mood > i { background: #b58cff; } .mood.low > i { background: #ff5a2d; }
-  .why { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; display: grid; gap: 1px; }
-  .why li { display: flex; justify-content: space-between; color: #9fe0a8; } .why li.neg { color: #ff9a9a; }
-  .air { margin-top: 4px; } .air > i { background: var(--cyan); } .air.low > i { background: #ff5a2d; animation: blink 0.6s steps(2) infinite; }
+  .meters { display: grid; gap: 4px; margin-bottom: 8px; }
+  .m { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 8px; color: var(--dim); }
+  .mv { min-width: 74px; text-align: right; color: var(--text); font-size: 12px; text-transform: capitalize; }
+  .m.hp > .bar > i, .m.hp { --c: var(--hp); } .m.rest { --c: var(--rest); } .m.food { --c: var(--hunger); } .m.mood { --c: #b58cff; } .m.air { --c: var(--cyan); }
+  .m > .bar > i { background: var(--c); }
+  .m.low > .bar > i { background: #ff5a2d; }
+  .m.air.low > .bar > i { animation: blink 0.6s steps(2) infinite; }
+  .m.low .mv { color: #ff9a9a; }
   @keyframes blink { 50% { opacity: 0.35; } }
-  aside { left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab)); width: 280px; max-height: calc(100vh - var(--hdr) - 130px); overflow-y: auto; }
-  h2 { margin: 0 0 6px; font-size: 15px; color: var(--cyan); }
-  h2 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
+  .m .bar { height: 8px; }
+  .cd > i { background: var(--amber); }
+  .why-box { margin: 0 0 6px; font-size: 12px; color: var(--dim); }
+  .why-box summary { cursor: pointer; }
+  .why { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 1px; }
+  .why li { display: flex; justify-content: space-between; color: #9fe0a8; } .why li.neg { color: #ff9a9a; }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; text-transform: capitalize; }
-  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
-  .foe { color: #ff8a7a; }
-  .cd > i { background: var(--amber); }
-  .sub { color: var(--dim); font-size: 12px; margin: 8px 0 4px; }
+  .btns { display: flex; gap: 4px; margin-top: 8px; }
+  .btns.one { display: grid; grid-template-columns: 1fr; }
+  .sub { color: var(--dim); font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; margin: 8px 0 4px; }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; }
   .chips button { min-height: 34px; padding: 0 10px; display: flex; gap: 6px; align-items: center; }
   .chips small { color: var(--dim); }
-  .btns.one { grid-template-columns: 1fr; }
   .warn { border-color: #7a2a2a; }
   .hint { margin: 6px 0 0; color: var(--dim); font-size: 12px; }
-  @media (max-width: 600px) { aside { width: auto; left: 0; bottom: 0; max-height: 52vh; } }
 </style>

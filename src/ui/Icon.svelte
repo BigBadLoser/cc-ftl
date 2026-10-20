@@ -30,6 +30,21 @@
     faster: 'M2 5l6 7-6 7zM9 5l6 7-6 7zM16 5l6 7-6 7z',
     draft: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
     downed: 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10zM12 7l-1 4 2 2-1 4',
+    back: 'M15 5l-7 7 7 7',
+    list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+    rotate: 'M20 12a8 8 0 1 1-3-6.2M20 4v5h-5',
+    select: 'M5 3l14 8-6 2 4 7-3 1-4-7-5 4z',
+    trash: 'M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6',
+    close: 'M5 5l14 14M19 5L5 19',
+    wall: 'M3 5h18v14H3zM3 12h18M9 5v7M15 12v7',
+    floor: 'M3 12l9-5 9 5-9 5zM3 12v3l9 5 9-5v-3',
+    door: 'M6 21V4h12v17M3 21h18M15 12h.01',
+    module: 'M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10',
+    ship: 'M3 12l5-6h11l2 6-2 6H8z',
+    person: 'M12 3.5a3.5 3.5 0 1 0 0 .1M5 21c0-4 3-7 7-7s7 3 7 7',
+    smile: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 14c1 2 7 2 8 0M9 9.5h.01M15 9.5h.01',
+    grid: 'M4 4h16v16H4zM4 12h16M12 4v16',
+    room: 'M4 4h16v16H4zM4 10h6V4',
   } as const;
   export type IconName = keyof typeof ICONS;
 </script>

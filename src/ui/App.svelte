@@ -1,20 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCombat, UiCutaway, UiPrize, UiShuttles, UiSnapshot, UiToolState, UiTrade } from './api';
+  import type { UiApi, UiCombat, UiCutaway, UiPrize, UiSnapshot, UiToolState, UiTrade } from './api';
   import CombatPanel from './CombatPanel.svelte';
   import PrizePanel from './PrizePanel.svelte';
-  import ShuttlePanel from './ShuttlePanel.svelte';
-  import TradeList from './TradeList.svelte';
+    import TradeList from './TradeList.svelte';
   import TradeWindow from './TradeWindow.svelte';
   import DebugPanel from './DebugPanel.svelte';
-  import TileInspector from './TileInspector.svelte';
+  import SelectionPanel from './SelectionPanel.svelte';
   import CrewBar from './CrewBar.svelte';
-  import CrewInspector from './CrewInspector.svelte';
   import PriorityGrid from './PriorityGrid.svelte';
   import ToolBar from './ToolBar.svelte';
   import AlertList from './AlertList.svelte';
   import BuildModules from './BuildModules.svelte';
-  import ModuleInspector from './ModuleInspector.svelte';
   import OverlayPicker from './OverlayPicker.svelte';
   import StatsChips from './StatsChips.svelte';
   import StockDrawer from './StockDrawer.svelte';
@@ -35,17 +32,14 @@
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
   let combatOpen = $state(false);
   let wasInCombat = false;
-  let shuttleOpen = $state(false);
   let prizeOpen = $state(false);
   let tradeOpen = $state(false);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   let prizes = $state<UiPrize[]>([]);
-  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
 
   let cutaway = $state<UiCutaway>('auto');
-  let selMod = $state<number | null>(null);
   let tool = $state<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
   $effect(() => {
     document.documentElement.toggleAttribute('data-combat', combat.inCombat && combatOpen);
@@ -63,12 +57,6 @@
       api.snapshot.subscribe((s) => (snap = s)),
       api.selectedCrew.subscribe((c) => (selCrew = c)),
       api.toast.subscribe((t) => (toast = t)),
-      api.selectedModule.subscribe((m) => {
-        selMod = m;
-        // Selecting a vehicle bay opens the shuttle panel.
-        if (m !== null && shuttles.bays.some((b) => b.id === m)) shuttleOpen = true;
-      }),
-      api.shuttles.subscribe((v) => (shuttles = v)),
       api.trade.subscribe((v) => (trade = v)),
       api.prizes.subscribe((v) => {
         if (v.length > prizes.length) {
@@ -97,7 +85,10 @@
       api.togglePause();
     } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
     else if (e.key === '`') debug = !debug;
-    else if (e.key === 'Escape') stockOpen = false;
+    else if (e.key === 'Escape') {
+      if (stockOpen) stockOpen = false;
+      else api.selectCrew(null);
+    }
   }
 
   const speeds: { label: string; icon: IconName; speed: 0 | 1 | 2 | 3 }[] = [
@@ -113,23 +104,17 @@
 <canvas bind:this={canvas}></canvas>
 
 <header>
-  <!-- Left: global views and actions as icon tiles. Centre: the always-relevant crew and resources. Right: time. -->
+  <!-- Centre: the always-relevant crew and resources. Right: time. View options live in the bottom-right dock. -->
   <span class="acts">
-    <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={20} /></button>
-    <OverlayPicker {api} />
-    {#if shuttles.bays.length}
-      <button class="tile" class:on={shuttleOpen} title="Shuttle" aria-label="Shuttle" data-testid="shuttle-open" onclick={() => { shuttleOpen = !shuttleOpen; if (shuttleOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><Icon name="shuttle" size={20} /></button>
-    {/if}
     {#if trade.partners.length}
-      <button class="tile" class:on={tradeOpen} title="Trade" aria-label="Trade" data-testid="trade-open" onclick={() => { tradeOpen = !tradeOpen; if (tradeOpen) { api.selectCrew(null); if (phone()) { combatOpen = false; shuttleOpen = false; } } }}><Icon name="trade" size={20} /></button>
+      <button class="tile" class:on={tradeOpen} title="Trade" aria-label="Trade" data-testid="trade-open" onclick={() => { tradeOpen = !tradeOpen; if (tradeOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><Icon name="trade" size={20} /></button>
     {/if}
     {#if prizes.length}
       <button class="tile" class:on={prizeOpen} title="Prizes" aria-label="Prizes" data-testid="prize-open" onclick={() => { prizeOpen = !prizeOpen; if (prizeOpen) { api.selectCrew(null); if (phone()) combatOpen = false; } }}><Icon name="prize" size={20} /></button>
     {/if}
     {#if combat.inCombat && !combatOpen}
-      <button class="tile fight" title="Combat" aria-label="Combat" data-testid="combat-open" onclick={() => { combatOpen = true; if (phone()) { shuttleOpen = false; prizeOpen = false; } }}><Icon name="combat" size={20} /></button>
+      <button class="tile fight" title="Combat" aria-label="Combat" data-testid="combat-open" onclick={() => { combatOpen = true; if (phone()) prizeOpen = false; }}><Icon name="combat" size={20} /></button>
     {/if}
-    <button class="tile" class:on={debug} title="Debug" aria-label="Debug" onclick={() => (debug = !debug)}><Icon name="debug" size={20} /></button>
   </span>
   <span class="mid">
     <CrewBar {api} />
@@ -154,23 +139,21 @@
 {#if combat.inCombat && combatOpen}
   <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onHail={(ship) => { tradeWith = ship; }} />
 {/if}
-<ToolBar {api} />
+<ToolBar {api}>
+    <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
+    <OverlayPicker {api} />
+    <button class="tile" class:on={debug} title="Debug" aria-label="Debug" onclick={() => (debug = !debug)}><Icon name="debug" size={18} /></button>
+</ToolBar>
 {#if priorities}
   <PriorityGrid {api} onClose={() => (priorities = false)} />
 {:else if tool.tool === 'build' && tool.build === 'module'}
   <BuildModules {api} />
-{:else if selCrew !== null}
-  <CrewInspector {api} onPriorities={() => (priorities = true)} />
-{:else if tradeOpen && tradeWith === null}
+{:else if selCrew === null && tradeOpen && tradeWith === null}
   <TradeList {api} onClose={() => (tradeOpen = false)} onOpen={(ship) => (tradeWith = ship)} />
-{:else if prizeOpen}
+{:else if selCrew === null && prizeOpen}
   <PrizePanel {api} onClose={() => (prizeOpen = false)} />
-{:else if shuttleOpen && (selMod === null || shuttles.bays.some((b) => b.id === selMod))}
-  <ShuttlePanel {api} onClose={() => (shuttleOpen = false)} />
-{:else if selMod !== null}
-  <ModuleInspector {api} />
 {:else}
-  <TileInspector {api} />
+  <SelectionPanel {api} onPriorities={() => (priorities = true)} />
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 <AlertList {api} />
@@ -192,18 +175,18 @@
   /* The phone sheet leaves a transparent window for the enemy view; keep other overlays out of it. */
   @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
   .fight { border-color: var(--red); color: var(--red); }
-  .acts { justify-self: start; display: grid; grid-template-columns: repeat(4, 40px); gap: 2px; }
-  .mid { display: flex; gap: 6px; align-items: start; min-width: 0; }
-  .time { justify-self: end; display: grid; gap: 2px; justify-items: end; }
+  .acts { grid-column: 1; justify-self: start; display: grid; grid-template-columns: repeat(3, 40px); gap: 2px; }
+  .mid { grid-column: 2; display: flex; gap: 6px; align-items: start; min-width: 0; }
+  .time { grid-column: 3; justify-self: end; display: grid; gap: 2px; justify-items: end; }
   .tick { font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 3px 6px; background: var(--panel); border: 1px solid var(--line); }
   .speeds { display: flex; gap: 2px; }
   @media (max-width: 600px) {
-    /* Row 1: actions and time. Row 2: resources. Row 3: crew. */
+    /* Row 1: tick and speed. Row 2: resources. Row 3: crew. */
     header { grid-template-columns: 1fr auto; gap: 4px; padding-top: calc(4px + var(--sat)); }
-    .acts { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 36px; }
+    .acts { grid-column: 1; grid-row: 1; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 36px; }
     .acts :global(button.tile), .speeds :global(button.tile) { width: 36px; height: 36px; }
     .mid { grid-column: 1 / -1; grid-row: 2; flex-direction: column-reverse; gap: 4px; }
-    .time { grid-template-columns: auto auto; align-items: center; }
+    .time { grid-column: 2; grid-row: 1; grid-template-columns: auto auto; align-items: center; }
     .tick { display: none; }
   }
 </style>

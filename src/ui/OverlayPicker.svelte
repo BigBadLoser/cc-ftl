@@ -35,10 +35,10 @@
 
 <style>
   .wrap { position: relative; }
-  .menu { position: absolute; top: 44px; left: 0; z-index: 8; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 6px; background: var(--panel); border: 1px solid var(--line); width: 190px; }
+  .menu { position: absolute; bottom: 38px; right: 0; z-index: 8; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 6px; background: var(--panel); border: 1px solid var(--line); width: 190px; }
   .menu button { padding: 0 6px; }
   .legend { position: fixed; z-index: 4; left: 50%; transform: translateX(-50%); top: calc(var(--hdr) + var(--sat) + 4px); display: grid; gap: 2px; padding: 5px 10px; background: var(--panel); border: 1px solid var(--line); font-size: 12px; min-width: 150px; pointer-events: none; }
   .grad { display: block; height: 8px; }
   .ends { display: flex; justify-content: space-between; color: var(--dim); gap: 12px; }
-  @media (max-width: 600px) { .legend { top: calc(50px + var(--sat)); left: auto; right: 8px; transform: none; min-width: 120px; padding: 3px 8px; } }
+  @media (max-width: 600px) { .menu { bottom: auto; right: 40px; top: 0; } .legend { top: calc(50px + var(--sat)); left: auto; right: 8px; transform: none; min-width: 120px; padding: 3px 8px; } }
 </style>
