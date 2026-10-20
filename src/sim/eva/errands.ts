@@ -2,7 +2,7 @@ import { AssignmentC, JobC, PathC, type Job, type Position } from '../crew/compo
 import { origin } from '../crew/helpers';
 import type { Tile } from '../crew/pathfind';
 import { ModuleC } from '../modules/components';
-import { AirlockC } from '../portals/components';
+import { AirlockC } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { planWalk } from './route';
@@ -68,8 +68,7 @@ export function startErrand(sim: Sim, crew: number, kind: 'suitUp' | 'suitOff', 
     target: src.airlock, errandFor: crew, ...(resume ? { resume } : {}),
   });
   sim.world.add(crew, AssignmentC, { jobId: id });
-  (sim.world.get(crew, PathC) as { steps: Tile[]; then?: unknown }).steps = [...src.steps];
-  delete (sim.world.get(crew, PathC) as { then?: unknown }).then;
+  (sim.world.get(crew, PathC) as { steps: Tile[] }).steps = [...src.steps];
   return id;
 }
 

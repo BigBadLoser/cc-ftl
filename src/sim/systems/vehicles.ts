@@ -2,7 +2,7 @@ import { ALT, BodyC, type Body } from '../body';
 import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
 import { isIncapacitated, isSettled } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
-import { airlockWorking } from '../portals/airlock';
+import { airlockWorking } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter, boardingTile, dockPoint } from '../vehicles/geometry';

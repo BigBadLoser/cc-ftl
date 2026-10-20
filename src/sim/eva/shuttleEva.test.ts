@@ -7,7 +7,8 @@ import {
 import type { SimEvent } from '../events';
 import { ModuleC } from '../modules/components';
 import { placementError, spawnModule } from '../modules/spawn';
-import { AirlockC, SuitC } from '../portals/components';
+import { SuitC } from './components';
+import { AirlockC } from '../modules/airlock';
 import { AboardC, VehicleC } from '../vehicles/components';
 import { EvaFloatC } from './components';
 import type { ContentRegistry, ModuleDef } from '../registry';

@@ -1,7 +1,7 @@
 import { shipById, shipOf } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { accessTile, hullOutward, hullSide, rotatedSize } from '../modules/footprint';
-import { airlockTiles } from '../portals/airlock';
+import { airlockTiles } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { VehicleBayC, VehicleC } from './components';
 import { gridIdOf } from '../regions';

@@ -2,7 +2,7 @@ import { gridIdOf } from '../regions';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { sweepErrands } from '../eva/errands';
 import { isThin, suitAir, suitDef } from '../eva/suit';
-import { SuitC } from '../portals/components';
+import { SuitC } from '../eva/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { EVA_AIR_LOW_FRAC } from '../tuning';

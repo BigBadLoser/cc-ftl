@@ -1,6 +1,6 @@
 import type { ModuleDef } from '../registry';
 import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, openTilesOf, type Tile } from '../modules/footprint';
-import { airlockTiles } from '../portals/airlock';
+import { airlockTiles } from '../modules/airlock';
 import type { RoomRole } from './types';
 
 export interface PlacedModule {

@@ -8,7 +8,7 @@ import { killCrew } from '../crew/death';
 import { releaseAssignment } from '../crew/helpers';
 import { spillItems } from '../items/stacks';
 import { ModuleC } from '../modules/components';
-import { CrossingC } from '../portals/components';
+
 import type { VehicleDef } from '../registry';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
@@ -66,7 +66,7 @@ export function boardCrew(sim: Sim, crew: number, vehicle: number): 'pilot' | 'p
   const v = sim.world.get(vehicle, VehicleC) as Vehicle;
   releaseAssignment(sim, crew);
   releaseBedClaim(sim, crew);
-  for (const key of [EmbarkOrderC, DraftedC, PositionC, PathC, CrossingC, CarriedC]) sim.world.remove(crew, key);
+  for (const key of [EmbarkOrderC, DraftedC, PositionC, PathC, CarriedC]) sim.world.remove(crew, key);
   sim.world.add(crew, AboardC, { vehicle });
   (sim.world.get(crew, CrewC) as Crew).activity = 'idle';
   const role = v.pilot === 0 ? 'pilot' : 'passenger';

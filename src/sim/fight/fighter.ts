@@ -77,7 +77,6 @@ function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: numb
   f.goal = { x: goal.x, y: goal.y };
   if (steps) {
     path.steps = steps;
-    delete path.then;
   } else clearPath(sim, id);
 }
 
@@ -207,6 +206,5 @@ function flee(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, threa
   const steps = fleePath(sim, grid, origin(pos), threats);
   if (steps) {
     path.steps = steps;
-    delete path.then;
   }
 }

@@ -1,8 +1,8 @@
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
-import { airlockTiles, airlockWorking } from '../portals/airlock';
-import { AirlockC, type Airlock } from '../portals/components';
+import { airlockTiles, airlockWorking } from '../modules/airlock';
+import { AirlockC, type Airlock } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { gridIdOf, shipIdOf } from '../regions';

@@ -2,7 +2,7 @@ import type { Sim } from '../sim';
 import {
   AssignmentC, CarriedC, CrewC, DeadC, DownedC, JobC, PathC, PositionC, type Position,
 } from './components';
-import { CrossingC } from '../portals/components';
+
 import { InertC, StunC } from '../robots/components';
 import type { Tile } from './pathfind';
 import { gridIdOf } from '../regions';
@@ -36,13 +36,12 @@ export function isAdjacent(a: Tile, b: Tile): boolean {
 export function clearPath(sim: Sim, crew: number): void {
   const path = sim.world.get(crew, PathC);
   if (path && path.steps.length > 0) path.steps = [];
-  if (path?.then) delete path.then;
 }
 
-/** True if the crew member still has somewhere to walk: steps left, or portal crossings planned. */
+/** True if the crew member still has somewhere to walk: steps left. */
 export function hasRoute(sim: Sim, crew: number): boolean {
   const path = sim.world.get(crew, PathC);
-  return !!path && (path.steps.length > 0 || (path.then?.length ?? 0) > 0 || sim.world.has(crew, CrossingC));
+  return !!path && (path.steps.length > 0);
 }
 
 /** Drop a crew member's job: free the reservation, remove the Assignment, clear the path. */

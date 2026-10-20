@@ -5,7 +5,7 @@ import { isTileWalkable } from '../modules/walk';
 import { needsFrom } from '../items/materials';
 import { destroyJob, structCostKey } from '../items/stacks';
 import { FighterC } from '../fight/components';
-import { SuitC } from '../portals/components';
+import { SuitC } from '../eva/components';
 import { Struct } from '../structure';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';

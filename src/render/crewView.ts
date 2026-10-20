@@ -6,7 +6,7 @@ import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '.
 import { EvaFloatC } from '../sim/eva/components';
 import { ShipC } from '../sim/combat/components';
 import { facingOf } from '../sim/crew/helpers';
-import { SuitC } from '../sim/portals/components';
+import { SuitC } from '../sim/eva/components';
 import { CarryingC } from '../sim/items/components';
 import { BLEED_OUT_SECONDS } from '../sim/tuning';
 import type { ModuleDef } from '../sim/registry';

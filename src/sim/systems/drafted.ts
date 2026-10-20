@@ -2,11 +2,10 @@ import { gridIdOf } from '../regions';
 import { AssignmentC, CrewC, DraftedC, JobC, PathC, PositionC, type Drafted, type Path, type Position } from '../crew/components';
 import { atJob, hasRoute, isIncapacitated, jobGoal, origin, releaseAssignment } from '../crew/helpers';
 import { planWalk } from '../eva/route';
-import { planRoute } from '../portals/route';
 import type { Sim } from '../sim';
 import { gridIdAt } from '../regions';
 
-/** Drafted crew walk to their ordered target (across grids, through portals) and never take jobs. */
+/** Drafted crew walk to their ordered target  and never take jobs. */
 export function draftedSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, DraftedC, PositionC, PathC)) {
     if (isIncapacitated(sim, id)) continue;
@@ -42,19 +41,11 @@ export function draftedSystem(sim: Sim): void {
     const walk = gridId === gridIdOf(sim, pos) ? planWalk(sim, id, gridId, o, target) : null;
     if (walk) {
       path.steps = walk.steps;
-      delete path.then;
       drafted.planned = { x: target.x, y: target.y };
       continue;
     }
-    const route = planRoute(sim, id, { gridId: gridIdOf(sim, pos), ...o }, { gridId, x: target.x, y: target.y });
-    if (route) {
-      path.steps = route.steps;
-      if (route.then.length > 0) path.then = route.then;
-      else delete path.then;
-      drafted.planned = { x: target.x, y: target.y };
-    } else {
-      drafted.target = null;
-      delete drafted.planned;
-    }
+    // No route (another ship's tile, or walled off): the order lapses.
+    drafted.target = null;
+    delete drafted.planned;
   }
 }

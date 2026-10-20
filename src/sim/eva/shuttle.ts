@@ -2,7 +2,7 @@ import { shipOf } from '../combat/ships';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { SuitC } from '../portals/components';
+import { SuitC } from './components';
 import type { Vehicle } from '../vehicles/components';
 import { vehicleDefOf } from '../vehicles/lifecycle';
 import { Struct, isEvaWalkable } from '../structure';

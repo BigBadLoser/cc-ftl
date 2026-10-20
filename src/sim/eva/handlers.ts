@@ -5,7 +5,7 @@ import { BodyC } from '../body';
 import { gridOfShip, shipEntityOf } from '../combat/ships';
 import type { Sim } from '../sim';
 import { CrewC as CrewKey, type Crew } from '../crew/components';
-import { SuitC } from '../portals/components';
+import { SuitC } from './components';
 import { VehicleC } from '../vehicles/components';
 import { occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { EvaFloatC } from './components';
@@ -16,7 +16,7 @@ import { airlockUsable, freeSuits, isSuited, needsAir, suitDef, suitTile } from 
 import { ModuleC } from '../modules/components';
 import { gridIdOf } from '../regions';
 
-type EvaCommandType = Extract<Command['type'], `eva.${string}`>;
+type EvaCommandType = Extract<Command['type'], `eva.${string}` | 'suit.set'>;
 type Handler<T extends EvaCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 function reject(sim: Sim, command: string, reason: string): void {
@@ -32,6 +32,11 @@ function ready(sim: Sim, type: string, crew: number): boolean {
 }
 
 export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
+  'suit.set': (sim, cmd) => {
+    if (!sim.world.has(cmd.crew, CrewC) || sim.world.has(cmd.crew, DeadC)) return reject(sim, cmd.type, 'noCrew');
+    if (cmd.worn) sim.world.add(cmd.crew, SuitC, { worn: true });
+    else sim.world.remove(cmd.crew, SuitC);
+  },
   'eva.suitUp': (sim, cmd) => {
     if (!ready(sim, cmd.type, cmd.crew)) return;
     const pos = sim.world.get(cmd.crew, PositionC)!;

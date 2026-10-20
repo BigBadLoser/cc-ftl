@@ -8,8 +8,7 @@ import { Struct } from '../structure';
 import { ModuleC } from './components';
 import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, inFootprint, openTilesOf } from './footprint';
 import { isTileWalkable } from './walk';
-import { dismantleAirlock, initAirlock } from '../portals/airlock';
-import { removePortalsOfAirlock } from '../portals/graph';
+import { dismantleAirlock, initAirlock } from './airlock';
 import { VehicleBayC } from '../vehicles/components';
 import { releaseBayVehicle } from '../vehicles/lifecycle';
 import { gridIdOf } from '../regions';
@@ -43,7 +42,6 @@ export function removeModule(sim: Sim, id: number): void {
   if (def && grid) {
     if (def.airlock) {
       dismantleAirlock(sim, grid, id);
-      removePortalsOfAirlock(sim, id);
     }
     for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
       if (grid.inBounds(t.x, t.y) && grid.get('module', t.x, t.y) === id) grid.set('module', t.x, t.y, 0);

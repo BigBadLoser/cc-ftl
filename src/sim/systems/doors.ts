@@ -1,6 +1,6 @@
 import { gridIdOf } from '../regions';
 import { CrewC, DeadC, PositionC } from '../crew/components';
-import { AirlockC } from '../portals/components';
+import { AirlockC } from '../modules/airlock';
 import { regions } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';

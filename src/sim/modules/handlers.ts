@@ -4,11 +4,12 @@ import { JobC } from '../crew/components';
 import { findJobAt } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
+import { AirlockC, requestAirlock } from './airlock';
 import { ModuleC } from './components';
 import { placementError, spawnModule } from './spawn';
 import { needsFrom } from '../items/materials';
 
-type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPriority' | 'module.setEnabled' | 'debug.spawnModule';
+type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPriority' | 'module.setEnabled' | 'debug.spawnModule' | 'airlock.cycle';
 type Handler<T extends ModuleCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 const DECON_FRACTION = 0.5;
@@ -18,6 +19,11 @@ function reject(sim: Sim, command: string, reason: string): void {
 }
 
 export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
+  'airlock.cycle': (sim, cmd) => {
+    if (!sim.world.has(cmd.moduleId, AirlockC)) return reject(sim, cmd.type, 'noAirlock');
+    if (cmd.to !== 'inner' && cmd.to !== 'outer') return reject(sim, cmd.type, 'badValue');
+    requestAirlock(sim, cmd.moduleId, cmd.to);
+  },
   'job.buildModule': (sim, cmd) => {
     const err = placementError(sim, gridOfShip(sim, cmd.ship), cmd.def, cmd.x, cmd.y, cmd.rot);
     if (err) return reject(sim, cmd.type, err);
