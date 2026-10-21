@@ -26,7 +26,7 @@
           {#if a.notice.lead}<span class="tap">Tap to look</span>{/if}
         </button>
       {:else}
-        <button class="go" disabled={!a.at} onclick={() => api.focusAlert(a.id)}><span class="ic"><Icon name={icon[a.kind] ?? 'alert'} size={16} /></span>{a.text}</button>
+        <button class="go" disabled={!a.at} onclick={() => api.focusAlert(a.id)}><span class="ic"><Icon name={icon[a.kind] ?? 'alert'} size={16} /></span><span class="t">{a.text}</span></button>
       {/if}
       <button class="x" aria-label="Dismiss" onclick={() => api.dismissAlert(a.id)}><Icon name="close" size={14} /></button>
     </div>
@@ -37,12 +37,13 @@
 
 <style>
   /* Separate cards under the log/time frame, stacked downward. */
-  .alerts { display: grid; gap: 2px; width: 100%; }
-  .alert { display: flex; background: var(--panel); border: 1px solid var(--amber); border-left-width: 3px; }
+  .alerts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; width: 100%; }
+  .alert { display: flex; min-width: 0; background: var(--panel); border: 1px solid var(--amber); border-left-width: 3px; }
   .alert.danger { border-color: var(--red); }
   .alert.good { border-color: var(--green); }
   .alert button { min-height: 32px; border: 0; background: transparent; font-size: 13px; }
-  .go { flex: 1; display: flex; align-items: center; gap: 8px; text-align: left; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .go { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; text-align: left; padding: 0 8px; overflow: hidden; white-space: nowrap; }
+  .go .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .go.story { display: block; white-space: normal; padding: 6px 8px; line-height: 1.3; font-size: 12px; opacity: 1; }
   .go.story b { display: block; font: 600 14px var(--head-font); color: var(--text); letter-spacing: 0.03em; }
   .go.story .body { display: block; color: var(--dim); }
