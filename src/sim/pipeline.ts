@@ -53,6 +53,8 @@ import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
 import { storySystem } from './systems/story';
 import { tradeSystem } from './systems/trade';
+import { eggSacSystem } from './systems/eggSacs';
+import { alienSystem } from './systems/aliens';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
 export type System = (sim: Sim) => void;
@@ -118,8 +120,12 @@ export const pipeline: readonly System[] = [
   equipSystem,
   decideSystem,
   draftedSystem,
+  // Egg sacs before crew combat: a sac disturbed or hurt last tick hatches, and new aliens fight from this tick on.
+  eggSacSystem,
   // Crew combat after decisions: it overrides paths of crew who fight or flee, before movement walks them.
   crewCombatSystem,
+  // Idle aliens stroll near where they hatched (after combat, which owns them while they hunt or flee).
+  alienSystem,
   // Movement before carry (carried crew copy their carrier's fresh position) and work.
   movementSystem,
   // Suited crew drifting between a hovering shuttle and a hull land or climb aboard.

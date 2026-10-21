@@ -3,7 +3,8 @@ import { ModuleC } from '../modules/components';
 import { regions , shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
-import { LIGHT_FALLOFF } from '../tuning';
+import { ShipC } from '../combat/components';
+import { LIGHT_FALLOFF, WRECK_LIGHT_SCALE } from '../tuning';
 
 /**
  * The light field is recomputed every tick from powered light modules. A light only reaches
@@ -16,6 +17,7 @@ export function lightingSystem(sim: Sim): void {
     const { width, height } = grid;
     const next = new Uint8Array(width * height);
     const room = grid.load('room');
+    const scale = sim.world.get(grid.id, ShipC)?.state === 'wreck' ? WRECK_LIGHT_SCALE : 1;
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
       const light = m && sim.content.modules[m.def]?.light;
@@ -31,7 +33,7 @@ export function lightingSystem(sim: Sim): void {
           if (room[i] !== home) continue;
           const d = Math.hypot(x - mx, y - my);
           if (d > light.radius) continue;
-          const v = Math.round(light.level * (1 - (LIGHT_FALLOFF * d) / light.radius));
+          const v = Math.round(light.level * scale * (1 - (LIGHT_FALLOFF * d) / light.radius));
           if (v > (next[i] as number)) next[i] = v;
         }
       }

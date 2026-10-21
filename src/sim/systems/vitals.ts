@@ -36,7 +36,7 @@ function harmPerSec(grid: Grid, x: number, y: number, suited: boolean, airless: 
  * are downed and bleed out unless a rescuer stabilizes them in a bed, where they heal and
  * eventually get up. A downed crew whose air is still lethal keeps bleeding even in a bed.
  * Crew without a Health component are ignored. Species flags: `airless` bodies neither breathe nor mind thin air, CO2 or
- * cold, and starve at zero hunger (a slow harm); `mechanical` ones never regenerate (crew mend them); `wreck` ones are wrecked at 0 hp instead of going down.
+ * cold, and starve at zero hunger (a slow harm); `mechanical` ones never regenerate (crew mend them); `wreck` ones are wrecked at 0 hp instead of going down; `creature` ones die at 0 hp.
  */
 export function vitalsSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, HealthC, PositionC)) {
@@ -63,6 +63,7 @@ export function vitalsSystem(sim: Sim): void {
       else if (!species?.mechanical) health.hp = Math.min(health.max, health.hp + REGEN_PER_SEC / TICK_HZ);
       if (health.hp <= 0) {
         if (species?.wreck) wreck(sim, id);
+        else if (species?.creature) killCrew(sim, id); // creatures die outright (the corpse stays)
         else down(sim, id, pos);
       }
     } else if (downed.stabilized && harm < BED_HEAL_PER_SEC) {

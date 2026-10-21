@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCombat, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
+  import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
   import CombatPanel from './CombatPanel.svelte';
   import NavStrip from './NavStrip.svelte';
   import ShipOverview from './ShipOverview.svelte';
@@ -30,6 +30,7 @@
   let toast = $state<string | null>(null);
   let snap = $state<UiSnapshot | undefined>(undefined);
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
+  let foes = $state<UiCrew[]>([]);
   let combatOpen = $state(false);
   let wasInCombat = false;
   let overviewOpen = $state(false);
@@ -73,6 +74,8 @@
         prizes = v;
       }),
       api.tool.subscribe((t) => (tool = t)),
+      // Hostile crew where the player's crew are (boarders, aliens on a derelict) light the combat button too.
+      api.hostiles.subscribe((v) => (foes = v)),
       api.combat.subscribe((c) => {
         combat = c;
         // The overlay opens by itself when a fight starts; closing it is the player's call until the next fight.
@@ -124,7 +127,7 @@
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
   <NavStrip
-    {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.length > 0} combatOpen={combat.inCombat && combatOpen}
+    {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.length > 0 || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
     onStock={() => (stockOpen = !stockOpen)}

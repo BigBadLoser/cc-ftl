@@ -40,6 +40,8 @@ export interface UiInspect {
   structName: string;
   room: number;
   fields: { name: string; value: number }[];
+  /** A player job on the tile (forcing a door...), with its progress, or null. */
+  job: { kind: string; progress: number; work: number } | null;
   selected: boolean;
 }
 
@@ -257,7 +259,7 @@ export type UiAlertKind =
   | 'job.missingMaterials' | 'storage.full' | 'production.done'
   | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
   | 'story.notice' | 'story.lead' | 'trade'
-  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost';
+  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -460,12 +462,27 @@ export interface UiTrade {
   deals: UiTradeDeal[];
 }
 
+/** A derelict (a ruined wreck with no crew), for its panel and node tile. */
+export interface UiDerelict {
+  /** Where it came from: its faction, e.g. 'scrapper'. */
+  kind: string;
+  cause: 'combat' | 'decay';
+  /** 0..1 overall integrity. */
+  hull: number;
+  /** Average air on its decks: vacuum, thin or breathable. */
+  air: 'vacuum' | 'thin' | 'breathable';
+  /** A power source still running (emergency lights) or nothing. */
+  power: 'emergency' | 'off';
+  /** Doors still jammed. */
+  jammed: number;
+}
+
 export interface UiShuttles {
   shuttles: UiShuttle[];
   /** Airlocks of other ships a shuttle can dock at. */
   airlocks: UiShuttleAirlock[];
   /** Ships a shuttle can hover beside: ShipC entity id (the UI key and the `vehicle.hover` command's `ship`) and name. */
-  targets: { ship: number; name: string }[];
+  targets: { ship: number; name: string; derelict?: UiDerelict }[];
   /** Crew on the player's ship who could climb in. */
   roster: UiShuttleCrew[];
   /** The player's vehicle bays (module ids) and whether each is empty. */

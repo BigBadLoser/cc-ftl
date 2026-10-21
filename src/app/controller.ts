@@ -9,6 +9,7 @@ import { createEventLog, type EventLog } from './eventLog';
 import { rejectionMessage } from './messages';
 import { createStore, type Readable } from './store';
 import { homeShip } from '../sim/index';
+import { EggSacC } from '../sim/aliens/components';
 
 const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door };
 const TOAST_MS = 2500;
@@ -63,13 +64,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     toastTimer = setTimeout(() => toast.set(null), ms);
   };
 
-  const selectTile = (t: Tile | null) => {
+  const selectTile = (t: Tile | null, ship = homeShipId()) => {
     shipSel.set(null);
     crewSel.set(null);
     modSel.set(null);
     r?.setSelectedCrew(null);
-    r?.setSelection(t);
-    bridge.setSelected(t ? { ship: homeShipId(), ...t } : null);
+    r?.setSelection(t, ship);
+    bridge.setSelected(t ? { ship, ...t } : null);
   };
   /** Center the camera on a crew member: on their ship, or on the shuttle they ride. */
   const focusCrew = (id: number) => {
@@ -179,19 +180,20 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   };
   const rotate = () => setTool({ rot: (tool.get().rot + 1) % 4 });
 
+  const selectShip = (ship: number | null) => {
+    selectTile(null);
+    if (ship === null) return;
+    shipSel.set(ship);
+    if (ship > 0) r?.frameShips([ship]); // a station has no ship component, so no grid
+  };
+
   return {
     tool,
     alerts,
     log,
     selectedModule: modSel,
     selectedShip: shipSel,
-    selectShip(ship) {
-      selectTile(null);
-      if (ship === null) return;
-      shipSel.set(ship);
-      const shipId = ship; // a station has no ship component, so no grid
-      if (shipId > 0) r?.frameShips([shipId]);
-    },
+    selectShip,
     selectedCrew: crewSel,
     selectModule,
     focusAlert(id) {
@@ -216,6 +218,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       return {
         onTap(sx, sy) {
           const crewId = renderer.pickCrew(sx, sy);
+          if (crewId !== null && sim.world.has(crewId, EggSacC)) return attack(crewId); // an egg sac: only ever a target
           if (crewId !== null) return isPlayerCrew(crewId) ? selectCrew(crewId) : crewSel.get() !== null && sim.world.has(crewSel.get() as number, DraftedC) ? attack(crewId) : selectCrew(crewId);
           const tile = renderer.pickTile(sx, sy);
           const grid0 = shipGrid(sim, homeShip(sim));
@@ -235,9 +238,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           const sel = crewSel.get();
           const any = renderer.pickTileAny(sx, sy);
           const ag = any && shipGrid(sim, any.shipId);
-          if (any && ag && sel !== null && sim.world.has(sel, DraftedC) && isWalkable(ag.get('struct', any.x, any.y))) {
+          const jammed = !!any && !!ag && ag.get('struct', any.x, any.y) === Struct.Door && ag.get('jam', any.x, any.y) !== 0;
+          if (any && ag && sel !== null && sim.world.has(sel, DraftedC) && !jammed && isWalkable(ag.get('struct', any.x, any.y))) {
             const here = shipIdOf(sim, sim.world.get(sel, PositionC));
             sim.enqueue({ type: 'crew.moveTo', id: sel, x: any.x, y: any.y, ...(here !== any.shipId ? { ship: any.shipId } : {}) });
+          } else if (any && (jammed || (!tile && any.shipId !== homeShipId() && sim.world.get(any.shipId, ShipC)?.state === 'wreck'))) {
+            // A derelict tile selects like one of your own (its panel offers Force door on jammed doors); the ship panel is on the node strip.
+            selectTile({ x: any.x, y: any.y }, any.shipId);
           } else selectTile(tile);
         },
         onHover(t) {

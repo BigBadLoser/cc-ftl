@@ -22,8 +22,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v20 (step 7d): no grid windows. `grids` (the window rectangles) is gone from the save and `ShipC.gridId` with it: a ship is its
  * ShipC entity id and its rectangle is the ShipC x, y, width, height.
  * v22: cargo containers (`ContainerC`; a detached one is a free BodyC entity with its StorageC and no ModuleC).
+ * v23: `ShipC.ruin` (a derelict's dressing data for the renderer: breach, decal and hook art, module art overrides).
  */
-export const SAVE_VERSION = 22;
+export const SAVE_VERSION = 24;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

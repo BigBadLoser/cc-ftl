@@ -90,6 +90,16 @@ export type SimEvent =
   | { type: 'robot.charged'; crew: number; bay: number }
   | { type: 'robot.active'; crew: number }
   | { type: 'robot.wrecked'; crew: number }
+  /** A heavy blow (HandWeaponDef.knockdownChance) stunned `crew` until tick `until`. */
+  | { type: 'crew.knockedDown'; crew: number; by: number; until: number }
+  /** Aliens: an egg sac started hatching (`cause`: a non-alien came near, it was hurt, or a neighbour hatched). */
+  | { type: 'eggsac.disturbed'; sac: number; ship: number; cause: 'proximity' | 'damage' | 'chain' }
+  /** An egg sac reached .hatch2 and let out `aliens` (crew ids) at (x, y). */
+  | { type: 'eggsac.hatched'; sac: number; ship: number; x: number; y: number; aliens: number[] }
+  /** An egg sac was destroyed before it hatched. */
+  | { type: 'eggsac.destroyed'; sac: number; ship: number }
+  /** A nest laid a new egg sac. */
+  | { type: 'nest.laid'; nest: number; sac: number; ship: number }
   | { type: 'robot.salvaged'; crew: number; ship: number; x: number; y: number }
   /** A robot fabricator built a robot. */
   | { type: 'robot.fabricated'; crew: number; moduleId: number; ship: number }

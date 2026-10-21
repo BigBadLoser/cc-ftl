@@ -4,6 +4,7 @@ import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
 import { EvaFloatC } from '../sim/eva/components';
+import { FighterC } from '../sim/fight/components';
 import { ShipC } from '../sim/combat/components';
 import { facingOf } from '../sim/crew/helpers';
 import { SuitC } from '../sim/eva/components';
@@ -76,6 +77,10 @@ interface Slot {
   suited: boolean;
   airBg: Sprite;
   airFill: Sprite;
+  /** One-shot clip (creature `attack` / `hurt`) playing until `until` seconds of slot time, with what started it. */
+  shot: { clip: string; until: number } | null;
+  lastHp: number;
+  lastCooldown: number;
 }
 
 const RED = 0xff3b3b;
@@ -153,7 +158,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, shadow, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false, suited, airBg, airFill };
+    return { root, parts, glows, ring, shadow, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0 };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -246,11 +251,22 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const onOpen = !!at && openTilesOf(at.def, at.m.x, at.m.y, at.m.rot).some((t) => t.x === mx && t.y === my);
         const chair = at && at.def.console ? accessTile(at.def, at.m.x, at.m.y, at.m.rot) : null;
         const sitting = !!chair && chair.x === mx && chair.y === my && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips.sit_idle);
-        const clipName = hurtLying ? (s.parts.some((q) => q.layer.def.clips.wreck) ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : clipFor(crew.activity, speed > 0.3, flight);
+        // Creature sheets (aliens) carry `attack`, `hurt` and `dead`: an attack (the fight cooldown restarting) or a hit
+        // (hp dropping) plays its clip once; a dead one lies as its `dead` corpse.
+        const has = (c: string) => s.parts.some((q) => q.layer.def.clips[c]);
+        const hpNow = world.get(id, HealthC)?.hp ?? 0;
+        const cd = world.get(id, FighterC)?.cooldown ?? 0;
+        if (!hurtLying && cd > s.lastCooldown && has('attack')) s.shot = { clip: 'attack', until: s.t + clipSec(s, 'attack') };
+        else if (!hurtLying && s.lastHp >= 0 && hpNow < s.lastHp - 0.01 && has('hurt') && s.shot?.clip !== 'attack') s.shot = { clip: 'hurt', until: s.t + clipSec(s, 'hurt') };
+        s.lastHp = hpNow;
+        s.lastCooldown = cd;
+        if (s.shot && (hurtLying || s.t >= s.shot.until)) s.shot = null;
+        const clipName = hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : s.shot?.clip ?? clipFor(crew.activity, speed > 0.3, flight);
         const docked = crew.activity === 'charging' && !!at?.def.robotBay && !hurtLying;
         const dir = (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
         s.shadow.visible = !sitting;
         if (clipName !== s.clip) {
+          if (s.shot && clipName === s.shot.clip) s.shot.until -= s.t;
           s.clip = clipName;
           s.t = 0;
         }
@@ -361,6 +377,12 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
       slots.clear();
     },
   };
+}
+
+/** Seconds one play of a clip takes on the slot's first layer that has it. */
+function clipSec(s: Slot, clip: string): number {
+  const c = s.parts.find((q) => q.layer.def.clips[clip])?.layer.def.clips[clip];
+  return c ? c.frames / Math.max(1, c.fps) : 0;
 }
 
 /** Column in the clip's sheet at time t. */

@@ -18,6 +18,19 @@ const robot = {
   charge: { drainPerSec: 0.12, busyMult: 2, lowBelow: 20 },
 } satisfies SpeciesDef;
 
+/** Shared alien body: a wild creature (no jobs, needs or sleep) that never surrenders. */
+const alien = {
+  name: 'Alien',
+  moveSpeed: 3,
+  workSpeed: 0,
+  restDecay: 0,
+  carryCapacity: 0,
+  designation: 'XN',
+  airless: true,
+  fearless: true,
+  creature: { fleeBelow: 0.25 },
+} satisfies SpeciesDef;
+
 export const species = {
   'species.human': {
     name: 'Human',
@@ -42,5 +55,34 @@ export const species = {
     armor: 0.3,
     designation: 'SX',
     wreck: [{ item: 'item.parts', count: 5 }, { item: 'item.scrap', count: 10 }],
+  },
+  // --- Derelict aliens (hatched from egg sacs; faction 'alien'; art `crew.alien.body.<kind>`). They do not breathe, so
+  // they cross vented, airless decks freely (cold and thin air do nothing to them; heat and fire still do).
+  // Hunter: the swarm unit. Fast, melee only, moderate hp.
+  'species.alien_hunter': {
+    ...alien,
+    name: 'Hunter',
+    moveSpeed: 3.6,
+    maxHp: 60,
+    natural: { id: 'claws', kind: 'melee', range: 1, damage: 9, cooldownSec: 0.9, accuracy: 0.75 },
+  },
+  // Brute: the tank. Slow, high hp, thick chitin, heavy blows that can knock a crew member down for a moment.
+  'species.alien_brute': {
+    ...alien,
+    name: 'Brute',
+    moveSpeed: 2.1,
+    maxHp: 180,
+    armor: 0.2,
+    natural: { id: 'crush', kind: 'melee', range: 1, damage: 18, cooldownSec: 1.7, accuracy: 0.7, knockdownChance: 0.35, knockdownSec: 2.5 },
+    creature: { fleeBelow: 0.15 },
+  },
+  // Spitter: ranged. Spits a slow glowing glob and keeps its distance.
+  'species.alien_spitter': {
+    ...alien,
+    name: 'Spitter',
+    moveSpeed: 2.8,
+    maxHp: 45,
+    natural: { id: 'spit', kind: 'ranged', range: 7, damage: 8, cooldownSec: 2.4, accuracy: 0.6 },
+    creature: { fleeBelow: 0.3, keepAway: 4 },
   },
 } satisfies Record<string, SpeciesDef>;

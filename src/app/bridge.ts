@@ -1,4 +1,4 @@
-import { ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
+import { JobC, ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
 import type { UiTrade, UiStory, UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
@@ -11,6 +11,7 @@ import { buildTrade } from './tradeSnapshot';
 import { buildStory } from './storySnapshot';
 import { createStore, type Readable } from './store';
 import { shipGrid } from '../sim/regions';
+import { findJobAt } from '../sim/crew/helpers';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
 export interface Snapshot {
@@ -45,6 +46,8 @@ export interface InspectSnapshot extends TileRef {
   /** Room id, or 0 when none. */
   room: number;
   fields: { name: string; value: number }[];
+  /** A player job on the tile (building, forcing a door...), with its progress, or null. */
+  job: { kind: string; progress: number; work: number } | null;
   /** True when this is the selected tile (false = hovered). */
   selected: boolean;
 }
@@ -133,8 +136,11 @@ export function createBridge(sim: Sim): Bridge {
       const struct = fields.find((f) => f.name === 'struct')?.value ?? 0;
       const sid = stackAt(sim, shipId, ref.x, ref.y);
       const st = sid ? sim.world.get(sid, ItemStackC) : undefined;
+      const jobId = findJobAt(sim, shipId, ref.x, ref.y);
+      const job = jobId ? sim.world.get(jobId, JobC) : undefined;
       snap = {
         ...ref,
+        job: job ? { kind: job.kind, progress: job.progress, work: job.work } : null,
         grid: shipId,
         local: { x: ref.x - grid.x0, y: ref.y - grid.y0 },
         stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count } : null,

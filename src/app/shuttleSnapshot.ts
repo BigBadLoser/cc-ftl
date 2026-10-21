@@ -1,7 +1,8 @@
-import { AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
+import { AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
 import { localOf } from './moduleSnapshot';
-import type { UiShuttle, UiShuttleCrew, UiShuttles } from '../ui/api';
-import { shipIdOf } from '../sim/regions';
+import type { UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles } from '../ui/api';
+import { shipIdOf, shipGrid } from '../sim/regions';
+import type { Ship } from '../sim/combat/components';
 import { homeShip } from '../sim/index';
 
 
@@ -71,7 +72,36 @@ export function buildShuttles(sim: Sim): UiShuttles {
   const targets: UiShuttles['targets'] = [];
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s && id !== PLAYER && s.state !== 'fled') targets.push({ ship: id, name: s.name });
+    if (s && id !== PLAYER && s.state !== 'fled') targets.push({ ship: id, name: s.name, ...(s.state === 'wreck' ? { derelict: derelictInfo(sim, id, s) } : {}) });
   }
   return { shuttles, airlocks, targets, roster, bays };
+}
+
+/** Hull, air, power and jammed doors of a wreck, read from its grid and modules. */
+function derelictInfo(sim: Sim, id: number, s: Ship): UiDerelict {
+  const grid = shipGrid(sim, id);
+  let o2 = 0, n = 0, jammed = 0;
+  if (grid) {
+    for (let y = grid.y0; y < grid.y0 + grid.height; y++)
+      for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+        const k = grid.get('struct', x, y);
+        if (k === Struct.Floor) { o2 += grid.get('o2', x, y); n++; }
+        else if (k === Struct.Door && grid.get('jam', x, y) !== 0) jammed++;
+      }
+  }
+  const mean = n ? o2 / n : 0;
+  let source = false;
+  for (const m of sim.world.query(ModuleC)) {
+    const c = sim.world.get(m, ModuleC);
+    if (c && shipIdOf(sim, c) === id && c.powered && c.enabled && c.hp > 0 && (sim.content.modules[c.def]?.power ?? 0) > 0) source = true;
+  }
+  return {
+    kind: (s.gen?.faction ?? '').replace(/^faction\./, ''),
+    // A ship wrecked in play (combat or scuttling) has no ruin data: it is a fresh combat wreck.
+    cause: s.ruin?.cause ?? 'combat',
+    hull: s.integrity,
+    air: mean < 5 ? 'vacuum' : mean < 14 ? 'thin' : 'breathable',
+    power: source ? 'emergency' : 'off',
+    jammed,
+  };
 }
