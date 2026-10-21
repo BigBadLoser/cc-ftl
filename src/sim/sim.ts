@@ -5,6 +5,7 @@ import { EventBuffer } from './events';
 import { commandHandlers } from './handlers';
 import { newSectorGrid } from './stamp';
 import type { Sector } from './combat/components';
+import type { SectorArchive } from './sector/archive';
 import { pipeline } from './pipeline';
 import { Rng } from './rng';
 import { newStory, type StoryState } from './story/state';
@@ -26,7 +27,9 @@ export class Sim {
   story: StoryState;
   /** Trade state: the player's credits, hails, offers and deals (see trade/). NPC wallets and stock are `TraderC` components. */
   trade: TradeState;
-  sector: Sector = { grid: newSectorGrid(), width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false };
+  sector: Sector = { grid: newSectorGrid(), width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false, node: 0, state: 'active' };
+  /** Sectors the player left, frozen (see sector/archive.ts). Every one is kept (user decision, 2026-10-21). */
+  archives: SectorArchive[] = [];
 
   constructor(
     /** World seed: drives galaxy generation; saved with the game. */

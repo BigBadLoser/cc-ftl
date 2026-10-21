@@ -73,6 +73,15 @@ export type Command =
   /** Restrict a storage module to `items` (item ids), or null to accept everything. */
   | { type: 'storage.setFilter'; moduleId: number; items: string[] | null }
   /** Spawn a hostile ship from a template; (x, y) is its top-left tile in sector coordinates. */
+  /**
+   * FTL jump of the player's ship (`ship`, FTL charged) to galaxy node `node`: the ship, its stowed and docked own vehicles and
+   * the crew aboard lift into a packet, the rest of the sector is archived, and the sector waits in state 'deploying' (the node's
+   * archive restored if it has one). `withDocked`: ids of non-player vehicles docked at its airlocks to take along (the others
+   * are cut loose). Crew or shuttles away stay in the archive (the UI confirms first, see `jumpWarnings`).
+   */
+  | { type: 'sector.jump'; ship: number; node: number; withDocked?: number[] }
+  /** Place the waiting ship (state 'deploying') with its top-left at sector (x, y); checked by the gap rule. */
+  | { type: 'sector.deploy'; x: number; y: number }
   | { type: 'debug.spawnEnemy'; template: string; x: number; y: number }
   /**
    * Generate a hostile ship for a faction (content.factions) at sector `depth` from `seed` (default: drawn from the sim
