@@ -42,8 +42,8 @@ def meta(name, rot):
 
 def _rig():
     if not _RIG:
-        from . import human_render as hr
-        _RIG.append((hr, hr.build_items()))
+        from . import human_items, human_render as hr
+        _RIG.append((hr, human_items.build_items()))
     return _RIG[0]
 
 
