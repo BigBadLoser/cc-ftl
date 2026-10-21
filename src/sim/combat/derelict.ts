@@ -5,7 +5,7 @@ import { spillItems } from '../items/stacks';
 import type { RuinMeta } from '../shipgen/ruinTypes';
 import { shipGrid, shipIdOf } from '../regions';
 import { DoorJam } from '../structure';
-import { ShipC } from './components';
+import { ShipC, type ShipRuin } from './components';
 import { spawnDriftingContainer } from '../containers/detach';
 import { ContainerC } from '../containers/components';
 
@@ -63,5 +63,24 @@ export function applyRuin(sim: Sim, shipId: number, template: ShipTemplate, meta
   if (ship) {
     ship.state = 'wreck';
     ship.integrity = meta.modules.length ? hp / meta.modules.length : 0;
+    ship.ruin = renderRuin(template, meta);
   }
+}
+
+/** The renderer's share of the meta: dressing per tile and per module (no loot, rooms or air, which live in the sim). */
+function renderRuin(template: ShipTemplate, meta: RuinMeta): ShipRuin {
+  const modules: ShipRuin['modules'] = [];
+  for (const r of meta.modules) {
+    const t = template.modules?.[r.index];
+    if (!t || (r.state === 'intact' && !r.art)) continue;
+    modules.push({ x: t.x, y: t.y, state: r.state, ...(r.art ? { art: r.art } : {}), ...(r.flicker ? { flicker: true } : {}) });
+  }
+  return {
+    cause: meta.cause,
+    impacts: meta.impacts.map((p) => ({ ...p })),
+    breaches: meta.breaches.map((b) => ({ ...b })),
+    decals: meta.decals.map((d) => ({ ...d })),
+    hooks: meta.hooks.filter((h) => h.art).map((h) => ({ x: h.x, y: h.y, size: h.size, art: h.art })),
+    modules,
+  };
 }

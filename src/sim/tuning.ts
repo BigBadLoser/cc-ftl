@@ -54,6 +54,8 @@ export const DEFAULT_PRIORITY = 3;
 export const LIGHT_DARK_BELOW = 40;
 /** Light falloff: level is scaled by (1 - FALLOFF * dist / radius). */
 export const LIGHT_FALLOFF = 0.55;
+/** A wreck's lights run on emergency power: their level is scaled by this (a wreck with no power has none). */
+export const WRECK_LIGHT_SCALE = 0.35;
 /** Door openness lost per tick once nobody is in the doorway (closes in ~3 s). */
 export const DOOR_CLOSE_PER_TICK = 4;
 /** Hp repaired per second at workSpeed 1. */

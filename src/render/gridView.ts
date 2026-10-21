@@ -24,6 +24,10 @@ export interface GridView extends Markers {
   /** Wall view mode; `ghosts` false (roofed ships) draws the near hull as solid full-height plating. */
   setCutaway(mode: CutawayMode, ghosts?: boolean): void;
   setOverlay(field: string | null): void;
+  /** The tile sprites' light tint of tile (x, y) (region-local), for dressing drawn over it: same path as the tiles. `wall` = wall-like (lit by the brightest neighbour). */
+  tintAt(x: number, y: number, wall: boolean): number;
+  /** Changes whenever `tintAt` results may change (light, air, emergency pulse). */
+  tintKey(): string;
   dispose(): void;
 }
 
@@ -289,6 +293,16 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     }
   }
 
+  const pulseNow = (): number => (host.emergency() ? pulsePhase(performance.now()) : -1);
+  const tintAt = (x: number, y: number, wall: boolean): number => {
+    let lv = 0;
+    if (wall) {
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) if (tiles.inside(x + dx, y + dy)) lv = Math.max(lv, tiles.get("light", x + dx, y + dy));
+    } else lv = tiles.get("light", x, y);
+    return lightTint(lv, !wall && tiles.get("o2", x, y) < VACUUM_O2, pulseNow());
+  };
+
   // Selection, hover and build previews come in sector tiles; the markers draw region-local.
   const loc = (t: { x: number; y: number }) => ({ x: t.x - grid.x0, y: t.y - grid.y0 });
   return {
@@ -296,6 +310,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     setHover: (t) => markers.setHover(t && loc(t)),
     setPreview: (tiles, valid) => markers.setPreview(tiles.map(loc), valid),
     grid,
+    tintAt,
+    tintKey: () => `${grid.revision("light")}|${grid.revision("o2")}|${pulseNow()}`,
     update() {
       const mr = grid.revision("module");
       if (mr !== modRev) {
