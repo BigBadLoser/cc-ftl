@@ -58,19 +58,20 @@ export const armoury = {
 
 /** Concourse (trading courtyards): stalls (pallets and lockers) and benches (tables with chairs) in open space. */
 export const plaza = {
-  fill: 0.1,
+  fill: 0.12,
   arrangements: [
     {
-      name: 'market', weight: 2, steps: [
-        { mod: 'module.storage_pallet', count: 'fill', upTo: 0.08, clear: 1, grid: [4, 4] },
-        { mod: 'module.mess_table', count: 'fill', upTo: 0.12, clear: 1, grid: [5, 5], rots: [0], with: { mod: 'module.chair', n: 2 } },
-        { mod: 'module.hydroponics', count: 6, wall: 'any' },
+      // Stall rows: containers and pallets in pairs along aisles, benches between the rows.
+      name: 'market', weight: 2, walkway: 'long', steps: [
+        { mod: 'module.cargo_container', count: 'fill', upTo: 0.1, clear: 1, grid: [7, 5], rots: [0], with: { mod: 'module.storage_pallet', n: 2 } },
+        { mod: 'module.mess_table', count: 'fill', upTo: 0.14, clear: 1, grid: [7, 5], rots: [0], with: { mod: 'module.chair', n: 4 } },
+        { mod: 'module.hydroponics', count: 4, wall: 'any' },
       ],
     },
     {
       name: 'food court', weight: 1, steps: [
         { mod: 'module.galley', count: 2, wall: 'any' },
-        { mod: 'module.mess_table', count: 'fill', upTo: 0.14, clear: 1, grid: [4, 4], rots: [0], with: { mod: 'module.chair', n: 4 } },
+        { mod: 'module.mess_table', count: 'fill', upTo: 0.12, clear: 2, grid: [6, 5], rots: [0], with: { mod: 'module.chair', n: 4 } },
         { mod: 'module.storage_locker', count: 4, wall: 'any' },
       ],
     },

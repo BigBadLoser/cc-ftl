@@ -69,7 +69,7 @@ const MOD: Record<string, { label: string; c: RGB }> = {
   'module.vehicle_bay': { label: 'BAY', c: [180, 180, 210] }, 'module.airlock': { label: 'A', c: [255, 255, 255] },
   'module.light': { label: '', c: [255, 250, 200] },
   'module.galley': { label: 'GAL', c: [255, 190, 120] }, 'module.mess_table': { label: 'TB', c: [235, 205, 160] },
-  'module.chair': { label: 'h', c: [235, 205, 160] }, 'module.storage_locker': { label: 'L', c: [170, 190, 210] },
+  'module.chair': { label: 'h', c: [150, 120, 90] }, 'module.storage_locker': { label: 'L', c: [170, 190, 210] },
   'module.storage_rack': { label: 'RK', c: [210, 160, 90] }, 'module.storage_pallet': { label: 'PAL', c: [210, 160, 90] }, 'module.cargo_container': { label: 'CTR', c: [230, 140, 70] },
   'module.med_bed': { label: 'MED', c: [255, 140, 140] }, 'module.battery': { label: 'BT', c: [240, 220, 60] },
   'module.hydroponics': { label: 'HY', c: [110, 230, 90] }, 'module.console': { label: 'CN', c: [90, 170, 255] },
@@ -77,6 +77,44 @@ const MOD: Record<string, { label: string; c: RGB }> = {
 };
 
 const defs = content.modules as Record<string, ModuleDef>;
+const COURTS = new Set<RoomRole>(['plaza', 'garden', 'drill']);
+
+/** Legend entries: room roles (floor tint) and the furniture glyphs the station sheets lean on. */
+const LEGEND_ROLES: [RoomRole, string][] = [
+  ['bridge', 'bridge'], ['hall', 'corridor'], ['quarters', 'quarters'], ['support', 'mess'], ['cargo', 'hold'], ['reactor', 'reactor'],
+  ['weapons', 'gun bay'], ['shields', 'shields'], ['core', 'ai core'], ['dock', 'dock'], ['farm', 'farm'], ['industry', 'refinery'],
+  ['armoury', 'armoury'], ['plaza', 'plaza (concourse)'], ['garden', 'garden deck'], ['drill', 'drill hall'],
+];
+const LEGEND_MODS: [string, string][] = [
+  ['module.cargo_container', 'stall/container'], ['module.storage_pallet', 'pallet'], ['module.mess_table', 'bench/table'], ['module.chair', 'seat'],
+  ['module.hydroponics', 'hydroponics'], ['module.refinery', 'refinery'], ['module.storage_locker', 'locker'], ['module.storage_rack', 'rack'],
+  ['module.storage', 'crate'], ['module.bed', 'bed'], ['module.airlock', 'airlock'], ['module.burstLaser', 'gun'], ['module.reactor', 'reactor'],
+];
+
+/** Draw the legend strip at (x, y), wrapping at `maxW`; returns its height. */
+export function drawLegend(r: Raster, x: number, y: number, maxW: number, ts = 2): number {
+  let cx = x;
+  let cy = y;
+  const item = (draw: (px: number, py: number) => void, label: string): void => {
+    const w = 12 * ts + label.length * 4 * ts + 10 * ts;
+    if (cx + w > x + maxW) { cx = x; cy += 9 * ts; }
+    draw(cx, cy);
+    r.text(label, cx + 10 * ts, cy + ts, [210, 210, 210], ts);
+    cx += w;
+  };
+  r.text('rooms:', cx, cy + ts, [255, 255, 255], ts);
+  cx += 28 * ts;
+  for (const [role, label] of LEGEND_ROLES) item((px, py) => r.rect(px, py, 8 * ts, 7 * ts, ROLE_TINT[role]), label);
+  cx = x;
+  cy += 10 * ts;
+  r.text('modules:', cx, cy + ts, [255, 255, 255], ts);
+  cx += 36 * ts;
+  for (const [id, label] of LEGEND_MODS) {
+    const st = MOD[id] ?? { label: '?', c: [255, 255, 255] as RGB };
+    item((px, py) => { r.rect(px, py, 8 * ts, 7 * ts, [40, 42, 48]); r.rect(px + ts, py + ts, 6 * ts, 5 * ts, st.c); }, label);
+  }
+  return cy + 10 * ts - y;
+}
 
 export const factionIds = (): string[] => Object.keys(content.factions);
 
@@ -118,8 +156,10 @@ export function drawShip(r: Raster, g: GenResult, ox: number, oy: number, s: num
       const px = ox + x * s; const py = oy + y * s;
       if (c === '_') {
         const room = g.roomOf[y * g.width + x] ?? -1;
-        r.rect(px, py, s, s, room >= 0 ? ROLE_TINT[g.rooms[room]?.role ?? 'hall'] : [60, 60, 60]);
-        r.rect(px, py, 1, 1, [30, 30, 34]);
+        const role = g.rooms[room]?.role ?? 'hall';
+        r.rect(px, py, s, s, room >= 0 ? ROLE_TINT[role] : [60, 60, 60]);
+        // Open courts are drawn as plain floor (a grid dot per tile reads as noise over hundreds of tiles).
+        if (!COURTS.has(role)) r.rect(px, py, 1, 1, [30, 30, 34]);
       } else if (c === 'D') r.rect(px + 1, py + 1, s - 2, s - 2, [230, 150, 40]);
       else if (c === '=') { r.rect(px, py, s, s, [120, 60, 120]); r.rect(px + 1, py + (s >> 1) - 1, s - 2, 2, [235, 70, 200]); }
       else {
@@ -139,6 +179,12 @@ export function drawShip(r: Raster, g: GenResult, ox: number, oy: number, s: num
     const [w, h] = rotatedSize(def, m.rot);
     const px = ox + m.x * s; const py = oy + m.y * s;
     if (def.container) { drawContainer(r, px, py, w, h, s, (m as { clamp?: string }).clamp ?? 'n', (m.stock ?? []).length > 0); continue; }
+    // Furniture (no power, not a system) is a solid block in its colour, so stalls, benches and beds read at any scale.
+    const furniture = def.power === 0 && !def.weapon && !def.airlock && !def.container && !def.vehicleBay;
+    if (furniture) {
+      for (const t of footprintTiles(def, m.x, m.y, m.rot)) r.rect(ox + t.x * s + 1, oy + t.y * s + 1, s - 2, s - 2, style.c);
+      continue;
+    }
     if (def.solid) for (const t of footprintTiles(def, m.x, m.y, m.rot)) r.rect(ox + t.x * s + 2, oy + t.y * s + 2, s - 4, s - 4, style.c.map((v) => v * 0.35) as RGB);
     r.frame(px + 1, py + 1, w * s - 2, h * s - 2, style.c, def.weapon || def.engine ? 2 : 1);
     if (def.weapon) { // a cross marks weapons (their roof turret sits over the footprint)
@@ -291,7 +337,9 @@ export function contactSheet(
   const cellH = Math.max(...ships.map((x) => x.g.height)) * s + 18 * ts + 16;
   const cols = Math.min(count, Math.max(1, Math.floor(maxWidth / cellW)));
   const rowsN = Math.ceil(count / cols);
-  const r = new Raster(cols * cellW + 8, rowsN * cellH + 30);
+  const W = Math.max(cols * cellW + 8, 1400);
+  const legendH = drawLegend(new Raster(W, 200), 8, 0, W - 16) + 8;
+  const r = new Raster(W, rowsN * cellH + 30 + legendH);
   const masks = ships.map((x) => silhouetteMask(x.g.template.rows));
   const sil = meanPairwise(masks, silhouetteDistance);
   // Near-duplicates: same-family pairs whose normalised silhouettes overlap with IoU above 0.9 and whose proportions
@@ -320,10 +368,11 @@ export function contactSheet(
   const roomText = `occupancy ${occ.toFixed(2)} doors/room ${dpr.toFixed(2)} interior dups ${(idup.share * 100).toFixed(0)}% of ${idup.rooms}`;
   const adjText = `${roomText} adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)}; within grammar ${mean(gIn).toFixed(2)}, across ${mean(gX).toFixed(2)}) spine ${spine.toFixed(2)} dups ${dupPairs.length}`;
   r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1} ${view}  shape ${sil.toFixed(2)} sections ${arch.toFixed(2)} ${adjText}`, 8, 8, [230, 230, 230], 2);
+  drawLegend(r, 8, 28, r.width - 16);
   const text: string[] = [];
   ships.forEach(({ seed, g }, i) => {
     const ox = 8 + (i % cols) * cellW;
-    const oy = 30 + Math.floor(i / cols) * cellH;
+    const oy = 30 + legendH + Math.floor(i / cols) * cellH;
     r.text(`#${seed} ${g.role} / ${g.archetype} ${g.width}X${g.height}${g.problems.length ? ' BAD' : ''}`, ox, oy, g.problems.length ? [255, 80, 80] : [220, 220, 220], ts);
     const m = g.metrics;
     const ms = m ? ` C${m.compactness.toFixed(2)} O${m.occupancy.toFixed(2)} R${m.corridorRatio.toFixed(2)} N${m.narrowLinks.toFixed(2)}` : '';
