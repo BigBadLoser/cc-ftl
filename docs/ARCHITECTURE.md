@@ -690,6 +690,25 @@ shipgen's `structureParts`):
   sector's top-left) emits `asteroid.spawned`.
 - Render: `render/asteroidView.ts`, a PLACEHOLDER (procedural diamonds with a rim, sizes from `TILE_W`/`TILE_H`), one Graphics per
   asteroid in its own region layer set at the sector origin, rebuilt on the struct/ore chunk revisions under its bbox.
+- **Mining pods (slice 2)** (`src/sim/mining/`, `systems/mining.ts`):
+  - `module.pod_bay` (3x3 solid pit, access tile beside the middle of its east side, `vehicleBay: { class: 'pod' }`) holds one
+    `vehicle.mining_pod`. The pod is an ordinary `VehicleC` + `BodyC` (stowing, body pinning, targeting, jumps with its ship all
+    come free) with `VehicleDef.crewless` (no one can embark; trade couriers and boarding parties skip it) and
+    `VehicleDef.mining { unitsPerSec }`. Numbers: speed 6 tiles/s, hold 24 units, laser 2 units/s, 30 hp, evasion 0.4.
+  - `MiningPodC { asteroid, tiles, phase, target, progress, recall, trips }` is the order. `mining.order { pod, asteroid, tiles? }`
+    (replaces any order; a pod already out turns to it) and `mining.recall { pod }`.
+  - The mining system (before the vehicle system): stowed and empty -> pick a tile and launch; outbound -> fly straight at the
+    tile centre (the system steers; a vehicle with no destination just holds there); mining -> cut `oreAmt` into the hold,
+    and at 0 clear `ore` and `writeStruct(Space)` (the owner layer clears with it); hop to the next tile while there is room;
+    full, empty-handed or recalled -> `dest = bay` and the vehicle system flies it home and stows it. Stowed with ore aboard it
+    waits ('unloading') while the existing cargo planner has crew haul the hold to storage from the bay's access tile; an empty
+    pod with nothing left, or recalled, ends the order. The laser works from above, so buried vein tiles are mined like
+    surface ones.
+  - Tile picks (`pick.ts`): nearest unclaimed ore tile of the order to the pod (squared distance to the tile centre), ties to
+    the lower y, then x; tiles another pod targets are skipped.
+  - Events: `mining.ordered`, `mining.launched` (plus `vehicle.launched`), `mining.tileCleared`, `mining.returning`, `mining.done`
+    (`exhausted` | `recalled` | `lost`). Render: `render/podView.ts` PLACEHOLDER (lozenge, shadow, pulsing laser; sizes from
+    `TILE_W`/`TILE_H`/`Z_PX`); the bay is a tinted floor-plate fallback; pods are skipped by `shuttleView` and the shuttle panel.
 - Contact sheets: `node tools/asteroids/cli.js <big|field|all> [--from 1] [--count 12] [--scale 4] [--hollow yes|no] [--out dir]`.
 
 ## Sector grid (planned)

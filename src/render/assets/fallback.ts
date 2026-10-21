@@ -37,6 +37,8 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.engine.hull': { ids: ['tile.hull.full.m15', 'tile.hull.m15'], tint: 0xffc080, perTile: true },
   'module.engine.machine': { ids: CRATE, tint: 0xffb060, perTile: true },
   'module.engine.machine.active': { ids: CRATE, tint: 0xffe0a0, perTile: true },
+  // Pod bay (asteroids slice 2): a hatch plate per tile until its art exists.
+  'module.pod_bay': { ids: FLOOR, tint: 0xd8c070, perTile: true },
   'module.shield_gen': { ids: CRATE, tint: 0x7fe6ff, perTile: true },
   'module.shield_gen_small': { ids: CRATE, tint: 0x7fe6ff, perTile: true },
   'module.weapons_console': { ids: CONSOLE, tint: 0xff9a8a, perTile: true },

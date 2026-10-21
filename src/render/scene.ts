@@ -28,6 +28,7 @@ import { targetedModules, wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
 import { createAsteroidView } from './asteroidView';
+import { createPodView } from './podView';
 import { createShipScene, type ShipScene } from './shipScene';
 
 export type { CutawayMode };
@@ -101,6 +102,8 @@ interface RendererContent {
   suit?: { airSec: number };
   /** Ore kinds (code and placeholder colour) for the asteroid placeholder drawing. */
   ores?: Readonly<Record<string, { code: number; color: number }>>;
+  /** Vehicle classes by def id: pods ('pod') are drawn by podView, not as shuttles. */
+  vehicles?: Readonly<Record<string, { class: string }>>;
 }
 
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
@@ -147,6 +150,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const rockLayers = W.region(false);
   rockLayers.setOrigin(0, 0, 0);
   const asteroids = createAsteroidView(world, rockLayers.floor, content.ores ?? {});
+  const isPod = (def: string) => content.vehicles?.[def]?.class === 'pod';
+  const pods = createPodView(world, SL.sorted, isPod);
 
   // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle
   // parked in a bay is the bay's own layer (vehicleBayArt).
@@ -154,6 +159,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     layer: SL.sorted,
     project: sectorArt,
     include: (v) => v.state !== 'stowed' || v.homeGrid === refId,
+    skip: isPod,
     low: { layer: W.low, project: sectorArt },
   });
 
@@ -294,6 +300,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         sc.update(dt);
       }
       asteroids.update(sector);
+      pods.update(dt);
       shuttles.update(dt);
       boxes.update();
       fightFx.update(dt);
@@ -400,6 +407,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     pickCombat: (sx, sy) => pass.pick(sx, sy),
     dispose() {
       asteroids.dispose();
+      pods.dispose();
       rockLayers.dispose();
       shuttles.dispose();
       boxes.dispose();

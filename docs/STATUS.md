@@ -55,9 +55,17 @@ are already merged or superseded. Don't build on them.
 the core carries no ore; the hollow variant is a 50% roll per seed unless forced. Debug: `?hook`, then
 `__cc.dispatch({ type: 'debug.spawnAsteroid', kind: 'big', seed: 4, hollow: true, x: 62, y: 40 })` and pan right/down.
 
+**Slice 2 (done):** `module.pod_bay` (3x3) and the crewless `vehicle.mining_pod`, `mining.order` / `mining.recall`, trips until
+the ore is gone (details in ARCHITECTURE "Asteroids"). Planner's calls: pods are **crewless** (nobody embarks; they fly their
+order themselves); hold 24, speed 6 tiles/s, laser 2 units/s; the laser works from above (buried vein tiles too); ore comes home
+in the hold and **crew haul it** from the bay's access tile through the existing cargo hauls (a full storage leaves the pod
+waiting, loaded); pods have no item yet, so they only come with a template or the debug hook (`__cc.stage.vehicle(def, bay)`);
+no UI panel yet (commands only). Not touched: `Struct.CoreRock` and hollow generation (under discussion).
+
 **Next slices, in order:**
-1. The small vehicle bay (3x3) and the mining pod vehicle.
-2. Pod laser-mining of veins and the ore haul-back (multiple trips).
+1. (Done in slice 2.) The small vehicle bay (3x3) and the mining pod vehicle.
+2. (Done in slice 2.) Pod laser-mining of veins and the ore haul-back (multiple trips). Open: a mining UI (pick an asteroid or
+   tiles, recall), a pod item or recipe, pod art, and the bay's own art.
 3. Building on asteroid surfaces.
 4. Hollowed-out interiors.
 5. Enemy asteroid outposts.
