@@ -8,6 +8,7 @@ import { Container, Graphics, Text } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
 import { PositionC } from '../sim/crew/components';
+import { EggSacC } from '../sim/aliens/components';
 import { ShipC, type Ship } from '../sim/combat/components';
 import { Z_PX } from './heights';
 import { iso, type Pt } from './iso';
@@ -51,7 +52,10 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
   const gridOf = (ship: number): number => world.has(ship, ShipC) ? ship : 0;
   const crewAt = (id: number, z: number): Pt | null => {
     const p = world.get(id, PositionC);
-    return p ? at(shipIdAtTile(world, p.x, p.y), p.x + (p.toX - p.x) * p.progress, p.y + (p.toY - p.y) * p.progress, z) : null;
+    if (p) return at(shipIdAtTile(world, p.x, p.y), p.x + (p.toX - p.x) * p.progress, p.y + (p.toY - p.y) * p.progress, z);
+    // Egg sacs have no Position: hit and miss marks go on the sac's centre.
+    const sac = world.get(id, EggSacC);
+    return sac ? at(sac.ship, sac.x + (sac.size - 1) / 2, sac.y + (sac.size - 1) / 2, z) : null;
   };
   const say = (text: string, p: Pt, fill: number) => {
     const t = new Text({ text, resolution: Math.max(1, scale()), style: { fontFamily: 'monospace', fontSize: 11, fontWeight: 'bold', fill, stroke: { color: 0x05080d, width: 2 } } });
