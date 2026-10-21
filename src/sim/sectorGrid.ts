@@ -105,6 +105,14 @@ export class SectorGrid implements GridLike {
     return { x: x0 * CHUNK_SIZE, y: y0 * CHUNK_SIZE, w: (x1 - x0 + 1) * CHUNK_SIZE, h: (y1 - y0 + 1) * CHUNK_SIZE };
   }
 
+  get x0(): number {
+    return this.extent().x;
+  }
+
+  get y0(): number {
+    return this.extent().y;
+  }
+
   get width(): number {
     return this.extent().w;
   }
@@ -212,11 +220,6 @@ export class SectorGrid implements GridLike {
   /** Number of allocated chunks. */
   get chunkCount(): number {
     return this.dir.size;
-  }
-
-  /** Not available on a sector: use chunkData() or load(). Exists only to satisfy GridLike. */
-  raw(field: string): Readonly<FieldArray> {
-    throw new Error(`SectorGrid has no dense raw("${field}"); use chunkData() or load()`);
   }
 
   /** JSON-able snapshot: chunks sorted by key, field data as base64. Round trips byte-identically. */

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, unitPrice, quote, hailVerdict, reputationWith, playerItems,
-  type Sim, type SimEvent,
-} from '../sim';
+import { CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, unitPrice, quote, hailVerdict, reputationWith, playerItems, type Sim, type SimEvent } from '../sim';
 import { content } from './index';
 import { withCivilian } from './ships/trade.test';
+import { shipIdOf } from '../sim/regions';
+import { shipIds } from '../sim/regions';
+
+/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
+const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -151,7 +153,7 @@ describe('hailing', () => {
     expect(hailVerdict(sim, ship)).toMatchObject({ answers: false, reason: 'hostile' });
     sim.story.reputation['traders'] = 0;
     expect(hailVerdict(sim, ship).answers).toBe(true);
-    sim.world.get(ship, CombatC)!.target = { gridId: 1, moduleId: 0 };
+    sim.world.get(ship, CombatC)!.target = { ship: nth(sim, 1), moduleId: 0 };
     expect(hailVerdict(sim, ship)).toMatchObject({ answers: false, reason: 'weaponsHot' });
   });
 
@@ -193,7 +195,7 @@ describe('offers', () => {
 
   it('barter balance: item for item, the trader must not lose; the surplus is a gift', () => {
     const { sim, station } = withStation();
-    const crate = sim.world.query(StorageC).find((i) => sim.world.get(i, ModuleC)!.gridId === 1)!;
+    const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number)!;
     storageAdd(sim, crate, 'item.electronics', 20);
     const start = playerItems(sim, 'item.electronics');
     const offer = (give: number, get: number): { error: string[]; balance?: number } => {

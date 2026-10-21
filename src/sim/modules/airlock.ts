@@ -1,10 +1,27 @@
+import { defineComponent } from '../ecs';
 import type { Grid } from '../grid';
-import { hullOutward, hullSide, rotateOffset, type Tile } from '../modules/footprint';
-import { ModuleC, type Module } from '../modules/components';
+import { ModuleC, type Module } from './components';
+import { hullOutward, hullSide, rotateOffset, type Tile } from './footprint';
 import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
 import { Struct, writeStruct } from '../structure';
-import { AirlockC, type Airlock } from './components';
+
+export type AirlockState = 'inner' | 'outer' | 'toOuter' | 'toInner';
+
+/**
+ * Cycle state of an airlock module. 'inner': inner door open, chamber pressurised. 'outer': outer door open, chamber
+ * in vacuum. The 'to...' states have both doors shut while the chamber pumps its air to / from the ship.
+ */
+export interface Airlock {
+  state: AirlockState;
+  /** Ticks left in a cycle. */
+  timer: number;
+  /** Side someone wants open; written by crew waiting at a door and by airlock.cycle, consumed by the airlock system. */
+  request: 'inner' | 'outer' | null;
+  /** Free suits stowed here. Absent (an old save) = the def's `airlock.suits`. */
+  suits?: number;
+}
+export const AirlockC = defineComponent<Airlock>('airlock');
 
 /**
  * Airlock geometry. A module with `airlock` has `hullEdge: 'n'`. Plain form: footprint [1, n] (n >= 3), local row 0 the outer

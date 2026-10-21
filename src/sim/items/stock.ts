@@ -1,3 +1,5 @@
+import { ContainerC } from '../containers/components';
+import { shipIdAt , shipIdOf } from '../regions';
 import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
@@ -43,17 +45,18 @@ export function reservations(sim: Sim): Reservations {
 const dist2 = (ax: number, ay: number, bx: number, by: number): number => (ax - bx) ** 2 + (ay - by) ** 2;
 
 /** Every unreserved source of `item` on a grid: loose stacks and storage contents. */
-export function sourcesOf(sim: Sim, gridId: number, item: string, res: Reservations): Located[] {
+export function sourcesOf(sim: Sim, shipId: number, item: string, res: Reservations): Located[] {
   const out: Located[] = [];
   for (const id of sim.world.query(ItemStackC)) {
     const s = sim.world.get(id, ItemStackC);
-    if (!s || s.item !== item || s.gridId !== gridId) continue;
+    if (!s || s.item !== item || shipIdAt(sim, s.x, s.y) !== shipId) continue;
     const avail = s.count - (res.out.get(refKey('floor', id, item)) ?? 0);
     if (avail > 0) out.push({ ref: { kind: 'floor', id }, x: s.x, y: s.y, avail });
   }
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId !== gridId) continue;
+    // Sealed containers are never reached by crew (their stock moves by unloader or shuttle, later).
+    if (!m || shipIdOf(sim, m) !== shipId || sim.world.has(id, ContainerC)) continue;
     const avail = storageCount(sim, id, item) - (res.out.get(refKey('storage', id, item)) ?? 0);
     if (avail > 0) out.push({ ref: { kind: 'storage', id }, x: m.x, y: m.y, avail });
   }
@@ -61,10 +64,10 @@ export function sourcesOf(sim: Sim, gridId: number, item: string, res: Reservati
 }
 
 /** The unreserved source of `item` nearest to a point (ties: lower id). */
-export function nearestSource(sim: Sim, gridId: number, item: string, at: { x: number; y: number }, res: Reservations): Located | null {
+export function nearestSource(sim: Sim, shipId: number, item: string, at: { x: number; y: number }, res: Reservations): Located | null {
   let best: Located | null = null;
   let bestD = Infinity;
-  for (const s of sourcesOf(sim, gridId, item, res)) {
+  for (const s of sourcesOf(sim, shipId, item, res)) {
     const d = dist2(s.x, s.y, at.x, at.y);
     if (d < bestD) {
       best = s;
@@ -75,12 +78,12 @@ export function nearestSource(sim: Sim, gridId: number, item: string, at: { x: n
 }
 
 /** The storage module nearest to a point that can still take at least one unit of `item`. */
-export function nearestStorageFor(sim: Sim, gridId: number, item: string, at: { x: number; y: number }, res: Reservations): (Located & { room: number }) | null {
+export function nearestStorageFor(sim: Sim, shipId: number, item: string, at: { x: number; y: number }, res: Reservations): (Located & { room: number }) | null {
   let best: (Located & { room: number }) | null = null;
   let bestD = Infinity;
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId !== gridId) continue;
+    if (!m || shipIdOf(sim, m) !== shipId || sim.world.has(id, ContainerC)) continue;
     const room = storageSpace(sim, id, item) - (res.incoming.get(refKey('storage', id, item)) ?? 0);
     const d = dist2(m.x, m.y, at.x, at.y);
     if (room > 0 && d < bestD) {

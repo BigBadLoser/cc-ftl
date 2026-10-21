@@ -4,6 +4,7 @@ import { roomTiles } from '../roomIndex';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { GAS_EPSILON, NORMAL_O2 } from '../tuning';
+import { shipIdOf, shipGrid } from '../regions';
 
 /**
  * Running modules act on the grid fields: life support adds oxygen and scrubs CO2 across its
@@ -14,18 +15,18 @@ export function modulesSystem(sim: Sim): void {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    const grid = m && sim.grids.get(m.gridId);
+    const grid = m && shipGrid(sim, shipIdOf(sim, m));
     if (!m || !def || !grid?.has('o2') || !m.powered || m.hp <= 0) continue;
 
     if (def.o2PerSec || def.co2ScrubPerSec) {
       const room = grid.get('room', m.x, m.y);
       const tiles = room ? roomTiles(grid).get(room) : undefined;
-      const idx = tiles ?? [m.y * grid.width + m.x];
+      const idx = tiles ?? [(m.y - grid.y0) * grid.width + (m.x - grid.x0)];
       const addO2 = ((def.o2PerSec ?? 0) / TICK_HZ) / idx.length;
       const scrub = ((def.co2ScrubPerSec ?? 0) / TICK_HZ) / idx.length;
       for (const i of idx) {
-        const x = i % grid.width;
-        const y = (i - x) / grid.width;
+        const x = grid.x0 + (i % grid.width);
+        const y = grid.y0 + Math.floor(i / grid.width);
         const cur = grid.get('o2', x, y);
         if (addO2 > 0 && cur < NORMAL_O2 - GAS_EPSILON) grid.set('o2', x, y, Math.min(NORMAL_O2, cur + addO2));
         const c = grid.get('co2', x, y);

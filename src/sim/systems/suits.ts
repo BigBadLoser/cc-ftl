@@ -1,7 +1,8 @@
+import { shipIdOf, shipGrid } from '../regions';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { sweepErrands } from '../eva/errands';
 import { isThin, suitAir, suitDef } from '../eva/suit';
-import { SuitC } from '../portals/components';
+import { SuitC } from '../eva/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { EVA_AIR_LOW_FRAC } from '../tuning';
@@ -19,7 +20,7 @@ export function suitsSystem(sim: Sim): void {
     if (sim.world.has(id, DeadC)) continue;
     const suit = sim.world.get(id, SuitC)!;
     const pos = sim.world.get(id, PositionC)!;
-    const grid = sim.grids.get(pos.gridId);
+    const grid = shipGrid(sim, shipIdOf(sim, pos));
     if (!(grid && isThin(grid, pos.x, pos.y))) continue;
     const before = suitAir(sim, id);
     if (before <= 0) continue;

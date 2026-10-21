@@ -191,12 +191,31 @@ palette.json    the single palette, read by Blender scripts and the game
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
-  crew, see below), `robot_bay`, `env` (props,
+  crew, see below), `aliens`, `robot_bay`, `env` (props,
   economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
   below), `structure` (faction tile looks, see below), `galley`
   (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
+- **Wall corner fills (`walls`, the 47-tile blob set):** wall and hull pieces are picked by the 4-neighbour mask
+  (N1 E2 S4 W8) plus corner bits (`tiles.ts` `wallCorners`: NE 1, SE 2, SW 4, NW 8, set when both arms beside the
+  corner connect and the two edge tiles and the diagonal are all wall; a door breaks the block). Ids:
+  `tile.wall.{full.|low.|}m<mask>c<bits>`, `tile.hull.{full.|}m<mask>c<bits>[.v1]`, end faces
+  `tile.{fam}.{pre}end.{s|e}.c<bits>` (only the fills reaching that edge) and the rear ghost
+  `tile.hull.ghost.m{6|7|14|15}c2[.r*]`. Each set bit fills that quadrant (`walls.Strip` `corners`), so a thick block
+  is one mass: black cut tops, wall height inside interior walls, hull-top height inside the hull with the walls up.
+  Every chain ends with the plain `m<mask>` id. Default look only for now: faction looks and breaches use the plain
+  pieces. Walls with no floor round them take their light from up to 6 tiles away (`gridView` `wallLight`), so a thick
+  block's top is lit evenly. Inside a thick hull band only the ring that touches space is hull: the tiles behind it are
+  interior walls at wall height (1.85) with the walls up. They are not raised to the hull top, because no local rule
+  tells the inside of a hull band from a 2-thick partition that joins the hull.
+- **Hull side (`tiles.ts` `hullSide`):** which wall tiles are far hull (full height in cutaway) or near hull (a ghost
+  in every level). The tile must touch space (8-neighbour). A run along x is near if nothing of the ship lies at +y up
+  to the outside, and a run along y if nothing lies at +x. It is far if space lies right behind the run (-y, or -x for a
+  run along y), or diagonally behind with no floor between (the outline's corners and steps). Every other wall is a
+  partition. So a wall that touches space through a breach, a notch or beside its run stays a partition: cut in
+  cutaway, never a ghost. The rays reach `HULL_RAY` (16) tiles, and `gridView` keys its chunks on the struct that far
+  round them.
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
     at the tile centre. The looks are `navy`, `drone`, `civil` and `scrap`, picked by faction.
@@ -206,6 +225,21 @@ palette.json    the single palette, read by Blender scripts and the game
   - Beams top out about 0.6 high, so every wall view level uses the same sprites. A 2–3-thick beam reads as
     twin trusses tied at each tile.
   - Preview from a shipgen dump: `tools/blender/review/beams_preview.py <dir> <out> ship <txt> <seed> <look>`.
+- **Cargo containers (no sheet yet; placeholder boxes drawn by `src/render/containerBox.ts`):** sealed container modules
+  (`ModuleDef.container`, `src/sim/containers`) stand on Beam tiles clamped to a freighter frame. Ids the renderer asks
+  for, most specific first (`moduleArt.containerChain`), anchored at the footprint's front tile like any module:
+  - A container's cargo doors are on one short end, and that end always faces the frame it is clamped to (the clamp
+    side; shipgen validation enforces it). The door end is part of the id: `container.<W>x<H>.r<N>.<n|e|s|w>`, with
+    the doors drawn on that end (on r0 spines today: `.n` hangs below a spine, `.s` stands on one).
+  - `container.<W>x<H>.r<N>.<end>[.damaged|.destroyed]`, then `container.<W>x<H>.r<N>.<end>`,
+    `container.<W>x<H>.r<N>[.damaged|.destroyed]`, then `container.<W>x<H>.r<N>`, `container.<W>x<H>[.damaged|.destroyed]`,
+    `container.<W>x<H>`. Sizes: `container.2x3` and `container.3x5`. On today's spines (along x) they stand at r0, the
+    short end on the spine; r1 is for a spine running along y. `.damaged` under half hp, `.destroyed` at 0. Ruins also name
+    `.patched` (a scrapper box welded shut, `RuinContainer.patched`) in their meta; the renderer shows it as `.damaged`.
+  - `container.clamp.<n|e|s|w>`, then `container.clamp`: the clamp gripping the frame, one sprite at the middle tile of
+    the clamped side (a separate layer so one clamp sprite serves every size).
+  - A detached container (a free body, `render/containerBodyView.ts`) uses the same shell ids, no clamp, at the body's
+    position. The beam sprites under a container are skipped (its seat), and frame beams end at it.
 - **Faction structure looks** (`sprites/restyle.py`, `structure_looks.py`, `structure_scrap.py`, `structure.py`,
   family `structure`; preview only, no full build yet): the default wall, hull and floor tiles rebuilt per faction.
   Geometry, masks, heights, ghosts and cutaway are unchanged; only the surfaces differ.
@@ -269,6 +303,8 @@ palette.json    the single palette, read by Blender scripts and the game
       - `.cracked`: leaking.
       - `.hatch0`, `.hatch1`, `.hatch2`: it swells, rips open and falls open. Play these when it breaks and spawn
         the alien on `.hatch2`.
+      - Wired: sacs are sim entities (`EggSacC`), drawn by `render/eggSacView.ts` from their state; ruin hooks of kind
+        `eggsac` are no longer static dressing.
       - `.burst`: the deflated skin, left in its puddle.
     - `decay.eggs`, `decay.ai.scrap`, and `decay.ai.cables.{x|y}`, which tiles along a run.
     - `module.light.off` (alternate with `module.light` for a flicker) and `module.light.broken`.
@@ -321,6 +357,21 @@ palette.json    the single palette, read by Blender scripts and the game
     (split at the waist).
   - `team.cloth` is the faction shell and `team.accent` the seam; the eye and charge cells glow.
   - Look previews: `ROBOT_QUICK`, `ROBOT_REST` and `ROBOT_ANIM` builds, composited by `review/robots_preview.py`.
+- **Aliens** (`sprites/alien.py`, `alien_render.py`, family `aliens`; wired on branch `aliens`): the derelict infestation, built
+  on the robot rig kit. There is one sheet per creature in the crew layer format, with species `alien` and no gear:
+  - `crew.alien.body.hunter`: the swarm melee unit, about 1 tile.
+  - `crew.alien.body.brute`: the tank, about 1.5 tiles.
+  - `crew.alien.body.spitter`: ranged; its `attack` clip spits a glowing glob.
+  - Each sheet has 8 direction rows and the clips idle 4, run 6, attack 5, hurt 2 and dead 1 (the corpse that
+    stays on the floor).
+  - The look is dark violet chitin with lighter violet limbs and one lime accent; the eyes and sacs glow.
+  - Previews: `ALIEN_QUICK` and `ALIEN_ANIM` builds, composited by `review/alien_preview.py`.
+  - Wiring: species `species.alien_<kind>` wears `crew.alien.body.<kind>` (`render/loadout.ts`), through the crew view's
+    single-sheet layer path like robots. `walk` falls back to `run`; an attack (the fight cooldown restarting) plays
+    `attack` once, a hit plays `hurt` once, and a dead alien lies as its `dead` frame. The spitter's glob is still drawn
+    in code (`render/fightFx.ts`, weapon `spit`); a glob sprite (`fx.alien.glob`, plus an impact splash) is wanted.
+  - Sim: `src/sim/aliens/` (egg sacs, nests, aliens) and `systems/eggSacs.ts` / `systems/aliens.ts`; content
+    `content/species.ts` (the three species), `content/roles.ts` (`role.alien_*`) and `content/creatures.ts` (hatch weights).
 - **Robot bay** (`sprites/robot_bay.py`, family `robot_bay`): 1x2, in the robots' look (light shells over a dark frame,
   the status light as a single eye).
   - The cradle is the footprint's rotated (0, 0) tile (the sim's `rotateOffset`), and the tower is the rotated (0, 1)
@@ -960,6 +1011,86 @@ Step 5b done (branch `sector-5b`): chunk tile views.
   destroy, the depth sort, collecting renderables).
 - Fixed on the way: a roof rebuild no longer deletes the roof parts (on main, any struct change on a ship removed its
   AI-core / shield-generator roof part until a power state changed).
+
+Step 6 done (branch `sector-6`): the coordinate flip.
+- Every component position is a sector tile: `Position` (and `toX/toY`), `Path` steps, `ModuleC`, `JobC`, `ItemStackC`, job
+  and drafted targets, and the events that carry tiles (`fire.started`, `projectile.hit/miss`). `spawnTemplateModules`
+  translates the ship-local template by the grid's top-left, so spawning stamps sector coordinates.
+- Windows are the identity: `GridWindow.get/set(x, y)` read sector tile (x, y); the window keeps only its rectangle as
+  bounds (`inBounds`, the edge checks of `isEvaWalkable`, `bordersSpace`, `network`), so behaviour at a ship's edge is
+  unchanged. `sim.grids.get(id)` still works for any id. `GridLike` gained `x0, y0` (the bounds' top-left; 0 for a dense
+  grid). Decided here rather than the plan's "whole sector" window: an unbounded window would change edge behaviour.
+- `load()` defaults to the window rectangle and returns it row-major from (x0, y0); field systems keep their index math and
+  add (x0, y0) where they turn an index into a tile (`writeBack`, fire, rooms, lighting, doors, alerts, autojobs, life
+  support). `roomTiles` indices count from (x0, y0). A* runs on window indices, so tie-breaking is unchanged.
+- Geometry sums are gone: `moduleCenter`, `dockPoint`, `bayCenter`, impacts, `tileFrame` / `tileCentre`, the crew floor scan
+  and `nearestExterior`. Lint (`no-restricted-syntax` in `src/sim`, outside `gridWindow`, `gridMap` and shipgen) rejects
+  `ship.x + m.x`-style sums and `ox` / `oy` sums. Bbox centres (`ship.x + ship.width / 2`) are sector sums and stay.
+- Render: `sectorPos` is deleted (sector tiles are plain `iso(x, y)`); `fightFx`, `crewMarks`, `sectorFx`, focus,
+  `screenOf` and tile picking work in sector tiles. One offset stays on purpose: a region's tile art (floors, walls, roof
+  livery and plan, chunk views) is built in ship-local tiles, because floor variants and the livery gradient depend on the
+  tile position and must not change when step 9 restamps a ship elsewhere. The region's containers sit at its top-left
+  (`regionOrigin(grid)`), and entity views (crew, modules, items, jobs, turrets, target marks, particles, markers)
+  subtract it when they place sprites. Depth keys are therefore unchanged.
+- The inspector readouts show ship-local tiles (`UiInspect.local`); commands take sector tiles.
+- 5b leftovers: `moduleView` light, the crew light reader in `shipScene` and `app/moduleSnapshot` (room, o2) use `get`.
+  `raw()` is left only in `crew/pathfind.ts` and `eva/route.ts` (window-indexed, step 7).
+- Save v15 (same shape, new meaning). `sectorEquiv` maps positions back to grid-local tiles before hashing (ShipC was
+  sector already); both pre-refactor hashes still match. Tests: single-ship fixtures sit at (0, 0) (`fight`, `eva`);
+  newGame tests add `PLAYER_START`; `portals` adds its grids' row-0 offsets; window, map, region and chunk tests use
+  sector tiles.
+- `gridId` stays as a dead tag (step 7).
+
+### Step 7 split (planned 2026-10-20)
+
+Step 7 is split into four slices. Each keeps `npm run check` green, changes no behaviour (the `sectorEquiv` and state
+hashes must still match) and bumps `SAVE_VERSION` only if the save shape changes.
+
+| Slice | Content | Why this order |
+|---|---|---|
+| **7a** (done on `sector-7a`, save v16) | `ItemStack.gridId` removed (membership from the `ship` layer through `gridIdAt`, falling back to the window rectangle for ship-less fixture grids); the last two `raw()` users (`crew/pathfind.ts`, `eva/route.ts`) read `load()` instead. Local-tile readouts for module, job and airlock labels | Items need no per-ship bounds and no portal; `raw()` goes first so 7d can delete it |
+| **7b** (done: `sector-7b`, save v17: Module, Job, Drafted; **7b2** on `sector-7b2`, save v18: `Position.gridId`) | `ModuleC.gridId`, `JobC.gridId` (+ `Drafted.target/planned.gridId`), `Position.gridId`: the "which ship is this entity on" answers become `shipAt` / `gridIdAt` at the entity's tile. Largest slice; split by component if it passes about 600 lines | Position is read by nearly every system, so it goes after the small components have set the pattern |
+| **7c** (done on `sector-7c`, save v19) | Ship-keyed ids: `Target.gridId`, `Projectile.fromGridId`, `CoreLink.gridId`, `Ship.gridId` -> the `ShipC` entity id; commands, events and UI snapshots switch from grid ids to ship ids (`gridId` fields in `commands.ts`, `events.ts`, `ui/api.ts`, `app/*Snapshot`) | One mechanical rename across the API surface, after the components no longer need the grid id |
+| **7d** (done on `sector-7d`, save v20) | Deleted `sim.grids`, `GridMap`, `GridWindow` (+ `raw`), the cross-grid portals (`portals/graph`, `route`, `pathCache`, `systems/portals`, the `portal.*` commands and events) and `Path.then`; `SuitC` moved to `eva/components.ts`, `AirlockC` and the airlock geometry to `modules/airlock.ts`. `Ship.gridId` is gone: a ship is its `ShipC` entity id everywhere. Per-ship bounds (EVA ring, `bordersSpace`, `networkOf`, power out-of-bounds, A*) are the `ShipC` rectangle (`shipRect`, `shipFrame`, `inShip`) through `ShipGrid`. Lint guard against `.gridId` and `.grids` in `src/sim` | Last, because the window rectangle is what kept edge behaviour identical until then |
+
+**7b notes.** `gridIdOf(sim, at)` (`sim/regions.ts`) is `gridIdAt` at `at.x, at.y` (0 for none). `gridIdAt` now has three steps: the
+`ship` owner layer; else the lowest-id grid whose rectangle holds the tile (Space inside a bbox, ship-less fixture grids); else the
+grid whose padded frame (EVA ring) holds it. The ring step keeps jobs on a downed EVA crew member (rescue) and drafted targets
+in the ring on the grid they had before. Frames never overlap, so the answer is unique. Drafted targets: `gridId` was set only
+for cross-grid orders; it is now `gridIdAt(target) || pos.gridId` (open Space stays on the crew member's own grid). The render
+side asks the grid object (`grid.inBounds(m.x, m.y)`; `onShip(ship, at)` in `render/regionRules.ts`) because it holds no `sim`.
+`sectorEquiv.test.ts` re-adds `gridId` to module rows (after `def`) in `legacyWorld`, as it does for vehicles. Job/module `gridId` parameters of helpers (`stackAt`, `makeHaul`, ...) stay until 7d.
+
+**7b2 notes (save v18).** `Position` is `{ x, y, toX, toY, progress, facing }` (sector tiles). "Which ship is this crew member on" is
+`gridIdOf(sim, pos)`, so an EVA crew member in the ring and a downed one outside the hull resolve by the ring rule of `gridIdAt`;
+crossing a portal just moves the tile. Crew aboard a shuttle already had **no `Position`** (`boardCrew` removes it, with `Path`,
+job and drafted state) and carry `AboardC { vehicle }`, which with the vehicle's `pilot` / `passengers` is the aboard link; nothing
+new was added. Their location is the vehicle's `BodyC`; `unboardCrew` adds a tile `Position` at the bay or airlock. Render has no
+`Sim`, so `gridIdAtTile(world, x, y)` (`render/regionRules.ts`) is the twin of `gridIdAt` over the `ShipC` rectangles and padded
+frames. Commands, events and snapshots keep their `gridId` fields (filled from the lookups) until 7c. `sectorEquiv.test.ts`
+re-adds `gridId` as the first key of `position` rows in `legacyWorld`; both hashes are unchanged.
+
+**7c notes (save v19).** `Target.ship`, `Projectile.fromShip` and `CoreLink.ship` hold `ShipC` entity ids. Commands and events name a
+ship by `ship` (`gridId` is gone from `commands.ts` and `events.ts` except `portal.link`, whose endpoints are grids until 7d).
+`Ship.gridId` stays as the ship-to-window link; handlers turn `cmd.ship` into a grid with `gridOfShip(sim, ship)` and emitters turn a
+grid into a ship with `shipOfGrid(sim, gridId)` or, from a tile, `shipIdOf(sim, at)` (same rule as `gridIdOf`, so EVA ring cases
+agree). Helpers that take a `gridId` (`stackAt`, `randomModule`, `targetableShip`, ...) are unchanged and go in 7d. The UI is keyed by
+ship id everywhere (`selectShip`, `UiCrew.ship`, `node-{ship}`); a station, which has no `ShipC`, uses its trader entity id from the
+same id space. The tile inspector still prints "grid N" through a readout-only `UiInspect.grid`. Render keeps its grid-keyed
+interfaces and the app layer converts. `sectorEquiv.test.ts` maps `ship` back to `gridId` / `fromGridId` in `legacyWorld`. Tests that
+queue a command naming a ship that a queued spawn command creates must step first (the id does not exist at enqueue time).
+
+**7d notes (save v20).** Step 7 is done.
+- **Ids.** There are no grid ids. `Ship` has no `gridId`; every former grid-id parameter (`stackAt`, `findPath`, `placementError`, `shieldCapacity`, ...) takes the ship id (the `ShipC` entity). `shipIdAt(sim, x, y)` is the old `gridIdAt`: owner layer, else the lowest-id ship whose rectangle holds the tile, else the lowest-id ship whose padded frame (the EVA ring) does, else 0; `shipIdOf(sim, at)` reads a thing's tile. The renderer twin is `shipIdAtTile(world, x, y)`. `shipIds(sim)` lists ships in creation order; `homeShip(sim)` is the lowest-id player-faction ship (the starting ship; it replaces the `GRID = 1` / `PLAYER = 1` constants of the app layer and the `refId = 1` of the renderer).
+- **Bounds.** The bound of a ship is its `ShipC` rectangle (`shipRect(ship)`, padded by `REGION_PAD` for `shipFrame`). `inShip(sim, ship, x, y)` and `inRect(rect, x, y)` are the point tests. The code that used to ask the window (`grid.inBounds`, `x0 / y0 / width / height`, `load()` over the window rectangle, `revision()` over its chunks) now asks a **`ShipGrid`** (`sim/shipGrid.ts`): a bounded view of `sim.sector.grid` for one ship, derived from the `ShipC` rectangle by `shipGrid(sim, ship)` (or `shipGridOf(sector, world, ship)` in the renderer, which has no `Sim`). It is not registered, not saved and has no id of its own (`id` is the ship id), it has no `raw()`, and the same object comes back while the rectangle is unchanged, so the `WeakMap` caches (`hullSum`, `fieldFrame`, `roomTiles`, `regionTiles`) still key on it. Edge behaviour is therefore the old windows' behaviour exactly; `regions.test.ts` pins it (`inShip`, `shipIdAt` ring rule, `isEvaWalkable`, `bordersSpace`, `networkOf`, out-of-rectangle `get` throws). `regions(sim)` returns `{ ship, grid: ShipGrid, bbox, frame }` per `ShipC`, ascending id.
+- **Ship-less fixtures.** A fixture grid now needs a `ShipC`: `stampShip(sim, template, { faction, x, y, state? })` stamps the template into the sector, places its modules and creates the `ShipC` (no `CombatC`, crew or event); `spawnShip` is `stampShip` plus combat, boarding, crew and the event. Fixtures stamp a prize (`state: 'prize'`, skipped by every ship system) at the origin as their first entity, so its ship id is 1. `spawnModule(sim, def, x, y, rot)` no longer takes a grid (it writes the sector grid); `spawnTemplateModules(sim, ship, template)` reads the ship's origin from its `ShipC`, `placeTemplateModules(sim, template, ox, oy)` is the form `stampShip` uses before the `ShipC` exists (entity ids stay in the old order: modules, then the ship).
+- **Portals.** Nothing in the sim ever created a portal (only the `portal.link` command did), so crew paths were always single-ship. Removed with `Path.then`, `CrossingC`, `PortalC`, the `portal.link` / `portal.unlink` commands and the `crew.crossed` / `portal.*` events. A drafted order whose target is on another ship or unreachable now lapses straight away (it did through `planRoute` returning null).
+- **Save.** `grids` (the window rectangles) and `ShipC.gridId` are gone from the save. Fixed-shape otherwise.
+- **Hashes.** Both `sectorEquiv` hashes are unchanged. `legacyWorld` writes `gridId` back (first key of `ship` rows), where a grid id is the ship's 1-based place in ship-id order, and maps `homeGrid`, `gridId` / `fromGridId` keys, positions and the per-grid tile hash through it.
+- **Tests that named ships by number.** `newGame` tests used grid ids 1 and 2; they use a local `nth(sim, n)` (the n-th ship in creation order) because the starter's entity id is not 1.
+
+Leftovers that 7a deliberately keeps: every `gridId` parameter of the helpers (`stackAt`, `nearestStorageFor`, `makeHaul`,
+...) and `sim.grids.get(...)` lookups; they go with 7b-7d.
 
 **Merges before the refactor (answer to the user's hold).**
 - Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**

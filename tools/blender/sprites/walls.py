@@ -72,6 +72,31 @@ def wall_top(fam, level):
     return {"up": HF, "cut": skirt_top() + CUT, "low": skirt_top()}[level]
 
 
+# Corner fills (the 47-tile blob set): bit NE 1, SE 2, SW 4, NW 8 is set when both adjacent arms are connected and the
+# diagonal tile is solid wall too (a door breaks the block). Each set bit fills that quadrant between the arms, so a
+# thick block is one solid mass instead of a lattice of posts and pits.
+CORNER = {1: "ne", 2: "se", 4: "sw", 8: "nw"}
+CORNER_NEED = {1: 3, 2: 6, 4: 12, 8: 9}   # arm bits each corner needs
+
+
+def corner_sets(mask):
+    """The corner bit sets a piece of this mask can carry (0 first)."""
+    allowed = sum(b for b, need in CORNER_NEED.items() if mask & need == need)
+    return [c for c in range(16) if c & allowed == c]
+
+
+def corner_boxes(corners, p0, p1):
+    """(bit, (x0, x1, y0, y1)) of each set corner quadrant between the partition band [p0, p1] and the tile edges."""
+    q = {1: (p1, 0.5, -0.5, p0), 2: (p1, 0.5, p1, 0.5), 4: (-0.5, p0, p1, 0.5), 8: (-0.5, p0, -0.5, p0)}
+    return [(b, q[b]) for b in (1, 2, 4, 8) if corners & b]
+
+
+def fill_top(fam, level):
+    """Top of a corner fill: inside a hull block with the walls up the hull top (one hull mass), else the partitions'
+    height at that level (cutaway: the cut height with the black cut cap)."""
+    return hull_top() if fam == "hull" and level == "up" else wall_top("wall", level)
+
+
 def profile(fam, level):
     """(wall thickness, wall top z, skirt top z)."""
     return (hull_thick() if fam == "hull" else TW), wall_top(fam, level), skirt_top()
@@ -250,22 +275,26 @@ class Strip(Spec):
     side, skirts all round (the front one reaches the near tile edge; the back one is hidden behind the wall). Hull: a
     hull_thick() strip along the far edges; an arm off a straight hull run is a partition at the partitions' offset."""
 
-    def __init__(self, mask, fam, level, variant=0):
-        self.mask, self.fam, self.level, self.variant = mask, fam, level, variant
+    def __init__(self, mask, fam, level, variant=0, corners=0):
+        self.mask, self.fam, self.level, self.variant, self.corners = mask, fam, level, variant, corners
         self.full = level == "up"
         t, self.top, self.zs = profile(fam, level)
         self.run = skirt_run()
         p0 = -0.5 + wall_back()
         p1 = p0 + TW
         wt = wall_top("wall", level)
+        fz = fill_top(fam, level)
         R = []
         if fam == "hull":
+            # A partition arm between corner fills rises with them (walls up: to the hull top), so the block has no notch.
+            et = fz if corners & 3 else wt
+            st = fz if corners & 6 else wt
             R.append(((-0.5, -0.5 + t, -0.5, -0.5 + t), "hull", t, self.top))
             if mask & 2:
-                R.append(((-0.5 + t, 0.5, p0, p1), "wall", TW, wt) if mask & 5 == 5 else
+                R.append(((-0.5 + t, 0.5, p0, p1), "wall", TW, et) if mask & 5 == 5 else
                          ((-0.5 + t, 0.5, -0.5, -0.5 + t), "hull", t, self.top))
             if mask & 4:
-                R.append(((p0, p1, -0.5 + t, 0.5), "wall", TW, wt) if mask & 10 == 10 else
+                R.append(((p0, p1, -0.5 + t, 0.5), "wall", TW, st) if mask & 10 == 10 else
                          ((-0.5, -0.5 + t, -0.5 + t, 0.5), "hull", t, self.top))
         else:
             R.append(((p0, p1, p0, p1), "wall", TW, wt))
@@ -273,6 +302,8 @@ class Strip(Spec):
                              (4, (p0, p1, p1, 0.5))):
                 if mask & bit:
                     R.append((box, "wall", TW, wt))
+        for bit, box in corner_boxes(corners, p0, p1):      # after the arms: _rect_at is first-match
+            R.append((box, "wall", TW, fz))
         self.rects = R
         k = round(t * GN)
         self.keep = (lambda ci, cj: ci + cj >= k) if fam == "hull" and mask == 6 else None   # chamfered outer corner
@@ -341,33 +372,52 @@ class Strip(Spec):
         return A.wall_face(face, s, z, top, self.zs, self.full)
 
 
-def block(mask, fam, deco=None, name=None, level="cut"):
-    """A far wall / far hull piece at a view level. deco: hull colour variant (1 = ochre plate)."""
-    m = core.Mesh(name or f"wall_{fam}_{mask}_{level}", flat=True)
-    emit(m, Strip(mask, fam, level, 1 if deco == 1 else 0))
+def block(mask, fam, deco=None, name=None, level="cut", corners=0):
+    """A far wall / far hull piece at a view level. deco: hull colour variant (1 = ochre plate). corners: fill bits."""
+    m = core.Mesh(name or f"wall_{fam}_{mask}_{level}_{corners}", flat=True)
+    emit(m, Strip(mask, fam, level, 1 if deco == 1 else 0, corners))
     return [m.build()]
 
 
-def end_face(fam, side, level="up"):
+def end_face(fam, side, level="up", corners=0):
     """Overlay where a wall or far hull butts into the low hull ghost (+y / +x neighbour): the cross-section of the
-    wall and its skirts above the ghost rim (ZG). side s: the +y end of an S arm, e: the +x end of an E arm."""
+    wall and its skirts above the ghost rim (ZG). side s: the +y end of an S arm, e: the +x end of an E arm. corners:
+    the fills reaching that edge (s: SE 2 / SW 4, e: NE 1 / SE 2) widen the section to the tile's corners."""
     t, top, zs = profile(fam, level)
     run = skirt_run()
     lo, hi = (0.0, t) if fam == "hull" else (wall_back(), wall_back() + TW)
-    m = core.Mesh(f"end_{fam}_{side}_{level}", flat=True)
+    p0 = wall_back()
+    p1 = p0 + TW
+    fz = fill_top(fam, level)
+    lo_bit, hi_bit = (4, 2) if side == "s" else (1, 2)       # u = x + 0.5 (s) or y + 0.5 (e)
+    spans = [(lo, hi, top)]
+    if corners & lo_bit:
+        spans.append((0.0, p0, fz))
+    if corners & hi_bit:
+        spans.append((p1, 1.0, fz))
+    covered = lambda u: any(a <= u < b for a, b, _ in spans)      # noqa: E731
+    m = core.Mesh(f"end_{fam}_{side}_{level}_{corners}", flat=True)
     R = A.ramp("blue" if fam == "hull" else "wall", "y" if side == "s" else "x")
     for c in range(GN):
         u0, u1 = c / GN, (c + 1) / GN
         um = (u0 + u1) / 2
-        body = lo <= um < hi
-        zt = top if body else zs * max(0.0, 1.0 - max(lo - um, um - hi) / run)
+        sp = next((s for s in spans if s[0] <= um < s[1]), None)
+        body = sp is not None
+        if body:
+            zt = sp[2]
+        else:
+            zt = zs * max(0.0, 1.0 - min(max(a - um, um - b) for a, b, _ in spans) / run)
         if zt <= ZG + 1e-6:
             continue
         rows = max(1, int(round((zt - ZG) / DZ)))
         for k in range(rows):
             z0, z1 = ZG + (zt - ZG) * k / rows, ZG + (zt - ZG) * (k + 1) / rows
-            if body:
-                col = R["H"] if z1 > top - 0.05 else (R["L"] if u0 <= lo + 1e-9 else R["M"])
+            if body and corners and (fam == "wall" or sp is not spans[0]):
+                # A filled face is the block's outer face: the same panels and seams as a wall face there.
+                col = A.wall_face("y" if side == "s" else "x", um if side == "s" else 1.0 - um, (z0 + z1) / 2, zt, zs,
+                                  level == "up")
+            elif body:
+                col = R["H"] if z1 > zt - 0.05 else (R["L"] if not covered(um - 1 / GN) else R["M"])
             else:
                 col = R["H"] if k == rows - 1 else R["M"]      # the skirt's cut section, in the skirt's own tone
             if side == "s":

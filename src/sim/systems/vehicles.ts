@@ -2,11 +2,12 @@ import { ALT, BodyC, type Body } from '../body';
 import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
 import { isIncapacitated, isSettled } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
-import { airlockWorking } from '../portals/airlock';
+import { airlockWorking } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter, boardingTile, dockPoint } from '../vehicles/geometry';
 import { boardCrew, destPoint, occupants, undock, vehicleDefOf, vehicleLostWithBay, vehicleSpeedPerTick } from '../vehicles/lifecycle';
+import { shipIdOf } from '../regions';
 
 /**
  * Vehicles. (1) Crew with an embark order who stand on the vehicle's boarding tile climb in (hidden, off the grid).
@@ -26,7 +27,7 @@ export function vehicleSystem(sim: Sim): void {
       sim.world.remove(crew, EmbarkOrderC);
       continue;
     }
-    if (isSettled(pos) && pos.gridId === at.gridId && pos.x === at.x && pos.y === at.y) {
+    if (isSettled(pos) && shipIdOf(sim, pos) === at.shipId && pos.x === at.x && pos.y === at.y) {
       sim.world.remove(crew, EmbarkOrderC);
       if (occupants(v).length < (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) boardCrew(sim, crew, order.vehicle);
       else sim.events.emit({ type: 'command.rejected', command: 'vehicle.embark', reason: 'full' });
@@ -81,11 +82,10 @@ function fly(sim: Sim, id: number, v: Vehicle, b: Body): void {
   b.y = to.y;
   v.dest = null;
   if (dest.type === 'dock') {
-    const gridId = sim.world.get(dest.airlock, ModuleC)?.gridId ?? 0;
     v.state = 'docked';
     v.dock = dest.airlock;
     b.alt = ALT.docked;
-    sim.events.emit({ type: 'vehicle.docked', vehicle: id, gridId, airlock: dest.airlock });
+    sim.events.emit({ type: 'vehicle.docked', vehicle: id, ship: shipIdOf(sim, sim.world.get(dest.airlock, ModuleC)), airlock: dest.airlock });
   } else if (dest.type === 'hover') {
     v.hover = dest.ship;
   } else {

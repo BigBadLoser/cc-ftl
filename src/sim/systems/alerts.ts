@@ -21,15 +21,15 @@ const memory = new WeakMap<Grid, Memory>();
 /** Raise hull.breach, fire.started and o2.low once per room as conditions start (every few ticks). */
 export function alertsSystem(sim: Sim): void {
   if (sim.tick % ALERT_INTERVAL_TICKS !== 0) return;
-  for (const { grid } of regions(sim)) {
+  for (const { grid, ship } of regions(sim)) {
     if (!grid.has('room') || !grid.has('o2') || !grid.has('fire')) continue;
     let mem = memory.get(grid);
     if (!mem) memory.set(grid, (mem = { breached: new Set(), burning: new Set(), lowO2: new Set() }));
-    scan(sim, grid, mem);
+    scan(sim, grid, ship, mem);
   }
 }
 
-function scan(sim: Sim, grid: Grid, mem: Memory): void {
+function scan(sim: Sim, grid: Grid, ship: number, mem: Memory): void {
   const { width, height } = grid;
   const struct = grid.load('struct');
   const fire = grid.load('fire');
@@ -49,12 +49,12 @@ function scan(sim: Sim, grid: Grid, mem: Memory): void {
     if ((fire[i] as number) > 0 && !burning.has(r)) burning.set(r, i);
   }
   for (const r of breached) {
-    if (!mem.breached.has(r)) sim.events.emit({ type: 'hull.breach', gridId: grid.id, room: r });
+    if (!mem.breached.has(r)) sim.events.emit({ type: 'hull.breach', ship, room: r });
   }
   for (const [r, i] of burning) {
     if (!mem.burning.has(r)) {
       const x = i % width;
-      sim.events.emit({ type: 'fire.started', gridId: grid.id, room: r, x, y: (i - x) / width });
+      sim.events.emit({ type: 'fire.started', ship, room: r, x: grid.x0 + x, y: grid.y0 + (i - x) / width });
     }
   }
   mem.breached = breached;
@@ -66,7 +66,7 @@ function scan(sim: Sim, grid: Grid, mem: Memory): void {
     const avg = sum / tiles.length;
     if (avg < O2_ALERT_BELOW && !mem.lowO2.has(r)) {
       mem.lowO2.add(r);
-      sim.events.emit({ type: 'o2.low', gridId: grid.id, room: r, o2: avg });
+      sim.events.emit({ type: 'o2.low', ship, room: r, o2: avg });
     } else if (avg > O2_ALERT_CLEAR_ABOVE) {
       mem.lowO2.delete(r);
     }

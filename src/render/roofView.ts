@@ -75,7 +75,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
     for (const id of world.query(ModuleC)) {
       const m = world.get(id, ModuleC);
       const def = m && defs[m.def];
-      if (!m || !def?.roofAsset || m.gridId !== grid.id) continue;
+      if (!m || !def?.roofAsset || !grid.inBounds(m.x, m.y)) continue;
       const on = m.powered && m.enabled && m.hp > 0;
       const stage = def.deploySec === undefined ? DEPLOY_FRAMES : deployStage(world, id);
       if (stage < 0 && !visible) continue; // stowed on the player's cutaway ship: nothing, no ghost
@@ -87,7 +87,9 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       const art = resolveArt(atlas, chain, key);
       if (!art) continue;
       const [w, h] = rotatedSize(def, m.rot);
-      const spots = art.fallback && art.perTile ? footprintTiles(def, m.x, m.y, m.rot) : [{ x: m.x + w - 1, y: m.y + h - 1 }];
+      // Modules are in sector tiles; roof parts are placed region-local like the plating.
+      const lx = m.x - grid.x0, ly = m.y - grid.y0;
+      const spots = art.fallback && art.perTile ? footprintTiles(def, lx, ly, m.rot) : [{ x: lx + w - 1, y: ly + h - 1 }];
       for (const t of spots) {
         const p = iso(t.x, t.y);
         const spr = new Sprite(art.s.tex);
@@ -134,7 +136,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
     const real = hasRoofArt(atlas);
     v.pieces = buildRoofPlating(tiles.kindAt, W, H, atlas, L, livery, plan, (x, y) => {
       if (real) return false;
-      const mod = grid.get('module', x, y);
+      const mod = tiles.get('module', x, y); // local tile
       return !!(mod && defs[world.get(mod, ModuleC)?.def ?? '']?.roofAsset);
     }, tiles.chunkRect(c));
     for (const p of v.pieces) for (const o of p.objs) o.visible = visible;
@@ -164,7 +166,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       let pk = '';
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
-        if (m && m.gridId === grid.id && defs[m.def]?.roofAsset) pk += `${id}:${m.x},${m.y},${m.rot}:${m.powered && m.enabled && m.hp > 0 ? 1 : 0}:${defs[m.def]?.deploySec === undefined ? '' : deployStage(world, id)};`;
+        if (m && grid.inBounds(m.x, m.y) && defs[m.def]?.roofAsset) pk += `${id}:${m.x},${m.y},${m.rot}:${m.powered && m.enabled && m.hp > 0 ? 1 : 0}:${defs[m.def]?.deploySec === undefined ? '' : deployStage(world, id)};`;
       }
       if (pk !== partKey) {
         partKey = pk;

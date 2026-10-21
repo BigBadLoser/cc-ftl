@@ -1,6 +1,8 @@
 import type { RoleDef } from '../sim';
 
 /** Priorities: 0 = off, 1 = highest ... 4 = lowest. Every role fights fires at 2. */
+const NO_WORK = { firefighting: 0, medical: 0, operating: 0, repair: 0, construction: 0, hauling: 0, crafting: 0, cooking: 0 };
+
 export const roles = {
   'role.engineer': {
     name: 'Engineer',
@@ -51,4 +53,8 @@ export const roles = {
     priorities: { firefighting: 1, medical: 0, operating: 4, repair: 1, construction: 2, hauling: 3, crafting: 4, cooking: 0 },
     skills: { repair: 3 },
   },
+  // --- Creatures (one role per alien species). No work at all: the alien system and crew combat drive them. ---
+  'role.alien_hunter': { name: 'Hunter', species: 'species.alien_hunter', priorities: NO_WORK, skills: { melee: 2 } },
+  'role.alien_brute': { name: 'Brute', species: 'species.alien_brute', priorities: NO_WORK, skills: { melee: 2 } },
+  'role.alien_spitter': { name: 'Spitter', species: 'species.alien_spitter', priorities: NO_WORK, skills: { gunnery: 2 } },
 } satisfies Record<string, RoleDef>;

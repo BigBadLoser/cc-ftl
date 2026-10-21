@@ -1,7 +1,8 @@
 import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
-import { isEvaWalkable, isWalkable } from '../structure';
+import { DoorJam, isEvaWalkable, isWalkable } from '../structure';
 import type { Sim } from '../sim';
+import { shipGrid } from '../regions';
 
 export interface Tile {
   x: number;
@@ -33,31 +34,36 @@ export interface PathOpts {
 /**
  * A* on one grid. 8 directions, no corner cutting. Returns the steps after `from` (empty if
  * already at the goal) or null if unreachable. Ties break on f, then h, then tile index.
- * Takes gridId so portal-spanning paths can extend this later.
+ * Takes shipId so portal-spanning paths can extend this later.
  */
-export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal, opts: PathOpts = {}): Tile[] | null {
-  const grid = sim.grids.get(gridId);
+export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, opts: PathOpts = {}): Tile[] | null {
+  const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct') || !grid.inBounds(from.x, from.y) || !grid.inBounds(goal.x, goal.y)) return null;
-  const { width, height } = grid;
-  const struct = grid.raw('struct');
-  const mods = grid.has('module') ? grid.raw('module') : null;
+  const { width, height, x0, y0 } = grid;
+  // The search runs on window indices, i = (y - y0) * width + (x - x0): the tie-break order is the same in any frame.
+  const struct = grid.load('struct');
+  const mods = grid.has('module') ? grid.load('module') : null;
+  const jam = grid.has('jam') ? grid.load('jam') : null;
   const infos = new Map<number, WalkInfo>();
-  const o2 = opts.avoidThin && grid.has('o2') ? grid.raw('o2') : null;
+  const o2 = opts.avoidThin && grid.has('o2') ? grid.load('o2') : null;
   const walk = (i: number): boolean => {
     const kind = struct[i] as number;
-    if (!isWalkable(kind) && !(opts.suited && isEvaWalkable(grid, i % width, Math.floor(i / width)))) return false;
+    const x = x0 + (i % width), y = y0 + Math.floor(i / width);
+    if (!isWalkable(kind) && !(opts.suited && isEvaWalkable(grid, x, y))) return false;
+    if (jam && jam[i] === DoorJam.Shut) return false;
     if (o2 && (o2[i] as number) < EVA_THIN_AIR_BELOW && i !== fromIndex) return false;
     const m = mods ? (mods[i] as number) : 0;
     if (m === 0) return true;
     let info = infos.get(m);
     if (!info) infos.set(m, (info = walkInfo(sim, m)));
-    return !info.solid || info.open.has(Math.floor(i / width) * OPEN_KEY + (i % width));
+    return !info.solid || info.open.has(y * OPEN_KEY + x);
   };
-  const fromIndex = from.y * width + from.x;
+  const at = (x: number, y: number): number => (y - y0) * width + (x - x0);
+  const fromIndex = at(from.x, from.y);
   const adj = goal.adjacent ? 1 : 0;
   const isGoal = (x: number, y: number): boolean =>
     adj ? Math.max(Math.abs(x - goal.x), Math.abs(y - goal.y)) === 1 : x === goal.x && y === goal.y;
-  if (!adj && !walk(goal.y * width + goal.x)) return null;
+  if (!adj && !walk(at(goal.x, goal.y))) return null;
   if (isGoal(from.x, from.y)) return [];
 
   const heuristic = (x: number, y: number): number => {
@@ -70,7 +76,7 @@ export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal, o
   const parent = new Int32Array(width * height).fill(-1);
   const closed = new Uint8Array(width * height);
   const heap = new MinHeap();
-  const start = from.y * width + from.x;
+  const start = fromIndex;
   g[start] = 0;
   heap.push(heuristic(from.x, from.y), heuristic(from.x, from.y), start);
 
@@ -80,9 +86,9 @@ export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal, o
     closed[cur] = 1;
     const cx = cur % width;
     const cy = (cur - cx) / width;
-    if (isGoal(cx, cy)) {
+    if (isGoal(x0 + cx, y0 + cy)) {
       const out: Tile[] = [];
-      for (let i = cur; i !== start; i = parent[i] as number) out.push({ x: i % width, y: Math.floor(i / width) });
+      for (let i = cur; i !== start; i = parent[i] as number) out.push({ x: x0 + (i % width), y: y0 + Math.floor(i / width) });
       return out.reverse();
     }
     for (const [dx, dy] of NEIGHBOURS) {
@@ -98,7 +104,7 @@ export function findPath(sim: Sim, gridId: number, from: Tile, goal: PathGoal, o
       if (g[ni] !== -1 && ng >= (g[ni] as number)) continue;
       g[ni] = ng;
       parent[ni] = cur;
-      const h = heuristic(nx, ny);
+      const h = heuristic(x0 + nx, y0 + ny);
       heap.push(ng + h, h, ni);
     }
   }

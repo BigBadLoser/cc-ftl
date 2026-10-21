@@ -45,7 +45,7 @@
     </div>
     <dl>
       <dt>Where</dt><dd data-testid="crew-where">{c.where}</dd>
-      <dt>Activity</dt><dd data-testid="crew-activity">{c.drafted ? 'drafted' : c.activity}{c.job ? ` · ${c.job}` : ''}</dd>
+      <dt>Activity</dt><dd data-testid="crew-activity" class:plain={c.activity === 'knocked down'}>{c.drafted ? 'drafted' : c.activity}{c.job ? ` · ${c.job}` : ''}</dd>
       <dt>Weapon</dt><dd data-testid="crew-weapon">{c.weapon ? `${c.weapon.name} (${c.weapon.damage} dmg${c.weapon.ranged ? `, range ${c.weapon.range}` : ', melee'})` : 'bare hands'}</dd>
       {#if c.surrendered}<dt>Status</dt><dd class="bad">{c.prisoner ? 'prisoner' : 'surrendered'}</dd>{/if}
       {#if c.fight && c.fight.mode !== 'idle'}<dt>Fight</dt><dd data-testid="crew-fight">{c.fight.mode === 'flee' ? 'fleeing' : `${c.fight.ordered ? 'ordered on' : 'engaging'} ${c.fight.target ?? '...'}`}{c.fight.cover ? ` · ${c.fight.cover}` : ''}</dd>{/if}
@@ -117,7 +117,7 @@
   .why { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 1px; }
   .why li { display: flex; justify-content: space-between; color: #9fe0a8; } .why li.neg { color: #ff9a9a; }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; }
-  dt { color: var(--dim); } dd { margin: 0; text-align: right; text-transform: capitalize; }
+  dt { color: var(--dim); } dd { margin: 0; text-align: right; text-transform: capitalize; } dd.plain { text-transform: none; } dd.plain::first-letter { text-transform: uppercase; }
   .btns { display: flex; gap: 4px; margin-top: 8px; }
   .btns.one { display: grid; grid-template-columns: 1fr; }
   .sub { color: var(--dim); font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; margin: 8px 0 4px; }

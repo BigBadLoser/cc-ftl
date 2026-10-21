@@ -9,14 +9,15 @@ import { footprintTiles } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { EquipC, EquipOrderC } from './components';
 import { handDefOf } from './weapons';
+import { shipIdOf } from '../regions';
 
 /** The nearest storage module on the grid holding `item`, or 0. */
-function nearestStock(sim: Sim, gridId: number, at: { x: number; y: number }, item: string): number {
+function nearestStock(sim: Sim, shipId: number, at: { x: number; y: number }, item: string): number {
   let best = 0;
   let bestD = Infinity;
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId !== gridId || m.hp <= 0 || storageCount(sim, id, item) <= 0) continue;
+    if (!m || shipIdOf(sim, m) !== shipId || m.hp <= 0 || storageCount(sim, id, item) <= 0) continue;
     const d = Math.max(Math.abs(m.x - at.x), Math.abs(m.y - at.y));
     if (d < bestD) {
       best = id;
@@ -30,7 +31,7 @@ function nearestStock(sim: Sim, gridId: number, at: { x: number; y: number }, it
 function atStorage(sim: Sim, pos: Position, storage: number): boolean {
   const m = sim.world.get(storage, ModuleC);
   const def = m && sim.content.modules[m.def];
-  if (!m || !def || m.gridId !== pos.gridId) return false;
+  if (!m || !def || shipIdOf(sim, m) !== shipIdOf(sim, pos)) return false;
   return footprintTiles(def, m.x, m.y, m.rot).some((t) => Math.max(Math.abs(t.x - pos.x), Math.abs(t.y - pos.y)) <= 1);
 }
 
@@ -41,7 +42,7 @@ export function orderEquip(sim: Sim, crew: number, item: string): string | null 
   const pos = sim.world.get(crew, PositionC);
   if (!pos || isIncapacitated(sim, crew)) return 'incapacitated';
   if (sim.world.get(crew, EquipC)?.weapon === item) return 'alreadyEquipped';
-  const storage = nearestStock(sim, pos.gridId, origin(pos), item);
+  const storage = nearestStock(sim, shipIdOf(sim, pos), origin(pos), item);
   if (!storage) return 'noStock';
   releaseAssignment(sim, crew);
   dropCarried(sim, crew);
@@ -56,7 +57,7 @@ export function dropWeapon(sim: Sim, crew: number): string | null {
   if (!eq?.weapon) return null;
   const item = eq.weapon;
   eq.weapon = null;
-  if (pos) spillItems(sim, pos.gridId, pos.toX, pos.toY, item, 1);
+  if (pos) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, item, 1);
   return item;
 }
 
@@ -79,14 +80,14 @@ export function equipOrders(sim: Sim): void {
       storageTake(sim, order.storage, order.item, 1);
       const eq = sim.world.get(id, EquipC);
       if (eq) {
-        if (eq.weapon && storageAdd(sim, order.storage, eq.weapon, 1) < 1) spillItems(sim, pos.gridId, pos.x, pos.y, eq.weapon, 1);
+        if (eq.weapon && storageAdd(sim, order.storage, eq.weapon, 1) < 1) spillItems(sim, shipIdOf(sim, pos), pos.x, pos.y, eq.weapon, 1);
         eq.weapon = order.item;
       } else sim.world.add(id, EquipC, { weapon: order.item });
       sim.world.remove(id, EquipOrderC);
       sim.events.emit({ type: 'crew.equipped', crew: id, item: order.item });
     } else if (path.steps.length === 0 && pos.toX === pos.x && pos.toY === pos.y) {
       const m = sim.world.get(order.storage, ModuleC);
-      const steps = m && findPath(sim, pos.gridId, origin(pos), { x: m.x, y: m.y, adjacent: true });
+      const steps = m && findPath(sim, shipIdOf(sim, pos), origin(pos), { x: m.x, y: m.y, adjacent: true });
       if (steps) path.steps = steps;
       else cancel();
     }

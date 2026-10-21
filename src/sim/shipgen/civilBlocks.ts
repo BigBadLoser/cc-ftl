@@ -2,6 +2,7 @@ import { localBuilder } from './blocks';
 import type { Builder, Rect, Side } from './builder';
 import { cargoSpec, engineSpec, reactorSpec, type RoomSpec } from './plan';
 import type { Rng } from '../rng';
+import { containerChar } from './containerCells';
 
 /**
  * Civilian builders, shared by the civilian generator and by scrapper salvage (as donors). Each draws one civil
@@ -12,7 +13,7 @@ import type { Rng } from '../rng';
  *   liner      a 1-wide spine lined with tiny identical cabins, a lounge bulb at one end
  *   station    a square module, a 1-wide cross corridor, a room in each quadrant
  *   barge      a catwalk over a row of deep hoppers stepping down in depth (a sawtooth keel)
- *   pod string cargo pods on a string of 1-tile tubes
+ *   pod string sealed containers clamped along a crawl tube
  *   tug        a stubby hull with a reactor, an ore hopper and one big engine aft
  *   containers cargo containers strung along a 1-wide spine, gaps between them
  *   cockpit    a blunt bridge room on a short corridor stub
@@ -113,20 +114,41 @@ export function barge(rng: Rng, crates: number, count?: number): Builder | null 
   return b;
 }
 
-/** Cargo pod string: pods on a string of 1-tile tubes. */
-export function podString(rng: Rng, crates: number): Builder | null {
+/** Container footprints a pod string draws from: the short (door) end along the tube, the length off it. */
+const STRING_BOXES: readonly (readonly [number, number])[] = [[3, 5], [2, 3]];
+
+/**
+ * Cargo pod string: sealed containers clamped along both walls of a crawl tube (crew walk the tube to whatever lies
+ * beyond it; the containers are not rooms). Tidy (civil): one container size, even spacing. `scrappy` (scrapper
+ * salvage): mismatched sizes, irregular gaps, empty slots.
+ */
+export function podString(rng: Rng, crates: number, scrappy = false): Builder | null {
   const b = localBuilder(rng);
-  const k = Math.max(2, Math.min(4, Math.ceil(crates / 4)));
-  let left = crates;
-  let tube: ReturnType<Builder['place']> = null;
+  const k = Math.max(4, Math.min(9, Math.ceil(crates / 2))) + (scrappy ? rng.int(0, 2) : 0);
+  const base = rng.pick(STRING_BOXES);
+  const gap = rng.int(0, 1);
+  // Lay each side's containers out along the tube first, then size the tube to the longer side.
+  const sides: { x: number; w: number; d: number }[][] = [[], []];
+  // The tube's walls stay bare for a stretch at both ends: its n / s faces are where it welds on.
+  const ends = [3, 3 + (scrappy ? rng.int(0, 2) : 0)];
   for (let i = 0; i < k; i++) {
-    const n = Math.max(1, Math.ceil(left / (k - i)));
-    left -= n;
-    const pod = b.place({ x: 6 * i, y: -3, w: 5, h: 5 }, 'cargo', { ...cargoSpec(n), w: 3, h: 3 });
-    if (!pod || (tube && !b.door(tube, pod))) return null;
-    if (i === k - 1) break;
-    tube = b.place({ x: 6 * i + 4, y: -2, w: 3, h: 3 }, 'hall');
-    if (!tube || !b.door(pod, tube)) return null;
+    const s = i % 2;
+    const [w, d] = scrappy ? rng.pick(STRING_BOXES) : base;
+    if (scrappy && i > 1 && rng.chance(0.25)) ends[s] = (ends[s] as number) + w + 1; // an empty slot
+    else {
+      sides[s]?.push({ x: ends[s] as number, w, d });
+      ends[s] = (ends[s] as number) + w + (scrappy ? rng.int(0, 3) : gap);
+    }
+  }
+  const L = Math.max(8, ...ends) + 3;
+  const tube = b.place({ x: 0, y: -2, w: L, h: 3 }, 'hall');
+  if (!tube) return null;
+  for (const [s, row] of sides.entries()) {
+    for (const c of row) {
+      const ch = containerChar(c.w, c.d);
+      if (!ch) continue;
+      b.cv.stamp(Array.from({ length: c.d }, () => ch.repeat(c.w)), c.x, s === 0 ? -2 - c.d : 1, `box${s}.${c.x}`);
+    }
   }
   return b;
 }

@@ -78,7 +78,7 @@ function load(sim: Sim, d: Deal, v: Vehicle): void {
       const avail = s.count - (res.out.get(refKey('storage', s.id, l.item)) ?? 0);
       const n = Math.min(need, avail, DEFAULT_CARRY_CAPACITY);
       if (n <= 0) continue;
-      makeHaul(sim, res, 'hauling', s.gridId, { ref: { kind: 'storage', id: s.id }, x: s.x, y: s.y, avail }, { kind: 'vehicle', id: d.vehicle }, l.item, n);
+      makeHaul(sim, res, 'hauling', s.shipId, { ref: { kind: 'storage', id: s.id }, x: s.x, y: s.y, avail }, { kind: 'vehicle', id: d.vehicle }, l.item, n);
       need -= n;
     }
   }

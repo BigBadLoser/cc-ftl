@@ -4,12 +4,12 @@ import { origin, releaseAssignment } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
 import { keepRobotJob, robotJobs } from '../robots/jobs';
 import type { Sim } from '../sim';
-import { regions } from '../regions';
+import { regions, shipIdOf, shipGrid } from '../regions';
 
 /** Work value for jobs that finish by condition (fire out, hp full, patient delivered), not by progress. */
 const CONDITIONAL_WORK = 1;
 
-function addJob(sim: Sim, job: Partial<Job> & Pick<Job, 'category' | 'kind' | 'gridId' | 'x' | 'y'>): void {
+function addJob(sim: Sim, job: Partial<Job> & Pick<Job, 'category' | 'kind' | 'x' | 'y'>): void {
   const id = sim.world.createEntity();
   sim.world.add(id, JobC, { struct: 0, work: CONDITIONAL_WORK, progress: 0, reservedBy: 0, ...job });
 }
@@ -45,10 +45,10 @@ export function autoJobsSystem(sim: Sim): void {
     const fire = grid.load('fire');
     for (let i = 0; i < fire.length; i++) {
       if (fire[i] === 0) continue;
-      const x = i % grid.width;
-      const y = (i - x) / grid.width;
-      if (!seen.has(`extinguish:${grid.id}:${x}:${y}`)) {
-        addJob(sim, { category: 'firefighting', kind: 'extinguish', gridId: grid.id, x, y });
+      const x = grid.x0 + (i % grid.width);
+      const y = grid.y0 + Math.floor(i / grid.width);
+      if (!seen.has(`extinguish:${x}:${y}`)) {
+        addJob(sim, { category: 'firefighting', kind: 'extinguish', x, y });
       }
     }
   }
@@ -56,24 +56,24 @@ export function autoJobsSystem(sim: Sim): void {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (!m || !def || m.hp >= def.maxHp || seen.has(`repair:${id}`)) continue;
-    addJob(sim, { category: 'repair', kind: 'repair', gridId: m.gridId, x: m.x, y: m.y, target: id });
+    addJob(sim, { category: 'repair', kind: 'repair', x: m.x, y: m.y, target: id });
   }
   for (const id of sim.world.query(DownedC, PositionC)) {
     const downed = sim.world.get(id, DownedC);
     const pos = sim.world.get(id, PositionC);
     if (!downed || !pos || downed.stabilized || seen.has(`rescue:${id}`)) continue;
-    if (!downed.bed && !findFreeBed(sim, pos.gridId, origin(pos))) continue; // nowhere to take them
-    addJob(sim, { category: 'medical', kind: 'rescue', gridId: pos.gridId, x: pos.x, y: pos.y, target: id, bed: downed.bed });
+    if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), origin(pos))) continue; // nowhere to take them
+    addJob(sim, { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed });
   }
   robotJobs(sim, seen, (job) => addJob(sim, job));
 }
 
 function jobKey(job: Job): string {
-  return job.kind === 'extinguish' ? `extinguish:${job.gridId}:${job.x}:${job.y}` : `${job.kind}:${job.target}`;
+  return job.kind === 'extinguish' ? `extinguish:${job.x}:${job.y}` : `${job.kind}:${job.target}`;
 }
 
 function keepExtinguish(sim: Sim, job: Job): boolean {
-  const grid = sim.grids.get(job.gridId);
+  const grid = shipGrid(sim, shipIdOf(sim, job));
   return !!grid?.has('fire') && grid.inBounds(job.x, job.y) && grid.get('fire', job.x, job.y) > 0;
 }
 

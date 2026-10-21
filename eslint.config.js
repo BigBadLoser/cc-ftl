@@ -18,6 +18,12 @@ const simBannedGlobals = ['window', 'document', 'performance', 'Date'].map((name
   message: `${name} is banned in src/sim (determinism / purity).`,
 }));
 
+/** Step 7d: there are no grid ids and no `sim.grids`: a ship is its ShipC entity id and its bounds are the ShipC rectangle. */
+const noGridIds = [
+  { selector: "MemberExpression[property.name='gridId']", message: 'No grid ids (step 7d): a ship is its ShipC entity id; use shipIdOf / shipIdAt.' },
+  { selector: "MemberExpression[property.name='grids']", message: 'No sim.grids (step 7d): use shipGrid(sim, ship) or regions(sim); bounds are the ShipC rectangle.' },
+];
+
 export default tseslint.config(
   { ignores: ['dist', 'coverage', 'node_modules', 'spikes', 'docs'] },
   js.configs.recommended,
@@ -49,6 +55,26 @@ export default tseslint.config(
   {
     files: ['src/sim/**/*.test.ts'],
     rules: { 'no-restricted-globals': 'off' },
+  },
+  {
+    // Step 6 (coordinate flip): positions are sector tiles everywhere, so no ship-origin or window-origin sums in the sim.
+    files: ['src/sim/**/*.ts'],
+    ignores: ['src/sim/shipgen/**', 'src/sim/**/*.test.ts'], // shipgen is template-local
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "BinaryExpression[operator=/^[-+]$/][left.type='MemberExpression'][left.object.name=/^(ship|s|sh)$/][left.property.name=/^[xy]$/][right.type='MemberExpression'][right.property.name=/^[xy]$/]",
+          message: 'Positions are sector tiles: no ship-origin + local sums (step 6).',
+        },
+        { selector: "BinaryExpression[operator=/^[-+]$/] > MemberExpression[property.name=/^o[xy]$/]", message: 'Grids read sector tiles: no window-origin sums (step 6).' },
+        ...noGridIds,
+      ],
+    },
+  },
+  {
+    files: ['src/sim/**/*.test.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...noGridIds] },
   },
   {
     files: ['src/content/**/*.ts'],

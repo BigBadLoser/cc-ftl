@@ -138,6 +138,8 @@ def jobs(name):
     raise KeyError(name)
 
 
+# `structure` is preview-only (no full build yet): build it by name, it is not part of `all`.
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
-            "structure", "galley", "derelict", "eggsac")
+            "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
+            "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage")
 ALL = RENDERED + ("sol", "damage_sol")

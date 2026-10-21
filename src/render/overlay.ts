@@ -64,7 +64,7 @@ export function createOverlay(grid: Grid, parent: Container, ow: OverlayWorld): 
     let k = '';
     for (const id of ow.world.query(ModuleC)) {
       const m = ow.world.get(id, ModuleC);
-      if (m && m.gridId === grid.id) k += `${id}${m.powered && m.enabled && m.hp > 0 ? 1 : 0}`;
+      if (m && grid.inBounds(m.x, m.y)) k += `${id}${m.powered && m.enabled && m.hp > 0 ? 1 : 0}`;
     }
     return k;
   }

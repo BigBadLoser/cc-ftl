@@ -1,6 +1,5 @@
 import type { Sim } from './sim';
 import { airlockSystem } from './systems/airlock';
-import { portalSystem } from './systems/portals';
 import { suitsSystem } from './systems/suits';
 import { evaFloatSystem } from './systems/evaFloat';
 import { alertsSystem } from './systems/alerts';
@@ -48,11 +47,14 @@ import { fabricatorSystem } from './systems/fabricators';
 import { robotBaySystem } from './systems/robotBays';
 import { workSystem } from './systems/work';
 import { vehicleSystem } from './systems/vehicles';
+import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
 import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
 import { storySystem } from './systems/story';
 import { tradeSystem } from './systems/trade';
+import { eggSacSystem } from './systems/eggSacs';
+import { alienSystem } from './systems/aliens';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
 export type System = (sim: Sim) => void;
@@ -118,17 +120,21 @@ export const pipeline: readonly System[] = [
   equipSystem,
   decideSystem,
   draftedSystem,
+  // Egg sacs before crew combat: a sac disturbed or hurt last tick hatches, and new aliens fight from this tick on.
+  eggSacSystem,
   // Crew combat after decisions: it overrides paths of crew who fight or flee, before movement walks them.
   crewCombatSystem,
+  // Idle aliens stroll near where they hatched (after combat, which owns them while they hunt or flee).
+  alienSystem,
   // Movement before carry (carried crew copy their carrier's fresh position) and work.
   movementSystem,
-  // Portal crossings after movement: crew who just reached a portal end start or finish a traversal.
-  portalSystem,
   // Suited crew drifting between a hovering shuttle and a hull land or climb aboard.
   evaFloatSystem,
   carrySystem,
   // Vehicles after crew movement: embarking crew board on arrival, shuttles fly before this tick's shots are aimed.
   vehicleSystem,
+  // Detached containers drift on their own velocity (inert bodies; nothing else moves them).
+  containerDriftSystem,
   // Trade deliveries read this tick's arrivals and issue next tick's flight orders; crew then haul the cargo.
   tradeSystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.

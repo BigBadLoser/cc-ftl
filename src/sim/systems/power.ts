@@ -3,6 +3,7 @@ import { ModuleC, type Module } from '../modules/components';
 import { networkOf } from '../modules/network';
 import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
+import { shipIdOf, shipGrid } from '../regions';
 
 interface Member {
   id: number;
@@ -21,9 +22,9 @@ export function powerSystem(sim: Sim): void {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC) as Module;
     const def = sim.content.modules[m.def];
-    const grid = sim.grids.get(m.gridId);
+    const grid = shipGrid(sim, shipIdOf(sim, m));
     if (!def || !grid) continue;
-    const key = m.gridId * 65536 + networkOf(grid, m.x, m.y);
+    const key = shipIdOf(sim, m) * 65536 + networkOf(grid, m.x, m.y);
     const list = networks.get(key);
     if (list) list.push({ id, m, def });
     else networks.set(key, [{ id, m, def }]);
@@ -65,5 +66,5 @@ function allocate(sim: Sim, members: Member[]): void {
     }
   }
   const first = members[0];
-  if (lostPower && first) sim.events.emit({ type: 'power.shortage', gridId: first.m.gridId, supply, demand });
+  if (lostPower && first) sim.events.emit({ type: 'power.shortage', ship: shipIdOf(sim, first.m), supply, demand });
 }

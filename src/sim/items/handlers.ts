@@ -1,8 +1,10 @@
 import type { Command } from '../commands';
+
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { ProductionC, StorageC } from './components';
 import { spillItems } from './stacks';
+import { shipGrid } from '../regions';
 
 type ItemCommandType = 'production.add' | 'production.remove' | 'production.edit' | 'production.reorder' | 'storage.setFilter' | 'debug.spawnItems';
 type Handler<T extends ItemCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -54,10 +56,10 @@ export const itemHandlers: { [T in ItemCommandType]: Handler<T> } = {
     s.filter = cmd.items === null ? null : [...cmd.items];
   },
   'debug.spawnItems': (sim, cmd) => {
-    const grid = sim.grids.get(cmd.gridId);
+    const grid = shipGrid(sim, cmd.ship);
     if (!grid?.has('item') || !grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
     if (!sim.content.items[cmd.item]) return reject(sim, cmd.type, 'badItem');
     if (!Number.isInteger(cmd.count) || cmd.count < 1) return reject(sim, cmd.type, 'badValue');
-    if (spillItems(sim, cmd.gridId, cmd.x, cmd.y, cmd.item, cmd.count) > 0) reject(sim, cmd.type, 'noRoom');
+    if (spillItems(sim, cmd.ship, cmd.x, cmd.y, cmd.item, cmd.count) > 0) reject(sim, cmd.type, 'noRoom');
   },
 };

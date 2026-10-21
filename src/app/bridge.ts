@@ -1,4 +1,4 @@
-import { ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
+import { JobC, ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
 import type { UiTrade, UiStory, UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
@@ -10,6 +10,8 @@ import { buildShuttles } from './shuttleSnapshot';
 import { buildTrade } from './tradeSnapshot';
 import { buildStory } from './storySnapshot';
 import { createStore, type Readable } from './store';
+import { shipGrid } from '../sim/regions';
+import { findJobAt } from '../sim/crew/helpers';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
 export interface Snapshot {
@@ -26,19 +28,26 @@ export interface Snapshot {
 }
 
 export interface TileRef {
-  gridId: number;
+  /** ShipC entity id of the ship the tile belongs to. */
+  ship: number;
   x: number;
   y: number;
 }
 
 /** Plain-data description of one tile, for the inspector. */
 export interface InspectSnapshot extends TileRef {
+  /** The ship's grid number, for the readout only. */
+  grid: number;
+  /** The tile in its ship's local tiles (from the grid's top-left), for the readouts; `x`, `y` are sector tiles. */
+  local: { x: number; y: number };
   structName: string;
   /** The loose item stack on the tile, or null. */
   stack: { item: string; name: string; count: number } | null;
   /** Room id, or 0 when none. */
   room: number;
   fields: { name: string; value: number }[];
+  /** A player job on the tile (building, forcing a door...), with its progress, or null. */
+  job: { kind: string; progress: number; work: number } | null;
   /** True when this is the selected tile (false = hovered). */
   selected: boolean;
 }
@@ -119,15 +128,21 @@ export function createBridge(sim: Sim): Bridge {
 
   const refreshInspect = () => {
     const ref = selected ?? hovered;
-    const grid = ref ? sim.grids.get(ref.gridId) : undefined;
+    const shipId = ref ? ref.ship : 0;
+    const grid = shipGrid(sim, shipId);
     let snap: InspectSnapshot | null = null;
     if (ref && grid?.inBounds(ref.x, ref.y)) {
       const fields = grid.fieldNames().map((name) => ({ name, value: grid.get(name, ref.x, ref.y) }));
       const struct = fields.find((f) => f.name === 'struct')?.value ?? 0;
-      const sid = stackAt(sim, ref.gridId, ref.x, ref.y);
+      const sid = stackAt(sim, shipId, ref.x, ref.y);
       const st = sid ? sim.world.get(sid, ItemStackC) : undefined;
+      const jobId = findJobAt(sim, shipId, ref.x, ref.y);
+      const job = jobId ? sim.world.get(jobId, JobC) : undefined;
       snap = {
         ...ref,
+        job: job ? { kind: job.kind, progress: job.progress, work: job.work } : null,
+        grid: shipId,
+        local: { x: ref.x - grid.x0, y: ref.y - grid.y0 },
         stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count } : null,
         structName: STRUCT_NAMES[struct] ?? `Unknown(${struct})`,
         room: fields.find((f) => f.name === 'room')?.value ?? 0,

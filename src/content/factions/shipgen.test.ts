@@ -5,6 +5,8 @@ import {
 } from '../../sim';
 import { content } from '../index';
 import { factions } from './index';
+import { shipIdOf, shipGrid, shipIds } from '../../sim/regions';
+import { homeShip } from '../../sim/combat/ships';
 
 const defs = content.modules as Record<string, ModuleDef>;
 const ids = Object.keys(factions) as (keyof typeof factions)[];
@@ -14,12 +16,11 @@ const count = (g: GenResult, pred: (d: ModuleDef) => boolean): number =>
   (g.template.modules ?? []).filter((m) => defs[m.def] && pred(defs[m.def] as ModuleDef)).length;
 
 /** Spawn a generated ship in a real sim and return the sim and its grid id. */
-function spawned(faction: string, seed: number, depth: number): { sim: Sim; gridId: number } {
+function spawned(faction: string, seed: number, depth: number): { sim: Sim; shipId: number } {
   const sim = newGame(1, content);
   sim.enqueue({ type: 'debug.spawnGenerated', faction, seed, depth, cx: 130, cy: 70 });
   sim.step();
-  const ship = sim.world.query(ShipC).map((i) => sim.world.get(i, ShipC)!).find((s) => s.gridId !== 1);
-  return { sim, gridId: ship?.gridId ?? 0 };
+  return { sim, shipId: shipIds(sim).find((i) => i !== homeShip(sim)) ?? 0 };
 }
 
 describe('ship generator', () => {
@@ -198,9 +199,9 @@ describe('ship generator', () => {
     const sim = newGame(1, content);
     sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.drones', seed, depth: 5, cx: 130, cy: 70 });
     sim.step();
-    const grid = [...sim.grids.values()].find((x) => x.id !== 1)!;
+    const grid = shipGrid(sim, shipIds(sim).find((i) => i !== homeShip(sim))!)!;
     let seen = 0;
-    for (let y = 0; y < grid.height; y++) for (let x = 0; x < grid.width; x++) {
+    for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
       if (grid.get('struct', x, y) !== Struct.Beam) continue;
       seen++;
       expect(isTileWalkable(sim, grid, x, y)).toBe(false);
@@ -211,20 +212,21 @@ describe('ship generator', () => {
   for (const id of ids) {
     it(`${id}: spawned in the sim, modules sit on floor and hull, chairs and access tiles are open, all floor is reachable, power balances`, () => {
       for (let seed = 0; seed < 12; seed++) {
-        const { sim, gridId } = spawned(id, seed * 31 + 5, seed % 10);
-        expect(gridId, `seed ${seed} spawned`).toBeGreaterThan(1);
-        const grid = sim.grids.get(gridId)!;
+        const { sim, shipId } = spawned(id, seed * 31 + 5, seed % 10);
+        expect(shipId, `seed ${seed} spawned`).toBeGreaterThan(1);
+        const grid = shipGrid(sim, shipId)!;
         let supply = 0;
         let demand = 0;
         for (const mid of sim.world.query(ModuleC)) {
           const m = sim.world.get(mid, ModuleC)!;
-          if (m.gridId !== gridId) continue;
+          if (shipIdOf(sim, m) !== shipId) continue;
           const def = defs[m.def] as ModuleDef;
           const wall = hullRow(def, m.x, m.y, m.rot);
           if (!def.airlock) {
             for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
               const onWall = wall.some((w) => w.x === t.x && w.y === t.y);
-              expect(grid.get('struct', t.x, t.y), `${m.def} at ${t.x},${t.y}`).toBe(onWall ? Struct.Wall : Struct.Floor);
+              // Containers stand on their frame's Beam tiles, sealed (no floor).
+              expect(grid.get('struct', t.x, t.y), `${m.def} at ${t.x},${t.y}`).toBe(def.container ? Struct.Beam : onWall ? Struct.Wall : Struct.Floor);
             }
           }
           const at = accessTile(def, m.x, m.y, m.rot);
@@ -234,13 +236,14 @@ describe('ship generator', () => {
         }
         expect(demand).toBeLessThanOrEqual(supply);
         // Flood from the first door over walkable tiles: everything walkable is reached.
-        const walk = (x: number, y: number) => grid.inBounds(x, y) && isTileWalkable(sim, grid, x, y);
+        // Local tiles (lx, ly) from the grid's top-left; the grid reads sector tiles.
+        const walk = (x: number, y: number) => grid.inBounds(grid.x0 + x, grid.y0 + y) && isTileWalkable(sim, grid, grid.x0 + x, grid.y0 + y);
         let start = -1;
         let total = 0;
         for (let y = 0; y < grid.height; y++) for (let x = 0; x < grid.width; x++) {
           if (!walk(x, y)) continue;
           total++;
-          if (start < 0 && grid.get('struct', x, y) === Struct.Door) start = y * grid.width + x;
+          if (start < 0 && grid.get('struct', grid.x0 + x, grid.y0 + y) === Struct.Door) start = y * grid.width + x;
         }
         const seen = new Set([start]);
         const stack = [start];
@@ -259,8 +262,8 @@ describe('ship generator', () => {
   }
 
   it('debug.spawnGenerated stores the origin on the ship, survives a save, and rejects unknown factions', () => {
-    const { sim, gridId } = spawned('faction.navy', 1234, 5);
-    const ship = sim.world.query(ShipC).map((i) => sim.world.get(i, ShipC)!).find((s) => s.gridId === gridId)!;
+    const { sim, shipId } = spawned('faction.navy', 1234, 5);
+    const ship = sim.world.get(shipId, ShipC)!;
     expect(ship.gen).toMatchObject({ faction: 'faction.navy', seed: 1234, depth: 5 });
     expect(typeof ship.gen?.role).toBe('string');
     expect(ship.faction).toBe('hostile');

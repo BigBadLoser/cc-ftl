@@ -20,7 +20,7 @@
   let info = $state<UiInspect | null>(null);
   let selCrew = $state<number | null>(null);
   let selMod = $state<number | null>(null);
-  let selGrid = $state<number | null>(null);
+  let selShip = $state<number | null>(null);
 
   onMount(() => {
     const u = [
@@ -33,7 +33,7 @@
       api.inspect.subscribe((v) => (info = v)),
       api.selectedCrew.subscribe((v) => (selCrew = v)),
       api.selectedModule.subscribe((v) => (selMod = v)),
-      api.selectedGrid.subscribe((v) => (selGrid = v)),
+      api.selectedShip.subscribe((v) => (selShip = v)),
     ];
     return () => u.forEach((f) => f());
   });
@@ -51,8 +51,8 @@
 </script>
 
 <aside class="sheet sel" class:wide data-testid="selection-panel">
-  {#if selGrid !== null}
-    <GridPanel {api} gridId={selGrid} onBack={back} {onTrade} />
+  {#if selShip !== null}
+    <GridPanel {api} ship={selShip} onBack={back} {onTrade} />
   {:else if hasCrew}
     <CrewInspector {api} {onPriorities} onBack={back} />
   {:else if mod && bays.some((b) => b.id === mod.id)}
@@ -74,7 +74,7 @@
       </div>
       {#if combat.player}<div class="meters"><ShipMeters ship={combat.player} compact /></div>{/if}
       <p class="hint" data-testid="sum-hover">
-        {#if hover}<Icon name="grid" size={14} />{hover.x}, {hover.y} {hover.structName}{hover.room ? ` · room ${hover.room}` : ''}{:else}Select crew, a module or a tile.{/if}
+        {#if hover}<Icon name="grid" size={14} />{hover.local.x}, {hover.local.y} {hover.structName}{hover.room ? ` · room ${hover.room}` : ''}{:else}Select crew, a module or a tile.{/if}
       </p>
     </div>
   {/if}

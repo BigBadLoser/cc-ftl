@@ -6,6 +6,7 @@ import type { Sim } from '../sim';
 import { ProductionC } from './components';
 import { consumeDelivered, needsMaterials } from './materials';
 import { spillItems } from './stacks';
+import { shipIdOf } from '../regions';
 
 /**
  * One tick of crafting at a station: waits for inputs and for power, then works. On completion the
@@ -23,10 +24,10 @@ export function performCraft(sim: Sim, job: Job, speed: number): WorkResult {
 
   consumeDelivered(job);
   const at = accessTile(def, m.x, m.y, m.rot) ?? { x: m.x, y: m.y };
-  for (const out of recipe.outputs) spillItems(sim, job.gridId, at.x, at.y, out.item, out.count);
+  for (const out of recipe.outputs) spillItems(sim, shipIdOf(sim, job), at.x, at.y, out.item, out.count);
   const orders = sim.world.get(job.target ?? 0, ProductionC)?.orders ?? [];
   const order = orders.find((o) => o.recipe === job.craft?.recipe && (o.mode === 'keep' || o.done < o.target));
   if (order) order.done++;
-  sim.events.emit({ type: 'production.done', module: job.target ?? 0, recipe: job.craft?.recipe ?? '', gridId: job.gridId, x: at.x, y: at.y });
+  sim.events.emit({ type: 'production.done', module: job.target ?? 0, recipe: job.craft?.recipe ?? '', ship: shipIdOf(sim, job), x: at.x, y: at.y });
   return 'done';
 }

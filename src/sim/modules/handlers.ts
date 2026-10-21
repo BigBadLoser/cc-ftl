@@ -1,13 +1,16 @@
 import type { Command } from '../commands';
+
 import { JobC } from '../crew/components';
 import { findJobAt } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
+import { AirlockC, requestAirlock } from './airlock';
 import { ModuleC } from './components';
 import { placementError, spawnModule } from './spawn';
 import { needsFrom } from '../items/materials';
+import { shipGrid } from '../regions';
 
-type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPriority' | 'module.setEnabled' | 'debug.spawnModule';
+type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPriority' | 'module.setEnabled' | 'debug.spawnModule' | 'airlock.cycle';
 type Handler<T extends ModuleCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 const DECON_FRACTION = 0.5;
@@ -17,21 +20,26 @@ function reject(sim: Sim, command: string, reason: string): void {
 }
 
 export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
+  'airlock.cycle': (sim, cmd) => {
+    if (!sim.world.has(cmd.moduleId, AirlockC)) return reject(sim, cmd.type, 'noAirlock');
+    if (cmd.to !== 'inner' && cmd.to !== 'outer') return reject(sim, cmd.type, 'badValue');
+    requestAirlock(sim, cmd.moduleId, cmd.to);
+  },
   'job.buildModule': (sim, cmd) => {
-    const err = placementError(sim, cmd.gridId, cmd.def, cmd.x, cmd.y, cmd.rot);
+    const err = placementError(sim, cmd.ship, cmd.def, cmd.x, cmd.y, cmd.rot);
     if (err) return reject(sim, cmd.type, err);
-    if (findJobAt(sim, cmd.gridId, cmd.x, cmd.y)) return reject(sim, cmd.type, 'jobExists');
+    if (findJobAt(sim, cmd.ship, cmd.x, cmd.y)) return reject(sim, cmd.type, 'jobExists');
     const def = sim.content.modules[cmd.def];
     const needs = needsFrom(def?.cost);
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, {
-      category: 'construction', kind: 'module', gridId: cmd.gridId, x: cmd.x, y: cmd.y, struct: 0,
+      category: 'construction', kind: 'module', x: cmd.x, y: cmd.y, struct: 0,
       work: def?.buildWork ?? TICK_HZ, progress: 0, reservedBy: 0, module: { def: cmd.def, rot: cmd.rot },
       ...(needs ? { needs, delivered: [] } : {}),
     });
   },
   'job.deconstructModule': (sim, cmd) => {
-    const grid = sim.grids.get(cmd.gridId);
+    const grid = shipGrid(sim, cmd.ship);
     if (!grid?.has('module')) return reject(sim, cmd.type, 'badGrid');
     if (!grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
     const target = grid.get('module', cmd.x, cmd.y);
@@ -43,7 +51,7 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     const work = Math.round((sim.content.modules[m.def]?.buildWork ?? TICK_HZ) * DECON_FRACTION);
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, {
-      category: 'construction', kind: 'moduleDecon', gridId: cmd.gridId, x: m.x, y: m.y, struct: 0,
+      category: 'construction', kind: 'moduleDecon', x: m.x, y: m.y, struct: 0,
       work, progress: 0, reservedBy: 0, target,
     });
   },
@@ -54,9 +62,9 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     m.priority = cmd.priority;
   },
   'debug.spawnModule': (sim, cmd) => {
-    const err = placementError(sim, cmd.gridId, cmd.def, cmd.x, cmd.y, cmd.rot);
+    const err = placementError(sim, cmd.ship, cmd.def, cmd.x, cmd.y, cmd.rot);
     if (err) return reject(sim, cmd.type, err);
-    spawnModule(sim, cmd.gridId, cmd.def, cmd.x, cmd.y, cmd.rot);
+    spawnModule(sim, cmd.def, cmd.x, cmd.y, cmd.rot);
   },
   'module.setEnabled': (sim, cmd) => {
     const m = sim.world.get(cmd.id, ModuleC);

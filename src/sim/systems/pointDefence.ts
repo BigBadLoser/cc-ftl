@@ -8,7 +8,8 @@ import { PD_CHANCE, PD_WINDOW, VEHICLE_PD_CHANCE, VEHICLE_PD_DAMAGE, VEHICLE_PD_
 import { VehicleC } from '../vehicles/components';
 import { dockPoint } from '../vehicles/geometry';
 import { damageVehicle, vehicleFaction } from '../vehicles/lifecycle';
-import { shipById, shipOf } from '../combat/ships';
+import { shipById } from '../combat/ships';
+import { shipIdOf } from '../regions';
 
 /**
  * Point defence: each interceptable shot (missiles) gets one roll per working point-defence module on the target
@@ -28,8 +29,8 @@ export function pointDefenceSystem(sim: Sim): void {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (!m || !def || !workingModule(sim, id)) continue;
-    if (def.aiCore) coreByGrid.set(m.gridId, true);
-    if (def.pointDefense) gunsByGrid.set(m.gridId, [...(gunsByGrid.get(m.gridId) ?? []), id]);
+    if (def.aiCore) coreByGrid.set(shipIdOf(sim, m), true);
+    if (def.pointDefense) gunsByGrid.set(shipIdOf(sim, m), [...(gunsByGrid.get(shipIdOf(sim, m)) ?? []), id]);
   }
   for (const id of [...sim.world.query(ProjectileC)]) {
     const p = sim.world.get(id, ProjectileC);
@@ -42,7 +43,7 @@ export function pointDefenceSystem(sim: Sim): void {
     for (const g of guns) {
       if (!sim.rng.chance(PD_CHANCE)) continue;
       track(sim, g, p.x, p.y);
-      sim.events.emit({ type: 'projectile.intercepted', projectile: id, weapon: p.weapon, gridId: defender });
+      sim.events.emit({ type: 'projectile.intercepted', projectile: id, weapon: p.weapon, ship: defender });
       sim.world.destroyEntity(id);
       break;
     }
@@ -51,13 +52,13 @@ export function pointDefenceSystem(sim: Sim): void {
 }
 
 /** The grid whose point defence covers a shot's target: the ship itself, or a shuttle's home ship when it is close. */
-function defenderGrid(sim: Sim, t: { gridId: number; vehicle?: number }): number {
+function defenderGrid(sim: Sim, t: { ship: number; vehicle?: number }): number {
   const v = t.vehicle ? sim.world.get(t.vehicle, VehicleC) : undefined;
   const b = t.vehicle ? sim.world.get(t.vehicle, BodyC) : undefined;
-  if (!t.vehicle) return t.gridId;
+  if (!t.vehicle) return t.ship;
   const ship = v && shipById(sim, v.homeShip);
   if (!v || !b || !ship || Math.hypot(b.x - (ship.x + ship.width / 2), b.y - (ship.y + ship.height / 2)) > VEHICLE_PD_RANGE) return 0;
-  return ship.gridId;
+  return v.homeShip;
 }
 
 function engageVehicles(sim: Sim, gunsByGrid: Map<number, number[]>, coreByGrid: Map<number, boolean>): void {
@@ -66,11 +67,11 @@ function engageVehicles(sim: Sim, gunsByGrid: Map<number, number[]>, coreByGrid:
     const b = sim.world.get(vid, BodyC);
     if (!v || !b || v.state === 'stowed') continue;
     const faction = vehicleFaction(sim, v);
-    const dockedAt = v.state === 'docked' ? dockPoint(sim, v.dock)?.gridId : 0;
-    for (const [gridId, guns] of gunsByGrid) {
-      const ship = shipOf(sim, gridId);
-      if (!ship || !coreByGrid.get(gridId) || ship.state === 'wreck' || ship.faction === faction || ship.faction === 'neutral' || faction === 'neutral') continue;
-      const near = dockedAt === gridId || (v.state === 'flying'
+    const dockedAt = v.state === 'docked' ? dockPoint(sim, v.dock)?.shipId : 0;
+    for (const [shipId, guns] of gunsByGrid) {
+      const ship = shipById(sim, shipId);
+      if (!ship || !coreByGrid.get(shipId) || ship.state === 'wreck' || ship.faction === faction || ship.faction === 'neutral' || faction === 'neutral') continue;
+      const near = dockedAt === shipId || (v.state === 'flying'
         && Math.hypot(b.x - (ship.x + ship.width / 2), b.y - (ship.y + ship.height / 2)) <= VEHICLE_PD_RANGE);
       if (!near) continue;
       for (const g of guns) {

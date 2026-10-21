@@ -16,6 +16,8 @@ import { installDebugHook } from './app/debugHook';
 import { createRenderer, type Renderer } from './render/scene';
 import { content } from './content';
 import { BodyC, newGame, ShipC } from './sim';
+import { shipGrid } from './sim/regions';
+import { homeShip } from './sim/index';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
@@ -46,8 +48,8 @@ const loop = createLoop({
 bridge.attachLoop(loop);
 
 /** Frame the player's ship and a hostile one (or only the player's ship) in the camera. */
-function focusFight(gridId: number | null): void {
-  renderer?.frameShips(gridId === null ? [1] : [1, gridId]);
+function focusFight(ship: number | null): void {
+  renderer?.frameShips(ship === null ? [1] : [1, ship]);
 }
 
 /**
@@ -57,26 +59,50 @@ function focusFight(gridId: number | null): void {
 const params = new URLSearchParams(location.search);
 const shipgenFlag = params.get('shipgen');
 const genDepth = Math.max(0, Math.floor(Number(params.get('depth') ?? 2)) || 0);
+/** `?genAt=dx,dy`: where a generated ship's centre goes, in tiles from the player's ship's centre (default 18,22). */
+const genAt = (params.get('genAt') ?? '18,22').split(',').map((v) => Math.round(Number(v) || 0)) as [number, number];
 
 /** Debug: generate a ship of `faction` (random if omitted) and put it where a raider would go. */
 function spawnGenerated(faction?: string): void {
-  const mine = shipOfGrid(1);
+  const mine = homeShipC();
   const ids = Object.keys(content.factions);
   const id = faction ?? ids[Math.floor(Math.random() * ids.length)];
   if (!mine || !id) return;
-  const cx = Math.round(mine.x + mine.width / 2 + 18);
-  const cy = Math.round(mine.y + mine.height / 2 + 22);
+  const cx = Math.round(mine.x + mine.width / 2 + genAt[0]);
+  const cy = Math.round(mine.y + mine.height / 2 + (genAt[1] ?? 22));
   bridge.dispatch({ type: 'debug.spawnGenerated', faction: id, depth: genDepth, seed: (Math.random() * 0x7fffffff) >>> 0, cx, cy });
+}
+
+/**
+ * Debug: `?shipgen=derelict` (or `derelict:scrapper`) makes "Spawn raider" spawn a ruined derelict instead; `?ruin=0.8`
+ * sets the intensity and `?cause=combat|decay` the cause (both rolled per seed otherwise).
+ */
+function spawnDerelict(faction?: string): void {
+  const mine = homeShipC();
+  const ids = Object.keys(content.factions);
+  const id = faction ? `faction.${faction.replace(/^faction\./, '')}` : ids[Math.floor(Math.random() * ids.length)];
+  if (!mine || !id) return;
+  const cause = params.get('cause');
+  const intensity = params.has('ruin') ? Math.max(0, Math.min(1, Number(params.get('ruin')) || 0)) : 0.5;
+  bridge.dispatch({
+    type: 'debug.spawnDerelict', faction: id, depth: genDepth, seed: (Math.random() * 0x7fffffff) >>> 0, intensity,
+    cx: Math.round(mine.x + mine.width / 2 + genAt[0]), cy: Math.round(mine.y + mine.height / 2 + (genAt[1] ?? 22)),
+    ...(cause === 'combat' || cause === 'decay' ? { cause } : {}),
+  });
 }
 
 /** Debug: put a raider a fair distance from the player's ship (diagonally, so a fight fits on a phone screen too). */
 function spawnRaider(boarders = false): void {
   const template = boarders ? 'ship.raiderBoarder' : 'ship.raider';
+  if (shipgenFlag?.startsWith('derelict')) {
+    spawnDerelict(shipgenFlag.split(':')[1]);
+    return;
+  }
   if (shipgenFlag) {
     spawnGenerated(shipgenFlag === '1' || shipgenFlag === 'true' ? undefined : `faction.${shipgenFlag.replace(/^faction\./, '')}`);
     return;
   }
-  const mine = shipOfGrid(1);
+  const mine = homeShipC();
   const t = content.ships[template];
   if (!mine || !t) return;
   const w = Math.max(...t.rows.map((r) => r.length));
@@ -88,12 +114,8 @@ function spawnRaider(boarders = false): void {
   bridge.dispatch({ type: 'debug.spawnEnemy', template, x, y });
 }
 
-function shipOfGrid(gridId: number) {
-  for (const id of sim.world.query(ShipC)) {
-    const s = sim.world.get(id, ShipC);
-    if (s?.gridId === gridId) return s;
-  }
-  return undefined;
+function homeShipC() {
+  return sim.world.get(homeShip(sim), ShipC);
 }
 
 const api: UiApi = {
@@ -115,8 +137,8 @@ const api: UiApi = {
   storages: bridge.storages,
   fabs: bridge.fabs,
   selectedModule: controller.selectedModule,
-  selectedGrid: controller.selectedGrid,
-  selectGrid: controller.selectGrid,
+  selectedShip: controller.selectedShip,
+  selectShip: controller.selectShip,
   stats: bridge.stats,
   alerts: controller.alerts.list,
   combat: bridge.combat,
@@ -129,10 +151,10 @@ const api: UiApi = {
     const b = sim.world.get(id, BodyC);
     if (b) renderer?.focusSector(b.x, b.y);
   },
-  setCombatView: (view) => renderer?.setCombatView(view),
+  setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, rect: view.rect }),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
-  focusFight: (gridId) => focusFight(gridId),
+  focusFight: (ship) => focusFight(ship),
   spawnRaider: (boarders) => spawnRaider(boarders),
   spawnGenerated: (faction) => spawnGenerated(faction),
   overlayList,
@@ -161,8 +183,8 @@ const api: UiApi = {
       .then((r) => {
         renderer = r;
         if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
-        r.setGrids(sim.grids);
-        const grid = sim.grids.get(1);
+        r.setSector(sim.sector.grid);
+        const grid = shipGrid(sim, homeShip(sim));
         if (grid) r.setGrid(grid);
         attachInput(canvas, r, controller.attach(r));
         window.addEventListener('resize', () => r.resize());

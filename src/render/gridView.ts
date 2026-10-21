@@ -3,7 +3,7 @@ import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
 import { hullRow } from "../sim/modules/footprint";
-import { airlockTiles } from "../sim/portals/airlock";
+import { airlockTiles } from "../sim/modules/airlock";
 import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
@@ -14,7 +14,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { floorChain, ghostVertsIn, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { floorChain, ghostVertsIn, HULL_RAY, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
 
@@ -24,6 +24,10 @@ export interface GridView extends Markers {
   /** Wall view mode; `ghosts` false (roofed ships) draws the near hull as solid full-height plating. */
   setCutaway(mode: CutawayMode, ghosts?: boolean): void;
   setOverlay(field: string | null): void;
+  /** The tile sprites' light tint of tile (x, y) (region-local), for dressing drawn over it: same path as the tiles. `wall` = wall-like (lit by the brightest neighbour). */
+  tintAt(x: number, y: number, wall: boolean): number;
+  /** Changes whenever `tintAt` results may change (light, air, emergency pulse). */
+  tintKey(): string;
   dispose(): void;
 }
 
@@ -37,6 +41,8 @@ export interface GridViewHost {
 
 /** Air thinner than this (kPa) is vacuum and gets a cold cast. */
 const VACUUM_O2 = 5;
+/** How far a wall inside a thick block looks for light (tiles; a wall with a floor tile round it uses only its 3x3). */
+const WALL_LIGHT_REACH = 6;
 
 interface Door {
   /** Display objects as returned by addStatic: sprite, glow, halo. */
@@ -102,6 +108,15 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let airlocks = new Set<number>();
 
   const kindAt = tiles.kindAt;
+  // Beam tiles under a cargo container are its seat, not frame: no beam sprite there, and the frame's beams end at it.
+  const boxAt = (x: number, y: number): boolean => {
+    const gx = x + grid.x0, gy = y + grid.y0;
+    if (!grid.inBounds(gx, gy)) return false;
+    const id = grid.get("module", gx, gy);
+    const m = id ? host.overlayWorld.world.get(id, ModuleC) : undefined;
+    return !!(m && host.overlayWorld.modules[m.def]?.container);
+  };
+  const frameKindAt = (x: number, y: number): number => (kindAt(x, y) === Struct.Beam && boxAt(x, y) ? Struct.Space : kindAt(x, y));
 
   function clearChunk(v: TileChunk): void {
     for (const s of v.owned) s.destroy();
@@ -117,10 +132,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     for (const id of world.query(ModuleC)) {
       const m = world.get(id, ModuleC);
       const def = m && modules[m.def];
-      if (!m || !def?.hullEdge || m.gridId !== grid.id) continue;
+      if (!m || !def?.hullEdge || !grid.inBounds(m.x, m.y)) continue;
       // The bulkhead spans the row's inner tiles; the two end tiles keep their hull wall (the sprite stops inside them).
       const row = hullRow(def, m.x, m.y, m.rot).sort((a, b) => a.x + a.y - (b.x + b.y));
-      for (const t of row.slice(1, -1)) out.add(t.y * width + t.x);
+      for (const t of row.slice(1, -1)) out.add((t.y - grid.y0) * width + (t.x - grid.x0)); // region-local index
     }
     return out;
   }
@@ -132,9 +147,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     for (const id of world.query(ModuleC)) {
       const m = world.get(id, ModuleC);
       const def = m && modules[m.def];
-      if (!m || !def?.airlock?.layout || m.gridId !== grid.id) continue;
+      if (!m || !def?.airlock?.layout || !grid.inBounds(m.x, m.y)) continue;
       const t = airlockTiles(def, m);
-      out.add(t.outer.y * width + t.outer.x);
+      out.add((t.outer.y - grid.y0) * width + (t.outer.x - grid.x0)); // region-local index
     }
     return out;
   }
@@ -177,8 +192,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           const k = struct[ci] as number;
           if (k === Struct.Space) continue;
           if (k === Struct.Beam) {
+            if (boxAt(x, y)) continue;
             // Low open truss, the same in every wall view level; sprites sit at the tile's depth, overlays just above.
-            const ids = beamIds(kindAt, x, y, host.beamLook?.() ?? DEFAULT_BEAM_LOOK);
+            const ids = beamIds(frameKindAt, x, y, host.beamLook?.() ?? DEFAULT_BEAM_LOOK);
             ids.forEach((id, i) => {
               const s = atlas.stat(id);
               if (!s) return;
@@ -242,7 +258,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
 
   function updateTints(v: TileChunk, pulse: number): void {
     if (!v.tinted.length) return;
-    const key = `${tiles.key("light", v.c, 1)}|${tiles.rev("o2", v.c)}|${tiles.rev("hp", v.c)}|${pulse}`;
+    const key = `${tiles.key("light", v.c, WALL_LIGHT_REACH)}|${tiles.rev("o2", v.c)}|${tiles.rev("hp", v.c)}|${pulse}`;
     if (key === v.tintKey) return;
     v.tintKey = key;
     const light = tiles.data("light", v.c);
@@ -250,16 +266,24 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     const hp = tiles.data("hp", v.c);
     const at = (a: Readonly<ArrayLike<number>> | undefined, i: number): number => (a ? (a[i] as number) : 0);
     const r = tiles.chunkRect(v.c);
+    // A wall takes the brightest light round it; inside a thick block (no floor round it) the search widens until it
+    // reaches a floor tile, so the block's top is lit as one mass instead of darkening into a pit.
+    const floorAt = (x: number, y: number) => tiles.inside(x, y) && kindAt(x, y) === Struct.Floor;
     const wallLight = (x: number, y: number): number => {
       let best = 0;
-      for (let dy = -1; dy <= 1; dy++)
-        for (let dx = -1; dx <= 1; dx++) {
-          const nx = x + dx;
-          const ny = y + dy;
-          if (!tiles.inside(nx, ny)) continue;
-          const own = nx >= r.x0 && ny >= r.y0 && nx < r.x1 && ny < r.y1;
-          best = Math.max(best, own ? at(light, (ny - r.y0) * CHUNK_SIZE + (nx - r.x0)) : tiles.get("light", nx, ny));
-        }
+      for (let rr = 1; rr <= WALL_LIGHT_REACH; rr++) {
+        let open = false;
+        for (let dy = -rr; dy <= rr; dy++)
+          for (let dx = -rr; dx <= rr; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (Math.max(Math.abs(dx), Math.abs(dy)) === rr && floorAt(nx, ny)) open = true;
+            if (!tiles.inside(nx, ny)) continue;
+            const own = nx >= r.x0 && ny >= r.y0 && nx < r.x1 && ny < r.y1;
+            best = Math.max(best, own ? at(light, (ny - r.y0) * CHUNK_SIZE + (nx - r.x0)) : tiles.get("light", nx, ny));
+          }
+        if (open) break;
+      }
       return best;
     };
     for (const t of v.tinted) {
@@ -269,9 +293,25 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     }
   }
 
+  const pulseNow = (): number => (host.emergency() ? pulsePhase(performance.now()) : -1);
+  const tintAt = (x: number, y: number, wall: boolean): number => {
+    let lv = 0;
+    if (wall) {
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) if (tiles.inside(x + dx, y + dy)) lv = Math.max(lv, tiles.get("light", x + dx, y + dy));
+    } else lv = tiles.get("light", x, y);
+    return lightTint(lv, !wall && tiles.get("o2", x, y) < VACUUM_O2, pulseNow());
+  };
+
+  // Selection, hover and build previews come in sector tiles; the markers draw region-local.
+  const loc = (t: { x: number; y: number }) => ({ x: t.x - grid.x0, y: t.y - grid.y0 });
   return {
-    ...markers,
+    setSelection: (t) => markers.setSelection(t === null ? null : Array.isArray(t) ? t.map(loc) : loc(t as { x: number; y: number })),
+    setHover: (t) => markers.setHover(t && loc(t)),
+    setPreview: (tiles, valid) => markers.setPreview(tiles.map(loc), valid),
     grid,
+    tintAt,
+    tintKey: () => `${grid.revision("light")}|${grid.revision("o2")}|${pulseNow()}`,
     update() {
       const mr = grid.revision("module");
       if (mr !== modRev) {
@@ -286,7 +326,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const built = `${base}|${grid.revision("struct")}|${mr}`;
       if (built !== builtKey) {
         builtKey = built;
-        chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c)}|${specialsNear(c)}`, buildChunk);
+        chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${specialsNear(c)}`, buildChunk);
         frameKey = "";
       }
       const pulse = host.emergency() ? pulsePhase(performance.now()) : -1;

@@ -11,6 +11,7 @@ import { IMPACT_H, MUZZLE_H } from './heights';
 import { sectorArt } from './sectorPos';
 import type { Layers } from './layers';
 import type { EmitterDef, Particles } from './fx/particles';
+import { onShip } from './regionRules';
 
 export interface SectorFx {
   onEvents(events: readonly SimEvent[]): void;
@@ -75,16 +76,18 @@ export function createSectorFx(
   const lines = new Graphics();
   L.ui.addChild(lines);
 
-  const ship = (gridId: number): Ship | undefined => {
+  const shipAtTile = (at: { x: number; y: number }): Ship | undefined => {
     for (const id of world.query(ShipC)) {
       const s = world.get(id, ShipC);
-      if (s?.gridId === gridId) return s;
+      if (s && onShip(s, at)) return s;
     }
     return undefined;
   };
+  const ship = (id: number): Ship | undefined => world.get(id, ShipC);
   /** Sector point (tile units, a tile's centre is at +0.5) -> art px in the sector frame. */
   const secArt = sectorArt;
-  const tileArt = (s: Ship, x: number, y: number) => secArt(s.x + x + 0.5, s.y + y + 0.5);
+  /** Centre of sector tile (x, y). */
+  const tileArt = (x: number, y: number) => secArt(x + 0.5, y + 0.5);
   const colorOf = (weapon: string) => WEAPON_COLOR[weapon] ?? 0xffffff;
 
   function flash(assetId: string, x: number, y: number, scale: number, peak = 1): void {
@@ -130,25 +133,25 @@ export function createSectorFx(
         if (e.type === 'weapon.fired') {
           const m = world.get(e.weaponId, ModuleC);
           const def = m && content.modules[m.def];
-          const s = m && ship(m.gridId);
+          const s = m && shipAtTile(m);
           if (!m || !def || !s) continue;
           const [w, h] = rotatedSize(def, m.rot);
-          const c = secArt(s.x + m.x + w / 2, s.y + m.y + h / 2);
+          const c = secArt(m.x + w / 2, m.y + h / 2);
           particles.burst(burst(colorOf(e.weapon), 60), c.x, c.y - MUZZLE_H, 8, 6);
           flash('fx.pd_shot', c.x, c.y - MUZZLE_H, 2);
         } else if (e.type === 'projectile.shieldHit') {
-          const s = ship(e.gridId);
+          const s = ship(e.ship);
           if (s) bubble(s);
         } else if (e.type === 'projectile.hit') {
-          const s = ship(e.gridId);
+          const s = ship(e.ship);
           if (!s) continue;
-          const c = tileArt(s, e.x, e.y);
+          const c = tileArt(e.x, e.y);
           const col = colorOf(e.weapon);
           particles.burst(burst(col, 90), c.x, c.y - 10, 14, 8);
           particles.burst(burst(0xffffff, 60), c.x, c.y - 10, 6, 6);
           flash('fx.explosion_small', c.x, c.y - 10, 1);
         } else if (e.type === 'projectile.intercepted') {
-          const s = ship(e.gridId);
+          const s = ship(e.ship);
           const last = shots.get(e.projectile);
           if (!s || !last) continue;
           const from = secArt(s.x + s.width / 2, s.y + s.height / 2);

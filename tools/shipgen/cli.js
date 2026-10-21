@@ -2,6 +2,7 @@
 /**
  * Ship layout contact sheets without Blender or sprite art.
  *   node tools/shipgen/cli.js <faction|all> [--from 1] [--count 12] [--depth 0] [--out dir] [--scale 10] [--views detail|silhouette|assembly|structure|all]
+ *   --ruin 0.2,0.5,0.9 [--cause combat|decay|both]: derelict ruin sheets instead (tools/shipgen/ruinView.ts).
  * Writes <out>/<faction>-d<depth>.png and .txt (validation summary + ASCII dump per seed) and prints the summary.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -49,6 +50,19 @@ try {
   const lib = await server.ssrLoadModule('/tools/shipgen/draw.ts');
   mkdirSync(out, { recursive: true });
   const factions = which === 'all' ? lib.factionIds() : [which.startsWith('faction.') ? which : `faction.${which}`];
+  if (opt('ruin')) {
+    const rv = await server.ssrLoadModule('/tools/shipgen/ruinView.ts');
+    const levels = opt('ruin').split(',').map(Number);
+    const causes = opt('cause', 'both') === 'both' ? ['combat', 'decay'] : [opt('cause')];
+    for (const f of factions) for (const cause of causes) {
+      const base = join(out, `${f.replace('faction.', '').replace(':', '-')}-ruin-${cause}`);
+      const sheet = rv.ruinSheet(f, from, count, depth, scale, cause, levels);
+      writeFileSync(`${base}.png`, png(sheet.raster.width, sheet.raster.height, sheet.raster.data));
+      writeFileSync(`${base}.txt`, sheet.text);
+      console.log(`${base}.png`);
+    }
+    process.exitCode = 0;
+  } else
   for (const f of factions) {
     const base = join(out, `${f.replace('faction.', '').replace(':', '-')}-d${depth}`);
     let text = '';

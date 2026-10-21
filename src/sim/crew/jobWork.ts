@@ -10,12 +10,13 @@ import { performAssemble } from '../robots/bay';
 import { performHack, performMend, performSalvage } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { Struct, writeStruct } from '../structure';
+import { DoorJam, Struct, writeStruct } from '../structure';
 import { stochasticRound } from '../stochastic';
 import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC } from '../tuning';
 import { findFreeBed } from './beds';
 import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position } from './components';
 import { isTileOccupied, origin } from './helpers';
+import { shipIdOf, shipGrid } from '../regions';
 
 /** 'done': the job is finished and removed. 'working': progressing. 'wait': ready but blocked. */
 export type WorkResult = 'done' | 'working' | 'wait';
@@ -33,7 +34,7 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
       const m = sim.world.get(job.target ?? 0, ModuleC);
       const cost = m && sim.content.modules[m.def]?.cost;
       removeModule(sim, job.target ?? 0);
-      if (m) refundCost(sim, job.gridId, m.x, m.y, cost); // after the tiles are free
+      if (m) refundCost(sim, shipIdOf(sim, job), m.x, m.y, cost); // after the tiles are free
       return 'done';
     });
     case 'extinguish': return extinguish(sim, job, speed);
@@ -46,6 +47,11 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'assemble': return performAssemble(sim, job, speed);
     case 'suitUp':
     case 'suitOff': return performSuitJob(sim, crew, job, speed);
+    case 'forceDoor': return timed(job, speed, () => {
+      const grid = shipGrid(sim, shipIdOf(sim, job));
+      if (grid?.has('jam') && grid.inBounds(job.x, job.y) && grid.get('jam', job.x, job.y) !== DoorJam.None) grid.set('jam', job.x, job.y, DoorJam.None);
+      return 'done';
+    });
   }
 }
 
@@ -56,17 +62,17 @@ function timed(job: Job, speed: number, finish: () => WorkResult): WorkResult {
 }
 
 function finishStruct(sim: Sim, job: Job): WorkResult {
-  if (job.kind === 'build' && isTileOccupied(sim, job.gridId, job.x, job.y)) return 'wait';
-  const grid = sim.grids.get(job.gridId);
+  if (job.kind === 'build' && isTileOccupied(sim, shipIdOf(sim, job), job.x, job.y)) return 'wait';
+  const grid = shipGrid(sim, shipIdOf(sim, job));
   if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {
     const next = job.kind === 'build' ? job.struct : Struct.Floor;
     const before = grid.get('struct', job.x, job.y);
     writeStruct(grid, job.x, job.y, next);
     if (job.kind === 'deconstruct') {
       const key = structCostKey(before);
-      refundCost(sim, job.gridId, job.x, job.y, key ? sim.content.structCosts[key] : undefined);
+      refundCost(sim, shipIdOf(sim, job), job.x, job.y, key ? sim.content.structCosts[key] : undefined);
     }
-    if (grid.has('item') && next !== Struct.Floor) evictStack(sim, job.gridId, job.x, job.y);
+    if (grid.has('item') && next !== Struct.Floor) evictStack(sim, shipIdOf(sim, job), job.x, job.y);
   }
   consumeDelivered(job);
   return 'done';
@@ -75,21 +81,21 @@ function finishStruct(sim: Sim, job: Job): WorkResult {
 function finishModule(sim: Sim, job: Job): WorkResult {
   const bp = job.module;
   const def = bp && sim.content.modules[bp.def];
-  const grid = sim.grids.get(job.gridId);
+  const grid = shipGrid(sim, shipIdOf(sim, job));
   if (!bp || !def || !grid?.has('module')) return 'done';
-  if (footprintBlockedByCrew(sim, job.gridId, bp.def, job.x, job.y, bp.rot)) return 'wait';
+  if (footprintBlockedByCrew(sim, shipIdOf(sim, job), bp.def, job.x, job.y, bp.rot)) return 'wait';
   const free = footprintTiles(def, job.x, job.y, bp.rot).every(
     (t) => grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Floor && grid.get('module', t.x, t.y) === 0,
   );
   if (!free) return 'done'; // a blueprint whose site was spoiled is dropped (delivered materials spill)
-  spawnModule(sim, job.gridId, bp.def, job.x, job.y, bp.rot);
+  spawnModule(sim, bp.def, job.x, job.y, bp.rot);
   consumeDelivered(job);
-  if (grid.has('item')) for (const t of footprintTiles(def, job.x, job.y, bp.rot)) evictStack(sim, job.gridId, t.x, t.y);
+  if (grid.has('item')) for (const t of footprintTiles(def, job.x, job.y, bp.rot)) evictStack(sim, shipIdOf(sim, job), t.x, t.y);
   return 'done';
 }
 
 function extinguish(sim: Sim, job: Job, speed: number): WorkResult {
-  const grid = sim.grids.get(job.gridId);
+  const grid = shipGrid(sim, shipIdOf(sim, job));
   if (!grid?.has('fire') || !grid.inBounds(job.x, job.y)) return 'done';
   const left = grid.get('fire', job.x, job.y) - stochasticRound(sim, (EXTINGUISH_PER_SEC * speed) / TICK_HZ);
   grid.set('fire', job.x, job.y, Math.max(0, left));
@@ -120,7 +126,7 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
   if (!carried) {
     let bed = sim.world.get(job.bed ?? 0, ModuleC)?.reservedBy === patient ? (job.bed as number) : 0;
     if (!bed) {
-      const plan = findFreeBed(sim, me.gridId, origin(me));
+      const plan = findFreeBed(sim, shipIdOf(sim, me), origin(me));
       if (!plan) return 'wait';
       bed = plan.bed;
       (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = patient;

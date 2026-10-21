@@ -63,7 +63,7 @@ export function createItemView(world: World, atlas: Atlas, L: Layers, items: Ite
       const pulse = host.emergency() ? pulsePhase(performance.now()) : -1;
       for (const id of world.query(ItemStackC)) {
         const st = world.get(id, ItemStackC);
-        if (!st || st.gridId !== grid.id) continue;
+        if (!st || !grid.inBounds(st.x, st.y)) continue;
         const src = atlas.firstOf(stackAssets(st.item, st.count, items[st.item]?.stackSize ?? 50));
         if (!src) continue;
         live.add(id);
@@ -83,8 +83,9 @@ export function createItemView(world: World, atlas: Atlas, L: Layers, items: Ite
           }
           entries.set(id, (e = { spr, glow, src }));
         }
-        place(e, st.x, st.y);
-        const key = depthKey(st.x, st.y) - 0.4;
+        // Stacks are in sector tiles; sprites are region-local (the region's containers sit at its sector offset).
+        place(e, st.x - grid.x0, st.y - grid.y0);
+        const key = depthKey(st.x - grid.x0, st.y - grid.y0) - 0.4;
         e.spr.zIndex = key;
         if (e.glow) e.glow.zIndex = key + 0.01;
         const lv = grid.inBounds(st.x, st.y) ? grid.get('light', st.x, st.y) : 0;

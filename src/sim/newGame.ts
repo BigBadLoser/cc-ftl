@@ -12,6 +12,6 @@ export function newGame(seed: number, content: ContentRegistry, shipId = 'ship.s
   if (!template) throw new Error(`Unknown ship "${shipId}"`);
   const sim = new Sim(seed, content);
   sim.trade.credits = content.trade?.startCredits ?? 0;
-  spawnShip(sim, { crew: DEFAULT_CREW, ...template }, { gridId: 1, faction: 'player', x: PLAYER_START.x, y: PLAYER_START.y });
+  spawnShip(sim, { crew: DEFAULT_CREW, ...template }, { faction: 'player', x: PLAYER_START.x, y: PLAYER_START.y });
   return sim;
 }

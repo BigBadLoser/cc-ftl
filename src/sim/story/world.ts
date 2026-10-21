@@ -1,3 +1,4 @@
+import { shipIdAt , shipIdOf } from '../regions';
 import { CrewC, DeadC } from '../crew/components';
 import { ShipC } from '../combat/components';
 import { AllegianceC, SurrenderedC } from '../fight/components';
@@ -16,29 +17,29 @@ export function playerCrew(sim: Sim): number[] {
   );
 }
 
-/** Grid ids of ships the player owns (active, disabled or prize; not wrecks). */
-export function playerGrids(sim: Sim): Set<number> {
+/** Ship ids of ships the player owns (active, disabled or prize; not wrecks). */
+export function playerShips(sim: Sim): Set<number> {
   const out = new Set<number>();
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s?.faction === 'player' && s.state !== 'wreck') out.add(s.gridId);
+    if (s?.faction === 'player' && s.state !== 'wreck') out.add(id);
   }
   return out;
 }
 
 /** Module entity ids of a def on player ships. */
 export function playerModules(sim: Sim, def?: string): number[] {
-  const grids = playerGrids(sim);
+  const grids = playerShips(sim);
   return sim.world.query(ModuleC).filter((id) => {
     const m = sim.world.get(id, ModuleC);
-    return !!m && grids.has(m.gridId) && (def === undefined || m.def === def);
+    return !!m && grids.has(shipIdOf(sim, m)) && (def === undefined || m.def === def);
   });
 }
 
 /** Storage modules on player ships, ascending id. */
 export function playerStorages(sim: Sim): number[] {
-  const grids = playerGrids(sim);
-  return sim.world.query(StorageC, ModuleC).filter((id) => grids.has(sim.world.get(id, ModuleC)?.gridId ?? -1));
+  const grids = playerShips(sim);
+  return sim.world.query(StorageC, ModuleC).filter((id) => grids.has(shipIdOf(sim, sim.world.get(id, ModuleC)) ?? -1));
 }
 
 export function skillOf(sim: Sim, crew: number, skill: SkillName): number {
@@ -65,10 +66,10 @@ export const hasImplant = (sim: Sim, crew: number, implant: string): boolean => 
 export function playerStock(sim: Sim, item: string): number {
   let n = 0;
   for (const id of playerStorages(sim)) n += storageCount(sim, id, item);
-  const grids = playerGrids(sim);
+  const grids = playerShips(sim);
   for (const id of sim.world.query(ItemStackC)) {
     const s = sim.world.get(id, ItemStackC);
-    if (s?.item === item && grids.has(s.gridId)) n += s.count;
+    if (s?.item === item && grids.has(shipIdAt(sim, s.x, s.y))) n += s.count;
   }
   return n;
 }

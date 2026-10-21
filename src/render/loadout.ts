@@ -28,6 +28,10 @@ export function crewLoadout(atlas: Atlas, crew: Crew, suited = false): LayerSpri
   // Robots wear a single body layer per type (worker, repair, security), built from the role id.
   const bot = atlas.layer(`crew.${own}.body.${crew.role.replace(/^role\.robot_/, '')}`);
   if (bot && bot.def.species === own) return [bot];
+  // Creatures of one art species with several bodies: `species.alien_hunter` wears `crew.alien.body.hunter`.
+  const [kin, kind] = own.split('_');
+  const body = kind ? atlas.layer(`crew.${kin}.body.${kind}`) : undefined;
+  if (body && body.def.species === kin) return [body];
   // Species without art yet borrow the human layers as a placeholder until their sheets exist.
   const sp = atlas.layer(`crew.${own}.body`) ? own : 'human';
   const p = `crew.${sp}.`;
@@ -75,9 +79,12 @@ export function clipFor(activity: string, moving: boolean, floating = false): st
  *   does not need to move differently);
  * - `sit_idle`: nothing, so the layer is hidden. Seated poses are fitted to the chair; a standing pose would clip through
  *   it. The engineer rig and EVA pack have no sit sheets for exactly this reason;
- * - `sit_work`: the layer's sit_idle.
+ * - `sit_work`: the layer's sit_idle;
+ * - `walk`: `run` (creature sheets), then idle.
  */
 const CLIP_FALLBACK: Readonly<Record<string, readonly string[]>> = {
+  // Creatures run where crew walk (the alien sheets have `run`, no `walk`).
+  walk: ['run', 'idle'],
   sit_idle: [],
   sit_work: ['sit_idle'],
 };

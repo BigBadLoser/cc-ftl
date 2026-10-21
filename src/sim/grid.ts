@@ -26,11 +26,17 @@ export interface Rect {
 export const CHUNK_SIZE = 16;
 
 /**
- * What systems and render use of a tile grid. Implemented by the dense `Grid` and by `GridWindow`, a rectangle of a
- * `SectorGrid` in local coordinates. `raw` is a temporary escape hatch: on a window it is a dense copy.
+ * What systems and render use of a tile grid. Implemented by the dense `Grid` (build scratch), the `SectorGrid` and a
+ * `ShipGrid`, one ship's rectangle of the sector.
  */
 export interface GridLike {
   readonly id: number;
+  /**
+   * Top-left of the grid's bounds in its own coordinates: 0 for a dense grid, the region's sector top-left for a sector
+   * ship view (sector coordinates). Tiles run x0 .. x0 + width - 1, y0 .. y0 + height - 1.
+   */
+  readonly x0: number;
+  readonly y0: number;
   readonly width: number;
   readonly height: number;
   has(field: string): boolean;
@@ -42,7 +48,6 @@ export interface GridLike {
   chunkRevision(field: string, cx: number, cy: number): number;
   /** Scratch copy of a field over `rect` (default: the whole grid), row-major w*h. Writes to it change nothing. */
   load(field: string, rect?: Rect): Float64Array;
-  raw(field: string): Readonly<FieldArray>;
 }
 
 export function allocate(type: FieldType, n: number): FieldArray {
@@ -73,10 +78,12 @@ export function fromBase64(type: FieldType, b64: string, n: number): FieldArray 
 /**
  * A dense rectangular tile grid with named typed-array field layers. All writes go through set(),
  * which bumps a per-field revision and a per-chunk revision so the renderer can diff cheaply.
- * Since the sector grid (step 2) live ships are `GridWindow`s into `sim.sector.grid`; a dense grid is a build scratch
- * (templates, tests) that `sim.grids.set` stamps into the sector.
+ * Live ships are `ShipGrid` views of `sim.sector.grid`; a dense grid is a build scratch
+ * (templates, tests) that `stampGrid` copies into the sector.
  */
 export class DenseGrid implements GridLike {
+  readonly x0 = 0;
+  readonly y0 = 0;
   readonly chunksX: number;
   readonly chunksY: number;
   private readonly types = new Map<string, FieldType>();
@@ -208,8 +215,8 @@ export class DenseGrid implements GridLike {
 }
 
 /**
- * `Grid` as a type is any grid systems and render see (`GridLike`: a dense grid or a window into the sector). As a value
- * it builds a dense grid, so `new Grid(...)` keeps working. Both go away with `sim.grids` (sector step 7).
+ * `Grid` as a type is any grid systems and render see (`GridLike`: a dense grid, the sector, or a ship's view of it). As a value
+ * it builds a dense grid, so `new Grid(...)` keeps working.
  */
 export type Grid = GridLike;
 export const Grid = DenseGrid;

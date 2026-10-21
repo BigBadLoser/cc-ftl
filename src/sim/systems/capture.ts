@@ -23,10 +23,10 @@ export function captureSystem(sim: Sim): void {
     if (!ship || (ship.state !== 'active' && ship.state !== 'disabled') || ship.faction === 'neutral') continue;
     let attacker: Faction | null = null;
     let need: number | null = null;
-    if (captureReady(sim, ship)) {
+    if (captureReady(sim, id)) {
       for (const f of ATTACKERS) {
         if (!factionsHostile(f, ship.faction) || (f !== 'player' && ship.faction !== 'player')) continue;
-        need = bridgeHoldTicks(sim, ship, f);
+        need = bridgeHoldTicks(sim, id, f);
         if (need !== null) {
           attacker = f;
           break;
@@ -46,11 +46,11 @@ export function captureSystem(sim: Sim): void {
     p.ticks++;
     if (p.ticks < need) continue;
     if (ship.faction !== 'player') {
-      capturePrize(sim, ship);
+      capturePrize(sim, id);
     } else {
       sim.world.remove(id, CaptureProgressC);
       sim.sector.lost = 'captured';
-      sim.events.emit({ type: 'ship.captured', gridId: ship.gridId, by: attacker, from: ship.faction });
+      sim.events.emit({ type: 'ship.captured', ship: id, by: attacker, from: ship.faction });
       sim.events.emit({ type: 'game.lost', reason: 'captured' });
       return;
     }

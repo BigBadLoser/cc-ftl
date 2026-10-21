@@ -1,18 +1,38 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   CrewC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
+
 import type { SimEvent } from '../events';
 import { spawnModule } from '../modules/spawn';
+
 import type { ContentRegistry, ModuleDef } from '../registry';
-import { gridFromTemplate } from '../ship';
 import { Sim } from '../sim';
+
+import { stampShip } from '../combat/ships';
+
+import type { ShipTemplate } from '../registry';
+
 import { Struct } from '../structure';
+
 import { CarryingC, ItemStackC } from './components';
+
 import { needsMaterials } from './materials';
+
 import { stackAt } from './stacks';
+
 import { storageAdd, storageCount } from './storage';
+
 import { totalStock } from './stock';
+
+import { shipGrid } from '../regions';
+
+
+/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
+function fixtureShip(sim: Sim, t: ShipTemplate): number {
+  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
+}
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -38,20 +58,20 @@ const all = (v: number): Priorities => ({
 
 function make(): Sim {
   const sim = new Sim(5, content);
-  sim.grids.set(1, gridFromTemplate(1, { name: 't', rows }));
+  fixtureShip(sim, { name: 't', rows });
   return sim;
 }
 function crew(sim: Sim, x: number, y: number, prio: Priorities): number {
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name: 'T', role: 'r', species: 'species.human', appearanceSeed: 1, activity: 'idle' });
-  sim.world.add(id, PositionC, { gridId: 1, x, y, toX: x, toY: y, progress: 0, facing: 0 });
+  sim.world.add(id, PositionC, { x, y, toX: x, toY: y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...prio });
   sim.world.add(id, NeedsC, { rest: 100 });
   return id;
 }
 const storage = (sim: Sim, x: number, y: number, stock: [string, number][] = []): number => {
-  const id = spawnModule(sim, 1, 'storage', x, y, 0);
+  const id = spawnModule(sim, 'storage', x, y, 0);
   for (const [i, n] of stock) storageAdd(sim, id, i, n);
   return id;
 };
@@ -63,9 +83,9 @@ const run = (sim: Sim, n: number, events: SimEvent[] = []): SimEvent[] => {
   return events;
 };
 const spawnItems = (sim: Sim, x: number, y: number, it: string, count: number): void =>
-  sim.enqueue({ type: 'debug.spawnItems', gridId: 1, x, y, item: it, count });
-const wall = (sim: Sim, x: number, y: number): void => sim.enqueue({ type: 'job.build', gridId: 1, x, y, struct: Struct.Wall });
-const struct = (sim: Sim, x: number, y: number): number => sim.grids.get(1)?.get('struct', x, y) as number;
+  sim.enqueue({ type: 'debug.spawnItems', ship: 1, x, y, item: it, count });
+const wall = (sim: Sim, x: number, y: number): void => sim.enqueue({ type: 'job.build', ship: 1, x, y, struct: Struct.Wall });
+const struct = (sim: Sim, x: number, y: number): number => shipGrid(sim, 1)?.get('struct', x, y) as number;
 const hauler = { ...all(4), hauling: 1 };
 const builder = { ...all(4), construction: 1 };
 
@@ -181,7 +201,7 @@ describe('construction materials', () => {
       const job = sim.world.query(JobC).map((j) => sim.world.get(j, JobC)).find((j) => j?.kind === 'build');
       if (job && job.delivered?.length) break;
     }
-    sim.enqueue({ type: 'job.cancel', gridId: 1, x: 6, y: 2 });
+    sim.enqueue({ type: 'job.cancel', ship: 1, x: 6, y: 2 });
     run(sim, 1);
     expect(sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)?.kind === 'build')).toHaveLength(0);
     const floor = sim.world.query(ItemStackC).map((s) => sim.world.get(s, ItemStackC)).filter((s) => s?.item === 'metal');
@@ -192,15 +212,15 @@ describe('construction materials', () => {
   it('refunds half the cost (rounded down) when deconstructing a wall or a module', () => {
     const sim = make();
     crew(sim, 3, 3, builder);
-    sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 6, y: 2, kind: Struct.Wall });
-    sim.enqueue({ type: 'job.deconstruct', gridId: 1, x: 6, y: 2 });
+    sim.enqueue({ type: 'debug.setStruct', ship: 1, x: 6, y: 2, kind: Struct.Wall });
+    sim.enqueue({ type: 'job.deconstruct', ship: 1, x: 6, y: 2 });
     run(sim, 300);
     expect(struct(sim, 6, 2)).toBe(Struct.Floor);
     const wallRefund = sim.world.get(stackAt(sim, 1, 6, 2), ItemStackC);
     expect(wallRefund).toMatchObject({ item: 'metal', count: 1 });
 
-    spawnModule(sim, 1, 'crate', 9, 3, 0);
-    sim.enqueue({ type: 'job.deconstructModule', gridId: 1, x: 9, y: 3 });
+    spawnModule(sim, 'crate', 9, 3, 0);
+    sim.enqueue({ type: 'job.deconstructModule', ship: 1, x: 9, y: 3 });
     run(sim, 300);
     expect(stackAt(sim, 1, 9, 3)).not.toBe(0);
     expect(sim.world.get(stackAt(sim, 1, 9, 3), ItemStackC)).toMatchObject({ item: 'metal', count: 3 });

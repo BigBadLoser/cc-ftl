@@ -4,6 +4,7 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { EVASION_CAP, FTL_CHARGE_SEC, SKILL_STEP } from '../tuning';
+import { shipIdOf } from '../regions';
 
 /**
  * Evasion and the FTL drive. Both need a pilot at a powered helm. Evasion is the sum of powered engines'
@@ -15,12 +16,12 @@ export function helmSystem(sim: Sim): void {
     const ship = sim.world.get(id, ShipC);
     const combat = sim.world.get(id, CombatC);
     if (!ship || !combat) continue;
-    const pilot = ship.state === 'active' ? mannedConsole(sim, ship.gridId, 'helm') : null;
+    const pilot = ship.state === 'active' ? mannedConsole(sim, id, 'helm') : null;
     let engines = 0;
     if (pilot) {
       for (const mid of sim.world.query(ModuleC)) {
         const m = sim.world.get(mid, ModuleC);
-        const eng = m && m.gridId === ship.gridId ? sim.content.modules[m.def]?.engine : undefined;
+        const eng = m && shipIdOf(sim, m) === id ? sim.content.modules[m.def]?.engine : undefined;
         if (!m || !eng || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC)) continue;
         engines += Math.abs(sim.content.modules[m.def]?.power ?? 0) * eng.evasionPerPower;
       }

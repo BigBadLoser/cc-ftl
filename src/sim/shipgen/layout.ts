@@ -1,6 +1,6 @@
 import type { ModuleDef } from '../registry';
 import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, openTilesOf, type Tile } from '../modules/footprint';
-import { airlockTiles } from '../portals/airlock';
+import { airlockTiles } from '../modules/airlock';
 import type { RoomRole } from './types';
 
 export interface PlacedModule {
@@ -182,18 +182,27 @@ export class Layout {
 
   /** True if every walkable tile and every protected tile is reachable from the first door. */
   connected(): boolean {
+    return this.unreached() === 0;
+  }
+
+  /**
+   * Walkable tiles not reachable from the first door, plus protected tiles that are not walkable. A ship with a
+   * sealed room starts above 0; a placement is safe when it does not raise this.
+   */
+  unreached(): number {
     const n = this.cells.length;
     let start = -1;
     let total = 0;
+    let bad = 0;
     for (let i = 0; i < n; i++) {
       if (!this.walkable(i)) {
-        if (this.keep[i]) return false;
+        if (this.keep[i]) bad++;
         continue;
       }
       total++;
       if (start < 0 && this.cells[i] === 'D') start = i;
     }
-    if (start < 0) return false;
+    if (start < 0) return n + bad;
     const seen = new Uint8Array(n);
     const stack = [start];
     seen[start] = 1;
@@ -208,7 +217,7 @@ export class Layout {
         }
       }
     }
-    return count === total;
+    return total - count + bad;
   }
 
   /** Floor tiles of a room. */

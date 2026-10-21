@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ALT, BodyC, CrewC, ModuleC, PositionC, ShipC, VehicleC, WeaponC, bayCenter, deserialize, dockPoint, isAirborne, newGame, serialize,
-  shipEntityOf, type Sim, type SimEvent,
-} from '../../sim';
+import { ALT, BodyC, CrewC, ModuleC, PositionC, ShipC, VehicleC, WeaponC, bayCenter, deserialize, dockPoint, isAirborne, newGame, serialize, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
+import { shipIdOf } from '../../sim/regions';
+import { shipIds } from '../../sim/regions';
+
+/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
+const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 // Step 8 of the sector grid: vehicles are free bodies (BodyC) that pin to their bay or dock and fly in sector tiles.
 
@@ -16,18 +18,18 @@ const run = (sim: Sim, n: number): SimEvent[] => {
   return out;
 };
 const reasons = (ev: SimEvent[]): string[] => ev.filter((e) => e.type === 'command.rejected').map((e) => (e as { reason: string }).reason);
-const shuttleOf = (sim: Sim): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === shipEntityOf(sim, 1))!;
-const airlockOf = (sim: Sim, gridId: number): number =>
-  sim.world.query(ModuleC).find((i) => sim.world.get(i, ModuleC)!.gridId === gridId && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
+const shuttleOf = (sim: Sim): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === nth(sim, 1))!;
+const airlockOf = (sim: Sim, shipId: number): number =>
+  sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId) && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
 
 /** Starter plus a disarmed raider at (100, 50); the starter's pilot aboard its shuttle, still stowed. */
 function setup(seed = 1): { sim: Sim; v: number } {
   const sim = newGame(seed, content);
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
   run(sim, 2);
-  for (const i of sim.world.query(WeaponC)) if (sim.world.get(i, ModuleC)!.gridId === 2) sim.world.get(i, ModuleC)!.enabled = false;
+  for (const i of sim.world.query(WeaponC)) if (shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[1] as number) sim.world.get(i, ModuleC)!.enabled = false;
   const v = shuttleOf(sim);
-  const pilot = sim.world.query(CrewC).find((c) => sim.world.get(c, CrewC)!.role === 'role.pilot' && sim.world.get(c, PositionC)?.gridId === 1)!;
+  const pilot = sim.world.query(CrewC).find((c) => sim.world.get(c, CrewC)!.role === 'role.pilot' && shipIdOf(sim, sim.world.get(c, PositionC)) === shipIds(sim)[0] as number)!;
   sim.enqueue({ type: 'vehicle.embark', crew: pilot, vehicle: v });
   run(sim, 400);
   expect(sim.world.get(v, VehicleC)!.pilot).toBe(pilot);
@@ -40,7 +42,7 @@ describe('vehicle bodies', () => {
     const sim = newGame(1, content);
     const v = shuttleOf(sim);
     const veh = sim.world.get(v, VehicleC)!;
-    expect(veh.homeShip).toBe(shipEntityOf(sim, 1));
+    expect(veh.homeShip).toBe(nth(sim, 1));
     expect(veh).not.toHaveProperty('x');
     run(sim, 1);
     const c = bayCenter(sim, veh.home)!;
@@ -88,10 +90,10 @@ describe('vehicle bodies', () => {
 
   it('hovers off another ship by its ship id; its own ship and a non-ship are refused', () => {
     const { sim, v } = setup();
-    sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: shipEntityOf(sim, 1) });
+    sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: nth(sim, 1) });
     sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: v });
     expect(reasons(run(sim, 1))).toEqual(['badTarget', 'badTarget']);
-    const raider = shipEntityOf(sim, 2);
+    const raider = nth(sim, 2);
     sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: raider });
     run(sim, 20 * 40);
     const veh = sim.world.get(v, VehicleC)!;

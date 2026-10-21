@@ -101,12 +101,12 @@ export function diffuseStep(
 
 /** Write a scratch array back to a grid field where it differs from `before` (the loaded values) by more than `eps`. */
 export function writeBack(grid: GridLike, field: string, vals: Float64Array, before: Float64Array, eps: number, round = false): void {
-  const { width } = grid;
+  const { width, x0, y0 } = grid;
   for (let i = 0; i < vals.length; i++) {
     const v = round ? Math.min(255, Math.max(0, Math.round(vals[i] as number))) : (vals[i] as number);
     if (Math.abs(v - (before[i] as number)) > eps) {
       const x = i % width;
-      grid.set(field, x, (i - x) / width, v);
+      grid.set(field, x0 + x, y0 + (i - x) / width, v);
     }
   }
 }

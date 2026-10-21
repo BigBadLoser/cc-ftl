@@ -7,6 +7,7 @@ import type { SimEvent } from '../events';
 import { createCrew } from '../crew/spawn';
 import type { ContentRegistry, ModuleDef } from '../registry';
 import { Sim } from '../sim';
+
 import { storageAdd } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { StorageC } from '../items/components';
@@ -42,7 +43,7 @@ const rows = ['##########', '#________#', '#________#', '#________#', '#########
 /** A sim with the player's ship (grid 1, one crate) and crew of the given roles. */
 export function storySim(events: Record<string, EventDef>, roles: string[] = ['role.engineer', 'role.rookie'], seed = 7): Sim {
   const sim = new Sim(seed, baseContent(events));
-  spawnShip(sim, { name: 'P', rows, modules: [{ def: 'module.crate', x: 7, y: 1, rot: 0 }] }, { gridId: 1, faction: 'player', x: 0, y: 0 });
+  spawnShip(sim, { name: 'P', rows, modules: [{ def: 'module.crate', x: 7, y: 1, rot: 0 }] }, { faction: 'player', x: 0, y: 0 });
   roles.forEach((r, i) => createCrew(sim, 1, r, { x: 1 + i, y: 2 }, { faction: 'player', name: i === 0 ? 'Mara' : `C${i}` }));
   return sim;
 }
@@ -117,12 +118,12 @@ describe('triggers over time', () => {
     run(sim, 100 * TICK_HZ);
     expect(sim.story.active).toBeNull();
     sim.enqueue({ type: 'story.setContext', periodicSec: 30 });
-    const foe = spawnShip(sim, { name: 'H', rows: ['###', '#_#', '###'] }, { gridId: 2, faction: 'hostile', x: 30, y: 30 });
+    const foe = spawnShip(sim, { name: 'H', rows: ['###', '#_#', '###'] }, { faction: 'hostile', x: 30, y: 30 });
     run(sim);
     expect(sim.sector.inCombat).toBe(true);
     run(sim, 60 * TICK_HZ);
     expect(sim.story.active).toBeNull();
-    sim.enqueue({ type: 'debug.capture', gridId: foe });
+    sim.enqueue({ type: 'debug.capture', ship: foe });
     run(sim, 2);
     expect(sim.sector.inCombat).toBe(false);
     run(sim, 2);

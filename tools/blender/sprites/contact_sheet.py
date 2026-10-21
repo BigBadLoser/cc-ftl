@@ -139,9 +139,13 @@ def blocks(s, layout, doors_open=(), mode="auto"):
                 s.static(f"tile.hull.ghost.m{mask}", x, y, 0.1)
                 continue
             fam = "hull" if hull else "wall"
-            vid = f"tile.{fam}.m{mask}"
-            if mode == "up":
-                vid = f"tile.{fam}.full.m{mask}"
+            c = 0                                      # corner fills (tiles.ts wallCorners), when the sheet has them
+            for bit, need, (dx, dy) in ((1, 3, (1, -1)), (2, 6, (1, 1)), (4, 12, (-1, 1)), (8, 9, (-1, -1))):
+                if mask & need == need and at(x + dx, y) == at(x, y + dy) == at(x + dx, y + dy) == "#":
+                    c |= bit
+            vid = f"tile.{fam}.{'full.' if mode == 'up' else ''}m{mask}"
+            if c and f"{vid}c{c}" in s.man["assets"]:
+                vid = f"{vid}c{c}"
             s.static(vid, x, y, 0.1)
             if hull:
                 if not mask & 4 and sp(0, 1):

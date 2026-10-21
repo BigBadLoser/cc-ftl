@@ -1,3 +1,4 @@
+import { shipIdAtTile } from '../regionRules';
 import type { World } from '../../sim/ecs';
 import { AssignmentC, CrewC, JobC, PositionC } from '../../sim/crew/components';
 import type { Grid } from '../../sim/grid';
@@ -70,12 +71,12 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
-        if (!m || !def || m.gridId !== grid.id) continue;
+        if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let cx = 0;
         let cy = 0;
         for (const f of tiles) {
-          const p = iso(f.x, f.y);
+          const p = iso(f.x - grid.x0, f.y - grid.y0); // modules are in sector tiles, particles region-local
           cx += p.x / tiles.length;
           cy += p.y / tiles.length;
         }
@@ -88,11 +89,11 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
       for (const id of world.query(CrewC, PositionC)) {
         const crew = world.get(id, CrewC);
         const pos = world.get(id, PositionC);
-        if (!crew || !pos || pos.gridId !== grid.id || crew.activity !== 'working') continue;
+        if (!crew || !pos || shipIdAtTile(world, pos.x, pos.y) !== grid.id || crew.activity !== 'working') continue;
         const a = world.get(id, AssignmentC);
         const job = a && world.get(a.jobId, JobC);
         if (!job || !WELD_JOBS.has(job.kind)) continue;
-        const p = iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress);
+        const p = iso(pos.x + (pos.toX - pos.x) * pos.progress - grid.x0, pos.y + (pos.toY - pos.y) * pos.progress - grid.y0);
         particles.emit(`w${id}`, WELD, p.x + 6, p.y - 16, 14, dt, 4);
       }
     },

@@ -1,14 +1,30 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
-import { gridFromTemplate } from '../ship';
+
 import { deserialize, serialize } from '../save';
+
 import { newGame } from '../newGame';
+
 import type { ContentRegistry } from '../registry';
 import { Sim } from '../sim';
+
+import { stampShip } from '../combat/ships';
+
+import type { ShipTemplate } from '../registry';
+
 import { Struct } from '../structure';
+
 import type { SimEvent } from '../events';
+import { shipGrid } from '../regions';
+
+
+/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
+function fixtureShip(sim: Sim, t: ShipTemplate): number {
+  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
+}
 
 const rows = ['#########', '#___#___#', '#___D___#', '#___#___#', '#########'];
 const all = (v: number): Priorities => ({
@@ -31,14 +47,14 @@ const content: ContentRegistry = {
 
 function make(): Sim {
   const sim = new Sim(7, content);
-  sim.grids.set(1, gridFromTemplate(1, content.ships['ship.t']!));
+  fixtureShip(sim, content.ships['ship.t']!);
   return sim;
 }
 
 function spawn(sim: Sim, x: number, y: number, prio: Priorities = all(4), rest = 100): number {
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name: 'T', role: 'role.engineer', species: 'species.human', appearanceSeed: 1, activity: 'idle' });
-  sim.world.add(id, PositionC, { gridId: 1, x, y, toX: x, toY: y, progress: 0, facing: 0 });
+  sim.world.add(id, PositionC, { x, y, toX: x, toY: y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...prio });
   sim.world.add(id, NeedsC, { rest });
@@ -47,9 +63,9 @@ function spawn(sim: Sim, x: number, y: number, prio: Priorities = all(4), rest =
 
 const construction = { ...all(4), construction: 1 };
 const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
-const struct = (sim: Sim, x: number, y: number) => sim.grids.get(1)!.get('struct', x, y);
+const struct = (sim: Sim, x: number, y: number) => shipGrid(sim, 1)!.get('struct', x, y);
 const build = (sim: Sim, x: number, y: number, s: number = Struct.Wall) =>
-  sim.enqueue({ type: 'job.build', gridId: 1, x, y, struct: s });
+  sim.enqueue({ type: 'job.build', ship: 1, x, y, struct: s });
 
 describe('crew jobs', () => {
   it('walks through a door and builds a wall', () => {
@@ -98,7 +114,7 @@ describe('crew jobs', () => {
     build(sim2, 2, 3); // near, construction (level 3)
     const far = sim2.world.createEntity();
     sim2.world.add(far, JobC, {
-      category: 'repair', kind: 'build', gridId: 1, x: 7, y: 3, struct: Struct.Wall, work: 40, progress: 0, reservedBy: 0,
+      category: 'repair', kind: 'build', x: 7, y: 3, struct: Struct.Wall, work: 40, progress: 0, reservedBy: 0,
     });
     run(sim2, 2);
     expect(sim2.world.get(c, AssignmentC)?.jobId).toBe(far);
@@ -145,7 +161,7 @@ describe('crew jobs', () => {
     build(sim, 7, 1);
     run(sim, 10);
     expect(sim.world.has(id, AssignmentC)).toBe(true);
-    sim.enqueue({ type: 'job.cancel', gridId: 1, x: 7, y: 1 });
+    sim.enqueue({ type: 'job.cancel', ship: 1, x: 7, y: 1 });
     run(sim, 2);
     expect(sim.world.has(id, AssignmentC)).toBe(false);
     expect(sim.world.query(JobC)).toHaveLength(0);
@@ -155,9 +171,9 @@ describe('crew jobs', () => {
   it('deconstruct turns a wall into floor; invalid commands are rejected', () => {
     const sim = make();
     spawn(sim, 3, 2, construction);
-    sim.enqueue({ type: 'job.deconstruct', gridId: 1, x: 4, y: 1 });
-    sim.enqueue({ type: 'job.deconstruct', gridId: 1, x: 1, y: 1 }); // floor
-    sim.enqueue({ type: 'job.build', gridId: 1, x: 4, y: 1, struct: Struct.Wall }); // job exists
+    sim.enqueue({ type: 'job.deconstruct', ship: 1, x: 4, y: 1 });
+    sim.enqueue({ type: 'job.deconstruct', ship: 1, x: 1, y: 1 }); // floor
+    sim.enqueue({ type: 'job.build', ship: 1, x: 4, y: 1, struct: Struct.Wall }); // job exists
     sim.enqueue({ type: 'crew.setPriority', id: 999, category: 'repair', value: 1 });
     sim.step();
     const rejected = sim.events.drain().filter((e) => e.type === 'command.rejected');

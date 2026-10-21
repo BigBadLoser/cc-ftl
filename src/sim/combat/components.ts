@@ -1,11 +1,12 @@
 import type { SectorGrid } from '../sectorGrid';
 import type { GenOrigin } from '../shipgen/types';
+import type { RuinBreach, RuinDecal, RuinHook } from '../shipgen/ruinTypes';
 import { defineComponent } from '../ecs';
 
 /** The sector all ships share. Saved with the game. */
 export interface Sector {
   /**
-   * Every tile of the sector: ships are stamped into it at their position (`sim.grids` holds windows onto it). Not plain
+   * Every tile of the sector: ships are stamped into it at their position (a ship's bounded view of it is `shipGrid(sim, ship)`, read from its ShipC rectangle). Not plain
    * data: the save writes it with `SectorGrid.serialize`.
    */
   grid: SectorGrid;
@@ -19,16 +20,32 @@ export interface Sector {
 }
 
 /** 'rogue': rogue AI (robot crews under an AI core); hostile to every other faction, neutral included. */
-export type Faction = 'player' | 'hostile' | 'neutral' | 'rogue';
+/** 'alien': wild creatures on derelicts; like rogue, at war with every other faction. */
+export type Faction = 'player' | 'hostile' | 'neutral' | 'rogue' | 'alien';
 /**
  * 'prize': a captured ship. Player-owned but inactive: no weapons, shields, AI or combat role; not flown. The player can
  * salvage it or scuttle it (-> 'wreck').
  */
 export type ShipState = 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
 
+/**
+ * The part of a derelict's ruin meta the renderer needs (dressing art per tile and module), kept small and saved with the
+ * ship. Tiles are ship-local (from the grid's top-left), like the meta.
+ */
+export interface ShipRuin {
+  cause: 'combat' | 'decay';
+  /** Impact centres (combat) or decay foci: the renderer scorches nearby walls from these. */
+  impacts: { x: number; y: number; r: number }[];
+  breaches: RuinBreach[];
+  decals: RuinDecal[];
+  /** Egg sacs, nests and AI spawns that carry art (static dressing). */
+  hooks: Pick<RuinHook, 'x' | 'y' | 'size' | 'art'>[];
+  /** Modules whose look the ruin changed: their template position, wreck state and art override. */
+  modules: { x: number; y: number; state: 'damaged' | 'destroyed' | 'intact'; art?: string; flicker?: boolean }[];
+}
+
 /** A ship (one per grid): identity, world placement and lifecycle state. */
 export interface Ship {
-  gridId: number;
   name: string;
   faction: Faction;
   state: ShipState;
@@ -44,14 +61,17 @@ export interface Ship {
   integrity: number;
   /** Set on generated ships: the faction, seed and depth they were generated from (the grid itself is saved). */
   gen?: GenOrigin;
+  /** Set on derelicts: dressing data for the renderer (see ShipRuin). */
+  ruin?: ShipRuin;
 }
 export const ShipC = defineComponent<Ship>('ship');
 
-/** A weapon target: a ship grid and optionally one of its modules (0 = any module), or a vehicle. */
+/** A weapon target: a ship and optionally one of its modules (0 = any module), or a vehicle. */
 export interface Target {
-  gridId: number;
+  /** The target ship's `ShipC` entity id. */
+  ship: number;
   moduleId: number;
-  /** Set (with gridId 0, moduleId 0) when the target is a shuttle in flight or docked. */
+  /** Set (with ship 0, moduleId 0) when the target is a shuttle in flight or docked. */
   vehicle?: number;
 }
 
@@ -107,8 +127,8 @@ export const PointDefenseC = defineComponent<PointDefense>('pointDefense');
 export interface Projectile {
   /** WeaponDef id. */
   weapon: string;
-  /** Firing ship grid and weapon module. */
-  fromGridId: number;
+  /** Firing ship (`ShipC` entity id) and weapon module. */
+  fromShip: number;
   fromModuleId: number;
   target: Target;
   /** Launch and destination points. */

@@ -37,6 +37,37 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
+## Aliens on derelicts (branch `aliens`, based on `derelict-ingame` plus `art/alien`; not merged; awaiting user review)
+
+- **Sim** (`src/sim/aliens/`, `systems/eggSacs.ts`, `systems/aliens.ts`): `applyRuin` turns the ruin pass's `eggsac` and
+  `nest` hooks into `EggSacC` / `NestC` entities (navy combat wrecks still get no alien hooks). A dormant sac (some spawn
+  `leaking`, the cracked look) hatches when disturbed: a non-alien within 3 tiles with line of sight, any damage (crew
+  attacks, fire), or a neighbour hatching within 6 tiles (1-3 s delay). Stages hatch0 -> hatch1 -> hatch2 (1.2 s each);
+  the brood comes out on hatch2 (1 alien per 1x1, 2 per 2x2), then it bursts. Crew can attack a sac (`crew.attack` with
+  the sac id; tapping a sac with drafted crew selected) and destroy it before hatch2: no brood. A nest lays a sac every
+  60 s while a non-alien is aboard, at most 3.
+- **Aliens** are crew entities of faction `alien` (at war with everyone) with no priorities or needs, so only crew combat
+  and the alien system run them. `AlienC` leashes them to the ship they hatched on (paths are planned on that grid only;
+  idle ones roam within 4 tiles of where they hatched). They never count as invaders (no console objective, no capture).
+  They are airless (cross vented decks; decision: aliens do not need air, heat and fire still hurt). At 0 hp they die
+  outright and leave a corpse (`SpeciesDef.creature`). Natural weapons: `SpeciesDef.natural`.
+  - Hunter (weight 7): fast (3.6), 60 hp, claws 9 dmg / 0.9 s.
+  - Brute (weight 2): slow (2.1), 180 hp, armour 0.2, crush 18 dmg / 1.7 s, 35% knockdown (2.5 s stun).
+  - Spitter (weight 1): 45 hp, spit 8 dmg range 7 / 2.4 s, backs off from foes within 4 tiles while reloading.
+  - All flee from visible foes when badly hurt (`creature.fleeBelow`).
+- **UI**: aliens are in the hostiles list, light the combat button, and the first hatch on a ship raises "Hostile
+  creatures aboard <ship>". Save v24.
+- **Render**: real sac art by state (`eggSacView.ts`); aliens through the crew view with the `art/alien` sheets
+  (attack / hurt / dead clips). Placeholder: the spit glob (drawn in code, and the hit lands at once in the sim).
+- **Pipeline fix**: `crew_pack.union_box` was dropped by the per-clip crew refactor although `robot_render` and
+  `alien_render` import it; restored (the robots family builds again too).
+- **User answers (2026-10-20)**: numbers stay; aliens stay on their derelict (no airlocks, shuttles or the player's ship);
+  the spit stays visual-only; no light avoidance yet. Done: drafted, armed crew with no order shoot an egg sac they can
+  already hit (in range and sight; they never walk to one) when no hostile is in view; a brute's knockdown reads
+  "Knocked down" (robots keep "Inert"); "is down" alerts fire for player crew anywhere, not only aboard the home ship.
+- Debug: `?shipgen=derelict:civilian&ruin=0.6&cause=decay&genAt=0,45&hook`, Spawn raider, then
+  `__cc.aliens(shipId)` lists sacs and aliens; `debug.spawnCrew` with `faction: 'player'` on the wreck sets them off.
+
 ## Trade (branch `trade`, based on `main` at 160e20b; not merged; awaiting user approval of the in-game look)
 
 Model, commands, price rules and "how to add a trader or a price" are in `docs/ARCHITECTURE.md` ("Trade"); player-facing rules in
@@ -141,7 +172,7 @@ Design is in `docs/DESIGN.md` (Crew, "EVA and spacesuits"). What exists:
   - `SuitC` carries `air` (seconds) and the `airlock` it came from. `AirlockC.suits` counts the suits stowed (def value `airlock.suits`).
   - Suit up / off are personal `suitUp` / `suitOff` jobs at the airlock's inside tile (`errands.ts`, `jobs.ts`), swept by `systems/suits.ts` when nobody carries them.
   - `planWalk` (`route.ts`) prefers a path that keeps out of thin air (`findPath` option `avoidThin`) and flags one that cannot (`thin`). `decide` uses it: a job that needs thin air sends the crew member for a suit first and resumes the job (`Job.resume`).
-  - Ships are never close (user decision): no ship-to-ship docking or crossing. `isEvaWalkable(grid, x, y)` lets suited crew onto the Space ring touching a hull; beams join later.
+  - Ships are never close (user decision): no ship-to-ship docking or crossing. `isEvaWalkable(grid, x, y)` lets suited crew onto the Space ring touching a hull (to be replaced by walking on the hull roof, see "EVA on the hull roof").
   - Cross-grid EVA starts at a shuttle: `vehicle.hover {vehicle, gridId}` (dest `hover`, `hoverPoint` in `vehicles/geometry.ts`, then `Vehicle.hover`), `eva.out {vehicle, crew?}` (suits from `Vehicle.suits` / def `eva.suits`, crew land on the nearest exterior tile within `floatRange` and drift there under `EvaFloatC`) and `eva.board {crew, vehicle}` (float back, board, suit stowed; `systems/evaFloat.ts`). The shuttle refuses to move while crew are out. Shuttle panel: Hover beside, Crew out (EVA); crew card: Back to shuttle.
   - `systems/suits.ts` drains the tank in thin air (rooms, airlock, hull outside). `vitals` treats a dry tank as no suit. `eva/conditions.ts` slows suited crew, `fight/weapons.ts` scales hit chance.
   - Commands: `eva.suitUp {crew, airlock}`, `eva.suitOff {crew, airlock?}` (drafted crew). `suit.set` stays as the debug/test shortcut. Events: `suit.donned`, `suit.doffed`, `suit.airLow`, `suit.airOut`.
@@ -337,6 +368,53 @@ Branch `sector-5b` (not merged, needs the user's screenshot approval): step 5b, 
 cracks, flames, atmosphere emitters and the field overlay read `SectorGrid` chunks (`render/regionTiles.ts`), keyed and
 rebuilt per sector chunk; see ARCHITECTURE "Step 5b done". Step 5 is complete apart from per-chunk culling and `alt` driving
 the lift. Comparison vs main in the scratchpad `s5b/` (`cmp.txt`).
+Branch `sector-6` (not merged): step 6, the coordinate flip. Every component holds sector tiles; windows read sector
+coordinates and keep their rectangle as bounds; geometry sums and `sectorPos` are gone, and a lint guards against new
+ones. Region tile art stays ship-local, placed at the region's top-left. Save v15. Both `sectorEquiv` hashes are
+unchanged (positions mapped back to local before hashing). See ARCHITECTURE "Step 6 done". Screenshots vs main (starter
+up, overlap cut, combat panel picked) in the scratchpad `s6/` (`cmp.txt`): starter identical, the rest differ only in
+time-driven pulses that differ between two main runs too.
+
+Branch `sector-7a` (not merged, no visual change): first slice of step 7 (cleanup). `ItemStack.gridId` is gone (owner read from
+the `ship` layer via `gridIdAt`), `crew/pathfind.ts` and `eva/route.ts` use `load()` (no `raw()` left in `src` outside tests and
+`GridWindow`), module / job / airlock readouts show ship-local tiles. Save v16. Hashes unchanged. Step 7 is split into 7a-7d,
+see ARCHITECTURE "Step 7 split". Next: 7b (Module, Job, Drafted, Position).
+
+Branch `sector-7b` (not merged, no visual change): 7b, first half. `ModuleC.gridId`, `JobC.gridId` and `Drafted.target/planned.gridId`
+are gone (membership from the tile via `gridIdOf` / `gridIdAt`); `Position.gridId` was left for 7b2. Save v17. Both `sectorEquiv`
+hashes unchanged (the test's `legacyWorld` writes `gridId` back into module rows). See ARCHITECTURE "Step 7 split".
+
+Branch `sector-7b2` (not merged, no visual change): `Position.gridId` is gone (about 100 reads now `gridIdOf(sim, pos)`; render uses
+`gridIdAtTile(world, x, y)`). Shuttle passengers need nothing new: they have no `Position` and carry `AboardC`; disembark gives
+them a tile again. Save v18. Both `sectorEquiv` hashes unchanged (`legacyWorld` writes `gridId` back as the first `position` key).
+Headless smoke: starter loads with 0 page errors; embark, launch, dock, disembark brings the pilot back on a tile. Next: 7c.
+
+Branch `sector-7c` (not merged, no visual change): ship-keyed ids, done in one slice (sim and UI together; no split needed).
+`Target.ship`, `Projectile.fromShip` and `CoreLink.ship` are `ShipC` entity ids; every command and event `gridId` field is now `ship`
+(`combat.setTarget` takes `ship` / `targetShip`; `weapon.fired` has `targetShip`; `crew.crossed` has `fromShip` / `toShip`;
+`portal.link` keeps its grids: portals go in 7d). UI snapshots and the `UiApi` are keyed by ship id: `selectShip` / `selectedShip`
+(renamed from `selectGrid`), `setCombatView({ ship })`, `focusFight(ship)`, the node strip's `node-{shipId}` and `hover-{shipId}`
+testids, `UiCrew.ship`, `UiPrize.ship`, `UiModule.ship`. **Stations** (no `ShipC`) are keyed by their trader entity id, in the same
+id space as ships (before: minus the entity id); `UiTradePartner.id` is that key. `Ship.gridId` itself stays: it is the link from a
+ship to its `sim.grids` entry, which 7d removes; `gridOfShip` / `shipOfGrid` / `shipIdOf` (`sim/regions.ts`) convert at the edges.
+Render keeps grid-keyed interfaces (`frameShips`, `setCombatView`, `pickTileAny`); `app/controller.ts` and `main.ts` convert.
+Save v19. Both `sectorEquiv` hashes unchanged (`legacyWorld` writes `gridId` / `fromGridId` back under the old key names).
+Fixture grids that had no ship now get an inert one (`fixtureShip`, a prize) so commands can name them.
+Headless smoke on the built game: 0 page errors, starter ship visible; a raider spawned through the debug hook shows as `node-{shipId}` in the strip, clicking it opens the selection panel with the Frame fight button, the combat panel opens by itself and auto-targets the raider, and picking a module (chip or tap in the ship view) sets `Target { ship, moduleId }`. Next: 7d.
+
+Branch `sector-7d` (not merged, no visual change): the final cleanup slice of step 7. `sim.grids`, `GridMap`, `GridWindow` (+ `raw`), the
+cross-grid portals and `Path.then` are gone; `SuitC` lives in `eva/components.ts` and `AirlockC` in `modules/airlock.ts`; `Ship.gridId` is
+gone, so every id in the sim, app and renderer is the `ShipC` entity id. A ship's bounds are its `ShipC` rectangle, read through
+`ShipGrid` (`shipGrid(sim, ship)`: a derived view of `sim.sector.grid`, not registered or saved). Lint rejects `.gridId` and `.grids` in
+`src/sim`. Save v20. Both `sectorEquiv` hashes unchanged. Ship-less fixture grids need `stampShip` (a prize `ShipC` at the origin). Tests that
+named ships 1 and 2 use `nth(sim, n)`. See ARCHITECTURE "Step 7 split" and "7d notes". **Step 7 is done.** Next: step 9 (lifting ships).
+
+**EVA on the hull roof (user decision, 2026-10-20; not built):** EVA crew outside a ship must not walk the hull ring at
+floor level (the tiles just outside the hull walls): there they look as if standing on air, and walking along wall faces
+would need a sideways walk animation we don't want for now. Instead EVA crew walk on top of the **hull roof**, pathing
+over roof tiles at roof height. This replaces the old plan of walkable beams on the hull ring. On a ship drawn without its
+roof (cutaway, e.g. the player ship), show the roof tiles just around an EVA crew member if that is cheap and reads well;
+otherwise the crew float at roof height over the cutaway.
 
 **Vehicle bay departure decision (user, 2026-10-20; for a later vehicle step, not built):** the bay doors are at the
 **bottom** of the pit. A departing shuttle drops down out of the pit through the bottom doors, flies clear of the ship's
@@ -527,3 +605,43 @@ notifications below (`AlertList`). Bottom left: one `SelectionPanel` (ship by de
 grid with Hail/Trade and prizes). Bottom right: tool dock (select, build, deconstruct, cancel, walls, overlays, debug).
 Open: CombatPanel still old style; phone hides the crew row while the combat sheet is open; station subtitle reads
 "Station · station"; debug "Spawn raider" default spot is rejected; stations select by negative grid id (no camera move).
+
+## Shipgen rooms and ruins (merged to `main` with user approval)
+
+- **Rooms** (`src/sim/shipgen/rooms/`): data-driven recipes per room type, door pruning, furniture defs in
+  `src/content/furniture.ts` (several have no art yet). User note: **room generation gets reworked once the new modules from
+  the art thread land** (storage set, medbay, battery, hydroponics, workbench, comms and sensor consoles, cryo pods).
+- **Ruins** (`src/sim/shipgen/ruin*.ts`, `src/sim/combat/derelict.ts`): `ruin(template, seed, opts)`, jammed doors
+  (`jam` field, `job.forceDoor`), `debug.spawnDerelict` / `?shipgen=derelict`. Done on `derelict-ingame`: derelict art wiring (`ShipC.ruin`, save v23), a Force door UI
+  action, a jammed-door marker.
+- **Next (user decision): sealed, detachable cargo containers** as their own ship component with their own exterior. Freighter
+  frames become trusses plus clamped containers; a detached container becomes a free body (like shuttles) carrying its
+  stock. Not walk-in (walk-in plus detachable would need grid surgery).
+
+## Cargo containers (branch `shipgen-containers`; not merged; awaiting user review of the look)
+
+- **Component** (`src/sim/containers`): a container is a module with `ModuleDef.container` (`container.2x3` cap 7,
+  90 hp; `container.3x5` cap 18, 160 hp; solid, full cover, no power). Cargo doors are on a short end, and that end
+  always clamps to the frame (user decision; shipgen validation enforces it). They stand on Beam tiles, tagged
+  `ContainerC` (def, rot, clamp side, state clamped / drifting, hp, last ship, drift). Haulers skip it (sealed).
+  Combat reuses module damage; at 0 hp its stock is lost. `container.detach` (and `detachContainer`) frees its tiles
+  (Space, no owner, no module) and turns the same entity into an inert drifting `BodyC` with its `StorageC`, seeded
+  velocity away from the ship's centre; `containerDriftSystem` moves it and damps it to rest (12 s time constant, a few
+  tiles), so it stays in the node as loot. Save v22.
+- **Shipgen**: container cells (`containerCells.ts`, symbol chars per size and turn) survive blocks, mirrors and
+  arranging; `generate` turns them into `=` plus container modules with stock (`extractContainers`). `containerFrame` is
+  a beam, truss or crawl-tube spine with containers on both faces, short end on the spine (sizes mixed, more on long
+  rows; gaps, stagger, empty slots seeded). The tug's barge and the mid frame keep a walkable crawl tube (crew must reach the far end). Validation:
+  containers must sit on `=` and touch the frame on their clamp side.
+- **Scrapper**: the pod-string donor (and the old non-section civilian grammar) is a crawl tube with containers clamped
+  on both walls (`civilBlocks.podString`); scrapper strings mix sizes, gaps and empty slots. The tube stays walkable.
+  About 25-35% of scrappers carry one (donor weights in `content/factions/scrapper.ts`; ~40% at depth 4). Salvage
+  cuts and notches never slice a container.
+- **Ruins** (`ruinContainers.ts`): some torn off (and any a shear cuts off) as `meta.containers` bodies near the wreck,
+  spaced a tile clear of the wreck and each other, spawned by `applyRuin`; the rest sealed, breached (stock partly lost,
+  under half hp) or destroyed (stock gone). Scrapper boxes are breached more often and sealed ones often `patched`.
+- **Render**: placeholder drawn boxes (0.8 tiles tall, under the hull wall) with a yellow clamp until art lands (ids in ARCHITECTURE "Cargo containers").
+- **Debug**: `?genAt=dx,dy` places generated ships and derelicts away from the player's ship (big freighters otherwise
+  collide with it and are refused).
+- User answers (2026-10-20): containers are pre-stocked for now, no player building, no UI yet; the truss / crawl mix
+  is fine. Later: pick-up, towing, cutting open.

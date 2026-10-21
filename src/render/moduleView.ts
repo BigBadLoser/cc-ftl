@@ -11,11 +11,14 @@ import { iso, depthKey, TILE_W } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
+import { boxState, containerBox } from './containerBox';
+import { ContainerC } from '../sim/containers/components';
+import type { ShipRuin } from '../sim/combat/components';
 import { airlockLayers, createCollarAnimator, dockedAt } from './airlockArt';
 import { robotBayLayers } from './robotBayArt';
 import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, vehicleBayLayers } from './vehicleBayArt';
-import { craftProgress, glowKey, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
+import { craftProgress, moduleAssets, glowKey, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -27,6 +30,8 @@ export interface ModuleViewHost {
   roofed(): boolean;
   /** The wall view level of the art; only the airlock's hull block follows it (the airlock itself never cuts away). */
   level(): WallLevel;
+  /** The derelict dressing of this ship, if it is one (module art overrides and wreck darkening). */
+  ruin?(): ShipRuin | undefined;
 }
 
 export interface ModuleView {
@@ -95,14 +100,22 @@ function cut(tex: Texture, x0: number, x1: number): Texture {
   return t;
 }
 
+const grey = (f: number): number => {
+  const c = Math.round(255 * f);
+  return (c << 16) | (c << 8) | c;
+};
+
+/** Light tint of exterior pieces (containers) that room lighting never reaches. */
+const EXTERIOR_TINT = 0xd8dce6;
+
 /** A craft job counts as running while its progress moved within this many ms. */
 const ACTIVE_MS = 400;
 
 /** True if any enabled power source of the grid is running. */
-export function shipHasPower(world: World, defs: ModuleDefs, gridId: number): boolean {
+export function shipHasPower(world: World, defs: ModuleDefs, grid: { inBounds(x: number, y: number): boolean }): boolean {
   for (const id of world.query(ModuleC)) {
     const m = world.get(id, ModuleC);
-    if (m && m.gridId === gridId && m.powered && m.enabled && m.hp > 0 && (defs[m.def]?.power ?? 0) > 0) return true;
+    if (m && grid.inBounds(m.x, m.y) && m.powered && m.enabled && m.hp > 0 && (defs[m.def]?.power ?? 0) > 0) return true;
   }
   return false;
 }
@@ -218,6 +231,32 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     return now - (lastProgress.get(id)?.at ?? -Infinity) < ACTIVE_MS;
   }
 
+  /** The ruin records of the current derelict by local module tile (rebuilt when the ship's ruin data changes). */
+  let ruinData: ShipRuin | undefined;
+  let ruinMods = new Map<string, ShipRuin['modules'][number]>();
+  /**
+   * What a derelict's ruin does to a module's look: extra art ids to try first (state-suffix art, a ruin override such as a
+   * broken light or a dormant fabricator, flickering) and a darkening factor when it has no art of its own.
+   */
+  function ruinLook(id: number, m: Module, def: ModuleDefs[string], on: boolean, now: number): { chain: string[]; dark: number } {
+    const none = { chain: [] as string[], dark: 1 };
+    const ruin = host.ruin?.();
+    if (!ruin) return none;
+    if (ruin !== ruinData) {
+      ruinData = ruin;
+      ruinMods = new Map(ruin.modules.map((r) => [`${r.x},${r.y}`, r]));
+    }
+    const t = host.target();
+    const r = t && ruinMods.get(`${m.x - t.grid.x0},${m.y - t.grid.y0}`);
+    if (!r) return none;
+    const state = r.state === 'destroyed' ? (m.hp <= 0 ? 'destroyed' : '') : r.state === 'damaged' ? (m.hp < def.maxHp ? 'damaged' : '') : '';
+    const art = r.art && !r.art.startsWith('decay.') && (state === 'destroyed' || !on) && (r.state !== 'damaged' || state === 'damaged' || !on) ? r.art : undefined;
+    const blip = r.flicker && Math.floor(now / 170 + m.x * 7 + m.y * 3) % 3 === 0;
+    const chain = art && !blip ? [art] : [];
+    if (state && !art) chain.push(...moduleAssets(world, id, m, def, false).map((id) => `${id}.${state}`));
+    return { chain, dark: state === 'destroyed' ? 0.5 : state === 'damaged' ? 0.8 : 1 };
+  }
+
   function update(): void {
     const t = host.target();
     const live = new Set<number>();
@@ -228,21 +267,32 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       const { grid } = t;
       const emergency = host.emergency();
       const pulse = emergency ? pulsePhase(now) : -1;
-      const light = grid.raw('light');
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
-        if (!m || !def || m.gridId !== grid.id) continue;
+        if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
         const on = m.powered && m.enabled && m.hp > 0;
+        // Modules are in sector tiles; their art is built region-local (the region's containers sit at its sector offset).
+        const lm: Module = { ...m, x: m.x - grid.x0, y: m.y - grid.y0 };
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
         const roofed = host.roofed();
         const level = host.level();
-        const raw = def.robotBay ? robotBayLayers(world, id, m, def, now)
-          : def.vehicleBay ? vehicleBayLayers(m, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
-          : def.airlock?.layout ? airlockLayers(world, id, m, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
-          : moduleLayers(world, id, m, def, active, true);
-        const layers = raw.flatMap((layer) => {
-          if (roofed && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
+        const raw = def.robotBay ? robotBayLayers(world, id, lm, def, now)
+          : def.vehicleBay ? vehicleBayLayers(lm, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
+          : def.airlock?.layout ? airlockLayers(world, id, lm, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
+          : moduleLayers(world, id, lm, def, active, true);
+        const wreck = ruinLook(id, m, def, on, now);
+        const withRuin = wreck.chain.length ? raw.map((l, i) => (i === 0 ? { ...l, chain: [...wreck.chain, ...l.chain] } : l)) : raw;
+        const layers = withRuin.flatMap((layer) => {
+          // Containers ride outside the hull: never under a roof.
+          if (roofed && !def.container && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
+          if (def.container && !atlas.firstOf(layer.chain)) {
+            // PLACEHOLDER until the container sheets land: a drawn box (with its own clamp mark) for the shell, no clamp layer.
+            if (layer.at) return [];
+            const [bw, bh] = rotatedSize(def, m.rot);
+            const box = containerBox(bw, bh, boxState(m.hp, def.maxHp), world.get(id, ContainerC)?.clamp ?? 'n');
+            return [{ layer, art: { s: box, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }];
+          }
           const art = resolveArt(atlas, layer.chain, layer.key);
           return art ? [{ layer, art }] : [];
         });
@@ -254,12 +304,15 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           dropEntry(e);
           e = undefined;
         }
-        if (!e) mods.set(id, (e = { sig, parts: build(m, def, layers, roofed) }));
+        if (!e) mods.set(id, (e = { sig, parts: build(lm, def, layers, roofed) }));
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
-        for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? (light[f.y * grid.width + f.x] as number) : 0;
-        const base = lightTint(lsum / Math.max(1, tiles.length), false, pulse);
-        const tint = on ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
+        for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
+        // A container is outside, lit by the sky like the hull (no room light reaches it), and never "off".
+        const base = def.container ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, tiles.length), false, pulse);
+        const lit = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
+        // A wreck without its own damaged / destroyed art is darkened instead.
+        const tint = wreck.dark < 1 && !wreck.chain.some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
         for (const p of e.parts) {
           p.spr.tint = mulColor(tint, p.art);
           for (const g of [p.glow, p.halo]) if (g) g.visible = on;

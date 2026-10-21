@@ -3,6 +3,7 @@ import {
   ModuleC, Struct, footprintTiles, hullRow, isTileWalkable, newGame, openTilesOf, accessTile, findPath, type Sim,
 } from '../../sim';
 import { content } from '../index';
+import { shipIdOf, shipGrid, shipIds } from '../../sim/regions';
 
 function spawned(shipId: string): Sim {
   const sim = newGame(1, content);
@@ -12,16 +13,16 @@ function spawned(shipId: string): Sim {
 }
 
 describe('combat content', () => {
-  for (const shipId of ['ship.starter', 'ship.raider']) {
-    const gridId = shipId === 'ship.starter' ? 1 : 2;
-    it(`${shipId}: modules sit on floor (engines on the hull wall), chairs are open, everything walkable is reachable, power balances`, () => {
-      const sim = spawned(shipId);
-      const grid = sim.grids.get(gridId)!;
+  for (const template of ['ship.starter', 'ship.raider']) {
+    it(`${template}: modules sit on floor (engines on the hull wall), chairs are open, everything walkable is reachable, power balances`, () => {
+      const sim = spawned(template);
+      const shipId = shipIds(sim)[template === 'ship.starter' ? 0 : 1] as number;
+      const grid = shipGrid(sim, shipId)!;
       let supply = 0;
       let demand = 0;
       for (const id of sim.world.query(ModuleC)) {
         const m = sim.world.get(id, ModuleC)!;
-        if (m.gridId !== gridId) continue;
+        if (shipIdOf(sim, m) !== shipId) continue;
         const def = content.modules[m.def as keyof typeof content.modules] as import('../../sim').ModuleDef;
         const wall = hullRow(def, m.x, m.y, m.rot);
         for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
@@ -38,18 +39,19 @@ describe('combat content', () => {
       expect(demand).toBeLessThanOrEqual(supply);
     });
 
-    it(`${shipId}: every walkable tile is reachable from the first door`, () => {
-      const sim = spawned(shipId);
-      const grid = sim.grids.get(gridId)!;
+    it(`${template}: every walkable tile is reachable from the first door`, () => {
+      const sim = spawned(template);
+      const shipId = shipIds(sim)[template === 'ship.starter' ? 0 : 1] as number;
+      const grid = shipGrid(sim, shipId)!;
       let start: { x: number; y: number } | null = null;
-      for (let y = 0; y < grid.height && !start; y++) {
-        for (let x = 0; x < grid.width && !start; x++) if (grid.get('struct', x, y) === Struct.Door) start = { x, y };
+      for (let y = grid.y0; y < grid.y0 + grid.height && !start; y++) {
+        for (let x = grid.x0; x < grid.x0 + grid.width && !start; x++) if (grid.get('struct', x, y) === Struct.Door) start = { x, y };
       }
       expect(start).not.toBeNull();
       const stuck: string[] = [];
-      for (let y = 0; y < grid.height; y++) {
-        for (let x = 0; x < grid.width; x++) {
-          if (isTileWalkable(sim, grid, x, y) && !findPath(sim, gridId, start!, { x, y })) stuck.push(`${x},${y}`);
+      for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+        for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+          if (isTileWalkable(sim, grid, x, y) && !findPath(sim, shipId, start!, { x, y })) stuck.push(`${x},${y}`);
         }
       }
       expect(stuck).toEqual([]);

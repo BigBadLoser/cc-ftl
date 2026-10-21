@@ -6,7 +6,7 @@
   let { api }: { api: UiApi } = $props();
   let crew = $state<UiCrew[]>([]);
   let sel = $state<number | null>(null);
-  const ready = (c: UiCrew) => !c.dead && !c.downed && c.gridId !== 0;
+  const ready = (c: UiCrew) => !c.dead && !c.downed && c.ship !== 0;
   const allDrafted = $derived(crew.filter(ready).every((c) => c.drafted));
 
   onMount(() => {
@@ -22,7 +22,8 @@
   function status(c: UiCrew): { icon: IconName; label: string; tone: 'ok' | 'warn' | 'bad' | 'dim' } {
     if (c.dead) return { icon: 'skull', label: 'Dead', tone: 'bad' };
     if (c.downed) return { icon: 'downed', label: c.downed.stabilized ? 'Downed (stable)' : 'Downed', tone: 'bad' };
-    if (c.away || c.gridId === 0) return { icon: 'away', label: c.where, tone: 'warn' };
+    if (c.away || c.ship === 0) return { icon: 'away', label: c.where, tone: 'warn' };
+    if (c.activity === 'knocked down') return { icon: 'downed', label: 'Knocked down', tone: 'bad' };
     if (c.fight && c.fight.mode !== 'idle') return { icon: 'target', label: c.fight.mode === 'flee' ? 'Fleeing' : 'Fighting', tone: 'bad' };
     if (c.drafted) return { icon: 'draft', label: 'Drafted', tone: 'warn' };
     if (c.hunger !== null && c.hunger < 10) return { icon: 'food', label: 'Starving', tone: 'bad' };

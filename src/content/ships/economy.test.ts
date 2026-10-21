@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CarryingC, ModuleC, ProductionC, StorageC, deserialize, newGame, serialize, storageCount, totalStock, type Sim,
-} from '../../sim';
+import { CarryingC, ModuleC, ProductionC, StorageC, deserialize, newGame, serialize, storageCount, totalStock, type Sim } from '../../sim';
 import { content } from '../index';
+import { shipGrid } from '../../sim/regions';
+import { shipIds } from '../../sim/regions';
+
+/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
+const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
+import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
 
 const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === def) as number;
@@ -11,8 +15,8 @@ const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((i
 function busy(): Sim {
   const sim = newGame(11, content);
   sim.enqueue({ type: 'production.add', moduleId: find(sim, 'module.fabricator'), recipe: 'recipe.metal', mode: 'count', target: 3 });
-  sim.enqueue({ type: 'debug.spawnItems', gridId: 1, x: 9, y: 10, item: 'item.scrap', count: 30 });
-  sim.enqueue({ type: 'job.build', gridId: 1, x: 12, y: 6, struct: 2 });
+  sim.enqueue({ type: 'debug.spawnItems', ship: nth(sim, 1), x: P0.x + 9, y: P0.y + 10, item: 'item.scrap', count: 30 });
+  sim.enqueue({ type: 'job.build', ship: nth(sim, 1), x: P0.x + 12, y: P0.y + 6, struct: 2 });
   return sim;
 }
 
@@ -34,7 +38,7 @@ describe('starter economy', () => {
     run(sim, 3000);
     expect(sim.world.get(find(sim, 'module.fabricator'), ProductionC)?.orders[0]?.done).toBe(3);
     expect(totalStock(sim, 'item.scrap')).toBe(80 + 30 - 6);
-    expect(sim.grids.get(1)?.get('struct', 12, 6)).toBe(2);
+    expect(shipGrid(sim, shipIds(sim)[0] as number)?.get('struct', P0.x + 12, P0.y + 6)).toBe(2);
   });
 
   it('is deterministic over 1500 ticks', () => {

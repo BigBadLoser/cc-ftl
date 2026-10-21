@@ -179,7 +179,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         const v = world.get(id, VehicleC);
         const b = world.get(id, BodyC);
         if (!v || !b) continue;
-        const ref: ShuttleRef = { state: v.state, dock: v.dock, homeGrid: world.get(v.homeShip, ShipC)?.gridId ?? 0 };
+        const ref: ShuttleRef = { state: v.state, dock: v.dock, homeGrid: world.has(v.homeShip, ShipC) ? v.homeShip : 0 };
         let t = tracks.get(id);
         if (!t) {
           const root = new Container();

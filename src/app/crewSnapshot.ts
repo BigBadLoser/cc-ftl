@@ -1,15 +1,21 @@
-import {
-  AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile,
-  AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC,
-  ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine,
-  storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory,
-  shipEntityOf,
-} from '../sim';
+import { AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory } from '../sim';
 import type { UiCrew, UiFight } from '../ui/api';
+import { localOf } from './moduleSnapshot';
+import { shipIdOf, shipGrid } from '../sim/regions';
+import { homeShip } from '../sim/index';
+import { StunC } from '../sim/robots/components';
+
+/**
+ * The activity the UI shows. A stunned organic body (a brute's knockdown) is 'knocked down'; robots keep 'inert' (shut
+ * down or ion-stunned).
+ */
+export function activityOf(sim: Sim, id: number, activity: string): string {
+  const species = sim.content.species[sim.world.get(id, CrewC)?.species ?? ''];
+  return activity === 'inert' && sim.world.has(id, StunC) && !species?.mechanical ? 'knocked down' : activity;
+}
 
 const STRUCT_LABEL: Record<number, string> = Object.fromEntries(Object.entries(Struct).map(([k, v]) => [v, k.toLowerCase()]));
 const NONE = Object.fromEntries(WORK_CATEGORIES.map((c) => [c, 0])) as Record<WorkCategory, number>;
-const HOME = 1;
 
 function jobLabel(sim: Sim, j: Job): string {
   const mod = j.module ? (sim.content.modules[j.module.def]?.name ?? 'module') : 'module';
@@ -37,14 +43,14 @@ function makeCtx(sim: Sim): Ctx {
   const ships = new Map<number, string>();
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s) ships.set(s.gridId, s.name);
+    if (s) ships.set(id, s.name);
   }
   return { ships, arms: new Map() };
 }
 
 /** Hand weapons sitting in storage on a grid (what a crew member there can fetch). */
-function armsOn(sim: Sim, ctx: Ctx, gridId: number) {
-  let out = ctx.arms.get(gridId);
+function armsOn(sim: Sim, ctx: Ctx, shipId: number) {
+  let out = ctx.arms.get(shipId);
   if (out) return out;
   out = [];
   const items = Object.entries(sim.content.items).filter(([, d]) => d.hand);
@@ -52,34 +58,34 @@ function armsOn(sim: Sim, ctx: Ctx, gridId: number) {
     let count = 0;
     for (const sid of sim.world.query(StorageC, ModuleC)) {
       const m = sim.world.get(sid, ModuleC);
-      if (m && m.gridId === gridId && m.hp > 0) count += storageCount(sim, sid, item);
+      if (m && shipIdOf(sim, m) === shipId && m.hp > 0) count += storageCount(sim, sid, item);
     }
     if (count > 0) out.push({ item, name: def.name, count });
   }
-  ctx.arms.set(gridId, out);
+  ctx.arms.set(shipId, out);
   return out;
 }
 
-function whereOf(sim: Sim, ctx: Ctx, id: number): { gridId: number; where: string } {
+function whereOf(sim: Sim, ctx: Ctx, id: number): { shipId: number; where: string } {
   const pos = sim.world.get(id, PositionC);
-  if (pos) return { gridId: pos.gridId, where: ctx.ships.get(pos.gridId) ?? 'Ship' };
+  if (pos) return { shipId: shipIdOf(sim, pos), where: ctx.ships.get(shipIdOf(sim, pos)) ?? 'Ship' };
   const aboard = sim.world.get(id, AboardC);
   const v = aboard && sim.world.get(aboard.vehicle, VehicleC);
-  if (!v) return { gridId: 0, where: 'Unknown' };
-  const dockShip = v.state === 'docked' ? ctx.ships.get(sim.world.get(v.dock, ModuleC)?.gridId ?? 0) : null;
-  return { gridId: 0, where: v.state === 'stowed' ? 'Shuttle (in bay)' : dockShip ? `Shuttle at ${dockShip}` : 'Shuttle (flying)' };
+  if (!v) return { shipId: 0, where: 'Unknown' };
+  const dockShip = v.state === 'docked' ? ctx.ships.get(shipIdOf(sim, sim.world.get(v.dock, ModuleC)) ?? 0) : null;
+  return { shipId: 0, where: v.state === 'stowed' ? 'Shuttle (in bay)' : dockShip ? `Shuttle at ${dockShip}` : 'Shuttle (flying)' };
 }
 
 function evaShuttleOf(sim: Sim, id: number): number | null {
   const vid = sim.world.get(id, SuitC)?.vehicle;
   const v = vid ? sim.world.get(vid, VehicleC) : undefined;
   const pos = sim.world.get(id, PositionC);
-  return vid && v && pos && v.state === 'flying' && !v.dest && !!v.hover && v.hover === shipEntityOf(sim, pos.gridId) ? vid : null;
+  return vid && v && pos && v.state === 'flying' && !v.dest && !!v.hover && v.hover === (shipIdOf(sim, pos)) ? vid : null;
 }
 
 function isOutside(sim: Sim, id: number): boolean {
   const p = sim.world.get(id, PositionC);
-  const g = p && sim.grids.get(p.gridId);
+  const g = p && shipGrid(sim, shipIdOf(sim, p));
   return !!g && g.inBounds(p.x, p.y) && g.get('struct', p.x, p.y) === Struct.Space;
 }
 
@@ -102,7 +108,7 @@ function suitAtOf(sim: Sim, id: number): UiCrew['suitAt'] {
   for (const lock of sim.world.query(AirlockC)) {
     const at = suitTile(sim, lock);
     const free = freeSuits(sim, lock);
-    if (!at || free <= 0 || sim.world.get(lock, ModuleC)?.gridId !== pos.gridId) continue;
+    if (!at || free <= 0 || shipIdOf(sim, sim.world.get(lock, ModuleC)) !== shipIdOf(sim, pos)) continue;
     const d = Math.hypot(at.x - pos.x, at.y - pos.y);
     if (!best || d < best.d) best = { id: lock, free, d };
   }
@@ -127,9 +133,9 @@ function fightOf(sim: Sim, id: number): UiFight | null {
   if (!f) return null;
   const pos = sim.world.get(id, PositionC);
   const tpos = f.target ? sim.world.get(f.target, PositionC) : undefined;
-  const grid = pos && sim.grids.get(pos.gridId);
+  const grid = pos && shipGrid(sim, shipIdOf(sim, pos));
   let cover: UiFight['cover'] = null;
-  if (pos && tpos && grid && tpos.gridId === pos.gridId) cover = sightLine(sim, grid, { x: tpos.x, y: tpos.y }, { x: pos.x, y: pos.y }).cover;
+  if (pos && tpos && grid && shipIdOf(sim, tpos) === shipIdOf(sim, pos)) cover = sightLine(sim, grid, { x: tpos.x, y: tpos.y }, { x: pos.x, y: pos.y }).cover;
   return {
     mode: f.mode, engage: f.engage, target: f.target ? (sim.world.get(f.target, CrewC)?.name ?? null) : null, targetId: f.target,
     ordered: f.ordered !== 0, cooldown: Math.round((f.cooldown / TICK_HZ) * 10) / 10, cooldownMax: wielded(sim, id).def.cooldownSec, cover,
@@ -145,7 +151,8 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
   const j = a && sim.world.get(a.jobId, JobC);
   if (j) {
     const pct = Math.round((j.progress / Math.max(1, j.work)) * 100);
-    job = `${jobLabel(sim, j)} at ${j.x},${j.y} (${pct}%)`;
+    const at = localOf(sim, shipIdOf(sim, j), j.x, j.y);
+    job = `${jobLabel(sim, j)} at ${at.x},${at.y} (${pct}%)`;
   }
   const hp = sim.world.get(id, HealthC);
   const downed = sim.world.get(id, DownedC);
@@ -156,7 +163,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     id,
     name: crew.name,
     role: role?.name ?? crew.role,
-    activity: crew.activity,
+    activity: activityOf(sim, id, crew.activity),
     rest: Math.round(sim.world.get(id, NeedsC)?.rest ?? 100),
     hunger: hungerOf(sim, id),
     mood: moodOf(sim, id),
@@ -171,11 +178,11 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     carriedBy: carrier ? (sim.world.get(carrier.carrier, CrewC)?.name ?? null) : null,
     carrying: sim.world.get(id, CarryingC) ?? null,
     side,
-    gridId: loc.gridId,
+    ship: loc.shipId,
     where: loc.where,
-    away: loc.gridId !== HOME,
+    away: loc.shipId !== homeShip(sim),
     weapon: w.item === 'unarmed' ? null : { item: w.item, name: sim.content.items[w.item]?.name ?? w.item, ranged: w.def.kind === 'ranged', damage: w.def.damage, range: w.def.range },
-    arms: loc.gridId ? armsOn(sim, ctx, loc.gridId) : [],
+    arms: loc.shipId ? armsOn(sim, ctx, loc.shipId) : [],
     surrendered: sim.world.has(id, SurrenderedC),
     prisoner: sim.world.has(id, PrisonerC),
     inert: sim.world.has(id, InertC),
@@ -200,11 +207,11 @@ export function buildCrewLists(sim: Sim): { crew: UiCrew[]; hostiles: UiCrew[] }
       const c = card(sim, ctx, id, 'player');
       if (!c) continue;
       crew.push(c);
-      if (c.gridId) occupied.add(c.gridId);
+      if (c.ship) occupied.add(c.ship);
     } else enemies.push(id);
   }
   for (const id of enemies) {
-    const g = sim.world.get(id, PositionC)?.gridId;
+    const g = shipIdOf(sim, sim.world.get(id, PositionC));
     if (!g || !occupied.has(g) || sim.world.has(id, DeadC)) continue;
     const c = card(sim, ctx, id, 'enemy');
     if (c) hostiles.push(c);

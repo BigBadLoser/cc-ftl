@@ -4,7 +4,7 @@
  */
 import { content } from '../../src/content';
 import {
-  adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, type GenResult, type ModuleDef, type RoomRole,
+  accessTile, adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, type GenResult, type ModuleDef, type RoomRole,
 } from '../../src/sim';
 import { drawAssemblies, drawSilhouette, drawStructure } from './views';
 
@@ -68,6 +68,11 @@ const MOD: Record<string, { label: string; c: RGB }> = {
   'module.storage': { label: 'C', c: [200, 170, 110] }, 'module.fabricator': { label: 'FAB', c: [200, 170, 110] },
   'module.vehicle_bay': { label: 'BAY', c: [180, 180, 210] }, 'module.airlock': { label: 'A', c: [255, 255, 255] },
   'module.light': { label: '', c: [255, 250, 200] },
+  'module.galley': { label: 'GAL', c: [255, 190, 120] }, 'module.mess_table': { label: 'TB', c: [235, 205, 160] },
+  'module.chair': { label: 'h', c: [235, 205, 160] }, 'module.storage_locker': { label: 'L', c: [170, 190, 210] },
+  'module.storage_rack': { label: 'RK', c: [210, 160, 90] }, 'module.storage_pallet': { label: 'PAL', c: [210, 160, 90] }, 'module.cargo_container': { label: 'CTR', c: [230, 140, 70] },
+  'module.med_bed': { label: 'MED', c: [255, 140, 140] }, 'module.battery': { label: 'BT', c: [240, 220, 60] },
+  'module.hydroponics': { label: 'HY', c: [110, 230, 90] }, 'module.console': { label: 'CN', c: [90, 170, 255] },
 };
 
 const defs = content.modules as Record<string, ModuleDef>;
@@ -113,6 +118,7 @@ export function drawShip(r: Raster, g: GenResult, ox: number, oy: number, s: num
     }
     const [w, h] = rotatedSize(def, m.rot);
     const px = ox + m.x * s; const py = oy + m.y * s;
+    if (def.container) { drawContainer(r, px, py, w, h, s, (m as { clamp?: string }).clamp ?? 'n', (m.stock ?? []).length > 0); continue; }
     if (def.solid) for (const t of footprintTiles(def, m.x, m.y, m.rot)) r.rect(ox + t.x * s + 2, oy + t.y * s + 2, s - 4, s - 4, style.c.map((v) => v * 0.35) as RGB);
     r.frame(px + 1, py + 1, w * s - 2, h * s - 2, style.c, def.weapon || def.engine ? 2 : 1);
     if (def.weapon) { // a cross marks weapons (their roof turret sits over the footprint)
@@ -120,8 +126,35 @@ export function drawShip(r: Raster, g: GenResult, ox: number, oy: number, s: num
     }
     if (def.engine) r.rect(px + w * s - 2, py + 2, 4, h * s - 4, [255, 200, 80]); // the bell side
     const label = style.label;
-    if (label && label.length * 4 <= w * s) r.text(label, px + 3, py + 3, style.c);
+    const fs = s >= 24 ? 2 : 1;
+    if (label && label.length * 4 * fs <= w * s) r.text(label, px + 3, py + 3, style.c, fs);
+    // The access tile (where crew stand to use it, or a seat's facing edge): a small square in the module's colour.
+    const a = accessTile(def, m.x, m.y, m.rot);
+    if (a) r.rect(ox + a.x * s + (s >> 1) - 2, oy + a.y * s + (s >> 1) - 2, 4, 4, style.c);
+    else if (m.def === 'module.chair') {
+      const [dx, dy] = [[0, -1], [1, 0], [0, 1], [-1, 0]][m.rot] as [number, number];
+      r.rect(px + (s >> 1) - 1 + dx * (s >> 2), py + (s >> 1) - 1 + dy * (s >> 2), 3, 3, style.c);
+    }
   }
+}
+
+/**
+ * A sealed container: a solid tinted box over its footprint (orange when stocked, grey when empty), ribbed across its
+ * length, a dark shell edge, and a yellow clamp bar on the side that grips the frame.
+ */
+export function drawContainer(r: Raster, px: number, py: number, w: number, h: number, s: number, clamp: string, full: boolean, tint: RGB = full ? [214, 128, 54] : [120, 124, 132]): void {
+  const W = w * s; const H = h * s;
+  r.rect(px + 1, py + 1, W - 2, H - 2, tint);
+  const rib = tint.map((v) => v * 0.72) as RGB;
+  if (w >= h) for (let x = px + 3; x < px + W - 3; x += 3) r.rect(x, py + 2, 1, H - 4, rib);
+  else for (let y = py + 3; y < py + H - 3; y += 3) r.rect(px + 2, y, W - 4, 1, rib);
+  r.frame(px + 1, py + 1, W - 2, H - 2, [40, 30, 24], 1);
+  const c: RGB = [255, 220, 60];
+  const t = Math.max(2, s >> 2);
+  if (clamp === 'n') r.rect(px + 2, py, W - 4, t, c);
+  else if (clamp === 's') r.rect(px + 2, py + H - t, W - 4, t, c);
+  else if (clamp === 'w') r.rect(px, py + 2, t, H - 4, c);
+  else r.rect(px + W - t, py + 2, t, H - 4, c);
 }
 
 export function ascii(g: GenResult): string {
@@ -146,6 +179,75 @@ export function summary(g: GenResult, seed: number): string {
     `shields ${n((d) => !!d.shieldGen)}, engines ${n((d) => !!d.engine)}, crew ${g.template.crew?.length ?? 0}, ` +
     `${g.metrics ? `metrics ${JSON.stringify(g.metrics)}, ` : ''}attempts ${g.attempts}, ${g.problems.length === 0 ? 'OK' : `INVALID: ${g.problems.join('; ')}`}` +
     (g.failures.length > 0 ? ` [rejected: ${g.failures.join(', ')}]` : '');
+}
+
+/** Mean door openings (runs of touching door tiles) per non-hall room. */
+export function doorsPerRoom(g: GenResult): number {
+  const rows = g.template.rows;
+  const at = (x: number, y: number): string => rows[y]?.[x] ?? '.';
+  const seen = new Set<number>();
+  const count = new Map<number, number>();
+  for (let y = 0; y < g.height; y++) {
+    for (let x = 0; x < g.width; x++) {
+      if (at(x, y) !== 'D' || seen.has(y * g.width + x)) continue;
+      const rooms = new Set<number>();
+      const stack = [[x, y] as [number, number]];
+      seen.add(y * g.width + x);
+      while (stack.length > 0) {
+        const [cx, cy] = stack.pop() as [number, number];
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+          const nx = cx + dx; const ny = cy + dy;
+          const c = at(nx, ny);
+          if (c === 'D' && !seen.has(ny * g.width + nx)) { seen.add(ny * g.width + nx); stack.push([nx, ny]); }
+          if (c === '_') rooms.add(g.roomOf[ny * g.width + nx] ?? -1);
+        }
+      }
+      for (const r of rooms) count.set(r, (count.get(r) ?? 0) + 1);
+    }
+  }
+  const rooms = g.rooms.filter((r) => r.role !== 'hall' && r.tiles.length > 0);
+  return rooms.reduce((t, r) => t + (count.get(r.id) ?? 0), 0) / Math.max(1, rooms.length);
+}
+
+/** Room interiors as role, size and module layout relative to the room's corner (lights left out). */
+function interiors(g: GenResult): { key: string; sig: string }[] {
+  const out: { key: string; sig: string }[] = [];
+  for (const room of g.rooms) {
+    if (room.role === 'hall' || room.tiles.length === 0) continue;
+    const xs = room.tiles.map((i) => i % g.width); const ys = room.tiles.map((i) => Math.floor(i / g.width));
+    const x0 = Math.min(...xs); const y0 = Math.min(...ys);
+    const mods = (g.template.modules ?? []).filter((m) => m.def !== 'module.light' && g.roomOf[m.y * g.width + m.x] === room.id);
+    if (mods.length === 0) continue;
+    out.push({
+      key: `${room.role} ${Math.max(...xs) - x0}x${Math.max(...ys) - y0} ${room.tiles.length}`,
+      sig: mods.map((m) => `${m.def}@${m.x - x0},${m.y - y0},${m.rot}`).sort().join(' '),
+    });
+  }
+  return out;
+}
+
+/**
+ * Interior repetition: of the furnished rooms that have a same-role, same-shape twin on another ship of the sheet,
+ * the share laid out identically to one of them.
+ */
+export function interiorDups(gs: GenResult[]): { share: number; rooms: number; byRole: string } {
+  const all = gs.map(interiors);
+  let twins = 0; let same = 0;
+  const per = new Map<string, [number, number]>();
+  all.forEach((rs, i) => {
+    for (const r of rs) {
+      const others = all.flatMap((o, j) => (j === i ? [] : o.filter((q) => q.key === r.key)));
+      if (others.length === 0) continue;
+      twins++;
+      const dup = others.some((q) => q.sig === r.sig);
+      if (dup) same++;
+      const role = r.key.split(' ')[0] as string;
+      const p = per.get(role) ?? [0, 0];
+      per.set(role, [p[0] + (dup ? 1 : 0), p[1] + 1]);
+    }
+  });
+  const byRole = [...per].sort().map(([k, [a, b]]) => `${k} ${a}/${b}`).join(', ');
+  return { share: twins ? same / twins : 0, rooms: twins, byRole };
 }
 
 /** A contact sheet of seeds [from, from + count) for one faction at one depth. */
@@ -190,7 +292,11 @@ export function contactSheet(
   void within;
   const gIn = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.gram === p.gram).map((q) => adjacencyDistance(p.sig, q.sig)));
   const gX = sigs.flatMap((p, i) => sigs.slice(i + 1).filter((q) => q.gram !== p.gram).map((q) => adjacencyDistance(p.sig, q.sig)));
-  const adjText = `adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)}; within grammar ${mean(gIn).toFixed(2)}, across ${mean(gX).toFixed(2)}) spine ${spine.toFixed(2)} dups ${dupPairs.length}`;
+  const dpr = ships.reduce((t, x) => t + doorsPerRoom(x.g), 0) / ships.length;
+  const occ = ships.reduce((t, x) => t + (x.g.metrics?.occupancy ?? 0), 0) / ships.length;
+  const idup = interiorDups(ships.map((x) => x.g));
+  const roomText = `occupancy ${occ.toFixed(2)} doors/room ${dpr.toFixed(2)} interior dups ${(idup.share * 100).toFixed(0)}% of ${idup.rooms}`;
+  const adjText = `${roomText} adjacency ${adj.toFixed(2)} (within family ${mean(pairsIn).toFixed(2)}, across ${mean(pairsX).toFixed(2)}; within grammar ${mean(gIn).toFixed(2)}, across ${mean(gX).toFixed(2)}) spine ${spine.toFixed(2)} dups ${dupPairs.length}`;
   r.text(`${faction} depth ${depth} seeds ${from}-${from + count - 1} ${view}  shape ${sil.toFixed(2)} sections ${arch.toFixed(2)} ${adjText}`, 8, 8, [230, 230, 230], 2);
   const text: string[] = [];
   ships.forEach(({ seed, g }, i) => {
@@ -203,5 +309,5 @@ export function contactSheet(
     (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : view === 'structure' ? drawStructure : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
     text.push(summary(g, seed), ascii(g), '');
   });
-  return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}, ${adjText}`, `near-duplicates: ${dupPairs.join(' ') || 'none'}`, ...errors, ...text].join('\n') };
+  return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}, ${adjText}`, `near-duplicates: ${dupPairs.join(' ') || 'none'}`, `interior dups by role: ${idup.byRole}`, ...errors, ...text].join('\n') };
 }

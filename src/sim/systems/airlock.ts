@@ -1,10 +1,11 @@
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
-import { airlockTiles, airlockWorking } from '../portals/airlock';
-import { AirlockC, type Airlock } from '../portals/components';
+import { airlockTiles, airlockWorking } from '../modules/airlock';
+import { AirlockC, type Airlock } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
+import { shipIdOf, shipGrid } from '../regions';
 
 /**
  * Airlock cycling. The two doors are never open together. A requested side only starts to cycle once the doorway that
@@ -18,7 +19,7 @@ export function airlockSystem(sim: Sim): void {
     const a = sim.world.get(id, AirlockC) as Airlock;
     const m = sim.world.get(id, ModuleC)!;
     const def = sim.content.modules[m.def];
-    const grid = sim.grids.get(m.gridId);
+    const grid = shipGrid(sim, shipIdOf(sim, m));
     if (!def?.airlock || !grid) continue;
     const t = airlockTiles(def, m);
     const working = airlockWorking(sim, id);
@@ -31,9 +32,9 @@ export function airlockSystem(sim: Sim): void {
       if (a.timer <= 0) {
         a.timer = 0;
         a.state = a.state === 'toOuter' ? 'outer' : 'inner';
-        sim.events.emit({ type: 'airlock.cycled', gridId: m.gridId, module: id, side: a.state });
+        sim.events.emit({ type: 'airlock.cycled', ship: shipIdOf(sim, m), module: id, side: a.state });
       }
-    } else if (a.request && a.request !== a.state && working && (def.airlock.layout || !occupied(sim, m.gridId, a.state === 'inner' ? t.inner : t.outer))) {
+    } else if (a.request && a.request !== a.state && working && (def.airlock.layout || !occupied(sim, shipIdOf(sim, m), a.state === 'inner' ? t.inner : t.outer))) {
       a.state = a.request === 'outer' ? 'toOuter' : 'toInner';
       a.timer = Math.max(1, Math.round(def.airlock.cycleSec * TICK_HZ));
       a.request = null;
@@ -76,11 +77,11 @@ function pump(grid: Grid, t: ReturnType<typeof airlockTiles>, out: boolean, rema
   }
 }
 
-function occupied(sim: Sim, gridId: number, tile: { x: number; y: number }): boolean {
+function occupied(sim: Sim, shipId: number, tile: { x: number; y: number }): boolean {
   for (const id of sim.world.query(CrewC, PositionC)) {
     if (sim.world.has(id, DeadC)) continue;
     const p = sim.world.get(id, PositionC)!;
-    if (p.gridId === gridId && ((p.x === tile.x && p.y === tile.y) || (p.toX === tile.x && p.toY === tile.y))) return true;
+    if (shipIdOf(sim, p) === shipId && ((p.x === tile.x && p.y === tile.y) || (p.toX === tile.x && p.toY === tile.y))) return true;
   }
   return false;
 }

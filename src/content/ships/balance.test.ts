@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CrewC, DeadC, DownedC, ModuleC, PositionC, newGame, shipOf, type Sim, type SimEvent,
-} from '../../sim';
+import { CrewC, DeadC, DownedC, ModuleC, PositionC, newGame, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
+import { shipIdOf } from '../../sim/regions';
+import { shipById } from '../../sim/combat/ships';
+import { shipIds } from '../../sim/regions';
+
+/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
+const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 const TPS = 20;
 
@@ -22,7 +26,7 @@ interface Result {
   seconds: number;
 }
 
-const playerCrew = (sim: Sim): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === 1);
+const playerCrew = (sim: Sim): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === shipIds(sim)[0] as number);
 const downCount = (sim: Sim, dead = false): number =>
   playerCrew(sim).filter((i) => sim.world.has(i, DeadC) || (!dead && sim.world.has(i, DownedC))).length;
 
@@ -43,24 +47,24 @@ function fight(seed: number, mode: 'manned' | 'unmanned', minutes: number): Resu
   const raiderReactor = (): number =>
     sim.world.query(ModuleC).find((i) => {
       const m = sim.world.get(i, ModuleC)!;
-      return m.gridId === 2 && m.def === 'module.reactor' && m.hp > 0;
+      return shipIdOf(sim, m) === shipIds(sim)[1] as number && m.def === 'module.reactor' && m.hp > 0;
     }) ?? 0;
   for (let t = 0; t < minutes * 60 * TPS; t++) {
     if (mode === 'manned' && t % 100 === 1) {
-      sim.enqueue({ type: 'combat.setTarget', shipGridId: 1, weaponId: null, targetGridId: 2, targetModuleId: raiderReactor() });
+      sim.enqueue({ type: 'combat.setTarget', ship: nth(sim, 1), weaponId: null, targetShip: nth(sim, 2), targetModuleId: raiderReactor() });
     }
     sim.step();
     const events: SimEvent[] = sim.events.drain();
     for (const e of events) {
-      if (e.type === 'module.destroyed' && e.gridId === 1) r.destroyed++;
-      if (e.type === 'crew.downed' && sim.world.get(e.crew, PositionC)?.gridId === 1) r.firstDownSec = Math.min(r.firstDownSec, t / TPS);
+      if (e.type === 'module.destroyed' && e.ship === nth(sim, 1)) r.destroyed++;
+      if (e.type === 'crew.downed' && shipIdOf(sim, sim.world.get(e.crew, PositionC)) === shipIds(sim)[0] as number) r.firstDownSec = Math.min(r.firstDownSec, t / TPS);
     }
-    r.minIntegrity = Math.min(r.minIntegrity, shipOf(sim, 1)?.integrity ?? 1);
+    r.minIntegrity = Math.min(r.minIntegrity, shipById(sim, shipIds(sim)[0] as number)?.integrity ?? 1);
     if (t === 2 * 60 * TPS) r.downAt2 = downCount(sim);
     if (t === 4 * 60 * TPS) { r.downAt4 = downCount(sim); r.deadAt4 = downCount(sim, true); }
     if (!sim.sector.inCombat) {
       r.seconds = t / TPS;
-      r.winner = shipOf(sim, 2)?.state === 'active' ? 'raider' : 'player';
+      r.winner = shipById(sim, shipIds(sim)[1] as number)?.state === 'active' ? 'raider' : 'player';
       break;
     }
   }

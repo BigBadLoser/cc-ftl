@@ -1,5 +1,6 @@
 import type { Faction } from '../combat/components';
 import { AllegianceC } from '../fight/components';
+
 import { CoreLinkC } from '../robots/components';
 import type { Sim } from '../sim';
 import { CREW_MAX_HP } from '../tuning';
@@ -8,10 +9,10 @@ import { CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC } from './compone
 /**
  * Create one crew member of a role on a tile. The species comes from the role (default human). `name` defaults to a
  * random pool name, or `<designation>-NNN` for species that have one. Core-linked species spawned for the rogue
- * faction are tied to the AI core of `gridId` (CoreLinkC). Returns the id, or 0 for an unknown role or species.
+ * faction are tied to the AI core of `shipId` (CoreLinkC). Returns the id, or 0 for an unknown role or species.
  */
 export function createCrew(
-  sim: Sim, gridId: number, roleId: string, tile: { x: number; y: number },
+  sim: Sim, shipId: number, roleId: string, tile: { x: number; y: number },
   opts: { faction: Faction; rest?: number; name?: string },
 ): number {
   const role = sim.content.roles[roleId];
@@ -23,7 +24,7 @@ export function createCrew(
     : (sim.content.crewNames[sim.rng.int(0, Math.max(0, sim.content.crewNames.length - 1))] ?? 'Crew'));
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name, role: roleId, species: speciesId, appearanceSeed: sim.rng.int(0, 0x7fffffff), activity: 'idle' });
-  sim.world.add(id, PositionC, { gridId, x: tile.x, y: tile.y, toX: tile.x, toY: tile.y, progress: 0, facing: 0 });
+  sim.world.add(id, PositionC, { x: tile.x, y: tile.y, toX: tile.x, toY: tile.y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...role.priorities });
   // Species without rest decay (robots) keep a full Needs record: the decision system reads it, nothing drains it.
@@ -33,6 +34,6 @@ export function createCrew(
   const hp = species.maxHp ?? CREW_MAX_HP;
   sim.world.add(id, HealthC, { hp, max: hp });
   sim.world.add(id, AllegianceC, { faction: opts.faction });
-  if (species.coreLinked && opts.faction === 'rogue') sim.world.add(id, CoreLinkC, { gridId, faction: 'rogue' });
+  if (species.coreLinked && opts.faction === 'rogue') sim.world.add(id, CoreLinkC, { ship: shipId, faction: 'rogue' });
   return id;
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCombat, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
+  import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
   import CombatPanel from './CombatPanel.svelte';
   import NavStrip from './NavStrip.svelte';
   import ShipOverview from './ShipOverview.svelte';
@@ -29,10 +29,11 @@
   let toast = $state<string | null>(null);
   let snap = $state<UiSnapshot | undefined>(undefined);
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
+  let foes = $state<UiCrew[]>([]);
   let combatOpen = $state(false);
   let wasInCombat = false;
   let overviewOpen = $state(false);
-  let selGrid = $state<number | null>(null);
+  let selShip = $state<number | null>(null);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
   let prizes = $state<UiPrize[]>([]);
@@ -54,15 +55,17 @@
     const unsubs = [
       api.snapshot.subscribe((s) => (snap = s)),
       api.toast.subscribe((t) => (toast = t)),
-      api.selectedGrid.subscribe((g) => (selGrid = g)),
+      api.selectedShip.subscribe((g) => (selShip = g)),
       api.prizes.subscribe((v) => {
         if (v.length > prizes.length) {
-          const fresh = v.find((x) => !prizes.some((o) => o.gridId === x.gridId));
-          if (fresh) api.selectGrid(fresh.gridId); // a ship was just taken: show it
+          const fresh = v.find((x) => !prizes.some((o) => o.ship === x.ship));
+          if (fresh) api.selectShip(fresh.ship); // a ship was just taken: show it
         }
         prizes = v;
       }),
       api.tool.subscribe((t) => (tool = t)),
+      // Hostile crew where the player's crew are (boarders, aliens on a derelict) light the combat button too.
+      api.hostiles.subscribe((v) => (foes = v)),
       api.combat.subscribe((c) => {
         combat = c;
         // The overlay opens by itself when a fight starts; closing it is the player's call until the next fight.
@@ -103,7 +106,7 @@
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: time, with a log above it later and notifications below. -->
   <NavStrip
-    {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.length > 0} combatOpen={combat.inCombat && combatOpen}
+    {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.length > 0 || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
     onStock={() => (stockOpen = !stockOpen)}
@@ -111,7 +114,7 @@
   />
   <span class="mid">
     <CrewBar {api} />
-    <NodeStrip {api} selected={selGrid} />
+    <NodeStrip {api} selected={selShip} />
   </span>
   <span class="time">
     <span class="tick">T {snap?.tick ?? 0}</span>

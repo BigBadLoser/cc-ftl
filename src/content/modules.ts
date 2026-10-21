@@ -1,4 +1,5 @@
 import type { ModuleDef } from '../sim';
+import { furniture } from './furniture';
 
 /**
  * Ship modules. Power is in units per second (+ supply, - draw). Footprints are [w, h] at
@@ -123,6 +124,17 @@ export const modules = {
     buildWork: 60,
     cost: [{ item: 'item.metal', count: 6 }],
     storage: { capacity: 8 },
+  },
+
+  // Sealed cargo containers (sim/containers): solid boxes on Beam tiles clamped to a freighter's frame, no interior.
+  // Footprint W x H at rotation 0 (art `container.<W>x<H>`); a storage slot per tile and a bit.
+  'container.2x3': {
+    name: 'Cargo container (small)', asset: 'container.2x3', footprint: [2, 3], solid: true, cover: 'full', power: 0,
+    flammability: 0.1, maxHp: 90, buildWork: 240, cost: [{ item: 'item.metal', count: 12 }], storage: { capacity: 7 }, container: true,
+  },
+  'container.3x5': {
+    name: 'Cargo container', asset: 'container.3x5', footprint: [3, 5], solid: true, cover: 'full', power: 0,
+    flammability: 0.1, maxHp: 160, buildWork: 420, cost: [{ item: 'item.metal', count: 26 }], storage: { capacity: 18 }, container: true,
   },
 
   // --- Combat. Offsets are (x, y) from the footprint's top-left at rotation 0; crew face south at rotation 0. ---
@@ -252,4 +264,5 @@ export const modules = {
     power: -1, priority: 4, flammability: 0.1, maxHp: 200, buildWork: 400, vehicleBay: { class: 'shuttle' },
     cost: [{ item: 'item.metal', count: 32 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }],
   },
+  ...furniture,
 } satisfies Record<string, ModuleDef>;

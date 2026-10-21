@@ -1,14 +1,29 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   CarriedC, CrewC, DeadC, DownedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
+
 import type { SimEvent } from '../events';
 import { ModuleC } from '../modules/components';
+
 import type { ContentRegistry, ModuleDef } from '../registry';
-import { gridFromTemplate, spawnTemplateModules } from '../ship';
+import { spawnTemplateModules } from '../ship';
 import { Sim } from '../sim';
+
+import { stampShip } from '../combat/ships';
+
+import type { ShipTemplate } from '../registry';
+
 import { Struct } from '../structure';
+
 import { BLEED_OUT_SECONDS, CREW_MAX_HP, GET_UP_HP } from '../tuning';
+
+
+/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
+function fixtureShip(sim: Sim, t: ShipTemplate): number {
+  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
+}
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -45,21 +60,21 @@ const FLOW = [{ def: 'bed', x: 11, y: 2, rot: 0 }];
 
 function make(modules = FLOW): Sim {
   const sim = new Sim(3, content);
-  sim.grids.set(1, gridFromTemplate(1, { name: 't', rows }));
+  fixtureShip(sim, { name: 't', rows });
   spawnTemplateModules(sim, 1, { name: 't', rows, modules });
   return sim;
 }
 function crew(sim: Sim, x: number, y: number, p: Priorities): number {
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name: 'T', role: 'r', species: 'species.human', appearanceSeed: 1, activity: 'idle' });
-  sim.world.add(id, PositionC, { gridId: 1, x, y, toX: x, toY: y, progress: 0, facing: 0 });
+  sim.world.add(id, PositionC, { x, y, toX: x, toY: y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...p });
   sim.world.add(id, NeedsC, { rest: 100 });
   sim.world.add(id, HealthC, { hp: CREW_MAX_HP, max: CREW_MAX_HP });
   return id;
 }
-const breach = (sim: Sim) => sim.enqueue({ type: 'debug.setStruct', gridId: 1, x: 1, y: 3, kind: Struct.Floor });
+const breach = (sim: Sim) => sim.enqueue({ type: 'debug.setStruct', ship: 1, x: 1, y: 3, kind: Struct.Floor });
 
 /** Step until `stop` holds (or `limit` ticks), collecting events with the tick they were emitted. */
 function runUntil(sim: Sim, limit: number, stop: () => boolean): { type: string; tick: number }[] {
@@ -150,7 +165,7 @@ describe('darkness', () => {
   function buildTicks(modules: typeof lit): number {
     const sim = make(modules);
     crew(sim, 8, 3, { ...all(4), construction: 1 });
-    sim.enqueue({ type: 'job.build', gridId: 1, x: 8, y: 2, struct: Struct.Wall });
+    sim.enqueue({ type: 'job.build', ship: 1, x: 8, y: 2, struct: Struct.Wall });
     let done = -1;
     for (let i = 0; i < 600 && done < 0; i++) {
       sim.step();

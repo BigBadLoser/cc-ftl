@@ -1,3 +1,4 @@
+import { shipIdAt, shipGrid } from '../regions';
 import { ItemStackC } from '../items/components';
 import { takeFromStack } from '../items/stacks';
 import type { Sim } from '../sim';
@@ -13,7 +14,7 @@ export function itemFireSystem(sim: Sim): void {
   for (const id of [...sim.world.query(ItemStackC)]) {
     const s = sim.world.get(id, ItemStackC);
     const flam = s && (sim.content.items[s.item]?.flammability ?? 0);
-    const grid = s && sim.grids.get(s.gridId);
+    const grid = s && shipGrid(sim, shipIdAt(sim, s.x, s.y));
     if (!s || !flam || !grid?.has('fire')) continue;
     const fire = grid.get('fire', s.x, s.y);
     if (fire === 0) continue;

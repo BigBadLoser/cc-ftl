@@ -1,6 +1,7 @@
+import { shipIdOf, shipGrid } from '../regions';
 import { CrewC, DraftedC, PathC, PositionC, type Crew, type Path, type Position } from '../crew/components';
 import { facingOf, hasRoute, isIncapacitated, isSettled } from '../crew/helpers';
-import { airlockDoorAt, requestAirlock } from '../portals/airlock';
+import { airlockDoorAt, requestAirlock } from '../modules/airlock';
 import { isTileWalkable } from '../modules/walk';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -15,7 +16,7 @@ export function movementSystem(sim: Sim): void {
     if (crew.activity === 'sleeping' || isIncapacitated(sim, id) || sim.world.has(id, EvaFloatC)) continue; // drifting: frozen
     const pos = sim.world.get(id, PositionC) as Position;
     const path = sim.world.get(id, PathC) as Path;
-    const grid = sim.grids.get(pos.gridId);
+    const grid = shipGrid(sim, shipIdOf(sim, pos));
     if (!grid?.has('struct')) continue;
     const suited = isSuited(sim, id);
     const walk = (x: number, y: number): boolean => isTileWalkable(sim, grid, x, y, suited);
@@ -26,7 +27,6 @@ export function movementSystem(sim: Sim): void {
       pos.toY = pos.y;
       pos.progress = 0;
       path.steps = [];
-      delete path.then;
     }
     if (isSettled(pos)) {
       const next = path.steps[0];
@@ -37,7 +37,6 @@ export function movementSystem(sim: Sim): void {
         const gate = airlockDoorAt(sim, grid, next.x, next.y);
         if (!walk(next.x, next.y) || cutsCorner || Math.max(Math.abs(dx), Math.abs(dy)) !== 1) {
           path.steps = [];
-          delete path.then;
         } else if (gate && grid.get('door', next.x, next.y) < 255) {
           requestAirlock(sim, gate.id, gate.door); // wait here until the airlock has cycled to this side
         } else {

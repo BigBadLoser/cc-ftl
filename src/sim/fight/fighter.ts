@@ -16,16 +16,22 @@ import { armorOf } from '../robots/core';
 import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
+import { shipIdOf } from '../regions';
+import { EggSacC } from '../aliens/components';
+import { sacInReach, sacTile } from '../aliens/target';
+import { StunC } from '../robots/components';
+import { haltCrew } from '../robots/halt';
+import { TICK_HZ } from '../time';
 
 /** Combat-ready crew with an allegiance, grouped by grid, each list in ascending id order. */
 export function combatReadyUnits(sim: Sim): Map<number, number[]> {
   const out = new Map<number, number[]>();
   for (const id of sim.world.query(AllegianceC, PositionC)) {
     if (!isCombatReady(sim, id)) continue;
-    const gridId = (sim.world.get(id, PositionC) as Position).gridId;
-    const list = out.get(gridId);
+    const shipId = shipIdOf(sim, sim.world.get(id, PositionC));
+    const list = out.get(shipId);
     if (list) list.push(id);
-    else out.set(gridId, [id]);
+    else out.set(shipId, [id]);
   }
   return out;
 }
@@ -71,23 +77,22 @@ function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: numb
   const moved = !f.goal || f.goal.x !== goal.x || f.goal.y !== goal.y;
   const idle = path.steps.length === 0 && isSettled(pos);
   if (!idle && !(moved && sim.tick - f.planned >= CHASE_REPLAN_TICKS)) return;
-  const steps = findPath(sim, pos.gridId, origin(pos), { ...goal, adjacent });
+  const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { ...goal, adjacent });
   f.planned = sim.tick;
   f.goal = { x: goal.x, y: goal.y };
   if (steps) {
     path.steps = steps;
-    delete path.then;
   } else clearPath(sim, id);
 }
 
 /** The grid's bridge if it has one (so boarders go hold it, which captures the ship), else its nearest console: a boarder's objective, as an access tile. */
-function consoleObjective(sim: Sim, gridId: number, from: Position): { x: number; y: number } | null {
+function consoleObjective(sim: Sim, shipId: number, from: Position): { x: number; y: number } | null {
   let best: { x: number; y: number } | null = null;
   let bestD = Infinity;
   for (const mid of sim.world.query(ModuleC)) {
     const m = sim.world.get(mid, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def?.console || m.gridId !== gridId || m.hp <= 0) continue;
+    if (!m || !def?.console || shipIdOf(sim, m) !== shipId || m.hp <= 0) continue;
     const at = accessTile(def, m.x, m.y, m.rot);
     const d = (at ? Math.hypot(at.x - from.x, at.y - from.y) : Infinity) + (def.bridge || def.console === 'helm' ? 0 : 1000);
     if (at && d < bestD) {
@@ -106,16 +111,20 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   if (f.cooldown > 0) f.cooldown--;
   const controlled = isPlayerControlled(sim, id);
   const invader = isInvader(sim, id);
+  // A player order to attack an egg sac (not crew, so not among the foes): its footprint tile nearest to us.
+  const sac = controlled && f.ordered ? sacTile(sim, f.ordered, shipIdOf(sim, pos), pos) : null;
   const foes = units
     .filter((o) => o !== id && isHostile(sim, id, o) && isCombatReady(sim, o))
     .map((o) => ({ id: o, pos: sim.world.get(o, PositionC) as Position }))
     .sort((a, b) => dist(pos, a.pos) - dist(pos, b.pos) || a.id - b.id);
+  // Drafted, armed crew with no order shoot an egg sac they can already hit (never walking to one), unless a hostile is in view.
+  const autoSac = controlled && !f.ordered && f.engage && isArmed(sim, id) ? sacInReach(sim, grid, shipIdOf(sim, pos), pos, wielded(sim, id).def) : null;
 
-  if (foes.length === 0) {
+  if (foes.length === 0 && !sac && !autoSac) {
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
     if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
-      const goal = consoleObjective(sim, pos.gridId, pos);
+      const goal = consoleObjective(sim, shipIdOf(sim, pos), pos);
       if (goal && (pos.x !== goal.x || pos.y !== goal.y)) walkTo(sim, id, f, pos, goal, false);
     }
     return;
@@ -144,9 +153,10 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   let target: (typeof foes)[number] | undefined;
   if (controlled) {
     const ordered = f.ordered ? foes.find((o) => o.id === f.ordered) : undefined;
-    if (f.ordered && !ordered) f.ordered = 0;
-    target = ordered ?? (f.engage && canFight ? seen : undefined);
-  } else if (canFight) target = seen ?? (hunter ? foes[0] : undefined);
+    if (f.ordered && !ordered && !sac) f.ordered = 0;
+    target = ordered ?? (sac ? { id: f.ordered, pos: sac } : f.engage && canFight ? seen ?? autoSac ?? undefined : undefined);
+  } else if (creatureTurn(sim, grid, id, f, pos, seen, foes)) return;
+  else if (canFight) target = seen ?? (hunter ? foes[0] : undefined);
   else if (seen && !sim.content.species[crew.species]?.fearless) return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
 
   if (!target) {
@@ -175,6 +185,21 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   attack(sim, id, f, target.id, target.pos, pos, weapon, d, cover);
 }
 
+/**
+ * A creature's own call before it engages: run from the foes it can see when badly hurt, and (ranged creatures with
+ * `keepAway`) back off from a foe that is too close while the next shot charges. True if it fled this tick.
+ */
+function creatureTurn(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, seen: { pos: Position } | undefined, foes: readonly { pos: Position }[]): boolean {
+  const creature = sim.content.species[(sim.world.get(id, CrewC) as Crew).species]?.creature;
+  if (!creature || !seen) return false;
+  const hp = sim.world.get(id, HealthC);
+  const hurt = !!hp && hp.hp < hp.max * creature.fleeBelow;
+  const crowded = !!creature.keepAway && f.cooldown > 0 && dist(pos, seen.pos) < creature.keepAway;
+  if (!hurt && !crowded) return false;
+  flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
+  return true;
+}
+
 function attack(
   sim: Sim, id: number, f: Fighter, targetId: number, tpos: Position, pos: Position,
   weapon: ReturnType<typeof wielded>, d: number, cover: Cover,
@@ -183,10 +208,16 @@ function attack(
   pos.facing = facingOf(tpos.x - pos.x, tpos.y - pos.y, pos.facing);
   sim.events.emit({
     type: 'crew.attacked', crew: id, target: targetId, weapon: weapon.item, ranged: weapon.def.kind === 'ranged',
-    gridId: pos.gridId, x: pos.x, y: pos.y, tx: tpos.x, ty: tpos.y,
+    ship: shipIdOf(sim, pos), x: pos.x, y: pos.y, tx: tpos.x, ty: tpos.y,
   });
   if (!sim.rng.chance(hitChance(sim, id, weapon.def, d, cover))) {
     sim.events.emit({ type: 'crew.miss', crew: id, target: targetId, cover });
+    return;
+  }
+  const sac = sim.world.get(targetId, EggSacC);
+  if (sac) {
+    sac.hp = Math.max(0, sac.hp - weapon.def.damage); // the egg sac system sees the damage next tick
+    sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage: weapon.def.damage, hp: sac.hp, cover });
     return;
   }
   const health = sim.world.get(targetId, HealthC);
@@ -194,6 +225,12 @@ function attack(
   if (health) health.hp = Math.max(0, health.hp - damage); // vitals downs them next tick
   sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage, hp: health?.hp ?? 0, cover });
   if (weapon.def.ion) stunCrew(sim, targetId);
+  if (weapon.def.knockdownChance && health && health.hp > 0 && sim.rng.chance(weapon.def.knockdownChance)) {
+    const until = sim.tick + Math.round((weapon.def.knockdownSec ?? 2) * TICK_HZ);
+    sim.world.add(targetId, StunC, { until: Math.max(until, sim.world.get(targetId, StunC)?.until ?? 0) });
+    haltCrew(sim, targetId);
+    sim.events.emit({ type: 'crew.knockedDown', crew: targetId, by: id, until });
+  }
 }
 
 /** Unarmed non-fighters run from hostiles they can see: replan every FLEE_REPLAN_TICKS or when the path runs out. */
@@ -206,6 +243,5 @@ function flee(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, threa
   const steps = fleePath(sim, grid, origin(pos), threats);
   if (steps) {
     path.steps = steps;
-    delete path.then;
   }
 }

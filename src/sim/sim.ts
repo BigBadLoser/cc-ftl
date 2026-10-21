@@ -3,7 +3,7 @@ import { CommandQueue, type Command } from './commands';
 import { World } from './ecs';
 import { EventBuffer } from './events';
 import { commandHandlers } from './handlers';
-import { GridMap, newSectorGrid } from './gridMap';
+import { newSectorGrid } from './stamp';
 import type { Sector } from './combat/components';
 import { pipeline } from './pipeline';
 import { Rng } from './rng';
@@ -20,8 +20,6 @@ export class Sim {
   tick = 0;
   rng: Rng;
   world = new World();
-  /** Grid id -> window onto `sector.grid` in the grid's local coordinates (sector refactor: goes away in step 7). */
-  grids = new GridMap(() => this.sector.grid);
   commands = new CommandQueue();
   events = new EventBuffer();
   /** Event system state: flags, reputation, the open decision, queue (see story/). */

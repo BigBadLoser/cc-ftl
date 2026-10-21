@@ -26,14 +26,22 @@ export interface UiStack {
 }
 
 export interface UiInspect {
-  gridId: number;
+  /** The ship (ShipC entity id) the tile belongs to: the `ship` of tile commands. */
+  ship: number;
+  /** Its grid number, for the readout only. */
+  grid: number;
+  /** Sector tile (what commands take). */
   x: number;
   y: number;
+  /** The same tile in its ship's local tiles (from the grid's top-left), for the readouts. */
+  local: { x: number; y: number };
   /** The loose item stack on the tile, or null. */
   stack: UiStack | null;
   structName: string;
   room: number;
   fields: { name: string; value: number }[];
+  /** A player job on the tile (forcing a door...), with its progress, or null. */
+  job: { kind: string; progress: number; work: number } | null;
   selected: boolean;
 }
 
@@ -64,8 +72,8 @@ export interface UiCrew {
   carrying: { item: string; count: number } | null;
   /** Which side: the player's crew, or hostile crew standing on a grid the player's crew is on. */
   side: 'player' | 'enemy';
-  /** Grid they stand on (0 = aboard a shuttle), and a label for where they are. */
-  gridId: number;
+  /** Ship they stand on (ShipC entity id; 0 = aboard a shuttle), and a label for where they are. */
+  ship: number;
   where: string;
   /** Not on the home ship. */
   away: boolean;
@@ -105,10 +113,15 @@ export interface UiFight {
 /** A placed module, for the inspector and the debug panel. */
 export interface UiModule {
   id: number;
+  /** The ship it is on (ShipC entity id): the `ship` of module commands. */
+  ship: number;
   def: string;
   name: string;
+  /** Sector tile of the top-left footprint tile (what commands take). */
   x: number;
   y: number;
+  /** The same tile in its ship's local tiles, for the readouts. */
+  local: { x: number; y: number };
   hp: number;
   maxHp: number;
   priority: number;
@@ -246,7 +259,7 @@ export type UiAlertKind =
   | 'job.missingMaterials' | 'storage.full' | 'production.done'
   | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
   | 'story.notice' | 'story.lead' | 'trade'
-  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost';
+  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard';
 
 /** A weapon module of the player's ship. */
 export interface UiWeapon {
@@ -282,8 +295,7 @@ export interface UiShipModule {
 }
 
 export interface UiShipCombat {
-  gridId: number;
-  /** ShipC entity id (the `ship` of trade commands). */
+  /** ShipC entity id: the key of the ship everywhere in the UI and in commands. */
   ship: number;
   name: string;
   state: 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
@@ -297,7 +309,7 @@ export interface UiShipCombat {
   ftl: number;
   ftlMax: number;
   /** Ship-wide target, with a label. */
-  target: { gridId: number; moduleId: number; label: string } | null;
+  target: { ship: number; moduleId: number; label: string } | null;
   modules: UiShipModule[];
 }
 
@@ -344,18 +356,21 @@ export interface UiShuttle {
 
 export interface UiShuttleAirlock {
   id: number;
-  gridId: number;
+  /** ShipC entity id of the ship it is on, and that ship's name. */
+  shipId: number;
   ship: string;
   working: boolean;
   /** Another shuttle is docked or headed there. */
   busy: boolean;
+  /** The airlock's tile in its ship's local tiles (readout only). */
   x: number;
   y: number;
 }
 
 /** A captured ship. `value` is the hull value estimate (prizeValue); `crewAboard` counts the player's crew still on it (scuttling needs none). */
 export interface UiPrize {
-  gridId: number;
+  /** ShipC entity id. */
+  ship: number;
   name: string;
   from: string;
   value: number;
@@ -386,8 +401,8 @@ export interface UiTradeOffer {
 
 /** A ship or station the player can hail. */
 export interface UiTradePartner {
+  /** The trader entity: the ShipC entity of a ship, a plain trader entity for a station (no ship). Also the UI key of the node. */
   id: number;
-  gridId: number;
   name: string;
   kind: 'ship' | 'station';
   /** Trader kind ('Freighter'), or '' if it has no trade profile. */
@@ -431,13 +446,27 @@ export interface UiTrade {
   deals: UiTradeDeal[];
 }
 
+/** A derelict (a ruined wreck with no crew), for its panel and node tile. */
+export interface UiDerelict {
+  /** Where it came from: its faction, e.g. 'scrapper'. */
+  kind: string;
+  cause: 'combat' | 'decay';
+  /** 0..1 overall integrity. */
+  hull: number;
+  /** Average air on its decks: vacuum, thin or breathable. */
+  air: 'vacuum' | 'thin' | 'breathable';
+  /** A power source still running (emergency lights) or nothing. */
+  power: 'emergency' | 'off';
+  /** Doors still jammed. */
+  jammed: number;
+}
+
 export interface UiShuttles {
   shuttles: UiShuttle[];
   /** Airlocks of other ships a shuttle can dock at. */
   airlocks: UiShuttleAirlock[];
-  /** Other ships a shuttle can hover beside for EVA: grid id and name. */
-  /** Ships a shuttle can hover beside: grid (UI key) and ShipC entity id (the `vehicle.hover` command's `ship`). */
-  targets: { gridId: number; ship: number; name: string }[];
+  /** Ships a shuttle can hover beside: ShipC entity id (the UI key and the `vehicle.hover` command's `ship`) and name. */
+  targets: { ship: number; name: string; derelict?: UiDerelict }[];
   /** Crew on the player's ship who could climb in. */
   roster: UiShuttleCrew[];
   /** The player's vehicle bays (module ids) and whether each is empty. */
@@ -517,10 +546,10 @@ export interface UiApi {
   fabs: Subscribable<UiFab[]>;
   selectedModule: Subscribable<number | null>;
   selectModule(id: number | null): void;
-  /** Another grid (ship or station) picked from the node strip; the selection panel drills into it. */
-  selectedGrid: Subscribable<number | null>;
-  /** Select another grid and move the camera to it (null clears). A negative id is a station (no grid): minus its entity id, no camera move. */
-  selectGrid(gridId: number | null): void;
+  /** Another ship or station picked from the node strip; the selection panel drills into it. */
+  selectedShip: Subscribable<number | null>;
+  /** Select another ship (ShipC entity id) or station (its trader entity id) and move the camera to a ship (null clears). A station has no ship, so no camera move. */
+  selectShip(ship: number | null): void;
   stats: Subscribable<UiStats>;
   alerts: Subscribable<UiAlert[]>;
   /** The open event decision and the last result. */
@@ -535,13 +564,13 @@ export interface UiApi {
   /** Center the camera on a shuttle (any state). */
   focusShuttle(id: number): void;
   /** Show a ship in the combat overlay rectangle (null hides it). */
-  setCombatView(view: { gridId: number; rect: UiRect } | null): void;
+  setCombatView(view: { ship: number; rect: UiRect } | null): void;
   /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
   pickCombat(x: number, y: number): { moduleId: number } | null;
   /** Roof hostile ships (default) or show their interior. */
   setRoofEnemies(on: boolean): void;
   /** Frame the player's ship and a hostile ship (or only the player's ship) in the camera. */
-  focusFight(gridId: number | null): void;
+  focusFight(ship: number | null): void;
   /** Spawn a raider about 30 tiles from the player's ship. */
   spawnRaider(boarders?: boolean): void;
   /** Spawn a procedurally generated enemy of a faction id (random faction if omitted) where a raider would go. */

@@ -25,7 +25,7 @@
 
 {#if m}
   <div data-testid="module-inspector">
-    <PanelHead icon="module" title={m.name} sub="{m.x},{m.y}" {onBack} />
+    <PanelHead icon="module" title={m.name} sub="{m.local.x},{m.local.y}" {onBack} />
     <dl>
       <dt>State</dt><dd data-testid="module-state" class:bad={!m.powered && m.power !== 0}>{stateOf(m)}</dd>
       <dt>Power</dt><dd>{power(m)}</dd>
@@ -48,7 +48,7 @@
     {/if}
     <div class="btns">
       <button class="tile" class:on={m.enabled} title={m.enabled ? 'Enabled (click to disable)' : 'Disabled (click to enable)'} aria-label={m.enabled ? 'Disable' : 'Enable'} data-testid="toggle-enabled" onclick={() => api.dispatch({ type: 'module.setEnabled', id: m.id, enabled: !m.enabled })}><Icon name="power" size={20} /></button>
-      <button class="tile warn" title="Deconstruct" aria-label="Deconstruct" data-testid="deconstruct-module" onclick={() => { api.dispatch({ type: 'job.deconstructModule', gridId: 1, x: m.x, y: m.y }); api.selectModule(null); }}><Icon name="trash" size={20} /></button>
+      <button class="tile warn" title="Deconstruct" aria-label="Deconstruct" data-testid="deconstruct-module" onclick={() => { api.dispatch({ type: 'job.deconstructModule', ship: m.ship, x: m.x, y: m.y }); api.selectModule(null); }}><Icon name="trash" size={20} /></button>
     </div>
   </div>
 {/if}

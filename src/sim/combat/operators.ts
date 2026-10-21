@@ -4,6 +4,7 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { stat, type StatName } from '../stats';
 import { IonC } from './components';
+import { shipIdOf } from '../regions';
 
 export type ConsoleKind = 'weapons' | 'shields' | 'helm';
 
@@ -28,16 +29,16 @@ export function operatorOf(sim: Sim, moduleId: number): number {
     const pos = sim.world.get(job.reservedBy, PositionC);
     const crew = sim.world.get(job.reservedBy, CrewC);
     if (!pos || !crew || crew.activity === 'sleeping' || isIncapacitated(sim, job.reservedBy)) continue;
-    if (isSettled(pos) && pos.x === job.x && pos.y === job.y && pos.gridId === job.gridId) return job.reservedBy;
+    if (isSettled(pos) && pos.x === job.x && pos.y === job.y && shipIdOf(sim, pos) === shipIdOf(sim, job)) return job.reservedBy;
   }
   return 0;
 }
 
 /** A powered console of a kind on a grid that someone is manning: its module and operator. */
-export function mannedConsole(sim: Sim, gridId: number, kind: ConsoleKind): { module: number; crew: number } | null {
+export function mannedConsole(sim: Sim, shipId: number, kind: ConsoleKind): { module: number; crew: number } | null {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId !== gridId || sim.content.modules[m.def]?.console !== kind) continue;
+    if (!m || shipIdOf(sim, m) !== shipId || sim.content.modules[m.def]?.console !== kind) continue;
     if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC)) continue;
     const crew = operatorOf(sim, id);
     if (crew) return { module: id, crew };
@@ -46,8 +47,8 @@ export function mannedConsole(sim: Sim, gridId: number, kind: ConsoleKind): { mo
 }
 
 /** Operator skill level at a console kind of a grid (0 if unmanned). */
-export function operatorSkill(sim: Sim, gridId: number, kind: ConsoleKind): number {
-  const op = mannedConsole(sim, gridId, kind);
+export function operatorSkill(sim: Sim, shipId: number, kind: ConsoleKind): number {
+  const op = mannedConsole(sim, shipId, kind);
   return op ? skillOf(sim, op.crew, SKILL_OF[kind]) : 0;
 }
 

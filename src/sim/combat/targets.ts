@@ -2,11 +2,13 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { WeaponC, type Combat, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
-import { shipOf } from './ships';
+
+import { shipIdOf } from '../regions';
+import { shipById } from './ships';
 
 /** True if the ship can still be shot at (exists, not a fled ship or a prize). Wrecks stay targetable but are not worth it for the AI. */
-export function targetableShip(sim: Sim, gridId: number): boolean {
-  const ship = shipOf(sim, gridId);
+export function targetableShip(sim: Sim, shipId: number): boolean {
+  const ship = shipById(sim, shipId);
   return !!ship && ship.state !== 'fled' && ship.state !== 'prize';
 }
 
@@ -17,8 +19,8 @@ export function targetableVehicle(sim: Sim, id: number): boolean {
 }
 
 /** Module ids on a grid, ascending. */
-export function modulesOnGrid(sim: Sim, gridId: number): number[] {
-  return sim.world.query(ModuleC).filter((i) => sim.world.get(i, ModuleC)?.gridId === gridId) as number[];
+export function modulesOnGrid(sim: Sim, shipId: number): number[] {
+  return sim.world.query(ModuleC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipId) as number[];
 }
 
 /**
@@ -29,15 +31,16 @@ export function modulesOnGrid(sim: Sim, gridId: number): number[] {
 export function resolveTarget(sim: Sim, weaponId: number, combat: Combat): Target | null {
   const t = sim.world.get(weaponId, WeaponC)?.target ?? combat.target;
   if (t?.vehicle) return targetableVehicle(sim, t.vehicle) ? t : null;
-  if (!t || !targetableShip(sim, t.gridId)) return null;
+  const shipId = t ? t.ship : 0;
+  if (!t || !targetableShip(sim, shipId)) return null;
   const m = t.moduleId ? sim.world.get(t.moduleId, ModuleC) : undefined;
-  if (m && m.gridId === t.gridId) return t;
-  return { gridId: t.gridId, moduleId: randomModule(sim, t.gridId) };
+  if (m && shipIdOf(sim, m) === shipId) return t;
+  return { ship: t.ship, moduleId: randomModule(sim, shipId) };
 }
 
 /** A random module of a grid (intact ones first); 0 if it has none. */
-export function randomModule(sim: Sim, gridId: number, filter?: (id: number) => boolean): number {
-  const all = modulesOnGrid(sim, gridId).filter((i) => !filter || filter(i));
+export function randomModule(sim: Sim, shipId: number, filter?: (id: number) => boolean): number {
+  const all = modulesOnGrid(sim, shipId).filter((i) => !filter || filter(i));
   const intact = all.filter((i) => (sim.world.get(i, ModuleC)?.hp ?? 0) > 0);
   const pool = intact.length > 0 ? intact : all;
   return pool.length > 0 ? sim.rng.pick(pool) : 0;

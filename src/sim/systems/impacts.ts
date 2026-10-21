@@ -1,7 +1,7 @@
 import { CombatC, ProjectileC } from '../combat/components';
 import { applyEffects } from '../combat/effects';
 import { gauss } from '../combat/geometry';
-import { shipEntityOf, shipOf } from '../combat/ships';
+import { shipById } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import type { Effect } from '../registry';
@@ -9,6 +9,7 @@ import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { VehicleC } from '../vehicles/components';
 import { damageVehicle, vehicleDefOf } from '../vehicles/lifecycle';
+import { shipIdOf, shipGrid } from '../regions';
 
 /**
  * Resolves projectiles that arrived. Order: target gone -> miss; evasion roll (ship evasion) -> miss; shield
@@ -26,11 +27,11 @@ export function impactSystem(sim: Sim): void {
       hitVehicle(sim, id, p.weapon, p.target.vehicle, def?.effects ?? [], p.x1, p.y1);
       continue;
     }
-    const gridId = p.target.gridId;
-    const ship = shipOf(sim, gridId);
-    const grid = sim.grids.get(gridId);
-    const combat = sim.world.get(shipEntityOf(sim, gridId), CombatC);
-    const base = { projectile: id, weapon: p.weapon, gridId };
+    const shipId = p.target.ship;
+    const ship = shipById(sim, shipId);
+    const grid = shipGrid(sim, shipId);
+    const combat = sim.world.get(shipId, CombatC);
+    const base = { projectile: id, weapon: p.weapon, ship: shipId };
     if (!def || !ship || !grid || !combat || ship.state === 'fled') {
       sim.events.emit({ type: 'projectile.miss', ...base, reason: 'gone', x: p.x1, y: p.y1 });
       continue;
@@ -45,19 +46,19 @@ export function impactSystem(sim: Sim): void {
       continue;
     }
     const mod = sim.world.get(p.target.moduleId, ModuleC);
-    const modDef = mod && mod.gridId === gridId ? sim.content.modules[mod.def] : undefined;
+    const modDef = mod && shipIdOf(sim, mod) === shipId ? sim.content.modules[mod.def] : undefined;
     const aimed = mod && modDef
       ? footprintTiles(modDef, mod.x, mod.y, mod.rot)
-      : [{ x: Math.floor(p.x1 - ship.x), y: Math.floor(p.y1 - ship.y) }];
+      : [{ x: Math.floor(p.x1), y: Math.floor(p.y1) }];
     const aim = sim.rng.pick(aimed);
     const x = aim.x + Math.round(gauss(sim) * p.spread);
     const y = aim.y + Math.round(gauss(sim) * p.spread);
     if (!grid.inBounds(x, y) || grid.get('struct', x, y) === Struct.Space) {
-      sim.events.emit({ type: 'projectile.miss', ...base, reason: 'space', x: ship.x + x + 0.5, y: ship.y + y + 0.5 });
+      sim.events.emit({ type: 'projectile.miss', ...base, reason: 'space', x: x + 0.5, y: y + 0.5 });
       continue;
     }
     sim.events.emit({ type: 'projectile.hit', ...base, x, y, moduleId: grid.get('module', x, y) });
-    applyEffects(sim, { gridId, x, y, projectile: id, weapon: p.weapon }, def.effects);
+    applyEffects(sim, { shipId, x, y, projectile: id, weapon: p.weapon }, def.effects);
   }
 }
 
@@ -69,11 +70,11 @@ function hitVehicle(sim: Sim, projectile: number, weapon: string, vehicle: numbe
   const v = sim.world.get(vehicle, VehicleC);
   const def = v && vehicleDefOf(sim, v);
   if (!v || !def) {
-    sim.events.emit({ type: 'projectile.miss', projectile, weapon, gridId: 0, reason: 'gone', x, y });
+    sim.events.emit({ type: 'projectile.miss', projectile, weapon, ship: 0, reason: 'gone', x, y });
     return;
   }
   if (sim.rng.chance(def.evasion)) {
-    sim.events.emit({ type: 'projectile.miss', projectile, weapon, gridId: 0, reason: 'evaded', x, y });
+    sim.events.emit({ type: 'projectile.miss', projectile, weapon, ship: 0, reason: 'evaded', x, y });
     return;
   }
   let amount = 0;

@@ -15,6 +15,10 @@ import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
 import { createRoofView } from './roofView';
+import { createRuinView } from './ruinView';
+import { createEggSacView } from './eggSacView';
+import { createJamMarks } from './jamMarks';
+import { ShipC } from '../sim/combat/components';
 import type { Livery } from './roofPlating';
 import { ROOF_H, wallTopPx } from './heights';
 import { createTargetMarks } from './targetMarks';
@@ -69,11 +73,13 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   let cutaway: CutawayMode = 'auto';
   let emergency = false;
   let marksOn = false;
+  let wreckEmergency = false;
+  let wreckTick = 0;
   let targeted: ReadonlySet<number> = new Set();
   const inside = () => (roofed ? null : { grid });
   const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK });
   const crewView = createCrewView(world, atlas, L, {
-    target: () => ({ gridId: grid.id }),
+    target: () => ({ shipId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),
     emergency: () => emergency,
     moduleAt: (x, y) => {
@@ -82,11 +88,14 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       const def = m && modules[m.def];
       return m && def ? { m, def } : null;
     },
-    light: () => ({ data: grid.raw('light'), width: grid.width }),
+    light: (x, y) => (grid.inBounds(x, y) ? grid.get('light', x, y) : 0),
     suitAirSec: o.suitAirSec,
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway) });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin });
+  const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency, view);
+  const jamMarks = createJamMarks(grid, atlas, L);
+  const sacView = createEggSacView(grid, world, atlas, L, (x, y, wall) => view.tintAt(x, y, wall));
   const itemView = createItemView(world, atlas, L, items, { target: inside, emergency: () => emergency });
   const fxView = createFxView(atlas, L, { target: inside });
   const particles = createParticles(atlas, L);
@@ -96,7 +105,11 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const wallHeight = () => wallTopPx(roofed ? 'up' : cutaway);
   const damage = createDamageView(grid, L, wallHeight);
   const marks = createTargetMarks(grid, world, modules, L.marks);
-  const applyMode = () => view.setCutaway(roofed ? 'up' : cutaway, !roofed);
+  const applyMode = () => {
+    view.setCutaway(roofed ? 'up' : cutaway, !roofed);
+    ruinView.setLevel(wallLevel(roofed ? 'up' : cutaway));
+    ruinView.setRoofed(roofed);
+  };
   applyMode();
   roof.setVisible(roofed);
   turretView.setRoofed(roofed);
@@ -106,8 +119,19 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     layers: L,
     view,
     update(dt) {
-      emergency = shipHasPower(world, modules, grid.id) === false;
+      // A wreck shows only emergency lighting (the sim scales its lights down), so dark tiles pulse red.
+      emergency = shipHasPower(world, modules, grid) === false || world.get(grid.id, ShipC)?.state === "wreck";
+      if (world.get(grid.id, ShipC)?.ruin && (wreckTick++ & 15) === 0) {
+        wreckEmergency = false;
+        for (const id of world.query(ModuleC)) {
+          const m = world.get(id, ModuleC);
+          if (m && modules[m.def]?.light && grid.inBounds(m.x, m.y) && m.powered && m.hp > 0) wreckEmergency = true;
+        }
+      }
       view.update();
+      ruinView.update();
+      jamMarks.update();
+      sacView.update();
       moduleView.update();
       itemView.update();
       fxView.update();
@@ -137,13 +161,21 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       targeted = t;
     },
     setSelectedCrew: (id) => crewView.setSelectedCrew(id),
-    pickCrew: (ax, ay) => crewView.pick(ax, ay),
+    pickCrew: (ax, ay) => {
+      // Crew (aliens included) and live egg sacs (attack targets): the one nearest the viewer wins. Hidden when roofed.
+      const c = crewView.pick(ax, ay);
+      const s = roofed ? null : sacView.pick(ax, ay);
+      return c && s ? (s.y > c.y ? s : c) : (c ?? s);
+    },
     pickModule: (ax, ay) => moduleView.pick(ax, ay),
     sprites: () => particles.count() + L.floor.children.reduce((n, c) => n + c.children.length, 0) + L.sorted.children.length + L.decal.children.length,
     dispose() {
       marks.dispose();
       damage.dispose();
       roof.dispose();
+      ruinView.dispose();
+      jamMarks.dispose();
+      sacView.dispose();
       turretView.dispose();
       crewView.dispose();
       moduleView.dispose();

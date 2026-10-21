@@ -2,6 +2,7 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { BedClaimC } from './components';
 import { findPath, type Tile } from './pathfind';
+import { shipIdOf } from '../regions';
 
 /** A reachable free bed and the steps to it. */
 export interface BedPlan {
@@ -13,13 +14,13 @@ export interface BedPlan {
  * The nearest unreserved, intact bed module on a grid (fewest steps, then lowest id). With
  * `adjacent`, the path ends next to the bed (for carriers) instead of on it.
  */
-export function findFreeBed(sim: Sim, gridId: number, from: Tile, adjacent = false): BedPlan | null {
+export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false): BedPlan | null {
   let best: BedPlan | null = null;
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.gridId !== gridId || m.reservedBy !== 0 || m.hp <= 0) continue;
+    if (!m || shipIdOf(sim, m) !== shipId || m.reservedBy !== 0 || m.hp <= 0) continue;
     if (!sim.content.modules[m.def]?.bed) continue;
-    const steps = findPath(sim, gridId, from, { x: m.x, y: m.y, adjacent });
+    const steps = findPath(sim, shipId, from, { x: m.x, y: m.y, adjacent });
     if (steps && (!best || steps.length < best.steps.length)) best = { bed: id, steps };
   }
   return best;

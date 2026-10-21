@@ -1,3 +1,4 @@
+
 import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
 import { factionsHostile, isAiFaction } from '../combat/factions';
 import { modulesOnGrid, randomModule } from '../combat/targets';
@@ -20,10 +21,10 @@ export function enemyAiSystem(sim: Sim): void {
     const combat = sim.world.get(id, CombatC);
     if (!ship || !combat || !isAiFaction(ship.faction) || ship.state !== 'active' || !sim.sector.inCombat) continue;
     if (ship.integrity < FLEE_BELOW && combat.ftl >= FTL_CHARGE_SEC) {
-      sim.enqueue({ type: 'combat.flee', gridId: ship.gridId });
+      sim.enqueue({ type: 'combat.flee', ship: id });
       continue;
     }
-    if (combat.hold) sim.enqueue({ type: 'combat.setHold', gridId: ship.gridId, hold: false });
+    if (combat.hold) sim.enqueue({ type: 'combat.setHold', ship: id, hold: false });
     if (combat.aiTimer > 0) {
       combat.aiTimer--;
       continue;
@@ -33,7 +34,7 @@ export function enemyAiSystem(sim: Sim): void {
       // A foe shuttle in flight is shot down first (all weapons; the ship-wide target).
       if (combat.target?.vehicle !== fv) {
         combat.aiTimer = AI_RETARGET_TICKS;
-        sim.enqueue({ type: 'combat.setTarget', shipGridId: ship.gridId, weaponId: null, targetGridId: 0, targetModuleId: 0, targetVehicle: fv });
+        sim.enqueue({ type: 'combat.setTarget', ship: id, weaponId: null, targetShip: 0, targetModuleId: 0, targetVehicle: fv });
       }
       continue;
     }
@@ -41,9 +42,9 @@ export function enemyAiSystem(sim: Sim): void {
     if (!foe) continue;
     const t = combat.target;
     const hp = t && sim.world.get(t.moduleId, ModuleC)?.hp;
-    if (t && t.gridId === foe && t.moduleId !== 0 && (hp ?? 0) > 0) continue;
+    if (t && t.ship === foe && t.moduleId !== 0 && (hp ?? 0) > 0) continue;
     combat.aiTimer = AI_RETARGET_TICKS;
-    sim.enqueue({ type: 'combat.setTarget', shipGridId: ship.gridId, weaponId: null, targetGridId: foe, targetModuleId: pick(sim, combat, foe) });
+    sim.enqueue({ type: 'combat.setTarget', ship: id, weaponId: null, targetShip: foe, targetModuleId: pick(sim, combat, foe) });
   }
 }
 
@@ -56,31 +57,31 @@ function flyingFoeVehicle(sim: Sim, faction: string): number {
   return 0;
 }
 
-/** Grid id of the first ship still in play at war with `faction` (a player ship first), or 0. */
+/** Ship id of the first ship still in play at war with `faction` (a player ship first), or 0. */
 function firstFoe(sim: Sim, faction: Ship['faction']): number {
   let other = 0;
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
     if (!s || (s.state !== 'active' && s.state !== 'disabled') || !factionsHostile(faction, s.faction)) continue;
-    if (s.faction === 'player') return s.gridId;
-    other ||= s.gridId;
+    if (s.faction === 'player') return id;
+    other ||= id;
   }
   return other;
 }
 
-function pick(sim: Sim, combat: Combat, gridId: number): number {
+function pick(sim: Sim, combat: Combat, shipId: number): number {
   const has = (key: 'weapon' | 'shieldGen') => (mid: number): boolean => {
     const m = sim.world.get(mid, ModuleC);
     return !!m && m.hp > 0 && !!sim.content.modules[m.def]?.[key];
   };
   if (combat.doctrine === 'weapons') {
-    const id = randomModule(sim, gridId, has('weapon'));
+    const id = randomModule(sim, shipId, has('weapon'));
     if (id && has('weapon')(id)) return id;
   } else if (combat.doctrine === 'shields') {
-    const id = randomModule(sim, gridId, has('shieldGen'));
+    const id = randomModule(sim, shipId, has('shieldGen'));
     if (id && has('shieldGen')(id)) return id;
   } else {
-    const live = modulesOnGrid(sim, gridId).filter((mid) => (sim.world.get(mid, ModuleC)?.hp ?? 0) > 0);
+    const live = modulesOnGrid(sim, shipId).filter((mid) => (sim.world.get(mid, ModuleC)?.hp ?? 0) > 0);
     const weight = (mid: number): number => sim.content.modules[sim.world.get(mid, ModuleC)?.def ?? '']?.maxHp ?? 1;
     const total = live.reduce((s, mid) => s + weight(mid), 0);
     let roll = sim.rng.next() * total;
@@ -89,5 +90,5 @@ function pick(sim: Sim, combat: Combat, gridId: number): number {
       if (roll < 0) return mid;
     }
   }
-  return randomModule(sim, gridId);
+  return randomModule(sim, shipId);
 }

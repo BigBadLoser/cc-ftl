@@ -1,3 +1,4 @@
+import { shipIdOf } from '../sim/regions';
 import { AllegianceC, CrewC, DeadC, DownedC, HealthC, PositionC, PrisonerC, PrizeC, ShipC, prizeValue, type Sim } from '../sim';
 import type { UiPrize } from '../ui/api';
 
@@ -12,7 +13,7 @@ export function buildPrizes(sim: Sim): UiPrize[] {
     let aboard = 0;
     for (const c of sim.world.query(CrewC, PositionC)) {
       const crew = sim.world.get(c, CrewC);
-      if (!crew || sim.world.get(c, PositionC)?.gridId !== ship.gridId || sim.world.has(c, DeadC)) continue;
+      if (!crew || shipIdOf(sim, sim.world.get(c, PositionC)) !== id || sim.world.has(c, DeadC)) continue;
       if (sim.world.has(c, PrisonerC)) {
         const hp = sim.world.get(c, HealthC);
         prisoners.push({
@@ -21,7 +22,7 @@ export function buildPrizes(sim: Sim): UiPrize[] {
         });
       } else if (sim.world.get(c, AllegianceC)?.faction === 'player') aboard++;
     }
-    out.push({ gridId: ship.gridId, name: ship.name, from: prize.from, value: prizeValue(sim, ship.gridId), prisoners, crewAboard: aboard });
+    out.push({ ship: id, name: ship.name, from: prize.from, value: prizeValue(sim, id), prisoners, crewAboard: aboard });
   }
   return out;
 }

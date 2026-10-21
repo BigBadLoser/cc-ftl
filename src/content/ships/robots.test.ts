@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AllegianceC, CoreLinkC, CrewC, DeadC, DownedC, DraftedC, EquipC, HackedC, HealthC, InertC, ModuleC, PathC, PositionC,
-  PrisonerC, ShipC, StunC, WreckC, deserialize, isSubdued, newGame, serialize, shipEntityOf, storageCount, StorageC,
-  WeaponC, type ContentRegistry, type ModuleDef, type Sim, type SimEvent,
-} from '../../sim';
+import { AllegianceC, CoreLinkC, CrewC, DeadC, DownedC, DraftedC, EquipC, HackedC, HealthC, InertC, ModuleC, PathC, PositionC, PrisonerC, ShipC, StunC, WreckC, deserialize, isSubdued, newGame, serialize, storageCount, StorageC, WeaponC, type ContentRegistry, type ModuleDef, type Sim, type SimEvent } from '../../sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { wantsToSurrender } from '../../sim/fight/surrender';
 import { content } from '../index';
+import { shipIdOf, shipGrid } from '../../sim/regions';
+import { shipIds } from '../../sim/regions';
+
+/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
+const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -18,14 +19,19 @@ const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[]
 };
 const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
-const crewOn = (sim: Sim, gridId: number): number[] => sim.world.query(CrewC).filter((i) => sim.world.get(i, PositionC)?.gridId === gridId);
-const robotsOn = (sim: Sim, gridId: number): number[] => crewOn(sim, gridId).filter((i) => sim.world.get(i, CrewC)!.species.startsWith('species.robot'));
-const modulesOf = (sim: Sim, gridId: number, def: string): number[] =>
-  sim.world.query(ModuleC).filter((i) => sim.world.get(i, ModuleC)!.gridId === gridId && sim.world.get(i, ModuleC)!.def === def);
-const ship = (sim: Sim, gridId: number) => sim.world.get(shipEntityOf(sim, gridId), ShipC)!;
-const teleport = (sim: Sim, id: number, gridId: number, x: number, y: number): void => {
-  sim.world.add(id, PositionC, { gridId, x, y, toX: x, toY: y, progress: 0, facing: 0 });
+const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, shipId));
+const robotsOn = (sim: Sim, shipId: number): number[] => crewOn(sim, shipId).filter((i) => sim.world.get(i, CrewC)!.species.startsWith('species.robot'));
+const modulesOf = (sim: Sim, shipId: number, def: string): number[] =>
+  sim.world.query(ModuleC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId) && sim.world.get(i, ModuleC)!.def === def);
+const ship = (sim: Sim, shipId: number) => sim.world.get(nth(sim, shipId), ShipC)!;
+const teleport = (sim: Sim, id: number, shipId: number, x: number, y: number): void => {
+  sim.world.add(id, PositionC, { x, y, toX: x, toY: y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
+};
+/** Sector tile of tile (lx, ly) of a grid, in its local tiles (from the grid's top-left). */
+const local = (sim: Sim, shipId: number, lx: number, ly: number): [number, number] => {
+  const g = shipGrid(sim, nth(sim, shipId))!;
+  return [g.x0 + lx, g.y0 + ly];
 };
 const core = (sim: Sim): number => modulesOf(sim, 2, 'module.aiCore')[0]!;
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
@@ -35,7 +41,7 @@ function setup(seed = 1, c: ContentRegistry = content): Sim {
   const sim = newGame(seed, c);
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.rogueShipyard', x: 100, y: 50 });
   run(sim, 3);
-  for (const i of sim.world.query(WeaponC)) if (sim.world.get(i, ModuleC)!.gridId === 2) sim.world.get(i, ModuleC)!.enabled = false;
+  for (const i of sim.world.query(WeaponC)) if (shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[1] as number) sim.world.get(i, ModuleC)!.enabled = false;
   return sim;
 }
 /** A tile of grid 1 a player crew member stands on (walkable floor). */
@@ -43,16 +49,16 @@ const playerTile = (sim: Sim): { x: number; y: number } => {
   const p = sim.world.get(crewOn(sim, 1)[0]!, PositionC)!;
   return { x: p.x, y: p.y };
 };
-function spawnRobot(sim: Sim, role = 'role.robot_worker', gridId = 1, at = playerTile(sim)): number {
-  sim.enqueue({ type: 'debug.spawnCrew', gridId, x: at.x, y: at.y, role });
+function spawnRobot(sim: Sim, role = 'role.robot_worker', shipId = 1, at = playerTile(sim)): number {
+  sim.enqueue({ type: 'debug.spawnCrew', ship: nth(sim, shipId), x: at.x, y: at.y, role });
   run(sim, 1);
   return Math.max(...sim.world.query(CrewC));
 }
 /** Every tile of a grid to vacuum (no air, deep cold). */
-function vent(sim: Sim, gridId: number): void {
-  const g = sim.grids.get(gridId)!;
-  for (let y = 0; y < g.height; y++) {
-    for (let x = 0; x < g.width; x++) {
+function vent(sim: Sim, shipId: number): void {
+  const g = shipGrid(sim, nth(sim, shipId))!;
+  for (let y = g.y0; y < g.y0 + g.height; y++) {
+    for (let x = g.x0; x < g.x0 + g.width; x++) {
       g.set('o2', x, y, 0);
       g.set('co2', x, y, 0);
       g.set('temp', x, y, -150);
@@ -89,7 +95,7 @@ describe('robot species', () => {
     const robot = spawnRobot(sim);
     sim.world.add(robot, DraftedC, { target: null }); // stands still to be mended
     sim.world.get(robot, HealthC)!.hp = 50;
-    const metal = (): number => sim.world.query(StorageC).filter((s) => sim.world.get(s, ModuleC)!.gridId === 1)
+    const metal = (): number => sim.world.query(StorageC).filter((s) => shipIdOf(sim, sim.world.get(s, ModuleC)) === shipIds(sim)[0] as number)
       .reduce((n, s) => n + storageCount(sim, s, 'item.metal'), 0);
     const before = metal();
     const out = run(sim, 2400, () => sim.world.get(robot, HealthC)!.hp >= 120);
@@ -134,7 +140,7 @@ describe('robot species', () => {
     const human = crewOn(sim, 1)[0]!;
     const at = sim.world.get(robot, PositionC)!;
     teleport(sim, human, 2, at.x, at.y);
-    applyEffects(sim, { gridId: 2, x: at.x, y: at.y, projectile: 0, weapon: 'weapon.ion' }, content.weapons['weapon.ion'].effects);
+    applyEffects(sim, { shipId: nth(sim, 2), x: at.x, y: at.y, projectile: 0, weapon: 'weapon.ion' }, content.weapons['weapon.ion'].effects);
     expect(sim.world.has(robot, StunC)).toBe(true);
     expect(sim.world.has(human, StunC)).toBe(false);
     expect(isSubdued(sim, robot)).toBe(false); // stunned is not taken
@@ -144,7 +150,7 @@ describe('robot species', () => {
     expect(sim.world.get(robot, PositionC)).toMatchObject({ x: pos.x, y: pos.y });
     run(sim, 10);
     expect(sim.world.has(robot, StunC)).toBe(false);
-    applyEffects(sim, { gridId: 2, x: at.x + 3, y: at.y, projectile: 0, weapon: 'emp' }, [{ type: 'emp', seconds: 5, radius: 3 }]);
+    applyEffects(sim, { shipId: nth(sim, 2), x: at.x + 3, y: at.y, projectile: 0, weapon: 'emp' }, [{ type: 'emp', seconds: 5, radius: 3 }]);
     expect(sim.world.has(robot, StunC)).toBe(true);
   });
 });
@@ -156,7 +162,7 @@ describe('AI control and capture', () => {
     expect(robots).toHaveLength(3);
     for (const r of robots) {
       expect(sim.world.get(r, AllegianceC)!.faction).toBe('rogue');
-      expect(sim.world.get(r, CoreLinkC)!.gridId).toBe(2);
+      expect(sim.world.get(r, CoreLinkC)!.ship).toBe(nth(sim, 2));
       expect(sim.world.has(r, InertC)).toBe(false);
     }
     sim.world.get(core(sim), ModuleC)!.enabled = false;
@@ -184,7 +190,7 @@ describe('AI control and capture', () => {
     c.hp = 0;
     const out = run(sim, 400, () => ship(sim, 2).state === 'prize');
     expect(ship(sim, 2)).toMatchObject({ state: 'prize', faction: 'player' });
-    expect(of(out, 'ship.captured')).toEqual([{ type: 'ship.captured', gridId: 2, by: 'player', from: 'rogue' }]);
+    expect(of(out, 'ship.captured')).toEqual([{ type: 'ship.captured', ship: nth(sim, 2), by: 'player', from: 'rogue' }]);
   });
 
   it('inert robots are taken prisoner on capture and stay down', () => {
@@ -223,7 +229,7 @@ describe('AI control and capture', () => {
     }
     sim.enqueue({ type: 'crew.hack', id: crewOn(sim, 1)[0]!, module: core(sim) });
     expect(of(run(sim, 1), 'command.rejected')).toHaveLength(1); // held: nothing to hack
-    teleport(sim, eng, 2, 15, 5); // the hacker walks away: the hold breaks
+    teleport(sim, eng, 2, ...local(sim, 2, 15, 5)); // the hacker walks away: the hold breaks
     run(sim, 2);
     expect(sim.world.get(core(sim), HackedC)!.hacker).toBe(0);
     for (const r of robots) {
@@ -253,7 +259,7 @@ describe('robot fabricator', () => {
     expect(made).toHaveLength(2);
     expect(robotsOn(sim, 2)).toHaveLength(start + 2);
     expect(made.map((r) => roleOf(sim, r))).toEqual(['role.robot_worker', 'role.robot_security']);
-    for (const r of made) expect(sim.world.get(r, CoreLinkC)!.gridId).toBe(2);
+    for (const r of made) expect(sim.world.get(r, CoreLinkC)!.ship).toBe(nth(sim, 2));
     sim.world.get(made[0]!, HealthC)!.hp = 0; // wrecked: the slot frees up
     expect(of(run(sim, 60), 'robot.fabricated')).toHaveLength(1);
     sim.world.get(core(sim), ModuleC)!.enabled = false;
@@ -274,10 +280,10 @@ describe('determinism and saves', () => {
   /** A boarding party in a firefight with the robots, the core live, the fabricator running. */
   function fight(seed: number): Sim {
     const sim = setup(seed);
-    for (const i of sim.world.query(WeaponC)) if (sim.world.get(i, ModuleC)!.gridId === 2) sim.world.get(i, ModuleC)!.enabled = true;
+    for (const i of sim.world.query(WeaponC)) if (shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[1] as number) sim.world.get(i, ModuleC)!.enabled = true;
     const party = crewOn(sim, 1).slice(0, 3);
     party.forEach((p, i) => {
-      teleport(sim, p, 2, 9, 6 + i);
+      teleport(sim, p, 2, ...local(sim, 2, 9, 6 + i));
       sim.world.add(p, EquipC, { weapon: i === 0 ? 'item.ion_pistol' : 'item.rifle' });
       sim.world.add(p, DraftedC, { target: null });
     });

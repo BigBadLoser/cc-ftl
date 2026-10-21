@@ -1,12 +1,12 @@
 import type { World } from '../sim/ecs';
 import type { Module } from '../sim/modules/components';
 import { hullOutward, hullSide } from '../sim/modules/footprint';
-import { airlockTiles } from '../sim/portals/airlock';
+import { airlockTiles } from '../sim/modules/airlock';
 import type { ModuleDef } from '../sim/registry';
 import { TICK_HZ } from '../sim/time';
 import { cargoCount } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
-import { AirlockC, type Airlock } from '../sim/portals/components';
+import { AirlockC, type Airlock } from '../sim/modules/airlock';
 import type { ModuleLayer } from './moduleArt';
 import { DOCK_CLAMP_DELAY_MS } from './dockSequence';
 import { BAY_FRAME_MS } from './vehicleBayArt';

@@ -1,7 +1,6 @@
 import type { QueuedCommand } from './commands';
 import type { Sector } from './combat/components';
 import { World, type WorldData } from './ecs';
-import type { GridRect } from './gridMap';
 import type { ContentRegistry } from './registry';
 import { SectorGrid, type SectorGridData } from './sectorGrid';
 import { Sim } from './sim';
@@ -15,8 +14,17 @@ import { newTrade, type TradeState } from './trade/types';
  * grid's window rectangle.
  * v14 (step 8): vehicles keep position, heading and altitude in `BodyC`; `VehicleC.homeShip` and `hover` are ShipC ids;
  * `EvaFloatC.sx/sy` is the hatch point in sector tiles.
+ * v15 (step 6, the coordinate flip): every component position (crew, paths, modules, jobs, items, ...) is a sector tile;
+ * the shape is unchanged but the meaning is not, so v14 saves are refused.
+ * v16 (step 7a): `ItemStack` drops `shipId` (the owning ship is read from the `ship` layer at the stack's tile).
+ * v17/v18 (steps 7b, 7b2): module, job, drafted and position drop `shipId`.
+ * v19 (step 7c): `Target.ship`, `Projectile.fromShip` and `CoreLink.ship` are ShipC entity ids (were grid ids).
+ * v20 (step 7d): no grid windows. `grids` (the window rectangles) is gone from the save and `ShipC.gridId` with it: a ship is its
+ * ShipC entity id and its rectangle is the ShipC x, y, width, height.
+ * v22: cargo containers (`ContainerC`; a detached one is a free BodyC entity with its StorageC and no ModuleC).
+ * v23: `ShipC.ruin` (a derelict's dressing data for the renderer: breach, decal and hook art, module art overrides).
  */
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 24;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -25,8 +33,6 @@ export interface SaveData {
   tick: number;
   rng: number;
   world: WorldData;
-  /** Each grid's window onto the sector grid, sorted by id. */
-  grids: GridRect[];
   sector: Omit<Sector, 'grid'> & { grid: SectorGridData };
   /** Event system state. Optional: saves from before it existed load with a fresh one (no version bump needed). */
   story?: StoryState;
@@ -43,7 +49,6 @@ export function serialize(sim: Sim): string {
     tick: sim.tick,
     rng: sim.rng.getState(),
     world: sim.world.serialize(),
-    grids: sim.grids.rects(),
     sector: { ...sim.sector, grid: sim.sector.grid.serialize() },
     story: sim.story,
     trade: sim.trade,
@@ -67,7 +72,6 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.rng.setState(data.rng);
   sim.world = World.deserialize(data.world);
   sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
-  sim.grids.restore(data.grids);
   sim.story = { ...newStory(data.seed), ...data.story };
   sim.trade = { ...newTrade(), ...data.trade };
   sim.commands.setPending(data.pending);

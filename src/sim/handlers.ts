@@ -1,13 +1,14 @@
 import { MarkerC } from './components';
+
 import type { Command } from './commands';
 import { captureHandlers } from './capture/handlers';
 import { combatHandlers } from './combat/handlers';
+import { containerHandlers } from './containers/handlers';
 import { crewHandlers } from './crew/handlers';
 import { evaHandlers } from './eva/handlers';
 import { fightHandlers } from './fight/handlers';
 import { itemHandlers } from './items/handlers';
 import { moduleHandlers } from './modules/handlers';
-import { portalHandlers } from './portals/handlers';
 import { robotHandlers } from './robots/handlers';
 import { storyHandlers } from './story/handlers';
 import { tradeHandlers } from './trade/handlers';
@@ -15,6 +16,7 @@ import { vehicleHandlers } from './vehicles/handlers';
 import { FIRE_START_INTENSITY } from './tuning';
 import { Struct, writeStruct } from './structure';
 import type { Sim } from './sim';
+import { shipGrid } from './regions';
 
 type Handler<T extends Command['type']> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
@@ -25,8 +27,8 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...combatHandlers,
   ...captureHandlers,
   ...moduleHandlers,
+  ...containerHandlers,
   ...itemHandlers,
-  ...portalHandlers,
   ...evaHandlers,
   ...vehicleHandlers,
   ...robotHandlers,
@@ -39,20 +41,20 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
     sim.events.emit({ type: 'debug.markerSpawned', entity, x: cmd.x, y: cmd.y });
   },
   'debug.setStruct': (sim, cmd) => {
-    const grid = sim.grids.get(cmd.gridId);
+    const grid = shipGrid(sim, cmd.ship);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y)) return;
     if (!Object.values(Struct).includes(cmd.kind as never)) return;
     writeStruct(grid, cmd.x, cmd.y, cmd.kind);
   },
   'debug.ignite': (sim, cmd) => {
-    const grid = sim.grids.get(cmd.gridId);
+    const grid = shipGrid(sim, cmd.ship);
     if (!grid?.has('fire') || !grid.inBounds(cmd.x, cmd.y)) return rejectCmd(sim, cmd.type, 'outOfBounds');
     const kind = grid.get('struct', cmd.x, cmd.y);
     if (kind !== Struct.Floor && kind !== Struct.Door) return rejectCmd(sim, cmd.type, 'notBurnable');
     if (grid.get('fire', cmd.x, cmd.y) < FIRE_START_INTENSITY) grid.set('fire', cmd.x, cmd.y, FIRE_START_INTENSITY);
   },
   'debug.setField': (sim, cmd) => {
-    const grid = sim.grids.get(cmd.gridId);
+    const grid = shipGrid(sim, cmd.ship);
     const range = DEBUG_FIELDS[cmd.field];
     if (!grid || !range || !grid.has(cmd.field)) return rejectCmd(sim, cmd.type, 'badField');
     if (!grid.inBounds(cmd.x, cmd.y)) return rejectCmd(sim, cmd.type, 'outOfBounds');

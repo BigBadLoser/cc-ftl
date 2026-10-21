@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { ModuleC, PointDefenseC, newGame, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
+import { shipIdOf } from '../../sim/regions';
+import { shipIds } from '../../sim/regions';
+
+/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
+const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 type Mod = NonNullable<ShipTemplate['modules']>[number];
 
@@ -36,8 +41,8 @@ function intercepts(template: ShipTemplate, seed = 1): { fired: number; hit: num
   const sim = newGame(seed, reg, 'ship.def');
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.shoot', x: 100, y: 50 });
   sim.step();
-  const target = [...sim.world.query(ModuleC)].find((i) => sim.world.get(i, ModuleC)!.gridId === 1)!;
-  sim.enqueue({ type: 'combat.setTarget', shipGridId: 2, weaponId: null, targetGridId: 1, targetModuleId: target });
+  const target = [...sim.world.query(ModuleC)].find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number)!;
+  sim.enqueue({ type: 'combat.setTarget', ship: nth(sim, 2), weaponId: null, targetShip: nth(sim, 1), targetModuleId: target });
   const events: SimEvent[] = [];
   for (let i = 0; i < 20 * 120; i++) { sim.step(); events.push(...sim.events.drain()); }
   return {

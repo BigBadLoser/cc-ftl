@@ -8,7 +8,7 @@ import { createCamera, type Camera } from './camera';
 import { ROOF_H } from './heights';
 import { iso, TILE_H, TILE_W } from './iso';
 import { isTargetable } from './moduleArt';
-import { localTileAt } from './scenePick';
+import { sectorTileAt } from './scenePick';
 import type { Origin } from './sectorPos';
 
 /** Where the combat overlay shows the enemy ship: a rectangle of the canvas in CSS px. */
@@ -30,11 +30,11 @@ function fitScale(boxW: number, boxH: number, spanW: number, spanH: number): num
 export interface CombatPassHost {
   world: World;
   modules: Readonly<Record<string, ModuleDef>>;
-  ship(gridId: number): Ship | undefined;
-  grid(gridId: number): Grid | undefined;
-  origin(gridId: number): Origin;
+  ship(shipId: number): Ship | undefined;
+  grid(shipId: number): Grid | undefined;
+  origin(shipId: number): Origin;
   /** True if the shown region is roofed (the view is lifted to the roof top). */
-  roofed(gridId: number): boolean;
+  roofed(shipId: number): boolean;
   /** Device px per CSS px of the canvas. */
   ratio(): number;
   /**
@@ -52,7 +52,7 @@ export interface CombatPassHost {
 export interface CombatPass {
   /** The panel's sprite: add it to the stage above the world. */
   readonly sprite: Sprite;
-  set(view: { gridId: number; rect: CombatViewRect } | null): void;
+  set(view: { shipId: number; rect: CombatViewRect } | null): void;
   /** The region shown, or null. */
   target(): number | null;
   /** Render pass B (before the main pass). */
@@ -67,12 +67,12 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
   const sprite = new Sprite();
   sprite.visible = false;
   let rt: RenderTexture | null = null;
-  let view: { gridId: number; rect: CombatViewRect } | null = null;
+  let view: { shipId: number; rect: CombatViewRect } | null = null;
   let geom: { x: number; y: number; w: number; h: number; lift: number } | null = null;
 
   function shown(): { ship: Ship; grid: Grid } | null {
-    const ship = view && h.ship(view.gridId);
-    const grid = view && h.grid(view.gridId);
+    const ship = view && h.ship(view.shipId);
+    const grid = view && h.grid(view.shipId);
     return ship && grid && ship.state !== 'fled' ? { ship, grid } : null;
   }
 
@@ -82,7 +82,7 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
       view = v;
       if (!v) geom = null;
     },
-    target: () => (shown() && view ? view.gridId : null),
+    target: () => (shown() && view ? view.shipId : null),
     render(gl, stage) {
       const s = shown();
       if (!s || !view) {
@@ -95,11 +95,11 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
       const y = Math.round(view.rect.y * k);
       const w = Math.max(1, Math.round(view.rect.w * k));
       const ht = Math.max(1, Math.round(view.rect.h * k));
-      const lift = h.roofed(view.gridId) ? ROOF_H : 0;
+      const lift = h.roofed(view.shipId) ? ROOF_H : 0;
       const { ship } = s;
       const spanW = (ship.width + ship.height) * (TILE_W / 2) + TILE_W;
       const spanH = (ship.width + ship.height) * (TILE_H / 2) + TILE_H * 2 + lift;
-      const o = h.origin(view.gridId);
+      const o = h.origin(view.shipId);
       const c = iso(o.x + ship.width / 2 - 0.5, o.y + ship.height / 2 - 0.5);
       // Device px straight in (ratio 1): the camera's canvas is the panel rectangle.
       cam.resize(w, ht, 1);
@@ -112,21 +112,21 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
         sprite.texture = rt;
       }
       sprite.visible = false;
-      h.place(cam, view.gridId);
+      h.place(cam, view.shipId);
       gl.render({ container: stage, target: rt, clear: true, clearColor: PANEL_BG });
       sprite.position.set(x, y);
       sprite.visible = true;
     },
     pick(sx, sy) {
       const g = geom;
-      const grid = view && h.grid(view.gridId);
+      const grid = view && h.grid(view.shipId);
       if (!g || !view || !grid) return null;
       const k = h.ratio();
       const dx = sx * k - g.x;
       const dy = sy * k - g.y;
       if (dx < 0 || dy < 0 || dx >= g.w || dy >= g.h) return null;
       const a = cam.toArt(dx, dy);
-      const t = localTileAt(h.origin(view.gridId), { x: a.x, y: a.y + g.lift });
+      const t = sectorTileAt({ x: a.x, y: a.y + g.lift });
       if (!grid.inBounds(t.x, t.y)) return null;
       // The nearest targetable module within a tile (tiles are small on a phone).
       const targetable = (def: string) => { const md = h.modules[def]; return !!md && isTargetable(md); };
