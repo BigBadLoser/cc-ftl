@@ -6,7 +6,8 @@
   import StarmapPanel from './StarmapPanel.svelte';
   import { fade } from 'svelte/transition';
   import StarmapInfo from './StarmapInfo.svelte';
-  import StarmapOuter from './StarmapOuter.svelte';
+  import StarmapGalaxy from './StarmapGalaxy.svelte';
+  import StarmapRegion from './StarmapRegion.svelte';
   import StarmapSector from './StarmapSector.svelte';
 
   let { api, onClose, onSlide }: { api: UiApi; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
@@ -48,11 +49,7 @@
     if (!map) return;
     if (n === 1) return focusSector(map.currentSector);
     const sec = sectorById.get(map.currentSector);
-    if (sec) {
-      cx = sec.x;
-      cy = sec.y;
-    }
-    s = Math.min(w, h) / LEVELS[n - 1]!.span;
+    flyTo(sec?.x ?? cx, sec?.y ?? cy, Math.min(w, h) / LEVELS[n - 1]!.span);
   }
   const pickedInfo = $derived.by(() => {
     if (!map || !picked) return null;
@@ -84,22 +81,34 @@
         `${reg.sectors} sectors${reg.current ? ' · you are here' : ''}`,
       ],
       zoom: () => {
-        cx = reg.x;
-        cy = reg.y;
-        s = Math.min(w, h) / LEVELS[1].span;
+        flyTo(reg.x, reg.y, Math.min(w, h) / LEVELS[1].span);
         picked = null;
       },
     };
   });
   const seenFactions = $derived(map ? map.factions.filter((f) => map!.sectors.some((x) => x.known && x.faction === f.id)) : []);
 
-  /** Centre on a sector so it fills most of the shorter side (the default view: your sector). */
-  function focusSector(id: string) {
+  /** Centre on a sector so it fills most of the shorter side (the default view: your sector); `instant` skips the glide. */
+  function focusSector(id: string, instant = false) {
     const sec = sectorById.get(id);
-    if (!sec) return;
-    cx = sec.x;
-    cy = sec.y;
-    s = (Math.min(w, h) * 0.62) / (2 * sec.r + 60);
+    if (sec) flyTo(sec.x, sec.y, (Math.min(w, h) * 0.62) / (2 * sec.r + 60), instant ? 0 : undefined);
+  }
+  /** Glide the camera to (x, y) at scale `to` over `ms` (zoom eased on a log scale, so it feels even); any drag stops it. */
+  let camRaf = 0;
+  function flyTo(x: number, y: number, to: number, ms = 450) {
+    cancelAnimationFrame(camRaf);
+    const from = { cx, cy, s };
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const t = ms > 0 ? Math.min(1, (now - t0) / ms) : 1;
+      const e = 1 - (1 - t) ** 3;
+      cx = from.cx + (x - from.cx) * e;
+      cy = from.cy + (y - from.cy) * e;
+      s = from.s * (to / from.s) ** e;
+      if (t < 1) camRaf = requestAnimationFrame(step);
+    };
+    if (ms > 0) camRaf = requestAnimationFrame(step);
+    else step(t0);
   }
   /** The node of a sector that is cheapest to reach (fewest jumps, then fuel), to plot a route into it; null if none. */
   function routeInto(id: string): string | null {
@@ -124,7 +133,7 @@
       map = m;
       if (!placed && m.nodes.length) {
         placed = true;
-        queueMicrotask(recenter);
+        queueMicrotask(() => focusSector(m.currentSector, true));
       }
       if (moved && selected === m.current) selected = null;
     }),
@@ -147,6 +156,7 @@
     const cam1 = follow ? { cx: sec.x, cy: sec.y, s: (Math.min(w, h) * 0.62) / (2 * sec.r + 60) } : cam0;
     const t0 = performance.now();
     cancelAnimationFrame(raf);
+    if (follow) cancelAnimationFrame(camRaf);
     onSlide?.(true);
     const frame = (now: number) => {
       const t = Math.min(1, (now - t0) / dur);
@@ -164,6 +174,7 @@
   }
   onDestroy(() => {
     cancelAnimationFrame(raf);
+    cancelAnimationFrame(camRaf);
     onSlide?.(false);
   });
   const ship = $derived(slide ? { x: slide.fx + (slide.tx - slide.fx) * slide.t, y: slide.fy + (slide.ty - slide.fy) * slide.t, fx: slide.fx, fy: slide.fy, tx: slide.tx, ty: slide.ty } : null);
@@ -190,6 +201,7 @@
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
   function down(e: PointerEvent) {
+    cancelAnimationFrame(camRaf);
     svg.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, local(e));
     if (pointers.size === 1) {
@@ -231,9 +243,12 @@
       selected = picked ? routeInto(picked.id) : null;
       return;
     }
+    // Galaxy level: the region of the sector under the tap (regions are drawn as areas), else a region centre nearby.
     if (level === 3 && map && map.regions.length) {
+      const sec = map.sectors.reduce((b, x) => (Math.hypot(x.x - m.x, x.y - m.y) < Math.hypot(b.x - m.x, b.y - m.y) ? x : b));
       const near = map.regions.reduce((b, x) => (Math.hypot(x.x - m.x, x.y - m.y) < Math.hypot(b.x - m.x, b.y - m.y) ? x : b));
-      picked = Math.hypot(near.x - m.x, near.y - m.y) < 40 / s ? { kind: 'region', id: near.id } : null;
+      const id = sec.region && Math.hypot(sec.x - m.x, sec.y - m.y) < 30 / s + sec.r * 1.5 ? sec.region : Math.hypot(near.x - m.x, near.y - m.y) < 40 / s ? near.id : null;
+      picked = id ? { kind: 'region', id } : null;
       return;
     }
     let best: UiStarNode | null = null;
@@ -249,6 +264,7 @@
   }
   function wheel(e: WheelEvent) {
     e.preventDefault();
+    cancelAnimationFrame(camRaf);
     const p = local(e);
     zoomAt(p.x, p.y, e.deltaY < 0 ? 1.18 : 1 / 1.18);
   }
@@ -305,8 +321,10 @@
             <g transition:fade={{ duration: 180 }}>
               {#if level === 1}
                 <StarmapSector {map} {px} {s} {view} {current} {route} {routePts} {selected} {ship} />
+              {:else if level === 2}
+                <StarmapRegion {map} {px} picked={picked?.id ?? null} {routePts} {routeSectors} />
               {:else}
-                <StarmapOuter {map} {level} {px} picked={picked?.id ?? null} {routePts} {routeSectors} />
+                <StarmapGalaxy {map} {px} picked={picked?.id ?? null} />
               {/if}
             </g>
           {/key}

@@ -1,4 +1,4 @@
-import { AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
+import { CombatC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 
 /**
@@ -51,6 +51,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       suitAir: (crew: number, sec: number) => { const su = sim.world.get(crew, SuitC); if (su) su.air = sec; },
       /** Set a crew member's hunger (0..100) and optionally rest (the needs shots). */
       needs: (crew: number, hunger: number, rest?: number) => { const n = sim.world.get(crew, NeedsC); if (n) { n.hunger = hunger; if (rest !== undefined) n.rest = rest; } },
+      /** Fill the player's FTL drive (a fresh game has no pilot at the helm to charge it). */
+      chargeFtl: () => { const c = sim.world.get(playerShip(sim)?.id ?? -1, CombatC); if (c) c.ftl = FTL_CHARGE_SEC; },
       /** Mood readout. */
       mood: (crew: number) => sim.world.get(crew, MoodC) ?? null,
     },
