@@ -151,7 +151,7 @@ def build_suit(arm, body):
         return it
 
     torso = mk("torso", "eva", ~R.arms & ~R.head & ~R.legs, _body_push(0.075, 0.12), _torso_col, 2)
-    legs = mk("legs", "eva", R.legs, _leg_push(0.05), _legs_col, 1)
+    legs = mk("legs", "eva", R.legs & (R.z > 0.14), _leg_push(0.05), _legs_col, 1)   # the feet are the rigid boots
     for side, sx in (("L", 1), ("R", -1)):
         mk(f"arm.{side}", "eva", R.arms & (np.sign(R.x) == sx), _arm_push(0.045), _arm_col, 1)
     sleeve = mk("arm.L", "eva_cyber", R.arms & (R.x > 0) & (R.x < 0.5), _arm_push(0.045), _arm_col, 1, glow=True)
@@ -166,11 +166,17 @@ def build_suit(arm, body):
     sp.box((0.04, -0.207, 1.215), (0.04, 0.012, 0.03), "plate")
     sp.cyl((0, 0.01, 1.42), 0.15, 0.06, "gm", sides=12)                                      # collar seal ring
     torso.objs += rs.build()
-    rs = RigidSet(arm)                                                      # boots
-    for s, sx in (("L", 1), ("R", -1)):
-        sh = rs.on(f"shin.{s}")
-        sh.box((sx * 0.12, -0.02, 0.12), (0.15, 0.2, 0.18), "gmD", bevel=0.03)
-        sh.box((sx * 0.12, -0.02, 0.215), (0.16, 0.21, 0.035), "gm", bevel=0.01)
+    rs = RigidSet(arm)                                                      # boots: a cuff on the shin round the
+    for s, sx in (("L", 1), ("R", -1)):                                     # ankle, the boot itself on the foot bone
+        sh = rs.on(f"shin.{s}")                                             # (it turns with the foot), enclosing the
+        sh.box((sx * 0.115, 0.09, 0.19), (0.2, 0.21, 0.16), "gmD", bevel=0.03)          # base foot it hides
+        sh.box((sx * 0.115, 0.09, 0.27), (0.21, 0.22, 0.03), "gm", bevel=0.01)
+        ft, to = rs.on(f"foot.{s}"), rs.on(f"toe.{s}")                     # the toe cap on the toe bone: the boot
+        ft.box((sx * 0.135, 0.065, 0.08), (0.17, 0.26, 0.15), "gmD", bevel=0.035)      # bends at the ball of the
+        ft.box((sx * 0.135, 0.065, 0.015), (0.18, 0.27, 0.03), "gm", bevel=0.01)       # foot when it pushes off;
+        to.box((sx * 0.135, -0.12, 0.05), (0.16, 0.13, 0.09), "gmD", bevel=0.035)      # a mid-grey sole, not the
+        to.box((sx * 0.135, -0.12, 0.015), (0.17, 0.14, 0.03), "gm", bevel=0.01)       # light one: a back-swing
+                                                                                        # shows it whole
     legs.objs += rs.build()
 
     def helmet(rs):
