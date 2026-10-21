@@ -100,7 +100,7 @@
   /* The page canvas shows through .view (the enemy ship is drawn there), so every other part paints its own background. */
   .combat {
     position: fixed; z-index: 7; display: flex; flex-direction: column; overflow: hidden;
-    right: calc(8px + var(--sar)); top: max(calc(var(--hdr) + 8px + var(--sat)), calc(var(--alerts-h, 0px) + var(--log-h, 0px) + 88px + var(--sat))); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
+    right: calc(8px + var(--sar)); top: max(calc(var(--hdr) + 8px + var(--sat)), calc(var(--rcol-h, 0px) + 16px + var(--sat))); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
     border: 1px solid var(--line-hi); border-radius: 0;
   }
   header.ph { margin: 0; padding: 0 0 0 10px; display: flex; align-items: center; gap: 8px; min-height: 32px; flex: none; }

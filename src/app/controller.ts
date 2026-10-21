@@ -46,6 +46,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const homeShipId = () => homeShip(sim);
   const alerts = createAlerts(sim);
   const log = createEventLog(sim);
+  alerts.onCleared(log.addCleared);
   let modPos: Tile | null = null;
   const crewSel = createStore<number | null>(null);
   const toast = createStore<string | null>(null);
@@ -207,7 +208,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         else if (e.type === 'ship.captured') showToast(e.by === 'player' ? 'Ship captured! It is now a prize.' : 'Your ship was captured!', 8000);
       }
       alerts.onEvents(events);
-      log.onEvents(events);
+      log.onEvents(events, alerts.covers);
     },
     attach(renderer) {
       r = renderer;

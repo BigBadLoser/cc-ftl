@@ -11,12 +11,18 @@ export interface Alerts {
   onEvents(events: SimEvent[]): void;
   dismiss(id: number): void;
   get(id: number): UiAlert | undefined;
+  /** True when this event raises (or would raise) an alert, so the event log can leave it to the alert. */
+  covers(e: SimEvent): boolean;
+  /** Called whenever an alert leaves the list (dismissed, expired or replaced), with the tick it appeared. */
+  onCleared(fn: (a: UiAlert, tick: number) => void): void;
 }
 
 /** Turns sim events into a short, deduplicated, dismissable alert queue (UI-side only; never feeds the sim). */
 export function createAlerts(sim: Sim): Alerts {
   const store = createStore<UiAlert[]>([]);
   const keys = new Map<number, string>();
+  const born = new Map<number, number>();
+  const clearedFns: ((a: UiAlert, tick: number) => void)[] = [];
   let nextId = 1;
 
   const crewName = (id: number) => sim.world.get(id, CrewC)?.name ?? 'Crew';
@@ -106,7 +112,11 @@ export function createAlerts(sim: Sim): Alerts {
     }
   }
 
-  const remove = (id: number) => {
+  /** `replaced`: a fresh alert for the same thing takes over, so the log waits for that one instead. */
+  const remove = (id: number, replaced = false) => {
+    const gone = store.get().find((a) => a.id === id);
+    if (gone && !replaced) for (const fn of clearedFns) fn(gone, born.get(id) ?? sim.tick);
+    born.delete(id);
     keys.delete(id);
     store.update((l) => l.filter((a) => a.id !== id));
   };
@@ -114,6 +124,8 @@ export function createAlerts(sim: Sim): Alerts {
   return {
     list: store,
     get: (id) => store.get().find((a) => a.id === id),
+    covers: (e) => describe(e) !== null,
+    onCleared: (fn) => void clearedFns.push(fn),
     dismiss(id) {
       const n = store.get().find((a) => a.id === id)?.notice;
       if (n?.lead) sim.enqueue({ type: 'story.dismissNotice', notice: n.id });
@@ -123,9 +135,10 @@ export function createAlerts(sim: Sim): Alerts {
       for (const e of events) {
         const d = describe(e);
         if (!d) continue;
-        for (const [id, k] of keys) if (k === d.key) remove(id);
+        for (const [id, k] of keys) if (k === d.key) remove(id, true);
         const id = nextId++;
         keys.set(id, d.key);
+        born.set(id, sim.tick);
         store.update((l) => [{ id, kind: d.kind, text: d.text, at: d.at, ...(d.notice ? { notice: d.notice } : {}) }, ...l].slice(0, MAX));
         setTimeout(() => remove(id), EXPIRE_MS);
       }

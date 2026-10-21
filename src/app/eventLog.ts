@@ -1,14 +1,33 @@
 import { shipIdOf } from '../sim/regions';
 import { CrewC, PositionC, ShipC, TraderC, type Sim, type SimEvent } from '../sim';
-import type { UiLogEntry } from '../ui/api';
+import type { UiAlert, UiAlertKind, UiLogEntry } from '../ui/api';
 import { createStore, type Readable } from './store';
 
 const MAX = 40;
 
 export interface EventLog {
   list: Readable<UiLogEntry[]>;
-  onEvents(events: SimEvent[]): void;
+  /** `covers` says whether an alert shows the event right now; those wait until the alert clears (see `addCleared`). */
+  onEvents(events: SimEvent[], covers?: (e: SimEvent) => boolean): void;
+  /** An alert left the screen: its happening goes into the log now. */
+  addCleared(alert: UiAlert, tick: number): void;
 }
+
+/** Alert kinds that record a happening (the rest are ongoing states and never reach the log). */
+const FROM_ALERT: Partial<Record<UiAlertKind, Pick<UiLogEntry, 'kind' | 'tone'>>> = {
+  'fire.started': { kind: 'fire', tone: 'bad' },
+  'hull.breach': { kind: 'breach', tone: 'bad' },
+  'crew.downed': { kind: 'crew.downed', tone: 'bad' },
+  'crew.died': { kind: 'crew.died', tone: 'bad' },
+  'crew.rescued': { kind: 'crew.rescued', tone: 'good' },
+  'combat.started': { kind: 'combat', tone: 'warn' },
+  'module.destroyed': { kind: 'module.destroyed', tone: 'bad' },
+  'ship.destroyed': { kind: 'ship.destroyed', tone: 'good' },
+  'ship.lost': { kind: 'lost', tone: 'bad' },
+  'ship.fled': { kind: 'ship.fled', tone: 'info' },
+  'production.done': { kind: 'production', tone: 'good' },
+  trade: { kind: 'trade', tone: 'info' },
+};
 
 type Entry = Pick<UiLogEntry, 'kind' | 'tone' | 'text'>;
 
@@ -63,22 +82,28 @@ export function createEventLog(sim: Sim): EventLog {
     }
   }
 
+  function add(list: UiLogEntry[], d: Entry, tick: number): UiLogEntry[] {
+    const top = list[0];
+    // The same thing again straight away folds into one line with a count.
+    return top && top.kind === d.kind && top.text === d.text
+      ? [{ ...top, tick, count: top.count + 1 }, ...list.slice(1)]
+      : [{ id: nextId++, tick, count: 1, ...d }, ...list].slice(0, MAX);
+  }
+
   return {
     list: store,
-    onEvents(events) {
+    onEvents(events, covers) {
       let list = store.get();
-      let changed = false;
       for (const e of events) {
+        if (covers?.(e)) continue;
         const d = describe(e);
-        if (!d) continue;
-        changed = true;
-        const top = list[0];
-        // The same thing again straight away folds into one line with a count.
-        list = top && top.kind === d.kind && top.text === d.text
-          ? [{ ...top, tick: sim.tick, count: top.count + 1 }, ...list.slice(1)]
-          : [{ id: nextId++, tick: sim.tick, count: 1, ...d }, ...list].slice(0, MAX);
+        if (d) list = add(list, d, sim.tick);
       }
-      if (changed) store.set(list);
+      if (list !== store.get()) store.set(list);
+    },
+    addCleared(alert, tick) {
+      const k = FROM_ALERT[alert.kind];
+      if (k) store.set(add(store.get(), { ...k, text: alert.text }, tick));
     },
   };
 }

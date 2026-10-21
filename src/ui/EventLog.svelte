@@ -5,25 +5,19 @@
 
   let { api }: { api: UiApi } = $props();
   let list = $state<UiLogEntry[]>([]);
-  let h = $state(0);
   const KEY = 'cc-ftl.log.open';
-  const phone = () => window.matchMedia('(max-width: 600px)').matches;
   let open = $state(true);
   try {
     const v = localStorage.getItem(KEY);
-    open = v === null ? !phone() : v === '1';
+    open = v === '1';
   } catch {
-    open = !phone();
+    open = false;
   }
   const toggle = () => {
     open = !open;
     try { localStorage.setItem(KEY, open ? '1' : '0'); } catch { /* storage may be blocked */ }
   };
 
-  /** Other panels sit below the log (alerts, the combat panel), so tell them how tall it is. */
-  $effect(() => {
-    document.documentElement.style.setProperty('--log-h', `${list.length ? h + 4 : 0}px`);
-  });
   onMount(() => api.log.subscribe((l) => (list = l)));
 
   const icon: Record<UiLogKind, IconName> = {
@@ -35,7 +29,7 @@
 </script>
 
 {#if list.length}
-  <div class="log" class:open data-testid="event-log" role="log" aria-label="Event log" bind:clientHeight={h}>
+  <div class="log sec" class:open data-testid="event-log" role="log" aria-label="Event log">
     <ul>
       {#each shown as e (e.id)}
         <li class={e.tone} data-testid="log-entry" data-kind={e.kind}>
@@ -50,7 +44,7 @@
 {/if}
 
 <style>
-  .log { position: fixed; z-index: 4; right: calc(8px + var(--sar)); top: calc(var(--sat) + 8px); width: min(260px, calc(100vw - 110px)); background: var(--panel); border: 1px solid var(--line); }
+  .log { position: relative; width: 100%; }
   ul { list-style: none; margin: 0; padding: 0; max-height: 110px; overflow-y: auto; touch-action: pan-y; }
   .open ul { padding-right: 0; }
   li { display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 6px; font-size: 12px; border-left: 3px solid var(--line-hi); white-space: nowrap; }
@@ -64,7 +58,8 @@
   /* The toggle rides on the first row, right of the time stamp. */
   .tg { position: absolute; top: 0; right: 0; width: 22px; height: 22px; border-width: 0 0 1px 1px; background: var(--panel-2); }
   li:first-child { padding-right: 28px; }
+  .tg { border-width: 0 0 0 1px; }
   @media (max-width: 600px) {
-    .log { right: auto; left: 8px; top: calc(var(--hdr) + var(--sat) + 6px); width: calc(100vw - 62px - var(--sar)); }
+    .log { position: relative; width: 100%; }
   }
 </style>
