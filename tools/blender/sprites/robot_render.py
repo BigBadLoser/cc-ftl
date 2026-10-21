@@ -15,7 +15,8 @@ from . import robots
 
 CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("charge", 4, 3, True), ("wreck", 1, 1, False)]
 SPECIES = {"worker": "robot", "repair": "robot", "security": "robot_heavy"}
-W, H, ORIGIN = 132, 124, (66, 84)       # roomier than the humans' canvas: the wrecks lie spread over the floor
+# roomier than the humans' canvas: the wrecks lie spread over the floor
+W, H, ORIGIN = 132 * core.K, 124 * core.K, (66 * core.K, 84 * core.K)
 TAU = math.tau
 
 

@@ -7,8 +7,11 @@ current gear (EVA pack/helmet, sleeping poses) reaches 76 px above the feet, 15 
 frame has 94 above, 26 below and 64 each side. Changing any constant here re-renders ALL crew (it is in the global
 cache hash)."""
 
-FRAME_W, FRAME_H = 128, 120
-ANCHOR = (64, 94)                       # feet position inside a frame (x, y from top)
+import os
+
+K = int(os.environ.get("ART_SCALE", "1"))   # art scale (core.K)
+FRAME_W, FRAME_H = 128 * K, 120 * K
+ANCHOR = (64 * K, 94 * K)                     # feet position inside a frame (x, y from top)
 W, H = FRAME_W - 2, FRAME_H - 2         # render canvas
 ORIGIN = (ANCHOR[0] - 1, ANCHOR[1] - 1)  # feet position in the render canvas
 

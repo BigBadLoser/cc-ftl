@@ -18,7 +18,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib import palette  # noqa: E402
 from . import post  # noqa: E402
 
-TILE_W, TILE_H = 64, 32
+K = int(os.environ.get("ART_SCALE", "1"))   # art scale: 2 renders every sprite at twice the pixel size
+TILE_W, TILE_H = 64 * K, 32 * K
 PXU = TILE_W / math.sqrt(2)          # px per ortho unit
 ZPX = PXU * math.cos(math.radians(30))  # px per world unit of height
 TEAM_ALBEDO = 0.7                    # key albedo scale (keeps lit top faces below clipping)

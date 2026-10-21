@@ -104,7 +104,7 @@ def engine(mask):
 
 
 # ---- v7 variant studies (preview only; see roof_variants.py) ---------------------------------------------------
-DZ = 4 / core.ZPX         # raised armour belt (variant B): one plate thickness, exactly 4 px, drawn with an anchor offset
+DZ = 4 * core.K / core.ZPX       # raised armour belt (variant B): one plate thickness, exactly 4 px, drawn with an anchor offset
 BEV = 0.05                # belt step bevel width (tiles)
 
 
@@ -142,7 +142,7 @@ def inset_base(layout, col, u, v, patch=False, mesh=core.Mesh):
                 g[j][i] = f["shd"]                  # near (S) lip in shade
             else:
                 g[j][i] = floor.get(g[j][i], g[j][i])
-    di, b = rv.DI / core.ZPX, 1.0 / GN
+    di, b = rv.DI * core.K / core.ZPX, 1.0 / GN
     zf, zb = ZR - di, ZR - di * 0.4
     m = mesh(f"roof_inset_{layout}{col}_{u}{v}", flat=True)
     m.pattern((-0.5, -0.5, zf), (1, 0, 0), (0, 1, 0), GN, GN, lambda i, j: g[j][i])

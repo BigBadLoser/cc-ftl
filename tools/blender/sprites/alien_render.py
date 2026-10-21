@@ -12,7 +12,7 @@ from . import human_render as hr
 from . import alien
 
 CLIPS = [("idle", 4, 4, True), ("run", 6, 12, True), ("attack", 5, 10, False), ("hurt", 2, 8, False), ("dead", 1, 1, False)]
-W, H, ORIGIN = 132, 124, (66, 84)
+W, H, ORIGIN = 132 * core.K, 124 * core.K, (66 * core.K, 84 * core.K)
 TAU = math.tau
 
 
