@@ -7,6 +7,9 @@ Run: python3 tools/blender/sprites/progress.py
 """
 import re
 import time
+import io
+import curses
+from contextlib import redirect_stdout
 from datetime import timedelta
 from pathlib import Path
 
@@ -119,14 +122,35 @@ def dashboard():
     print()
     print("Crew percentage is exact for the logged work plan; families are counted by")
     print("completed batches, not duration. ETA needs observed progress and is approximate.")
-    print("Press Ctrl+C to exit dashboard; renders continue independently.")
+    print("Press q or Ctrl+C to exit; renders continue independently.")
+
+
+def tui(stdscr):
+    """Draw in-place in the alternate terminal screen without scrolling."""
+    curses.curs_set(0)
+    stdscr.nodelay(True)
+    while True:
+        capture = io.StringIO()
+        with redirect_stdout(capture):
+            dashboard()
+        height, width = stdscr.getmaxyx()
+        stdscr.erase()
+        for y, line in enumerate(capture.getvalue().splitlines()[:height]):
+            if width > 1:
+                try:
+                    stdscr.addnstr(y, 0, line, width - 1)
+                except curses.error:
+                    pass
+        stdscr.refresh()
+        for _ in range(50):
+            key = stdscr.getch()
+            if key in (ord("q"), ord("Q"), 3):
+                return
+            time.sleep(0.1)
 
 
 if __name__ == "__main__":
     try:
-        while True:
-            print("\033[2J\033[H", end="")
-            dashboard()
-            time.sleep(5)
+        curses.wrapper(tui)
     except KeyboardInterrupt:
-        print()
+        pass
