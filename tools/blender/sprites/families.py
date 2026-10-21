@@ -16,6 +16,7 @@
   derelict  derelict dressing: breached walls, scorch, debris, dead lights, infestation, AI scrap (derelict*.py)
   damage    .damaged / .destroyed of the modules (damage.py: a pass over each module's own idle build)
   damage_sol  the same for Sol's packs (engine, AI core, shield generators), in a Blender job per pack (sol_damage.py)
+  decay     more derelict dressing: fallen ceiling, glass, parts; frost, blood, oil, scratch decals (derelict_more.py)
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   storage_set lockers, racks, pallets, containers, tanks, cold stores, armories: 3 fills x 4 rotations (storage_set.py;
             MODPACK_ROTS=1 renders r0 only, for quick previews)
@@ -124,6 +125,9 @@ def jobs(name):
     if name == "derelict":
         from . import derelict
         return derelict.SPRITES, True
+    if name == "decay":
+        from . import derelict_more
+        return derelict_more.SPRITES, True
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
