@@ -22,13 +22,13 @@ def scene_digest():
     if sc.world and sc.world.node_tree:
         for n in sc.world.node_tree.nodes:
             for i in n.inputs:
-                if hasattr(i, "default_value"):
+                if hasattr(i, "default_value") and i.name != "Strength":      # Strength is set per pass by core._set_pass
                     v = i.default_value
                     _upd(h, list(v) if hasattr(v, "__len__") else [v])
     for ob in sc.objects:
         if ob.type in ("LIGHT", "CAMERA"):
-            h.update(repr((ob.type, ob.hide_render)).encode())
-            _upd(h, [list(r) for r in ob.matrix_world])
+            h.update(ob.type.encode())                         # not hide_render: core._set_pass toggles the sun per pass
+            _upd(h, [list(r) for r in ob.matrix_basis])           # not matrix_world: stale until the depsgraph runs
             d = ob.data
             for k in ("energy", "angle", "use_shadow", "type", "clip_start", "clip_end"):
                 if hasattr(d, k):
@@ -79,7 +79,7 @@ def objects_digest(objs):
                        _idx(sc_objs, ob.parent),
                        sorted((k, str(ob[k])) for k in ob.keys() if not k.startswith("_")),
                        [(m.type, _idx(sc_objs, getattr(m, "object", None))) for m in ob.modifiers])).encode())
-        _upd(h, [list(r) for r in ob.matrix_world])
+        _upd(h, [list(r) for r in ob.matrix_basis] + [list(r) for r in ob.matrix_parent_inverse])
         if ob.type == "MESH":
             _mesh(ob, h)
     return h.hexdigest()
