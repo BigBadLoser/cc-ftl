@@ -738,6 +738,16 @@ shipgen's `structureParts`):
   asteroid, writes the base tiles with their air and temperature, places its modules and makes the `ShipC` (with
   `outpost: { style, kind }`) owning them. `debug.spawnOutpost { style, seed, kind?, x?, y? }`, event `outpost.spawned`. Render:
   `rockRoofView.ts` caps a roofed dug base with rock blocks and hides the base's own layers, so from outside it is plain rock.
+- **Outpost hostility (`outposts/state.ts`, `systems/outposts.ts`)**: `ShipC.outpost { hidden, provoked }`. `isDormant` (not
+  provoked) ships are skipped by `combatStateSystem`; they have no `CombatC`, so the combat snapshot (enemies, auto-target,
+  hostile count) never lists them. `isHiddenOutpost` ships are refused by `targetableShip` and `combat.setTarget`, left out of the
+  shuttle targets and trade partners (so the node strip and hail list), skipped by tile and crew picking (`PickHost.hidden`) and
+  always roofed. `outpostSystem` (every 10 ticks, before the combat state) discovers by player crew or vehicles within
+  `DISCOVER_RANGE` (6) of the base tiles' box and provokes on boarding (player crew on a base tile) or a breach (a base floor
+  touching a floor it does not own). `provokeOutpost` is also called by `combat.setTarget` (the player aiming at it), the impact
+  system (a player shot landing; shots at an outpost without `CombatC` land with no shields or evasion) and `job.build` /
+  `job.deconstruct` into its region; it reveals the outpost and adds a `CombatC`. Events `outpost.discovered` / `outpost.provoked`.
+  `shipStateSystem` never disables an outpost.
 - Contact sheets: `node tools/asteroids/cli.js <big|field|all> [--from 1] [--count 12] [--scale 4] [--coverage open|mixed|dense] [--out dir]`.
 
 ## Sector grid (planned)

@@ -82,10 +82,22 @@ Planner's calls:
 - Pods: the best free pilot (not drafted, not reserved, of the ship's side, on the ship; highest piloting) walks to the bay and
   embarks; they stay aboard between trips and climb out when the order ends or is recalled; with nobody free the order waits
   (`mining.waiting`, reason `noPilot`). Pods are 2.6 tiles across (`VehicleDef.size`). Couriers and boarders skip class 'pod'.
-- Outposts are a `ShipC` region over the base rectangle (state comes out 'disabled' from the ship-state system: no engines);
-  surface ones are neutral, dug ones hostile; they have no crew yet. The habitat and room contents are hand-made kits; switch to
-  the station prefabs and room recipes of the `stations` branch when it lands. A hostile dug outpost puts the sector in combat
-  (it is a hostile ship); outposts have no `CombatC`.
+- Outposts are a `ShipC` region over the base rectangle, never 'disabled' (immobile by nature, no crew yet); surface ones are
+  neutral, dug ones hostile. The habitat and room contents are hand-made kits; switch to the station prefabs and room recipes of
+  the `stations` branch when it lands.
+- **Dormant until provoked; dug ones hidden until discovered (user decision, 2026-10-21).** A dormant outpost is no combatant
+  (combat trigger, alerts, combat panel enemies, auto-target), whatever its faction; it has no `CombatC` until provoked. A hidden
+  one is not listed (node strip, shuttle targets, trade/hail), not targetable (`combat.setTarget` refuses it), not pickable
+  (clicks fall through to the rock) and keeps its rock roof whatever the roof toggle. Discovery (alert "Hidden base discovered"):
+  a player crew member or a player vehicle out of its bay within `DISCOVER_RANGE` = 6 tiles (Chebyshev) of the box of the base's
+  tiles, checked every 10 ticks, or a breach; it is then listed and selectable but still dormant. Provocation (alert "<name> turns
+  hostile"; it gets a `CombatC`): the player aiming weapons at it (`combat.setTarget`; planner's call: aiming is the attack,
+  since weapons are only manned in combat), a shot landing on it, player crew standing on its walkable tiles (boarding), a
+  build or dig order into its region, or a floor it does not own touching its floors (a dug breach). Surface outposts are never
+  hidden. Both flags are saved on `ShipC.outpost`.
+- Venting fx fix: the dug base looked like it leaked (air puffs along every rock edge). The sim was airtight; the vent emitter
+  read the region's art kind, which shows rock as Space. It now reads the real tile and vents only into Space or ground. Test:
+  every room of both styles within 1% over 120 s, no breach or low-O2 events.
 - Rendering (placeholder): rock mass is a 1.2-tile-high block, ground a flat paler diamond with crater pits; a roofed dug base
   is capped by rock blocks (`rockRoofView.ts`) and its own layers hide; pods hover above the tallest rock. Rock drawn in the floor
   layer does not sort against crew yet.
