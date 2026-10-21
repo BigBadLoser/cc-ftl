@@ -93,11 +93,17 @@ def _band(kb, kq, su, u0, v0):
     kq.box(su * (u0 + 0.002), 0, BAND_Z[0] + 0.03, 0.012, 2 * v0 - 0.5, 0.04, pin, top=pin)
 
 
-def _end(k, kp, sv, u0, v0, doors, patched=False):
+def _end(k, kp, sv, u0, v0, doors, patched=False, panelled=False):
     """An end: its panel (and the door leaves) painted (kp), the door hardware bare (k)."""
     v = sv * (v0 - 0.04)
     kp.box(0, v, 0.09, 2 * u0 - 0.18, 0.05, H - 0.18, SH, top=SH)
     ve = sv * (v0 - 0.012)
+    if not doors and panelled:                                                       # blank end: flat panels, as
+        span = 2 * u0 - 0.24                                                         # the sides
+        n = max(2, round(span / 0.5))
+        for i in range(n + 1):
+            kp.box(-span / 2 + i * span / n, ve, 0.1, 0.025, 0.02, H - 0.2, SHD)
+        return
     if not doors:                                                                    # blank end: ribs across
         n = int((2 * u0 - 0.24) / 0.13)
         for i in range(n):
@@ -167,7 +173,7 @@ def shell(size, rot, end, variant=0, state=""):
         _side(kp, su, u0, v0, panelled=variant == 2)
         _band(kb, kq, su, u0, v0)
     _end(k, kp, ds, u0, v0, True, patched=state == "patched")
-    _end(k, kp, -ds, u0, v0, False)
+    _end(k, kp, -ds, u0, v0, False, panelled=variant == 2)
     light = None if state == "destroyed" else ("orange" if state in ("damaged", "patched") else "green")
     _roof(k, kp, u0, v0, ds, light, variant)
     if variant == 1:

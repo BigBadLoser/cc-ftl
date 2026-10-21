@@ -185,6 +185,27 @@ def patches(k, ds, u0, v0, rnd):
     name = rnd.choice(("skull", "x", "nope", "bolt"))
     _spray(lambda a, dz, s, col: k.box(a, sv * (v0 + 0.075), 0.66 * H + dz, s, 0.008, s, col), name,
            0.08 * (1.25 if H > 2.5 else 1.0), rnd.choice(INKS), rnd)
+    sv, ve = -ds, -ds * (v0 + 0.003)                                                 # the blank end: plates, a tag
+    for i in range(2):
+        w, h = rnd.uniform(0.35, 0.5) * 2 * u0, rnd.uniform(0.3, 0.45) * H
+        u = (i - 0.5) * u0 * 0.9 + rnd.uniform(-0.1, 0.1)
+        z = rnd.uniform(0.12, H - 0.2 - h)
+        stock = "salvage" if i == 0 and rnd.random() < 0.5 else rnd.choice(STOCK + ODD)
+        k.box(u, ve, z - 0.06, w + 0.14, 0.012, h + 0.12, "grime")
+        k.box(u, ve + sv * 0.006, z - 0.03, w + 0.06, 0.02, h + 0.06, C.CAST)
+        if stock == "salvage":
+            n = max(3, round(w / 0.14))
+            for j in range(n):
+                col = "hazY" if j % 2 else "hazK"
+                k.box(u - w / 2 + (j + 0.5) * w / n, ve + sv * 0.018, z, w / n, 0.02, h, col)
+        else:
+            k.box(u, ve + sv * 0.018, z, w, 0.02, h, stock, top=stock)
+        for zz in (z + 0.05, z + h - 0.08):
+            for j in range(max(2, int(w / 0.14))):
+                k.box(u - w / 2 + 0.07 + j * 0.14, ve + sv * 0.03, zz, 0.045, 0.012, 0.045, "sole")
+    name = rnd.choice(sorted(TAGS))
+    _spray(lambda a, dz, sz, col: k.box(sv * a, sv * (v0 + 0.06), 0.55 * H + dz, sz, 0.008, sz, col), name,
+           0.08 * (1.25 if H > 2.5 else 1.0), rnd.choice(INKS), rnd)
     roof(k, ds, u0, v0, rnd)
 
 
