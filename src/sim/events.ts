@@ -56,6 +56,10 @@ export type SimEvent =
   | { type: 'ship.fled'; ship: number }
   /** A dormant hostile (pirate den) was provoked: aimed at, damaged or boarded. */
   | { type: 'ship.provoked'; ship: number; reason: 'aimed' | 'damaged' | 'boarded' }
+  /** A station raised its alarm (intruders, attacked, fire, breach): guards converge, civilians take cover. */
+  | { type: 'station.alarm'; ship: number; reason: string }
+  /** A station's alarm calmed after a quiet spell; it forgets its grudges. */
+  | { type: 'station.calm'; ship: number }
   | { type: 'sector.jumped'; ship: number; from: number; to: number; restored: boolean }
   | { type: 'sector.deployed'; ship: number; x: number; y: number }
   /** An airlock finished a cycle; `side` is the door now open. */

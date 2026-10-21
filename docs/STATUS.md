@@ -176,8 +176,28 @@ Spines and arcs stay below hub size, because they outgrow the 160 cap. Hubs buil
 - **One zoom ladder** after merging main's 2x code: whole levels from 1 up; below 1 the fractions 1/8, 1/6, 1/4, 1/3, 1/2, 0.75,
   with 1 / ART_SCALE among them. Every level below 1 is drawn smoothed.
 
+**Slice 4: station life and security (2026-10-21).** Design in ARCHITECTURE, "Crew AI" and "Stations".
+- **Principle (user):** NPCs use the same crew AI as the player's crew; the only differences are the command source and a per-ship
+  director (data and config). Patrols are `patrol` jobs posted by `stationDirector`; alarm response withdraws them and leaves the
+  hunting to the shared fight code. No bespoke NPC movement besides the idle stroll fallback.
+- Decisions made here (defaults, not user answers):
+  - station crew get hungry and eat, but hunger floors at 25 (no starving NPCs; resupply is off-screen);
+  - the "Watch" (patrol) priority column is hidden in the player's grid until the player has patrols;
+  - invited trade crew cannot start a fight with a neutral station (`crew.attack` needs hostility); if they are engaged on station
+    crew, or the station is damaged, they become wanted;
+  - alarms track wanted crew per station (`WantedC`), not a faction-wide hostility flip, and are forgotten 30 s after it calms.
+- Perf: a trading hub in the node, 2000 ticks after a 300-tick warm-up: 7.25 ms per tick before, 7.8 after (station crew now eat,
+  stroll and patrol; the alarm scan groups crew by grid each tick).
+- **Player-only assumptions left for the next slice** (outside this slice's path):
+  - `systems/cargoJobs.ts`: the unload branch runs for player ships only;
+  - `crew/mood.ts`: mood is player-crew only (station crew have no mood);
+  - drafting is player-only (`isPlayerControlled`, the `crew.draft` commands): a director cannot draft yet, so "battle stations"
+    is the withdrawn patrols plus fighter roles' own engage rule;
+  - enemy ships still use `systems/enemyAi.ts` and `boardingAi.ts`, separate policy code that should become directors;
+  - `systems/dormancy.ts` and `stationAlarm.ts` treat only the player as invitable or provoking.
+
 Next slices (not built):
-1. Station NPC behaviour and security AI: guards, patrols, alarms, and drawing from the armoury.
+1. Directors for enemy ships (fold `enemyAi` and `boardingAi` into director policy), director drafting, and the leftovers above.
 2. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.
 3. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
 4. Generator polish:

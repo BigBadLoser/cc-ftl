@@ -1,10 +1,13 @@
 import { ShipC } from '../combat/components';
 import { shipById, spawnShip } from '../combat/ships';
-import { placementGapError, regions } from '../regions';
+import { placementGapError, regions, shipIdOf } from '../regions';
 import { generateStation } from '../shipgen/stationGen';
 import type { StationSize } from '../shipgen/stationTypes';
 import type { Sim } from '../sim';
 import { ensureTrader } from '../trade/traders';
+import { CrewC, PositionC } from '../crew/components';
+import type { GenResult } from '../shipgen/types';
+import { StationAlarmC, StationC, StationCrewC } from './components';
 import { MIN_SHIP_GAP, REGION_PAD } from '../tuning';
 
 /** Tiles of open space kept between a new station and whatever is already in the node (beyond the placement minimum). */
@@ -43,5 +46,39 @@ export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: nu
   ship.immobile = true;
   if (def.side === 'hostile') ship.dormant = ship.integrity;
   if (sim.world.has(id, ShipC)) ensureTrader(sim, id);
+  settleIn(sim, id, gen, x, y);
   return id;
+}
+
+const COURT_ROLES: readonly string[] = ['plaza', 'garden', 'drill', 'support'];
+const POST_ROLES: readonly string[] = ['armoury', 'dock', 'plaza', 'garden', 'drill', 'bridge'];
+
+/**
+ * Station life: the courts idle crew wander in and the patrol stops (from the generator's rooms), the alarm, and the
+ * station crew marker on everyone aboard. Patrols are jobs the station's director posts (systems/stationDirector.ts).
+ */
+function settleIn(sim: Sim, id: number, gen: GenResult, x: number, y: number): void {
+  const toSector = (i: number): { x: number; y: number } => ({ x: x + (i % gen.width), y: y + Math.floor(i / gen.width) });
+  const floor = (i: number): boolean => gen.template.rows[Math.floor(i / gen.width)]?.[i % gen.width] === '_';
+  const centre = (tiles: number[]): number => {
+    const ft = tiles.filter(floor);
+    const cx = ft.reduce((t, i) => t + (i % gen.width), 0) / Math.max(1, ft.length);
+    const cy = ft.reduce((t, i) => t + Math.floor(i / gen.width), 0) / Math.max(1, ft.length);
+    return ft.reduce((b, i) => (Math.hypot((i % gen.width) - cx, Math.floor(i / gen.width) - cy) < Math.hypot((b % gen.width) - cx, Math.floor(b / gen.width) - cy) ? i : b), ft[0] ?? -1);
+  };
+  const courts: { x: number; y: number }[] = [];
+  const posts: { x: number; y: number }[] = [];
+  for (const r of gen.rooms) {
+    const ft = r.tiles.filter(floor);
+    if (ft.length === 0) continue;
+    if (COURT_ROLES.includes(r.role)) for (let k = 0; k < Math.min(6, ft.length); k++) courts.push(toSector(ft[Math.floor((k * ft.length) / 6)] as number));
+    const c = centre(ft);
+    if (POST_ROLES.includes(r.role) && c >= 0) posts.push(toSector(c));
+  }
+  sim.world.add(id, StationC, { courts, posts, nextPost: 0 });
+  const ship = sim.world.get(id, ShipC);
+  sim.world.add(id, StationAlarmC, { state: 'calm', reason: '', quiet: 0, integrity: ship?.integrity ?? 1 });
+  for (const c of [...sim.world.query(CrewC, PositionC)].sort((a, b) => a - b)) {
+    if (shipIdOf(sim, sim.world.get(c, PositionC)) === id) sim.world.add(c, StationCrewC, { station: id });
+  }
 }

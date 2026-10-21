@@ -3,6 +3,7 @@ import type { Renderer } from '../render/scene';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { AlienC, EggSacC } from '../sim/aliens/components';
 import { DeadC } from '../sim/crew/components';
+import { StationAlarmC, StationC } from '../sim/stations/components';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -100,6 +101,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     /** Ship ids with their components (stations: `immobile`), the trade state, and a camera frame for screenshots. */
     shipList: () => [...sim.world.query(ShipC)].map((id) => ({ id, ...sim.world.get(id, ShipC) })),
     trade: () => sim.trade,
+    /** A station's courts and patrol stops, and its alarm. */
+    station: (id: number) => ({ ...sim.world.get(id, StationC), alarm: sim.world.get(id, StationAlarmC) }),
     frame: (ids: number[]) => r.frameShips(ids),
     events: () => seen,
   };

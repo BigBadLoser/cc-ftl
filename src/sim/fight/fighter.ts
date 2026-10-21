@@ -22,6 +22,7 @@ import { sacInReach, sacTile } from '../aliens/target';
 import { StunC } from '../robots/components';
 import { haltCrew } from '../robots/halt';
 import { TICK_HZ } from '../time';
+import { StationCrewC } from '../stations/components';
 
 /** Combat-ready crew with an allegiance, grouped by grid, each list in ascending id order. */
 export function combatReadyUnits(sim: Sim): Map<number, number[]> {
@@ -137,7 +138,8 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const role = sim.content.roles[crew.role];
   const weapon = wielded(sim, id);
   const faction = sim.world.get(id, AllegianceC)?.faction;
-  const canFight = isArmed(sim, id) || !!role?.fighter || faction !== 'player';
+  // Station civilians (crew who are neither armed nor fighters) run from trouble like the player's do.
+  const canFight = isArmed(sim, id) || !!role?.fighter || (faction !== 'player' && !sim.world.has(id, StationCrewC));
   const hunter = invader || !!role?.fighter;
 
   // The nearest foe we can see (sight range, clear line).

@@ -37,6 +37,8 @@ export const WORK_CATEGORIES = [
   'hauling',
   'crafting',
   'cooking',
+  /** Walking a patrol (station guards; patrol jobs come from a ship's director, see stations/director). */
+  'patrol',
 ] as const;
 export type WorkCategory = (typeof WORK_CATEGORIES)[number];
 
@@ -138,6 +140,8 @@ export type JobKind =
   | 'assemble'
   /** suitUp / suitOff: put on or take off an EVA suit at the airlock `target`; the crew member stands ON the airlock's inside tile. */
   | 'suitUp' | 'suitOff'
+  /** patrol: walk to a patrol stop and stand watch there for `work` ticks (a ship director posts them for its guards). */
+  | 'patrol'
   /** forceDoor: free a jammed door at (x, y) (player-ordered, worked from beside it). */
   | 'forceDoor';
 

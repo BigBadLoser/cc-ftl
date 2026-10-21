@@ -8,6 +8,8 @@ import { autoJobsSystem } from './systems/autojobs';
 import { carrySystem } from './systems/carry';
 import { combatStateSystem } from './systems/combatState';
 import { dormancySystem } from './systems/dormancy';
+import { stationAlarmSystem } from './systems/stationAlarm';
+import { stationDirectorSystem } from './systems/stationDirector';
 import { craftJobsSystem } from './systems/craftJobs';
 import { decideSystem } from './systems/decide';
 import { deploySystem } from './systems/deploy';
@@ -143,6 +145,10 @@ export const pipeline: readonly System[] = [
   // --- Combat (see each system's notes). Dormant hostiles wake on provocation, then the combat state is decided (it
   // decides whether consoles are needed next tick).
   dormancySystem,
+  // Station alarms: intruders, attacks and hazards make the station's people hostile to the culprits (fight code acts on it).
+  stationAlarmSystem,
+  // NPC ship directors post jobs for their crew (patrols; withdrawn on alarm) into the shared job system.
+  stationDirectorSystem,
   combatStateSystem,
   // Ion timers expire before anything asks whether a module is disabled.
   ionSystem,

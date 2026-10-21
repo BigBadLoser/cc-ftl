@@ -259,7 +259,7 @@ export type UiAlertKind =
   | 'job.missingMaterials' | 'storage.full' | 'production.done'
   | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
   | 'story.notice' | 'story.lead' | 'trade'
-  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard';
+  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard' | 'station.alarm';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
