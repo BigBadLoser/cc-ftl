@@ -1,7 +1,8 @@
 import { localBuilder } from './blocks';
 import type { Builder, Part, Rect } from './builder';
 import { letterOf } from './canvas';
-import { bandDepth, bandRadius, bandRooms } from './stationBands';
+import { bandArcs, bandDepth, bandRadius, bandRooms } from './stationBands';
+import { arcsBetween, dockBanks, without } from './stationDocks';
 import type { RoomSpec } from './plan';
 import type { Rng } from '../rng';
 
@@ -91,9 +92,10 @@ const mid = <T>(xs: T[]): T => xs[(xs.length - 1) >> 1] as T;
  * (side -1): each room is centred on its share of the arc and pushed along the normal until it lands clear with a
  * door onto the corridor. Returns the rooms that found no place.
  */
-function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs: [number, number][], side: 1 | -1, reach = 0): RoomSpec[] {
-  // With `reach`, rooms stand beyond a band of rooms and door onto any of them.
-  const doorTo = reach > 0 ? (L: number): boolean => L >= 0 : label;
+function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs: [number, number][], side: 1 | -1, reach = 0, avoid?: Set<number>): RoomSpec[] {
+  // With `reach`, rooms stand beyond a band of rooms and door onto any of them (never onto a dock: its airlock needs
+  // the dock's side walls).
+  const doorTo = reach > 0 ? (L: number): boolean => L >= 0 && !avoid?.has(L) : label;
   const total = arcs.reduce((t, [a, z]) => t + (z - a), 0);
   const len = rooms.reduce((t, r) => t + r.w + 2, 0);
   const left: RoomSpec[] = [];
@@ -165,10 +167,6 @@ function spoke(b: Builder, d: 'n' | 's' | 'e' | 'w', a: number, z: number, inner
 /** Distance from the centre to a hub's wall on a face. */
 const face = (h: Part, d: 'n' | 's' | 'e' | 'w'): number => ({ n: -h.y, s: h.y + h.h - 1, w: -h.x, e: h.x + h.w - 1 })[d];
 
-/** Radius whose circumference carries `rooms` (outboard, plus a margin), at least `min`. */
-const radiusFor = (rooms: RoomSpec[], min: number, share = 1): number =>
-  Math.max(min, Math.ceil((rooms.reduce((t, r) => t + r.w + 2, 0) * 0.85) / (TAU * share)));
-
 export interface WheelOpts {
   spokes: ('n' | 's' | 'e' | 'w')[];
   /** Extra radius beyond what the rooms need. */
@@ -208,7 +206,7 @@ export function wheelStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], o: Whee
   const inside = rest.slice(0, o.centre);
   const band = rest.slice(o.centre);
   const depth = bandDepth(band);
-  const R = Math.max(bandRadius([...band, ...sys], depth), Math.ceil(hw / 2) + 6 + (inside.length > 0 ? Math.max(0, ...inside.map((r) => r.w)) + 2 : 0)) + o.extra;
+  const R = Math.max(bandRadius([...band, ...sys, ...docks], depth), Math.ceil(hw / 2) + 6 + (inside.length > 0 ? Math.max(0, ...inside.map((r) => r.w)) + 2 : 0)) + o.extra;
   const ring = corridor(b, R, 'wheel');
   if (!ring) return null;
   const h = b.place({ x: -(hw >> 1) - 1, y: -(hub.h >> 1) - 1, w: hw + 2, h: hub.h + 2 }, hub.role, { ...hub, w: hw });
@@ -222,32 +220,61 @@ export function wheelStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], o: Whee
     const ok = f ? b.attach(h, f, f === 'e' || f === 'w' ? { ...r, w: r.h, h: r.w } : r, 0) : null;
     if (!ok) band.push(r);
   });
-  if (!bandRooms(b, R, ring.label, band, depth, [[0, TAU]])) return null;
-  return rim(b, R, ring.label, sys, docks, [[0, TAU]], depth + 1) ? b : null;
+  return outerBand(b, R, ring.label, band, sys, docks, depth) ? b : null;
+}
+
+/** Widest court between a concentric station's inner band and its outer ring. */
+const COURT = 14;
+
+/** The four quarter arcs between cardinal spokes. */
+const QUARTERS: [number, number][] = [0, 1, 2, 3].map((q) => [q * (TAU / 4) + 0.3, (q + 1) * (TAU / 4) - 0.3]);
+
+/** Radius whose circumference carries the rim rooms side by side (rectangles beyond the band), clear of the docks. */
+const rimRadius = (sys: RoomSpec[], docks: RoomSpec[]): number =>
+  Math.ceil((sys.reduce((t, r) => t + Math.max(r.w, r.h) + 3, 0) * 1.2 + (docks.length * 4 + 24)) / TAU);
+
+/**
+ * The outboard band of a full round ring with its docks reserved first (dock banks on the north and south faces), the
+ * band cut round them, then the system rooms on the rim beyond the band, clear of the banks.
+ */
+function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: RoomSpec[], docks: RoomSpec[], depth: number): boolean {
+  const banks = dockBanks(b, R, ring, docks, R + depth + 2);
+  if (!banks) return false;
+  if (!bandArcs(b, R, ring, band, depth, arcsBetween(banks.splits))) return false;
+  const rim = without([[0, TAU]], banks.keep);
+  const left = fitAlong(b, R, ring, sys, rim, 1, depth + 1, banks.labels);
+  // Crowded rims: guns get a second pass on their own (fresh spots between the first ones); rooms that need no hull
+  // (reactors, shields, the core) go inboard of the corridor instead, facing the centre.
+  const guns = fitAlong(b, R, ring, left.filter((r) => r.role === 'weapons'), rim, 1, depth + 1, banks.labels);
+  return guns.length === 0 && fitAlong(b, R, ring, left.filter((r) => r.role !== 'weapons'), QUARTERS, -1).length === 0;
 }
 
 /**
- * Concentric: an inner and an outer round ring joined by spokes, the hub in the middle, rooms as rectangles outboard of
- * both (the inner ring also inboard). Still rectangles: as ring bands its airlocks did not fit (open, see STATUS).
+ * Concentric: an inner and an outer round ring joined by four cardinal spokes, the hub in the middle. Every soft room is
+ * a ring segment: the inner ring carries bands on both faces (its inboard band fills the centre round the hub), the
+ * outer ring one band outboard with its docks reserved first as banks on the north and south faces. System rooms stay
+ * rectangles on the outer rim, beyond the band. The space between the inner band and the outer ring is the court.
  */
 export function concentricStation(rng: Rng, hub: RoomSpec, roomsIn: RoomSpec[], spokes: ('n' | 's' | 'e' | 'w')[]): Builder | null {
   const b = localBuilder(rng);
-  // Docks stay on the outer ring (airlocks face open space, not the centre).
-  // Docks and system rooms (gun bays need open space beside them) stay on the outer ring, never round the centre.
-  const rooms = [...roomsIn.filter((r) => r.role !== 'dock' && !isSystem(r)), ...roomsIn.filter(isSystem), ...roomsIn.filter((r) => r.role === 'dock')];
+  const docks = roomsIn.filter(isDock);
+  const sys = roomsIn.filter(isSystem);
+  const rest = roomsIn.filter((r) => !isDock(r) && !isSystem(r));
+  const area = (rs: RoomSpec[]): number => rs.reduce((t, r) => t + r.w * r.h, 0);
+  // Shares by floor area: about a fifth round the hub, a third outside the inner ring, the rest on the outer ring.
+  const total = area(rest);
+  const iIn: RoomSpec[] = [], iOut: RoomSpec[] = [], oBand: RoomSpec[] = [];
+  for (const r of rest) (area(iIn) < total * 0.2 ? iIn : area(iOut) < total * 0.33 ? iOut : oBand).push(r);
   const hw = Math.max(hub.w, hub.h);
-  // The inner ring carries rooms on both faces (its inboard half fills the centre round the hub).
-  const k = Math.max(2, Math.round(rooms.length * 0.4));
-  const inner = rooms.slice(0, Math.ceil(k / 2));
-  const core = rooms.slice(Math.ceil(k / 2), k);
-  const outer = rooms.slice(k);
-  const depth = Math.max(3, ...inner.map((r) => Math.max(r.w, r.h))) + 2;
-  // Inner rooms keep clear of the cardinal spokes: four arcs between them.
-  const gap = 0.22;
-  const arcs: [number, number][] = [0, 1, 2, 3].map((q) => [q * (TAU / 4) + gap, (q + 1) * (TAU / 4) - gap]);
-  const coreDepth = Math.max(0, ...core.map((r) => Math.max(r.w, r.h))) + 2;
-  const R1 = Math.max(radiusFor(inner, Math.ceil(hw / 2) + 6, 1 - (4 * gap) / TAU), Math.ceil(hw / 2) + coreDepth + 3);
-  const R2 = Math.max(radiusFor(outer, 0), R1 + depth + 4);
+  const hubR = Math.ceil(Math.hypot(hw / 2 + 1, hub.h / 2 + 1));
+  const dI = bandDepth(iIn);
+  const dO = bandDepth(iOut);
+  const dB = bandDepth(oBand);
+  const R1a = Math.max(hubR + (iIn.length > 0 ? dI + 4 : 4), bandRadius(iIn, dI, 1, -1), bandRadius(iOut, dO));
+  const R2 = Math.max(R1a + dO + 8, bandRadius([...oBand, ...sys, ...docks], dB), rimRadius(sys, docks) - dB - 2);
+  // A rim-driven outer ring (many guns) would leave a vast court: the inner ring grows to keep the court at most
+  // COURT tiles across, its segments longer.
+  const R1 = Math.max(R1a, R2 - dO - 2 - COURT);
   const r1 = corridor(b, R1, 'inner');
   const r2 = corridor(b, R2, 'outer');
   if (!r1 || !r2) return null;
@@ -256,10 +283,11 @@ export function concentricStation(rng: Rng, hub: RoomSpec, roomsIn: RoomSpec[], 
   const hubLabel = b.cv.labelAt(h.x + 1, h.y + 1);
   for (const d of spokes) if (!spoke(b, d, face(h, d), R1 - 1, hubLabel, r1.label)) return null;
   for (const d of ['n', 's', 'e', 'w'] as const) if (!spoke(b, d, R1 + 1, R2 - 1, r1.label, r2.label)) return null;
-  const left = fitAlong(b, R1, r1.label, inner, arcs, 1);
-  const leftIn = fitAlong(b, R1, r1.label, core, arcs, -1);
-  const left2 = fitAlong(b, R2, r2.label, [...outer, ...left, ...leftIn], [[0, TAU]], 1);
-  return fitAlong(b, R2, r2.label, left2, [[0, TAU]], -1).length === 0 ? b : null;
+  const ANGLE = { e: 0, s: Math.PI / 2, w: Math.PI, n: -Math.PI / 2 } as const;
+  // Spokes cut the inner bands into arcs: the hub's spokes inboard, the four cardinal ones outboard.
+  if (!bandArcs(b, R1, r1.label, iIn, dI, arcsBetween(spokes.map((d) => ANGLE[d])), -1)) return null;
+  if (!bandArcs(b, R1, r1.label, iOut, dO, arcsBetween([0, 1, 2, 3].map((q) => (q * TAU) / 4)))) return null;
+  return outerBand(b, R2, r2.label, oBand, sys, docks, dB) ? b : null;
 }
 
 /** Arc: a partial round ring (a crescent) of `span` radians: a room band outside it, system rooms and docks beyond. */
