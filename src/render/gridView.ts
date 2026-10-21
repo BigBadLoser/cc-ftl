@@ -14,7 +14,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { floorChain, ghostVertsIn, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { floorChain, ghostVertsIn, HULL_RAY, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
 
@@ -310,7 +310,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const built = `${base}|${grid.revision("struct")}|${mr}`;
       if (built !== builtKey) {
         builtKey = built;
-        chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c)}|${specialsNear(c)}`, buildChunk);
+        chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${specialsNear(c)}`, buildChunk);
         frameKey = "";
       }
       const pulse = host.emergency() ? pulsePhase(performance.now()) : -1;

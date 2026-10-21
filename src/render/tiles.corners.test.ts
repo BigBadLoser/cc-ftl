@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Struct } from "../sim/structure";
-import { outward, touchesSpace, wallCorners, wallMask, wallPieces, type CutawayMode, type KindAt, type Piece } from "./tiles";
+import { HullSide, hullSide, outward, touchesSpace, wallCorners, wallMask, wallPieces, type CutawayMode, type KindAt, type Piece } from "./tiles";
 
 const W = Struct.Wall;
 const F = Struct.Floor;
@@ -65,6 +65,14 @@ const has2x2 = (k: KindAt, x: number, y: number) => {
   return false;
 };
 
+/** The legacy hull side: any wall touching space was hull, near if space lay at +x / +y / +x+y. */
+const legacySide = (k: KindAt, x: number, y: number) =>
+  k(x, y) !== W && k(x, y) !== D ? -1 : !touchesSpace(k, x, y) ? HullSide.None : outward(k, x, y) ? HullSide.Near : HullSide.Far;
+const sideOf = (k: KindAt, x: number, y: number) => (k(x, y) !== W && k(x, y) !== D ? -1 : hullSide(k, x, y));
+/** The tile and the neighbours its end faces look at classify as before (hullSide only changes misfiring walls). */
+const sameSides = (k: KindAt, x: number, y: number) =>
+  [[0, 0], [1, 0], [0, 1]].every(([dx, dy]) => legacySide(k, x + dx!, y + dy!) === sideOf(k, x + dx!, y + dy!));
+
 describe("wall corner fills", () => {
   it("sets a corner only for two connected arms and a solid diagonal; doors break it", () => {
     const block = grid([
@@ -122,10 +130,11 @@ describe("wall corner fills", () => {
             for (const ghosts of [true, false]) {
               const now = wallPieces(k, x, y, kind, mode, ghosts, gap);
               const old = legacyPieces(k, x, y, kind, mode, ghosts, gap);
-              if (!has2x2(k, x, y)) {
+              if (!has2x2(k, x, y) && sameSides(k, x, y)) {
                 expect(now).toEqual(old);
                 compared++;
               } else filled++;
+              if (!sameSides(k, x, y)) continue;                       // a misfire hullSide fixes (own tests)
               expect(now.map((p) => p.chain.at(-1))).toEqual(old.map((p) => p.chain.at(-1)));
               expect(now.map((p) => [p.order, !!p.under])).toEqual(old.map((p) => [p.order, !!p.under]));
             }
