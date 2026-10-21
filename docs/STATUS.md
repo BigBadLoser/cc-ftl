@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-21 (step 9a on `sector-9`).
+Last updated: 2026-10-21 (asteroids slice 1 on `asteroids`).
 
 **Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
 map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
@@ -36,6 +36,32 @@ m4-combat + m4-assets + m4-ui to main.
 
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
+
+## Asteroids (branch `asteroids`; slice 1 of 7; not merged; visual: needs the user's screenshot approval)
+
+**User decisions (2026-10-21):**
+1. Asteroids are real tiles in the sector grid, mineable and buildable like any other region.
+2. Default mining uses **mining pods**: they deploy from a new small vehicle bay (about 3x3), fly to an asteroid, laser-mine its ore
+   veins and bring the ore back; a field takes several trips.
+3. Two scales: **very big asteroids** you (or enemies) can build a base or outpost on, and **fields of smaller asteroids** with
+   ore for pods.
+4. Asteroid bases are either **hollowed out** (an interior cut into the rock) or **built on the surface**, never both on one asteroid.
+
+**Slice 1 (done):** rock and ore tiles, the `AsteroidC` region model, the seeded generator, stamping with the gap rule,
+`debug.spawnAsteroid`, placeholder drawing and contact sheets. Details and the region-model reasoning in ARCHITECTURE
+("Asteroids"). Save v26. Planner's calls the user can overrule: own `AsteroidC` (not a ShipC kind); mined rock becomes Space
+(no rubble); ores yield existing items (iron -> metal, ice -> ice, rare -> electronics) until raw ores and refining exist;
+`ASTEROID_GAP` = 4 tiles (rock to a ship's padded frame, and rock to rock between asteroids); weapons do not damage rock;
+the core carries no ore; the hollow variant is a 50% roll per seed unless forced. Debug: `?hook`, then
+`__cc.dispatch({ type: 'debug.spawnAsteroid', kind: 'big', seed: 4, hollow: true, x: 62, y: 40 })` and pan right/down.
+
+**Next slices, in order:**
+1. The small vehicle bay (3x3) and the mining pod vehicle.
+2. Pod laser-mining of veins and the ore haul-back (multiple trips).
+3. Building on asteroid surfaces.
+4. Hollowed-out interiors.
+5. Enemy asteroid outposts.
+6. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles).
 
 ## Aliens on derelicts (branch `aliens`, based on `derelict-ingame` plus `art/alien`; not merged; awaiting user review)
 

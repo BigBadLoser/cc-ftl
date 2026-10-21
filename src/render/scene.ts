@@ -27,6 +27,7 @@ import { sectorTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHo
 import { targetedModules, wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
+import { createAsteroidView } from './asteroidView';
 import { createShipScene, type ShipScene } from './shipScene';
 
 export type { CutawayMode };
@@ -98,6 +99,8 @@ interface RendererContent {
   weapons: Readonly<Record<string, WeaponDef>>;
   /** The EVA suit, for the air bar over suited crew. */
   suit?: { airSec: number };
+  /** Ore kinds (code and placeholder colour) for the asteroid placeholder drawing. */
+  ores?: Readonly<Record<string, { code: number; color: number }>>;
 }
 
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
@@ -140,6 +143,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   stage.addChild(SL.world);
   const sectorParticles = createParticles(atlas, SL);
   const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules });
+  // Asteroids (PLACEHOLDER drawing, asteroidView.ts): one region layer set in the sector frame, under every ship's tiles.
+  const rockLayers = W.region(false);
+  rockLayers.setOrigin(0, 0, 0);
+  const asteroids = createAsteroidView(world, rockLayers.floor, content.ores ?? {});
 
   // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle
   // parked in a bay is the bay's own layer (vehicleBayArt).
@@ -286,6 +293,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         sc.setMarks(id === shown, id === shown ? targetedModules(world, refId, id) : NONE);
         sc.update(dt);
       }
+      asteroids.update(sector);
       shuttles.update(dt);
       boxes.update();
       fightFx.update(dt);
@@ -391,6 +399,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     setCombatMarks: (m) => pass.setMarks(m),
     pickCombat: (sx, sy) => pass.pick(sx, sy),
     dispose() {
+      asteroids.dispose();
+      rockLayers.dispose();
       shuttles.dispose();
       boxes.dispose();
       fightFx.dispose();

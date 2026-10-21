@@ -650,6 +650,48 @@ the `ItemDef` (the content test fails for an unpriced item); tilt it per trader 
 **A new faction:** add a `TradeFactionDef` keyed by its faction id. When the real faction system arrives, replace `tradeFactionOf`,
 `profileFor` and the `relation + reputation` rule in `trade/traders.ts`; everything else reads those.
 
+## Asteroids (slice 1 on branch `asteroids`), `src/sim/asteroids/`
+
+**Region model: its own `AsteroidC` entity plus the owner layer (not a `ShipC` kind).** An asteroid (one big body, or a whole
+field of small rocks) is an entity with `AsteroidC { kind, seed, hollow, x, y, width, height, parts, core }` (sector tiles).
+Its rock tiles carry the entity id in the `ship` owner layer, which now means "owning region". Why not `ShipC` with a new kind:
+- Every field system, combat, AI, capture, the node strip and the UI iterate `ShipC` / `regions(sim)`. A ShipC asteroid would
+  need a guard in each of them, and a 120x120 rock would join the air, heat and light sweeps every tick for nothing. With its
+  own component, all of them ignore asteroids with no change.
+- `shipAt(sim, x, y)` returns the owner only when it is a `ShipC`, so rock reads as "no ship" in every ship rule (`shipIdAt`,
+  impacts: a shot landing on rock misses, build-owner rules). `ownerAt` is the raw layer; `asteroidAt` gives the asteroid.
+- Jumps: `liftShip` only takes the ship's rectangle and `liftSet`, so asteroids never jump; `archiveSector` freezes every
+  entity and chunk left, so an asteroid stays in its node's archive and comes back whole (`content/ships/asteroids.test.ts`).
+  The translation table moves `asteroid` (x, y, parts, core).
+- Gap rule: `placementGapError` (ships) also refuses overlap with, or coming within `ASTEROID_GAP` (4) of, any rock body's
+  bbox (`parts`, not the field's whole bbox, so ships may sit inside a field's extent). `asteroidGapError(sim, parts)` is the
+  asteroid side: rock bodies keep `ASTEROID_GAP` from every ship's padded frame and from other asteroids' rock.
+- Later (bases): a hollowed or surface base will need air, power and light. Plan: the base becomes a `ShipC` region of its own
+  (a station) whose rectangle covers the built tiles; the rock around stays the asteroid's. Not built.
+
+**Tiles.** `Struct.Rock` (5) and `Struct.CoreRock` (6, the hollowable core of a big asteroid; Rock in every rule). `isRock(kind)`.
+Rock is solid, airtight (`gasConductance` 0; atmosphere and smoke zero it like a wall), unwalkable, blocks sight (`los.ts`),
+has no integrity (hp 0: weapons do not chip it) and gets no room. Two new u8 fields: `ore` (an `OreDef.code`, 0 none) and
+`oreAmt` (units left). Ore sits only on plain Rock. Mined rock will become Space (no rubble), which `syncOwner` already clears.
+Ore kinds are content (`content/ores.ts`, `ContentRegistry.ores`): iron -> `item.metal`, ice -> `item.ice`, rare metals ->
+`item.electronics` (existing items; no raw-ore items or refining yet). Save v26.
+
+**Generation** (`gen.ts`, `shape.ts`, `noise.ts`; pure, `Rng` per seed, separate from shipgen; `validateAsteroid` reuses
+shipgen's `structureParts`):
+- Big (`BIG`): 40-120 tiles on the long side, aspect 0.6-1, 5-9 metaballs roughened by seeded value-noise fbm (rough 0.75),
+  largest 4-connected body kept and holes filled, then cropped. Veins: one per ~200 rock tiles, 12-40 step 4-connected random
+  walks, 35% of steps two wide, ore picked by `weight.big`. Hollow variant (`hollowChance` 0.5, or forced by `hollow`): the core
+  is the rock at least 5 tiles from space, flood-connected to the deepest tile, within a noise-varied reach of about 0.28 of
+  the short side. The core carries no ore. Forcing `hollow` keeps the outline.
+- Field (`FIELD`): extent 70-110 x 45-70, 18-34 rocks of 3-15 tiles (sizes lean small), gathered around 2-4 clumps, placed by
+  rejection sampling with 3 empty tiles between rock bboxes. 65% of rocks get 1-2 ore pockets (diamond blobs, radius 1-3).
+- `stampAsteroid(sim, plan, x, y)` writes only rock tiles (struct, hp 0, owner, ore) through the grid API, so Space inside a
+  field's bbox is untouched. `debug.spawnAsteroid { kind, seed, x?, y?, hollow? }` (auto spot: first fit scanning from the
+  sector's top-left) emits `asteroid.spawned`.
+- Render: `render/asteroidView.ts`, a PLACEHOLDER (procedural diamonds with a rim, sizes from `TILE_W`/`TILE_H`), one Graphics per
+  asteroid in its own region layer set at the sector origin, rebuilt on the struct/ore chunk revisions under its bbox.
+- Contact sheets: `node tools/asteroids/cli.js <big|field|all> [--from 1] [--count 12] [--scale 4] [--hollow yes|no] [--out dir]`.
+
 ## Sector grid (planned)
 
 Decision (user, 2026-10-19): **a sector is one large grid with everything placed on it.** It replaces the many-grids model
