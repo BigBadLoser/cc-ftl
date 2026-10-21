@@ -23,6 +23,9 @@ SCENE = re.compile(r"CREW scene ([\d.]+)s; (\d+) entries, (\d+) cache hits, (\d+
 RENDER = re.compile(r"(?:^|\s)rendered (\d+)/(\d+)")
 PACK = re.compile(r"CREW pack .* hits (\d+) misses (\d+)")
 MANIFEST = re.compile(r"^MANIFEST (\S+)")
+FAMILY_START = re.compile(r"^FAMILY_START (\\S+)$")
+FAMILY_JOBS = re.compile(r"^FAMILY_JOBS (\\S+) (\\d+)$")
+FAMILY_PROGRESS = re.compile(r"^FAMILY_PROGRESS (\\S+) (\\d+) (\\d+)$")
 BAR_WIDTH = 24
 OBSERVED = {}
 
@@ -107,6 +110,27 @@ def log_status(name):
     return f"{name}: {path.stat().st_size // 1024} KiB | last update {duration(time.time() - path.stat().st_mtime)} ago"
 
 
+def family_progress():
+    data = read_log(LOG_ROOT / "families.log")
+    # Only the last run matters; tee usually truncates, but support appended logs.
+    batch = data.rfind("FAMILY_BATCH ")
+    if batch >= 0:
+        data = data[batch:]
+    completed = [m.group(1) for m in MANIFEST.finditer(data)]
+    active = list(FAMILY_START.finditer(data))
+    if not active:
+        return completed, None, None
+    name = active[-1].group(1)
+    section = data[active[-1].end():]
+    total_match = next((m for m in FAMILY_JOBS.finditer(section) if m.group(1) == name), None)
+    if not total_match:
+        return completed, name, None
+    total = int(total_match.group(2))
+    updates = [m for m in FAMILY_PROGRESS.finditer(section) if m.group(1) == name]
+    done = int(updates[-1].group(2)) if updates else 0
+    return completed, name, (done, total)
+
+
 def dashboard():
     print("CC-FTL 2x sprite rendering  |  " + time.strftime("%Y-%m-%d %H:%M:%S"))
     print("=" * 78)
@@ -145,20 +169,27 @@ def dashboard():
     print()
     print("NON-CREW FAMILIES")
     print("-" * 78)
-    family_log = read_log(LOG_ROOT / "families.log")
-    finished = [m.group(1) for m in MANIFEST.finditer(family_log)]
-    family_set = set(finished)
-    n = len(family_set.intersection(FAMILIES))
-    print(f"Families: {progress_bar(n / len(FAMILIES))} "
-          f"{n}/{len(FAMILIES)} complete (family count, not render-time weighted)")
+    finished, active, current = family_progress()
+    n = len(set(finished).intersection(FAMILIES))
+    print(f"Family batches: {progress_bar(n / len(FAMILIES))} "
+          f"{n}/{len(FAMILIES)} complete (not weighted by render time)")
+    if active:
+        if current:
+            done, total = current
+            fraction = done / total if total else 1
+            estimated = eta("family:" + active, done, total)
+            print(f"Current: {active}  {progress_bar(fraction)} {fraction:6.1%} "
+                  f"{done}/{total} jobs  ETA {duration(estimated)}")
+            print("  Job progress counts completed build jobs; packing is separate.")
+        else:
+            print(f"Current: {active} | special renderer (no per-job counters available)")
+    elif not finished:
+        print("Waiting for family renderer progress logs.")
     if finished:
         print("Last completed: " + ", ".join(finished[-5:]))
-    remaining = [f for f in FAMILIES if f not in family_set]
+    remaining = [f for f in FAMILIES if f not in set(finished)]
     if remaining:
-        print("Next/uncompleted: " + ", ".join(remaining[:5]))
-    family_eta = eta("families", n, len(FAMILIES))
-    if family_eta is not None:
-        print(f"Families rough ETA: ~{duration(family_eta)} (unequal family sizes)")
+        print("Upcoming: " + ", ".join(remaining[:5]))
     print()
     print("LOG HEALTH")
     print("-" * 78)
@@ -166,8 +197,8 @@ def dashboard():
         print("  " + log_status(name))
     print("Missing logs mean progress cannot be inferred from previous terminal output.")
     print()
-    print("Crew percentage is exact for the logged work plan; families are counted by")
-    print("completed batches, not duration. ETA needs observed progress and is approximate.")
+    print("Crew: cached + rendered frames. Families: jobs within instrumented families;")
+    print("special families (robots, aliens, sol, damage_sol) need separate counters.")
     print("Press q or Ctrl+C to exit; renders continue independently.")
 
 
