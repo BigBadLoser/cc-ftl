@@ -18,6 +18,7 @@ Ids (the renderer's chain, render/moduleArt.containerChain; the game mirrors the
   <shell id>.logo.<company>            then a company logo (containers_logo.py), picked by hash; intact and damaged
       shells only (patched: the scrappers' X replaces the brand; destroyed: burnt off)
   Every overlay is rendered from its shell's own build, so dents, holes and welded plates cover it as on the shell.
+  Destroyed shells have no overlays at all: the paint is burnt off, the wreck is bare char.
   container.<W>x<H>[.paint|.lv]        fallback: r0, doors toward the camera
   container.clamp.<n|e|s|w>, container.clamp   the clamp at the middle tile of the clamped side, gripping the door end
 Variants v0 (no suffix), v1 (stencil code on the roof, hazard roof edge), v2 (flat panelled sides and roof, rust),
@@ -290,8 +291,8 @@ def clamp(side):
 
 
 def _jobs_for(size, rot, end, variant, state):
-    """The shell sprite and its overlays from the same build (damage included): <id>.paint, <id>.lv and, but on
-    patched and destroyed boxes (the scrappers' X replaces the brand; charred), <id>.logo.<company>."""
+    """The shell sprite and its overlays from the same build (damage included): <id>.paint and <id>.lv (not on
+    destroyed boxes: the paint is burnt off) and <id>.logo.<company> (not on patched or destroyed ones)."""
     sid = f"container.{size}.r{rot}.{end}" + (f".v{variant}" if variant else "")
     sid += f".{state}" if state else ""
     W, L = SIZES[size]
@@ -299,8 +300,9 @@ def _jobs_for(size, rot, end, variant, state):
     build = lambda: shell(size, rot, end, variant, state)  # noqa: E731
     if state in ("damaged", "destroyed"):
         build = damage.wrap(build, state, sid, False, False)
-    out = [(sid, fp, "prop", build), (f"{sid}.paint", fp, "block", lambda: painted(build)),
-           (f"{sid}.lv", fp, "block", lambda: keyed(build))]
+    out = [(sid, fp, "prop", build)]
+    if state != "destroyed":                                                         # its paint burnt off: bare char
+        out += [(f"{sid}.paint", fp, "block", lambda: painted(build)), (f"{sid}.lv", fp, "block", lambda: keyed(build))]
     if LOGOS and state in ("", "damaged"):
         from .containers_logo import COMPANIES
         out += [(f"{sid}.logo.{co}", fp, "block", lambda c=co: branded(build, c)) for co in COMPANIES]
