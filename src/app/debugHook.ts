@@ -97,6 +97,10 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     story: () => sim.story,
     vehicles: () => vehicleViews(sim),
     ships: () => [...sim.world.query(ShipC)].map((id) => sim.world.get(id, ShipC)),
+    /** Ship ids with their components (stations: `immobile`), the trade state, and a camera frame for screenshots. */
+    shipList: () => [...sim.world.query(ShipC)].map((id) => ({ id, ...sim.world.get(id, ShipC) })),
+    trade: () => sim.trade,
+    frame: (ids: number[]) => r.frameShips(ids),
     events: () => seen,
   };
   return { onEvents: (types) => void seen.push(...types) };

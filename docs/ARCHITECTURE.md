@@ -624,8 +624,14 @@ commands while paused so the window answers at once.
    airlock on the player's ship).
 2. Goods **from the trader** come on the **trader's own shuttle** if its kind has `shuttle: true` (a real `VehicleC` spawned at its ship,
    no crew, `home: 0`, despawned when it is back); otherwise the **player's shuttle goes over** to fetch them.
-3. Stations are ships (an immobile `ShipC`, see "Stations" below), so they take branch 1 or 2 unchanged. Station kinds have no shuttle,
-   so the player's shuttle flies every station run. (The instant fallback for grid-less stations is gone.)
+3. Stations are ships (an immobile `ShipC`, see "Stations" below). Station kinds have no shuttle, so the player's shuttle flies every
+   station run, and it **docks** (`trade/stationDock.ts`) instead of hovering: `out` -> `dockStation` (dock at a free working station
+   airlock; the dock order reserves it, `dockError` 'occupied' for anyone else) -> `stationWork` (the bought goods are staged from the
+   trader's set-aside stock into the station storage nearest the airlock, station crew haul both ways between station storage and the
+   shuttle, the player's goods pass from station storage into the trader's stock) -> undock -> `back`. No free station airlock, a
+   failed dock or a station crew that never comes falls back to the hover swap (`Deal.via 'hover'`, shown in the deal status). A run
+   can be cancelled while docked: haul jobs are dropped, the bought goods return to the trader, the player's goods to the hold, and
+   the shuttle flies home. (The instant fallback for grid-less stations is gone.)
 One run carries at most the shuttle hold (`VehicleDef.cargo`, 40 units) each way.
 
 A **deal** (`Deal`) holds the payer's credits in **escrow** from accept (the player's if `balance > 0`, else the trader's) and takes the

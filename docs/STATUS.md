@@ -165,12 +165,22 @@ Spines and arcs stay below hub size, because they outgrow the 160 cap. Hubs buil
 - Crew names repeat once the pool runs out, because hub crews outgrew it. The camera can zoom out below 1 to frame a hub.
 - UI note: the hostiles button still lights for a dormant den (the sim is not in combat).
 
+**Slice 3 (user answers 2026-10-21):**
+- **Station trade docks at the station's airlocks**, and station crew haul both ways (ARCHITECTURE trade, branch 3). The hover swap
+  stays as the fallback when no station airlock is free.
+- **Depots sell "surplus":** every hand weapon up to `ItemDef.tier` 2 (blade, sidearm, ion pistol; never the tier-3 rifle), at a
+  1.1 markup, labelled "surplus" in the trade window; they still buy weapons. No armour items exist yet.
+- Defaults the user did not answer, noted here:
+  - the hostiles button stays dark for a dormant den until it is provoked;
+  - the node growing to fit a hub is fine for now.
+- **One zoom ladder** after merging main's 2x code: whole levels from 1 up; below 1 the fractions 1/8, 1/6, 1/4, 1/3, 1/2, 0.75,
+  with 1 / ART_SCALE among them. Every level below 1 is drawn smoothed.
+
 Next slices (not built):
-1. Docking trade at station airlocks: the player's shuttle docks, and station crew load and unload at the station's storage.
-2. Station NPC behaviour and security AI: guards, patrols, alarms, and drawing from the armoury.
-3. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.
-4. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
-5. Generator polish:
+1. Station NPC behaviour and security AI: guards, patrols, alarms, and drawing from the armoury.
+2. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.
+3. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
+4. Generator polish:
    - concentric rings as ring bands (airlocks beyond a band need their own facing rule);
    - big courtyards are slow to furnish and dark (lighting places at most 12 lamps a room). Hubs now take a mean of 0.3–1.9 s; the worst is 8.6 s (a farming satellite hub that reseeded 18 times). The slow-test bound is 15 s;
    - an armour doctrine for walls (navy belts, depots) is not built: every wall is one tile now;
