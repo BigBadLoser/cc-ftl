@@ -1,4 +1,5 @@
-"""Production bridge consoles (console_proto models, approved): helm 3x2, weapons 2x2, shield 3x2, in four rotations.
+"""Production bridge consoles (console_proto models, approved): helm 3x2, weapons 2x2, shield 3x2, in four rotations; and
+the ops consoles comms 2x2 and sensor 2x2 (console_ops.py, family `ops_consoles`).
 
 Per console and rotation r (footprint rotated like the sim, clockwise):
   module.<c>.r<r>            idle (screens dark)          module.<c>.r<r>.active   powered and manned
@@ -13,11 +14,14 @@ import math
 import bpy
 import numpy as np
 
+from . import console_ops  # noqa: F401  (registers comms and sensor in console_proto's tables)
 from . import console_proto as C
 from . import core, env_build, post
 from .cmbkit import Frame
 
-IDS = {"helm": "module.helm", "weapons": "module.weapons_console", "shield": "module.shield_console"}
+IDS = {"helm": "module.helm", "weapons": "module.weapons_console", "shield": "module.shield_console",
+       "comms": "module.comms_console", "sensor": "module.sensor_console"}
+BRIDGE = ("helm", "weapons", "shield")                # the `consoles` family; comms and sensor are `ops_consoles`
 SEAT_DIR = {0: 6, 1: 0, 2: 2, 3: 4}      # seated crew direction per rotation (faces +u: r0 -y, r1 +x, r2 +y, r3 -x)
 SIT_CAST = (("body", "legs.cargo_pants", "gear.belt.tool_belt", "eyes.cyber", "hair.mohawk", "arm.L.cyber", "arm.R.cyber",
              "torso.work_shirt", "gear.head.welding_goggles"),
@@ -42,8 +46,9 @@ def meta(name, rot):
 
 def _rig():
     if not _RIG:
+        from . import human_items
         from . import human_render as hr
-        _RIG.append((hr, hr.build_items()))
+        _RIG.append((hr, human_items.build_items()))
     return _RIG[0]
 
 
@@ -120,5 +125,5 @@ def console_items(name, rot):
     return out
 
 
-def jobs():
-    return [lambda n=n, r=r: console_items(n, r) for n in IDS for r in range(4)]
+def jobs(names=BRIDGE, rots=range(4)):
+    return [lambda n=n, r=r: console_items(n, r) for n in names for r in rots]
