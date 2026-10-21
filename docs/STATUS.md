@@ -153,13 +153,24 @@ Spines and arcs stay below hub size, because they outgrow the 160 cap. Hubs buil
   - Plaza stalls laid out as clusters with aisles.
   - Zoomed crops come from `--count 1 --scale 12`.
 
+**Slice 2 (stations in the node, real station trade):** see ARCHITECTURE "Stations".
+- `debug.spawnStation {kind, size, seed, x?, y?}` stamps a generated station as an immobile ship with crew, security and a trader. The
+  debug panel has Trade outpost, Trade hub and Pirate den buttons, and `?station=trading:hub` spawns one at start.
+- The instant trade fallback is deleted. Station deals fly the player's shuttle (hover beside the station, swap cargo with its
+  stock, fly home): the existing branch 1/2. **Not built:** docking at a station's own airlock and hauling through its storage.
+- Kinds:
+  - trading, mining and farming are neutral and hailable;
+  - the military depot is neutral and its quartermaster sells no hand weapons (stock list only; it still buys them);
+  - the pirate den is hostile but dormant until aimed at, damaged or boarded.
+- Crew names repeat once the pool runs out, because hub crews outgrew it. The camera can zoom out below 1 to frame a hub.
+- UI note: the hostiles button still lights for a dormant den (the sim is not in combat).
+
 Next slices (not built):
-1. Spawn a station as a region in the node: an immobile `ShipC`-like kind with no FTL, no jump lift and no flee.
-2. Replace the TEMPORARY trade instant fallback with real docking at station airlocks and shuttles.
-3. Station NPC behaviour and security AI: guards, patrols, alarms, and drawing from the armoury.
-4. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.
-5. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
-6. Generator polish:
+1. Docking trade at station airlocks: the player's shuttle docks, and station crew load and unload at the station's storage.
+2. Station NPC behaviour and security AI: guards, patrols, alarms, and drawing from the armoury.
+3. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.
+4. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
+5. Generator polish:
    - concentric rings as ring bands (airlocks beyond a band need their own facing rule);
    - big courtyards are slow to furnish and dark (lighting places at most 12 lamps a room). Hubs now take a mean of 0.3–1.9 s; the worst is 8.6 s (a farming satellite hub that reseeded 18 times). The slow-test bound is 15 s;
    - an armour doctrine for walls (navy belts, depots) is not built: every wall is one tile now;
@@ -211,7 +222,7 @@ Model, commands, price rules and "how to add a trader or a price" are in `docs/A
   records the hull family.
 - **UI:** Trade button, ship list with Hail, trade window (bottom sheet on phones), credits chip, Hail in the combat panel, trade line
   in the shuttle panel, trade alerts. `?hook` + `?shipgen=civilian` then "Trade" in the top bar.
-- **Decisions to review:** who flies (above); the instant station fallback is TEMPORARY; a hostile-side ship in combat always refuses
+- **Decisions to review:** who flies (above); the instant station fallback (since removed on `stations`: stations are ships now); a hostile-side ship in combat always refuses
   (its guns lock on you at once), so the reputation thaw only applies to non-shooting ships; payment is escrowed at accept; a run
   carries 40 units; trade commands tick the sim once while paused; credits live in `sim.trade`, not on a ship, so they survive a ship swap.
 - **Not done:** hyperlane/sector prices, restocking over time, NPC-to-NPC trade, selling floor stacks (storage only), several runs for

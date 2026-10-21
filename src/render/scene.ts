@@ -7,7 +7,7 @@ import type { SectorGrid } from '../sim/sectorGrid';
 import { shipGridOf } from '../sim/shipGrid';
 import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
 import { loadAtlas } from './assets/loader';
-import { createCamera, type Camera } from './camera';
+import { createCamera, fitLevel, type Camera } from './camera';
 import { createCombatPass, type CombatMarks, type CombatViewRect } from './combatPass';
 import type { CutawayMode } from './gridView';
 import { iso, TILE_H, TILE_W } from './iso';
@@ -355,7 +355,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       }
       if (x0 === Infinity) return;
       cam.centerOn((x0 + x1) / 2, (y0 + y1) / 2);
-      cam.setZoom(Math.max(1, Math.floor(Math.min(cam.w / (x1 - x0 + 64), cam.h / (y1 - y0 + 64)))));
+      cam.setZoom(fitLevel(Math.min(cam.w / (x1 - x0 + 64), cam.h / (y1 - y0 + 64)), Infinity));
     },
     info: () => {
       let sprites = sectorParticles.count();

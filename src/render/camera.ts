@@ -27,6 +27,32 @@ export interface Camera {
 
 const STEP_UP = 1.14;
 
+/**
+ * Zoom levels below 1 device px per art px, for framing things far bigger than a ship (station hubs). Integer fractions
+ * keep the downscale even; everything at 1 and above stays an integer scale.
+ */
+const OUT_LEVELS = [1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 8];
+
+/** The zoom level nearest `z`: an integer in [1, max], or one of OUT_LEVELS below 1. */
+export function zoomLevel(z: number, max: number): number {
+  if (z >= 1) return Math.max(1, Math.min(max, Math.round(z)));
+  return OUT_LEVELS.reduce((best, l) => (Math.abs(l - z) < Math.abs(best - z) ? l : best), 1);
+}
+
+/** The largest zoom level that is at most `fit` (framing: everything must show). */
+export function fitLevel(fit: number, max: number): number {
+  if (fit >= 1) return Math.max(1, Math.min(max, Math.floor(fit)));
+  return OUT_LEVELS.find((l) => l <= fit) ?? (OUT_LEVELS[OUT_LEVELS.length - 1] as number);
+}
+
+/** One level up or down from `zoom`. */
+function stepLevel(zoom: number, dir: 1 | -1, max: number): number {
+  if (zoom > 1 || (zoom === 1 && dir > 0)) return Math.max(1, Math.min(max, zoom + dir));
+  const all = [1, ...OUT_LEVELS];
+  const i = all.findIndex((l) => Math.abs(l - zoom) < 1e-9);
+  return all[Math.max(0, Math.min(all.length - 1, (i < 0 ? 0 : i) - dir))] as number;
+}
+
 export function createCamera(maxZoom: number): Camera {
   let zoom = 1;
   let dprInt = 1;
@@ -36,7 +62,7 @@ export function createCamera(maxZoom: number): Camera {
   let cx = 0;
   let cy = 0;
   let acc = 1;
-  /** Device px per art px. Always an integer, so art pixels stay crisp. */
+  /** Device px per art px. An integer from 1 up (art pixels stay crisp); below 1 only the OUT_LEVELS fractions. */
   const scale = () => zoom;
   let maxScale = maxZoom;
   let sized = false;
@@ -77,13 +103,13 @@ export function createCamera(maxZoom: number): Camera {
     },
     zoomAt(factor, sx, sy) {
       acc *= factor;
-      if (acc >= STEP_UP) cam.setZoom(zoom + 1, sx, sy);
-      else if (acc <= 1 / STEP_UP) cam.setZoom(zoom - 1, sx, sy);
+      if (acc >= STEP_UP) cam.setZoom(stepLevel(zoom, 1, maxScale), sx, sy);
+      else if (acc <= 1 / STEP_UP) cam.setZoom(stepLevel(zoom, -1, maxScale), sx, sy);
       else return;
       acc = 1;
     },
     setZoom(z, sx, sy) {
-      z = Math.max(1, Math.min(maxScale, Math.round(z)));
+      z = zoomLevel(z, maxScale);
       if (z === zoom) return;
       const a = sx === undefined || sy === undefined ? { x: cx, y: cy } : cam.toArt(sx, sy);
       const px = sx === undefined ? w / 2 : sx * ratio;
