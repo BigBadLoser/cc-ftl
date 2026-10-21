@@ -217,6 +217,24 @@ export class SectorGrid implements GridLike {
     return this.chunkKeys().map((k) => ({ cx: keyCx(k), cy: keyCy(k) }));
   }
 
+  /**
+   * Release every allocated chunk touching `rect` whose tiles all hold their empty values (after a ship is lifted out).
+   * Returns how many were released. Revisions are bumped as on any release, so they never go backwards.
+   */
+  releaseEmpty(rect: Rect): number {
+    let n = 0;
+    for (let cy = rect.y >> CHUNK_SHIFT; cy <= (rect.y + rect.h - 1) >> CHUNK_SHIFT; cy++) {
+      for (let cx = rect.x >> CHUNK_SHIFT; cx <= (rect.x + rect.w - 1) >> CHUNK_SHIFT; cx++) {
+        const key = chunkKey(cx, cy);
+        const chunk = this.dir.get(key);
+        if (!chunk || !chunk.arrays.every((a, f) => a.every((v) => v === this.empties[f]))) continue;
+        this.release(key);
+        n++;
+      }
+    }
+    return n;
+  }
+
   /** Number of allocated chunks. */
   get chunkCount(): number {
     return this.dir.size;
