@@ -49,7 +49,8 @@ export function createGhostFilter(): Filter {
 }
 
 /** Camera zoom (device px per art px), so the outline stays one art px wide. */
-export function setGhostZoom(filter: Filter, zoom: number): void {
+export function setGhostZoom(filter: Filter, scale: number): void {
+  const zoom = Math.max(1, scale);
   const g = filter.resources.ghost as { uniforms: { uZoom: number }; update(): void };
   if (g.uniforms.uZoom === zoom) return;
   g.uniforms.uZoom = zoom;

@@ -187,8 +187,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     cam.centerOn(c.x, c.y - 8 * ART_SCALE - WALL_RISE / 2);
     const spanW = (grid.width + grid.height) * (TILE_W / 2) + TILE_W;
     const spanH = (grid.width + grid.height) * (TILE_H / 2) + TILE_H * 2 + WALL_RISE;
-    // Largest whole device-px-per-art-px scale at which the whole ship fits (at least 1).
-    cam.setZoom(Math.max(1, Math.floor(Math.min(cam.w / spanW, cam.h / spanH))));
+    // Largest zoom level (whole from 1 up; 0.75 and 0.5 below at 2x art) at which the whole ship fits (at least the smallest).
+    cam.fitZoom(Math.min(cam.w / spanW, cam.h / spanH));
   }
 
   /** A ship's roof livery; the debug URL parameter `?bow=east|west` forces the end the bow motifs take. */
@@ -249,6 +249,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   function place(c: Camera, target: number | null): void {
     const any = shipOf(refId) !== undefined;
     for (const [id, sc] of scenes) sc.layers.setVisible(any && regionInView(id, sc.grid, c));
+    // Shrunk art (the main camera below zoom 1) is drawn with linear filtering; the combat panel keeps nearest.
+    atlas.setSmooth(target === null && c.scale < 1);
     W.setUiVisible(target === null);
     W.setMarksVisible(target !== null);
     SL.ui.visible = target === null;
@@ -355,7 +357,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       }
       if (x0 === Infinity) return;
       cam.centerOn((x0 + x1) / 2, (y0 + y1) / 2);
-      cam.setZoom(Math.max(1, Math.floor(Math.min(cam.w / (x1 - x0 + 64 * ART_SCALE), cam.h / (y1 - y0 + 64 * ART_SCALE)))));
+      cam.fitZoom(Math.min(cam.w / (x1 - x0 + 64 * ART_SCALE), cam.h / (y1 - y0 + 64 * ART_SCALE)));
     },
     info: () => {
       let sprites = sectorParticles.count();
