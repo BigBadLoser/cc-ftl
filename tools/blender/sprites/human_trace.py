@@ -16,7 +16,9 @@ LIMBS = ("arm", "forearm", "hand", "leg", "shin", "foot")
 UPPER_K = (1.05, 1.18, 1.02)          # upper arm thickness against the traced arm: shoulder, bicep, elbow
                                       # (a bigger bicep made a ball at the top of the arm at 2x)
 FORE_K = (1.08, 1.02, 0.95)           # forearm: elbow, a third down, wrist
-SHIN_K = (1.0, 1.14, 0.88)            # lower leg: knee, the calf a third down, a narrower ankle
+SHIN_K = (0.88, 1.08, 0.76)           # lower leg: a narrow knee, the calf a third down, a slim ankle
+THIGH_K = (1.04, 1.0, 0.84)           # thigh: full at the hip, tapering to the knee
+FOOT_K = (0.85, 0.88)                 # foot length (from the ankle) and girth: the 1x feet were oversized to read
 HEAD_W, HEAD_H = 0.84, 1.14           # head width and height against the traced head
 HAND_LEN = 0.17                       # wrist to the curled finger ends (the traced hand, fingers out, is 0.26)
 
@@ -236,9 +238,12 @@ def measure(arm, body):
                                                 axis=True), FORE_K)
         out["limb"][f"hand.{s}"] = shape_hand(wrist(limb(by[f"hand.{s}"], h[f"hand.{s}"], t[f"hand.{s}"], step=0.03),
                                                     h[f"hand.{s}"]), h[f"hand.{s}"])
-        out["limb"][f"leg.{s}"] = to_joint(limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"]), h[f"leg.{s}"])
+        out["limb"][f"leg.{s}"] = bulk(to_joint(limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"]), h[f"leg.{s}"]),
+                                       THIGH_K)
         out["limb"][f"shin.{s}"] = bulk(limb(by[f"shin.{s}"], h[f"shin.{s}"], t[f"shin.{s}"]), SHIN_K)
-        out["limb"][f"foot.{s}"] = limb(by[f"foot.{s}"], h[f"foot.{s}"], t[f"toe.{s}"], step=0.035)[:-1]   # toe shorter
+        fh, (fl, fg) = h[f"foot.{s}"], FOOT_K
+        out["limb"][f"foot.{s}"] = [(fh + (Vector(c) - fh) * fl, e1, e2, r1 * fg, r2 * fg) for c, e1, e2, r1, r2 in
+                                    limb(by[f"foot.{s}"], fh, t[f"toe.{s}"], step=0.035)[:-1]]   # toe shorter
     hz = max(b[:, 2].max() for k, b in by.items() if k == "head")
     tz = by["hips"][:, 2].min()
     lg = out["limb"]["leg.L"][0]
