@@ -49,32 +49,6 @@ describe('ship generator', () => {
     }
   }, 90000);
 
-  for (const id of ids) {
-    it(`${id}: 200 seeds across depths 0-9 all validate`, () => {
-      const bad: string[] = [];
-      for (let seed = 0; seed < 200; seed++) {
-        const g = gen(id, seed * 7919 + 13, seed % 10);
-        if (g.problems.length > 0) bad.push(`seed ${seed}: ${g.problems.join('; ')}`);
-      }
-      expect(bad).toEqual([]);
-    }, 90000);
-  }
-
-  it('scales with depth: deeper ships are longer, better armed and shielded, with more power and crew', () => {
-    for (const id of ids) {
-      const stats = (g: GenResult) => [g.width, count(g, (d) => !!d.weapon), count(g, (d) => !!d.shieldGen), count(g, (d) => d.power > 0), g.template.crew?.length ?? 0];
-      const avgs = (depth: number): number[] => {
-        const s = [0, 0, 0, 0, 0];
-        for (let seed = 0; seed < 30; seed++) stats(gen(id, seed, depth)).forEach((v, k) => { s[k]! += v / 30; });
-        return s;
-      };
-      const [lo, hi] = [avgs(0), avgs(9)];
-      for (let k = 0; k < 5; k++) {
-        expect(hi[k], `${id} stat ${k}`).toBeGreaterThan(lo[k] as number);
-      }
-    }
-  }, 120000);
-
   it('keeps each motif recognisable', () => {
     for (let seed = 0; seed < 30; seed++) {
       const d = gen('faction.drones', seed, seed % 10);

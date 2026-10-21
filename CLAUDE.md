@@ -11,7 +11,10 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm test`: Vitest
 - `npm run lint`: ESLint, including the import-boundary rules
 - `npm run typecheck`: `tsc` and `svelte-check`
-- `npm run check`: lint, typecheck and test. Run it before every commit.
+- `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
+  skipping `*.slow.test.ts`. Run it before every commit.
+- `npm run check`: lint, typecheck and every test. Run it before opening or updating a PR, and before merging. CI runs it
+  on every PR and on `main`.
 - `npm run sprites`: rebuild the sprite sheets in `public/assets/` with headless Blender
   (`tools/blender/setup.sh` installs it). Commit the generated sheets, JSON and manifest.
 

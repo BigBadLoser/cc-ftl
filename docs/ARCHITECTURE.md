@@ -169,6 +169,19 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
 
 **Visuals.** Field overlays and the tile inspector read grid arrays directly.
 
+## Test tiers
+
+- **Fast tier** (`npm run check:fast`, before every commit): lint, typecheck, then `vitest run --changed`, which runs only the
+  test files that import an uncommitted file, directly or transitively. A render or UI change runs its own tests in seconds.
+  A `src/sim` change still selects most content tests, because they build a full game through `newGame` and so depend on every
+  system. That is correct, not noise.
+- **Slow tier** (`*.slow.test.ts`): soak tests over many seeds or long runs. The fast tier skips them; `npm run check` and CI
+  always run them. Name a test `.slow.test.ts` only when it is a soak or sweep whose failures a normal test would also hint
+  at, never to hide a flaky test.
+- **Full** (`npm run check`, before a PR or merge, and in CI): everything.
+- Vitest runs files in parallel, so one huge file sets the wall time. Split sweeps across files rather than growing one.
+- Test files never import other test files: an imported `*.test.ts` runs its tests again in the importer.
+
 ## Asset pipeline
 
 Asset *creation* is decoupled from asset *rendering*. Models are built as 3D in Blender, then
