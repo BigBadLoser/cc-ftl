@@ -26,8 +26,10 @@ import { newTrade, type TradeState } from './trade/types';
  * v23: `ShipC.ruin` (a derelict's dressing data for the renderer: breach, decal and hook art, module art overrides).
  * v25 (step 9a): `sector.node`, `sector.state` ('active' | 'deploying') and `sector.packet` (the player's ship in transit while
  * deploying), plus `archives` (every sector the player left, frozen).
+ * v26 (asteroids slice 1): tile fields `ore` and `oreAmt`, struct kinds Rock and CoreRock, and `AsteroidC` regions that own
+ * their rock tiles in the `ship` layer.
  */
-export const SAVE_VERSION = 25;
+export const SAVE_VERSION = 26;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

@@ -28,6 +28,7 @@ export interface ShipTemplate {
 
 import type { EventDef } from './story/defs';
 import type { TradeDef } from './trade/types';
+import type { OreDef } from './asteroids/types';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -60,6 +61,8 @@ export interface ContentRegistry {
   trade?: TradeDef;
   /** Derelict infestations: what hatches from egg sacs. Absent = sacs hatch nothing. */
   creatures?: CreatureDefs;
+  /** Ore kinds in asteroid rock (content/ores.ts) by id. Absent = asteroids carry no ore. */
+  ores?: Record<string, OreDef>;
 }
 
 /** Derelict creatures (content/creatures.ts). */

@@ -1,9 +1,10 @@
+import { AsteroidC } from './asteroids/components';
 import { ShipC, type Ship } from './combat/components';
 import type { GridLike, Rect } from './grid';
 import { shipGridOf, type ShipGrid } from './shipGrid';
 import type { Sim } from './sim';
 import { Struct } from './structure';
-import { MIN_SHIP_GAP, REGION_PAD } from './tuning';
+import { ASTEROID_GAP, MIN_SHIP_GAP, REGION_PAD } from './tuning';
 
 /** One ship's structure in the sector, what field systems run over: the shared sector grid and the ship's rectangle. */
 export interface Region {
@@ -66,9 +67,31 @@ export function regions(sim: Sim): Region[] {
   return out;
 }
 
-/** The `ShipC` entity owning the sector tile (x, y), or 0 (Space, or structure no ship owns). */
-export function shipAt(sim: Sim, x: number, y: number): number {
+/** The region entity owning the sector tile (x, y) in the `ship` owner layer: a `ShipC` or an `AsteroidC`, or 0. */
+export function ownerAt(sim: Sim, x: number, y: number): number {
   return sim.sector.grid.get('ship', x, y);
+}
+
+/**
+ * The `ShipC` entity owning the sector tile (x, y), or 0 (Space, structure no ship owns, or asteroid rock: an asteroid owns its
+ * tiles but is not a ship, so every ship rule reads it as unowned).
+ */
+export function shipAt(sim: Sim, x: number, y: number): number {
+  const owner = ownerAt(sim, x, y);
+  return owner !== 0 && sim.world.has(owner, ShipC) ? owner : 0;
+}
+
+/** The `AsteroidC` entity owning the sector tile (x, y), or 0. */
+export function asteroidAt(sim: Sim, x: number, y: number): number {
+  const owner = ownerAt(sim, x, y);
+  return owner !== 0 && sim.world.has(owner, AsteroidC) ? owner : 0;
+}
+
+/** Every asteroid rock body's bbox in sector tiles, by ascending asteroid id then part order. */
+export function asteroidParts(sim: Sim): Rect[] {
+  const out: Rect[] = [];
+  for (const id of [...sim.world.query(AsteroidC)].sort((a, b) => a - b)) out.push(...(sim.world.get(id, AsteroidC)?.parts ?? []));
+  return out;
 }
 
 /**
@@ -110,8 +133,9 @@ export function stampOwner(grid: GridLike, ship: number, rect: Rect): void {
 }
 
 /**
- * Why a ship with sector bbox `bbox` cannot be placed, or null: 'overlap' if it shares a tile with another grid,
- * 'tooClose' if its padded frame comes within MIN_SHIP_GAP of another grid's padded frame.
+ * Why a ship with sector bbox `bbox` cannot be placed, or null: 'overlap' if it shares a tile with another grid or an asteroid
+ * rock body's bbox, 'tooClose' if its padded frame comes within MIN_SHIP_GAP of another grid's padded frame or within
+ * ASTEROID_GAP of a rock body.
  */
 export function placementGapError(sim: Sim, bbox: Rect): 'overlap' | 'tooClose' | null {
   const reach = padded(bbox, REGION_PAD + MIN_SHIP_GAP);
@@ -119,6 +143,29 @@ export function placementGapError(sim: Sim, bbox: Rect): 'overlap' | 'tooClose' 
   for (const r of regions(sim)) {
     if (intersects(bbox, r.bbox)) return 'overlap';
     if (intersects(reach, r.frame)) close = true;
+  }
+  const rockReach = padded(bbox, REGION_PAD + ASTEROID_GAP);
+  for (const part of asteroidParts(sim)) {
+    if (intersects(bbox, part)) return 'overlap';
+    if (intersects(rockReach, part)) close = true;
+  }
+  return close ? 'tooClose' : null;
+}
+
+/**
+ * Why asteroid rock bodies with these sector bboxes cannot be placed, or null: 'overlap' if one shares a tile with a ship's
+ * padded frame or another rock body, 'tooClose' if one comes within ASTEROID_GAP of either.
+ */
+export function asteroidGapError(sim: Sim, parts: readonly Rect[]): 'overlap' | 'tooClose' | null {
+  let close = false;
+  const others = asteroidParts(sim);
+  const frames = regions(sim).map((r) => r.frame);
+  for (const part of parts) {
+    const reach = padded(part, ASTEROID_GAP);
+    for (const o of [...frames, ...others]) {
+      if (intersects(part, o)) return 'overlap';
+      if (intersects(reach, o)) close = true;
+    }
   }
   return close ? 'tooClose' : null;
 }

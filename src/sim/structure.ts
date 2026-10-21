@@ -9,6 +9,13 @@ export const Struct = {
   Door: 3,
   /** A structural beam: solid, airtight, not walkable, no floor and no integrity (struts between assemblies). */
   Beam: 4,
+  /**
+   * Asteroid rock: solid, airtight, not walkable, no integrity (weapons do not chip it). A surface later slices build on.
+   * Mining turns it into Space. Owned (`ship` layer) by its `AsteroidC` entity, not a ship.
+   */
+  Rock: 5,
+  /** Dense rock of a big asteroid's hollowable core: Rock in every rule, marked where an interior can later be cut. No ore. */
+  CoreRock: 6,
 } as const;
 export type StructKind = (typeof Struct)[keyof typeof Struct];
 
@@ -45,6 +52,10 @@ export const SHIP_FIELDS = {
   hp: 'u8',
   /** Entity id of the owning `ShipC` for non-Space tiles (0 = none). Written by stamping; read by the sector grid. */
   ship: 'u32',
+  /** Ore kind on a rock tile: an `OreDef.code` (content/ores.ts), 0 = none. Only rock tiles carry ore. */
+  ore: 'u8',
+  /** Units of ore left on the tile (0..255); 0 with `ore` 0. */
+  oreAmt: 'u8',
 } as const satisfies FieldSpec;
 
 /**
@@ -66,7 +77,14 @@ export const SHIP_EMPTY = {
   item: 0,
   hp: 0,
   ship: 0,
+  ore: 0,
+  oreAmt: 0,
 } as const satisfies Record<keyof typeof SHIP_FIELDS, number>;
+
+/** True for asteroid rock (plain or core): solid, airtight and unwalkable like a wall, with no integrity. */
+export function isRock(kind: number): boolean {
+  return kind === Struct.Rock || kind === Struct.CoreRock;
+}
 
 /** Jam state of a door tile (`jam` field). A jammed-shut door blocks walking; neither kind moves until forced. */
 export const DoorJam = { None: 0, Open: 1, Shut: 2 } as const;

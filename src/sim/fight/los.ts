@@ -2,7 +2,7 @@ import { ModuleC } from '../modules/components';
 import { openTilesOf } from '../modules/footprint';
 import type { Grid } from '../grid';
 import type { Sim } from '../sim';
-import { Struct } from '../structure';
+import { Struct, isRock } from '../structure';
 import { DOOR_SIGHT_OPEN } from '../tuning';
 
 export interface Cell {
@@ -45,7 +45,7 @@ type Block = 'none' | 'wall' | 'module';
 function blockOf(sim: Sim, grid: Grid, x: number, y: number): Block {
   if (!grid.inBounds(x, y)) return 'wall';
   const kind = grid.get('struct', x, y);
-  if (kind === Struct.Wall) return 'wall';
+  if (kind === Struct.Wall || isRock(kind)) return 'wall';
   if (kind === Struct.Door && grid.get('door', x, y) < DOOR_SIGHT_OPEN) return 'wall';
   const id = grid.has('module') ? grid.get('module', x, y) : 0;
   if (id === 0) return 'none';

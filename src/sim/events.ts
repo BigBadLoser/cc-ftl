@@ -34,6 +34,8 @@ export type SimEvent =
   | { type: 'storage.full'; ship: number; x: number; y: number; item: string }
   /** A ship entered the sector (newGame or debug.spawnEnemy). */
   | { type: 'ship.spawned'; ship: number; faction: Faction }
+  /** An asteroid region was stamped (`asteroid` is its AsteroidC entity); its bbox in sector tiles. */
+  | { type: 'asteroid.spawned'; asteroid: number; kind: 'big' | 'field'; x: number; y: number; w: number; h: number }
   | { type: 'combat.started' }
   | { type: 'combat.ended' }
   /** A weapon module launched one shot (`projectile` is its entity). */
