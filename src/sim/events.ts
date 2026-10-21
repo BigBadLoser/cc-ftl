@@ -54,6 +54,8 @@ export type SimEvent =
   | { type: 'ship.recovered'; ship: number }
   | { type: 'ship.destroyed'; ship: number }
   | { type: 'ship.fled'; ship: number }
+  | { type: 'sector.jumped'; ship: number; from: number; to: number; restored: boolean }
+  | { type: 'sector.deployed'; ship: number; x: number; y: number }
   /** An airlock finished a cycle; `side` is the door now open. */
   | { type: 'airlock.cycled'; ship: number; module: number; side: 'inner' | 'outer' }
   /** A shuttle left its bay (home ship `ship`) at sector position (x, y). */

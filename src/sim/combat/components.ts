@@ -2,6 +2,7 @@ import type { SectorGrid } from '../sectorGrid';
 import type { GenOrigin } from '../shipgen/types';
 import type { RuinBreach, RuinDecal, RuinHook } from '../shipgen/ruinTypes';
 import { defineComponent } from '../ecs';
+import type { ShipPacket } from '../sector/packet';
 
 /** The sector all ships share. Saved with the game. */
 export interface Sector {
@@ -17,6 +18,15 @@ export interface Sector {
   inCombat: boolean;
   /** Set once the player has lost (reason code, e.g. 'captured'); see the `game.lost` event. */
   lost?: string;
+  /** Galaxy node this sector is (0 = the starting node). Archives are keyed by it. */
+  node: number;
+  /**
+   * 'active': normal play. 'deploying': the player's ship has jumped in and waits as `packet` until `sector.deploy` stamps it
+   * (the deploy modal pauses the sim meanwhile).
+   */
+  state: 'active' | 'deploying';
+  /** The player's ship in transit while deploying. */
+  packet?: ShipPacket;
 }
 
 /** 'rogue': rogue AI (robot crews under an AI core); hostile to every other faction, neutral included. */

@@ -1,5 +1,5 @@
 export { Rng } from './rng';
-export { World, defineComponent, type ComponentKey, type WorldData } from './ecs';
+export { World, defineComponent, componentNames, type EntityData, type ComponentKey, type WorldData } from './ecs';
 export { Grid, DenseGrid, CHUNK_SIZE, type FieldSpec, type FieldType, type GridData, type GridLike } from './grid';
 export { SectorGrid, type SectorGridData } from './sectorGrid';
 export { newSectorGrid, stampGrid } from './stamp';
@@ -75,3 +75,6 @@ export { planCourier, courierDef, type CourierPlan } from './trade/courier';
 export { playerShip, playerItems } from './trade/player';
 export { liveDealWith, isLive } from './trade/deals';
 export { ShipGrid, shipGridOf } from './shipGrid';
+export { packetFromTemplate, liftShip, stampPacket, type ShipPacket, type PacketEntity } from './sector/packet';
+export { archiveSector, restoreArchive, archiveOf, type SectorArchive } from './sector/archive';
+export { liftSet, jumpWarnings, type JumpWarnings, type LiftOptions, type WithDocked } from './sector/members';

@@ -5,11 +5,6 @@
 
   let { api }: { api: UiApi } = $props();
   let list = $state<UiAlert[]>([]);
-  let h = $state(0);
-  /** The combat panel starts below the notifications. */
-  $effect(() => {
-    document.documentElement.style.setProperty('--alerts-h', `${h}px`);
-  });
   onMount(() => api.alerts.subscribe((a) => (list = a)));
 
   const danger = new Set(['fire.started', 'hull.breach', 'crew.died', 'crew.downed', 'crew.starving', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'module.destroyed', 'ship.lost', 'creatures.aboard']);
@@ -20,7 +15,8 @@
   };
 </script>
 
-<div class="alerts" data-testid="alerts" bind:clientHeight={h}>
+{#if list.length}
+<div class="alerts" data-testid="alerts">
   {#each list.slice(0, 4) as a (a.id)}
     <div class="alert" class:danger={danger.has(a.kind)} class:good={good.has(a.kind)} data-testid="alert" data-kind={a.kind}>
       {#if a.notice}
@@ -37,11 +33,12 @@
   {/each}
   {#if list.length > 4}<div class="more">+{list.length - 4} more</div>{/if}
 </div>
+{/if}
 
 <style>
-  /* Notifications queue under the time controls, stacked downward. */
-  .alerts { position: fixed; z-index: 4; right: calc(8px + var(--sar)); top: calc(var(--sat) + 80px); display: grid; gap: 2px; width: min(260px, calc(100vw - 110px)); pointer-events: none; }
-  .alert { display: flex; pointer-events: auto; background: var(--panel); border: 1px solid var(--amber); border-left-width: 3px; }
+  /* Separate cards under the log/time frame, stacked downward. */
+  .alerts { display: grid; gap: 2px; width: 100%; }
+  .alert { display: flex; background: var(--panel); border: 1px solid var(--amber); border-left-width: 3px; }
   .alert.danger { border-color: var(--red); }
   .alert.good { border-color: var(--green); }
   .alert button { min-height: 32px; border: 0; background: transparent; font-size: 13px; }
@@ -56,5 +53,5 @@
   .ic { display: inline-flex; color: var(--amber); }
   .danger .ic { color: var(--red); } .good .ic { color: var(--green); }
   .more { color: var(--dim); font-size: 12px; padding-left: 4px; }
-  @media (max-width: 600px) { .alerts { right: auto; left: 8px; width: calc(100vw - 62px - var(--sar)); top: calc(var(--hdr) + var(--sat) + 6px); } :global(html[data-combat]) .alerts { display: none; } }
+  @media (max-width: 600px) { :global(html[data-combat]) .alerts { display: none; } }
 </style>

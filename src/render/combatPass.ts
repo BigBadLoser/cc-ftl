@@ -1,4 +1,4 @@
-import { Container, RenderTexture, Sprite, type Renderer as PixiRenderer } from 'pixi.js';
+import { Container, Graphics, RenderTexture, Sprite, type Renderer as PixiRenderer } from 'pixi.js';
 import type { Ship } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
@@ -9,6 +9,8 @@ import { ROOF_H } from './heights';
 import { iso, TILE_H, TILE_W } from './iso';
 import { isTargetable } from './moduleArt';
 import { sectorTileAt } from './scenePick';
+import { footprintQuad, isoBracketSegments, MODULE_RISE, padQuad } from './targetBrackets';
+import { rotatedSize } from '../sim/modules/footprint';
 import type { Origin } from './sectorPos';
 
 /** Where the combat overlay shows the enemy ship: a rectangle of the canvas in CSS px. */
@@ -20,11 +22,24 @@ export interface CombatViewRect {
 }
 
 const PANEL_BG = 0x04070b;
+/** Bracket colours: neutral is the theme's --dim, the ship-wide target its --red, weapon overrides its --cyan. */
+const C_NEUTRAL = 0x7fa9c0;
+const C_SHIP = 0xff5a5a;
+const C_OWN = 0x36d4ff;
+const C_OUTLINE = 0x05080d;
 
-/** Whole-number scale that fits a span into a box; below 1 it steps by quarters. */
+/** What the target brackets show (module ids; 0 or absent = none). */
+export interface CombatMarks {
+  shipTarget?: number;
+  overrides: readonly number[];
+  hover?: number;
+  /** A weapon is armed ("tap enemy..."): all brackets pulse. */
+  arming: boolean;
+}
+
+/** Scale that fits a span into a box: fractional so the ship fills the view (capped at 3, floored at 0.25). */
 function fitScale(boxW: number, boxH: number, spanW: number, spanH: number): number {
-  const s = Math.min(boxW / spanW, boxH / spanH);
-  return s >= 1 ? Math.min(3, Math.floor(s)) : Math.max(0.25, Math.floor(s * 4) / 4);
+  return Math.max(0.25, Math.min(3, boxW / spanW, boxH / spanH));
 }
 
 export interface CombatPassHost {
@@ -53,6 +68,8 @@ export interface CombatPass {
   /** The panel's sprite: add it to the stage above the world. */
   readonly sprite: Sprite;
   set(view: { shipId: number; rect: CombatViewRect } | null): void;
+  /** Which brackets to draw over the targetable modules of the shown ship. */
+  setMarks(marks: CombatMarks): void;
   /** The region shown, or null. */
   target(): number | null;
   /** Render pass B (before the main pass). */
@@ -66,6 +83,10 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
   const cam = createCamera(3);
   const sprite = new Sprite();
   sprite.visible = false;
+  // Brackets live in the sprite's space (panel device px, the camera's canvas), so they never scale with the art.
+  const gfx = new Graphics();
+  sprite.addChild(gfx);
+  let marks: CombatMarks = { overrides: [], arming: false };
   let rt: RenderTexture | null = null;
   let view: { shipId: number; rect: CombatViewRect } | null = null;
   let geom: { x: number; y: number; w: number; h: number; lift: number } | null = null;
@@ -76,11 +97,43 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
     return ship && grid && ship.state !== 'fled' ? { ship, grid } : null;
   }
 
+  /** Rebuild the bracket Graphics for the shown ship, projected with the same camera that `pick()` inverts. */
+  function drawBrackets(grid: Grid, lift: number): void {
+    gfx.clear();
+    const k = h.ratio();
+    const lw = k >= 2 ? 2 : 1.5;
+    const pulse = marks.arming ? 0.6 + 0.4 * Math.sin(performance.now() / 220) : 1;
+    const project = (ax: number, ay: number) => ({ x: Math.round(ax * cam.scale + cam.originX), y: Math.round(ay * cam.scale + cam.originY) });
+    for (const id of h.world.query(ModuleC)) {
+      const m = h.world.get(id, ModuleC);
+      const def = m && h.modules[m.def];
+      if (!m || !def || !isTargetable(def) || !grid.inBounds(m.x, m.y)) continue;
+      const [w, ht] = rotatedSize(def, m.rot);
+      const quad = footprintQuad(m.x, m.y, w, ht, { x: 0, y: 0 }, lift, project, MODULE_RISE);
+      const hov = marks.hover === id;
+      const own = marks.overrides.includes(id);
+      const wide = marks.shipTarget === id;
+      const color = wide ? C_SHIP : own ? C_OWN : hov ? 0xffffff : C_NEUTRAL;
+      const alpha = (wide ? 1 : own ? 0.9 : hov ? 1 : marks.arming ? 0.7 : 0.55) * pulse;
+      const pad = hov ? 2 : 0;
+      const width = hov ? lw + 1 : lw;
+      const segs = isoBracketSegments(padQuad(quad, pad));
+      // A dark outline under each bracket keeps it readable on any roof colour.
+      for (const sg of segs) gfx.moveTo(sg.x1, sg.y1).lineTo(sg.x2, sg.y2);
+      gfx.stroke({ width: width + 2 * k, color: C_OUTLINE, alpha: 0.85 * alpha, cap: 'square' });
+      for (const sg of segs) gfx.moveTo(sg.x1, sg.y1).lineTo(sg.x2, sg.y2);
+      gfx.stroke({ width, color, alpha });
+    }
+  }
+
   return {
     sprite,
     set(v) {
       view = v;
       if (!v) geom = null;
+    },
+    setMarks(m) {
+      marks = m;
     },
     target: () => (shown() && view ? view.shipId : null),
     render(gl, stage) {
@@ -116,6 +169,7 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
       gl.render({ container: stage, target: rt, clear: true, clearColor: PANEL_BG });
       sprite.position.set(x, y);
       sprite.visible = true;
+      drawBrackets(s.grid, lift);
     },
     pick(sx, sy) {
       const g = geom;

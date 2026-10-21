@@ -5,6 +5,7 @@ import type { UiBuildKind, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
 import type { InputHandlers, Tile } from './input';
 import { createAlerts, type Alerts } from './alerts';
+import { createEventLog, type EventLog } from './eventLog';
 import { rejectionMessage } from './messages';
 import { createStore, type Readable } from './store';
 import { homeShip } from '../sim/index';
@@ -23,6 +24,7 @@ export interface Controller {
   /** Select another ship or station and frame a ship in the camera (null clears). A station has no ship, so the camera stays. */
   selectShip(ship: number | null): void;
   alerts: Alerts;
+  log: EventLog;
   toast: Readable<string | null>;
   setTool(state: Partial<UiToolState>): void;
   selectCrew(id: number | null, focus?: boolean): void;
@@ -44,6 +46,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   /** The player's ship (home grid 1) as a ShipC entity id. */
   const homeShipId = () => homeShip(sim);
   const alerts = createAlerts(sim);
+  const log = createEventLog(sim);
+  alerts.onRaised(log.defer);
+  alerts.onCleared((a, _tick, replaced) => log.release(a.id, replaced));
   let modPos: Tile | null = null;
   const crewSel = createStore<number | null>(null);
   const toast = createStore<string | null>(null);
@@ -185,6 +190,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   return {
     tool,
     alerts,
+    log,
     selectedModule: modSel,
     selectedShip: shipSel,
     selectShip,
@@ -205,6 +211,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         else if (e.type === 'ship.captured') showToast(e.by === 'player' ? 'Ship captured! It is now a prize.' : 'Your ship was captured!', 8000);
       }
       alerts.onEvents(events);
+      log.onEvents(events, alerts.covers);
     },
     attach(renderer) {
       r = renderer;

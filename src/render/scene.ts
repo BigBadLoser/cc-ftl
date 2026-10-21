@@ -8,7 +8,7 @@ import { shipGridOf } from '../sim/shipGrid';
 import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
 import { loadAtlas } from './assets/loader';
 import { createCamera, type Camera } from './camera';
-import { createCombatPass, type CombatViewRect } from './combatPass';
+import { createCombatPass, type CombatMarks, type CombatViewRect } from './combatPass';
 import type { CutawayMode } from './gridView';
 import { iso, TILE_H, TILE_W } from './iso';
 import { createParticles } from './fx/particles';
@@ -41,7 +41,7 @@ export interface RenderInfo {
 
 type Tile = { x: number; y: number };
 
-export type { CombatViewRect };
+export type { CombatMarks, CombatViewRect };
 
 export interface Renderer {
   render(alpha: number): void;
@@ -86,6 +86,8 @@ export interface Renderer {
   onEvents(events: readonly SimEvent[]): void;
   /** Show a ship in the combat overlay rectangle (null hides it). */
   setCombatView(view: { shipId: number; rect: CombatViewRect } | null): void;
+  /** Which target brackets the combat overlay draws. */
+  setCombatMarks(marks: CombatMarks): void;
   /** Module (0 = the hull itself) under a canvas-relative position inside the combat overlay, or null if outside the ship. */
   pickCombat(screenX: number, screenY: number): { moduleId: number } | null;
 }
@@ -386,6 +388,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       fightFx.onEvents(events);
     },
     setCombatView: (v) => pass.set(v),
+    setCombatMarks: (m) => pass.setMarks(m),
     pickCombat: (sx, sy) => pass.pick(sx, sy),
     dispose() {
       shuttles.dispose();

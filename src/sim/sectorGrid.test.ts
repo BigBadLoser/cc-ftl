@@ -174,3 +174,18 @@ describe('SectorGrid performance sanity', () => {
     expect(s.chunkCount).toBe(14 * 14);
   }, 2000); // loose wall-clock bound via the test timeout (Date/performance are banned in src/sim)
 });
+
+describe('SectorGrid releaseEmpty', () => {
+  it('releases the chunks under a rectangle whose tiles are all empty, and keeps the others', () => {
+    const g = new SectorGrid(0, SHIP_FIELDS, SHIP_EMPTY, { occupancyField: null });
+    g.set('struct', 1, 1, Struct.Floor);
+    g.set('struct', 40, 1, Struct.Floor);
+    expect(g.chunkCount).toBe(2);
+    const rev = g.revision('o2');
+    g.set('struct', 1, 1, Struct.Space);
+    expect(g.chunkCount).toBe(2);
+    expect(g.releaseEmpty({ x: 0, y: 0, w: 48, h: 4 })).toBe(1);
+    expect(g.chunks()).toEqual([{ cx: 2, cy: 0 }]);
+    expect(g.revision('o2')).toBeGreaterThan(rev);
+  });
+});

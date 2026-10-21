@@ -5,10 +5,21 @@ export interface ComponentKey<T> {
   readonly _type?: T;
 }
 
+const NAMES: string[] = [];
+
 /** Declare a component type. Components are plain serializable data; refer to entities by ID. */
 export function defineComponent<T>(name: string): ComponentKey<T> {
+  if (!NAMES.includes(name)) NAMES.push(name);
   return { name };
 }
+
+/** Names of every component declared so far (in declaration order). The packet translation table must cover each. */
+export function componentNames(): readonly string[] {
+  return NAMES;
+}
+
+/** One entity's components by store name (values by reference), as `World.detach` returns and `World.restore` takes. */
+export type EntityData = Record<string, unknown>;
 
 /** JSON-able snapshot of a World. */
 export interface WorldData {
@@ -51,6 +62,37 @@ export class World {
     for (const store of this.stores.values()) {
       if (store.data.delete(id)) store.version++;
     }
+  }
+
+  /** Remove an entity and return its components by store name (sorted by name). The id is not reused. */
+  detach(id: number): EntityData {
+    const out: EntityData = {};
+    if (!this.alive.has(id)) return out;
+    for (const name of [...this.stores.keys()].sort()) {
+      const store = this.stores.get(name) as Store;
+      if (store.data.has(id)) out[name] = store.data.get(id);
+    }
+    this.destroyEntity(id);
+    return out;
+  }
+
+  /**
+   * Bring back an entity under its old id with these components (a lifted ship or an archived sector coming back). Ids are
+   * never reused, so the id is free unless it is alive; throws if it is alive or was never issued.
+   */
+  restore(id: number, data: EntityData): void {
+    if (this.alive.has(id) || id <= 0 || id >= this.nextId) throw new Error(`World.restore: id ${id} is alive or was never issued`);
+    this.alive.add(id);
+    for (const name of Object.keys(data).sort()) {
+      const store = this.store(name);
+      store.data.set(id, data[name]);
+      store.version++;
+    }
+  }
+
+  /** IDs of every living entity, ascending. */
+  ids(): number[] {
+    return [...this.alive].sort((a, b) => a - b);
   }
 
   /** True if the entity exists. */

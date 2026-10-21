@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-19 (trade branch added).
+Last updated: 2026-10-21 (step 9a on `sector-9`).
 
 **Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
 map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
@@ -409,6 +409,40 @@ gone, so every id in the sim, app and renderer is the `ShipC` entity id. A ship'
 `src/sim`. Save v20. Both `sectorEquiv` hashes unchanged. Ship-less fixture grids need `stampShip` (a prize `ShipC` at the origin). Tests that
 named ships 1 and 2 use `nth(sim, n)`. See ARCHITECTURE "Step 7 split" and "7d notes". **Step 7 is done.** Next: step 9 (lifting ships).
 
+Branch `sector-9` (not merged, no visual change, sim only): **step 9a done** (packets, archives, jump and deploy commands). Save v25.
+- `ShipPacket` (`sim/sector/packet.ts`): `packetFromTemplate(t)`; `liftShip(sim, ship, { withDocked })` copies every field over the
+  ship's rectangle, clears it to empty Space, releases the chunks left empty (`SectorGrid.releaseEmpty`) and detaches the entities
+  that travel (`liftSet`: what stands on the ship, its own stowed and docked vehicles, the picked non-player docked vehicles, the
+  crew aboard them; clamped containers are modules, so they come too) with coordinates in ship-local tiles; `stampShip(sim,
+  template | packet, { x, y, faction?, state? })` is the one entry (a template packet takes the old path, so both `sectorEquiv`
+  hashes are unchanged; a lifted packet comes back whole).
+- **Ids are kept, not remapped** (planner's call, as ARCHITECTURE "Entity ids survive" says): world ids are never reused, so
+  `World.restore` brings entities back under their own ids and links between them need no fix-up. The translation table
+  (`sector/translate.ts`, one entry per component, a test fails on a new component without one) moves coordinates only.
+  References that cross the cut are cleared (`sector/refs.ts`: weapon and ship targets, attack orders, job and bed
+  reservations, assignments); a stranded shuttle's `homeShip` is kept so it is valid again when the player returns.
+- `SectorArchive` (`sector/archive.ts`): `{ node, tick, width, height, grid, entities }`; `archiveSector` freezes everything left
+  (projectiles in flight are dropped), `restoreArchive(sim, node)` brings it back. `Sim.archives` is saved.
+- Commands: `sector.jump { ship, node, withDocked? }` (player ship, FTL charged, not while deploying, refused while a trade deal is
+  live; clears hails and offers) lifts, archives, restores the target node's archive if any, and leaves `sector.state =
+  'deploying'` with `sector.packet`; `sector.deploy { x, y }` checks bounds and the gap rule and stamps. Events `sector.jumped`,
+  `sector.deployed`. `Sector` gained `node` (0 = start) and `state`. There is no galaxy on `main` yet (`starmap` is unmerged), so
+  a node is a plain number.
+- Query for the jump confirm: `jumpWarnings(sim, ship)` → `{ crew, vehicles, hostileDocked }`.
+- Shuttle speed is 8 tiles/s.
+- **Left for 9b (UI, visual, needs screenshots):** the jump confirm (lists `jumpWarnings`, a toggle per hostile docked shuttle
+  that fills `withDocked`), the deploy modal (sector map with ShipC bboxes, picks the spot, sends `sector.deploy`, pauses the sim
+  while `state === 'deploying'`), render and UI handling of an empty world while deploying, and the hook into the `starmap`
+  branch's `enterNode` (fresh nodes are empty sectors for now: no generation on arrival). Not done either: `debug.spawnGenerated`
+  using the deploy bounds check, and jump-time FTL rules beyond "charged".
+
+**User decisions for step 9 (2026-10-21):**
+- A jump with crew or a shuttle away is allowed after the player confirms; they stay in the archive (answers open question 2).
+- A hostile shuttle docked at the airlock at jump time is the player's choice in the jump confirm: it comes along (boarders
+  aboard it too) or is cut loose and left behind (answers open question 3).
+- All archives are kept; there is no retention or pruning rule for now (answers open question 4).
+- Shuttle speed goes from 5 to 8 tiles/s (answers open question 1's speed part).
+
 **EVA on the hull roof (user decision, 2026-10-20; not built):** EVA crew outside a ship must not walk the hull ring at
 floor level (the tiles just outside the hull walls): there they look as if standing on air, and walking along wall faces
 would need a sideways walk animation we don't want for now. Instead EVA crew walk on top of the **hull roof**, pathing
@@ -439,13 +473,13 @@ Merge advice:
 - Holding everything recreates a flag-day merge.
 
 **Open questions for the user:**
-1. **Distances.** Proposed: deploy 60–200 tiles apart, sectors about 1000x600 in practice. At today's speeds, 200 tiles is
+1. **Distances.** (Speed answered: 8 tiles/s, 2026-10-21.) Proposed: deploy 60–200 tiles apart, sectors about 1000x600 in practice. At today's speeds, 200 tiles is
    40 s by shuttle and 7–17 s for shots. Raise shuttle speed (5 → 8 tiles/s)?
-2. **Jumping with crew or a shuttle away** (boarding party, hovering EVA): refuse, confirm and leave them in the archive, or
+2. (Answered 2026-10-21: confirm and leave them in the archive.) **Jumping with crew or a shuttle away** (boarding party, hovering EVA): refuse, confirm and leave them in the archive, or
    recall first?
-3. **A hostile shuttle docked at your airlock at jump time:** it comes along (its boarders with it), or is cut loose and left
+3. (Answered 2026-10-21: the player chooses in the confirm.) **A hostile shuttle docked at your airlock at jump time:** it comes along (its boarders with it), or is cut loose and left
    behind?
-4. **Left-behind sectors:** keep only those with something of yours (prizes, stranded crew), keep the last N, or keep all?
+4. (Answered 2026-10-21: keep all.) **Left-behind sectors:** keep only those with something of yours (prizes, stranded crew), keep the last N, or keep all?
 5. **A shot landing on a ship it wasn't aimed at:** hit that ship (proposed: the tile owner takes it) or pass through?
 6. **Merges:** approve the `eva` look and merge `eva` + `weapons-int` to main before the refactor, or keep the hold and run
    the refactor on one integration branch?

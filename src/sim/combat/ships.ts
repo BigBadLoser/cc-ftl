@@ -3,8 +3,8 @@ import { ModuleC } from '../modules/components';
 import { isDeployed } from '../modules/deploy';
 import { isTileWalkable } from '../modules/walk';
 import { placementGapError, stampOwner, shipIdOf, shipGrid } from '../regions';
-import { gridFromTemplate, placeTemplateModules } from '../ship';
-import { stampGrid } from '../stamp';
+import { placeTemplateModules } from '../ship';
+import { packetFromTemplate, stampPacket, stampTiles, type ShipPacket } from '../sector/packet';
 import { ShipGrid } from '../shipGrid';
 import type { ShipTemplate } from '../registry';
 import type { Sim } from '../sim';
@@ -65,23 +65,27 @@ export function spawnCrew(sim: Sim, shipId: number, roles: readonly string[], re
 }
 
 /**
- * Stamp a template into the sector at (x, y) and give it a ShipC (identity, rectangle and lifecycle state): tiles, modules
- * (with their stock and vehicles) and the owner layer; no combat, boarding or crew. Returns the ship id (the ShipC entity).
- * Throws if it would overlap another ship or break MIN_SHIP_GAP (commands check `placementGapError` first and reject).
+ * Stamp a ship into the sector at (x, y) and return its ship id (the ShipC entity). A template (or a packet made from one by
+ * `packetFromTemplate`) gets its tiles, modules (with their stock and vehicles), the owner layer and a new ShipC (identity,
+ * rectangle and lifecycle state; `faction` and `state` from `opts`); no combat, boarding or crew. A lifted packet (`liftShip`)
+ * comes back whole, entities under their own ids, and `opts` gives only the spot. Throws if it would overlap another ship or
+ * break MIN_SHIP_GAP (commands check `placementGapError` first and reject).
  */
 export function stampShip(
-  sim: Sim, template: ShipTemplate, opts: { faction: Faction; x: number; y: number; state?: Ship['state'] },
+  sim: Sim, src: ShipTemplate | ShipPacket, opts: { faction?: Faction; x: number; y: number; state?: Ship['state'] },
 ): number {
-  const dense = gridFromTemplate(template);
-  const rect = { x: opts.x, y: opts.y, w: dense.width, h: dense.height };
+  const packet = 'rows' in src ? packetFromTemplate(src) : src;
+  const template = packet.template;
+  if (!template) return stampPacket(sim, packet, opts.x, opts.y);
+  const rect = { x: opts.x, y: opts.y, w: packet.w, h: packet.h };
   const gap = placementGapError(sim, rect);
   if (gap) throw new Error(`stampShip "${template.name}" at (${opts.x}, ${opts.y}): ${gap}`);
-  stampGrid(sim.sector.grid, dense, opts.x, opts.y);
+  stampTiles(sim, packet, opts.x, opts.y);
   placeTemplateModules(sim, template, opts.x, opts.y);
   const ship = sim.world.createEntity();
   sim.world.add(ship, ShipC, {
-    name: template.name, faction: opts.faction, state: opts.state ?? 'active', x: opts.x, y: opts.y,
-    width: dense.width, height: dense.height, hullMax: hullSum(new ShipGrid(0, sim.sector.grid, opts.x, opts.y, dense.width, dense.height)), integrity: 1,
+    name: template.name, faction: opts.faction ?? 'neutral', state: opts.state ?? 'active', x: opts.x, y: opts.y,
+    width: packet.w, height: packet.h, hullMax: hullSum(new ShipGrid(0, sim.sector.grid, opts.x, opts.y, packet.w, packet.h)), integrity: 1,
   });
   stampOwner(sim.sector.grid, ship, rect);
   // Template vehicles were spawned with the modules, before their ship existed: they belong to it now.

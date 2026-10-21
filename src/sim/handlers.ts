@@ -10,6 +10,7 @@ import { fightHandlers } from './fight/handlers';
 import { itemHandlers } from './items/handlers';
 import { moduleHandlers } from './modules/handlers';
 import { robotHandlers } from './robots/handlers';
+import { sectorHandlers } from './sector/handlers';
 import { storyHandlers } from './story/handlers';
 import { tradeHandlers } from './trade/handlers';
 import { vehicleHandlers } from './vehicles/handlers';
@@ -34,6 +35,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...robotHandlers,
   ...storyHandlers,
   ...tradeHandlers,
+  ...sectorHandlers,
   noop: () => {},
   'debug.spawnMarker': (sim, cmd) => {
     const entity = sim.world.createEntity();
