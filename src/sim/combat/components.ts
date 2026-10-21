@@ -1,5 +1,6 @@
 import type { SectorGrid } from '../sectorGrid';
 import type { GenOrigin } from '../shipgen/types';
+import type { RuinBreach, RuinDecal, RuinHook } from '../shipgen/ruinTypes';
 import { defineComponent } from '../ecs';
 
 /** The sector all ships share. Saved with the game. */
@@ -26,6 +27,22 @@ export type Faction = 'player' | 'hostile' | 'neutral' | 'rogue';
  */
 export type ShipState = 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
 
+/**
+ * The part of a derelict's ruin meta the renderer needs (dressing art per tile and module), kept small and saved with the
+ * ship. Tiles are ship-local (from the grid's top-left), like the meta.
+ */
+export interface ShipRuin {
+  cause: 'combat' | 'decay';
+  /** Impact centres (combat) or decay foci: the renderer scorches nearby walls from these. */
+  impacts: { x: number; y: number; r: number }[];
+  breaches: RuinBreach[];
+  decals: RuinDecal[];
+  /** Egg sacs, nests and AI spawns that carry art (static dressing). */
+  hooks: Pick<RuinHook, 'x' | 'y' | 'size' | 'art'>[];
+  /** Modules whose look the ruin changed: their template position, wreck state and art override. */
+  modules: { x: number; y: number; state: 'damaged' | 'destroyed' | 'intact'; art?: string; flicker?: boolean }[];
+}
+
 /** A ship (one per grid): identity, world placement and lifecycle state. */
 export interface Ship {
   name: string;
@@ -43,6 +60,8 @@ export interface Ship {
   integrity: number;
   /** Set on generated ships: the faction, seed and depth they were generated from (the grid itself is saved). */
   gen?: GenOrigin;
+  /** Set on derelicts: dressing data for the renderer (see ShipRuin). */
+  ruin?: ShipRuin;
 }
 export const ShipC = defineComponent<Ship>('ship');
 

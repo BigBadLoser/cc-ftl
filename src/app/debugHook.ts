@@ -1,6 +1,6 @@
-import { AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
+import { AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
-import { shipIdOf } from '../sim/regions';
+import { shipIdOf, shipGrid } from '../sim/regions';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -21,6 +21,26 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
         out.push({ id, shipId: shipIdOf(sim, m), ship: shipIdOf(sim, m), x: m.x, y: m.y, ax: a.x, ay: a.y });
       }
       return out;
+    },
+    /** A ship's modules with their power state and hp, and its ruin dressing counts (for derelict checks). */
+    wreck(shipId: number) {
+      const ruin = sim.world.get(shipId, ShipC)?.ruin;
+      const mods = [...sim.world.query(ModuleC)].flatMap((id) => {
+        const m = sim.world.get(id, ModuleC);
+        return m && shipIdOf(sim, m) === shipId ? [{ def: m.def, x: m.x, y: m.y, enabled: m.enabled, powered: m.powered, hp: m.hp }] : [];
+      });
+      const ship = sim.world.get(shipId, ShipC);
+      const grid = shipGrid(sim, shipId);
+      const jammed: { x: number; y: number; jam: number; near: { x: number; y: number } | null }[] = [];
+      if (grid)
+        for (let y = grid.y0; y < grid.y0 + grid.height; y++)
+          for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+            const jam = grid.get('jam', x, y);
+            if (!jam || grid.get('struct', x, y) !== Struct.Door) continue;
+            const near = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).map(([dx, dy]) => ({ x: x + dx, y: y + dy })).find((t) => grid.get('struct', t.x, t.y) === Struct.Floor && !grid.get('module', t.x, t.y));
+            jammed.push({ x, y, jam, near: near ?? null });
+          }
+      return { jammed, origin: ship && { x: ship.x, y: ship.y }, ruin: ruin && { cause: ruin.cause, impacts: ruin.impacts, breaches: ruin.breaches.length, decals: ruin.decals.length, hooks: ruin.hooks.length, modules: ruin.modules }, mods };
     },
     /** Crew on grids, with their side and the screen position of their feet. */
     crew: () =>

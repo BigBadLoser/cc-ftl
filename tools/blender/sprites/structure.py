@@ -35,6 +35,7 @@ LOOKS = ("navy", "drone", "civil.v1", "civil.v2", "civil.v3", "civil.v4", "scrap
 
 
 ALT = re.compile(r"^tile\.(hull\.(full\.)?|wall\.full\.)m\d+$")      # pieces with alt variants .a1..a3
+CORNER = re.compile(r"\.m\d+c\d+|\.end\.[se]\.c\d")     # corner-fill pieces: default look only for now
 
 
 def faction_id(sid, name):
@@ -56,7 +57,7 @@ def jobs():
     for name in names:
         lk = look(name)
         for sid, fp, kind, fn in DEFAULT:
-            if kind == "ghost" or sid.startswith("tile.door") or (only and sid not in only):
+            if kind == "ghost" or sid.startswith("tile.door") or CORNER.search(sid) or (only and sid not in only):
                 continue
             fid = faction_id(sid, name)
             out.append((fid, fp, kind, _wrap(lk, fid, fn)))

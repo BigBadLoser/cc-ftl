@@ -54,6 +54,16 @@ def tile_hash(x, y):
     return (h ^ (h >> 15)) & 0xFFFFFFFF
 
 
+def corners(x, y, m):
+    """tiles.ts wallCorners: NE 1, SE 2, SW 4, NW 8 (both arms connected, the three tiles round the corner solid wall)."""
+    w = lambda dx, dy: at(x + dx, y + dy) == "#"  # noqa: E731
+    c = 0
+    for bit, need, (dx, dy) in ((1, 3, (1, -1)), (2, 6, (1, 1)), (4, 12, (-1, 1)), (8, 9, (-1, -1))):
+        if m & need == need and w(dx, 0) and w(0, dy) and w(dx, dy):
+            c |= bit
+    return c
+
+
 def ghost_at(x, y, level):
     return at(x, y) == "#" and touches_space(x, y) and (outward(x, y) > 0 or level == "low")
 
@@ -76,12 +86,13 @@ def pieces(x, y, level):
             out.append((f"tile.hull.belly.o{o}.m{m}{v}", 1, True))
         return out
     fam = "hull" if hull else "wall"
+    c = corners(x, y, m)                           # corner fills: default look only, so faction looks use c0 here
     base = f"tile.{fam}.{PRE[level]}m{m}"
-    out = [(base + v, 0, False)]
+    out = [(base + v, 0, False, (f"{base}c{c}{v}", f"{base}c{c}") if c else ())]
     if m & 4 and ghost_at(x, y + 1, level):
-        out.append((f"tile.{fam}.{PRE[level]}end.s", 1, False))
+        out.append((f"tile.{fam}.{PRE[level]}end.s", 1, False, (f"tile.{fam}.{PRE[level]}end.s.c{c & 6}",) if c & 6 else ()))
     if m & 2 and ghost_at(x + 1, y, level):
-        out.append((f"tile.{fam}.{PRE[level]}end.e", 1, False))
+        out.append((f"tile.{fam}.{PRE[level]}end.e", 1, False, (f"tile.{fam}.{PRE[level]}end.e.c{c & 3}",) if c & 3 else ()))
     return out
 
 
@@ -123,8 +134,8 @@ def used_ids():
 
 
 def draw_room(cv, S, pub, ox, oy, seg, level):
-    def put(did, x, y):
-        for aid in chain(did, seg, x, y):
+    def put(did, x, y, first=()):
+        for aid in (() if seg else first) + tuple(chain(did, seg, x, y)):
             for A in (S, pub):
                 if aid in A.m["assets"]:
                     cv.static(A, aid, *iso(ox, oy, x, y))
@@ -132,7 +143,7 @@ def draw_room(cv, S, pub, ox, oy, seg, level):
     tiles = [(x, y) for y in range(len(ROOM)) for x in range(len(ROOM[0])) if at(x, y) != " "]
     for x, y in tiles:                                              # under-floor layer: bellies, drops
         if at(x, y) in "#D":
-            for did, _, under in pieces(x, y, level):
+            for did, _, under, *_ in pieces(x, y, level):
                 if under:
                     put(did, x, y)
     for x, y in tiles:
@@ -141,15 +152,15 @@ def draw_room(cv, S, pub, ox, oy, seg, level):
     draw = []
     for x, y in tiles:
         if at(x, y) in "#D":
-            for did, order, under in pieces(x, y, level):
+            for did, order, under, *first in pieces(x, y, level):
                 if not under:
-                    draw.append((x + y, order, did, x, y))
-    draw.append((2 + 3 + 0.5, 0, "@crew", 2, 3))
-    for _, _, did, x, y in sorted(draw):
+                    draw.append((x + y, order, did, x, y, first[0] if first else ()))
+    draw.append((2 + 3 + 0.5, 0, "@crew", 2, 3, ()))
+    for _, _, did, x, y, first in sorted(draw):
         if did == "@crew":
             cv.char(human(pub, DIRS["SE"]), *iso(ox, oy, x, y))
         else:
-            put(did, x, y)
+            put(did, x, y, first)
 
 
 def alt_strip(S, pub, out):

@@ -1,4 +1,4 @@
-import { at, components, heavy, isHull, modTiles, put, touchesSpace } from './ruinGrid';
+import { at, components, heavy, isHull, modTiles, N4, put, touchesSpace } from './ruinGrid';
 import type { RuinCtx } from './ruinTypes';
 import { tearOff } from './ruinContainers';
 
@@ -142,8 +142,10 @@ function dropLostModules(c: RuinCtx): void {
   // A container that lost tiles (or its whole frame) was torn off, not lost: it drifts beside the wreck.
   c.modules.forEach((m, i) => { if (c.defs[m.def]?.container && modTiles(c, i).some((t) => at(c, t.x, t.y) === '.')) tearOff(c, i); });
   c.modules = c.modules.filter((_, i) => modTiles(c, i).every((t) => at(c, t.x, t.y) !== '.'));
-  // Breaches on vanished tiles are no longer meaningful as dressing for hull/wall; keep floor holes adjacent to the hull.
-  c.meta.breaches = c.meta.breaches.filter((b) => b.kind === 'floor' ? N8Solid(c, b.x, b.y) : N8Solid(c, b.x, b.y) || at(c, b.x, b.y) !== '.');
+  // Floor holes stay where they touch the structure. A hull or wall breach is only the torn edge: it must still border a
+  // standing wall. Tiles torn out deeper inside a thick block are plain space (or open floor), with no record.
+  const standing = (x: number, y: number): boolean => at(c, x, y) === '#' || at(c, x, y) === 'D';
+  c.meta.breaches = c.meta.breaches.filter((b) => (b.kind === 'floor' ? N8Solid(c, b.x, b.y) : N4.some(([dx, dy]) => standing(b.x + dx, b.y + dy))));
 }
 
 function N8Solid(c: RuinCtx, x: number, y: number): boolean {

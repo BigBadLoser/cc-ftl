@@ -55,7 +55,8 @@ export interface Renderer {
   /** Roof hostile ships (default on); off shows their interior. */
   setRoofEnemies(on: boolean): void;
   setOverlay(field: string | null): void;
-  setSelection(tile: Tile | readonly Tile[] | null): void;
+  /** Selected tile(s) on `shipId`'s grid (default the camera ship's; derelicts and other ships take their own). */
+  setSelection(tile: Tile | readonly Tile[] | null, shipId?: number): void;
   setHover(tile: Tile | null): void;
   setPreview(tiles: readonly Tile[], valid?: boolean): void;
   /** Center the camera on a (fractional) tile position of the camera ship's grid. */
@@ -123,6 +124,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let overlay: string | null = null;
   let hover: Tile | null = null;
   let selection: Tile | readonly Tile[] | null = null;
+  let selShip = 0;
   let selectedCrew: number | null = null;
   let preview: readonly Tile[] = [];
   let previewValid = true;
@@ -200,7 +202,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       sc.view.setSelection(selection);
       sc.view.setHover(hover);
       sc.view.setPreview(preview, previewValid);
-    }
+    } else if (grid.id === selShip) sc.view.setSelection(selection);
     sc.setSelectedCrew(selectedCrew);
     scenes.set(grid.id, sc);
     return sc;
@@ -314,9 +316,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       overlay = f;
       scenes.get(refId)?.view.setOverlay(f);
     },
-    setSelection(t) {
+    setSelection(t, shipId = refId) {
       selection = t;
-      scenes.get(refId)?.view.setSelection(t);
+      if (selShip !== shipId) scenes.get(selShip)?.view.setSelection(null);
+      selShip = shipId;
+      scenes.get(shipId)?.view.setSelection(t);
     },
     setHover(t) {
       hover = t;
