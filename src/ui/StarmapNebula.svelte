@@ -32,7 +32,7 @@
 
   /**
    * The tiles (a full square of equal tiles) stitched into one image, so they blend without seams. The density is
-   * thickened (the larger of itself and a blurred copy) so thin strands read as clouds. Density to colour: violet
+   * blurred well past the width of its strands, so it reads as broad soft clouds. Density to colour: violet
    * haze at the edges of the nebula, deeper blue in its body, a paler core where it is densest.
    */
   function paint(tiles: UiNebulaTile[], x0: number, y0: number, cols: number): string {
@@ -47,14 +47,14 @@
       const oy = Math.round((t.y - y0) / size) * n;
       for (let k = 0; k < t.data.length; k++) raw[(oy + Math.floor(k / n)) * w + ox + (k % n)] = t.data[k]! / 255;
     }
-    const soft = blur(raw, w, 3);
+    const soft = blur(raw, w, 7);
     const c = document.createElement('canvas');
     c.width = c.height = w;
     const ctx = c.getContext('2d');
     if (!ctx) return '';
     const img = ctx.createImageData(w, w);
     for (let k = 0; k < raw.length; k++) {
-      const d = Math.max(raw[k]!, Math.min(1, soft[k]! * 1.35));
+      const d = Math.min(1, soft[k]! * 1.2);
       const m = smooth(0.15, 0.7, d);
       const core = smooth(0.8, 1, d);
       const p = k * 4;
