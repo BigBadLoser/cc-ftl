@@ -12,7 +12,7 @@ ANCHOR = (64, 94)                       # feet position inside a frame (x, y fro
 W, H = FRAME_W - 2, FRAME_H - 2         # render canvas
 ORIGIN = (ANCHOR[0] - 1, ANCHOR[1] - 1)  # feet position in the render canvas
 
-ORDER = {"body": 0, "eyes": 10, "legs": 20, "torso": 30, "gear.belt": 40, "gear.holster": 45, "arm.R": 50, "arm.L": 51, "gear.shoulder": 53, "hair": 60,
+ORDER = {"body": 0, "eyes": 10, "legs": 20, "torso": 30, "gear.belt": 40, "arm.R": 50, "arm.L": 51, "gear.shoulder": 53, "gear.holster": 54, "hair": 60,
          "gear.hand": 55, "implant.temple": 65, "gear.head": 70, "gear.back": 80}       # gear.hand: held weapons
 # (clip, frames, fps, loop). Every clip gets its own sheet per item (crew_build.item_clips says which items get it).
 CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("sleep", 3, 2, True), ("sit_idle", 4, 3, True),
