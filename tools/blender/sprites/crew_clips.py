@@ -43,6 +43,8 @@ def _float(arm, i, clip):
 
 
 def _sit_items(it):
+    if it.slot == "gear.holster":                       # a weapon slung or stowed on the back sits in the backrest too
+        return hw.CARRY[hw.FAMILY[it.name]] in ("thigh", "belt")
     return it.slot not in SIT_HIDE
 
 
@@ -55,8 +57,8 @@ def _combat(arm, i, clip):
 
 
 def _combat_items(family):
-    """Every layer, but of the held weapons only those of this pose family."""
-    return lambda it: it.slot != "gear.hand" or hw.FAMILY.get(it.name) == family
+    """Every layer but the holstered weapons, and of the held weapons only those of this pose family."""
+    return lambda it: it.slot != "gear.holster" and (it.slot != "gear.hand" or hw.FAMILY.get(it.name) == family)
 
 
 def _is_arm_bone(n):
@@ -119,7 +121,9 @@ POSES = {
     "eva_float": Pose(action="idle_Armature", hold="first", before=_float, puffs=suit.puffs, items=_float_items),
 }
 for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy"):
-    POSES[_c] = Pose(action="idle_Armature", hold="first", before=_combat, items=_combat_items(_c.split("_", 1)[1]))
+    POSES[_c] = Pose(action="idle_Armature", hold="first", before=_combat, items=_combat_items(_c.rsplit("_", 1)[1]))
+for _c in ("walk_aim_1h", "walk_aim_2h", "walk_heavy"):                 # the walk cycle's legs, the aim's arms
+    POSES[_c] = Pose(action="walk_Armature", before=_combat, items=_combat_items(_c.rsplit("_", 1)[1]))
 
 
 def pose_of(clip):

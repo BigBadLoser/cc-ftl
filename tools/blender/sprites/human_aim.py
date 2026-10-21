@@ -7,7 +7,8 @@ IK; two-hand and heavy holds put the left hand on the family's support point (hu
   aim_1h / fire_1h        one arm out at shoulder height, the other at the side; fire: a kick up and back, then settle
   aim_2h / fire_2h        stock in the right shoulder, left hand on the foregrip; fire: as 1h, smaller
   aim_heavy / fire_heavy  braced at the right hip, a wide knees-bent stance, left hand on the top handle; fire: a
-                          sustained shudder (4 frames, looping)"""
+                          sustained shudder (4 frames, looping)
+  walk_aim_1h / walk_aim_2h / walk_heavy   the walk cycle's legs (the walk action at that frame) under the aim's arms"""
 import math
 
 from mathutils import Matrix, Vector
@@ -63,16 +64,18 @@ def _stance(arm, wide):
 
 def apply(arm, i, clip):
     """Pose frame i of a combat clip (see the module docstring). -> breathing amount."""
-    arm.animation_data.action = None                                         # keep idle frame 0, stop the action
-    pb = arm.pose.bones
-    fam = clip.split("_", 1)[1]
+    arm.animation_data.action = None                                         # keep the action's pose, stop it
+    pb = arm.pose.bones                                                      # overwriting ours
+    fam = clip.rsplit("_", 1)[1]
+    walk = clip.startswith("walk")
     k = KICK[clip][i] if clip in KICK else 0.0
-    breath = 0.0 if clip in KICK else math.sin(math.pi * i)
+    breath = 0.0 if clip in KICK or walk else math.sin(math.pi * i)
     pitch = 0.12 * k + (0.05 if fam == "heavy" else 0.0)
     fwd = (FWD * math.cos(pitch) + UP * math.sin(pitch)).normalized()
     up = (UP * math.cos(pitch) - FWD * math.sin(pitch)).normalized()
     back = -FWD * 0.04 * k                                                   # the kick
-    _stance(arm, fam == "heavy")
+    if not walk:
+        _stance(arm, fam == "heavy")
     _aim(arm, "spine_02", Vector((0, -0.08 if fam != "heavy" else 0.04, 1)))   # lean into it (heavy: lean back)
     if fam == "1h":
         S = pb["arm.R"].head.copy()

@@ -29,7 +29,8 @@ GLOBAL_FILES = [SRC / "core.py", SRC / "post.py", SRC / "human_render.py",
                 BL / "lib/palette.py", REPO / "palette.json", BL / "palette_extra.json", BL / "source/base_cc0.glb"]
 CLIP_FILES = {"sit_idle": ["human_sit.py", "console_proto.py", "cmbkit.py"], "sit_work": ["human_sit.py", "console_proto.py", "cmbkit.py"],
               "eva_float": ["human_suit.py", "human_sit.py"]}      # files a clip's pose/chair code leans on (hashed for that clip only)
-for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy"):
+for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy", "walk_aim_1h", "walk_aim_2h",
+           "walk_heavy"):
     CLIP_FILES[_c] = ["human_aim.py", "human_v2_weapons.py", "human_sit.py"]
 
 

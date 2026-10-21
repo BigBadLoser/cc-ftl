@@ -9,7 +9,7 @@ SUPPORT point, so one pose serves every weapon of a family. `muzzle` (grip-relat
 manifest (crew_build / crew_pack) for the flash, tracer or beam."""
 import bmesh
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 from . import core
 from .human_base import Item, paint
@@ -21,6 +21,7 @@ SUPPORT = {"2h": Vector((0.0, 0.33, -0.01)), "heavy": Vector((0.0, 0.1, 0.2))}  
 FAMILY = {"sidearm": "1h", "ion_pistol": "1h", "laser_pistol": "1h", "plasma_cutter": "1h", "rifle": "2h",
           "laser_rifle": "2h", "shotgun": "2h", "smg": "2h", "rail_rifle": "2h", "flamethrower": "heavy",
           "heavy_repeater": "heavy", "blade": "1m", "shock_baton": "1m", "breach_axe": "2m"}
+CARRY = {"1h": "thigh", "2h": "sling", "heavy": "stow", "1m": "belt", "2m": "sling"}   # out of the hands (holster)
 
 
 class Gun:
@@ -53,13 +54,19 @@ class Gun:
         self.f.append([b + n + k for k in range(n)])
         self.c.append(cap or col)
 
-    def mesh(self, name, A):
-        """The skinned object: grip frame -> hand.R rest frame -> armature rest space."""
-        bone = A.data.bones["hand.R"]
-        g = Vector((0.0, bone.length * GRIP, 0.0))
-        M = bone.matrix_local
+    def mesh(self, name, A, bone="hand.R", frame=None):
+        """The skinned object, whole on `bone`: grip frame -> hand.R rest frame -> armature rest space; or, with
+        frame = (origin, right, fwd, up) in rest space, the grip frame placed there (a holstered or slung weapon)."""
+        if frame is None:
+            b = A.data.bones["hand.R"]
+            g, M = Vector((0.0, b.length * GRIP, 0.0)), b.matrix_local
+            pts = [M @ (v * SIZE + g) for v in self.v]
+        else:
+            o, r, f, u = frame
+            rot = Matrix((r, f, u)).transposed()
+            pts = [o + rot @ (v * SIZE) for v in self.v]
         me = bpy.data.meshes.new(name)
-        me.from_pydata([tuple(M @ (v * SIZE + g)) for v in self.v], [], self.f)
+        me.from_pydata([tuple(p) for p in pts], [], self.f)
         bm = bmesh.new()
         bm.from_mesh(me)
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
@@ -68,7 +75,7 @@ class Gun:
         me.update()
         ob = bpy.data.objects.new(name, me)
         bpy.context.scene.collection.objects.link(ob)
-        ob.vertex_groups.new(name="hand.R").add(list(range(len(self.v))), 1.0, "REPLACE")
+        ob.vertex_groups.new(name=bone).add(list(range(len(self.v))), 1.0, "REPLACE")
         mod = ob.modifiers.new("Armature", "ARMATURE")
         mod.object = A
         ob.parent = A
@@ -260,6 +267,52 @@ def fuel_tanks(A, R):
     return Item("gear.back", "fuel_tanks", [b.mesh("v2.fuel_tanks", A, col)])
 
 
+def _axes(fwd, up):
+    fwd = fwd.normalized()
+    right = fwd.cross(up).normalized()
+    return right, fwd, right.cross(fwd).normalized()
+
+
+def _carry(A, R, name, g):
+    """(bone, frame) where a weapon rides out of the hands, and extra pieces on the Gun: a sheath, a back frame."""
+    how = CARRY[FAMILY[name]]
+    back = Vector((0, R.chest.y + 0.17, R.chest.z - 0.04))
+    if how == "thigh":                                                       # right thigh holster, muzzle down
+        g.box((0, 0.14, 0.045), (0.1, 0.27, 0.13), "leather", top="strap")             # the holster over the slide
+        return "leg.R", (R.h["leg.R"] + Vector((-0.12, 0.0, 0.02)),) + _axes(Vector((0, 0.05, -1)), Vector((0, -1, 0)))
+    if how == "belt":                                                        # left hip, hanging, flat side out
+        if name == "blade":
+            g.box((0, 0.26, 0.015), (0.05, 0.38, 0.11), "leather", top="strap")
+        return "hips", (R.h["leg.L"] + Vector((0.14, 0.03, 0.02)),) + _axes(Vector((0.1, 0.25, -1)), Vector((1, 0, 0)))
+    if how == "sling":                                                       # across the back, muzzle up-left
+        f = Vector((0.55, 0.0, 0.83)).normalized()
+        return "spine_03", (back - f * 0.14 * SIZE,) + _axes(f, Vector((0, 1, 0)))
+    if name == "flamethrower":                                               # the wand clipped by its tanks
+        return "spine_03", (back + Vector((-0.16, 0.04, -0.2)),) + _axes(Vector((0, 0, 1)), Vector((0, 1, 0)))
+    g.box((0.12, 0.15, 0.06), (0.06, 0.4, 0.06), "dark")                              # stowed upright on a back frame
+    return "spine_03", (back + Vector((0.0, 0.05, -0.22)),) + _axes(Vector((0, 0, 1)), Vector((0, 1, 0)))
+
+
+def _sling_strap(A, R):
+    """The strap of a slung weapon across the chest, from the left shoulder to the right hip."""
+    b = Build()
+    pts = [Vector((0.13, R.chest.y - 0.1, R.shoulder_z + 0.01)), Vector((0.03, R.chest.y - 0.15, R.chest.z)),
+           Vector((-0.08, R.chest.y - 0.15, R.hips.z + 0.18)), Vector((-0.15, R.hips.y - 0.1, R.hips.z + 0.06))]
+    for k in range(3):
+        b.tube(pts[k], pts[k + 1], 0.017, 0.017, blend("spine_03", "hips", k / 2))
+    return b.mesh("v2.sling_strap", A, lambda p, n: "strap")
+
+
+def holster(A, R, name):
+    g = Gun()
+    BUILD[name](g)
+    bone, frame = _carry(A, R, name, g)
+    objs = [g.mesh(f"v2.holster.{name}", A, bone, frame)]
+    if CARRY[FAMILY[name]] == "sling":
+        objs.append(_sling_strap(A, R))
+    return Item("gear.holster", name, objs, glow=g.lit())
+
+
 def build(A, R):
     out = [fuel_tanks(A, R)]
     for name, fn in BUILD.items():
@@ -269,5 +322,5 @@ def build(A, R):
         it = Item("gear.hand", name, objs, glow=g.lit())
         it.muzzle = muzzle * SIZE + Vector((0.0, grip_y(A), 0.0))   # wrist frame (hand.R local), for crew_build
         it.family = FAMILY[name]
-        out.append(it)
+        out += [it, holster(A, R, name)]
     return out
