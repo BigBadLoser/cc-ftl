@@ -17,12 +17,16 @@ from mathutils import Euler, Matrix, Vector
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib import palette  # noqa: E402
 from . import post  # noqa: E402
+from .scale import ART_SCALE, TILE_H, TILE_W  # noqa: E402,F401  (the one tile-size constant: scale.py)
 
-TILE_W, TILE_H = 64, 32
 PXU = TILE_W / math.sqrt(2)          # px per ortho unit
 ZPX = PXU * math.cos(math.radians(30))  # px per world unit of height
 TEAM_ALBEDO = 0.7                    # key albedo scale (keeps lit top faces below clipping)
-SS = 4                               # supersample factor (mode-downsampled, never blurred)
+# Render quality. FINAL (the default) is what ships; `npm run sprites -- ... --preview` sets SPRITE_PREVIEW=1 for a fast,
+# approximate look (never commit it: sprite_cache keeps preview and final renders apart).
+PREVIEW = os.environ.get("SPRITE_PREVIEW") == "1"
+SS = int(os.environ.get("SPRITE_SS") or (2 if PREVIEW else 4))        # supersample factor (mode-downsampled, never blurred)
+SAMPLES = int(os.environ.get("SPRITE_SAMPLES") or (1 if PREVIEW else 4))
 CAM_ROT = (math.radians(60), 0, math.radians(45))
 _R = np.array([0.7071068, 0.7071068, 0.0])
 _U = np.array([-0.3535534, 0.3535534, 0.8660254])
@@ -100,7 +104,7 @@ def setup_scene():
     sc = bpy.context.scene
     sc.render.engine = "CYCLES"
     c = sc.cycles
-    c.device, c.samples, c.use_denoising, c.use_adaptive_sampling = "CPU", 4, False, False
+    c.device, c.samples, c.use_denoising, c.use_adaptive_sampling = "CPU", SAMPLES, False, False
     c.filter_width = 0.01
     c.max_bounces = 0
     c.diffuse_bounces = 0

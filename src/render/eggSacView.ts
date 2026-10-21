@@ -3,7 +3,7 @@ import { EggSacC, type EggSac } from '../sim/aliens/components';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import type { Atlas } from './assets/loader';
-import { depthKey, iso } from './iso';
+import { ART_SCALE as S, depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { addStatic } from './sprites';
 
@@ -73,8 +73,8 @@ export function createEggSacView(grid: Grid, world: World, atlas: Atlas, L: Laye
         const sac = world.get(id, EggSacC);
         if (!sac || sac.state === 'burst') continue;
         const p = iso(s.x, s.y);
-        const hw = 18 * sac.size, h = 26 * sac.size;
-        if (Math.abs(ax - p.x) <= hw && ay >= p.y - h && ay <= p.y + 8 && (!best || p.y > best.y)) best = { id, y: p.y };
+        const hw = 18 * S * sac.size, h = 26 * S * sac.size;
+        if (Math.abs(ax - p.x) <= hw && ay >= p.y - h && ay <= p.y + 8 * S && (!best || p.y > best.y)) best = { id, y: p.y };
       }
       return best;
     },
