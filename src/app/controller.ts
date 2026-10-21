@@ -46,7 +46,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const homeShipId = () => homeShip(sim);
   const alerts = createAlerts(sim);
   const log = createEventLog(sim);
-  alerts.onCleared(log.addCleared);
+  alerts.onRaised(log.defer);
+  alerts.onCleared((a, _tick, replaced) => log.release(a.id, replaced));
   let modPos: Tile | null = null;
   const crewSel = createStore<number | null>(null);
   const toast = createStore<string | null>(null);

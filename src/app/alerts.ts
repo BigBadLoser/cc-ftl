@@ -14,7 +14,9 @@ export interface Alerts {
   /** True when this event raises (or would raise) an alert, so the event log can leave it to the alert. */
   covers(e: SimEvent): boolean;
   /** Called whenever an alert leaves the list (dismissed, expired or replaced), with the tick it appeared. */
-  onCleared(fn: (a: UiAlert, tick: number) => void): void;
+  onCleared(fn: (a: UiAlert, tick: number, replaced: boolean) => void): void;
+  /** Called for each event that raised a new alert, with that alert's id. */
+  onRaised(fn: (e: SimEvent, alertId: number) => void): void;
 }
 
 /** Turns sim events into a short, deduplicated, dismissable alert queue (UI-side only; never feeds the sim). */
@@ -22,7 +24,8 @@ export function createAlerts(sim: Sim): Alerts {
   const store = createStore<UiAlert[]>([]);
   const keys = new Map<number, string>();
   const born = new Map<number, number>();
-  const clearedFns: ((a: UiAlert, tick: number) => void)[] = [];
+  const clearedFns: ((a: UiAlert, tick: number, replaced: boolean) => void)[] = [];
+  const raisedFns: ((e: SimEvent, alertId: number) => void)[] = [];
   let nextId = 1;
 
   const crewName = (id: number) => sim.world.get(id, CrewC)?.name ?? 'Crew';
@@ -115,7 +118,7 @@ export function createAlerts(sim: Sim): Alerts {
   /** `replaced`: a fresh alert for the same thing takes over, so the log waits for that one instead. */
   const remove = (id: number, replaced = false) => {
     const gone = store.get().find((a) => a.id === id);
-    if (gone && !replaced) for (const fn of clearedFns) fn(gone, born.get(id) ?? sim.tick);
+    if (gone) for (const fn of clearedFns) fn(gone, born.get(id) ?? sim.tick, replaced);
     born.delete(id);
     keys.delete(id);
     store.update((l) => l.filter((a) => a.id !== id));
@@ -126,6 +129,7 @@ export function createAlerts(sim: Sim): Alerts {
     get: (id) => store.get().find((a) => a.id === id),
     covers: (e) => describe(e) !== null,
     onCleared: (fn) => void clearedFns.push(fn),
+    onRaised: (fn) => void raisedFns.push(fn),
     dismiss(id) {
       const n = store.get().find((a) => a.id === id)?.notice;
       if (n?.lead) sim.enqueue({ type: 'story.dismissNotice', notice: n.id });
@@ -139,7 +143,10 @@ export function createAlerts(sim: Sim): Alerts {
         const id = nextId++;
         keys.set(id, d.key);
         born.set(id, sim.tick);
-        store.update((l) => [{ id, kind: d.kind, text: d.text, at: d.at, ...(d.notice ? { notice: d.notice } : {}) }, ...l].slice(0, MAX));
+        store.update((l) => [{ id, kind: d.kind, text: d.text, at: d.at, ...(d.notice ? { notice: d.notice } : {}) }, ...l]);
+        for (const fn of raisedFns) fn(e, id);
+        // The oldest alert falls off a full queue: that is a clearing like any other, so it reaches the log.
+        for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
         setTimeout(() => remove(id), EXPIRE_MS);
       }
       for (const id of [...keys.keys()]) if (!store.get().some((a) => a.id === id)) keys.delete(id);
