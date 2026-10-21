@@ -173,6 +173,26 @@ describe('sector.jump, archives and sector.deploy', () => {
     expect(run(sim, 1)).toContain('command.rejected:sector.deploy:overlap');
   });
 
+  it('freezes a restored node while the deploy waits, including after a rejected deploy', () => {
+    const sim = newGame(6, content);
+    const player = homeShip(sim);
+    // A fresh combat wreck with crew aboard: left to tick, its air, heat and crew would change.
+    stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40 });
+    jump(sim, 1);
+    run(sim, 1);
+    sim.enqueue({ type: 'sector.deploy', x: 10, y: 10 });
+    run(sim, 1);
+    jump(sim, 0, undefined, player);
+    expect(run(sim, 1)).toContain('sector.jumped');
+    const snap = (): string => JSON.stringify({ w: sim.world.serialize(), g: sim.sector.grid.serialize() });
+    const before = snap();
+    sim.enqueue({ type: 'sector.deploy', x: 150, y: 35 }); // rejected: overlaps the raider
+    expect(run(sim, 120)).toContain('command.rejected:sector.deploy:overlap');
+    expect(snap()).toBe(before);
+    sim.enqueue({ type: 'sector.deploy', x: 30, y: 40 });
+    expect(run(sim, 1)).toContain('sector.deployed');
+  });
+
   it('lists crew and shuttles away; they stay in the archive', () => {
     const sim = newGame(5, content);
     const player = homeShip(sim);

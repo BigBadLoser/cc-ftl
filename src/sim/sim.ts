@@ -46,10 +46,11 @@ export class Sim {
     this.commands.enqueue(cmd, this.tick);
   }
 
-  /** Advance one tick: apply commands, run the pipeline in order, increment the counter. */
+  /** Advance one tick: apply commands, run the pipeline in order (unless deploying), increment the counter. */
   step(): void {
     this.commands.drain(this.tick, (cmd) => this.apply(cmd));
-    for (const system of pipeline) system(this);
+    // While the player's ship waits to deploy, the node is frozen: only a successful `sector.deploy` resumes it.
+    if (this.sector.state !== 'deploying') for (const system of pipeline) system(this);
     this.tick++;
   }
 
