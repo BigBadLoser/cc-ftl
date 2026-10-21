@@ -83,6 +83,7 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     const at = boardingTile(sim, cmd.vehicle);
     if (!at) return reject(sim, cmd.type, 'notBoardable');
     if (v.state === 'docked' && !airlockWorking(sim, v.dock)) return reject(sim, cmd.type, 'airlockDown');
+    if (vehicleDefOf(sim, v)?.crewless) return reject(sim, cmd.type, 'crewless');
     if (occupants(v).length >= seats(sim, v)) return reject(sim, cmd.type, 'full');
     let drafted = sim.world.get(cmd.crew, DraftedC);
     if (!drafted) {

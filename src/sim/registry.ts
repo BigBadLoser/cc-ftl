@@ -105,6 +105,10 @@ export interface VehicleDef {
   cargo?: number;
   /** EVA from a hovering shuttle: suits stowed aboard (the hatch works like an airlock for them) and how far off a target's hull it holds station (tiles). */
   eva?: { suits: number; hoverGap: number };
+  /** No crew: nobody can embark, and it only flies on orders it runs itself (mining pods). */
+  crewless?: boolean;
+  /** A mining laser: ore units cut per second while it holds over an ore tile (mining pods, see systems/mining.ts). */
+  mining?: { unitsPerSec: number };
 }
 
 /** One typed result of a weapon impact. All are applied by combat/effects.ts. */

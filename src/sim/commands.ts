@@ -88,6 +88,13 @@ export type Command =
    * sector (x, y), or at the first spot that fits when both are omitted. `hollow` forces a big asteroid's hollowable core on or
    * off (default: rolled from the seed). Checked by the gap rule (`asteroidGapError`).
    */
+  /**
+   * Order mining pod `pod` (a crewless vehicle with a mining laser, stowed or out) to mine asteroid `asteroid`: trips until its
+   * ore is gone or it is recalled. `tiles` limits it to those ore tiles (sector tiles). Replaces the pod's current order.
+   */
+  | { type: 'mining.order'; pod: number; asteroid: number; tiles?: { x: number; y: number }[] }
+  /** Recall a mining pod: it flies home with what it has, unloads, and ends its order. */
+  | { type: 'mining.recall'; pod: number }
   | { type: 'debug.spawnAsteroid'; kind: 'big' | 'field'; seed: number; x?: number; y?: number; hollow?: boolean }
   /**
    * Generate a hostile ship for a faction (content.factions) at sector `depth` from `seed` (default: drawn from the sim

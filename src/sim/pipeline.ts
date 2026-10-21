@@ -47,6 +47,7 @@ import { fabricatorSystem } from './systems/fabricators';
 import { robotBaySystem } from './systems/robotBays';
 import { workSystem } from './systems/work';
 import { vehicleSystem } from './systems/vehicles';
+import { miningSystem } from './systems/mining';
 import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
 import { captureSystem } from './systems/capture';
@@ -131,6 +132,8 @@ export const pipeline: readonly System[] = [
   // Suited crew drifting between a hovering shuttle and a hull land or climb aboard.
   evaFloatSystem,
   carrySystem,
+  // Mining pods steer their outbound legs and cut ore, then hand the leg home to the vehicle system right after.
+  miningSystem,
   // Vehicles after crew movement: embarking crew board on arrival, shuttles fly before this tick's shots are aimed.
   vehicleSystem,
   // Detached containers drift on their own velocity (inert bodies; nothing else moves them).

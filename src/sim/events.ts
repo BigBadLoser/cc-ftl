@@ -35,6 +35,15 @@ export type SimEvent =
   /** A ship entered the sector (newGame or debug.spawnEnemy). */
   | { type: 'ship.spawned'; ship: number; faction: Faction }
   /** An asteroid region was stamped (`asteroid` is its AsteroidC entity); its bbox in sector tiles. */
+  | { type: 'mining.ordered'; pod: number; asteroid: number; tiles: number }
+  /** A pod left its bay on a mining trip (also `vehicle.launched`), heading for ore tile (x, y). */
+  | { type: 'mining.launched'; pod: number; asteroid: number; x: number; y: number; trip: number }
+  /** A pod cut the last ore off tile (x, y): the rock there is gone (Space). */
+  | { type: 'mining.tileCleared'; pod: number; asteroid: number; x: number; y: number }
+  /** A pod heads home with `cargo` ore units (hold full, nothing left, or recalled). */
+  | { type: 'mining.returning'; pod: number; cargo: number }
+  /** A mining order ended: 'exhausted' (no ore left), 'recalled', or 'lost' (no bay to return to). */
+  | { type: 'mining.done'; pod: number; asteroid: number; reason: 'exhausted' | 'recalled' | 'lost'; trips: number }
   | { type: 'asteroid.spawned'; asteroid: number; kind: 'big' | 'field'; x: number; y: number; w: number; h: number }
   | { type: 'combat.started' }
   | { type: 'combat.ended' }

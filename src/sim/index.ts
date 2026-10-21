@@ -85,3 +85,5 @@ export { AsteroidC, type Asteroid } from './asteroids/components';
 export { stampAsteroid, findAsteroidSpot } from './asteroids/place';
 export { validateAsteroid } from './asteroids/validate';
 export { ownerAt, asteroidAt, asteroidParts, asteroidGapError } from './regions';
+export { MiningPodC, type MiningPod, type MiningPhase } from './mining/components';
+export { pickTile, orderTiles, isOreTile } from './mining/pick';

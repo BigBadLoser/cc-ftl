@@ -264,5 +264,12 @@ export const modules = {
     power: -1, priority: 4, flammability: 0.1, maxHp: 200, buildWork: 400, vehicleBay: { class: 'shuttle' },
     cost: [{ item: 'item.metal', count: 32 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }],
   },
+  // Small 3x3 bay for one pod (class 'pod'), placed like the shuttle bay: solid pit, crew unload it at the access tile beside
+  // the middle of its east side.
+  'module.pod_bay': {
+    name: 'Pod bay', asset: 'module.pod_bay', footprint: [3, 3], solid: true, access: [3, 1],
+    power: -1, priority: 4, flammability: 0.1, maxHp: 120, buildWork: 240, vehicleBay: { class: 'pod' },
+    cost: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 6 }],
+  },
   ...furniture,
 } satisfies Record<string, ModuleDef>;
