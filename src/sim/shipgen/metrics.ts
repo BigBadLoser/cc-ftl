@@ -36,6 +36,30 @@ export function layoutMetrics(t: ShipTemplate, hallTile: (x: number, y: number) 
     const d = defs[m.def];
     if (d && m.def !== 'module.light') for (const p of footprintTiles(d, m.x, m.y, m.rot)) if (at(p.x, p.y) === '_') used.add(p.y * w + p.x);
   }
+  // Thick walls: wall or hull tiles with nothing but wall or space all round (8 neighbours): plating slabs, double
+  // hulls and filled pockets. Floor, doors, beams, containers and module tiles (hull modules sit on walls) all count
+  // as something a wall bounds.
+  const modTile = new Set<number>();
+  for (const m of t.modules ?? []) {
+    const d = defs[m.def];
+    if (d) for (const p of footprintTiles(d, m.x, m.y, m.rot)) modTile.add(p.y * w + p.x);
+  }
+  let walls = 0;
+  let thick = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (at(x, y) !== '#') continue;
+      walls++;
+      let bounds = modTile.has(y * w + x);
+      for (let dy = -1; dy <= 1 && !bounds; dy++) {
+        for (let dx = -1; dx <= 1 && !bounds; dx++) {
+          const c = at(x + dx, y + dy);
+          bounds = (c !== '#' && c !== '.') || modTile.has((y + dy) * w + x + dx);
+        }
+      }
+      if (!bounds) thick++;
+    }
+  }
   const bw = x1 - x0 + 1;
   const bh = y1 - y0 + 1;
   const r = (v: number): number => Math.round(v * 1000) / 1000;
@@ -47,6 +71,7 @@ export function layoutMetrics(t: ShipTemplate, hallTile: (x: number, y: number) 
     aspect: r(bw / bh),
     beamShare: r(beams / Math.max(1, filled)),
     spine: r(spineShare(hallRow, hallCol) / Math.max(1, halls)),
+    thickWall: r(thick / Math.max(1, walls)),
   };
 }
 

@@ -13,6 +13,7 @@ import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
 import { salvage } from './topoSalvage';
 import { validateTemplate } from './validate';
+import { thinWalls } from './thinWalls';
 import { extractContainers } from './containerCells';
 import type { ArchetypeId, FactionDef, GenResult, GenRoom, RoomRole, ShipRoleDef } from './types';
 
@@ -236,9 +237,24 @@ export function finishLayout(
   opts: { immobile?: boolean; check?: ExtraCheck } = {},
 ): GenResult {
   b.cv.fixDoors();
-  const { rows: drawn, labels: roomOf, width, height, ox, oy } = b.cv.crop();
   const labels = b.cv.labels;
-  const roles = labels.map((l) => b.chunkRoles.get(`${l.chunk}:${l.letter}`) ?? roleOfLetter(l.letter) ?? 'cargo');
+  const roleOfLabel = (l: { chunk: string; letter: string }): RoomRole => b.chunkRoles.get(`${l.chunk}:${l.letter}`) ?? roleOfLetter(l.letter) ?? 'cargo';
+  const partByKey = new Map(b.parts.map((p) => [p.key, p.spec]));
+  // One wall between parts: slabs become floor, spare hull layers and double partitions go (thinWalls.ts).
+  const KEEP: readonly RoomRole[] = ['dock', 'engine', 'hangar'];
+  thinWalls(b.cv, {
+    canGrow: (i) => {
+      const l = labels[i];
+      if (!l) return false;
+      const spec = partByKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`);
+      return !spec?.sealed && !KEEP.includes(roleOfLabel(l));
+    },
+    rank: (i) => (labels[i] && roleOfLabel(labels[i] as { chunk: string; letter: string }) === 'hall' ? 1 : 0),
+    axis2: b.axis2,
+  });
+  b.cv.fixDoors();
+  const { rows: drawn, labels: roomOf, width, height, ox, oy } = b.cv.crop();
+  const roles = labels.map((l) => roleOfLabel(l));
   const { rows: framed, containers } = extractContainers(drawn);
   const rows = pruneDoors(framed, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
