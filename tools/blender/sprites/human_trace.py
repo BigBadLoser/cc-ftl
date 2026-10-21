@@ -20,6 +20,7 @@ SHIN_K = (0.88, 1.08, 0.76)           # lower leg: a narrow knee, the calf a thi
 THIGH_K = (1.04, 1.0, 0.84)           # thigh: full at the hip, tapering to the knee
 FOOT_K = (0.85, 0.88)                 # foot length (from the ankle) and girth: the 1x feet were oversized to read
 HEAD_W, HEAD_H = 0.84, 1.14           # head width and height against the traced head
+HEAD_K = 1.0                          # the whole head's size (about the chin)
 HAND_LEN = 0.15                       # wrist to just past the knuckles: the palm (the fingers are separate tubes)
 
 
@@ -185,7 +186,8 @@ def to_joint(secs, head):
 def oval(rows):
     """The traced head made narrower (HEAD_W) and taller (HEAD_H, up from the chin): an oval from the front, not a ball."""
     z0 = rows[0][0].z
-    return [(Vector((c.x, c.y, z0 + (c.z - z0) * HEAD_H)), hx * HEAD_W, hy, wt) for c, hx, hy, wt in rows]
+    return [(Vector((c.x, c.y, z0 + (c.z - z0) * HEAD_H * HEAD_K)), hx * HEAD_W * HEAD_K, hy * HEAD_K, wt)
+            for c, hx, hy, wt in rows]
 
 
 def shape_hand(secs, head):
