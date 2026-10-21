@@ -18,6 +18,8 @@ import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position
 import { isTileOccupied, origin } from './helpers';
 import { shipIdOf, shipGrid } from '../regions';
 import { finishDig } from '../rock/dig';
+import { AsteroidC } from '../asteroids/components';
+import { spawnVehicle } from '../vehicles/lifecycle';
 
 /** 'done': the job is finished and removed. 'working': progressing. 'wait': ready but blocked. */
 export type WorkResult = 'done' | 'working' | 'wait';
@@ -70,6 +72,9 @@ function finishStruct(sim: Sim, job: Job): WorkResult {
     const before = grid.get('struct', job.x, job.y);
     if (before === Struct.Rock && next === Struct.Floor) finishDig(sim, grid, shipIdOf(sim, job), job.x, job.y);
     else writeStruct(grid, job.x, job.y, next);
+    // built on an asteroid base: the new tile is the base's, not the asteroid's
+    const ship = shipIdOf(sim, job);
+    if (next !== Struct.Space && grid.get('ship', job.x, job.y) !== ship && sim.world.has(grid.get('ship', job.x, job.y), AsteroidC)) grid.set('ship', job.x, job.y, ship);
     if (job.kind === 'deconstruct') {
       const key = structCostKey(before);
       refundCost(sim, shipIdOf(sim, job), job.x, job.y, key ? sim.content.structCosts[key] : undefined);
@@ -92,7 +97,9 @@ function finishModule(sim: Sim, job: Job): WorkResult {
   if (!free) return 'done'; // a blueprint whose site was spoiled is dropped (delivered materials spill)
   // auto-level: the little rock mass the footprint clips becomes ground (its extra work was added to the job)
   for (const t of tiles) if (grid.get('struct', t.x, t.y) === Struct.Rock) writeStruct(grid, t.x, t.y, Struct.Ground);
-  spawnModule(sim, bp.def, job.x, job.y, bp.rot);
+  const id = spawnModule(sim, bp.def, job.x, job.y, bp.rot);
+  const comes = def.vehicleBay?.builtWith;
+  if (comes && sim.content.vehicles?.[comes]) spawnVehicle(sim, comes, id); // the pod bay comes with its pod
   consumeDelivered(job);
   if (grid.has('item')) for (const t of footprintTiles(def, job.x, job.y, bp.rot)) evictStack(sim, shipIdOf(sim, job), t.x, t.y);
   return 'done';

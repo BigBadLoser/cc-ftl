@@ -268,8 +268,10 @@ export const modules = {
   // the middle of its east side.
   'module.pod_bay': {
     name: 'Pod bay', asset: 'module.pod_bay', footprint: [3, 3], solid: true, access: [3, 1],
-    power: -1, priority: 4, flammability: 0.1, maxHp: 120, buildWork: 240, vehicleBay: { class: 'pod' },
-    cost: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 6 }],
+    // Built by crew, it comes with its pod: the cost covers both (bay 16 metal, 6 electronics; pod 12 metal, 6 electronics,
+    // 4 polymer).
+    power: -1, priority: 4, flammability: 0.1, maxHp: 120, buildWork: 360, vehicleBay: { class: 'pod', builtWith: 'vehicle.mining_pod' },
+    cost: [{ item: 'item.metal', count: 28 }, { item: 'item.electronics', count: 12 }, { item: 'item.polymer', count: 4 }],
   },
   ...furniture,
 } satisfies Record<string, ModuleDef>;

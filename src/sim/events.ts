@@ -55,6 +55,8 @@ export type SimEvent =
   | { type: 'outpost.discovered'; ship: number; reason: 'proximity' | 'breach' | 'provoked' }
   /** An outpost turned combatant: shot at, boarded, dug into, or breached. */
   | { type: 'outpost.provoked'; ship: number; reason: 'shot' | 'boarded' | 'dug' | 'breach' }
+  /** The player claimed a base region (`ship`) on an asteroid. */
+  | { type: 'asteroid.claimed'; asteroid: number; ship: number; x: number; y: number; w: number; h: number }
   | { type: 'outpost.spawned'; asteroid: number; ship: number; style: 'surface' | 'dug'; kind: string; x: number; y: number }
   | { type: 'asteroid.spawned'; asteroid: number; kind: 'big' | 'field'; x: number; y: number; w: number; h: number }
   | { type: 'combat.started' }

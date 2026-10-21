@@ -79,6 +79,8 @@ export interface Ship {
    * dormant: no combatant). See outposts/state.ts.
    */
   outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean; provoked: boolean };
+  /** Set on a base the player claimed on an asteroid (`asteroid.claim`): immobile, never disabled or wrecked by the ship-state system. */
+  base?: { asteroid: number };
 }
 export const ShipC = defineComponent<Ship>('ship');
 

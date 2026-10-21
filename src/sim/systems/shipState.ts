@@ -22,6 +22,7 @@ export function shipStateSystem(sim: Sim): void {
     const ship = sim.world.get(id, ShipC);
     const grid = ship && shipGrid(sim, id);
     if (!ship || !grid?.has('hp') || ship.state === 'wreck' || ship.state === 'fled' || ship.state === 'prize') continue;
+    if (ship.base) continue; // a claimed asteroid base starts empty: no integrity to lose, nothing to disable
     const walls = hullSum(grid);
     ship.hullMax = Math.max(ship.hullMax, walls);
     let modHp = 0;

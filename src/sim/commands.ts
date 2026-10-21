@@ -99,6 +99,12 @@ export type Command =
    * Generate an asteroid outpost (`surface`: habitats on the plains of an open asteroid; `dug`: rooms carved into a dense one)
    * from `seed` and stamp it at (x, y) or the first spot that fits. `kind` picks the flavour (default rolled).
    */
+  /**
+   * Start a player base on big asteroid `asteroid`: an immobile player-owned region (ShipC with `base`) over the sector rectangle
+   * (x, y, w, h), 4-60 tiles a side, inside the asteroid's box, at least half on its rock, its padded frame clear of every other
+   * region. The rock stays the asteroid's until crew dig or build on it.
+   */
+  | { type: 'asteroid.claim'; asteroid: number; x: number; y: number; w: number; h: number }
   | { type: 'debug.spawnOutpost'; style: 'surface' | 'dug'; seed: number; kind?: 'trading' | 'farming' | 'mining' | 'pirate' | 'criminal' | 'covert'; x?: number; y?: number }
   | { type: 'debug.spawnAsteroid'; kind: 'big' | 'field'; seed: number; x?: number; y?: number; coverage?: 'open' | 'mixed' | 'dense' }
   /**
