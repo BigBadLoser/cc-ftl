@@ -18,9 +18,22 @@
   const me = $derived(combat.player);
   const aimed = $derived(me?.target && enemy && me.target.ship === enemy.ship ? me.target.moduleId : 0);
   const sel = $derived(me?.weapons.find((w) => w.id === selWeapon) ?? null);
-  const pill: Record<string, { text: string; tone: string }> = {
-    active: { text: 'Hostile', tone: 'red' }, disabled: { text: 'Disabled', tone: 'amber' }, wreck: { text: 'Wreck', tone: 'dim' }, prize: { text: 'Prize', tone: 'green' }, fled: { text: 'Fled', tone: 'dim' },
-  };
+  /** Short state-driven status for the header pill, from what the panel already reads. */
+  const pill = $derived.by((): { text: string; tone: string } => {
+    if (!enemy) return { text: 'Clear', tone: 'dim' };
+    switch (enemy.state) {
+      case 'disabled': return { text: 'Target disabled', tone: 'amber' };
+      case 'wreck': return { text: 'Wreck', tone: 'dim' };
+      case 'prize': return { text: 'Prize', tone: 'green' };
+      case 'fled': return { text: 'Enemy fled', tone: 'dim' };
+    }
+    if (!me) return { text: 'Hostile', tone: 'red' };
+    if (me.hold) return { text: 'Holding fire', tone: 'amber' };
+    if (enemy.shield.max > 0 && enemy.shield.layers === 0) return { text: 'Shields down', tone: 'green' };
+    if (me.weapons.length === 0) return { text: 'No weapons', tone: 'dim' };
+    if (me.weapons.some((w) => w.charge >= 1 && w.powered && !w.ion)) return { text: 'Engaging', tone: 'red' };
+    return { text: 'Charging weapons', tone: 'amber' };
+  });
 
   // A new hostile ship starts as the ship-wide target, so weapons fire without the player having to find the first tap.
   let autoAimed = 0;
@@ -72,7 +85,7 @@
   <header class="ph">
     <span class="ico"><Icon name="target" size={18} /></span>
     <span class="t">{enemy ? enemy.name : 'Combat'}</span>
-    {#if enemy}{@const st = pill[enemy.state] ?? { text: enemy.state, tone: 'dim' }}<span class="pillst {st.tone}" data-testid="combat-state">{st.text}</span>{/if}
+    {#if enemy}<span class="pillst {pill.tone}" data-testid="combat-state">{pill.text}</span>{/if}
     <button class="tile" title="Frame: center the camera between the ships" aria-label="Frame" onclick={() => api.focusFight(enemy?.ship ?? null)}><Icon name="frame" size={18} /></button>
     <button class="tile x" title="Close combat panel" aria-label="Close combat panel" data-testid="combat-close" onclick={onClose}><Icon name="close" size={16} /></button>
   </header>
@@ -113,7 +126,7 @@
   header .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   header button.tile { width: 32px; height: 32px; border-width: 0 0 0 1px; background: #0a3a52; color: #fff; }
   header button.tile:hover { background: var(--panel-3); }
-  .pillst { font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; }
+  .pillst { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; white-space: nowrap; flex: none; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; }
   .pillst.red { color: #ff8a8a; background: #3a1216; } .pillst.amber { color: var(--amber); } .pillst.green { color: var(--green); } .pillst.dim { color: var(--dim); }
   .top { flex: none; }
   .enemy { background: var(--panel); padding: 8px 10px 0; display: grid; gap: 5px; }
@@ -126,13 +139,13 @@
   .viewbox { position: relative; padding: 8px; }
   .view { height: 190px; cursor: crosshair; box-shadow: 0 0 0 8px var(--panel), inset 0 0 0 1px var(--line); }
   .none { background: var(--panel); color: var(--dim); margin: 0; padding: 10px; }
-  @media (min-width: 601px) and (max-height: 860px) { .view { height: 150px; } }
+  @media (min-width: 601px) and (max-height: 860px) { .view { height: 104px; } }
   @media (max-width: 600px) {
-    .combat { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-width: none; height: 72vh; border-width: 1px 0 0; transition: height 0.18s; }
+    .combat { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-width: none; height: 55vh; border-width: 1px 0 0; transition: height 0.18s; }
     .combat.expanded { height: calc(100vh - 12px - var(--sat)); }
     .handle { display: flex; justify-content: center; align-items: center; height: 16px; min-height: 16px; width: 100%; padding: 0; border: 0; background: var(--panel-2); flex: none; }
     .handle i { width: 40px; height: 4px; background: var(--line-hi); }
-    .view { height: 17vh; }
+    .view { height: 9vh; }
     .expanded .view { height: 30vh; }
   }
 </style>

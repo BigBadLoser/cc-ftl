@@ -75,12 +75,12 @@
     </div>
     {#if !ready && !me.hold}<div class="hint" data-testid="combat-volley-hint">Hold fire to charge a volley</div>{/if}
     <div class="sec">
-      {#if enemy}<button class="tile sm" title="Hail: call them on the radio. Only ships that are not hostile answer" aria-label="Hail" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}><Icon name="hail" size={16} /></button>{/if}
+      {#if enemy}<button class="tile sm" title="Hail: call them on the radio. Only ships that are not hostile answer" aria-label="Hail" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}><Icon name="hail" size={16} /><span class="cap">Hail</span></button>{/if}
       <span class="ftl" class:full={canFlee} title="FTL charge: full means you can flee">
-        <button class="tile sm go" disabled={!canFlee} title="Flee: jump away" aria-label="Flee" data-testid="combat-flee" onclick={flee}><Icon name="fast" size={16} /></button>
+        <button class="tile sm go" disabled={!canFlee} title="Flee: jump away" aria-label="Flee" data-testid="combat-flee" onclick={flee}><Icon name="fast" size={16} /><span class="cap">Flee</span></button>
         <span class="bar"><i style="width:{ftlPct}%"></i></span>
       </span>
-      <span class="sh" title="Your shield layers" data-testid="ship-meters"><Icon name="shield" size={14} /><b data-testid="shield-pips">{me.shield.layers}/{me.shield.max}</b></span>
+      <span class="sh" title="Your shield layers" data-testid="ship-meters"><Icon name="shield" size={14} /><b data-testid="shield-pips">{me.shield.layers}/{me.shield.max}</b><span class="cap">Shields</span></span>
       <span class="consoles" data-testid="combat-consoles">
         {#each me.consoles as c (c.id)}
           {@const bad = !c.powered || (!c.operator && c.kind !== 'shields')}
@@ -94,7 +94,7 @@
 
 <style>
   .player { background: var(--panel); flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
+  .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 8px 16px; overscroll-behavior: contain; }
   .wh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   h3 { margin: 0; font: 600 14px/1.2 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .link { min-height: 0; min-width: 0; height: 24px; padding: 0 8px; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--cyan); background: transparent; border-color: var(--line); }
@@ -117,11 +117,14 @@
   button.big.go:not(:disabled) { background: #0e6a80; border-color: var(--cyan); color: #fff; }
   .hint { font-size: 11px; color: var(--dim); }
   .sec { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; }
+  button.tile.sm:has(.cap) { width: auto; min-width: 44px; height: 38px; flex-direction: column; gap: 1px; padding: 0 6px; }
+  .cap { font-size: 10px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dim); }
+  .sh .cap { margin-left: 2px; }
   .ftl { display: inline-flex; align-items: center; gap: 6px; } .ftl .bar { width: 44px; } .ftl.full .bar > i { background: var(--green); }
   .go:not(:disabled) { color: var(--cyan); }
   .sh { display: inline-flex; align-items: center; gap: 4px; color: var(--cyan); } .sh b { color: var(--text); font-weight: 600; }
   .consoles { display: inline-flex; flex-wrap: wrap; gap: 4px; }
   .cs { padding: 1px 6px; border: 1px solid var(--line); color: var(--dim); } .cs.warn { border-color: var(--amber); color: var(--amber); }
   .dim { color: var(--dim); margin: 0; font-size: 12px; }
-  @media (max-width: 600px) { footer { padding-bottom: calc(8px + var(--sab)); } }
+  @media (max-width: 600px) { :global(.combat:not(.expanded)) :is(.hint, .consoles) { display: none; } footer { padding-bottom: calc(8px + var(--sab)); } }
 </style>
