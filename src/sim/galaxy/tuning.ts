@@ -20,11 +20,13 @@ export const TERRAIN_STREAK = 0.09;
 export const TERRAIN_TIDE_SCALE = 26000;
 
 /**
- * Regions (regions.ts): one seed per REGION_CELL cell on ground at least REGION_SEED_DENSITY dense. A sector joins the
+ * Regions (regions.ts): one seed candidate per REGION_CELL cell on ground at least REGION_SEED_DENSITY dense, thinned
+ * so seeds keep their mean REGION_SPACING apart (skewed small, so a few regions are large). A sector joins the
  * seed cheapest to reach within REGION_REACH: distance (wobbled by +-REGION_BORDER_WOBBLE) plus REGION_RIFT_COST per
  * unit of void crossed.
  */
-export const REGION_CELL = 3800;
+export const REGION_CELL = 1800;
+export const REGION_SPACING = { min: 1600, max: 3800 } as const;
 export const REGION_REACH = 5600;
 export const REGION_SEED_DENSITY = 0.35;
 export const REGION_BORDER_WOBBLE = 0.2;

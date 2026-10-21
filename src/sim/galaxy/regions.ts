@@ -3,7 +3,7 @@ import { hash32, unit } from './hash';
 import type { Terrain } from './terrain';
 import { dangerAt, type TerritoryField } from './territory';
 import {
-  LANE_MIN_DENSITY, MIN_REGION_SECTORS, REGION_BORDER_WOBBLE, REGION_CELL, REGION_REACH, REGION_RIFT_COST, REGION_SEED_DENSITY, WILD_GAP, WILD_MATES, WILD_VOID,
+  LANE_MIN_DENSITY, MIN_REGION_SECTORS, REGION_BORDER_WOBBLE, REGION_CELL, REGION_REACH, REGION_RIFT_COST, REGION_SEED_DENSITY, REGION_SPACING, WILD_GAP, WILD_MATES, WILD_VOID,
 } from './tuning';
 
 /** A region (province): a named group of sectors around a seed, owned by one faction or by nobody. */
@@ -17,22 +17,37 @@ export interface Region {
   faction: string | null;
   /** What to expect there (regionType): core, border, corporate, trade, pirate, machine, frontier or rich. */
   type: RegionType;
+  /** Its seed's spacing: larger regions claim further (reach costs are divided by reach / REGION_SPACING mean). */
+  reach: number;
 }
 
 export type RegionType = 'core' | 'border' | 'corporate' | 'trade' | 'pirate' | 'machine' | 'frontier' | 'rich';
 
-const JITTER = 0.35;
+/** Candidates sit anywhere in their cell, so a seed is up to half a cell from its cell centre on each axis. */
+const JITTER = 0.5;
 const RING = Math.ceil(REGION_REACH / REGION_CELL + 0.5 + JITTER);
+/** Cells the widest pair spacing can span (for thinning). */
+const THIN = Math.ceil(REGION_SPACING.max / REGION_CELL) + 1;
+
+interface SeedCandidate {
+  x: number;
+  y: number;
+  pri: number;
+  spacing: number;
+  /** Landed on dense enough ground. */
+  ok: boolean;
+}
 const cellOf = (v: number): number => Math.floor(v / REGION_CELL + 0.5);
 
 /**
- * Regions over the terrain: one seed per REGION_CELL cell, placed on dense ground (a cell over a rift has none). A
+ * Regions over the terrain: seeds thinned to irregular, varied spacing (see region()), on dense ground only. A
  * point belongs to the seed it is cheapest to reach, where distance is wobbled by noise and every unit of void on the
  * way costs REGION_RIFT_COST extra, so borders follow the rifts. A seed that would get fewer than MIN_REGION_SECTORS
  * sectors is dropped and its sectors join their next-cheapest region. All of it reads a bounded ring of cells: chunk-safe.
  */
 export class RegionField {
   private regions = new Map<string, Region | null>();
+  private cands = new Map<string, SeedCandidate>();
   private owner = new Map<string, Region | null>();
   private base = new Map<string, Region | null>();
   private keep = new Map<string, boolean>();
@@ -47,18 +62,53 @@ export class RegionField {
     private readonly content: GalaxyContent | undefined,
   ) {}
 
+  /** A cell's seed candidate: a point on dense ground (a few tries), a priority and a spacing (skewed small). */
+  private candidate(rx: number, ry: number): SeedCandidate {
+    const key = `${rx},${ry}`;
+    let c = this.cands.get(key);
+    if (!c) {
+      const u = (salt: number) => unit(this.seed, rx, ry, salt);
+      const spacing = REGION_SPACING.min + u(85) ** 1.3 * (REGION_SPACING.max - REGION_SPACING.min);
+      if (rx === 0 && ry === 0) c = { x: 0, y: 0, pri: 2, spacing, ok: true };
+      else {
+        c = { x: 0, y: 0, pri: u(86), spacing, ok: false };
+        for (let k = 0; k < 3 && !c.ok; k++) {
+          c.x = (rx - 0.5 + unit(this.seed, rx, ry, k, 81)) * REGION_CELL;
+          c.y = (ry - 0.5 + unit(this.seed, rx, ry, k, 82)) * REGION_CELL;
+          c.ok = this.terrain.density(c.x, c.y) >= REGION_SEED_DENSITY;
+        }
+      }
+      this.cands.set(key, c);
+    }
+    return c;
+  }
+
+  /**
+   * The region seeded in a cell, or null. Candidates are thinned Matérn-style: one survives unless a higher-priority
+   * candidate lies within their mean spacing, so seeds fall irregularly (no grid) and regions vary in size. The start
+   * cell's seed sits at the origin with the top priority.
+   */
   region(rx: number, ry: number): Region | null {
     const key = `${rx},${ry}`;
     let r = this.regions.get(key);
     if (r === undefined) {
       r = null;
-      for (let k = 0; k < 4 && !r; k++) {
-        const home = rx === 0 && ry === 0;
-        const x = home ? 0 : (rx + (unit(this.seed, rx, ry, k, 81) * 2 - 1) * JITTER) * REGION_CELL;
-        const y = home ? 0 : (ry + (unit(this.seed, rx, ry, k, 82) * 2 - 1) * JITTER) * REGION_CELL;
-        if (!home && this.terrain.density(x, y) < REGION_SEED_DENSITY) continue;
-        const faction = this.territory.factionAt(x, y);
-        r = { id: `g.${rx}.${ry}`, rx, ry, x, y, name: this.nameOf(rx, ry), faction, type: this.typeOf(faction, x, y) };
+      const c = this.candidate(rx, ry);
+      let alive = c.ok;
+      for (let dy = -THIN; dy <= THIN && alive; dy++) {
+        for (let dx = -THIN; dx <= THIN; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const o = this.candidate(rx + dx, ry + dy);
+          if (!o.ok || Math.hypot(o.x - c.x, o.y - c.y) >= (o.spacing + c.spacing) / 2) continue;
+          if (o.pri > c.pri || (o.pri === c.pri && (dy > 0 || (dy === 0 && dx > 0)))) {
+            alive = false;
+            break;
+          }
+        }
+      }
+      if (alive) {
+        const faction = this.territory.factionAt(c.x, c.y);
+        r = { id: `g.${rx}.${ry}`, rx, ry, x: c.x, y: c.y, name: this.nameOf(rx, ry), faction, type: this.typeOf(faction, c.x, c.y), reach: c.spacing };
       }
       this.regions.set(key, r);
     }
@@ -106,7 +156,8 @@ export class RegionField {
     const d = Math.hypot(x - r.x, y - r.y);
     if (d > REGION_REACH) return Infinity;
     const wob = 1 + REGION_BORDER_WOBBLE * (this.terrain.wobble(x, y, 1400, hash32(r.rx, r.ry) % 997) - 0.5) * 2;
-    return d * wob + REGION_RIFT_COST * this.terrain.voidRun(r.x, r.y, x, y, LANE_MIN_DENSITY, 100).total;
+    const strength = r.reach / ((REGION_SPACING.min + REGION_SPACING.max) / 2);
+    return (d * wob) / strength + REGION_RIFT_COST * this.terrain.voidRun(r.x, r.y, x, y, LANE_MIN_DENSITY, 100).total;
   }
 
   /** The cheapest seed to reach (x, y) among those passing `ok`. */
