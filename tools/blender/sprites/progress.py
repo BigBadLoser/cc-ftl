@@ -94,11 +94,13 @@ def dashboard():
         if estimated is not None:
             crew_etas.append(estimated)
         print(f"Crew {n}: {progress_bar(fraction)} {fraction:6.1%} "
-              f"{w['done']:>6}/{w['total']:<6} {state}")
+              f"{w['done']:>6}/{w['total']:<6} {state} ETA {duration(estimated)}")
     if aggregate_total:
         fraction = aggregate_done / aggregate_total
         print(f"CREW  : {progress_bar(fraction)} {fraction:6.1%} "
               f"{aggregate_done:>6}/{aggregate_total:<6} (includes cache hits)")
+    if crew_etas:
+        print(f"Crew remaining (slowest worker): ~{duration(max(crew_etas))}")
     print()
     family_log = read_log(LOG_ROOT / "families.log")
     finished = [m.group(1) for m in MANIFEST.finditer(family_log)]
@@ -111,10 +113,12 @@ def dashboard():
     remaining = [f for f in FAMILIES if f not in family_set]
     if remaining:
         print("Next/uncompleted: " + ", ".join(remaining[:5]))
+    family_eta = eta("families", n, len(FAMILIES))
+    if family_eta is not None:
+        print(f"Families rough ETA: ~{duration(family_eta)} (unequal family sizes)")
     print()
     print("Crew percentage is exact for the logged work plan; families are counted by")
-    print("completed batches. ETA is not shown: family sizes vary, and crew logs provide")
-    print("not duration. ETA needs observed progress and is approximate.")
+    print("completed batches, not duration. ETA needs observed progress and is approximate.")
     print("Press Ctrl+C to exit dashboard; renders continue independently.")
 
 
