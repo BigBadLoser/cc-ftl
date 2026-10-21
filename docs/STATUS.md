@@ -180,9 +180,36 @@ Next slices (not built):
 1. Station NPC behaviour and security AI: guards, patrols, alarms, and drawing from the armoury.
 2. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.
 3. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
+**Round 5 (generator polish, branch `stations-polish`):**
+- **Dock banks** (`stationDocks.ts`): wheels and the outer ring of concentric stations reserve their docks before the band
+  is cut. Docks stand side by side (shared walls) on the ring's north and south faces (west once a bank passes about 30
+  degrees), each a straight 3-wide spur from the corridor wall out past the band, so the airlock faces space. The band
+  splits into arcs at the bank centres and the rim rooms keep clear of the collars.
+- **Concentric rings are ring bands:** the inner ring has segment bands on both faces (the inboard one round the hub),
+  the outer ring one outboard band; spokes cut the bands into arcs. System rooms stay rectangles on the outer rim
+  (guns get a second pass; reactors, shields and the core fall back inboard of the outer corridor). The court between
+  the rings is at most 14 tiles across (`COURT`): the inner ring grows when many guns make the rim big.
+- **Courts lit to scale:** rooms of 120+ tiles get a lamp grid (pitch 9) plus a pass that lights any tile still dark,
+  with no 12-lamp cap; every court floor tile is within 6 tiles of a lamp (tested). Courts may take up to three extra
+  reactors for their lamps.
+- **Faster fit-out:** `Layout.walkable` is a lookup (a solid mask kept by push/pop), which the per-candidate
+  connectivity check calls on every tile.
+- **Numbers** (`node tools/shipgen/bench.js`, 12 seeds; trading 48):
+
+| Hubs | Mean before → after | Worst before → after | Attempts before → after |
+|---|---|---|---|
+| Trading | 1.45 s → 0.40 s | 3.0 s → 0.55 s | 2.17 → 1.08 |
+| Mining | 0.78 s → 0.28 s | 1.7 s → 0.73 s | 1.33 → 1.25 |
+| Farming | 1.86 s → 0.21 s | 8.1 s → 0.32 s | 4.33 → 1.08 |
+| Military | 1.75 s → 1.84 s | 4.4 s → 3.2 s | 3.42 → 1.83 |
+| Pirate | 0.36 s → 0.19 s | 0.71 s → 0.45 s | 2.58 → 2.58 |
+
+  Trading round share (wheel, concentric, arc): outpost 25% → 46%, station 25% → 56%, hub 4% → 60% (weights say 57%,
+  62%, 50%). Military hubs now come out concentric 9 times in 12 (was 5) with two drill halls each, so their mean
+  stays about the same.
+
 4. Generator polish:
-   - concentric rings as ring bands (airlocks beyond a band need their own facing rule);
-   - big courtyards are slow to furnish and dark (lighting places at most 12 lamps a room). Hubs now take a mean of 0.3–1.9 s; the worst is 8.6 s (a farming satellite hub that reseeded 18 times). The slow-test bound is 15 s;
+   - military concentric hubs are the slowest (mean about 1.8 s): two drill halls and 24 guns to furnish. The slow test bounds the hub mean at 3 s and the worst at 8 s;
    - an armour doctrine for walls (navy belts, depots) is not built: every wall is one tile now;
    - wheel hubs with one hub room leave a big empty centre, so wheels are weighted only for outposts and stations;
    - spines have no doubled form for hubs.
