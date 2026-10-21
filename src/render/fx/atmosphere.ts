@@ -59,7 +59,10 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
         if (air > 0.5) {
           for (let d = 0; d < 4; d++) {
             const [dx, dy] = DIRS[d] as readonly [number, number];
-            if (tiles.kindAt(x + dx, y + dy) === Struct.Space) {
+            // the real tile (not the art kind, which shows asteroid rock as Space): air streams out only into vacuum,
+            // Space or airless rock ground; rock mass is a wall
+            const n = tiles.get('struct', x + dx, y + dy);
+            if (n === Struct.Space || n === Struct.Ground) {
               const v = VENT[d] as (typeof VENT)[number];
               const rate = 3 + 7 * Math.min(1, air / 21);
               particles.emit(`va${i}.${d}`, v.air, cc.x, cc.y - 4, rate, dt, 8);
