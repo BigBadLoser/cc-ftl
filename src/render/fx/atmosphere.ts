@@ -5,7 +5,7 @@ import type { Grid } from '../../sim/grid';
 import { footprintTiles } from '../../sim/modules/footprint';
 import { ModuleC } from '../../sim/modules/components';
 import { Struct } from '../../sim/structure';
-import { iso } from '../iso';
+import { ART_SCALE as S, iso, TILE_H, TILE_W } from '../iso';
 import { regionTiles } from '../regionTiles';
 import type { ModuleDefs } from '../moduleView';
 import type { EmitterDef, Particles } from './particles';
@@ -19,8 +19,8 @@ const WELD: EmitterDef = { ...SPARK, vx: [-35, 35], vy: [-55, -10], life: [0.2, 
 /** Venting: air puffs and ice crystals stream toward the space tile; one def per grid direction (+x, -x, +y, -y). */
 const DIRS: readonly (readonly [number, number])[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const VENT = DIRS.map(([dx, dy]) => {
-  const sx = (dx - dy) * 32;
-  const sy = (dx + dy) * 16;
+  const sx = ((dx - dy) * TILE_W) / 2;
+  const sy = ((dx + dy) * TILE_H) / 2;
   const len = Math.hypot(sx, sy);
   const r = (a: number, b: number): [number, number] => [(sx / len) * a, (sx / len) * b];
   const q = (a: number, b: number): [number, number] => [(sy / len) * a, (sy / len) * b];
@@ -52,9 +52,9 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
         if (k !== Struct.Floor && k !== Struct.Door) return;
         const cc = iso(x, y);
         const sv = (tiles.data('smoke', c)?.[ci] ?? 0) as number;
-        if (sv >= 18) particles.emit(`s${i}`, SMOKE, cc.x, cc.y - 10, 0.4 + (sv / 255) * 2.4, dt, 18);
+        if (sv >= 18) particles.emit(`s${i}`, SMOKE, cc.x, cc.y - 10 * S, 0.4 + (sv / 255) * 2.4, dt, 18);
         const fv = (tiles.data('fire', c)?.[ci] ?? 0) as number;
-        if (fv > 0) particles.emit(`e${i}`, EMBER, cc.x, cc.y - 6, (fv / 255) * 5 + 0.6, dt, 14);
+        if (fv > 0) particles.emit(`e${i}`, EMBER, cc.x, cc.y - 6 * S, (fv / 255) * 5 + 0.6, dt, 14);
         const air = (tiles.data('o2', c)?.[ci] ?? 0) as number;
         if (air > 0.5) {
           for (let d = 0; d < 4; d++) {
@@ -62,8 +62,8 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
             if (tiles.kindAt(x + dx, y + dy) === Struct.Space) {
               const v = VENT[d] as (typeof VENT)[number];
               const rate = 3 + 7 * Math.min(1, air / 21);
-              particles.emit(`va${i}.${d}`, v.air, cc.x, cc.y - 4, rate, dt, 8);
-              particles.emit(`vi${i}.${d}`, v.ice, cc.x, cc.y - 4, rate * 0.25, dt, 8);
+              particles.emit(`va${i}.${d}`, v.air, cc.x, cc.y - 4 * S, rate, dt, 8);
+              particles.emit(`vi${i}.${d}`, v.ice, cc.x, cc.y - 4 * S, rate * 0.25, dt, 8);
             }
           }
         }
@@ -82,9 +82,9 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
         }
         const on = m.powered && m.enabled && m.hp > 0;
         const prev = wasPowered.get(id);
-        if (prev === true && !on && m.enabled) particles.burst(SPARK, cx, cy - 14, 10, 10);
+        if (prev === true && !on && m.enabled) particles.burst(SPARK, cx, cy - 14 * S, 10, 10);
         wasPowered.set(id, on);
-        if (m.hp > 0 && m.hp < def.maxHp * 0.5) particles.emit(`m${id}`, SPARK, cx, cy - 14, 1.5 + 2.5 * (1 - m.hp / (def.maxHp * 0.5)), dt, 12);
+        if (m.hp > 0 && m.hp < def.maxHp * 0.5) particles.emit(`m${id}`, SPARK, cx, cy - 14 * S, 1.5 + 2.5 * (1 - m.hp / (def.maxHp * 0.5)), dt, 12);
       }
       for (const id of world.query(CrewC, PositionC)) {
         const crew = world.get(id, CrewC);
@@ -94,7 +94,7 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
         const job = a && world.get(a.jobId, JobC);
         if (!job || !WELD_JOBS.has(job.kind)) continue;
         const p = iso(pos.x + (pos.toX - pos.x) * pos.progress - grid.x0, pos.y + (pos.toY - pos.y) * pos.progress - grid.y0);
-        particles.emit(`w${id}`, WELD, p.x + 6, p.y - 16, 14, dt, 4);
+        particles.emit(`w${id}`, WELD, p.x + 6 * S, p.y - 16 * S, 14, dt, 4);
       }
     },
   };

@@ -1,21 +1,13 @@
 # Rendering all art at 2x
 
-How to re-render every sprite at twice the current pixel size on your own machine. Branch: `art/scale-2x` (main plus
-the containers, module-pack and crew-weapons art branches, plus the `ART_SCALE` switch).
+How to re-render every sprite at 2x on your own machine. Branch: `art/scale-2x` (the art branches merged with `art-2x`,
+where the pipeline renders at 2x: tiles 128x64, crew frames 256x240 with the feet at 128,188, robot and alien frames
+264x248; the scale lives in `tools/blender/sprites/scale.py`). No environment variable is needed any more.
 
-## What the switch does
+Every family is render-cached (`.cache/sprites/<family>`), so a re-run only renders what changed; `--preview` renders a
+grainy quick look (see `tools/blender/README.md`, "Speed").
 
-`ART_SCALE=2` doubles the pipeline's pixel scale: tiles render at 128x64 instead of 64x32, crew frames at 256x240
-(feet anchor 128,188), robot and alien frames at 264x248, and Sol's packs follow automatically (they size from the
-tile). Nothing else changes: the same models are rendered at a higher pixel density. Without the variable everything
-is exactly as before.
-
-Not scaled (decide after seeing the result):
-- Outlines stay 1 px, so they look thinner relative to the sprites.
-- Weapons are still drawn 1.25x life size, which was needed at 62 px crew; at 2x 1.0 may look better
-  (`SIZE` in `tools/blender/sprites/human_v2_weapons.py`).
-- The crew models are still the simplified game-size body: at 2x the faces, hands and clothes look plain. A crew
-  detail pass is the follow-up.
+Outlines stay 1 px, so they look thinner relative to the sprites.
 
 ## Setup (once)
 
@@ -41,17 +33,17 @@ so with 8+ cores four crew workers plus the families job is about right; with fe
 **Terminal 1: every non-crew family**, one after another into `public/assets`:
 
 ```bash
-ART_SCALE=2 npm run sprites -- -- public/assets robots,aliens,env,walls,consoles,weapons,roof,robot_bay,vehicle_bay,shuttle,airlock,struct,fx,galley,derelict,eggsac,storage_set,medbay,battery,hydroponics,workbench,ops_consoles,cryo,wallprops,hazards,clutter,decay,corpse,damage,containers,sol,damage_sol
+npm run sprites -- -- public/assets robots,aliens,env,walls,consoles,weapons,roof,robot_bay,vehicle_bay,shuttle,airlock,struct,fx,galley,derelict,eggsac,storage_set,medbay,battery,hydroponics,workbench,ops_consoles,cryo,wallprops,hazards,clutter,decay,corpse,damage,containers,sol,damage_sol
 ```
 
 **Terminals 2-5: crew workers.** They only fill the render cache (`.cache/sprites/crew`); their output dirs are
 thrown away. Split by clip:
 
 ```bash
-ART_SCALE=2 npm run sprites -- -- /tmp/crew1 crew --clip walk,sleep
-ART_SCALE=2 npm run sprites -- -- /tmp/crew2 crew --clip idle,work,eva_float
-ART_SCALE=2 npm run sprites -- -- /tmp/crew3 crew --clip sit_idle,sit_work
-ART_SCALE=2 npm run sprites -- -- /tmp/crew4 crew --clip aim_1h,fire_1h,aim_2h,fire_2h,aim_heavy,fire_heavy,walk_aim_1h,walk_aim_2h,walk_heavy,ready_1m,swing_1m,ready_2m,swing_2m,crouch_idle,crouch_walk,crouch_aim_1h,crouch_fire_1h,crouch_aim_2h,crouch_fire_2h,crouch_fire_heavy,crouch_ready_1m,lean_l_1h,lean_r_1h,lean_l_2h,lean_r_2h
+npm run sprites -- -- /tmp/crew1 crew --clip walk,sleep
+npm run sprites -- -- /tmp/crew2 crew --clip idle,work,eva_float
+npm run sprites -- -- /tmp/crew3 crew --clip sit_idle,sit_work
+npm run sprites -- -- /tmp/crew4 crew --clip aim_1h,fire_1h,aim_2h,fire_2h,aim_heavy,fire_heavy,walk_aim_1h,walk_aim_2h,walk_heavy,ready_1m,swing_1m,ready_2m,swing_2m,crouch_idle,crouch_walk,crouch_aim_1h,crouch_fire_1h,crouch_aim_2h,crouch_fire_2h,crouch_fire_heavy,crouch_ready_1m,lean_l_1h,lean_r_1h,lean_l_2h,lean_r_2h
 ```
 
 With two workers, run the first two lines and then the last two.
@@ -60,7 +52,7 @@ With two workers, run the first two lines and then the last two.
 a few minutes:
 
 ```bash
-ART_SCALE=2 npm run sprites -- -- public/assets crew
+npm run sprites -- -- public/assets crew
 ```
 
 The log should say `0 misses`. If it renders anything, a worker didn't finish; let this run complete it.

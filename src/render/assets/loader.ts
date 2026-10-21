@@ -34,6 +34,8 @@ export interface Atlas {
   layer(id: string): LayerSprite | undefined;
   /** Sorted ids of all assets starting with a prefix. */
   ids(prefix: string): string[];
+  /** Filter every sheet linearly (true: for art drawn below zoom 1, so it does not shimmer) or nearest-neighbour (false: crisp). */
+  setSmooth(on: boolean): void;
 }
 
 function validate(m: Manifest): void {
@@ -70,6 +72,7 @@ export async function loadAtlas(base = assetBase()): Promise<Atlas> {
     return s;
   };
 
+  let smooth = false;
   const statics = new Map<string, StaticSprite>();
   const layers = new Map<string, LayerSprite>();
   const cache = new Map<string, Texture>();
@@ -127,6 +130,11 @@ export async function loadAtlas(base = assetBase()): Promise<Atlas> {
       return l;
     },
     ids: (prefix) => sortedIds.filter((id) => id.startsWith(prefix)),
+    setSmooth(on) {
+      if (on === smooth) return;
+      smooth = on;
+      for (const s of sheets.values()) for (const t of [s.image, s.glow]) if (t) t.source.scaleMode = on ? 'linear' : 'nearest';
+    },
   };
   return atlas;
 }

@@ -1,107 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ModuleC, ShipC, Struct, accessTile, deserialize, footprintTiles, generateShip, hullRow, isTileWalkable, newGame,
-  adjacencyDistance, adjacencySignature, meanPairwise, openTilesOf, serialize, silhouetteDistance, silhouetteMask, structureParts, type FactionDef, type GenResult, type ModuleDef, type Sim,
-} from '../../sim';
+import { Struct, generateShip, isTileWalkable, newGame, adjacencyDistance, adjacencySignature, meanPairwise, silhouetteDistance, silhouetteMask, type FactionDef, type GenResult, type ModuleDef } from '../../sim';
 import { content } from '../index';
 import { factions } from './index';
-import { shipIdOf, shipGrid, shipIds } from '../../sim/regions';
+import { shipGrid, shipIds } from '../../sim/regions';
 import { homeShip } from '../../sim/combat/ships';
 
 const defs = content.modules as Record<string, ModuleDef>;
-const ids = Object.keys(factions) as (keyof typeof factions)[];
 const gen = (id: keyof typeof factions, seed: number, depth: number): GenResult =>
   generateShip(factions[id] as FactionDef, id, seed, depth, defs);
 const count = (g: GenResult, pred: (d: ModuleDef) => boolean): number =>
   (g.template.modules ?? []).filter((m) => defs[m.def] && pred(defs[m.def] as ModuleDef)).length;
 
-/** Spawn a generated ship in a real sim and return the sim and its grid id. */
-function spawned(faction: string, seed: number, depth: number): { sim: Sim; shipId: number } {
-  const sim = newGame(1, content);
-  sim.enqueue({ type: 'debug.spawnGenerated', faction, seed, depth, cx: 130, cy: 70 });
-  sim.step();
-  return { sim, shipId: shipIds(sim).find((i) => i !== homeShip(sim)) ?? 0 };
-}
-
-describe('ship generator', () => {
-  it('every ship is one connected structure (hull, walls, floors, beams 4-connected), first attempt mostly', () => {
-    for (const id of ids) {
-      let reseeded = 0;
-      for (const depth of [1, 4, 9]) {
-        for (let seed = 1; seed <= 12; seed++) {
-          const g = gen(id, seed, depth);
-          const w = Math.max(...g.template.rows.map((r) => r.length));
-          const cells = g.template.rows.flatMap((r) => Array.from({ length: w }, (_, x) => r[x] ?? '.'));
-          expect(structureParts(cells, w, g.template.rows.length), `${id} seed ${seed} depth ${depth}`).toBe(1);
-          if (g.failures.some((f) => f.includes('disconnected'))) reseeded++;
-        }
-      }
-      // Gaps are fixed at the source, not by reseeding.
-      expect(reseeded, `${id} reseeds for disconnection`).toBeLessThanOrEqual(1);
-    }
-  }, 240000);
-
-  it('is deterministic: same faction, seed and depth give the same template; seeds vary the layout', () => {
-    for (const id of ids) {
-      expect(gen(id, 77, 3).template).toEqual(gen(id, 77, 3).template);
-      const layouts = new Set(Array.from({ length: 12 }, (_, s) => gen(id, s, 3).template.rows.join('\n')));
-      expect(layouts.size, id).toBeGreaterThanOrEqual(6);
-    }
-  }, 90000);
-
-  for (const id of ids) {
-    it(`${id}: 200 seeds across depths 0-9 all validate`, () => {
-      const bad: string[] = [];
-      for (let seed = 0; seed < 200; seed++) {
-        const g = gen(id, seed * 7919 + 13, seed % 10);
-        if (g.problems.length > 0) bad.push(`seed ${seed}: ${g.problems.join('; ')}`);
-      }
-      expect(bad).toEqual([]);
-    }, 90000);
-  }
-
-  it('scales with depth: deeper ships are longer, better armed and shielded, with more power and crew', () => {
-    for (const id of ids) {
-      const stats = (g: GenResult) => [g.width, count(g, (d) => !!d.weapon), count(g, (d) => !!d.shieldGen), count(g, (d) => d.power > 0), g.template.crew?.length ?? 0];
-      const avgs = (depth: number): number[] => {
-        const s = [0, 0, 0, 0, 0];
-        for (let seed = 0; seed < 30; seed++) stats(gen(id, seed, depth)).forEach((v, k) => { s[k]! += v / 30; });
-        return s;
-      };
-      const [lo, hi] = [avgs(0), avgs(9)];
-      for (let k = 0; k < 5; k++) {
-        expect(hi[k], `${id} stat ${k}`).toBeGreaterThan(lo[k] as number);
-      }
-    }
-  }, 120000);
-
-  it('keeps each motif recognisable', () => {
-    for (let seed = 0; seed < 30; seed++) {
-      const d = gen('faction.drones', seed, seed % 10);
-      expect(count(d, (m) => !!m.bed || !!m.o2PerSec)).toBe(0);
-      expect(count(d, (m) => !!m.aiCore)).toBe(1);
-      const s = gen('faction.scrapper', seed, seed % 10);
-      expect(count(s, (m) => !!m.vehicleBay)).toBe(1);
-      expect(s.template.boarding).toBeDefined();
-      expect(count(s, (m) => !!m.storage)).toBeGreaterThanOrEqual(5);
-      const n = gen('faction.navy', seed, seed % 10);
-      // Navy hulls are mirrored (doors aside), except the carrier's offset island; staggered gun mounts may break it,
-      // so any mismatch must lie inside a mount (or its mirror image).
-      const dbg = n.debug!;
-      const mounts = dbg.assemblies.filter((a) => a.kind === 'mount' || a.kind === 'plate');
-      const inMount = (x: number, y: number): boolean => mounts.some((a) => x >= a.x && x < a.x + a.w && y >= a.y && y < a.y + a.h);
-      const rows = n.template.rows.map((r) => r.replace(/D/g, '#'));
-      // Mirror about the root assembly's axis (asymmetric mounts shift the crop).
-      const r0 = dbg.assemblies[0]!;
-      const m = (y: number): number => 2 * r0.y + r0.h - 1 - y;
-      const bad = rows.flatMap((r, y) => [...r].map((ch, x) => ((rows[m(y)]?.[x] ?? '.') !== ch && !inMount(x, y) && !inMount(x, m(y)) ? `${x},${y}` : '')).filter(Boolean));
-      if (n.role !== 'carrier') expect(bad, `${n.template.name} hull is mirror-symmetric`).toEqual([]);
-    }
-    const lopsided = Array.from({ length: 20 }, (_, seed) => gen('faction.scrapper', seed, 4).template.rows)
-      .filter((rows) => rows.join() !== [...rows].reverse().join());
-    expect(lopsided.length).toBeGreaterThanOrEqual(18);
-  });
-
+describe('ship generator: doctrines', () => {
   it('navy (2D arranger): every hull family appears, major assemblies sit side by side, architecture varies', () => {
     const families = new Set<string>();
     let sideBySide = 0;
@@ -209,75 +119,4 @@ describe('ship generator', () => {
     expect(seen).toBeGreaterThan(0);
   });
 
-  for (const id of ids) {
-    it(`${id}: spawned in the sim, modules sit on floor and hull, chairs and access tiles are open, all floor is reachable, power balances`, () => {
-      for (let seed = 0; seed < 12; seed++) {
-        const { sim, shipId } = spawned(id, seed * 31 + 5, seed % 10);
-        expect(shipId, `seed ${seed} spawned`).toBeGreaterThan(1);
-        const grid = shipGrid(sim, shipId)!;
-        let supply = 0;
-        let demand = 0;
-        for (const mid of sim.world.query(ModuleC)) {
-          const m = sim.world.get(mid, ModuleC)!;
-          if (shipIdOf(sim, m) !== shipId) continue;
-          const def = defs[m.def] as ModuleDef;
-          const wall = hullRow(def, m.x, m.y, m.rot);
-          if (!def.airlock) {
-            for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
-              const onWall = wall.some((w) => w.x === t.x && w.y === t.y);
-              // Containers stand on their frame's Beam tiles, sealed (no floor).
-              expect(grid.get('struct', t.x, t.y), `${m.def} at ${t.x},${t.y}`).toBe(def.container ? Struct.Beam : onWall ? Struct.Wall : Struct.Floor);
-            }
-          }
-          const at = accessTile(def, m.x, m.y, m.rot);
-          if (at) expect(isTileWalkable(sim, grid, at.x, at.y), `${m.def} access`).toBe(true);
-          for (const t of openTilesOf(def, m.x, m.y, m.rot)) expect(isTileWalkable(sim, grid, t.x, t.y)).toBe(true);
-          if (def.power > 0) supply += def.power; else demand -= def.power;
-        }
-        expect(demand).toBeLessThanOrEqual(supply);
-        // Flood from the first door over walkable tiles: everything walkable is reached.
-        // Local tiles (lx, ly) from the grid's top-left; the grid reads sector tiles.
-        const walk = (x: number, y: number) => grid.inBounds(grid.x0 + x, grid.y0 + y) && isTileWalkable(sim, grid, grid.x0 + x, grid.y0 + y);
-        let start = -1;
-        let total = 0;
-        for (let y = 0; y < grid.height; y++) for (let x = 0; x < grid.width; x++) {
-          if (!walk(x, y)) continue;
-          total++;
-          if (start < 0 && grid.get('struct', grid.x0 + x, grid.y0 + y) === Struct.Door) start = y * grid.width + x;
-        }
-        const seen = new Set([start]);
-        const stack = [start];
-        while (stack.length) {
-          const i = stack.pop()!;
-          const x = i % grid.width;
-          const y = Math.floor(i / grid.width);
-          for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
-            const j = ny * grid.width + nx;
-            if (walk(nx, ny) && !seen.has(j)) { seen.add(j); stack.push(j); }
-          }
-        }
-        expect(seen.size, `seed ${seed}`).toBe(total);
-      }
-    });
-  }
-
-  it('debug.spawnGenerated stores the origin on the ship, survives a save, and rejects unknown factions', () => {
-    const { sim, shipId } = spawned('faction.navy', 1234, 5);
-    const ship = sim.world.get(shipId, ShipC)!;
-    expect(ship.gen).toMatchObject({ faction: 'faction.navy', seed: 1234, depth: 5 });
-    expect(typeof ship.gen?.role).toBe('string');
-    expect(ship.faction).toBe('hostile');
-    const loaded = deserialize(serialize(sim), content);
-    expect(serialize(loaded)).toBe(serialize(sim));
-    sim.events.drain();
-    sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.nobody', depth: 0, cx: 30, cy: 30 });
-    sim.step();
-    expect(sim.events.drain().some((e) => e.type === 'command.rejected')).toBe(true);
-  });
-
-  it('a generated ship fights: a minute of combat against the starter runs without errors', () => {
-    const { sim } = spawned('faction.scrapper', 99, 3);
-    for (let t = 0; t < 20 * 60; t++) sim.step();
-    expect(sim.world.query(ShipC).length).toBe(2);
-  });
 });

@@ -22,7 +22,7 @@ import type { Filter } from 'pixi.js';
 import { diamondTextures } from './diamonds';
 import { heldAssets } from './itemView';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
-import { depthKey, iso } from './iso';
+import { ART_SCALE as S, depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { clipFor, crewLoadout, resolveClip } from './loadout';
 
@@ -87,8 +87,8 @@ const RED = 0xff3b3b;
 const CYAN = 0x22d3ee;
 const SMOOTH = 14;
 /** Screen offset (art px, from the feet) of the hands for each facing 0..7 (SE, S, SW, W, NW, N, NE, E), and their height. */
-const HAND: readonly (readonly [number, number])[] = [[7, 3], [0, 5], [-7, 3], [-8, 0], [-7, -3], [0, -4], [7, -3], [8, 0]];
-const HAND_Y = -19;
+const HAND: readonly (readonly [number, number])[] = ([[7, 3], [0, 5], [-7, 3], [-8, 0], [-7, -3], [0, -4], [7, -3], [8, 0]] as const).map(([x, y]) => [x * S, y * S] as const);
+const HAND_Y = -19 * S;
 /** Seated operator direction per console rotation (faces the desk: r0 -y, r1 +x, r2 +y, r3 -x; consoles.py SEAT_DIR). */
 const SEAT_DIR = [6, 0, 2, 4];
 /** A robot docked in a bay cradle faces away from the tower (robot_bay.py: r0 6, r1 0, r2 2, r3 4): same table. */
@@ -158,7 +158,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, shadow, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20, first.def.anchor.y - 6), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0 };
+    return { root, parts, glows, ring, shadow, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0 };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -296,7 +296,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const lx = s.x - target.ox, ly = s.y - target.oy;
         const p = iso(lx, ly);
         // A carried body hangs at the carrier's side, drawn just over them.
-        s.root.position.set(Math.round(p.x) + (carried ? 9 : 0), Math.round(p.y) + (carried ? -13 : 0));
+        s.root.position.set(Math.round(p.x) + (carried ? 9 * S : 0), Math.round(p.y) + (carried ? -13 * S : 0));
         let z = depthKey(lx, ly) + (carried ? 0.02 : 0);
         if (at && onOpen) {
           const f = footprintTiles(at.def, at.m.x, at.m.y, at.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
@@ -305,20 +305,20 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         s.root.zIndex = z;
         applyLight(s, pos.x, pos.y, dead);
         const carrying = world.get(id, CarryingC);
-        showHeld(s, carrying?.item, dir, !hurtLying, s.clip === 'walk' ? Math.round(Math.abs(Math.sin(s.t * 9))) : 0);
+        showHeld(s, carrying?.item, dir, !hurtLying, s.clip === 'walk' ? Math.round(Math.abs(Math.sin(s.t * 9))) * S : 0);
         const hp = world.get(id, HealthC);
         const showBar = !dead && (!!downed || (!!hp && hp.hp < hp.max));
         s.barBg.visible = s.barFill.visible = showBar;
         if (showBar) {
           const frac = downed ? Math.max(0, downed.bleed / BLEED_OUT_SECONDS) : hp ? hp.hp / hp.max : 1;
-          const w = 22;
-          const by = s.lying ? -34 : -s.height - 10;
-          s.barBg.position.set(-w / 2 - 1, by - 1);
-          s.barBg.width = w + 2;
-          s.barBg.height = 5;
+          const w = 22 * S;
+          const by = s.lying ? -34 * S : -s.height - 10 * S;
+          s.barBg.position.set(-w / 2 - S, by - S);
+          s.barBg.width = w + 2 * S;
+          s.barBg.height = 5 * S;
           s.barFill.position.set(-w / 2, by);
-          s.barFill.width = Math.max(1, Math.round(w * frac));
-          s.barFill.height = 3;
+          s.barFill.width = Math.max(S, Math.round(w * frac));
+          s.barFill.height = 3 * S;
           s.barFill.tint = downed ? (downed.stabilized ? 0x4cc3ff : 0xff2d2d) : frac > 0.5 ? 0x4cd964 : frac > 0.25 ? 0xf0c030 : 0xff5a2d;
         }
         // The suit's tank: a small bar over the head once it is in use (cyan, amber under half, flashing red under a quarter).
@@ -329,14 +329,14 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         s.airBg.visible = s.airFill.visible = showAir;
         if (showAir) {
           const frac = Math.max(0, Math.min(1, air / airMax));
-          const w = 22;
-          const ay = (s.lying ? -34 : -s.height - 10) - (showBar ? 6 : 0);
-          s.airBg.position.set(-w / 2 - 1, ay - 1);
-          s.airBg.width = w + 2;
-          s.airBg.height = 4;
+          const w = 22 * S;
+          const ay = (s.lying ? -34 * S : -s.height - 10 * S) - (showBar ? 6 * S : 0);
+          s.airBg.position.set(-w / 2 - S, ay - S);
+          s.airBg.width = w + 2 * S;
+          s.airBg.height = 4 * S;
           s.airFill.position.set(-w / 2, ay);
-          s.airFill.width = Math.max(frac > 0 ? 1 : 0, Math.round(w * frac));
-          s.airFill.height = 2;
+          s.airFill.width = Math.max(frac > 0 ? S : 0, Math.round(w * frac));
+          s.airFill.height = 2 * S;
           const blink = frac < 0.25 && Math.floor(now / 250) % 2 === 0;
           s.airFill.tint = blink ? 0xffffff : frac > 0.5 ? 0x22d3ee : frac > 0.25 ? 0xf0c030 : 0xff3b3b;
         }
@@ -362,9 +362,9 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
       for (const [id, s] of slots) {
         const px = s.root.x;
         const py = s.root.y;
-        const hw = s.lying ? 24 : 11;
-        const h = s.lying ? 22 : s.height;
-        if (Math.abs(ax - px) <= hw && ay >= py - h && ay <= py + 4 && py > bestY) {
+        const hw = (s.lying ? 24 : 11) * S;
+        const h = s.lying ? 22 * S : s.height;
+        if (Math.abs(ax - px) <= hw && ay >= py - h && ay <= py + 4 * S && py > bestY) {
           bestY = py;
           best = id;
         }

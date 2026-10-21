@@ -1,7 +1,7 @@
 """Sheet packing and manifest merging for the sprite families (no bpy needed except for `read_png`).
 
 A family renders a list of items {id, fp, rgba, g, ax, ay} (cropped sprite, glow twin, anchor inside the crop). `pack`
-shelf-packs them into pages of at most PAGE x PAGE px: sheet `<family>` (page 0), `<family>.1`, ... with images
+shelf-packs them into pages of at most PAGE x PAGE px (scale.MAX_SHEET = 4096; a family that does not fit one page is split): sheet `<family>` (page 0), `<family>.1`, ... with images
 `sprites/<sheet>.png` and `.glow.png`. `merge` folds a family's fragment into an existing manifest: every asset of the
 family's sheets and every id the family produces is replaced, everything else is kept, so families rebuild one at a
 time and the committed manifest is the cache."""
@@ -11,8 +11,9 @@ import re
 import numpy as np
 
 from .post import write_png
+from .scale import MAX_SHEET
 
-PAGE = 2048
+PAGE = MAX_SHEET      # sheets are at most PAGE x PAGE px (4096: the phone GPU texture limit); more sprites go to `<family>.1`, ...
 
 
 def read_png(path):
@@ -34,6 +35,8 @@ def _pages(items):
     pages, cur, x, y, rowh, width = [], [], 1, 1, 0, 1
     for it in order:
         h, w = it["rgba"].shape[:2]
+        if w + 2 > PAGE or h + 2 > PAGE:
+            raise ValueError(f"sprite {it['id']} is {w}x{h}: larger than a {PAGE} px sheet")
         if x + w + 1 > PAGE:
             x, y, rowh = 1, y + rowh + 1, 0
         if y + h + 1 > PAGE:

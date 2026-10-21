@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only terminal dashboard for the five parallel ART_SCALE=2 sprite jobs.
+"""Read-only terminal dashboard for the five parallel 2x sprite jobs.
 
 Launch workers with: 2>&1 | tee /tmp/crew1.log (through crew4.log),
 and 2>&1 | tee /tmp/families.log for the non-crew job.

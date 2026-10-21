@@ -2,10 +2,12 @@
 
 Outlines: floors and wall/door blocks none (blocks fill the footprint and tile into one mass); props a normal 1px ring."""
 import math
+import time
 import bpy
 import numpy as np
 from mathutils import Vector
-from . import core, post
+from . import core, post, sprite_cache
+from . import geom_digest as gd
 
 SS = core.SS
 
@@ -37,7 +39,7 @@ def render_ghost(objs, W, H):
     cov = post.blocks(a2 > 0.5, SS)
     cnt = cov.sum(-1)
     lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / np.maximum(cnt, 1)
-    ga = np.where(cnt >= 3, np.clip(lum / 255.0 * 0.65, 0, 0.9), 0.0)    # low threshold: thin lines stay unbroken
+    ga = np.where(cnt >= post.scaled(3, SS), np.clip(lum / 255.0 * 0.65, 0, 0.9), 0.0)    # low threshold: thin lines stay unbroken
     tint = np.array([200.0, 214.0, 232.0])
     out = np.where(op[..., None], c.astype(float), tint)
     mixed = np.where(op[..., None], c * (1 - ga[..., None]) + tint * ga[..., None], tint)
@@ -84,27 +86,83 @@ def crop_item(sid, fp, c, op, g, ox, oy, al=None):
     return {"id": sid, "fp": fp, "rgba": rgba[y0:y1, x0:x1], "g": g[y0:y1, x0:x1], "ax": ox - x0, "ay": oy - y0}
 
 
-def render_jobs(jobs, extra=True, only=None, log=print, progress=None):
+def global_digest():
+    """Everything global that can change a rendered sprite: the render code (core, post, this file), the palette files, the
+    tile scale, the Blender version and the quality settings. Per-sprite inputs (geometry, scene state) are keyed separately."""
+    b = sprite_cache.BL
+    files = [sprite_cache.SRC / f for f in ("core.py", "post.py", "env_build.py", "scale.py", "geom_digest.py", "sprite_cache.py")]
+    files += [b / "lib/palette.py", sprite_cache.ROOT / "palette.json", b / "palette_extra.json"]
+    return sprite_cache.digest(sprite_cache.files_digest(files), bpy.app.version_string, core.TILE_W, core.TILE_H, core.SS,
+                               core.SAMPLES, core.PREVIEW)
+
+
+def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False, plan=False, progress=None):
     """Render sprite jobs: (id, footprint, kind, builder) tuples, or callables returning ready items (multi-part
-    sprites such as a console and its front overlay). `extra` picks the quantisation palette (see post.select)."""
-    items = []
+    sprites such as a console and its front overlay). `extra` picks the quantisation palette (see post.select).
+
+    With `family` the render cache (sprite_cache.py) is used: a job whose key is unchanged loads its items instead of
+    rendering. A tuple job is keyed by its built geometry, so editing one builder re-renders only the sprites whose meshes
+    changed. A callable job renders itself, so it is keyed by the source of its module and everything that module imports.
+    `force` ignores the cache for the selected jobs; `plan` only counts hits and misses (nothing renders or is stored).
+    `progress(done, total)` is called as the jobs go by (the sprite dashboard, progress.py)."""
+    items, hits, misses, miss_ids = [], 0, 0, []
+    glob = global_digest() if family else None
+    t0 = time.time()
+
+    def cached(stem, key):
+        nonlocal hits
+        path = sprite_cache.entry_path(family, stem, key)
+        if family and not force and path.exists():
+            hits += 1
+            return path, sprite_cache.load(path)
+        return path, None
+
     for index, job in enumerate(jobs, 1):
+        if progress:
+            progress(index, len(jobs))
         if callable(job):
-            items += job()
-            if progress:
-                progress(index, len(jobs))
+            stem = None
+            if family:
+                stem = "call." + sprite_cache.digest(getattr(job, "__defaults__", None))[:10]
+                key = sprite_cache.digest(glob, job.__module__, sprite_cache.files_digest(sprite_cache.closure_files(job.__module__)),
+                                          getattr(job, "__defaults__", None), gd.scene_digest())
+                path, got = cached(stem, key)
+                if got is not None:
+                    items += got
+                    continue
+            misses += 1
+            miss_ids.append(stem or "callable")
+            if plan:
+                continue
+            res = job()
+            items += res
+            if family:
+                sprite_cache.store(path, res)
             continue
         sid, fp, kind, fn = job
         if only and not any(o in sid for o in only):
-            if progress:
-                progress(index, len(jobs))
             continue
         core.clear_scene_meshes()
-        post.select(extra(sid) if callable(extra) else extra)
-        it = crop_item(sid, fp, *render_sprite(sid, kind, fn()))
+        pal = bool(extra(sid) if callable(extra) else extra)
+        post.select(pal)
+        objs = fn()
+        if family:
+            key = sprite_cache.digest(glob, sid, fp, kind, pal, gd.scene_digest(), gd.objects_digest(objs))
+            path, got = cached(sid, key)
+            if got is not None:
+                items += got
+                continue
+        misses += 1
+        miss_ids.append(sid)
+        if plan:
+            continue
+        it = crop_item(sid, fp, *render_sprite(sid, kind, objs))
         if it:
             items.append(it)
-        if progress:
-            progress(index, len(jobs))
+        if family:
+            sprite_cache.store(path, [it] if it else [])
+    if family:
+        log(f"CACHE {family}: {hits} hits, {misses} misses{' (planned: nothing rendered)' if plan else ''} in {time.time() - t0:.1f}s"
+            + (f"; first misses: {', '.join(miss_ids[:8])}" if miss_ids else ""))
     log(f"RENDERED {len(items)} sprites")
     return items

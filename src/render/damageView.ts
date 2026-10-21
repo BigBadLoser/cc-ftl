@@ -2,7 +2,7 @@ import { Graphics } from 'pixi.js';
 import { CHUNK_SIZE, type Grid } from '../sim/grid';
 import { Struct, STRUCT_MAX_HP } from '../sim/structure';
 import type { Layers } from './layers';
-import { iso } from './iso';
+import { ART_SCALE as S, iso } from './iso';
 import { createChunkViews, regionTiles, type ChunkRef } from './regionTiles';
 import { tileHash } from './tiles';
 
@@ -41,14 +41,14 @@ export function createDamageView(grid: Grid, L: Layers, wallH: () => number): Da
         // Hull tiles facing the camera are drawn as ghosts; no cracks on those.
         if (tiles.kindAt(x, y + 1) === Struct.Space || tiles.kindAt(x + 1, y) === Struct.Space) continue;
         const p = iso(x, y);
-        const cy = p.y - Math.max(4, h / 2);
+        const cy = p.y - Math.max(4 * S, h / 2);
         const hash = tileHash(x, y);
         const n = ratio < 0.25 ? 3 : ratio < 0.5 ? 2 : 1;
         for (let j = 0; j < n; j++) {
-          const sx = p.x + ((hash >>> (j * 5)) % 19) - 9;
-          const sy = cy + ((hash >>> (j * 3 + 1)) % 9) - 4;
+          const sx = p.x + (((hash >>> (j * 5)) % 19) - 9) * S;
+          const sy = cy + (((hash >>> (j * 3 + 1)) % 9) - 4) * S;
           const dir = (hash >>> (j * 7)) & 1 ? 1 : -1;
-          g.moveTo(sx, sy).lineTo(sx + dir * 3, sy + 3).lineTo(sx + dir * 1, sy + 6).lineTo(sx + dir * 5, sy + 10);
+          g.moveTo(sx, sy).lineTo(sx + dir * 3 * S, sy + 3 * S).lineTo(sx + dir * S, sy + 6 * S).lineTo(sx + dir * 5 * S, sy + 10 * S);
         }
       }
     g.stroke({ width: 1, color: 0x120c0c, alpha: 0.9, pixelLine: true });

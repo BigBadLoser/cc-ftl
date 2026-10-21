@@ -11,7 +11,7 @@ import { PositionC } from '../sim/crew/components';
 import { EggSacC } from '../sim/aliens/components';
 import { ShipC, type Ship } from '../sim/combat/components';
 import { Z_PX } from './heights';
-import { iso, type Pt } from './iso';
+import { ART_SCALE as S, iso, type Pt } from './iso';
 
 export interface FightFxHost {
   ship(shipId: number): Ship | undefined;
@@ -58,9 +58,9 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
     return sac ? at(sac.ship, sac.x + (sac.size - 1) / 2, sac.y + (sac.size - 1) / 2, z) : null;
   };
   const say = (text: string, p: Pt, fill: number) => {
-    const t = new Text({ text, resolution: Math.max(1, scale()), style: { fontFamily: 'monospace', fontSize: 11, fontWeight: 'bold', fill, stroke: { color: 0x05080d, width: 2 } } });
+    const t = new Text({ text, resolution: Math.max(1, scale()), style: { fontFamily: 'monospace', fontSize: 11 * S, fontWeight: 'bold', fill, stroke: { color: 0x05080d, width: 2 * S } } });
     t.anchor.set(0.5);
-    t.position.set(Math.round(p.x), Math.round(p.y - 6));
+    t.position.set(Math.round(p.x), Math.round(p.y - 6 * S));
     parent.addChild(t);
     floaters.push({ text: t, age: 0, y0: t.y });
   };
@@ -74,11 +74,11 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
           if (!a || !b) continue;
           const glob = e.weapon === 'spit';
           tracers.push({ a, b, age: 0, ranged: e.ranged, glob });
-          if (!glob) flashes.push({ x: e.ranged ? a.x : b.x, y: e.ranged ? a.y : b.y, age: 0, life: 0.2, color: 0xfff1a8, r: e.ranged ? 6 : 8 });
+          if (!glob) flashes.push({ x: e.ranged ? a.x : b.x, y: e.ranged ? a.y : b.y, age: 0, life: 0.2, color: 0xfff1a8, r: (e.ranged ? 6 : 8) * S });
         } else if (e.type === 'crew.hit') {
           const p = crewAt(e.target, BODY_Z);
           if (!p) continue;
-          flashes.push({ x: p.x, y: p.y, age: 0, life: FLASH_LIFE, color: 0xff4a3a, r: 10 });
+          flashes.push({ x: p.x, y: p.y, age: 0, life: FLASH_LIFE, color: 0xff4a3a, r: 10 * S });
           say(`-${Math.round(e.damage)}`, p, 0xff8a7a);
         } else if (e.type === 'crew.miss') {
           const p = crewAt(e.target, BODY_Z);
@@ -97,13 +97,13 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
         }
         if (t.glob) {
           const u = t.age / GLOB_LIFE;
-          const x = t.a.x + (t.b.x - t.a.x) * u, y = t.a.y + (t.b.y - t.a.y) * u - Math.sin(u * Math.PI) * 10;
-          g.circle(x, y, 5).fill({ color: 0xb8e83a, alpha: 0.35 }).circle(x, y, 2.5).fill({ color: 0xeaff9a, alpha: 0.95 });
+          const x = t.a.x + (t.b.x - t.a.x) * u, y = t.a.y + (t.b.y - t.a.y) * u - Math.sin(u * Math.PI) * 10 * S;
+          g.circle(x, y, 5 * S).fill({ color: 0xb8e83a, alpha: 0.35 }).circle(x, y, 2.5 * S).fill({ color: 0xeaff9a, alpha: 0.95 });
           continue;
         }
         const k = 1 - t.age / TRACER_LIFE;
-        if (t.ranged) g.moveTo(t.a.x, t.a.y).lineTo(t.b.x, t.b.y).stroke({ width: 2, color: 0xffe08a, alpha: k });
-        else g.moveTo(t.b.x - 8, t.b.y - 8).lineTo(t.b.x + 8, t.b.y + 8).stroke({ width: 2, color: 0xffffff, alpha: k });
+        if (t.ranged) g.moveTo(t.a.x, t.a.y).lineTo(t.b.x, t.b.y).stroke({ width: 2 * S, color: 0xffe08a, alpha: k });
+        else g.moveTo(t.b.x - 8 * S, t.b.y - 8 * S).lineTo(t.b.x + 8 * S, t.b.y + 8 * S).stroke({ width: 2 * S, color: 0xffffff, alpha: k });
       }
       for (let i = flashes.length - 1; i >= 0; i--) {
         const f = flashes[i] as Flash;
@@ -123,7 +123,7 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
           floaters.splice(i, 1);
           continue;
         }
-        f.text.y = f.y0 - f.age * 22;
+        f.text.y = f.y0 - f.age * 22 * S;
         f.text.alpha = 1 - f.age / TEXT_LIFE;
       }
     },

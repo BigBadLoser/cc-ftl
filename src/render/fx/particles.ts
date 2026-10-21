@@ -1,8 +1,10 @@
 import { Particle, ParticleContainer, type Texture } from 'pixi.js';
 import type { Atlas } from '../assets/loader';
 import type { Layers } from '../layers';
+import { ART_SCALE as S } from '../iso';
 
-/** A kind of particle, as data. Velocities are art px per second, gravity in px/s^2 (negative = rises). */
+/** A kind of particle, as data. Velocities are art px per second, gravity in px/s^2 (negative = rises), all authored
+ * at the 64 px-tile baseline: the system multiplies them (and `spread`) by ART_SCALE. */
 export interface EmitterDef {
   /** Asset ids; with `frameByAge` the frame advances over the particle's life, otherwise one is picked at random. */
   frames: readonly string[];
@@ -99,9 +101,9 @@ export function createParticles(atlas: Atlas, L: Layers): Particles {
       else p.tint = 0xffffff;
       const l: Live = {
         p, def, tex,
-        x: x + (Math.random() - 0.5) * spread,
-        y: y + (Math.random() - 0.5) * spread * 0.5,
-        vx: rnd(def.vx), vy: rnd(def.vy), age: 0, life: rnd(def.life), add: !!def.additive,
+        x: x + (Math.random() - 0.5) * spread * S,
+        y: y + (Math.random() - 0.5) * spread * S * 0.5,
+        vx: rnd(def.vx) * S, vy: rnd(def.vy) * S, age: 0, life: rnd(def.life), add: !!def.additive,
       };
       p.alpha = 0;
       p.x = Math.round(l.x);
@@ -134,8 +136,8 @@ export function createParticles(atlas: Atlas, L: Layers): Particles {
           continue;
         }
         const k = l.age / l.life;
-        l.vx += (l.def.gx ?? 0) * dt;
-        l.vy += (l.def.gy ?? 0) * dt;
+        l.vx += (l.def.gx ?? 0) * S * dt;
+        l.vy += (l.def.gy ?? 0) * S * dt;
         l.x += l.vx * dt;
         l.y += l.vy * dt;
         l.p.x = Math.round(l.x);

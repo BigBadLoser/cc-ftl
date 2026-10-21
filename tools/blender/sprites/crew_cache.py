@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 def root():
-    return Path(os.environ.get("SPRITE_CACHE") or ROOT / ".cache/sprites") / "crew"
+    preview = os.environ.get("SPRITE_PREVIEW") == "1"          # preview renders (core.PREVIEW) never mix with final ones
+    return Path(os.environ.get("SPRITE_CACHE") or ROOT / ".cache/sprites") / ("preview" if preview else "") / "crew"
 
 
 def digest(*parts):

@@ -10,7 +10,7 @@ import { CrewC, DeadC, DownedC, HealthC, PositionC } from '../sim/crew/component
 import { AllegianceC, SurrenderedC } from '../sim/fight/components';
 import type { Ship } from '../sim/combat/components';
 import { Z_PX } from './heights';
-import { iso } from './iso';
+import { ART_SCALE as S, iso } from './iso';
 
 export interface CrewMarksHost {
   ship(shipId: number): Ship | undefined;
@@ -23,7 +23,7 @@ export interface CrewMarks {
   dispose(): void;
 }
 
-const BAR_W = 20;
+const BAR_W = 20 * S;
 
 export function createCrewMarks(world: World, parent: Container, host: CrewMarksHost): CrewMarks {
   const g = new Graphics();
@@ -43,18 +43,18 @@ export function createCrewMarks(world: World, parent: Container, host: CrewMarks
         const downed = world.has(id, DownedC);
         const flag = world.has(id, SurrenderedC);
         const foot = mine ? 0x4cd964 : 0xff4a3a;
-        g.poly([p.x, p.y - 5, p.x + 10, p.y, p.x, p.y + 5, p.x - 10, p.y]).stroke({ width: 1, color: foot, alpha: 0.8 });
+        g.poly([p.x, p.y - 5 * S, p.x + 10 * S, p.y, p.x, p.y + 5 * S, p.x - 10 * S, p.y]).stroke({ width: S, color: foot, alpha: 0.8 });
         const top = p.y - (downed ? 0.55 : 1.7) * Z_PX;
         if (hp && hp.hp < hp.max && !downed) {
-          g.rect(p.x - BAR_W / 2 - 1, top - 1, BAR_W + 2, 5).fill({ color: 0x05080d, alpha: 0.85 });
-          g.rect(p.x - BAR_W / 2, top, (BAR_W * Math.max(0, hp.hp)) / hp.max, 3).fill(mine ? 0x4cd964 : 0xff5a4a);
+          g.rect(p.x - BAR_W / 2 - S, top - S, BAR_W + 2 * S, 5 * S).fill({ color: 0x05080d, alpha: 0.85 });
+          g.rect(p.x - BAR_W / 2, top, (BAR_W * Math.max(0, hp.hp)) / hp.max, 3 * S).fill(mine ? 0x4cd964 : 0xff5a4a);
         }
         if (downed) {
-          g.rect(p.x - 2, top - 8, 4, 12).fill(0xff3b30);
-          g.rect(p.x - 6, top - 4, 12, 4).fill(0xff3b30);
+          g.rect(p.x - 2 * S, top - 8 * S, 4 * S, 12 * S).fill(0xff3b30);
+          g.rect(p.x - 6 * S, top - 4 * S, 12 * S, 4 * S).fill(0xff3b30);
         } else if (flag) {
-          g.rect(p.x, top - 14, 1.5, 16).fill(0xdfe6f0);
-          g.poly([p.x + 1.5, top - 14, p.x + 11, top - 10, p.x + 1.5, top - 6]).fill(0xffffff).stroke({ width: 1, color: 0x151c28 });
+          g.rect(p.x, top - 14 * S, 1.5 * S, 16 * S).fill(0xdfe6f0);
+          g.poly([p.x + 1.5 * S, top - 14 * S, p.x + 11 * S, top - 10 * S, p.x + 1.5 * S, top - 6 * S]).fill(0xffffff).stroke({ width: S, color: 0x151c28 });
         }
       }
     },

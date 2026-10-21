@@ -20,6 +20,16 @@ The older GLB pipeline below (`build.py`, `crew/`, `lib/`) is kept as source for
   `contact_sheet.py` verification image (room + junction test).
 - Verify: `blender -b --factory-startup --python tools/blender/sprites/contact_sheet.py -- [assets] [outdir]`.
 
+### Speed: render cache and `--preview`
+Every rendered family (not `sol`, `robots`, `aliens`, which run their own renderers) is cached in `.cache/sprites/<family>`
+(`sprite_cache.py`, `geom_digest.py`; `$SPRITE_CACHE` moves it). A sprite's key hashes the render code (`core`, `post`,
+`env_build`, `scale`), the palette files, tile size, Blender version, SS and samples, the scene state (world, sun, camera) and
+the built geometry (vertices, faces, colour attributes, object flags). Editing one builder re-renders only the sprites whose
+meshes changed. Callable jobs (consoles, bays, shuttle, airlock) render themselves, so they are keyed by their module and
+everything it imports. Options: `--plan` (hit/miss report, renders nothing), `--force`, `--no-cache`.
+`--preview` renders at SS 2 and 1 sample (grainy, about 4x faster), cached apart under `preview/`; with `--only` it needs a
+scratch outdir. Do not lower the FINAL settings: 1 sample leaves visible grain (the ambient term is noisy at 1 spp).
+
 ### Crew layers
 One sheet per item AND clip: `crew.human.<slot>[.<item>].<clip>`, for example `crew.human.torso.tee.walk` (+ `.glow` twin
 when that clip has glow pixels). Rows = sim facing d (0 = grid +x, counter-clockwise in grid

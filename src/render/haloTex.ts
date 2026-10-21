@@ -1,9 +1,10 @@
+import { ART_SCALE } from './iso';
 import { BlurFilter, Container, Rectangle, Sprite, type Renderer, type Texture } from 'pixi.js';
 
 /** Art px of blur (sigma) baked into a halo texture; matches the old live filter at zoom 1. */
-export const HALO_BLUR = 1.5;
+export const HALO_BLUR = 1.5 * ART_SCALE;
 /** Transparent border added on every side so the blur is not clipped. */
-export const HALO_PAD = 6;
+export const HALO_PAD = 6 * ART_SCALE;
 
 let renderer: Renderer | null = null;
 const cache = new WeakMap<Texture, Texture>();

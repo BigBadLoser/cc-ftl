@@ -171,8 +171,9 @@ export function setFilterTint(filter: Filter, color: number): void {
   group.update();
 }
 
-/** Camera zoom (device px per art px): the outline and rim step this far, and the filter pads one art px. */
-export function setFilterZoom(filter: Filter, zoom: number): void {
+/** Camera zoom (device px per art px): the outline and rim step this far, and the filter pads one art px. Below 1 (shrunk art) they stay one device px. */
+export function setFilterZoom(filter: Filter, scale: number): void {
+  const zoom = Math.max(1, scale);
   const group = filter.resources.palette as { uniforms: { uZoom: number }; update(): void };
   if (group.uniforms.uZoom === zoom) return;
   group.uniforms.uZoom = zoom;
