@@ -9,7 +9,7 @@ import { ROOF_H } from './heights';
 import { iso, TILE_H, TILE_W } from './iso';
 import { isTargetable } from './moduleArt';
 import { sectorTileAt } from './scenePick';
-import { bracketSegments, footprintRect, MODULE_RISE } from './targetBrackets';
+import { footprintQuad, isoBracketSegments, MODULE_RISE, padQuad } from './targetBrackets';
 import { rotatedSize } from '../sim/modules/footprint';
 import type { Origin } from './sectorPos';
 
@@ -36,10 +36,9 @@ export interface CombatMarks {
   arming: boolean;
 }
 
-/** Whole-number scale that fits a span into a box; below 1 it steps by quarters. */
+/** Scale that fits a span into a box: fractional so the ship fills the view (capped at 3, floored at 0.25). */
 function fitScale(boxW: number, boxH: number, spanW: number, spanH: number): number {
-  const s = Math.min(boxW / spanW, boxH / spanH);
-  return s >= 1 ? Math.min(3, Math.floor(s)) : Math.max(0.25, Math.floor(s * 4) / 4);
+  return Math.max(0.25, Math.min(3, boxW / spanW, boxH / spanH));
 }
 
 export interface CombatPassHost {
@@ -102,21 +101,21 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
     gfx.clear();
     const k = h.ratio();
     const lw = k >= 2 ? 2 : 1.5;
-    const pulse = marks.arming ? 0.75 + 0.25 * Math.sin(performance.now() / 220) : 1;
+    const pulse = marks.arming ? 0.6 + 0.4 * Math.sin(performance.now() / 220) : 1;
     const project = (ax: number, ay: number) => ({ x: Math.round(ax * cam.scale + cam.originX), y: Math.round(ay * cam.scale + cam.originY) });
     for (const id of h.world.query(ModuleC)) {
       const m = h.world.get(id, ModuleC);
       const def = m && h.modules[m.def];
       if (!m || !def || !isTargetable(def) || !grid.inBounds(m.x, m.y)) continue;
       const [w, ht] = rotatedSize(def, m.rot);
-      const rect = footprintRect(m.x, m.y, w, ht, { x: 0, y: 0 }, lift, project, MODULE_RISE);
+      const quad = footprintQuad(m.x, m.y, w, ht, { x: 0, y: 0 }, lift, project, MODULE_RISE);
       const hov = marks.hover === id;
       const own = marks.overrides.includes(id);
       const wide = marks.shipTarget === id;
       const color = wide ? C_SHIP : own ? C_OWN : hov ? 0xffffff : C_NEUTRAL;
-      const alpha = (wide ? 1 : own ? 0.9 : hov ? 1 : marks.arming ? 0.55 : 0.35) * pulse;
+      const alpha = (wide ? 1 : own ? 0.9 : hov ? 1 : marks.arming ? 0.7 : 0.55) * pulse;
       const pad = hov ? 2 : 0;
-      for (const sg of bracketSegments({ x: rect.x - pad, y: rect.y - pad, w: rect.w + 2 * pad, h: rect.h + 2 * pad }))
+      for (const sg of isoBracketSegments(padQuad(quad, pad)))
         gfx.moveTo(sg.x1, sg.y1).lineTo(sg.x2, sg.y2);
       gfx.stroke({ width: hov ? lw + 1 : lw, color, alpha });
     }
