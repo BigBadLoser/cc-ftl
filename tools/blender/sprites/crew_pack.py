@@ -7,6 +7,7 @@ import numpy as np
 from . import crew_cache as cc
 from . import crew_spec as cs
 from . import post
+from .scale import MAX_SHEET
 
 KEY_COLORS = {"team.skin": "#ff00ff", "team.hair": "#00ff00", "team.cloth": "#ffff00", "team.accent": "#00ffff"}
 
@@ -56,6 +57,8 @@ def pack(items, entries, outdir, log=print):
             has_glow = cached["glow"]
             kept += 1
         else:
+            if 8 * cs.FRAME_H > MAX_SHEET or n * cs.FRAME_W > MAX_SHEET:
+                raise ValueError(f"crew sheet {sid} would be {n * cs.FRAME_W}x{8 * cs.FRAME_H}: over the {MAX_SHEET} px limit")
             sheet = np.zeros((8 * cs.FRAME_H, n * cs.FRAME_W, 4), np.uint8)
             glow = np.zeros_like(sheet)
             for _, _, d, i, _, path in es:

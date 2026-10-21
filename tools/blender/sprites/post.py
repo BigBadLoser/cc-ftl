@@ -123,24 +123,40 @@ def quantize(rgb):
     return BAND_MAP[idx] if MERGE_BANDS else idx
 
 
+def scaled(thresh, S):
+    """A coverage threshold written for 16 samples per pixel (SS 4), scaled to S*S samples (identical at S = 4)."""
+    return max(1, -(-thresh * S * S // 16))
+
+
 def blocks(a, S):
     h, w = a.shape[0] // S, a.shape[1] // S
     return a.reshape(h, S, w, S, *a.shape[2:]).swapaxes(1, 2).reshape(h, w, S * S, *a.shape[2:])
+
+
+def _block_modes(idx, n):
+    """idx (h*w, S*S) palette indices, n = 'not covered'. -> (h*w,) most frequent index, the lowest index on a tie
+    (what a bincount().argmax() gives); n when a block has no covered pixel. Sorts each block and counts equal
+    neighbours, so it never builds an (h*w, palette) histogram."""
+    s = np.sort(idx, axis=1)
+    eq = (s[:, :, None] == s[:, None, :]).sum(-1)
+    eq[s == n] = 0
+    return np.take_along_axis(s, eq.argmax(1)[:, None], 1)[:, 0]
 
 
 def downsample(rgb, alpha, S, thresh, quant):
     """rgb (H*S,W*S,3) 0..255, alpha bool. Returns (rgb (h,w,3) uint8, opaque bool (h,w))."""
     am = blocks(alpha, S)
     cnt = am.sum(-1)
-    opaque = cnt >= thresh
+    opaque = cnt >= scaled(thresh, S)
     h, w = opaque.shape
     if quant:
-        idx = blocks(quantize(rgb), S)
         n = len(PALETTE)
-        b = np.where(am, idx, n).reshape(h * w, S * S)
-        flat = (np.arange(h * w)[:, None] * (n + 1) + b).ravel()
-        counts = np.bincount(flat, minlength=h * w * (n + 1)).reshape(h * w, n + 1)[:, :n]
-        out = PALETTE[counts.argmax(1)].reshape(h, w, 3)
+        full = np.full(alpha.shape, n, np.int32)
+        full[alpha] = quantize(rgb[alpha])                  # only covered pixels: most of a frame is empty
+        sel = (cnt > 0).ravel()
+        mode = np.zeros(h * w, np.int64)                    # empty blocks: PALETTE[0], as the histogram argmax gave
+        mode[sel] = _block_modes(blocks(full, S).reshape(h * w, S * S)[sel], n)
+        out = PALETTE[mode].reshape(h, w, 3)
     else:
         rb = blocks(rgb, S)
         wgt = am[..., None]
@@ -187,7 +203,7 @@ def glow_down(rgb, S, thresh=3):
     lb, rb = blocks(lit, S), blocks(rgb, S)
     cnt = lb.sum(-1)
     mean = (rb * lb[..., None]).sum(2) / np.maximum(cnt, 1)[..., None]
-    on = cnt >= thresh
+    on = cnt >= scaled(thresh, S)
     out = np.zeros(on.shape + (4,), np.uint8)
     out[..., :3] = np.where(on[..., None], np.clip(mean, 0, 255), 0)
     out[..., 3] = np.where(on, 255, 0)

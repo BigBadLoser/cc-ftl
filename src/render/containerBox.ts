@@ -1,6 +1,6 @@
 import { Texture } from 'pixi.js';
 import type { StaticSprite } from './assets/loader';
-import { TILE_H, TILE_W } from './iso';
+import { ART_SCALE as K, TILE_H, TILE_W } from './iso';
 import { Z_PX } from './heights';
 
 /**
@@ -29,12 +29,12 @@ export function containerBox(w: number, h: number, state: BoxState, clamp: strin
   // Footprint corners (art px, origin at the top-left tile's centre): north, east, south, west.
   const N = { x: 0, y: -HH }, E = { x: w * HW, y: (w - 1) * HH }, S = { x: (w - h) * HW, y: (w + h - 1) * HH }, W = { x: -h * HW, y: (h - 1) * HH };
   const minX = W.x, minY = N.y - Z;
-  const cw = E.x - W.x + 2, ch = S.y - minY + 2;
+  const cw = E.x - W.x + 2 * K, ch = S.y - minY + 2 * K;
   const cv = document.createElement('canvas');
   cv.width = cw;
   cv.height = ch;
   const g = cv.getContext('2d') as CanvasRenderingContext2D;
-  const P = (p: { x: number; y: number }, up = 0): [number, number] => [p.x - minX + 1, p.y - minY + 1 - up];
+  const P = (p: { x: number; y: number }, up = 0): [number, number] => [p.x - minX + K, p.y - minY + K - up];
   const poly = (pts: [number, number][], fill: string, stroke = 'rgba(30,22,18,0.9)'): void => {
     g.beginPath();
     pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
@@ -42,7 +42,7 @@ export function containerBox(w: number, h: number, state: BoxState, clamp: strin
     g.fillStyle = fill;
     g.fill();
     g.strokeStyle = stroke;
-    g.lineWidth = 1;
+    g.lineWidth = K;
     g.stroke();
   };
   const c = COLOR[state];
@@ -57,8 +57,8 @@ export function containerBox(w: number, h: number, state: BoxState, clamp: strin
       const t = i / n;
       const [x, y] = P({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
       g.beginPath();
-      g.moveTo(Math.round(x) + 0.5, y - 2);
-      g.lineTo(Math.round(x) + 0.5, y - Z + 2);
+      g.moveTo(Math.round(x) + K / 2, y - 2 * K);
+      g.lineTo(Math.round(x) + K / 2, y - Z + 2 * K);
       g.stroke();
     }
   };
@@ -66,7 +66,7 @@ export function containerBox(w: number, h: number, state: BoxState, clamp: strin
   if (state !== 'ok') {
     // A blown hole on the lid (damaged), or a torn-open lid (destroyed).
     const m = { x: (N.x + S.x) / 2, y: (N.y + S.y) / 2 };
-    poly([P({ x: m.x - HW * 0.6, y: m.y }, Z), P({ x: m.x, y: m.y - HH * 0.5 }, Z), P({ x: m.x + HW * 0.7, y: m.y + 2 }, Z), P({ x: m.x - 4, y: m.y + HH * 0.6 }, Z)], 'rgb(18,14,14)', 'rgba(255,140,60,0.8)');
+    poly([P({ x: m.x - HW * 0.6, y: m.y }, Z), P({ x: m.x, y: m.y - HH * 0.5 }, Z), P({ x: m.x + HW * 0.7, y: m.y + 2 * K }, Z), P({ x: m.x - 4 * K, y: m.y + HH * 0.6 }, Z)], 'rgb(18,14,14)', 'rgba(255,140,60,0.8)');
   }
   // The door end (always the clamped short end): a darker band across the lid there, and on a near face (s or e) the
   // double cargo door itself. Then the clamp: a yellow bar along the lid edge on the frame side.
@@ -81,17 +81,17 @@ export function containerBox(w: number, h: number, state: BoxState, clamp: strin
     if (clamp === 's' || clamp === 'e') {
       // The face from a to b (the near short end), doors inset from its edges, a seam down the middle.
       const lerp = (u: number, up: number): [number, number] => { const [x, y] = P({ x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u }, up); return [x, y]; };
-      poly([lerp(0.12, 3), lerp(0.88, 3), lerp(0.88, Z - 3), lerp(0.12, Z - 3)], rgb(c, 0.38), 'rgba(20,14,10,0.9)');
+      poly([lerp(0.12, 3 * K), lerp(0.88, 3 * K), lerp(0.88, Z - 3 * K), lerp(0.12, Z - 3 * K)], rgb(c, 0.38), 'rgba(20,14,10,0.9)');
       g.strokeStyle = 'rgba(20,14,10,0.9)';
-      g.lineWidth = 1;
+      g.lineWidth = K;
       g.beginPath();
-      const [sx, sy] = lerp(0.5, 3), [tx, ty] = lerp(0.5, Z - 3);
-      g.moveTo(Math.round(sx) + 0.5, sy);
-      g.lineTo(Math.round(tx) + 0.5, ty);
+      const [sx, sy] = lerp(0.5, 3 * K), [tx, ty] = lerp(0.5, Z - 3 * K);
+      g.moveTo(Math.round(sx) + K / 2, sy);
+      g.lineTo(Math.round(tx) + K / 2, ty);
       g.stroke();
     }
     g.strokeStyle = clamped ? 'rgb(255,214,60)' : 'rgba(0,0,0,0)';
-    g.lineWidth = 3;
+    g.lineWidth = 3 * K;
     g.beginPath();
     const [ax, ay] = P(a, Z), [bx, by] = P(b, Z);
     g.moveTo(ax + (bx - ax) * 0.12, ay + (by - ay) * 0.12);
@@ -103,8 +103,8 @@ export function containerBox(w: number, h: number, state: BoxState, clamp: strin
   const s: StaticSprite = {
     tex,
     glow: null,
-    ax: (w - h) * HW - minX + 1,
-    ay: (w + h - 2) * HH - minY + 1,
+    ax: (w - h) * HW - minX + K,
+    ay: (w + h - 2) * HH - minY + K,
     footprint: [w, h],
   };
   cache.set(key, s);

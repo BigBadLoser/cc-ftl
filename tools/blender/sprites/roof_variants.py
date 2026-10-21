@@ -17,6 +17,7 @@ C  material stronger value range and saturation, cooler blue-grey and warmer och
             per-tile tint (0 sprites). Cost: patched plates 2 colours x 16 tiles = +32.
 """
 from . import roof_layout as rl
+from .scale import ART_SCALE
 from .roof_layout import GN, MC, FAM, _Canvas, _raised, _feature, _girder, _corners
 
 FAM_C = {
@@ -25,7 +26,7 @@ FAM_C = {
 }
 PATCH = (2, 1, 0, 1)          # patched plate index per layout (variant C)
 INSET = (1, 2, 2, 0)          # inset plate index per layout (v10): never the patched plate
-DI = 2.5                      # inset depth (px at 1x)
+DI = 2.5 * ART_SCALE          # inset depth (px; 2.5 at the 64x32 baseline)
 
 
 def inset_module(mx, my):

@@ -9,7 +9,7 @@ import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
 import { createGhostFilter, setGhostZoom } from './ghost';
 import { ROOF_H } from './heights';
-import { depthKey, iso } from './iso';
+import { depthKey, iso, TILE_H, TILE_W } from './iso';
 import type { Layers } from './layers';
 import { lightTint, mulColor } from './lightTint';
 import type { ModuleDefs } from './moduleView';
@@ -112,7 +112,7 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
             d.anchor.set(0.5);
             d.scale.set(5 - i);
             d.tint = charged ? 0xffe070 : 0xffffff;
-            d.position.set(Math.round(p.x + (dx - dy) * 32 * k), Math.round(p.y - ROOF_H - 16 + (dx + dy) * 16 * k));
+            d.position.set(Math.round(p.x + (dx - dy) * TILE_W / 2 * k), Math.round(p.y - ROOF_H - TILE_H / 2 + (dx + dy) * TILE_H / 2 * k));
           });
         } else {
           for (const d of t.barrel) d.destroy();

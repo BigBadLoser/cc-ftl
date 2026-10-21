@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import compose  # noqa: E402
+from sprites.scale import ART_SCALE as S, TILE_H, TILE_W  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 BG = (14, 17, 22)
@@ -46,7 +47,7 @@ def stack(man, assets, char, d, clip, frame):
         col = cd["start"] + frame
         fw, fh = a["frameW"], a["frameH"]
         sl = (slice(d * fh, (d + 1) * fh), slice(col * fw, (col + 1) * fw))
-        x, y = 70 - a["anchor"]["x"], 120 - a["anchor"]["y"]
+        x, y = 70 * S - a["anchor"]["x"], 120 * S - a["anchor"]["y"]
         lay = compose.remap_keys(img[sl], COLOURS[char])
         hid = (lay[..., 3] > 0) & (lay[..., 3] < 128)       # sit clips: pixels hidden behind the chair (faint alpha)
         if hid.any():
@@ -86,17 +87,17 @@ def tile(man, assets):
 
 def cell(man, assets, char, d, clip, frame, floor):
     cv, gl = stack(man, assets, char, d, clip, frame)
-    base = np.zeros((150, 140, 4), np.uint8)
+    base = np.zeros((150 * S, 140 * S, 4), np.uint8)
     base[..., :3], base[..., 3] = BG, 255
     t, an = floor
     for gx in (-1, 0, 1):
         for gy in (-1, 0, 1):
-            compose.over(base, t, 70 + (gx - gy) * 32 - an["x"], 120 + (gx + gy) * 16 - an["y"])
+            compose.over(base, t, 70 * S + (gx - gy) * (TILE_W // 2) - an["x"], 120 * S + (gx + gy) * (TILE_H // 2) - an["y"])
     rgb, op = outline_rim(cv)
     cv[..., :3], cv[..., 3] = rgb, op * 255
     compose.over(base, cv, 0, 0)
     compose.add(base, gl, 0, 0, 1.5)
-    return base[28:128, 32:108, :3]
+    return base[28 * S:128 * S, 32 * S:108 * S, :3]
 
 
 def main():

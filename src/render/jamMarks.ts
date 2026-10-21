@@ -2,7 +2,7 @@ import { Graphics } from 'pixi.js';
 import type { Grid } from '../sim/grid';
 import { DoorJam, Struct } from '../sim/structure';
 import type { Atlas } from './assets/loader';
-import { depthKey, iso } from './iso';
+import { ART_SCALE as S, depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { regionTiles } from './regionTiles';
 import { addStatic } from './sprites';
@@ -20,7 +20,7 @@ export interface JamMarks {
 const RED = 0xff4d4d;
 const AMBER = 0xf5a623;
 /** Height of the chevrons above the door's floor centre, art px (about mid-door). */
-const LIFT = 26;
+const LIFT = 26 * S;
 
 export function createJamMarks(grid: Grid, atlas: Atlas, L: Layers): JamMarks {
   const tiles = regionTiles(grid);
@@ -35,7 +35,7 @@ export function createJamMarks(grid: Grid, atlas: Atlas, L: Layers): JamMarks {
 
   function chevrons(color: number): Graphics {
     const g = new Graphics();
-    for (const dy of [0, 7]) g.poly([-9, -4 + dy, 0, 3 + dy, 9, -4 + dy, 9, -8 + dy, 0, -1 + dy, -9, -8 + dy]).fill({ color }).stroke({ color: 0x20080a, width: 1 });
+    for (const dy of [0, 7]) g.poly([-9, -4 + dy, 0, 3 + dy, 9, -4 + dy, 9, -8 + dy, 0, -1 + dy, -9, -8 + dy].map((v) => v * S)).fill({ color }).stroke({ color: 0x20080a, width: S });
     return g;
   }
 

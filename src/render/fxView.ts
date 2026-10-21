@@ -2,7 +2,7 @@ import { Sprite } from 'pixi.js';
 import type { Grid } from '../sim/grid';
 import { Struct } from '../sim/structure';
 import type { Atlas, StaticSprite } from './assets/loader';
-import { depthKey, iso } from './iso';
+import { ART_SCALE, depthKey, iso } from './iso';
 import { regionTiles } from './regionTiles';
 import type { Layers } from './layers';
 
@@ -62,7 +62,7 @@ export function createFxView(atlas: Atlas, L: Layers, host: FxViewHost): FxView 
             const p = iso(x, y);
             const slot = fireSlot();
             const px = Math.round(p.x - f.ax * sc);
-            const py = Math.round(p.y - f.ay * sc + 4);
+            const py = Math.round(p.y - f.ay * sc + 4 * ART_SCALE);
             slot.spr.texture = f.tex;
             slot.spr.scale.set(sc);
             slot.spr.position.set(px, py);

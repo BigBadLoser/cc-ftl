@@ -1,3 +1,4 @@
+import { ART_SCALE, TILE_W } from './iso';
 /**
  * Heights of the art, the ONE place the renderer keeps them. They mirror the Blender pipeline (tools/blender/sprites/
  * walls.py: HF and HF + ROOF_T; core.ZPX), which also writes them to the manifest (`heights`); heights.test.ts checks
@@ -7,8 +8,8 @@
  * needs no lift: ROOF_H only lifts stand-in art, overlay markers and projectile launch points.
  */
 
-/** Art px per tile of height (orthographic camera at 30 degrees elevation, 64x32 tiles): 32 * sqrt(2) * cos 30. */
-export const Z_PX = 16 * Math.sqrt(6);
+/** Art px per tile of height (orthographic camera at 30 degrees elevation): TILE_W / sqrt(2) * cos 30 = TILE_W / 4 * sqrt(6). */
+export const Z_PX = (TILE_W / 4) * Math.sqrt(6);
 /** Interior wall height in tiles (walls.HF). */
 export const WALL_Z = 1.85;
 /** Roof top in tiles: the 0.2 roof slab on the walls, flush with the hull top (walls.hull_top()). */
@@ -22,7 +23,7 @@ export const ROOF_H = Math.round(ROOF_Z * Z_PX);
 
 /** Launch height of a shot: the roof turret. Shots descend to ground level at their target. */
 export const MUZZLE_H = ROOF_H;
-export const IMPACT_H = 6;
+export const IMPACT_H = 6 * ART_SCALE;
 
 /** Height in art px of the walls drawn for a wall view mode (damage decals). */
 export function wallTopPx(mode: 'up' | 'auto' | 'down'): number {
