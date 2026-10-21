@@ -3,6 +3,9 @@
 
 `what` = all (default), crew, robots, or a comma list of families (families.py: env, walls, consoles, weapons, roof, sol).
 `crew` is incremental (crew_build.py: render cache under .cache/sprites/crew); options --item S, --clip C, --force, --plan.
+Every other rendered family is cached too (sprite_cache.py, .cache/sprites/<family>): a job re-renders only when its key changed;
+--force ignores the cache, --plan reports hits and misses and renders nothing, --no-cache bypasses it.
+--preview renders at SS 2 and 1 sample (core.py): rough, cached apart, scratch outdir only.
 `--only A,B` (families rendered through env_build) renders just the sprites whose id contains A or B; use it with a scratch outdir
 for a quick check (the sheets are then partial: never commit them).
 Each family renders into its own sheets under <outdir>/sprites/ and is merged into <outdir>/manifest.json (shape:
@@ -12,6 +15,8 @@ import os
 import sys
 from pathlib import Path
 
+if "--preview" in sys.argv:         # before core is imported: it reads the quality from the environment
+    os.environ["SPRITE_PREVIEW"] = "1"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import core, pack, families, walls  # noqa: E402
 
@@ -31,7 +36,7 @@ def parse_opts(argv):
     pos, opts, k = [], {}, 0
     while k < len(argv):
         a = argv[k]
-        if a in ("--force", "--plan"):
+        if a in ("--force", "--plan", "--preview", "--no-cache"):
             opts[a[2:]] = True
         elif a in ("--item", "--clip", "--only") and k + 1 < len(argv):
             k += 1
@@ -48,6 +53,10 @@ def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     argv, opts = parse_opts(argv)
     out = Path(argv[0]) if argv else ROOT / "public/assets"
+    if (opts.get("preview") or opts.get("only")) and out.resolve() == (ROOT / "public/assets").resolve() \
+            and not opts.get("plan"):
+        sys.exit("--preview / --only give approximate or partial sheets: pass a scratch outdir "
+                 "(npm run sprites -- -- /tmp/out walls --only tile.wall.m5 --preview), never public/assets")
     what = argv[1] if len(argv) > 1 else "all"
     out.mkdir(parents=True, exist_ok=True)
     mpath = out / "manifest.json"
@@ -79,7 +88,12 @@ def main():
             from sprites import env_build
             core.setup_scene()
             jobs, extra = families.jobs(name)
-            sheets, assets = pack.pack(name, env_build.render_jobs(jobs, extra, only=opts["only"].split(",") if opts.get("only") else None), out)
+            items = env_build.render_jobs(jobs, extra, only=opts["only"].split(",") if opts.get("only") else None,
+                                          family=None if opts.get("no-cache") else name, force=bool(opts.get("force")),
+                                          plan=bool(opts.get("plan")))
+            if opts.get("plan"):
+                continue
+            sheets, assets = pack.pack(name, items, out)
             pack.merge(m, name, sheets, assets)
         pack.save_manifest(mpath, m)
         print("MANIFEST", name, len(m["sheets"]), "sheets", len(m["assets"]), "assets", flush=True)
