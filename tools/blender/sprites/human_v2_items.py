@@ -231,7 +231,7 @@ def build_items():
     belt = tool_belt(A, R)
     items = [body(A, R), eyes(A, R), eyes(A, R, cyber=True), flesh_arm(A, R, "L"), flesh_arm(A, R, "R"), tee(A, R),
              work_shirt(A, R), cargo_pants(A, R), hair_short(A, R), hair_ponytail(A, R), hair_shaved(A, R),
-             belt] + gear + eva + human_v2_kits.build(A, R) + human_v2_weapons.build(A)
+             belt] + gear + eva + human_v2_kits.build(A, R) + human_v2_weapons.build(A, R)
     for it in items:
         it.order = hr.ORDER[it.slot]
     for act in bpy.data.actions:       # we drive bone scale ourselves (torso width, breathing)

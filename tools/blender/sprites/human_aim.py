@@ -82,15 +82,15 @@ def apply(arm, i, clip):
         _frame(arm, "hand.R", fwd, up)
     elif fam == "2h":
         sh = pb["arm.R"].head.copy()
-        grip = sh + FWD * 0.3 + LEFT * 0.05 - UP * 0.07 + back
+        grip = sh + FWD * 0.34 + LEFT * 0.05 - UP * 0.08 + back
         _hold(arm, "R", grip, fwd, up, -UP - LEFT * 0.6 + FWD * 0.2)
-        sup = pb["hand.R"].matrix @ (hw.SUPPORT["2h"] + Vector((0, hw.grip_y(arm), 0)))
+        sup = pb["hand.R"].matrix @ (hw.SUPPORT["2h"] * hw.SIZE + Vector((0, hw.grip_y(arm), 0)))
         _hold(arm, "L", sup - up * 0.03, fwd, up, -UP + LEFT * 0.8)
     else:
         hips = pb["hips"].head.copy()
         grip = hips + FWD * 0.24 - LEFT * 0.11 + UP * 0.14 + back * 0.6
         _hold(arm, "R", grip, fwd, up, -UP - LEFT * 0.5 - FWD * 0.3)
-        sup = pb["hand.R"].matrix @ (hw.SUPPORT["heavy"] + Vector((0, hw.grip_y(arm), 0)))
+        sup = pb["hand.R"].matrix @ (hw.SUPPORT["heavy"] * hw.SIZE + Vector((0, hw.grip_y(arm), 0)))
         _hold(arm, "L", sup + up * 0.02, fwd, up, -UP + LEFT * 0.9)
     _aim(arm, "head", Vector((0, -0.1, 1)))
     return 0.4 * breath
