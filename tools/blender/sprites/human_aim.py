@@ -77,6 +77,14 @@ def _twist(arm, ang):
     bpy_update()
 
 
+def _cup(arm, at, fwd, up):
+    """The left hand cups a handguard at `at`: palm up under it, the barrel along the fist (index towards the muzzle),
+    the forearm in from below on the left and the fingers wrapping up the far side."""
+    across = fwd.cross(up).normalized()                                       # wrist to knuckles: to the right
+    _ik(arm, "L", at - across * hw.grip_y(arm), -UP + LEFT * 0.6)
+    _frame(arm, "hand.L", across, fwd)
+
+
 def _stance(arm, wide):
     pb = arm.pose.bones
     pb["root"].location = (0, 0, -0.035 if wide else 0.0)
@@ -173,7 +181,7 @@ def apply(arm, i, clip):
         grip = pocket + fwd * hw.BUTT * hw.SIZE - up * (0.04 + hw.RISE) * hw.SIZE + back
         _hold(arm, "R", grip, fwd, up, -UP * 0.6 - LEFT * 0.8)                # the right elbow out to the side
         sup = pb["hand.R"].matrix @ hw.to_hand(arm, hw.SUPPORT["2h"])
-        _hold(arm, "L", sup - up * 0.03, fwd, up, -UP + LEFT * 0.3)
+        _cup(arm, sup, fwd, up)
     else:
         hips = pb["hips"].head.copy()
         _twist(arm, 0.25)

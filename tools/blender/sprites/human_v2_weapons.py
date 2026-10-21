@@ -24,7 +24,7 @@ RISE = 0.04                               # guns sit this much higher than the f
 BUTT = 0.3                                # every shouldered gun's butt this far behind the grip
 GRIP = 1.3                                # the fist's centre, in the curled fingers: fraction of the hand bone
 SIZE = 1.0                                # weapons at life size (1.25 at 1x, so they read at ~62 px)
-SUPPORT = {"2h": Vector((0.0, 0.31, -0.01)), "heavy": Vector((0.0, 0.27, -0.03)),
+SUPPORT = {"2h": Vector((0.0, 0.31, 0.03)), "heavy": Vector((0.0, 0.27, -0.03)),
            "2m": Vector((0.0, -0.21, 0.0))}                                     # the left hand, grip-relative
 FAMILY = {"sidearm": "1h", "ion_pistol": "1h", "laser_pistol": "1h", "plasma_cutter": "1h", "rifle": "2h",
           "laser_rifle": "2h", "shotgun": "2h", "smg": "2h", "rail_rifle": "2h", "flamethrower": "heavy",
