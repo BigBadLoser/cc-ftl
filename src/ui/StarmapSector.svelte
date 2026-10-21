@@ -6,6 +6,7 @@
    */
   import type { UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import StarmapBody from './StarmapBody.svelte';
+  import { BADGE, dangerColor } from './starmapStyle';
 
   let { map, px, s, view, current, route, routePts, selected, ship }: {
     map: UiStarmap; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
@@ -14,9 +15,6 @@
     ship: { x: number; y: number; fx: number; fy: number; tx: number; ty: number } | null;
   } = $props();
 
-  const BADGE: Record<string, string> = { T: '#4ade80', M: '#60a5fa', R: '#c4b5fd', A: '#a3a3a3', D: '#fb923c' };
-  /** Danger tier label colours: calm cyan through amber to red. */
-  const DANGER = ['#67e8f9', '#86efac', '#bef264', '#fde047', '#fbbf24', '#fb923c', '#f87171', '#ef4444', '#dc2626', '#e879f9'];
   const clampX = (x: number, m: number) => Math.max(view.x0 + px(m), Math.min(view.x1 - px(m), x));
   const clampY = (y: number, top: number, bottom: number) => Math.max(view.y0 + px(top), Math.min(view.y1 - px(bottom), y));
   /** Exits grouped by the sector they lead to (one label each), at the far gateway pinned into the view. */
@@ -87,7 +85,7 @@
     {@const lx = clampX(sec.x, 80)}
     {@const ly = clampY(sec.top - px(22), 24, 50)}
     <text x={lx} y={ly} class="sname" class:cur={sec.id === map.currentSector} font-size={px(13)} stroke-width={px(3)}>{sec.name}</text>
-    <text x={lx} y={ly + px(14)} class="sdanger" font-size={px(10)} stroke-width={px(3)} fill={DANGER[Math.min(DANGER.length - 1, sec.danger)]}>Danger {sec.danger}</text>
+    <text x={lx} y={ly + px(14)} class="sdanger" font-size={px(10)} stroke-width={px(3)} fill={dangerColor(sec.danger)}>Danger {sec.danger}</text>
   {/if}
 {/each}
 {#each exitLabels as l (l.e.to)}

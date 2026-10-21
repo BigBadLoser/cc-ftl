@@ -67,8 +67,11 @@
           `${owner ? owner.name : sec.known ? 'Unclaimed' : 'Owner unknown'} · danger ${sec.danger}`,
           reg?.revealed ? `${reg.name}, ${reg.typeLabel}` : 'Unclaimed space',
           sec.known ? `${sec.nodes} beacons${sec.body ? ` · ${sec.body.kind.replace('_', ' ')}` : ''}${sec.hub ? ' · regional hub' : ''}` : 'Not yet charted by your sensors',
+          sec.id === map.currentSector ? 'You are here' : route ? `Route: ${route.hops} jump${route.hops > 1 ? 's' : ''} · ⛽ ${route.fuel} fuel · ${route.time} d` : 'No known route yet',
         ],
         zoom: () => focusSector(sec.id),
+        action: route && !route.blocker ? { label: route.hops > 1 ? `Jump (1 of ${route.hops})` : 'Jump', run: jump } : null,
+        warn: route?.blocker ?? (route && !route.fuelOk ? 'Not enough fuel for the whole route.' : null),
       };
     }
     const reg = map.regions.find((r) => r.id === picked!.id);
@@ -98,6 +101,18 @@
     cy = sec.y;
     s = (Math.min(w, h) * 0.62) / (2 * sec.r + 60);
   }
+  /** The node of a sector that is cheapest to reach (fewest jumps, then fuel), to plot a route into it; null if none. */
+  function routeInto(id: string): string | null {
+    if (!map || id === map.currentSector) return null;
+    let best: { id: string; hops: number; fuel: number } | null = null;
+    for (const n of map.nodes) {
+      if (n.sector !== id || !n.known) continue;
+      const r = api.planRoute(n.id);
+      if (r && (!best || r.hops < best.hops || (r.hops === best.hops && r.fuel < best.fuel))) best = { id: n.id, hops: r.hops, fuel: r.fuel };
+    }
+    return best?.id ?? null;
+  }
+  const routeSectors = $derived(new Set(route ? route.path.map((id) => nodeById.get(id)?.sector ?? '') : []));
   function recenter() {
     if (map) focusSector(map.currentSector);
   }
@@ -213,6 +228,7 @@
     if (level === 2 && map && map.sectors.length) {
       const near = map.sectors.reduce((b, x) => (Math.hypot(x.x - m.x, x.y - m.y) < Math.hypot(b.x - m.x, b.y - m.y) ? x : b));
       picked = Math.hypot(near.x - m.x, near.y - m.y) < 30 / s + near.r ? { kind: 'sector', id: near.id } : null;
+      selected = picked ? routeInto(picked.id) : null;
       return;
     }
     if (level === 3 && map && map.regions.length) {
@@ -290,7 +306,7 @@
               {#if level === 1}
                 <StarmapSector {map} {px} {s} {view} {current} {route} {routePts} {selected} {ship} />
               {:else}
-                <StarmapOuter {map} {level} {px} picked={picked?.id ?? null} />
+                <StarmapOuter {map} {level} {px} picked={picked?.id ?? null} {routePts} {routeSectors} />
               {/if}
             </g>
           {/key}
@@ -306,7 +322,8 @@
     {/if}
   </div>
   {#if pickedInfo && level > 1}
-    <StarmapInfo title={pickedInfo.title} color={pickedInfo.color} lines={pickedInfo.lines} zoomLabel={pickedInfo.zoomLabel} onZoom={pickedInfo.zoom} onClear={() => (picked = null)} />
+    <StarmapInfo title={pickedInfo.title} color={pickedInfo.color} lines={pickedInfo.lines} zoomLabel={pickedInfo.zoomLabel} onZoom={pickedInfo.zoom}
+      action={'action' in pickedInfo ? pickedInfo.action : null} warn={'warn' in pickedInfo ? pickedInfo.warn : null} onClear={() => ((picked = null), (selected = null))} />
   {/if}
   {#if sel && map && level === 1}
     <StarmapPanel node={sel} sector={sectorById.get(sel.sector) ?? null} factions={map.factions} {route} onJump={jump} onClear={() => (selected = null)} />
