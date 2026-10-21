@@ -229,10 +229,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           const sel = crewSel.get();
           const any = renderer.pickTileAny(sx, sy);
           const ag = any && shipGrid(sim, any.shipId);
-          if (any && ag && sel !== null && sim.world.has(sel, DraftedC) && isWalkable(ag.get('struct', any.x, any.y))) {
+          const jammed = !!any && !!ag && ag.get('struct', any.x, any.y) === Struct.Door && ag.get('jam', any.x, any.y) !== 0;
+          if (any && ag && sel !== null && sim.world.has(sel, DraftedC) && !jammed && isWalkable(ag.get('struct', any.x, any.y))) {
             const here = shipIdOf(sim, sim.world.get(sel, PositionC));
             sim.enqueue({ type: 'crew.moveTo', id: sel, x: any.x, y: any.y, ...(here !== any.shipId ? { ship: any.shipId } : {}) });
-          } else if (!tile && any && any.shipId !== homeShipId() && sim.world.get(any.shipId, ShipC)?.ruin) {
+          } else if (any && (jammed || (!tile && any.shipId !== homeShipId() && sim.world.get(any.shipId, ShipC)?.state === 'wreck'))) {
             // A derelict tile selects like one of your own (its panel offers Force door on jammed doors); the ship panel is on the node strip.
             selectTile({ x: any.x, y: any.y }, any.shipId);
           } else selectTile(tile);

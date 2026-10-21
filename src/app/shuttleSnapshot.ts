@@ -72,7 +72,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
   const targets: UiShuttles['targets'] = [];
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s && id !== PLAYER && s.state !== 'fled') targets.push({ ship: id, name: s.name, ...(s.ruin ? { derelict: derelictInfo(sim, id, s) } : {}) });
+    if (s && id !== PLAYER && s.state !== 'fled') targets.push({ ship: id, name: s.name, ...(s.state === 'wreck' ? { derelict: derelictInfo(sim, id, s) } : {}) });
   }
   return { shuttles, airlocks, targets, roster, bays };
 }
@@ -97,7 +97,8 @@ function derelictInfo(sim: Sim, id: number, s: Ship): UiDerelict {
   }
   return {
     kind: (s.gen?.faction ?? '').replace(/^faction\./, ''),
-    cause: s.ruin?.cause ?? 'decay',
+    // A ship wrecked in play (combat or scuttling) has no ruin data: it is a fresh combat wreck.
+    cause: s.ruin?.cause ?? 'combat',
     hull: s.integrity,
     air: mean < 5 ? 'vacuum' : mean < 14 ? 'thin' : 'breathable',
     power: source ? 'emergency' : 'off',
