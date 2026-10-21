@@ -104,7 +104,7 @@ def engine(mask):
 
 
 # ---- v7 variant studies (preview only; see roof_variants.py) ---------------------------------------------------
-DZ = 4 / core.ZPX         # raised armour belt (variant B): one plate thickness, exactly 4 px, drawn with an anchor offset
+DZ = 4 * core.ART_SCALE / core.ZPX   # raised armour belt (variant B): one plate thickness, exactly 4 px at 64x32 (8 at 128x64), drawn with an anchor offset
 BEV = 0.05                # belt step bevel width (tiles)
 
 

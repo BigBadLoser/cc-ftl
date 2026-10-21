@@ -3,6 +3,8 @@
 
 `what` = all (default), crew, robots, or a comma list of families (families.py: env, walls, consoles, weapons, roof, sol).
 `crew` is incremental (crew_build.py: render cache under .cache/sprites/crew); options --item S, --clip C, --force, --plan.
+`--only A,B` (families rendered through env_build) renders just the sprites whose id contains A or B; use it with a scratch outdir
+for a quick check (the sheets are then partial: never commit them).
 Each family renders into its own sheets under <outdir>/sprites/ and is merged into <outdir>/manifest.json (shape:
 src/render/assets/manifest.ts): its old sheets and ids are replaced, the rest is kept. So one family can be rebuilt
 alone and the committed manifest is the cache. Default outdir = public/assets."""
@@ -31,10 +33,10 @@ def parse_opts(argv):
         a = argv[k]
         if a in ("--force", "--plan"):
             opts[a[2:]] = True
-        elif a in ("--item", "--clip") and k + 1 < len(argv):
+        elif a in ("--item", "--clip", "--only") and k + 1 < len(argv):
             k += 1
             opts[a[2:]] = argv[k]
-        elif a.startswith(("--item=", "--clip=")):
+        elif a.startswith(("--item=", "--clip=", "--only=")):
             opts[a[2:].split("=")[0]] = a.split("=", 1)[1]
         else:
             pos.append(a)
@@ -77,7 +79,7 @@ def main():
             from sprites import env_build
             core.setup_scene()
             jobs, extra = families.jobs(name)
-            sheets, assets = pack.pack(name, env_build.render_jobs(jobs, extra), out)
+            sheets, assets = pack.pack(name, env_build.render_jobs(jobs, extra, only=opts["only"].split(",") if opts.get("only") else None), out)
             pack.merge(m, name, sheets, assets)
         pack.save_manifest(mpath, m)
         print("MANIFEST", name, len(m["sheets"]), "sheets", len(m["assets"]), "assets", flush=True)

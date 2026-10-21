@@ -11,7 +11,7 @@ import bpy
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sprites import compose, post  # noqa: E402
+from sprites import compose, core, post  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_OUT = "/tmp/claude-0/-home-user/ed10066a-51ba-5b6e-98cf-ce829905d359/scratchpad/r1-assets"
@@ -43,7 +43,7 @@ class Scene:
 
     def screen(self, gx, gy):
         """Floor-diamond centre of grid point (gx, gy) (tile centres at +0.5)."""
-        return self.ox + (gx - gy) * 32, self.oy + (gx + gy) * 16
+        return self.ox + (gx - gy) * (core.TILE_W // 2), self.oy + (gx + gy) * (core.TILE_H // 2)
 
     def static(self, aid, tx, ty, depth=0.0):
         """Queue static asset aid whose anchor tile is (tx, ty)."""

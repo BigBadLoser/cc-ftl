@@ -17,8 +17,8 @@ from mathutils import Euler, Matrix, Vector
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib import palette  # noqa: E402
 from . import post  # noqa: E402
+from .scale import ART_SCALE, TILE_H, TILE_W  # noqa: E402,F401  (the one tile-size constant: scale.py)
 
-TILE_W, TILE_H = 64, 32
 PXU = TILE_W / math.sqrt(2)          # px per ortho unit
 ZPX = PXU * math.cos(math.radians(30))  # px per world unit of height
 TEAM_ALBEDO = 0.7                    # key albedo scale (keeps lit top faces below clipping)
