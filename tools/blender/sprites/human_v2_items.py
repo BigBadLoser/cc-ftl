@@ -33,16 +33,23 @@ def body(A, R):
 
 
 def eyes(A, R, cyber=False):
-    """Two dark eyes and brows in the hair colour. cyber: the right eye (x < 0) is a gunmetal implant with a cyan lens."""
-    b = Build()
+    """Two dark eyes and brows in the hair colour, a nose, a mouth line and ears. cyber: the right eye (x < 0) is a
+    gunmetal implant with a cyan lens."""
+    b, face = Build(), Build()
     c = R.head_c
+    w = W("head")
+    face.blob(Vector((0, R.front + 0.004, c.z - 0.035)), 0.017, 0.022, 0.032, w, exp=2.4, nlat=6)     # the nose
+    mouth = c.z - 0.088
+    face.blob(Vector((0, R.front + 0.01, mouth)), 0.03, 0.008, 0.008, w, exp=2.6, nlat=6)
+    for sx in (1, -1):                                                       # the ears
+        face.blob(Vector((sx * (R.HX + 0.004), c.y + 0.012, c.z - 0.012)), 0.018, 0.034, 0.044, w, exp=2.4, nlat=6)
     for sx in (1, -1):                                         # two dark eyes, ~2 x 3 px: they show which way the head faces
         if cyber and sx < 0:
             continue
         b.blob(Vector((sx * 0.048, R.front + 0.018, c.z + 0.0)), 0.022, 0.012, 0.028, W("head"), exp=2.4, nlat=6)
-    brow = c.z + 0.052
+    brow = c.z + 0.048
     for sx in (1, -1):                                         # brows, in the hair colour, a little wider than the eyes
-        b.blob(Vector((sx * 0.05, R.front + 0.016, brow)), 0.034, 0.012, 0.012, W("head"), exp=2.6, nlat=6)
+        b.blob(Vector((sx * 0.05, R.front + 0.014, brow)), 0.036, 0.013, 0.015, W("head"), exp=2.6, nlat=6)
     if cyber:
         eye = Vector((-0.048, R.front + 0.012, c.z))
         b.blob(eye, 0.032, 0.016, 0.034, W("head"), exp=3.0, nlat=6)
@@ -54,8 +61,10 @@ def eyes(A, R, cyber=False):
         if cyber and p.x < -0.01:
             return "cyan" if p.y < R.front - 0.004 else "gmD"
         return "dark"
-    return Item("eyes", "cyber" if cyber else "organic", [b.mesh("v2.eyes" + (".cyber" if cyber else ""), A, col)],
-                default=not cyber, glow=cyber)
+    sfx = ".cyber" if cyber else ""
+    objs = [b.mesh("v2.eyes" + sfx, A, col),
+            face.mesh("v2.face" + sfx, A, lambda p, n: "team.skin*0.5" if abs(p.z - mouth) < 0.012 else "team.skin")]
+    return Item("eyes", "cyber" if cyber else "organic", objs, default=not cyber, glow=cyber)
 
 
 def flesh_arm(A, R, s):
@@ -64,9 +73,11 @@ def flesh_arm(A, R, s):
     b = Build()
     arm(b, R, s)
     ex, wx = abs(R.h[f"forearm.{s}"].x), abs(R.h[f"hand.{s}"].x)
+    kx = wx + (abs(R.t[f"hand.{s}"].x) - wx) * 0.55                        # the knuckles
 
     def col(c, n):
-        if abs(abs(c.x) - ex) < CREASE and n.y < -0.2 or abs(abs(c.x) - wx) < CREASE:
+        if abs(abs(c.x) - ex) < CREASE and n.y < -0.2 or abs(abs(c.x) - wx) < CREASE or \
+                abs(abs(c.x) - kx) < 0.01 and n.z > -0.3:
             return "team.skin*0.5"
         return "team.skin"
     return Item(f"arm.{s}", "flesh", [b.mesh(f"v2.arm.{s}", A, col)], default=True)
@@ -77,9 +88,16 @@ def tee(A, R):
     swing in front of the body), which would always hide a torso-layer sleeve under the bare arm."""
     b = Build()
     nz = R.neck.z
-    crew_neck = lambda c: not (c.z > nz - 0.02 and abs(c.x) < 0.09 and c.y < R.neck.y - 0.02)  # noqa: E731
-    torso(b, R, grow=0.02, lo=R.hips.z + 0.09, keep=crew_neck)
-    return Item("torso", "tee", [b.mesh("v2.tee", A, flat("team.cloth"))])
+    lo = R.hips.z + 0.09
+    torso(b, R, grow=0.02, lo=lo, cuts=(lo + 0.03, nz - 0.045))          # closed at the top: the neck cuts a clean
+                                                                             # round collar (a cut-out neck shows ragged)
+    arm_x = R.h["arm.L"].x - 0.02
+
+    def col(c, n):                                                           # collar, hem and armholes a shade darker
+        if c.z > nz - 0.045 and abs(c.x) < 0.13 or c.z < lo + 0.03 or abs(c.x) > arm_x and c.z > R.chest.z:
+            return "team.cloth*0.7"
+        return "team.cloth"
+    return Item("torso", "tee", [b.mesh("v2.tee", A, col)])
 
 
 def work_shirt(A, R):
@@ -108,18 +126,25 @@ def cargo_pants(A, R):
         leg(b, R, s, grow=0.018, boot=0.02)
     k0, k1 = R.t["leg.L"].z + 0.06, R.h["leg.L"].z - 0.1
     kz = R.t["leg.L"].z
+    fx = abs(R.h["foot.L"].x)
 
     def col(c, n):
         if c.z < 0.035:
             return "steelD"                                                 # a dark sole edge
         if c.z < 0.17:
+            if n.y < -0.45 and abs(abs(c.x) - fx) < 0.018 and 0.07 < c.z < 0.15:
+                return "steelD"                                             # the laces
+            if c.z < 0.075 and n.y < -0.3:
+                return "sole"                                               # the toe cap
             return "boot"
+        if c.z < 0.2:
+            return "steelD"                                                 # the cuff over the boot
         if abs(c.z - kz) < CREASE:
             return "steelD"                                                 # a crease line round the knee
         if c.z > top - 0.065:
             return "rust"                                                   # the waistband: a belt line under the hem
         if k0 < c.z < k1 and n.x * (1 if c.x > 0 else -1) > 0.55:
-            return "pocket"
+            return "steelD" if c.z > k1 - 0.025 else "pocket"              # the pocket and its flap
         return "pants"
     return Item("legs", "cargo_pants", [b.mesh("v2.cargo_pants", A, col)], default=True)
 
@@ -137,10 +162,23 @@ def _hair_cap(b, R, back=-0.15, grow=HAIR_GROW):
     head(b, R, grow=grow, keep=keep)
 
 
+def _strands(p, n):
+    """Hair colour with darker strands running front to back on the upper surfaces."""
+    return "team.hair*0.7" if n.z > 0.2 and int((p.x + 1.0) / 0.03) % 2 else "team.hair"
+
+
+def _fringe(b, R):
+    c = R.head_c
+    for x, dz in ((-0.07, 0.0), (-0.025, -0.012), (0.02, -0.006), (0.065, 0.004)):
+        b.blob(Vector((x, R.front + 0.012, c.z + HAIR_FRONT + 0.012 + dz)), 0.03, 0.022, 0.026, W("head"), exp=2.2,
+               nlat=6)
+
+
 def hair_short(A, R):
     b = Build()
     _hair_cap(b, R)
-    return Item("hair", "short", [b.mesh("v2.hair.short", A, flat("team.hair"))], default=True)
+    _fringe(b, R)
+    return Item("hair", "short", [b.mesh("v2.hair.short", A, _strands)], default=True)
 
 
 def hair_ponytail(A, R):

@@ -20,7 +20,7 @@ from . import human_shape
 from .human_base import paint
 
 SHIN_SLANT = 0.25                     # how much of the base's backward shin slant is kept in the rest pose
-N_RING = 16
+N_RING = 24
 
 
 # ---- mesh builder --------------------------------------------------------------------------------------------------
@@ -232,6 +232,9 @@ def torso(b, R, grow=0.0, lo=None, hi=None, cuts=(), keep=None):
     lo, hi = zs[0] if lo is None else lo, zs[-1] if hi is None else hi
     mid = [r for r in rings if lo < r[0].z < hi] + [at(z) for z in cuts if lo < z < hi]
     clip = [at(lo)] + sorted(mid, key=lambda r: r[0].z) + [at(hi)]
+    if grow and hi == zs[-1]:                    # a garment's top clears the body's by its thickness too (level tops fight)
+        c, hx, hy, w = clip[-1]
+        clip[-1] = (c + Vector((0, 0, grow)), hx, hy, w)
     b.loft(clip, keep=keep)
 
 
