@@ -4,7 +4,9 @@ level).
 Props (kind prop, one tile, no footprint):
 - decay.debris.ceiling: a fallen ceiling panel propped on its bent T-bar, a broken piece, the dead strip light;
 - decay.debris.glass: a shattered screen or viewport pane, its frame on the deck, shards scattered round it;
-- decay.debris.parts: spilled parts: a gear, nuts and bolts, a circuit board, a servo, a spanner, a spring.
+- decay.debris.parts: spilled parts: a gear, nuts and bolts, a circuit board, a servo, a spanner, a spring;
+- decay.bodybag[.v1][.r1 .. .r3]: a zipped body bag shaped round the body (head, shoulders, two legs, the feet up),
+  straps round it, an ID label and a toe tag; off-white, .v1 olive; ~1.7 tiles long, centred like the lying crew.
 Floor decals (kind block, drawn on top of the tile; flat, so tones are exactly the palette's):
 - decay.frost.floor.v0 / .v1: an ice sheet with crystal spikes and a rime edge;
 - decay.blood.floor.v0 .. v2: a pool, a splatter, a drag trail (dried dark at the rims);
@@ -15,6 +17,7 @@ import random
 
 from . import core
 from .derelict import _path, bd, decal
+from .modkit import K
 
 # ---- props ---------------------------------------------------------------------------------------------------------
 
@@ -83,6 +86,35 @@ def debris_parts():
         else:
             m.box((x, y, 0.0), (0.09, 0.025, 0.025), "steelL", rz=rnd.uniform(0, math.pi), base=True)
     return [m.build()]
+
+
+BAGS = {"white": ("c4W4", "c4W2", "c2F5", "c4W6"), "olive": ("c2F3", "c2F1", "black", "c4H2")}  # bag, crest,
+#                                                                                   straps, zip (a shade off the crest)
+
+
+def bodybag(rot, look):
+    k = K(f"bodybag_{rot}_{look}", (1, 1), rot)
+    bag, crest, strap, zp = BAGS[look]
+    k.box(0, -0.64, 0.0, 0.28, 0.28, 0.24, bag, top=crest, bevel=0.12)                # the head, round
+    k.box(0, -0.38, 0.0, 0.56, 0.22, 0.25, bag, top=crest, bevel=0.1)                 # broad shoulders
+    k.box(0, -0.16, 0.0, 0.46, 0.26, 0.26, bag, top=crest, bevel=0.08)                # chest
+    k.box(0, 0.04, 0.0, 0.42, 0.2, 0.23, bag, top=crest, bevel=0.08)                  # waist and hips, easing down
+    for su in (-1, 1):                                                               # two legs, the feet up
+        k.box(su * 0.1, 0.22, 0.0, 0.18, 0.24, 0.2, bag, top=crest, bevel=0.07)       # thighs
+        k.box(su * 0.1, 0.44, 0.0, 0.16, 0.24, 0.17, bag, top=crest, bevel=0.06)      # shins
+        k.box(su * 0.1, 0.62, 0.0, 0.15, 0.14, 0.23, bag, top=crest, bevel=0.06)
+    for v0, v1, z in ((-0.78, -0.5, 0.235), (-0.5, -0.04, 0.255), (-0.04, 0.12, 0.225), (0.12, 0.33, 0.195),
+                      (0.33, 0.56, 0.165)):                                         # the zip over the lumps
+        k.box(0.0, (v0 + v1) / 2, z + 0.012, 0.036, v1 - v0, 0.016, zp)
+    k.box(0.0, -0.8, 0.16, 0.06, 0.07, 0.03, "steelL")                                # its pull
+    for v, w, h in ((-0.38, 0.56, 0.25), (-0.12, 0.46, 0.26), (0.3, 0.38, 0.2)):     # straps round it, buckled
+        k.box(0, v, 0.0, w + 0.02, 0.07, h + 0.012, strap, top=strap, bevel=0.03)
+        k.box(-0.1, v, h, 0.07, 0.09, 0.02, "steelL")
+    k.box(0.12, -0.18, 0.26, 0.14, 0.16, 0.012, "hazY")                               # ID label on the chest
+    k.box(0.12, -0.18, 0.272, 0.1, 0.04, 0.006, "hazK")
+    k.box(0.0, 0.84, 0.02, 0.1, 0.06, 0.012, "medWhite", rz=0.4)                      # toe tag on its string
+    k.box(0.0, 0.76, 0.06, 0.012, 0.06, 0.012, "sole")
+    return k.build()
 
 
 # ---- floor decals --------------------------------------------------------------------------------------------------
@@ -181,6 +213,8 @@ def scratch(v):
 SPRITES = [("decay.debris.ceiling", (1, 1), "prop", debris_ceiling),
            ("decay.debris.glass", (1, 1), "prop", debris_glass),
            ("decay.debris.parts", (1, 1), "prop", debris_parts)]
+SPRITES += [("decay.bodybag" + v + ("" if r == 0 else f".r{r}"), (1, 1), "prop", lambda r=r, lk=lk: bodybag(r, lk))
+            for v, lk in (("", "white"), (".v1", "olive")) for r in range(4)]
 SPRITES += [(f"decay.frost.floor.v{v}", (1, 1), "block", lambda v=v: frost(v)) for v in range(2)]
 SPRITES += [(f"decay.blood.floor.v{v}", (1, 1), "block", lambda v=v: blood(v)) for v in range(3)]
 SPRITES += [(f"decay.oil.floor.v{v}", (1, 1), "block", lambda v=v: oil(v)) for v in range(2)]

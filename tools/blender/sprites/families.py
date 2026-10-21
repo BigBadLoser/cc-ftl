@@ -17,6 +17,7 @@
   damage    .damaged / .destroyed of the modules (damage.py: a pass over each module's own idle build)
   damage_sol  the same for Sol's packs (engine, AI core, shield generators), in a Blender job per pack (sol_damage.py)
   decay     more derelict dressing: fallen ceiling, glass, parts; frost, blood, oil, scratch decals (derelict_more.py)
+  corpse    dead crew lying on the deck, 2 poses x 4 rotations, from the real crew rig (corpse.py)
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   storage_set lockers, racks, pallets, containers, tanks, cold stores, armories: 3 fills x 4 rotations (storage_set.py;
             MODPACK_ROTS=1 renders r0 only, for quick previews)
@@ -119,6 +120,9 @@ def jobs(name):
         import os
         from . import damage
         return damage.jobs(range(int(os.environ.get("MODPACK_ROTS", 4))))
+    if name == "corpse":
+        from . import corpse
+        return corpse.SPRITES, True
     if name == "eggsac":
         from . import derelict_sac
         return derelict_sac.SPRITES, True
