@@ -62,10 +62,13 @@ describe('station life and security', () => {
     expect(fled).toBe(true);
     expect(types(ev)).toContain('crew.downed');
     // Quiet for 30 s: the alarm calms and the grudge is forgotten.
-    const later = run(sim, 900);
-    expect(types(later)).toContain('station.calm');
+    let calmed = false;
+    for (let i = 0; i < 900 && !calmed; i++) calmed = types(run(sim, 1)).includes('station.calm');
+    expect(calmed).toBe(true);
     expect(sim.world.get(st, StationAlarmC)?.state).toBe('calm');
     expect(sim.world.query(WantedC).length).toBe(0);
+    // The intruder was only downed: when they get up, still aboard and uninvited, the alarm goes off again.
+    expect(types(run(sim, 1500))).toContain('station.alarm');
   });
 
   it('crew from a trade run docked at the station are invited and raise no alarm', () => {

@@ -9,6 +9,10 @@ import { CrewC, PositionC } from '../crew/components';
 import type { GenResult } from '../shipgen/types';
 import { StationAlarmC, StationC, StationCrewC } from './components';
 import { MIN_SHIP_GAP, REGION_PAD } from '../tuning';
+import { StorageC } from '../items/components';
+import { storageCount, storageTake } from '../items/storage';
+import { ModuleC } from '../modules/components';
+import { EquipC } from '../fight/components';
 
 /** Tiles of open space kept between a new station and whatever is already in the node (beyond the placement minimum). */
 const STATION_GAP = 2 * REGION_PAD + MIN_SHIP_GAP + 8;
@@ -79,6 +83,27 @@ function settleIn(sim: Sim, id: number, gen: GenResult, x: number, y: number): v
   const ship = sim.world.get(id, ShipC);
   sim.world.add(id, StationAlarmC, { state: 'calm', reason: '', quiet: 0, integrity: ship?.integrity ?? 1 });
   for (const c of [...sim.world.query(CrewC, PositionC)].sort((a, b) => a - b)) {
-    if (shipIdOf(sim, sim.world.get(c, PositionC)) === id) sim.world.add(c, StationCrewC, { station: id });
+    if (shipIdOf(sim, sim.world.get(c, PositionC)) === id) {
+      sim.world.add(c, StationCrewC, { station: id });
+      armFromLockers(sim, id, c);
+    }
+  }
+}
+
+/**
+ * A station has been running long before anyone arrives: crew whose role has a loadout already carry its first item
+ * the station's storage holds (taken out of that storage, the armoury lockers in practice). Without this a fresh station's
+ * guards spend their first half minute walking to the armoury.
+ */
+function armFromLockers(sim: Sim, station: number, crew: number): void {
+  const loadout = sim.content.roles[sim.world.get(crew, CrewC)?.role ?? '']?.loadout;
+  if (!loadout || sim.world.get(crew, EquipC)?.weapon) return;
+  const stores = sim.world.query(StorageC, ModuleC).filter((m) => shipIdOf(sim, sim.world.get(m, ModuleC)) === station);
+  for (const item of loadout) {
+    const from = stores.find((m) => storageCount(sim, m, item) > 0);
+    if (from === undefined) continue;
+    storageTake(sim, from, item, 1);
+    sim.world.add(crew, EquipC, { weapon: item });
+    return;
   }
 }
