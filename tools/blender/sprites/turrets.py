@@ -16,6 +16,7 @@ from . import core
 from . import turret_bays as TB
 from . import turret_concepts as TC
 from . import turret_mil  # noqa: F401  (registers the missile launcher, ion cannon and incendiary launcher)
+from . import turret_bay_laser  # noqa: F401  (the burst laser bay)
 
 # stem -> (bay key, turret builder, race radius in rig units, footprint side)
 PICKS = {"burst_laser": ("laser", 0.62, 2), "mass_driver": ("driver", 0.92, 3), "point_defense": ("pd", 0.64, 2),
