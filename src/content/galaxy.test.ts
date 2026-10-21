@@ -61,11 +61,15 @@ describe('galaxy content', () => {
 });
 
 describe('starmap travel', () => {
-  it('starts at the start node with its sensor range discovered and the story context set', () => {
+  it('starts at the start node with its sector and sensor range discovered and the story context set', () => {
     const sim = newGame(1, content);
     expect(sim.galaxy.current).toBe(START_NODE);
     const h = hops(sim, START_NODE);
-    for (const [id, n] of h) expect(sim.galaxy.discovered[id] !== undefined, `${id} at ${n}`).toBe(n <= SENSOR_HOPS);
+    const sector = galaxyIndex(sim.galaxy).nodes.get(START_NODE)?.sector;
+    for (const [id, n] of h) {
+      const inSector = galaxyIndex(sim.galaxy).nodes.get(id)?.sector === sector;
+      expect(sim.galaxy.discovered[id] !== undefined, `${id} at ${n}`).toBe(n <= SENSOR_HOPS || inSector);
+    }
     expect(sim.story.context).toMatchObject({ danger: 0, faction: 'navy' });
     expect(fuel(sim)).toBe(16);
   });

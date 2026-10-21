@@ -27,8 +27,9 @@ export function jumpBlocker(sim: Sim, edge: EdgeData | undefined): 'noRoute' | '
 }
 
 /**
- * Sensors: mark every node within SENSOR_HOPS jumps of the current one discovered. Hyperlanes that lead into chunks not
- * generated yet generate them first, so the scan never stops at a seam.
+ * Sensors: mark every node of the current sector, and every node within SENSOR_HOPS jumps of the current one,
+ * discovered (so every exit of your sector can be plotted to). Hyperlanes that lead into chunks not generated yet
+ * generate them first, so the scan never stops at a seam.
  */
 export function discover(sim: Sim): number {
   const g = sim.galaxy;
@@ -61,6 +62,13 @@ export function discover(sim: Sim): number {
       }
     }
     frontier = next.sort();
+  }
+  const here = galaxyIndex(g).nodes.get(g.current);
+  for (const id of (here && galaxyIndex(g).sectors.get(here.sector)?.nodes) ?? []) {
+    if (g.discovered[id] === undefined) {
+      g.discovered[id] = sim.tick;
+      found++;
+    }
   }
   if (found) {
     g.rev++;

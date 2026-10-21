@@ -30,18 +30,27 @@ export function fluidOutline(points: readonly P[], links: readonly [P, P][], sig
   const y0 = Math.min(...points.map((p) => p[1])) - pad;
   const nx = Math.ceil((Math.max(...points.map((p) => p[0])) + pad - x0) / step);
   const ny = Math.ceil((Math.max(...points.map((p) => p[1])) + pad - y0) / step);
-  const F: number[][] = [];
-  for (let j = 0; j <= ny; j++) {
-    const row: number[] = [];
-    for (let i = 0; i <= nx; i++) {
-      const x = x0 + i * step;
-      const y = y0 + j * step;
-      let f = 0;
-      for (const p of points) f += Math.exp(-((Math.hypot(x - p[0], y - p[1]) / (sig * 1.25)) ** 2));
-      for (const [a, b] of links) f += 0.8 * Math.exp(-((segDist(x, y, a, b) / sig) ** 2));
-      row.push(f);
+  // Each point and segment only adds to the cells within REACH widths of it (beyond that its Gaussian is < 0.1%).
+  const F = Array.from({ length: ny + 1 }, () => new Float64Array(nx + 1));
+  const REACH = 3;
+  const splat = (bx0: number, by0: number, bx1: number, by1: number, f: (x: number, y: number) => number) => {
+    const i0 = Math.max(0, Math.floor((bx0 - x0) / step));
+    const i1 = Math.min(nx, Math.ceil((bx1 - x0) / step));
+    const j0 = Math.max(0, Math.floor((by0 - y0) / step));
+    const j1 = Math.min(ny, Math.ceil((by1 - y0) / step));
+    for (let j = j0; j <= j1; j++) {
+      const row = F[j]!;
+      for (let i = i0; i <= i1; i++) row[i]! += f(x0 + i * step, y0 + j * step);
     }
-    F.push(row);
+  };
+  const rp = sig * 1.25 * REACH;
+  for (const p of points) {
+    splat(p[0] - rp, p[1] - rp, p[0] + rp, p[1] + rp, (x, y) => Math.exp(-((Math.hypot(x - p[0], y - p[1]) / (sig * 1.25)) ** 2)));
+  }
+  const rl = sig * REACH;
+  for (const [a, b] of links) {
+    splat(Math.min(a[0], b[0]) - rl, Math.min(a[1], b[1]) - rl, Math.max(a[0], b[0]) + rl, Math.max(a[1], b[1]) + rl,
+      (x, y) => 0.8 * Math.exp(-((segDist(x, y, a, b) / sig) ** 2)));
   }
   const segs: [P, P][] = [];
   const lerp = (a: number, b: number, va: number, vb: number) => a + ((thr - va) / (vb - va)) * (b - a);
