@@ -28,9 +28,11 @@ RUNG = ZGR / math.tan(math.radians(55))   # its slope toward the room at 55 deg 
 
 
 class Out(Spec):
-    def __init__(self, mask, o, variant=0, part=None, room=0):
-        """room (rear ghost only): unconnected N (1) / W (8) sides that face a room instead of space."""
+    def __init__(self, mask, o, variant=0, part=None, room=0, corners=0):
+        """room (rear ghost only): unconnected N (1) / W (8) sides that face a room instead of space. corners (rear
+        ghost only): bit 2 = the SE diagonal is solid wall (a thick block), so the slope does not dip toward it."""
         self.mask, self.o, self.variant, self.part, self.room = mask, o, variant if o in (1, 2) else 0, part, room
+        self.corners = corners
         self._lines = None
         self.drop_y = bool(o & 1) and o != 4
         self.drop_x = bool(o & 2) and o != 4
@@ -73,7 +75,7 @@ class Out(Spec):
             d.append(y + 0.5)
         if self.room & 8:
             d.append(x + 0.5)
-        if m & 6 == 6:
+        if m & 6 == 6 and not self.corners & 2:
             d.append(max(0.5 - x, 0.5 - y))
         return min(d)
 
@@ -205,16 +207,16 @@ def _dummy(name):
     return m.build()
 
 
-def out_block(mask, o, variant=0, part="rim", room=0):
+def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
     """A ghost piece. part "rim": the see-through edge lines above the deck (a 'ghost' sprite: env_build renders its
     brightness as alpha; drawn in the sorted layer). part "belly": the solid armour below the deck (drawn UNDER the
     floor layer, so a deck in front of it hides it)."""
-    m = core.Mesh(f"hull_ghost{o}_{mask}_{variant}_{part}_{room}", flat=True)
-    emit(m, Out(mask, o, variant, part, room))
+    m = core.Mesh(f"hull_ghost{o}_{mask}_{variant}_{part}_{room}_{corners}", flat=True)
+    emit(m, Out(mask, o, variant, part, room, corners))
     if not m.f:                                       # a corner piece with no camera-facing outer edge
         m.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")
     if part == "rim":
-        return [_dummy(f"ghost_plate_{o}_{mask}_{room}"), m.build()]
+        return [_dummy(f"ghost_plate_{o}_{mask}_{room}_{corners}"), m.build()]
     return [m.build()]
 
 

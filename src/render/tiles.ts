@@ -48,6 +48,24 @@ export function wallMask(kindAt: KindAt, x: number, y: number): number {
   );
 }
 
+/**
+ * Corner fills (walls.py corner_sets): bit 1 = NE, 2 = SE, 4 = SW, 8 = NW. A bit is set when both arms beside that
+ * corner are connected and all three tiles round it (the two edge neighbours and the diagonal) are solid wall: a door
+ * breaks a thick block. The piece then fills that quadrant, so a thick block is one mass instead of posts and pits.
+ */
+export function wallCorners(kindAt: KindAt, x: number, y: number, mask: number): number {
+  const wall = (dx: number, dy: number) => kindAt(x + dx, y + dy) === Struct.Wall;
+  let c = 0;
+  if ((mask & 3) === 3 && wall(0, -1) && wall(1, 0) && wall(1, -1)) c |= 1;
+  if ((mask & 6) === 6 && wall(1, 0) && wall(0, 1) && wall(1, 1)) c |= 2;
+  if ((mask & 12) === 12 && wall(0, 1) && wall(-1, 0) && wall(-1, 1)) c |= 4;
+  if ((mask & 9) === 9 && wall(-1, 0) && wall(0, -1) && wall(-1, -1)) c |= 8;
+  return c;
+}
+
+/** `c<bits>`, or "" for none. */
+const cs = (c: number) => (c ? `c${c}` : "");
+
 /** Wall view level of the art (tools/blender/sprites/walls.py LEVELS) for a cutaway mode. */
 export type WallLevel = "up" | "cut" | "low";
 export const wallLevel = (mode: CutawayMode): WallLevel => (mode === "up" ? "up" : mode === "down" ? "low" : "cut");
@@ -63,15 +81,68 @@ export function outward(kindAt: KindAt, x: number, y: number): number {
   return o || (kindAt(x + 1, y + 1) === Struct.Space ? 4 : 0);
 }
 
+/** How far `clearTo` looks (tiles). gridView keys its chunks on the struct this far round them. */
+export const HULL_RAY = 16;
+
+/**
+ * True if the ray from (x, y) toward (dx, dy) leaves the ship crossing only solid tiles: no floor of this ship lies that
+ * way. A ray that stays inside a block for HULL_RAY tiles counts as clear.
+ */
+function clearTo(kindAt: KindAt, x: number, y: number, dx: number, dy: number): boolean {
+  for (let k = 1; k <= HULL_RAY; k++) {
+    const t = kindAt(x + dx * k, y + dy * k);
+    if (t === Struct.Space) return true;
+    if (t === Struct.Floor) return false;
+  }
+  return true;
+}
+
+/** Hull side of a wall tile: the far hull (stays full in cutaway), the near hull (a ghost), or none (a partition). */
+export const HullSide = { None: 0, Far: 1, Near: 2 } as const;
+
+/**
+ * Which hull side the wall at (x, y) is. It must touch space (8-neighbour), and that is not enough: what lies behind it
+ * decides. A wall running along x (an E / W arm, or no arm) looks toward -y (far) or +y (near), one running along y
+ * toward -x / +x; it is that side's hull only if no floor of this ship lies that way. So a partition that touches
+ * space through a breach, a notch or a gap stays a partition (cut in cutaway, never a ghost), while concave hull steps
+ * and thick hull keep their outline.
+ */
+export function hullSide(kindAt: KindAt, x: number, y: number): number {
+  if (!touchesSpace(kindAt, x, y)) return HullSide.None;
+  const m = wallMask(kindAt, x, y);
+  const alongX = (m & 10) !== 0 || (m & 5) === 0;
+  const alongY = (m & 5) !== 0 || (m & 10) === 0;
+  const o = outward(kindAt, x, y);
+  // Near: the run's front side (+y of a run along x, +x of a run along y) is clear of ship floor. That holds for the
+  // diagonal-only case too (o 4, space only at +x+y): a ray toward that known space proves nothing about the front.
+  if (o && ((alongX && clearTo(kindAt, x, y, 0, 1)) || (alongY && clearTo(kindAt, x, y, 1, 0)))) return HullSide.Near;
+  // Far: space right behind the run (-y of a run along x, -x of a run along y), or diagonally behind with nothing of
+  // the ship between (the outline's corners and steps). Space only beside the run (a breach, a notch) does not count.
+  const sp = (dx: number, dy: number) => kindAt(x + dx, y + dy) === Struct.Space;
+  const backY = alongX && clearTo(kindAt, x, y, 0, -1);
+  const backX = alongY && clearTo(kindAt, x, y, -1, 0);
+  if ((sp(0, -1) && alongX) || (sp(-1, 0) && alongY) || (sp(-1, -1) && (backY || backX)) || (sp(1, -1) && backY) || (sp(-1, 1) && backX))
+    return HullSide.Far;
+  return HullSide.None;
+}
+
+/** `outward` of the near hull only (0 for the far hull and for partitions that touch space). */
+export function nearOut(kindAt: KindAt, x: number, y: number): number {
+  return hullSide(kindAt, x, y) === HullSide.Near ? outward(kindAt, x, y) : 0;
+}
+
 /** True if the hull tile at (x, y) draws as a ghost at this level (the near hull always, every hull side in `low`). */
 function ghostAt(kindAt: KindAt, x: number, y: number, level: WallLevel): boolean {
-  const k = kindAt(x, y);
-  return k === Struct.Wall && touchesSpace(kindAt, x, y) && (outward(kindAt, x, y) > 0 || level === "low");
+  if (kindAt(x, y) !== Struct.Wall) return false;
+  const side = hullSide(kindAt, x, y);
+  return side === HullSide.Near || (side === HullSide.Far && level === "low");
 }
 
 /** True if the hull ghost at (x, y) (the near hull, or any hull side in `down`) replaces the floor plate under it. */
 export function replacesFloor(kindAt: KindAt, x: number, y: number, mode: CutawayMode = "auto"): boolean {
-  return solidish(kindAt(x, y)) && touchesSpace(kindAt, x, y) && (outward(kindAt, x, y) > 0 || wallLevel(mode) === "low");
+  if (!solidish(kindAt(x, y))) return false;
+  const side = hullSide(kindAt, x, y);
+  return side === HullSide.Near || (side === HullSide.Far && wallLevel(mode) === "low");
 }
 
 /**
@@ -99,7 +170,8 @@ export function wallPieces(
   gap: (x: number, y: number) => boolean = () => false,
 ): Piece[] {
   const level = wallLevel(mode);
-  const o = outward(kindAt, x, y);
+  const side = hullSide(kindAt, x, y);
+  const o = side === HullSide.Near ? outward(kindAt, x, y) : 0;
   if (kind === Struct.Door) {
     const ax = solidish(kindAt(x - 1, y)) && solidish(kindAt(x + 1, y)) ? "x" : "y";
     const out: Piece[] = [{ chain: [`tile.door.${ax}`], order: 0 }];
@@ -107,7 +179,7 @@ export function wallPieces(
     return out;
   }
   const mask = wallMask(kindAt, x, y);
-  const hull = touchesSpace(kindAt, x, y);
+  const hull = side !== HullSide.None;
   const v = hull && (((x + y) % 3) + 3) % 3 === 0 ? ".v1" : "";
   const selfGhost = ghosts;
   if (selfGhost && hull && o) {
@@ -118,14 +190,22 @@ export function wallPieces(
   if (selfGhost && hull && level === "low") {
     // The rear ghost traces its sloped skirt; `.r<1|8|9>` = which unconnected N / W sides face a room, not space.
     const room = (isRoom(kindAt(x, y - 1)) ? 1 : 0) | (isRoom(kindAt(x - 1, y)) ? 8 : 0);
+    // `c2`: the SE diagonal is solid too (a thick block), so the slope does not dip toward it.
     const id = `tile.hull.ghost.m${mask}`;
-    return [{ chain: room ? [`${id}.r${room}`, id] : [id], order: 0 }];
+    const legacy = room ? [`${id}.r${room}`, id] : [id];
+    const se = (mask & 6) === 6 && wallCorners(kindAt, x, y, mask) & 2;
+    return [{ chain: se ? [...legacy.map((i) => i.replace(id, `${id}c2`)), ...legacy] : legacy, order: 0 }];
   }
+  // Corner fills (wallCorners): `m<mask>c<bits>` first, today's `m<mask>` last, so partial art falls back cleanly.
+  const c = wallCorners(kindAt, x, y, mask);
   const fam = hull ? "hull" : "wall";
-  const base = `tile.${fam}.${PRE[level]}m${mask}`;
-  const out: Piece[] = [{ chain: [base + v, base], order: 0 }];
-  if (mask & 4 && ((ghosts && ghostAt(kindAt, x, y + 1, level)) || gap(x, y + 1))) out.push({ chain: [`tile.${fam}.${PRE[level]}end.s`], order: 1 });
-  if (mask & 2 && ((ghosts && ghostAt(kindAt, x + 1, y, level)) || gap(x + 1, y))) out.push({ chain: [`tile.${fam}.${PRE[level]}end.e`], order: 1 });
+  const pre = `tile.${fam}.${PRE[level]}`;
+  const base = `${pre}m${mask}`;
+  const chain = c ? [...new Set([`${base}c${c}${v}`, `${base}c${c}`, base + v, base])] : [base + v, base];
+  const out: Piece[] = [{ chain, order: 0 }];
+  const end = (side: string, bits: number) => (bits ? [`${pre}end.${side}.${cs(bits)}`, `${pre}end.${side}`] : [`${pre}end.${side}`]);
+  if (mask & 4 && ((ghosts && ghostAt(kindAt, x, y + 1, level)) || gap(x, y + 1))) out.push({ chain: end("s", c & 6), order: 1 });
+  if (mask & 2 && ((ghosts && ghostAt(kindAt, x + 1, y, level)) || gap(x + 1, y))) out.push({ chain: end("e", c & 3), order: 1 });
   return out;
 }
 
@@ -156,8 +236,9 @@ function vertsOver(kindAt: KindAt, x0: number, y0: number, x1: number, y1: numbe
   };
   for (let y = y0; y < y1; y++)
     for (let x = x0; x < x1; x++) {
-      if (kindAt(x, y) !== Struct.Wall || !touchesSpace(kindAt, x, y)) continue;
-      const o = outward(kindAt, x, y);
+      if (kindAt(x, y) !== Struct.Wall) continue;
+      const o = nearOut(kindAt, x, y);
+      if (!o) continue;
       const m = wallMask(kindAt, x, y);
       const segs: [number, number, number, number, string][] = [];
       if (o === 1 && m & 8) segs.push([x - 0.5, y + 0.5, x + 0.5, y + 0.5, "y"]);

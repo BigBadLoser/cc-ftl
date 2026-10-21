@@ -11,28 +11,35 @@ and low (shortest: partitions are skirt-high stubs, every hull side is a ghost).
 - Near-hull ghosts tile.hull.o{o}.m{mask} (o: 1 = space at +y, 2 = at +x, 3 = both: the chamfered outer corner, 4 =
   concave corner), drawn in every level, and their below-deck bellies tile.hull.belly.o{o}.m{mask} (.v1: muted ochre
   band), which the renderer draws UNDER the floor layer so a deck in front hides them.
-- End faces where a wall butts into a ghost: tile.{fam}.{full.|low.|}end.{s|e}.
+- Corner fills (47-tile blob set): every far piece also comes as m{mask}c{bits} for each set of filled corner quadrants
+  (NE 1, SE 2, SW 4, NW 8: both arms connected and the diagonal solid wall), so thick blocks read as one mass; the rear
+  ghost as tile.hull.ghost.m{6|7|14|15}c2[.r*] (SE diagonal solid: no dip toward it).
+- End faces where a wall butts into a ghost: tile.{fam}.{full.|low.|}end.{s|e}[.c{bits}] (the fills reaching that edge).
 - The belly alone for a door in the near hull (tile.hull.drop.{s|e}); doors, never cut (tile.door.{x|y}[.open])."""
 from .doors import door
 from .floors import floor
 from .hull import drop, out_block, vert
-from .walls import block, end_face
+from .walls import block, corner_sets, end_face
 
 FLOORS = "abcdefgh"
 PRE = {"up": "full.", "cut": "", "low": "low."}
 SPRITES = [(f"tile.floor.{v}", (1, 1), "floor", lambda v=v: floor(v)) for v in FLOORS]
 for _m in range(16):
-    for _lv, _pre in PRE.items():
-        SPRITES.append((f"tile.wall.{_pre}m{_m}", (1, 1), "block", lambda m=_m, lv=_lv: block(m, "wall", level=lv)))
-    for _lv in ("up", "cut"):
-        for _v in (0, 1):
-            SPRITES.append((f"tile.hull.{PRE[_lv]}m{_m}{'.v1' if _v else ''}", (1, 1), "block",
-                            lambda m=_m, lv=_lv, v=_v: block(m, "hull", v, level=lv)))
-    for _r in (0, 1, 8, 9):                        # rear ghost: which unconnected N / W sides face a room
-        if _r & _m:
-            continue
-        SPRITES.append((f"tile.hull.ghost.m{_m}{f'.r{_r}' if _r else ''}", (1, 1), "ghost",
-                        lambda m=_m, r=_r: out_block(m, 0, room=r)))
+    for _c in corner_sets(_m):                     # corner fills (walls.corner_sets): m<mask>c<bits>, c0 = plain m<mask>
+        _id = f"m{_m}c{_c}" if _c else f"m{_m}"
+        for _lv, _pre in PRE.items():
+            SPRITES.append((f"tile.wall.{_pre}{_id}", (1, 1), "block",
+                            lambda m=_m, lv=_lv, c=_c: block(m, "wall", level=lv, corners=c)))
+        for _lv in ("up", "cut"):
+            for _v in (0, 1):
+                SPRITES.append((f"tile.hull.{PRE[_lv]}{_id}{'.v1' if _v else ''}", (1, 1), "block",
+                                lambda m=_m, lv=_lv, v=_v, c=_c: block(m, "hull", v, level=lv, corners=c)))
+    for _c in ((0, 2) if _m & 6 == 6 else (0,)):   # rear ghost: c2 = the SE diagonal is solid (no dip toward it)
+        for _r in (0, 1, 8, 9):                    # ... and which unconnected N / W sides face a room
+            if _r & _m:
+                continue
+            SPRITES.append((f"tile.hull.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1), "ghost",
+                            lambda m=_m, r=_r, c=_c: out_block(m, 0, room=r, corners=c)))
 OUT_MASK = {1: 4, 2: 2, 3: 6, 4: 0}    # mask bits that must be clear for each outward set (4: concave corner)
 for _o, _clear in OUT_MASK.items():
     for _m in range(16):
@@ -46,11 +53,16 @@ for _o, _clear in OUT_MASK.items():
             SPRITES.append((f"tile.hull.belly.o{_o}.m{_m}.v1", (1, 1), "block",
                             lambda m=_m, o=_o: out_block(m, o, 1, "belly")))
 SPRITES.append(("tile.hull.ghost.vert", (1, 1), "ghost", vert))
+END_CORNERS = {"s": (0, 2, 4, 6), "e": (0, 1, 2, 3)}   # the corner fills reaching each end face's edge
 for _s in ("s", "e"):
     for _lv, _pre in PRE.items():
-        SPRITES.append((f"tile.wall.{_pre}end.{_s}", (1, 1), "block", lambda s=_s, lv=_lv: end_face("wall", s, lv)))
-        if _lv != "low":
-            SPRITES.append((f"tile.hull.{_pre}end.{_s}", (1, 1), "block", lambda s=_s, lv=_lv: end_face("hull", s, lv)))
+        for _c in END_CORNERS[_s]:
+            _cs = f".c{_c}" if _c else ""
+            SPRITES.append((f"tile.wall.{_pre}end.{_s}{_cs}", (1, 1), "block",
+                            lambda s=_s, lv=_lv, c=_c: end_face("wall", s, lv, c)))
+            if _lv != "low":
+                SPRITES.append((f"tile.hull.{_pre}end.{_s}{_cs}", (1, 1), "block",
+                                lambda s=_s, lv=_lv, c=_c: end_face("hull", s, lv, c)))
     SPRITES.append((f"tile.hull.drop.{_s}", (1, 1), "block", lambda s=_s: drop(s)))
 for _ax in ("x", "y"):
     SPRITES += [(f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False)),
