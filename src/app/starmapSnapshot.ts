@@ -2,7 +2,7 @@ import {
   CombatC, DANGER_STEP, FTL_CHARGE_SEC, FUEL_ITEM, edgeBetween, galaxyIndex, isHostileFaction, jumpBlocker,
   planStarRoute, playerShip, playerStock, SENSOR_HOPS, standings, type Sim,
 } from '../sim';
-import type { UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
+import type { UiStarExit, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { buildRegions, sectorOutline } from './starmapRegions';
 
 const OPEN_SPACE = '#5a6b85';
@@ -69,7 +69,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       top: Math.round(Math.min(...s.hull.map((p) => p.y))), r: Math.round(s.r),
       hull: s.hull.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(' '),
       color: (k && s.faction && content?.factions[s.faction]?.color) || OPEN_SPACE,
-      outline: sectorOutline(index, s), body: s.body ?? null, region: s.region ?? null, hub: !!s.hub,
+      outline: sectorOutline(index, s), body: s.body ?? null, region: s.region ?? null, hub: !!s.hub, nodes: s.nodes.length,
     };
   });
   const edges = [...index.edges.values()].filter((e) => known(e.a) && known(e.b)).map((e) => {
@@ -83,9 +83,26 @@ export function buildStarmap(sim: Sim): UiStarmap {
   }));
   const here = index.sectors.get(index.nodes.get(g.current)?.sector ?? '');
   const outer = buildRegions(index, content, (id) => knownSectors.has(id), here);
+  // Exits: every hyperlane from a node of the player's sector to another sector.
+  const exits: UiStarExit[] = [];
+  for (const id of here?.nodes ?? []) {
+    for (const e of index.adjacent.get(id) ?? []) {
+      if (e.kind !== 'hyperlane') continue;
+      const a = index.nodes.get(id)!;
+      const b = index.nodes.get(e.a === id ? e.b : e.a);
+      const to = b && index.sectors.get(b.sector);
+      if (!b || !to || to.id === here?.id) continue;
+      const k = knownSectors.has(to.id);
+      exits.push({
+        id: e.id, ax: Math.round(a.x), ay: Math.round(a.y), bx: Math.round(b.x), by: Math.round(b.y), to: to.id,
+        name: k ? to.name : null, color: (k && to.faction && content?.factions[to.faction]?.color) || OPEN_SPACE, danger: to.danger,
+        kind: e.rift ? 'rift' : e.gate ? 'gate' : 'lane', fuel: e.fuel,
+      });
+    }
+  }
   return {
     rev: g.rev, ...starmapStatus(sim), dangerStep: DANGER_STEP, sectors, nodes, edges, factions,
-    currentSector: here?.id ?? '', currentRegion: here?.region ?? null, ...outer,
+    currentSector: here?.id ?? '', currentRegion: here?.region ?? null, exits, ...outer,
   };
 }
 

@@ -3,12 +3,12 @@
   let { kind, x, y, r, dim = 1 }: { kind: string; x: number; y: number; r: number; dim?: number } = $props();
 
   const LOOK: Record<string, { core: string; glow: string; halo: number }> = {
-    star: { core: '#fde68a', glow: '#fbbf24', halo: 2.6 },
-    red_dwarf: { core: '#fca5a5', glow: '#f87171', halo: 2.4 },
-    blue_giant: { core: '#dbeafe', glow: '#60a5fa', halo: 2.8 },
+    star: { core: '#fde68a', glow: '#fbbf24', halo: 1.9 },
+    red_dwarf: { core: '#fca5a5', glow: '#f87171', halo: 1.8 },
+    blue_giant: { core: '#dbeafe', glow: '#60a5fa', halo: 2 },
     gas_giant: { core: '#b45309', glow: '#f59e0b', halo: 1.6 },
     nebula: { core: 'none', glow: '#a855f7', halo: 1.8 },
-    black_hole: { core: '#000', glow: '#f97316', halo: 2.2 },
+    black_hole: { core: '#000', glow: '#f97316', halo: 1.8 },
   };
   const look = $derived(LOOK[kind] ?? LOOK.star!);
 </script>

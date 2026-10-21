@@ -3,8 +3,10 @@
   import type { UiApi } from './api';
   import type { UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import StarmapPanel from './StarmapPanel.svelte';
-  import StarmapBody from './StarmapBody.svelte';
+  import { fade } from 'svelte/transition';
+  import StarmapInfo from './StarmapInfo.svelte';
   import StarmapOuter from './StarmapOuter.svelte';
+  import StarmapSector from './StarmapSector.svelte';
 
   let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
 
@@ -16,6 +18,8 @@
   let cy = $state(0);
   let s = $state(1);
   let selected = $state<string | null>(null);
+  /** A sector (level 2) or region (level 3) tapped on an outer level. */
+  let picked = $state<{ kind: 'sector' | 'region'; id: string } | null>(null);
   let placed = false;
 
   const nodeById = $derived(new Map((map?.nodes ?? []).map((n) => [n.id, n])));
@@ -32,6 +36,57 @@
    */
   const span = $derived(Math.min(w, h) / s);
   const level = $derived<1 | 2 | 3>(span < 2200 ? 1 : span < 11000 ? 2 : 3);
+  /** The visible map rectangle (for pinning labels inside the view). */
+  const view = $derived({ x0: cx - w / 2 / s, y0: cy - h / 2 / s, x1: cx + w / 2 / s, y1: cy + h / 2 / s });
+  const LEVELS = [
+    { n: 1, label: 'Sector', short: 'Sec', span: 0 }, { n: 2, label: 'Region', short: 'Reg', span: 5200 }, { n: 3, label: 'Galaxy', short: 'Gal', span: 12500 },
+  ] as const;
+  /** Jump to a zoom level, centred on your sector. */
+  function setLevel(n: 1 | 2 | 3) {
+    picked = null;
+    if (!map) return;
+    if (n === 1) return focusSector(map.currentSector);
+    const sec = sectorById.get(map.currentSector);
+    if (sec) {
+      cx = sec.x;
+      cy = sec.y;
+    }
+    s = Math.min(w, h) / LEVELS[n - 1]!.span;
+  }
+  const pickedInfo = $derived.by(() => {
+    if (!map || !picked) return null;
+    if (picked.kind === 'sector') {
+      const sec = sectorById.get(picked.id);
+      if (!sec) return null;
+      const reg = map.regions.find((r) => r.id === sec.region);
+      const owner = map.factions.find((f) => f.id === sec.faction);
+      return {
+        title: sec.known ? sec.name : 'Uncharted sector', color: sec.known ? sec.color : '#94a3b8', zoomLabel: 'Zoom in',
+        lines: [
+          `${owner ? owner.name : sec.known ? 'Unclaimed' : 'Owner unknown'} · danger ${sec.danger}`,
+          reg?.revealed ? `${reg.name}, ${reg.typeLabel}` : 'Unclaimed space',
+          sec.known ? `${sec.nodes} beacons${sec.body ? ` · ${sec.body.kind.replace('_', ' ')}` : ''}${sec.hub ? ' · regional hub' : ''}` : 'Not yet charted by your sensors',
+        ],
+        zoom: () => focusSector(sec.id),
+      };
+    }
+    const reg = map.regions.find((r) => r.id === picked!.id);
+    if (!reg) return null;
+    const owner = map.factions.find((f) => f.id === reg.faction);
+    return {
+      title: reg.revealed ? reg.name : 'Uncharted region', color: reg.revealed ? reg.color : '#94a3b8', zoomLabel: 'Zoom in',
+      lines: [
+        reg.revealed ? `${reg.typeLabel}${owner ? ` · ${owner.name}` : ''}` : 'Unknown',
+        `${reg.sectors} sectors${reg.current ? ' · you are here' : ''}`,
+      ],
+      zoom: () => {
+        cx = reg.x;
+        cy = reg.y;
+        s = Math.min(w, h) / LEVELS[1].span;
+        picked = null;
+      },
+    };
+  });
   const seenFactions = $derived(map ? map.factions.filter((f) => map!.sectors.some((x) => x.known && x.faction === f.id)) : []);
 
   /** Centre on a sector so it fills most of the shorter side (the default view: your sector). */
@@ -115,16 +170,14 @@
   function tap(p: { x: number; y: number }) {
     const m = toMap(p.x, p.y);
     // Outer levels: a tap zooms one level in, onto the sector (level 2) or region (level 3) under it.
-    if (level === 2 && map) {
+    if (level === 2 && map && map.sectors.length) {
       const near = map.sectors.reduce((b, x) => (Math.hypot(x.x - m.x, x.y - m.y) < Math.hypot(b.x - m.x, b.y - m.y) ? x : b));
-      if (Math.hypot(near.x - m.x, near.y - m.y) < 30 / s + near.r) focusSector(near.id);
+      picked = Math.hypot(near.x - m.x, near.y - m.y) < 30 / s + near.r ? { kind: 'sector', id: near.id } : null;
       return;
     }
     if (level === 3 && map && map.regions.length) {
       const near = map.regions.reduce((b, x) => (Math.hypot(x.x - m.x, x.y - m.y) < Math.hypot(b.x - m.x, b.y - m.y) ? x : b));
-      cx = near.x;
-      cy = near.y;
-      s = Math.min(w, h) / 6000;
+      picked = Math.hypot(near.x - m.x, near.y - m.y) < 40 / s ? { kind: 'region', id: near.id } : null;
       return;
     }
     let best: UiStarNode | null = null;
@@ -153,10 +206,7 @@
   }
 
   const GLOW: Record<string, string> = { star: '#fbbf24', red_dwarf: '#f87171', blue_giant: '#60a5fa', gas_giant: '#f59e0b', nebula: '#a855f7', black_hole: '#f97316' };
-  const BADGE: Record<string, string> = { T: '#4ade80', M: '#60a5fa', R: '#c4b5fd', A: '#a3a3a3', D: '#fb923c' };
   const px = (v: number) => v / s;
-  /** Danger tier label colours: calm cyan through amber to red. */
-  const DANGER = ['#67e8f9', '#86efac', '#bef264', '#fde047', '#fbbf24', '#fb923c', '#f87171', '#ef4444', '#dc2626', '#e879f9'];
 </script>
 
 <svelte:window onkeydown={key} />
@@ -174,6 +224,11 @@
       {/if}
     {/if}
     <span class="grow"></span>
+    <span class="levels" role="group" aria-label="Zoom level">
+      {#each LEVELS as l (l.n)}
+        <button class:on={level === l.n} onclick={() => setLevel(l.n)} data-testid={`starmap-level-${l.n}`} aria-label={l.label}><span class="long">{l.label}</span><span class="short">{l.short}</span></button>
+      {/each}
+    </span>
     <button class="zoom" onclick={() => zoomAt(w / 2, h / 2, 1.4)} aria-label="Zoom in">+</button>
     <button class="zoom" onclick={() => zoomAt(w / 2, h / 2, 1 / 1.4)} aria-label="Zoom out">−</button>
     <button onclick={recenter} aria-label="Centre on ship">⌖</button>
@@ -189,51 +244,15 @@
           {/each}
         </defs>
         <g transform={`translate(${w / 2 - cx * s} ${h / 2 - cy * s}) scale(${s})`}>
-          {#if level === 1}
-            {#each map.sectors as sec (sec.id)}
-              <path d={sec.outline} class="outline" class:known={sec.known} class:cur={sec.id === map.currentSector} style={`--c:${sec.color}`} fill-rule="evenodd" />
-            {/each}
-            {#each map.sectors as sec (sec.id)}
-              {#if sec.known && sec.body}<StarmapBody kind={sec.body.kind} x={sec.body.x} y={sec.body.y} r={sec.body.r} dim={sec.id === map.currentSector ? 1 : 0.6} />{/if}
-            {/each}
-            {#each map.edges as e (e.id)}
-              <line x1={e.ax} y1={e.ay} x2={e.bx} y2={e.by} class={e.kind} class:anchor={e.anchor} class:gate={e.gate} class:rift={e.rift} />
-            {/each}
-            {#if current}
-              {#each map.nodes.filter((n) => n.reachable) as n (n.id)}
-                <line x1={current.x} y1={current.y} x2={n.x} y2={n.y} class="reach" />
-              {/each}
-            {/if}
-            {#if routePts}
-              <polyline points={routePts} class="route" class:blocked={!!route?.blocker} />
-            {/if}
-            {#each map.nodes as n (n.id)}
-              {#if n.known}
-                {#if n.hostiles}<circle cx={n.x} cy={n.y} r={px(9)} class="hostile" />{/if}
-                <circle cx={n.x} cy={n.y} r={px(n.current ? 6 : 4.5)} class="node" class:visited={n.visited} class:cur={n.current} />
-                {#if n.reachable}<circle cx={n.x} cy={n.y} r={px(8.5)} class="reachable" />{/if}
-                {#if n.current}<circle cx={n.x} cy={n.y} r={px(11)} class="here" />{/if}
-                {#if s > 0.7}
-                  {#each n.badges as b, i (i)}
-                    <rect x={n.x + px(9 + i * 12)} y={n.y - px(5)} width={px(11)} height={px(11)} rx={px(2)} fill={BADGE[b] ?? '#999'} />
-                    <text x={n.x + px(14.5 + i * 12)} y={n.y + px(3.2)} class="badge" font-size={px(9)}>{b}</text>
-                  {/each}
-                {/if}
-                {#if s > 1.5}<text x={n.x} y={n.y + px(17)} class="nname" font-size={px(10)} stroke-width={px(3)}>{n.name}</text>{/if}
+          {#key level}
+            <g transition:fade={{ duration: 180 }}>
+              {#if level === 1}
+                <StarmapSector {map} {px} {s} {view} {current} {route} {routePts} {selected} />
               {:else}
-                <circle cx={n.x} cy={n.y} r={px(1.6)} class="unknown" />
+                <StarmapOuter {map} {level} {px} picked={picked?.id ?? null} />
               {/if}
-              {#if selected === n.id}<circle cx={n.x} cy={n.y} r={px(14)} class="sel" />{/if}
-            {/each}
-            {#each map.sectors as sec (sec.id)}
-              {#if sec.known}
-                <text x={sec.x} y={sec.top - px(22)} class="sname" class:cur={sec.id === map.currentSector} font-size={px(13)} stroke-width={px(3)}>{sec.name}</text>
-                <text x={sec.x} y={sec.top - px(8)} class="sdanger" font-size={px(10)} stroke-width={px(3)} fill={DANGER[Math.min(DANGER.length - 1, sec.danger)]}>Danger {sec.danger}</text>
-              {/if}
-            {/each}
-          {:else}
-            <StarmapOuter {map} {level} {px} />
-          {/if}
+            </g>
+          {/key}
         </g>
       {/if}
     </svg>
@@ -245,7 +264,10 @@
       </ul>
     {/if}
   </div>
-  {#if sel && map}
+  {#if pickedInfo && level > 1}
+    <StarmapInfo title={pickedInfo.title} color={pickedInfo.color} lines={pickedInfo.lines} zoomLabel={pickedInfo.zoomLabel} onZoom={pickedInfo.zoom} onClear={() => (picked = null)} />
+  {/if}
+  {#if sel && map && level === 1}
     <StarmapPanel node={sel} sector={sectorById.get(sel.sector) ?? null} factions={map.factions} {route} onJump={jump} onClear={() => (selected = null)} />
   {/if}
 </div>
@@ -260,32 +282,10 @@
   .grow { flex: 1; }
   .view { position: relative; flex: 1; min-height: 0; overflow: hidden; }
   svg { display: block; touch-action: none; cursor: grab; }
-  .outline { fill: var(--c); fill-opacity: 0.02; stroke: var(--c); stroke-opacity: 0.22; stroke-dasharray: 4 5; vector-effect: non-scaling-stroke; }
-  .outline.known { fill-opacity: 0.07; stroke-opacity: 0.5; stroke-dasharray: none; stroke-width: 1.4; }
-  .outline.cur { fill-opacity: 0.12; stroke-opacity: 0.85; stroke-width: 2; }
-  line.hyperlane.gate { stroke-width: 2.6; stroke-opacity: 0.9; }
-  line.hyperlane.rift { stroke: #a78bfa; stroke-dasharray: 3 6; }
-  line.reach { stroke: #4ade80; stroke-opacity: 0.8; stroke-width: 2.4; vector-effect: non-scaling-stroke; }
-  .reachable { fill: none; stroke: #4ade80; stroke-width: 2; vector-effect: non-scaling-stroke; }
-  line { vector-effect: non-scaling-stroke; }
-  line.hyperlane { stroke: #7dd3fc; stroke-opacity: 0.7; stroke-width: 1.8; }
-  line.hyperlane.anchor { stroke-dasharray: 7 4; }
-  line.route { stroke: #8195b3; stroke-opacity: 0.6; stroke-width: 1; }
-  polyline.route { fill: none; stroke: var(--amber); stroke-opacity: 1; stroke-width: 3.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-  polyline.route.blocked { stroke-dasharray: 8 5; }
-  .node { fill: #cbd5e1; stroke: #05080e; stroke-width: 1; vector-effect: non-scaling-stroke; }
-  .node.visited { fill: #67e8f9; }
-  .node.cur { fill: var(--cyan); }
-  .here { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; }
-  .sel { fill: none; stroke: var(--amber); stroke-width: 2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
-  .hostile { fill: rgba(239, 68, 68, 0.25); stroke: var(--red); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-  .unknown { fill: #34445c; }
-  .badge { fill: #05080e; text-anchor: middle; font-weight: 700; pointer-events: none; }
-  .nname { fill: var(--dim); text-anchor: middle; pointer-events: none; }
-  .sname { fill: #e2e8f0; fill-opacity: 0.85; text-anchor: middle; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; pointer-events: none; paint-order: stroke; stroke: #05080e; stroke-linejoin: round; }
-  .sname.cur { fill: var(--cyan); fill-opacity: 1; }
-  .sdanger { text-anchor: middle; font-weight: 600; pointer-events: none; paint-order: stroke; stroke: #05080e; stroke-linejoin: round; }
-  .nname { paint-order: stroke; stroke: #05080e; stroke-linejoin: round; }
+  .levels { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .levels button { border: 0; border-radius: 0; padding: 4px 10px; background: transparent; color: var(--dim); }
+  .levels button.on { background: #0e4a56; color: var(--cyan); }
+  .short { display: none; }
   .legend { position: absolute; left: 8px; top: 8px; margin: 0; padding: 6px 8px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; display: grid; gap: 2px; pointer-events: none; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
   .legend em { font-style: normal; margin-left: 4px; font-size: 11px; }
@@ -297,5 +297,8 @@
     header button { min-width: 36px; min-height: 36px; padding: 0 8px; }
     .long { display: none; }
     .legend { font-size: 11px; padding: 4px 6px; }
+    .levels button { min-width: 0; padding: 4px 6px; font-size: 12px; }
+    .short { display: inline; }
+    header strong { display: none; }
   }
 </style>

@@ -23,6 +23,8 @@ export interface UiStarSector {
   /** Its region (null: unclaimed frontier). */
   region: string | null;
   hub: boolean;
+  /** Number of nodes in it. */
+  nodes: number;
 }
 
 /** A region (a named group of sectors) for the outer zoom levels. */
@@ -42,8 +44,26 @@ export interface UiStarRegion {
   outline: string;
   /** One of its sectors is known. */
   known: boolean;
+  /** Its name and type are shown: known, or next to the player's region (what to expect beyond the border). */
+  revealed: boolean;
   /** The player is in it. */
   current: boolean;
+}
+
+/** A way out of the player's sector: the lane from its gateway node to a neighbouring sector. */
+export interface UiStarExit {
+  id: string;
+  ax: number;
+  ay: number;
+  bx: number;
+  by: number;
+  /** The sector it leads to: id, name (if known), owner colour, danger. */
+  to: string;
+  name: string | null;
+  color: string;
+  danger: number;
+  kind: 'lane' | 'gate' | 'rift';
+  fuel: number;
 }
 
 /** A link between two sectors (level 2) or two regions (level 3). */
@@ -122,6 +142,7 @@ export interface UiStarmap {
   currentSector: string;
   currentRegion: string | null;
   regions: UiStarRegion[];
+  exits: UiStarExit[];
   /** Level 2: lanes between sectors (one per sector pair). Level 3: links between regions. */
   sectorLinks: UiStarLink[];
   regionLinks: UiStarLink[];

@@ -84,7 +84,7 @@ export function buildRegions(index: GalaxyIndex, content: GalaxyContent | undefi
     let outline = regionOutlines.get(okey);
     if (outline === undefined) {
       const inner = pairs.filter((p) => p.a.region === id && p.b.region === id).map((p): [P, P] => [[p.a.x, p.a.y], [p.b.x, p.b.y]]);
-      outline = fluidOutline(list.map((s): P => [s.x, s.y]), inner, 260, 40);
+      outline = fluidOutline(list.map((s): P => [s.x, s.y]), inner, 200, 36);
       if (regionOutlines.size > 2000) regionOutlines.clear();
       regionOutlines.set(okey, outline);
     }
@@ -92,7 +92,7 @@ export function buildRegions(index: GalaxyIndex, content: GalaxyContent | undefi
       id, name: first.regionName ?? id, type: first.regionType ?? '', typeLabel: REGION_TYPE_LABEL[first.regionType ?? ''] ?? '',
       faction: first.faction, color: (first.faction && content?.factions[first.faction]?.color) || OPEN_SPACE,
       x: Math.round(x), y: Math.round(y), sectors: list.length, outline, known: list.some((s) => known(s.id)),
-      current: id === current?.region,
+      revealed: false, current: id === current?.region,
     });
   }
   const sectorLinks: UiStarLink[] = pairs.map((p) => ({
@@ -150,5 +150,9 @@ export function buildRegions(index: GalaxyIndex, content: GalaxyContent | undefi
       link(best![0], best![1], 'through');
     }
   }
+  // Regions next to the player's are revealed by name and type (their sectors stay unknown until sensors reach them).
+  const next = new Set<string>();
+  for (const l of regionLinks.values()) if (l.mine) for (const id of l.id.split('|')) next.add(id);
+  for (const r of regions) r.revealed = r.known || next.has(r.id);
   return { regions, sectorLinks, regionLinks: [...regionLinks.values()] };
 }
