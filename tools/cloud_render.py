@@ -66,6 +66,16 @@ class RenderJobError(RuntimeError):
     pass
 
 
+def signal_process_group(process, sig=signal.SIGTERM):
+    """Blender can spawn nested Sol renders; stop its entire process group."""
+    if process.poll() is not None:
+        return
+    try:
+        os.killpg(process.pid, sig)
+    except ProcessLookupError:
+        pass
+
+
 class Runner:
     def __init__(self, args):
         self.args = args
@@ -134,11 +144,12 @@ class Runner:
             try:
                 while process.poll() is None:
                     if STOP.is_set():
-                        process.terminate()
+                        signal_process_group(process)
                         try:
                             process.wait(timeout=5)
                         except subprocess.TimeoutExpired:
-                            process.kill()
+                            signal_process_group(process, signal.SIGKILL)
+                            process.wait()
                         raise RenderJobError("Stopped")
                     time.sleep(0.5)
                 if process.returncode:
@@ -226,7 +237,7 @@ class Runner:
             with LOCK:
                 for process in list(LIVE):
                     if process.poll() is None:
-                        process.terminate()
+                        signal_process_group(process)
 
 
 def job_detail(key):
@@ -334,7 +345,7 @@ def main():
         with LOCK:
             for process in list(LIVE):
                 if process.poll() is None:
-                    process.terminate()
+                    signal_process_group(process)
     signal.signal(signal.SIGINT, interrupt)
     signal.signal(signal.SIGTERM, interrupt)
     try:
