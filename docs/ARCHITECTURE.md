@@ -157,6 +157,31 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
   seed).
 - Skin, hair and cloth colours use **palette swap**. `team.*` materials render as reserved key colours,
   which a shader remaps per crew member.
+- **Weapons, armour and cover** (`human_v2_weapons.py`, `human_aim.py`, `human_crouch.py`, `human_v2_armor.py`;
+  art only, the game wiring is pending):
+  - Held weapons are `crew.human.gear.hand.<weapon>` (slot order 55, over the arms). Each pose family has its own
+    clips, and a weapon layer only exists in its family's:
+    - `1h`: sidearm, ion_pistol, laser_pistol, plasma_cutter. Clips `aim_1h`, `fire_1h`, `walk_aim_1h`.
+    - `2h`: rifle, laser_rifle, shotgun, smg, rail_rifle. Clips `aim_2h`, `fire_2h`, `walk_aim_2h`.
+    - `heavy`: flamethrower, heavy_repeater. Clips `aim_heavy`, `fire_heavy`, `walk_heavy`.
+    - `1m`: blade, shock_baton. Clips `ready_1m`, `swing_1m`.
+    - `2m`: breach_axe. Clips `ready_2m`, `swing_2m`.
+  - Cover:
+    - `crouch_idle` and `crouch_walk` exist for every layer but the held weapons.
+    - Crouched combat clips: `crouch_aim_1h`, `crouch_fire_1h`, `crouch_aim_2h`, `crouch_fire_2h`,
+      `crouch_fire_heavy` and `crouch_ready_1m`.
+    - Leans: `lean_l_1h`, `lean_r_1h`, `lean_l_2h`, `lean_r_2h`.
+  - Every held weapon's clip entry carries `muzzle[direction][frame] = [x, y]`: the muzzle, or the tip for melee, in
+    sprite px from the anchor. Flashes, tracers and beams start there.
+  - Out of the hands a weapon is `crew.human.gear.holster.<weapon>` (slot order 45):
+    - 1h guns ride in a hip holster; 1h melee hangs at the left hip.
+    - Long guns and the axe are slung across the back.
+    - Heavies are stowed on the back.
+
+    Holsters have no combat clips. Show either the holster or the held layer, never both. The flamethrower also wears
+    `gear.back.fuel_tanks`.
+  - Armour: the security `torso.armor_vest`, plus `torso.armor_heavy`, `gear.shoulder.pads` (slot order 53) and
+    `gear.head.heavy_helmet`. The heavy helmet covers the hair like the EVA helmet, so drop the hair layer under it.
 
 **Lighting.**
 - Base sprites are lit in Blender with a fixed key light. A separate **glow sheet** (the emission pass)
