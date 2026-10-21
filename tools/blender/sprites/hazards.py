@@ -25,16 +25,29 @@ class _HFace(_Face):
 
 
 def _sparks(put, rnd, n, reach):
-    """A burst of short bright streaks round a point: put(dx, dz, dd, size, col) places one."""
+    """A burst from a point: a bright core, then sparks thrown out and falling in arcs, each with a fading trail.
+    put(dx, dz, dd, size, col) places one blob (dx along the face or deck, dz up, dd out)."""
+    for _ in range(4):
+        put(rnd.uniform(-0.02, 0.02), rnd.uniform(-0.02, 0.02), 0.02, 0.035, rnd.choice(("arc", "flameW")))
     for _ in range(n):
-        a = rnd.uniform(0, math.tau)
-        r = rnd.uniform(0.02, reach)
-        col = rnd.choice(("arc", "flameW", "flameY", "flameY"))
-        put(r * math.cos(a), r * math.sin(a) * 0.8 - 0.02, rnd.uniform(0.0, 0.06), rnd.uniform(0.018, 0.03), col)
+        a = rnd.uniform(-0.4, math.pi + 0.4)                                          # thrown out and mostly up
+        sp = rnd.uniform(0.5, 1.0) * reach * 3
+        vx, vz, vd = sp * math.cos(a), sp * math.sin(a) * 0.8, rnd.uniform(0.1, 0.5) * reach * 3
+        t = rnd.uniform(0.12, 0.33)
+        for k, col in enumerate(("flameW", "flameY", "orange")):                    # head, then its trail
+            tt = t - k * 0.04
+            if tt <= 0:
+                break
+            put(vx * tt, vz * tt - 2.2 * tt * tt, vd * tt, 0.026 - k * 0.006, col)
 
 
 def cable_spark(f, frame):
     z = 1.0
+    rs = random.Random(9)
+    f.box(0.0, 0.004, z, 0.6, 0.01, 0.64, "grime")                                      # scorched round the burst
+    for _ in range(10):
+        f.box(rs.choice((-1, 1)) * rs.uniform(0.25, 0.34), 0.005, z + rs.uniform(-0.3, 0.3), rs.uniform(0.04, 0.09),
+              0.01, rs.uniform(0.04, 0.1), rs.choice(("grime", "dark")))
     f.box(0.0, 0.01, z, 0.46, 0.02, 0.5, "gmD")                                        # the panel's recess, torn open
     f.box(0.0, 0.015, z, 0.4, 0.02, 0.44, "dark")
     f.box(0.24, 0.12, z + 0.05, 0.02, 0.22, 0.36, "plate", tilt=0.5)                    # the cover hanging off a hinge
@@ -42,12 +55,13 @@ def cable_spark(f, frame):
     for i, (s, col, ln) in enumerate(((-0.12, "dark", 0.42), (-0.04, "medRed", 0.55), (0.05, "dark", 0.36),
                                       (0.12, "polyB", 0.48))):
         f.box(s, 0.04 + 0.02 * i, z + 0.1 - ln / 2, 0.028, 0.028, ln, col)              # torn cables hanging
-        f.box(s + 0.01, 0.05 + 0.02 * i, z + 0.1 - ln, 0.04, 0.03, 0.03, "brass")       # bare copper ends
+        hot = frame < FRAMES - 1 and i % 2 == 0
+        f.box(s + 0.01, 0.05 + 0.02 * i, z + 0.1 - ln, 0.04, 0.03, 0.03, "orange" if hot else "brass")  # bare ends
         ends.append((s, 0.05 + 0.02 * i, z + 0.1 - ln))
     if frame < FRAMES - 1:
         rnd = random.Random(frame * 13 + 5)
         for s, d, ze in rnd.sample(ends, 2):
-            _sparks(lambda dx, dz, dd, sz, col: f.box(s + dx, d + 0.04 + dd, ze + dz, sz, sz, sz, col), rnd, 9, 0.14)
+            _sparks(lambda dx, dz, dd, sz, col: f.box(s + dx, d + 0.04 + dd, ze + dz, sz, sz, sz, col), rnd, 12, 0.14)
 
 
 def pipes_leak(f, frame):
@@ -55,17 +69,28 @@ def pipes_leak(f, frame):
     f.box(0.12, 0.085, 1.4, 0.07, 0.11, 0.11, "dark", bevel=0.03)                       # the split, its torn lips
     f.box(0.09, 0.13, 1.43, 0.03, 0.03, 0.03, "steelL")
     f.box(0.15, 0.13, 1.37, 0.03, 0.03, 0.03, "steelL")
-    rnd = random.Random(1)
-    puffs = [(rnd.uniform(-0.05, 0.05), rnd.uniform(-0.04, 0.04), rnd.uniform(0.8, 1.2)) for _ in range(12)]
-    for k, (js, jz, sc) in enumerate(puffs):                                          # steam: a plume of puffs blown
-        t = (k / len(puffs) + frame / FRAMES) % 1.0                                     # out and up, each a step
-        d = 0.14 + t * 0.6                                                              # further on per frame
-        z = 1.42 + t * 0.34 + jz
-        s = 0.12 + js + t * 0.1
-        r = (0.05 + t * 0.15) * sc
-        col = "medWhite" if t < 0.6 else "sole"
-        f.box(s, d, z, r * 1.3, r, r * 0.9, col, bevel=r * 0.45)
-
+    for ds, dz in ((-0.07, 0.05), (0.06, -0.05), (0.18, 0.04), (-0.02, -0.06)):     # frost round it
+        f.box(0.12 + ds, 0.13, 1.4 + dz, 0.04, 0.02, 0.03, "iceB")
+    rj = random.Random(frame)
+    for i in range(4):                                                                # the hard jet out of it
+        f.box(0.12 + rj.uniform(-0.01, 0.01), 0.16 + i * 0.05, 1.42 + i * 0.01, 0.04 + i * 0.012, 0.05,
+              0.04 + i * 0.012, "medWhite", bevel=0.012)
+    n = 7                                                                             # the plume: puffs a step apart,
+    for k in range(n):                                                                # each moving a quarter step per
+        t = (k + frame / FRAMES) / n                                                  # frame, so after four frames each
+        d = 0.25 + t * 0.5                                                            # stands where the next one was:
+        z = 1.44 + t ** 1.3 * 0.6                                                     # a seamless flow out and up,
+        s = 0.12 - t * 0.45 + 0.05 * math.sin(t * 6.0)                                # drifting back along the run
+        r = 0.07 + t * 0.22                                                           # (the next tile's wall would
+        #                                                                               cover it the other way). Shape
+        #                                                                               and colour: functions of t
+        col = "medWhite" if t < 0.3 else ("c3W3" if t < 0.65 else "nvW2")
+        subs = 3 if t < 0.85 else 2                                                   # billowing; breaking up late
+        for m in range(subs):
+            a = t * 9.0 + m * 2.1
+            rr = r * (0.75 if m else 1.0) * (0.7 if t >= 0.85 else 1.0)
+            f.box(s + 0.5 * r * math.cos(a) * (m > 0), d + 0.3 * r * math.sin(a) * (m > 0),
+                  z + 0.4 * r * math.sin(a + 1) * (m > 0), rr * 1.3, rr, rr * 0.9, col, bevel=rr * 0.45)
 
 def beacon(f, frame):
     """The lamp turns a quarter per frame: f0 its beam swept onto the wall to the left, f1 facing the camera (the dome
@@ -82,14 +107,25 @@ def beacon(f, frame):
         aa = a * math.pi / 2 + math.pi / 4
         f.box(0.09 * math.cos(aa), 0.2 + 0.09 * math.sin(aa), z + 0.065, 0.02, 0.02, 0.16, "steelD")
     f.cyl(0.0, 0.2, z + 0.14, 0.095, 0.025, "steelD", top="gm")
-    if lit and frame in (0, 2):                                                       # the beam swept along the wall
-        sg = -1 if frame == 0 else 1
-        for slope in (-0.35, 0.0, 0.35):                                              # three thin rays, fanning
-            for i in range(9):
-                x = 0.12 + i * 0.05
-                f.box(sg * x, 0.006, z + 0.05 + slope * (x - 0.1), 0.05, 0.01, 0.025, "emR")
+    if lit and frame in (0, 2):                                                       # the beam fanned across the
+        sg = -1 if frame == 0 else 1                                                  # wall, brightest by the lamp
+        rf = random.Random(frame)
+        for i in range(10):                                                          # within its own wall tile
+            x = 0.12 + i * 0.04
+            half = 0.03 + 0.22 * (x - 0.1)
+            for j in range(-int(half / 0.035), int(half / 0.035) + 1):
+                if rf.random() < (x - 0.3) * 2.5:                                    # solid, thinning at its far end
+                    continue
+                f.box(sg * x, 0.006, z + 0.05 + j * 0.035, 0.04, 0.008, 0.035, "red" if x < 0.3 else "emR")
         f.box(sg * 0.07, 0.2, z + 0.06, 0.06, 0.06, 0.07, "red")
-
+    elif face:                                                                        # facing out: a halo round it
+        for a in range(16):
+            aa = a * math.tau / 16
+            f.box(0.17 * math.cos(aa), 0.006, z + 0.06 + 0.14 * math.sin(aa), 0.05, 0.008, 0.05, "emR")
+    elif lit:                                                                         # facing the wall: a hot spot
+        for a in range(10):                                                           # on it behind the lamp
+            aa = a * math.tau / 10
+            f.box(0.09 * math.cos(aa), 0.006, z + 0.06 + 0.08 * math.sin(aa), 0.06, 0.008, 0.06, "red")
 
 def floor_spark(frame):
     k = K(f"floor_spark_{frame}", (1, 1))
@@ -107,7 +143,8 @@ def floor_spark(frame):
     if frame < FRAMES - 1:
         r2 = random.Random(frame * 11 + 2)
         for u, v in r2.sample(ends, 2):
-            _sparks(lambda dx, dz, dd, sz, col: k.box(u + dx, v + dd, 0.04 + abs(dz), sz, sz, sz, col), r2, 10, 0.16)
+            _sparks(lambda dx, dz, dd, sz, col: k.box(u + dx, v + dd, max(0.01, 0.04 + dz), sz, sz, sz, col),
+                    r2, 10, 0.16)
     return k.build()
 
 
