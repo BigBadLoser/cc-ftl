@@ -1,6 +1,6 @@
 """The EVA suit on the v2 body: the shell, sleeves, legs and helmet built from the same traced sections as the body (the
 old suit was cut from the realistic base's mesh, whose bumpy surface shaded as speckle at 2x, with a box for a helmet).
-The life-support pack and the suited cyber forearm stay the old rigid ones (human_suit).
+The life-support pack (scaled up) and the suited cyber forearm stay the old rigid ones (human_suit).
 
   torso.eva            a puffy white shell, a team-colour chest panel under a control unit, a gunmetal waist bearing
                        and a collar seal ring for the helmet
@@ -8,7 +8,7 @@ The life-support pack and the suited cyber forearm stay the old rigid ones (huma
   arm.L.eva, arm.R.eva sleeves with an upper-arm band, an elbow joint, a wrist bearing and gunmetal gloves
   arm.L.eva_cyber      the sleeve stops above the elbow (the cyber forearm stays out)
   gear.head.eva_helmet a round bubble with a gold visor wrapped round its front, a faint HUD line along the visor top, a
-                       team-colour ear pucks and a lamp"""
+                       a gunmetal frame round it, team-colour ear pucks and a lamp"""
 import bpy
 from mathutils import Vector
 
@@ -16,6 +16,13 @@ from .human_base import Item
 from .human_v2 import Build, W, arm, blend, chain, fingers, leg, torso
 
 SHELL = "medWhite"
+COLLAR = (0.2, 0.2)          # the helmet seal ring's half width and depth: it sits on the shoulders, wider than the neck
+PACK = 1.2                   # the old life-support pack, scaled up from the top of its front face
+
+
+def _collar_top(R):
+    """The top of the helmet's seal ring, on the shoulders: the shell's top plus a little; the helmet sits in it."""
+    return R.T["torso"][-1][0].z + 0.065 + 0.03
 
 
 def _torso(A, R):
@@ -23,7 +30,10 @@ def _torso(A, R):
     lo, waist = R.hips.z - 0.12, R.hips.z + 0.1
     torso(b, R, grow=0.065, lo=lo, cuts=(waist - 0.025, waist + 0.025))
     nc = R.neck
-    ring.tube(nc - Vector((0, 0, 0.03)), nc + Vector((0, 0, 0.03)), 0.125, 0.12, W("spine_03"))       # collar seal ring
+    top = _collar_top(R)
+    cy = (nc.y + R.head_c.y) / 2
+    ring.tube(Vector((0, cy, top - 0.1)), Vector((0, cy, top)), COLLAR[0], COLLAR[0], W("spine_03"),
+              ra2=COLLAR[1], rb2=COLLAR[1], up=(0, 1, 0), exp=2.4, round_ends=False)      # collar seal ring
     c, hx, hy, _ = min(R.T["torso"], key=lambda r: abs(r[0].z - (R.chest.z - 0.02)))
     uc = Vector((0, c.y - hy - 0.095, c.z))
     unit.blob(uc, 0.085, 0.035, 0.055, W("spine_03"), exp=3.2, nlat=6)                          # chest control unit
@@ -44,7 +54,7 @@ def _torso(A, R):
                 return "plate"                                               # two dials
         return "gmD"
     return Item("torso", "eva", [b.mesh("v2.eva.torso", A, shell), unit.mesh("v2.eva.unit", A, ctrl),
-                                 ring.mesh("v2.eva.collar", A, lambda p, n: "gm")])
+                                 ring.mesh("v2.eva.collar", A, lambda p, n: "gm" if p.z > top - 0.05 else "gmD")])
 
 
 def _legs(A, R):
@@ -101,17 +111,18 @@ def _arm(A, R, s, cyber=False):
 
 
 def _helmet(A, R):
-    dome, visor, parts = Build(), Build(), Build()
+    dome, visor, rim, parts = Build(), Build(), Build(), Build()
     w = W("head")
     c = R.head_c + Vector((0, 0.01, 0.02))
     hx, hz = R.HX + 0.085, R.HZ + 0.075
     hy = max(R.HY + 0.085, c.y - R.front + 0.06)                            # clears the nose
-    dome.blob(c, hx, hy, hz, w, exp=2.2, nlat=12)                           # the bubble
+    base = _collar_top(R) - 0.015
+    dome.blob(c, hx, hy, hz, w, exp=2.2, nlat=12, keep=lambda p: p.z > base)   # the bubble, sitting in the collar
     vz = c.z - 0.01
     visor.blob(c, hx + 0.012, hy + 0.012, hz + 0.012, w, exp=2.2, nlat=12,
-               keep=lambda p: p.y < c.y - hy * 0.2 and abs(p.z - vz) < hz * 0.52)    # wrapped round the front
-    nz = c.z - hz + 0.02
-    parts.tube(Vector((0, c.y, nz - 0.03)), Vector((0, c.y, nz + 0.02)), 0.15, 0.15, w)               # neck seal ring
+               keep=lambda p: p.y < c.y - hy * 0.2 and abs(p.z - vz) < hz * 0.52 and p.z > base)   # round the front
+    rim.blob(c, hx + 0.006, hy + 0.006, hz + 0.006, w, exp=2.2, nlat=12,
+             keep=lambda p: p.y < c.y - hy * 0.1 and abs(p.z - vz) < hz * 0.62 and p.z > base)   # its frame
     for sx in (1, -1):
         parts.blob(c + Vector((sx * (hx + 0.008), 0.0, -0.015)), 0.022, 0.055, 0.055, w, exp=2.6, nlat=6)   # ear pucks
     lamp = c + Vector((-hx * 0.72, -hy * 0.42, hz * 0.5))
@@ -121,14 +132,29 @@ def _helmet(A, R):
         return "cyan" if p.z > vz + hz * 0.47 else "brass"                   # the HUD line along the visor top
 
     def part(p, n):
-        if abs(p.x) > hx * 0.9 and p.z > nz + 0.05:
+        if abs(p.x) > hx * 0.9:
             return "team.cloth"
         if (p - lamp).length < 0.05:
             return "lens" if n.y < -0.6 else "gm"
         return "gm"
     objs = [dome.mesh("v2.eva.helmet", A, lambda p, n: SHELL), visor.mesh("v2.eva.visor", A, glass),
+            rim.mesh("v2.eva.visor_rim", A, lambda p, n: "gm"),
             parts.mesh("v2.eva.helmet.parts", A, part)]
     return Item("gear.head", "eva_helmet", objs, glow=True)
+
+
+def _scale_pack(it):
+    """The pack (and its thrust puffs) scaled by PACK about the top of its front face, so it grows out from the back and
+    down: a taller top would sit behind the helmet, which is drawn over it."""
+    cos = [[v.co.copy() for v in ob.data.vertices] for ob in it.objs]
+    allc = [c for cs in cos for c in cs]
+    lo = Vector(tuple(min(c[i] for c in allc) for i in range(3)))
+    hi = Vector(tuple(max(c[i] for c in allc) for i in range(3)))
+    anchor = Vector(((lo.x + hi.x) / 2, lo.y, hi.z))
+    for ob, cs in zip(it.objs, cos):
+        for v, c in zip(ob.data.vertices, cs):
+            v.co = anchor + (c - anchor) * PACK
+        ob.data.update()
 
 
 def build(A, R, old):
@@ -149,6 +175,8 @@ def build(A, R, old):
                 it.objs.remove(ob)                                           # pieces are gear.*)
                 bpy.data.objects.remove(ob, do_unlink=True)
             it.objs[:0] = _arm(A, R, it.slot[-1], cyber=True)
+        if it.name == "eva_pack":
+            _scale_pack(it)
         if new is None:
             out.append(it)
             continue
