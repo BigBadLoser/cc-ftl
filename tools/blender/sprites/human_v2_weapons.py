@@ -41,7 +41,7 @@ class Gun:
             self.f.append([b + i for i in f])
             self.c.append(top if top_face and top else col)
 
-    def tube(self, y0, y1, x, z, r, col, n=8, cap=None):
+    def tube(self, y0, y1, x, z, r, col, n=12, cap=None):
         """A cylinder along y at (x, z); cap: the colour of its front end (a bore)."""
         import math
         b = len(self.v)
@@ -98,10 +98,29 @@ def grip_y(A):
     return A.data.bones["hand.R"].length * GRIP
 
 
+def _guard(g, y=0.045, z=-0.035):
+    """A trigger guard: a thin loop under the frame in front of the grip."""
+    g.box((0, y + 0.035, z - 0.03), (0.02, 0.02, 0.06), "dark")
+    g.box((0, y, z - 0.055), (0.02, 0.09, 0.018), "dark")
+
+
+def _panel(g, y, z, w, h, col="gmD", dx=0.0):
+    """A flat detail plate on both sides of a body of half width dx (a port, a vent, a grip panel)."""
+    for sx in (1, -1):
+        g.box((sx * (dx + 0.002), y, z), (0.006, w, h), col)
+
+
 def sidearm(g):
     g.box((0, 0.1, 0.065), (0.06, 0.26, 0.08), "steel", top="sole")                      # slide
     g.box((0, 0.07, 0.025), (0.055, 0.18, 0.03), "dark")                                 # frame
     g.box((0, 0.0, -0.015), (0.055, 0.075, 0.12), "dark")                               # grip, through the fist
+    for y in (-0.005, 0.02):
+        _panel(g, y, 0.065, 0.012, 0.06, "dark", 0.03)                                  # slide serrations
+    _panel(g, 0.0, -0.02, 0.05, 0.08, "gmD", 0.0275)                                    # grip panels
+    g.box((0, 0.215, 0.11), (0.014, 0.02, 0.018), "dark")                               # front sight
+    g.box((0, -0.015, 0.11), (0.04, 0.02, 0.018), "dark")                               # rear sight
+    g.tube(0.226, 0.232, 0, 0.065, 0.014, "dark")                                       # the bore
+    _guard(g)
     return Vector((0, 0.24, 0.065))
 
 
@@ -114,6 +133,14 @@ def rifle(g):
     g.box((0, 0.13, -0.045), (0.055, 0.075, 0.13), "gmD")                               # magazine
     g.box((0, 0.0, -0.03), (0.05, 0.055, 0.1), "dark")                                  # pistol grip
     g.box((0, 0.06, 0.13), (0.035, 0.1, 0.045), "dark")                                 # sight
+    g.box((0, 0.06, 0.155), (0.02, 0.02, 0.012), "lens")                                # its lens
+    g.box((0, 0.2, 0.115), (0.03, 0.2, 0.012), "dark")                                  # top rail
+    _panel(g, 0.13, 0.075, 0.07, 0.03, "dark", 0.0375)                                  # ejection port
+    _panel(g, 0.33, 0.05, 0.12, 0.02, "jacket", 0.04)                                   # handguard slots
+    g.tube(0.6, 0.67, 0, 0.065, 0.034, "dark", cap="dark")                              # muzzle brake
+    g.box((0, 0.12, -0.12), (0.055, 0.06, 0.04), "gmD")                                 # magazine curve
+    g.box((0, -0.2, 0.105), (0.05, 0.12, 0.02), "jacket")                               # cheek rest
+    _guard(g, 0.05, -0.04)
     return Vector((0, 0.67, 0.065))
 
 
@@ -127,6 +154,12 @@ def heavy_repeater(g):
     for y in (0.0, 0.2):
         g.box((0, y, 0.15), (0.04, 0.035, 0.05), "dark")
     g.box((0, 0.0, -0.04), (0.055, 0.065, 0.12), "dark")                                # grip
+    for k in range(4):                                                                  # the ammo belt into it
+        g.box((-0.1 + k * 0.02, 0.06, 0.075 - k * 0.012), (0.018, 0.06, 0.02), "brass" if k % 2 else "rust")
+    for y in (0.3, 0.38, 0.46):
+        g.box((0, y, 0.135), (0.11, 0.025, 0.012), "dark")                              # barrel shroud bands
+    _panel(g, 0.06, 0.06, 0.2, 0.05, "gmD", 0.085)                                      # receiver side plates
+    g.box((0, 0.27, -0.035), (0.045, 0.05, 0.1), "dark")                                # front grip
     return Vector((0, 0.63, 0.06))
 
 
@@ -137,6 +170,10 @@ def ion_pistol(g):
         g.tube(y - 0.016, y + 0.016, 0, 0.065, 0.042, "fxI2")                          # violet coils,
         g.tube(y - 0.005, y + 0.005, 0, 0.065, 0.045, "fxI1")                          # blue-banded
     g.box((0, 0.0, -0.015), (0.055, 0.075, 0.12), "dark")
+    _panel(g, 0.0, -0.02, 0.05, 0.08, "gmD", 0.0275)                                    # grip panels
+    g.box((0, 0.02, 0.12), (0.03, 0.03, 0.02), "dark")                                  # rear sight
+    g.box((0, 0.11, 0.111), (0.03, 0.06, 0.006), "fxI1")                                # charge strip, lit
+    _guard(g)
     return Vector((0, 0.33, 0.065))
 
 
@@ -145,6 +182,9 @@ def laser_pistol(g):
     g.box((0, 0.05, 0.12), (0.03, 0.12, 0.045), "gm")                                   # heat-sink fin
     g.box((0, 0.243, 0.065), (0.05, 0.02, 0.05), "red")                                 # emitter lens
     g.box((0, 0.0, -0.015), (0.055, 0.075, 0.12), "dark")
+    _panel(g, 0.12, 0.065, 0.12, 0.012, "red", 0.0325)           # a glowing side strip
+    _panel(g, 0.0, -0.02, 0.05, 0.08, "gmD", 0.0275)
+    _guard(g)
     return Vector((0, 0.26, 0.065))
 
 
@@ -155,6 +195,10 @@ def plasma_cutter(g):
     g.tube(0.3, 0.335, 0, 0.05, 0.03, "orange")                                         # its hot tip
     g.box((0, -0.06, 0.04), (0.05, 0.06, 0.06), "dark")                                 # hose fitting
     g.box((0, 0.0, -0.03), (0.055, 0.07, 0.11), "dark")
+    _panel(g, 0.05, 0.02, 0.1, 0.02, "hazK", 0.045)                                     # side hazard band
+    for y in (0.17, 0.21, 0.25):
+        g.tube(y - 0.006, y + 0.006, 0, 0.05, 0.03, "steelD")                          # nozzle cooling rings
+    _guard(g, 0.04, -0.045)
     return Vector((0, 0.34, 0.05))
 
 
@@ -164,6 +208,12 @@ def laser_rifle(g):
     g.box((0, 0.06, -0.035), (0.05, 0.12, 0.07), "fxO")                                 # power cell, glowing
     g.box((0, -0.2, 0.05), (0.065, 0.26, 0.1), "gm")                                    # stock
     g.box((0, 0.0, -0.03), (0.05, 0.055, 0.1), "dark")
+    _panel(g, 0.25, 0.06, 0.3, 0.012, "red", 0.0425)                                   # a glowing strip down each side
+    for y in (0.1, 0.14, 0.18):
+        g.box((0, y, 0.113), (0.05, 0.016, 0.006), "dark")                              # top vents
+    g.box((0, 0.12, 0.14), (0.03, 0.12, 0.04), "gm")                                    # scope
+    g.box((0, 0.185, 0.14), (0.022, 0.006, 0.026), "lens")
+    _guard(g, 0.05, -0.04)
     return Vector((0, 0.46, 0.06))
 
 
@@ -174,6 +224,12 @@ def shotgun(g):
     g.box((0, 0.33, 0.015), (0.08, 0.13, 0.065), "rust", top="rO1")                     # wooden pump grip
     g.box((0, -0.18, 0.045), (0.07, 0.22, 0.11), "rust", top="rO1")                     # and stock
     g.box((0, 0.0, -0.03), (0.05, 0.055, 0.1), "dark")
+    for k in range(4):                                                                  # a row of shells on the side
+        g.box((0.045, 0.0 + k * 0.03, 0.065), (0.008, 0.022, 0.035), "medRed")
+    for y in (0.3, 0.33, 0.36):
+        g.box((0, y, 0.049), (0.085, 0.01, 0.006), "rust")       # pump grooves
+    g.box((0, 0.34, 0.12), (0.02, 0.32, 0.008), "dark")                                # barrel rib
+    _guard(g, 0.05, -0.04)
     return Vector((0, 0.51, 0.08))
 
 
@@ -184,6 +240,12 @@ def smg(g):
     g.box((0, 0.33, -0.005), (0.045, 0.045, 0.09), "dark")                              # foregrip
     g.box((0, -0.15, 0.05), (0.045, 0.18, 0.06), "gmD")                                 # folding stock
     g.box((0, 0.0, -0.03), (0.05, 0.055, 0.1), "dark")
+    g.tube(0.23, 0.36, 0, 0.065, 0.034, "gmD")                                          # barrel shroud
+    for y in (0.26, 0.3, 0.34):
+        _panel(g, y, 0.065, 0.016, 0.02, "dark", 0.033)                                  # its holes
+    g.box((0, 0.1, 0.125), (0.03, 0.08, 0.035), "dark")                                 # sight
+    _panel(g, 0.12, 0.075, 0.06, 0.025, "dark", 0.0375)                                 # ejection port
+    _guard(g, 0.05, -0.04)
     return Vector((0, 0.43, 0.065))
 
 
@@ -194,6 +256,11 @@ def rail_rifle(g):
         g.tube(y - 0.014, y + 0.014, 0, 0.06, 0.048, "cyan")                           # rail rings, cyan
     g.box((0, -0.21, 0.05), (0.06, 0.24, 0.09), "dark")                                 # stock
     g.box((0, 0.0, -0.03), (0.05, 0.055, 0.1), "dark")
+    for y in (-0.06, 0.0, 0.06):
+        _panel(g, y, 0.06, 0.04, 0.06, "gm", 0.04)                # capacitor cells on the breech
+    g.box((0, 0.02, 0.13), (0.035, 0.16, 0.04), "dark")                                 # long scope
+    g.box((0, 0.105, 0.13), (0.026, 0.006, 0.03), "lens")
+    _guard(g, 0.05, -0.04)
     return Vector((0, 0.68, 0.06))
 
 
@@ -207,6 +274,10 @@ def flamethrower(g):
         g.box((0, y, 0.14), (0.04, 0.035, 0.05), "dark")
     g.box((0, -0.12, 0.03), (0.06, 0.06, 0.06), "dark")                                 # the hose coupling
     g.box((0, 0.0, -0.04), (0.055, 0.065, 0.12), "dark")
+    g.tube(0.11, 0.14, 0.068, 0.09, 0.025, "steelL", cap="sole")                       # a pressure gauge
+    _panel(g, 0.05, 0.02, 0.3, 0.02, "hazK", 0.065)                                     # a dark band round the tank
+    for y in (0.3, 0.38, 0.46):
+        g.tube(y - 0.008, y + 0.008, 0, 0.06, 0.042, "steelD")                         # wand grip rings
     return Vector((0, 0.58, 0.06))
 
 
@@ -214,6 +285,10 @@ def blade(g):
     g.box((0, 0.0, 0.0), (0.05, 0.11, 0.055), "dark")                                  # handle in the fist
     g.box((0, 0.065, 0.0), (0.06, 0.025, 0.08), "steelD")                               # guard
     g.box((0, 0.26, 0.015), (0.03, 0.36, 0.085), "steelL", top="sole")                  # a machete blade
+    g.box((0, 0.26, -0.033), (0.026, 0.36, 0.014), "sole")                              # the bright edge
+    for y in (-0.03, 0.0, 0.03):
+        g.box((0, y, 0.0), (0.056, 0.012, 0.06), "leather")                             # handle wrap
+    g.box((0, -0.065, 0.0), (0.06, 0.022, 0.06), "steelD")                              # pommel
     return Vector((0, 0.44, 0.015))
 
 
@@ -221,6 +296,10 @@ def shock_baton(g):
     g.box((0, 0.0, 0.0), (0.055, 0.12, 0.055), "dark")
     g.tube(0.06, 0.38, 0, 0, 0.026, "gmD")                                              # shaft
     g.tube(0.38, 0.44, 0, 0, 0.036, "arc")                                              # the live tip
+    for y in (-0.03, 0.0, 0.03):
+        g.box((0, y, 0.0), (0.061, 0.012, 0.061), "steelD")                             # grip bands
+    g.tube(0.06, 0.09, 0, 0, 0.034, "steel")                                            # guard collar
+    g.box((0, 0.22, 0.027), (0.012, 0.08, 0.006), "arc")                                # a lit charge strip
     return Vector((0, 0.45, 0))
 
 
@@ -228,6 +307,10 @@ def breach_axe(g):
     g.tube(-0.3, 0.55, 0, 0, 0.026, "leather")                                         # long haft
     g.box((0, 0.5, 0.1), (0.05, 0.12, 0.2), "steel", top="steelL")                      # the head's blade
     g.box((0, 0.5, -0.05), (0.045, 0.09, 0.1), "steelD")                                # its back spike
+    g.box((0, 0.5, 0.205), (0.04, 0.12, 0.012), "sole")                                 # the bright edge
+    _panel(g, 0.5, 0.11, 0.06, 0.05, "hazY", 0.025)                                     # a hazard-yellow flash
+    for y in (-0.25, -0.2, -0.15, 0.0, 0.05):
+        g.tube(y - 0.01, y + 0.01, 0, 0, 0.03, "dark")                                 # grip wraps
     return Vector((0, 0.5, 0.2))
 
 
