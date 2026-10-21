@@ -242,7 +242,7 @@ export function finishLayout(
   const partByKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   // One wall between parts: slabs become floor, spare hull layers and double partitions go (thinWalls.ts).
   const KEEP: readonly RoomRole[] = ['dock', 'engine', 'hangar'];
-  thinWalls(b.cv, {
+  const thin = thinWalls(b.cv, {
     canGrow: (i) => {
       const l = labels[i];
       if (!l) return false;
@@ -269,7 +269,7 @@ export function finishLayout(
   if (bad && problems.length === 0) problems.push(bad);
   const rooms: GenRoom[] = roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
   return {
-    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics,
+    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin,
     ...(comp ? { debug: comp.debug(ox, oy, width, height, rows, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', profile) } : {}),
   };
 }

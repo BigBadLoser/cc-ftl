@@ -160,7 +160,7 @@ describe('station walls and courtyards', () => {
     for (const id of ids) {
       for (const size of STATION_SIZES) {
         const g = gen(id, size, 5);
-        expect(g.metrics?.thickWall ?? 1, `${id} ${size}`).toBeLessThanOrEqual(0.03);
+        expect(g.metrics?.thickWall ?? 1, `${id} ${size}`).toBeLessThanOrEqual(0.05);
         courts += g.rooms.filter((r) => r.role === 'plaza' || r.role === 'garden' || r.role === 'drill').length;
       }
     }

@@ -6,8 +6,9 @@ import type { Canvas } from './canvas';
  *   - slabs: plating, taper wedges and filled pockets are solid wall with no floor nearby;
  *   - double hulls: a second wall layer outside a room's own wall;
  *   - double partitions: two rooms placed side by side, each with its own wall.
- * The pass turns slab interiors into floor of the neighbouring room (keeping one wall along open space, so the outline
- * stays), peels extra hull layers, and folds one wall of every double partition into the room beside it. Rooms that
+ * The pass turns slab interiors into floor of the neighbouring room, folds the inner wall of a double hull and one wall
+ * of every double partition into the room beside it. It never touches the outline (any tile touching space, 8
+ * neighbours): stair-stepped tapers and chamfers are the silhouette and stay exactly as drawn. Rooms that
  * must keep their exact box (sealed pods, docks, engines, hangars) are never grown.
  */
 
@@ -22,11 +23,18 @@ export interface ThinOpts {
   axis2: number;
 }
 
-export function thinWalls(cv: Canvas, o: ThinOpts): { slabs: number; peeled: number; folded: number } {
+/** What the pass did: slabs absorbed, wall tiles folded into rooms, outline tiles changed (always 0). */
+export interface ThinStats {
+  slabs: number;
+  folded: number;
+  outlineChanged: number;
+}
+
+export function thinWalls(cv: Canvas, o: ThinOpts): ThinStats {
   const S = cv.size;
   const c = cv.cells;
   const lab = cv.label;
-  const out = { slabs: 0, peeled: 0, folded: 0 };
+  const out: ThinStats = { slabs: 0, folded: 0, outlineChanged: 0 };
   /** Distance of a raw canvas row from the mirror axis (doubled). */
   const off = (rawY: number): number => Math.abs(2 * (rawY - (S >> 1)) - o.axis2);
   // Work inside the used box (plus a margin) only.
@@ -40,6 +48,12 @@ export function thinWalls(cv: Canvas, o: ThinOpts): { slabs: number; peeled: num
   if (x1 < x0) return out;
   x0 = Math.max(1, x0 - 1); y0 = Math.max(1, y0 - 1); x1 = Math.min(S - 2, x1 + 1); y1 = Math.min(S - 2, y1 + 1);
   const at = (x: number, y: number): string => c[y * S + x] ?? '.';
+  /** The outline: every non-space tile touching space (8 neighbours). The pass must leave it exactly as it was. */
+  const outline = (): Set<number> => {
+    const set = new Set<number>();
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (at(x, y) !== '.' && nearSpace(x, y)) set.add(y * S + x);
+    return set;
+  };
   /** Something a wall bounds: floor, a door, a beam, a container. */
   const bounded = (ch: string): boolean => ch !== '#' && ch !== '.';
   const thick = (x: number, y: number): boolean => {
@@ -51,6 +65,8 @@ export function thinWalls(cv: Canvas, o: ThinOpts): { slabs: number; peeled: num
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (at(x + dx, y + dy) === '.') return true;
     return false;
   };
+
+  const before = outline();
 
   // 1. Slabs: components of thick wall.
   const seen = new Uint8Array(S * S);
@@ -72,20 +88,8 @@ export function thinWalls(cv: Canvas, o: ThinOpts): { slabs: number; peeled: num
         }
       }
       const fill = comp.filter((k) => !nearSpace(k % S, (k - (k % S)) / S));
-      if (fill.length === 0) {
-        // A spare hull layer: peel it off where a wall stays behind it (never cut the structure).
-        for (const k of comp) {
-          const kx = k % S;
-          const ky = (k - kx) / S;
-          // Keep the cell if it is the only link between two non-space neighbours across it.
-          const across = (at(kx - 1, ky) !== '.' && at(kx + 1, ky) !== '.' && at(kx, ky - 1) === '.' && at(kx, ky + 1) === '.')
-            || (at(kx, ky - 1) !== '.' && at(kx, ky + 1) !== '.' && at(kx - 1, ky) === '.' && at(kx + 1, ky) === '.');
-          if (across) continue;
-          c[k] = '.';
-          out.peeled++;
-        }
-        continue;
-      }
+      // A slab that is all outline (a stair-stepped edge, a chamfer) is the silhouette: it stays.
+      if (fill.length === 0) continue;
       out.slabs += absorb(fill) ? 1 : 0;
     }
   }
@@ -122,6 +126,7 @@ export function thinWalls(cv: Canvas, o: ThinOpts): { slabs: number; peeled: num
     const open = v.walls.filter((w) => {
       const wx = w % S;
       const wy = (w - wx) / S;
+      if (nearSpace(wx, wy)) return false;
       for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
           const j = (wy + dy) * S + wx + dx;
@@ -147,61 +152,58 @@ export function thinWalls(cv: Canvas, o: ThinOpts): { slabs: number; peeled: num
     return reach.size > 0;
   }
 
-  // Leftover thick shell (stair steps of a taper once its inside became floor): peel what faces open space.
-  for (let pass = 0; pass < 3; pass++) {
-    let n = 0;
+  // 2. Double (and triple) partitions and double hulls: floor A | wall | wall (| wall) | floor B (or space) in a straight
+  // line. One wall per round folds into the room beside it; three rounds thin a triple seam to one wall.
+  for (let round = 0; round < 3; round++) {
+    const fold: [number, number][] = [];
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
-        if (!thick(x, y) || !N4.some(([dx, dy]) => at(x + dx, y + dy) === '.')) continue;
-        const across = (at(x - 1, y) !== '.' && at(x + 1, y) !== '.' && at(x, y - 1) === '.' && at(x, y + 1) === '.')
-          || (at(x, y - 1) !== '.' && at(x, y + 1) !== '.' && at(x - 1, y) === '.' && at(x + 1, y) === '.');
-        if (across) continue;
-        c[y * S + x] = '.';
-        n++;
+        if (c[y * S + x] !== '_') continue;
+        const A = lab[y * S + x] as number;
+        if (A < 0 || !o.canGrow(A)) continue;
+        for (const [dx, dy] of N4) {
+          const w = at(x + dx, y + dy);
+          const w2 = at(x + 2 * dx, y + 2 * dy);
+          if ((w !== '#' && w !== 'D') || (w2 !== '#' && w2 !== 'D') || nearSpace(x + dx, y + dy)) continue;
+          if ((w === 'D') !== (w2 === 'D')) continue;
+          // The first tile past the walls (a third wall is allowed: a triple seam).
+          const k = at(x + 3 * dx, y + 3 * dy) === '#' && w2 === '#' ? 4 : 3;
+          const b = at(x + k * dx, y + k * dy);
+          // A double hull (floor | wall | hull | space): the inner wall becomes floor, the outline stays.
+          if (b === '.' && k === 3 && w === '#') { fold.push([(y + dy) * S + x + dx, A]); continue; }
+          if (b !== '_') continue;
+          const B = lab[(y + k * dy) * S + x + k * dx] as number;
+          if (B === A) continue;
+          // Grow the room that ranks lower as an absorber (rooms before corridors), so corridors keep their width.
+          if (o.canGrow(B) && o.rank(B) < o.rank(A)) continue;
+          // Equal claims: across a row the outboard room grows (mirror-safe), across a column the western one.
+          if (o.canGrow(B) && o.rank(B) === o.rank(A)) {
+            if (dy !== 0 && (off(y) < off(y + k * dy) || (off(y) === off(y + k * dy) && dy < 0))) continue;
+            if (dx !== 0 && dx < 0) continue;
+          }
+          fold.push([(y + dy) * S + x + dx, A]);
+        }
       }
     }
-    out.peeled += n;
+    let n = 0;
+    for (const [kk, A] of fold) {
+      const kx = kk % S;
+      const ky = (kk - kx) / S;
+      let ok = c[kk] === '#' || c[kk] === 'D';
+      for (let dy = -1; dy <= 1 && ok; dy++) for (let dx = -1; dx <= 1 && ok; dx++) {
+        const j = (ky + dy) * S + kx + dx;
+        if (c[j] === '_' && lab[j] !== A) ok = false;
+      }
+      if (!ok) continue;
+      c[kk] = '_';
+      lab[kk] = A;
+      n++;
+    }
+    out.folded += n;
     if (n === 0) break;
   }
-
-  // 2. Double partitions and double hulls: floor A | wall | wall | floor B (or space) in a straight line.
-  const fold: [number, number][] = [];
-  for (let y = y0; y <= y1; y++) {
-    for (let x = x0; x <= x1; x++) {
-      if (c[y * S + x] !== '_') continue;
-      const A = lab[y * S + x] as number;
-      if (A < 0 || !o.canGrow(A)) continue;
-      for (const [dx, dy] of N4) {
-        const w = at(x + dx, y + dy);
-        const w2 = at(x + 2 * dx, y + 2 * dy);
-        const b = at(x + 3 * dx, y + 3 * dy);
-        if ((w !== '#' && w !== 'D') || (w2 !== '#' && w2 !== 'D') || b !== '_') continue;
-        if ((w === 'D') !== (w2 === 'D')) continue;
-        const B = lab[(y + 3 * dy) * S + x + 3 * dx] as number;
-        if (B === A) continue;
-        // Grow the room that ranks lower as an absorber (rooms before corridors), so corridors keep their width.
-        if (o.canGrow(B) && o.rank(B) < o.rank(A)) continue;
-        // Equal claims: across a row the outboard room grows (mirror-safe), across a column the western one.
-        if (o.canGrow(B) && o.rank(B) === o.rank(A)) {
-          if (dy !== 0 && (off(y) < off(y + 3 * dy) || (off(y) === off(y + 3 * dy) && dy < 0))) continue;
-          if (dx !== 0 && dx < 0) continue;
-        }
-        fold.push([(y + dy) * S + x + dx, A]);
-      }
-    }
-  }
-  for (const [k, A] of fold) {
-    const kx = k % S;
-    const ky = (k - kx) / S;
-    let ok = true;
-    for (let dy = -1; dy <= 1 && ok; dy++) for (let dx = -1; dx <= 1 && ok; dx++) {
-      const j = (ky + dy) * S + kx + dx;
-      if (c[j] === '_' && lab[j] !== A) ok = false;
-    }
-    if (!ok) continue;
-    c[k] = '_';
-    lab[k] = A;
-    out.folded++;
-  }
+  const after = outline();
+  for (const k of before) if (!after.has(k)) out.outlineChanged++;
+  for (const k of after) if (!before.has(k)) out.outlineChanged++;
   return out;
 }

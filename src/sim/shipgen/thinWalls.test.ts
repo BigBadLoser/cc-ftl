@@ -24,11 +24,23 @@ describe('thinWalls', () => {
     expect(rows(b)[2], rows(b).join('\n')).toBe('.#_______#.');
   });
 
-  it('peels a second hull layer', () => {
+  it('folds the inner wall of a double hull and keeps the outline', () => {
     const b = new Builder(new Rng(1));
     b.place({ x: 1, y: 1, w: 5, h: 5 }, 'cargo');
     b.cv.stamp(['#######', '#.....#', '#.....#', '#.....#', '#.....#', '#.....#', '#######'], 0, 0, 'hull');
-    thinWalls(b.cv, opts);
-    expect(rows(b)).toEqual(['.......', '.#####.', '.#___#.', '.#___#.', '.#___#.', '.#####.', '.......']);
+    const t = thinWalls(b.cv, opts);
+    expect(t.outlineChanged).toBe(0);
+    expect(rows(b)[1]).toBe('.#######.');
+    expect(rows(b)[3]).toBe('.#_____#.');
+  });
+
+  it('never removes a stair-stepped edge', () => {
+    const b = new Builder(new Rng(1));
+    b.place({ x: 0, y: 0, w: 6, h: 5 }, 'cargo');
+    b.cv.stamp(['##....', '###...', '####..'], 5, 0, 'step');
+    const before = rows(b).join('\n');
+    const t = thinWalls(b.cv, opts);
+    expect(t.outlineChanged).toBe(0);
+    expect(rows(b).join('\n').replace(/_/g, '#')).toBe(before.replace(/_/g, '#'));
   });
 });

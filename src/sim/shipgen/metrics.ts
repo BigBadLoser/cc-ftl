@@ -36,8 +36,8 @@ export function layoutMetrics(t: ShipTemplate, hallTile: (x: number, y: number) 
     const d = defs[m.def];
     if (d && m.def !== 'module.light') for (const p of footprintTiles(d, m.x, m.y, m.rot)) if (at(p.x, p.y) === '_') used.add(p.y * w + p.x);
   }
-  // Thick walls: wall or hull tiles with nothing but wall or space all round (8 neighbours): plating slabs, double
-  // hulls and filled pockets. Floor, doors, beams, containers and module tiles (hull modules sit on walls) all count
+  // Thick walls: wall or hull tiles with nothing but wall or space all round (8 neighbours): plating slabs, filled
+  // pockets and the outer layer of double hulls (stair-stepped outline tiles are one thick by definition). Floor, doors, beams, containers and module tiles (hull modules sit on walls) all count
   // as something a wall bounds.
   const modTile = new Set<number>();
   for (const m of t.modules ?? []) {
@@ -57,7 +57,14 @@ export function layoutMetrics(t: ShipTemplate, hallTile: (x: number, y: number) 
           bounds = (c !== '#' && c !== '.') || modTile.has((y + dy) * w + x + dx);
         }
       }
-      if (!bounds) thick++;
+      if (bounds) continue;
+      // On the outline (touching space), a tile is one thick by definition (a stair-stepped diagonal, a chamfer)
+      // unless it is the outer layer of a straight double hull: wall, then floor, two tiles in.
+      let outline = false;
+      for (let dy = -1; dy <= 1 && !outline; dy++) for (let dx = -1; dx <= 1 && !outline; dx++) outline = at(x + dx, y + dy) === '.';
+      const bnd = (c: string): boolean => c !== '#' && c !== '.';
+      const doubled = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + (dx as number), y + (dy as number)) === '#' && bnd(at(x + 2 * (dx as number), y + 2 * (dy as number))));
+      if (!outline || doubled) thick++;
     }
   }
   const bw = x1 - x0 + 1;

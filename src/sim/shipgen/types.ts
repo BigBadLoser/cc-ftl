@@ -234,6 +234,8 @@ export interface GenResult {
   failures: string[];
   /** Diagnostic metrics of the layout. */
   metrics?: Record<MetricId, number>;
+  /** Wall thinning (thinWalls.ts): slabs absorbed, tiles folded, outline tiles changed (must stay 0). */
+  thin?: { slabs: number; folded: number; outlineChanged: number };
   /** Assemblies, ports, joins and traversal (assembly-driven generation only), for the viewer. */
   debug?: CompDebug;
 }
