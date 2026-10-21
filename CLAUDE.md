@@ -12,9 +12,9 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm run lint`: ESLint, including the import-boundary rules
 - `npm run typecheck`: `tsc` and `svelte-check`
 - `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
-  skipping `*.slow.test.ts`. Run it before every commit.
-- `npm run check`: lint, typecheck and every test, slow tier included. Run it once before a PR is marked finished (ready
-  for review or merge). CI runs it on every PR push and on `main`.
+  skipping `*.slow.test.ts`. Run it before every commit and before pushing a work branch.
+- `npm run check`: lint, typecheck and every test, slow tier included. Run it in the testing round before opening a PR.
+  CI runs it on every PR push and on `main`.
 - `npm run sprites`: rebuild the sprite sheets in `public/assets/` with headless Blender
   (`tools/blender/setup.sh` installs it). Commit the generated sheets, JSON and manifest.
 
@@ -40,8 +40,11 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 
 ## Workflow
 
-- All work lands through PRs, never straight to `main`. Commit often with `check:fast`; run the full `npm run check` before
-  calling a PR finished.
+- Flow for every piece of work:
+  1. Iterate on a work branch until the user is happy. Commit often with `check:fast` and push the branch freely (a push to
+     a branch is a backup, not a release).
+  2. Then one round of testing and bug fixes: the full `npm run check`, plus fixing whatever it finds.
+  3. Then open the PR. CI and Codex review it, and only the user merges it to `main`. Nothing reaches `main` any other way.
 - Use Sonnet or Haiku subagents for well-scoped tasks, and keep token use low.
 - Verify visual changes with a headless screenshot before handing them to the user. The user often
   tests on a phone through `main` at https://cc-ftl.bigbadloser.workers.dev. Branch previews
