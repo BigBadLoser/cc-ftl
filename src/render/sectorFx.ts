@@ -8,6 +8,7 @@ import type { ModuleDef, WeaponDef } from '../sim/registry';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
 import { IMPACT_H, MUZZLE_H } from './heights';
+import { ART_SCALE as S, TILE_W } from './iso';
 import { sectorArt } from './sectorPos';
 import type { Layers } from './layers';
 import type { EmitterDef, Particles } from './fx/particles';
@@ -106,9 +107,9 @@ export function createSectorFx(
   function bubble(s: Ship): void {
     const c = secArt(s.x + s.width / 2, s.y + s.height / 2);
     const k = (s.width + s.height) / 2;
-    const rx = (s.width + s.height) * 16 + 10;
+    const rx = ((s.width + s.height) * TILE_W) / 4 + 10 * S;
     const g = new Graphics();
-    g.ellipse(0, 0, rx, rx / 2).stroke({ width: 3, color: 0x9fefff, alpha: 1 });
+    g.ellipse(0, 0, rx, rx / 2).stroke({ width: 3 * S, color: 0x9fefff, alpha: 1 });
     g.position.set(Math.round(c.x), Math.round(c.y));
     L.sorted.addChild(g);
     flashes.push({ spr: g, age: 0, life: 0.45, grow: 0, peak: 1 });
@@ -119,10 +120,10 @@ export function createSectorFx(
     const p = secArt(sx, sy);
     const t = new Text({
       text, resolution: Math.max(1, L.scale),
-      style: { fontFamily: 'monospace', fontSize: 12, fontWeight: 'bold', fill, stroke: { color: 0x05080d, width: 2 } },
+      style: { fontFamily: 'monospace', fontSize: 12 * S, fontWeight: 'bold', fill, stroke: { color: 0x05080d, width: 2 * S } },
     });
     t.anchor.set(0.5);
-    t.position.set(Math.round(p.x), Math.round(p.y - 14));
+    t.position.set(Math.round(p.x), Math.round(p.y - 14 * S));
     L.ui.addChild(t);
     floaters.push({ text: t, age: 0, y0: t.y });
   }
@@ -147,9 +148,9 @@ export function createSectorFx(
           if (!s) continue;
           const c = tileArt(e.x, e.y);
           const col = colorOf(e.weapon);
-          particles.burst(burst(col, 90), c.x, c.y - 10, 14, 8);
-          particles.burst(burst(0xffffff, 60), c.x, c.y - 10, 6, 6);
-          flash('fx.explosion_small', c.x, c.y - 10, 1);
+          particles.burst(burst(col, 90), c.x, c.y - 10 * S, 14, 8);
+          particles.burst(burst(0xffffff, 60), c.x, c.y - 10 * S, 6, 6);
+          flash('fx.explosion_small', c.x, c.y - 10 * S, 1);
         } else if (e.type === 'projectile.intercepted') {
           const s = ship(e.ship);
           const last = shots.get(e.projectile);
@@ -216,7 +217,7 @@ export function createSectorFx(
           continue;
         }
         const a = 1 - tr.age / TRACER_LIFE;
-        lines.moveTo(tr.a.x, tr.a.y - 10).lineTo(tr.b.x, tr.b.y - 6).stroke({ width: 1, color: 0xffffff, alpha: a, pixelLine: true });
+        lines.moveTo(tr.a.x, tr.a.y - 10 * S).lineTo(tr.b.x, tr.b.y - 6 * S).stroke({ width: 1, color: 0xffffff, alpha: a, pixelLine: true });
       }
       for (let i = floaters.length - 1; i >= 0; i--) {
         const f = floaters[i] as Floater;
@@ -226,7 +227,7 @@ export function createSectorFx(
           floaters.splice(i, 1);
           continue;
         }
-        f.text.y = Math.round(f.y0 - 16 * (f.age / TEXT_LIFE));
+        f.text.y = Math.round(f.y0 - 16 * S * (f.age / TEXT_LIFE));
         f.text.alpha = Math.min(1, (1 - f.age / TEXT_LIFE) * 2);
       }
     },

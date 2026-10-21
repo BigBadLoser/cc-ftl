@@ -1,4 +1,4 @@
-import { iso } from './iso';
+import { ART_SCALE, iso } from './iso';
 
 export interface Pt {
   x: number;
@@ -21,7 +21,7 @@ export interface Seg {
 }
 
 /** Art px a module's body rises above its floor diamond; the quad's top vertex is raised by about this much. */
-export const MODULE_RISE = 10;
+export const MODULE_RISE = 10 * ART_SCALE;
 
 /**
  * Screen-space quad (a parallelogram for non-square footprints) of a module's iso footprint. `tx, ty, w, h` are the
@@ -46,10 +46,11 @@ export function footprintQuad(
   return { top: at(x0, y0, rise), right: at(x1, y0, rise / 2), bottom: at(x1, y1, 0), left: at(x0, y1, rise / 2) };
 }
 
+/** Bracket arms are drawn in the projected (device px) frame, so these are screen-space and do not scale with the art. */
 export const ARM_MIN = 4;
 export const ARM_MAX = 10;
 
-/** Arm length along an edge: a quarter of its length, clamped to 4..10 px (and never more than half the edge). */
+/** Arm length along an edge: a quarter of its length, clamped to 4..10 device px (and never more than half the edge). */
 export function armLength(side: number): number {
   return Math.min(side / 2, Math.max(ARM_MIN, Math.min(ARM_MAX, side * 0.25)));
 }

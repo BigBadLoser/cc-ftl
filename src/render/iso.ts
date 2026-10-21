@@ -1,6 +1,13 @@
 /** 2:1 isometric projection. Art pixels at 1x; tile (x, y)'s floor-diamond centre is iso(x, y). */
 export const TILE_W = 64;
 export const TILE_H = 32;
+/**
+ * Art scale against the 64x32-tile baseline all hand-tuned pixel literals were written at. Any render-side pixel offset,
+ * size or speed that is really a fraction of a tile or of a height is written `n * ART_SCALE` (), so the
+ * art can change resolution by changing TILE_W alone. Screen-space UI (CSS px, device-px line widths) is not scaled.
+ */
+export const ART_SCALE = TILE_W / 64;
+
 const HW = TILE_W / 2;
 const HH = TILE_H / 2;
 
