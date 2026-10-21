@@ -9,8 +9,10 @@ from typing import Callable, Optional
 import bpy
 import numpy as np
 from .human_base import SCALE
+from . import human_aim as aim
 from . import human_sit as hs
 from . import human_suit as suit
+from . import human_v2_weapons as hw
 from .crew_spec import CLIPS
 
 SIT_HIDE = ("gear.back",)        # slots left empty in the sit clips (the engineer rig would sit inside the backrest)
@@ -46,6 +48,15 @@ def _sit_items(it):
 
 def _float_items(it):
     return suit.is_eva(it) or it.slot == "body"
+
+
+def _combat(arm, i, clip):
+    return aim.apply(arm, i, clip)
+
+
+def _combat_items(family):
+    """Every layer, but of the held weapons only those of this pose family."""
+    return lambda it: it.slot != "gear.hand" or hw.FAMILY.get(it.name) == family
 
 
 def _is_arm_bone(n):
@@ -107,6 +118,8 @@ POSES = {
     "sit_work": Pose(action="idle_Armature", hold="first", before=_sit, chair=True, items=_sit_items),
     "eva_float": Pose(action="idle_Armature", hold="first", before=_float, puffs=suit.puffs, items=_float_items),
 }
+for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy"):
+    POSES[_c] = Pose(action="idle_Armature", hold="first", before=_combat, items=_combat_items(_c.split("_", 1)[1]))
 
 
 def pose_of(clip):

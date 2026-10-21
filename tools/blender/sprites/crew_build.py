@@ -16,6 +16,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 import bpy
+import numpy as np
 from . import core, crew_cache as cc, crew_digest as dg, crew_pack
 from . import crew_spec as cs
 from . import crew_clips as clips
@@ -28,11 +29,25 @@ GLOBAL_FILES = [SRC / "core.py", SRC / "post.py", SRC / "human_render.py",
                 BL / "lib/palette.py", REPO / "palette.json", BL / "palette_extra.json", BL / "source/base_cc0.glb"]
 CLIP_FILES = {"sit_idle": ["human_sit.py", "console_proto.py", "cmbkit.py"], "sit_work": ["human_sit.py", "console_proto.py", "cmbkit.py"],
               "eva_float": ["human_suit.py", "human_sit.py"]}      # files a clip's pose/chair code leans on (hashed for that clip only)
+for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy"):
+    CLIP_FILES[_c] = ["human_aim.py", "human_v2_weapons.py", "human_sit.py"]
 
 
 def item_clips(it):
-    """Clips an item has sheets for (Pose.items in crew_clips: no sit_* for gear.back, eva_float only for body and suit)."""
+    """Clips an item has sheets for (Pose.items in crew_clips: no sit_* for gear.back, eva_float only for body and suit).
+    Held weapons (gear.hand) only get the clips that ask for them: they are drawn only in their own family's combat clips."""
+    if it.slot == "gear.hand":
+        return [clip for clip, _, _, _ in cs.CLIPS if clips.pose_of(clip).items and clips.pose_of(clip).items(it)]
     return [clip for clip, _, _, _ in cs.CLIPS if not clips.pose_of(clip).items or clips.pose_of(clip).items(it)]
+
+
+def muzzle_px(arm, it):
+    """A held weapon's muzzle in sprite px from the anchor (x right, y down), or None."""
+    mz = getattr(it, "muzzle", None)
+    if mz is None:
+        return None
+    sx, sy = core.screen_xy(np.array(arm.matrix_world @ (arm.pose.bones["hand.R"].matrix @ mz)))
+    return np.array([round(sx, 1), round(-sy, 1)], np.float32)
 
 
 def clip_key(clip, n):
@@ -136,7 +151,7 @@ def _render(arm, items, miss, log):
         chair.hide_render, chair.rotation_euler = not p.chair, arm.rotation_euler
         for k, _, _, _, _, path in todo[(d, clip, i)]:
             rgba, g = hr.render_item(items[k], items, head, chair=chair if p.chair else None)
-            cc.store(path, rgba, g)
+            cc.store(path, rgba, g, muzzle_px(arm, items[k]))
             done += 1
         if done % 200 < len(todo[(d, clip, i)]):
             log(f"  rendered {done}/{len(miss)}")

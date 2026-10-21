@@ -36,19 +36,24 @@ def entry_path(item_id, clip, d, i, key):
     return root() / item_id / clip / f"d{d}_f{i}.{key[:20]}.npz"
 
 
-def store(path, rgba, glow):
+def store(path, rgba, glow, muzzle=None):
     path.parent.mkdir(parents=True, exist_ok=True)
     stem = path.name.split(".")[0]
     for old in path.parent.glob(stem + ".*.npz"):         # stale entries of the same frame
         old.unlink()
     tmp = path.with_suffix(".tmp.npz")
-    if glow is None:
-        np.savez_compressed(tmp, rgba=rgba)
-    else:
-        np.savez_compressed(tmp, rgba=rgba, glow=glow)
+    extra = {} if glow is None else {"glow": glow}
+    if muzzle is not None:
+        extra["muzzle"] = muzzle                          # held weapons: the muzzle point (sprite px from the anchor)
+    np.savez_compressed(tmp, rgba=rgba, **extra)
     os.replace(tmp, path)
 
 
 def load(path):
     with np.load(path) as z:
         return z["rgba"], (z["glow"] if "glow" in z.files else None)
+
+
+def load_muzzle(path):
+    with np.load(path) as z:
+        return [round(float(v), 1) for v in z["muzzle"]] if "muzzle" in z.files else None
