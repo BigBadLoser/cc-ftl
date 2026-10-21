@@ -1,13 +1,38 @@
 """Floor sprites: seamless plated deck variants (lit, diamond-masked by env_build). Only `a` plus subtle `c` and `h`
-are picked by the renderer; the rest are kept for placed content later.
+are picked by the renderer (a on ~90% of tiles, c and h on ~5% each); the rest are kept for placed content later.
 
 Drawn on a 64x64 cell grid (a cell is about 2 px across, 1 px down at the 128x64 tile, so every line and dot is at
-least 2 cells: thinner ones vanish in the downsample): plates have a dark seam and a light lip, bolts carry a shadow,
-and the detail is structured (recessed grip panels, inset hatches, a grooved rail): the floor is the backdrop, so no
-noise. Colours are the deck keys structure_looks.FLOOR_STEP remaps per ship look."""
+least 2 cells: thinner ones vanish in the downsample): a, c and h are one panel a tile with a soft seam, chamfered
+corners and a light lip (the way RimWorld and Space Haven decks tile); a stays plain, since anything on it repeats on
+every tile, and the occasional c and h carry the wear and detail. The unused variants keep their own plate style. Colours are the deck keys structure_looks.FLOOR_STEP remaps per ship look."""
 from . import core
 
 N = 64
+
+
+def _panel(i, j, ch=4):
+    """One panel a tile, the RimWorld / Space Haven way: a soft seam (steelD, not black) on its low sides (the next
+    tile's closes the others), chamfered corners (a small diamond where four tiles meet), a light lip along one side;
+    None inside."""
+    if i < 2 or j < 2:
+        return "steelD"
+    ci, cj = min(i, 63 - i), min(j, 63 - j)
+    if ci + cj < ch + 2 and ci < ch + 2 and cj < ch + 2:
+        return "steelD"
+    if i < 4:
+        return "boot"
+    return None
+
+
+def _scratches(i, j, lines):
+    """Faint 2-cell scratches along the given cell segments."""
+    for (a0, b0), (a1, b1) in lines:
+        n = max(abs(a1 - a0), abs(b1 - b0))
+        for t in range(n + 1):
+            a, b = a0 + (a1 - a0) * t // n, b0 + (b1 - b0) * t // n
+            if a <= i <= a + 1 and b <= j <= b + 1:
+                return True
+    return False
 
 
 def _plate(i, j, i0, j0, i1, j1, fill="steel"):
@@ -30,17 +55,6 @@ def _bolt(i, j, at):
     return None
 
 
-def _grip(a, c, lo=10, hi=23):
-    """A recessed grip panel (shadow on its low sides, a light lip on the high) with short bars across it."""
-    if not (lo <= a <= hi and lo <= c <= hi):
-        return "steel"
-    if a <= lo + 1 or c <= lo + 1:
-        return "steelD"
-    if a >= hi - 1 or c >= hi - 1:
-        return "steelL"
-    return "steelD" if (a - lo) % 4 in (0, 1) and lo + 4 <= c <= hi - 4 else "steel"
-
-
 def _corners(k0, k1):
     return ((k0, k0), (k1, k0), (k0, k1), (k1, k1))
 
@@ -49,37 +63,17 @@ def floor(variant):
     m = core.Mesh(f"floor_{variant}")
 
     def fn(i, j):
-        if variant == "a":                        # 2x2 plates, corner bolts, tread on one diagonal pair
-            qi, qj = i // 32, j // 32
-            li, lj = i % 32, j % 32
-            b = _bolt(li, lj, _corners(6, 24))
-            if b:
-                return b
-
-            def inside(a, c):
-                if (qi + qj) % 2 == 0:
-                    return _grip(a, c)
-                return "steel"
-            return _plate(li, lj, 0, 0, 31, 31, inside)
+        if variant == "a":                        # the deck everywhere: one plain panel (detail would repeat)
+            return _panel(i, j) or "steel"
         if variant == "b":                        # checkered plates
             qi, qj = i // 32, j // 32
             return _plate(i % 32, j % 32, 0, 0, 31, 31, "steelD" if (qi + qj) % 2 else "steel")
-        if variant == "c":                        # one plate, an inset access panel with four screws, corner bolts
-            b = _bolt(i, j, _corners(5, 57))
-            if b:
-                return b
-
-            def inside(a, c):
-                if 14 <= a <= 50 and 14 <= c <= 50:                          # the inset panel: shadow on its low sides
-                    if a <= 15 or c <= 15:
-                        return "steelD"
-                    if a >= 49 or c >= 49:
-                        return "steelL"
-                    if any(x <= a <= x + 1 and y <= c <= y + 1 for x, y in _corners(19, 44)):
-                        return "dark"                                        # screws
-                    return "steel"
-                return "steel"
-            return _plate(i, j, 0, 0, 63, 63, inside)
+        if variant == "c":                        # a sibling of a on ~5% of tiles: a few faint scratches
+            p = _panel(i, j)
+            if p:
+                return p
+            return "boot" if _scratches(i, j, (((14, 20), (24, 26)), ((40, 12), (47, 16)), ((30, 44), (44, 52)))) \
+                else "steel"
         if variant == "d":                        # grate: slits in a framed well
             def inside(a, c):
                 if 8 <= a <= 55 and 8 <= c <= 55:
@@ -113,17 +107,17 @@ def floor(variant):
             if b:
                 return b
             return _plate(pi, j, 0, -1, 31, 64, "steel")
-        # h: plate with bolt rows along two edges and a grooved light centre rail
-        b = _bolt(i, j, [(k, 8) for k in range(8, 56, 8)] + [(k, 54) for k in range(8, 56, 8)])
-        if b:
-            return b
-
-        def inside(a, c):
-            if 26 <= c <= 27 or 36 <= c <= 37:
-                return "dark"                                                # the rail's grooves
-            if 28 <= c <= 35:
-                return "steelL" if c < 32 else "plate"
-            return "steel"
-        return _plate(i, j, 0, 0, 63, 63, inside)
+        # h: a sibling of a on ~5% of tiles: a small bolted access plate in one corner
+        p = _panel(i, j)
+        if p:
+            return p
+        if 38 <= i <= 55 and 38 <= j <= 55:
+            if i <= 39 or j <= 39:
+                return "steelD"
+            b = _bolt(i, j, ((42, 42), (50, 50)))
+            if b:
+                return b
+            return "boot" if i <= 41 else "steel"
+        return "steel"
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
     return [m.build()]
