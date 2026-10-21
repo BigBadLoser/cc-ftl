@@ -124,6 +124,24 @@ export class RegionField {
     return best;
   }
 
+  /**
+   * How firmly a point belongs to its region: the reach cost to the second-cheapest kept seed minus the cheapest.
+   * Small near a border; the generator leaves sites under BORDER_GAP empty, which spaces regions apart.
+   */
+  margin(x: number, y: number): number {
+    let a = Infinity;
+    let b = Infinity;
+    for (const r of this.near(x, y)) {
+      if (!this.kept(r)) continue;
+      const c = this.cost(r, x, y);
+      if (c < a) {
+        b = a;
+        a = c;
+      } else if (c < b) b = c;
+    }
+    return b - a;
+  }
+
   /** First pass: the cheapest seed of all. */
   private baseAt(x: number, y: number): Region | null {
     const key = `${x},${y}`;

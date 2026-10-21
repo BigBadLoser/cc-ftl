@@ -31,6 +31,8 @@ export const REGION_BORDER_WOBBLE = 0.2;
 export const REGION_RIFT_COST = 14;
 /** Regions smaller than this are absorbed by their neighbours. */
 export const MIN_REGION_SECTORS = 4;
+/** Region borders are left empty where a site's reach-cost margin to the next region is under this (spaces regions apart). */
+export const BORDER_GAP = 700;
 /** Wild space: sectors a region reaches only over more than WILD_VOID of void, or with fewer than WILD_MATES region-mates within WILD_GAP. */
 export const WILD_VOID = 300;
 export const WILD_GAP = 1150;

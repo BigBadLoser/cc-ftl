@@ -8,7 +8,7 @@ import { SiteField, type Site } from './sites';
 import { Terrain } from './terrain';
 import { TerritoryField } from './territory';
 import {
-  ANCHOR_CHANCE, CHUNK_CELLS, GATE_SECOND, GATE_SPREAD, GATE_THIRD, HYPERLANE_MAX, LANE_MAX_VOID,
+  ANCHOR_CHANCE, BORDER_GAP, CHUNK_CELLS, GATE_SECOND, GATE_SPREAD, GATE_THIRD, HYPERLANE_MAX, LANE_MAX_VOID,
   LANE_MIN_DENSITY, LOOP_CHANCE, NO_GATE, REGION_CELL, REGION_REACH, RIFT_GATE_PENALTY, RIFT_MAX, SITE_CELL,
 } from './tuning';
 import type { ChunkData, EdgeData, NodeData } from './types';
@@ -63,6 +63,7 @@ export class GalaxyGen implements SectorContext {
   private gateSets = new Map<string, Set<string>>();
   private cross = new Map<string, Crossing[]>();
   private links = new Map<string, Site[]>();
+  private alive = new Map<string, boolean>();
 
   constructor(
     readonly seed: number,
@@ -104,6 +105,21 @@ export class GalaxyGen implements SectorContext {
     return best as NodeData;
   }
 
+  /** Does a site become a sector? Not when it sits in a border band (see RegionField.margin); the start always does. */
+  private live(site: Site): boolean {
+    let v = this.alive.get(site.id);
+    if (v === undefined) {
+      v = (site.gx === 0 && site.gy === 0) || !this.regions.regionAt(site.x, site.y) || this.regions.margin(site.x, site.y) >= BORDER_GAP;
+      this.alive.set(site.id, v);
+    }
+    return v;
+  }
+
+  /** Sites that become sectors within `range` of (x, y). */
+  private sitesNear(x: number, y: number, range: number): Site[] {
+    return this.sites.sitesNear(x, y, range).filter((s) => this.live(s));
+  }
+
   /** True when a-b stays out of the void: no stretch over LANE_MAX_VOID below LANE_MIN_DENSITY, and short enough. */
   private clear(a: Site, b: Site): boolean {
     return dist(a, b) <= HYPERLANE_MAX && this.terrain.voidRun(a.x, a.y, b.x, b.y, LANE_MIN_DENSITY).longest <= LANE_MAX_VOID;
@@ -118,7 +134,7 @@ export class GalaxyGen implements SectorContext {
     let out = this.cands.get(site.id);
     if (!out) {
       out = [];
-      const near = this.sites.sitesNear(site.x, site.y, RIFT_MAX);
+      const near = this.sitesNear(site.x, site.y, RIFT_MAX);
       for (const o of near) {
         if (o.id === site.id) continue;
         const [a, b] = site.id < o.id ? [site, o] : [o, site];
@@ -138,7 +154,7 @@ export class GalaxyGen implements SectorContext {
     let out = this.cross.get(key);
     if (!out) {
       out = [];
-      for (const s of this.sites.sitesNear(a.x, a.y, REGION_REACH)) {
+      for (const s of this.sitesNear(a.x, a.y, REGION_REACH)) {
         if (this.regions.regionAt(s.x, s.y) !== a) continue;
         for (const { site: o, rift } of this.candidates(s)) {
           if (this.regions.regionAt(o.x, o.y) !== b) continue;
@@ -210,7 +226,7 @@ export class GalaxyGen implements SectorContext {
     const out: EdgeData[] = [];
     const mine = this.regions.regionAt(site.x, site.y);
     const cands = this.candidates(site);
-    const near = this.sites.sitesNear(site.x, site.y, RIFT_MAX);
+    const near = this.sitesNear(site.x, site.y, RIFT_MAX);
     for (const { site: other, rift } of cands) {
       if (mine && this.regions.regionAt(other.x, other.y)) continue;
       const [a, b] = site.id < other.id ? [site, other] : [other, site];
@@ -243,7 +259,7 @@ export class GalaxyGen implements SectorContext {
     let out = this.links.get(site.id);
     if (!out) {
       const mine = this.regions.regionAt(site.x, site.y);
-      const same = this.sites.sitesNear(site.x, site.y, RIFT_MAX).filter((o) => this.regions.regionAt(o.x, o.y) === mine);
+      const same = this.sitesNear(site.x, site.y, RIFT_MAX).filter((o) => this.regions.regionAt(o.x, o.y) === mine);
       out = same.filter((o) => o.id !== site.id && isRelativeNeighbour(site, o, same));
       this.links.set(site.id, out);
     }
@@ -286,7 +302,7 @@ export class GalaxyGen implements SectorContext {
     for (let gy = cy * CHUNK_CELLS; gy < (cy + 1) * CHUNK_CELLS; gy++) {
       for (let gx = cx * CHUNK_CELLS; gx < (cx + 1) * CHUNK_CELLS; gx++) {
         const site = this.sites.site(gx, gy);
-        if (!site) continue;
+        if (!site || !this.live(site)) continue;
         const built = this.sector(site);
         data.sectors.push(built.sector);
         data.nodes.push(...built.nodes);
