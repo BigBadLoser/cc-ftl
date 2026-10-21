@@ -140,6 +140,19 @@ Spines and arcs stay below hub size, because they outgrow the 160 cap. Hubs buil
   - **Concentric rings still use rectangles.** As bands, every airlock failed: the band wrapped round the docks. They
     now keep system rooms and docks on the outer ring.
 
+**Round 4:**
+- **Wall thinning keeps the outline.** Round 3's peeling had squared off stair-stepped tapers and chamfers. Now no tile
+  touching space (8 neighbours) is ever removed or turned to floor; a double hull is thinned by folding its inner wall
+  into the room instead.
+  - `GenResult.thin.outlineChanged` is checked to be 0 across a sweep.
+  - The 32 depth-9 ship sheets have exactly the outline tiles they had before the pass existed.
+  - The ruin pass now keeps the piece with the most floor.
+- **Readable sheets.**
+  - A legend strip: room tints and module glyphs.
+  - Courts drawn as plain floor; furniture as solid blocks.
+  - Plaza stalls laid out as clusters with aisles.
+  - Zoomed crops come from `--count 1 --scale 12`.
+
 Next slices (not built):
 1. Spawn a station as a region in the node: an immobile `ShipC`-like kind with no FTL, no jump lift and no flee.
 2. Replace the TEMPORARY trade instant fallback with real docking at station airlocks and shuttles.
