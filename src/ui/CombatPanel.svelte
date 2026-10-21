@@ -134,7 +134,7 @@
   .st em { font-style: normal; color: var(--dim); font-size: 12px; }
   .st.low b { color: var(--red); }
   .bar.hull { height: 6px; } .bar.hull.low > i { background: var(--red); }
-  .viewbox { position: relative; padding: 8px; flex: 1 1 auto; min-height: 150px; display: flex; background: var(--panel); }
+  .viewbox { position: relative; padding: 8px; flex: 1 1 auto; min-height: 150px; display: flex; }
   .view { flex: 1; min-height: 0; cursor: crosshair; box-shadow: 0 0 0 8px var(--panel), inset 0 0 0 1px var(--line); }
   .none { background: var(--panel); color: var(--dim); margin: 0; padding: 10px; }
   @media (max-width: 600px) {
