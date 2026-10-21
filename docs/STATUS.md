@@ -148,7 +148,7 @@ Next slices (not built):
 5. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
 6. Generator polish:
    - concentric rings as ring bands (airlocks beyond a band need their own facing rule);
-   - big courtyards are slow to furnish and dark (lighting places at most 12 lamps a room);
+   - big courtyards are slow to furnish and dark (lighting places at most 12 lamps a room). Hubs now take a mean of 0.3–1.9 s; the worst is 8.6 s (a farming satellite hub that reseeded 18 times). The slow-test bound is 15 s;
    - an armour doctrine for walls (navy belts, depots) is not built: every wall is one tile now;
    - wheel hubs with one hub room leave a big empty centre, so wheels are weighted only for outposts and stations;
    - spines have no doubled form for hubs.
