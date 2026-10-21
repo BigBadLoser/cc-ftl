@@ -40,7 +40,7 @@
     {#if sec.known}
       <StarmapBody kind={sec.body?.kind ?? 'star'} x={sec.x} y={sec.y} r={px(sec.hub ? 6 : 4.5)} />
     {:else}
-      <circle cx={sec.x} cy={sec.y} r={px(2.5)} class="uncharted" />
+      <circle cx={sec.x} cy={sec.y} r={px(4.5)} class="uncharted" />
     {/if}
     {#if sec.id === map.currentSector}<circle cx={sec.x} cy={sec.y} r={px(13)} class="here" />{/if}
     {#if sec.id === picked}<circle cx={sec.x} cy={sec.y} r={px(17)} class="sel" />{/if}
@@ -80,7 +80,7 @@
   .link.rift { stroke-dasharray: 3 6; stroke-opacity: 0.8; stroke-width: var(--w, 1.6px); }
   .link.through { stroke-dasharray: 7 7; stroke-opacity: 0.45; stroke-width: 1.4; }
   .link.mine { stroke-opacity: 0.95; stroke-width: 2.6; }
-  .uncharted { fill: #34445c; }
+  .uncharted { fill: #0b1220; stroke: #7c8ca6; stroke-opacity: 0.85; stroke-width: 1.5; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
   .here { fill: none; stroke: var(--cyan); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
   .rnode { fill: #0b1220; stroke: var(--c); stroke-width: 2; vector-effect: non-scaling-stroke; }
   .rnode:not(.known) { stroke-dasharray: 4 4; }

@@ -60,7 +60,7 @@
     {/if}
     {#if s > 1.5}<text x={n.x} y={n.y + px(17)} class="nname" font-size={px(10)} stroke-width={px(3)}>{n.name}</text>{/if}
   {:else}
-    <circle cx={n.x} cy={n.y} r={px(1.6)} class="unknown" />
+    <circle cx={n.x} cy={n.y} r={px(4)} class="unknown" />
   {/if}
   {#if selected === n.id}<circle cx={n.x} cy={n.y} r={px(14)} class="sel" />{/if}
 {/each}
@@ -100,7 +100,7 @@
   .here { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; }
   .sel { fill: none; stroke: var(--amber); stroke-width: 2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
   .hostile { fill: rgba(239, 68, 68, 0.25); stroke: var(--red); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-  .unknown { fill: #34445c; }
+  .unknown { fill: #0b1220; stroke: #7c8ca6; stroke-opacity: 0.85; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
   text { text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: #05080e; stroke-linejoin: round; }
   .badge { fill: #05080e; font-weight: 700; stroke: none; }
   .nname { fill: var(--dim); }
