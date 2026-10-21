@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-21 (step 9a on `sector-9`).
+Last updated: 2026-10-21 (stations slice 1 on `stations`).
 
 **Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
 map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
@@ -36,6 +36,54 @@ m4-combat + m4-assets + m4-ui to main.
 
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
+
+## Stations, slice 1: generation (branch `stations`; not merged)
+
+**User decisions (2026-10-21):** stations come in sizes from small frontier trading posts up to system hubs, and a hub is
+much bigger than any ship. All five kinds are wanted: trading, mining, farming, military depot and pirate den. A player can
+try to board and capture any station. Stations carry many NPCs, security among them, and most are armed to the teeth. Pirate
+dens are weaker on purpose, so they can be conquered.
+
+What exists (generation only, nothing spawns yet):
+- **Sim** (`src/sim/shipgen/station*.ts`): `generateStation(def, id, size, seed, defs)` returns a normal `GenResult` plus
+  `station` (kind, size, crew, security, docks, guns, shields). `planStation` makes the rooms from the tier, the station
+  grammars (`stationRing`, `stationLattice`, `stationHub` core ring with satellites on spokes, `stationWelded` pirate den)
+  build them from the civil ring and lattice builders, and `finishLayout` (split out of `generate.ts`) runs the ship
+  fit-out and validators. The engine rule is off (`validateTemplate(..., { immobile: true })`, and no engines or
+  thrusters are planned). Station rules on top: enough airlock docks, everything inside the template rect, and a size
+  cap of `STATION_MAX` = 160 tiles a side.
+- **Content** (`src/content/stations.ts`, `satisfies StationDef`): `station.trading|mining|farming|military|pirate`, each
+  with tiers `outpost | station | hub`. Crew are 8 / 20 / 44 times a kind factor (farming 1.1, depot 1.2, pirate 0.8).
+  The security share is depot 0.55, trading 0.3, mining 0.25, farming 0.2 and pirate 0.15. Guns per tier: depot
+  4/12/24 (50% heavy), trading 2/6/12, mining 2/5/10, farming 2/4/8, pirate 1/3/6.
+- **New content pieces:**
+  - room roles `farm`, `industry` and `armoury`, with recipes in `rooms/station.ts`;
+  - the placeholder `module.refinery` (fabricator tinted orange in `fallback.ts`; no mechanic);
+  - `RoomSpec.items` for per-room stock: armoury lockers hold rifles and sidearms;
+  - `HullFamilyDef.cages` for the ore cages that mining stations hang off the structure.
+- **Armed NPCs:** no new field. Security crew are `role.security`, whose existing `loadout` fetches rifles and sidearms
+  from storage. Every station's armoury lockers hold at least one hand weapon per security crew member (a test checks this).
+- **Fixes on the way:** lattice stations were not centred on x, so wide ones lost modules off the local canvas
+  silently (now centred, and a lost module fails the build). Frozen blocks reused room chars after 59 labels, which
+  merged rooms. There are now 315 chars, so ships are unchanged.
+- **Numbers:** the largest hubs build in under about 1 s each (mean 0.3–0.7 s), are 140–160 tiles a side, and take
+  1.5–2.3 attempts on average.
+- **Sheets:** `node tools/shipgen/cli.js station.all --size outpost,hub --count 6 --scale 6 --out <dir>`
+  (`station.<kind>`, `--size outpost|station|hub|a,b|all`).
+- **Tests:** `src/content/stations.test.ts` checks validity per kind and size, determinism, doctrine module counts,
+  crew and security scaling, defence ordering and armoury stock. `stations.slow.test.ts` sweeps 12 seeds per kind and
+  size.
+
+Next slices (not built):
+1. Spawn a station as a region in the node: an immobile `ShipC`-like kind with no FTL, no jump lift and no flee.
+2. Replace the TEMPORARY trade instant fallback with real docking at station airlocks and shuttles.
+3. Station NPC behaviour and security AI: guards, patrols, alarms, and drawing from the armoury.
+4. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.
+5. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
+6. Generator polish:
+   - ring courtyards are large and empty (an inner deck or truss could fill them);
+   - a satellite that clashes with its neighbours costs a reseed on hubs;
+   - pirate outposts can get many docks, because each welded lattice brings two.
 
 ## Aliens on derelicts (branch `aliens`, based on `derelict-ingame` plus `art/alien`; not merged; awaiting user review)
 

@@ -36,6 +36,8 @@ export interface StationTier {
   /** Airlock docks (at least). */
   docks: number;
   grammars: readonly Weighted<StationGrammar>[];
+  /** Ore cages (rows of ore holds on a rail) hung off the structure: mining stations. */
+  cages?: number;
 }
 
 export interface StationDef {
@@ -57,7 +59,7 @@ export interface StationDef {
 }
 
 /** Largest template a station may have (tiles per side): a hub is much bigger than any ship but stays one region. */
-export const STATION_MAX = 140;
+export const STATION_MAX = 160;
 
 /** Station summary attached to a generated station. */
 export interface StationInfo {

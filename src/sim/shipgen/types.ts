@@ -146,6 +146,8 @@ export interface HullFamilyDef {
   /** Salvage families: how much this role wants each donor aboard (by function), and which donors can anchor. */
   donors?: Partial<Record<DonorKind, number>>;
   anchors?: readonly Weighted<DonorKind>[];
+  /** Stations: ore cages hung off the structure (mining stations). */
+  cages?: number;
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 

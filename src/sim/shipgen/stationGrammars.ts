@@ -1,8 +1,9 @@
-import type { Block, Side } from './arranger';
+import { mirrorBlock, type Block, type Side } from './arranger';
 import { hallBlock } from './blocks';
 import { podString } from './civilBlocks';
+import { oreCage } from './civilFrames';
 import { latticeStation, ringStation } from './civilStations';
-import { civil, shuffle } from './civilKit';
+import { blockOf, civil, shuffle } from './civilKit';
 import { no, type Ctx } from './navyKit';
 import { allRooms, type RoomSpec } from './plan';
 import type { Rng } from '../rng';
@@ -140,6 +141,40 @@ function welded(c: Ctx): boolean {
   return true;
 }
 
+/** Ore cages (mining): rows of ore holds on a rail, hung below or above any placed module. */
+function cages(c: Ctx): boolean {
+  const n = c.fam.cages ?? 0;
+  const hosts = c.A.placed.map((_, i) => i);
+  for (let k = 0; k < n; k++) {
+    const o = { hw: c.rng.int(2, 3), hh: c.rng.int(3, 4), gap: c.rng.int(1, 4), every: c.rng.int(1, 2), tooth: c.rng.int(1, 3) };
+    const cage = oreCage(c.rng, c.rng.int(12, 24), o, 5);
+    let done = false;
+    // Outermost ports first (a ring's inner walls face its empty centre), then anything outside every other block.
+    const tries = shuffle(c.rng, hosts).flatMap((host) => (['s', 'n'] as Side[]).flatMap((side) =>
+      blockOf(c, host).ports.filter((p) => p.side === side).sort((p, q) => (side === 's' ? q.y - p.y : p.y - q.y)).slice(0, 3)
+        .map((p) => ({ host, side, port: p.id }))));
+    for (const t of tries) {
+      const id = c.A.attach(t.host, t.side === 's' ? cage : mirrorBlock(cage), { side: t.side, parentPort: t.port, align: 'any', doors: 1 });
+      if (id === null) continue;
+      // Open space beyond the cage (no structure further out): never inside a ring's empty centre.
+      const b = c.A.bounds(id);
+      const box = c.A.box();
+      let inside = false;
+      for (let x = b.x; x < b.x + b.w && !inside; x++) {
+        if (t.side === 's') { for (let y = b.y + b.h; y <= box.y1 && !inside; y++) inside = (c.A.cell(x, y) ?? '.') !== '.'; }
+        else for (let y = b.y - 1; y >= box.y0 && !inside; y--) inside = (c.A.cell(x, y) ?? '.') !== '.';
+      }
+      if (!inside) { done = true; break; }
+      c.A.undoLast();
+    }
+    if (!done) return no(c, 'ore cage');
+  }
+  if (n > 0) c.parts.push(`cages ${n}`);
+  return true;
+}
+
+const withCages = (run: (c: Ctx) => boolean) => (c: Ctx): boolean => run(c) && cages(c);
+
 export const STATION_GRAMMARS: Record<'stationRing' | 'stationLattice' | 'stationHub' | 'stationWelded', (c: Ctx, f: FactionDef) => boolean> = {
-  stationRing: (c) => ring(c), stationLattice: (c) => lattice(c), stationHub: (c) => hubStation(c), stationWelded: (c) => welded(c),
+  stationRing: withCages(ring), stationLattice: withCages(lattice), stationHub: withCages(hubStation), stationWelded: withCages(welded),
 };

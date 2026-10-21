@@ -19,11 +19,11 @@ const CIVIL_SHAPES: Record<StationSize, Weighted<StationGrammar>[]> = {
   hub: g(['stationHub', 1]),
 };
 
-interface TierNums { crew: number; guns: Per; heavyPct: number; shields: Per; pd: Per; crates: Per; docks: Per; shapes?: Record<StationSize, Weighted<StationGrammar>[]> }
+interface TierNums { cages?: Per; crew: number; guns: Per; heavyPct: number; shields: Per; pd: Per; crates: Per; docks: Per; shapes?: Record<StationSize, Weighted<StationGrammar>[]> }
 function tiers(n: TierNums): Record<StationSize, StationTier> {
   const one = (s: StationSize): StationTier => ({
     crew: Math.round(CREW[s] * n.crew), guns: n.guns[s], heavyPct: n.heavyPct, shields: n.shields[s], pointDefense: n.pd[s],
-    crates: n.crates[s], docks: n.docks[s], grammars: (n.shapes ?? CIVIL_SHAPES)[s],
+    crates: n.crates[s], docks: n.docks[s], grammars: (n.shapes ?? CIVIL_SHAPES)[s], ...(n.cages ? { cages: n.cages[s] } : {}),
   });
   return { outpost: one('outpost'), station: one('station'), hub: one('hub') };
 }
@@ -55,12 +55,12 @@ export const stations = {
     tiers: tiers({ crew: 1, guns: per(2, 6, 12), heavyPct: 25, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(12, 30, 60), docks: per(3, 5, 8) }),
     rooms: [room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 4)), armoury(per(1, 1, 2))],
   },
-  // Mining: refineries on ore-processing floors, big ore stores, docks for the mining ships.
+  // Mining: refineries on ore-processing floors, ore cages and big ore stores, docks for the mining ships.
   'station.mining': {
     name: 'Mining station', kind: 'mining', side: 'neutral', motif: 'motif.civilian', security: 0.25, crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.scrap', min: 0, max: 6 }],
-    tiers: tiers({ crew: 1, guns: per(2, 5, 10), heavyPct: 20, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(10, 24, 48), docks: per(3, 4, 6) }),
+    tiers: tiers({ cages: per(1, 1, 2), crew: 1, guns: per(2, 5, 10), heavyPct: 20, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(10, 24, 48), docks: per(3, 4, 6) }),
     rooms: [
       room('industry', n(2, 'module.refinery'), 7, 4, per(1, 2, 4)),
       room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 3), [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }]),
