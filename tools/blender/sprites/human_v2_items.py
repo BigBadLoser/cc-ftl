@@ -6,7 +6,6 @@ plain palette colours. Flat colour regions with hard edges; nothing smaller than
 import math
 
 import bpy
-import numpy as np
 from mathutils import Vector
 
 from . import core
@@ -198,21 +197,6 @@ def hair_ponytail(A, R):
     return Item("hair", "ponytail", [b.mesh("v2.hair.ponytail", A, flat("team.hair"))])
 
 
-def _fit_helmet(it, R, margin=0.07, wide=1.06, deep=1.12):
-    """The old helmet over the taller v2 head: stretched up from its rim until the crown clears the head by `margin`,
-    and a little wider and deeper (the shell is nearly round: the squarer forehead pokes through its front), so the head
-    does not show through the shell or the visor."""
-    top = max(r[0].z for r in R.T["head"]) + 0.012
-    cos = [np.array([v.co[:] for v in ob.data.vertices]) for ob in it.objs]
-    allc = np.vstack(cos)
-    lo, hi = allc.min(0), allc.max(0)
-    base = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
-    k = np.array([wide, deep, max(1.0, (top + margin - lo[2]) / (hi[2] - lo[2]))])
-    for ob, co in zip(it.objs, cos):
-        ob.data.vertices.foreach_set("co", ((co - base) * k + base).ravel())
-        ob.data.update()
-
-
 def hair_shaved(A, R):
     b = Build()
     _hair_cap(b, R, grow=0.004)
@@ -263,16 +247,17 @@ def _cyber_bulk(items, A):
 
 
 def build_items():
-    from . import human_v2_armor, human_v2_kits, human_v2_weapons
+    from . import human_v2_armor, human_v2_eva, human_v2_kits, human_v2_weapons
     core.setup_scene()
     A = import_base()
     src = bpy.data.objects["skin@body.team.skin"]
     T = human_trace.measure(A, src)                                          # trace the realistic base, then drop it
-    eva = suit.build_suit(A, src)                                           # the EVA suit as on the old base (same rig)
+    eva = suit.build_suit(A, src)                                           # the old suit: its pack and cyber forearm
     keep = {ob.name for it in eva for ob in it.objs}
     for ob in [o for o in bpy.data.objects if o.type == "MESH" and o.name not in keep]:
         bpy.data.objects.remove(ob, do_unlink=True)
     R = Rig(A, T)
+    eva = human_v2_eva.build(A, R, eva)                                      # the suit rebuilt on the v2 body
     gear = [hg.hair_mohawk(A), hg.jack(A), hg.goggles(A), hg.engineer_rig(A), hg.cyber_arm(A, "L"),
             hg.cyber_arm(A, "R")]                                            # the old rigid gear (same rig)
     belt = tool_belt(A, R)
@@ -291,7 +276,6 @@ def build_items():
     hb.warp_gear(eva + gear + [belt])                                        # rigid parts, as the old build
     _to_v2_head(gear, R)
     _cyber_bulk(gear, A)
-    _fit_helmet(next(it for it in eva if it.slot == "gear.head"), R)
     A.rotation_mode = "XYZ"
     A.scale = (SCALE,) * 3
     A.data.pose_position = "POSE"
