@@ -260,7 +260,7 @@ export type UiAlertKind =
   | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
   | 'story.notice' | 'story.lead' | 'trade'
   | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard'
-  | 'outpost.discovered' | 'outpost.provoked';
+  | 'outpost.discovered' | 'outpost.provoked' | 'mining.waiting' | 'mining.done';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -519,7 +519,45 @@ export interface UiLegend {
 }
 
 export type UiTool = 'select' | 'build' | 'deconstruct' | 'cancel';
-export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module';
+/** 'dig' / 'level' work rock mass (dig: Floor, level: Ground); 'claim' drags a base rectangle onto an asteroid. */
+export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'claim';
+/** A mining pod of the player's (VehicleC with a mining laser). */
+export interface UiPod {
+  id: number;
+  name: string;
+  state: 'stowed' | 'flying' | 'docked';
+  /** Mining order phase ('waiting' = no free pilot yet), or null with no order. */
+  phase: 'launching' | 'outbound' | 'mining' | 'returning' | 'unloading' | 'waiting' | null;
+  /** Asteroid it mines (0 = none). */
+  asteroid: number;
+  pilot: string | null;
+  hold: number;
+  cap: number;
+  trips: number;
+  /** Based on the player's home ship (not a claimed base). */
+  home: boolean;
+}
+
+/** An asteroid or asteroid field in the node, with the ore left in it. */
+export interface UiAsteroid {
+  id: number;
+  kind: 'big' | 'field';
+  coverage: 'open' | 'mixed' | 'dense';
+  name: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  ore: { name: string; item: string; units: number; color: string }[];
+  /** Pods mining it now. */
+  pods: number;
+}
+
+export interface UiMining {
+  asteroids: UiAsteroid[];
+  pods: UiPod[];
+}
+
 export interface UiToolState {
   tool: UiTool;
   build: UiBuildKind;
@@ -582,6 +620,12 @@ export interface UiApi {
   trade: Subscribable<UiTrade>;
   shuttles: Subscribable<UiShuttles>;
   prizes: Subscribable<UiPrize[]>;
+  /** Asteroids in the node and the player's mining pods. */
+  mining: Subscribable<UiMining>;
+  /** Asteroid picked by clicking its rock or from the node strip (null = none). */
+  selectedAsteroid: Subscribable<number | null>;
+  /** Select an asteroid and move the camera to it (null clears). */
+  selectAsteroid(id: number | null): void;
   /** Center the camera on a shuttle (any state). */
   focusShuttle(id: number): void;
   /** Show a ship in the combat overlay rectangle (null hides it). */

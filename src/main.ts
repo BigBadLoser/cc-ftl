@@ -147,6 +147,9 @@ const api: UiApi = {
   shuttles: bridge.shuttles,
   trade: bridge.trade,
   prizes: bridge.prizes,
+  mining: bridge.mining,
+  selectedAsteroid: controller.selectedAsteroid,
+  selectAsteroid: controller.selectAsteroid,
   story: bridge.story,
   chooseStory: bridge.chooseStory,
   focusShuttle: (id) => {

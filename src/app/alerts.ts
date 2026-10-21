@@ -97,6 +97,8 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: e.type, key: `pd${e.module}`, text: `${sim.content.recipes[e.recipe]?.name ?? 'Batch'} done`, at: { x: e.x, y: e.y } };
       case 'eggsac.hatched': return { kind: 'creatures.aboard', key: `ca${e.ship}`, text: `Hostile creatures aboard ${shipName(e.ship)?.name ?? 'the wreck'}`, at: { x: e.x, y: e.y } };
       case 'combat.started': return { kind: e.type, key: 'cs', text: 'Hostile ship in range: combat!', at: null };
+      case 'mining.waiting': return { kind: e.type, key: `mw${e.pod}`, text: 'Mining pod waits for a free pilot', at: null };
+      case 'mining.done': return { kind: e.type, key: `md${e.pod}`, text: e.reason === 'exhausted' ? `Mining done: ore used up (${e.trips} trips)` : e.reason === 'recalled' ? 'Mining pod recalled' : 'Mining pod lost its bay', at: null };
       case 'outpost.discovered': return { kind: e.type, key: `od${e.ship}`, text: 'Hidden base discovered', at: shipCentre(e.ship) };
       case 'outpost.provoked': return { kind: e.type, key: `op${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Outpost'} turns hostile`, at: shipCentre(e.ship) };
       case 'module.destroyed': {

@@ -1,12 +1,13 @@
 import { JobC, ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiTrade, UiStory, UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
 import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
+import { buildMining } from './miningSnapshot';
 import { buildTrade } from './tradeSnapshot';
 import { buildStory } from './storySnapshot';
 import { createStore, type Readable } from './store';
@@ -68,6 +69,7 @@ export interface Bridge {
   shuttles: Readable<UiShuttles>;
   trade: Readable<UiTrade>;
   prizes: Readable<UiPrize[]>;
+  mining: Readable<UiMining>;
   story: Readable<UiStory>;
   /** Pick an option of the open event decision and resume the speed the game was on. */
   chooseStory(choice: string): void;
@@ -109,6 +111,8 @@ export function createBridge(sim: Sim): Bridge {
   const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
   let lastTrade = '';
   const prizes = createStore<UiPrize[]>([]);
+  const mining = createStore<UiMining>({ asteroids: [], pods: [] });
+  let lastMining = '';
   const story = createStore<UiStory>({ active: null, last: null });
   let lastStory = '';
   /** Speed to return to when the open decision is answered (null = no decision is holding the game). */
@@ -214,6 +218,14 @@ export function createBridge(sim: Sim): Bridge {
     lastTrade = key;
     trade.set(snap);
   };
+  const refreshMining = () => {
+    if (combatFrame % 6) return;
+    const snap = buildMining(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastMining) return;
+    lastMining = key;
+    mining.set(snap);
+  };
   const refreshPrizes = () => {
     if (combatFrame % 3) return;
     const snap = buildPrizes(sim);
@@ -262,6 +274,7 @@ export function createBridge(sim: Sim): Bridge {
     shuttles,
     trade,
     prizes,
+    mining,
     story,
     chooseStory(choice) {
       sim.enqueue({ type: 'story.choose', choice });
@@ -295,6 +308,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshShuttles();
       refreshTrade();
       refreshPrizes();
+      refreshMining();
       refreshCombat();
       refreshStory();
     },

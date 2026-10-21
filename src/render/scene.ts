@@ -80,6 +80,8 @@ export interface Renderer {
   pickModule(screenX: number, screenY: number): number | null;
   /** The ship tile (any ship in the sector) under a canvas-relative position, or null. */
   pickTileAny(screenX: number, screenY: number): { shipId: number; x: number; y: number } | null;
+  /** The sector tile under a canvas-relative position, wherever it is (painting tools, asteroid rock). */
+  pickSector(screenX: number, screenY: number): Tile;
   /** Canvas-relative CSS px of a tile's centre on any ship. */
   screenOf(shipId: number, x: number, y: number): { x: number; y: number };
   /** Draw a ring under this crew member (null clears). */
@@ -388,6 +390,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     pickCrew: (sx, sy) => pickCrewAcross(pickHost(), sx, sy),
     pickTileAny: (sx, sy) => pickTileAcross(pickHost(), sx, sy),
+    pickSector: (sx, sy) => sectorTileAt(cam.toArt(sx, sy)),
     screenOf: (shipId, x, y) => screenOfTile(pickHost(), ratio(), shipId, x, y),
     pickModule(sx, sy) {
       const a = cam.toArt(sx, sy);
