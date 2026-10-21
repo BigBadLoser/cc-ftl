@@ -236,6 +236,8 @@ export interface GenResult {
   metrics?: Record<MetricId, number>;
   /** Wall thinning (thinWalls.ts): slabs absorbed, tiles folded, outline tiles changed (must stay 0). */
   thin?: { slabs: number; folded: number; outlineChanged: number };
+  /** Airlock-only docks opened into their corridor, and those left walled for want of one (openDocks.ts). */
+  docks?: { merged: number; walled: number };
   /** Assemblies, ports, joins and traversal (assembly-driven generation only), for the viewer. */
   debug?: CompDebug;
 }

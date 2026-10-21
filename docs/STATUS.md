@@ -196,6 +196,15 @@ Spines and arcs stay below hub size, because they outgrow the 160 cap. Hubs buil
   - enemy ships still use `systems/enemyAi.ts` and `boardingAi.ts`, separate policy code that should become directors;
   - `systems/dormancy.ts` and `stationAlarm.ts` treat only the player as invitable or provoking.
 
+**Airlock-only docks open into their corridor (user decision, 2026-10-21).** `shipgen/openDocks.ts`, run after fit-out for
+ships and stations alike: a dock room that holds only its airlock (and lamp), with at most 12 floor tiles, loses the partition
+and door to the corridor (hall room) it borders, and its floor joins that corridor. Never into a non-corridor room; docks with
+lockers or racks keep their wall and door; only partition tiles touching no space go, so the hull stays airtight. Docks that
+border no corridor stay walled (placement-time fixing was not cheap: dock placement differs per grammar). Sweep counts are
+printed by `content/airlockDoors.test.ts`: ships merged 47 / walled 4 over 24 layouts, stations merged 74 / walled 19 over 45.
+The generic door sprite is also no longer drawn on an airlock's pod (render/airlockArt `airlockDoorTiles`, ported from
+`airlock-int` 0e5a50d, which never reached main).
+
 Next slices (not built):
 1. Directors for enemy ships (fold `enemyAi` and `boardingAi` into director policy), director drafting, and the leftovers above.
 2. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.

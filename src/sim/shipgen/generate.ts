@@ -15,6 +15,7 @@ import { salvage } from './topoSalvage';
 import { validateTemplate } from './validate';
 import { thinWalls } from './thinWalls';
 import { extractContainers } from './containerCells';
+import { openBareDocks } from './openDocks';
 import type { ArchetypeId, FactionDef, GenResult, GenRoom, RoomRole, ShipRoleDef } from './types';
 
 /** Attempts before giving up on a seed (each reseeds deterministically). */
@@ -262,16 +263,21 @@ export function finishLayout(
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
   const d = fitOut(rng, f, rows, roomOf, roles, specs, defs);
-  const template = toTemplate(f, role, factionId, seed, plan, rows, d);
+  // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
+  const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
+  const docks = { merged: opened.merged, walled: opened.walled };
+  const dockTile = new Set(opened.tiles);
+  const fitted = opened.merged > 0 ? rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : rows;
+  const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
   template.modules = [...(template.modules ?? []), ...containers.map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
   if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));
-  const metrics = layoutMetrics(template, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', defs);
+  const metrics = layoutMetrics(template, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall' && !dockTile.has(y * width + x), defs);
   const bad = metricViolation(metrics, f.metrics);
   if (bad && problems.length === 0) problems.push(bad);
   const rooms: GenRoom[] = roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
   return {
-    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin,
+    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin, docks,
     ...(comp ? { debug: comp.debug(ox, oy, width, height, rows, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', profile) } : {}),
   };
 }
