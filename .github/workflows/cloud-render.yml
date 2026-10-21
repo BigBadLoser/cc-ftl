@@ -1,0 +1,25 @@
+name: Cloud Render Tooling
+
+on:
+  push:
+    branches: [art/cloud-render]
+  pull_request:
+    paths:
+      - tools/cloud_render.py
+      - tools/cloud-render/**
+      - tools/blender/sprites/build_sprites.py
+      - tools/blender/sprites/crew_build.py
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile tooling
+        run: python -m py_compile tools/cloud_render.py tools/blender/sprites/build_sprites.py tools/blender/sprites/crew_build.py
+      - name: Run supervisor tests
+        run: python tools/cloud-render/test_cloud_render.py
