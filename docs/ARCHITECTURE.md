@@ -794,23 +794,31 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
 
 ### 4. Placement and jumping
 
-- **Packets.** `ShipPacket` is the single format for a ship in transit:
-  `{ w, h, tiles: local dense field arrays, entities: WorldData subset in local coordinates, shipId }`.
+- **Packets** (built in 9a, `sim/sector/packet.ts`). `ShipPacket` is the single format for a ship in transit:
+  `{ ship, w, h, tiles: Record<field, number[]> (local, row-major), entities: { id, c }[] (local coordinates), template? }`.
   - `packetFromTemplate(template)` covers templates and shipgen.
   - `liftShip(sim, ship)` makes a packet from a live region.
-  - `stampShip(sim, packet, at) → shipId` writes the tiles (`set`, owner = ship id) and creates or restores the entities,
-    translated by `at`.
-  - `spawnShip` becomes `stampShip(packetFromTemplate(t))` plus the crew roll.
+  - `stampShip(sim, template | packet, { x, y, faction?, state? }) → shipId` writes the tiles (`set`, owner = ship id) and creates
+    (template) or restores (lifted packet, `World.restore`) the entities, translated by `at`.
+  - `spawnShip` is `stampShip(template)` plus combat, boarding and the crew roll.
+  - `liftShip(sim, ship, { withDocked })`: `withDocked` is `false` (default: non-player vehicles docked at its airlocks are cut
+    loose and undock where they are), `true`, or the list of those vehicle ids to take (the jump confirm's choice). The player's own
+    stowed and docked vehicles always come; clamped containers are modules on its tiles and come too.
 - **Entity ids survive.** World ids are never reused, so lifted entities keep their ids and references between them (vehicle
   home, job target, suit airlock) stay valid. References that leave (a weapon target on a ship left behind) dangle harmlessly,
-  because `world.get` returns undefined and is checked today. The jump also clears them explicitly.
-- **Translation table** (`sim/sector/translate.ts`): one entry per component that holds coordinates (`PositionC`, `PathC`,
-  `ModuleC`, `JobC`, `ItemStackC`, `DraftedC`, `BodyC`, `EvaFloatC`, `WeaponC` volley points). A test fails when a registered
-  component has `x`/`y` keys but no entry.
-- **Deploy modal.** On arrival the player's packet waits (`sector.state = 'deploying'`, the sim is paused by the modal). The UI
+  because `world.get` returns undefined and is checked today. The jump also clears them explicitly (`sector/refs.ts`: ship and
+  weapon targets, attack orders, job and bed reservations, assignments), on both sides of the cut. A stranded shuttle keeps its
+  `homeShip`, which is valid again once the player returns. Packets and archives therefore need no id remapping.
+- **Translation table** (`sim/sector/translate.ts`): one entry per component, the coordinate shift or `null` (Position, Path,
+  Module, Job, ItemStack, Drafted, Body, EvaFloat, Ship, Projectile, Eat, Fighter goal, EggSac, Nest, Alien home, Marker). A test
+  fails when a declared component (`componentNames()`) has no entry.
+- **Deploy modal** (sim side built in 9a; the modal is 9b). On arrival the player's packet waits (`sector.state = 'deploying'`,
+  `sector.packet`; the sim is paused by the modal). The UI
   shows ShipC bboxes and the chosen spot; the command `sector.deploy { x, y }` checks the gap rule and stamps. The debug spawns
   (`debug.spawnEnemy`, `debug.spawnGenerated`) use the same check.
-- **Jumping.** `combat.flee` / `ship.jump` (FTL charged):
+- **Jumping.** `sector.jump { ship, node, withDocked? }` (built in 9a; FTL charged, refused while deploying or while a trade deal
+  is live; hails and offers are dropped; `jumpWarnings(sim, ship)` lists crew and shuttles away and hostile docked vehicles for
+  the confirm):
   1. Collect: the player region's tiles (owner = ship), every entity on them, crew aboard vehicles whose `dock` is one of its
      airlocks or whose `home` bay is stowed in it, and those vehicles.
   2. Lift into a packet; release the chunks that are now empty.
@@ -820,11 +828,11 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
   - Prizes, wrecks, derelicts, enemies, and **own crew or shuttles not aboard or docked** stay in the archive:
     `{ nodeId, tick, chunks, world subset }`, frozen and not simulated.
   - Returning to the galaxy node restores the archive.
-  - Retention: keep archives that hold anything player-owned (prizes, stranded crew); drop the rest and regenerate them from
-    the seed if revisited.
-  - Jumping with own crew or vehicles away asks for confirmation (open question 2).
-- **Save format.** `sector: { id, state, inCombat, lost?, grid: SectorGridData }` and `archives: SectorArchive[]`; `grids[]` is
-  gone. **No migrations (user decision, 2026-10-19):** this is a prototype, so each step that changes the save format just
+  - Retention (user decision, 2026-10-21): **keep every archive**; no pruning rule for now. Shots in flight are dropped when a
+    sector is archived.
+  - Jumping with own crew or vehicles away is allowed after the player confirms; they stay in the archive (user, 2026-10-21).
+- **Save format.** `sector: { node, state, packet?, width, height, inCombat, lost?, grid: SectorGridData }` and
+  `archives: SectorArchive[]` (save v25); `grids[]` is gone. **No migrations (user decision, 2026-10-19):** this is a prototype, so each step that changes the save format just
   bumps `SAVE_VERSION` and old saves are discarded.
 
 ### 5. Combat on one map
@@ -888,7 +896,7 @@ and need no screenshots. Steps 5 and 9 are visual and need user screenshot appro
 | 6 | **Coordinate flip:** stamping writes sector coordinates into every component, and every window becomes the identity (the whole sector), so `sim.grids.get(anyId)` still works. Test fixtures place their ship at (0, 0), so single-ship tests pass unchanged; multi-ship tests (eva, vehicles, capture, combat, portals) are updated | `gridId` remains as a dead tag | M (about 40 source sites: geometry `ship.x +` sums, spawn, impacts, render `sectorPos`) |
 | 7 | Remove `gridId` component by component (Position, Module, Job, Item, Robot, Drafted, Projectile, Target, commands, events, snapshots); delete `sim.grids`, `GridWindow.raw`, cross-grid portals and `Path.then`; move `SuitC` and `AirlockC`; save v14 | none (cleanup) | L, mechanical; several PRs |
 | 8 | `BodyC` for vehicles; `homeShip`, `hover: ship`; EVA float in sector space; air layer depth rule | n/a | M |
-| 9 | Packets: `liftShip`, `stampShip`, translation table, `SectorArchive`; `sector.deploy` and the deploy modal; jump with docked vehicles | n/a | L (M6 work) |
+| 9 | Packets: `liftShip`, `stampShip`, translation table, `SectorArchive`; `sector.deploy` and the deploy modal; jump with docked vehicles | n/a | L (M6 work; **9a** sim done on `sector-9`, save v25; **9b** UI: jump confirm, deploy modal, starmap hook) |
 | 10 | Performance: settled-region sleep, reduced cadence for wrecks, a bench test with a 10-ship sector | n/a | M |
 
 **Progress.** Step 1 done (branch `sector-1`, new code only): `GridLike` in `grid.ts` (`Grid` implements it);
@@ -1120,4 +1128,4 @@ Leftovers that 7a deliberately keeps: every `gridId` parameter of the helpers (`
   objects (crew, bodies). Static tiles keep their insertion order per chunk.
 - Determinism: chunk Map order is insertion-dependent, so systems must iterate regions (ShipC query order) or sorted chunks,
   never `Map` order. A test runs the same seed with and without a save round-trip.
-- Long ranges make shuttle trips slow (5 tiles/s). Tuning, not architecture.
+- Long ranges make shuttle trips slow (now 8 tiles/s, user decision 2026-10-21). Tuning, not architecture.

@@ -3,6 +3,7 @@ import type { Sector } from './combat/components';
 import { World, type WorldData } from './ecs';
 import type { ContentRegistry } from './registry';
 import { SectorGrid, type SectorGridData } from './sectorGrid';
+import type { SectorArchive } from './sector/archive';
 import { Sim } from './sim';
 import { newStory, type StoryState } from './story/state';
 import { newTrade, type TradeState } from './trade/types';
@@ -23,8 +24,10 @@ import { newTrade, type TradeState } from './trade/types';
  * ShipC entity id and its rectangle is the ShipC x, y, width, height.
  * v22: cargo containers (`ContainerC`; a detached one is a free BodyC entity with its StorageC and no ModuleC).
  * v23: `ShipC.ruin` (a derelict's dressing data for the renderer: breach, decal and hook art, module art overrides).
+ * v25 (step 9a): `sector.node`, `sector.state` ('active' | 'deploying') and `sector.packet` (the player's ship in transit while
+ * deploying), plus `archives` (every sector the player left, frozen).
  */
-export const SAVE_VERSION = 24;
+export const SAVE_VERSION = 25;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -39,6 +42,8 @@ export interface SaveData {
   /** Trade state. Optional like `story`: older saves load with an empty one. */
   trade?: TradeState;
   pending: QueuedCommand[];
+  /** Sectors the player left (see sector/archive.ts). */
+  archives: SectorArchive[];
 }
 
 /** Serialize the sim to a JSON string. */
@@ -53,6 +58,7 @@ export function serialize(sim: Sim): string {
     story: sim.story,
     trade: sim.trade,
     pending: [...sim.commands.getPending()],
+    archives: sim.archives,
   };
   return JSON.stringify(data);
 }
@@ -75,5 +81,6 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.story = { ...newStory(data.seed), ...data.story };
   sim.trade = { ...newTrade(), ...data.trade };
   sim.commands.setPending(data.pending);
+  sim.archives = data.archives;
   return sim;
 }

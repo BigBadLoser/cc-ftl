@@ -77,3 +77,26 @@ describe('World', () => {
     expect(w2.createEntity()).toBe(a + 2);
   });
 });
+
+describe('World.detach / restore', () => {
+  it('detaches an entity with its components and restores it under the same id', () => {
+    const w = new World();
+    const A = defineComponent<{ v: number }>('detachA');
+    const B = defineComponent<{ s: string }>('detachB');
+    const a = w.createEntity();
+    const b = w.createEntity();
+    w.add(a, A, { v: 1 });
+    w.add(a, B, { s: 'x' });
+    w.add(b, A, { v: 2 });
+    const data = w.detach(a);
+    expect(data).toEqual({ detachA: { v: 1 }, detachB: { s: 'x' } });
+    expect(w.isAlive(a)).toBe(false);
+    expect(w.query(A)).toEqual([b]);
+    w.restore(a, data);
+    expect(w.query(A, B)).toEqual([a]);
+    expect(w.ids()).toEqual([a, b]);
+    expect(() => w.restore(a, {})).toThrow();
+    expect(() => w.restore(99, {})).toThrow();
+    expect(w.createEntity()).toBe(3);
+  });
+});
