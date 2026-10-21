@@ -15,7 +15,7 @@ from . import core
 from .human_base import Item, paint
 from .human_v2 import Build, W, blend
 
-GRIP = 0.55                               # the fist's centre, as a fraction of the hand bone from the wrist
+GRIP = 1.3                                # the fist's centre, in the curled fingers: fraction of the hand bone
 SIZE = 1.25                               # every weapon drawn this much over life size, so it reads at ~62 px
 SUPPORT = {"2h": Vector((0.0, 0.33, -0.01)), "heavy": Vector((0.0, 0.1, 0.2)),
            "2m": Vector((0.0, -0.24, 0.0))}                                     # the left hand, grip-relative
