@@ -8,10 +8,12 @@ function setup(n: number): { sim: Sim; pods: number[]; asteroid: number } {
   const ship = homeShip(sim);
   const g = shipGrid(sim, ship)!;
   const pods: number[] = [];
-  for (let y = g.y0; y < g.y0 + g.height && pods.length < n; y++) {
-    for (let x = g.x0; x < g.x0 + g.width && pods.length < n; x++) {
-      if (!placementError(sim, ship, 'module.pod_bay', x, y, 0)) pods.push(spawnVehicle(sim, 'vehicle.mining_pod', spawnModule(sim, 'module.pod_bay', x, y, 0)));
-    }
+  // the first bay scanning from the top-left, the second from the bottom-right, so neither covers the other's access tile
+  const spots = [];
+  for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) spots.push({ x, y });
+  for (const list of [spots, [...spots].reverse()].slice(0, n)) {
+    const s = list.find((p) => !placementError(sim, ship, 'module.pod_bay', p.x, p.y, 0));
+    if (s) pods.push(spawnVehicle(sim, 'vehicle.mining_pod', spawnModule(sim, 'module.pod_bay', s.x, s.y, 0)));
   }
   sim.enqueue({ type: 'debug.spawnAsteroid', kind: 'field', seed: 3 });
   sim.step();

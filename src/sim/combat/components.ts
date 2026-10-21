@@ -73,6 +73,8 @@ export interface Ship {
   gen?: GenOrigin;
   /** Set on derelicts: dressing data for the renderer (see ShipRuin). */
   ruin?: ShipRuin;
+  /** Set on asteroid outposts (outposts/gen.ts): its style and kind; a dug one is roofed with rock. */
+  outpost?: { style: 'surface' | 'dug'; kind: string };
 }
 export const ShipC = defineComponent<Ship>('ship');
 

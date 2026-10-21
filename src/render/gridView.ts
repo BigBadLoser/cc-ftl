@@ -190,7 +190,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         for (let x = x0; x < x1; x++) {
           const ci = (y - r.y0) * CHUNK_SIZE + (x - r.x0);
           const k = struct[ci] as number;
-          if (k === Struct.Space) continue;
+          if (k === Struct.Space || k === Struct.Rock || k === Struct.Ground) continue; // rock: asteroidView
           if (k === Struct.Beam) {
             if (boxAt(x, y)) continue;
             // Low open truss, the same in every wall view level; sprites sit at the tile's depth, overlays just above.

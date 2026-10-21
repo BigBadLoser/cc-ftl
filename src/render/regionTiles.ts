@@ -118,7 +118,8 @@ export function createRegionTiles(src: ChunkSource, ox: number, oy: number, widt
     height,
     inside,
     get,
-    kindAt: (lx, ly) => (inside(lx, ly) ? get('struct', lx, ly) : Struct.Space),
+    // asteroid rock (mass and ground) inside a region is drawn by asteroidView: the region's tile art sees it as Space
+    kindAt: (lx, ly) => { const k = inside(lx, ly) ? get('struct', lx, ly) : Struct.Space; return k === Struct.Rock || k === Struct.Ground ? Struct.Space : k; },
     chunks(pad = 0) {
       const out: ChunkRef[] = [];
       if (width <= 0 || height <= 0) return out;

@@ -37,39 +37,66 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
-## Asteroids (branch `asteroids`; slice 1 of 7; not merged; visual: needs the user's screenshot approval)
+## Asteroids (branch `asteroids`; slices 1-3; not merged; visual: needs the user's screenshot approval)
 
 **User decisions (2026-10-21):**
 1. Asteroids are real tiles in the sector grid, mineable and buildable like any other region.
 2. Default mining uses **mining pods**: they deploy from a new small vehicle bay (about 3x3), fly to an asteroid, laser-mine its ore
-   veins and bring the ore back; a field takes several trips.
+   veins and bring the ore back; a field takes several trips. **Pods are piloted** (one crew pilot) and nearly fill their 3x3
+   bay (correction, 2026-10-21).
 3. Two scales: **very big asteroids** you (or enemies) can build a base or outpost on, and **fields of smaller asteroids** with
    ore for pods.
-4. Asteroid bases are either **hollowed out** (an interior cut into the rock) or **built on the surface**, never both on one asteroid.
+4. Asteroid bases are either **dug** (rooms carved into rock mass) or **built on the surface**, never both on one asteroid.
+5. **Two rock forms** (replaces the hollow-core design, 2026-10-21): rock **mass** (full-height solid block, airtight, blocks
+   sight) and rock **ground** (flat levelled rock: walkable, airless, a buildable foundation). Big asteroids are mostly ground
+   with mass as features (ridges, boulders, crater rims, one or two massifs) and roll a coverage class: open, mixed or dense
+   (dense is common and mostly just rock). Veins run through both; the richer ones sit in massifs. `Struct.CoreRock` and the
+   hollow roll are gone.
+6. Build on ground at normal speed; a footprint may clip a little rock mass (up to 25%), which its job levels at a small extra
+   cost; a real ridge needs clearing first. Digging (a crew job, slow on purpose) turns rock mass into floor; the mass left
+   around is a natural airtight wall; the outer layer (mass touching space or ground) cannot be dug; a dig through a vein
+   yields its ore. Outposts: surface (trading, farming, mining: prefab habitats on open plains, tubes, a dock at the edge) and
+   dug (pirate, criminal, covert: rooms in dense rock, a tunnel to an airlock in a rock face, a rock roof so it looks like
+   plain asteroid from outside). Enemies use the same generators.
 
-**Slice 1 (done):** rock and ore tiles, the `AsteroidC` region model, the seeded generator, stamping with the gap rule,
-`debug.spawnAsteroid`, placeholder drawing and contact sheets. Details and the region-model reasoning in ARCHITECTURE
-("Asteroids"). Save v26. Planner's calls the user can overrule: own `AsteroidC` (not a ShipC kind); mined rock becomes Space
-(no rubble); ores yield existing items (iron -> metal, ice -> ice, rare -> electronics) until raw ores and refining exist;
-`ASTEROID_GAP` = 4 tiles (rock to a ship's padded frame, and rock to rock between asteroids); weapons do not damage rock;
-the core carries no ore; the hollow variant is a 50% roll per seed unless forced. Debug: `?hook`, then
-`__cc.dispatch({ type: 'debug.spawnAsteroid', kind: 'big', seed: 4, hollow: true, x: 62, y: 40 })` and pan right/down.
+**Slice 1:** rock and ore tiles, the `AsteroidC` region model, the seeded generator, stamping with the gap rule,
+`debug.spawnAsteroid`, placeholder drawing and contact sheets. Planner's calls: own `AsteroidC` (not a ShipC kind); mined rock
+becomes Space (no rubble); ores yield existing items (iron -> metal, ice -> ice, rare -> electronics) until raw ores and refining
+exist; `ASTEROID_GAP` = 4 tiles; weapons do not damage rock.
 
-**Slice 2 (done):** `module.pod_bay` (3x3) and the crewless `vehicle.mining_pod`, `mining.order` / `mining.recall`, trips until
-the ore is gone (details in ARCHITECTURE "Asteroids"). Planner's calls: pods are **crewless** (nobody embarks; they fly their
-order themselves); hold 24, speed 6 tiles/s, laser 2 units/s; the laser works from above (buried vein tiles too); ore comes home
-in the hold and **crew haul it** from the bay's access tile through the existing cargo hauls (a full storage leaves the pod
-waiting, loaded); pods have no item yet, so they only come with a template or the debug hook (`__cc.stage.vehicle(def, bay)`);
-no UI panel yet (commands only). Not touched: `Struct.CoreRock` and hollow generation (under discussion).
+**Slice 2:** `module.pod_bay` (3x3) and `vehicle.mining_pod`, `mining.order` / `mining.recall`, trips until the ore is gone.
+Planner's calls: hold 24, speed 6 tiles/s, laser 2 units/s; the laser works from above (buried vein tiles too); crew haul the
+ore from the bay's access tile through the existing cargo hauls (a full storage leaves the pod waiting, loaded); no pod item
+yet (template or `__cc.stage.vehicle(def, bay)`); no mining UI yet.
+
+**Slice 3 (done):** the two rock forms, coverage classes, dig / level / auto-level, outposts, piloted full-size pods. Save v27.
+Planner's calls:
+- Dig and level are **folded into `job.build`** (no new commands): Floor on rock mass digs (15 s, free), Ground on rock mass
+  levels (6 s, free), anything else on rock mass is refused (`rockMass`); Floor, walls and doors build on ground as on a deck.
+  The outer layer can still be levelled. A dug tile's ore drops on it as a loose stack that crew haul (not into the digger's
+  hands). A levelled tile keeps its ore (pods can still mine it).
+- Auto-level: up to 25% of a module footprint (2 of a 3x3) may be rock mass; the job gets 3 s of extra work per rock tile and
+  levels them to ground when it finishes. Modules stand on floor or ground.
+- Coverage odds open 3 : mixed 3 : dense 4; rock-mass share open 6-20%, mixed 30-55%, dense 78-100%. Field rocks are all rock
+  mass (solid boulders).
+- Pods: the best free pilot (not drafted, not reserved, of the ship's side, on the ship; highest piloting) walks to the bay and
+  embarks; they stay aboard between trips and climb out when the order ends or is recalled; with nobody free the order waits
+  (`mining.waiting`, reason `noPilot`). Pods are 2.6 tiles across (`VehicleDef.size`). Couriers and boarders skip class 'pod'.
+- Outposts are a `ShipC` region over the base rectangle (state comes out 'disabled' from the ship-state system: no engines);
+  surface ones are neutral, dug ones hostile; they have no crew yet. The habitat and room contents are hand-made kits; switch to
+  the station prefabs and room recipes of the `stations` branch when it lands. A hostile dug outpost puts the sector in combat
+  (it is a hostile ship); outposts have no `CombatC`.
+- Rendering (placeholder): rock mass is a 1.2-tile-high block, ground a flat paler diamond with crater pits; a roofed dug base
+  is capped by rock blocks (`rockRoofView.ts`) and its own layers hide; pods hover above the tallest rock. Rock drawn in the floor
+  layer does not sort against crew yet.
+- Debug: `?hook`, then `__cc.dispatch({ type: 'debug.spawnOutpost', style: 'dug', seed: 1 })`, `__cc.focus(x, y)`.
 
 **Next slices, in order:**
-1. (Done in slice 2.) The small vehicle bay (3x3) and the mining pod vehicle.
-2. (Done in slice 2.) Pod laser-mining of veins and the ore haul-back (multiple trips). Open: a mining UI (pick an asteroid or
-   tiles, recall), a pod item or recipe, pod art, and the bay's own art.
-3. Building on asteroid surfaces.
-4. Hollowed-out interiors.
-5. Enemy asteroid outposts.
-6. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles).
+1. Mining UI (pick an asteroid or tiles, recall) and a pod item or recipe; pod and pod-bay art.
+2. Claiming an asteroid as a player base (a `ShipC` region over it, so crew can walk, dig and build there) and the build menu
+   for dig / level on asteroids.
+3. Outpost crews, trade and AI (enemy outposts defending, NPC factions picking outposts by kind).
+4. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew.
 
 ## Aliens on derelicts (branch `aliens`, based on `derelict-ingame` plus `art/alien`; not merged; awaiting user review)
 

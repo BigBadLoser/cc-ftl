@@ -10,6 +10,10 @@ import { boardingTile } from '../vehicles/geometry';
 import { unboardCrew } from '../vehicles/lifecycle';
 import { sendToEmbark } from '../vehicles/embark';
 import { MiningPodC, type MiningPod } from './components';
+import { TICK_HZ } from '../time';
+
+/** While an order waits for a pilot, it looks for one this often. */
+const PILOT_RETRY_TICKS = 5 * TICK_HZ;
 
 /** Crew reserved by any mining order. */
 function reserved(sim: Sim): Set<number> {
@@ -55,6 +59,16 @@ export function ensurePilot(sim: Sim, pod: number, v: Vehicle, order: MiningPod)
   }
   const walking = order.pilot && sim.world.get(order.pilot, EmbarkOrderC)?.vehicle === pod;
   if (walking) return false;
+  if (order.pilot) {
+    // the reserved pilot gave up (no path to the bay) or was taken: release them, and look again in a while
+    if (sim.world.has(order.pilot, DraftedC) && !sim.world.has(order.pilot, AboardC)) {
+      sim.world.remove(order.pilot, DraftedC);
+      const c = sim.world.get(order.pilot, CrewC);
+      if (c) c.activity = 'idle';
+    }
+    order.pilot = 0;
+  }
+  if (order.waiting && (sim.tick + pod) % PILOT_RETRY_TICKS !== 0) return false;
   order.pilot = pickPilot(sim, v);
   if (order.pilot && !sendToEmbark(sim, order.pilot, pod)) {
     order.waiting = false;
