@@ -233,7 +233,7 @@ def float_pose(arm, i, scale, n=4):
     hs._aim(arm, "spine_02", hs._fwd(lean * 1.05))
     hs._aim(arm, "spine_03", hs._fwd(lean * 1.05))
     hs._aim(arm, "neck_01", hs._fwd(0.15))
-    hs._aim(arm, "head", hs._fwd(-0.05))
+    hs._aim(arm, "head", hs._fwd(0.1))                  # tipped with the body: the helmet stays seated in its collar
     for s, n_ in ((1, "L"), (-1, "R")):
         k = math.sin(ph + (0.0 if s > 0 else math.pi)) * 0.06
         hs._aim(arm, f"leg.{n_}", Vector((s * 0.09, math.sin(0.5 + k), -math.cos(0.5 + k))))

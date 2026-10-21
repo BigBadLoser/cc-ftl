@@ -2,13 +2,13 @@
 old suit was cut from the realistic base's mesh, whose bumpy surface shaded as speckle at 2x, with a box for a helmet).
 The life-support pack (scaled up) and the suited cyber forearm stay the old rigid ones (human_suit).
 
-  torso.eva            a puffy white shell, a team-colour chest panel under a control unit, a gunmetal waist bearing
-                       and a collar seal ring for the helmet
+  torso.eva            a puffy white shell, a team-colour chest panel under a control unit, ribbed hoses from it round
+                       the waist to the pack, a gunmetal waist bearing and a collar seal ring the helmet sits in
   legs.eva             suit legs with knee pads, a team-colour band above each knee, thigh bearings and chunky boots on the feet
   arm.L.eva, arm.R.eva sleeves with an upper-arm band, an elbow joint, a wrist bearing and gunmetal gloves
   arm.L.eva_cyber      the sleeve stops above the elbow (the cyber forearm stays out)
   gear.head.eva_helmet a round bubble with a gold visor wrapped round its front, a faint HUD line along the visor top, a
-                       a gunmetal frame round it, team-colour ear pucks and a lamp"""
+                       a gunmetal frame round it, team-colour ear pucks and a lit lamp"""
 import bpy
 from mathutils import Vector
 
@@ -17,12 +17,43 @@ from .human_v2 import Build, W, arm, blend, chain, fingers, leg, torso
 
 SHELL = "medWhite"
 COLLAR = (0.2, 0.2)          # the helmet seal ring's half width and depth: it sits on the shoulders, wider than the neck
+HOSE = 0.022                 # hose radius
 PACK = 1.2                   # the old life-support pack, scaled up from the top of its front face
 
 
 def _collar_top(R):
     """The top of the helmet's seal ring, on the shoulders: the shell's top plus a little; the helmet sits in it."""
     return R.T["torso"][-1][0].z + 0.065 + 0.03
+
+
+def _catmull(pts, n):
+    """n points along a Catmull-Rom curve through pts (ends repeated)."""
+    q = [pts[0]] + list(pts) + [pts[-1]]
+    out = []
+    for i in range(1, len(q) - 2):
+        p0, p1, p2, p3 = q[i - 1], q[i], q[i + 1], q[i + 2]
+        for k in range(n):
+            t = k / n
+            out.append(0.5 * (2 * p1 + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
+                              + (3 * p1 - p0 - 3 * p2 + p3) * t * t * t))
+    return out + [pts[-1]]
+
+
+def _hose(bs, R, start, sx):
+    """A ribbed hose from the chest unit's side, down round the waist, up into the bottom of the pack: short tubes along
+    a smooth curve, alternating between the two builds (dark hose, lighter ribs)."""
+    def outside(z, fy, out=0.0):
+        c, hx, hy, _ = min(R.T["torso"], key=lambda r: abs(r[0].z - z))
+        return Vector((sx * (hx + 0.065 + HOSE + 0.008 + out), c.y + fy * (hy + 0.065 + HOSE + 0.012), z))
+    z = R.chest.z
+    front = outside(z - 0.22, -1.0, 0.0)
+    front.x = sx * 0.11                                                      # a sag across the belly, clear of the arms
+    pts = [start, front, outside(z - 0.2, -0.45, -0.01), outside(z - 0.18, 0.4, -0.01),
+           outside(z - 0.06, 1.0, -0.06) + Vector((0, 0.02, 0))]
+    curve = _catmull(pts, 5)
+    for k, (a, b) in enumerate(zip(curve, curve[1:])):
+        wt = blend("spine_02", "spine_03", min(1.0, max(0.0, ((a.z + b.z) / 2 - (z - 0.2)) / 0.2)))
+        bs[k % 2].tube(a, b, HOSE * (1.15 if k % 2 else 1.0), HOSE * (1.15 if k % 2 else 1.0), wt)
 
 
 def _torso(A, R):
@@ -32,11 +63,14 @@ def _torso(A, R):
     nc = R.neck
     top = _collar_top(R)
     cy = (nc.y + R.head_c.y) / 2
-    ring.tube(Vector((0, cy, top - 0.1)), Vector((0, cy, top)), COLLAR[0], COLLAR[0], W("spine_03"),
+    ring.tube(Vector((0, cy, top - 0.1)), Vector((0, cy, top)), COLLAR[0], COLLAR[0], W("neck_01"),
               ra2=COLLAR[1], rb2=COLLAR[1], up=(0, 1, 0), exp=2.4, round_ends=False)      # collar seal ring
     c, hx, hy, _ = min(R.T["torso"], key=lambda r: abs(r[0].z - (R.chest.z - 0.02)))
     uc = Vector((0, c.y - hy - 0.095, c.z))
     unit.blob(uc, 0.085, 0.035, 0.055, W("spine_03"), exp=3.2, nlat=6)                          # chest control unit
+    hoses = [Build(), Build()]
+    for sx in (1, -1):
+        _hose(hoses, R, uc + Vector((sx * 0.075, 0.015, -0.03)), sx)
 
     def shell(p, n):
         if abs(p.z - waist) < 0.025:
@@ -54,7 +88,9 @@ def _torso(A, R):
                 return "plate"                                               # two dials
         return "gmD"
     return Item("torso", "eva", [b.mesh("v2.eva.torso", A, shell), unit.mesh("v2.eva.unit", A, ctrl),
-                                 ring.mesh("v2.eva.collar", A, lambda p, n: "gm" if p.z > top - 0.05 else "gmD")])
+                                 ring.mesh("v2.eva.collar", A, lambda p, n: "gm" if p.z > top - 0.05 else "gmD"),
+                                 hoses[0].mesh("v2.eva.hose", A, lambda p, n: "gmD"),
+                                 hoses[1].mesh("v2.eva.hose.ribs", A, lambda p, n: "gm")])
 
 
 def _legs(A, R):
@@ -125,8 +161,11 @@ def _helmet(A, R):
              keep=lambda p: p.y < c.y - hy * 0.1 and abs(p.z - vz) < hz * 0.62 and p.z > base)   # its frame
     for sx in (1, -1):
         parts.blob(c + Vector((sx * (hx + 0.008), 0.0, -0.015)), 0.022, 0.055, 0.055, w, exp=2.6, nlat=6)   # ear pucks
-    lamp = c + Vector((-hx * 0.72, -hy * 0.42, hz * 0.5))
-    parts.blob(lamp, 0.03, 0.04, 0.025, w, exp=3.0, nlat=6)
+    d = Vector((-0.72, -0.42, 0.45))                                         # the lamp: on the shell's surface (the
+    k = (abs(d.x) ** 2.2 + abs(d.y) ** 2.2 + abs(d.z) ** 2.2) ** (-1 / 2.2)   # superellipsoid along d), over the right
+    lamp = c + Vector((d.x * hx, d.y * hy, d.z * hz)) * k + Vector((-0.012, -0.01, 0.006))   # temple, facing forward
+    lamps = Build()
+    lamps.tube(lamp + Vector((0, 0.03, 0)), lamp - Vector((0, 0.035, 0)), 0.026, 0.03, w, up=(0, 0, 1))
 
     def glass(p, n):
         return "cyan" if p.z > vz + hz * 0.47 else "brass"                   # the HUD line along the visor top
@@ -134,12 +173,11 @@ def _helmet(A, R):
     def part(p, n):
         if abs(p.x) > hx * 0.9:
             return "team.cloth"
-        if (p - lamp).length < 0.05:
-            return "lens" if n.y < -0.6 else "gm"
         return "gm"
     objs = [dome.mesh("v2.eva.helmet", A, lambda p, n: SHELL), visor.mesh("v2.eva.visor", A, glass),
             rim.mesh("v2.eva.visor_rim", A, lambda p, n: "gm"),
-            parts.mesh("v2.eva.helmet.parts", A, part)]
+            parts.mesh("v2.eva.helmet.parts", A, part),
+            lamps.mesh("v2.eva.lamp", A, lambda p, n: "lampY" if n.y < -0.6 and p.y < lamp.y - 0.03 else "gm")]
     return Item("gear.head", "eva_helmet", objs, glow=True)
 
 
