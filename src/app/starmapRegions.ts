@@ -11,7 +11,6 @@ export const REGION_TYPE_LABEL: Record<string, string> = {
 
 // Generated data never changes: outlines are computed once per sector (and per region and sector count).
 const sectorOutlines = new Map<string, string>();
-const sectorPatches = new Map<string, string>();
 const regionOutlines = new Map<string, string>();
 
 /** A sector's fluid outline around its nodes and the routes between them (cached by sector). */
@@ -28,29 +27,6 @@ function outlineOf(s: SectorData, node: (id: string) => NodeData | undefined, ro
   return d;
 }
 
-/** Region-level patches: blob width (map units) and cut-off. */
-const PATCH_SIGMA = 90;
-const PATCH_CUT = 0.8;
-
-/**
- * A sector's patch for the Region level: a rounder outline from wider blobs around its nodes alone, cut higher so it
- * keeps about the same size (cached by sector).
- */
-function patchOf(s: SectorData, node: (id: string) => NodeData | undefined): string {
-  const key = `${s.id}@${s.x},${s.y}`;
-  let d = sectorPatches.get(key);
-  if (d === undefined) {
-    d = fluidOutline(s.nodes.map(node).filter((n) => !!n).map((n): P => [n.x, n.y]), [], PATCH_SIGMA, 16, PATCH_CUT);
-    if (sectorPatches.size > 4000) sectorPatches.clear();
-    sectorPatches.set(key, d);
-  }
-  return d;
-}
-/** A sector's Region-level patch, from the generated galaxy's index. */
-export function sectorPatch(index: GalaxyIndex, s: SectorData): string {
-  return patchOf(s, (id) => index.nodes.get(id));
-}
-
 /** A sector's outline, from the generated galaxy's index. */
 export function sectorOutline(index: GalaxyIndex, s: SectorData): string {
   return outlineOf(s, (id) => index.nodes.get(id), () => {
@@ -65,7 +41,6 @@ export function warmOutlines(chunk: ChunkData): void {
   for (const s of chunk.sectors) {
     const mine = new Set(s.nodes);
     outlineOf(s, (id) => nodes.get(id), () => chunk.edges.filter((e) => e.kind === 'route' && mine.has(e.a) && mine.has(e.b)));
-    patchOf(s, (id) => nodes.get(id));
   }
 }
 

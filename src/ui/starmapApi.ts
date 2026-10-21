@@ -18,8 +18,6 @@ export interface UiStarSector {
   known: boolean;
   /** Fluid outline around its nodes and routes (SVG path, map units; evenodd for holes). */
   outline: string;
-  /** A rounder outline for the Region level (SVG path, map units). */
-  patch: string;
   /** Its central body (star, gas giant...): kind, position (map units) and radius. */
   body: { kind: string; x: number; y: number; r: number } | null;
   /** Its region (null: unclaimed frontier). */

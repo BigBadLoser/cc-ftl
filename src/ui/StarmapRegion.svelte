@@ -71,8 +71,8 @@
 {/each}
 {#each map.sectors as sec (sec.id)}
   {@const c = sec.known ? (tint.get(sec.region ?? '') ?? '#64748b') : '#475569'}
-  <path d={sec.patch} class="patch-base" fill-rule="evenodd" />
-  <path d={sec.patch} class="patch" class:known={sec.known} class:cur={sec.id === map.currentSector} class:onroute={routeSectors.has(sec.id)} class:picked={sec.id === picked} style={`--c:${c}`} fill-rule="evenodd" />
+  <path d={sec.outline} class="patch-base" fill-rule="evenodd" />
+  <path d={sec.outline} class="patch" class:known={sec.known} class:cur={sec.id === map.currentSector} class:onroute={routeSectors.has(sec.id)} class:picked={sec.id === picked} style={`--c:${c}`} fill-rule="evenodd" />
 {/each}
 {#if routePts}<polyline points={routePts} class="route" />{/if}
 {#each map.sectors as sec (sec.id)}

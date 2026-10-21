@@ -4,7 +4,7 @@ import {
 } from '../sim';
 import type { UiStarExit, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { nebulaAround } from './starmapNebula';
-import { buildRegions, sectorOutline, sectorPatch } from './starmapRegions';
+import { buildRegions, sectorOutline } from './starmapRegions';
 
 const OPEN_SPACE = '#5a6b85';
 
@@ -70,7 +70,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       top: Math.round(Math.min(...s.hull.map((p) => p.y))), r: Math.round(s.r),
       hull: s.hull.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(' '),
       color: (k && s.faction && content?.factions[s.faction]?.color) || OPEN_SPACE,
-      outline: sectorOutline(index, s), patch: sectorPatch(index, s), body: s.body ?? null, region: s.region ?? null, hub: !!s.hub, nodes: s.nodes.length,
+      outline: sectorOutline(index, s), body: s.body ?? null, region: s.region ?? null, hub: !!s.hub, nodes: s.nodes.length,
     };
   });
   const edges = [...index.edges.values()].filter((e) => known(e.a) && known(e.b)).map((e) => {

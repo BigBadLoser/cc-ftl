@@ -19,11 +19,12 @@ function segDist(px: number, py: number, a: P, b: P): number {
 
 /**
  * The outline around `points` and `links` (segments): the iso-line of a sum of Gaussians of width `sig` around each
- * point (and 0.8 x a narrower one along each segment), sampled every `step` units, cut at `thr`. Holes come out as inner
- * loops (draw with fill-rule evenodd).
+ * point (and 0.8 x a narrower one along each segment), sampled every `step` units. Holes come out as inner loops (draw
+ * with fill-rule evenodd).
  */
-export function fluidOutline(points: readonly P[], links: readonly [P, P][], sig: number, step: number, thr = 0.42): string {
+export function fluidOutline(points: readonly P[], links: readonly [P, P][], sig: number, step: number): string {
   if (!points.length) return '';
+  const thr = 0.42;
   const pad = sig * 3;
   const x0 = Math.min(...points.map((p) => p[0])) - pad;
   const y0 = Math.min(...points.map((p) => p[1])) - pad;
