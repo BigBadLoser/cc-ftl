@@ -8,7 +8,11 @@ IK; two-hand and heavy holds put the left hand on the family's support point (hu
   aim_2h / fire_2h        stock in the right shoulder, left hand on the foregrip; fire: as 1h, smaller
   aim_heavy / fire_heavy  braced at the right hip, a wide knees-bent stance, left hand on the top handle; fire: a
                           sustained shudder (4 frames, looping)
-  walk_aim_1h / walk_aim_2h / walk_heavy   the walk cycle's legs (the walk action at that frame) under the aim's arms"""
+  walk_aim_1h / walk_aim_2h / walk_heavy   the walk cycle's legs (the walk action at that frame) under the aim's arms
+  ready_1m / swing_1m     guard with the blade or baton up; swing: wind up behind the shoulder, chop through, strike,
+                          follow through low across the body, recover (5 frames)
+  ready_2m / swing_2m     the axe across the body, both hands on the haft; swing: overhead, from behind the head down
+                          to the floor in front, then back (6 frames)"""
 import math
 
 from mathutils import Matrix, Vector
@@ -62,12 +66,50 @@ def _stance(arm, wide):
             _aim(arm, f"shin.{n}", Vector((s * 0.12, 0.1, -1)))
 
 
+RIGHT = -LEFT
+# melee keyframes: (right wrist offset from the right shoulder, weapon direction), per frame
+MELEE = {
+    "ready_1m": [(FWD * 0.3 + UP * 0.02, UP * 0.75 + FWD * 0.6), (FWD * 0.3 - UP * 0.01, UP * 0.7 + FWD * 0.65)],
+    "swing_1m": [(UP * 0.32 + RIGHT * 0.1 - FWD * 0.05, UP * 0.6 - FWD * 0.75 + RIGHT * 0.2),
+                 (FWD * 0.38 + UP * 0.16, UP * 0.75 + FWD * 0.65),
+                 (FWD * 0.48 - UP * 0.12 + LEFT * 0.1, FWD * 0.9 - UP * 0.4),
+                 (FWD * 0.3 - UP * 0.38 + LEFT * 0.3, -UP * 0.7 + LEFT * 0.5 + FWD * 0.3),
+                 (FWD * 0.3 + UP * 0.0, UP * 0.7 + FWD * 0.6)],
+    "ready_2m": [(FWD * 0.24 - UP * 0.12 + LEFT * 0.12, UP * 0.8 + RIGHT * 0.45 + FWD * 0.15),
+                 (FWD * 0.24 - UP * 0.15 + LEFT * 0.12, UP * 0.8 + RIGHT * 0.45 + FWD * 0.15)],
+    "swing_2m": [(UP * 0.3 + LEFT * 0.1, UP * 0.5 - FWD * 0.85),
+                 (UP * 0.42 + FWD * 0.1 + LEFT * 0.12, UP * 0.95 - FWD * 0.2),
+                 (UP * 0.28 + FWD * 0.32 + LEFT * 0.12, FWD * 0.85 + UP * 0.5),
+                 (FWD * 0.4 - UP * 0.2 + LEFT * 0.12, FWD * 0.6 - UP * 0.8),
+                 (FWD * 0.4 - UP * 0.24 + LEFT * 0.12, FWD * 0.55 - UP * 0.85),
+                 (FWD * 0.28 - UP * 0.1 + LEFT * 0.12, UP * 0.8 + RIGHT * 0.4 + FWD * 0.2)],
+}
+
+
+def _melee(arm, i, clip):
+    pb = arm.pose.bones
+    wrist, d = MELEE[clip][i]
+    d = d.normalized()
+    up = -FWD if abs(d.z) > 0.9 else UP                                       # the blade's edge leads the cut
+    _aim(arm, "spine_02", Vector((0, -0.12 if clip.startswith("swing") and i in (2, 3) else -0.04, 1)))
+    _ik(arm, "R", pb["arm.R"].head + wrist, -UP + RIGHT * 0.5 - FWD * 0.2)
+    _frame(arm, "hand.R", d, up)
+    if clip.endswith("2m"):                                                  # the left hand lower on the haft
+        sup = pb["hand.R"].matrix @ (hw.SUPPORT["2m"] * hw.SIZE + Vector((0, hw.grip_y(arm), 0)))
+        _hold(arm, "L", sup, pb["hand.R"].matrix.to_3x3() @ Vector((0, 1, 0)),
+              pb["hand.R"].matrix.to_3x3() @ Vector((0, 0, 1)), -UP + LEFT * 0.8)
+
+
 def apply(arm, i, clip):
     """Pose frame i of a combat clip (see the module docstring). -> breathing amount."""
     arm.animation_data.action = None                                         # keep the action's pose, stop it
     pb = arm.pose.bones                                                      # overwriting ours
     fam = clip.rsplit("_", 1)[1]
     walk = clip.startswith("walk")
+    if fam in ("1m", "2m"):
+        _melee(arm, i, clip)
+        _aim(arm, "head", Vector((0, -0.1, 1)))
+        return 0.0
     k = KICK[clip][i] if clip in KICK else 0.0
     breath = 0.0 if clip in KICK or walk else math.sin(math.pi * i)
     pitch = 0.12 * k + (0.05 if fam == "heavy" else 0.0)

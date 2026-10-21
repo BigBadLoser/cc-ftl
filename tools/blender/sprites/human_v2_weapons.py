@@ -17,7 +17,8 @@ from .human_v2 import Build, W, blend
 
 GRIP = 0.55                               # the fist's centre, as a fraction of the hand bone from the wrist
 SIZE = 1.25                               # every weapon drawn this much over life size, so it reads at ~62 px
-SUPPORT = {"2h": Vector((0.0, 0.33, -0.01)), "heavy": Vector((0.0, 0.1, 0.2))}   # the left hand, grip-relative
+SUPPORT = {"2h": Vector((0.0, 0.33, -0.01)), "heavy": Vector((0.0, 0.1, 0.2)),
+           "2m": Vector((0.0, -0.24, 0.0))}                                     # the left hand, grip-relative
 FAMILY = {"sidearm": "1h", "ion_pistol": "1h", "laser_pistol": "1h", "plasma_cutter": "1h", "rifle": "2h",
           "laser_rifle": "2h", "shotgun": "2h", "smg": "2h", "rail_rifle": "2h", "flamethrower": "heavy",
           "heavy_repeater": "heavy", "blade": "1m", "shock_baton": "1m", "breach_axe": "2m"}

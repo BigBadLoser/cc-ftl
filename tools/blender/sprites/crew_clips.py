@@ -120,7 +120,8 @@ POSES = {
     "sit_work": Pose(action="idle_Armature", hold="first", before=_sit, chair=True, items=_sit_items),
     "eva_float": Pose(action="idle_Armature", hold="first", before=_float, puffs=suit.puffs, items=_float_items),
 }
-for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy"):
+for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy", "ready_1m", "swing_1m", "ready_2m",
+           "swing_2m"):
     POSES[_c] = Pose(action="idle_Armature", hold="first", before=_combat, items=_combat_items(_c.rsplit("_", 1)[1]))
 for _c in ("walk_aim_1h", "walk_aim_2h", "walk_heavy"):                 # the walk cycle's legs, the aim's arms
     POSES[_c] = Pose(action="walk_Armature", before=_combat, items=_combat_items(_c.rsplit("_", 1)[1]))
