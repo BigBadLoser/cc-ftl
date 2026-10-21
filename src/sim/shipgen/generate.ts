@@ -131,9 +131,11 @@ function fitOut(
   const margin = recipeRooms.length * lampPower;
   // Short of power after lighting: squeeze extra reactors into engineering or stores.
   const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || r === 'cargo' || r === 'support' ? i : -1)).filter((i) => i >= 0);
+  // Station courts (lit to scale, so lamp-hungry) can take a reactor on their open floor as a last resort.
+  const courts = roles.map((r, i) => (r === 'plaza' || r === 'garden' || r === 'drill' ? i : -1)).filter((i) => i >= 0);
   const reactor = defs['module.reactor'];
-  for (let k = 0; k < 3 && supply < demand + margin && reactor; k++) {
-    if (!placeOne(lay, rng, 'module.reactor', spare)) break;
+  for (let k = 0; k < (courts.length > 0 ? 6 : 3) && supply < demand + margin && reactor; k++) {
+    if (!(k < 3 && placeOne(lay, rng, 'module.reactor', spare)) && !(courts.length > 0 && placeOne(lay, rng, 'module.reactor', courts))) break;
     supply += reactor.power;
   }
   if (supply < demand) return { ...out, error: 'not enough power' };

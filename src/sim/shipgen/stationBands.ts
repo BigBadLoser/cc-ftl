@@ -25,7 +25,7 @@ export function bandRadius(rooms: RoomSpec[], depth: number, share = 1, side: 1 
  * Stamp `rooms` as segments of the band between the corridor (radius R, label `ring`) and radius R +- (depth + 1),
  * over the angle ranges `arcs`. Returns false if a room gets too little floor or no door.
  */
-export function bandRooms(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1 = 1): boolean {
+export function bandRooms(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1 = 1, tag = ''): boolean {
   if (rooms.length === 0) return true;
   const cv = b.cv;
   const lo = side > 0 ? R + 0.5 : R - depth - 1.5;
@@ -86,8 +86,8 @@ export function bandRooms(b: Builder, R: number, ring: number, rooms: RoomSpec[]
         if (row[x + dx - bx] === '.' && !isFloor.has(key(x + dx, y + dy))) row[x + dx - bx] = '#';
       }
     }
-    if (!b.cv.stamp(rows.map((q) => q.join('')), bx, by, `band${R}:${s}`)) return false;
-    b.parts.push({ x: bx, y: by, w: rows[0]?.length ?? 0, h: rows.length, key: `band${R}:${s}`, role: r.role, spec: r });
+    if (!b.cv.stamp(rows.map((q) => q.join('')), bx, by, `band${R}${tag}:${s}`)) return false;
+    b.parts.push({ x: bx, y: by, w: rows[0]?.length ?? 0, h: rows.length, key: `band${R}${tag}:${s}`, role: r.role, spec: r });
   }
   // Doors: straight through one wall onto the corridor, else onto the previous segment.
   for (const [s] of rooms.entries()) {
@@ -107,6 +107,29 @@ export function bandRooms(b: Builder, R: number, ring: number, rooms: RoomSpec[]
     if (pick.length === 0) return false;
     const d = pick[pick.length >> 1] as [number, number, boolean];
     cv.setDoor(d[0], d[1]);
+  }
+  return true;
+}
+
+/**
+ * A band over several separate arcs (cut by dock banks or spokes): rooms shared out to the arcs by length, each arc
+ * banded on its own so no segment straddles a gap. Arcs too short for one room get none.
+ */
+export function bandArcs(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1 = 1): boolean {
+  const total = arcs.reduce((t, [a, z]) => t + (z - a), 0);
+  const area = rooms.reduce((t, r) => t + r.w * r.h + 4, 0);
+  let i = 0;
+  let acc = 0;
+  let want = 0;
+  for (const [k, arc] of arcs.entries()) {
+    want += ((arc[1] - arc[0]) / total) * area;
+    const mine: RoomSpec[] = [];
+    while (i < rooms.length && (k === arcs.length - 1 || acc + ((rooms[i] as RoomSpec).w * (rooms[i] as RoomSpec).h + 4) / 2 <= want)) {
+      const r = rooms[i++] as RoomSpec;
+      acc += r.w * r.h + 4;
+      mine.push(r);
+    }
+    if (!bandRooms(b, R, ring, mine, depth, [arc], side, `${side > 0 ? 'o' : 'i'}${k}`)) return false;
   }
   return true;
 }
