@@ -50,7 +50,9 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     mpath = out / "manifest.json"
     names = (["crew", "robots", "aliens"] + list(families.ALL)) if what == "all" else what.split(",")
+    print("FAMILY_BATCH", len(names), flush=True)
     for name in names:
+        print("FAMILY_START", name, flush=True)
         m = pack.load_manifest(mpath, base())
         if name == "crew":
             from sprites import crew_build, crew_pack
@@ -81,10 +83,17 @@ def main():
             from sprites import env_build
             core.setup_scene()
             jobs, extra = families.jobs(name)
-            sheets, assets = pack.pack(name, env_build.render_jobs(jobs, extra), out)
+            total = len(jobs)
+            print("FAMILY_JOBS", name, total, flush=True)
+            step = max(1, total // 100)
+            def progress(done, count):
+                if done == 1 or done == count or done % step == 0:
+                    print("FAMILY_PROGRESS", name, done, count, flush=True)
+            sheets, assets = pack.pack(name, env_build.render_jobs(jobs, extra, progress=progress), out)
             pack.merge(m, name, sheets, assets)
         pack.save_manifest(mpath, m)
         print("MANIFEST", name, len(m["sheets"]), "sheets", len(m["assets"]), "assets", flush=True)
+        print("FAMILY_COMPLETE", name, flush=True)
 
 
 main()
