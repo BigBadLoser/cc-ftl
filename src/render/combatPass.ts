@@ -26,6 +26,7 @@ const PANEL_BG = 0x04070b;
 const C_NEUTRAL = 0x7fa9c0;
 const C_SHIP = 0xff5a5a;
 const C_OWN = 0x36d4ff;
+const C_OUTLINE = 0x05080d;
 
 /** What the target brackets show (module ids; 0 or absent = none). */
 export interface CombatMarks {
@@ -115,9 +116,13 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
       const color = wide ? C_SHIP : own ? C_OWN : hov ? 0xffffff : C_NEUTRAL;
       const alpha = (wide ? 1 : own ? 0.9 : hov ? 1 : marks.arming ? 0.7 : 0.55) * pulse;
       const pad = hov ? 2 : 0;
-      for (const sg of isoBracketSegments(padQuad(quad, pad)))
-        gfx.moveTo(sg.x1, sg.y1).lineTo(sg.x2, sg.y2);
-      gfx.stroke({ width: hov ? lw + 1 : lw, color, alpha });
+      const width = hov ? lw + 1 : lw;
+      const segs = isoBracketSegments(padQuad(quad, pad));
+      // A dark outline under each bracket keeps it readable on any roof colour.
+      for (const sg of segs) gfx.moveTo(sg.x1, sg.y1).lineTo(sg.x2, sg.y2);
+      gfx.stroke({ width: width + 2 * k, color: C_OUTLINE, alpha: 0.85 * alpha, cap: 'square' });
+      for (const sg of segs) gfx.moveTo(sg.x1, sg.y1).lineTo(sg.x2, sg.y2);
+      gfx.stroke({ width, color, alpha });
     }
   }
 
