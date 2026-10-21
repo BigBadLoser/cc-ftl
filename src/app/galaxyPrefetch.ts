@@ -5,6 +5,11 @@ import { warmOutlines } from './starmapRegions';
 export const PREFETCH_RING = 4;
 /** At game start, this inner ring is generated before the first frame (the rest follows in idle slots). */
 export const START_RING = 3;
+/** Normally one chunk every PREFETCH_EVERY bridge updates; for PREFETCH_BOOST_MS after a jump (while the starmap
+ * slides the ship along the lane) as many as fit in PREFETCH_BOOST_BUDGET_MS per update. */
+export const PREFETCH_EVERY = 4;
+export const PREFETCH_BOOST_MS = 1600;
+export const PREFETCH_BOOST_BUDGET_MS = 10;
 
 /**
  * Generate ahead: the galaxy is a pure function of (seed, chunk), so chunks around the player can be built early into

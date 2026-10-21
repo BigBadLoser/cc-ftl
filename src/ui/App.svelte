@@ -35,6 +35,8 @@
   let wasInCombat = false;
   let shuttleOpen = $state(false);
   let mapOpen = $state(false);
+  /** True while the starmap animates a jump; story popups wait for it. */
+  let sliding = $state(false);
   let prizeOpen = $state(false);
   let prizes = $state<UiPrize[]>([]);
   let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
@@ -163,8 +165,8 @@
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 <AlertList {api} />
-{#if mapOpen}<StarmapView {api} onClose={() => (mapOpen = false)} />{/if}
-<StoryModal {api} />
+{#if mapOpen}<StarmapView {api} onClose={() => ((mapOpen = false), (sliding = false))} onSlide={(on) => (sliding = on)} />{/if}
+<StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />
 
 <style>

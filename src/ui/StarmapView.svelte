@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import type { UiApi } from './api';
   import type { UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import StarmapPanel from './StarmapPanel.svelte';
@@ -8,7 +8,7 @@
   import StarmapOuter from './StarmapOuter.svelte';
   import StarmapSector from './StarmapSector.svelte';
 
-  let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
+  let { api, onClose, onSlide }: { api: UiApi; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
 
   let map = $state<UiStarmap | null>(null);
   let w = $state(800);
@@ -104,6 +104,7 @@
   onMount(() =>
     api.starmap.subscribe((m) => {
       const moved = map && map.current !== m.current;
+      if (moved && map) startSlide(map, m);
       map = m;
       if (!placed && m.nodes.length) {
         placed = true;
@@ -112,6 +113,44 @@
       if (moved && selected === m.current) selected = null;
     }),
   );
+
+  /**
+   * The jump animation: the ship marker slides along the lane from the old node to the new one (longer lanes take
+   * longer), and if the jump enters another sector the camera glides to it. The bridge generates ahead meanwhile.
+   */
+  let slide = $state<{ fx: number; fy: number; tx: number; ty: number; t: number } | null>(null);
+  let raf = 0;
+  function startSlide(prev: UiStarmap, next: UiStarmap) {
+    const a = prev.nodes.find((n) => n.id === prev.current);
+    const b = next.nodes.find((n) => n.id === next.current);
+    if (!a || !b) return;
+    const dur = Math.min(1600, 600 + Math.hypot(b.x - a.x, b.y - a.y) * 0.8);
+    const cam0 = { cx, cy, s };
+    const sec = next.sectors.find((x) => x.id === next.currentSector);
+    const follow = level === 1 && sec && prev.currentSector !== next.currentSector;
+    const cam1 = follow ? { cx: sec.x, cy: sec.y, s: (Math.min(w, h) * 0.62) / (2 * sec.r + 60) } : cam0;
+    const t0 = performance.now();
+    cancelAnimationFrame(raf);
+    onSlide?.(true);
+    const frame = (now: number) => {
+      const t = Math.min(1, (now - t0) / dur);
+      const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+      slide = t < 1 ? { fx: a.x, fy: a.y, tx: b.x, ty: b.y, t: e } : null;
+      if (!slide) onSlide?.(false);
+      if (follow) {
+        cx = cam0.cx + (cam1.cx - cam0.cx) * e;
+        cy = cam0.cy + (cam1.cy - cam0.cy) * e;
+        s = cam0.s + (cam1.s - cam0.s) * e;
+      }
+      if (t < 1) raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+  }
+  onDestroy(() => {
+    cancelAnimationFrame(raf);
+    onSlide?.(false);
+  });
+  const ship = $derived(slide ? { x: slide.fx + (slide.tx - slide.fx) * slide.t, y: slide.fy + (slide.ty - slide.fy) * slide.t, fx: slide.fx, fy: slide.fy, tx: slide.tx, ty: slide.ty } : null);
 
   const toMap = (px: number, py: number) => ({ x: cx + (px - w / 2) / s, y: cy + (py - h / 2) / s });
   const MIN_S = 0.015;
@@ -247,7 +286,7 @@
           {#key level}
             <g transition:fade={{ duration: 180 }}>
               {#if level === 1}
-                <StarmapSector {map} {px} {s} {view} {current} {route} {routePts} {selected} />
+                <StarmapSector {map} {px} {s} {view} {current} {route} {routePts} {selected} {ship} />
               {:else}
                 <StarmapOuter {map} {level} {px} picked={picked?.id ?? null} />
               {/if}

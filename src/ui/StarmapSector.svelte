@@ -7,9 +7,11 @@
   import type { UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import StarmapBody from './StarmapBody.svelte';
 
-  let { map, px, s, view, current, route, routePts, selected }: {
+  let { map, px, s, view, current, route, routePts, selected, ship }: {
     map: UiStarmap; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
     current: UiStarNode | null; route: UiStarRoute | null; routePts: string; selected: string | null;
+    /** While a jump animates: the ship's position on the lane and the lane's ends. */
+    ship: { x: number; y: number; fx: number; fy: number; tx: number; ty: number } | null;
   } = $props();
 
   const BADGE: Record<string, string> = { T: '#4ade80', M: '#60a5fa', R: '#c4b5fd', A: '#a3a3a3', D: '#fb923c' };
@@ -38,7 +40,7 @@
 {#each map.exits as e (e.id)}
   <line x1={e.ax} y1={e.ay} x2={e.bx} y2={e.by} class="exit {e.kind}" />
 {/each}
-{#if current}
+{#if current && !ship}
   {#each map.nodes.filter((n) => n.reachable) as n (n.id)}
     <line x1={current.x} y1={current.y} x2={n.x} y2={n.y} class="reach" />
   {/each}
@@ -50,8 +52,8 @@
   {#if n.known}
     {#if n.hostiles}<circle cx={n.x} cy={n.y} r={px(9)} class="hostile" />{/if}
     <circle cx={n.x} cy={n.y} r={px(n.current ? 6 : 4.5)} class="node" class:visited={n.visited} class:cur={n.current} />
-    {#if n.reachable}<circle cx={n.x} cy={n.y} r={px(8.5)} class="reachable" />{/if}
-    {#if n.current}<circle cx={n.x} cy={n.y} r={px(11)} class="here" />{/if}
+    {#if n.reachable && !ship}<circle cx={n.x} cy={n.y} r={px(8.5)} class="reachable" />{/if}
+    {#if n.current && !ship}<circle cx={n.x} cy={n.y} r={px(11)} class="here" />{/if}
     {#if s > 0.7}
       {#each n.badges as b, i (i)}
         <rect x={n.x + px(9 + i * 12)} y={n.y - px(5)} width={px(11)} height={px(11)} rx={px(2)} fill={BADGE[b] ?? '#999'} />
@@ -64,6 +66,12 @@
   {/if}
   {#if selected === n.id}<circle cx={n.x} cy={n.y} r={px(14)} class="sel" />{/if}
 {/each}
+{#if ship}
+  {@const ang = (Math.atan2(ship.ty - ship.fy, ship.tx - ship.fx) * 180) / Math.PI}
+  <line x1={ship.fx} y1={ship.fy} x2={ship.x} y2={ship.y} class="trail" />
+  <circle cx={ship.x} cy={ship.y} r={px(11)} class="here" />
+  <path d={`M ${px(8)} 0 L ${px(-6)} ${px(-5)} L ${px(-3)} 0 L ${px(-6)} ${px(5)} Z`} transform={`translate(${ship.x} ${ship.y}) rotate(${ang})`} class="ship" />
+{/if}
 {#each map.sectors as sec (sec.id)}
   {#if sec.known && sec.x > view.x0 && sec.x < view.x1 && sec.y > view.y0 && sec.y < view.y1}
     {@const lx = clampX(sec.x, 80)}
@@ -98,6 +106,8 @@
   .node.cur { fill: var(--cyan); }
   .reachable { fill: none; stroke: #4ade80; stroke-width: 2; vector-effect: non-scaling-stroke; }
   .here { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .ship { fill: var(--cyan); stroke: #05080e; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  line.trail { stroke: var(--cyan); stroke-opacity: 0.8; stroke-width: 3; stroke-linecap: round; }
   .sel { fill: none; stroke: var(--amber); stroke-width: 2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
   .hostile { fill: rgba(239, 68, 68, 0.25); stroke: var(--red); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
   .unknown { fill: #0b1220; stroke: #7c8ca6; stroke-opacity: 0.85; stroke-width: 1.5; vector-effect: non-scaling-stroke; }

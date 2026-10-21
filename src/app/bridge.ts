@@ -9,7 +9,7 @@ import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildStory } from './storySnapshot';
 import { buildStarmap, planStarmapRoute, starmapStatus } from './starmapSnapshot';
-import { prefetchGalaxy, prefetchStart } from './galaxyPrefetch';
+import { PREFETCH_BOOST_BUDGET_MS, PREFETCH_BOOST_MS, PREFETCH_EVERY, prefetchGalaxy, prefetchStart } from './galaxyPrefetch';
 import type { UiStarmap, UiStarRoute } from '../ui/starmapApi';
 import { createStore, type Readable } from './store';
 
@@ -221,6 +221,21 @@ export function createBridge(sim: Sim): Bridge {
     }
   };
   /** Starmap: full rebuild on a galaxy revision, otherwise only the fuel and FTL figures (about six times a second). */
+  // Generate ahead: normally one chunk every few updates; right after a jump (while the starmap slides the ship along
+  // the lane, so a slow frame goes unnoticed) chunks back to back within a per-update budget.
+  let prefetchFrame = 0;
+  let lastNode = sim.galaxy.current;
+  let boostUntil = 0;
+  const runPrefetch = () => {
+    const now = performance.now();
+    if (sim.galaxy.current !== lastNode) {
+      lastNode = sim.galaxy.current;
+      boostUntil = now + PREFETCH_BOOST_MS;
+    }
+    if (now < boostUntil) {
+      while (performance.now() - now < PREFETCH_BOOST_BUDGET_MS && prefetchGalaxy(sim));
+    } else if (prefetchFrame++ % PREFETCH_EVERY === 0) prefetchGalaxy(sim);
+  };
   const refreshStarmap = () => {
     if (starFrame++ % 10) return;
     const cur = starmap.get();
@@ -285,7 +300,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshCombat();
       refreshStory();
       refreshStarmap();
-      prefetchGalaxy(sim);
+      runPrefetch();
     },
   };
 }
