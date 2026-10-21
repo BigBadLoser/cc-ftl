@@ -29,7 +29,7 @@ def parse_opts(argv):
     pos, opts, k = [], {}, 0
     while k < len(argv):
         a = argv[k]
-        if a in ("--force", "--plan"):
+        if a in ("--force", "--plan", "--cache-only"):
             opts[a[2:]] = True
         elif a in ("--item", "--clip") and k + 1 < len(argv):
             k += 1
@@ -57,7 +57,7 @@ def main():
         if name == "crew":
             from sprites import crew_build, crew_pack
             sheets, assets, full = crew_build.build(out, opts)
-            if not opts.get("plan"):
+            if not opts.get("plan") and not opts.get("cache-only"):
                 crew_pack.merge(m, sheets, assets, full, out)
         elif name == "aliens":
             # ALIEN_QUICK=1: preview frames only (see alien_render.build); not for commits
