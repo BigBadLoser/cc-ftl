@@ -26,7 +26,7 @@ export function buildTrade(sim: Sim): UiTrade {
   const candidates = [...sim.world.query(ShipC), ...sim.world.query(TraderC).filter((i) => !sim.world.has(i, ShipC))];
   for (const id of candidates) {
     const ship = sim.world.get(id, ShipC);
-    if (ship && (ship.faction === 'player' || (ship.state !== 'active' && ship.state !== 'disabled'))) continue;
+    if (ship && (ship.faction === 'player' || ship.outpost?.hidden || (ship.state !== 'active' && ship.state !== 'disabled'))) continue;
     const trader = sim.world.get(id, TraderC);
     const profile = trader?.profile ?? (ship ? profileFor(sim, ship) : null);
     const hail = sim.trade.hails.find((h) => h.ship === id);

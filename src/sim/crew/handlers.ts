@@ -10,6 +10,8 @@ import { DoorJam, Struct } from '../structure';
 import type { Sim } from '../sim';
 import type { GridLike } from '../grid';
 import { rockBuild } from '../rock/dig';
+import { provokeOutpost } from '../outposts/state';
+import { ShipC } from '../combat/components';
 import { TICK_HZ } from '../time';
 import {
   CrewC, DraftedC, JobC, PositionC, PrioritiesC, WORK_CATEGORIES, type Crew,
@@ -53,6 +55,12 @@ function checkTile(sim: Sim, type: string, shipId: number, x: number, y: number)
   return grid.get('struct', x, y);
 }
 
+/** Build orders come from the player: one aimed at someone else's outpost (digging or building into it) provokes it. */
+function provokeIfOutpost(sim: Sim, ship: number): void {
+  const s = sim.world.get(ship, ShipC);
+  if (s?.outpost && s.faction !== 'player') provokeOutpost(sim, ship, 'dug');
+}
+
 function crewOf(sim: Sim, type: string, id: number): Crew | undefined {
   const crew = sim.world.get(id, CrewC);
   if (!crew) reject(sim, type, 'noCrew');
@@ -64,6 +72,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     if (!BUILDABLE.includes(cmd.struct)) return reject(sim, cmd.type, 'badStruct');
     const current = checkTile(sim, cmd.type, cmd.ship, cmd.x, cmd.y);
     if (current < 0) return;
+    provokeIfOutpost(sim, cmd.ship);
     if (current === cmd.struct) return reject(sim, cmd.type, 'sameStruct');
     if (shipGrid(sim, cmd.ship)?.get('module', cmd.x, cmd.y)) return reject(sim, cmd.type, 'moduleHere');
     if (current === Struct.Rock) {
@@ -78,6 +87,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
   'job.deconstruct': (sim, cmd) => {
     const current = checkTile(sim, cmd.type, cmd.ship, cmd.x, cmd.y);
     if (current < 0) return;
+    provokeIfOutpost(sim, cmd.ship);
     if (current !== Struct.Wall && current !== Struct.Door) return reject(sim, cmd.type, 'nothingToDeconstruct');
     createJob(sim, 'deconstruct', cmd.ship, cmd.x, cmd.y, Struct.Floor, DECONSTRUCT_TICKS);
   },

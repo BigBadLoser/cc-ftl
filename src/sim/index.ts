@@ -91,3 +91,5 @@ export { generateOutpost, OUTPOST, OUTPOST_KINDS, type OutpostPlan, type Outpost
 export { validateOutpost } from './outposts/validate';
 export { stampOutpost } from './outposts/stamp';
 export { DIG_TICKS, LEVEL_TICKS, AUTO_LEVEL_MAX, isOuterRock } from './rock/dig';
+export { isDormant, isHiddenOutpost, discoverOutpost, provokeOutpost } from './outposts/state';
+export { DISCOVER_RANGE } from './systems/outposts';

@@ -72,7 +72,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
   const targets: UiShuttles['targets'] = [];
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s && id !== PLAYER && s.state !== 'fled') targets.push({ ship: id, name: s.name, ...(s.state === 'wreck' ? { derelict: derelictInfo(sim, id, s) } : {}) });
+    if (s && id !== PLAYER && s.state !== 'fled' && !s.outpost?.hidden) targets.push({ ship: id, name: s.name, ...(s.state === 'wreck' ? { derelict: derelictInfo(sim, id, s) } : {}) });
   }
   return { shuttles, airlocks, targets, roster, bays };
 }

@@ -46,7 +46,8 @@ export function shipStateSystem(sim: Sim): void {
       wreckShip(sim, id);
       continue;
     }
-    const disabled = ableCrew(sim, id) === 0 || (sources > 0 && running === 0);
+    // outposts are immobile by nature and have no crew yet: never 'disabled' for that
+    const disabled = !ship.outpost && (ableCrew(sim, id) === 0 || (sources > 0 && running === 0));
     if (disabled && ship.state === 'active') {
       ship.state = 'disabled';
       sim.events.emit({ type: 'ship.disabled', ship: id });

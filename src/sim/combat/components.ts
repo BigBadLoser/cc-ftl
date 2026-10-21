@@ -73,8 +73,12 @@ export interface Ship {
   gen?: GenOrigin;
   /** Set on derelicts: dressing data for the renderer (see ShipRuin). */
   ruin?: ShipRuin;
-  /** Set on asteroid outposts (outposts/gen.ts): its style and kind; a dug one is roofed with rock. */
-  outpost?: { style: 'surface' | 'dug'; kind: string };
+  /**
+   * Set on asteroid outposts (outposts/gen.ts): its style and kind; a dug one is roofed with rock. `hidden` until the player
+   * discovers it (dug ones start hidden); `provoked` once the player attacked, boarded or dug into it (until then it is
+   * dormant: no combatant). See outposts/state.ts.
+   */
+  outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean; provoked: boolean };
 }
 export const ShipC = defineComponent<Ship>('ship');
 

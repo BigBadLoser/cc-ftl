@@ -7,6 +7,7 @@ import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
 import { carrySystem } from './systems/carry';
 import { combatStateSystem } from './systems/combatState';
+import { outpostSystem } from './systems/outposts';
 import { craftJobsSystem } from './systems/craftJobs';
 import { decideSystem } from './systems/decide';
 import { deploySystem } from './systems/deploy';
@@ -142,6 +143,8 @@ export const pipeline: readonly System[] = [
   tradeSystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.
   workSystem,
+  // Outposts found or provoked by player presence, before the combat state reads who is a combatant.
+  outpostSystem,
   // --- Combat (see each system's notes). State first: it decides whether consoles are needed next tick.
   combatStateSystem,
   // Ion timers expire before anything asks whether a module is disabled.

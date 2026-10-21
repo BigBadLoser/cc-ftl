@@ -175,7 +175,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     return g ? regionOrigin(g) : ZERO;
   };
   const NONE: ReadonlySet<number> = new Set();
-  const pickHost = (): PickHost => ({ scenes, cam, origin });
+  const pickHost = (): PickHost => ({ scenes, cam, origin, hidden: (id) => !!world.get(id, ShipC)?.outpost?.hidden });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf });
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
@@ -207,7 +207,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   /** A ship's roof livery; the debug URL parameter `?bow=east|west` forces the end the bow motifs take. */
   const bowParam = new URLSearchParams(window.location.search).get('bow');
   const shipLivery = (s: Ship) => ({ ...liveryFor(s.faction, s.name), ...(bowParam ? { bowWest: bowParam === 'west' } : {}) });
-  const roofFor = (id: number, s: Ship) => wantsRoof(world, id, s, roofEnemies);
+  // a hidden outpost stays under its rock roof whatever the roof toggle says
+  const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || wantsRoof(world, id, s, roofEnemies);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
     const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
