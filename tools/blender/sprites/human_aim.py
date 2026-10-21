@@ -53,10 +53,17 @@ def _frame(arm, name, fwd, up):
     bpy_update()
 
 
+def _wrist(s, at, hy, hz, gy):
+    """Where hand s's wrist goes so its fist (gy along the hand, TUNNEL to the palm side) closes on `at`, the hand's +Y
+    along hy and +Z along hz."""
+    hx = hy.cross(hz).normalized()
+    return at - hy * gy - hx * (-hw.TUNNEL if s == "R" else hw.TUNNEL)
+
+
 def _hold(arm, s, grip, fwd, up, pole):
     """Hand s closes on the grip-frame point `grip` (armature space), barrel along fwd (the hand pitched under it)."""
     hf, hu = hw.hand_axes(fwd, up)
-    _ik(arm, s, grip - hf * hw.grip_y(arm), pole)
+    _ik(arm, s, _wrist(s, grip, hf, hu, hw.grip_y(arm)), pole)
     _frame(arm, f"hand.{s}", hf, hu)
 
 
@@ -81,7 +88,7 @@ def _cup(arm, at, fwd, up):
     """The left hand cups a handguard at `at`: palm up under it, the barrel along the fist (index towards the muzzle),
     the forearm in from below on the left and the fingers wrapping up the far side."""
     across = fwd.cross(up).normalized()                                       # wrist to knuckles: to the right
-    _ik(arm, "L", at - across * hw.grip_y(arm), -UP + LEFT * 0.6)
+    _ik(arm, "L", _wrist("L", at, across, fwd, hw.grip_y(arm)), -UP + LEFT * 0.6)
     _frame(arm, "hand.L", across, fwd)
 
 
@@ -128,7 +135,7 @@ def _melee(arm, i, clip):
     _frame(arm, "hand.R", hy, d)
     if clip.endswith("2m"):                                                  # the left hand lower on the haft
         sup = pb["hand.R"].matrix @ hw.to_hand(arm, hw.SUPPORT["2m"], melee=True)
-        _ik(arm, "L", sup - hy * hw.grip_y(arm), -UP * 0.4 + LEFT * 0.8 + FWD * 0.6)      # the elbow out in front
+        _ik(arm, "L", _wrist("L", sup, hy, d, hw.grip_y(arm)), -UP * 0.4 + LEFT * 0.8 + FWD * 0.6)   # elbow out front
         _frame(arm, "hand.L", hy, d)
 
 

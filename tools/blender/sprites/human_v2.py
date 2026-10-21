@@ -339,10 +339,10 @@ def leg(b, R, side, grow=0.0, foot=True, boot=0.0):
         b.sweep(transport([(c, e1, e2, r1, r2, W(f"foot.{s}")) for c, e1, e2, r1, r2 in secs]), grow=grow + boot, exp=2.6)
 
 
-HEAD_EXP = 3.6                        # squarer sections (2: round)
-HEAD_TOP = 0.35                       # how much of the traced cranium's rounding off is taken out (a flatter top)
-HEAD_JAW = 0.4                        # likewise for the narrowing to the chin (a squarer jaw)
-HEAD_CROWN = 0.7
+HEAD_EXP = 2.8                        # sections between round (2) and square (3.6 read as a box at 2x)
+HEAD_TOP = 0.1                        # how much of the traced cranium's rounding off is taken out (a flatter top)
+HEAD_JAW = 0.15                       # likewise for the narrowing to the chin (a squarer jaw)
+HEAD_CROWN = 0.8
 
 
 def head(b, R, grow=0.0, keep=None):

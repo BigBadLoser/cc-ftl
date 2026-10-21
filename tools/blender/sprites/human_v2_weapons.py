@@ -19,6 +19,8 @@ from .human_v2 import Build, W, blend
 
 HOLD = 0.4                                # the hand pitched this much (rad) under the barrel: the gun sits above
                                           # the wrist (along the barrel, its body ran through the wrist)
+TUNNEL = 0.03                             # the curled fingers close this far to the palm side of the hand's line
+                                          # (hand.R -x, hand.L +x): grips go there, not through the knuckles
 RISE = 0.04                               # guns sit this much higher than the fist's centre (the grip runs down
                                           # into the fist, the gun above it)
 BUTT = 0.3                                # every shouldered gun's butt this far behind the grip
@@ -145,7 +147,7 @@ def to_hand(A, v, melee=False):
         v = Matrix.Rotation(math.pi / 2, 3, "X") @ v
     else:
         v = Matrix.Rotation(HOLD, 3, "X") @ (v + Vector((0.0, 0.0, RISE)))
-    return v + Vector((0.0, grip_y(A), 0.0))
+    return v + Vector((-TUNNEL, grip_y(A), 0.0))
 
 
 def hand_axes(fwd, up):

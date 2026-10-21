@@ -156,12 +156,18 @@ HAIR_GROW, HAIR_FRONT, HAIR_SIDE = 0.01, 0.095, 0.02     # a close cap; hairline
 
 
 def _hair_cap(b, R, back=-0.15, grow=HAIR_GROW):
-    front, side = HAIR_FRONT, HAIR_SIDE
+    """The hair as the head grown a little, kept above one smooth hairline: HAIR_FRONT over the forehead, a little higher
+    at the temples, easing down to HAIR_SIDE over the ears and to `back` at the nape (no step at the temples)."""
     c = R.head_c
+    ss = lambda e0, e1, t: (lambda u: u * u * (3 - 2 * u))(min(1.0, max(0.0, (t - e0) / (e1 - e0))))  # noqa: E731
 
     def keep(p):
         r = p - c
-        return r.z > front or (r.y > 0.02 and r.z > back) or (r.y > -0.04 and r.z > side and abs(r.x) > R.HX - 0.02)
+        t = (r.y + R.HY) / (2 * R.HY)                                        # 0 at the face, 1 at the back
+        line = HAIR_FRONT + 0.03 * min(1.0, abs(r.x) / R.HX) ** 2
+        line += (HAIR_SIDE - line) * ss(0.1, 0.45, t)
+        line += (back - line) * ss(0.55, 0.85, t)
+        return r.z > line
     head(b, R, grow=grow, keep=keep)
 
 
@@ -172,9 +178,9 @@ def _strands(p, n):
 
 def _fringe(b, R):
     c = R.head_c
-    for x, dz in ((-0.07, 0.004), (-0.025, -0.004), (0.02, 0.0), (0.065, 0.006)):     # bottoms >= 0.085 over the
-        b.blob(Vector((x, R.front + 0.012, c.z + HAIR_FRONT + 0.02 + dz)), 0.03, 0.022, 0.026, W("head"), exp=2.2,
-               nlat=6)                                                       # centre: 2 px of brow clear of the fringe
+    for x, dz in ((-0.065, 0.004), (-0.022, -0.002), (0.02, 0.0), (0.062, 0.005)):    # on the hairline (its curve),
+        z = c.z + HAIR_FRONT + 0.03 * (abs(x) / R.HX) ** 2 + 0.016 + dz        # not jutting out of it: 2 px of brow
+        b.blob(Vector((x, R.front + 0.022, z)), 0.028, 0.016, 0.02, W("head"), exp=2.2, nlat=6)   # clear below
 
 
 def hair_short(A, R):
