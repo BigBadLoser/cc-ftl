@@ -118,6 +118,8 @@ def apply(arm, i, clip):
     if crouch:
         hc.legs(arm, kneel=fam == "heavy", lift=0.05 if fam in ("2h", "heavy") else 0.0)
         hc.torso(arm, 0.0)
+    elif not walk and fam != "heavy":
+        hc.stance(arm)                                                       # idle's legs, tidied
     if fam in ("1m", "2m"):
         _melee(arm, i, clip)
         _aim(arm, "head", Vector((0, -0.1, 1)))

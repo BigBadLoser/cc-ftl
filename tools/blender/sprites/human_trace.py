@@ -20,7 +20,7 @@ SHIN_K = (0.88, 1.08, 0.76)           # lower leg: a narrow knee, the calf a thi
 THIGH_K = (1.04, 1.0, 0.84)           # thigh: full at the hip, tapering to the knee
 FOOT_K = (0.85, 0.88)                 # foot length (from the ankle) and girth: the 1x feet were oversized to read
 HEAD_W, HEAD_H = 0.84, 1.14           # head width and height against the traced head
-HAND_LEN = 0.17                       # wrist to the curled finger ends (the traced hand, fingers out, is 0.26)
+HAND_LEN = 0.15                       # wrist to just past the knuckles: the palm (the fingers are separate tubes)
 
 
 def fold(name):
@@ -204,8 +204,8 @@ def shape_hand(secs, head):
         f = min(1.0, max(0.0, (t - ts[k]) / (ts[k + 1] - ts[k])))
         c = Vector(secs[k][0]).lerp(Vector(secs[k + 1][0]), f)
         u = t / HAND_LEN
-        curl = 0.035 * max(0.0, (u - 0.5) / 0.5) ** 2                       # the fingers bend down under the palm
-        width = 0.038 + 0.016 * min(1.0, u / 0.7) - 0.01 * max(0.0, (u - 0.7) / 0.3)
+        curl = 0.0
+        width = 0.038 + 0.016 * min(1.0, u / 0.7) - 0.006 * max(0.0, (u - 0.7) / 0.3)
         thick = 0.028 + 0.008 * min(1.0, u / 0.6)
         out.append((c - e2 * curl, e1, e2, width, thick))
     return out

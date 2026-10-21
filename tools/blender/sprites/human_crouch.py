@@ -56,6 +56,16 @@ def legs(arm, i=0, n=1, walk=False, kneel=False, lift=0.0):
         _leg_ik(arm, s, ankle, FWD + LEFT * sx * 0.35)
 
 
+def stance(arm, out=0.03):
+    """Standing: the feet under the hips (`out` to the side) and pointing forward. The base idle stands wide and
+    splay-footed, which reads odd at 2x."""
+    pb = arm.pose.bones
+    bpy_update()
+    for s, sx in (("L", 1), ("R", -1)):
+        hip, ankle = pb[f"leg.{s}"].head.copy(), pb[f"foot.{s}"].head.copy()
+        _leg_ik(arm, s, Vector((hip.x + sx * out, ankle.y, ankle.z)), FWD + LEFT * sx * 0.15)
+
+
 def torso(arm, hunch):
     """hunch 1: bent well over (hidden); 0: upright (up over the cover)."""
     lean = 0.08 + 0.85 * hunch

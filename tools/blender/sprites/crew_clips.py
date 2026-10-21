@@ -123,7 +123,14 @@ def _sleep(arm, i):
     arm.location = _SLEEP_LOC[key]
 
 
+def _stand(arm, i):
+    arm.animation_data.action = None                     # keep the action's pose, stop it overwriting ours
+    crouch.stance(arm)
+
+
 POSES = {
+    "idle": Pose(after=_stand),
+    "work": Pose(after=_stand),
     "sleep": Pose(hold="last", after=_sleep),
     "sit_idle": Pose(action="idle_Armature", hold="first", before=_sit, chair=True, items=_sit_items),
     "sit_work": Pose(action="idle_Armature", hold="first", before=_sit, chair=True, items=_sit_items),

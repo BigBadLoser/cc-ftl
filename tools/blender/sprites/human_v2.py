@@ -312,11 +312,23 @@ def arm(b, R, side, grow=0.0, upper=1.0, fore=True, hand=True):
         chain(b, R, bones, grow, t1=upper * (n_up - 1) / (n - 1))
     else:
         chain(b, R, bones, grow)
-    if hand:                                                                 # the thumb, along the front of the hand
-        t0, t1 = R.h[f"thumb_1.{s}"], R.t[f"thumb_2.{s}"]
-        ax = (R.t[f"hand.{s}"] - R.h[f"hand.{s}"]).normalized()
-        tip = t0.lerp(t1, 0.6) + ax * 0.02 + Vector((0, -0.012, 0))         # short, a little out from the hand
-        b.tube(t0 - ax * 0.015, tip, 0.027 + grow, 0.022 + grow, W(f"hand.{s}"))
+    if hand:
+        fingers(b, R, s, grow)
+
+
+FINGER_R = (0.017, 0.015, 0.013)      # finger radius per segment (base to tip): ~3 px wide at 2x, with a groove between
+
+
+def fingers(b, R, s, grow=0.0):
+    """Four fingers and a thumb as tubes on their own bones, so they curl with the clips' finger poses (a closed hand,
+    a grip) and read as fingers at 2x: each segment on its bone, slightly shorter than the bone so the joints show."""
+    for f in ("index", "middle", "ring", "pinky"):
+        for k, r in zip((1, 2, 3), FINGER_R):
+            h, t = R.h[f"{f}_{k}.{s}"], R.t[f"{f}_{k}.{s}"]
+            b.tube(h, t, r + grow, r * 0.95 + grow, W(f"{f}_{k}.{s}"))
+    for k, r in ((1, 0.022), (2, 0.019), (3, 0.016)):                        # the thumb, thicker
+        h, t = R.h[f"thumb_{k}.{s}"], R.t[f"thumb_{k}.{s}"]
+        b.tube(h, t, r + grow, r * 0.92 + grow, W(f"thumb_{k}.{s}"))
 
 
 def leg(b, R, side, grow=0.0, foot=True, boot=0.0):

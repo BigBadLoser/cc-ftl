@@ -75,11 +75,9 @@ def flesh_arm(A, R, s):
     b = Build()
     arm(b, R, s)
     ex, wx = abs(R.h[f"forearm.{s}"].x), abs(R.h[f"hand.{s}"].x)
-    kx = wx + (abs(R.t[f"hand.{s}"].x) - wx) * 0.55                        # the knuckles
 
     def col(c, n):
-        if abs(abs(c.x) - ex) < CREASE and n.y < -0.2 or abs(abs(c.x) - wx) < CREASE or \
-                abs(abs(c.x) - kx) < 0.014 and n.z > -0.3:
+        if abs(abs(c.x) - ex) < CREASE and n.y < -0.2 or abs(abs(c.x) - wx) < CREASE:
             return "team.skin*0.5"
         return "team.skin"
     return Item(f"arm.{s}", "flesh", [b.mesh(f"v2.arm.{s}", A, col)], default=True)
