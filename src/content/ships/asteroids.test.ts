@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AsteroidC, CombatC, FTL_CHARGE_SEC, ShipC, Struct, asteroidAt, deserialize, generateAsteroid, homeShip, isRock, newGame, ownerAt,
+  AsteroidC, CombatC, FTL_CHARGE_SEC, ShipC, asteroidAt, deserialize, generateAsteroid, homeShip, isAsteroidRock, newGame, ownerAt,
   serialize, shipAt, shipIdAt, type OreDef, type Sim,
 } from '../../sim';
 import { content } from '../index';
@@ -32,13 +32,13 @@ function rockTiles(sim: Sim, id: number): string {
 describe('asteroids in the sector', () => {
   it('debug.spawnAsteroid stamps the plan: rock owned by the asteroid, ore as generated, not a ship', () => {
     const sim = newGame(1, content);
-    sim.enqueue({ type: 'debug.spawnAsteroid', kind: 'big', seed: 4, hollow: true });
+    sim.enqueue({ type: 'debug.spawnAsteroid', kind: 'big', seed: 4, coverage: 'mixed' });
     expect(run(sim, 1)).toContain('asteroid.spawned');
     const [id] = asteroids(sim);
     const a = sim.world.get(id!, AsteroidC)!;
     expect(sim.world.has(id!, ShipC)).toBe(false);
-    const plan = generateAsteroid('big', 4, ORES, { hollow: true });
-    expect([a.width, a.height, a.hollow]).toEqual([plan.w, plan.h, true]);
+    const plan = generateAsteroid('big', 4, ORES, { coverage: 'mixed' });
+    expect([a.width, a.height, a.coverage]).toEqual([plan.w, plan.h, 'mixed']);
     let rock = 0;
     for (let y = 0; y < plan.h; y++) {
       for (let x = 0; x < plan.w; x++) {
@@ -46,7 +46,7 @@ describe('asteroids in the sector', () => {
         const sx = a.x + x, sy = a.y + y;
         expect(sim.sector.grid.get('struct', sx, sy)).toBe(plan.struct[i]);
         expect(sim.sector.grid.get('ore', sx, sy)).toBe(plan.ore[i]);
-        if (!isRock(plan.struct[i]!)) continue;
+        if (!isAsteroidRock(plan.struct[i]!)) continue;
         rock++;
         expect(ownerAt(sim, sx, sy)).toBe(id);
         expect(asteroidAt(sim, sx, sy)).toBe(id);
@@ -55,8 +55,6 @@ describe('asteroids in the sector', () => {
       }
     }
     expect(rock).toBeGreaterThan(500);
-    expect(a.core).not.toBeNull();
-    expect(sim.sector.grid.get('struct', a.core!.x + (a.core!.w >> 1), a.core!.y + (a.core!.h >> 1))).toBe(Struct.CoreRock);
   });
 
   it('keeps the gap rule both ways: no asteroid on a ship, no ship on an asteroid', () => {

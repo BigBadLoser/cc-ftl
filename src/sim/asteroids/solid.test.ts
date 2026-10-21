@@ -36,7 +36,7 @@ const avgO2 = (sim: Sim, x0: number): number => {
 
 describe('rock in the systems', () => {
   it('is solid: not walkable, blocks paths and sight; no integrity', () => {
-    for (const kind of [Struct.Rock, Struct.CoreRock]) {
+    for (const kind of [Struct.Rock]) {
       const sim = make(kind);
       const g = shipGrid(sim, 1)!;
       expect(isWalkable(kind)).toBe(false);

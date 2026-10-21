@@ -36,6 +36,10 @@ export type SimEvent =
   | { type: 'ship.spawned'; ship: number; faction: Faction }
   /** An asteroid region was stamped (`asteroid` is its AsteroidC entity); its bbox in sector tiles. */
   | { type: 'mining.ordered'; pod: number; asteroid: number; tiles: number }
+  /** A crew member was sent to fly a pod (walking to its bay); the order waits for them. */
+  | { type: 'mining.pilotSent'; pod: number; crew: number }
+  /** A mining order cannot launch: `noPilot` (no free crew member on the pod's ship). Fired once per wait. */
+  | { type: 'mining.waiting'; pod: number; reason: 'noPilot' }
   /** A pod left its bay on a mining trip (also `vehicle.launched`), heading for ore tile (x, y). */
   | { type: 'mining.launched'; pod: number; asteroid: number; x: number; y: number; trip: number }
   /** A pod cut the last ore off tile (x, y): the rock there is gone (Space). */

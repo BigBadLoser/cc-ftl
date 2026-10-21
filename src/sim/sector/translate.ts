@@ -49,7 +49,6 @@ export const TRANSLATE: Record<string, Shift | null> = {
   asteroid: (c, dx, dy) => {
     xy(c, dx, dy);
     (c.parts as Xy[]).forEach((r) => point(r, dx, dy));
-    point(c.core as Xy | null, dx, dy);
   },
   // No coordinates:
   airlock: null, deploy: null, combat: null, weapon: null, pointDefense: null, ion: null, captureProgress: null, prize: null,

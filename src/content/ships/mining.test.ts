@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AsteroidC, CrewC, MiningPodC, Struct, VehicleC, deserialize, homeShip, newGame, placementError, serialize, shipGrid, spawnModule, spawnVehicle,
+  AsteroidC, CrewC, DraftedC, MiningPodC, PositionC, Struct, VehicleC, deserialize, homeShip, newGame, placementError, serialize, shipGrid, spawnModule, spawnVehicle,
   totalStock, type Sim,
 } from '../../sim';
 import { content } from '../index';
@@ -109,6 +109,7 @@ describe('mining pods', () => {
     until(a.sim, 3000, () => a.sim.world.get(a.pod, MiningPodC)?.phase === 'mining');
     until(b.sim, 3000, () => b.sim.world.get(b.pod, MiningPodC)?.phase === 'mining');
     expect(serialize(b.sim)).toBe(serialize(a.sim));
+    expect(a.sim.world.get(a.pod, VehicleC)!.pilot).not.toBe(0); // saved with the pilot aboard
     const c = deserialize(serialize(a.sim), content);
     const la = until(a.sim, 1500, () => false);
     const lc = until(c, 1500, () => false);
@@ -116,17 +117,51 @@ describe('mining pods', () => {
     expect(serialize(c)).toBe(serialize(a.sim));
   });
 
-  it('rejects bad orders, and nobody can board a pod', () => {
+  it('needs a pilot: the best free pilot walks over and embarks, stays aboard between trips, and climbs out at the end', () => {
+    const { sim, pod, asteroid } = setup();
+    const tiles = oreTiles(sim, asteroid).filter((o) => o.amt > HOLD).slice(0, 1);
+    sim.enqueue({ type: 'mining.order', pod, asteroid, tiles });
+    const log = until(sim, 3000, (l) => l.includes('mining.launched'));
+    expect(log.indexOf('mining.pilotSent')).toBeGreaterThanOrEqual(0);
+    expect(log.indexOf('crew.embarked')).toBeGreaterThan(log.indexOf('mining.pilotSent'));
+    expect(log.indexOf('mining.launched')).toBeGreaterThan(log.indexOf('crew.embarked'));
+    const pilot = sim.world.get(pod, VehicleC)!.pilot;
+    expect(pilot).toBe(sim.world.get(pod, MiningPodC)!.pilot);
+    expect(sim.world.get(pilot, CrewC)!.role).toBe('role.pilot');
+    // home with a full hold, unloading: the pilot is still aboard
+    until(sim, 6000, () => sim.world.get(pod, MiningPodC)?.phase === 'unloading');
+    expect(sim.world.get(pod, VehicleC)!.pilot).toBe(pilot);
+    sim.enqueue({ type: 'mining.recall', pod });
+    const end = until(sim, 6000, (l) => l.includes('mining.done'));
+    expect(end).toContain('crew.disembarked');
+    expect(sim.world.get(pod, VehicleC)!.pilot).toBe(0);
+    expect(sim.world.has(pilot, PositionC)).toBe(true);
+    expect(sim.world.has(pilot, DraftedC)).toBe(false);
+  });
+
+  it('waits with no free pilot (no crewless launch), and goes once one is free', () => {
+    const { sim, pod, asteroid } = setup();
+    const crew = [...sim.world.query(CrewC)];
+    for (const id of crew) sim.enqueue({ type: 'crew.draft', id, drafted: true });
+    sim.step();
+    sim.enqueue({ type: 'mining.order', pod, asteroid });
+    const log = until(sim, 200, () => false);
+    expect(log.filter((e) => e === 'mining.waiting')).toHaveLength(1);
+    expect(log).not.toContain('mining.launched');
+    expect(sim.world.get(pod, VehicleC)!.state).toBe('stowed');
+    sim.enqueue({ type: 'crew.draft', id: crew[0]!, drafted: false });
+    expect(until(sim, 3000, (l) => l.includes('mining.launched'))).toContain('mining.pilotSent');
+  });
+
+  it('rejects bad orders', () => {
     const { sim, pod, asteroid } = setup();
     sim.enqueue({ type: 'mining.order', pod: asteroid, asteroid });
     sim.enqueue({ type: 'mining.order', pod, asteroid: pod });
     sim.enqueue({ type: 'mining.order', pod, asteroid, tiles: [{ x: -999, y: -999 }] });
     sim.enqueue({ type: 'mining.recall', pod });
-    const crew = [...sim.world.query(CrewC)][0]!;
-    sim.enqueue({ type: 'vehicle.embark', crew, vehicle: pod });
     const log = until(sim, 1, () => false).filter((e) => e.startsWith('rejected'));
     expect(log).toEqual([
-      'rejected:mining.order:noPod', 'rejected:mining.order:noAsteroid', 'rejected:mining.order:noOre', 'rejected:mining.recall:noOrder', 'rejected:vehicle.embark:crewless',
+      'rejected:mining.order:noPod', 'rejected:mining.order:noAsteroid', 'rejected:mining.order:noOre', 'rejected:mining.recall:noOrder',
     ]);
   });
 });

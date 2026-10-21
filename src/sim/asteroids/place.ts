@@ -21,8 +21,7 @@ export function stampAsteroid(sim: Sim, plan: AsteroidPlan, x: number, y: number
   const gap = asteroidGapError(sim, parts);
   if (gap) throw new Error(`stampAsteroid ${plan.kind} #${plan.seed} at (${x}, ${y}): ${gap}`);
   const id = sim.world.createEntity();
-  const core = plan.core ? { x: plan.core.x + x, y: plan.core.y + y, w: plan.core.w, h: plan.core.h } : null;
-  sim.world.add(id, AsteroidC, { kind: plan.kind, seed: plan.seed, hollow: plan.hollow, x, y, width: plan.w, height: plan.h, parts, core });
+  sim.world.add(id, AsteroidC, { kind: plan.kind, seed: plan.seed, coverage: plan.coverage, x, y, width: plan.w, height: plan.h, parts });
   const grid = sim.sector.grid;
   for (let ly = 0; ly < plan.h; ly++) {
     for (let lx = 0; lx < plan.w; lx++) {

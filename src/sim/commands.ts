@@ -85,17 +85,17 @@ export type Command =
   | { type: 'debug.spawnEnemy'; template: string; x: number; y: number }
   /**
    * Generate an asteroid (`big`: one rock body, `field`: a cluster of small rocks) from `seed` and stamp it with its top-left at
-   * sector (x, y), or at the first spot that fits when both are omitted. `hollow` forces a big asteroid's hollowable core on or
-   * off (default: rolled from the seed). Checked by the gap rule (`asteroidGapError`).
+   * sector (x, y), or at the first spot that fits when both are omitted. `coverage` forces a big asteroid's rock-mass class
+   * (default: rolled from the seed). Checked by the gap rule (`asteroidGapError`).
    */
   /**
-   * Order mining pod `pod` (a crewless vehicle with a mining laser, stowed or out) to mine asteroid `asteroid`: trips until its
+   * Order mining pod `pod` (a piloted vehicle with a mining laser, stowed or out; a free crew member is sent to fly it) to mine asteroid `asteroid`: trips until its
    * ore is gone or it is recalled. `tiles` limits it to those ore tiles (sector tiles). Replaces the pod's current order.
    */
   | { type: 'mining.order'; pod: number; asteroid: number; tiles?: { x: number; y: number }[] }
   /** Recall a mining pod: it flies home with what it has, unloads, and ends its order. */
   | { type: 'mining.recall'; pod: number }
-  | { type: 'debug.spawnAsteroid'; kind: 'big' | 'field'; seed: number; x?: number; y?: number; hollow?: boolean }
+  | { type: 'debug.spawnAsteroid'; kind: 'big' | 'field'; seed: number; x?: number; y?: number; coverage?: 'open' | 'mixed' | 'dense' }
   /**
    * Generate a hostile ship for a faction (content.factions) at sector `depth` from `seed` (default: drawn from the sim
    * RNG) and spawn it centred on sector tile (cx, cy), clamped into the sector. The origin is stored on the ship.

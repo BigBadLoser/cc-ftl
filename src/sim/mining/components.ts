@@ -6,9 +6,10 @@ import { defineComponent } from '../ecs';
  * ore aboard, waiting for crew to haul it to storage (the ordinary cargo hauls).
  */
 export type MiningPhase = 'launching' | 'outbound' | 'mining' | 'returning' | 'unloading';
+// 'launching' covers waiting for the pilot to walk over and climb in.
 
 /**
- * A mining order on a pod (a crewless vehicle with `VehicleDef.mining`): trips to `asteroid` until its ore (or the `tiles` it was
+ * A mining order on a pod (a piloted vehicle with `VehicleDef.mining`): trips to `asteroid` until its ore (or the `tiles` it was
  * limited to) is gone or it is recalled. Sector tiles. `progress` is the fraction of the next ore unit already cut.
  */
 export interface MiningPod {
@@ -22,5 +23,9 @@ export interface MiningPod {
   recall: boolean;
   /** Round trips started under this order. */
   trips: number;
+  /** Crew member reserved to fly the pod (walking to it, or aboard as its pilot), or 0. */
+  pilot: number;
+  /** True while the order waits for a free pilot (the `mining.waiting` event fired once). */
+  waiting?: boolean;
 }
 export const MiningPodC = defineComponent<MiningPod>('miningPod');

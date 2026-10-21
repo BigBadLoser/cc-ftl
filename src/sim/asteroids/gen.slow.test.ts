@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateAsteroid } from './gen';
+import { BIG, generateAsteroid } from './gen';
 import type { OreDef } from './types';
 import { validateAsteroid } from './validate';
 
@@ -10,14 +10,17 @@ const ORES: OreDef[] = [
 ];
 
 describe('asteroid generation sweep', () => {
-  it('every seed of 1..80 gives a sound big asteroid (both variants) and field', () => {
+  it('every seed of 1..80 gives a sound big asteroid (each coverage class) and field', () => {
     const bad: string[] = [];
     for (let seed = 1; seed <= 80; seed++) {
-      for (const [kind, hollow] of [['big', true], ['big', false], ['field', undefined]] as const) {
-        const p = generateAsteroid(kind, seed, ORES, hollow === undefined ? {} : { hollow });
+      for (const [kind, coverage] of [['big', 'open'], ['big', 'mixed'], ['big', 'dense'], ['big', undefined], ['field', undefined]] as const) {
+        const p = generateAsteroid(kind, seed, ORES, coverage === undefined ? {} : { coverage });
         const problems = validateAsteroid(p);
-        if (kind === 'big' && hollow && !p.core) problems.push('no core');
-        if (problems.length) bad.push(`${kind}${hollow ? ' hollow' : ''} #${seed}: ${problems.join('; ')}`);
+        if (kind === 'big') {
+          const [lo, hi] = BIG.mass[p.coverage];
+          if (p.mass < lo - 0.001 || p.mass > hi + 0.001) problems.push(`mass ${p.mass} outside ${lo}-${hi}`);
+        }
+        if (problems.length) bad.push(`${kind} ${coverage ?? ''} #${seed}: ${problems.join('; ')}`);
       }
     }
     expect(bad).toEqual([]);

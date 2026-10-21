@@ -103,7 +103,7 @@ interface RendererContent {
   /** Ore kinds (code and placeholder colour) for the asteroid placeholder drawing. */
   ores?: Readonly<Record<string, { code: number; color: number }>>;
   /** Vehicle classes by def id: pods ('pod') are drawn by podView, not as shuttles. */
-  vehicles?: Readonly<Record<string, { class: string }>>;
+  vehicles?: Readonly<Record<string, { class: string; size?: number }>>;
 }
 
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
@@ -151,7 +151,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   rockLayers.setOrigin(0, 0, 0);
   const asteroids = createAsteroidView(world, rockLayers.floor, content.ores ?? {});
   const isPod = (def: string) => content.vehicles?.[def]?.class === 'pod';
-  const pods = createPodView(world, SL.sorted, isPod);
+  const pods = createPodView(world, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined) });
 
   // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle
   // parked in a bay is the bay's own layer (vehicleBayArt).

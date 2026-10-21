@@ -105,8 +105,8 @@ export interface VehicleDef {
   cargo?: number;
   /** EVA from a hovering shuttle: suits stowed aboard (the hatch works like an airlock for them) and how far off a target's hull it holds station (tiles). */
   eva?: { suits: number; hoverGap: number };
-  /** No crew: nobody can embark, and it only flies on orders it runs itself (mining pods). */
-  crewless?: boolean;
+  /** Size across in tiles (render footprint; a mining pod nearly fills its 3x3 bay). Absent = the art's own size. */
+  size?: number;
   /** A mining laser: ore units cut per second while it holds over an ore tile (mining pods, see systems/mining.ts). */
   mining?: { unitsPerSec: number };
 }

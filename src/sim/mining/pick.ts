@@ -1,12 +1,12 @@
 import { AsteroidC } from '../asteroids/components';
 import type { Sim } from '../sim';
-import { isRock } from '../structure';
+import { isAsteroidRock } from '../structure';
 import { MiningPodC, type MiningPod } from './components';
 
 /** True if the sector tile is ore-bearing rock owned by `asteroid`. */
 export function isOreTile(sim: Sim, asteroid: number, x: number, y: number): boolean {
   const g = sim.sector.grid;
-  return g.get('ship', x, y) === asteroid && isRock(g.get('struct', x, y)) && g.get('ore', x, y) !== 0 && g.get('oreAmt', x, y) > 0;
+  return g.get('ship', x, y) === asteroid && isAsteroidRock(g.get('struct', x, y)) && g.get('ore', x, y) !== 0 && g.get('oreAmt', x, y) > 0;
 }
 
 /** Tiles other pods are heading for or mining, as "x,y" keys. */

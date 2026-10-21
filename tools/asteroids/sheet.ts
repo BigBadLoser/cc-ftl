@@ -1,9 +1,9 @@
 /**
  * Asteroid contact sheets (dev tool, not shipped): top-down rasters of generated asteroids showing the outline, ore veins
- * and the hollowable core, plus a text summary per seed. Reuses the ship viewer's Raster.
+ * and the two rock forms (mass dark and shaded, ground pale and flat), plus a text summary per seed. Reuses the ship viewer's Raster.
  */
 import { content } from '../../src/content';
-import { generateAsteroid, Struct, type AsteroidKind, type AsteroidPlan, type OreDef } from '../../src/sim';
+import { generateAsteroid, Struct, type AsteroidCoverage, type AsteroidKind, type AsteroidPlan, type OreDef } from '../../src/sim';
 import { validateAsteroid } from '../../src/sim/asteroids/validate';
 import { Raster } from '../shipgen/draw';
 
@@ -24,16 +24,18 @@ function draw(r: Raster, plan: AsteroidPlan, ox: number, oy: number, s: number):
         return nx < 0 || ny < 0 || nx >= plan.w || ny >= plan.h || plan.struct[ny * plan.w + nx] === Struct.Space;
       };
       const shade = open(-1, 0) || open(0, -1) ? 1.25 : open(1, 0) || open(0, 1) ? 0.7 : 1;
-      const base: RGB = ore ? rgb(ore.color) : k === Struct.CoreRock ? [74, 64, 96] : [104, 98, 92];
-      r.rect(ox + x * s, oy + y * s, s, s, base.map((v) => Math.min(255, v * shade)) as RGB);
+      const ground = k === Struct.Ground;
+      const base: RGB = ground ? [150, 138, 118] : [92, 88, 84];
+      const c = ore ? (ground ? rgb(ore.color).map((v, j) => Math.round(v * 0.6 + (base[j] as number) * 0.4)) as RGB : rgb(ore.color)) : base;
+      r.rect(ox + x * s, oy + y * s, s, s, (ground ? c : c.map((v) => Math.min(255, v * shade))) as RGB);
     }
   }
 }
 
 /** A sheet of `count` asteroids of `kind` from seed `from`, laid out in rows no wider than `maxWidth` px. */
-export function asteroidSheet(kind: AsteroidKind, from: number, count: number, scale: number, maxWidth = 2400, hollow?: boolean): { raster: Raster; text: string } {
+export function asteroidSheet(kind: AsteroidKind, from: number, count: number, scale: number, maxWidth = 2400, coverage?: AsteroidCoverage): { raster: Raster; text: string } {
   const plans: AsteroidPlan[] = [];
-  for (let k = 0; k < count; k++) plans.push(generateAsteroid(kind, from + k, ORES, hollow === undefined ? {} : { hollow }));
+  for (let k = 0; k < count; k++) plans.push(generateAsteroid(kind, from + k, ORES, coverage === undefined ? {} : { coverage }));
   const pad = 16;
   const label = 14;
   const cells = plans.map((p) => ({ p, w: p.w * scale + pad, h: p.h * scale + pad + label }));
@@ -57,14 +59,12 @@ export function asteroidSheet(kind: AsteroidKind, from: number, count: number, s
     for (const c of rr.items) {
       const p = c.p;
       const rock = p.struct.filter((k) => k !== Struct.Space).length;
-      const core = p.struct.filter((k) => k === Struct.CoreRock).length;
       const ore = p.ore.filter((o) => o !== 0).length;
       const problems = validateAsteroid(p);
-      r.text(`#${p.seed} ${p.w}X${p.h}${p.hollow ? ' H' : ''}${problems.length ? ' !' : ''}`, x, y, problems.length ? [255, 90, 90] : [170, 170, 180], 2);
+      r.text(`#${p.seed} ${p.w}X${p.h} ${p.coverage} ${Math.round(p.mass * 100)}${problems.length ? ' !' : ''}`, x, y, problems.length ? [255, 90, 90] : [170, 170, 180], 2);
       r.frame(x - 1, y + label - 1, p.w * scale + 2, p.h * scale + 2, [40, 44, 56]);
       draw(r, p, x, y + label, scale);
-      if (p.core) r.frame(x + p.core.x * scale, y + label + p.core.y * scale, p.core.w * scale, p.core.h * scale, [150, 120, 220]);
-      lines.push(`seed ${p.seed}: ${p.w}x${p.h} parts ${p.parts.length} rock ${rock} core ${core} ore ${ore}${problems.length ? ` PROBLEMS ${problems.join('; ')}` : ''}`);
+      lines.push(`seed ${p.seed}: ${p.w}x${p.h} parts ${p.parts.length} rock ${rock} ${p.coverage} mass ${(p.mass * 100).toFixed(1)}% ore ${ore}${problems.length ? ` PROBLEMS ${problems.join('; ')}` : ''}`);
       x += c.w;
     }
     y += rr.h;

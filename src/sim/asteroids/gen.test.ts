@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isRock, Struct } from '../structure';
-import { FIELD, generateAsteroid } from './gen';
+import { isAsteroidRock, Struct } from '../structure';
+import { BIG, FIELD, generateAsteroid } from './gen';
 import type { OreDef } from './types';
 import { validateAsteroid } from './validate';
 
@@ -43,26 +43,46 @@ describe('asteroid generation', () => {
     }
   });
 
-  it('a big asteroid is one connected rock body 40-120 tiles across, ore only on plain rock', () => {
+  it('a big asteroid is one connected rock body 40-120 tiles across, ore only on rock', () => {
     for (let seed = 1; seed <= 6; seed++) {
       const p = generateAsteroid('big', seed, ORES);
       expect(validateAsteroid(p), `seed ${seed}`).toEqual([]);
-      expect(bodies(p.w, p.h, (i) => isRock(p.struct[i]!))).toBe(1);
+      expect(bodies(p.w, p.h, (i) => isAsteroidRock(p.struct[i]!))).toBe(1);
       expect(Math.max(p.w, p.h)).toBeGreaterThanOrEqual(30);
       expect(Math.max(p.w, p.h)).toBeLessThanOrEqual(120);
-      for (let i = 0; i < p.ore.length; i++) if (p.ore[i]) expect(p.struct[i]).toBe(Struct.Rock);
+      for (let i = 0; i < p.ore.length; i++) if (p.ore[i]) expect(isAsteroidRock(p.struct[i]!)).toBe(true);
       expect(p.ore.some((o) => o !== 0)).toBe(true);
     }
   });
 
-  it('the hollow variant has one connected core of dense rock; the solid one has none; forcing keeps the outline', () => {
-    const hollow = generateAsteroid('big', 3, ORES, { hollow: true });
-    const solid = generateAsteroid('big', 3, ORES, { hollow: false });
-    expect(Array.from(solid.struct).map(isRock)).toEqual(Array.from(hollow.struct).map(isRock));
-    expect(hollow.core).not.toBeNull();
-    expect(bodies(hollow.w, hollow.h, (i) => hollow.struct[i] === Struct.CoreRock)).toBe(1);
-    expect(solid.core).toBeNull();
-    expect(solid.struct.includes(Struct.CoreRock)).toBe(false);
+  it('rolls a coverage class and hits its rock-mass range; forcing it keeps the outline', () => {
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 12; seed++) {
+      const p = generateAsteroid('big', seed, ORES);
+      seen.add(p.coverage);
+      const [lo, hi] = BIG.mass[p.coverage];
+      expect(p.mass, `seed ${seed} ${p.coverage}`).toBeGreaterThanOrEqual(lo - 0.001);
+      expect(p.mass).toBeLessThanOrEqual(hi + 0.001);
+      const solid = p.struct.filter((k) => k === Struct.Rock).length / p.struct.filter((k) => isAsteroidRock(k)).length;
+      expect(solid).toBeCloseTo(p.mass, 9);
+    }
+    expect([...seen].sort()).toEqual(['dense', 'mixed', 'open']);
+    const open = generateAsteroid('big', 3, ORES, { coverage: 'open' });
+    const dense = generateAsteroid('big', 3, ORES, { coverage: 'dense' });
+    expect(Array.from(dense.struct).map(isAsteroidRock)).toEqual(Array.from(open.struct).map(isAsteroidRock));
+    expect(dense.mass).toBeGreaterThan(open.mass);
+  });
+
+  it('puts ore in both rock forms, richer and mostly in rock mass', () => {
+    const p = generateAsteroid('big', 1, ORES, { coverage: 'mixed' });
+    let inMass = 0, inGround = 0, massAmt = 0, groundAmt = 0;
+    for (let i = 0; i < p.ore.length; i++) {
+      if (!p.ore[i]) continue;
+      if (p.struct[i] === Struct.Rock) { inMass++; massAmt += p.amt[i]!; } else { inGround++; groundAmt += p.amt[i]!; }
+    }
+    expect(inMass).toBeGreaterThan(0);
+    expect(inGround).toBeGreaterThan(0);
+    expect(massAmt / inMass).toBeGreaterThan(groundAmt / inGround);
   });
 
   it('a field is many small rocks, each one body, spaced by FIELD.gap, with ore pockets', () => {

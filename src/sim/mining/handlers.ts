@@ -36,7 +36,7 @@ export const miningHandlers: { [T in MiningCommandType]: Handler<T> } = {
     const flying = v.state === 'flying';
     if (flying) v.dest = null;
     sim.world.add(cmd.pod, MiningPodC, {
-      asteroid: cmd.asteroid, tiles, phase: flying ? 'outbound' : 'launching', target: null, progress: 0, recall: false, trips: prev?.trips ?? 0,
+      asteroid: cmd.asteroid, tiles, phase: flying ? 'outbound' : 'launching', target: null, progress: 0, recall: false, trips: prev?.trips ?? 0, pilot: prev?.pilot ?? v.pilot,
     });
     sim.events.emit({ type: 'mining.ordered', pod: cmd.pod, asteroid: cmd.asteroid, tiles: tiles?.length ?? -1 });
   },

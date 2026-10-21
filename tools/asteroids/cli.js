@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Asteroid contact sheets (sibling of tools/shipgen):
- *   node tools/asteroids/cli.js <big|field|all> [--from 1] [--count 12] [--scale 4] [--hollow yes|no] [--out dir]
+ *   node tools/asteroids/cli.js <big|field|all> [--from 1] [--count 12] [--scale 4] [--coverage open|mixed|dense] [--out dir]
  * Writes <out>/<kind>.png and .txt (one summary line per seed) and prints the paths.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -18,8 +18,7 @@ const which = args[0] && !args[0].startsWith('--') ? args[0] : 'all';
 const from = Number(opt('from', 1));
 const count = Number(opt('count', 12));
 const scale = Number(opt('scale', 4));
-const hollowOpt = opt('hollow');
-const hollow = hollowOpt === undefined ? undefined : hollowOpt === 'yes';
+const coverage = opt('coverage');
 const out = resolve(opt('out', 'tools/asteroids/out'));
 
 function crc32(buf) {
@@ -49,8 +48,8 @@ try {
   const lib = await server.ssrLoadModule('/tools/asteroids/sheet.ts');
   mkdirSync(out, { recursive: true });
   for (const kind of which === 'all' ? ['big', 'field'] : [which]) {
-    const name = kind === 'big' && hollow !== undefined ? `big-${hollow ? 'hollow' : 'solid'}` : kind;
-    const sheet = lib.asteroidSheet(kind, from, count, scale, 2400, hollow);
+    const name = kind === 'big' && coverage ? `big-${coverage}` : kind;
+    const sheet = lib.asteroidSheet(kind, from, count, scale, 2400, coverage);
     const base = join(out, name);
     writeFileSync(`${base}.png`, png(sheet.raster.width, sheet.raster.height, sheet.raster.data));
     writeFileSync(`${base}.txt`, sheet.text);

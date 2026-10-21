@@ -17,7 +17,7 @@ export const asteroidHandlers: { [T in AsteroidCommandType]: Handler<T> } = {
     if (cmd.kind !== 'big' && cmd.kind !== 'field') return reject(sim, cmd.type, 'badKind');
     if (!Number.isInteger(cmd.seed) || (cmd.x === undefined) !== (cmd.y === undefined)) return reject(sim, cmd.type, 'badValue');
     const ores = Object.values(sim.content.ores ?? {}) as OreDef[];
-    const plan = generateAsteroid(cmd.kind, cmd.seed, ores, cmd.hollow === undefined ? {} : { hollow: cmd.hollow });
+    const plan = generateAsteroid(cmd.kind, cmd.seed, ores, cmd.coverage === undefined ? {} : { coverage: cmd.coverage });
     let at: { x: number; y: number } | null;
     if (cmd.x !== undefined && cmd.y !== undefined) {
       if (!Number.isInteger(cmd.x) || !Number.isInteger(cmd.y)) return reject(sim, cmd.type, 'badValue');

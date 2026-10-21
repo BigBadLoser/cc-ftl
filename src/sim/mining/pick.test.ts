@@ -13,13 +13,13 @@ const content: ContentRegistry = { ships: {}, roles: {}, species: {}, modules: {
 function bar(): { sim: Sim; asteroid: number } {
   const sim = new Sim(1, content);
   const plan: AsteroidPlan = {
-    kind: 'field', seed: 0, hollow: false, w: 5, h: 1, struct: new Uint8Array(5).fill(Struct.Rock),
-    ore: Uint8Array.from([1, 0, 1, 0, 1]), amt: Uint8Array.from([5, 0, 5, 0, 5]), parts: [{ x: 0, y: 0, w: 5, h: 1 }], core: null,
+    kind: 'field', seed: 0, coverage: 'dense', mass: 1, w: 5, h: 1, struct: new Uint8Array(5).fill(Struct.Rock),
+    ore: Uint8Array.from([1, 0, 1, 0, 1]), amt: Uint8Array.from([5, 0, 5, 0, 5]), parts: [{ x: 0, y: 0, w: 5, h: 1 }],
   };
   return { sim, asteroid: stampAsteroid(sim, plan, 10, 10) };
 }
 const order = (asteroid: number, o: Partial<MiningPod> = {}): MiningPod =>
-  ({ asteroid, tiles: null, phase: 'launching', target: null, progress: 0, recall: false, trips: 0, ...o });
+  ({ asteroid, tiles: null, phase: 'launching', target: null, progress: 0, recall: false, trips: 0, pilot: 0, ...o });
 
 describe('mining tile picks', () => {
   it('lists ore tiles row-major and picks the nearest, ties to the lower x', () => {

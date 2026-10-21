@@ -89,7 +89,7 @@ function start(sim: Sim, shipId: number, b: Boarder, weapon?: string): void {
   let vehicle = 0;
   for (const vid of sim.world.query(VehicleC)) {
     const v = sim.world.get(vid, VehicleC);
-    if (v && v.homeShip === shipId && v.state === 'stowed' && !sim.content.vehicles?.[v.def]?.crewless) {
+    if (v && v.homeShip === shipId && v.state === 'stowed' && sim.content.vehicles?.[v.def]?.class !== 'pod') {
       vehicle = vid;
       break;
     }

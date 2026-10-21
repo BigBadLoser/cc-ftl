@@ -28,8 +28,10 @@ import { newTrade, type TradeState } from './trade/types';
  * deploying), plus `archives` (every sector the player left, frozen).
  * v26 (asteroids slice 1): tile fields `ore` and `oreAmt`, struct kinds Rock and CoreRock, and `AsteroidC` regions that own
  * their rock tiles in the `ship` layer.
+ * v27 (asteroids slice 3): CoreRock is gone; struct 6 is rock Ground (walkable, airless foundation); `AsteroidC.coverage`
+ * replaces `hollow` and `core`.
  */
-export const SAVE_VERSION = 26;
+export const SAVE_VERSION = 27;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

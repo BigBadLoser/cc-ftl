@@ -41,7 +41,7 @@ function playerCourier(sim: Sim, units: number): { vehicle: number } | { error: 
   for (const id of [...sim.world.query(VehicleC)].sort((a, b) => a - b)) {
     const v = sim.world.get(id, VehicleC) as Vehicle;
     const cap = vehicleDefOf(sim, v)?.cargo ?? 0;
-    if (v.homeShip !== me || cap <= 0 || vehicleDefOf(sim, v)?.crewless) continue;
+    if (v.homeShip !== me || cap <= 0 || vehicleDefOf(sim, v)?.class === 'pod') continue;
     if (busy.has(id) || cargoCount(v) > 0 || (v.state === 'flying' && v.dest) || v.outbound) {
       error = 'courierBusy';
       continue;

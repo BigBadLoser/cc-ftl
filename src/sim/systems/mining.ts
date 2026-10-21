@@ -5,6 +5,7 @@ import { bayCenter, bayWorking } from '../vehicles/geometry';
 import { vehicleDefOf, vehicleSpeedPerTick } from '../vehicles/lifecycle';
 import { MiningPodC, type MiningPod } from '../mining/components';
 import { isOreTile, pickTile } from '../mining/pick';
+import { ensurePilot, releasePilot } from '../mining/pilot';
 import type { Sim } from '../sim';
 import { Struct, writeStruct } from '../structure';
 import { TICK_HZ } from '../time';
@@ -17,6 +18,7 @@ function oreItem(sim: Sim, code: number): string | undefined {
 
 function end(sim: Sim, pod: number, order: MiningPod, reason: 'exhausted' | 'recalled' | 'lost'): void {
   sim.world.remove(pod, MiningPodC);
+  releasePilot(sim, pod, order);
   sim.events.emit({ type: 'mining.done', pod, asteroid: order.asteroid, reason, trips: order.trips });
 }
 
@@ -65,10 +67,12 @@ function mine(sim: Sim, pod: number, v: Vehicle, order: MiningPod): void {
 }
 
 /**
- * Mining pods. A pod with a `MiningPodC` order runs trips: launch from its bay with an empty hold, fly to the nearest unclaimed
+ * Mining pods. A pod with a `MiningPodC` order first gets a pilot (a free crew member walks over and climbs in; with nobody
+ * free the order waits), then runs trips: launch from its bay with an empty hold, fly to the nearest unclaimed
  * ore tile of the order, laser it into the hold, hop to the next tile while there is room, fly home when full (or when nothing
  * is left, or on recall), and wait stowed while crew haul the ore to storage (the cargo planner unloads a stowed vehicle at its
- * bay's access tile). An empty pod with nothing left to mine, or recalled, ends the order. The vehicle system flies the leg home
+ * bay's access tile). An empty pod with nothing left to mine, or recalled, ends the order and its pilot climbs out (the
+ * pilot stays aboard between trips). The vehicle system flies the leg home
  * and stows it; this system steers the outbound legs itself (a vehicle with no destination just holds position there).
  * Runs before the vehicle system.
  */
@@ -93,7 +97,7 @@ export function miningSystem(sim: Sim): void {
         end(sim, pod, order, order.recall ? 'recalled' : 'exhausted');
         continue;
       }
-      if (!bayWorking(sim, v.home)) continue;
+      if (!bayWorking(sim, v.home) || !ensurePilot(sim, pod, v, order)) continue;
       order.phase = 'outbound';
       order.target = next;
       order.progress = 0;

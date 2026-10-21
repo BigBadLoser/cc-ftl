@@ -43,7 +43,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
   const shuttles: UiShuttles['shuttles'] = [];
   for (const v of vehicleViews(sim)) {
     const def = sim.content.vehicles?.[v.def];
-    if (v.homeGrid !== PLAYER || def?.crewless) continue; // mining pods fly their own orders: not in the shuttle panel
+    if (v.homeGrid !== PLAYER || def?.class === 'pod') continue; // mining pods fly their own orders: not in the shuttle panel
     const dockM = v.dockedAt ? sim.world.get(v.dockedAt, ModuleC) : undefined;
     shuttles.push({
       id: v.id, name: def?.name ?? 'Shuttle', state: v.state, hp: Math.round(v.hp), maxHp: v.maxHp, capacity: def?.capacity ?? 0,

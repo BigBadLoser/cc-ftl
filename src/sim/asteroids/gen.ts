@@ -7,7 +7,7 @@ import { Rng } from '../rng';
 import { Struct } from '../structure';
 import { fbm } from './noise';
 import { blob, bounds, crop, depth, fillHoles, largestBody, metaballs, type Ball, type Mask } from './shape';
-import type { AsteroidKind, AsteroidPlan, OreDef } from './types';
+import type { AsteroidCoverage, AsteroidKind, AsteroidPlan, OreDef } from './types';
 
 /** Big asteroid parameters. Diameter is the longer side before the outline is trimmed. */
 export const BIG = {
@@ -18,17 +18,20 @@ export const BIG = {
   balls: [5, 9],
   /** Outline roughness (noise amplitude on the metaball field). */
   rough: 0.75,
+  /** Coverage class odds (dense asteroids are common) and the rock-mass share of each, inclusive range. */
+  coverage: { open: 3, mixed: 3, dense: 4 },
+  mass: { open: [0.06, 0.2], mixed: [0.3, 0.55], dense: [0.78, 1] },
+  /** Massifs (big blobs of mass) and craters (a ground floor ringed by a mass rim) per asteroid. */
+  massifs: [1, 2],
+  craters: [1, 4],
   /** Rock tiles per ore vein. */
   tilesPerVein: 200,
   veinLength: [12, 40],
   /** Chance a vein step is two tiles wide. */
   veinWide: 0.35,
-  /** Chance an unforced big asteroid is the hollowable variant. */
-  hollowChance: 0.5,
-  /** Core tiles are at least this many tiles from space ... */
-  coreMargin: 5,
-  /** ... and within this fraction of the shorter side of the deepest tile. */
-  coreRadius: 0.28,
+  /** Chance a vein starts inside rock mass (massifs, ridges), and the amount factor of ore in rock mass (richer). */
+  veinInMass: 0.7,
+  massRich: 1.6,
 } as const;
 
 /** Asteroid field parameters. */
@@ -48,12 +51,11 @@ export const FIELD = {
   placeTries: 600,
 } as const;
 
-/** Options for `generateAsteroid`. `hollow` forces (or forbids) a big asteroid's hollowable core; default from the seed. */
+/** Options for `generateAsteroid`. `coverage` forces a big asteroid's class; default rolled from the seed (the outline is the same). */
 export interface AsteroidGenOptions {
-  hollow?: boolean;
+  coverage?: AsteroidCoverage;
 }
 
-const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 
 function pickOre(rng: Rng, ores: readonly OreDef[], kind: AsteroidKind): OreDef | undefined {
   const total = ores.reduce((s, o) => s + o.weight[kind], 0);
@@ -66,57 +68,32 @@ function pickOre(rng: Rng, ores: readonly OreDef[], kind: AsteroidKind): OreDef 
   return ores[ores.length - 1];
 }
 
-function emptyPlan(kind: AsteroidKind, seed: number, hollow: boolean, w: number, h: number): AsteroidPlan {
-  return { kind, seed, hollow, w, h, struct: new Uint8Array(w * h), ore: new Uint8Array(w * h), amt: new Uint8Array(w * h), parts: [], core: null };
+function emptyPlan(kind: AsteroidKind, seed: number, coverage: AsteroidCoverage, w: number, h: number): AsteroidPlan {
+  return { kind, seed, coverage, mass: 0, w, h, struct: new Uint8Array(w * h), ore: new Uint8Array(w * h), amt: new Uint8Array(w * h), parts: [] };
 }
 
 function setOre(plan: AsteroidPlan, i: number, ore: OreDef, rng: Rng): void {
-  if (plan.struct[i] !== Struct.Rock) return;
+  const k = plan.struct[i];
+  if (k !== Struct.Rock && k !== Struct.Ground) return;
+  const n = rng.int(ore.amount[0], ore.amount[1]);
   plan.ore[i] = ore.code;
-  plan.amt[i] = rng.int(ore.amount[0], ore.amount[1]);
+  plan.amt[i] = Math.min(255, k === Struct.Rock && plan.kind === 'big' ? Math.round(n * BIG.massRich) : n);
 }
 
-/** Mark the hollowable core: rock at least `coreMargin` deep, connected to the deepest tile and near it. */
-function markCore(plan: AsteroidPlan, mask: Mask, noiseSeed: number): void {
-  const d = depth(mask);
-  let deepest = 0;
-  for (let i = 1; i < d.length; i++) if ((d[i] as number) > (d[deepest] as number)) deepest = i;
-  if ((d[deepest] as number) < BIG.coreMargin) return;
-  const r = Math.min(plan.w, plan.h) * BIG.coreRadius;
-  const cx = deepest % plan.w;
-  const cy = (deepest - cx) / plan.w;
-  const stack = [deepest];
-  const seen = new Uint8Array(d.length);
-  seen[deepest] = 1;
-  while (stack.length > 0) {
-    const i = stack.pop() as number;
-    plan.struct[i] = Struct.CoreRock;
-    const x = i % plan.w;
-    const y = (i - x) / plan.w;
-    for (const [dx, dy] of N4) {
-      const nx = x + dx, ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= plan.w || ny >= plan.h) continue;
-      const j = ny * plan.w + nx;
-      // a lumpy chamber, not a disc: the reach varies with low-frequency noise
-      const reach = r * (0.6 + 0.8 * fbm(noiseSeed, nx, ny, 3 / r, 2));
-      if (seen[j] || (d[j] as number) < BIG.coreMargin || Math.hypot(nx - cx, ny - cy) > reach) continue;
-      seen[j] = 1;
-      stack.push(j);
-    }
-  }
-  const core = { w: plan.w, h: plan.h, m: plan.struct.map((s) => (s === Struct.CoreRock ? 1 : 0)) };
-  plan.core = bounds(core);
-}
-
-/** Ore veins: wandering 4-connected streaks through plain rock, one or two tiles wide. */
+/** Ore veins: wandering 4-connected streaks through both rock forms, one or two tiles wide, most starting in rock mass. */
 function carveVeins(plan: AsteroidPlan, rng: Rng, ores: readonly OreDef[]): void {
   const rock: number[] = [];
-  for (let i = 0; i < plan.struct.length; i++) if (plan.struct[i] === Struct.Rock) rock.push(i);
+  const mass: number[] = [];
+  for (let i = 0; i < plan.struct.length; i++) {
+    if (plan.struct[i] !== Struct.Space) rock.push(i);
+    if (plan.struct[i] === Struct.Rock) mass.push(i);
+  }
   const veins = Math.max(2, Math.round(rock.length / BIG.tilesPerVein));
   for (let v = 0; v < veins && rock.length > 0; v++) {
     const ore = pickOre(rng, ores, 'big');
     if (!ore) return;
-    const start = rng.pick(rock);
+    const inMass = rng.chance(BIG.veinInMass) && mass.length > 0;
+    const start = rng.pick(inMass ? mass : rock);
     let x = start % plan.w;
     let y = (start - x) / plan.w;
     let heading = rng.next() * Math.PI * 2;
@@ -134,17 +111,54 @@ function carveVeins(plan: AsteroidPlan, rng: Rng, ores: readonly OreDef[]): void
       const alongX = rng.next() < Math.abs(c) / (Math.abs(c) + Math.abs(sn));
       const nx = alongX ? x + Math.sign(c) : x;
       const ny = alongX ? y : y + Math.sign(sn);
-      if (nx < 0 || ny < 0 || nx >= plan.w || ny >= plan.h || plan.struct[ny * plan.w + nx] !== Struct.Rock) break;
+      if (nx < 0 || ny < 0 || nx >= plan.w || ny >= plan.h || plan.struct[ny * plan.w + nx] === Struct.Space) break;
       x = nx;
       y = ny;
     }
   }
 }
 
+function rollCoverage(rng: Rng): AsteroidCoverage {
+  const w = BIG.coverage;
+  const r = rng.next() * (w.open + w.mixed + w.dense);
+  return r < w.open ? 'open' : r < w.open + w.mixed ? 'mixed' : 'dense';
+}
+
+/**
+ * Rock-mass height field over the body: ridged noise (ridges), one or two massifs (broad domes), craters (a ring rim of mass
+ * around a sunken floor), all deterministic for the seed. The highest `share` of body tiles become rock mass.
+ */
+function massField(rng: Rng, mask: Mask): Float64Array {
+  const { w, h, m } = mask;
+  const f = new Float64Array(w * h);
+  const seed = rng.int(0, 0x7fffffff);
+  const freq = 3 / Math.min(w, h);
+  const massifs = Array.from({ length: rng.int(BIG.massifs[0], BIG.massifs[1]) }, () => ({ x: w * (0.2 + 0.6 * rng.next()), y: h * (0.2 + 0.6 * rng.next()), r: Math.min(w, h) * (0.12 + 0.14 * rng.next()) }));
+  const craters = Array.from({ length: rng.int(BIG.craters[0], BIG.craters[1]) }, () => ({ x: w * (0.15 + 0.7 * rng.next()), y: h * (0.15 + 0.7 * rng.next()), r: Math.min(w, h) * (0.05 + 0.1 * rng.next()) }));
+  const d = depth(mask);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (!m[i]) continue;
+      const ridge = 1 - Math.abs(2 * fbm(seed, x, y, freq, 3) - 1);
+      let v = 0.55 * ridge ** 3 + 0.15 * fbm(seed + 7, x, y, freq * 3, 2);
+      for (const s of massifs) v += 0.9 * Math.max(0, 1 - Math.hypot(x - s.x, y - s.y) / s.r);
+      for (const c of craters) {
+        const t = Math.hypot(x - c.x, y - c.y) / c.r;
+        v += t < 0.85 ? -0.6 : t < 1.2 ? 0.5 * (1 - Math.abs(t - 1.02) / 0.18) : 0;
+      }
+      // the outer band leans to ground on open and mixed asteroids
+      v -= 0.25 * Math.max(0, 1 - (d[i] as number) / 4);
+      f[i] = v;
+    }
+  }
+  return f;
+}
+
 function generateBig(seed: number, ores: readonly OreDef[], opts: AsteroidGenOptions): AsteroidPlan {
   const rng = new Rng(seed ^ 0x5a17e401);
-  const rolled = rng.chance(BIG.hollowChance);
-  const hollow = opts.hollow ?? rolled;
+  const rolled = rollCoverage(rng);
+  const coverage = opts.coverage ?? rolled;
   const size = rng.int(BIG.minSize, BIG.maxSize);
   const short = Math.max(BIG.minSize, Math.round(size * (BIG.aspect[0] + (BIG.aspect[1] - BIG.aspect[0]) * rng.next())));
   const [w, h] = rng.chance(0.5) ? [size, short] : [short, size];
@@ -160,11 +174,19 @@ function generateBig(seed: number, ores: readonly OreDef[], opts: AsteroidGenOpt
   fillHoles(full);
   const box = bounds(full) ?? { x: 0, y: 0, w: 1, h: 1 };
   const mask = crop(full, box);
-  const plan = emptyPlan('big', seed, hollow, mask.w, mask.h);
-  for (let i = 0; i < mask.m.length; i++) if (mask.m[i]) plan.struct[i] = Struct.Rock;
+  const plan = emptyPlan('big', seed, coverage, mask.w, mask.h);
+  const field = massField(rng, mask);
+  const [lo, hi] = BIG.mass[coverage];
+  const share = lo + (hi - lo) * rng.next();
+  const body: number[] = [];
+  for (let i = 0; i < mask.m.length; i++) if (mask.m[i]) body.push(i);
+  // the top `share` of the field is rock mass (ties by index, so the split is exact and deterministic)
+  const ranked = [...body].sort((a, b) => (field[b] as number) - (field[a] as number) || a - b);
+  const massCount = Math.round(share * body.length);
+  for (const i of body) plan.struct[i] = Struct.Ground;
+  for (let k = 0; k < massCount; k++) plan.struct[ranked[k] as number] = Struct.Rock;
+  plan.mass = body.length ? massCount / body.length : 0;
   plan.parts = [{ x: 0, y: 0, w: mask.w, h: mask.h }];
-  const coreSeed = rng.int(0, 0x7fffffff);
-  if (hollow) markCore(plan, mask, coreSeed);
   carveVeins(plan, rng, ores);
   return plan;
 }
@@ -195,13 +217,13 @@ function generateField(seed: number, ores: readonly OreDef[]): AsteroidPlan {
       && r.y < p.r.y + p.r.h + FIELD.gap && p.r.y < r.y + r.h + FIELD.gap);
     if (!clash) placed.push({ r, m });
   }
-  if (placed.length === 0) return emptyPlan('field', seed, false, 1, 1);
+  if (placed.length === 0) return emptyPlan('field', seed, 'dense', 1, 1);
   // crop the field to its rocks
   const x0 = Math.min(...placed.map((p) => p.r.x)), y0 = Math.min(...placed.map((p) => p.r.y));
   for (const p of placed) { p.r.x -= x0; p.r.y -= y0; }
   const w = Math.max(1, ...placed.map((p) => p.r.x + p.r.w));
   const h = Math.max(1, ...placed.map((p) => p.r.y + p.r.h));
-  const plan = emptyPlan('field', seed, false, w, h);
+  const plan = emptyPlan('field', seed, 'dense', w, h);
   for (const p of placed) {
     for (let y = 0; y < p.m.h; y++) {
       for (let x = 0; x < p.m.w; x++) if (p.m.m[y * p.m.w + x]) plan.struct[(p.r.y + y) * w + p.r.x + x] = Struct.Rock;
@@ -232,5 +254,7 @@ function generateField(seed: number, ores: readonly OreDef[]): AsteroidPlan {
  */
 export function generateAsteroid(kind: AsteroidKind, seed: number, ores: readonly OreDef[], opts: AsteroidGenOptions = {}): AsteroidPlan {
   const sorted = [...ores].sort((a, b) => a.code - b.code);
-  return kind === 'big' ? generateBig(seed >>> 0, sorted, opts) : generateField(seed >>> 0, sorted);
+  const plan = kind === 'big' ? generateBig(seed >>> 0, sorted, opts) : generateField(seed >>> 0, sorted);
+  if (kind === 'field') plan.mass = 1; // field rocks are solid boulders: rock mass only
+  return plan;
 }
