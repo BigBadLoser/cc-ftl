@@ -84,21 +84,27 @@ def crop_item(sid, fp, c, op, g, ox, oy, al=None):
     return {"id": sid, "fp": fp, "rgba": rgba[y0:y1, x0:x1], "g": g[y0:y1, x0:x1], "ax": ox - x0, "ay": oy - y0}
 
 
-def render_jobs(jobs, extra=True, only=None, log=print):
+def render_jobs(jobs, extra=True, only=None, log=print, progress=None):
     """Render sprite jobs: (id, footprint, kind, builder) tuples, or callables returning ready items (multi-part
     sprites such as a console and its front overlay). `extra` picks the quantisation palette (see post.select)."""
     items = []
-    for job in jobs:
+    for index, job in enumerate(jobs, 1):
         if callable(job):
             items += job()
+            if progress:
+                progress(index, len(jobs))
             continue
         sid, fp, kind, fn = job
         if only and not any(o in sid for o in only):
+            if progress:
+                progress(index, len(jobs))
             continue
         core.clear_scene_meshes()
         post.select(extra(sid) if callable(extra) else extra)
         it = crop_item(sid, fp, *render_sprite(sid, kind, fn()))
         if it:
             items.append(it)
+        if progress:
+            progress(index, len(jobs))
     log(f"RENDERED {len(items)} sprites")
     return items
