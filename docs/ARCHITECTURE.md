@@ -748,6 +748,15 @@ shipgen's `structureParts`):
   system (a player shot landing; shots at an outpost without `CombatC` land with no shields or evasion) and `job.build` /
   `job.deconstruct` into its region; it reveals the outpost and adds a `CombatC`. Events `outpost.discovered` / `outpost.provoked`.
   `shipStateSystem` never disables an outpost.
+- **Claimed bases (slice 4)**: `asteroid.claim { asteroid, x, y, w, h }` creates a player `ShipC` with `base: { asteroid }` over
+  the rectangle (validated in `asteroids/handlers.ts`). `shipStateSystem` skips bases. `finishStruct` hands a tile built on asteroid
+  rock to the building ship's owner layer; `finishDig` already did. `nearestExterior` (EVA landing) accepts rock ground. The UI's
+  build tools resolve the player region per tile (`controller.mineAt`), so the same tools work on the home ship and on bases;
+  input paints with `Renderer.pickSector` (any sector tile).
+- **Mining UI (slice 4)**: `app/miningSnapshot.ts` (`UiMining { asteroids, pods }`: ore totals per kind over each asteroid's rock,
+  pods with phase, pilot, hold, trips), `ui/AsteroidPanel.svelte`, `ui/PodList.svelte` (also in `ShuttlePanel`), asteroid tiles in
+  `NodeStrip`, `api.selectAsteroid` (the controller also opens it on a tap on rock no region claims). Pod bays come with their pod
+  when built by crew (`ModuleDef.vehicleBay.builtWith`, spawned in `finishModule`).
 - Contact sheets: `node tools/asteroids/cli.js <big|field|all> [--from 1] [--count 12] [--scale 4] [--coverage open|mixed|dense] [--out dir]`.
 
 ## Sector grid (planned)

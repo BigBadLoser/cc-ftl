@@ -103,12 +103,32 @@ Planner's calls:
   layer does not sort against crew yet.
 - Debug: `?hook`, then `__cc.dispatch({ type: 'debug.spawnOutpost', style: 'dug', seed: 1 })`, `__cc.focus(x, y)`.
 
+**Slice 4 (done): mining UI, pods from the build menu, claiming a base.** Planner's calls:
+- Mining UI: click plain asteroid rock (or a hidden base under it) or the asteroid tile in the node strip to open the asteroid
+  panel: ore left by kind, the player's pods (status, pilot, hold, trips) with Mine (sends `mining.order` for the whole
+  asteroid) and Recall, and Claim for a base. The vehicle panel (select a pod bay) lists the pods too. Alerts: "Mining pod waits for
+  a free pilot", "Mining done". No tile/area paint mode for `tiles` yet (the command takes them).
+- Pod: **the pod bay comes with its pod** when crew build it (`vehicleBay.builtWith`); its cost covers both (28 metal, 12
+  electronics, 4 polymer; 18 s of work). No separate pod item or recipe. The pod bay is in the modules build menu.
+- Claiming: build menu "Claim asteroid", drag a rectangle (4-60 tiles a side, inside the asteroid's box, at least half on its
+  rock, clear of other regions' frames) -> `asteroid.claim`: an immobile player `ShipC` with `base` (never disabled or wrecked by
+  the ship-state system). Build tools now paint on any player region under the cursor (home ship or base). Tiles crew build or dig
+  there become the base's. It is listed in the node strip, saved, and stays in the node's archive on a jump like a prize.
+  "Dig rock" and "Level rock" are in the build menu (free; the outer-layer rule holds).
+- Reaching it: a shuttle hovers beside the base (`vehicle.hover` takes the base like any ship) and suited crew EVA out; they now
+  land on open rock ground as well as the hull ring, and walk the ground in suits. Because of the outer-layer rule, nobody digs in
+  from the open: build a sealed habitat (floor and walls on the ground) against the rock, then dig inward from its floor. Missing
+  for a smooth loop: crew cannot walk between the home ship and the base (separate regions, ships are never close), so every
+  trip is a shuttle run; no "send crew to the base" order or base supply hauling yet; the base has no power until crew build it.
+- A pod bay job whose footprint lies across a busy corridor can wait for a long time: crew walking through block the finish
+  (an existing rule for solid modules).
+
 **Next slices, in order:**
-1. Mining UI (pick an asteroid or tiles, recall) and a pod item or recipe; pod and pod-bay art.
-2. Claiming an asteroid as a player base (a `ShipC` region over it, so crew can walk, dig and build there) and the build menu
-   for dig / level on asteroids.
-3. Outpost crews, trade and AI (enemy outposts defending, NPC factions picking outposts by kind).
-4. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew.
+1. Base logistics: carry materials and crew between the home ship and a base (shuttle cargo runs, a "go to base" order),
+   and the tile paint mode for mining orders.
+2. Outpost crews, trade and AI (enemy outposts defending, NPC factions picking outposts by kind), shared with the station
+   branch's NPC and security work.
+3. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew; pod and pod-bay art.
 
 ## Aliens on derelicts (branch `aliens`, based on `derelict-ingame` plus `art/alien`; not merged; awaiting user review)
 
