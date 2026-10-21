@@ -21,8 +21,8 @@ from .scale import ART_SCALE
 from .roof_layout import GN, MC, FAM, _Canvas, _raised, _feature, _girder, _corners
 
 FAM_C = {
-    "o": dict(top="cO1", t2="cO2", lit="cOL", shd="cOS", rl="cOR", k="cOK", fs="cOD", fe="cOE", pa="cOP", pa2="cOQ"),
-    "b": dict(top="cB1", t2="cB2", lit="cBL", shd="cBS", rl="cBR", k="cBK", fs="cBD", fe="cBE", pa="cBP", pa2="cBQ"),
+    "o": dict(top="cO1", t2="cO2", lit="cOL", shd="cOS", rl="cOR", k="cOS", fs="cOD", fe="cOE", pa="cOP", pa2="cOQ"),
+    "b": dict(top="cB1", t2="cB2", lit="cBL", shd="cBS", rl="cBR", k="cBS", fs="cBD", fe="cBE", pa="cBP", pa2="cBQ"),
 }
 PATCH = (2, 1, 0, 1)          # patched plate index per layout (variant C)
 INSET = (1, 2, 2, 0)          # inset plate index per layout (v10): never the patched plate
