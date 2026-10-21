@@ -220,7 +220,6 @@ export function createBridge(sim: Sim): Bridge {
       applySpeed(0);
     }
   };
-  /** Starmap: full rebuild on a galaxy revision, otherwise only the fuel and FTL figures (about six times a second). */
   // Generate ahead: normally one chunk every few updates; right after a jump (while the starmap slides the ship along
   // the lane, so a slow frame goes unnoticed) chunks back to back within a per-update budget.
   let prefetchFrame = 0;
@@ -236,6 +235,7 @@ export function createBridge(sim: Sim): Bridge {
       while (performance.now() - now < PREFETCH_BOOST_BUDGET_MS && prefetchGalaxy(sim));
     } else if (prefetchFrame++ % PREFETCH_EVERY === 0) prefetchGalaxy(sim);
   };
+  /** Starmap: full rebuild on a galaxy revision, otherwise only the fuel and FTL figures (about six times a second). */
   const refreshStarmap = () => {
     if (starFrame++ % 10) return;
     const cur = starmap.get();
