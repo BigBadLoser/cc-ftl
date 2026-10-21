@@ -123,23 +123,6 @@ export function galaxyView(seed: number, sectorId = 's.0.0', span = 26000): stri
     r.y = r.list.reduce((t, s) => t + s.y, 0) / r.list.length;
   }
   const out = frame(seed);
-  // Wild (unclaimed) sectors as faint dots, with faint lanes: wild to wild, and wild to the region it touches (drawn
-  // to the region's node). This is how regions with no gate of their own are reached.
-  const at = (s: SectorData): P => {
-    const r = s.region ? regions.get(s.region) : undefined;
-    return map(r ? [r.x, r.y] : [s.x, s.y]);
-  };
-  for (const { a, b, e } of sectorLinks(w)) {
-    if (a.region && b.region) continue;
-    const [ax, ay] = at(a);
-    const [bx, by] = at(b);
-    out.push(`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${e.rift ? '#a78bfa' : '#64748b'}" stroke-opacity="0.35" stroke-width="1"${e.rift ? ' stroke-dasharray="2 4"' : ''}/>`);
-  }
-  for (const s of w.sectors.values()) {
-    if (s.region) continue;
-    const [x, y] = map([s.x, s.y]);
-    out.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#94a3b8" opacity="0.7"/>`);
-  }
   const gates = new Map<string, { a: string; b: string; n: number; rift: boolean }>();
   for (const { a, b, e } of sectorLinks(w)) {
     if (!e.gate || !a.region || !b.region) continue;
@@ -148,6 +131,48 @@ export function galaxyView(seed: number, sectorId = 's.0.0', span = 26000): stri
     g.n++;
     g.rift &&= !!e.rift;
     gates.set(key, g);
+  }
+  // Routes through unclaimed space, abstracted to region level: each connected patch of unclaimed sectors links the
+  // regions it touches (joined along a minimum spanning tree of their centres), drawn faint and dashed. No sector detail.
+  const links = sectorLinks(w);
+  const parent = new Map<string, string>();
+  const find = (id: string): string => {
+    let r = id;
+    while (parent.get(r) !== r) r = parent.get(r)!;
+    return r;
+  };
+  for (const s of w.sectors.values()) if (!s.region) parent.set(s.id, s.id);
+  for (const { a, b } of links) if (!a.region && !b.region) parent.set(find(a.id), find(b.id));
+  const touched = new Map<string, Set<string>>();
+  for (const { a, b } of links) {
+    const [wild, other] = !a.region && b.region ? [a, b] : !b.region && a.region ? [b, a] : [null, null];
+    if (!wild || !other?.region) continue;
+    const c = find(wild.id);
+    touched.set(c, (touched.get(c) ?? new Set()).add(other.region));
+  }
+  const through = new Set<string>();
+  for (const set of touched.values()) {
+    const ids = [...set].filter((id) => regions.has(id));
+    const inTree = new Set(ids.slice(0, 1));
+    while (inTree.size < ids.length) {
+      let best: [string, string, number] | null = null;
+      for (const p of inTree) {
+        for (const q of ids) {
+          if (inTree.has(q)) continue;
+          const d = Math.hypot(regions.get(p)!.x - regions.get(q)!.x, regions.get(p)!.y - regions.get(q)!.y);
+          if (!best || d < best[2]) best = [p, q, d];
+        }
+      }
+      inTree.add(best![1]);
+      const key = [best![0], best![1]].sort().join('|');
+      if (!gates.has(key)) through.add(key);
+    }
+  }
+  for (const key of through) {
+    const [ia, ib] = key.split('|') as [string, string];
+    const [ax, ay] = map([regions.get(ia)!.x, regions.get(ia)!.y]);
+    const [bx, by] = map([regions.get(ib)!.x, regions.get(ib)!.y]);
+    out.push(`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="#94a3b8" stroke-opacity="0.45" stroke-width="1.4" stroke-dasharray="6 6"/>`);
   }
   for (const g of gates.values()) {
     const ra = regions.get(g.a);
@@ -169,7 +194,7 @@ export function galaxyView(seed: number, sectorId = 's.0.0', span = 26000): stri
     out.push(`<text x="${x.toFixed(1)}" y="${(y + rad + 14).toFixed(1)}" text-anchor="middle" ${font} font-size="11" letter-spacing="2" fill="${col}" stroke="#05070d" stroke-width="3" paint-order="stroke">${(s0.regionName ?? '').toUpperCase()}</text>`);
     out.push(`<text x="${x.toFixed(1)}" y="${(y + rad + 27).toFixed(1)}" text-anchor="middle" ${font} font-size="9" fill="#94a3b8" stroke="#05070d" stroke-width="3" paint-order="stroke">${REGION_TYPE[s0.regionType ?? ''] ?? ''}</text>`);
   }
-  out.push(`<text x="24" y="${H - 22}" ${font} font-size="13" letter-spacing="2" fill="#94a3b8">ZOOM 3/3 (regions)  ·  lines: gates between regions (thicker = more)  ·  dots and faint lines: unclaimed sectors and their lanes</text>`);
+  out.push(`<text x="24" y="${H - 22}" ${font} font-size="13" letter-spacing="2" fill="#94a3b8">ZOOM 3/3 (regions)  ·  lines: gates between regions (thicker = more)  ·  faint dashed: a route through unclaimed space</text>`);
   out.push('</svg>');
   return out.join('\n');
 }
