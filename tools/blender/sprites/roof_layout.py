@@ -29,11 +29,11 @@ FAM = {
 
 # plates per layout, in tile units: (x0, y0, w, h, tone, feature)
 # features: P pocket + corner bolts, PP twin pockets, X / Y riveted strap along x / y, LX / LY bolted lap seam
-# across x / y, C corner bolts only, H round access hatch, V louvred vent, S conduit pipes along x, - plain
+# across x / y, C corner bolts only, - plain
 LAYOUTS = (
-    ((0, 0, 4, 2, 0, "P"), (0, 2, 2, 2, 1, "LX"), (2, 2, 2, 2, 0, "H")),
-    ((0, 0, 2, 4, 0, "Y"), (2, 0, 2, 2, 1, "V"), (2, 2, 2, 2, 0, "P")),
-    ((0, 0, 4, 1, 1, "S"), (0, 1, 2, 3, 0, "P"), (2, 1, 2, 3, 1, "LY")),
+    ((0, 0, 4, 2, 0, "P"), (0, 2, 2, 2, 1, "LX"), (2, 2, 2, 2, 0, "-")),
+    ((0, 0, 2, 4, 0, "Y"), (2, 0, 2, 2, 1, "C"), (2, 2, 2, 2, 0, "P")),
+    ((0, 0, 4, 1, 1, "-"), (0, 1, 2, 3, 0, "P"), (2, 1, 2, 3, 1, "LY")),
     ((0, 0, 2, 2, 1, "-"), (2, 0, 2, 2, 0, "X"), (0, 2, 4, 2, 1, "PP")),
 )
 RAIL = 9               # girder width (cells): 2-cell groove, 6-cell band, 1-cell weld line
@@ -192,66 +192,6 @@ def _feature(cv, feat, X0, Y0, X1, Y1, other):
                 cv.bolt(s - 5, p)
     elif feat == "C":
         _corners(cv, X0, Y0, X1, Y1)
-    elif feat == "H":
-        _hatch(cv, (X0 + FM + X1) // 2, (Y0 + FM + Y1) // 2, other)
-    elif feat == "V":
-        _vent(cv, X0 + FM + 6, Y0 + FM + 10, X1 - 11, Y1 - 15, other)
-        _corners(cv, X0, Y0, X1, Y1)
-    elif feat == "S":
-        _conduit(cv, X0, X1, (Y0 + FM + Y1) // 2 - 6, other)
-
-
-def _hatch(cv, cx, cy, other, R=13):
-    """Round access hatch: a dark groove, a raised rim (lit on its S half, shaded on its N), a lid in the other tone with
-    four bolts and a handle bar."""
-    for Y in range(cy - R, cy + R + 1):
-        for X in range(cx - R, cx + R + 1):
-            d = ((X - cx) ** 2 + (Y - cy) ** 2) ** 0.5
-            if d >= R:
-                continue
-            if d >= R - 1:
-                cv.put(X, Y, "k")
-            elif d >= R - 3:
-                cv.put(X, Y, "lit" if Y >= cy else "shd")
-            else:
-                cv.put(X, Y, other, True)
-    for dx, dy in ((-6, -6), (5, -6), (-6, 5), (5, 5)):
-        cv.bolt(cx + dx, cy + dy)
-    for X in range(cx - 4, cx + 5):
-        cv.put(X, cy - 1, "lit")
-        cv.put(X, cy, "lit")
-        cv.put(X, cy + 1, "k")
-
-
-def _vent(cv, X0, Y0, X1, Y1, floor):
-    """Louvred vent: a recessed frame (as a pocket) with slats across it, each a lit edge over a dark gap."""
-    _pocket(cv, X0, Y0, X1, Y1, floor)
-    for Y in range(Y0 + 2, Y1 - 2):
-        k = (Y - Y0 - 2) % 3
-        if k == 2:
-            continue
-        for X in range(X0 + 2, X1 - 2):
-            cv.put(X, Y, "lit" if k == 0 else "k")
-
-
-def _conduit(cv, X0, X1, Y, other):
-    """Two pipes along x (6 and 4 cells thick: a dark outline, a lit top, the other tone, a shaded underside) with a
-    clamp band every tile."""
-    for y0, t in ((Y, 6), (Y + 9, 4)):
-        for X in range(X0 + 2, X1 - 2):
-            clamp = (X % GN) in (14, 15, 16)
-            for d in range(t + 1):
-                if d == 0 or d == t:
-                    r = "k"
-                elif clamp:
-                    r = "rl"
-                elif d == 1:
-                    r = "lit"
-                elif d == t - 1:
-                    r = "shd"
-                else:
-                    r = other
-                cv.put(X, y0 + d, r)
 
 
 def _girder(cv, side, n):
