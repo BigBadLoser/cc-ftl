@@ -4,7 +4,7 @@
  */
 import { content } from '../../src/content';
 import {
-  accessTile, adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, type GenResult, type ModuleDef, type RoomRole,
+  accessTile, adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, generateStation, type GenResult, type StationDef, type StationSize, type ModuleDef, type RoomRole,
 } from '../../src/sim';
 import { drawAssemblies, drawSilhouette, drawStructure } from './views';
 
@@ -52,7 +52,7 @@ const GLYPHS: Record<string, string> = Object.fromEntries(Object.entries({
 const ROLE_TINT: Record<RoomRole, RGB> = {
   bridge: [52, 92, 140], engine: [120, 70, 40], reactor: [120, 110, 40], weapons: [120, 50, 70], shields: [40, 110, 120],
   cargo: [88, 80, 60], quarters: [70, 100, 60], core: [100, 60, 130], hangar: [70, 70, 90], hall: [58, 60, 66],
-  dock: [140, 140, 150], support: [50, 105, 90],
+  dock: [140, 140, 150], support: [50, 105, 90], farm: [60, 120, 40], industry: [130, 90, 50], armoury: [130, 40, 40],
 };
 
 /** Short labels and colours per module. */
@@ -73,6 +73,7 @@ const MOD: Record<string, { label: string; c: RGB }> = {
   'module.storage_rack': { label: 'RK', c: [210, 160, 90] }, 'module.storage_pallet': { label: 'PAL', c: [210, 160, 90] }, 'module.cargo_container': { label: 'CTR', c: [230, 140, 70] },
   'module.med_bed': { label: 'MED', c: [255, 140, 140] }, 'module.battery': { label: 'BT', c: [240, 220, 60] },
   'module.hydroponics': { label: 'HY', c: [110, 230, 90] }, 'module.console': { label: 'CN', c: [90, 170, 255] },
+  'module.refinery': { label: 'REF', c: [255, 150, 60] },
 };
 
 const defs = content.modules as Record<string, ModuleDef>;
@@ -81,11 +82,26 @@ export const factionIds = (): string[] => Object.keys(content.factions);
 
 /** `faction.drones:picket` keeps only that hull family (one family's sheet). */
 export function gen(factionSpec: string, seed: number, depth: number): GenResult {
+  if (factionSpec.startsWith('station.')) return genStation(factionSpec, seed);
   const [faction, family] = factionSpec.split(':') as [string, string | undefined];
   const f0 = (content.factions as Record<string, (typeof content.factions)[keyof typeof content.factions]>)[faction];
   if (!f0) throw new Error(`unknown faction ${faction}; try ${factionIds().join(', ')}`);
   const f = family && f0.hullFamilies ? { ...f0, hullFamilies: f0.hullFamilies.filter((h) => h.id === family) } : f0;
   return generateShip(f as typeof f0, faction, seed, depth, defs);
+}
+
+export const stationIds = (): string[] => Object.keys(content.stations);
+
+/**
+ * `station.trading:hub` builds that kind at one size; `station.trading:outpost,hub` cycles the sizes by seed (seed 1
+ * the first size, seed 2 the second...), so one sheet shows the smallest and largest side by side. No size: all three.
+ */
+export function genStation(spec: string, seed: number): GenResult {
+  const [id, sizes] = spec.split(':') as [string, string | undefined];
+  const def = (content.stations as Record<string, StationDef>)[id];
+  if (!def) throw new Error(`unknown station ${id}; try ${stationIds().join(', ')}`);
+  const list = (sizes ? sizes.split(',') : ['outpost', 'station', 'hub']) as StationSize[];
+  return generateStation(def, id, list[(seed - 1) % list.length] as StationSize, seed, defs);
 }
 
 /** Draw one layout at (ox, oy), `s` px per tile. */
@@ -175,7 +191,9 @@ export function summary(g: GenResult, seed: number): string {
   let supply = 0; let demand = 0;
   for (const m of mods) { const p = defs[m.def]?.power ?? 0; if (p > 0) supply += p; else demand -= p; }
   const roles = g.rooms.map((r) => r.role).filter((r) => r !== 'hall');
-  return `seed ${seed}: ${g.role}/${g.archetype} (${g.topology}) ${g.width}x${g.height} ${roles.length} rooms, power ${demand}/${supply}, weapons ${n((d) => !!d.weapon)}, ` +
+  const st = (g as { station?: { kind: string; size: string; crew: number; security: number; docks: number; guns: number; shields: number } }).station;
+  const stText = st ? `${st.kind} ${st.size}: crew ${st.crew} (security ${st.security}), docks ${st.docks}, guns ${st.guns}, shields ${st.shields}; ` : '';
+  return `seed ${seed}: ${stText}${g.role}/${g.archetype} (${g.topology}) ${g.width}x${g.height} ${roles.length} rooms, power ${demand}/${supply}, weapons ${n((d) => !!d.weapon)}, ` +
     `shields ${n((d) => !!d.shieldGen)}, engines ${n((d) => !!d.engine)}, crew ${g.template.crew?.length ?? 0}, ` +
     `${g.metrics ? `metrics ${JSON.stringify(g.metrics)}, ` : ''}attempts ${g.attempts}, ${g.problems.length === 0 ? 'OK' : `INVALID: ${g.problems.join('; ')}`}` +
     (g.failures.length > 0 ? ` [rejected: ${g.failures.join(', ')}]` : '');

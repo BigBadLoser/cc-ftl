@@ -1,5 +1,6 @@
 import type { Faction } from './combat/components';
 import type { FactionDef } from './shipgen/types';
+import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
@@ -56,6 +57,8 @@ export interface ContentRegistry {
   suit?: SuitDef;
   /** Faction content id (e.g. 'faction.scrapper') to definition, for generated ships. Absent = none. */
   factions?: Record<string, FactionDef>;
+  /** Station kinds the station generator builds (src/sim/shipgen/stationGen.ts). */
+  stations?: Record<string, StationDef>;
   /** Trade: prices' spread, faction stances and trader profiles. Absent = nobody trades. */
   trade?: TradeDef;
   /** Derelict infestations: what hatches from egg sacs. Absent = sacs hatch nothing. */

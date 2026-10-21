@@ -7,7 +7,11 @@ import type { AccessKind, RoomRole } from './types';
 
 /** Generic block making: draw an assembly with a local Builder, then freeze it into a Block with ports. */
 
-const CHARS = 'abcefghijklmnopqrstuvwxyzABCEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+/**
+ * Private room chars of a frozen block. After the 59 ASCII ones come 256 Latin Extended letters: big blocks (station
+ * lattices and rings) have more rooms and tubes than that, and a reused char would merge two rooms into one label.
+ */
+const CHARS = [...'abcefghijklmnopqrstuvwxyzABCEFGHIJKLMNOPQRSTUVWXYZ0123456789', ...Array.from({ length: 256 }, (_, i) => String.fromCharCode(0x100 + i))];
 
 /** Ports given in the local builder's coordinates. */
 export type LocalPort = BlockPort;

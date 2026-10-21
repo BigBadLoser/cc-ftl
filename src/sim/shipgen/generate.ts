@@ -19,6 +19,9 @@ import type { ArchetypeId, FactionDef, GenResult, GenRoom, RoomRole, ShipRoleDef
 /** Attempts before giving up on a seed (each reseeds deterministically). */
 export const GEN_ATTEMPTS = 24;
 
+/** Seed for attempt `n` of `seed` (shared with the station generator). */
+export const seedOf = (seed: number, n: number): number => attemptSeed(seed, n);
+
 /** Seed for attempt `n` of `seed`. */
 const attemptSeed = (seed: number, n: number): number => (Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b) + Math.imul(n, 0xc2b2ae35)) >>> 0;
 
@@ -77,7 +80,7 @@ function fitOut(
   const stockUp = (idx: number, spec: RoomSpec | undefined): void => {
     const id = lay.modules[idx]?.def as string;
     if (spec?.stock && defs[id]?.storage) {
-      out.stock.set(idx, f.stock.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
+      out.stock.set(idx, (spec.items ?? f.stock).map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
     }
   };
   // Planned modules per room and def, for steps that place only a share of them.
@@ -217,6 +220,21 @@ export function generateAttempt(
     topology = TOPOLOGIES[archetype as Exclude<ArchetypeId, 'sections'>](b, f, plan);
   }
   if (!topology) return `${archetype}: structure clash`;
+  return finishLayout(rng, f, factionId, seed, role, archetype, plan, b, topology, comp, profile, defs, n);
+}
+
+/** Extra validation of a finished template (stations add their own rules), returning problems. */
+export type ExtraCheck = (t: ShipTemplate, defs: Record<string, ModuleDef>) => string[];
+
+/**
+ * Crop the built structure, fit it out, make the template, validate it and take metrics: the shared back half of a
+ * generation attempt (ships and stations).
+ */
+export function finishLayout(
+  rng: Rng, f: FactionDef, factionId: string, seed: number, role: ShipRoleDef, archetype: ArchetypeId, plan: ShipPlan, b: Builder,
+  topology: string, comp: Arranger | null, profile: string, defs: Record<string, ModuleDef>, n: number,
+  opts: { immobile?: boolean; check?: ExtraCheck } = {},
+): GenResult {
   b.cv.fixDoors();
   const { rows: drawn, labels: roomOf, width, height, ox, oy } = b.cv.crop();
   const labels = b.cv.labels;
@@ -228,7 +246,8 @@ export function generateAttempt(
   const d = fitOut(rng, f, rows, roomOf, roles, specs, defs);
   const template = toTemplate(f, role, factionId, seed, plan, rows, d);
   template.modules = [...(template.modules ?? []), ...containers.map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
-  const problems = d.error ? [d.error] : validateTemplate(template, defs);
+  const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
+  if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));
   const metrics = layoutMetrics(template, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', defs);
   const bad = metricViolation(metrics, f.metrics);
   if (bad && problems.length === 0) problems.push(bad);

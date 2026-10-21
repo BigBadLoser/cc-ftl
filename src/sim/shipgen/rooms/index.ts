@@ -4,12 +4,13 @@ import { engineering } from './engineering';
 import { mess } from './mess';
 import { quarters } from './quarters';
 import { storage } from './storage';
+import { armoury, farm, industry } from './station';
 import { dock, engines, hangar, shields, weapons } from './systems';
 import type { RoomRecipe } from './types';
 
 /** Room recipes by role. Halls and AI cores have none. Mount rooms keep the generic placer for their mounts. */
 export const RECIPES: Partial<Record<RoomRole, RoomRecipe>> = {
-  bridge, quarters, cargo: storage, support: mess, reactor: engineering, weapons, shields, engine: engines, dock, hangar,
+  bridge, quarters, cargo: storage, support: mess, reactor: engineering, weapons, shields, engine: engines, dock, hangar, farm, industry, armoury,
 };
 
 export { pruneDoors } from './doors';

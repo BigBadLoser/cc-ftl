@@ -1,5 +1,6 @@
 import type { Faction } from '../combat/components';
 import type { ItemQty, ShipTemplate } from '../registry';
+import type { StationGrammar } from './stationTypes';
 
 /**
  * Procedural ship layouts, in stages: pick a ship role and a hull archetype (weighted by the faction's architectural
@@ -10,7 +11,9 @@ import type { ItemQty, ShipTemplate } from '../registry';
 /** What a room is for. */
 export type RoomRole =
   | 'bridge' | 'engine' | 'reactor' | 'weapons' | 'shields' | 'cargo' | 'quarters' | 'core' | 'hangar' | 'hall'
-  | 'dock' | 'support';
+  | 'dock' | 'support'
+  /** Station rooms: hydroponics farms, ore refining and processing, the armoury (weapon lockers). */
+  | 'farm' | 'industry' | 'armoury';
 
 /** Structural topologies the builder knows. Factions weight them; any faction could use any. */
 export type ArchetypeId =
@@ -136,7 +139,7 @@ export interface HullFamilyDef {
   /** The core is a citadel: an enclosed compartment on the axis, passages around it, crew quarters outboard. */
   citadel?: boolean;
   /** Structural grammars the family uses (how its sections are arranged in 2D), weighted. */
-  grammars: readonly Weighted<NavyGrammar | DroneGrammar | ScrapGrammar | CivilGrammar>[];
+  grammars: readonly Weighted<NavyGrammar | DroneGrammar | ScrapGrammar | CivilGrammar | StationGrammar>[];
   /** Soft proportion target (length / beam): arrangements nearer it score better; never a hard reject. */
   aspect: readonly [number, number];
   /** Propulsion configurations the family uses (engines always face +x). */
