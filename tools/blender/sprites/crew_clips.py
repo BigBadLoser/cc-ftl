@@ -10,6 +10,7 @@ import bpy
 import numpy as np
 from .human_base import SCALE
 from . import human_aim as aim
+from . import human_crouch as crouch
 from . import human_sit as hs
 from . import human_suit as suit
 from . import human_v2_weapons as hw
@@ -54,6 +55,14 @@ def _float_items(it):
 
 def _combat(arm, i, clip):
     return aim.apply(arm, i, clip)
+
+
+def _crouch(arm, i, clip):
+    return crouch.base(arm, i, clip)
+
+
+def _not_held(it):
+    return it.slot != "gear.hand"
 
 
 def _combat_items(family):
@@ -123,6 +132,11 @@ POSES = {
 for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy", "ready_1m", "swing_1m", "ready_2m",
            "swing_2m"):
     POSES[_c] = Pose(action="idle_Armature", hold="first", before=_combat, items=_combat_items(_c.rsplit("_", 1)[1]))
+for _c in ("crouch_aim_1h", "crouch_fire_1h", "crouch_aim_2h", "crouch_fire_2h", "crouch_fire_heavy", "crouch_ready_1m",
+           "lean_l_1h", "lean_r_1h", "lean_l_2h", "lean_r_2h"):
+    POSES[_c] = Pose(action="idle_Armature", hold="first", before=_combat, items=_combat_items(_c.rsplit("_", 1)[1]))
+for _c in ("crouch_idle", "crouch_walk"):                                # cover, weapons holstered (or not carried)
+    POSES[_c] = Pose(action="idle_Armature", hold="first", before=_crouch, items=_not_held)
 for _c in ("walk_aim_1h", "walk_aim_2h", "walk_heavy"):                 # the walk cycle's legs, the aim's arms
     POSES[_c] = Pose(action="walk_Armature", before=_combat, items=_combat_items(_c.rsplit("_", 1)[1]))
 

@@ -30,8 +30,12 @@ GLOBAL_FILES = [SRC / "core.py", SRC / "post.py", SRC / "human_render.py",
 CLIP_FILES = {"sit_idle": ["human_sit.py", "console_proto.py", "cmbkit.py"], "sit_work": ["human_sit.py", "console_proto.py", "cmbkit.py"],
               "eva_float": ["human_suit.py", "human_sit.py"]}      # files a clip's pose/chair code leans on (hashed for that clip only)
 for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy", "walk_aim_1h", "walk_aim_2h",
-           "walk_heavy", "ready_1m", "swing_1m", "ready_2m", "swing_2m"):
-    CLIP_FILES[_c] = ["human_aim.py", "human_v2_weapons.py", "human_sit.py"]
+           "walk_heavy", "ready_1m", "swing_1m", "ready_2m", "swing_2m", "crouch_aim_1h", "crouch_fire_1h",
+           "crouch_aim_2h", "crouch_fire_2h", "crouch_fire_heavy", "crouch_ready_1m", "lean_l_1h", "lean_r_1h",
+           "lean_l_2h", "lean_r_2h"):
+    CLIP_FILES[_c] = ["human_aim.py", "human_v2_weapons.py", "human_sit.py", "human_crouch.py"]
+for _c in ("crouch_idle", "crouch_walk"):
+    CLIP_FILES[_c] = ["human_crouch.py", "human_aim.py", "human_sit.py"]
 
 
 def item_clips(it):

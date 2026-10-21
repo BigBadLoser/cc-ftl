@@ -12,11 +12,14 @@ IK; two-hand and heavy holds put the left hand on the family's support point (hu
   ready_1m / swing_1m     guard with the blade or baton up; swing: wind up behind the shoulder, chop through, strike,
                           follow through low across the body, recover (5 frames)
   ready_2m / swing_2m     the axe across the body, both hands on the haft; swing: overhead, from behind the head down
-                          to the floor in front, then back (6 frames)"""
+                          to the floor in front, then back (6 frames)
+  crouch_<combat clip>    the same arms over human_crouch's legs: crouched behind cover, the torso up over it
+  lean_l_<1h|2h> / lean_r_<1h|2h>   the aim, the upper body leaning out sideways (round a doorframe or a corner)"""
 import math
 
 from mathutils import Matrix, Vector
 
+from . import human_crouch as hc
 from . import human_v2_weapons as hw
 from .human_sit import _aim, bpy_update
 
@@ -104,8 +107,17 @@ def apply(arm, i, clip):
     """Pose frame i of a combat clip (see the module docstring). -> breathing amount."""
     arm.animation_data.action = None                                         # keep the action's pose, stop it
     pb = arm.pose.bones                                                      # overwriting ours
+    crouch = clip.startswith("crouch_")
+    clip = clip.removeprefix("crouch_")
+    lean = 0
+    if clip.startswith("lean_"):
+        lean = 1 if clip[5] == "l" else -1
+        clip = "aim_" + clip.rsplit("_", 1)[1]
     fam = clip.rsplit("_", 1)[1]
     walk = clip.startswith("walk")
+    if crouch:
+        hc.legs(arm, kneel=fam == "heavy", lift=0.05 if fam in ("2h", "heavy") else 0.0)
+        hc.torso(arm, 0.0)
     if fam in ("1m", "2m"):
         _melee(arm, i, clip)
         _aim(arm, "head", Vector((0, -0.1, 1)))
@@ -116,9 +128,15 @@ def apply(arm, i, clip):
     fwd = (FWD * math.cos(pitch) + UP * math.sin(pitch)).normalized()
     up = (UP * math.cos(pitch) - FWD * math.sin(pitch)).normalized()
     back = -FWD * 0.04 * k                                                   # the kick
-    if not walk:
+    if not walk and not crouch:
         _stance(arm, fam == "heavy")
-    _aim(arm, "spine_02", Vector((0, -0.08 if fam != "heavy" else 0.04, 1)))   # lean into it (heavy: lean back)
+        _aim(arm, "spine_02", Vector((0, -0.08 if fam != "heavy" else 0.04, 1)))   # lean into it (heavy: lean back)
+    if lean:                                                                 # out round the corner: hips the other way
+        pb["root"].location = (-lean * 0.035, 0, 0)
+        bpy_update()
+        _aim(arm, "spine", Vector((lean * 0.12, -0.04, 1)))
+        _aim(arm, "spine_02", Vector((lean * 0.32, -0.06, 1)))
+        _aim(arm, "spine_03", Vector((lean * 0.4, -0.06, 1)))
     if fam == "1h":
         S = pb["arm.R"].head.copy()
         reach = (arm.data.bones["arm.R"].length + arm.data.bones["forearm.R"].length) * 0.96
