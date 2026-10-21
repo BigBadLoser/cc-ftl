@@ -48,6 +48,10 @@ export type SimEvent =
   | { type: 'mining.returning'; pod: number; cargo: number }
   /** A mining order ended: 'exhausted' (no ore left), 'recalled', or 'lost' (no bay to return to). */
   | { type: 'mining.done'; pod: number; asteroid: number; reason: 'exhausted' | 'recalled' | 'lost'; trips: number }
+  /** A dig through a vein dropped `count` units of `item` on the dug tile. */
+  | { type: 'rock.dug'; ship: number; x: number; y: number; item: string; count: number }
+  /** An outpost was stamped: its asteroid and its base region (ShipC). */
+  | { type: 'outpost.spawned'; asteroid: number; ship: number; style: 'surface' | 'dug'; kind: string; x: number; y: number }
   | { type: 'asteroid.spawned'; asteroid: number; kind: 'big' | 'field'; x: number; y: number; w: number; h: number }
   | { type: 'combat.started' }
   | { type: 'combat.ended' }

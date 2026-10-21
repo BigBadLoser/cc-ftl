@@ -95,6 +95,11 @@ export type Command =
   | { type: 'mining.order'; pod: number; asteroid: number; tiles?: { x: number; y: number }[] }
   /** Recall a mining pod: it flies home with what it has, unloads, and ends its order. */
   | { type: 'mining.recall'; pod: number }
+  /**
+   * Generate an asteroid outpost (`surface`: habitats on the plains of an open asteroid; `dug`: rooms carved into a dense one)
+   * from `seed` and stamp it at (x, y) or the first spot that fits. `kind` picks the flavour (default rolled).
+   */
+  | { type: 'debug.spawnOutpost'; style: 'surface' | 'dug'; seed: number; kind?: 'trading' | 'farming' | 'mining' | 'pirate' | 'criminal' | 'covert'; x?: number; y?: number }
   | { type: 'debug.spawnAsteroid'; kind: 'big' | 'field'; seed: number; x?: number; y?: number; coverage?: 'open' | 'mixed' | 'dense' }
   /**
    * Generate a hostile ship for a faction (content.factions) at sector `depth` from `seed` (default: drawn from the sim

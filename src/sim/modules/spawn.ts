@@ -10,6 +10,7 @@ import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, inFootprint
 import { isTileWalkable } from './walk';
 import { dismantleAirlock, initAirlock } from './airlock';
 import { VehicleBayC } from '../vehicles/components';
+import { AUTO_LEVEL_MAX } from '../rock/dig';
 import { releaseBayVehicle } from '../vehicles/lifecycle';
 import { shipIdOf, shipGrid } from '../regions';
 import { initContainer } from '../containers/detach';
@@ -66,14 +67,16 @@ export function placementError(sim: Sim, shipId: number, defId: string, x: numbe
   if (!Number.isInteger(rot) || rot < 0 || rot > 3) return 'badRot';
   const tiles = footprintTiles(def, x, y, rot);
   const wallRow = hullRow(def, x, y, rot);
+  let rock = 0;
   for (const t of tiles) {
     if (!grid.inBounds(t.x, t.y)) return 'outOfBounds';
     const onWall = wallRow.some((w) => w.x === t.x && w.y === t.y);
-    if (onWall ? grid.get('struct', t.x, t.y) !== Struct.Wall : grid.get('struct', t.x, t.y) !== Struct.Floor) {
-      return onWall ? 'notOnHull' : 'notFloor';
-    }
+    const k = grid.get('struct', t.x, t.y);
+    if (!onWall && k === Struct.Rock) rock++; // clipped rock mass: auto-levelled by the job, within AUTO_LEVEL_MAX
+    else if (onWall ? k !== Struct.Wall : k !== Struct.Floor && k !== Struct.Ground) return onWall ? 'notOnHull' : 'notFloor';
     if (grid.get('module', t.x, t.y) !== 0) return 'occupied';
   }
+  if (rock > tiles.length * AUTO_LEVEL_MAX) return 'rockMass';
   const side = hullSide(def, rot);
   if (side) {
     // The wall row must be exterior hull: Space right beyond every tile of it.

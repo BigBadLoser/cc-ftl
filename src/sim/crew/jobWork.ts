@@ -17,6 +17,7 @@ import { findFreeBed } from './beds';
 import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position } from './components';
 import { isTileOccupied, origin } from './helpers';
 import { shipIdOf, shipGrid } from '../regions';
+import { finishDig } from '../rock/dig';
 
 /** 'done': the job is finished and removed. 'working': progressing. 'wait': ready but blocked. */
 export type WorkResult = 'done' | 'working' | 'wait';
@@ -67,12 +68,13 @@ function finishStruct(sim: Sim, job: Job): WorkResult {
   if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {
     const next = job.kind === 'build' ? job.struct : Struct.Floor;
     const before = grid.get('struct', job.x, job.y);
-    writeStruct(grid, job.x, job.y, next);
+    if (before === Struct.Rock && next === Struct.Floor) finishDig(sim, grid, shipIdOf(sim, job), job.x, job.y);
+    else writeStruct(grid, job.x, job.y, next);
     if (job.kind === 'deconstruct') {
       const key = structCostKey(before);
       refundCost(sim, shipIdOf(sim, job), job.x, job.y, key ? sim.content.structCosts[key] : undefined);
     }
-    if (grid.has('item') && next !== Struct.Floor) evictStack(sim, shipIdOf(sim, job), job.x, job.y);
+    if (grid.has('item') && next !== Struct.Floor && next !== Struct.Ground) evictStack(sim, shipIdOf(sim, job), job.x, job.y);
   }
   consumeDelivered(job);
   return 'done';
@@ -84,10 +86,12 @@ function finishModule(sim: Sim, job: Job): WorkResult {
   const grid = shipGrid(sim, shipIdOf(sim, job));
   if (!bp || !def || !grid?.has('module')) return 'done';
   if (footprintBlockedByCrew(sim, shipIdOf(sim, job), bp.def, job.x, job.y, bp.rot)) return 'wait';
-  const free = footprintTiles(def, job.x, job.y, bp.rot).every(
-    (t) => grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Floor && grid.get('module', t.x, t.y) === 0,
-  );
+  const tiles = footprintTiles(def, job.x, job.y, bp.rot);
+  const base = (k: number) => k === Struct.Floor || k === Struct.Ground || k === Struct.Rock;
+  const free = tiles.every((t) => grid.inBounds(t.x, t.y) && base(grid.get('struct', t.x, t.y)) && grid.get('module', t.x, t.y) === 0);
   if (!free) return 'done'; // a blueprint whose site was spoiled is dropped (delivered materials spill)
+  // auto-level: the little rock mass the footprint clips becomes ground (its extra work was added to the job)
+  for (const t of tiles) if (grid.get('struct', t.x, t.y) === Struct.Rock) writeStruct(grid, t.x, t.y, Struct.Ground);
   spawnModule(sim, bp.def, job.x, job.y, bp.rot);
   consumeDelivered(job);
   if (grid.has('item')) for (const t of footprintTiles(def, job.x, job.y, bp.rot)) evictStack(sim, shipIdOf(sim, job), t.x, t.y);

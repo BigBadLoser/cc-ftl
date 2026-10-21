@@ -8,6 +8,8 @@ import { FighterC } from '../fight/components';
 import { SuitC } from '../eva/components';
 import { DoorJam, Struct } from '../structure';
 import type { Sim } from '../sim';
+import type { GridLike } from '../grid';
+import { rockBuild } from '../rock/dig';
 import { TICK_HZ } from '../time';
 import {
   CrewC, DraftedC, JobC, PositionC, PrioritiesC, WORK_CATEGORIES, type Crew,
@@ -21,7 +23,7 @@ export type CrewCommandType = Exclude<
 >;
 type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
-const BUILDABLE: readonly number[] = [Struct.Floor, Struct.Wall, Struct.Door];
+const BUILDABLE: readonly number[] = [Struct.Floor, Struct.Wall, Struct.Door, Struct.Ground];
 /** Work needed (ticks at workSpeed 1): walls take 3 s, floors and doors 2 s. */
 const BUILD_TICKS: Record<number, number> = { [Struct.Wall]: 3 * TICK_HZ, [Struct.Floor]: 2 * TICK_HZ, [Struct.Door]: 2 * TICK_HZ };
 const DECONSTRUCT_TICKS = 2 * TICK_HZ;
@@ -32,9 +34,9 @@ function reject(sim: Sim, command: string, reason: string): void {
   sim.events.emit({ type: 'command.rejected', command, reason });
 }
 
-function createJob(sim: Sim, kind: 'build' | 'deconstruct' | 'forceDoor', shipId: number, x: number, y: number, struct: number, work: number): void {
+function createJob(sim: Sim, kind: 'build' | 'deconstruct' | 'forceDoor', shipId: number, x: number, y: number, struct: number, work: number, free = false): void {
   const id = sim.world.createEntity();
-  const key = kind === 'build' ? structCostKey(struct) : undefined;
+  const key = kind === 'build' && !free ? structCostKey(struct) : undefined;
   const needs = needsFrom(key ? sim.content.structCosts[key] : undefined);
   sim.world.add(id, JobC, {
     category: 'construction', kind, x, y, struct, work, progress: 0, reservedBy: 0,
@@ -64,6 +66,13 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     if (current < 0) return;
     if (current === cmd.struct) return reject(sim, cmd.type, 'sameStruct');
     if (shipGrid(sim, cmd.ship)?.get('module', cmd.x, cmd.y)) return reject(sim, cmd.type, 'moduleHere');
+    if (current === Struct.Rock) {
+      // digging (Floor) or levelling (Ground) rock mass: slow, free
+      const r = rockBuild(shipGrid(sim, cmd.ship) as GridLike, cmd.x, cmd.y, cmd.struct);
+      if ('error' in r) return reject(sim, cmd.type, r.error);
+      return createJob(sim, 'build', cmd.ship, cmd.x, cmd.y, cmd.struct, r.work, true);
+    }
+    if (cmd.struct === Struct.Ground) return reject(sim, cmd.type, 'notRock');
     createJob(sim, 'build', cmd.ship, cmd.x, cmd.y, cmd.struct, BUILD_TICKS[cmd.struct] as number);
   },
   'job.deconstruct': (sim, cmd) => {
