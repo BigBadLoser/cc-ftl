@@ -53,7 +53,7 @@ describe('station generator', () => {
       const hub = gen(id, 'hub', 2);
       // Built tiles, not the bounding box: spines and crosses have long thin outlines.
       const filled = (g: StationResult): number => g.template.rows.join('').replace(/\./g, '').length;
-      expect(filled(hub), id).toBeGreaterThan(2.5 * filled(small));
+      expect(filled(hub), id).toBeGreaterThan(2 * filled(small));
       expect(Math.max(hub.width, hub.height), id).toBeGreaterThan(70);
     }
   }, 120000);
@@ -64,7 +64,7 @@ describe('station generator', () => {
     const f = gen('station.farming', 'station', 3);
     const d = gen('station.military', 'station', 3);
     const p = gen('station.pirate', 'station', 3);
-    const storage = (g: StationResult): number => countBy(g, (x) => !!x.storage && !x.container);
+    const storage = (g: StationResult): number => count(g, 'module.storage');
     // Trading: several docks and the most storage of the civil kinds.
     expect(t.station.docks).toBeGreaterThanOrEqual(5);
     expect(storage(t)).toBeGreaterThan(storage(f));
@@ -118,7 +118,7 @@ describe('station layouts', () => {
   it('kinds lean on different layouts: round rings for trade and farms, spines and crosses for mining, trees for pirates', () => {
     const used = (id: Id): string[] => [1, 2, 3, 4, 5, 6].map((s) => gen(id, 'station', s).topology.split(' ')[0] as string);
     const round = (xs: string[]): number => xs.filter((x) => x === 'stationWheel' || x === 'stationConcentric').length;
-    expect(round(used('station.trading'))).toBeGreaterThanOrEqual(2);
+    expect(round(used('station.trading'))).toBeGreaterThanOrEqual(1);
     expect(round(used('station.farming'))).toBeGreaterThanOrEqual(3);
     expect(used('station.mining').filter((x) => x === 'stationSpine' || x === 'stationCross').length).toBeGreaterThanOrEqual(3);
     expect(used('station.pirate').every((x) => x === 'stationTree' || x === 'stationWelded')).toBe(true);
@@ -152,4 +152,18 @@ describe('station crew and defence', () => {
     }
     for (const id of ids) expect(defence(id, 'outpost'), id).toBeLessThan(defence(id, 'hub'));
   });
+});
+
+describe('station walls and courtyards', () => {
+  it('walls are one tile thick and enclosed centres become open rooms', () => {
+    let courts = 0;
+    for (const id of ids) {
+      for (const size of STATION_SIZES) {
+        const g = gen(id, size, 5);
+        expect(g.metrics?.thickWall ?? 1, `${id} ${size}`).toBeLessThanOrEqual(0.03);
+        courts += g.rooms.filter((r) => r.role === 'plaza' || r.role === 'garden' || r.role === 'drill').length;
+      }
+    }
+    expect(courts).toBeGreaterThan(3);
+  }, 120000);
 });

@@ -99,6 +99,47 @@ Per-kind weights live in `SHAPES` in `src/content/stations.ts`:
 Spines and arcs stay below hub size, because they outgrow the 160 cap. Hubs build in a mean of 0.4–0.65 s each
 (worst 1.8 s) with 1.4–3.1 attempts. CLI: `--layout stationWheel` forces one layout.
 
+**Round 3 (user feedback: "courtyards as rooms, rooms that follow the ring, walls far too thick everywhere"):**
+- **Thick walls, every generator.**
+  - Causes:
+    - taper and plating wedges and filled pockets were solid wall slabs (`hullFill.ts`);
+    - blocks and rooms joined side by side kept both walls (double partitions);
+    - welded and tapered outlines left spare hull layers and stair-step shells.
+  - Fix: `thinWalls.ts` runs on the final canvas before fit-out, for ships and stations alike:
+    - slab interiors become floor of the neighbouring room, keeping one wall along open space, so outlines stay;
+    - spare hull layers peel off;
+    - double partitions fold into one wall. The outboard or western room grows, so mirrored hulls stay mirrored.
+  - Sealed pods, docks, engines and hangars keep their boxes.
+- **New metric `thickWall`:** wall tiles with no floor, door, beam, container or module among their 8 neighbours. It
+  shows in the sheet summaries and is bounded in tests: ship mean at most 0.02 and max 0.05 per faction; stations at
+  most 0.03.
+- **thickWall before → after** (mean over seeds):
+
+| | Before | After |
+|---|---|---|
+| Scrapper | 0.118 | 0.003 |
+| Navy | 0.093 | 0.000 |
+| Civilian | 0.038 | 0.000 |
+| Drones | 0.016 | 0.001 |
+| Stations | 0.00–0.08 | under 0.01 |
+
+  No armour doctrine is kept yet: navy tapers now read as floor inside a stepped one-wall outline.
+- **Courtyards as rooms** (`stationCourts.ts`): every space pocket a ring block encloses becomes one open room. That
+  covers ring centres, the sectors between spokes and the band between two rings. Each court gets up to four doors to
+  its corridors, plus some "shop" doors from soft rooms. Roles and recipes (`rooms/station.ts`):
+  - `plaza`: trading 0.8, mining 0.4 (stalls, benches, a food court);
+  - `garden`: farming 0.85 (hydroponics);
+  - `drill`: military 0.6 (open floor, racks).
+  The chance is drawn per block, so some stations keep empty centres.
+- **Ring rooms follow the band** (`stationBands.ts`), on wheels and arcs: soft rooms (quarters, holds, messes, farms,
+  refineries, armouries) are ring segments cut by one-wall radial partitions. They are stair-stepped polygons;
+  fit-out handles non-rectangular rooms.
+  - System rooms (guns, shields, the core, reactors, the bridge) stay rectangles on the rim beyond the band, because gun
+    bays need square floor and open space beside them.
+  - Docks sit on the rim near the top and bottom, because airlocks face north or south.
+  - **Concentric rings still use rectangles.** As bands, every airlock failed: the band wrapped round the docks. They
+    now keep system rooms and docks on the outer ring.
+
 Next slices (not built):
 1. Spawn a station as a region in the node: an immobile `ShipC`-like kind with no FTL, no jump lift and no flee.
 2. Replace the TEMPORARY trade instant fallback with real docking at station airlocks and shuttles.
@@ -106,7 +147,9 @@ Next slices (not built):
 4. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.
 5. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
 6. Generator polish:
-   - square-ring courtyards are still empty (round rings fill theirs inboard);
+   - concentric rings as ring bands (airlocks beyond a band need their own facing rule);
+   - big courtyards are slow to furnish and dark (lighting places at most 12 lamps a room);
+   - an armour doctrine for walls (navy belts, depots) is not built: every wall is one tile now;
    - wheel hubs with one hub room leave a big empty centre, so wheels are weighted only for outposts and stations;
    - spines have no doubled form for hubs.
 

@@ -58,6 +58,8 @@ export interface StationDef {
   transition: TransitionStyle;
   tiers: Readonly<Record<StationSize, StationTier>>;
   rooms: readonly StationRoomDef[];
+  /** Enclosed centres (ring courtyards, sectors between spokes) become open rooms of this role, with this chance. */
+  atrium?: { role: 'plaza' | 'garden' | 'drill'; chance: number };
 }
 
 /** Largest template a station may have (tiles per side): a hub is much bigger than any ship but stays one region. */

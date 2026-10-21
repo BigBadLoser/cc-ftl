@@ -3,6 +3,8 @@ import { hallBlock } from './blocks';
 import { podString } from './civilBlocks';
 import { oreCage } from './civilFrames';
 import { latticeStation, ringStation } from './civilStations';
+import type { Builder } from './builder';
+import { courtyards } from './stationCourts';
 import { arcStation, concentricStation, wheelStation } from './stationRings';
 import { dockSpec, type RoomSpec } from './plan';
 import { blockOf, civil, shuffle } from './civilKit';
@@ -29,10 +31,19 @@ const undocked = (c: Ctx): { rooms: RoomSpec[]; docks: number } => {
   return { rooms, docks: 2 + all.length - rooms.length };
 };
 
-function ringBlock(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, docks = 2): Block | null {
+type Court = (b: Builder | null) => Builder | null;
+
+/** The kind's courtyard rule for one block: enclosed centres become an open room (seeded per block, for variety). */
+const courtOf = (c: Ctx): Court => (b) => {
+  const a = c.fam.atrium;
+  if (b && a && c.rng.chance(a.chance) && courtyards(b, c.rng, a.role) > 0 && !c.parts.includes('atrium')) c.parts.push('atrium');
+  return b;
+};
+
+function ringBlock(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, docks = 2, court: Court = (b) => b): Block | null {
   const spokes = shuffle(rng, ['n', 's', 'w', 'e'] as Side[]).slice(0, rng.int(2, 4));
   const o = { extra: rng.int(0, 2), weight: [rng.pick([0.8, 1, 1.3]), rng.pick([0.8, 1, 1.3]), rng.pick([0.8, 1, 1.6])], inner: true, east: true, docks };
-  return civil(ringStation(rng, hub, shuffle(rng, rooms), 0, reactors, spokes, o), 'command', label);
+  return civil(court(ringStation(rng, hub, shuffle(rng, rooms), 0, reactors, spokes, o)), 'command', label);
 }
 
 function latticeBlock(rng: Rng, first: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, holes?: number, docks = 2): Block | null {
@@ -42,7 +53,7 @@ function latticeBlock(rng: Rng, first: RoomSpec, rooms: RoomSpec[], reactors: nu
 
 function ring(c: Ctx): boolean {
   const { rooms, docks } = undocked(c);
-  const b = ringBlock(c.rng, c.plan.command, rooms, c.plan.reactors, 'ring station', docks);
+  const b = ringBlock(c.rng, c.plan.command, rooms, c.plan.reactors, 'ring station', docks, courtOf(c));
   if (!b) return no(c, 'ring');
   c.A.placeRoot(b);
   return true;
@@ -69,10 +80,10 @@ function hubStation(c: Ctx): boolean {
   let reactors = c.plan.reactors - share;
   // The core is a square ring or a round wheel; satellites are rings, wheels or lattices.
   const wheelOf = (hub: RoomSpec, rs: RoomSpec[], rx: number, dk: number, label: string): Block | null =>
-    civil(wheelStation(c.rng, hub, [...rs, ...reactorRooms(rx), ...Array.from({ length: dk }, () => dockSpec())], { spokes: cardinal(c, 2), extra: 0, centre: 0 }), 'command', label);
+    civil(courtOf(c)(wheelStation(c.rng, hub, [...rs, ...reactorRooms(rx), ...Array.from({ length: dk }, () => dockSpec())], { spokes: cardinal(c, 2), extra: 0, centre: 0 })), 'command', label);
   const root = c.rng.chance(0.5)
     ? wheelOf(c.plan.command, [...coreRooms, ...(groups[0] ?? [])], share, docks, 'hub core wheel')
-    : ringBlock(c.rng, c.plan.command, [...coreRooms, ...(groups[0] ?? [])], share, 'hub core ring', docks);
+    : ringBlock(c.rng, c.plan.command, [...coreRooms, ...(groups[0] ?? [])], share, 'hub core ring', docks, courtOf(c));
   if (!root) return no(c, 'core ring');
   const r0 = c.A.placeRoot(root);
   const sides = shuffle(c.rng, ['n', 's', 'w', 'e'] as Side[]).slice(0, k);
@@ -87,7 +98,7 @@ function hubStation(c: Ctx): boolean {
     reactors -= rx;
     const pick = c.rng.int(0, 2);
     const sat = pick === 0 ? wheelOf(head, body, rx, docks <= 2 ? 0 : 2, 'satellite wheel')
-      : pick === 1 || docks <= 2 ? ringBlock(c.rng, head, body, rx, 'satellite ring', docks <= 2 ? 0 : 2) : latticeBlock(c.rng, head, body, rx, 'satellite lattice');
+      : pick === 1 || docks <= 2 ? ringBlock(c.rng, head, body, rx, 'satellite ring', docks <= 2 ? 0 : 2, courtOf(c)) : latticeBlock(c.rng, head, body, rx, 'satellite lattice');
     if (!sat) return no(c, 'satellite');
     // A longer spoke when the satellite would clash with what is already there.
     let id: number | null = null;
@@ -137,11 +148,11 @@ function wheel(c: Ctx): boolean {
   const spokes = cardinal(c, 2);
   const o = { spokes, extra: c.rng.int(0, 2), centre: spokes.length < 4 ? c.rng.int(0, 2) : 0 };
   c.parts.push(`spokes ${spokes.join('')}${o.centre ? ` centre ${o.centre}` : ''}`);
-  return placeRoot(c, civil(wheelStation(c.rng, c.plan.command, fullRooms(c), o), 'command', 'wheel station'), 'wheel');
+  return placeRoot(c, civil(courtOf(c)(wheelStation(c.rng, c.plan.command, fullRooms(c), o)), 'command', 'wheel station'), 'wheel');
 }
 
 function concentric(c: Ctx): boolean {
-  return placeRoot(c, civil(concentricStation(c.rng, c.plan.command, fullRooms(c), cardinal(c, 2)), 'command', 'concentric station'), 'concentric');
+  return placeRoot(c, civil(courtOf(c)(concentricStation(c.rng, c.plan.command, fullRooms(c), cardinal(c, 2))), 'command', 'concentric station'), 'concentric');
 }
 
 function arc(c: Ctx): boolean {

@@ -55,3 +55,50 @@ export const armoury = {
     },
   ],
 } as const satisfies RoomRecipe;
+
+/** Concourse (trading courtyards): stalls (pallets and lockers) and benches (tables with chairs) in open space. */
+export const plaza = {
+  fill: 0.1,
+  arrangements: [
+    {
+      name: 'market', weight: 2, steps: [
+        { mod: 'module.storage_pallet', count: 'fill', upTo: 0.08, clear: 1, grid: [4, 4] },
+        { mod: 'module.mess_table', count: 'fill', upTo: 0.12, clear: 1, grid: [5, 5], rots: [0], with: { mod: 'module.chair', n: 2 } },
+        { mod: 'module.hydroponics', count: 6, wall: 'any' },
+      ],
+    },
+    {
+      name: 'food court', weight: 1, steps: [
+        { mod: 'module.galley', count: 2, wall: 'any' },
+        { mod: 'module.mess_table', count: 'fill', upTo: 0.14, clear: 1, grid: [4, 4], rots: [0], with: { mod: 'module.chair', n: 4 } },
+        { mod: 'module.storage_locker', count: 4, wall: 'any' },
+      ],
+    },
+  ],
+} as const satisfies RoomRecipe;
+
+/** Garden deck (farming courtyards): hydroponics beds in rows, a few benches. */
+export const garden = {
+  fill: 0.18,
+  arrangements: [
+    {
+      name: 'garden', weight: 1, steps: [
+        { mod: 'module.hydroponics', count: 'fill', upTo: 0.16, clear: 1, grid: [3, 3], rots: [0] },
+        { mod: 'module.mess_table', count: 3, clear: 1, rots: [0], with: { mod: 'module.chair', n: 2 } },
+      ],
+    },
+  ],
+} as const satisfies RoomRecipe;
+
+/** Drill hall (military courtyards): open floor, racks and lockers on the walls. */
+export const drill = {
+  fill: 0.06,
+  arrangements: [
+    {
+      name: 'drill hall', weight: 1, steps: [
+        { mod: 'module.storage_rack', count: 'fill', wall: 'any', row: true },
+        { mod: 'module.storage_locker', count: 6, wall: 'any', row: true },
+      ],
+    },
+  ],
+} as const satisfies RoomRecipe;

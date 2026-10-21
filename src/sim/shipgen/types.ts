@@ -13,7 +13,9 @@ export type RoomRole =
   | 'bridge' | 'engine' | 'reactor' | 'weapons' | 'shields' | 'cargo' | 'quarters' | 'core' | 'hangar' | 'hall'
   | 'dock' | 'support'
   /** Station rooms: hydroponics farms, ore refining and processing, the armoury (weapon lockers). */
-  | 'farm' | 'industry' | 'armoury';
+  | 'farm' | 'industry' | 'armoury'
+  /** Station courtyards (open rooms filling enclosed centres): a concourse, a garden deck, a drill hall. */
+  | 'plaza' | 'garden' | 'drill';
 
 /** Structural topologies the builder knows. Factions weight them; any faction could use any. */
 export type ArchetypeId =
@@ -148,6 +150,8 @@ export interface HullFamilyDef {
   anchors?: readonly Weighted<DonorKind>[];
   /** Stations: ore cages hung off the structure (mining stations). */
   cages?: number;
+  /** Stations: enclosed centres become open rooms of this role, with this chance per station. */
+  atrium?: { role: RoomRole; chance: number };
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 
