@@ -84,12 +84,16 @@ def _twist(arm, ang):
     bpy_update()
 
 
+CUP_DROP = 0.035                    # the cupping fist's centre this far under the handguard's (fingers not over its top)
+
+
 def _cup(arm, at, fwd, up):
     """The left hand cups a handguard at `at`: palm up under it, the barrel along the fist (index towards the muzzle),
     the forearm in from below on the left and the fingers wrapping up the far side."""
     across = fwd.cross(up).normalized()                                       # wrist to knuckles: to the right
-    _ik(arm, "L", _wrist("L", at, across, fwd, hw.grip_y(arm)), -UP + LEFT * 0.6)
-    _frame(arm, "hand.L", across, fwd)
+    under = at - up * CUP_DROP                                                 # the handguard rests on the palm, the
+    _ik(arm, "L", _wrist("L", under, across, fwd, hw.grip_y(arm)), -UP + LEFT * 0.25 - FWD * 0.3)   # fingers up its
+    _frame(arm, "hand.L", across, fwd)                                         # side, the elbow down under the gun
 
 
 def _stance(arm, wide):
