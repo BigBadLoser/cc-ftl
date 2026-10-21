@@ -110,6 +110,8 @@ export interface LatticeOpts {
   holes: number;
   /** Extra module size. */
   pad: number;
+  /** Airlocks: 0, 1 (top) or 2 (top and bottom, the default). */
+  docks?: number;
 }
 
 export function latticeStation(rng: Rng, modsIn: RoomSpec[], engines: number, o: LatticeOpts): Builder | null {
@@ -175,7 +177,8 @@ export function latticeStation(rng: Rng, modsIn: RoomSpec[], engines: number, o:
   const botRow = (parts[R - 1] ?? []).filter((p, c): p is Part => !!p && !isEng(R - 1, c));
   const t0 = topRow[0];
   const b0 = botRow[botRow.length - 1] ?? botRow[0];
-  if (!t0 || !b0 || !b.attach(t0, 'n', dockSpec(), Math.floor(t0.w / 2) - 1)) return null;
-  if (!b.attach(b0, 's', dockSpec(), Math.floor(b0.w / 2) - 1)) return null;
+  const docks = o.docks ?? 2;
+  if (!t0 || !b0 || (docks > 0 && !b.attach(t0, 'n', dockSpec(), Math.floor(t0.w / 2) - 1))) return null;
+  if (docks > 1 && !b.attach(b0, 's', dockSpec(), Math.floor(b0.w / 2) - 1)) return null;
   return b;
 }

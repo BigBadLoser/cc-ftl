@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   Rng, SECURITY_ROLE, STATION_MAX, STATION_SIZES, generateStation, planStation, stationCrew, structureParts,
-  type ItemDef, type ModuleDef, type StationDef, type StationResult, type StationSize,
+  type ItemDef, type ModuleDef, type StationDef, type StationGrammar, type StationResult, type StationSize,
 } from '../sim';
 import { content } from './index';
 import { stations } from './stations';
@@ -51,7 +51,9 @@ describe('station generator', () => {
     for (const id of ids) {
       const small = gen(id, 'outpost', 2);
       const hub = gen(id, 'hub', 2);
-      expect(hub.width * hub.height, id).toBeGreaterThan(2 * small.width * small.height);
+      // Built tiles, not the bounding box: spines and crosses have long thin outlines.
+      const filled = (g: StationResult): number => g.template.rows.join('').replace(/\./g, '').length;
+      expect(filled(hub), id).toBeGreaterThan(2.5 * filled(small));
       expect(Math.max(hub.width, hub.height), id).toBeGreaterThan(70);
     }
   }, 120000);
@@ -80,7 +82,7 @@ describe('station generator', () => {
     expect(d.station.docks).toBeLessThanOrEqual(3);
     expect(d.rooms.filter((r) => r.role === 'armoury').length).toBeGreaterThanOrEqual(2);
     // Pirate den: welded from several modules, loot stores, the fewest guns (farms come close).
-    expect(p.topology).toContain('stationWelded');
+    expect(p.topology).toMatch(/stationWelded|stationTree/);
     for (const g of [t, m]) expect(p.station.guns).toBeLessThan(g.station.guns);
     expect(p.station.guns).toBeLessThanOrEqual(f.station.guns);
   }, 120000);
@@ -92,6 +94,34 @@ describe('station generator', () => {
         .reduce((n, s) => n + s.count, 0);
       expect(guns, id).toBeGreaterThanOrEqual(g.station.security);
     }
+  }, 120000);
+});
+
+describe('station layouts', () => {
+  const LAYOUTS: StationGrammar[] = [
+    'stationRing', 'stationLattice', 'stationHub', 'stationWelded', 'stationWheel', 'stationConcentric', 'stationArc', 'stationSpine', 'stationCross', 'stationTree',
+  ];
+  const forced = (id: Id, size: StationSize, layout: StationGrammar, seed: number): StationResult => {
+    const def = stations[id] as StationDef;
+    return generateStation({ ...def, tiers: { ...def.tiers, [size]: { ...def.tiers[size], grammars: [{ value: layout, weight: 1 }] } } }, id, size, seed, defs);
+  };
+  it('every layout builds valid stations (round rings, spines, crosses, trees and the rest)', () => {
+    for (const layout of LAYOUTS) {
+      for (const [id, size] of [['station.trading', 'outpost'], ['station.military', 'station']] as [Id, StationSize][]) {
+        const g = forced(id, size, layout, 11);
+        expect(g.problems, `${layout} ${id} ${size}`).toEqual([]);
+        expect(g.topology.startsWith(layout), `${layout} ${g.topology}`).toBe(true);
+      }
+    }
+  }, 120000);
+
+  it('kinds lean on different layouts: round rings for trade and farms, spines and crosses for mining, trees for pirates', () => {
+    const used = (id: Id): string[] => [1, 2, 3, 4, 5, 6].map((s) => gen(id, 'station', s).topology.split(' ')[0] as string);
+    const round = (xs: string[]): number => xs.filter((x) => x === 'stationWheel' || x === 'stationConcentric').length;
+    expect(round(used('station.trading'))).toBeGreaterThanOrEqual(2);
+    expect(round(used('station.farming'))).toBeGreaterThanOrEqual(3);
+    expect(used('station.mining').filter((x) => x === 'stationSpine' || x === 'stationCross').length).toBeGreaterThanOrEqual(3);
+    expect(used('station.pirate').every((x) => x === 'stationTree' || x === 'stationWelded')).toBe(true);
   }, 120000);
 });
 

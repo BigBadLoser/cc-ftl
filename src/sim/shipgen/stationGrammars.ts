@@ -3,10 +3,14 @@ import { hallBlock } from './blocks';
 import { podString } from './civilBlocks';
 import { oreCage } from './civilFrames';
 import { latticeStation, ringStation } from './civilStations';
+import { arcStation, concentricStation, wheelStation } from './stationRings';
+import { dockSpec, type RoomSpec } from './plan';
 import { blockOf, civil, shuffle } from './civilKit';
 import { no, type Ctx } from './navyKit';
-import { allRooms, type RoomSpec } from './plan';
+import { cardinal, fullRooms, placeRoot, reactorRooms, roomsOf, split } from './stationKit';
+import { STATION_LAYOUTS } from './stationLayouts';
 import type { Rng } from '../rng';
+import type { StationGrammar } from './stationTypes';
 import type { FactionDef } from './types';
 
 /**
@@ -18,8 +22,6 @@ import type { FactionDef } from './types';
  *   stationWelded   a small core with modules and loot pods welded straight onto it, no spokes (pirate dens)
  */
 
-/** Every room except the control room (which the ring hub or the first lattice module takes). */
-const roomsOf = (c: Ctx): RoomSpec[] => allRooms(c.plan).filter((r) => r !== c.plan.command);
 /** Rings place their own docks: the rooms without docks, and how many docks in all (two come with every structure). */
 const undocked = (c: Ctx): { rooms: RoomSpec[]; docks: number } => {
   const all = roomsOf(c);
@@ -27,21 +29,14 @@ const undocked = (c: Ctx): { rooms: RoomSpec[]; docks: number } => {
   return { rooms, docks: 2 + all.length - rooms.length };
 };
 
-/** Reactor rooms for a lattice (rings put them on their east run). */
-function reactorRooms(k0: number): RoomSpec[] {
-  const out: RoomSpec[] = [];
-  for (let k = k0; k > 0; k -= 2) out.push({ role: 'reactor', mods: Array<string>(Math.min(2, k)).fill('module.reactor'), w: 2 * Math.min(2, k) + 2, h: 4 });
-  return out;
-}
-
 function ringBlock(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, docks = 2): Block | null {
   const spokes = shuffle(rng, ['n', 's', 'w', 'e'] as Side[]).slice(0, rng.int(2, 4));
   const o = { extra: rng.int(0, 2), weight: [rng.pick([0.8, 1, 1.3]), rng.pick([0.8, 1, 1.3]), rng.pick([0.8, 1, 1.6])], inner: true, east: true, docks };
   return civil(ringStation(rng, hub, shuffle(rng, rooms), 0, reactors, spokes, o), 'command', label);
 }
 
-function latticeBlock(rng: Rng, first: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, holes?: number): Block | null {
-  const o = { gx: rng.int(2, 5), gy: rng.int(2, 4), spread: rng.pick([0.8, 1.2, 1.8]), holes: holes ?? rng.pick([0, 0.15]), pad: rng.int(0, 1) };
+function latticeBlock(rng: Rng, first: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, holes?: number, docks = 2): Block | null {
+  const o = { gx: rng.int(2, 5), gy: rng.int(2, 4), spread: rng.pick([0.8, 1.2, 1.8]), holes: holes ?? rng.pick([0, 0.15]), pad: rng.int(0, 1), docks };
   return civil(latticeStation(rng, [first, ...shuffle(rng, [...rooms, ...reactorRooms(reactors)])], 0, o), 'command', label);
 }
 
@@ -60,17 +55,6 @@ function lattice(c: Ctx): boolean {
   return true;
 }
 
-/** Split rooms into `k` groups of similar floor area (largest first, each to the smallest group). */
-function split(rooms: RoomSpec[], k: number): RoomSpec[][] {
-  const out: RoomSpec[][] = Array.from({ length: k }, () => []);
-  const area = (g: RoomSpec[]): number => g.reduce((t, r) => t + r.w * r.h, 0);
-  for (const r of [...rooms].sort((a, b) => b.w * b.h - a.w * a.h)) {
-    const g = out.reduce((best, x) => (area(x) < area(best) ? x : best), out[0] as RoomSpec[]);
-    g.push(r);
-  }
-  return out;
-}
-
 const OPP: Record<Side, Side> = { n: 's', s: 'n', e: 'w', w: 'e' };
 
 /** Hub: the core ring (control, AI core, shields, reactors) and satellites on spokes, one per side. */
@@ -83,7 +67,12 @@ function hubStation(c: Ctx): boolean {
   // Reactors spread over the core and the satellites, so no ring run grows long on its reactor rooms alone.
   const share = Math.ceil(c.plan.reactors / (k + 1));
   let reactors = c.plan.reactors - share;
-  const root = ringBlock(c.rng, c.plan.command, [...coreRooms, ...(groups[0] ?? [])], share, 'hub core ring', docks);
+  // The core is a square ring or a round wheel; satellites are rings, wheels or lattices.
+  const wheelOf = (hub: RoomSpec, rs: RoomSpec[], rx: number, dk: number, label: string): Block | null =>
+    civil(wheelStation(c.rng, hub, [...rs, ...reactorRooms(rx), ...Array.from({ length: dk }, () => dockSpec())], { spokes: cardinal(c, 2), extra: 0, centre: 0 }), 'command', label);
+  const root = c.rng.chance(0.5)
+    ? wheelOf(c.plan.command, [...coreRooms, ...(groups[0] ?? [])], share, docks, 'hub core wheel')
+    : ringBlock(c.rng, c.plan.command, [...coreRooms, ...(groups[0] ?? [])], share, 'hub core ring', docks);
   if (!root) return no(c, 'core ring');
   const r0 = c.A.placeRoot(root);
   const sides = shuffle(c.rng, ['n', 's', 'w', 'e'] as Side[]).slice(0, k);
@@ -96,7 +85,9 @@ function hubStation(c: Ctx): boolean {
     // Few-dock kinds (depots) get ring satellites with no docks of their own; lattices always bring two.
     const rx = i === sides.length - 1 ? reactors : Math.min(reactors, share);
     reactors -= rx;
-    const sat = docks <= 2 || c.rng.chance(0.5) ? ringBlock(c.rng, head, body, rx, 'satellite ring', docks <= 2 ? 0 : 2) : latticeBlock(c.rng, head, body, rx, 'satellite lattice');
+    const pick = c.rng.int(0, 2);
+    const sat = pick === 0 ? wheelOf(head, body, rx, docks <= 2 ? 0 : 2, 'satellite wheel')
+      : pick === 1 || docks <= 2 ? ringBlock(c.rng, head, body, rx, 'satellite ring', docks <= 2 ? 0 : 2) : latticeBlock(c.rng, head, body, rx, 'satellite lattice');
     if (!sat) return no(c, 'satellite');
     // A longer spoke when the satellite would clash with what is already there.
     let id: number | null = null;
@@ -125,7 +116,8 @@ function welded(c: Ctx): boolean {
     const g = groups[i] ?? [];
     const head = g[0];
     if (!head) continue;
-    const blk = c.rng.chance(0.5) ? latticeBlock(c.rng, head, g.slice(1), 0, 'welded lattice', 0.3) : ringBlock(c.rng, head, g.slice(1), 0, 'welded ring');
+    // Welded-on modules bring no airlocks of their own: the den keeps the docks its tier asks for.
+    const blk = c.rng.chance(0.5) ? latticeBlock(c.rng, head, g.slice(1), 0, 'welded lattice', 0.3, 0) : ringBlock(c.rng, head, g.slice(1), 0, 'welded ring', 0);
     if (!blk) return no(c, 'welded module');
     const host = c.rng.pick(ids);
     const side = c.rng.pick(['n', 's', 'w', 'e'] as Side[]);
@@ -139,6 +131,23 @@ function welded(c: Ctx): boolean {
   }
   c.parts.push(`welded ${ids.length}`);
   return true;
+}
+
+function wheel(c: Ctx): boolean {
+  const spokes = cardinal(c, 2);
+  const o = { spokes, extra: c.rng.int(0, 2), centre: spokes.length < 4 ? c.rng.int(0, 2) : 0 };
+  c.parts.push(`spokes ${spokes.join('')}${o.centre ? ` centre ${o.centre}` : ''}`);
+  return placeRoot(c, civil(wheelStation(c.rng, c.plan.command, fullRooms(c), o), 'command', 'wheel station'), 'wheel');
+}
+
+function concentric(c: Ctx): boolean {
+  return placeRoot(c, civil(concentricStation(c.rng, c.plan.command, fullRooms(c), cardinal(c, 2)), 'command', 'concentric station'), 'concentric');
+}
+
+function arc(c: Ctx): boolean {
+  const span = c.rng.pick([Math.PI, Math.PI * 1.25, Math.PI * 1.5]);
+  c.parts.push(`span ${Math.round((span * 180) / Math.PI)}`);
+  return placeRoot(c, civil(arcStation(c.rng, c.plan.command, fullRooms(c), span), 'command', 'arc station'), 'arc');
 }
 
 /** Ore cages (mining): rows of ore holds on a rail, hung below or above any placed module. */
@@ -175,6 +184,8 @@ function cages(c: Ctx): boolean {
 
 const withCages = (run: (c: Ctx) => boolean) => (c: Ctx): boolean => run(c) && cages(c);
 
-export const STATION_GRAMMARS: Record<'stationRing' | 'stationLattice' | 'stationHub' | 'stationWelded', (c: Ctx, f: FactionDef) => boolean> = {
+export const STATION_GRAMMARS: Record<StationGrammar, (c: Ctx, f: FactionDef) => boolean> = {
   stationRing: withCages(ring), stationLattice: withCages(lattice), stationHub: withCages(hubStation), stationWelded: withCages(welded),
+  stationWheel: withCages(wheel), stationConcentric: withCages(concentric), stationArc: withCages(arc),
+  stationSpine: withCages(STATION_LAYOUTS.spine), stationCross: withCages(STATION_LAYOUTS.cross), stationTree: withCages(STATION_LAYOUTS.tree),
 };

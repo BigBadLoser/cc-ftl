@@ -11,7 +11,9 @@ export type StationSize = 'outpost' | 'station' | 'hub';
 export const STATION_SIZES: readonly StationSize[] = ['outpost', 'station', 'hub'];
 
 /** Station topologies (see stationGrammars.ts). */
-export type StationGrammar = 'stationRing' | 'stationLattice' | 'stationHub' | 'stationWelded';
+export type StationGrammar =
+  | 'stationRing' | 'stationLattice' | 'stationHub' | 'stationWelded' | 'stationWheel' | 'stationConcentric' | 'stationArc'
+  | 'stationSpine' | 'stationCross' | 'stationTree';
 
 /** A kind-specific room: its role, the modules it holds, its interior size, and how many per size tier. */
 export interface StationRoomDef {

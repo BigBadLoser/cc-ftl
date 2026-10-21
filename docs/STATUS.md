@@ -74,6 +74,31 @@ What exists (generation only, nothing spawns yet):
   crew and security scaling, defence ordering and armoury stock. `stations.slow.test.ts` sweeps 12 seeds per kind and
   size.
 
+**Layouts (round 2, after user feedback "more layouts, some circles"):** ten station grammars. The new ones:
+- `stationWheel`: a round ring on a rasterised circle (`stationRings.ts`), rooms fitted outboard and, when they don't
+  fit, inboard; the hub on 2 to 4 spokes, sometimes with rooms beside it.
+- `stationConcentric`: two round rings joined by four spokes. The inner ring has rooms on both faces, which fills the
+  centre. Docks stay on the outer ring.
+- `stationArc`: a partial ring (180 to 270 degrees), rooms on both faces, docks at the ends.
+- `stationSpine`: a 2-wide spine with pods flush or on stubs both sides, docks at the ends.
+- `stationCross`: four arms from a core room, rooms on both faces, a dock at every arm end.
+- `stationTree`: quads and towers grown branch-wise off the newest modules, with airlocks hung off them.
+
+Hub satellites (and the hub core) can now be wheels. Welded pirate modules bring no airlocks of their own.
+
+Per-kind weights live in `SHAPES` in `src/content/stations.ts`:
+
+| Kind | Outpost | Station | Hub |
+|---|---|---|---|
+| Trading | wheel 3, cross 2, ring 1, arc 1 | wheel 3, concentric 2, cross 2, ring 1 | concentric 3, hub 3 |
+| Mining | spine 3, cross 2, arc 1, tree 1 | spine 3, cross 2, lattice 1, wheel 1 | hub 3, cross 2, concentric 1 |
+| Farming | wheel 2, arc 2, ring 1, lattice 1 | wheel 3, concentric 2, lattice 1 | concentric 3, hub 2 |
+| Military | cross 2, spine 2, ring 1 | spine 2, cross 2, ring 2, concentric 1 | hub 2, concentric 2, cross 1 |
+| Pirate | tree 3, welded 2, arc 1 | tree 2, welded 2 | welded 2, tree 2 |
+
+Spines and arcs stay below hub size, because they outgrow the 160 cap. Hubs build in a mean of 0.4–0.65 s each
+(worst 1.8 s) with 1.4–3.1 attempts. CLI: `--layout stationWheel` forces one layout.
+
 Next slices (not built):
 1. Spawn a station as a region in the node: an immobile `ShipC`-like kind with no FTL, no jump lift and no flee.
 2. Replace the TEMPORARY trade instant fallback with real docking at station airlocks and shuttles.
@@ -81,9 +106,9 @@ Next slices (not built):
 4. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.
 5. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
 6. Generator polish:
-   - ring courtyards are large and empty (an inner deck or truss could fill them);
-   - a satellite that clashes with its neighbours costs a reseed on hubs;
-   - pirate outposts can get many docks, because each welded lattice brings two.
+   - square-ring courtyards are still empty (round rings fill theirs inboard);
+   - wheel hubs with one hub room leave a big empty centre, so wheels are weighted only for outposts and stations;
+   - spines have no doubled form for hubs.
 
 ## Aliens on derelicts (branch `aliens`, based on `derelict-ingame` plus `art/alien`; not merged; awaiting user review)
 

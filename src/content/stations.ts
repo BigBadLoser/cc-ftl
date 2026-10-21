@@ -13,17 +13,45 @@ const per = (outpost: number, station: number, hub: number): Per => ({ outpost, 
 const CREW = per(8, 20, 44);
 
 const g = (...xs: [StationGrammar, number][]): Weighted<StationGrammar>[] => xs.map(([value, weight]) => ({ value, weight }));
-const CIVIL_SHAPES: Record<StationSize, Weighted<StationGrammar>[]> = {
-  outpost: g(['stationRing', 2], ['stationLattice', 2]),
-  station: g(['stationRing', 2], ['stationLattice', 2], ['stationHub', 1]),
-  hub: g(['stationHub', 1]),
+type Shapes = Record<StationSize, Weighted<StationGrammar>[]>;
+/**
+ * Layouts per kind and size (see src/sim/shipgen/stationGrammars.ts): round wheels and concentric rings for trade and
+ * farming, spines and crosses for mining and depots, branching trees and welded heaps for pirates. Hubs use the
+ * satellite hub, concentric rings or (mining, depots) a big cross; spines and arcs stay below hub size.
+ */
+const SHAPES: Record<'trading' | 'mining' | 'farming' | 'military' | 'pirate', Shapes> = {
+  trading: {
+    outpost: g(['stationWheel', 3], ['stationCross', 2], ['stationRing', 1], ['stationArc', 1]),
+    station: g(['stationWheel', 3], ['stationConcentric', 2], ['stationCross', 2], ['stationRing', 1]),
+    hub: g(['stationConcentric', 3], ['stationHub', 3]),
+  },
+  mining: {
+    outpost: g(['stationSpine', 3], ['stationCross', 2], ['stationArc', 1], ['stationTree', 1]),
+    station: g(['stationSpine', 3], ['stationCross', 2], ['stationLattice', 1], ['stationWheel', 1]),
+    hub: g(['stationHub', 3], ['stationCross', 2], ['stationConcentric', 1]),
+  },
+  farming: {
+    outpost: g(['stationWheel', 2], ['stationArc', 2], ['stationRing', 1], ['stationLattice', 1]),
+    station: g(['stationWheel', 3], ['stationConcentric', 2], ['stationLattice', 1]),
+    hub: g(['stationConcentric', 3], ['stationHub', 2]),
+  },
+  military: {
+    outpost: g(['stationCross', 2], ['stationSpine', 2], ['stationRing', 1]),
+    station: g(['stationSpine', 2], ['stationCross', 2], ['stationRing', 2], ['stationConcentric', 1]),
+    hub: g(['stationHub', 2], ['stationConcentric', 2], ['stationCross', 1]),
+  },
+  pirate: {
+    outpost: g(['stationTree', 3], ['stationWelded', 2], ['stationArc', 1]),
+    station: g(['stationTree', 2], ['stationWelded', 2]),
+    hub: g(['stationWelded', 2], ['stationTree', 2]),
+  },
 };
 
-interface TierNums { cages?: Per; crew: number; guns: Per; heavyPct: number; shields: Per; pd: Per; crates: Per; docks: Per; shapes?: Record<StationSize, Weighted<StationGrammar>[]> }
+interface TierNums { cages?: Per; crew: number; guns: Per; heavyPct: number; shields: Per; pd: Per; crates: Per; docks: Per; shapes: Shapes }
 function tiers(n: TierNums): Record<StationSize, StationTier> {
   const one = (s: StationSize): StationTier => ({
     crew: Math.round(CREW[s] * n.crew), guns: n.guns[s], heavyPct: n.heavyPct, shields: n.shields[s], pointDefense: n.pd[s],
-    crates: n.crates[s], docks: n.docks[s], grammars: (n.shapes ?? CIVIL_SHAPES)[s], ...(n.cages ? { cages: n.cages[s] } : {}),
+    crates: n.crates[s], docks: n.docks[s], grammars: n.shapes[s], ...(n.cages ? { cages: n.cages[s] } : {}),
   });
   return { outpost: one('outpost'), station: one('station'), hub: one('hub') };
 }
@@ -52,7 +80,7 @@ export const stations = {
     name: 'Trade station', kind: 'trading', side: 'neutral', motif: 'motif.civilian', security: 0.3, crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.metal', min: 2, max: 8 }, { item: 'item.electronics', min: 1, max: 4 }, { item: 'item.polymer', min: 0, max: 4 }, { item: 'item.ration', min: 0, max: 4 }],
-    tiers: tiers({ crew: 1, guns: per(2, 6, 12), heavyPct: 25, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(12, 30, 60), docks: per(3, 5, 8) }),
+    tiers: tiers({ crew: 1, guns: per(2, 6, 12), heavyPct: 25, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(12, 30, 60), docks: per(3, 5, 8), shapes: SHAPES.trading }),
     rooms: [room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 4)), armoury(per(1, 1, 2))],
   },
   // Mining: refineries on ore-processing floors, ore cages and big ore stores, docks for the mining ships.
@@ -60,7 +88,7 @@ export const stations = {
     name: 'Mining station', kind: 'mining', side: 'neutral', motif: 'motif.civilian', security: 0.25, crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.scrap', min: 0, max: 6 }],
-    tiers: tiers({ cages: per(1, 1, 2), crew: 1, guns: per(2, 5, 10), heavyPct: 20, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(10, 24, 48), docks: per(3, 4, 6) }),
+    tiers: tiers({ cages: per(1, 1, 2), crew: 1, guns: per(2, 5, 10), heavyPct: 20, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(10, 24, 48), docks: per(3, 4, 6), shapes: SHAPES.mining }),
     rooms: [
       room('industry', n(2, 'module.refinery'), 7, 4, per(1, 2, 4)),
       room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 3), [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }]),
@@ -72,7 +100,7 @@ export const stations = {
     name: 'Agri station', kind: 'farming', side: 'neutral', motif: 'motif.civilian', security: 0.2, crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.ration', min: 4, max: 12 }, { item: 'item.polymer', min: 0, max: 4 }],
-    tiers: tiers({ crew: 1.1, guns: per(2, 4, 8), heavyPct: 15, shields: per(0, 1, 2), pd: per(1, 1, 2), crates: per(6, 14, 28), docks: per(2, 2, 3) }),
+    tiers: tiers({ crew: 1.1, guns: per(2, 4, 8), heavyPct: 15, shields: per(0, 1, 2), pd: per(1, 1, 2), crates: per(6, 14, 28), docks: per(2, 2, 3), shapes: SHAPES.farming }),
     rooms: [
       room('farm', ['module.lifeSupport', ...n(6, 'module.hydroponics')], 8, 4, per(2, 4, 8)),
       room('support', ['module.lifeSupport'], 6, 3, per(0, 1, 2)),
@@ -86,7 +114,7 @@ export const stations = {
     weapons: { light: LIGHT, heavy: HEAVY }, shields: [{ value: 'module.shieldGen', weight: 1 }],
     transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },
     stock: [{ item: 'item.metal', min: 2, max: 6 }, { item: 'item.missile', min: 2, max: 6 }, { item: 'item.electronics', min: 0, max: 3 }],
-    tiers: tiers({ crew: 1.2, guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 2, 2) }),
+    tiers: tiers({ crew: 1.2, guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 2, 2), shapes: SHAPES.military }),
     rooms: [armoury(per(1, 2, 4), 6)],
   },
   // Pirate den: scrappy welded modules, light defences (conquerable on purpose), loot stores.
@@ -99,7 +127,7 @@ export const stations = {
     stock: [{ item: 'item.scrap', min: 2, max: 8 }, { item: 'item.metal', min: 0, max: 4 }, { item: 'item.electronics', min: 0, max: 3 }],
     tiers: tiers({
       crew: 0.8, guns: per(1, 3, 6), heavyPct: 15, shields: per(0, 1, 1), pd: per(0, 1, 1), crates: per(8, 16, 30), docks: per(2, 3, 3),
-      shapes: { outpost: g(['stationWelded', 2], ['stationLattice', 1]), station: g(['stationWelded', 1]), hub: g(['stationWelded', 1]) },
+      shapes: SHAPES.pirate,
     }),
     rooms: [
       room('cargo', n(3, 'module.storage'), 6, 4, per(1, 2, 3), [{ item: 'item.electronics', min: 1, max: 4 }, { item: 'item.rifle', min: 0, max: 1 }, { item: 'item.parts', min: 0, max: 3 }]),

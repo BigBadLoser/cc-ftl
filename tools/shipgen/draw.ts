@@ -4,7 +4,7 @@
  */
 import { content } from '../../src/content';
 import {
-  accessTile, adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, generateStation, type GenResult, type StationDef, type StationSize, type ModuleDef, type RoomRole,
+  accessTile, adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, generateStation, type GenResult, type StationDef, type StationGrammar, type StationSize, type ModuleDef, type RoomRole,
 } from '../../src/sim';
 import { drawAssemblies, drawSilhouette, drawStructure } from './views';
 
@@ -93,15 +93,19 @@ export function gen(factionSpec: string, seed: number, depth: number): GenResult
 export const stationIds = (): string[] => Object.keys(content.stations);
 
 /**
- * `station.trading:hub` builds that kind at one size; `station.trading:outpost,hub` cycles the sizes by seed (seed 1
+ * `station.trading:hub` builds that kind at one size (`station.trading:hub@stationWheel`: one layout only); `station.trading:outpost,hub` cycles the sizes by seed (seed 1
  * the first size, seed 2 the second...), so one sheet shows the smallest and largest side by side. No size: all three.
  */
 export function genStation(spec: string, seed: number): GenResult {
-  const [id, sizes] = spec.split(':') as [string, string | undefined];
-  const def = (content.stations as Record<string, StationDef>)[id];
-  if (!def) throw new Error(`unknown station ${id}; try ${stationIds().join(', ')}`);
+  const [head, layout] = spec.split('@') as [string, string | undefined];
+  const [id, sizes] = head.split(':') as [string, string | undefined];
+  const def0 = (content.stations as Record<string, StationDef>)[id];
+  if (!def0) throw new Error(`unknown station ${id}; try ${stationIds().join(', ')}`);
   const list = (sizes ? sizes.split(',') : ['outpost', 'station', 'hub']) as StationSize[];
-  return generateStation(def, id, list[(seed - 1) % list.length] as StationSize, seed, defs);
+  const size = list[(seed - 1) % list.length] as StationSize;
+  // `@stationWheel` forces one layout (a layout's sheet).
+  const def = layout ? { ...def0, tiers: { ...def0.tiers, [size]: { ...def0.tiers[size], grammars: [{ value: layout as StationGrammar, weight: 1 }] } } } : def0;
+  return generateStation(def, id, size, seed, defs);
 }
 
 /** Draw one layout at (ox, oy), `s` px per tile. */
