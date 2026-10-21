@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { UiApi } from './api';
   import type { UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
+  import StarmapNebula from './StarmapNebula.svelte';
   import StarmapPanel from './StarmapPanel.svelte';
   import { fade } from 'svelte/transition';
   import StarmapInfo from './StarmapInfo.svelte';
@@ -283,6 +284,7 @@
           {/each}
         </defs>
         <g transform={`translate(${w / 2 - cx * s} ${h / 2 - cy * s}) scale(${s})`}>
+          {#if level < 3}<StarmapNebula tiles={map.nebula} opacity={level === 1 ? 0.6 : 1} />{/if}
           {#key level}
             <g transition:fade={{ duration: 180 }}>
               {#if level === 1}

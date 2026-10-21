@@ -34,12 +34,21 @@
 {#each map.sectors as sec (sec.id)}
   {#if sec.known && sec.body}<StarmapBody kind={sec.body.kind} x={sec.body.x} y={sec.body.y} r={sec.body.r * 0.75} dim={sec.id === map.currentSector ? 1 : 0.55} />{/if}
 {/each}
-{#each map.edges as e (e.id)}
-  <line x1={e.ax} y1={e.ay} x2={e.bx} y2={e.by} class={e.kind} class:anchor={e.anchor} class:gate={e.gate} class:rift={e.rift} />
-{/each}
-{#each map.exits as e (e.id)}
-  <line x1={e.ax} y1={e.ay} x2={e.bx} y2={e.by} class="exit {e.kind}" />
-{/each}
+<!-- Lanes fade out toward the edges of the view, so long lanes leaving the sector do not crowd the frame. -->
+<defs>
+  <radialGradient id="sm-lane-fade"><stop offset="0.5" stop-color="#fff" /><stop offset="1" stop-color="#1a1a1a" /></radialGradient>
+  <mask id="sm-lane-mask" maskUnits="userSpaceOnUse" x={view.x0} y={view.y0} width={view.x1 - view.x0} height={view.y1 - view.y0}>
+    <rect x={view.x0} y={view.y0} width={view.x1 - view.x0} height={view.y1 - view.y0} fill="url(#sm-lane-fade)" />
+  </mask>
+</defs>
+<g mask="url(#sm-lane-mask)">
+  {#each map.edges as e (e.id)}
+    <line x1={e.ax} y1={e.ay} x2={e.bx} y2={e.by} class={e.kind} class:anchor={e.anchor} class:gate={e.gate} class:rift={e.rift} />
+  {/each}
+  {#each map.exits as e (e.id)}
+    <line x1={e.ax} y1={e.ay} x2={e.bx} y2={e.by} class="exit {e.kind}" />
+  {/each}
+</g>
 {#if current && !ship}
   {#each map.nodes.filter((n) => n.reachable) as n (n.id)}
     <line x1={current.x} y1={current.y} x2={n.x} y2={n.y} class="reach" />
@@ -51,7 +60,8 @@
 {#each map.nodes as n (n.id)}
   {#if n.known}
     {#if n.hostiles}<circle cx={n.x} cy={n.y} r={px(9)} class="hostile" />{/if}
-    <circle cx={n.x} cy={n.y} r={px(n.current ? 6 : 4.5)} class="node" class:visited={n.visited} class:cur={n.current} />
+    <circle cx={n.x} cy={n.y} r={px(n.current ? 6 : n.visited ? 4.5 : 4.2)} class="node" class:visited={n.visited} class:cur={n.current} />
+    {#if n.current && !ship}<circle cx={n.x} cy={n.y} r={px(11)} class="pulse" />{/if}
     {#if n.reachable && !ship}<circle cx={n.x} cy={n.y} r={px(8.5)} class="reachable" />{/if}
     {#if n.current && !ship}<circle cx={n.x} cy={n.y} r={px(11)} class="here" />{/if}
     {#if s > 0.7}
@@ -101,11 +111,14 @@
   line.reach { stroke: #4ade80; stroke-opacity: 0.8; stroke-width: 2.4; }
   polyline.route { fill: none; stroke: var(--amber); stroke-opacity: 1; stroke-width: 3.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
   polyline.route.blocked { stroke-dasharray: 8 5; }
-  .node { fill: #cbd5e1; stroke: #05080e; stroke-width: 1; vector-effect: non-scaling-stroke; }
-  .node.visited { fill: #67e8f9; }
+  .node { fill: #a3b1c6; stroke: #05080e; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .node.visited { fill: #d6f6fb; }
   .node.cur { fill: var(--cyan); }
   .reachable { fill: none; stroke: #4ade80; stroke-width: 2; vector-effect: non-scaling-stroke; }
   .here { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .pulse { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; transform-box: fill-box; transform-origin: center; animation: pulse 2.2s ease-out infinite; pointer-events: none; }
+  @keyframes pulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(2.2); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .pulse { display: none; } }
   .ship { fill: var(--cyan); stroke: #05080e; stroke-width: 1; vector-effect: non-scaling-stroke; }
   line.trail { stroke: var(--cyan); stroke-opacity: 0.8; stroke-width: 3; stroke-linecap: round; }
   .sel { fill: none; stroke: var(--amber); stroke-width: 2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }

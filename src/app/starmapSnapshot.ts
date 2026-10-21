@@ -3,6 +3,7 @@ import {
   planStarRoute, playerShip, playerStock, SENSOR_HOPS, standings, type Sim,
 } from '../sim';
 import type { UiStarExit, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
+import { nebulaAround } from './starmapNebula';
 import { buildRegions, sectorOutline } from './starmapRegions';
 
 const OPEN_SPACE = '#5a6b85';
@@ -103,6 +104,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
   return {
     rev: g.rev, ...starmapStatus(sim), dangerStep: DANGER_STEP, sectors, nodes, edges, factions,
     currentSector: here?.id ?? '', currentRegion: here?.region ?? null, exits, ...outer,
+    nebula: here ? nebulaAround(sim, here.x, here.y) : [],
   };
 }
 

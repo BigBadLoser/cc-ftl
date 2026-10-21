@@ -146,6 +146,18 @@ export interface UiStarmap {
   /** Level 2: lanes between sectors (one per sector pair). Level 3: links between regions. */
   sectorLinks: UiStarLink[];
   regionLinks: UiStarLink[];
+  /** The nebula backdrop around the player (levels 1 and 2). */
+  nebula: UiNebulaTile[];
+}
+
+/** A square of terrain density: `n` x `n` samples (0..255, row-major) spanning `size` map units from (x, y). */
+export interface UiNebulaTile {
+  id: string;
+  x: number;
+  y: number;
+  size: number;
+  n: number;
+  data: Uint8Array;
 }
 
 /** A planned route to a node. */
