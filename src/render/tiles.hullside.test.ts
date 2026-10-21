@@ -49,6 +49,13 @@ describe("hull side (far hull stays full in cutaway, near hull is a ghost)", () 
     const k = ship(["      ", " #####", " #___#", " ####_#", "    #_#", "    ###"].map((r) => r.padEnd(7)));
     expect(hullSide(k, 4, 3)).toBe(HullSide.Far);
   });
+  it("a run with floor in front is not near hull, even with space at its +x+y diagonal", () => {
+    // (2, 2): a partition along x, rooms at -y and +y, space only at the SE diagonal (a diagonal breach or notch).
+    const k = ship(["#####", "#___#", "#####", "##_ #", "#####"]);
+    expect(hullSide(k, 2, 2)).toBe(HullSide.None);
+    expect(replacesFloor(k, 2, 2)).toBe(false);
+    expect(first(k, 2, 2)).toBe("tile.wall.m10");
+  });
   it("thick hull keeps its outer ring as hull and its inside as wall", () => {
     const k = ship(["      ", " #### ", " #### ", " #__# ", " #### ", "      "]);
     expect(hullSide(k, 2, 1)).toBe(HullSide.Far);

@@ -113,8 +113,9 @@ export function hullSide(kindAt: KindAt, x: number, y: number): number {
   const alongX = (m & 10) !== 0 || (m & 5) === 0;
   const alongY = (m & 5) !== 0 || (m & 10) === 0;
   const o = outward(kindAt, x, y);
-  if (o && ((alongX && clearTo(kindAt, x, y, 0, 1)) || (alongY && clearTo(kindAt, x, y, 1, 0)) || (o === 4 && clearTo(kindAt, x, y, 1, 1))))
-    return HullSide.Near;
+  // Near: the run's front side (+y of a run along x, +x of a run along y) is clear of ship floor. That holds for the
+  // diagonal-only case too (o 4, space only at +x+y): a ray toward that known space proves nothing about the front.
+  if (o && ((alongX && clearTo(kindAt, x, y, 0, 1)) || (alongY && clearTo(kindAt, x, y, 1, 0)))) return HullSide.Near;
   // Far: space right behind the run (-y of a run along x, -x of a run along y), or diagonally behind with nothing of
   // the ship between (the outline's corners and steps). Space only beside the run (a breach, a notch) does not count.
   const sp = (dx: number, dy: number) => kindAt(x + dx, y + dy) === Struct.Space;
