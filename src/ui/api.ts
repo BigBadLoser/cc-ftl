@@ -317,6 +317,8 @@ export interface UiShipCombat {
   ship: number;
   name: string;
   state: 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
+  /** A dormant hostile (pirate den) not yet provoked: listed (it can be targeted) but it does not light the hostiles button. */
+  dormant?: boolean;
   /** 0..1 hull and module integrity. */
   integrity: number;
   shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };
@@ -406,6 +408,8 @@ export interface UiTradeLine {
   /** Credits per unit: what they charge the player, and what they pay the player. */
   sell: number;
   buy: number;
+  /** Sold as surplus (older, middle-grade gear: a military depot's). */
+  surplus?: boolean;
 }
 
 export interface UiTradeOffer {

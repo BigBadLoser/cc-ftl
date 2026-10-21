@@ -173,6 +173,8 @@ export interface ItemDef {
   food?: { nutrition: number };
   /** Base price in credits. Absent = not for sale. Traders add a spread and modifiers on top (see trade/pricing.ts). */
   price?: number;
+  /** Quality tier of gear (1 basic, 2 middle grade, 3 the best). Traders' surplus rules sell only up to a tier. */
+  tier?: number;
 }
 
 /** A hand weapon (sidearm, rifle, blade) carried by crew. Ranged ones need line of sight; melee ones need adjacency. */

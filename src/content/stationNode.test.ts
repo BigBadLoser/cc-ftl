@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, CrewC, FTL_CHARGE_SEC, PositionC, SECURITY_ROLE, ShipC, TraderC, deserialize, homeShip, newGame, planCourier, serialize,
-  type Sim,
+  CombatC, CrewC, FTL_CHARGE_SEC, PositionC, SECURITY_ROLE, ShipC, TraderC, VehicleC, deserialize, homeShip, isSurplus, newGame, planCourier,
+  serialize, unitPrice, type Sim,
 } from '../sim';
+import { stationAirlock } from '../sim/trade/stationDock';
 import { shipIdOf } from '../sim/regions';
 import { content } from './index';
 
@@ -123,4 +124,34 @@ describe('stations in the node', () => {
     run(c, 200);
     expect(serialize(c)).toBe(serialize(a));
   });
+});
+
+describe('station trade details', () => {
+  it('reserves a station airlock: one a shuttle is docking at is not offered to another', () => {
+    const { sim, station } = withStation('station.trading', 'station');
+    const shuttle = sim.world.query(VehicleC)[0] as number;
+    const first = stationAirlock(sim, station, shuttle);
+    expect(first).toBeGreaterThan(0);
+    // Another shuttle (a stand-in) is on its way to dock there: the trade picks a different airlock.
+    const other = sim.world.createEntity();
+    sim.world.add(other, VehicleC, { ...sim.world.get(shuttle, VehicleC)!, dest: { type: 'dock', airlock: first }, dock: 0 });
+    const second = stationAirlock(sim, station, shuttle);
+    expect(second).toBeGreaterThan(0);
+    expect(second).not.toBe(first);
+  });
+
+  it('a military depot sells surplus: basic and middle-grade hand weapons, never its best, at a markup; it still buys them', () => {
+    const { sim, station } = withStation('station.military', 'outpost');
+    const t = sim.world.get(station, TraderC)!;
+    const weapons = t.stock.filter((s) => content.items[s.item as keyof typeof content.items]?.tags.includes('weapon')).map((s) => s.item).sort();
+    expect(weapons).toEqual(['item.blade', 'item.ion_pistol', 'item.sidearm']);
+    expect(t.stock.some((s) => s.item === 'item.rifle')).toBe(false);
+    expect(isSurplus(sim, t.profile, 'item.sidearm')).toBe(true);
+    expect(isSurplus(sim, t.profile, 'item.rifle')).toBe(false);
+    // The markup: a surplus sidearm costs more than at a trade station; the depot still pays for rifles.
+    const trade = withStation('station.trading', 'outpost');
+    expect(unitPrice(sim, station, 'item.sidearm', 'sell')).toBeGreaterThan(unitPrice(trade.sim, trade.station, 'item.sidearm', 'sell')!);
+    expect(unitPrice(sim, station, 'item.rifle', 'buy')).toBeGreaterThan(0);
+  });
+
 });

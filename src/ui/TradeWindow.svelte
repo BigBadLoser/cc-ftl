@@ -127,7 +127,7 @@
           {#each lines.filter((l) => l.theirs > 0) as l (l.item)}
             <div class="row" class:set={(get[l.item] ?? 0) > 0}>
               <ItemIcon {api} item={l.item} size={26} />
-              <span class="nm">{l.name}<small>{l.theirs} in stock</small></span>
+              <span class="nm">{l.name}<small>{l.theirs} in stock{l.surplus ? ' · surplus' : ''}</small></span>
               <span class="pr">₵{l.sell}</span>
               <span class="step">
                 <button aria-label="Fewer {l.name}" disabled={!!p.offer || (get[l.item] ?? 0) === 0} onclick={() => bump('get', l, -1)}>−</button>

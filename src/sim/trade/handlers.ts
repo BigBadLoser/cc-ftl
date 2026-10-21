@@ -5,6 +5,8 @@ import { failDeal, isLive, liveDealWith, openDeal } from './deals';
 import { checkOffer } from './offers';
 import { ensureTrader, hailVerdict } from './traders';
 import { spawnStation } from '../stations/spawn';
+import { unwindStation } from './stationDock';
+import { VehicleC } from '../vehicles/components';
 
 type TradeCommandType = Extract<Command['type'], `trade.${string}` | 'debug.spawnStation' | 'debug.setCredits'>;
 type Handler<T extends TradeCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -51,9 +53,18 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     }
     const deal = sim.trade.deals.find((d) => d.id === cmd.id);
     if (!deal || !isLive(deal)) return reject(sim, cmd.type, 'noDeal');
-    // Once the shuttle has left with the goods there is nothing to call back.
-    if (deal.phase !== 'dispatch' && deal.phase !== 'load') return reject(sim, cmd.type, 'inTransit');
+    // Once the shuttle has left with the goods there is nothing to call back, except at a station dock: the run is
+    // unwound there (goods back where they were) and the shuttle flies home.
+    const atStation = deal.phase === 'dockStation' || deal.phase === 'stationWork';
+    if (deal.phase !== 'dispatch' && deal.phase !== 'load' && !atStation) return reject(sim, cmd.type, 'inTransit');
+    if (atStation) unwindStation(sim, deal);
     failDeal(sim, deal, 'cancelled');
+    const v = atStation ? sim.world.get(deal.vehicle, VehicleC) : undefined;
+    if (v) {
+      // Keep the autopilot until it is home (parkCourier clears it once the shuttle is stowed).
+      v.autopilot = true;
+      sim.enqueue({ type: 'vehicle.return', vehicle: deal.vehicle });
+    }
   },
   'debug.spawnStation': (sim, cmd) => {
     if (cmd.profile !== undefined && !sim.content.trade?.traders[cmd.profile]) return reject(sim, cmd.type, 'badProfile');

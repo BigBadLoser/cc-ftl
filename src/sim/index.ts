@@ -69,7 +69,7 @@ export { captureReady, isAiRun } from './capture/control';
 export * from './shipgen';
 export * from './trade/types';
 export { unitPrice, linesValue, quote, reputationWith, type Quote, type PriceSide } from './trade/pricing';
-export { hailVerdict, ensureTrader, profileFor, rollTrader, tradeFactionOf, type HailVerdict } from './trade/traders';
+export { hailVerdict, ensureTrader, isSurplus, profileFor, rollTrader, tradeFactionOf, type HailVerdict } from './trade/traders';
 export { spawnStation } from './stations/spawn';
 export { checkOffer, cleanLines, unitsOf, type OfferCheck } from './trade/offers';
 export { planCourier, courierDef, type CourierPlan } from './trade/courier';

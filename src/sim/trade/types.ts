@@ -54,6 +54,11 @@ export interface TraderDef {
   credits: [number, number];
   /** Stock for sale: each entry is included with `chance` (default 1) and rolls a count in [min, max]. */
   stock: { item: string; min: number; max: number; chance?: number }[];
+  /**
+   * Surplus: every item with `tag` up to `maxTier` (ItemDef.tier; older, middle-grade gear, never the best) is stocked with a
+   * count in [min, max] and sold at `markup` (on top of the other price modifiers). Labelled "surplus" in the trade window.
+   */
+  surplus?: { tag: string; maxTier: number; min: number; max: number; markup: number };
 }
 
 /** A trade partner entity (a ship, or a station): its wallet and stock. Created on the first hail. */
@@ -89,7 +94,11 @@ export interface Offer {
   tick: number;
 }
 
-export type DealPhase = 'dispatch' | 'load' | 'out' | 'exchange' | 'back' | 'unload' | 'done' | 'failed';
+/**
+ * Deal phases. At a station the player's shuttle docks (`dockStation`) and the station crew haul both ways
+ * (`stationWork`) instead of the hover swap (`exchange`).
+ */
+export type DealPhase = 'dispatch' | 'load' | 'out' | 'dockStation' | 'stationWork' | 'exchange' | 'back' | 'unload' | 'done' | 'failed';
 
 /** An accepted deal: escrow, reserved goods and the delivery task. */
 export interface Deal {
@@ -114,6 +123,10 @@ export interface Deal {
   tick: number;
   /** Why a failed deal failed. */
   reason?: string;
+  /** How the goods change hands at the trader: docked at a station airlock, or the hover swap (no free station airlock). */
+  via?: 'dock' | 'hover';
+  /** Docking at a station: the station airlock (reserved by the dock order) and the bought goods staged in its storage. */
+  dock?: { airlock: number; staged: { storage: number; item: string; count: number }[] };
 }
 
 /** All trade state. Plain data on the Sim, saved with it (optional in old saves). */
