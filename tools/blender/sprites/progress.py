@@ -20,6 +20,7 @@ RENDER = re.compile(r"(?:^|\s)rendered (\d+)/(\d+)")
 PACK = re.compile(r"CREW pack .* hits (\d+) misses (\d+)")
 MANIFEST = re.compile(r"^MANIFEST (\S+)")
 BAR_WIDTH = 24
+OBSERVED = {}
 
 
 def read_log(path):
@@ -63,10 +64,23 @@ def crew_worker(number):
                 complete=complete, age=age)
 
 
+def eta(key, done, total):
+    now = time.monotonic()
+    old = OBSERVED.get(key)
+    if old is None or done < old[1]:
+        OBSERVED[key] = (now, done)
+        return None
+    elapsed, advance = now - old[0], done - old[1]
+    if advance <= 0 or elapsed < 2:
+        return None
+    return (total - done) * elapsed / advance
+
+
 def dashboard():
     print("CC-FTL 2x sprite rendering  |  " + time.strftime("%Y-%m-%d %H:%M:%S"))
     print("=" * 78)
     aggregate_done = aggregate_total = 0
+    crew_etas = []
     for n in range(1, 5):
         w = crew_worker(n)
         if w is None:
@@ -76,6 +90,9 @@ def dashboard():
         aggregate_total += w["total"]
         fraction = w["done"] / w["total"] if w["total"] else 1
         state = "COMPLETE" if w["complete"] else ("packing" if w["done"] == w["total"] else "rendering")
+        estimated = 0 if w["complete"] else eta(f"crew{n}", w["done"], w["total"])
+        if estimated is not None:
+            crew_etas.append(estimated)
         print(f"Crew {n}: {progress_bar(fraction)} {fraction:6.1%} "
               f"{w['done']:>6}/{w['total']:<6} {state}")
     if aggregate_total:
@@ -97,7 +114,7 @@ def dashboard():
     print()
     print("Crew percentage is exact for the logged work plan; families are counted by")
     print("completed batches. ETA is not shown: family sizes vary, and crew logs provide")
-    print("no reliable per-frame timing for estimating remaining runtime.")
+    print("not duration. ETA needs observed progress and is approximate.")
     print("Press Ctrl+C to exit dashboard; renders continue independently.")
 
 
