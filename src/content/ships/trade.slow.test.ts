@@ -110,6 +110,28 @@ describe('trade, end to end', () => {
     expect(serialize(loaded)).toBe(serialize(sim));
   });
 
+  it('buy from a trading station: the player shuttle flies over, takes the goods from its stock and brings them home', () => {
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 });
+    run(sim, 2);
+    const station = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
+    sim.enqueue({ type: 'trade.hail', ship: station });
+    run(sim, 2);
+    const t = sim.world.get(station, TraderC)!;
+    const have = stored(sim, 'item.metal');
+    const theirs = t.stock.find((x) => x.item === 'item.metal')!.count;
+    sim.enqueue({ type: 'trade.offer', ship: station, give: [], get: [{ item: 'item.metal', count: 10 }] });
+    const offered = ofType(run(sim, 2), 'trade.offered')[0]!;
+    sim.enqueue({ type: 'trade.accept', offer: offered.offer });
+    expect(ofType(run(sim, 2), 'trade.dealMade')[0]).toMatchObject({ courier: 'you' });
+    const events = run(sim, 9000);
+    expect(ofType(events, 'trade.failed')).toHaveLength(0);
+    expect(ofType(events, 'trade.delivered')[0]).toMatchObject({ to: 'player' });
+    expect(ofType(events, 'trade.settled')).toHaveLength(1);
+    expect(stored(sim, 'item.metal')).toBe(have + 10);
+    expect(t.stock.find((x) => x.item === 'item.metal')!.count).toBe(theirs - 10);
+  });
+
   it('a trade run with no crew aboard completes end to end', () => {
     const { sim, ship } = withCivilian('mining');
     const shuttle = sim.world.query(VehicleC)[0] as number;

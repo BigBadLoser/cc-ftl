@@ -432,7 +432,7 @@ export interface UiTradePartner {
   wallet: number;
   rep: number;
   lines: UiTradeLine[];
-  /** How a delivery would go: who flies ('them' | 'you' | 'instant') or the reject code that stops it, for goods going out / coming in. */
+  /** How a delivery would go: who flies ('them' | 'you') or the reject code that stops it, for goods going out / coming in. */
   out: { courier: string; error: string };
   in: { courier: string; error: string };
   /** Units a shuttle hold takes. */
@@ -597,6 +597,8 @@ export interface UiApi {
   spawnRaider(boarders?: boolean): void;
   /** Spawn a procedurally generated enemy of a faction id (random faction if omitted) where a raider would go. */
   spawnGenerated(faction?: string): void;
+  /** Generate a station of a kind ('station.trading'...) and size east of everything in the node, and frame it. */
+  spawnStation(kind: string, size: 'outpost' | 'station' | 'hub'): void;
   /** Overlay ids offered by the picker, in order. */
   overlayList: { id: string; label: string }[];
   overlayLegend(id: string): UiLegend | null;

@@ -3,7 +3,8 @@ import type { Sim } from '../sim';
 import { planCourier } from './courier';
 import { failDeal, isLive, liveDealWith, openDeal } from './deals';
 import { checkOffer } from './offers';
-import { ensureTrader, hailVerdict, spawnStation } from './traders';
+import { ensureTrader, hailVerdict } from './traders';
+import { spawnStation } from '../stations/spawn';
 
 type TradeCommandType = Extract<Command['type'], `trade.${string}` | 'debug.spawnStation' | 'debug.setCredits'>;
 type Handler<T extends TradeCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -55,8 +56,13 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     failDeal(sim, deal, 'cancelled');
   },
   'debug.spawnStation': (sim, cmd) => {
-    if (!sim.content.trade?.traders[cmd.profile]) return reject(sim, cmd.type, 'badProfile');
-    spawnStation(sim, cmd.profile, cmd.name ?? sim.content.trade.traders[cmd.profile]?.name ?? 'Station');
+    if (cmd.profile !== undefined && !sim.content.trade?.traders[cmd.profile]) return reject(sim, cmd.type, 'badProfile');
+    // The old trader-profile form is a trading outpost.
+    const kind = cmd.kind ?? 'station.trading';
+    const seed = cmd.seed === undefined ? sim.rng.int(0, 0x7fffffff) : cmd.seed;
+    const at = cmd.x !== undefined && cmd.y !== undefined ? { x: cmd.x, y: cmd.y } : undefined;
+    const r = spawnStation(sim, kind, cmd.size ?? 'outpost', seed, at, cmd.name);
+    if (typeof r === 'string') return reject(sim, cmd.type, r);
   },
   'debug.setCredits': (sim, cmd) => {
     if (!Number.isFinite(cmd.value)) return reject(sim, cmd.type, 'badValue');

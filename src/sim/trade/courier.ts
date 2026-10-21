@@ -13,7 +13,7 @@ export interface CourierPlan {
   courier: Deal['courier'];
   /** The player's shuttle (courier 'you'), else 0. */
   vehicle: number;
-  /** The player airlock the goods come in at (0 for the instant fallback). */
+  /** The player airlock the goods come in at. */
   airlock: number;
 }
 
@@ -54,13 +54,12 @@ function playerCourier(sim: Sim, units: number): { vehicle: number } | { error: 
 
 /**
  * Decide who flies a deal and where the goods come in. Goods the player hands over always travel on the player's shuttle,
- * and so do goods from a seller with no shuttle of its own; otherwise the seller sends its own. A trader with no grid (a
- * station) has no shuttle or airlock at all: it gets the TEMPORARY instant fallback until station grids exist.
+ * and so do goods from a seller with no shuttle of its own (stations included); otherwise the seller sends its own.
  */
 export function planCourier(sim: Sim, ship: number, give: readonly ItemQty[], get: readonly ItemQty[]): CourierPlan | { error: string } {
   const trader = sim.world.get(ship, TraderC);
   if (!trader) return { error: 'noTrader' };
-  if (!sim.world.has(ship, ShipC)) return { courier: 'instant', vehicle: 0, airlock: 0 };
+  if (!sim.world.has(ship, ShipC)) return { error: 'noTrader' };
   if (!playerShip(sim)) return { error: 'noShip' };
   const kind = sim.content.trade?.traders[trader.profile];
   const units = Math.max(unitsOf(give), unitsOf(get));

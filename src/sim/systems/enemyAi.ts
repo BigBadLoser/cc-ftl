@@ -19,8 +19,8 @@ export function enemyAiSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC, CombatC)) {
     const ship = sim.world.get(id, ShipC);
     const combat = sim.world.get(id, CombatC);
-    if (!ship || !combat || !isAiFaction(ship.faction) || ship.state !== 'active' || !sim.sector.inCombat) continue;
-    if (ship.integrity < FLEE_BELOW && combat.ftl >= FTL_CHARGE_SEC) {
+    if (!ship || !combat || !isAiFaction(ship.faction) || ship.state !== 'active' || !sim.sector.inCombat || ship.dormant !== undefined) continue;
+    if (!ship.immobile && ship.integrity < FLEE_BELOW && combat.ftl >= FTL_CHARGE_SEC) {
       sim.enqueue({ type: 'combat.flee', ship: id });
       continue;
     }

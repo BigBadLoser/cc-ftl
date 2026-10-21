@@ -50,6 +50,7 @@ export function createEventLog(sim: Sim): EventLog {
       case 'ship.disabled': return { kind: e.type, tone: mine(e.ship) ? 'bad' : 'good', text: `${shipName(e.ship)} disabled` };
       case 'ship.destroyed': return mine(e.ship) ? { kind: 'lost', tone: 'bad', text: 'Your ship was destroyed' } : { kind: e.type, tone: 'good', text: `${shipName(e.ship)} destroyed` };
       case 'ship.fled': return { kind: e.type, tone: 'info', text: `${shipName(e.ship)} jumped away` };
+      case 'ship.provoked': return { kind: 'combat', tone: 'bad', text: `${shipName(e.ship)} is roused: its guns turn on you` };
       case 'ship.captured': return { kind: e.type, tone: e.by === 'player' ? 'good' : 'bad', text: e.by === 'player' ? `${shipName(e.ship)} captured` : `${shipName(e.ship)} was captured` };
       case 'container.detached': return { kind: 'container', tone: 'info', text: 'A cargo container broke loose' };
       case 'production.done': return { kind: 'production', tone: 'good', text: `${sim.content.recipes[e.recipe]?.name ?? 'Batch'} finished` };

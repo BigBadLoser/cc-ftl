@@ -41,8 +41,7 @@
   const courierNote = $derived(
     !route ? '' : route.error ? (REASONS[route.error] ?? route.error)
       : route.courier === 'them' ? 'Their shuttle flies it to your airlock.'
-        : route.courier === 'you' ? 'Your shuttle carries the goods and docks at your airlock.'
-          : 'Instant delivery (stations have no shuttle yet: temporary).',
+        : 'Your shuttle carries the goods and docks at your airlock.',
   );
   const problem = $derived.by(() => {
     if (!p) return '';
@@ -51,7 +50,7 @@
     if (pays > trade.credits) return 'Not enough credits';
     if (pays < 0 && -pays > p.wallet) return 'They cannot afford to pay that';
     if (route?.error) return courierNote;
-    if (route && route.courier !== 'instant' && units > p.holdCap) return `Too much for one shuttle hold (${p.holdCap} units)`;
+    if (route && units > p.holdCap) return `Too much for one shuttle hold (${p.holdCap} units)`;
     return '';
   });
 

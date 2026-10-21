@@ -73,6 +73,13 @@ export interface Ship {
   gen?: GenOrigin;
   /** Set on derelicts: dressing data for the renderer (see ShipRuin). */
   ruin?: ShipRuin;
+  /** Stations: no FTL, no engines, never flees or jumps; it stays in its node (archived with it). */
+  immobile?: true;
+  /**
+   * Dormant hostile (a pirate den): no combat until provoked. Holds the integrity it had when it went quiet; aiming at it,
+   * damaging it or boarding it wakes it (dormancySystem) and the field is removed.
+   */
+  dormant?: number;
 }
 export const ShipC = defineComponent<Ship>('ship');
 

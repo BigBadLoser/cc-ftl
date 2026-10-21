@@ -4,7 +4,7 @@ import type { ItemQty } from '../registry';
 
 /**
  * Trade content (`ContentRegistry.trade`). Terminology: a "node" is one playable location (the old "sector"); this file
- * only knows trade partners, which are entities (ships, or stations that have no grid yet).
+ * only knows trade partners, which are entities (ships; stations are immobile ships).
  */
 export interface TradeDef {
   /** Credits the player starts with. */
@@ -64,7 +64,7 @@ export interface Trader {
   name: string;
   credits: number;
   stock: ItemQty[];
-  /** True for a station with no grid: deliveries are the temporary instant fallback. */
+  /** True for a station (an immobile ship): its trades run like any ship's, by shuttle. */
   station: boolean;
 }
 export const TraderC = defineComponent<Trader>('trader');
@@ -101,10 +101,10 @@ export interface Deal {
   balance: number;
   /** Credits held in escrow from the payer (the player when balance > 0, the trader when < 0). Paid out on delivery. */
   held: number;
-  /** Who flies: the trader's own shuttle, the player's, or the temporary instant fallback (stations with no grid). */
-  courier: 'them' | 'you' | 'instant';
+  /** Who flies: the trader's own shuttle or the player's. */
+  courier: 'them' | 'you';
   phase: DealPhase;
-  /** Vehicle entity doing the run (0 until it exists / instant). */
+  /** Vehicle entity doing the run (0 until it exists). */
   vehicle: number;
   /** Player airlock module the shuttle docks at. */
   airlock: number;

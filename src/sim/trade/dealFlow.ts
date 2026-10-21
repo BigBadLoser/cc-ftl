@@ -9,7 +9,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { undock } from '../vehicles/lifecycle';
 import { addStock, failDeal, isLive, settleDeal } from './deals';
 import { spawnCourier } from './courier';
-import { giveToPlayer, playerItems, playerShip, storagesHolding, takeFromPlayer } from './player';
+import { storagesHolding } from './player';
 import { TraderC, type Deal } from './types';
 
 /** Ticks between repeats of a flight command a deal keeps asking for until the shuttle obeys. */
@@ -32,7 +32,6 @@ export function advanceDeals(sim: Sim): void {
 
 function step(sim: Sim, d: Deal): void {
   d.timer++;
-  if (d.courier === 'instant') return instant(sim, d);
   if (d.courier === 'them' && d.phase === 'dispatch') {
     d.vehicle = spawnCourier(sim, d);
     if (!d.vehicle) return failDeal(sim, d, 'noCourier');
@@ -132,18 +131,6 @@ function dismissCourier(sim: Sim, d: Deal): void {
     sim.world.destroyEntity(d.vehicle);
     d.vehicle = 0;
   } else if (!v.dest) v.dest = { type: 'hover', ship: d.ship };
-}
-
-/** TEMPORARY instant fallback for traders with no grid or shuttle (stations): the goods change hands at once. */
-function instant(sim: Sim, d: Deal): void {
-  const trader = sim.world.get(d.ship, TraderC);
-  if (!trader || !playerShip(sim)) return failDeal(sim, d, 'traderGone');
-  if (d.give.some((l) => playerItems(sim, l.item) < l.count)) return failDeal(sim, d, 'noItems');
-  for (const l of d.give) takeFromPlayer(sim, l.item, l.count);
-  for (const l of d.give) addStock(trader.stock, l.item, l.count);
-  for (const l of d.get) giveToPlayer(sim, l.item, l.count);
-  sim.events.emit({ type: 'trade.delivered', deal: d.id, ship: d.ship, to: 'player' });
-  settleDeal(sim, d);
 }
 
 /** The player's shuttle flies itself home after a run; once it is stowed (or gone) it is a normal crewed shuttle again. */

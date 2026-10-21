@@ -7,6 +7,7 @@ import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
 import { carrySystem } from './systems/carry';
 import { combatStateSystem } from './systems/combatState';
+import { dormancySystem } from './systems/dormancy';
 import { craftJobsSystem } from './systems/craftJobs';
 import { decideSystem } from './systems/decide';
 import { deploySystem } from './systems/deploy';
@@ -139,7 +140,9 @@ export const pipeline: readonly System[] = [
   tradeSystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.
   workSystem,
-  // --- Combat (see each system's notes). State first: it decides whether consoles are needed next tick.
+  // --- Combat (see each system's notes). Dormant hostiles wake on provocation, then the combat state is decided (it
+  // decides whether consoles are needed next tick).
+  dormancySystem,
   combatStateSystem,
   // Ion timers expire before anything asks whether a module is disabled.
   ionSystem,
