@@ -123,11 +123,22 @@ export function galaxyView(seed: number, sectorId = 's.0.0', span = 26000): stri
     r.y = r.list.reduce((t, s) => t + s.y, 0) / r.list.length;
   }
   const out = frame(seed);
-  // Wild sectors as faint dust.
+  // Wild (unclaimed) sectors as faint dots, with faint lanes: wild to wild, and wild to the region it touches (drawn
+  // to the region's node). This is how regions with no gate of their own are reached.
+  const at = (s: SectorData): P => {
+    const r = s.region ? regions.get(s.region) : undefined;
+    return map(r ? [r.x, r.y] : [s.x, s.y]);
+  };
+  for (const { a, b, e } of sectorLinks(w)) {
+    if (a.region && b.region) continue;
+    const [ax, ay] = at(a);
+    const [bx, by] = at(b);
+    out.push(`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${e.rift ? '#a78bfa' : '#64748b'}" stroke-opacity="0.35" stroke-width="1"${e.rift ? ' stroke-dasharray="2 4"' : ''}/>`);
+  }
   for (const s of w.sectors.values()) {
     if (s.region) continue;
     const [x, y] = map([s.x, s.y]);
-    out.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.6" fill="#64748b" opacity="0.6"/>`);
+    out.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#94a3b8" opacity="0.7"/>`);
   }
   const gates = new Map<string, { a: string; b: string; n: number; rift: boolean }>();
   for (const { a, b, e } of sectorLinks(w)) {
@@ -158,7 +169,7 @@ export function galaxyView(seed: number, sectorId = 's.0.0', span = 26000): stri
     out.push(`<text x="${x.toFixed(1)}" y="${(y + rad + 14).toFixed(1)}" text-anchor="middle" ${font} font-size="11" letter-spacing="2" fill="${col}" stroke="#05070d" stroke-width="3" paint-order="stroke">${(s0.regionName ?? '').toUpperCase()}</text>`);
     out.push(`<text x="${x.toFixed(1)}" y="${(y + rad + 27).toFixed(1)}" text-anchor="middle" ${font} font-size="9" fill="#94a3b8" stroke="#05070d" stroke-width="3" paint-order="stroke">${REGION_TYPE[s0.regionType ?? ''] ?? ''}</text>`);
   }
-  out.push(`<text x="24" y="${H - 22}" ${font} font-size="13" letter-spacing="2" fill="#94a3b8">ZOOM 3/3 (regions)  ·  lines: gates between regions (thicker = more)  ·  dots: wild sectors</text>`);
+  out.push(`<text x="24" y="${H - 22}" ${font} font-size="13" letter-spacing="2" fill="#94a3b8">ZOOM 3/3 (regions)  ·  lines: gates between regions (thicker = more)  ·  dots and faint lines: unclaimed sectors and their lanes</text>`);
   out.push('</svg>');
   return out.join('\n');
 }
