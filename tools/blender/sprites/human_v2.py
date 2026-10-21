@@ -315,8 +315,8 @@ def arm(b, R, side, grow=0.0, upper=1.0, fore=True, hand=True):
     if hand:                                                                 # the thumb, along the front of the hand
         t0, t1 = R.h[f"thumb_1.{s}"], R.t[f"thumb_2.{s}"]
         ax = (R.t[f"hand.{s}"] - R.h[f"hand.{s}"]).normalized()
-        tip = t0.lerp(t1, 0.5) + ax * 0.02                                  # short and laid in along the hand
-        b.tube(t0 - ax * 0.015, tip, 0.024 + grow, 0.02 + grow, W(f"hand.{s}"))
+        tip = t0.lerp(t1, 0.6) + ax * 0.02 + Vector((0, -0.012, 0))         # short, a little out from the hand
+        b.tube(t0 - ax * 0.015, tip, 0.027 + grow, 0.022 + grow, W(f"hand.{s}"))
 
 
 def leg(b, R, side, grow=0.0, foot=True, boot=0.0):

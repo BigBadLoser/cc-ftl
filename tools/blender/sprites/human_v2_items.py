@@ -3,6 +3,8 @@ human_items uses in place of the old build when CREW_BASE is v2 (the default on 
 
 Colour roles as before: team.skin / team.hair / team.cloth / team.accent are the palette-swap keys; fixed parts use
 plain palette colours. Flat colour regions with hard edges; nothing smaller than ~2 px."""
+import math
+
 import bpy
 import numpy as np
 from mathutils import Vector
@@ -77,7 +79,7 @@ def flesh_arm(A, R, s):
 
     def col(c, n):
         if abs(abs(c.x) - ex) < CREASE and n.y < -0.2 or abs(abs(c.x) - wx) < CREASE or \
-                abs(abs(c.x) - kx) < 0.01 and n.z > -0.3:
+                abs(abs(c.x) - kx) < 0.014 and n.z > -0.3:
             return "team.skin*0.5"
         return "team.skin"
     return Item(f"arm.{s}", "flesh", [b.mesh(f"v2.arm.{s}", A, col)], default=True)
@@ -91,22 +93,25 @@ def tee(A, R):
     lo = R.hips.z + 0.09
     torso(b, R, grow=0.02, lo=lo, cuts=(lo + 0.03, nz - 0.045))          # closed at the top: the neck cuts a clean
                                                                              # round collar (a cut-out neck shows ragged)
-    arm_x = R.h["arm.L"].x - 0.02
+    arm_x, bz = R.h["arm.L"].x - 0.02, R.chest.z + 0.06
 
     def col(c, n):                                                           # collar, hem and armholes a shade darker
-        if c.z > nz - 0.045 and abs(c.x) < 0.13 or c.z < lo + 0.03 or abs(c.x) > arm_x and c.z > R.chest.z:
+        if c.z > nz - 0.03 and math.hypot(c.x, c.y - R.neck.y) < 0.12 or c.z < lo + 0.03 or \
+                abs(c.x) > arm_x and c.z > R.chest.z:
             return "team.cloth*0.7"
+        if n.y < -0.5 and 0.05 < c.x < 0.1 and abs(c.z - bz) < 0.025:
+            return "team.accent"                                             # a crew badge on the left chest
         return "team.cloth"
     return Item("torso", "tee", [b.mesh("v2.tee", A, col)])
 
 
 def work_shirt(A, R):
-    """The hi-vis work vest, as on the old base: sleeveless (bare arms), a scoop neck at the front, a hi-vis band round the
-    chest and hi-vis shoulder straps."""
+    """The hi-vis work vest, as on the old base: sleeveless (bare arms), a hi-vis band round the chest and hi-vis
+    shoulder straps."""
     b = Build()
-    nz, sz = R.neck.z, R.shoulder_z
-    scoop = lambda c: not (c.z > nz - 0.04 and abs(c.x) < 0.1 and c.y < R.neck.y - 0.02)  # noqa: E731  front only
-    torso(b, R, grow=0.016, lo=R.hips.z + 0.09, keep=scoop, cuts=(R.chest.z + 0.03, R.chest.z + 0.09, sz - 0.03))
+    sz = R.shoulder_z
+    torso(b, R, grow=0.016, lo=R.hips.z + 0.09, cuts=(R.chest.z + 0.03, R.chest.z + 0.09, sz - 0.03))   # closed top
+                                                                             # (the neck cuts a clean collar, see tee)
 
     def col(c, n):
         if R.chest.z + 0.03 < c.z < R.chest.z + 0.09:
@@ -126,14 +131,14 @@ def cargo_pants(A, R):
         leg(b, R, s, grow=0.018, boot=0.02)
     k0, k1 = R.t["leg.L"].z + 0.06, R.h["leg.L"].z - 0.1
     kz = R.t["leg.L"].z
-    fx = abs(R.h["foot.L"].x)
+    fx, fy = abs(R.h["foot.L"].x), R.h["foot.L"].y
 
     def col(c, n):
         if c.z < 0.035:
             return "steelD"                                                 # a dark sole edge
         if c.z < 0.17:
-            if n.y < -0.45 and abs(abs(c.x) - fx) < 0.018 and 0.07 < c.z < 0.15:
-                return "steelD"                                             # the laces
+            if abs(abs(c.x) - fx) < 0.026 and c.y < fy and c.z > 0.05 and (n.z > 0.35 or n.y < -0.45):
+                return "steelD"                                             # the laces, up the instep and the ankle
             if c.z < 0.075 and n.y < -0.3:
                 return "sole"                                               # the toe cap
             return "boot"
@@ -144,12 +149,12 @@ def cargo_pants(A, R):
         if c.z > top - 0.065:
             return "rust"                                                   # the waistband: a belt line under the hem
         if k0 < c.z < k1 and n.x * (1 if c.x > 0 else -1) > 0.55:
-            return "steelD" if c.z > k1 - 0.025 else "pocket"              # the pocket and its flap
+            return "steelD" if c.z > k1 - 0.04 else "pocket"               # the pocket and its flap
         return "pants"
     return Item("legs", "cargo_pants", [b.mesh("v2.cargo_pants", A, col)], default=True)
 
 
-HAIR_GROW, HAIR_FRONT, HAIR_SIDE = 0.01, 0.07, 0.02      # a close cap; hairline height at the front and the sides
+HAIR_GROW, HAIR_FRONT, HAIR_SIDE = 0.01, 0.095, 0.02     # a close cap; hairline height at the front and the sides
 
 
 def _hair_cap(b, R, back=-0.15, grow=HAIR_GROW):
@@ -164,14 +169,14 @@ def _hair_cap(b, R, back=-0.15, grow=HAIR_GROW):
 
 def _strands(p, n):
     """Hair colour with darker strands running front to back on the upper surfaces."""
-    return "team.hair*0.7" if n.z > 0.2 and int((p.x + 1.0) / 0.03) % 2 else "team.hair"
+    return "team.hair*0.6" if n.z > 0.2 and int((p.x + 1.0) / 0.026) % 2 else "team.hair"
 
 
 def _fringe(b, R):
     c = R.head_c
-    for x, dz in ((-0.07, 0.0), (-0.025, -0.012), (0.02, -0.006), (0.065, 0.004)):
-        b.blob(Vector((x, R.front + 0.012, c.z + HAIR_FRONT + 0.012 + dz)), 0.03, 0.022, 0.026, W("head"), exp=2.2,
-               nlat=6)
+    for x, dz in ((-0.07, 0.004), (-0.025, -0.004), (0.02, 0.0), (0.065, 0.006)):     # bottoms >= 0.085 over the
+        b.blob(Vector((x, R.front + 0.012, c.z + HAIR_FRONT + 0.02 + dz)), 0.03, 0.022, 0.026, W("head"), exp=2.2,
+               nlat=6)                                                       # centre: 2 px of brow clear of the fringe
 
 
 def hair_short(A, R):
