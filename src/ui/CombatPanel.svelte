@@ -9,15 +9,12 @@
 
   let expanded = $state(false);
   let viewEl: HTMLDivElement | undefined = $state();
-  /** The enemy module last tapped, for per-weapon aiming ('' = whole ship). */
-  let picked = $state(0);
   /** The weapon chosen for aiming (0 = none: picks aim the whole ship's target). */
   let selWeapon = $state(0);
 
   const enemy = $derived<UiShipCombat | undefined>(combat.enemies.find((e) => e.state === 'active' || e.state === 'disabled') ?? combat.enemies[0]);
   const me = $derived(combat.player);
   const aimed = $derived(me?.target && enemy && me.target.ship === enemy.ship ? me.target.moduleId : 0);
-  const sel = $derived(me?.weapons.find((w) => w.id === selWeapon) ?? null);
   /** Short state-driven status for the header pill, from what the panel already reads. */
   const pill = $derived.by((): { text: string; tone: string } => {
     if (!enemy) return { text: 'Clear', tone: 'dim' };
@@ -44,10 +41,11 @@
     }
   });
 
-  function aim(moduleId: number) {
+  /** Aim the selected weapon (viewport taps), or the whole ship's target when `shipWide` or no weapon is selected. */
+  function aim(moduleId: number, shipWide = false) {
     if (!me || !enemy) return;
-    picked = moduleId;
-    const weaponId = selWeapon && me.weapons.some((w) => w.id === selWeapon) ? selWeapon : null;
+    const weaponId = !shipWide && selWeapon && me.weapons.some((w) => w.id === selWeapon) ? selWeapon : null;
+    if (weaponId) selWeapon = 0;
     api.dispatch({ type: 'combat.setTarget', ship: me.ship, weaponId, targetShip: enemy.ship, targetModuleId: moduleId });
   }
   function tap(e: MouseEvent) {
@@ -104,20 +102,20 @@
       <div class="viewbox">
         <div class="view" bind:this={viewEl} onclick={tap} role="presentation" data-testid="combat-view"></div>
       </div>
-      <CombatTarget {enemy} {aimed} hasTarget={!!me?.target} weapon={sel} shipTarget={me?.target?.label ?? ''} onAim={aim} />
+      <CombatTarget {enemy} shipModuleId={aimed} hasTarget={!!me?.target} onAim={(id) => aim(id, true)} />
     </div>
   {:else}
     <p class="none">No hostile ships in range.</p>
   {/if}
 
-  {#if me}<CombatPlayer {api} {me} {enemy} {picked} {selWeapon} onSelect={(id) => (selWeapon = id)} {onHail} />{/if}
+  {#if me}<CombatPlayer {api} {me} {enemy} {selWeapon} onSelect={(id) => (selWeapon = id)} {onHail} />{/if}
 </section>
 
 <style>
   /* The page canvas shows through .view (the enemy ship is drawn there), so every other part paints its own background. */
   .combat {
     position: fixed; z-index: 7; display: flex; flex-direction: column; overflow: hidden;
-    right: calc(8px + var(--sar)); top: max(calc(var(--hdr) + 8px + var(--sat)), calc(var(--rcol-h, 0px) + 16px + var(--sat))); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
+    right: calc(8px + var(--sar)); top: calc(var(--hdr) + 8px + var(--sat)); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
     border: 1px solid var(--line-hi); border-radius: 0;
   }
   .handle { display: none; }
@@ -128,7 +126,7 @@
   header button.tile:hover { background: var(--panel-3); }
   .pillst { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; white-space: nowrap; flex: none; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; }
   .pillst.red { color: #ff8a8a; background: #3a1216; } .pillst.amber { color: var(--amber); } .pillst.green { color: var(--green); } .pillst.dim { color: var(--dim); }
-  .top { flex: none; }
+  .top { flex: 6 1 0; min-height: 0; display: flex; flex-direction: column; }
   .enemy { background: var(--panel); padding: 8px 10px 0; display: grid; gap: 5px; }
   .stats { display: flex; align-items: center; gap: 14px; }
   .st { display: inline-flex; align-items: center; gap: 5px; color: var(--cyan); font-size: 13px; }
@@ -136,16 +134,14 @@
   .st em { font-style: normal; color: var(--dim); font-size: 12px; }
   .st.low b { color: var(--red); }
   .bar.hull { height: 6px; } .bar.hull.low > i { background: var(--red); }
-  .viewbox { position: relative; padding: 8px; }
-  .view { height: 190px; cursor: crosshair; box-shadow: 0 0 0 8px var(--panel), inset 0 0 0 1px var(--line); }
+  .viewbox { position: relative; padding: 8px; flex: 1 1 auto; min-height: 150px; display: flex; background: var(--panel); }
+  .view { flex: 1; min-height: 0; cursor: crosshair; box-shadow: 0 0 0 8px var(--panel), inset 0 0 0 1px var(--line); }
   .none { background: var(--panel); color: var(--dim); margin: 0; padding: 10px; }
-  @media (min-width: 601px) and (max-height: 860px) { .view { height: 104px; } }
   @media (max-width: 600px) {
-    .combat { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-width: none; height: 55vh; border-width: 1px 0 0; transition: height 0.18s; }
+    .combat { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-width: none; height: 62vh; border-width: 1px 0 0; transition: height 0.18s; }
     .combat.expanded { height: calc(100vh - 12px - var(--sat)); }
     .handle { display: flex; justify-content: center; align-items: center; height: 16px; min-height: 16px; width: 100%; padding: 0; border: 0; background: var(--panel-2); flex: none; }
     .handle i { width: 40px; height: 4px; background: var(--line-hi); }
-    .view { height: 9vh; }
-    .expanded .view { height: 30vh; }
+    .viewbox { min-height: 0; }
   }
 </style>

@@ -1,10 +1,11 @@
 <script lang="ts">
   import type { UiApi, UiCombat, UiShipCombat } from './api';
   import Icon from './Icon.svelte';
+  import { resolveTarget } from './combatTarget';
 
   type Me = NonNullable<UiCombat['player']>;
-  let { api, me, enemy, picked, selWeapon, onSelect, onHail }: {
-    api: UiApi; me: Me; enemy: UiShipCombat | undefined; picked: number; selWeapon: number; onSelect: (id: number) => void; onHail: (ship: number) => void;
+  let { api, me, enemy, selWeapon, onSelect, onHail }: {
+    api: UiApi; me: Me; enemy: UiShipCombat | undefined; selWeapon: number; onSelect: (id: number) => void; onHail: (ship: number) => void;
   } = $props();
 
   const ready = $derived(me.weapons.some((w) => w.charge >= 1 && w.powered && !w.ion));
@@ -19,9 +20,6 @@
   const setHold = (hold: boolean) => api.dispatch({ type: 'combat.setHold', ship: me.ship, hold });
   const volley = () => api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
   const flee = () => api.dispatch({ type: 'combat.flee', ship: me.ship });
-  const aimWeapon = (weaponId: number, moduleId: number) => {
-    if (enemy) api.dispatch({ type: 'combat.setTarget', ship: me.ship, weaponId, targetShip: enemy.ship, targetModuleId: moduleId });
-  };
   const clearWeapon = (weaponId: number) =>
     api.dispatch({ type: 'combat.setTarget', ship: me.ship, weaponId, targetShip: 0, targetModuleId: 0 });
   const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
@@ -36,7 +34,6 @@
     if (w.charge >= 1) return { text: w.ion ? 'Ion ready' : 'Ready', tone: 'green' };
     return { text: 'Charging', tone: 'amber' };
   }
-  const pickedName = $derived(enemy?.modules.find((m) => m.id === picked)?.name ?? 'whole ship');
   const volleyTitle = $derived(ready ? 'Fire volley: every charged weapon now' : me.hold ? 'Fire volley: waiting for a weapon to charge' : 'Fire volley: hold fire to charge one, weapons otherwise fire as soon as they charge');
 </script>
 
@@ -49,19 +46,16 @@
     <div class="weapons" data-testid="combat-weapons">
       {#each me.weapons as w, i (w.id)}
         {@const st = status(w)}
-        <div class="w" class:sel={selWeapon === w.id} class:off={!w.powered} role="button" tabindex="0" aria-pressed={selWeapon === w.id} title="Select to aim this weapon: then tap a module" onclick={() => onSelect(selWeapon === w.id ? 0 : w.id)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(selWeapon === w.id ? 0 : w.id); } }}>
-          <div class="line">
-            <span class="nm">{names[i]}</span>
-            {#if w.ammo !== null && w.ammo > 0}<span class="tag">x{w.ammo}</span>{/if}
-            <span class="stt {st.tone}">{st.text}</span>
-          </div>
-          <div class="bar {st.tone}"><i style="width:{Math.round(w.charge * 100)}%"></i></div>
-          <div class="line sub">
-            <span class="to" title={w.target ? `Aimed: ${w.target}` : 'Follows ship target'}>Target: {w.target ?? 'ship target'}</span>
-            <span class="mode">{w.target ? 'Manual' : 'Auto'}</span>
-            <button class="tile sm" title="Aim this weapon at: {pickedName} (the module you tapped last)" aria-label="Aim at {pickedName}" disabled={!enemy} onclick={(e) => { e.stopPropagation(); aimWeapon(w.id, picked); }}><Icon name="target" size={14} /></button>
-            {#if w.target}<button class="tile sm" title="Follow the ship target" aria-label="Follow the ship target" onclick={(e) => { e.stopPropagation(); clearWeapon(w.id); }}><Icon name="rotate" size={14} /></button>{/if}
-          </div>
+        {@const own = w.target !== null}
+        {@const ownName = own && enemy ? resolveTarget(enemy, 0, { moduleId: w.targetModuleId }).label : (w.target ?? '')}
+        <div class="w" class:sel={selWeapon === w.id} class:off={!w.powered} data-testid="combat-weapon">
+          <span class="nm" title={names[i]}>{names[i]}{#if w.ammo !== null && w.ammo > 0}<span class="tag">x{w.ammo}</span>{/if}</span>
+          <span class="chg {st.tone}" title="Charge {Math.round(w.charge * 100)}%"><i style="width:{Math.round(w.charge * 100)}%"></i></span>
+          <span class="stt {st.tone}">{st.text}</span>
+          <button class="tg" class:own class:armed={selWeapon === w.id} disabled={!enemy} title={selWeapon === w.id ? 'Now tap a module on the enemy ship (tap again to cancel)' : own ? `Own target: ${ownName}. Tap to re-aim` : 'Follows the ship target. Tap, then tap a module to aim just this weapon'} aria-pressed={selWeapon === w.id} onclick={() => onSelect(selWeapon === w.id ? 0 : w.id)}>
+            <span>{selWeapon === w.id ? 'tap enemy...' : own ? ownName : '\u21b3 ship target'}</span>
+          </button>
+          {#if own}<button class="rs" title="Reset to the ship target" aria-label="Reset to the ship target" onclick={() => clearWeapon(w.id)}><Icon name="rotate" size={12} /></button>{:else}<span class="nors"></span>{/if}
         </div>
       {/each}
       {#if me.weapons.length === 0}<p class="dim">No weapons installed.</p>{/if}
@@ -75,9 +69,9 @@
     </div>
     {#if !ready && !me.hold}<div class="hint" data-testid="combat-volley-hint">Hold fire to charge a volley</div>{/if}
     <div class="sec">
-      {#if enemy}<button class="tile sm" title="Hail: call them on the radio. Only ships that are not hostile answer" aria-label="Hail" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}><Icon name="hail" size={16} /><span class="cap">Hail</span></button>{/if}
+      {#if enemy}<button class="tile sm q" title="Hail: call them on the radio. Only ships that are not hostile answer" aria-label="Hail" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}><Icon name="hail" size={16} /><span class="cap">Hail</span></button>{/if}
       <span class="ftl" class:full={canFlee} title="FTL charge: full means you can flee">
-        <button class="tile sm go" disabled={!canFlee} title="Flee: jump away" aria-label="Flee" data-testid="combat-flee" onclick={flee}><Icon name="fast" size={16} /><span class="cap">Flee</span></button>
+        <button class="tile sm q go" disabled={!canFlee} title="Flee: jump away" aria-label="Flee" data-testid="combat-flee" onclick={flee}><Icon name="fast" size={16} /><span class="cap">Flee</span></button>
         <span class="bar"><i style="width:{ftlPct}%"></i></span>
       </span>
       <span class="sh" title="Your shield layers" data-testid="ship-meters"><Icon name="shield" size={14} /><b data-testid="shield-pips">{me.shield.layers}/{me.shield.max}</b><span class="cap">Shields</span></span>
@@ -93,31 +87,34 @@
 </div>
 
 <style>
-  .player { background: var(--panel); flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .player { background: var(--panel); flex: 5 1 0; min-height: 0; display: flex; flex-direction: column; }
   .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 8px 16px; overscroll-behavior: contain; }
   .wh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   h3 { margin: 0; font: 600 14px/1.2 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .link { min-height: 0; min-width: 0; height: 24px; padding: 0 8px; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--cyan); background: transparent; border-color: var(--line); }
-  .weapons { display: grid; gap: 6px; }
-  .w { display: grid; gap: 5px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); cursor: pointer; }
+  .weapons { display: grid; gap: 3px; }
+  .w { display: grid; grid-template-columns: minmax(0, 1fr) 36px 52px 92px 22px; align-items: center; gap: 5px; height: 36px; padding: 0 4px 0 8px; background: var(--panel-2); border: 1px solid var(--line); }
   .w.sel { border-color: var(--cyan); background: var(--panel-3); }
   .w.off { opacity: 0.7; }
-  .line { display: flex; align-items: center; gap: 6px; }
-  .nm { flex: 1; min-width: 0; font: 600 17px/1.2 var(--head-font); letter-spacing: 0.03em; }
-  .stt { font-size: 12px; } .stt.amber { color: var(--amber); } .stt.green { color: var(--green); } .stt.red { color: #ff8a8a; }
-  .bar { height: 6px; } .bar.amber > i { background: var(--amber); } .bar.green > i { background: var(--green); } .bar.red > i { background: var(--red); }
-  .sub { font-size: 12px; color: var(--dim); }
-  .to { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .mode { color: var(--text); }
-  button.tile.sm { width: 28px; height: 28px; }
-  .tag { font-size: 10px; padding: 0 5px; background: #0b1220; border: 1px solid var(--line); }
+  .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 15px/1.2 var(--head-font); letter-spacing: 0.03em; }
+  .chg { display: block; height: 4px; background: #0b1220; } .chg > i { display: block; height: 100%; }
+  .chg.amber > i { background: var(--amber); } .chg.green > i { background: var(--green); } .chg.red > i { background: var(--red); }
+  .stt { font-size: 11px; white-space: nowrap; } .stt.amber { color: var(--amber); } .stt.green { color: var(--green); } .stt.red { color: #ff8a8a; }
+  button.tg { min-height: 0; min-width: 0; height: 26px; padding: 0 4px; border-color: transparent; background: transparent; color: var(--dim); font-size: 11px; text-align: left; overflow: hidden; }
+  button.tg span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  button.tg.own { color: var(--cyan); font-weight: 600; background: #0a3a52; border-color: var(--cyan); }
+  button.tg.armed { color: #fff; border-color: var(--amber); background: var(--panel-3); }
+  button.rs { min-height: 0; min-width: 0; width: 22px; height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--cyan); }
+  .nors { display: block; }
+  .tag { margin-left: 4px; font-size: 10px; padding: 0 4px; background: #0b1220; border: 1px solid var(--line); font-weight: 400; }
   footer { flex: none; padding: 8px; display: grid; gap: 6px; background: var(--panel); border-top: 1px solid var(--line-hi); }
   .fire { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  button.big { height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 16px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); }
+  button.big { height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 16px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); }
   button.big.go:not(:disabled) { background: #0e6a80; border-color: var(--cyan); color: #fff; }
   .hint { font-size: 11px; color: var(--dim); }
-  .sec { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; }
-  button.tile.sm:has(.cap) { width: auto; min-width: 44px; height: 38px; flex-direction: column; gap: 1px; padding: 0 6px; }
+  .sec { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-size: 11px; opacity: 0.8; }
+  button.tile.q { width: auto; min-width: 0; min-height: 0; height: 26px; flex-direction: row; gap: 4px; padding: 0 6px; background: transparent; }
+  button.tile.q .cap { font-size: 10px; }
   .cap { font-size: 10px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dim); }
   .sh .cap { margin-left: 2px; }
   .ftl { display: inline-flex; align-items: center; gap: 6px; } .ftl .bar { width: 44px; } .ftl.full .bar > i { background: var(--green); }

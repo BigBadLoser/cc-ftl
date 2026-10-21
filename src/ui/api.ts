@@ -289,6 +289,8 @@ export interface UiWeapon {
   powered: boolean;
   /** Own target label, or null when it uses the ship-wide one. */
   target: string | null;
+  /** Module id of the own target (0 = whole ship or none). */
+  targetModuleId: number;
 }
 
 /** A console of the player's ship and who runs it. */
