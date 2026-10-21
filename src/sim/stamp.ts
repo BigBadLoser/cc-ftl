@@ -3,8 +3,9 @@ import { SectorGrid } from './sectorGrid';
 import { SHIP_EMPTY, SHIP_FIELDS } from './structure';
 
 /**
- * A fresh, empty sector grid with the ship fields. Chunks are never released for now (no occupancy field): a chunk whose
- * structure is all gone can still hold module or item ids on Space tiles, and nothing lifts ships yet (step 9 decides).
+ * A fresh, empty sector grid with the ship fields. Chunks are not released on write (no occupancy field): a chunk whose
+ * structure is all gone can still hold module or item ids on Space tiles. `liftShip` releases the chunks it leaves wholly
+ * empty (`SectorGrid.releaseEmpty`).
  */
 export function newSectorGrid(): SectorGrid {
   return new SectorGrid(0, SHIP_FIELDS, SHIP_EMPTY, { occupancyField: null });
