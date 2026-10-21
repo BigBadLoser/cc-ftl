@@ -33,6 +33,8 @@ function legacyWorld(sim: Sim): unknown {
   delete stores.body;
   // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.
   if ((stores.container ?? []).length === 0) delete stores.container;
+  // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
+  for (const k of ['eggSac', 'nest', 'alien']) if ((stores[k] ?? []).length === 0) delete stores[k];
   stores.vehicle = (stores.vehicle ?? []).map(([id, raw]) => {
     const { def, homeShip, home, state, hp, ...rest } = raw as Vehicle;
     const b = bodies.get(id) as Body;

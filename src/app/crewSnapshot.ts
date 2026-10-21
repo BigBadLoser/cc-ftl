@@ -3,6 +3,16 @@ import type { UiCrew, UiFight } from '../ui/api';
 import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
+import { StunC } from '../sim/robots/components';
+
+/**
+ * The activity the UI shows. A stunned organic body (a brute's knockdown) is 'knocked down'; robots keep 'inert' (shut
+ * down or ion-stunned).
+ */
+export function activityOf(sim: Sim, id: number, activity: string): string {
+  const species = sim.content.species[sim.world.get(id, CrewC)?.species ?? ''];
+  return activity === 'inert' && sim.world.has(id, StunC) && !species?.mechanical ? 'knocked down' : activity;
+}
 
 const STRUCT_LABEL: Record<number, string> = Object.fromEntries(Object.entries(Struct).map(([k, v]) => [v, k.toLowerCase()]));
 const NONE = Object.fromEntries(WORK_CATEGORIES.map((c) => [c, 0])) as Record<WorkCategory, number>;
@@ -153,7 +163,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     id,
     name: crew.name,
     role: role?.name ?? crew.role,
-    activity: crew.activity,
+    activity: activityOf(sim, id, crew.activity),
     rest: Math.round(sim.world.get(id, NeedsC)?.rest ?? 100),
     hunger: hungerOf(sim, id),
     mood: moodOf(sim, id),

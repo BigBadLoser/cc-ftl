@@ -259,7 +259,7 @@ export type UiAlertKind =
   | 'job.missingMaterials' | 'storage.full' | 'production.done'
   | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
   | 'story.notice' | 'story.lead' | 'trade'
-  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost';
+  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard';
 
 /** A weapon module of the player's ship. */
 export interface UiWeapon {

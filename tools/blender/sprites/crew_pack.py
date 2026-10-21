@@ -11,6 +11,22 @@ from . import post
 KEY_COLORS = {"team.skin": "#ff00ff", "team.hair": "#00ff00", "team.cloth": "#ffff00", "team.accent": "#00ffff"}
 
 
+def union_box(res):
+    """Crop box (x0, y0, x1, y1) holding every opaque pixel of every frame: {key: {frame: (rgba, glow)}}. The robot and
+    alien single-sheet packers use it (human crew use the fixed crew frame instead)."""
+    box = None
+    for frames in res.values():
+        for rgba, g in frames.values():
+            op = rgba[..., 3] > 0
+            if g is not None:
+                op = op | (g[..., 3] > 0)
+            if not op.any():
+                continue
+            b = post.crop_box(op)
+            box = b if box is None else (min(box[0], b[0]), min(box[1], b[1]), max(box[2], b[2]), max(box[3], b[3]))
+    return box
+
+
 def _packed_path():
     return cc.root() / "packed.json"
 

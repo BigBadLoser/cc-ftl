@@ -8,6 +8,7 @@ import { Container, Graphics, Text } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
 import { PositionC } from '../sim/crew/components';
+import { EggSacC } from '../sim/aliens/components';
 import { ShipC, type Ship } from '../sim/combat/components';
 import { Z_PX } from './heights';
 import { iso, type Pt } from './iso';
@@ -28,7 +29,9 @@ const TRACER_LIFE = 0.32;
 const FLASH_LIFE = 0.35;
 const TEXT_LIFE = 0.8;
 
-interface Tracer { a: Pt; b: Pt; age: number; ranged: boolean }
+interface Tracer { a: Pt; b: Pt; age: number; ranged: boolean; glob?: boolean }
+/** A spitter's glob (natural weapon 'spit'): a slow glowing ball along the line. PLACEHOLDER until a glob sprite exists. */
+const GLOB_LIFE = 0.55;
 interface Flash { x: number; y: number; age: number; life: number; color: number; r: number }
 interface Floater { text: Text; age: number; y0: number }
 
@@ -49,7 +52,10 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
   const gridOf = (ship: number): number => world.has(ship, ShipC) ? ship : 0;
   const crewAt = (id: number, z: number): Pt | null => {
     const p = world.get(id, PositionC);
-    return p ? at(shipIdAtTile(world, p.x, p.y), p.x + (p.toX - p.x) * p.progress, p.y + (p.toY - p.y) * p.progress, z) : null;
+    if (p) return at(shipIdAtTile(world, p.x, p.y), p.x + (p.toX - p.x) * p.progress, p.y + (p.toY - p.y) * p.progress, z);
+    // Egg sacs have no Position: hit and miss marks go on the sac's centre.
+    const sac = world.get(id, EggSacC);
+    return sac ? at(sac.ship, sac.x + (sac.size - 1) / 2, sac.y + (sac.size - 1) / 2, z) : null;
   };
   const say = (text: string, p: Pt, fill: number) => {
     const t = new Text({ text, resolution: Math.max(1, scale()), style: { fontFamily: 'monospace', fontSize: 11, fontWeight: 'bold', fill, stroke: { color: 0x05080d, width: 2 } } });
@@ -66,8 +72,9 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
           const a = at(gridOf(e.ship), e.x, e.y, MUZZLE_Z);
           const b = at(gridOf(e.ship), e.tx, e.ty, BODY_Z);
           if (!a || !b) continue;
-          tracers.push({ a, b, age: 0, ranged: e.ranged });
-          flashes.push({ x: e.ranged ? a.x : b.x, y: e.ranged ? a.y : b.y, age: 0, life: 0.2, color: 0xfff1a8, r: e.ranged ? 6 : 8 });
+          const glob = e.weapon === 'spit';
+          tracers.push({ a, b, age: 0, ranged: e.ranged, glob });
+          if (!glob) flashes.push({ x: e.ranged ? a.x : b.x, y: e.ranged ? a.y : b.y, age: 0, life: 0.2, color: 0xfff1a8, r: e.ranged ? 6 : 8 });
         } else if (e.type === 'crew.hit') {
           const p = crewAt(e.target, BODY_Z);
           if (!p) continue;
@@ -84,8 +91,14 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
       for (let i = tracers.length - 1; i >= 0; i--) {
         const t = tracers[i] as Tracer;
         t.age += dt;
-        if (t.age >= TRACER_LIFE) {
+        if (t.age >= (t.glob ? GLOB_LIFE : TRACER_LIFE)) {
           tracers.splice(i, 1);
+          continue;
+        }
+        if (t.glob) {
+          const u = t.age / GLOB_LIFE;
+          const x = t.a.x + (t.b.x - t.a.x) * u, y = t.a.y + (t.b.y - t.a.y) * u - Math.sin(u * Math.PI) * 10;
+          g.circle(x, y, 5).fill({ color: 0xb8e83a, alpha: 0.35 }).circle(x, y, 2.5).fill({ color: 0xeaff9a, alpha: 0.95 });
           continue;
         }
         const k = 1 - t.age / TRACER_LIFE;

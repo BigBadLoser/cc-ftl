@@ -20,7 +20,8 @@ export interface Sector {
 }
 
 /** 'rogue': rogue AI (robot crews under an AI core); hostile to every other faction, neutral included. */
-export type Faction = 'player' | 'hostile' | 'neutral' | 'rogue';
+/** 'alien': wild creatures on derelicts; like rogue, at war with every other faction. */
+export type Faction = 'player' | 'hostile' | 'neutral' | 'rogue' | 'alien';
 /**
  * 'prize': a captured ship. Player-owned but inactive: no weapons, shields, AI or combat role; not flown. The player can
  * salvage it or scuttle it (-> 'wreck').

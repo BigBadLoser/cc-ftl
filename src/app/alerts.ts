@@ -48,9 +48,11 @@ export function createAlerts(sim: Sim): Alerts {
 
   const traderName = (id: number) => sim.world.get(id, TraderC)?.name ?? 'trader';
   const playerSuit = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
-  /** Hostile ships and their crew raise no alerts of their own. */
+  /** Hostile ships and their crew raise no alerts of their own (a player crew member going down anywhere does). */
   const foreign = (e: SimEvent): boolean => {
     if (e.type === 'fire.started' || e.type === 'hull.breach' || e.type === 'power.shortage' || e.type === 'o2.low') return e.ship !== home();
+    // The player's own crew going down is news wherever they are (an away team on a derelict or an enemy ship).
+    if (e.type === 'crew.downed' && playerSuit(e.crew)) return false;
     if (e.type === 'crew.downed' || e.type === 'crew.died' || e.type === 'crew.rescued') {
       return shipIdOf(sim, sim.world.get(e.crew, PositionC)) !== home();
     }
@@ -83,6 +85,7 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: e.type, key: `s${e.x},${e.y}`, text: `Storage full (${sim.content.items[e.item]?.name ?? e.item})`, at: { x: e.x, y: e.y } };
       case 'production.done':
         return { kind: e.type, key: `pd${e.module}`, text: `${sim.content.recipes[e.recipe]?.name ?? 'Batch'} done`, at: { x: e.x, y: e.y } };
+      case 'eggsac.hatched': return { kind: 'creatures.aboard', key: `ca${e.ship}`, text: `Hostile creatures aboard ${shipName(e.ship)?.name ?? 'the wreck'}`, at: { x: e.x, y: e.y } };
       case 'combat.started': return { kind: e.type, key: 'cs', text: 'Hostile ship in range: combat!', at: null };
       case 'module.destroyed': {
         const s = shipName(e.ship);
