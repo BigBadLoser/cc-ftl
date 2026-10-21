@@ -49,6 +49,15 @@
     station: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM2 12h4M18 12h4',
     derelict: 'M3 17l5-9 4 5 3-4 6 8zM3 17h18',
     alert: 'M12 3l10 18H2zM12 10v5M12 18h.01',
+    shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM12 8v8',
+    evasion: 'M4 19c5 0 6-5 8-9s4-4 8-4M16 3l4 3-3 4',
+    hail: 'M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13',
+    frame: 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5M12 12h.01',
+    hold: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM6 6l12 12',
+    volley: 'M12 3v5M12 16v5M3 12h5M16 12h5M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3',
+    pick: 'M8 6h13M8 12h13M8 18h13M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2',
+    chevUp: 'M5 15l7-7 7 7',
+    chevDown: 'M5 9l7 7 7-7',
     fire: 'M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z',
   } as const;
   export type IconName = keyof typeof ICONS;

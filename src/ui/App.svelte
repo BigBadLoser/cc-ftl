@@ -11,6 +11,7 @@
   import PriorityGrid from './PriorityGrid.svelte';
   import ToolBar from './ToolBar.svelte';
   import AlertList from './AlertList.svelte';
+  import EventLog from './EventLog.svelte';
   import BuildModules from './BuildModules.svelte';
   import OverlayPicker from './OverlayPicker.svelte';
   import NodeStrip from './NodeStrip.svelte';
@@ -43,6 +44,11 @@
   $effect(() => {
     document.documentElement.toggleAttribute('data-combat', combat.inCombat && combatOpen);
   });
+  let narrow = $state(window.matchMedia('(max-width: 600px)').matches);
+  let rcolH = $state(0);
+  $effect(() => {
+    document.documentElement.style.setProperty('--rcol-h', `${rcolH}px`);
+  });
   const phone = () => window.matchMedia('(max-width: 600px)').matches;
   const cutLabel: Record<UiCutaway, string> = { auto: 'Cutaway', up: 'Up', down: 'Low' };
   const cutNext: Record<UiCutaway, UiCutaway> = { auto: 'up', up: 'down', down: 'auto' };
@@ -52,7 +58,11 @@
   }
 
   onMount(() => {
+    const mq = window.matchMedia('(max-width: 600px)');
+    const onMq = () => (narrow = mq.matches);
+    mq.addEventListener('change', onMq);
     const unsubs = [
+      () => mq.removeEventListener('change', onMq),
       api.snapshot.subscribe((s) => (snap = s)),
       api.toast.subscribe((t) => (toast = t)),
       api.selectedShip.subscribe((g) => (selShip = g)),
@@ -99,12 +109,23 @@
   ];
 </script>
 
+{#snippet time()}
+  <span class="time sec">
+    <span class="tick">T {snap?.tick ?? 0}</span>
+    <span class="speeds">
+      {#each speeds as s (s.speed)}
+        <button class="tile" class:on={snap?.speed === s.speed} title={s.label} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
+      {/each}
+    </span>
+  </span>
+{/snippet}
+
 <svelte:window onkeydown={onKey} />
 
 <canvas bind:this={canvas}></canvas>
 
 <header>
-  <!-- Left: global screens. Centre: crew and what else is in the node. Right: time, with a log above it later and notifications below. -->
+  <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
   <NavStrip
     {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.length > 0 || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     onOverview={() => (overviewOpen = !overviewOpen)}
@@ -116,14 +137,7 @@
     <CrewBar {api} />
     <NodeStrip {api} selected={selShip} />
   </span>
-  <span class="time">
-    <span class="tick">T {snap?.tick ?? 0}</span>
-    <span class="speeds">
-      {#each speeds as s (s.speed)}
-        <button class="tile" class:on={snap?.speed === s.speed} title={s.label} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
-      {/each}
-    </span>
-  </span>
+  {#if narrow}{@render time()}{/if}
 </header>
 
 {#if overviewOpen}
@@ -151,12 +165,21 @@
   <SelectionPanel {api} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} />
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
-<AlertList {api} />
+
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
 {/if}
 <StoryModal {api} />
 <ErrorOverlay {api} />
+
+<!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; alerts stack below as separate cards. -->
+<div class="rcol" bind:clientHeight={rcolH}>
+  <div class="frame">
+    <EventLog {api} />
+    {#if !narrow}{@render time()}{/if}
+  </div>
+  <AlertList {api} />
+</div>
 
 <style>
   canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
@@ -171,16 +194,25 @@
   @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
   header > :global(.strip) { grid-column: 1; justify-self: start; }
   .mid { grid-column: 2; display: flex; gap: 6px; align-items: start; min-width: 0; }
-  .time { grid-column: 3; justify-self: end; display: grid; gap: 2px; justify-items: end; }
-  .tick { font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 3px 6px; background: var(--panel); border: 1px solid var(--line); }
-  .speeds { display: flex; gap: 2px; }
+  /* The top-right frame: log and time in a single box divided by a hairline; alerts hang below it. */
+  .rcol { position: fixed; z-index: 4; top: calc(var(--sat) + 8px); right: calc(8px + var(--sar)); width: min(260px, calc(100vw - 110px)); display: flex; flex-direction: column; gap: 4px; }
+  .frame { background: var(--panel); border: 1px solid var(--line-hi); }
+  .frame > :global(.sec + .sec) { border-top: 1px solid var(--line); }
+  .time { display: flex; align-items: center; gap: 0; }
+  .tick { flex: 1; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
+  .speeds { display: flex; }
+  .speeds :global(button.tile) { border: 0; border-left: 1px solid var(--line); background: transparent; width: 36px; height: 36px; }
+  .speeds :global(button.tile:hover) { background: var(--panel-3); }
+  .speeds :global(button.tile.on) { background: var(--panel-3); box-shadow: inset 0 0 0 1px var(--cyan); }
   @media (max-width: 600px) {
     /* Row 1: tick and speed. Row 2: resources. Row 3: crew. */
     header { grid-template-columns: auto 1fr; gap: 4px; padding-top: calc(4px + var(--sat)); }
-    .speeds :global(button.tile) { width: 36px; height: 36px; }
+    .rcol { right: auto; left: calc(8px + var(--sal)); top: calc(var(--hdr) + var(--sat) + 6px); width: calc(100vw - 62px - var(--sar)); }
+    .frame:not(:has(.sec)) { display: none; }
+    header .time { background: var(--panel); border: 1px solid var(--line-hi); }
     .mid { grid-column: 1 / -1; grid-row: 2; flex-direction: column-reverse; gap: 4px; }
     header > :global(.strip) { grid-row: 1; }
-    .time { grid-column: 2; grid-row: 1; grid-template-columns: auto auto; align-items: center; justify-self: end; }
+    header .time { grid-column: 2; grid-row: 1; justify-self: end; }
     .tick { display: none; }
   }
 </style>

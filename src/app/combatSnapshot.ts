@@ -64,7 +64,7 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
           const ammo = sim.content.weapons?.[def.weapon]?.ammo;
           weapons.push({
             id: mid, name: def.name, charge: round(w.charge), ammo: ammo ? ammoCount(sim, playerGrid, ammo) : null,
-            ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target),
+            ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target), targetModuleId: w.target?.moduleId ?? 0,
           });
         }
         if (def.console) {

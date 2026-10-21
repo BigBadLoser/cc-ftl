@@ -18,6 +18,7 @@ import { content } from './content';
 import { BodyC, newGame, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
+import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
@@ -107,10 +108,10 @@ function spawnRaider(boarders = false): void {
   if (!mine || !t) return;
   const w = Math.max(...t.rows.map((r) => r.length));
   const h = t.rows.length;
-  const cx = mine.x + mine.width / 2;
   const cy = mine.y + mine.height / 2;
-  const x = Math.min(sim.sector.width - w, Math.max(0, Math.round(cx + 18 - w / 2)));
-  const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy + 22 - h / 2)));
+  // Just past the player ship's padded frame plus the minimum gap, level with it, so the placement is never refused as tooClose.
+  const x = Math.min(sim.sector.width - w, mine.x + mine.width + MIN_SHIP_GAP + 2 * REGION_PAD + 4);
+  const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy - h / 2)));
   bridge.dispatch({ type: 'debug.spawnEnemy', template, x, y });
 }
 
@@ -141,6 +142,7 @@ const api: UiApi = {
   selectShip: controller.selectShip,
   stats: bridge.stats,
   alerts: controller.alerts.list,
+  log: controller.log.list,
   combat: bridge.combat,
   shuttles: bridge.shuttles,
   trade: bridge.trade,
@@ -152,6 +154,7 @@ const api: UiApi = {
     if (b) renderer?.focusSector(b.x, b.y);
   },
   setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, rect: view.rect }),
+  setCombatMarks: (marks) => renderer?.setCombatMarks(marks),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   focusFight: (ship) => focusFight(ship),
