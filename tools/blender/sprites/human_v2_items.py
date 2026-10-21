@@ -237,7 +237,7 @@ def _to_v2_head(items, R):
                 ob.data.update()
 
 
-CYBER_K = {"arm": 1.25, "forearm": 1.1, "hand": 1.0}                 # cyber arm thickness, to match the v2 flesh arm
+CYBER_K = {"arm": 1.1, "forearm": 1.1, "hand": 1.0}                   # cyber arm thickness, to match the v2 flesh arm
 
 
 def _cyber_bulk(items, A):

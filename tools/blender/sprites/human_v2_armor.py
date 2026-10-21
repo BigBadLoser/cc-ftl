@@ -120,10 +120,10 @@ def shoulder_pads(A, R):
     for s, sx in (("L", 1), ("R", -1)):
         sh = R.h[f"arm.{s}"]
         d = sh + Vector((sx * 0.02, 0.0, 0.03))
-        b.blob(d, 0.15, 0.155, 0.09, blend(f"clavicle.{s}", f"arm.{s}", 0.75), exp=2.6, nlat=8)
+        b.blob(d, 0.135, 0.14, 0.085, blend(f"clavicle.{s}", f"arm.{s}", 0.75), exp=2.6, nlat=8)
         el = R.T["limb"][f"arm.{s}"][-1][0]                                 # the elbow (rest pose: arms out)
         L = (el.x - sh.x) * sx - 0.045
-        b.tube(sh - Vector((sx * 0.05, 0, 0)), sh + Vector((sx * L, 0, 0)), 0.15, 0.112, W(f"arm.{s}"))
+        b.tube(sh - Vector((sx * 0.05, 0, 0)), sh + Vector((sx * L, 0, 0)), 0.13, 0.1, W(f"arm.{s}"))
         # The sleeve is roomy, starts inside the shoulder with a round end and is all on the arm bone like the bare arm,
         # so it encloses the arm's upper half in any pose: the arm is a holdout for this layer, so wherever it poked
         # out it would cut a skin-coloured hole. It runs to the elbow, as a bare upper arm under a short pad shows as

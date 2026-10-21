@@ -13,7 +13,8 @@ FOLD = {"index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand", "thu
 TORSO = ("hips", "spine", "spine_02", "spine_03", "clavicle.L", "clavicle.R")
 HEAD = ("neck_01", "head")
 LIMBS = ("arm", "forearm", "hand", "leg", "shin", "foot")
-UPPER_K = (1.12, 1.45, 1.12)          # upper arm thickness against the traced arm: shoulder, bicep, elbow
+UPPER_K = (1.05, 1.18, 1.02)          # upper arm thickness against the traced arm: shoulder, bicep, elbow
+                                      # (a bigger bicep made a ball at the top of the arm at 2x)
 FORE_K = (1.08, 1.02, 0.95)           # forearm: elbow, a third down, wrist
 SHIN_K = (1.0, 1.14, 0.88)            # lower leg: knee, the calf a third down, a narrower ankle
 HEAD_W, HEAD_H = 0.84, 1.14           # head width and height against the traced head
