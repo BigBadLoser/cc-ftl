@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, unitPrice, quote, hailVerdict, reputationWith, playerItems, type Sim, type SimEvent } from '../sim';
 import { content } from './index';
-import { withCivilian } from './ships/trade.test';
 import { shipIdOf } from '../sim/regions';
 import { shipIds } from '../sim/regions';
 
@@ -19,6 +18,19 @@ const run = (sim: Sim, n: number): SimEvent[] => {
 const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 const rejected = (events: SimEvent[]): string[] => ofType(events, 'command.rejected').map((e) => e.reason);
+
+/** A started game with a generated civilian ship of the wanted role in the node (searching seeds for it). */
+function withCivilian(role: string, gameSeed = 1): { sim: Sim; ship: number } {
+  for (let seed = 1; seed < 80; seed++) {
+    const sim = newGame(gameSeed, content);
+    sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.civilian', seed, depth: 2, cx: 130, cy: 70 });
+    sim.step();
+    sim.events.drain();
+    const ship = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.gen?.role === role);
+    if (ship) return { sim, ship };
+  }
+  throw new Error(`no civilian ${role} found`);
+}
 
 /** A started game with a trading station (no grid) and the hail already answered. */
 function withStation(): { sim: Sim; station: number } {

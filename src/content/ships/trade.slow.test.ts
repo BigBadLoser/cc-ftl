@@ -19,7 +19,7 @@ const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extrac
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 
 /** A started game with a generated civilian ship of the wanted role in the node (searching seeds for it). */
-export function withCivilian(role: string, gameSeed = 1): { sim: Sim; ship: number } {
+function withCivilian(role: string, gameSeed = 1): { sim: Sim; ship: number } {
   for (let seed = 1; seed < 80; seed++) {
     const sim = newGame(gameSeed, content);
     sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.civilian', seed, depth: 2, cx: 130, cy: 70 });
