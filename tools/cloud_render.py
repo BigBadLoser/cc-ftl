@@ -169,6 +169,8 @@ class Runner:
                 return
             try:
                 key = f"crew:{clip}"
+                # Content-addressed cache is authoritative; a completed job has
+                # an on-disk checkpoint but missing cache files require --fresh.
                 if not self.done(key):
                     self.run_blender(key, "crew", clip=clip)
             finally:
@@ -327,7 +329,14 @@ def main():
     if args.workers * args.threads > budget:
         parser.error(f"Requested {args.workers} x {args.threads} threads > {budget} CPUs")
     print(f"Cloud-render CPU budget: {budget}; Blender: {args.workers} processes x {args.threads} threads", flush=True)
-    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+    def interrupt(_signum, _frame):
+        STOP.set()
+        with LOCK:
+            for process in list(LIVE):
+                if process.poll() is None:
+                    process.terminate()
+    signal.signal(signal.SIGINT, interrupt)
+    signal.signal(signal.SIGTERM, interrupt)
     try:
         Runner(args).run()
     except (KeyboardInterrupt, RenderJobError) as exc:
