@@ -23,6 +23,18 @@
    "image": "sprites/consoles.png",
    "glow": "sprites/consoles.glow.png"
   },
+  "containers": {
+   "image": "sprites/containers.png",
+   "glow": "sprites/containers.glow.png"
+  },
+  "containers.1": {
+   "image": "sprites/containers.1.png",
+   "glow": "sprites/containers.1.glow.png"
+  },
+  "containers.2": {
+   "image": "sprites/containers.2.png",
+   "glow": "sprites/containers.2.glow.png"
+  },
   "crew.human.arm.L.cyber.idle": {
    "image": "sprites/crew.human.arm.L.cyber.idle.png",
    "glow": "sprites/crew.human.arm.L.cyber.idle.glow.png"
@@ -768,6 +780,7739 @@
   }
  },
  "assets": {
+  "container.2x4": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1334,
+    "y": 493,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 62,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "container.2x4.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 536,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": -8,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 199,
+    "y": 1033,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 57,
+    "y": 126
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1523,
+    "y": 493,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 62,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "container.2x4.r0.n.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1756,
+    "y": 249,
+    "w": 188,
+    "h": 190
+   },
+   "anchor": {
+    "x": 62,
+    "y": 149
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 661,
+    "y": 296,
+    "w": 95,
+    "h": 69
+   },
+   "anchor": {
+    "x": 6,
+    "y": 97
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 757,
+    "y": 296,
+    "w": 95,
+    "h": 69
+   },
+   "anchor": {
+    "x": 6,
+    "y": 97
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 853,
+    "y": 296,
+    "w": 95,
+    "h": 69
+   },
+   "anchor": {
+    "x": 6,
+    "y": 97
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 949,
+    "y": 296,
+    "w": 95,
+    "h": 69
+   },
+   "anchor": {
+    "x": 6,
+    "y": 97
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1045,
+    "y": 296,
+    "w": 95,
+    "h": 69
+   },
+   "anchor": {
+    "x": 6,
+    "y": 97
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 646,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": -8,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 378,
+    "y": 1033,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 57,
+    "y": 126
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.destroyed": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1465,
+    "y": 1358,
+    "w": 204,
+    "h": 150
+   },
+   "anchor": {
+    "x": 62,
+    "y": 109
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 563,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 618,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 673,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 728,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 783,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 756,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": -8,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 557,
+    "y": 1033,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 57,
+    "y": 126
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.patched": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1712,
+    "y": 493,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 62,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "container.2x4.r0.n.patched.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 866,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": -8,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.patched.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 736,
+    "y": 1033,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 57,
+    "y": 126
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 683,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 62,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "container.2x4.r0.n.v1.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1140,
+    "y": 493,
+    "w": 193,
+    "h": 175
+   },
+   "anchor": {
+    "x": 62,
+    "y": 134
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 838,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 893,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 948,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1003,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1058,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 306,
+    "y": 522,
+    "w": 34,
+    "h": 28
+   },
+   "anchor": {
+    "x": -79,
+    "y": 63
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1692,
+    "y": 858,
+    "w": 178,
+    "h": 163
+   },
+   "anchor": {
+    "x": 57,
+    "y": 129
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1113,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1168,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1223,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1278,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1333,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 976,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": -8,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v1.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 915,
+    "y": 1033,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 57,
+    "y": 126
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 190,
+    "y": 683,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 62,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "container.2x4.r0.n.v2.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 379,
+    "y": 683,
+    "w": 192,
+    "h": 174
+   },
+   "anchor": {
+    "x": 66,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "container.2x4.r0.n.v2.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1388,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1443,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1498,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1553,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1608,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 256,
+    "y": 522,
+    "w": 49,
+    "h": 34
+   },
+   "anchor": {
+    "x": -3,
+    "y": 31
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1094,
+    "y": 1033,
+    "w": 179,
+    "h": 160
+   },
+   "anchor": {
+    "x": 58,
+    "y": 126
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1663,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1718,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1773,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1828,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1883,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1086,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": -8,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.n.v2.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1274,
+    "y": 1033,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 57,
+    "y": 126
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 572,
+    "y": 683,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 62,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "container.2x4.r0.s.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 761,
+    "y": 683,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 62,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1151,
+    "y": 1850,
+    "w": 70,
+    "h": 81
+   },
+   "anchor": {
+    "x": -19,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1222,
+    "y": 1850,
+    "w": 70,
+    "h": 81
+   },
+   "anchor": {
+    "x": -19,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1293,
+    "y": 1850,
+    "w": 70,
+    "h": 81
+   },
+   "anchor": {
+    "x": -19,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1364,
+    "y": 1850,
+    "w": 70,
+    "h": 81
+   },
+   "anchor": {
+    "x": -19,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1435,
+    "y": 1850,
+    "w": 70,
+    "h": 81
+   },
+   "anchor": {
+    "x": -19,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1251,
+    "y": 296,
+    "w": 109,
+    "h": 68
+   },
+   "anchor": {
+    "x": -8,
+    "y": 65
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1453,
+    "y": 1033,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 57,
+    "y": 126
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.destroyed": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1612,
+    "y": 1197,
+    "w": 204,
+    "h": 159
+   },
+   "anchor": {
+    "x": 78,
+    "y": 118
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1938,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1993,
+    "y": 367,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 56,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 111,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1196,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": -8,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1632,
+    "y": 1033,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 57,
+    "y": 126
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.patched": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 950,
+    "y": 683,
+    "w": 190,
+    "h": 174
+   },
+   "anchor": {
+    "x": 62,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "container.2x4.r0.s.patched.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1306,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": -8,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.patched.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 362,
+    "y": 1358,
+    "w": 178,
+    "h": 158
+   },
+   "anchor": {
+    "x": 57,
+    "y": 124
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1141,
+    "y": 683,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 62,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "container.2x4.r0.s.v1.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 571,
+    "y": 493,
+    "w": 188,
+    "h": 177
+   },
+   "anchor": {
+    "x": 62,
+    "y": 136
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 166,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 221,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 276,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 331,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 386,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1864,
+    "y": 149,
+    "w": 114,
+    "h": 72
+   },
+   "anchor": {
+    "x": -3,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1513,
+    "y": 858,
+    "w": 178,
+    "h": 164
+   },
+   "anchor": {
+    "x": 57,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 441,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 496,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 551,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 606,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 661,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1416,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": -8,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v1.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1811,
+    "y": 1033,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 57,
+    "y": 126
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1330,
+    "y": 683,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 62,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "container.2x4.r0.s.v2.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1519,
+    "y": 683,
+    "w": 191,
+    "h": 174
+   },
+   "anchor": {
+    "x": 65,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1919,
+    "y": 296,
+    "w": 121,
+    "h": 58
+   },
+   "anchor": {
+    "x": 32,
+    "y": 86
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1,
+    "y": 367,
+    "w": 121,
+    "h": 58
+   },
+   "anchor": {
+    "x": 32,
+    "y": 86
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 123,
+    "y": 367,
+    "w": 121,
+    "h": 58
+   },
+   "anchor": {
+    "x": 32,
+    "y": 86
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 245,
+    "y": 367,
+    "w": 121,
+    "h": 58
+   },
+   "anchor": {
+    "x": 32,
+    "y": 86
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 367,
+    "y": 367,
+    "w": 121,
+    "h": 58
+   },
+   "anchor": {
+    "x": 32,
+    "y": 86
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 341,
+    "y": 522,
+    "w": 21,
+    "h": 24
+   },
+   "anchor": {
+    "x": -96,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 541,
+    "y": 1358,
+    "w": 178,
+    "h": 158
+   },
+   "anchor": {
+    "x": 57,
+    "y": 124
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 716,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 771,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 826,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 881,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 936,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": -35,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1526,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": -8,
+    "y": 67
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r0.s.v2.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 720,
+    "y": 1358,
+    "w": 178,
+    "h": 158
+   },
+   "anchor": {
+    "x": 57,
+    "y": 124
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "container.2x4.r1.e": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1711,
+    "y": 683,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 126,
+    "y": 133
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.e.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 858,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 126,
+    "y": 133
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1496,
+    "y": 474,
+    "w": 59,
+    "h": 44
+   },
+   "anchor": {
+    "x": 95,
+    "y": 73
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1556,
+    "y": 474,
+    "w": 59,
+    "h": 44
+   },
+   "anchor": {
+    "x": 95,
+    "y": 73
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1616,
+    "y": 474,
+    "w": 59,
+    "h": 44
+   },
+   "anchor": {
+    "x": 95,
+    "y": 73
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1676,
+    "y": 474,
+    "w": 59,
+    "h": 44
+   },
+   "anchor": {
+    "x": 95,
+    "y": 73
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1736,
+    "y": 474,
+    "w": 59,
+    "h": 44
+   },
+   "anchor": {
+    "x": 95,
+    "y": 73
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1636,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 1197,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 121,
+    "y": 126
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.destroyed": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1257,
+    "y": 1358,
+    "w": 207,
+    "h": 156
+   },
+   "anchor": {
+    "x": 145,
+    "y": 115
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 991,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1046,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1101,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1156,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1211,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1746,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 180,
+    "y": 1197,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 121,
+    "y": 126
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.patched": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 190,
+    "y": 858,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 126,
+    "y": 133
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.e.patched.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1856,
+    "y": 223,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.patched.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1817,
+    "y": 1197,
+    "w": 178,
+    "h": 159
+   },
+   "anchor": {
+    "x": 121,
+    "y": 125
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 379,
+    "y": 858,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 126,
+    "y": 133
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.e.v1.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 190,
+    "y": 493,
+    "w": 188,
+    "h": 184
+   },
+   "anchor": {
+    "x": 126,
+    "y": 143
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 606,
+    "y": 474,
+    "w": 60,
+    "h": 46
+   },
+   "anchor": {
+    "x": 97,
+    "y": 74
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 667,
+    "y": 474,
+    "w": 60,
+    "h": 46
+   },
+   "anchor": {
+    "x": 97,
+    "y": 74
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 728,
+    "y": 474,
+    "w": 60,
+    "h": 46
+   },
+   "anchor": {
+    "x": 97,
+    "y": 74
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 789,
+    "y": 474,
+    "w": 60,
+    "h": 46
+   },
+   "anchor": {
+    "x": 97,
+    "y": 74
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 850,
+    "y": 474,
+    "w": 60,
+    "h": 46
+   },
+   "anchor": {
+    "x": 97,
+    "y": 74
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1,
+    "y": 296,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 359,
+    "y": 1197,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 121,
+    "y": 126
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1266,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1321,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1376,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1431,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1486,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 111,
+    "y": 296,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v1.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 538,
+    "y": 1197,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 121,
+    "y": 126
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 568,
+    "y": 858,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 126,
+    "y": 133
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.e.v2.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 379,
+    "y": 493,
+    "w": 191,
+    "h": 180
+   },
+   "anchor": {
+    "x": 129,
+    "y": 139
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.e.v2.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1186,
+    "y": 474,
+    "w": 61,
+    "h": 45
+   },
+   "anchor": {
+    "x": 97,
+    "y": 73
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1248,
+    "y": 474,
+    "w": 61,
+    "h": 45
+   },
+   "anchor": {
+    "x": 97,
+    "y": 73
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1310,
+    "y": 474,
+    "w": 61,
+    "h": 45
+   },
+   "anchor": {
+    "x": 97,
+    "y": 73
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1372,
+    "y": 474,
+    "w": 61,
+    "h": 45
+   },
+   "anchor": {
+    "x": 97,
+    "y": 73
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1434,
+    "y": 474,
+    "w": 61,
+    "h": 45
+   },
+   "anchor": {
+    "x": 97,
+    "y": 73
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1361,
+    "y": 296,
+    "w": 114,
+    "h": 68
+   },
+   "anchor": {
+    "x": 122,
+    "y": 65
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 899,
+    "y": 1358,
+    "w": 178,
+    "h": 158
+   },
+   "anchor": {
+    "x": 121,
+    "y": 124
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1541,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1596,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1651,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1706,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1761,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 221,
+    "y": 296,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.e.v2.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 717,
+    "y": 1197,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 121,
+    "y": 126
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 757,
+    "y": 858,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 126,
+    "y": 133
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.w.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 760,
+    "y": 493,
+    "w": 188,
+    "h": 177
+   },
+   "anchor": {
+    "x": 126,
+    "y": 136
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.w.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1,
+    "y": 522,
+    "w": 50,
+    "h": 40
+   },
+   "anchor": {
+    "x": 85,
+    "y": 69
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 52,
+    "y": 522,
+    "w": 50,
+    "h": 40
+   },
+   "anchor": {
+    "x": 85,
+    "y": 69
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 103,
+    "y": 522,
+    "w": 50,
+    "h": 40
+   },
+   "anchor": {
+    "x": 85,
+    "y": 69
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 154,
+    "y": 522,
+    "w": 50,
+    "h": 40
+   },
+   "anchor": {
+    "x": 85,
+    "y": 69
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 205,
+    "y": 522,
+    "w": 50,
+    "h": 40
+   },
+   "anchor": {
+    "x": 85,
+    "y": 69
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1476,
+    "y": 296,
+    "w": 107,
+    "h": 68
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 896,
+    "y": 1197,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 121,
+    "y": 126
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.destroyed": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 1033,
+    "w": 197,
+    "h": 163
+   },
+   "anchor": {
+    "x": 135,
+    "y": 122
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1816,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1871,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1926,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1981,
+    "y": 426,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 331,
+    "y": 296,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1075,
+    "y": 1197,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 121,
+    "y": 126
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.patched": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 946,
+    "y": 858,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 126,
+    "y": 133
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.w.patched.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 489,
+    "y": 367,
+    "w": 73,
+    "h": 51
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.patched.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 1358,
+    "w": 178,
+    "h": 159
+   },
+   "anchor": {
+    "x": 121,
+    "y": 125
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1135,
+    "y": 858,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 126,
+    "y": 133
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.w.v1.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 493,
+    "w": 188,
+    "h": 189
+   },
+   "anchor": {
+    "x": 126,
+    "y": 148
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.w.v1.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1796,
+    "y": 474,
+    "w": 44,
+    "h": 44
+   },
+   "anchor": {
+    "x": 94,
+    "y": 74
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1841,
+    "y": 474,
+    "w": 44,
+    "h": 44
+   },
+   "anchor": {
+    "x": 94,
+    "y": 74
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1886,
+    "y": 474,
+    "w": 44,
+    "h": 44
+   },
+   "anchor": {
+    "x": 94,
+    "y": 74
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1931,
+    "y": 474,
+    "w": 44,
+    "h": 44
+   },
+   "anchor": {
+    "x": 94,
+    "y": 74
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1976,
+    "y": 474,
+    "w": 44,
+    "h": 44
+   },
+   "anchor": {
+    "x": 94,
+    "y": 74
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1141,
+    "y": 296,
+    "w": 109,
+    "h": 69
+   },
+   "anchor": {
+    "x": 117,
+    "y": 66
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1254,
+    "y": 1197,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 121,
+    "y": 126
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 56,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 111,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 166,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 221,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 276,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 441,
+    "y": 296,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v1.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1433,
+    "y": 1197,
+    "w": 178,
+    "h": 160
+   },
+   "anchor": {
+    "x": 121,
+    "y": 126
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1324,
+    "y": 858,
+    "w": 188,
+    "h": 174
+   },
+   "anchor": {
+    "x": 126,
+    "y": 133
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "container.2x4.r1.w.v2.damaged": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 949,
+    "y": 493,
+    "w": 190,
+    "h": 177
+   },
+   "anchor": {
+    "x": 128,
+    "y": 136
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 911,
+    "y": 474,
+    "w": 54,
+    "h": 46
+   },
+   "anchor": {
+    "x": 89,
+    "y": 75
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 966,
+    "y": 474,
+    "w": 54,
+    "h": 46
+   },
+   "anchor": {
+    "x": 89,
+    "y": 75
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1021,
+    "y": 474,
+    "w": 54,
+    "h": 46
+   },
+   "anchor": {
+    "x": 89,
+    "y": 75
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1076,
+    "y": 474,
+    "w": 54,
+    "h": 46
+   },
+   "anchor": {
+    "x": 89,
+    "y": 75
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1131,
+    "y": 474,
+    "w": 54,
+    "h": 46
+   },
+   "anchor": {
+    "x": 89,
+    "y": 75
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1584,
+    "y": 296,
+    "w": 109,
+    "h": 65
+   },
+   "anchor": {
+    "x": 117,
+    "y": 62
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 180,
+    "y": 1358,
+    "w": 181,
+    "h": 159
+   },
+   "anchor": {
+    "x": 124,
+    "y": 125
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 331,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 386,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 441,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 496,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 551,
+    "y": 474,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 89,
+    "y": 76
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 551,
+    "y": 296,
+    "w": 109,
+    "h": 70
+   },
+   "anchor": {
+    "x": 117,
+    "y": 67
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.2x4.r1.w.v2.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1078,
+    "y": 1358,
+    "w": 178,
+    "h": 158
+   },
+   "anchor": {
+    "x": 121,
+    "y": 124
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "container.3x6": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1,
+    "y": 313,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1130,
+    "y": 1518,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 561,
+    "y": 1099,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 89,
+    "y": 194
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 286,
+    "y": 313,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.n.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 571,
+    "y": 313,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.n.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1572,
+    "y": 1953,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1656,
+    "y": 1953,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1740,
+    "y": 1953,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1824,
+    "y": 1953,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1908,
+    "y": 1953,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1304,
+    "y": 1518,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 836,
+    "y": 1099,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 89,
+    "y": 194
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.destroyed": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1136,
+    "y": 249,
+    "w": 312,
+    "h": 230
+   },
+   "anchor": {
+    "x": 94,
+    "y": 169
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 85,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 169,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 253,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 337,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1478,
+    "y": 1518,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1111,
+    "y": 1099,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 89,
+    "y": 194
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.patched": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 856,
+    "y": 313,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.n.patched.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1652,
+    "y": 1518,
+    "w": 172,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.patched.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 826,
+    "y": 1,
+    "w": 274,
+    "h": 246
+   },
+   "anchor": {
+    "x": 89,
+    "y": 192
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1141,
+    "y": 313,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.n.v1.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1711,
+    "y": 1,
+    "w": 284,
+    "h": 274
+   },
+   "anchor": {
+    "x": 94,
+    "y": 213
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 1518,
+    "w": 155,
+    "h": 111
+   },
+   "anchor": {
+    "x": 19,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 157,
+    "y": 1518,
+    "w": 155,
+    "h": 111
+   },
+   "anchor": {
+    "x": 19,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 313,
+    "y": 1518,
+    "w": 155,
+    "h": 111
+   },
+   "anchor": {
+    "x": 19,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 469,
+    "y": 1518,
+    "w": 155,
+    "h": 111
+   },
+   "anchor": {
+    "x": 19,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 625,
+    "y": 1518,
+    "w": 155,
+    "h": 111
+   },
+   "anchor": {
+    "x": 19,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1825,
+    "y": 1518,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1376,
+    "y": 1,
+    "w": 274,
+    "h": 245
+   },
+   "anchor": {
+    "x": 89,
+    "y": 191
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 421,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 505,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 589,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 673,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 757,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 1630,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v1.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1386,
+    "y": 1099,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 89,
+    "y": 194
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1426,
+    "y": 313,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.n.v2.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 286,
+    "y": 1,
+    "w": 284,
+    "h": 307
+   },
+   "anchor": {
+    "x": 94,
+    "y": 246
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.n.v2.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1132,
+    "y": 1953,
+    "w": 87,
+    "h": 74
+   },
+   "anchor": {
+    "x": -49,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1220,
+    "y": 1953,
+    "w": 87,
+    "h": 74
+   },
+   "anchor": {
+    "x": -49,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1308,
+    "y": 1953,
+    "w": 87,
+    "h": 74
+   },
+   "anchor": {
+    "x": -49,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1396,
+    "y": 1953,
+    "w": 87,
+    "h": 74
+   },
+   "anchor": {
+    "x": -49,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1484,
+    "y": 1953,
+    "w": 87,
+    "h": 74
+   },
+   "anchor": {
+    "x": -49,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 175,
+    "y": 1630,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 276,
+    "y": 249,
+    "w": 274,
+    "h": 241
+   },
+   "anchor": {
+    "x": 89,
+    "y": 187
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 841,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 925,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1009,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1093,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1177,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 349,
+    "y": 1630,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.n.v2.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1376,
+    "y": 1605,
+    "w": 274,
+    "h": 247
+   },
+   "anchor": {
+    "x": 89,
+    "y": 193
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1711,
+    "y": 313,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.s.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 571,
+    "y": 1,
+    "w": 284,
+    "h": 294
+   },
+   "anchor": {
+    "x": 94,
+    "y": 233
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.s.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 341,
+    "y": 1850,
+    "w": 161,
+    "h": 96
+   },
+   "anchor": {
+    "x": 25,
+    "y": 140
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 503,
+    "y": 1850,
+    "w": 161,
+    "h": 96
+   },
+   "anchor": {
+    "x": 25,
+    "y": 140
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 665,
+    "y": 1850,
+    "w": 161,
+    "h": 96
+   },
+   "anchor": {
+    "x": 25,
+    "y": 140
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 827,
+    "y": 1850,
+    "w": 161,
+    "h": 96
+   },
+   "anchor": {
+    "x": 25,
+    "y": 140
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 989,
+    "y": 1850,
+    "w": 161,
+    "h": 96
+   },
+   "anchor": {
+    "x": 25,
+    "y": 140
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1670,
+    "y": 1358,
+    "w": 173,
+    "h": 115
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 249,
+    "w": 274,
+    "h": 243
+   },
+   "anchor": {
+    "x": 89,
+    "y": 189
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.destroyed": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1651,
+    "y": 1,
+    "w": 302,
+    "h": 244
+   },
+   "anchor": {
+    "x": 94,
+    "y": 183
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1261,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1345,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1429,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1513,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1597,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 523,
+    "y": 1630,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1661,
+    "y": 1099,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 89,
+    "y": 194
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.patched": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1,
+    "y": 575,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.s.patched.lv": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1,
+    "y": 223,
+    "w": 99,
+    "h": 72
+   },
+   "anchor": {
+    "x": -44,
+    "y": 84
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.patched.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1101,
+    "y": 1,
+    "w": 274,
+    "h": 246
+   },
+   "anchor": {
+    "x": 89,
+    "y": 192
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 286,
+    "y": 575,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.s.v1.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1426,
+    "y": 1,
+    "w": 284,
+    "h": 275
+   },
+   "anchor": {
+    "x": 94,
+    "y": 214
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1393,
+    "y": 1740,
+    "w": 169,
+    "h": 102
+   },
+   "anchor": {
+    "x": 33,
+    "y": 146
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1563,
+    "y": 1740,
+    "w": 169,
+    "h": 102
+   },
+   "anchor": {
+    "x": 33,
+    "y": 146
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1733,
+    "y": 1740,
+    "w": 169,
+    "h": 102
+   },
+   "anchor": {
+    "x": 33,
+    "y": 146
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 1850,
+    "w": 169,
+    "h": 102
+   },
+   "anchor": {
+    "x": 33,
+    "y": 146
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 171,
+    "y": 1850,
+    "w": 169,
+    "h": 102
+   },
+   "anchor": {
+    "x": 33,
+    "y": 146
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1219,
+    "y": 1740,
+    "w": 173,
+    "h": 104
+   },
+   "anchor": {
+    "x": -8,
+    "y": 98
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1,
+    "y": 1356,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 89,
+    "y": 194
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1681,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1765,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1849,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1933,
+    "y": 1,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 697,
+    "y": 1630,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v1.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 276,
+    "y": 1356,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 89,
+    "y": 194
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 571,
+    "y": 575,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ],
+   "glow": true
+  },
+  "container.3x6.r0.s.v2.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 856,
+    "y": 575,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 94,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 85,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 169,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 253,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 337,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 421,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 871,
+    "y": 1630,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 551,
+    "y": 1356,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 89,
+    "y": 194
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 505,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 589,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 673,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 757,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 841,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": -53,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1045,
+    "y": 1630,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": -8,
+    "y": 103
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r0.s.v2.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 826,
+    "y": 1356,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 89,
+    "y": 194
+   },
+   "footprint": [
+    3,
+    6
+   ]
+  },
+  "container.3x6.r1.e": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1141,
+    "y": 575,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 190,
+    "y": 200
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.e.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1,
+    "y": 1099,
+    "w": 284,
+    "h": 256
+   },
+   "anchor": {
+    "x": 190,
+    "y": 195
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1921,
+    "y": 1850,
+    "w": 78,
+    "h": 75
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 1953,
+    "w": 78,
+    "h": 75
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 80,
+    "y": 1953,
+    "w": 78,
+    "h": 75
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 159,
+    "y": 1953,
+    "w": 78,
+    "h": 75
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 238,
+    "y": 1953,
+    "w": 78,
+    "h": 75
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 781,
+    "y": 1518,
+    "w": 174,
+    "h": 110
+   },
+   "anchor": {
+    "x": 182,
+    "y": 104
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 551,
+    "y": 249,
+    "w": 274,
+    "h": 241
+   },
+   "anchor": {
+    "x": 185,
+    "y": 187
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.destroyed": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 826,
+    "y": 249,
+    "w": 309,
+    "h": 239
+   },
+   "anchor": {
+    "x": 215,
+    "y": 178
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 925,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1009,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1093,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1177,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1261,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1219,
+    "y": 1630,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1101,
+    "y": 1356,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 185,
+    "y": 194
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.patched": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1426,
+    "y": 575,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 190,
+    "y": 200
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.e.patched.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1393,
+    "y": 1630,
+    "w": 172,
+    "h": 109
+   },
+   "anchor": {
+    "x": 180,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.patched.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1651,
+    "y": 1605,
+    "w": 274,
+    "h": 247
+   },
+   "anchor": {
+    "x": 185,
+    "y": 193
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1711,
+    "y": 575,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 190,
+    "y": 200
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.e.v1.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 856,
+    "y": 1,
+    "w": 284,
+    "h": 293
+   },
+   "anchor": {
+    "x": 190,
+    "y": 232
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.e.v1.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 317,
+    "y": 1953,
+    "w": 80,
+    "h": 75
+   },
+   "anchor": {
+    "x": 138,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 398,
+    "y": 1953,
+    "w": 80,
+    "h": 75
+   },
+   "anchor": {
+    "x": 138,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 479,
+    "y": 1953,
+    "w": 80,
+    "h": 75
+   },
+   "anchor": {
+    "x": 138,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 560,
+    "y": 1953,
+    "w": 80,
+    "h": 75
+   },
+   "anchor": {
+    "x": 138,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 641,
+    "y": 1953,
+    "w": 80,
+    "h": 75
+   },
+   "anchor": {
+    "x": 138,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1566,
+    "y": 1630,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 274,
+    "h": 247
+   },
+   "anchor": {
+    "x": 185,
+    "y": 193
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1345,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1429,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1513,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1597,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1681,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1740,
+    "y": 1630,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v1.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1376,
+    "y": 1356,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 185,
+    "y": 194
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1,
+    "y": 837,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 190,
+    "y": 200
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.e.v2.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 286,
+    "y": 837,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 190,
+    "y": 200
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.e.v2.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 722,
+    "y": 1953,
+    "w": 81,
+    "h": 75
+   },
+   "anchor": {
+    "x": 139,
+    "y": 116
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 804,
+    "y": 1953,
+    "w": 81,
+    "h": 75
+   },
+   "anchor": {
+    "x": 139,
+    "y": 116
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 886,
+    "y": 1953,
+    "w": 81,
+    "h": 75
+   },
+   "anchor": {
+    "x": 139,
+    "y": 116
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 968,
+    "y": 1953,
+    "w": 81,
+    "h": 75
+   },
+   "anchor": {
+    "x": 139,
+    "y": 116
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1050,
+    "y": 1953,
+    "w": 81,
+    "h": 75
+   },
+   "anchor": {
+    "x": 139,
+    "y": 116
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 956,
+    "y": 1518,
+    "w": 173,
+    "h": 110
+   },
+   "anchor": {
+    "x": 181,
+    "y": 104
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 276,
+    "y": 1,
+    "w": 274,
+    "h": 247
+   },
+   "anchor": {
+    "x": 185,
+    "y": 193
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1765,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1849,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1933,
+    "y": 75,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 85,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1,
+    "y": 1740,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.e.v2.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1651,
+    "y": 1356,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 185,
+    "y": 194
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 571,
+    "y": 837,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 190,
+    "y": 200
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.w.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1141,
+    "y": 1,
+    "w": 284,
+    "h": 292
+   },
+   "anchor": {
+    "x": 190,
+    "y": 231
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 169,
+    "y": 149,
+    "w": 86,
+    "h": 73
+   },
+   "anchor": {
+    "x": 142,
+    "y": 115
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 256,
+    "y": 149,
+    "w": 86,
+    "h": 73
+   },
+   "anchor": {
+    "x": 142,
+    "y": 115
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 343,
+    "y": 149,
+    "w": 86,
+    "h": 73
+   },
+   "anchor": {
+    "x": 142,
+    "y": 115
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 430,
+    "y": 149,
+    "w": 86,
+    "h": 73
+   },
+   "anchor": {
+    "x": 142,
+    "y": 115
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 517,
+    "y": 149,
+    "w": 86,
+    "h": 73
+   },
+   "anchor": {
+    "x": 142,
+    "y": 115
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 175,
+    "y": 1740,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1,
+    "y": 1605,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 185,
+    "y": 194
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.destroyed": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1449,
+    "y": 249,
+    "w": 306,
+    "h": 225
+   },
+   "anchor": {
+    "x": 212,
+    "y": 164
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 604,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 688,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 772,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 856,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 940,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 349,
+    "y": 1740,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 276,
+    "y": 1605,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 185,
+    "y": 194
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.patched": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 856,
+    "y": 837,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 190,
+    "y": 200
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.w.patched.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1045,
+    "y": 1740,
+    "w": 173,
+    "h": 108
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.patched.paint": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 551,
+    "y": 1,
+    "w": 274,
+    "h": 247
+   },
+   "anchor": {
+    "x": 185,
+    "y": 193
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1141,
+    "y": 837,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 190,
+    "y": 200
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.w.v1.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 284,
+    "h": 311
+   },
+   "anchor": {
+    "x": 190,
+    "y": 250
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.w.v1.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 101,
+    "y": 223,
+    "w": 86,
+    "h": 72
+   },
+   "anchor": {
+    "x": 141,
+    "y": 116
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 188,
+    "y": 223,
+    "w": 86,
+    "h": 72
+   },
+   "anchor": {
+    "x": 141,
+    "y": 116
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 275,
+    "y": 223,
+    "w": 86,
+    "h": 72
+   },
+   "anchor": {
+    "x": 141,
+    "y": 116
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 362,
+    "y": 223,
+    "w": 86,
+    "h": 72
+   },
+   "anchor": {
+    "x": 141,
+    "y": 116
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 449,
+    "y": 223,
+    "w": 86,
+    "h": 72
+   },
+   "anchor": {
+    "x": 141,
+    "y": 116
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 523,
+    "y": 1740,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 286,
+    "y": 1099,
+    "w": 274,
+    "h": 252
+   },
+   "anchor": {
+    "x": 185,
+    "y": 198
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1024,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1108,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1192,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1276,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1360,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 697,
+    "y": 1740,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v1.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 551,
+    "y": 1605,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 185,
+    "y": 194
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1426,
+    "y": 837,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 190,
+    "y": 200
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.w.v2.damaged": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1711,
+    "y": 837,
+    "w": 284,
+    "h": 261
+   },
+   "anchor": {
+    "x": 190,
+    "y": 200
+   },
+   "footprint": [
+    6,
+    3
+   ],
+   "glow": true
+  },
+  "container.3x6.r1.w.v2.damaged.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1506,
+    "y": 1850,
+    "w": 82,
+    "h": 77
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.damaged.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1589,
+    "y": 1850,
+    "w": 82,
+    "h": 77
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.damaged.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1672,
+    "y": 1850,
+    "w": 82,
+    "h": 77
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.damaged.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1755,
+    "y": 1850,
+    "w": 82,
+    "h": 77
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.damaged.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1838,
+    "y": 1850,
+    "w": 82,
+    "h": 77
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.damaged.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 1844,
+    "y": 1358,
+    "w": 174,
+    "h": 112
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.damaged.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 826,
+    "y": 1605,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 185,
+    "y": 194
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.logo.halvard": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1444,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.logo.meridian": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1528,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.logo.sable": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1612,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.logo.talos": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1696,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.logo.vantor": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1780,
+    "y": 149,
+    "w": 83,
+    "h": 73
+   },
+   "anchor": {
+    "x": 136,
+    "y": 117
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.lv": {
+   "kind": "static",
+   "sheet": "containers.1",
+   "frame": {
+    "x": 871,
+    "y": 1740,
+    "w": 173,
+    "h": 109
+   },
+   "anchor": {
+    "x": 181,
+    "y": 103
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.3x6.r1.w.v2.paint": {
+   "kind": "static",
+   "sheet": "containers",
+   "frame": {
+    "x": 1101,
+    "y": 1605,
+    "w": 274,
+    "h": 248
+   },
+   "anchor": {
+    "x": 185,
+    "y": 194
+   },
+   "footprint": [
+    6,
+    3
+   ]
+  },
+  "container.clamp": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1694,
+    "y": 296,
+    "w": 44,
+    "h": 59
+   },
+   "anchor": {
+    "x": -5,
+    "y": 54
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "container.clamp.e": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1739,
+    "y": 296,
+    "w": 44,
+    "h": 59
+   },
+   "anchor": {
+    "x": -5,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "container.clamp.n": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1784,
+    "y": 296,
+    "w": 44,
+    "h": 59
+   },
+   "anchor": {
+    "x": -5,
+    "y": 54
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "container.clamp.s": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1829,
+    "y": 296,
+    "w": 44,
+    "h": 59
+   },
+   "anchor": {
+    "x": 49,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "container.clamp.w": {
+   "kind": "static",
+   "sheet": "containers.2",
+   "frame": {
+    "x": 1874,
+    "y": 296,
+    "w": 44,
+    "h": 59
+   },
+   "anchor": {
+    "x": 49,
+    "y": 54
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "crew.human.arm.L.cyber": {
    "kind": "crew.layer",
    "species": "human",
