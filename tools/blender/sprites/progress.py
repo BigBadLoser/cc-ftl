@@ -9,6 +9,7 @@ import re
 import time
 import io
 import curses
+import subprocess
 from contextlib import redirect_stdout
 from datetime import timedelta
 from pathlib import Path
@@ -79,9 +80,46 @@ def eta(key, done, total):
     return (total - done) * elapsed / advance
 
 
+def active_renders():
+    try:
+        output = subprocess.check_output(
+            ["ps", "-eo", "pid=,etime=,%cpu=,%mem=,args="],
+            text=True, stderr=subprocess.DEVNULL, timeout=2)
+    except (OSError, subprocess.SubprocessError):
+        return []
+    result = []
+    for line in output.splitlines():
+        fields = line.strip().split(None, 4)
+        if len(fields) == 5 and "blender" in fields[4].lower() and "build_sprites.py" in fields[4]:
+            result.append(fields)
+    return result
+
+
+def cache_count():
+    cache = Path(__file__).resolve().parents[3] / ".cache/sprites/crew"
+    return sum(1 for _ in cache.rglob("*.npz")) if cache.exists() else 0
+
+
+def log_status(name):
+    path = LOG_ROOT / name
+    if not path.exists():
+        return f"{name}: MISSING (needs /tmp/{name})"
+    return f"{name}: {path.stat().st_size // 1024} KiB | last update {duration(time.time() - path.stat().st_mtime)} ago"
+
+
 def dashboard():
     print("CC-FTL 2x sprite rendering  |  " + time.strftime("%Y-%m-%d %H:%M:%S"))
     print("=" * 78)
+    processes = active_renders()
+    print(f"ACTIVE RENDERS: {len(processes)} | Cached crew frames: {cache_count():,}")
+    for pid, elapsed, cpu, mem, cmd in processes[:8]:
+        job = "crew" if " crew " in cmd else "families"
+        print(f"  PID {pid} | elapsed {elapsed} | CPU {cpu}% | RAM {mem}% | {job}")
+    if not processes:
+        print("  No active Blender sprite processes detected")
+    print()
+    print("CREW WORKERS")
+    print("-" * 78)
     aggregate_done = aggregate_total = 0
     crew_etas = []
     for n in range(1, 5):
@@ -105,6 +143,8 @@ def dashboard():
     if crew_etas:
         print(f"Crew remaining (slowest worker): ~{duration(max(crew_etas))}")
     print()
+    print("NON-CREW FAMILIES")
+    print("-" * 78)
     family_log = read_log(LOG_ROOT / "families.log")
     finished = [m.group(1) for m in MANIFEST.finditer(family_log)]
     family_set = set(finished)
@@ -119,6 +159,12 @@ def dashboard():
     family_eta = eta("families", n, len(FAMILIES))
     if family_eta is not None:
         print(f"Families rough ETA: ~{duration(family_eta)} (unequal family sizes)")
+    print()
+    print("LOG HEALTH")
+    print("-" * 78)
+    for name in ["crew1.log", "crew2.log", "crew3.log", "crew4.log", "families.log"]:
+        print("  " + log_status(name))
+    print("Missing logs mean progress cannot be inferred from previous terminal output.")
     print()
     print("Crew percentage is exact for the logged work plan; families are counted by")
     print("completed batches, not duration. ETA needs observed progress and is approximate.")
