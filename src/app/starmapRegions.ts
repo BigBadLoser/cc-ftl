@@ -1,4 +1,4 @@
-import type { GalaxyContent, GalaxyIndex, SectorData } from '../sim';
+import type { ChunkData, EdgeData, GalaxyContent, GalaxyIndex, NodeData, SectorData } from '../sim';
 import type { UiStarLink, UiStarRegion } from '../ui/starmapApi';
 import { fluidOutline, type P } from './starmapShapes';
 
@@ -13,27 +13,35 @@ export const REGION_TYPE_LABEL: Record<string, string> = {
 const sectorOutlines = new Map<string, string>();
 const regionOutlines = new Map<string, string>();
 
-/** A sector's fluid outline around its nodes and routes. */
-export function sectorOutline(index: GalaxyIndex, s: SectorData): string {
+/** A sector's fluid outline around its nodes and the routes between them (cached by sector). */
+function outlineOf(s: SectorData, node: (id: string) => NodeData | undefined, routes: () => EdgeData[]): string {
   const key = `${s.id}@${s.x},${s.y}`;
   let d = sectorOutlines.get(key);
   if (d === undefined) {
-    const pts = s.nodes.map((id) => index.nodes.get(id)).filter((n) => !!n).map((n): P => [n.x, n.y]);
-    const mine = new Set(s.nodes);
-    const links: [P, P][] = [];
-    for (const id of s.nodes) {
-      for (const e of index.adjacent.get(id) ?? []) {
-        if (e.kind !== 'route' || e.a !== id || !mine.has(e.b)) continue;
-        const a = index.nodes.get(e.a)!;
-        const b = index.nodes.get(e.b)!;
-        links.push([[a.x, a.y], [b.x, b.y]]);
-      }
-    }
+    const pts = s.nodes.map(node).filter((n) => !!n).map((n): P => [n.x, n.y]);
+    const links = routes().map((e): [P, P] => [[node(e.a)!.x, node(e.a)!.y], [node(e.b)!.x, node(e.b)!.y]]);
     d = fluidOutline(pts, links, 44, 8);
     if (sectorOutlines.size > 4000) sectorOutlines.clear();
     sectorOutlines.set(key, d);
   }
   return d;
+}
+
+/** A sector's outline, from the generated galaxy's index. */
+export function sectorOutline(index: GalaxyIndex, s: SectorData): string {
+  return outlineOf(s, (id) => index.nodes.get(id), () => {
+    const mine = new Set(s.nodes);
+    return s.nodes.flatMap((id) => (index.adjacent.get(id) ?? []).filter((e) => e.kind === 'route' && e.a === id && mine.has(e.b)));
+  });
+}
+
+/** Compute and cache the outlines of a chunk's sectors ahead of time (the prefetcher calls this). */
+export function warmOutlines(chunk: ChunkData): void {
+  const nodes = new Map(chunk.nodes.map((n) => [n.id, n]));
+  for (const s of chunk.sectors) {
+    const mine = new Set(s.nodes);
+    outlineOf(s, (id) => nodes.get(id), () => chunk.edges.filter((e) => e.kind === 'route' && mine.has(e.a) && mine.has(e.b)));
+  }
 }
 
 interface SectorPair {

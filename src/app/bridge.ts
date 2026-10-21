@@ -9,6 +9,7 @@ import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildStory } from './storySnapshot';
 import { buildStarmap, planStarmapRoute, starmapStatus } from './starmapSnapshot';
+import { prefetchGalaxy, prefetchStart } from './galaxyPrefetch';
 import type { UiStarmap, UiStarRoute } from '../ui/starmapApi';
 import { createStore, type Readable } from './store';
 
@@ -103,6 +104,8 @@ export function createBridge(sim: Sim): Bridge {
   const prizes = createStore<UiPrize[]>([]);
   const story = createStore<UiStory>({ active: null, last: null });
   let lastStory = '';
+  // Generate the galaxy around the start ahead of time (one short wait while loading), then keep ahead in update().
+  prefetchStart(sim);
   const starmap = createStore<UiStarmap>(buildStarmap(sim));
   let starFrame = 0;
   /** Speed to return to when the open decision is answered (null = no decision is holding the game). */
@@ -282,6 +285,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshCombat();
       refreshStory();
       refreshStarmap();
+      prefetchGalaxy(sim);
     },
   };
 }

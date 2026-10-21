@@ -64,6 +64,7 @@ export class GalaxyGen implements SectorContext {
   private cross = new Map<string, Crossing[]>();
   private links = new Map<string, Site[]>();
   private alive = new Map<string, boolean>();
+  private done = new Map<string, ChunkData>();
 
   constructor(
     readonly seed: number,
@@ -295,8 +296,27 @@ export class GalaxyGen implements SectorContext {
     return true;
   }
 
-  /** Generate one chunk: its sectors (sites whose cell is in it), their nodes and routes, and their hyperlanes. */
+  /** True when a chunk is already generated (cached). */
+  hasChunk(cx: number, cy: number): boolean {
+    return this.done.has(chunkKey(cx, cy));
+  }
+
+  /**
+   * One chunk: its sectors (sites whose cell is in it), their nodes and routes, and their hyperlanes. Cached, so a chunk
+   * generated ahead of time (the app prefetches around the player) costs nothing when the sim asks for it.
+   */
   chunk(cx: number, cy: number): ChunkData {
+    const key = chunkKey(cx, cy);
+    let data = this.done.get(key);
+    if (!data) {
+      data = this.build(cx, cy);
+      if (this.done.size > 4096) this.done.clear();
+      this.done.set(key, data);
+    }
+    return data;
+  }
+
+  private build(cx: number, cy: number): ChunkData {
     const data: ChunkData = { key: chunkKey(cx, cy), cx, cy, sectors: [], nodes: [], edges: [] };
     const seen = new Set<string>();
     for (let gy = cy * CHUNK_CELLS; gy < (cy + 1) * CHUNK_CELLS; gy++) {

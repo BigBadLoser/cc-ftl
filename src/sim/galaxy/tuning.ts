@@ -14,6 +14,8 @@ export const CHUNK_CELLS = 4;
 export const TERRAIN_SCALE = 5200;
 export const TERRAIN_LATTICE = 40;
 export const TERRAIN_COARSE = 160;
+/** The slowly varying terrain parts (domain warp, flow, tide) are cached on this coarser lattice. */
+export const TERRAIN_LOW = 400;
 /** Directional terrain: filament noise is averaged over +-2 steps of this length (in noise units) along the flow. */
 export const TERRAIN_STREAK = 0.09;
 /** The large-scale tide (dense core expanses vs sparse rim) has features about this many units across. */

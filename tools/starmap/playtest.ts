@@ -11,6 +11,7 @@ import { jumpCosts } from '../../src/sim/galaxy/costs';
 import { giveItems } from '../../src/sim/story/effects';
 import { playerStock } from '../../src/sim/story/world';
 import { buildStarmap } from '../../src/app/starmapSnapshot';
+import { prefetchGalaxy, prefetchStart } from '../../src/app/galaxyPrefetch';
 import { content } from '../../src/content';
 
 export interface PlaytestResult {
@@ -19,8 +20,16 @@ export interface PlaytestResult {
   log: string[];
 }
 
-export function playtest(seed: number, jumps: number, saveEvery = 10): PlaytestResult {
+export function playtest(seed: number, jumps: number, saveEvery = 10, prefetch = 0): PlaytestResult {
   let sim: Sim = newGame(seed, content);
+  // With `prefetch`, run the app's prefetcher like the game does: the start ring first, then `prefetch` calls between jumps.
+  const prefetchMs: number[] = [];
+  let startMs = 0;
+  if (prefetch) {
+    const t0 = performance.now();
+    prefetchStart(sim);
+    startMs = performance.now() - t0;
+  }
   const failures: string[] = [];
   const log: string[] = [];
   const fail = (msg: string) => failures.push(`jump ${done}: ${msg}`);
@@ -97,6 +106,11 @@ export function playtest(seed: number, jumps: number, saveEvery = 10): PlaytestR
     }
     if (edge.kind === 'hyperlane' && edge.fuel !== jumpCosts('hyperlane', edge.length, !!edge.gate).fuel) fail(`fuel on ${edge.id} does not match its costs`);
 
+    for (let k = 0; k < prefetch; k++) {
+      const t0 = performance.now();
+      if (!prefetchGalaxy(sim)) break;
+      prefetchMs.push(performance.now() - t0);
+    }
     // Top up like a pilot and a trader would, then jump through the real command.
     const combat = sim.world.get(playerShip(sim)?.id ?? -1, CombatC);
     if (combat) combat.ftl = FTL_CHARGE_SEC;
@@ -140,6 +154,7 @@ export function playtest(seed: number, jumps: number, saveEvery = 10): PlaytestR
       seed, jumps: done, sectorCrossings: crossings, gates, rifts, saves, sectors: sectorsSeen.size, regions: regionsSeen.size,
       chunks: Object.keys(sim.galaxy.chunks).length, buildMsAvg: +avg(buildMs).toFixed(1), buildMsMax: +Math.max(...buildMs).toFixed(1),
       jumpMsAvg: +avg(stepMs).toFixed(1), jumpMsMax: +Math.max(...stepMs).toFixed(1),
+      startPrefetchMs: +startMs.toFixed(0), prefetchCallMsMax: +Math.max(0, ...prefetchMs).toFixed(1),
     },
   };
 }

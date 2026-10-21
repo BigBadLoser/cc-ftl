@@ -1,4 +1,4 @@
-import { TERRAIN_COARSE, TERRAIN_LATTICE, TERRAIN_SCALE, TERRAIN_STREAK, TERRAIN_TIDE_SCALE } from './tuning';
+import { TERRAIN_COARSE, TERRAIN_LATTICE, TERRAIN_LOW, TERRAIN_SCALE, TERRAIN_STREAK, TERRAIN_TIDE_SCALE } from './tuning';
 
 /** Fast hash of four integers to [0, 1) (murmur-style mixing, fixed arity for the noise inner loop). */
 function h4(a: number, b: number, c: number, d: number): number {
@@ -26,6 +26,7 @@ const smooth = (e0: number, e1: number, v: number): number => {
 export class Terrain {
   private lattice = new Map<number, number>();
   private coarseLattice = new Map<number, number>();
+  private lows = new Map<number, Float64Array>();
 
   constructor(readonly seed: number) {}
 
@@ -77,23 +78,52 @@ export class Terrain {
     return smooth(0.3, 0.7, this.fbm(x / TERRAIN_TIDE_SCALE + 11.3, y / TERRAIN_TIDE_SCALE - 4.1, 21, 3));
   }
 
+  /** The slowly varying parts at a lattice point: domain warp (qx, qy), flow direction (fx, fy) and the tide. */
+  private lowAt(ix: number, iy: number): Float64Array {
+    const key = (ix + 32768) * 65536 + (iy + 32768);
+    let v = this.lows.get(key);
+    if (!v) {
+      const px = (ix * TERRAIN_LOW) / TERRAIN_SCALE;
+      const py = (iy * TERRAIN_LOW) / TERRAIN_SCALE;
+      const flow = this.fbm(px * 0.35 - 7.9, py * 0.35 + 1.7, 7, 2) * Math.PI * 4;
+      v = Float64Array.of(
+        this.fbm(px + 3.1, py + 7.7, 1, 4) - 0.5, this.fbm(px - 5.4, py + 2.2, 2, 4) - 0.5,
+        Math.cos(flow), Math.sin(flow), this.tide(ix * TERRAIN_LOW, iy * TERRAIN_LOW),
+      );
+      this.lows.set(key, v);
+    }
+    return v;
+  }
+
+  /** The slowly varying parts at (x, y), bilinear on the TERRAIN_LOW lattice (they barely change across a cell). */
+  private low(x: number, y: number): number[] {
+    const gx = x / TERRAIN_LOW;
+    const gy = y / TERRAIN_LOW;
+    const ix = Math.floor(gx);
+    const iy = Math.floor(gy);
+    const fx = gx - ix;
+    const fy = gy - iy;
+    const a = this.lowAt(ix, iy);
+    const b = this.lowAt(ix + 1, iy);
+    const c = this.lowAt(ix, iy + 1);
+    const d = this.lowAt(ix + 1, iy + 1);
+    return [0, 1, 2, 3, 4].map((k) => a[k]! + (b[k]! - a[k]!) * fx + (c[k]! - a[k]!) * fy + (a[k]! - b[k]! - c[k]! + d[k]!) * fx * fy);
+  }
+
   /** The raw field at a point (no lattice). */
   private raw(x: number, y: number): number {
     const px = x / TERRAIN_SCALE;
     const py = y / TERRAIN_SCALE;
-    const qx = this.fbm(px + 3.1, py + 7.7, 1, 4) - 0.5;
-    const qy = this.fbm(px - 5.4, py + 2.2, 2, 4) - 0.5;
+    const [qx, qy, fx, fy, tide] = this.low(x, y) as [number, number, number, number, number];
     // Directional terrain: smear the filament noise along a slowly turning flow, so ridges run as long streams.
-    const flow = this.fbm(px * 0.35 - 7.9, py * 0.35 + 1.7, 7, 2) * Math.PI * 4;
-    const dx = Math.cos(flow) * TERRAIN_STREAK;
-    const dy = Math.sin(flow) * TERRAIN_STREAK;
+    const dx = fx * TERRAIN_STREAK;
+    const dy = fy * TERRAIN_STREAK;
     let n = 0;
-    for (let k = -1; k <= 1; k++) n += this.fbm(px + 3.4 * qx + 1.5 * k * dx, py + 3.4 * qy + 1.5 * k * dy, 3, 5);
+    for (let k = -1; k <= 1; k++) n += this.fbm(px + 3.4 * qx + 1.5 * k * dx, py + 3.4 * qy + 1.5 * k * dy, 3, 4);
     n /= 3;
-    const tide = this.tide(x, y);
     const filament = 1 - smooth(0, 0.08 + 0.08 * tide, Math.abs(n - 0.5));
     const cloud = smooth(0.62 - 0.2 * tide, 0.8 - 0.2 * tide, this.fbm(px * 0.6 + 2.2 * qy, py * 0.6 - 2.2 * qx, 9, 4));
-    const grain = 0.12 * (this.fbm(px * 3, py * 3, 4, 3) - 0.5);
+    const grain = 0.12 * (this.fbm(px * 3, py * 3, 4, 2) - 0.5);
     const home = 0.85 * (1 - smooth(500, 1500, Math.hypot(x, y)));
     const d = (0.78 * filament + 0.4 * cloud * (0.3 + 0.7 * filament) - 0.05 + grain) * (0.8 + 0.45 * tide);
     return Math.max(0, Math.min(1, Math.max(home, d)));
