@@ -196,6 +196,8 @@
   .mid { grid-column: 2; display: flex; gap: 6px; align-items: start; min-width: 0; }
   /* The top-right frame: log and time in a single box divided by a hairline; alerts hang below it. */
   .rcol { position: fixed; z-index: 4; top: calc(var(--sat) + 8px); right: calc(8px + var(--sar)); width: min(260px, calc(100vw - 110px)); display: flex; flex-direction: column; gap: 4px; }
+  /* An expanded alert (hover or tap) draws over the combat panel below it. */
+  .rcol:has(:global(.alert:hover)), .rcol:has(:global(.alert:focus-within)) { z-index: 8; }
   .frame { background: var(--panel); border: 1px solid var(--line-hi); }
   .frame > :global(.sec + .sec) { border-top: 1px solid var(--line); }
   .time { display: flex; align-items: center; gap: 0; }
