@@ -3,6 +3,8 @@
   import type { UiApi } from './api';
   import type { UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import StarmapPanel from './StarmapPanel.svelte';
+  import StarmapBody from './StarmapBody.svelte';
+  import StarmapOuter from './StarmapOuter.svelte';
 
   let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
 
@@ -23,15 +25,25 @@
   /** Recomputed whenever the map or its fuel/charge figures change. */
   const route = $derived<UiStarRoute | null>(map && sel && sel.known && !sel.current ? api.planRoute(sel.id) : null);
   const routePts = $derived(route ? route.path.map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : '');
-  const rings = $derived(map ? Array.from({ length: 9 }, (_, k) => (k + 1) * map!.dangerStep) : []);
+  const here = $derived(map ? sectorById.get(map.currentSector) ?? null : null);
+  /**
+   * Semantic zoom by how much map fits across the shorter side: the sector (nodes), sectors as icons inside regions,
+   * then regions as nodes.
+   */
+  const span = $derived(Math.min(w, h) / s);
+  const level = $derived<1 | 2 | 3>(span < 2200 ? 1 : span < 11000 ? 2 : 3);
   const seenFactions = $derived(map ? map.factions.filter((f) => map!.sectors.some((x) => x.known && x.faction === f.id)) : []);
 
-  /** Fit about 900 map units (560 on phones) across the shorter side, centred on the current node. */
+  /** Centre on a sector so it fills most of the shorter side (the default view: your sector). */
+  function focusSector(id: string) {
+    const sec = sectorById.get(id);
+    if (!sec) return;
+    cx = sec.x;
+    cy = sec.y;
+    s = (Math.min(w, h) * 0.62) / (2 * sec.r + 60);
+  }
   function recenter() {
-    if (!current) return;
-    cx = current.x;
-    cy = current.y;
-    s = Math.min(w, h) / (Math.min(w, h) < 500 ? 560 : 900);
+    if (map) focusSector(map.currentSector);
   }
 
   onMount(() =>
@@ -47,7 +59,7 @@
   );
 
   const toMap = (px: number, py: number) => ({ x: cx + (px - w / 2) / s, y: cy + (py - h / 2) / s });
-  const MIN_S = 0.04;
+  const MIN_S = 0.015;
   const MAX_S = 6;
   function zoomAt(px: number, py: number, f: number) {
     const before = toMap(px, py);
@@ -102,6 +114,19 @@
   }
   function tap(p: { x: number; y: number }) {
     const m = toMap(p.x, p.y);
+    // Outer levels: a tap zooms one level in, onto the sector (level 2) or region (level 3) under it.
+    if (level === 2 && map) {
+      const near = map.sectors.reduce((b, x) => (Math.hypot(x.x - m.x, x.y - m.y) < Math.hypot(b.x - m.x, b.y - m.y) ? x : b));
+      if (Math.hypot(near.x - m.x, near.y - m.y) < 30 / s + near.r) focusSector(near.id);
+      return;
+    }
+    if (level === 3 && map && map.regions.length) {
+      const near = map.regions.reduce((b, x) => (Math.hypot(x.x - m.x, x.y - m.y) < Math.hypot(b.x - m.x, b.y - m.y) ? x : b));
+      cx = near.x;
+      cy = near.y;
+      s = Math.min(w, h) / 6000;
+      return;
+    }
     let best: UiStarNode | null = null;
     let bd = 22 / s;
     for (const n of map?.nodes ?? []) {
@@ -127,6 +152,7 @@
     if (next && !route?.blocker) api.dispatch({ type: 'galaxy.jump', to: next });
   }
 
+  const GLOW: Record<string, string> = { star: '#fbbf24', red_dwarf: '#f87171', blue_giant: '#60a5fa', gas_giant: '#f59e0b', nebula: '#a855f7', black_hole: '#f97316' };
   const BADGE: Record<string, string> = { T: '#4ade80', M: '#60a5fa', R: '#c4b5fd', A: '#a3a3a3', D: '#fb923c' };
   const px = (v: number) => v / s;
   /** Danger tier label colours: calm cyan through amber to red. */
@@ -142,6 +168,10 @@
       <span class="chip" class:bad={route && !route.fuelOk} data-testid="starmap-fuel">⛽ {map.fuel}</span>
       <span class="chip" class:bad={route && !route.chargeOk}>FTL {map.charge}/{map.chargeMax}s</span>
       <span class="chip dim long">{map.jumps} jumps · {map.days} d</span>
+      {#if here?.region}
+        {@const reg = map.regions.find((r) => r.id === here?.region)}
+        {#if reg}<span class="chip long" style={`color:${reg.color}`}>{reg.name} · <span class="dim">{reg.typeLabel}</span></span>{/if}
+      {/if}
     {/if}
     <span class="grow"></span>
     <button class="zoom" onclick={() => zoomAt(w / 2, h / 2, 1.4)} aria-label="Zoom in">+</button>
@@ -153,44 +183,56 @@
     <svg bind:this={svg} width={w} height={h} role="application" aria-label="Starmap"
       onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onwheel={wheel}>
       {#if map}
+        <defs>
+          {#each Object.entries(GLOW) as [kind, col] (kind)}
+            <radialGradient id={`sm-glow-${kind}`}><stop offset="0" stop-color={col} stop-opacity="0.5" /><stop offset="1" stop-color={col} stop-opacity="0" /></radialGradient>
+          {/each}
+        </defs>
         <g transform={`translate(${w / 2 - cx * s} ${h / 2 - cy * s}) scale(${s})`}>
-          {#each rings as r, k (r)}
-            <circle cx="0" cy="0" {r} class="ring" />
-            {#if s > 0.12}<text x="0" y={-r - px(4)} class="ringlabel" font-size={px(11)}>Danger {k + 1}</text>{/if}
-          {/each}
-          {#each map.sectors as sec (sec.id)}
-            <polygon points={sec.hull} class="hull" class:known={sec.known} style={`--c:${sec.color}`} />
-          {/each}
-          {#each map.edges as e (e.id)}
-            <line x1={e.ax} y1={e.ay} x2={e.bx} y2={e.by} class={e.kind} class:anchor={e.anchor} />
-          {/each}
-          {#if routePts}
-            <polyline points={routePts} class="route" class:blocked={!!route?.blocker} />
-          {/if}
-          {#each map.nodes as n (n.id)}
-            {#if n.known}
-              {#if n.hostiles}<circle cx={n.x} cy={n.y} r={px(9)} class="hostile" />{/if}
-              <circle cx={n.x} cy={n.y} r={px(n.current ? 6 : 4)} class="node" class:visited={n.visited} class:cur={n.current} />
-              {#if n.current}<circle cx={n.x} cy={n.y} r={px(11)} class="here" />{/if}
-              {#if s > 0.7}
-                {#each n.badges as b, i (i)}
-                  <rect x={n.x + px(7 + i * 12)} y={n.y - px(5)} width={px(11)} height={px(11)} rx={px(2)} fill={BADGE[b] ?? '#999'} />
-                  <text x={n.x + px(12.5 + i * 12)} y={n.y + px(3.2)} class="badge" font-size={px(9)}>{b}</text>
-                {/each}
-              {/if}
-              {#if s > 1.5}<text x={n.x} y={n.y + px(17)} class="nname" font-size={px(10)}>{n.name}</text>{/if}
-            {:else}
-              <circle cx={n.x} cy={n.y} r={px(1.6)} class="unknown" />
+          {#if level === 1}
+            {#each map.sectors as sec (sec.id)}
+              <path d={sec.outline} class="outline" class:known={sec.known} class:cur={sec.id === map.currentSector} style={`--c:${sec.color}`} fill-rule="evenodd" />
+            {/each}
+            {#each map.sectors as sec (sec.id)}
+              {#if sec.known && sec.body}<StarmapBody kind={sec.body.kind} x={sec.body.x} y={sec.body.y} r={sec.body.r} dim={sec.id === map.currentSector ? 1 : 0.6} />{/if}
+            {/each}
+            {#each map.edges as e (e.id)}
+              <line x1={e.ax} y1={e.ay} x2={e.bx} y2={e.by} class={e.kind} class:anchor={e.anchor} class:gate={e.gate} class:rift={e.rift} />
+            {/each}
+            {#if current}
+              {#each map.nodes.filter((n) => n.reachable) as n (n.id)}
+                <line x1={current.x} y1={current.y} x2={n.x} y2={n.y} class="reach" />
+              {/each}
             {/if}
-            {#if selected === n.id}<circle cx={n.x} cy={n.y} r={px(14)} class="sel" />{/if}
-          {/each}
-          {#if s > 0.28 && s < 2.2}
+            {#if routePts}
+              <polyline points={routePts} class="route" class:blocked={!!route?.blocker} />
+            {/if}
+            {#each map.nodes as n (n.id)}
+              {#if n.known}
+                {#if n.hostiles}<circle cx={n.x} cy={n.y} r={px(9)} class="hostile" />{/if}
+                <circle cx={n.x} cy={n.y} r={px(n.current ? 6 : 4.5)} class="node" class:visited={n.visited} class:cur={n.current} />
+                {#if n.reachable}<circle cx={n.x} cy={n.y} r={px(8.5)} class="reachable" />{/if}
+                {#if n.current}<circle cx={n.x} cy={n.y} r={px(11)} class="here" />{/if}
+                {#if s > 0.7}
+                  {#each n.badges as b, i (i)}
+                    <rect x={n.x + px(9 + i * 12)} y={n.y - px(5)} width={px(11)} height={px(11)} rx={px(2)} fill={BADGE[b] ?? '#999'} />
+                    <text x={n.x + px(14.5 + i * 12)} y={n.y + px(3.2)} class="badge" font-size={px(9)}>{b}</text>
+                  {/each}
+                {/if}
+                {#if s > 1.5}<text x={n.x} y={n.y + px(17)} class="nname" font-size={px(10)} stroke-width={px(3)}>{n.name}</text>{/if}
+              {:else}
+                <circle cx={n.x} cy={n.y} r={px(1.6)} class="unknown" />
+              {/if}
+              {#if selected === n.id}<circle cx={n.x} cy={n.y} r={px(14)} class="sel" />{/if}
+            {/each}
             {#each map.sectors as sec (sec.id)}
               {#if sec.known}
-                <text x={sec.x} y={sec.top - px(18)} class="sname" font-size={px(12)}>{sec.name}</text>
-                <text x={sec.x} y={sec.top - px(6)} class="sdanger" font-size={px(10)} fill={DANGER[Math.min(DANGER.length - 1, sec.danger)]}>Danger {sec.danger}</text>
+                <text x={sec.x} y={sec.top - px(22)} class="sname" class:cur={sec.id === map.currentSector} font-size={px(13)} stroke-width={px(3)}>{sec.name}</text>
+                <text x={sec.x} y={sec.top - px(8)} class="sdanger" font-size={px(10)} stroke-width={px(3)} fill={DANGER[Math.min(DANGER.length - 1, sec.danger)]}>Danger {sec.danger}</text>
               {/if}
             {/each}
+          {:else}
+            <StarmapOuter {map} {level} {px} />
           {/if}
         </g>
       {/if}
@@ -218,10 +260,13 @@
   .grow { flex: 1; }
   .view { position: relative; flex: 1; min-height: 0; overflow: hidden; }
   svg { display: block; touch-action: none; cursor: grab; }
-  .ring { fill: none; stroke: #1b2a40; stroke-dasharray: 6 8; vector-effect: non-scaling-stroke; }
-  .ringlabel { fill: #3d5577; text-anchor: middle; }
-  .hull { fill: var(--c); fill-opacity: 0.03; stroke: var(--c); stroke-opacity: 0.25; vector-effect: non-scaling-stroke; }
-  .hull.known { fill-opacity: 0.17; stroke-opacity: 0.75; stroke-width: 1.4; }
+  .outline { fill: var(--c); fill-opacity: 0.02; stroke: var(--c); stroke-opacity: 0.22; stroke-dasharray: 4 5; vector-effect: non-scaling-stroke; }
+  .outline.known { fill-opacity: 0.07; stroke-opacity: 0.5; stroke-dasharray: none; stroke-width: 1.4; }
+  .outline.cur { fill-opacity: 0.12; stroke-opacity: 0.85; stroke-width: 2; }
+  line.hyperlane.gate { stroke-width: 2.6; stroke-opacity: 0.9; }
+  line.hyperlane.rift { stroke: #a78bfa; stroke-dasharray: 3 6; }
+  line.reach { stroke: #4ade80; stroke-opacity: 0.8; stroke-width: 2.4; vector-effect: non-scaling-stroke; }
+  .reachable { fill: none; stroke: #4ade80; stroke-width: 2; vector-effect: non-scaling-stroke; }
   line { vector-effect: non-scaling-stroke; }
   line.hyperlane { stroke: #7dd3fc; stroke-opacity: 0.7; stroke-width: 1.8; }
   line.hyperlane.anchor { stroke-dasharray: 7 4; }
@@ -237,8 +282,10 @@
   .unknown { fill: #34445c; }
   .badge { fill: #05080e; text-anchor: middle; font-weight: 700; pointer-events: none; }
   .nname { fill: var(--dim); text-anchor: middle; pointer-events: none; }
-  .sname { fill: #e2e8f0; fill-opacity: 0.85; text-anchor: middle; font-weight: 600; pointer-events: none; paint-order: stroke; stroke: #05080e; stroke-width: 3; stroke-linejoin: round; }
-  .sdanger { text-anchor: middle; font-weight: 600; pointer-events: none; paint-order: stroke; stroke: #05080e; stroke-width: 3; stroke-linejoin: round; }
+  .sname { fill: #e2e8f0; fill-opacity: 0.85; text-anchor: middle; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; pointer-events: none; paint-order: stroke; stroke: #05080e; stroke-linejoin: round; }
+  .sname.cur { fill: var(--cyan); fill-opacity: 1; }
+  .sdanger { text-anchor: middle; font-weight: 600; pointer-events: none; paint-order: stroke; stroke: #05080e; stroke-linejoin: round; }
+  .nname { paint-order: stroke; stroke: #05080e; stroke-linejoin: round; }
   .legend { position: absolute; left: 8px; top: 8px; margin: 0; padding: 6px 8px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; display: grid; gap: 2px; pointer-events: none; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
   .legend em { font-style: normal; margin-left: 4px; font-size: 11px; }

@@ -3,6 +3,7 @@ import {
   planStarRoute, playerShip, playerStock, SENSOR_HOPS, standings, type Sim,
 } from '../sim';
 import type { UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
+import { buildRegions, sectorOutline } from './starmapRegions';
 
 const OPEN_SPACE = '#5a6b85';
 
@@ -46,6 +47,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
   const known = (id: string) => g.discovered[id] !== undefined;
   const nodes: UiStarNode[] = [];
   const knownSectors = new Set<string>();
+  const reachable = new Set((index.adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a)));
   for (const n of index.nodes.values()) {
     const k = known(n.id);
     if (k) knownSectors.add(n.sector);
@@ -57,28 +59,34 @@ export function buildStarmap(sim: Sim): UiStarmap {
       badges: k ? n.structures.map((s) => content?.structures[s.def]?.badge ?? '?') : [],
       structures: k ? n.structures.map((s) => content?.structures[s.def]?.name ?? s.def) : [],
       resources: k ? n.resources.map((r) => sim.content.items[r]?.name ?? r) : [],
-      hostiles, others: contacts.length - hostiles,
+      hostiles, others: contacts.length - hostiles, reachable: reachable.has(n.id),
     });
   }
   const sectors = [...index.sectors.values()].map((s) => {
     const k = knownSectors.has(s.id);
     return {
       id: s.id, name: s.name, x: Math.round(s.x), y: Math.round(s.y), faction: k ? s.faction : null, danger: s.danger, known: k,
-      top: Math.round(Math.min(...s.hull.map((p) => p.y))),
+      top: Math.round(Math.min(...s.hull.map((p) => p.y))), r: Math.round(s.r),
       hull: s.hull.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(' '),
       color: (k && s.faction && content?.factions[s.faction]?.color) || OPEN_SPACE,
+      outline: sectorOutline(index, s), body: s.body ?? null, region: s.region ?? null, hub: !!s.hub,
     };
   });
   const edges = [...index.edges.values()].filter((e) => known(e.a) && known(e.b)).map((e) => {
     const a = index.nodes.get(e.a);
     const b = index.nodes.get(e.b);
-    return { id: e.id, kind: e.kind, ax: Math.round(a?.x ?? 0), ay: Math.round(a?.y ?? 0), bx: Math.round(b?.x ?? 0), by: Math.round(b?.y ?? 0), anchor: !!e.anchor };
+    return { id: e.id, kind: e.kind, ax: Math.round(a?.x ?? 0), ay: Math.round(a?.y ?? 0), bx: Math.round(b?.x ?? 0), by: Math.round(b?.y ?? 0), anchor: !!e.anchor, gate: !!e.gate, rift: !!e.rift };
   });
   const factions = standings(sim).map((s) => ({
     id: s.faction, name: content?.factions[s.faction]?.name ?? s.faction, color: content?.factions[s.faction]?.color ?? OPEN_SPACE,
     tier: s.tier, standing: s.value,
   }));
-  return { rev: g.rev, ...starmapStatus(sim), dangerStep: DANGER_STEP, sectors, nodes, edges, factions };
+  const here = index.sectors.get(index.nodes.get(g.current)?.sector ?? '');
+  const outer = buildRegions(index, content, (id) => knownSectors.has(id), here);
+  return {
+    rev: g.rev, ...starmapStatus(sim), dangerStep: DANGER_STEP, sectors, nodes, edges, factions,
+    currentSector: here?.id ?? '', currentRegion: here?.region ?? null, ...outer,
+  };
 }
 
 const BLOCKERS: Record<string, string> = {

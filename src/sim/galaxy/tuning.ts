@@ -128,7 +128,7 @@ export const TERRITORY_TRAFFIC = 3;
 /** Sensor range in jumps from the current node. */
 export const SENSOR_HOPS = 3;
 /** Chunks within this ring of the current node's chunk are generated on arrival (lazy frontier). */
-export const FRONTIER_RING = 1;
+export const FRONTIER_RING = 2;
 
 /** Arrival rolls while the player stays at a node: every ARRIVAL_EVERY_SEC, chance ARRIVAL_PER_DANGER x danger (x territory). */
 export const ARRIVAL_EVERY_SEC = 60;

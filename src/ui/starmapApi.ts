@@ -11,10 +11,54 @@ export interface UiStarSector {
   /** Territory tint (grey for open space). */
   color: string;
   danger: number;
-  /** Top of the hull (map y), where the label goes. */
+  /** Top of the hull (map y), where the label goes, and the sector's radius (map units). */
   top: number;
+  r: number;
   /** At least one node discovered: tint and name are shown. */
   known: boolean;
+  /** Fluid outline around its nodes and routes (SVG path, map units; evenodd for holes). */
+  outline: string;
+  /** Its central body (star, gas giant...): kind, position (map units) and radius. */
+  body: { kind: string; x: number; y: number; r: number } | null;
+  /** Its region (null: unclaimed frontier). */
+  region: string | null;
+  hub: boolean;
+}
+
+/** A region (a named group of sectors) for the outer zoom levels. */
+export interface UiStarRegion {
+  id: string;
+  name: string;
+  /** Type key (core, border, corporate, trade, pirate, machine, frontier, rich) and its label. */
+  type: string;
+  typeLabel: string;
+  faction: string | null;
+  color: string;
+  /** Centre of its sectors (map units) and their count. */
+  x: number;
+  y: number;
+  sectors: number;
+  /** Fluid area over its sectors and the lanes between them (SVG path, map units). */
+  outline: string;
+  /** One of its sectors is known. */
+  known: boolean;
+  /** The player is in it. */
+  current: boolean;
+}
+
+/** A link between two sectors (level 2) or two regions (level 3). */
+export interface UiStarLink {
+  id: string;
+  ax: number;
+  ay: number;
+  bx: number;
+  by: number;
+  /** gate: across a region border; rift: across the void; through: (regions) a route through unclaimed space. */
+  kind: 'lane' | 'gate' | 'rift' | 'through';
+  /** Touches the player's sector (level 2) or region (level 3). */
+  mine: boolean;
+  /** How many lanes it stands for (gates between two regions). */
+  count: number;
 }
 
 export interface UiStarNode {
@@ -35,6 +79,8 @@ export interface UiStarNode {
   /** Ships seen at the node (within sensor range only): hostile and other. */
   hostiles: number;
   others: number;
+  /** One jump from the player's node. */
+  reachable: boolean;
 }
 
 export interface UiStarEdge {
@@ -45,6 +91,8 @@ export interface UiStarEdge {
   bx: number;
   by: number;
   anchor: boolean;
+  gate: boolean;
+  rift: boolean;
 }
 
 export interface UiStarFaction {
@@ -70,6 +118,13 @@ export interface UiStarmap {
   /** Only edges whose both ends are discovered. */
   edges: UiStarEdge[];
   factions: UiStarFaction[];
+  /** The player's sector and region. */
+  currentSector: string;
+  currentRegion: string | null;
+  regions: UiStarRegion[];
+  /** Level 2: lanes between sectors (one per sector pair). Level 3: links between regions. */
+  sectorLinks: UiStarLink[];
+  regionLinks: UiStarLink[];
 }
 
 /** A planned route to a node. */
