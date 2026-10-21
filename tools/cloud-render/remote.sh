@@ -12,6 +12,10 @@ DIR="cc-ftl-cloud"
 SESSION="ccftl-render"
 case "$ACTION" in
   deploy|launch)
+    if ssh "$HOST" "tmux has-session -t $SESSION 2>/dev/null"; then
+      echo "Refusing to replace source while $SESSION is rendering. Stop it first." >&2
+      exit 1
+    fi
     ssh "$HOST" "mkdir -p $DIR"
     rsync -az --delete \
       --exclude='/.git/' --exclude='/node_modules/' --exclude='/dist/' \
