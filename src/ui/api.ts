@@ -585,6 +585,8 @@ export interface UiApi {
   focusShuttle(id: number): void;
   /** Show a ship in the combat overlay rectangle (null hides it). */
   setCombatView(view: { ship: number; rect: UiRect } | null): void;
+  /** Which target brackets the combat view draws over the enemy's modules (module ids; 0/absent = none). */
+  setCombatMarks(marks: { shipTarget?: number; overrides: number[]; hover?: number; arming: boolean }): void;
   /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
   pickCombat(x: number, y: number): { moduleId: number } | null;
   /** Roof hostile ships (default) or show their interior. */

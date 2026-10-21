@@ -154,6 +154,7 @@ const api: UiApi = {
     if (b) renderer?.focusSector(b.x, b.y);
   },
   setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, rect: view.rect }),
+  setCombatMarks: (marks) => renderer?.setCombatMarks(marks),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   focusFight: (ship) => focusFight(ship),

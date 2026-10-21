@@ -53,6 +53,20 @@
     if (hit) aim(hit.moduleId);
   }
 
+  // Target brackets over the enemy's modules: hover from the pointer (same pick as a tap), the rest from the snapshot.
+  let hover = $state(0);
+  function move(e: PointerEvent) {
+    hover = e.pointerType === 'touch' ? 0 : (api.pickCombat(e.clientX, e.clientY)?.moduleId ?? 0);
+  }
+  $effect(() => {
+    api.setCombatMarks({
+      shipTarget: aimed || undefined,
+      overrides: me?.weapons.filter((w) => w.targetModuleId !== 0).map((w) => w.targetModuleId) ?? [],
+      hover: hover || undefined,
+      arming: selWeapon !== 0,
+    });
+  });
+
   // Tell the renderer where to draw the enemy ship: the transparent viewport element, followed every frame.
   let raf = 0;
   let last = '';
@@ -100,7 +114,7 @@
         <div class="bar hull" class:low={hullPct < 35}><i style="width:{hullPct}%"></i></div>
       </div>
       <div class="viewbox">
-        <div class="view" bind:this={viewEl} onclick={tap} role="presentation" data-testid="combat-view"></div>
+        <div class="view" bind:this={viewEl} onclick={tap} onpointermove={move} onpointerleave={() => (hover = 0)} role="presentation" data-testid="combat-view"></div>
       </div>
       <CombatTarget {enemy} shipModuleId={aimed} hasTarget={!!me?.target} onAim={(id) => aim(id, true)} />
     </div>
