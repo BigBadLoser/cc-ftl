@@ -7,6 +7,8 @@ GRIP of the way down the hand), in rig units (~36 px each at game size: no part 
 Every weapon belongs to a pose family (FAMILY), and its support point (where the left hand goes) is the family's
 SUPPORT point, so one pose serves every weapon of a family. `muzzle` (grip-relative) is exported per clip frame into the
 manifest (crew_build / crew_pack) for the flash, tracer or beam."""
+import math
+
 import bmesh
 import bpy
 from mathutils import Matrix, Vector
@@ -15,10 +17,15 @@ from . import core
 from .human_base import Item, paint
 from .human_v2 import Build, W, blend
 
+HOLD = 0.4                                # the hand pitched this much (rad) under the barrel: the gun sits above
+                                          # the wrist (along the barrel, its body ran through the wrist)
+RISE = 0.04                               # guns sit this much higher than the fist's centre (the grip runs down
+                                          # into the fist, the gun above it)
+BUTT = 0.3                                # every shouldered gun's butt this far behind the grip
 GRIP = 1.3                                # the fist's centre, in the curled fingers: fraction of the hand bone
-SIZE = 1.25                               # every weapon drawn this much over life size, so it reads at ~62 px
-SUPPORT = {"2h": Vector((0.0, 0.33, -0.01)), "heavy": Vector((0.0, 0.1, 0.2)),
-           "2m": Vector((0.0, -0.24, 0.0))}                                     # the left hand, grip-relative
+SIZE = 1.0                                # weapons at life size (1.25 at 1x, so they read at ~62 px)
+SUPPORT = {"2h": Vector((0.0, 0.31, -0.01)), "heavy": Vector((0.0, 0.27, -0.03)),
+           "2m": Vector((0.0, -0.21, 0.0))}                                     # the left hand, grip-relative
 FAMILY = {"sidearm": "1h", "ion_pistol": "1h", "laser_pistol": "1h", "plasma_cutter": "1h", "rifle": "2h",
           "laser_rifle": "2h", "shotgun": "2h", "smg": "2h", "rail_rifle": "2h", "flamethrower": "heavy",
           "heavy_repeater": "heavy", "blade": "1m", "shock_baton": "1m", "breach_axe": "2m"}
@@ -28,8 +35,9 @@ CARRY = {"1h": "thigh", "2h": "sling", "heavy": "stow", "1m": "belt", "2m": "sli
 class Gun:
     """Boxes and tubes in the grip frame (x right, y forward, z up), one palette colour per face."""
 
-    def __init__(self):
+    def __init__(self, melee=False):
         self.v, self.f, self.c = [], [], []
+        self.melee = melee
 
     def box(self, c, s, col, top=None):
         x, y, z = c
@@ -59,9 +67,8 @@ class Gun:
         """The skinned object, whole on `bone`: grip frame -> hand.R rest frame -> armature rest space; or, with
         frame = (origin, right, fwd, up) in rest space, the grip frame placed there (a holstered or slung weapon)."""
         if frame is None:
-            b = A.data.bones["hand.R"]
-            g, M = Vector((0.0, b.length * GRIP, 0.0)), b.matrix_local
-            pts = [M @ (v * SIZE + g) for v in self.v]
+            M = A.data.bones["hand.R"].matrix_local
+            pts = [M @ to_hand(A, v, self.melee) for v in self.v]
         else:
             o, r, f, u = frame
             rot = Matrix((r, f, u)).transposed()
@@ -98,6 +105,24 @@ def grip_y(A):
     return A.data.bones["hand.R"].length * GRIP
 
 
+def to_hand(A, v, melee=False):
+    """A weapon-frame point (unscaled) in hand.R's local frame, at the grip. Guns: pitched up by HOLD and raised by RISE
+    (the grip runs down through the fist along the hand's -Z, the index side up). Melee: the handle (weapon y) runs
+    through the fist along the hand's +Z, the blade out of the thumb side and its edge (weapon -z) to the knuckles."""
+    v = v * SIZE
+    if melee:
+        v = Matrix.Rotation(math.pi / 2, 3, "X") @ v
+    else:
+        v = Matrix.Rotation(HOLD, 3, "X") @ (v + Vector((0.0, 0.0, RISE)))
+    return v + Vector((0.0, grip_y(A), 0.0))
+
+
+def hand_axes(fwd, up):
+    """The hand's (+Y, +Z) for a gun whose barrel points along fwd, top along up: pitched down by HOLD."""
+    c, s = math.cos(HOLD), math.sin(HOLD)
+    return (fwd * c - up * s).normalized(), (up * c + fwd * s).normalized()
+
+
 def _guard(g, y=0.045, z=-0.035):
     """A trigger guard: a thin loop under the frame in front of the grip."""
     g.box((0, y + 0.035, z - 0.03), (0.02, 0.02, 0.06), "dark")
@@ -128,8 +153,8 @@ def rifle(g):
     g.box((0, 0.08, 0.06), (0.075, 0.34, 0.1), "steel", top="sole")                     # receiver
     g.box((0, 0.33, 0.05), (0.08, 0.2, 0.085), "jacketD", top="jacket")                 # olive handguard
     g.tube(0.42, 0.66, 0, 0.065, 0.026, "gmD", cap="dark")                               # barrel
-    g.box((0, -0.2, 0.045), (0.065, 0.26, 0.11), "jacketD", top="jacket")              # olive stock
-    g.box((0, -0.335, 0.04), (0.07, 0.03, 0.13), "gmD")                                 # its butt pad
+    g.box((0, -0.16, 0.045), (0.065, 0.24, 0.11), "jacketD", top="jacket")             # olive stock
+    g.box((0, -0.285, 0.04), (0.07, 0.03, 0.13), "gmD")                                 # its butt pad (at -BUTT)
     g.box((0, 0.13, -0.045), (0.055, 0.075, 0.13), "gmD")                               # magazine
     g.box((0, 0.0, -0.03), (0.05, 0.055, 0.1), "dark")                                  # pistol grip
     g.box((0, 0.06, 0.13), (0.035, 0.1, 0.045), "dark")                                 # sight
@@ -139,7 +164,7 @@ def rifle(g):
     _panel(g, 0.33, 0.05, 0.12, 0.02, "jacket", 0.04)                                   # handguard slots
     g.tube(0.6, 0.67, 0, 0.065, 0.034, "dark", cap="dark")                              # muzzle brake
     g.box((0, 0.12, -0.12), (0.055, 0.06, 0.04), "gmD")                                 # magazine curve
-    g.box((0, -0.2, 0.105), (0.05, 0.12, 0.02), "jacket")                               # cheek rest
+    g.box((0, -0.16, 0.105), (0.05, 0.12, 0.02), "jacket")                              # cheek rest
     _guard(g, 0.05, -0.04)
     return Vector((0, 0.67, 0.065))
 
@@ -149,13 +174,13 @@ def heavy_repeater(g):
     for dx, dz in ((-0.038, 0.025), (0.038, 0.025), (-0.038, 0.095), (0.038, 0.095)):    # the barrel cluster
         g.tube(0.24, 0.62, dx, dz, 0.026, "steelL", cap="dark")
     g.box((0, 0.5, 0.06), (0.15, 0.05, 0.15), "dark")                                   # the clamp round it
-    g.box((-0.14, 0.06, 0.0), (0.1, 0.2, 0.15), "jacketD", top="jacket")               # ammo box, left side
+    g.box((0.14, 0.06, 0.0), (0.1, 0.2, 0.15), "jacketD", top="jacket")                # ammo box, outer side
     g.box((0, 0.1, 0.18), (0.04, 0.22, 0.04), "dark")                                   # carry handle
     for y in (0.0, 0.2):
         g.box((0, y, 0.15), (0.04, 0.035, 0.05), "dark")
     g.box((0, 0.0, -0.04), (0.055, 0.065, 0.12), "dark")                                # grip
     for k in range(4):                                                                  # the ammo belt into it
-        g.box((-0.1 + k * 0.02, 0.06, 0.075 - k * 0.012), (0.018, 0.06, 0.02), "brass" if k % 2 else "rust")
+        g.box((0.1 - k * 0.02, 0.06, 0.075 - k * 0.012), (0.018, 0.06, 0.02), "brass" if k % 2 else "rust")
     for y in (0.3, 0.38, 0.46):
         g.box((0, y, 0.135), (0.11, 0.025, 0.012), "dark")                              # barrel shroud bands
     _panel(g, 0.06, 0.06, 0.2, 0.05, "gmD", 0.085)                                      # receiver side plates
@@ -206,7 +231,7 @@ def laser_rifle(g):
     g.box((0, 0.19, 0.06), (0.085, 0.5, 0.1), "c3W3", top="c3W1")                      # long smooth housing
     g.box((0, 0.443, 0.06), (0.06, 0.02, 0.06), "red")                                  # emitter lens (no rings)
     g.box((0, 0.06, -0.035), (0.05, 0.12, 0.07), "fxO")                                 # power cell, glowing
-    g.box((0, -0.2, 0.05), (0.065, 0.26, 0.1), "gm")                                    # stock
+    g.box((0, -0.17, 0.05), (0.065, 0.26, 0.1), "gm")                                   # stock
     g.box((0, 0.0, -0.03), (0.05, 0.055, 0.1), "dark")
     _panel(g, 0.25, 0.06, 0.3, 0.012, "red", 0.0425)                                   # a glowing strip down each side
     for y in (0.1, 0.14, 0.18):
@@ -222,7 +247,7 @@ def shotgun(g):
     g.tube(0.18, 0.5, 0, 0.08, 0.038, "steelL", cap="dark")                             # a wide barrel
     g.tube(0.18, 0.44, 0, 0.02, 0.026, "gmD")                                           # the magazine tube under it
     g.box((0, 0.33, 0.015), (0.08, 0.13, 0.065), "rust", top="rO1")                     # wooden pump grip
-    g.box((0, -0.18, 0.045), (0.07, 0.22, 0.11), "rust", top="rO1")                     # and stock
+    g.box((0, -0.19, 0.045), (0.07, 0.22, 0.11), "rust", top="rO1")                     # and stock
     g.box((0, 0.0, -0.03), (0.05, 0.055, 0.1), "dark")
     for k in range(4):                                                                  # a row of shells on the side
         g.box((0.045, 0.0 + k * 0.03, 0.065), (0.008, 0.022, 0.035), "medRed")
@@ -238,7 +263,7 @@ def smg(g):
     g.tube(0.23, 0.42, 0, 0.065, 0.022, "gmD", cap="dark")                              # short barrel
     g.box((0, 0.13, -0.08), (0.05, 0.07, 0.19), "dark")                                 # long vertical magazine
     g.box((0, 0.33, -0.005), (0.045, 0.045, 0.09), "dark")                              # foregrip
-    g.box((0, -0.15, 0.05), (0.045, 0.18, 0.06), "gmD")                                 # folding stock
+    g.box((0, -0.18, 0.05), (0.045, 0.24, 0.06), "gmD")                                 # folding stock
     g.box((0, 0.0, -0.03), (0.05, 0.055, 0.1), "dark")
     g.tube(0.23, 0.36, 0, 0.065, 0.034, "gmD")                                          # barrel shroud
     for y in (0.26, 0.3, 0.34):
@@ -254,7 +279,7 @@ def rail_rifle(g):
     g.box((0, 0.36, 0.06), (0.05, 0.62, 0.06), "steel", top="sole")                     # the long slim rail
     for y in (0.27, 0.38, 0.49, 0.6):
         g.tube(y - 0.014, y + 0.014, 0, 0.06, 0.048, "cyan")                           # rail rings, cyan
-    g.box((0, -0.21, 0.05), (0.06, 0.24, 0.09), "dark")                                 # stock
+    g.box((0, -0.18, 0.05), (0.06, 0.24, 0.09), "dark")                                 # stock
     g.box((0, 0.0, -0.03), (0.05, 0.055, 0.1), "dark")
     for y in (-0.06, 0.0, 0.06):
         _panel(g, y, 0.06, 0.04, 0.06, "gm", 0.04)                # capacitor cells on the breech
@@ -273,6 +298,7 @@ def flamethrower(g):
     for y in (0.0, 0.2):
         g.box((0, y, 0.14), (0.04, 0.035, 0.05), "dark")
     g.box((0, -0.12, 0.03), (0.06, 0.06, 0.06), "dark")                                 # the hose coupling
+    g.box((0, 0.27, 0.0), (0.045, 0.05, 0.1), "dark")                                   # front grip (left hand)
     g.box((0, 0.0, -0.04), (0.055, 0.065, 0.12), "dark")
     g.tube(0.11, 0.14, 0.068, 0.09, 0.025, "steelL", cap="sole")                       # a pressure gauge
     _panel(g, 0.05, 0.02, 0.3, 0.02, "hazK", 0.065)                                     # a dark band round the tank
@@ -400,11 +426,11 @@ def holster(A, R, name):
 def build(A, R):
     out = [fuel_tanks(A, R)]
     for name, fn in BUILD.items():
-        g = Gun()
+        g = Gun(melee=FAMILY[name] in ("1m", "2m"))
         muzzle = fn(g)
         objs = [g.mesh(f"v2.weapon.{name}", A)] + ([_hip_cell(A, R)] if name == "plasma_cutter" else [])
         it = Item("gear.hand", name, objs, glow=g.lit())
-        it.muzzle = muzzle * SIZE + Vector((0.0, grip_y(A), 0.0))   # wrist frame (hand.R local), for crew_build
+        it.muzzle = to_hand(A, muzzle, g.melee)                     # wrist frame (hand.R local), for crew_build
         it.family = FAMILY[name]
         out += [it, holster(A, R, name)]
     return out

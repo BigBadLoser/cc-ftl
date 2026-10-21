@@ -54,9 +54,27 @@ def _frame(arm, name, fwd, up):
 
 
 def _hold(arm, s, grip, fwd, up, pole):
-    """Hand s closes on the grip-frame point `grip` (armature space), barrel along fwd."""
-    _ik(arm, s, grip - fwd * hw.grip_y(arm), pole)
-    _frame(arm, f"hand.{s}", fwd, up)
+    """Hand s closes on the grip-frame point `grip` (armature space), barrel along fwd (the hand pitched under it)."""
+    hf, hu = hw.hand_axes(fwd, up)
+    _ik(arm, s, grip - hf * hw.grip_y(arm), pole)
+    _frame(arm, f"hand.{s}", hf, hu)
+
+
+def _twist(arm, ang):
+    """Turn the chest about the spine (ang > 0: the left shoulder forward, a bladed stance), the neck back the other
+    way so the head still faces ahead."""
+    pb = arm.pose.bones
+    y0 = pb["arm.L"].head.y
+    for n in ("spine_02", "spine_03"):
+        pb[n].matrix = pb[n].matrix @ Matrix.Rotation(ang / 2, 4, "Y")
+        bpy_update()
+    if (pb["arm.L"].head.y - y0) * ang > 0:                                   # the wrong way round: turn back twice
+        for n in ("spine_02", "spine_03"):
+            pb[n].matrix = pb[n].matrix @ Matrix.Rotation(-ang, 4, "Y")
+            bpy_update()
+        ang = -ang
+    pb["neck_01"].matrix = pb["neck_01"].matrix @ Matrix.Rotation(-ang, 4, "Y")
+    bpy_update()
 
 
 def _stance(arm, wide):
@@ -76,16 +94,16 @@ MELEE = {
     "swing_1m": [(UP * 0.32 + RIGHT * 0.1 - FWD * 0.05, UP * 0.6 - FWD * 0.75 + RIGHT * 0.2),
                  (FWD * 0.38 + UP * 0.16, UP * 0.75 + FWD * 0.65),
                  (FWD * 0.48 - UP * 0.12 + LEFT * 0.1, FWD * 0.9 - UP * 0.4),
-                 (FWD * 0.3 - UP * 0.38 + LEFT * 0.3, -UP * 0.7 + LEFT * 0.5 + FWD * 0.3),
-                 (FWD * 0.3 + UP * 0.0, UP * 0.7 + FWD * 0.6)],
-    "ready_2m": [(FWD * 0.24 - UP * 0.12 + LEFT * 0.12, UP * 0.8 + RIGHT * 0.45 + FWD * 0.15),
-                 (FWD * 0.24 - UP * 0.15 + LEFT * 0.12, UP * 0.8 + RIGHT * 0.45 + FWD * 0.15)],
-    "swing_2m": [(UP * 0.3 + LEFT * 0.1, UP * 0.5 - FWD * 0.85),
-                 (UP * 0.42 + FWD * 0.1 + LEFT * 0.12, UP * 0.95 - FWD * 0.2),
-                 (UP * 0.28 + FWD * 0.32 + LEFT * 0.12, FWD * 0.85 + UP * 0.5),
-                 (FWD * 0.4 - UP * 0.2 + LEFT * 0.12, FWD * 0.6 - UP * 0.8),
-                 (FWD * 0.4 - UP * 0.24 + LEFT * 0.12, FWD * 0.55 - UP * 0.85),
-                 (FWD * 0.28 - UP * 0.1 + LEFT * 0.12, UP * 0.8 + RIGHT * 0.4 + FWD * 0.2)],
+                 (FWD * 0.42 - UP * 0.32 + LEFT * 0.12, -UP * 0.7 + LEFT * 0.5 + FWD * 0.3),     # out in front, clear
+                 (FWD * 0.3 + UP * 0.0, UP * 0.7 + FWD * 0.6)],                                 # of the belly
+    "ready_2m": [(FWD * 0.42 - UP * 0.1, UP * 0.8 + RIGHT * 0.45 + FWD * 0.15),
+                 (FWD * 0.42 - UP * 0.13, UP * 0.8 + RIGHT * 0.45 + FWD * 0.15)],
+    "swing_2m": [(UP * 0.26 + FWD * 0.26 + RIGHT * 0.06, UP * 0.5 - FWD * 0.85),                # overhead, the hands
+                 (UP * 0.34 + FWD * 0.34 + RIGHT * 0.04, UP * 0.95 - FWD * 0.2),                # in front of the head
+                 (UP * 0.14 + FWD * 0.52, FWD * 0.85 + UP * 0.5),
+                 (FWD * 0.54 - UP * 0.18 + LEFT * 0.02, FWD * 0.6 - UP * 0.8),
+                 (FWD * 0.54 - UP * 0.22 + LEFT * 0.02, FWD * 0.55 - UP * 0.85),
+                 (FWD * 0.42 - UP * 0.08, UP * 0.8 + RIGHT * 0.4 + FWD * 0.2)],
 }
 
 
@@ -96,11 +114,14 @@ def _melee(arm, i, clip):
     up = -FWD if abs(d.z) > 0.9 else UP                                       # the blade's edge leads the cut
     _aim(arm, "spine_02", Vector((0, -0.12 if clip.startswith("swing") and i in (2, 3) else -0.04, 1)))
     _ik(arm, "R", pb["arm.R"].head + wrist, -UP + RIGHT * 0.5 - FWD * 0.2)
-    _frame(arm, "hand.R", d, up)
+    fa = (pb["forearm.R"].tail - pb["forearm.R"].head).normalized()
+    hy = fa - d * fa.dot(d)                                                  # the hand carries on from the forearm,
+    hy = hy.normalized() if hy.length > 1e-3 else up.cross(d).normalized()  # the handle across the fist along d
+    _frame(arm, "hand.R", hy, d)
     if clip.endswith("2m"):                                                  # the left hand lower on the haft
-        sup = pb["hand.R"].matrix @ (hw.SUPPORT["2m"] * hw.SIZE + Vector((0, hw.grip_y(arm), 0)))
-        _hold(arm, "L", sup, pb["hand.R"].matrix.to_3x3() @ Vector((0, 1, 0)),
-              pb["hand.R"].matrix.to_3x3() @ Vector((0, 0, 1)), -UP + LEFT * 0.8)
+        sup = pb["hand.R"].matrix @ hw.to_hand(arm, hw.SUPPORT["2m"], melee=True)
+        _ik(arm, "L", sup - hy * hw.grip_y(arm), -UP * 0.4 + LEFT * 0.8 + FWD * 0.6)      # the elbow out in front
+        _frame(arm, "hand.L", hy, d)
 
 
 def apply(arm, i, clip):
@@ -142,20 +163,23 @@ def apply(arm, i, clip):
     if fam == "1h":
         S = pb["arm.R"].head.copy()
         reach = (arm.data.bones["arm.R"].length + arm.data.bones["forearm.R"].length) * 0.96
-        wrist = S + (FWD * 0.94 + LEFT * 0.28 - UP * 0.1).normalized() * reach + back
+        wrist = S + (FWD * 0.978 - UP * 0.1).normalized() * reach + back    # straight out, not across
         _ik(arm, "R", wrist, -UP + LEFT * 0.2 + FWD * 0.1)
-        _frame(arm, "hand.R", fwd, up)
-    elif fam == "2h":
-        sh = pb["arm.R"].head.copy()
-        grip = sh + FWD * 0.34 + LEFT * 0.05 - UP * 0.08 + back
-        _hold(arm, "R", grip, fwd, up, -UP - LEFT * 0.6 + FWD * 0.2)
-        sup = pb["hand.R"].matrix @ (hw.SUPPORT["2h"] * hw.SIZE + Vector((0, hw.grip_y(arm), 0)))
-        _hold(arm, "L", sup - up * 0.03, fwd, up, -UP + LEFT * 0.8)
+        _frame(arm, "hand.R", *hw.hand_axes(fwd, up))
+    elif fam == "2h":                                                        # shouldered: bladed, the butt in the
+        _twist(arm, 0.45)                                                    # pocket inside the right shoulder
+        sR, sL = pb["arm.R"].head.copy(), pb["arm.L"].head.copy()
+        pocket = sR + (sL - sR).normalized() * 0.04 + FWD * 0.12 - UP * 0.06
+        grip = pocket + fwd * hw.BUTT * hw.SIZE - up * (0.04 + hw.RISE) * hw.SIZE + back
+        _hold(arm, "R", grip, fwd, up, -UP * 0.6 - LEFT * 0.8)                # the right elbow out to the side
+        sup = pb["hand.R"].matrix @ hw.to_hand(arm, hw.SUPPORT["2h"])
+        _hold(arm, "L", sup - up * 0.03, fwd, up, -UP + LEFT * 0.3)
     else:
         hips = pb["hips"].head.copy()
-        grip = hips + FWD * 0.24 - LEFT * 0.11 + UP * 0.14 + back * 0.6
-        _hold(arm, "R", grip, fwd, up, -UP - LEFT * 0.5 - FWD * 0.3)
-        sup = pb["hand.R"].matrix @ (hw.SUPPORT["heavy"] * hw.SIZE + Vector((0, hw.grip_y(arm), 0)))
-        _hold(arm, "L", sup + up * 0.02, fwd, up, -UP + LEFT * 0.9)
+        _twist(arm, 0.25)
+        grip = hips + FWD * 0.34 - LEFT * 0.17 + UP * 0.16 + back * 0.6           # out in front of the right hip, clear
+        _hold(arm, "R", grip, fwd, up, -UP - LEFT * 0.7 - FWD * 0.1)              # of the belly
+        sup = pb["hand.R"].matrix @ hw.to_hand(arm, hw.SUPPORT["heavy"])
+        _hold(arm, "L", sup, fwd, up, -UP + LEFT * 0.6)                           # under the gun, on its front grip
     _aim(arm, "head", Vector((0, -0.1, 1)))
     return 0.4 * breath
