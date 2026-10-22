@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, bribeCost, deserialize, evadeOdds, evadeRoll, galaxyIndex, newGame, playerShip, serialize, type Sim,
+  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, bribeCost, deserialize, evadeOddsFor, passingMeets, evadeOdds, evadeRoll, galaxyIndex, newGame, playerShip, serialize, type Sim,
 } from '../sim';
 import { eventNodeId } from '../sim/galaxy/eventGrid';
 import type { Fleet } from '../sim/galaxy/types';
@@ -27,7 +27,7 @@ const adjacent = (sim: Sim, id: string): string[] =>
 const enemies = (sim: Sim): number[] => sim.world.query(ShipC).filter((id) => sim.world.get(id, ShipC)?.faction !== 'player');
 const packetCombat = (sim: Sim) => {
   const p = sim.sector.packet;
-  return p?.entities.find((e) => e.id === p.ship)?.c['combat'] as { ftl: number; evasion: number };
+  return p?.entities.find((e) => e.id === p.ship)?.c['combat'] as { ftl: number; evasion: number; pilot: number };
 };
 
 /** The player flies two hops; a pirate fleet (or `faction`/`role`) at the first node flies the other way and interdicts there. */
@@ -41,6 +41,8 @@ function interdiction(seed: number, faction = 'pirates', role: Fleet['role'] = '
   const next = adjacent(sim, to).find((n) => n !== START_NODE) ?? START_NODE;
   sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [to, next] });
   const g = sim.galaxy;
+  // Non-hostile crossings only sometimes become a hail or scan: take a fleet id that does (the turn of the crossing is the next one).
+  while (!passingMeets(sim, g.nextFleet, g.turn + 1)) g.nextFleet++;
   const f: Fleet = {
     id: g.nextFleet++, faction, role, ships: [{ id: g.nextFleet++, faction, shipgen: faction === 'pirates' ? 'faction.scrapper' : 'faction.civilian', seed: 77, depth: 1, since: 0 }],
     node: to, from: to, moved: -1, route: [START_NODE], dest: START_NODE, dwell: 0, ttl: 99, ...over,
@@ -69,13 +71,13 @@ describe('evade', () => {
     expect(evadeRoll(a.sim, a.enc)).toBe(evadeRoll(b.sim, b.enc));
     expect(a.enc.id).toBe(b.enc.id);
     const base = evadeOdds(a.sim, a.enc);
-    packetCombat(a.sim).evasion = 0.5;
+    Object.assign(packetCombat(a.sim), { evasion: 0.24, pilot: 3 });
     expect(evadeOdds(a.sim, a.enc)).toBeGreaterThan(base);
     expect(evadeOdds(a.sim, { ...a.enc, strength: a.enc.strength + 10 })).toBeLessThan(evadeOdds(a.sim, a.enc));
     expect(evadeOdds(a.sim, { ...a.enc, strength: 1000 })).toBeGreaterThanOrEqual(0.05);
   }, 60000);
 
-  /** Make the roll land between the odds, by choosing an encounter id whose roll is mid-range and setting the evasion around it. */
+  /** Make the roll land clear of the odds, by choosing an encounter id whose roll is mid-range and setting the helm to win or lose it. */
   function rigged(wins: boolean) {
     const r = interdiction(26);
     const { sim } = r;
@@ -83,7 +85,9 @@ describe('evade', () => {
     while (evadeRoll(sim, { ...r.enc, id }) < 0.2 || evadeRoll(sim, { ...r.enc, id }) > 0.7) id += 1000;
     r.enc.id = id;
     const roll = evadeRoll(sim, r.enc);
-    packetCombat(sim).evasion = Math.max(0, roll + (wins ? 0.1 : -0.1) - 0.3 + r.enc.strength * 0.05);
+    // A top pilot at powered engines (about 0.8 against one small ship) wins a mid-range roll; no engine power (odds at the minimum) loses it.
+    Object.assign(packetCombat(sim), wins ? { evasion: 0.12 * 1.5, pilot: 5 } : { evasion: 0, pilot: 0 });
+    r.enc.strength = 1.5;
     expect(evadeOdds(sim, r.enc) > roll).toBe(wins);
     return r;
   }
@@ -108,6 +112,26 @@ describe('evade', () => {
     expect(sim.galaxy.event).not.toBeNull();
     expect(sim.sector.node).toBe(eventNodeId(sim.galaxy.event!.id));
   }, 60000);
+});
+
+describe('evade odds follow the pilot', () => {
+  const one = 1.5; // a lone depth-1 pirate
+  const helm = (skill: number, engines = 1) => ({ evasion: 0.12 * engines * (1 + 0.1 * skill), pilot: skill });
+
+  it('a top pilot gets about 0.8 against a single small pirate, a mediocre one about 0.4', () => {
+    expect(evadeOddsFor(helm(5), one)).toBeCloseTo(0.8, 1);
+    expect(evadeOddsFor(helm(1.5), one)).toBeCloseTo(0.4, 1);
+    expect(evadeOddsFor(helm(3), one)).toBeGreaterThan(evadeOddsFor(helm(1.5), one));
+  });
+
+  it('no pilot or unpowered engines are at the minimum; weaker engines and bigger fleets lower the odds', () => {
+    expect(evadeOddsFor({ evasion: 0, pilot: 0 }, one)).toBe(0.05);
+    expect(evadeOddsFor({ evasion: 0, pilot: 5 }, one)).toBe(0.05);
+    expect(evadeOddsFor(helm(5, 0.5), one)).toBeLessThan(evadeOddsFor(helm(5), one));
+    expect(evadeOddsFor(helm(5), 6)).toBeLessThan(evadeOddsFor(helm(5), one));
+    expect(evadeOddsFor(helm(50), 0)).toBeLessThanOrEqual(0.9);
+    expect(evadeOddsFor(helm(5), 1000)).toBe(0.05);
+  });
 });
 
 describe('bribe', () => {

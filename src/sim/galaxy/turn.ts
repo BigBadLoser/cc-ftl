@@ -7,7 +7,7 @@ import { TURN_SEC } from './tuning';
 /**
  * The starmap is turn-based, and a turn comes from two triggers that share `GalaxyState.turn` and both call `onTurn`:
  * - a hop entered (`takeHopTurn`, from `galaxy.jump` and `advanceTravel`), and
- * - game time (`tickTurnClock`): every TURN_SEC (60) seconds while the sector is 'active' at a node.
+ * - game time (`tickTurnClock`): every TURN_SEC (180, three minutes) seconds while the sector is 'active' at a node.
  * No double counting: `GalaxyState.turnClock` counts only active ticks, and is reset when a hop's turn is taken and at `sector.deploy`
  * (`resetTurnClock`), so a hop never also fires a time turn for the same stretch.
  */

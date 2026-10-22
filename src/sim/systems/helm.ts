@@ -26,7 +26,9 @@ export function helmSystem(sim: Sim): void {
         engines += Math.abs(sim.content.modules[m.def]?.power ?? 0) * eng.evasionPerPower;
       }
     }
-    const boost = pilot ? 1 + SKILL_STEP * skillOf(sim, pilot.crew, 'piloting') : 0;
+    const skill = pilot ? Math.max(0, skillOf(sim, pilot.crew, 'piloting')) : 0;
+    const boost = pilot ? 1 + SKILL_STEP * skill : 0;
+    combat.pilot = skill;
     combat.evasion = Math.min(EVASION_CAP, engines * boost);
     if (pilot && engines > 0) combat.ftl = Math.min(FTL_CHARGE_SEC, combat.ftl + boost / TICK_HZ);
   }

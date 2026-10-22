@@ -26,6 +26,7 @@ export function wreckShip(sim: Sim, shipId: number): void {
     if (c && id === shipId) {
       c.shield.layers = 0;
       c.evasion = 0;
+      c.pilot = 0;
     }
   }
   sim.events.emit({ type: 'ship.destroyed', ship: shipId });

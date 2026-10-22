@@ -117,6 +117,8 @@ export interface Combat {
   shield: { layers: number; max: number; /** Seconds toward the next layer. */ timer: number };
   /** Chance 0..1 that an incoming shot misses; derived each tick from powered engines and the pilot. */
   evasion: number;
+  /** Piloting skill of whoever mans the helm (0 when nobody does); with `evasion` it gives the hyperspace evade odds. */
+  pilot: number;
   /** Ticks until the AI next reconsiders its targets. */
   aiTimer: number;
 }

@@ -543,6 +543,24 @@ Not taken from PR #16: `src/ui/Starmap*`, `src/app/starmap*`, `galaxyPrefetch`, 
   6. The grid draws nothing from the map: no turn clock, no arrivals, no story draw (`onDeployed` returns early), `galaxy.jump` and teleport refused (`inEvent`).
 - **Not done:** salvage of the rescued ship, damage persistence for fleets, contraband fines, trade hail from the hail card.
 
+**User decisions 2026-10-22: living world (rework of NPC traffic in 4 stages, after the user reviewed `npc-encounters`).**
+- Turns: game-time turns are 3 minutes minimum (was 60 s); hops still each count as a turn.
+- Fleets lean very strongly to ONE ship. Group size scales with ship size via a size budget: a navy patrol can be two small ships or one heavy; traders, civilians and miners are always single ships; pirates mostly a single small ship, occasionally a pair of small ones.
+- Spawning and deleting fleets is the wrong model. NPCs have lives of their own outside interactions with the player (stages 2-4): a persistent population with home ports (stations, dens, depots, mining outposts) sized by port; ships live until destroyed; agendas per role (traders run buy-low/sell-high between stations; miners go to fields and back; patrols cycle their territory and chase pirates; pirates prowl near their den, rob traders and return); losses are rebuilt slowly at the home port; only the area near the player is simulated per turn, far regions catch up deterministically on approach.
+- Passing a non-hostile fleet should usually NOT produce an event.
+- Interdiction is a MODAL in the centre of the map screen, not a sidebar card.
+- Evade: a very skilled pilot should get around 80%.
+- Arrival warning: when a ship is travelling to the player's node the player gets a warning like "<ship> drops from hyperspace in 2 turns" (hostile = danger styling).
+- Damage not carrying over is noted as wrong but deferred.
+- **Stage plan.** 1: turn length, quiet passing, pilot-driven evade, interdiction modal, arrival warnings (done, below). 2: persistent population with home ports, single-ship fleets with the size budget, per-role agendas, rebuilds, near-player simulation with deterministic catch-up. 3: a SIMPLE economy (traders move real station stock and nudge prices; keep it small). 4: off-screen NPC-vs-NPC encounters decided by a stats mini-sim (three heavy navy battleships beat one small pirate) with real consequences (losses, wrecks, distress calls) and a news/rumours feed.
+
+**Stage 1 (built on `npc-encounters`; save v36).**
+- `TURN_SEC` 180 (the no-double-count and reset rules are unchanged). `ARRIVAL_EVERY_SEC` stays 60.
+- Non-hostile crossings: `passingMeets(sim, fleet, turn)`, a hash of seed, fleet and turn against `PASSING_ENCOUNTER_CHANCE` (0.12), gates a hail or scan (the `galaxy.crossing` event is still emitted). Distress from a stranded fleet and hostile interdictions always happen.
+- Evade formula (`galaxy/encounterOdds.ts`, constants in `tuning.ts`): `pilot = clamp(piloting skill / 5)`, `engine = clamp(raw engine evasion / 0.12)`, `odds = (0.32 + 0.57 x pilot) x (0.6 + 0.4 x engine) - strength x 0.06`, clamped to [0.05, 0.9]. The helm's skill is stored on `Combat.pilot` by `helmSystem` (new saved field, hence v36); no pilot or no powered engines means ship evasion 0 and the minimum 0.05. Against a lone depth-1 pirate (strength 1.5): skill 5 with one engine 0.80, skill 3 (pilot role) 0.60, skill 1.5 0.40, skill 0 0.23, half the engine power at skill 5 0.62; three depth-3 ships (strength 7.5) bring a skill-5 pilot to 0.45. The roll stays `unit(seed, encounter id)`.
+- Interdiction UI is `ui/InterdictModal.svelte`, centred over the map area of `StarmapView` (a bottom sheet on phones); hail, scan and distress stay in the drawer.
+- Arrival warnings: `incomingFleets(sim)` (`galaxy/incoming.ts`, pure query: fleets in sensor range whose route reaches the player's node, ETA = place in the route, nearest first, stranded fleets excluded) feeds `alerts.syncIncoming()` (app, called from `onEvents`), which keeps one alert per fleet ("<faction role> drops from hyperspace in N turns", kinds `galaxy.incoming` / `galaxy.incomingHostile`), updates it in place, drops it on arrival or a change of course, and does not re-raise a dismissed one for the same trip.
+
 ## Crew sprite pipeline (branch `crew-pipeline`; merged to `main` with user approval)
 
 Details in `tools/blender/README.md` (Crew layers, Incremental builds) and `docs/ARCHITECTURE.md` (Asset pipeline, Crew).

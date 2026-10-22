@@ -36,6 +36,12 @@ function legacyWorld(sim: Sim): unknown {
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   // And asteroids and mining pods: their empty stores are not part of it.
   for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
+  stores.combat = (stores.combat ?? []).map(([id, raw]) => {
+    const { pilot, ...rest } = raw as Record<string, unknown>;
+    void pilot;
+    return [id, rest];
+  });
   // The `patrol` work category came after it too (station directors post patrol jobs; no ship here has any).
   stores.priorities = (stores.priorities ?? []).map(([id, raw]) => {
     const rest = { ...(raw as Record<string, unknown>) };

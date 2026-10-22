@@ -43,7 +43,7 @@ import { newTrade, type TradeState } from './trade/types';
  * v34 (NPC traffic): `galaxy.turnClock`, `galaxy.fleets`, `galaxy.encounters`, `galaxy.nextFleet`.
  * v35 (encounters): `galaxy.event` (the event grid, node id `event:<id>`), `Encounter.strength` / `danger`, `Travel.phase` 'interdicted' | 'event' and `Travel.held`.
  */
-export const SAVE_VERSION = 35;
+export const SAVE_VERSION = 36;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

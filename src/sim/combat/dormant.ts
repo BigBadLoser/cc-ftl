@@ -31,7 +31,7 @@ export function wake(sim: Sim, id: number, reason: WakeReason): void {
     const layers = shieldCapacity(sim, id, false);
     const combat: Combat = {
       hold: false, volley: false, target: null, doctrine: 'random', ftl: 0,
-      shield: { layers, max: layers, timer: 0 }, evasion: 0, aiTimer: 0,
+      shield: { layers, max: layers, timer: 0 }, evasion: 0, pilot: 0, aiTimer: 0,
     };
     sim.world.add(id, CombatC, combat);
   }
