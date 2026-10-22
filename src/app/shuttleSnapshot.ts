@@ -1,4 +1,4 @@
-import { AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
+import { FerryC, ferryFree, ferryRegions, pickFerryShuttle, StorageC, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
 import { localOf } from './moduleSnapshot';
 import type { UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
@@ -15,6 +15,31 @@ function tradeRun(sim: Sim, vehicle: number): UiShuttle['trade'] {
     back: 'Bringing the goods home', unload: 'Crew unloading the cargo',
   };
   return { status: status[d.phase] ?? d.phase, partner: sim.world.get(d.ship, TraderC)?.name ?? 'Trader' };
+}
+
+const FERRY_STATUS: Record<string, string> = {
+  toFrom: 'Flying to the pickup', gather: 'Loading and boarding', toDest: 'Flying to the drop-off', deliver: 'Unloading and landing', home: 'Heading home',
+};
+
+/** The base run this shuttle is on, as a status line. */
+function ferryRun(sim: Sim, vehicle: number): UiShuttle['ferry'] {
+  const f = sim.world.get(vehicle, FerryC);
+  return f ? { status: FERRY_STATUS[f.phase] ?? f.phase, to: shipName(sim, f.to) } : null;
+}
+
+/** The player's regions with the stock in their storage (only when there is more than one: the home ship alone has nowhere to run). */
+function regionList(sim: Sim, home: number): UiShuttles['regions'] {
+  const ids = ferryRegions(sim);
+  if (ids.length < 2) return [];
+  return ids.sort((a, b) => (a === home ? -1 : b === home ? 1 : a - b)).map((id) => {
+    const totals = new Map<string, number>();
+    for (const sid of sim.world.query(StorageC, ModuleC)) {
+      if (shipIdOf(sim, sim.world.get(sid, ModuleC)) !== id) continue;
+      for (const st of sim.world.get(sid, StorageC)?.stacks ?? []) totals.set(st.item, (totals.get(st.item) ?? 0) + st.count);
+    }
+    const stock = [...totals].sort(([a], [b]) => a.localeCompare(b)).map(([item, count]) => ({ item, name: sim.content.items[item]?.name ?? item, count }));
+    return { id, name: shipName(sim, id), home: id === home, stock };
+  });
 }
 
 function crewRef(sim: Sim, id: number): UiShuttleCrew | null {
@@ -51,6 +76,8 @@ export function buildShuttles(sim: Sim): UiShuttles {
       destination: v.destination, dockShip: dockM ? shipName(sim, shipIdOf(sim, dockM)) : null, bay: v.bay,
       boardable: boardingTile(sim, v.id) !== null,
       trade: tradeRun(sim, v.id),
+      ferry: ferryRun(sim, v.id),
+      ferryFree: ferryFree(sim, v.id),
       hoverShip: v.hoveringGrid ? shipName(sim, v.hoveringGrid) : null,
       suits: vehicleSuits(sim, sim.world.get(v.id, VehicleC) as never),
       canEva: v.state === 'flying' && !v.destination && v.hovering !== 0 && v.passengers.length > 0 && vehicleSuits(sim, sim.world.get(v.id, VehicleC) as never) > 0,
@@ -74,7 +101,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
     const s = sim.world.get(id, ShipC);
     if (s && id !== PLAYER && s.state !== 'fled' && !s.outpost?.hidden) targets.push({ ship: id, name: s.name, ...(s.state === 'wreck' ? { derelict: derelictInfo(sim, id, s) } : {}) });
   }
-  return { shuttles, airlocks, targets, roster, bays };
+  return { shuttles, airlocks, targets, roster, bays, regions: regionList(sim, PLAYER), ferryReady: pickFerryShuttle(sim) !== 0 };
 }
 
 /** Hull, air, power and jammed doors of a wreck, read from its grid and modules. */

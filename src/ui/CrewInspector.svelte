@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCrew } from './api';
+  import type { UiApi, UiCrew, UiShuttles } from './api';
   import Icon, { type IconName } from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
 
@@ -8,6 +8,7 @@
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
   let sel = $state<number | null>(null);
+  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], ferryReady: false });
   const c = $derived(crew.find((x) => x.id === sel) ?? foes.find((x) => x.id === sel));
   const enemy = $derived(c?.side === 'enemy');
 
@@ -18,7 +19,8 @@
     const a = api.crew.subscribe((v) => (crew = v));
     const b = api.selectedCrew.subscribe((s) => (sel = s));
     const d = api.hostiles.subscribe((v) => (foes = v));
-    return () => (a(), b(), d());
+    const e = api.shuttles.subscribe((v) => (shuttles = v));
+    return () => (a(), b(), d(), e());
   });
 </script>
 
@@ -76,6 +78,16 @@
           <button class:on={c.weapon?.item === a.item} data-testid="equip-{a.item}" onclick={() => api.dispatch({ type: 'crew.equip', id: c.id, item: a.item })}>{a.name}<small>x{a.count}</small></button>
         {/each}
         {#if c.weapon}<button data-testid="unequip" onclick={() => api.dispatch({ type: 'crew.unequip', id: c.id })}>Drop {c.weapon.name}</button>{/if}
+      </div>
+    {/if}
+    {#if shuttles.regions.length > 1 && shuttles.regions.some((r) => r.id === c.ship) && !c.dead && !c.downed}
+      <div class="sub">Base trip (by shuttle)</div>
+      <div class="chips" data-testid="ferry-crew">
+        {#each shuttles.regions.filter((r) => r.id !== c.ship) as r (r.id)}
+          <button disabled={!shuttles.ferryReady} data-testid="ferry-crew-{r.id}" title={shuttles.ferryReady ? '' : 'No free shuttle'} onclick={() => api.dispatch({ type: 'ferry.order', from: c.ship, to: r.id, crew: [c.id] })}>
+            {r.home ? 'Come home' : `Go to ${r.name}`}
+          </button>
+        {/each}
       </div>
     {/if}
     {#if c.drafted}

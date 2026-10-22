@@ -370,6 +370,10 @@ export interface UiShuttle {
   dockShip: string | null;
   /** The trade run it is on (status text and the partner's name), or null. */
   trade: { status: string; partner: string } | null;
+  /** The base-logistics run it is on (status text and the destination region's name), or null. */
+  ferry: { status: string; to: string } | null;
+  /** Free for a new base run (idle, not a pod, no trade run). */
+  ferryFree: boolean;
   /** Module id of its home bay. */
   bay: number;
   /** Crew can climb in or out here right now (stowed in the bay, or docked). */
@@ -495,6 +499,10 @@ export interface UiShuttles {
   roster: UiShuttleCrew[];
   /** The player's vehicle bays (module ids) and whether each is empty. */
   bays: { id: number; empty: boolean }[];
+  /** The player's regions shuttles can run cargo and crew between (the home ship first, then claimed bases), with the stock in each region's storage. Empty with only the home ship. */
+  regions: { id: number; name: string; home: boolean; stock: { item: string; name: string; count: number }[] }[];
+  /** A shuttle is free to take a "go to base" order right now. */
+  ferryReady: boolean;
 }
 
 /** Where the combat overlay shows the enemy ship, in CSS px relative to the page. */
