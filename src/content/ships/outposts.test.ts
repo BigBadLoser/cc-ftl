@@ -1,25 +1,37 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
 import {
-  AsteroidC, JobC, LEVEL_TICKS, ShipC, Sim, Struct, deserialize, generateOutpost, placementError, serialize, shipGrid, spawnCrew, stampShip,
+  AsteroidC, CombatC, CrewC, JobC, isDormant, isHiddenOutpost, LEVEL_TICKS, ShipC, Sim, Struct, deserialize, generateOutpost, placementError, serialize, shipGrid, spawnCrew, stampShip,
   totalStock, validateOutpost, writeStruct, type OreDef,
 } from '../../sim';
+import { StationAlarmC, StationC, StationCrewC } from '../../sim/stations/components';
+import { TraderC } from '../../sim/trade/types';
 
-const ORES = Object.values(content.ores) as OreDef[];
+const CTX = { ores: Object.values(content.ores) as OreDef[], modules: content.modules, stations: content.stations };
 
 describe('outposts', () => {
   for (const style of ['surface', 'dug'] as const) {
     it(`${style}: deterministic and valid`, () => {
       for (let seed = 1; seed <= 4; seed++) {
-        const a = generateOutpost(style, seed, ORES)!;
+        const a = generateOutpost(style, seed, CTX)!;
         expect(a, `seed ${seed}`).not.toBeNull();
-        const b = generateOutpost(style, seed, ORES)!;
+        const b = generateOutpost(style, seed, CTX)!;
         expect(b.template).toEqual(a.template);
         expect(Array.from(b.asteroid.struct)).toEqual(Array.from(a.asteroid.struct));
         expect(validateOutpost(a, content.modules), `${style} #${seed}\n${a.template.rows.join('\n')}`).toEqual([]);
       }
     });
   }
+
+  it('each kind is built from its station kind at the outpost tier, with crew and security', () => {
+    for (const [kind, station] of [['trading', 'station.trading'], ['farming', 'station.farming'], ['mining', 'station.mining'], ['pirate', 'station.pirate'], ['covert', 'station.pirate']] as const) {
+      const o = generateOutpost(kind === 'pirate' || kind === 'covert' ? 'dug' : 'surface', 3, CTX, kind)!;
+      expect(o.stationKind).toBe(station);
+      expect(o.station.station).toMatchObject({ kind: station.slice(8), size: 'outpost' });
+      expect(o.template.crew!.length).toBeGreaterThan(4);
+      expect(o.template.crew).toContain('role.security');
+    }
+  });
 });
 
 function run(sim: Sim, n: number): string[] {
@@ -55,6 +67,42 @@ function floorO2(sim: Sim, ship: number): { min: number; mean: number } {
   }
   return { min, mean: sum / n };
 }
+
+describe('outposts are stations in the sector', () => {
+  for (const [style, kind] of [['surface', 'trading'], ['dug', 'pirate']] as const) {
+    it(`${style} ${kind}: crewed with security, run by the station director, dormant until provoked`, () => {
+      const sim = new Sim(5, content);
+      sim.enqueue({ type: 'debug.spawnOutpost', style, kind, seed: 2 });
+      expect(run(sim, 1)).toEqual(['outpost.spawned']);
+      const ship = [...sim.world.query(ShipC)][0]!;
+      const s = sim.world.get(ship, ShipC)!;
+      expect(s).toMatchObject({ faction: style === 'surface' ? 'neutral' : 'hostile', immobile: true, gen: { faction: `station.${kind}`, role: 'outpost' } });
+      expect(isHiddenOutpost(s)).toBe(style === 'dug');
+      const crew = [...sim.world.query(CrewC)].filter((c) => sim.world.has(c, StationCrewC));
+      const roles = crew.map((c) => sim.world.get(c, CrewC)!.role);
+      expect(crew.length).toBeGreaterThan(4);
+      expect(roles).toContain('role.security');
+      expect(sim.world.has(ship, StationC)).toBe(true);
+      expect(sim.world.has(ship, StationAlarmC)).toBe(true);
+      expect(sim.world.has(ship, TraderC)).toBe(true);
+      const log: string[] = [];
+      let patrols = 0;
+      for (let i = 0; i < 3000; i++) {
+        sim.step();
+        for (const e of sim.events.drain()) {
+          log.push(e.type);
+          if (e.type === 'crew.jobDone' && e.kind === 'patrol' && e.ship === ship) patrols++;
+        }
+      }
+      expect(patrols).toBeGreaterThanOrEqual(2); // the director posts patrols, the shared crew AI walks them
+      expect(log).not.toContain('combat.started');
+      expect(log).not.toContain('station.alarm');
+      expect(isDormant(sim.world.get(ship, ShipC))).toBe(true);
+      expect(sim.world.has(ship, CombatC)).toBe(false);
+      expect(isHiddenOutpost(sim.world.get(ship, ShipC))).toBe(style === 'dug');
+    });
+  }
+});
 
 describe('outposts in the sector', () => {
   it('a dug base is airtight: rock mass walls hold its air', () => {

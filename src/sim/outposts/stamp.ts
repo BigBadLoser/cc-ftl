@@ -1,6 +1,8 @@
 import { stampAsteroid } from '../asteroids/place';
 import { hullSum } from '../combat/hull';
 import { ShipC, type Faction } from '../combat/components';
+import { spawnCrew } from '../combat/ships';
+import { outfitStation } from '../stations/spawn';
 import { ShipGrid } from '../shipGrid';
 import { gridFromTemplate, placeTemplateModules } from '../ship';
 import type { Sim } from '../sim';
@@ -15,7 +17,8 @@ export function outpostFaction(o: OutpostPlan): Faction {
  * Stamp an outpost with its asteroid's top-left at sector (x, y): the asteroid (`stampAsteroid`, gap-checked), then the base:
  * every non-'.' template tile with all its fields (structure, air, temperature) from the template grid, its modules, and a
  * `ShipC` region over the base rectangle that owns those tiles. The rock and ground inside the rectangle stay the asteroid's,
- * so the base's field systems see rock mass as walls. No crew yet. Returns { asteroid, ship }.
+ * so the base's field systems see rock mass as walls. Then the station is outfitted like any station (`outfitStation`: trader and
+ * station life) and crewed, security included (`spawnCrew` from the template's roles). Returns { asteroid, ship }.
  */
 export function stampOutpost(sim: Sim, o: OutpostPlan, x: number, y: number): { asteroid: number; ship: number } {
   const asteroid = stampAsteroid(sim, o.asteroid, x, y);
@@ -39,5 +42,7 @@ export function stampOutpost(sim: Sim, o: OutpostPlan, x: number, y: number): { 
     hullMax: hullSum(new ShipGrid(0, g, bx, by, dense.width, dense.height)), integrity: 1, immobile: true, dormant: 1, outpost: { style: o.style, kind: o.kind, hidden: o.style === 'dug' },
   });
   for (const [tx, ty] of built) g.set('ship', tx, ty, ship);
+  spawnCrew(sim, ship, o.template.crew ?? [], 100);
+  outfitStation(sim, ship, o.stationKind, 'outpost', o.seed, { ...o.station, template: o.template }, bx, by);
   return { asteroid, ship };
 }

@@ -37,8 +37,9 @@ import { newTrade, type TradeState } from './trade/types';
  * replaces `hollow` and `core`.
  * v29: raw ore items (`item.iron_ore`, `item.rare_ore`) and the 3x4 crafting `module.refinery`.
  * v30: one dormancy state: outposts are stamped `immobile` + `dormant` (like dens); `ShipC.outpost.provoked` and `outpost.provoked` are gone.
+ * v31: asteroid outposts are real stations (`station.<kind>` outpost tier): crewed, with `StationC`, `StationAlarmC`, a trader and `ShipC.gen`.
  */
-export const SAVE_VERSION = 30;
+export const SAVE_VERSION = 31;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

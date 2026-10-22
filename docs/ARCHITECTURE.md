@@ -736,16 +736,18 @@ shipgen's `structureParts`):
   by the digging ship and drops the tile's ore as a loose stack (`rock.dug`). Module placement (`placementError`) accepts floor
   or ground and up to `AUTO_LEVEL_MAX` (25%) rock mass; `job.buildModule` adds `AUTO_LEVEL_TICKS` (3 s) per rock tile and
   `finishModule` levels them to ground.
-- **Outposts (slice 3, `outposts/`)**: `generateOutpost(style, seed, ores, kind?)` returns the asteroid plan, a base
-  `ShipTemplate` and its offset. Surface: an open asteroid, base rectangle levelled to ground at the north edge, 2-3 prefab
-  habitats (9x8 with hull walls; reactor, life support, lights in the first; quarters; storage or galley by kind) joined by
-  walled tubes (3-6 tiles), the airlock in the first habitat's north hull facing open space. Dug: a dense asteroid, the same
-  rooms carved into rock mass (no walls: '.' template cells are rock), a 3-6 tile tunnel north to an airlock set in a notch of
-  the rock face. `validateOutpost` = shipgen's `validateTemplate` minus helm and engine, plus: an airlock, its collar on open
-  space, the asteroid sound, and (dug) no carved tile touching anything but rock mass or base tiles. `stampOutpost` stamps the
-  asteroid, writes the base tiles with their air and temperature, places its modules and makes the `ShipC` (with
-  `outpost: { style, kind }`) owning them. `debug.spawnOutpost { style, seed, kind?, x?, y? }`, event `outpost.spawned`. Render:
-  `rockRoofView.ts` caps a roofed dug base with rock blocks and hides the base's own layers, so from outside it is plain rock.
+- **Outposts (`outposts/`)**: an outpost is a station (see "Stations"). `generateOutpost(style, seed, {ores, modules, stations}, kind?)`
+  generates a `station.<kind>` at the 'outpost' tier (`OUTPOST_STATION` maps trading, farming, mining; pirate, criminal and covert use
+  `station.pirate`) and a big asteroid with `minSize`, and `site.ts` fits one to the other: `pickDock` (the n/s airlock nearest the
+  template edge with nothing built in the three columns beyond), `placeAt` (dock outer door on the rock face, least overhang), and
+  for dug `carveInRock` (hull walls bordering outside become rock; outside cargo frames dropped). Surface levels the base plus a
+  one-tile ring to ground; dug packs it with rock mass; both cut the dock's notch to space. `OutpostPlan` carries the template, the
+  generated station (rooms) and the dock. `validateOutpost` = `validateTemplate` (immobile), crew, an airlock, the dock collar on
+  open space, the asteroid sound, and (dug) no carved tile touching anything but rock mass or base tiles. `stampOutpost` stamps the
+  asteroid, writes the base tiles, places modules, makes the `ShipC` (`outpost`, `immobile`, `dormant`), then `spawnCrew` and the
+  shared `outfitStation` (stations/spawn.ts: `gen`, trader, `StationC`, `StationAlarmC`, `StationCrewC`), so `stationDirector`,
+  `stationAlarm` and the crew AI run it like any station. `debug.spawnOutpost { style, seed, kind?, x?, y? }`, event
+  `outpost.spawned`. Render: `rockRoofView.ts` caps a roofed dug base with rock blocks, so from outside it is plain rock.
 - **Outpost hostility (`outposts/state.ts`, `systems/outposts.ts`)**: an outpost is stamped `immobile` and `dormant` (the same state as a
   pirate den, see "Stations"); `ShipC.outpost { style, kind, hidden }` holds only the style and the hidden flag. `isDormant` /
   `wake` live in `combat/dormant.ts`. A dormant outpost has no `CombatC`, so the combat snapshot (enemies, auto-target, hostile

@@ -87,9 +87,17 @@ Planner's calls:
 - Pods: the best free pilot (not drafted, not reserved, of the ship's side, on the ship; highest piloting) walks to the bay and
   embarks; they stay aboard between trips and climb out when the order ends or is recalled; with nobody free the order waits
   (`mining.waiting`, reason `noPilot`). Pods are 2.6 tiles across (`VehicleDef.size`). Couriers and boarders skip class 'pod'.
-- Outposts are a `ShipC` region over the base rectangle, never 'disabled' (`immobile`, no crew yet); surface ones are
-  neutral, dug ones hostile. The habitat and room contents are hand-made kits; switch to the station prefabs and room recipes of
-  the `stations` branch when it lands.
+- Outposts are a `ShipC` region over the base rectangle, never 'disabled' (`immobile`); surface ones are neutral, dug ones
+  hostile. **Outposts are real stations (2026-10-22, save v31):** the hand-made habitat kits are gone. `generateOutpost` builds a
+  `station.<kind>` at the 'outpost' tier (trading, farming, mining; pirate, criminal and covert all use `station.pirate`) and fits
+  it onto a big asteroid: the dock airlock (the north- or south-facing one nearest the template edge with nothing built beyond it)
+  is set on the rock face with its collar cut to open space (`outposts/site.ts`). Surface: ground pad one tile around the
+  station on an open asteroid. Dug: `carveInRock` turns every hull wall bordering outside into rock mass (rooms and one-wall
+  partitions stay) and drops outside cargo frames and crates; the rect plus ring is packed with rock on a dense asteroid. Crew,
+  security, trader and station life come from the shared `outfitStation` (stations/spawn.ts), so the director, alarm and crew AI
+  run them; they have no `CombatC` until woken. Planner's calls: kept the station's other airlocks (on ground or rock, not
+  space; only the dock opens to space); base tiles that overhang the outline are filled with ground or rock (at most 20%);
+  the asteroid is asked for `minSize` (new `AsteroidGenOptions`) so a 40-65 tile station fits; stations' guns and shields stay.
 - **Dormant until provoked; dug ones hidden until discovered (user decision, 2026-10-21).** A dormant outpost is no combatant
   (combat trigger, alerts, combat panel enemies, auto-target), whatever its faction; it is stamped `immobile` + `dormant` like a pirate den (one mechanism: `combat/dormant.ts`, `wake`, event `ship.provoked`) and has no `CombatC` until it wakes. A hidden
   one is not listed (node strip, shuttle targets, trade/hail), not targetable (`combat.setTarget` refuses it), not pickable
@@ -131,8 +139,7 @@ Planner's calls:
 **Next slices, in order:**
 1. Base logistics: carry materials and crew between the home ship and a base (shuttle cargo runs, a "go to base" order),
    and the tile paint mode for mining orders.
-2. Outpost crews, trade and AI (enemy outposts defending, NPC factions picking outposts by kind), shared with the station
-   branch's NPC and security work.
+2. (Crews, trader and director done, see Slice 3.) Still open: enemy outposts defending when woken, NPC factions picking outposts by kind, an outpost dock the player's shuttles can use.
 3. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew; pod and pod-bay art.
 
 ## Stations, slice 1: generation (branch `stations`; not merged)

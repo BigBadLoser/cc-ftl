@@ -119,7 +119,7 @@ describe('outpost hostility', () => {
     const { sim, base } = setup();
     sim.enqueue({ type: 'debug.spawnStation', kind: 'station.pirate', size: 'outpost', seed: 3, x: sim.sector.width + 40, y: 20 });
     expect(run(sim, 1).filter((e) => e.startsWith('rejected'))).toEqual([]);
-    const den = [...sim.world.query(ShipC)].find((id) => sim.world.get(id, ShipC)?.gen?.faction === 'station.pirate')!;
+    const den = [...sim.world.query(ShipC)].find((id) => sim.world.get(id, ShipC)?.gen?.faction === 'station.pirate' && !sim.world.get(id, ShipC)?.outpost)!;
     sim.world.get(base, ShipC)!.outpost!.hidden = false;
     for (const id of [base, den]) expect(isDormant(sim.world.get(id, ShipC))).toBe(true);
     const woke: number[] = [];

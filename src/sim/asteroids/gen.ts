@@ -54,6 +54,8 @@ export const FIELD = {
 /** Options for `generateAsteroid`. `coverage` forces a big asteroid's class; default rolled from the seed (the outline is the same). */
 export interface AsteroidGenOptions {
   coverage?: AsteroidCoverage;
+  /** Least longer side before trimming (big asteroids; capped at `BIG.maxSize`): outposts ask for room for a station. */
+  minSize?: number;
 }
 
 
@@ -159,7 +161,7 @@ function generateBig(seed: number, ores: readonly OreDef[], opts: AsteroidGenOpt
   const rng = new Rng(seed ^ 0x5a17e401);
   const rolled = rollCoverage(rng);
   const coverage = opts.coverage ?? rolled;
-  const size = rng.int(BIG.minSize, BIG.maxSize);
+  const size = rng.int(Math.min(BIG.maxSize, Math.max(BIG.minSize, opts.minSize ?? 0)), BIG.maxSize);
   const short = Math.max(BIG.minSize, Math.round(size * (BIG.aspect[0] + (BIG.aspect[1] - BIG.aspect[0]) * rng.next())));
   const [w, h] = rng.chance(0.5) ? [size, short] : [short, size];
   const balls: Ball[] = [{ x: w / 2, y: h / 2, r: Math.min(w, h) * 0.3 }];

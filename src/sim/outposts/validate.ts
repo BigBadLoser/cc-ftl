@@ -4,26 +4,24 @@ import { validateAsteroid } from '../asteroids/validate';
 import { Struct } from '../structure';
 import type { OutpostPlan } from './gen';
 
-/** Ship checks an outpost is exempt from: it does not fly or fight. */
-const EXEMPT = ['no engine', 'no helm or AI core'];
+/** Ship checks a carved (dug) base is exempt from: its outer walls are the rock, not hull. */
+const DUG_EXEMPT = /not on the hull/;
 
 /**
- * Problems with an outpost, empty when sound: the base template passes the ship checks (modules on floor, access and chairs
- * clear, every walkable tile reachable, power balance, one connected structure) except the helm and engine, it has an
- * airlock, the asteroid is sound, the airlock's collar opens on space, and (dug) every carved tile is closed in by rock
- * mass or the base's own tiles (no breach to space or ground).
+ * Problems with an outpost, empty when sound: the station template passes the ship checks (immobile: modules on floor, access and
+ * chairs clear, power balance, one connected structure; a dug base's airlock walls excepted), it has crew and an airlock, the
+ * asteroid is sound, the dock's collar opens on space, and (dug) every carved tile is closed in by rock mass or the base's own
+ * tiles (no breach to space or ground).
  */
 export function validateOutpost(o: OutpostPlan, defs: Record<string, ModuleDef>): string[] {
-  const problems = validateTemplate(o.template, defs).filter((p) => !EXEMPT.includes(p));
+  const problems = validateTemplate(o.template, defs, { immobile: true }).filter((p) => o.style === 'surface' || !DUG_EXEMPT.test(p));
   problems.push(...validateAsteroid(o.asteroid).map((p) => `asteroid: ${p}`));
-  const airlocks = (o.template.modules ?? []).filter((m) => defs[m.def]?.airlock);
-  if (airlocks.length === 0) problems.push('no airlock');
+  if (!(o.template.modules ?? []).some((m) => defs[m.def]?.airlock)) problems.push('no airlock');
+  if ((o.template.crew ?? []).length === 0) problems.push('no crew');
   const plan = o.asteroid;
   const at = (x: number, y: number) => (x < 0 || y < 0 || x >= plan.w || y >= plan.h ? Struct.Space : plan.struct[y * plan.w + x]);
   const cell = (lx: number, ly: number) => o.template.rows[ly]?.[lx] ?? '.';
-  for (const a of airlocks) {
-    if (at(o.at.x + a.x + 1, o.at.y + a.y - 1) !== Struct.Space) problems.push('airlock collar is not open space');
-  }
+  if (at(o.at.x + o.dock.collar.x, o.at.y + o.dock.collar.y) !== Struct.Space) problems.push('airlock collar is not open space');
   if (o.style === 'dug') {
     for (let ly = 0; ly < o.template.rows.length; ly++) {
       for (let lx = 0; lx < (o.template.rows[ly] as string).length; lx++) {
