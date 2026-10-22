@@ -162,8 +162,14 @@ export type SimEvent =
   | { type: 'galaxy.hyperspace'; ship: number; route: string[]; charge: number }
   /** A hop of the trip ended at `to` (fuel of that hop and, for the first, the FTL charge paid on entry). */
   | { type: 'galaxy.jumped'; from: string; to: string; edge: string; fuel: number; charge: number }
-  /** A starmap turn began (a hop was entered); see galaxy/turn.ts. */
-  | { type: 'galaxy.turn'; turn: number }
+  /** A starmap turn began (a hop was entered, or `cause: 'time'` for a game-time turn); see galaxy/turn.ts. */
+  | { type: 'galaxy.turn'; turn: number; cause?: 'time' }
+  /** The player's hop met an NPC fleet (see galaxy/encounters.ts); an encounter was stored for it (`kind`) or resolved/expired. */
+  | { type: 'galaxy.crossing'; fleet: number; faction: string; role: string; how: 'pass' | 'overlap' | 'node'; node: string }
+  | { type: 'galaxy.encounter'; id: number; kind: 'interdict' | 'hail' | 'scan' | 'distress'; fleet: number; faction: string; role: string; node: string }
+  /** An interdiction cut the player's trip short at `node` (it drops there). */
+  | { type: 'galaxy.interdicted'; node: string }
+  | { type: 'galaxy.encounterResolved'; id: number; outcome: string }
   | { type: 'galaxy.stalled'; node: string; need: number }
   | { type: 'galaxy.dropped'; node: string }
   | { type: 'galaxy.discovered'; count: number }

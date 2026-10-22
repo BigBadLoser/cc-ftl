@@ -851,7 +851,7 @@ ties on time then node id, over discovered nodes.
   and the phase (`hop`, `arrived`, `noFuel`).
 - **Turns.** Each hop entered is one turn (`GalaxyState.turn`; edge days stay as data in `galaxy.days` but do not set the pace). The sim moves one hop per
   `TURN_TICKS` (16) ticks, only as pacing. `onTurn(sim, turn)` (`galaxy/turn.ts`) runs once per hop entered (the first on `galaxy.jump`, the rest in
-  `advanceTravel`) and emits `galaxy.turn`; the next slice puts NPC movement and encounters there. The map's glide between nodes is a fixed 700 ms tween in the view, not sim time.
+  `advanceTravel`) and emits `galaxy.turn`; NPC movement runs there (see NPC traffic below). The map's glide between nodes is a fixed 700 ms tween in the view, not sim time.
 - **Fuel in hyperspace** is read from and burnt in the packet (`galaxy/fuel.ts`: `fuelStock`, `burnFuel`, `ftlCharge`), each hop's fuel as it is entered. A route may start
   with fuel for its first hop only; the trip stops (`noFuel`, event `galaxy.stalled`) at the last node reached when the next hop cannot be paid, and waits there.
   `galaxy.current` and `sector.node` move as each node is passed; the arrival scan, `story.context` and the owed story draw (`pendingDraw`) follow.
@@ -863,6 +863,20 @@ ties on time then node id, over discovered nodes.
   the cheapest adjacent node it can pay for now (least fuel, then charge, then node id). The player then drops (or opens the map). AI ships keep the old flee (`'fled'`).
 - Ids: `Sector.node`, `SectorArchive.node`, `archiveOf`, `restoreArchive` and `sector.jumped` (emitted at the drop) use the galaxy node id (a string; `START_NODE` at the start).
 - While `sector.state` is not `'active'` the pipeline is skipped, `galaxySystem` and `rollArrival` return early, and arrivals only spawn into an active node.
+
+**Turn clock** (`turn.ts`). Turns come from two triggers that share `GalaxyState.turn` and both call `onTurn(sim, turn, cause)`: a hop entered (`takeHopTurn`), and
+TURN_SEC (60) seconds of game time while the sector is `'active'` (`tickTurnClock`, `galaxy.turn` with `cause: 'time'`). `GalaxyState.turnClock` counts only active ticks
+and is reset by a hop's turn and at `sector.deploy` (`resetTurnClock`), so a hop never also fires a time turn for the same stretch.
+
+**NPC traffic** (`fleets.ts`, `fleetShips.ts`, `encounters.ts`). `GalaxyState.fleets` are persistent plain-data fleets (`Fleet`: faction, role, `ships: Contact[]`, `node`, `from`,
+`moved`, `route`, `dest`, `dwell`, `ttl`). `onTurn` runs `stepFleets`: each fleet takes one hop of its planned route (`planStarRoute`), rests at its destination, then sets out again until
+its `ttl` is spent; new ones spawn deterministically from (seed, turn, slot) among the generated nodes within FLEET_AREA_HOPS of the player, up to FLEET_CAP. The same ships are the
+node's: when the player's node is live a fleet that arrives is materialised through `spawnContact` and one that leaves (or the player leaving) is lifted out with `liftShip`, so
+`Contact.ship` is set only for fleets in the live node and node archives never hold fleet ships. Crossings (`crossAfterHop`, when the player's hop ends): `pass`, `overlap`
+or `node` -> `galaxy.crossing`, an `Encounter` (`interdict` | `hail` | `scan` | `distress`, by faction and role) stored in `GalaxyState.encounters` and `galaxy.encounter`. A pending
+interdiction cuts the trip and drops the ship at the node reached (`galaxy.interdicted`) and refuses `galaxy.jump` (`interdicted`) until `resolveEncounter` (slice (c); for now the
+`galaxy.dismissEncounter` command or expiry). The view shows fleets within SENSOR_HOPS (`visibleFleets`, `UiStarFleet`): chevrons beside their nodes at the sector level
+and a Traffic list in the node drawer. Tests: `content/galaxyTraffic.test.ts` and `.slow.test.ts`.
 
 **Arrivals** (`galaxySystem`, `arrivals.ts`). Every `ARRIVAL_EVERY_SEC` (60) at the current node: chance `ARRIVAL_PER_DANGER x danger` (cap
 `ARRIVAL_MAX_CHANCE`; x1.5 in hostile territory, x0.4 in friendly), up to `MAX_HOSTILE_CONTACTS`, the faction drawn from the node's traffic pool

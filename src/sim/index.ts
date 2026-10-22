@@ -105,4 +105,6 @@ export { routeEdges, routeBlocker, routeCharge, hopTicksOf } from './galaxy/hype
 export { standing, standings, tierOf, isHostileFaction } from './galaxy/standing';
 export { galaxyGen, chunkOfId } from './galaxy/generator';
 export { SENSOR_HOPS, DANGER_STEP } from './galaxy/tuning';
+export { visibleFleets, sensorNodes } from './galaxy/fleets';
+export { interdicted, resolveEncounter } from './galaxy/encounters';
 export { playerStock } from './story/world';

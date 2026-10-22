@@ -138,6 +138,62 @@ export interface Travel {
   stopping?: true;
 }
 
+/** What a fleet does for a living; derived from its faction's kind when it is made (fleets.ts). */
+export type FleetRole = 'trader' | 'patrol' | 'pirate' | 'raider';
+
+/**
+ * An NPC fleet moving on the starmap, one hop per turn. The same ships become real ones in a node the player is in: `ships` are
+ * `Contact`s (the node-contact descriptor), `Contact.ship` is set while the fleet is materialised in the player's active node and
+ * unset (descriptors only) everywhere else. A fleet is never in a node archive: its ships are lifted out when the player leaves.
+ */
+export interface Fleet {
+  id: number;
+  faction: string;
+  role: FleetRole;
+  ships: Contact[];
+  /** The node it is at (or has just reached this turn). */
+  node: string;
+  /** The node it was at before this turn's move; equals `node` when it did not move. */
+  from: string;
+  /** The turn of its last move (-1 never). */
+  moved: number;
+  /** Nodes still to visit, the next first. Empty = at its destination. */
+  route: string[];
+  /** Where it is heading (last of the route, or `node`). */
+  dest: string;
+  /** Turns left idle at a station before its next trip. */
+  dwell: number;
+  /** Turns left to live (the fleet despawns at 0). */
+  ttl: number;
+  /** Stranded and damaged: it does not move and calls for help. */
+  damaged?: true;
+  /** Turn of its last encounter with the player (a cooldown against repeats). */
+  met?: number;
+}
+
+/** What a crossing with a fleet turns into. 'interdict' halts the player's travel; the others are alerts for now. */
+export type EncounterKind = 'interdict' | 'hail' | 'scan' | 'distress';
+/** How the player and the fleet met in a turn: opposite directions on one lane, the same direction on one lane, or ending in the same node. */
+export type CrossingHow = 'pass' | 'overlap' | 'node';
+
+/**
+ * An encounter waiting to be resolved (slice (c): evade, bribe or fight on a deep-space event grid). Stored when a crossing is
+ * detected; it expires at turn `expires` if nothing resolved it. Fleet facts are copied: the fleet may be gone by then.
+ */
+export interface Encounter {
+  id: number;
+  kind: EncounterKind;
+  fleet: number;
+  faction: string;
+  role: FleetRole;
+  ships: number;
+  how: CrossingHow;
+  /** The node the player was at when it happened (where travel halts for an interdiction). */
+  node: string;
+  turn: number;
+  expires: number;
+}
+
 /** Mutable starmap state on the Sim (`sim.galaxy`), saved with the game. */
 export interface GalaxyState {
   current: string;
@@ -154,8 +210,16 @@ export interface GalaxyState {
   nextArrival: number;
   nextId: number;
   jumps: number;
-  /** The starmap turn: one per hop entered (see turn.ts). */
+  /** The starmap turn: one per hop entered, and one per TURN_SEC of game time at a node (see turn.ts). */
   turn: number;
+  /** Ticks of active game time since the last turn (reset by a hop's turn and at `sector.deploy`). */
+  turnClock: number;
+  /** NPC fleets on the map, ascending id (fleets.ts). */
+  fleets: Fleet[];
+  /** Encounters waiting to be resolved, ascending id (encounters.ts). */
+  encounters: Encounter[];
+  /** Ids for fleets, their ships and encounters (apart from `nextId`, so node contacts keep their ids). */
+  nextFleet: number;
   /** Travel days spent in jumps. */
   days: number;
   /** The hyperspace trip in progress, or null. */

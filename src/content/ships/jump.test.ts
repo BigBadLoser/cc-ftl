@@ -138,6 +138,7 @@ describe('ship packets', () => {
 describe('galaxy.jump, archives and sector.deploy', () => {
   it('jumps, archives the rest, deploys, and restores the archive on return', () => {
     const sim = newGame(3, content);
+    sim.galaxy.fleets = []; // this test is about archives: no NPC fleet waits at the node it drops into
     const raider = stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40, state: 'wreck' });
     run(sim, 20);
     const player = homeShip(sim);

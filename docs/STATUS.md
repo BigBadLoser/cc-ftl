@@ -502,6 +502,31 @@ Not taken from PR #16: `src/ui/Starmap*`, `src/app/starmap*`, `galaxyPrefetch`, 
   6. **NPC fleets are persistent:** the ships moving on the map are the same entities or descriptors that become real ships in a node the player enters and leave the node's archive when they depart; galaxy
      contacts and node archives must stay consistent with NPC movement.
 
+**NPC traffic, slices (a) and (b) (branch `npc-traffic`, cut from `main`; sim plus starmap markers; visual: needs screenshot approval).** Design in
+`docs/ARCHITECTURE.md` ("Starmap", NPC traffic). Save v34 (`galaxy.turnClock`, `fleets`, `encounters`, `nextFleet`); `GENERATOR_VERSION` unchanged (no chunk output changed).
+- **Built:** the turn clock (hop turns and 60 s game-time turns share `GalaxyState.turn`; `onTurn(sim, turn, cause)`), persistent NPC fleets that move one hop per turn
+  and materialise in / lift out of the player's live node, crossing detection, encounter kinds (`interdict`, `hail`, `scan`, `distress`) stored as pending encounters,
+  interdiction halting the trip, `galaxy.dismissEncounter` (a stub), starmap markers (sector level) and a Traffic list in the node drawer, and an alert per encounter.
+- **Planner's calls (user decisions above are followed as written):**
+  1. Fleet ships are `Contact` descriptors, materialised by `spawnContact` (the one spawn path). Leaving a node, the fleet's ships are lifted out with `liftShip` and the packet is
+     dropped, so **damage does not carry over** and a node's archive never holds a fleet ship (no duplicates by construction). `stampPacket` could keep the packet later.
+  2. The player leaving lifts the fleet ships first (`galaxy.jump`, flee, teleport), then the archive freezes the rest. Fleets are descriptors everywhere the player is not.
+  3. Crossings are decided when the player's hop ends, from the fleet's step of the same turn (`moved`/`from`/`node`): `pass` (opposite on a lane), `overlap` (same way on a lane),
+     `node` (the turn ends in one node; a fleet resting there counts). A stationary player (a time turn) gets no encounter: arriving fleets just materialise.
+  4. Kind from faction and role: hostile pirate/raider interdicts, a damaged non-hostile fleet is `distress`, patrols `scan`, everything else `hail`. Roles follow the faction kind
+     (government patrol, corporation 70% trader / 30% patrol, civilian trader, pirates `pirate`, rogue `raider`). A fleet is not met again for ENCOUNTER_COOLDOWN (6) turns.
+  5. Interdiction: the trip's route is cut at the node reached and it drops there (`galaxy.interdicted`); `galaxy.jump` is refused (`interdicted`) while one is pending, except the
+     player's own flee. Pending encounters expire (3 turns for alerts, 6 for an interdiction) and `galaxy.dismissEncounter {id}` clears one; slice (c) replaces both with `resolveEncounter`.
+  6. Spawning is hashed from (seed, turn, slot), never the galaxy Rng: 2 tries a turn at 40%, cap 14, origins and destinations among the nodes within 6 jumps of the player (all
+     generated), stations weighted x2, never spawning at the player's node. 28 tries at 50% seed the first turn. A fleet lives 14 to 36 turns and despawns at a destination once it is
+     spent, or when it falls out of the area. 7% are stranded and damaged (they never move; `distress`).
+  7. A live node holds at most FLEET_NODE_SHIPS (3) other ships when fleet ships materialise (the sector is 200x120 and the deploy gap rule needs room); the rest wait as descriptors and
+     are retried each second. A fight or a live trade deal holds the fleets in the player's node in place.
+  8. Sensors: markers and the Traffic list show fleets within SENSOR_HOPS jumps of the current node only.
+- **Slice (c) needs:** an `Encounter` UI (`map.encounters` is not in the snapshot yet; read `sim.galaxy.encounters`), the event grid node and choices that end in `resolveEncounter(sim, id, outcome)`
+  (evade = roll, bribe = credits, fight = drop into combat with the fleet's ships, which `fleets[].ships` already describe), replacing `galaxy.dismissEncounter`, and fleet ships entering
+  the grid (use `materialiseFleet`-style spawning into the pocket). Damage persistence (packets) if wanted.
+
 ## Crew sprite pipeline (branch `crew-pipeline`; merged to `main` with user approval)
 
 Details in `tools/blender/README.md` (Crew layers, Incremental builds) and `docs/ARCHITECTURE.md` (Asset pipeline, Crew).

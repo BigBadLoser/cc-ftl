@@ -40,8 +40,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v31: asteroid outposts are real stations (`station.<kind>` outpost tier): crewed, with `StationC`, `StationAlarmC`, a trader and `ShipC.gen`.
  * v32: finished rock walls (Struct.RockWall) and no ore on big asteroids.
  * v33: `MiningPodC.spot` (where a pod hovers to cut its tile, clear of other pods).
+ * v34 (NPC traffic): `galaxy.turnClock`, `galaxy.fleets`, `galaxy.encounters`, `galaxy.nextFleet`.
  */
-export const SAVE_VERSION = 33;
+export const SAVE_VERSION = 34;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

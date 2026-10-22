@@ -161,6 +161,8 @@ export type Command =
   | { type: 'galaxy.jump'; ship: number; route: string[]; withDocked?: number[] }
   /** End the hyperspace trip at the node last passed: its archive comes back (or its ships appear on the first visit) and the ship waits to deploy. */
   | { type: 'galaxy.drop' }
+  /** Clear a pending encounter (stub until slice (c)'s evade, bribe and fight choices replace it). */
+  | { type: 'galaxy.dismissEncounter'; id: number }
   /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */
   | { type: 'debug.galaxyReveal'; radius: number }
   /** Debug: move to any generated galaxy node at no cost, as if arriving there (no event draw). */

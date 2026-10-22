@@ -6,7 +6,9 @@ import { arrive, checkLeaving, type Reject } from './travel';
 import { edgeBetween } from './route';
 import { ensureAround, galaxyIndex, nodeState } from './state';
 import { TURN_TICKS } from './tuning';
-import { onTurn } from './turn';
+import { crossAfterHop, interdicted } from './encounters';
+import { liftFleetsAt, materialiseFleetsAt } from './fleetShips';
+import { takeHopTurn } from './turn';
 import type { EdgeData } from './types';
 
 /**
@@ -58,6 +60,8 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   const g = sim.galaxy;
   const reject: Reject = (reason) => (sim.events.emit({ type: 'command.rejected', command, reason }), false);
   if (!checkLeaving(sim, ship, reject)) return false;
+  // A pending interdiction holds the ship until it is resolved (slice (c)); the player's own flee is never blocked.
+  if (command !== 'combat.flee' && interdicted(sim)) return reject('interdicted');
   if (!galaxyIndex(g).nodes.has(g.current)) ensureAround(sim, g.current);
   const nodes = [g.current, ...route];
   const edges = routeEdges(sim, nodes);
@@ -68,12 +72,13 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   spendCharge(sim, charge, ship);
   burnFuel(sim, first.fuel, ship);
   g.pendingDraw = null;
+  liftFleetsAt(sim, g.current);
   enterHyperspace(sim, ship, withDocked ?? false);
   // The node left keeps its ships in its archive: no descriptors of it remain.
   const left = g.nodes[g.current];
   if (left) left.contacts = [];
   g.travel = { route: nodes, charge, at: 0, elapsed: 0, hopTicks: hopTicksOf(), phase: 'hop' };
-  onTurn(sim, ++g.turn);
+  takeHopTurn(sim);
   g.rev++;
   sim.events.emit({ type: 'galaxy.hyperspace', ship, route: nodes, charge });
   return true;
@@ -101,6 +106,12 @@ export function advanceTravel(sim: Sim): void {
   // must not overwrite: transit wins over arrival.
   g.pendingDraw = g.pendingDraw === 'transit' || edge.anchor ? 'transit' : 'arrival';
   t.elapsed = 0;
+  // The turn ends here: a fleet that crossed the hop, or is in this node, may interdict, which cuts the route and drops the ship now.
+  if (crossAfterHop(sim, from, g.current) && t.at < t.route.length - 1) {
+    t.route.length = t.at + 1;
+    t.stopping = true;
+    sim.events.emit({ type: 'galaxy.interdicted', node: g.current });
+  }
   if (t.at >= t.route.length - 1) {
     t.phase = 'arrived';
     if (t.stopping) drop(sim);
@@ -114,7 +125,7 @@ export function advanceTravel(sim: Sim): void {
   }
   burnFuel(sim, next.fuel);
   t.hopTicks = hopTicksOf();
-  onTurn(sim, ++g.turn);
+  takeHopTurn(sim);
 }
 
 /**
@@ -138,6 +149,7 @@ export function drop(sim: Sim, command = 'galaxy.drop'): boolean {
     for (const c of st.contacts) spawnContact(sim, g.current, c);
     st.contacts = st.contacts.filter((c) => c.ship !== undefined);
   }
+  materialiseFleetsAt(sim, g.current);
   g.travel = null;
   g.rev++;
   sim.events.emit({ type: 'galaxy.dropped', node: g.current });
@@ -167,6 +179,7 @@ export function teleport(sim: Sim, to: string): boolean {
   if (!me) return reject('notPlayerShip');
   if (!checkLeaving(sim, me.id, reject)) return false;
   const from = g.current;
+  liftFleetsAt(sim, from);
   enterHyperspace(sim, me.id, false);
   const left = g.nodes[from];
   if (left) left.contacts = [];
