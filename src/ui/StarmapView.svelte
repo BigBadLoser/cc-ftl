@@ -23,6 +23,8 @@
 
   let map = $state<UiStarmap | null>(null);
   /** Flee-target mode: only while the ship is still in the node (once it is in hyperspace the map is the ordinary trip view). */
+  /** In hyperspace the map cannot be closed: it is the view until the ship drops. */
+  const locked = $derived(map?.state === 'hyperspace');
   const fleeing = $derived(flee !== null && map?.state !== 'hyperspace' && map?.state !== 'deploying');
   let w = $state(800);
   let h = $state(600);
@@ -359,7 +361,7 @@
     zoomAt(p.x, p.y, e.deltaY < 0 ? 1.18 : 1 / 1.18);
   }
   function key(e: KeyboardEvent) {
-    if (e.key === 'Escape') onClose();
+    if (e.key === 'Escape' && !locked) onClose();
   }
 
   /**
@@ -395,8 +397,8 @@
 
 <div class="starmap" data-testid="starmap" data-mode={fleeing ? 'flee' : 'browse'}>
   <div class="head">
-    <PanelHead icon="map" title={fleeing ? 'Flee: pick a target' : 'Starmap'} sub={here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
-      onBack={onClose} backTitle="Back to ship (Esc)" backTestId="starmap-close" />
+    <PanelHead icon="map" title={fleeing ? 'Flee: pick a target' : 'Starmap'} sub={locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
+      onBack={locked ? undefined : onClose} backTitle="Back to ship (Esc)" backTestId="starmap-close" />
   </div>
   <div class="statbar">
     {#if map}<StarmapStats {map} fuelBad={!!route && !route.fuelOk} chargeBad={!!route && !route.chargeOk} />{/if}

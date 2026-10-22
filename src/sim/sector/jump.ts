@@ -7,11 +7,13 @@ import type { WithDocked } from './members';
 /**
  * The player's ship leaves the node it is in and enters hyperspace (sector refactor step 9): lift it (with what travels along, see
  * `liftShip`) into a packet, freeze the rest of the sector into the archive of the node left, drop the hails and offers of that
- * node, and wait in state 'hyperspace' with the sector empty. Callers (`galaxy.jump`, the player's `combat.flee`, the debug
+ * node, end combat if there was any (`combat.ended`), and wait in state 'hyperspace' with the sector empty. Callers (`galaxy.jump`, the player's `combat.flee`, the debug
  * teleport) validate and pay first.
  */
 export function enterHyperspace(sim: Sim, ship: number, withDocked: WithDocked = false): void {
   const packet = liftShip(sim, ship, { withDocked });
+  // Leaving ends any fight here (the combat system does not run in hyperspace to say so).
+  if (sim.sector.inCombat) sim.events.emit({ type: 'combat.ended' });
   archiveSector(sim);
   sim.trade.hails = [];
   sim.trade.offers = [];

@@ -77,6 +77,7 @@
 <svelte:window onkeydown={key} />
 
 <div class="veil" data-testid="deploy-picker">
+  <div class="streaks" aria-hidden="true"></div>
   <div class="sheet panel">
     <PanelHead icon="ship" title="Deploy" sub={deploy.nodeName} />
     <div class="cells">
@@ -103,7 +104,11 @@
 </div>
 
 <style>
-  .veil { position: fixed; inset: 0; z-index: 12; background: color-mix(in srgb, var(--bg) 80%, transparent); }
+  /* Nothing of the game shows behind the picker: an opaque hyperspace backdrop of CSS streaks. */
+  .veil { position: fixed; inset: 0; z-index: 12; background: var(--bg); overflow: hidden; }
+  .streaks { position: absolute; inset: -50%; background: repeating-linear-gradient(100deg, transparent 0 46px, color-mix(in srgb, var(--cyan) 22%, transparent) 46px 48px, transparent 48px 120px, color-mix(in srgb, var(--cyan) 10%, transparent) 120px 121px); animation: rush 0.9s linear infinite; }
+  @keyframes rush { to { transform: translateX(-120px); } }
+  @media (prefers-reduced-motion: reduce) { .streaks { animation: none; } }
   .panel { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); box-sizing: border-box; background: linear-gradient(var(--panel), var(--panel)), var(--bg); }
   @media (min-width: 601px) { .panel { left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 24px)); border-width: 1px; } }
   .cells { display: flex; gap: 4px; flex-wrap: wrap; }
