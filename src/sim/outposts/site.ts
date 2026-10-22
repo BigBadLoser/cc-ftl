@@ -37,8 +37,9 @@ export function pickDock(t: ShipTemplate, defs: Record<string, ModuleDef>): Dock
 }
 
 /**
- * A dug station: the rock is its hull. Every hull wall that borders outside becomes '.' (the asteroid's rock mass fills it), so
- * rooms are carved into rock and walls between rooms stay one tile thick. Module footprints and airlock tiles are kept. Cargo
+ * A dug station: the rock is its hull. Hull fill that borders outside and touches no room becomes '.' (the asteroid's rock mass
+ * fills it); every wall beside a room stays (a finished rock wall once stamped), so rooms are carved into rock and every wall,
+ * partition or face, is one tile of dressed rock. Module footprints and airlock tiles are kept. Cargo
  * frames and containers hanging outside the hull are dropped.
  */
 export function carveInRock(src: ShipTemplate, defs: Record<string, ModuleDef>): ShipTemplate {
@@ -55,8 +56,12 @@ export function carveInRock(src: ShipTemplate, defs: Record<string, ModuleDef>):
     }
   }
   const at = (x: number, y: number): string => t.rows[y]?.[x] ?? '.';
+  // A wall that touches the inside (any neighbour, diagonals too) stays: it is the room's face, dressed rock once stamped, so
+  // no raw rock pokes up where two wall runs meet. Only hull fill with no inside beside it goes back to rock mass.
+  const ring = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const;
+  const inside = (x: number, y: number): boolean => ring.some(([dx, dy]) => { const c = at(x + dx, y + dy); return c !== '#' && c !== '.'; });
   const rows = t.rows.map((row, y) => Array.from(row, (c, x) => (
-    c === '#' && !keep.has(`${x},${y}`) && ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).some(([dx, dy]) => at(x + dx, y + dy) === '.') ? '.' : c)).join(''));
+    c === '#' && !keep.has(`${x},${y}`) && !inside(x, y) && ring.slice(0, 4).some(([dx, dy]) => at(x + dx, y + dy) === '.') ? '.' : c)).join(''));
   return { ...t, rows };
 }
 

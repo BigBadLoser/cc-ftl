@@ -130,6 +130,18 @@ describe('outpost walls', () => {
       const dw = walls(dug, [...dug.world.query(ShipC)][0]!);
       expect(dw.rock).toBeGreaterThan(20);
       expect(dw.metal).toBe(0);
+      // Every room is faced in dressed rock: no raw rock mass touches its floors or doors, diagonals included.
+      const base = [...dug.world.query(ShipC)][0]!;
+      const g = shipGrid(dug, base)!;
+      const raw: string[] = [];
+      for (let y = g.y0; y < g.y0 + g.height; y++) {
+        for (let x = g.x0; x < g.x0 + g.width; x++) {
+          const k = g.get('struct', x, y);
+          if (g.get('ship', x, y) !== base || (k !== Struct.Floor && k !== Struct.Door)) continue;
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dug.sector.grid.get('struct', x + dx, y + dy) === Struct.Rock) raw.push(`${x + dx},${y + dy}`);
+        }
+      }
+      expect(raw).toEqual([]);
       const surf = new Sim(seed, content);
       surf.enqueue({ type: 'debug.spawnOutpost', style: 'surface', seed });
       surf.step();

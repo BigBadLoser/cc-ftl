@@ -76,8 +76,8 @@ describe('outpost hostility', () => {
     const { sim, base } = setup();
     const f = baseFloor(sim, base);
     const g = sim.sector.grid;
-    // a floor the base does not own beside one of its floors: what a player tunnel reaching it leaves
-    const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: f.x + dx!, y: f.y + dy! })).find((t) => g.get('struct', t.x, t.y) === Struct.Rock)!;
+    // a floor the base does not own beside one of its floors: what a player tunnel digging through its rock-wall face leaves
+    const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: f.x + dx!, y: f.y + dy! })).find((t) => g.get('struct', t.x, t.y) === Struct.RockWall)!;
     g.set('struct', n.x, n.y, Struct.Floor);
     g.set('ship', n.x, n.y, 0);
     const log = run(sim, 20);
