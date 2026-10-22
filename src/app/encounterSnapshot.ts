@@ -56,6 +56,10 @@ export function resultOf(sim: Sim): UiEncounterResult | null {
     case 'evadeFailed': return { text: `Evade failed against the ${who}: rolled ${pct(r.roll)} against ${pct(r.odds)}`, tone: 'red', turn: r.turn };
     case 'bribed': return { text: `Paid the ${who} ${r.cost ?? 0} credits to let you pass`, tone: 'amber', turn: r.turn };
     case 'fought': return { text: `Fighting the ${who}`, tone: 'red', turn: r.turn };
+    case 'cleared': return { text: `Cleared the ${who}`, tone: 'green', turn: r.turn };
+    case 'escaped': return { text: `Escaped the ${who}`, tone: 'amber', turn: r.turn };
+    case 'left': return { text: `Left the ${who} behind`, tone: 'dim', turn: r.turn };
+    case 'helped': return { text: `Helped the ${who}`, tone: 'green', turn: r.turn };
     case 'responded': return { text: `Answering the ${who}'s distress call`, tone: 'green', turn: r.turn };
     case 'gone': return { text: `The ${who} is gone`, tone: 'dim', turn: r.turn };
     default: return null;

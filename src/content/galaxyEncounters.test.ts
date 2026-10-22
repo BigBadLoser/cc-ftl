@@ -201,6 +201,7 @@ describe('fight', () => {
     expect(sim.archives).toHaveLength(archives);
     expect(sim.galaxy.fleets.includes(f)).toBe(false); // destroyed
     expect(sim.sector.inCombat).toBe(false);
+    expect(sim.galaxy.lastResult?.outcome).toBe('cleared');
     expect(sim.galaxy.travel?.phase).toBe('hop');
     while (sim.galaxy.travel?.phase === 'hop') step(sim);
     expect(sim.galaxy.current).toBe(next);

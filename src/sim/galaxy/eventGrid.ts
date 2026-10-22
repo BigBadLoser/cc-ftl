@@ -108,7 +108,10 @@ export function leaveEvent(sim: Sim, resume: (sim: Sim) => void, command = 'gala
     if (hostilesPresent(sim) > 0) spendCharge(sim, FTL_CHARGE_SEC, me.id);
     packet = liftShip(sim, me.id, { withDocked: false });
   }
+  const hostile = hostilesPresent(sim) > 0;
   const fleet = settleFleet(sim, ev);
+  // The outcome line moves on from "fighting" / "answering": cleared, escaped or helped.
+  if (g.lastResult?.id === ev.id) g.lastResult.outcome = ev.kind === 'rescue' ? 'helped' : hostile ? 'escaped' : fleet.ships.length ? 'left' : 'cleared';
   if (sim.sector.inCombat) sim.events.emit({ type: 'combat.ended' });
   for (const id of sim.world.ids()) sim.world.destroyEntity(id);
   sim.sector.grid = newSectorGrid();

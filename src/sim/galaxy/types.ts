@@ -226,7 +226,7 @@ export interface EncounterResult {
   kind: EncounterKind;
   faction: string;
   role: FleetRole;
-  /** 'evaded' | 'evadeFailed' | 'bribed' | 'fought' | 'responded' | 'acknowledged' | 'ignored' | 'gone' | 'expired'. */
+  /** 'evaded' | 'evadeFailed' | 'bribed' | 'fought' | 'cleared' | 'escaped' | 'left' | 'responded' | 'helped' | 'acknowledged' | 'ignored' | 'gone' | 'expired'. */
   outcome: string;
   turn: number;
   odds?: number;

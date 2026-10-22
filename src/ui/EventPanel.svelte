@@ -14,7 +14,7 @@
   const leave = () => api.dispatch({ type: 'galaxy.leaveEvent' });
   const status = $derived(
     event.hostiles > 0 ? `${event.hostiles} hostile ship${event.hostiles > 1 ? 's' : ''} in range`
-    : event.kind === 'rescue' ? 'All quiet. Help them, then move on.' : 'The sky is clear.',
+    : event.kind === 'rescue' ? 'All quiet. Help them, then move on.' : 'The sky is clear: the fight is won.',
   );
 </script>
 
@@ -23,10 +23,10 @@
   <div class="who">
     <i style={`background: ${toneColor(event.tone)}`}></i>
     <b>{event.faction} {event.role.toLowerCase()}</b>
-    <small>{event.ships} ship{event.ships === 1 ? '' : 's'}</small>
+    <small>{event.ships === 0 ? 'none left' : `${event.ships} ship${event.ships === 1 ? '' : 's'}`}</small>
   </div>
   <p class="note" class:warn={event.hostiles > 0}><Icon name={event.hostiles > 0 ? 'alert' : 'shield'} size={14} />{status}</p>
-  {#if result && result.tone === 'red'}<p class="note result" data-testid="event-result">{result.text}</p>{/if}
+  {#if result && result.tone === 'red' && event.hostiles > 0}<p class="note result" data-testid="event-result">{result.text}</p>{/if}
   <p class="note dim"><Icon name="map" size={14} />Trip to {event.resumeTo}, {event.hopsLeft} hop{event.hopsLeft === 1 ? '' : 's'} left. This pocket is not on the map and is gone when you leave.</p>
   <button class="go" class:on={event.canLeave} class:flee={event.fleeing} disabled={!event.canLeave || event.deploying} onclick={leave} data-testid="event-leave">
     <Icon name={event.fleeing ? 'evasion' : 'fast'} size={18} />{event.fleeing ? 'Flee and resume' : 'Resume travel'}
