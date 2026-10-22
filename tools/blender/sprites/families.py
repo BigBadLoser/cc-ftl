@@ -16,6 +16,7 @@
   derelict  derelict dressing: breached walls, scorch, debris, dead lights, infestation, AI scrap (derelict*.py)
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
+  rock      asteroid rock: rock mass by neighbour mask, levelled ground with its worn edge and under-lip, ore tiles (rock.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -68,10 +69,13 @@ def jobs(name):
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
+    if name == "rock":
+        from . import rock
+        return rock.jobs(), True
     raise KeyError(name)
 
 
 # `structure` is preview-only (no full build yet): build it by name, it is not part of `all`.
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
-            "fx", "galley", "derelict", "eggsac")
+            "fx", "galley", "derelict", "eggsac", "rock")
 ALL = RENDERED + ("sol",)
