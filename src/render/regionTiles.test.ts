@@ -29,6 +29,18 @@ const createLayers = () => createWorldStack().region(false);
 const key = (c: ChunkRef) => `${c.cx},${c.cy}`;
 
 describe('region tiles', () => {
+  it('wallAt keeps a rock wall, kindAt reads it as wall; rock mass is Space for both', () => {
+    const g = ship(0, 0, 8, 6);
+    g.set('struct', 3, 3, Struct.RockWall);
+    g.set('struct', 4, 3, Struct.Rock);
+    const t = regionTiles(g);
+    expect(t.wallAt(3, 3)).toBe(Struct.RockWall);
+    expect(t.kindAt(3, 3)).toBe(Struct.Wall);
+    expect(t.wallAt(4, 3)).toBe(Struct.Space);
+    expect(t.wallAt(5, 3)).toBe(t.kindAt(5, 3));
+  });
+
+
   it('reads the window through sector chunks, Space outside it', () => {
     const g = ship(21, -7);
     const t = regionTiles(g);

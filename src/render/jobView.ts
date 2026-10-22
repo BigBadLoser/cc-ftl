@@ -91,9 +91,8 @@ export function createJobView(
         const kindAt: KindAt = (x, y) => {
           if (!grid.inBounds(x0 + x, y0 + y)) return Struct.Space;
           const p = pending.get(y * grid.width + x);
-          return artKind(p === Struct.Wall || p === Struct.Door || p === Struct.RockWall
-            ? p
-            : grid.get("struct", x0 + x, y0 + y));
+          const k = p === Struct.Wall || p === Struct.Door || p === Struct.RockWall ? p : grid.get("struct", x0 + x, y0 + y);
+          return k === Struct.RockWall ? k : artKind(k); // a rock wall stays one (never hull), see tiles.ts
         };
         for (const j of jobs) {
           const build = j.kind === "build";

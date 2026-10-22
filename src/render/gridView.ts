@@ -110,6 +110,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let airlocks = new Set<number>();
 
   const kindAt = tiles.kindAt;
+  const wallAt = tiles.wallAt; // rock walls stay RockWall: never hull
   // Beam tiles under a cargo container are its seat, not frame: no beam sprite there, and the frame's beams end at it.
   const boxAt = (x: number, y: number): boolean => {
     const gx = x + grid.x0, gy = y + grid.y0;
@@ -206,7 +207,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // An engine's hull row is the hull wall in cutaway / low (the same ghost as the hull around it); with the walls
           // up or roofed the wall is left out and the engine's bulkhead stands there between the hull runs.
           const engineUp = replaced.has(idx) && mode === "up";
-          const f = ghosts && !engineUp && replacesFloor(kindAt, x, y, mode) ? undefined : atlas.firstOf(floorChain(x, y));
+          const f = ghosts && !engineUp && replacesFloor(wallAt, x, y, mode) ? undefined : atlas.firstOf(floorChain(x, y));
           if (f) {
             const made = addStatic(L, f, x, y, 0, v.floor);
             owned.push(...made);
@@ -215,7 +216,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (gapAt(x, y) || airlocks.has(idx)) continue;
-          for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts, gapAt)) {
+          for (const piece of wallPieces(wallAt, x, y, k, mode, ghosts, gapAt)) {
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
             // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
@@ -233,7 +234,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         }
     if (ghosts) {
       const vert = atlas.stat("tile.hull.ghost.vert");
-      if (vert) for (const t of ghostVertsIn(kindAt, r.x0, r.y0, r.x1, r.y1)) owned.push(...addStatic(L, vert, t.x, t.y, depthKey(t.x, t.y) + 0.001, L.sorted));
+      if (vert) for (const t of ghostVertsIn(wallAt, r.x0, r.y0, r.x1, r.y1)) owned.push(...addStatic(L, vert, t.x, t.y, depthKey(t.x, t.y) + 0.001, L.sorted));
     }
     return v;
   }

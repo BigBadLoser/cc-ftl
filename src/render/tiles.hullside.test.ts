@@ -63,3 +63,24 @@ describe("hull side (far hull stays full in cutaway, near hull is a ghost)", () 
     expect(hullSide(k, 2, 4)).toBe(HullSide.Near);
   });
 });
+
+describe("a finished rock wall is never hull", () => {
+  // R = rock wall, space around it (rock mass reads as Space to the wall art): a Wall there is hull, a RockWall a partition.
+  const KR: Record<string, number> = { ...K, R: Struct.RockWall };
+  const rock = (rows: string[]) => (x: number, y: number) => KR[rows[y]?.[x] ?? " "] ?? Struct.Space;
+  it("draws interior wall pieces in every view, never hull or ghost pieces", () => {
+    const rows = ["      ", " RRRR ", " R__R ", " RRRR ", "      "];
+    const k = rock(rows);
+    for (const [x, y] of [[2, 1], [1, 2], [4, 2], [2, 3], [1, 1], [4, 3]] as const) {
+      expect(hullSide(k, x, y)).toBe(HullSide.None);
+      expect(replacesFloor(k, x, y, "auto")).toBe(false);
+      expect(replacesFloor(k, x, y, "down")).toBe(false);
+      for (const mode of ["up", "auto", "down"] as const)
+        for (const pc of wallPieces(k, x, y, Struct.Wall, mode)) expect(pc.chain.every((id) => id.startsWith("tile.wall."))).toBe(true);
+    }
+  });
+  it("a metal wall beside rock walls keeps its hull", () => {
+    const k = rock(["     ", " #RR ", " #__ ", "     "]);
+    expect(hullSide(k, 1, 1)).not.toBe(HullSide.None);
+  });
+});

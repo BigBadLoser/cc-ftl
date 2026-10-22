@@ -6,7 +6,7 @@
  *   the station) with its dock airlock at the asteroid's edge, facing open space.
  * - 'dug' (pirate, criminal, covert): a dense asteroid; the station's rooms are carved into rock mass, which stands in for every
  *   outer wall (`carveInRock`), a rock roof hides it, and one airlock is set in a notch of the rock face.
- * Both keep the station's other airlocks; on rock or ground they open on the asteroid, not on space.
+ * A dug base keeps only its dock airlock; a surface outpost keeps other airlocks only where they open on ground or space (not rock mass).
  */
 import { generateAsteroid } from '../asteroids/gen';
 import type { AsteroidPlan, OreDef } from '../asteroids/types';
@@ -15,7 +15,7 @@ import { Rng } from '../rng';
 import { generateStation, type StationResult } from '../shipgen/stationGen';
 import type { StationDef } from '../shipgen/stationTypes';
 import { isAsteroidRock, Struct } from '../structure';
-import { builtOf, carveInRock, pickDock, placeAt, type Dock } from './site';
+import { builtOf, carveInRock, dropBuriedAirlocks, pickDock, placeAt, type Dock } from './site';
 
 export type OutpostStyle = 'surface' | 'dug';
 export type OutpostKind = 'trading' | 'farming' | 'mining' | 'pirate' | 'criminal' | 'covert';
@@ -118,7 +118,12 @@ export function generateOutpost(style: OutpostStyle, seed: number, content: Outp
       if (!at) continue;
       shape(plan, style, template, dock, at);
       recount(plan);
-      return { style, kind: k, seed, asteroid: plan, template, at: { x: at.x, y: at.y }, stationKind, station, dock };
+      // Airlocks whose outside is rock mass go (a dug base keeps only its dock; the dock's notch is the one open side).
+      const open = (o: { x: number; y: number }): boolean => style === 'surface' && plan.struct[(at.y + o.y) * plan.w + at.x + o.x] !== Struct.Rock;
+      const kept = dropBuriedAirlocks(template, content.modules, dock, open);
+      const docks = (kept.modules ?? []).filter((m) => content.modules[m.def]?.airlock).length;
+      station = { ...station, station: { ...station.station, docks } };
+      return { style, kind: k, seed, asteroid: plan, template: kept, at: { x: at.x, y: at.y }, stationKind, station, dock };
     }
   }
   return null;

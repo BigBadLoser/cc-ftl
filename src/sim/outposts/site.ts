@@ -97,3 +97,35 @@ export function placeAt(plan: AsteroidPlan, t: ShipTemplate, dock: Dock, maxBulg
   }
   return best && best.bulge <= maxBulge * b.count ? { x: best.x, y: best.y, face: best.face } : null;
 }
+
+/** The tile just outside an airlock module (its docking collar, else past the outer door), in template tiles. */
+export function airlockOutside(def: ModuleDef, m: { x: number; y: number; rot: number }): { x: number; y: number } {
+  const a = airlockTiles(def, m);
+  if (a.collar) return a.collar;
+  const out = hullOutward(hullSide(def, m.rot) ?? 'n');
+  return { x: a.outer.x + out.x, y: a.outer.y + out.y };
+}
+
+/**
+ * Drop the airlocks other than the dock that would open into rock. A dug base keeps only its dock (every other airlock would
+ * open into rock mass); a surface outpost keeps those whose outside tile (`outsideRock` false) is open ground or space. A dropped
+ * airlock's outer door tile becomes plain wall ('#', a finished rock wall in a dug base) and its inner door tile floor, so the
+ * bay stays an airtight room with a one-tile wall on the hull line.
+ */
+export function dropBuriedAirlocks(
+  t: ShipTemplate, defs: Record<string, ModuleDef>, dock: Dock, keep: (outside: { x: number; y: number }) => boolean,
+): ShipTemplate {
+  const rows = t.rows.map((r) => r.split(''));
+  const put = (p: { x: number; y: number }, c: string) => { if (rows[p.y] && rows[p.y]![p.x] !== undefined) rows[p.y]![p.x] = c; };
+  const modules = (t.modules ?? []).filter((m) => {
+    const def = defs[m.def];
+    if (!def?.airlock) return true;
+    const a = airlockTiles(def, m);
+    if (a.outer.x === dock.outer.x && a.outer.y === dock.outer.y) return true;
+    if (keep(airlockOutside(def, m))) return true;
+    put(a.outer, '#');
+    put(a.inner, '_');
+    return false;
+  });
+  return { ...t, rows: rows.map((r) => r.join('')), modules };
+}

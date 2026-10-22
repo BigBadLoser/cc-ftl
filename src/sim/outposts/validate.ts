@@ -1,6 +1,7 @@
 import { validateTemplate } from '../shipgen/validate';
 import type { ModuleDef } from '../registry';
 import { validateAsteroid } from '../asteroids/validate';
+import { airlockOutside } from './site';
 import { Struct } from '../structure';
 import type { OutpostPlan } from './gen';
 
@@ -10,7 +11,7 @@ const DUG_EXEMPT = /not on the hull/;
 /**
  * Problems with an outpost, empty when sound: the station template passes the ship checks (immobile: modules on floor, access and
  * chairs clear, power balance, one connected structure; a dug base's airlock walls excepted), it has crew and an airlock, the
- * asteroid is sound, the dock's collar opens on space, and (dug) every carved tile is closed in by rock mass or the base's own
+ * asteroid is sound, the dock's collar opens on space, no airlock opens into rock mass (a dug base has only its dock), and (dug) every carved tile is closed in by rock mass or the base's own
  * tiles (no breach to space or ground).
  */
 export function validateOutpost(o: OutpostPlan, defs: Record<string, ModuleDef>): string[] {
@@ -21,6 +22,12 @@ export function validateOutpost(o: OutpostPlan, defs: Record<string, ModuleDef>)
   const plan = o.asteroid;
   const at = (x: number, y: number) => (x < 0 || y < 0 || x >= plan.w || y >= plan.h ? Struct.Space : plan.struct[y * plan.w + x]);
   const cell = (lx: number, ly: number) => o.template.rows[ly]?.[lx] ?? '.';
+  const airlocks = (o.template.modules ?? []).filter((m) => defs[m.def]?.airlock);
+  if (o.style === 'dug' && airlocks.length !== 1) problems.push(`a dug base keeps only its dock airlock, has ${airlocks.length}`);
+  for (const m of airlocks) {
+    const out = airlockOutside(defs[m.def] as ModuleDef, m);
+    if (at(o.at.x + out.x, o.at.y + out.y) === Struct.Rock) problems.push(`airlock at ${m.x},${m.y} opens into rock`);
+  }
   if (at(o.at.x + o.dock.collar.x, o.at.y + o.dock.collar.y) !== Struct.Space) problems.push('airlock collar is not open space');
   if (o.style === 'dug') {
     for (let ly = 0; ly < o.template.rows.length; ly++) {

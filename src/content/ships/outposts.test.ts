@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { content } from '../index';
 import {
   AsteroidC, CombatC, CrewC, JobC, isDormant, isHiddenOutpost, LEVEL_TICKS, ShipC, Sim, Struct, deserialize, generateOutpost, placementError, serialize, shipGrid, spawnCrew, stampShip,
-  totalStock, validateOutpost, writeStruct, type OreDef,
+  totalStock, validateOutpost, writeStruct, type ModuleDef, type OreDef,
 } from '../../sim';
+import { airlockOutside } from '../../sim/outposts/site';
 import { StationAlarmC, StationC, StationCrewC } from '../../sim/stations/components';
 import { TraderC } from '../../sim/trade/types';
 
 const CTX = { ores: Object.values(content.ores) as OreDef[], modules: content.modules, stations: content.stations };
+const MODS: Record<string, ModuleDef> = content.modules;
 
 describe('outposts', () => {
   for (const style of ['surface', 'dug'] as const) {
@@ -22,6 +24,29 @@ describe('outposts', () => {
       }
     });
   }
+
+  it('airlocks never open into rock: a dug base has only its dock, whose collar is space (seeds 1..20)', () => {
+    for (const style of ['dug', 'surface'] as const) {
+      for (let seed = 1; seed <= 20; seed++) {
+        const o = generateOutpost(style, seed, CTX);
+        if (!o) continue;
+        const plan = o.asteroid;
+        const at = (x: number, y: number) => (x < 0 || y < 0 || x >= plan.w || y >= plan.h ? Struct.Space : plan.struct[y * plan.w + x]);
+        const locks = (o.template.modules ?? []).filter((m) => MODS[m.def]?.airlock);
+        expect(locks.length, `${style} #${seed}`).toBeGreaterThan(0);
+        if (style === 'dug') {
+          expect(locks.length, `dug #${seed}`).toBe(1);
+          expect(at(o.at.x + o.dock.collar.x, o.at.y + o.dock.collar.y)).toBe(Struct.Space);
+        }
+        for (const m of locks) {
+          const out = airlockOutside(MODS[m.def]!, m);
+          expect(at(o.at.x + out.x, o.at.y + out.y), `${style} #${seed} airlock ${m.x},${m.y}`).not.toBe(Struct.Rock);
+        }
+        expect(o.station.station.docks).toBe(locks.length);
+        expect(validateOutpost(o, content.modules), `${style} #${seed}`).toEqual([]);
+      }
+    }
+  });
 
   it('each kind is built from its station kind at the outpost tier, with crew and security', () => {
     for (const [kind, station] of [['trading', 'station.trading'], ['farming', 'station.farming'], ['mining', 'station.mining'], ['pirate', 'station.pirate'], ['covert', 'station.pirate']] as const) {
