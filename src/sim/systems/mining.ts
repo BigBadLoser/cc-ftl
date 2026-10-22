@@ -4,7 +4,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter, bayWorking } from '../vehicles/geometry';
 import { vehicleDefOf, vehicleSpeedPerTick } from '../vehicles/lifecycle';
 import { MiningPodC, type MiningPod } from '../mining/components';
-import { isOreTile, orderTiles, pickTile } from '../mining/pick';
+import { isOreTile, pickTile } from '../mining/pick';
 import { ensurePilot, releasePilot } from '../mining/pilot';
 import type { Sim } from '../sim';
 import { Struct, writeStruct } from '../structure';
@@ -71,8 +71,8 @@ function mine(sim: Sim, pod: number, v: Vehicle, order: MiningPod): void {
  * free the order waits), then runs trips: launch from its bay with an empty hold, fly to the nearest unclaimed
  * ore tile of the order, laser it into the hold, hop to the next tile while there is room, fly home when full (or when nothing
  * is left, or on recall), and wait stowed while crew haul the ore to storage (the cargo planner unloads a stowed vehicle at its
- * bay's access tile). An empty pod with nothing left to mine, or recalled, ends the order (ore that only another pod has
- * claimed is not "nothing left": it waits stowed and retries) and its pilot climbs out (the
+ * bay's access tile). An empty pod with nothing left to mine, or recalled, ends the order (pods share an order's
+ * tiles: another pod working the last one is not "nothing left") and its pilot climbs out (the
  * pilot stays aboard between trips). The vehicle system flies the leg home
  * and stows it; this system steers the outbound legs itself (a vehicle with no destination just holds position there).
  * Runs before the vehicle system.
@@ -95,8 +95,6 @@ export function miningSystem(sim: Sim): void {
       const from = bayCenter(sim, v.home) ?? b;
       const next = order.recall ? null : pickTile(sim, pod, order, from);
       if (!next) {
-        // Ore left that another pod has claimed: wait stowed and retry (the claim may be mined out, recalled or redirected).
-        if (!order.recall && orderTiles(sim, order).length > 0) continue;
         end(sim, pod, order, order.recall ? 'recalled' : 'exhausted');
         continue;
       }

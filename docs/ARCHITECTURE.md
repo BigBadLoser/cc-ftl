@@ -723,7 +723,8 @@ shipgen's `structureParts`):
     pod with nothing left, or recalled, ends the order. The laser works from above, so buried vein tiles are mined like
     surface ones.
   - Tile picks (`pick.ts`): nearest unclaimed ore tile of the order to the pod (squared distance to the tile centre), ties to
-    the lower y, then x; tiles another pod targets are skipped.
+    the lower y, then x. Tiles another pod targets are passed over while free ones remain; once every tile is taken, pods
+    share them (user decision, 2026-10-22: two pods can share a mining task), so an order ends only when its ore is gone.
   - Events: `mining.ordered`, `mining.pilotSent`, `mining.waiting`, `mining.launched` (plus `vehicle.launched`),
     `mining.tileCleared`, `mining.returning`, `mining.done` (`exhausted` | `recalled` | `lost`). Render: `render/podView.ts`
     PLACEHOLDER: a hull ellipse inscribed in the pod's `size` diamond, canopy with a seated pilot stand-in, ground shadow, a

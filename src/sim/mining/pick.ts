@@ -32,20 +32,24 @@ export function orderTiles(sim: Sim, order: MiningPod): { x: number; y: number }
 }
 
 /**
- * The next tile for a pod at `from`: the nearest unclaimed ore tile of its order (squared distance from `from` to the tile
- * centre), ties to the lower y, then the lower x. Deterministic; null when nothing is left.
+ * The next tile for a pod at `from`: the nearest ore tile of its order that no other pod is working (squared distance from
+ * `from` to the tile centre), ties to the lower y, then the lower x; with every tile taken, the nearest one anyway, so pods
+ * share an order's last tiles instead of idling. Deterministic; null only when no ore is left.
  */
 export function pickTile(sim: Sim, pod: number, order: MiningPod, from: { x: number; y: number }): { x: number; y: number } | null {
   const taken = claimed(sim, pod);
-  let best: { x: number; y: number } | null = null;
-  let bestD = Infinity;
-  for (const t of orderTiles(sim, order)) {
-    if (taken.has(`${t.x},${t.y}`)) continue;
-    const d = (t.x + 0.5 - from.x) ** 2 + (t.y + 0.5 - from.y) ** 2;
-    if (d < bestD || (d === bestD && best && (t.y < best.y || (t.y === best.y && t.x < best.x)))) {
-      best = t;
-      bestD = d;
+  const nearest = (tiles: { x: number; y: number }[]): { x: number; y: number } | null => {
+    let best: { x: number; y: number } | null = null;
+    let bestD = Infinity;
+    for (const t of tiles) {
+      const d = (t.x + 0.5 - from.x) ** 2 + (t.y + 0.5 - from.y) ** 2;
+      if (d < bestD || (d === bestD && best && (t.y < best.y || (t.y === best.y && t.x < best.x)))) {
+        best = t;
+        bestD = d;
+      }
     }
-  }
-  return best;
+    return best;
+  };
+  const tiles = orderTiles(sim, order);
+  return nearest(tiles.filter((t) => !taken.has(`${t.x},${t.y}`))) ?? nearest(tiles);
 }
