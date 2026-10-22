@@ -263,14 +263,57 @@ def job_detail(key):
     return "initializing / packing"
 
 
+def active_processes():
+    try:
+        output = subprocess.check_output(["ps", "-eo", "pid=,etime=,%cpu=,rss=,args="],
+                                         text=True, stderr=subprocess.DEVNULL, timeout=3)
+    except (OSError, subprocess.SubprocessError):
+        return []
+    result = []
+    for row in output.splitlines():
+        parts = row.strip().split(None, 4)
+        if len(parts) != 5 or "blender" not in parts[4].lower() or "build_sprites.py" not in parts[4]:
+            continue
+        try:
+            result.append((parts[0], parts[1], float(parts[2]), int(parts[3])))
+        except ValueError:
+            pass
+    return result
+
+
+def log_age(key):
+    try:
+        return max(0, int(time.time() - (LOG_DIR / f"{safe_name(key)}.log").stat().st_mtime))
+    except OSError:
+        return None
+
+
+def compact_duration(seconds):
+    if seconds is None:
+        return "unknown"
+    if seconds < 60:
+        return f"{seconds}s"
+    if seconds < 3600:
+        return f"{seconds // 60}m"
+    return f"{seconds // 3600}h{seconds % 3600 // 60:02}m"
+
+
 def status_lines():
     try:
         state = json.loads(STATE_FILE.read_text())
     except (OSError, ValueError):
         return ["No cloud-render state found. Start with 'python3 tools/cloud_render.py run'."]
     jobs = state.get("jobs", {})
+    processes = active_processes()
     lines = ["CC-FTL CLOUD RENDER     " + time.strftime("%Y-%m-%d %H:%M:%S"),
              f"Scale {state.get('scale')}x | {state.get('workers')} workers x {state.get('threads')} threads | Source {state.get('signature', '')[:10]}", ""]
+    if processes:
+        cpu = sum(p[2] for p in processes)
+        ram = sum(p[3] for p in processes) / 1048576
+        lines.append(f"BLENDER: {len(processes)} processes | CPU {cpu:.0f}% / {cpu_budget() * 100}% | RSS {ram:.2f} GiB")
+    else:
+        lines.append("BLENDER: no worker processes detected")
+    lines.append("")
     for title, prefix, total in (("CREW CLIPS", "crew:", len(clips())),
                                  ("NON-CREW FAMILIES", "family:", len(FAMILIES))):
         subset = [(k, v) for k, v in jobs.items() if k.startswith(prefix)]
@@ -281,7 +324,7 @@ def status_lines():
         filled = round(width * done / total)
         lines.append(f"{title:20} [{'#' * filled}{'-' * (width - filled)}] {done}/{total}")
         for k, v in running:
-            lines.append(f"  RUNNING {k[len(prefix):]:20} {job_detail(k)}")
+            lines.append(f"  RUNNING {k[len(prefix):]:20} {job_detail(k)} | last log {compact_duration(log_age(k))} ago")
         for k, v in failed:
             lines.append(f"  FAILED  {k[len(prefix):]:20} {v.get('error', '')}")
         lines.append("")
