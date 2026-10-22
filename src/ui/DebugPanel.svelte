@@ -62,6 +62,9 @@
     <button data-testid="dbg-spawn-scrapper" onclick={() => api.spawnGenerated('faction.scrapper')}>Gen scrapper</button>
     <button data-testid="dbg-spawn-drones" onclick={() => api.spawnGenerated('faction.drones')}>Gen drone</button>
     <button data-testid="dbg-spawn-navy" onclick={() => api.spawnGenerated('faction.navy')}>Gen navy</button>
+    <button data-testid="dbg-station-trading" onclick={() => api.spawnStation('station.trading', 'outpost')}>Trade outpost</button>
+    <button data-testid="dbg-station-hub" onclick={() => api.spawnStation('station.trading', 'hub')}>Trade hub</button>
+    <button data-testid="dbg-station-pirate" onclick={() => api.spawnStation('station.pirate', 'station')}>Pirate den</button>
     <button class:on={!roofed} data-testid="dbg-roof" onclick={toggleRoof}>{roofed ? 'Unroof enemies' : 'Roof enemies'}</button>
     <button disabled={!tile} onclick={() => spawnBot('role.robot_worker')}>Worker bot on tile</button>
     <button disabled={!tile} onclick={() => spawnBot('role.robot_repair')}>Repair bot on tile</button>

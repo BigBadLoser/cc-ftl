@@ -4,7 +4,7 @@ import type { ItemQty } from '../registry';
 
 /**
  * Trade content (`ContentRegistry.trade`). Terminology: a "node" is one playable location (the old "sector"); this file
- * only knows trade partners, which are entities (ships, or stations that have no grid yet).
+ * only knows trade partners, which are entities (ships; stations are immobile ships).
  */
 export interface TradeDef {
   /** Credits the player starts with. */
@@ -54,6 +54,11 @@ export interface TraderDef {
   credits: [number, number];
   /** Stock for sale: each entry is included with `chance` (default 1) and rolls a count in [min, max]. */
   stock: { item: string; min: number; max: number; chance?: number }[];
+  /**
+   * Surplus: every item with `tag` up to `maxTier` (ItemDef.tier; older, middle-grade gear, never the best) is stocked with a
+   * count in [min, max] and sold at `markup` (on top of the other price modifiers). Labelled "surplus" in the trade window.
+   */
+  surplus?: { tag: string; maxTier: number; min: number; max: number; markup: number };
 }
 
 /** A trade partner entity (a ship, or a station): its wallet and stock. Created on the first hail. */
@@ -64,7 +69,7 @@ export interface Trader {
   name: string;
   credits: number;
   stock: ItemQty[];
-  /** True for a station with no grid: deliveries are the temporary instant fallback. */
+  /** True for a station (an immobile ship): its trades run like any ship's, by shuttle. */
   station: boolean;
 }
 export const TraderC = defineComponent<Trader>('trader');
@@ -89,7 +94,11 @@ export interface Offer {
   tick: number;
 }
 
-export type DealPhase = 'dispatch' | 'load' | 'out' | 'exchange' | 'back' | 'unload' | 'done' | 'failed';
+/**
+ * Deal phases. At a station the player's shuttle docks (`dockStation`) and the station crew haul both ways
+ * (`stationWork`) instead of the hover swap (`exchange`).
+ */
+export type DealPhase = 'dispatch' | 'load' | 'out' | 'dockStation' | 'stationWork' | 'exchange' | 'back' | 'unload' | 'done' | 'failed';
 
 /** An accepted deal: escrow, reserved goods and the delivery task. */
 export interface Deal {
@@ -101,10 +110,10 @@ export interface Deal {
   balance: number;
   /** Credits held in escrow from the payer (the player when balance > 0, the trader when < 0). Paid out on delivery. */
   held: number;
-  /** Who flies: the trader's own shuttle, the player's, or the temporary instant fallback (stations with no grid). */
-  courier: 'them' | 'you' | 'instant';
+  /** Who flies: the trader's own shuttle or the player's. */
+  courier: 'them' | 'you';
   phase: DealPhase;
-  /** Vehicle entity doing the run (0 until it exists / instant). */
+  /** Vehicle entity doing the run (0 until it exists). */
   vehicle: number;
   /** Player airlock module the shuttle docks at. */
   airlock: number;
@@ -114,6 +123,10 @@ export interface Deal {
   tick: number;
   /** Why a failed deal failed. */
   reason?: string;
+  /** How the goods change hands at the trader: docked at a station airlock, or the hover swap (no free station airlock). */
+  via?: 'dock' | 'hover';
+  /** Docking at a station: the station airlock (reserved by the dock order) and the bought goods staged in its storage. */
+  dock?: { airlock: number; staged: { storage: number; item: string; count: number }[] };
 }
 
 /** All trade state. Plain data on the Sim, saved with it (optional in old saves). */

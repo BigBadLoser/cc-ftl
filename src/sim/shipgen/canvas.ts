@@ -3,7 +3,7 @@ import type { ChunkDef, RoomRole } from './types';
 
 const ROLES: Record<string, RoomRole> = {
   b: 'bridge', e: 'engine', r: 'reactor', w: 'weapons', s: 'shields', c: 'cargo', q: 'quarters', a: 'core', g: 'hangar', h: 'hall',
-  k: 'dock', u: 'support',
+  k: 'dock', u: 'support', f: 'farm', i: 'industry', m: 'armoury', p: 'plaza', y: 'garden', x: 'drill',
 };
 
 /** Floor letter of a role (inverse of roleOfLetter). */

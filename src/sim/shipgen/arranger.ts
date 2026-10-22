@@ -384,12 +384,24 @@ export class Arranger {
         }
       });
     });
+    // Floor the wall thinning added between assemblies belongs to none: it serves the nearest assembly's access.
+    const ownerNear = (x: number, y: number): AccessKind | undefined => {
+      for (let r = 1; r <= 3; r++) {
+        for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r]] as const) {
+          const a = assemblies[asmOf[(y + dy) * width + x + dx] ?? -1];
+          if (a && x + dx >= 0 && x + dx < width && a.access !== 'external' && rows[y + dy]?.[x + dx] === '_') return a.access;
+        }
+      }
+      return undefined;
+    };
     const traversal: CompDebug['traversal'] = [];
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const c = rows[y]?.[x];
         if (c !== 'D' && !(c === '_' && hallAt(x, y))) continue;
-        let access = assemblies[asmOf[y * width + x] ?? -1]?.access ?? 'human';
+        const own = assemblies[asmOf[y * width + x] ?? -1]?.access;
+        // Floor in a beam's cells (wall thinning grew a room there) serves the room beside it.
+        let access = (c === '_' && own === 'external' ? ownerNear(x, y) : own) ?? ownerNear(x, y) ?? 'human';
         // A door cell can belong to a beam that crosses the wall; it serves the floors it joins.
         if (c === 'D' && access === 'external') {
           for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {

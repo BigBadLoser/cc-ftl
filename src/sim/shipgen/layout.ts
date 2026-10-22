@@ -26,6 +26,8 @@ export class Layout {
   readonly occ: Int16Array;
   /** Tiles crew must be able to stand on (door sides, access tiles, airlock insides). */
   readonly keep: Uint8Array;
+  /** 1 under the blocking part of a solid module (kept by push / pop, so `walkable` is a lookup). */
+  private readonly solid: Uint8Array;
   readonly modules: PlacedModule[] = [];
   private readonly protects: number[][] = [];
   readonly defs: Record<string, ModuleDef>;
@@ -41,6 +43,7 @@ export class Layout {
     this.defs = defs;
     this.occ = new Int16Array(this.w * this.h).fill(-1);
     this.keep = new Uint8Array(this.w * this.h);
+    this.solid = new Uint8Array(this.w * this.h);
     for (let i = 0; i < this.cells.length; i++) {
       if (this.cells[i] !== 'D') continue;
       for (const n of this.neighbours(i)) if (this.cells[n] === '_') this.keep[n] = 1;
@@ -69,15 +72,7 @@ export class Layout {
   /** True if crew can stand on tile i: floor or door, not under the blocking part of a solid module. */
   walkable(i: number): boolean {
     const c = this.cells[i];
-    if (c !== '_' && c !== 'D') return false;
-    const m = this.occ[i] as number;
-    if (m < 0) return true;
-    const pm = this.modules[m] as PlacedModule;
-    const def = this.defs[pm.def] as ModuleDef;
-    if (!def.solid) return true;
-    const x = i % this.w;
-    const y = Math.floor(i / this.w);
-    return openTilesOf(def, pm.x, pm.y, pm.rot).some((t) => t.x === x && t.y === y);
+    return (c === '_' || c === 'D') && this.solid[i] === 0;
   }
 
   /** Why the module cannot go here (null = it fits). `room` restricts the footprint to one room (-1 any). */
@@ -152,8 +147,12 @@ export class Layout {
     const idx = this.modules.length;
     this.modules.push(pm);
     const wallRow = hullRow(def, pm.x, pm.y, pm.rot);
+    const open = def.solid ? openTilesOf(def, pm.x, pm.y, pm.rot) : [];
     for (const t of footprintTiles(def, pm.x, pm.y, pm.rot)) {
-      if (!wallRow.some((w) => w.x === t.x && w.y === t.y)) this.occ[t.y * this.w + t.x] = idx;
+      if (wallRow.some((w) => w.x === t.x && w.y === t.y)) continue;
+      const i = t.y * this.w + t.x;
+      this.occ[i] = idx;
+      this.solid[i] = def.solid && !open.some((o) => o.x === t.x && o.y === t.y) ? 1 : 0;
     }
     const prot = this.protectedTiles(pm).map((t) => t.y * this.w + t.x);
     this.protects.push(prot);
@@ -166,7 +165,7 @@ export class Layout {
     const def = this.defs[pm.def] as ModuleDef;
     for (const t of footprintTiles(def, pm.x, pm.y, pm.rot)) {
       const i = t.y * this.w + t.x;
-      if (this.occ[i] === this.modules.length) this.occ[i] = -1;
+      if (this.occ[i] === this.modules.length) { this.occ[i] = -1; this.solid[i] = 0; }
     }
     for (const i of this.protects.pop() ?? []) this.keep[i] = (this.keep[i] as number) - 2;
   }
@@ -191,6 +190,7 @@ export class Layout {
    */
   unreached(): number {
     const n = this.cells.length;
+    const W = this.w;
     let start = -1;
     let total = 0;
     let bad = 0;
@@ -207,15 +207,17 @@ export class Layout {
     const stack = [start];
     seen[start] = 1;
     let count = 0;
+    const visit = (j: number): void => {
+      if (!seen[j] && this.walkable(j)) { seen[j] = 1; stack.push(j); }
+    };
     while (stack.length > 0) {
       const i = stack.pop() as number;
       count++;
-      for (const j of this.neighbours(i)) {
-        if (!seen[j] && this.walkable(j)) {
-          seen[j] = 1;
-          stack.push(j);
-        }
-      }
+      const x = i % W;
+      if (x > 0) visit(i - 1);
+      if (x < W - 1) visit(i + 1);
+      if (i >= W) visit(i - W);
+      if (i + W < n) visit(i + W);
     }
     return total - count + bad;
   }

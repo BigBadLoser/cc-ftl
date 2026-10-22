@@ -31,6 +31,7 @@ const sim = newGame(seed, content);
 const bridge = createBridge(sim);
 const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
+let starmapOpen = false;
 let hook: { onEvents(types: readonly string[]): void } | undefined;
 
 const itemIcons = createStore<Record<string, UiIcon>>({});
@@ -38,10 +39,22 @@ loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e
 
 const loop = createLoop({
   sim,
-  render: (alpha) => renderer?.render(alpha),
+  // The starmap covers the whole screen, and in hyperspace or while deploying the sector is empty: skip drawing the world.
+  render: (alpha) => { if (!starmapOpen && sim.sector.state === 'active') renderer?.render(alpha); },
   onEvents: (events) => {
     controller.onEvents(events);
     renderer?.onEvents(events);
+    // A jump lifts the ships out of the sector: their scenes are stale. The deployed ship is shown (and framed) like a new game's.
+    for (const e of events) {
+      if (e.type === 'sector.jumped' || e.type === 'galaxy.hyperspace') {
+        renderer?.setSector(sim.sector.grid); // archiving and restoring swap the sector's grid object
+        renderer?.resetWorld();
+      }
+      else if (e.type === 'sector.deployed') {
+        const grid = shipGrid(sim, e.ship);
+        if (grid) renderer?.setGrid(grid);
+      }
+    }
     hook?.onEvents(events.map((e) => e.type));
   },
   onFrame: (stats) => bridge.update(stats, renderer?.info()),
@@ -119,6 +132,23 @@ function homeShipC() {
   return sim.world.get(homeShip(sim), ShipC);
 }
 
+/**
+ * Debug: generate a station (`kind` 'station.trading'..., `size` outpost | station | hub) east of everything in the node
+ * and frame it with the player's ship. `?station=trading:hub` spawns one at start.
+ */
+function spawnStation(kind: string, size: 'outpost' | 'station' | 'hub'): void {
+  const before = new Set(sim.world.query(ShipC));
+  bridge.dispatch({ type: 'debug.spawnStation', kind, size, seed: (Math.random() * 0x7fffffff) >>> 0 });
+  // The command runs on the next tick: frame the new station once it exists.
+  const frame = (tries: number): void => {
+    const id = sim.world.query(ShipC).find((i) => !before.has(i) && sim.world.get(i, ShipC)?.immobile);
+    if (id) renderer?.frameShips([homeShip(sim), id]);
+    else if (tries > 0) setTimeout(() => frame(tries - 1), 100);
+  };
+  frame(30);
+}
+const stationFlag = params.get('station');
+
 const api: UiApi = {
   snapshot: bridge.snapshot,
   inspect: bridge.inspect,
@@ -151,6 +181,15 @@ const api: UiApi = {
   selectedAsteroid: controller.selectedAsteroid,
   selectAsteroid: controller.selectAsteroid,
   story: bridge.story,
+  starmap: bridge.starmap,
+  planRoute: bridge.planRoute,
+  deploy: bridge.deploy,
+  deployCheck: bridge.deployCheck,
+  jumpWarnings: bridge.jumpWarnings,
+  setStarmapOpen: (open) => {
+    starmapOpen = open;
+    bridge.setStarmapOpen(open);
+  },
   chooseStory: bridge.chooseStory,
   focusShuttle: (id) => {
     const b = sim.world.get(id, BodyC);
@@ -163,6 +202,7 @@ const api: UiApi = {
   focusFight: (ship) => focusFight(ship),
   spawnRaider: (boarders) => spawnRaider(boarders),
   spawnGenerated: (faction) => spawnGenerated(faction),
+  spawnStation: (kind, size) => spawnStation(kind, size),
   overlayList,
   overlayLegend,
   dismissAlert: controller.alerts.dismiss,
@@ -195,12 +235,20 @@ const api: UiApi = {
         attachInput(canvas, r, controller.attach(r));
         window.addEventListener('resize', () => r.resize());
         loop.start();
+        if (stationFlag) {
+          const [k, s] = stationFlag.split(':');
+          spawnStation(`station.${(k ?? 'trading').replace(/^station\./, '')}`, (s === 'station' || s === 'hub' ? s : 'outpost'));
+        }
+        // Build the starmap's geometry in idle time (one small piece per slot), so its first open does not wait for it.
+        const idle = (f: () => void): void => (typeof requestIdleCallback === 'function' ? void requestIdleCallback(f, { timeout: 3000 }) : void setTimeout(f, 100));
+        const warm = (): void => { if (bridge.warmStarmap()) idle(warm); };
+        setTimeout(() => idle(warm), 1500);
       })
       .catch((e: unknown) => errorLog.push(e));
   },
 };
 
-// Periodic events: one draw about every 3 minutes of play. Danger tier and territory are parameters until sectors are redone.
-bridge.dispatch({ type: 'story.setContext', danger: 1, faction: null, periodicSec: 180 });
+// Periodic events: one draw about every 3 minutes of play. Danger tier and territory follow the current starmap node.
+bridge.dispatch({ type: 'story.setContext', periodicSec: 180 });
 
 mount(App, { target, props: { api } });

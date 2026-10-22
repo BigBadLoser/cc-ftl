@@ -1,11 +1,13 @@
 import {
-  ShipC, TraderC, VehicleC, courierDef, hailVerdict, planCourier, playerItems, playerShip, profileFor, reputationWith, unitPrice, type Deal, type Sim,
+  ShipC, TraderC, VehicleC, courierDef, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, reputationWith, unitPrice, type Deal, type Sim,
 } from '../sim';
 import type { UiTrade, UiTradeDeal, UiTradePartner } from '../ui/api';
 
 /** Short label of what a deal is doing now. */
 const PHASE: Record<Deal['phase'], string> = {
-  dispatch: 'Sending the shuttle', load: 'Loading the shuttle', out: 'Shuttle on its way over', exchange: 'Swapping cargo',
+  dispatch: 'Sending the shuttle', load: 'Loading the shuttle', out: 'Shuttle on its way over',
+  dockStation: 'Docking at the station', stationWork: 'Station crew loading and unloading',
+  exchange: 'Swapping cargo',
   back: 'Shuttle bringing it home', unload: 'Crew unloading the cargo', done: 'Settled', failed: 'Called off',
 };
 
@@ -38,7 +40,9 @@ export function buildTrade(sim: Sim): UiTrade {
         const mine = playerItems(sim, item);
         const sell = unitPrice(sim, id, item, 'sell');
         const buy = unitPrice(sim, id, item, 'buy');
-        if (sell !== null && buy !== null && (theirs > 0 || mine > 0)) lines.push({ item, name: sim.content.items[item]?.name ?? item, theirs, mine, sell, buy });
+        if (sell !== null && buy !== null && (theirs > 0 || mine > 0)) {
+          lines.push({ item, name: sim.content.items[item]?.name ?? item, theirs, mine, sell, buy, ...(isSurplus(sim, trader.profile, item) ? { surplus: true } : {}) });
+        }
       }
     }
     const offer = sim.trade.offers.find((o) => o.ship === id);
@@ -55,7 +59,8 @@ export function buildTrade(sim: Sim): UiTrade {
   }
   partners.sort((a, b) => a.distance - b.distance || a.id - b.id);
   const deals: UiTradeDeal[] = sim.trade.deals.map((d) => ({
-    id: d.id, ship: d.ship, partner: sim.world.get(d.ship, TraderC)?.name ?? 'Trader', phase: d.phase, status: d.phase === 'failed' ? `Called off: ${d.reason ?? ''}` : PHASE[d.phase],
+    id: d.id, ship: d.ship, partner: sim.world.get(d.ship, TraderC)?.name ?? 'Trader', phase: d.phase, status: d.phase === 'failed' ? `Called off: ${d.reason ?? ''}`
+      : d.phase === 'exchange' && d.via === 'hover' ? 'Swapping cargo from a hover (no station airlock free)' : PHASE[d.phase],
     courier: d.courier, give: list(sim, d.give), get: list(sim, d.get), balance: d.barter ? 0 : d.balance, barter: d.barter, vehicle: d.vehicle,
     live: d.phase !== 'done' && d.phase !== 'failed', cancellable: d.phase === 'dispatch' || d.phase === 'load',
     flying: d.vehicle !== 0 && sim.world.get(d.vehicle, VehicleC)?.state === 'flying',

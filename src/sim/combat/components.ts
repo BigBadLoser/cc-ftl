@@ -18,14 +18,15 @@ export interface Sector {
   inCombat: boolean;
   /** Set once the player has lost (reason code, e.g. 'captured'); see the `game.lost` event. */
   lost?: string;
-  /** Galaxy node this sector is (0 = the starting node). Archives are keyed by it. */
-  node: number;
+  /** Galaxy node id this sector is (`START_NODE` at the start). Archives are keyed by it. */
+  node: string;
   /**
-   * 'active': normal play. 'deploying': the player's ship has jumped in and waits as `packet` until `sector.deploy` stamps it
-   * (the deploy modal pauses the sim meanwhile).
+   * 'active': normal play. 'hyperspace': the player's ship has been lifted into `packet` and travels (`galaxy.travel`); the sector
+   * is empty and only the travel clock runs. 'deploying': it dropped out at a node and waits as `packet` until `sector.deploy` stamps
+   * it (the deploy picker pauses the sim meanwhile).
    */
-  state: 'active' | 'deploying';
-  /** The player's ship in transit while deploying. */
+  state: 'active' | 'hyperspace' | 'deploying';
+  /** The player's ship in transit while in hyperspace or deploying. */
   packet?: ShipPacket;
 }
 
@@ -81,6 +82,13 @@ export interface Ship {
   outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean; provoked: boolean };
   /** Set on a base the player claimed on an asteroid (`asteroid.claim`): immobile, never disabled or wrecked by the ship-state system. */
   base?: { asteroid: number };
+  /** Stations: no FTL, no engines, never flees or jumps; it stays in its node (archived with it). */
+  immobile?: true;
+  /**
+   * Dormant hostile (a pirate den): no combat until provoked. Holds the integrity it had when it went quiet; aiming at it,
+   * damaging it or boarding it wakes it (dormancySystem) and the field is removed.
+   */
+  dormant?: number;
 }
 export const ShipC = defineComponent<Ship>('ship');
 

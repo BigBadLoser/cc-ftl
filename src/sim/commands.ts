@@ -73,13 +73,6 @@ export type Command =
   /** Restrict a storage module to `items` (item ids), or null to accept everything. */
   | { type: 'storage.setFilter'; moduleId: number; items: string[] | null }
   /** Spawn a hostile ship from a template; (x, y) is its top-left tile in sector coordinates. */
-  /**
-   * FTL jump of the player's ship (`ship`, FTL charged) to galaxy node `node`: the ship, its stowed and docked own vehicles and
-   * the crew aboard lift into a packet, the rest of the sector is archived, and the sector waits in state 'deploying' (the node's
-   * archive restored if it has one). `withDocked`: ids of non-player vehicles docked at its airlocks to take along (the others
-   * are cut loose). Crew or shuttles away stay in the archive (the UI confirms first, see `jumpWarnings`).
-   */
-  | { type: 'sector.jump'; ship: number; node: number; withDocked?: number[] }
   /** Place the waiting ship (state 'deploying') with its top-left at sector (x, y); checked by the gap rule. */
   | { type: 'sector.deploy'; x: number; y: number }
   | { type: 'debug.spawnEnemy'; template: string; x: number; y: number }
@@ -123,8 +116,11 @@ export type Command =
   | { type: 'combat.setHold'; ship: number; hold: boolean }
   /** Fire every charged weapon of the ship now. */
   | { type: 'combat.fireVolley'; ship: number }
-  /** Jump away with a fully charged FTL drive. */
-  | { type: 'combat.flee'; ship: number }
+  /**
+   * Flee: leave the node with a charged FTL drive. The player's ship enters hyperspace like `galaxy.jump` with a one-hop route to `to` (an
+   * adjacent node), else to the cheapest connected node it can afford; AI ships just leave (state 'fled').
+   */
+  | { type: 'combat.flee'; ship: number; to?: string }
   /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
   | { type: 'ship.scuttle'; ship: number }
   /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */
@@ -154,6 +150,23 @@ export type Command =
   | { type: 'story.dismissNotice'; notice: number }
   /** Debug: set a persistent flag/counter (0 clears it). */
   | { type: 'story.setFlag'; flag: string; value: number }
+  /**
+   * The one way to travel (step 9): the player's `ship` enters hyperspace and follows `route` (the nodes to pass, in order, the first one
+   * joined to the current node, each pair by an edge). Needs a valid route, an active sector, no live trade deal, FTL charge for the
+   * largest hop (spent once) and fuel for the first hop (each later hop pays as it is entered; the trip stops where it cannot). The
+   * ship (with its stowed and docked own vehicles and the crew aboard) lifts into a packet and the rest of the sector is archived.
+   * `withDocked`: ids of non-player vehicles docked at its airlocks to take along (the others are cut loose). Crew or shuttles away
+   * stay in the archive (the UI confirms first, see `jumpWarnings`). Nothing is paid or moved if it is rejected.
+   */
+  | { type: 'galaxy.jump'; ship: number; route: string[]; withDocked?: number[] }
+  /** End the hyperspace trip at the node last passed: its archive comes back (or its ships appear on the first visit) and the ship waits to deploy. */
+  | { type: 'galaxy.drop' }
+  /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */
+  | { type: 'debug.galaxyReveal'; radius: number }
+  /** Debug: move to any generated galaxy node at no cost, as if arriving there (no event draw). */
+  | { type: 'debug.galaxyTeleport'; node: string }
+  /** Debug: fill the player's FTL drive. */
+  | { type: 'debug.chargeFtl' }
   /** Call a ship (or station) in the node. Non-hostile ones answer (see trade/traders.ts `hailVerdict`), hostile ones refuse. */
   | { type: 'trade.hail'; ship: number }
   /**
@@ -167,7 +180,12 @@ export type Command =
   /** Withdraw an offer, or call off a deal whose shuttle has not left yet. `id` is the offer or deal id. */
   | { type: 'trade.cancel'; id: number }
   /** Spawn a trading station (an entity with a wallet and stock but no grid; deliveries use the instant fallback). */
-  | { type: 'debug.spawnStation'; profile: string; name?: string }
+  /**
+   * Generate and stamp a station (shipgen/stationGen.ts) of `kind` ('station.trading'...) and `size` at (x, y), or east of
+   * everything in the node, with a trader aboard. The old grid-less form `{profile: 'trader.station'}` still works: it
+   * spawns a trading outpost.
+   */
+  | { type: 'debug.spawnStation'; kind?: string; size?: 'outpost' | 'station' | 'hub'; seed?: number; x?: number; y?: number; profile?: string; name?: string }
   /** Set the player's credits. */
   | { type: 'debug.setCredits'; value: number }
   | { type: 'debug.spawnItems'; ship: number; x: number; y: number; item: string; count: number };

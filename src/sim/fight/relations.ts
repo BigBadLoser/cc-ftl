@@ -7,10 +7,19 @@ import type { Sim } from '../sim';
 import { AllegianceC, EquipOrderC, FighterC, SurrenderedC } from './components';
 import { shipById } from '../combat/ships';
 import { AlienC } from '../aliens/components';
+import { StationCrewC, WantedC } from '../stations/components';
 
-/** True if the two crew members are on opposing sides (see factionsHostile: neutral fights nobody, rogue everybody). */
+/**
+ * True if the two crew members are on opposing sides (see factionsHostile: neutral fights nobody, rogue everybody), or one
+ * is wanted by the station the other belongs to (an intruder, or invited crew who attacked: stations/alarm).
+ */
 export function isHostile(sim: Sim, a: number, b: number): boolean {
-  return factionsHostile(sim.world.get(a, AllegianceC)?.faction, sim.world.get(b, AllegianceC)?.faction);
+  if (factionsHostile(sim.world.get(a, AllegianceC)?.faction, sim.world.get(b, AllegianceC)?.faction)) return true;
+  const wanted = (x: number, y: number): boolean => {
+    const w = sim.world.get(x, WantedC);
+    return !!w && sim.world.get(y, StationCrewC)?.station === w.station;
+  };
+  return wanted(a, b) || wanted(b, a);
 }
 
 /** Surrendered, downed, dead or an inert robot: out of the fight. Capture treats all of them as taken. */

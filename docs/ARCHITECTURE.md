@@ -114,7 +114,7 @@ field systems read.
 - This one mechanism covers boarding, away teams, derelicts, captured ships and future fleets.
 
 **Galaxy.**
-- Chunked and seeded, generated on demand.
+- Chunked and seeded, generated on demand (see "Starmap" below).
 - Only the local area simulates at full fidelity. Distant places are abstract until visited.
 
 ## Content
@@ -546,7 +546,8 @@ counters, reputation per faction, the open decision (`active`), a `queue` of due
 **EventDef**
 - `mode`: `'decision'` (pauses the game in a modal) or `'notice'` (in-world, non-pausing alert; `effects` apply on arrival; `lead`
   makes the notice open that decision when tapped; `expireSec`).
-- `triggers[]`: `arrival` (weight; drawn by `story.arrive`), `periodic` (weight; drawn every `periodicSec` outside combat while no
+- `triggers[]`: `arrival` (weight; drawn by `story.arrive` and on a galaxy jump), `transit` (weight; drawn instead of an arrival after crossing an
+  anchored hyperlane), `periodic` (weight; drawn every `periodicSec` outside combat while no
   decision is open), `flag` (`flag`, `atLeast`, `delaySec`: queued when the flag first reaches the level), `chain` (only reached by a
   `chain` effect or debug fire).
 - Pool filters: `danger {min,max}`, `factions[]` (null = open space), `eligible: Requirement[]`, `once`, `cooldownSec`. A draw sums
@@ -581,7 +582,7 @@ and flag triggers resolve and that every choice runs). For an arc, have one even
 ## Trade, `src/sim/trade/`
 
 **Terminology (user decision, 2026-10-19):** a **node** is one playable grid or location (what older text and code call a "sector"); a
-**sector** is a group of nodes; sectors are linked by **hyperlanes**. New code and docs say "node". Trade only needs "ships in the same
+**sector** is a group of nodes; sectors are linked by **hyperlanes**; a **cluster** is a group of sectors (see "Starmap"). New code and docs say "node". Trade only needs "ships in the same
 node", which is every ship in `sim.sector` today.
 
 **Model.** Credits are a separate currency (`sim.trade.credits`, the player's; NPC wallets are `TraderC.credits`). Barter swaps items for
@@ -613,7 +614,8 @@ Civilians start at +2 (they talk until you are at -3 with `traders`), navy at 0,
 
 **Commands** (events out): `trade.hail {ship}` (`trade.hailAnswered` / `trade.hailRefused {reason}`), `trade.offer {ship, give, get,
 barter?}` (validated and priced, becomes a pending offer, `trade.offered`; one offer per partner), `trade.accept {offer}`
-(`trade.dealMade {courier}`), `trade.cancel {id}` (an offer, or a deal still in `dispatch`/`load`), `debug.spawnStation {profile, name?}`,
+(`trade.dealMade {courier}`), `trade.cancel {id}` (an offer, or a deal still in `dispatch`/`load`), `debug.spawnStation {kind?, size?, seed?, x?, y?, name?}` (the old
+`{profile}` form spawns a trading outpost),
 `debug.setCredits`. Offer rejects: `noTrader notAnswered empty badLine noPrice theyLack noItems unbalanced noFunds theyBroke noRoom`;
 accept adds the courier ones `noCourier noPilot courierBusy noAirlock tooBig dealOpen`. `bridge.dispatch` runs one tick for `trade.*`
 commands while paused so the window answers at once.
@@ -623,8 +625,14 @@ commands while paused so the window answers at once.
    airlock on the player's ship).
 2. Goods **from the trader** come on the **trader's own shuttle** if its kind has `shuttle: true` (a real `VehicleC` spawned at its ship,
    no crew, `home: 0`, despawned when it is back); otherwise the **player's shuttle goes over** to fetch them.
-3. A partner with no `ShipC` (a station) uses the **instant fallback**: the goods change hands on the next tick. **TEMPORARY**: remove it
-   when stations are grids with airlocks and shuttles (the deal then takes branch 1 or 2 unchanged).
+3. Stations are ships (an immobile `ShipC`, see "Stations" below). Station kinds have no shuttle, so the player's shuttle flies every
+   station run, and it **docks** (`trade/stationDock.ts`) instead of hovering: `out` -> `dockStation` (dock at a free working station
+   airlock; the dock order reserves it, `dockError` 'occupied' for anyone else) -> `stationWork` (the bought goods are staged from the
+   trader's set-aside stock into the station storage nearest the airlock, station crew haul both ways between station storage and the
+   shuttle, the player's goods pass from station storage into the trader's stock) -> undock -> `back`. No free station airlock, a
+   failed dock or a station crew that never comes falls back to the hover swap (`Deal.via 'hover'`, shown in the deal status). A run
+   can be cancelled while docked: haul jobs are dropped, the bought goods return to the trader, the player's goods to the hold, and
+   the shuttle flies home. (The instant fallback for grid-less stations is gone.)
 One run carries at most the shuttle hold (`VehicleDef.cargo`, 40 units) each way.
 
 A **deal** (`Deal`) holds the payer's credits in **escrow** from accept (the player's if `balance > 0`, else the trader's) and takes the
@@ -758,6 +766,136 @@ shipgen's `structureParts`):
   `NodeStrip`, `api.selectAsteroid` (the controller also opens it on a tap on rock no region claims). Pod bays come with their pod
   when built by crew (`ModuleDef.vehicleBay.builtWith`, spawned in `finishModule`).
 - Contact sheets: `node tools/asteroids/cli.js <big|field|all> [--from 1] [--count 12] [--scale 4] [--coverage open|mixed|dense] [--out dir]`.
+
+## Starmap (galaxy), `src/sim/galaxy/`
+
+Sim only so far (branch `galaxy`): no UI, no snapshot, no tools. The starmap view, its zoom levels and the dev tools live on the
+unmerged `starmap-macro-wip` (PR #16) and are described under "Zoom levels" as the target.
+
+**Terms (user decisions).**
+- **Node:** one playable location (one sector grid; older text says "sector" for it).
+- **Sector:** a group of nodes (a blob of 6 to 12) around a **central body**.
+- **Cluster:** a named group of sectors with one owner (2026-10-22: "cluster", not "region", because "region" is the sector-grid ship
+  region of `sim/regions.ts`). Code, ids (`g.<rx>.<ry>`), tuning (`CLUSTER_*`) and strings say cluster.
+- **Galaxy:** all clusters. Nodes inside a sector are joined by **routes**, sectors by **hyperlanes**, clusters by **gates** (a hyperlane
+  that crosses a cluster border) and, across voids, **rift lanes**.
+
+**Model** (`types.ts`). Generated data is immutable and a pure function of (seed, galaxy content, chunk): `ChunkData { sectors, nodes, edges }`.
+- `SectorData`: site, radius, padded hull, name, faction, danger, its `cluster` / `clusterName` / `clusterType`, `hub`, layout style and
+  central `body`.
+- `NodeData`: position, danger, territory faction, `structures: {def, owner}[]` descriptors, `resources`, `contacts` present at generation.
+- `EdgeData`: `route` or `hyperlane`, length, `fuel`, `charge`, `time`, optional mid-lane `anchor`, `gate`, `rift`.
+- The mutable `GalaxyState` (`sim.galaxy`): current node, generated chunks, `discovered` / `visited` (node to tick), per-node
+  `NodeState { contacts }` (made on first use from the generated contacts), its own Rng (arrival rolls never touch `sim.rng`), the next
+  arrival tick, jump count, travel days and a `rev` counter.
+- `galaxyIndex(g)` is a derived lookup (nodes, sectors, edges, adjacency in edge-id order), cached per chunk count, never saved.
+
+**Generation pipeline** (`generator.ts` and the files it composes). Every stage is a pure function of (seed, position or id) that reads a bounded
+neighbourhood, so any chunk can be generated first, in any order, and agrees with its neighbours at the seams.
+1. **Terrain** (`terrain.ts`): a density field in [0, 1] from domain-warped fractal noise: filaments along one contour of the warped
+   noise, **cloud** (nebula) patches on a second channel, a large-scale tide (dense core expanses vs a sparse rim) and a guaranteed
+   bump at the start. Zero density is **void**, the **rifts**. Cached on lattices (`TERRAIN_LATTICE`, `TERRAIN_COARSE`, `TERRAIN_LOW`); the
+   cloud channel is the nebula data the starmap view paints.
+2. **Sites** (`sites.ts`): one candidate per `SITE_CELL` (320) cell, alive with a chance rising with density (`DENSITY_MIN` to
+   `DENSITY_FULL`), thinned Matérn-style so sites keep `SITE_SPACING` apart (360 in the core, 640 in thin space), then a radius
+   (`SECTOR_RADIUS`, capped so neighbouring hulls keep `HULL_GAP`: hulls never overlap, also across chunk borders). The start cell's
+   site is pinned at (0, 0).
+3. **Clusters** (`clusters.ts`): seeds on dense ground, one candidate per `CLUSTER_CELL` (1800), thinned to a varied spacing
+   (`CLUSTER_SPACING`, skewed small so a few are large). A sector joins the seed cheapest to reach within `CLUSTER_REACH`: distance
+   (wobbled by `CLUSTER_BORDER_WOBBLE`) plus `CLUSTER_RIFT_COST` per unit of void crossed, so borders follow the rifts. Clusters with
+   fewer than `MIN_CLUSTER_SECTORS` are absorbed; sites within `BORDER_GAP` of a border are left empty (clusters sit apart); **wild space**
+   (sectors the cluster reaches only over void or with too few mates) belongs to no cluster and no faction. A cluster has a **name**
+   (content name parts), a **type** (`core`, `border`, `corporate`, `trade`, `pirate`, `machine`, `frontier`, `rich`, from its owner's
+   kind, danger and density) and a **hub**: its best-scoring sector, the crossroads (more nodes, `spokes` layout, every clear lane kept).
+4. **Territory** (`territory.ts`): a faction seed field read at the **cluster seeds**, so whole clusters change hands: one seed per
+   `TERRITORY_CELL x TERRITORY_SCALE`, its faction drawn by `GalaxyFactionDef.territory.weight` among factions whose danger range admits
+   the seed's tier (plus open space), reach `territory.reach` (default `TERRITORY_REACH`). The start's seed belongs to the `home` faction.
+   `danger = min(DANGER_MAX (9), floor(distance from start / DANGER_STEP (650)))`.
+5. **Sectors** (`sector.ts`, `layout.ts`): a layout style (`cloud streak clumps ring fork corridor`, weighted, with a looseness; a hub is
+   `spokes`, the start sector a `cloud`) and a **central body** (`star red_dwarf blue_giant gas_giant nebula black_hole`, weighted). Nodes
+   are Poisson-disk darts inside the disc accepted against the style weight times the body's pull (keep-out around the body, a mild orbit
+   band), 6 to 12 of them; the start sector's node 0 is pinned at the origin (`START_NODE` = `s.0.0.n0`). Routes are the Gabriel graph's
+   spanning tree plus `ROUTE_EXTRA`. Contents: territory faction, a station of the owner's kinds (or a free traders' station in open
+   space), asteroid fields and old derelicts by per-node chance, contacts at `CONTACT_PER_DANGER x danger`; the start node has a trade station.
+6. **Hyperlanes** (`generator.ts`): candidates are Gabriel pairs that keep out of the void (no stretch over `LANE_MAX_VOID` below
+   `LANE_MIN_DENSITY`) plus **rift lanes**: relative-neighbour pairs up to `RIFT_MAX` that do cross it, so no island of sectors is stranded.
+   Inside a cluster: a spanning tree of the cluster's relative-neighbour backbone plus `LOOP_CHANCE` of the other links (some choice, some
+   chokepoints), and the hub keeps all its clear lanes. Wild sectors keep their relative-neighbour lanes. Each lane joins the two
+   **gateway** nodes facing each other. `ANCHOR_CHANCE` of lanes carry a mid-lane anchor.
+7. **Gates**: between two touching clusters one crossing lane is kept (shortest, rift lanes penalised by `RIFT_GATE_PENALTY`), plus a second and
+   third with `GATE_SECOND` / `GATE_THIRD` chance at least `GATE_SPREAD` apart; a border that has a detour through a third cluster closes with
+   `NO_GATE` chance. Crossing a gate costs `GATE_FUEL` extra and `GATE_TIME` times the days.
+
+**Chunks and the lazy frontier.** A chunk is `CHUNK_CELLS`^2 (4x4) site cells (1280 units). It holds the sectors whose cell lies in it, their routes
+and every hyperlane touching them (a lane between two chunks is stored in both, identical). `ensureAround(sim, node)` generates every chunk within
+`FRONTIER_RING` (1, so 3x3 chunks) of the node's chunk on arrival; the sensor scan generates the chunk a hyperlane leads into.
+`GalaxyGen` (`galaxyGen(seed, content)`) memoises the pure functions per (seed, content); it is a cache and never saved.
+
+**Save.** `SaveData.galaxy` (save v26) holds the state with `chunks` as sorted keys plus `generatorVersion`; `loadGalaxy` regenerates the
+chunks from the seed. `GENERATOR_VERSION` (`tuning.ts`) must be bumped whenever the generator or the galaxy content tables change what a key
+generates; a save of another version is refused (no migrations, like `SAVE_VERSION`).
+
+**Travel** (`travel.ts`, `route.ts`, `costs.ts`). Costs by length: fuel = ceil(length / 90) for routes, ceil(length / 220) for hyperlanes (+ `GATE_FUEL`
+through a gate); FTL charge = 10 + 0.12 x length (max 30 s) for routes, a full charge (`FTL_CHARGE_SEC`) for hyperlanes; days = length / 40 or / 110
+(x `GATE_TIME` for a gate). The charge is the existing `CombatC.ftl`; fuel is `item.fuel` in player storage. `planStarRoute(g, from, to)` is Dijkstra on fuel,
+ties on time then node id, over discovered nodes.
+- **Hyperspace (user decisions 2026-10-22: the starmap is turn-based; a jump enters hyperspace).** `galaxy.jump { ship, route, withDocked? }` is the only way to
+  travel (`sector.jump` no longer exists). `route` is the nodes to pass, each pair joined by an edge. It validates (rejections `inHyperspace`, `deploying`,
+  `notPlayerShip`, `tradeInProgress`, `noRoute`, `notCharged`, `noFuel`), pays the **FTL charge once** (the largest any hop needs; a hyperlane hop needs a full
+  drive, and per-hop charge would make a mid-route hyperlane impossible without recharging in flight) and the **first hop's fuel**, then lifts the ship into a
+  packet and archives the node (`enterHyperspace`, `sector/jump.ts`). `sector.state` is `'hyperspace'`, the sector is empty and `Sim.step` runs `advanceTravel`
+  instead of the pipeline: the ship's interior stays frozen in the packet. `GalaxyState.travel` holds the route, the node last passed (`at`), the tick in the hop
+  and the phase (`hop`, `arrived`, `noFuel`).
+- **Turns.** Each hop entered is one turn (`GalaxyState.turn`; edge days stay as data in `galaxy.days` but do not set the pace). The sim moves one hop per
+  `TURN_TICKS` (16) ticks, only as pacing. `onTurn(sim, turn)` (`galaxy/turn.ts`) runs once per hop entered (the first on `galaxy.jump`, the rest in
+  `advanceTravel`) and emits `galaxy.turn`; the next slice puts NPC movement and encounters there. The map's glide between nodes is a fixed 700 ms tween in the view, not sim time.
+- **Fuel in hyperspace** is read from and burnt in the packet (`galaxy/fuel.ts`: `fuelStock`, `burnFuel`, `ftlCharge`), each hop's fuel as it is entered. A route may start
+  with fuel for its first hop only; the trip stops (`noFuel`, event `galaxy.stalled`) at the last node reached when the next hop cannot be paid, and waits there.
+  `galaxy.current` and `sector.node` move as each node is passed; the arrival scan, `story.context` and the owed story draw (`pendingDraw`) follow.
+- **`galaxy.drop`** ends the trip. At a node (the end, stalled) it drops at once; mid-hop it cuts the route after the hop under way and drops at the next node on arrival
+  (the ship is in a lane, not at a node, and falling back would waste the hop's fuel). Dropping restores the node's archive (`dropOut`), or on the first entry makes its
+  generated contacts real ships (the node's archive owns them once left), and the ship waits in state `'deploying'`; `sector.deploy` places it (the deploy picker),
+  restarts the arrival clock and draws the owed story event.
+- **Flee is a one-hop hyperspace trip.** `combat.flee { ship, to? }` for the player's ship is `galaxy.jump` with a one-hop route to `to` (an adjacent node) or, by default,
+  the cheapest adjacent node it can pay for now (least fuel, then charge, then node id). The player then drops (or opens the map). AI ships keep the old flee (`'fled'`).
+- Ids: `Sector.node`, `SectorArchive.node`, `archiveOf`, `restoreArchive` and `sector.jumped` (emitted at the drop) use the galaxy node id (a string; `START_NODE` at the start).
+- While `sector.state` is not `'active'` the pipeline is skipped, `galaxySystem` and `rollArrival` return early, and arrivals only spawn into an active node.
+
+**Arrivals** (`galaxySystem`, `arrivals.ts`). Every `ARRIVAL_EVERY_SEC` (60) at the current node: chance `ARRIVAL_PER_DANGER x danger` (cap
+`ARRIVAL_MAX_CHANCE`; x1.5 in hostile territory, x0.4 in friendly), up to `MAX_HOSTILE_CONTACTS`, the faction drawn from the node's traffic pool
+(factions with `traffic` at that danger, the owner weighted up) filtered to hostile ones. Rolls use the galaxy Rng. Contacts of wrecked, fled or
+captured ships are pruned each second. Danger 0 never rolls. `playerShipInfo` is the galaxy's `{id, ship}` helper; trade's `playerShip(sim)` is the id.
+
+**Factions and standings** (`standing.ts`, `src/content/galaxy.ts`). There is one faction table: the galaxy faction defs. Each names the
+generator styles of its ships, combat side, territory, stations, traffic, `baseStanding`, `relations` and a **reputation key** (`reputation`),
+one of trade's keys: `traders`, `corp`, `navy`, `pirates`, `drones` (the three corporations share `corp`). Reputation stays in `sim.story.reputation`,
+the only store; trade's `reputationWith` and `hailVerdict` are the source of truth for prices and hailing and the galaxy only reads the same
+numbers: `standing = baseStanding + reputation[own key] + STANDING_SPILLOVER (0.25) x sum(relation x reputation[their key])`, tiers hostile below
+`HOSTILE_BELOW` (-2), friendly from `FRIENDLY_AT` (3), `alwaysHostile` overrides. `story.context.faction` is the territory owner's reputation key
+(so event `factions: ['corp']` matches any corporation's space).
+
+**Zoom levels** (view design, built on `starmap-macro-wip`, not ported). The map has three levels by zoom, each drawing from the same chunks:
+1. **Sector:** nodes, routes, hyperlane exits labelled with where they lead, central bodies, sector outlines, the nebula cloud channel, the plotted
+   route.
+2. **Cluster:** sectors as patches in their cluster's colour with body, name, danger and known services, joined by connectors; for route planning.
+3. **Galaxy:** clusters as patches (uncharted ones as fog) joined by gates, rift lanes and routes through unclaimed space.
+The sim side is `clusterName` / `clusterType` / `cluster` on sectors and the `gate` / `rift` flags on edges.
+
+**View** (`app/starmap*.ts`, `ui/Starmap*.svelte`). `buildStarmap(sim)` (app) turns the generated galaxy into `UiStarmap` (plain data in `ui/starmapApi.ts`: sectors with outlines and bodies, nodes, edges, exits, clusters and their links,
+nebula tiles; colours as theme tones). The bridge builds it lazily (`warmStarmap` in idle slots, or on first open), keeps fuel and charge fresh while the screen is open, and rebuilds on `galaxy.rev`. `StarmapView` owns the camera, hit testing and hover and
+picks the level by zoom (sector below 2200 units across the short side, cluster below 11000, galaxy above); the level components draw with `starmapStyle.ts`, the only module that maps tones and danger to theme tokens. Flee mode (`flee` prop) restricts picks to
+nodes one jump away. While the map is open the world is not rendered.
+
+**Debug commands:** `debug.galaxyReveal {radius}`, `debug.galaxyTeleport {node}`, `debug.chargeFtl`.
+
+**Tests:** `galaxy/generator.test.ts` (determinism, order independence, seams, costs, start), `generator.slow.test.ts` (7x7 spacing and hull overlap, 9x9
+connectivity), `route.test.ts`, `content/galaxy.test.ts` (content, standings, travel, arrivals, save, generator version, deploying).
+**`newGame` cost with the galaxy: about 350 to 450 ms** (measured 2026-10-22 at `FRONTIER_RING` 2: 25 chunks; at 1 (now): 9 chunks, 270 to 450 ms), mostly generation.
+
+**Tuning** (`galaxy/tuning.ts`): denser galaxy: `SITE_SPACING`, `SITE_CELL`; bigger sectors: `SECTOR_RADIUS`; busier sectors: `NODES_PER_SECTOR`, `NODE_SPACING`;
+more loops: `ROUTE_EXTRA`, `LOOP_CHANCE`; cluster size and spacing: `CLUSTER_SPACING`, `CLUSTER_REACH`, `MIN_CLUSTER_SECTORS`; how closed the borders are:
+`GATE_*`, `NO_GATE`; faster danger ramp: `DANGER_STEP`; bigger faction blobs: `TERRITORY_CELL`, `TERRITORY_SCALE`; jump prices: `*_UNITS_PER_FUEL`,
+`ROUTE_CHARGE`; pressure while staying: `ARRIVAL_*`.
 
 ## Sector grid (planned)
 
@@ -939,14 +1077,15 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
   `sector.packet`; the sim is paused by the modal). The UI
   shows ShipC bboxes and the chosen spot; the command `sector.deploy { x, y }` checks the gap rule and stamps. The debug spawns
   (`debug.spawnEnemy`, `debug.spawnGenerated`) use the same check.
-- **Jumping.** `sector.jump { ship, node, withDocked? }` (built in 9a; FTL charged, refused while deploying or while a trade deal
+- **Jumping.** `galaxy.jump { ship, route, withDocked? }` (it replaced `sector.jump`; edge, FTL charge and fuel paid, refused while deploying or while a trade deal
   is live; hails and offers are dropped; `jumpWarnings(sim, ship)` lists crew and shuttles away and hostile docked vehicles for
   the confirm):
   1. Collect: the player region's tiles (owner = ship), every entity on them, crew aboard vehicles whose `dock` is one of its
      airlocks or whose `home` bay is stowed in it, and those vehicles.
   2. Lift into a packet; release the chunks that are now empty.
   3. Freeze the rest of the sector into a `SectorArchive`.
-  4. Generate or restore the next sector and enter the deploy modal.
+  4. Restore the next node's archive if it has one (else it is empty) and enter the deploy modal. At `sector.deploy`, a node entered for the first time
+     gets its generated contacts as ships (`galaxy/deploy.ts`).
 - **Left behind.**
   - Prizes, wrecks, derelicts, enemies, and **own crew or shuttles not aboard or docked** stay in the archive:
     `{ nodeId, tick, chunks, world subset }`, frozen and not simulated.
@@ -1252,3 +1391,54 @@ Leftovers that 7a deliberately keeps: every `gridId` parameter of the helpers (`
 - Determinism: chunk Map order is insertion-dependent, so systems must iterate regions (ShipC query order) or sorted chunks,
   never `Map` order. A test runs the same seed with and without a save round-trip.
 - Long ranges make shuttle trips slow (now 8 tiles/s, user decision 2026-10-21). Tuning, not architecture.
+
+## Crew AI: one system for every ship (user principle, 2026-10-21)
+
+NPCs use almost exactly the same crew AI as the player's crew. There is no parallel "NPC behaviour" stack:
+- Station, enemy and player crew all run through the same needs (`systems/needs.ts`), job generation (the `*Jobs` systems),
+  reservation, decide (`pickJob` by role priorities and `WORK_CATEGORIES`), work (`performJob`) and fight (`fight/`) code. Jobs are
+  per ship and picked by crew aboard that ship, for every faction.
+- The only differences are the **command source** and a **policy layer**. The player issues commands (priorities, drafts, orders);
+  an NPC ship has a small per-ship **director**, data and config that sets the same things: it posts jobs and later drafts and
+  orders. `systems/stationDirector.ts` is the first one.
+- New NPC behaviour is a job kind, a work category or a priority, not bespoke movement code. Patrols are `patrol` jobs; alarm
+  response withdraws them and lets the shared fight code hunt (fighter roles engage hostiles on their grid, unarmed civilians flee).
+- Remaining player-only spots are listed in docs/STATUS.md (stations, slice 4) and should be made faction-agnostic as they are touched.
+
+## Stations
+
+Generated by `shipgen/stationGen.ts` (kinds and sizes in `content/stations.ts`; see docs/STATUS.md) and stamped by
+`stations/spawn.ts` `spawnStation(sim, kind, size, seed, at?, name?)` (the `debug.spawnStation` command):
+- A station is an ordinary ship region with `ShipC.immobile: true` and `gen = {faction: kind, role: size}`: tiles, modules, crew and
+  security of the kind's side (`spawnShip`), and a trader (`ensureTrader`, profile `trader.station.<kind>`, `Trader.station` true).
+- Immobile: no engines or FTL; `combat.flee` is refused (`immobile`) and the enemy AI never tries; the ship-state rule never disables it
+  for lacking engines (it has none to lose: disabled is crew and power only). A jump archives it with its node like anything else.
+- Placement: east of everything in the node, vertically centred. The node's width/height grow to fit a hub (nodes are sparse chunked
+  grids; the size bounds placement and the camera only).
+- Hostile kinds (pirate dens) start **dormant** (`ShipC.dormant` = the integrity it went quiet at). `systems/dormancy.ts` wakes it
+  (`ship.provoked {reason}`) when a player ship or weapon aims at it, it is damaged, or player crew stand aboard. While dormant it
+  does not count for `combatState` and the enemy AI skips it. A minimal stand-in for the outposts' rule on `asteroids`: unify on merge.
+- Camera: `frameShips` can now zoom below 1 device px per art px (`camera.ts` OUT_LEVELS 1/2..1/8) so a hub fits the screen.
+- Cost: a trading hub (149x126, 44 crew) in the node takes the sim from about 0.7 to 7.5 ms per tick (20 Hz budget 50 ms). The
+  per-tile field systems dominate: lighting 1.3, atmosphere 1.2, temperature 1.1, smoke 0.8, doors 0.5 ms; settled regions do not
+  sleep yet on a fresh station.
+- **Station life (slice 4).** `settleIn` (end of `spawnStation`) adds `StationC {courts, posts, nextPost}` (strolling tiles in
+  plazas, gardens and rest rooms; patrol stops at the armoury, docks, plazas, gardens, drill hall and bridge), `StationAlarmC` and
+  `StationCrewC {station}` on its crew. Crew with a role loadout start carrying its first item the station's storage holds
+  (taken out of the armoury lockers): a station has been running long before anyone arrives. Station crew live on the shared crew AI: they eat (hunger floors at 25, as the station is
+  resupplied off-screen), sleep, work their station's jobs, and idle crew sometimes stroll to a court (`stations/life.ts`, a
+  fallback inside decide before `wander`).
+- **Director** (`systems/stationDirector.ts`, every 10 ticks): while calm it keeps one `patrol` job (category `patrol`, kind
+  `patrol`, an on-tile job worked for 3 s) per able guard at rotating walkable posts. Roles opt in with `priorities.patrol`
+  (security and security bots at 2; the player's grid hides the column, as no player director posts patrols yet). On alarm it
+  withdraws every patrol job.
+- **Alarm** (`systems/stationAlarm.ts`, before the director): per station, outsiders aboard (another faction, no `StationCrewC`)
+  who are not invited become `WantedC {station}`; player crew are invited while a docked trade run is in `dockStation` or
+  `stationWork`, unless they attack station crew. Station damage (an integrity drop) makes all player crew aboard wanted. A
+  hazard scan every 20 ticks raises it for fire or breach with nobody wanted. An intrusion wakes a dormant den. `fight/relations`
+  `isHostile` treats wanted crew and that station's crew as mutual enemies, so guards (armed from the armoury lockers at spawn)
+  engage and unarmed station civilians flee. An unarmed AI fighter that is on its way to a locker (`EquipOrderC`) arms
+  first and only fights bare-handed with a foe in reach (before, the chase and the fetch took turns rewriting its path and it
+  reached neither). Events `station.alarm {ship, reason}` and `station.calm`. After 30 s quiet the alarm
+  calms and the station's `WantedC` are cleared.
+

@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-21 (asteroids slice 1 on `asteroids`).
+Last updated: 2026-10-22 (asteroids on `asteroids`, merged with stations and galaxy from `main`).
 
 **Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
 map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
@@ -69,7 +69,7 @@ Planner's calls: hold 24, speed 6 tiles/s, laser 2 units/s; the laser works from
 ore from the bay's access tile through the existing cargo hauls (a full storage leaves the pod waiting, loaded); no pod item
 yet (template or `__cc.stage.vehicle(def, bay)`); no mining UI yet.
 
-**Slice 3 (done):** the two rock forms, coverage classes, dig / level / auto-level, outposts, piloted full-size pods. Save v27.
+**Slice 3 (done):** the two rock forms, coverage classes, dig / level / auto-level, outposts, piloted full-size pods. Save v28 after the merge with main (stations v26, galaxy v27).
 Planner's calls:
 - Dig and level are **folded into `job.build`** (no new commands): Floor on rock mass digs (15 s, free), Ground on rock mass
   levels (6 s, free), anything else on rock mass is refused (`rockMass`); Floor, walls and doors build on ground as on a deck.
@@ -130,6 +130,212 @@ Planner's calls:
    branch's NPC and security work.
 3. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew; pod and pod-bay art.
 
+## Stations, slice 1: generation (branch `stations`; not merged)
+
+**User decisions (2026-10-21):** stations come in sizes from small frontier trading posts up to system hubs, and a hub is
+much bigger than any ship. All five kinds are wanted: trading, mining, farming, military depot and pirate den. A player can
+try to board and capture any station. Stations carry many NPCs, security among them, and most are armed to the teeth. Pirate
+dens are weaker on purpose, so they can be conquered.
+
+What exists (generation only, nothing spawns yet):
+- **Sim** (`src/sim/shipgen/station*.ts`): `generateStation(def, id, size, seed, defs)` returns a normal `GenResult` plus
+  `station` (kind, size, crew, security, docks, guns, shields). `planStation` makes the rooms from the tier, the station
+  grammars (`stationRing`, `stationLattice`, `stationHub` core ring with satellites on spokes, `stationWelded` pirate den)
+  build them from the civil ring and lattice builders, and `finishLayout` (split out of `generate.ts`) runs the ship
+  fit-out and validators. The engine rule is off (`validateTemplate(..., { immobile: true })`, and no engines or
+  thrusters are planned). Station rules on top: enough airlock docks, everything inside the template rect, and a size
+  cap of `STATION_MAX` = 160 tiles a side.
+- **Content** (`src/content/stations.ts`, `satisfies StationDef`): `station.trading|mining|farming|military|pirate`, each
+  with tiers `outpost | station | hub`. Crew are 8 / 20 / 44 times a kind factor (farming 1.1, depot 1.2, pirate 0.8).
+  The security share is depot 0.55, trading 0.3, mining 0.25, farming 0.2 and pirate 0.15. Guns per tier: depot
+  4/12/24 (50% heavy), trading 2/6/12, mining 2/5/10, farming 2/4/8, pirate 1/3/6.
+- **New content pieces:**
+  - room roles `farm`, `industry` and `armoury`, with recipes in `rooms/station.ts`;
+  - the placeholder `module.refinery` (fabricator tinted orange in `fallback.ts`; no mechanic);
+  - `RoomSpec.items` for per-room stock: armoury lockers hold rifles and sidearms;
+  - `HullFamilyDef.cages` for the ore cages that mining stations hang off the structure.
+- **Armed NPCs:** no new field. Security crew are `role.security`, whose existing `loadout` fetches rifles and sidearms
+  from storage. Every station's armoury lockers hold at least one hand weapon per security crew member (a test checks this).
+- **Fixes on the way:** lattice stations were not centred on x, so wide ones lost modules off the local canvas
+  silently (now centred, and a lost module fails the build). Frozen blocks reused room chars after 59 labels, which
+  merged rooms. There are now 315 chars, so ships are unchanged.
+- **Numbers:** the largest hubs build in under about 1 s each (mean 0.3–0.7 s), are 140–160 tiles a side, and take
+  1.5–2.3 attempts on average.
+- **Sheets:** `node tools/shipgen/cli.js station.all --size outpost,hub --count 6 --scale 6 --out <dir>`
+  (`station.<kind>`, `--size outpost|station|hub|a,b|all`).
+- **Tests:** `src/content/stations.test.ts` checks validity per kind and size, determinism, doctrine module counts,
+  crew and security scaling, defence ordering and armoury stock. `stations.slow.test.ts` sweeps 12 seeds per kind and
+  size.
+
+**Layouts (round 2, after user feedback "more layouts, some circles"):** ten station grammars. The new ones:
+- `stationWheel`: a round ring on a rasterised circle (`stationRings.ts`), rooms fitted outboard and, when they don't
+  fit, inboard; the hub on 2 to 4 spokes, sometimes with rooms beside it.
+- `stationConcentric`: two round rings joined by four spokes. The inner ring has rooms on both faces, which fills the
+  centre. Docks stay on the outer ring.
+- `stationArc`: a partial ring (180 to 270 degrees), rooms on both faces, docks at the ends.
+- `stationSpine`: a 2-wide spine with pods flush or on stubs both sides, docks at the ends.
+- `stationCross`: four arms from a core room, rooms on both faces, a dock at every arm end.
+- `stationTree`: quads and towers grown branch-wise off the newest modules, with airlocks hung off them.
+
+Hub satellites (and the hub core) can now be wheels. Welded pirate modules bring no airlocks of their own.
+
+Per-kind weights live in `SHAPES` in `src/content/stations.ts`:
+
+| Kind | Outpost | Station | Hub |
+|---|---|---|---|
+| Trading | wheel 3, cross 2, ring 1, arc 1 | wheel 3, concentric 2, cross 2, ring 1 | concentric 3, hub 3 |
+| Mining | spine 3, cross 2, arc 1, tree 1 | spine 3, cross 2, lattice 1, wheel 1 | hub 3, cross 2, concentric 1 |
+| Farming | wheel 2, arc 2, ring 1, lattice 1 | wheel 3, concentric 2, lattice 1 | concentric 3, hub 2 |
+| Military | cross 2, spine 2, ring 1 | spine 2, cross 2, ring 2, concentric 1 | hub 2, concentric 2, cross 1 |
+| Pirate | tree 3, welded 2, arc 1 | tree 2, welded 2 | welded 2, tree 2 |
+
+Spines and arcs stay below hub size, because they outgrow the 160 cap. Hubs build in a mean of 0.4–0.65 s each
+(worst 1.8 s) with 1.4–3.1 attempts. CLI: `--layout stationWheel` forces one layout.
+
+**Round 3 (user feedback: "courtyards as rooms, rooms that follow the ring, walls far too thick everywhere"):**
+- **Thick walls, every generator.**
+  - Causes:
+    - taper and plating wedges and filled pockets were solid wall slabs (`hullFill.ts`);
+    - blocks and rooms joined side by side kept both walls (double partitions);
+    - welded and tapered outlines left spare hull layers and stair-step shells.
+  - Fix: `thinWalls.ts` runs on the final canvas before fit-out, for ships and stations alike:
+    - slab interiors become floor of the neighbouring room, keeping one wall along open space, so outlines stay;
+    - spare hull layers peel off;
+    - double partitions fold into one wall. The outboard or western room grows, so mirrored hulls stay mirrored.
+  - Sealed pods, docks, engines and hangars keep their boxes.
+- **New metric `thickWall`:** wall tiles with no floor, door, beam, container or module among their 8 neighbours. It
+  shows in the sheet summaries and is bounded in tests: ship mean at most 0.02 and max 0.05 per faction; stations at
+  most 0.03.
+- **thickWall before → after** (mean over seeds):
+
+| | Before | After |
+|---|---|---|
+| Scrapper | 0.118 | 0.003 |
+| Navy | 0.093 | 0.000 |
+| Civilian | 0.038 | 0.000 |
+| Drones | 0.016 | 0.001 |
+| Stations | 0.00–0.08 | under 0.01 |
+
+  No armour doctrine is kept yet: navy tapers now read as floor inside a stepped one-wall outline.
+- **Courtyards as rooms** (`stationCourts.ts`): every space pocket a ring block encloses becomes one open room. That
+  covers ring centres, the sectors between spokes and the band between two rings. Each court gets up to four doors to
+  its corridors, plus some "shop" doors from soft rooms. Roles and recipes (`rooms/station.ts`):
+  - `plaza`: trading 0.8, mining 0.4 (stalls, benches, a food court);
+  - `garden`: farming 0.85 (hydroponics);
+  - `drill`: military 0.6 (open floor, racks).
+  The chance is drawn per block, so some stations keep empty centres.
+- **Ring rooms follow the band** (`stationBands.ts`), on wheels and arcs: soft rooms (quarters, holds, messes, farms,
+  refineries, armouries) are ring segments cut by one-wall radial partitions. They are stair-stepped polygons;
+  fit-out handles non-rectangular rooms.
+  - System rooms (guns, shields, the core, reactors, the bridge) stay rectangles on the rim beyond the band, because gun
+    bays need square floor and open space beside them.
+  - Docks sit on the rim near the top and bottom, because airlocks face north or south.
+  - **Concentric rings still use rectangles.** As bands, every airlock failed: the band wrapped round the docks. They
+    now keep system rooms and docks on the outer ring.
+
+**Round 4:**
+- **Wall thinning keeps the outline.** Round 3's peeling had squared off stair-stepped tapers and chamfers. Now no tile
+  touching space (8 neighbours) is ever removed or turned to floor; a double hull is thinned by folding its inner wall
+  into the room instead.
+  - `GenResult.thin.outlineChanged` is checked to be 0 across a sweep.
+  - The 32 depth-9 ship sheets have exactly the outline tiles they had before the pass existed.
+  - The ruin pass now keeps the piece with the most floor.
+- **Readable sheets.**
+  - A legend strip: room tints and module glyphs.
+  - Courts drawn as plain floor; furniture as solid blocks.
+  - Plaza stalls laid out as clusters with aisles.
+  - Zoomed crops come from `--count 1 --scale 12`.
+
+**Slice 2 (stations in the node, real station trade):** see ARCHITECTURE "Stations".
+- `debug.spawnStation {kind, size, seed, x?, y?}` stamps a generated station as an immobile ship with crew, security and a trader. The
+  debug panel has Trade outpost, Trade hub and Pirate den buttons, and `?station=trading:hub` spawns one at start.
+- The instant trade fallback is deleted. Station deals fly the player's shuttle (hover beside the station, swap cargo with its
+  stock, fly home): the existing branch 1/2. **Not built:** docking at a station's own airlock and hauling through its storage.
+- Kinds:
+  - trading, mining and farming are neutral and hailable;
+  - the military depot is neutral and its quartermaster sells no hand weapons (stock list only; it still buys them);
+  - the pirate den is hostile but dormant until aimed at, damaged or boarded.
+- Crew names repeat once the pool runs out, because hub crews outgrew it. The camera can zoom out below 1 to frame a hub.
+- UI note: the hostiles button still lights for a dormant den (the sim is not in combat).
+
+**Slice 3 (user answers 2026-10-21):**
+- **Station trade docks at the station's airlocks**, and station crew haul both ways (ARCHITECTURE trade, branch 3). The hover swap
+  stays as the fallback when no station airlock is free.
+- **Depots sell "surplus":** every hand weapon up to `ItemDef.tier` 2 (blade, sidearm, ion pistol; never the tier-3 rifle), at a
+  1.1 markup, labelled "surplus" in the trade window; they still buy weapons. No armour items exist yet.
+- Defaults the user did not answer, noted here:
+  - the hostiles button stays dark for a dormant den until it is provoked;
+  - the node growing to fit a hub is fine for now.
+- **One zoom ladder** after merging main's 2x code: whole levels from 1 up; below 1 the fractions 1/8, 1/6, 1/4, 1/3, 1/2, 0.75,
+  with 1 / ART_SCALE among them. Every level below 1 is drawn smoothed.
+
+**Slice 4: station life and security (2026-10-21).** Design in ARCHITECTURE, "Crew AI" and "Stations".
+- **Principle (user):** NPCs use the same crew AI as the player's crew; the only differences are the command source and a per-ship
+  director (data and config). Patrols are `patrol` jobs posted by `stationDirector`; alarm response withdraws them and leaves the
+  hunting to the shared fight code. No bespoke NPC movement besides the idle stroll fallback.
+- Decisions made here (defaults, not user answers):
+  - station crew get hungry and eat, but hunger floors at 25 (no starving NPCs; resupply is off-screen);
+  - the "Watch" (patrol) priority column is hidden in the player's grid until the player has patrols;
+  - invited trade crew cannot start a fight with a neutral station (`crew.attack` needs hostility); if they are engaged on station
+    crew, or the station is damaged, they become wanted;
+  - alarms track wanted crew per station (`WantedC`), not a faction-wide hostility flip, and are forgotten 30 s after it calms.
+- Perf: a trading hub in the node, 2000 ticks after a 300-tick warm-up: 7.25 ms per tick before, 7.8 after (station crew now eat,
+  stroll and patrol; the alarm scan groups crew by grid each tick).
+- **Player-only assumptions left for the next slice** (outside this slice's path):
+  - `systems/cargoJobs.ts`: the unload branch runs for player ships only;
+  - `crew/mood.ts`: mood is player-crew only (station crew have no mood);
+  - drafting is player-only (`isPlayerControlled`, the `crew.draft` commands): a director cannot draft yet, so "battle stations"
+    is the withdrawn patrols plus fighter roles' own engage rule;
+  - enemy ships still use `systems/enemyAi.ts` and `boardingAi.ts`, separate policy code that should become directors;
+  - `systems/dormancy.ts` and `stationAlarm.ts` treat only the player as invitable or provoking.
+
+**Airlock-only docks open into their corridor (user decision, 2026-10-21).** `shipgen/openDocks.ts`, run after fit-out for
+ships and stations alike: a dock room that holds only its airlock (and lamp), with at most 12 floor tiles, loses the partition
+and door to the corridor (hall room) it borders, and its floor joins that corridor. Never into a non-corridor room; docks with
+lockers or racks keep their wall and door; only partition tiles touching no space go, so the hull stays airtight. Docks that
+border no corridor stay walled (placement-time fixing was not cheap: dock placement differs per grammar). Sweep counts are
+printed by `content/airlockDoors.test.ts`: ships merged 47 / walled 4 over 24 layouts, stations merged 74 / walled 19 over 45.
+The generic door sprite is also no longer drawn on an airlock's pod (render/airlockArt `airlockDoorTiles`, ported from
+`airlock-int` 0e5a50d, which never reached main).
+
+Next slices (not built):
+1. Directors for enemy ships (fold `enemyAi` and `boardingAi` into director policy), director drafting, and the leftovers above.
+2. Boarding and capture balance for stations: many security NPCs, and pirate dens as the soft target.
+3. Station art at the new 2x scale (128x64 tiles): refinery, hydroponics and armoury lockers, plus the ore cages.
+**Round 5 (generator polish, branch `stations-polish`):**
+- **Dock banks** (`stationDocks.ts`): wheels and the outer ring of concentric stations reserve their docks before the band
+  is cut. Docks stand side by side (shared walls) on the ring's north and south faces (west once a bank passes about 30
+  degrees), each a straight 3-wide spur from the corridor wall out past the band, so the airlock faces space. The band
+  splits into arcs at the bank centres and the rim rooms keep clear of the collars.
+- **Concentric rings are ring bands:** the inner ring has segment bands on both faces (the inboard one round the hub),
+  the outer ring one outboard band; spokes cut the bands into arcs. System rooms stay rectangles on the outer rim
+  (guns get a second pass; reactors, shields and the core fall back inboard of the outer corridor). The court between
+  the rings is at most 14 tiles across (`COURT`): the inner ring grows when many guns make the rim big.
+- **Courts lit to scale:** rooms of 120+ tiles get a lamp grid (pitch 9) plus a pass that lights any tile still dark,
+  with no 12-lamp cap; every court floor tile is within 6 tiles of a lamp (tested). Courts may take up to three extra
+  reactors for their lamps.
+- **Faster fit-out:** `Layout.walkable` is a lookup (a solid mask kept by push/pop), which the per-candidate
+  connectivity check calls on every tile.
+- **Numbers** (`node tools/shipgen/bench.js`, 12 seeds; trading 48):
+
+| Hubs | Mean before → after | Worst before → after | Attempts before → after |
+|---|---|---|---|
+| Trading | 1.45 s → 0.40 s | 3.0 s → 0.55 s | 2.17 → 1.08 |
+| Mining | 0.78 s → 0.28 s | 1.7 s → 0.73 s | 1.33 → 1.25 |
+| Farming | 1.86 s → 0.21 s | 8.1 s → 0.32 s | 4.33 → 1.08 |
+| Military | 1.75 s → 1.84 s | 4.4 s → 3.2 s | 3.42 → 1.83 |
+| Pirate | 0.36 s → 0.19 s | 0.71 s → 0.45 s | 2.58 → 2.58 |
+
+  Trading round share (wheel, concentric, arc): outpost 25% → 46%, station 25% → 56%, hub 4% → 60% (weights say 57%,
+  62%, 50%). Military hubs now come out concentric 9 times in 12 (was 5) with two drill halls each, so their mean
+  stays about the same.
+
+4. Generator polish:
+   - military concentric hubs are the slowest (mean about 1.8 s): two drill halls and 24 guns to furnish. The slow test bounds the hub mean at 3 s and the worst at 8 s;
+   - an armour doctrine for walls (navy belts, depots) is not built: every wall is one tile now;
+   - wheel hubs with one hub room leave a big empty centre, so wheels are weighted only for outposts and stations;
+   - spines have no doubled form for hubs.
+
 ## Aliens on derelicts (branch `aliens`, based on `derelict-ingame` plus `art/alien`; not merged; awaiting user review)
 
 - **Sim** (`src/sim/aliens/`, `systems/eggSacs.ts`, `systems/aliens.ts`): `applyRuin` turns the ruin pass's `eggsac` and
@@ -175,11 +381,100 @@ Model, commands, price rules and "how to add a trader or a price" are in `docs/A
   records the hull family.
 - **UI:** Trade button, ship list with Hail, trade window (bottom sheet on phones), credits chip, Hail in the combat panel, trade line
   in the shuttle panel, trade alerts. `?hook` + `?shipgen=civilian` then "Trade" in the top bar.
-- **Decisions to review:** who flies (above); the instant station fallback is TEMPORARY; a hostile-side ship in combat always refuses
+- **Decisions to review:** who flies (above); the instant station fallback (since removed on `stations`: stations are ships now); a hostile-side ship in combat always refuses
   (its guns lock on you at once), so the reputation thaw only applies to non-shooting ships; payment is escrowed at accept; a run
   carries 40 units; trade commands tick the sim once while paused; credits live in `sim.trade`, not on a ship, so they survive a ship swap.
 - **Not done:** hyperlane/sector prices, restocking over time, NPC-to-NPC trade, selling floor stacks (storage only), several runs for
   a big deal, per-faction shuttle livery, art for credits and the trade window (plain UI).
+
+## Galaxy sim (branch `galaxy`, cut from `main` at efd356b; sim only; not merged)
+
+Port of the starmap sim from `starmap-macro-wip` (PR #16, 175 commits behind main) onto today's main. No UI, no app snapshot, no tools, no
+visual change. Design in `docs/DESIGN.md` ("Starmap and factions"), model, pipeline and tuning in `docs/ARCHITECTURE.md` ("Starmap").
+
+**User decisions (2026-10-22):**
+1. The tier above sectors is a **cluster**, not a "region" (region collides with the sector-grid ship region). Renamed everywhere
+   (`clusters.ts`, `ClusterField`, `CLUSTER_*`, `clusterName` / `clusterType`, ids `g.<rx>.<ry>`, docs). The sector name suffix "Cluster" became "Rim".
+   When the UI is ported, `REGION_TYPE_LABEL` becomes `CLUSTER_TYPE_LABEL` (and `StarmapRegion` and the `regions` snapshot fields follow).
+2. **Trade's reputation keys stay** (`traders`, `corp`, `navy`, `pirates`, `drones`). Events keep `'corp'` (no `meridian`). One faction table: each
+   galaxy faction def carries its trade key in `reputation` (navy to `navy`; meridian, helix, vantor to `corp`; traders; pirates; rogue to `drones`).
+   `standing()` reads `sim.story.reputation` through that key, no second store; trade's `reputationWith` and `hailVerdict` are untouched.
+   `story.context.faction` is the territory owner's reputation key, so `corp` events fire in any corporation's space.
+
+**What exists:** `src/sim/galaxy/*` (terrain, sites, clusters, gates and rift lanes, sectors with layouts and central bodies, generator, route, travel,
+arrivals, standing, state), `systems/galaxy.ts` (pipeline, after `captureSystem`), commands `galaxy.jump`, `debug.galaxyReveal`,
+`debug.galaxyTeleport`, `debug.chargeFtl`, events `galaxy.*`, `item.fuel` (16 in the starter crate), `content/galaxy.ts` (7 factions, 5 structure kinds,
+names), the story `transit` trigger. `galaxy.jump` validates, pays and lifts the ship through the step 9 path (see below).
+- **Save v27** (stations took v26 on `main`). `SaveData.galaxy` (chunk keys, regenerated from the seed) plus `generatorVersion`; a save of another generator version is refused.
+  Bump `GENERATOR_VERSION` (`galaxy/tuning.ts`) whenever the generator or the galaxy content changes what a chunk key generates.
+  **PR #20 (stations) also bumps to 26: whichever merges second takes 27.**
+- `sectorEquiv.test.ts` (main's rewrite) runs on a `legacy` content copy whose starter crate has no fuel, and ignores `galaxy.*` events; the pinned hashes
+  are unchanged, so the galaxy does not disturb the sim.
+- `playerShip` clash: trade's `playerShip(sim): number` kept; the galaxy helper is `playerShipInfo(sim)`. 7d API: `spawnShip` returns the ship id.
+- Tests: 19 new (9 `content/galaxy.test.ts`, 5 + 2 slow generator, 3 route). Whole suite 536 (503 fast, 33 slow). The 7x7 and 9x9 chunk tests are in
+  `generator.slow.test.ts`.
+- **`newGame` now costs about 350 to 450 ms** (warm, seeds 1 to 5; 25 chunks at `FRONTIER_RING` 2; now 270 to 450 ms with 9 chunks at ring 1), almost all of it generation; the review measured
+  548 ms cold. Not optimised. Ring 1 is now set; the per-chunk part is small, so most of the cost is fixed (terrain and cluster seeds).
+
+**Step 9 hookup (done on this branch).** See `docs/ARCHITECTURE.md` ("Starmap", Travel). Design choices:
+- `galaxy.jump { ship, to, withDocked? }` is the only jump command. The raw `sector.jump` command is **removed**; its lift, archive and restore became the plain
+  function `leaveNode` (`sector/jump.ts`), called by `galaxy.jump`, the player's `combat.flee` and `debug.galaxyTeleport` (free). A command never calls a command.
+- Node ids are strings everywhere (`Sector.node`, `SectorArchive.node`, `archiveOf`, `restoreArchive`, `sector.jumped`). Save is v27.
+- `galaxy.current` moves only after the lift; payment (edge charge and fuel) happens right before it, after every validation.
+- **Flee = jump (user decision, 2026-10-22).** `combat.flee { ship, to? }` of the player charges nothing itself: FTL must already be charged, then it jumps to `to`, else
+  the cheapest adjacent node it can pay for (fuel, then charge, then id). One escape path. AI ships keep the old flee (`'fled'`, they leave); not routed through `leaveNode`
+  because they have no packet or archive.
+- Contacts materialise at `sector.deploy`, the first time only; afterwards the archive owns the ships and the descriptors are emptied. All contacts become ships (hostile on
+  their combat side, others `neutral`, so civilians can be hailed). Placement is rings around the player's ship with the deploy bounds and gap rule (`freeSpot` replaced `arrivalSpot`).
+- The arrival story draw is owed at the jump (`GalaxyState.pendingDraw`) and drawn at deploy. Hostile arrivals only roll in an active node.
+- `FRONTIER_RING` is **1** (user decision): 3x3 chunks around the node.
+- Also fixed: `edgeBetween(a, a)` matched an edge touching `a`.
+- Tests: `content/galaxyJump.test.ts` (materialise on first deploy, archive owns and no duplicates on return, pay only on the lift, draw at deploy, flee, string ids in a mid-deploy save),
+  `galaxyJump.slow.test.ts` (determinism and save continuation over a trip), `jump.test.ts` and `combat.test.ts` updated.
+- **Still to do:** the **9b UI** (jump confirm listing `jumpWarnings` with the `withDocked` toggles, the deploy picker/modal, empty-world handling while deploying) and the
+  **starmap UI** (done in slice 4, below). Structures (`NodeData.structures`) are still descriptors; no grid places them.
+Not taken from PR #16: `src/ui/Starmap*`, `src/app/starmap*`, `galaxyPrefetch`, the `bridge` changes, `tools/starmap`.
+
+**User answers (2026-10-22):** `corp` events fire in any corporation's space as now; Helix and Vantor are placeholder names, hailing unchanged; `FRONTIER_RING` 1; fleeing is a jump (one escape path).
+
+**Starmap UI (slice 4, on `galaxy`; visual: needs the user's screenshot approval before any PR).** Ported from PR #16 and restyled to main's design.
+- Files: `src/app/starmap{Snapshot,Clusters,Shapes,Nebula,Tone}.ts`, `galaxyPrefetch.ts`, `src/ui/Starmap*.svelte`, `starmapApi.ts` (the types; `api.ts` only gains `starmap`, `planRoute`, `setStarmapOpen`),
+  `starmapStyle.ts` (the one place map colours come from: theme tokens only, no hex; danger scale dim, amber, red, never green), `tempDeploy.ts`.
+  Regions are clusters everywhere (`CLUSTER_TYPE_LABEL`, `UiStarCluster`, `StarmapCluster.svelte`). `UiStarSector.hull` is gone; galaxy faction defs lost their `color` (the view tints by faction kind: government cyan,
+  corporation amber, civilian green, pirates red, rogue text).
+- Look: sharp corners, `PanelHead` band with a back tile (`PanelHead` gained `backIcon`/`backTitle`/`backTestId`), icon + value cells for fuel, FTL charge, jumps and days, a `.sheet` card for a node (bottom sheet on phones),
+  level tabs and zoom tiles, a small sharp legend. New icons: `map zoomIn zoomOut recenter clock`. The Map tile is the first tile of `NavStrip` (key `m`); the old top-bar text button is gone.
+  Hover highlights (node, sector, cluster) with a pointer cursor; `grab` only while dragging.
+- Three levels: Sector (nodes, lanes, exits, bodies, nebula), Cluster (sectors as patches), Galaxy (clusters, gates, rift lanes).
+- **Flee target mode:** the combat panel's Flee opens the map in flee mode: only nodes one jump away can be picked, the cheapest affordable one is preselected, the card button sends `combat.flee { ship, to }`.
+- ~~TEMP auto-deploy~~ (removed by the deploy picker below). In `main.ts`: on `sector.jumped` the renderer
+  gets the new sector grid and drops its ship scenes, on `sector.deployed` it shows the ship (`Renderer.resetWorld`); 9b should keep that or replace it with its own handling.
+- **Perf:** the world is not drawn while the map is open (`api.setStarmapOpen`). The starmap is no longer built in `createBridge`: outlines and nebula tiles warm in idle slots after load (`bridge.warmStarmap`, one small piece per slot),
+  the snapshot is assembled on first open if not yet warm, and the prefetch no longer blocks load (it runs one chunk per few frames, ring 2). Measured in headless Chromium on a dev server, 390x844, median-ish of 4 loads: page ready to `__cc` 2.6 s (4.2 s cold) before, 1.9 s (3.0 s cold) after;
+  first map open (click to drawn) 0.9 to 1.1 s before, 0.8 to 0.9 s after when warm (1.0 to 1.3 s if opened within 1.5 s of load).
+- **Left:** art for the starmap bodies if wanted.
+
+**Hyperspace, drawer, deploy picker (slice 4b + 9b, on `galaxy`; visual: needs screenshot approval).** Design in `docs/ARCHITECTURE.md` ("Starmap", Travel).
+- **Model (user, 2026-10-22):** a jump enters hyperspace; the ship travels the plotted route hop by hop with the map open; "Drop from hyperspace" ends it. **The starmap is turn-based:**
+  each hop entered is one turn (`GalaxyState.turn`; shown in the drawer and info row instead of days). The sim steps one hop per 16 ticks only as pacing; the glide on the map is a fixed
+  700 ms tween (visual only). The packet is lifted and frozen during hyperspace. `onTurn(sim, turn)` (`galaxy/turn.ts`) runs once per hop and emits `galaxy.turn`; it is otherwise a no-op.
+- **Choices I made:** FTL charge is paid once on entry (the largest any hop needs); fuel per hop as entered, the trip stops where it cannot pay; `galaxy.drop` mid-hop finishes the hop and drops at the
+  next node (no wasted fuel, no falling back), at a node it drops at once; the node's ships appear (archive restored, or contacts materialised on first entry) at the drop, so the deploy picker shows them.
+- **UI:** click a far node to plot (route highlighted, drawer shows sector info, fuel info, the hops); click the same node again to go (the drawer's Jump is the same thing, for touch). A jump that would leave
+  crew or shuttles behind opens a confirm step in the drawer (docked hostile shuttles get a toggle that fills `withDocked`); with nothing to warn about it goes straight away. In hyperspace the drawer
+  shows progress and Drop from hyperspace; closing the map shows a cheap hyperspace view (CSS streaks, status, Open starmap, Drop). After a drop the deploy picker (flat sector map, valid spots
+  highlighted, keep-out frames, a ghost of the ship, Best spot, Deploy here) replaces the old TEMP auto-deploy. Flee from the combat panel opens the map in flee mode.
+- **NEXT SLICE (user decisions 2026-10-22, not built): NPC traffic and interdiction.** A large slice, likely split into (a) the turn clock and NPC movement, (b) crossings and encounter events,
+  (c) the event grid and interdiction UI.
+  1. **Turns also tick from game time:** a fixed amount of in-node game time makes a map turn in the background, so NPCs can drop into a node the player has sat in alone. Proposal: **1 turn = 60 sim
+     seconds** (1200 ticks, the same as `ARRIVAL_EVERY_SEC`). `onTurn` is called from both triggers and both share `GalaxyState.turn`. Rule against double counting: the time accumulator runs only
+     while the sector is active and is reset when a hop's turn is taken and at `sector.deploy`, so a hop never also fires a time turn for the same stretch.
+  2. **Crossing:** travel happens between turns. The player and an NPC passing each other on the same lane in the same turn (opposite directions or overlapping segments) count, and so does ending the turn in the same node.
+  3. **Interdiction:** the player chooses evade (a roll), bribe (credits) or fight (drops into combat).
+  4. **Where fights happen:** a separate deep-space pocket, an event grid: a temporary node holding the player's packet and the interdicting ship(s); afterwards travel resumes or the player continues from there.
+  5. Crossings can trigger pirate interdiction, trader hails, patrol scans and distress calls.
+  6. **NPC fleets are persistent:** the ships moving on the map are the same entities or descriptors that become real ships in a node the player enters and leave the node's archive when they depart; galaxy
+     contacts and node archives must stay consistent with NPC movement.
 
 ## Crew sprite pipeline (branch `crew-pipeline`; merged to `main` with user approval)
 
@@ -516,11 +811,10 @@ Branch `sector-9` (not merged, no visual change, sim only): **step 9a done** (pa
   reservations, assignments); a stranded shuttle's `homeShip` is kept so it is valid again when the player returns.
 - `SectorArchive` (`sector/archive.ts`): `{ node, tick, width, height, grid, entities }`; `archiveSector` freezes everything left
   (projectiles in flight are dropped), `restoreArchive(sim, node)` brings it back. `Sim.archives` is saved.
-- Commands: `sector.jump { ship, node, withDocked? }` (player ship, FTL charged, not while deploying, refused while a trade deal is
+- Commands: `sector.jump { ship, node, withDocked? }` (since replaced by `galaxy.jump`; player ship, FTL charged, not while deploying, refused while a trade deal is
   live; clears hails and offers) lifts, archives, restores the target node's archive if any, and leaves `sector.state =
   'deploying'` with `sector.packet`; `sector.deploy { x, y }` checks bounds and the gap rule and stamps. Events `sector.jumped`,
-  `sector.deployed`. `Sector` gained `node` (0 = start) and `state`. There is no galaxy on `main` yet (`starmap` is unmerged), so
-  a node is a plain number.
+  `sector.deployed`. `Sector` gained `node` and `state`. (On `galaxy`: `sector.jump` became `galaxy.jump`, and node ids are the galaxy's strings.)
 - Query for the jump confirm: `jumpWarnings(sim, ship)` → `{ crew, vehicles, hostileDocked }`.
 - Shuttle speed is 8 tiles/s.
 - **Left for 9b (UI, visual, needs screenshots):** the jump confirm (lists `jumpWarnings`, a toggle per hostile docked shuttle

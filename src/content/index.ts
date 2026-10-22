@@ -12,7 +12,9 @@ import { suit } from './suit';
 import { factions } from './factions';
 import { raiderBoarder, raiderBoarderId, raiderShip, raiderShipId } from './ships/raider';
 import { events } from './events';
+import { galaxy } from './galaxy';
 import { trade } from './trade';
+import { stations } from './stations';
 import { creatures } from './creatures';
 import { ores } from './ores';
 import { starterShip, starterShipId } from './ships/starter';
@@ -32,6 +34,8 @@ export const content = {
   suit,
   events,
   factions,
+  galaxy,
+  stations,
   trade,
   creatures,
   ores,

@@ -212,7 +212,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     selectTile(null);
     if (ship === null) return;
     shipSel.set(ship);
-    if (ship > 0) r?.frameShips([ship]); // a station has no ship component, so no grid
+    if (ship > 0) r?.frameShips([ship]);
   };
   const selectAsteroid = (id: number | null) => {
     selectTile(null);

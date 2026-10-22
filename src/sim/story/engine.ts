@@ -9,6 +9,8 @@ import { withRng } from './state';
 export const NOTICE_LIFE_SEC = 45;
 
 type TriggerKind = EventTrigger['kind'];
+/** Trigger kinds drawn from a weighted pool. */
+export type DrawKind = Extract<TriggerKind, 'arrival' | 'periodic' | 'transit'>;
 
 function rejected(sim: Sim, command: string, reason: string): void {
   sim.events.emit({ type: 'command.rejected', command, reason });
@@ -30,7 +32,7 @@ function allowedAgain(sim: Sim, id: string, def: EventDef): boolean {
 }
 
 /** Candidates of a pool with their weights, in content order (stable). */
-export function poolFor(sim: Sim, kind: 'arrival' | 'periodic'): { id: string; weight: number }[] {
+export function poolFor(sim: Sim, kind: DrawKind): { id: string; weight: number }[] {
   const out: { id: string; weight: number }[] = [];
   for (const [id, def] of Object.entries(sim.content.events ?? {})) {
     if (!drawable(sim, id, def)) continue;
@@ -41,7 +43,7 @@ export function poolFor(sim: Sim, kind: 'arrival' | 'periodic'): { id: string; w
 }
 
 /** Draw one event from a pool by weight with the story Rng and start it. Returns its id, or null when the pool is empty. */
-export function drawEvent(sim: Sim, kind: Extract<TriggerKind, 'arrival' | 'periodic'>): string | null {
+export function drawEvent(sim: Sim, kind: DrawKind): string | null {
   const pool = poolFor(sim, kind);
   const total = pool.reduce((s, p) => s + p.weight, 0);
   if (total <= 0) return null;

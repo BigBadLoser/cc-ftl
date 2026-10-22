@@ -8,8 +8,10 @@
   onMount(() => api.crew.subscribe((v) => (crew = v)));
 
   const SHORT: Record<WorkCategory, string> = {
-    firefighting: 'Fire', medical: 'Med', operating: 'Ops', repair: 'Fix', construction: 'Build', hauling: 'Haul', crafting: 'Craft', cooking: 'Cook',
+    firefighting: 'Fire', medical: 'Med', operating: 'Ops', repair: 'Fix', construction: 'Build', hauling: 'Haul', crafting: 'Craft', cooking: 'Cook', patrol: 'Watch',
   };
+  /** Patrols are posted only by NPC ship directors (stations): no column for the player's crew. */
+  const SHOWN = WORK_CATEGORIES.filter((c) => c !== 'patrol');
   /** 1 -> 2 -> 3 -> 4 -> off -> 1 */
   const next = (v: number) => (v + 1) % 5;
   const cycle = (c: UiCrew, cat: WorkCategory) =>
@@ -26,7 +28,7 @@
       <thead>
         <tr>
           <th></th>
-          {#each WORK_CATEGORIES as cat (cat)}<th title={cat}>{SHORT[cat]}</th>{/each}
+          {#each SHOWN as cat (cat)}<th title={cat}>{SHORT[cat]}</th>{/each}
           <th></th>
         </tr>
       </thead>
@@ -34,7 +36,7 @@
         {#each crew as c (c.id)}
           <tr>
             <th class="who" scope="row">{c.name}</th>
-            {#each WORK_CATEGORIES as cat (cat)}
+            {#each SHOWN as cat (cat)}
               <td>
                 <button
                   class="cell" class:changed={c.priorities[cat] !== c.defaults[cat]} class:off={c.priorities[cat] === 0}

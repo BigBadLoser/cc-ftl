@@ -114,3 +114,39 @@ export function stampPacket(sim: Sim, packet: ShipPacket, x: number, y: number):
   for (const e of packet.entities) sim.world.restore(e.id, translated(e.c, x, y));
   return packet.ship;
 }
+
+/** Units of an item in the storage modules and loose stacks of a packet's entities (a ship in hyperspace holds its cargo as data). */
+export function packetCount(packet: ShipPacket, item: string): number {
+  let n = 0;
+  for (const e of packet.entities) {
+    for (const st of (e.c['storage'] as { stacks: { item: string; count: number }[] } | undefined)?.stacks ?? []) if (st.item === item) n += st.count;
+    const loose = e.c['itemStack'] as { item: string; count: number } | undefined;
+    if (loose?.item === item) n += loose.count;
+  }
+  return n;
+}
+
+/** Take up to `count` units of an item out of a packet (storage first, then loose stacks); returns how many came out. */
+export function packetTake(packet: ShipPacket, item: string, count: number): number {
+  let left = count;
+  for (const e of packet.entities) {
+    const stacks = (e.c['storage'] as { stacks: { item: string; count: number }[] } | undefined)?.stacks;
+    for (let i = (stacks?.length ?? 0) - 1; stacks && i >= 0 && left > 0; i--) {
+      const st = stacks[i];
+      if (!st || st.item !== item) continue;
+      const take = Math.min(left, st.count);
+      st.count -= take;
+      left -= take;
+      if (st.count === 0) stacks.splice(i, 1);
+    }
+  }
+  for (const e of [...packet.entities]) {
+    const loose = e.c['itemStack'] as { item: string; count: number } | undefined;
+    if (left <= 0 || !loose || loose.item !== item) continue;
+    const take = Math.min(left, loose.count);
+    loose.count -= take;
+    left -= take;
+    if (loose.count === 0) packet.entities.splice(packet.entities.indexOf(e), 1);
+  }
+  return count - left;
+}

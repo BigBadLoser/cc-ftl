@@ -6,6 +6,7 @@ import { SectorGrid, type SectorGridData } from './sectorGrid';
 import type { SectorArchive } from './sector/archive';
 import { Sim } from './sim';
 import { newStory, type StoryState } from './story/state';
+import { loadGalaxy, saveGalaxy, type GalaxySave } from './galaxy/state';
 import { newTrade, type TradeState } from './trade/types';
 
 /**
@@ -26,12 +27,16 @@ import { newTrade, type TradeState } from './trade/types';
  * v23: `ShipC.ruin` (a derelict's dressing data for the renderer: breach, decal and hook art, module art overrides).
  * v25 (step 9a): `sector.node`, `sector.state` ('active' | 'deploying') and `sector.packet` (the player's ship in transit while
  * deploying), plus `archives` (every sector the player left, frozen).
- * v26 (asteroids slice 1): tile fields `ore` and `oreAmt`, struct kinds Rock and CoreRock, and `AsteroidC` regions that own
+ * v26: stations (`ShipC.immobile`, `ShipC.dormant`, `StationC`, `StationAlarmC`, `StationCrewC`, `WantedC`) and the `patrol`
+ * work category in every `PrioritiesC`.
+ * v27 (galaxy): `galaxy` (the starmap state; its chunks are listed by key and regenerated from the seed, with the
+ * `generatorVersion` they were made under, which must match).
+ * v28 (asteroids slices 1-3; earlier numbered v26-v27 on the branch, never shipped): tile fields `ore` and `oreAmt`, struct kinds Rock and CoreRock, and `AsteroidC` regions that own
  * their rock tiles in the `ship` layer.
- * v27 (asteroids slice 3): CoreRock is gone; struct 6 is rock Ground (walkable, airless foundation); `AsteroidC.coverage`
+ *   Then: CoreRock is gone; struct 6 is rock Ground (walkable, airless foundation); `AsteroidC.coverage`
  * replaces `hollow` and `core`.
  */
-export const SAVE_VERSION = 27;
+export const SAVE_VERSION = 28;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -45,6 +50,8 @@ export interface SaveData {
   story?: StoryState;
   /** Trade state. Optional like `story`: older saves load with an empty one. */
   trade?: TradeState;
+  /** Starmap state, chunks as keys (see galaxy/state.ts). */
+  galaxy: GalaxySave;
   pending: QueuedCommand[];
   /** Sectors the player left (see sector/archive.ts). */
   archives: SectorArchive[];
@@ -61,6 +68,7 @@ export function serialize(sim: Sim): string {
     sector: { ...sim.sector, grid: sim.sector.grid.serialize() },
     story: sim.story,
     trade: sim.trade,
+    galaxy: saveGalaxy(sim.galaxy),
     pending: [...sim.commands.getPending()],
     archives: sim.archives,
   };
@@ -84,6 +92,7 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
   sim.story = { ...newStory(data.seed), ...data.story };
   sim.trade = { ...newTrade(), ...data.trade };
+  sim.galaxy = loadGalaxy(sim, data.galaxy);
   sim.commands.setPending(data.pending);
   sim.archives = data.archives;
   return sim;

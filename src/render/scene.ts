@@ -10,7 +10,7 @@ import { loadAtlas } from './assets/loader';
 import { createCamera, type Camera } from './camera';
 import { createCombatPass, type CombatMarks, type CombatViewRect } from './combatPass';
 import type { CutawayMode } from './gridView';
-import { iso, TILE_H, TILE_W } from './iso';
+import { ART_SCALE, iso, TILE_H, TILE_W } from './iso';
 import { createParticles } from './fx/particles';
 import { createLayers } from './layers';
 import { initHalos } from './haloTex';
@@ -86,6 +86,8 @@ export interface Renderer {
   screenOf(shipId: number, x: number, y: number): { x: number; y: number };
   /** Draw a ring under this crew member (null clears). */
   setSelectedCrew(id: number | null): void;
+  /** Drop every ship scene (the sector changed under them: a jump lifted the ships out); the next frame builds them again. */
+  resetWorld(): void;
   /** Sim events of the last frame, for combat fx. */
   onEvents(events: readonly SimEvent[]): void;
   /** Show a ship in the combat overlay rectangle (null hides it). */
@@ -199,11 +201,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   function frame(grid: Grid): void {
     const o = origin(grid.id);
     const c = iso(o.x + grid.width / 2 - 0.5, o.y + grid.height / 2 - 0.5);
-    cam.centerOn(c.x, c.y - 8 - WALL_RISE / 2);
+    cam.centerOn(c.x, c.y - 8 * ART_SCALE - WALL_RISE / 2);
     const spanW = (grid.width + grid.height) * (TILE_W / 2) + TILE_W;
     const spanH = (grid.width + grid.height) * (TILE_H / 2) + TILE_H * 2 + WALL_RISE;
-    // Largest whole device-px-per-art-px scale at which the whole ship fits (at least 1).
-    cam.setZoom(Math.max(1, Math.floor(Math.min(cam.w / spanW, cam.h / spanH))));
+    // Largest zoom level (whole from 1 up; 0.75 and 0.5 below at 2x art) at which the whole ship fits (at least the smallest).
+    cam.fitZoom(Math.min(cam.w / spanW, cam.h / spanH));
   }
 
   /** A ship's roof livery; the debug URL parameter `?bow=east|west` forces the end the bow motifs take. */
@@ -254,8 +256,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     const P = 4;
     const x0 = iso(o.x - P, o.y + grid.height + P).x;
     const x1 = iso(o.x + grid.width + P, o.y - P).x;
-    const y0 = iso(o.x - P, o.y - P).y - ROOF_H - 64;
-    const y1 = iso(o.x + grid.width + P, o.y + grid.height + P).y + 32;
+    const y0 = iso(o.x - P, o.y - P).y - ROOF_H - 64 * ART_SCALE;
+    const y1 = iso(o.x + grid.width + P, o.y + grid.height + P).y + 32 * ART_SCALE;
     const vx0 = -c.originX / c.scale;
     const vy0 = -c.originY / c.scale;
     return x1 >= vx0 && x0 <= vx0 + c.w / c.scale && y1 >= vy0 && y0 <= vy0 + c.h / c.scale;
@@ -265,6 +267,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   function place(c: Camera, target: number | null): void {
     const any = shipOf(refId) !== undefined;
     for (const [id, sc] of scenes) sc.layers.setVisible(any && regionInView(id, sc.grid, c));
+    // Shrunk art (the main camera below zoom 1) is drawn with linear filtering; the combat panel keeps nearest.
+    atlas.setSmooth(target === null && c.scale < 1);
     W.setUiVisible(target === null);
     W.setMarksVisible(target !== null);
     SL.ui.visible = target === null;
@@ -315,6 +319,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       gl.render({ container: stage });
     },
     resize,
+    resetWorld() {
+      for (const sc of scenes.values()) sc.dispose();
+      scenes.clear();
+    },
     setSector(g) {
       sector = g;
     },
@@ -353,7 +361,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     focusTile(x, y) {
       const p = iso(x, y); // a sector tile
-      cam.centerOn(p.x, p.y - 8);
+      cam.centerOn(p.x, p.y - 8 * ART_SCALE);
     },
     focusSector(x, y) {
       const p = sectorArt(x, y);
@@ -373,7 +381,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       }
       if (x0 === Infinity) return;
       cam.centerOn((x0 + x1) / 2, (y0 + y1) / 2);
-      cam.setZoom(Math.max(1, Math.floor(Math.min(cam.w / (x1 - x0 + 64), cam.h / (y1 - y0 + 64)))));
+      cam.fitZoom(Math.min(cam.w / (x1 - x0 + 64 * ART_SCALE), cam.h / (y1 - y0 + 64 * ART_SCALE)));
     },
     info: () => {
       let sprites = sectorParticles.count();

@@ -8,6 +8,9 @@ import { autoJobsSystem } from './systems/autojobs';
 import { carrySystem } from './systems/carry';
 import { combatStateSystem } from './systems/combatState';
 import { outpostSystem } from './systems/outposts';
+import { dormancySystem } from './systems/dormancy';
+import { stationAlarmSystem } from './systems/stationAlarm';
+import { stationDirectorSystem } from './systems/stationDirector';
 import { craftJobsSystem } from './systems/craftJobs';
 import { decideSystem } from './systems/decide';
 import { deploySystem } from './systems/deploy';
@@ -53,6 +56,7 @@ import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
 import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
+import { galaxySystem } from './systems/galaxy';
 import { storySystem } from './systems/story';
 import { tradeSystem } from './systems/trade';
 import { eggSacSystem } from './systems/eggSacs';
@@ -145,7 +149,13 @@ export const pipeline: readonly System[] = [
   workSystem,
   // Outposts found or provoked by player presence, before the combat state reads who is a combatant.
   outpostSystem,
-  // --- Combat (see each system's notes). State first: it decides whether consoles are needed next tick.
+  // --- Combat (see each system's notes). Dormant hostiles wake on provocation, then the combat state is decided (it
+  // decides whether consoles are needed next tick).
+  dormancySystem,
+  // Station alarms: intruders, attacks and hazards make the station's people hostile to the culprits (fight code acts on it).
+  stationAlarmSystem,
+  // NPC ship directors post jobs for their crew (patrols; withdrawn on alarm) into the shared job system.
+  stationDirectorSystem,
   combatStateSystem,
   // Ion timers expire before anything asks whether a module is disabled.
   ionSystem,
@@ -172,6 +182,9 @@ export const pipeline: readonly System[] = [
   shipStateSystem,
   // Capture last: it reads this tick's crew states (downed, surrendered, positions) and may end combat for the next.
   captureSystem,
+  // Starmap after ship state (contacts of wrecked or fled ships are dropped) and before events: an arrival spawns its
+  // ship for the next tick's systems. Does not run while the sector is deploying (the whole pipeline is skipped then).
+  galaxySystem,
   // Events last: periodic draws, due chains and lapsing notices read the finished tick. Reads no grid state.
   storySystem,
 ];

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AsteroidC, CombatC, FTL_CHARGE_SEC, ShipC, asteroidAt, deserialize, generateAsteroid, homeShip, isAsteroidRock, newGame, ownerAt,
+  AsteroidC, ShipC, asteroidAt, deserialize, galaxyIndex, generateAsteroid, homeShip, isAsteroidRock, newGame, ownerAt,
   serialize, shipAt, shipIdAt, type OreDef, type Sim,
 } from '../../sim';
 import { content } from '../index';
@@ -93,15 +93,15 @@ describe('asteroids in the sector', () => {
     const ship = homeShip(sim);
     const s = sim.world.get(ship, ShipC)!;
     const home = { x: s.x, y: s.y };
-    sim.world.get(ship, CombatC)!.ftl = FTL_CHARGE_SEC;
-    sim.enqueue({ type: 'sector.jump', ship, node: 1 });
+    const start = sim.sector.node;
+    const away = (galaxyIndex(sim.galaxy).adjacent.get(start) ?? []).map((e) => (e.a === start ? e.b : e.a)).sort()[0]!;
+    sim.enqueue({ type: 'debug.galaxyTeleport', node: away });
     run(sim, 1);
     expect(asteroids(sim)).toEqual([]);
-    expect(sim.archives.find((x) => x.node === 0)?.entities.some((e) => e.id === id)).toBe(true);
+    expect(sim.archives.find((x) => x.node === start)?.entities.some((e) => e.id === id)).toBe(true);
     sim.enqueue({ type: 'sector.deploy', ...home });
     run(sim, 1);
-    sim.world.get(ship, CombatC)!.ftl = FTL_CHARGE_SEC;
-    sim.enqueue({ type: 'sector.jump', ship, node: 0 });
+    sim.enqueue({ type: 'debug.galaxyTeleport', node: start });
     run(sim, 1);
     expect(asteroids(sim)).toEqual([id]);
     expect(JSON.stringify(sim.world.get(id!, AsteroidC))).toBe(before.c);

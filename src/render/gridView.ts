@@ -3,7 +3,7 @@ import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
 import { hullRow } from "../sim/modules/footprint";
-import { airlockTiles } from "../sim/modules/airlock";
+import { airlockDoorTiles } from "./airlockArt";
 import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
@@ -140,18 +140,11 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     return out;
   }
 
-  /** Outer door tiles of the docking airlocks: the airlock's own hull block (moduleView) stands there, at every wall level. */
+  /** Door tiles of the docking airlocks (outer and inner): the airlock's own sprites (hull block, pod housing) stand there. */
   function airlockHull(): Set<number> {
-    const out = new Set<number>();
     const { world, modules } = host.overlayWorld;
-    for (const id of world.query(ModuleC)) {
-      const m = world.get(id, ModuleC);
-      const def = m && modules[m.def];
-      if (!m || !def?.airlock?.layout || !grid.inBounds(m.x, m.y)) continue;
-      const t = airlockTiles(def, m);
-      out.add((t.outer.y - grid.y0) * width + (t.outer.x - grid.x0)); // region-local index
-    }
-    return out;
+    const tiles = airlockDoorTiles(world, modules, (x, y) => grid.inBounds(x, y));
+    return new Set(tiles.filter((t) => grid.inBounds(t.x, t.y)).map((t) => (t.y - grid.y0) * width + (t.x - grid.x0))); // region-local index
   }
 
   /** The engine and airlock hull tiles within two tiles of a chunk (the reach of its wall pieces), as part of its key. */

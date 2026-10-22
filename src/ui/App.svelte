@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import type { UiStarmap, UiDeploy } from './starmapApi';
   import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
   import CombatPanel from './CombatPanel.svelte';
   import NavStrip from './NavStrip.svelte';
@@ -18,6 +19,8 @@
   import StockDrawer from './StockDrawer.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
+  import StarmapView from './StarmapView.svelte';
+  import DeployPicker from './DeployPicker.svelte';
   import Icon, { type IconName } from './Icon.svelte';
   import './theme.css';
 
@@ -34,6 +37,18 @@
   let combatOpen = $state(false);
   let wasInCombat = false;
   let overviewOpen = $state(false);
+  let mapOpen = $state(false);
+  /** The ship fleeing: the starmap was opened from the combat panel to pick the target. */
+  let fleeShip = $state<number | null>(null);
+  let sliding = $state(false);
+  /** The starmap's status (hyperspace trip) and the deploy picker's data, kept fresh even while the map is closed. */
+  let star = $state<UiStarmap | null>(null);
+  let deploy = $state<UiDeploy | null>(null);
+  $effect(() => {
+    if (deploy) mapOpen = false; // dropped out: the picker takes over, and the map stays closed once deployed
+    else if (star?.state === 'hyperspace') mapOpen = true; // in hyperspace the map is the view
+  });
+  const mapLocked = $derived(star?.state === 'hyperspace');
   let selShip = $state<number | null>(null);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
@@ -65,6 +80,8 @@
       () => mq.removeEventListener('change', onMq),
       api.snapshot.subscribe((s) => (snap = s)),
       api.toast.subscribe((t) => (toast = t)),
+      api.starmap.subscribe((m) => (star = m)),
+      api.deploy.subscribe((d) => (deploy = d)),
       api.selectedShip.subscribe((g) => (selShip = g)),
       api.prizes.subscribe((v) => {
         if (v.length > prizes.length) {
@@ -94,6 +111,7 @@
       api.togglePause();
     } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
     else if (e.key === '`') debug = !debug;
+    else if (e.key === 'm') { if (!mapLocked) { fleeShip = null; mapOpen = !mapOpen; } }
     else if (e.key === 'Escape') {
       if (stockOpen) stockOpen = false;
       else if (overviewOpen) overviewOpen = false;
@@ -127,7 +145,8 @@
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
   <NavStrip
-    {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.length > 0 || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
+    {mapOpen} {mapLocked} onMap={() => { fleeShip = null; mapOpen = !mapOpen; }}
+    {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.some((e) => !e.dormant) || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
     onStock={() => (stockOpen = !stockOpen)}
@@ -150,7 +169,7 @@
   <DebugPanel {api} {snap} />
 {/if}
 {#if combat.inCombat && combatOpen}
-  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onHail={(ship) => { tradeWith = ship; }} />
+  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onFlee={(ship) => { fleeShip = ship; mapOpen = true; }} onHail={(ship) => { tradeWith = ship; }} />
 {/if}
 <ToolBar {api}>
     <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
@@ -169,7 +188,8 @@
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
 {/if}
-<StoryModal {api} />
+{#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} flee={fleeShip} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; fleeShip = null; }} onSlide={(on) => (sliding = on)} />{/if}
+<StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />
 
 <!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; alerts stack below as separate cards. -->
@@ -196,6 +216,8 @@
   .mid { grid-column: 2; display: flex; gap: 6px; align-items: start; min-width: 0; }
   /* The top-right frame: log and time in a single box divided by a hairline; alerts hang below it. */
   .rcol { position: fixed; z-index: 4; top: calc(var(--sat) + 8px); right: calc(8px + var(--sar)); width: min(260px, calc(100vw - 110px)); display: flex; flex-direction: column; gap: 4px; }
+  /* An expanded alert (hover or tap) draws over the combat panel below it. */
+  .rcol:has(:global(.alert:hover)), .rcol:has(:global(.alert:focus-within)) { z-index: 8; }
   .frame { background: var(--panel); border: 1px solid var(--line-hi); }
   .frame > :global(.sec + .sec) { border-top: 1px solid var(--line); }
   .time { display: flex; align-items: center; gap: 0; }

@@ -1,11 +1,12 @@
 import { Texture } from 'pixi.js';
+import { ART_SCALE as S, TILE_H } from './iso';
 
 export interface DiamondTextures {
-  /** Filled 64x32 diamond (white, tint it). */
+  /** Filled tile-sized diamond (white, tint it). */
   fill: Texture;
-  /** 2 px outline of the 64x32 diamond. */
+  /** 2 art-px outline of the tile diamond. */
   outline: Texture;
-  /** Small 32x16 outline used as a crew ring. */
+  /** Half-tile outline used as a crew ring. */
   ring: Texture;
   /** Soft blob shadow under crew. */
   shadow: Texture;
@@ -27,8 +28,8 @@ function bake(h: number, filled: boolean): Texture {
   for (let r = 0; r < h; r++) {
     const hw = 2 * (Math.min(r, h - 1 - r) + 1);
     for (let x = w / 2 - hw; x < w / 2 + hw; x++) {
-      const edge = x < w / 2 - hw + 2 || x >= w / 2 + hw - 2;
-      if (filled || edge || r === 0 || r === h - 1) set(x, r);
+      const edge = x < w / 2 - hw + 2 * S || x >= w / 2 + hw - 2 * S;
+      if (filled || edge || r < S || r >= h - S) set(x, r);
     }
   }
   g.putImageData(img, 0, 0);
@@ -43,15 +44,16 @@ function nearest(c: HTMLCanvasElement): Texture {
 
 function bakeShadow(): Texture {
   const c = document.createElement('canvas');
-  c.width = 22;
-  c.height = 11;
+  const W = 22 * S, H = 11 * S;
+  c.width = W;
+  c.height = H;
   const g = c.getContext('2d');
   if (!g) throw new Error('2D canvas unavailable');
-  const img = g.createImageData(22, 11);
-  for (let y = 0; y < 11; y++)
-    for (let x = 0; x < 22; x++) {
-      const d = Math.hypot((x - 10.5) / 11, (y - 5) / 5.5);
-      img.data[(y * 22 + x) * 4 + 3] = d < 1 ? (d < 0.62 ? 120 : 70) : 0;
+  const img = g.createImageData(W, H);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const d = Math.hypot((x - (W - 1) / 2) / (W / 2), (y - (H - 1) / 2) / (H / 2));
+      img.data[(y * W + x) * 4 + 3] = d < 1 ? (d < 0.62 ? 120 : 70) : 0;
     }
   g.putImageData(img, 0, 0);
   return nearest(c);
@@ -59,6 +61,6 @@ function bakeShadow(): Texture {
 
 let cache: DiamondTextures | undefined;
 export function diamondTextures(): DiamondTextures {
-  cache ??= { fill: bake(32, true), outline: bake(32, false), ring: bake(16, false), shadow: bakeShadow() };
+  cache ??= { fill: bake(TILE_H, true), outline: bake(TILE_H, false), ring: bake(TILE_H / 2, false), shadow: bakeShadow() };
   return cache;
 }

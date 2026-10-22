@@ -36,6 +36,12 @@ function legacyWorld(sim: Sim): unknown {
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   // And asteroids and mining pods: their empty stores are not part of it.
   for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  // The `patrol` work category came after it too (station directors post patrol jobs; no ship here has any).
+  stores.priorities = (stores.priorities ?? []).map(([id, raw]) => {
+    const rest = { ...(raw as Record<string, unknown>) };
+    delete rest.patrol;
+    return [id, rest];
+  });
   stores.vehicle = (stores.vehicle ?? []).map(([id, raw]) => {
     const { def, homeShip, home, state, hp, ...rest } = raw as Vehicle;
     const b = bodies.get(id) as Body;
@@ -133,20 +139,36 @@ function stateHash(sim: Sim, events: string): string {
 function run(sim: Sim, n: number, log: string[]): void {
   for (let i = 0; i < n; i++) {
     sim.step();
-    for (const e of sim.events.drain()) log.push(e.type);
+    // The starmap's own events (`galaxy.*`) did not exist before the refactor either.
+    for (const e of sim.events.drain()) if (!e.type.startsWith('galaxy.')) log.push(e.type);
   }
 }
 
+/**
+ * Content as the pre-refactor code had it: the starter's crate held no fuel (the starmap added 16 units, which would change
+ * the recorded world). Everything else is the live content, so the recorded hashes still pin the refactor.
+ */
+const legacy: typeof content = {
+  ...content,
+  ships: {
+    ...content.ships,
+    'ship.starter': {
+      ...content.ships['ship.starter'],
+      modules: content.ships['ship.starter'].modules.map((m) => ('stock' in m && m.stock ? { ...m, stock: m.stock.filter((q) => q.item !== 'item.fuel') } : m)),
+    },
+  },
+};
+
 /** Starter ship against a raider: weapons, shields, breaches, fire and boarding. */
 function combat(seed: number): Sim {
-  const sim = newGame(seed, content);
+  const sim = newGame(seed, legacy);
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
   return sim;
 }
 
 /** Starter ship with a fire in the first floor tile from the centre and a hull breach on the first outer wall. */
 function disaster(seed: number): Sim {
-  const sim = newGame(seed, content);
+  const sim = newGame(seed, legacy);
   const g = shipGrid(sim, homeShipOf(sim))!;
   let fire: { x: number; y: number } | null = null;
   let breach: { x: number; y: number } | null = null;
@@ -186,7 +208,7 @@ describe('sector refactor equivalence', () => {
     const la: string[] = [], lb: string[] = [];
     run(a, 1200, la);
     run(b, 600, lb);
-    const c = deserialize(serialize(b), content);
+    const c = deserialize(serialize(b), legacy);
     run(c, 600, lb);
     expect(stateHash(c, lb.join(','))).toBe(stateHash(a, la.join(',')));
     expect(serialize(c)).toBe(serialize(a));

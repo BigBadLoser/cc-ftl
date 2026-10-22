@@ -1,25 +1,28 @@
 import { describe, expect, it } from 'vitest';
+import { TILE_H, TILE_W } from './iso';
 import { armLength, footprintQuad, isoBracketSegments, padQuad } from './targetBrackets';
 
 const id = (x: number, y: number) => ({ x, y });
 const O = { x: 0, y: 0 };
+const HW = TILE_W / 2;
+const HH = TILE_H / 2;
 
 describe('footprintQuad', () => {
   it('1x1 is the tile diamond', () => {
-    expect(footprintQuad(0, 0, 1, 1, O, 0, id)).toEqual({ top: { x: 0, y: -16 }, right: { x: 32, y: 0 }, bottom: { x: 0, y: 16 }, left: { x: -32, y: 0 } });
+    expect(footprintQuad(0, 0, 1, 1, O, 0, id)).toEqual({ top: { x: 0, y: -HH }, right: { x: HW, y: 0 }, bottom: { x: 0, y: HH }, left: { x: -HW, y: 0 } });
   });
   it('2x1 is a parallelogram with its real corners', () => {
     const q = footprintQuad(3, 1, 2, 1, O, 0, id);
-    expect(q).toEqual({ top: { x: 64, y: 48 }, right: { x: 128, y: 80 }, bottom: { x: 96, y: 96 }, left: { x: 32, y: 64 } });
+    expect(q).toEqual({ top: { x: 2 * HW, y: 3 * HH }, right: { x: 4 * HW, y: 5 * HH }, bottom: { x: 3 * HW, y: 6 * HH }, left: { x: HW, y: 4 * HH } });
   });
   it('rotated 1x2 mirrors it', () => {
     const q = footprintQuad(3, 1, 1, 2, O, 0, id);
-    expect(q).toEqual({ top: { x: 64, y: 48 }, right: { x: 96, y: 64 }, bottom: { x: 32, y: 96 }, left: { x: 0, y: 80 } });
+    expect(q).toEqual({ top: { x: 2 * HW, y: 3 * HH }, right: { x: 3 * HW, y: 4 * HH }, bottom: { x: HW, y: 6 * HH }, left: { x: 0, y: 5 * HH } });
   });
   it('subtracts lift, adds origin and rise, and applies the projection', () => {
     const q = footprintQuad(0, 0, 1, 1, { x: 1, y: 1 }, 8, (x, y) => ({ x: x * 2 + 5, y: y * 2 + 7 }), 4);
-    expect(q.bottom).toEqual({ x: 5, y: 2 * (48 - 8) + 7 });
-    expect(q.top).toEqual({ x: 5, y: 2 * (16 - 8 - 4) + 7 });
+    expect(q.bottom).toEqual({ x: 5, y: 2 * (3 * HH - 8) + 7 });
+    expect(q.top).toEqual({ x: 5, y: 2 * (HH - 8 - 4) + 7 });
   });
 });
 
@@ -49,9 +52,9 @@ describe('isoBracketSegments', () => {
   });
   it('padding moves corners outward along the diagonals', () => {
     const q = padQuad(footprintQuad(0, 0, 1, 1, O, 0, id), 2);
-    expect(q.top.y).toBeLessThan(-16);
-    expect(q.right.x).toBeGreaterThan(32);
-    expect(q.bottom.y).toBeGreaterThan(16);
-    expect(q.left.x).toBeLessThan(-32);
+    expect(q.top.y).toBeLessThan(-HH);
+    expect(q.right.x).toBeGreaterThan(HW);
+    expect(q.bottom.y).toBeGreaterThan(HH);
+    expect(q.left.x).toBeLessThan(-HW);
   });
 });

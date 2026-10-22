@@ -1,6 +1,7 @@
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
+import { isSurplus } from './traders';
 import { TraderC } from './types';
 
 export type PriceSide = 'sell' | 'buy';
@@ -16,7 +17,7 @@ export function reputationWith(sim: Sim, trader: number): number {
 
 /**
  * Credits per unit between the trader and the player. 'sell' = the trader sells to the player, 'buy' = it buys from the player.
- * price = base x global spread x faction x trader kind x item-tag mods x reputation, rounded, at least 1. A buy price never
+ * price = base x global spread x faction x trader kind x item-tag mods (x surplus markup) x reputation, rounded, at least 1. A buy price never
  * exceeds the sell price of the same item, so shuttling goods back and forth cannot make money. Null = not for sale / no trade.
  */
 export function unitPrice(sim: Sim, trader: number, item: string, side: PriceSide): number | null {
@@ -30,6 +31,8 @@ export function unitPrice(sim: Sim, trader: number, item: string, side: PriceSid
   const raw = (s: PriceSide): number => {
     let p = base * (s === 'sell' ? cfg.spread.sell : cfg.spread.buy) * (fac?.[s] ?? 1) * (kind?.[s] ?? 1);
     for (const tag of sim.content.items[item]?.tags ?? []) p *= kind?.tagMods?.[tag]?.[s] ?? 1;
+    // Surplus gear sells at the kind's markup.
+    if (s === 'sell' && isSurplus(sim, t.profile, item)) p *= kind?.surplus?.markup ?? 1;
     // A friend gets better prices: they sell for less and pay more.
     const shift = clamp(cfg.repStep * rep, -cfg.repMax, cfg.repMax);
     p *= s === 'sell' ? 1 - shift : 1 + shift;

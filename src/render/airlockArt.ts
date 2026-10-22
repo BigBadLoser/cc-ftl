@@ -1,5 +1,5 @@
 import type { World } from '../sim/ecs';
-import type { Module } from '../sim/modules/components';
+import { ModuleC, type Module } from '../sim/modules/components';
 import { hullOutward, hullSide } from '../sim/modules/footprint';
 import { airlockTiles } from '../sim/modules/airlock';
 import type { ModuleDef } from '../sim/registry';
@@ -90,6 +90,23 @@ export function createCollarAnimator(): { stepOf(airlock: number, docked: boolea
       tracks.delete(airlock);
     },
   };
+}
+
+/**
+ * Door tiles the docking airlocks' own sprites cover: the outer door (the hull block) and the inner door (the pod housing,
+ * which holds the inner door and its frames). Both are `Struct.Door` in the grid; the generic door sprite must not be drawn
+ * on either, or every airlock shows a plain door on top of its pod. `inside` limits the airlocks to one region.
+ */
+export function airlockDoorTiles(world: World, defs: Readonly<Record<string, ModuleDef>>, inside: (x: number, y: number) => boolean): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  for (const id of world.query(ModuleC)) {
+    const m = world.get(id, ModuleC);
+    const def = m && defs[m.def];
+    if (!m || !def?.airlock?.layout || !inside(m.x, m.y)) continue;
+    const t = airlockTiles(def, m);
+    out.push(t.outer, t.inner);
+  }
+  return out;
 }
 
 /** The vehicle docked at this airlock, if any. */

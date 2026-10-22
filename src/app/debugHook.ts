@@ -1,8 +1,9 @@
-import { AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
+import { CombatC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { AlienC, EggSacC } from '../sim/aliens/components';
 import { DeadC } from '../sim/crew/components';
+import { StationAlarmC, StationC } from '../sim/stations/components';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -90,6 +91,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       suitAir: (crew: number, sec: number) => { const su = sim.world.get(crew, SuitC); if (su) su.air = sec; },
       /** Set a crew member's hunger (0..100) and optionally rest (the needs shots). */
       needs: (crew: number, hunger: number, rest?: number) => { const n = sim.world.get(crew, NeedsC); if (n) { n.hunger = hunger; if (rest !== undefined) n.rest = rest; } },
+      /** Fill the player's FTL drive (a fresh game has no pilot at the helm to charge it). */
+      chargeFtl: () => { const c = sim.world.get(playerShip(sim), CombatC); if (c) c.ftl = FTL_CHARGE_SEC; },
       /** Mood readout. */
       mood: (crew: number) => sim.world.get(crew, MoodC) ?? null,
     },
@@ -101,6 +104,12 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     story: () => sim.story,
     vehicles: () => vehicleViews(sim),
     ships: () => [...sim.world.query(ShipC)].map((id) => sim.world.get(id, ShipC)),
+    /** Ship ids with their components (stations: `immobile`), the trade state, and a camera frame for screenshots. */
+    shipList: () => [...sim.world.query(ShipC)].map((id) => ({ id, ...sim.world.get(id, ShipC) })),
+    trade: () => sim.trade,
+    /** A station's courts and patrol stops, and its alarm. */
+    station: (id: number) => ({ ...sim.world.get(id, StationC), alarm: sim.world.get(id, StationAlarmC) }),
+    frame: (ids: number[]) => r.frameShips(ids),
     events: () => seen,
   };
   return { onEvents: (types) => void seen.push(...types) };

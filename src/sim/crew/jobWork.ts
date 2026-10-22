@@ -44,6 +44,7 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'repair': return repair(sim, job, speed);
     case 'rescue': return rescue(sim, crew, job);
     case 'operate': return 'working'; // held until the operate-jobs system drops it
+    case 'patrol': return timed(job, 1, () => 'done'); // stand watch at the stop, then the director posts the next one
     case 'mend': return performMend(sim, crew, job, speed);
     case 'salvage': return performSalvage(sim, job, speed);
     case 'hack': return performHack(sim, crew, job, speed);

@@ -38,6 +38,13 @@ export function profileFor(sim: Sim, ship: Ship): string | null {
 }
 
 /** Roll a trader's wallet and stock from the world seed and an identity number. Pure: same inputs, same trader. */
+/** True when a trader sells this item as surplus (its kind's surplus rule covers it). */
+export function isSurplus(sim: Sim, profile: string, item: string): boolean {
+  const sp = sim.content.trade?.traders[profile]?.surplus;
+  const it = sim.content.items[item];
+  return !!sp && !!it && it.tags.includes(sp.tag) && (it.tier ?? 99) <= sp.maxTier;
+}
+
 export function rollTrader(sim: Sim, profile: string, faction: string, name: string, identity: number, station: boolean): Trader {
   const def = sim.content.trade?.traders[profile];
   const rng = new Rng(mix(sim.seed, identity, profile.length, profile.charCodeAt(profile.length - 1)));
@@ -46,6 +53,14 @@ export function rollTrader(sim: Sim, profile: string, faction: string, name: str
     if (line.chance !== undefined && !rng.chance(line.chance)) continue;
     const count = rng.int(line.min, line.max);
     if (count > 0 && sim.content.items[line.item]) stock.push({ item: line.item, count });
+  }
+  const sp = def?.surplus;
+  if (sp) {
+    for (const [item, it] of Object.entries(sim.content.items).sort(([a], [b]) => (a < b ? -1 : 1))) {
+      if (!it.tags.includes(sp.tag) || (it.tier ?? 99) > sp.maxTier || stock.some((s) => s.item === item)) continue;
+      const count = rng.int(sp.min, sp.max);
+      if (count > 0) stock.push({ item, count });
+    }
   }
   const [lo, hi] = def?.credits ?? [0, 0];
   return { profile, faction, name, credits: rng.int(lo, hi), stock, station };
@@ -59,7 +74,7 @@ export function ensureTrader(sim: Sim, id: number): Trader | null {
   if (!ship || ship.faction === 'player') return null;
   const profile = profileFor(sim, ship);
   if (!profile) return null;
-  const t = rollTrader(sim, profile, tradeFactionOf(ship), ship.name, ship.gen?.seed ?? id, false);
+  const t = rollTrader(sim, profile, tradeFactionOf(ship), ship.name, ship.gen?.seed ?? id, ship.immobile === true);
   sim.world.add(id, TraderC, t);
   return t;
 }
@@ -95,17 +110,4 @@ function aimingAtPlayer(sim: Sim, id: number): boolean {
   if (!t) return false;
   if (t.vehicle) return false;
   return sim.world.get(t.ship, ShipC)?.faction === 'player';
-}
-
-/**
- * Spawn a trading station: an entity with a wallet and stock but no grid yet. Stations have no airlock or shuttle, so
- * their deliveries use the TEMPORARY instant fallback (see systems/trade.ts) until station grids exist.
- */
-export function spawnStation(sim: Sim, profile: string, name: string): number {
-  const def = sim.content.trade?.traders[profile];
-  if (!def) throw new Error(`spawnStation: unknown trader "${profile}"`);
-  const id = sim.world.createEntity();
-  const faction = def.match.faction ?? `side.${def.match.side ?? 'neutral'}`;
-  sim.world.add(id, TraderC, rollTrader(sim, profile, faction, name, id, true));
-  return id;
 }

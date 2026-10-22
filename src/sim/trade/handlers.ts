@@ -3,7 +3,10 @@ import type { Sim } from '../sim';
 import { planCourier } from './courier';
 import { failDeal, isLive, liveDealWith, openDeal } from './deals';
 import { checkOffer } from './offers';
-import { ensureTrader, hailVerdict, spawnStation } from './traders';
+import { ensureTrader, hailVerdict } from './traders';
+import { spawnStation } from '../stations/spawn';
+import { unwindStation } from './stationDock';
+import { VehicleC } from '../vehicles/components';
 
 type TradeCommandType = Extract<Command['type'], `trade.${string}` | 'debug.spawnStation' | 'debug.setCredits'>;
 type Handler<T extends TradeCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -50,13 +53,27 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     }
     const deal = sim.trade.deals.find((d) => d.id === cmd.id);
     if (!deal || !isLive(deal)) return reject(sim, cmd.type, 'noDeal');
-    // Once the shuttle has left with the goods there is nothing to call back.
-    if (deal.phase !== 'dispatch' && deal.phase !== 'load') return reject(sim, cmd.type, 'inTransit');
+    // Once the shuttle has left with the goods there is nothing to call back, except at a station dock: the run is
+    // unwound there (goods back where they were) and the shuttle flies home.
+    const atStation = deal.phase === 'dockStation' || deal.phase === 'stationWork';
+    if (deal.phase !== 'dispatch' && deal.phase !== 'load' && !atStation) return reject(sim, cmd.type, 'inTransit');
+    if (atStation) unwindStation(sim, deal);
     failDeal(sim, deal, 'cancelled');
+    const v = atStation ? sim.world.get(deal.vehicle, VehicleC) : undefined;
+    if (v) {
+      // Keep the autopilot until it is home (parkCourier clears it once the shuttle is stowed).
+      v.autopilot = true;
+      sim.enqueue({ type: 'vehicle.return', vehicle: deal.vehicle });
+    }
   },
   'debug.spawnStation': (sim, cmd) => {
-    if (!sim.content.trade?.traders[cmd.profile]) return reject(sim, cmd.type, 'badProfile');
-    spawnStation(sim, cmd.profile, cmd.name ?? sim.content.trade.traders[cmd.profile]?.name ?? 'Station');
+    if (cmd.profile !== undefined && !sim.content.trade?.traders[cmd.profile]) return reject(sim, cmd.type, 'badProfile');
+    // The old trader-profile form is a trading outpost.
+    const kind = cmd.kind ?? 'station.trading';
+    const seed = cmd.seed === undefined ? sim.rng.int(0, 0x7fffffff) : cmd.seed;
+    const at = cmd.x !== undefined && cmd.y !== undefined ? { x: cmd.x, y: cmd.y } : undefined;
+    const r = spawnStation(sim, kind, cmd.size ?? 'outpost', seed, at, cmd.name);
+    if (typeof r === 'string') return reject(sim, cmd.type, r);
   },
   'debug.setCredits': (sim, cmd) => {
     if (!Number.isFinite(cmd.value)) return reject(sim, cmd.type, 'badValue');

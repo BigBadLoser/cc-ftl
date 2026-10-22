@@ -13,7 +13,7 @@ import { translated } from './translate';
  * in `Sim.archives`. Retention (user decision, 2026-10-21): every archive is kept; there is no pruning rule for now.
  */
 export interface SectorArchive {
-  node: number;
+  node: string;
   tick: number;
   width: number;
   height: number;
@@ -41,7 +41,7 @@ export function archiveSector(sim: Sim): SectorArchive {
 }
 
 /** The archive of a node, or undefined. */
-export function archiveOf(sim: Sim, node: number): SectorArchive | undefined {
+export function archiveOf(sim: Sim, node: string): SectorArchive | undefined {
   return sim.archives.find((a) => a.node === node);
 }
 
@@ -49,7 +49,7 @@ export function archiveOf(sim: Sim, node: number): SectorArchive | undefined {
  * Bring a node's archive back as the current sector (which must be empty of tiles and entities) and drop it from the list.
  * Returns false if the node has none (the caller makes a fresh sector).
  */
-export function restoreArchive(sim: Sim, node: number): boolean {
+export function restoreArchive(sim: Sim, node: string): boolean {
   const archive = archiveOf(sim, node);
   if (!archive) return false;
   sim.sector.grid = SectorGrid.deserialize(0, archive.grid);

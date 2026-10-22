@@ -35,6 +35,8 @@ export interface RoomSpec {
   vehicle?: boolean;
   /** No door: equipment serviced from outside; its footprint fills the room (no connectivity check). */
   sealed?: boolean;
+  /** Storage here starts with these instead of the faction's stock (a station armoury's weapons). */
+  items?: readonly { item: string; min: number; max: number }[];
 }
 
 /** Everything the ship carries, grouped into rooms. Topologies decide where each room goes. */

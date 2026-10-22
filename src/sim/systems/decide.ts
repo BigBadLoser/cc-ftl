@@ -20,6 +20,7 @@ import { canTakeRobotJob, heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW } from '../tuning';
 import { shipIdOf, shipGrid } from '../regions';
+import { strollTurn } from '../stations/life';
 
 /** Below this rest a non-drafted crew member drops everything and sleeps in place. */
 const SLEEP_BELOW = 20;
@@ -74,7 +75,7 @@ export function decideSystem(sim: Sim): void {
     }
 
     dropCarried(sim, id); // a load left over from a lost haul job
-    if (!pickJob(sim, id, pos) && !stowSuit(sim, id, pos)) wander(sim, id, pos, crew);
+    if (!pickJob(sim, id, pos) && !stowSuit(sim, id, pos) && !strollTurn(sim, id, pos)) wander(sim, id, pos, crew);
   }
 }
 

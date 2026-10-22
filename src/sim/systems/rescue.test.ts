@@ -43,7 +43,7 @@ const content: ContentRegistry = {
   structCosts: {},
 };
 const all = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v, patrol: v,
 });
 
 // V (x 2-3) is a small room that gets breached; B (x 5-12) is the sick bay with the bed.

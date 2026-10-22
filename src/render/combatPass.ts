@@ -6,7 +6,7 @@ import { ModuleC } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { createCamera, type Camera } from './camera';
 import { ROOF_H } from './heights';
-import { iso, TILE_H, TILE_W } from './iso';
+import { ART_SCALE, iso, TILE_H, TILE_W } from './iso';
 import { isTargetable } from './moduleArt';
 import { sectorTileAt } from './scenePick';
 import { footprintQuad, isoBracketSegments, MODULE_RISE, padQuad } from './targetBrackets';
@@ -37,9 +37,9 @@ export interface CombatMarks {
   arming: boolean;
 }
 
-/** Scale that fits a span into a box: fractional so the ship fills the view (capped at 3, floored at 0.25). */
+/** Scale that fits a span into a box: fractional so the ship fills the view (capped at 3 and floored at 0.25 against the 64 px-tile art, so those scale down with it). */
 function fitScale(boxW: number, boxH: number, spanW: number, spanH: number): number {
-  return Math.max(0.25, Math.min(3, boxW / spanW, boxH / spanH));
+  return Math.max(0.25 / ART_SCALE, Math.min(3 / ART_SCALE, boxW / spanW, boxH / spanH));
 }
 
 export interface CombatPassHost {

@@ -1,3 +1,4 @@
+import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute } from './starmapApi';
 import type { Command, WorkCategory } from '../sim';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
@@ -259,7 +260,7 @@ export type UiAlertKind =
   | 'job.missingMaterials' | 'storage.full' | 'production.done'
   | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
   | 'story.notice' | 'story.lead' | 'trade'
-  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard'
+  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard' | 'station.alarm'
   | 'outpost.discovered' | 'outpost.provoked' | 'mining.waiting' | 'mining.done';
 
 export type UiLogKind =
@@ -318,6 +319,8 @@ export interface UiShipCombat {
   ship: number;
   name: string;
   state: 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
+  /** A dormant hostile (pirate den) not yet provoked: listed (it can be targeted) but it does not light the hostiles button. */
+  dormant?: boolean;
   /** 0..1 hull and module integrity. */
   integrity: number;
   shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };
@@ -407,6 +410,8 @@ export interface UiTradeLine {
   /** Credits per unit: what they charge the player, and what they pay the player. */
   sell: number;
   buy: number;
+  /** Sold as surplus (older, middle-grade gear: a military depot's). */
+  surplus?: boolean;
 }
 
 export interface UiTradeOffer {
@@ -433,7 +438,7 @@ export interface UiTradePartner {
   wallet: number;
   rep: number;
   lines: UiTradeLine[];
-  /** How a delivery would go: who flies ('them' | 'you' | 'instant') or the reject code that stops it, for goods going out / coming in. */
+  /** How a delivery would go: who flies ('them' | 'you') or the reject code that stops it, for goods going out / coming in. */
   out: { courier: string; error: string };
   in: { courier: string; error: string };
   /** Units a shuttle hold takes. */
@@ -613,6 +618,15 @@ export interface UiApi {
   log: Subscribable<UiLogEntry[]>;
   /** The open event decision and the last result. */
   story: Subscribable<UiStory>;
+  /** The starmap view's data, and a route preview to a node (path, fuel, next jump's charge, blocker). */
+  starmap: Subscribable<UiStarmap>;
+  planRoute(to: string): UiStarRoute | null;
+  /** The starmap screen opened or closed: it builds its data then, and the world view stops rendering behind it. */
+  setStarmapOpen(open: boolean): void;
+  /** The deploy picker's data while the ship waits to be placed, a spot's gap-rule error (null = valid), and what a jump would leave behind. */
+  deploy: Subscribable<UiDeploy | null>;
+  deployCheck(x: number, y: number): string | null;
+  jumpWarnings(ship: number): UiJumpWarnings;
   /** Pick an option of the open decision and resume play. */
   chooseStory(choice: string): void;
   combat: Subscribable<UiCombat>;
@@ -642,6 +656,8 @@ export interface UiApi {
   spawnRaider(boarders?: boolean): void;
   /** Spawn a procedurally generated enemy of a faction id (random faction if omitted) where a raider would go. */
   spawnGenerated(faction?: string): void;
+  /** Generate a station of a kind ('station.trading'...) and size east of everything in the node, and frame it. */
+  spawnStation(kind: string, size: 'outpost' | 'station' | 'hub'): void;
   /** Overlay ids offered by the picker, in order. */
   overlayList: { id: string; label: string }[];
   overlayLegend(id: string): UiLegend | null;

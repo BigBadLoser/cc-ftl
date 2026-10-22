@@ -5,7 +5,7 @@ import { dockSpec, engineSpec, reactorSpec, type RoomSpec } from './plan';
 import type { Rng } from '../rng';
 
 /**
- * Station builders with no bow or stern. Engines are small thruster rooms on east faces inside the structure (the
+ * Station builders with no bow or stern. Engines (none for immobile stations, `stationGen.ts`) are small thruster rooms on east faces inside the structure (the
  * engine art faces +x only), never a drive section.
  *   ring     rooms round a corridor ring with an empty centre, a small hub joined by two to four spokes
  *   lattice  modules on a 2D grid with gaps, linked by short tubes (walkable) and beams (structure)
@@ -31,18 +31,22 @@ export interface RingOpts {
   weight: number[];
   /** Rooms also lining the inside of the top and bottom runs (a thicker ring wall). */
   inner: boolean;
+  /** Airlock docks, split between the top and bottom runs (default 2). */
+  docks?: number;
+  /** Deal rooms to the east run too (after the reactors): a fuller, smaller ring (stations). */
+  east?: boolean;
 }
 
 /** Ring station: a square corridor ring round an empty centre, rooms outboard, the hub joined by spokes. */
 export function ringStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], engines: number, reactors: number, spokes: Side[], o: RingOpts): Builder | null {
   const b = localBuilder(rng);
-  const docks = [dockSpec(), dockSpec()];
-  const [top, bot, wst] = deal(rooms, 3, o.weight) as [RoomSpec[], RoomSpec[], RoomSpec[]];
-  top.push(docks[0] as RoomSpec);
-  bot.push(docks[1] as RoomSpec);
+  const [top, bot, wst, est] = deal(rooms, o.east ? 4 : 3, o.east ? [...o.weight, 1.4] : o.weight) as [RoomSpec[], RoomSpec[], RoomSpec[], RoomSpec[] | undefined];
+  for (let i = 0; i < (o.docks ?? 2); i++) (i % 2 === 0 ? top : bot).push(dockSpec());
   const east: RoomSpec[] = [];
-  for (let i = 0; i < Math.max(1, engines); i++) east.push(engineSpec(1, 'w'));
+  for (let i = 0; i < engines; i++) east.push(engineSpec(1, 'w'));
   for (let k = reactors; k > 0; k -= 2) east.push({ ...reactorSpec(Math.min(2, k)), w: 3, h: 2 * Math.min(2, k) + 1 });
+  // East-side rooms stand outboard like the west ones: turned so their long side runs along the ring.
+  for (const r of est ?? []) east.push(r.w > r.h ? { ...r, w: r.h, h: r.w } : r);
   const along = (specs: RoomSpec[]): number => specs.reduce((t, r) => t + r.h + 1, 1);
   const hw = Math.max(hub.w, hub.h);
   const S = Math.max(9, Math.ceil(run(top) / 2) + 1, Math.ceil(run(bot) / 2) + 1, Math.ceil((along(wst) + 4) / 2), Math.ceil((along(east) + 4) / 2), Math.ceil(hw / 2) + 5) + o.extra;
@@ -106,13 +110,15 @@ export interface LatticeOpts {
   holes: number;
   /** Extra module size. */
   pad: number;
+  /** Airlocks: 0, 1 (top) or 2 (top and bottom, the default). */
+  docks?: number;
 }
 
 export function latticeStation(rng: Rng, modsIn: RoomSpec[], engines: number, o: LatticeOpts): Builder | null {
   const b = localBuilder(rng);
   const { gx, gy } = o;
   const mods = modsIn.map((r) => ({ ...r, w: r.w + rng.int(0, o.pad), h: r.h + rng.int(0, Math.min(1, o.pad)) }));
-  const eng = Array.from({ length: Math.max(1, engines) }, () => engineSpec(1, 'w'));
+  const eng = Array.from({ length: Math.max(0, engines) }, () => engineSpec(1, 'w'));
   const C = Math.max(2, Math.round(Math.sqrt((mods.length + eng.length) * o.spread)));
   // Rows fill west to east; a thruster closes each of the first rows (east-most there, so it faces open space).
   const grid: (RoomSpec | null)[][] = [];
@@ -131,12 +137,16 @@ export function latticeStation(rng: Rng, modsIn: RoomSpec[], engines: number, o:
   const PY = Math.max(...all.map((r) => r.h)) + 2 + gy;
   const isEng = (r: number, c: number): boolean => grid[r]?.[c]?.role === 'engine';
   const oy = -Math.round((R * PY) / 2);
+  // Centred on x too: a wide lattice (big stations) would run off the local canvas and lose modules.
+  const ox = -Math.round((C2 * PX) / 2);
   const parts: (Part | null)[][] = grid.map((row, r) => row.map((s, c) => {
     if (!s) return null;
-    const cx = c * PX + Math.floor(PX / 2);
+    const cx = ox + c * PX + Math.floor(PX / 2);
     const cy = oy + r * PY + Math.floor(PY / 2);
     return b.place({ x: cx - Math.ceil((s.w + 2) / 2), y: cy - Math.ceil((s.h + 2) / 2), w: s.w + 2, h: s.h + 2 }, s.role, s);
   }));
+  // Every module must land (a lost one would drop its planned modules).
+  if (parts.some((row, r) => row.some((p, c) => !p && grid[r]?.[c]))) return null;
   const at = (r: number, c: number): Part | null => parts[r]?.[c] ?? null;
   for (let r = 0; r < R; r++) {
     const cols = (grid[r] ?? []).map((_, c) => c).filter((c) => at(r, c));
@@ -155,7 +165,7 @@ export function latticeStation(rng: Rng, modsIn: RoomSpec[], engines: number, o:
     for (const c of cols) {
       const a = at(r, c) as Part;
       const z = at(r + 1, c) as Part;
-      const cx = c * PX + Math.floor(PX / 2);
+      const cx = ox + c * PX + Math.floor(PX / 2);
       if (c === link) {
         const t = b.place({ x: cx - 1, y: a.y + a.h - 1, w: 3, h: z.y - (a.y + a.h - 1) + 1 }, 'hall');
         if (!t || !b.door(a, t) || !b.door(t, z)) return null;
@@ -167,7 +177,8 @@ export function latticeStation(rng: Rng, modsIn: RoomSpec[], engines: number, o:
   const botRow = (parts[R - 1] ?? []).filter((p, c): p is Part => !!p && !isEng(R - 1, c));
   const t0 = topRow[0];
   const b0 = botRow[botRow.length - 1] ?? botRow[0];
-  if (!t0 || !b0 || !b.attach(t0, 'n', dockSpec(), Math.floor(t0.w / 2) - 1)) return null;
-  if (!b.attach(b0, 's', dockSpec(), Math.floor(b0.w / 2) - 1)) return null;
+  const docks = o.docks ?? 2;
+  if (!t0 || !b0 || (docks > 0 && !b.attach(t0, 'n', dockSpec(), Math.floor(t0.w / 2) - 1))) return null;
+  if (docks > 1 && !b.attach(b0, 's', dockSpec(), Math.floor(b0.w / 2) - 1)) return null;
   return b;
 }

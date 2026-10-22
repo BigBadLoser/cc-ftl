@@ -8,11 +8,12 @@ import math
 import os
 import numpy as np
 from . import core, post
+from .scale import ART_SCALE as _S
 from . import human_render as hr
 from . import alien
 
 CLIPS = [("idle", 4, 4, True), ("run", 6, 12, True), ("attack", 5, 10, False), ("hurt", 2, 8, False), ("dead", 1, 1, False)]
-W, H, ORIGIN = 132, 124, (66, 84)
+W, H, ORIGIN = 132 * _S, 124 * _S, (66 * _S, 84 * _S)
 TAU = math.tau
 
 
