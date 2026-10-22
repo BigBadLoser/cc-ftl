@@ -36,6 +36,8 @@
   let wasInCombat = false;
   let overviewOpen = $state(false);
   let mapOpen = $state(false);
+  /** The ship fleeing: the starmap was opened from the combat panel to pick the target. */
+  let fleeShip = $state<number | null>(null);
   let sliding = $state(false);
   let selShip = $state<number | null>(null);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
@@ -97,7 +99,7 @@
       api.togglePause();
     } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
     else if (e.key === '`') debug = !debug;
-    else if (e.key === 'm') mapOpen = !mapOpen;
+    else if (e.key === 'm') { fleeShip = null; mapOpen = !mapOpen; }
     else if (e.key === 'Escape') {
       if (stockOpen) stockOpen = false;
       else if (overviewOpen) overviewOpen = false;
@@ -131,7 +133,7 @@
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
   <NavStrip
-    {mapOpen} onMap={() => (mapOpen = !mapOpen)}
+    {mapOpen} onMap={() => { fleeShip = null; mapOpen = !mapOpen; }}
     {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.length > 0 || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
@@ -155,7 +157,7 @@
   <DebugPanel {api} {snap} />
 {/if}
 {#if combat.inCombat && combatOpen}
-  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onHail={(ship) => { tradeWith = ship; }} />
+  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onFlee={(ship) => { fleeShip = ship; mapOpen = true; }} onHail={(ship) => { tradeWith = ship; }} />
 {/if}
 <ToolBar {api}>
     <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
@@ -174,7 +176,7 @@
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
 {/if}
-{#if mapOpen}<StarmapView {api} onClose={() => ((mapOpen = false), (sliding = false))} onSlide={(on) => (sliding = on)} />{/if}
+{#if mapOpen}<StarmapView {api} flee={fleeShip} onClose={() => ((mapOpen = false), (sliding = false), (fleeShip = null))} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />
 

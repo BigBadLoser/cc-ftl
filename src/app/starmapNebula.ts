@@ -41,3 +41,17 @@ export function nebulaAround(sim: Sim, x: number, y: number): UiNebulaTile[] {
   }
   return out;
 }
+
+/** Build the next missing tile around (x, y), for idle-time warming; false once all are built. */
+export function warmNebula(sim: Sim, x: number, y: number): boolean {
+  const tx = Math.floor(x / NEBULA_TILE);
+  const ty = Math.floor(y / NEBULA_TILE);
+  for (let dy = -NEBULA_RING; dy <= NEBULA_RING; dy++) {
+    for (let dx = -NEBULA_RING; dx <= NEBULA_RING; dx++) {
+      if (cache.has(`${sim.seed}:${tx + dx},${ty + dy}`)) continue;
+      tile(sim, tx + dx, ty + dy);
+      return true;
+    }
+  }
+  return false;
+}

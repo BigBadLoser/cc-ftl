@@ -1,8 +1,8 @@
 import type { ChunkData, EdgeData, GalaxyContent, GalaxyIndex, NodeData, SectorData } from '../sim';
 import type { UiStarLink, UiStarCluster } from '../ui/starmapApi';
+import { toneOf } from './starmapTone';
 import { fluidOutline, type P } from './starmapShapes';
 
-const OPEN_SPACE = '#5a6b85';
 
 export const CLUSTER_TYPE_LABEL: Record<string, string> = {
   core: 'core worlds', border: 'border march', corporate: 'corporate holdings', trade: 'trade lanes',
@@ -98,7 +98,7 @@ export function buildClusters(index: GalaxyIndex, content: GalaxyContent | undef
     }
     clusters.push({
       id, name: first.clusterName ?? id, type: first.clusterType ?? '', typeLabel: CLUSTER_TYPE_LABEL[first.clusterType ?? ''] ?? '',
-      faction: first.faction, color: (first.faction && content?.factions[first.faction]?.color) || OPEN_SPACE,
+      faction: first.faction, tone: first.faction ? toneOf(content?.factions[first.faction]?.kind) : 'dim',
       x: Math.round(x), y: Math.round(y), sectors: list.length, outline, known: list.some((s) => known(s.id)),
       revealed: false, current: id === current?.cluster,
     });

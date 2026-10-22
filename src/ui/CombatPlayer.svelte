@@ -4,8 +4,8 @@
   import { resolveTarget } from './combatTarget';
 
   type Me = NonNullable<UiCombat['player']>;
-  let { api, me, enemy, selWeapon, onSelect, onHail }: {
-    api: UiApi; me: Me; enemy: UiShipCombat | undefined; selWeapon: number; onSelect: (id: number) => void; onHail: (ship: number) => void;
+  let { api, me, enemy, selWeapon, onSelect, onHail, onFlee }: {
+    api: UiApi; me: Me; enemy: UiShipCombat | undefined; selWeapon: number; onSelect: (id: number) => void; onHail: (ship: number) => void; onFlee: (ship: number) => void;
   } = $props();
 
   const ready = $derived(me.weapons.some((w) => w.charge >= 1 && w.powered && !w.ion));
@@ -19,7 +19,8 @@
 
   const setHold = (hold: boolean) => api.dispatch({ type: 'combat.setHold', ship: me.ship, hold });
   const volley = () => api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
-  const flee = () => api.dispatch({ type: 'combat.flee', ship: me.ship });
+  /** Fleeing is a jump: open the starmap to pick the target (the cheapest reachable one is preselected). */
+  const flee = () => onFlee(me.ship);
   const clearWeapon = (weaponId: number) =>
     api.dispatch({ type: 'combat.setTarget', ship: me.ship, weaponId, targetShip: 0, targetModuleId: 0 });
   const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
@@ -70,8 +71,8 @@
     {#if !ready && !me.hold}<div class="hint" data-testid="combat-volley-hint">Hold fire to charge a volley</div>{/if}
     <div class="sec">
       {#if enemy}<button class="tile sm q" title="Hail: call them on the radio. Only ships that are not hostile answer" aria-label="Hail" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}><Icon name="hail" size={16} /><span class="cap">Hail</span></button>{/if}
-      <span class="ftl" class:full={canFlee} title="FTL charge: full means you can flee">
-        <button class="tile sm q go" disabled={!canFlee} title="Flee: jump away" aria-label="Flee" data-testid="combat-flee" onclick={flee}><Icon name="fast" size={16} /><span class="cap">Flee</span></button>
+      <span class="ftl" class:full={canFlee} title="FTL charge: a jump needs its charge, short ones less than a full drive">
+        <button class="tile sm q go" disabled={me.state !== 'active'} title="Flee: pick a node to jump to" aria-label="Flee" data-testid="combat-flee" onclick={flee}><Icon name="fast" size={16} /><span class="cap">Flee</span></button>
         <span class="bar"><i style="width:{ftlPct}%"></i></span>
       </span>
       <span class="sh" title="Your shield layers" data-testid="ship-meters"><Icon name="shield" size={14} /><b data-testid="shield-pips">{me.shield.layers}/{me.shield.max}</b><span class="cap">Shields</span></span>

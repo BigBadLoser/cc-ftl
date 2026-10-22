@@ -3,10 +3,9 @@ import {
   planStarRoute, playerShip, playerStock, SENSOR_HOPS, standings, type Sim,
 } from '../sim';
 import type { UiStarExit, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
+import { toneOf } from './starmapTone';
 import { nebulaAround } from './starmapNebula';
 import { buildClusters, sectorOutline } from './starmapClusters';
-
-const OPEN_SPACE = '#5a6b85';
 
 /** Nodes within sensor range of the current node (contacts are only shown there). */
 function inSensors(sim: Sim): Set<string> {
@@ -69,7 +68,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
     return {
       id: s.id, name: s.name, x: Math.round(s.x), y: Math.round(s.y), faction: k ? s.faction : null, danger: s.danger, known: k,
       top: Math.round(Math.min(...s.hull.map((p) => p.y))), r: Math.round(s.r),
-      color: (k && s.faction && content?.factions[s.faction]?.color) || OPEN_SPACE,
+      tone: k && s.faction ? toneOf(content?.factions[s.faction]?.kind) : 'dim',
       outline: sectorOutline(index, s), body: s.body ?? null, cluster: s.cluster ?? null, hub: !!s.hub, nodes: s.nodes.length,
     };
   });
@@ -79,7 +78,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
     return { id: e.id, kind: e.kind, ax: Math.round(a?.x ?? 0), ay: Math.round(a?.y ?? 0), bx: Math.round(b?.x ?? 0), by: Math.round(b?.y ?? 0), anchor: !!e.anchor, gate: !!e.gate, rift: !!e.rift };
   });
   const factions = standings(sim).map((s) => ({
-    id: s.faction, name: content?.factions[s.faction]?.name ?? s.faction, color: content?.factions[s.faction]?.color ?? OPEN_SPACE,
+    id: s.faction, name: content?.factions[s.faction]?.name ?? s.faction, tone: toneOf(content?.factions[s.faction]?.kind),
     tier: s.tier, standing: s.value,
   }));
   const here = index.sectors.get(index.nodes.get(g.current)?.sector ?? '');
@@ -96,7 +95,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       const k = knownSectors.has(to.id);
       exits.push({
         id: e.id, ax: Math.round(a.x), ay: Math.round(a.y), bx: Math.round(b.x), by: Math.round(b.y), to: to.id,
-        name: k ? to.name : null, color: (k && to.faction && content?.factions[to.faction]?.color) || OPEN_SPACE, danger: to.danger,
+        name: k ? to.name : null, tone: k && to.faction ? toneOf(content?.factions[to.faction]?.kind) : 'dim', danger: to.danger,
         kind: e.rift ? 'rift' : e.gate ? 'gate' : 'lane', fuel: e.fuel,
       });
     }
@@ -124,5 +123,13 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
     to, path: r.path, hops: r.path.length - 1, fuel: r.fuel, time: r.time, nextCharge: first?.charge ?? 0,
     fuelOk: status.fuel >= r.fuel, chargeOk: (first?.charge ?? Infinity) <= status.charge + 1e-9,
     blocker: block ? BLOCKERS[block] ?? block : null,
+  };
+}
+
+/** A starmap with nothing in it (rev -1): what the store holds until the screen is first built. */
+export function emptyStarmap(): UiStarmap {
+  return {
+    rev: -1, current: '', ship: 0, fuel: 0, charge: 0, chargeMax: FTL_CHARGE_SEC, jumps: 0, days: 0, dangerStep: DANGER_STEP, sectors: [], nodes: [],
+    edges: [], factions: [], currentSector: '', currentCluster: null, clusters: [], exits: [], sectorLinks: [], clusterLinks: [], nebula: [],
   };
 }

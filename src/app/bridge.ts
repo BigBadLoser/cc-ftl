@@ -1,4 +1,4 @@
-import { JobC, ItemStackC, Struct, stackAt, type Command, type Sim } from '../sim';
+import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
 import type { UiTrade, UiStory, UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
@@ -9,8 +9,10 @@ import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildTrade } from './tradeSnapshot';
 import { buildStory } from './storySnapshot';
-import { buildStarmap, planStarmapRoute, starmapStatus } from './starmapSnapshot';
-import { PREFETCH_BOOST_BUDGET_MS, PREFETCH_BOOST_MS, PREFETCH_EVERY, prefetchGalaxy, prefetchStart } from './galaxyPrefetch';
+import { warmOutlines } from './starmapClusters';
+import { warmNebula } from './starmapNebula';
+import { buildStarmap, emptyStarmap, planStarmapRoute, starmapStatus } from './starmapSnapshot';
+import { PREFETCH_BOOST_BUDGET_MS, PREFETCH_BOOST_MS, PREFETCH_EVERY, prefetchGalaxy } from './galaxyPrefetch';
 import type { UiStarmap, UiStarRoute } from '../ui/starmapApi';
 import { tempAutoDeploy } from './tempDeploy';
 import { createStore, type Readable } from './store';
@@ -76,6 +78,10 @@ export interface Bridge {
   /** The generated starmap (geometry rebuilt when the galaxy changes; fuel and charge kept fresh). */
   starmap: Readable<UiStarmap>;
   planRoute(to: string): UiStarRoute | null;
+  /** The starmap screen opens (builds and keeps its data fresh) or closes (stops refreshing). */
+  setStarmapOpen(open: boolean): void;
+  /** Build the starmap's geometry ahead of the first open, one small piece per call (idle time); returns true while more is left. */
+  warmStarmap(): boolean;
   /** Pick an option of the open event decision and resume the speed the game was on. */
   chooseStory(choice: string): void;
   setSelected(tile: TileRef | null): void;
@@ -118,9 +124,15 @@ export function createBridge(sim: Sim): Bridge {
   const prizes = createStore<UiPrize[]>([]);
   const story = createStore<UiStory>({ active: null, last: null });
   let lastStory = '';
-  prefetchStart(sim);
-  const starmap = createStore<UiStarmap>(buildStarmap(sim));
+  // The starmap is built lazily: when the screen first opens, or in idle time after loading (`warmStarmap`), never in createBridge.
+  const starmap = createStore<UiStarmap>(emptyStarmap());
+  let starOpen = false;
+  const warmedChunks = new Set<string>();
   let starFrame = 0;
+  const syncStarmap = () => {
+    if (starmap.get().rev !== sim.galaxy.rev) starmap.set(buildStarmap(sim));
+    else starmap.set({ ...starmap.get(), ...starmapStatus(sim) });
+  };
   /** Speed to return to when the open decision is answered (null = no decision is holding the game). */
   let heldSpeed: Speed | null = null;
   let lastPrizes = '';
@@ -257,15 +269,16 @@ export function createBridge(sim: Sim): Bridge {
       boostUntil = now + PREFETCH_BOOST_MS;
     }
     if (now < boostUntil) {
-      while (performance.now() - now < PREFETCH_BOOST_BUDGET_MS && prefetchGalaxy(sim));
-    } else if (prefetchFrame++ % PREFETCH_EVERY === 0) prefetchGalaxy(sim);
+      while (performance.now() - now < PREFETCH_BOOST_BUDGET_MS && prefetchGalaxy(sim, starmap.get().rev >= 0));
+    } else if (prefetchFrame++ % PREFETCH_EVERY === 0) prefetchGalaxy(sim, starmap.get().rev >= 0);
   };
+  /** While the screen is open: full rebuild on a galaxy revision, otherwise only the fuel and FTL figures (about six times a second). */
   const refreshStarmap = () => {
-    if (starFrame++ % 10) return;
+    if (!starOpen || starFrame++ % 10) return;
     const cur = starmap.get();
     if (cur.rev !== sim.galaxy.rev) return starmap.set(buildStarmap(sim));
     const st = starmapStatus(sim);
-    if (st.fuel !== cur.fuel || st.charge !== cur.charge || st.current !== cur.current) starmap.set({ ...cur, ...st });
+    if (st.fuel !== cur.fuel || st.charge !== cur.charge || st.current !== cur.current || st.ship !== cur.ship) starmap.set({ ...cur, ...st });
   };
   const applySpeed = (speed: Speed) => {
     loop?.setSpeed(speed);
@@ -295,6 +308,24 @@ export function createBridge(sim: Sim): Bridge {
     story,
     starmap,
     planRoute: (to) => planStarmapRoute(sim, to),
+    setStarmapOpen(open) {
+      starOpen = open;
+      if (open) syncStarmap();
+    },
+    warmStarmap() {
+      if (starmap.get().rev >= 0) return false;
+      // One sector-outline chunk, then one nebula tile per call; the last call assembles the (now cheap) snapshot.
+      const chunk = Object.values(sim.galaxy.chunks).find((c) => !warmedChunks.has(c.key));
+      if (chunk) {
+        warmedChunks.add(chunk.key);
+        warmOutlines(chunk);
+        return true;
+      }
+      const at = nodeOf(sim, sim.galaxy.current);
+      if (at && warmNebula(sim, at.x, at.y)) return true;
+      starmap.set(buildStarmap(sim));
+      return false;
+    },
     chooseStory(choice) {
       sim.enqueue({ type: 'story.choose', choice });
       const back = heldSpeed;

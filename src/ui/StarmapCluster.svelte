@@ -8,15 +8,15 @@
   import type { UiStarmap } from './starmapApi';
   import StarmapBody from './StarmapBody.svelte';
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
-  import { BADGE, dangerColor } from './starmapStyle';
+  import { BADGE, dangerColor, toneColor } from './starmapStyle';
 
-  let { map, px, picked, routePts = '', routeSectors = new Set() }: {
-    map: UiStarmap; px: (v: number) => number; picked: string | null;
+  let { map, px, picked, hover, routePts = '', routeSectors = new Set() }: {
+    map: UiStarmap; px: (v: number) => number; picked: string | null; hover: string | null;
     /** The plotted route (SVG points) and the sectors it passes through. */
     routePts?: string; routeSectors?: Set<string>;
   } = $props();
 
-  const tint = $derived(new Map(map.clusters.map((r) => [r.id, r.revealed ? r.color : '#64748b'])));
+  const tint = $derived(new Map(map.clusters.map((r) => [r.id, r.revealed ? toneColor(r.tone) : 'var(--dim)'])));
   /** Known services per sector: the structure badges of its discovered nodes. */
   const services = $derived.by(() => {
     // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a temporary built inside $derived, never mutated after
@@ -64,15 +64,15 @@
 </script>
 
 {#each map.clusters as r (r.id)}
-  <path d={r.outline} class="area" class:known={r.known} class:revealed={r.revealed} style={`--c:${r.revealed ? r.color : '#64748b'}`} fill-rule="evenodd" />
+  <path d={r.outline} class="area" class:known={r.known} class:revealed={r.revealed} style={`--c: ${r.revealed ? toneColor(r.tone) : 'var(--dim)'}`} fill-rule="evenodd" />
 {/each}
 {#each map.sectorLinks as l (l.id)}
   <line x1={l.ax} y1={l.ay} x2={l.bx} y2={l.by} class="conn {l.kind}" class:mine={l.mine} />
 {/each}
 {#each map.sectors as sec (sec.id)}
-  {@const c = sec.known ? (tint.get(sec.cluster ?? '') ?? '#64748b') : '#475569'}
+  {@const c = sec.known ? (tint.get(sec.cluster ?? '') ?? 'var(--dim)') : 'var(--dim)'}
   <path d={sec.outline} class="patch-base" fill-rule="evenodd" />
-  <path d={sec.outline} class="patch" class:known={sec.known} class:cur={sec.id === map.currentSector} class:onroute={routeSectors.has(sec.id)} class:picked={sec.id === picked} style={`--c:${c}`} fill-rule="evenodd" />
+  <path d={sec.outline} class="patch" class:known={sec.known} class:cur={sec.id === map.currentSector} class:onroute={routeSectors.has(sec.id)} class:picked={sec.id === picked} class:hov={sec.id === hover} style={`--c: ${c}`} fill-rule="evenodd" />
 {/each}
 {#if routePts}<polyline points={routePts} class="route" />{/if}
 {#each map.sectors as sec (sec.id)}
@@ -82,10 +82,10 @@
     {#if b}
       {@const icons = services.get(sec.id) ?? []}
       {@const mid = (b.x0 + b.x1) / 2}
-      <text stroke-width={px(3)} x={mid} y={b.y0 + px(10)} class="sname" class:cur={sec.id === map.currentSector} font-size={px(11)}>{sec.name}</text>
-      <text stroke-width={px(3)} x={mid} y={b.y0 + px(21)} font-size={px(9)} class="danger" fill={dangerColor(sec.danger)}>danger {sec.danger}</text>
+      <text stroke-width={px(3)} x={mid} y={b.y0 + px(10)} class="sname" class:cur={sec.id === map.currentSector} font-size={px(13)}>{sec.name}</text>
+      <text stroke-width={px(3)} x={mid} y={b.y0 + px(21)} font-size={px(9)} class="danger" style={`fill: ${dangerColor(sec.danger)}`}>danger {sec.danger}</text>
       {#each icons as s, i (s)}
-        <rect x={mid + px(-icons.length * 6 + i * 12 + 1)} y={b.y0 + px(24)} width={px(10)} height={px(10)} rx={px(2)} fill={BADGE[s] ?? '#999'} />
+        <rect x={mid + px(-icons.length * 6 + i * 12 + 1)} y={b.y0 + px(24)} width={px(10)} height={px(10)} class="chip" style={`fill: ${BADGE[s] ?? 'var(--dim)'}`} />
         <text x={mid + px(-icons.length * 6 + i * 12 + 6)} y={b.y0 + px(31.8)} class="badge" font-size={px(8)}>{s}</text>
       {/each}
     {/if}
@@ -97,7 +97,7 @@
 {#each map.clusters as r (r.id)}
   {@const b = labels.get(`r:${r.id}`)}
   {#if b}
-    <text stroke-width={px(3)} x={r.x} y={b.y0 + px(14)} class="rname" fill={r.color} font-size={px(15)}>{r.name}</text>
+    <text stroke-width={px(3)} x={r.x} y={b.y0 + px(14)} class="rname" style={`fill: ${toneColor(r.tone)}`} font-size={px(15)}>{r.name}</text>
     <text stroke-width={px(3)} x={r.x} y={b.y0 + px(27)} class="rtype" font-size={px(11)}>{r.typeLabel}</text>
   {/if}
 {/each}
@@ -106,24 +106,25 @@
   .area { fill: var(--c); fill-opacity: 0.02; stroke: var(--c); stroke-opacity: 0.35; stroke-dasharray: 6 6; vector-effect: non-scaling-stroke; }
   .area.revealed { fill-opacity: 0.03; stroke-opacity: 0.5; stroke-width: 1.5; }
   .area.known { fill-opacity: 0.05; stroke-opacity: 0.8; stroke-dasharray: none; stroke-width: 3; }
-  .conn { stroke: #64748b; stroke-opacity: 0.8; stroke-width: 3; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-  .conn.gate { stroke: #7dd3fc; stroke-width: 5; }
-  .conn.rift { stroke: #a78bfa; stroke-dasharray: 4 6; stroke-width: 3; }
-  .conn.mine { stroke: #4ade80; }
-  .patch-base { fill: #070b14; }
-  .patch { fill: #334155; fill-opacity: 0.55; stroke: #7c8ca6; stroke-opacity: 0.7; stroke-width: 1.2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+  .conn { stroke: var(--dim); stroke-opacity: 0.8; stroke-width: 3; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .conn.gate { stroke: var(--cyan); stroke-width: 5; }
+  .conn.rift { stroke: var(--text); stroke-opacity: 0.5; stroke-dasharray: 4 6; stroke-width: 3; }
+  .conn.mine { stroke: var(--green); }
+  .patch-base { fill: var(--bg); }
+  .patch { fill: var(--panel-3); fill-opacity: 0.55; stroke: var(--dim); stroke-opacity: 0.7; stroke-width: 1.2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
   .patch.known { fill: var(--c); fill-opacity: 0.3; stroke: var(--c); stroke-opacity: 0.85; stroke-dasharray: none; }
   .patch.onroute { stroke: var(--amber); stroke-opacity: 1; stroke-width: 2; }
   .patch.cur { fill-opacity: 0.45; stroke: var(--cyan); stroke-opacity: 1; stroke-width: 2.5; }
+  .patch.hov { stroke: var(--text); stroke-opacity: 1; stroke-width: 2; stroke-dasharray: none; fill-opacity: 0.42; }
   .patch.picked { stroke: var(--amber); stroke-opacity: 1; stroke-width: 3; stroke-dasharray: 6 4; }
   .route { fill: none; stroke: var(--amber); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
   .here { fill: none; stroke: var(--cyan); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
-  text { text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: #05080e; stroke-linejoin: round; }
-  .badge { fill: #05080e; font-weight: 700; stroke: none; }
-  .danger { font-weight: 600; }
-  .unk { fill: #94a3b8; fill-opacity: 0.6; font-weight: 600; }
-  .sname { fill: #cbd5e1; }
+  text { text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-linejoin: round; font-family: var(--head-font); }
+  .badge { fill: var(--bg); font-weight: 700; stroke: none; }
+  .danger { font-weight: 600; letter-spacing: 0.05em; }
+  .unk { fill: var(--dim); fill-opacity: 0.6; font-weight: 600; }
+  .sname { fill: var(--text); font-weight: 600; letter-spacing: 0.04em; }
   .sname.cur { fill: var(--cyan); }
   .rname { font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
-  .rtype { fill: #94a3b8; }
+  .rtype { fill: var(--dim); }
 </style>

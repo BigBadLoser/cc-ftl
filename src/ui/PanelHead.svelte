@@ -1,12 +1,16 @@
 <script lang="ts">
   import Icon, { type IconName } from './Icon.svelte';
 
-  let { icon, title, sub = '', foe = false, onBack }: { icon: IconName; title: string; sub?: string; foe?: boolean; onBack?: () => void } = $props();
+  let { icon, title, sub = '', foe = false, onBack, backIcon = 'back', backTitle = 'Back to ship (Esc)', backTestId = 'sel-back' }: {
+    icon: IconName; title: string; sub?: string; foe?: boolean; onBack?: () => void;
+    /** The back tile's glyph, tooltip and test id (a card closes with `close`, the starmap goes back to the ship). */
+    backIcon?: IconName; backTitle?: string; backTestId?: string;
+  } = $props();
 </script>
 
 <div class="ph head" class:foe>
   {#if onBack}
-    <button class="tile back" title="Back to ship (Esc)" aria-label="Back to ship" data-testid="sel-back" onclick={onBack}><Icon name="back" size={18} /></button>
+    <button class="tile back" title={backTitle} aria-label={backTitle.replace(/ \(.*\)$/, '')} data-testid={backTestId} onclick={onBack}><Icon name={backIcon} size={18} /></button>
   {:else}
     <span class="ico"><Icon name={icon} size={18} /></span>
   {/if}

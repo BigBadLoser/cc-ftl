@@ -10,7 +10,7 @@ import type { GalaxyContent, GalaxyFactionDef, StructureDef } from '../sim';
  */
 const factions = {
   navy: {
-    name: 'Concord Navy', kind: 'government', reputation: 'navy', color: '#5b8def', home: true,
+    name: 'Concord Navy', kind: 'government', reputation: 'navy', home: true,
     ships: [{ value: 'faction.navy', weight: 1 }],
     territory: { weight: 2.2, danger: { max: 4 }, reach: 820 },
     stations: [{ value: 'structure.station_military', weight: 3 }, { value: 'structure.station_trade', weight: 1 }],
@@ -19,7 +19,7 @@ const factions = {
     traffic: { weight: 1, danger: { max: 5 } },
   },
   meridian: {
-    name: 'Meridian Combine', kind: 'corporation', reputation: 'corp', color: '#f0b429',
+    name: 'Meridian Combine', kind: 'corporation', reputation: 'corp',
     ships: [{ value: 'faction.navy', weight: 2 }, { value: 'faction.civilian', weight: 1 }],
     territory: { weight: 1.6, danger: { min: 1, max: 7 } },
     stations: [{ value: 'structure.station_trade', weight: 3 }, { value: 'structure.station_research', weight: 1 }],
@@ -28,7 +28,7 @@ const factions = {
     traffic: { weight: 0.8, danger: { max: 7 } },
   },
   helix: {
-    name: 'Helix Biosystems', kind: 'corporation', reputation: 'corp', color: '#2dd4bf',
+    name: 'Helix Biosystems', kind: 'corporation', reputation: 'corp',
     ships: [{ value: 'faction.navy', weight: 1 }, { value: 'faction.civilian', weight: 1 }],
     territory: { weight: 1.1, danger: { min: 2, max: 8 } },
     stations: [{ value: 'structure.station_research', weight: 3 }, { value: 'structure.station_trade', weight: 1 }],
@@ -37,7 +37,7 @@ const factions = {
     traffic: { weight: 0.5, danger: { min: 1 } },
   },
   vantor: {
-    name: 'Vantor Heavy Industries', kind: 'corporation', reputation: 'corp', color: '#fb7a3c',
+    name: 'Vantor Heavy Industries', kind: 'corporation', reputation: 'corp',
     ships: [{ value: 'faction.civilian', weight: 2 }, { value: 'faction.navy', weight: 1 }],
     territory: { weight: 1.2, danger: { min: 1, max: 9 } },
     stations: [{ value: 'structure.station_trade', weight: 2 }, { value: 'structure.station_military', weight: 1 }],
@@ -46,14 +46,14 @@ const factions = {
     traffic: { weight: 0.6, danger: { min: 1 } },
   },
   traders: {
-    name: 'Free Traders', kind: 'civilian', reputation: 'traders', color: '#4ade80',
+    name: 'Free Traders', kind: 'civilian', reputation: 'traders',
     ships: [{ value: 'faction.civilian', weight: 1 }],
     baseStanding: 2,
     relations: { pirates: -0.3, vantor: 0.2 },
     traffic: { weight: 2, danger: { max: 7 } },
   },
   pirates: {
-    name: 'Scrapper Clans', kind: 'pirates', reputation: 'pirates', color: '#ef4444',
+    name: 'Scrapper Clans', kind: 'pirates', reputation: 'pirates',
     ships: [{ value: 'faction.scrapper', weight: 1 }],
     territory: { weight: 1.4, danger: { min: 3 }, reach: 680 },
     stations: [{ value: 'structure.station_trade', weight: 1 }],
@@ -62,7 +62,7 @@ const factions = {
     traffic: { weight: 1.6, danger: { min: 1 } },
   },
   rogue: {
-    name: 'Rogue AI', kind: 'rogue', reputation: 'drones', color: '#e879f9', combatFaction: 'rogue', alwaysHostile: true,
+    name: 'Rogue AI', kind: 'rogue', reputation: 'drones', combatFaction: 'rogue', alwaysHostile: true,
     ships: [{ value: 'faction.drones', weight: 1 }],
     territory: { weight: 1, danger: { min: 5 }, reach: 640 },
     baseStanding: -10,

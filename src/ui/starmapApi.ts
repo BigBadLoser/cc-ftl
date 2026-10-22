@@ -1,13 +1,16 @@
 /** Starmap view data (published by app/starmapSnapshot.ts). Plain data; map units, y down. */
 
+/** A theme colour by token name (`--cyan`...): the view maps it through `starmapStyle.ts`; the data holds no CSS. */
+export type Tone = 'cyan' | 'amber' | 'green' | 'red' | 'text' | 'dim';
+
 export interface UiStarSector {
   id: string;
   name: string;
   x: number;
   y: number;
   faction: string | null;
-  /** Territory tint (grey for open space). */
-  color: string;
+  /** Territory tint (dim for open space). */
+  tone: Tone;
   danger: number;
   /** Top of the sector (map y), where the label goes, and the sector's radius (map units). */
   top: number;
@@ -33,7 +36,7 @@ export interface UiStarCluster {
   type: string;
   typeLabel: string;
   faction: string | null;
-  color: string;
+  tone: Tone;
   /** Centre of its sectors (map units) and their count. */
   x: number;
   y: number;
@@ -55,10 +58,10 @@ export interface UiStarExit {
   ay: number;
   bx: number;
   by: number;
-  /** The sector it leads to: id, name (if known), owner colour, danger. */
+  /** The sector it leads to: id, name (if known), owner tint, danger. */
   to: string;
   name: string | null;
-  color: string;
+  tone: Tone;
   danger: number;
   kind: 'lane' | 'gate' | 'rift';
   fuel: number;
@@ -116,7 +119,7 @@ export interface UiStarEdge {
 export interface UiStarFaction {
   id: string;
   name: string;
-  color: string;
+  tone: Tone;
   tier: 'hostile' | 'neutral' | 'friendly';
   standing: number;
 }

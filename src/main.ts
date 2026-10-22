@@ -31,6 +31,7 @@ const sim = newGame(seed, content);
 const bridge = createBridge(sim);
 const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
+let starmapOpen = false;
 let hook: { onEvents(types: readonly string[]): void } | undefined;
 
 const itemIcons = createStore<Record<string, UiIcon>>({});
@@ -38,7 +39,8 @@ loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e
 
 const loop = createLoop({
   sim,
-  render: (alpha) => renderer?.render(alpha),
+  // The starmap covers the whole screen: skip drawing the world behind it.
+  render: (alpha) => { if (!starmapOpen) renderer?.render(alpha); },
   onEvents: (events) => {
     controller.onEvents(events);
     renderer?.onEvents(events);
@@ -150,6 +152,10 @@ const api: UiApi = {
   story: bridge.story,
   starmap: bridge.starmap,
   planRoute: bridge.planRoute,
+  setStarmapOpen: (open) => {
+    starmapOpen = open;
+    bridge.setStarmapOpen(open);
+  },
   chooseStory: bridge.chooseStory,
   focusShuttle: (id) => {
     const b = sim.world.get(id, BodyC);
@@ -194,6 +200,10 @@ const api: UiApi = {
         attachInput(canvas, r, controller.attach(r));
         window.addEventListener('resize', () => r.resize());
         loop.start();
+        // Build the starmap's geometry in idle time (one small piece per slot), so its first open does not wait for it.
+        const idle = (f: () => void): void => (typeof requestIdleCallback === 'function' ? void requestIdleCallback(f, { timeout: 3000 }) : void setTimeout(f, 100));
+        const warm = (): void => { if (bridge.warmStarmap()) idle(warm); };
+        setTimeout(() => idle(warm), 1500);
       })
       .catch((e: unknown) => errorLog.push(e));
   },

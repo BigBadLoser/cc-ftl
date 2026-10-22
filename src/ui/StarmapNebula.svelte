@@ -1,5 +1,6 @@
 <script lang="ts" module>
   import type { UiNebulaTile } from './starmapApi';
+  import { tokenRgb } from './starmapStyle';
 
   const smooth = (a: number, b: number, v: number) => {
     const t = Math.max(0, Math.min(1, (v - a) / (b - a)));
@@ -32,8 +33,8 @@
 
   /**
    * The tiles (a full square of equal tiles) stitched into one image, so they blend without seams. The density is
-   * blurred well past the width of its strands, so it reads as broad soft clouds. Density to colour: violet
-   * haze at the edges of the nebula, deeper blue in its body, a paler core where it is densest.
+   * blurred well past the width of its strands, so it reads as broad soft clouds. Density to colour: thin
+   * haze at the edges of the nebula, a brighter body, a cyan core where it is densest (all from the theme tokens).
    */
   function paint(tiles: UiNebulaTile[], x0: number, y0: number, cols: number): string {
     const key = tiles.map((t) => t.id).join('|');
@@ -53,14 +54,19 @@
     const ctx = c.getContext('2d');
     if (!ctx) return '';
     const img = ctx.createImageData(w, w);
+    // Theme colours: thin haze at the edge, the brighter rule colour in the body, cyan where it is densest.
+    const haze = tokenRgb('--line');
+    const hi = tokenRgb('--line-hi');
+    const core_ = tokenRgb('--cyan');
     for (let k = 0; k < raw.length; k++) {
       const d = Math.min(1, soft[k]! * 1.2);
       const m = smooth(0.15, 0.7, d);
       const core = smooth(0.8, 1, d);
       const p = k * 4;
-      img.data[p] = 96 - 50 * m + 60 * core;
-      img.data[p + 1] = 70 + 50 * m + 60 * core;
-      img.data[p + 2] = 180 + 15 * m + 30 * core;
+      for (let ch = 0; ch < 3; ch++) {
+        const body = haze[ch]! + (hi[ch]! - haze[ch]!) * m;
+        img.data[p + ch] = body + (core_[ch]! - body) * core;
+      }
       img.data[p + 3] = 255 * (0.19 * smooth(0.1, 0.45, d) + 0.05 * core);
     }
     ctx.putImageData(img, 0, 0);

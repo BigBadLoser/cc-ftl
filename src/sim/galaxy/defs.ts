@@ -25,8 +25,6 @@ export interface GalaxyFactionDef {
   kind: 'government' | 'corporation' | 'pirates' | 'rogue' | 'civilian';
   /** Key into `sim.story.reputation`: 'traders' | 'corp' | 'navy' | 'pirates' | 'drones' (trade's keys). */
   reputation: string;
-  /** Territory tint on the starmap (UI only). */
-  color: string;
   /** Generator factions (`content.factions` ids) its ships are built by, weighted. */
   ships: readonly Weighted[];
   /** Side its ships take in combat when it is hostile: the rogue AI fights everyone ('rogue'); default 'hostile'. */
