@@ -96,7 +96,7 @@ export interface ChunkData {
   edges: EdgeData[];
 }
 
-/** A ship at a node. Hostile ones are spawned into the sector grid on arrival (`ship` = its ShipC entity once spawned). */
+/** A ship at a node (`ship` = its ShipC entity once materialised in the sector). */
 export interface Contact {
   id: number;
   faction: string;
@@ -110,7 +110,14 @@ export interface Contact {
 }
 
 export interface NodeState {
+  /**
+   * Ships at the node that are not in its archive: its generated contacts until the player first enters (then they are
+   * materialised as real ships and the archive owns them: this list is emptied when the node is left), and arrivals while the
+   * player stays.
+   */
   contacts: Contact[];
+  /** The player has entered this node: its generated contacts have become ships (owned by the node's archive once left). */
+  entered: boolean;
 }
 
 /** Mutable starmap state on the Sim (`sim.galaxy`), saved with the game. */
@@ -131,6 +138,8 @@ export interface GalaxyState {
   jumps: number;
   /** Travel days spent in jumps. */
   days: number;
+  /** The story draw owed at the next `sector.deploy` ('transit' after an anchored hyperlane), or null. */
+  pendingDraw: 'arrival' | 'transit' | null;
   /** Bumped on every change the starmap view shows. */
   rev: number;
 }

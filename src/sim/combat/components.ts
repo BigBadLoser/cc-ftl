@@ -18,8 +18,8 @@ export interface Sector {
   inCombat: boolean;
   /** Set once the player has lost (reason code, e.g. 'captured'); see the `game.lost` event. */
   lost?: string;
-  /** Galaxy node this sector is (0 = the starting node). Archives are keyed by it. */
-  node: number;
+  /** Galaxy node id this sector is (`START_NODE` at the start). Archives are keyed by it. */
+  node: string;
   /**
    * 'active': normal play. 'deploying': the player's ship has jumped in and waits as `packet` until `sector.deploy` stamps it
    * (the deploy modal pauses the sim meanwhile).

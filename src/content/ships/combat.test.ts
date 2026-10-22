@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
+import { CombatC, CrewC, IonC, playerItems, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
@@ -328,21 +328,31 @@ describe('enemy AI, endings', () => {
     expect(shipGrid(sim, shipIds(sim)[0] as number)).toBeDefined();
   });
 
-  it('flee needs a charged FTL drive and takes the ship out of the fight', () => {
+  it('the player flees by jumping: it needs a charged FTL drive and leaves the fight', () => {
     const sim = newGame(1, content);
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
     sim.enqueue({ type: 'combat.flee', ship: nth(sim, 1) });
     const early = run(sim, 2);
     expect(early.some((e) => e.type === 'command.rejected' && e.reason === 'notCharged')).toBe(true);
+    expect(sim.sector.state).toBe('active');
     run(sim, 20 * 25);
     expect(combatOf(sim, 1).ftl).toBeGreaterThan(5);
     combatOf(sim, 1).ftl = 40;
+    const fuel = playerItems(sim, 'item.fuel');
     sim.enqueue({ type: 'combat.flee', ship: nth(sim, 1) });
     const events = run(sim, 40);
-    expect(ofType(events, 'ship.fled')).toEqual([{ type: 'ship.fled', ship: nth(sim, 1) }]);
-    expect(shipById(sim, shipIds(sim)[0] as number)?.state).toBe('fled');
-    expect(ofType(events, 'combat.ended')).toHaveLength(1);
-    expect(sim.sector.inCombat).toBe(false);
+    // One escape path: the same lift, archive and deploy as `galaxy.jump`, to the cheapest connected node.
+    const jumped = ofType(events, 'galaxy.jumped');
+    expect(jumped).toHaveLength(1);
+    expect(ofType(events, 'sector.jumped')).toHaveLength(1);
+    expect(ofType(events, 'ship.fled')).toEqual([]);
+    expect(sim.sector).toMatchObject({ state: 'deploying', node: jumped[0]!.to, inCombat: false });
+    expect(sim.galaxy.current).toBe(jumped[0]!.to);
+    expect(sim.archives.map((a) => a.node)).toEqual([jumped[0]!.from]);
+    sim.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
+    run(sim, 1);
+    expect(combatOf(sim, 1).ftl).toBeCloseTo(40 - jumped[0]!.charge, 0);
+    expect(playerItems(sim, 'item.fuel')).toBe(fuel - jumped[0]!.fuel);
   });
 
   it('a badly damaged raider with a charged drive retreats', () => {

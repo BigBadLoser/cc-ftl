@@ -73,13 +73,6 @@ export type Command =
   /** Restrict a storage module to `items` (item ids), or null to accept everything. */
   | { type: 'storage.setFilter'; moduleId: number; items: string[] | null }
   /** Spawn a hostile ship from a template; (x, y) is its top-left tile in sector coordinates. */
-  /**
-   * FTL jump of the player's ship (`ship`, FTL charged) to galaxy node `node`: the ship, its stowed and docked own vehicles and
-   * the crew aboard lift into a packet, the rest of the sector is archived, and the sector waits in state 'deploying' (the node's
-   * archive restored if it has one). `withDocked`: ids of non-player vehicles docked at its airlocks to take along (the others
-   * are cut loose). Crew or shuttles away stay in the archive (the UI confirms first, see `jumpWarnings`).
-   */
-  | { type: 'sector.jump'; ship: number; node: number; withDocked?: number[] }
   /** Place the waiting ship (state 'deploying') with its top-left at sector (x, y); checked by the gap rule. */
   | { type: 'sector.deploy'; x: number; y: number }
   | { type: 'debug.spawnEnemy'; template: string; x: number; y: number }
@@ -99,8 +92,11 @@ export type Command =
   | { type: 'combat.setHold'; ship: number; hold: boolean }
   /** Fire every charged weapon of the ship now. */
   | { type: 'combat.fireVolley'; ship: number }
-  /** Jump away with a fully charged FTL drive. */
-  | { type: 'combat.flee'; ship: number }
+  /**
+   * Flee: leave the node with a charged FTL drive. The player's ship jumps like `galaxy.jump` to `to` (an adjacent node), else to the
+   * cheapest connected node it can afford; AI ships just leave (state 'fled').
+   */
+  | { type: 'combat.flee'; ship: number; to?: string }
   /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
   | { type: 'ship.scuttle'; ship: number }
   /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */
@@ -130,8 +126,14 @@ export type Command =
   | { type: 'story.dismissNotice'; notice: number }
   /** Debug: set a persistent flag/counter (0 clears it). */
   | { type: 'story.setFlag'; flag: string; value: number }
-  /** Starmap: jump along one route or hyperlane from the current galaxy node to `to`, spending its fuel and FTL charge. */
-  | { type: 'galaxy.jump'; to: string }
+  /**
+   * The one way to jump (step 9): the player's `ship` goes along one route or hyperlane from the current galaxy node to `to`. Needs a valid
+   * edge, its FTL charge and fuel, no live trade deal and an active sector; pays both, then the ship (with its stowed and docked own vehicles
+   * and the crew aboard) lifts into a packet, the rest of the sector is archived, the archive of `to` is restored if it has one, and the
+   * sector waits in state 'deploying'. `withDocked`: ids of non-player vehicles docked at its airlocks to take along (the others are cut
+   * loose). Crew or shuttles away stay in the archive (the UI confirms first, see `jumpWarnings`). Nothing is paid or moved if it is rejected.
+   */
+  | { type: 'galaxy.jump'; ship: number; to: string; withDocked?: number[] }
   /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */
   | { type: 'debug.galaxyReveal'; radius: number }
   /** Debug: move to any generated galaxy node at no cost, as if arriving there (no event draw). */

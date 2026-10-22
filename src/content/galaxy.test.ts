@@ -7,7 +7,6 @@ import { GENERATOR_VERSION } from '../sim/galaxy/tuning';
 import { galaxySystem } from '../sim/systems/galaxy';
 import { rollArrival } from '../sim/galaxy/arrivals';
 import { ensureAround } from '../sim/galaxy/state';
-import { enterNode } from '../sim/galaxy/travel';
 import { playerStock } from '../sim/story/world';
 import { takeItems } from '../sim/story/effects';
 import { content } from '.';
@@ -15,6 +14,13 @@ import { content } from '.';
 const ftl = (sim: Sim) => sim.world.get(playerShip(sim), CombatC);
 const fuel = (sim: Sim) => playerStock(sim, 'item.fuel');
 const neighbours = (sim: Sim, id: string) => (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a));
+/** Queue a jump of the player's ship. */
+const jumpTo = (sim: Sim, to: string) => sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), to });
+/** Place the waiting ship in the middle of the sector (the deploy modal's job). */
+const deploy = (sim: Sim) => {
+  sim.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
+  sim.step();
+};
 const rejections = (sim: Sim) => sim.events.drain().filter((e) => e.type === 'command.rejected').map((e) => (e as { reason: string }).reason);
 
 /** Hops from `from` to every node, over the generated graph. */
@@ -83,13 +89,15 @@ describe('starmap travel', () => {
     const sim = newGame(2, content);
     const to = neighbours(sim, START_NODE)[0] as string;
     const edge = edgeBetween(sim.galaxy, START_NODE, to);
-    sim.enqueue({ type: 'galaxy.jump', to });
+    jumpTo(sim, to);
     sim.step();
     expect(rejections(sim)).toEqual(['notCharged']);
     sim.enqueue({ type: 'debug.chargeFtl' });
-    sim.enqueue({ type: 'galaxy.jump', to });
+    jumpTo(sim, to);
     sim.step();
     expect(sim.galaxy.current).toBe(to);
+    expect(sim.sector).toMatchObject({ node: to, state: 'deploying' });
+    deploy(sim);
     expect(fuel(sim)).toBe(16 - (edge?.fuel ?? 0));
     expect(ftl(sim)?.ftl).toBeCloseTo(FTL_CHARGE_SEC - (edge?.charge ?? 0), 0);
     expect(sim.galaxy.visited[to]).toBeDefined();
@@ -100,12 +108,12 @@ describe('starmap travel', () => {
     const sim = newGame(3, content);
     sim.enqueue({ type: 'debug.chargeFtl' });
     const far = [...hops(sim, START_NODE)].find(([, n]) => n === 2)?.[0] as string;
-    sim.enqueue({ type: 'galaxy.jump', to: far });
+    jumpTo(sim, far);
     sim.step();
     expect(rejections(sim)).toEqual(['noRoute']);
     takeItems(sim, 'item.fuel', fuel(sim));
     const to = neighbours(sim, START_NODE)[0] as string;
-    sim.enqueue({ type: 'galaxy.jump', to });
+    jumpTo(sim, to);
     sim.step();
     expect(rejections(sim)).toEqual(['noFuel']);
     expect(sim.galaxy.current).toBe(START_NODE);
@@ -125,13 +133,15 @@ describe('starmap travel', () => {
       ensureAround(sim, 's.12.0.n0');
       const far = [...galaxyIndex(sim.galaxy).nodes.values()].filter((n) => n.danger >= 6).sort((a, b) => (a.id < b.id ? -1 : 1))[0];
       if (!far) throw new Error('no far node');
-      sim.galaxy.current = far.id;
-      enterNode(sim, far.id, null);
+      sim.enqueue({ type: 'debug.galaxyTeleport', node: far.id });
+      sim.step();
+      deploy(sim);
+      sim.events.drain();
       const arrived: string[] = [];
       for (let t = 0; t < 30; t++) {
         sim.tick = sim.galaxy.nextArrival;
         rollArrival(sim);
-        for (const e of sim.events.drain()) if (e.type === 'galaxy.enemyArrived') arrived.push(`${t}:${e.faction}:${e.ship ?? '-'}`);
+        for (const e of sim.events.drain()) if (e.type === 'galaxy.shipArrived') arrived.push(`${t}:${e.faction}:${e.ship ?? '-'}`);
       }
       return arrived;
     };
@@ -143,7 +153,7 @@ describe('starmap travel', () => {
   it('saves and loads the galaxy, regenerating its chunks', () => {
     const sim = newGame(5, content);
     sim.enqueue({ type: 'debug.chargeFtl' });
-    sim.enqueue({ type: 'galaxy.jump', to: neighbours(sim, START_NODE)[0] as string });
+    jumpTo(sim, neighbours(sim, START_NODE)[0] as string);
     sim.step();
     const json = serialize(sim);
     expect(JSON.parse(json).galaxy.chunks).toEqual(Object.keys(sim.galaxy.chunks).sort());
@@ -173,9 +183,9 @@ describe('starmap travel', () => {
     for (let i = 0; i < 20; i++) galaxySystem(sim);
     rollArrival(sim);
     expect(sim.galaxy.rng).toBe(rng);
-    expect(sim.events.drain().filter((e) => e.type === 'galaxy.enemyArrived')).toEqual([]);
+    expect(sim.events.drain().filter((e) => e.type === 'galaxy.shipArrived')).toEqual([]);
     sim.enqueue({ type: 'debug.chargeFtl' });
-    sim.enqueue({ type: 'galaxy.jump', to: neighbours(sim, far.id)[0] as string });
+    jumpTo(sim, neighbours(sim, far.id)[0] as string);
     sim.step();
     expect(rejections(sim)).toEqual(['deploying']);
     expect(sim.galaxy.current).toBe(far.id);

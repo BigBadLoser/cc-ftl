@@ -22,15 +22,15 @@ export function playerShipInfo(sim: Sim): { id: number; ship: Ship } | null {
   return null;
 }
 
-/** Distances (tiles between ship centres) and directions tried, in order, when placing an arriving ship. */
+/** Distances (tiles between ship centres) and directions tried, in order, when placing a ship that appears in the node. */
 const SPOT_RINGS = [70, 95, 125, 160];
 const SPOT_DIRS = 12;
 
 /**
- * Where an arriving ship of w x h tiles goes: the first spot on rings around the player's ship that is inside the sector
- * and passes the gap rule (`placementGapError`). Null when nothing fits. Deterministic (fixed order).
+ * Where a ship of w x h tiles appears: the first spot on rings around the player's ship that passes the same checks as
+ * `sector.deploy` (inside the sector bounds, then the gap rule `placementGapError`). Null when nothing fits. Deterministic.
  */
-function arrivalSpot(sim: Sim, w: number, h: number): { x: number; y: number } | null {
+function freeSpot(sim: Sim, w: number, h: number): { x: number; y: number } | null {
   const me = playerShipInfo(sim)?.ship;
   const cx = me ? me.x + me.width / 2 : sim.sector.width / 2;
   const cy = me ? me.y + me.height / 2 : sim.sector.height / 2;
@@ -47,11 +47,12 @@ function arrivalSpot(sim: Sim, w: number, h: number): { x: number; y: number } |
 }
 
 /**
- * Spawn a contact at the current node into the sector grid through the generated-ship path and the gap rule. Returns
- * false (the contact stays, unspawned) when its generator faction is missing, no layout comes out or nothing fits.
+ * Make a contact a real ship in the active sector through the generated-ship path and the gap rule: hostile ones on their
+ * faction's combat side, the rest neutral. Returns false (the contact stays, unspawned) when the sector is not active, its
+ * generator faction is missing, no layout comes out or nothing fits.
  */
-function spawnContact(sim: Sim, node: string, c: Contact): boolean {
-  if (sim.sector.state === 'deploying' || sim.galaxy.current !== node || c.ship !== undefined) return false;
+export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
+  if (sim.sector.state !== 'active' || sim.galaxy.current !== node || c.ship !== undefined) return false;
   const def = sim.content.factions?.[c.shipgen];
   if (!def) return false;
   let gen: ReturnType<typeof generateShip>;
@@ -61,24 +62,16 @@ function spawnContact(sim: Sim, node: string, c: Contact): boolean {
     return false;
   }
   if (gen.problems.length > 0) return false;
-  const spot = arrivalSpot(sim, gen.width, gen.height);
+  const spot = freeSpot(sim, gen.width, gen.height);
   if (!spot) return false;
-  const side = sim.content.galaxy?.factions[c.faction]?.combatFaction ?? 'hostile';
+  const side = isHostileFaction(sim, c.faction) ? sim.content.galaxy?.factions[c.faction]?.combatFaction ?? 'hostile' : 'neutral';
   const id = spawnShip(sim, gen.template, { faction: side, x: spot.x, y: spot.y, rest: 100 });
   const ship = sim.world.get(id, ShipC);
   if (ship) ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth };
   c.ship = id;
   sim.galaxy.rev++;
-  sim.events.emit({ type: 'galaxy.enemyArrived', node, faction: c.faction, ship: id });
+  sim.events.emit({ type: 'galaxy.shipArrived', node, faction: c.faction, ship: id });
   return true;
-}
-
-/** Spawn every hostile contact of the current node that is not in the sector yet. */
-export function spawnPresent(sim: Sim): void {
-  const node = sim.galaxy.current;
-  for (const c of nodeState(sim, node).contacts) {
-    if (c.ship === undefined && isHostileFaction(sim, c.faction)) spawnContact(sim, node, c);
-  }
 }
 
 /** Drop contacts whose spawned ship is gone, wrecked, fled or taken. */
@@ -113,7 +106,7 @@ function arrivalChance(sim: Sim): number {
  */
 export function rollArrival(sim: Sim): void {
   const g = sim.galaxy;
-  if (sim.sector.state === 'deploying' || sim.tick < g.nextArrival) return;
+  if (sim.sector.state !== 'active' || sim.tick < g.nextArrival) return;
   g.nextArrival = sim.tick + Math.round(ARRIVAL_EVERY_SEC * TICK_HZ);
   const node = currentNode(sim);
   if (!node || !playerShipInfo(sim)) return;
@@ -129,5 +122,5 @@ export function rollArrival(sim: Sim): void {
   const c: Contact = { id: g.nextId++, faction, shipgen, seed: roll.seed, depth: node.danger, since: sim.tick };
   st.contacts.push(c);
   g.rev++;
-  if (!spawnContact(sim, node.id, c)) sim.events.emit({ type: 'galaxy.enemyArrived', node: node.id, faction, ship: null });
+  if (!spawnContact(sim, node.id, c)) sim.events.emit({ type: 'galaxy.shipArrived', node: node.id, faction, ship: null });
 }

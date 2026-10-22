@@ -1,14 +1,15 @@
 import { CombatC } from '../combat/components';
-import { drawEvent } from '../story/engine';
 import { takeItems } from '../story/effects';
 import { playerStock } from '../story/world';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { playerShipInfo, spawnPresent } from './arrivals';
+import { leaveNode } from '../sector/jump';
+import { isLive } from '../trade/deals';
+import { playerShipInfo } from './arrivals';
 import { chunkOfId } from './generator';
 import { edgeBetween } from './route';
-import { isHostileFaction, repKey } from './standing';
-import { currentNode, ensureAround, ensureChunkOf, galaxyIndex, nodeState } from './state';
+import { repKey } from './standing';
+import { currentNode, ensureAround, ensureChunkOf, galaxyIndex } from './state';
 import { ARRIVAL_EVERY_SEC, SENSOR_HOPS } from './tuning';
 import type { EdgeData, NodeData } from './types';
 
@@ -83,52 +84,95 @@ function setContext(sim: Sim, node: NodeData): void {
   sim.story.context.faction = node.faction ? repKey(sim, node.faction) : null;
 }
 
-/**
- * Arriving at a node: generate the frontier, scan, set the context events and enemy generation read, restart the
- * arrival clock, bring in the hostile ships present, and draw an arrival event (a 'transit' one after an anchored
- * hyperlane) unless enemies are waiting.
- *
- * HOOK (sector refactor step 9): this is where the player's ship (plus docked vehicles) is lifted into a packet, the
- * node left behind is archived, the new node's grid is generated or restored with its structures
- * (`NodeData.structures`) and the deploy modal opens. Until then the sector grid is not swapped: ships of the node left
- * behind stay where they are, and new arrivals are placed around the player by the gap rule.
- */
-export function enterNode(sim: Sim, node: string, via: EdgeData | null): void {
+/** The galaxy side of arriving at `sim.galaxy.current`: frontier, visited, the sensor scan and the story context. */
+function arrive(sim: Sim): void {
   const g = sim.galaxy;
-  ensureAround(sim, node);
-  g.visited[node] ??= sim.tick;
+  ensureAround(sim, g.current);
+  g.visited[g.current] ??= sim.tick;
   discover(sim);
   const data = currentNode(sim);
-  if (!data) return;
-  setContext(sim, data);
-  g.nextArrival = sim.tick + Math.round(ARRIVAL_EVERY_SEC * TICK_HZ);
-  spawnPresent(sim);
-  const enemies = nodeState(sim, node).contacts.some((c) => isHostileFaction(sim, c.faction));
-  if (via && !enemies) drawEvent(sim, via.anchor ? 'transit' : 'arrival');
+  if (data) setContext(sim, data);
   g.rev++;
 }
 
-/** Set up the galaxy for a new game: the start node, its frontier and the first scan. */
+/** Set up the galaxy for a new game: the start node (the ship is already in it), its frontier and the first scan. */
 export function startGalaxy(sim: Sim): void {
-  enterNode(sim, sim.galaxy.current, null);
+  arrive(sim);
+  sim.galaxy.nodes[sim.galaxy.current] = { contacts: [], entered: true };
+  sim.galaxy.nextArrival = sim.tick + Math.round(ARRIVAL_EVERY_SEC * TICK_HZ);
 }
 
-/** Jump one edge from the current node to `to`, spending its fuel and FTL charge. Rejects with a reason code. */
-export function jump(sim: Sim, to: string): void {
+type Reject = (reason: string) => false;
+
+/** The player's flown ship may leave now: sector active, a ship with combat state, no live trade deal.  */
+function checkLeaving(sim: Sim, ship: number, reject: Reject): boolean {
+  if (sim.sector.state !== 'active') return reject('deploying');
+  const me = playerShipInfo(sim);
+  if (!me || me.id !== ship) return reject('notPlayerShip');
+  // A deal in flight names ships, shuttles and escrow of this sector: finish or cancel it first.
+  if (sim.trade.deals.some(isLive)) return reject('tradeInProgress');
+  return true;
+}
+
+/**
+ * Pay for `edge` and leave: spend its FTL charge and fuel, lift the ship out (`leaveNode`), then move the galaxy: `current`
+ * follows the sector, the jump is counted, the arrival scan runs and the story draw is owed for `sector.deploy`.
+ * `edge` null = a free move (debug teleport). The caller has validated; nothing here can fail after the payment.
+ */
+function go(sim: Sim, ship: number, to: string, edge: EdgeData | null, withDocked: number[] | undefined): void {
   const g = sim.galaxy;
-  if (sim.sector.state === 'deploying') return void sim.events.emit({ type: 'command.rejected', command: 'galaxy.jump', reason: 'deploying' });
+  const combat = sim.world.get(ship, CombatC);
+  if (edge && combat) combat.ftl = Math.max(0, combat.ftl - edge.charge);
+  if (edge) takeItems(sim, FUEL_ITEM, edge.fuel);
+  const from = g.current;
+  leaveNode(sim, ship, to, withDocked ?? false);
+  // The node left keeps its ships in its archive: no descriptors of it remain.
+  const left = g.nodes[from];
+  if (left) left.contacts = [];
+  g.current = to;
+  if (edge) {
+    g.jumps++;
+    g.days = Math.round((g.days + edge.time) * 10) / 10;
+    sim.events.emit({ type: 'galaxy.jumped', from, to, edge: edge.id, fuel: edge.fuel, charge: edge.charge });
+  }
+  arrive(sim);
+  g.pendingDraw = edge ? (edge.anchor ? 'transit' : 'arrival') : null;
+}
+
+/** `galaxy.jump`: validate the edge, charge and fuel (and that the ship may leave), then pay and go. Rejects with a reason code. */
+export function jump(sim: Sim, ship: number, to: string, withDocked?: number[], command = 'galaxy.jump'): boolean {
+  const g = sim.galaxy;
+  const reject: Reject = (reason) => (sim.events.emit({ type: 'command.rejected', command, reason }), false);
+  if (!checkLeaving(sim, ship, reject)) return false;
   if (!galaxyIndex(g).nodes.has(g.current)) ensureAround(sim, g.current);
   const edge = edgeBetween(g, g.current, to);
   const blocked = jumpBlocker(sim, edge);
-  if (blocked || !edge) return void sim.events.emit({ type: 'command.rejected', command: 'galaxy.jump', reason: blocked ?? 'noRoute' });
+  if (blocked || !edge) return reject(blocked ?? 'noRoute');
+  go(sim, ship, to, edge, withDocked);
+  return true;
+}
+
+/**
+ * The player's flee: a jump to `to` (an adjacent node), else to the cheapest connected node it can pay for now (least fuel,
+ * then charge, then node id); when none is affordable the cheapest one's blocker is the reason. Same payment as a jump.
+ */
+export function flee(sim: Sim, ship: number, to?: string): boolean {
+  const g = sim.galaxy;
+  if (!galaxyIndex(g).nodes.has(g.current)) ensureAround(sim, g.current);
+  const options = (galaxyIndex(g).adjacent.get(g.current) ?? [])
+    .map((e) => ({ e, to: e.a === g.current ? e.b : e.a }))
+    .filter((o) => to === undefined || o.to === to)
+    .sort((p, q) => p.e.fuel - q.e.fuel || p.e.charge - q.e.charge || (p.to < q.to ? -1 : 1));
+  const pick = options.find((o) => jumpBlocker(sim, o.e) === null) ?? options[0];
+  return jump(sim, ship, pick?.to ?? to ?? '', undefined, 'combat.flee');
+}
+
+/** Debug: move the player's ship to any generated node at no cost (the same lift, archive and deploy path). */
+export function teleport(sim: Sim, to: string): boolean {
+  const reject: Reject = (reason) => (sim.events.emit({ type: 'command.rejected', command: 'debug.galaxyTeleport', reason }), false);
   const me = playerShipInfo(sim);
-  const combat = me ? sim.world.get(me.id, CombatC) : undefined;
-  if (combat) combat.ftl = Math.max(0, combat.ftl - edge.charge);
-  takeItems(sim, FUEL_ITEM, edge.fuel);
-  const from = g.current;
-  g.current = to;
-  g.jumps++;
-  g.days = Math.round((g.days + edge.time) * 10) / 10;
-  sim.events.emit({ type: 'galaxy.jumped', from, to, edge: edge.id, fuel: edge.fuel, charge: edge.charge });
-  enterNode(sim, to, edge);
+  if (!me) return reject('notPlayerShip');
+  if (!checkLeaving(sim, me.id, reject)) return false;
+  go(sim, me.id, to, null, undefined);
+  return true;
 }

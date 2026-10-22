@@ -9,7 +9,7 @@ import type { SectorArchive } from './sector/archive';
 import { pipeline } from './pipeline';
 import { Rng } from './rng';
 import { newStory, type StoryState } from './story/state';
-import { newGalaxy } from './galaxy/state';
+import { newGalaxy, START_NODE } from './galaxy/state';
 import type { GalaxyState } from './galaxy/types';
 import { newTrade, type TradeState } from './trade/types';
 import { TICK_HZ } from './time';
@@ -31,7 +31,7 @@ export class Sim {
   trade: TradeState;
   /** Starmap state: current node, generated chunks, discovery, contacts (see galaxy/). */
   galaxy: GalaxyState;
-  sector: Sector = { grid: newSectorGrid(), width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false, node: 0, state: 'active' };
+  sector: Sector = { grid: newSectorGrid(), width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false, node: START_NODE, state: 'active' };
   /** Sectors the player left, frozen (see sector/archive.ts). Every one is kept (user decision, 2026-10-21). */
   archives: SectorArchive[] = [];
 

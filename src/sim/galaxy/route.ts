@@ -101,5 +101,5 @@ export function planStarRoute(g: GalaxyState, from: string, to: string, opts: { 
 
 /** The edge joining two nodes directly, if any. */
 export function edgeBetween(g: GalaxyState, a: string, b: string): EdgeData | undefined {
-  return galaxyIndex(g).adjacent.get(a)?.find((e) => e.a === b || e.b === b);
+  return galaxyIndex(g).adjacent.get(a)?.find((e) => (e.a === a && e.b === b) || (e.b === a && e.a === b));
 }

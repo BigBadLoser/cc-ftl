@@ -11,7 +11,7 @@ export const START_NODE = 's.0.0.n0';
 export function newGalaxy(seed: number): GalaxyState {
   return {
     current: START_NODE, chunks: {}, discovered: {}, visited: {}, nodes: {}, rng: (seed ^ 0x6a1a7e5) >>> 0,
-    nextArrival: 0, nextId: 1, jumps: 0, days: 0, rev: 0,
+    nextArrival: 0, nextId: 1, jumps: 0, days: 0, pendingDraw: null, rev: 0,
   };
 }
 
@@ -101,6 +101,7 @@ export function nodeState(sim: Sim, id: string): NodeState {
     const data = nodeOf(sim, id);
     const content = sim.content.galaxy;
     s = {
+      entered: false,
       contacts: (data?.contacts ?? []).map((c) => {
         const shipgen = pickWeighted(content?.factions[c.faction]?.ships ?? [], (c.seed % 9973) / 9973) ?? '';
         return { id: g.nextId++, faction: c.faction, shipgen, seed: c.seed, depth: c.depth, since: 0 };
