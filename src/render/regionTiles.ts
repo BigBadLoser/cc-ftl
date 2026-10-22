@@ -1,6 +1,7 @@
 import { CHUNK_SIZE, type FieldArray, type Grid } from '../sim/grid';
 import { ShipGrid } from '../sim/shipGrid';
 import { Struct } from '../sim/structure';
+import { artKind } from './tiles';
 
 /**
  * Chunk tile views (ARCHITECTURE "Sector grid" §7 step 5b). Per-tile render layers (floors, walls, roofs, cracks, fire,
@@ -41,6 +42,8 @@ export interface RegionTiles {
   get(field: string, lx: number, ly: number): number;
   /** `struct` at a local tile, Space outside the region. */
   kindAt(lx: number, ly: number): number;
+  /** `kindAt`, except a finished rock wall stays `Struct.RockWall`: the wall art (tiles.ts) never makes it hull. */
+  wallAt(lx: number, ly: number): number;
   /** The sector chunks under the region grown by `pad` tiles, in row-major chunk order (cy, then cx). */
   chunks(pad?: number): ChunkRef[];
   /** Local tile rectangle of a sector chunk: [x0, x1) x [y0, y1). */
@@ -118,7 +121,9 @@ export function createRegionTiles(src: ChunkSource, ox: number, oy: number, widt
     height,
     inside,
     get,
-    kindAt: (lx, ly) => (inside(lx, ly) ? get('struct', lx, ly) : Struct.Space),
+    // asteroid rock (mass and ground) inside a region is drawn by asteroidView: the region's tile art sees it as Space
+    kindAt: (lx, ly) => { const k = inside(lx, ly) ? get('struct', lx, ly) : Struct.Space; return k === Struct.Rock || k === Struct.Ground ? Struct.Space : artKind(k); },
+    wallAt: (lx, ly) => (inside(lx, ly) && get('struct', lx, ly) === Struct.RockWall ? Struct.RockWall : self.kindAt(lx, ly)),
     chunks(pad = 0) {
       const out: ChunkRef[] = [];
       if (width <= 0 || height <= 0) return out;

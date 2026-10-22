@@ -27,6 +27,8 @@ import { sectorTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHo
 import { targetedModules, wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
+import { createAsteroidView } from './asteroidView';
+import { createPodView } from './podView';
 import { createShipScene, type ShipScene } from './shipScene';
 
 export type { CutawayMode };
@@ -78,6 +80,8 @@ export interface Renderer {
   pickModule(screenX: number, screenY: number): number | null;
   /** The ship tile (any ship in the sector) under a canvas-relative position, or null. */
   pickTileAny(screenX: number, screenY: number): { shipId: number; x: number; y: number } | null;
+  /** The sector tile under a canvas-relative position, wherever it is (painting tools, asteroid rock). */
+  pickSector(screenX: number, screenY: number): Tile;
   /** Canvas-relative CSS px of a tile's centre on any ship. */
   screenOf(shipId: number, x: number, y: number): { x: number; y: number };
   /** Draw a ring under this crew member (null clears). */
@@ -100,6 +104,10 @@ interface RendererContent {
   weapons: Readonly<Record<string, WeaponDef>>;
   /** The EVA suit, for the air bar over suited crew. */
   suit?: { airSec: number };
+  /** Ore kinds (code and placeholder colour) for the asteroid placeholder drawing. */
+  ores?: Readonly<Record<string, { code: number; color: number }>>;
+  /** Vehicle classes by def id: pods ('pod') are drawn by podView, not as shuttles. */
+  vehicles?: Readonly<Record<string, { class: string; size?: number }>>;
 }
 
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
@@ -142,6 +150,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   stage.addChild(SL.world);
   const sectorParticles = createParticles(atlas, SL);
   const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules });
+  // Asteroids (PLACEHOLDER drawing, asteroidView.ts): one region layer set in the sector frame, under every ship's tiles.
+  const rockLayers = W.region(false);
+  rockLayers.setOrigin(0, 0, 0);
+  const asteroids = createAsteroidView(world, rockLayers.floor, content.ores ?? {});
+  const isPod = (def: string) => content.vehicles?.[def]?.class === 'pod';
+  const pods = createPodView(world, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined) });
 
   // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle
   // parked in a bay is the bay's own layer (vehicleBayArt).
@@ -149,6 +163,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     layer: SL.sorted,
     project: sectorArt,
     include: (v) => v.state !== 'stowed' || v.homeGrid === refId,
+    skip: isPod,
     low: { layer: W.low, project: sectorArt },
   });
 
@@ -164,7 +179,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     return g ? regionOrigin(g) : ZERO;
   };
   const NONE: ReadonlySet<number> = new Set();
-  const pickHost = (): PickHost => ({ scenes, cam, origin });
+  const pickHost = (): PickHost => ({ scenes, cam, origin, hidden: (id) => !!world.get(id, ShipC)?.outpost?.hidden });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf });
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
@@ -196,7 +211,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   /** A ship's roof livery; the debug URL parameter `?bow=east|west` forces the end the bow motifs take. */
   const bowParam = new URLSearchParams(window.location.search).get('bow');
   const shipLivery = (s: Ship) => ({ ...liveryFor(s.faction, s.name), ...(bowParam ? { bowWest: bowParam === 'west' } : {}) });
-  const roofFor = (id: number, s: Ship) => wantsRoof(world, id, s, roofEnemies);
+  // a hidden outpost stays under its rock roof whatever the roof toggle says
+  const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || wantsRoof(world, id, s, roofEnemies);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
     const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
@@ -290,6 +306,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         sc.setMarks(id === shown, id === shown ? targetedModules(world, refId, id) : NONE);
         sc.update(dt);
       }
+      asteroids.update(sector);
+      pods.update(dt);
       shuttles.update(dt);
       boxes.update();
       fightFx.update(dt);
@@ -380,6 +398,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     pickCrew: (sx, sy) => pickCrewAcross(pickHost(), sx, sy),
     pickTileAny: (sx, sy) => pickTileAcross(pickHost(), sx, sy),
+    pickSector: (sx, sy) => sectorTileAt(cam.toArt(sx, sy)),
     screenOf: (shipId, x, y) => screenOfTile(pickHost(), ratio(), shipId, x, y),
     pickModule(sx, sy) {
       const a = cam.toArt(sx, sy);
@@ -399,6 +418,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     setCombatMarks: (m) => pass.setMarks(m),
     pickCombat: (sx, sy) => pass.pick(sx, sy),
     dispose() {
+      asteroids.dispose();
+      pods.dispose();
+      rockLayers.dispose();
       shuttles.dispose();
       boxes.dispose();
       fightFx.dispose();

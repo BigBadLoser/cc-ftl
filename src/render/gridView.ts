@@ -14,7 +14,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { floorChain, ghostVertsIn, HULL_RAY, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, floorChain, ghostVertsIn, ROCK_WALL_TINT, HULL_RAY, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
 
@@ -61,6 +61,8 @@ interface Tinted {
   wall: boolean;
   /** Walls and doors darken as their integrity drops. */
   solid: boolean;
+  /** A finished rock wall: tinted stone. */
+  stone?: boolean;
 }
 
 /** The tile sprites of one sector chunk of the region. */
@@ -108,6 +110,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let airlocks = new Set<number>();
 
   const kindAt = tiles.kindAt;
+  const wallAt = tiles.wallAt; // rock walls stay RockWall: never hull
   // Beam tiles under a cargo container are its seat, not frame: no beam sprite there, and the frame's beams end at it.
   const boxAt = (x: number, y: number): boolean => {
     const gx = x + grid.x0, gy = y + grid.y0;
@@ -182,8 +185,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       for (let y = y0; y < y1; y++)
         for (let x = x0; x < x1; x++) {
           const ci = (y - r.y0) * CHUNK_SIZE + (x - r.x0);
-          const k = struct[ci] as number;
-          if (k === Struct.Space) continue;
+          const raw = struct[ci] as number;
+          const stone = raw === Struct.RockWall;
+          const k = artKind(raw);
+          if (k === Struct.Space || k === Struct.Rock || k === Struct.Ground) continue; // rock: asteroidView
           if (k === Struct.Beam) {
             if (boxAt(x, y)) continue;
             // Low open truss, the same in every wall view level; sprites sit at the tile's depth, overlays just above.
@@ -202,7 +207,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // An engine's hull row is the hull wall in cutaway / low (the same ghost as the hull around it); with the walls
           // up or roofed the wall is left out and the engine's bulkhead stands there between the hull runs.
           const engineUp = replaced.has(idx) && mode === "up";
-          const f = ghosts && !engineUp && replacesFloor(kindAt, x, y, mode) ? undefined : atlas.firstOf(floorChain(x, y));
+          const f = ghosts && !engineUp && replacesFloor(wallAt, x, y, mode) ? undefined : atlas.firstOf(floorChain(x, y));
           if (f) {
             const made = addStatic(L, f, x, y, 0, v.floor);
             owned.push(...made);
@@ -211,7 +216,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (gapAt(x, y) || airlocks.has(idx)) continue;
-          for (const piece of wallPieces(kindAt, x, y, k, mode, ghosts, gapAt)) {
+          for (const piece of wallPieces(wallAt, x, y, k, mode, ghosts, gapAt)) {
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
             // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
@@ -224,12 +229,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
               const open = atlas.stat(`${closedId}.open`);
               if (open) doors.push({ objs: made, closed: s, open, ci });
             }
-            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: !isDoor, solid: true });
+            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: !isDoor, solid: true, ...(stone ? { stone } : {}) });
           }
         }
     if (ghosts) {
       const vert = atlas.stat("tile.hull.ghost.vert");
-      if (vert) for (const t of ghostVertsIn(kindAt, r.x0, r.y0, r.x1, r.y1)) owned.push(...addStatic(L, vert, t.x, t.y, depthKey(t.x, t.y) + 0.001, L.sorted));
+      if (vert) for (const t of ghostVertsIn(wallAt, r.x0, r.y0, r.x1, r.y1)) owned.push(...addStatic(L, vert, t.x, t.y, depthKey(t.x, t.y) + 0.001, L.sorted));
     }
     return v;
   }
@@ -282,7 +287,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     for (const t of v.tinted) {
       const lv = t.wall ? wallLight(t.x, t.y) : at(light, t.ci);
       const lit = lightTint(lv, !t.wall && at(o2, t.ci) < VACUUM_O2, pulse);
-      t.spr.tint = t.solid ? mulColor(lit, damageTint(at(hp, t.ci))) : lit;
+      const base = t.solid ? mulColor(lit, damageTint(at(hp, t.ci))) : lit;
+      t.spr.tint = t.stone ? mulColor(base, ROCK_WALL_TINT) : base;
     }
   }
 

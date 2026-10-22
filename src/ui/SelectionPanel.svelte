@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiCombat, UiCrew, UiInspect, UiModule, UiShuttles, UiStats } from './api';
   import GridPanel from './GridPanel.svelte';
+  import AsteroidPanel from './AsteroidPanel.svelte';
   import CrewInspector from './CrewInspector.svelte';
   import Icon from './Icon.svelte';
   import ModuleInspector from './ModuleInspector.svelte';
@@ -21,6 +22,7 @@
   let selCrew = $state<number | null>(null);
   let selMod = $state<number | null>(null);
   let selShip = $state<number | null>(null);
+  let selAst = $state<number | null>(null);
   /** The ship is lifted out (hyperspace, or waiting to deploy): its crew and systems are not in the world, so show that instead of zeros. */
   let transit = $state(false);
 
@@ -37,6 +39,7 @@
       api.selectedCrew.subscribe((v) => (selCrew = v)),
       api.selectedModule.subscribe((v) => (selMod = v)),
       api.selectedShip.subscribe((v) => (selShip = v)),
+      api.selectedAsteroid.subscribe((v) => (selAst = v)),
     ];
     return () => u.forEach((f) => f());
   });
@@ -54,7 +57,9 @@
 </script>
 
 <aside class="sheet sel" class:wide data-testid="selection-panel">
-  {#if selShip !== null}
+  {#if selAst !== null}
+    <AsteroidPanel {api} asteroid={selAst} onBack={back} />
+  {:else if selShip !== null}
     <GridPanel {api} ship={selShip} onBack={back} {onTrade} />
   {:else if hasCrew}
     <CrewInspector {api} {onPriorities} onBack={back} />

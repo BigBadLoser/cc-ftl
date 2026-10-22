@@ -658,6 +658,118 @@ the `ItemDef` (the content test fails for an unpriced item); tilt it per trader 
 **A new faction:** add a `TradeFactionDef` keyed by its faction id. When the real faction system arrives, replace `tradeFactionOf`,
 `profileFor` and the `relation + reputation` rule in `trade/traders.ts`; everything else reads those.
 
+## Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`
+
+**Region model: its own `AsteroidC` entity plus the owner layer (not a `ShipC` kind).** An asteroid (one big body, or a whole
+field of small rocks) is an entity with `AsteroidC { kind, seed, coverage, x, y, width, height, parts }` (sector tiles).
+Its rock tiles carry the entity id in the `ship` owner layer, which now means "owning region". Why not `ShipC` with a new kind:
+- Every field system, combat, AI, capture, the node strip and the UI iterate `ShipC` / `regions(sim)`. A ShipC asteroid would
+  need a guard in each of them, and a 120x120 rock would join the air, heat and light sweeps every tick for nothing. With its
+  own component, all of them ignore asteroids with no change.
+- `shipAt(sim, x, y)` returns the owner only when it is a `ShipC`, so rock reads as "no ship" in every ship rule (`shipIdAt`,
+  impacts: a shot landing on rock misses, build-owner rules). `ownerAt` is the raw layer; `asteroidAt` gives the asteroid.
+- Jumps: `liftShip` only takes the ship's rectangle and `liftSet`, so asteroids never jump; `archiveSector` freezes every
+  entity and chunk left, so an asteroid stays in its node's archive and comes back whole (`content/ships/asteroids.test.ts`).
+  The translation table moves `asteroid` (x, y, parts).
+- Gap rule: `placementGapError` (ships) also refuses overlap with, or coming within `ASTEROID_GAP` (4) of, any rock body's
+  bbox (`parts`, not the field's whole bbox, so ships may sit inside a field's extent). `asteroidGapError(sim, parts)` is the
+  asteroid side: rock bodies keep `ASTEROID_GAP` from every ship's padded frame and from other asteroids' rock.
+- Bases (slice 3): an outpost is a `ShipC` region of its own over the base rectangle; the rock and ground inside it stay the
+  asteroid's (owner layer), so its field systems see rock mass as walls and ground as vacuum, and its crew path over both.
+
+**Tiles.** Two rock forms. `Struct.Rock` (5) is rock **mass**: solid, airtight (`gasConductance` 0; atmosphere and smoke zero
+it like a wall), unwalkable, blocks sight (`los.ts`), no integrity (hp 0: weapons do not chip it), no room. `Struct.Ground` (6) is
+rock **ground**: walkable (`isWalkable`), conductance 1 but airless (`isAirless`: atmosphere, smoke and temperature hold it at
+vacuum like Space, so crew there need suits), a foundation for floors, walls, doors and modules. Helpers `isRock` (mass),
+`isGround`, `isAsteroidRock` (either). Two u8 fields: `ore` (an `OreDef.code`, 0 none) and `oreAmt` (units left); ore sits on
+either form. Pod mining turns a tile into Space (no rubble), which `syncOwner` already clears. Ore kinds are content
+(`content/ores.ts`): iron -> `item.metal`, ice -> `item.ice`, rare metals -> `item.electronics`. Save v27.
+
+**Generation** (`gen.ts`, `shape.ts`, `noise.ts`; pure, `Rng` per seed, separate from shipgen; `validateAsteroid` reuses
+shipgen's `structureParts`):
+- Big (`BIG`): 40-120 tiles on the long side, aspect 0.6-1, 5-9 metaballs roughened by seeded value-noise fbm (rough 0.75),
+  largest 4-connected body kept and holes filled, then cropped. Veins: one per ~200 rock tiles, 12-40 step 4-connected random
+  walks through either form, 35% of steps two wide, 70% starting in rock mass, ore picked by `weight.big`, amounts x1.6 in mass.
+  Coverage (`BIG.coverage` odds open 3 : mixed 3 : dense 4, forced by `coverage`, the outline stays): a mass field = ridged
+  noise cubed + 1-2 massifs (domes) + 1-4 craters (a sunken floor ringed by a rim) - an outer-band bias; the top `share` of body
+  tiles (share drawn in `BIG.mass[class]`: 6-20%, 30-55%, 78-100%) become rock mass, the rest ground, so the class's range holds
+  exactly. Field rocks are rock mass only.
+- Field (`FIELD`): extent 70-110 x 45-70, 18-34 rocks of 3-15 tiles (sizes lean small), gathered around 2-4 clumps, placed by
+  rejection sampling with 3 empty tiles between rock bboxes. 65% of rocks get 1-2 ore pockets (diamond blobs, radius 1-3).
+- `stampAsteroid(sim, plan, x, y)` writes only rock tiles (struct, hp 0, owner, ore) through the grid API, so Space inside a
+  field's bbox is untouched. `debug.spawnAsteroid { kind, seed, x?, y?, coverage? }` (auto spot: first fit scanning from the
+  sector's top-left) emits `asteroid.spawned`.
+- Render: `render/asteroidView.ts`, a PLACEHOLDER: rock mass as blocks `ROCK_MASS_Z` (1.2) tiles of height, ground as flat
+  diamonds with hashed crater pits, ore tinting the top; sizes from `TILE_W`/`TILE_H`/`Z_PX`; one Graphics per asteroid in its
+  own region layer set at the sector origin, rebuilt on the struct/ore chunk revisions under its bbox. A region's own tile art
+  (`regionTiles.kindAt`, `gridView`) treats both rock forms as Space, so floors and walls are never drawn on rock.
+- **Mining pods (slice 2)** (`src/sim/mining/`, `systems/mining.ts`):
+  - `module.pod_bay` (3x3 solid pit, access tile beside the middle of its east side, `vehicleBay: { class: 'pod' }`) holds one
+    `vehicle.mining_pod`. The pod is an ordinary `VehicleC` + `BodyC` (stowing, body pinning, targeting, jumps with its ship all
+    come free) of class 'pod' (trade couriers and boarding parties skip that class), `VehicleDef.size` 2.6 tiles and
+    `VehicleDef.mining { unitsPerSec }`. Numbers: speed 6 tiles/s, hold 24 units, laser 2 units/s, 30 hp, evasion 0.4, one pilot.
+  - Pilot (`mining/pilot.ts`): a stowed pod with no pilot reserves the best free crew member (on its ship, of its side, not
+    drafted, not reserved by another order, highest piloting, then lowest id) and sends them through `sendToEmbark` (the shared
+    body of `vehicle.embark`, `vehicles/embark.ts`); the order records `pilot`. Nobody free: the order waits and emits
+    `mining.waiting` once. The pilot stays aboard between trips; at the end of the order they climb out at the bay (or, still
+    walking, are released back to their schedule).
+  - `MiningPodC { asteroid, tiles, phase, target, progress, recall, trips, pilot, waiting? }` is the order. `mining.order { pod, asteroid, tiles? }`
+    (replaces any order; a pod already out turns to it) and `mining.recall { pod }`.
+  - The mining system (before the vehicle system): stowed and empty -> pick a tile and launch; outbound -> fly straight at the
+    tile centre (the system steers; a vehicle with no destination just holds there); mining -> cut `oreAmt` into the hold,
+    and at 0 clear `ore` and `writeStruct(Space)` (the owner layer clears with it); hop to the next tile while there is room;
+    full, empty-handed or recalled -> `dest = bay` and the vehicle system flies it home and stows it. Stowed with ore aboard it
+    waits ('unloading') while the existing cargo planner has crew haul the hold to storage from the bay's access tile; an empty
+    pod with nothing left, or recalled, ends the order. The laser works from above, so buried vein tiles are mined like
+    surface ones.
+  - Tile picks (`pick.ts`): nearest unclaimed ore tile of the order to the pod (squared distance to the tile centre), ties to
+    the lower y, then x. Tiles another pod targets are passed over while free ones remain; once every tile is taken, pods
+    share them (user decision, 2026-10-22: two pods can share a mining task), so an order ends only when its ore is gone.
+  - Events: `mining.ordered`, `mining.pilotSent`, `mining.waiting`, `mining.launched` (plus `vehicle.launched`),
+    `mining.tileCleared`, `mining.returning`, `mining.done` (`exhausted` | `recalled` | `lost`). Render: `render/podView.ts`
+    PLACEHOLDER: a hull ellipse inscribed in the pod's `size` diamond, canopy with a seated pilot stand-in, ground shadow, a
+    pulsing laser from its belly; in the bay it sits on the deck in the shared depth layer, in flight it hovers at
+    `ROCK_MASS_Z + 0.9` so it clears rock mass. There is no vehicle pick or hit radius in the sim (shots hit the body point), so
+    nothing else scales with it. The bay is a tinted floor-plate fallback; pods are skipped by `shuttleView` and the shuttle panel.
+- **Digging and levelling (slice 3, `rock/dig.ts`)**, folded into `job.build`: Floor on rock mass digs (`DIG_TICKS` 15 s, no
+  materials; refused as `outerLayer` when a 4-neighbour is Space, ground or out of bounds), Ground on rock mass levels
+  (`LEVEL_TICKS` 6 s); other builds on mass are `rockMass`, Ground on anything else `notRock`. `finishDig` writes Floor owned
+  by the digging ship and drops the tile's ore as a loose stack (`rock.dug`). Module placement (`placementError`) accepts floor
+  or ground and up to `AUTO_LEVEL_MAX` (25%) rock mass; `job.buildModule` adds `AUTO_LEVEL_TICKS` (3 s) per rock tile and
+  `finishModule` levels them to ground.
+- **Outposts (`outposts/`)**: an outpost is a station (see "Stations"). `generateOutpost(style, seed, {ores, modules, stations}, kind?)`
+  generates a `station.<kind>` at the 'outpost' tier (`OUTPOST_STATION` maps trading, farming, mining; pirate, criminal and covert use
+  `station.pirate`) and a big asteroid with `minSize`, and `site.ts` fits one to the other: `pickDock` (the n/s airlock nearest the
+  template edge with nothing built in the three columns beyond), `placeAt` (dock outer door on the rock face, least overhang), and
+  for dug `carveInRock` (hull walls bordering outside become rock; outside cargo frames dropped). Surface levels the base plus a
+  one-tile ring to ground; dug packs it with rock mass; both cut the dock's notch to space. `OutpostPlan` carries the template, the
+  generated station (rooms) and the dock. `validateOutpost` = `validateTemplate` (immobile), crew, an airlock, the dock collar on
+  open space, the asteroid sound, and (dug) no carved tile touching anything but rock mass or base tiles. `stampOutpost` stamps the
+  asteroid, writes the base tiles, places modules, makes the `ShipC` (`outpost`, `immobile`, `dormant`), then `spawnCrew` and the
+  shared `outfitStation` (stations/spawn.ts: `gen`, trader, `StationC`, `StationAlarmC`, `StationCrewC`), so `stationDirector`,
+  `stationAlarm` and the crew AI run it like any station. `debug.spawnOutpost { style, seed, kind?, x?, y? }`, event
+  `outpost.spawned`. Render: `rockRoofView.ts` caps a roofed dug base with rock blocks, so from outside it is plain rock.
+- **Outpost hostility (`outposts/state.ts`, `systems/outposts.ts`)**: an outpost is stamped `immobile` and `dormant` (the same state as a
+  pirate den, see "Stations"); `ShipC.outpost { style, kind, hidden }` holds only the style and the hidden flag. `isDormant` /
+  `wake` live in `combat/dormant.ts`. A dormant outpost has no `CombatC`, so the combat snapshot (enemies, auto-target, hostile
+  count) never lists it as a threat. `isHiddenOutpost` ships are refused by `targetableShip` and `combat.setTarget`, left out of the
+  shuttle targets and trade partners (so the node strip and hail list), skipped by tile and crew picking (`PickHost.hidden`) and
+  always roofed. `outpostSystem` (every 10 ticks, before dormancy) discovers by player crew or vehicles within `DISCOVER_RANGE` (6)
+  of the base tiles' box (`outpost.discovered`) and wakes on a breach (a base floor touching a floor it does not own). `job.build` /
+  `job.deconstruct` into its region wake it ('dug'); aim, damage and boarding wake it in `dormancySystem` (shots at a dormant ship
+  without `CombatC` still land with no shields or evasion). `wake` reveals it and adds a `CombatC`.
+  `shipStateSystem` never disables an outpost.
+- **Claimed bases (slice 4)**: `asteroid.claim { asteroid, x, y, w, h }` creates a player `ShipC` with `base: { asteroid }` over
+  the rectangle (validated in `asteroids/handlers.ts`). `shipStateSystem` skips bases. `finishStruct` hands a tile built on asteroid
+  rock to the building ship's owner layer; `finishDig` already did. `nearestExterior` (EVA landing) accepts rock ground. The UI's
+  build tools resolve the player region per tile (`controller.mineAt`), so the same tools work on the home ship and on bases;
+  input paints with `Renderer.pickSector` (any sector tile).
+- **Mining UI (slice 4)**: `app/miningSnapshot.ts` (`UiMining { asteroids, pods }`: ore totals per kind over each asteroid's rock,
+  pods with phase, pilot, hold, trips), `ui/AsteroidPanel.svelte`, `ui/PodList.svelte` (also in `ShuttlePanel`), asteroid tiles in
+  `NodeStrip`, `api.selectAsteroid` (the controller also opens it on a tap on rock no region claims). Pod bays come with their pod
+  when built by crew (`ModuleDef.vehicleBay.builtWith`, spawned in `finishModule`).
+- Contact sheets: `node tools/asteroids/cli.js <big|field|all> [--from 1] [--count 12] [--scale 4] [--coverage open|mixed|dense] [--out dir]`.
+
 ## Starmap (galaxy), `src/sim/galaxy/`
 
 Sim only so far (branch `galaxy`): no UI, no snapshot, no tools. The starmap view, its zoom levels and the dev tools live on the
@@ -1306,9 +1418,11 @@ Generated by `shipgen/stationGen.ts` (kinds and sizes in `content/stations.ts`; 
   for lacking engines (it has none to lose: disabled is crew and power only). A jump archives it with its node like anything else.
 - Placement: east of everything in the node, vertically centred. The node's width/height grow to fit a hub (nodes are sparse chunked
   grids; the size bounds placement and the camera only).
-- Hostile kinds (pirate dens) start **dormant** (`ShipC.dormant` = the integrity it went quiet at). `systems/dormancy.ts` wakes it
-  (`ship.provoked {reason}`) when a player ship or weapon aims at it, it is damaged, or player crew stand aboard. While dormant it
-  does not count for `combatState` and the enemy AI skips it. A minimal stand-in for the outposts' rule on `asteroids`: unify on merge.
+- Hostile kinds (pirate dens) and asteroid outposts start **dormant** (`ShipC.dormant` = the integrity it went quiet at; one
+  mechanism, `isDormant` / `wake` in `combat/dormant.ts`). `systems/dormancy.ts` wakes it when a player ship or weapon aims at it
+  ('aimed'), it is damaged ('damaged'), or player crew stand aboard ('boarded'); outposts also wake on 'dug' and 'breach'. `wake`
+  emits `ship.provoked {reason}`, reveals a hidden outpost and adds a `CombatC` if missing. While dormant it does not count for
+  `combatState` and the enemy AI skips it.
 - Camera: `frameShips` can now zoom below 1 device px per art px (`camera.ts` OUT_LEVELS 1/2..1/8) so a hub fits the screen.
 - Cost: a trading hub (149x126, 44 crew) in the node takes the sim from about 0.7 to 7.5 ms per tick (20 Hz budget 50 ms). The
   per-tile field systems dominate: lighting 1.3, atmosphere 1.2, temperature 1.1, smoke 0.8, doors 0.5 ms; settled regions do not

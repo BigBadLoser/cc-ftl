@@ -1,4 +1,4 @@
-import { CombatC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
+import { CombatC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { AlienC, EggSacC } from '../sim/aliens/components';
@@ -13,6 +13,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
   const seen: string[] = [];
   (window as unknown as { __cc: unknown }).__cc = {
     screenOf: (shipId: number, x: number, y: number) => r.screenOf(shipId, x, y),
+    /** Centre the camera on a sector position in tiles (screenshot scripts). */
+    focus: (x: number, y: number) => r.focusSector(x, y),
     /** Modules of a def: grid, origin and access tile. */
     modules(def: string) {
       const out: { id: number; shipId: number; ship: number; x: number; y: number; ax: number; ay: number }[] = [];
@@ -83,6 +85,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       cargo: (vehicle: number, item: string, n: number) => cargoAdd(sim, vehicle, item, n),
       /** Spawn a whole ship from a content template at sector (x, y) (staging a neutral target for shuttle EVA shots); returns its grid id. */
       ship: (template: string, faction: Faction, x: number, y: number) => spawnShip(sim, sim.content.ships[template] as never, { faction, x, y }),
+      /** Put a vehicle (e.g. 'vehicle.mining_pod') in an empty bay module; returns its id (the mining shots). */
+      vehicle: (def: string, bay: number) => spawnVehicle(sim, def, bay),
       /** Set a suit's tank (the air-warning shot). */
       suitAir: (crew: number, sec: number) => { const su = sim.world.get(crew, SuitC); if (su) su.air = sec; },
       /** Set a crew member's hunger (0..100) and optionally rest (the needs shots). */

@@ -47,6 +47,7 @@ export function createAlerts(sim: Sim): Alerts {
   /** The player's ship (home grid 1), as a ShipC entity id. */
   const home = () => 1;
   const shipName = (ship: number) => sim.world.get(ship, ShipC);
+  const shipCentre = (ship: number) => { const s = sim.world.get(ship, ShipC); return s ? { x: Math.floor(s.x + s.width / 2), y: Math.floor(s.y + s.height / 2) } : null; };
   const reactorAt = () => {
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
@@ -96,6 +97,10 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: e.type, key: `pd${e.module}`, text: `${sim.content.recipes[e.recipe]?.name ?? 'Batch'} done`, at: { x: e.x, y: e.y } };
       case 'eggsac.hatched': return { kind: 'creatures.aboard', key: `ca${e.ship}`, text: `Hostile creatures aboard ${shipName(e.ship)?.name ?? 'the wreck'}`, at: { x: e.x, y: e.y } };
       case 'combat.started': return { kind: e.type, key: 'cs', text: 'Hostile ship in range: combat!', at: null };
+      case 'mining.waiting': return { kind: e.type, key: `mw${e.pod}`, text: 'Mining pod waits for a free pilot', at: null };
+      case 'mining.done': return { kind: e.type, key: `md${e.pod}`, text: e.reason === 'exhausted' ? `Mining done: ore used up (${e.trips} trips)` : e.reason === 'recalled' ? 'Mining pod recalled' : 'Mining pod lost its bay', at: null };
+      case 'outpost.discovered': return { kind: e.type, key: `od${e.ship}`, text: 'Hidden base discovered', at: shipCentre(e.ship) };
+      case 'ship.provoked': return { kind: e.type, key: `op${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Ship'} turns hostile`, at: shipCentre(e.ship) };
       case 'module.destroyed': {
         const s = shipName(e.ship);
         if (s?.faction !== 'player') return null;

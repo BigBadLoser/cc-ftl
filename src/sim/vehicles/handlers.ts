@@ -1,7 +1,4 @@
 import type { Command } from '../commands';
-import { releaseBedClaim } from '../crew/beds';
-import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
-import { isIncapacitated, releaseAssignment } from '../crew/helpers';
 import { StorageC } from '../items/components';
 import { storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
@@ -12,8 +9,9 @@ import { BodyC } from '../body';
 import { shipById } from '../combat/ships';
 import { outsideCrew } from '../eva/shuttle';
 import type { Sim } from '../sim';
-import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
+import { VehicleBayC, VehicleC, type Vehicle } from './components';
 import { bayWorking, boardingTile } from './geometry';
+import { sendToEmbark } from './embark';
 import { occupants, spawnVehicle, unboardCrew, undock, vehicleDefOf } from './lifecycle';
 import { shipIdOf, shipGrid } from '../regions';
 
@@ -22,11 +20,6 @@ type Handler<T extends VehicleCommandType> = (sim: Sim, cmd: Extract<Command, { 
 
 function reject(sim: Sim, command: string, reason: string): void {
   sim.events.emit({ type: 'command.rejected', command, reason });
-}
-
-/** Total people a vehicle holds: the pilot plus its passenger capacity. */
-function seats(sim: Sim, v: Vehicle): number {
-  return (vehicleDefOf(sim, v)?.capacity ?? 0) + 1;
 }
 
 /** Start a stowed vehicle's flight at its bay. Returns a reject reason, or null. */
@@ -76,24 +69,8 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     reject(sim, cmd.type, 'noShuttle');
   },
   'vehicle.embark': (sim, cmd) => {
-    const v = sim.world.get(cmd.vehicle, VehicleC);
-    if (!v) return reject(sim, cmd.type, 'noVehicle');
-    if (!sim.world.has(cmd.crew, CrewC) || sim.world.has(cmd.crew, DeadC) || sim.world.has(cmd.crew, AboardC)) return reject(sim, cmd.type, 'noCrew');
-    if (isIncapacitated(sim, cmd.crew) || !sim.world.has(cmd.crew, PositionC)) return reject(sim, cmd.type, 'incapacitated');
-    const at = boardingTile(sim, cmd.vehicle);
-    if (!at) return reject(sim, cmd.type, 'notBoardable');
-    if (v.state === 'docked' && !airlockWorking(sim, v.dock)) return reject(sim, cmd.type, 'airlockDown');
-    if (occupants(v).length >= seats(sim, v)) return reject(sim, cmd.type, 'full');
-    let drafted = sim.world.get(cmd.crew, DraftedC);
-    if (!drafted) {
-      releaseAssignment(sim, cmd.crew);
-      releaseBedClaim(sim, cmd.crew);
-      drafted = { target: null };
-      sim.world.add(cmd.crew, DraftedC, drafted);
-      (sim.world.get(cmd.crew, CrewC) as { activity: string }).activity = 'drafted';
-    }
-    drafted.target = { x: at.x, y: at.y };
-    sim.world.add(cmd.crew, EmbarkOrderC, { vehicle: cmd.vehicle });
+    const err = sendToEmbark(sim, cmd.crew, cmd.vehicle);
+    if (err) reject(sim, cmd.type, err);
   },
   'vehicle.disembark': (sim, cmd) => {
     const v = sim.world.get(cmd.vehicle, VehicleC);

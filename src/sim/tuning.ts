@@ -144,6 +144,11 @@ export const SECTOR_HEIGHT = 120;
 export const REGION_PAD = 2;
 /** Least gap in tiles between two ships' padded frames (ships are never close: user rule). */
 export const MIN_SHIP_GAP = 12;
+/**
+ * Least gap in tiles between asteroid rock (each rock body's bbox) and a ship's padded frame or another asteroid's rock. Smaller
+ * than MIN_SHIP_GAP: rock is inert, and mining pods should not fly far.
+ */
+export const ASTEROID_GAP = 4;
 /** Where the player's ship sits in a new sector (top-left tile). */
 export const PLAYER_START = { x: 20, y: 50 } as const;
 /** Seconds of piloted, powered engines to charge the FTL drive. */

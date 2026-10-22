@@ -30,6 +30,21 @@ export const recipes = {
     outputs: [{ item: 'item.polymer', count: 1 }],
     work: 80,
   },
+  // Refinery recipes: raw ore from mining pods and digging becomes building materials.
+  'recipe.refine_iron': {
+    name: 'Refine iron ore',
+    station: 'module.refinery',
+    inputs: [{ item: 'item.iron_ore', count: 3 }],
+    outputs: [{ item: 'item.metal', count: 2 }],
+    work: 80,
+  },
+  'recipe.refine_rare': {
+    name: 'Refine rare ore',
+    station: 'module.refinery',
+    inputs: [{ item: 'item.rare_ore', count: 2 }],
+    outputs: [{ item: 'item.electronics', count: 1 }],
+    work: 140,
+  },
   // The galley's recipe: reclaimed scrap becomes nutrient paste bars.
   'recipe.ration': {
     name: 'Print rations',

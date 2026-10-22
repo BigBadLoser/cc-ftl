@@ -9,6 +9,9 @@ export const items = {
   'item.polymer': { name: 'Polymer', tags: ['refined', 'building'], stackSize: 50, price: 9, flammability: 0.6 },
   // Robot spare parts: mend robots (25 hp each), salvaged from robot wrecks.
   'item.parts': { name: 'Spare parts', tags: ['refined', 'components'], stackSize: 50, price: 12 },
+  // Raw ores from asteroid rock: refined at a refinery (metal, electronics). Ice is used as is.
+  'item.iron_ore': { name: 'Iron ore', tags: ['raw', 'ore'], stackSize: 100, price: 3 },
+  'item.rare_ore': { name: 'Rare ore', tags: ['raw', 'ore'], stackSize: 50, price: 12 },
   'item.ice': { name: 'Ice', tags: ['raw', 'water'], stackSize: 50, price: 3 },
   // Food: hungry crew eat one from storage (+50 hunger). Printed at a galley from scrap. Flammable packaging.
   'item.ration': { name: 'Ration', tags: ['food'], stackSize: 50, price: 5, flammability: 0.2, food: { nutrition: 50 } },

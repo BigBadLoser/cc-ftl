@@ -1,7 +1,7 @@
 import { conductanceMap, diffuseStep, fieldFrame, writeBack } from '../diffusion';
 import { regions } from '../regions';
 import type { Sim } from '../sim';
-import { Struct } from '../structure';
+import { Struct, isAirless } from '../structure';
 import { NORMAL_TEMP, SPACE_TEMP, TEMP_AMBIENT_LOSS, TEMP_DIFFUSION, TEMP_VENT } from '../tuning';
 
 const TEMP_EPSILON = 1e-3;
@@ -19,7 +19,7 @@ export function temperatureSystem(sim: Sim): void {
     const cond = conductanceMap(grid, frame);
     const before = grid.load('temp');
     const temp = before.slice();
-    for (let i = 0; i < struct.length; i++) if (struct[i] === Struct.Space) temp[i] = SPACE_TEMP;
+    for (let i = 0; i < struct.length; i++) if (isAirless(struct[i] as number)) temp[i] = SPACE_TEMP;
     diffuseStep(frame, cond, [temp], TEMP_DIFFUSION, TEMP_VENT, false);
     for (let i = 0; i < struct.length; i++) {
       const kind = struct[i];

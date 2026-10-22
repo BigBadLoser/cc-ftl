@@ -1,12 +1,13 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiTrade, UiStory, UiCombat, UiPrize, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
 import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
+import { buildMining } from './miningSnapshot';
 import { buildTrade } from './tradeSnapshot';
 import { buildStory } from './storySnapshot';
 import { warmOutlines } from './starmapClusters';
@@ -74,6 +75,7 @@ export interface Bridge {
   shuttles: Readable<UiShuttles>;
   trade: Readable<UiTrade>;
   prizes: Readable<UiPrize[]>;
+  mining: Readable<UiMining>;
   story: Readable<UiStory>;
   /** The generated starmap (geometry rebuilt when the galaxy changes; fuel and charge kept fresh). */
   starmap: Readable<UiStarmap>;
@@ -126,6 +128,8 @@ export function createBridge(sim: Sim): Bridge {
   const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
   let lastTrade = '';
   const prizes = createStore<UiPrize[]>([]);
+  const mining = createStore<UiMining>({ asteroids: [], pods: [] });
+  let lastMining = '';
   const story = createStore<UiStory>({ active: null, last: null });
   let lastStory = '';
   // The starmap is built lazily: when the screen first opens, or in idle time after loading (`warmStarmap`), never in createBridge.
@@ -243,6 +247,14 @@ export function createBridge(sim: Sim): Bridge {
     lastTrade = key;
     trade.set(snap);
   };
+  const refreshMining = () => {
+    if (combatFrame % 6) return;
+    const snap = buildMining(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastMining) return;
+    lastMining = key;
+    mining.set(snap);
+  };
   const refreshPrizes = () => {
     if (combatFrame % 3) return;
     const snap = buildPrizes(sim);
@@ -325,6 +337,7 @@ export function createBridge(sim: Sim): Bridge {
     shuttles,
     trade,
     prizes,
+    mining,
     story,
     starmap,
     planRoute: (to) => planStarmapRoute(sim, to),
@@ -381,6 +394,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshShuttles();
       refreshTrade();
       refreshPrizes();
+      refreshMining();
       refreshCombat();
       refreshStory();
       refreshDeploy();

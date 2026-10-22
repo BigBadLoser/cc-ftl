@@ -37,6 +37,8 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.engine.hull': { ids: ['tile.hull.full.m15', 'tile.hull.m15'], tint: 0xffc080, perTile: true },
   'module.engine.machine': { ids: CRATE, tint: 0xffb060, perTile: true },
   'module.engine.machine.active': { ids: CRATE, tint: 0xffe0a0, perTile: true },
+  // Pod bay (asteroids slice 2): a hatch plate per tile until its art exists.
+  'module.pod_bay': { ids: FLOOR, tint: 0xd8c070, perTile: true },
   'module.shield_gen': { ids: CRATE, tint: 0x7fe6ff, perTile: true },
   'module.shield_gen_small': { ids: CRATE, tint: 0x7fe6ff, perTile: true },
   'module.weapons_console': { ids: CONSOLE, tint: 0xff9a8a, perTile: true },
@@ -45,8 +47,8 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.ai_core': { ids: CONSOLE, tint: 0xd9a8ff, perTile: true },
   // Galley / food printer: the fabricator tinted mint green until it has its own model (art list in docs/STATUS.md).
   'module.galley': { ids: ['module.fabricator'], tint: 0x8affc0 },
-  // Station ore refinery: the fabricator tinted orange until it has art.
-  'module.refinery': { ids: ['module.fabricator'], tint: 0xffa060 },
+  // Ore refinery (3x4): a crate per footprint tile, tinted orange, until it has art.
+  'module.refinery': { ids: CRATE, tint: 0xffa060, perTile: true },
   // Cargo containers have no entry: until their sheets land they are drawn boxes (render/containerBox.ts).
   // Roof turret: a crate with a barrel nub pointing along the aim (see turretView).
   'turret.generic': { ids: CRATE, tint: 0xd0d8e8 },

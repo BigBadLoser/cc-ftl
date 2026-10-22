@@ -34,7 +34,8 @@ function legacyWorld(sim: Sim): unknown {
   // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
-  for (const k of ['eggSac', 'nest', 'alien']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  // And asteroids and mining pods: their empty stores are not part of it.
+  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The `patrol` work category came after it too (station directors post patrol jobs; no ship here has any).
   stores.priorities = (stores.priorities ?? []).map(([id, raw]) => {
     const rest = { ...(raw as Record<string, unknown>) };

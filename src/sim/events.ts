@@ -34,6 +34,29 @@ export type SimEvent =
   | { type: 'storage.full'; ship: number; x: number; y: number; item: string }
   /** A ship entered the sector (newGame or debug.spawnEnemy). */
   | { type: 'ship.spawned'; ship: number; faction: Faction }
+  /** An asteroid region was stamped (`asteroid` is its AsteroidC entity); its bbox in sector tiles. */
+  | { type: 'mining.ordered'; pod: number; asteroid: number; tiles: number }
+  /** A crew member was sent to fly a pod (walking to its bay); the order waits for them. */
+  | { type: 'mining.pilotSent'; pod: number; crew: number }
+  /** A mining order cannot launch: `noPilot` (no free crew member on the pod's ship). Fired once per wait. */
+  | { type: 'mining.waiting'; pod: number; reason: 'noPilot' }
+  /** A pod left its bay on a mining trip (also `vehicle.launched`), heading for ore tile (x, y). */
+  | { type: 'mining.launched'; pod: number; asteroid: number; x: number; y: number; trip: number }
+  /** A pod cut the last ore off tile (x, y): the rock there is gone (Space). */
+  | { type: 'mining.tileCleared'; pod: number; asteroid: number; x: number; y: number }
+  /** A pod heads home with `cargo` ore units (hold full, nothing left, or recalled). */
+  | { type: 'mining.returning'; pod: number; cargo: number }
+  /** A mining order ended: 'exhausted' (no ore left), 'recalled', or 'lost' (no bay to return to). */
+  | { type: 'mining.done'; pod: number; asteroid: number; reason: 'exhausted' | 'recalled' | 'lost'; trips: number }
+  /** A dig through a vein dropped `count` units of `item` on the dug tile. */
+  | { type: 'rock.dug'; ship: number; x: number; y: number; item: string; count: number }
+  /** An outpost was stamped: its asteroid and its base region (ShipC). */
+  /** A hidden outpost was found (still dormant): 'proximity' (player crew or vehicle near it), 'breach', or 'provoked'. */
+  | { type: 'outpost.discovered'; ship: number; reason: 'proximity' | 'breach' | 'provoked' }
+  /** The player claimed a base region (`ship`) on an asteroid. */
+  | { type: 'asteroid.claimed'; asteroid: number; ship: number; x: number; y: number; w: number; h: number }
+  | { type: 'outpost.spawned'; asteroid: number; ship: number; style: 'surface' | 'dug'; kind: string; x: number; y: number }
+  | { type: 'asteroid.spawned'; asteroid: number; kind: 'big' | 'field'; x: number; y: number; w: number; h: number }
   | { type: 'combat.started' }
   | { type: 'combat.ended' }
   /** A weapon module launched one shot (`projectile` is its entity). */
@@ -54,8 +77,8 @@ export type SimEvent =
   | { type: 'ship.recovered'; ship: number }
   | { type: 'ship.destroyed'; ship: number }
   | { type: 'ship.fled'; ship: number }
-  /** A dormant hostile (pirate den) was provoked: aimed at, damaged or boarded. */
-  | { type: 'ship.provoked'; ship: number; reason: 'aimed' | 'damaged' | 'boarded' }
+  /** A dormant ship (pirate den, outpost) was provoked: aimed at, damaged, boarded, dug into or breached. */
+  | { type: 'ship.provoked'; ship: number; reason: 'aimed' | 'damaged' | 'boarded' | 'dug' | 'breach' }
   /** A station raised its alarm (intruders, attacked, fire, breach): guards converge, civilians take cover. */
   | { type: 'station.alarm'; ship: number; reason: string }
   /** A station's alarm calmed after a quiet spell; it forgets its grudges. */

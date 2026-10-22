@@ -74,11 +74,19 @@ export interface Ship {
   gen?: GenOrigin;
   /** Set on derelicts: dressing data for the renderer (see ShipRuin). */
   ruin?: ShipRuin;
+  /**
+   * Set on asteroid outposts (outposts/gen.ts): its style and kind; a dug one is roofed with rock. `hidden` until the player
+   * discovers it (dug ones start hidden). Outposts are also `immobile` and `dormant` until provoked. See outposts/state.ts.
+   */
+  outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean };
+  /** Set on a base the player claimed on an asteroid (`asteroid.claim`): immobile, never disabled or wrecked by the ship-state system. */
+  base?: { asteroid: number };
   /** Stations: no FTL, no engines, never flees or jumps; it stays in its node (archived with it). */
   immobile?: true;
   /**
-   * Dormant hostile (a pirate den): no combat until provoked. Holds the integrity it had when it went quiet; aiming at it,
-   * damaging it or boarding it wakes it (dormancySystem) and the field is removed.
+   * Dormant (a pirate den or an asteroid outpost): no combat until provoked. Holds the integrity it had when it went quiet;
+   * aiming at it, damaging it or boarding it wakes it (dormancySystem), as does digging or breaching into an outpost. All wake
+   * through `wake` (combat/dormant.ts), which removes the field.
    */
   dormant?: number;
 }

@@ -1,4 +1,5 @@
-import { shipIdOf, shipGrid } from '../sim/regions';
+import { asteroidAt, inShip, shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
+import { AsteroidC } from '../sim/asteroids/components';
 import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, footprintTiles, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
 import type { UiBuildKind, UiToolState } from '../ui/api';
@@ -11,7 +12,8 @@ import { createStore, type Readable } from './store';
 import { homeShip } from '../sim/index';
 import { EggSacC } from '../sim/aliens/components';
 
-const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door };
+// dig, level and finish are builds on rock mass: Floor digs it out, Ground levels it, RockWall finishes it into a wall (the sim tells them apart by the tile)
+const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
 const TOAST_MS = 2500;
 
 /** Tool + selection state and the translation of input gestures into commands. */
@@ -23,6 +25,9 @@ export interface Controller {
   selectedShip: Readable<number | null>;
   /** Select another ship or station and frame a ship in the camera (null clears). A station has no ship, so the camera stays. */
   selectShip(ship: number | null): void;
+  /** Asteroid picked by clicking its rock or from the node strip, or null. */
+  selectedAsteroid: Readable<number | null>;
+  selectAsteroid(id: number | null): void;
   alerts: Alerts;
   log: EventLog;
   toast: Readable<string | null>;
@@ -43,6 +48,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const tool = createStore<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
   const modSel = createStore<number | null>(null);
   const shipSel = createStore<number | null>(null);
+  const astSel = createStore<number | null>(null);
   /** The player's ship (home grid 1) as a ShipC entity id. */
   const homeShipId = () => homeShip(sim);
   const alerts = createAlerts(sim);
@@ -66,6 +72,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
 
   const selectTile = (t: Tile | null, ship = homeShipId()) => {
     shipSel.set(null);
+    astSel.set(null);
     crewSel.set(null);
     modSel.set(null);
     r?.setSelectedCrew(null);
@@ -86,6 +93,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (id === null) return selectTile(null);
     modSel.set(null);
     shipSel.set(null);
+    astSel.set(null);
     crewSel.set(id);
     r?.setSelection(null);
     bridge.setSelected(null);
@@ -105,6 +113,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (id === null || !m || !def) return selectTile(null);
     crewSel.set(null);
     shipSel.set(null);
+    astSel.set(null);
     r?.setSelectedCrew(null);
     bridge.setSelected(null);
     modSel.set(id);
@@ -121,7 +130,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const at = modPos ?? hover;
     const def = t.moduleDef ? sim.content.modules[t.moduleDef] : undefined;
     if (!at || !def || !t.moduleDef) return null;
-    return { tiles: footprintTiles(def, at.x, at.y, t.rot), at, def: t.moduleDef, error: placementError(sim, homeShip(sim), t.moduleDef, at.x, at.y, t.rot) };
+    // The player region under the cursor (a claimed base), else the home ship (whose error then says why it does not fit).
+    const ship = mineAt(at.x, at.y) || homeShipId();
+    return { tiles: footprintTiles(def, at.x, at.y, t.rot), at, ship, def: t.moduleDef, error: placementError(sim, ship, t.moduleDef, at.x, at.y, t.rot) };
   };
 
   /** Tiles covered by the current drag: a line for wall/door, a rectangle otherwise. */
@@ -130,7 +141,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const { x: sx, y: sy } = paintStart;
     let { x: ex, y: ey } = paintEnd;
     const t = tool.get();
-    if (t.tool === 'build' && t.build !== 'floor') {
+    if (t.tool === 'build' && t.build !== 'floor' && t.build !== 'dig' && t.build !== 'level' && t.build !== 'finish' && t.build !== 'claim') {
       if (Math.abs(ex - sx) >= Math.abs(ey - sy)) ey = sy;
       else ex = sx;
     }
@@ -156,13 +167,32 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     paintStart = paintEnd = null;
     refreshPreview();
   };
+  /** The player's region (home ship or a claimed base) whose rectangle holds the tile, or 0. */
+  const mineAt = (x: number, y: number): number => {
+    const id = shipIdAt(sim, x, y);
+    return id && sim.world.get(id, ShipC)?.faction === 'player' && inShip(sim, id, x, y) ? id : 0;
+  };
   const commit = () => {
     const { tool: t, build } = tool.get();
     if (t === 'build' && build === 'module') return;
+    if (t === 'build' && build === 'claim') {
+      const tiles = shape();
+      const at = tiles.find((p) => asteroidAt(sim, p.x, p.y));
+      const asteroid = at ? asteroidAt(sim, at.x, at.y) : 0;
+      if (!asteroid || !paintStart || !paintEnd) showToast('Drag over an asteroid');
+      else {
+        const x = Math.min(paintStart.x, paintEnd.x), y = Math.min(paintStart.y, paintEnd.y);
+        sim.enqueue({ type: 'asteroid.claim', asteroid, x, y, w: Math.abs(paintEnd.x - paintStart.x) + 1, h: Math.abs(paintEnd.y - paintStart.y) + 1 });
+      }
+      paintStart = paintEnd = null;
+      return refreshPreview();
+    }
     for (const { x, y } of shape()) {
-      if (t === 'build' && build !== 'module') sim.enqueue({ type: 'job.build', ship: homeShipId(), x, y, struct: BUILD_STRUCT[build] });
-      else if (t === 'deconstruct') sim.enqueue({ type: 'job.deconstruct', ship: homeShipId(), x, y });
-      else if (t === 'cancel') sim.enqueue({ type: 'job.cancel', ship: homeShipId(), x, y });
+      const ship = mineAt(x, y);
+      if (!ship) continue;
+      if (t === 'build') sim.enqueue({ type: 'job.build', ship, x, y, struct: BUILD_STRUCT[build as keyof typeof BUILD_STRUCT] });
+      else if (t === 'deconstruct') sim.enqueue({ type: 'job.deconstruct', ship, x, y });
+      else if (t === 'cancel') sim.enqueue({ type: 'job.cancel', ship, x, y });
     }
     paintStart = paintEnd = null;
     refreshPreview();
@@ -176,7 +206,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const plan = modulePlan();
     if (!plan) return;
     if (plan.error) showToast(rejectionMessage(plan.error));
-    else sim.enqueue({ type: 'job.buildModule', ship: homeShipId(), x: plan.at.x, y: plan.at.y, def: plan.def, rot: tool.get().rot });
+    else sim.enqueue({ type: 'job.buildModule', ship: plan.ship, x: plan.at.x, y: plan.at.y, def: plan.def, rot: tool.get().rot });
   };
   const rotate = () => setTool({ rot: (tool.get().rot + 1) % 4 });
 
@@ -186,6 +216,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     shipSel.set(ship);
     if (ship > 0) r?.frameShips([ship]);
   };
+  const selectAsteroid = (id: number | null) => {
+    selectTile(null);
+    const a = id === null ? undefined : sim.world.get(id, AsteroidC);
+    if (id === null || !a) return;
+    astSel.set(id);
+    r?.focusSector(a.x + a.width / 2, a.y + a.height / 2);
+  };
 
   return {
     tool,
@@ -194,6 +231,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     selectedModule: modSel,
     selectedShip: shipSel,
     selectShip,
+    selectedAsteroid: astSel,
+    selectAsteroid,
     selectedCrew: crewSel,
     selectModule,
     focusAlert(id) {
@@ -245,12 +284,16 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           } else if (any && (jammed || (!tile && any.shipId !== homeShipId() && sim.world.get(any.shipId, ShipC)?.state === 'wreck'))) {
             // A derelict tile selects like one of your own (its panel offers Force door on jammed doors); the ship panel is on the node strip.
             selectTile({ x: any.x, y: any.y }, any.shipId);
+          } else if (!tile && !any && asteroidAt(sim, renderer.pickSector(sx, sy).x, renderer.pickSector(sx, sy).y)) {
+            // plain asteroid rock (or a hidden base under it): the asteroid's panel
+            const st = renderer.pickSector(sx, sy);
+            selectAsteroid(asteroidAt(sim, st.x, st.y));
           } else selectTile(tile);
         },
         onHover(t) {
           hover = t;
           if (!paintStart) modPos = null;
-          bridge.setHovered(t ? { ship: homeShipId(), ...t } : null);
+          bridge.setHovered(t && inShip(sim, homeShipId(), t.x, t.y) ? { ship: homeShipId(), ...t } : null);
           refreshPreview();
         },
         paintMode: () => tool.get().tool !== 'select',

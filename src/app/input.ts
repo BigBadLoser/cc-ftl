@@ -58,7 +58,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
       dragging = false;
       multi = false;
       painting = e.button === 0 && h.paintMode();
-      if (painting) h.onPaint('start', renderer.pickTile(start.x, start.y));
+      if (painting) h.onPaint('start', renderer.pickSector(start.x, start.y));
     } else if (pointers.size === 2) {
       if (painting) {
         painting = false;
@@ -73,7 +73,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     const p = local(e);
     const prev = pointers.get(e.pointerId);
     if (!prev) {
-      if (e.pointerType === 'mouse') h.onHover(renderer.pickTile(p.x, p.y));
+      if (e.pointerType === 'mouse') h.onHover(renderer.pickSector(p.x, p.y));
       return;
     }
     if (pointers.size >= 2) {
@@ -87,12 +87,12 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     }
     pointers.set(e.pointerId, p);
     if (painting) {
-      h.onPaint('move', renderer.pickTile(p.x, p.y));
+      h.onPaint('move', renderer.pickSector(p.x, p.y));
       return;
     }
     if (!dragging && Math.hypot(p.x - start.x, p.y - start.y) >= DRAG_THRESHOLD) dragging = true;
     if (dragging) renderer.pan(p.x - prev.x, p.y - prev.y);
-    else if (e.pointerType === 'mouse') h.onHover(renderer.pickTile(p.x, p.y));
+    else if (e.pointerType === 'mouse') h.onHover(renderer.pickSector(p.x, p.y));
   };
 
   const onUp = (e: PointerEvent) => {
@@ -102,7 +102,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     if (painting && e.pointerId === downId) {
       painting = false;
       const p = local(e);
-      h.onPaint(e.type === 'pointerup' ? 'end' : 'cancel', renderer.pickTile(p.x, p.y));
+      h.onPaint(e.type === 'pointerup' ? 'end' : 'cancel', renderer.pickSector(p.x, p.y));
     } else if (e.pointerId === downId && e.type === 'pointerup' && !dragging && !multi) {
       const p = local(e);
       h.onTap(p.x, p.y);

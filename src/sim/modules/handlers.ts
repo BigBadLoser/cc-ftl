@@ -3,6 +3,9 @@ import type { Command } from '../commands';
 import { JobC } from '../crew/components';
 import { findJobAt } from '../crew/helpers';
 import type { Sim } from '../sim';
+import { AUTO_LEVEL_TICKS } from '../rock/dig';
+import { footprintTiles } from './footprint';
+import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
 import { AirlockC, requestAirlock } from './airlock';
 import { ModuleC } from './components';
@@ -31,10 +34,12 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     if (findJobAt(sim, cmd.ship, cmd.x, cmd.y)) return reject(sim, cmd.type, 'jobExists');
     const def = sim.content.modules[cmd.def];
     const needs = needsFrom(def?.cost);
+    const grid = shipGrid(sim, cmd.ship);
+    const rock = def && grid ? footprintTiles(def, cmd.x, cmd.y, cmd.rot).filter((t) => grid.get('struct', t.x, t.y) === Struct.Rock).length : 0;
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, {
       category: 'construction', kind: 'module', x: cmd.x, y: cmd.y, struct: 0,
-      work: def?.buildWork ?? TICK_HZ, progress: 0, reservedBy: 0, module: { def: cmd.def, rot: cmd.rot },
+      work: (def?.buildWork ?? TICK_HZ) + rock * AUTO_LEVEL_TICKS, progress: 0, reservedBy: 0, module: { def: cmd.def, rot: cmd.rot },
       ...(needs ? { needs, delivered: [] } : {}),
     });
   },

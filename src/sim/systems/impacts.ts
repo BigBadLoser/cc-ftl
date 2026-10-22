@@ -6,6 +6,7 @@ import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import type { Effect } from '../registry';
 import type { Sim } from '../sim';
+import { isDormant } from '../combat/dormant';
 import { Struct } from '../structure';
 import { VehicleC } from '../vehicles/components';
 import { damageVehicle, vehicleDefOf } from '../vehicles/lifecycle';
@@ -32,15 +33,16 @@ export function impactSystem(sim: Sim): void {
     const grid = shipGrid(sim, shipId);
     const combat = sim.world.get(shipId, CombatC);
     const base = { projectile: id, weapon: p.weapon, ship: shipId };
-    if (!def || !ship || !grid || !combat || ship.state === 'fled') {
+    // a dormant ship may have no CombatC: a shot at it still lands (no shields, no evasion); dormancySystem sees the damage
+    if (!def || !ship || !grid || (!combat && !isDormant(ship)) || ship.state === 'fled') {
       sim.events.emit({ type: 'projectile.miss', ...base, reason: 'gone', x: p.x1, y: p.y1 });
       continue;
     }
-    if (sim.rng.chance(combat.evasion)) {
+    if (combat && sim.rng.chance(combat.evasion)) {
       sim.events.emit({ type: 'projectile.miss', ...base, reason: 'evaded', x: p.x1, y: p.y1 });
       continue;
     }
-    if (!def.shield.bypass && combat.shield.layers > def.shield.pierce) {
+    if (combat && !def.shield.bypass && combat.shield.layers > def.shield.pierce) {
       combat.shield.layers = Math.max(0, combat.shield.layers - def.shield.damage);
       sim.events.emit({ type: 'projectile.shieldHit', ...base, layers: combat.shield.layers });
       continue;

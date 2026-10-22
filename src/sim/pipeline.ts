@@ -7,6 +7,7 @@ import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
 import { carrySystem } from './systems/carry';
 import { combatStateSystem } from './systems/combatState';
+import { outpostSystem } from './systems/outposts';
 import { dormancySystem } from './systems/dormancy';
 import { stationAlarmSystem } from './systems/stationAlarm';
 import { stationDirectorSystem } from './systems/stationDirector';
@@ -50,6 +51,7 @@ import { fabricatorSystem } from './systems/fabricators';
 import { robotBaySystem } from './systems/robotBays';
 import { workSystem } from './systems/work';
 import { vehicleSystem } from './systems/vehicles';
+import { miningSystem } from './systems/mining';
 import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
 import { captureSystem } from './systems/capture';
@@ -135,6 +137,8 @@ export const pipeline: readonly System[] = [
   // Suited crew drifting between a hovering shuttle and a hull land or climb aboard.
   evaFloatSystem,
   carrySystem,
+  // Mining pods steer their outbound legs and cut ore, then hand the leg home to the vehicle system right after.
+  miningSystem,
   // Vehicles after crew movement: embarking crew board on arrival, shuttles fly before this tick's shots are aimed.
   vehicleSystem,
   // Detached containers drift on their own velocity (inert bodies; nothing else moves them).
@@ -143,6 +147,8 @@ export const pipeline: readonly System[] = [
   tradeSystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.
   workSystem,
+  // Outposts found or provoked by player presence, before the combat state reads who is a combatant.
+  outpostSystem,
   // --- Combat (see each system's notes). Dormant hostiles wake on provocation, then the combat state is decided (it
   // decides whether consoles are needed next tick).
   dormancySystem,

@@ -37,7 +37,9 @@ export function nearestExterior(sim: Sim, shipId: number, at: { x: number; y: nu
   const out: { x: number; y: number; d: number }[] = [];
   for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
     for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
-      if (grid.get('struct', x, y) === Struct.Space && isEvaWalkable(grid, x, y)) out.push({ x, y, d: Math.hypot(x - at.x, y - at.y) });
+      const k = grid.get('struct', x, y);
+      // the hull ring, or open rock ground (an asteroid base: suited crew land on the plains)
+      if ((k === Struct.Space && isEvaWalkable(grid, x, y)) || k === Struct.Ground) out.push({ x, y, d: Math.hypot(x - at.x, y - at.y) });
     }
   }
   return out.sort((a, b) => a.d - b.d || a.y - b.y || a.x - b.x).slice(0, n);

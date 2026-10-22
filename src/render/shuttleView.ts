@@ -50,6 +50,8 @@ export interface ShuttleViewHost {
   project(sx: number, sy: number): Pt;
   /** Which vehicles this view draws (flying, docked, and the one just leaving or settling in a bay). */
   include(v: ShuttleRef): boolean;
+  /** Vehicle defs another view draws (mining pods). */
+  skip?(def: string): boolean;
   /**
    * Where a body at hull height or lower is drawn: the shared world layer (a sector-frame container whose children sort with
    * every region's tiles, walls, modules and crew by depth), so the hull, walls and an airlock's collar sort against the
@@ -178,7 +180,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
       for (const id of world.query(VehicleC, BodyC)) {
         const v = world.get(id, VehicleC);
         const b = world.get(id, BodyC);
-        if (!v || !b) continue;
+        if (!v || !b || host.skip?.(v.def)) continue;
         const ref: ShuttleRef = { state: v.state, dock: v.dock, homeGrid: world.has(v.homeShip, ShipC) ? v.homeShip : 0 };
         let t = tracks.get(id);
         if (!t) {

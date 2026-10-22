@@ -10,6 +10,8 @@ import type { ShipScene } from './shipScene';
  */
 export interface PickHost {
   scenes: ReadonlyMap<number, ShipScene>;
+  /** True for a region the player cannot see as such (a hidden outpost): a click there is plain asteroid rock. */
+  hidden?(shipId: number): boolean;
   cam: Camera;
   /** Sector top-left of a grid's region (tiles): where its region-local art sits. */
   origin(shipId: number): Origin;
@@ -25,7 +27,7 @@ export function pickTileAcross(h: PickHost, sx: number, sy: number): { shipId: n
   const a = h.cam.toArt(sx, sy);
   // Regions never share tiles (padded frames keep a gap), so at most one owns the sector tile.
   for (const [id, sc] of h.scenes) {
-    if (!sc.layers.visible) continue;
+    if (!sc.layers.visible || h.hidden?.(id)) continue;
     const t = sectorTileAt(a);
     if (sc.grid.inBounds(t.x, t.y) && sc.grid.get('struct', t.x, t.y) !== Struct.Space) return { shipId: id, x: t.x, y: t.y };
   }
@@ -38,7 +40,7 @@ export function pickCrewAcross(h: PickHost, sx: number, sy: number): number | nu
   let best: number | null = null;
   let bestY = -Infinity;
   for (const [id, sc] of h.scenes) {
-    if (!sc.layers.visible) continue;
+    if (!sc.layers.visible || h.hidden?.(id)) continue;
     const g = h.origin(id);
     const o = iso(g.x, g.y);
     const hit = sc.pickCrew(a.x - o.x, a.y - o.y);

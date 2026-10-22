@@ -42,6 +42,14 @@ export const TRANSLATE: Record<string, Shift | null> = {
   nest: xy,
   alien: keys(['homeX', 'homeY']),
   marker: xy,
+  miningPod: (c, dx, dy) => {
+    point(c.target as Xy | null, dx, dy);
+    (c.tiles as Xy[] | null)?.forEach((t) => point(t, dx, dy));
+  },
+  asteroid: (c, dx, dy) => {
+    xy(c, dx, dy);
+    (c.parts as Xy[]).forEach((r) => point(r, dx, dy));
+  },
   station: (c, dx, dy) => [...(c.courts as Xy[]), ...(c.posts as Xy[])].forEach((t) => point(t, dx, dy)),
   // No coordinates:
   airlock: null, deploy: null, combat: null, weapon: null, pointDefense: null, ion: null, captureProgress: null, prize: null,

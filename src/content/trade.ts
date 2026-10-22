@@ -58,6 +58,7 @@ export const trade = {
       tagMods: { raw: { sell: 0.8 }, components: { buy: 1.25 } }, credits: [200, 700],
       stock: [
         { item: 'item.ice', min: 20, max: 70 }, { item: 'item.scrap', min: 20, max: 80 }, { item: 'item.metal', min: 15, max: 50 },
+        { item: 'item.iron_ore', min: 20, max: 80 }, { item: 'item.rare_ore', min: 2, max: 12, chance: 0.6 },
         { item: 'item.parts', min: 0, max: 6, chance: 0.4 },
       ],
     },
@@ -73,7 +74,8 @@ export const trade = {
     },
     'trader.station.mining': {
       name: 'Mining station', match: { faction: 'station.mining' }, shuttle: false, sell: 0.9, credits: [1200, 3500],
-      stock: [{ item: 'item.metal', min: 80, max: 200 }, { item: 'item.ice', min: 40, max: 120 }, { item: 'item.scrap', min: 20, max: 80 }, { item: 'item.parts', min: 4, max: 12 }],
+      stock: [{ item: 'item.metal', min: 80, max: 200 }, { item: 'item.ice', min: 40, max: 120 }, { item: 'item.scrap', min: 20, max: 80 }, { item: 'item.parts', min: 4, max: 12 },
+        { item: 'item.iron_ore', min: 60, max: 180 }, { item: 'item.rare_ore', min: 6, max: 24 }],
     },
     'trader.station.farming': {
       name: 'Agri station', match: { faction: 'station.farming' }, shuttle: false, credits: [800, 2500],

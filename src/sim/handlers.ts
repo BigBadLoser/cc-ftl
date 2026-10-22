@@ -1,6 +1,9 @@
 import { MarkerC } from './components';
 
 import type { Command } from './commands';
+import { asteroidHandlers } from './asteroids/handlers';
+import { miningHandlers } from './mining/handlers';
+import { outpostHandlers } from './outposts/handlers';
 import { captureHandlers } from './capture/handlers';
 import { combatHandlers } from './combat/handlers';
 import { containerHandlers } from './containers/handlers';
@@ -38,6 +41,9 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...tradeHandlers,
   ...galaxyHandlers,
   ...sectorHandlers,
+  ...asteroidHandlers,
+  ...miningHandlers,
+  ...outpostHandlers,
   noop: () => {},
   'debug.spawnMarker': (sim, cmd) => {
     const entity = sim.world.createEntity();

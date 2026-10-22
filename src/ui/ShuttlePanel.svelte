@@ -2,10 +2,16 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiShuttles } from './api';
   import PanelHead from './PanelHead.svelte';
+  import PodList from './PodList.svelte';
+  import type { UiMining } from './api';
 
   let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
   let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
-  onMount(() => api.shuttles.subscribe((v) => (data = v)));
+  let mining = $state<UiMining>({ asteroids: [], pods: [] });
+  onMount(() => {
+    const u = [api.shuttles.subscribe((v) => (data = v)), api.mining.subscribe((v) => (mining = v))];
+    return () => u.forEach((f) => f());
+  });
 
   const where = (s: UiShuttles['shuttles'][number]) =>
     s.state === 'stowed' ? 'Parked in bay'
@@ -106,6 +112,12 @@
   {#each data.bays.filter((b) => b.empty) as b (b.id)}
     <button class="assign" data-testid="assign-{b.id}" onclick={() => api.dispatch({ type: 'vehicle.assign', bay: b.id })}>Fit a shuttle from storage</button>
   {/each}
+  {#if mining.pods.length}
+    <section data-testid="shuttle-pods">
+      <h3>Mining pods <small>select an asteroid to send one</small></h3>
+      <PodList {api} {mining} />
+    </section>
+  {/if}
 </div>
 
 <style>

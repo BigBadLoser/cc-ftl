@@ -16,6 +16,7 @@ import { galaxy } from './galaxy';
 import { trade } from './trade';
 import { stations } from './stations';
 import { creatures } from './creatures';
+import { ores } from './ores';
 import { starterShip, starterShipId } from './ships/starter';
 import { rogueShipyard, rogueShipyardId } from './ships/rogue';
 
@@ -37,4 +38,5 @@ export const content = {
   stations,
   trade,
   creatures,
+  ores,
 } satisfies ContentRegistry;

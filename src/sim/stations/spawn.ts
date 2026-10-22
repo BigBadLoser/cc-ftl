@@ -46,12 +46,24 @@ export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: nu
   const id = spawnShip(sim, template, { faction: def.side, x, y, rest: 100 });
   const ship = shipById(sim, id);
   if (!ship) return 'noShip';
+  if (def.side === 'hostile') ship.dormant = ship.integrity;
+  outfitStation(sim, id, kind, size, seed, gen, x, y);
+  return id;
+}
+
+/**
+ * Make a stamped ship region a station: its generator identity (so trade and doctrine find the kind), immobile, a trader, and
+ * the station life (`settleIn`: courts, patrol posts, alarm, the crew marker). The shared tail of `spawnStation` and of asteroid
+ * outposts (outposts/stamp.ts), which run on the same director, alarm and crew AI. `gen` is the generated station (its rooms
+ * and template rows in region-local tiles) and (x, y) the region's top-left. Crew must already be aboard; dormancy is the caller's.
+ */
+export function outfitStation(sim: Sim, id: number, kind: string, size: StationSize, seed: number, gen: GenResult, x: number, y: number): void {
+  const ship = sim.world.get(id, ShipC);
+  if (!ship) return;
   ship.gen = { faction: kind, seed: seed >>> 0, depth: 0, role: size };
   ship.immobile = true;
-  if (def.side === 'hostile') ship.dormant = ship.integrity;
-  if (sim.world.has(id, ShipC)) ensureTrader(sim, id);
+  ensureTrader(sim, id);
   settleIn(sim, id, gen, x, y);
-  return id;
 }
 
 const COURT_ROLES: readonly string[] = ['plaza', 'garden', 'drill', 'support'];

@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-22 (galaxy sim on `galaxy`, merged with stations from `main`).
+Last updated: 2026-10-22 (asteroids on `asteroids`, merged with stations and galaxy from `main`).
 
 **Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
 map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
@@ -37,6 +37,125 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
+## Asteroids (branch `asteroids`; slices 1-3; not merged; visual: needs the user's screenshot approval)
+
+**User decisions (2026-10-21):**
+1. Asteroids are real tiles in the sector grid, mineable and buildable like any other region.
+2. Default mining uses **mining pods**: they deploy from a new small vehicle bay (about 3x3), fly to an asteroid, laser-mine its ore
+   veins and bring the ore back; a field takes several trips. **Pods are piloted** (one crew pilot) and nearly fill their 3x3
+   bay (correction, 2026-10-21).
+3. Two scales: **very big asteroids** you (or enemies) can build a base or outpost on, and **fields of smaller asteroids** with
+   ore for pods.
+4. Asteroid bases are either **dug** (rooms carved into rock mass) or **built on the surface**, never both on one asteroid.
+5. **Two rock forms** (replaces the hollow-core design, 2026-10-21): rock **mass** (full-height solid block, airtight, blocks
+   sight) and rock **ground** (flat levelled rock: walkable, airless, a buildable foundation). Big asteroids are mostly ground
+   with mass as features (ridges, boulders, crater rims, one or two massifs) and roll a coverage class: open, mixed or dense
+   (dense is common and mostly just rock). `Struct.CoreRock` and the hollow roll are gone. (Veins: superseded by decision 8.)
+6. Build on ground at normal speed; a footprint may clip a little rock mass (up to 25%), which its job levels at a small extra
+   cost; a real ridge needs clearing first. Digging (a crew job, slow on purpose) turns rock mass into floor; the mass left
+   around is a natural airtight wall; the outer layer (mass touching space or ground) cannot be dug; a dig through a vein
+   yields its ore. Outposts: surface (trading, farming, mining: prefab habitats on open plains, tubes, a dock at the edge) and
+   dug (pirate, criminal, covert: rooms in dense rock, a tunnel to an airlock in a rock face, a rock roof so it looks like
+   plain asteroid from outside). Enemies use the same generators.
+7. **Finished rock walls (2026-10-22, save v32).** New `Struct.RockWall` (dressed stone): a normal 1-tile wall (wall height,
+   airtight, blocks movement and sight, doors go into it, no integrity so weapons do not chip it). Crew **finish** rock mass into
+   it: `job.build` with struct RockWall on rock mass, free, 8 s (`FINISH_TICKS`; dig 15 s, level 6 s), only on a tile with a floor
+   or door 4-neighbour; the outer-layer rule does not apply (the wall stays sealed). Digging a rock wall gives floor like rock
+   mass (same 15 s and outer-layer rule); a Door can be built on one. Works in claimed bases ("Finish rock" in the build menu
+   beside Dig and Level). **Dug outposts are walled entirely in rock walls** (`stampOutpost` turns every metal wall of a dug base
+   into `RockWall`, room partitions and faces against rock alike; doors stay doors); surface outposts keep metal station walls.
+   Planner's calls: deconstructing a rock wall is refused (`nothingToDeconstruct`; no refund, no revert to rock mass); a metal
+   Wall cannot be built over one (`rockMass`); hull-edge modules (guns, engines) may sit on a rock wall row. Rendering is a
+   placeholder: the metal wall sprites with a stone multiply tint (`ROCK_WALL_TINT`, `artKind` in render/tiles.ts maps RockWall to
+   Wall for all the wall-piece logic); the Blender art is pending.
+8. **Big asteroids carry no ore (2026-10-22, save v32).** Only fields (small rocks for mining pods) have ore, as pockets;
+   `OreDef.weight` is now one number (the pocket odds). The big-asteroid veins, "richer in massifs" and `BIG.vein*` are gone, so
+   digging a big asteroid yields nothing, and the asteroid panel shows "No ore" and offers no Mine button there. Mining stations
+   and outposts on big asteroids are fine without ore.
+
+**Slice 1:** rock and ore tiles, the `AsteroidC` region model, the seeded generator, stamping with the gap rule,
+`debug.spawnAsteroid`, placeholder drawing and contact sheets. Planner's calls: own `AsteroidC` (not a ShipC kind); mined rock
+becomes Space (no rubble); ores yielded existing items at first (superseded: see "Raw ores and refining"); `ASTEROID_GAP` = 4 tiles; weapons do not damage rock.
+
+**Raw ores and refining (done):** `item.iron_ore` and `item.rare_ore` (raw, ore) are what `ore.iron` and `ore.rare` yield; ice stays
+`item.ice`. `module.refinery` is a real 3x4 player-buildable crafting module (access on the middle of the east long side, power -8,
+cost 30 metal + 8 electronics + 4 parts); recipes `recipe.refine_iron` (3 ore -> 2 metal) and `recipe.refine_rare` (2 ore -> 1
+electronics). Mining stations stock and sell ore; their industry rooms are 10x7. Art pending: the fallback is an orange crate per
+tile. Save v29.
+
+**Slice 2:** `module.pod_bay` (3x3) and `vehicle.mining_pod`, `mining.order` / `mining.recall`, trips until the ore is gone.
+Planner's calls: hold 24, speed 6 tiles/s, laser 2 units/s; the laser works from above (buried vein tiles too); crew haul the
+ore from the bay's access tile through the existing cargo hauls (a full storage leaves the pod waiting, loaded); no pod item
+yet (template or `__cc.stage.vehicle(def, bay)`); no mining UI yet.
+
+**Slice 3 (done):** the two rock forms, coverage classes, dig / level / auto-level, outposts, piloted full-size pods. Save v28 after the merge with main (stations v26, galaxy v27).
+Planner's calls:
+- Dig and level are **folded into `job.build`** (no new commands): Floor on rock mass digs (15 s, free), Ground on rock mass
+  levels (6 s, free), anything else on rock mass is refused (`rockMass`); Floor, walls and doors build on ground as on a deck.
+  The outer layer can still be levelled. A dug tile's ore drops on it as a loose stack that crew haul (not into the digger's
+  hands). A levelled tile keeps its ore (pods can still mine it).
+- Auto-level: up to 25% of a module footprint (2 of a 3x3) may be rock mass; the job gets 3 s of extra work per rock tile and
+  levels them to ground when it finishes. Modules stand on floor or ground.
+- Coverage odds open 3 : mixed 3 : dense 4; rock-mass share open 6-20%, mixed 30-55%, dense 78-100%. Field rocks are all rock
+  mass (solid boulders).
+- Pods: the best free pilot (not drafted, not reserved, of the ship's side, on the ship; highest piloting) walks to the bay and
+  embarks; they stay aboard between trips and climb out when the order ends or is recalled; with nobody free the order waits
+  (`mining.waiting`, reason `noPilot`). Pods are 2.6 tiles across (`VehicleDef.size`). Couriers and boarders skip class 'pod'.
+- Outposts are a `ShipC` region over the base rectangle, never 'disabled' (`immobile`); surface ones are neutral, dug ones
+  hostile. **Outposts are real stations (2026-10-22, save v31):** the hand-made habitat kits are gone. `generateOutpost` builds a
+  `station.<kind>` at the 'outpost' tier (trading, farming, mining; pirate, criminal and covert all use `station.pirate`) and fits
+  it onto a big asteroid: the dock airlock (the north- or south-facing one nearest the template edge with nothing built beyond it)
+  is set on the rock face with its collar cut to open space (`outposts/site.ts`). Surface: ground pad one tile around the
+  station on an open asteroid. Dug: `carveInRock` turns every hull wall bordering outside into rock mass (rooms and one-wall
+  partitions stay) and drops outside cargo frames and crates; the rect plus ring is packed with rock on a dense asteroid. Crew,
+  security, trader and station life come from the shared `outfitStation` (stations/spawn.ts), so the director, alarm and crew AI
+  run them; they have no `CombatC` until woken. Planner's calls: kept the station's other airlocks (on ground or rock, not
+  space; only the dock opens to space); base tiles that overhang the outline are filled with ground or rock (at most 20%);
+  the asteroid is asked for `minSize` (new `AsteroidGenOptions`) so a 40-65 tile station fits; stations' guns and shields stay.
+- **Dormant until provoked; dug ones hidden until discovered (user decision, 2026-10-21).** A dormant outpost is no combatant
+  (combat trigger, alerts, combat panel enemies, auto-target), whatever its faction; it is stamped `immobile` + `dormant` like a pirate den (one mechanism: `combat/dormant.ts`, `wake`, event `ship.provoked`) and has no `CombatC` until it wakes. A hidden
+  one is not listed (node strip, shuttle targets, trade/hail), not targetable (`combat.setTarget` refuses it), not pickable
+  (clicks fall through to the rock) and keeps its rock roof whatever the roof toggle. Discovery (alert "Hidden base discovered"):
+  a player crew member or a player vehicle out of its bay within `DISCOVER_RANGE` = 6 tiles (Chebyshev) of the box of the base's
+  tiles, checked every 10 ticks, or a breach; it is then listed and selectable but still dormant. Provocation (alert "<name> turns
+  hostile"; it gets a `CombatC`): the player aiming weapons at it (`combat.setTarget`; planner's call: aiming is the attack,
+  since weapons are only manned in combat), a shot landing on it, player crew standing on its walkable tiles (boarding), a
+  build or dig order into its region, or a floor it does not own touching its floors (a dug breach). Surface outposts are never
+  hidden. Both flags are saved on `ShipC.outpost`.
+- Venting fx fix: the dug base looked like it leaked (air puffs along every rock edge). The sim was airtight; the vent emitter
+  read the region's art kind, which shows rock as Space. It now reads the real tile and vents only into Space or ground. Test:
+  every room of both styles within 1% over 120 s, no breach or low-O2 events.
+- Rendering (placeholder): rock mass is a 1.2-tile-high block, ground a flat paler diamond with crater pits; a roofed dug base
+  is capped by rock blocks (`rockRoofView.ts`) and its own layers hide; pods hover above the tallest rock. Rock drawn in the floor
+  layer does not sort against crew yet.
+- Debug: `?hook`, then `__cc.dispatch({ type: 'debug.spawnOutpost', style: 'dug', seed: 1 })`, `__cc.focus(x, y)`.
+
+**Slice 4 (done): mining UI, pods from the build menu, claiming a base.** Planner's calls:
+- Mining UI: click plain asteroid rock (or a hidden base under it) or the asteroid tile in the node strip to open the asteroid
+  panel: ore left by kind, the player's pods (status, pilot, hold, trips) with Mine (sends `mining.order` for the whole
+  asteroid) and Recall, and Claim for a base. The vehicle panel (select a pod bay) lists the pods too. Alerts: "Mining pod waits for
+  a free pilot", "Mining done". No tile/area paint mode for `tiles` yet (the command takes them).
+- Pod: **the pod bay comes with its pod** when crew build it (`vehicleBay.builtWith`); its cost covers both (28 metal, 12
+  electronics, 4 polymer; 18 s of work). No separate pod item or recipe. The pod bay is in the modules build menu.
+- Claiming: build menu "Claim asteroid", drag a rectangle (4-60 tiles a side, inside the asteroid's box, at least half on its
+  rock, clear of other regions' frames) -> `asteroid.claim`: an immobile player `ShipC` with `base` (never disabled or wrecked by
+  the ship-state system). Build tools now paint on any player region under the cursor (home ship or base). Tiles crew build or dig
+  there become the base's. It is listed in the node strip, saved, and stays in the node's archive on a jump like a prize.
+  "Dig rock" and "Level rock" are in the build menu (free; the outer-layer rule holds).
+- Reaching it: a shuttle hovers beside the base (`vehicle.hover` takes the base like any ship) and suited crew EVA out; they now
+  land on open rock ground as well as the hull ring, and walk the ground in suits. Because of the outer-layer rule, nobody digs in
+  from the open: build a sealed habitat (floor and walls on the ground) against the rock, then dig inward from its floor. Missing
+  for a smooth loop: crew cannot walk between the home ship and the base (separate regions, ships are never close), so every
+  trip is a shuttle run; no "send crew to the base" order or base supply hauling yet; the base has no power until crew build it.
+- A pod bay job whose footprint lies across a busy corridor can wait for a long time: crew walking through block the finish
+  (an existing rule for solid modules).
+
+**Next slices, in order:**
+1. Base logistics: carry materials and crew between the home ship and a base (shuttle cargo runs, a "go to base" order),
+   and the tile paint mode for mining orders.
+2. (Crews, trader and director done, see Slice 3.) Still open: enemy outposts defending when woken, NPC factions picking outposts by kind, an outpost dock the player's shuttles can use.
+3. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew; pod and pod-bay art.
+
 ## Stations, slice 1: generation (branch `stations`; not merged)
 
 **User decisions (2026-10-21):** stations come in sizes from small frontier trading posts up to system hubs, and a hub is
@@ -58,7 +177,7 @@ What exists (generation only, nothing spawns yet):
   4/12/24 (50% heavy), trading 2/6/12, mining 2/5/10, farming 2/4/8, pirate 1/3/6.
 - **New content pieces:**
   - room roles `farm`, `industry` and `armoury`, with recipes in `rooms/station.ts`;
-  - the placeholder `module.refinery` (fabricator tinted orange in `fallback.ts`; no mechanic);
+  - `module.refinery` (now a real 3x4 refining module; orange crate fallback art until the Blender sheet exists);
   - `RoomSpec.items` for per-room stock: armoury lockers hold rifles and sidearms;
   - `HullFamilyDef.cages` for the ore cages that mining stations hang off the structure.
 - **Armed NPCs:** no new field. Security crew are `role.security`, whose existing `loadout` fetches rifles and sidearms

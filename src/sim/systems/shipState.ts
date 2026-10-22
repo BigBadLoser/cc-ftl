@@ -22,6 +22,7 @@ export function shipStateSystem(sim: Sim): void {
     const ship = sim.world.get(id, ShipC);
     const grid = ship && shipGrid(sim, id);
     if (!ship || !grid?.has('hp') || ship.state === 'wreck' || ship.state === 'fled' || ship.state === 'prize') continue;
+    if (ship.base) continue; // a claimed asteroid base starts empty: no integrity to lose, nothing to disable
     const walls = hullSum(grid);
     ship.hullMax = Math.max(ship.hullMax, walls);
     let modHp = 0;
@@ -46,7 +47,8 @@ export function shipStateSystem(sim: Sim): void {
       wreckShip(sim, id);
       continue;
     }
-    const disabled = ableCrew(sim, id) === 0 || (sources > 0 && running === 0);
+    // outposts are immobile by nature and have no crew yet: never 'disabled' for that
+    const disabled = !ship.outpost && (ableCrew(sim, id) === 0 || (sources > 0 && running === 0));
     if (disabled && ship.state === 'active') {
       ship.state = 'disabled';
       sim.events.emit({ type: 'ship.disabled', ship: id });

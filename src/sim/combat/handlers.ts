@@ -82,6 +82,8 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     } else if (cmd.targetShip !== 0) {
       if (cmd.targetShip === cmd.ship || !shipById(sim, cmd.targetShip)) return reject(sim, cmd.type, 'badTarget');
       if (cmd.targetModuleId !== 0 && !moduleOnGrid(sim, cmd.targetModuleId, cmd.targetShip)) return reject(sim, cmd.type, 'badTarget');
+      const aimed = shipById(sim, cmd.targetShip);
+      if (aimed?.outpost?.hidden) return reject(sim, cmd.type, 'badTarget'); // nobody knows it is there
       target = { ship: cmd.targetShip, moduleId: cmd.targetModuleId };
     }
     if (cmd.weaponId === null) {

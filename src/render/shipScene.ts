@@ -15,6 +15,7 @@ import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
 import { createRoofView } from './roofView';
+import { createRockRoofView } from './rockRoofView';
 import { createRuinView } from './ruinView';
 import { createEggSacView } from './eggSacView';
 import { createJamMarks } from './jamMarks';
@@ -102,6 +103,15 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => ({ grid }) });
   const turretView = createTurretView(world, atlas, L, grid, modules);
   const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null);
+  // A dug outpost is roofed with rock, not plating (PLACEHOLDER, rockRoofView.ts).
+  // It sits in the fx layer, and while it is on the region's own tile and entity layers hide: the rock around the base is drawn
+  // by the asteroid's view, which lies under them, so anything of the base left showing would cut through the rock.
+  const rockRoof = world.get(grid.id, ShipC)?.outpost?.style === 'dug' ? createRockRoofView(grid, L.fx) : null;
+  const showRoof = (on: boolean) => {
+    roof.setVisible(on && !rockRoof);
+    rockRoof?.setVisible(on);
+    if (rockRoof) for (const c of [L.floor, L.under, L.decal, L.sorted]) c.visible = !on;
+  };
   const wallHeight = () => wallTopPx(roofed ? 'up' : cutaway);
   const damage = createDamageView(grid, L, wallHeight);
   const marks = createTargetMarks(grid, world, modules, L.marks);
@@ -111,7 +121,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     ruinView.setRoofed(roofed);
   };
   applyMode();
-  roof.setVisible(roofed);
+  showRoof(roofed);
   turretView.setRoofed(roofed);
 
   return {
@@ -119,6 +129,9 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     layers: L,
     view,
     update(dt) {
+      rockRoof?.update();
+      // region culling re-shows every layer when the region comes into view: keep the base hidden under its rock roof
+      if (rockRoof && roofed) for (const c of [L.floor, L.under, L.decal, L.sorted]) c.visible = false;
       // A wreck shows only emergency lighting (the sim scales its lights down), so dark tiles pulse red.
       emergency = shipHasPower(world, modules, grid) === false || world.get(grid.id, ShipC)?.state === "wreck";
       if (world.get(grid.id, ShipC)?.ruin && (wreckTick++ & 15) === 0) {
@@ -147,7 +160,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     setRoofed(r) {
       roofed = r;
       applyMode();
-      roof.setVisible(r);
+      showRoof(r);
       turretView.setRoofed(r);
     },
     isRoofed: () => roofed,
@@ -170,6 +183,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     pickModule: (ax, ay) => moduleView.pick(ax, ay),
     sprites: () => particles.count() + L.floor.children.reduce((n, c) => n + c.children.length, 0) + L.sorted.children.length + L.decal.children.length,
     dispose() {
+      rockRoof?.dispose();
       marks.dispose();
       damage.dispose();
       roof.dispose();

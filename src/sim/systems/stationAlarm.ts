@@ -61,11 +61,6 @@ export function stationAlarmSystem(sim: Sim): void {
       const h = hazard(sim, st);
       if (h) reasons.push(h);
     }
-    // An intruder on a dormant den wakes it (the dormancy system also wakes it on aim and damage).
-    if (ship.dormant !== undefined && reasons.includes('intruders')) {
-      delete ship.dormant;
-      sim.events.emit({ type: 'ship.provoked', ship: st, reason: 'boarded' });
-    }
     if (reasons.length > 0) {
       const reason = reasons.includes('attacked') ? 'attacked' : (reasons[0] as string);
       if (alarm.state === 'calm') sim.events.emit({ type: 'station.alarm', ship: st, reason });

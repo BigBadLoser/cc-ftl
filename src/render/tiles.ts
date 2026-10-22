@@ -6,7 +6,18 @@ export type Chain = string[];
 /** Wall view mode: up = walls up, auto = cutaway (partitions cut, far hull full), down = shortest (whole hull a ghost rim). */
 export type CutawayMode = "auto" | "up" | "down";
 
-const solidish = (k: number) => k === Struct.Wall || k === Struct.Door;
+/** Wall art treats a finished rock wall as a wall (same pieces, runs and cut views); only its tint differs (`ROCK_WALL_TINT`). */
+export const artKind = (k: number): number => (k === Struct.RockWall ? Struct.Wall : k);
+/** Multiply tint that turns the metal wall sprites into dressed stone (placeholder until rock-wall art exists). */
+export const ROCK_WALL_TINT = 0xff9a82;
+
+/**
+ * Wall art reads tiles through a `KindAt` that keeps a finished rock wall as `Struct.RockWall` (`RegionTiles.wallAt`): it
+ * connects like a wall but is never hull, whatever lies beside it (rock mass, ground or space), so it always draws as an
+ * interior wall piece (tinted by `ROCK_WALL_TINT`).
+ */
+const solidish = (k: number) => k === Struct.Wall || k === Struct.Door || k === Struct.RockWall;
+const isWallish = (k: number) => k === Struct.Wall || k === Struct.RockWall;
 const isRoom = (k: number) => k === Struct.Floor;
 
 export function touchesSpace(kindAt: KindAt, x: number, y: number): boolean {
@@ -54,7 +65,7 @@ export function wallMask(kindAt: KindAt, x: number, y: number): number {
  * breaks a thick block. The piece then fills that quadrant, so a thick block is one mass instead of posts and pits.
  */
 export function wallCorners(kindAt: KindAt, x: number, y: number, mask: number): number {
-  const wall = (dx: number, dy: number) => kindAt(x + dx, y + dy) === Struct.Wall;
+  const wall = (dx: number, dy: number) => isWallish(kindAt(x + dx, y + dy));
   let c = 0;
   if ((mask & 3) === 3 && wall(0, -1) && wall(1, 0) && wall(1, -1)) c |= 1;
   if ((mask & 6) === 6 && wall(1, 0) && wall(0, 1) && wall(1, 1)) c |= 2;
@@ -108,6 +119,7 @@ export const HullSide = { None: 0, Far: 1, Near: 2 } as const;
  * and thick hull keep their outline.
  */
 export function hullSide(kindAt: KindAt, x: number, y: number): number {
+  if (kindAt(x, y) === Struct.RockWall) return HullSide.None;
   if (!touchesSpace(kindAt, x, y)) return HullSide.None;
   const m = wallMask(kindAt, x, y);
   const alongX = (m & 10) !== 0 || (m & 5) === 0;

@@ -42,8 +42,8 @@ export function buildShuttles(sim: Sim): UiShuttles {
   }
   const shuttles: UiShuttles['shuttles'] = [];
   for (const v of vehicleViews(sim)) {
-    if (v.homeGrid !== PLAYER) continue;
     const def = sim.content.vehicles?.[v.def];
+    if (v.homeGrid !== PLAYER || def?.class === 'pod') continue; // mining pods fly their own orders: not in the shuttle panel
     const dockM = v.dockedAt ? sim.world.get(v.dockedAt, ModuleC) : undefined;
     shuttles.push({
       id: v.id, name: def?.name ?? 'Shuttle', state: v.state, hp: Math.round(v.hp), maxHp: v.maxHp, capacity: def?.capacity ?? 0,
@@ -72,7 +72,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
   const targets: UiShuttles['targets'] = [];
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s && id !== PLAYER && s.state !== 'fled') targets.push({ ship: id, name: s.name, ...(s.state === 'wreck' ? { derelict: derelictInfo(sim, id, s) } : {}) });
+    if (s && id !== PLAYER && s.state !== 'fled' && !s.outpost?.hidden) targets.push({ ship: id, name: s.name, ...(s.state === 'wreck' ? { derelict: derelictInfo(sim, id, s) } : {}) });
   }
   return { shuttles, airlocks, targets, roster, bays };
 }

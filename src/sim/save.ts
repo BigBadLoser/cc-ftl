@@ -31,8 +31,17 @@ import { newTrade, type TradeState } from './trade/types';
  * work category in every `PrioritiesC`.
  * v27 (galaxy): `galaxy` (the starmap state; its chunks are listed by key and regenerated from the seed, with the
  * `generatorVersion` they were made under, which must match).
+ * v28 (asteroids slices 1-3; earlier numbered v26-v27 on the branch, never shipped): tile fields `ore` and `oreAmt`, struct kinds Rock and CoreRock, and `AsteroidC` regions that own
+ * their rock tiles in the `ship` layer.
+ *   Then: CoreRock is gone; struct 6 is rock Ground (walkable, airless foundation); `AsteroidC.coverage`
+ * replaces `hollow` and `core`.
+ * v29: raw ore items (`item.iron_ore`, `item.rare_ore`) and the 3x4 crafting `module.refinery`.
+ * v30: one dormancy state: outposts are stamped `immobile` + `dormant` (like dens); `ShipC.outpost.provoked` and `outpost.provoked` are gone.
+ * v31: asteroid outposts are real stations (`station.<kind>` outpost tier): crewed, with `StationC`, `StationAlarmC`, a trader and `ShipC.gen`.
+ * v32: finished rock walls (Struct.RockWall) and no ore on big asteroids.
+ * v33: `MiningPodC.spot` (where a pod hovers to cut its tile, clear of other pods).
  */
-export const SAVE_VERSION = 27;
+export const SAVE_VERSION = 33;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

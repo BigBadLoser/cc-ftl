@@ -29,6 +29,7 @@ export interface ShipTemplate {
 
 import type { EventDef } from './story/defs';
 import type { TradeDef } from './trade/types';
+import type { OreDef } from './asteroids/types';
 import type { GalaxyContent } from './galaxy/defs';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
@@ -66,6 +67,8 @@ export interface ContentRegistry {
   trade?: TradeDef;
   /** Derelict infestations: what hatches from egg sacs. Absent = sacs hatch nothing. */
   creatures?: CreatureDefs;
+  /** Ore kinds in asteroid rock (content/ores.ts) by id. Absent = asteroids carry no ore. */
+  ores?: Record<string, OreDef>;
 }
 
 /** Derelict creatures (content/creatures.ts). */
@@ -108,6 +111,10 @@ export interface VehicleDef {
   cargo?: number;
   /** EVA from a hovering shuttle: suits stowed aboard (the hatch works like an airlock for them) and how far off a target's hull it holds station (tiles). */
   eva?: { suits: number; hoverGap: number };
+  /** Size across in tiles (render footprint; a mining pod nearly fills its 3x3 bay). Absent = the art's own size. */
+  size?: number;
+  /** A mining laser: ore units cut per second while it holds over an ore tile (mining pods, see systems/mining.ts). */
+  mining?: { unitsPerSec: number };
 }
 
 /** One typed result of a weapon impact. All are applied by combat/effects.ts. */
@@ -364,7 +371,7 @@ export interface ModuleDef {
    * floor). Holds one vehicle whose `VehicleDef.class` equals `class` ('shuttle' bays are 4x5; later 'pod' bays, 3x3, for
    * mining and construction pods). Crew board and leave it at `access`, a floor tile beside the footprint.
    */
-  vehicleBay?: { class: string };
+  vehicleBay?: { class: string; /** A vehicle def that comes with the bay when crew build it (the pod bay's pod). */ builtWith?: string };
   /**
    * Marks the ship's bridge for capture (a helm console counts as one with the defaults). Holding it means a live
    * crew member of the attacking side stands within `radius` tiles (default CAPTURE_BRIDGE_RADIUS) of the module's access

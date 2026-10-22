@@ -9,6 +9,23 @@ export const Struct = {
   Door: 3,
   /** A structural beam: solid, airtight, not walkable, no floor and no integrity (struts between assemblies). */
   Beam: 4,
+  /**
+   * Rock mass: a full-height solid block of asteroid rock. Airtight, not walkable, blocks sight, no integrity (weapons do not
+   * chip it), so around a dug room it is a natural wall. Digging turns it into Floor, levelling into Ground, pod mining into
+   * Space. Owned (`ship` layer) by its `AsteroidC` entity, or by the ship whose crew dug it.
+   */
+  Rock: 5,
+  /**
+   * Rock ground: flat, levelled rock. Walkable, but airless like Space (no gas, space temperature, suits needed), and a
+   * foundation: floors, walls, doors and modules build on it as on a deck without hull.
+   */
+  Ground: 6,
+  /**
+   * Finished rock wall: dressed stone, a normal 1-tile wall (wall height, airtight, blocks movement and sight, doors can be set
+   * into it) with no integrity (weapons do not chip it). Crew make it from rock mass (`job.build` of RockWall: finishing); digging
+   * it gives Floor like rock mass. Dug outposts are walled with it.
+   */
+  RockWall: 7,
 } as const;
 export type StructKind = (typeof Struct)[keyof typeof Struct];
 
@@ -45,6 +62,10 @@ export const SHIP_FIELDS = {
   hp: 'u8',
   /** Entity id of the owning `ShipC` for non-Space tiles (0 = none). Written by stamping; read by the sector grid. */
   ship: 'u32',
+  /** Ore kind on a rock tile: an `OreDef.code` (content/ores.ts), 0 = none. Only rock tiles carry ore. */
+  ore: 'u8',
+  /** Units of ore left on the tile (0..255); 0 with `ore` 0. */
+  oreAmt: 'u8',
 } as const satisfies FieldSpec;
 
 /**
@@ -66,14 +87,46 @@ export const SHIP_EMPTY = {
   item: 0,
   hp: 0,
   ship: 0,
+  ore: 0,
+  oreAmt: 0,
 } as const satisfies Record<keyof typeof SHIP_FIELDS, number>;
+
+/** True for rock mass: solid, airtight and unwalkable like a wall, with no integrity. */
+export function isRock(kind: number): boolean {
+  return kind === Struct.Rock;
+}
+
+/** True for a finished rock wall (see `Struct.RockWall`). */
+export function isRockWall(kind: number): boolean {
+  return kind === Struct.RockWall;
+}
+
+/** True for solid rock of either height: rock mass or a finished rock wall (airtight, unwalkable, blocks sight, no integrity). */
+export function isSolidRock(kind: number): boolean {
+  return kind === Struct.Rock || kind === Struct.RockWall;
+}
+
+/** True for rock ground: walkable, airless foundation. */
+export function isGround(kind: number): boolean {
+  return kind === Struct.Ground;
+}
+
+/** True for either rock form (mass or ground): what an asteroid is made of, and what may carry ore. */
+export function isAsteroidRock(kind: number): boolean {
+  return kind === Struct.Rock || kind === Struct.Ground;
+}
+
+/** True for tiles that hold no gas: Space and rock ground (vacuum) and solid tiles (walls, rock mass). */
+export function isAirless(kind: number): boolean {
+  return kind === Struct.Space || kind === Struct.Ground;
+}
 
 /** Jam state of a door tile (`jam` field). A jammed-shut door blocks walking; neither kind moves until forced. */
 export const DoorJam = { None: 0, Open: 1, Shut: 2 } as const;
 
 /** True if crew can stand on this tile kind (ignores modules: see modules/walk.ts). */
 export function isWalkable(kind: number): boolean {
-  return kind === Struct.Floor || kind === Struct.Door;
+  return kind === Struct.Floor || kind === Struct.Door || kind === Struct.Ground;
 }
 
 /**
@@ -93,7 +146,7 @@ export function isEvaWalkable(grid: GridLike, x: number, y: number): boolean {
 
 /** Gas conductance of a tile: 0 walls and closed doors, 1 floor/space, a fraction for a partly open door. */
 export function gasConductance(kind: number, doorOpen: number): number {
-  if (kind === Struct.Floor || kind === Struct.Space) return 1;
+  if (kind === Struct.Floor || kind === Struct.Space || kind === Struct.Ground) return 1;
   if (kind === Struct.Door) return doorOpen / 255;
   return 0;
 }
