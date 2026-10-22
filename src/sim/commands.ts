@@ -130,6 +130,14 @@ export type Command =
   | { type: 'story.dismissNotice'; notice: number }
   /** Debug: set a persistent flag/counter (0 clears it). */
   | { type: 'story.setFlag'; flag: string; value: number }
+  /** Starmap: jump along one route or hyperlane from the current galaxy node to `to`, spending its fuel and FTL charge. */
+  | { type: 'galaxy.jump'; to: string }
+  /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */
+  | { type: 'debug.galaxyReveal'; radius: number }
+  /** Debug: move to any generated galaxy node at no cost, as if arriving there (no event draw). */
+  | { type: 'debug.galaxyTeleport'; node: string }
+  /** Debug: fill the player's FTL drive. */
+  | { type: 'debug.chargeFtl' }
   /** Call a ship (or station) in the node. Non-hostile ones answer (see trade/traders.ts `hailVerdict`), hostile ones refuse. */
   | { type: 'trade.hail'; ship: number }
   /**

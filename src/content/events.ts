@@ -2,7 +2,8 @@ import type { EventDef } from '../sim';
 
 /**
  * Starter events (see "Events" in docs/ARCHITECTURE.md). Faction ids are free strings matched against the story
- * context: 'corp' (the Meridian corporation), 'pirates', or null for open space. Reputation is per faction id.
+ * context: the reputation key of the territory the player is in ('corp' for any corporation's space, 'navy', 'pirates', ...) or null
+ * for open space. Reputation is per that key (see trade's faction table and content/galaxy.ts, where each galaxy faction names its key).
  * Physical outcomes (`physical` effects) are recorded only until the sector layer can realise them.
  */
 export const events = {
@@ -12,7 +13,7 @@ export const events = {
     title: 'Distress call',
     text: 'A battered freighter drifts nearby, its engines dead. The captain begs for help restoring power before the cold gets to the crew.',
     mode: 'decision',
-    triggers: [{ kind: 'arrival', weight: 3 }, { kind: 'periodic', weight: 3 }],
+    triggers: [{ kind: 'transit', weight: 2 }, { kind: 'arrival', weight: 3 }, { kind: 'periodic', weight: 3 }],
     cooldownSec: 600,
     choices: [
       {
@@ -53,7 +54,7 @@ export const events = {
     title: 'Derelict sighted',
     text: 'Long-range scans pick out a dark, drifting hull. No transponder, no heat. It could hold salvage, or something worse.',
     mode: 'decision',
-    triggers: [{ kind: 'arrival', weight: 2 }, { kind: 'periodic', weight: 2 }],
+    triggers: [{ kind: 'transit', weight: 3 }, { kind: 'arrival', weight: 2 }, { kind: 'periodic', weight: 2 }],
     danger: { max: 3 },
     choices: [
       {
@@ -72,7 +73,7 @@ export const events = {
     title: 'Pirate scout surrenders',
     text: 'A pirate skiff took a hit from something else and its pilot hails you, hands up. "I only fly the boat. Please. I have a kid."',
     mode: 'decision',
-    triggers: [{ kind: 'periodic', weight: 3 }, { kind: 'arrival', weight: 1 }],
+    triggers: [{ kind: 'transit', weight: 2 }, { kind: 'periodic', weight: 3 }, { kind: 'arrival', weight: 1 }],
     danger: { min: 1 },
     once: true,
     choices: [
@@ -99,7 +100,7 @@ export const events = {
     title: 'Maintenance terminal',
     text: 'A dead station relay still blinks a service port, a connector pattern no human tool fits. The core behind it is intact.',
     mode: 'decision',
-    triggers: [{ kind: 'arrival', weight: 2 }, { kind: 'periodic', weight: 1 }],
+    triggers: [{ kind: 'transit', weight: 1 }, { kind: 'arrival', weight: 2 }, { kind: 'periodic', weight: 1 }],
     cooldownSec: 900,
     choices: [
       { id: 'interface', label: 'Interface directly', requires: [{ kind: 'species', species: 'species.robot' }], outcome: { text: 'The robot plugs in and downloads the station logs: parts caches, coordinates and a long lullaby.', effects: [{ type: 'items', item: 'item.parts', count: 8 }, { type: 'items', item: 'item.electronics', count: 4 }, { type: 'skillXp', skill: 'hacking', amount: 30, who: 'random' }] } },

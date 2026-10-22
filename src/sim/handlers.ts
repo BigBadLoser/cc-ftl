@@ -7,6 +7,7 @@ import { containerHandlers } from './containers/handlers';
 import { crewHandlers } from './crew/handlers';
 import { evaHandlers } from './eva/handlers';
 import { fightHandlers } from './fight/handlers';
+import { galaxyHandlers } from './galaxy/handlers';
 import { itemHandlers } from './items/handlers';
 import { moduleHandlers } from './modules/handlers';
 import { robotHandlers } from './robots/handlers';
@@ -35,6 +36,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...robotHandlers,
   ...storyHandlers,
   ...tradeHandlers,
+  ...galaxyHandlers,
   ...sectorHandlers,
   noop: () => {},
   'debug.spawnMarker': (sim, cmd) => {

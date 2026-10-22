@@ -9,6 +9,8 @@ import type { SectorArchive } from './sector/archive';
 import { pipeline } from './pipeline';
 import { Rng } from './rng';
 import { newStory, type StoryState } from './story/state';
+import { newGalaxy } from './galaxy/state';
+import type { GalaxyState } from './galaxy/types';
 import { newTrade, type TradeState } from './trade/types';
 import { TICK_HZ } from './time';
 import { SECTOR_HEIGHT, SECTOR_WIDTH } from './tuning';
@@ -27,6 +29,8 @@ export class Sim {
   story: StoryState;
   /** Trade state: the player's credits, hails, offers and deals (see trade/). NPC wallets and stock are `TraderC` components. */
   trade: TradeState;
+  /** Starmap state: current node, generated chunks, discovery, contacts (see galaxy/). */
+  galaxy: GalaxyState;
   sector: Sector = { grid: newSectorGrid(), width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false, node: 0, state: 'active' };
   /** Sectors the player left, frozen (see sector/archive.ts). Every one is kept (user decision, 2026-10-21). */
   archives: SectorArchive[] = [];
@@ -39,6 +43,7 @@ export class Sim {
     this.rng = new Rng(seed);
     this.story = newStory(seed);
     this.trade = newTrade();
+    this.galaxy = newGalaxy(seed);
   }
 
   /** Queue a command to apply at the start of the next tick. */

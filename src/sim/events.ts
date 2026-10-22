@@ -128,6 +128,11 @@ export type SimEvent =
   /** The deal's credits were paid out (`credits`: positive = the player paid, negative = the player was paid, 0 = barter). */
   | { type: 'trade.settled'; deal: number; ship: number; credits: number }
   | { type: 'trade.failed'; deal: number; ship: number; reason: string }
+  /** Starmap: a chunk was generated; the player jumped (fuel and FTL charge spent); sensors revealed nodes; a ship turned up. */
+  | { type: 'galaxy.chunk'; key: string }
+  | { type: 'galaxy.jumped'; from: string; to: string; edge: string; fuel: number; charge: number }
+  | { type: 'galaxy.discovered'; count: number }
+  | { type: 'galaxy.enemyArrived'; node: string; faction: string; ship: number | null }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 
