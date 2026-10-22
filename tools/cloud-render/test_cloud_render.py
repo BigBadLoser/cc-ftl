@@ -1,5 +1,6 @@
 """Standard-library smoke tests for the cloud-render supervisor (no Blender required)."""
 import json
+import importlib.util
 import os
 import sys
 import tempfile
@@ -58,6 +59,49 @@ class CloudRenderTests(unittest.TestCase):
                 changed = cr.Runner(args)
                 self.assertFalse(changed.done("crew:idle"))
             self.assertEqual(json.loads(state.read_text())["signature"], "B")
+
+
+    def test_asset_inventory_integrity(self):
+        script = Path(__file__).resolve().with_name("verify_assets.py")
+        spec = importlib.util.spec_from_file_location("cloud_asset_verify", script)
+        verify_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(verify_module)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            assets = root / "assets"
+            (assets / "sprites").mkdir(parents=True)
+            (assets / "sprites" / "test.png").write_bytes(b"test sprite")
+            manifest = {
+                "tile": {"w": 128, "h": 64},
+                "sheets": {"test": {"image": "sprites/test.png"}},
+                "assets": {}
+            }
+            (assets / "manifest.json").write_text(json.dumps(manifest))
+            self.assertEqual(verify_module.verify(assets), ["manifest.json", "sprites/test.png"])
+            first = verify_module.digest(assets / "sprites/test.png")
+            (assets / "sprites" / "test.png").write_bytes(b"corrupted")
+            self.assertNotEqual(first, verify_module.digest(assets / "sprites/test.png"))
+            manifest["sheets"]["test"]["image"] = "../outside.png"
+            (assets / "manifest.json").write_text(json.dumps(manifest))
+            with self.assertRaises(ValueError):
+                verify_module.verify(assets)
+
+    def test_complete_state_required_for_final_transfer(self):
+        script = Path(__file__).resolve().with_name("verify_assets.py")
+        spec = importlib.util.spec_from_file_location("cloud_asset_verify", script)
+        verify_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(verify_module)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            assets = root / "assets"
+            assets.mkdir()
+            (assets / "manifest.json").write_text(json.dumps({
+                "tile": {"w": 128, "h": 64}, "sheets": {}, "assets": {}
+            }))
+            state = root / "state.json"
+            state.write_text(json.dumps({"jobs": {}}))
+            with self.assertRaisesRegex(ValueError, "Incomplete render jobs"):
+                verify_module.verify(assets, True, state)
 
 
 if __name__ == "__main__":
