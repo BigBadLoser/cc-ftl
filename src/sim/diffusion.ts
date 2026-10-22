@@ -1,5 +1,5 @@
 import type { GridLike } from './grid';
-import { Struct, gasConductance } from './structure';
+import { Struct, gasConductance, isAirless } from './structure';
 
 /**
  * A region's structure as the field systems see it, rebuilt only when its `struct` revision changes. `active` lists the
@@ -55,7 +55,7 @@ export function conductanceMap(grid: GridLike, frame: FieldFrame): Float64Array 
 /**
  * One explicit, mass-conserving diffusion step over 4-neighbour links, for several fields at once.
  * Each link moves k * (a - b) from the richer tile to the poorer one, with
- * k = (kNormal, or kVent if either end is Space) * min(conductance). Space tiles never change
+ * k = (kNormal, or kVent if either end is airless: Space or rock ground) * min(conductance). Airless tiles never change
  * (they are a fixed sink/source). Stable while a tile's links sum to <= 1. Links run in ascending tile order (right,
  * then down), the same order as a full row-major sweep, so the floating-point sums are identical.
  */
@@ -69,8 +69,9 @@ export function diffuseStep(
   const link = (i: number, j: number): void => {
     const c = Math.min(cond[i] as number, cond[j] as number);
     if (c <= 0) return;
-    const si = struct[i] === Struct.Space;
-    const sj = struct[j] === Struct.Space;
+    // Airless tiles (Space and rock ground) are fixed sinks: they never take on gas or heat.
+    const si = isAirless(struct[i] as number);
+    const sj = isAirless(struct[j] as number);
     if (si && sj) return;
     const k = (si || sj ? kVent : kNormal) * c;
     for (let f = 0; f < fields.length; f++) {

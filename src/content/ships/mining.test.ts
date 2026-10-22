@@ -102,6 +102,33 @@ describe('mining pods', () => {
     expect(sim.sector.grid.get('struct', t.x, t.y)).toBe(Struct.Rock);
   });
 
+  it('a pod whose only ore is claimed by another pod waits and goes later, instead of ending the order', () => {
+    const { sim, pod, asteroid } = setup();
+    const t = oreTiles(sim, asteroid).find((o) => o.amt > HOLD)!;
+    // Another pod with that tile as its target (the claim); it sits in a second bay with no pilot, so it never leaves.
+    const ship = homeShip(sim);
+    const g = shipGrid(sim, ship)!;
+    let bay2 = 0;
+    for (let y = g.y0; y < g.y0 + g.height && !bay2; y++) {
+      for (let x = g.x0; x < g.x0 + g.width && !bay2; x++) if (!placementError(sim, ship, 'module.pod_bay', x, y, 0)) bay2 = spawnModule(sim, 'module.pod_bay', x, y, 0);
+    }
+    const other = spawnVehicle(sim, 'vehicle.mining_pod', bay2);
+    sim.world.add(other, MiningPodC, { asteroid, tiles: [{ x: t.x, y: t.y }], phase: 'mining', target: { x: t.x, y: t.y }, progress: 0, recall: false, trips: 1, pilot: 0, waiting: false });
+    sim.enqueue({ type: 'mining.order', pod, asteroid, tiles: [t] });
+    const waited = until(sim, 400, () => false);
+    expect(waited).not.toContain('mining.done');
+    expect(sim.world.get(pod, MiningPodC)).toBeDefined();
+    expect(sim.world.get(pod, VehicleC)!.state).toBe('stowed');
+    // The claim goes (that pod was recalled or finished): this one takes the tile.
+    sim.world.remove(other, MiningPodC);
+    let launched = false;
+    until(sim, 6000, () => launched, () => {
+      launched ||= sim.world.get(pod, VehicleC)?.state === 'flying';
+    });
+    expect(launched).toBe(true);
+    expect(sim.world.get(pod, MiningPodC)?.target).toEqual({ x: t.x, y: t.y });
+  });
+
   it('a save mid-trip loads and plays on identically; two runs of a seed match', () => {
     const a = setup(5);
     const b = setup(5);

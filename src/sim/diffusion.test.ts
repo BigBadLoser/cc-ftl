@@ -5,7 +5,7 @@ import { DenseGrid, type GridLike } from './grid';
 import { ShipGrid } from './shipGrid';
 import { newSectorGrid, stampGrid } from './stamp';
 import { gridFromTemplate } from './ship';
-import { Struct, gasConductance } from './structure';
+import { Struct, gasConductance, isAirless } from './structure';
 
 /** The pre-sector full sweep (every tile, every link), kept here as the reference the active-list version must match. */
 function referenceStep(grid: GridLike, fields: Float64Array[], kNormal: number, kVent: number, floorAtZero: boolean): void {
@@ -17,8 +17,8 @@ function referenceStep(grid: GridLike, fields: Float64Array[], kNormal: number, 
   const link = (i: number, j: number): void => {
     const c = Math.min(cond[i] as number, cond[j] as number);
     if (c <= 0) return;
-    const si = struct[i] === Struct.Space;
-    const sj = struct[j] === Struct.Space;
+    const si = isAirless(struct[i] as number);
+    const sj = isAirless(struct[j] as number);
     if (si && sj) return;
     const k = (si || sj ? kVent : kNormal) * c;
     fields.forEach((v, f) => {
@@ -73,6 +73,24 @@ describe('active-list diffusion', () => {
     expect(a[0]).toEqual(b[0]);
     expect(a[1]).toEqual(b[1]);
     expect(a[0]![3 * 30 + 15]).not.toBe(b[0]![0]); // something moved
+  });
+
+  it('keeps rock ground a fixed vacuum: it never takes on gas, and a room vents into it as into Space', () => {
+    const vent = (outside: number): { room: number; out: number } => {
+      const grid = gridFromTemplate({ name: 't', rows: ROWS });
+      for (const x of [28, 29]) grid.set('struct', x, 3, outside); // the open end of the room, right against its floor
+      const frame = fieldFrame(grid);
+      const cond = conductanceMap(grid, frame);
+      const struct = grid.load('struct');
+      const f = [new Float64Array(struct.map((k) => (k === Struct.Floor || k === Struct.Door ? 20 : 0)))];
+      for (let s = 0; s < 200; s++) diffuseStep(frame, cond, f, 0.2, 0.45, true);
+      return { room: f[0]![3 * 30 + 26]!, out: f[0]![3 * 30 + 28]! };
+    };
+    const ground = vent(Struct.Ground);
+    const space = vent(Struct.Space);
+    expect(ground.out).toBe(0);
+    expect(space.room).toBeLessThan(20); // it vented
+    expect(ground).toEqual(space);
   });
 
   it('lists only structure and the vacuum touching it', () => {

@@ -6,7 +6,7 @@ import { GAS_DIFFUSION, GAS_EPSILON, GAS_SUBSTEPS, GAS_VENT } from '../tuning';
 
 /**
  * Per-tile gas diffusion of O2 and CO2. Floors, open doors (scaled by openness) and Space are
- * gas-passable; walls and closed doors block. Space is a fixed vacuum sink, so a floor tile next
+ * gas-passable; walls and closed doors block. Space and rock ground are fixed vacuum sinks, so a floor tile next
  * to Space (a breach) vents fast and the whole connected volume bleeds out through it.
  * Mass is conserved between ordinary tiles. Walls hold no gas (anything left in a freshly built
  * wall is dropped). Runs per region; diffusion visits only the region's active tiles (see diffusion.ts).

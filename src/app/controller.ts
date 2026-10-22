@@ -130,7 +130,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const at = modPos ?? hover;
     const def = t.moduleDef ? sim.content.modules[t.moduleDef] : undefined;
     if (!at || !def || !t.moduleDef) return null;
-    return { tiles: footprintTiles(def, at.x, at.y, t.rot), at, def: t.moduleDef, error: placementError(sim, homeShip(sim), t.moduleDef, at.x, at.y, t.rot) };
+    // The player region under the cursor (a claimed base), else the home ship (whose error then says why it does not fit).
+    const ship = mineAt(at.x, at.y) || homeShipId();
+    return { tiles: footprintTiles(def, at.x, at.y, t.rot), at, ship, def: t.moduleDef, error: placementError(sim, ship, t.moduleDef, at.x, at.y, t.rot) };
   };
 
   /** Tiles covered by the current drag: a line for wall/door, a rectangle otherwise. */
@@ -204,7 +206,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const plan = modulePlan();
     if (!plan) return;
     if (plan.error) showToast(rejectionMessage(plan.error));
-    else sim.enqueue({ type: 'job.buildModule', ship: homeShipId(), x: plan.at.x, y: plan.at.y, def: plan.def, rot: tool.get().rot });
+    else sim.enqueue({ type: 'job.buildModule', ship: plan.ship, x: plan.at.x, y: plan.at.y, def: plan.def, rot: tool.get().rot });
   };
   const rotate = () => setTool({ rot: (tool.get().rot + 1) % 4 });
 
