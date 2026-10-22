@@ -32,6 +32,11 @@
     const obstacles: Box[] = map.sectors
       .filter((x) => x.known && x.x > view.x0 && x.x < view.x1 && x.y > view.y0 && x.y < view.y1)
       .map((x) => boxAt(clampX(x.x, 80), clampY(x.top - px(24), 24, 50) - 15 * k, 200 * k, 34 * k));
+    // Node names, the level tabs (top left), the zoom tools (top right) and the legend (bottom left) are in the way too.
+    for (const n of map.nodes) {
+      if (named(n) && n.x > view.x0 && n.x < view.x1 && n.y > view.y0 && n.y < view.y1) obstacles.push(boxAt(n.x, n.y + 7 * k, (n.name.length * 7.6 + 10) * k, 18 * k));
+    }
+    obstacles.push({ x0: view.x0, y0: view.y1 - 96 * k, x1: view.x0 + 210 * k, y1: view.y1 });
     // The level tabs (top left) and the zoom tools (top right) sit over the map.
     obstacles.push({ x0: view.x0, y0: view.y0, x1: view.x0 + 296 * k, y1: view.y0 + 46 * k }, { x0: view.x1 - 58 * k, y0: view.y0, x1: view.x1, y1: view.y0 + 134 * k });
     const items = [...by.values()].map((e): LabelItem => {
