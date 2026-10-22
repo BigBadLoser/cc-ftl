@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { galaxyIndex, newGame, playerShip, type Sim } from '../sim';
 import { ensureAround } from '../sim/galaxy/state';
 import { content } from '../content';
+import { buildCombat } from './combatSnapshot';
 import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
 
 /** A new game teleported to a node with generated ships, waiting to deploy. */
@@ -50,5 +51,11 @@ describe('deploy picker data', () => {
   it('lists crew away from the ship by name for the jump confirm', () => {
     const sim = newGame(3, content);
     expect(buildJumpWarnings(sim, playerShip(sim))).toEqual({ crew: [], vehicles: [], hostileDocked: [] });
+  });
+
+  it('shows no combat while the ship waits to deploy, whatever is placed in the empty sector', () => {
+    const sim = waiting();
+    expect(sim.sector.state).toBe('deploying');
+    expect(buildCombat(sim)).toEqual({ inCombat: false, player: null, enemies: [] });
   });
 });

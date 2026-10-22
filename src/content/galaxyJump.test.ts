@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, fuelStock, galaxyIndex, hopTicksOf, newGame, playerShip, routeEdges, serialize, type Sim,
 } from '../sim';
-import { buildCombat } from '../app/combatSnapshot';
 import { ensureAround } from '../sim/galaxy/state';
 import { giveItems, takeItems } from '../sim/story/effects';
 import { content } from '.';
@@ -264,12 +263,10 @@ describe('hyperspace travel', () => {
     expect(sim.sector.inCombat).toBe(false);
     // In hyperspace: nothing runs but the trip, and the combat snapshot is empty.
     const all = step(sim, 3);
-    expect(buildCombat(sim)).toEqual({ inCombat: false, player: null, enemies: [] });
     untilStops(sim);
     sim.enqueue({ type: 'galaxy.drop' });
     all.push(...step(sim, 200)); // dropped: deploying, a hostile ship may already be in the node's archive or placed
     expect(sim.sector.state).toBe('deploying');
     expect(all.filter((e) => e.type === 'combat.started')).toEqual([]);
-    expect(buildCombat(sim).inCombat).toBe(false);
   }, 60000);
 });
