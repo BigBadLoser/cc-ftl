@@ -35,8 +35,9 @@ import { newTrade, type TradeState } from './trade/types';
  * their rock tiles in the `ship` layer.
  *   Then: CoreRock is gone; struct 6 is rock Ground (walkable, airless foundation); `AsteroidC.coverage`
  * replaces `hollow` and `core`.
+ * v29: raw ore items (`item.iron_ore`, `item.rare_ore`) and the 3x4 crafting `module.refinery`.
  */
-export const SAVE_VERSION = 28;
+export const SAVE_VERSION = 29;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

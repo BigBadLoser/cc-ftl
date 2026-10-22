@@ -33,7 +33,7 @@ function oreTiles(sim: Sim, asteroid: number): { x: number; y: number; amt: numb
   return out;
 }
 
-const ORE_ITEMS = ['item.metal', 'item.ice', 'item.electronics'];
+const ORE_ITEMS = ['item.iron_ore', 'item.ice', 'item.rare_ore'];
 const stock = (sim: Sim) => ORE_ITEMS.reduce((n, i) => n + totalStock(sim, i), 0);
 const hold = (sim: Sim, pod: number) => sim.world.get(pod, VehicleC)!.cargo.reduce((n, q) => n + q.count, 0);
 

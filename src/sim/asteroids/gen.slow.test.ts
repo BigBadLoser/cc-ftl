@@ -4,9 +4,9 @@ import type { OreDef } from './types';
 import { validateAsteroid } from './validate';
 
 const ORES: OreDef[] = [
-  { code: 1, name: 'Iron', item: 'item.metal', weight: { big: 6, field: 5 }, amount: [20, 60], color: 0 },
+  { code: 1, name: 'Iron', item: 'item.iron_ore', weight: { big: 6, field: 5 }, amount: [20, 60], color: 0 },
   { code: 2, name: 'Ice', item: 'item.ice', weight: { big: 3, field: 4 }, amount: [30, 80], color: 0 },
-  { code: 3, name: 'Rare', item: 'item.electronics', weight: { big: 1, field: 1 }, amount: [5, 20], color: 0 },
+  { code: 3, name: 'Rare', item: 'item.rare_ore', weight: { big: 1, field: 1 }, amount: [5, 20], color: 0 },
 ];
 
 describe('asteroid generation sweep', () => {

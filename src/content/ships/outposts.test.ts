@@ -112,7 +112,7 @@ describe('digging, levelling and building on rock', () => {
     sim.enqueue({ type: 'job.build', ship, x: 10, y: 4, struct: Struct.Wall });
     sim.enqueue({ type: 'job.build', ship, x: 2, y: 2, struct: Struct.Ground });
     expect(run(sim, 1)).toEqual(['rejected:job.build:outerLayer', 'rejected:job.build:outerLayer', 'rejected:job.build:rockMass', 'rejected:job.build:notRock']);
-    const before = totalStock(sim, 'item.metal');
+    const before = totalStock(sim, 'item.iron_ore');
     sim.enqueue({ type: 'job.build', ship, x: 9, y: 4, struct: Struct.Floor });
     sim.enqueue({ type: 'job.build', ship, x: 9, y: 6, struct: Struct.Ground });
     const log = run(sim, 60 * 20);
@@ -121,7 +121,7 @@ describe('digging, levelling and building on rock', () => {
     expect(g.get('ore', 9, 4)).toBe(0);
     expect(g.get('ship', 9, 4)).toBe(ship);
     expect(g.get('struct', 9, 6)).toBe(Struct.Ground);
-    expect(totalStock(sim, 'item.metal') - before).toBe(30);
+    expect(totalStock(sim, 'item.iron_ore') - before).toBe(30);
   });
 
   it('a module footprint may clip up to a quarter rock mass (auto-levelled by its job), not more', () => {

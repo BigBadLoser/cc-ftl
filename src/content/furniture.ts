@@ -49,9 +49,11 @@ export const furniture = {
     name: 'Hydroponics bed', asset: 'module.hydroponics', footprint: [2, 1], solid: true, access: [0, 1], power: 0,
     flammability: 0.4, maxHp: 60, buildWork: 120, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.polymer', count: 4 }],
   },
-  // Ore refinery (stations): dressing for mining stations' processing floors. No refining mechanic yet.
+  // Ore refinery 3x4: crew refine raw ore at the access tile (middle of the east long side at rotation 0). Player-buildable
+  // and laid out on mining stations' processing floors.
   'module.refinery': {
-    name: 'Ore refinery', asset: 'module.refinery', footprint: [2, 2], solid: true, access: [0, 2], power: -6, priority: 3,
-    flammability: 0.1, maxHp: 140, buildWork: 200, cost: [{ item: 'item.metal', count: 18 }, { item: 'item.electronics', count: 4 }],
+    name: 'Ore refinery', asset: 'module.refinery', footprint: [3, 4], solid: true, access: [3, 1], power: -8, priority: 3,
+    flammability: 0.1, maxHp: 220, buildWork: 300, workstation: true, crafting: true,
+    cost: [{ item: 'item.metal', count: 30 }, { item: 'item.electronics', count: 8 }, { item: 'item.parts', count: 4 }],
   },
 } satisfies Record<string, ModuleDef>;

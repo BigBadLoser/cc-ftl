@@ -31,7 +31,7 @@ describe('mining pods, long run', () => {
   it('two pods work one field for six minutes: no shared tile, and every unit cut ends in storage or a hold', () => {
     const { sim, pods, asteroid } = setup(2);
     expect(pods).toHaveLength(2);
-    const items = ['item.metal', 'item.ice', 'item.electronics'];
+    const items = ['item.iron_ore', 'item.ice', 'item.rare_ore'];
     const stock = () => items.reduce((n, i) => n + totalStock(sim, i), 0);
     const ore0 = oreLeft(sim, asteroid);
     const stock0 = stock();

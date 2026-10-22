@@ -61,8 +61,13 @@ are already merged or superseded. Don't build on them.
 
 **Slice 1:** rock and ore tiles, the `AsteroidC` region model, the seeded generator, stamping with the gap rule,
 `debug.spawnAsteroid`, placeholder drawing and contact sheets. Planner's calls: own `AsteroidC` (not a ShipC kind); mined rock
-becomes Space (no rubble); ores yield existing items (iron -> metal, ice -> ice, rare -> electronics) until raw ores and refining
-exist; `ASTEROID_GAP` = 4 tiles; weapons do not damage rock.
+becomes Space (no rubble); ores yielded existing items at first (superseded: see "Raw ores and refining"); `ASTEROID_GAP` = 4 tiles; weapons do not damage rock.
+
+**Raw ores and refining (done):** `item.iron_ore` and `item.rare_ore` (raw, ore) are what `ore.iron` and `ore.rare` yield; ice stays
+`item.ice`. `module.refinery` is a real 3x4 player-buildable crafting module (access on the middle of the east long side, power -8,
+cost 30 metal + 8 electronics + 4 parts); recipes `recipe.refine_iron` (3 ore -> 2 metal) and `recipe.refine_rare` (2 ore -> 1
+electronics). Mining stations stock and sell ore; their industry rooms are 10x7. Art pending: the fallback is an orange crate per
+tile. Save v29.
 
 **Slice 2:** `module.pod_bay` (3x3) and `vehicle.mining_pod`, `mining.order` / `mining.recall`, trips until the ore is gone.
 Planner's calls: hold 24, speed 6 tiles/s, laser 2 units/s; the laser works from above (buried vein tiles too); crew haul the
@@ -151,7 +156,7 @@ What exists (generation only, nothing spawns yet):
   4/12/24 (50% heavy), trading 2/6/12, mining 2/5/10, farming 2/4/8, pirate 1/3/6.
 - **New content pieces:**
   - room roles `farm`, `industry` and `armoury`, with recipes in `rooms/station.ts`;
-  - the placeholder `module.refinery` (fabricator tinted orange in `fallback.ts`; no mechanic);
+  - `module.refinery` (now a real 3x4 refining module; orange crate fallback art until the Blender sheet exists);
   - `RoomSpec.items` for per-room stock: armoury lockers hold rifles and sidearms;
   - `HullFamilyDef.cages` for the ore cages that mining stations hang off the structure.
 - **Armed NPCs:** no new field. Security crew are `role.security`, whose existing `loadout` fetches rifles and sidearms
