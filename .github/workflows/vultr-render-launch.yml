@@ -1,0 +1,97 @@
+name: Launch Vultr Render
+
+on:
+  workflow_dispatch:
+    inputs:
+      plan:
+        description: "Vultr plan ID (copy from Vultr plan selector / API)"
+        required: true
+        type: string
+      region:
+        description: "Vultr region code"
+        required: true
+        default: ewr
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cc-ftl-vultr-launch
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      VULTR_API_KEY: ${{ secrets.VULTR_API_KEY }}
+      VULTR_SSH_KEY_ID: ${{ secrets.VULTR_SSH_KEY_ID }}
+      VULTR_OS_ID: "2284"
+      VULTR_REGION: ${{ inputs.region }}
+      VULTR_PLAN: ${{ inputs.plan }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: art/cloud-render
+      - name: Validate credentials
+        env:
+          DEPLOY_KEY: ${{ secrets.CLOUD_RENDER_SSH_PRIVATE_KEY }}
+        run: |
+          test -n "$VULTR_API_KEY"
+          test -n "$VULTR_SSH_KEY_ID"
+          test -n "$DEPLOY_KEY"
+      - name: Create server
+        id: create
+        run: python3 tools/cloud-render/vultr_api.py launch
+      - name: Prepare SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.CLOUD_RENDER_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+      - name: Wait for server to accept SSH
+        id: ready
+        env:
+          INSTANCE_ID: ${{ steps.create.outputs.instance_id }}
+        run: |
+          for n in $(seq 1 60); do
+            if python3 tools/cloud-render/vultr_api.py ip; then
+              IP=$(python3 - <<'PY'
+          import json,os,urllib.request
+          req=urllib.request.Request(
+              "https://api.vultr.com/v2/instances/"+os.environ["INSTANCE_ID"],
+              headers={"Authorization":"Bearer "+os.environ["VULTR_API_KEY"]})
+          print(json.load(urllib.request.urlopen(req))["instance"]["main_ip"])
+          PY
+              )
+              if ssh-keyscan -T 3 -H "$IP" >> ~/.ssh/known_hosts 2>/dev/null; then
+                if ssh -o BatchMode=yes -o ConnectTimeout=5 root@"$IP" 'echo ready'; then
+                  echo "ip=$IP" >> "$GITHUB_OUTPUT"
+                  exit 0
+                fi
+              fi
+            fi
+            sleep 10
+          done
+          echo "SSH setup timed out; server still exists and is billing." >&2
+          exit 1
+      - name: Deploy and launch renderer
+        env:
+          HOST_IP: ${{ steps.ready.outputs.ip }}
+        run: bash tools/cloud-render/remote.sh "root@$HOST_IP" launch
+      - name: Server details
+        if: always()
+        env:
+          INSTANCE_ID: ${{ steps.create.outputs.instance_id }}
+          HOST_IP: ${{ steps.ready.outputs.ip }}
+        run: |
+          {
+            echo "## Vultr CC-FTL renderer"
+            echo "Instance ID: ${INSTANCE_ID:-not created}"
+            echo "IPv4: ${HOST_IP:-not yet available}"
+            echo "If the workflow fails after provisioning, the instance may still be billing."
+            echo "Delete the instance manually in Vultr after recovering assets."
+          } >> "$GITHUB_STEP_SUMMARY"
