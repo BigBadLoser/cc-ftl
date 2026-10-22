@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiCost, UiFab, UiOrder, UiRecipe } from './api';
   import ItemIcon from './ItemIcon.svelte';
+  import { NumberStepper, Segmented } from './kit';
 
   let { api, id, def }: { api: UiApi; id: number; def: string } = $props();
   let fabs = $state<UiFab[]>([]);
@@ -19,7 +20,8 @@
     mode = m;
     target = defaults[m];
   }
-  const step = (v: number, d: number) => Math.max(1, v + d * (v >= 20 ? 5 : 1));
+  /** Steps of 1, growing to 5 from 20 up; never below 1. */
+  const step = (v: number, d: 1 | -1) => v + d * (v >= 20 ? 5 : 1);
 
   function add() {
     if (!pick) return;
@@ -60,11 +62,7 @@
           </div>
           <div class="l2">
             <button class="mode" data-testid="order-mode-{i}" title="Make N batches, or keep stock at N" onclick={() => edit(i, { mode: o.mode === 'count' ? 'keep' : 'count' })}>{o.mode === 'count' ? 'Make' : 'Keep'}</button>
-            <span class="tg">
-              <button aria-label="Less" data-testid="order-dec-{i}" onclick={() => edit(i, { target: step(o.target, -1) })}>-</button>
-              <b>{o.target}</b>
-              <button aria-label="More" data-testid="order-inc-{i}" onclick={() => edit(i, { target: step(o.target, 1) })}>+</button>
-            </span>
+            <NumberStepper value={o.target} min={1} {step} label="Batches" decTestId="order-dec-{i}" incTestId="order-inc-{i}" onChange={(v) => edit(i, { target: v })} />
             <span class="mv">
               <button aria-label="Move up" disabled={i === 0} onclick={() => move(i, i - 1)}>↑</button>
               <button aria-label="Move down" disabled={i === fab.orders.length - 1} onclick={() => move(i, i + 1)}>↓</button>
@@ -91,15 +89,8 @@
         {/each}
         {#if pick}
           <div class="form">
-            <span class="seg">
-              <button class:on={mode === 'count'} data-testid="add-mode-count" onclick={() => setMode('count')}>Make</button>
-              <button class:on={mode === 'keep'} data-testid="add-mode-keep" onclick={() => setMode('keep')}>Keep</button>
-            </span>
-            <span class="tg">
-              <button aria-label="Less" onclick={() => (target = step(target, -1))}>-</button>
-              <b data-testid="add-target">{target}</b>
-              <button aria-label="More" onclick={() => (target = step(target, 1))}>+</button>
-            </span>
+            <Segmented label="Order type" value={mode} onChange={(m) => setMode(m as 'count' | 'keep')} options={[{ value: 'count', label: 'Make', testId: 'add-mode-count' }, { value: 'keep', label: 'Keep', testId: 'add-mode-keep' }]} />
+            <NumberStepper value={target} min={1} {step} label="Target" valueTestId="add-target" onChange={(v) => (target = v)} />
             <button class="go" data-testid="add-order" onclick={add}>Add</button>
           </div>
           <p class="hint">{mode === 'count' ? `Craft ${target} batch${target === 1 ? '' : 'es'}.` : `Keep ${target} in stock, crafting whenever it drops below.`}</p>
@@ -131,8 +122,6 @@
   .l2 { display: flex; align-items: center; gap: 6px; margin-top: 2px; justify-content: space-between; }
   .l2 button, .form button, .picker .cancel { min-height: 36px; min-width: 36px; padding: 0 8px; }
   .mode { min-width: 56px; }
-  .tg { display: flex; align-items: center; gap: 4px; }
-  .tg b { min-width: 2.2em; text-align: center; }
   .mv { display: flex; gap: 4px; }
   .rm { color: #ff9a9a; }
   .addbtn { margin-top: 8px; width: 100%; }
@@ -143,7 +132,6 @@
   .rf { color: var(--dim); font-size: 12px; }
   .sec { color: var(--cyan); font-size: 12px; }
   .form { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
-  .seg { display: flex; gap: 4px; }
   .go { background: #0e4a56; border-color: var(--cyan); min-width: 64px; }
   .hint { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
 </style>

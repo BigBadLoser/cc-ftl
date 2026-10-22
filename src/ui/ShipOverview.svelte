@@ -3,6 +3,7 @@
   import type { UiApi, UiCombat, UiCrew, UiModule, UiStats, UiStock } from './api';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
+  import { Tooltip } from './kit';
   import ShipMeters from './ShipMeters.svelte';
 
   let { api, stockOpen, onStock, onClose }: { api: UiApi; stockOpen: boolean; onStock: () => void; onClose: () => void } = $props();
@@ -35,13 +36,13 @@
   <PanelHead icon="hull" title="Ship overview" />
   <button class="tile close" title="Close" aria-label="Close overview" data-testid="overview-close" onclick={onClose}><Icon name="close" size={16} /></button>
   <div class="res" data-testid="stats">
-    <span class="cell" class:bad={short} title="Power supply / demand" data-testid="stat-power"><Icon name="power" size={18} /><b>{st.supply}/{st.demand}</b></span>
-    <span class="cell" class:bad={o2Low} title="Average O₂ of rooms with crew (kPa)" data-testid="stat-o2"><Icon name="o2" size={18} /><b>{st.o2 === null ? '–' : st.o2.toFixed(1)}</b></span>
-    <span class="cell" title="Credits" data-testid="stat-credits"><Icon name="credits" size={18} /><b>{credits}</b></span>
-    {#if hasFuel}<span class="cell" class:bad={fuel < 3} title="Fuel" data-testid="stat-fuel"><Icon name="fuel" size={18} /><b>{fuel}</b></span>{/if}
+    <Tooltip text="Power supply / demand"><span class="cell" class:bad={short} data-testid="stat-power"><Icon name="power" size={18} /><b>{st.supply}/{st.demand}</b></span></Tooltip>
+    <Tooltip text="Average O₂ of rooms with crew (kPa)"><span class="cell" class:bad={o2Low} data-testid="stat-o2"><Icon name="o2" size={18} /><b>{st.o2 === null ? '–' : st.o2.toFixed(1)}</b></span></Tooltip>
+    <Tooltip text="Credits"><span class="cell" data-testid="stat-credits"><Icon name="credits" size={18} /><b>{credits}</b></span></Tooltip>
+    {#if hasFuel}<Tooltip text="Fuel"><span class="cell" class:bad={fuel < 3} data-testid="stat-fuel"><Icon name="fuel" size={18} /><b>{fuel}</b></span></Tooltip>{/if}
     <button class="cell" class:on={stockOpen} aria-pressed={stockOpen} title="Ship stock" data-testid="stat-stock" onclick={onStock}><Icon name="stock" size={18} /><b>{total}</b></button>
-    <span class="cell" title="Crew"><Icon name="person" size={18} /><b>{crew.length}</b></span>
-    <span class="cell" class:bad={off.length > 0} title="Modules ({off.length} offline)"><Icon name="module" size={18} /><b>{mods.length - off.length}/{mods.length}</b></span>
+    <Tooltip text="Crew"><span class="cell"><Icon name="person" size={18} /><b>{crew.length}</b></span></Tooltip>
+    <Tooltip text="Modules ({off.length} offline)"><span class="cell" class:bad={off.length > 0}><Icon name="module" size={18} /><b>{mods.length - off.length}/{mods.length}</b></span></Tooltip>
   </div>
   {#if combat.player}<div class="meters"><ShipMeters ship={combat.player} compact /></div>{/if}
 </aside>
