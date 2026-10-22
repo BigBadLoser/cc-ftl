@@ -532,8 +532,8 @@ export interface UiLegend {
 }
 
 export type UiTool = 'select' | 'build' | 'deconstruct' | 'cancel';
-/** 'dig' / 'level' / 'finish' work rock mass (dig: Floor, level: Ground, finish: RockWall); 'claim' drags a base rectangle onto an asteroid. */
-export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim';
+/** 'dig' / 'level' / 'finish' work rock mass (dig: Floor, level: Ground, finish: RockWall); 'claim' drags a base rectangle onto an asteroid; 'mine' drags a rectangle over ore (the ore tiles in it go to the mining pods in `pods`, or every pod when empty). */
+export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim' | 'mine';
 /** A mining pod of the player's (VehicleC with a mining laser). */
 export interface UiPod {
   id: number;
@@ -578,6 +578,8 @@ export interface UiToolState {
   moduleDef: string | null;
   /** Quarter turns clockwise for module placement. */
   rot: number;
+  /** The 'mine' tool: pod ids the painted ore is ordered to (empty = every pod). */
+  pods?: number[];
 }
 
 export type UiCutaway = 'auto' | 'up' | 'down';

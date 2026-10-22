@@ -1,6 +1,6 @@
 import { asteroidAt, inShip, shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { AsteroidC } from '../sim/asteroids/components';
-import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, footprintTiles, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
+import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isOreTile, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
 import type { UiBuildKind, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
@@ -11,9 +11,10 @@ import { rejectionMessage } from './messages';
 import { createStore, type Readable } from './store';
 import { homeShip } from '../sim/index';
 import { EggSacC } from '../sim/aliens/components';
+import { shipById } from '../sim/combat/ships';
 
 // dig, level and finish are builds on rock mass: Floor digs it out, Ground levels it, RockWall finishes it into a wall (the sim tells them apart by the tile)
-const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
+const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
 const TOAST_MS = 2500;
 
 /** Tool + selection state and the translation of input gestures into commands. */
@@ -120,6 +121,15 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     r?.setSelection(footprintTiles(def, m.x, m.y, m.rot));
   };
 
+  const isMineTool = () => {
+    const t = tool.get();
+    return t.tool === 'build' && t.build === 'mine';
+  };
+  /** The asteroid whose ore sits on this sector tile, or 0. */
+  const oreAsteroid = (x: number, y: number): number => {
+    const a = asteroidAt(sim, x, y);
+    return a && isOreTile(sim, a, x, y) ? a : 0;
+  };
   const moduleMode = () => {
     const t = tool.get();
     return t.tool === 'build' && t.build === 'module' && t.moduleDef !== null;
@@ -141,7 +151,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const { x: sx, y: sy } = paintStart;
     let { x: ex, y: ey } = paintEnd;
     const t = tool.get();
-    if (t.tool === 'build' && t.build !== 'floor' && t.build !== 'dig' && t.build !== 'level' && t.build !== 'finish' && t.build !== 'claim') {
+    if (t.tool === 'build' && t.build !== 'floor' && t.build !== 'dig' && t.build !== 'level' && t.build !== 'finish' && t.build !== 'claim' && t.build !== 'mine') {
       if (Math.abs(ex - sx) >= Math.abs(ey - sy)) ey = sy;
       else ex = sx;
     }
@@ -159,6 +169,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       r?.setPreview(plan?.tiles ?? [], plan ? plan.error === null : true);
       return;
     }
+    if (isMineTool()) {
+      // Only the ore tiles show: those are what the pods will cut.
+      const covered = paintStart ? shape() : hover ? [hover] : [];
+      return r?.setPreview(covered.filter((p) => oreAsteroid(p.x, p.y)), true);
+    }
     r?.setPreview(paintStart ? shape() : active && hover ? [hover] : []);
   };
   const setTool = (s: Partial<UiToolState>) => {
@@ -175,6 +190,21 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const commit = () => {
     const { tool: t, build } = tool.get();
     if (t === 'build' && build === 'module') return;
+    if (t === 'build' && build === 'mine') {
+      const ore = shape().filter((p) => oreAsteroid(p.x, p.y));
+      const asteroid = ore[0] ? oreAsteroid(ore[0].x, ore[0].y) : 0;
+      const tiles = ore.filter((p) => oreAsteroid(p.x, p.y) === asteroid);
+      const chosen = tool.get().pods ?? [];
+      const pods = (chosen.length ? chosen : [...sim.world.query(VehicleC)]).filter((id) => {
+        const v = sim.world.get(id, VehicleC);
+        return !!v && !!sim.content.vehicles?.[v.def]?.mining && shipById(sim, v.homeShip)?.faction === 'player';
+      });
+      if (!asteroid) showToast('No ore in that rectangle');
+      else if (!pods.length) showToast('No mining pod to send');
+      else for (const pod of pods) sim.enqueue({ type: 'mining.order', pod, asteroid, tiles });
+      paintStart = paintEnd = null;
+      return refreshPreview();
+    }
     if (t === 'build' && build === 'claim') {
       const tiles = shape();
       const at = tiles.find((p) => asteroidAt(sim, p.x, p.y));
