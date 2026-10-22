@@ -1,4 +1,5 @@
 import { CombatC, ShipC, type Ship } from '../combat/components';
+import { factionsHostile } from '../combat/factions';
 import { spawnShip } from '../combat/ships';
 import { placementGapError } from '../regions';
 import { generateShip } from '../shipgen/generate';
@@ -101,6 +102,19 @@ function arrivalChance(sim: Sim): number {
 }
 
 /**
+ * Hostile ships in the active sector, for the arrival cap: the live ships themselves (a revisited node's archive brings its ships
+ * back without descriptors), plus descriptors that never found room to spawn.
+ */
+function hostileShipsHere(sim: Sim, contacts: readonly Contact[]): number {
+  let n = contacts.filter((c) => c.ship === undefined && isHostileFaction(sim, c.faction)).length;
+  for (const id of sim.world.query(ShipC)) {
+    const s = sim.world.get(id, ShipC);
+    if (s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, 'player')) n++;
+  }
+  return n;
+}
+
+/**
  * The arrival roll while the player stays: every ARRIVAL_EVERY_SEC, with `arrivalChance`, a ship of a faction hostile to
  * the player (drawn from the node's traffic pool) jumps in and is spawned. Uses the galaxy's own Rng.
  */
@@ -111,7 +125,7 @@ export function rollArrival(sim: Sim): void {
   const node = currentNode(sim);
   if (!node || !playerShipInfo(sim)) return;
   const st = nodeState(sim, node.id);
-  if (st.contacts.filter((c) => isHostileFaction(sim, c.faction)).length >= MAX_HOSTILE_CONTACTS) return;
+  if (hostileShipsHere(sim, st.contacts) >= MAX_HOSTILE_CONTACTS) return;
   const p = arrivalChance(sim);
   const content = sim.content.galaxy;
   const pool = trafficPool(content, node.faction, node.danger).filter((w) => isHostileFaction(sim, w.value));

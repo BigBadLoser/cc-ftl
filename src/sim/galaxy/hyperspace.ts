@@ -44,12 +44,12 @@ export function routeEdges(sim: Sim, nodes: readonly string[]): EdgeData[] | nul
 export const routeCharge = (edges: readonly EdgeData[]): number => edges.reduce((m, e) => Math.max(m, e.charge), 0);
 
 /** Why a trip along `edges` cannot start now, or null: no route, no ship, the drive is short of `routeCharge`, or no fuel for the first hop. */
-export function routeBlocker(sim: Sim, edges: readonly EdgeData[] | null): 'noRoute' | 'noShip' | 'notCharged' | 'noFuel' | null {
+export function routeBlocker(sim: Sim, edges: readonly EdgeData[] | null, ship?: number): 'noRoute' | 'noShip' | 'notCharged' | 'noFuel' | null {
   if (!edges || !edges.length) return 'noRoute';
-  const charge = ftlCharge(sim);
+  const charge = ftlCharge(sim, ship);
   if (charge === null) return 'noShip';
   if (charge + 1e-9 < routeCharge(edges)) return 'notCharged';
-  if (fuelStock(sim) < (edges[0] as EdgeData).fuel) return 'noFuel';
+  if (fuelStock(sim, ship) < (edges[0] as EdgeData).fuel) return 'noFuel';
   return null;
 }
 
@@ -61,12 +61,13 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   if (!galaxyIndex(g).nodes.has(g.current)) ensureAround(sim, g.current);
   const nodes = [g.current, ...route];
   const edges = routeEdges(sim, nodes);
-  const blocked = routeBlocker(sim, edges);
+  const blocked = routeBlocker(sim, edges, ship);
   if (blocked || !edges) return reject(blocked ?? 'noRoute');
   const first = edges[0] as EdgeData;
   const charge = routeCharge(edges);
-  spendCharge(sim, charge);
-  burnFuel(sim, first.fuel);
+  spendCharge(sim, charge, ship);
+  burnFuel(sim, first.fuel, ship);
+  g.pendingDraw = null;
   enterHyperspace(sim, ship, withDocked ?? false);
   // The node left keeps its ships in its archive: no descriptors of it remain.
   const left = g.nodes[g.current];
@@ -96,7 +97,9 @@ export function advanceTravel(sim: Sim): void {
   g.days = Math.round((g.days + edge.time) * 10) / 10;
   sim.events.emit({ type: 'galaxy.jumped', from, to: g.current, edge: edge.id, fuel: edge.fuel, charge: from === t.route[0] ? t.charge : 0 });
   arrive(sim);
-  g.pendingDraw = edge.anchor ? 'transit' : 'arrival';
+  // One draw per trip, resolved at deploy. An anchored lane anywhere on the route owes the (rarer) transit draw, which a later plain hop
+  // must not overwrite: transit wins over arrival.
+  g.pendingDraw = g.pendingDraw === 'transit' || edge.anchor ? 'transit' : 'arrival';
   t.elapsed = 0;
   if (t.at >= t.route.length - 1) {
     t.phase = 'arrived';

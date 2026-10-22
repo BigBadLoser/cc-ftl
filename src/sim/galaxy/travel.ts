@@ -10,12 +10,12 @@ import { ARRIVAL_EVERY_SEC, SENSOR_HOPS } from './tuning';
 import type { EdgeData, NodeData } from './types';
 
 /** Why a jump along `edge` cannot go now, or null when it can (the single-hop check; routes use `routeBlocker`). */
-export function jumpBlocker(sim: Sim, edge: EdgeData | undefined): 'noRoute' | 'noShip' | 'notCharged' | 'noFuel' | null {
+export function jumpBlocker(sim: Sim, edge: EdgeData | undefined, ship?: number): 'noRoute' | 'noShip' | 'notCharged' | 'noFuel' | null {
   if (!edge) return 'noRoute';
-  const charge = ftlCharge(sim);
+  const charge = ftlCharge(sim, ship);
   if (charge === null) return 'noShip';
   if (charge + 1e-9 < edge.charge) return 'notCharged';
-  if (fuelStock(sim) < edge.fuel) return 'noFuel';
+  if (fuelStock(sim, ship) < edge.fuel) return 'noFuel';
   return null;
 }
 
