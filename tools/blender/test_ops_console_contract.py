@@ -2,7 +2,7 @@
 import ast
 from pathlib import Path
 
-root = Path(__file__).resolve().parents[1]
+root = Path(__file__).resolve().parent
 src = (root / "sprites" / "consoles.py").read_text()
 tree = ast.parse(src)
 jobs = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "jobs")
