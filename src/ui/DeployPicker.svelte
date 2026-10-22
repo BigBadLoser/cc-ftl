@@ -72,7 +72,7 @@
       <text x={spot.x + deploy.ship.w / 2} y={spot.y + deploy.ship.h / 2} class="label you">Your ship</text>
     </svg>
   </div>
-  <div class="bar">
+  <div class="actions">
     <button onclick={auto} disabled={!deploy.suggested} data-testid="deploy-auto"><Icon name="recenter" size={18} />Best spot</button>
     <button class="go" onclick={go} disabled={!!error} data-testid="deploy-go"><Icon name="ship" size={18} />Deploy here</button>
   </div>
@@ -97,7 +97,7 @@
   .ghost.bad { fill: color-mix(in srgb, var(--red) 30%, transparent); stroke: var(--red); }
   .label { fill: var(--text); font: 600 4px var(--head-font); letter-spacing: 0.05em; text-anchor: middle; dominant-baseline: middle; pointer-events: none; text-transform: uppercase; }
   .label.you { fill: var(--cyan); }
-  .bar { flex: none; display: flex; gap: 6px; padding: 8px 10px calc(8px + var(--sab)); background: var(--panel); border-top: 1px solid var(--line-hi); }
-  .bar button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
+  .actions { flex: none; display: flex; gap: 6px; padding: 8px 10px calc(8px + var(--sab)); background: var(--panel); border-top: 1px solid var(--line-hi); }
+  .actions button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
 </style>
