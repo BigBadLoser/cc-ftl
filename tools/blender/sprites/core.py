@@ -294,6 +294,8 @@ def _glows():
         if ob.type != "MESH" or ob.hide_render or "Glow" not in ob.data.color_attributes:
             continue
         d = ob.data.color_attributes["Glow"].data
+        if not len(d):                                     # a zero-face mesh has an empty corner-domain buffer
+            continue
         buf = np.empty(len(d) * 4, np.float32)
         d.foreach_get("color", buf)
         if buf.reshape(-1, 4)[:, :3].max() > 0:            # rgb only: alpha is always 1
