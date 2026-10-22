@@ -78,6 +78,10 @@ def main():
             from sprites import robot_render
             sheets, assets = robot_render.build(out)
             pack.merge(m, "robots", sheets, assets)
+        elif name == "damage_sol":
+            from sprites import sol_damage
+            sheets, assets = sol_damage.build(out)
+            pack.merge(m, "damage_sol", sheets, assets)
         elif name == "sol":
             from sprites import sol_pack
             sheets, assets = sol_pack.build(out)
