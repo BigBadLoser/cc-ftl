@@ -133,10 +133,27 @@ names), the story `transit` trigger. `galaxy.jump` validates, pays and lifts the
 - Tests: `content/galaxyJump.test.ts` (materialise on first deploy, archive owns and no duplicates on return, pay only on the lift, draw at deploy, flee, string ids in a mid-deploy save),
   `galaxyJump.slow.test.ts` (determinism and save continuation over a trip), `jump.test.ts` and `combat.test.ts` updated.
 - **Still to do:** the **9b UI** (jump confirm listing `jumpWarnings` with the `withDocked` toggles, the deploy picker/modal, empty-world handling while deploying) and the
-  **restyled starmap UI** (three zoom levels, route plotting, flee target picker, `CLUSTER_TYPE_LABEL`). Structures (`NodeData.structures`) are still descriptors; no grid places them.
+  **starmap UI** (done in slice 4, below). Structures (`NodeData.structures`) are still descriptors; no grid places them.
 Not taken from PR #16: `src/ui/Starmap*`, `src/app/starmap*`, `galaxyPrefetch`, the `bridge` changes, `tools/starmap`.
 
 **User answers (2026-10-22):** `corp` events fire in any corporation's space as now; Helix and Vantor are placeholder names, hailing unchanged; `FRONTIER_RING` 1; fleeing is a jump (one escape path).
+
+**Starmap UI (slice 4, on `galaxy`; visual: needs the user's screenshot approval before any PR).** Ported from PR #16 and restyled to main's design.
+- Files: `src/app/starmap{Snapshot,Clusters,Shapes,Nebula,Tone}.ts`, `galaxyPrefetch.ts`, `src/ui/Starmap*.svelte`, `starmapApi.ts` (the types; `api.ts` only gains `starmap`, `planRoute`, `setStarmapOpen`),
+  `starmapStyle.ts` (the one place map colours come from: theme tokens only, no hex; danger scale dim, amber, red, never green), `tempDeploy.ts`.
+  Regions are clusters everywhere (`CLUSTER_TYPE_LABEL`, `UiStarCluster`, `StarmapCluster.svelte`). `UiStarSector.hull` is gone; galaxy faction defs lost their `color` (the view tints by faction kind: government cyan,
+  corporation amber, civilian green, pirates red, rogue text).
+- Look: sharp corners, `PanelHead` band with a back tile (`PanelHead` gained `backIcon`/`backTitle`/`backTestId`), icon + value cells for fuel, FTL charge, jumps and days, a `.sheet` card for a node (bottom sheet on phones),
+  level tabs and zoom tiles, a small sharp legend. New icons: `map zoomIn zoomOut recenter clock`. The Map tile is the first tile of `NavStrip` (key `m`); the old top-bar text button is gone.
+  Hover highlights (node, sector, cluster) with a pointer cursor; `grab` only while dragging.
+- Three levels: Sector (nodes, lanes, exits, bodies, nebula), Cluster (sectors as patches), Galaxy (clusters, gates, rift lanes).
+- **Flee target mode:** the combat panel's Flee opens the map in flee mode: only nodes one jump away can be picked, the cheapest affordable one is preselected, the card button sends `combat.flee { ship, to }`.
+- **TEMP (remove in 9b):** `app/tempDeploy.ts` auto-deploys the waiting ship at the first free spot around `PLAYER_START` right after a jump (the deploy picker does not exist yet). Also in `main.ts`: on `sector.jumped` the renderer
+  gets the new sector grid and drops its ship scenes, on `sector.deployed` it shows the ship (`Renderer.resetWorld`); 9b should keep that or replace it with its own handling.
+- **Perf:** the world is not drawn while the map is open (`api.setStarmapOpen`). The starmap is no longer built in `createBridge`: outlines and nebula tiles warm in idle slots after load (`bridge.warmStarmap`, one small piece per slot),
+  the snapshot is assembled on first open if not yet warm, and the prefetch no longer blocks load (it runs one chunk per few frames, ring 2). Measured in headless Chromium on a dev server, 390x844, median-ish of 4 loads: page ready to `__cc` 2.6 s (4.2 s cold) before, 1.9 s (3.0 s cold) after;
+  first map open (click to drawn) 0.9 to 1.1 s before, 0.8 to 0.9 s after when warm (1.0 to 1.3 s if opened within 1.5 s of load).
+- **Left:** 9b UI (jump confirm with `jumpWarnings` and the `withDocked` toggles, deploy picker; removes `tempDeploy`), art for the starmap bodies if wanted, route plotting across clusters beyond the first hop (Jump takes the first hop of a route).
 
 ## Crew sprite pipeline (branch `crew-pipeline`; merged to `main` with user approval)
 

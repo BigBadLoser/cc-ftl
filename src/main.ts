@@ -44,6 +44,17 @@ const loop = createLoop({
   onEvents: (events) => {
     controller.onEvents(events);
     renderer?.onEvents(events);
+    // A jump lifts the ships out of the sector: their scenes are stale. The deployed ship is shown (and framed) like a new game's.
+    for (const e of events) {
+      if (e.type === 'sector.jumped') {
+        renderer?.setSector(sim.sector.grid); // archiving and restoring swap the sector's grid object
+        renderer?.resetWorld();
+      }
+      else if (e.type === 'sector.deployed') {
+        const grid = shipGrid(sim, e.ship);
+        if (grid) renderer?.setGrid(grid);
+      }
+    }
     hook?.onEvents(events.map((e) => e.type));
   },
   onFrame: (stats) => bridge.update(stats, renderer?.info()),

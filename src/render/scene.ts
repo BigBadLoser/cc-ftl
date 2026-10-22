@@ -82,6 +82,8 @@ export interface Renderer {
   screenOf(shipId: number, x: number, y: number): { x: number; y: number };
   /** Draw a ring under this crew member (null clears). */
   setSelectedCrew(id: number | null): void;
+  /** Drop every ship scene (the sector changed under them: a jump lifted the ships out); the next frame builds them again. */
+  resetWorld(): void;
   /** Sim events of the last frame, for combat fx. */
   onEvents(events: readonly SimEvent[]): void;
   /** Show a ship in the combat overlay rectangle (null hides it). */
@@ -299,6 +301,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       gl.render({ container: stage });
     },
     resize,
+    resetWorld() {
+      for (const sc of scenes.values()) sc.dispose();
+      scenes.clear();
+    },
     setSector(g) {
       sector = g;
     },
