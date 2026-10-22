@@ -288,9 +288,27 @@ def _set_pass(which):
     bg.inputs["Strength"].default_value = 1.0 if which == "color" else 0.0
 
 
+def _glows():
+    """True if a visible mesh has any non-black Glow colour, i.e. a glow pass could show something."""
+    for ob in bpy.context.scene.objects:
+        if ob.type != "MESH" or ob.hide_render or "Glow" not in ob.data.color_attributes:
+            continue
+        d = ob.data.color_attributes["Glow"].data
+        if not len(d):                                     # a zero-face mesh has an empty corner-domain buffer
+            continue
+        buf = np.empty(len(d) * 4, np.float32)
+        d.foreach_get("color", buf)
+        if buf.reshape(-1, 4)[:, :3].max() > 0:            # rgb only: alpha is always 1
+            return True
+    return False
+
+
 def render(W, H, which="color", origin=None):
     """Render the scene; the world origin lands at pixel `origin` = (x, y from the top) of the WxH canvas (default:
-    centre). Returns (rgb float 0..255 (H*SS,W*SS,3), alpha float 0..1)."""
+    centre). Returns (rgb float 0..255 (H*SS,W*SS,3), alpha float 0..1). A glow pass of a scene with no Glow colour
+    anywhere is all black, so it is not rendered (the alpha of a glow pass is not used)."""
+    if which == "glow" and not _glows():
+        return np.zeros((H * SS, W * SS, 3), np.float32), np.zeros((H * SS, W * SS), np.float32)
     sc, cam = _state["scene"], _state["cam"]
     _set_pass(which)
     sc.render.resolution_x, sc.render.resolution_y = W * SS, H * SS
