@@ -11,6 +11,8 @@ const noImports = (names, patterns) => ({
 const pat = (dirs) => dirs.map((d) => ({ group: [`**/${d}`, `**/${d}/**`], message: `Forbidden import of ${d} here.` }));
 const pixiNames = [{ name: 'pixi.js', message: 'pixi.js is only allowed in src/render.' }];
 const pixiPat = [{ group: ['pixi.js/*', '@pixi/*'], message: 'pixi.js is only allowed in src/render.' }];
+const bitsNames = [{ name: 'bits-ui', message: 'Import from ui/kit; only src/ui/kit may use bits-ui.' }];
+const bitsPat = [{ group: ['bits-ui/*'], message: 'Import from ui/kit; only src/ui/kit may use bits-ui.' }];
 const sveltePat = [{ group: ['svelte', 'svelte/*'], message: 'svelte is not allowed here.' }];
 
 const simBannedGlobals = ['window', 'document', 'performance', 'Date'].map((name) => ({
@@ -85,7 +87,12 @@ export default tseslint.config(
     rules: noImports([], [...sveltePat, ...pat(['ui', 'app'])]),
   },
   {
+    // Panels use the UI kit, never the headless library underneath it (see "UI kit" in docs/ARCHITECTURE.md).
     files: ['src/ui/**/*.ts', 'src/ui/**/*.svelte'],
+    rules: noImports([...pixiNames, ...bitsNames], [...pixiPat, ...bitsPat, ...pat(['render'])]),
+  },
+  {
+    files: ['src/ui/kit/**/*.ts', 'src/ui/kit/**/*.svelte'],
     rules: noImports(pixiNames, [...pixiPat, ...pat(['render'])]),
   },
 );
