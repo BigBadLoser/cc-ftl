@@ -4,6 +4,7 @@
   import PanelHead from './PanelHead.svelte';
   import PodList from './PodList.svelte';
   import type { UiMining } from './api';
+  import { Select, NumberStepper } from './kit';
 
   let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
   let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], ferryReady: false });
@@ -21,8 +22,8 @@
   const from = $derived(data.regions.find((r) => r.id === runFrom) ?? data.regions[0]);
   const to = $derived(data.regions.find((r) => r.id === runTo && r.id !== from?.id) ?? data.regions.find((r) => r.id !== from?.id));
   const item = $derived(from?.stock.find((l) => l.item === runItem) ?? from?.stock[0]);
-  const sendRun = (vehicle: number) => {
-    if (from && to && item) api.dispatch({ type: 'ferry.order', vehicle, from: from.id, to: to.id, items: [{ item: item.item, count: Math.max(1, Math.min(item.count, Math.round(runQty))) }] });
+  const sendRun = (vehicle: number, cargo: number) => {
+    if (from && to && item) api.dispatch({ type: 'ferry.order', vehicle, from: from.id, to: to.id, items: [{ item: item.item, count: Math.max(1, Math.min(item.count, cargo || item.count, Math.round(runQty))) }] });
   };
 
   const where = (s: UiShuttles['shuttles'][number]) =>
@@ -99,20 +100,15 @@
           <button class="mini" data-testid="ferry-cancel" onclick={() => api.dispatch({ type: 'ferry.cancel', vehicle: s.id })}>Call off</button>
         </div>
       {:else if data.regions.length > 1 && s.ferryFree && from && to}
+        {@const maxQty = Math.max(1, Math.min(item?.count ?? 1, s.cargo || 9999))}
         <div class="sub">Base run (cargo; crew go from their card)</div>
         <div class="run" data-testid="ferry-form-{s.id}">
-          <select aria-label="From" value={from.id} onchange={(e) => (runFrom = Number(e.currentTarget.value))} data-testid="ferry-from">
-            {#each data.regions as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
-          </select>
+          <Select label="From" testId="ferry-from" value={String(from.id)} onChange={(v) => (runFrom = Number(v))} options={data.regions.map((r) => ({ value: String(r.id), label: r.name }))} />
           <span class="arrow">to</span>
-          <select aria-label="To" value={to.id} onchange={(e) => (runTo = Number(e.currentTarget.value))} data-testid="ferry-to">
-            {#each data.regions.filter((r) => r.id !== from.id) as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
-          </select>
-          <select aria-label="Item" value={item?.item ?? ''} onchange={(e) => (runItem = e.currentTarget.value)} data-testid="ferry-item" disabled={from.stock.length === 0}>
-            {#each from.stock as l (l.item)}<option value={l.item}>{l.name} ({l.count})</option>{:else}<option value="">nothing stored</option>{/each}
-          </select>
-          <input type="number" min="1" max={item?.count ?? 1} bind:value={runQty} aria-label="Amount" data-testid="ferry-qty" />
-          <button disabled={!item} data-testid="ferry-send" onclick={() => sendRun(s.id)}>Send run</button>
+          <Select label="To" testId="ferry-to" value={String(to.id)} onChange={(v) => (runTo = Number(v))} options={data.regions.filter((r) => r.id !== from.id).map((r) => ({ value: String(r.id), label: r.name }))} />
+          <div class="wide"><Select label="Item" testId="ferry-item" value={item?.item ?? ''} disabled={from.stock.length === 0} placeholder="nothing stored" onChange={(v) => (runItem = v)} options={from.stock.map((l) => ({ value: l.item, label: l.name, sub: String(l.count), testId: `ferry-item-${l.item}` }))} /></div>
+          <span class="qty"><NumberStepper label="Amount" min={1} max={maxQty} value={Math.max(1, Math.min(maxQty, runQty))} onChange={(v) => (runQty = v)} valueTestId="ferry-qty" decTestId="ferry-qty-dec" incTestId="ferry-qty-inc" disabled={!item} /></span>
+          <button disabled={!item} data-testid="ferry-send" onclick={() => sendRun(s.id, s.cargo)}>Send run</button>
         </div>
       {/if}
 
@@ -171,11 +167,11 @@
   .chips button { display: grid; gap: 0; text-align: left; padding: 2px 10px; min-height: 36px; }
   .chips small { color: var(--dim); font-size: 11px; }
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
-  .run { display: grid; grid-template-columns: 1fr auto 1fr; gap: 4px; align-items: center; }
-  .run select:nth-of-type(3), .run input, .run button { grid-column: auto; }
-  .run select:nth-of-type(3) { grid-column: 1 / 3; }
-  .run input { width: 100%; box-sizing: border-box; min-height: 34px; }
-  .run button { grid-column: 1 / -1; }
+  .run { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 4px; align-items: center; }
+  .run .wide { grid-column: 1 / -1; display: grid; }
+  .run :global(.kit-sel-trigger) { width: 100%; }
+  .run .qty { grid-column: 1 / 3; }
+  .run button { grid-column: 3; }
   .arrow { color: var(--dim); font-size: 12px; }
   .none { color: var(--dim); margin: 4px 0; }
   .assign { width: 100%; margin-top: 8px; }

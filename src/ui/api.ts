@@ -372,6 +372,8 @@ export interface UiShuttle {
   trade: { status: string; partner: string } | null;
   /** The base-logistics run it is on (status text and the destination region's name), or null. */
   ferry: { status: string; to: string } | null;
+  /** Units its hold takes. */
+  cargo: number;
   /** Free for a new base run (idle, not a pod, no trade run). */
   ferryFree: boolean;
   /** Module id of its home bay. */

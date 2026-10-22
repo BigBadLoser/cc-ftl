@@ -82,11 +82,8 @@
     {#if shuttles.regions.length > 1 && shuttles.regions.some((r) => r.id === c.ship) && !c.dead && !c.downed}
       <div class="sub">Base trip (by shuttle)</div>
       <div class="chips" data-testid="ferry-crew">
-        {#each shuttles.regions.filter((r) => r.id !== c.ship) as r (r.id)}
-          <button disabled={!shuttles.ferryReady} data-testid="ferry-crew-{r.id}" title={shuttles.ferryReady ? '' : 'No free shuttle'} onclick={() => api.dispatch({ type: 'ferry.order', from: c.ship, to: r.id, crew: [c.id] })}>
-            {r.home ? 'Come home' : `Go to ${r.name}`}
-          </button>
-        {/each}
+        <Chips label="Base trip" deselect value="" onChange={(to: string) => to && api.dispatch({ type: 'ferry.order', from: c.ship, to: Number(to), crew: [c.id] })}
+          options={shuttles.regions.filter((r) => r.id !== c.ship).map((r) => ({ value: String(r.id), label: r.home ? 'Come home' : `Go to ${r.name}`, disabled: !shuttles.ferryReady, title: shuttles.ferryReady ? '' : 'No free shuttle', testId: `ferry-crew-${r.id}` }))} />
       </div>
     {/if}
     {#if c.drafted}

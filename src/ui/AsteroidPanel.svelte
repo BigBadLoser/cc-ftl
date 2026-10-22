@@ -3,6 +3,7 @@
   import type { UiApi, UiMining } from './api';
   import PanelHead from './PanelHead.svelte';
   import PodList from './PodList.svelte';
+  import { Chips } from './kit';
 
   let { api, asteroid, onBack }: { api: UiApi; asteroid: number; onBack: () => void } = $props();
   let mining = $state<UiMining>({ asteroids: [], pods: [] });
@@ -11,7 +12,6 @@
   // Pods the painted ore goes to (all of them until the player narrows it).
   let off = $state<number[]>([]);
   const picked = $derived(mining.pods.filter((p) => !off.includes(p.id)).map((p) => p.id));
-  const toggle = (id: number) => (off = off.includes(id) ? off.filter((x) => x !== id) : [...off, id]);
   const total = $derived(a ? a.ore.reduce((n, o) => n + o.units, 0) : 0);
 </script>
 
@@ -30,10 +30,9 @@
     <PodList {api} {mining} {asteroid} canMine={total > 0} />
     {#if total > 0 && mining.pods.length}
       <div class="sub">Paint ore for</div>
-      <div class="chips" data-testid="mine-pods">
-        {#each mining.pods as p (p.id)}
-          <button class:on={picked.includes(p.id)} data-testid="mine-pod-{p.id}" onclick={() => toggle(p.id)}>{p.name}</button>
-        {/each}
+      <div data-testid="mine-pods">
+        <Chips multiple label="Pods to paint for" value={picked.map(String)} onChange={(v: string[]) => (off = mining.pods.map((p) => p.id).filter((id) => !v.includes(String(id))))}
+          options={mining.pods.map((p) => ({ value: String(p.id), label: p.name, testId: `mine-pod-${p.id}` }))} />
       </div>
       <button class="full" disabled={picked.length === 0} data-testid="asteroid-paint" title="Drag a rectangle over ore: the pods cut just those tiles" onclick={() => api.setTool({ tool: 'build', build: 'mine', pods: picked })}>Paint ore to mine…</button>
     {/if}
@@ -51,7 +50,4 @@
   .sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
   .dim { color: var(--dim); }
   .full { width: 100%; margin-top: 10px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-  .chips button { min-height: 30px; padding: 0 10px; }
-  .chips button.on { border-color: var(--cyan); }
 </style>

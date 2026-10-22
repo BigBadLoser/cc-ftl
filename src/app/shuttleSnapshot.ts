@@ -71,7 +71,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
     if (v.homeGrid !== PLAYER || def?.class === 'pod') continue; // mining pods fly their own orders: not in the shuttle panel
     const dockM = v.dockedAt ? sim.world.get(v.dockedAt, ModuleC) : undefined;
     shuttles.push({
-      id: v.id, name: def?.name ?? 'Shuttle', state: v.state, hp: Math.round(v.hp), maxHp: v.maxHp, capacity: def?.capacity ?? 0,
+      id: v.id, name: def?.name ?? 'Shuttle', state: v.state, hp: Math.round(v.hp), maxHp: v.maxHp, capacity: def?.capacity ?? 0, cargo: def?.cargo ?? 0,
       pilot: crewRef(sim, v.pilot), passengers: v.passengers.map((c) => crewRef(sim, c)).filter((c): c is UiShuttleCrew => !!c),
       destination: v.destination, dockShip: dockM ? shipName(sim, shipIdOf(sim, dockM)) : null, bay: v.bay,
       boardable: boardingTile(sim, v.id) !== null,
