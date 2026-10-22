@@ -1,6 +1,7 @@
 import { CHUNK_SIZE, type FieldArray, type Grid } from '../sim/grid';
 import { ShipGrid } from '../sim/shipGrid';
 import { Struct } from '../sim/structure';
+import { artKind } from './tiles';
 
 /**
  * Chunk tile views (ARCHITECTURE "Sector grid" §7 step 5b). Per-tile render layers (floors, walls, roofs, cracks, fire,
@@ -119,7 +120,7 @@ export function createRegionTiles(src: ChunkSource, ox: number, oy: number, widt
     inside,
     get,
     // asteroid rock (mass and ground) inside a region is drawn by asteroidView: the region's tile art sees it as Space
-    kindAt: (lx, ly) => { const k = inside(lx, ly) ? get('struct', lx, ly) : Struct.Space; return k === Struct.Rock || k === Struct.Ground ? Struct.Space : k; },
+    kindAt: (lx, ly) => { const k = inside(lx, ly) ? get('struct', lx, ly) : Struct.Space; return k === Struct.Rock || k === Struct.Ground ? Struct.Space : artKind(k); },
     chunks(pad = 0) {
       const out: ChunkRef[] = [];
       if (width <= 0 || height <= 0) return out;

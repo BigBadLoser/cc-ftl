@@ -50,14 +50,28 @@ are already merged or superseded. Don't build on them.
 5. **Two rock forms** (replaces the hollow-core design, 2026-10-21): rock **mass** (full-height solid block, airtight, blocks
    sight) and rock **ground** (flat levelled rock: walkable, airless, a buildable foundation). Big asteroids are mostly ground
    with mass as features (ridges, boulders, crater rims, one or two massifs) and roll a coverage class: open, mixed or dense
-   (dense is common and mostly just rock). Veins run through both; the richer ones sit in massifs. `Struct.CoreRock` and the
-   hollow roll are gone.
+   (dense is common and mostly just rock). `Struct.CoreRock` and the hollow roll are gone. (Veins: superseded by decision 8.)
 6. Build on ground at normal speed; a footprint may clip a little rock mass (up to 25%), which its job levels at a small extra
    cost; a real ridge needs clearing first. Digging (a crew job, slow on purpose) turns rock mass into floor; the mass left
    around is a natural airtight wall; the outer layer (mass touching space or ground) cannot be dug; a dig through a vein
    yields its ore. Outposts: surface (trading, farming, mining: prefab habitats on open plains, tubes, a dock at the edge) and
    dug (pirate, criminal, covert: rooms in dense rock, a tunnel to an airlock in a rock face, a rock roof so it looks like
    plain asteroid from outside). Enemies use the same generators.
+7. **Finished rock walls (2026-10-22, save v32).** New `Struct.RockWall` (dressed stone): a normal 1-tile wall (wall height,
+   airtight, blocks movement and sight, doors go into it, no integrity so weapons do not chip it). Crew **finish** rock mass into
+   it: `job.build` with struct RockWall on rock mass, free, 8 s (`FINISH_TICKS`; dig 15 s, level 6 s), only on a tile with a floor
+   or door 4-neighbour; the outer-layer rule does not apply (the wall stays sealed). Digging a rock wall gives floor like rock
+   mass (same 15 s and outer-layer rule); a Door can be built on one. Works in claimed bases ("Finish rock" in the build menu
+   beside Dig and Level). **Dug outposts are walled entirely in rock walls** (`stampOutpost` turns every metal wall of a dug base
+   into `RockWall`, room partitions and faces against rock alike; doors stay doors); surface outposts keep metal station walls.
+   Planner's calls: deconstructing a rock wall is refused (`nothingToDeconstruct`; no refund, no revert to rock mass); a metal
+   Wall cannot be built over one (`rockMass`); hull-edge modules (guns, engines) may sit on a rock wall row. Rendering is a
+   placeholder: the metal wall sprites with a stone multiply tint (`ROCK_WALL_TINT`, `artKind` in render/tiles.ts maps RockWall to
+   Wall for all the wall-piece logic); the Blender art is pending.
+8. **Big asteroids carry no ore (2026-10-22, save v32).** Only fields (small rocks for mining pods) have ore, as pockets;
+   `OreDef.weight` is now one number (the pocket odds). The big-asteroid veins, "richer in massifs" and `BIG.vein*` are gone, so
+   digging a big asteroid yields nothing, and the asteroid panel shows "No ore" and offers no Mine button there. Mining stations
+   and outposts on big asteroids are fine without ore.
 
 **Slice 1:** rock and ore tiles, the `AsteroidC` region model, the seeded generator, stamping with the gap rule,
 `debug.spawnAsteroid`, placeholder drawing and contact sheets. Planner's calls: own `AsteroidC` (not a ShipC kind); mined rock

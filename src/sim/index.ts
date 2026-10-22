@@ -81,7 +81,7 @@ export { archiveSector, restoreArchive, archiveOf, type SectorArchive } from './
 export { liftSet, jumpWarnings, type JumpWarnings, type LiftOptions, type WithDocked } from './sector/members';
 export type { OreDef, AsteroidKind, AsteroidPlan, AsteroidCoverage } from './asteroids/types';
 export { generateAsteroid, BIG as ASTEROID_BIG, FIELD as ASTEROID_FIELD } from './asteroids/gen';
-export { isRock, isGround, isAsteroidRock, isAirless } from './structure';
+export { isRock, isRockWall, isSolidRock, isGround, isAsteroidRock, isAirless } from './structure';
 export { AsteroidC, type Asteroid } from './asteroids/components';
 export { stampAsteroid, findAsteroidSpot } from './asteroids/place';
 export { validateAsteroid } from './asteroids/validate';
@@ -91,7 +91,7 @@ export { pickTile, orderTiles, isOreTile } from './mining/pick';
 export { generateOutpost, OUTPOST, OUTPOST_KINDS, OUTPOST_STATION, type OutpostContent, type OutpostPlan, type OutpostStyle, type OutpostKind } from './outposts/gen';
 export { validateOutpost } from './outposts/validate';
 export { stampOutpost } from './outposts/stamp';
-export { DIG_TICKS, LEVEL_TICKS, AUTO_LEVEL_MAX, isOuterRock } from './rock/dig';
+export { DIG_TICKS, LEVEL_TICKS, FINISH_TICKS, AUTO_LEVEL_MAX, isOuterRock } from './rock/dig';
 export { isHiddenOutpost, discoverOutpost } from './outposts/state';
 export { isDormant, wake, type WakeReason } from './combat/dormant';
 export { DISCOVER_RANGE } from './systems/outposts';

@@ -2,7 +2,7 @@ import { conductanceMap, diffuseStep, fieldFrame, writeBack } from '../diffusion
 import { regions } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { Struct, isAirless, isRock } from '../structure';
+import { Struct, isAirless, isSolidRock } from '../structure';
 import { SMOKE_DECAY_PER_SEC, SMOKE_DIFFUSION, SMOKE_VENT } from '../tuning';
 
 /**
@@ -18,7 +18,7 @@ export function smokeSystem(sim: Sim): void {
     const before = grid.load('smoke');
     const smoke = before.slice();
     for (let i = 0; i < struct.length; i++) {
-      if (isAirless(struct[i] as number) || struct[i] === Struct.Wall || isRock(struct[i] as number)) smoke[i] = 0;
+      if (isAirless(struct[i] as number) || struct[i] === Struct.Wall || isSolidRock(struct[i] as number)) smoke[i] = 0;
     }
     diffuseStep(frame, conductanceMap(grid, frame), [smoke], SMOKE_DIFFUSION, SMOKE_VENT, true);
     if (decayNow) {

@@ -1,7 +1,7 @@
 import { conductanceMap, diffuseStep, fieldFrame, writeBack } from '../diffusion';
 import { regions } from '../regions';
 import type { Sim } from '../sim';
-import { Struct, isAirless, isRock } from '../structure';
+import { Struct, isAirless, isSolidRock } from '../structure';
 import { GAS_DIFFUSION, GAS_EPSILON, GAS_SUBSTEPS, GAS_VENT } from '../tuning';
 
 /**
@@ -22,7 +22,7 @@ export function atmosphereSystem(sim: Sim): void {
     const o2 = o2Before.slice();
     const co2 = co2Before.slice();
     for (let i = 0; i < struct.length; i++) {
-      if (isAirless(struct[i] as number) || struct[i] === Struct.Wall || isRock(struct[i] as number)) {
+      if (isAirless(struct[i] as number) || struct[i] === Struct.Wall || isSolidRock(struct[i] as number)) {
         o2[i] = 0;
         co2[i] = 0;
       }

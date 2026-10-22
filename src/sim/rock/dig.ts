@@ -5,13 +5,16 @@ import { Struct, writeStruct } from '../structure';
 import { TICK_HZ } from '../time';
 
 /**
- * Digging and levelling asteroid rock (folded into `job.build`): a build of Floor on rock mass digs it out, a build of Ground
- * on rock mass levels it. Both are slow on purpose and cost no materials. The rock mass around a dug tile stays, a natural
+ * Digging, levelling and finishing asteroid rock (folded into `job.build`): a build of Floor on rock mass (or a finished rock
+ * wall) digs it out, a build of Ground on rock mass levels it, a build of RockWall on rock mass beside a floor finishes it into a
+ * wall (the outer-layer rule does not apply: the wall stays sealed). Both are slow on purpose and cost no materials. The rock mass around a dug tile stays, a natural
  * airtight wall. The outer layer (rock mass touching Space or rock ground, or the edge of the ship's bounds) cannot be dug,
  * so a dig never breaches by accident; it can still be levelled.
  */
 export const DIG_TICKS = 15 * TICK_HZ;
 export const LEVEL_TICKS = 6 * TICK_HZ;
+/** Finishing rock mass into a rock wall (free). */
+export const FINISH_TICKS = 8 * TICK_HZ;
 /** A module footprint may clip at most this share of rock mass; its job levels those tiles first, for LEVEL_TICKS / 2 each. */
 export const AUTO_LEVEL_MAX = 0.25;
 export const AUTO_LEVEL_TICKS = LEVEL_TICKS / 2;
@@ -26,10 +29,25 @@ export function isOuterRock(grid: GridLike, x: number, y: number): boolean {
   return false;
 }
 
-/** Why `job.build` of `struct` on rock mass at (x, y) is refused, or null; and its work ticks. */
+/** True if a 4-neighbour of (x, y) is a floor or a door: the rock there can be finished into a wall. */
+export function bordersFloor(grid: GridLike, x: number, y: number): boolean {
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    if (!grid.inBounds(x + dx, y + dy)) continue;
+    const k = grid.get('struct', x + dx, y + dy);
+    if (k === Struct.Floor || k === Struct.Door) return true;
+  }
+  return false;
+}
+
+/**
+ * Why `job.build` of `struct` on rock (mass, or a finished rock wall which digs the same way) at (x, y) is refused, or its work
+ * ticks. Floor digs, Ground levels (mass only), RockWall finishes (mass only, beside a floor, the outer layer allowed).
+ */
 export function rockBuild(grid: GridLike, x: number, y: number, struct: number): { error: string } | { work: number } {
-  if (struct === Struct.Ground) return { work: LEVEL_TICKS };
-  if (struct !== Struct.Floor) return { error: 'rockMass' }; // dig or level it first
+  const wall = grid.get('struct', x, y) === Struct.RockWall;
+  if (struct === Struct.Ground && !wall) return { work: LEVEL_TICKS };
+  if (struct === Struct.RockWall && !wall) return bordersFloor(grid, x, y) ? { work: FINISH_TICKS } : { error: 'noFloorBeside' };
+  if (struct !== Struct.Floor) return { error: 'rockMass' }; // dig, level or finish it first
   if (isOuterRock(grid, x, y)) return { error: 'outerLayer' };
   return { work: DIG_TICKS };
 }

@@ -71,7 +71,7 @@ function finishStruct(sim: Sim, job: Job): WorkResult {
   if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {
     const next = job.kind === 'build' ? job.struct : Struct.Floor;
     const before = grid.get('struct', job.x, job.y);
-    if (before === Struct.Rock && next === Struct.Floor) finishDig(sim, grid, shipIdOf(sim, job), job.x, job.y);
+    if ((before === Struct.Rock || before === Struct.RockWall) && next === Struct.Floor) finishDig(sim, grid, shipIdOf(sim, job), job.x, job.y);
     else writeStruct(grid, job.x, job.y, next);
     // built on an asteroid base: the new tile is the base's, not the asteroid's
     const ship = shipIdOf(sim, job);

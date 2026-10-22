@@ -12,8 +12,8 @@ import { createStore, type Readable } from './store';
 import { homeShip } from '../sim/index';
 import { EggSacC } from '../sim/aliens/components';
 
-// dig and level are builds on rock mass: Floor digs it out, Ground levels it (the sim tells them apart by the tile)
-const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground };
+// dig, level and finish are builds on rock mass: Floor digs it out, Ground levels it, RockWall finishes it into a wall (the sim tells them apart by the tile)
+const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
 const TOAST_MS = 2500;
 
 /** Tool + selection state and the translation of input gestures into commands. */
@@ -139,7 +139,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const { x: sx, y: sy } = paintStart;
     let { x: ex, y: ey } = paintEnd;
     const t = tool.get();
-    if (t.tool === 'build' && t.build !== 'floor' && t.build !== 'dig' && t.build !== 'level' && t.build !== 'claim') {
+    if (t.tool === 'build' && t.build !== 'floor' && t.build !== 'dig' && t.build !== 'level' && t.build !== 'finish' && t.build !== 'claim') {
       if (Math.abs(ex - sx) >= Math.abs(ey - sy)) ey = sy;
       else ex = sx;
     }

@@ -25,7 +25,7 @@ export type CrewCommandType = Exclude<
 >;
 type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
-const BUILDABLE: readonly number[] = [Struct.Floor, Struct.Wall, Struct.Door, Struct.Ground];
+const BUILDABLE: readonly number[] = [Struct.Floor, Struct.Wall, Struct.Door, Struct.Ground, Struct.RockWall];
 /** Work needed (ticks at workSpeed 1): walls take 3 s, floors and doors 2 s. */
 const BUILD_TICKS: Record<number, number> = { [Struct.Wall]: 3 * TICK_HZ, [Struct.Floor]: 2 * TICK_HZ, [Struct.Door]: 2 * TICK_HZ };
 const DECONSTRUCT_TICKS = 2 * TICK_HZ;
@@ -75,13 +75,13 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     provokeIfOutpost(sim, cmd.ship);
     if (current === cmd.struct) return reject(sim, cmd.type, 'sameStruct');
     if (shipGrid(sim, cmd.ship)?.get('module', cmd.x, cmd.y)) return reject(sim, cmd.type, 'moduleHere');
-    if (current === Struct.Rock) {
-      // digging (Floor) or levelling (Ground) rock mass: slow, free
+    if (current === Struct.Rock || (current === Struct.RockWall && cmd.struct !== Struct.Door)) {
+      // digging (Floor), levelling (Ground) or finishing (RockWall) rock: slow, free
       const r = rockBuild(shipGrid(sim, cmd.ship) as GridLike, cmd.x, cmd.y, cmd.struct);
       if ('error' in r) return reject(sim, cmd.type, r.error);
       return createJob(sim, 'build', cmd.ship, cmd.x, cmd.y, cmd.struct, r.work, true);
     }
-    if (cmd.struct === Struct.Ground) return reject(sim, cmd.type, 'notRock');
+    if (cmd.struct === Struct.Ground || cmd.struct === Struct.RockWall) return reject(sim, cmd.type, 'notRock');
     createJob(sim, 'build', cmd.ship, cmd.x, cmd.y, cmd.struct, BUILD_TICKS[cmd.struct] as number);
   },
   'job.deconstruct': (sim, cmd) => {

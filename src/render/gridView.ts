@@ -14,7 +14,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { floorChain, ghostVertsIn, HULL_RAY, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, floorChain, ghostVertsIn, ROCK_WALL_TINT, HULL_RAY, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
 
@@ -61,6 +61,8 @@ interface Tinted {
   wall: boolean;
   /** Walls and doors darken as their integrity drops. */
   solid: boolean;
+  /** A finished rock wall: tinted stone. */
+  stone?: boolean;
 }
 
 /** The tile sprites of one sector chunk of the region. */
@@ -182,7 +184,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       for (let y = y0; y < y1; y++)
         for (let x = x0; x < x1; x++) {
           const ci = (y - r.y0) * CHUNK_SIZE + (x - r.x0);
-          const k = struct[ci] as number;
+          const raw = struct[ci] as number;
+          const stone = raw === Struct.RockWall;
+          const k = artKind(raw);
           if (k === Struct.Space || k === Struct.Rock || k === Struct.Ground) continue; // rock: asteroidView
           if (k === Struct.Beam) {
             if (boxAt(x, y)) continue;
@@ -224,7 +228,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
               const open = atlas.stat(`${closedId}.open`);
               if (open) doors.push({ objs: made, closed: s, open, ci });
             }
-            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: !isDoor, solid: true });
+            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: !isDoor, solid: true, ...(stone ? { stone } : {}) });
           }
         }
     if (ghosts) {
@@ -282,7 +286,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     for (const t of v.tinted) {
       const lv = t.wall ? wallLight(t.x, t.y) : at(light, t.ci);
       const lit = lightTint(lv, !t.wall && at(o2, t.ci) < VACUUM_O2, pulse);
-      t.spr.tint = t.solid ? mulColor(lit, damageTint(at(hp, t.ci))) : lit;
+      const base = t.solid ? mulColor(lit, damageTint(at(hp, t.ci))) : lit;
+      t.spr.tint = t.stone ? mulColor(base, ROCK_WALL_TINT) : base;
     }
   }
 

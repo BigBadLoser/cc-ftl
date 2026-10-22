@@ -5,8 +5,8 @@ import type { OreDef } from './types';
 import { validateAsteroid } from './validate';
 
 const ORES: OreDef[] = [
-  { code: 2, name: 'Ice', item: 'item.ice', weight: { big: 3, field: 4 }, amount: [30, 80], color: 0 },
-  { code: 1, name: 'Iron', item: 'item.iron_ore', weight: { big: 6, field: 5 }, amount: [20, 60], color: 0 },
+  { code: 2, name: 'Ice', item: 'item.ice', weight: 4, amount: [30, 80], color: 0 },
+  { code: 1, name: 'Iron', item: 'item.iron_ore', weight: 5, amount: [20, 60], color: 0 },
 ];
 
 /** 4-connected bodies of the cells `keep` selects. */
@@ -43,7 +43,7 @@ describe('asteroid generation', () => {
     }
   });
 
-  it('a big asteroid is one connected rock body 40-120 tiles across, ore only on rock', () => {
+  it('a big asteroid is one connected rock body 40-120 tiles across, with no ore', () => {
     for (let seed = 1; seed <= 6; seed++) {
       const p = generateAsteroid('big', seed, ORES);
       expect(validateAsteroid(p), `seed ${seed}`).toEqual([]);
@@ -51,7 +51,7 @@ describe('asteroid generation', () => {
       expect(Math.max(p.w, p.h)).toBeGreaterThanOrEqual(30);
       expect(Math.max(p.w, p.h)).toBeLessThanOrEqual(120);
       for (let i = 0; i < p.ore.length; i++) if (p.ore[i]) expect(isAsteroidRock(p.struct[i]!)).toBe(true);
-      expect(p.ore.some((o) => o !== 0)).toBe(true);
+      expect(p.ore.some((o) => o !== 0)).toBe(false);
     }
   });
 
@@ -73,16 +73,14 @@ describe('asteroid generation', () => {
     expect(dense.mass).toBeGreaterThan(open.mass);
   });
 
-  it('puts ore in both rock forms, richer and mostly in rock mass', () => {
-    const p = generateAsteroid('big', 1, ORES, { coverage: 'mixed' });
-    let inMass = 0, inGround = 0, massAmt = 0, groundAmt = 0;
-    for (let i = 0; i < p.ore.length; i++) {
-      if (!p.ore[i]) continue;
-      if (p.struct[i] === Struct.Rock) { inMass++; massAmt += p.amt[i]!; } else { inGround++; groundAmt += p.amt[i]!; }
+  it('big asteroids have zero ore tiles across a seed sweep, whatever the coverage; fields always have ore', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const big = generateAsteroid('big', seed, ORES, { coverage: (['open', 'mixed', 'dense'] as const)[seed % 3] });
+      expect(big.ore.some((o) => o !== 0) || big.amt.some((n) => n !== 0), `big ${seed}`).toBe(false);
     }
-    expect(inMass).toBeGreaterThan(0);
-    expect(inGround).toBeGreaterThan(0);
-    expect(massAmt / inMass).toBeGreaterThan(groundAmt / inGround);
+    let withOre = 0;
+    for (let seed = 1; seed <= 20; seed++) if (generateAsteroid('field', seed, ORES).ore.some((o) => o !== 0)) withOre++;
+    expect(withOre).toBe(20);
   });
 
   it('a field is many small rocks, each one body, spaced by FIELD.gap, with ore pockets', () => {

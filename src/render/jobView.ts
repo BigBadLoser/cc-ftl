@@ -7,6 +7,7 @@ import type { Atlas } from "./assets/loader";
 import { depthKey, iso } from "./iso";
 import type { Layers } from "./layers";
 import {
+  artKind,
   floorChain,
   wallPieces,
   type Chain,
@@ -90,13 +91,13 @@ export function createJobView(
         const kindAt: KindAt = (x, y) => {
           if (!grid.inBounds(x0 + x, y0 + y)) return Struct.Space;
           const p = pending.get(y * grid.width + x);
-          return p === Struct.Wall || p === Struct.Door
+          return artKind(p === Struct.Wall || p === Struct.Door || p === Struct.RockWall
             ? p
-            : grid.get("struct", x0 + x, y0 + y);
+            : grid.get("struct", x0 + x, y0 + y));
         };
         for (const j of jobs) {
           const build = j.kind === "build";
-          const kind = build ? j.struct : grid.get("struct", j.x, j.y);
+          const kind = artKind(build ? j.struct : grid.get("struct", j.x, j.y));
           const frac = j.work > 0 ? Math.min(1, j.progress / j.work) : 0;
           const tint = build ? BUILD : DECON;
           const alpha = build ? 0.3 + 0.5 * frac : 0.65;

@@ -29,6 +29,7 @@
     { id: 'module', label: 'Modules', icon: 'module' },
     { id: 'dig', label: 'Dig rock', icon: 'pick' },
     { id: 'level', label: 'Level rock', icon: 'floor' },
+    { id: 'finish', label: 'Finish rock', icon: 'wall' },
     { id: 'claim', label: 'Claim asteroid', icon: 'flag' },
   ];
 </script>

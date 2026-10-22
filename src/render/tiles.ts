@@ -6,6 +6,11 @@ export type Chain = string[];
 /** Wall view mode: up = walls up, auto = cutaway (partitions cut, far hull full), down = shortest (whole hull a ghost rim). */
 export type CutawayMode = "auto" | "up" | "down";
 
+/** Wall art treats a finished rock wall as a wall (same pieces, runs and cut views); only its tint differs (`ROCK_WALL_TINT`). */
+export const artKind = (k: number): number => (k === Struct.RockWall ? Struct.Wall : k);
+/** Multiply tint that turns the metal wall sprites into dressed stone (placeholder until rock-wall art exists). */
+export const ROCK_WALL_TINT = 0xff9a82;
+
 const solidish = (k: number) => k === Struct.Wall || k === Struct.Door;
 const isRoom = (k: number) => k === Struct.Floor;
 

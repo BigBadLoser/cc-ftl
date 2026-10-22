@@ -18,8 +18,8 @@ export interface OreDef {
   name: string;
   /** Item a mined tile yields (an existing item id). */
   item: string;
-  /** Relative odds of a vein (big asteroids) or a pocket (field rocks) being this ore. 0 = never. */
-  weight: { big: number; field: number };
+  /** Relative odds of a pocket in a field rock being this ore. 0 = never. Big asteroids carry no ore. */
+  weight: number;
   /** Units of ore per tile, inclusive range (the `oreAmt` field, 1..255). */
   amount: [number, number];
   /** Placeholder colour for debug drawing and contact sheets (0xRRGGBB). */

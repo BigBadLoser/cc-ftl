@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { UiApi, UiMining, UiPod } from './api';
 
-  /** The player's mining pods with their state; with `asteroid`, each row offers Mine (that asteroid) or Recall. */
-  let { api, mining, asteroid = 0 }: { api: UiApi; mining: UiMining; asteroid?: number } = $props();
+  /** The player's mining pods with their state; with `asteroid`, each row offers Mine (that asteroid, only if `canMine`: it has ore) or Recall. */
+  let { api, mining, asteroid = 0, canMine = true }: { api: UiApi; mining: UiMining; asteroid?: number; canMine?: boolean } = $props();
 
   const status = (p: UiPod): string => {
     if (p.phase === 'waiting') return 'waiting for a pilot';
@@ -26,7 +26,7 @@
         <small class="dim">Hold {p.hold}/{p.cap}{#if p.trips} · {p.trips} trip{p.trips === 1 ? '' : 's'}{/if}{#if p.asteroid && !asteroid} · {target(p) ?? ''}{/if}</small>
         {#if p.phase}
           <button data-testid="pod-recall-{p.id}" onclick={() => api.dispatch({ type: 'mining.recall', pod: p.id })}>Recall</button>
-        {:else if asteroid}
+        {:else if asteroid && canMine}
           <button class="go" data-testid="pod-mine-{p.id}" onclick={() => api.dispatch({ type: 'mining.order', pod: p.id, asteroid })}>Mine</button>
         {/if}
       </div>

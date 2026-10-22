@@ -19,11 +19,11 @@
       {#each a.ore as o (o.item)}
         <li><span><i class="sw" style="background: {o.color}"></i>{o.name}</span><b>{o.units}</b></li>
       {:else}
-        <li class="dim">No ore left.</li>
+        <li class="dim">{a.kind === 'big' ? 'No ore: nothing to mine here.' : 'No ore left.'}</li>
       {/each}
     </ul>
     <div class="sub">Mining pods</div>
-    <PodList {api} {mining} {asteroid} />
+    <PodList {api} {mining} {asteroid} canMine={total > 0} />
     {#if a.kind === 'big'}
       <button class="full" data-testid="asteroid-claim" title="Drag a rectangle on the asteroid to start a base there" onclick={() => api.setTool({ tool: 'build', build: 'claim' })}>Claim for a base…</button>
     {/if}

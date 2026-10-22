@@ -73,7 +73,7 @@ export function placementError(sim: Sim, shipId: number, defId: string, x: numbe
     const onWall = wallRow.some((w) => w.x === t.x && w.y === t.y);
     const k = grid.get('struct', t.x, t.y);
     if (!onWall && k === Struct.Rock) rock++; // clipped rock mass: auto-levelled by the job, within AUTO_LEVEL_MAX
-    else if (onWall ? k !== Struct.Wall : k !== Struct.Floor && k !== Struct.Ground) return onWall ? 'notOnHull' : 'notFloor';
+    else if (onWall ? k !== Struct.Wall && k !== Struct.RockWall : k !== Struct.Floor && k !== Struct.Ground) return onWall ? 'notOnHull' : 'notFloor';
     if (grid.get('module', t.x, t.y) !== 0) return 'occupied';
   }
   if (rock > tiles.length * AUTO_LEVEL_MAX) return 'rockMass';

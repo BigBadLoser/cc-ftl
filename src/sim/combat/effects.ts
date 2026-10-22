@@ -67,7 +67,7 @@ function hullDamage(sim: Sim, at: Impact, amount: number, radius: number, fallof
 function isEngineWall(sim: Sim, shipId: number, x: number, y: number): boolean {
   const grid = shipGrid(sim, shipId);
   const m = grid?.has('module') ? sim.world.get(grid.get('module', x, y), ModuleC) : undefined;
-  return !!m && !!sim.content.modules[m.def]?.hullEdge && grid?.get('struct', x, y) === Struct.Wall;
+  return !!m && !!sim.content.modules[m.def]?.hullEdge && (grid?.get('struct', x, y) === Struct.Wall || grid?.get('struct', x, y) === Struct.RockWall);
 }
 
 /** Distinct module ids within `radius` tiles (Chebyshev) of the impact. */

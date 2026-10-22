@@ -524,8 +524,8 @@ export interface UiLegend {
 }
 
 export type UiTool = 'select' | 'build' | 'deconstruct' | 'cancel';
-/** 'dig' / 'level' work rock mass (dig: Floor, level: Ground); 'claim' drags a base rectangle onto an asteroid. */
-export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'claim';
+/** 'dig' / 'level' / 'finish' work rock mass (dig: Floor, level: Ground, finish: RockWall); 'claim' drags a base rectangle onto an asteroid. */
+export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim';
 /** A mining pod of the player's (VehicleC with a mining laser). */
 export interface UiPod {
   id: number;

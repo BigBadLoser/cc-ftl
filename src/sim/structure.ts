@@ -20,6 +20,12 @@ export const Struct = {
    * foundation: floors, walls, doors and modules build on it as on a deck without hull.
    */
   Ground: 6,
+  /**
+   * Finished rock wall: dressed stone, a normal 1-tile wall (wall height, airtight, blocks movement and sight, doors can be set
+   * into it) with no integrity (weapons do not chip it). Crew make it from rock mass (`job.build` of RockWall: finishing); digging
+   * it gives Floor like rock mass. Dug outposts are walled with it.
+   */
+  RockWall: 7,
 } as const;
 export type StructKind = (typeof Struct)[keyof typeof Struct];
 
@@ -88,6 +94,16 @@ export const SHIP_EMPTY = {
 /** True for rock mass: solid, airtight and unwalkable like a wall, with no integrity. */
 export function isRock(kind: number): boolean {
   return kind === Struct.Rock;
+}
+
+/** True for a finished rock wall (see `Struct.RockWall`). */
+export function isRockWall(kind: number): boolean {
+  return kind === Struct.RockWall;
+}
+
+/** True for solid rock of either height: rock mass or a finished rock wall (airtight, unwalkable, blocks sight, no integrity). */
+export function isSolidRock(kind: number): boolean {
+  return kind === Struct.Rock || kind === Struct.RockWall;
 }
 
 /** True for rock ground: walkable, airless foundation. */
