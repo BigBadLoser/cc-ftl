@@ -1,0 +1,31 @@
+{
+  "tile": [
+    128,
+    64
+  ],
+  "footprint": [
+    4,
+    3
+  ],
+  "origin": "footprint centre / deck z=0",
+  "measuredSize": [
+    3.948,
+    2.779,
+    1.77
+  ],
+  "height": 1.77,
+  "floorSlab": false,
+  "state": "active",
+  "samples": 4,
+  "supersample": 2,
+  "previewOnly": true,
+  "geometryChecks": "passed",
+  "anchor": {
+    "x": 203,
+    "y": 207
+  },
+  "spritePixels": [
+    405,
+    283
+  ]
+}
