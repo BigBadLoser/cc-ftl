@@ -1,7 +1,8 @@
 """Parametric reactor geometry study. No vents, bolts, labels, lights or finish.
 
 Lengths are world/tile units. The detailed v1 reactor is preserved separately.
-The front end is a real annular surface with a throat and an opaque inset plate.
+Historical passes retain their annular face; current passes use a separate
+open arch and recessed circular closure.
 """
 from dataclasses import dataclass,asdict
 import math
@@ -42,6 +43,11 @@ class ReactorShape:
     service_loops:bool=False
     end_frame_extra:float=0
     closed_frame_edges:bool=False
+    open_end_arch:bool=False
+    arch_band_width:float=.24
+    connected_service_pipes:bool=False
+    cabinet_outreach:float=0
+    cabinet_extension_top:float=.59
 
     def spec(self):
         return asdict(self)
@@ -64,6 +70,8 @@ def prism(f,u0,u1,points,col,close=(True,True)):
 
 
 def end_cap(f,p):
+    if p.open_end_arch:
+        return open_arch(f,p)
     u=p.length/2+p.end_overhang
     outline=profile(p,p.end_frame_extra)
     # Ray intersections produce an actual arch-to-circle annulus, without a face over the hole.
@@ -122,28 +130,94 @@ def end_cap(f,p):
     f.poly(back,"steel",flip=True)
 
 
+def open_arch(f,p):
+    """Freestanding U-frame: no plate across its centre or beneath the plug.
+
+    Two continuous rails and seven radial webs bound six actual open windows.
+    The pressure closure is a separate recessed circular component.
+    """
+    u=p.length/2+p.end_overhang
+    rv=p.radius_v+p.end_frame_extra;rz=p.radius_z+p.end_frame_extra
+    band=p.arch_band_width;rail=p.frame_width
+    def point(a,t,depth=0):
+        return f.pt(u-depth,p.centre_v+(rv-band*t)*math.cos(a),
+                    p.spring_z+(rz-band*t)*math.sin(a))
+    def strip(a,b,t0,t1):
+        front=[point(a,t0),point(b,t0),point(b,t1),point(a,t1)]
+        back=[point(a,t0,p.frame_depth),point(b,t0,p.frame_depth),
+              point(b,t1,p.frame_depth),point(a,t1,p.frame_depth)]
+        f.poly(front,"steelL",flip=True);f.poly(back[::-1],"steel",flip=True)
+    for i in range(48):
+        a=i*math.pi/48;b=(i+1)*math.pi/48
+        strip(a,b,0,rail/band);strip(a,b,1-rail/band,1)
+        # Only each window's boundary receives a sidewall, never its subdivisions.
+        for t in (0,rail/band,1-rail/band,1):
+            f.poly([point(a,t),point(b,t),point(b,t,p.frame_depth),
+                    point(a,t,p.frame_depth)],"steel",flip=True)
+    for angle in (0,30,60,90,120,150,180):
+        a=max(0,math.radians(angle)-.027);b=min(math.pi,math.radians(angle)+.027)
+        strip(a,b,rail/band,1-rail/band)
+        for theta in (a,b):
+            f.poly([point(theta,rail/band),point(theta,1-rail/band),
+                    point(theta,1-rail/band,p.frame_depth),point(theta,rail/band,p.frame_depth)],"steel",flip=True)
+    for sign in (-1,1):
+        f.box(u-p.frame_depth/2,p.centre_v+sign*(rv-band/2),p.base_z,
+              p.frame_depth,band,p.spring_z-p.base_z,"steelL",top="steel")
+    # Independent circular pressure closure, with a real rim and tapered throat.
+    circles=[]
+    for depth,radius in ((p.frame_depth*.65,p.port_radius+.055),
+                         (p.frame_depth*.65,p.port_radius),
+                         (p.frame_depth+p.port_depth,p.plate_radius)):
+        circles.append([f.pt(u-depth,p.centre_v+radius*math.cos(i*math.tau/48),
+                             p.port_z+radius*math.sin(i*math.tau/48)) for i in range(48)])
+    for a,b in zip(circles,circles[1:]):
+        for i in range(48):
+            j=(i+1)%48
+            f.poly([a[i],a[j],b[j],b[i]],"steel",flip=True)
+    f.poly(circles[-1],"steelD",flip=True)
+
+
+def service_connections(p,u):
+    """Exact centreline endpoints shared by pipe and flange geometry."""
+    face=p.cabinet_v+p.cabinet_depth/2+p.cabinet_outreach
+    pipe_u=u-.07;flange_v=face+.10;flange_top=.07
+    path=[(face-.01,.46),(face+.10,.43),(face+.16,.34),
+          (face+.16,.23),(flange_v,.16),(flange_v,flange_top)]
+    return pipe_u,flange_v,flange_top,path
+
+
 def service_loop(f,p,u):
     v=p.cabinet_v
     path=[(v-.12,.46),(v+.10,.38),(v+.23,.24),(v+.23,.12),
           (v+.16,.08),(v+.04,.08),(v,.16)]
+    pipe_u=u-.20
+    if p.connected_service_pipes:
+        pipe_u,flange_v,flange_top,path=service_connections(p,u)
     rings=[]
     for i,(vv,z) in enumerate(path):
         a,b=path[max(0,i-1)],path[min(len(path)-1,i+1)]
         dv,dz=b[0]-a[0],b[1]-a[1];length=math.hypot(dv,dz)
-        rings.append([f.pt(u-.20+.055*math.cos(t),vv-.055*math.sin(t)*dz/length,
+        rings.append([f.pt(pipe_u+.055*math.cos(t),vv-.055*math.sin(t)*dz/length,
                            z+.055*math.sin(t)*dv/length) for t in (k*math.tau/10 for k in range(10))])
     for a,b in zip(rings,rings[1:]):
         for i in range(10):
             j=(i+1)%10
             f.poly([a[i],a[j],b[j],b[i]],"steel",flip=True)
-    f.vcyl(u-.20,v+.14,.015,.14,.045,"steelD",top="steelL",sides=16)
+    if p.connected_service_pipes:
+        f.poly(rings[0],"steel",flip=True);f.poly(rings[-1][::-1],"steel",flip=True)
+        f.vcyl(pipe_u,flange_v,.015,.12,flange_top-.015,"steelD",top="steelL",sides=24)
+    else:
+        f.vcyl(u-.20,v+.14,.015,.14,.045,"steelD",top="steelL",sides=16)
 
 
 def build_blockout(p=ReactorShape()):
     m=core.Mesh("reactor_geometry_blockout");f=VesselFrame(m,0)
     end=p.length/2
-    prism(f,-end-p.end_overhang,end+p.end_overhang,profile(p),"steelL",close=(True,False))
+    front=end+p.end_overhang-(p.frame_depth if p.open_end_arch else 0)
+    prism(f,-end-p.end_overhang,front,profile(p),"steelL",close=(True,False))
     for i in range(5):
+        if p.open_end_arch and i==4:
+            continue
         u=-end+i*p.length/4
         prism(f,u-p.hoop_width/2,u+p.hoop_width/2,profile(p,p.hoop_extra),"steel",close=(False,False))
         if p.solid_hoops:
@@ -157,6 +231,10 @@ def build_blockout(p=ReactorShape()):
     for u in p.cabinet_u:
         f.box(u,p.cabinet_v,p.cabinet_bottom,p.cabinet_width,p.cabinet_depth,
               p.cabinet_top-p.cabinet_bottom,"steel",top="plate")
+        if p.cabinet_outreach:
+            face=p.cabinet_v+p.cabinet_depth/2
+            f.box(u,face+p.cabinet_outreach/2,p.cabinet_bottom,p.cabinet_width,
+                  p.cabinet_outreach,p.cabinet_extension_top-p.cabinet_bottom,"steel",top="plate")
         if p.service_loops:
             service_loop(f,p,u)
         else:
@@ -176,7 +254,7 @@ def landmarks(p):
     peak=min(arc,key=lambda point:screen(0,*point)[1])
     front_peak=min(profile(p,p.end_frame_extra)[:25],key=lambda point:screen(0,*point)[1])
     out={"rear_peak":screen(-p.length/2,*peak),"front_peak":screen(p.length/2+p.end_overhang,*front_peak),
-         "port_center":screen(p.length/2+p.end_overhang-p.port_depth,p.centre_v,p.port_z)}
+         "port_center":screen(p.length/2+p.end_overhang-p.port_depth-(p.frame_depth if p.open_end_arch else 0),p.centre_v,p.port_z)}
     out["controller"]=screen(p.controller_u,p.controller_v,p.controller_top)
     for i,u in enumerate(p.cabinet_u):
         out[f"cabinet_{i+1}"]=screen(u,p.cabinet_v,p.cabinet_top)

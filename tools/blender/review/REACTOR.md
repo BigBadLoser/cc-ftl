@@ -25,6 +25,36 @@ side-by-side comparison, annotated comparison and landmark-error report in
 | B | Front is a solid annulus rather than a cage; hoops too thin; box pedestals obscure the reference's exposed service loops. | C adds structural cage pockets, thicker hoops and separate pipe loops/round feet. |
 | C | Front rim crest too low; cage pockets too shallow in projected height; cage exterior lacks closed thickness. | D expands only the front cage and closes its outer edges, preserving the casing and service bank. |
 | D | Cage openings still too narrow/divided; circular plug lacks the reference's dished/stepped profile; service/controller housings lack their compound shapes. | Remain visible for review. Mechanical detailing and material finishing have not begun. |
+| E | Full-height cabinet extensions are too blocky; plug still lacks its dished profile and its deeper position differs from the reference; arch windows remain partly obscured by the jacket. | F preserves the original upper housings, extending only the lower sections. Plug and window discrepancies remain explicit. |
+| F | Plug profile/placement remains inaccurate; jacket behind the cage obscures some windows; cabinet/controller compound shapes still need refinement. | Current geometry preview for user review; no finishing or decorative details added. |
+
+### Latest correction: F
+
+User feedback identified three structural faults in D: insufficient cabinet
+outreach, a solid end instead of an arch, and pipes missing their cabinet/flange
+connections. E replaces the end with a true open-bottom U-frame, independent
+recessed circular closure and six open cage windows. The last full hoop is
+replaced by this frame, and the jacket ends at its rear edge so it does not
+occupy the same plane. There is no solid annular backing or bottom crossbar.
+The jacket still hides parts of some cage windows from the project camera.
+
+F retains D's upper cabinet positions and extends their lower sections outward
+by **0.38 units**. Total cabinet depth is now **0.60**, previously 0.22. The
+inboard edge stays at v=0.665 and the new outer face is v=1.265. Upper housings
+remain at their existing height and position. Barrel cross-section, middle
+hoops, controller and axial cabinet positions are unchanged.
+
+Each pipe begins 0.01 units inside that outer face at z=0.46, curves outward
+and down, then enters vertically at its flange's exact top centre (v=1.365,
+z=0.07). The same centre coordinates define the flange and pipe endpoint.
+All three measured connections are saved in `blockout-f.json`.
+
+Current F bounds: **3.960 x 2.714 x 1.390**; still within 4x3. Upper cabinet
+landmark errors remain D's 3.2–7.3 reference pixels. The circular plug now sits
+behind the arch thickness as well as its own recess: its measured centre error
+is **13.6 reference pixels**, worse than D's 5.0, and remains a discrepancy.
+E's landmark metadata was corrected to measure the actual recessed plate
+rather than the old plate plane; the reference picks and alignment are unchanged.
 
 ### Measurements and limitations
 
@@ -51,17 +81,17 @@ placement, not surface/topology accuracy; the remaining cage and housing
 discrepancies matter even where point errors are small. The first two fitted
 landmarks are alignment constraints, not independent validation.
 
-Current D bounds: **4.000 x 2.710 x 1.390** world units. Fits the proposed 4x3
+D bounds: **4.000 x 2.710 x 1.390** world units. Fits the proposed 4x3
 footprint; feet at zero and top below 1.85. Height is derived from the reference
 blockout rather than the taller v1. No floor slab.
 
 ```sh
 # Check that no Blender process is running before each render.
-SPRITE_PREVIEW=1 SPRITE_SAMPLES=4 blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/reactor_study.py -- --pass-name blockout-d --out artifacts/reactor-study
-python3 tools/blender/review/reactor_study.py --pass-name blockout-d --out artifacts/reactor-study --compare
+SPRITE_PREVIEW=1 SPRITE_SAMPLES=4 blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/reactor_study.py -- --pass-name blockout-f --out artifacts/reactor-study
+python3 tools/blender/review/reactor_study.py --pass-name blockout-f --out artifacts/reactor-study --compare
 ```
 
-Use `blockout-a`, `blockout-b` or `blockout-c` to reproduce earlier passes.
+Use `blockout-a` through `blockout-e` to reproduce earlier passes.
 The study has no lights, vents, fasteners, labels or final palette. Original
 reactor content and production assets remain untouched.
 

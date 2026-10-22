@@ -45,6 +45,15 @@ def render(out,name):
     info={'parameters':p.spec(),'tile':[core.TILE_W,core.TILE_H],'samples':4,'SS':core.SS,
           'anchor':[w//2+1-int(x0),h//2+1-int(y0)],'landmarks':landmarks(p),
           'size':[float(v) for v in np.ptp(q,axis=0)],'stage':'primary geometry / neutral materials'}
+    if p.connected_service_pipes:
+        from sprites.reactor_blockout import service_connections
+        connections=[]
+        for u in p.cabinet_u:
+            pipe_u,flange_v,flange_top,path=service_connections(p,u)
+            connections.append({'pipeStart':[pipe_u,*path[0]],'pipeEnd':[pipe_u,*path[-1]],
+                                'flangeTopCenter':[pipe_u,flange_v,flange_top],
+                                'cabinetFaceV':p.cabinet_v+p.cabinet_depth/2+p.cabinet_outreach})
+        info['pipeConnections']=connections
     (out/f'{name}.json').write_text(json.dumps(info,indent=2)+'\n')
     print('BLOCKOUT RENDERED',name,flush=True)
 
