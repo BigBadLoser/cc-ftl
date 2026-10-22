@@ -2,6 +2,7 @@
 /**
  * Ship layout contact sheets without Blender or sprite art.
  *   node tools/shipgen/cli.js <faction|all> [--from 1] [--count 12] [--depth 0] [--out dir] [--scale 10] [--views detail|silhouette|assembly|structure|all]
+ *   node tools/shipgen/cli.js station.<kind>|station.all [--size outpost|station|hub|outpost,hub|all] [--layout stationWheel]: station sheets.
  *   --ruin 0.2,0.5,0.9 [--cause combat|decay|both]: derelict ruin sheets instead (tools/shipgen/ruinView.ts).
  * Writes <out>/<faction>-d<depth>.png and .txt (validation summary + ASCII dump per seed) and prints the summary.
  */
@@ -49,7 +50,14 @@ const server = await createServer({ server: { middlewareMode: true }, appType: '
 try {
   const lib = await server.ssrLoadModule('/tools/shipgen/draw.ts');
   mkdirSync(out, { recursive: true });
-  const factions = which === 'all' ? lib.factionIds() : [which.startsWith('faction.') ? which : `faction.${which}`];
+  // Stations: `station.<kind>` (or `station.all`) with --size outpost|station|hub, a comma list, or all.
+  const size = opt('size');
+  const layout = opt('layout');
+  const stationSpec = (id) => `${size && size !== 'all' && !id.includes(':') ? `${id}:${size}` : id}${layout ? `@${layout}` : ''}`;
+  const factions = which === 'all' ? lib.factionIds()
+    : which === 'station.all' ? lib.stationIds().map(stationSpec)
+    : which.startsWith('station.') ? [stationSpec(which)]
+    : [which.startsWith('faction.') ? which : `faction.${which}`];
   if (opt('ruin')) {
     const rv = await server.ssrLoadModule('/tools/shipgen/ruinView.ts');
     const levels = opt('ruin').split(',').map(Number);
@@ -64,7 +72,7 @@ try {
     process.exitCode = 0;
   } else
   for (const f of factions) {
-    const base = join(out, `${f.replace('faction.', '').replace(':', '-')}-d${depth}`);
+    const base = join(out, f.startsWith('station.') ? f.replace(':', '-').replace(/,/g, '+').replace('@', '-') : `${f.replace('faction.', '').replace(':', '-')}-d${depth}`);
     let text = '';
     for (const view of views) {
       const sheet = lib.contactSheet(f, from, count, depth, scale, 2600, view);

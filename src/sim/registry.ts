@@ -1,5 +1,6 @@
 import type { Faction } from './combat/components';
 import type { FactionDef } from './shipgen/types';
+import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
@@ -59,6 +60,8 @@ export interface ContentRegistry {
   galaxy?: GalaxyContent;
   /** Faction content id (e.g. 'faction.scrapper') to definition, for generated ships. Absent = none. */
   factions?: Record<string, FactionDef>;
+  /** Station kinds the station generator builds (src/sim/shipgen/stationGen.ts). */
+  stations?: Record<string, StationDef>;
   /** Trade: prices' spread, faction stances and trader profiles. Absent = nobody trades. */
   trade?: TradeDef;
   /** Derelict infestations: what hatches from egg sacs. Absent = sacs hatch nothing. */
@@ -173,6 +176,8 @@ export interface ItemDef {
   food?: { nutrition: number };
   /** Base price in credits. Absent = not for sale. Traders add a spread and modifiers on top (see trade/pricing.ts). */
   price?: number;
+  /** Quality tier of gear (1 basic, 2 middle grade, 3 the best). Traders' surplus rules sell only up to a tier. */
+  tier?: number;
 }
 
 /** A hand weapon (sidearm, rifle, blade) carried by crew. Ranged ones need line of sight; melee ones need adjacency. */

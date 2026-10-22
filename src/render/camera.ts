@@ -1,12 +1,12 @@
 import { ART_SCALE } from './iso';
 
 /**
- * Zoom levels (device px per art px) of the main camera. From 1 up they are whole numbers, so the art stays crisp with
- * nearest-neighbour. At 2x art (TILE_W 128) there are also levels below 1 (`1 / ART_SCALE`, which is the old zoom 1, and
- * 0.75); the renderer draws those with linear filtering (`scene.ts` `setSmooth`) so the pixel art does not shimmer when
- * shrunk. At the 64 px tile there are none, so the camera behaves as it always did.
+ * Zoom levels (device px per art px) of the main camera: one ladder at any art scale. From 1 up they are whole numbers,
+ * so the art stays crisp with nearest-neighbour. Below 1 come fractional levels down to 1/8: framing things far bigger
+ * than a ship (station hubs), and at 2x art (TILE_W 128) `1 / ART_SCALE` is the old zoom 1. The renderer draws every
+ * level below 1 with linear filtering (`scene.ts` `setSmooth`) so the pixel art does not shimmer when shrunk.
  */
-const BELOW_ONE: readonly number[] = ART_SCALE > 1 ? [1 / ART_SCALE, 0.75] : [];
+const BELOW_ONE: readonly number[] = [...new Set([1 / 8, 1 / 6, 1 / 4, 1 / 3, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
 
 /** Every allowed zoom up to `max`, ascending. */
 export function zoomLevels(max: number): number[] {

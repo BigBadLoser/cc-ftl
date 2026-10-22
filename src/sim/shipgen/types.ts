@@ -1,5 +1,6 @@
 import type { Faction } from '../combat/components';
 import type { ItemQty, ShipTemplate } from '../registry';
+import type { StationGrammar } from './stationTypes';
 
 /**
  * Procedural ship layouts, in stages: pick a ship role and a hull archetype (weighted by the faction's architectural
@@ -10,7 +11,11 @@ import type { ItemQty, ShipTemplate } from '../registry';
 /** What a room is for. */
 export type RoomRole =
   | 'bridge' | 'engine' | 'reactor' | 'weapons' | 'shields' | 'cargo' | 'quarters' | 'core' | 'hangar' | 'hall'
-  | 'dock' | 'support';
+  | 'dock' | 'support'
+  /** Station rooms: hydroponics farms, ore refining and processing, the armoury (weapon lockers). */
+  | 'farm' | 'industry' | 'armoury'
+  /** Station courtyards (open rooms filling enclosed centres): a concourse, a garden deck, a drill hall. */
+  | 'plaza' | 'garden' | 'drill';
 
 /** Structural topologies the builder knows. Factions weight them; any faction could use any. */
 export type ArchetypeId =
@@ -136,13 +141,17 @@ export interface HullFamilyDef {
   /** The core is a citadel: an enclosed compartment on the axis, passages around it, crew quarters outboard. */
   citadel?: boolean;
   /** Structural grammars the family uses (how its sections are arranged in 2D), weighted. */
-  grammars: readonly Weighted<NavyGrammar | DroneGrammar | ScrapGrammar | CivilGrammar>[];
+  grammars: readonly Weighted<NavyGrammar | DroneGrammar | ScrapGrammar | CivilGrammar | StationGrammar>[];
   /** Soft proportion target (length / beam): arrangements nearer it score better; never a hard reject. */
   aspect: readonly [number, number];
   /** Propulsion configurations the family uses (engines always face +x). */
   /** Salvage families: how much this role wants each donor aboard (by function), and which donors can anchor. */
   donors?: Partial<Record<DonorKind, number>>;
   anchors?: readonly Weighted<DonorKind>[];
+  /** Stations: ore cages hung off the structure (mining stations). */
+  cages?: number;
+  /** Stations: enclosed centres become open rooms of this role, with this chance per station. */
+  atrium?: { role: RoomRole; chance: number };
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 
@@ -158,7 +167,7 @@ export interface TransitionStyle {
 }
 
 /** Diagnostic metric bands: a generated ship outside a band is rejected and reseeded. */
-export type MetricId = 'compactness' | 'occupancy' | 'corridorRatio' | 'narrowLinks' | 'aspect' | 'beamShare' | 'spine';
+export type MetricId = 'compactness' | 'occupancy' | 'corridorRatio' | 'narrowLinks' | 'aspect' | 'beamShare' | 'spine' | 'thickWall';
 export type MetricBands = Partial<Record<MetricId, readonly [number, number]>>;
 
 export interface FactionDef {
@@ -225,6 +234,10 @@ export interface GenResult {
   failures: string[];
   /** Diagnostic metrics of the layout. */
   metrics?: Record<MetricId, number>;
+  /** Wall thinning (thinWalls.ts): slabs absorbed, tiles folded, outline tiles changed (must stay 0). */
+  thin?: { slabs: number; folded: number; outlineChanged: number };
+  /** Airlock-only docks opened into their corridor, and those left walled for want of one (openDocks.ts). */
+  docks?: { merged: number; walled: number };
   /** Assemblies, ports, joins and traversal (assembly-driven generation only), for the viewer. */
   debug?: CompDebug;
 }

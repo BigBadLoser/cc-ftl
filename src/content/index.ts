@@ -14,6 +14,7 @@ import { raiderBoarder, raiderBoarderId, raiderShip, raiderShipId } from './ship
 import { events } from './events';
 import { galaxy } from './galaxy';
 import { trade } from './trade';
+import { stations } from './stations';
 import { creatures } from './creatures';
 import { starterShip, starterShipId } from './ships/starter';
 import { rogueShipyard, rogueShipyardId } from './ships/rogue';
@@ -33,6 +34,7 @@ export const content = {
   events,
   factions,
   galaxy,
+  stations,
   trade,
   creatures,
 } satisfies ContentRegistry;

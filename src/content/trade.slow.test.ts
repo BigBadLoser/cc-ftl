@@ -32,10 +32,10 @@ function withCivilian(role: string, gameSeed = 1): { sim: Sim; ship: number } {
   throw new Error(`no civilian ${role} found`);
 }
 
-/** A started game with a trading station (no grid) and the hail already answered. */
+/** A started game with a trading outpost (a generated station grid) and the hail already answered. */
 function withStation(): { sim: Sim; station: number } {
   const sim = newGame(7, content);
-  sim.enqueue({ type: 'debug.spawnStation', profile: 'trader.station', name: 'Haven' });
+  sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4, name: 'Haven' });
   sim.step();
   const station = [...sim.world.query(TraderC)][0] as number;
   sim.enqueue({ type: 'trade.hail', ship: station });
@@ -227,38 +227,12 @@ describe('offers', () => {
     const before = sim.trade.credits;
     expect(offer(10, 1).error).toEqual([]);
     sim.enqueue({ type: 'trade.accept', offer: sim.trade.offers[0]!.id });
-    const ev = run(sim, 5);
+    // The player's shuttle carries the goods over to the station and back (no instant fallback any more).
+    const ev = run(sim, 8000);
     expect(rejected(ev)).toEqual([]);
+    expect(ofType(ev, 'trade.settled')).toHaveLength(1);
     expect(sim.trade.credits).toBe(before);
     expect(playerItems(sim, 'item.electronics')).toBe(start - 10);
-  });
-});
-
-describe('instant fallback (stations have no grid or shuttle yet)', () => {
-  it('buy and sell settle at once through the same offer / accept commands', () => {
-    const { sim, station } = withStation();
-    const t = sim.world.get(station, TraderC)!;
-    expect(t.station).toBe(true);
-    const metal = playerItems(sim, 'item.metal');
-    const credits = sim.trade.credits;
-    const theirs = t.credits;
-    sim.enqueue({ type: 'trade.offer', ship: station, give: [], get: [{ item: 'item.metal', count: 5 }] });
-    const o = ofType(run(sim, 2), 'trade.offered')[0]!;
-    sim.enqueue({ type: 'trade.accept', offer: o.offer });
-    const ev = run(sim, 3);
-    expect(ofType(ev, 'trade.dealMade')[0]).toMatchObject({ courier: 'instant' });
-    expect(ofType(ev, 'trade.delivered')).toHaveLength(1);
-    expect(ofType(ev, 'trade.settled')[0]).toMatchObject({ credits: o.balance });
-    expect(playerItems(sim, 'item.metal')).toBe(metal + 5);
-    expect(sim.trade.credits).toBe(credits - o.balance);
-    expect(t.credits).toBe(theirs + o.balance);
-    // And back: sell the same metal.
-    sim.enqueue({ type: 'trade.offer', ship: station, give: [{ item: 'item.metal', count: 5 }], get: [] });
-    const o2 = ofType(run(sim, 2), 'trade.offered')[0]!;
-    sim.enqueue({ type: 'trade.accept', offer: o2.offer });
-    run(sim, 3);
-    expect(playerItems(sim, 'item.metal')).toBe(metal);
-    expect(sim.trade.credits).toBeLessThan(credits); // the spread
   });
 });
 

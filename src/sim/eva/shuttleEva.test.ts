@@ -58,7 +58,7 @@ const content: ContentRegistry = {
   },
   modules: { airlock: airlockDef },
 };
-const all4: Priorities = { firefighting: 4, medical: 4, operating: 4, repair: 4, construction: 4, hauling: 4, crafting: 4, cooking: 4 };
+const all4: Priorities = { firefighting: 4, medical: 4, operating: 4, repair: 4, construction: 4, hauling: 4, crafting: 4, cooking: 4, patrol: 0 };
 
 /** A 14x14 ship: hull ring, 10x10 floor. */
 function ring(): string[] {

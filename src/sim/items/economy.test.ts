@@ -53,7 +53,7 @@ const content: ContentRegistry = {
 };
 const rows = ['##############', '#____________#', '#____________#', '#____________#', '#____________#', '##############'];
 const all = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v, patrol: v,
 });
 
 function make(): Sim {

@@ -1,7 +1,7 @@
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
 import { quote, type Quote } from './pricing';
-import { playerItems, playerRoom } from './player';
+import { playerItems } from './player';
 import { ensureTrader, hailVerdict } from './traders';
 import type { Offer } from './types';
 
@@ -50,10 +50,6 @@ export function checkOffer(sim: Sim, ship: number, giveIn: readonly ItemQty[], g
   const pays = barter ? 0 : q.balance;
   if (pays > sim.trade.credits) return fail('noFunds', q);
   if (pays < 0 && -pays > trader.credits) return fail('theyBroke', q);
-  if (trader.station) {
-    // Instant fallback: the goods are put straight into storage, so it must have room.
-    for (const l of get) if (playerRoom(sim, l.item) < l.count) return fail('noRoom', q);
-  }
   return { error: null, give, get, quote: q };
 }
 

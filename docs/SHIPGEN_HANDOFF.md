@@ -67,7 +67,8 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 | `civilBlocks.ts` | civil builders shared by the civilian generator and scrapper donors (freighter, habitat, liner, station, barge, pods, tug, containers, cockpit, drive, cabins, lounge, cross hub) |
 | `civilGrammars.ts` | civilian topologies: freighter, liner, mining, station |
 | `civilFrames.ts` | civil frames: container frames, ore cages, truss bridges, rig booms, the liner's 2D hull |
-| `civilStations.ts` | ring and lattice stations |
+| `civilStations.ts` | ring and lattice stations (also the station generator's building blocks) |
+| `stationTypes.ts`, `stationPlan.ts`, `stationGrammars.ts`, `stationGen.ts` | the station generator: kinds and tiers, room plan, ring / lattice / hub / welded grammars, generation and station rules (`docs/STATUS.md`, Stations) |
 | `civilKit.ts` | civil joins, drive, `beside`, variant picks |
 | `civilShips.ts` | civil freighters, mining ships, crew bodies |
 | `scrapDonors.ts` | the donor registry and job pool; navy and drone donors cut from their own generators |

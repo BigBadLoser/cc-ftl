@@ -36,7 +36,7 @@ The refactor's `SectorGrid` is really the node grid. It gets renamed after rende
 
 | Branch | What | State |
 |---|---|---|
-| `trade` | Credits, prices, hailing ships in the node, trade window, shuttle-delivered deals, barter | Done, checks green. Ready to merge once approved. Station trade is an instant TEMPORARY fallback. |
+| `trade` | Credits, prices, hailing ships in the node, trade window, shuttle-delivered deals, barter | Done, checks green. Ready to merge once approved. Station trade was an instant TEMPORARY fallback; removed on `stations` (stations are ships). |
 | `starmap` | M6 endless chunked galaxy (sectors, nodes, hyperlanes), route planning, fuel and FTL charge, sensors, arrivals, 7 factions, standings, starmap view | Done, checks green. Open question: add a density-field pass (clusters, voids, chokepoints, varied sector sizes)? The large scale is too uniform. |
 | `sector-5` | Render step 5: one shared world layer, combat panel as a second camera, picking in sector coordinates, visibility rule, low-body depth | Committed. Was finishing its before/after screenshot comparison when the session ended. Re-run it (`scratchpad` scripts are gone) and get approval. |
 | `crew-pipeline` | Crew sprites: per-clip sheets, fixed frame size, render cache and incremental builds | Was in progress. Check whether it got pushed. If not, restart from its brief (below). |

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  destroyVehicle, CarryingC, CrewC, ModuleC, PositionC, ShipC, StorageC, TraderC, VehicleC, deserialize, newGame, playerItems, serialize, storageCount, storageAdd,
-  type Sim, type SimEvent,
+  destroyVehicle, AirlockC, CarryingC, CrewC, JobC, ModuleC, PositionC, ShipC, StorageC, TraderC, VehicleC, deserialize, newGame, playerItems, serialize,
+  storageCount, storageAdd, type Deal, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
@@ -42,6 +42,27 @@ function crewPilot(sim: Sim): number {
 }
 
 const stored = (sim: Sim, item: string): number => playerItems(sim, item);
+
+/** A new game with a trading outpost east of the player, hailed; and the starter's first crate. */
+function atStation(): { sim: Sim; station: number; crate: number } {
+  const sim = newGame(1, content);
+  sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 });
+  run(sim, 2);
+  const station = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
+  sim.enqueue({ type: 'trade.hail', ship: station });
+  run(sim, 2);
+  const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number)!;
+  return { sim, station, crate };
+}
+
+/** Offer and accept a deal; returns a getter for its live record. */
+function accept(sim: Sim, ship: number, give: { item: string; count: number }[], get: { item: string; count: number }[]): () => Deal {
+  sim.enqueue({ type: 'trade.offer', ship, give, get });
+  const offered = ofType(run(sim, 2), 'trade.offered')[0]!;
+  sim.enqueue({ type: 'trade.accept', offer: offered.offer });
+  const made = ofType(run(sim, 2), 'trade.dealMade')[0]!;
+  return () => sim.trade.deals.find((d) => d.id === made.deal)!;
+}
 
 describe('trade, end to end', () => {
   it('buy from a freighter: its shuttle docks at the unloaders, crew haul the cargo into storage, then payment settles', () => {
@@ -108,6 +129,71 @@ describe('trade, end to end', () => {
     // Save round trip after a finished deal.
     const loaded = deserialize(serialize(sim), content);
     expect(serialize(loaded)).toBe(serialize(sim));
+  });
+
+  it('trade at a station both ways: the shuttle docks at a station airlock and station crew haul goods in and out', () => {
+    const { sim, station, crate } = atStation();
+    storageAdd(sim, crate, 'item.electronics', 10);
+    const t = sim.world.get(station, TraderC)!;
+    const have = { metal: stored(sim, 'item.metal'), elec: stored(sim, 'item.electronics') };
+    const theirs = { metal: t.stock.find((x) => x.item === 'item.metal')!.count, elec: t.stock.find((x) => x.item === 'item.electronics')?.count ?? 0 };
+    const deal = accept(sim, station, [{ item: 'item.electronics', count: 10 }], [{ item: 'item.metal', count: 10 }]);
+    let hauls = 0;
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 9000; i++) {
+      events.push(...run(sim, 1));
+      if (deal().phase === 'stationWork') hauls = Math.max(hauls, sim.world.query(JobC).filter((j) => {
+        const h = sim.world.get(j, JobC)?.haul;
+        return h && ((h.src.kind === 'vehicle') || (h.dst.kind === 'vehicle')) && shipIdOf(sim, { x: sim.world.get(j, JobC)!.x, y: sim.world.get(j, JobC)!.y }) === station;
+      }).length);
+      if (deal().phase === 'done' || deal().phase === 'failed') break;
+    }
+    expect(deal()).toMatchObject({ phase: 'done', via: 'dock' });
+    expect(hauls).toBeGreaterThan(0);
+    expect(ofType(events, 'vehicle.docked').length).toBeGreaterThanOrEqual(2);
+    expect(ofType(events, 'trade.delivered').map((e) => e.to)).toEqual(['trader', 'player']);
+    run(sim, 600);
+    expect(stored(sim, 'item.metal')).toBe(have.metal + 10);
+    expect(stored(sim, 'item.electronics')).toBe(have.elec - 10);
+    expect(t.stock.find((x) => x.item === 'item.metal')!.count).toBe(theirs.metal - 10);
+    expect(t.stock.find((x) => x.item === 'item.electronics')!.count).toBe(theirs.elec + 10);
+  });
+
+  it('with no free station airlock the run falls back to the hover swap', () => {
+    const { sim, station } = atStation();
+    for (const id of sim.world.query(AirlockC, ModuleC)) if (shipIdOf(sim, sim.world.get(id, ModuleC)) === station) sim.world.get(id, ModuleC)!.hp = 0;
+    const have = stored(sim, 'item.metal');
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    const seen = new Set<string>();
+    for (let i = 0; i < 9000 && deal().phase !== 'done'; i++) { run(sim, 1); seen.add(deal().phase); }
+    expect(deal()).toMatchObject({ phase: 'done', via: 'hover' });
+    expect(seen.has('exchange')).toBe(true);
+    expect(seen.has('stationWork')).toBe(false);
+    run(sim, 300);
+    expect(stored(sim, 'item.metal')).toBe(have + 10);
+  });
+
+  it('calling off a run docked at the station puts everything back and the shuttle comes home', () => {
+    const { sim, station, crate } = atStation();
+    storageAdd(sim, crate, 'item.electronics', 10);
+    const t = sim.world.get(station, TraderC)!;
+    const before = { credits: sim.trade.credits, theirCredits: t.credits, stock: JSON.stringify(t.stock), elec: stored(sim, 'item.electronics') };
+    const deal = accept(sim, station, [{ item: 'item.electronics', count: 10 }], [{ item: 'item.metal', count: 10 }]);
+    for (let i = 0; i < 6000 && deal().phase !== 'stationWork'; i++) run(sim, 1);
+    expect(deal().phase).toBe('stationWork');
+    run(sim, 60);
+    sim.enqueue({ type: 'trade.cancel', id: deal().id });
+    const ev = run(sim, 2);
+    expect(ofType(ev, 'trade.failed')[0]).toMatchObject({ reason: 'cancelled' });
+    expect(sim.trade.credits).toBe(before.credits);
+    expect(t.credits).toBe(before.theirCredits);
+    const shuttle = sim.world.query(VehicleC)[0] as number;
+    for (let i = 0; i < 4000 && sim.world.get(shuttle, VehicleC)!.state !== 'stowed'; i++) run(sim, 1);
+    run(sim, 600);
+    expect(sim.world.get(shuttle, VehicleC)!.state).toBe('stowed');
+    expect(JSON.parse(JSON.stringify(t.stock)).sort((a: { item: string }, b: { item: string }) => a.item.localeCompare(b.item)))
+      .toEqual(JSON.parse(before.stock).sort((a: { item: string }, b: { item: string }) => a.item.localeCompare(b.item)));
+    expect(stored(sim, 'item.electronics')).toBe(before.elec);
   });
 
   it('a trade run with no crew aboard completes end to end', () => {

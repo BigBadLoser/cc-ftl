@@ -108,6 +108,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const combat = sim.world.get(entity, CombatC);
     if (!ship || !combat) return reject(sim, cmd.type, 'noShip');
     if (ship.state !== 'active') return reject(sim, cmd.type, 'notActive');
+    if (ship.immobile) return reject(sim, cmd.type, 'immobile');
     // The player's ship leaves through the galaxy: charge the drive, then jump (`to`, else the cheapest affordable neighbour).
     if (ship.faction === 'player') return void flee(sim, entity, cmd.to);
     if (combat.ftl < FTL_CHARGE_SEC) return reject(sim, cmd.type, 'notCharged');

@@ -146,7 +146,7 @@
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
   <NavStrip
     {mapOpen} {mapLocked} onMap={() => { fleeShip = null; mapOpen = !mapOpen; }}
-    {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.length > 0 || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
+    {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.some((e) => !e.dormant) || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
     onStock={() => (stockOpen = !stockOpen)}

@@ -49,4 +49,9 @@ export const furniture = {
     name: 'Hydroponics bed', asset: 'module.hydroponics', footprint: [2, 1], solid: true, access: [0, 1], power: 0,
     flammability: 0.4, maxHp: 60, buildWork: 120, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.polymer', count: 4 }],
   },
+  // Ore refinery (stations): dressing for mining stations' processing floors. No refining mechanic yet.
+  'module.refinery': {
+    name: 'Ore refinery', asset: 'module.refinery', footprint: [2, 2], solid: true, access: [0, 2], power: -6, priority: 3,
+    flammability: 0.1, maxHp: 140, buildWork: 200, cost: [{ item: 'item.metal', count: 18 }, { item: 'item.electronics', count: 4 }],
+  },
 } satisfies Record<string, ModuleDef>;

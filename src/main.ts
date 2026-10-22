@@ -132,6 +132,23 @@ function homeShipC() {
   return sim.world.get(homeShip(sim), ShipC);
 }
 
+/**
+ * Debug: generate a station (`kind` 'station.trading'..., `size` outpost | station | hub) east of everything in the node
+ * and frame it with the player's ship. `?station=trading:hub` spawns one at start.
+ */
+function spawnStation(kind: string, size: 'outpost' | 'station' | 'hub'): void {
+  const before = new Set(sim.world.query(ShipC));
+  bridge.dispatch({ type: 'debug.spawnStation', kind, size, seed: (Math.random() * 0x7fffffff) >>> 0 });
+  // The command runs on the next tick: frame the new station once it exists.
+  const frame = (tries: number): void => {
+    const id = sim.world.query(ShipC).find((i) => !before.has(i) && sim.world.get(i, ShipC)?.immobile);
+    if (id) renderer?.frameShips([homeShip(sim), id]);
+    else if (tries > 0) setTimeout(() => frame(tries - 1), 100);
+  };
+  frame(30);
+}
+const stationFlag = params.get('station');
+
 const api: UiApi = {
   snapshot: bridge.snapshot,
   inspect: bridge.inspect,
@@ -182,6 +199,7 @@ const api: UiApi = {
   focusFight: (ship) => focusFight(ship),
   spawnRaider: (boarders) => spawnRaider(boarders),
   spawnGenerated: (faction) => spawnGenerated(faction),
+  spawnStation: (kind, size) => spawnStation(kind, size),
   overlayList,
   overlayLegend,
   dismissAlert: controller.alerts.dismiss,
@@ -214,6 +232,10 @@ const api: UiApi = {
         attachInput(canvas, r, controller.attach(r));
         window.addEventListener('resize', () => r.resize());
         loop.start();
+        if (stationFlag) {
+          const [k, s] = stationFlag.split(':');
+          spawnStation(`station.${(k ?? 'trading').replace(/^station\./, '')}`, (s === 'station' || s === 'hub' ? s : 'outpost'));
+        }
         // Build the starmap's geometry in idle time (one small piece per slot), so its first open does not wait for it.
         const idle = (f: () => void): void => (typeof requestIdleCallback === 'function' ? void requestIdleCallback(f, { timeout: 3000 }) : void setTimeout(f, 100));
         const warm = (): void => { if (bridge.warmStarmap()) idle(warm); };

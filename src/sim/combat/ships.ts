@@ -52,6 +52,8 @@ export function spawnCrew(sim: Sim, shipId: number, roles: readonly string[], re
   const out: number[] = [];
   for (const roleId of roles) {
     const role = sim.content.roles[roleId];
+    // Big crews (station hubs) outrun the name pool: names repeat rather than crew going missing.
+    if (names.length === 0) names.push(...sim.content.crewNames);
     if (!role || names.length === 0 || floor.length === 0) continue;
     const tile = floor.splice(sim.rng.int(0, floor.length - 1), 1)[0] as { x: number; y: number };
     const designated = !!sim.content.species[role.species ?? 'species.human']?.designation;
