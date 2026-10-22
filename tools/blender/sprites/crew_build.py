@@ -125,6 +125,9 @@ def build(out, opts, log=_log):
     _render(arm, items, miss, log)
     if miss:
         log(f"CREW rendered {len(miss)} entries in {time.time() - t1:.1f}s")
+    if opts.get("cache-only"):
+        log("CREW cache-only complete; skipping temporary sheet packing")
+        return {}, {}, full
     t2 = time.time()
     sheets, assets = crew_pack.pack(items, entries, out, log)
     log(f"CREW pack {time.time() - t2:.1f}s; total {time.time() - t0:.1f}s; hits {len(entries) - len(miss)} misses {len(miss)}")
