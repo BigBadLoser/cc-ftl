@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   AboardC, BodyC, CombatC, CrewC, FTL_CHARGE_SEC, ModuleC, PositionC, ShipC, Struct, VehicleC, deserialize, generateShip, homeShip,
-  jumpWarnings, liftSet, liftShip, newGame, serialize, shipGrid, stampShip, type FactionDef, type ModuleDef, type Sim,
+  START_NODE, galaxyIndex, jumpWarnings, liftSet, liftShip, newGame, serialize, shipGrid, stampShip, type FactionDef, type ModuleDef, type Sim,
 } from '../../sim';
+import { giveItems } from '../../sim/story/effects';
 import { ContainerC } from '../../sim/containers/components';
 import { translated } from '../../sim/sector/translate';
 import { content } from '../index';
@@ -33,11 +34,27 @@ function run(sim: Sim, n: number): string[] {
   return log;
 }
 
+/** Run the trip to its last node, then drop out of hyperspace (the ship then waits to deploy). Returns the event log. */
+function land(sim: Sim): string[] {
+  const log: string[] = run(sim, 1); // the queued jump
+  for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && sim.galaxy.travel?.phase === 'hop'; i++) log.push(...run(sim, 1));
+  sim.enqueue({ type: 'galaxy.drop' });
+  log.push(...run(sim, 1));
+  return log;
+}
+
 /** Charge the player's drive and queue a jump. */
-function jump(sim: Sim, node: number, withDocked?: number[], ship = homeShip(sim)): void {
+function jump(sim: Sim, node: string, withDocked?: number[], ship = homeShip(sim)): void {
   const combat = sim.world.get(ship, CombatC);
   if (combat) combat.ftl = FTL_CHARGE_SEC;
-  sim.enqueue({ type: 'sector.jump', ship, node, ...(withDocked ? { withDocked } : {}) });
+  giveItems(sim, 'item.fuel', 50);
+  sim.enqueue({ type: 'galaxy.jump', ship, route: [node], ...(withDocked ? { withDocked } : {}) });
+}
+
+/** The k-th node (ascending id) one edge away from the start node. */
+function near(sim: Sim, k: number): string {
+  const nodes = (galaxyIndex(sim.galaxy).adjacent.get(START_NODE) ?? []).map((e) => (e.a === START_NODE ? e.b : e.a)).sort();
+  return nodes[k] as string;
 }
 
 const vehicleOf = (sim: Sim, ship: number): number => sim.world.query(VehicleC).find((v) => sim.world.get(v, VehicleC)?.homeShip === ship) ?? 0;
@@ -118,7 +135,7 @@ describe('ship packets', () => {
   });
 });
 
-describe('sector.jump, archives and sector.deploy', () => {
+describe('galaxy.jump, archives and sector.deploy', () => {
   it('jumps, archives the rest, deploys, and restores the archive on return', () => {
     const sim = newGame(3, content);
     const raider = stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40, state: 'wreck' });
@@ -126,12 +143,12 @@ describe('sector.jump, archives and sector.deploy', () => {
     const player = homeShip(sim);
     const raiderIds = sim.world.ids().filter((id) => !liftSet(sim, player).includes(id));
     const raiderTiles = Array.from(sim.sector.grid.load('struct', { x: 160, y: 40, w: 40, h: 30 }));
-    jump(sim, 7);
-    const log = run(sim, 1);
+    jump(sim, near(sim, 0));
+    const log = land(sim);
     expect(log).toContain('sector.jumped');
-    expect(sim.sector).toMatchObject({ node: 7, state: 'deploying' });
+    expect(sim.sector).toMatchObject({ node: near(sim, 0), state: 'deploying' });
     expect(sim.world.entityCount).toBe(0);
-    expect(sim.archives.map((a) => a.node)).toEqual([0]);
+    expect(sim.archives.map((a) => a.node)).toEqual([START_NODE]);
     expect(sim.archives[0]!.entities.map((e) => e.id)).toEqual(raiderIds);
     // Deploying: the gap rule and the bounds are checked; then the ship is back with all its entities.
     sim.enqueue({ type: 'sector.deploy', x: -5, y: 0 });
@@ -142,9 +159,9 @@ describe('sector.jump, archives and sector.deploy', () => {
     expect(sim.world.get(player, ShipC)).toMatchObject({ x: 100, y: 60 });
     expect(sim.world.has(raider, ShipC)).toBe(false);
     // Back to node 0: the raider wreck returns as it was, and node 7 is archived (all archives are kept).
-    jump(sim, 0);
-    expect(run(sim, 1)).toContain('sector.jumped');
-    expect(sim.archives.map((a) => a.node)).toEqual([7]);
+    jump(sim, START_NODE);
+    expect(land(sim)).toContain('sector.jumped');
+    expect(sim.archives.map((a) => a.node)).toEqual([near(sim, 0)]);
     expect(sim.world.ids()).toEqual(raiderIds);
     expect(Array.from(sim.sector.grid.load('struct', { x: 160, y: 40, w: 40, h: 30 }))).toEqual(raiderTiles);
     sim.enqueue({ type: 'sector.deploy', x: 30, y: 40 });
@@ -155,20 +172,20 @@ describe('sector.jump, archives and sector.deploy', () => {
   it('refuses a jump without FTL charge, and a deploy that breaks the gap rule', () => {
     const sim = newGame(3, content);
     const player = homeShip(sim);
-    sim.enqueue({ type: 'sector.jump', ship: player, node: 1 });
-    expect(run(sim, 1)).toContain('command.rejected:sector.jump:notCharged');
-    jump(sim, 0);
-    expect(run(sim, 1)).toContain('command.rejected:sector.jump:badNode');
+    sim.enqueue({ type: 'galaxy.jump', ship: player, route: [near(sim, 0)] });
+    expect(run(sim, 1)).toContain('command.rejected:galaxy.jump:notCharged');
+    jump(sim, START_NODE);
+    expect(run(sim, 1)).toContain('command.rejected:galaxy.jump:noRoute');
     stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40, state: 'wreck' });
-    jump(sim, 1);
-    run(sim, 1);
-    jump(sim, 0, undefined, player); // refused while deploying
-    expect(run(sim, 1)).toContain('command.rejected:sector.jump:deploying');
+    jump(sim, near(sim, 0));
+    land(sim);
+    jump(sim, START_NODE, undefined, player); // refused while deploying
+    expect(run(sim, 1)).toContain('command.rejected:galaxy.jump:deploying');
     // Back at node 0 the wreck is restored; deploying on top of it breaks the gap rule.
     sim.enqueue({ type: 'sector.deploy', x: 10, y: 10 });
     run(sim, 1);
-    jump(sim, 0, undefined, player);
-    run(sim, 1);
+    jump(sim, START_NODE, undefined, player);
+    land(sim);
     sim.enqueue({ type: 'sector.deploy', x: 150, y: 35 });
     expect(run(sim, 1)).toContain('command.rejected:sector.deploy:overlap');
   });
@@ -178,12 +195,12 @@ describe('sector.jump, archives and sector.deploy', () => {
     const player = homeShip(sim);
     // A fresh combat wreck with crew aboard: left to tick, its air, heat and crew would change.
     stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40 });
-    jump(sim, 1);
-    run(sim, 1);
+    jump(sim, near(sim, 0));
+    land(sim);
     sim.enqueue({ type: 'sector.deploy', x: 10, y: 10 });
     run(sim, 1);
-    jump(sim, 0, undefined, player);
-    expect(run(sim, 1)).toContain('sector.jumped');
+    jump(sim, START_NODE, undefined, player);
+    expect(land(sim)).toContain('sector.jumped');
     const snap = (): string => JSON.stringify({ w: sim.world.serialize(), g: sim.sector.grid.serialize() });
     const before = snap();
     sim.enqueue({ type: 'sector.deploy', x: 150, y: 35 }); // rejected: overlaps the raider
@@ -214,8 +231,8 @@ describe('sector.jump, archives and sector.deploy', () => {
     expect(w.crew).toEqual([crew, rider].sort((a, b) => a - b));
     expect(w.vehicles).toEqual([shuttle]);
     expect(w.hostileDocked).toEqual([]);
-    jump(sim, 2);
-    run(sim, 1);
+    jump(sim, near(sim, 1));
+    land(sim);
     const archived = sim.archives[0]!.entities.map((e) => e.id);
     expect(archived).toEqual(expect.arrayContaining([crew, rider, shuttle]));
     expect(sim.sector.packet!.entities.map((e) => e.id)).not.toContain(crew);
@@ -226,7 +243,7 @@ describe('sector.jump, archives and sector.deploy', () => {
       const sim = newGame(8, content);
       sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 160, y: 40 });
       run(sim, 100);
-      jump(sim, 4);
+      jump(sim, near(sim, 0));
       run(sim, 2);
       return sim;
     };

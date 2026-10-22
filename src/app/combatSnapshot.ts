@@ -79,6 +79,8 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
     } else if (s.faction === 'hostile' && s.state !== 'fled') enemies.push(s.dormant !== undefined ? { ...base, dormant: true } : base);
   }
   if (me) enemies.sort((a, b) => dist(sim, me, a.ship) - dist(sim, me, b.ship));
+  // A ship in hyperspace or waiting to deploy is not in any fight, whatever is archived or placed in the empty sector.
+  if (sim.sector.state !== 'active') return { inCombat: false, player: null, enemies: [] };
   return { inCombat: sim.sector.inCombat, player, enemies };
 }
 

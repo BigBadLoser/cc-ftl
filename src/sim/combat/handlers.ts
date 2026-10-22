@@ -1,6 +1,7 @@
 import type { Command } from '../commands';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
+import { flee } from '../galaxy/hyperspace';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
@@ -108,6 +109,8 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (!ship || !combat) return reject(sim, cmd.type, 'noShip');
     if (ship.state !== 'active') return reject(sim, cmd.type, 'notActive');
     if (ship.immobile) return reject(sim, cmd.type, 'immobile');
+    // The player's ship leaves through the galaxy: charge the drive, then jump (`to`, else the cheapest affordable neighbour).
+    if (ship.faction === 'player') return void flee(sim, entity, cmd.to);
     if (combat.ftl < FTL_CHARGE_SEC) return reject(sim, cmd.type, 'notCharged');
     ship.state = 'fled';
     sim.events.emit({ type: 'ship.fled', ship: cmd.ship });

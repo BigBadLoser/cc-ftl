@@ -21,9 +21,12 @@
   let selCrew = $state<number | null>(null);
   let selMod = $state<number | null>(null);
   let selShip = $state<number | null>(null);
+  /** The ship is lifted out (hyperspace, or waiting to deploy): its crew and systems are not in the world, so show that instead of zeros. */
+  let transit = $state(false);
 
   onMount(() => {
     const u = [
+      api.starmap.subscribe((m) => (transit = m.state !== 'active')),
       api.crew.subscribe((v) => (crew = v)),
       api.hostiles.subscribe((v) => (foes = v)),
       api.modules.subscribe((v) => (mods = v)),
@@ -63,7 +66,8 @@
     <TileInspector {api} onBack={back} />
   {:else}
     <div data-testid="ship-summary">
-      <PanelHead icon="ship" title="Your ship" />
+      <PanelHead icon="ship" title="Your ship" sub={transit ? 'In transit' : ''} />
+      {#if transit}<p class="hint" data-testid="sum-transit">In transit: the ship is out of the node until it deploys.</p>{:else}
       <div class="grid">
         <span class="cell" class:warn={hurt > 0} title="Crew{drafted ? `, ${drafted} drafted` : ''}">
           <Icon name="person" size={18} /><b data-testid="sum-crew">{crew.length}</b>{#if drafted}<small>{drafted} drafted</small>{/if}
@@ -76,6 +80,7 @@
       <p class="hint" data-testid="sum-hover">
         {#if hover}<Icon name="grid" size={14} />{hover.local.x}, {hover.local.y} {hover.structName}{hover.room ? ` · room ${hover.room}` : ''}{:else}Select crew, a module or a tile.{/if}
       </p>
+      {/if}
     </div>
   {/if}
 </aside>

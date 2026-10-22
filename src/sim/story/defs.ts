@@ -16,6 +16,8 @@ export interface StoryContext {
 export type EventTrigger =
   /** Drawn (weighted) when the player arrives somewhere (`story.arrive`). */
   | { kind: 'arrival'; weight: number }
+  /** Drawn (weighted) when the player crosses a hyperlane with a mid-lane anchor (starmap), instead of an arrival draw. */
+  | { kind: 'transit'; weight: number }
   /** Drawn (weighted) every `periodicSec` of play, outside combat. */
   | { kind: 'periodic'; weight: number }
   /** Queued `delaySec` after the flag first reaches `atLeast` (default 1); eligibility is checked when it comes due. */

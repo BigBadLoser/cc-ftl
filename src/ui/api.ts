@@ -1,3 +1,4 @@
+import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute } from './starmapApi';
 import type { Command, WorkCategory } from '../sim';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
@@ -578,6 +579,15 @@ export interface UiApi {
   log: Subscribable<UiLogEntry[]>;
   /** The open event decision and the last result. */
   story: Subscribable<UiStory>;
+  /** The starmap view's data, and a route preview to a node (path, fuel, next jump's charge, blocker). */
+  starmap: Subscribable<UiStarmap>;
+  planRoute(to: string): UiStarRoute | null;
+  /** The starmap screen opened or closed: it builds its data then, and the world view stops rendering behind it. */
+  setStarmapOpen(open: boolean): void;
+  /** The deploy picker's data while the ship waits to be placed, a spot's gap-rule error (null = valid), and what a jump would leave behind. */
+  deploy: Subscribable<UiDeploy | null>;
+  deployCheck(x: number, y: number): string | null;
+  jumpWarnings(ship: number): UiJumpWarnings;
   /** Pick an option of the open decision and resume play. */
   chooseStory(choice: string): void;
   combat: Subscribable<UiCombat>;

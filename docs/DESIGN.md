@@ -27,6 +27,9 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   may come later.
 - **Endless galaxy**, procedurally generated in chunks. **Danger tiers** rise as you push outward; the
   pressure comes from choosing to go deeper for better loot, species and tech, not from a chasing fleet.
+- **Terms:** a **node** is one playable location (one grid with its structures and ships; older text says "sector" for it). A
+  **sector** is a group of nodes around a central body. A **cluster** is a named group of sectors held by one power (user decision,
+  2026-10-22: "cluster", not "region"). Sectors are joined by **hyperlanes**, clusters by **gates**. See "Starmap and factions".
 - **Long-term goals:** faction wars that move territory, story arcs that unlock with depth, end-tier
   threats (boss fleets, anomalies).
 - **Real-time with pause**, adjustable speed.
@@ -148,9 +151,10 @@ Cybernetic implants are everywhere. Neon is both mood and information.
 
 FTL's decision-making with physical consequences, in a shared sector.
 
-- **Sectors:** a sector is a playable space holding ships, stations, asteroids and derelicts, each its
-  own grid at a world position. On entering a sector, a **deploy modal** (a simplified sector map)
-  lets you choose where your ship sits relative to the other objects.
+- **Nodes:** a node is a playable space holding ships, stations, asteroids and derelicts, all on one grid. On entering a node, a
+  **deploy modal** (a simplified map of the node) lets you choose where your ship sits relative to the other objects.
+- **No combat nodes:** a node becomes a fight when hostile ships are there, including a hostile ship that jumps into your node while
+  you stay.
 - **No movement, no maneuvering, no firing arcs.** Distance only affects **projectile travel time**,
   so a far deployment gives more time to react (shields, point defence). There is no accuracy penalty.
 - **Combat overlay:** the camera stays on your ship, and an overlay panel shows the enemy ship live,
@@ -199,9 +203,39 @@ FTL's decision-making with physical consequences, in a shared sector.
 - Outcomes can be **physical**: spawn a derelict to explore, a fire, a boarding party, a combat.
 - **Persistent flags and arcs:** the pirate you spared comes back; the corp you robbed puts out a bounty.
 - **Skill checks show their odds.**
-- Event pools are weighted by danger tier and faction territory.
+- Event pools are weighted by danger tier and faction territory (the current node's, set on every jump).
 - **Presentation:** decisions pause in a modal; flavour and optional leads arrive in-world and can be
   ignored.
+
+## Starmap and factions
+
+- **Galaxy:** endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula clouds and **rifts** (voids).
+  Space is grouped three ways: nodes make a **sector** (6 to 12 nodes around a **central body**: a star, red dwarf, blue giant, gas giant,
+  nebula or black hole; the nodes take a layout such as a cloud, streak, ring, fork or corridor), sectors make a **cluster**, clusters
+  make the galaxy.
+- **Clusters** are named, have one owner (or nobody) and a type that tells you what to expect: core worlds, border march, corporate
+  holdings, trade lanes, pirate haven, machine dominion, frontier, rich and contested. Each has a **hub** sector, a crossroads with
+  more nodes and lanes. Clusters sit apart, and borders follow the rifts. Space a cluster barely reaches is **wild**: no owner.
+- **Lanes:** routes join nodes inside a sector; hyperlanes join sectors between gateway nodes that face each other. Between two
+  clusters only a few **gates** cross the border (usually one, sometimes two or three, sometimes none and you go around). Where a
+  sector can only be reached across a void, a long **rift lane** crosses it. Some hyperlanes carry a mid-lane event.
+- **Danger** rises with distance from the start: a tier about every two sector spacings outward (tiers 0 to 9). It sets enemy depth,
+  event pools and how often hostile ships show up.
+- **Node contents:** structures (asteroid fields; trade, military and research stations; old derelicts), the owner, a resources hint
+  and the ships present. Structures are descriptors until nodes become grids.
+- **Travel:** every jump costs **fuel** (an item) and **FTL charge**. Longer jumps cost more; hyperlanes are cheaper per distance but
+  need a full charge; a gate costs extra fuel and twice the days. The planner picks the least fuel, then the shortest time, through
+  space you have seen.
+- **Sensors** show nodes within 3 jumps and your whole sector. **Arrivals:** while you stay, hostile ships may jump in (more often at
+  higher danger and in hostile territory; never at danger 0).
+- **Factions:** the Concord Navy (government, holds the core where you start), the corporations (Meridian Combine: trade; Helix
+  Biosystems: research; Vantor Heavy Industries: industry), the Free Traders (civilians, no territory), the Scrapper Clans (pirates) and
+  the Rogue AI (drones; always hostile). The navy holds the start, corporations the middle band, pirates and the machines farther out.
+- **Standing** = base standing + reputation + a share of reputation with related factions. Reputation is kept per trade key (`traders`,
+  `corp`, `navy`, `pirates`, `drones`; the three corporations share `corp`), the same numbers trade prices and hailing use. Hostile
+  below -2, friendly from 3.
+- **The starmap view** (not built on `main` yet) has three zoom levels: **sector** (nodes, routes, exits, bodies, nebula), **cluster**
+  (sectors as patches, for planning a route) and **galaxy** (clusters joined by gates and rift lanes).
 
 ## Economy
 
@@ -209,8 +243,8 @@ FTL's decision-making with physical consequences, in a shared sector.
   station, time), hauling via the job system.
 - **Start light:** scrap plus 3–4 resources and a few recipes. Full chains (mining → refining →
   crafting, food) are added later as data.
-- **Terminology:** a **node** is one playable grid or location, a **sector** is a group of nodes, and sectors are linked by
-  **hyperlanes**.
+- **Terminology:** a **node** is one playable grid or location, a **sector** is a group of nodes, a **cluster** is a group of
+  sectors, and sectors are linked by **hyperlanes**.
 
 ### Trade
 

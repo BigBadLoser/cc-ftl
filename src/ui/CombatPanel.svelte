@@ -5,7 +5,7 @@
   import Icon from './Icon.svelte';
   import CombatTarget from './CombatTarget.svelte';
 
-  let { api, combat, onClose, onHail }: { api: UiApi; combat: UiCombat; onClose: () => void; onHail: (ship: number) => void } = $props();
+  let { api, combat, onClose, onHail, onFlee }: { api: UiApi; combat: UiCombat; onClose: () => void; onHail: (ship: number) => void; onFlee: (ship: number) => void } = $props();
 
   let expanded = $state(false);
   let viewEl: HTMLDivElement | undefined = $state();
@@ -122,7 +122,7 @@
     <p class="none">No hostile ships in range.</p>
   {/if}
 
-  {#if me}<CombatPlayer {api} {me} {enemy} {selWeapon} onSelect={(id) => (selWeapon = id)} {onHail} />{/if}
+  {#if me}<CombatPlayer {api} {me} {enemy} {selWeapon} onSelect={(id) => (selWeapon = id)} {onHail} {onFlee} />{/if}
 </section>
 
 <style>

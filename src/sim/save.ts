@@ -6,6 +6,7 @@ import { SectorGrid, type SectorGridData } from './sectorGrid';
 import type { SectorArchive } from './sector/archive';
 import { Sim } from './sim';
 import { newStory, type StoryState } from './story/state';
+import { loadGalaxy, saveGalaxy, type GalaxySave } from './galaxy/state';
 import { newTrade, type TradeState } from './trade/types';
 
 /**
@@ -28,8 +29,10 @@ import { newTrade, type TradeState } from './trade/types';
  * deploying), plus `archives` (every sector the player left, frozen).
  * v26: stations (`ShipC.immobile`, `ShipC.dormant`, `StationC`, `StationAlarmC`, `StationCrewC`, `WantedC`) and the `patrol`
  * work category in every `PrioritiesC`.
+ * v27 (galaxy): `galaxy` (the starmap state; its chunks are listed by key and regenerated from the seed, with the
+ * `generatorVersion` they were made under, which must match).
  */
-export const SAVE_VERSION = 26;
+export const SAVE_VERSION = 27;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -43,6 +46,8 @@ export interface SaveData {
   story?: StoryState;
   /** Trade state. Optional like `story`: older saves load with an empty one. */
   trade?: TradeState;
+  /** Starmap state, chunks as keys (see galaxy/state.ts). */
+  galaxy: GalaxySave;
   pending: QueuedCommand[];
   /** Sectors the player left (see sector/archive.ts). */
   archives: SectorArchive[];
@@ -59,6 +64,7 @@ export function serialize(sim: Sim): string {
     sector: { ...sim.sector, grid: sim.sector.grid.serialize() },
     story: sim.story,
     trade: sim.trade,
+    galaxy: saveGalaxy(sim.galaxy),
     pending: [...sim.commands.getPending()],
     archives: sim.archives,
   };
@@ -82,6 +88,7 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
   sim.story = { ...newStory(data.seed), ...data.story };
   sim.trade = { ...newTrade(), ...data.trade };
+  sim.galaxy = loadGalaxy(sim, data.galaxy);
   sim.commands.setPending(data.pending);
   sim.archives = data.archives;
   return sim;

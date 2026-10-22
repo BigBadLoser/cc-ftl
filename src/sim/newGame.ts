@@ -1,6 +1,7 @@
 import { spawnShip } from './combat/ships';
 import type { ContentRegistry } from './registry';
 import { Sim } from './sim';
+import { startGalaxy } from './galaxy/travel';
 import { PLAYER_START } from './tuning';
 
 /** Fallback crew for templates that list none. */
@@ -13,5 +14,6 @@ export function newGame(seed: number, content: ContentRegistry, shipId = 'ship.s
   const sim = new Sim(seed, content);
   sim.trade.credits = content.trade?.startCredits ?? 0;
   spawnShip(sim, { crew: DEFAULT_CREW, ...template }, { faction: 'player', x: PLAYER_START.x, y: PLAYER_START.y });
+  startGalaxy(sim);
   return sim;
 }

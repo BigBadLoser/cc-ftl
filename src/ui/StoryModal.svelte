@@ -2,7 +2,8 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiStory } from './api';
 
-  let { api }: { api: UiApi } = $props();
+  /** `hold` keeps popups back (while the starmap animates a jump); they show once it clears. */
+  let { api, hold = false }: { api: UiApi; hold?: boolean } = $props();
   let story = $state<UiStory>({ active: null, last: null });
   /** The result the player already dismissed (or that was there when the page loaded). */
   let seenTick = $state<number | null | undefined>(undefined);
@@ -26,7 +27,9 @@
   }
 </script>
 
-{#if active}
+{#if hold}
+  <!-- held back until the jump animation ends -->
+{:else if active}
   <div class="veil" data-testid="story-modal">
     <div class="card" role="dialog" aria-modal="true" aria-label={active.title}>
       <h2>{active.title}</h2>

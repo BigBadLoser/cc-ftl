@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, CrewC, FTL_CHARGE_SEC, PositionC, SECURITY_ROLE, ShipC, TraderC, VehicleC, deserialize, homeShip, isSurplus, newGame, planCourier,
+  CombatC, CrewC, FTL_CHARGE_SEC, PositionC, SECURITY_ROLE, ShipC, TraderC, VehicleC, deserialize, galaxyIndex, homeShip, isSurplus, newGame, planCourier,
   serialize, unitPrice, type Sim,
 } from '../sim';
 import { stationAirlock } from '../sim/trade/stationDock';
@@ -65,16 +65,15 @@ describe('stations in the node', () => {
   it('stays in the node archive on a jump and comes back with the node', () => {
     const { sim, station } = withStation();
     const name = sim.world.get(station, ShipC)!.name;
-    const player = homeShip(sim);
-    sim.world.get(player, CombatC)!.ftl = FTL_CHARGE_SEC;
-    sim.enqueue({ type: 'sector.jump', ship: player, node: 5 });
+    const home = sim.sector.node;
+    const away = (galaxyIndex(sim.galaxy).adjacent.get(home) ?? []).map((e) => (e.a === home ? e.b : e.a)).sort()[0]!;
+    sim.enqueue({ type: 'debug.galaxyTeleport', node: away });
     expect(run(sim, 1)).toContain('sector.jumped');
     expect(sim.world.has(station, ShipC)).toBe(false);
-    expect(sim.archives[0]!.entities.some((e) => e.id === station)).toBe(true);
+    expect(sim.archives.find((a) => a.node === home)!.entities.some((e) => e.id === station)).toBe(true);
     sim.enqueue({ type: 'sector.deploy', x: 40, y: 40 });
     run(sim, 1);
-    sim.world.get(player, CombatC)!.ftl = FTL_CHARGE_SEC;
-    sim.enqueue({ type: 'sector.jump', ship: player, node: 0 });
+    sim.enqueue({ type: 'debug.galaxyTeleport', node: home });
     expect(run(sim, 1)).toContain('sector.jumped');
     expect(sim.world.get(station, ShipC)).toMatchObject({ name, immobile: true });
   });

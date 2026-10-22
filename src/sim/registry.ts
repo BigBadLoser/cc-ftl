@@ -29,6 +29,7 @@ export interface ShipTemplate {
 
 import type { EventDef } from './story/defs';
 import type { TradeDef } from './trade/types';
+import type { GalaxyContent } from './galaxy/defs';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -55,6 +56,8 @@ export interface ContentRegistry {
   events?: Record<string, EventDef>;
   /** The EVA spacesuit. Absent = DEFAULT_SUIT (tuning.ts). */
   suit?: SuitDef;
+  /** Starmap content: galaxy factions (territory, standings), node structures, sector names. Absent = a bare galaxy. */
+  galaxy?: GalaxyContent;
   /** Faction content id (e.g. 'faction.scrapper') to definition, for generated ships. Absent = none. */
   factions?: Record<string, FactionDef>;
   /** Station kinds the station generator builds (src/sim/shipgen/stationGen.ts). */
