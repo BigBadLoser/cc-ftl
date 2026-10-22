@@ -80,8 +80,10 @@ export { archiveSector, restoreArchive, archiveOf, type SectorArchive } from './
 export { liftSet, jumpWarnings, type JumpWarnings, type LiftOptions, type WithDocked } from './sector/members';
 export * from './galaxy/types';
 export type { GalaxyFactionDef, StructureDef, GalaxyContent, StandingTier, DangerRange } from './galaxy/defs';
-export { galaxyIndex, nodeOf, currentNode, START_NODE } from './galaxy/state';
-export { edgeBetween } from './galaxy/route';
+export { galaxyIndex, nodeOf, currentNode, START_NODE, type GalaxyIndex } from './galaxy/state';
+export { edgeBetween, planStarRoute } from './galaxy/route';
 export { jumpBlocker, FUEL_ITEM } from './galaxy/travel';
-export { standing, tierOf } from './galaxy/standing';
-export { SENSOR_HOPS } from './galaxy/tuning';
+export { standing, standings, tierOf, isHostileFaction } from './galaxy/standing';
+export { galaxyGen, chunkOfId } from './galaxy/generator';
+export { SENSOR_HOPS, DANGER_STEP } from './galaxy/tuning';
+export { playerStock } from './story/world';

@@ -18,6 +18,7 @@
   import StockDrawer from './StockDrawer.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
+  import StarmapView from './StarmapView.svelte';
   import Icon, { type IconName } from './Icon.svelte';
   import './theme.css';
 
@@ -34,6 +35,8 @@
   let combatOpen = $state(false);
   let wasInCombat = false;
   let overviewOpen = $state(false);
+  let mapOpen = $state(false);
+  let sliding = $state(false);
   let selShip = $state<number | null>(null);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
@@ -94,6 +97,7 @@
       api.togglePause();
     } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
     else if (e.key === '`') debug = !debug;
+    else if (e.key === 'm') mapOpen = !mapOpen;
     else if (e.key === 'Escape') {
       if (stockOpen) stockOpen = false;
       else if (overviewOpen) overviewOpen = false;
@@ -127,6 +131,7 @@
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
   <NavStrip
+    {mapOpen} onMap={() => (mapOpen = !mapOpen)}
     {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.length > 0 || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
@@ -169,7 +174,8 @@
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
 {/if}
-<StoryModal {api} />
+{#if mapOpen}<StarmapView {api} onClose={() => ((mapOpen = false), (sliding = false))} onSlide={(on) => (sliding = on)} />{/if}
+<StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />
 
 <!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; alerts stack below as separate cards. -->

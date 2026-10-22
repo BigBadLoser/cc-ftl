@@ -148,6 +148,8 @@ const api: UiApi = {
   trade: bridge.trade,
   prizes: bridge.prizes,
   story: bridge.story,
+  starmap: bridge.starmap,
+  planRoute: bridge.planRoute,
   chooseStory: bridge.chooseStory,
   focusShuttle: (id) => {
     const b = sim.world.get(id, BodyC);
@@ -197,7 +199,7 @@ const api: UiApi = {
   },
 };
 
-// Periodic events: one draw about every 3 minutes of play. Danger tier and territory are parameters until sectors are redone.
-bridge.dispatch({ type: 'story.setContext', danger: 1, faction: null, periodicSec: 180 });
+// Periodic events: one draw about every 3 minutes of play. Danger tier and territory follow the current starmap node.
+bridge.dispatch({ type: 'story.setContext', periodicSec: 180 });
 
 mount(App, { target, props: { api } });

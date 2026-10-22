@@ -24,7 +24,7 @@ export function withGalaxyRng<T>(g: GalaxyState, fn: (rng: Rng) => T): T {
 }
 
 /** Lookup tables over the generated chunks. Derived, never saved; rebuilt when the chunk set changes. */
-interface GalaxyIndex {
+export interface GalaxyIndex {
   nodes: Map<string, NodeData>;
   sectors: Map<string, SectorData>;
   edges: Map<string, EdgeData>;

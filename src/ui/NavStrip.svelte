@@ -4,20 +4,23 @@
   type Props = {
     overviewOpen: boolean;
     stockOpen: boolean;
+    mapOpen: boolean;
     prioritiesOpen: boolean;
     /** Enemies are present in the node. */
     hostile: boolean;
     combatOpen: boolean;
+    onMap: () => void;
     onOverview: () => void;
     onCrew: () => void;
     onStock: () => void;
     onCombat: () => void;
   };
-  let { overviewOpen, stockOpen, prioritiesOpen, hostile, combatOpen, onOverview, onCrew, onStock, onCombat }: Props = $props();
+  let { mapOpen, onMap, overviewOpen, stockOpen, prioritiesOpen, hostile, combatOpen, onOverview, onCrew, onStock, onCombat }: Props = $props();
 </script>
 
-<!-- Global screens: one framed strip of flush icon tiles. A starmap tile can be added to the front later. -->
+<!-- Global screens: one framed strip of flush icon tiles, the starmap first. -->
 <div class="strip" role="toolbar" aria-label="Screens" data-testid="navstrip">
+  <button class="tile" class:on={mapOpen} title="Starmap (M)" aria-label="Starmap" data-testid="starmap-open" onclick={onMap}><Icon name="map" size={22} /></button>
   <button class="tile" class:on={overviewOpen} title="Ship overview" aria-label="Ship overview" data-testid="overview-open" onclick={onOverview}><Icon name="hull" size={22} /></button>
   <button class="tile" class:on={prioritiesOpen} title="Crew priorities" aria-label="Crew" data-testid="crew-open" onclick={onCrew}><Icon name="person" size={22} /></button>
   <button class="tile" class:on={stockOpen} title="Ship stock" aria-label="Stock" data-testid="stock-open" onclick={onStock}><Icon name="stock" size={22} /></button>
