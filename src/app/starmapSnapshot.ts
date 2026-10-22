@@ -1,8 +1,8 @@
 import {
-  CombatC, DANGER_STEP, FTL_CHARGE_SEC, FUEL_ITEM, edgeBetween, galaxyIndex, isHostileFaction, jumpBlocker,
-  planStarRoute, playerShip, playerStock, SENSOR_HOPS, standings, type Sim,
+  DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
+  nodeOf, routeBlocker, routeCharge, SENSOR_HOPS, standings, type Sim,
 } from '../sim';
-import type { UiStarExit, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
+import type { UiStarExit, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { toneOf } from './starmapTone';
 import { nebulaAround } from './starmapNebula';
 import { buildClusters, sectorOutline } from './starmapClusters';
@@ -28,14 +28,20 @@ function inSensors(sim: Sim): Set<string> {
   return out;
 }
 
+/** The trip in progress as the view draws it. */
+function travelOf(sim: Sim): UiTravel | null {
+  const t = sim.galaxy.travel;
+  if (!t) return null;
+  const next = t.phase === 'noFuel' ? edgeBetween(sim.galaxy, sim.galaxy.current, t.route[t.at + 1] as string) : undefined;
+  const names = t.route.map((id) => (sim.galaxy.discovered[id] !== undefined ? nodeOf(sim, id)?.name : undefined) ?? 'Uncharted');
+  return { route: [...t.route], at: t.at, phase: t.phase, stopping: !!t.stopping, need: next?.fuel ?? 0, names };
+}
+
 /** The fuel, charge and progress figures (cheap; refreshed often). */
-export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'chargeMax' | 'jumps' | 'days' | 'current' | 'ship'> {
-  const ship = playerShip(sim);
-  const combat = sim.world.get(ship, CombatC);
+export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'chargeMax' | 'jumps' | 'turn' | 'state' | 'travel' | 'current' | 'ship'> {
   return {
-    ship,
-    fuel: playerStock(sim, FUEL_ITEM), charge: Math.floor(combat?.ftl ?? 0), chargeMax: FTL_CHARGE_SEC,
-    jumps: sim.galaxy.jumps, days: sim.galaxy.days, current: sim.galaxy.current,
+    ship: playerShip(sim), fuel: fuelStock(sim), charge: Math.floor(ftlCharge(sim) ?? 0), chargeMax: FTL_CHARGE_SEC,
+    jumps: sim.galaxy.jumps, turn: sim.galaxy.turn, state: sim.sector.state, travel: travelOf(sim), current: sim.galaxy.current,
   };
 }
 
@@ -109,19 +115,20 @@ export function buildStarmap(sim: Sim): UiStarmap {
 
 const BLOCKERS: Record<string, string> = {
   noRoute: 'No route there.', noShip: 'Your ship cannot jump.', notCharged: 'The FTL drive is still charging (a pilot at the helm charges it).',
-  noFuel: 'Not enough fuel for the next jump.',
+  noFuel: 'Not enough fuel for the first hop.',
 };
 
-/** The route preview to a node: path, total fuel and time, next jump's charge, and whether it can go. */
+/** The route preview to a node: the hops with their fuel and days, the charge to enter hyperspace, and whether it can go. */
 export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
   const r = planStarRoute(sim.galaxy, sim.galaxy.current, to);
   if (!r || r.path.length < 2) return null;
   const status = starmapStatus(sim);
-  const first = edgeBetween(sim.galaxy, r.path[0] as string, r.path[1] as string);
-  const block = jumpBlocker(sim, first);
+  const block = routeBlocker(sim, r.edges);
+  const charge = routeCharge(r.edges);
   return {
-    to, path: r.path, hops: r.path.length - 1, fuel: r.fuel, time: r.time, nextCharge: first?.charge ?? 0,
-    fuelOk: status.fuel >= r.fuel, chargeOk: (first?.charge ?? Infinity) <= status.charge + 1e-9,
+    to, path: r.path, hops: r.path.length - 1, fuel: r.fuel, time: r.time,
+    legs: r.edges.map((e, i) => ({ to: r.path[i + 1] as string, fuel: e.fuel, time: e.time, kind: e.kind, gate: !!e.gate })),
+    nextCharge: charge, fuelOk: status.fuel >= r.fuel, chargeOk: charge <= status.charge + 1e-9,
     blocker: block ? BLOCKERS[block] ?? block : null,
   };
 }
@@ -129,7 +136,7 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
 /** A starmap with nothing in it (rev -1): what the store holds until the screen is first built. */
 export function emptyStarmap(): UiStarmap {
   return {
-    rev: -1, current: '', ship: 0, fuel: 0, charge: 0, chargeMax: FTL_CHARGE_SEC, jumps: 0, days: 0, dangerStep: DANGER_STEP, sectors: [], nodes: [],
+    rev: -1, current: '', ship: 0, fuel: 0, charge: 0, chargeMax: FTL_CHARGE_SEC, jumps: 0, turn: 0, state: 'active', travel: null, dangerStep: DANGER_STEP, sectors: [], nodes: [],
     edges: [], factions: [], currentSector: '', currentCluster: null, clusters: [], exits: [], sectorLinks: [], clusterLinks: [], nebula: [],
   };
 }

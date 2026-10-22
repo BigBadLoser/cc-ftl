@@ -120,6 +120,24 @@ export interface NodeState {
   entered: boolean;
 }
 
+/**
+ * Hyperspace travel of the player's ship along a route (`sector.state === 'hyperspace'`, the ship waits as the sector's packet).
+ * `route[0]` is the node it left; `at` is the index of the node last passed (`galaxy.current` is `route[at]`).
+ */
+export interface Travel {
+  route: string[];
+  /** FTL charge seconds paid on entering hyperspace (the largest any hop of the route needs). */
+  charge: number;
+  at: number;
+  /** Ticks into the hop from `route[at]` to `route[at + 1]`, and how many it takes (the edge's days at HYPERSPACE_SEC_PER_DAY). */
+  elapsed: number;
+  hopTicks: number;
+  /** 'hop': under way; 'arrived': at the end of the route; 'noFuel': stopped at `route[at]` for want of fuel for the next hop. */
+  phase: 'hop' | 'arrived' | 'noFuel';
+  /** A drop was asked for mid-hop: the route was cut after the hop under way and the ship drops out when it gets there. */
+  stopping?: true;
+}
+
 /** Mutable starmap state on the Sim (`sim.galaxy`), saved with the game. */
 export interface GalaxyState {
   current: string;
@@ -136,8 +154,12 @@ export interface GalaxyState {
   nextArrival: number;
   nextId: number;
   jumps: number;
+  /** The starmap turn: one per hop entered (see turn.ts). */
+  turn: number;
   /** Travel days spent in jumps. */
   days: number;
+  /** The hyperspace trip in progress, or null. */
+  travel: Travel | null;
   /** The story draw owed at the next `sector.deploy` ('transit' after an anchored hyperlane), or null. */
   pendingDraw: 'arrival' | 'transit' | null;
   /** Bumped on every change the starmap view shows. */

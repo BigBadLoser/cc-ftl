@@ -9,6 +9,7 @@ import type { SectorArchive } from './sector/archive';
 import { pipeline } from './pipeline';
 import { Rng } from './rng';
 import { newStory, type StoryState } from './story/state';
+import { advanceTravel } from './galaxy/hyperspace';
 import { newGalaxy, START_NODE } from './galaxy/state';
 import type { GalaxyState } from './galaxy/types';
 import { newTrade, type TradeState } from './trade/types';
@@ -55,7 +56,8 @@ export class Sim {
   step(): void {
     this.commands.drain(this.tick, (cmd) => this.apply(cmd));
     // While the player's ship waits to deploy, the node is frozen: only a successful `sector.deploy` resumes it.
-    if (this.sector.state !== 'deploying') for (const system of pipeline) system(this);
+    if (this.sector.state === 'active') for (const system of pipeline) system(this);
+    else if (this.sector.state === 'hyperspace') advanceTravel(this);
     this.tick++;
   }
 

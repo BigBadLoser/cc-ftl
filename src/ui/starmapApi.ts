@@ -133,7 +133,12 @@ export interface UiStarmap {
   charge: number;
   chargeMax: number;
   jumps: number;
-  days: number;
+  /** The starmap turn (one per hop entered). */
+  turn: number;
+  /** 'active': in a node; 'hyperspace': travelling (see `travel`); 'deploying': dropped out, placing the ship. */
+  state: 'active' | 'hyperspace' | 'deploying';
+  /** The hyperspace trip in progress. */
+  travel: UiTravel | null;
   /** Map units per danger tier (rings on the map). */
   dangerStep: number;
   sectors: UiStarSector[];
@@ -153,6 +158,20 @@ export interface UiStarmap {
   nebula: UiNebulaTile[];
 }
 
+/** The hyperspace trip: the route's node ids, the index of the node last passed, and the hop's pace. */
+export interface UiTravel {
+  route: string[];
+  at: number;
+  /** 'hop': under way to route[at + 1]; 'arrived': at the end; 'noFuel': stopped for want of fuel. */
+  phase: 'hop' | 'arrived' | 'noFuel';
+  /** A drop was asked for: the route ends at the next node, where the ship drops out. */
+  stopping: boolean;
+  /** Fuel the next hop needs (when stopped for want of it). */
+  need: number;
+  /** The route's node names (Uncharted where not discovered), for views that do not hold the whole map. */
+  names: string[];
+}
+
 /** A square of terrain density: `n` x `n` samples (0..255, row-major) spanning `size` map units from (x, y). */
 export interface UiNebulaTile {
   id: string;
@@ -168,12 +187,38 @@ export interface UiStarRoute {
   to: string;
   path: string[];
   hops: number;
+  /** Total fuel of all hops (each is paid as it is entered), and the days of the whole route (data; the map counts turns, one per hop). */
   fuel: number;
   time: number;
-  /** FTL charge the next jump needs, and whether the tank and the drive cover the route / the next jump. */
+  /** Per hop: the node reached, its fuel and its days. */
+  legs: { to: string; fuel: number; time: number; kind: 'route' | 'hyperlane'; gate: boolean }[];
+  /** FTL charge needed to enter hyperspace (the largest hop's, spent once), and whether the tank and the drive cover the route / the first hop. */
   nextCharge: number;
   fuelOk: boolean;
   chargeOk: boolean;
   /** Why the next jump cannot go now (a short sentence), or null. */
   blocker: string | null;
+}
+
+/** What a jump would leave behind or cut loose (the confirm step lists it). Names only: the ids of docked vehicles go in `withDocked`. */
+export interface UiJumpWarnings {
+  /** Living player crew not aboard (boarding parties, EVA, crew on a shuttle that is away). */
+  crew: string[];
+  /** Player vehicles not stowed or docked on the ship. */
+  vehicles: string[];
+  /** Non-player vehicles docked at the ship's airlocks; each can come along or be cut loose. */
+  hostileDocked: { id: number; name: string }[];
+}
+
+/** The deploy picker's data while the ship waits to be placed. Sector tiles; `keepOut` rects are where the gap rule forbids the ship's top-left corner... see `others`. */
+export interface UiDeploy {
+  node: string;
+  nodeName: string;
+  width: number;
+  height: number;
+  /** The waiting ship's size and a spot that passes the gap rule (null when the sector has none). */
+  ship: { w: number; h: number };
+  suggested: { x: number; y: number } | null;
+  /** Ships already in the sector: their bounding rect, the padded frame the gap rule keeps clear, and who they are. */
+  others: { x: number; y: number; w: number; h: number; frame: { x: number; y: number; w: number; h: number }; name: string; hostile: boolean }[];
 }

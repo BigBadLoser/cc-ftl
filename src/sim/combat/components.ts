@@ -21,11 +21,12 @@ export interface Sector {
   /** Galaxy node id this sector is (`START_NODE` at the start). Archives are keyed by it. */
   node: string;
   /**
-   * 'active': normal play. 'deploying': the player's ship has jumped in and waits as `packet` until `sector.deploy` stamps it
-   * (the deploy modal pauses the sim meanwhile).
+   * 'active': normal play. 'hyperspace': the player's ship has been lifted into `packet` and travels (`galaxy.travel`); the sector
+   * is empty and only the travel clock runs. 'deploying': it dropped out at a node and waits as `packet` until `sector.deploy` stamps
+   * it (the deploy picker pauses the sim meanwhile).
    */
-  state: 'active' | 'deploying';
-  /** The player's ship in transit while deploying. */
+  state: 'active' | 'hyperspace' | 'deploying';
+  /** The player's ship in transit while in hyperspace or deploying. */
   packet?: ShipPacket;
 }
 

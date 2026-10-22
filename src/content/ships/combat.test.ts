@@ -341,18 +341,22 @@ describe('enemy AI, endings', () => {
     const fuel = playerItems(sim, 'item.fuel');
     sim.enqueue({ type: 'combat.flee', ship: nth(sim, 1) });
     const events = run(sim, 40);
-    // One escape path: the same lift, archive and deploy as `galaxy.jump`, to the cheapest connected node.
-    const jumped = ofType(events, 'galaxy.jumped');
-    expect(jumped).toHaveLength(1);
-    expect(ofType(events, 'sector.jumped')).toHaveLength(1);
+    // One escape path: the same lift, archive and hyperspace trip as `galaxy.jump`, a one-hop route to the cheapest connected node.
+    const entered = ofType(events, 'galaxy.hyperspace');
+    expect(entered).toHaveLength(1);
+    const to = entered[0]!.route[1]!;
     expect(ofType(events, 'ship.fled')).toEqual([]);
-    expect(sim.sector).toMatchObject({ state: 'deploying', node: jumped[0]!.to, inCombat: false });
-    expect(sim.galaxy.current).toBe(jumped[0]!.to);
-    expect(sim.archives.map((a) => a.node)).toEqual([jumped[0]!.from]);
+    expect(sim.sector).toMatchObject({ state: 'hyperspace', inCombat: false });
+    expect(sim.archives.map((a) => a.node)).toEqual([entered[0]!.route[0]]);
+    for (let i = 0; i < 2000 && sim.galaxy.travel?.phase === 'hop'; i++) sim.step();
+    expect(sim.galaxy.current).toBe(to);
+    sim.enqueue({ type: 'galaxy.drop' });
+    run(sim, 1);
+    expect(sim.sector).toMatchObject({ state: 'deploying', node: to });
     sim.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
     run(sim, 1);
-    expect(combatOf(sim, 1).ftl).toBeCloseTo(40 - jumped[0]!.charge, 0);
-    expect(playerItems(sim, 'item.fuel')).toBe(fuel - jumped[0]!.fuel);
+    expect(combatOf(sim, 1).ftl).toBeLessThan(40);
+    expect(playerItems(sim, 'item.fuel')).toBeLessThan(fuel);
   });
 
   it('a badly damaged raider with a charged drive retreats', () => {

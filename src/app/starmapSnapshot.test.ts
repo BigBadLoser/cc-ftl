@@ -33,6 +33,7 @@ describe('starmap snapshot', () => {
     const to = map.nodes.find((n) => n.reachable)!.id;
     const uncharged = planStarmapRoute(sim, to)!;
     expect(uncharged).toMatchObject({ hops: 1, fuelOk: true, chargeOk: false });
+    expect(uncharged.legs).toHaveLength(1);
     expect(uncharged.blocker).toMatch(/charging/);
     const combat = sim.world.get(playerShip(sim), CombatC)!;
     combat.ftl = FTL_CHARGE_SEC;

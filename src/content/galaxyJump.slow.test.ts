@@ -13,23 +13,29 @@ function trip(seed: number): Sim {
     for (let i = 0; i < n; i++) sim.step();
   };
   const deploy = (): void => {
-    sim.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
-    run(1);
+    for (const [x, y] of [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const) {
+      sim.enqueue({ type: 'sector.deploy', x, y });
+      run(1);
+      if (sim.sector.state === 'active') break;
+    }
   };
   sim.enqueue({ type: 'debug.galaxyTeleport', node: far.id });
   run(1);
   deploy();
-  run(20 * 130);
+  run(20 * 15);
   // Hop to a neighbour and back along real edges.
   const next = galaxyIndex(sim.galaxy).adjacent.get(far.id)![0]!;
   for (const to of [next.a === far.id ? next.b : next.a, far.id]) {
     giveItems(sim, 'item.fuel', 40);
     const c = sim.world.get(playerShip(sim), CombatC);
     if (c) c.ftl = FTL_CHARGE_SEC;
-    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), to });
+    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [to] });
+    run(1);
+    for (let i = 0; i < 90000 && sim.galaxy.travel?.phase === 'hop'; i++) sim.step();
+    sim.enqueue({ type: 'galaxy.drop' });
     run(1);
     deploy();
-    run(20 * 70);
+    run(20 * 15);
   }
   return sim;
 }

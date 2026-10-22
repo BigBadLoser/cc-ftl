@@ -39,14 +39,14 @@ loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e
 
 const loop = createLoop({
   sim,
-  // The starmap covers the whole screen: skip drawing the world behind it.
-  render: (alpha) => { if (!starmapOpen) renderer?.render(alpha); },
+  // The starmap covers the whole screen, and in hyperspace or while deploying the sector is empty: skip drawing the world.
+  render: (alpha) => { if (!starmapOpen && sim.sector.state === 'active') renderer?.render(alpha); },
   onEvents: (events) => {
     controller.onEvents(events);
     renderer?.onEvents(events);
     // A jump lifts the ships out of the sector: their scenes are stale. The deployed ship is shown (and framed) like a new game's.
     for (const e of events) {
-      if (e.type === 'sector.jumped') {
+      if (e.type === 'sector.jumped' || e.type === 'galaxy.hyperspace') {
         renderer?.setSector(sim.sector.grid); // archiving and restoring swap the sector's grid object
         renderer?.resetWorld();
       }
@@ -163,6 +163,9 @@ const api: UiApi = {
   story: bridge.story,
   starmap: bridge.starmap,
   planRoute: bridge.planRoute,
+  deploy: bridge.deploy,
+  deployCheck: bridge.deployCheck,
+  jumpWarnings: bridge.jumpWarnings,
   setStarmapOpen: (open) => {
     starmapOpen = open;
     bridge.setStarmapOpen(open);

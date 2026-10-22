@@ -93,8 +93,8 @@ export type Command =
   /** Fire every charged weapon of the ship now. */
   | { type: 'combat.fireVolley'; ship: number }
   /**
-   * Flee: leave the node with a charged FTL drive. The player's ship jumps like `galaxy.jump` to `to` (an adjacent node), else to the
-   * cheapest connected node it can afford; AI ships just leave (state 'fled').
+   * Flee: leave the node with a charged FTL drive. The player's ship enters hyperspace like `galaxy.jump` with a one-hop route to `to` (an
+   * adjacent node), else to the cheapest connected node it can afford; AI ships just leave (state 'fled').
    */
   | { type: 'combat.flee'; ship: number; to?: string }
   /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
@@ -127,13 +127,16 @@ export type Command =
   /** Debug: set a persistent flag/counter (0 clears it). */
   | { type: 'story.setFlag'; flag: string; value: number }
   /**
-   * The one way to jump (step 9): the player's `ship` goes along one route or hyperlane from the current galaxy node to `to`. Needs a valid
-   * edge, its FTL charge and fuel, no live trade deal and an active sector; pays both, then the ship (with its stowed and docked own vehicles
-   * and the crew aboard) lifts into a packet, the rest of the sector is archived, the archive of `to` is restored if it has one, and the
-   * sector waits in state 'deploying'. `withDocked`: ids of non-player vehicles docked at its airlocks to take along (the others are cut
-   * loose). Crew or shuttles away stay in the archive (the UI confirms first, see `jumpWarnings`). Nothing is paid or moved if it is rejected.
+   * The one way to travel (step 9): the player's `ship` enters hyperspace and follows `route` (the nodes to pass, in order, the first one
+   * joined to the current node, each pair by an edge). Needs a valid route, an active sector, no live trade deal, FTL charge for the
+   * largest hop (spent once) and fuel for the first hop (each later hop pays as it is entered; the trip stops where it cannot). The
+   * ship (with its stowed and docked own vehicles and the crew aboard) lifts into a packet and the rest of the sector is archived.
+   * `withDocked`: ids of non-player vehicles docked at its airlocks to take along (the others are cut loose). Crew or shuttles away
+   * stay in the archive (the UI confirms first, see `jumpWarnings`). Nothing is paid or moved if it is rejected.
    */
-  | { type: 'galaxy.jump'; ship: number; to: string; withDocked?: number[] }
+  | { type: 'galaxy.jump'; ship: number; route: string[]; withDocked?: number[] }
+  /** End the hyperspace trip at the node last passed: its archive comes back (or its ships appear on the first visit) and the ship waits to deploy. */
+  | { type: 'galaxy.drop' }
   /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */
   | { type: 'debug.galaxyReveal'; radius: number }
   /** Debug: move to any generated galaxy node at no cost, as if arriving there (no event draw). */

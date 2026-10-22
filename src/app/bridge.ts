@@ -13,8 +13,8 @@ import { warmOutlines } from './starmapClusters';
 import { warmNebula } from './starmapNebula';
 import { buildStarmap, emptyStarmap, planStarmapRoute, starmapStatus } from './starmapSnapshot';
 import { PREFETCH_BOOST_BUDGET_MS, PREFETCH_BOOST_MS, PREFETCH_EVERY, prefetchGalaxy } from './galaxyPrefetch';
-import type { UiStarmap, UiStarRoute } from '../ui/starmapApi';
-import { tempAutoDeploy } from './tempDeploy';
+import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute } from '../ui/starmapApi';
+import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
 import { createStore, type Readable } from './store';
 import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
@@ -78,6 +78,10 @@ export interface Bridge {
   /** The generated starmap (geometry rebuilt when the galaxy changes; fuel and charge kept fresh). */
   starmap: Readable<UiStarmap>;
   planRoute(to: string): UiStarRoute | null;
+  /** The deploy picker's data while the ship waits to be placed (null otherwise), the gap-rule check of a spot, and the jump confirm's list. */
+  deploy: Readable<UiDeploy | null>;
+  deployCheck(x: number, y: number): string | null;
+  jumpWarnings(ship: number): UiJumpWarnings;
   /** The starmap screen opens (builds and keeps its data fresh) or closes (stops refreshing). */
   setStarmapOpen(open: boolean): void;
   /** Build the starmap's geometry ahead of the first open, one small piece per call (idle time); returns true while more is left. */
@@ -126,7 +130,10 @@ export function createBridge(sim: Sim): Bridge {
   let lastStory = '';
   // The starmap is built lazily: when the screen first opens, or in idle time after loading (`warmStarmap`), never in createBridge.
   const starmap = createStore<UiStarmap>(emptyStarmap());
+  const deploy = createStore<UiDeploy | null>(null);
+  let deployKey = '';
   let starOpen = false;
+  let lastStatus = '';
   const warmedChunks = new Set<string>();
   let starFrame = 0;
   const syncStarmap = () => {
@@ -274,11 +281,24 @@ export function createBridge(sim: Sim): Bridge {
   };
   /** While the screen is open: full rebuild on a galaxy revision, otherwise only the fuel and FTL figures (about six times a second). */
   const refreshStarmap = () => {
-    if (!starOpen || starFrame++ % 10) return;
+    // Closed: only the status (state and trip) is kept fresh, so the game view can tell the player they are in hyperspace.
+    if ((!starOpen && sim.sector.state === 'active' && !starmap.get().travel) || starFrame++ % 5) return;
     const cur = starmap.get();
-    if (cur.rev !== sim.galaxy.rev) return starmap.set(buildStarmap(sim));
+    if (starOpen && cur.rev !== sim.galaxy.rev) return starmap.set(buildStarmap(sim));
     const st = starmapStatus(sim);
-    if (st.fuel !== cur.fuel || st.charge !== cur.charge || st.current !== cur.current || st.ship !== cur.ship) starmap.set({ ...cur, ...st });
+    const key = JSON.stringify(st);
+    if (key !== lastStatus) {
+      lastStatus = key;
+      starmap.set({ ...cur, ...st });
+    }
+  };
+  /** The deploy picker's data, built once when a ship starts waiting (the sector is frozen meanwhile). */
+  const refreshDeploy = () => {
+    const waiting = sim.sector.state === 'deploying' && !!sim.sector.packet;
+    const key = waiting ? `${sim.sector.node}:${sim.tick}` : '';
+    if (key === deployKey) return;
+    deployKey = key;
+    deploy.set(waiting ? buildDeploy(sim) : null);
   };
   const applySpeed = (speed: Speed) => {
     loop?.setSpeed(speed);
@@ -308,6 +328,9 @@ export function createBridge(sim: Sim): Bridge {
     story,
     starmap,
     planRoute: (to) => planStarmapRoute(sim, to),
+    deploy,
+    deployCheck: (x, y) => deployError(sim, x, y),
+    jumpWarnings: (ship) => buildJumpWarnings(sim, ship),
     setStarmapOpen(open) {
       starOpen = open;
       if (open) syncStarmap();
@@ -360,7 +383,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshPrizes();
       refreshCombat();
       refreshStory();
-      tempAutoDeploy(sim); // TEMP until the 9b deploy picker
+      refreshDeploy();
       refreshStarmap();
       runPrefetch();
     },

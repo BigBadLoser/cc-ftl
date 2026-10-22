@@ -102,6 +102,12 @@ export const LOOP_CHANCE = 0.2;
 /** Chance a hyperlane carries a mid-lane event anchor. */
 export const ANCHOR_CHANCE = 0.35;
 
+/**
+ * The starmap is turn-based: entering a hop is one turn (`GalaxyState.turn`), whatever the edge's days (kept as data). The sim steps
+ * one hop per TURN_TICKS ticks only as pacing, so the map's glide animation (a fixed tween per hop, visual only) can play between nodes.
+ */
+export const TURN_TICKS = 16;
+
 /** Fuel per jump: ceil(length / units per fuel). Hyperlanes are cheaper per distance. */
 export const ROUTE_UNITS_PER_FUEL = 90;
 export const HYPERLANE_UNITS_PER_FUEL = 220;

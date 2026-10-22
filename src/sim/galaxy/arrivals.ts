@@ -48,11 +48,11 @@ function freeSpot(sim: Sim, w: number, h: number): { x: number; y: number } | nu
 
 /**
  * Make a contact a real ship in the active sector through the generated-ship path and the gap rule: hostile ones on their
- * faction's combat side, the rest neutral. Returns false (the contact stays, unspawned) when the sector is not active, its
+ * faction's combat side, the rest neutral. Returns false (the contact stays, unspawned) when its
  * generator faction is missing, no layout comes out or nothing fits.
  */
 export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
-  if (sim.sector.state !== 'active' || sim.galaxy.current !== node || c.ship !== undefined) return false;
+  if (sim.galaxy.current !== node || c.ship !== undefined) return false;
   const def = sim.content.factions?.[c.shipgen];
   if (!def) return false;
   let gen: ReturnType<typeof generateShip>;

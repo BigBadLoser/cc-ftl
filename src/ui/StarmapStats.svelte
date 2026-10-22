@@ -1,5 +1,5 @@
 <script lang="ts">
-  /** The info row: fuel, FTL charge, jumps made and days travelled as icon + value cells (the look of the ship overview's stat cells). */
+  /** The info row: fuel, FTL charge, jumps made and the turn as icon + value cells (the look of the ship overview's stat cells). */
   import Icon from './Icon.svelte';
   import type { UiStarmap } from './starmapApi';
 
@@ -10,7 +10,7 @@
   <span class="cell" class:bad={fuelBad} title="Fuel" data-testid="starmap-fuel"><Icon name="fuel" size={18} /><b>{map.fuel}</b></span>
   <span class="cell" class:bad={chargeBad} title="FTL charge" data-testid="starmap-charge"><Icon name="bolt" size={18} /><b>{map.charge}/{map.chargeMax}</b><small>s</small></span>
   <span class="cell" title="Jumps made"><Icon name="fast" size={18} /><b>{map.jumps}</b></span>
-  <span class="cell" title="Days travelled"><Icon name="clock" size={18} /><b>{map.days}</b><small>d</small></span>
+  <span class="cell" title="Starmap turn (one per hop entered)" data-testid="starmap-turn"><Icon name="clock" size={18} /><b>{map.turn}</b><small>turn</small></span>
 </div>
 
 <style>

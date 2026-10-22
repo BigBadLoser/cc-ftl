@@ -5,13 +5,15 @@ import { FTL_CHARGE_SEC } from '../tuning';
 import { playerShipInfo } from './arrivals';
 import { chunkOfId } from './generator';
 import { ensureChunk, ensureChunkOf, galaxyIndex } from './state';
-import { discover, jump, teleport } from './travel';
+import { drop, jump, teleport } from './hyperspace';
+import { discover } from './travel';
 
 type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl'>;
 type Handler<T extends GalaxyCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
-  'galaxy.jump': (sim, cmd) => void jump(sim, cmd.ship, cmd.to, cmd.withDocked),
+  'galaxy.jump': (sim, cmd) => void jump(sim, cmd.ship, cmd.route, cmd.withDocked),
+  'galaxy.drop': (sim) => void drop(sim),
   'debug.galaxyReveal': (sim, cmd) => {
     const r = Math.max(0, Math.min(12, Math.floor(cmd.radius)));
     const [cx, cy] = (chunkOfId(sim.galaxy.current) ?? '0,0').split(',').map(Number) as [number, number];

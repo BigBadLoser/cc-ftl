@@ -15,7 +15,14 @@ const ftl = (sim: Sim) => sim.world.get(playerShip(sim), CombatC);
 const fuel = (sim: Sim) => playerStock(sim, 'item.fuel');
 const neighbours = (sim: Sim, id: string) => (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a));
 /** Queue a jump of the player's ship. */
-const jumpTo = (sim: Sim, to: string) => sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), to });
+const jumpTo = (sim: Sim, ...route: string[]) => sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route });
+/** Run a trip to its last node and drop out of hyperspace. */
+const land = (sim: Sim) => {
+  sim.step();
+  for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && sim.galaxy.travel?.phase === 'hop'; i++) sim.step();
+  sim.enqueue({ type: 'galaxy.drop' });
+  sim.step();
+};
 /** Place the waiting ship in the middle of the sector (the deploy modal's job). */
 const deploy = (sim: Sim) => {
   sim.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
@@ -95,6 +102,10 @@ describe('starmap travel', () => {
     sim.enqueue({ type: 'debug.chargeFtl' });
     jumpTo(sim, to);
     sim.step();
+    // In hyperspace: the ship is lifted out, nothing has been passed yet.
+    expect(sim.sector.state).toBe('hyperspace');
+    expect(sim.galaxy.current).toBe(START_NODE);
+    land(sim);
     expect(sim.galaxy.current).toBe(to);
     expect(sim.sector).toMatchObject({ node: to, state: 'deploying' });
     deploy(sim);
@@ -154,7 +165,8 @@ describe('starmap travel', () => {
     const sim = newGame(5, content);
     sim.enqueue({ type: 'debug.chargeFtl' });
     jumpTo(sim, neighbours(sim, START_NODE)[0] as string);
-    sim.step();
+    for (let i = 0; i < 40; i++) sim.step(); // a trip still under way
+    expect(sim.sector.state).toBe('hyperspace');
     const json = serialize(sim);
     expect(JSON.parse(json).galaxy.chunks).toEqual(Object.keys(sim.galaxy.chunks).sort());
     const back = deserialize(json, content);

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import type { UiStarmap, UiDeploy } from './starmapApi';
   import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
   import CombatPanel from './CombatPanel.svelte';
   import NavStrip from './NavStrip.svelte';
@@ -19,6 +20,8 @@
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
   import StarmapView from './StarmapView.svelte';
+  import DeployPicker from './DeployPicker.svelte';
+  import HyperspaceView from './HyperspaceView.svelte';
   import Icon, { type IconName } from './Icon.svelte';
   import './theme.css';
 
@@ -39,6 +42,12 @@
   /** The ship fleeing: the starmap was opened from the combat panel to pick the target. */
   let fleeShip = $state<number | null>(null);
   let sliding = $state(false);
+  /** The starmap's status (hyperspace trip) and the deploy picker's data, kept fresh even while the map is closed. */
+  let star = $state<UiStarmap | null>(null);
+  let deploy = $state<UiDeploy | null>(null);
+  $effect(() => {
+    if (deploy) mapOpen = false; // dropped out: the picker takes over, and the map stays closed once deployed
+  });
   let selShip = $state<number | null>(null);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
@@ -70,6 +79,8 @@
       () => mq.removeEventListener('change', onMq),
       api.snapshot.subscribe((s) => (snap = s)),
       api.toast.subscribe((t) => (toast = t)),
+      api.starmap.subscribe((m) => (star = m)),
+      api.deploy.subscribe((d) => (deploy = d)),
       api.selectedShip.subscribe((g) => (selShip = g)),
       api.prizes.subscribe((v) => {
         if (v.length > prizes.length) {
@@ -176,7 +187,7 @@
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
 {/if}
-{#if mapOpen}<StarmapView {api} flee={fleeShip} onClose={() => ((mapOpen = false), (sliding = false), (fleeShip = null))} onSlide={(on) => (sliding = on)} />{/if}
+{#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} flee={fleeShip} onClose={() => ((mapOpen = false), (sliding = false), (fleeShip = null))} onSlide={(on) => (sliding = on)} />{:else if star?.state === 'hyperspace'}<HyperspaceView {api} map={star} onOpenMap={() => { fleeShip = null; mapOpen = true; }} />{/if}
 <StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />
 

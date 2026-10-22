@@ -5,23 +5,31 @@ import { liftShip } from './packet';
 import type { WithDocked } from './members';
 
 /**
- * The one way the player's ship leaves a node (sector refactor step 9): lift it (with what travels along, see `liftShip`) into a
- * packet, freeze the rest of the sector into the archive of the node left, drop the hails and offers of that node, restore the
- * archive of `to` if it has one (else the sector stays empty: the galaxy fills it at deploy time), and wait in state 'deploying'.
- * Callers (`galaxy.jump`, the player's `combat.flee`) validate and pay first. Returns whether an archive was restored.
+ * The player's ship leaves the node it is in and enters hyperspace (sector refactor step 9): lift it (with what travels along, see
+ * `liftShip`) into a packet, freeze the rest of the sector into the archive of the node left, drop the hails and offers of that
+ * node, and wait in state 'hyperspace' with the sector empty. Callers (`galaxy.jump`, the player's `combat.flee`, the debug
+ * teleport) validate and pay first.
  */
-export function leaveNode(sim: Sim, ship: number, to: string, withDocked: WithDocked = false): boolean {
+export function enterHyperspace(sim: Sim, ship: number, withDocked: WithDocked = false): void {
   const packet = liftShip(sim, ship, { withDocked });
-  const from = sim.sector.node;
   archiveSector(sim);
   sim.trade.hails = [];
   sim.trade.offers = [];
-  sim.sector.node = to;
   sim.sector.width = SECTOR_WIDTH;
   sim.sector.height = SECTOR_HEIGHT;
-  const restored = restoreArchive(sim, to);
-  sim.sector.state = 'deploying';
+  sim.sector.state = 'hyperspace';
   sim.sector.packet = packet;
-  sim.events.emit({ type: 'sector.jumped', ship, from, to, restored });
+}
+
+/**
+ * The ship drops out of hyperspace at `sim.sector.node`: the archive of that node comes back if it has one (else the sector is
+ * empty and the galaxy fills it, see `galaxy/drop.ts`), and the ship waits in state 'deploying' for `sector.deploy`.
+ * Returns whether an archive was restored.
+ */
+export function dropOut(sim: Sim, from: string): boolean {
+  const restored = restoreArchive(sim, sim.sector.node);
+  sim.sector.state = 'deploying';
+  const ship = sim.sector.packet?.ship ?? 0;
+  sim.events.emit({ type: 'sector.jumped', ship, from, to: sim.sector.node, restored });
   return restored;
 }

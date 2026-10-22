@@ -130,7 +130,13 @@ export type SimEvent =
   | { type: 'trade.failed'; deal: number; ship: number; reason: string }
   /** Starmap: a chunk was generated; the player jumped (fuel and FTL charge spent); sensors revealed nodes; a ship turned up (hostile or not). */
   | { type: 'galaxy.chunk'; key: string }
+  | { type: 'galaxy.hyperspace'; ship: number; route: string[]; charge: number }
+  /** A hop of the trip ended at `to` (fuel of that hop and, for the first, the FTL charge paid on entry). */
   | { type: 'galaxy.jumped'; from: string; to: string; edge: string; fuel: number; charge: number }
+  /** A starmap turn began (a hop was entered); see galaxy/turn.ts. */
+  | { type: 'galaxy.turn'; turn: number }
+  | { type: 'galaxy.stalled'; node: string; need: number }
+  | { type: 'galaxy.dropped'; node: string }
   | { type: 'galaxy.discovered'; count: number }
   | { type: 'galaxy.shipArrived'; node: string; faction: string; ship: number | null }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */

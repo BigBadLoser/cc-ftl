@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import type { UiApi } from './api';
-  import type { UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
+  import type { UiJumpWarnings, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
   import StarmapNebula from './StarmapNebula.svelte';
-  import StarmapPanel from './StarmapPanel.svelte';
+  import StarmapDrawer from './StarmapDrawer.svelte';
   import StarmapStats from './StarmapStats.svelte';
   import { fade } from 'svelte/transition';
   import StarmapInfo from './StarmapInfo.svelte';
@@ -21,6 +21,8 @@
   let { api, flee = null, onClose, onSlide }: { api: UiApi; flee?: number | null; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
 
   let map = $state<UiStarmap | null>(null);
+  /** Flee-target mode: only while the ship is still in the node (once it is in hyperspace the map is the ordinary trip view). */
+  const fleeing = $derived(flee !== null && map?.state !== 'hyperspace' && map?.state !== 'deploying');
   let w = $state(800);
   let h = $state(600);
   /** View centre (map units) and scale (screen px per unit). */
@@ -35,6 +37,9 @@
   let dragging = $state(false);
   let placed = false;
   let preselected = false;
+  /** The jump confirm step (what the jump would leave behind) and which docked shuttles come along. */
+  let confirming = $state<UiJumpWarnings | null>(null);
+  let taking = $state<number[]>([]);
 
   const nodeById = $derived(new Map((map?.nodes ?? []).map((n) => [n.id, n])));
   const sectorById = $derived(new Map((map?.sectors ?? []).map((x) => [x.id, x])));
@@ -42,7 +47,8 @@
   const sel = $derived(selected ? nodeById.get(selected) ?? null : null);
   /** Recomputed whenever the map or its fuel/charge figures change. */
   const route = $derived<UiStarRoute | null>(map && sel && sel.known && !sel.current ? api.planRoute(sel.id) : null);
-  const routePts = $derived(route ? route.path.map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : '');
+  const travelPts = $derived(map?.travel ? map.travel.route.slice(map.travel.at).map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : '');
+  const routePts = $derived(travelPts || (route ? route.path.map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : ''));
   const here = $derived(map ? sectorById.get(map.currentSector) ?? null : null);
   /**
    * Semantic zoom by how much map fits across the shorter side: the sector (nodes), sectors as icons inside clusters,
@@ -79,7 +85,7 @@
           sec.id === map.currentSector ? 'You are here' : route ? `Route: ${route.hops} jump${route.hops > 1 ? 's' : ''} · ${route.fuel} fuel · ${route.time} d` : 'No known route yet',
         ],
         zoom: () => focusSector(sec.id),
-        action: route && !route.blocker ? { label: flee !== null ? 'Flee' : route.hops > 1 ? `Jump (1 of ${route.hops})` : 'Jump', run: go } : null,
+        action: route && !route.blocker ? { label: fleeing ? 'Flee' : route.hops > 1 ? `Jump (1 of ${route.hops})` : 'Jump', run: go } : null,
         warn: route?.blocker ?? (route && !route.fuelOk ? 'Not enough fuel for the whole route.' : null),
       };
     }
@@ -98,7 +104,8 @@
       },
     };
   });
-  const cardOpen = $derived((!!sel && level === 1) || (!!pickedInfo && level > 1));
+  const drawerOpen = $derived(!!map && level < 3 && (!!map.travel || !!sel));
+  const cardOpen = $derived(drawerOpen || (!!pickedInfo && level === 3));
   const seenFactions = $derived(map ? map.factions.filter((f) => map!.sectors.some((x) => x.known && x.faction === f.id)) : []);
 
   /** Centre on a sector so it fills most of the shorter side (the default view: your sector); `instant` skips the glide. */
@@ -140,7 +147,7 @@
   }
 
   /** The nodes one jump away that can be picked in flee mode (null when browsing). */
-  const only = $derived(flee !== null && map ? new Set(map.nodes.filter((n) => n.reachable).map((n) => n.id)) : null);
+  const only = $derived(fleeing && map ? new Set(map.nodes.filter((n) => n.reachable).map((n) => n.id)) : null);
   /** Flee preselect: the cheapest target that can go now (least fuel, then charge), else the cheapest of all. */
   function cheapestTarget(m: UiStarmap): string | null {
     const options = m.nodes.filter((n) => n.reachable).flatMap((n) => {
@@ -155,14 +162,13 @@
     api.setStarmapOpen(true);
     const unsub = api.starmap.subscribe((m) => {
       const moved = map && map.current !== m.current;
-      if (moved && map) startSlide(map, m);
       map = m;
       if (!placed && m.nodes.length) {
         placed = true;
         queueMicrotask(() => focusSector(m.currentSector, true));
       }
       if (moved && selected === m.current) selected = null;
-      if (flee !== null && !preselected && m.nodes.length) {
+      if (fleeing && !preselected && m.nodes.length) {
         preselected = true;
         selected = cheapestTarget(m);
       }
@@ -176,45 +182,65 @@
   });
 
   /**
-   * The jump animation: the ship marker slides along the lane from the old node to the new one (longer lanes take
-   * longer), and if the jump enters another sector the camera glides to it. The bridge generates ahead meanwhile.
+   * The ship's glide along the route: visual only (a fixed tween per hop, independent of the sim's pace). `glide` is a float index
+   * along `travel.route`; it moves toward the node being headed for (the next one while a hop is under way) at one hop per
+   * GLIDE_MS, never overshooting, so fast sim turns queue up and play one after another.
    */
-  let slide = $state<{ fx: number; fy: number; tx: number; ty: number; t: number } | null>(null);
+  const GLIDE_MS = 700;
+  let glide = $state<number | null>(null);
+  let tripKey = '';
+  let follow = false;
   let raf = 0;
-  function startSlide(prev: UiStarmap, next: UiStarmap) {
-    const a = prev.nodes.find((n) => n.id === prev.current);
-    const b = next.nodes.find((n) => n.id === next.current);
-    if (!a || !b) return;
-    const dur = Math.min(1600, 600 + Math.hypot(b.x - a.x, b.y - a.y) * 0.8);
-    const cam0 = { cx, cy, s };
-    const sec = next.sectors.find((x) => x.id === next.currentSector);
-    const follow = level === 1 && sec && prev.currentSector !== next.currentSector;
-    const cam1 = follow ? { cx: sec.x, cy: sec.y, s: (Math.min(w, h) * 0.62) / (2 * sec.r + 60) } : cam0;
-    const t0 = performance.now();
-    cancelAnimationFrame(raf);
-    if (follow) cancelAnimationFrame(camRaf);
-    onSlide?.(true);
-    const frame = (now: number) => {
-      const t = Math.min(1, (now - t0) / dur);
-      const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-      slide = t < 1 ? { fx: a.x, fy: a.y, tx: b.x, ty: b.y, t: e } : null;
-      if (!slide) onSlide?.(false);
-      if (follow) {
-        cx = cam0.cx + (cam1.cx - cam0.cx) * e;
-        cy = cam0.cy + (cam1.cy - cam0.cy) * e;
-        s = cam0.s + (cam1.s - cam0.s) * e;
+  let lastFrame = 0;
+  function frame(now: number) {
+    const dt = lastFrame ? Math.min(100, now - lastFrame) : 16;
+    lastFrame = now;
+    const tr = map?.travel;
+    if (tr) {
+      const key = `${tr.route[0]}>${tr.route.length}`;
+      if (key !== tripKey && (tripKey === '' || tr.at === 0)) {
+        tripKey = key;
+        glide = tr.at;
+        follow = true;
+        const first = nodeById.get(tr.route[0] as string);
+        if (first && level === 1) flyTo(first.x, first.y, s, 250);
       }
-      if (t < 1) raf = requestAnimationFrame(frame);
-    };
+      const target = tr.phase === 'hop' ? tr.at + 1 : tr.at;
+      const g = glide ?? tr.at;
+      glide = g < target ? Math.min(target, g + dt / GLIDE_MS) : target;
+      onSlide?.(g < target);
+      if (follow && level === 1 && ship) {
+        cx += (ship.x - cx) * 0.12;
+        cy += (ship.y - cy) * 0.12;
+      }
+    } else if (glide !== null) {
+      glide = null;
+      tripKey = '';
+      onSlide?.(false);
+    }
     raf = requestAnimationFrame(frame);
   }
+  onMount(() => {
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  });
   onDestroy(() => {
     api.setStarmapOpen(false);
-    cancelAnimationFrame(raf);
     cancelAnimationFrame(camRaf);
     onSlide?.(false);
   });
-  const ship = $derived(slide ? { x: slide.fx + (slide.tx - slide.fx) * slide.t, y: slide.fy + (slide.ty - slide.fy) * slide.t, fx: slide.fx, fy: slide.fy, tx: slide.tx, ty: slide.ty } : null);
+  /** The ship marker on the lane it is gliding along (ends of the lane for the heading). */
+  const ship = $derived.by(() => {
+    const tr = map?.travel;
+    if (!tr || glide === null) return null;
+    const i = Math.min(tr.route.length - 2, Math.max(0, Math.floor(glide)));
+    const a = nodeById.get(tr.route[i] as string);
+    const b = nodeById.get(tr.route[i + 1] as string);
+    if (!a || !b) return null;
+    const t = Math.min(1, glide - i);
+    const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+    return { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e, fx: a.x, fy: a.y, tx: b.x, ty: b.y };
+  });
 
   const toMap = (px: number, py: number) => ({ x: cx + (px - w / 2) / s, y: cy + (py - h / 2) / s });
   const MIN_S = 0.015;
@@ -309,7 +335,11 @@
       picked = hit ? { kind: 'sector', id: hit.id } : null;
       selected = picked ? routeInto(picked.id) : null;
     } else if (level === 3) picked = hit ? { kind: 'cluster', id: hit.id } : null;
-    else selected = hit?.id ?? null;
+    else if (hit && hit.id === selected && route && !route.blocker && map?.state === 'active') go();
+    else {
+      selected = hit?.id ?? null;
+      confirming = null;
+    }
   }
   let hoverRaf = 0;
   function hovering(e: PointerEvent) {
@@ -328,23 +358,40 @@
     if (e.key === 'Escape') onClose();
   }
 
-  /** The card's button: flee to the picked neighbour, or take the first jump of the plotted route. */
+  /**
+   * Set off along the plotted route (the second tap on the picked node, or the drawer's Jump). Flee goes at once as a one-hop trip;
+   * a jump that would leave crew or shuttles behind opens the confirm step in the drawer first.
+   */
   function go() {
-    const next = route?.path[1];
-    if (!next || route?.blocker || !map) return;
-    if (flee !== null) {
-      api.dispatch({ type: 'combat.flee', ship: flee, to: next });
-      onClose();
-    } else api.dispatch({ type: 'galaxy.jump', ship: map.ship, to: next });
+    if (!route || route.blocker || !map || map.state !== 'active') return;
+    if (fleeing) {
+      api.dispatch({ type: 'combat.flee', ship: flee as number, to: route.path[1] });
+      return;
+    }
+    const w = api.jumpWarnings(map.ship);
+    if (w.crew.length || w.vehicles.length || w.hostileDocked.length) {
+      confirming = w;
+      taking = [];
+    } else fly();
   }
+  /** Enter hyperspace with the plotted route (and the docked shuttles picked in the confirm step). */
+  function fly() {
+    if (!route || !map) return;
+    api.dispatch({ type: 'galaxy.jump', ship: map.ship, route: route.path.slice(1), ...(taking.length ? { withDocked: [...taking] } : {}) });
+    confirming = null;
+    taking = [];
+    selected = null;
+  }
+  const toggleTake = (id: number) => (taking = taking.includes(id) ? taking.filter((t) => t !== id) : [...taking, id]);
+  const drop = () => api.dispatch({ type: 'galaxy.drop' });
   const px = (v: number) => v / s;
 </script>
 
 <svelte:window onkeydown={key} />
 
-<div class="starmap" data-testid="starmap" data-mode={flee !== null ? 'flee' : 'browse'}>
+<div class="starmap" data-testid="starmap" data-mode={fleeing ? 'flee' : 'browse'}>
   <div class="head">
-    <PanelHead icon="map" title={flee !== null ? 'Flee: pick a target' : 'Starmap'} sub={here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
+    <PanelHead icon="map" title={fleeing ? 'Flee: pick a target' : 'Starmap'} sub={here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
       onBack={onClose} backTitle="Back to ship (Esc)" backTestId="starmap-close" />
   </div>
   <div class="statbar">
@@ -380,7 +427,7 @@
         <button class:on={level === l.n} onclick={() => setLevel(l.n)} data-testid={`starmap-level-${l.n}`} aria-pressed={level === l.n}>{l.label}</button>
       {/each}
     </div>
-    <div class="tools" role="toolbar" aria-label="Map view">
+    <div class="tools" class:shift={drawerOpen} role="toolbar" aria-label="Map view">
       <button class="tile" title="Zoom in" aria-label="Zoom in" onclick={() => zoomAt(w / 2, h / 2, 1.4)}><Icon name="zoomIn" size={22} /></button>
       <button class="tile" title="Zoom out" aria-label="Zoom out" onclick={() => zoomAt(w / 2, h / 2, 1 / 1.4)}><Icon name="zoomOut" size={22} /></button>
       <button class="tile" title="Centre on your ship" aria-label="Centre on your ship" onclick={recenter}><Icon name="recenter" size={22} /></button>
@@ -393,13 +440,15 @@
         {/each}
       </ul>
     {/if}
+  {#if map && drawerOpen}
+      <StarmapDrawer {map} node={sel} sector={sel ? sectorById.get(sel.sector) ?? null : null} cluster={sel ? map.clusters.find((c) => c.id === sectorById.get(sel.sector)?.cluster) ?? null : null}
+        factions={map.factions} {route} nodes={nodeById} {fleeing} warnings={confirming} taking={new Set(taking)}
+        onGo={go} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggleTake} onDrop={drop} onClear={() => ((selected = null), (confirming = null))} />
+  {/if}
   </div>
-  {#if pickedInfo && level > 1}
+  {#if pickedInfo && level === 3}
     <StarmapInfo title={pickedInfo.title} lines={pickedInfo.lines} zoomLabel={pickedInfo.zoomLabel} onZoom={pickedInfo.zoom}
       action={'action' in pickedInfo ? pickedInfo.action : null} warn={'warn' in pickedInfo ? pickedInfo.warn : null} onClear={() => ((picked = null), (selected = null))} />
-  {/if}
-  {#if sel && map && level === 1}
-    <StarmapPanel node={sel} sector={sectorById.get(sel.sector) ?? null} factions={map.factions} {route} fleeing={flee !== null} onGo={go} onClear={() => (selected = null)} />
   {/if}
 </div>
 
@@ -418,6 +467,7 @@
   .levels button:hover { background: var(--panel-3); }
   .levels button.on { background: var(--panel-3); box-shadow: inset 0 0 0 1px var(--cyan); color: var(--text); }
   .tools { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line-hi); }
+  @media (min-width: 601px) { .tools.shift { right: 348px; } }
   .tools button.tile { border: 0; border-bottom: 1px solid var(--line); background: transparent; }
   .tools button.tile:last-child { border-bottom: 0; }
   .tools button.tile:hover { background: var(--panel-3); }

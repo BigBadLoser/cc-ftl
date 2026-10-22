@@ -1,7 +1,7 @@
 import type { Command } from '../commands';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
-import { flee } from '../galaxy/travel';
+import { flee } from '../galaxy/hyperspace';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
