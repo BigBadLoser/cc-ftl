@@ -1,7 +1,8 @@
 import { asteroidAt, inShip, shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { AsteroidC } from '../sim/asteroids/components';
-import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isOreTile, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
+import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isOreTile, isSolidRock, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
+import { ROCK_MASS_Z } from '../render/asteroidView';
 import type { UiBuildKind, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
 import type { InputHandlers, Tile } from './input';
@@ -172,7 +173,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (isMineTool()) {
       // Only the ore tiles show: those are what the pods will cut.
       const covered = paintStart ? shape() : hover ? [hover] : [];
-      return r?.setPreview(covered.filter((p) => oreAsteroid(p.x, p.y)), true);
+      // Drawn on the top of the rock block (the rock is ROCK_MASS_Z tall); ground ore stays flat.
+      return r?.setPreview(covered.filter((p) => oreAsteroid(p.x, p.y)).map((p) => ({ ...p, ...(isSolidRock(sim.sector.grid.get('struct', p.x, p.y)) ? { lift: ROCK_MASS_Z } : {}) })), true);
     }
     r?.setPreview(paintStart ? shape() : active && hover ? [hover] : []);
   };
@@ -327,6 +329,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           refreshPreview();
         },
         paintMode: () => tool.get().tool !== 'select',
+        pickLift: () => (isMineTool() ? ROCK_MASS_Z : 0),
         onPaint(phase, t) {
           if (moduleMode()) {
             if (phase === 'cancel') modPos = null;

@@ -40,7 +40,8 @@ describe('mining paint tool', () => {
     c.setTool({ tool: 'build', build: 'mine', pods: [pod] });
     h.onPaint('start', { x: rect.x0, y: rect.y0 });
     h.onPaint('move', { x: rect.x1, y: rect.y1 });
-    expect(preview).toEqual(inRect);
+    expect(preview.map(({ x, y }) => ({ x, y }))).toEqual(inRect);
+    expect(preview.every((t) => (t as { lift?: number }).lift !== undefined)).toBe(true); // drawn on the rock tops
     expect(preview.length).toBeLessThan((rect.x1 - rect.x0 + 1) * (rect.y1 - rect.y0 + 1));
     h.onPaint('end', { x: rect.x1, y: rect.y1 });
     sim.step();

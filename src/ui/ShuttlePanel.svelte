@@ -101,14 +101,14 @@
       {:else if data.regions.length > 1 && s.ferryFree && from && to}
         <div class="sub">Base run (cargo; crew go from their card)</div>
         <div class="run" data-testid="ferry-form-{s.id}">
-          <select aria-label="From" bind:value={runFrom} data-testid="ferry-from">
+          <select aria-label="From" value={from.id} onchange={(e) => (runFrom = Number(e.currentTarget.value))} data-testid="ferry-from">
             {#each data.regions as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
           </select>
           <span class="arrow">to</span>
-          <select aria-label="To" bind:value={runTo} data-testid="ferry-to">
+          <select aria-label="To" value={to.id} onchange={(e) => (runTo = Number(e.currentTarget.value))} data-testid="ferry-to">
             {#each data.regions.filter((r) => r.id !== from.id) as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
           </select>
-          <select aria-label="Item" bind:value={runItem} data-testid="ferry-item" disabled={from.stock.length === 0}>
+          <select aria-label="Item" value={item?.item ?? ''} onchange={(e) => (runItem = e.currentTarget.value)} data-testid="ferry-item" disabled={from.stock.length === 0}>
             {#each from.stock as l (l.item)}<option value={l.item}>{l.name} ({l.count})</option>{:else}<option value="">nothing stored</option>{/each}
           </select>
           <input type="number" min="1" max={item?.count ?? 1} bind:value={runQty} aria-label="Amount" data-testid="ferry-qty" />

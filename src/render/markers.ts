@@ -1,8 +1,10 @@
 import { Container, Sprite } from 'pixi.js';
 import { diamondTextures } from './diamonds';
+import { Z_PX } from './heights';
 import { iso } from './iso';
 
-type Tile = { x: number; y: number };
+/** `lift`: tiles of height above the ground the marker is drawn at (the top of a rock block). */
+type Tile = { x: number; y: number; lift?: number };
 
 const CYAN = 0x22d3ee;
 const BAD = 0xff4d4d;
@@ -31,7 +33,7 @@ export function createMarkers(parent: Container): Markers {
     s.visible = t !== null;
     if (t) {
       const p = iso(t.x, t.y);
-      s.position.set(p.x, p.y);
+      s.position.set(p.x, p.y - (t.lift ?? 0) * Z_PX);
     }
   };
   const hover = make(0.45);
