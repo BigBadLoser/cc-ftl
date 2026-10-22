@@ -2,13 +2,8 @@ name: Cloud Render Tooling
 
 on:
   push:
-    branches: [art/cloud-render]
-  pull_request:
-    paths:
-      - tools/cloud_render.py
-      - tools/cloud-render/**
-      - tools/blender/sprites/build_sprites.py
-      - tools/blender/sprites/crew_build.py
+    branches:
+      - art/cloud-render
   workflow_dispatch:
 
 jobs:
@@ -19,9 +14,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile tooling
-        run: python -m py_compile tools/cloud_render.py tools/cloud-render/verify_assets.py tools/blender/sprites/build_sprites.py tools/blender/sprites/crew_build.py
-      - name: Validate shell scripts
-        run: bash -n tools/cloud-render/remote.sh tools/cloud-render/bootstrap.sh
-      - name: Run supervisor tests
-        run: python tools/cloud-render/test_cloud_render.py
+      - name: Compile tools
+        run: |
+          python -m py_compile tools/cloud_render.py tools/cloud-render/verify_assets.py tools/blender/sprites/build_sprites.py tools/blender/sprites/crew_build.py
+      - name: Shell syntax
+        run: |
+          bash -n tools/cloud-render/remote.sh
+          bash -n tools/cloud-render/bootstrap.sh
+      - name: Smoke tests
+        run: |
+          python tools/cloud-render/test_cloud_render.py
