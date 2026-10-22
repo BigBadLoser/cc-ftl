@@ -34,6 +34,7 @@ describe('route planning', () => {
     const g = fixture();
     expect(edgeBetween(g, 'd', 'a')?.fuel).toBe(3);
     expect(edgeBetween(g, 'a', 'e')).toBeUndefined();
+    expect(edgeBetween(g, 'a', 'a')).toBeUndefined();
     expect(planStarRoute(g, 'a', 'zz')).toBeNull();
     expect(planStarRoute(g, 'a', 'a')).toMatchObject({ path: ['a'], fuel: 0 });
   });

@@ -105,9 +105,7 @@ visual change. Design in `docs/DESIGN.md` ("Starmap and factions"), model, pipel
 **What exists:** `src/sim/galaxy/*` (terrain, sites, clusters, gates and rift lanes, sectors with layouts and central bodies, generator, route, travel,
 arrivals, standing, state), `systems/galaxy.ts` (pipeline, after `captureSystem`), commands `galaxy.jump`, `debug.galaxyReveal`,
 `debug.galaxyTeleport`, `debug.chargeFtl`, events `galaxy.*`, `item.fuel` (16 in the starter crate), `content/galaxy.ts` (7 factions, 5 structure kinds,
-names), the story `transit` trigger. `galaxy.jump` validates the edge, charge and fuel, pays, moves `current` and runs `enterNode` (frontier, sensors,
-story context, hostile contacts spawned into the current sector grid, an arrival or transit event draw). The galaxy system, arrivals and `galaxy.jump`
-do nothing while `sim.sector.state === 'deploying'`.
+names), the story `transit` trigger. `galaxy.jump` validates, pays and lifts the ship through the step 9 path (see below).
 - **Save v26.** `SaveData.galaxy` (chunk keys, regenerated from the seed) plus `generatorVersion`; a save of another generator version is refused.
   Bump `GENERATOR_VERSION` (`galaxy/tuning.ts`) whenever the generator or the galaxy content changes what a chunk key generates.
   **PR #20 (stations) also bumps to 26: whichever merges second takes 27.**
@@ -116,23 +114,29 @@ do nothing while `sim.sector.state === 'deploying'`.
 - `playerShip` clash: trade's `playerShip(sim): number` kept; the galaxy helper is `playerShipInfo(sim)`. 7d API: `spawnShip` returns the ship id.
 - Tests: 19 new (9 `content/galaxy.test.ts`, 5 + 2 slow generator, 3 route). Whole suite 536 (503 fast, 33 slow). The 7x7 and 9x9 chunk tests are in
   `generator.slow.test.ts`.
-- **`newGame` now costs about 350 to 450 ms** (warm, seeds 1 to 5; 25 chunks at `FRONTIER_RING` 2), almost all of it generation; the review measured
-  548 ms cold. Not optimised. Options if it matters: `FRONTIER_RING` 1 (9 chunks), or generate the frontier lazily after the first tick.
+- **`newGame` now costs about 350 to 450 ms** (warm, seeds 1 to 5; 25 chunks at `FRONTIER_RING` 2; now 270 to 450 ms with 9 chunks at ring 1), almost all of it generation; the review measured
+  548 ms cold. Not optimised. Ring 1 is now set; the per-chunk part is small, so most of the cost is fixed (terrain and cluster seeds).
 
-**TODO, the next slice: hook the galaxy to step 9.** Today a galaxy jump only moves `galaxy.current`; the sector grid is not swapped.
-1. `Sector.node` and `SectorArchive.node` become the galaxy's string node ids (now numbers; 0 = start), and the start node is `START_NODE`.
-2. One jump path: `sector.jump` (ship lift, archive, `deploying`) is the only way to move; `galaxy.jump`'s validation and payment (edge, `jumpBlocker`,
-   fuel, charge, `jumps` and `days`) move into it or run before it, and `galaxy.current` follows `sector.node`.
-3. Contacts materialise as ships on first entry to a node and are then owned by the archive (the `NodeState.contacts` ship ids go away or become archive
-   data); revisiting restores the archive instead of generating again. Remove the "spawn into the current sector" part of `enterNode`.
-4. Arrival spawns (`rollArrival`, hostile contacts present) happen at deploy time (`sector.deploy`) and by the gap rule against the deployed ships.
-5. The story context and the event draw move to deploy time too. Then the UI: starmap view with the three zoom levels (sector, cluster, galaxy), the
-   jump confirm (`jumpWarnings`) and the deploy modal.
+**Step 9 hookup (done on this branch).** See `docs/ARCHITECTURE.md` ("Starmap", Travel). Design choices:
+- `galaxy.jump { ship, to, withDocked? }` is the only jump command. The raw `sector.jump` command is **removed**; its lift, archive and restore became the plain
+  function `leaveNode` (`sector/jump.ts`), called by `galaxy.jump`, the player's `combat.flee` and `debug.galaxyTeleport` (free). A command never calls a command.
+- Node ids are strings everywhere (`Sector.node`, `SectorArchive.node`, `archiveOf`, `restoreArchive`, `sector.jumped`). Save stays v26 (the branch's v26 never shipped).
+- `galaxy.current` moves only after the lift; payment (edge charge and fuel) happens right before it, after every validation.
+- **Flee = jump (user decision, 2026-10-22).** `combat.flee { ship, to? }` of the player charges nothing itself: FTL must already be charged, then it jumps to `to`, else
+  the cheapest adjacent node it can pay for (fuel, then charge, then id). One escape path. AI ships keep the old flee (`'fled'`, they leave); not routed through `leaveNode`
+  because they have no packet or archive.
+- Contacts materialise at `sector.deploy`, the first time only; afterwards the archive owns the ships and the descriptors are emptied. All contacts become ships (hostile on
+  their combat side, others `neutral`, so civilians can be hailed). Placement is rings around the player's ship with the deploy bounds and gap rule (`freeSpot` replaced `arrivalSpot`).
+- The arrival story draw is owed at the jump (`GalaxyState.pendingDraw`) and drawn at deploy. Hostile arrivals only roll in an active node.
+- `FRONTIER_RING` is **1** (user decision): 3x3 chunks around the node.
+- Also fixed: `edgeBetween(a, a)` matched an edge touching `a`.
+- Tests: `content/galaxyJump.test.ts` (materialise on first deploy, archive owns and no duplicates on return, pay only on the lift, draw at deploy, flee, string ids in a mid-deploy save),
+  `galaxyJump.slow.test.ts` (determinism and save continuation over a trip), `jump.test.ts` and `combat.test.ts` updated.
+- **Still to do:** the **9b UI** (jump confirm listing `jumpWarnings` with the `withDocked` toggles, the deploy picker/modal, empty-world handling while deploying) and the
+  **restyled starmap UI** (three zoom levels, route plotting, flee target picker, `CLUSTER_TYPE_LABEL`). Structures (`NodeData.structures`) are still descriptors; no grid places them.
 Not taken from PR #16: `src/ui/Starmap*`, `src/app/starmap*`, `galaxyPrefetch`, the `bridge` changes, `tools/starmap`.
 
-**For the user to decide:** whether `corp` events should name Meridian only (today any corporation's space counts as `corp`); whether Helix and Vantor ships
-should be hailed as `corp` rather than by their generator hulls (`faction.navy` / `faction.civilian` in trade's table); `FRONTIER_RING` against the
-`newGame` cost; whether jumping while enemies are present stays allowed (the branch allowed it; `combat.flee` is the other way out).
+**User answers (2026-10-22):** `corp` events fire in any corporation's space as now; Helix and Vantor are placeholder names, hailing unchanged; `FRONTIER_RING` 1; fleeing is a jump (one escape path).
 
 ## Crew sprite pipeline (branch `crew-pipeline`; merged to `main` with user approval)
 
@@ -469,11 +473,10 @@ Branch `sector-9` (not merged, no visual change, sim only): **step 9a done** (pa
   reservations, assignments); a stranded shuttle's `homeShip` is kept so it is valid again when the player returns.
 - `SectorArchive` (`sector/archive.ts`): `{ node, tick, width, height, grid, entities }`; `archiveSector` freezes everything left
   (projectiles in flight are dropped), `restoreArchive(sim, node)` brings it back. `Sim.archives` is saved.
-- Commands: `sector.jump { ship, node, withDocked? }` (player ship, FTL charged, not while deploying, refused while a trade deal is
+- Commands: `sector.jump { ship, node, withDocked? }` (since replaced by `galaxy.jump`; player ship, FTL charged, not while deploying, refused while a trade deal is
   live; clears hails and offers) lifts, archives, restores the target node's archive if any, and leaves `sector.state =
   'deploying'` with `sector.packet`; `sector.deploy { x, y }` checks bounds and the gap rule and stamps. Events `sector.jumped`,
-  `sector.deployed`. `Sector` gained `node` (0 = start) and `state`. There is no galaxy on `main` yet (`starmap` is unmerged), so
-  a node is a plain number.
+  `sector.deployed`. `Sector` gained `node` and `state`. (On `galaxy`: `sector.jump` became `galaxy.jump`, and node ids are the galaxy's strings.)
 - Query for the jump confirm: `jumpWarnings(sim, ship)` → `{ crew, vehicles, hostileDocked }`.
 - Shuttle speed is 8 tiles/s.
 - **Left for 9b (UI, visual, needs screenshots):** the jump confirm (lists `jumpWarnings`, a toggle per hostile docked shuttle

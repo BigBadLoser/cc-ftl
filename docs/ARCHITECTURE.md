@@ -712,7 +712,7 @@ neighbourhood, so any chunk can be generated first, in any order, and agrees wit
 
 **Chunks and the lazy frontier.** A chunk is `CHUNK_CELLS`^2 (4x4) site cells (1280 units). It holds the sectors whose cell lies in it, their routes
 and every hyperlane touching them (a lane between two chunks is stored in both, identical). `ensureAround(sim, node)` generates every chunk within
-`FRONTIER_RING` (2, so 5x5 chunks) of the node's chunk on arrival; the sensor scan generates the chunk a hyperlane leads into.
+`FRONTIER_RING` (1, so 3x3 chunks) of the node's chunk on arrival; the sensor scan generates the chunk a hyperlane leads into.
 `GalaxyGen` (`galaxyGen(seed, content)`) memoises the pure functions per (seed, content); it is a cache and never saved.
 
 **Save.** `SaveData.galaxy` (save v26) holds the state with `chunks` as sorted keys plus `generatorVersion`; `loadGalaxy` regenerates the
@@ -722,14 +722,24 @@ generates; a save of another version is refused (no migrations, like `SAVE_VERSI
 **Travel** (`travel.ts`, `route.ts`, `costs.ts`). Costs by length: fuel = ceil(length / 90) for routes, ceil(length / 220) for hyperlanes (+ `GATE_FUEL`
 through a gate); FTL charge = 10 + 0.12 x length (max 30 s) for routes, a full charge (`FTL_CHARGE_SEC`) for hyperlanes; days = length / 40 or / 110
 (x `GATE_TIME` for a gate). The charge is the existing `CombatC.ftl`; fuel is `item.fuel` in player storage. `planStarRoute(g, from, to)` is Dijkstra on fuel,
-ties on time then node id, over discovered nodes. `galaxy.jump { to }` takes **one edge** and, for this slice, only validates the edge, charge and
-fuel (rejections `noRoute`, `noShip`, `notCharged`, `noFuel`, `deploying`), pays both and moves `galaxy.current`; then `enterNode`: frontier, visited,
-sensor scan (`SENSOR_HOPS` = 3 jumps; it also marks the whole current sector), `story.context` (danger and the territory owner's reputation key),
-the arrival clock, hostile contacts spawned into the sector through `generateShip` + `spawnShip` and the gap rule, and a story draw (`transit`
-pool after an anchored hyperlane, else `arrival`; none when enemies wait).
-- **Not yet hooked to the sector grid (step 9).** `galaxy.current` is a string node id; `Sector.node` and `SectorArchive` are still numbers; `sector.jump` and
-  `galaxy.jump` are separate; the sector grid is not swapped on a galaxy jump. See `docs/STATUS.md`, "Galaxy".
-- While `sim.sector.state === 'deploying'` the pipeline is skipped, `galaxySystem` and arrivals return early, and `galaxy.jump` is rejected.
+ties on time then node id, over discovered nodes.
+- **`galaxy.jump { ship, to, withDocked? }` is the one jump path** (`sector.jump` no longer exists as a command). It validates (rejections `deploying`,
+  `notPlayerShip`, `tradeInProgress`, `noRoute`, `notCharged`, `noFuel`), pays the edge's charge and fuel, then calls `leaveNode` (`sector/jump.ts`, a plain
+  function shared with the player's flee and the debug teleport): lift the ship into a packet, archive the node left, restore the archive of the node
+  entered if it has one, state `'deploying'`. Only then does `galaxy.current` move (it always equals `sector.node`), the jump get counted and the arrival
+  scan run (frontier, visited, sensors `SENSOR_HOPS` = 3 which also marks the whole current sector, `story.context` = danger and the owner's reputation key).
+  Nothing is paid or moved on a rejection.
+- **`sector.deploy` finishes the arrival** (`galaxy/deploy.ts`, `onDeployed`): the first time the player enters a node, its generated contacts (descriptors in
+  `NodeState.contacts`) become real ships through `generateShip` + `spawnShip`, placed on rings around the player's ship by the deploy bounds and the gap
+  rule (hostile ones on their combat side, others neutral). `NodeState.entered` is then true and, when the node is left, its descriptor list is emptied:
+  the node's `SectorArchive` owns the ships. Re-entering restores the archive and spawns nothing. The arrival clock restarts and the story draw owed since the
+  jump (`GalaxyState.pendingDraw`: `transit` after an anchored hyperlane, else `arrival`) runs unless an AI ship is waiting.
+- **Flee is a jump.** `combat.flee { ship, to? }` for the player's ship is the same jump to `to` (an adjacent node) or, by default, the cheapest adjacent node
+  it can pay for now (least fuel, then charge, then node id; if none is affordable the cheapest one's blocker is the rejection). It needs the edge's charge,
+  so the FTL drive must be charged first. AI ships keep the old flee: state `'fled'` and `ship.fled`, they just leave the node.
+- Ids: `Sector.node`, `SectorArchive.node`, `archiveOf`, `restoreArchive` and `sector.jumped` use the galaxy node id (a string; `START_NODE` at the start).
+- While `sim.sector.state === 'deploying'` the whole pipeline is skipped (`Sim.step`), `galaxySystem` and `rollArrival` also return early, and arrivals only
+  spawn into an active node.
 
 **Arrivals** (`galaxySystem`, `arrivals.ts`). Every `ARRIVAL_EVERY_SEC` (60) at the current node: chance `ARRIVAL_PER_DANGER x danger` (cap
 `ARRIVAL_MAX_CHANCE`; x1.5 in hostile territory, x0.4 in friendly), up to `MAX_HOSTILE_CONTACTS`, the faction drawn from the node's traffic pool
@@ -755,7 +765,7 @@ The sim side is `clusterName` / `clusterType` / `cluster` on sectors and the `ga
 
 **Tests:** `galaxy/generator.test.ts` (determinism, order independence, seams, costs, start), `generator.slow.test.ts` (7x7 spacing and hull overlap, 9x9
 connectivity), `route.test.ts`, `content/galaxy.test.ts` (content, standings, travel, arrivals, save, generator version, deploying).
-**`newGame` cost with the galaxy: about 350 to 450 ms** (25 chunks at `FRONTIER_RING` 2; measured 2026-10-22), mostly generation.
+**`newGame` cost with the galaxy: about 350 to 450 ms** (measured 2026-10-22 at `FRONTIER_RING` 2: 25 chunks; at 1 (now): 9 chunks, 270 to 450 ms), mostly generation.
 
 **Tuning** (`galaxy/tuning.ts`): denser galaxy: `SITE_SPACING`, `SITE_CELL`; bigger sectors: `SECTOR_RADIUS`; busier sectors: `NODES_PER_SECTOR`, `NODE_SPACING`;
 more loops: `ROUTE_EXTRA`, `LOOP_CHANCE`; cluster size and spacing: `CLUSTER_SPACING`, `CLUSTER_REACH`, `MIN_CLUSTER_SECTORS`; how closed the borders are:
@@ -942,14 +952,15 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
   `sector.packet`; the sim is paused by the modal). The UI
   shows ShipC bboxes and the chosen spot; the command `sector.deploy { x, y }` checks the gap rule and stamps. The debug spawns
   (`debug.spawnEnemy`, `debug.spawnGenerated`) use the same check.
-- **Jumping.** `sector.jump { ship, node, withDocked? }` (built in 9a; FTL charged, refused while deploying or while a trade deal
+- **Jumping.** `galaxy.jump { ship, to, withDocked? }` (it replaced `sector.jump`; edge, FTL charge and fuel paid, refused while deploying or while a trade deal
   is live; hails and offers are dropped; `jumpWarnings(sim, ship)` lists crew and shuttles away and hostile docked vehicles for
   the confirm):
   1. Collect: the player region's tiles (owner = ship), every entity on them, crew aboard vehicles whose `dock` is one of its
      airlocks or whose `home` bay is stowed in it, and those vehicles.
   2. Lift into a packet; release the chunks that are now empty.
   3. Freeze the rest of the sector into a `SectorArchive`.
-  4. Generate or restore the next sector and enter the deploy modal.
+  4. Restore the next node's archive if it has one (else it is empty) and enter the deploy modal. At `sector.deploy`, a node entered for the first time
+     gets its generated contacts as ships (`galaxy/deploy.ts`).
 - **Left behind.**
   - Prizes, wrecks, derelicts, enemies, and **own crew or shuttles not aboard or docked** stay in the archive:
     `{ nodeId, tick, chunks, world subset }`, frozen and not simulated.
