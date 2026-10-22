@@ -18,6 +18,7 @@ Once the render completes:
 
 ```bash
 bash tools/cloud-render/remote.sh ubuntu@SERVER_IP status
+bash tools/cloud-render/remote.sh ubuntu@SERVER_IP verify
 bash tools/cloud-render/remote.sh ubuntu@SERVER_IP fetch
 bash tools/cloud-render/remote.sh ubuntu@SERVER_IP fetch-cache
 git status --short
@@ -40,7 +41,7 @@ Useful remote actions:
 | `status` | Snapshot of workers and completion |
 | `logs` | Tail orchestrator log |
 | `stop` | Ask the render session to stop |
-| `fetch` | Download `public/assets` |
+| `verify` | Confirm every job finished and every manifest sprite file exists |\n| `fetch` | Download sprites and verify every SHA256 checksum against the server |\n| `archive` | Package verified sprites as a server-side tarball for SFTP |
 | `fetch-cache` | Download crew frame cache for reuse later |
 | `seed-cache` | Upload existing crew frame cache to server |
 
@@ -72,3 +73,32 @@ Workers and thread limits must fit the available CPU affinity. Set `BLENDER_BIN`
 - Source changes invalidate completed-job checkpoints. If you manually delete cached files but keep `state.json`, run `--fresh` to force rechecking crew cache and rerendering missing family jobs.
 - Source tree upload excludes `.git`, `node_modules`, `dist` and `.cache`. It includes art source files and assets required by Blender scripts.
 - The console dashboard reports job-level progress and does not promise a deterministic overall ETA. For detailed failures read `.cache/cloud-render/logs/<job>.log`.
+
+## Verified downloads and temporary servers
+
+After rendering completes, the remote command `verify` requires all 32 non-crew families, all crew clips and final crew packing to finish successfully. It also checks that all manifest-referenced sprite sheets exist and the tile dimensions match ART_SCALE=2.
+
+```bash
+bash tools/cloud-render/remote.sh root@SERVER_IP verify
+bash tools/cloud-render/remote.sh root@SERVER_IP fetch
+bash tools/cloud-render/remote.sh root@SERVER_IP fetch-cache
+```
+
+The `fetch` command generates a SHA256 inventory on Vultr, downloads `public/assets` with resumable rsync and checks every image and manifest against that inventory. It returns an error on corruption or incomplete output. Do **not** destroy the server before it prints `Verified download complete` and you have inspected your local output.
+
+### Phone / SFTP download
+
+For temporary access from a phone, run this in your server SSH terminal:
+
+```bash
+cd ~/cc-ftl-cloud
+python3 tools/cloud-render/verify_assets.py --require-complete --write .cache/cloud-render/assets.sha256
+tar -czf .cache/cloud-render/assets.tar.gz -C public assets
+ls -lh .cache/cloud-render/assets.tar.gz
+```
+
+Alternatively, from a local checkout run `bash tools/cloud-render/remote.sh root@SERVER_IP archive`. This creates `~/cc-ftl-cloud/.cache/cloud-render/assets.tar.gz` for download with an SFTP client. Also download `assets.sha256` if you want to verify extracted images later. **Creating the archive on the server is not a backup**; download it and check the extracted contents before deleting the Vultr instance. The archive excludes the reusable crew render cache.
+
+### Deployment safety
+
+`deploy` and `launch` preserve remote `.cache` and `public/assets`, do not delete unknown remote source files, and refuse to overwrite source while the named render tmux session is present. Source changes still invalidate checkpoints, so deploy changes while idle; transfer the current cache before replacing a disposable instance.
