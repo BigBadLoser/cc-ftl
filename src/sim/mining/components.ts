@@ -18,6 +18,8 @@ export interface MiningPod {
   tiles: { x: number; y: number }[] | null;
   phase: MiningPhase;
   target: { x: number; y: number } | null;
+  /** Where the pod hovers while it cuts `target` (sector coordinates): over the tile, or beside it so pods never overlap. */
+  spot?: { x: number; y: number } | null;
   progress: number;
   /** Recalled: finish this trip home (no new tiles) and end the order. */
   recall: boolean;

@@ -53,3 +53,25 @@ export function pickTile(sim: Sim, pod: number, order: MiningPod, from: { x: num
   const tiles = orderTiles(sim, order);
   return nearest(tiles.filter((t) => !taken.has(`${t.x},${t.y}`))) ?? nearest(tiles);
 }
+
+/** Hover offsets tried around a target tile's centre, in pod widths: over it, then a ring of 8, then a wider ring. */
+const SPOTS: readonly [number, number][] = [[0, 0], ...[1, 2].flatMap((r) =>
+  Array.from({ length: 8 }, (_, k): [number, number] => [r * Math.cos((k * Math.PI) / 4), r * Math.sin((k * Math.PI) / 4)]))];
+
+/**
+ * Where a pod hovers to cut `target`: the first spot (over the tile, then rings around it) at least `size` from every other
+ * pod's spot, so pods sharing a tile or working neighbouring ones never sit on top of each other. Deterministic.
+ */
+export function hoverSpot(sim: Sim, pod: number, target: { x: number; y: number }, size: number): { x: number; y: number } {
+  const others: { x: number; y: number }[] = [];
+  for (const id of sim.world.query(MiningPodC)) {
+    const s = id !== pod ? sim.world.get(id, MiningPodC)?.spot : null;
+    if (s) others.push(s);
+  }
+  const cx = target.x + 0.5, cy = target.y + 0.5;
+  for (const [ox, oy] of SPOTS) {
+    const x = cx + ox * size, y = cy + oy * size;
+    if (others.every((o) => (o.x - x) ** 2 + (o.y - y) ** 2 >= size * size - 1e-9)) return { x, y };
+  }
+  return { x: cx, y: cy };
+}

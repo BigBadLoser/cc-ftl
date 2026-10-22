@@ -5,7 +5,7 @@ import type { ContentRegistry } from '../registry';
 import { Sim } from '../sim';
 import { Struct } from '../structure';
 import { MiningPodC, type MiningPod } from './components';
-import { orderTiles, pickTile } from './pick';
+import { hoverSpot, orderTiles, pickTile } from './pick';
 
 const content: ContentRegistry = { ships: {}, roles: {}, species: {}, modules: {}, crewNames: [], items: {}, recipes: {}, structCosts: {} };
 
@@ -37,5 +37,18 @@ describe('mining tile picks', () => {
     expect(pickTile(sim, 99, order(asteroid, { tiles: [{ x: 14, y: 10 }] }), { x: 0, y: 0 })).toEqual({ x: 14, y: 10 });
     expect(pickTile(sim, 99, order(asteroid, { tiles: [{ x: 3, y: 3 }] }), { x: 0, y: 0 })).toBeNull(); // no ore there
     expect(pickTile(sim, other, order(asteroid, { tiles: [{ x: 14, y: 10 }] }), { x: 0, y: 0 })).toEqual({ x: 14, y: 10 });
+  });
+
+  it('hovers over the tile, or a pod width clear of every other pod', () => {
+    const { sim, asteroid } = bar();
+    expect(hoverSpot(sim, 99, { x: 12, y: 10 }, 2.6)).toEqual({ x: 12.5, y: 10.5 });
+    const other = sim.world.createEntity();
+    sim.world.add(other, MiningPodC, order(asteroid, { phase: 'mining', target: { x: 12, y: 10 }, spot: { x: 12.5, y: 10.5 } }));
+    const a = hoverSpot(sim, 99, { x: 12, y: 10 }, 2.6);
+    expect(Math.hypot(a.x - 12.5, a.y - 10.5)).toBeGreaterThanOrEqual(2.6 - 1e-9);
+    // A neighbouring tile is too close too: that pod moves off as well.
+    const b = hoverSpot(sim, 99, { x: 13, y: 10 }, 2.6);
+    expect(Math.hypot(b.x - 12.5, b.y - 10.5)).toBeGreaterThanOrEqual(2.6 - 1e-9);
+    expect(hoverSpot(sim, 99, { x: 13, y: 10 }, 2.6)).toEqual(b); // deterministic
   });
 });

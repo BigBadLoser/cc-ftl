@@ -4,7 +4,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter, bayWorking } from '../vehicles/geometry';
 import { vehicleDefOf, vehicleSpeedPerTick } from '../vehicles/lifecycle';
 import { MiningPodC, type MiningPod } from '../mining/components';
-import { isOreTile, pickTile } from '../mining/pick';
+import { hoverSpot, isOreTile, pickTile } from '../mining/pick';
 import { ensurePilot, releasePilot } from '../mining/pilot';
 import type { Sim } from '../sim';
 import { Struct, writeStruct } from '../structure';
@@ -25,14 +25,15 @@ function end(sim: Sim, pod: number, order: MiningPod, reason: 'exhausted' | 'rec
 function goHome(sim: Sim, pod: number, v: Vehicle, order: MiningPod): void {
   order.phase = 'returning';
   order.target = null;
+  order.spot = null;
   v.dest = { type: 'bay' };
   sim.events.emit({ type: 'mining.returning', pod, cargo: cargoCount(v) });
 }
 
-/** Fly straight at the target tile's centre; true on arrival. */
+/** Fly straight at a point (sector coordinates); true on arrival. */
 function approach(sim: Sim, v: Vehicle, b: Body, to: { x: number; y: number }): boolean {
-  const dx = to.x + 0.5 - b.x;
-  const dy = to.y + 0.5 - b.y;
+  const dx = to.x - b.x;
+  const dy = to.y - b.y;
   const dist = Math.hypot(dx, dy);
   const step = vehicleSpeedPerTick(sim, v);
   if (dist > 0.0001) b.heading = Math.atan2(dy, dx);
@@ -42,9 +43,15 @@ function approach(sim: Sim, v: Vehicle, b: Body, to: { x: number; y: number }): 
     b.y += (dy / dist) * step;
     return false;
   }
-  b.x = to.x + 0.5;
-  b.y = to.y + 0.5;
+  b.x = to.x;
+  b.y = to.y;
   return true;
+}
+
+/** Aim the order at a tile, with a hover spot clear of every other pod (a pod's width apart). */
+function aim(sim: Sim, pod: number, v: Vehicle, order: MiningPod, t: { x: number; y: number }): void {
+  order.target = t;
+  order.spot = hoverSpot(sim, pod, t, vehicleDefOf(sim, v)?.size ?? 1);
 }
 
 /** Cut ore off the target tile at the pod's laser rate into its hold; an emptied tile becomes Space. */
@@ -100,7 +107,7 @@ export function miningSystem(sim: Sim): void {
       }
       if (!bayWorking(sim, v.home) || !ensurePilot(sim, pod, v, order)) continue;
       order.phase = 'outbound';
-      order.target = next;
+      aim(sim, pod, v, order, next);
       order.progress = 0;
       order.trips++;
       v.state = 'flying';
@@ -127,11 +134,12 @@ export function miningSystem(sim: Sim): void {
         goHome(sim, pod, v, order);
         continue;
       }
-      order.target = next;
+      aim(sim, pod, v, order, next);
       order.phase = 'outbound';
     }
     if (order.phase === 'outbound') {
-      if (approach(sim, v, b, order.target as { x: number; y: number })) order.phase = 'mining';
+      const to = order.spot ?? { x: (order.target as { x: number }).x + 0.5, y: (order.target as { y: number }).y + 0.5 };
+      if (approach(sim, v, b, to)) order.phase = 'mining';
       continue;
     }
     mine(sim, pod, v, order);

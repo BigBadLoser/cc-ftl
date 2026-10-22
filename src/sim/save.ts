@@ -39,8 +39,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v30: one dormancy state: outposts are stamped `immobile` + `dormant` (like dens); `ShipC.outpost.provoked` and `outpost.provoked` are gone.
  * v31: asteroid outposts are real stations (`station.<kind>` outpost tier): crewed, with `StationC`, `StationAlarmC`, a trader and `ShipC.gen`.
  * v32: finished rock walls (Struct.RockWall) and no ore on big asteroids.
+ * v33: `MiningPodC.spot` (where a pod hovers to cut its tile, clear of other pods).
  */
-export const SAVE_VERSION = 32;
+export const SAVE_VERSION = 33;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
