@@ -35,7 +35,7 @@
   .panel { position: relative; width: min(420px, calc(100vw - 24px)); display: grid; gap: 8px; border-width: 1px; }
   p { margin: 0; font-size: 14px; }
   .two { display: flex; gap: 6px; flex-wrap: wrap; }
-  .two button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
+  .two button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
   .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
   @media (max-width: 600px) { .panel { position: relative; left: auto; right: auto; bottom: auto; border-width: 1px; padding: 10px; } }
 </style>

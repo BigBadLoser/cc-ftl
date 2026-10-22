@@ -123,7 +123,8 @@
 </aside>
 
 <style>
-  .drawer { position: absolute; z-index: 12; display: grid; gap: 8px; align-content: start; overflow-y: auto; }
+  /* Solid under the near-opaque panel colour, so map labels never ghost through the text. */
+  .drawer { position: absolute; z-index: 12; display: grid; gap: 8px; align-content: start; overflow-y: auto; box-sizing: border-box; background: linear-gradient(var(--panel), var(--panel)), var(--bg); }
   section { display: grid; gap: 4px; }
   h4 { margin: 0; font: 600 12px var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); }
   .row { font-size: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

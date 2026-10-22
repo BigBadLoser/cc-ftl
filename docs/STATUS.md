@@ -148,12 +148,34 @@ Not taken from PR #16: `src/ui/Starmap*`, `src/app/starmap*`, `galaxyPrefetch`, 
   Hover highlights (node, sector, cluster) with a pointer cursor; `grab` only while dragging.
 - Three levels: Sector (nodes, lanes, exits, bodies, nebula), Cluster (sectors as patches), Galaxy (clusters, gates, rift lanes).
 - **Flee target mode:** the combat panel's Flee opens the map in flee mode: only nodes one jump away can be picked, the cheapest affordable one is preselected, the card button sends `combat.flee { ship, to }`.
-- **TEMP (remove in 9b):** `app/tempDeploy.ts` auto-deploys the waiting ship at the first free spot around `PLAYER_START` right after a jump (the deploy picker does not exist yet). Also in `main.ts`: on `sector.jumped` the renderer
+- ~~TEMP auto-deploy~~ (removed by the deploy picker below). In `main.ts`: on `sector.jumped` the renderer
   gets the new sector grid and drops its ship scenes, on `sector.deployed` it shows the ship (`Renderer.resetWorld`); 9b should keep that or replace it with its own handling.
 - **Perf:** the world is not drawn while the map is open (`api.setStarmapOpen`). The starmap is no longer built in `createBridge`: outlines and nebula tiles warm in idle slots after load (`bridge.warmStarmap`, one small piece per slot),
   the snapshot is assembled on first open if not yet warm, and the prefetch no longer blocks load (it runs one chunk per few frames, ring 2). Measured in headless Chromium on a dev server, 390x844, median-ish of 4 loads: page ready to `__cc` 2.6 s (4.2 s cold) before, 1.9 s (3.0 s cold) after;
   first map open (click to drawn) 0.9 to 1.1 s before, 0.8 to 0.9 s after when warm (1.0 to 1.3 s if opened within 1.5 s of load).
-- **Left:** 9b UI (jump confirm with `jumpWarnings` and the `withDocked` toggles, deploy picker; removes `tempDeploy`), art for the starmap bodies if wanted, route plotting across clusters beyond the first hop (Jump takes the first hop of a route).
+- **Left:** art for the starmap bodies if wanted.
+
+**Hyperspace, drawer, deploy picker (slice 4b + 9b, on `galaxy`; visual: needs screenshot approval).** Design in `docs/ARCHITECTURE.md` ("Starmap", Travel).
+- **Model (user, 2026-10-22):** a jump enters hyperspace; the ship travels the plotted route hop by hop with the map open; "Drop from hyperspace" ends it. **The starmap is turn-based:**
+  each hop entered is one turn (`GalaxyState.turn`; shown in the drawer and info row instead of days). The sim steps one hop per 16 ticks only as pacing; the glide on the map is a fixed
+  700 ms tween (visual only). The packet is lifted and frozen during hyperspace. `onTurn(sim, turn)` (`galaxy/turn.ts`) runs once per hop and emits `galaxy.turn`; it is otherwise a no-op.
+- **Choices I made:** FTL charge is paid once on entry (the largest any hop needs); fuel per hop as entered, the trip stops where it cannot pay; `galaxy.drop` mid-hop finishes the hop and drops at the
+  next node (no wasted fuel, no falling back), at a node it drops at once; the node's ships appear (archive restored, or contacts materialised on first entry) at the drop, so the deploy picker shows them.
+- **UI:** click a far node to plot (route highlighted, drawer shows sector info, fuel info, the hops); click the same node again to go (the drawer's Jump is the same thing, for touch). A jump that would leave
+  crew or shuttles behind opens a confirm step in the drawer (docked hostile shuttles get a toggle that fills `withDocked`); with nothing to warn about it goes straight away. In hyperspace the drawer
+  shows progress and Drop from hyperspace; closing the map shows a cheap hyperspace view (CSS streaks, status, Open starmap, Drop). After a drop the deploy picker (flat sector map, valid spots
+  highlighted, keep-out frames, a ghost of the ship, Best spot, Deploy here) replaces the old TEMP auto-deploy. Flee from the combat panel opens the map in flee mode.
+- **NEXT SLICE (user decisions 2026-10-22, not built): NPC traffic and interdiction.** A large slice, likely split into (a) the turn clock and NPC movement, (b) crossings and encounter events,
+  (c) the event grid and interdiction UI.
+  1. **Turns also tick from game time:** a fixed amount of in-node game time makes a map turn in the background, so NPCs can drop into a node the player has sat in alone. Proposal: **1 turn = 60 sim
+     seconds** (1200 ticks, the same as `ARRIVAL_EVERY_SEC`). `onTurn` is called from both triggers and both share `GalaxyState.turn`. Rule against double counting: the time accumulator runs only
+     while the sector is active and is reset when a hop's turn is taken and at `sector.deploy`, so a hop never also fires a time turn for the same stretch.
+  2. **Crossing:** travel happens between turns. The player and an NPC passing each other on the same lane in the same turn (opposite directions or overlapping segments) count, and so does ending the turn in the same node.
+  3. **Interdiction:** the player chooses evade (a roll), bribe (credits) or fight (drops into combat).
+  4. **Where fights happen:** a separate deep-space pocket, an event grid: a temporary node holding the player's packet and the interdicting ship(s); afterwards travel resumes or the player continues from there.
+  5. Crossings can trigger pirate interdiction, trader hails, patrol scans and distress calls.
+  6. **NPC fleets are persistent:** the ships moving on the map are the same entities or descriptors that become real ships in a node the player enters and leave the node's archive when they depart; galaxy
+     contacts and node archives must stay consistent with NPC movement.
 
 ## Crew sprite pipeline (branch `crew-pipeline`; merged to `main` with user approval)
 

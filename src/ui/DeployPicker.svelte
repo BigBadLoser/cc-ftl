@@ -86,9 +86,9 @@
   .cell { display: flex; align-items: center; gap: 6px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--cyan); }
   .cell b { color: var(--text); font-weight: 600; }
   .cell.bad { border-color: var(--red); color: var(--red); }
-  .area { flex: 1; min-height: 0; display: flex; padding: 8px; }
-  svg { width: 100%; height: 100%; touch-action: none; border: 1px solid var(--line-hi); background: var(--panel); }
-  .field { fill: var(--bg); }
+  .area { position: relative; flex: 1; min-height: 0; }
+  svg { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); touch-action: none; border: 1px solid var(--line-hi); background: var(--panel); }
+  .field { fill: var(--bg); stroke: var(--line); stroke-width: 0.4; }
   .ok { fill: var(--green); opacity: 0.12; }
   .frame { fill: var(--red); opacity: 0.16; stroke: var(--red); stroke-opacity: 0.5; stroke-width: 0.4; stroke-dasharray: 2 1.5; }
   .other { fill: var(--panel-3); stroke: var(--dim); stroke-width: 0.5; }

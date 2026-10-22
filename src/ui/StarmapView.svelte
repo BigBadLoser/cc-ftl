@@ -12,6 +12,7 @@
   import StarmapGalaxy from './StarmapGalaxy.svelte';
   import StarmapCluster from './StarmapCluster.svelte';
   import StarmapSector from './StarmapSector.svelte';
+  import { jumpCommand, toggleTake } from './starmapJump';
   import { BODY_LOOK, toneColor } from './starmapStyle';
 
   /**
@@ -339,6 +340,9 @@
     else {
       selected = hit?.id ?? null;
       confirming = null;
+      // On a phone the drawer is a bottom sheet over the lower part of the map: bring the picked node above it.
+      const n = hit ? nodeById.get(hit.id) : null;
+      if (n && w <= 600) flyTo(n.x, n.y + (0.22 * h) / s, s, 300);
     }
   }
   let hoverRaf = 0;
@@ -377,12 +381,12 @@
   /** Enter hyperspace with the plotted route (and the docked shuttles picked in the confirm step). */
   function fly() {
     if (!route || !map) return;
-    api.dispatch({ type: 'galaxy.jump', ship: map.ship, route: route.path.slice(1), ...(taking.length ? { withDocked: [...taking] } : {}) });
+    api.dispatch(jumpCommand(map.ship, route.path, taking));
     confirming = null;
     taking = [];
     selected = null;
   }
-  const toggleTake = (id: number) => (taking = taking.includes(id) ? taking.filter((t) => t !== id) : [...taking, id]);
+  const toggle = (id: number) => (taking = toggleTake(taking, id));
   const drop = () => api.dispatch({ type: 'galaxy.drop' });
   const px = (v: number) => v / s;
 </script>
@@ -443,7 +447,7 @@
   {#if map && drawerOpen}
       <StarmapDrawer {map} node={sel} sector={sel ? sectorById.get(sel.sector) ?? null : null} cluster={sel ? map.clusters.find((c) => c.id === sectorById.get(sel.sector)?.cluster) ?? null : null}
         factions={map.factions} {route} nodes={nodeById} {fleeing} warnings={confirming} taking={new Set(taking)}
-        onGo={go} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggleTake} onDrop={drop} onClear={() => ((selected = null), (confirming = null))} />
+        onGo={go} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggle} onDrop={drop} onClear={() => ((selected = null), (confirming = null))} />
   {/if}
   </div>
   {#if pickedInfo && level === 3}
