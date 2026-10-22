@@ -7,7 +7,7 @@ import json
 import os
 import queue
 import re
-import runpy
+import importlib
 import signal
 import subprocess
 import sys
@@ -38,8 +38,13 @@ def cpu_budget():
 
 
 def clips():
-    spec = runpy.run_path(str(ROOT / "tools/blender/sprites/crew_spec.py"))
-    return [row[0] for row in spec["CLIPS"]]
+    # crew_spec imports its siblings relatively (`from .scale import ...`), so load it as part of the `sprites` package.
+    sys.path.insert(0, str(ROOT / "tools/blender"))
+    try:
+        spec = importlib.import_module("sprites.crew_spec")
+    finally:
+        sys.path.pop(0)
+    return [row[0] for row in spec.CLIPS]
 
 
 def source_key(scale):
