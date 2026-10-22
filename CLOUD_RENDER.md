@@ -102,3 +102,24 @@ Alternatively, from a local checkout run `bash tools/cloud-render/remote.sh root
 ### Deployment safety
 
 `deploy` and `launch` preserve remote `.cache` and `public/assets`, do not delete unknown remote source files, and refuse to overwrite source while the named render tmux session is present. Source changes still invalidate checkpoints, so deploy changes while idle; transfer the current cache before replacing a disposable instance.
+
+## Deploy entirely from a phone (GitHub Actions + Vultr API)
+
+The `.github/workflows/vultr-render-launch.yml` workflow provisions a fresh Vultr Ubuntu 24.04 VM and deploys the renderer over SSH with no existing instance or computer required. It takes the Vultr plan ID and region as inputs. It does **not** automatically delete the instance or back up the render results.
+
+**One-time setup:**
+
+1. Enable the Vultr API in your Vultr account, create a token, and confirm its allowed IPs permit GitHub-hosted Actions runners. Broad API access is sensitive; remove it after use.
+2. Add an SSH public key to Vultr and copy its Vultr SSH key ID. Keep the matching private key.
+3. In GitHub repository Settings → Secrets and variables → Actions, add three repository secrets:
+   - `VULTR_API_KEY`: Vultr API token.
+   - `VULTR_SSH_KEY_ID`: ID of the registered Vultr public SSH key.
+   - `CLOUD_RENDER_SSH_PRIVATE_KEY`: corresponding private SSH key (multiline).
+4. GitHub requires a manually triggered workflow to exist on the repository's **default branch**. Only the launch workflow YAML needs to be copied/cherry-picked to the default branch (it explicitly checks out `art/cloud-render`). Keep the actual rendering code on the art branch. Do not merge the entire art branch into the default branch just to activate the workflow.
+5. From GitHub Mobile or mobile Safari: repository → Actions → Launch Vultr Render → Run workflow. Enter your available Vultr plan ID and region (default `ewr`).
+
+The workflow refuses to create a second instance with the same label, provisions Ubuntu 24.04, waits for SSH, syncs source from `art/cloud-render`, bootstraps Blender, and starts the renderer in tmux. GitHub's workflow summary gives you the created instance ID/IP. The instance can still be running and accruing charges **even if the workflow fails**—check Vultr and delete failed instances manually.
+
+**Finish:** Once complete, use the documented verified `fetch` from a computer, or `archive` and SFTP from your phone. Download and verify everything before deleting the VM in Vultr.
+
+The workflow expects the default root SSH user of a standard Vultr Ubuntu image and Ubuntu 24.04 OS ID `2284`. If these values differ on your Vultr account, adjust the YAML. The specific plan ID must be copied from Vultr's available plans; the workflow does not assume a plan exists in every region.
