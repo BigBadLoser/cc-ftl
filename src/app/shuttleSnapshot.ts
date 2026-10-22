@@ -62,7 +62,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
     if (!m || shipIdOf(sim, m) === PLAYER) continue;
     const shipId = shipIdOf(sim, m);
     const ship = sim.world.get(shipId, ShipC);
-    if (!ship || ship.state === 'fled') continue;
+    if (!ship || ship.state === 'fled' || (ship.outpost?.dock && ship.outpost.dock !== id)) continue; // an outpost's other airlocks open onto ground
     airlocks.push({ id, shipId, ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id), ...localOf(sim, shipIdOf(sim, m), m.x, m.y) });
   }
   const shuttles: UiShuttles['shuttles'] = [];

@@ -76,9 +76,10 @@ export interface Ship {
   ruin?: ShipRuin;
   /**
    * Set on asteroid outposts (outposts/gen.ts): its style and kind; a dug one is roofed with rock. `hidden` until the player
-   * discovers it (dug ones start hidden). Outposts are also `immobile` and `dormant` until provoked. See outposts/state.ts.
+   * discovers it (dug ones start hidden). `dock` is the module id of its dock airlock (the one on the rock face, open to space): the only airlock
+   * a shuttle may dock at. Outposts are also `immobile` and `dormant` until provoked. See outposts/state.ts.
    */
-  outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean };
+  outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean; dock?: number };
   /** Set on a base the player claimed on an asteroid (`asteroid.claim`): immobile, never disabled or wrecked by the ship-state system. */
   base?: { asteroid: number };
   /** Stations: no FTL, no engines, never flees or jumps; it stays in its node (archived with it). */
