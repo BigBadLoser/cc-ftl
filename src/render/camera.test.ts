@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { createCamera, floorLevel, nearestLevel, zoomLevels } from './camera';
 import { ART_SCALE } from './iso';
 
-const below = ART_SCALE > 1 ? [1 / ART_SCALE, 0.75] : [];
+/** The fractional levels: down to 1/8 at any art scale (station hubs), with 1 / ART_SCALE among them. */
+const below = [...new Set([1 / 8, 1 / 6, 1 / 4, 1 / 3, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
 
 describe('zoom levels', () => {
-  it('are whole numbers from 1 up, plus fractional ones below 1 only at 2x art', () => {
+  it('are whole numbers from 1 up, plus fractional ones below 1 down to 1/8', () => {
     expect(zoomLevels(3)).toEqual([...below, 1, 2, 3]);
     expect(zoomLevels(1).every((z) => z <= 1)).toBe(true);
   });
@@ -53,5 +54,18 @@ describe('camera', () => {
     const after = cam.toArt(200, 150);
     expect(Math.abs(after.x - before.x)).toBeLessThan(1);
     expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+  });
+});
+
+describe('framing big things', () => {
+  it('a station hub fits: fitZoom goes below 1 and the levels below 1 stay on the ladder', () => {
+    const cam = createCamera(3);
+    cam.resize(1440, 900, 1);
+    cam.fitZoom(0.2);
+    expect(cam.zoom).toBe(1 / 6);
+    cam.fitZoom(0.01);
+    expect(cam.zoom).toBe(1 / 8);
+    cam.zoomAt(2, 700, 450);
+    expect(cam.zoom).toBe(1 / 6);
   });
 });

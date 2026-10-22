@@ -26,8 +26,10 @@ import { newTrade, type TradeState } from './trade/types';
  * v23: `ShipC.ruin` (a derelict's dressing data for the renderer: breach, decal and hook art, module art overrides).
  * v25 (step 9a): `sector.node`, `sector.state` ('active' | 'deploying') and `sector.packet` (the player's ship in transit while
  * deploying), plus `archives` (every sector the player left, frozen).
+ * v26: stations (`ShipC.immobile`, `ShipC.dormant`, `StationC`, `StationAlarmC`, `StationCrewC`, `WantedC`) and the `patrol`
+ * work category in every `PrioritiesC`.
  */
-export const SAVE_VERSION = 25;
+export const SAVE_VERSION = 26;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

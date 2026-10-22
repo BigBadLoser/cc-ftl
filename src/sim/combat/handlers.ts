@@ -107,6 +107,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const combat = sim.world.get(entity, CombatC);
     if (!ship || !combat) return reject(sim, cmd.type, 'noShip');
     if (ship.state !== 'active') return reject(sim, cmd.type, 'notActive');
+    if (ship.immobile) return reject(sim, cmd.type, 'immobile');
     if (combat.ftl < FTL_CHARGE_SEC) return reject(sim, cmd.type, 'notCharged');
     ship.state = 'fled';
     sim.events.emit({ type: 'ship.fled', ship: cmd.ship });

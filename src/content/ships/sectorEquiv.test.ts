@@ -35,6 +35,12 @@ function legacyWorld(sim: Sim): unknown {
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   for (const k of ['eggSac', 'nest', 'alien']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  // The `patrol` work category came after it too (station directors post patrol jobs; no ship here has any).
+  stores.priorities = (stores.priorities ?? []).map(([id, raw]) => {
+    const rest = { ...(raw as Record<string, unknown>) };
+    delete rest.patrol;
+    return [id, rest];
+  });
   stores.vehicle = (stores.vehicle ?? []).map(([id, raw]) => {
     const { def, homeShip, home, state, hp, ...rest } = raw as Vehicle;
     const b = bodies.get(id) as Body;

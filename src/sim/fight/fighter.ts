@@ -8,7 +8,7 @@ import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { CHASE_REPLAN_TICKS, COMBAT_SIGHT, FLEE_REPLAN_TICKS } from '../tuning';
-import { AllegianceC, FighterC, type Fighter } from './components';
+import { AllegianceC, EquipOrderC, FighterC, type Fighter } from './components';
 import { fleePath } from './flee';
 import { sightLine, type Cover } from './los';
 import { isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
@@ -22,6 +22,7 @@ import { sacInReach, sacTile } from '../aliens/target';
 import { StunC } from '../robots/components';
 import { haltCrew } from '../robots/halt';
 import { TICK_HZ } from '../time';
+import { StationCrewC } from '../stations/components';
 
 /** Combat-ready crew with an allegiance, grouped by grid, each list in ascending id order. */
 export function combatReadyUnits(sim: Sim): Map<number, number[]> {
@@ -137,7 +138,8 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const role = sim.content.roles[crew.role];
   const weapon = wielded(sim, id);
   const faction = sim.world.get(id, AllegianceC)?.faction;
-  const canFight = isArmed(sim, id) || !!role?.fighter || faction !== 'player';
+  // Station civilians (crew who are neither armed nor fighters) run from trouble like the player's do.
+  const canFight = isArmed(sim, id) || !!role?.fighter || (faction !== 'player' && !sim.world.has(id, StationCrewC));
   const hunter = invader || !!role?.fighter;
 
   // The nearest foe we can see (sight range, clear line).
@@ -176,6 +178,9 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     inReach = line.visible;
   }
   if (!inReach) {
+    // An unarmed AI fighter on its way to the weapon locker arms first (only a foe at arm's length makes it fight bare-handed):
+    // chasing would take over its path every replan and it would never reach either.
+    if (!controlled && !isArmed(sim, id) && sim.world.has(id, EquipOrderC)) return;
     if (!moveOrder) walkTo(sim, id, f, pos, target.pos, true);
     return;
   }

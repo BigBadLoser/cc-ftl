@@ -28,6 +28,12 @@ export const trade = {
     'side.neutral': { name: 'Neutral', reputation: 'traders', relation: 1 },
     'side.hostile': { name: 'Raiders', reputation: 'pirates', relation: -2, sell: 1.3, buy: 0.8 },
     'side.rogue': { name: 'Rogue AI', reputation: 'rogue', relation: -9 },
+    // Generated stations (src/content/stations.ts) trade under their kind.
+    'station.trading': { name: 'Trade station', reputation: 'traders', relation: 2 },
+    'station.mining': { name: 'Mining station', reputation: 'traders', relation: 2 },
+    'station.farming': { name: 'Agri station', reputation: 'traders', relation: 2 },
+    'station.military': { name: 'Navy depot', reputation: 'navy', relation: 0, sell: 1.1, buy: 0.95 },
+    'station.pirate': { name: 'Pirate den', reputation: 'pirates', relation: -2, sell: 1.3, buy: 0.8 },
   },
   traders: {
     // --- Civilian roles (the generator's hull families) ---
@@ -53,6 +59,37 @@ export const trade = {
       stock: [
         { item: 'item.ice', min: 20, max: 70 }, { item: 'item.scrap', min: 20, max: 80 }, { item: 'item.metal', min: 15, max: 50 },
         { item: 'item.parts', min: 0, max: 6, chance: 0.4 },
+      ],
+    },
+    // Stations by kind. They have no shuttle: the player's shuttle flies every run. Depots sell no hand weapons.
+    'trader.station.trading': {
+      name: 'Trade station', match: { faction: 'station.trading' }, shuttle: false, credits: [2000, 6000],
+      stock: [
+        { item: 'item.metal', min: 40, max: 120 }, { item: 'item.electronics', min: 15, max: 40 }, { item: 'item.polymer', min: 15, max: 50 },
+        { item: 'item.parts', min: 8, max: 25 }, { item: 'item.ration', min: 30, max: 80 }, { item: 'item.ice', min: 10, max: 40 },
+        { item: 'item.missile', min: 4, max: 16, chance: 0.7 }, { item: 'item.sidearm', min: 1, max: 4, chance: 0.6 },
+        { item: 'item.rifle', min: 1, max: 2, chance: 0.35 }, { item: 'item.shuttle', min: 1, max: 1, chance: 0.2 },
+      ],
+    },
+    'trader.station.mining': {
+      name: 'Mining station', match: { faction: 'station.mining' }, shuttle: false, sell: 0.9, credits: [1200, 3500],
+      stock: [{ item: 'item.metal', min: 80, max: 200 }, { item: 'item.ice', min: 40, max: 120 }, { item: 'item.scrap', min: 20, max: 80 }, { item: 'item.parts', min: 4, max: 12 }],
+    },
+    'trader.station.farming': {
+      name: 'Agri station', match: { faction: 'station.farming' }, shuttle: false, credits: [800, 2500],
+      stock: [{ item: 'item.ration', min: 60, max: 180 }, { item: 'item.polymer', min: 10, max: 40 }, { item: 'item.ice', min: 10, max: 30 }],
+    },
+    'trader.station.military': {
+      // Military surplus: older, middle-grade hand weapons (tiers 1-2, never the best) at a modest markup; it still buys.
+      name: 'Depot quartermaster', match: { faction: 'station.military' }, shuttle: false, credits: [1500, 4000],
+      surplus: { tag: 'weapon', maxTier: 2, min: 2, max: 8, markup: 1.1 },
+      stock: [{ item: 'item.missile', min: 10, max: 30 }, { item: 'item.parts', min: 10, max: 30 }, { item: 'item.electronics', min: 10, max: 30 }, { item: 'item.metal', min: 20, max: 60 }],
+    },
+    'trader.station.pirate': {
+      name: 'Den fence', match: { faction: 'station.pirate' }, shuttle: false, tagMods: { weapon: { sell: 0.85 }, salvage: { buy: 1.2 } }, credits: [300, 1200],
+      stock: [
+        { item: 'item.scrap', min: 30, max: 100 }, { item: 'item.parts', min: 5, max: 15 }, { item: 'item.ion_pistol', min: 1, max: 4, chance: 0.7 },
+        { item: 'item.blade', min: 2, max: 6 }, { item: 'item.rifle', min: 1, max: 3, chance: 0.5 }, { item: 'item.missile', min: 2, max: 10, chance: 0.5 },
       ],
     },
     'trader.station': {

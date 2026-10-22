@@ -45,6 +45,8 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.ai_core': { ids: CONSOLE, tint: 0xd9a8ff, perTile: true },
   // Galley / food printer: the fabricator tinted mint green until it has its own model (art list in docs/STATUS.md).
   'module.galley': { ids: ['module.fabricator'], tint: 0x8affc0 },
+  // Station ore refinery: the fabricator tinted orange until it has art.
+  'module.refinery': { ids: ['module.fabricator'], tint: 0xffa060 },
   // Cargo containers have no entry: until their sheets land they are drawn boxes (render/containerBox.ts).
   // Roof turret: a crate with a barrel nub pointing along the aim (see turretView).
   'turret.generic': { ids: CRATE, tint: 0xd0d8e8 },

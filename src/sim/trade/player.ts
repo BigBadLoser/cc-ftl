@@ -1,6 +1,6 @@
 import { ShipC } from '../combat/components';
 import { StorageC } from '../items/components';
-import { storageAdd, storageCount, storageSpace, storageTake } from '../items/storage';
+import { storageCount } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { airlockWorking } from '../modules/airlock';
 import { AirlockC } from '../modules/airlock';
@@ -26,25 +26,6 @@ function playerStorages(sim: Sim): number[] {
 /** Units of an item in the player's storage. */
 export function playerItems(sim: Sim, item: string): number {
   return playerStorages(sim).reduce((n, id) => n + storageCount(sim, id, item), 0);
-}
-
-/** Units of an item the player's storage could still take. */
-export function playerRoom(sim: Sim, item: string): number {
-  return playerStorages(sim).reduce((n, id) => n + storageSpace(sim, id, item), 0);
-}
-
-/** Take up to `n` units from the player's storage (instant fallback); returns how many came out. */
-export function takeFromPlayer(sim: Sim, item: string, n: number): number {
-  let left = n;
-  for (const id of playerStorages(sim)) if (left > 0) left -= storageTake(sim, id, item, left);
-  return n - left;
-}
-
-/** Put units into the player's storage (instant fallback); returns how many fit. */
-export function giveToPlayer(sim: Sim, item: string, n: number): number {
-  let left = n;
-  for (const id of playerStorages(sim)) if (left > 0) left -= storageAdd(sim, id, item, left);
-  return n - left;
 }
 
 /** Storage modules of the player's ship that hold an item, with how much (loading hauls take from these). */

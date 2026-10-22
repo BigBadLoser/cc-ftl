@@ -88,6 +88,7 @@ const LIGHT_REACH = 4.5;
 /** Lights until every floor tile of the room is within reach of one, preferring wall-side tiles. */
 export function lightRoom(lay: Layout, rng: Rng, room: number): void {
   const tiles = lay.roomTiles(room);
+  if (tiles.length >= BIG_ROOM) { lightOpen(lay, room, tiles); return; }
   const lit = new Uint8Array(lay.cells.length);
   const covers = (a: number, b: number): boolean =>
     Math.hypot((a % lay.w) - (b % lay.w), Math.floor(a / lay.w) - Math.floor(b / lay.w)) <= LIGHT_REACH;
@@ -110,5 +111,63 @@ export function lightRoom(lay: Layout, rng: Rng, room: number): void {
     if (best < 0) return;
     lay.push({ def: 'module.light', x: best % lay.w, y: Math.floor(best / lay.w), rot: 0 });
     for (const t of tiles) if (covers(best, t)) lit[t] = 1;
+  }
+}
+
+/** Rooms this big (courtyards: plazas, gardens, drill halls) are lit by `lightOpen`, with no lamp cap. */
+export const BIG_ROOM = 120;
+/** Lamp grid pitch in big rooms, and the reach every floor tile is kept within (inside the module's radius of 7). */
+const GRID = 9;
+export const OPEN_REACH = 6;
+
+/**
+ * Big open rooms: a lamp grid scaled to the area (one lamp near every grid point, so the count grows with the room),
+ * then a pass that lights any tile still dark (furniture took the grid tile, a nook by the wall) from the nearest free
+ * tile. Every step is local, so it stays cheap on courts of a thousand tiles and more.
+ */
+function lightOpen(lay: Layout, room: number, tiles: number[]): void {
+  const W = lay.w;
+  const lit = new Uint8Array(lay.cells.length);
+  const R = Math.ceil(OPEN_REACH);
+  const mark = (li: number): void => {
+    const lx = li % W, ly = (li - lx) / W;
+    for (let y = Math.max(0, ly - R); y <= Math.min(lay.h - 1, ly + R); y++) {
+      for (let x = Math.max(0, lx - R); x <= Math.min(W - 1, lx + R); x++) {
+        if ((x - lx) ** 2 + (y - ly) ** 2 <= OPEN_REACH * OPEN_REACH && lay.roomOf[y * W + x] === room) lit[y * W + x] = 1;
+      }
+    }
+  };
+  for (const m of lay.modules) if (m.def === 'module.light' && lay.roomOf[m.y * W + m.x] === room) mark(m.y * W + m.x);
+  const fits = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < W && y < lay.h && lay.roomOf[y * W + x] === room
+    && lay.cells[y * W + x] === '_' && lay.occ[y * W + x] === -1 && !lay.fitError('module.light', x, y, 0, room);
+  /** The free tile nearest (x, y) within `r` (rings outward), or -1. */
+  const near = (x: number, y: number, r: number): number => {
+    for (let d = 0; d <= r; d++) {
+      let best = -1, bd = Infinity;
+      for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== d || !fits(x + dx, y + dy)) continue;
+        const e = dx * dx + dy * dy;
+        if (e < bd) { bd = e; best = (y + dy) * W + x + dx; }
+      }
+      if (best >= 0) return best;
+    }
+    return -1;
+  };
+  const put = (i: number): void => { lay.push({ def: 'module.light', x: i % W, y: Math.floor(i / W), rot: 0 }); mark(i); };
+  let x0 = W, y0 = lay.h, x1 = 0, y1 = 0;
+  for (const t of tiles) { const x = t % W, y = (t - x) / W; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  // The grid, centred on the room's box so the margins match.
+  const ox = x0 + (((x1 - x0) % GRID) >> 1), oy = y0 + (((y1 - y0) % GRID) >> 1);
+  for (let gy = oy; gy <= y1; gy += GRID) {
+    for (let gx = ox; gx <= x1; gx += GRID) {
+      if (lit[gy * W + gx] && lay.roomOf[gy * W + gx] === room) continue;
+      const i = near(gx, gy, 2);
+      if (i >= 0 && !lit[i]) put(i);
+    }
+  }
+  for (const t of tiles) {
+    if (lit[t]) continue;
+    const i = near(t % W, Math.floor(t / W), R - 1);
+    if (i >= 0) put(i);
   }
 }

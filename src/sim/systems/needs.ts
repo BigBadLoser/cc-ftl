@@ -9,6 +9,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { stat } from '../stats';
 import { BED_REST_MULT, HUNGER_SLEEP_MULT } from '../tuning';
+import { StationCrewC } from '../stations/components';
 
 /** Sleeping recovers this many times faster than awake decay. */
 const SLEEP_RECOVERY_MULT = 5;
@@ -63,9 +64,14 @@ function inBed(sim: Sim, id: number): boolean {
  * member when it ends. A meal that was interrupted (drafted, fighting, downed) is dropped. Hitting zero raises
  * `crew.starving` once; the harm is dealt by the vitals system.
  */
+/** Lowest hunger a station crew member falls to: hungry enough to go and eat, never starving. */
+const STATION_HUNGER_FLOOR = 25;
+
 function hunger(sim: Sim, id: number, crew: Crew, needs: Needs): void {
   const def = sim.content.species[crew.species]?.hunger;
-  if (!def || sim.world.get(id, AllegianceC)?.faction !== 'player') return;
+  // Station crew get hungry and eat too, but never starve: the station is resupplied off-screen (STATION_HUNGER_FLOOR).
+  const station = sim.world.has(id, StationCrewC);
+  if (!def || (!station && sim.world.get(id, AllegianceC)?.faction !== 'player')) return;
   needs.hunger ??= 70 + (crew.appearanceSeed % 31);
   const eat = sim.world.get(id, EatC);
   if (eat && (sim.world.has(id, DraftedC) || (eat.left >= 0 && crew.activity !== 'eating'))) sim.world.remove(id, EatC);
@@ -77,6 +83,6 @@ function hunger(sim: Sim, id: number, crew: Crew, needs: Needs): void {
     sim.events.emit({ type: 'crew.ate', crew: id, item: eat.item, galley: eat.galley });
   }
   const before = needs.hunger;
-  needs.hunger = Math.max(0, before - (def.decayPerSec * (crew.activity === 'sleeping' ? HUNGER_SLEEP_MULT : 1)) / TICK_HZ);
+  needs.hunger = Math.max(station ? STATION_HUNGER_FLOOR : 0, before - (def.decayPerSec * (crew.activity === 'sleeping' ? HUNGER_SLEEP_MULT : 1)) / TICK_HZ);
   if (before > 0 && needs.hunger <= 0) sim.events.emit({ type: 'crew.starving', crew: id });
 }

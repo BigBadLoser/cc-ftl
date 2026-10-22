@@ -6,10 +6,10 @@ import { roofMounted } from './layout';
 /**
  * Check a ship template the way the layout tests do: modules on floor (hull modules on exterior hull), no overlaps,
  * open chairs and access tiles, every walkable tile reachable from the first door, power balance, a helm, engines on
- * the stern (+x) hull, a reactor, doors usable from both sides and clear roof space around roof-mounted modules.
+ * the stern (+x) hull (unless `immobile`: stations), a reactor, doors usable from both sides and clear roof space around roof-mounted modules.
  * Returns human-readable problems (empty = valid).
  */
-export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef>): string[] {
+export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef>, opts: { immobile?: boolean } = {}): string[] {
   const problems: string[] = [];
   const h = t.rows.length;
   const w = Math.max(...t.rows.map((r) => r.length));
@@ -77,7 +77,8 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   const count = (pred: (d: ModuleDef) => boolean): number => mods.filter((m) => defs[m.def] && pred(defs[m.def] as ModuleDef)).length;
   // A helm is the bridge; on AI-run ships the AI core stands in (as on the robots branch).
   if (count((d) => !!d.bridge || !!d.aiCore) === 0) problems.push('no helm or AI core');
-  if (count((d) => !!d.engine) === 0) problems.push('no engine');
+  // Stations are immobile: no engines needed (none are planned).
+  if (!opts.immobile && count((d) => !!d.engine) === 0) problems.push('no engine');
   if (count((d) => d.power > 0) === 0) problems.push('no reactor');
   if (t.boarding && count((d) => !!d.vehicleBay) === 0) problems.push('boards but has no shuttle bay');
   // Doors join walkable tiles on two opposite sides; everything walkable is reachable from the first door.

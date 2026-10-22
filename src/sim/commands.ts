@@ -143,7 +143,12 @@ export type Command =
   /** Withdraw an offer, or call off a deal whose shuttle has not left yet. `id` is the offer or deal id. */
   | { type: 'trade.cancel'; id: number }
   /** Spawn a trading station (an entity with a wallet and stock but no grid; deliveries use the instant fallback). */
-  | { type: 'debug.spawnStation'; profile: string; name?: string }
+  /**
+   * Generate and stamp a station (shipgen/stationGen.ts) of `kind` ('station.trading'...) and `size` at (x, y), or east of
+   * everything in the node, with a trader aboard. The old grid-less form `{profile: 'trader.station'}` still works: it
+   * spawns a trading outpost.
+   */
+  | { type: 'debug.spawnStation'; kind?: string; size?: 'outpost' | 'station' | 'hub'; seed?: number; x?: number; y?: number; profile?: string; name?: string }
   /** Set the player's credits. */
   | { type: 'debug.setCredits'; value: number }
   | { type: 'debug.spawnItems'; ship: number; x: number; y: number; item: string; count: number };

@@ -131,7 +131,10 @@ function shear(c: RuinCtx, depth: number): void {
 function keepLargest(c: RuinCtx): void {
   const { label, sizes } = components(c, (i) => c.cells[i] !== '.');
   if (sizes.length <= 1) return;
-  const best = sizes.indexOf(Math.max(...sizes));
+  // The piece with the most floor stays (a bare cargo frame never outlives the crewed hull), then the biggest.
+  const floor = sizes.map(() => 0);
+  for (let i = 0; i < label.length; i++) if (label[i] !== -1 && c.cells[i] === '_') floor[label[i] as number] = (floor[label[i] as number] ?? 0) + 1;
+  const best = sizes.reduce((b, n, k) => ((floor[k] ?? 0) > (floor[b] ?? 0) || ((floor[k] ?? 0) === (floor[b] ?? 0) && n > (sizes[b] ?? 0)) ? k : b), 0);
   for (let i = 0; i < label.length; i++) {
     if (label[i] !== -1 && label[i] !== best) { c.cells[i] = '.'; c.meta.sheared++; }
   }
