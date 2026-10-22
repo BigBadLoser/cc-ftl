@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, PositionC, ShipC, newGame, type Sim } from '../sim';
+import { CrewC, PositionC, START_NODE, ShipC, galaxyIndex, newGame, type Sim } from '../sim';
 import { content } from '../content';
 import { shipGrid } from '../sim/regions';
 import { Struct } from '../sim/structure';
@@ -36,5 +36,69 @@ describe('alerts', () => {
     const list = current(alerts);
     expect(list.map((a) => a.kind)).toEqual(['crew.downed']);
     expect(list[0]?.text).toContain('is down');
+  });
+
+  describe('arrival warnings', () => {
+    function setup() {
+      const sim = newGame(31, content);
+      sim.galaxy.fleets = [];
+      const index = galaxyIndex(sim.galaxy);
+      const edge = (id: string): string => index.adjacent.get(id)!.map((e) => (e.a === id ? e.b : e.a)).sort()[0] as string;
+      const a = edge(START_NODE);
+      const b = (index.adjacent.get(a) ?? []).map((e) => (e.a === a ? e.b : e.a)).sort().find((n) => n !== START_NODE) as string;
+      const add = (faction: string, role: 'trader' | 'pirate', node: string, route: string[]) => {
+        const f = { id: sim.galaxy.nextFleet++, faction, role, ships: [{ id: sim.galaxy.nextFleet++, faction, shipgen: 'faction.civilian', seed: 1, depth: 1, since: 0 }], node, from: node, moved: -1, route, dest: route[route.length - 1] as string, dwell: 0, ttl: 99 };
+        sim.galaxy.fleets.push(f);
+        return f;
+      };
+      return { sim, a, b, add };
+    }
+
+    it('says how many turns until a fleet drops out, in danger styling for hostiles, and follows the fleet', () => {
+      const { sim, a, b, add } = setup();
+      const alerts = createAlerts(sim);
+      const pirate = add('pirates', 'pirate', b, [a, START_NODE]);
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      let list = current(alerts);
+      expect(list).toHaveLength(1);
+      expect(list[0]?.kind).toBe('galaxy.incomingHostile');
+      expect(list[0]?.text).toMatch(/drops from hyperspace in 2 turns$/);
+      const id = list[0]?.id;
+      pirate.node = a;
+      pirate.route = [START_NODE];
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      list = current(alerts);
+      expect(list).toHaveLength(1);
+      expect(list[0]).toMatchObject({ id, kind: 'galaxy.incomingHostile' });
+      expect(list[0]?.text).toMatch(/in 1 turn$/);
+      pirate.node = START_NODE;
+      pirate.route = [];
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      expect(current(alerts)).toEqual([]);
+    });
+
+    it('a friendly fleet is a plain warning, a change of course clears it, and a dismissed warning stays dismissed for that trip', () => {
+      const { sim, a, b, add } = setup();
+      const alerts = createAlerts(sim);
+      const trader = add('traders', 'trader', a, [START_NODE]);
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      expect(current(alerts).map((x) => x.kind)).toEqual(['galaxy.incoming']);
+      alerts.dismiss(current(alerts)[0]!.id);
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      expect(current(alerts)).toEqual([]);
+      trader.route = [b];
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      expect(current(alerts)).toEqual([]);
+      trader.route = [START_NODE];
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      expect(current(alerts)).toHaveLength(1); // it changed course and came back: a new trip, a new warning
+    });
   });
 });

@@ -1,5 +1,5 @@
 import { shipIdOf, shipGrid } from '../sim/regions';
-import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
+import { AllegianceC, CrewC, ModuleC, incomingFleets, PositionC, ShipC, TraderC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createStore, type Readable } from './store';
 
@@ -11,6 +11,8 @@ export interface Alerts {
   onEvents(events: SimEvent[]): void;
   dismiss(id: number): void;
   get(id: number): UiAlert | undefined;
+  /** Arrival warnings: bring the "drops from hyperspace" alerts in line with the fleets now on their way to the player's node (state, not events). */
+  syncIncoming(): void;
   /** True when this event raises (or would raise) an alert, so the event log can leave it to the alert. */
   covers(e: SimEvent): boolean;
   /** Called whenever an alert leaves the list (dismissed, expired or replaced), with the tick it appeared. */
@@ -27,6 +29,11 @@ export function createAlerts(sim: Sim): Alerts {
   const clearedFns: ((a: UiAlert, tick: number, replaced: boolean) => void)[] = [];
   const raisedFns: ((e: SimEvent, alertId: number) => void)[] = [];
   let nextId = 1;
+  /** Arrival-warning alerts by fleet id. They follow the sim, so they never expire on a timer and stay out of the event log. */
+  const incoming = new Map<number, number>();
+  let incomingKey = '';
+  /** Fleets whose warning the player dismissed: quiet until the fleet is no longer on its way. */
+  const muted = new Set<number>();
 
   const crewName = (id: number) => sim.world.get(id, CrewC)?.name ?? 'Crew';
   const crewAt = (id: number) => {
@@ -142,8 +149,40 @@ export function createAlerts(sim: Sim): Alerts {
     store.update((l) => l.filter((a) => a.id !== id));
   };
 
+  function syncIncoming(): void {
+    const g = sim.galaxy;
+    const key = `${g.rev}|${g.current}|${g.turn}`;
+    if (key === incomingKey) return;
+    incomingKey = key;
+    const want = sim.content.galaxy ? incomingFleets(sim) : [];
+    const ids = new Set(want.map((w) => w.fleet));
+    for (const fleet of muted) if (!ids.has(fleet)) muted.delete(fleet);
+    for (const [fleet, id] of incoming) {
+      if (ids.has(fleet) && store.get().some((a) => a.id === id)) continue;
+      if (ids.has(fleet)) muted.add(fleet);
+      incoming.delete(fleet);
+      remove(id);
+    }
+    for (const w of want) {
+      if (muted.has(w.fleet)) continue;
+      const name = `${sim.content.galaxy?.factions[w.faction]?.name ?? w.faction} ${w.role}${w.ships > 1 ? ` x${w.ships}` : ''}`;
+      const text = `${name} drops from hyperspace in ${w.eta} turn${w.eta === 1 ? '' : 's'}`;
+      const kind: UiAlertKind = w.hostile ? 'galaxy.incomingHostile' : 'galaxy.incoming';
+      const id = incoming.get(w.fleet);
+      if (id !== undefined) {
+        store.update((l) => l.map((a) => (a.id === id ? { ...a, kind, text } : a)));
+        continue;
+      }
+      const nid = nextId++;
+      incoming.set(w.fleet, nid);
+      store.update((l) => [{ id: nid, kind, text, at: null }, ...l]);
+      for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
+    }
+  }
+
   return {
     list: store,
+    syncIncoming,
     get: (id) => store.get().find((a) => a.id === id),
     covers: (e) => describe(e) !== null,
     onCleared: (fn) => void clearedFns.push(fn),

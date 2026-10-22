@@ -37,7 +37,7 @@
   const dropNote = $derived(
     travel?.phase === 'noFuel' ? `Out of fuel for the next hop (needs ${travel.need}). Drop here or refuel.`
     : travel?.phase === 'arrived' ? 'You have reached the end of the route.'
-    : travel?.phase === 'interdicted' ? 'Travel is halted until you answer.'
+    : travel?.phase === 'interdicted' ? 'Travel is halted until you answer the interdiction.'
     : travel?.stopping ? `Dropping out at ${nameOf(travel.route[travel.at + 1] as string)} when the hop ends.`
     : 'Mid-hop, you drop out at the next node.',
   );
@@ -47,7 +47,7 @@
   <PanelHead icon="map" {title} {sub} onBack={travel ? undefined : onClear} backIcon="close" backTitle="Close drawer" backTestId="starmap-card-close" />
 
   {#if travel}
-    {#each map.encounters as e (e.id)}
+    {#each map.encounters.filter((x) => x.kind !== 'interdict') as e (e.id)}
       <StarmapEncounter encounter={e} onChoose={onRespond} />
     {/each}
     {#if recent}<p class="note result {recent.tone}" data-testid="starmap-result"><Icon name={recent.tone === 'red' ? 'alert' : 'chevUp'} size={14} />{recent.text}</p>{/if}

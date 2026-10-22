@@ -5,6 +5,7 @@
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
   import StarmapNebula from './StarmapNebula.svelte';
+  import InterdictModal from './InterdictModal.svelte';
   import StarmapDrawer from './StarmapDrawer.svelte';
   import StarmapStats from './StarmapStats.svelte';
   import { fade } from 'svelte/transition';
@@ -108,6 +109,7 @@
     };
   });
   const drawerOpen = $derived(!!map && level < 3 && (!!map.travel || !!sel));
+  const interdiction = $derived(map?.encounters.find((e) => e.kind === 'interdict') ?? null);
   const cardOpen = $derived(drawerOpen || (!!pickedInfo && level === 3));
   const seenFactions = $derived(map ? map.factions.filter((f) => map!.sectors.some((x) => x.known && x.faction === f.id)) : []);
 
@@ -447,6 +449,7 @@
         {/each}
       </ul>
     {/if}
+  {#if interdiction}<InterdictModal encounter={interdiction} onChoose={respond} />{/if}
   {#if map && drawerOpen}
       <StarmapDrawer {map} node={sel} sector={sel ? sectorById.get(sel.sector) ?? null : null} cluster={sel ? map.clusters.find((c) => c.id === sectorById.get(sel.sector)?.cluster) ?? null : null}
         factions={map.factions} {route} nodes={nodeById} {fleeing} warnings={confirming} taking={new Set(taking)}
