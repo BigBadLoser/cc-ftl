@@ -120,9 +120,14 @@ def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False
         if callable(job):
             stem = None
             if family:
-                stem = "call." + sprite_cache.digest(getattr(job, "__defaults__", None))[:10]
-                key = sprite_cache.digest(glob, job.__module__, sprite_cache.files_digest(sprite_cache.closure_files(job.__module__)),
-                                          getattr(job, "__defaults__", None), gd.scene_digest())
+                # The job's own code is part of its identity: two lambdas with the same defaults (fly.d0 and docked.d0,
+                # say) are different sprites and must never share a cache entry.
+                code = getattr(job, "__code__", None)
+                ident = (job.__module__, getattr(job, "__qualname__", None), code.co_firstlineno if code else None,
+                         code.co_code.hex() if code else None, repr([c for c in code.co_consts if not hasattr(c, 'co_code')]) if code else None, getattr(job, "__defaults__", None))
+                stem = "call." + sprite_cache.digest(ident)[:10]
+                key = sprite_cache.digest(glob, ident, sprite_cache.files_digest(sprite_cache.closure_files(job.__module__)),
+                                          gd.scene_digest())
                 path, got = cached(stem, key)
                 if got is not None:
                     items += got
