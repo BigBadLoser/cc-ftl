@@ -22,7 +22,7 @@
     <p data-testid="hyperspace-status">{status}</p>
     <div class="two">
       <button onclick={onOpenMap} data-testid="hyperspace-open-map"><Icon name="map" size={18} />Open starmap</button>
-      <button class="go" onclick={() => api.dispatch({ type: 'galaxy.drop' })} data-testid="hyperspace-drop"><Icon name="back" size={18} />Drop from hyperspace</button>
+      <button class="go" onclick={() => api.dispatch({ type: 'galaxy.drop' })} data-testid="hyperspace-drop">Drop from hyperspace</button>
     </div>
   </div>
 </div>
@@ -34,8 +34,8 @@
   @media (prefers-reduced-motion: reduce) { .streaks { animation: none; } }
   .panel { position: relative; width: min(420px, calc(100vw - 24px)); display: grid; gap: 8px; border-width: 1px; }
   p { margin: 0; font-size: 14px; }
-  .two { display: flex; gap: 6px; flex-wrap: wrap; }
-  .two button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+  .two { display: grid; gap: 6px; }
+  .two button { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
   .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
   @media (max-width: 600px) { .panel { position: relative; left: auto; right: auto; bottom: auto; border-width: 1px; padding: 10px; } }
 </style>

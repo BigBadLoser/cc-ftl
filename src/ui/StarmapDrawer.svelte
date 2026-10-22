@@ -28,7 +28,7 @@
   const legs = $derived(travel ? travel.route.slice(1).map((id, i) => ({ id, done: i < travel.at, now: i === travel.at && travel.phase === 'hop' })) : []);
   const afterRoute = $derived(route ? map.fuel - route.fuel : map.fuel);
   const title = $derived(travel ? 'In hyperspace' : node ? (node.known ? node.name : 'Unexplored') : 'Course');
-  const sub = $derived(travel ? `Turn ${map.turn}` : [sector?.known ? sector.name : null, `Danger ${node?.danger ?? 0}`].filter(Boolean).join(' · '));
+  const sub = $derived(travel ? `Turn ${map.turn}` : `Danger ${node?.danger ?? 0}`);
   const label = $derived(fleeing ? 'Flee here' : route && route.hops > 1 ? `Jump (${route.hops} hops)` : 'Jump');
   const dropNote = $derived(
     travel?.phase === 'noFuel' ? `Out of fuel for the next hop (needs ${travel.need}). Drop here or refuel.`
@@ -60,7 +60,7 @@
       </div>
     </section>
     <p class="note" class:warn={travel.phase === 'noFuel'}>{dropNote}</p>
-    <button class="go" onclick={onDrop} disabled={travel.stopping} data-testid="starmap-drop"><Icon name="back" size={18} />Drop from hyperspace</button>
+    <button class="go" onclick={onDrop} disabled={travel.stopping} data-testid="starmap-drop">Drop from hyperspace</button>
   {:else if node}
     <section>
       <h4>Sector</h4>
@@ -124,7 +124,7 @@
 
 <style>
   /* Solid under the near-opaque panel colour, so map labels never ghost through the text. */
-  .drawer { position: absolute; z-index: 12; display: grid; gap: 8px; align-content: start; overflow-y: auto; box-sizing: border-box; background: linear-gradient(var(--panel), var(--panel)), var(--bg); }
+  .drawer { position: absolute; z-index: 12; display: grid; gap: 8px; align-content: start; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; grid-template-columns: minmax(0, 1fr); background: linear-gradient(var(--panel), var(--panel)), var(--bg); }
   section { display: grid; gap: 4px; }
   h4 { margin: 0; font: 600 12px var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); }
   .row { font-size: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
