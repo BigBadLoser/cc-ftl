@@ -1,0 +1,32 @@
+{
+  "length": 3.5,
+  "radius_v": 1.045,
+  "radius_z": 1.045,
+  "centre_v": -0.25,
+  "spring_z": 0.62,
+  "base_z": 0.16,
+  "hoop_extra": 0.05,
+  "hoop_width": 0.065,
+  "end_overhang": 0.09,
+  "port_radius": 0.62,
+  "plate_radius": 0.58,
+  "port_depth": -0.12,
+  "port_z": 0.82,
+  "cabinet_u": [
+    -1.02,
+    0,
+    1.02
+  ],
+  "cabinet_v": 1.13,
+  "cabinet_width": 0.57,
+  "cabinet_depth": 0.54,
+  "cabinet_bottom": 0.1,
+  "cabinet_top": 1.012,
+  "controller_width": 0.38,
+  "controller_depth": 0.5,
+  "controller_u": -1.68,
+  "controller_v": 1.06,
+  "controller_top": 0.73,
+  "solid_hoops": false,
+  "closed_frame_edges": false
+}

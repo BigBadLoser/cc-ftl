@@ -1,0 +1,80 @@
+{
+  "parameters": {
+    "length": 3.5,
+    "radius_v": 1.045,
+    "radius_z": 1.045,
+    "centre_v": -0.25,
+    "spring_z": 0.62,
+    "base_z": 0.16,
+    "hoop_extra": 0.05,
+    "hoop_width": 0.065,
+    "end_overhang": 0.09,
+    "port_radius": 0.62,
+    "plate_radius": 0.58,
+    "port_depth": -0.12,
+    "port_z": 0.82,
+    "cabinet_u": [
+      -1.02,
+      0,
+      1.02
+    ],
+    "cabinet_v": 1.13,
+    "cabinet_width": 0.57,
+    "cabinet_depth": 0.54,
+    "cabinet_bottom": 0.1,
+    "cabinet_top": 1.012,
+    "controller_width": 0.38,
+    "controller_depth": 0.5,
+    "controller_u": -1.68,
+    "controller_v": 1.06,
+    "controller_top": 0.73,
+    "solid_hoops": false,
+    "closed_frame_edges": false
+  },
+  "tile": [
+    128,
+    64
+  ],
+  "samples": 4,
+  "SS": 2,
+  "anchor": [
+    205,
+    208
+  ],
+  "landmarks": {
+    "rear_peak": [
+      -69.18154709822913,
+      -205.30379513642313
+    ],
+    "front_peak": [
+      159.35387463165296,
+      -86.19064577893236
+    ],
+    "port_center": [
+      141.44000620459283,
+      -9.554607332517099
+    ],
+    "controller": [
+      -175.35999764662702,
+      -77.06008231687495
+    ],
+    "cabinet_1": [
+      -137.60000213513965,
+      -75.80427216639185
+    ],
+    "cabinet_2": [
+      -72.32000161898746,
+      -43.16427190831578
+    ],
+    "cabinet_3": [
+      -7.040001102835294,
+      -10.524271650239692
+    ]
+  },
+  "size": [
+    3.8300000429153442,
+    2.7450000047683716,
+    1.715000033378601
+  ],
+  "stage": "primary geometry / neutral materials"
+}

@@ -1,0 +1,76 @@
+{
+  "alignment": "one uniform scale + translation fitted to two barrel-end silhouette peaks",
+  "uniformScale": 1.1671448901970647,
+  "referencePixelUncertainty": 4,
+  "errorsInReferencePixels": {
+    "rear_peak": 6.778627642628462,
+    "front_peak": 6.7786276426284635,
+    "port_center": 31.844981021986545,
+    "cabinet_1": 87.86539843048922,
+    "cabinet_2": 74.78572189690946,
+    "cabinet_3": 62.46446660254379,
+    "controller": 43.797702896688655
+  },
+  "referenceLandmarks": {
+    "rear_peak": [
+      301,
+      78
+    ],
+    "front_peak": [
+      574,
+      205
+    ],
+    "port_center": [
+      545,
+      269
+    ],
+    "cabinet_1": [
+      311,
+      209
+    ],
+    "cabinet_2": [
+      373,
+      243
+    ],
+    "cabinet_3": [
+      435,
+      277
+    ],
+    "controller": [
+      224,
+      221
+    ]
+  },
+  "alignedRenderLandmarks": {
+    "rear_peak": [
+      304.13302514946844,
+      71.98884818606243
+    ],
+    "front_peak": [
+      570.8669748505315,
+      211.01115181393754
+    ],
+    "port_center": [
+      549.9588948522257,
+      300.45651249161693
+    ],
+    "controller": [
+      180.20738914286412,
+      221.6678423032979
+    ],
+    "cabinet_1": [
+      224.2787749579607,
+      223.13355470349182
+    ],
+    "cabinet_2": [
+      300.4699939924495,
+      261.2291642207362
+    ],
+    "cabinet_3": [
+      376.66121302693824,
+      299.3247737379806
+    ]
+  },
+  "referenceCameraCaveat": "Project camera stays fixed. Residuals can reflect geometry, landmark uncertainty or reference projection; the comparison does not distinguish these.",
+  "stage": "blockout, not a finished or claimed matching asset"
+}
