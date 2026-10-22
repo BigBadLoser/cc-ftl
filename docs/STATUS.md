@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-21 (step 9a on `sector-9`).
+Last updated: 2026-10-22 (galaxy sim on `galaxy`).
 
 **Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
 map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
@@ -87,6 +87,52 @@ Model, commands, price rules and "how to add a trader or a price" are in `docs/A
   carries 40 units; trade commands tick the sim once while paused; credits live in `sim.trade`, not on a ship, so they survive a ship swap.
 - **Not done:** hyperlane/sector prices, restocking over time, NPC-to-NPC trade, selling floor stacks (storage only), several runs for
   a big deal, per-faction shuttle livery, art for credits and the trade window (plain UI).
+
+## Galaxy sim (branch `galaxy`, cut from `main` at efd356b; sim only; not merged)
+
+Port of the starmap sim from `starmap-macro-wip` (PR #16, 175 commits behind main) onto today's main. No UI, no app snapshot, no tools, no
+visual change. Design in `docs/DESIGN.md` ("Starmap and factions"), model, pipeline and tuning in `docs/ARCHITECTURE.md` ("Starmap").
+
+**User decisions (2026-10-22):**
+1. The tier above sectors is a **cluster**, not a "region" (region collides with the sector-grid ship region). Renamed everywhere
+   (`clusters.ts`, `ClusterField`, `CLUSTER_*`, `clusterName` / `clusterType`, ids `g.<rx>.<ry>`, docs). The sector name suffix "Cluster" became "Rim".
+   When the UI is ported, `REGION_TYPE_LABEL` becomes `CLUSTER_TYPE_LABEL` (and `StarmapRegion` and the `regions` snapshot fields follow).
+2. **Trade's reputation keys stay** (`traders`, `corp`, `navy`, `pirates`, `drones`). Events keep `'corp'` (no `meridian`). One faction table: each
+   galaxy faction def carries its trade key in `reputation` (navy to `navy`; meridian, helix, vantor to `corp`; traders; pirates; rogue to `drones`).
+   `standing()` reads `sim.story.reputation` through that key, no second store; trade's `reputationWith` and `hailVerdict` are untouched.
+   `story.context.faction` is the territory owner's reputation key, so `corp` events fire in any corporation's space.
+
+**What exists:** `src/sim/galaxy/*` (terrain, sites, clusters, gates and rift lanes, sectors with layouts and central bodies, generator, route, travel,
+arrivals, standing, state), `systems/galaxy.ts` (pipeline, after `captureSystem`), commands `galaxy.jump`, `debug.galaxyReveal`,
+`debug.galaxyTeleport`, `debug.chargeFtl`, events `galaxy.*`, `item.fuel` (16 in the starter crate), `content/galaxy.ts` (7 factions, 5 structure kinds,
+names), the story `transit` trigger. `galaxy.jump` validates the edge, charge and fuel, pays, moves `current` and runs `enterNode` (frontier, sensors,
+story context, hostile contacts spawned into the current sector grid, an arrival or transit event draw). The galaxy system, arrivals and `galaxy.jump`
+do nothing while `sim.sector.state === 'deploying'`.
+- **Save v26.** `SaveData.galaxy` (chunk keys, regenerated from the seed) plus `generatorVersion`; a save of another generator version is refused.
+  Bump `GENERATOR_VERSION` (`galaxy/tuning.ts`) whenever the generator or the galaxy content changes what a chunk key generates.
+  **PR #20 (stations) also bumps to 26: whichever merges second takes 27.**
+- `sectorEquiv.test.ts` (main's rewrite) runs on a `legacy` content copy whose starter crate has no fuel, and ignores `galaxy.*` events; the pinned hashes
+  are unchanged, so the galaxy does not disturb the sim.
+- `playerShip` clash: trade's `playerShip(sim): number` kept; the galaxy helper is `playerShipInfo(sim)`. 7d API: `spawnShip` returns the ship id.
+- Tests: 19 new (9 `content/galaxy.test.ts`, 5 + 2 slow generator, 3 route). Whole suite 536 (503 fast, 33 slow). The 7x7 and 9x9 chunk tests are in
+  `generator.slow.test.ts`.
+- **`newGame` now costs about 350 to 450 ms** (warm, seeds 1 to 5; 25 chunks at `FRONTIER_RING` 2), almost all of it generation; the review measured
+  548 ms cold. Not optimised. Options if it matters: `FRONTIER_RING` 1 (9 chunks), or generate the frontier lazily after the first tick.
+
+**TODO, the next slice: hook the galaxy to step 9.** Today a galaxy jump only moves `galaxy.current`; the sector grid is not swapped.
+1. `Sector.node` and `SectorArchive.node` become the galaxy's string node ids (now numbers; 0 = start), and the start node is `START_NODE`.
+2. One jump path: `sector.jump` (ship lift, archive, `deploying`) is the only way to move; `galaxy.jump`'s validation and payment (edge, `jumpBlocker`,
+   fuel, charge, `jumps` and `days`) move into it or run before it, and `galaxy.current` follows `sector.node`.
+3. Contacts materialise as ships on first entry to a node and are then owned by the archive (the `NodeState.contacts` ship ids go away or become archive
+   data); revisiting restores the archive instead of generating again. Remove the "spawn into the current sector" part of `enterNode`.
+4. Arrival spawns (`rollArrival`, hostile contacts present) happen at deploy time (`sector.deploy`) and by the gap rule against the deployed ships.
+5. The story context and the event draw move to deploy time too. Then the UI: starmap view with the three zoom levels (sector, cluster, galaxy), the
+   jump confirm (`jumpWarnings`) and the deploy modal.
+Not taken from PR #16: `src/ui/Starmap*`, `src/app/starmap*`, `galaxyPrefetch`, the `bridge` changes, `tools/starmap`.
+
+**For the user to decide:** whether `corp` events should name Meridian only (today any corporation's space counts as `corp`); whether Helix and Vantor ships
+should be hailed as `corp` rather than by their generator hulls (`faction.navy` / `faction.civilian` in trade's table); `FRONTIER_RING` against the
+`newGame` cost; whether jumping while enemies are present stays allowed (the branch allowed it; `combat.flee` is the other way out).
 
 ## Crew sprite pipeline (branch `crew-pipeline`; merged to `main` with user approval)
 
