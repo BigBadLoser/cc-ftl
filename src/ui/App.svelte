@@ -21,6 +21,7 @@
   import StoryModal from './StoryModal.svelte';
   import StarmapView from './StarmapView.svelte';
   import DeployPicker from './DeployPicker.svelte';
+  import EventPanel from './EventPanel.svelte';
   import Icon, { type IconName } from './Icon.svelte';
   import './theme.css';
 
@@ -169,7 +170,7 @@
   <DebugPanel {api} {snap} />
 {/if}
 {#if combat.inCombat && combatOpen}
-  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onFlee={(ship) => { fleeShip = ship; mapOpen = true; }} onHail={(ship) => { tradeWith = ship; }} />
+  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onFlee={(ship) => { if (star?.event) api.dispatch({ type: 'combat.flee', ship }); else { fleeShip = ship; mapOpen = true; } }} onHail={(ship) => { tradeWith = ship; }} />
 {/if}
 <ToolBar {api}>
     <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
@@ -188,6 +189,7 @@
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
 {/if}
+{#if star?.event && !deploy && !mapOpen}<EventPanel {api} event={star.event} result={star.result} />{/if}
 {#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} flee={fleeShip} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; fleeShip = null; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />

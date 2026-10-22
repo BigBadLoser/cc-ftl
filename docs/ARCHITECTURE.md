@@ -874,9 +874,21 @@ its `ttl` is spent; new ones spawn deterministically from (seed, turn, slot) amo
 node's: when the player's node is live a fleet that arrives is materialised through `spawnContact` and one that leaves (or the player leaving) is lifted out with `liftShip`, so
 `Contact.ship` is set only for fleets in the live node and node archives never hold fleet ships. Crossings (`crossAfterHop`, when the player's hop ends): `pass`, `overlap`
 or `node` -> `galaxy.crossing`, an `Encounter` (`interdict` | `hail` | `scan` | `distress`, by faction and role) stored in `GalaxyState.encounters` and `galaxy.encounter`. A pending
-interdiction cuts the trip and drops the ship at the node reached (`galaxy.interdicted`) and refuses `galaxy.jump` (`interdicted`) until `resolveEncounter` (slice (c); for now the
-`galaxy.dismissEncounter` command or expiry). The view shows fleets within SENSOR_HOPS (`visibleFleets`, `UiStarFleet`): chevrons beside their nodes at the sector level
+interdiction halts the trip in hyperspace (`Travel.phase === 'interdicted'`, `galaxy.interdicted`; the ship stays a packet, `galaxy.drop` and `galaxy.jump` are refused) until `galaxy.respond`.
+The view shows fleets within SENSOR_HOPS (`visibleFleets`, `UiStarFleet`): chevrons beside their nodes at the sector level
 and a Traffic list in the node drawer. Tests: `content/galaxyTraffic.test.ts` and `.slow.test.ts`.
+
+**Encounters and event grids** (`encounterOdds.ts`, `respond.ts`, `eventGrid.ts`). `galaxy.respond { encounter, choice }` is the one answer (`respond`; the stub
+`galaxy.dismissEncounter` is gone). Interdiction: `evade` (roll `unit(seed, encounter id, salt)` against `evadeOdds`: 0.3 + the player's evasion (powered engines x pilot, read from
+the packet) - 0.05 x fleet strength, clamped to [0.05, 0.9]; failure fights), `bribe` (`bribeCost`: 12 x strength x (1 + 0.4 x danger) x a standing factor, at least 10 credits; refused as
+`cantAfford`; starts the fleet's cooldown) or `fight`. Fleet strength is the sum over its ships of 1 + 0.5 x depth. Distress: `respond` (an event grid with the damaged ships as
+neutrals; leaving it earns reputation and the fleet moves on) or `ignore`. Hail and scan: `acknowledge`. Success lets the held trip go on (`resumeAfterHop`).
+An **event grid** (`GalaxyState.event`, node id `event:<encounter id>`) is a pocket that is not a node: it is not in the galaxy index, has no chunk contents or contacts, is never
+archived, and runs no turns, arrivals or story draws. `enterEvent` takes the fleet out of `GalaxyState.fleets`, swaps in an empty sector, makes the fleet's ships real
+(`materialiseFleet` with the real node as `node`) and sets the packet waiting to deploy (the deploy picker). `GalaxyState.current` stays the real node; `sim.sector.node` is the event id and the
+trip is `phase: 'event'` (`held` remembers the phase to return to). `galaxy.leaveEvent` (also the player's `combat.flee` there) lifts the ship back into a packet, wipes the sector (every
+entity destroyed, a fresh grid), returns the fleet's survivors as descriptors (cooldown set) or forgets the fleet if none are left, and carries the trip on. Leaving with hostiles
+about is a flee and needs the drive charged (spent). `GalaxyState.lastResult` keeps the last outcome for the drawer's outcome line. Save v35.
 
 **Arrivals** (`galaxySystem`, `arrivals.ts`). Every `ARRIVAL_EVERY_SEC` (60) at the current node: chance `ARRIVAL_PER_DANGER x danger` (cap
 `ARRIVAL_MAX_CHANCE`; x1.5 in hostile territory, x0.4 in friendly), up to `MAX_HOSTILE_CONTACTS`, the faction drawn from the node's traffic pool

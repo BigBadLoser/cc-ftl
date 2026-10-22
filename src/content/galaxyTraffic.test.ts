@@ -268,35 +268,34 @@ describe('crossings and encounters', () => {
     return { sim, f, events, to, next };
   }
 
-  it('a pirate on the lane the player flies interdicts: travel halts at the node and the encounter waits', () => {
+  it('a pirate on the lane the player flies interdicts: the ship halts in hyperspace at the node and the encounter waits', () => {
     // The pirates start at `to` and fly to START_NODE: they pass the player on the lane.
     const r = hopWith(26, () => ({ route: [START_NODE], dest: START_NODE }), 'pirates', 'pirate');
     expect(r.events).toContainEqual(expect.objectContaining({ type: 'galaxy.crossing', how: 'pass' }));
     expect(r.events).toContainEqual(expect.objectContaining({ type: 'galaxy.encounter', kind: 'interdict' }));
     expect(r.sim.galaxy.encounters).toHaveLength(1);
     expect(r.sim.galaxy.encounters[0]).toMatchObject({ kind: 'interdict', node: r.to, how: 'pass' });
-    // The trip stopped at the first node and the ship dropped there, though the route had another hop.
-    expect(r.sim.sector.state).toBe('deploying');
+    // The trip stopped at the first node, though the route had another hop; the ship waits in hyperspace.
+    expect(r.sim.sector.state).toBe('hyperspace');
+    expect(r.sim.galaxy.travel?.phase).toBe('interdicted');
     expect(r.sim.galaxy.current).toBe(r.to);
     expect(r.sim.galaxy.jumps).toBe(1);
   }, 60000);
 
-  it('while an interdiction is pending, jumping is refused until it is dismissed', () => {
+  it('while an interdiction is pending the ship cannot drop or jump; once resolved the trip goes on', () => {
     const r = hopWith(26, () => ({ route: [START_NODE], dest: START_NODE }), 'pirates', 'pirate');
     const sim = r.sim;
-    deploy(sim);
-    expect(sim.sector.state).toBe('active');
-    charge(sim);
-    giveItems(sim, 'item.fuel', 50);
-    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [START_NODE] });
-    expect(step(sim)).toContainEqual({ type: 'command.rejected', command: 'galaxy.jump', reason: 'interdicted' });
-    expect(sim.sector.state).toBe('active');
-    sim.enqueue({ type: 'galaxy.dismissEncounter', id: sim.galaxy.encounters[0]?.id as number });
+    sim.enqueue({ type: 'galaxy.drop' });
+    expect(step(sim)).toContainEqual({ type: 'command.rejected', command: 'galaxy.drop', reason: 'interdicted' });
+    sim.enqueue({ type: 'galaxy.respond', encounter: sim.galaxy.encounters[0]?.id as number, choice: 'acknowledge' });
+    expect(step(sim)).toContainEqual(expect.objectContaining({ type: 'command.rejected', reason: 'badChoice' }));
+    sim.galaxy.encounters[0]!.strength = 0.1; // cheap enough to pay for
+    sim.trade.credits = 500;
+    sim.enqueue({ type: 'galaxy.respond', encounter: sim.galaxy.encounters[0]?.id as number, choice: 'bribe' });
     step(sim);
     expect(sim.galaxy.encounters).toHaveLength(0);
-    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [START_NODE] });
-    step(sim);
-    expect(sim.sector.state).toBe('hyperspace');
+    expect(sim.galaxy.travel?.phase).toBe('hop');
+    expect(sim.galaxy.travel?.route[sim.galaxy.travel.at]).toBe(r.to);
   }, 60000);
 
   it('a trader crossing the player only hails: an alert encounter, travel goes on', () => {

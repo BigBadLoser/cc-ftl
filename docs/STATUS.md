@@ -527,6 +527,22 @@ Not taken from PR #16: `src/ui/Starmap*`, `src/app/starmap*`, `galaxyPrefetch`, 
   (evade = roll, bribe = credits, fight = drop into combat with the fleet's ships, which `fleets[].ships` already describe), replacing `galaxy.dismissEncounter`, and fleet ships entering
   the grid (use `materialiseFleet`-style spawning into the pocket). Damage persistence (packets) if wanted.
 
+**NPC traffic slice (c): resolving encounters (branch `npc-encounters`, cut from `npc-traffic`; visual: needs screenshot approval).** Design in `docs/ARCHITECTURE.md` ("Starmap", Encounters and event grids). Save v35.
+- **Built:** `galaxy.respond { encounter, choice }` (replaces `galaxy.dismissEncounter`), the event grid (`event:<encounter id>`, a pocket outside the map), `galaxy.leaveEvent`, an encounter card in the
+  starmap drawer (fleet, threat, choices with odds and prices, outcome line), an event-grid card in the game view (Resume travel / Flee), alerts for the roll, the bribe and the drop.
+- **Planner's calls:**
+  1. An interdiction halts the ship **in hyperspace** (`Travel.phase 'interdicted'`) instead of dropping it at the node: the trip is still there to resume, the starmap stays locked, and the drawer is the
+     place to answer. `galaxy.drop` is refused until it is settled; interdictions never expire (no turns pass while halted), alerts still expire after 3 turns.
+  2. Evade odds = 0.3 + evasion - 0.05 x strength, clamped [0.05, 0.9] (evasion is already engines x pilot skill, 0..0.75). Bribe = 12 x strength x (1 + 0.4 x danger) x (1 - 0.05 x standing, clamped [0.5, 2]),
+     min 10. Strength = sum of 1 + 0.5 x depth per ship. Constants in `galaxy/tuning.ts`.
+  3. Fight and rescue use the same event grid. The deploy picker places the player (same compact picker; the node name reads "Deep space"). The fleet is out of `fleets` while inside; survivors return as
+     descriptors with a fresh cooldown, destroyed or fled ships are forgotten, a fleet with none left is gone. Damage does not carry over (as before).
+  4. Leaving: free when no hostile ship is active; with hostiles about it needs a charged drive and spends it (a flee). The player's `combat.flee` in the grid is the same command. The player's crew or
+     shuttles left outside the packet are lost with the grid.
+  5. Hail and scan only acknowledge (no trade-hail hookup, no contraband fine). Distress `respond` works only in hyperspace (alerts last 3 turns); helping earns +2 reputation on the fleet's key.
+  6. The grid draws nothing from the map: no turn clock, no arrivals, no story draw (`onDeployed` returns early), `galaxy.jump` and teleport refused (`inEvent`).
+- **Not done:** salvage of the rescued ship, damage persistence for fleets, contraband fines, trade hail from the hail card.
+
 ## Crew sprite pipeline (branch `crew-pipeline`; merged to `main` with user approval)
 
 Details in `tools/blender/README.md` (Crew layers, Incremental builds) and `docs/ARCHITECTURE.md` (Asset pipeline, Crew).

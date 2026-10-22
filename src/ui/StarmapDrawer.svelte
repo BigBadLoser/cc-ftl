@@ -6,17 +6,18 @@
    */
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
-  import type { UiJumpWarnings, UiStarCluster, UiStarFaction, UiStarmap, UiStarNode, UiStarRoute, UiStarSector } from './starmapApi';
+  import StarmapEncounter from './StarmapEncounter.svelte';
+  import type { UiEncounterChoice, UiJumpWarnings, UiStarCluster, UiStarFaction, UiStarmap, UiStarNode, UiStarRoute, UiStarSector } from './starmapApi';
   import { dangerColor, toneColor } from './starmapStyle';
 
-  let { map, node, sector, cluster, factions, route, nodes, fleeing = false, warnings = null, taking, onGo, onConfirm, onCancel, onToggle, onDrop, onClear }: {
+  let { map, node, sector, cluster, factions, route, nodes, fleeing = false, warnings = null, taking, onGo, onConfirm, onCancel, onToggle, onDrop, onClear, onRespond }: {
     map: UiStarmap; node: UiStarNode | null; sector: UiStarSector | null; cluster: UiStarCluster | null; factions: UiStarFaction[];
     route: UiStarRoute | null; nodes: Map<string, UiStarNode>;
     /** Flee-target mode: the button flees (a one-hop trip away from the fight) instead of jumping. */
     fleeing?: boolean;
     /** The confirm step: what the jump would leave behind (null = not confirming) and which docked shuttles come along. */
     warnings?: UiJumpWarnings | null; taking: Set<number>;
-    onGo: () => void; onConfirm: () => void; onCancel: () => void; onToggle: (id: number) => void; onDrop: () => void; onClear: () => void;
+    onGo: () => void; onConfirm: () => void; onCancel: () => void; onToggle: (id: number) => void; onDrop: () => void; onClear: () => void; onRespond: (id: number, choice: UiEncounterChoice['choice']) => void;
   } = $props();
 
   const travel = $derived(map.travel);
@@ -28,12 +29,15 @@
   const legs = $derived(travel ? travel.route.slice(1).map((id, i) => ({ id, done: i < travel.at, now: i === travel.at && travel.phase === 'hop' })) : []);
   const traffic = $derived(node ? map.fleets.filter((f) => f.node === node.id) : []);
   const afterRoute = $derived(route ? map.fuel - route.fuel : map.fuel);
-  const title = $derived(travel ? 'In hyperspace' : node ? (node.known ? node.name : 'Unexplored') : 'Course');
+  const blocked = $derived(travel?.phase === 'interdicted' || travel?.phase === 'event');
+  const recent = $derived(map.result && map.encounters.length === 0 && map.turn - map.result.turn <= 3 ? map.result : null);
+  const title = $derived(travel ? (travel.phase === 'interdicted' ? 'Interdicted' : 'In hyperspace') : node ? (node.known ? node.name : 'Unexplored') : 'Course');
   const sub = $derived(travel ? `Turn ${map.turn}` : `Danger ${node?.danger ?? 0}`);
   const label = $derived(fleeing ? 'Flee here' : route && route.hops > 1 ? `Jump (${route.hops} hops)` : 'Jump');
   const dropNote = $derived(
     travel?.phase === 'noFuel' ? `Out of fuel for the next hop (needs ${travel.need}). Drop here or refuel.`
     : travel?.phase === 'arrived' ? 'You have reached the end of the route.'
+    : travel?.phase === 'interdicted' ? 'Travel is halted until you answer.'
     : travel?.stopping ? `Dropping out at ${nameOf(travel.route[travel.at + 1] as string)} when the hop ends.`
     : 'Mid-hop, you drop out at the next node.',
   );
@@ -43,6 +47,10 @@
   <PanelHead icon="map" {title} {sub} onBack={travel ? undefined : onClear} backIcon="close" backTitle="Close drawer" backTestId="starmap-card-close" />
 
   {#if travel}
+    {#each map.encounters as e (e.id)}
+      <StarmapEncounter encounter={e} onChoose={onRespond} />
+    {/each}
+    {#if recent}<p class="note result {recent.tone}" data-testid="starmap-result"><Icon name={recent.tone === 'red' ? 'alert' : 'chevUp'} size={14} />{recent.text}</p>{/if}
     <section>
       <h4>Progress</h4>
       <div class="bar" role="progressbar" aria-valuemin={0} aria-valuemax={travel.route.length - 1} aria-valuenow={travel.at}><i style={`width: ${(travel.at / Math.max(1, travel.route.length - 1)) * 100}%`}></i></div>
@@ -61,7 +69,7 @@
       </div>
     </section>
     <p class="note" class:warn={travel.phase === 'noFuel'}>{dropNote}</p>
-    <button class="go" onclick={onDrop} disabled={travel.stopping} data-testid="starmap-drop">Drop from hyperspace</button>
+    <button class="go" onclick={onDrop} disabled={travel.stopping || blocked} data-testid="starmap-drop">Drop from hyperspace</button>
   {:else if node}
     <section>
       <h4>Sector</h4>
@@ -139,6 +147,9 @@
   .dim { color: var(--dim); }
   .warn { color: var(--red); }
   .here { color: var(--cyan); }
+  .result { padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); }
+  .result.green { color: var(--green); border-color: var(--green); } .result.amber { color: var(--amber); border-color: var(--amber); }
+  .result.red { color: var(--red); border-color: var(--red); } .result.dim { color: var(--dim); }
   .note { margin: 0; font-size: 12px; display: flex; gap: 6px; align-items: center; }
   .chip { font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border: 1px solid currentColor; }
   .tier.hostile { color: var(--red); } .tier.friendly { color: var(--green); } .tier.neutral { color: var(--dim); }

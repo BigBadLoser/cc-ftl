@@ -21,6 +21,8 @@ function enemiesPresent(sim: Sim): boolean {
  */
 export function onDeployed(sim: Sim): void {
   const g = sim.galaxy;
+  // An event grid is not a node: no arrival clock, no story draw.
+  if (g.event) return void g.rev++;
   resetTurnClock(sim);
   g.nextArrival = sim.tick + Math.round(ARRIVAL_EVERY_SEC * TICK_HZ);
   const draw = g.pendingDraw;

@@ -132,8 +132,14 @@ export interface Travel {
   /** Ticks into the hop from `route[at]` to `route[at + 1]`, and how many it takes (the edge's days at HYPERSPACE_SEC_PER_DAY). */
   elapsed: number;
   hopTicks: number;
-  /** 'hop': under way; 'arrived': at the end of the route; 'noFuel': stopped at `route[at]` for want of fuel for the next hop. */
-  phase: 'hop' | 'arrived' | 'noFuel';
+  /**
+   * 'hop': under way; 'arrived': at the end of the route; 'noFuel': stopped at `route[at]` for want of fuel for the next hop;
+   * 'interdicted': halted at `route[at]` by a pending interdiction (resolved by `galaxy.respond`, the ship stays in hyperspace);
+   * 'event': the ship is in an event grid (`GalaxyState.event`) and the trip waits.
+   */
+  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event';
+  /** Set in phase 'event': the phase to go back to when the grid is left ('interdicted' resumes the trip). */
+  held?: 'hop' | 'arrived' | 'noFuel' | 'interdicted';
   /** A drop was asked for mid-hop: the route was cut after the hop under way and the ship drops out when it gets there. */
   stopping?: true;
 }
@@ -187,11 +193,45 @@ export interface Encounter {
   faction: string;
   role: FleetRole;
   ships: number;
+  /** Fleet strength (`fleetStrength`) and the node's danger when it was met: the odds and the bribe are computed from these. */
+  strength: number;
+  danger: number;
   how: CrossingHow;
   /** The node the player was at when it happened (where travel halts for an interdiction). */
   node: string;
   turn: number;
   expires: number;
+}
+
+/** What the player does about an encounter (`galaxy.respond`): interdictions take evade / bribe / fight, a distress call respond / ignore, hails and scans acknowledge. */
+export type EncounterChoice = 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge';
+
+/**
+ * A deep-space pocket (node id `event:<encounter id>`, never in the galaxy index, never archived) the player's packet was deployed into
+ * to settle an encounter. The fleet is out of `GalaxyState.fleets` while the grid exists. Leaving it discards the sector.
+ */
+export interface EventGrid {
+  /** The encounter id; the grid's node id is `eventNodeId(id)`. */
+  id: number;
+  /** 'fight': an interdiction (the fleet is hostile); 'rescue': a distress call (the fleet's ships are neutral). */
+  kind: 'fight' | 'rescue';
+  encounter: Encounter;
+  /** The fleet while inside the grid (its ships are real ones here). */
+  fleet: Fleet;
+}
+
+/** How the last encounter ended, for the view's outcome line (`GalaxyState.lastResult`). `odds` and `roll` for an evade, `cost` for a bribe. */
+export interface EncounterResult {
+  id: number;
+  kind: EncounterKind;
+  faction: string;
+  role: FleetRole;
+  /** 'evaded' | 'evadeFailed' | 'bribed' | 'fought' | 'responded' | 'acknowledged' | 'ignored' | 'gone' | 'expired'. */
+  outcome: string;
+  turn: number;
+  odds?: number;
+  roll?: number;
+  cost?: number;
 }
 
 /** Mutable starmap state on the Sim (`sim.galaxy`), saved with the game. */
@@ -218,6 +258,10 @@ export interface GalaxyState {
   fleets: Fleet[];
   /** Encounters waiting to be resolved, ascending id (encounters.ts). */
   encounters: Encounter[];
+  /** The event grid the player is in, or null (eventGrid.ts). `sim.sector.node` is its node id while it exists; `current` stays the real node. */
+  event: EventGrid | null;
+  /** How the last encounter was settled, or null. */
+  lastResult: EncounterResult | null;
   /** Ids for fleets, their ships and encounters (apart from `nextId`, so node contacts keep their ids). */
   nextFleet: number;
   /** Travel days spent in jumps. */

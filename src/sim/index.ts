@@ -106,5 +106,8 @@ export { standing, standings, tierOf, isHostileFaction } from './galaxy/standing
 export { galaxyGen, chunkOfId } from './galaxy/generator';
 export { SENSOR_HOPS, DANGER_STEP } from './galaxy/tuning';
 export { visibleFleets, sensorNodes } from './galaxy/fleets';
-export { interdicted, resolveEncounter } from './galaxy/encounters';
+export { interdicted, finishEncounter } from './galaxy/encounters';
+export { respond, choicesOf, evadeRoll } from './galaxy/respond';
+export { evadeOdds, bribeCost, fleetStrength, playerEvasion } from './galaxy/encounterOdds';
+export { eventNodeId, isEventNode, inEvent, leaveBlocker, hostilesPresent } from './galaxy/eventGrid';
 export { playerStock } from './story/world';

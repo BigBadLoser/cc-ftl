@@ -125,6 +125,9 @@ export function createAlerts(sim: Sim): Alerts {
           : e.kind === 'scan' ? `A ${who} scans you in passing` : `Distress call from a ${who}`;
         return { kind: e.type, key: `ge${e.id}`, text, at: null };
       }
+      case 'galaxy.evadeRoll': return { kind: 'galaxy.encounter', key: `ge${e.id}`, text: e.success ? `Evaded: rolled ${Math.round(e.roll * 100)}% against ${Math.round(e.odds * 100)}%` : `Evade failed: rolled ${Math.round(e.roll * 100)}% against ${Math.round(e.odds * 100)}%`, at: null };
+      case 'galaxy.bribed': return { kind: 'galaxy.encounter', key: `ge${e.id}`, text: `Paid ${e.cost} credits to pass`, at: null };
+      case 'galaxy.eventEntered': return { kind: 'galaxy.encounter', key: `gv${e.id}`, text: e.kind === 'fight' ? 'Dropped into deep space: fight' : 'Dropped into deep space to help', at: null };
       case 'ship.fled': return { kind: e.type, key: `sf${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Ship'} jumped away`, at: null };
       default: return null;
     }

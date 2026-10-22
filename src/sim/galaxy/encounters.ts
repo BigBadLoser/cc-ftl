@@ -1,5 +1,7 @@
 import type { Sim } from '../sim';
+import { fleetStrength } from './encounterOdds';
 import { isHostileFaction } from './standing';
+import { nodeOf } from './state';
 import { ENCOUNTER_COOLDOWN, ENCOUNTER_MAX, ENCOUNTER_TTL } from './tuning';
 import type { CrossingHow, Encounter, EncounterKind, Fleet } from './types';
 
@@ -53,7 +55,7 @@ export function crossAfterHop(sim: Sim, from: string, to: string): boolean {
     const kind = encounterKind(sim, f);
     const ttl = kind === 'interdict' ? ENCOUNTER_TTL.interdict : ENCOUNTER_TTL.alert;
     const e: Encounter = {
-      id: g.nextFleet++, kind, fleet: f.id, faction: f.faction, role: f.role, ships: f.ships.length, how, node: to, turn: g.turn, expires: g.turn + ttl,
+      id: g.nextFleet++, kind, fleet: f.id, faction: f.faction, role: f.role, ships: f.ships.length, strength: fleetStrength(f.ships), danger: nodeOf(sim, to)?.danger ?? 0, how, node: to, turn: g.turn, expires: g.turn + ttl,
     };
     g.encounters.push(e);
     if (g.encounters.length > ENCOUNTER_MAX) g.encounters.splice(0, g.encounters.length - ENCOUNTER_MAX);
@@ -64,20 +66,23 @@ export function crossAfterHop(sim: Sim, from: string, to: string): boolean {
   return halted;
 }
 
-/** Drop encounters whose time ran out. */
+/** Drop alerts whose time ran out (an interdiction stays until it is resolved). */
 export function expireEncounters(sim: Sim, turn: number): void {
   const g = sim.galaxy;
-  const left = g.encounters.filter((e) => e.expires > turn);
+  const gone = (e: Encounter): boolean => e.kind !== 'interdict' && e.expires <= turn;
+  const left = g.encounters.filter((e) => !gone(e));
   if (left.length === g.encounters.length) return;
-  for (const e of g.encounters) if (e.expires <= turn) sim.events.emit({ type: 'galaxy.encounterResolved', id: e.id, outcome: 'expired' });
+  for (const e of g.encounters) if (gone(e)) sim.events.emit({ type: 'galaxy.encounterResolved', id: e.id, outcome: 'expired' });
   g.encounters = left;
   g.rev++;
 }
 
-/** Slice (c)'s hook: end an encounter with an outcome ('evaded', 'bribed', 'fought', 'dismissed', ...). False when there is no such encounter. */
-export function resolveEncounter(sim: Sim, id: number, outcome: string): boolean {
+/** End an encounter with an outcome ('evaded', 'bribed', 'fought', 'acknowledged', ...). False when there is no such encounter. */
+export function finishEncounter(sim: Sim, id: number, outcome: string, detail: { odds?: number; roll?: number; cost?: number } = {}): boolean {
   const g = sim.galaxy;
-  if (!g.encounters.some((e) => e.id === id)) return false;
+  const e = g.encounters.find((x) => x.id === id);
+  if (!e) return false;
+  g.lastResult = { id, kind: e.kind, faction: e.faction, role: e.role, outcome, turn: g.turn, ...detail };
   g.encounters = g.encounters.filter((e) => e.id !== id);
   g.rev++;
   sim.events.emit({ type: 'galaxy.encounterResolved', id, outcome });

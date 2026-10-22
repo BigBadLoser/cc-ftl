@@ -46,7 +46,7 @@ const loop = createLoop({
     renderer?.onEvents(events);
     // A jump lifts the ships out of the sector: their scenes are stale. The deployed ship is shown (and framed) like a new game's.
     for (const e of events) {
-      if (e.type === 'sector.jumped' || e.type === 'galaxy.hyperspace') {
+      if (e.type === 'sector.jumped' || e.type === 'galaxy.hyperspace' || e.type === 'galaxy.eventLeft') {
         renderer?.setSector(sim.sector.grid); // archiving and restoring swap the sector's grid object
         renderer?.resetWorld();
       }

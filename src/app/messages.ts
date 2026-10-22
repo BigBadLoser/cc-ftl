@@ -1,4 +1,12 @@
 const REASONS: Record<string, string> = {
+  noEncounter: 'That encounter is over',
+  badChoice: "That isn't an option here",
+  cantAfford: "You can't afford that",
+  inEvent: 'Finish here first: leave the event grid',
+  notInterdicted: 'Not interdicted',
+  fleetGone: 'They are gone',
+  noEvent: 'You are not in an event grid',
+  interdicted: 'Answer the interdiction first',
   jobExists: "There's already a job on that tile",
   noJob: 'No job on that tile to cancel',
   sameStruct: "That's already built there",

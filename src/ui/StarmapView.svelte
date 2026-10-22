@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import type { UiApi } from './api';
-  import type { UiJumpWarnings, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
+  import type { UiEncounterChoice, UiJumpWarnings, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
   import StarmapNebula from './StarmapNebula.svelte';
@@ -390,6 +390,7 @@
   }
   const toggle = (id: number) => (taking = toggleTake(taking, id));
   const drop = () => api.dispatch({ type: 'galaxy.drop' });
+  const respond = (encounter: number, choice: UiEncounterChoice['choice']) => api.dispatch({ type: 'galaxy.respond', encounter, choice });
   const px = (v: number) => v / s;
 </script>
 
@@ -449,7 +450,7 @@
   {#if map && drawerOpen}
       <StarmapDrawer {map} node={sel} sector={sel ? sectorById.get(sel.sector) ?? null : null} cluster={sel ? map.clusters.find((c) => c.id === sectorById.get(sel.sector)?.cluster) ?? null : null}
         factions={map.factions} {route} nodes={nodeById} {fleeing} warnings={confirming} taking={new Set(taking)}
-        onGo={go} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggle} onDrop={drop} onClear={() => ((selected = null), (confirming = null))} />
+        onGo={go} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggle} onDrop={drop} onRespond={respond} onClear={() => ((selected = null), (confirming = null))} />
   {/if}
   </div>
   {#if pickedInfo && level === 3}

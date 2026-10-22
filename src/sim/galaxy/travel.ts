@@ -100,6 +100,7 @@ export type Reject = (reason: string) => false;
 
 /** The player's flown ship may leave now: sector active, a ship with combat state, no live trade deal. */
 export function checkLeaving(sim: Sim, ship: number, reject: Reject): boolean {
+  if (sim.galaxy.event) return reject('inEvent');
   if (sim.sector.state === 'hyperspace') return reject('inHyperspace');
   if (sim.sector.state !== 'active') return reject('deploying');
   const me = playerShipInfo(sim);

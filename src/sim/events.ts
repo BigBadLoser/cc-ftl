@@ -170,6 +170,11 @@ export type SimEvent =
   /** An interdiction cut the player's trip short at `node` (it drops there). */
   | { type: 'galaxy.interdicted'; node: string }
   | { type: 'galaxy.encounterResolved'; id: number; outcome: string }
+  | { type: 'galaxy.evadeRoll'; id: number; odds: number; roll: number; success: boolean }
+  | { type: 'galaxy.bribed'; id: number; cost: number; faction: string }
+  | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' }
+  | { type: 'galaxy.eventLeft'; id: number; node: string }
+  | { type: 'galaxy.rescued'; id: number; faction: string }
   | { type: 'galaxy.stalled'; node: string; need: number }
   | { type: 'galaxy.dropped'; node: string }
   | { type: 'galaxy.discovered'; count: number }

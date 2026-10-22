@@ -165,6 +165,11 @@ export interface UiStarmap {
   nodes: UiStarNode[];
   /** NPC fleets within sensor range. */
   fleets: UiStarFleet[];
+  /** The player's credits (what a bribe costs is compared to this), pending encounters, the event grid and how the last encounter ended. */
+  credits: number;
+  encounters: UiEncounter[];
+  event: UiEventGrid | null;
+  result: UiEncounterResult | null;
   /** Only edges whose both ends are discovered. */
   edges: UiStarEdge[];
   factions: UiStarFaction[];
@@ -180,12 +185,69 @@ export interface UiStarmap {
   nebula: UiNebulaTile[];
 }
 
+/** One thing the player can do about an encounter. `detail` is the odds or the price ("62%", "84 cr"), `why` the reason when it is disabled. */
+export interface UiEncounterChoice {
+  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge';
+  label: string;
+  detail: string;
+  enabled: boolean;
+  why: string | null;
+}
+
+/** A pending encounter as the drawer shows it: who, how strong, how it came about and the choices. */
+export interface UiEncounter {
+  id: number;
+  kind: 'interdict' | 'hail' | 'scan' | 'distress';
+  title: string;
+  faction: string;
+  role: string;
+  tone: Tone;
+  hostile: boolean;
+  ships: number;
+  /** "Light" | "Moderate" | "Heavy" | "Overwhelming", from the fleet strength. */
+  threat: string;
+  /** "Intercepted you on the lane" etc., and the node name. */
+  how: string;
+  node: string;
+  choices: UiEncounterChoice[];
+}
+
+/** How the last encounter ended, as a line with a tone. */
+export interface UiEncounterResult {
+  text: string;
+  /** The starmap turn it happened. */
+  turn: number;
+  tone: 'green' | 'amber' | 'red' | 'dim';
+}
+
+/** The event grid the player is in (a deep-space pocket for a fight or a rescue). */
+export interface UiEventGrid {
+  id: number;
+  kind: 'fight' | 'rescue';
+  title: string;
+  faction: string;
+  role: string;
+  tone: Tone;
+  /** Fleet ships still in the grid, and how many of them are hostile and active. */
+  ships: number;
+  hostiles: number;
+  /** The ship is still being placed (the deploy picker is up). */
+  deploying: boolean;
+  /** Leaving is allowed now; `why` says what is missing when it is not. Under fire leaving is a flee that spends the charged drive. */
+  canLeave: boolean;
+  why: string | null;
+  fleeing: boolean;
+  /** The destination of the held trip (node name) and the hops left. */
+  resumeTo: string;
+  hopsLeft: number;
+}
+
 /** The hyperspace trip: the route's node ids, the index of the node last passed, and the hop's pace. */
 export interface UiTravel {
   route: string[];
   at: number;
-  /** 'hop': under way to route[at + 1]; 'arrived': at the end; 'noFuel': stopped for want of fuel. */
-  phase: 'hop' | 'arrived' | 'noFuel';
+  /** 'hop': under way to route[at + 1]; 'arrived': at the end; 'noFuel': stopped for want of fuel; 'interdicted': halted by an encounter; 'event': in an event grid. */
+  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event';
   /** A drop was asked for: the route ends at the next node, where the ship drops out. */
   stopping: boolean;
   /** Fuel the next hop needs (when stopped for want of it). */

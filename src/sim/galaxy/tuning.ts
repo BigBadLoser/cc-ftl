@@ -132,6 +132,23 @@ export const FLEET_NODE_SHIPS = 3;
 export const ENCOUNTER_COOLDOWN = 6;
 export const ENCOUNTER_TTL = { alert: 3, interdict: 6 } as const;
 export const ENCOUNTER_MAX = 8;
+/**
+ * Encounter odds and prices (encounterOdds.ts). Fleet strength = sum over its ships of (1 + depth x STRENGTH_PER_DEPTH).
+ * Bribe = BRIBE_PER_STRENGTH x strength x (1 + danger x BRIBE_PER_DANGER) x a standing factor (1 - BRIBE_STANDING x standing, clamped to [0.5, 2]), at least BRIBE_MIN.
+ * Evade odds = EVADE_BASE + evasion x EVADE_PER_EVASION - strength x EVADE_PER_STRENGTH, clamped to [EVADE_MIN, EVADE_MAX].
+ */
+export const STRENGTH_PER_DEPTH = 0.5;
+export const BRIBE_PER_STRENGTH = 12;
+export const BRIBE_PER_DANGER = 0.4;
+export const BRIBE_STANDING = 0.05;
+export const BRIBE_MIN = 10;
+export const EVADE_BASE = 0.3;
+export const EVADE_PER_EVASION = 1;
+export const EVADE_PER_STRENGTH = 0.05;
+export const EVADE_MIN = 0.05;
+export const EVADE_MAX = 0.9;
+/** Reputation a rescued distress fleet gives (on its faction's key). */
+export const RESCUE_REPUTATION = 2;
 
 /** Fuel per jump: ceil(length / units per fuel). Hyperlanes are cheaper per distance. */
 export const ROUTE_UNITS_PER_FUEL = 90;

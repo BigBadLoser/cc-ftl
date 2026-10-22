@@ -1,4 +1,4 @@
-import { CrewC, ShipC, VehicleC, jumpWarnings, nodeOf, type Sim } from '../sim';
+import { CrewC, ShipC, VehicleC, isEventNode, jumpWarnings, nodeOf, type Sim } from '../sim';
 import { placementGapError, regions } from '../sim/regions';
 import { PLAYER_START } from '../sim/tuning';
 import type { UiDeploy, UiJumpWarnings } from '../ui/starmapApi';
@@ -31,7 +31,7 @@ export function buildDeploy(sim: Sim): UiDeploy | null {
   const p = sim.sector.packet;
   if (sim.sector.state !== 'deploying' || !p) return null;
   return {
-    node: sim.sector.node, nodeName: nodeOf(sim, sim.sector.node)?.name ?? sim.sector.node, width: sim.sector.width, height: sim.sector.height,
+    node: sim.sector.node, nodeName: isEventNode(sim.sector.node) ? 'Deep space' : nodeOf(sim, sim.sector.node)?.name ?? sim.sector.node, width: sim.sector.width, height: sim.sector.height,
     ship: { w: p.w, h: p.h }, suggested: suggest(sim),
     others: regions(sim).map((r) => {
       const s = sim.world.get(r.ship, ShipC);
