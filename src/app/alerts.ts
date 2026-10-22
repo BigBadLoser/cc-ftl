@@ -119,6 +119,12 @@ export function createAlerts(sim: Sim): Alerts {
       case 'trade.settled': return { kind: 'trade', key: `td${e.deal}`, text: `Deal settled${e.credits ? `: ${e.credits > 0 ? '-' : '+'}${Math.abs(e.credits)} credits` : ''}`, at: null };
       case 'trade.failed': return { kind: 'trade', key: `td${e.deal}`, text: `Deal with ${traderName(e.ship)} called off`, at: null };
       case 'station.alarm': return { kind: e.type, key: `sa${e.ship}`, text: `Alarm on ${shipName(e.ship)?.name ?? 'the station'}: ${e.reason}`, at: null };
+      case 'galaxy.encounter': {
+        const who = `${sim.content.galaxy?.factions[e.faction]?.name ?? e.faction} ${e.role}`;
+        const text = e.kind === 'interdict' ? `Interdicted by a ${who}: dropped out of hyperspace` : e.kind === 'hail' ? `A ${who} hails you in passing`
+          : e.kind === 'scan' ? `A ${who} scans you in passing` : `Distress call from a ${who}`;
+        return { kind: e.type, key: `ge${e.id}`, text, at: null };
+      }
       case 'ship.fled': return { kind: e.type, key: `sf${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Ship'} jumped away`, at: null };
       default: return null;
     }

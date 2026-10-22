@@ -26,6 +26,7 @@
     return n?.known ? n.name : 'Uncharted';
   };
   const legs = $derived(travel ? travel.route.slice(1).map((id, i) => ({ id, done: i < travel.at, now: i === travel.at && travel.phase === 'hop' })) : []);
+  const traffic = $derived(node ? map.fleets.filter((f) => f.node === node.id) : []);
   const afterRoute = $derived(route ? map.fuel - route.fuel : map.fuel);
   const title = $derived(travel ? 'In hyperspace' : node ? (node.known ? node.name : 'Unexplored') : 'Course');
   const sub = $derived(travel ? `Turn ${map.turn}` : `Danger ${node?.danger ?? 0}`);
@@ -75,6 +76,13 @@
         <div class="row">{node.structures.length ? node.structures.join(', ') : 'Empty space'}</div>
         {#if node.resources.length}<div class="row dim">Resources: {node.resources.join(', ')}</div>{/if}
         {#if node.hostiles}<div class="row warn" data-testid="starmap-hostiles"><Icon name="alert" size={14} />{node.hostiles} hostile ship{node.hostiles > 1 ? 's' : ''} present</div>{/if}
+        {#if traffic.length}
+          <ul class="traffic" data-testid="starmap-traffic">
+            {#each traffic as f (f.id)}
+              <li class:hostile={f.hostile} title={f.heading}><i style={`background: ${toneColor(f.tone)}`}></i><span>{f.faction} {f.role.toLowerCase()}{f.ships > 1 ? ` x${f.ships}` : ''}</span><small>{f.heading}</small></li>
+            {/each}
+          </ul>
+        {/if}
         {#if node.others}<div class="row dim">{node.others} other ship{node.others > 1 ? 's' : ''} in the area</div>{/if}
       {/if}
     </section>
@@ -145,6 +153,12 @@
   .legs li small { display: inline-flex; align-items: center; gap: 4px; color: var(--dim); font-size: 11px; }
   .legs li.done { color: var(--cyan); }
   .legs li.now { border-color: var(--cyan); background: var(--panel-3); color: var(--cyan); }
+  .traffic { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+  .traffic li { display: flex; align-items: center; gap: 8px; padding: 3px 8px; background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; }
+  .traffic li.hostile { border-color: var(--red); }
+  .traffic i { width: 8px; height: 8px; flex: none; clip-path: polygon(100% 50%, 0 0, 25% 50%, 0 100%); }
+  .traffic span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .traffic small { color: var(--dim); font-size: 11px; }
   .n { font: 600 12px var(--head-font); color: var(--cyan); min-width: 12px; }
   .confirm { padding: 8px; border: 1px solid var(--amber); background: var(--panel-2); }
   .take { display: flex; gap: 8px; align-items: center; font-size: 13px; min-height: 32px; }

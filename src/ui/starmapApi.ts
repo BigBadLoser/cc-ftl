@@ -104,6 +104,26 @@ export interface UiStarNode {
   reachable: boolean;
 }
 
+/** An NPC fleet the sensors can see: drawn beside its node, heading for `next` (null while resting). */
+export interface UiStarFleet {
+  id: number;
+  node: string;
+  x: number;
+  y: number;
+  /** The next node on its route (position), or null when it rests or is stranded. */
+  tx: number | null;
+  ty: number | null;
+  /** Faction name, role label ("Trader", "Patrol", "Raider"), ship count, tone by faction kind, and whether it is hostile to the player. */
+  faction: string;
+  role: string;
+  ships: number;
+  tone: Tone;
+  hostile: boolean;
+  damaged: boolean;
+  /** "Heading to X", "Resting" or "Adrift". */
+  heading: string;
+}
+
 export interface UiStarEdge {
   id: string;
   kind: 'route' | 'hyperlane';
@@ -143,6 +163,8 @@ export interface UiStarmap {
   dangerStep: number;
   sectors: UiStarSector[];
   nodes: UiStarNode[];
+  /** NPC fleets within sensor range. */
+  fleets: UiStarFleet[];
   /** Only edges whose both ends are discovered. */
   edges: UiStarEdge[];
   factions: UiStarFaction[];

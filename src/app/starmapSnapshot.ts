@@ -1,31 +1,29 @@
 import {
   DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
-  nodeOf, routeBlocker, routeCharge, SENSOR_HOPS, standings, type Sim,
+  nodeOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Sim,
 } from '../sim';
-import type { UiStarExit, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
+import type { UiStarExit, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { toneOf } from './starmapTone';
 import { nebulaAround } from './starmapNebula';
 import { buildClusters, sectorOutline } from './starmapClusters';
 
-/** Nodes within sensor range of the current node (contacts are only shown there). */
-function inSensors(sim: Sim): Set<string> {
+const ROLE_LABEL: Record<string, string> = { trader: 'Trader', patrol: 'Patrol', pirate: 'Pirate', raider: 'Raider' };
+
+/** The NPC fleets the sensors see, with where each is heading. */
+function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
   const index = galaxyIndex(sim.galaxy);
-  const out = new Set([sim.galaxy.current]);
-  let frontier = [sim.galaxy.current];
-  for (let h = 0; h < SENSOR_HOPS; h++) {
-    const next: string[] = [];
-    for (const id of frontier) {
-      for (const e of index.adjacent.get(id) ?? []) {
-        const o = e.a === id ? e.b : e.a;
-        if (!out.has(o)) {
-          out.add(o);
-          next.push(o);
-        }
-      }
-    }
-    frontier = next;
-  }
-  return out;
+  const content = sim.content.galaxy;
+  return visibleFleets(sim).flatMap((f) => {
+    const at = index.nodes.get(f.node);
+    const next = f.route.length ? index.nodes.get(f.route[0] as string) : undefined;
+    if (!at) return [];
+    return [{
+      id: f.id, node: f.node, x: Math.round(at.x), y: Math.round(at.y), tx: next ? Math.round(next.x) : null, ty: next ? Math.round(next.y) : null,
+      faction: content?.factions[f.faction]?.name ?? f.faction, role: ROLE_LABEL[f.role] ?? f.role, ships: f.ships.length,
+      tone: toneOf(content?.factions[f.faction]?.kind), hostile: isHostileFaction(sim, f.faction), damaged: !!f.damaged,
+      heading: f.damaged ? 'Adrift' : f.route.length ? `Heading to ${nodeName(f.route[0] as string)}` : 'Resting',
+    }];
+  });
 }
 
 /** The trip in progress as the view draws it. */
@@ -50,7 +48,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
   const g = sim.galaxy;
   const index = galaxyIndex(g);
   const content = sim.content.galaxy;
-  const sensors = inSensors(sim);
+  const sensors = sensorNodes(sim);
   const known = (id: string) => g.discovered[id] !== undefined;
   const nodes: UiStarNode[] = [];
   const knownSectors = new Set<string>();
@@ -107,7 +105,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
     }
   }
   return {
-    rev: g.rev, ...starmapStatus(sim), dangerStep: DANGER_STEP, sectors, nodes, edges, factions,
+    rev: g.rev, ...starmapStatus(sim), dangerStep: DANGER_STEP, sectors, nodes, fleets: fleetsOf(sim, (id) => (known(id) ? index.nodes.get(id)?.name : undefined) ?? 'uncharted space'), edges, factions,
     currentSector: here?.id ?? '', currentCluster: here?.cluster ?? null, exits, ...outer,
     nebula: here ? nebulaAround(sim, here.x, here.y) : [],
   };
@@ -136,7 +134,7 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
 /** A starmap with nothing in it (rev -1): what the store holds until the screen is first built. */
 export function emptyStarmap(): UiStarmap {
   return {
-    rev: -1, current: '', ship: 0, fuel: 0, charge: 0, chargeMax: FTL_CHARGE_SEC, jumps: 0, turn: 0, state: 'active', travel: null, dangerStep: DANGER_STEP, sectors: [], nodes: [],
+    rev: -1, current: '', ship: 0, fuel: 0, charge: 0, chargeMax: FTL_CHARGE_SEC, jumps: 0, turn: 0, state: 'active', travel: null, dangerStep: DANGER_STEP, sectors: [], nodes: [], fleets: [],
     edges: [], factions: [], currentSector: '', currentCluster: null, clusters: [], exits: [], sectorLinks: [], clusterLinks: [], nebula: [],
   };
 }

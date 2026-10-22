@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, newGame, playerShip } from '../sim';
+import { CombatC, FTL_CHARGE_SEC, START_NODE, newGame, playerShip, visibleFleets } from '../sim';
 import { content } from '../content';
 import { buildStarmap, emptyStarmap, planStarmapRoute } from './starmapSnapshot';
 import { toneOf } from './starmapTone';
@@ -18,6 +18,19 @@ describe('starmap snapshot', () => {
     expect(map.nebula).toHaveLength(49);
     // The data holds theme tones, never CSS or hex.
     expect(JSON.stringify({ ...map, nebula: [] })).not.toMatch(/#[0-9a-f]{3,6}\b|region/i);
+  });
+
+  it('lists only the NPC fleets within sensor range, with their heading and a theme tone', () => {
+    const sim = newGame(22, content);
+    const map = buildStarmap(sim);
+    const seen = new Set(visibleFleets(sim).map((f) => f.id));
+    expect(map.fleets.map((f) => f.id)).toEqual([...seen]);
+    expect(map.fleets.length).toBeGreaterThan(0);
+    expect(map.fleets.length).toBeLessThan(sim.galaxy.fleets.length);
+    for (const f of map.fleets) {
+      expect(['cyan', 'amber', 'green', 'red', 'text', 'dim']).toContain(f.tone);
+      expect(f.heading).toMatch(/^(Heading to .+|Resting|Adrift)$/);
+    }
   });
 
   it('keeps every faction tone on the theme scale and an empty map before the first build', () => {
