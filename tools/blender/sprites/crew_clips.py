@@ -9,8 +9,11 @@ from typing import Callable, Optional
 import bpy
 import numpy as np
 from .human_base import SCALE
+from . import human_aim as aim
+from . import human_crouch as crouch
 from . import human_sit as hs
 from . import human_suit as suit
+from . import human_v2_weapons as hw
 from .crew_spec import CLIPS
 
 SIT_HIDE = ("gear.back",)        # slots left empty in the sit clips (the engineer rig would sit inside the backrest)
@@ -41,11 +44,30 @@ def _float(arm, i, clip):
 
 
 def _sit_items(it):
+    if it.slot == "gear.holster":                       # a weapon slung or stowed on the back sits in the backrest too
+        return hw.CARRY[hw.FAMILY[it.name]] in ("thigh", "belt")
     return it.slot not in SIT_HIDE
 
 
 def _float_items(it):
     return suit.is_eva(it) or it.slot == "body"
+
+
+def _combat(arm, i, clip):
+    return aim.apply(arm, i, clip)
+
+
+def _crouch(arm, i, clip):
+    return crouch.base(arm, i, clip)
+
+
+def _not_held(it):
+    return it.slot != "gear.hand"
+
+
+def _combat_items(family):
+    """Every layer but the holstered weapons, and of the held weapons only those of this pose family."""
+    return lambda it: it.slot != "gear.holster" and (it.slot != "gear.hand" or hw.FAMILY.get(it.name) == family)
 
 
 def _is_arm_bone(n):
@@ -107,6 +129,16 @@ POSES = {
     "sit_work": Pose(action="idle_Armature", hold="first", before=_sit, chair=True, items=_sit_items),
     "eva_float": Pose(action="idle_Armature", hold="first", before=_float, puffs=suit.puffs, items=_float_items),
 }
+for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy", "ready_1m", "swing_1m", "ready_2m",
+           "swing_2m"):
+    POSES[_c] = Pose(action="idle_Armature", hold="first", before=_combat, items=_combat_items(_c.rsplit("_", 1)[1]))
+for _c in ("crouch_aim_1h", "crouch_fire_1h", "crouch_aim_2h", "crouch_fire_2h", "crouch_fire_heavy", "crouch_ready_1m",
+           "lean_l_1h", "lean_r_1h", "lean_l_2h", "lean_r_2h"):
+    POSES[_c] = Pose(action="idle_Armature", hold="first", before=_combat, items=_combat_items(_c.rsplit("_", 1)[1]))
+for _c in ("crouch_idle", "crouch_walk"):                                # cover, weapons holstered (or not carried)
+    POSES[_c] = Pose(action="idle_Armature", hold="first", before=_crouch, items=_not_held)
+for _c in ("walk_aim_1h", "walk_aim_2h", "walk_heavy"):                 # the walk cycle's legs, the aim's arms
+    POSES[_c] = Pose(action="walk_Armature", before=_combat, items=_combat_items(_c.rsplit("_", 1)[1]))
 
 
 def pose_of(clip):
