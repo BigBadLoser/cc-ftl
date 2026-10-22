@@ -88,8 +88,8 @@
       <rect class="field" x="0" y="0" width={cols} height={rows} />
       {#each valid as v (`${v.x},${v.y}`)}<rect class="ok" x={v.x} y={v.y} width="1" height="1" />{/each}
       {#each blocks as b (`${b.x},${b.y}`)}<rect class={b.kind} x={b.x} y={b.y} width="1" height="1" data-testid={`deploy-${b.kind}`} />{/each}
-      {#each { length: cols + 1 } as _, i (i)}<line class="grid" x1={i} y1="0" x2={i} y2={rows} />{/each}
-      {#each { length: rows + 1 } as _, i (i)}<line class="grid" x1="0" y1={i} x2={cols} y2={i} />{/each}
+      {#each [...Array(cols + 1).keys()] as i (i)}<line class="grid" x1={i} y1="0" x2={i} y2={rows} />{/each}
+      {#each [...Array(rows + 1).keys()] as i (i)}<line class="grid" x1="0" y1={i} x2={cols} y2={i} />{/each}
       <rect class="ghost" class:bad={!!error} x={cell.x} y={cell.y} width={span.w} height={span.h} data-testid="deploy-ghost" />
     </svg>
     <ul class="legend" aria-label="Key">
