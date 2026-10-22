@@ -44,7 +44,7 @@
 </div>
 
 <style>
-  .sub { color: var(--dim); font-size: 12px; margin: 8px 0 4px; }
+  .sub { color: var(--dim); font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; margin: 8px 0 4px; }
   .sub small { margin-left: 6px; }
   .ore { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
   .ore li { display: flex; justify-content: space-between; }
@@ -52,6 +52,6 @@
   .dim { color: var(--dim); }
   .full { width: 100%; margin-top: 10px; }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-  .chips button { min-height: 30px; padding: 0 10px; }
+  .chips button { min-height: 40px; padding: 0 10px; }
   .chips button.on { border-color: var(--cyan); }
 </style>

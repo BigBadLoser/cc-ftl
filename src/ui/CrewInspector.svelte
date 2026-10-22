@@ -134,7 +134,7 @@
   .btns.one { display: grid; grid-template-columns: 1fr; }
   .sub { color: var(--dim); font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; margin: 8px 0 4px; }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-  .chips button { min-height: 34px; padding: 0 10px; display: flex; gap: 6px; align-items: center; }
+  .chips button { min-height: 40px; padding: 0 10px; display: flex; gap: 6px; align-items: center; }
   .chips small { color: var(--dim); }
   .warn { border-color: #7a2a2a; }
   .hint { margin: 6px 0 0; color: var(--dim); font-size: 12px; }

@@ -43,6 +43,6 @@
   .dim { color: var(--dim); }
   .bar { height: 4px; background: var(--panel-3); margin: 3px 0; }
   .bar i { display: block; height: 100%; background: var(--cyan); }
-  .bot button { padding: 2px 10px; }
+  .bot button { min-height: 40px; padding: 0 14px; }
   .go { border-color: var(--cyan); }
 </style>
