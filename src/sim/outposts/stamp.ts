@@ -36,7 +36,7 @@ export function stampOutpost(sim: Sim, o: OutpostPlan, x: number, y: number): { 
   const ship = sim.world.createEntity();
   sim.world.add(ship, ShipC, {
     name: o.template.name, faction: outpostFaction(o), state: 'active', x: bx, y: by, width: dense.width, height: dense.height,
-    hullMax: hullSum(new ShipGrid(0, g, bx, by, dense.width, dense.height)), integrity: 1, outpost: { style: o.style, kind: o.kind, hidden: o.style === 'dug', provoked: false },
+    hullMax: hullSum(new ShipGrid(0, g, bx, by, dense.width, dense.height)), integrity: 1, immobile: true, dormant: 1, outpost: { style: o.style, kind: o.kind, hidden: o.style === 'dug' },
   });
   for (const [tx, ty] of built) g.set('ship', tx, ty, ship);
   return { asteroid, ship };

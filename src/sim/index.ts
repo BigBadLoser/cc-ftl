@@ -92,7 +92,8 @@ export { generateOutpost, OUTPOST, OUTPOST_KINDS, type OutpostPlan, type Outpost
 export { validateOutpost } from './outposts/validate';
 export { stampOutpost } from './outposts/stamp';
 export { DIG_TICKS, LEVEL_TICKS, AUTO_LEVEL_MAX, isOuterRock } from './rock/dig';
-export { isDormant, isHiddenOutpost, discoverOutpost, provokeOutpost } from './outposts/state';
+export { isHiddenOutpost, discoverOutpost } from './outposts/state';
+export { isDormant, wake, type WakeReason } from './combat/dormant';
 export { DISCOVER_RANGE } from './systems/outposts';
 export * from './galaxy/types';
 export type { GalaxyFactionDef, StructureDef, GalaxyContent, StandingTier, DangerRange } from './galaxy/defs';

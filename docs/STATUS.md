@@ -87,11 +87,11 @@ Planner's calls:
 - Pods: the best free pilot (not drafted, not reserved, of the ship's side, on the ship; highest piloting) walks to the bay and
   embarks; they stay aboard between trips and climb out when the order ends or is recalled; with nobody free the order waits
   (`mining.waiting`, reason `noPilot`). Pods are 2.6 tiles across (`VehicleDef.size`). Couriers and boarders skip class 'pod'.
-- Outposts are a `ShipC` region over the base rectangle, never 'disabled' (immobile by nature, no crew yet); surface ones are
+- Outposts are a `ShipC` region over the base rectangle, never 'disabled' (`immobile`, no crew yet); surface ones are
   neutral, dug ones hostile. The habitat and room contents are hand-made kits; switch to the station prefabs and room recipes of
   the `stations` branch when it lands.
 - **Dormant until provoked; dug ones hidden until discovered (user decision, 2026-10-21).** A dormant outpost is no combatant
-  (combat trigger, alerts, combat panel enemies, auto-target), whatever its faction; it has no `CombatC` until provoked. A hidden
+  (combat trigger, alerts, combat panel enemies, auto-target), whatever its faction; it is stamped `immobile` + `dormant` like a pirate den (one mechanism: `combat/dormant.ts`, `wake`, event `ship.provoked`) and has no `CombatC` until it wakes. A hidden
   one is not listed (node strip, shuttle targets, trade/hail), not targetable (`combat.setTarget` refuses it), not pickable
   (clicks fall through to the rock) and keeps its rock roof whatever the roof toggle. Discovery (alert "Hidden base discovered"):
   a player crew member or a player vehicle out of its bay within `DISCOVER_RANGE` = 6 tiles (Chebyshev) of the box of the base's

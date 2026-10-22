@@ -3,17 +3,18 @@ import { ModuleC } from '../modules/components';
 import { PositionC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
+import { isDormant, wake, type WakeReason } from '../combat/dormant';
 import type { Sim } from '../sim';
 
 /**
- * Dormant hostiles (pirate dens) wake when provoked: a player ship aims at them (ship-wide or any weapon), they take damage
- * (integrity below what they had when they went quiet), or a player crew member stands aboard (boarding). Until then the
- * enemy AI leaves them alone and they do not put the node in combat. Minimal stand-in for the outposts' rule on the
- * `asteroids` branch; unify on merge.
+ * Dormant ships (pirate dens, outposts) wake when provoked: a player ship aims at them (ship-wide or any weapon), they take
+ * damage (integrity below what they had when they went quiet), or a player crew member stands aboard (boarding). Until then
+ * the enemy AI leaves them alone and they do not put the node in combat. Outposts also wake on a dig or breach into them
+ * (crew/handlers.ts, systems/outposts.ts); every wake goes through `wake` (combat/dormant.ts).
  */
 export function dormancySystem(sim: Sim): void {
   const sleepers: number[] = [];
-  for (const id of sim.world.query(ShipC)) if (sim.world.get(id, ShipC)?.dormant !== undefined) sleepers.push(id);
+  for (const id of sim.world.query(ShipC)) if (isDormant(sim.world.get(id, ShipC))) sleepers.push(id);
   if (sleepers.length === 0) return;
   const aimedAt = new Set<number>();
   for (const id of sim.world.query(ShipC, CombatC)) {
@@ -33,9 +34,7 @@ export function dormancySystem(sim: Sim): void {
   for (const id of sleepers) {
     const ship = sim.world.get(id, ShipC);
     if (!ship || ship.dormant === undefined) continue;
-    const why = aimedAt.has(id) ? 'aimed' : ship.integrity < ship.dormant - 1e-6 ? 'damaged' : boarded.has(id) ? 'boarded' : '';
-    if (!why) continue;
-    delete ship.dormant;
-    sim.events.emit({ type: 'ship.provoked', ship: id, reason: why });
+    const why: WakeReason | '' = aimedAt.has(id) ? 'aimed' : ship.integrity < ship.dormant - 1e-6 ? 'damaged' : boarded.has(id) ? 'boarded' : '';
+    if (why) wake(sim, id, why);
   }
 }

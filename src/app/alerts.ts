@@ -100,7 +100,7 @@ export function createAlerts(sim: Sim): Alerts {
       case 'mining.waiting': return { kind: e.type, key: `mw${e.pod}`, text: 'Mining pod waits for a free pilot', at: null };
       case 'mining.done': return { kind: e.type, key: `md${e.pod}`, text: e.reason === 'exhausted' ? `Mining done: ore used up (${e.trips} trips)` : e.reason === 'recalled' ? 'Mining pod recalled' : 'Mining pod lost its bay', at: null };
       case 'outpost.discovered': return { kind: e.type, key: `od${e.ship}`, text: 'Hidden base discovered', at: shipCentre(e.ship) };
-      case 'outpost.provoked': return { kind: e.type, key: `op${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Outpost'} turns hostile`, at: shipCentre(e.ship) };
+      case 'ship.provoked': return { kind: e.type, key: `op${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Ship'} turns hostile`, at: shipCentre(e.ship) };
       case 'module.destroyed': {
         const s = shipName(e.ship);
         if (s?.faction !== 'player') return null;

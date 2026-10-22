@@ -36,8 +36,9 @@ import { newTrade, type TradeState } from './trade/types';
  *   Then: CoreRock is gone; struct 6 is rock Ground (walkable, airless foundation); `AsteroidC.coverage`
  * replaces `hollow` and `core`.
  * v29: raw ore items (`item.iron_ore`, `item.rare_ore`) and the 3x4 crafting `module.refinery`.
+ * v30: one dormancy state: outposts are stamped `immobile` + `dormant` (like dens); `ShipC.outpost.provoked` and `outpost.provoked` are gone.
  */
-export const SAVE_VERSION = 29;
+export const SAVE_VERSION = 30;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

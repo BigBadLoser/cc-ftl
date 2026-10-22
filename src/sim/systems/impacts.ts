@@ -6,7 +6,7 @@ import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import type { Effect } from '../registry';
 import type { Sim } from '../sim';
-import { provokeOutpost } from '../outposts/state';
+import { isDormant } from '../combat/dormant';
 import { Struct } from '../structure';
 import { VehicleC } from '../vehicles/components';
 import { damageVehicle, vehicleDefOf } from '../vehicles/lifecycle';
@@ -33,12 +33,11 @@ export function impactSystem(sim: Sim): void {
     const grid = shipGrid(sim, shipId);
     const combat = sim.world.get(shipId, CombatC);
     const base = { projectile: id, weapon: p.weapon, ship: shipId };
-    // an outpost has no CombatC until provoked: a shot at it still lands (no shields, no evasion) and provokes it
-    if (!def || !ship || !grid || (!combat && !ship.outpost) || ship.state === 'fled') {
+    // a dormant ship may have no CombatC: a shot at it still lands (no shields, no evasion); dormancySystem sees the damage
+    if (!def || !ship || !grid || (!combat && !isDormant(ship)) || ship.state === 'fled') {
       sim.events.emit({ type: 'projectile.miss', ...base, reason: 'gone', x: p.x1, y: p.y1 });
       continue;
     }
-    if (ship.outpost && shipById(sim, p.fromShip)?.faction === 'player') provokeOutpost(sim, shipId, 'shot');
     if (combat && sim.rng.chance(combat.evasion)) {
       sim.events.emit({ type: 'projectile.miss', ...base, reason: 'evaded', x: p.x1, y: p.y1 });
       continue;

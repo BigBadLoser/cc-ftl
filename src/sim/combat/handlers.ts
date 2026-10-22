@@ -1,7 +1,6 @@
 import type { Command } from '../commands';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
-import { provokeOutpost } from '../outposts/state';
 import { flee } from '../galaxy/hyperspace';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
@@ -86,8 +85,6 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
       const aimed = shipById(sim, cmd.targetShip);
       if (aimed?.outpost?.hidden) return reject(sim, cmd.type, 'badTarget'); // nobody knows it is there
       target = { ship: cmd.targetShip, moduleId: cmd.targetModuleId };
-      // the player training weapons on an outpost is an attack: it provokes it (and so starts combat)
-      if (aimed?.outpost && shipById(sim, ship)?.faction === 'player') provokeOutpost(sim, cmd.targetShip, 'shot');
     }
     if (cmd.weaponId === null) {
       combat.target = target;

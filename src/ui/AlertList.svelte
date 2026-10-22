@@ -7,11 +7,11 @@
   let list = $state<UiAlert[]>([]);
   onMount(() => api.alerts.subscribe((a) => (list = a)));
 
-  const danger = new Set(['fire.started', 'hull.breach', 'crew.died', 'crew.downed', 'crew.starving', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'module.destroyed', 'ship.lost', 'creatures.aboard', 'outpost.provoked']);
+  const danger = new Set(['fire.started', 'hull.breach', 'crew.died', 'crew.downed', 'crew.starving', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'module.destroyed', 'ship.lost', 'creatures.aboard', 'ship.provoked']);
   const good = new Set(['production.done', 'crew.rescued', 'ship.destroyed', 'trade']);
   const icon: Record<string, IconName> = {
     'fire.started': 'fire', 'hull.breach': 'alert', 'power.shortage': 'power', 'o2.low': 'o2', 'suit.airLow': 'o2', 'suit.airOut': 'o2', 'crew.downed': 'downed', 'crew.starving': 'food', 'crew.moodLow': 'smile', 'crew.died': 'skull',
-    'crew.rescued': 'person', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'outpost.discovered': 'station', 'outpost.provoked': 'combat', 'mining.waiting': 'person', 'mining.done': 'pick', 'module.destroyed': 'close', 'ship.destroyed': 'prize', 'ship.fled': 'ship', 'ship.lost': 'skull', 'job.missingMaterials': 'stock', 'storage.full': 'stock', 'production.done': 'wrench', trade: 'credits',
+    'crew.rescued': 'person', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'outpost.discovered': 'station', 'ship.provoked': 'combat', 'mining.waiting': 'person', 'mining.done': 'pick', 'module.destroyed': 'close', 'ship.destroyed': 'prize', 'ship.fled': 'ship', 'ship.lost': 'skull', 'job.missingMaterials': 'stock', 'storage.full': 'stock', 'production.done': 'wrench', trade: 'credits',
   };
 </script>
 

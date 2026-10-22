@@ -53,8 +53,6 @@ export type SimEvent =
   /** An outpost was stamped: its asteroid and its base region (ShipC). */
   /** A hidden outpost was found (still dormant): 'proximity' (player crew or vehicle near it), 'breach', or 'provoked'. */
   | { type: 'outpost.discovered'; ship: number; reason: 'proximity' | 'breach' | 'provoked' }
-  /** An outpost turned combatant: shot at, boarded, dug into, or breached. */
-  | { type: 'outpost.provoked'; ship: number; reason: 'shot' | 'boarded' | 'dug' | 'breach' }
   /** The player claimed a base region (`ship`) on an asteroid. */
   | { type: 'asteroid.claimed'; asteroid: number; ship: number; x: number; y: number; w: number; h: number }
   | { type: 'outpost.spawned'; asteroid: number; ship: number; style: 'surface' | 'dug'; kind: string; x: number; y: number }
@@ -79,8 +77,8 @@ export type SimEvent =
   | { type: 'ship.recovered'; ship: number }
   | { type: 'ship.destroyed'; ship: number }
   | { type: 'ship.fled'; ship: number }
-  /** A dormant hostile (pirate den) was provoked: aimed at, damaged or boarded. */
-  | { type: 'ship.provoked'; ship: number; reason: 'aimed' | 'damaged' | 'boarded' }
+  /** A dormant ship (pirate den, outpost) was provoked: aimed at, damaged, boarded, dug into or breached. */
+  | { type: 'ship.provoked'; ship: number; reason: 'aimed' | 'damaged' | 'boarded' | 'dug' | 'breach' }
   /** A station raised its alarm (intruders, attacked, fire, breach): guards converge, civilians take cover. */
   | { type: 'station.alarm'; ship: number; reason: string }
   /** A station's alarm calmed after a quiet spell; it forgets its grudges. */

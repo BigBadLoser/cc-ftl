@@ -10,7 +10,7 @@ import { DoorJam, Struct } from '../structure';
 import type { Sim } from '../sim';
 import type { GridLike } from '../grid';
 import { rockBuild } from '../rock/dig';
-import { provokeOutpost } from '../outposts/state';
+import { wake } from '../combat/dormant';
 import { ShipC } from '../combat/components';
 import { TICK_HZ } from '../time';
 import {
@@ -55,10 +55,10 @@ function checkTile(sim: Sim, type: string, shipId: number, x: number, y: number)
   return grid.get('struct', x, y);
 }
 
-/** Build orders come from the player: one aimed at someone else's outpost (digging or building into it) provokes it. */
+/** Build orders come from the player: one aimed at a dormant outpost (digging or building into it) provokes it. */
 function provokeIfOutpost(sim: Sim, ship: number): void {
   const s = sim.world.get(ship, ShipC);
-  if (s?.outpost && s.faction !== 'player') provokeOutpost(sim, ship, 'dug');
+  if (s?.outpost) wake(sim, ship, 'dug');
 }
 
 function crewOf(sim: Sim, type: string, id: number): Crew | undefined {

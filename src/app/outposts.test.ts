@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CrewC, PositionC, ShipC, Struct, deserialize, homeShip, newGame, serialize, shipGrid, type Sim,
+  CombatC, CrewC, PositionC, ShipC, Struct, deserialize, homeShip, isDormant, newGame, serialize, shipGrid, type Sim,
 } from '../sim';
 import { targetableShip } from '../sim/combat/targets';
 import { content } from '../content';
@@ -48,7 +48,8 @@ describe('outpost hostility', () => {
     const s = sim.world.get(base, ShipC)!;
     expect(s.faction).toBe('hostile');
     expect(s.state).toBe('active');
-    expect(s.outpost).toMatchObject({ hidden: true, provoked: false });
+    expect(s).toMatchObject({ immobile: true, outpost: { hidden: true } });
+    expect(s.dormant).toBeDefined();
     expect(listed(sim, base)).toBe(false);
     expect(targetableShip(sim, base)).toBe(false);
   });
@@ -62,11 +63,11 @@ describe('outpost hostility', () => {
     let log = run(sim, 20);
     expect(log).toContain('outpost.discovered');
     expect(log).not.toContain('combat.started');
-    expect(s.outpost).toMatchObject({ hidden: false, provoked: false });
+    expect(s.outpost).toMatchObject({ hidden: false });
     expect(buildShuttles(sim).targets.some((t) => t.ship === base)).toBe(true);
     moveTo(sim, crew, f.x, f.y);
     log = run(sim, 20);
-    expect(log).toContain('outpost.provoked');
+    expect(log).toContain('ship.provoked');
     expect(log).toContain('combat.started');
     expect(buildCombat(sim).enemies.some((e) => e.ship === base)).toBe(true);
   });
@@ -81,8 +82,9 @@ describe('outpost hostility', () => {
     g.set('ship', n.x, n.y, 0);
     const log = run(sim, 20);
     expect(log.indexOf('outpost.discovered')).toBeGreaterThanOrEqual(0);
-    expect(log).toContain('outpost.provoked');
-    expect(sim.world.get(base, ShipC)!.outpost).toMatchObject({ hidden: false, provoked: true });
+    expect(log).toContain('ship.provoked');
+    expect(sim.world.get(base, ShipC)!.outpost).toMatchObject({ hidden: false });
+    expect(sim.world.get(base, ShipC)!.dormant).toBeUndefined();
   });
 
   it('aiming weapons at a discovered outpost provokes it (a hidden one cannot be targeted)', () => {
@@ -93,7 +95,7 @@ describe('outpost hostility', () => {
     s.outpost!.hidden = false; // discovered
     sim.enqueue({ type: 'combat.setTarget', ship: homeShip(sim), weaponId: null, targetShip: base, targetModuleId: 0 });
     const log = run(sim, 60 * 20);
-    expect(log).toContain('outpost.provoked');
+    expect(log).toContain('ship.provoked');
     expect(log).toContain('combat.started');
   });
 
@@ -101,15 +103,37 @@ describe('outpost hostility', () => {
     const { sim, base } = setup();
     run(sim, 30);
     const a = deserialize(serialize(sim), content);
-    expect(a.world.get(base, ShipC)!.outpost).toMatchObject({ hidden: true, provoked: false });
+    expect(a.world.get(base, ShipC)!.outpost).toMatchObject({ hidden: true });
     sim.world.get(base, ShipC)!.outpost!.hidden = false;
     const b = deserialize(serialize(sim), content);
-    expect(b.world.get(base, ShipC)!.outpost).toMatchObject({ hidden: false, provoked: false });
+    expect(b.world.get(base, ShipC)!.outpost).toMatchObject({ hidden: false });
     moveTo(sim, playerCrew(sim), baseFloor(sim, base).x, baseFloor(sim, base).y);
     run(sim, 20);
     const c = deserialize(serialize(sim), content);
-    expect(c.world.get(base, ShipC)!.outpost).toMatchObject({ provoked: true });
+    expect(c.world.get(base, ShipC)!.dormant).toBeUndefined();
     expect(run(c, 300)).toEqual(run(sim, 300));
     expect(serialize(c)).toBe(serialize(sim));
+  });
+
+  it('a dormant outpost and a dormant den wake through the same path: both emit ship.provoked and get a CombatC', () => {
+    const { sim, base } = setup();
+    sim.enqueue({ type: 'debug.spawnStation', kind: 'station.pirate', size: 'outpost', seed: 3, x: sim.sector.width + 40, y: 20 });
+    expect(run(sim, 1).filter((e) => e.startsWith('rejected'))).toEqual([]);
+    const den = [...sim.world.query(ShipC)].find((id) => sim.world.get(id, ShipC)?.gen?.faction === 'station.pirate')!;
+    sim.world.get(base, ShipC)!.outpost!.hidden = false;
+    for (const id of [base, den]) expect(isDormant(sim.world.get(id, ShipC))).toBe(true);
+    const woke: number[] = [];
+    for (const id of [base, den]) {
+      sim.enqueue({ type: 'combat.setTarget', ship: homeShip(sim), weaponId: null, targetShip: id, targetModuleId: 0 });
+      for (let i = 0; i < 3; i++) {
+        sim.step();
+        for (const e of sim.events.drain()) if (e.type === 'ship.provoked') woke.push(e.ship);
+      }
+    }
+    expect(woke.sort((a, b) => a - b)).toEqual([base, den].sort((a, b) => a - b));
+    for (const id of [base, den]) {
+      expect(isDormant(sim.world.get(id, ShipC))).toBe(false);
+      expect(sim.world.has(id, CombatC)).toBe(true);
+    }
   });
 });
