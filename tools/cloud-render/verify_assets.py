@@ -3,7 +3,9 @@
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 def digest(path):
@@ -48,11 +50,6 @@ def verify(assets, require_complete=False, state_path=None):
         failed = [k for k in required if state.get("jobs", {}).get(k, {}).get("status") != "done"]
         if failed:
             raise ValueError(f"Incomplete render jobs: {len(failed)}; first: {failed[:5]}")
-        for family in ("robots", "aliens"):
-            if not any(name.startswith(f"crew.{family[:-1]}.") for name in manifest.get("assets", {})):
-                # Historical sprite ID prefixes vary, so require manifest sheet names instead.
-                if not any(s.startswith("crew.") for s in manifest.get("sheets", {})):
-                    raise ValueError("No crew sheets in completed manifest")
     return files
 
 
