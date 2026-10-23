@@ -6,7 +6,8 @@ import { Sim } from '../sim';
 import { Struct } from '../structure';
 import { BodyC } from '../body';
 import { MiningPodC, type MiningPod } from './components';
-import { FAR, hoverSpot, orderTiles, pickTile } from './pick';
+import { STANDOFF } from './geometry';
+import { hoverSpot, orderTiles, pickTile } from './pick';
 
 const content: ContentRegistry = { ships: {}, roles: {}, species: {}, modules: {}, crewNames: [], items: {}, recipes: {}, structCosts: {} };
 
@@ -40,25 +41,34 @@ describe('mining tile picks', () => {
     expect(pickTile(sim, other, order(asteroid, { tiles: [{ x: 14, y: 10 }] }), { x: 0, y: 0 })).toEqual({ x: 14, y: 10 });
   });
 
-  it('hovers FAR tiles behind the ore on screen first (grid -x or -y), nearest the pod, then in front, then the grid diagonals', () => {
+  it('sits STANDOFF out on a heading ray: behind the ore on screen first (grid -x or -y), nearest the pod, then in front, then the diagonals', () => {
     const { sim } = bar();
     const g = sim.sector.grid;
     const pod = sim.world.createEntity();
     sim.world.add(pod, BodyC, { x: 8, y: 14, heading: 0, alt: 2.5 });
-    // The bar's end tile (10, 10) cleared: both spots behind (12, 10) are open, the pod in the south-west is nearer the (-FAR, 0) one.
+    const c = { x: 12.5, y: 10.5 };
+    // The bar's end tile (10, 10) cleared: both spots behind (12, 10) are open, the pod in the south-west is nearer the grid -x one.
     g.set('struct', 10, 10, Struct.Space);
-    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: 10, y: 10.5 });
+    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: c.x - STANDOFF, y: c.y });
     sim.world.get(pod, BodyC)!.x = 16;
     sim.world.get(pod, BodyC)!.y = 4;
-    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: 12.5, y: 8 });
-    // Rock behind (both) and east: the spot in front (south) is next.
-    for (const [x, y] of [[10, 10], [12, 8], [15, 10]] as [number, number][]) g.set('struct', x, y, Struct.Rock);
-    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: 12.5, y: 13 });
-    // Rock in front too: a grid diagonal FAR out.
-    g.set('struct', 12, 13, Struct.Rock);
+    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: c.x, y: c.y - STANDOFF });
+    // Rock behind (both): in front is next (the bar's tile (14, 10) is rock, so only grid +y is open).
+    g.set('struct', 10, 10, Struct.Rock);
+    g.set('struct', 12, 8, Struct.Rock);
+    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: c.x, y: c.y + STANDOFF });
+    // Rock in front too: a grid diagonal, exactly STANDOFF from the ore on a 45 degree ray.
+    g.set('struct', 12, 12, Struct.Rock);
     const diag = hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6);
-    expect(Math.abs(diag.x - 12.5)).toBe(FAR);
-    expect(Math.abs(diag.y - 10.5)).toBe(FAR);
+    expect(Math.hypot(diag.x - c.x, diag.y - c.y)).toBeCloseTo(STANDOFF, 9);
+    expect(Math.abs(diag.x - c.x)).toBeCloseTo(Math.abs(diag.y - c.y), 9);
+  });
+
+  it('keeps the heading ray when every spot is over rock: the pod flies above it', () => {
+    const { sim } = bar();
+    for (const x of [8, 9, 10, 11, 12, 13, 14, 15, 16]) for (const y of [6, 7, 8, 9, 10, 11, 12, 13, 14]) sim.sector.grid.set('struct', x, y, Struct.Rock);
+    const over = hoverSpot(sim, 99, { x: 12, y: 10 }, 2.6);
+    expect(Math.hypot(over.x - 12.5, over.y - 10.5)).toBeCloseTo(STANDOFF, 9);
   });
 
   it('keeps pods a width apart and is deterministic', () => {

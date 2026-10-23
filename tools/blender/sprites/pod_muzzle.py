@@ -2,7 +2,7 @@
 
 Pure Python (no bpy), so pack.py can call it without Blender. The projection is the art camera's (2:1 iso: x = (u_x - u_y) * TILE_W / 2,
 y = (u_x + u_y) * TILE_H / 2 - z * ZPX), the geometry is mining_pod.laser (pivot LASER_U, LASER_Z; barrel pitched down 60 degrees while
-mining; the emitter face 0.71 along it) plus the frame's bob. The game's measured table (src/render/podMuzzle.ts) agrees with it within
+mining; the emitter face 0.71 along it) plus the frame's bob. The game projects the same geometry (src/render/podMuzzle.ts; its test holds the measured tips) and agrees with the sheet within
 a few px; once a render has run, the manifest's `muzzle` is the source and the table can go."""
 import math
 import re

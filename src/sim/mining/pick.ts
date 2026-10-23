@@ -2,6 +2,7 @@ import { AsteroidC } from '../asteroids/components';
 import type { Sim } from '../sim';
 import { BodyC } from '../body';
 import { isAsteroidRock, Struct } from '../structure';
+import { DIRS, STANDOFF } from './geometry';
 import { MiningPodC, type MiningPod } from './components';
 
 /** True if the sector tile is ore-bearing rock owned by `asteroid`. */
@@ -56,26 +57,17 @@ export function pickTile(sim: Sim, pod: number, order: MiningPod, from: { x: num
 }
 
 /**
- * Hover offsets in tiles from the target tile's centre, in groups tried in order. Screen up-left is grid (-1, 0) and up-right is
- * (0, -1) (iso.ts: x = (gx - gy) / 2, y = (gx + gy) / 4), so the first group of each ring sits behind the ore, where the pod faces
- * down-left or down-right toward the camera; then the two in front, then the four grid diagonals. The first ring is `FAR` tiles out:
- * the pod's laser barrel reaches 1.3 tiles ahead of it, so that leaves the barrel tip clear of the rock (a tile short of the ore's
- * centre) with a stretch of beam crossing to the ore. The second ring is one tile out, for ore with rock all round it.
+ * Headings (sprite directions, `DIRS`) in the order a pod tries them. The pod faces the ore, so it sits at the ore's centre minus
+ * `STANDOFF` along the heading: heading d0 puts it at grid -x of the ore and d2 at grid -y (screen up-left and up-right, behind the
+ * ore, facing down-right and down-left toward the camera), then d4 and d6 (in front), then the four grid diagonals.
  */
-export const FAR = 2.5;
-const NEAR: readonly (readonly (readonly [number, number])[])[] = [FAR, 1].flatMap((r) => [
-  [[-r, 0], [0, -r]],
-  [[r, 0], [0, r]],
-  [[r, r], [-r, r], [r, -r], [-r, -r]],
-] as const);
-/** Last resort, in pod widths: over the tile, then a ring of 8, then a wider ring (the spot may lie over rock). */
-const SPOTS: readonly [number, number][] = [[0, 0], ...[1, 2].flatMap((r) =>
-  Array.from({ length: 8 }, (_, k): [number, number] => [r * Math.cos((k * Math.PI) / 4), r * Math.sin((k * Math.PI) / 4)]))];
+const HEADINGS: readonly (readonly number[])[] = [[0, 2], [4, 6], [1, 3, 5, 7]];
 
 /**
- * Where a pod hovers to cut `target`: beside it, not over it. The first group of `NEAR` that has a spot over open space or
- * ground (not rock mass) at least `size` from every other pod's spot, so pods working neighbouring tiles never share a spot
- * (nearest the pod first, ties in list order); then (rock all round) the old rings over and round the tile. Deterministic.
+ * Where a pod hovers to cut `target`: on one of the eight heading rays out from the tile's centre, `STANDOFF` away, so its laser
+ * barrel's axis ends on the tile (geometry.ts). The first heading (in `HEADINGS` order, nearest the pod first within a group, ties
+ * in list order) whose spot is over open space or ground (not rock mass) and at least `size` from every other pod's spot wins;
+ * with none, the same ignoring the open-space rule (the pod flies above rock), then ignoring the separation. Deterministic.
  */
 export function hoverSpot(sim: Sim, pod: number, target: { x: number; y: number }, size: number): { x: number; y: number } {
   const others: { x: number; y: number }[] = [];
@@ -93,17 +85,11 @@ export function hoverSpot(sim: Sim, pod: number, target: { x: number; y: number 
     return k === Struct.Space || k === Struct.Ground;
   };
   const at = sim.world.get(pod, BodyC) ?? { x: cx, y: cy };
-  for (const group of NEAR) {
-    // nearest the pod first, ties in list order
-    const ranked = group
-      .map(([ox, oy], i) => ({ x: cx + ox, y: cy + oy, i }))
-      .sort((a, b) => (a.x - at.x) ** 2 + (a.y - at.y) ** 2 - ((b.x - at.x) ** 2 + (b.y - at.y) ** 2) || a.i - b.i);
-    const hit = ranked.find((c) => open(c.x, c.y) && clear(c.x, c.y));
-    if (hit) return { x: hit.x, y: hit.y };
-  }
-  for (const [ox, oy] of SPOTS) {
-    const x = cx + ox * size, y = cy + oy * size;
-    if (clear(x, y)) return { x, y };
-  }
-  return { x: cx, y: cy };
+  const spots = HEADINGS.map((group) =>
+    group
+      .map((k, i) => ({ x: cx - (DIRS[k] as readonly [number, number])[0] * STANDOFF, y: cy - (DIRS[k] as readonly [number, number])[1] * STANDOFF, i }))
+      .sort((a, b) => (a.x - at.x) ** 2 + (a.y - at.y) ** 2 - ((b.x - at.x) ** 2 + (b.y - at.y) ** 2) || a.i - b.i),
+  ).flat();
+  const hit = spots.find((c) => open(c.x, c.y) && clear(c.x, c.y)) ?? spots.find((c) => clear(c.x, c.y)) ?? spots[0];
+  return hit ? { x: hit.x, y: hit.y } : { x: cx, y: cy };
 }

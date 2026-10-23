@@ -4,11 +4,11 @@ import type { World } from '../sim/ecs';
 import { MiningPodC } from '../sim/mining/components';
 import { VehicleC } from '../sim/vehicles/components';
 import type { Atlas, StaticSprite } from './assets/loader';
-import { ROCK_MASS_Z } from './asteroidView';
+import { POD_HOVER_Z } from '../sim/mining/geometry';
 import { Z_PX } from './heights';
-import { iso, TILE_H } from './iso';
+import { TILE_H } from './iso';
 import { sectorArt } from './sectorPos';
-import { HIDDEN, MUZZLE } from './podMuzzle';
+import { barrel, beamEnd, HIDDEN } from './podMuzzle';
 import { headingIndex } from './shuttleView';
 
 /**
@@ -25,7 +25,7 @@ export interface PodView {
 }
 
 /** Hover height above the floor in tiles of height: the barrel tip (a hair under the foot) above the rock's top, so the beam drops onto the ore. */
-const POD_Z = ROCK_MASS_Z + 0.4;
+const POD_Z = POD_HOVER_Z;
 
 const LASER = 0xff6a3a;
 /** A stowed pod (placeholder until the bay's parked sprite exists) sits this far below the deck, on the pit floor, and sorts behind the pit's near lip. */
@@ -117,14 +117,14 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         t.fx.clear();
         t.fxBack.clear();
         if (mining && m?.target) {
-          const tp = iso(m.target.x, m.target.y);
-          const top = tp.y - ROCK_MASS_Z * Z_PX; // the laser ends on the rock's top face
           const pulse = 0.6 + 0.4 * Math.sin(clock * 18);
-          // From the barrel's tip (measured from the sprite, podMuzzle.ts) to the rock's top face; behind the pod while the hull hides the barrel.
-          const [mx, my] = (MUZZLE[d]?.[frame] ?? [0, 0]) as readonly [number, number];
+          // From the barrel's emitter face straight along its axis (the sim puts the pod on a heading ray so the axis meets the ore's top
+          // face, sim/mining/geometry.ts); behind the pod while the hull hides the barrel.
+          const [sx, sy] = barrel(d, frame).tip;
+          const [ex, ey] = beamEnd(d, frame);
           const beam = HIDDEN.has(d) ? t.fxBack : t.fx;
-          beam.moveTo(mx, my).lineTo(tp.x - p.x, top - p.y + lift).stroke({ color: LASER, width: Math.max(1, TILE_H / 12), alpha: pulse });
-          t.fx.circle(tp.x - p.x, top - p.y + lift, TILE_H * 0.15).fill({ color: 0xffd0a0, alpha: pulse });
+          beam.moveTo(sx, sy).lineTo(ex, ey).stroke({ color: LASER, width: Math.max(1, TILE_H / 12), alpha: pulse });
+          t.fx.circle(ex, ey, TILE_H * 0.15).fill({ color: 0xffd0a0, alpha: pulse });
         }
         t.root.position.set(Math.round(p.x), Math.round(p.y - lift));
         t.root.zIndex = b.x + b.y + (low ? PIT_DEPTH : 0);

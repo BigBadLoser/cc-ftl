@@ -2,6 +2,7 @@ import { Container, type Sprite } from 'pixi.js';
 import { AsteroidC, type Asteroid } from '../sim/asteroids/components';
 import type { World } from '../sim/ecs';
 import { CHUNK_SIZE } from '../sim/grid';
+import { ROCK_TOP_Z } from '../sim/mining/geometry';
 import type { SectorGrid } from '../sim/sectorGrid';
 import { Struct } from '../sim/structure';
 import type { Atlas } from './assets/loader';
@@ -29,7 +30,7 @@ export interface AsteroidView {
 }
 
 /** Height of a rock-mass block in tiles of height (the art's ZM). */
-export const ROCK_MASS_Z = 1.2;
+export const ROCK_MASS_Z = ROCK_TOP_Z;
 /** Mass sits a hair behind other things on its diagonal. */
 export const MASS_DZ = -0.1;
 
