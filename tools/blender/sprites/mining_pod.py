@@ -2,7 +2,8 @@
 
 Local frame as shuttle_craft (u = nose, v across, z up, origin at the footprint centre on the pad; `Spin(heading)`).
 The body is a capsule swept along the pod's v axis (built in its own frame turned a quarter turn, `Spin(heading + 90)`):
-a ball cut in half with the halves pushed a little apart, a band between two ribs round its middle, armour plates, and
+a ball cut in half with the halves pushed a little apart, a drum round its middle (a cylinder proud of the
+domes, with flat dark sides) carrying the armour plates, and
 the big round HATCH (a heavy ring round a red-lit door with lamps) closing each end. The nose (+u) carries a boxy
 WINDSHIELD that juts out of the hull, a big raked pane over a smaller lower one in dark glass. Underneath: one
 big thruster bell in a housing, which it rests on when parked; a big mining laser in a gimbal hung from the
@@ -19,7 +20,8 @@ from .shuttle_craft import Spin, _g, profile, smooth, station, sweep
 
 C = 1.18                      # the body's axis height above the pad (parked, on the bell)
 R = 0.86                      # the hull's radius: the band's, and each half-dome's
-BAND = (-0.47, 0.47)          # the band between the two ribs (along the pod's v); everything mirrors about v = 0
+BAND = (-0.47, 0.47)          # the drum's flat sides (along the pod's v); everything mirrors about v = 0
+DRUM_R = 0.95                 # the drum's radius: it stands this much proud of the domes (R) all round
 DOME_C = 0.235                # each half-dome's centre, out from the middle (0: the whole ball; the ribs: split wide)
 HATCH_END = 0.6               # the domes end where the hull's radius is this, under the hatch rings
 
@@ -47,14 +49,6 @@ GLOW = "cyan"
 BEAM = "orange"
 
 
-def _r(a):
-    """The body's radius at a (along its axis, the pod's v)."""
-    for (p, rp), (q, rq) in zip(BALL, BALL[1:]):
-        if p <= a <= q:
-            return rp + (rq - rp) * (a - p) / (q - p)
-    return BALL[-1][1] if a > 0 else BALL[0][1]
-
-
 def patch(f, body, u0, u1, t0, t1, k, mat, n=9, steps=4):
     """A panel lying on the hull: the arc t0..t1 (degrees) of its round section, scaled by k, over u0..u1 (as
     shuttle_craft.patch, but on the hull's own circle, not the shuttle's rounded square)."""
@@ -76,24 +70,24 @@ def strut(f, p0, p1, w, mat):
 
 
 def body(fb):
-    """The bulb, in the body frame (u along the pod's +v)."""
+    """The hull, in the body frame (u along the pod's +v): the two half-domes, and round their middle the DRUM, a cylinder
+    a little bigger than them with flat dark sides, so it stands out of the domes by DRUM_R - R all round."""
     _g("hull")
     B = [(u, r, r, 0, C) for u, r in BALL]
     sweep(fb, B, SECTION, HULL, cap0=HULL_D)
-    patch(fb, B, -0.6, 0.6, 200, 340, 1.01, HULL_D, n=9, steps=6)             # the shaded underside plates
-    patch(fb, B, -0.28, 0.28, 235, 305, 1.02, "grime", n=5, steps=2)
+    _g("drum")
+    D = [(u, DRUM_R, DRUM_R, 0, C) for u in BAND]
+    sweep(fb, D, SECTION, HULL, cap0="steelD", cap1="steelD")               # the drum and its flat sides
+    patch(fb, D, BAND[0], BAND[1], 200, 340, 1.006, HULL_D, n=9, steps=2)   # its shaded underside
+    patch(fb, D, -0.28, 0.28, 235, 305, 1.012, "grime", n=5, steps=2)
     _g("plates")
-    # One armour plate wraps the band from the windshield's brow over the top and down the back (profile 0 = pod -u,
-    # 90 = top, 180 = the nose), lying close on the hull so its ends never stand off the silhouette; its stripes run the
-    # whole way with it.
+    # One armour plate wraps the drum from the windshield's brow over the top and down the back (profile 0 = pod -u,
+    # 90 = top, 180 = the nose), its stripes the whole way with it.
     t0, t1 = -55, 150
-    patch(fb, B, -0.43, 0.43, t0, t1, 1.012, HULL_L, n=21, steps=4)
-    patch(fb, B, -0.1, 0.1, t0, t1, 1.022, YEL, n=21, steps=2)
-    for u0 in (-0.42, 0.32):
-        patch(fb, B, u0, u0 + 0.1, t0, t1, 1.022, YEL_D, n=21, steps=1)
-    for u in BAND:                                                           # the ribs
-        k = _r(u) * 1.055
-        sweep(fb, [(u - 0.035, k, k, 0, C), (u + 0.035, k, k, 0, C)], SECTION, "steelD")
+    patch(fb, D, BAND[0] + 0.04, BAND[1] - 0.04, t0, t1, 1.012, HULL_L, n=21, steps=2)
+    patch(fb, D, -0.1, 0.1, t0, t1, 1.022, YEL, n=21, steps=1)
+    for u0 in (BAND[0] + 0.05, BAND[1] - 0.15):
+        patch(fb, D, u0, u0 + 0.1, t0, t1, 1.022, YEL_D, n=21, steps=1)
 
 
 def hatch(fb):
@@ -182,8 +176,8 @@ def laser(f, down, lit):
 
 def greeble(f):
     _g("greeble")
-    f.vcyl(-0.45, 0, C + 0.66, 0.022, 0.3, "steelL", sides=6)              # antenna, on the centre line aft
-    f.box(-0.45, 0, C + 0.96, 0.05, 0.05, 0.04, "red")
+    f.vcyl(-0.45, 0, C + 0.8, 0.022, 0.3, "steelL", sides=6)               # antenna, on the centre line aft
+    f.box(-0.45, 0, C + 1.1, 0.05, 0.05, 0.04, "red")
 
 
 def pod(heading, state="parked", bob=0.0, dz=0.0):
