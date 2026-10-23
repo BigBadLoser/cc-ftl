@@ -196,7 +196,7 @@ def heap(k, fill, ore, rng):
 
     o = C.ORES[ore]
     a = S - T - 0.02
-    nu, nv = max(8, round(2 * a / 0.11)), 14
+    nu, nv = max(6, round(2 * a / 0.13)), 12
 
     def at(i, j, jit=True):
         u = -a + 2 * a * i / nu
@@ -209,24 +209,24 @@ def heap(k, fill, ore, rng):
             z = level + rise * (1 - r * r)
         inner = 0 < i < nu and 0 < j < nv
         if jit and inner:
-            u, v, z = u + rng.uniform(-0.02, 0.02), v + rng.uniform(-0.02, 0.02), z + rng.uniform(-0.04, 0.04)
+            u, v, z = u + rng.uniform(-0.03, 0.03), v + rng.uniform(-0.03, 0.03), z + rng.uniform(-0.06, 0.06)
         return (u, v, max(z, _arc(v, ROCK_R - T) + 0.03))
     P = {(i, j): at(i, j) for i in range(nu + 1) for j in range(nv + 1)}
 
-    def face():
-        if o["glow"] and rng.random() < 0.04:
-            return o["glow"][0]
-        return o["faces"][rng.integers(len(o["faces"]))]
+    def face():                                                            # the bed: dark, so the chunks stand out
+        return o["bed"][rng.integers(len(o["bed"]))]
+    tones = [c for pair in o["chunk"] for c in pair] + list(o["faces"])
     for i in range(nu):
         for j in range(nv):
             p, q, r_, s_ = P[i, j], P[i + 1, j], P[i + 1, j + 1], P[i, j + 1]
             C._poly(k, [p, q, r_], face())
             C._poly(k, [p, r_, s_], face())
-    for _ in range(int(46 * S)):
-        u, v, z = at(rng.uniform(0.6, nu - 0.6), rng.uniform(0.6, nv - 0.6), jit=False)
-        r = rng.uniform(0.045, 0.1)
-        C._lump(k, (u, v, z + 0.01), (rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4), 1), r, r * rng.uniform(0.6, 1.1),
-                o["chunk"][rng.integers(len(o["chunk"]))], rng)
+    for _ in range(int(95 * S)):                                            # rocks: big, blocky, one tone each
+        u, v, z = at(rng.uniform(0.5, nu - 0.5), rng.uniform(0.5, nv - 0.5), jit=False)
+        r = rng.uniform(0.06, 0.13)
+        glint = o["glow"] and rng.random() < 0.08
+        col = o["glow"][0] if glint else tones[rng.integers(len(tones))]
+        C._rock(k, (u, v, z), r, r * rng.uniform(0.7, 1.1), col, rng)
 
 
 def base(k, w):

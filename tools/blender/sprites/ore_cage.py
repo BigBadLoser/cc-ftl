@@ -32,9 +32,9 @@ EDGE = 0.06                   # the frame's inset from the footprint edge
 HEAP = {"empty": None, "fill1": (0.2, 0.32), "fill2": (0.5, 0.24), "full": (0.86, 0.36)}
 # ore -> faces of the heap (weighted), glow faces (a few), chunk two-tones
 ORES = {
-    "iron": dict(faces=("orM", "orD", "rkD", "rkM", "orD", "or", "rk"), glow=(), chunk=(("orM", "orD"), ("rkM", "rkD"), ("or", "orM"))),
-    "ice": dict(faces=("icM", "ic", "icD", "icL", "icM", "rkM"), glow=("icG",), chunk=(("icL", "ic"), ("ic", "icD"), ("icM", "icD"))),
-    "rare": dict(faces=("rkD", "rkM", "rvD", "rk", "rvM", "rkD"), glow=("rvG",), chunk=(("rvM", "rvD"), ("rkM", "rkD"), ("rk", "rkD"))),
+    "iron": dict(bed=("rkD", "orD", "rkK"), faces=("orM", "orD", "rkD", "rkM", "orD", "or", "rk"), glow=(), chunk=(("orM", "orD"), ("rkM", "rkD"), ("or", "orM"))),
+    "ice": dict(bed=("icD", "icM", "rkD"), faces=("icM", "ic", "icD", "icL", "icM", "rkM"), glow=("icG",), chunk=(("icL", "ic"), ("ic", "icD"), ("icM", "icD"))),
+    "rare": dict(bed=("rkD", "rvD", "rkK"), faces=("rkD", "rkM", "rvD", "rk", "rvM", "rkD"), glow=("rvG",), chunk=(("rvM", "rvD"), ("rkM", "rkD"), ("rk", "rkD"))),
     # scrap: the heap's bed under the pieces (scrap.py), dark and rusty
     "scrap": dict(faces=("grime", "steelD", "grime", "rustD", "gmD", "dark"), glow=(), chunk=(("steel", "steelD"), ("rust", "rustD"))),
 }
@@ -255,8 +255,9 @@ def chute(k, b):
         k.box(s_ * (w0 - 0.04), v1 - 0.05, 0.0, 0.12, 0.12, 0.025, "steelD", top="steel")
 
 
-def _lump(k, c, axis, r, L, cols, rng, sides=5):
-    """A chunk: an irregular cone of `sides` faces about axis, its base sunk into the heap."""
+def _lump(k, c, axis, r, L, cols, rng, sides=5, mono=False):
+    """A chunk: an irregular cone of `sides` faces about axis, its base sunk into the heap. mono: one colour all round,
+    so the light alone shapes it."""
     a = Vector(axis).normalized()
     t = a.cross(Vector((0, 0, 1)) if abs(a.z) < 0.9 else Vector((1, 0, 0))).normalized()
     s = a.cross(t)
@@ -266,7 +267,26 @@ def _lump(k, c, axis, r, L, cols, rng, sides=5):
     tip = c + a * L + (t * rng.uniform(-0.3, 0.3) + s * rng.uniform(-0.3, 0.3)) * r
     for i in range(sides):
         p, q = ring[i], ring[(i + 1) % sides]
-        _poly(k, [tuple(p), tuple(q), tuple(tip)], cols[i % 2] if rng.random() < 0.8 else cols[1 - i % 2])
+        _poly(k, [tuple(p), tuple(q), tuple(tip)], cols[0] if mono else (cols[i % 2] if rng.random() < 0.8 else cols[1 - i % 2]))
+
+
+def _rock(k, c, r, h, col, rng, sides=6):
+    """A blocky rock of one tone: three jittered rings (base, shoulder, crown) and a domed top, its base sunk."""
+    c = Vector(c)
+    a0 = rng.uniform(0, math.tau)
+    rings = []
+    for f, zf in ((1.0, -0.25), (0.92, 0.45), (0.55, 0.9)):
+        rings.append([c + Vector((math.cos(a0 + i * math.tau / sides + rng.uniform(-0.2, 0.2)) * r * f * rng.uniform(0.8, 1.15),
+                                  math.sin(a0 + i * math.tau / sides + rng.uniform(-0.2, 0.2)) * r * f * rng.uniform(0.8, 1.15),
+                                  h * zf + rng.uniform(-0.15, 0.15) * h)) for i in range(sides)])
+    for lo, hi in zip(rings, rings[1:]):
+        for i in range(sides):
+            j = (i + 1) % sides
+            _poly(k, [tuple(lo[i]), tuple(lo[j]), tuple(hi[j])], col)
+            _poly(k, [tuple(lo[i]), tuple(hi[j]), tuple(hi[i])], col)
+    top = sum(rings[-1], Vector()) / sides + Vector((rng.uniform(-0.2, 0.2) * r, rng.uniform(-0.2, 0.2) * r, 0.1 * h))
+    for i in range(sides):
+        _poly(k, [tuple(rings[-1][i]), tuple(rings[-1][(i + 1) % sides]), tuple(top)], col)
 
 
 class Heap:
