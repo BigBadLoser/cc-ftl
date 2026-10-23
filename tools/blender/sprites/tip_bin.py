@@ -21,7 +21,7 @@ ROCK_C, ROCK_R = (-0.1, 1.52), 1.2       # the bottom arc's centre (v, z) and ra
 FRONT_B = 0.6                            # v where the sloped front meets the bottom
 PIVOT = (0.52, 0.36)                     # the front axle (v, z)
 RAM = ((-0.82, 0.24), (-0.42, 0.86))     # ram foot and the lug it pushes (v, z), outside the sides
-RAM_U = S + 0.15
+RAM_U = S + 0.13
 KNUCKLES = 3                             # hinge knuckles along the axle
 RIB, FL = 0.055, 0.16                    # rib depth (flush with the flange's face), the flange's width
 HOOPS = (-0.45, 0.0, 0.42)
@@ -231,7 +231,7 @@ def heap(k, fill, ore, rng):
 
 def base(k, w):
     for s in (-1, 1):
-        channel(k, (s * (S + 0.04), -0.92), (s * (S + 0.04), 0.92), s)
+        channel(k, (s * (S + 0.04), -0.92), (s * (S + 0.04), 0.92), s, F=0.17)  # wide enough for the brackets
         for v in (-0.84, 0.84):                                             # foot plates
             k.box(s * (S + 0.08), v, 0.0, 0.2, 0.16, 0.02, "steelD", top="steel")
     for v in (-0.8, 0.62):
@@ -283,7 +283,7 @@ def _width(w):
     """Size the bin across its width (u) for a footprint w tiles wide: the profile along v stays the same."""
     global S, RAM_U, KNUCKLES
     S = w / 2 - 0.24
-    RAM_U = S + 0.15
+    RAM_U = S + 0.13
     KNUCKLES = 3 if w < 3 else 5
 
 
