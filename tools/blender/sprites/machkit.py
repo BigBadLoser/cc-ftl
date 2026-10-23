@@ -19,25 +19,32 @@ AX = {"+u": ((0, 1), (1, 0)), "-u": ((0, 1), (-1, 0)), "+v": ((1, 0), (0, 1)), "
 
 
 def _oct(u0, u1, v0, v1, c):
-    return [(u0 + c, v0), (u1 - c, v0), (u1, v0 + c), (u1, v1 - c), (u1 - c, v1), (u0 + c, v1), (u0, v1 - c), (u0, v0 + c)]
+    """Eight corners going round; c = chamfer per corner (u0v0, u1v0, u1v1, u0v1)."""
+    a, b, d, e = c
+    return [(u0 + a, v0), (u1 - b, v0), (u1, v0 + b), (u1, v1 - d), (u1 - d, v1), (u0 + e, v1), (u0, v1 - e), (u0, v0 + a)]
 
 
 def hull(k, u0, u1, v0, v1, z0, z1, cv=0.16, ct=0.1, side=BODY, bevel=TRIM, top=BODY_L, corner=TRIM):
-    """A housing with chamfered vertical corners (cv) and top edges (ct); the corner chamfers in `corner` (armour)."""
+    """A housing with chamfered vertical corners and bevelled top edges; the corner chamfers in `corner` (armour).
+    cv: per corner (u0v0, u1v0, u1v1, u0v1) or one for all; ct: per side (-v, +u, +v, -u) or one for all. Blocks that
+    meet flush take 0 on the corners and sides where they join."""
+    cv = (cv,) * 4 if isinstance(cv, (int, float)) else cv
+    ct = (ct,) * 4 if isinstance(ct, (int, float)) else ct
     lo = _oct(u0, u1, v0, v1, cv)
-    hi = _oct(u0 + ct, u1 - ct, v0 + ct, v1 - ct, max(0.0, cv - ct * 0.42))
+    m = max(ct)
+    hi = _oct(u0 + ct[3], u1 - ct[1], v0 + ct[0], v1 - ct[2], [max(0.0, c - m * 0.42) for c in cv])
     c = Vector(((u0 + u1) / 2, (v0 + v1) / 2, 0))
-    zm = z1 - ct
+    zm = z1 - m
     for i in range(8):
         j = (i + 1) % 8
-        if math.dist(lo[i], lo[j]) < 1e-6:
-            continue
         out = Vector(((lo[i][0] + lo[j][0]) / 2, (lo[i][1] + lo[j][1]) / 2, 0)) - c
         armour = corner and i % 2 == 1                                      # odd edges are the corner chamfers
-        face(k, [(*lo[i], z0), (*lo[j], z0), (*lo[j], zm), (*lo[i], zm)], out, corner if armour else side)
-        if ct > 0:
+        if math.dist(lo[i], lo[j]) > 1e-6:
+            face(k, [(*lo[i], z0), (*lo[j], z0), (*lo[j], zm), (*lo[i], zm)], out, corner if armour else side)
+        if m > 0 and (math.dist(lo[i], lo[j]) > 1e-6 or math.dist(hi[i], hi[j]) > 1e-6):
+            flat = i % 2 == 0 and ct[i // 2] == 0                           # a side meeting a neighbour: no bevel
             face(k, [(*lo[i], zm), (*lo[j], zm), (*hi[j], z1), (*hi[i], z1)], out.normalized() + Vector((0, 0, 1)),
-                 corner if armour else bevel)
+                 side if flat else (corner if armour else bevel))
     face(k, [(*p, z1) for p in hi], (0, 0, 1), top)
 
 
