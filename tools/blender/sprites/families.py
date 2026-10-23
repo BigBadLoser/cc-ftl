@@ -20,6 +20,7 @@
   rockwall  finished rock walls: dressed stone, the metal wall set mirrored piece for piece (rockwall.py)
   pod_bay   the mining pod's 3x3 bay (pit, iris, clamp arms) and the pod parked in it, 4 rotations (pod_family.py)
   mining_pod the mining pod: 8 fly headings, 8 mining headings x 2 frames, 4 docked poses (pod_family.py craft_jobs)
+  fx_mining the mining laser's beam segment, its hit on the rock, rock chips, the dust of a tile mined out (fx_mining.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -84,10 +85,14 @@ def jobs(name):
     if name == "mining_pod":
         from . import pod_family
         return pod_family.craft_jobs(), True
+    if name == "fx_mining":
+        from . import fx_mining
+        return fx_mining.SPRITES, True
     raise KeyError(name)
 
 
 # `structure` is preview-only (no full build yet): build it by name, it is not part of `all`.
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
-            "fx", "galley", "derelict", "eggsac", "rock", "rockwall", "pod_bay", "mining_pod")
+            "fx", "galley", "derelict", "eggsac", "rock", "rockwall", "pod_bay", "mining_pod",
+            "fx_mining")
 ALL = RENDERED + ("sol",)
