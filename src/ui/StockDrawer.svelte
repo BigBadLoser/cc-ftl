@@ -34,5 +34,5 @@
   .nm { display: flex; align-items: center; gap: 6px; text-align: left; }
   li.none { opacity: 0.45; }
   li > span:not(.nm) { color: var(--dim); }
-  @media (max-width: 600px) { aside { top: calc(var(--hdr) + var(--sat)); bottom: auto; left: 8px; right: 8px; width: auto; transform: none; border-radius: 10px; border-width: 1px; padding: 10px; } }
+  @media (max-width: 600px) { aside { top: calc(var(--hdr) + var(--sat)); bottom: auto; left: 8px; right: 8px; width: auto; transform: none; border-radius: 0; border-width: 1px; padding: 10px; } }
 </style>

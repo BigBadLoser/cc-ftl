@@ -21,6 +21,7 @@
     "pixel-lab:build": "vite build -c spikes/pixel-lab/vite.config.ts && node spikes/pixel-lab/post.mjs"
   },
   "dependencies": {
+    "bits-ui": "2.20.1",
     "pixi.js": "^8.9.2",
     "svelte": "^5.57.2"
   },
