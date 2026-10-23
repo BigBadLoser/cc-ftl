@@ -49,7 +49,7 @@ describe('mining tile picks', () => {
     sim.world.get(pod, BodyC)!.y = 6;
     expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: 11.5, y: 9.5 });
     // Rock on all four diagonals of the end tile (10, 10): fill them and the west neighbour is the only open spot left near.
-    for (const [x, y] of [[9, 9], [11, 9], [9, 11], [11, 11]]) sim.sector.grid.set('struct', x, y, Struct.Rock);
+    for (const [x, y] of [[9, 9], [11, 9], [9, 11], [11, 11]] as [number, number][]) sim.sector.grid.set('struct', x, y, Struct.Rock);
     const o = hoverSpot(sim, pod, { x: 10, y: 10 }, 2.6);
     expect([[10.5, 9.5], [10.5, 11.5], [9.5, 10.5]].some(([x, y]) => o.x === x && o.y === y)).toBe(true);
     void asteroid;
