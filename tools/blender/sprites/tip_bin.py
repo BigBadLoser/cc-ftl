@@ -1,5 +1,5 @@
 """TIP BIN (option A to the ore cage): a hydraulic tipping skip. A shelled plate body in hazard yellow (outer skin, inner
-skin scraped to bare steel, a thick flange round the open top): its sides a profile with a vertical back, a front
+skin a shade darker, a thick flange round the open top): its sides a profile with a vertical back, a front
 sloped out to the tipping lip and a curved bottom. It rests on a cradle beam and pivots on an axle through brackets at
 the front; two hydraulic rams on the outside of the sides push on lugs at the back to tip it over the lip. The base: a
 skid frame of channel rails and cross members. Local frame: modkit.K (front = +v, the lip)."""
@@ -89,21 +89,16 @@ def body(k, w):
     pr = profile()
     ip = inset(pr, T)
     yel = lambda u, v, z: w(YEL, u, v, z)                                  # noqa: E731
-    bare = lambda u, v, z: w("steel", u, v, z + 0.3)                        # noqa: E731
+    inside = lambda u, v, z: w(YEL_D, u, v, z + 0.3)                        # noqa: E731
     for s in (-1, 1):
         out = [(s * S, v, z) for v, z in pr]
         inn = [(s * (S - T), v, z) for v, z in ip]
-        C._poly(k, out if s > 0 else out[::-1], yel(s * S, 0.0, 0.7))      # outer side plate
-        C._poly(k, inn[::-1] if s > 0 else inn, "steelD")                   # its inner face
+        C._poly(k, out if s > 0 else out[::-1], YEL)                        # outer side plate
+        C._poly(k, inn[::-1] if s > 0 else inn, YEL_D)                      # its inner face
     _skin(k, pr, S, yel)
-    _skin(k, ip, S - T, bare, inward=True)
+    _skin(k, ip, S - T, inside, inward=True)
     # the top flange, thick enough to cover the shell's edge: across the back and the lip, along the sloped sides
-    k.box(0, BACK - RIB + FL / 2, TOP_B - 0.07, 2 * S + 0.11, FL, 0.1, w(YEL_D, 0, BACK, TOP_B), top=w(YEL_L, 0, BACK, 1.3))
-    k.box(0, LIP - 0.01, TOP_F - 0.07, 2 * S + 0.11, 0.12, 0.1, w(YEL_D, 0, LIP, TOP_F), top=w(YEL_L, 0, LIP, 1.3))
-    L = math.hypot(LIP - BACK, TOP_F - TOP_B)
-    for s in (-1, 1):
-        k.box(s * (S + RIB - FL / 2), (BACK + LIP) / 2, (TOP_B + TOP_F) / 2 - 0.07, FL, L, 0.1, w(YEL_D, s, 0, 1.0),
-              top=w(YEL_L, s, 0.3, 1.3), rx=math.atan2(TOP_F - TOP_B, LIP - BACK))
+    flange(k)
     for v in HOOPS:
         hoop(k, w, v)
     for u in (-0.4, 0.0, 0.4):
@@ -115,6 +110,23 @@ def body(k, w):
                      ((-0.12, RAM[1][1] + 0.12), (0.1, RAM[1][1] + 0.12), (0.06, RAM[1][1] - 0.08), (-0.08, RAM[1][1] - 0.08))],
                  (1, 0, 0), 0.025, "steelD")
         tube(k, (s * (S + 0.08), *RAM[1]), (s * (RAM_U + 0.08), *RAM[1]), 0.03, "steelL", sides=6)
+
+
+def flange(k):
+    """One continuous rim round the open top, mitred at the corners, following the sloped top edge; its outer face flush
+    with the ribs."""
+    o = [(-S - RIB, BACK - RIB), (S + RIB, BACK - RIB), (S + RIB, LIP + RIB), (-S - RIB, LIP + RIB)]
+    i = [(u - math.copysign(FL, u), v - math.copysign(FL, v - (BACK + LIP) / 2)) for u, v in o]
+    top = lambda p, dz=0.03: Vector((p[0], p[1], top_z(p[1]) + dz))       # noqa: E731
+    bot = lambda p: top(p, -0.07)                                          # noqa: E731
+    c = Vector((0, (BACK + LIP) / 2, 0))
+    for a in range(4):
+        b = (a + 1) % 4
+        mid = Vector(((o[a][0] + o[b][0]) / 2, (o[a][1] + o[b][1]) / 2, 0)) - c
+        _face(k, [top(o[a]), top(o[b]), top(i[b]), top(i[a])], (0, 0, 1), YEL_L)
+        _face(k, [top(o[a]), top(o[b]), bot(o[b]), bot(o[a])], mid, YEL)
+        _face(k, [top(i[a]), top(i[b]), bot(i[b]), bot(i[a])], -mid, YEL_D)
+        _face(k, [bot(o[a]), bot(o[b]), bot(i[b]), bot(i[a])], (0, 0, -1), YEL_D)
 
 
 def top_z(v):
@@ -139,7 +151,7 @@ def hoop(k, w, v):
                (Vector((s * S, v, zb)), corner, 1 / corner.dot(side))]
         pts += run if s > 0 else run[::-1]
     pts = pts[:3] + [(Vector((0, v, zb)), nb, 1.0)] + pts[3:]
-    strip(k, pts, RIB, 0.08, w(YEL_D, 0, v, 0.5))
+    strip(k, pts, RIB, 0.08, YEL)
 
 
 def back_rib(k, w, u):
@@ -151,7 +163,7 @@ def back_rib(k, w, u):
            (Vector((u, BACK, zb)), corner, 1 / corner.dot(back))]
     for i, v in enumerate((-0.68, -0.56, -0.44)):
         pts.append((Vector((u, v, _arc(v))), _arc_n(v), 1.0 - 0.3 * (i + 1)))
-    strip(k, pts, RIB, 0.08, w(YEL_D, u, BACK, 0.5), b=Vector((1, 0, 0)))
+    strip(k, pts, RIB, 0.08, YEL, b=Vector((1, 0, 0)))
 
 
 def _face(k, pts, want, col):
