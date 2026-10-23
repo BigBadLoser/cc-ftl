@@ -16,12 +16,14 @@ import math
 
 from . import core
 from .shuttle_bay import lbox
-from .shuttle_craft import Spin, _g, profile, smooth, station, sweep
+from .shuttle_craft import Spin, _g, profile, smooth, station
 
 C = 1.18                      # the body's axis height above the pad (parked, on the bell)
 R = 0.86                      # the hull's radius: the band's, and each half-dome's
 BAND = (-0.47, 0.47)          # the drum's flat sides (along the pod's v); everything mirrors about v = 0
 DRUM_R = 0.95                 # the drum's radius: it stands this much proud of the domes (R) all round
+FLAT = 0.74                   # the back is cut flat this far behind the centre (drum, plates and domes alike)
+REAR = (C + 0.02, 0.2, 0.3)   # the rear thruster on the flat back: centre z, throat and mouth radius
 DOME_C = 0.235                # each half-dome's centre, out from the middle (0: the whole ball; the ribs: split wide)
 HATCH_END = 0.6               # the domes end where the hull's radius is this, under the hatch rings
 
@@ -49,11 +51,26 @@ GLOW = "cyan"
 BEAM = "orange"
 
 
+def loft(f, stations, prof, mat, cap0=None, cap1=None, closed=True, flat=FLAT):
+    """shuttle_craft.sweep with the back cut flat: no point stands further than `flat` along the body frame's +v (the
+    pod's -u, its back)."""
+    rings = [[f.pt(u, min(v0 + pv * sv, flat), z0 + pz * sz) for pv, pz in prof] for u, sv, sz, v0, z0 in stations]
+    n = len(prof)
+    for A, B in zip(rings, rings[1:]):
+        for i in range(n if closed else n - 1):
+            j = (i + 1) % n
+            f.poly([A[i], A[j], B[j], B[i]], mat, flip=True)
+    if cap0:
+        f.poly(rings[0], cap0, flip=True)
+    if cap1:
+        f.poly(rings[-1][::-1], cap1, flip=True)
+
+
 def patch(f, body, u0, u1, t0, t1, k, mat, n=9, steps=4):
     """A panel lying on the hull: the arc t0..t1 (degrees) of its round section, scaled by k, over u0..u1 (as
     shuttle_craft.patch, but on the hull's own circle, not the shuttle's rounded square)."""
     us = [u0 + (u1 - u0) * i / steps for i in range(steps + 1)]
-    sweep(f, [station(body, u, k) for u in us], profile(t0, t1, n, p=2.0), mat, closed=False)
+    loft(f, [station(body, u, k) for u in us], profile(t0, t1, n, p=2.0), mat, closed=False, flat=FLAT + (k - 1) * DRUM_R)
 
 
 def strut(f, p0, p1, w, mat):
@@ -74,10 +91,10 @@ def body(fb):
     a little bigger than them with flat dark sides, so it stands out of the domes by DRUM_R - R all round."""
     _g("hull")
     B = [(u, r, r, 0, C) for u, r in BALL]
-    sweep(fb, B, SECTION, HULL, cap0=HULL_D)
+    loft(fb, B, SECTION, HULL, cap0=HULL_D)
     _g("drum")
     D = [(u, DRUM_R, DRUM_R, 0, C) for u in BAND]
-    sweep(fb, D, SECTION, HULL, cap0="steelD", cap1="steelD")               # the drum and its flat sides
+    loft(fb, D, SECTION, HULL, cap0="steelD", cap1="steelD")                # the drum and its flat sides
     patch(fb, D, BAND[0], BAND[1], 200, 340, 1.006, HULL_D, n=9, steps=2)   # its shaded underside
     patch(fb, D, -0.28, 0.28, 235, 305, 1.012, "grime", n=5, steps=2)
     _g("plates")
@@ -138,6 +155,22 @@ def windshield(f):
     f.box((u0 + ub) / 2, 0, zt, ub - u0, 2 * hw + 0.04, 0.035, YEL)
 
 
+def rear_thruster(f, lit):
+    """A second, smaller thruster on the flat back for forward thrust: a mounting plate, a flared bell, lip lit in flight."""
+    _g("rear")
+    z, rt, rm = REAR
+    ub = -FLAT - 0.03                                                        # the face, over the armour plate
+    f.box(ub + 0.015, 0, z, 0.03, 0.62, 0.62, HULL_D, base=False)              # mounting plate
+    f.hcyl(ub, ub - 0.08, 0, z, rt + 0.08, "steelD", sides=20, capstart="steelD")   # collar
+    f.hcyl(ub - 0.08, ub - 0.34, 0, z, rt, "steelD", r1=rm, sides=20)                   # the bell
+    f.hcyl(ub - 0.33, ub - 0.35, 0, z, rm + 0.01, GLOW if lit else "steel", sides=20, cap="dark")   # its lip, the mouth
+    if lit:
+        f.hcyl(ub - 0.3, ub - 0.352, 0, z, rm * 0.5, GLOW, sides=16, cap="arc")      # the burning core, deep in it
+    for k in range(4):                                                       # bolts on the plate
+        a = k * math.tau / 4 + math.pi / 4
+        f.box(ub - 0.004, 0.25 * math.cos(a), z + 0.25 * math.sin(a), 0.02, 0.05, 0.05, "steelL", base=False)
+
+
 def thruster(f, lit):
     """The big main thruster under the body: a housing, a flared bell with gimbal struts, a lip lit in flight."""
     _g("thruster")
@@ -190,6 +223,7 @@ def pod(heading, state="parked", bob=0.0, dz=0.0):
     hatch(Spin(m, heading - math.pi / 2))                                    # the same hatch on the other end
     windshield(f)
     thruster(f, state in ("fly", "mine"))
+    rear_thruster(f, state in ("fly", "mine"))
     laser(f, state == "mine", state == "mine")
     greeble(f)
     return [smooth(m.build())]
