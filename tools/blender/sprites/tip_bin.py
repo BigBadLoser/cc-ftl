@@ -22,6 +22,7 @@ FRONT_B = 0.6                            # v where the sloped front meets the bo
 PIVOT = (0.52, 0.36)                     # the front axle (v, z)
 RAM = ((-0.82, 0.24), (-0.42, 0.86))     # ram foot and the lug it pushes (v, z), outside the sides
 RAM_U = S + 0.15
+KNUCKLES = 3                             # hinge knuckles along the axle
 RIB, FL = 0.055, 0.16                    # rib depth (flush with the flange's face), the flange's width
 HOOPS = (-0.45, 0.0, 0.42)
 
@@ -240,7 +241,7 @@ def base(k, w):
         k.box(u, -0.1, 0.2, 0.22, 0.16, 0.09, "steelD", top="steel")
         k.box(u, -0.1, 0.29, 0.2, 0.14, _arc(-0.1) - 0.29, "dark")
     tube(k, (-RAM_U - 0.07, PIVOT[0], PIVOT[1]), (RAM_U + 0.07, PIVOT[0], PIVOT[1]), 0.04, "steelL", cap="steelD")
-    for u in _spread(S - 0.2, 0.45):                                        # hinge knuckles under the bin
+    for u in _spread(S - 0.2, n=KNUCKLES):                                  # hinge knuckles under the bin
         tube(k, (u - 0.07, PIVOT[0], PIVOT[1]), (u + 0.07, PIVOT[0], PIVOT[1]), 0.07, "steelD", sides=10)
         k.box(u, PIVOT[0], PIVOT[1], 0.14, 0.08, _arc(PIVOT[0]) - PIVOT[1] + 0.03, "steelD")
     pv, pz = PIVOT
@@ -272,17 +273,18 @@ def base(k, w):
     tube(k, (-0.2, -0.8, 0.3), (-0.06, -0.8, 0.3), 0.07, "steelD", sides=10, cap="dark")
 
 
-def _spread(half, pitch):
-    """Evenly spaced positions across -half .. half, about `pitch` apart."""
-    n = max(1, round(2 * half / pitch))
+def _spread(half, pitch=None, n=None):
+    """Evenly spaced positions across -half .. half: n of them, or about `pitch` apart."""
+    n = n - 1 if n else max(1, round(2 * half / pitch))
     return [-half + 2 * half * i / n for i in range(n + 1)]
 
 
 def _width(w):
     """Size the bin across its width (u) for a footprint w tiles wide: the profile along v stays the same."""
-    global S, RAM_U
+    global S, RAM_U, KNUCKLES
     S = w / 2 - 0.24
     RAM_U = S + 0.15
+    KNUCKLES = 3 if w < 3 else 5
 
 
 def tip_bin(fp, fill, rot, ore="iron"):
@@ -293,7 +295,7 @@ def tip_bin(fp, fill, rot, ore="iron"):
     base(k, w)
     n0 = len(k.m.f)
     body(k, w)
-    grime(k, n0, len(k.m.f), Vector((0, (BACK + LIP) / 2, 0.75)), top_z)
+    grime(k, n0, len(k.m.f), Vector((0, (BACK + LIP) / 2, 0.75)), top_z, lip=LIP)
     rng = np.random.default_rng(11 + C.FILLS.index(fill))
     if C.HEAP[fill]:
         heap(k, fill, ore, rng)

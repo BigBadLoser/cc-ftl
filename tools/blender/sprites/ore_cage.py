@@ -25,7 +25,7 @@ BASE = 0.16                   # top of the base frame
 MID = (0.64, 0.71)            # the mid rail
 RAIL = 0.12                   # the top rail's depth
 BAR_R, BAR_PITCH = 0.022, 0.13
-CHUTE = 0.24                  # the drop chute's reach out of the front wall
+CHUTE = 0.32                  # the drop chute's reach out of the front wall
 EDGE = 0.06                   # the frame's inset from the footprint edge
 # fill -> (level at the walls, rise to the middle); the heap's surface between
 HEAP = {"empty": None, "fill1": (0.2, 0.32), "fill2": (0.5, 0.24), "full": (0.86, 0.36)}
@@ -206,15 +206,48 @@ def frame(k, b, drop=0):
 
 
 def chute(k, b):
-    """The drop chute on the front wall: a housing, a slide gate striped across, its lever."""
-    v0, v1, w = b.v1, b.v1 + CHUTE, 0.56
-    k.box(0, (v0 + v1) / 2, 0.0, w, CHUTE, 0.12, "steelD", top="steel")                 # foot
-    for s in (-1, 1):                                                                    # cheeks
-        k.box(s * (w / 2 - 0.03), (v0 + v1) / 2, 0.12, 0.06, CHUTE, 0.42, "steel", top="steelL")
-    k.box(0, (v0 + v1) / 2 - 0.03, 0.5, w, CHUTE + 0.06, 0.05, "steelD", top="steel", rx=-0.32)   # sloped hood
-    for i in range(4):                                                                   # slide gate
-        k.box(0, v1 - 0.03, 0.14 + i * 0.085, w - 0.12, 0.03, 0.085, ("hazY", "hazK")[i % 2])
-    k.box(w / 2 + 0.03, v1 - 0.05, 0.12, 0.05, 0.05, 0.36, "steelD", top="hazY")       # lever
+    """The drop chute on the front wall: a spout sloping down and out of a bolted flange round the wall opening, a slide
+    gate in guide rails across its mouth (stripes, a pull handle), a lever to lift it, legs under the mouth."""
+    from .steelkit import face, tube
+    from .tip_bin_wear import _clip
+    w0, v0, v1 = 0.24, b.v1 + 0.025, b.v1 + CHUTE - 0.03
+    zb, zt = (0.3, 0.17), (0.62, 0.48)                                       # spout floor and cover, wall .. mouth
+    for s_ in (-1, 1):                                                       # the flange round the opening
+        k.box(s_ * (w0 + 0.05), b.v1 + 0.015, BASE, 0.07, 0.03, zt[0] + 0.07 - BASE, "steelD", top="steel")
+    for z in (BASE, zt[0] + 0.02):
+        k.box(0, b.v1 + 0.015, z, 2 * w0 + 0.17, 0.03, 0.05, "steelD", top="steel")
+    for s_ in (-1, 1):                                                       # cheeks
+        slab(k, [(s_ * w0, v0, zb[0] - 0.05), (s_ * w0, v1, zb[1] - 0.05), (s_ * w0, v1, zt[1]), (s_ * w0, v0, zt[0])],
+             (1, 0, 0), 0.04, "steel", side="steelD")
+    for (za, zc), col, t in ((zb, "steelD", 0.03), (zt, "c4T3", 0.035)):    # floor and cover (painted)
+        nrm = (0, -(zc - za), v1 - v0)
+        slab(k, [(-w0, v0, za), (w0, v0, za), (w0, v1, zc), (-w0, v1, zc)], nrm, t, col, side="steelD")
+    for f in (0.35, 0.7):                                                    # ribs across the cover
+        v, z = v0 + (v1 - v0) * f, zt[0] + (zt[1] - zt[0]) * f
+        k.box(0, v, z, 2 * w0 + 0.06, 0.04, 0.04, "c4T4", top="c4T3")
+    g0, g1, vg = zb[1] - 0.07, zt[1] + 0.05, v1 + 0.012                      # the gate, shut
+    ug = w0 + 0.035
+    for s_ in (-1, 1):                                                       # its guides, either side of the mouth
+        k.box(s_ * ug, v1 + 0.005, g0 - 0.02, 0.05, 0.05, g1 - g0 + 0.06, "steelD", top="steel")
+    k.box(0, vg - 0.005, g0, 2 * w0, 0.02, g1 - g0, "hazK")
+    rect = [(-w0 + 0.01, g0 + 0.01), (w0 - 0.01, g0 + 0.01), (w0 - 0.01, g1 - 0.01), (-w0 + 0.01, g1 - 0.01)]
+    for i in range(-6, 8):                                                   # diagonal stripes
+        c = i * 0.14
+        band_ = [(c - 1.0, -1.0 + g0), (c + 0.07 - 1.0, -1.0 + g0), (c + 0.07 + 1.0, 1.0 + g0), (c + 1.0, 1.0 + g0)]
+        cut = _clip(band_, rect)
+        if cut:
+            face(k, [(u, vg + 0.007, z) for u, z in cut], (0, 1, 0), "hazY")
+    tube(k, (-0.1, vg + 0.04, g1 - 0.06), (0.1, vg + 0.04, g1 - 0.06), 0.014, "steelL", sides=6)   # pull handle
+    for s_ in (-0.1, 0.1):
+        k.box(s_, vg + 0.02, g1 - 0.075, 0.02, 0.04, 0.03, "steelD")
+    piv = (w0 + 0.02, (v0 + v1) / 2, (zb[0] + zt[0] + zb[1] + zt[1]) / 4)   # the lift lever, on the +u cheek
+    tube(k, (piv[0], piv[1], piv[2]), (piv[0] + 0.07, piv[1], piv[2]), 0.04, "steel", sides=8, cap="steelD")
+    end = (piv[0] + 0.07, piv[1] - 0.06, piv[2] + 0.26)
+    tube(k, (piv[0] + 0.06, piv[1], piv[2]), end, 0.02, "steelD", sides=6)
+    tube(k, end, (end[0], end[1] - 0.02, end[2] + 0.1), 0.03, "hazY", sides=6, cap="hazK")
+    for s_ in (-1, 1):                                                       # legs under the mouth
+        k.box(s_ * (w0 - 0.04), v1 - 0.05, 0.02, 0.05, 0.05, zb[1] - 0.07, "steelD", top="steel")
+        k.box(s_ * (w0 - 0.04), v1 - 0.05, 0.0, 0.12, 0.12, 0.025, "steelD", top="steel")
 
 
 def _lump(k, c, axis, r, L, cols, rng, sides=5):
@@ -292,19 +325,14 @@ class Heap:
                 _lump(k, c, out + Vector((0, 0, 0.3)), r, r * 0.8, o["chunk"][rng.integers(len(o["chunk"]))], rng)
 
 
-def spill(k, b, ore, n, seed, front=True):
-    """Loose chunks on the floor: inside the empty bin, and at the chute's mouth."""
+def spill(k, b, ore, n, seed):
+    """Loose chunks on the floor of the empty bin."""
     rng, o = np.random.default_rng(seed), ORES[ore]
     for _ in range(n):
         u = rng.uniform(b.u0 + 0.15, b.u1 - 0.15)
         v = rng.uniform(b.v0 + 0.15, b.v1 - 0.15)
         r = rng.uniform(0.04, 0.09)
         _lump(k, (u, v, 0.09), (0, 0, 1), r, r * 0.8, o["chunk"][rng.integers(len(o["chunk"]))], rng)
-    if front:
-        for _ in range(4):
-            r = rng.uniform(0.035, 0.06)
-            _lump(k, (rng.uniform(-0.3, 0.3), b.v1 + CHUTE + rng.uniform(-0.02, 0.04), 0.0), (0, 0, 1), r, r * 0.7,
-                  o["chunk"][rng.integers(len(o["chunk"]))], rng)
 
 
 def cage(fp, fill, rot, ore="iron", drop=0):
@@ -317,7 +345,6 @@ def cage(fp, fill, rot, ore="iron", drop=0):
     seed = {"iron": 11, "ice": 23, "rare": 37}[ore] + FILLS.index(fill)
     if HEAP[fill]:
         Heap(b, fill, seed).build(k, ore)
-        spill(k, b, ore, 0, seed)
     else:
-        spill(k, b, ore, 7, seed, front=False)
+        spill(k, b, ore, 7, seed)
     return k.build()

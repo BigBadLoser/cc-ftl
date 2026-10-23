@@ -72,9 +72,10 @@ def _s(x):
     return x * x * (3 - 2 * x)
 
 
-def grime(k, n0, n1, centre, top_z, seed=5, low_z=0.85, run_k=0.9, dust_k=1.0, run_col="rust"):
+def grime(k, n0, n1, centre, top_z, seed=5, low_z=0.85, run_k=0.9, dust_k=1.0, run_col="rust", lip=None):
     """Wear on faces n0 .. n1: centre (local) is a point inside the bin, top_z(v) its rim height. low_z: dust gathers
-    below it; run_k, dust_k: how strong the run-off and the dust are."""
+    below it; run_k, dust_k: how strong the run-off and the dust are; lip: the v of the front rim's face, which gets a
+    light touch of grime where the ore runs over it."""
     from lib import palette
     rust, dust, ore = (Vector(palette.linear(c)) for c in (run_col, "gdD", "rkD"))
     rng = np.random.default_rng(seed)
@@ -105,4 +106,6 @@ def grime(k, n0, n1, centre, top_z, seed=5, low_z=0.85, run_k=0.9, dust_k=1.0, r
             low = _s((low_z - c.z) / (low_z * 0.6))
             col = col.lerp(rust, min(0.8, run_k * run))
             col = col.lerp(dust, dust_k * min(0.8, 0.7 * low + 0.4 * _s((blot - 0.4) / 0.4)))
+            if lip is not None and c.y > lip - 0.02 and -0.05 < below < 0.12 and n.normalized().y > 0.6:
+                col = col.lerp(ore, 0.12 + 0.14 * (0.5 + 0.5 * math.sin(5.7 * c.x + 0.9) * math.sin(3.1 * c.x - 0.4)))
         k.m.f[i] = (idx, tuple(col), own, glow)
