@@ -32,10 +32,12 @@ def _oct(r, c):
 
 class Block:
     """A housing block on rect (u0, u1, v0, v1), h tall; `outer` its sides on the footprint's edge (leaning, bevelled).
-    armour: orange walls, else body walls with orange corners and trim. openings: [(side, s0, s1, z0, z1, depth)]."""
+    armour: orange walls, else body walls with orange corners and trim. cap: the orange bevel on every top edge, not
+    only the outer ones (for a block standing clear of its neighbours). openings: [(side, s0, s1, z0, z1, depth)]."""
 
-    def __init__(self, rect, h, outer, armour=False, top=TOP, openings=(), corner=0.3):
+    def __init__(self, rect, h, outer, armour=False, top=TOP, openings=(), corner=0.3, cap=False):
         self.r, self.h, self.outer, self.armour, self.top = rect, h, set(outer), armour, top
+        self.bev = set(SIDES) if cap else self.outer
         self.openings = list(openings)
         u0, u1, v0, v1 = rect
         cmax = 0.4 * min(u1 - u0, v1 - v0)
@@ -47,7 +49,7 @@ class Block:
 
     def rect_at(self, z, extra=0.0):
         u0, u1, v0, v1 = self.r
-        e = lambda s: (self.inset(s, z) + extra) if s in self.outer else 0.0   # noqa: E731
+        e = lambda s: self.inset(s, z) + (extra if s in self.bev else 0.0)    # noqa: E731
         return (u0 + e("-u"), u1 - e("+u"), v0 + e("-v"), v1 - e("+v"))
 
     def oct_at(self, z, extra=0.0):
@@ -63,8 +65,8 @@ class Block:
         return {"+u": Vector((1, 0, 0)), "-u": Vector((-1, 0, 0)), "+v": Vector((0, 1, 0)), "-v": Vector((0, -1, 0))}[side]
 
     def build(self, k):
-        zm = self.h - (CT if self.outer else 0.0)
-        lo, mid, hi = self.oct_at(0), self.oct_at(zm), self.oct_at(zm, CT if self.outer else 0.0)
+        zm = self.h - (CT if self.bev else 0.0)
+        lo, mid, hi = self.oct_at(0), self.oct_at(zm), self.oct_at(zm, CT if self.bev else 0.0)
         cen = Vector(((self.r[0] + self.r[1]) / 2, (self.r[2] + self.r[3]) / 2, 0))
         wall = ARM if self.armour else BODY
         for i in range(8):
@@ -77,7 +79,7 @@ class Block:
                 else:
                     face(k, [(*lo[i], 0), (*lo[j], 0), (*mid[j], zm), (*mid[i], zm)], out, ARM if side is None else wall)
             if zm < self.h and (math.dist(mid[i], mid[j]) > 1e-6 or math.dist(hi[i], hi[j]) > 1e-6):
-                bevel = side is None or side in self.outer
+                bevel = side is None or side in self.bev
                 face(k, [(*mid[i], zm), (*mid[j], zm), (*hi[j], self.h), (*hi[i], self.h)], out + Vector((0, 0, 1)),
                      ARM_L if bevel else wall)
         face(k, [(*p, self.h) for p in hi], (0, 0, 1), self.top)
@@ -244,14 +246,14 @@ def crucible(k, on):
     annulus(k, cu, cv, 1.22, 1.34, r + 0.05, r - 0.12, ARM)
     k.cyl(cu, cv, 1.27, r - 0.12, 0.04, GLOW if on else DARK, sides=26)
     k.cyl(cu, cv, 1.28, r - 0.28, 0.04, HOT if on else DARK, sides=22)
-    wing(k, on, -0.92, 0.82)
+    wing(k, on, -0.92, 1.02)
     crew_blocks(k, on, (-1.0, 0.0), 0.78, 0.66, 0.92)
-    Block((-0.92, 0.32, 0.72, V), 1.08, {"+v"}, top=DARK).build(k)             # the feed block, its hopper open
+    Block((-0.92, 0.32, 0.72, V), 1.08, {"+v"}, top=DARK, cap=True).build(k)             # the feed block, its hopper open
     for (u, v, su, sv) in ((-0.3, 0.91, 0.94, 0.08), (-0.3, 1.73, 0.94, 0.08), (-0.73, 1.32, 0.08, 0.9),
                            (0.13, 1.32, 0.08, 0.9)):                       # the hopper's coping
         k.box(u, v, 1.08, su, sv, 0.05, ARM, top=ARM_L)
     Block((-0.92, 0.32, -0.48, 0.72), 0.5, set()).build(k)                    # the well the pot stands in
-    Block((-0.92, 0.32, -V, -0.48), 0.96, {"-v"}, armour=True).build(k)        # the flue block
+    Block((-0.92, 0.32, -V, -0.48), 0.96, {"-v"}, armour=True, cap=True).build(k)        # the flue block
     stack(k, -0.3, -1.25, 0.96, 1.95, 0.24, on, collar_z=0.96, windows=False)
     pipe(k, [(cu, cv - r + 0.05, 1.08), (-0.3, -0.62, 1.08), (-0.3, -0.98, 1.08)], r=0.08)
     flange(k, (-0.3, -0.62, 1.08), (0, 1, 0), 0.11)
@@ -264,9 +266,9 @@ def stacks(k, on):
     heights = (0.98, 1.2, 0.86)
     for (v, hb) in zip((-1.1, 0.0, 1.1), heights):
         Block((-0.92, 0.32, v - 0.55, v + 0.55), hb, {"-v"} if v < 0 else ({"+v"} if v > 0 else set()),
-              armour=(v == 0.0)).build(k)
+              cap=True).build(k)
         stack(k, su, v, hb, hb + 0.78, 0.32, on, collar_z=hb)
-    wing(k, on, -0.92, 0.7)
+    wing(k, on, -0.92, 0.94)
     crew_blocks(k, on, (-0.55, 0.55), 0.74, 0.62, 0.82)
     hz = 1.62
     pipe(k, [(su - 0.34, -1.1, hz), (su - 0.42, -1.1, hz), (su - 0.42, 1.1, hz), (su - 0.34, 1.1, hz)], r=0.06)
@@ -285,11 +287,14 @@ def kiln(k, on):
         tube(k, (-0.3, v - 0.08, 0.6), (-0.3, v + 0.08, 0.6), 0.57, ARM, sides=26, cap=ARM_D)
     for v in (-0.25, 0.25):
         tube(k, (-0.3, v - 0.025, 0.6), (-0.3, v + 0.025, 0.6), 0.51, GLOW if on else REC, sides=26)
-    wing(k, on, -0.85, 0.86, vents=((-1.0, -0.2), (0.2, 1.0)))
+    wing(k, on, -0.85, 1.0, vents=((-1.0, -0.2), (0.2, 1.0)))
     crew_blocks(k, on, (-0.75, 0.75), 0.7, 0.6, 0.7)
-    Block((-0.85, 0.32, 1.2, V), 1.3, {"+v"}, armour=True).build(k)            # the intake hood
-    k.box(-0.27, 1.6, 1.29, 0.8, 0.5, 0.03, DARK)
-    Block((-0.85, 0.32, -V, -1.25), 1.18, {"-v"}).build(k)                     # the discharge hood
+    Block((-0.85, 0.32, 1.2, V), 1.3, {"+v"}, cap=True).build(k)               # the intake hood, its mouth coped
+    k.box(-0.27, 1.56, 1.29, 0.7, 0.46, 0.02, DARK)
+    for (u, v, su, sv) in ((-0.27, 1.3, 0.78, 0.06), (-0.27, 1.82, 0.78, 0.06), (-0.65, 1.56, 0.06, 0.58),
+                           (0.11, 1.56, 0.06, 0.58)):
+        k.box(u, v, 1.3, su, sv, 0.05, ARM, top=ARM_L)
+    Block((-0.85, 0.32, -V, -1.25), 1.18, {"-v"}, cap=True).build(k)                     # the discharge hood
     stack(k, -0.27, -1.6, 1.18, 1.9, 0.2, on, collar_z=1.18, windows=False)
 
 
