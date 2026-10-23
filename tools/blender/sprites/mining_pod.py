@@ -7,7 +7,8 @@ domes, with flat dark sides) carrying the armour plates, and
 the big round HATCH (a heavy ring round a red-lit door with lamps) closing each end. The nose (+u) carries a boxy
 WINDSHIELD that juts out of the hull, a big raked pane over a smaller lower one in dark glass. Underneath: one
 big thruster bell in a housing, which it rests on when parked; a big mining laser in a gimbal hung from the
-windshield's flat underside.
+windshield's flat underside, two grab arms behind hatch panels either side of it, and two work lamps on the windshield's
+lower corners. The back is cut flat and carries a wide, short rear thruster.
 Warm dark steel (c4F), industrial yellow accents (c4T).
 
 States: parked / docked (laser stowed, thruster dark), fly (thruster lit), mine (laser lowered, emitter lit; `bob` lifts
@@ -22,8 +23,10 @@ C = 1.18                      # the body's axis height above the pad (parked, on
 R = 0.86                      # the hull's radius: the band's, and each half-dome's
 BAND = (-0.47, 0.47)          # the drum's flat sides (along the pod's v); everything mirrors about v = 0
 DRUM_R = 0.95                 # the drum's radius: it stands this much proud of the domes (R) all round
-FLAT = 0.74                   # the back is cut flat this far behind the centre (drum, plates and domes alike)
-REAR = (C + 0.02, 0.2, 0.3)   # the rear thruster on the flat back: centre z, throat and mouth radius
+FLAT = 0.8                    # the back is cut flat this far behind the centre (drum, plates and domes alike)
+REAR = (C, 0.34, 0.42)        # the rear thruster on the flat back: centre z, throat and mouth radius (the flat is
+                              # the drum's width, +-0.47, across)
+ARM_V = 0.3                   # the grab arms, either side of the laser
 DOME_C = 0.235                # each half-dome's centre, out from the middle (0: the whole ball; the ribs: split wide)
 HATCH_END = 0.6               # the domes end where the hull's radius is this, under the hatch rings
 
@@ -155,20 +158,75 @@ def windshield(f):
     f.box((u0 + ub) / 2, 0, zt, ub - u0, 2 * hw + 0.04, 0.035, YEL)
 
 
+def ring(f, u, z, r0, r1, mat, sides=24):
+    """A flat annulus across u (facing -u) between radii r0 and r1, centred on the axis at height z."""
+    for i in range(sides):
+        a, b = i * math.tau / sides, (i + 1) * math.tau / sides
+        f.poly([f.pt(u, r0 * math.cos(a), z + r0 * math.sin(a)), f.pt(u, r1 * math.cos(a), z + r1 * math.sin(a)),
+                f.pt(u, r1 * math.cos(b), z + r1 * math.sin(b)), f.pt(u, r0 * math.cos(b), z + r0 * math.sin(b))],
+               mat, flip=True)
+
+
 def rear_thruster(f, lit):
-    """A second, smaller thruster on the flat back for forward thrust: a mounting plate, a flared bell, lip lit in flight."""
+    """A wide, short thruster on the flat back for forward thrust, open at the mouth: a bolted mounting plate, a collar,
+    a flared bell with a lip ring, its inner wall running in to a throat plate with the injector at its centre. Lit,
+    the inner wall and the injector burn."""
     _g("rear")
     z, rt, rm = REAR
     ub = -FLAT - 0.03                                                        # the face, over the armour plate
-    f.box(ub + 0.015, 0, z, 0.03, 0.62, 0.62, HULL_D, base=False)              # mounting plate
-    f.hcyl(ub, ub - 0.08, 0, z, rt + 0.08, "steelD", sides=20, capstart="steelD")   # collar
-    f.hcyl(ub - 0.08, ub - 0.34, 0, z, rt, "steelD", r1=rm, sides=20)                   # the bell
-    f.hcyl(ub - 0.33, ub - 0.35, 0, z, rm + 0.01, GLOW if lit else "steel", sides=20, cap="dark")   # its lip, the mouth
-    if lit:
-        f.hcyl(ub - 0.3, ub - 0.352, 0, z, rm * 0.5, GLOW, sides=16, cap="arc")      # the burning core, deep in it
-    for k in range(4):                                                       # bolts on the plate
+    um, ut = ub - 0.22, ub - 0.07                                            # mouth, throat
+    f.box(ub + 0.015, 0, z, 0.03, 0.92, 0.96, HULL_D, base=False)              # mounting plate
+    for k in range(4):                                                       # its bolts, in the corners
         a = k * math.tau / 4 + math.pi / 4
-        f.box(ub - 0.004, 0.25 * math.cos(a), z + 0.25 * math.sin(a), 0.02, 0.05, 0.05, "steelL", base=False)
+        f.box(ub - 0.004, 0.4 * math.cos(a), z + 0.42 * math.sin(a), 0.02, 0.05, 0.05, "steelL", base=False)
+    f.hcyl(ub, ut, 0, z, rt + 0.04, "steelD", sides=24)                       # collar
+    f.hcyl(ut, um, 0, z, rt, HULL_D, r1=rm, sides=24)                         # the bell, outside
+    ring(f, um, z, rm - 0.035, rm, "steelL")                                 # its lip
+    f.hcyl(um, ut, 0, z, rm - 0.035, GLOW if lit else "dark", r1=rt - 0.04, sides=24)   # the inner wall (facing in)
+    ring(f, ut, z, 0.0, rt - 0.04, "steelD")                                 # the throat plate
+    f.hcyl(ut, ut - 0.03, 0, z, 0.12, "steelD", sides=12, cap="arc" if lit else "dark")   # the injector
+
+
+def arms(f, out):
+    """Two grab arms in the drum's lower front, either side of the laser, each behind a hatch panel. Stowed, the panels
+    are shut; mining, the doors stand open and the arms reach forward and down: a shoulder, an upper arm with its
+    piston, a forearm and a two-fingered claw."""
+    _g("arms")
+    zc = C - 0.66
+    uc = math.sqrt(DRUM_R ** 2 - (zc - C) ** 2)                              # the panel's place on the drum
+    nu, nz = uc / DRUM_R, (zc - C) / DRUM_R                                  # its outward normal (forward and down)
+    pitch = math.atan2(nz, nu)
+    for sv in (-1, 1):
+        v = sv * ARM_V
+        f.box(uc + 0.01, v, zc, 0.04, 0.28, 0.32, HULL_D, base=False, pitch=pitch, pu=uc + 0.01, pz=zc)   # the frame
+        if not out:
+            f.box(uc + 0.03, v, zc, 0.02, 0.22, 0.26, HULL_L, base=False, pitch=pitch, pu=uc + 0.03, pz=zc)  # the door
+            f.box(uc + 0.04, v, zc + 0.09, 0.01, 0.22, 0.03, YEL, base=False, pitch=pitch, pu=uc + 0.04, pz=zc)
+            continue
+        f.box(uc + 0.03, v, zc, 0.02, 0.22, 0.26, "dark", base=False, pitch=pitch, pu=uc + 0.03, pz=zc)  # the opening
+        h = (uc - nz * 0.13 + nu * 0.03, zc + nu * 0.13 + nz * 0.03)          # the door's hinge, the opening's top
+        d = (h[0] + nu * 0.26, h[1] + nz * 0.26 + 0.08)                       # the door, swung out
+        lbox(f, lambda a, b, c, h=h, d=d, v=v: ((h if b < 0 else d)[0], v + a * 0.11, (h if b < 0 else d)[1] + c * 0.012),
+             {"side": HULL_L, "top": HULL_L})
+        S = (uc + 0.04, v, zc)                                               # shoulder, elbow, wrist
+        E = (uc + 0.34, v, zc - 0.16)
+        W = (uc + 0.52, v, zc - 0.38)
+        strut(f, S, E, 0.08, HULL_D)
+        strut(f, E, W, 0.07, HULL_D)
+        strut(f, (S[0], v + sv * 0.05, S[2] + 0.06), (E[0] - 0.1, v + sv * 0.05, E[2] + 0.04), 0.03, YEL)   # piston
+        for p in (S, E, W):
+            f.box(p[0], p[1], p[2], 0.11, 0.11, 0.11, "steelL", base=False)  # joints
+        strut(f, W, (W[0] + 0.16, v - 0.05, W[2] - 0.04), 0.035, "steel")   # the claw's fingers
+        strut(f, W, (W[0] + 0.1, v + 0.05, W[2] - 0.14), 0.035, "steel")
+
+
+def lights(f, on):
+    """Two work lamps on the windshield's lower corners, aimed forward."""
+    _g("lights")
+    u0, u1, hw = WIND
+    for sv in (-1, 1):
+        f.box(u1 - 0.1, sv * (hw + 0.05), WIND_ZB + 0.08, 0.16, 0.1, 0.1, "steelD", top=HULL, base=False)
+        f.box(u1 - 0.015, sv * (hw + 0.05), WIND_ZB + 0.08, 0.012, 0.07, 0.06, "arc" if on else "dark", base=False)
 
 
 def thruster(f, lit):
@@ -225,5 +283,7 @@ def pod(heading, state="parked", bob=0.0, dz=0.0):
     thruster(f, state in ("fly", "mine"))
     rear_thruster(f, state in ("fly", "mine"))
     laser(f, state == "mine", state == "mine")
+    arms(f, state == "mine")
+    lights(f, state in ("fly", "mine"))
     greeble(f)
     return [smooth(m.build())]
