@@ -221,3 +221,40 @@ def slab(f, body, u0, u1, t0, t1, k0, k1, top, side, round_=False):
             f.poly([pt(*a, k1), pt(*b, k1), pt(*c, k1), pt(*d, k1)], top, flip=True)
     for (ua, ta), (ub, tb) in zip(edge, edge[1:] + edge[:1]):                 # the walls
         f.poly([pt(ua, ta, k0), pt(ub, tb, k0), pt(ub, tb, k1), pt(ua, ta, k1)], side, flip=True)
+
+
+def true_normals(ob, c0, axis, dome_c, drum_from, hard_deg=35.0):
+    """Shade a hull object by its true surface, not by averaging faces (which goes flat along cut edges, where a corner
+    has fewer faces round it): each corner's normal is the exact normal of the round surface under it, a sphere about
+    +-dome_c along the axis from c0, or, on the drum (further than drum_from from the axis) and between the domes, the
+    cylinder's. Faces turned more than hard_deg from that surface (walls, the drum's sides, the bore) stay flat."""
+    from mathutils import Vector
+    a = Vector(axis).normalized()
+    c0 = Vector(c0)
+
+    def surface(p):
+        d = p - c0
+        s = d.dot(a)
+        radial = d - a * s
+        if radial.length > drum_from or abs(s) <= dome_c:
+            n = radial
+        else:
+            n = p - (c0 + a * math.copysign(dome_c, s))
+        return n.normalized() if n.length > 1e-9 else Vector((0, 0, 1))
+    me = ob.data
+    me.update()
+    hard = math.cos(math.radians(hard_deg))
+    out = []
+    for poly in me.polygons:
+        fn = poly.normal
+        sn = surface(poly.center)
+        dot = fn.dot(sn)
+        for li in poly.loop_indices:
+            if abs(dot) < hard:
+                out.append(fn.copy())
+            else:
+                n = surface(me.vertices[me.loops[li].vertex_index].co)
+                out.append(n if dot > 0 else -n)
+    me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
+    me.normals_split_custom_set(out)
+    return ob
