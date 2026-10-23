@@ -21,5 +21,5 @@
 
 <style>
   :global(.kit-tip-trigger:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
-  :global(.kit-tip) { z-index: 60; max-width: min(260px, calc(100vw - 16px)); padding: 4px 8px; background: var(--panel); border: 1px solid var(--line-hi); border-radius: 0; color: var(--text); font-size: 12px; line-height: 1.35; pointer-events: none; }
+  :global(.kit-tip) { z-index: 60; max-width: min(260px, calc(100vw - 16px)); padding: 4px 8px; background: var(--panel-2); border: 1px solid var(--line-hi); border-radius: 0; color: var(--text); font-size: 12px; line-height: 1.35; pointer-events: none; }
 </style>
