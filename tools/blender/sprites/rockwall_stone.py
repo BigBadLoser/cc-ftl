@@ -22,7 +22,9 @@ GROOVE = 0.009                               # how far a brick stands proud: a l
                                              # shallow from every side (no edge turns black or vanishes)
 JOINT = 0.016                                # the flat mortar line between bricks (about a pixel at 2x)
 BLOCK = 0.5                                  # brick length (the face and the footing alike)
-TILT = 0.006                                 # the most a brick's face leans (depth difference, top to bottom)
+TILT = 0.0                                   # the most a brick's face leans (depth difference, top to bottom);
+                                             # a lean also turns it in the light, unevenly: SHADE does that instead
+SHADE = 0.05                                 # each brick's own shade, at most this much lighter or darker
 SKIRT_N = 2                                  # brick courses down the skirt
 SKIRT_GAP = 0.016                            # the footing's mortar line (= JOINT)
 MORTAR = "rkK"                               # the joints' floor (the cliffs' seam tone), face and slope
@@ -45,10 +47,12 @@ def brick_tone(z):
 
 
 def brick_var(course, start):
-    """One brick's own cut, from its course and position: (bevel width, how far it stands proud, its lean)."""
+    """One brick's own cut, from its course and position: (bevel width, how far it stands proud, its lean, its
+    shade: a light multiplier)."""
     h = _hash(course, int(round(((start + 0.5) % 1.0) * 997)), 11)
     f = lambda n, m: (h // n % m) / (m - 1)               # noqa: E731
-    return CH * (0.7 + 0.6 * f(1, 97)), GROOVE * (0.75 + 0.5 * f(97, 89)), TILT * (2 * f(8633, 101) - 1)
+    return (CH * (0.7 + 0.6 * f(1, 97)), GROOVE * (0.75 + 0.5 * f(97, 89)), TILT * (2 * f(8633, 101) - 1),
+            1 + SHADE * (2 * f(871933, 103) - 1))
 
 
 def course_h():
@@ -80,7 +84,8 @@ def panel(k, ax, plane, u0, u1, z0, z1, cham, col, var):
     g = JOINT / 2                                    # each side of a joint keeps half the mortar line
     u0, u1 = u0 + (g if cham[0] else 0), u1 - (g if cham[1] else 0)
     z0, z1 = z0 + (g if cham[2] else 0), z1 - (g if cham[3] else 0)
-    ch, proud, tilt = var
+    ch, proud, tilt, shade = var
+    n0 = len(k.m.f)
     i0, i1 = u0 + (ch if cham[0] else 0), u1 - (ch if cham[1] else 0)
     j0, j1 = z0 + (ch if cham[2] else 0), z1 - (ch if cham[3] else 0)
     if i1 - i0 < ch or j1 - j0 < ch:
@@ -97,6 +102,14 @@ def panel(k, ax, plane, u0, u1, z0, z1, cham, col, var):
             nv = (Vector((nrm[0], 0, nrm[1])) if ax == "y" else Vector((0, nrm[0], nrm[1]))) + out
             quad(k, front[p], front[q], outer[q], outer[p], col, nv)
             soften(k, out)
+    tint(k, n0, shade)
+
+
+def tint(k, n0, shade):
+    """Give the polygons added since n0 (one brick) its own shade (Lit.build multiplies their light by it)."""
+    if isinstance(k, Lit):
+        for i in range(n0, len(k.m.f)):
+            k.shade[i] = shade
 
 
 def relight(k, slope_normal, face_normal):
@@ -207,7 +220,8 @@ def skirt_blocks(k, sp, ax, plane, a, b):
             poly = _clip(_clip(poly, lo), hi)
             if len(poly) < 3:
                 continue
-            ch, proud, tilt = brick_var(-(c + 1), u0)
+            ch, proud, tilt, shade = brick_var(-(c + 1), u0)
+            n0 = len(k.m.f)
             inner = _inset(poly, ch)
             col = brick_tone(zs * (1 - (d0 + d1) / 2 / run))
             dm = (d0 + d1) / 2
@@ -222,6 +236,7 @@ def skirt_blocks(k, sp, ax, plane, a, b):
                 quad(k, p0, p1, top[j2], top[i], col, (p0 + p1) / 2 - cen + nrm * 0.02)
                 soften(k, nrm, 1.0)                    # the slope faces the light: its bevels need all their turn
                 relight(k, nrm, out)
+            tint(k, n0, shade)
 
 
 SUN = Vector((0.3, -0.3, 0.86)).normalized()               # the walls' key: symmetric across the diagonal,
@@ -248,6 +263,7 @@ class Lit(Canvas):
         self.m = core.Mesh(name, flat=True)
         self.soft = {}                                            # bevel face index -> its plane's normal
         self.relit = {}                                           # footing face index -> (slope, wall face) normals
+        self.shade = {}                                           # brick face index -> its own shade
 
     def build(self):
         m = self.m
@@ -270,5 +286,6 @@ class Lit(Canvas):
             elif 0.15 < n.z < 0.95:                               # any other slope (bare skirt): its wall's tone too
                 h = Vector((n.x, n.y, 0.0)).normalized()
                 lam *= light(h) / max(1e-6, light(n))
+            lam *= self.shade.get(i, 1.0)
             m.f[i] = (idx, col, tuple(v * lam for v in own), glow)
         return [m.build()]
