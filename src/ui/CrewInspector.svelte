@@ -9,7 +9,7 @@
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
   let sel = $state<number | null>(null);
-  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], ferryReady: false });
+  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   const c = $derived(crew.find((x) => x.id === sel) ?? foes.find((x) => x.id === sel));
   const enemy = $derived(c?.side === 'enemy');
 

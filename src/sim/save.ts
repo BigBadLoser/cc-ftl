@@ -41,8 +41,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v32: finished rock walls (Struct.RockWall) and no ore on big asteroids.
  * v33: `MiningPodC.spot` (where a pod hovers to cut its tile, clear of other pods).
  * v34: `FerryC` (base-logistics runs on shuttles) and `ShipC.outpost.dock` (the outpost's dock airlock).
+ * v35: `TransferC` (logistics orders), `SalvageWatchC`, `Ferry.transfer|loaded|left`.
  */
-export const SAVE_VERSION = 34;
+export const SAVE_VERSION = 35;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

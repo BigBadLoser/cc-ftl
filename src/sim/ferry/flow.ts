@@ -2,13 +2,14 @@ import { CrewC, DraftedC, JobC, PositionC } from '../crew/components';
 import { EvaFloatC, SuitC } from '../eva/components';
 import { outsideCrew } from '../eva/shuttle';
 import { makeHaul } from '../items/plan';
+import { spillItems, takeFromStack } from '../items/stacks';
 import { nearestSource, refKey, reservations } from '../items/stock';
 import { storageAdd, storageTake } from '../items/storage';
-import { StorageC } from '../items/components';
+import { ItemStackC, StorageC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
 import { shipById } from '../combat/ships';
-import { shipGrid, shipIdOf } from '../regions';
+import { shipGrid, shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
@@ -17,7 +18,8 @@ import { AboardC, EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/compo
 import { boardingTile, cargoTile } from '../vehicles/geometry';
 import { occupants, unboardCrew } from '../vehicles/lifecycle';
 import { FerryC, type Ferry } from './components';
-import { ferryMode, isFerryRegion, regionAirlock } from './pick';
+import { settleTransfer } from '../logistics/settle';
+import { ferryMode, isFerryRegion, isPickupRegion, regionAirlock } from './pick';
 
 /** Ticks between repeats of an order a run keeps asking for until the shuttle obeys. */
 const REPEAT = 20;
@@ -70,6 +72,15 @@ function takeInstant(sim: Sim, id: number, region: number, f: Ferry): void {
       const got = storageTake(sim, sid, l.item, need);
       const fit = cargoAdd(sim, id, l.item, got);
       if (fit < got) storageAdd(sim, sid, l.item, got - fit);
+      need -= fit;
+    }
+    for (const stack of [...sim.world.query(ItemStackC)].sort((a, b) => a - b)) {
+      const st = sim.world.get(stack, ItemStackC);
+      if (need <= 0) break;
+      if (!st || st.item !== l.item || shipIdAt(sim, st.x, st.y) !== region) continue;
+      const got = takeFromStack(sim, stack, need);
+      const fit = cargoAdd(sim, id, l.item, got);
+      if (fit < got) spillItems(sim, region, st.x, st.y, l.item, got - fit);
       need -= fit;
     }
   }
@@ -152,6 +163,7 @@ function gather(sim: Sim, id: number, v: Vehicle, f: Ferry): void {
   f.items = f.items.map((l) => ({ item: l.item, count: Math.min(l.count, cargoOf(sim, id, l.item)) })).filter((l) => l.count > 0);
   for (const c of occupants(v)) if (!f.crew.includes(c) && sim.world.has(c, EmbarkOrderC)) sim.world.remove(c, EmbarkOrderC);
   if (f.crew.length === 0 && f.items.length === 0) return abort(f, 'nothing');
+  f.loaded = f.items.map((l) => ({ ...l }));
   v.outbound = true; // sealed: cargoJobs must not take it back off at the pickup
   if (v.state === 'docked') sim.enqueue({ type: 'vehicle.undock', vehicle: id });
   go(f, 'toDest');
@@ -188,6 +200,7 @@ function deliver(sim: Sim, id: number, v: Vehicle, f: Ferry): void {
   if (floating || (still > 0 && f.timer <= sec(CREW_SEC))) return;
   sim.events.emit({ type: 'ferry.delivered', vehicle: id, to: f.to, items: items - left, crew: f.crew.length - still });
   if (left > 0) f.reason ??= 'noRoom';
+  f.left = v.cargo.map((q) => ({ ...q }));
   f.crew = [];
   go(f, 'home');
 }
@@ -201,6 +214,7 @@ function home(sim: Sim, id: number, v: Vehicle, f: Ferry): void {
     v.autopilot = false;
     v.outbound = false;
     sim.world.remove(id, FerryC);
+    settleTransfer(sim, f);
     sim.events.emit({ type: 'ferry.done', vehicle: id, ...(f.reason ? { reason: f.reason } : {}) });
     return;
   }
@@ -209,6 +223,8 @@ function home(sim: Sim, id: number, v: Vehicle, f: Ferry): void {
     // Nowhere to land (bay gone): drop the run and leave the shuttle hovering.
     v.autopilot = false;
     sim.world.remove(id, FerryC);
+    f.reason ??= 'lost';
+    settleTransfer(sim, f);
     sim.events.emit({ type: 'ferry.done', vehicle: id, reason: 'lost' });
     return;
   }
@@ -227,7 +243,7 @@ export function ferrySystem(sim: Sim): void {
     const v = sim.world.get(id, VehicleC);
     if (!v) continue;
     f.timer++;
-    if (f.phase !== 'home' && (!isFerryRegion(sim, f.from) || !isFerryRegion(sim, f.to) || !shipById(sim, f.from) || !shipById(sim, f.to))) abort(f, 'lost');
+    if (f.phase !== 'home' && (!isPickupRegion(sim, f.from) || !isFerryRegion(sim, f.to) || !shipById(sim, f.from) || !shipById(sim, f.to))) abort(f, 'lost');
     switch (f.phase) {
       case 'toFrom':
         if (arrive(sim, id, v, f, f.from)) go(f, 'gather');

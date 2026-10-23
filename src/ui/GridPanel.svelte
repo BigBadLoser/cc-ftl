@@ -11,7 +11,7 @@
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   let prizes = $state<UiPrize[]>([]);
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
-  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], ferryReady: false });
+  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   onMount(() => {
     const u = [
       api.trade.subscribe((v) => (trade = v)),

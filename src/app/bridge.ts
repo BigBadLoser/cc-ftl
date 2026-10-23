@@ -124,7 +124,7 @@ export function createBridge(sim: Sim): Bridge {
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
-  const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], ferryReady: false });
+  const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
   let lastTrade = '';
   const prizes = createStore<UiPrize[]>([]);

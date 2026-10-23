@@ -93,6 +93,13 @@ export type Command =
    * instant cargo swap). Then it flies home. Replaces nothing: a shuttle on a trade run, a ferry or a mining order is busy.
    */
   | { type: 'ferry.order'; vehicle?: number; from: number; to: number; items?: { item: string; count: number }[]; crew?: number[] }
+  /**
+   * Queue a logistics transfer: move `items` (clipped to what `from` holds) from player region `from` (or a salvage site) to player
+   * region `to`. A free shuttle and pilot take it in as many trips as it needs; nothing else to micro-manage.
+   */
+  | { type: 'transfer.order'; from: number; to: number; items: { item: string; count: number }[] }
+  /** Cancel a transfer: pending trips stop, goods stay where they are (a trip already on its way to the drop-off finishes). */
+  | { type: 'transfer.cancel'; order: number }
   /** Call a run off: crew still aboard ride home, the shuttle flies back to its bay. */
   | { type: 'ferry.cancel'; vehicle: number }
   /** Recall a mining pod: it flies home with what it has, unloads, and ends its order. */

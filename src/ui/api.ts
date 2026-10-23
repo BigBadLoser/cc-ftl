@@ -261,7 +261,7 @@ export type UiAlertKind =
   | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
   | 'story.notice' | 'story.lead' | 'trade'
   | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard' | 'station.alarm'
-  | 'outpost.discovered' | 'ship.provoked' | 'mining.waiting' | 'mining.done';
+  | 'outpost.discovered' | 'ship.provoked' | 'mining.waiting' | 'mining.done' | 'transfer';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -503,8 +503,26 @@ export interface UiShuttles {
   bays: { id: number; empty: boolean }[];
   /** The player's regions shuttles can run cargo and crew between (the home ship first, then claimed bases), with the stock in each region's storage. Empty with only the home ship. */
   regions: { id: number; name: string; home: boolean; stock: { item: string; name: string; count: number }[] }[];
+  /** Logistics transfer orders, oldest first. */
+  transfers: UiTransfer[];
   /** A shuttle is free to take a "go to base" order right now. */
   ferryReady: boolean;
+}
+
+/** One logistics order: what is left to move between two regions, and what it is doing. */
+export interface UiTransfer {
+  id: number;
+  from: string;
+  to: string;
+  items: { item: string; name: string; count: number }[];
+  total: number;
+  moved: number;
+  trips: number;
+  /** 'queued' | 'boarding' | 'underway' | 'blocked' (blocked is shown in the warning colour). */
+  state: string;
+  status: string;
+  /** Queued by the game (salvage), not by the player. */
+  auto: boolean;
 }
 
 /** Where the combat overlay shows the enemy ship, in CSS px relative to the page. */

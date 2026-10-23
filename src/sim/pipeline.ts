@@ -53,6 +53,7 @@ import { workSystem } from './systems/work';
 import { vehicleSystem } from './systems/vehicles';
 import { miningSystem } from './systems/mining';
 import { ferrySystem } from './ferry/flow';
+import { logisticsSystem } from './logistics/system';
 import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
 import { captureSystem } from './systems/capture';
@@ -148,6 +149,8 @@ export const pipeline: readonly System[] = [
   tradeSystem,
   // Base-logistics runs: shuttles carry cargo and crew between the home ship and claimed bases (ordinary vehicle commands, next tick).
   ferrySystem,
+  // Transfer orders (queue) take free shuttles and pilots and start the runs above; they book trips the ferry flow just settled.
+  logisticsSystem,
   // Work last: completed jobs change the grid, which rooms picks up next tick.
   workSystem,
   // Outposts found or provoked by player presence, before the combat state reads who is a combatant.

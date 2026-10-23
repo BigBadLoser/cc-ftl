@@ -1,6 +1,6 @@
-import { FerryC, ferryFree, ferryRegions, pickFerryShuttle, StorageC, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
+import { FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
 import { localOf } from './moduleSnapshot';
-import type { UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles } from '../ui/api';
+import type { UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles, UiTransfer } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import type { Ship } from '../sim/combat/components';
 import { homeShip } from '../sim/index';
@@ -27,17 +27,38 @@ function ferryRun(sim: Sim, vehicle: number): UiShuttle['ferry'] {
   return f ? { status: FERRY_STATUS[f.phase] ?? f.phase, to: shipName(sim, f.to) } : null;
 }
 
+const BLOCK_TEXT: Record<string, string> = {
+  noShuttle: 'Waiting for a free shuttle', noPilot: 'Waiting for a free pilot', noAirlock: 'No working airlock to dock at',
+  noStock: 'Nothing left to take at the pickup', failed: 'Trips keep failing: cancel and retry',
+};
+
+/** The queued, boarding and running transfer orders as plain data, oldest first. */
+function transferList(sim: Sim): UiTransfer[] {
+  const out: UiTransfer[] = [];
+  for (const id of [...sim.world.query(TransferC)].sort((a, b) => a - b)) {
+    const t = sim.world.get(id, TransferC);
+    if (!t) continue;
+    const pilot = t.pilot ? sim.world.get(t.pilot, CrewC)?.name : undefined;
+    const phase = FERRY_STATUS[sim.world.get(t.vehicle, FerryC)?.phase ?? ''];
+    const status =
+      t.status === 'blocked' ? BLOCK_TEXT[t.reason ?? ''] ?? 'Blocked'
+        : t.status === 'boarding' ? `${pilot ?? 'The pilot'} is heading to the shuttle`
+          : t.status === 'underway' ? `Trip ${t.trips + 1}: ${(phase ?? 'on its way').toLowerCase()}${pilot ? ` (${pilot})` : ''}`
+            : 'Waiting for a shuttle';
+    out.push({
+      id, from: shipName(sim, t.from), to: shipName(sim, t.to), state: t.status, status, auto: !!t.auto, total: t.total, moved: t.moved, trips: t.trips,
+      items: t.items.map((l) => ({ item: l.item, name: sim.content.items[l.item]?.name ?? l.item, count: l.count })),
+    });
+  }
+  return out;
+}
+
 /** The player's regions with the stock in their storage (only when there is more than one: the home ship alone has nowhere to run). */
 function regionList(sim: Sim, home: number): UiShuttles['regions'] {
   const ids = ferryRegions(sim);
   if (ids.length < 2) return [];
   return ids.sort((a, b) => (a === home ? -1 : b === home ? 1 : a - b)).map((id) => {
-    const totals = new Map<string, number>();
-    for (const sid of sim.world.query(StorageC, ModuleC)) {
-      if (shipIdOf(sim, sim.world.get(sid, ModuleC)) !== id) continue;
-      for (const st of sim.world.get(sid, StorageC)?.stacks ?? []) totals.set(st.item, (totals.get(st.item) ?? 0) + st.count);
-    }
-    const stock = [...totals].sort(([a], [b]) => a.localeCompare(b)).map(([item, count]) => ({ item, name: sim.content.items[item]?.name ?? item, count }));
+    const stock = regionStock(sim, id).map(({ item, count }) => ({ item, name: sim.content.items[item]?.name ?? item, count }));
     return { id, name: shipName(sim, id), home: id === home, stock };
   });
 }
@@ -101,7 +122,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
     const s = sim.world.get(id, ShipC);
     if (s && id !== PLAYER && s.state !== 'fled' && !s.outpost?.hidden) targets.push({ ship: id, name: s.name, ...(s.state === 'wreck' ? { derelict: derelictInfo(sim, id, s) } : {}) });
   }
-  return { shuttles, airlocks, targets, roster, bays, regions: regionList(sim, PLAYER), ferryReady: pickFerryShuttle(sim) !== 0 };
+  return { shuttles, airlocks, targets, roster, bays, regions: regionList(sim, PLAYER), transfers: transferList(sim), ferryReady: pickFerryShuttle(sim) !== 0 };
 }
 
 /** Hull, air, power and jammed doors of a wreck, read from its grid and modules. */

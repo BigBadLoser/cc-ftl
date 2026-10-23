@@ -54,6 +54,16 @@ export type SimEvent =
   | { type: 'ferry.delivered'; vehicle: number; to: number; items: number; crew: number }
   /** A run ended and the shuttle is back in its bay (`reason` is set when it was called off or could not finish). */
   | { type: 'ferry.done'; vehicle: number; reason?: 'noAirlock' | 'timeout' | 'lost' | 'cancelled' | 'nothing' | 'noRoom' }
+  /** A transfer order (logistics) was queued; `auto` for salvage the game queued itself. */
+  | { type: 'transfer.queued'; order: number; from: number; to: number; items: number; auto: boolean }
+  /** A transfer's shuttle left with a load: trip number `trip`, `pilot` flying (0 = flying itself). */
+  | { type: 'transfer.underway'; order: number; vehicle: number; pilot: number; trip: number; items: number }
+  /** A trip set `items` units down at `to`; `final` when the order has nothing left to move. */
+  | { type: 'transfer.delivered'; order: number; to: number; items: number; left: number; final: boolean }
+  /** A transfer cannot go on for `reason` (fired once per change; it retries by itself, except `failed`, which waits for a cancel). */
+  | { type: 'transfer.blocked'; order: number; reason: 'noShuttle' | 'noPilot' | 'noAirlock' | 'noStock' | 'failed' }
+  /** An order ended without finishing: 'player', 'lost' (a region is gone), 'nothing' (salvage that vanished), 'recalled' (its trip was called off). */
+  | { type: 'transfer.cancelled'; order: number; reason: 'player' | 'lost' | 'nothing' | 'recalled' }
   /** A dig through a vein dropped `count` units of `item` on the dug tile. */
   | { type: 'rock.dug'; ship: number; x: number; y: number; item: string; count: number }
   /** An outpost was stamped: its asteroid and its base region (ShipC). */

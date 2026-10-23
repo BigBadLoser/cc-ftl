@@ -25,5 +25,11 @@ export interface Ferry {
   timer: number;
   /** Why the run is heading home early, if it is. */
   reason?: 'noAirlock' | 'timeout' | 'lost' | 'cancelled' | 'nothing' | 'noRoom';
+  /** The transfer order (logistics) this trip belongs to; absent for a hand-made run. Its result is settled when the run ends. */
+  transfer?: number;
+  /** What the hold really took at the pickup (set when the run leaves it). */
+  loaded?: ItemQty[];
+  /** The hold's contents once unloading at the drop-off finished (absent while the run never got that far). */
+  left?: ItemQty[];
 }
 export const FerryC = defineComponent<Ferry>('ferry');

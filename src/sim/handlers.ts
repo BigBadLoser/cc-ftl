@@ -4,6 +4,7 @@ import type { Command } from './commands';
 import { asteroidHandlers } from './asteroids/handlers';
 import { miningHandlers } from './mining/handlers';
 import { ferryHandlers } from './ferry/handlers';
+import { logisticsHandlers } from './logistics/handlers';
 import { outpostHandlers } from './outposts/handlers';
 import { captureHandlers } from './capture/handlers';
 import { combatHandlers } from './combat/handlers';
@@ -45,6 +46,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...asteroidHandlers,
   ...miningHandlers,
   ...ferryHandlers,
+  ...logisticsHandlers,
   ...outpostHandlers,
   noop: () => {},
   'debug.spawnMarker': (sim, cmd) => {

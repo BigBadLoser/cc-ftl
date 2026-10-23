@@ -4,27 +4,14 @@
   import PanelHead from './PanelHead.svelte';
   import PodList from './PodList.svelte';
   import type { UiMining } from './api';
-  import { Select, NumberStepper } from './kit';
 
   let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
-  let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], ferryReady: false });
+  let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   let mining = $state<UiMining>({ asteroids: [], pods: [] });
   onMount(() => {
     const u = [api.shuttles.subscribe((v) => (data = v)), api.mining.subscribe((v) => (mining = v))];
     return () => u.forEach((f) => f());
   });
-
-  // Base run form (shared by the shuttles): from, to, item, amount.
-  let runFrom = $state(0);
-  let runTo = $state(0);
-  let runItem = $state('');
-  let runQty = $state(10);
-  const from = $derived(data.regions.find((r) => r.id === runFrom) ?? data.regions[0]);
-  const to = $derived(data.regions.find((r) => r.id === runTo && r.id !== from?.id) ?? data.regions.find((r) => r.id !== from?.id));
-  const item = $derived(from?.stock.find((l) => l.item === runItem) ?? from?.stock[0]);
-  const sendRun = (vehicle: number, cargo: number) => {
-    if (from && to && item) api.dispatch({ type: 'ferry.order', vehicle, from: from.id, to: to.id, items: [{ item: item.item, count: Math.max(1, Math.min(item.count, cargo || item.count, Math.round(runQty))) }] });
-  };
 
   const where = (s: UiShuttles['shuttles'][number]) =>
     s.state === 'stowed' ? 'Parked in bay'
@@ -96,19 +83,8 @@
       </div>
 
       {#if s.ferry}
-        <div class="trade" data-testid="shuttle-ferry">Base run to {s.ferry.to}: {s.ferry.status}
+        <div class="trade" data-testid="shuttle-ferry">Run to {s.ferry.to}: {s.ferry.status}
           <button class="mini" data-testid="ferry-cancel" onclick={() => api.dispatch({ type: 'ferry.cancel', vehicle: s.id })}>Call off</button>
-        </div>
-      {:else if data.regions.length > 1 && s.ferryFree && from && to}
-        {@const maxQty = Math.max(1, Math.min(item?.count ?? 1, s.cargo || 9999))}
-        <div class="sub">Base run (cargo; crew go from their card)</div>
-        <div class="run" data-testid="ferry-form-{s.id}">
-          <Select label="From" testId="ferry-from" value={String(from.id)} onChange={(v) => (runFrom = Number(v))} options={data.regions.map((r) => ({ value: String(r.id), label: r.name }))} />
-          <span class="arrow">to</span>
-          <Select label="To" testId="ferry-to" value={String(to.id)} onChange={(v) => (runTo = Number(v))} options={data.regions.filter((r) => r.id !== from.id).map((r) => ({ value: String(r.id), label: r.name }))} />
-          <div class="wide"><Select label="Item" testId="ferry-item" value={item?.item ?? ''} disabled={from.stock.length === 0} placeholder="nothing stored" onChange={(v) => (runItem = v)} options={from.stock.map((l) => ({ value: l.item, label: l.name, sub: String(l.count), testId: `ferry-item-${l.item}` }))} /></div>
-          <span class="qty"><NumberStepper label="Amount" min={1} max={maxQty} value={Math.max(1, Math.min(maxQty, runQty))} onChange={(v) => (runQty = v)} valueTestId="ferry-qty" decTestId="ferry-qty-dec" incTestId="ferry-qty-inc" disabled={!item} /></span>
-          <button disabled={!item} data-testid="ferry-send" onclick={() => sendRun(s.id, s.cargo)}>Send run</button>
         </div>
       {/if}
 
@@ -167,12 +143,6 @@
   .chips button { display: grid; gap: 0; text-align: left; padding: 2px 10px; min-height: 36px; }
   .chips small { color: var(--dim); font-size: 11px; }
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
-  .run { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 4px; align-items: center; }
-  .run .wide { grid-column: 1 / -1; display: grid; }
-  .run :global(.kit-sel-trigger) { width: 100%; }
-  .run .qty { grid-column: 1 / 3; }
-  .run button { grid-column: 3; }
-  .arrow { color: var(--dim); font-size: 12px; }
   .none { color: var(--dim); margin: 4px 0; }
   .assign { width: 100%; margin-top: 8px; }
 </style>

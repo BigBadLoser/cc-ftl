@@ -1,11 +1,10 @@
 import { ShipC } from '../combat/components';
 import { shipById } from '../combat/ships';
-import { StorageC } from '../items/components';
-import { storageCount } from '../items/storage';
+import { ItemStackC, StorageC } from '../items/components';
 import { AirlockC, airlockWorking } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
 import { isLive } from '../trade/deals';
-import { shipIdOf } from '../regions';
+import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { dockError } from '../vehicles/handlers';
 import { VehicleBayC, VehicleC } from '../vehicles/components';
@@ -20,11 +19,32 @@ export function isFerryRegion(sim: Sim, ship: number): boolean {
   return !!s && s.faction === 'player' && (s.state === 'active' || s.state === 'disabled');
 }
 
-/** Units of an item in all storage modules of a region. */
+/**
+ * True for a region a run can load from: a ferry region, or a salvage site (a captured prize or a ruined derelict), whose
+ * loose stacks and storage the crew there can haul and a hovering shuttle can swap.
+ */
+export function isPickupRegion(sim: Sim, ship: number): boolean {
+  const s = sim.world.get(ship, ShipC);
+  return isFerryRegion(sim, ship) || (!!s && (s.state === 'prize' || (s.state === 'wreck' && !!s.ruin)));
+}
+
+/** Units of every item in a region's storage modules and loose on its floor, ascending by item id. */
+export function regionStock(sim: Sim, ship: number): { item: string; count: number }[] {
+  const totals = new Map<string, number>();
+  for (const id of sim.world.query(StorageC, ModuleC)) {
+    if (shipIdOf(sim, sim.world.get(id, ModuleC)) !== ship) continue;
+    for (const st of sim.world.get(id, StorageC)?.stacks ?? []) totals.set(st.item, (totals.get(st.item) ?? 0) + st.count);
+  }
+  for (const id of sim.world.query(ItemStackC)) {
+    const st = sim.world.get(id, ItemStackC);
+    if (st && shipIdAt(sim, st.x, st.y) === ship) totals.set(st.item, (totals.get(st.item) ?? 0) + st.count);
+  }
+  return [...totals].sort(([a], [b]) => a.localeCompare(b)).map(([item, count]) => ({ item, count }));
+}
+
+/** Units of an item in a region's storage modules and loose on its floor. */
 export function regionItems(sim: Sim, ship: number, item: string): number {
-  let n = 0;
-  for (const id of sim.world.query(StorageC, ModuleC)) if (shipIdOf(sim, sim.world.get(id, ModuleC)) === ship) n += storageCount(sim, id, item);
-  return n;
+  return regionStock(sim, ship).find((l) => l.item === item)?.count ?? 0;
 }
 
 /** A free, working airlock of a region this shuttle may dock at (the one it is docked at first), or 0. */
