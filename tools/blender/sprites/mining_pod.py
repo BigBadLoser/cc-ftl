@@ -37,7 +37,7 @@ BALL = _dome(-DOME_C, -1, HATCH_END)[::-1] + _dome(DOME_C, 1, HATCH_END)   # hal
 SECTION = profile(n=20, p=2.3)          # round, a little squared: a pressure hull
 HATCH_R = 0.5                 # the round hatch's door radius
 BELL = (0.0, 0.42, 0.28)      # the main thruster: mouth z, mouth radius, throat radius
-WIND = (0.5, 1.02, 0.4)       # windshield box: back u (inside the hull), front u at its foot, half width
+WIND = (0.5, 1.22, 0.4)       # windshield box: back u (inside the hull), front u at its foot, half width
 LASER_U, LASER_Z = 0.6, C - 0.62
 HULL, HULL_D, HULL_L = "c4F2", "c4F4", "c4F1"
 YEL, YEL_D = "c4T2", "c4T4"
@@ -105,7 +105,7 @@ def windshield(f):
     over a smaller lower one, dark glass with a lit bezel and one reflection, a yellow brow on top."""
     _g("windshield")
     u0, u1, hw = WIND
-    zb, zt, rake = C - 0.44, C + 0.4, 0.14
+    zb, zt, rake = C - 0.44, C + 0.4, 0.3
 
     def frame(a, b, d):
         return (u0 if b < 0 else (u1 - (rake if d > 0 else 0.0)), a * hw, zt if d > 0 else zb)
