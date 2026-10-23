@@ -90,7 +90,7 @@
               <li class:hostile={f.hostile} title={`${f.heading}. Home: ${f.home}`}>
                 <i style={`background: ${toneColor(f.tone)}`}></i>
                 <span><b>{f.name}</b> <small>{f.faction} {f.role.toLowerCase()}</small></span>
-                <small class="sub">{f.heading} · home {f.home}</small>
+                <small class="sub">{f.heading.endsWith(f.home) ? f.heading : `${f.heading} · home ${f.home}`}</small>
               </li>
             {/each}
           </ul>

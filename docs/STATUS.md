@@ -561,6 +561,30 @@ Not taken from PR #16: `src/ui/Starmap*`, `src/app/starmap*`, `galaxyPrefetch`, 
 - Interdiction UI is `ui/InterdictModal.svelte`, centred over the map area of `StarmapView` (a bottom sheet on phones); hail, scan and distress stay in the drawer.
 - Arrival warnings: `incomingFleets(sim)` (`galaxy/incoming.ts`, pure query: fleets in sensor range whose route reaches the player's node, ETA = place in the route, nearest first, stranded fleets excluded) feeds `alerts.syncIncoming()` (app, called from `onEvents`), which keeps one alert per fleet ("<faction role> drops from hyperspace in N turns", kinds `galaxy.incoming` / `galaxy.incomingHostile`), updates it in place, drops it on arrival or a change of course, and does not re-raise a dismissed one for the same trip.
 
+**Stage 2: persistent population (built on `npc-encounters`; save v37; `GENERATOR_VERSION` unchanged: chunk output is the same).** Design in `docs/ARCHITECTURE.md` ("NPC population").
+- **Model:** no spawning or despawning. Every NPC ship belongs to a home port and lives until destroyed. Ports are derived from node structures (station, pirate den, navy depot, mining outpost, drone nest);
+  a port's size (1 to 3) and kind set how many fleets it fields. Fleets are created when their chunk is generated (`populate`, about 1 ms for nine chunks), named, and saved as descriptors (about 350 bytes a fleet).
+- **Budgets (content, `content/galaxyFleets.ts`, per galaxy faction):** size costs small 2, medium 3, heavy 4. Navy patrol budget 4 = two small, one medium or one heavy (or budget 2 = one small); pirates mostly 2 (one small), a fifth 4 (two small),
+  sometimes one medium; traders, civilians and miners `maxShips: 1`; drones up to two. Hull families map to size classes (navy corvette small, frigate medium, cruiser and carrier heavy; civilian mining small, freighter medium, liner heavy;
+  scrapper raider small, hauler and gunrunner medium; drones picket small, lancer medium, swarm heavy). A ship's generator seed is searched so its first attempt builds the family asked for (`previewHull`).
+- **Agendas:** rest at home, an outing of a few stops, home. Traders: stations within 6 hops, dwell 2 to 4 turns, `onDock` hook (`dock.ts`) for stage 3. Miners: one of the three nearest ore fields within 4 hops of home. Patrols: nodes of their faction's territory within 4 hops of home.
+  Pirates and raiders: any node within 3 hops of the den or nest. All one hop per turn.
+- **Losses:** a wrecked or captured ship is gone; its port owes a replacement (one every 12 to 20 turns by port kind, a single-ship fleet of the lost role and size). A ship that jumps away survives (its fleet runs for home). Distress comes from real damage (a disabled or under-40% ship
+  strands its fleet) or a rare breakdown (0.15% per hop away from home); stranded fleets repair themselves after 12 to 24 turns unless rescued.
+- **Scale:** only fleets whose node or home is within 6 hops of the player are stepped; the rest are frozen and caught up on approach, turn by turn up to 40 turns (exact), else home plus the last 40 turns (deterministic, the cycle phase differs).
+- **Planner's calls:**
+  1. Free traders also keep ships at any market (trade or research station) whoever owns it (weight 3 against the owner's own groups), so navy trade stations still have merchants. Navy hulls are patrol-only, civilian hulls trader or miner, so corporations field both.
+  2. Mining outposts are asteroid fields a faction owns in its territory (only factions that field miners); drone nests are derelicts in rogue territory. No new structures were added, so chunk generation is untouched.
+  3. A port homed in the player's own node (the start station) starts its fleets one hop out and coming in, so nothing materialises around a new game. Hostile stranded fleets only hail (no interdiction from a hulk).
+  4. Ship names are `prefix + name` per faction (CNS, MCV, HBV, VHI; free traders "Lucky Margin"; scrappers "Rust Jackal"; drones "Unit Reap 31"), unique among living ships; a fleet shows as its first ship, "+n" for the rest.
+  5. Hostile arrival rolls (`rollArrival`, while the player stays) and node contacts are unchanged: they are node ships, not fleets.
+  6. Damage still does not persist beyond "crippled strands the fleet"; salvage, NPC-vs-NPC fights and the economy are stages 3 and 4.
+- **Perf (headless, one core):** `newGame` cold is 270 to 340 ms (seed generation as before; baseline commit measured 275 to 336 ms), warm 3 ms; a turn with a full area (19 simulated fleets of 132 in an 81-chunk world) 0.12 ms, baseline 0.10 ms with 14 fleets;
+  catch-up of a whole area after 300 turns away 2 to 4 ms. The real cost of a turn is materialising a ship in the player's node (generator, about 20 to 50 ms), unchanged.
+- **Tests:** `content/galaxyPopulation.test.ts` (determinism, rosters match port kind and size, budgets and caps, agendas, nothing disappears, rebuild after N turns, catch-up equivalence, save mid-trip, materialise and lift without duplicates, stranding, fled ships),
+  `.slow.test.ts` (all port kinds over four seeds, long run, catch-up beyond the cap); `galaxyTraffic` and `galaxyEncounters` updated; the arrival-warning alert test checks the ship name.
+- **Next:** stage 3, a small economy through `onDock` (traders move real station stock and nudge prices); stage 4, off-screen NPC-vs-NPC encounters with consequences and a news feed.
+
 ## Crew sprite pipeline (branch `crew-pipeline`; merged to `main` with user approval)
 
 Details in `tools/blender/README.md` (Crew layers, Incremental builds) and `docs/ARCHITECTURE.md` (Asset pipeline, Crew).
