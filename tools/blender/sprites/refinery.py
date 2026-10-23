@@ -1,171 +1,132 @@
-"""REFINERY (module.refinery, 3x4, family `refinery`): raw ore in, metal and electronics out, in the machine kit's
-language (machkit.py). Every design is one tall housing filling the footprint, its profile slotted where things go in
-and out: a terminal niche at the access tile (beside the +u long side at v -0.5, sim access [3, 1]) and an output bay
-behind it under a lintel. Three designs while we choose:
+"""REFINERY (module.refinery, 3x4, family `refinery`): raw ore in, metal and electronics out. Built in stages after the
+reference: 1 massing (this blockout, plain grey), 2 sub-forms, 3 colour and light, 4 detail and wear.
 
-  A  spine     a raised spine of three crucible ports along the top, an ore intake stepped into the far end
-  B  tower     a crucible tower rises out of the far end of the housing, lit through slit windows
-  C  kiln      a rotary kiln lies half sunk in a trough along the top, between an intake hood and a discharge hood
+Massing, in tiers: a battered base hull (walls leaning in) with machinery bays let into its long sides between armour
+pilasters and big corner armour; a deck at its top, rimmed, with a channel along the +u half holding two sunken
+hoppers; a spine block along the -u half carrying three octagonal stacks. The crew side (+u, access tile at v -0.5,
+sim access [3, 1]) has the terminal slab in its middle and an output hatch beside it. Local frame: modkit.K, u across
+the 3-tile width, v along the 4."""
+import math
 
-Local frame: modkit.K, u across the 3-tile width, v along the 4."""
 from mathutils import Vector
 
-from . import machkit as M
 from .modkit import K
-from .steelkit import tube
+from .steelkit import face, tube
 
 FP = (3, 4)
 U, V = 1.46, 1.96                    # the footprint's half extents, less a hair
-S = U - 0.42                         # the back wall of the +u slots
-TERM = (-0.95, -0.05)                # the terminal niche (v), at the access tile; its hood from TERM_Z up
-OUT = (-1.82, -1.18)                 # the output bay (v); its lintel from OUT_Z up
-TERM_Z, OUT_Z = 1.0, 0.72
+H = 0.62                             # the deck
+BAT = 0.18                           # the hull's batter: how far its walls lean in, bottom to deck
+BAY = 0.2                            # how deep the bays are let in
+AV = -0.5                            # the access tile's v
+G, GT, GD = "gm", "plate", "steel"   # blockout greys: faces, tops, recesses
+HOLE = "dark"
 
 
-def body(k, h, on, step=None):
-    """The housing, h tall, its +u side slotted for the terminal and the output bay; step = v where the top steps down
-    by 0.38 to the far (+v) end, for an intake."""
-    vb = step if step else V
-    M.hull(k, -U, S, -V, vb, 0, h, cv=(0.28, 0, 0, 0 if step else 0.28), ct=(0.12, 0, 0 if step else 0.12, 0.12))
-    blocks = [(TERM[1], vb, 0, h, (0, 0.05, 0 if step else 0.28, 0), (0, 0.12, 0 if step else 0.12, 0)),
-              (OUT[1], TERM[0], 0, h, (0, 0.05, 0.05, 0), (0, 0.12, 0, 0)),
-              (-V, OUT[0], 0, h, (0, 0.28, 0.05, 0), (0.12, 0.12, 0, 0)),
-              (TERM[0], TERM[1], TERM_Z, h, (0, 0, 0, 0), (0, 0.12, 0, 0)),                    # the hood over the terminal
-              (OUT[0], OUT[1], OUT_Z, h, (0, 0, 0, 0), (0, 0.12, 0, 0))]                        # the lintel over the bay
-    for v0, v1, z0, z1, cv, ct in blocks:
-        M.hull(k, S, U, v0, v1, z0, z1, cv=cv, ct=ct)
-    for v0, v1, z in ((TERM[0], TERM[1], TERM_Z), (OUT[0], OUT[1], OUT_Z)):                  # soffits, lit
-        M.sbox(k, "+u", S, (v0 + v1) / 2, z - 0.03, v1 - v0, 0.4, 0.03, M.BODY_D)
-        M.sbox(k, "+u", S, (v0 + v1) / 2, z - 0.05, v1 - v0 - 0.12, 0.06, 0.02, M.LIT if on else M.BODY_D, d0=0.3)
-    if step:                                                                  # the stepped-down intake end
-        M.hull(k, -U, U, step, V, 0, h - 0.38, cv=(0, 0, 0.28, 0.28), ct=(0, 0.12, 0.12, 0.12))
-        grille(k, -0.85, 0.85, step + 0.12, V - 0.14, h - 0.38)
-    terminal(k, on)
-    output(k, on)
+def _oct(r, c):
+    """Eight corners going round; c = chamfer, one for all or per corner (u0v0, u1v0, u1v1, u0v1)."""
+    u0, u1, v0, v1 = r
+    a, b, d, e = (c,) * 4 if isinstance(c, (int, float)) else c
+    return [(u0 + a, v0), (u1 - b, v0), (u1, v0 + b), (u1, v1 - d), (u1 - d, v1), (u0 + e, v1), (u0, v1 - e), (u0, v0 + a)]
 
 
-def terminal(k, on):
-    """In the niche: a desk whose top slopes up toward the wall, the screen and buttons on the slope, a status lamp."""
-    from .steelkit import face
-    c, w = (TERM[0] + TERM[1]) / 2, 0.37
-    M.sbox(k, "+u", S, c, 0, 2 * w, 0.34, 0.52, M.BODY, top=M.BODY_L)
-    u0, u1, zb, zf = S, S + 0.36, 0.86, 0.56                                 # the slope: high at the wall, low in front
-    for e, want in ((-1, (0, -1, 0)), (1, (0, 1, 0))):
-        face(k, [(u0, c + e * w, 0.52), (u1, c + e * w, 0.52), (u1, c + e * w, zf), (u0, c + e * w, zb)], want, M.BODY)
-    face(k, [(u1, c - w, 0.52), (u1, c + w, 0.52), (u1, c + w, zf), (u1, c - w, zf)], (1, 0, 0), M.TRIM)
-    n = Vector((zb - zf, 0, u1 - u0)).normalized()
-    face(k, [(u0, c - w, zb), (u1, c - w, zf), (u1, c + w, zf), (u0, c + w, zb)], n, M.BODY_D)
-
-    def on_slope(t, sv, lift=0.008):                                      # t 0 at the wall .. 1 at the front edge
-        p = Vector((u0 + (u1 - u0) * t, c + sv, zb + (zf - zb) * t)) + n * lift
-        return tuple(p)
-    face(k, [on_slope(0.08, -0.3), on_slope(0.62, -0.3), on_slope(0.62, 0.3), on_slope(0.08, 0.3)], n,
-         M.SCREEN if on else M.DARK)
-    for i, col in enumerate(("red", "flameY", "cyan", "green")):
-        sv = -0.21 + i * 0.14
-        face(k, [on_slope(0.72, sv - 0.04, 0.02), on_slope(0.88, sv - 0.04, 0.02), on_slope(0.88, sv + 0.04, 0.02),
-                 on_slope(0.72, sv + 0.04, 0.02)], n, col if on else M.BODY_D)
-    M.lamp(k, "+u", S, c + 0.3, TERM_Z - 0.12, on, w=0.06, h=0.05)
+def frustum(k, lo, hi, z0, z1, c_lo=0.0, c_hi=0.0, col=G, top=GT):
+    """A block from the rectangle lo (u0, u1, v0, v1) at z0 to hi at z1, its corners chamfered by c_lo / c_hi."""
+    a, b = _oct(lo, c_lo), _oct(hi, c_hi)
+    cen = Vector(((lo[0] + lo[1]) / 2, (lo[2] + lo[3]) / 2, (z0 + z1) / 2))
+    for i in range(8):
+        j = (i + 1) % 8
+        q = [(*a[i], z0), (*a[j], z0), (*b[j], z1), (*b[i], z1)]
+        if math.dist(a[i], a[j]) + math.dist(b[i], b[j]) < 1e-6:
+            continue
+        mid = sum((Vector(p) for p in q), Vector()) / 4
+        face(k, q, mid - cen, col)
+    face(k, [(*p, z1) for p in b], (0, 0, 1), top)
 
 
-def output(k, on):
-    """In the bay: a dark recess, ingots on the sill, boards on the shelf."""
-    w, c = OUT[1] - OUT[0], (OUT[0] + OUT[1]) / 2
-    M.sbox(k, "+u", S, c, 0.0, w, 0.004, OUT_Z, M.DARK)
-    M.sbox(k, "+u", S, c, 0.0, w, 0.36, 0.12, M.BODY_D, top=M.BODY)
-    M.sbox(k, "+u", S, c, 0.38, w, 0.26, 0.03, M.BODY_D, top=M.BODY)
-    for i in range(3):
-        hot = on and i == 0
-        M.sbox(k, "+u", S, c + (i - 1) * 0.18, 0.12, 0.14, 0.08, 0.05, "orange" if hot else "steelL",
-               top="orange" if hot else "plate", d0=0.2)
-        M.sbox(k, "+u", S, c + (i - 1) * 0.18, 0.41, 0.14, 0.1, 0.015, "pcb", d0=0.1)
+def wall_block(k, side, s0, s1, z1, depth, col=G, c=0.0):
+    """A block standing on a long side (+-u), s0 .. s1 along v, its outer face on the battered line, `depth` deep."""
+    e = 1 if side > 0 else -1
+    out_lo, out_hi = U, U - BAT * z1 / H
+    lo = sorted((e * out_lo, e * (out_lo - depth)))
+    hi = sorted((e * out_hi, e * (out_lo - depth)))
+    frustum(k, (*lo, s0, s1), (*hi, s0, s1), 0, z1, c, c, col)
 
 
-def grille(k, u0, u1, v0, v1, z):
-    """An ore intake: a dark throat under bars, in a painted frame."""
-    k.box((u0 + u1) / 2, (v0 + v1) / 2, z - 0.02, u1 - u0, v1 - v0, 0.03, M.DARK)
-    n = max(3, round((u1 - u0) / 0.12))
-    for i in range(1, n):
-        k.box(u0 + (u1 - u0) * i / n, (v0 + v1) / 2, z, 0.025, v1 - v0, 0.03, M.BODY_D, top=M.BODY)
-    for v in (v0, v1):
-        k.box((u0 + u1) / 2, v, z, u1 - u0 + 0.06, 0.05, 0.05, M.TRIM, top=M.TRIM_L)
-    for u in (u0, u1):
-        k.box(u, (v0 + v1) / 2, z, 0.05, v1 - v0, 0.05, M.TRIM, top=M.TRIM_L)
+def corner(k, su, sv, L, depth=0.62, z1=H + 0.08):
+    """A corner armour block: out on the batter line on both outer faces, its outer corner cut by a big chamfer."""
+    top = BAT * z1 / H
+    us = sorted((su * U, su * (U - depth)))
+    vs = sorted((sv * V, sv * (V - L)))
+    hus = sorted((su * (U - top), su * (U - depth)))
+    hvs = sorted((sv * (V - top), sv * (V - L)))
+    i = {(-1, -1): 0, (1, -1): 1, (1, 1): 2, (-1, 1): 3}[(su, sv)]
+    c_lo, c_hi = [0.0] * 4, [0.0] * 4
+    c_lo[i], c_hi[i] = 0.3, 0.3 - top * 0.5
+    frustum(k, (*us, *vs), (*hus, *hvs), 0, z1, tuple(c_lo), tuple(c_hi))
 
 
-def side_vents(k, on, z0, z1, vs=(-1.0, 0.75), w=1.1, near=True, front=True):
-    """Vent bays round the housing: down the -u side, across both ends (near=False when the +v end is stepped), and
-    on the +u side ahead of the terminal (front)."""
-    for v in vs:
-        M.vent(k, "-u", U, v, z0, z1, w, on)
-    M.vent(k, "-v", V, 0.0, z0, z1, 1.7, on)
-    if near:
-        M.vent(k, "+v", V, 0.0, z0, z1, 1.7, on)
-    if front:
-        M.vent(k, "+u", U, 0.95, z0, z1, 1.3, on)
+def base(k):
+    """The hull: a battered core set back by the bay depth, armour pilasters and corner blocks out on the batter line,
+    roller assemblies in the bays."""
+    ci = U - BAY                                                              # the core's (bay back wall's) half width
+    frustum(k, (-ci, ci, -V, V), (-ci + BAT * 0.6, ci - BAT * 0.6, -V + BAT, V - BAT), 0, H, 0.3, 0.22, GD)
+    corners = 0.46
+    for su in (-1, 1):                                                        # corner armour, wrapping each corner
+        for sv in (-1, 1):
+            corner(k, su, sv, corners)
+    piers = {1: [(-1.12, -0.96), (0.62, 0.78)], -1: [(-0.58, -0.42), (0.42, 0.58)]}
+    for side, ps in piers.items():
+        for s0, s1 in ps:
+            wall_block(k, side, s0, s1, H, BAY + 0.02)
+    bays = {1: [(V - corners, 0.78), (0.62, -0.05)], -1: [(-V + corners, -0.58), (-0.42, 0.42), (0.58, V - corners)]}
+    for side, bs in bays.items():                                             # rollers: two drums stacked in each bay
+        for s0, s1 in bs:
+            a, b = sorted((s0, s1))
+            for z, r in ((0.17, 0.13), (0.43, 0.12)):
+                u = side * (U - BAT * z / H - r - 0.02)
+                tube(k, (u, a + 0.04, z), (u, b - 0.04, z), r, G, sides=12, cap=GT)
+    for end in (-1, 1):                                                       # end armour, across each short end
+        v0, v1 = sorted((end * V, end * (V - BAY - 0.02)))
+        hv0, hv1 = sorted((end * (V - BAT * (H + 0.06) / H), end * (V - BAY - 0.02)))
+        frustum(k, (-U + corners * 0.6, U - corners * 0.6, v0, v1), (-U + corners * 0.8, U - corners * 0.8, hv0, hv1),
+                0, H + 0.06, 0.0, 0.0)
 
 
-def variant_a(k, on):
-    h = 1.2
-    body(k, h, on, step=1.4)
-    M.hull(k, -0.62, 0.62, -1.6, 1.25, h, h + 0.36, cv=0.14, ct=0.08, bevel=M.BODY)
-    for v in (-0.98, 0.0, 0.98):
-        M.port(k, 0.0, v, h + 0.36, 0.27, on)
-    if on:
-        for side in ("+u", "-u"):
-            M.sbox(k, side, 0.62, -0.18, h + 0.14, 2.5, 0.01, 0.03, M.LIT)
-    side_vents(k, on, 0.25, 0.95, near=False, front=False)
-    M.vent(k, "+u", U, 0.62, 0.25, 0.95, 1.0, on)
-    M.vent(k, "+v", V, 0.0, 0.18, 0.62, 1.7, on)
+def deck(k):
+    """The deck's rim along the +u edge and the ends, the channel inside it, two sunken hoppers in the channel."""
+    ci = U - BAY - BAT * 0.6
+    frustum(k, (ci - 0.3, ci, -V + BAT + 0.3, V - BAT - 0.3), (ci - 0.28, ci - 0.03, -V + BAT + 0.32, V - BAT - 0.32),
+            H, H + 0.16)
+    for e in (-1, 1):
+        v0, v1 = sorted((e * (V - BAT), e * (V - BAT - 0.35)))
+        frustum(k, (-ci, ci, v0, v1), (-ci + 0.03, ci - 0.03, v0 + 0.02, v1 - 0.02), H, H + 0.16)
+    for v in (0.2, 1.0):                                                      # hoppers: open boxes sunk in the channel
+        u, s = 0.42, 0.27
+        k.box(u, v, H - 0.02, 2 * s - 0.08, 2 * s - 0.08, 0.04, HOLE)
+        for du, dv, su, sv in ((-s, 0, 0.06, 2 * s), (s, 0, 0.06, 2 * s), (0, -s, 2 * s, 0.06), (0, s, 2 * s, 0.06)):
+            k.box(u + du, v + dv, H, su, sv, 0.2, G, top=GT)
 
 
-def variant_b(k, on):
-    h = 1.05
-    body(k, h, on)
-    tu, tv, tw = 0.0, 1.05, 0.88                                              # the tower: centre, half width
-    M.hull(k, tu - tw, tu + tw, tv - tw, tv + tw, h, 2.0, cv=0.32, ct=0.12)
-    for side, pl, s in (("+u", tw, tv), ("-v", -(tv - tw), 0.0), ("-u", tw, tv)):
-        for e in (-0.3, 0.0, 0.3):                                            # slit windows, lit within
-            M.sbox(k, side, pl, s + e, 1.22, 0.1, 0.006, 0.55, M.DARK)
-            M.sbox(k, side, pl, s + e, 1.27, 0.05, 0.01, 0.45, M.LIT if on else M.BODY_D)
-            for z in (1.19, 1.77):
-                M.sbox(k, side, pl, s + e, z, 0.16, 0.04, 0.03, M.TRIM_D, top=M.TRIM)
-    k.cyl(tu, tv, 2.0, 0.5, 0.1, M.BODY_D, top=M.BODY, sides=20)                                # the cap
-    M.port(k, tu, tv, 2.1, 0.3, False)                                                          # the ore intake
-    k.cyl(-0.45, -1.4, h, 0.13, 0.75, M.BODY, top=M.DARK, sides=10)                              # the stack
-    k.cyl(-0.45, -1.4, h + 0.6, 0.15, 0.07, M.TRIM, top=M.DARK, sides=10)
-    for u, v in ((0.3, -0.55), (0.3, -1.3)):
-        M.port(k, u, v, h, 0.2, on)
-    side_vents(k, on, 0.22, 0.82, vs=(-1.0,), w=1.3)
+def spine(k):
+    """The raised block along the -u half and its three octagonal stacks, hollow at the top."""
+    frustum(k, (-1.12, 0.02, -1.55, 1.55), (-1.06, -0.04, -1.5, 1.5), H, H + 0.55, 0.12, 0.1)
+    for v in (-1.0, 0.0, 1.0):
+        u, z0, z1, r = -0.55, H + 0.55, H + 1.2, 0.36
+        frustum(k, (u - r, u + r, v - r, v + r), (u - r, u + r, v - r, v + r), z0, z1, 0.22, 0.22)
+        k.box(u, v, z1 - 0.04, 1.2 * r, 1.2 * r, 0.05, HOLE)
 
 
-def variant_c(k, on):
-    h = 1.0
-    body(k, h, on)
-    a, b = Vector((0.0, -1.2, h + 0.05)), Vector((0.0, 1.2, h))               # the kiln's axis, falling to the discharge
-    for e in (-1, 1):                                                         # the trough's walls
-        M.hull(k, e * 0.62 - 0.17, e * 0.62 + 0.17, -1.25, 1.25, h, h + 0.2, cv=0.04, ct=0.05, bevel=M.TRIM_D,
-               corner=None)
-    tube(k, a, b, 0.46, M.BODY, sides=20, cap=M.DARK)
-    for v in (-0.6, 0.6):                                                     # riding rings
-        c = a.lerp(b, (v - a.y) / (b.y - a.y))
-        tube(k, c - Vector((0, 0.06, 0)), c + Vector((0, 0.06, 0)), 0.52, M.TRIM, sides=20, cap=M.TRIM_D)
-    for v in (-0.22, 0.18):                                                   # the hot seams
-        c = a.lerp(b, (v - a.y) / (b.y - a.y))
-        tube(k, c - Vector((0, 0.025, 0)), c + Vector((0, 0.025, 0)), 0.475, M.LIT if on else M.DARK, sides=20)
-    M.hull(k, -0.9, 0.9, 1.2, V, h, 1.75, cv=(0, 0, 0.2, 0.2), ct=(0.08, 0.1, 0.1, 0.1))     # intake hood
-    grille(k, -0.5, 0.5, 1.38, 1.8, 1.75)
-    M.hull(k, -0.95, 0.95, -V, -1.2, h, 1.85, cv=(0.2, 0.2, 0, 0), ct=(0.1, 0.1, 0.08, 0.1))   # discharge hood
-    k.cyl(-0.5, -1.6, 1.85, 0.13, 0.4, M.BODY, top=M.DARK, sides=10)
-    k.cyl(-0.5, -1.6, 2.15, 0.15, 0.07, M.TRIM, top=M.DARK, sides=10)
-    M.vent(k, "-v", V, 0.0, h + 0.15, h + 0.65, 1.2, on)
-    side_vents(k, on, 0.22, 0.78)
+def terminal(k):
+    """The crew side's middle: a slab tower at the access tile (screen up top later), an output hatch beside it."""
+    frustum(k, (U - 0.44, U, AV - 0.36, AV + 0.36), (U - 0.44, U - 0.08, AV - 0.32, AV + 0.32), 0, H + 0.5, 0.06, 0.06)
+    k.box(U - 0.05, -1.37, 0.06, 0.04, 0.42, 0.42, GD)                       # the output hatch, set in its bay
 
 
-VARIANTS = {"A": variant_a, "B": variant_b, "C": variant_c}
-
-
-def refinery(variant, rot, on):
-    k = K(f"refinery_{variant}_{rot}_{int(on)}", FP, rot)
-    VARIANTS[variant](k, on)
+def blockout(rot=0):
+    k = K(f"refinery_blockout_{rot}", FP, rot)
+    base(k)
+    deck(k)
+    spine(k)
+    terminal(k)
     return k.build()
