@@ -25,14 +25,14 @@
   const pct = (t: { moved: number; total: number }) => Math.round((t.moved / Math.max(1, t.total)) * 100);
 </script>
 
-<div data-testid="transfer-section">
+<div class="ts" data-testid="transfer-section">
   {#if data.regions.length > 1 && from && to}
     <div class="route" data-testid="transfer-form">
       <Select label="From" testId="transfer-from" value={String(from.id)} onChange={(v) => { fromId = Number(v); picked = {}; }} options={regionOpts()} />
       <span class="arrow">to</span>
       <Select label="To" testId="transfer-to" value={String(to.id)} onChange={(v) => (toId = Number(v))} options={regionOpts(from.id)} />
     </div>
-    <ul class="items">
+    <div class="scroll"><ul class="items">
       {#each lines as l (l.item)}
         <li data-testid="transfer-line-{l.item}">
           <span class="nm"><ItemIcon {api} item={l.item} size={26} />{l.name}</span>
@@ -43,7 +43,7 @@
       {:else}
         <li class="none">Nothing stored at {from.name}.</li>
       {/each}
-    </ul>
+    </ul></div>
     <button class="go" disabled={chosen === 0} data-testid="transfer-send" onclick={send}>Transfer{chosen ? ` ${chosen}` : ''}</button>
     <p class="hint">A free shuttle and pilot take it over by themselves, in as many trips as it needs.</p>
   {:else}
@@ -51,7 +51,7 @@
   {/if}
 
   <h3>Queue</h3>
-  <ul class="queue" data-testid="transfer-queue">
+  <div class="qscroll"><ul class="queue" data-testid="transfer-queue">
     {#each data.transfers as t (t.id)}
       <li data-testid="transfer-{t.id}" class:blocked={t.state === 'blocked'}>
         <div class="row1"><b>{t.from} to {t.to}</b>{#if t.auto}<small>salvage</small>{/if}
@@ -63,15 +63,18 @@
     {:else}
       <li class="none" data-testid="transfer-empty">No transfers.</li>
     {/each}
-  </ul>
+  </ul></div>
 </div>
 
 <style>
-  .route { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; align-items: center; margin-bottom: 6px; }
+  .ts { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .route, .go, .hint, h3 { flex: none; }
+  .scroll { flex: 1 1 0; min-height: 96px; overflow-y: auto; border: 1px solid var(--line); background: var(--panel-2); padding: 6px; }
+  .qscroll { flex: 0 1 34%; min-height: 64px; overflow-y: auto; }
+  .route { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; align-items: center; margin-bottom: 8px; }
   .route :global(.kit-sel-trigger) { width: 100%; }
   .arrow, small, .hint { color: var(--dim); font-size: 12px; }
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-  .items { max-height: 34vh; overflow-y: auto; }
   .items li { display: grid; grid-template-columns: 1fr 36px auto; align-items: center; gap: 6px; }
   .items small { text-align: right; }
   .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
