@@ -322,15 +322,25 @@ def greeble(f):
     f.box(-0.64, 0, C + 0.98, 0.05, 0.05, 0.04, "red")                       # the top panel
 
 
-SOOT, SOOT_FALL = 0.6, 0.2     # soot round the rear bore: its darkening at the rim, and how far out it halves
-DIRT, DIRT_FROM = 0.3, -0.25  # dirt gathering low on the hull: its darkening at the bottom, from what height (x R) down
+SOOT, SOOT_FALL = 0.75, 0.3    # soot round the rear bore: its darkening at the rim, and how far out it halves
+DUST = "gdD"                  # the dirt's colour: the asteroid's dust
+STREAKS = ((-0.62, 0.55), (-0.33, 0.7), (-0.06, 0.5), (0.2, 0.75), (0.41, 0.45), (0.66, 0.6))   # (u, top z / R)
+
+
+def _smooth(x):
+    x = max(0.0, min(1.0, x))
+    return x * x * (3 - 2 * x)
 
 
 def wear(mh, c0, c1, cb):
-    """Soft wear, darkening the hull's own faces (each colour scaled) by where they lie: soot blown back round the rear
-    thruster's bore, fading out over the back; dirt gathered low on the hull, toward its underside. c0, c1, cb: the
-    body frame's origin, a point along its u (the pod's v) and one along its v (the pod's back), in Blender space."""
+    """Soft wear on the hull's own faces, by where they lie (the faces are fine, so it reads as a gradient): soot blown
+    back round the rear thruster's bore and fading out over the back; and dirt, the steel blended toward the asteroid's
+    dust, gathered low on the hull, packed into the creases where the drum meets the domes and round the hatch frames,
+    run down the hull in a few streaks, and uneven all over in broad, soft blotches. c0, c1, cb: the body frame's
+    origin, a point along its u (the pod's v) and one along its v (the pod's back), in Blender space."""
     from mathutils import Vector
+    from lib import palette
+    dust = palette.linear(DUST)
     o = Vector(c0)
     a, b = (Vector(c1) - o).normalized(), (Vector(cb) - o).normalized()
     for k, (idx, col, own, glow) in enumerate(mh.f):
@@ -338,12 +348,15 @@ def wear(mh, c0, c1, cb):
         s, back, z = p.dot(a), p.dot(b), p.z
         soot = 0.0
         if back > 0:                                                         # on the back: by distance from the bore
-            out = max(0.0, math.hypot(s, z) - BORE)
-            soot = SOOT * 0.5 ** (out / SOOT_FALL) * min(1.0, back / 0.6)
-        lo = max(0.0, min(1.0, (DIRT_FROM * R - z) / ((1 + DIRT_FROM) * R)))
-        dirt = DIRT * lo * lo * (3 - 2 * lo)
-        f = (1 - soot) * (1 - dirt)
-        mh.f[k] = (idx, tuple(x * f for x in col), own, glow)
+            soot = SOOT * 0.5 ** (max(0.0, math.hypot(s, z) - BORE) / SOOT_FALL) * min(1.0, back / 0.5)
+        low = _smooth((0.1 * R - z) / R)                                     # low on the hull
+        crease = math.exp(-((abs(s) - 0.5) / 0.05) ** 2) + math.exp(-((abs(s) - 0.79) / 0.04) ** 2)
+        streak = sum(math.exp(-((s - su) / 0.035) ** 2) * (0.6 ** ((zt * R - z) / 0.25) if z < zt * R else 0.0)
+                     for su, zt in STREAKS)
+        blot = 0.5 + 0.5 * math.sin(3.1 * s + 1.3) * math.sin(2.7 * z + 0.4) * math.cos(2.2 * back - 0.8)
+        dirt = min(0.7, 0.5 * low + 0.35 * crease + 0.35 * streak + 0.3 * _smooth((blot - 0.45) / 0.4))
+        f = 1 - soot
+        mh.f[k] = (idx, tuple(x * f * (1 - dirt) + d * dirt for x, d in zip(col, dust)), own, glow)
 
 
 def pod(heading, state="parked", bob=0.0, dz=0.0):
