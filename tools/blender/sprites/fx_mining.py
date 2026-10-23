@@ -19,6 +19,13 @@ from .fxkit import N, P, R, U, UP, Fx, spikes
 
 O = Vector((0, 0, 0))
 LOOP = 4
+STYLE = "orange"              # the laser's colour (the pod's emitter is lit to match)
+RAMPS = {                     # beam halo, sheath, core; hit rim, pool, hot spot (face, rim), flare; sparks by age
+    "orange": dict(halo="fxO", sheath="fxY", core="fxW", rim="fxO", pool="fxY", spot=("fxW", "fxY"), flare="fxY",
+                   sparks=("fxW", "fxY", "fxO", "fxR")),
+    "red": dict(halo="fxD", sheath="red", core="fxW", rim="fxD", pool="red", spot=("fxW", "fxR"), flare="red",
+                sparks=("fxW", "fxR", "red", "fxD")),
+}
 
 
 def beam(k):
@@ -28,15 +35,16 @@ def beam(k):
 
     def band(h, col, v=0.0):                                                 # square-ended, so segments tile
         f.flat([P(-0.5, v - h / 2), P(0.5, v - h / 2), P(0.5, v + h / 2), P(-0.5, v + h / 2)], col)
-    band(0.17 + 0.03 * pulse, "fxO")
-    band(0.1 + 0.015 * math.sin(ph * math.tau + 1.7), "fxY")
-    band(0.04, "fxW")
+    c = RAMPS[STYLE]
+    band(0.17 + 0.03 * pulse, c["halo"])
+    band(0.1 + 0.015 * math.sin(ph * math.tau + 1.7), c["sheath"])
+    band(0.04, c["core"])
     for j in range(2):                                                       # nodes running along it, every half tile,
         u = -0.5 + ((ph + j / 2) % 1)                                        # cut at the segment's ends and wrapped
         for du in (0.0, -1.0, 1.0):                                          # round, so segments tile seamlessly
             pts = _clip_u([(u + du + a, b) for a, b in ((-0.07, 0), (0, -0.05), (0.07, 0), (0, 0.05))])
             if len(pts) >= 3:
-                f.flat([P(a, b) for a, b in pts], "fxW")
+                f.flat([P(a, b) for a, b in pts], c["core"])
     return f.build()
 
 
@@ -76,15 +84,17 @@ def hit(k):
     f = Fx(f"mining_hit_{k}")
     rng = np.random.default_rng(23)
     flick = (1.0, 0.85, 1.1, 0.9)[k] * HIT
-    f.ring(O, 0.2 * flick, 0.08, "fxO", segs=14)                             # the molten rim
-    f.ring(O, 0.13 * flick, 0.13 * flick, "fxY", segs=12)                    # the pool
-    f.sphere(O + UP * 0.03, 0.075 * flick, lambda n: "fxW" if n.dot(N) > 0.25 else "fxY", segs=10, rings=6)   # hot spot
-    spikes(f, O + UP * 0.05 + N * 0.15, 4, 0.04 * HIT, (0.2 + 0.06 * (k % 2)) * HIT, 0.045 * HIT, "fxY",
+    c = RAMPS[STYLE]
+    f.ring(O, 0.2 * flick, 0.08, c["rim"], segs=14)                          # the molten rim
+    f.ring(O, 0.13 * flick, 0.13 * flick, c["pool"], segs=12)                # the pool
+    f.sphere(O + UP * 0.03, 0.075 * flick, lambda n: c["spot"][0] if n.dot(N) > 0.25 else c["spot"][1], segs=10,
+             rings=6)                                                        # hot spot
+    spikes(f, O + UP * 0.05 + N * 0.15, 4, 0.04 * HIT, (0.2 + 0.06 * (k % 2)) * HIT, 0.045 * HIT, c["flare"],
            rot=math.pi / 4 * (k % 2))
     for a, out, up, born in _thrown(rng, 12, 0.11 * HIT, 0.17 * HIT):                    # sparks, each a few frames old
         age = (k - born) % LOOP + 1
         p0, p1 = _at(a, out, up, age - 0.8), _at(a, out, up, age)
-        f.streak(p0 + N * 0.3, p1 + N * 0.3, 0.0, 0.045, ("fxW", "fxY", "fxO", "fxR")[age - 1])
+        f.streak(p0 + N * 0.3, p1 + N * 0.3, 0.0, 0.045, c["sparks"][age - 1])
     return f.build()
 
 
