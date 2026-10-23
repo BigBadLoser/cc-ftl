@@ -164,8 +164,23 @@ Planner's calls:
   are undrafted (the shuttle's `outsideCrew` check would otherwise hold it forever) and are crew of that region for jobs. Not done: crew
   walking between regions (they are never close), a "stop work and come home" auto order, base supply hauling by itself.
   Events `ferry.started|delivered|done`. A shuttle on a run, a trade run or a mining order is busy (`ferryFree`).
-- **UI.** Shuttle panel: a "Base run" form per free shuttle (from, to, item, amount; only when the player has a base). Crew card: "Go to
+- **UI.** (The shuttle panel's "Base run" form is gone: see "Logistics" below.) Crew card: "Go to
   <base>" / "Come home" under "Base trip" (picks a free shuttle). `UiShuttles.regions` and `ferryReady` feed both.
+- **Logistics (`src/sim/logistics/`, save v35).** The player no longer micro-manages runs. `transfer.order { from, to, items }` queues an
+  order (its own entity, `TransferC`: items left, moved/total, status `queued|boarding|underway|blocked`); `transfer.cancel { order }` ends it.
+  `logisticsSystem` (after `ferrySystem`) gives each queued order the lowest free shuttle (`ferryFree`) and the free crew member on the
+  shuttle's home ship with the best piloting (`pickPilot`, so real pilots first; undrafted, not reserved), who walks to the bay and
+  climbs in; then it starts an ordinary ferry run (`startFerry`, shared with `ferry.order`) for one hold-load. The ferry flow settles
+  each trip (`settleTransfer`, called as the run ends) and the next trip starts by itself. Orders with no shuttle, pilot, dock or stock
+  wait and retry (events `transfer.blocked`, reason `noShuttle|noPilot|noAirlock|noStock|failed`); three failed trips in a row wait for
+  a cancel. Cancel: a queued or boarding order just ends, a trip not yet loaded is called home, one already loaded finishes its delivery.
+  Events `transfer.queued|underway|delivered|blocked|cancelled` (alerts: salvage queued, delivered, blocked).
+- **Salvage auto-ferry** (`logistics/salvage.ts`). On a captured prize or ruined derelict where player crew stand, the loot (storage and loose
+  stacks) is queued home as one auto order when it fills a shuttle hold, or when the site went quiet (no open jobs there, pile unchanged for
+  20 s). One open salvage order per site. Pickup regions can be such sites (`isPickupRegion`); loose stacks are taken by crew hauls, or by
+  the instant swap when nobody hauls. Derelicts with no crew of ours on them are left alone.
+- **Transfers UI.** Stock drawer, "Transfers" tab (`TransferSection.svelte`): From and To `Select`s, a `NumberStepper` per stocked item, a
+  Transfer button, and the queue with status, progress and Cancel. `UiShuttles.transfers` feeds it.
 - **Mining paint.** Build menu "Mine ore (paint)" (tool kind `mine`, `UiToolState.pods`) and a "Paint ore to mine..." button in the
   asteroid panel, with chips to choose which pods (all by default). Drag a rectangle: the preview highlights only the ore tiles in it, and
   release sends `mining.order { pod, asteroid, tiles }` to each chosen pod (every pod when none is chosen; one asteroid per drag, the first
