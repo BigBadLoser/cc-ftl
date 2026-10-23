@@ -15,7 +15,10 @@ floor (pod_bay.PIT down).
 Family `mining_pod` (the sector view; origin = the pod's centre, the bell's foot at z 0):
   vehicle.mining_pod.fly.d0..d7        8 headings (d0 = +x, d2 = +y), thrusters lit
   vehicle.mining_pod.mine.d0..d7.f0..f1   mining: hovering, laser down and lit, arms out; two frames of a slight bob
-  vehicle.mining_pod.docked.d0/2/4/6   the docked pose (laser folded, thrusters dark): the lift off / settle in a bay"""
+  vehicle.mining_pod.docked.d0/2/4/6   the docked pose (laser folded, thrusters dark): the lift off / settle in a bay
+
+`emitter(d)` gives, for the mining sprites, where the beam leaves the laser: its mouth in sprite px from the craft
+origin (right, down) and the barrel's direction on screen, so the renderer can start fx.mining.beam there."""
 import math
 
 from . import core, post, vehicle_bay as VB, pod_bay as B, mining_pod as P
@@ -61,6 +64,25 @@ def craft_item(name, heading, state, bob=0.0):
     post.select(True)
     dz = 0.0 if state in ("parked", "docked") else -HOVER
     return [VB._render(name, "prop", P.pod(heading, state, bob=bob, dz=dz), [], (1, 1))]
+
+
+def emitter(d, bob=0.0):
+    """The mining laser's mouth for vehicle.mining_pod.mine.d<d> (px right and down from the origin) and the barrel's
+    screen direction (a unit (right, down) vector)."""
+    pitch = math.radians(-60)
+    reach = P.LASER_U + 0.71                                                 # the flared emitter's mouth
+    f = P.Spin(None, d * math.pi / 4)
+
+    def px(u, z):
+        x, y = f.xy(u, 0.0)
+        right, up = core.screen_xy(core.G(x, y, z + bob))
+        return right, -up
+    lu = reach - P.LASER_U
+    mouth = px(P.LASER_U + lu * math.cos(pitch), P.LASER_Z + lu * math.sin(pitch))
+    back = px(P.LASER_U, P.LASER_Z)
+    dx, dy = mouth[0] - back[0], mouth[1] - back[1]
+    n = math.hypot(dx, dy) or 1.0
+    return mouth, (dx / n, dy / n)
 
 
 def jobs():
