@@ -33,6 +33,10 @@
   clutter   floor clutter props: barrels, crates, potted plants, a toppled chair, a tool cart (clutter.py)
   cryo      the cryo pod, idle / .active (frozen, occupied) / .empty (open) (cryo.py; MODPACK_ROTS as above)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
+  rock      asteroid rock: rock mass by neighbour mask, levelled ground with its worn edge and under-lip, ore tiles (rock.py)
+  rockwall  finished rock walls: dressed stone, the metal wall set mirrored piece for piece (rockwall.py)
+  pod_bay   the mining pod's 3x3 bay (pit, iris, clamp arms) and the pod parked in it, 4 rotations (pod_family.py)
+  mining_pod the mining pod: 8 fly headings, 8 mining headings x 2 frames, 4 docked poses (pod_family.py craft_jobs)
 Crew layers are built separately (`crew`)."""
 
 
@@ -148,11 +152,24 @@ def jobs(name):
     if name == "roof":
         from . import roofs, roof_cuts
         return roofs.SPRITES + roof_cuts.SPRITES, True
+    if name == "rock":
+        from . import rock
+        return rock.jobs(), True
+    if name == "rockwall":
+        from . import rockwall
+        return rockwall.jobs(), True
+    if name == "pod_bay":
+        from . import pod_family
+        return pod_family.jobs(), True
+    if name == "mining_pod":
+        from . import pod_family
+        return pod_family.craft_jobs(), True
     raise KeyError(name)
 
 
 # `structure` is preview-only (no full build yet): build it by name, it is not part of `all`.
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
-            "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage")
+            "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
+            "pod_bay", "mining_pod")
 ALL = RENDERED + ("sol", "damage_sol")
