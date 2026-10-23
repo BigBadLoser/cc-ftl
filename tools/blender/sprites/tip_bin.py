@@ -125,8 +125,13 @@ def flange(k):
         for j in range(n):
             o0, o1 = lerp(o[a], o[b], j / n), lerp(o[a], o[b], (j + 1) / n)
             i0, i1 = lerp(i[a], i[b], j / n), lerp(i[a], i[b], (j + 1) / n)
-            _face(k, [top(o0), top(o1), top(i1), top(i0)], (0, 0, 1), YEL_L)
-            _face(k, [top(o0), top(o1), bot(o1), bot(o0)], mid, YEL)
+            for m in range(4):                                             # across the rim too, so chips are spots
+                a0, a1 = lerp(o0, i0, m / 4), lerp(o0, i0, (m + 1) / 4)
+                b0, b1 = lerp(o1, i1, m / 4), lerp(o1, i1, (m + 1) / 4)
+                _face(k, [top(a0), top(b0), top(b1), top(a1)], (0, 0, 1), YEL_L)
+            for m in range(3):                                             # its outer face in rows
+                za, zb = 0.03 - 0.1 * m / 3, 0.03 - 0.1 * (m + 1) / 3
+                _face(k, [top(o0, za), top(o1, za), top(o1, zb), top(o0, zb)], mid, YEL)
             _face(k, [top(i0), top(i1), bot(i1), bot(i0)], -mid, YEL_D)
             _face(k, [bot(o0), bot(o1), bot(i1), bot(i0)], (0, 0, -1), YEL_D)
 

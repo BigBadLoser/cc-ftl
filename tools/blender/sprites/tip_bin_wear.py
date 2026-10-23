@@ -72,6 +72,12 @@ def _s(x):
     return x * x * (3 - 2 * x)
 
 
+def _hash(p, salt=0.0):
+    """A repeatable random number in [0, 1) for a point."""
+    x = math.sin(12.9898 * p.x + 78.233 * p.y + 37.719 * p.z + salt) * 43758.5453
+    return x - math.floor(x)
+
+
 def grime(k, n0, n1, centre, top_z, lip_v, seed=5):
     """Wear on faces n0 .. n1: centre (local) is a point inside the bin, top_z(v) its rim height."""
     from lib import palette
@@ -91,9 +97,12 @@ def grime(k, n0, n1, centre, top_z, lip_v, seed=5):
             n += Vector(((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y)))
         below = top_z(c.y) - c.z
         blot = 0.5 + 0.5 * math.sin(4.1 * c.x + 1.3) * math.sin(3.3 * c.y + 0.4) * math.cos(2.9 * c.z - 0.8)
-        spot = math.sin(29 * c.x + 3.1) * math.sin(37 * c.y + 1.7) * math.sin(23 * c.z + 0.6)
         lip = _s((c.y - lip_v + 0.12) / 0.1)                                # the tipping lip takes the scraping
-        chip = 0.7 * _s((0.07 - abs(below)) / 0.05) * _s((spot - 0.5 + 0.35 * lip) / 0.25) * (0.3 + 0.7 * lip)
+        clump = 0.5 + 0.5 * math.sin(5.3 * c.x + 1.1) * math.sin(4.1 * c.y + 2.3)
+        p_chip = (0.08 + 0.4 * lip) * (0.4 + 0.9 * clump)                   # scattered chips, in clumps
+        chip = 0.0
+        if _hash(c) < p_chip:
+            chip = (0.45 + 0.4 * _hash(c, 7.1)) * _s((0.07 - abs(below)) / 0.05)
         col = Vector(col)
         n = -n                                                              # stored winding is mirrored (core.G, flip)
         if n.dot(c - centre) < 0 and n.z < 0.9:                              # inside walls
