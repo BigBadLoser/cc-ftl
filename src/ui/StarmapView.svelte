@@ -10,6 +10,7 @@
   import StarmapStats from './StarmapStats.svelte';
   import { fade } from 'svelte/transition';
   import StarmapInfo from './StarmapInfo.svelte';
+  import StarmapNews from './StarmapNews.svelte';
   import StarmapGalaxy from './StarmapGalaxy.svelte';
   import StarmapCluster from './StarmapCluster.svelte';
   import StarmapSector from './StarmapSector.svelte';
@@ -108,6 +109,7 @@
       },
     };
   });
+  let newsOpen = $state(false);
   const drawerOpen = $derived(!!map && level < 3 && (!!map.travel || !!sel));
   const interdiction = $derived(map?.encounters.find((e) => e.kind === 'interdict') ?? null);
   const cardOpen = $derived(drawerOpen || (!!pickedInfo && level === 3));
@@ -440,8 +442,9 @@
       <button class="tile" title="Zoom in" aria-label="Zoom in" onclick={() => zoomAt(w / 2, h / 2, 1.4)}><Icon name="zoomIn" size={22} /></button>
       <button class="tile" title="Zoom out" aria-label="Zoom out" onclick={() => zoomAt(w / 2, h / 2, 1 / 1.4)}><Icon name="zoomOut" size={22} /></button>
       <button class="tile" title="Centre on your ship" aria-label="Centre on your ship" onclick={recenter}><Icon name="recenter" size={22} /></button>
+      <button class="tile" class:on={newsOpen} title="News and rumours" aria-label="News and rumours" aria-pressed={newsOpen} onclick={() => (newsOpen = !newsOpen)} data-testid="starmap-news-toggle"><Icon name="list" size={22} /></button>
     </div>
-    {#if seenFactions.length && !cardOpen}
+    {#if seenFactions.length && !cardOpen && !newsOpen}
       <ul class="legend" aria-label="Territory">
         <li class="lh">Territory</li>
         {#each seenFactions as f (f.id)}
@@ -449,6 +452,7 @@
         {/each}
       </ul>
     {/if}
+  {#if map && newsOpen && !drawerOpen}<StarmapNews news={map.news} turn={map.turn} onClose={() => (newsOpen = false)} />{/if}
   {#if interdiction}<InterdictModal encounter={interdiction} onChoose={respond} />{/if}
   {#if map && drawerOpen}
       <StarmapDrawer {map} node={sel} sector={sel ? sectorById.get(sel.sector) ?? null : null} cluster={sel ? map.clusters.find((c) => c.id === sectorById.get(sel.sector)?.cluster) ?? null : null}
@@ -481,6 +485,7 @@
   .tools button.tile { border: 0; border-bottom: 1px solid var(--line); background: transparent; }
   .tools button.tile:last-child { border-bottom: 0; }
   .tools button.tile:hover { background: var(--panel-3); }
+  .tools button.tile.on { box-shadow: inset 0 0 0 1px var(--cyan); }
   .legend { position: absolute; left: 8px; bottom: 8px; margin: 0; padding: 6px 10px; list-style: none; background: var(--panel); border: 1px solid var(--line-hi); font-size: 12px; display: grid; gap: 3px; pointer-events: none; }
   .legend .lh { font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); }
   .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }

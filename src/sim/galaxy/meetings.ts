@@ -122,15 +122,18 @@ export function apply(sim: Sim, m: Meeting, c: Clash, turn: number): void {
     if (raid) news({ kind: 'raid', ...base });
     else if (lost.length) news({ kind: 'destroyed', ...base });
     else news({ kind: 'driven', ...base });
-    if (lost.length && l.role === 'trader') news({ kind: 'cut', who: nameL, faction: l.faction });
+    let looted = false;
     // A pirate that won takes what the loser carried: everything if it was destroyed, half if it ran.
     if ((w.role === 'pirate' || w.role === 'raider') && w.ships.length && (l.cargo?.length ?? 0) > 0) {
       const taken = loot(w, l, loserSide.fate === 'destroyed' ? 1 : 0.5);
       if (loserSide.fate === 'fled') l.cargo = (l.cargo ?? []).map((x) => ({ ...x, count: x.count - (taken.find((t) => t.item === x.item)?.count ?? 0) })).filter((x) => x.count > 0);
       const best = taken.reduce<{ item: string; count: number } | null>((p, t) => (!p || t.count > p.count ? t : p), null);
       if (best) news({ kind: 'loot', ...base, item: best.item, count: taken.reduce((n, t) => n + t.count, 0) });
+      looted = !!best;
       if (taken.length) headHome(sim, w);
     }
+    // A trader lost with nothing worth taking is still a trade route cut (with loot, the loot line says it).
+    if (lost.length && l.role === 'trader' && !looted) news({ kind: 'cut', who: nameL, faction: l.faction });
     // A patrol that drove a pirate away follows it.
     if (w.role === 'patrol' && (l.role === 'pirate' || l.role === 'raider') && loserSide.fate === 'fled' && l.ships.length) chase(sim, w, l);
   }

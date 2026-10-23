@@ -206,13 +206,15 @@ describe('meetings away from the player', () => {
     const loaded = run(true);
     expect(loaded.took).toEqual([{ item: 'item.ration', count: 18 }]);
     expect(loaded.sim.galaxy.news.some((n) => n.kind === 'loot' && n.item === 'item.ration' && n.count === 18)).toBe(true);
-    expect(loaded.sim.galaxy.news.some((n) => n.kind === 'cut')).toBe(true);
     // It heads home (or rests there) and, docked, the cargo goes into the market.
     const { sim, pirate, e } = loaded;
     pirate.dwell = 0;
     for (let i = 0; i < 40 && (pirate.cargo?.length ?? 0) > 0; i++) turns(sim, 1);
     expect(pirate.cargo).toBeUndefined();
     const twin = run(false);
+    // Nothing to take: the lost trader is reported as a trade route cut.
+    expect(twin.sim.galaxy.news.some((n) => n.kind === 'cut')).toBe(true);
+    expect(twin.sim.galaxy.news.some((n) => n.kind === 'loot')).toBe(false);
     twin.pirate.dwell = 0;
     for (let i = 0; i < 40; i++) turns(twin.sim, 1);
     // Both worlds are on the same turn count only if each ran the same loop; compare at a common turn.

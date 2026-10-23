@@ -4,6 +4,7 @@ import {
 } from '../sim';
 import type { UiStarExit, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { cargoOf, marketOf } from './marketSnapshot';
+import { newsOf } from './newsSnapshot';
 import { toneOf } from './starmapTone';
 import { ROLE_LABEL, encountersOf, eventOf, resultOf } from './encounterSnapshot';
 import { nebulaAround } from './starmapNebula';
@@ -122,7 +123,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
   return {
     rev: g.rev, ...starmapStatus(sim), dangerStep: DANGER_STEP, sectors, nodes, fleets: fleetsOf(sim, (id) => (known(id) ? index.nodes.get(id)?.name : undefined) ?? 'uncharted space'), edges, factions,
     currentSector: here?.id ?? '', currentCluster: here?.cluster ?? null, exits, ...outer,
-    nebula: here ? nebulaAround(sim, here.x, here.y) : [],
+    nebula: here ? nebulaAround(sim, here.x, here.y) : [], news: newsOf(sim),
   };
 }
 
@@ -150,6 +151,6 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
 export function emptyStarmap(): UiStarmap {
   return {
     rev: -1, current: '', ship: 0, fuel: 0, charge: 0, chargeMax: FTL_CHARGE_SEC, jumps: 0, turn: 0, state: 'active', travel: null, credits: 0, encounters: [], event: null, result: null, dangerStep: DANGER_STEP, sectors: [], nodes: [], fleets: [],
-    edges: [], factions: [], currentSector: '', currentCluster: null, clusters: [], exits: [], sectorLinks: [], clusterLinks: [], nebula: [],
+    edges: [], factions: [], currentSector: '', currentCluster: null, clusters: [], exits: [], sectorLinks: [], clusterLinks: [], nebula: [], news: [],
   };
 }

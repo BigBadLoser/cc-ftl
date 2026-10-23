@@ -158,6 +158,18 @@ export interface UiStarFaction {
   standing: number;
 }
 
+/** One line of the news feed (what the world did lately): precise inside sensor range, a rumour outside it. */
+export interface UiNews {
+  id: number;
+  turn: number;
+  icon: 'skull' | 'evasion' | 'combat' | 'trade' | 'stock' | 'ship';
+  tone: Tone;
+  text: string;
+  /** Where: the node's name for news in range, the region (sector) for a rumour. */
+  place: string;
+  rumour: boolean;
+}
+
 export interface UiStarmap {
   rev: number;
   current: string;
@@ -179,6 +191,8 @@ export interface UiStarmap {
   nodes: UiStarNode[];
   /** NPC fleets within sensor range. */
   fleets: UiStarFleet[];
+  /** The news feed, newest first. */
+  news: UiNews[];
   /** The player's credits (what a bribe costs is compared to this), pending encounters, the event grid and how the last encounter ended. */
   credits: number;
   encounters: UiEncounter[];
