@@ -2,11 +2,11 @@
 reference: 1 massing (this blockout, plain grey), 2 sub-forms, 3 colour and light, 4 detail and wear.
 
 Massing, in tiers. The hull is one battered solid (walls leaning in, corners cut by a big chamfer) up to its rim; its
-long sides have bays let into them (openings with real recesses behind) for the roller assemblies, the output hatch and
-the terminal. Its top is a rim round a deck opening: inside, the deck floor sits lower, with a channel along the +u half
-holding two sunken hoppers beside a spine about a tile wide down the middle, carrying three round stacks. The crew
-side (+u) has the terminal slab in its middle bay, a roller bay either side. Local frame: modkit.K, u across the 3-tile width, v
-along the 4."""
+long sides have bays let into them (openings with real recesses behind): roller assemblies on the -u side, the input and
+output hatches on the crew side (+u) either side of a full-height slot through the rim, where the terminal's body
+stands with a gap each side. Its top is a rim round a deck opening: inside, the deck floor sits lower, and a spine about
+a tile wide runs down the middle carrying three round stacks. Local frame: modkit.K, u across the 3-tile width, v along
+the 4."""
 import math
 
 from mathutils import Vector
@@ -131,11 +131,6 @@ def deck(k):
         face(k, [(*a, H), (*b, H), (*b, HT), (*a, HT)], -mid, GD)
     face(k, [(*p, H) for p in sq], (0, 0, 1), G)
     spine(k, iu, iv)
-    for v in (-0.45, 0.45):                                                   # hoppers sunk in the channel
-        u, s = 0.73, 0.23
-        k.box(u, v, H - 0.02, 2 * s - 0.08, 2 * s - 0.08, 0.04, HOLE)
-        for du, dv, su, sv in ((-s, 0, 0.06, 2 * s), (s, 0, 0.06, 2 * s), (0, -s, 2 * s, 0.06), (0, s, 2 * s, 0.06)):
-            k.box(u + du, v + dv, H, su, sv, 0.22, G, top=GT)
 
 
 def spine(k, iu, iv):
@@ -167,48 +162,27 @@ def stack(k, u, v, z0, z1, r, ri, n=20):
 
 
 def hatch(k, v0, v1, kind):
-    """A hatch block filling a crew-side bay just behind the wall line: input, a dark mouth over a lip that juts out to
-    catch the load; output, a door with a tray at its foot."""
+    """A hatch block filling a crew-side bay just behind the wall line; the input has a dark mouth."""
     z0, z1 = BZ
     ub = wall_u(1, z0) - D
     uf = wall_u(1, z1) - 0.04                                                 # the block's face, behind the wall line
     a, b = v0 + 0.03, v1 - 0.03
     k.box((ub + uf) / 2, (a + b) / 2, z0, uf - ub, b - a, z1 - z0, G, top=GT)
-    c, w = (a + b) / 2, b - a
-    if kind == "input":
-        k.box(uf + 0.004, c, 0.34, 0.01, w - 0.18, 0.26, HOLE)                     # the mouth
-        frustum_lip(k, uf, U - 0.02, c - (w - 0.14) / 2, c + (w - 0.14) / 2, 0.24, 0.34)
-    else:
-        k.box(uf + 0.01, c, 0.2, 0.03, w - 0.2, 0.46, GT)                          # the door, proud
-        k.box(uf + 0.004, c, 0.16, 0.01, w - 0.12, 0.54, GD)                        # its frame's shadow
-        k.box((uf + U - 0.02) / 2, c, z0, U - 0.02 - uf, w - 0.1, 0.1, G, top=GT)  # the tray at its foot
-
-
-def frustum_lip(k, u0, u1, v0, v1, z0, z1):
-    """A lip jutting out of a face at u0 to u1, its top sloping down and out."""
-    cen = Vector(((u0 + u1) / 2, (v0 + v1) / 2, (z0 + z1) / 2))
-    pts = {"in_lo": [(u0, v0, z0), (u0, v1, z0)], "out_lo": [(u1, v0, z0), (u1, v1, z0)],
-           "in_hi": [(u0, v0, z1), (u0, v1, z1)], "out_hi": [(u1, v0, z0 + 0.04), (u1, v1, z0 + 0.04)]}
-    il, ol, ih, oh = pts["in_lo"], pts["out_lo"], pts["in_hi"], pts["out_hi"]
-    face(k, [ih[0], ih[1], oh[1], oh[0]], (0.4, 0, 1), GT)                      # the sloped top
-    face(k, [ol[0], ol[1], oh[1], oh[0]], (1, 0, 0), G)
-    face(k, [il[0], ol[0], oh[0], ih[0]], Vector(il[0]) - cen, G)
-    face(k, [il[1], ol[1], oh[1], ih[1]], Vector(il[1]) - cen, G)
+    if kind == "input":                                                       # its mouth
+        k.box(uf + 0.004, (a + b) / 2, 0.34, 0.01, b - a - 0.18, 0.26, HOLE)
 
 
 def terminal(k):
-    """The terminal: a base jutting out to the footprint's edge, its top sloping up to the slab, and the slab rising
-    above the rim behind it (screen up top later)."""
+    """The terminal's body, filling its slot from the slot's back wall out to the footprint's edge, its top a shallow
+    slope down toward the crew (a screen on a gimbal goes on the slope at the detail stage)."""
     v0, v1 = -0.32, 0.32
-    u_in = U - B - RIM                                                        # the slab's back joins the slot's back wall
-    us = U - 0.24                                                             # the slab's face, set back
-    k.box((u_in + us) / 2, (v0 + v1) / 2, 0, us - u_in, v1 - v0, HT + 0.45, G, top=GT)
-    k.box((us + U - 0.02) / 2 - 0.01, 0, 0, U - 0.02 - us + 0.02, v1 - v0 + 0.02, 0.3, G)     # the base
-    lo = [(us - 0.01, v0 - 0.01, 0.3), (U - 0.02, v0 - 0.01, 0.3), (U - 0.02, v1 + 0.01, 0.3), (us - 0.01, v1 + 0.01, 0.3)]
-    hi = [(us - 0.01, v0 - 0.01, 0.62), (us - 0.01, v1 + 0.01, 0.62)]
-    face(k, [lo[1], lo[2], hi[1], hi[0]], (1, 0, 1.4), GT)                      # its sloped top
-    face(k, [lo[0], lo[1], hi[0]], (0, -1, 0), G)
-    face(k, [lo[3], lo[2], hi[1]], (0, 1, 0), G)
+    ub, uf = U - B - RIM, U - 0.02
+    zb, zf = 0.8, 0.58                                                        # the slope: high at the back, low in front
+    q = lambda u, v, z: (u, v, z)                                             # noqa: E731
+    face(k, [q(uf, v0, 0), q(uf, v1, 0), q(uf, v1, zf), q(uf, v0, zf)], (1, 0, 0), G)
+    face(k, [q(ub, v0, zb), q(uf, v0, zf), q(uf, v1, zf), q(ub, v1, zb)], (zb - zf, 0, uf - ub), GT)
+    for v, want in ((v0, (0, -1, 0)), (v1, (0, 1, 0))):
+        face(k, [q(ub, v, 0), q(uf, v, 0), q(uf, v, zf), q(ub, v, zb)], want, G)
 
 
 def blockout(rot=0):
