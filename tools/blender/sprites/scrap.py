@@ -99,3 +99,22 @@ def floor(k, b, seed):
     rng = np.random.default_rng(seed * 7 + 3)
     for _ in range(6):
         piece(k, rng, rng.uniform(b.u0 + 0.3, b.u1 - 0.3), rng.uniform(b.v0 + 0.3, b.v1 - 0.3), 0.2)
+
+
+SIZES = {"module.storage_scrap": (2, 2), "module.storage_scrap_large": (2, 3)}
+
+
+def jobs():
+    """Family `storage_scrap`, per size and rotation: <asset>[.r<r>].<fill> (empty, fill1, fill2, full); the plain <asset>
+    is r0 at fill2."""
+    from . import ore_cage as C
+    out = []
+    for name, fp in SIZES.items():
+        for r in range(4):
+            f_ = fp if r % 2 == 0 else fp[::-1]
+            sfx = "" if r == 0 else f".r{r}"
+            out += [(f"{name}{sfx}.{fill}", f_, "prop", lambda fp=fp, fill=fill, r=r: C.cage(fp, fill, r, "scrap", drop=1))
+                    for fill in C.FILLS]
+        out.append((name, fp, "prop", lambda fp=fp: C.cage(fp, "fill2", 0, "scrap", drop=1)))
+    return out
+

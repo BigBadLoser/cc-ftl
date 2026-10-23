@@ -307,3 +307,23 @@ def tip_bin(fp, fill, rot, ore="iron"):
             C._lump(k, (rng.uniform(-0.5, 0.5), v, _arc(v, ROCK_R - T) + 0.01), (0, 0, 1), r, r * 0.8,
                     o["chunk"][rng.integers(3)], rng)
     return k.build()
+
+
+ORE_KINDS = ("iron", "ice", "rare")
+SIZES = {"module.storage_ore": (2, 2), "module.storage_ore_large": (3, 2)}
+
+
+def jobs():
+    """Family `storage_ore`, per size and rotation: <asset>[.r<r>].empty and <asset>[.r<r>].<ore>.<fill> (ore iron, ice
+    or rare; fill fill1, fill2 or full); the plain <asset> is r0 iron at fill2."""
+    out = []
+    for name, fp in SIZES.items():
+        states = [("empty", "empty", "iron")] + [(f"{o}.{f}", f, o) for o in ORE_KINDS for f in C.FILLS[1:]]
+        for r in range(4):
+            f_ = fp if r % 2 == 0 else fp[::-1]
+            sfx = "" if r == 0 else f".r{r}"
+            out += [(f"{name}{sfx}.{sid}", f_, "prop", lambda fp=fp, fill=fill, r=r, o=o: tip_bin(fp, fill, r, o))
+                    for sid, fill, o in states]
+        out.append((name, fp, "prop", lambda fp=fp: tip_bin(fp, "fill2", 0)))
+    return out
+

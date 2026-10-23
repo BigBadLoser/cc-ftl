@@ -25,6 +25,7 @@ BASE = 0.16                   # top of the base frame
 MID = (0.64, 0.71)            # the mid rail
 RAIL = 0.12                   # the top rail's depth
 BAR_R, BAR_PITCH = 0.022, 0.13
+SIDE_BARS = 7                 # bars in each section of the side walls (along v)
 CHUTE = 0.32                  # the drop chute's reach out of the front wall
 EDGE = 0.06                   # the frame's inset from the footprint edge
 # fill -> (level at the walls, rise to the middle); the heap's surface between
@@ -127,18 +128,18 @@ def _sections(b, p, q):
     return list(zip(cuts, cuts[1:]))
 
 
-def bars(b, p, q, drop=0):
+def bars(b, p, q, drop=0, count=None):
     """Bar positions along the wall p -> q: every BAR_PITCH, clear of the posts. With drop, each section between posts
-    has `drop` fewer bars, spaced evenly post to post."""
+    has `drop` fewer bars, spaced evenly post to post; with count, each section has that many."""
     L = math.dist(p, q)
     n = max(1, int(L / BAR_PITCH))
     at = lambda t: (p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t)  # noqa: E731
     ts = [i / n for i in range(1, n) if min(math.dist(at(i / n), c) for c in b.posts()) > GIRDER * 0.8]
-    if not drop:
+    if not drop and not count:
         return [at(t) for t in ts]
     out = []
     for t0, t1 in _sections(b, p, q):
-        m = sum(t0 < t < t1 for t in ts) - drop
+        m = count or sum(t0 < t < t1 for t in ts) - drop
         out += [at(t0 + (t1 - t0) * (j + 1) / (m + 1)) for j in range(max(0, m))]
     return out
 
@@ -199,8 +200,13 @@ def frame(k, b, drop=0):
         kick(k, b, p, q)
         _run(k, p, q, MID[0], MID[1] - MID[0], 0.07, "steel", top="steelL", piece=0.1)   # mid rail
         _run(k, p, q, H - 0.1, 0.1, RAIL, "steel", top="steelL", piece=0.1)              # top rail
-        _band(k, p, q, H - 0.09, 0.07, RAIL / 2 + 0.008)                                 # its hazard band
-        for u, v in bars(b, p, q, drop):
+        L = math.dist(p, q)
+        for t0, t1 in _sections(b, p, q):                                                # its hazard band, post to post
+            a0, a1 = t0 + GIRDER / 2 / L, t1 - GIRDER / 2 / L
+            _band(k, (p[0] + (q[0] - p[0]) * a0, p[1] + (q[1] - p[1]) * a0),
+                  (p[0] + (q[0] - p[0]) * a1, p[1] + (q[1] - p[1]) * a1), H - 0.09, 0.07, RAIL / 2 + 0.008)
+        side = abs(q[1] - p[1]) > abs(q[0] - p[0])
+        for u, v in bars(b, p, q, drop, SIDE_BARS if side else None):
             k.cyl(u, v, KICK, BAR_R, H - 0.1 - KICK, "steelL", sides=6)
     k.box((b.u0 + b.u1) / 2, (b.v0 + b.v1) / 2, 0.06, b.u1 - b.u0, b.v1 - b.v0, 0.1, "plateC")   # floor plate
     for u, v in b.posts():
@@ -224,9 +230,6 @@ def chute(k, b):
     for (za, zc), col, t in ((zb, "steelD", 0.03), (zt, "c4T3", 0.035)):    # floor and cover (painted)
         nrm = (0, -(zc - za), v1 - v0)
         slab(k, [(-w0, v0, za), (w0, v0, za), (w0, v1, zc), (-w0, v1, zc)], nrm, t, col, side="steelD")
-    for f in (0.35, 0.7):                                                    # ribs across the cover
-        v, z = v0 + (v1 - v0) * f, zt[0] + (zt[1] - zt[0]) * f
-        k.box(0, v, z, 2 * w0 + 0.06, 0.04, 0.04, "c4T4", top="c4T3")
     g0, g1, vg = zb[1] - 0.07, zt[1] + 0.05, v1 + 0.012                      # the gate, shut
     ug = w0 + 0.035
     for s_ in (-1, 1):                                                       # its guides, either side of the mouth
