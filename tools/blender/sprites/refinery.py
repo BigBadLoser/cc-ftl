@@ -150,11 +150,12 @@ def deck(k):
             pts = pts[:3]
         face(k, pts, (0, 0, 1), col)
     face(k, [(-iu, -iv, zt), (iu, -iv, zt), (iu, iv, zt), (-iu, iv, zt)], (0, 0, 1), GT)   # the deck, flush with the rim
-    spine(k, iu, iv)
+    TOP[0](k, iu, iv)
 
 
-def tier(k, lo, hi, z0, z1, c_lo, c_hi, col=G, top=GT):
+def tier(k, lo, hi, z0, z1, c_lo, c_hi, col=None, top=None):
     """A block from the rectangle lo (u0, u1, v0, v1) at z0 to hi at z1, corners cut by c_lo / c_hi."""
+    col, top = col or G, top or GT
     a, b = _oct(lo, c_lo), _oct(hi, c_hi)
     cen = Vector(((lo[0] + lo[1]) / 2, (lo[2] + lo[3]) / 2, (z0 + z1) / 2))
     for i in range(8):
@@ -175,6 +176,9 @@ def spine(k, iu, iv):
         if STAGE[0] >= 2:
             from . import refinery_forms as F
             F.stack_forms(k, 0.0, v, top, top + 0.62, 0.36)
+
+
+TOP = [spine]                        # what stands on the deck (refinery_finish swaps in its variants)
 
 
 def stack(k, u, v, z0, z1, r, ri, n=20):

@@ -11,6 +11,7 @@ from .steelkit import face, tube
 
 ARM = "lvW2"                          # the armour, orange at stage 3
 T = 0.035                             # how proud the armour stands
+LIT = [None]                          # the glow colour when finished and running (refinery_finish), else unlit
 
 
 def _n(i):
@@ -131,7 +132,7 @@ def stack_forms(k, u, v, z0, z1, r):
     annulus(k, u, v, z1 - 0.06, z1 + 0.005, r + 0.03, 0.26, ARM)
     for a in (-0.42, 0.42):
         cu, cv = u + (r + 0.004) * math.cos(a), v + (r + 0.004) * math.sin(a)
-        k.box(cu, cv, z0 + 0.2, 0.03, 0.09, 0.22, R.HOLE, rz=a)
+        k.box(cu, cv, z0 + 0.2, 0.03, 0.09, 0.22, LIT[0] or R.HOLE, rz=a)
 
 
 def annulus(k, u, v, z0, z1, ro, ri, col, n=20):
