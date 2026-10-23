@@ -157,6 +157,10 @@ def body(fb):
     _g("hull")
     B = [(u, r, r, 0, C) for u, r in BALL]
     loft(fb, B, SECTION, HULL, cap0=HULL_D, hole=BORE)                      # (they run on through the drum)
+    _g("panels")
+    for (a, b), (t0, t1) in PANELS:
+        for sg in (1, -1):
+            panel(fb, B, *sorted((sg * a, sg * b)), t0, t1)
     _g("drum")
     D = [(BAND[0] + (BAND[1] - BAND[0]) * i / 24, DRUM_R, DRUM_R, 0, C) for i in range(25)]   # fine, for the bore
     loft(fb, D, profile(n=72, p=2.0), HULL, cap0="steelD", cap1="steelD", hole=BORE)   # the drum and its flat sides
@@ -170,6 +174,23 @@ def body(fb):
     patch(fb, D, -0.1, 0.1, t0, t1, 1.022, YEL, n=61, steps=5)
     for u0 in (BAND[0] + 0.05, BAND[1] - 0.15):
         patch(fb, D, u0, u0 + 0.1, t0, t1, 1.022, YEL_D, n=61, steps=3)
+
+
+def panel(fb, body, u0, u1, t0, t1):
+    """A maintenance panel: a curved plate lying on the hull over u0..u1 and the arc t0..t1 (degrees), a hair proud of
+    it, with a dark seam round it and a fastener in each corner."""
+    n = max(3, int((t1 - t0) / 5) + 2)
+    patch(fb, body, u0 - 0.018, u1 + 0.018, t0 - 2.5, t1 + 2.5, 1.008, "steelD", n=n, steps=4)   # the seam
+    patch(fb, body, u0, u1, t0, t1, 1.016, HULL, n=n, steps=4)                                     # the plate
+    du, dt = 0.03, 4.0
+    for uu in (u0 + du, u1 - du):                                            # its fasteners
+        for tt in (t0 + dt, t1 - dt):
+            patch(fb, body, uu - 0.013, uu + 0.013, tt - 1.6, tt + 1.6, 1.022, "steelL", n=2, steps=1)
+
+
+# the domes' maintenance panels, (|u| range, arc), mirrored onto both domes: upper front, top, back and lower front,
+# clear of the hatches, the arms' panels and the drum
+PANELS = (((0.53, 0.72), (112, 152)), ((0.53, 0.72), (42, 96)), ((0.53, 0.72), (-42, 12)), ((0.53, 0.72), (206, 244)))
 
 
 def hatch(fb):
@@ -243,7 +264,7 @@ def rear_thruster(f, lit):
                 f.pt(-va, pa[0], pa[1])], "steelD", flip=True)
     ring(f, -BORE_FLOOR, z, 0.0, BORE, "dark", sides=BORE_N)                 # its floor
     ub = -BORE_FLOOR
-    ut, um = ub - 0.14, ub - 0.42                                            # throat, mouth (out past the hull)
+    ut, um = ub - 0.14, ub - 0.52                                            # throat, mouth (out past the hull)
     f.hcyl(ub, ut, 0, z, rt + 0.04, "steelD", sides=24)                       # collar
     f.hcyl(ut, um, 0, z, rt, HULL_D, r1=rm, sides=24)                         # the bell, outside
     ring(f, um, z, rm - 0.035, rm, "steelL")                                 # its lip
@@ -310,13 +331,15 @@ def arms(f, out):
         strut(f, _add(S, (0.06, (1, 0, 0)), (0.02, (0, 0, 1))), _add(E, (0.1, (1, 0, 0)), (0.03, (0, 0, 1))), 0.035, YEL)   # piston
         for p_, r in ((S, 0.075), (E, 0.065), (W, 0.055)):
             pin(f, p_, r, 0.13, "steelL")                                    # round pivots
-        for k in range(4):                                                   # the claw: four fingers round the wrist,
-            a = k * math.tau / 4 + math.pi / 4                               # splayed out then curled in at the tips
+        pin(f, _add(W, (0.04, (1, 0, 0))), 0.07, 0.15, "steelD")             # the claw's palm
+        for k in range(4):                                                   # four fingers round the wrist, open wide:
+            a = k * math.tau / 4 + math.pi / 4                               # splayed out, the tips turned forward
             ca, sa = math.cos(a), math.sin(a)
-            knuckle = _add(W, (0.1, (1, 0, 0)), (0.07 * ca, (0, 1, 0)), (0.07 * sa, (0, 0, 1)))
-            tip = _add(W, (0.19, (1, 0, 0)), (0.03 * ca, (0, 1, 0)), (0.03 * sa, (0, 0, 1)))
-            strut(f, W, knuckle, 0.035, "steelD")
-            strut(f, knuckle, tip, 0.03, "steelL")
+            base = _add(W, (0.06, (1, 0, 0)), (0.05 * ca, (0, 1, 0)), (0.05 * sa, (0, 0, 1)))
+            knuckle = _add(W, (0.17, (1, 0, 0)), (0.17 * ca, (0, 1, 0)), (0.17 * sa, (0, 0, 1)))
+            tip = _add(W, (0.3, (1, 0, 0)), (0.19 * ca, (0, 1, 0)), (0.19 * sa, (0, 0, 1)))
+            strut(f, base, knuckle, 0.05, "steelD")
+            strut(f, knuckle, tip, 0.042, "steelL")
 
 
 def lights(f, on):
