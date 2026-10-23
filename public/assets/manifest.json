@@ -747,6 +747,14 @@
    "image": "sprites/galley.png",
    "glow": "sprites/galley.glow.png"
   },
+  "mining_pod": {
+   "image": "sprites/mining_pod.png",
+   "glow": "sprites/mining_pod.glow.png"
+  },
+  "pod_bay": {
+   "image": "sprites/pod_bay.png",
+   "glow": "sprites/pod_bay.glow.png"
+  },
   "robot_bay": {
    "image": "sprites/robot_bay.png",
    "glow": "sprites/robot_bay.glow.png"
@@ -13263,6 +13271,538 @@
     3,
     3
    ]
+  },
+  "module.pod_bay.r0": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 386,
+    "y": 1,
+    "w": 384,
+    "h": 270
+   },
+   "anchor": {
+    "x": 192,
+    "y": 238
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r0.empty": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 3081,
+    "y": 1,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r0.fold.f0": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1,
+    "y": 272,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r0.fold.f1": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 771,
+    "y": 272,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r0.open.f0": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1156,
+    "y": 272,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r0.open.f1": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1541,
+    "y": 272,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r0.open.f2": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1926,
+    "y": 272,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r1": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1156,
+    "y": 1,
+    "w": 384,
+    "h": 270
+   },
+   "anchor": {
+    "x": 192,
+    "y": 238
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r1.empty": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 2311,
+    "y": 272,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r1.fold.f0": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 3081,
+    "y": 272,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r1.fold.f1": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1,
+    "y": 505,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r1.open.f0": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 386,
+    "y": 505,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r1.open.f1": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 771,
+    "y": 505,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r1.open.f2": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1156,
+    "y": 505,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r2": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1926,
+    "y": 1,
+    "w": 384,
+    "h": 243
+   },
+   "anchor": {
+    "x": 192,
+    "y": 211
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r2.empty": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1541,
+    "y": 505,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r2.fold.f0": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 2311,
+    "y": 505,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r2.fold.f1": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 3081,
+    "y": 505,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r2.open.f0": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 3466,
+    "y": 505,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r2.open.f1": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1,
+    "y": 738,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r2.open.f2": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 386,
+    "y": 738,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r3": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 2696,
+    "y": 1,
+    "w": 384,
+    "h": 243
+   },
+   "anchor": {
+    "x": 192,
+    "y": 211
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r3.empty": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 771,
+    "y": 738,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r3.fold.f0": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 1541,
+    "y": 738,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r3.fold.f1": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 2311,
+    "y": 738,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r3.open.f0": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 2696,
+    "y": 738,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r3.open.f1": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 3081,
+    "y": 738,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.pod_bay.r3.open.f2": {
+   "kind": "static",
+   "sheet": "pod_bay",
+   "frame": {
+    "x": 3466,
+    "y": 738,
+    "w": 384,
+    "h": 232
+   },
+   "anchor": {
+    "x": 192,
+    "y": 200
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.point_defense.bay.r0": {
    "kind": "static",
@@ -64775,6 +65315,462 @@
     2,
     2
    ]
+  },
+  "vehicle.mining_pod.fly.d0": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 1748,
+    "y": 1,
+    "w": 209,
+    "h": 245
+   },
+   "anchor": {
+    "x": 99,
+    "y": 195
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.fly.d1": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 182,
+    "h": 272
+   },
+   "anchor": {
+    "x": 91,
+    "y": 204
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.fly.d2": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 2168,
+    "y": 1,
+    "w": 209,
+    "h": 245
+   },
+   "anchor": {
+    "x": 110,
+    "y": 195
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.fly.d3": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 2378,
+    "y": 1,
+    "w": 250,
+    "h": 210
+   },
+   "anchor": {
+    "x": 148,
+    "y": 189
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.fly.d4": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 2839,
+    "y": 1,
+    "w": 209,
+    "h": 210
+   },
+   "anchor": {
+    "x": 110,
+    "y": 189
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.fly.d5": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 3049,
+    "y": 1,
+    "w": 182,
+    "h": 210
+   },
+   "anchor": {
+    "x": 91,
+    "y": 189
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.fly.d6": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 3442,
+    "y": 1,
+    "w": 209,
+    "h": 210
+   },
+   "anchor": {
+    "x": 99,
+    "y": 189
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.fly.d7": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 3652,
+    "y": 1,
+    "w": 250,
+    "h": 210
+   },
+   "anchor": {
+    "x": 102,
+    "y": 189
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d0.f0": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 550,
+    "y": 1,
+    "w": 246,
+    "h": 250
+   },
+   "anchor": {
+    "x": 99,
+    "y": 195
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d0.f1": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 797,
+    "y": 1,
+    "w": 246,
+    "h": 250
+   },
+   "anchor": {
+    "x": 99,
+    "y": 198
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d1.f0": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 184,
+    "y": 1,
+    "w": 182,
+    "h": 272
+   },
+   "anchor": {
+    "x": 91,
+    "y": 204
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d1.f1": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 367,
+    "y": 1,
+    "w": 182,
+    "h": 272
+   },
+   "anchor": {
+    "x": 91,
+    "y": 206
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d2.f0": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 1044,
+    "y": 1,
+    "w": 246,
+    "h": 250
+   },
+   "anchor": {
+    "x": 147,
+    "y": 195
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d2.f1": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 1291,
+    "y": 1,
+    "w": 246,
+    "h": 250
+   },
+   "anchor": {
+    "x": 147,
+    "y": 198
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d3.f0": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 1,
+    "y": 274,
+    "w": 245,
+    "h": 210
+   },
+   "anchor": {
+    "x": 143,
+    "y": 189
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d3.f1": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 247,
+    "y": 274,
+    "w": 245,
+    "h": 210
+   },
+   "anchor": {
+    "x": 143,
+    "y": 192
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d4.f0": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 493,
+    "y": 274,
+    "w": 246,
+    "h": 210
+   },
+   "anchor": {
+    "x": 147,
+    "y": 189
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d4.f1": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 740,
+    "y": 274,
+    "w": 246,
+    "h": 210
+   },
+   "anchor": {
+    "x": 147,
+    "y": 192
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d5.f0": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 987,
+    "y": 274,
+    "w": 182,
+    "h": 210
+   },
+   "anchor": {
+    "x": 91,
+    "y": 189
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d5.f1": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 2156,
+    "y": 274,
+    "w": 182,
+    "h": 209
+   },
+   "anchor": {
+    "x": 91,
+    "y": 191
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d6.f0": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 1170,
+    "y": 274,
+    "w": 246,
+    "h": 210
+   },
+   "anchor": {
+    "x": 99,
+    "y": 189
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d6.f1": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 1417,
+    "y": 274,
+    "w": 246,
+    "h": 210
+   },
+   "anchor": {
+    "x": 99,
+    "y": 192
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d7.f0": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 1664,
+    "y": 274,
+    "w": 245,
+    "h": 210
+   },
+   "anchor": {
+    "x": 102,
+    "y": 189
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.mining_pod.mine.d7.f1": {
+   "kind": "static",
+   "sheet": "mining_pod",
+   "frame": {
+    "x": 1910,
+    "y": 274,
+    "w": 245,
+    "h": 210
+   },
+   "anchor": {
+    "x": 102,
+    "y": 192
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
   },
   "vehicle.shuttle.docked.d0": {
    "kind": "static",
