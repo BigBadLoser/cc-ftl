@@ -17,6 +17,7 @@
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
   rock      asteroid rock: rock mass by neighbour mask, levelled ground with its worn edge and under-lip, ore tiles (rock.py)
+  rockwall  finished rock walls: dressed stone, the metal wall set mirrored piece for piece (rockwall.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -72,10 +73,13 @@ def jobs(name):
     if name == "rock":
         from . import rock
         return rock.jobs(), True
+    if name == "rockwall":
+        from . import rockwall
+        return rockwall.jobs(), True
     raise KeyError(name)
 
 
 # `structure` is preview-only (no full build yet): build it by name, it is not part of `all`.
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
-            "fx", "galley", "derelict", "eggsac", "rock")
+            "fx", "galley", "derelict", "eggsac", "rock", "rockwall")
 ALL = RENDERED + ("sol",)
