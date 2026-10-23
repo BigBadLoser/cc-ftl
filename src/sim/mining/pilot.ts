@@ -27,15 +27,15 @@ function reserved(sim: Sim): Set<number> {
 
 /**
  * The crew member to fly a pod: on its home ship, of that ship's side, able, not drafted (a free schedule), not already
- * reserved by another order or walking to a vehicle. Highest piloting first, then the lowest id. 0 for none.
+ * reserved by another order (or in `exclude`) or walking to a vehicle. Highest piloting first, then the lowest id. 0 for none.
  */
-export function pickPilot(sim: Sim, v: Vehicle): number {
+export function pickPilot(sim: Sim, v: Vehicle, exclude?: ReadonlySet<number>): number {
   const faction = shipById(sim, v.homeShip)?.faction;
   const taken = reserved(sim);
   let best = 0;
   let bestSkill = -Infinity;
   for (const id of [...sim.world.query(CrewC, PositionC)].sort((a, b) => a - b)) {
-    if (taken.has(id) || sim.world.has(id, DeadC) || sim.world.has(id, DraftedC) || sim.world.has(id, EmbarkOrderC) || sim.world.has(id, AboardC)) continue;
+    if (taken.has(id) || exclude?.has(id) || sim.world.has(id, DeadC) || sim.world.has(id, DraftedC) || sim.world.has(id, EmbarkOrderC) || sim.world.has(id, AboardC)) continue;
     if (isIncapacitated(sim, id) || sim.world.get(id, AllegianceC)?.faction !== faction) continue;
     if (shipIdOf(sim, sim.world.get(id, PositionC)) !== v.homeShip) continue;
     const skill = stat(sim, id, 'piloting');

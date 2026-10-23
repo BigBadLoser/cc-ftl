@@ -2,15 +2,27 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiStock } from './api';
   import ItemIcon from './ItemIcon.svelte';
+  import TransferSection from './TransferSection.svelte';
+  import { Segmented } from './kit';
 
   let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
   let stock = $state<UiStock[]>([]);
-  onMount(() => api.stock.subscribe((v) => (stock = v)));
+  let queued = $state(0);
+  let tab = $state<'stock' | 'transfers'>('stock');
+  onMount(() => {
+    const u = [api.stock.subscribe((v) => (stock = v)), api.shuttles.subscribe((v) => (queued = v.transfers.length))];
+    return () => u.forEach((f) => f());
+  });
   const rows = $derived(api.items.map((it) => ({ it, s: stock.find((x) => x.item === it.id) })));
 </script>
 
-<aside class="sheet" data-testid="stock-drawer">
+<aside class="sheet" class:tall={tab === 'transfers'} data-testid="stock-drawer">
   <div class="top"><h2>Ship stock</h2><button aria-label="Close" onclick={onClose}>×</button></div>
+  <div class="tabs"><Segmented label="Stock view" testId="stock-tabs" value={tab} onChange={(v) => (tab = v as typeof tab)}
+    options={[{ value: 'stock', label: 'Stock', testId: 'stock-tab' }, { value: 'transfers', label: queued ? `Transfers (${queued})` : 'Transfers', testId: 'transfers-tab' }]} /></div>
+  {#if tab === 'transfers'}
+    <TransferSection {api} />
+  {:else}
   <div class="head"><span></span><span>Total</span><span>Floor</span><span>Stored</span><span>Carried</span></div>
   <ul>
     {#each rows as { it, s } (it.id)}
@@ -21,11 +33,14 @@
       </li>
     {/each}
   </ul>
+  {/if}
 </aside>
 
 <style>
-  aside { top: calc(var(--hdr) + var(--sat) + 4px); left: 50%; transform: translateX(-50%); width: min(380px, calc(100vw - 16px)); }
-  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  aside { z-index: 6; box-sizing: border-box; top: calc(var(--hdr) + var(--sat) + 4px); left: 50%; transform: translateX(-50%); width: min(640px, calc(100vw - 16px)); display: flex; flex-direction: column; max-height: calc(100dvh - var(--hdr) - var(--sat) - 16px); overflow-y: auto; }
+  aside.tall { height: calc(100dvh - var(--hdr) - var(--sat) - 12px); overflow: hidden; }
+  .tabs { margin-bottom: 8px; flex: none; }
+  .top { flex: none; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
   h2 { margin: 0; font-size: 15px; color: var(--cyan); }
   .top button { min-height: 34px; min-width: 34px; padding: 0; font-size: 18px; }
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
@@ -34,5 +49,8 @@
   .nm { display: flex; align-items: center; gap: 6px; text-align: left; }
   li.none { opacity: 0.45; }
   li > span:not(.nm) { color: var(--dim); }
-  @media (max-width: 600px) { aside { top: calc(var(--hdr) + var(--sat)); bottom: auto; left: 8px; right: 8px; width: auto; transform: none; border-radius: 10px; border-width: 1px; padding: 10px; } }
+  @media (max-width: 600px) {
+    aside { top: calc(var(--hdr) + var(--sat)); bottom: auto; left: 0; right: 0; width: auto; transform: none; border-radius: 0; border-width: 1px 0; padding: 10px 12px calc(10px + var(--sab)); max-height: calc(100dvh - var(--hdr) - var(--sat)); }
+    aside.tall { height: calc(100dvh - var(--hdr) - var(--sat)); }
+  }
 </style>

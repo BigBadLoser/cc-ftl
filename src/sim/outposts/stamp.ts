@@ -1,4 +1,6 @@
 import { stampAsteroid } from '../asteroids/place';
+import { AirlockC, airlockTiles } from '../modules/airlock';
+import { ModuleC } from '../modules/components';
 import { hullSum } from '../combat/hull';
 import { ShipC, type Faction } from '../combat/components';
 import { spawnCrew } from '../combat/ships';
@@ -44,6 +46,14 @@ export function stampOutpost(sim: Sim, o: OutpostPlan, x: number, y: number): { 
     hullMax: hullSum(new ShipGrid(0, g, bx, by, dense.width, dense.height)), integrity: 1, immobile: true, dormant: 1, outpost: { style: o.style, kind: o.kind, hidden: o.style === 'dug' },
   });
   for (const [tx, ty] of built) g.set('ship', tx, ty, ship);
+  // The dock airlock: the one whose outer door sits on the plan's dock tile (the only airlock a shuttle may dock at).
+  for (const id of sim.world.query(AirlockC, ModuleC)) {
+    const m = sim.world.get(id, ModuleC);
+    const def = m && sim.content.modules[m.def];
+    const outer = m && def?.airlock ? airlockTiles(def, m).outer : null;
+    const owner = sim.sector.grid.get('ship', m?.x ?? -1, m?.y ?? -1);
+    if (outer && owner === ship && outer.x === bx + o.dock.outer.x && outer.y === by + o.dock.outer.y) (sim.world.get(ship, ShipC) as { outpost: { dock?: number } }).outpost.dock = id;
+  }
   spawnCrew(sim, ship, o.template.crew ?? [], 100);
   outfitStation(sim, ship, o.stationKind, 'outpost', o.seed, { ...o.station, template: o.template }, bx, by);
   return { asteroid, ship };

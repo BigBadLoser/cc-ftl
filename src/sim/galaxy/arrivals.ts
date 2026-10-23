@@ -14,6 +14,19 @@ import {
 } from './tuning';
 import type { Contact } from './types';
 
+/**
+ * Generated ships by contact key (faction shipgen, seed, depth), per content registry. Generation is a pure function of the key, so
+ * a contact that finds no room (retried every second by fleets and arrivals) reuses its ship instead of generating it again; a key
+ * that cannot be generated is remembered as null. An entry goes once its ship is placed. Not saved: a cache, rebuilt on demand.
+ */
+const generatedShips = new WeakMap<object, Map<string, ReturnType<typeof generateShip> | null>>();
+const GENERATED_MAX = 64;
+function generated(sim: Sim): Map<string, ReturnType<typeof generateShip> | null> {
+  let m = generatedShips.get(sim.content);
+  if (!m) generatedShips.set(sim.content, (m = new Map()));
+  return m;
+}
+
 /** The player's flown ship (lowest id) with its components: active, player faction, with combat state. Trade's `playerShip` returns just the id. */
 export function playerShipInfo(sim: Sim): { id: number; ship: Ship } | null {
   for (const id of sim.world.query(ShipC, CombatC)) {
@@ -56,19 +69,30 @@ export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
   if (sim.galaxy.current !== node || c.ship !== undefined) return false;
   const def = sim.content.factions?.[c.shipgen];
   if (!def) return false;
-  let gen: ReturnType<typeof generateShip>;
-  try {
-    gen = generateShip(def, c.shipgen, c.seed, c.depth, sim.content.modules);
-  } catch {
-    return false;
+  const key = `${c.shipgen}|${c.seed}|${c.depth}`;
+  const memo = generated(sim);
+  let gen = memo.get(key);
+  if (gen === undefined) {
+    try {
+      gen = generateShip(def, c.shipgen, c.seed, c.depth, sim.content.modules);
+    } catch {
+      gen = null;
+    }
+    if (gen && gen.problems.length > 0) gen = null;
+    memo.set(key, gen);
+    if (memo.size > GENERATED_MAX) memo.delete(memo.keys().next().value as string);
   }
-  if (gen.problems.length > 0) return false;
+  if (!gen) return false;
   const spot = freeSpot(sim, gen.width, gen.height);
   if (!spot) return false;
+  memo.delete(key);
   const side = isHostileFaction(sim, c.faction) ? sim.content.galaxy?.factions[c.faction]?.combatFaction ?? 'hostile' : 'neutral';
   const id = spawnShip(sim, gen.template, { faction: side, x: spot.x, y: spot.y, rest: 100 });
   const ship = sim.world.get(id, ShipC);
-  if (ship) ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth };
+  if (ship) {
+    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth };
+    if (c.name) ship.name = c.name;
+  }
   c.ship = id;
   sim.galaxy.rev++;
   sim.events.emit({ type: 'galaxy.shipArrived', node, faction: c.faction, ship: id });

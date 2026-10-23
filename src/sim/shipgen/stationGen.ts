@@ -80,7 +80,7 @@ export function generateStation(def: StationDef, id: string, size: StationSize, 
     const g = finishLayout(rng, f, id, seed, role, 'sections', r.plan, r.b, r.profile, r.A, r.profile, defs, n, {
       immobile: true, check: (t, d) => stationProblems(t, d, def.tiers[size].docks),
     });
-    g.template.name = `${def.name} ${size} ${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
+    g.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
     last = { ...g, failures: [...failures], station: infoOf(def, size, g.template, defs) };
     if (g.problems.length === 0) return last;
     failures.push(`${g.topology.split(' ')[0]}: ${g.problems[0]}`);

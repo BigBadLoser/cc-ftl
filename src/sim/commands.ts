@@ -86,6 +86,22 @@ export type Command =
    * ore is gone or it is recalled. `tiles` limits it to those ore tiles (sector tiles). Replaces the pod's current order.
    */
   | { type: 'mining.order'; pod: number; asteroid: number; tiles?: { x: number; y: number }[] }
+  /**
+   * A base-logistics run (`ferry`): a free shuttle (`vehicle`, 0 = pick one) carries `items` (clipped to what `from` holds and to the
+   * hold) and `crew` (standing in `from`) from player region `from` to player region `to` (the home ship or a claimed base),
+   * docking at a free working airlock of each or, at a region with none that is not its home ship, hovering (suited crew,
+   * instant cargo swap). Then it flies home. Replaces nothing: a shuttle on a trade run, a ferry or a mining order is busy.
+   */
+  | { type: 'ferry.order'; vehicle?: number; from: number; to: number; items?: { item: string; count: number }[]; crew?: number[] }
+  /**
+   * Queue a logistics transfer: move `items` (clipped to what `from` holds) from player region `from` (or a salvage site) to player
+   * region `to`. A free shuttle and pilot take it in as many trips as it needs; nothing else to micro-manage.
+   */
+  | { type: 'transfer.order'; from: number; to: number; items: { item: string; count: number }[] }
+  /** Cancel a transfer: pending trips stop, goods stay where they are (a trip already on its way to the drop-off finishes). */
+  | { type: 'transfer.cancel'; order: number }
+  /** Call a run off: crew still aboard ride home, the shuttle flies back to its bay. */
+  | { type: 'ferry.cancel'; vehicle: number }
   /** Recall a mining pod: it flies home with what it has, unloads, and ends its order. */
   | { type: 'mining.recall'; pod: number }
   /**
@@ -161,6 +177,13 @@ export type Command =
   | { type: 'galaxy.jump'; ship: number; route: string[]; withDocked?: number[] }
   /** End the hyperspace trip at the node last passed: its archive comes back (or its ships appear on the first visit) and the ship waits to deploy. */
   | { type: 'galaxy.drop' }
+  /**
+   * Answer a pending encounter (galaxy/respond.ts): an interdiction takes `evade` (a seeded roll against the fleet), `bribe` (credits) or `fight`
+   * (the event grid opens); a distress call `respond` (an event grid with the damaged fleet) or `ignore`; a hail or scan `acknowledge`.
+   */
+  | { type: 'galaxy.respond'; encounter: number; choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' }
+  /** Leave the event grid (the player's `combat.flee` does the same): the ship goes back into hyperspace and the trip carries on. Hostiles about need a charged drive. */
+  | { type: 'galaxy.leaveEvent' }
   /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */
   | { type: 'debug.galaxyReveal'; radius: number }
   /** Debug: move to any generated galaxy node at no cost, as if arriving there (no event draw). */

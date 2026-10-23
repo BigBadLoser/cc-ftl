@@ -1,6 +1,6 @@
 import { ShipC } from '../combat/components';
 import { shipById, spawnShip } from '../combat/ships';
-import { placementGapError, regions, shipIdOf } from '../regions';
+import { placeAt, placementGapError, regions, shipIdOf, type Place } from '../regions';
 import { generateStation } from '../shipgen/stationGen';
 import type { StationSize } from '../shipgen/stationTypes';
 import type { Sim } from '../sim';
@@ -24,13 +24,12 @@ const STATION_GAP = 2 * REGION_PAD + MIN_SHIP_GAP + 8;
  * size only bounds placement and the camera). Hostile kinds (pirate dens) start dormant: no combat until provoked.
  * Returns the ship id, or a reason it could not be placed.
  */
-export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: number, at?: { x: number; y: number }, name?: string): number | string {
+export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: number, at?: Place, name?: string): number | string {
   const def = sim.content.stations?.[kind];
   if (!def) return 'badKind';
   const gen = generateStation(def, kind, size, seed >>> 0, sim.content.modules);
   if (gen.problems.length > 0) return 'noLayout';
-  let x = at?.x ?? 0;
-  let y = at?.y ?? 0;
+  let { x, y } = at ? placeAt(at, gen.width, gen.height) : { x: 0, y: 0 };
   if (!at) {
     let east = 0;
     for (const r of regions(sim)) east = Math.max(east, r.bbox.x + r.bbox.w);

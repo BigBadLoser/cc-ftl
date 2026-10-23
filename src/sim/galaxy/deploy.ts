@@ -4,6 +4,7 @@ import { drawEvent } from '../story/engine';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { ARRIVAL_EVERY_SEC } from './tuning';
+import { resetTurnClock } from './turn';
 
 /** Any AI ship still in play in the sector (restored from an archive or just materialised). */
 function enemiesPresent(sim: Sim): boolean {
@@ -20,6 +21,9 @@ function enemiesPresent(sim: Sim): boolean {
  */
 export function onDeployed(sim: Sim): void {
   const g = sim.galaxy;
+  // An event grid is not a node: no arrival clock, no story draw.
+  if (g.event) return void g.rev++;
+  resetTurnClock(sim);
   g.nextArrival = sim.tick + Math.round(ARRIVAL_EVERY_SEC * TICK_HZ);
   const draw = g.pendingDraw;
   g.pendingDraw = null;

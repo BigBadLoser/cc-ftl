@@ -76,9 +76,10 @@ export interface Ship {
   ruin?: ShipRuin;
   /**
    * Set on asteroid outposts (outposts/gen.ts): its style and kind; a dug one is roofed with rock. `hidden` until the player
-   * discovers it (dug ones start hidden). Outposts are also `immobile` and `dormant` until provoked. See outposts/state.ts.
+   * discovers it (dug ones start hidden). `dock` is the module id of its dock airlock (the one on the rock face, open to space): the only airlock
+   * a shuttle may dock at. Outposts are also `immobile` and `dormant` until provoked. See outposts/state.ts.
    */
-  outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean };
+  outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean; dock?: number };
   /** Set on a base the player claimed on an asteroid (`asteroid.claim`): immobile, never disabled or wrecked by the ship-state system. */
   base?: { asteroid: number };
   /** Stations: no FTL, no engines, never flees or jumps; it stays in its node (archived with it). */
@@ -117,6 +118,14 @@ export interface Combat {
   shield: { layers: number; max: number; /** Seconds toward the next layer. */ timer: number };
   /** Chance 0..1 that an incoming shot misses; derived each tick from powered engines and the pilot. */
   evasion: number;
+  /** Piloting skill of whoever mans the helm (0 when nobody does); with `evasion` it gives the hyperspace evade odds. */
+  pilot: number;
+  /**
+   * The same two figures for a ship under way with nobody manning the helm (consoles are only manned in combat): the best pilot aboard (awake, on their feet)
+   * and the powered engines with that pilot's boost; 0 when the ship has no powered helm. The hyperspace evade odds use these when `pilot` is 0.
+   */
+  cruisePilot: number;
+  cruiseEvasion: number;
   /** Ticks until the AI next reconsiders its targets. */
   aiTimer: number;
 }

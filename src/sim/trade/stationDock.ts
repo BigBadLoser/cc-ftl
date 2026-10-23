@@ -12,7 +12,7 @@ import { cargoAdd, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { cargoTile } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
-import { addStock } from './deals';
+import { addStock, touchMarket } from './deals';
 import { TraderC, type Deal } from './types';
 
 /**
@@ -105,6 +105,7 @@ export function takeDelivery(sim: Sim, d: Deal): void {
     }
     addStock(trader.stock, l.item, l.count - left);
   }
+  touchMarket(sim, trader);
 }
 
 /**

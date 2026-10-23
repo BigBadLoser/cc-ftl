@@ -9,16 +9,18 @@
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
 
-  let { map, px, s, view, current, route, routePts, selected, hover, only = null, ship }: {
+  let { map, px, s, view, current, route, routePts, selected, hover, only = null, ship, inset = 0 }: {
     map: UiStarmap; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
     current: UiStarNode | null; route: UiStarRoute | null; routePts: string; selected: string | null; hover: string | null;
+    /** Screen px at the right edge that the side drawer (and the map tools beside it) cover: labels stay clear of it. */
+    inset?: number;
     /** Flee-target mode: only these nodes can be picked, the rest are dimmed. */
     only?: Set<string> | null;
     /** While a jump animates: the ship's position on the lane and the lane's ends. */
     ship: { x: number; y: number; fx: number; fy: number; tx: number; ty: number } | null;
   } = $props();
 
-  const clampX = (x: number, m: number) => Math.max(view.x0 + px(m), Math.min(view.x1 - px(m), x));
+  const clampX = (x: number, m: number) => Math.max(view.x0 + px(m), Math.min(view.x1 - px(inset) - px(m), x));
   const clampY = (y: number, top: number, bottom: number) => Math.max(view.y0 + px(top), Math.min(view.y1 - px(bottom), y));
   /**
    * Exits grouped by the sector they lead to (one label each), at the far gateway pinned into the view; labels that would
@@ -38,7 +40,7 @@
     }
     obstacles.push({ x0: view.x0, y0: view.y1 - 96 * k, x1: view.x0 + 210 * k, y1: view.y1 });
     // The level tabs (top left) and the zoom tools (top right) sit over the map.
-    obstacles.push({ x0: view.x0, y0: view.y0, x1: view.x0 + 296 * k, y1: view.y0 + 46 * k }, { x0: view.x1 - 58 * k, y0: view.y0, x1: view.x1, y1: view.y0 + 134 * k });
+    obstacles.push({ x0: view.x0, y0: view.y0, x1: view.x0 + 296 * k, y1: view.y0 + 46 * k }, { x0: view.x1 - (inset + 64) * k, y0: view.y0, x1: view.x1, y1: view.y0 + 196 * k });
     const items = [...by.values()].map((e): LabelItem => {
       const w = (`To ${e.name ?? 'uncharted space'}`.length * 9.4 + 16) * k;
       const x = clampX(e.bx, Math.min(w / 2 / k + 8, 150));
@@ -49,6 +51,21 @@
     return [...by.values()].flatMap((e) => {
       const b = placed.get(e.to);
       return b ? [{ x: (b.x0 + b.x1) / 2, y: b.y0 + 15 * k, e }] : [];
+    });
+  });
+  /**
+   * NPC fleets in sensor range: a chevron beside its node (several at one node fan out) pointing along its heading, and a dashed line
+   * toward the next node. The chevron's tooltip says who it is and where it is going.
+   */
+  const marks = $derived.by(() => {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a temporary built inside $derived, never mutated after
+    const count = new Map<string, number>();
+    return map.fleets.map((f) => {
+      const k = count.get(f.node) ?? 0;
+      count.set(f.node, k + 1);
+      const side = (-135 + k * 55) * (Math.PI / 180);
+      const heading = f.tx !== null && f.ty !== null ? (Math.atan2(f.ty - f.y, f.tx - f.x) * 180) / Math.PI : -90;
+      return { f, ox: Math.cos(side), oy: Math.sin(side), heading };
     });
   });
   /** A node shows its name when it matters (yours, a jump away, picked, under the cursor) or when zoomed in. */
@@ -107,6 +124,16 @@
   {/if}
   {#if selected === n.id}<circle cx={n.x} cy={n.y} r={px(14)} class="sel" />{/if}
 {/each}
+{#each marks as m (m.f.id)}
+  {#if m.f.tx !== null && m.f.ty !== null}<line x1={m.f.x} y1={m.f.y} x2={m.f.tx} y2={m.f.ty} class="heading" style={`stroke: ${toneColor(m.f.tone)}`} />{/if}
+{/each}
+{#each marks as m (m.f.id)}
+  <g transform={`translate(${m.f.x + m.ox * px(17)} ${m.f.y + m.oy * px(17)}) rotate(${m.heading})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
+    <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
+    <path d={`M ${px(10)} 0 L ${px(-7)} ${px(-7)} L ${px(-3)} 0 L ${px(-7)} ${px(7)} Z`} style={`fill: ${toneColor(m.f.tone)}`} />
+    {#if m.f.damaged}<circle r={px(11)} class="adrift" />{/if}
+  </g>
+{/each}
 {#if ship}
   {@const ang = (Math.atan2(ship.ty - ship.fy, ship.tx - ship.fx) * 180) / Math.PI}
   <line x1={ship.fx} y1={ship.fy} x2={ship.x} y2={ship.y} class="trail" />
@@ -153,6 +180,10 @@
   @media (prefers-reduced-motion: reduce) { .pulse { display: none; } }
   .ship { fill: var(--cyan); stroke: var(--bg); stroke-width: 1; vector-effect: non-scaling-stroke; }
   line.trail { stroke: var(--cyan); stroke-opacity: 0.8; stroke-width: 3; stroke-linecap: round; }
+  line.heading { stroke-opacity: 0.55; stroke-width: 1.6; stroke-dasharray: 4 4; }
+  .fleet path { stroke: var(--bg); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .fleet { pointer-events: all; }
+  .adrift { fill: none; stroke: var(--amber); stroke-width: 1.2; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
   .sel { fill: none; stroke: var(--amber); stroke-width: 2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
   .hostile { fill: color-mix(in srgb, var(--red) 25%, transparent); stroke: var(--red); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
   .unknown { fill: var(--bg); stroke: var(--dim); stroke-opacity: 0.85; stroke-width: 1.5; vector-effect: non-scaling-stroke; }

@@ -134,7 +134,7 @@ Planner's calls:
 - Mining UI: click plain asteroid rock (or a hidden base under it) or the asteroid tile in the node strip to open the asteroid
   panel: ore left by kind, the player's pods (status, pilot, hold, trips) with Mine (sends `mining.order` for the whole
   asteroid) and Recall, and Claim for a base. The vehicle panel (select a pod bay) lists the pods too. Alerts: "Mining pod waits for
-  a free pilot", "Mining done". No tile/area paint mode for `tiles` yet (the command takes them).
+  a free pilot", "Mining done". The paint mode for `tiles` came in slice 5.
 - Pod: **the pod bay comes with its pod** when crew build it (`vehicleBay.builtWith`); its cost covers both (28 metal, 12
   electronics, 4 polymer; 18 s of work). No separate pod item or recipe. The pod bay is in the modules build menu.
 - Claiming: build menu "Claim asteroid", drag a rectangle (4-60 tiles a side, inside the asteroid's box, at least half on its
@@ -150,11 +150,53 @@ Planner's calls:
 - A pod bay job whose footprint lies across a busy corridor can wait for a long time: crew walking through block the finish
   (an existing rule for solid modules).
 
+**Slice 5 (branch `asteroids-2`; done): base logistics, mining paint, outpost defence and docks (save v34).** Planner's calls:
+- **Shuttle runs (`src/sim/ferry/`).** One order, `ferry.order { vehicle?, from, to, items?, crew? }` (`ferry.cancel { vehicle }`), carries
+  cargo and/or crew between two player regions (the home ship or a claimed base). The shuttle (named, or the first free one, a stowed one
+  preferred) flies itself (`Vehicle.autopilot`, as for trade). `FerryC` on the vehicle is a small state machine (`systems` order: after
+  `tradeSystem`): `toFrom` -> `gather` -> `toDest` -> `deliver` -> `home`, built only from the existing vehicle commands and cargo hauls.
+  A region with a free working airlock is **docked** at (`dockError`, the same reservation as trade); a region with none is **hovered**
+  at (`vehicle.hover`, never the shuttle's own home ship, so the home ship needs a working airlock). Docked: station crew haul the load
+  into the hold through the unloaders (`makeHaul`, up to 90 s, then an instant swap in case nobody is there) and `cargoJobsSystem`
+  unloads it at the other end; hovering: the swap is instant after `trade.exchangeSec`. Cargo is clipped to what `from` holds and to the
+  hold (40). Crew: docked, they walk to the airlock's inside tile and climb in (`vehicle.embark`) and walk off at the far end; hovering, suited
+  crew `eva.board` / `eva.out` (a base with no airlock needs suits; crew without one are left behind). Crew who land by EVA keep their suit,
+  are undrafted (the shuttle's `outsideCrew` check would otherwise hold it forever) and are crew of that region for jobs. Not done: crew
+  walking between regions (they are never close), a "stop work and come home" auto order, base supply hauling by itself.
+  Events `ferry.started|delivered|done`. A shuttle on a run, a trade run or a mining order is busy (`ferryFree`).
+- **UI.** (The shuttle panel's "Base run" form is gone: see "Logistics" below.) Crew card: "Go to
+  <base>" / "Come home" under "Base trip" (picks a free shuttle). `UiShuttles.regions` and `ferryReady` feed both.
+- **Logistics (`src/sim/logistics/`, save v35).** The player no longer micro-manages runs. `transfer.order { from, to, items }` queues an
+  order (its own entity, `TransferC`: items left, moved/total, status `queued|boarding|underway|blocked`); `transfer.cancel { order }` ends it.
+  `logisticsSystem` (after `ferrySystem`) gives each queued order the lowest free shuttle (`ferryFree`) and the free crew member on the
+  shuttle's home ship with the best piloting (`pickPilot`, so real pilots first; undrafted, not reserved), who walks to the bay and
+  climbs in; then it starts an ordinary ferry run (`startFerry`, shared with `ferry.order`) for one hold-load. The ferry flow settles
+  each trip (`settleTransfer`, called as the run ends) and the next trip starts by itself. Orders with no shuttle, pilot, dock or stock
+  wait and retry (events `transfer.blocked`, reason `noShuttle|noPilot|noAirlock|noStock|failed`); three failed trips in a row wait for
+  a cancel. Cancel: a queued or boarding order just ends, a trip not yet loaded is called home, one already loaded finishes its delivery.
+  Events `transfer.queued|underway|delivered|blocked|cancelled` (alerts: salvage queued, delivered, blocked).
+- **Salvage auto-ferry** (`logistics/salvage.ts`). On a captured prize or ruined derelict where player crew stand, the loot (storage and loose
+  stacks) is queued home as one auto order when it fills a shuttle hold, or when the site went quiet (no open jobs there, pile unchanged for
+  20 s). One open salvage order per site. Pickup regions can be such sites (`isPickupRegion`); loose stacks are taken by crew hauls, or by
+  the instant swap when nobody hauls. Derelicts with no crew of ours on them are left alone.
+- **Transfers UI.** Stock drawer, "Transfers" tab (`TransferSection.svelte`): From and To `Select`s, a `NumberStepper` per stocked item, a
+  Transfer button, and the queue with status, progress and Cancel. `UiShuttles.transfers` feeds it.
+- **Mining paint.** Build menu "Mine ore (paint)" (tool kind `mine`, `UiToolState.pods`) and a "Paint ore to mine..." button in the
+  asteroid panel, with chips to choose which pods (all by default). Drag a rectangle: the preview highlights only the ore tiles in it, and
+  release sends `mining.order { pod, asteroid, tiles }` to each chosen pod (every pod when none is chosen; one asteroid per drag, the first
+  ore tile's). "No ore in that rectangle" toast otherwise.
+- **Outposts.** A woken dug (hostile) outpost already ran like a woken den (checked scenario by scenario, now pinned by
+  `content/ships/outpostDefence.test.ts`): wake by aim, damage, boarding or a dig/breach gives it a `CombatC`, the node goes into combat,
+  its turrets shoot the player's ship and hovering shuttles, and the station alarm sends security to intruders. The gap was the dock:
+  `ShipC.outpost.dock` (module id of the airlock on the rock face) is now recorded by `stampOutpost`; `dockError` refuses any other airlock
+  of an outpost (`notDock`; they open onto ground) and the shuttle panel lists only the dock. Surface (neutral) outposts therefore trade by
+  shuttle at that dock exactly like a station (`trade/stationDock.ts`, tested). NPC factions choosing outposts by kind is not done (galaxy
+  branch).
+
 **Next slices, in order:**
-1. Base logistics: carry materials and crew between the home ship and a base (shuttle cargo runs, a "go to base" order),
-   and the tile paint mode for mining orders.
-2. (Crews, trader and director done, see Slice 3.) Still open: enemy outposts defending when woken, NPC factions picking outposts by kind, an outpost dock the player's shuttles can use.
-3. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew; pod and pod-bay art.
+1. (Crews, trader, director, base logistics, mining paint, outpost defence and docks done, see Slices 3 and 5.) Still open: NPC factions
+   picking outposts by kind; crew walking between regions in suits when they are close; auto-supply of a base.
+2. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew; pod and pod-bay art.
 
 ## Stations, slice 1: generation (branch `stations`; not merged)
 
@@ -501,6 +543,141 @@ Not taken from PR #16: `src/ui/Starmap*`, `src/app/starmap*`, `galaxyPrefetch`, 
   5. Crossings can trigger pirate interdiction, trader hails, patrol scans and distress calls.
   6. **NPC fleets are persistent:** the ships moving on the map are the same entities or descriptors that become real ships in a node the player enters and leave the node's archive when they depart; galaxy
      contacts and node archives must stay consistent with NPC movement.
+
+**NPC traffic, slices (a) and (b) (branch `npc-traffic`, cut from `main`; sim plus starmap markers; visual: needs screenshot approval).** Design in
+`docs/ARCHITECTURE.md` ("Starmap", NPC traffic). Save v34 (`galaxy.turnClock`, `fleets`, `encounters`, `nextFleet`); `GENERATOR_VERSION` unchanged (no chunk output changed).
+- **Built:** the turn clock (hop turns and 60 s game-time turns share `GalaxyState.turn`; `onTurn(sim, turn, cause)`), persistent NPC fleets that move one hop per turn
+  and materialise in / lift out of the player's live node, crossing detection, encounter kinds (`interdict`, `hail`, `scan`, `distress`) stored as pending encounters,
+  interdiction halting the trip, `galaxy.dismissEncounter` (a stub), starmap markers (sector level) and a Traffic list in the node drawer, and an alert per encounter.
+- **Planner's calls (user decisions above are followed as written):**
+  1. Fleet ships are `Contact` descriptors, materialised by `spawnContact` (the one spawn path). Leaving a node, the fleet's ships are lifted out with `liftShip` and the packet is
+     dropped, so **damage does not carry over** and a node's archive never holds a fleet ship (no duplicates by construction). `stampPacket` could keep the packet later.
+  2. The player leaving lifts the fleet ships first (`galaxy.jump`, flee, teleport), then the archive freezes the rest. Fleets are descriptors everywhere the player is not.
+  3. Crossings are decided when the player's hop ends, from the fleet's step of the same turn (`moved`/`from`/`node`): `pass` (opposite on a lane), `overlap` (same way on a lane),
+     `node` (the turn ends in one node; a fleet resting there counts). A stationary player (a time turn) gets no encounter: arriving fleets just materialise.
+  4. Kind from faction and role: hostile pirate/raider interdicts, a damaged non-hostile fleet is `distress`, patrols `scan`, everything else `hail`. Roles follow the faction kind
+     (government patrol, corporation 70% trader / 30% patrol, civilian trader, pirates `pirate`, rogue `raider`). A fleet is not met again for ENCOUNTER_COOLDOWN (6) turns.
+  5. Interdiction: the trip's route is cut at the node reached and it drops there (`galaxy.interdicted`); `galaxy.jump` is refused (`interdicted`) while one is pending, except the
+     player's own flee. Pending encounters expire (3 turns for alerts, 6 for an interdiction) and `galaxy.dismissEncounter {id}` clears one; slice (c) replaces both with `resolveEncounter`.
+  6. Spawning is hashed from (seed, turn, slot), never the galaxy Rng: 2 tries a turn at 40%, cap 14, origins and destinations among the nodes within 6 jumps of the player (all
+     generated), stations weighted x2, never spawning at the player's node. 28 tries at 50% seed the first turn. A fleet lives 14 to 36 turns and despawns at a destination once it is
+     spent, or when it falls out of the area. 7% are stranded and damaged (they never move; `distress`).
+  7. A live node holds at most FLEET_NODE_SHIPS (3) other ships when fleet ships materialise (the sector is 200x120 and the deploy gap rule needs room); the rest wait as descriptors and
+     are retried each second. A fight or a live trade deal holds the fleets in the player's node in place.
+  8. Sensors: markers and the Traffic list show fleets within SENSOR_HOPS jumps of the current node only.
+- **Slice (c) needs:** an `Encounter` UI (`map.encounters` is not in the snapshot yet; read `sim.galaxy.encounters`), the event grid node and choices that end in `resolveEncounter(sim, id, outcome)`
+  (evade = roll, bribe = credits, fight = drop into combat with the fleet's ships, which `fleets[].ships` already describe), replacing `galaxy.dismissEncounter`, and fleet ships entering
+  the grid (use `materialiseFleet`-style spawning into the pocket). Damage persistence (packets) if wanted.
+
+**NPC traffic slice (c): resolving encounters (branch `npc-encounters`, cut from `npc-traffic`; visual: needs screenshot approval).** Design in `docs/ARCHITECTURE.md` ("Starmap", Encounters and event grids). Save v35.
+- **Built:** `galaxy.respond { encounter, choice }` (replaces `galaxy.dismissEncounter`), the event grid (`event:<encounter id>`, a pocket outside the map), `galaxy.leaveEvent`, an encounter card in the
+  starmap drawer (fleet, threat, choices with odds and prices, outcome line), an event-grid card in the game view (Resume travel / Flee), alerts for the roll, the bribe and the drop.
+- **Planner's calls:**
+  1. An interdiction halts the ship **in hyperspace** (`Travel.phase 'interdicted'`) instead of dropping it at the node: the trip is still there to resume, the starmap stays locked, and the drawer is the
+     place to answer. `galaxy.drop` is refused until it is settled; interdictions never expire (no turns pass while halted), alerts still expire after 3 turns.
+  2. Evade odds = 0.3 + evasion - 0.05 x strength, clamped [0.05, 0.9] (evasion is already engines x pilot skill, 0..0.75). Bribe = 12 x strength x (1 + 0.4 x danger) x (1 - 0.05 x standing, clamped [0.5, 2]),
+     min 10. Strength = sum of 1 + 0.5 x depth per ship. Constants in `galaxy/tuning.ts`.
+  3. Fight and rescue use the same event grid. The deploy picker places the player (same compact picker; the node name reads "Deep space"). The fleet is out of `fleets` while inside; survivors return as
+     descriptors with a fresh cooldown, destroyed or fled ships are forgotten, a fleet with none left is gone. Damage does not carry over (as before).
+  4. Leaving: free when no hostile ship is active; with hostiles about it needs a charged drive and spends it (a flee). The player's `combat.flee` in the grid is the same command. The player's crew or
+     shuttles left outside the packet are lost with the grid.
+  5. Hail and scan only acknowledge (no trade-hail hookup, no contraband fine). Distress `respond` works only in hyperspace (alerts last 3 turns); helping earns +2 reputation on the fleet's key.
+  6. The grid draws nothing from the map: no turn clock, no arrivals, no story draw (`onDeployed` returns early), `galaxy.jump` and teleport refused (`inEvent`).
+- **Not done:** salvage of the rescued ship, damage persistence for fleets, contraband fines, trade hail from the hail card.
+
+**User decisions 2026-10-22: living world (rework of NPC traffic in 4 stages, after the user reviewed `npc-encounters`).**
+- Turns: game-time turns are 3 minutes minimum (was 60 s); hops still each count as a turn.
+- Fleets lean very strongly to ONE ship. Group size scales with ship size via a size budget: a navy patrol can be two small ships or one heavy; traders, civilians and miners are always single ships; pirates mostly a single small ship, occasionally a pair of small ones.
+- Spawning and deleting fleets is the wrong model. NPCs have lives of their own outside interactions with the player (stages 2-4): a persistent population with home ports (stations, dens, depots, mining outposts) sized by port; ships live until destroyed; agendas per role (traders run buy-low/sell-high between stations; miners go to fields and back; patrols cycle their territory and chase pirates; pirates prowl near their den, rob traders and return); losses are rebuilt slowly at the home port; only the area near the player is simulated per turn, far regions catch up deterministically on approach.
+- Passing a non-hostile fleet should usually NOT produce an event.
+- Interdiction is a MODAL in the centre of the map screen, not a sidebar card.
+- Evade: a very skilled pilot should get around 80%.
+- Arrival warning: when a ship is travelling to the player's node the player gets a warning like "<ship> drops from hyperspace in 2 turns" (hostile = danger styling).
+- Damage not carrying over is noted as wrong but deferred.
+- **Stage plan.** 1: turn length, quiet passing, pilot-driven evade, interdiction modal, arrival warnings (done, below). 2: persistent population with home ports, single-ship fleets with the size budget, per-role agendas, rebuilds, near-player simulation with deterministic catch-up. 3: a SIMPLE economy (traders move real station stock and nudge prices; keep it small). 4: off-screen NPC-vs-NPC encounters decided by a stats mini-sim (three heavy navy battleships beat one small pirate) with real consequences (losses, wrecks, distress calls) and a news/rumours feed.
+
+**Stage 1 (built on `npc-encounters`; save v36).**
+- `TURN_SEC` 180 (the no-double-count and reset rules are unchanged). `ARRIVAL_EVERY_SEC` stays 60.
+- Non-hostile crossings: `passingMeets(sim, fleet, turn)`, a hash of seed, fleet and turn against `PASSING_ENCOUNTER_CHANCE` (0.12), gates a hail or scan (the `galaxy.crossing` event is still emitted). Distress from a stranded fleet and hostile interdictions always happen.
+- Evade formula (`galaxy/encounterOdds.ts`, constants in `tuning.ts`): `pilot = clamp(piloting skill / 5)`, `engine = clamp(raw engine evasion / 0.12)`, `odds = (0.32 + 0.57 x pilot) x (0.6 + 0.4 x engine) - strength x 0.06`, clamped to [0.05, 0.9]. The helm's skill is stored on `Combat.pilot` by `helmSystem` (new saved field, hence v36); no pilot or no powered engines means ship evasion 0 and the minimum 0.05. Against a lone depth-1 pirate (strength 1.5): skill 5 with one engine 0.80, skill 3 (pilot role) 0.60, skill 1.5 0.40, skill 0 0.23, half the engine power at skill 5 0.62; three depth-3 ships (strength 7.5) bring a skill-5 pilot to 0.45. The roll stays `unit(seed, encounter id)`.
+- Interdiction UI is `ui/InterdictModal.svelte`, centred over the map area of `StarmapView` (a bottom sheet on phones); hail, scan and distress stay in the drawer.
+- Arrival warnings: `incomingFleets(sim)` (`galaxy/incoming.ts`, pure query: fleets in sensor range whose route reaches the player's node, ETA = place in the route, nearest first, stranded fleets excluded) feeds `alerts.syncIncoming()` (app, called from `onEvents`), which keeps one alert per fleet ("<faction role> drops from hyperspace in N turns", kinds `galaxy.incoming` / `galaxy.incomingHostile`), updates it in place, drops it on arrival or a change of course, and does not re-raise a dismissed one for the same trip.
+
+**Stage 2: persistent population (built on `npc-encounters`; save v37; `GENERATOR_VERSION` unchanged: chunk output is the same).** Design in `docs/ARCHITECTURE.md` ("NPC population").
+- **Model:** no spawning or despawning. Every NPC ship belongs to a home port and lives until destroyed. Ports are derived from node structures (station, pirate den, navy depot, mining outpost, drone nest);
+  a port's size (1 to 3) and kind set how many fleets it fields. Fleets are created when their chunk is generated (`populate`, about 1 ms for nine chunks), named, and saved as descriptors (about 350 bytes a fleet).
+- **Budgets (content, `content/galaxyFleets.ts`, per galaxy faction):** size costs small 2, medium 3, heavy 4. Navy patrol budget 4 = two small, one medium or one heavy (or budget 2 = one small); pirates mostly 2 (one small), a fifth 4 (two small),
+  sometimes one medium; traders, civilians and miners `maxShips: 1`; drones up to two. Hull families map to size classes (navy corvette small, frigate medium, cruiser and carrier heavy; civilian mining small, freighter medium, liner heavy;
+  scrapper raider small, hauler and gunrunner medium; drones picket small, lancer medium, swarm heavy). A ship's generator seed is searched so its first attempt builds the family asked for (`previewHull`).
+- **Agendas:** rest at home, an outing of a few stops, home. Traders: stations within 6 hops, dwell 2 to 4 turns, `onDock` hook (`dock.ts`) for stage 3. Miners: one of the three nearest ore fields within 4 hops of home. Patrols: nodes of their faction's territory within 4 hops of home.
+  Pirates and raiders: any node within 3 hops of the den or nest. All one hop per turn.
+- **Losses:** a wrecked or captured ship is gone; its port owes a replacement (one every 12 to 20 turns by port kind, a single-ship fleet of the lost role and size). A ship that jumps away survives (its fleet runs for home). Distress comes from real damage (a disabled or under-40% ship
+  strands its fleet) or a rare breakdown (0.15% per hop away from home); stranded fleets repair themselves after 12 to 24 turns unless rescued.
+- **Scale:** only fleets whose node or home is within 6 hops of the player are stepped; the rest are frozen and caught up on approach, turn by turn up to 40 turns (exact), else home plus the last 40 turns (deterministic, the cycle phase differs).
+- **Planner's calls:**
+  1. Free traders also keep ships at any market (trade or research station) whoever owns it (weight 3 against the owner's own groups), so navy trade stations still have merchants. Navy hulls are patrol-only, civilian hulls trader or miner, so corporations field both.
+  2. Mining outposts are asteroid fields a faction owns in its territory (only factions that field miners); drone nests are derelicts in rogue territory. No new structures were added, so chunk generation is untouched.
+  3. A port homed in the player's own node (the start station) starts its fleets one hop out and coming in, so nothing materialises around a new game. Hostile stranded fleets only hail (no interdiction from a hulk).
+  4. Ship names are `prefix + name` per faction (CNS, MCV, HBV, VHI; free traders "Lucky Margin"; scrappers "Rust Jackal"; drones "Unit Reap 31"), unique among living ships; a fleet shows as its first ship, "+n" for the rest.
+  5. Hostile arrival rolls (`rollArrival`, while the player stays) and node contacts are unchanged: they are node ships, not fleets.
+  6. Damage still does not persist beyond "crippled strands the fleet"; salvage, NPC-vs-NPC fights and the economy are stages 3 and 4.
+- **Perf (headless, one core):** `newGame` cold is 270 to 340 ms (seed generation as before; baseline commit measured 275 to 336 ms), warm 3 ms; a turn with a full area (19 simulated fleets of 132 in an 81-chunk world) 0.12 ms, baseline 0.10 ms with 14 fleets;
+  catch-up of a whole area after 300 turns away 2 to 4 ms. The real cost of a turn is materialising a ship in the player's node (generator, about 20 to 50 ms), unchanged.
+- **Tests:** `content/galaxyPopulation.test.ts` (determinism, rosters match port kind and size, budgets and caps, agendas, nothing disappears, rebuild after N turns, catch-up equivalence, save mid-trip, materialise and lift without duplicates, stranding, fled ships),
+  `.slow.test.ts` (all port kinds over four seeds, long run, catch-up beyond the cap); `galaxyTraffic` and `galaxyEncounters` updated; the arrival-warning alert test checks the ship name.
+- **Next:** stage 3 (below, done); stage 4, off-screen NPC-vs-NPC encounters with consequences and a news feed.
+
+**Stage 3: a simple NPC economy (built on `npc-encounters`; save v38).** Design in `docs/ARCHITECTURE.md` ("NPC economy"). Small on purpose.
+- **State:** `GalaxyState.markets[portId] = { turn, stock }`, only the items whose level differs from the port's baseline; no entry = baseline at turn 0. `Fleet.cargo` (item, count lines) and `Fleet.pick` (the stop a trader bought for). `Trader.port` / `Trader.base` on a live station that is a port's market.
+- **Market model** (`galaxy/market.ts`): baseline = the port's trade profile stock (`rollTrader`, so a live station shows the same economy); each turn a stock moves 4% of the way to `baseline + net / 0.04`, net = (production - consumption) x port size; clamped to [0, cap], cap = max(40, 3 x baseline). Closed form, so a frozen port catches up in one step over any gap (no loop, no cap on the gap) and an untouched port is "matured" the first time anyone looks.
+- **Production table** (`content/galaxyMarket.ts`, per turn at size 1): mining outposts dig iron ore 2, metal 1, ice 1, rare ore 0.2 and eat rations 1, parts 0.2; farms grow rations 3, ice 0.5 and eat polymer, parts, metal; trading stations make electronics 0.4, polymer 0.5 and eat rations 1.5, electronics 0.5, parts 0.4, metal 0.8, missiles 0.2; depots eat rations, metal, parts, missiles, electronics; dens make scrap 1 and eat rations, ice, parts, electronics. Port kind picks the profile (station: trading, 30% farm by hash; den: pirate; depot: military; outpost: mining; nest: no market).
+- **Prices:** `unitPrice` gets one extra factor, `stockFactor(stock, baseline) = clamp(1 + 0.6 x (baseline - stock) / max(baseline, 20), 0.5, 1.6)`, applied only to a live station bound to a port (`Trader.port`); plain stations and every existing trade test are unchanged. NPCs compare `marketValue` (base price x kind mods x the same factor, no spread).
+- **Traders** (`galaxy/dock.ts`, `onDock(sim, fleet, port, stops)`): sell the whole cargo into the port (what does not fit under the cap is dumped), then for each of the nearest 6 next stops price every commodity here and there and take goods whose price there beats here by 15%, best margin first, up to half the stock and the hull cargo (small 20, medium 40, heavy 80 per ship). The stop with the most profit becomes `Fleet.pick` and the agenda goes there (else it picks as before). Credits are not tracked (ports are bottomless). Miners load 80% iron ore and 20% rare ore at a field and sell it into their home outpost.
+- **Sync with the live station:** entering a node (`drop`) or each turn binds unbound station traders to the node's ports (profile, baseline and stock from the market), leaving (`jump`, flee, teleport) writes the trader's stock back as the port's state. While bound the trader is the only copy (player deals and NPC docks both change it); each turn it steps toward its level with a hashed dither so slow rates still show.
+- **UI:** the node drawer shows a "Market" line (up to two cheap goods with a down chevron, two dear with an up chevron) for nodes in sensor range, and "Carrying 40 Ration" on a trader's row.
+- **Planner's calls:**
+  1. No credits for NPCs: a trader's gain is only visible as goods moving; a wallet would be one more number to balance for no gameplay yet. Easy to add on `Fleet` later.
+  2. A market is touched lazily (a dock, the player, the UI), never per turn, so the per-turn cost is the docks only. Markets of ports no fleet visits stay at their level and never appear in the save.
+  3. NPC trades use the mid price (no 1.25/0.6 spread), otherwise no price gap could ever beat it; the player still pays the spread.
+  4. Galaxy nodes do not spawn live stations yet (only `debug.spawnStation` does, pending the sector refactor), so the live sync binds whichever station traders stand in the player's node to its ports, matching by profile first and then in order.
+  5. A live station's profile is overwritten with its port's, so prices match the galaxy market even for a debug station of another kind.
+  6. The live market is paused for time the player is away and during a stay it moves one dithered step per turn; a station destroyed while live loses its stock (the stale entry stays valid).
+  7. Only ten commodities are traded by NPCs (`market.goods`); weapons and vehicles only follow the price factor on the player's side.
+- **Perf (headless, one core, 6 seeds x 280 turns, 25 to 34 fleets):** turn 0.083 ms average against 0.025 before; the worst turn 12 ms when the first docks build their economies (cached per port). A market read or catch-up is O(items) (about 12), so no catch-up cost to speak of.
+- **Tests:** `content/galaxyMarket.test.ts` (production and consumption, prices from stock, drift and bounds, closed-form catch-up equals stepping, trader buys low and picks the more profitable stop in either order, nothing when no stop pays, full shelf, miners deliver, a running world, save mid-trip with cargo, live bind / player trade / write-back / jump away and back).
+- **Next:** stage 4, off-screen NPC-vs-NPC encounters with consequences and a news feed.
+
+**Node population (built on `npc-encounters`; save v39).** Design in `docs/ARCHITECTURE.md` ("Node population"). Before this a galaxy node was an empty grid when the player dropped in (only `debug.spawnStation` made a live station), so the stage 3 market sync had nothing to bind. Now a node's structures become real on the player's FIRST drop (`populateNode`, `galaxy/populate.ts`, `populateSpawn.ts`).
+- **What becomes what:** a station structure is a generated station (kind and size from its port: den = `station.pirate`, depot = `station.military`, a market = the kind its trade profile names, trading or farming; port size 1, 2, 3 = outpost, station, hub), made by `spawnStation` (crew, security, trader, director) and bound to its port market (`bindStation`), so player trades move the world economy. An asteroid field is a field of rocks (`generateAsteroid` + `stampAsteroid`); a field that is a mining-outpost port also gets a surface mining outpost on a big asteroid (`generateOutpost` + `stampOutpost`), bound to the port. A derelict is a ruined wreck of the node's faction (any non-rogue faction in unclaimed space); a drone nest (derelict in rogue space) is a heavier ruin of the rogue AI, infested with robots (the existing `ruin` pass). Every spawner is a function of (galaxy seed, node, structure index).
+- **Once only:** `NodeState.populated`. After the node is left its archive owns the stations, rocks and wrecks; a return restores, never repeats. Order inside `drop`: archive restore or contacts, fleets, then population (east of everything already there), then `bindMarkets`. The start node is populated by `newGame(seed, content, ship, true)`, which `main.ts` asks for; the default stays an empty node so the many tests that start in an empty sector are unchanged. The starter ship is never moved: structures go at least 70 tiles from the west edge and 30 tiles east of everything before them.
+- **Layout:** west to east in structure order, centred on a mid line with a small hashed offset; the sector grows (width and height) to hold them, as it does for hubs.
+- **Planner's calls:**
+  1. A pirate den in a node that also has an asteroid field is not an orbital station but a dug pirate outpost (the existing hidden-in-rock style, `style: 'dug'`, `hidden`), so the player finds only a big rock until the base is discovered; with no field nearby it is an orbital pirate station. The dug base is always the `outpost` tier (the generator has no bigger dug bases). A dug den is bound to the den market like any other.
+  2. A mining outpost is a field AND a surface outpost (two things in the node), since miners work the field and sell to the outpost.
+  3. Research stations are built as trading stations (no research station kind exists); non-port stations use the `station` tier.
+  4. Derelicts: the node's faction hull when it has one (a navy node has navy wrecks), else a hash pick over the non-rogue factions; cause and intensity from the seed (nests are always combat ruins at 0.7).
+  5. Hubs are real: a size 3 port makes a hub (up to about 150 x 150 tiles). Generation is the cost (below); no cap was added.
+  6. Structures that fail to place (the generator refuses a seed, no layout) are skipped rather than retried; the node is still marked populated.
+- **Perf (headless, one core, noisy machine):** a first drop populates in a median of 22 ms (40 structured nodes over 7x7 chunks), worst 430 ms (a size 2 navy depot), a hub-size market or depot in the 300 to 600 ms range; return visits cost nothing (the archive). The start node adds about 300 ms to a new game with a trade station (seed 3: 11 ms warm to 316 ms; seed 21: 363 to 626 ms cold, the chunk generation dominates).
+- **Tests:** `content/galaxyPopulate.test.ts` (stations, outposts, dens dug or orbital, derelicts and nests, layout and gap, restored not duplicated, determinism whatever was visited first, save and load, station bound to its port and a player deal moving the port market, the start node).
+- **Next:** stage 4 (below).
+
+**Stage 4: off-screen life (built on `npc-encounters`; save v40).** Design in `docs/ARCHITECTURE.md` ("Off-screen life"). The world now fights without the player.
+- **Mini-sim** (`galaxy/clash.ts`, tuning in `tuningWar.ts`): when fleets of factions at war meet outside the player's node, a stats mini-sim decides it ("three heavy navy ships against one small pirate: the winner is obvious"). Ship power = size class (small 1, medium 2.4, heavy 5) x role (patrol 1.25, pirate 1, raider 1.1, trader 0.12, miner 0.1) x (1 + 0.08 x depth); a fleet's power is the sum, halved while stranded. Each side's power is scaled by a bounded random factor (+-35%), and the share p decides: p >= 0.82 the loser is destroyed (the winner is hurt with chance 1.6 x (1 - p)); p >= 0.62 the loser is driven off (each ship lost with up to 0.7 chance, survivors run home); otherwise a draw: both stranded and each ship lost with 0.15. All rolls are hashes of (seed, both fleets, turn). Overwhelming strength decides (three heavy patrol ships against a small pirate: the pirate is destroyed in over 99% of the fights it does not avoid); an even match varies (driven off, draws, either side winning).
+- **Who fights:** factions at war (relation sum <= -0.3 either way, or the rogue AI against anyone) with at least one armed role (patrol, pirate, raider): two haulers never fight. Pirates (not drones) avoid a patrol with under 45% of their strength (80% of the time): no fight, they run home. Patrols and pirates also hunt: with chance 0.6 per planned leg a patrol makes for a pirate or raider it can take, a pirate for a trader or miner (never a patrol), within its normal range (`agenda.ts` `hunt`); without it armed fleets would hardly ever meet, since territories hardly overlap.
+- **Detection** (`meetings.ts`): each turn, among the fleets that stepped, outside the player's node (a fleet in it, or that just left it, never takes part): opposite directions on one lane (settled at a hashed end), or the same node at the end of the turn. A fleet fights at most once per turn; fleets and nodes go in id order. Frozen fleets that catch up play their meetings too (`catchUpFleets` takes an `after` hook), among the fleets caught up together.
+- **Consequences:** a destroyed ship is forgotten, its port owes a replacement (stage 2 rebuilds), and its hull becomes a wreck waiting at that node (`NodeState.wrecks`, at most 4 a node); the next drop there (first visit or return) generates the same hull ruined by combat, nobody moved in (`spawnDerelict`, `placeWrecks`), east of everything, found and salvaged like any derelict. A driven-off side runs for home (`retreat`); a patrol that drove a pirate off follows it two hops (`chase`). Stranded survivors call for help (`strand`: the stage 2 breakdown path, a navy patrol gives a distress call, repaired alone after 12 to 24 turns). A pirate or raider that wins takes the loser's cargo (all of it from a destroyed fleet, half from one that ran, up to its hold), heads home and sells it into the den market on arrival (`dock.ts`).
+- **News** (`galaxy/news.ts`, `GalaxyState.news`, at most 40): facts only (kind, turn, node, who, faction, foe, item): destroyed, raid (a patrol destroyed a ship at its den), driven off, clash, trade route cut (a trader lost where there was nothing to take; with a pirate's loot the loot line says it), loot, shortage (a trader took a shelf under 10% of its baseline; once per port and item per 80 turns), rebuilt (a port launched a replacement). `newsFeed(sim)` marks each item precise (its node is within sensor range) or not; `app/newsSnapshot.ts` words them: precise news names ships and places ("CNS Valiant destroyed Rust Jackal", Kessa Alpha), distant news is a rumour (factions and the sector only, italic and dim, "Rumour"). UI: a News tile in the starmap's tool column opens `ui/StarmapNews.svelte` (PanelHead, theme tokens, 14 items, age and place under each).
+- **Planner's calls:**
+  1. Meetings are rare by nature (pirates live in their own dangerous space, patrols and traders in safe space, and hunting only reaches ranges of home): the start area (navy and free traders) has none, pirate country near a den with traders and patrols around has a few dozen a thousand turns. Tuning lives in `tuningWar.ts` (`HUNT_CHANCE`, `WIN_ALL`, ...).
+  2. Meetings never touch ships: no real fights are simulated, no damage state beyond stranded, and a fight in the player's node stays real combat.
+  3. Wrecks are the exact ship that died (same generator key), ruined 0.6 by combat, never infested; they sit east of everything at the node, in a revisited node too.
+  4. Frozen fleets that catch up meet only each other, so a catch-up equals stepping when the whole region is caught up together (tested over 40 turns); a fleet rebuilt during a long catch-up cannot meet within it.
+  5. News turn stamps are the fleet's own turn, so a catch-up reports its past turns at the right turn. News ids have their own counter (`nextNews`), so a log entry never shifts the ids fleets are made with.
+  6. A lane meeting is settled at a hashed end of the lane, which is where the wreck and the news go.
+- **Perf (headless, one core, 600 to 1000 turns):** 0.03 to 0.11 ms a turn with 3 to 15 simulated fleets (the busiest start areas of 24 seeds: 15 fleets 0.086 ms, 13 fleets 0.058 ms; pirate country around a den 0.11 ms), against 0.083 ms for 25 to 34 fleets in stage 3 (a simulated area is only the fleets within 6 hops). Meeting detection is a group-by over the fleets that stepped. A 400-turn replay is byte for byte the same; save and load round-trips the log and the waiting wrecks. Full `npm run check` (134 files, 775 tests, slow tier included) and `npm run build` pass.
+- **Tests:** `content/galaxyWar.test.ts` (strength decides: three heavy patrol ships against a small pirate, an even match varies, haulers are prey, a pirate avoids a strong patrol, determinism, who fights; destroyed ships leave wrecks, owe rebuilds and make news; the wreck is found on the next drop once, also at a node visited before; driven-off runs home and the patrol chases; a draw strands both and the patrol sends a distress call; the pirate's loot reaches the den market; the player's node is exempt; lane crossings; the log is bounded and precise only in sensor range; a 400-turn world replays identically; save and load; catch-up equals stepping, fights included), `app/newsSnapshot.test.ts`.
+- **Not done:** salvage of an off-screen wreck beyond what derelicts already allow, damage persisting for fleets (still only "stranded"), a news alert when the player is nearby, rebuilt fleets meeting inside their own catch-up.
 
 ## Crew sprite pipeline (branch `crew-pipeline`; merged to `main` with user approval)
 

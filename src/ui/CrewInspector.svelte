@@ -1,13 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCrew } from './api';
+  import type { UiApi, UiCrew, UiShuttles } from './api';
   import Icon, { type IconName } from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
+  import { Chips } from './kit';
 
   let { api, onPriorities, onBack }: { api: UiApi; onPriorities: () => void; onBack: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
   let sel = $state<number | null>(null);
+  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   const c = $derived(crew.find((x) => x.id === sel) ?? foes.find((x) => x.id === sel));
   const enemy = $derived(c?.side === 'enemy');
 
@@ -18,7 +20,8 @@
     const a = api.crew.subscribe((v) => (crew = v));
     const b = api.selectedCrew.subscribe((s) => (sel = s));
     const d = api.hostiles.subscribe((v) => (foes = v));
-    return () => (a(), b(), d());
+    const e = api.shuttles.subscribe((v) => (shuttles = v));
+    return () => (a(), b(), d(), e());
   });
 </script>
 
@@ -72,10 +75,15 @@
     {#if c.arms.length || c.weapon}
       <div class="sub">Weapon</div>
       <div class="chips" data-testid="equip-list">
-        {#each c.arms as a (a.item)}
-          <button class:on={c.weapon?.item === a.item} data-testid="equip-{a.item}" onclick={() => api.dispatch({ type: 'crew.equip', id: c.id, item: a.item })}>{a.name}<small>x{a.count}</small></button>
-        {/each}
+        <Chips label="Weapon" deselect={false} value={c.weapon?.item ?? ''} options={c.arms.map((a) => ({ value: a.item, label: a.name, sub: `x${a.count}`, testId: `equip-${a.item}` }))} onChange={(item: string) => api.dispatch({ type: 'crew.equip', id: c.id, item })} />
         {#if c.weapon}<button data-testid="unequip" onclick={() => api.dispatch({ type: 'crew.unequip', id: c.id })}>Drop {c.weapon.name}</button>{/if}
+      </div>
+    {/if}
+    {#if shuttles.regions.length > 1 && shuttles.regions.some((r) => r.id === c.ship) && !c.dead && !c.downed}
+      <div class="sub">Base trip (by shuttle)</div>
+      <div class="chips" data-testid="ferry-crew">
+        <Chips label="Base trip" deselect value="" onChange={(to: string) => to && api.dispatch({ type: 'ferry.order', from: c.ship, to: Number(to), crew: [c.id] })}
+          options={shuttles.regions.filter((r) => r.id !== c.ship).map((r) => ({ value: String(r.id), label: r.home ? 'Come home' : `Go to ${r.name}`, disabled: !shuttles.ferryReady, title: shuttles.ferryReady ? '' : 'No free shuttle', testId: `ferry-crew-${r.id}` }))} />
       </div>
     {/if}
     {#if c.drafted}
@@ -122,8 +130,8 @@
   .btns.one { display: grid; grid-template-columns: 1fr; }
   .sub { color: var(--dim); font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; margin: 8px 0 4px; }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-  .chips button { min-height: 34px; padding: 0 10px; display: flex; gap: 6px; align-items: center; }
-  .chips small { color: var(--dim); }
+  .chips :global(.kit-chips) { display: contents; }
+  .chips > button { min-height: 34px; padding: 0 10px; }
   .warn { border-color: #7a2a2a; }
   .hint { margin: 6px 0 0; color: var(--dim); font-size: 12px; }
 </style>

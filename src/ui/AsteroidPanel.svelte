@@ -3,11 +3,15 @@
   import type { UiApi, UiMining } from './api';
   import PanelHead from './PanelHead.svelte';
   import PodList from './PodList.svelte';
+  import { Chips } from './kit';
 
   let { api, asteroid, onBack }: { api: UiApi; asteroid: number; onBack: () => void } = $props();
   let mining = $state<UiMining>({ asteroids: [], pods: [] });
   onMount(() => api.mining.subscribe((v) => (mining = v)));
   const a = $derived(mining.asteroids.find((x) => x.id === asteroid));
+  // Pods the painted ore goes to (all of them until the player narrows it).
+  let off = $state<number[]>([]);
+  const picked = $derived(mining.pods.filter((p) => !off.includes(p.id)).map((p) => p.id));
   const total = $derived(a ? a.ore.reduce((n, o) => n + o.units, 0) : 0);
 </script>
 
@@ -24,6 +28,14 @@
     </ul>
     <div class="sub">Mining pods</div>
     <PodList {api} {mining} {asteroid} canMine={total > 0} />
+    {#if total > 0 && mining.pods.length}
+      <div class="sub">Paint ore for</div>
+      <div data-testid="mine-pods">
+        <Chips multiple label="Pods to paint for" value={picked.map(String)} onChange={(v: string[]) => (off = mining.pods.map((p) => p.id).filter((id) => !v.includes(String(id))))}
+          options={mining.pods.map((p) => ({ value: String(p.id), label: p.name, testId: `mine-pod-${p.id}` }))} />
+      </div>
+      <button class="full" disabled={picked.length === 0} data-testid="asteroid-paint" title="Drag a rectangle over ore: the pods cut just those tiles" onclick={() => api.setTool({ tool: 'build', build: 'mine', pods: picked })}>Paint ore to mine…</button>
+    {/if}
     {#if a.kind === 'big'}
       <button class="full" data-testid="asteroid-claim" title="Drag a rectangle on the asteroid to start a base there" onclick={() => api.setTool({ tool: 'build', build: 'claim' })}>Claim for a base…</button>
     {/if}

@@ -19,12 +19,21 @@ export function liveDealWith(sim: Sim, ship: number): Deal | undefined {
  * of its stock, and, for the player's shuttle carrying outbound goods, seal its hold so the cargo planner leaves it alone.
  * `check` is the offer re-validated just now and `plan` the courier chosen for it.
  */
+/**
+ * A live port's stock changed outside a galaxy turn (a player deal moved goods in or out): bump the galaxy revision so the starmap's market summary
+ * (cheap and dear goods, built per revision) is rebuilt. Plain station traders (no port) are not on the map. A counter bump is all it costs.
+ */
+export function touchMarket(sim: Sim, trader: { port?: string } | undefined): void {
+  if (trader?.port) sim.galaxy.rev++;
+}
+
 export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: CourierPlan): Deal {
   const trader = sim.world.get(offer.ship, TraderC);
   const pay = settlement(offer);
   if (pay > 0) sim.trade.credits -= pay;
   else if (trader) trader.credits += pay;
   if (trader) for (const l of check.get) takeStock(trader.stock, l.item, l.count);
+  touchMarket(sim, trader);
   const deal: Deal = {
     id: sim.trade.nextId++, ship: offer.ship, give: check.give, get: check.get, barter: offer.barter, balance: offer.balance,
     held: Math.abs(pay), courier: plan.courier, phase: 'dispatch', vehicle: plan.vehicle, airlock: plan.airlock, timer: 0, tick: sim.tick,
@@ -73,6 +82,7 @@ export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void 
   if (d.balance > 0 && !d.barter) sim.trade.credits += d.held;
   else if (d.balance < 0 && !d.barter && trader) trader.credits += d.held;
   if (trader && !lost) for (const l of d.get) addStock(trader.stock, l.item, l.count);
+  touchMarket(sim, trader);
   d.held = 0;
   d.phase = 'failed';
   d.reason = reason;

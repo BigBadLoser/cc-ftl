@@ -1,4 +1,12 @@
 const REASONS: Record<string, string> = {
+  noEncounter: 'That encounter is over',
+  badChoice: "That isn't an option here",
+  cantAfford: "You can't afford that",
+  inEvent: 'Finish here first: leave the event grid',
+  notInterdicted: 'Not interdicted',
+  fleetGone: 'They are gone',
+  noEvent: 'You are not in an event grid',
+  interdicted: 'Answer the interdiction first',
   jobExists: "There's already a job on that tile",
   noJob: 'No job on that tile to cancel',
   sameStruct: "That's already built there",
@@ -43,6 +51,7 @@ const REASONS: Record<string, string> = {
   otherGrid: 'Go to that airlock\'s ship first',
   unreachable: "Can't get to an airlock from here",
   noAirlock: 'That airlock is not usable',
+  needSuits: 'Not enough EVA suits: without an airlock the crew land by suit, so send fewer or suit them up first',
   // Trade
   noTrader: 'Nobody there to trade with',
   notAnswered: 'They have not answered your hail',

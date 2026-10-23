@@ -103,7 +103,8 @@ describe('hunger', () => {
       if (i % TICK_HZ === 0) for (const h of humans(sim)) if ((needs(sim, h).hunger ?? 1) <= 0) starving++;
     }
     expect(starving).toBe(0);
-    for (const h of humans(sim)) expect(needs(sim, h).hunger as number).toBeGreaterThan(5);
+    // Foreign crews (an arrival may board the sector during ten minutes) have no hunger; the player's crew does.
+    for (const h of humans(sim).filter((id) => needs(sim, id).hunger !== undefined)) expect(needs(sim, h).hunger as number).toBeGreaterThan(5);
     expect(totalStock(sim, 'item.ration')).toBeGreaterThanOrEqual(8); // the galley's keep order refills the larder
   });
 });

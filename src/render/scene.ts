@@ -18,7 +18,7 @@ import { initHalos } from './haloTex';
 import { createWorldStack } from './worldLayers';
 import { regionOrigin, sectorArt, type Origin } from './sectorPos';
 import type { ModuleDefs } from './moduleView';
-import { ROOF_H } from './heights';
+import { ROOF_H, Z_PX } from './heights';
 import { liveryFor } from './roofArt';
 import { createShuttleView } from './shuttleView';
 import { createContainerBodyView } from './containerBodyView';
@@ -30,6 +30,7 @@ import { targetedModules, wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
 import { createAsteroidView } from './asteroidView';
+import { createMarkers } from './markers';
 import { createPodView } from './podView';
 import { createShipScene, type ShipScene } from './shipScene';
 
@@ -43,7 +44,7 @@ export interface RenderInfo {
   zoom: number;
 }
 
-type Tile = { x: number; y: number };
+type Tile = { x: number; y: number; lift?: number };
 
 export type { CombatMarks, CombatViewRect };
 
@@ -84,8 +85,8 @@ export interface Renderer {
   pickModule(screenX: number, screenY: number): number | null;
   /** The ship tile (any ship in the sector) under a canvas-relative position, or null. */
   pickTileAny(screenX: number, screenY: number): { shipId: number; x: number; y: number } | null;
-  /** The sector tile under a canvas-relative position, wherever it is (painting tools, asteroid rock). */
-  pickSector(screenX: number, screenY: number): Tile;
+  /** The sector tile under a canvas-relative position, wherever it is (painting tools, asteroid rock). `lift`: read the point as that many tiles above the ground (the top of a rock block). */
+  pickSector(screenX: number, screenY: number, lift?: number): Tile;
   /** Canvas-relative CSS px of a tile's centre on any ship. */
   screenOf(shipId: number, x: number, y: number): { x: number; y: number };
   /** Draw a ring under this crew member (null clears). */
@@ -145,8 +146,6 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let selection: Tile | readonly Tile[] | null = null;
   let selShip = 0;
   let selectedCrew: number | null = null;
-  let preview: readonly Tile[] = [];
-  let previewValid = true;
   let lastFrame = performance.now();
 
   // One world layer stack for every region (ship), in the sector frame: art origin = sector tile (0, 0).
@@ -189,6 +188,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const pickHost = (): PickHost => ({ scenes, cam, origin, hidden: (id) => !!world.get(id, ShipC)?.outpost?.hidden });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
+  const sectorMarks = createMarkers(SL.ui);
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
   function shipOf(shipId: number): Ship | undefined {
@@ -228,7 +228,6 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       sc.view.setOverlay(overlay);
       sc.view.setSelection(selection);
       sc.view.setHover(hover);
-      sc.view.setPreview(preview, previewValid);
     } else if (grid.id === selShip) sc.view.setSelection(selection);
     sc.setSelectedCrew(selectedCrew);
     scenes.set(grid.id, sc);
@@ -380,9 +379,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       scenes.get(refId)?.view.setHover(t);
     },
     setPreview(tiles, valid = true) {
-      preview = tiles;
-      previewValid = valid;
-      scenes.get(refId)?.view.setPreview(tiles, valid);
+      // Drawn in the shared sector layer, not the reference ship's: a drag over a distant asteroid has that ship culled away.
+      sectorMarks.setPreview(tiles, valid);
     },
     focusTile(x, y) {
       const p = iso(x, y); // a sector tile
@@ -424,7 +422,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     pickCrew: (sx, sy) => pickCrewAcross(pickHost(), sx, sy),
     pickTileAny: (sx, sy) => pickTileAcross(pickHost(), sx, sy),
-    pickSector: (sx, sy) => sectorTileAt(cam.toArt(sx, sy)),
+    pickSector: (sx, sy, lift = 0) => {
+      const a = cam.toArt(sx, sy);
+      return sectorTileAt({ x: a.x, y: a.y + lift * Z_PX });
+    },
     screenOf: (shipId, x, y) => screenOfTile(pickHost(), ratio(), shipId, x, y),
     pickModule(sx, sy) {
       const a = cam.toArt(sx, sy);

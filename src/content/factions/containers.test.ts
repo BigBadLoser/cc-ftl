@@ -18,6 +18,7 @@ const boxes = (t: ShipTemplate) => (t.modules ?? []).filter((m) => defs[m.def]?.
 /** A freighter stamped as a prize at (40, 40) of a fresh game. */
 function stamped(seed: number): { sim: Sim; ship: number } {
   const sim = newGame(1, content);
+  sim.galaxy.fleets = []; // keep NPC traffic out of this long run (fleets arrive in the node every minute)
   const ship = stampShip(sim, freighter(seed).template, { faction: 'hostile', x: 300, y: 40, state: 'prize' });
   return { sim, ship };
 }
@@ -112,6 +113,7 @@ describe('cargo containers', () => {
       clamped += ks.filter((k) => k.fate !== 'torn').length;
       if (!ks.some((k) => k.fate === 'torn')) continue;
       const sim = newGame(1, content);
+      sim.galaxy.fleets = []; // keep NPC traffic out of this long run (fleets arrive in the node every minute)
       const ship = stampShip(sim, r.template, { faction: 'hostile', x: 300, y: 60, state: 'prize' });
       applyRuin(sim, ship, r.template, r.meta);
       const bodies = sim.world.query(ContainerC, BodyC).filter((i) => sim.world.get(i, ContainerC)!.state === 'drifting');

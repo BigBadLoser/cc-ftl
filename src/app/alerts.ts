@@ -1,5 +1,5 @@
 import { shipIdOf, shipGrid } from '../sim/regions';
-import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
+import { AllegianceC, CrewC, ModuleC, incomingFleets, PositionC, ShipC, TraderC, roomTiles, type Grid, type Sim, type SimEvent } from '../sim';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createStore, type Readable } from './store';
 
@@ -11,6 +11,8 @@ export interface Alerts {
   onEvents(events: SimEvent[]): void;
   dismiss(id: number): void;
   get(id: number): UiAlert | undefined;
+  /** Arrival warnings: bring the "drops from hyperspace" alerts in line with the fleets now on their way to the player's node (state, not events). */
+  syncIncoming(): void;
   /** True when this event raises (or would raise) an alert, so the event log can leave it to the alert. */
   covers(e: SimEvent): boolean;
   /** Called whenever an alert leaves the list (dismissed, expired or replaced), with the tick it appeared. */
@@ -20,6 +22,8 @@ export interface Alerts {
 }
 
 /** Turns sim events into a short, deduplicated, dismissable alert queue (UI-side only; never feeds the sim). */
+const BLOCKED = { noShuttle: 'no free shuttle', noPilot: 'no free pilot', noAirlock: 'no working airlock', noStock: 'nothing left to take', failed: 'trips keep failing' } as const;
+
 export function createAlerts(sim: Sim): Alerts {
   const store = createStore<UiAlert[]>([]);
   const keys = new Map<number, string>();
@@ -27,6 +31,11 @@ export function createAlerts(sim: Sim): Alerts {
   const clearedFns: ((a: UiAlert, tick: number, replaced: boolean) => void)[] = [];
   const raisedFns: ((e: SimEvent, alertId: number) => void)[] = [];
   let nextId = 1;
+  /** Arrival-warning alerts by fleet id. They follow the sim, so they never expire on a timer and stay out of the event log. */
+  const incoming = new Map<number, number>();
+  let incomingKey = '';
+  /** Fleets whose warning the player dismissed: quiet until the fleet is no longer on its way. */
+  const muted = new Set<number>();
 
   const crewName = (id: number) => sim.world.get(id, CrewC)?.name ?? 'Crew';
   const crewAt = (id: number) => {
@@ -99,6 +108,9 @@ export function createAlerts(sim: Sim): Alerts {
       case 'combat.started': return { kind: e.type, key: 'cs', text: 'Hostile ship in range: combat!', at: null };
       case 'mining.waiting': return { kind: e.type, key: `mw${e.pod}`, text: 'Mining pod waits for a free pilot', at: null };
       case 'mining.done': return { kind: e.type, key: `md${e.pod}`, text: e.reason === 'exhausted' ? `Mining done: ore used up (${e.trips} trips)` : e.reason === 'recalled' ? 'Mining pod recalled' : 'Mining pod lost its bay', at: null };
+      case 'transfer.queued': return e.auto ? { kind: 'transfer', key: `tq${e.order}`, text: `Salvage from ${shipName(e.from)?.name ?? 'a wreck'} queued for transfer`, at: null } : null;
+      case 'transfer.delivered': return e.final ? { kind: 'transfer', key: `tq${e.order}`, text: `Transfer delivered to ${shipName(e.to)?.name ?? 'the destination'}`, at: null } : null;
+      case 'transfer.blocked': return { kind: 'transfer', key: `tb${e.order}`, text: `Transfer blocked: ${BLOCKED[e.reason]}`, at: null };
       case 'outpost.discovered': return { kind: e.type, key: `od${e.ship}`, text: 'Hidden base discovered', at: shipCentre(e.ship) };
       case 'ship.provoked': return { kind: e.type, key: `op${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Ship'} turns hostile`, at: shipCentre(e.ship) };
       case 'module.destroyed': {
@@ -119,6 +131,15 @@ export function createAlerts(sim: Sim): Alerts {
       case 'trade.settled': return { kind: 'trade', key: `td${e.deal}`, text: `Deal settled${e.credits ? `: ${e.credits > 0 ? '-' : '+'}${Math.abs(e.credits)} credits` : ''}`, at: null };
       case 'trade.failed': return { kind: 'trade', key: `td${e.deal}`, text: `Deal with ${traderName(e.ship)} called off`, at: null };
       case 'station.alarm': return { kind: e.type, key: `sa${e.ship}`, text: `Alarm on ${shipName(e.ship)?.name ?? 'the station'}: ${e.reason}`, at: null };
+      case 'galaxy.encounter': {
+        const who = `${sim.content.galaxy?.factions[e.faction]?.name ?? e.faction} ${e.role}`;
+        const text = e.kind === 'interdict' ? `Interdicted by a ${who}: dropped out of hyperspace` : e.kind === 'hail' ? `A ${who} hails you in passing`
+          : e.kind === 'scan' ? `A ${who} scans you in passing` : `Distress call from a ${who}`;
+        return { kind: e.type, key: `ge${e.id}`, text, at: null };
+      }
+      case 'galaxy.evadeRoll': return { kind: 'galaxy.encounter', key: `ge${e.id}`, text: e.success ? `Evaded: rolled ${Math.round(e.roll * 100)}% against ${Math.round(e.odds * 100)}%` : `Evade failed: rolled ${Math.round(e.roll * 100)}% against ${Math.round(e.odds * 100)}%`, at: null };
+      case 'galaxy.bribed': return { kind: 'galaxy.encounter', key: `ge${e.id}`, text: `Paid ${e.cost} credits to pass`, at: null };
+      case 'galaxy.eventEntered': return { kind: 'galaxy.encounter', key: `gv${e.id}`, text: e.kind === 'fight' ? 'Dropped into deep space: fight' : 'Dropped into deep space to help', at: null };
       case 'ship.fled': return { kind: e.type, key: `sf${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Ship'} jumped away`, at: null };
       default: return null;
     }
@@ -133,8 +154,39 @@ export function createAlerts(sim: Sim): Alerts {
     store.update((l) => l.filter((a) => a.id !== id));
   };
 
+  function syncIncoming(): void {
+    const g = sim.galaxy;
+    const key = `${g.rev}|${g.current}|${g.turn}`;
+    if (key === incomingKey) return;
+    incomingKey = key;
+    const want = sim.content.galaxy ? incomingFleets(sim) : [];
+    const ids = new Set(want.map((w) => w.fleet));
+    for (const fleet of muted) if (!ids.has(fleet)) muted.delete(fleet);
+    for (const [fleet, id] of incoming) {
+      if (ids.has(fleet) && store.get().some((a) => a.id === id)) continue;
+      if (ids.has(fleet)) muted.add(fleet);
+      incoming.delete(fleet);
+      remove(id);
+    }
+    for (const w of want) {
+      if (muted.has(w.fleet)) continue;
+      const text = `${w.name} drops from hyperspace in ${w.eta} turn${w.eta === 1 ? '' : 's'}`;
+      const kind: UiAlertKind = w.hostile ? 'galaxy.incomingHostile' : 'galaxy.incoming';
+      const id = incoming.get(w.fleet);
+      if (id !== undefined) {
+        store.update((l) => l.map((a) => (a.id === id ? { ...a, kind, text } : a)));
+        continue;
+      }
+      const nid = nextId++;
+      incoming.set(w.fleet, nid);
+      store.update((l) => [{ id: nid, kind, text, at: null }, ...l]);
+      for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
+    }
+  }
+
   return {
     list: store,
+    syncIncoming,
     get: (id) => store.get().find((a) => a.id === id),
     covers: (e) => describe(e) !== null,
     onCleared: (fn) => void clearedFns.push(fn),

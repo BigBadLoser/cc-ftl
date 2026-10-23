@@ -1,6 +1,7 @@
 import type { Sim } from '../sim';
 import { Rng } from '../rng';
 import { chunkKey, chunkOfId, galaxyGen } from './generator';
+import { populate } from './roster';
 import { pickWeighted } from './sector';
 import { FRONTIER_RING, GENERATOR_VERSION } from './tuning';
 import type { ChunkData, EdgeData, GalaxyState, NodeData, NodeState, SectorData } from './types';
@@ -11,7 +12,7 @@ export const START_NODE = 's.0.0.n0';
 export function newGalaxy(seed: number): GalaxyState {
   return {
     current: START_NODE, chunks: {}, discovered: {}, visited: {}, nodes: {}, rng: (seed ^ 0x6a1a7e5) >>> 0,
-    nextArrival: 0, nextId: 1, jumps: 0, turn: 0, days: 0, pendingDraw: null, travel: null, rev: 0,
+    nextArrival: 0, nextId: 1, jumps: 0, turn: 0, turnClock: 0, fleets: [], encounters: [], event: null, lastResult: null, nextFleet: 1, ports: {}, markets: {}, news: [], nextNews: 1, days: 0, pendingDraw: null, travel: null, rev: 0,
   };
 }
 
@@ -66,7 +67,9 @@ export function galaxyIndex(g: GalaxyState): GalaxyIndex {
 export function ensureChunk(sim: Sim, cx: number, cy: number): boolean {
   const key = chunkKey(cx, cy);
   if (sim.galaxy.chunks[key]) return false;
-  sim.galaxy.chunks[key] = galaxyGen(sim.seed, sim.content.galaxy).chunk(cx, cy);
+  const chunk = galaxyGen(sim.seed, sim.content.galaxy).chunk(cx, cy);
+  sim.galaxy.chunks[key] = chunk;
+  populate(sim, chunk);
   sim.galaxy.rev++;
   sim.events.emit({ type: 'galaxy.chunk', key });
   return true;
