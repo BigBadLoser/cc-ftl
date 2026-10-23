@@ -77,8 +77,9 @@ class Wear:
     STEPS = {"steel": ((0.58, "grime"), (0.75, "rustD"), (0.92, "rust")), "steelL": ((0.6, "steel"), (0.9, "rust")),
              "steelD": ((0.7, "rustD"),), "hazY": ((0.7, "c4T5"), (0.95, "rust")), "plateC": ((0.6, "grime"),)}
 
-    def __init__(self, seed):
+    def __init__(self, seed, amount=1.0, dust=True):
         self.ph = np.random.default_rng(seed).uniform(0, math.tau, 6)
+        self.amount, self.dust = amount, dust
 
     def __call__(self, col, u, v, z):
         if col not in self.STEPS:
@@ -86,8 +87,8 @@ class Wear:
         ph = self.ph
         blot = (0.55 + 0.45 * math.sin(3.1 * u + ph[0]) * math.sin(2.7 * v + ph[1]) +
                 0.3 * math.sin(8.3 * u + 5.9 * v + ph[2]) * math.sin(6.1 * z + ph[3]) + 0.2 * math.sin(17 * (u - v) + ph[4]))
-        r = blot * (0.55 + 0.6 * _smooth((0.6 - z) / 0.6))
-        if z < 0.22 and math.sin(11 * u + 7 * v + ph[5]) > 0.35 and col in ("steel", "steelD"):
+        r = self.amount * blot * (0.55 + 0.6 * _smooth((0.6 - z) / 0.6))
+        if self.dust and z < 0.22 and math.sin(11 * u + 7 * v + ph[5]) > 0.35 and col in ("steel", "steelD"):
             return "gdD"
         out = col
         for t, c in self.STEPS[col]:
