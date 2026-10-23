@@ -23,9 +23,10 @@ export const choicesOf = (e: Encounter): EncounterChoice[] =>
 /** The evade roll for an encounter: a pure function of the seed and the id. */
 export const evadeRoll = (sim: Sim, e: Encounter): number => unit(sim.seed, e.id, EVADE_SALT);
 
-/** Let the interdicted trip go on (the encounter is already settled). */
+/** Let the interdicted trip go on (the encounter is already settled), unless another interdiction is still waiting for an answer. */
 function resume(sim: Sim): void {
   const t = sim.galaxy.travel;
+  if (sim.galaxy.encounters.some((e) => e.kind === 'interdict')) return;
   if (t?.phase === 'interdicted') resumeAfterHop(sim, t);
 }
 

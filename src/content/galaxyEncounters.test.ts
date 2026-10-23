@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, bribeCost, deserialize, evadeOddsFor, passingMeets, evadeOdds, evadeRoll, galaxyIndex, newGame, playerShip, serialize, type Sim,
 } from '../sim';
+import { fleetStrength } from '../sim/galaxy/encounterOdds';
 import { eventNodeId } from '../sim/galaxy/eventGrid';
 import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
@@ -31,7 +32,7 @@ const packetCombat = (sim: Sim) => {
 };
 
 /** The player flies two hops; a pirate fleet (or `faction`/`role`) at the first node flies the other way and interdicts there. */
-function interdiction(seed: number, faction = 'pirates', role: Fleet['role'] = 'pirate', over: Partial<Fleet> = {}) {
+function interdiction(seed: number, faction = 'pirates', role: Fleet['role'] = 'pirate', over: Partial<Fleet> = {}, others = 0) {
   const sim = newGame(seed, content);
   sim.galaxy.fleets = [];
   giveItems(sim, 'item.fuel', 50);
@@ -48,6 +49,8 @@ function interdiction(seed: number, faction = 'pirates', role: Fleet['role'] = '
     node: to, from: to, moved: -1, route: [START_NODE], dest: START_NODE, dwell: 0, legs: 0, home: `${START_NODE}#0`, synced: g.turn, ...over,
   };
   g.fleets.push(f);
+  // More hostile fleets crossing the same hop (deeper ships, so the lead one is the strongest).
+  for (let i = 0; i < others; i++) g.fleets.push({ ...f, id: g.nextFleet++, ships: [{ ...f.ships[0]!, id: g.nextFleet++, depth: 3 + i, seed: 80 + i }] });
   step(sim);
   while (g.travel?.phase === 'hop') step(sim);
   return { sim, f, to, next, enc: g.encounters[0]! };
@@ -154,6 +157,37 @@ describe('evade odds follow the pilot', () => {
     expect(evadeOddsFor(helm(50), 0)).toBeLessThanOrEqual(0.9);
     expect(evadeOddsFor(helm(5), 1000)).toBe(0.05);
   });
+});
+
+describe('two hostile fleets on one hop', () => {
+  it('only the strongest interdicts, and answering it lets the trip go on and travel work afterwards', () => {
+    const { sim, f, enc } = interdiction(26, 'pirates', 'pirate', {}, 1);
+    const pending = sim.galaxy.encounters.filter((e) => e.kind === 'interdict');
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.fleet).not.toBe(f.id);
+    expect(pending[0]?.strength).toBeGreaterThan(fleetStrength(f.ships));
+    expect(enc.kind).toBe('interdict');
+    sim.trade.credits = 5000;
+    respond(sim, 'bribe', pending[0]!.id);
+    expect(sim.galaxy.encounters.filter((e) => e.kind === 'interdict')).toHaveLength(0);
+    expect(sim.galaxy.travel?.phase).not.toBe('interdicted');
+    // The trip carries on and ends; a new jump is accepted afterwards.
+    for (let i = 0; i < 80 && sim.galaxy.travel; i++) { step(sim); if (sim.galaxy.travel?.phase === 'arrived') sim.enqueue({ type: 'galaxy.drop' }); }
+    expect(sim.galaxy.travel).toBeNull();
+  }, 60000);
+
+  it('a second interdiction left pending (an older save) keeps the trip halted until it is answered too, then resumes', () => {
+    const { sim, enc } = interdiction(26);
+    const twin = { ...enc, id: sim.galaxy.nextFleet++, fleet: enc.fleet };
+    sim.galaxy.encounters.push(twin);
+    sim.trade.credits = 5000;
+    respond(sim, 'bribe', enc.id);
+    expect(sim.galaxy.travel?.phase).toBe('interdicted');
+    expect(sim.galaxy.encounters.map((e) => e.id)).toEqual([twin.id]);
+    respond(sim, 'bribe', twin.id);
+    expect(sim.galaxy.encounters.some((e) => e.kind === 'interdict')).toBe(false);
+    expect(sim.galaxy.travel?.phase).not.toBe('interdicted');
+  }, 60000);
 });
 
 describe('bribe', () => {
