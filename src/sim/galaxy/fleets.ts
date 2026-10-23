@@ -1,6 +1,6 @@
 import type { Sim } from '../sim';
 import { isLive } from '../trade/deals';
-import { catchUp, stepAgenda } from './agenda';
+import { catchUpFleets, stepAgenda } from './agenda';
 import { liftFleet, materialiseFleet, strandIfCrippled } from './fleetShips';
 import { nodesWithin } from './graph';
 import { portNode } from './ports';
@@ -16,7 +16,7 @@ export { nodesWithin } from './graph';
  * of the galaxy seed, the turn number and the galaxy state, so a run and a save continuation agree.
  *
  * Only the area near the player is simulated: a fleet is stepped while its node or its home is within FLEET_AREA_HOPS jumps of the player's node.
- * The rest are frozen (`Fleet.synced` stays behind) and `syncFleets` plays them forward with `catchUp` when the player comes near.
+ * The rest are frozen (`Fleet.synced` stays behind) and `syncFleets` plays them forward with `catchUpFleets` when the player comes near.
  */
 
 /** Nodes the player's sensors cover: within SENSOR_HOPS jumps of the current node. Fleets elsewhere are not shown. */
@@ -36,7 +36,7 @@ export function syncFleets(sim: Sim, turn: number): void {
   const g = sim.galaxy;
   if (!sim.content.galaxy) return;
   const area = nodesWithin(sim, g.current, FLEET_AREA_HOPS);
-  for (const f of g.fleets) if (f.synced < turn && simulated(f, area)) catchUp(sim, f, turn);
+  catchUpFleets(sim, g.fleets.filter((f) => f.synced < turn && simulated(f, area)), turn);
   rebuildPorts(sim, turn, area);
 }
 

@@ -1,5 +1,5 @@
 import type { Sim } from '../sim';
-import { onDock } from './dock';
+import { dockPort, onDock, onWork } from './dock';
 import { pathTo, reachFrom } from './graph';
 import { unit } from './hash';
 import { portNode } from './ports';
@@ -56,8 +56,9 @@ function targets(sim: Sim, f: Fleet): string[] {
 }
 
 /** Choose the next stop (miners take one of the three nearest fields), or null when there is none. */
-function pickTarget(sim: Sim, f: Fleet, turn: number): string | null {
+function pickTarget(sim: Sim, f: Fleet, turn: number, wanted?: string): string | null {
   const list = targets(sim, f);
+  if (wanted && list.includes(wanted)) return wanted;
   const pool = f.role === 'miner' ? list.slice(0, 3) : list;
   return pool.length ? (pool[Math.floor(rnd(sim, f, turn, SALT.target) * pool.length)] as string) : null;
 }
@@ -66,14 +67,16 @@ function pickTarget(sim: Sim, f: Fleet, turn: number): string | null {
 function plan(sim: Sim, f: Fleet, turn: number): void {
   const home = portNode(f.home);
   let dest: string | null = null;
+  const wanted = f.pick;
+  delete f.pick;
   if (f.legs > 0) {
     f.legs--;
-    dest = pickTarget(sim, f, turn);
+    dest = pickTarget(sim, f, turn, wanted);
   } else if (f.node !== home) {
     dest = home;
   } else {
     f.legs = intIn(FLEET_LEGS[f.role], rnd(sim, f, turn, SALT.legs));
-    dest = pickTarget(sim, f, turn);
+    dest = pickTarget(sim, f, turn, wanted);
     if (dest) f.legs--;
   }
   if (!dest && f.node !== home) {
@@ -92,8 +95,9 @@ function plan(sim: Sim, f: Fleet, turn: number): void {
 function arrive(sim: Sim, f: Fleet, turn: number): void {
   const home = f.node === portNode(f.home);
   f.dwell = home ? intIn(FLEET_REST, rnd(sim, f, turn, SALT.rest)) : intIn(FLEET_WORK[f.role], rnd(sim, f, turn, SALT.work));
-  const port = portsAt(sim, f.node)[0];
-  if (port) onDock(sim, f, port);
+  const port = dockPort(portsAt(sim, f.node), f.role);
+  if (port) onDock(sim, f, port, () => (f.legs > 0 || home ? targets(sim, f) : [portNode(f.home)]));
+  else onWork(sim, f);
 }
 
 /** Play one turn of the fleet's agenda: `turn` is the turn number being played. Records the move for crossing detection (`from`, `moved`). */
@@ -126,13 +130,26 @@ export function stepAgenda(sim: Sim, f: Fleet, turn: number): void {
  * turns). After a longer absence it is first put back at its home port with a hashed rest, and only the last CATCHUP_MAX turns are played.
  */
 export function catchUp(sim: Sim, f: Fleet, to: number): void {
-  if (f.synced >= to) return;
-  if (to - f.synced > CATCHUP_MAX) {
+  catchUpFleets(sim, [f], to);
+}
+
+/**
+ * Bring several frozen fleets up to turn `to` together: turn by turn, every fleet that is behind steps in id order, exactly the order `stepFleets` would
+ * have played. That matters because docking trades against shared port markets: one fleet's whole absence played before the next one's would give the
+ * second a different market than a stepped run did.
+ */
+export function catchUpFleets(sim: Sim, fleets: readonly Fleet[], to: number): void {
+  const behind = fleets.filter((f) => f.synced < to);
+  for (const f of behind) {
+    if (to - f.synced <= CATCHUP_MAX) continue;
     const home = portNode(f.home);
     Object.assign(f, { node: home, from: home, route: [], dest: home, legs: 0, dwell: intIn(FLEET_REST, rnd(sim, f, to, SALT.reset)), synced: to - CATCHUP_MAX });
     delete f.damaged;
+    delete f.cargo;
+    delete f.pick;
   }
-  for (let t = f.synced + 1; t <= to; t++) stepAgenda(sim, f, t);
+  const from = behind.reduce((m, f) => Math.min(m, f.synced), to);
+  for (let t = from + 1; t <= to; t++) for (const f of behind) if (f.synced < t) stepAgenda(sim, f, t);
 }
 
 /** The fleet is stranded where it is: it stops and calls for help until it has repaired itself (REPAIR_TURNS) or is helped. */
