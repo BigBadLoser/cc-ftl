@@ -131,25 +131,30 @@ def deck(k):
     spine(k, iu, iv)
 
 
-def spine(k, iu, iv):
-    """The raised block along the -u half of the deck, inside the rim, and its three round stacks."""
-    u0, u1, v0, v1, top = -0.45, 0.45, -iv + 0.1, iv - 0.1, H + 0.6        # about a tile wide, centred
-    lo, hi = (u0, u1, v0, v1), (u0 + 0.05, u1 - 0.05, v0 + 0.05, v1 - 0.05)
-    a, b = _oct(lo, 0.1), _oct(hi, 0.08)
-    cen = Vector(((u0 + u1) / 2, 0, (H + top) / 2))
+def tier(k, lo, hi, z0, z1, c_lo, c_hi, col=G, top=GT):
+    """A block from the rectangle lo (u0, u1, v0, v1) at z0 to hi at z1, corners cut by c_lo / c_hi."""
+    a, b = _oct(lo, c_lo), _oct(hi, c_hi)
+    cen = Vector(((lo[0] + lo[1]) / 2, (lo[2] + lo[3]) / 2, (z0 + z1) / 2))
     for i in range(8):
         j = (i + 1) % 8
-        q = [(*a[i], H), (*a[j], H), (*b[j], top), (*b[i], top)]
-        face(k, q, sum((Vector(p) for p in q), Vector()) / 4 - cen, G)
-    face(k, [(*p, top) for p in b], (0, 0, 1), GT)
+        q = [(*a[i], z0), (*a[j], z0), (*b[j], z1), (*b[i], z1)]
+        face(k, q, sum((Vector(p) for p in q), Vector()) / 4 - cen, col)
+    face(k, [(*p, z1) for p in b], (0, 0, 1), top)
+
+
+def spine(k, iu, iv):
+    """The stacks' plinth down the middle of the deck: two tiers stepping in, leaning and cut at the corners like the
+    hull, and the three round stacks on top."""
+    hw, hl = 0.56, iv - 0.04                                                  # the lower tier's half width and length
+    z1, top = H + 0.24, H + 0.58
+    tier(k, (-hw, hw, -hl, hl), (-hw + 0.05, hw - 0.05, -hl + 0.05, hl - 0.05), H, z1, 0.24, 0.2)
+    w2, l2 = hw - 0.13, hl - 0.13
+    tier(k, (-w2, w2, -l2, l2), (-w2 + 0.04, w2 - 0.04, -l2 + 0.04, l2 - 0.04), z1, top, 0.18, 0.15)
     for v in (-0.95, 0.0, 0.95):
-        stack(k, (u0 + u1) / 2, v, top, top + 0.62, 0.36, 0.26)
+        stack(k, 0.0, v, top, top + 0.62, 0.36, 0.26)
         if STAGE[0] >= 2:
             from . import refinery_forms as F
-            F.stack_forms(k, (u0 + u1) / 2, v, top, top + 0.62, 0.36)
-    if STAGE[0] >= 2:
-        from . import refinery_forms as F
-        F.spine_forms(k, u0, u1, v0, v1, H, top)
+            F.stack_forms(k, 0.0, v, top, top + 0.62, 0.36)
 
 
 def stack(k, u, v, z0, z1, r, ri, n=20):

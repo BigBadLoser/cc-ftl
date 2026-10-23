@@ -1,6 +1,6 @@
 """Refinery stage 2, the sub-forms on the blockout (refinery.py): corner armour wrapping each corner, a triangular frame
 across each end, pilasters between the bays, ribs round the rollers, a rail along the rim, collars, lips and window slits
-on the stacks, a belt and ribs on the spine, the hatches' insides and a louvred panel on the terminal. Still grey; the
+on the stacks, the hatches' insides and a louvred panel on the terminal. Still grey; the
 armour (what turns orange) is a warm light grey (ARM) so it reads apart."""
 import math
 
@@ -26,9 +26,9 @@ def corner_armour(k, i, wrap=0.12):
     lo = [Vector((*R.LO[i], 0)) + (Vector((*R.LO[h], 0)) - Vector((*R.LO[i], 0))).normalized() * wrap,
           Vector((*R.LO[i], 0)), Vector((*R.LO[j], 0)),
           Vector((*R.LO[j], 0)) + (Vector((*R.LO[nx], 0)) - Vector((*R.LO[j], 0))).normalized() * wrap]
-    hi = [Vector((*R.HI[i], R.HT)) + (Vector((*R.HI[h], 0)) - Vector((*R.HI[i], 0))).normalized() * wrap,
-          Vector((*R.HI[i], R.HT)), Vector((*R.HI[j], R.HT)),
-          Vector((*R.HI[j], R.HT)) + (Vector((*R.HI[nx], 0)) - Vector((*R.HI[j], 0))).normalized() * wrap]
+    hi = [Vector((*R.HI[i], RAIL[0])) + (Vector((*R.HI[h], 0)) - Vector((*R.HI[i], 0))).normalized() * wrap,
+          Vector((*R.HI[i], RAIL[0])), Vector((*R.HI[j], RAIL[0])),
+          Vector((*R.HI[j], RAIL[0])) + (Vector((*R.HI[nx], 0)) - Vector((*R.HI[j], 0))).normalized() * wrap]
     segs = [_n(h), _n(i), _n(j)]
     vn = [segs[0], (segs[0] + segs[1]).normalized() / math.cos(math.pi / 8), (segs[1] + segs[2]).normalized() /
           math.cos(math.pi / 8), segs[2]]
@@ -65,11 +65,11 @@ def end_P(sv):
 def end_frame(k, sv):
     """The triangular frame across an end: two legs leaning in from the bottom corners, a bar along the top."""
     P, n = end_P(sv), (0, sv, R.B / R.HT)
-    xb, xt, w, top = 0.92, 0.3, 0.12, R.HT - 0.08
+    xb, xt, w, top = 0.92, 0.3, 0.12, RAIL[0] - 0.08
     for e in (-1, 1):
         proud(k, P, n, sorted_quad([(e * xb, 0.02), (e * (xb - w * 1.3), 0.02), (e * (xt - w), top), (e * xt, top)]), T,
               ARM)
-    proud(k, P, n, [(-xt - 0.02, top), (xt + 0.02, top), (xt + 0.02, R.HT - 0.01), (-xt - 0.02, R.HT - 0.01)], T, ARM)
+    proud(k, P, n, [(-xt - 0.02, top), (xt + 0.02, top), (xt + 0.02, RAIL[0]), (-xt - 0.02, RAIL[0])], T, ARM)
 
 
 def sorted_quad(q):
@@ -83,8 +83,8 @@ def pilasters(k):
     for s, xs in ((-1, (-0.48, 0.48)), (1, (-0.55, 0.55))):
         for x in xs:
             w = 0.06 if s < 0 else 0.065
-            proud(k, long_P(s), (s, 0, R.B / R.HT), [(x - w, 0.0), (x + w, 0.0), (x + w, R.HT - 0.01),
-                                                     (x - w, R.HT - 0.01)], T, ARM)
+            proud(k, long_P(s), (s, 0, R.B / R.HT), [(x - w, 0.0), (x + w, 0.0), (x + w, RAIL[0]), (x - w, RAIL[0])], T,
+                  ARM)
 
 
 def roller_ribs(k):
@@ -97,23 +97,37 @@ def roller_ribs(k):
                 tube(k, (u, v - 0.018, z), (u, v + 0.018, z), r + 0.018, R.G, sides=14, cap=R.GD)
 
 
-def rim_rail(k):
-    """A rail along the rim's outer edge, all round but the terminal's slot."""
-    ring = [Vector((*p, R.HT)) for p in R.HI]
-    inset = 0.05
-    c = Vector((0, 0, R.HT))
+RAIL = (R.HT - 0.04, R.HT + 0.05)        # the rim rail's foot and top: the armour rises into its underside
+
+
+def rim_rail(k, inset=0.09):
+    """A capping rail round the rim, mitred at the corners, its face flush with the armour's (T proud of the hull), so
+    the corner plates, the pilasters and the end frames all run up into it. Broken at the terminal's slot."""
+    vn = [(_n((i - 1) % 8) + _n(i)).normalized() / math.cos(math.pi / 8) for i in range(8)]
+    out = [Vector((*R.HI[i], 0)) + vn[i] * T for i in range(8)]
+    inn = [Vector((*R.HI[i], 0)) - vn[i] * inset for i in range(8)]
+    z0, z1 = RAIL
+    up = lambda p, z: Vector((p.x, p.y, z))                                  # noqa: E731
     for i in range(8):
-        a, b = ring[i], ring[(i + 1) % 8]
-        if i == 2:
-            parts = [(a, Vector((a.x, -R.TS, R.HT))), (Vector((b.x, R.TS, R.HT)), b)]
-        else:
-            parts = [(a, b)]
-        for p, q in parts:
-            pi, qi = p + (c - p).normalized() * inset, q + (c - q).normalized() * inset
-            up = Vector((0, 0, 0.05))
-            face(k, [p + up, q + up, qi + up, pi + up], (0, 0, 1), ARM)
-            face(k, [p, q, q + up, p + up], p + q - 2 * c, ARM)
-            face(k, [pi, qi, qi + up, pi + up], 2 * c - p - q, R.GD)
+        j = (i + 1) % 8
+        spans = [(0.0, 1.0)]
+        if i == 2:                                                            # the +u side: the slot
+            a_, b_ = out[i], out[j]
+            t0 = (-R.TS - a_.y) / (b_.y - a_.y)
+            t1 = (R.TS - a_.y) / (b_.y - a_.y)
+            spans = [(0.0, t0), (t1, 1.0)]
+        for ta, tb in spans:
+            oa, ob = out[i].lerp(out[j], ta), out[i].lerp(out[j], tb)
+            ia, ib = inn[i].lerp(inn[j], ta), inn[i].lerp(inn[j], tb)
+            n = _n(i)
+            face(k, [up(oa, z0), up(ob, z0), up(ob, z1), up(oa, z1)], n, ARM)
+            face(k, [up(oa, z1), up(ob, z1), up(ib, z1), up(ia, z1)], (0, 0, 1), ARM)
+            face(k, [up(ia, R.HT), up(ib, R.HT), up(ib, z1), up(ia, z1)], -n, R.GD)
+            face(k, [up(oa, z0), up(ob, z0), up(ib, z0), up(ia, z0)], (0, 0, -1), R.GD)
+            if i == 2:                                                        # its ends at the slot
+                e = oa if ta > 0 else ob
+                f = ia if ta > 0 else ib
+                face(k, [up(e, z0), up(f, z0), up(f, z1), up(e, z1)], (0, 1 if ta > 0 else -1, 0), ARM)
 
 
 def stack_forms(k, u, v, z0, z1, r):
@@ -137,31 +151,19 @@ def annulus(k, u, v, z0, z1, ro, ri, col, n=20):
         face(k, [o1[i], o1[j], i1[j], i1[i]], (0, 0, 1), col)
 
 
-def spine_forms(k, u0, u1, v0, v1, z0, z1):
-    """A belt round the spine and ribs on its long faces between the stacks."""
-    k.box((u0 + u1) / 2, (v0 + v1) / 2, z0 + 0.3, u1 - u0 + 0.06, v1 - v0 + 0.06, 0.06, R.G, top=R.GT)
-    for u in (u0, u1):
-        for v in (-0.47, 0.47):
-            k.box(u, v, z0, 0.05, 0.1, z1 - z0, R.G, top=R.GT)
-
-
 def hatches(k):
-    """The input's mouth, a chute sloping into it inside its recess; the output's door on its recess's back wall."""
+    """Each hatch: a dark mouth in its recess's back wall, a chute sloping into it."""
     for v0, v1, kind in R.BAYS[1]:
         if kind == "terminal":
             continue
         z0, z1 = R.BZ
         ub = R.wall_u(1, z0) - R.D
         c, w = (v0 + v1) / 2, v1 - v0
-        if kind == "input":
+        if kind in ("input", "output"):
             k.box(ub + 0.004, c, z0 + 0.22, 0.01, w - 0.2, 0.3, R.HOLE)
             face(k, [(ub, c - w / 2 + 0.06, z0 + 0.22), (ub, c + w / 2 - 0.06, z0 + 0.22),
                      (ub + R.D * 0.7, c + w / 2 - 0.06, z0 + 0.04), (ub + R.D * 0.7, c - w / 2 + 0.06, z0 + 0.04)],
                  (0.6, 0, 1), R.GT)
-        else:
-            k.box(ub + 0.015, c, z0 + 0.05, 0.03, w - 0.16, z1 - z0 - 0.1, R.G, top=R.GT)
-            k.box(ub + 0.032, c, (z0 + z1) / 2 - 0.01, 0.006, w - 0.16, 0.02, R.GD)
-            k.box(ub + 0.04, c + w / 2 - 0.16, (z0 + z1) / 2 - 0.06, 0.02, 0.05, 0.1, R.GT)
 
 
 def terminal_forms(k):
