@@ -3,10 +3,10 @@ sibling (shuttle_bay.py: its frame, polygon helpers and hazard bands).
 
 Local frame (shuttle_bay.BayFrame, footprint (3, 3)): u = grid x, v = grid y at rotation 0, origin at the footprint centre.
 Layout: an octagonal pit filling the footprint, PIT deep, under a hazard-striped coaming. Its floor is an IRIS of eight
-blades that turn open into a launch shaft. Two cradle arms rise from the side lips (+-v) and grip the parked pod's hull
-shoulders; they fold back against the lips to let it go. A work light stands on each chamfered corner, aimed into the
+blades that turn open into a launch shaft. Two clamp arms rise from the side lips (+-v), arch over the parked pod and grip
+its top; they fold back against the lips to let it go. A work light stands on each chamfered corner, aimed into the
 pit. Crew reach the pod from the access tile beside the middle of the +u side (module access [3, 1]): a gate on the lip
-and a short tongue out over the pit to the pod's canopy, which faces it (the pod parks nose +u at r0)."""
+and a short tongue out over the pit to the pod's side hatch, which faces it (the pod parks nose -v at r0)."""
 import math
 
 from . import core
@@ -21,9 +21,9 @@ LIP, LIP_W = 0.08, 0.12
 SHAFT = 0.8
 IRIS_R, IRIS_N = 1.18, 8               # iris radius and blade count
 IRIS_T = 0.04
-ARM_V = 0.32                           # cradle arms grip the pod's belt between its hatch and thrusters (u)
-ARM = ((1.5, 0.12), (1.44, 0.66), (1.16, 0.8), (0.93, 0.64))   # arm centreline (|v|, z): lip pivot .. belt shoe
-ARM_W, ARM_TH = 0.42, 0.13
+ARM_V = -0.42                          # the clamps reach over the pod's top aft of its yellow band (u)
+ARM = ((1.5, 0.12), (1.5, 1.25), (1.25, 1.55), (0.85, 1.5), (0.6, 1.3))   # (|v|, z): lip pivot, up, over, onto the top
+ARM_W, ARM_TH = 0.3, 0.11
 FOLD = (0.45, 0.85)                    # arm fold per .fold.f<i>
 OPENS = (0.3, 0.65, 1.0)               # iris open fraction per .open.f<i>
 
