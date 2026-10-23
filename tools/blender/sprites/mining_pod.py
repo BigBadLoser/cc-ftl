@@ -15,7 +15,7 @@ import math
 
 from . import core
 from .shuttle_bay import lbox
-from .shuttle_craft import Spin, _g, patch, profile, smooth, sweep
+from .shuttle_craft import Spin, _g, profile, smooth, station, sweep
 
 C = 1.18                      # the body's axis height above the pad (parked, on the bell)
 R = 0.86                      # the hull's radius: the band's, and each half-dome's
@@ -53,6 +53,13 @@ def _r(a):
         if p <= a <= q:
             return rp + (rq - rp) * (a - p) / (q - p)
     return BALL[-1][1] if a > 0 else BALL[0][1]
+
+
+def patch(f, body, u0, u1, t0, t1, k, mat, n=9, steps=4):
+    """A panel lying on the hull: the arc t0..t1 (degrees) of its round section, scaled by k, over u0..u1 (as
+    shuttle_craft.patch, but on the hull's own circle, not the shuttle's rounded square)."""
+    us = [u0 + (u1 - u0) * i / steps for i in range(steps + 1)]
+    sweep(f, [station(body, u, k) for u in us], profile(t0, t1, n, p=2.0), mat, closed=False)
 
 
 def strut(f, p0, p1, w, mat):
