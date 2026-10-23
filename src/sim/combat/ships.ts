@@ -109,7 +109,7 @@ export function spawnShip(
   const layers = shieldCapacity(sim, ship, false);
   const combat: Combat = {
     hold: false, volley: false, target: null, doctrine: template.doctrine ?? 'random', ftl: 0,
-    shield: { layers, max: layers, timer: 0 }, evasion: 0, pilot: 0, aiTimer: 0,
+    shield: { layers, max: layers, timer: 0 }, evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0,
   };
   sim.world.add(ship, CombatC, combat);
   if (template.boarding) {

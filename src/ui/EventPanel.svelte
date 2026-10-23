@@ -27,7 +27,7 @@
   </div>
   <p class="note" class:warn={event.hostiles > 0}><Icon name={event.hostiles > 0 ? 'alert' : 'shield'} size={14} />{status}</p>
   {#if result && result.tone === 'red' && event.hostiles > 0}<p class="note result" data-testid="event-result">{result.text}</p>{/if}
-  <p class="note dim"><Icon name="map" size={14} />Trip to {event.resumeTo}, {event.hopsLeft} hop{event.hopsLeft === 1 ? '' : 's'} left. This pocket is not on the map and is gone when you leave.</p>
+  <p class="note dim"><Icon name="map" size={14} />{event.hopsLeft === 0 ? `You had reached ${event.resumeTo}.` : `On your way to ${event.resumeTo}, ${event.hopsLeft} hop${event.hopsLeft === 1 ? '' : 's'} to go.`} This patch of deep space is not on the map; it ends when you leave.</p>
   <button class="go" class:on={event.canLeave} class:flee={event.fleeing} disabled={!event.canLeave || event.deploying} onclick={leave} data-testid="event-leave">
     <Icon name={event.fleeing ? 'evasion' : 'fast'} size={18} />{event.fleeing ? 'Flee and resume' : 'Resume travel'}
   </button>

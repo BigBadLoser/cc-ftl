@@ -119,6 +119,12 @@ export interface Combat {
   evasion: number;
   /** Piloting skill of whoever mans the helm (0 when nobody does); with `evasion` it gives the hyperspace evade odds. */
   pilot: number;
+  /**
+   * The same two figures for a ship under way with nobody manning the helm (consoles are only manned in combat): the best pilot aboard (awake, on their feet)
+   * and the powered engines with that pilot's boost; 0 when the ship has no powered helm. The hyperspace evade odds use these when `pilot` is 0.
+   */
+  cruisePilot: number;
+  cruiseEvasion: number;
   /** Ticks until the AI next reconsiders its targets. */
   aiTimer: number;
 }

@@ -117,7 +117,7 @@ export const TURN_SEC = 180;
  * the fleets of a region are created with its chunk. Only fleets whose current node or home is within FLEET_AREA_HOPS jumps of the player's node
  * are stepped each turn (fleets.ts); the others are frozen and `catchUp` (agenda.ts) plays them forward when the player comes near.
  */
-export const FLEET_AREA_HOPS = 6;
+export const FLEET_AREA_HOPS = 9;
 /** Hops explored (and cached) from a node when fleets choose a target or a path; no leg of an outing may exceed it. */
 export const REACH_HOPS = 8;
 /** Turns a returning fleet rests at home before its next outing, and how long it works at a stop (by role). */
@@ -130,7 +130,7 @@ export const FLEET_LEGS: Record<FleetRole, { readonly min: number; readonly max:
   trader: { min: 1, max: 3 }, miner: { min: 1, max: 1 }, patrol: { min: 2, max: 4 }, pirate: { min: 1, max: 3 }, raider: { min: 1, max: 2 },
 };
 /** How far from its home port (hops) a role roams: a trader's stations, a miner's fields, a patrol's territory, a pirate's lanes. */
-export const FLEET_RANGE: Record<FleetRole, number> = { trader: 6, miner: 4, patrol: 4, pirate: 3, raider: 3 };
+export const FLEET_RANGE: Record<FleetRole, number> = { trader: 6, miner: 4, patrol: 5, pirate: 5, raider: 5 };
 /** The longest single leg (hops) of an outing. */
 export const FLEET_LEG_HOPS = 5;
 /** Chance per hop away from home that a fleet breaks down (stranded, calling for help) and the turns it takes to repair itself. */
@@ -167,7 +167,8 @@ export const ENCOUNTER_MAX = 8;
  *   engine = clamp(raw engine evasion / EVADE_ENGINES_FULL, 0, 1)   (raw = the ship's evasion / (1 + SKILL_STEP x skill): powered, intact engines)
  *   odds   = (EVADE_PILOT_BASE + EVADE_PILOT_SPAN x pilot) x (EVADE_ENGINE_FLOOR + (1 - EVADE_ENGINE_FLOOR) x engine) - strength x EVADE_PER_STRENGTH
  * clamped to [EVADE_MIN, EVADE_MAX]; no pilot at an intact, powered helm, or no powered engines (ship evasion 0) gives EVADE_MIN.
- * Against a typical lone small pirate (strength 1.5): top pilot (skill 5) with one engine 0.80, skill 3 (a pilot role) 0.60, skill 1.5 about 0.40, skill 0 0.23.
+ * Odds with one engine (strength: light 1.5, moderate 3.5, heavy 7, overwhelming 12): top pilot (skill 5) 0.85 / 0.79 / 0.68 / 0.53, skill 3 (a pilot role)
+ * 0.62 / 0.56 / 0.45 / 0.30, a novice (skill 0.5) 0.33 / 0.27 / 0.17 / 0.05. Under way nobody mans the helm (consoles are only manned in combat), so the best pilot aboard flies it.
  */
 export const STRENGTH_PER_DEPTH = 0.5;
 export const BRIBE_PER_STRENGTH = 12;
@@ -179,7 +180,7 @@ export const EVADE_ENGINES_FULL = 0.12;
 export const EVADE_PILOT_BASE = 0.32;
 export const EVADE_PILOT_SPAN = 0.57;
 export const EVADE_ENGINE_FLOOR = 0.6;
-export const EVADE_PER_STRENGTH = 0.06;
+export const EVADE_PER_STRENGTH = 0.03;
 export const EVADE_MIN = 0.05;
 export const EVADE_MAX = 0.9;
 /** Reputation a rescued distress fleet gives (on its faction's key). */

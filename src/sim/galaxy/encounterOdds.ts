@@ -13,7 +13,7 @@ import { playerShipInfo } from './arrivals';
  * The numbers behind an interdiction (planner's calls, see docs/STATUS.md):
  * - strength of a fleet = sum over ships of (1 + depth x STRENGTH_PER_DEPTH): a lone depth-1 raider is 1.5, three depth-3 ships 7.5.
  * - evade odds: driven mainly by the pilot (formula and examples in tuning.ts). The helm's state is read from the ship's combat state (from the packet in hyperspace):
- *   `evasion` is 0 without a pilot at a powered, intact helm or without powered engines; `pilot` is the helm operator's piloting skill.
+ *   `evasion` is 0 without a pilot at a powered, intact helm or without powered engines; `pilot` is the helm operator's piloting skill (or, with the helm unmanned, the best pilot aboard: the cruise figures).
  * - bribe = BRIBE_PER_STRENGTH x strength x (1 + danger x BRIBE_PER_DANGER) x (1 - BRIBE_STANDING x standing with the faction, clamped to [0.5, 2]),
  *   rounded, at least BRIBE_MIN. A faction that likes you asks less; one that hates you asks more.
  */
@@ -23,9 +23,12 @@ export const fleetStrength = (ships: readonly Contact[]): number => ships.reduce
 export function playerHelm(sim: Sim): { evasion: number; pilot: number } {
   const p = sim.sector.packet;
   const c = sim.sector.state === 'hyperspace' && p
-    ? (p.entities.find((e) => e.id === p.ship)?.c['combat'] as { evasion?: number; pilot?: number } | undefined)
+    ? (p.entities.find((e) => e.id === p.ship)?.c['combat'] as { evasion?: number; pilot?: number; cruiseEvasion?: number; cruisePilot?: number } | undefined)
     : (() => { const me = playerShipInfo(sim); return me ? sim.world.get(me.id, CombatC) : undefined; })();
-  return { evasion: c?.evasion ?? 0, pilot: c?.pilot ?? 0 };
+  // A manned helm (combat) decides; under way nobody mans it, so the best pilot aboard flies.
+  const manned = { evasion: c?.evasion ?? 0, pilot: c?.pilot ?? 0 };
+  if (manned.pilot > 0 && manned.evasion > 0) return manned;
+  return { evasion: c?.cruiseEvasion ?? 0, pilot: c?.cruisePilot ?? 0 };
 }
 
 const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));

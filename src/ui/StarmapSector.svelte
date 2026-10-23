@@ -9,16 +9,18 @@
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
 
-  let { map, px, s, view, current, route, routePts, selected, hover, only = null, ship }: {
+  let { map, px, s, view, current, route, routePts, selected, hover, only = null, ship, inset = 0 }: {
     map: UiStarmap; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
     current: UiStarNode | null; route: UiStarRoute | null; routePts: string; selected: string | null; hover: string | null;
+    /** Screen px at the right edge that the side drawer (and the map tools beside it) cover: labels stay clear of it. */
+    inset?: number;
     /** Flee-target mode: only these nodes can be picked, the rest are dimmed. */
     only?: Set<string> | null;
     /** While a jump animates: the ship's position on the lane and the lane's ends. */
     ship: { x: number; y: number; fx: number; fy: number; tx: number; ty: number } | null;
   } = $props();
 
-  const clampX = (x: number, m: number) => Math.max(view.x0 + px(m), Math.min(view.x1 - px(m), x));
+  const clampX = (x: number, m: number) => Math.max(view.x0 + px(m), Math.min(view.x1 - px(inset) - px(m), x));
   const clampY = (y: number, top: number, bottom: number) => Math.max(view.y0 + px(top), Math.min(view.y1 - px(bottom), y));
   /**
    * Exits grouped by the sector they lead to (one label each), at the far gateway pinned into the view; labels that would
@@ -38,7 +40,7 @@
     }
     obstacles.push({ x0: view.x0, y0: view.y1 - 96 * k, x1: view.x0 + 210 * k, y1: view.y1 });
     // The level tabs (top left) and the zoom tools (top right) sit over the map.
-    obstacles.push({ x0: view.x0, y0: view.y0, x1: view.x0 + 296 * k, y1: view.y0 + 46 * k }, { x0: view.x1 - 58 * k, y0: view.y0, x1: view.x1, y1: view.y0 + 134 * k });
+    obstacles.push({ x0: view.x0, y0: view.y0, x1: view.x0 + 296 * k, y1: view.y0 + 46 * k }, { x0: view.x1 - (inset + 64) * k, y0: view.y0, x1: view.x1, y1: view.y0 + 196 * k });
     const items = [...by.values()].map((e): LabelItem => {
       const w = (`To ${e.name ?? 'uncharted space'}`.length * 9.4 + 16) * k;
       const x = clampX(e.bx, Math.min(w / 2 / k + 8, 150));

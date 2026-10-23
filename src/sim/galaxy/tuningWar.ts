@@ -36,5 +36,5 @@ export const NEWS_SHORTAGE_SHARE = 0.1;
 export const NEWS_SHORTAGE_MIN = 10;
 export const NEWS_SHORTAGE_TURNS = 80;
 /** Armed fleets hunt: with this chance per planned leg a patrol makes for a pirate (and a pirate for a trader) within its range, if it is at least HUNT_EDGE times as strong. */
-export const HUNT_CHANCE = 0.6;
-export const HUNT_EDGE = 0.8;
+export const HUNT_CHANCE = 0.85;
+export const HUNT_EDGE = 0.6;

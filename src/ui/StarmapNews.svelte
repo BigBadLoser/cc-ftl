@@ -39,6 +39,6 @@
   .tx em { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; font-style: normal; color: var(--amber); margin-right: 6px; }
   small { grid-column: 2; color: var(--dim); font-size: 11px; }
   .dim { color: var(--dim); margin: 0; font-size: 13px; }
-  @media (min-width: 601px) { .news { left: 8px; top: 54px; bottom: auto; right: auto; width: 330px; max-height: calc(100% - 66px); } }
-  @media (max-width: 600px) { .news { left: 0; right: 0; bottom: 0; } }
+  @media (min-width: 601px) { .news { left: 8px; top: 54px; bottom: auto; right: auto; width: 280px; max-height: min(46%, 420px); } }
+  @media (max-width: 600px) { .news { left: 0; right: 0; bottom: 0; max-height: 42%; } }
 </style>

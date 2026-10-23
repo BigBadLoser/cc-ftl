@@ -110,6 +110,11 @@
     };
   });
   let newsOpen = $state(false);
+  /** News the player has not looked at: ids above the newest one seen when the panel was last open (the panel starts closed, so the map stays clear). */
+  let newsSeen = $state(0);
+  const newestNews = $derived(map?.news.reduce((m, n) => Math.max(m, n.id), 0) ?? 0);
+  const unread = $derived(newsOpen ? 0 : (map?.news.filter((n) => n.id > newsSeen).length ?? 0));
+  $effect(() => { if (newsOpen) newsSeen = newestNews; });
   const drawerOpen = $derived(!!map && level < 3 && (!!map.travel || !!sel));
   const interdiction = $derived(map?.encounters.find((e) => e.kind === 'interdict') ?? null);
   const cardOpen = $derived(drawerOpen || (!!pickedInfo && level === 3));
@@ -422,7 +427,7 @@
           {#key level}
             <g transition:fade={{ duration: 180 }}>
               {#if level === 1}
-                <StarmapSector {map} {px} {s} {view} {current} {route} {routePts} {selected} {hover} {only} {ship} />
+                <StarmapSector {map} {px} {s} {view} {current} {route} {routePts} {selected} {hover} {only} {ship} inset={drawerOpen && w > 600 ? 340 : 0} />
               {:else if level === 2}
                 <StarmapCluster {map} {px} picked={picked?.id ?? null} {hover} {routePts} {routeSectors} />
               {:else}
@@ -442,7 +447,7 @@
       <button class="tile" title="Zoom in" aria-label="Zoom in" onclick={() => zoomAt(w / 2, h / 2, 1.4)}><Icon name="zoomIn" size={22} /></button>
       <button class="tile" title="Zoom out" aria-label="Zoom out" onclick={() => zoomAt(w / 2, h / 2, 1 / 1.4)}><Icon name="zoomOut" size={22} /></button>
       <button class="tile" title="Centre on your ship" aria-label="Centre on your ship" onclick={recenter}><Icon name="recenter" size={22} /></button>
-      <button class="tile" class:on={newsOpen} title="News and rumours" aria-label="News and rumours" aria-pressed={newsOpen} onclick={() => (newsOpen = !newsOpen)} data-testid="starmap-news-toggle"><Icon name="list" size={22} /></button>
+      <button class="tile" class:on={newsOpen} title="News and rumours" aria-label="News and rumours" aria-pressed={newsOpen} onclick={() => (newsOpen = !newsOpen)} data-testid="starmap-news-toggle"><Icon name="list" size={22} />{#if unread}<b class="badge" data-testid="starmap-news-unread">{unread > 9 ? '9+' : unread}</b>{/if}</button>
     </div>
     {#if seenFactions.length && !cardOpen && !newsOpen}
       <ul class="legend" aria-label="Territory">
@@ -485,6 +490,8 @@
   .tools button.tile { border: 0; border-bottom: 1px solid var(--line); background: transparent; }
   .tools button.tile:last-child { border-bottom: 0; }
   .tools button.tile:hover { background: var(--panel-3); }
+  .tools button.tile { position: relative; }
+  .badge { position: absolute; top: 2px; right: 2px; min-width: 14px; height: 14px; padding: 0 3px; box-sizing: border-box; display: grid; place-items: center; font: 700 10px/1 var(--head-font); color: var(--bg); background: var(--amber); }
   .tools button.tile.on { box-shadow: inset 0 0 0 1px var(--cyan); }
   .legend { position: absolute; left: 8px; bottom: 8px; margin: 0; padding: 6px 10px; list-style: none; background: var(--panel); border: 1px solid var(--line-hi); font-size: 12px; display: grid; gap: 3px; pointer-events: none; }
   .legend .lh { font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); }

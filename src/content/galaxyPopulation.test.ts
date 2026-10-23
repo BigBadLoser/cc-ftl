@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { START_NODE, ShipC, deserialize, fleetName, galaxyIndex, newGame, portOf, serialize, visibleFleets, type GalaxyContent, type Sim } from '../sim';
+import { FLEET_RANGE } from '../sim/galaxy/tuning';
 import { catchUp, stepAgenda } from '../sim/galaxy/agenda';
 import { liftFleet, materialiseFleet, tendFleets } from '../sim/galaxy/fleetShips';
 import { stepFleets, syncFleets } from '../sim/galaxy/fleets';
@@ -105,7 +106,7 @@ describe('agendas', () => {
     const restedHome = new Set<number>();
     turns(sim, 160, (t) => {
       for (const f of sim.galaxy.fleets) {
-        if (f.moved === t && f.route.length === 0) (stops.get(f.id) ?? stops.set(f.id, new Set()).get(f.id))?.add(f.node);
+        if (f.moved === t && f.route.length === 0 && f.dest === f.node && !f.damaged) (stops.get(f.id) ?? stops.set(f.id, new Set()).get(f.id))?.add(f.node);
         if (f.node === portNode(f.home) && f.dwell > 0) restedHome.add(f.id);
       }
     });
@@ -121,6 +122,7 @@ describe('agendas', () => {
       for (const node of stops.get(f.id) ?? []) {
         seenRoles.add(f.role);
         if (node === home) continue;
+        // (Stops are recorded when a fleet arrives at the end of the leg it planned: a fleet beaten in a clash runs for home through nodes it never chose.)
         if (f.role === 'trader') expect(kinds(sim, node)).toContain('station');
         if (f.role === 'miner') expect(kinds(sim, node)).toContain('asteroids');
         if (f.role === 'patrol') expect(index.nodes.get(node)?.faction).toBe(f.faction);
@@ -180,7 +182,7 @@ describe('agendas', () => {
       sim.galaxy.current = f.node;
       for (let t = 1; t <= 80; t++) {
         stepAgenda(sim, f, t);
-        if (f.moved === t && !f.route.length) expect(reach(f.node)).toBeLessThanOrEqual(3);
+        if (f.moved === t && !f.route.length) expect(reach(f.node)).toBeLessThanOrEqual(FLEET_RANGE[f.role]);
       }
     }
   }, 60000);

@@ -37,6 +37,8 @@
 
 <style>
   /* Separate cards under the log/time frame, stacked downward. */
+  /* With the combat panel open on the right the alerts step left of it, instead of hiding under it. */
+  @media (min-width: 601px) { :global(:root[data-combat]) .alerts { transform: translateX(-380px); } }
   .alerts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; width: 100%; }
   .alert { display: flex; min-width: 0; background: var(--panel); border: 1px solid var(--amber); border-left-width: 3px; }
   .alert.danger { border-color: var(--red); }

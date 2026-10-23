@@ -124,6 +124,28 @@ describe('evade odds follow the pilot', () => {
     expect(evadeOddsFor(helm(3), one)).toBeGreaterThan(evadeOddsFor(helm(1.5), one));
   });
 
+  it('the curve: a top pilot evades a moderate fleet about 80% of the time, a novice rarely, and strength matters', () => {
+    const light = 1.5, moderate = 3.5, heavy = 7, overwhelming = 12;
+    const row = (skill: number) => [light, moderate, heavy, overwhelming].map((s) => evadeOddsFor(helm(skill), s));
+    expect(row(5)[1]).toBeGreaterThanOrEqual(0.75);
+    expect(row(5)[1]).toBeLessThanOrEqual(0.85);
+    expect(row(3)[1]).toBeGreaterThan(0.45);
+    expect(row(3)[1]).toBeLessThan(0.65);
+    expect(row(0.5)[1]).toBeLessThan(0.35);
+    for (const skill of [0.5, 3, 5]) for (let i = 1; i < 4; i++) expect(row(skill)[i]).toBeLessThanOrEqual(row(skill)[i - 1] as number);
+    for (let i = 0; i < 4; i++) expect(row(5)[i]).toBeGreaterThan(row(3)[i] as number);
+  });
+
+  it('with nobody at the helm the best pilot aboard flies: the staged ship is no longer stuck at the floor', () => {
+    const sim = newGame(26, content);
+    const combat = sim.world.get(playerShip(sim), CombatC)!;
+    for (let i = 0; i < 40; i++) sim.step();
+    expect(combat.pilot).toBe(0);
+    expect(combat.cruisePilot).toBeGreaterThan(0);
+    expect(combat.cruiseEvasion).toBeGreaterThan(0);
+    expect(evadeOdds(sim, { strength: 3.5 } as never)).toBeGreaterThan(0.4);
+  });
+
   it('no pilot or unpowered engines are at the minimum; weaker engines and bigger fleets lower the odds', () => {
     expect(evadeOddsFor({ evasion: 0, pilot: 0 }, one)).toBe(0.05);
     expect(evadeOddsFor({ evasion: 0, pilot: 5 }, one)).toBe(0.05);

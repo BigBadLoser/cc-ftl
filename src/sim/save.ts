@@ -50,7 +50,7 @@ import { newTrade, type TradeState } from './trade/types';
  * v39 (node population): `NodeState.populated` (the node's structures were made real; its archive owns them).
  * v40 (stage 4, off-screen life): `galaxy.news` / `galaxy.nextNews` (the bounded news log), `NodeState.wrecks` (ships destroyed in NPC fights, waiting to be found as wrecks).
  */
-export const SAVE_VERSION = 40;
+export const SAVE_VERSION = 41;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

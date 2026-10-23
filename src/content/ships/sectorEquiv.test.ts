@@ -38,8 +38,10 @@ function legacyWorld(sim: Sim): unknown {
   for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
-    const { pilot, ...rest } = raw as Record<string, unknown>;
+    const { pilot, cruisePilot, cruiseEvasion, ...rest } = raw as Record<string, unknown>;
     void pilot;
+    void cruisePilot;
+    void cruiseEvasion;
     return [id, rest];
   });
   // The `patrol` work category came after it too (station directors post patrol jobs; no ship here has any).
