@@ -35,12 +35,12 @@ def _dome(c, sign, r_end, n=6):
 
 
 BALL = _dome(-DOME_C, -1, HATCH_END)[::-1] + _dome(DOME_C, 1, HATCH_END)   # half-dome, drum, half-dome
-SECTION = profile(n=20, p=2.3)          # round, a little squared: a pressure hull
+SECTION = profile(n=24, p=2.0)          # a true circle: a pressure hull
 HATCH_R = 0.5                 # the round hatch's door radius
 BELL = (0.0, 0.42, 0.28)      # the main thruster: mouth z, mouth radius, throat radius
 WIND = (0.5, 1.22, 0.4)       # windshield box: back u (inside the hull), front u at its foot, half width
 WIND_ZB = C - 0.44            # the windshield box's flat underside
-LASER_U, LASER_Z = 0.98, WIND_ZB - 0.26   # the laser's pivot, in the gimbal hung under the windshield
+LASER_U, LASER_Z = 0.98, WIND_ZB - 0.2    # the laser's pivot, in the gimbal hung under the windshield
 HULL, HULL_D, HULL_L = "c4F2", "c4F4", "c4F1"
 YEL, YEL_D = "c4T2", "c4T4"
 GLOW = "cyan"
@@ -90,38 +90,24 @@ def body(fb):
 
 
 def hatch(fb):
-    """An airlock door closing the body's +u end (in fb, the pod's +v or -v side): a heavy frame ring with a hazard-striped
-    face and lamps, a hinge block on the aft side, and the red door itself: a seam ring, eight locking dogs over its edge,
-    a hand wheel at the centre and a small porthole above it."""
+    """An airlock door closing the body's +u end (in fb, the pod's +v or -v side), all in rings: a heavy frame ring, a
+    thin yellow ring inside it, the red door with a seam ring, a hand wheel at its centre and a porthole above."""
     _g("hatch")
     u = BALL[-1][0]
     rf = HATCH_R + 0.12
-    fb.hcyl(u - 0.04, u + 0.06, 0, C, rf, "steelD", sides=24, cap="steelD")             # the frame ring
-    for k in range(16):                                                      # its hazard face
-        a = (k + 0.5) * math.tau / 16
-        fb.box(u + 0.065, (rf - 0.055) * math.cos(a), C + (rf - 0.055) * math.sin(a), 0.01, 0.12, 0.07,
-               "hazY" if k % 2 else "hazK", base=False)
-    for a in (math.pi * 0.25, math.pi * 0.75):                               # lamps at the frame's upper corners
-        fb.box(u + 0.075, (rf + 0.01) * math.cos(a), C + (rf + 0.01) * math.sin(a), 0.04, 0.07, 0.07, "orange", base=False)
-    fb.box(u + 0.03, -(rf + 0.02), C, 0.1, 0.1, 0.36, "steelD", base=False)   # the hinge block (aft)
-    for dz in (-0.12, 0.12):
-        fb.box(u + 0.09, -(HATCH_R - 0.02), C + dz, 0.05, 0.14, 0.07, "steelL", base=False)
-    du = u + 0.08
-    fb.hcyl(u + 0.06, du, 0, C, HATCH_R, "drK", sides=24, cap="drD")           # the door
-    fb.hcyl(du, du + 0.004, 0, C, HATCH_R * 0.72, "drK", sides=24, cap="drD")  # its seam ring
-    fb.hcyl(du + 0.004, du + 0.006, 0, C, HATCH_R * 0.72 - 0.025, "drD", sides=24, cap="drD")
-    for k in range(8):                                                       # locking dogs over the edge
-        a = k * math.tau / 8 + math.pi / 8
-        fb.box(du + 0.01, (HATCH_R - 0.02) * math.cos(a), C + (HATCH_R - 0.02) * math.sin(a), 0.03, 0.08, 0.08,
-               "steelL", base=False)
-    wz = C - 0.04                                                            # the hand wheel: a rim (a steel disc
-    fb.hcyl(du, du + 0.03, 0, wz, 0.17, "steelD", sides=16, cap="steelL")      # with the door showing through it),
-    fb.hcyl(du + 0.03, du + 0.032, 0, wz, 0.13, "drD", sides=16, cap="drD")
+    fb.hcyl(u - 0.04, u + 0.06, 0, C, rf, "steelD", sides=32, cap="steelD")              # the frame ring
+    fb.hcyl(u + 0.06, u + 0.066, 0, C, HATCH_R + 0.04, "hazY", sides=32, cap="hazY")   # the yellow ring
+    du = u + 0.086
+    fb.hcyl(u + 0.066, du, 0, C, HATCH_R, "drK", sides=32, cap="drD")         # the door
+    fb.hcyl(du, du + 0.006, 0, C, HATCH_R * 0.74, "drK", sides=32, cap="drD")  # its seam ring
+    fb.hcyl(du + 0.006, du + 0.008, 0, C, HATCH_R * 0.74 - 0.03, "drD", sides=32, cap="drD")
+    wz = C - 0.04                                                            # the hand wheel: a steel rim
+    fb.hcyl(du, du + 0.03, 0, wz, 0.17, "steelD", sides=20, cap="steelL")      # (a disc, the door showing through)
+    fb.hcyl(du + 0.03, du + 0.032, 0, wz, 0.13, "drD", sides=20, cap="drD")
     fb.box(du + 0.04, 0, wz, 0.02, 0.28, 0.035, "steelL", base=False)          # two spokes
     fb.box(du + 0.04, 0, wz, 0.02, 0.035, 0.28, "steelL", base=False)
-    fb.hcyl(du + 0.03, du + 0.06, 0, wz, 0.045, "steelD", sides=10, cap="steelL")    # and a hub
-    fb.hcyl(du, du + 0.012, 0, C + 0.27, 0.075, "steelD", sides=12, cap="glassD")   # porthole
-    fb.box(du + 0.014, 0.02, C + 0.3, 0.004, 0.06, 0.015, "lens", base=False)
+    fb.hcyl(du + 0.03, du + 0.06, 0, wz, 0.045, "steelD", sides=12, cap="steelL")    # a hub
+    fb.hcyl(du, du + 0.012, 0, C + 0.27, 0.075, "steelD", sides=16, cap="glassD")   # porthole
 
 
 def windshield(f):
@@ -147,7 +133,8 @@ def windshield(f):
         pane(z0, z1, 0.07, "glassD", 0.006)
     pane(zt - 0.2, zt - 0.16, 0.07, "lens", 0.009)                           # a reflection across the upper pane
     pane(zt - 0.26, zt - 0.245, 0.07, "lens", 0.009)
-    f.box((u0 + u1) / 2 - 0.06, 0, zt, u1 - u0 - 0.12, 2 * hw + 0.04, 0.035, YEL)   # the yellow brow
+    ub = u1 - rake + 0.03                                                    # the yellow brow, just past the glass
+    f.box((u0 + ub) / 2, 0, zt, ub - u0, 2 * hw + 0.04, 0.035, YEL)
 
 
 def thruster(f, lit):
@@ -167,7 +154,7 @@ def thruster(f, lit):
 
 def laser(f, down, lit):
     """The mining laser in a gimbal hung from the windshield's flat underside: a turntable, a yoke of two arms and the
-    laser between them on a trunnion, level when stowed, tipped forward and down when mining. A big gun: a yellow breech,
+    laser between them on a trunnion, angled down when stowed, further down when mining. A big gun: a yellow breech,
     a ribbed barrel and a flared emitter."""
     _g("laser")
     f.vcyl(LASER_U, 0, WIND_ZB - 0.06, 0.17, 0.06, HULL_D, top=HULL_D, sides=16)      # turntable
@@ -175,7 +162,7 @@ def laser(f, down, lit):
     for sv in (-1, 1):                                                       # the yoke's arms
         f.box(LASER_U, sv * 0.165, LASER_Z - 0.08, 0.2, 0.05, WIND_ZB - 0.09 - LASER_Z + 0.08, HULL_D, top=HULL)
         f.hcyl(LASER_U - 0.07, LASER_U + 0.07, sv * 0.195, LASER_Z, 0.06, YEL_D, sides=10, cap="steelL", capstart="steelL")
-    kw = dict(pitch=math.radians(-55 if down else -8), pu=LASER_U, pz=LASER_Z)
+    kw = dict(pitch=math.radians(-60 if down else -38), pu=LASER_U, pz=LASER_Z)     # stowed: angled down, clear
     f.box(LASER_U - 0.05, 0, LASER_Z, 0.3, 0.26, 0.24, YEL, top=YEL, base=False, **kw)        # breech
     f.box(LASER_U - 0.05, 0, LASER_Z + 0.125, 0.22, 0.14, 0.012, "hazK", base=False, **kw)
     f.hcyl(LASER_U + 0.1, LASER_U + 0.62, 0, LASER_Z, 0.1, "steel", r1=0.085, sides=12, **kw)   # barrel
