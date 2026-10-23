@@ -1,6 +1,6 @@
 import { JobC } from '../crew/components';
 import { releaseAssignment } from '../crew/helpers';
-import { IonC } from '../combat/components';
+import { CombatC, IonC } from '../combat/components';
 
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
@@ -28,6 +28,8 @@ export function operateJobsSystem(sim: Sim): void {
     if (job.reservedBy) releaseAssignment(sim, job.reservedBy);
     sim.world.destroyEntity(jobId);
   }
+  // Nothing to open outside combat unless a charge order stands.
+  if (!sim.sector.inCombat && !sim.world.query(CombatC).some((id) => sim.world.get(id, CombatC)?.ftlOrder)) return;
   const fresh = new Set<number>();
   for (const id of sim.world.query(ModuleC)) {
     if (open.has(id) || !consoleNeeded(sim, id)) continue;
