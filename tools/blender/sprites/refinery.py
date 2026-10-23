@@ -24,7 +24,7 @@ RIM = 0.26                           # the rim's width
 D = 0.22                             # how deep the bays go
 BZ = (0.1, HT - 0.1)                 # the bays' floor and ceiling: the same margin above and below
 AV = -0.5                            # the access tile's v
-BAYS = {1: [(-1.42, -0.46, "rollers"), (-0.36, 0.36, "terminal"), (0.46, 1.42, "rollers")],
+BAYS = {1: [(-1.42, -0.46, "output"), (-0.36, 0.36, "terminal"), (0.46, 1.42, "input")],
         -1: [(-1.42, -0.53, "rollers"), (-0.43, 0.43, "rollers"), (0.53, 1.42, "rollers")]}
 G, GT, GD, HOLE = "gm", "plate", "steelD", "dark"      # blockout: faces, tops, recesses, holes
 
@@ -77,6 +77,8 @@ def long_side(k, s):
             face(k, [at(ca, za, -1), at(cb, za, 1), at(cb, zb, 1), at(ca, zb, -1)], (s, 0, 0), G)
     for v0, v1, kind in bays:
         recess(k, s, v0, v1)
+        if kind in ("input", "output"):
+            hatch(k, v0, v1, kind)
         if kind == "rollers":
             for z, r in ((0.27, 0.14), (0.55, 0.13)):
                 u = wall_u(s, z) - s * (D - r - 0.01)
@@ -146,11 +148,49 @@ def stack(k, u, v, z0, z1, r, ri, n=20):
     face(k, i0, (0, 0, 1), HOLE)
 
 
+def hatch(k, v0, v1, kind):
+    """A hatch block filling a crew-side bay just behind the wall line: input, a dark mouth over a lip that juts out to
+    catch the load; output, a door with a tray at its foot."""
+    z0, z1 = BZ
+    ub = wall_u(1, z0) - D
+    uf = wall_u(1, z1) - 0.04                                                 # the block's face, behind the wall line
+    a, b = v0 + 0.03, v1 - 0.03
+    k.box((ub + uf) / 2, (a + b) / 2, z0, uf - ub, b - a, z1 - z0, G, top=GT)
+    c, w = (a + b) / 2, b - a
+    if kind == "input":
+        k.box(uf + 0.004, c, 0.34, 0.01, w - 0.18, 0.26, HOLE)                     # the mouth
+        frustum_lip(k, uf, U - 0.02, c - (w - 0.14) / 2, c + (w - 0.14) / 2, 0.24, 0.34)
+    else:
+        k.box(uf + 0.01, c, 0.2, 0.03, w - 0.2, 0.46, GT)                          # the door, proud
+        k.box(uf + 0.004, c, 0.16, 0.01, w - 0.12, 0.54, GD)                        # its frame's shadow
+        k.box((uf + U - 0.02) / 2, c, z0, U - 0.02 - uf, w - 0.1, 0.1, G, top=GT)  # the tray at its foot
+
+
+def frustum_lip(k, u0, u1, v0, v1, z0, z1):
+    """A lip jutting out of a face at u0 to u1, its top sloping down and out."""
+    cen = Vector(((u0 + u1) / 2, (v0 + v1) / 2, (z0 + z1) / 2))
+    pts = {"in_lo": [(u0, v0, z0), (u0, v1, z0)], "out_lo": [(u1, v0, z0), (u1, v1, z0)],
+           "in_hi": [(u0, v0, z1), (u0, v1, z1)], "out_hi": [(u1, v0, z0 + 0.04), (u1, v1, z0 + 0.04)]}
+    il, ol, ih, oh = pts["in_lo"], pts["out_lo"], pts["in_hi"], pts["out_hi"]
+    face(k, [ih[0], ih[1], oh[1], oh[0]], (0.4, 0, 1), GT)                      # the sloped top
+    face(k, [ol[0], ol[1], oh[1], oh[0]], (1, 0, 0), G)
+    face(k, [il[0], ol[0], oh[0], ih[0]], Vector(il[0]) - cen, G)
+    face(k, [il[1], ol[1], oh[1], ih[1]], Vector(il[1]) - cen, G)
+
+
 def terminal(k):
-    """The terminal slab, standing in its bay at the access tile and rising above the rim (screen up top later)."""
+    """The terminal: a base jutting out to the footprint's edge, its top sloping up to the slab, and the slab rising
+    above the rim behind it (screen up top later)."""
     v0, v1 = -0.32, 0.32
-    u_in = wall_u(1, 0) - D
-    k.box((u_in + U) / 2 - 0.02, (v0 + v1) / 2, 0, U - u_in - 0.04, v1 - v0, HT + 0.45, G, top=GT)
+    u_in = U - B - RIM - 0.08                                                 # the slab rises through the rim from the deck
+    us = U - 0.24                                                             # the slab's face, set back
+    k.box((u_in + us) / 2, (v0 + v1) / 2, 0, us - u_in, v1 - v0, HT + 0.45, G, top=GT)
+    k.box((us + U - 0.02) / 2 - 0.01, 0, 0, U - 0.02 - us + 0.02, v1 - v0 + 0.02, 0.3, G)     # the base
+    lo = [(us - 0.01, v0 - 0.01, 0.3), (U - 0.02, v0 - 0.01, 0.3), (U - 0.02, v1 + 0.01, 0.3), (us - 0.01, v1 + 0.01, 0.3)]
+    hi = [(us - 0.01, v0 - 0.01, 0.62), (us - 0.01, v1 + 0.01, 0.62)]
+    face(k, [lo[1], lo[2], hi[1], hi[0]], (1, 0, 1.4), GT)                      # its sloped top
+    face(k, [lo[0], lo[1], hi[0]], (0, -1, 0), G)
+    face(k, [lo[3], lo[2], hi[1]], (0, 1, 0), G)
 
 
 def blockout(rot=0):
