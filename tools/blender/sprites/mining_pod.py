@@ -86,7 +86,7 @@ def body(fb):
     loft(fb, B, SECTION, HULL, cap0=HULL_D, hole=BORE, recesses=cuts)      # (they run on through the drum)
     _g("panels")
     for u0, u1, t0, t1 in cuts:
-        H.recess(fb, B, SECTION, u0, u1, t0, t1, PANEL_DEPTH, HULL_D, HULL, (math.copysign(DOME_C, u0), C))
+        H.recess(fb, B, SECTION, u0, u1, t0, t1, PANEL_DEPTH, HULL_D, HULL_D, (math.copysign(DOME_C, u0), C))
     _g("drum")
     D = [(BAND[0] + (BAND[1] - BAND[0]) * i / 24, DRUM_R, DRUM_R, 0, C) for i in range(25)]   # fine, for the bore
     loft(fb, D, profile(n=72, p=2.0), HULL, cap0="steelD", cap1="steelD", hole=BORE)   # the drum and its flat sides
