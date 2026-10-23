@@ -295,7 +295,7 @@ def thruster(f, lit):
               ((rt - 0.02) * math.cos(a), (rt - 0.02) * math.sin(a), zm + 0.1), 0.04, "steelL")
 
 
-def laser(f, down, lit):
+def laser(f, down, lit, folded=False):
     """The mining laser in a gimbal hung from the windshield's flat underside: a turntable, a yoke of two arms and the
     laser between them on a trunnion, angled down when stowed, further down when mining. A big gun: a yellow breech,
     a ribbed barrel and a flared emitter."""
@@ -305,7 +305,8 @@ def laser(f, down, lit):
     for sv in (-1, 1):                                                       # the yoke's arms
         f.box(LASER_U, sv * 0.165, LASER_Z - 0.08, 0.2, 0.05, WIND_ZB - 0.09 - LASER_Z + 0.08, HULL_D, top=HULL)
         f.hcyl(LASER_U - 0.07, LASER_U + 0.07, sv * 0.195, LASER_Z, 0.06, YEL_D, sides=10, cap="steelL", capstart="steelL")
-    kw = dict(pitch=math.radians(-60 if down else -38), pu=LASER_U, pz=LASER_Z)     # stowed: angled down, clear
+    pitch = -168 if folded else (-60 if down else -38)                     # docked: folded back under the windshield
+    kw = dict(pitch=math.radians(pitch), pu=LASER_U, pz=LASER_Z)            # (clear of a bay's walls); flying: down
     f.box(LASER_U - 0.05, 0, LASER_Z, 0.3, 0.26, 0.24, YEL, top=YEL, base=False, **kw)        # breech
     f.box(LASER_U - 0.05, 0, LASER_Z + 0.125, 0.22, 0.14, 0.012, "hazK", base=False, **kw)
     f.hcyl(LASER_U + 0.1, LASER_U + 0.62, 0, LASER_Z, 0.1, "steel", r1=0.085, sides=12, **kw)   # barrel
@@ -373,7 +374,7 @@ def pod(heading, state="parked", bob=0.0, dz=0.0):
     windshield(f)
     thruster(f, state in ("fly", "mine"))
     rear_thruster(f, state in ("fly", "mine"))
-    laser(f, state == "mine", state == "mine")
+    laser(f, state == "mine", state == "mine", folded=state in ("parked", "docked"))
     arms(f, state == "mine")
     lights(f, state in ("fly", "mine"))
     greeble(f)
