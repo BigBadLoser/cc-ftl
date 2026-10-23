@@ -10,6 +10,7 @@ import { crossAfterHop, interdicted } from './encounters';
 import { liftFleetsAt, materialiseFleetsAt } from './fleetShips';
 import { bindMarkets, unbindMarkets } from './marketLive';
 import { populateNode } from './populate';
+import { placeWrecks } from './wrecks';
 import { takeHopTurn } from './turn';
 import type { EdgeData, Travel } from './types';
 
@@ -169,6 +170,8 @@ export function drop(sim: Sim, command = 'galaxy.drop'): boolean {
   materialiseFleetsAt(sim, g.current);
   // The node's structures go in last, east of the ships already there (and of the free water the player deploys in), then the stations become markets.
   if (first) populateNode(sim, g.current);
+  // What fights left here while the player was away (meetings.ts) is found now, on a first visit and on a return alike.
+  placeWrecks(sim, g.current);
   bindMarkets(sim);
   g.travel = null;
   g.rev++;

@@ -1,8 +1,10 @@
 import type { Sim } from '../sim';
 import { econOf, moveStock, stockAt, valueAt, type Econ } from './market';
 import { portsAt, portOf } from './portIndex';
+import { reportedShortage, report } from './news';
 import { portNode, type Port } from './ports';
 import { CARGO_BY_SIZE, MINER_ORE, MINER_RARE_SHARE, TRADE_CANDIDATES, TRADE_MIN_MARGIN, TRADE_TAKE_SHARE } from './tuning';
+import { NEWS_SHORTAGE_MIN, NEWS_SHORTAGE_SHARE } from './tuningWar';
 import type { Fleet } from './types';
 
 /**
@@ -61,6 +63,10 @@ export function onDock(sim: Sim, f: Fleet, port: Port, stops: () => string[]): v
   } else if (f.role === 'trader') {
     const e = econOf(sim, port);
     if (e) trade(sim, f, e, stops());
+  } else if ((f.role === 'pirate' || f.role === 'raider') && cargoLoad(f) > 0 && f.node === portNode(f.home)) {
+    // Loot taken off a ship (meetings.ts) is sold into the den's market when its owner gets home.
+    const e = econOf(sim, port);
+    if (e) unload(sim, f, e);
   }
 }
 
@@ -104,6 +110,16 @@ function trade(sim: Sim, f: Fleet, here: Econ, stops: string[]): void {
     if (plan.profit > (best?.profit ?? 0)) best = plan;
   }
   if (!best) return;
-  for (const b of best.buys) load(f, b.item, -moveStock(sim, here, f.synced, b.item, -b.count));
+  for (const b of best.buys) {
+    const moved = -moveStock(sim, here, f.synced, b.item, -b.count);
+    load(f, b.item, moved);
+    // A shelf that is nearly bare is news: the port is short of that good.
+    const left = (mine[b.item] ?? 0) - moved;
+    const base = here.base[b.item] ?? 0;
+    const node = portNode(here.id);
+    if (base >= NEWS_SHORTAGE_MIN && left < NEWS_SHORTAGE_SHARE * base && !reportedShortage(sim, node, b.item, f.synced)) {
+      report(sim, { kind: 'shortage', node, who: f.ships[0]?.name ?? f.role, faction: f.faction, item: b.item }, f.synced);
+    }
+  }
   if (cargoLoad(f) > 0) f.pick = best.node;
 }

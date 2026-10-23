@@ -2,6 +2,7 @@ import type { Sim } from '../sim';
 import { isLive } from '../trade/deals';
 import { catchUpFleets, stepAgenda } from './agenda';
 import { liftFleet, materialiseFleet, strandIfCrippled } from './fleetShips';
+import { resolveMeetings } from './meetings';
 import { nodesWithin } from './graph';
 import { portNode } from './ports';
 import { rebuildPorts } from './rebuild';
@@ -36,7 +37,7 @@ export function syncFleets(sim: Sim, turn: number): void {
   const g = sim.galaxy;
   if (!sim.content.galaxy) return;
   const area = nodesWithin(sim, g.current, FLEET_AREA_HOPS);
-  catchUpFleets(sim, g.fleets.filter((f) => f.synced < turn && simulated(f, area)), turn);
+  catchUpFleets(sim, g.fleets.filter((f) => f.synced < turn && simulated(f, area)), turn, (t, stepped) => resolveMeetings(sim, t, stepped));
   rebuildPorts(sim, turn, area);
 }
 
@@ -55,6 +56,7 @@ export function stepFleets(sim: Sim, turn: number): void {
   syncFleets(sim, turn - 1);
   const area = nodesWithin(sim, g.current, FLEET_AREA_HOPS);
   const hold = holdsFleets(sim);
+  const stepped: Fleet[] = [];
   for (const f of g.fleets) {
     if (f.synced >= turn || !simulated(f, area)) continue;
     const here = live && f.node === g.current;
@@ -65,9 +67,12 @@ export function stepFleets(sim: Sim, turn: number): void {
       continue;
     }
     stepAgenda(sim, f, turn);
+    stepped.push(f);
     if (here && f.node !== g.current) liftFleet(sim, f);
     else if (live && !here && f.node === g.current) materialiseFleet(sim, f);
   }
+  // Fleets of factions at war that met away from the player are settled by stats (meetings.ts).
+  resolveMeetings(sim, turn, stepped);
   rebuildPorts(sim, turn, area);
   g.rev++;
 }

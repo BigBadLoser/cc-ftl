@@ -4,6 +4,8 @@ import { materialiseFleet } from './fleetShips';
 import { strHash, unit } from './hash';
 import { portOf } from './portIndex';
 import { portNode } from './ports';
+import { fleetName } from './names';
+import { report } from './news';
 import { makeFleet, usedNames } from './roster';
 import { nodeOf } from './state';
 import { FLEET_REST } from './tuning';
@@ -32,6 +34,7 @@ export function rebuildPorts(sim: Sim, turn: number, area: ReadonlyMap<string, n
       if (f) {
         f.dwell = Math.floor(unit(sim.seed, ...key, 5) * (FLEET_REST.max + 1));
         g.fleets.push(f);
+        report(sim, { kind: 'rebuilt', node: node.id, who: fleetName(f), faction: f.faction }, at);
         catchUp(sim, f, turn);
         if (sim.sector.state === 'active' && f.node === g.current) materialiseFleet(sim, f);
       }

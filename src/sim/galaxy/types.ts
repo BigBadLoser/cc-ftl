@@ -127,6 +127,40 @@ export interface NodeState {
   entered: boolean;
   /** Its structures have been made real (populate.ts); once true they belong to the node's archive. */
   populated?: true;
+  /** Ships destroyed here while the player was elsewhere, waiting to be found as wrecks at the next drop (wrecks.ts). */
+  wrecks?: WreckSeed[];
+}
+
+/** A destroyed NPC ship's hull: the generator key of the ship it was (so the wreck is that ship, ruined) and when and under what name it fell. */
+export interface WreckSeed {
+  shipgen: string;
+  seed: number;
+  depth: number;
+  name: string;
+  /** The galaxy faction it flew for. */
+  faction: string;
+  turn: number;
+}
+
+/**
+ * What the news log reports (news.ts). `destroyed`: `who` destroyed `foe`; `driven`: `who` drove `foe` off; `clash`: `who` and `foe` fought to a bloody draw;
+ * `raid`: `who` raided a den and destroyed `foe`; `cut`: a trade route is cut, `foe` (a trader) was lost near here; `loot`: `who` took `count` of `item`
+ * from `foe`; `shortage`: the port here is short of `item`; `rebuilt`: `who` was launched from the port here.
+ */
+export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt';
+
+export interface NewsItem {
+  id: number;
+  turn: number;
+  kind: NewsKind;
+  /** Where it happened (a node id; for a clash on a lane, the end it was settled at). */
+  node: string;
+  who: string;
+  faction: string;
+  foe?: string;
+  foeFaction?: string;
+  item?: string;
+  count?: number;
 }
 
 /**
@@ -306,6 +340,10 @@ export interface GalaxyState {
   ports: Record<string, PortState>;
   /** Port markets that differ from their baseline, by port id (market.ts). */
   markets: Record<string, MarketState>;
+  /** What happened in the world lately, oldest first, at most NEWS_MAX (news.ts). */
+  news: NewsItem[];
+  /** Ids for news items (apart from `nextFleet`, so a log entry never shifts the ids fleets are made with). */
+  nextNews: number;
   /** Travel days spent in jumps. */
   days: number;
   /** The hyperspace trip in progress, or null. */

@@ -48,8 +48,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v38 (stage 3, NPC economy): `galaxy.markets` (port stock that differs from its baseline), `Fleet.cargo` / `Fleet.pick`, `Trader.port` / `Trader.base`
  * (a live station that is a port's market).
  * v39 (node population): `NodeState.populated` (the node's structures were made real; its archive owns them).
+ * v40 (stage 4, off-screen life): `galaxy.news` / `galaxy.nextNews` (the bounded news log), `NodeState.wrecks` (ships destroyed in NPC fights, waiting to be found as wrecks).
  */
-export const SAVE_VERSION = 39;
+export const SAVE_VERSION = 40;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
