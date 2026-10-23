@@ -121,6 +121,8 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
   validate(manifest);
 
   let smooth = false;
+  /** Crew sheet images hold palette-swap key colours: the crew filter reads them, so they are always sampled nearest (a blend of a key with its neighbour would escape the swap). The filter's own output is what the camera smooths. */
+  const isCrewImage = (path: string): boolean => path.startsWith('sprites/crew.');
   let clock = performance.now();
   const bytesOf = (t: Texture): number => t.source.pixelWidth * t.source.pixelHeight * 4;
   let restoring = false;
@@ -130,9 +132,10 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     hooks.upload(src);
     (src.resource as { close?: () => void }).close?.();
   };
-  const loadTex = async (path: string): Promise<Texture> => {
-    const t = await Assets.load<Texture>({ src: base + path, data: { scaleMode: smooth ? 'linear' : 'nearest' } });
-    t.source.scaleMode = smooth ? 'linear' : 'nearest';
+  const loadTex = async (path: string, keyed = false): Promise<Texture> => {
+    const mode = smooth && !keyed ? 'linear' : 'nearest';
+    const t = await Assets.load<Texture>({ src: base + path, data: { scaleMode: mode } });
+    t.source.scaleMode = mode;
     t.source.autoGenerateMipmaps = false;
     toGpu(t.source);
     return t;
@@ -153,7 +156,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
 
   const io: SheetIO<Texture> = {
     async load(image, glow) {
-      const [img, gl] = await Promise.all([loadTex(image), glow ? loadTex(glow) : null]);
+      const [img, gl] = await Promise.all([loadTex(image, isCrewImage(image)), glow ? loadTex(glow) : null]);
       return { sheet: { image: img, glow: gl }, bytes: bytesOf(img) + (gl ? bytesOf(gl) : 0) };
     },
     unload(name, _sheet, image, glow) {
@@ -292,8 +295,8 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     setSmooth(on) {
       if (on === smooth) return;
       smooth = on;
-      store.forEachReady((_n, s) => {
-        for (const t of [s.image, s.glow]) if (t) t.source.scaleMode = on ? 'linear' : 'nearest';
+      store.forEachReady((name, s) => {
+        for (const [i, t] of [s.image, s.glow].entries()) if (t) t.source.scaleMode = on && !(i === 0 && name.startsWith('crew.')) ? 'linear' : 'nearest';
       });
     },
     get restoring() {

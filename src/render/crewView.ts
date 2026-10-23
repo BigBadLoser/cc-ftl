@@ -17,7 +17,7 @@ import { accessTile, footprintTiles, openTilesOf } from '../sim/modules/footprin
 import { moduleKey } from './moduleView';
 import { SEAT_DZ } from './moduleArt';
 import type { Atlas, LayerSprite } from './assets/loader';
-import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
+import { createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
 import { diamondTextures } from './diamonds';
 import { heldAssets } from './itemView';
@@ -65,6 +65,9 @@ interface Slot {
   ring: Sprite;
   shadow: Sprite;
   filter: Filter;
+  /** The stacked layers the filter runs on, and whether its filters are the shrunk-art chain (`crewFilters`). */
+  body: Container;
+  shrunk: boolean;
   /** The item held in the hands while hauling: one sprite drawn over the body, one under it (when facing away). */
   carry: Sprite;
   carryBack: Sprite;
@@ -133,7 +136,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     ring.visible = false;
     const body = new Container();
     const filter = createCrewFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed));
-    body.filters = [filter];
+    body.filters = crewFilters(filter, L.scale);
     const parts = layers.map((layer) => {
       const sprite = new Sprite();
       sprite.position.set(-layer.def.anchor.x, -layer.def.anchor.y);
@@ -172,7 +175,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, shadow, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
+    return { root, parts, glows, ring, shadow, filter, body, shrunk: L.scale < 1, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -182,6 +185,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     if (dead) tint = mulColor(tint, 0x7c7c7c);
     setFilterTint(s.filter, tint);
     setFilterZoom(s.filter, L.scale);
+    const shrunk = L.scale < 1;
+    if (shrunk !== s.shrunk) {
+      s.shrunk = shrunk;
+      s.body.filters = crewFilters(s.filter, L.scale);
+    }
   }
 
   /** Put the carried item's sprite at the hands: ahead of the body, over it unless the carrier faces away. */
