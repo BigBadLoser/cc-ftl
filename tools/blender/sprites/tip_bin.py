@@ -10,6 +10,7 @@ from mathutils import Vector
 
 from . import ore_cage as C
 from .modkit import K
+from .tip_bin_wear import band, grime, plate
 
 YEL, YEL_L, YEL_D = "nvT2", "nvT1", "nvT3"      # faded paint
 S, T = 0.76, 0.05                        # the sides' half width, the plate thickness
@@ -68,7 +69,7 @@ def _skin(k, pr, s, col, inward=False):
             continue
         (v0, z0), (v1, z1) = pr[i], pr[(i + 1) % len(pr)]
         q = [(s, v0, z0), (-s, v0, z0), (-s, v1, z1), (s, v1, z1)]
-        C._poly(k, q[::-1] if inward else q, col(0.0, (v0 + v1) / 2, (z0 + z1) / 2))
+        band(k, q[::-1] if inward else q, col)
 
 
 def tube(k, p0, p1, r, col, sides=8, cap=None):
@@ -88,15 +89,11 @@ def tube(k, p0, p1, r, col, sides=8, cap=None):
 def body(k, w):
     pr = profile()
     ip = inset(pr, T)
-    yel = lambda u, v, z: w(YEL, u, v, z)                                  # noqa: E731
-    inside = lambda u, v, z: w(YEL_D, u, v, z + 0.3)                        # noqa: E731
     for s in (-1, 1):
-        out = [(s * S, v, z) for v, z in pr]
-        inn = [(s * (S - T), v, z) for v, z in ip]
-        C._poly(k, out if s > 0 else out[::-1], YEL)                        # outer side plate
-        C._poly(k, inn[::-1] if s > 0 else inn, YEL_D)                      # its inner face
-    _skin(k, pr, S, yel)
-    _skin(k, ip, S - T, inside, inward=True)
+        plate(k, pr, s * S, YEL, flip=s < 0)                                # outer side plate
+        plate(k, ip, s * (S - T), YEL_D, flip=s > 0)                        # its inner face
+    _skin(k, pr, S, YEL)
+    _skin(k, ip, S - T, YEL_D, inward=True)
     # the top flange, thick enough to cover the shell's edge: across the back and the lip, along the sloped sides
     flange(k)
     for v in HOOPS:
@@ -120,13 +117,18 @@ def flange(k):
     top = lambda p, dz=0.03: Vector((p[0], p[1], top_z(p[1]) + dz))       # noqa: E731
     bot = lambda p: top(p, -0.07)                                          # noqa: E731
     c = Vector((0, (BACK + LIP) / 2, 0))
+    lerp = lambda p, q, t: (p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t)   # noqa: E731
     for a in range(4):
         b = (a + 1) % 4
         mid = Vector(((o[a][0] + o[b][0]) / 2, (o[a][1] + o[b][1]) / 2, 0)) - c
-        _face(k, [top(o[a]), top(o[b]), top(i[b]), top(i[a])], (0, 0, 1), YEL_L)
-        _face(k, [top(o[a]), top(o[b]), bot(o[b]), bot(o[a])], mid, YEL)
-        _face(k, [top(i[a]), top(i[b]), bot(i[b]), bot(i[a])], -mid, YEL_D)
-        _face(k, [bot(o[a]), bot(o[b]), bot(i[b]), bot(i[a])], (0, 0, -1), YEL_D)
+        n = max(1, round(math.dist(o[a], o[b]) / 0.045))                    # in pieces, for the wear
+        for j in range(n):
+            o0, o1 = lerp(o[a], o[b], j / n), lerp(o[a], o[b], (j + 1) / n)
+            i0, i1 = lerp(i[a], i[b], j / n), lerp(i[a], i[b], (j + 1) / n)
+            _face(k, [top(o0), top(o1), top(i1), top(i0)], (0, 0, 1), YEL_L)
+            _face(k, [top(o0), top(o1), bot(o1), bot(o0)], mid, YEL)
+            _face(k, [top(i0), top(i1), bot(i1), bot(i0)], -mid, YEL_D)
+            _face(k, [bot(o0), bot(o1), bot(i1), bot(i0)], (0, 0, -1), YEL_D)
 
 
 def top_z(v):
@@ -180,6 +182,11 @@ def strip(k, path, depth, width, col, b=None):
     """A rib of rectangular section along path [(point, outward normal, depth scale)], its back on the surface."""
     b = b or Vector((0, 1, 0))
     h = b * width / 2
+    fine = [path[0]]                                                       # in pieces, for the wear
+    for (p0, n0, f0), (p1, n1, f1) in zip(path, path[1:]):
+        m = max(1, math.ceil((p1 - p0).length / 0.07))
+        fine += [(p0.lerp(p1, t / m), n0.lerp(n1, t / m).normalized(), f0 + (f1 - f0) * t / m) for t in range(1, m + 1)]
+    path = fine
     rows = [(p - h, p + h, p - h + n * depth * f, p + h + n * depth * f, n) for p, n, f in path]
     for (l0, r0, lo0, ro0, n0), (l1, r1, lo1, ro1, n1) in zip(rows, rows[1:]):
         _face(k, [lo0, ro0, ro1, lo1], n0 + n1, col)
@@ -319,7 +326,9 @@ def tip_bin(fp, fill, rot, ore="iron"):
     k = K(f"tip_bin_{ore}_{fill}_{rot}", fp, rot)
     w = TipWear(17, amount=0.9)
     base(k, w)
+    n0 = len(k.m.f)
     body(k, w)
+    grime(k, n0, len(k.m.f), Vector((0, (BACK + LIP) / 2, 0.75)), top_z, LIP)
     rng = np.random.default_rng(11 + C.FILLS.index(fill))
     if C.HEAP[fill]:
         heap(k, fill, ore, rng)
