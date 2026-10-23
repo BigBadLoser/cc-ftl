@@ -1,129 +1,154 @@
-import { Graphics, type Container } from 'pixi.js';
+import { Container, type Sprite } from 'pixi.js';
 import { AsteroidC, type Asteroid } from '../sim/asteroids/components';
 import type { World } from '../sim/ecs';
 import { CHUNK_SIZE } from '../sim/grid';
 import type { SectorGrid } from '../sim/sectorGrid';
 import { Struct } from '../sim/structure';
-import { Z_PX } from './heights';
-import { iso, TILE_H, TILE_W } from './iso';
+import type { Atlas } from './assets/loader';
+import { depthKey } from './iso';
+import type { Layers } from './layers';
+import { addStatic } from './sprites';
+import { tileHash } from './tiles';
 
 /**
- * PLACEHOLDER asteroid drawing (procedural, allowed while asteroid art is pending; final art comes from the sprite pipeline).
- * Rock mass is a full-height block (ROCK_MASS_Z tiles of height) with a lit top and two shaded faces where it meets lower
- * tiles; rock ground is a flat, paler diamond with a few crater pits picked by a tile hash. Ore tints the top of either form.
- * Every size derives from TILE_W / TILE_H and Z_PX. One Graphics per asteroid, rebuilt when its chunks' struct or ore
- * revisions change.
+ * Asteroid rock from the `rock` sprite family (tools/blender/sprites/rock.py). Neighbour masks are N 1, E 2, S 4, W 8.
+ *  - Rock mass `rock.mass.m<mask>[.c<cuts>].v<0-3>`: mask = the rock neighbours; cuts mark inner corners (the diagonal is not
+ *    rock while both sides beside it are): SE 1, SW 2, NE 4 (a NW cut sits behind the rock's own top and is never drawn).
+ *    Ore tiles use `rock.ore.<iron|ice|rare>.<rich|thin>.m<mask>[.c<cuts>]` instead (one variant).
+ *  - Ground `rock.ground.m<mask>[.c<cuts>].v<n>`: mask = the solid neighbours (rock or ground), cuts SE 1, SW 2, NE 4, NW 8; the
+ *    interior (m15, no cuts) has 8 variants, edges 3. Under every rock tile goes `rock.ground.<...>.under`, the asteroid's
+ *    worn edge and under-lip, which the mass stands back on.
+ * Ground and the under-lips go in the floor layer back to front; mass sorts with everything else at its tile's depth. Variants
+ * come from a hash of the tile. Rebuilt when the chunks' struct or ore revisions change, or when art arrives (`rebuild`).
  */
 export interface AsteroidView {
   update(sector: SectorGrid | null): void;
+  /** Build again from the atlas now (new sheets arrived, or the art streamer is marking the sheets in use). */
+  rebuild(): void;
   dispose(): void;
 }
 
-const MASS = 0x5c5854;
-const GROUND = 0x968a76;
-/** Height of a rock-mass block in tiles of height (taller than a crew member, lower than a wall). */
+/** Height of a rock-mass block in tiles of height (the art's ZM). */
 export const ROCK_MASS_Z = 1.2;
-/** Ground slab edge, as a fraction of the tile height (where ground meets space). */
-const GROUND_RIM = 0.25;
+/** Mass sits a hair behind other things on its diagonal. */
+const MASS_DZ = -0.1;
 
-const tileHash = (x: number, y: number): number => {
-  let h = Math.imul(x, 0x27d4eb2d) ^ Math.imul(y, 0x165667b1);
-  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
-  return ((h ^ (h >>> 13)) >>> 0) / 4294967296;
-};
+const ORE_KIND: Record<string, string> = { 'ore.iron': 'iron', 'ore.ice': 'ice', 'ore.rare': 'rare' };
 
-function shade(c: number, f: number): number {
-  const ch = (s: number) => Math.min(255, Math.round(((c >> s) & 255) * f));
-  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
-}
-
-/** Sum of the struct and ore chunk revisions under the asteroid's bbox: a change detector (revisions only grow). */
+/** Sum of the struct, ore and ore-amount chunk revisions under the asteroid's bbox (padded by one): a change detector. */
 function revision(sector: SectorGrid, a: Asteroid): number {
   let rev = 0;
-  for (let cy = Math.floor(a.y / CHUNK_SIZE); cy <= Math.floor((a.y + a.height - 1) / CHUNK_SIZE); cy++) {
-    for (let cx = Math.floor(a.x / CHUNK_SIZE); cx <= Math.floor((a.x + a.width - 1) / CHUNK_SIZE); cx++) {
-      rev += sector.chunkRevision('struct', cx, cy) + sector.chunkRevision('ore', cx, cy);
+  for (let cy = Math.floor((a.y - 1) / CHUNK_SIZE); cy <= Math.floor((a.y + a.height) / CHUNK_SIZE); cy++) {
+    for (let cx = Math.floor((a.x - 1) / CHUNK_SIZE); cx <= Math.floor((a.x + a.width) / CHUNK_SIZE); cx++) {
+      rev += sector.chunkRevision('struct', cx, cy) + sector.chunkRevision('ore', cx, cy) + sector.chunkRevision('oreAmt', cx, cy);
     }
   }
   return rev;
 }
 
-function draw(g: Graphics, sector: SectorGrid, a: Asteroid, oreColor: (code: number) => number): void {
-  g.clear();
-  const hw = TILE_W / 2, hh = TILE_H / 2;
-  const tall = ROCK_MASS_Z * Z_PX, rim = TILE_H * GROUND_RIM;
-  const kind = (x: number, y: number) => sector.get('struct', x, y);
-  const mass = (x: number, y: number) => kind(x, y) === Struct.Rock;
-  const solidBelow = (x: number, y: number) => kind(x, y) === Struct.Rock || kind(x, y) === Struct.Ground;
-  // back to front (x + y ascending), so a nearer block covers the one behind it
-  for (let d = 0; d <= a.width + a.height - 2; d++) {
-    for (let lx = Math.max(0, d - a.height + 1); lx <= Math.min(a.width - 1, d); lx++) {
-      const x = a.x + lx, y = a.y + d - lx;
-      const k = kind(x, y);
-      if (k !== Struct.Rock && k !== Struct.Ground) continue;
-      const ore = sector.get('ore', x, y);
-      const c = iso(x, y);
-      if (k === Struct.Ground) {
-        const base = ore ? mix(oreColor(ore), GROUND, 0.5) : GROUND;
-        if (!solidBelow(x, y + 1)) g.poly([c.x - hw, c.y, c.x, c.y + hh, c.x, c.y + hh + rim, c.x - hw, c.y + rim]).fill(shade(GROUND, 0.6));
-        if (!solidBelow(x + 1, y)) g.poly([c.x, c.y + hh, c.x + hw, c.y, c.x + hw, c.y + rim, c.x, c.y + hh + rim]).fill(shade(GROUND, 0.45));
-        g.poly([c.x, c.y - hh, c.x + hw, c.y, c.x, c.y + hh, c.x - hw, c.y]).fill(base);
-        const r = tileHash(x, y);
-        if (r < 0.18) {
-          // a small crater pit: dark bowl with a lit far lip
-          const px = c.x + (tileHash(y, x) - 0.5) * hw * 0.6, py = c.y + (r * 5 - 0.5) * hh * 0.5;
-          g.ellipse(px, py, hw * 0.28, hh * 0.28).fill(shade(GROUND, 0.7));
-          g.ellipse(px, py + hh * 0.04, hw * 0.2, hh * 0.18).fill(shade(GROUND, 0.55));
+const cuts = (c: number) => (c ? `.c${c}` : '');
+
+/** Inner-corner cut bits: the diagonal is not `solid` while both neighbours beside it are. */
+function cutBits(solid: (dx: number, dy: number) => boolean, nw: boolean): number {
+  const n = solid(0, -1), e = solid(1, 0), s = solid(0, 1), w = solid(-1, 0);
+  return (s && e && !solid(1, 1) ? 1 : 0) | (s && w && !solid(-1, 1) ? 2 : 0) | (n && e && !solid(1, -1) ? 4 : 0) | (nw && n && w && !solid(-1, -1) ? 8 : 0);
+}
+const maskOf = (solid: (dx: number, dy: number) => boolean): number =>
+  (solid(0, -1) ? 1 : 0) | (solid(1, 0) ? 2 : 0) | (solid(0, 1) ? 4 : 0) | (solid(-1, 0) ? 8 : 0);
+
+interface Built {
+  root: Container;
+  mass: Sprite[];
+  rev: number;
+  gen: number;
+}
+
+export function createAsteroidView(world: World, atlas: Atlas, L: Layers, ores: Readonly<Record<string, { code: number; amount: readonly [number, number] }>>): AsteroidView {
+  const byCode = new Map(Object.entries(ores).map(([id, o]) => [o.code, { kind: ORE_KIND[id] ?? 'iron', mid: (o.amount[0] + o.amount[1]) / 2 }]));
+  const views = new Map<number, Built>();
+  let last: SectorGrid | null = null;
+
+  function drop(b: Built): void {
+    b.root.destroy({ children: true });
+    for (const s of b.mass) s.destroy();
+  }
+
+  function build(sector: SectorGrid, a: Asteroid, b: Built): void {
+    b.root.removeChildren().forEach((c) => c.destroy());
+    for (const s of b.mass) s.destroy();
+    b.mass.length = 0;
+    const kind = (x: number, y: number) => sector.get('struct', x, y);
+    for (let d = 0; d <= a.width + a.height - 2; d++) {
+      for (let lx = Math.max(0, d - a.height + 1); lx <= Math.min(a.width - 1, d); lx++) {
+        const x = a.x + lx, y = a.y + d - lx;
+        const k = kind(x, y);
+        if (k !== Struct.Rock && k !== Struct.Ground) continue;
+        const h = tileHash(x, y) >>> 8;
+        const solid = (dx: number, dy: number) => { const n = kind(x + dx, y + dy); return n === Struct.Rock || n === Struct.Ground; };
+        const gm = maskOf(solid), gc = cutBits(solid, true);
+        const g = `rock.ground.m${gm}${cuts(gc)}`;
+        if (k === Struct.Ground) {
+          const v = h % (gm === 15 && !gc ? 8 : 3);
+          const s = atlas.firstOf([`${g}.v${v}`, `${g}.v0`]);
+          if (s) addStatic(L, s, x, y, 0, b.root);
+          continue;
         }
-        continue;
+        const under = atlas.stat(`${g}.under`);
+        if (under) addStatic(L, under, x, y, 0, b.root);
+        const rock = (dx: number, dy: number) => kind(x + dx, y + dy) === Struct.Rock;
+        const m = maskOf(rock), c = cutBits(rock, false);
+        const ore = sector.get('ore', x, y);
+        const def = ore ? byCode.get(ore) : undefined;
+        const mm = `m${m}${cuts(c)}`;
+        const chain = def
+          ? [`rock.ore.${def.kind}.${sector.get('oreAmt', x, y) >= def.mid ? 'rich' : 'thin'}.${mm}`, `rock.mass.${mm}.v${h % 4}`, `rock.mass.m${m}.v${h % 4}`]
+          : [`rock.mass.${mm}.v${h % 4}`, `rock.mass.${mm}.v0`, `rock.mass.m${m}.v0`];
+        const s = atlas.firstOf(chain);
+        if (s) b.mass.push(...addStatic(L, s, x, y, depthKey(x, y) + MASS_DZ, L.sorted));
       }
-      const base = ore ? oreColor(ore) : MASS;
-      const top = c.y - tall;
-      if (!mass(x, y + 1)) g.poly([c.x - hw, top, c.x, top + hh, c.x, c.y + hh, c.x - hw, c.y]).fill(shade(MASS, 0.7));
-      if (!mass(x + 1, y)) g.poly([c.x, top + hh, c.x + hw, top, c.x + hw, c.y, c.x, c.y + hh]).fill(shade(MASS, 0.5));
-      const lit = !mass(x - 1, y) || !mass(x, y - 1) ? 1.25 : 1;
-      g.poly([c.x, top - hh, c.x + hw, top, c.x, top + hh, c.x - hw, top]).fill(shade(base, lit));
     }
   }
-}
 
-function mix(a: number, b: number, t: number): number {
-  const ch = (s: number) => Math.round(((a >> s) & 255) * t + ((b >> s) & 255) * (1 - t));
-  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
-}
+  function sync(sector: SectorGrid, force: boolean): void {
+    const live = new Set(world.query(AsteroidC));
+    for (const [id, b] of views) {
+      if (!live.has(id)) {
+        drop(b);
+        views.delete(id);
+      }
+    }
+    for (const id of live) {
+      const a = world.get(id, AsteroidC) as Asteroid;
+      let b = views.get(id);
+      if (!b) {
+        const root = new Container();
+        L.floor.addChild(root);
+        views.set(id, (b = { root, mass: [], rev: -1, gen: -1 }));
+      }
+      const rev = revision(sector, a);
+      if (force || rev !== b.rev || b.gen !== atlas.generation) {
+        build(sector, a, b);
+        b.rev = rev;
+        b.gen = atlas.generation;
+      }
+    }
+  }
 
-/** Draws every AsteroidC region into `layer` (a container in the sector frame, art origin = sector tile (0, 0)). */
-export function createAsteroidView(world: World, layer: Container, ores: Readonly<Record<string, { code: number; color: number }>>): AsteroidView {
-  const colors = new Map(Object.values(ores).map((o) => [o.code, o.color]));
-  const oreColor = (code: number) => colors.get(code) ?? 0xffffff;
-  const views = new Map<number, { g: Graphics; rev: number }>();
   return {
     update(sector) {
-      const live = new Set(sector ? world.query(AsteroidC) : []);
-      for (const [id, v] of views) {
-        if (!live.has(id)) {
-          v.g.destroy();
-          views.delete(id);
-        }
+      last = sector;
+      if (!sector) {
+        for (const b of views.values()) drop(b);
+        views.clear();
+        return;
       }
-      if (!sector) return;
-      for (const id of live) {
-        const a = world.get(id, AsteroidC) as Asteroid;
-        let v = views.get(id);
-        if (!v) {
-          v = { g: new Graphics(), rev: -1 };
-          layer.addChild(v.g);
-          views.set(id, v);
-        }
-        const rev = revision(sector, a);
-        if (rev !== v.rev) {
-          draw(v.g, sector, a, oreColor);
-          v.rev = rev;
-        }
-      }
+      sync(sector, false);
+    },
+    rebuild() {
+      if (last) sync(last, true);
     },
     dispose() {
-      for (const v of views.values()) v.g.destroy();
+      for (const b of views.values()) drop(b);
       views.clear();
     },
   };

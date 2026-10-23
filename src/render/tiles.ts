@@ -6,15 +6,13 @@ export type Chain = string[];
 /** Wall view mode: up = walls up, auto = cutaway (partitions cut, far hull full), down = shortest (whole hull a ghost rim). */
 export type CutawayMode = "auto" | "up" | "down";
 
-/** Wall art treats a finished rock wall as a wall (same pieces, runs and cut views); only its tint differs (`ROCK_WALL_TINT`). */
+/** Wall art treats a finished rock wall as a wall (same pieces, runs and cut views); its sprites are `tile.rockwall.*`. */
 export const artKind = (k: number): number => (k === Struct.RockWall ? Struct.Wall : k);
-/** Multiply tint that turns the metal wall sprites into dressed stone (placeholder until rock-wall art exists). */
-export const ROCK_WALL_TINT = 0xff9a82;
 
 /**
  * Wall art reads tiles through a `KindAt` that keeps a finished rock wall as `Struct.RockWall` (`RegionTiles.wallAt`): it
  * connects like a wall but is never hull, whatever lies beside it (rock mass, ground or space), so it always draws as an
- * interior wall piece (tinted by `ROCK_WALL_TINT`).
+ * interior wall piece (`tile.rockwall.*`, the `wall` family's twin).
  */
 const solidish = (k: number) => k === Struct.Wall || k === Struct.Door || k === Struct.RockWall;
 const isWallish = (k: number) => k === Struct.Wall || k === Struct.RockWall;
@@ -210,7 +208,7 @@ export function wallPieces(
   }
   // Corner fills (wallCorners): `m<mask>c<bits>` first, today's `m<mask>` last, so partial art falls back cleanly.
   const c = wallCorners(kindAt, x, y, mask);
-  const fam = hull ? "hull" : "wall";
+  const fam = hull ? "hull" : kind === Struct.RockWall ? "rockwall" : "wall";
   const pre = `tile.${fam}.${PRE[level]}`;
   const base = `${pre}m${mask}`;
   const chain = c ? [...new Set([`${base}c${c}${v}`, `${base}c${c}`, base + v, base])] : [base + v, base];

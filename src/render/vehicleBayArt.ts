@@ -78,7 +78,9 @@ export function shuttleHome(world: World, bay: number): boolean {
 
 /** Asset id of a bay sprite state, and of the shuttle parked in it. */
 export const bayId = (asset: string, rot: number, state: string): string => `${asset}.r${rot}${state ? `.${state}` : ''}`;
-export const parkedId = (rot: number, state: string): string => `vehicle.shuttle.parked.r${rot}${state ? `.${state}` : ''}`;
+export const parkedId = (rot: number, state: string, craft = 'vehicle.shuttle'): string => `${craft}.parked.r${rot}${state ? `.${state}` : ''}`;
+/** The craft a bay of this class parks (art id prefix): pod bays hold mining pods, the rest shuttles. */
+const craftOf = (def: ModuleDef): string => (def.vehicleBay?.class === 'pod' ? 'vehicle.mining_pod' : 'vehicle.shuttle');
 
 /** The parked shuttle sorts over the bay's own glow and halo (key + 0.01 / 0.015), so the pit's lights never paint over it. */
 export const PARKED_DZ = 0.019;
@@ -91,6 +93,7 @@ export const PARKED_DZ = 0.019;
 export function vehicleBayLayers(m: Module, def: ModuleDef, s: BayStep): ModuleLayer[] {
   const a = def.asset;
   const out: ModuleLayer[] = [{ chain: [bayId(a, m.rot, s.bay), bayId(a, m.rot, ''), a], key: a, tiles: 'all', strips: true }];
-  if (s.shuttle !== null) out.push({ chain: [parkedId(m.rot, s.shuttle), parkedId(m.rot, '')], key: 'vehicle.shuttle.parked', tiles: 'all', strips: true, dz: PARKED_DZ });
+  const craft = craftOf(def);
+  if (s.shuttle !== null) out.push({ chain: [parkedId(m.rot, s.shuttle, craft), parkedId(m.rot, '', craft)], key: `${craft}.parked`, tiles: 'all', strips: true, dz: PARKED_DZ });
   return out;
 }

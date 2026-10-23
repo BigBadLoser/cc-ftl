@@ -109,7 +109,7 @@ interface RendererContent {
   /** The EVA suit, for the air bar over suited crew. */
   suit?: { airSec: number };
   /** Ore kinds (code and placeholder colour) for the asteroid placeholder drawing. */
-  ores?: Readonly<Record<string, { code: number; color: number }>>;
+  ores?: Readonly<Record<string, { code: number; color: number; amount: readonly [number, number] }>>;
   /** Vehicle classes by def id: pods ('pod') are drawn by podView, not as shuttles. */
   vehicles?: Readonly<Record<string, { class: string; size?: number }>>;
 }
@@ -157,12 +157,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   stage.addChild(SL.world);
   const sectorParticles = createParticles(atlas, SL);
   const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules });
-  // Asteroids (PLACEHOLDER drawing, asteroidView.ts): one region layer set in the sector frame, under every ship's tiles.
+  // Asteroids (rock sprites, asteroidView.ts): one region layer set in the sector frame, under every ship's tiles.
   const rockLayers = W.region(false);
   rockLayers.setOrigin(0, 0, 0);
-  const asteroids = createAsteroidView(world, rockLayers.floor, content.ores ?? {});
+  const asteroids = createAsteroidView(world, atlas, rockLayers, content.ores ?? {});
   const isPod = (def: string) => content.vehicles?.[def]?.class === 'pod';
-  const pods = createPodView(world, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined) });
+  const pods = createPodView(world, atlas, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined) });
 
   // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle
   // parked in a bay is the bay's own layer (vehicleBayArt).
@@ -265,6 +265,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       rebuild() {
         for (const sc of scenes.values()) sc.dispose();
         scenes.clear();
+        asteroids.rebuild();
       },
       sync,
     },
