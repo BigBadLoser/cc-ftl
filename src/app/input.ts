@@ -18,6 +18,8 @@ export interface InputHandlers {
   onKey(key: string): void;
   /** Mouse hover tile (null when off-grid or pointer left). */
   onHover(tile: Tile | null): void;
+  /** Height (tiles) above the ground that picked tiles are read at: the mining tool paints the tops of rock blocks. Default 0. */
+  pickLift?(): number;
 }
 
 const DRAG_THRESHOLD = 4;
@@ -58,7 +60,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
       dragging = false;
       multi = false;
       painting = e.button === 0 && h.paintMode();
-      if (painting) h.onPaint('start', renderer.pickSector(start.x, start.y));
+      if (painting) h.onPaint('start', renderer.pickSector(start.x, start.y, h.pickLift?.()));
     } else if (pointers.size === 2) {
       if (painting) {
         painting = false;
@@ -73,7 +75,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     const p = local(e);
     const prev = pointers.get(e.pointerId);
     if (!prev) {
-      if (e.pointerType === 'mouse') h.onHover(renderer.pickSector(p.x, p.y));
+      if (e.pointerType === 'mouse') h.onHover(renderer.pickSector(p.x, p.y, h.pickLift?.()));
       return;
     }
     if (pointers.size >= 2) {
@@ -87,12 +89,12 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     }
     pointers.set(e.pointerId, p);
     if (painting) {
-      h.onPaint('move', renderer.pickSector(p.x, p.y));
+      h.onPaint('move', renderer.pickSector(p.x, p.y, h.pickLift?.()));
       return;
     }
     if (!dragging && Math.hypot(p.x - start.x, p.y - start.y) >= DRAG_THRESHOLD) dragging = true;
     if (dragging) renderer.pan(p.x - prev.x, p.y - prev.y);
-    else if (e.pointerType === 'mouse') h.onHover(renderer.pickSector(p.x, p.y));
+    else if (e.pointerType === 'mouse') h.onHover(renderer.pickSector(p.x, p.y, h.pickLift?.()));
   };
 
   const onUp = (e: PointerEvent) => {
@@ -102,7 +104,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     if (painting && e.pointerId === downId) {
       painting = false;
       const p = local(e);
-      h.onPaint(e.type === 'pointerup' ? 'end' : 'cancel', renderer.pickSector(p.x, p.y));
+      h.onPaint(e.type === 'pointerup' ? 'end' : 'cancel', renderer.pickSector(p.x, p.y, h.pickLift?.()));
     } else if (e.pointerId === downId && e.type === 'pointerup' && !dragging && !multi) {
       const p = local(e);
       h.onTap(p.x, p.y);

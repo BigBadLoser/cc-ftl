@@ -134,7 +134,7 @@ Planner's calls:
 - Mining UI: click plain asteroid rock (or a hidden base under it) or the asteroid tile in the node strip to open the asteroid
   panel: ore left by kind, the player's pods (status, pilot, hold, trips) with Mine (sends `mining.order` for the whole
   asteroid) and Recall, and Claim for a base. The vehicle panel (select a pod bay) lists the pods too. Alerts: "Mining pod waits for
-  a free pilot", "Mining done". No tile/area paint mode for `tiles` yet (the command takes them).
+  a free pilot", "Mining done". The paint mode for `tiles` came in slice 5.
 - Pod: **the pod bay comes with its pod** when crew build it (`vehicleBay.builtWith`); its cost covers both (28 metal, 12
   electronics, 4 polymer; 18 s of work). No separate pod item or recipe. The pod bay is in the modules build menu.
 - Claiming: build menu "Claim asteroid", drag a rectangle (4-60 tiles a side, inside the asteroid's box, at least half on its
@@ -150,11 +150,53 @@ Planner's calls:
 - A pod bay job whose footprint lies across a busy corridor can wait for a long time: crew walking through block the finish
   (an existing rule for solid modules).
 
+**Slice 5 (branch `asteroids-2`; done): base logistics, mining paint, outpost defence and docks (save v34).** Planner's calls:
+- **Shuttle runs (`src/sim/ferry/`).** One order, `ferry.order { vehicle?, from, to, items?, crew? }` (`ferry.cancel { vehicle }`), carries
+  cargo and/or crew between two player regions (the home ship or a claimed base). The shuttle (named, or the first free one, a stowed one
+  preferred) flies itself (`Vehicle.autopilot`, as for trade). `FerryC` on the vehicle is a small state machine (`systems` order: after
+  `tradeSystem`): `toFrom` -> `gather` -> `toDest` -> `deliver` -> `home`, built only from the existing vehicle commands and cargo hauls.
+  A region with a free working airlock is **docked** at (`dockError`, the same reservation as trade); a region with none is **hovered**
+  at (`vehicle.hover`, never the shuttle's own home ship, so the home ship needs a working airlock). Docked: station crew haul the load
+  into the hold through the unloaders (`makeHaul`, up to 90 s, then an instant swap in case nobody is there) and `cargoJobsSystem`
+  unloads it at the other end; hovering: the swap is instant after `trade.exchangeSec`. Cargo is clipped to what `from` holds and to the
+  hold (40). Crew: docked, they walk to the airlock's inside tile and climb in (`vehicle.embark`) and walk off at the far end; hovering, suited
+  crew `eva.board` / `eva.out` (a base with no airlock needs suits; crew without one are left behind). Crew who land by EVA keep their suit,
+  are undrafted (the shuttle's `outsideCrew` check would otherwise hold it forever) and are crew of that region for jobs. Not done: crew
+  walking between regions (they are never close), a "stop work and come home" auto order, base supply hauling by itself.
+  Events `ferry.started|delivered|done`. A shuttle on a run, a trade run or a mining order is busy (`ferryFree`).
+- **UI.** (The shuttle panel's "Base run" form is gone: see "Logistics" below.) Crew card: "Go to
+  <base>" / "Come home" under "Base trip" (picks a free shuttle). `UiShuttles.regions` and `ferryReady` feed both.
+- **Logistics (`src/sim/logistics/`, save v35).** The player no longer micro-manages runs. `transfer.order { from, to, items }` queues an
+  order (its own entity, `TransferC`: items left, moved/total, status `queued|boarding|underway|blocked`); `transfer.cancel { order }` ends it.
+  `logisticsSystem` (after `ferrySystem`) gives each queued order the lowest free shuttle (`ferryFree`) and the free crew member on the
+  shuttle's home ship with the best piloting (`pickPilot`, so real pilots first; undrafted, not reserved), who walks to the bay and
+  climbs in; then it starts an ordinary ferry run (`startFerry`, shared with `ferry.order`) for one hold-load. The ferry flow settles
+  each trip (`settleTransfer`, called as the run ends) and the next trip starts by itself. Orders with no shuttle, pilot, dock or stock
+  wait and retry (events `transfer.blocked`, reason `noShuttle|noPilot|noAirlock|noStock|failed`); three failed trips in a row wait for
+  a cancel. Cancel: a queued or boarding order just ends, a trip not yet loaded is called home, one already loaded finishes its delivery.
+  Events `transfer.queued|underway|delivered|blocked|cancelled` (alerts: salvage queued, delivered, blocked).
+- **Salvage auto-ferry** (`logistics/salvage.ts`). On a captured prize or ruined derelict where player crew stand, the loot (storage and loose
+  stacks) is queued home as one auto order when it fills a shuttle hold, or when the site went quiet (no open jobs there, pile unchanged for
+  20 s). One open salvage order per site. Pickup regions can be such sites (`isPickupRegion`); loose stacks are taken by crew hauls, or by
+  the instant swap when nobody hauls. Derelicts with no crew of ours on them are left alone.
+- **Transfers UI.** Stock drawer, "Transfers" tab (`TransferSection.svelte`): From and To `Select`s, a `NumberStepper` per stocked item, a
+  Transfer button, and the queue with status, progress and Cancel. `UiShuttles.transfers` feeds it.
+- **Mining paint.** Build menu "Mine ore (paint)" (tool kind `mine`, `UiToolState.pods`) and a "Paint ore to mine..." button in the
+  asteroid panel, with chips to choose which pods (all by default). Drag a rectangle: the preview highlights only the ore tiles in it, and
+  release sends `mining.order { pod, asteroid, tiles }` to each chosen pod (every pod when none is chosen; one asteroid per drag, the first
+  ore tile's). "No ore in that rectangle" toast otherwise.
+- **Outposts.** A woken dug (hostile) outpost already ran like a woken den (checked scenario by scenario, now pinned by
+  `content/ships/outpostDefence.test.ts`): wake by aim, damage, boarding or a dig/breach gives it a `CombatC`, the node goes into combat,
+  its turrets shoot the player's ship and hovering shuttles, and the station alarm sends security to intruders. The gap was the dock:
+  `ShipC.outpost.dock` (module id of the airlock on the rock face) is now recorded by `stampOutpost`; `dockError` refuses any other airlock
+  of an outpost (`notDock`; they open onto ground) and the shuttle panel lists only the dock. Surface (neutral) outposts therefore trade by
+  shuttle at that dock exactly like a station (`trade/stationDock.ts`, tested). NPC factions choosing outposts by kind is not done (galaxy
+  branch).
+
 **Next slices, in order:**
-1. Base logistics: carry materials and crew between the home ship and a base (shuttle cargo runs, a "go to base" order),
-   and the tile paint mode for mining orders.
-2. (Crews, trader and director done, see Slice 3.) Still open: enemy outposts defending when woken, NPC factions picking outposts by kind, an outpost dock the player's shuttles can use.
-3. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew; pod and pod-bay art.
+1. (Crews, trader, director, base logistics, mining paint, outpost defence and docks done, see Slices 3 and 5.) Still open: NPC factions
+   picking outposts by kind; crew walking between regions in suits when they are close; auto-supply of a base.
+2. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew; pod and pod-bay art.
 
 ## Stations, slice 1: generation (branch `stations`; not merged)
 

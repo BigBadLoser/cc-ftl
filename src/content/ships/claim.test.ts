@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AboardC, AsteroidC, CrewC, PositionC, ShipC, Struct, SuitC, VehicleC, deserialize, homeShip, newGame, serialize,
+  AboardC, AsteroidC, CrewC, ItemStackC, regionItems, PositionC, ShipC, Struct, SuitC, VehicleC, deserialize, homeShip, newGame, serialize,
   shipGrid, type Sim,
 } from '../../sim';
+import { shipIdAt } from '../../sim/regions';
 import { content } from '../index';
 
 function run(sim: Sim, n: number, until?: (l: string[]) => boolean): string[] {
@@ -74,5 +75,19 @@ describe('claiming an asteroid', () => {
     expect(sim.world.has(crew[1]!, SuitC)).toBe(true);
     expect([Struct.Ground, Struct.Space]).toContain(g.get('struct', p!.x, p!.y));
   });
-});
 
+  it('a transfer order bootstraps a fresh claimed base with no storage: everything lands as floor stacks', () => {
+    const { sim, asteroid } = setup();
+    sim.enqueue({ type: 'asteroid.claim', asteroid, ...westRect(sim, asteroid) });
+    run(sim, 1);
+    const base = [...sim.world.query(ShipC)].find((id) => sim.world.get(id, ShipC)?.base)!;
+    expect(regionItems(sim, base, 'item.metal')).toBe(0);
+    sim.enqueue({ type: 'transfer.order', from: homeShip(sim), to: base, items: [{ item: 'item.metal', count: 25 }] });
+    const log = run(sim, 12000, (l) => l.includes('ferry.done'));
+    expect(log).toContain('ferry.delivered');
+    expect(log).not.toContain('transfer.blocked');
+    expect(regionItems(sim, base, 'item.metal')).toBe(25);
+    const stacks = [...sim.world.query(ItemStackC)].map((i) => sim.world.get(i, ItemStackC)!).filter((st) => st.item === 'item.metal' && shipIdAt(sim, st.x, st.y) === base);
+    expect(stacks.reduce((n, st) => n + st.count, 0)).toBe(25);
+  });
+});

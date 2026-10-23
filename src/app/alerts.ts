@@ -20,6 +20,8 @@ export interface Alerts {
 }
 
 /** Turns sim events into a short, deduplicated, dismissable alert queue (UI-side only; never feeds the sim). */
+const BLOCKED = { noShuttle: 'no free shuttle', noPilot: 'no free pilot', noAirlock: 'no working airlock', noStock: 'nothing left to take', failed: 'trips keep failing' } as const;
+
 export function createAlerts(sim: Sim): Alerts {
   const store = createStore<UiAlert[]>([]);
   const keys = new Map<number, string>();
@@ -99,6 +101,9 @@ export function createAlerts(sim: Sim): Alerts {
       case 'combat.started': return { kind: e.type, key: 'cs', text: 'Hostile ship in range: combat!', at: null };
       case 'mining.waiting': return { kind: e.type, key: `mw${e.pod}`, text: 'Mining pod waits for a free pilot', at: null };
       case 'mining.done': return { kind: e.type, key: `md${e.pod}`, text: e.reason === 'exhausted' ? `Mining done: ore used up (${e.trips} trips)` : e.reason === 'recalled' ? 'Mining pod recalled' : 'Mining pod lost its bay', at: null };
+      case 'transfer.queued': return e.auto ? { kind: 'transfer', key: `tq${e.order}`, text: `Salvage from ${shipName(e.from)?.name ?? 'a wreck'} queued for transfer`, at: null } : null;
+      case 'transfer.delivered': return e.final ? { kind: 'transfer', key: `tq${e.order}`, text: `Transfer delivered to ${shipName(e.to)?.name ?? 'the destination'}`, at: null } : null;
+      case 'transfer.blocked': return { kind: 'transfer', key: `tb${e.order}`, text: `Transfer blocked: ${BLOCKED[e.reason]}`, at: null };
       case 'outpost.discovered': return { kind: e.type, key: `od${e.ship}`, text: 'Hidden base discovered', at: shipCentre(e.ship) };
       case 'ship.provoked': return { kind: e.type, key: `op${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Ship'} turns hostile`, at: shipCentre(e.ship) };
       case 'module.destroyed': {

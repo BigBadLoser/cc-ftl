@@ -261,7 +261,7 @@ export type UiAlertKind =
   | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
   | 'story.notice' | 'story.lead' | 'trade'
   | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard' | 'station.alarm'
-  | 'outpost.discovered' | 'ship.provoked' | 'mining.waiting' | 'mining.done';
+  | 'outpost.discovered' | 'ship.provoked' | 'mining.waiting' | 'mining.done' | 'transfer';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -370,6 +370,12 @@ export interface UiShuttle {
   dockShip: string | null;
   /** The trade run it is on (status text and the partner's name), or null. */
   trade: { status: string; partner: string } | null;
+  /** The base-logistics run it is on (status text and the destination region's name), or null. */
+  ferry: { status: string; to: string } | null;
+  /** Units its hold takes. */
+  cargo: number;
+  /** Free for a new base run (idle, not a pod, no trade run). */
+  ferryFree: boolean;
   /** Module id of its home bay. */
   bay: number;
   /** Crew can climb in or out here right now (stowed in the bay, or docked). */
@@ -495,6 +501,28 @@ export interface UiShuttles {
   roster: UiShuttleCrew[];
   /** The player's vehicle bays (module ids) and whether each is empty. */
   bays: { id: number; empty: boolean }[];
+  /** The player's regions shuttles can run cargo and crew between (the home ship first, then claimed bases), with the stock in each region's storage. Empty with only the home ship. */
+  regions: { id: number; name: string; home: boolean; stock: { item: string; name: string; count: number }[] }[];
+  /** Logistics transfer orders, oldest first. */
+  transfers: UiTransfer[];
+  /** A shuttle is free to take a "go to base" order right now. */
+  ferryReady: boolean;
+}
+
+/** One logistics order: what is left to move between two regions, and what it is doing. */
+export interface UiTransfer {
+  id: number;
+  from: string;
+  to: string;
+  items: { item: string; name: string; count: number }[];
+  total: number;
+  moved: number;
+  trips: number;
+  /** 'queued' | 'boarding' | 'underway' | 'blocked' (blocked is shown in the warning colour). */
+  state: string;
+  status: string;
+  /** Queued by the game (salvage), not by the player. */
+  auto: boolean;
 }
 
 /** Where the combat overlay shows the enemy ship, in CSS px relative to the page. */
@@ -524,8 +552,8 @@ export interface UiLegend {
 }
 
 export type UiTool = 'select' | 'build' | 'deconstruct' | 'cancel';
-/** 'dig' / 'level' / 'finish' work rock mass (dig: Floor, level: Ground, finish: RockWall); 'claim' drags a base rectangle onto an asteroid. */
-export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim';
+/** 'dig' / 'level' / 'finish' work rock mass (dig: Floor, level: Ground, finish: RockWall); 'claim' drags a base rectangle onto an asteroid; 'mine' drags a rectangle over ore (the ore tiles in it go to the mining pods in `pods`, or every pod when empty). */
+export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim' | 'mine';
 /** A mining pod of the player's (VehicleC with a mining laser). */
 export interface UiPod {
   id: number;
@@ -570,6 +598,8 @@ export interface UiToolState {
   moduleDef: string | null;
   /** Quarter turns clockwise for module placement. */
   rot: number;
+  /** The 'mine' tool: pod ids the painted ore is ordered to (empty = every pod). */
+  pods?: number[];
 }
 
 export type UiCutaway = 'auto' | 'up' | 'down';
