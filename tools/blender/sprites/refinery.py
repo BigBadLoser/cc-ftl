@@ -24,7 +24,8 @@ RIM = 0.26                           # the rim's width
 D = 0.22                             # how deep the bays go
 BZ = (0.1, HT - 0.1)                 # the bays' floor and ceiling: the same margin above and below
 AV = -0.5                            # the access tile's v
-BAYS = {1: [(-1.42, -0.46, "output"), (-0.36, 0.36, "terminal"), (0.46, 1.42, "input")],
+TS = 0.48                            # the terminal slot's half width: a gap either side of the terminal's body
+BAYS = {1: [(-1.42, -0.62, "output"), (-TS, TS, "terminal"), (0.62, 1.42, "input")],
         -1: [(-1.42, -0.53, "rollers"), (-0.43, 0.43, "rollers"), (0.53, 1.42, "rollers")]}
 G, GT, GD, HOLE = "gm", "plate", "steelD", "dark"      # blockout: faces, tops, recesses, holes
 
@@ -69,13 +70,17 @@ def long_side(k, s):
     rows = [(0.0, BZ[0], False), (BZ[0], BZ[1], True), (BZ[1], HT, False)]
     cols = [None] + [e for v0, v1, _ in bays for e in (v0, v1)] + [None]     # None: where the side meets a corner
     at = lambda c, z, end: (wall_u(s, z), end * side_end(z) if c is None else c, z)    # noqa: E731
+    full = [kind == "terminal" for _, _, kind in bays]                        # the terminal's slot runs the full height
     for za, zb, cut in rows:
         for c in range(len(cols) - 1):
-            if cut and c % 2 == 1:                                            # a bay's opening
+            if c % 2 == 1 and (cut or full[c // 2]):                          # a bay's opening
                 continue
             ca, cb = cols[c], cols[c + 1]
             face(k, [at(ca, za, -1), at(cb, za, 1), at(cb, zb, 1), at(ca, zb, -1)], (s, 0, 0), G)
     for v0, v1, kind in bays:
+        if kind == "terminal":
+            slot(k, v0, v1)
+            continue
         recess(k, s, v0, v1)
         if kind in ("input", "output"):
             hatch(k, v0, v1, kind)
@@ -83,6 +88,15 @@ def long_side(k, s):
             for z, r in ((0.27, 0.14), (0.55, 0.13)):
                 u = wall_u(s, z) - s * (D - r - 0.01)
                 tube(k, (u, v0 + 0.03, z), (u, v1 - 0.03, z), r, G, sides=14, cap=GT)
+
+
+def slot(k, v0, v1):
+    """The terminal's slot, cut the full height of the +u side and through the rim, back to the deck opening's edge."""
+    ub = U - B - RIM
+    front = lambda v, z: (wall_u(1, z), v, z)                                 # noqa: E731
+    face(k, [(ub, v0, 0), (ub, v1, 0), (ub, v1, HT), (ub, v0, HT)], (1, 0, 0), GD)
+    face(k, [front(v0, 0), (ub, v0, 0), (ub, v0, HT), front(v0, HT)], (0, 1, 0), G)
+    face(k, [front(v1, 0), (ub, v1, 0), (ub, v1, HT), front(v1, HT)], (0, -1, 0), G)
 
 
 def recess(k, s, v0, v1):
@@ -102,6 +116,10 @@ def deck(k):
     inner = [(-iu, -iv), (iu, -iv), (iu, -iv), (iu, iv), (iu, iv), (-iu, iv), (-iu, iv), (-iu, -iv)]
     for i in range(8):                                                        # the rim, mitred to the octagon
         j = (i + 1) % 8
+        if i == 2:                                                            # the +u side: cut by the terminal's slot
+            for a, b, c, d in ((HI[2], (U - B, -TS), (iu, -TS), inner[2]), ((U - B, TS), HI[3], inner[3], (iu, TS))):
+                face(k, [(*a, HT), (*b, HT), (*c, HT), (*d, HT)], (0, 0, 1), GT)
+            continue
         pts = [(*HI[i], HT), (*HI[j], HT), (*inner[j], HT), (*inner[i], HT)]
         if inner[i] == inner[j]:
             pts = pts[:3]
@@ -182,7 +200,7 @@ def terminal(k):
     """The terminal: a base jutting out to the footprint's edge, its top sloping up to the slab, and the slab rising
     above the rim behind it (screen up top later)."""
     v0, v1 = -0.32, 0.32
-    u_in = U - B - RIM - 0.08                                                 # the slab rises through the rim from the deck
+    u_in = U - B - RIM                                                        # the slab's back joins the slot's back wall
     us = U - 0.24                                                             # the slab's face, set back
     k.box((u_in + us) / 2, (v0 + v1) / 2, 0, us - u_in, v1 - v0, HT + 0.45, G, top=GT)
     k.box((us + U - 0.02) / 2 - 0.01, 0, 0, U - 0.02 - us + 0.02, v1 - v0 + 0.02, 0.3, G)     # the base
