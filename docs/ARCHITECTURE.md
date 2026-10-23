@@ -467,6 +467,22 @@ palette.json    the single palette, read by Blender scripts and the game
 - Every action dispatches a command.
 - UI-only state (open drawers, selected tab) lives in `ui/` and never touches the sim.
 
+## UI kit, `src/ui/kit/`
+
+Small in-house controls for panels, built on [Bits UI](https://bits-ui.com) (headless, Svelte 5: it supplies keyboard, focus and
+ARIA behaviour and no styling). The game keeps its own look: every kit component is styled here with the tokens in
+`src/ui/theme.css` (sharp dark panels, the global `button.on` state, 40px touch targets, `--focus` ring), not by a styled library.
+
+- Components: `Select`, `NumberStepper`, `Segmented`, `Chips`, `Tooltip`, `Dialog`, `Slider`, exported from `src/ui/kit/index.ts`.
+  Props are plain values plus an `onChange` callback (controlled); options are `KitOption` (`value`, `label`, `sub`, `disabled`, `testId`).
+- **Rule: panels import from `ui/kit` only, never `bits-ui`.** ESLint (`no-restricted-imports`) allows `bits-ui` only under
+  `src/ui/kit`, so the library can be swapped by editing the kit alone. Panels still never mutate the sim; a kit control only reports a
+  value and the panel dispatches the command.
+- Adding one: create `src/ui/kit/<Name>.svelte` wrapping the Bits primitive (or plain Svelte if there is no fit), style it with theme tokens
+  (add a token to `theme.css` rather than a literal), keep it working at 390px wide with a visible focus ring, put pure logic in a
+  `<name>.ts` with a `*.test.ts` beside it, and export it from `index.ts`.
+- Portalled parts (Select list, Tooltip, Dialog) render under `body`, so their styles are `:global` and namespaced `kit-*`.
+
 ## Saves
 
 - A save is the serialized sim: ECS component stores, grid arrays (base64 typed arrays), RNG state,

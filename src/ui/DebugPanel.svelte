@@ -81,7 +81,7 @@
 </aside>
 
 <style>
-  aside { position: fixed; z-index: 6; top: calc(var(--hdr) + 236px + var(--sat)); right: calc(8px + var(--sar)); width: min(230px, calc(100vw - 16px)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px; max-height: calc(100vh - var(--hdr) - 250px); overflow-y: auto; }
+  aside { position: fixed; z-index: 6; top: calc(var(--hdr) + 236px + var(--sat)); right: calc(8px + var(--sar)); width: min(230px, calc(100vw - 16px)); background: var(--panel); border: 1px solid var(--line); border-radius: 0; padding: 8px; max-height: calc(100vh - var(--hdr) - 250px); overflow-y: auto; }
   aside button { min-height: 34px; font-size: 12px; padding: 0 6px; }
   dl { display: grid; grid-template-columns: 1fr auto; gap: 1px 12px; margin: 0 0 8px; font-size: 12px; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; color: var(--cyan); }

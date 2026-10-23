@@ -63,7 +63,7 @@
   .cap b { color: var(--text); }
   .bar.full > i { background: #ff9a3c; }
   .contents { list-style: none; margin: 8px 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; }
-  .contents li { display: flex; align-items: center; gap: 6px; background: #0e1626; border-radius: 8px; padding: 2px 8px 2px 4px; }
+  .contents li { display: flex; align-items: center; gap: 6px; background: #0e1626; border-radius: 0; padding: 2px 8px 2px 4px; }
   .contents .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .contents .empty { color: var(--dim); grid-column: 1 / -1; padding: 6px 8px; }
   .fh { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
