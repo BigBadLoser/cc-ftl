@@ -19,7 +19,7 @@ from .fxkit import N, P, R, U, UP, Fx, spikes
 
 O = Vector((0, 0, 0))
 LOOP = 4
-STYLE = "orange"              # the laser's colour (the pod's emitter is lit to match)
+STYLE = "red"                 # the laser's colour (the pod's emitter is lit to match)
 RAMPS = {                     # beam halo, sheath, core; hit rim, pool, hot spot (face, rim), flare; sparks by age
     "orange": dict(halo="fxO", sheath="fxY", core="fxW", rim="fxO", pool="fxY", spot=("fxW", "fxY"), flare="fxY",
                    sparks=("fxW", "fxY", "fxO", "fxR")),
@@ -77,6 +77,7 @@ def _at(a, out, up, t, fall=0.035):
 
 
 HIT = 1.4                     # the hit's size
+CHIPS = 1.8                   # the rock chips' size and throw
 DUST_SIZE = 2.0               # the dust cloud's size: it covers the tile mined out
 
 
@@ -101,12 +102,12 @@ def hit(k):
 def chips(k):
     f = Fx(f"mining_chips_{k}")
     rng = np.random.default_rng(31)
-    for i, (a, out, up, born) in enumerate(_thrown(rng, 8, 0.09, 0.2)):
+    for i, (a, out, up, born) in enumerate(_thrown(rng, 8, 0.09 * CHIPS, 0.2 * CHIPS)):
         age = (k - born) % LOOP + 0.6
-        c = _at(a, out, up, age, fall=0.06)
+        c = _at(a, out, up, age, fall=0.06 * CHIPS)
         if c.z < -0.02:
             continue
-        r = 0.035 + 0.015 * (i % 3)
+        r = (0.035 + 0.015 * (i % 3)) * CHIPS
         col = ("rkM", "rk", "rkD", "orM")[i % 4]
 
         def paint(n, col=col):
