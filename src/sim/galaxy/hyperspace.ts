@@ -9,6 +9,7 @@ import { TURN_TICKS } from './tuning';
 import { crossAfterHop, interdicted } from './encounters';
 import { liftFleetsAt, materialiseFleetsAt } from './fleetShips';
 import { bindMarkets, unbindMarkets } from './marketLive';
+import { populateNode } from './populate';
 import { takeHopTurn } from './turn';
 import type { EdgeData, Travel } from './types';
 
@@ -159,12 +160,15 @@ export function drop(sim: Sim, command = 'galaxy.drop'): boolean {
   }
   dropOut(sim, t.route[0] as string);
   const st = nodeState(sim, g.current);
-  if (!st.entered) {
+  const first = !st.entered;
+  if (first) {
     st.entered = true;
     for (const c of st.contacts) spawnContact(sim, g.current, c);
     st.contacts = st.contacts.filter((c) => c.ship !== undefined);
   }
   materialiseFleetsAt(sim, g.current);
+  // The node's structures go in last, east of the ships already there (and of the free water the player deploys in), then the stations become markets.
+  if (first) populateNode(sim, g.current);
   bindMarkets(sim);
   g.travel = null;
   g.rev++;

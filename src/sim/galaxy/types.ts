@@ -125,6 +125,8 @@ export interface NodeState {
   contacts: Contact[];
   /** The player has entered this node: its generated contacts have become ships (owned by the node's archive once left). */
   entered: boolean;
+  /** Its structures have been made real (populate.ts); once true they belong to the node's archive. */
+  populated?: true;
 }
 
 /**

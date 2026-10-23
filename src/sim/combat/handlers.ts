@@ -7,10 +7,9 @@ import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { placementGapError , shipIdOf } from '../regions';
-import { shipById, spawnShip, stampShip } from './ships';
+import { shipById, spawnShip } from './ships';
 import { generateShip } from '../shipgen/generate';
-import { ruin } from '../shipgen/ruin';
-import { applyRuin } from './derelict';
+import { spawnDerelict } from './derelict';
 
 type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy' | 'debug.spawnGenerated' | 'debug.spawnDerelict'>;
 type Handler<T extends CombatCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -54,22 +53,15 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (ship) ship.gen = { faction: cmd.faction, seed, depth: cmd.depth, role: gen.role };
   },
   'debug.spawnDerelict': (sim, cmd) => {
-    const faction = sim.content.factions?.[cmd.faction];
-    if (!faction) return reject(sim, cmd.type, 'badFaction');
+    if (!sim.content.factions?.[cmd.faction]) return reject(sim, cmd.type, 'badFaction');
     if (![cmd.cx, cmd.cy, cmd.depth].every(Number.isInteger) || cmd.depth < 0) return reject(sim, cmd.type, 'badValue');
     const seed = cmd.seed === undefined ? sim.rng.int(0, 0x7fffffff) : cmd.seed >>> 0;
-    const gen = generateShip(faction, cmd.faction, seed, cmd.depth, sim.content.modules);
-    if (gen.problems.length > 0) return reject(sim, cmd.type, 'noLayout');
-    const infest = faction.living ? 'alien' : 'robot';
-    const { template, meta } = ruin(gen.template, seed, { defs: sim.content.modules, intensity: cmd.intensity ?? 0.5, infest, origin: cmd.faction, ...(cmd.cause ? { cause: cmd.cause } : {}) });
-    const x = Math.min(sim.sector.width - gen.width, Math.max(0, cmd.cx - (gen.width >> 1)));
-    const y = Math.min(sim.sector.height - gen.height, Math.max(0, cmd.cy - (gen.height >> 1)));
-    const gap = placementGapError(sim, { x, y, w: gen.width, h: gen.height });
-    if (gap) return reject(sim, cmd.type, gap);
-    const shipId = stampShip(sim, template, { faction: 'neutral', x, y, state: 'wreck' });
-    applyRuin(sim, shipId, template, meta);
-    const ship = shipById(sim, shipId);
-    if (ship) ship.gen = { faction: cmd.faction, seed, depth: cmd.depth, role: gen.role };
+    // Centred on (cx, cy), kept inside the sector (the debug spawner never grows it).
+    const at = (w: number, h: number): { x: number; y: number } => ({
+      x: Math.min(sim.sector.width - w, Math.max(0, cmd.cx - (w >> 1))), y: Math.min(sim.sector.height - h, Math.max(0, cmd.cy - (h >> 1))),
+    });
+    const r = spawnDerelict(sim, { faction: cmd.faction, depth: cmd.depth, seed, at, intensity: cmd.intensity ?? 0.5, ...(cmd.cause ? { cause: cmd.cause } : {}) });
+    if (typeof r === 'string') return reject(sim, cmd.type, r);
   },
   'combat.setTarget': (sim, cmd) => {
     const ship = cmd.ship;

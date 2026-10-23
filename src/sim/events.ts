@@ -177,6 +177,7 @@ export type SimEvent =
   | { type: 'galaxy.rescued'; id: number; faction: string }
   | { type: 'galaxy.stalled'; node: string; need: number }
   | { type: 'galaxy.dropped'; node: string }
+  | { type: 'galaxy.populated'; node: string; count: number }
   | { type: 'galaxy.discovered'; count: number }
   | { type: 'galaxy.shipArrived'; node: string; faction: string; ship: number | null }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */

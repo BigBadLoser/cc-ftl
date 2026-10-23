@@ -3,6 +3,7 @@ import { TraderC, type Trader } from '../trade/types';
 import { advance, baseLines, econOf, toState, type Econ } from './market';
 import { strHash, unit } from './hash';
 import { portsAt } from './portIndex';
+import type { Port } from './ports';
 
 /**
  * The player's node and the world market (market.ts). A station standing in the player's node is the market of one of the node's ports while the player is
@@ -33,12 +34,27 @@ export function bindMarkets(sim: Sim): void {
     const i = Math.max(0, ports.findIndex((e) => e.profile === t.profile));
     const e = ports.splice(i, 1)[0];
     if (!e) break;
-    const full = advance(e, g.markets[e.id] ?? { turn: 0, stock: {} }, g.turn);
-    t.port = e.id;
-    t.profile = e.profile;
-    t.base = baseLines(e);
-    t.stock = Object.entries(full).filter(([, v]) => Math.round(v) > 0).map(([item, v]) => ({ item, count: Math.round(v) })).sort((a, b) => (a.item < b.item ? -1 : 1));
+    bindTrader(sim, t, e);
   }
+}
+
+/** The trader becomes the port's market: its profile, baseline and stock as of now. */
+function bindTrader(sim: Sim, t: Trader, e: Econ): void {
+  const g = sim.galaxy;
+  const full = advance(e, g.markets[e.id] ?? { turn: 0, stock: {} }, g.turn);
+  t.port = e.id;
+  t.profile = e.profile;
+  t.base = baseLines(e);
+  t.stock = Object.entries(full).filter(([, v]) => Math.round(v) > 0).map(([item, v]) => ({ item, count: Math.round(v) })).sort((a, b) => (a.item < b.item ? -1 : 1));
+}
+
+/** Bind a station that was made for a port (population.ts) to that port's market; false when the port has no market or the station no trader. */
+export function bindStation(sim: Sim, station: number, port: Port): boolean {
+  const t = sim.world.get(station, TraderC);
+  const e = econOf(sim, port);
+  if (!t || !e || t.port) return false;
+  bindTrader(sim, t, e);
+  return true;
 }
 
 /** The bound traders leave the market: their stock is written back as the port's state as of now and they are unbound. */

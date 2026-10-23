@@ -27,7 +27,7 @@ const param = new URLSearchParams(location.search).get('seed');
 const seed = param !== null && Number.isFinite(Number(param)) ? Number(param) >>> 0 : (Math.random() * 0x100000000) >>> 0;
 
 const errorLog = createErrorLog();
-const sim = newGame(seed, content);
+const sim = newGame(seed, content, undefined, true);
 const bridge = createBridge(sim);
 const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;

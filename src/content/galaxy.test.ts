@@ -25,8 +25,12 @@ const land = (sim: Sim) => {
 };
 /** Place the waiting ship in the middle of the sector (the deploy modal's job). */
 const deploy = (sim: Sim) => {
-  sim.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
-  sim.step();
+  // A node's structures stand east of x = 70 (galaxy/populate.ts): fall back to the free water in the west.
+  for (const [x, y] of [[100, 60], [20, 50]] as const) {
+    sim.enqueue({ type: 'sector.deploy', x, y });
+    sim.step();
+    if (sim.sector.state === 'active') break;
+  }
 };
 const rejections = (sim: Sim) => sim.events.drain().filter((e) => e.type === 'command.rejected').map((e) => (e as { reason: string }).reason);
 
