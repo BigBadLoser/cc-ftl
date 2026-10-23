@@ -1,6 +1,8 @@
 import { CrewC, DraftedC, JobC, PositionC } from '../crew/components';
 import { EvaFloatC, SuitC } from '../eva/components';
-import { outsideCrew } from '../eva/shuttle';
+import { outsideCrew, tileFrame } from '../eva/shuttle';
+import { BodyC } from '../body';
+import { Struct } from '../structure';
 import { makeHaul } from '../items/plan';
 import { spillItems, takeFromStack } from '../items/stacks';
 import { nearestSource, refKey, reservations } from '../items/stock';
@@ -86,7 +88,31 @@ function takeInstant(sim: Sim, id: number, region: number, f: Ferry): void {
   }
 }
 
-/** Put the hold into the region's storage at once. Returns the units that did not fit. */
+/** Where loose goods go down at the destination: inside the docked airlock, or the walkable tile nearest the hover point. */
+function dropPoint(sim: Sim, id: number, region: number): { x: number; y: number } | null {
+  const v = sim.world.get(id, VehicleC) as Vehicle;
+  if (v.state === 'docked') {
+    const at = boardingTile(sim, id);
+    return at && at.shipId === region ? at : null;
+  }
+  const body = sim.world.get(id, BodyC);
+  const grid = shipGrid(sim, region);
+  const frame = body && tileFrame(sim, region, body.x, body.y);
+  if (!frame || !grid?.has('struct')) return null;
+  let best: { x: number; y: number; d: number } | null = null;
+  for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+      const k = grid.get('struct', x, y);
+      if (k !== Struct.Floor && k !== Struct.Ground) continue;
+      if (!isTileWalkable(sim, grid, x, y)) continue;
+      const d = Math.hypot(x - frame.x, y - frame.y);
+      if (!best || d < best.d) best = { x, y, d };
+    }
+  }
+  return best;
+}
+
+/** Put the hold into the region's storage at once, the rest down as loose floor stacks. Returns the units that found no room. */
 function dropInstant(sim: Sim, id: number, region: number): number {
   const v = sim.world.get(id, VehicleC) as Vehicle;
   for (const q of [...v.cargo]) {
@@ -97,6 +123,11 @@ function dropInstant(sim: Sim, id: number, region: number): number {
       left -= storageAdd(sim, sid, q.item, left);
     }
     cargoTake(sim, id, q.item, q.count - left);
+  }
+  // No storage with room (a freshly claimed base has none): down on the floor, where the ordinary hauls find it.
+  const at = cargoCount(v) > 0 ? dropPoint(sim, id, region) : null;
+  if (at) {
+    for (const q of [...v.cargo]) cargoTake(sim, id, q.item, q.count - spillItems(sim, region, at.x, at.y, q.item, q.count));
   }
   return cargoCount(v);
 }

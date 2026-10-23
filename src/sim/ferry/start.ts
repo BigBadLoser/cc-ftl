@@ -1,4 +1,6 @@
 import { CrewC, DeadC, PositionC } from '../crew/components';
+import { SuitC } from '../eva/components';
+import { vehicleSuits } from '../eva/shuttle';
 import { isIncapacitated } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
@@ -39,6 +41,13 @@ export function startFerry(sim: Sim, req: FerryRequest): string | null {
     if (shipIdOf(sim, pos) !== req.from) return 'otherRegion';
   }
   if (crew.length > def.capacity + 1 - (v.pilot ? 1 : 0)) return 'full';
+  // Without an airlock the crew go by suit: a hover pickup takes only suited crew, a hover drop-off needs a suit for each
+  // (the shuttle's own plus those the crew already wear, which return to the hold as they board).
+  if (crew.length > 0) {
+    const worn = crew.filter((c) => sim.world.has(c, SuitC)).length;
+    if (ferryMode(sim, req.from, id) === 'hover' && worn < crew.length) return 'needSuits';
+    if (ferryMode(sim, req.to, id) === 'hover' && crew.length > vehicleSuits(sim, v) + worn) return 'needSuits';
+  }
   const items: { item: string; count: number }[] = [];
   let room = def.cargo ?? 0;
   if ((req.items?.length ?? 0) > 0 && cargoCount(v) > 0) return 'holdBusy';

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   AboardC, CrewC, FerryC, ModuleC, PositionC, SuitC, VehicleC, deserialize, homeShip, newGame, serialize, spawnCrew,
 } from '../../sim';
-import { done, outpostRegion, run, shuttleOf, stockOn } from './ferryFixture';
+import { ItemStackC } from '../../sim';
+import { done, outpostRegion, run, shuttleOf, stockOn, storages } from './ferryFixture';
 import { shipIdOf } from '../../sim/regions';
 import { content } from '../index';
 
@@ -117,5 +118,44 @@ describe('base logistics: crew go to the base and back', () => {
       expect(shipIdOf(sim, sim.world.get(c, PositionC))).toBe(base);
       expect(sim.world.has(c, SuitC)).toBe(false);
     }
+  });
+});
+
+describe('base logistics: bootstrap and suit limits', () => {
+  it('delivers to a base with no storage as loose floor stacks, by hover and by dock', () => {
+    for (const airlock of [false, true]) {
+      const sim = newGame(3, content);
+      const home = homeShip(sim);
+      const base = outpostRegion(sim, 70, 30, airlock);
+      for (const s of storages(sim, base)) sim.world.destroyEntity(s);
+      run(sim, 5);
+      expect(storages(sim, base).filter((s) => sim.world.has(s, ModuleC))).toHaveLength(0);
+      sim.enqueue({ type: 'ferry.order', from: home, to: base, items: [{ item: 'item.metal', count: 25 }] });
+      const log = run(sim, 9000, done);
+      expect(log).toContain('ferry.delivered');
+      expect(log).not.toContain('ferry.done:noRoom');
+      const loose = [...sim.world.query(ItemStackC)].map((i) => sim.world.get(i, ItemStackC)!)
+        .filter((st) => st.item === 'item.metal' && shipIdOf(sim, st) === base);
+      expect(loose.reduce((n, st) => n + st.count, 0)).toBe(25);
+      expect(sim.world.get(shuttleOf(sim), VehicleC)!.cargo).toEqual([]);
+    }
+  });
+
+  it('rejects more crew than the suits for a base with no airlock, and accepts them with an airlock', () => {
+    const sim = newGame(3, content);
+    const home = homeShip(sim);
+    const hover = outpostRegion(sim, 70, 30, false);
+    const docked = outpostRegion(sim, 70, 60, true);
+    run(sim, 5);
+    const crew = [...sim.world.query(CrewC)].sort((a, b) => a - b).slice(0, 4);
+    expect(crew).toHaveLength(4);
+    sim.enqueue({ type: 'ferry.order', from: home, to: hover, crew });
+    expect(run(sim, 1)).toEqual(['rejected:ferry.order:needSuits']);
+    sim.enqueue({ type: 'ferry.order', from: home, to: hover, crew: crew.slice(0, 3) });
+    expect(run(sim, 1)).toEqual(['ferry.started']);
+    sim.enqueue({ type: 'ferry.cancel', vehicle: shuttleOf(sim) });
+    run(sim, 6000, done);
+    sim.enqueue({ type: 'ferry.order', from: home, to: docked, crew });
+    expect(run(sim, 1)).toEqual(['ferry.started']);
   });
 });
