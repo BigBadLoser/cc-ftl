@@ -4,8 +4,8 @@ reference: 1 massing (this blockout, plain grey), 2 sub-forms, 3 colour and ligh
 Massing, in tiers. The hull is one battered solid (walls leaning in, corners cut by a big chamfer) up to its rim; its
 long sides have bays let into them (openings with real recesses behind) for the roller assemblies, the output hatch and
 the terminal. Its top is a rim round a deck opening: inside, the deck floor sits lower, with a channel along the +u half
-holding two sunken hoppers and a spine along the -u half carrying three round stacks. The crew side (+u, access tile at
-v -0.5, sim access [3, 1]) has the terminal slab in its middle bay. Local frame: modkit.K, u across the 3-tile width, v
+holding two sunken hoppers beside a spine about a tile wide down the middle, carrying three round stacks. The crew
+side (+u) has the terminal slab in its middle bay, a roller bay either side. Local frame: modkit.K, u across the 3-tile width, v
 along the 4."""
 import math
 
@@ -22,9 +22,9 @@ B = 0.2                              # the batter: how far the walls lean in, bo
 C = 0.4                              # the corner chamfer at the bottom
 RIM = 0.26                           # the rim's width
 D = 0.22                             # how deep the bays go
-BZ = (0.07, 0.55)                    # the bays' floor and ceiling
+BZ = (0.1, HT - 0.1)                 # the bays' floor and ceiling: the same margin above and below
 AV = -0.5                            # the access tile's v
-BAYS = {1: [(-1.4, -1.0, "hatch"), (-0.9, -0.1, "terminal"), (0.02, 0.66, "rollers"), (0.78, 1.42, "rollers")],
+BAYS = {1: [(-1.42, -0.46, "rollers"), (-0.36, 0.36, "terminal"), (0.46, 1.42, "rollers")],
         -1: [(-1.42, -0.53, "rollers"), (-0.43, 0.43, "rollers"), (0.53, 1.42, "rollers")]}
 G, GT, GD, HOLE = "gm", "plate", "steelD", "dark"      # blockout: faces, tops, recesses, holes
 
@@ -78,7 +78,7 @@ def long_side(k, s):
     for v0, v1, kind in bays:
         recess(k, s, v0, v1)
         if kind == "rollers":
-            for z, r in ((0.19, 0.12), (0.43, 0.11)):
+            for z, r in ((0.27, 0.14), (0.55, 0.13)):
                 u = wall_u(s, z) - s * (D - r - 0.01)
                 tube(k, (u, v0 + 0.03, z), (u, v1 - 0.03, z), r, G, sides=14, cap=GT)
 
@@ -111,8 +111,8 @@ def deck(k):
         face(k, [(*a, H), (*b, H), (*b, HT), (*a, HT)], -mid, GD)
     face(k, [(*p, H) for p in sq], (0, 0, 1), G)
     spine(k, iu, iv)
-    for v in (0.15, 0.95):                                                    # hoppers sunk in the channel
-        u, s = 0.42, 0.26
+    for v in (-0.45, 0.45):                                                   # hoppers sunk in the channel
+        u, s = 0.73, 0.23
         k.box(u, v, H - 0.02, 2 * s - 0.08, 2 * s - 0.08, 0.04, HOLE)
         for du, dv, su, sv in ((-s, 0, 0.06, 2 * s), (s, 0, 0.06, 2 * s), (0, -s, 2 * s, 0.06), (0, s, 2 * s, 0.06)):
             k.box(u + du, v + dv, H, su, sv, 0.22, G, top=GT)
@@ -120,7 +120,7 @@ def deck(k):
 
 def spine(k, iu, iv):
     """The raised block along the -u half of the deck, inside the rim, and its three round stacks."""
-    u0, u1, v0, v1, top = -iu + 0.02, -0.08, -iv + 0.1, iv - 0.1, H + 0.6
+    u0, u1, v0, v1, top = -0.45, 0.45, -iv + 0.1, iv - 0.1, H + 0.6        # about a tile wide, centred
     lo, hi = (u0, u1, v0, v1), (u0 + 0.05, u1 - 0.05, v0 + 0.05, v1 - 0.05)
     a, b = _oct(lo, 0.1), _oct(hi, 0.08)
     cen = Vector(((u0 + u1) / 2, 0, (H + top) / 2))
@@ -148,7 +148,7 @@ def stack(k, u, v, z0, z1, r, ri, n=20):
 
 def terminal(k):
     """The terminal slab, standing in its bay at the access tile and rising above the rim (screen up top later)."""
-    v0, v1 = -0.86, -0.14
+    v0, v1 = -0.32, 0.32
     u_in = wall_u(1, 0) - D
     k.box((u_in + U) / 2 - 0.02, (v0 + v1) / 2, 0, U - u_in - 0.04, v1 - v0, HT + 0.45, G, top=GT)
 
