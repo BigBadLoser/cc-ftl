@@ -86,7 +86,7 @@ def body(fb):
     loft(fb, B, SECTION, HULL, cap0=HULL_D, hole=BORE, recesses=cuts)      # (they run on through the drum)
     _g("panels")
     for u0, u1, t0, t1 in cuts:
-        H.recess(fb, B, SECTION, u0, u1, t0, t1, PANEL_DEPTH, HULL_D, HULL, (math.copysign(DOME_C, u0), C))
+        H.recess(fb, B, SECTION, u0, u1, t0, t1, PANEL_DEPTH, HULL, HULL, (math.copysign(DOME_C, u0), C))
     _g("drum")
     D = [(BAND[0] + (BAND[1] - BAND[0]) * i / 24, DRUM_R, DRUM_R, 0, C) for i in range(25)]   # fine, for the bore
     loft(fb, D, profile(n=72, p=2.0), HULL, cap0="steelD", cap1="steelD", hole=BORE)   # the drum and its flat sides
@@ -109,12 +109,13 @@ def body(fb):
             H.slab(fb, D, uu - 0.03, uu + 0.03, tt - 3.0, tt + 3.0, 1.05, 1.075, "steelL", "steelD", round_=True)
 
 
-# the domes' maintenance panels, (|u| range, arc), mirrored onto both domes: upper front, top, back and lower front,
-# with clear margins from the drum's overhang, the hatch frames, the arms' panels and each other. Each is recessed: cut
+# the domes' maintenance panels, (|u| range, arc), mirrored onto both domes: five even places round each dome, the
+# arm's panel at the front (180) and these four in the rest, clear of the drum's overhang and the hatch frames. Each is recessed: cut
 # out of the dome, sunk, walled round.
 TOP_PANEL = (-0.29, 0.29, 70, 124)   # the drum-top panel: u range, arc (clear of the antenna and the windshield)
-PANEL_DEPTH = 0.04            # how far the domes' panels are sunk into the hull
-PANELS = (((0.575, 0.7), (114, 150)), ((0.575, 0.7), (50, 90)), ((0.575, 0.7), (-36, 4)), ((0.575, 0.7), (210, 240)))
+PANEL_DEPTH = 0.02            # how far the domes' panels are sunk into the hull
+PANEL_U, PANEL_W = (0.56, 0.715), 46.0   # the recesses' |u| range and arc (degrees)
+PANELS = tuple((PANEL_U, (c - PANEL_W / 2, c + PANEL_W / 2)) for c in (180 - 72, 180 - 144, 180 + 144, 180 + 72))
 
 
 def hatch(fb):
