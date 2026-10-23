@@ -170,27 +170,31 @@ def terminal_forms(k):
 
 
 def conveyor(k):
-    """The ore conveyor: an inclined belt between side rails, on legs, rising from the deck above the input hatch (the
-    -v bay) across to a feed port in the middle of the plinth's upper tier."""
-    w = 0.26
-    lo, hi = Vector((0.84, -1.34, R.H + 0.08)), Vector((0.5, -0.12, R.H + 0.38))
+    """The ore conveyor: a belt between side rails, on legs, rising along the deck from above the input hatch (the -v
+    bay), turning on a turn plate at the top and running level into a feed port in the middle of the plinth."""
+    w, uc, vt, zt = 0.26, 0.78, -0.12, R.H + 0.4                                    # width, line, the turn, its height
+    lo, hi = Vector((uc, -1.34, R.H + 0.08)), Vector((uc, vt - 0.2, zt))
     d = hi - lo
-    L = d.length
-    rz = math.atan2(-d.x, d.y)                                                      # its heading in plan
-    rx = math.atan2(d.z, math.hypot(d.x, d.y))                                      # and its rise
+    L, rx = d.length, math.atan2(d.z, d.y)
     mid = (lo + hi) / 2
-    side = Vector((math.cos(rz), math.sin(rz), 0))
-    k.box(mid.x, mid.y, mid.z - 0.025, w, L, 0.05, R.HOLE, rz=rz, rx=rx)            # the belt
-    for e in (-1, 1):                                                               # its side rails
-        c = mid + side * e * (w / 2 + 0.02)
-        k.box(c.x, c.y, mid.z - 0.03, 0.04, L + 0.04, 0.09, R.G, top=R.GT, rz=rz, rx=rx)
-    for t in (0.2, 0.62):                                                           # legs
+    k.box(uc, mid.y, mid.z - 0.025, w, L, 0.05, R.HOLE, rx=rx)                      # the rising belt
+    for e in (-1, 1):
+        k.box(uc + e * (w / 2 + 0.02), mid.y, mid.z - 0.03, 0.04, L, 0.09, R.G, top=R.GT, rx=rx)
+    for t in (0.25, 0.75):                                                          # its legs
         p = lo.lerp(hi, t)
         for e in (-1, 1):
-            c = p + side * e * (w / 2 + 0.02)
-            k.box(c.x, c.y, R.H, 0.04, 0.04, p.z - R.H - 0.03, R.GD, rz=rz)
-    k.box(0.44, -0.12, R.H + 0.3, 0.06, 0.38, 0.24, R.G, top=R.GT)                  # the feed port's hood
-    k.box(0.475, -0.12, R.H + 0.32, 0.01, 0.3, 0.16, R.HOLE)                        # its mouth
+            k.box(uc + e * (w / 2 + 0.02), p.y, R.H, 0.04, 0.04, p.z - R.H - 0.04, R.GD)
+    k.box(uc, vt, zt - 0.08, w + 0.08, 0.4, 0.08, R.G, top=R.GT)                    # the turn plate
+    k.box(uc, vt, zt - 0.002, w, w, 0.006, R.HOLE)
+    k.cyl(uc, vt, zt + 0.004, 0.05, 0.02, R.GT, sides=10)                           # its pivot
+    for e in (-1, 1):                                                               # and its legs
+        k.box(uc + e * (w / 2 + 0.02), vt, R.H, 0.04, 0.04, zt - 0.08 - R.H, R.GD)
+    u0, u1 = 0.48, uc - w / 2 - 0.04                                                # the level run into the port
+    k.box((u0 + u1) / 2, vt, zt - 0.05, u1 - u0, w, 0.05, R.HOLE)
+    for e in (-1, 1):
+        k.box((u0 + u1) / 2, vt + e * (w / 2 + 0.02), zt - 0.06, u1 - u0, 0.04, 0.09, R.G, top=R.GT)
+    k.box(0.44, vt, zt - 0.12, 0.06, 0.38, 0.26, R.G, top=R.GT)                     # the feed port's hood
+    k.box(0.475, vt, zt - 0.06, 0.01, 0.3, 0.14, R.HOLE)                            # its mouth
 
 
 def plinth_vents(k):
