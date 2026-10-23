@@ -9,7 +9,7 @@ WINDSHIELD that juts out of the hull, a big raked pane over a smaller lower one 
 big thruster bell in a housing, which it rests on when parked; a big mining laser in a gimbal hung from the
 windshield's flat underside, two grab arms behind hatch panels either side of it, and two work lamps on the windshield's
 lower corners. The back is cut flat and carries a wide, short rear thruster.
-Warm dark steel (c4F), industrial yellow accents (c4T).
+The ship's blue-grey steel, industrial yellow accents (c4T).
 
 States: parked / docked (laser stowed, thruster dark), fly (thruster lit), mine (laser lowered, emitter lit; `bob` lifts
 it for the hover loop)."""
@@ -26,7 +26,7 @@ DRUM_R = 0.95                 # the drum's radius: it stands this much proud of 
 FLAT = 0.8                    # the back is cut flat this far behind the centre (drum, plates and domes alike)
 REAR = (C, 0.34, 0.42)        # the rear thruster on the flat back: centre z, throat and mouth radius (the flat is
                               # the drum's width, +-0.47, across)
-ARM_V = 0.3                   # the grab arms, either side of the laser
+ARM_AT = (0.62, C - 0.25)     # the grab arms' panels: |v| and z on the front of each dome, either side of the windshield
 DOME_C = 0.235                # each half-dome's centre, out from the middle (0: the whole ball; the ribs: split wide)
 HATCH_END = 0.6               # the domes end where the hull's radius is this, under the hatch rings
 
@@ -48,7 +48,7 @@ BELL = (0.0, 0.42, 0.28)      # the main thruster: mouth z, mouth radius, throat
 WIND = (0.5, 1.22, 0.4)       # windshield box: back u (inside the hull), front u at its foot, half width
 WIND_ZB = C - 0.44            # the windshield box's flat underside
 LASER_U, LASER_Z = 0.98, WIND_ZB - 0.2    # the laser's pivot, in the gimbal hung under the windshield
-HULL, HULL_D, HULL_L = "c4F2", "c4F4", "c4F1"
+HULL, HULL_D, HULL_L = "steelL", "steel", "plate"   # the ship's own blue-grey steel
 YEL, YEL_D = "c4T2", "c4T4"
 GLOW = "cyan"
 BEAM = "orange"
@@ -168,17 +168,19 @@ def ring(f, u, z, r0, r1, mat, sides=24):
 
 
 def rear_thruster(f, lit):
-    """A wide, short thruster on the flat back for forward thrust, open at the mouth: a bolted mounting plate, a collar,
+    """A wide, short thruster on the flat back for forward thrust, open at the mouth: a round bolted flange with soot
+    round it on the flat face, a collar,
     a flared bell with a lip ring, its inner wall running in to a throat plate with the injector at its centre. Lit,
     the inner wall and the injector burn."""
     _g("rear")
     z, rt, rm = REAR
     ub = -FLAT - 0.03                                                        # the face, over the armour plate
     um, ut = ub - 0.22, ub - 0.07                                            # mouth, throat
-    f.box(ub + 0.015, 0, z, 0.03, 0.92, 0.96, HULL_D, base=False)              # mounting plate
-    for k in range(4):                                                       # its bolts, in the corners
-        a = k * math.tau / 4 + math.pi / 4
-        f.box(ub - 0.004, 0.4 * math.cos(a), z + 0.42 * math.sin(a), 0.02, 0.05, 0.05, "steelL", base=False)
+    ring(f, ub + 0.028, z, rt + 0.16, rt + 0.24, "grime")                     # soot round it on the flat face
+    f.hcyl(ub + 0.03, ub - 0.01, 0, z, rt + 0.16, HULL_D, sides=28, cap=HULL_D)   # a round flange
+    for k in range(8):                                                       # bolted round
+        a = k * math.tau / 8 + math.pi / 8
+        f.box(ub - 0.015, (rt + 0.11) * math.cos(a), z + (rt + 0.11) * math.sin(a), 0.02, 0.05, 0.05, "steelL", base=False)
     f.hcyl(ub, ut, 0, z, rt + 0.04, "steelD", sides=24)                       # collar
     f.hcyl(ut, um, 0, z, rt, HULL_D, r1=rm, sides=24)                         # the bell, outside
     ring(f, um, z, rm - 0.035, rm, "steelL")                                 # its lip
@@ -187,46 +189,68 @@ def rear_thruster(f, lit):
     f.hcyl(ut, ut - 0.03, 0, z, 0.12, "steelD", sides=12, cap="arc" if lit else "dark")   # the injector
 
 
+def obox(f, c, n, a, w, h, th, mat):
+    """A box centred at c (u, v, z) square to the unit normal n: w across a (a unit vector square to n), h along n x a,
+    th thick along n."""
+    b = (n[1] * a[2] - n[2] * a[1], n[2] * a[0] - n[0] * a[2], n[0] * a[1] - n[1] * a[0])
+    lbox(f, lambda i, j, k: tuple(c[q] + a[q] * i * w / 2 + b[q] * j * h / 2 + n[q] * k * th / 2 for q in range(3)),
+         {"side": mat, "top": mat})
+
+
+def _add(p, *terms):
+    """p plus the sums of (scale, vector) terms."""
+    return tuple(p[q] + sum(k * v[q] for k, v in terms) for q in range(3))
+
+
 def arms(f, out):
-    """Two grab arms in the drum's lower front, either side of the laser, each behind a hatch panel. Stowed, the panels
-    are shut; mining, the doors stand open and the arms reach forward and down: a shoulder, an upper arm with its
-    piston, a forearm and a two-fingered claw."""
+    """Two grab arms either side of the windshield, each behind a hatch panel set square into the front of its dome.
+    Stowed, the panels are shut; mining, the doors stand open on their top hinges and the arms reach forward, down and
+    in toward the laser's mark: a shoulder, an upper arm with its piston, a forearm and a two-fingered claw."""
     _g("arms")
-    zc = C - 0.66
-    uc = math.sqrt(DRUM_R ** 2 - (zc - C) ** 2)                              # the panel's place on the drum
-    nu, nz = uc / DRUM_R, (zc - C) / DRUM_R                                  # its outward normal (forward and down)
-    pitch = math.atan2(nz, nu)
+    av, az = ARM_AT
     for sv in (-1, 1):
-        v = sv * ARM_V
-        f.box(uc + 0.01, v, zc, 0.04, 0.28, 0.32, HULL_D, base=False, pitch=pitch, pu=uc + 0.01, pz=zc)   # the frame
+        dv, dz = av - DOME_C, az - C
+        du = math.sqrt(R * R - dv * dv - dz * dz)
+        P = (du, sv * av, az)                                                # on the dome's surface
+        n = (du / R, sv * dv / R, dz / R)                                    # its outward normal
+        al = math.hypot(n[0], n[1])
+        a = (-n[1] / al, n[0] / al, 0.0)                                     # across the panel, level
+        up = (n[1] * a[2] - n[2] * a[1], n[2] * a[0] - n[0] * a[2], n[0] * a[1] - n[1] * a[0])
+        if up[2] < 0:
+            up = tuple(-x for x in up)
+        obox(f, _add(P, (0.01, n)), n, a, 0.3, 0.34, 0.05, HULL_D)            # the panel's frame
         if not out:
-            f.box(uc + 0.03, v, zc, 0.02, 0.22, 0.26, HULL_L, base=False, pitch=pitch, pu=uc + 0.03, pz=zc)  # the door
-            f.box(uc + 0.04, v, zc + 0.09, 0.01, 0.22, 0.03, YEL, base=False, pitch=pitch, pu=uc + 0.04, pz=zc)
+            obox(f, _add(P, (0.035, n)), n, a, 0.24, 0.28, 0.02, HULL_L)        # the door, shut
+            obox(f, _add(P, (0.05, n), (0.1, up)), n, a, 0.24, 0.04, 0.01, YEL)
             continue
-        f.box(uc + 0.03, v, zc, 0.02, 0.22, 0.26, "dark", base=False, pitch=pitch, pu=uc + 0.03, pz=zc)  # the opening
-        h = (uc - nz * 0.13 + nu * 0.03, zc + nu * 0.13 + nz * 0.03)          # the door's hinge, the opening's top
-        d = (h[0] + nu * 0.26, h[1] + nz * 0.26 + 0.08)                       # the door, swung out
-        lbox(f, lambda a, b, c, h=h, d=d, v=v: ((h if b < 0 else d)[0], v + a * 0.11, (h if b < 0 else d)[1] + c * 0.012),
-             {"side": HULL_L, "top": HULL_L})
-        S = (uc + 0.04, v, zc)                                               # shoulder, elbow, wrist
-        E = (uc + 0.34, v, zc - 0.16)
-        W = (uc + 0.52, v, zc - 0.38)
-        strut(f, S, E, 0.08, HULL_D)
-        strut(f, E, W, 0.07, HULL_D)
-        strut(f, (S[0], v + sv * 0.05, S[2] + 0.06), (E[0] - 0.1, v + sv * 0.05, E[2] + 0.04), 0.03, YEL)   # piston
-        for p in (S, E, W):
-            f.box(p[0], p[1], p[2], 0.11, 0.11, 0.11, "steelL", base=False)  # joints
-        strut(f, W, (W[0] + 0.16, v - 0.05, W[2] - 0.04), 0.035, "steel")   # the claw's fingers
-        strut(f, W, (W[0] + 0.1, v + 0.05, W[2] - 0.14), 0.035, "steel")
+        obox(f, _add(P, (0.035, n)), n, a, 0.24, 0.28, 0.02, "dark")            # the opening
+        h = _add(P, (0.04, n), (0.14, up))                                   # the door on its top hinge, swung out
+        d = _add(h, (0.24, n), (0.08, up))
+        lbox(f, lambda i, j, k, h=h, d=d, a=a: tuple((h if j < 0 else d)[q] + a[q] * i * 0.12 + (0, 0, 1)[q] * k * 0.012
+                                                        for q in range(3)), {"side": HULL_L, "top": HULL_L})
+        S = _add(P, (0.06, n))                                               # shoulder, elbow, wrist
+        E = _add(S, (0.26, (1, 0, 0)), (-sv * 0.04, (0, 1, 0)), (-0.14, (0, 0, 1)))
+        W = _add(E, (0.16, (1, 0, 0)), (-sv * 0.1, (0, 1, 0)), (-0.24, (0, 0, 1)))
+        strut(f, S, E, 0.09, HULL_D)
+        strut(f, E, W, 0.08, HULL_D)
+        strut(f, _add(S, (0.07, (0, 0, 1))), _add(E, (-0.08, (1, 0, 0)), (0.05, (0, 0, 1))), 0.035, YEL)   # piston
+        for p_ in (S, E, W):
+            f.box(p_[0], p_[1], p_[2], 0.12, 0.12, 0.12, "steelL", base=False)    # joints
+        strut(f, W, _add(W, (0.17, (1, 0, 0)), (-sv * 0.02, (0, 1, 0)), (-0.05, (0, 0, 1))), 0.04, "steelD")  # fingers
+        strut(f, W, _add(W, (0.1, (1, 0, 0)), (-sv * 0.06, (0, 1, 0)), (-0.16, (0, 0, 1))), 0.04, "steelD")
 
 
 def lights(f, on):
-    """Two work lamps on the windshield's lower corners, aimed forward."""
+    """Two round spotlights on the windshield's top corners, aimed forward, their lenses glowing warm white."""
     _g("lights")
     u0, u1, hw = WIND
+    zt, rake = C + 0.4, 0.3
+    ub = u1 - rake
     for sv in (-1, 1):
-        f.box(u1 - 0.1, sv * (hw + 0.05), WIND_ZB + 0.08, 0.16, 0.1, 0.1, "steelD", top=HULL, base=False)
-        f.box(u1 - 0.015, sv * (hw + 0.05), WIND_ZB + 0.08, 0.012, 0.07, 0.06, "arc" if on else "dark", base=False)
+        v = sv * (hw - 0.06)
+        f.box(ub - 0.1, v, zt + 0.035, 0.14, 0.12, 0.05, "steelD")              # its bracket on the brow
+        f.hcyl(ub - 0.2, ub + 0.04, v, zt + 0.15, 0.085, "steelD", sides=12)    # the can
+        f.hcyl(ub + 0.04, ub + 0.06, v, zt + 0.15, 0.1, YEL, sides=12, cap="flameW" if on else "steelL")   # bezel, lens
 
 
 def thruster(f, lit):
