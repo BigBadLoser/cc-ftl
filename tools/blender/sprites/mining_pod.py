@@ -33,7 +33,7 @@ DOME_C = 0.235                # each half-dome's centre, out from the middle (0:
 HATCH_END = 0.6               # the domes end where the hull's radius is this, under the hatch rings
 
 
-def _dome(c, sign, r_end, n=6):
+def _dome(c, sign, r_end, n=10):
     """Stations of a half-dome centred at c, going outward (sign) to where its radius is r_end."""
     p0 = math.asin(r_end / R)
     out = []
@@ -44,7 +44,7 @@ def _dome(c, sign, r_end, n=6):
 
 
 BALL = _dome(-DOME_C, -1, HATCH_END)[::-1] + _dome(DOME_C, 1, HATCH_END)   # half-dome, drum, half-dome
-SECTION = profile(n=24, p=2.0)          # a true circle: a pressure hull
+SECTION = profile(n=48, p=2.0)          # a true circle: a pressure hull (fine, so cut edges shade smoothly)
 HATCH_R = 0.5                 # the round hatch's door radius
 BELL = (0.0, 0.42, 0.28)      # the main thruster: mouth z, mouth radius, throat radius
 WIND = (0.5, 1.22, 0.4)       # windshield box: back u (inside the hull), front u at its foot, half width
@@ -110,10 +110,11 @@ def body(fb):
 
 
 # the domes' maintenance panels, (|u| range, arc), mirrored onto both domes: upper front, top, back and lower front,
-# clear of the hatches, the arms' panels and the drum. Each is recessed: cut out of the dome, sunk, walled round.
+# with clear margins from the drum's overhang, the hatch frames, the arms' panels and each other. Each is recessed: cut
+# out of the dome, sunk, walled round.
 TOP_PANEL = (-0.29, 0.29, 70, 124)   # the drum-top panel: u range, arc (clear of the antenna and the windshield)
-PANEL_DEPTH = 0.03            # how far the domes' panels are sunk into the hull
-PANELS = (((0.53, 0.72), (112, 152)), ((0.53, 0.72), (42, 96)), ((0.53, 0.72), (-42, 12)), ((0.53, 0.72), (206, 244)))
+PANEL_DEPTH = 0.04            # how far the domes' panels are sunk into the hull
+PANELS = (((0.575, 0.7), (114, 150)), ((0.575, 0.7), (50, 90)), ((0.575, 0.7), (-36, 4)), ((0.575, 0.7), (210, 240)))
 
 
 def hatch(fb):
