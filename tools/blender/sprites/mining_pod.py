@@ -107,22 +107,6 @@ def body(fb):
     for uu in (u0 + 0.045, u1 - 0.045):                                      # round screw heads
         for tt in (t0 + 5.0, t1 - 5.0):
             H.slab(fb, D, uu - 0.03, uu + 0.03, tt - 3.0, tt + 3.0, 1.05, 1.075, "steelL", "steelD", round_=True)
-    grime(fb, B, D)
-
-
-def grime(fb, B, D):
-    """Wear, as clean shapes lying on the hull: soot blown back over the drum above and below the rear thruster; a
-    streak run down each dome from under the arm's panel; chips of bare metal along the stripes' edges."""
-    _g("grime")
-    for t0, t1 in ((25, 40), (-40, -25)):                                  # soot, a crescent above the bore and one
-        patch(fb, D, -0.34, 0.34, t0, t1, 1.03, "steelD", n=5, steps=8)       # below it
-    for sg in (1, -1):                                                       # leaks from the arms' joints
-        patch(fb, B, *sorted((sg * 0.595, sg * 0.655)), 196, 228, 1.006, "steelD", n=7, steps=2)
-    for u, t in CHIPS:                                                       # worn paint on the stripes' edges
-        patch(fb, D, u - 0.035, u + 0.035, t - 4.0, t + 4.0, 1.026, "steelL", n=3, steps=1)
-
-
-CHIPS = ((0.1, 30), (-0.1, 55), (0.1, 140), (-0.1, 10), (0.32, 45), (-0.42, 100), (0.42, 20), (-0.32, 135))
 
 
 # the domes' maintenance panels, (|u| range, arc), mirrored onto both domes: five even places round each dome, the
@@ -338,6 +322,30 @@ def greeble(f):
     f.box(-0.64, 0, C + 0.98, 0.05, 0.05, 0.04, "red")                       # the top panel
 
 
+SOOT, SOOT_FALL = 0.6, 0.2     # soot round the rear bore: its darkening at the rim, and how far out it halves
+DIRT, DIRT_FROM = 0.3, -0.25  # dirt gathering low on the hull: its darkening at the bottom, from what height (x R) down
+
+
+def wear(mh, c0, c1, cb):
+    """Soft wear, darkening the hull's own faces (each colour scaled) by where they lie: soot blown back round the rear
+    thruster's bore, fading out over the back; dirt gathered low on the hull, toward its underside. c0, c1, cb: the
+    body frame's origin, a point along its u (the pod's v) and one along its v (the pod's back), in Blender space."""
+    from mathutils import Vector
+    o = Vector(c0)
+    a, b = (Vector(c1) - o).normalized(), (Vector(cb) - o).normalized()
+    for k, (idx, col, own, glow) in enumerate(mh.f):
+        p = sum((Vector(mh.v[i]) for i in idx), Vector()) / len(idx) - o
+        s, back, z = p.dot(a), p.dot(b), p.z
+        soot = 0.0
+        if back > 0:                                                         # on the back: by distance from the bore
+            out = max(0.0, math.hypot(s, z) - BORE)
+            soot = SOOT * 0.5 ** (out / SOOT_FALL) * min(1.0, back / 0.6)
+        lo = max(0.0, min(1.0, (DIRT_FROM * R - z) / ((1 + DIRT_FROM) * R)))
+        dirt = DIRT * lo * lo * (3 - 2 * lo)
+        f = (1 - soot) * (1 - dirt)
+        mh.f[k] = (idx, tuple(x * f for x in col), own, glow)
+
+
 def pod(heading, state="parked", bob=0.0, dz=0.0):
     """state: parked / docked, fly or mine."""
     m = core.Mesh(f"mining_pod_{state}")
@@ -356,7 +364,8 @@ def pod(heading, state="parked", bob=0.0, dz=0.0):
     arms(f, state == "mine")
     lights(f, state in ("fly", "mine"))
     greeble(f)
-    c0, c1 = fh.pt(0, 0, C), fh.pt(1, 0, C)
+    c0, c1, cb = fh.pt(0, 0, C), fh.pt(1, 0, C), fh.pt(0, 1, C)
+    wear(mh, c0, c1, cb)
     hull = H.true_normals(mh.build(), (c0[0], c0[1], c0[2] + mh.dz), tuple(c1[i] - c0[i] for i in range(3)), DOME_C,
                           (R + DRUM_R) / 2)
     return [smooth(m.build()), hull]
