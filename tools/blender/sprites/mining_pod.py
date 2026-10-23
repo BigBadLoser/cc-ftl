@@ -107,6 +107,22 @@ def body(fb):
     for uu in (u0 + 0.045, u1 - 0.045):                                      # round screw heads
         for tt in (t0 + 5.0, t1 - 5.0):
             H.slab(fb, D, uu - 0.03, uu + 0.03, tt - 3.0, tt + 3.0, 1.05, 1.075, "steelL", "steelD", round_=True)
+    grime(fb, B, D)
+
+
+def grime(fb, B, D):
+    """Wear, as clean shapes lying on the hull: soot blown back over the drum above and below the rear thruster; a
+    streak run down each dome from under the arm's panel; chips of bare metal along the stripes' edges."""
+    _g("grime")
+    for t0, t1 in ((25, 40), (-40, -25)):                                  # soot, a crescent above the bore and one
+        patch(fb, D, -0.34, 0.34, t0, t1, 1.03, "steelD", n=5, steps=8)       # below it
+    for sg in (1, -1):                                                       # leaks from the arms' joints
+        patch(fb, B, *sorted((sg * 0.595, sg * 0.655)), 196, 228, 1.006, "steelD", n=7, steps=2)
+    for u, t in CHIPS:                                                       # worn paint on the stripes' edges
+        patch(fb, D, u - 0.035, u + 0.035, t - 4.0, t + 4.0, 1.026, "steelL", n=3, steps=1)
+
+
+CHIPS = ((0.1, 30), (-0.1, 55), (0.1, 140), (-0.1, 10), (0.32, 45), (-0.42, 100), (0.42, 20), (-0.32, 135))
 
 
 # the domes' maintenance panels, (|u| range, arc), mirrored onto both domes: five even places round each dome, the
