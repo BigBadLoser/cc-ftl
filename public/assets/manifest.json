@@ -743,6 +743,10 @@
    "image": "sprites/fx.png",
    "glow": "sprites/fx.glow.png"
   },
+  "fx_mining": {
+   "image": "sprites/fx_mining.png",
+   "glow": "sprites/fx_mining.glow.png"
+  },
   "galley": {
    "image": "sprites/galley.png",
    "glow": "sprites/galley.glow.png"
@@ -8240,6 +8244,412 @@
    "anchor": {
     "x": 30,
     "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mining.beam": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 1301,
+    "y": 1,
+    "w": 92,
+    "h": 16
+   },
+   "anchor": {
+    "x": 46,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mining.beam.0": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 1394,
+    "y": 1,
+    "w": 92,
+    "h": 16
+   },
+   "anchor": {
+    "x": 46,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mining.beam.1": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 1208,
+    "y": 1,
+    "w": 92,
+    "h": 18
+   },
+   "anchor": {
+    "x": 46,
+    "y": 9
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mining.beam.2": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 1487,
+    "y": 1,
+    "w": 92,
+    "h": 16
+   },
+   "anchor": {
+    "x": 46,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mining.beam.3": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 1580,
+    "y": 1,
+    "w": 92,
+    "h": 14
+   },
+   "anchor": {
+    "x": 46,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mining.chips": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 1045,
+    "y": 1,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 21,
+    "y": 51
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.chips.0": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 1100,
+    "y": 1,
+    "w": 54,
+    "h": 47
+   },
+   "anchor": {
+    "x": 21,
+    "y": 51
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.chips.1": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 821,
+    "y": 1,
+    "w": 75,
+    "h": 62
+   },
+   "anchor": {
+    "x": 31,
+    "y": 57
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.chips.2": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 1155,
+    "y": 1,
+    "w": 52,
+    "h": 47
+   },
+   "anchor": {
+    "x": 27,
+    "y": 46
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.chips.3": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 897,
+    "y": 1,
+    "w": 47,
+    "h": 62
+   },
+   "anchor": {
+    "x": 12,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.dust": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 945,
+    "y": 1,
+    "w": 49,
+    "h": 55
+   },
+   "anchor": {
+    "x": 24,
+    "y": 51
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.dust.0": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 995,
+    "y": 1,
+    "w": 49,
+    "h": 55
+   },
+   "anchor": {
+    "x": 24,
+    "y": 51
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.dust.1": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 682,
+    "y": 1,
+    "w": 63,
+    "h": 65
+   },
+   "anchor": {
+    "x": 31,
+    "y": 61
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.dust.2": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 436,
+    "y": 1,
+    "w": 76,
+    "h": 74
+   },
+   "anchor": {
+    "x": 38,
+    "y": 70
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.dust.3": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 178,
+    "y": 1,
+    "w": 85,
+    "h": 82
+   },
+   "anchor": {
+    "x": 43,
+    "y": 78
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.dust.4": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 88,
+    "h": 85
+   },
+   "anchor": {
+    "x": 45,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.dust.5": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 90,
+    "y": 1,
+    "w": 87,
+    "h": 83
+   },
+   "anchor": {
+    "x": 46,
+    "y": 85
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "fx.mining.hit": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 264,
+    "y": 1,
+    "w": 85,
+    "h": 82
+   },
+   "anchor": {
+    "x": 37,
+    "y": 62
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mining.hit.0": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 350,
+    "y": 1,
+    "w": 85,
+    "h": 82
+   },
+   "anchor": {
+    "x": 37,
+    "y": 62
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mining.hit.1": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 598,
+    "y": 1,
+    "w": 83,
+    "h": 70
+   },
+   "anchor": {
+    "x": 50,
+    "y": 51
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mining.hit.2": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 746,
+    "y": 1,
+    "w": 74,
+    "h": 64
+   },
+   "anchor": {
+    "x": 44,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mining.hit.3": {
+   "kind": "static",
+   "sheet": "fx_mining",
+   "frame": {
+    "x": 513,
+    "y": 1,
+    "w": 84,
+    "h": 73
+   },
+   "anchor": {
+    "x": 44,
+    "y": 54
    },
    "footprint": [
     1,
