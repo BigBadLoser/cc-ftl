@@ -1,11 +1,12 @@
 """REFINERY (module.refinery, 3x4, family `refinery`): raw ore in, metal and electronics out. Built in stages after the
 reference: 1 massing (this blockout, plain grey), 2 sub-forms, 3 colour and light, 4 detail and wear.
 
-Massing, in tiers: a battered base hull (walls leaning in) with machinery bays let into its long sides between armour
-pilasters and big corner armour; a deck at its top, rimmed, with a channel along the +u half holding two sunken
-hoppers; a spine block along the -u half carrying three octagonal stacks. The crew side (+u, access tile at v -0.5,
-sim access [3, 1]) has the terminal slab in its middle and an output hatch beside it. Local frame: modkit.K, u across
-the 3-tile width, v along the 4."""
+Massing, in tiers. The hull is one battered solid (walls leaning in, corners cut by a big chamfer) up to its rim; its
+long sides have bays let into them (openings with real recesses behind) for the roller assemblies, the output hatch and
+the terminal. Its top is a rim round a deck opening: inside, the deck floor sits lower, with a channel along the +u half
+holding two sunken hoppers and a spine along the -u half carrying three round stacks. The crew side (+u, access tile at
+v -0.5, sim access [3, 1]) has the terminal slab in its middle bay. Local frame: modkit.K, u across the 3-tile width, v
+along the 4."""
 import math
 
 from mathutils import Vector
@@ -15,118 +16,145 @@ from .steelkit import face, tube
 
 FP = (3, 4)
 U, V = 1.46, 1.96                    # the footprint's half extents, less a hair
-H = 0.62                             # the deck
-BAT = 0.18                           # the hull's batter: how far its walls lean in, bottom to deck
-BAY = 0.2                            # how deep the bays are let in
+HT = 0.8                             # the rim's top
+H = 0.6                              # the deck floor, inside the rim
+B = 0.2                              # the batter: how far the walls lean in, bottom to rim
+C = 0.4                              # the corner chamfer at the bottom
+RIM = 0.26                           # the rim's width
+D = 0.22                             # how deep the bays go
+BZ = (0.07, 0.55)                    # the bays' floor and ceiling
 AV = -0.5                            # the access tile's v
-G, GT, GD = "gm", "plate", "steel"   # blockout greys: faces, tops, recesses
-HOLE = "dark"
+BAYS = {1: [(-1.4, -1.0, "hatch"), (-0.9, -0.1, "terminal"), (0.02, 0.66, "rollers"), (0.78, 1.42, "rollers")],
+        -1: [(-1.42, -0.53, "rollers"), (-0.43, 0.43, "rollers"), (0.53, 1.42, "rollers")]}
+G, GT, GD, HOLE = "gm", "plate", "steelD", "dark"      # blockout: faces, tops, recesses, holes
 
 
 def _oct(r, c):
-    """Eight corners going round; c = chamfer, one for all or per corner (u0v0, u1v0, u1v1, u0v1)."""
     u0, u1, v0, v1 = r
-    a, b, d, e = (c,) * 4 if isinstance(c, (int, float)) else c
-    return [(u0 + a, v0), (u1 - b, v0), (u1, v0 + b), (u1, v1 - d), (u1 - d, v1), (u0 + e, v1), (u0, v1 - e), (u0, v0 + a)]
+    return [(u0 + c, v0), (u1 - c, v0), (u1, v0 + c), (u1, v1 - c), (u1 - c, v1), (u0 + c, v1), (u0, v1 - c), (u0, v0 + c)]
 
 
-def frustum(k, lo, hi, z0, z1, c_lo=0.0, c_hi=0.0, col=G, top=GT):
-    """A block from the rectangle lo (u0, u1, v0, v1) at z0 to hi at z1, its corners chamfered by c_lo / c_hi."""
-    a, b = _oct(lo, c_lo), _oct(hi, c_hi)
-    cen = Vector(((lo[0] + lo[1]) / 2, (lo[2] + lo[3]) / 2, (z0 + z1) / 2))
+LO = _oct((-U, U, -V, V), C)
+HI = _oct((-U + B, U - B, -V + B, V - B), C - B * (math.sqrt(2) - 1))
+
+
+def wall_u(s, z):
+    """The u of the long side s (+-1) at height z."""
+    return s * (U - B * z / HT)
+
+
+def side_end(z):
+    """How far along v the long sides run at height z (where the corner chamfers begin)."""
+    t = z / HT
+    return (V - C) * (1 - t) + abs(HI[3][1]) * t
+
+
+def hull(k):
+    """The battered hull: the eight outer faces (the long ones cut open for the bays), the bays' recesses, the rim."""
+    cen = Vector((0, 0, HT / 2))
     for i in range(8):
-        j = (i + 1) % 8
-        q = [(*a[i], z0), (*a[j], z0), (*b[j], z1), (*b[i], z1)]
-        if math.dist(a[i], a[j]) + math.dist(b[i], b[j]) < 1e-6:
+        if i in (2, 6):
             continue
-        mid = sum((Vector(p) for p in q), Vector()) / 4
-        face(k, q, mid - cen, col)
-    face(k, [(*p, z1) for p in b], (0, 0, 1), top)
+        j = (i + 1) % 8
+        q = [(*LO[i], 0), (*LO[j], 0), (*HI[j], HT), (*HI[i], HT)]
+        face(k, q, sum((Vector(p) for p in q), Vector()) / 4 - cen, G)
+    for s in (1, -1):
+        long_side(k, s)
+    deck(k)
 
 
-def wall_block(k, side, s0, s1, z1, depth, col=G, c=0.0):
-    """A block standing on a long side (+-u), s0 .. s1 along v, its outer face on the battered line, `depth` deep."""
-    e = 1 if side > 0 else -1
-    out_lo, out_hi = U, U - BAT * z1 / H
-    lo = sorted((e * out_lo, e * (out_lo - depth)))
-    hi = sorted((e * out_hi, e * (out_lo - depth)))
-    frustum(k, (*lo, s0, s1), (*hi, s0, s1), 0, z1, c, c, col)
+def long_side(k, s):
+    """A long side's face as cells round its bays, and each bay's recess."""
+    bays = sorted(BAYS[s])
+    rows = [(0.0, BZ[0], False), (BZ[0], BZ[1], True), (BZ[1], HT, False)]
+    cols = [None] + [e for v0, v1, _ in bays for e in (v0, v1)] + [None]     # None: where the side meets a corner
+    at = lambda c, z, end: (wall_u(s, z), end * side_end(z) if c is None else c, z)    # noqa: E731
+    for za, zb, cut in rows:
+        for c in range(len(cols) - 1):
+            if cut and c % 2 == 1:                                            # a bay's opening
+                continue
+            ca, cb = cols[c], cols[c + 1]
+            face(k, [at(ca, za, -1), at(cb, za, 1), at(cb, zb, 1), at(ca, zb, -1)], (s, 0, 0), G)
+    for v0, v1, kind in bays:
+        recess(k, s, v0, v1)
+        if kind == "rollers":
+            for z, r in ((0.19, 0.12), (0.43, 0.11)):
+                u = wall_u(s, z) - s * (D - r - 0.01)
+                tube(k, (u, v0 + 0.03, z), (u, v1 - 0.03, z), r, G, sides=14, cap=GT)
 
 
-def corner(k, su, sv, L, depth=0.62, z1=H + 0.08):
-    """A corner armour block: out on the batter line on both outer faces, its outer corner cut by a big chamfer."""
-    top = BAT * z1 / H
-    us = sorted((su * U, su * (U - depth)))
-    vs = sorted((sv * V, sv * (V - L)))
-    hus = sorted((su * (U - top), su * (U - depth)))
-    hvs = sorted((sv * (V - top), sv * (V - L)))
-    i = {(-1, -1): 0, (1, -1): 1, (1, 1): 2, (-1, 1): 3}[(su, sv)]
-    c_lo, c_hi = [0.0] * 4, [0.0] * 4
-    c_lo[i], c_hi[i] = 0.3, 0.3 - top * 0.5
-    frustum(k, (*us, *vs), (*hus, *hvs), 0, z1, tuple(c_lo), tuple(c_hi))
-
-
-def base(k):
-    """The hull: a battered core set back by the bay depth, armour pilasters and corner blocks out on the batter line,
-    roller assemblies in the bays."""
-    ci = U - BAY                                                              # the core's (bay back wall's) half width
-    frustum(k, (-ci, ci, -V, V), (-ci + BAT * 0.6, ci - BAT * 0.6, -V + BAT, V - BAT), 0, H, 0.3, 0.22, GD)
-    corners = 0.46
-    for su in (-1, 1):                                                        # corner armour, wrapping each corner
-        for sv in (-1, 1):
-            corner(k, su, sv, corners)
-    piers = {1: [(-1.12, -0.96), (0.62, 0.78)], -1: [(-0.58, -0.42), (0.42, 0.58)]}
-    for side, ps in piers.items():
-        for s0, s1 in ps:
-            wall_block(k, side, s0, s1, H, BAY + 0.02)
-    bays = {1: [(V - corners, 0.78), (0.62, -0.05)], -1: [(-V + corners, -0.58), (-0.42, 0.42), (0.58, V - corners)]}
-    for side, bs in bays.items():                                             # rollers: two drums stacked in each bay
-        for s0, s1 in bs:
-            a, b = sorted((s0, s1))
-            for z, r in ((0.17, 0.13), (0.43, 0.12)):
-                u = side * (U - BAT * z / H - r - 0.02)
-                tube(k, (u, a + 0.04, z), (u, b - 0.04, z), r, G, sides=12, cap=GT)
-    for end in (-1, 1):                                                       # end armour, across each short end
-        v0, v1 = sorted((end * V, end * (V - BAY - 0.02)))
-        hv0, hv1 = sorted((end * (V - BAT * (H + 0.06) / H), end * (V - BAY - 0.02)))
-        frustum(k, (-U + corners * 0.6, U - corners * 0.6, v0, v1), (-U + corners * 0.8, U - corners * 0.8, hv0, hv1),
-                0, H + 0.06, 0.0, 0.0)
+def recess(k, s, v0, v1):
+    z0, z1 = BZ
+    back = lambda v, z: (wall_u(s, z) - s * D, v, z)                          # noqa: E731
+    front = lambda v, z: (wall_u(s, z), v, z)                                 # noqa: E731
+    face(k, [back(v0, z0), back(v1, z0), back(v1, z1), back(v0, z1)], (s, 0, 0), GD)
+    face(k, [front(v0, z0), front(v1, z0), back(v1, z0), back(v0, z0)], (0, 0, 1), G)
+    face(k, [front(v0, z1), front(v1, z1), back(v1, z1), back(v0, z1)], (0, 0, -1), GD)
+    face(k, [front(v0, z0), back(v0, z0), back(v0, z1), front(v0, z1)], (0, 1, 0), G)
+    face(k, [front(v1, z0), back(v1, z0), back(v1, z1), front(v1, z1)], (0, -1, 0), G)
 
 
 def deck(k):
-    """The deck's rim along the +u edge and the ends, the channel inside it, two sunken hoppers in the channel."""
-    ci = U - BAY - BAT * 0.6
-    frustum(k, (ci - 0.3, ci, -V + BAT + 0.3, V - BAT - 0.3), (ci - 0.28, ci - 0.03, -V + BAT + 0.32, V - BAT - 0.32),
-            H, H + 0.16)
-    for e in (-1, 1):
-        v0, v1 = sorted((e * (V - BAT), e * (V - BAT - 0.35)))
-        frustum(k, (-ci, ci, v0, v1), (-ci + 0.03, ci - 0.03, v0 + 0.02, v1 - 0.02), H, H + 0.16)
-    for v in (0.2, 1.0):                                                      # hoppers: open boxes sunk in the channel
-        u, s = 0.42, 0.27
+    """The rim (one ring round the hull's top), the walls inside it down to the deck floor, the floor."""
+    iu, iv = U - B - RIM, V - B - RIM                                         # the deck opening's half extents
+    inner = [(-iu, -iv), (iu, -iv), (iu, -iv), (iu, iv), (iu, iv), (-iu, iv), (-iu, iv), (-iu, -iv)]
+    for i in range(8):                                                        # the rim, mitred to the octagon
+        j = (i + 1) % 8
+        pts = [(*HI[i], HT), (*HI[j], HT), (*inner[j], HT), (*inner[i], HT)]
+        if inner[i] == inner[j]:
+            pts = pts[:3]
+        face(k, pts, (0, 0, 1), GT)
+    sq = [(-iu, -iv), (iu, -iv), (iu, iv), (-iu, iv)]
+    for i in range(4):                                                        # the opening's walls, facing in
+        a, b = sq[i], sq[(i + 1) % 4]
+        mid = Vector(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0))
+        face(k, [(*a, H), (*b, H), (*b, HT), (*a, HT)], -mid, GD)
+    face(k, [(*p, H) for p in sq], (0, 0, 1), G)
+    spine(k, iu, iv)
+    for v in (0.15, 0.95):                                                    # hoppers sunk in the channel
+        u, s = 0.42, 0.26
         k.box(u, v, H - 0.02, 2 * s - 0.08, 2 * s - 0.08, 0.04, HOLE)
         for du, dv, su, sv in ((-s, 0, 0.06, 2 * s), (s, 0, 0.06, 2 * s), (0, -s, 2 * s, 0.06), (0, s, 2 * s, 0.06)):
-            k.box(u + du, v + dv, H, su, sv, 0.2, G, top=GT)
+            k.box(u + du, v + dv, H, su, sv, 0.22, G, top=GT)
 
 
-def spine(k):
-    """The raised block along the -u half and its three octagonal stacks, hollow at the top."""
-    frustum(k, (-1.12, 0.02, -1.55, 1.55), (-1.06, -0.04, -1.5, 1.5), H, H + 0.55, 0.12, 0.1)
-    for v in (-1.0, 0.0, 1.0):
-        u, z0, z1, r = -0.55, H + 0.55, H + 1.2, 0.36
-        frustum(k, (u - r, u + r, v - r, v + r), (u - r, u + r, v - r, v + r), z0, z1, 0.22, 0.22)
-        k.box(u, v, z1 - 0.04, 1.2 * r, 1.2 * r, 0.05, HOLE)
+def spine(k, iu, iv):
+    """The raised block along the -u half of the deck, inside the rim, and its three round stacks."""
+    u0, u1, v0, v1, top = -iu + 0.02, -0.08, -iv + 0.1, iv - 0.1, H + 0.6
+    lo, hi = (u0, u1, v0, v1), (u0 + 0.05, u1 - 0.05, v0 + 0.05, v1 - 0.05)
+    a, b = _oct(lo, 0.1), _oct(hi, 0.08)
+    cen = Vector(((u0 + u1) / 2, 0, (H + top) / 2))
+    for i in range(8):
+        j = (i + 1) % 8
+        q = [(*a[i], H), (*a[j], H), (*b[j], top), (*b[i], top)]
+        face(k, q, sum((Vector(p) for p in q), Vector()) / 4 - cen, G)
+    face(k, [(*p, top) for p in b], (0, 0, 1), GT)
+    for v in (-0.95, 0.0, 0.95):
+        stack(k, (u0 + u1) / 2, v, top, top + 0.62, 0.36, 0.26)
+
+
+def stack(k, u, v, z0, z1, r, ri, n=20):
+    """A round stack: its wall, a ring on top, a round bore going down into the dark."""
+    ring = lambda rad, z: [(u + rad * math.cos(i * math.tau / n), v + rad * math.sin(i * math.tau / n), z) for i in range(n)]   # noqa: E731
+    o0, o1, i1, i0 = ring(r, z0), ring(r, z1), ring(ri, z1), ring(ri, z1 - 0.35)
+    for i in range(n):
+        j = (i + 1) % n
+        out = Vector((math.cos((i + 0.5) * math.tau / n), math.sin((i + 0.5) * math.tau / n), 0))
+        face(k, [o0[i], o0[j], o1[j], o1[i]], out, G)
+        face(k, [o1[i], o1[j], i1[j], i1[i]], (0, 0, 1), GT)
+        face(k, [i1[i], i1[j], i0[j], i0[i]], -out, GD)
+    face(k, i0, (0, 0, 1), HOLE)
 
 
 def terminal(k):
-    """The crew side's middle: a slab tower at the access tile (screen up top later), an output hatch beside it."""
-    frustum(k, (U - 0.44, U, AV - 0.36, AV + 0.36), (U - 0.44, U - 0.08, AV - 0.32, AV + 0.32), 0, H + 0.5, 0.06, 0.06)
-    k.box(U - 0.05, -1.37, 0.06, 0.04, 0.42, 0.42, GD)                       # the output hatch, set in its bay
+    """The terminal slab, standing in its bay at the access tile and rising above the rim (screen up top later)."""
+    v0, v1 = -0.86, -0.14
+    u_in = wall_u(1, 0) - D
+    k.box((u_in + U) / 2 - 0.02, (v0 + v1) / 2, 0, U - u_in - 0.04, v1 - v0, HT + 0.45, G, top=GT)
 
 
 def blockout(rot=0):
     k = K(f"refinery_blockout_{rot}", FP, rot)
-    base(k)
-    deck(k)
-    spine(k)
+    hull(k)
     terminal(k)
     return k.build()
