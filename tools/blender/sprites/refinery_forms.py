@@ -169,31 +169,28 @@ def terminal_forms(k):
         k.box(uf + 0.012, 0, 0.11 + i * 0.075, 0.02, 0.3, 0.025, R.G, top=R.GT)
 
 
-def conveyor(k, seed=3):
-    """An ore conveyor on the deck: an inclined belt between side rails, on legs, carrying ore from above the input up
-    into a feed hopper beside the plinth."""
-    import numpy as np
-    from .ore_cage import _rock
-    rng = np.random.default_rng(seed)
-    u, w = 0.78, 0.26
-    lo, hi = Vector((u, 1.36, R.H + 0.1)), Vector((u, 0.74, R.H + 0.52))
+def conveyor(k):
+    """The ore conveyor: an inclined belt between side rails, on legs, rising from the deck above the input hatch (the
+    -v bay) across to a feed port in the middle of the plinth's upper tier."""
+    w = 0.26
+    lo, hi = Vector((0.84, -1.34, R.H + 0.08)), Vector((0.5, -0.12, R.H + 0.38))
     d = hi - lo
-    L, ang = d.length, math.atan2(d.z, -d.y)
+    L = d.length
+    rz = math.atan2(-d.x, d.y)                                                      # its heading in plan
+    rx = math.atan2(d.z, math.hypot(d.x, d.y))                                      # and its rise
     mid = (lo + hi) / 2
-    k.box(u, mid.y, mid.z - 0.025, w, L, 0.05, R.HOLE, rx=-ang)                    # the belt
+    side = Vector((math.cos(rz), math.sin(rz), 0))
+    k.box(mid.x, mid.y, mid.z - 0.025, w, L, 0.05, R.HOLE, rz=rz, rx=rx)            # the belt
     for e in (-1, 1):                                                               # its side rails
-        k.box(u + e * (w / 2 + 0.02), mid.y, mid.z - 0.03, 0.04, L + 0.04, 0.09, R.G, top=R.GT, rx=-ang)
-    for t in (0.25, 0.7):                                                           # legs
+        c = mid + side * e * (w / 2 + 0.02)
+        k.box(c.x, c.y, mid.z - 0.03, 0.04, L + 0.04, 0.09, R.G, top=R.GT, rz=rz, rx=rx)
+    for t in (0.2, 0.62):                                                           # legs
         p = lo.lerp(hi, t)
         for e in (-1, 1):
-            k.box(u + e * (w / 2 + 0.02), p.y, R.H, 0.04, 0.04, p.z - R.H - 0.03, R.GD)
-    n = Vector((0, d.z, -d.y)).normalized() if d.z * 0 == 0 else Vector((0, 0, 1))
-    n = n if n.z > 0 else -n
-    for i in range(7):                                                              # ore riding up it
-        p = lo.lerp(hi, 0.08 + 0.84 * i / 6) + n * 0.02 + Vector((rng.uniform(-0.07, 0.07), 0, 0))
-        _rock(k, p, rng.uniform(0.04, 0.06), 0.05, ("orM", "rkD", "orD", "rkM")[i % 4], rng)
-    k.box(0.72, 0.58, R.H + 0.3, 0.42, 0.34, 0.32, R.G, top=R.GT)                   # the feed hopper
-    k.box(0.72, 0.58, R.H + 0.6, 0.32, 0.24, 0.03, R.HOLE)
+            c = p + side * e * (w / 2 + 0.02)
+            k.box(c.x, c.y, R.H, 0.04, 0.04, p.z - R.H - 0.03, R.GD, rz=rz)
+    k.box(0.44, -0.12, R.H + 0.3, 0.06, 0.38, 0.24, R.G, top=R.GT)                  # the feed port's hood
+    k.box(0.475, -0.12, R.H + 0.32, 0.01, 0.3, 0.16, R.HOLE)                        # its mouth
 
 
 def plinth_vents(k):
@@ -203,25 +200,6 @@ def plinth_vents(k):
         for v in (-0.95, 0.0, 0.95):
             k.box(s * (hw - 0.012), v, R.H + 0.07, 0.03, 0.34, 0.1, R.HOLE)
         k.box(0, s * (hl - 0.012), R.H + 0.07, 0.5, 0.03, 0.1, R.HOLE)
-
-
-def contents(k, seed=9):
-    """Ore on the input's chute, ingots stacked on the output's."""
-    import numpy as np
-    from .ore_cage import _rock
-    rng = np.random.default_rng(seed)
-    z0 = R.BZ[0]
-    ub = R.wall_u(1, z0) - R.D
-    for v0, v1, kind in R.BAYS[1]:
-        c = (v0 + v1) / 2
-        if kind == "input":
-            for i in range(6):
-                t = rng.uniform(0.15, 0.85)
-                p = Vector((ub + R.D * 0.7 * t, c + rng.uniform(-0.22, 0.22), z0 + 0.22 - 0.18 * t + 0.02))
-                _rock(k, p, rng.uniform(0.04, 0.06), 0.05, ("orM", "rkD", "orD")[i % 3], rng)
-        elif kind == "output":
-            for j, (dv, dz) in enumerate(((-0.12, 0), (0.0, 0), (0.12, 0), (-0.06, 0.045), (0.06, 0.045))):
-                k.box(ub + R.D * 0.55, c + dv, z0 + 0.07 + dz, 0.16, 0.1, 0.045, "steelL", top="plate")
 
 
 def forms(k):
@@ -236,4 +214,3 @@ def forms(k):
     terminal_forms(k)
     conveyor(k)
     plinth_vents(k)
-    contents(k)

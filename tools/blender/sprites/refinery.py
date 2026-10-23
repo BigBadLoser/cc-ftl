@@ -25,7 +25,7 @@ D = 0.22                             # how deep the bays go
 BZ = (0.1, HT - 0.1)                 # the bays' floor and ceiling: the same margin above and below
 AV = -0.5                            # the access tile's v
 TS = 0.48                            # the terminal slot's half width: a gap either side of the terminal's body
-BAYS = {1: [(-1.42, -0.62, "output"), (-TS, TS, "terminal"), (0.62, 1.42, "input")],
+BAYS = {1: [(-1.42, -0.62, "input"), (-TS, TS, "terminal"), (0.62, 1.42, "output")],
         -1: [(-1.42, -0.53, "rollers"), (-0.43, 0.43, "rollers"), (0.53, 1.42, "rollers")]}
 G, GT, GD, HOLE = "gm", "plate", "steelD", "dark"      # blockout: faces, tops, recesses, holes
 
