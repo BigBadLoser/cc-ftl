@@ -6,7 +6,7 @@
   import type { UiMining } from './api';
 
   let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
-  let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [] });
+  let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   let mining = $state<UiMining>({ asteroids: [], pods: [] });
   onMount(() => {
     const u = [api.shuttles.subscribe((v) => (data = v)), api.mining.subscribe((v) => (mining = v))];
@@ -81,6 +81,12 @@
           <button data-testid="shuttle-disembark" onclick={() => api.dispatch({ type: 'vehicle.disembark', vehicle: s.id })}>Passengers out</button>
         {/if}
       </div>
+
+      {#if s.ferry}
+        <div class="trade" data-testid="shuttle-ferry">Run to {s.ferry.to}: {s.ferry.status}
+          <button class="mini" data-testid="ferry-cancel" onclick={() => api.dispatch({ type: 'ferry.cancel', vehicle: s.id })}>Call off</button>
+        </div>
+      {/if}
 
       {#if s.state !== 'docked' && s.pilot}
         <div class="sub">Hover beside (EVA)</div>

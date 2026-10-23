@@ -30,6 +30,7 @@
     { id: 'dig', label: 'Dig rock', icon: 'pick' },
     { id: 'level', label: 'Level rock', icon: 'floor' },
     { id: 'finish', label: 'Finish rock', icon: 'wall' },
+    { id: 'mine', label: 'Mine ore (paint)', icon: 'pick' },
     { id: 'claim', label: 'Claim asteroid', icon: 'flag' },
   ];
 </script>

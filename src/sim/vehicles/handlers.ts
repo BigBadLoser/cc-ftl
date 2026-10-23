@@ -39,7 +39,10 @@ export function dockError(sim: Sim, id: number, airlock: number): string | null 
   const m = sim.world.get(airlock, ModuleC);
   if (!m || !sim.world.has(airlock, AirlockC)) return 'noAirlock';
   if (!airlockWorking(sim, airlock)) return 'airlockDown';
-  if (shipById(sim, shipIdOf(sim, m))?.state === 'fled') return 'badTarget';
+  const host = shipById(sim, shipIdOf(sim, m));
+  if (host?.state === 'fled') return 'badTarget';
+  // An asteroid outpost has one dock (on its rock face, open to space); its other airlocks open onto ground.
+  if (host?.outpost?.dock && host.outpost.dock !== airlock) return 'notDock';
   for (const other of sim.world.query(VehicleC)) {
     const o = sim.world.get(other, VehicleC) as Vehicle;
     if (other !== id && (o.dock === airlock || (o.dest?.type === 'dock' && o.dest.airlock === airlock))) return 'occupied';

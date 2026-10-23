@@ -51,6 +51,7 @@ const REASONS: Record<string, string> = {
   otherGrid: 'Go to that airlock\'s ship first',
   unreachable: "Can't get to an airlock from here",
   noAirlock: 'That airlock is not usable',
+  needSuits: 'Not enough EVA suits: without an airlock the crew land by suit, so send fewer or suit them up first',
   // Trade
   noTrader: 'Nobody there to trade with',
   notAnswered: 'They have not answered your hail',

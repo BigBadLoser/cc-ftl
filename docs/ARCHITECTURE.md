@@ -784,6 +784,12 @@ shipgen's `structureParts`):
   pods with phase, pilot, hold, trips), `ui/AsteroidPanel.svelte`, `ui/PodList.svelte` (also in `ShuttlePanel`), asteroid tiles in
   `NodeStrip`, `api.selectAsteroid` (the controller also opens it on a tap on rock no region claims). Pod bays come with their pod
   when built by crew (`ModuleDef.vehicleBay.builtWith`, spawned in `finishModule`).
+- **Base logistics (`ferry/`, slice 5)**: `FerryC` on a shuttle is a run between two player regions (`ferry.order`, `ferry.cancel`); `ferrySystem`
+  (after `tradeSystem`) steps `toFrom -> gather -> toDest -> deliver -> home` with ordinary vehicle commands, `makeHaul` loads and the existing
+  `cargoJobsSystem` unload. Dock at a free working airlock (`regionAirlock`, `dockError`) else hover (`ferryMode`); hover swaps are instant, crew
+  by `eva.out`/`eva.board`. Landed suited crew drop `Suit.vehicle` and are undrafted (they belong to the region). `UiShuttles.regions` /
+  `ferryReady`; shuttle panel "Base run", crew card "Base trip". Mining paint: tool `mine` in `app/controller.ts` (`UiToolState.pods`).
+  Outposts record their dock (`ShipC.outpost.dock`); `dockError` returns `notDock` for the rest.
 - Contact sheets: `node tools/asteroids/cli.js <big|field|all> [--from 1] [--count 12] [--scale 4] [--coverage open|mixed|dense] [--out dir]`.
 
 ## Starmap (galaxy), `src/sim/galaxy/`

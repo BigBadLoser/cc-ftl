@@ -86,6 +86,22 @@ export type Command =
    * ore is gone or it is recalled. `tiles` limits it to those ore tiles (sector tiles). Replaces the pod's current order.
    */
   | { type: 'mining.order'; pod: number; asteroid: number; tiles?: { x: number; y: number }[] }
+  /**
+   * A base-logistics run (`ferry`): a free shuttle (`vehicle`, 0 = pick one) carries `items` (clipped to what `from` holds and to the
+   * hold) and `crew` (standing in `from`) from player region `from` to player region `to` (the home ship or a claimed base),
+   * docking at a free working airlock of each or, at a region with none that is not its home ship, hovering (suited crew,
+   * instant cargo swap). Then it flies home. Replaces nothing: a shuttle on a trade run, a ferry or a mining order is busy.
+   */
+  | { type: 'ferry.order'; vehicle?: number; from: number; to: number; items?: { item: string; count: number }[]; crew?: number[] }
+  /**
+   * Queue a logistics transfer: move `items` (clipped to what `from` holds) from player region `from` (or a salvage site) to player
+   * region `to`. A free shuttle and pilot take it in as many trips as it needs; nothing else to micro-manage.
+   */
+  | { type: 'transfer.order'; from: number; to: number; items: { item: string; count: number }[] }
+  /** Cancel a transfer: pending trips stop, goods stay where they are (a trip already on its way to the drop-off finishes). */
+  | { type: 'transfer.cancel'; order: number }
+  /** Call a run off: crew still aboard ride home, the shuttle flies back to its bay. */
+  | { type: 'ferry.cancel'; vehicle: number }
   /** Recall a mining pod: it flies home with what it has, unloads, and ends its order. */
   | { type: 'mining.recall'; pod: number }
   /**

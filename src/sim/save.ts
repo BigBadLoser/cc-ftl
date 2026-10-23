@@ -40,6 +40,8 @@ import { newTrade, type TradeState } from './trade/types';
  * v31: asteroid outposts are real stations (`station.<kind>` outpost tier): crewed, with `StationC`, `StationAlarmC`, a trader and `ShipC.gen`.
  * v32: finished rock walls (Struct.RockWall) and no ore on big asteroids.
  * v33: `MiningPodC.spot` (where a pod hovers to cut its tile, clear of other pods).
+ * v34 (base logistics, numbered in parallel with NPC traffic below): `FerryC` (base-logistics runs on shuttles) and `ShipC.outpost.dock` (the outpost's dock airlock).
+ * v35 (logistics, likewise): `TransferC` (logistics orders), `SalvageWatchC`, `Ferry.transfer|loaded|left`.
  * v34 (NPC traffic): `galaxy.turnClock`, `galaxy.fleets`, `galaxy.encounters`, `galaxy.nextFleet`.
  * v35 (encounters): `galaxy.event` (the event grid, node id `event:<id>`), `Encounter.strength` / `danger`, `Travel.phase` 'interdicted' | 'event' and `Travel.held`.
  * v36 (stage 1 of the living world): `Combat.pilot` (the helm's piloting skill, for evade odds).
@@ -49,8 +51,10 @@ import { newTrade, type TradeState } from './trade/types';
  * (a live station that is a port's market).
  * v39 (node population): `NodeState.populated` (the node's structures were made real; its archive owns them).
  * v40 (stage 4, off-screen life): `galaxy.news` / `galaxy.nextNews` (the bounded news log), `NodeState.wrecks` (ships destroyed in NPC fights, waiting to be found as wrecks).
+ * v41: `Combat.cruisePilot` / `Combat.cruiseEvasion` (evade odds outside combat).
+ * v42: base logistics and the living world in one save.
  */
-export const SAVE_VERSION = 41;
+export const SAVE_VERSION = 42;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

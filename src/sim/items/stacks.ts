@@ -30,7 +30,7 @@ for (let dy = -SPILL_RADIUS; dy <= SPILL_RADIUS; dy++) {
 SPIRAL.sort((a, b) => (a.dx ** 2 + a.dy ** 2) - (b.dx ** 2 + b.dy ** 2) || a.dy - b.dy || a.dx - b.dx);
 
 /**
- * Put items on the floor at the nearest tile with room: bare floor (no module, no door) that is
+ * Put items on the floor at the nearest tile with room: bare floor or open ground (no module, no door) that is
  * empty or holds the same item below its stack size. Returns how many units found no room (lost).
  */
 export function spillItems(sim: Sim, shipId: number, x: number, y: number, item: string, count: number): number {
@@ -42,7 +42,9 @@ export function spillItems(sim: Sim, shipId: number, x: number, y: number, item:
     if (left <= 0) break;
     const tx = x + dx;
     const ty = y + dy;
-    if (!grid.inBounds(tx, ty) || grid.get('struct', tx, ty) !== Struct.Floor) continue;
+    if (!grid.inBounds(tx, ty)) continue;
+    const kind = grid.get('struct', tx, ty);
+    if (kind !== Struct.Floor && kind !== Struct.Ground) continue;
     if (grid.has('module') && grid.get('module', tx, ty) !== 0) continue;
     const existing = grid.get('item', tx, ty);
     const stack = existing ? sim.world.get(existing, ItemStackC) : undefined;
