@@ -148,27 +148,46 @@ def facet(stations, prof, u, t, kk=1.0):
     return _bilinear(q, stations[k][0], stations[k + 1][0], ti, tj, u, x)
 
 
-def recess(f, stations, prof, u0, u1, t0, t1, depth, wall, floor, screw=None):
-    """A recessed panel where the loft was cut by (u0, u1, t0, t1): a floor `depth` (radius fraction) below the facets,
-    walls round it down from the hull, and, if `screw`, a fastener in each of the floor's corners."""
+def _sink(p, centre, d):
+    """p moved d into the hull along its surface normal: away from centre (u, z), the middle of the sphere it lies on,
+    or, if centre's u is None, straight toward the axis at height z (a cylinder)."""
+    cu, cz = centre
+    n = (0.0 if cu is None else p[0] - cu, p[1], p[2] - cz)
+    ln = math.sqrt(sum(x * x for x in n)) or 1.0
+    return tuple(p[x] - n[x] / ln * d for x in range(3))
+
+
+def recess(f, stations, prof, u0, u1, t0, t1, depth, wall, floor, centre, screw=None):
+    """A recessed panel where the loft was cut by (u0, u1, t0, t1): its floor sunk `depth` into the hull along the
+    surface normal (see _sink: `centre` is (u, z) of the sphere, or (None, z) of a cylinder's axis), walls straight
+    down to it all round, and, if
+    `screw`, a fastener in each of the floor's corners."""
     ang = sorted({a + s for a in _angles(prof) for s in (-360, 0, 360) if t0 < a + s < t1})
     us = [u0] + [st[0] for st in stations if u0 < st[0] < u1] + [u1]
     ts = [t0] + ang + [t1]
-    lo = 1.0 - depth
+
+    def top(u, t):
+        return facet(stations, prof, u, t)
+
+    def low(u, t, d=depth):
+        return _sink(top(u, t), centre, d)
     for a, b in zip(us, us[1:]):                                             # the floor
         for c, d in zip(ts, ts[1:]):
-            f.poly([f.pt(*facet(stations, prof, u, t, lo)) for u, t in ((a, c), (a, d), (b, d), (b, c))], floor, flip=True)
+            f.poly([f.pt(*low(u, t)) for u, t in ((a, c), (a, d), (b, d), (b, c))], floor, flip=True)
     edges = [[(u, t0) for u in us], [(u1, t) for t in ts], [(u, t1) for u in us[::-1]], [(u0, t) for t in ts[::-1]]]
     for e in edges:                                                          # the walls
         for (ua, ta), (ub, tb) in zip(e, e[1:]):
-            f.poly([f.pt(*facet(stations, prof, ua, ta)), f.pt(*facet(stations, prof, ub, tb)),
-                    f.pt(*facet(stations, prof, ub, tb, lo)), f.pt(*facet(stations, prof, ua, ta, lo))], wall, flip=True)
+            f.poly([f.pt(*top(ua, ta)), f.pt(*top(ub, tb)), f.pt(*low(ub, tb)), f.pt(*low(ua, ta))], wall, flip=True)
     if screw:
-        for uu in (u0 + 0.03, u1 - 0.03):
-            for tc in (t0 + 4.0, t1 - 4.0):
-                f.poly([f.pt(*facet(stations, prof, u, t, lo + 0.004)) for u, t in
-                        ((uu - 0.014, tc - 1.8), (uu - 0.014, tc + 1.8), (uu + 0.014, tc + 1.8), (uu + 0.014, tc - 1.8))],
-                       screw, flip=True)
+        for uu in (u0 + 0.035, u1 - 0.035):
+            for tc in (t0 + 4.5, t1 - 4.5):
+                ring_ = [low(uu + 0.022 * math.cos(k * math.tau / 8), tc + 2.4 * math.sin(k * math.tau / 8)) for k in range(8)]
+                head = [low(uu + 0.022 * math.cos(k * math.tau / 8), tc + 2.4 * math.sin(k * math.tau / 8), depth - 0.012)
+                        for k in range(8)]
+                for k in range(8):                                           # a round screw head, standing on the floor
+                    m = (k + 1) % 8
+                    f.poly([f.pt(*ring_[k]), f.pt(*ring_[m]), f.pt(*head[m]), f.pt(*head[k])], "steelD", flip=True)
+                f.poly([f.pt(*p) for p in head], screw, flip=True)
 
 
 def patch(f, body, u0, u1, t0, t1, k, mat, n=9, steps=4, hole=None, zc=0.0):
@@ -176,3 +195,29 @@ def patch(f, body, u0, u1, t0, t1, k, mat, n=9, steps=4, hole=None, zc=0.0):
     shuttle_craft.patch, but on the hull's own circle, not the shuttle's rounded square), cut by the bore."""
     us = [u0 + (u1 - u0) * i / steps for i in range(steps + 1)]
     loft(f, [station(body, u, k) for u in us], profile(t0, t1, n, p=2.0), mat, closed=False, hole=hole, zc=zc)
+
+
+def slab(f, body, u0, u1, t0, t1, k0, k1, top, side, round_=False):
+    """A raised plate on a round hull: its top lying at radius scale k1 over u0..u1 and the arc t0..t1 (degrees), its
+    edges walls down to k0. round_: an ellipse inscribed in that rectangle instead (a screw head)."""
+    tm, um = (t0 + t1) / 2, (u0 + u1) / 2
+    if round_:
+        edge = [(um + (u1 - u0) / 2 * math.cos(a), tm + (t1 - t0) / 2 * math.sin(a))
+                for a in (i * math.tau / 10 for i in range(10))]
+    else:
+        nt = max(2, int((t1 - t0) / 4))
+        edge = ([(u0, t0 + (t1 - t0) * i / nt) for i in range(nt + 1)] + [(u1, t0 + (t1 - t0) * i / nt) for i in range(nt, -1, -1)])
+
+    def pt(u, t, k):
+        su, sv, sz, v0, z0 = station(body, min(max(u, body[0][0]), body[-1][0]), k)
+        return f.pt(u, v0 + sv * math.cos(math.radians(t)), z0 + sz * math.sin(math.radians(t)))
+    if round_:
+        f.poly([pt(u, t, k1) for u, t in edge], top, flip=True)
+    else:
+        nt = len(edge) // 2 - 1
+        for i in range(nt):                                                  # the top, in strips across the arc
+            a, b = edge[i], edge[i + 1]
+            c, d = edge[-1 - i - 1], edge[-1 - i]
+            f.poly([pt(*a, k1), pt(*b, k1), pt(*c, k1), pt(*d, k1)], top, flip=True)
+    for (ua, ta), (ub, tb) in zip(edge, edge[1:] + edge[:1]):                 # the walls
+        f.poly([pt(ua, ta, k0), pt(ub, tb, k0), pt(ub, tb, k1), pt(ua, ta, k1)], side, flip=True)

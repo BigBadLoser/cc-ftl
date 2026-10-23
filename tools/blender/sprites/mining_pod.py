@@ -86,7 +86,7 @@ def body(fb):
     loft(fb, B, SECTION, HULL, cap0=HULL_D, hole=BORE, recesses=cuts)      # (they run on through the drum)
     _g("panels")
     for u0, u1, t0, t1 in cuts:
-        H.recess(fb, B, SECTION, u0, u1, t0, t1, PANEL_DEPTH, "steelD", HULL, screw="steelL")
+        H.recess(fb, B, SECTION, u0, u1, t0, t1, PANEL_DEPTH, HULL_D, HULL, (math.copysign(DOME_C, u0), C))
     _g("drum")
     D = [(BAND[0] + (BAND[1] - BAND[0]) * i / 24, DRUM_R, DRUM_R, 0, C) for i in range(25)]   # fine, for the bore
     loft(fb, D, profile(n=72, p=2.0), HULL, cap0="steelD", cap1="steelD", hole=BORE)   # the drum and its flat sides
@@ -101,19 +101,18 @@ def body(fb):
     for u0 in (BAND[0] + 0.05, BAND[1] - 0.15):
         patch(fb, D, u0, u0 + 0.1, t0, t1, 1.022, YEL_D, n=61, steps=3)
     _g("top_panel")                                                          # a big raised panel on the drum's top,
-    u0, u1, t0, t1 = TOP_PANEL                                               # the centre stripe carried over it
-    patch(fb, D, u0 - 0.02, u1 + 0.02, t0 - 2, t1 + 2, 1.032, "steelD", n=15, steps=6)    # its edge
-    patch(fb, D, u0, u1, t0, t1, 1.042, HULL_L, n=15, steps=6)
-    patch(fb, D, -0.1, 0.1, t0, t1, 1.05, YEL, n=15, steps=2)
-    for uu in (u0 + 0.04, u1 - 0.04):                                        # screws
-        for tt in (t0 + 4.5, t1 - 4.5):
-            patch(fb, D, uu - 0.022, uu + 0.022, tt - 2.2, tt + 2.2, 1.056, "steelL", n=3, steps=1)
+    u0, u1, t0, t1 = TOP_PANEL                                               # a thick slab, the centre stripe over it
+    H.slab(fb, D, u0, u1, t0, t1, 1.012, 1.055, HULL_L, HULL)
+    patch(fb, D, -0.1, 0.1, t0, t1, 1.06, YEL, n=15, steps=2)
+    for uu in (u0 + 0.045, u1 - 0.045):                                      # round screw heads
+        for tt in (t0 + 5.0, t1 - 5.0):
+            H.slab(fb, D, uu - 0.03, uu + 0.03, tt - 3.0, tt + 3.0, 1.05, 1.075, "steelL", "steelD", round_=True)
 
 
 # the domes' maintenance panels, (|u| range, arc), mirrored onto both domes: upper front, top, back and lower front,
 # clear of the hatches, the arms' panels and the drum. Each is recessed: cut out of the dome, sunk, walled round.
 TOP_PANEL = (-0.29, 0.29, 70, 124)   # the drum-top panel: u range, arc (clear of the antenna and the windshield)
-PANEL_DEPTH = 0.035           # how far the domes' panels are sunk (a fraction of the radius)
+PANEL_DEPTH = 0.03            # how far the domes' panels are sunk into the hull
 PANELS = (((0.53, 0.72), (112, 152)), ((0.53, 0.72), (42, 96)), ((0.53, 0.72), (-42, 12)), ((0.53, 0.72), (206, 244)))
 
 
