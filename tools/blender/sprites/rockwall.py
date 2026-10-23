@@ -18,7 +18,8 @@ from mathutils import Vector
 from . import derelict_walls as DW
 from . import walls as W
 from .rock_base import TAU, polyg, quad, rng, tri
-from .rockwall_stone import FINE, MORTAR, Lit, _hash, dressed_face, skirt_blocks
+from .rockwall_stone import (CH, FINE, MORTAR, Lit, _hash, _pt, brick_tone, brick_var, courses, dressed_face, panel,
+                             skirt_blocks)
 
 STONE = ("rkM", "rkD", "rkD", "rkM")                 # broken and cut rock: the cliffs' tones
 
@@ -162,8 +163,23 @@ def breach(mask, level):
     return build(sp, f"rockwall_breach_{mask}_{level}", limit, lambda m: DW._cables(m, "wall", mask, level))
 
 
+def section(k, ax, plane, a, b, zs, top, z_lo, bond=False):
+    """Bricks over a cut through the wall from a to b (u), on the face's own courses (so the joints meet the face's at
+    the corner), above z_lo: one stone across each course, or the face's bond (bond, a corner fill's outer face)."""
+    cs = [c for c in courses(zs, top) if c[1] > z_lo + 2 * CH]
+    for ci, (z0, z1, joints) in enumerate(cs):
+        z0 = max(z0, z_lo)
+        cuts = sorted({a, b} | ({jt + sh for jt in joints for sh in (-1, 0, 1) if a < jt + sh < b} if bond else set()))
+        for u0, u1 in zip(cuts, cuts[1:]):
+            polyg(k, [_pt(ax, plane, u0, z0, 0.0), _pt(ax, plane, u1, z0, 0.0), _pt(ax, plane, u1, z1, 0.0),
+                      _pt(ax, plane, u0, z1, 0.0)], MORTAR, _pt(ax, 0.0, 0.0, 0.0, 1.0))
+            panel(k, ax, plane, u0, u1, z0, z1, (True, True, True, ci < len(cs) - 1), brick_tone((z0 + z1) / 2),
+                  brick_var(ci, u0))
+
+
 def end_face(side, level="up", corners=0):
-    """walls.end_face's shape for stone: the wall's section where it butts into the low hull ghost."""
+    """walls.end_face's shape for stone: the wall's section where it butts into the low hull ghost. The skirt and the
+    wall's foot are a plain cut of the stone; above them the wall's courses in section."""
     t, top, zs = W.profile("wall", level)
     run = W.skirt_run()
     p0 = W.wall_back()
@@ -171,43 +187,31 @@ def end_face(side, level="up", corners=0):
     fz = W.fill_top("wall", level)
     lo_bit, hi_bit = (4, 2) if side == "s" else (1, 2)
     spans = [(p0, p1, top)] + ([(0.0, p0, fz)] if corners & lo_bit else []) + ([(p1, 1.0, fz)] if corners & hi_bit else [])
+    ax = "y" if side == "s" else "x"
     k = Lit(f"rockwall_end_{side}_{level}_{corners}")
-    out = Vector((0, 1, 0)) if side == "s" else Vector((1, 0, 0))
+    out = _pt(ax, 0.0, 0.0, 0.0, 1.0)
+    lo = courses(zs, top)[0][0]                          # the bricks start here
     for c in range(FINE):
         u0, u1 = c / FINE, (c + 1) / FINE
         um = (u0 + u1) / 2
         sp = next((s for s in spans if s[0] <= um < s[1]), None)
-        zt = sp[2] if sp else zs * max(0.0, 1.0 - min(max(a - um, um - b) for a, b, _ in spans) / run)
+        zt = min(lo, sp[2]) if sp else min(lo, zs * max(0.0, 1.0 - min(max(a - um, um - b) for a, b, _ in spans) / run))
         if zt <= W.ZG + 1e-6:
             continue
-        rows = max(1, int(round((zt - W.ZG) / 0.04)))
-        for r_ in range(rows):
-            z0, z1 = W.ZG + (zt - W.ZG) * r_ / rows, W.ZG + (zt - W.ZG) * (r_ + 1) / rows
-            col = "swK" if (sp and z1 > zt - 0.02) else STONE[_hash(c // 12, r_ // 5) % 4]
-            a, b = (Vector((-0.5 + u0, 0.5, z0)), Vector((-0.5 + u1, 0.5, z0))) if side == "s" else \
-                (Vector((0.5, -0.5 + u0, z0)), Vector((0.5, -0.5 + u1, z0)))
-            dz = Vector((0, 0, z1 - z0))
-            quad(k, a, b, b + dz, a + dz, col, out)
+        polyg(k, [_pt(ax, 0.5, u - 0.5, z, 0.0) for u, z in ((u0, W.ZG), (u1, W.ZG), (u1, zt), (u0, zt))], "rkD", out)
+    for i, (a, b, zt) in enumerate(spans):
+        if zt > lo + 2 * CH:
+            section(k, ax, 0.5, a - 0.5, b - 0.5, zs, zt, lo, bond=i > 0)
     return k.build()
 
 
 def breach_end(side, level):
-    """The intact neighbour's exposed end beside a breach: the stone's section from the tear's edge to the wall top."""
+    """The intact neighbour's exposed end beside a breach: the wall's section from the tear's edge to the wall top."""
     lo, edge = DW.tear_range("wall", level)
     top = W.wall_top("wall", level)
     p0 = -0.5 + W.wall_back()
     k = Lit(f"rockwall_breach_end_{side}_{level}")
-    out = Vector((-1, 0, 0)) if side == "w" else Vector((0, -1, 0))
-    n = max(1, round(W.TW * FINE))
-    rows = max(1, int(round((top - edge) / 0.04)))
-    for c in range(n):
-        u0, u1 = p0 + c / FINE, p0 + (c + 1) / FINE
-        for r_ in range(rows):
-            z0, z1 = edge + (top - edge) * r_ / rows, edge + (top - edge) * (r_ + 1) / rows
-            a, b = (Vector((-0.5, u1, z0)), Vector((-0.5, u0, z0))) if side == "w" else \
-                (Vector((u0, -0.5, z0)), Vector((u1, -0.5, z0)))
-            dz = Vector((0, 0, z1 - z0))
-            polyg(k, [a, b, b + dz, a + dz], STONE[_hash(c // 12, r_ // 5) % 4], out)
+    section(k, "x" if side == "w" else "y", -0.5, p0, p0 + W.TW, W.skirt_top(), top, edge)
     return k.build()
 
 
