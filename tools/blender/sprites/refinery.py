@@ -144,6 +144,12 @@ def spine(k, iu, iv):
     face(k, [(*p, top) for p in b], (0, 0, 1), GT)
     for v in (-0.95, 0.0, 0.95):
         stack(k, (u0 + u1) / 2, v, top, top + 0.62, 0.36, 0.26)
+        if STAGE[0] >= 2:
+            from . import refinery_forms as F
+            F.stack_forms(k, (u0 + u1) / 2, v, top, top + 0.62, 0.36)
+    if STAGE[0] >= 2:
+        from . import refinery_forms as F
+        F.spine_forms(k, u0, u1, v0, v1, H, top)
 
 
 def stack(k, u, v, z0, z1, r, ri, n=20):
@@ -173,6 +179,21 @@ def terminal(k):
         (ua, va), (ub_, vb) = plan[i], plan[i + 1]
         out = Vector(((ua + ub_) / 2 - (ub + uf) / 2, (va + vb) / 2, 0))
         face(k, [(ua, va, 0), (ub_, vb, 0), (ub_, vb, z(ub_)), (ua, va, z(ua))], out, G)
+
+
+STAGE = [1]                          # the stage being built (set by model)
+
+
+def model(rot=0, stage=2):
+    """The refinery as far as `stage` (1 the massing, 2 with its sub-forms)."""
+    STAGE[0] = stage
+    k = K(f"refinery_s{stage}_{rot}", FP, rot)
+    hull(k)
+    terminal(k)
+    if stage >= 2:
+        from . import refinery_forms as F
+        F.forms(k)
+    return k.build()
 
 
 def blockout(rot=0):
