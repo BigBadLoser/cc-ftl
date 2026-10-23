@@ -25,9 +25,14 @@ export interface PodView {
 
 /** Hover height above the floor in tiles of height: its foot a little under the rock tops, as it floats beside them. */
 const POD_Z = ROCK_MASS_Z - 0.2;
-/** The laser's muzzle: tiles ahead of the pod's centre along its heading, and its height above the pod's foot in tiles of height. */
-const MUZZLE_AHEAD = 0.9;
-const MUZZLE_UP = 0.8;
+/**
+ * The laser's emitter face in the mining pose, from tools/blender/sprites/mining_pod.py: the gimbal pivots at (LASER_U 0.98 ahead,
+ * z 0.54), the barrel is pitched down 60 degrees and the emitter face is 0.71 along it. That is 0.98 + 0.71 cos 60 ahead of the pod's
+ * centre along its heading, and 0.54 - 0.71 sin 60 above the foot (just under it); the second mining frame bobs the pod up 0.03.
+ */
+const MUZZLE_AHEAD = 0.98 + 0.71 * Math.cos(Math.PI / 3);
+const MUZZLE_UP = 0.54 - 0.71 * Math.sin(Math.PI / 3);
+const MINE_BOB = [0, 0.03];
 const LASER = 0xff6a3a;
 /** A stowed pod (placeholder until the bay's parked sprite exists) sits this far below the deck, on the pit floor, and sorts behind the pit's near lip. */
 const PIT_Z = -0.6;
@@ -82,12 +87,13 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         // A stowed pod is the bay layer's `parked` sprite once that art exists.
         if (low && atlas.ids(`${v.def}.parked`).length > 0) continue;
         const d = headingIndex(b.heading);
+        const frame = Math.floor((clock * 1000) / MINE_FRAME_MS) % 2;
         const m = world.get(id, MiningPodC);
         const mining = !low && m?.phase === 'mining' && !!m.target;
         const sprite = low
           ? atlas.firstOf([`${v.def}.docked.d${d & 6}`, `${v.def}.fly.d${d}`])
           : mining
-            ? atlas.firstOf([`${v.def}.mine.d${d}.f${Math.floor((clock * 1000) / MINE_FRAME_MS) % 2}`, `${v.def}.fly.d${d}`])
+            ? atlas.firstOf([`${v.def}.mine.d${d}.f${frame}`, `${v.def}.fly.d${d}`])
             : atlas.stat(`${v.def}.fly.d${d}`);
         if (!sprite) continue;
         seen.add(id);
@@ -117,7 +123,7 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
           const top = tp.y - ROCK_MASS_Z * Z_PX; // the laser ends on the rock's top face
           const pulse = 0.6 + 0.4 * Math.sin(clock * 18);
           const mx = iso(Math.cos(b.heading) * MUZZLE_AHEAD, Math.sin(b.heading) * MUZZLE_AHEAD);
-          const my = mx.y - iso(0, 0).y - MUZZLE_UP * Z_PX;
+          const my = mx.y - iso(0, 0).y - (MUZZLE_UP + (MINE_BOB[frame] ?? 0)) * Z_PX;
           t.fx.moveTo(mx.x - iso(0, 0).x, my).lineTo(tp.x - p.x, top - p.y + lift).stroke({ color: LASER, width: Math.max(1, TILE_H / 12), alpha: pulse });
           t.fx.circle(tp.x - p.x, top - p.y + lift, TILE_H * 0.15).fill({ color: 0xffd0a0, alpha: pulse });
         }

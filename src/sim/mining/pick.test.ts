@@ -40,19 +40,28 @@ describe('mining tile picks', () => {
     expect(pickTile(sim, other, order(asteroid, { tiles: [{ x: 14, y: 10 }] }), { x: 0, y: 0 })).toEqual({ x: 14, y: 10 });
   });
 
-  it('hovers diagonally beside the ore, nearest the pod first, orthogonally only when no diagonal is open', () => {
-    const { sim, asteroid } = bar();
-    // The 5x1 bar: every tile above and below it is open space, so the diagonal south-west of (12, 10) is the nearest to a pod there.
+  it('hovers behind the ore on screen first (grid -x or -y), nearest the pod, then in front, then the grid diagonals', () => {
+    const { sim } = bar();
     const pod = sim.world.createEntity();
     sim.world.add(pod, BodyC, { x: 8, y: 14, heading: 0, alt: 2.5 });
-    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: 11.5, y: 11.5 });
-    sim.world.get(pod, BodyC)!.y = 6;
-    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: 11.5, y: 9.5 });
-    // Rock on all four diagonals of the end tile (10, 10): fill them and the west neighbour is the only open spot left near.
-    for (const [x, y] of [[9, 9], [11, 9], [9, 11], [11, 11]] as [number, number][]) sim.sector.grid.set('struct', x, y, Struct.Rock);
-    const o = hoverSpot(sim, pod, { x: 10, y: 10 }, 2.6);
-    expect([[10.5, 9.5], [10.5, 11.5], [9.5, 10.5]].some(([x, y]) => o.x === x && o.y === y)).toBe(true);
-    void asteroid;
+    // Open space on both spots behind (12, 10) (the bar's tile (11, 10) cleared): the pod in the south-west is nearer the (-1, 0) one.
+    sim.sector.grid.set('struct', 11, 10, Struct.Space);
+    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: 11.5, y: 10.5 });
+    sim.world.get(pod, BodyC)!.x = 16;
+    sim.world.get(pod, BodyC)!.y = 4;
+    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: 12.5, y: 9.5 });
+    // Rock behind (both): the spots in front are next.
+    const g = sim.sector.grid;
+    g.set('struct', 11, 10, Struct.Rock);
+    g.set('struct', 12, 9, Struct.Rock);
+    const front = hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6);
+    expect([[13.5, 10.5], [12.5, 11.5]].some(([x, y]) => front.x === x && front.y === y)).toBe(true);
+    // Rock in front too: a grid diagonal.
+    g.set('struct', 13, 10, Struct.Rock);
+    g.set('struct', 12, 11, Struct.Rock);
+    const diag = hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6);
+    expect(Math.abs(diag.x - 12.5)).toBe(1);
+    expect(Math.abs(diag.y - 10.5)).toBe(1);
   });
 
   it('keeps pods a width apart and is deterministic', () => {
