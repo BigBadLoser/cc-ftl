@@ -333,7 +333,7 @@ def tip_bin(fp, fill, rot, ore="iron"):
     base(k, w)
     n0 = len(k.m.f)
     body(k, w)
-    grime(k, n0, len(k.m.f), Vector((0, (BACK + LIP) / 2, 0.75)), top_z, LIP)
+    grime(k, n0, len(k.m.f), Vector((0, (BACK + LIP) / 2, 0.75)), top_z)
     rng = np.random.default_rng(11 + C.FILLS.index(fill))
     if C.HEAP[fill]:
         heap(k, fill, ore, rng)

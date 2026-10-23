@@ -1,8 +1,8 @@
 """The tip bin's fine plates and its wear, done the mining pod's way: the body's plates are cut into small faces, then
 each face's colour is blended by where it lies (mining_pod.wear), so the wear reads as soft gradients, not patches.
 
-Outside: rust run-off streaking down from the rim, the asteroid's dust gathered low and in broad blotches, paint
-chipped to bare steel along the rim. Inside: ore grime packed low, the rim's inner edge scraped bare."""
+Outside: rust run-off streaking down from the rim, the asteroid's dust gathered low and in broad blotches. Inside: ore
+grime packed low."""
 import math
 
 import numpy as np
@@ -72,16 +72,10 @@ def _s(x):
     return x * x * (3 - 2 * x)
 
 
-def _hash(p, salt=0.0):
-    """A repeatable random number in [0, 1) for a point."""
-    x = math.sin(12.9898 * p.x + 78.233 * p.y + 37.719 * p.z + salt) * 43758.5453
-    return x - math.floor(x)
-
-
-def grime(k, n0, n1, centre, top_z, lip_v, seed=5):
+def grime(k, n0, n1, centre, top_z, seed=5):
     """Wear on faces n0 .. n1: centre (local) is a point inside the bin, top_z(v) its rim height."""
     from lib import palette
-    rust, dust, bare, ore = (Vector(palette.linear(c)) for c in ("rust", "gdD", "steelL", "rkD"))
+    rust, dust, ore = (Vector(palette.linear(c)) for c in ("rust", "gdD", "rkD"))
     rng = np.random.default_rng(seed)
     streaks = [(rng.uniform(0, 1), rng.uniform(0.3, 0.8), rng.uniform(0.02, 0.05)) for _ in range(18)]
     cx, cy = centre.x, centre.y
@@ -97,12 +91,6 @@ def grime(k, n0, n1, centre, top_z, lip_v, seed=5):
             n += Vector(((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y)))
         below = top_z(c.y) - c.z
         blot = 0.5 + 0.5 * math.sin(4.1 * c.x + 1.3) * math.sin(3.3 * c.y + 0.4) * math.cos(2.9 * c.z - 0.8)
-        lip = _s((c.y - lip_v + 0.12) / 0.1)                                # the tipping lip takes the scraping
-        clump = 0.5 + 0.5 * math.sin(5.3 * c.x + 1.1) * math.sin(4.1 * c.y + 2.3)
-        p_chip = (0.08 + 0.4 * lip) * (0.4 + 0.9 * clump)                   # scattered chips, in clumps
-        chip = 0.0
-        if _hash(c) < p_chip:
-            chip = (0.45 + 0.4 * _hash(c, 7.1)) * _s((0.07 - abs(below)) / 0.05)
         col = Vector(col)
         n = -n                                                              # stored winding is mirrored (core.G, flip)
         if n.dot(c - centre) < 0 and n.z < 0.9:                              # inside walls
@@ -116,5 +104,4 @@ def grime(k, n0, n1, centre, top_z, lip_v, seed=5):
             low = _s((0.85 - c.z) / 0.5)
             col = col.lerp(rust, min(0.8, 0.9 * run))
             col = col.lerp(dust, min(0.8, 0.7 * low + 0.4 * _s((blot - 0.4) / 0.4)))
-        col = col.lerp(bare, min(0.85, chip))
         k.m.f[i] = (idx, tuple(col), own, glow)
