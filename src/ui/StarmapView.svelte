@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import type { UiApi } from './api';
+  import type { UiApi, UiFtl } from './api';
   import type { UiEncounterChoice, UiJumpWarnings, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
@@ -45,6 +45,9 @@
   /** The jump confirm step (what the jump would leave behind) and which docked shuttles come along. */
   let confirming = $state<UiJumpWarnings | null>(null);
   let taking = $state<number[]>([]);
+  /** The FTL drive and its order, and whether the open confirm step is for "Jump when charged". */
+  let ftl = $state<UiFtl | null>(null);
+  let queueing = false;
 
   const nodeById = $derived(new Map((map?.nodes ?? []).map((n) => [n.id, n])));
   const sectorById = $derived(new Map((map?.sectors ?? []).map((x) => [x.id, x])));
@@ -185,10 +188,12 @@
         selected = cheapestTarget(m);
       }
     });
+    const unsubFtl = api.ftl.subscribe((f) => (ftl = f));
     // A wheel listener must not be passive to stop the page from scrolling.
     svg.addEventListener('wheel', wheel, { passive: false });
     return () => {
       unsub();
+      unsubFtl();
       svg.removeEventListener('wheel', wheel);
     };
   });
@@ -377,8 +382,10 @@
    * Set off along the plotted route (the second tap on the picked node, or the drawer's Jump). Flee goes at once as a one-hop trip;
    * a jump that would leave crew or shuttles behind opens the confirm step in the drawer first.
    */
-  function go() {
-    if (!route || route.blocker || !map || map.state !== 'active') return;
+  function go(queue = false) {
+    if (!route || !map || map.state !== 'active') return;
+    if (queue ? route.chargeOk || fleeing : route.blocker) return;
+    queueing = queue;
     if (fleeing) {
       api.dispatch({ type: 'combat.flee', ship: flee as number, to: route.path[1] });
       return;
@@ -392,7 +399,9 @@
   /** Enter hyperspace with the plotted route (and the docked shuttles picked in the confirm step). */
   function fly() {
     if (!route || !map) return;
-    api.dispatch(jumpCommand(map.ship, route.path, taking));
+    const jump = jumpCommand(map.ship, route.path, taking);
+    api.dispatch(queueing ? { type: 'ftl.charge', ship: map.ship, jump: jump.route, ...(jump.withDocked ? { withDocked: jump.withDocked } : {}) } : jump);
+    queueing = false;
     confirming = null;
     taking = [];
     selected = null;
@@ -462,7 +471,7 @@
   {#if map && drawerOpen}
       <StarmapDrawer {map} node={sel} sector={sel ? sectorById.get(sel.sector) ?? null : null} cluster={sel ? map.clusters.find((c) => c.id === sectorById.get(sel.sector)?.cluster) ?? null : null}
         factions={map.factions} {route} nodes={nodeById} {fleeing} warnings={confirming} taking={new Set(taking)}
-        onGo={go} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggle} onDrop={drop} onRespond={respond} onClear={() => ((selected = null), (confirming = null))} />
+        {ftl} onGo={() => go()} onQueue={() => go(true)} onCharge={() => map && api.dispatch({ type: 'ftl.charge', ship: map.ship })} onCancelCharge={() => map && api.dispatch({ type: 'ftl.cancelCharge', ship: map.ship })} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggle} onDrop={drop} onRespond={respond} onClear={() => ((selected = null), (confirming = null))} />
   {/if}
   </div>
   {#if pickedInfo && level === 3}

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCombat, UiCrew, UiModule, UiStats, UiStock } from './api';
+  import type { UiApi, UiCombat, UiCrew, UiFtl, UiModule, UiStats, UiStock } from './api';
+  import FtlCharge from './FtlCharge.svelte';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
   import { Tooltip } from './kit';
@@ -13,6 +14,7 @@
   let crew = $state<UiCrew[]>([]);
   let mods = $state<UiModule[]>([]);
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
+  let ftl = $state<UiFtl | null>(null);
   onMount(() => {
     const u = [
       api.stats.subscribe((s) => (st = s)),
@@ -21,6 +23,7 @@
       api.crew.subscribe((v) => (crew = v)),
       api.modules.subscribe((v) => (mods = v)),
       api.combat.subscribe((v) => (combat = v)),
+      api.ftl.subscribe((v) => (ftl = v)),
     ];
     return () => u.forEach((f) => f());
   });
@@ -44,6 +47,7 @@
     <Tooltip text="Crew"><span class="cell"><Icon name="person" size={18} /><b>{crew.length}</b></span></Tooltip>
     <Tooltip text="Modules ({off.length} offline)"><span class="cell" class:bad={off.length > 0}><Icon name="module" size={18} /><b>{mods.length - off.length}/{mods.length}</b></span></Tooltip>
   </div>
+  {#if ftl}<div class="drive"><FtlCharge {ftl} testid="overview-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: ftl!.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: ftl!.ship })} /></div>{/if}
   {#if combat.player}<div class="meters"><ShipMeters ship={combat.player} compact /></div>{/if}
 </aside>
 
@@ -55,6 +59,7 @@
   .cell b { color: var(--text); font-weight: 600; }
   button.cell { cursor: pointer; } button.cell.on { border-color: var(--cyan); background: var(--panel-3); }
   .cell.bad { border-color: var(--red); color: var(--red); }
+  .drive { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
   .meters { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
   @media (max-width: 600px) { :global(html[data-combat]) .over { display: none; } .over { bottom: auto; left: 8px; right: calc(46px + var(--sar)); width: auto; border-width: 1px; padding: 10px; } }
 </style>

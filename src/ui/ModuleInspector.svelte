@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiModule } from './api';
+  import type { UiApi, UiFtl, UiModule } from './api';
+  import FtlCharge from './FtlCharge.svelte';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
   import FabPanel from './FabPanel.svelte';
@@ -10,12 +11,14 @@
   let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
   let mods = $state<UiModule[]>([]);
   let sel = $state<number | null>(null);
+  let ftl = $state<UiFtl | null>(null);
   const m = $derived(mods.find((x) => x.id === sel));
 
   onMount(() => {
     const a = api.modules.subscribe((v) => (mods = v));
     const b = api.selectedModule.subscribe((s) => (sel = s));
-    return () => (a(), b());
+    const c = api.ftl.subscribe((v) => (ftl = v));
+    return () => (a(), b(), c());
   });
 
   const stateOf = (x: UiModule) => (!x.enabled ? 'Disabled' : x.hp <= 0 ? 'Destroyed' : x.powered ? 'Running' : 'No power');
@@ -33,6 +36,7 @@
       {#if m.suits}<dt>EVA suits</dt><dd data-testid="airlock-suits">{m.suits.stowed} / {m.suits.max}</dd>{/if}
     </dl>
     <div class="bar hp" class:low={hpPct(m) < 40}><i style:width="{hpPct(m)}%"></i></div>
+    {#if m.def === 'module.helm' && ftl && ftl.ship === m.ship}<div class="drive"><FtlCharge {ftl} testid="helm-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: m.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: m.ship })} /></div>{/if}
     {#if m.crafting}<FabPanel {api} id={m.id} def={m.def} />{/if}
     {#if m.storage}<StoragePanel {api} id={m.id} />{/if}
     {#if m.bay}<RobotBayPanel {api} id={m.id} bay={m.bay} />{/if}
@@ -54,6 +58,7 @@
 {/if}
 
 <style>
+  .drive { margin: 0 0 8px; }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; }
   dd.bad { color: #ff9a9a; }

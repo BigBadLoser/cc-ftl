@@ -53,8 +53,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v40 (stage 4, off-screen life): `galaxy.news` / `galaxy.nextNews` (the bounded news log), `NodeState.wrecks` (ships destroyed in NPC fights, waiting to be found as wrecks).
  * v41: `Combat.cruisePilot` / `Combat.cruiseEvasion` (evade odds outside combat).
  * v42: base logistics and the living world in one save.
+ * v43: `Combat.ftlOrder` (the standing `ftl.charge` order and its queued jump).
  */
-export const SAVE_VERSION = 42;
+export const SAVE_VERSION = 43;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

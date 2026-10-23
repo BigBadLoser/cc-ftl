@@ -174,6 +174,7 @@ const api: UiApi = {
   alerts: controller.alerts.list,
   log: controller.log.list,
   combat: bridge.combat,
+  ftl: bridge.ftl,
   shuttles: bridge.shuttles,
   trade: bridge.trade,
   prizes: bridge.prizes,
