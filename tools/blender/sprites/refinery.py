@@ -88,13 +88,33 @@ def long_side(k, s):
                 tube(k, (u, v0 + 0.03, z), (u, v1 - 0.03, z), r, G, sides=14, cap=GT)
 
 
+def rim_top():
+    """The rim's top: the hull's at stage 1; at stage 2 the armour cap's, a little higher."""
+    return HT + (0.05 if STAGE[0] >= 2 else 0.0)
+
+
+def rim_outline(t):
+    """The octagon of the rim's outer edge pushed out by t, mitred at the corners."""
+    out = []
+    for i in range(8):
+        ns = []
+        for e in ((i - 1) % 8, i):
+            (a, b), (c, d) = LO[e], LO[(e + 1) % 8]
+            n = Vector((d - b, -(c - a), 0)).normalized()
+            ns.append(n if n.dot(Vector(((a + c) / 2, (b + d) / 2, 0))) > 0 else -n)
+        m = (ns[0] + ns[1]).normalized() / math.cos(math.pi / 8)
+        out.append((HI[i][0] + m.x * t, HI[i][1] + m.y * t))
+    return out
+
+
 def slot(k, v0, v1):
     """The terminal's slot, cut the full height of the +u side and through the rim, back to the deck opening's edge."""
     ub = U - B - RIM
     front = lambda v, z: (wall_u(1, z), v, z)                                 # noqa: E731
-    face(k, [(ub, v0, 0), (ub, v1, 0), (ub, v1, HT), (ub, v0, HT)], (1, 0, 0), GD)
-    face(k, [front(v0, 0), (ub, v0, 0), (ub, v0, HT), front(v0, HT)], (0, 1, 0), G)
-    face(k, [front(v1, 0), (ub, v1, 0), (ub, v1, HT), front(v1, HT)], (0, -1, 0), G)
+    zt = rim_top()
+    face(k, [(ub, v0, 0), (ub, v1, 0), (ub, v1, zt), (ub, v0, zt)], (1, 0, 0), GD)
+    face(k, [front(v0, 0), (ub, v0, 0), (ub, v0, zt), front(v0, HT)], (0, 1, 0), G)
+    face(k, [front(v1, 0), (ub, v1, 0), (ub, v1, zt), front(v1, HT)], (0, -1, 0), G)
 
 
 def recess(k, s, v0, v1):
@@ -109,24 +129,31 @@ def recess(k, s, v0, v1):
 
 
 def deck(k):
-    """The rim (one ring round the hull's top), the walls inside it down to the deck floor, the floor."""
+    """The rim (one ring round the hull's top; at stage 2 the armour cap, reaching out flush with the armour), the walls
+    inside it down to the deck floor, the floor."""
     iu, iv = U - B - RIM, V - B - RIM                                         # the deck opening's half extents
     inner = [(-iu, -iv), (iu, -iv), (iu, -iv), (iu, iv), (iu, iv), (-iu, iv), (-iu, iv), (-iu, -iv)]
+    zt = rim_top()
+    if STAGE[0] >= 2:
+        from .refinery_forms import ARM, T
+        o, col = rim_outline(T), ARM
+    else:
+        o, col = HI, GT
     for i in range(8):                                                        # the rim, mitred to the octagon
         j = (i + 1) % 8
         if i == 2:                                                            # the +u side: cut by the terminal's slot
-            for a, b, c, d in ((HI[2], (U - B, -TS), (iu, -TS), inner[2]), ((U - B, TS), HI[3], inner[3], (iu, TS))):
-                face(k, [(*a, HT), (*b, HT), (*c, HT), (*d, HT)], (0, 0, 1), GT)
+            for a, b, c, d in ((o[2], (o[2][0], -TS), (iu, -TS), inner[2]), ((o[3][0], TS), o[3], inner[3], (iu, TS))):
+                face(k, [(*a, zt), (*b, zt), (*c, zt), (*d, zt)], (0, 0, 1), col)
             continue
-        pts = [(*HI[i], HT), (*HI[j], HT), (*inner[j], HT), (*inner[i], HT)]
+        pts = [(*o[i], zt), (*o[j], zt), (*inner[j], zt), (*inner[i], zt)]
         if inner[i] == inner[j]:
             pts = pts[:3]
-        face(k, pts, (0, 0, 1), GT)
+        face(k, pts, (0, 0, 1), col)
     sq = [(-iu, -iv), (iu, -iv), (iu, iv), (-iu, iv)]
     for i in range(4):                                                        # the opening's walls, facing in
         a, b = sq[i], sq[(i + 1) % 4]
         mid = Vector(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0))
-        face(k, [(*a, H), (*b, H), (*b, HT), (*a, HT)], -mid, GD)
+        face(k, [(*a, H), (*b, H), (*b, zt), (*a, zt)], -mid, G)
     face(k, [(*p, H) for p in sq], (0, 0, 1), G)
     spine(k, iu, iv)
 

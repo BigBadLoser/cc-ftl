@@ -100,34 +100,29 @@ def roller_ribs(k):
 RAIL = (R.HT - 0.04, R.HT + 0.05)        # the rim rail's foot and top: the armour rises into its underside
 
 
-def rim_rail(k, inset=0.09):
-    """A capping rail round the rim, mitred at the corners, its face flush with the armour's (T proud of the hull), so
-    the corner plates, the pilasters and the end frames all run up into it. Broken at the terminal's slot."""
-    vn = [(_n((i - 1) % 8) + _n(i)).normalized() / math.cos(math.pi / 8) for i in range(8)]
-    out = [Vector((*R.HI[i], 0)) + vn[i] * T for i in range(8)]
-    inn = [Vector((*R.HI[i], 0)) - vn[i] * inset for i in range(8)]
-    z0, z1 = RAIL
+def rim_rail(k):
+    """The armour cap's outer face round the rim (its top is the rim's own, refinery.deck), flush with the armour's face,
+    so the corner plates, the pilasters and the end frames run up into it; its underside; its ends at the terminal's
+    slot."""
+    out = [Vector((*p, 0)) for p in R.rim_outline(T)]
+    z0, z1 = RAIL[0], R.rim_top()
     up = lambda p, z: Vector((p.x, p.y, z))                                  # noqa: E731
     for i in range(8):
         j = (i + 1) % 8
         spans = [(0.0, 1.0)]
         if i == 2:                                                            # the +u side: the slot
-            a_, b_ = out[i], out[j]
-            t0 = (-R.TS - a_.y) / (b_.y - a_.y)
-            t1 = (R.TS - a_.y) / (b_.y - a_.y)
+            t0 = (-R.TS - out[i].y) / (out[j].y - out[i].y)
+            t1 = (R.TS - out[i].y) / (out[j].y - out[i].y)
             spans = [(0.0, t0), (t1, 1.0)]
         for ta, tb in spans:
             oa, ob = out[i].lerp(out[j], ta), out[i].lerp(out[j], tb)
-            ia, ib = inn[i].lerp(inn[j], ta), inn[i].lerp(inn[j], tb)
-            n = _n(i)
-            face(k, [up(oa, z0), up(ob, z0), up(ob, z1), up(oa, z1)], n, ARM)
-            face(k, [up(oa, z1), up(ob, z1), up(ib, z1), up(ia, z1)], (0, 0, 1), ARM)
-            face(k, [up(ia, R.HT), up(ib, R.HT), up(ib, z1), up(ia, z1)], -n, R.GD)
-            face(k, [up(oa, z0), up(ob, z0), up(ib, z0), up(ia, z0)], (0, 0, -1), R.GD)
+            ha = Vector((*R.HI[i], 0)).lerp(Vector((*R.HI[j], 0)), ta)
+            hb = Vector((*R.HI[i], 0)).lerp(Vector((*R.HI[j], 0)), tb)
+            face(k, [up(oa, z0), up(ob, z0), up(ob, z1), up(oa, z1)], _n(i), ARM)
+            face(k, [up(oa, z0), up(ob, z0), up(hb, z0), up(ha, z0)], (0, 0, -1), R.GD)
             if i == 2:                                                        # its ends at the slot
-                e = oa if ta > 0 else ob
-                f = ia if ta > 0 else ib
-                face(k, [up(e, z0), up(f, z0), up(f, z1), up(e, z1)], (0, 1 if ta > 0 else -1, 0), ARM)
+                e, h = (oa, ha) if ta > 0 else (ob, hb)
+                face(k, [up(e, z0), up(h, z0), up(h, z1), up(e, z1)], (0, 1 if ta > 0 else -1, 0), ARM)
 
 
 def stack_forms(k, u, v, z0, z1, r):
@@ -174,6 +169,61 @@ def terminal_forms(k):
         k.box(uf + 0.012, 0, 0.11 + i * 0.075, 0.02, 0.3, 0.025, R.G, top=R.GT)
 
 
+def conveyor(k, seed=3):
+    """An ore conveyor on the deck: an inclined belt between side rails, on legs, carrying ore from above the input up
+    into a feed hopper beside the plinth."""
+    import numpy as np
+    from .ore_cage import _rock
+    rng = np.random.default_rng(seed)
+    u, w = 0.78, 0.26
+    lo, hi = Vector((u, 1.36, R.H + 0.1)), Vector((u, 0.74, R.H + 0.52))
+    d = hi - lo
+    L, ang = d.length, math.atan2(d.z, -d.y)
+    mid = (lo + hi) / 2
+    k.box(u, mid.y, mid.z - 0.025, w, L, 0.05, R.HOLE, rx=-ang)                    # the belt
+    for e in (-1, 1):                                                               # its side rails
+        k.box(u + e * (w / 2 + 0.02), mid.y, mid.z - 0.03, 0.04, L + 0.04, 0.09, R.G, top=R.GT, rx=-ang)
+    for t in (0.25, 0.7):                                                           # legs
+        p = lo.lerp(hi, t)
+        for e in (-1, 1):
+            k.box(u + e * (w / 2 + 0.02), p.y, R.H, 0.04, 0.04, p.z - R.H - 0.03, R.GD)
+    n = Vector((0, d.z, -d.y)).normalized() if d.z * 0 == 0 else Vector((0, 0, 1))
+    n = n if n.z > 0 else -n
+    for i in range(7):                                                              # ore riding up it
+        p = lo.lerp(hi, 0.08 + 0.84 * i / 6) + n * 0.02 + Vector((rng.uniform(-0.07, 0.07), 0, 0))
+        _rock(k, p, rng.uniform(0.04, 0.06), 0.05, ("orM", "rkD", "orD", "rkM")[i % 4], rng)
+    k.box(0.72, 0.58, R.H + 0.3, 0.42, 0.34, 0.32, R.G, top=R.GT)                   # the feed hopper
+    k.box(0.72, 0.58, R.H + 0.6, 0.32, 0.24, 0.03, R.HOLE)
+
+
+def plinth_vents(k):
+    """Heat vents let into the plinth's lower tier, under each stack and at its ends (they glow at stage 3)."""
+    hw, hl = 0.56, R.V - R.B - R.RIM - 0.04
+    for s in (-1, 1):
+        for v in (-0.95, 0.0, 0.95):
+            k.box(s * (hw - 0.012), v, R.H + 0.07, 0.03, 0.34, 0.1, R.HOLE)
+        k.box(0, s * (hl - 0.012), R.H + 0.07, 0.5, 0.03, 0.1, R.HOLE)
+
+
+def contents(k, seed=9):
+    """Ore on the input's chute, ingots stacked on the output's."""
+    import numpy as np
+    from .ore_cage import _rock
+    rng = np.random.default_rng(seed)
+    z0 = R.BZ[0]
+    ub = R.wall_u(1, z0) - R.D
+    for v0, v1, kind in R.BAYS[1]:
+        c = (v0 + v1) / 2
+        if kind == "input":
+            for i in range(6):
+                t = rng.uniform(0.15, 0.85)
+                p = Vector((ub + R.D * 0.7 * t, c + rng.uniform(-0.22, 0.22), z0 + 0.22 - 0.18 * t + 0.02))
+                _rock(k, p, rng.uniform(0.04, 0.06), 0.05, ("orM", "rkD", "orD")[i % 3], rng)
+        elif kind == "output":
+            for j, (dv, dz) in enumerate(((-0.12, 0), (0.0, 0), (0.12, 0), (-0.06, 0.045), (0.06, 0.045))):
+                k.box(ub + R.D * 0.55, c + dv, z0 + 0.07 + dz, 0.16, 0.1, 0.045, "steelL", top="plate")
+
+
 def forms(k):
     for i in (1, 3, 5, 7):
         corner_armour(k, i)
@@ -184,3 +234,6 @@ def forms(k):
     rim_rail(k)
     hatches(k)
     terminal_forms(k)
+    conveyor(k)
+    plinth_vents(k)
+    contents(k)
