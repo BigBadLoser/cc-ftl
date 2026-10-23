@@ -53,7 +53,7 @@ LASER_U, LASER_Z = 0.98, WIND_ZB - 0.2    # the laser's pivot, in the gimbal hun
 HULL, HULL_D, HULL_L = "steelL", "steel", "plate"   # the ship's own blue-grey steel
 YEL, YEL_D = "c4T2", "c4T4"
 GLOW = "cyan"
-BEAM = "orange"
+BEAM = "red"                  # the emitter, lit to match fx_mining's laser
 
 
 def loft(f, stations, prof, mat, **kw):
