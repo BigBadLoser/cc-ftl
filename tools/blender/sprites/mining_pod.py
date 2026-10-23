@@ -113,7 +113,7 @@ def body(fb):
 # arm's panel at the front (180) and these four in the rest, clear of the drum's overhang and the hatch frames. Each is recessed: cut
 # out of the dome, sunk, walled round.
 TOP_PANEL = (-0.29, 0.29, 70, 124)   # the drum-top panel: u range, arc (clear of the antenna and the windshield)
-PANEL_DEPTH = 0.02            # how far the domes' panels are sunk into the hull
+PANEL_DEPTH = 0.032           # how far the domes' panels are sunk into the hull
 PANEL_U, PANEL_W = (0.56, 0.715), 46.0   # the recesses' |u| range and arc (degrees)
 PANELS = tuple((PANEL_U, (c - PANEL_W / 2, c + PANEL_W / 2)) for c in (180 - 72, 180 - 144, 180 + 144, 180 + 72))
 
