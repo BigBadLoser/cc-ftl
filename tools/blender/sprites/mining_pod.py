@@ -1,13 +1,13 @@
-"""The MINING POD (vehicle.mining_pod): a one-seat ribbed bulb of a miner that sits in a 3x3 bay. Ore rides inside it.
+"""The MINING POD (vehicle.mining_pod): a one-seat capsule of a miner that sits in a 3x3 bay. Ore rides inside it.
 
 Local frame as shuttle_craft (u = nose, v across, z up, origin at the footprint centre on the pad; `Spin(heading)`).
-The body is a bulb swept along the pod's +v axis (built in its own frame turned a quarter turn, `Spin(heading + 90)`):
-ribbed, banded with armour plates, and closed on its +v end by the big round HATCH (a heavy ring round a red-lit door
+The body is a capsule swept along the pod's +v axis (built in its own frame turned a quarter turn, `Spin(heading + 90)`):
+a straight band between two ribs with a half-dome pushed out on each side, banded with armour plates, and closed on its +v end by the big round HATCH (a heavy ring round a red-lit door
 with lamps). The nose (+u) carries a boxy WINDSHIELD that juts out of the hull, a big raked pane over a small lower one.
 Underneath: one big thruster bell in a housing and four legs splayed round it; a mining laser on a chin mount under the
-windshield; four manoeuvring thrusters on the flanks. Warm dark steel (c4F), industrial yellow accents (c4T).
+windshield. Warm dark steel (c4F), industrial yellow accents (c4T).
 
-States: parked / docked (legs down, laser stowed, thrusters dark), fly (legs folded, thrusters lit), mine (legs folded,
+States: parked / docked (legs down, laser stowed, thruster dark), fly (legs folded, thruster lit), mine (legs folded,
 laser lowered, emitter lit; `bob` lifts it for the hover loop)."""
 import math
 
@@ -16,7 +16,22 @@ from .shuttle_bay import lbox
 from .shuttle_craft import Spin, _g, patch, profile, smooth, sweep
 
 C = 1.38                      # the body's axis height above the pad (legs down)
-BALL = [(-0.8, 0.2), (-0.77, 0.34), (-0.72, 0.48), (-0.64, 0.66), (-0.44, 0.82), (-0.15, 0.86), (0.2, 0.86), (0.46, 0.8), (0.62, 0.66), (0.68, 0.6)]
+R = 0.86                      # the hull's radius: the band's, and each half-dome's
+BAND = (-0.5, 0.44)           # the band between the two ribs (along the pod's v): a straight drum
+HATCH_END, VENT_END = 0.6, 0.2   # the domes end where the hull's radius is this: the hatch ring, the vent cap
+
+
+def _dome(c, sign, r_end, n=6):
+    """Stations of a half-dome on the band's edge c, going outward (sign) to where its radius is r_end."""
+    p0 = math.asin(r_end / R)
+    out = []
+    for k in range(n + 1):
+        p = math.pi / 2 - (math.pi / 2 - p0) * k / n
+        out.append((c + sign * R * math.cos(p), R * math.sin(p)))
+    return out
+
+
+BALL = _dome(BAND[0], -1, VENT_END)[::-1] + _dome(BAND[1], 1, HATCH_END)   # half-dome, band, half-dome
 SECTION = profile(n=20, p=2.3)          # round, a little squared: a pressure hull
 HATCH_R = 0.5                 # the round hatch's door radius
 BELL = (0.22, 0.42, 0.28)     # the main thruster: mouth z, mouth radius, throat radius
@@ -65,9 +80,10 @@ def body(fb):
     for u in (-0.5, 0.44):                                                   # the ribs
         k = _r(u) * 1.055
         sweep(fb, [(u - 0.035, k, k, 0, C), (u + 0.035, k, k, 0, C)], SECTION, "steelD")
-    fb.hcyl(-0.84, -0.78, 0, C, 0.2, "steelD", sides=12, capstart="steelD")    # a vent cap on the far end
+    ue = BALL[0][0]
+    fb.hcyl(ue - 0.04, ue + 0.02, 0, C, VENT_END, "steelD", sides=12, capstart="steelD")   # a vent cap on the far end
     for dz in (-0.08, 0.0, 0.08):
-        fb.box(-0.845, 0, C + dz, 0.012, 0.24, 0.03, "dark", base=False)
+        fb.box(ue - 0.045, 0, C + dz, 0.012, 0.24, 0.03, "dark", base=False)
 
 
 def hatch(fb):
@@ -123,17 +139,6 @@ def thruster(f, lit):
               ((rt - 0.02) * math.cos(a), (rt - 0.02) * math.sin(a), zm + 0.1), 0.04, "steelL")
 
 
-def rcs(f, lit):
-    """Four manoeuvring thrusters, fore and aft on each flank of the bulb."""
-    _g("rcs")
-    for su in (1, -1):
-        for v in (-0.55, 0.5):
-            u = su * _r(v) * 0.97
-            f.box(u, v, C - 0.12, 0.18, 0.18, 0.24, HULL_D, top=HULL)
-            f.box(u + su * 0.1, v, C, 0.02, 0.07, 0.07, GLOW if lit else "dark", base=False)
-            f.vcyl(u, v, C + 0.12, 0.045, 0.06, "steelD", top=GLOW if lit else "steelD", sides=8)
-
-
 def laser(f, down, lit):
     """The mining laser on a chin mount under the windshield: level when stowed, tipped forward and down when mining."""
     _g("laser")
@@ -181,7 +186,6 @@ def pod(heading, state="parked", bob=0.0, dz=0.0):
     hatch(fb)
     windshield(f)
     thruster(f, state in ("fly", "mine"))
-    rcs(f, state in ("fly", "mine"))
     laser(f, state == "mine", state == "mine")
     legs(f, state in ("parked", "docked"))
     greeble(f)
