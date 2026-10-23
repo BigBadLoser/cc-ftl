@@ -227,7 +227,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
               const open = atlas.stat(`${closedId}.open`);
               if (open) doors.push({ objs: made, closed: s, open, ci });
             }
-            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: !isDoor, solid: true });
+            // A door is lit like a wall (the brightest light round it): its own tile is dark while it is closed (light stops at a
+            // closed door) and takes its neighbours' light once open, which made the sprite change colour as it swung.
+            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: true, solid: true });
           }
         }
     if (ghosts) {

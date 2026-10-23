@@ -69,6 +69,7 @@ describe('pickFrame (clip sheets load on demand)', () => {
       frame: (c: ClipDef, _d: number, col: number) => { asked.push(c.sheet as string); return ready.includes(c.sheet as string) ? ({ sheet: c.sheet, col } as never) : undefined; },
       glowFrame: () => null,
       request: () => undefined,
+      loaded: (c: ClipDef) => ready.includes(c.sheet as string),
     } as LayerSprite;
     return { l, asked };
   };
@@ -85,6 +86,15 @@ describe('pickFrame (clip sheets load on demand)', () => {
   it('is hidden for a clip the layer is never drawn in, whatever is loaded', () => {
     const { l } = lazy(['idle'], ['s.idle']);
     expect(pickFrame(l, 'sit_idle', 0, 0)).toBeUndefined();
+  });
+  it('never vanishes while any other clip of the layer is loaded, and asks for no other sheet than the wanted one', () => {
+    const { l, asked } = lazy(['idle', 'walk', 'work', 'sleep'], ['s.sleep']);
+    expect(pickFrame(l, 'work', 0, 0)?.clip.sheet).toBe('s.sleep');
+    expect(asked.filter((a) => a !== 's.sleep')).toEqual(['s.work']);
+  });
+  it('prefers idle, then walk, over other loaded clips', () => {
+    expect(pickFrame(lazy(['idle', 'walk', 'work', 'sleep'], ['s.sleep', 's.walk']).l, 'work', 0, 0)?.clip.sheet).toBe('s.walk');
+    expect(pickFrame(lazy(['idle', 'walk', 'work', 'sleep'], ['s.sleep', 's.walk', 's.idle']).l, 'work', 0, 0)?.clip.sheet).toBe('s.idle');
   });
   it('is hidden while nothing of the layer is loaded', () => {
     const { l } = lazy(['idle', 'walk'], []);

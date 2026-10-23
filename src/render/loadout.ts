@@ -139,7 +139,9 @@ export const PRELOAD_CLIPS: readonly string[] = ['idle', 'walk', 'run', 'work'];
 
 /** Queue the common clips of each layer (a layer without a clip is skipped). */
 export function preloadLayers(layers: readonly LayerSprite[]): void {
-  for (const l of layers) for (const name of PRELOAD_CLIPS) if (l.def.clips[name]) l.request(l.def.clips[name] as ClipDef);
+  // Clip by clip across all layers (not layer by layer): the whole figure gets its idle first, then its walk, so a
+  // layer is never the last of the stack to have any sheet while the body already walks.
+  for (const name of PRELOAD_CLIPS) for (const l of layers) if (l.def.clips[name]) l.request(l.def.clips[name] as ClipDef);
 }
 
 /** Column in the clip's sheet at time t (seconds into the clip). */
@@ -156,14 +158,18 @@ export interface Drawn {
 
 /**
  * The frame to draw for a layer: the requested clip's (see resolveClip), or, while that clip's sheet is still loading,
- * the layer's idle (then walk) so the figure is never blank; undefined if the layer is not drawn for the clip, or has
- * nothing loaded yet (hidden for now). Asking queues the missing sheet.
+ * the layer's idle, then walk, then any other clip of it that is loaded, so a layer never vanishes while some sheet of
+ * it exists. Undefined if the layer is not drawn for the clip, or has no sheet loaded at all yet. Only the requested
+ * clip's sheet is queued (urgently); the stand-ins are used only if already loaded.
  */
 export function pickFrame(layer: LayerSprite, clip: string, dir: number, t: number): Drawn | undefined {
   const want = resolveClip(layer.def, clip);
   if (!want) return undefined;
-  for (const c of [want, layer.def.clips.idle, layer.def.clips.walk]) {
-    if (!c) continue;
+  const first = layer.frame(want, dir, colOf(want, t));
+  if (first) return { tex: first, clip: want, col: colOf(want, t) };
+  const rest = [layer.def.clips.idle, layer.def.clips.walk, ...Object.values(layer.def.clips)];
+  for (const c of rest) {
+    if (!c || !layer.loaded(c)) continue;
     const col = colOf(c, t);
     const tex = layer.frame(c, dir, col);
     if (tex) return { tex, clip: c, col };

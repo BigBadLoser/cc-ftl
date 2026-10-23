@@ -25,8 +25,10 @@ export interface LayerSprite {
   frame(clip: ClipDef, dir: number, col: number): Texture | undefined;
   /** Same cell of the clip's glow sheet, or null if that sheet has no glow. Only meaningful once `frame` returned a texture. */
   glowFrame(clip: ClipDef, dir: number, col: number): Texture | null;
-  /** Queue the clip's sheet (no-op when loaded or on its way). */
+  /** Queue the clip's sheet at the back (no-op when loaded or on its way): for clips that will be needed soon. */
   request(clip: ClipDef): void;
+  /** True if the clip's sheet is loaded now (asks for nothing). */
+  loaded(clip: ClipDef): boolean;
 }
 
 export interface AtlasHooks {
@@ -241,6 +243,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
       frame: (clip, dir, col) => cut(clip, 'i', dir, col) ?? undefined,
       glowFrame: (clip, dir, col) => cut(clip, 'g', dir, col) ?? null,
       request: (clip) => store.request(sheetOf(clip)),
+      loaded: (clip) => store.isReady(sheetOf(clip)),
     };
   };
 
