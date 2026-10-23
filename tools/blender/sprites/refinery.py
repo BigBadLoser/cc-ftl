@@ -4,9 +4,9 @@ reference: 1 massing (this blockout, plain grey), 2 sub-forms, 3 colour and ligh
 Massing, in tiers. The hull is one battered solid (walls leaning in, corners cut by a big chamfer) up to its rim; its
 long sides have bays let into them (openings with real recesses behind): roller assemblies on the -u side, the input and
 output hatches' bays on the crew side (+u) either side of a full-height slot through the rim, where the terminal's body
-stands with a gap each side. Its top is a rim round a deck opening: inside, the deck floor sits lower, and a spine about
-a tile wide runs down the middle carrying three round stacks. Local frame: modkit.K, u across the 3-tile width, v along
-the 4."""
+stands with a gap each side. Its top is a rim round a flush deck, and a one-tier
+plinth about a tile wide runs down the middle carrying three round stacks. Local frame: modkit.K, u across the 3-tile
+width, v along the 4."""
 import math
 
 from mathutils import Vector
@@ -129,8 +129,8 @@ def recess(k, s, v0, v1):
 
 
 def deck(k):
-    """The rim (one ring round the hull's top; at stage 2 the armour cap, reaching out flush with the armour), the walls
-    inside it down to the deck floor, the floor."""
+    """The hull's top: the rim (one ring; at stage 2 the armour cap, reaching out flush with the armour) and the deck
+    inside it, flush."""
     iu, iv = U - B - RIM, V - B - RIM                                         # the deck opening's half extents
     inner = [(-iu, -iv), (iu, -iv), (iu, -iv), (iu, iv), (iu, iv), (-iu, iv), (-iu, iv), (-iu, -iv)]
     zt = rim_top()
@@ -149,12 +149,7 @@ def deck(k):
         if inner[i] == inner[j]:
             pts = pts[:3]
         face(k, pts, (0, 0, 1), col)
-    sq = [(-iu, -iv), (iu, -iv), (iu, iv), (-iu, iv)]
-    for i in range(4):                                                        # the opening's walls, facing in
-        a, b = sq[i], sq[(i + 1) % 4]
-        mid = Vector(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0))
-        face(k, [(*a, H), (*b, H), (*b, zt), (*a, zt)], -mid, G)
-    face(k, [(*p, H) for p in sq], (0, 0, 1), G)
+    face(k, [(-iu, -iv, zt), (iu, -iv, zt), (iu, iv, zt), (-iu, iv, zt)], (0, 0, 1), GT)   # the deck, flush with the rim
     spine(k, iu, iv)
 
 
@@ -170,13 +165,11 @@ def tier(k, lo, hi, z0, z1, c_lo, c_hi, col=G, top=GT):
 
 
 def spine(k, iu, iv):
-    """The stacks' plinth down the middle of the deck: two tiers stepping in, leaning and cut at the corners like the
-    hull, and the three round stacks on top."""
-    hw, hl = 0.56, iv - 0.04                                                  # the lower tier's half width and length
-    z1, top = H + 0.24, H + 0.58
-    tier(k, (-hw, hw, -hl, hl), (-hw + 0.05, hw - 0.05, -hl + 0.05, hl - 0.05), H, z1, 0.24, 0.2)
-    w2, l2 = hw - 0.13, hl - 0.13
-    tier(k, (-w2, w2, -l2, l2), (-w2 + 0.04, w2 - 0.04, -l2 + 0.04, l2 - 0.04), z1, top, 0.18, 0.15)
+    """The stacks' plinth down the middle of the deck: one tier, leaning and cut at the corners like the hull, and the
+    three round stacks on top."""
+    zt, top = rim_top(), H + 0.58
+    w, l = 0.43, iv - 0.17
+    tier(k, (-w, w, -l, l), (-w + 0.04, w - 0.04, -l + 0.04, l - 0.04), zt, top, 0.18, 0.15)
     for v in (-0.95, 0.0, 0.95):
         stack(k, 0.0, v, top, top + 0.62, 0.36, 0.26)
         if STAGE[0] >= 2:

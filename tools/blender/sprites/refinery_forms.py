@@ -169,43 +169,6 @@ def terminal_forms(k):
         k.box(uf + 0.012, 0, 0.11 + i * 0.075, 0.02, 0.3, 0.025, R.G, top=R.GT)
 
 
-def conveyor(k):
-    """The ore conveyor: a belt between side rails, on legs, rising along the deck from above the input hatch (the -v
-    bay), turning on a turn plate at the top and running level into a feed port in the middle of the plinth."""
-    w, uc, vt, zt = 0.26, 0.78, -0.12, R.H + 0.4                                    # width, line, the turn, its height
-    lo, hi = Vector((uc, -1.34, R.H + 0.08)), Vector((uc, vt - 0.2, zt))
-    d = hi - lo
-    L, rx = d.length, math.atan2(d.z, d.y)
-    mid = (lo + hi) / 2
-    k.box(uc, mid.y, mid.z - 0.025, w, L, 0.05, R.HOLE, rx=rx)                      # the rising belt
-    for e in (-1, 1):
-        k.box(uc + e * (w / 2 + 0.02), mid.y, mid.z - 0.03, 0.04, L, 0.09, R.G, top=R.GT, rx=rx)
-    for t in (0.25, 0.75):                                                          # its legs
-        p = lo.lerp(hi, t)
-        for e in (-1, 1):
-            k.box(uc + e * (w / 2 + 0.02), p.y, R.H, 0.04, 0.04, p.z - R.H - 0.04, R.GD)
-    k.box(uc, vt, zt - 0.08, w + 0.08, 0.4, 0.08, R.G, top=R.GT)                    # the turn plate
-    k.box(uc, vt, zt - 0.002, w, w, 0.006, R.HOLE)
-    k.cyl(uc, vt, zt + 0.004, 0.05, 0.02, R.GT, sides=10)                           # its pivot
-    for e in (-1, 1):                                                               # and its legs
-        k.box(uc + e * (w / 2 + 0.02), vt, R.H, 0.04, 0.04, zt - 0.08 - R.H, R.GD)
-    u0, u1 = 0.48, uc - w / 2 - 0.04                                                # the level run into the port
-    k.box((u0 + u1) / 2, vt, zt - 0.05, u1 - u0, w, 0.05, R.HOLE)
-    for e in (-1, 1):
-        k.box((u0 + u1) / 2, vt + e * (w / 2 + 0.02), zt - 0.06, u1 - u0, 0.04, 0.09, R.G, top=R.GT)
-    k.box(0.44, vt, zt - 0.12, 0.06, 0.38, 0.26, R.G, top=R.GT)                     # the feed port's hood
-    k.box(0.475, vt, zt - 0.06, 0.01, 0.3, 0.14, R.HOLE)                            # its mouth
-
-
-def plinth_vents(k):
-    """Heat vents let into the plinth's lower tier, under each stack and at its ends (they glow at stage 3)."""
-    hw, hl = 0.56, R.V - R.B - R.RIM - 0.04
-    for s in (-1, 1):
-        for v in (-0.95, 0.0, 0.95):
-            k.box(s * (hw - 0.012), v, R.H + 0.07, 0.03, 0.34, 0.1, R.HOLE)
-        k.box(0, s * (hl - 0.012), R.H + 0.07, 0.5, 0.03, 0.1, R.HOLE)
-
-
 def forms(k):
     for i in (1, 3, 5, 7):
         corner_armour(k, i)
@@ -216,5 +179,3 @@ def forms(k):
     rim_rail(k)
     hatches(k)
     terminal_forms(k)
-    conveyor(k)
-    plinth_vents(k)
