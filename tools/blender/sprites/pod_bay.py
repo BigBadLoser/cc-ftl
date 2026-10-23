@@ -16,7 +16,7 @@ FOOT = (3, 3)
 PAD_T = 0.06
 OPEN = (-1.4, 1.4, -1.4, 1.4)          # pit opening (the footprint less a seat)
 CH = (0.42, 0.42, 0.42, 0.42)
-PIT = 0.8                              # pit floor below the deck: the parked pod's hold tops out at 0.72
+PIT = 0.8                              # pit floor below the deck, where the parked pod's thruster bell rests
 LIP, LIP_W = 0.08, 0.12
 SHAFT = 0.8
 IRIS_R, IRIS_N = 1.18, 8               # iris radius and blade count
@@ -143,8 +143,8 @@ def _seg(f, sv, p0, p1, w, th, mat, top):
 
 
 def arms(f, fold):
-    """Two cradle arms from the +-v lips: a pivot block on the lip, a pale arm with a lamp strip arching over the pod's
-    flank, an orange shoe on its shoulder. fold 0 gripping .. 1 folded flat against the lip."""
+    """Two clamp arms from the +-v lips: a pivot block on the lip, a pale arm with a lamp strip rising and arching over
+    the pod, an orange shoe gripping the top of its drum. fold 0 gripping .. 1 folded flat against the lip."""
     _g("arms")
     for sv in (-1, 1):
         f.box(ARM_V, sv * 1.5, PAD_T, ARM_W + 0.16, 0.24, 0.16, "steelD", top="steel")
