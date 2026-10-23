@@ -96,14 +96,15 @@ def global_digest():
                                core.SAMPLES, core.PREVIEW)
 
 
-def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False, plan=False):
+def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False, plan=False, progress=None):
     """Render sprite jobs: (id, footprint, kind, builder) tuples, or callables returning ready items (multi-part
     sprites such as a console and its front overlay). `extra` picks the quantisation palette (see post.select).
 
     With `family` the render cache (sprite_cache.py) is used: a job whose key is unchanged loads its items instead of
     rendering. A tuple job is keyed by its built geometry, so editing one builder re-renders only the sprites whose meshes
     changed. A callable job renders itself, so it is keyed by the source of its module and everything that module imports.
-    `force` ignores the cache for the selected jobs; `plan` only counts hits and misses (nothing renders or is stored)."""
+    `force` ignores the cache for the selected jobs; `plan` only counts hits and misses (nothing renders or is stored).
+    `progress(done, total)` is called as the jobs go by (the sprite dashboard, progress.py)."""
     items, hits, misses, miss_ids = [], 0, 0, []
     glob = global_digest() if family else None
     t0 = time.time()
@@ -116,13 +117,20 @@ def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False
             return path, sprite_cache.load(path)
         return path, None
 
-    for job in jobs:
+    for index, job in enumerate(jobs, 1):
+        if progress:
+            progress(index, len(jobs))
         if callable(job):
             stem = None
             if family:
-                stem = "call." + sprite_cache.digest(getattr(job, "__defaults__", None))[:10]
-                key = sprite_cache.digest(glob, job.__module__, sprite_cache.files_digest(sprite_cache.closure_files(job.__module__)),
-                                          getattr(job, "__defaults__", None), gd.scene_digest())
+                # The job's own code is part of its identity: two lambdas with the same defaults (fly.d0 and docked.d0,
+                # say) are different sprites and must never share a cache entry.
+                code = getattr(job, "__code__", None)
+                ident = (job.__module__, getattr(job, "__qualname__", None), code.co_firstlineno if code else None,
+                         code.co_code.hex() if code else None, repr([c for c in code.co_consts if not hasattr(c, 'co_code')]) if code else None, getattr(job, "__defaults__", None))
+                stem = "call." + sprite_cache.digest(ident)[:10]
+                key = sprite_cache.digest(glob, ident, sprite_cache.files_digest(sprite_cache.closure_files(job.__module__)),
+                                          gd.scene_digest())
                 path, got = cached(stem, key)
                 if got is not None:
                     items += got

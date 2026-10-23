@@ -379,4 +379,4 @@ def console_parts(name, rot, st):
     m = _Split(f"console_{name}_{rot}_{int(st)}", f.xy(*CHAIR[name]))
     f.m = m
     BUILD[name](f, st)
-    return {k: p.build() for k, p in m.parts.items()}
+    return {k: p.build() for k, p in m.parts.items() if p.f}          # a desk with no front part in this rotation

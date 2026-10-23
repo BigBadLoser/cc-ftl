@@ -83,6 +83,11 @@ def pack(items, entries, outdir, log=print):
                                       "frameW": cs.FRAME_W, "frameH": cs.FRAME_H, "anchor": {"x": cs.ANCHOR[0], "y": cs.ANCHOR[1]},
                                       "clips": {}})
         a["clips"][clip] = {"sheet": sid, "start": 0, "frames": n, "fps": fps, "loop": loop}
+        if getattr(it, "muzzle", None) is not None:          # held weapons: [direction][frame] -> [x, y] px from the anchor
+            mz = [[None] * n for _ in range(8)]
+            for _, _, d, i, _, path in es:
+                mz[d][i] = cc.load_muzzle(path)
+            a["clips"][clip]["muzzle"] = mz
         if has_glow:
             a["glow"] = True
     pp.parent.mkdir(parents=True, exist_ok=True)

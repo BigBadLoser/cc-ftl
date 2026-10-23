@@ -36,7 +36,7 @@ def parse_opts(argv):
     pos, opts, k = [], {}, 0
     while k < len(argv):
         a = argv[k]
-        if a in ("--force", "--plan", "--preview", "--no-cache"):
+        if a in ("--force", "--plan", "--preview", "--no-cache", "--cache-only"):
             opts[a[2:]] = True
         elif a in ("--item", "--clip", "--only") and k + 1 < len(argv):
             k += 1
@@ -66,7 +66,7 @@ def main():
         if name == "crew":
             from sprites import crew_build, crew_pack
             sheets, assets, full = crew_build.build(out, opts)
-            if not opts.get("plan"):
+            if not opts.get("plan") and not opts.get("cache-only"):
                 crew_pack.merge(m, sheets, assets, full, out)
         elif name == "aliens":
             # ALIEN_QUICK=1: preview frames only (see alien_render.build); not for commits
@@ -88,9 +88,16 @@ def main():
             from sprites import env_build
             core.setup_scene()
             jobs, extra = families.jobs(name)
+            total = len(jobs)
+            print("FAMILY_JOBS", name, total, flush=True)
+            step = max(1, total // 100)
+
+            def progress(done, count):
+                if done == 1 or done == count or done % step == 0:
+                    print("FAMILY_PROGRESS", name, done, count, flush=True)
             items = env_build.render_jobs(jobs, extra, only=opts["only"].split(",") if opts.get("only") else None,
                                           family=None if opts.get("no-cache") else name, force=bool(opts.get("force")),
-                                          plan=bool(opts.get("plan")))
+                                          plan=bool(opts.get("plan")), progress=progress)
             if opts.get("plan"):
                 continue
             sheets, assets = pack.pack(name, items, out)
