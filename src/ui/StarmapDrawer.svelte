@@ -83,6 +83,14 @@
       {#if node.known}
         <div class="row">{node.structures.length ? node.structures.join(', ') : 'Empty space'}</div>
         {#if node.resources.length}<div class="row dim">Resources: {node.resources.join(', ')}</div>{/if}
+        {#if node.market}
+          <div class="row market" data-testid="starmap-market" title="Prices follow the port's stock: cheap where plentiful, dear where scarce">
+            <span class="dim">Market</span>
+            {#each node.market.cheap as g (g)}<span class="good cheap"><Icon name="chevDown" size={11} />{g}</span>{/each}
+            {#each node.market.dear as g (g)}<span class="good dear"><Icon name="chevUp" size={11} />{g}</span>{/each}
+            {#if !node.market.cheap.length && !node.market.dear.length}<span class="dim">prices steady</span>{/if}
+          </div>
+        {/if}
         {#if node.hostiles}<div class="row warn" data-testid="starmap-hostiles"><Icon name="alert" size={14} />{node.hostiles} hostile ship{node.hostiles > 1 ? 's' : ''} present</div>{/if}
         {#if traffic.length}
           <ul class="traffic" data-testid="starmap-traffic">
@@ -91,6 +99,7 @@
                 <i style={`background: ${toneColor(f.tone)}`}></i>
                 <span><b>{f.name}</b> <small>{f.faction} {f.role.toLowerCase()}</small></span>
                 <small class="sub">{f.heading.endsWith(f.home) ? f.heading : `${f.heading} · home ${f.home}`}</small>
+                {#if f.cargo}<small class="sub cargo" data-testid="starmap-cargo">Carrying {f.cargo}</small>{/if}
               </li>
             {/each}
           </ul>
@@ -171,6 +180,10 @@
   .traffic { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
   .traffic li { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; row-gap: 1px; padding: 3px 8px; background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; }
   .traffic li b { font-weight: 600; }
+  .market .good { display: inline-flex; align-items: center; gap: 2px; }
+  .market .cheap { color: var(--green); }
+  .market .dear { color: var(--amber); }
+  .traffic .cargo { color: var(--text); }
   .traffic .sub { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .traffic li.hostile { border-color: var(--red); }
   .traffic i { width: 8px; height: 8px; flex: none; clip-path: polygon(100% 50%, 0 0, 25% 50%, 0 100%); }

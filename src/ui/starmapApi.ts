@@ -82,6 +82,12 @@ export interface UiStarLink {
   count: number;
 }
 
+/** A port's market in a few words: the goods that are cheap and the goods that are dear there right now. */
+export interface UiStarMarket {
+  cheap: string[];
+  dear: string[];
+}
+
 export interface UiStarNode {
   id: string;
   sector: string;
@@ -102,6 +108,8 @@ export interface UiStarNode {
   others: number;
   /** One jump from the player's node. */
   reachable: boolean;
+  /** The market of its trading port, when sensors reach it and it has one. */
+  market?: UiStarMarket | null;
 }
 
 /** An NPC fleet the sensors can see: drawn beside its node, heading for `next` (null while resting). */
@@ -126,6 +134,8 @@ export interface UiStarFleet {
   heading: string;
   /** Its home port's node. */
   home: string;
+  /** What it carries ("20 Metal, 4 Ice"), or empty. */
+  cargo?: string;
 }
 
 export interface UiStarEdge {

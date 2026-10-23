@@ -3,6 +3,7 @@ import {
   fleetName, nodeOf, portNode, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
 import type { UiStarExit, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
+import { cargoOf, marketOf } from './marketSnapshot';
 import { toneOf } from './starmapTone';
 import { ROLE_LABEL, encountersOf, eventOf, resultOf } from './encounterSnapshot';
 import { nebulaAround } from './starmapNebula';
@@ -34,7 +35,7 @@ function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
       id: f.id, node: f.node, x: Math.round(at.x), y: Math.round(at.y), tx: next ? Math.round(next.x) : null, ty: next ? Math.round(next.y) : null,
       name: fleetName(f), faction: content?.factions[f.faction]?.name ?? f.faction, role: ROLE_LABEL[f.role] ?? f.role, ships: f.ships.length,
       tone: toneOf(content?.factions[f.faction]?.kind), hostile: isHostileFaction(sim, f.faction), damaged: !!f.damaged,
-      heading: headingOf(f, nodeName), home: nodeName(portNode(f.home)),
+      heading: headingOf(f, nodeName), home: nodeName(portNode(f.home)), cargo: cargoOf(sim, f),
     }];
   });
 }
@@ -78,7 +79,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       badges: k ? n.structures.map((s) => content?.structures[s.def]?.badge ?? '?') : [],
       structures: k ? n.structures.map((s) => content?.structures[s.def]?.name ?? s.def) : [],
       resources: k ? n.resources.map((r) => sim.content.items[r]?.name ?? r) : [],
-      hostiles, others: contacts.length - hostiles, reachable: reachable.has(n.id),
+      hostiles, others: contacts.length - hostiles, reachable: reachable.has(n.id), market: k && sensors.has(n.id) ? marketOf(sim, n.id) : null,
     });
   }
   const sectors = [...index.sectors.values()].map((s) => {
