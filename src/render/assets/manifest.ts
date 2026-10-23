@@ -52,6 +52,15 @@ export interface ClipDef {
   frames: number;
   fps: number;
   loop: boolean;
+  /**
+   * Trimmed sheets: size of one cell, and where the cell's top-left sits in the layer's frame (so the sprite is drawn at
+   * `ox - anchor.x, oy - anchor.y`). The pipeline crops each clip sheet to the union of its opaque pixels. Absent: the
+   * cell is the layer's whole frame (`frameW` x `frameH`, offset 0).
+   */
+  cw?: number;
+  ch?: number;
+  ox?: number;
+  oy?: number;
 }
 
 /**
@@ -87,4 +96,9 @@ export interface Manifest {
   sheets: Record<string, SheetDef>;
   /** Asset id (e.g. 'tile.floor.a', 'crew.human.hair.mohawk') -> definition. */
   assets: Record<string, AssetDef>;
+}
+
+/** The cell of a clip's sheet: size, and offset of its top-left inside the layer's frame (see `ClipDef.cw`). */
+export function cellOf(a: Pick<LayerAsset, 'frameW' | 'frameH'>, c: ClipDef): { w: number; h: number; ox: number; oy: number } {
+  return { w: c.cw ?? a.frameW, h: c.ch ?? a.frameH, ox: c.ox ?? 0, oy: c.oy ?? 0 };
 }

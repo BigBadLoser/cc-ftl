@@ -6,7 +6,8 @@ import type { Grid } from '../sim/grid';
 import type { SectorGrid } from '../sim/sectorGrid';
 import { shipGridOf } from '../sim/shipGrid';
 import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
-import { loadAtlas } from './assets/loader';
+import { loadAtlas, type AtlasStats } from './assets/loader';
+import { createArtStream } from './artStream';
 import { createCamera, type Camera } from './camera';
 import { createCombatPass, type CombatMarks, type CombatViewRect } from './combatPass';
 import type { CutawayMode } from './gridView';
@@ -68,6 +69,8 @@ export interface Renderer {
   /** Frame the given ships (by grid id) in the view: centered, at the largest zoom that fits them (at least 1). */
   frameShips(gridIds: readonly number[]): void;
   info(): RenderInfo;
+  /** Sheet streaming counters (decoded bytes resident, requests, pending...) and scene rebuilds, for the debug hook. */
+  art(): AtlasStats & { rebuilds: number };
   /** Drag the view by a screen-space delta in CSS px. */
   pan(dxPx: number, dyPx: number): void;
   /** Zoom by factor (>1 zooms in), snapped to integer steps, keeping the point under (screenX, screenY) fixed. */
@@ -225,6 +228,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     } else if (grid.id === selShip) sc.view.setSelection(selection);
     sc.setSelectedCrew(selectedCrew);
     scenes.set(grid.id, sc);
+    art.built(grid.id);
     return sc;
   }
 
@@ -250,6 +254,19 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     }
   }
 
+  // Sheets load on demand: scenes are rebuilt when the art they asked for arrives (artStream.ts).
+  const art = createArtStream(
+    atlas,
+    {
+      rebuild() {
+        for (const sc of scenes.values()) sc.dispose();
+        scenes.clear();
+      },
+      sync,
+    },
+    () => performance.now(),
+  );
+
   /** Art px box of a region (padded for the roof, turrets, bells and docked bodies), for culling per camera. */
   function regionInView(id: number, grid: Grid, c: Camera): boolean {
     const o = origin(id);
@@ -266,7 +283,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   /** Place the world for a camera pass: the main pass (target null) or the combat panel (pass B, showing `target`). */
   function place(c: Camera, target: number | null): void {
     const any = shipOf(refId) !== undefined;
-    for (const [id, sc] of scenes) sc.layers.setVisible(any && regionInView(id, sc.grid, c));
+    for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && regionInView(id, sc.grid, c));
     // Shrunk art (the main camera below zoom 1) is drawn with linear filtering; the combat panel keeps nearest.
     atlas.setSmooth(target === null && c.scale < 1);
     W.setUiVisible(target === null);
@@ -294,6 +311,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   return {
     render(alpha) {
       sync();
+      art.update();
       const now = performance.now();
       const dt = Math.min(0.1, (now - lastFrame) / 1000);
       lastFrame = now;
@@ -317,6 +335,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       pass.render(gl, stage);
       place(cam, null);
       gl.render({ container: stage });
+      atlas.tick();
     },
     resize,
     resetWorld() {
@@ -388,6 +407,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       for (const sc of scenes.values()) sprites += sc.sprites();
       return { sprites, zoom: cam.zoom };
     },
+    art: () => ({ ...atlas.stats(), rebuilds: art.rebuilds() }),
     pan: (dx, dy) => cam.pan(dx, dy),
     zoomAt: (f, x, y) => cam.zoomAt(f, x, y),
     pickTile(sx, sy) {

@@ -286,6 +286,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const layers = withRuin.flatMap((layer) => {
           // Containers ride outside the hull: never under a roof.
           if (roofed && !def.container && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
+          if (def.container && atlas.loading(layer.chain)) return []; // its sheet is on the way
           if (def.container && !atlas.firstOf(layer.chain)) {
             // PLACEHOLDER until the container sheets land: a drawn box (with its own clamp mark) for the shell, no clamp layer.
             if (layer.at) return [];

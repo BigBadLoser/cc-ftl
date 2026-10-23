@@ -1,5 +1,7 @@
 import { Assets, Rectangle, Texture } from 'pixi.js';
-import { MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest, type StaticAsset } from './manifest';
+import { cellOf, MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest, type StaticAsset } from './manifest';
+import { dropHalo } from '../haloTex';
+import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
 
 /** Base URL of the asset folder. `VITE_ASSET_BASE` only relocates it (used to point at a fixture). */
 export function assetBase(): string {
@@ -19,24 +21,69 @@ export interface StaticSprite {
 
 export interface LayerSprite {
   def: LayerAsset;
-  /** Frame `col` (= clip.start + frame index) of direction `dir` in the clip's sheet. */
-  frame(clip: ClipDef, dir: number, col: number): Texture;
-  /** Same cell of the clip's glow sheet, or null if that sheet has no glow. */
+  /** Frame `col` (= clip.start + frame index) of direction `dir` in the clip's sheet; undefined while the sheet is not loaded (it is queued). */
+  frame(clip: ClipDef, dir: number, col: number): Texture | undefined;
+  /** Same cell of the clip's glow sheet, or null if that sheet has no glow. Only meaningful once `frame` returned a texture. */
   glowFrame(clip: ClipDef, dir: number, col: number): Texture | null;
+  /** Queue the clip's sheet (no-op when loaded or on its way). */
+  request(clip: ClipDef): void;
+}
+
+export interface AtlasStats {
+  /** Sheets the manifest lists / ready now / queued or loading / failed. */
+  sheets: number;
+  ready: number;
+  pending: number;
+  failed: number;
+  /** Load requests so far (a sheet evicted and needed again counts twice). */
+  requests: number;
+  /** Decoded bytes resident (width * height * 4 over loaded images and glows), total and per pool. */
+  residentBytes: number;
+  pools: Record<string, { resident: number; budget: number; sheets: number }>;
+  generation: number;
 }
 
 export interface Atlas {
   readonly manifest: Manifest;
-  /** Static asset by id, or undefined if the manifest lacks it. */
+  /** Bumps whenever an environment sheet arrives or is evicted (crew clips are looked up per frame and do not count): views that cached a resolved texture re-resolve when it changes. */
+  readonly generation: number;
+  /** Sheets queued or loading. */
+  busy(): number;
+  /** Static asset by id; undefined if the manifest lacks it or its sheet is not loaded yet (it is queued). */
   stat(id: string): StaticSprite | undefined;
-  /** First static asset that exists among the ids (fallback chains). */
+  /**
+   * First static asset that exists among the ids (fallback chains). An id whose sheet is still loading ends the search:
+   * a later id is a worse stand-in, not an alternative.
+   */
   firstOf(ids: readonly string[]): StaticSprite | undefined;
+  /** True if the chain's first manifest id has a sheet that is not loaded yet (so "missing" is only for now). */
+  loading(ids: readonly string[]): boolean;
   layer(id: string): LayerSprite | undefined;
   /** Sorted ids of all assets starting with a prefix. */
   ids(prefix: string): string[];
   /** Filter every sheet linearly (true: for art drawn below zoom 1, so it does not shimmer) or nearest-neighbour (false: crisp). */
   setSmooth(on: boolean): void;
+  /** Once per frame after drawing: frees evicted sheets and trims the crew pool to its budget. */
+  tick(): void;
+  /** Advance the use clock and return it: sheets used from now on are newer than the mark (see `sweepEnv`). */
+  mark(): number;
+  /** If the env pool is over budget, evict the env sheets nobody used since `mark` (rebuild the sprites that hold env textures first). */
+  sweepEnv(mark: number): string[];
+  /** True when the env pool is over its budget. */
+  envOver(): boolean;
+  /** Resolves when no sheet is queued or loading. */
+  whenIdle(): Promise<void>;
+  /** Decoded sizes and load counters (the `?hook` debug API shows them). */
+  stats(): AtlasStats;
 }
+
+/** Sheets every ship draws (walls and floors, beams, the item/puff sheet, combat fx): loaded at start, never evicted. */
+export const EAGER_SHEETS: readonly string[] = ['walls', 'struct', 'env', 'fx'];
+/** Decoded-byte budgets. Crew clips are evicted by idle time; env sheets by `sweepEnv` (their textures live in built sprites). */
+export const CREW_BUDGET = 256 * 2 ** 20;
+export const ENV_BUDGET = 384 * 2 ** 20;
+/** A crew sheet nobody drew with for this long may be evicted. */
+export const CREW_IDLE_MS = 4000;
 
 function validate(m: Manifest): void {
   if (!m || m.version !== MANIFEST_VERSION || !m.assets || Array.isArray(m.assets) || !m.sheets) {
@@ -50,78 +97,152 @@ export async function loadAtlas(base = assetBase()): Promise<Atlas> {
   const manifest = (await res.json()) as Manifest;
   validate(manifest);
 
-  const sheets = new Map<string, { image: Texture; glow: Texture | null }>();
-  const load = async (path: string): Promise<Texture> => {
-    const t = await Assets.load<Texture>({ src: base + path, data: { scaleMode: 'nearest' } });
-    t.source.scaleMode = 'nearest';
+  let smooth = false;
+  let clock = performance.now();
+  const bytesOf = (t: Texture): number => t.source.pixelWidth * t.source.pixelHeight * 4;
+  const loadTex = async (path: string): Promise<Texture> => {
+    const t = await Assets.load<Texture>({ src: base + path, data: { scaleMode: smooth ? 'linear' : 'nearest' } });
+    t.source.scaleMode = smooth ? 'linear' : 'nearest';
     t.source.autoGenerateMipmaps = false;
     return t;
   };
-  await Promise.all(
-    Object.entries(manifest.sheets).map(async ([name, def]) => {
-      const [image, glow] = await Promise.all([load(def.image), def.glow ? load(def.glow) : null]);
-      sheets.set(name, { image, glow });
-    }),
-  );
-
-  const sub = (src: Texture, x: number, y: number, w: number, h: number): Texture =>
-    new Texture({ source: src.source, frame: new Rectangle(x, y, w, h) });
-  const sheet = (name: string) => {
-    const s = sheets.get(name);
-    if (!s) throw new Error(`Manifest references unknown sheet "${name}"`);
-    return s;
-  };
-
-  let smooth = false;
+  // Textures cut from a sheet, by sheet: dropped on eviction and destroyed when the sheet is.
+  const cuts = new Map<string, Texture[]>();
+  const detached = new Map<string, Texture[]>();
   const statics = new Map<string, StaticSprite>();
-  const layers = new Map<string, LayerSprite>();
-  const cache = new Map<string, Texture>();
+  const staticsOf = new Map<string, string[]>();
+  const frames = new Map<string, Map<string, Texture>>();
 
-  const makeStatic = (a: StaticAsset): StaticSprite => {
-    const s = sheet(a.sheet);
+  const io: SheetIO<Texture> = {
+    async load(image, glow) {
+      const [img, gl] = await Promise.all([loadTex(image), glow ? loadTex(glow) : null]);
+      return { sheet: { image: img, glow: gl }, bytes: bytesOf(img) + (gl ? bytesOf(gl) : 0) };
+    },
+    unload(name, _sheet, image, glow) {
+      for (const t of detached.get(name) ?? []) t.destroy(false);
+      detached.delete(name);
+      void Assets.unload(base + image);
+      if (glow) void Assets.unload(base + glow);
+    },
+  };
+  const store = new SheetStore<Texture>({
+    io,
+    pools: {
+      core: { budget: Infinity },
+      env: { budget: ENV_BUDGET },
+      crew: { budget: CREW_BUDGET, idleMs: CREW_IDLE_MS },
+    },
+    concurrency: 4,
+    now: () => clock,
+    onEvict(name) {
+      for (const id of staticsOf.get(name) ?? []) statics.delete(id);
+      staticsOf.delete(name);
+      frames.delete(name);
+      const list = cuts.get(name) ?? [];
+      cuts.delete(name);
+      for (const t of list) dropHalo(t);
+      detached.set(name, [...(detached.get(name) ?? []), ...list]);
+    },
+    onRestore: (name) => void detached.delete(name),
+    onError: (name, err) => console.warn(`Sheet "${name}" failed to load`, err),
+  });
+  const eager = new Set(EAGER_SHEETS);
+  for (const [name, def] of Object.entries(manifest.sheets)) {
+    const pinned = eager.has(name);
+    store.register(name, { image: def.image, glow: def.glow, pool: pinned ? 'core' : name.startsWith('crew.') ? 'crew' : 'env', pinned });
+  }
+  for (const name of EAGER_SHEETS) if (store.has(name)) store.request(name);
+  await store.idle();
+
+  const sub = (sheet: string, src: Texture, x: number, y: number, w: number, h: number): Texture => {
+    const t = new Texture({ source: src.source, frame: new Rectangle(x, y, w, h) });
+    let list = cuts.get(sheet);
+    if (!list) cuts.set(sheet, (list = []));
+    list.push(t);
+    return t;
+  };
+  const makeStatic = (sheet: string, s: Loaded<Texture>, a: StaticAsset): StaticSprite => {
     const { x, y, w, h } = a.frame;
     return {
-      tex: sub(s.image, x, y, w, h),
-      glow: a.glow && s.glow ? sub(s.glow, x, y, w, h) : null,
+      tex: sub(sheet, s.image, x, y, w, h),
+      glow: a.glow && s.glow ? sub(sheet, s.glow, x, y, w, h) : null,
       ax: a.anchor.x,
       ay: a.anchor.y,
       footprint: a.footprint,
     };
   };
+
+  const layers = new Map<string, LayerSprite>();
   const makeLayer = (id: string, a: LayerAsset): LayerSprite => {
-    const cut = (clip: ClipDef, tag: 'i' | 'g', dir: number, col: number): Texture | null => {
+    const sheetOf = (clip: ClipDef): string => {
       const name = clip.sheet ?? a.sheet;
       if (!name) throw new Error(`Layer "${id}" has no sheet for a clip`);
-      const s = sheet(name);
+      return name;
+    };
+    const cut = (clip: ClipDef, tag: 'i' | 'g', dir: number, col: number): Texture | null | undefined => {
+      const name = sheetOf(clip);
+      const s = store.get(name);
+      if (!s) return undefined;
       const src = tag === 'i' ? s.image : s.glow;
       if (!src) return null;
-      const key = `${name}|${tag}|${dir}|${col}`;
-      let t = cache.get(key);
-      if (!t) cache.set(key, (t = sub(src, col * a.frameW, dir * a.frameH, a.frameW, a.frameH)));
+      let m = frames.get(name);
+      if (!m) frames.set(name, (m = new Map()));
+      const key = `${tag}|${dir}|${col}`;
+      let t = m.get(key);
+      if (!t) {
+        const c = cellOf(a, clip);
+        m.set(key, (t = sub(name, src, col * c.w, dir * c.h, c.w, c.h)));
+      }
       return t;
     };
     return {
       def: a,
-      frame: (clip, dir, col) => cut(clip, 'i', dir, col) as Texture,
-      glowFrame: (clip, dir, col) => cut(clip, 'g', dir, col),
+      frame: (clip, dir, col) => cut(clip, 'i', dir, col) ?? undefined,
+      glowFrame: (clip, dir, col) => cut(clip, 'g', dir, col) ?? null,
+      request: (clip) => store.request(sheetOf(clip)),
     };
   };
 
   const sortedIds = Object.keys(manifest.assets).sort();
+  const staticSheet = (id: string): string | undefined => {
+    const a = manifest.assets[id];
+    return a?.kind === 'static' ? a.sheet : undefined;
+  };
   const atlas: Atlas = {
     manifest,
+    get generation() {
+      return store.generationOf('core', 'env');
+    },
+    busy: () => store.pending,
     stat(id) {
-      let s = statics.get(id);
       const a = manifest.assets[id];
-      if (!s && a?.kind === 'static') statics.set(id, (s = makeStatic(a)));
+      if (a?.kind !== 'static') return undefined;
+      const sh = store.get(a.sheet);
+      if (!sh) return undefined;
+      let s = statics.get(id);
+      if (!s) {
+        statics.set(id, (s = makeStatic(a.sheet, sh, a)));
+        let l = staticsOf.get(a.sheet);
+        if (!l) staticsOf.set(a.sheet, (l = []));
+        l.push(id);
+      }
       return s;
     },
     firstOf(ids) {
       for (const id of ids) {
-        const s = atlas.stat(id);
-        if (s) return s;
+        const sheet = staticSheet(id);
+        if (!sheet || store.state(sheet) === 'failed') continue;
+        return atlas.stat(id);
       }
       return undefined;
+    },
+    loading(ids) {
+      for (const id of ids) {
+        const sheet = staticSheet(id);
+        if (!sheet || store.state(sheet) === 'failed') continue;
+        return store.state(sheet) !== 'ready';
+      }
+      return false;
     },
     layer(id) {
       let l = layers.get(id);
@@ -133,7 +254,33 @@ export async function loadAtlas(base = assetBase()): Promise<Atlas> {
     setSmooth(on) {
       if (on === smooth) return;
       smooth = on;
-      for (const s of sheets.values()) for (const t of [s.image, s.glow]) if (t) t.source.scaleMode = on ? 'linear' : 'nearest';
+      store.forEachReady((_n, s) => {
+        for (const t of [s.image, s.glow]) if (t) t.source.scaleMode = on ? 'linear' : 'nearest';
+      });
+    },
+    mark() {
+      clock = Math.max(performance.now(), clock + 0.001);
+      return clock;
+    },
+    tick() {
+      atlas.mark();
+      store.tick();
+    },
+    sweepEnv: (before) => (store.over('env') ? store.sweep('env', before) : []),
+    envOver: () => store.over('env'),
+    whenIdle: () => store.idle(),
+    stats() {
+      const st = store.stats();
+      return {
+        sheets: Object.keys(manifest.sheets).length,
+        ready: st.ready,
+        pending: st.pending,
+        failed: st.failed,
+        requests: st.requests,
+        residentBytes: Object.values(st.pools).reduce((n, p) => n + p.resident, 0),
+        pools: st.pools,
+        generation: store.generation,
+      };
     },
   };
   return atlas;

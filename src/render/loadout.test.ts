@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { ClipDef, LayerAsset } from './assets/manifest';
 import type { Atlas, LayerSprite } from './assets/loader';
 import type { Crew } from '../sim/crew/components';
-import { crewLoadout, resolveClip } from './loadout';
+import { colOf, crewLoadout, pickFrame, resolveClip } from './loadout';
+import { cellOf } from './assets/manifest';
 
 const clip = (sheet: string): ClipDef => ({ sheet, start: 0, frames: 4, fps: 4, loop: true });
 const layer = (names: string[]): LayerAsset => ({
@@ -56,5 +57,49 @@ describe('crewLoadout', () => {
       expect(w).not.toContain('crew.human.hair.mohawk');
       expect(w).not.toContain('crew.human.hair.bun');
     }
+  });
+});
+
+describe('pickFrame (clip sheets load on demand)', () => {
+  /** A layer whose sheets are "loaded" only if listed; asking for another one records the request. */
+  const lazy = (names: string[], ready: string[]) => {
+    const asked: string[] = [];
+    const l = {
+      def: layer(names),
+      frame: (c: ClipDef, _d: number, col: number) => { asked.push(c.sheet as string); return ready.includes(c.sheet as string) ? ({ sheet: c.sheet, col } as never) : undefined; },
+      glowFrame: () => null,
+      request: () => undefined,
+    } as LayerSprite;
+    return { l, asked };
+  };
+  it('draws the requested clip when its sheet is loaded', () => {
+    const { l } = lazy(['idle', 'walk'], ['s.idle', 's.walk']);
+    expect(pickFrame(l, 'walk', 2, 0)?.clip.sheet).toBe('s.walk');
+  });
+  it('draws the idle frames while the requested clip loads, and asks for the clip', () => {
+    const { l, asked } = lazy(['idle', 'swing_1m'], ['s.idle']);
+    const d = pickFrame(l, 'swing_1m', 0, 0);
+    expect(d?.clip.sheet).toBe('s.idle');
+    expect(asked[0]).toBe('s.swing_1m');
+  });
+  it('is hidden for a clip the layer is never drawn in, whatever is loaded', () => {
+    const { l } = lazy(['idle'], ['s.idle']);
+    expect(pickFrame(l, 'sit_idle', 0, 0)).toBeUndefined();
+  });
+  it('is hidden while nothing of the layer is loaded', () => {
+    const { l } = lazy(['idle', 'walk'], []);
+    expect(pickFrame(l, 'walk', 0, 0)).toBeUndefined();
+  });
+});
+
+describe('cells and columns', () => {
+  it('colOf loops or holds the last frame', () => {
+    expect(colOf({ start: 0, frames: 4, fps: 4, loop: true }, 1.25)).toBe(1);
+    expect(colOf({ start: 0, frames: 3, fps: 12, loop: false }, 5)).toBe(2);
+  });
+  it('cellOf is the layer frame unless the clip sheet is trimmed', () => {
+    const a = { frameW: 256, frameH: 240 };
+    expect(cellOf(a, clip('s'))).toEqual({ w: 256, h: 240, ox: 0, oy: 0 });
+    expect(cellOf(a, { ...clip('s'), cw: 90, ch: 120, ox: 70, oy: 60 })).toEqual({ w: 90, h: 120, ox: 70, oy: 60 });
   });
 });

@@ -108,6 +108,7 @@ export interface Art {
 export function resolveArt(atlas: Atlas, chain: readonly string[], key: string = chain[chain.length - 1] ?? ''): Art | undefined {
   const real = atlas.firstOf(chain);
   if (real) return { s: real, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 };
+  if (atlas.loading(chain)) return undefined; // the real art is on its way: draw nothing, not the stand-in
   const fb = FALLBACK[key];
   const s = fb && atlas.firstOf(fb.ids);
   return fb && s ? { s, tint: fb.tint ?? 0xffffff, scale: fb.scale ?? 1, fallback: true, lift: fb.lift ?? 0, add: fb.add, perTile: !!fb.perTile, rise: fb.rise ?? 1 } : undefined;

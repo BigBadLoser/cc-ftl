@@ -16,7 +16,6 @@ import { accessTile, footprintTiles, openTilesOf } from '../sim/modules/footprin
 import { moduleKey } from './moduleView';
 import { SEAT_DZ } from './moduleArt';
 import type { Atlas, LayerSprite } from './assets/loader';
-import type { ClipDef } from './assets/manifest';
 import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
 import { diamondTextures } from './diamonds';
@@ -24,7 +23,8 @@ import { heldAssets } from './itemView';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
 import { ART_SCALE as S, depthKey, iso } from './iso';
 import type { Layers } from './layers';
-import { clipFor, crewLoadout, resolveClip } from './loadout';
+import { clipFor, crewLoadout, pickFrame, preloadLayers } from './loadout';
+import { cellOf } from './assets/manifest';
 
 export interface CrewViewHost {
   /** True when the ship has no running power source (emergency lighting). */
@@ -111,6 +111,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     const layers = crewLoadout(atlas, crew, suited);
     const first = layers[0];
     if (!first) return null;
+    preloadLayers(layers);
     const root = new Container();
     const shadow = new Sprite(tex.shadow);
     shadow.anchor.set(0.5);
@@ -274,21 +275,31 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         if (!hurtLying) s.t += dt;
         s.lying = clipName === 'sleep';
         // A layer without a sheet for the clip is drawn with its fallback or hidden (see resolveClip).
+        // Sheets load on demand: until a clip's sheet is there the layer shows its idle (pickFrame).
         for (const { layer, sprite } of s.parts) {
-          const c = resolveClip(layer.def, clipName);
-          sprite.visible = !!c;
-          if (c) sprite.texture = layer.frame(c, dir, colOf(c, s.t));
+          const d = pickFrame(layer, clipName, dir, s.t);
+          sprite.visible = !!d;
+          if (d) {
+            sprite.texture = d.tex;
+            const cell = cellOf(layer.def, d.clip);
+            sprite.position.set(cell.ox - layer.def.anchor.x, cell.oy - layer.def.anchor.y);
+          }
         }
         for (const g of s.glows) {
-          const c = resolveClip(g.layer.def, clipName);
-          const tex = c ? g.layer.glowFrame(c, dir, colOf(c, s.t)) : null;
+          const d = pickFrame(g.layer, clipName, dir, s.t);
+          const tex = d ? g.layer.glowFrame(d.clip, dir, d.col) : null;
           g.sprite.texture = tex ?? Texture.EMPTY;
           g.sprite.visible = !!tex;
+          if (d && tex) {
+            const cell = cellOf(g.layer.def, d.clip);
+            g.sprite.position.set(cell.ox - g.layer.def.anchor.x, cell.oy - g.layer.def.anchor.y);
+          }
           if (g.halo) {
             g.halo.visible = !!tex;
-            if (tex) {
+            if (d && tex) {
+              const cell = cellOf(g.layer.def, d.clip);
               g.halo.texture = haloTex(tex);
-              g.halo.position.set(-g.layer.def.anchor.x - HALO_PAD, -g.layer.def.anchor.y - HALO_PAD);
+              g.halo.position.set(cell.ox - g.layer.def.anchor.x - HALO_PAD, cell.oy - g.layer.def.anchor.y - HALO_PAD);
             }
           }
         }
@@ -383,10 +394,4 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
 function clipSec(s: Slot, clip: string): number {
   const c = s.parts.find((q) => q.layer.def.clips[clip])?.layer.def.clips[clip];
   return c ? c.frames / Math.max(1, c.fps) : 0;
-}
-
-/** Column in the clip's sheet at time t. */
-function colOf(c: ClipDef, t: number): number {
-  const f = Math.floor(t * c.fps);
-  return c.start + (c.loop ? f % c.frames : Math.min(c.frames - 1, f));
 }

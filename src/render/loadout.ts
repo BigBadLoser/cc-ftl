@@ -1,3 +1,4 @@
+import type { Texture } from 'pixi.js';
 import type { Atlas, LayerSprite } from './assets/loader';
 import { hash } from './assets/palette';
 import type { ClipDef, LayerAsset } from './assets/manifest';
@@ -94,6 +95,43 @@ export function resolveClip(def: LayerAsset, clip: string): ClipDef | undefined 
   for (const name of [clip, ...(CLIP_FALLBACK[clip] ?? ['idle'])]) {
     const c = def.clips[name];
     if (c) return c;
+  }
+  return undefined;
+}
+
+/** Clips every crew member is seen in: their sheets are queued when the figure appears, the rest on first use. */
+export const PRELOAD_CLIPS: readonly string[] = ['idle', 'walk', 'run', 'work'];
+
+/** Queue the common clips of each layer (a layer without a clip is skipped). */
+export function preloadLayers(layers: readonly LayerSprite[]): void {
+  for (const l of layers) for (const name of PRELOAD_CLIPS) if (l.def.clips[name]) l.request(l.def.clips[name] as ClipDef);
+}
+
+/** Column in the clip's sheet at time t (seconds into the clip). */
+export function colOf(c: ClipDef, t: number): number {
+  const f = Math.floor(t * c.fps);
+  return c.start + (c.loop ? f % c.frames : Math.min(c.frames - 1, f));
+}
+
+export interface Drawn {
+  tex: Texture;
+  clip: ClipDef;
+  col: number;
+}
+
+/**
+ * The frame to draw for a layer: the requested clip's (see resolveClip), or, while that clip's sheet is still loading,
+ * the layer's idle (then walk) so the figure is never blank; undefined if the layer is not drawn for the clip, or has
+ * nothing loaded yet (hidden for now). Asking queues the missing sheet.
+ */
+export function pickFrame(layer: LayerSprite, clip: string, dir: number, t: number): Drawn | undefined {
+  const want = resolveClip(layer.def, clip);
+  if (!want) return undefined;
+  for (const c of [want, layer.def.clips.idle, layer.def.clips.walk]) {
+    if (!c) continue;
+    const col = colOf(c, t);
+    const tex = layer.frame(c, dir, col);
+    if (tex) return { tex, clip: c, col };
   }
   return undefined;
 }

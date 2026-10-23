@@ -15,6 +15,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     screenOf: (shipId: number, x: number, y: number) => r.screenOf(shipId, x, y),
     /** Centre the camera on a sector position in tiles (screenshot scripts). */
     focus: (x: number, y: number) => r.focusSector(x, y),
+    /** Sheet streaming: decoded bytes resident (total and per pool), requests, pending, scene rebuilds. */
+    art: () => r.art(),
     /** Modules of a def: grid, origin and access tile. */
     modules(def: string) {
       const out: { id: number; shipId: number; ship: number; x: number; y: number; ax: number; ay: number }[] = [];

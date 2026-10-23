@@ -32,6 +32,14 @@ export function haloTex(glow: Texture): Texture {
   return tex;
 }
 
+/** Free the baked halo of a glow texture that is going away (its sheet was evicted). */
+export function dropHalo(glow: Texture): void {
+  const hit = cache.get(glow);
+  if (!hit) return;
+  cache.delete(glow);
+  hit.destroy(true);
+}
+
 /** A glow's halo as an additive sprite for position (x, y) of the glow (x is the sprite origin; `flip` mirrors it). */
 export function makeHalo(glow: Texture, x: number, y: number, flip = false): Sprite {
   const h = new Sprite(haloTex(glow));
