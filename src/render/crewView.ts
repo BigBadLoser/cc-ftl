@@ -1,15 +1,16 @@
 import { shipIdAtTile } from './regionRules';
-import { HALO_PAD, haloTex } from './haloTex';
 import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
+import type { HandWeaponArt } from '../sim';
 import { EvaFloatC } from '../sim/eva/components';
-import { FighterC } from '../sim/fight/components';
+import { EquipC, FighterC } from '../sim/fight/components';
 import { ShipC } from '../sim/combat/components';
 import { facingOf } from '../sim/crew/helpers';
 import { SuitC } from '../sim/eva/components';
 import { CarryingC } from '../sim/items/components';
 import { BLEED_OUT_SECONDS } from '../sim/tuning';
+import { TICK_HZ } from '../sim/time';
 import type { ModuleDef } from '../sim/registry';
 import type { Module } from '../sim/modules/components';
 import { accessTile, footprintTiles, openTilesOf } from '../sim/modules/footprint';
@@ -23,8 +24,10 @@ import { heldAssets } from './itemView';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
 import { ART_SCALE as S, depthKey, iso } from './iso';
 import type { Layers } from './layers';
-import { clipFor, crewLoadout, pickFrame, preloadLayers } from './loadout';
-import { cellOf } from './assets/manifest';
+import { clipFor, crewLoadout, preloadLayers } from './loadout';
+import type { ClipDef } from './assets/manifest';
+import { drawLayers } from './crewSprites';
+import { FAMILY, fireClip, prefetchClips, stanceClip } from './handWeapon';
 
 export interface CrewViewHost {
   /** True when the ship has no running power source (emergency lighting). */
@@ -42,6 +45,8 @@ export interface CrewViewHost {
   moduleAt?(x: number, y: number): { m: Module; def: ModuleDef } | null;
   /** Seconds of air in a full suit tank (scales the air bar). */
   suitAirSec?(): number;
+  /** The art of a hand weapon item (ItemDef.hand.art), if it has any. */
+  weaponArt?(item: string): HandWeaponArt | undefined;
 }
 
 export interface CrewView {
@@ -81,11 +86,19 @@ interface Slot {
   shot: { clip: string; until: number } | null;
   lastHp: number;
   lastCooldown: number;
+  /** The hand weapon drawn on the figure (holster and held layers are in `parts`); rebuilt when it changes. */
+  art: HandWeaponArt | undefined;
+  /** Clock seconds until which the figure keeps its weapon up after a fight (so it does not flicker between shots). */
+  engagedUntil: number;
+  /** The weapon family's combat sheets have been requested. */
+  warm: boolean;
 }
 
 const RED = 0xff3b3b;
 const CYAN = 0x22d3ee;
 const SMOOTH = 14;
+/** Seconds a crew member keeps the weapon up after the fight leaves them (no target in view). */
+const WEAPON_LINGER = 1.5;
 /** Screen offset (art px, from the feet) of the hands for each facing 0..7 (SE, S, SW, W, NW, N, NE, E), and their height. */
 const HAND: readonly (readonly [number, number])[] = ([[7, 3], [0, 5], [-7, 3], [-8, 0], [-7, -3], [0, -4], [7, -3], [8, 0]] as const).map(([x, y]) => [x * S, y * S] as const);
 const HAND_Y = -19 * S;
@@ -104,11 +117,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     return world.has(shipId, ShipC);
   }
 
-  function make(id: number): Slot | null {
+  function make(id: number, art: HandWeaponArt | undefined): Slot | null {
     const crew = world.get(id, CrewC);
     if (!crew) return null;
     const suited = world.has(id, SuitC);
-    const layers = crewLoadout(atlas, crew, suited);
+    const layers = crewLoadout(atlas, crew, suited, art);
     const first = layers[0];
     if (!first) return null;
     preloadLayers(layers);
@@ -159,7 +172,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, shadow, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0 };
+    return { root, parts, glows, ring, shadow, filter, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -202,13 +215,15 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         if (!pos || !crew || shipIdAtTile(world, pos.x, pos.y) !== target.shipId || host.hidden?.(pos.x, pos.y)) continue;
         seen.add(id);
         let s = slots.get(id);
-        if (s && s.suited !== world.has(id, SuitC)) {
-          drop(s); // suit on or off: new layers (the sprite is rebuilt in place on the next line)
+        const item = world.get(id, EquipC)?.weapon;
+        const art = item ? host.weaponArt?.(item) : undefined;
+        if (s && (s.suited !== world.has(id, SuitC) || s.art !== art)) {
+          drop(s); // suit on or off, or another weapon: new layers (the sprite is rebuilt in place on the next line)
           slots.delete(id);
           s = undefined;
         }
         if (!s) {
-          const made = make(id);
+          const made = make(id, art);
           if (!made) continue;
           slots.set(id, (s = made));
         }
@@ -257,12 +272,25 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const has = (c: string) => s.parts.some((q) => q.layer.def.clips[c]);
         const hpNow = world.get(id, HealthC)?.hp ?? 0;
         const cd = world.get(id, FighterC)?.cooldown ?? 0;
-        if (!hurtLying && cd > s.lastCooldown && has('attack')) s.shot = { clip: 'attack', until: s.t + clipSec(s, 'attack') };
+        // A crew member with a drawn hand weapon: weapon up while engaged (and a moment after), a fire/swing clip per shot.
+        const wDef = s.art ? s.parts.find((q) => q.layer.def.slot === 'gear.hand')?.layer.def : undefined;
+        const gun = wDef && s.art && !hurtLying && !sitting && !flight ? s.art : undefined;
+        const nowSec = now / 1000;
+        const fighting = world.get(id, FighterC)?.mode === 'engage';
+        if (fighting) s.engagedUntil = nowSec + WEAPON_LINGER;
+        if (gun && wDef && !s.warm && (fighting || world.has(id, DraftedC))) {
+          s.warm = true; // sheets load on first use: ask for the weapon's combat poses now, before the first shot
+          for (const q of s.parts) for (const c of prefetchClips(gun.family)) if (q.layer.def.clips[c]) q.layer.request(q.layer.def.clips[c] as ClipDef);
+        }
+        if (gun && wDef && cd > s.lastCooldown) {
+          const f = fireClip(gun.family, wDef.clips[FAMILY[gun.family].fire], cd / TICK_HZ);
+          s.shot = { clip: f.clip, until: s.t + f.sec };
+        } else if (!hurtLying && cd > s.lastCooldown && has('attack')) s.shot = { clip: 'attack', until: s.t + clipSec(s, 'attack') };
         else if (!hurtLying && s.lastHp >= 0 && hpNow < s.lastHp - 0.01 && has('hurt') && s.shot?.clip !== 'attack') s.shot = { clip: 'hurt', until: s.t + clipSec(s, 'hurt') };
         s.lastHp = hpNow;
         s.lastCooldown = cd;
         if (s.shot && (hurtLying || s.t >= s.shot.until)) s.shot = null;
-        const clipName = hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : s.shot?.clip ?? clipFor(crew.activity, speed > 0.3, flight);
+        const clipName = hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : s.shot?.clip ?? (gun ? stanceClip(gun.family, { engaged: nowSec < s.engagedUntil, moving: speed > 0.3 }) : null) ?? clipFor(crew.activity, speed > 0.3, flight);
         const docked = crew.activity === 'charging' && !!at?.def.robotBay && !hurtLying;
         const dir = (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
         s.shadow.visible = !sitting;
@@ -274,35 +302,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         // Downed, dead and carried crew hold the first frame of the sleep clip (no dedicated lying clip yet).
         if (!hurtLying) s.t += dt;
         s.lying = clipName === 'sleep';
-        // A layer without a sheet for the clip is drawn with its fallback or hidden (see resolveClip).
-        // Sheets load on demand: until a clip's sheet is there the layer shows its idle (pickFrame).
-        for (const { layer, sprite } of s.parts) {
-          const d = pickFrame(layer, clipName, dir, s.t);
-          sprite.visible = !!d;
-          if (d) {
-            sprite.texture = d.tex;
-            const cell = cellOf(layer.def, d.clip);
-            sprite.position.set(cell.ox - layer.def.anchor.x, cell.oy - layer.def.anchor.y);
-          }
-        }
-        for (const g of s.glows) {
-          const d = pickFrame(g.layer, clipName, dir, s.t);
-          const tex = d ? g.layer.glowFrame(d.clip, dir, d.col) : null;
-          g.sprite.texture = tex ?? Texture.EMPTY;
-          g.sprite.visible = !!tex;
-          if (d && tex) {
-            const cell = cellOf(g.layer.def, d.clip);
-            g.sprite.position.set(cell.ox - g.layer.def.anchor.x, cell.oy - g.layer.def.anchor.y);
-          }
-          if (g.halo) {
-            g.halo.visible = !!tex;
-            if (d && tex) {
-              const cell = cellOf(g.layer.def, d.clip);
-              g.halo.texture = haloTex(tex);
-              g.halo.position.set(cell.ox - g.layer.def.anchor.x - HALO_PAD, cell.oy - g.layer.def.anchor.y - HALO_PAD);
-            }
-          }
-        }
+        drawLayers(s, clipName, dir, s.t);
         // Region-local art position and depth (the region's containers sit at its sector offset).
         const lx = s.x - target.ox, ly = s.y - target.oy;
         const p = iso(lx, ly);

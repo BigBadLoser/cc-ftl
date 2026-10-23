@@ -23,6 +23,7 @@ import { liveryFor } from './roofArt';
 import { createShuttleView } from './shuttleView';
 import { createContainerBodyView } from './containerBodyView';
 import { createFightFx } from './fightFx';
+import { crewMuzzle } from './crewMuzzle';
 import { createCrewMarks } from './crewMarks';
 import { sectorTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
 import { targetedModules, wantsRoof } from './regionRules';
@@ -187,7 +188,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const NONE: ReadonlySet<number> = new Set();
   const pickHost = (): PickHost => ({ scenes, cam, origin, hidden: (id) => !!world.get(id, ShipC)?.outpost?.hidden });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
-  const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf });
+  const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
   function shipOf(shipId: number): Ship | undefined {

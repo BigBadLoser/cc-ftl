@@ -61,6 +61,11 @@ export interface ClipDef {
   ch?: number;
   ox?: number;
   oy?: number;
+  /**
+   * Held weapons only: `muzzle[direction][frame] = [x, y]`, the barrel end (the tip, for melee) in sprite px from the
+   * layer's anchor (x right, y down). Anchor-relative like the cell's `ox`/`oy`, so trimming does not change it.
+   */
+  muzzle?: [number, number][][];
 }
 
 /**

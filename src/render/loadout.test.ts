@@ -103,3 +103,31 @@ describe('cells and columns', () => {
     expect(cellOf(a, { ...clip('s'), cw: 90, ch: 120, ox: 70, oy: 60 })).toEqual({ w: 90, h: 120, ox: 70, oy: 60 });
   });
 });
+
+describe('crewLoadout gear', () => {
+  const ids = ['body', 'eyes.organic', 'hair.short', 'arm.L.flesh', 'arm.R.flesh', 'torso.tee', 'torso.armor_vest', 'torso.armor_heavy', 'legs.cargo_pants',
+    'gear.shoulder.pads', 'gear.head.tactical_helmet', 'gear.head.heavy_helmet', 'gear.holster.rifle', 'gear.hand.rifle'].map((i) => `crew.human.${i}`);
+  const atlas = {
+    layer: (id: string) => (ids.includes(id) ? { def: { ...layer(['idle']), order: ids.indexOf(id) }, id } : undefined),
+    ids: (prefix: string) => ids.filter((i) => i.startsWith(prefix)),
+  } as unknown as Atlas;
+  const crew = (role: string): Crew => ({ name: 'x', role, species: 'species.human', appearanceSeed: 1, activity: 'idle' }) as unknown as Crew;
+  const worn = (c: Crew, art?: { id: string; family: '2h' }) => crewLoadout(atlas, c, false, art).map((l) => (l as LayerSprite & { id: string }).id);
+
+  it('wears the holster and the held layer of the equipped weapon (the view draws one per clip)', () => {
+    expect(worn(crew('role.security'), { id: 'rifle', family: '2h' })).toEqual(expect.arrayContaining(['crew.human.gear.holster.rifle', 'crew.human.gear.hand.rifle']));
+    expect(worn(crew('role.security'))).not.toContain('crew.human.gear.hand.rifle');
+  });
+  it('skips a weapon whose layers the manifest lacks', () => {
+    expect(worn(crew('role.security'), { id: 'blade', family: '2h' })).not.toContain('crew.human.gear.hand.blade');
+  });
+  it('puts shoulder pads on security, and full armour with no hair on a marine', () => {
+    expect(worn(crew('role.security'))).toContain('crew.human.gear.shoulder.pads');
+    const m = worn(crew('role.marine'));
+    expect(m).toEqual(expect.arrayContaining(['crew.human.torso.armor_heavy', 'crew.human.gear.head.heavy_helmet']));
+    expect(m).not.toContain('crew.human.hair.short');
+  });
+  it('wears no weapon in a suit', () => {
+    expect(crewLoadout(atlas, crew('role.security'), true, { id: 'rifle', family: '2h' }).map((l) => (l as LayerSprite & { id: string }).id)).not.toContain('crew.human.gear.hand.rifle');
+  });
+});

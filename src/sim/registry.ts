@@ -187,6 +187,15 @@ export interface ItemDef {
   tier?: number;
 }
 
+/** Pose family of a hand weapon's art (which aim/fire/ready/swing clips it has). */
+export type WeaponFamily = '1h' | '2h' | 'heavy' | '1m' | '2m';
+
+/** The art of a hand weapon: the `crew.human.gear.hand.<id>` / `gear.holster.<id>` layers, and the pose family. Render data; the sim never reads it. */
+export interface HandWeaponArt {
+  id: string;
+  family: WeaponFamily;
+}
+
 /** A hand weapon (sidearm, rifle, blade) carried by crew. Ranged ones need line of sight; melee ones need adjacency. */
 export interface HandWeaponDef {
   kind: 'ranged' | 'melee';
@@ -203,6 +212,8 @@ export interface HandWeaponDef {
   /** A hit knocks the target down (stunned, StunC) for `knockdownSec` with this chance. */
   knockdownChance?: number;
   knockdownSec?: number;
+  /** Which sprite layers draw it in the crew's hands. Absent = nothing is drawn. */
+  art?: HandWeaponArt;
 }
 
 export interface RecipeDef {

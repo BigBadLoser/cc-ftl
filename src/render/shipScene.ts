@@ -91,6 +91,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     },
     light: (x, y) => (grid.inBounds(x, y) ? grid.get('light', x, y) : 0),
     suitAirSec: o.suitAirSec,
+    weaponArt: (item) => items[item]?.hand?.art,
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
   const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin });
