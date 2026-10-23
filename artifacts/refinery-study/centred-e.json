@@ -1,0 +1,100 @@
+{
+  "parameters": {
+    "bay_spacing": 1.02,
+    "rear_v": 0,
+    "rear_top": 1.62,
+    "rear_width": 0.74,
+    "rear_depth": 0.76,
+    "rear_bottom": 1.0,
+    "front_v": 0.58,
+    "front_top": 1.0,
+    "front_width": 0.53,
+    "front_depth": 0.51,
+    "drum_v": 1.14,
+    "drum_z": 0.43,
+    "drum_radius": 0.28,
+    "drum_width": 0.72,
+    "end_u": 2.18,
+    "end_width": 0.4,
+    "end_top": 0.94,
+    "rim": 0.075,
+    "well_depth": 0.35,
+    "ribbed_drums": true,
+    "coloured": false,
+    "front_u_offset": 0.4,
+    "front_setback": 0,
+    "rear_plinth_top": 1.08,
+    "split_ends": true,
+    "footprint": [
+      3,
+      5
+    ],
+    "sill_length": 4.66,
+    "body_length": 4.24,
+    "end_links": true,
+    "end_bridges": true,
+    "end_bevel": 0.055,
+    "centred_layout": true
+  },
+  "footprint": [
+    3,
+    5
+  ],
+  "tile": [
+    128,
+    64
+  ],
+  "samples": 4,
+  "SS": 2,
+  "camera": {
+    "yaw": 45,
+    "elevation": 30
+  },
+  "landmarks": {
+    "rear_1": [
+      -65.28000051615217,
+      -159.62154834282268
+    ],
+    "front_1": [
+      -76.80000128041972,
+      -79.66367214723492
+    ],
+    "drum_1": [
+      -138.24000154181604,
+      -29.864979019297216
+    ],
+    "rear_2": [
+      0.0,
+      -126.98154808474659
+    ],
+    "front_2": [
+      -11.519998856918878,
+      -47.02367093548449
+    ],
+    "drum_2": [
+      -72.96000102566387,
+      2.7750212387788697
+    ],
+    "rear_3": [
+      65.28000051615217,
+      -94.34154782667049
+    ],
+    "front_3": [
+      53.7599997518846,
+      -14.383671631082757
+    ],
+    "drum_3": [
+      -7.680000509511705,
+      35.415021496854955
+    ]
+  },
+  "anchor": [
+    240,
+    183
+  ],
+  "bounds": [
+    4.760000228881836,
+    2.84437358379364,
+    1.6200000047683716
+  ]
+}
