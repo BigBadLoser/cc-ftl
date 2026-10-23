@@ -1,4 +1,4 @@
-import { CombatC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
+import { siteIds, siteStatus, CombatC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { AlienC, EggSacC } from '../sim/aliens/components';
@@ -100,6 +100,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       ship: (template: string, faction: Faction, x: number, y: number) => spawnShip(sim, sim.content.ships[template] as never, { faction, x, y }),
       /** Put a vehicle (e.g. 'vehicle.mining_pod') in an empty bay module; returns its id (the mining shots). */
       vehicle: (def: string, bay: number) => spawnVehicle(sim, def, bay),
+      /** Set the progress of every module construction site to a share of its work (the ghost shots). */
+      siteProgress: (frac: number) => { for (const id of sim.world.query(JobC)) { const j = sim.world.get(id, JobC); if (j?.kind === 'module') j.progress = Math.round(j.work * frac); } },
       /** Set a suit's tank (the air-warning shot). */
       suitAir: (crew: number, sec: number) => { const su = sim.world.get(crew, SuitC); if (su) su.air = sec; },
       /** Set a crew member's hunger (0..100) and optionally rest (the needs shots). */
@@ -109,6 +111,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       /** Mood readout. */
       mood: (crew: number) => sim.world.get(crew, MoodC) ?? null,
     },
+    /** Module construction sites with their status (progress, materials, block). */
+    sites: () => siteIds(sim).map((id) => siteStatus(sim, id)),
     dispatch: (cmd: Parameters<Sim['enqueue']>[0]) => sim.enqueue(cmd),
     /** Events: start one by id (ignores triggers and eligibility), set a flag, set the pool context. */
     fireEvent: (event: string) => sim.enqueue({ type: 'story.fire', event }),

@@ -37,12 +37,22 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     if (!dest) return 'done';
     const cap = Math.max(1, Math.floor(stat(sim, crew, 'carryCapacity')));
     const want = Math.min(h.count, cap);
+    const asked = h.count;
     const taken = h.src.kind === 'floor' ? takeFromStack(sim, h.src.id, want)
       : h.src.kind === 'vehicle' ? cargoTake(sim, h.src.id, h.item, want)
       : storageTake(sim, h.src.id, h.item, want);
     if (taken <= 0) return 'done';
-    sim.world.add(crew, CarryingC, { item: h.item, count: taken });
+    const extra: { item: string; count: number }[] = [];
+    if (h.src.kind === 'storage') {
+      for (const q of h.extra ?? []) {
+        const got = storageTake(sim, h.src.id, q.item, Math.min(q.count, cap));
+        if (got > 0) extra.push({ item: q.item, count: got });
+      }
+    }
+    sim.world.add(crew, CarryingC, { item: h.item, count: taken, ...(extra.length > 0 ? { extra } : {}) });
     h.count = taken;
+    if (taken < asked) delete h.then; // the source held less than planned: no more stops
+    if (h.extra) h.extra = extra;
     h.phase = 'deliver';
     job.x = dest.x;
     job.y = dest.y;
@@ -59,10 +69,31 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     const target = sim.world.get(h.dst.id, JobC);
     moved = target ? deliverToJob(target, h.item, carrying.count) : 0;
   }
-  if (carrying.count > moved) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, h.item, carrying.count - moved);
-  sim.world.remove(crew, CarryingC);
+  for (const q of carrying.extra ?? []) {
+    const target = h.dst.kind === 'job' ? sim.world.get(h.dst.id, JobC) : undefined;
+    const got = target ? deliverToJob(target, q.item, q.count) : 0;
+    if (q.count > got) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, q.item, q.count - got);
+    if (got > 0) sim.events.emit({ type: 'item.hauled', crew, item: q.item, count: got, ship: shipIdOf(sim, job), x: job.x, y: job.y, to: 'job' });
+  }
   if (moved > 0) {
     sim.events.emit({ type: 'item.hauled', crew, item: h.item, count: moved, ship: shipIdOf(sim, job), x: job.x, y: job.y, to: h.dst.kind });
   }
+  // what is left goes on to the next job on the route
+  const left = carrying.count - moved;
+  while (left > 0 && h.then?.length) {
+    const next = h.then.shift() as { job: number; count: number };
+    const nj = sim.world.get(next.job, JobC);
+    if (!nj) continue;
+    h.dst = { kind: 'job', id: next.job };
+    h.count = left;
+    if (h.then.length === 0) delete h.then;
+    carrying.count = left;
+    delete carrying.extra;
+    job.x = nj.x;
+    job.y = nj.y;
+    return 'working';
+  }
+  if (left > 0) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, h.item, left);
+  sim.world.remove(crew, CarryingC);
   return 'done';
 }

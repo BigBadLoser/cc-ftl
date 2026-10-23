@@ -12,6 +12,9 @@ export interface Tile {
 export interface PathGoal extends Tile {
   /** True: stop on any walkable tile 8-adjacent to (x, y) (for working on walls). */
   adjacent?: boolean;
+  /** With `adjacent`: the goal is the w x h box whose top-left is (x, y), and the walker stops beside the box, never inside it. */
+  w?: number;
+  h?: number;
 }
 
 // Integer costs (x10) keep the search exact and tie-breaking deterministic.
@@ -61,14 +64,16 @@ export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, o
   const at = (x: number, y: number): number => (y - y0) * width + (x - x0);
   const fromIndex = at(from.x, from.y);
   const adj = goal.adjacent ? 1 : 0;
-  const isGoal = (x: number, y: number): boolean =>
-    adj ? Math.max(Math.abs(x - goal.x), Math.abs(y - goal.y)) === 1 : x === goal.x && y === goal.y;
+  const gw = goal.w ?? 1, gh = goal.h ?? 1;
+  const gap = (x: number, y: number): number =>
+    Math.max(goal.x - x, x - (goal.x + gw - 1), goal.y - y, y - (goal.y + gh - 1), 0);
+  const isGoal = (x: number, y: number): boolean => (adj ? gap(x, y) === 1 : x === goal.x && y === goal.y);
   if (!adj && !walk(at(goal.x, goal.y))) return null;
   if (isGoal(from.x, from.y)) return [];
 
   const heuristic = (x: number, y: number): number => {
-    const dx = Math.max(0, Math.abs(x - goal.x) - adj);
-    const dy = Math.max(0, Math.abs(y - goal.y) - adj);
+    const dx = Math.max(0, Math.max(goal.x - x, x - (goal.x + gw - 1)) - adj);
+    const dy = Math.max(0, Math.max(goal.y - y, y - (goal.y + gh - 1)) - adj);
     return DIAG * Math.min(dx, dy) + ORTHO * Math.abs(dx - dy);
   };
 

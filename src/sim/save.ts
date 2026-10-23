@@ -54,7 +54,7 @@ import { newTrade, type TradeState } from './trade/types';
  * v41: `Combat.cruisePilot` / `Combat.cruiseEvasion` (evade odds outside combat).
  * v42: base logistics and the living world in one save.
  */
-export const SAVE_VERSION = 42;
+export const SAVE_VERSION = 43;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

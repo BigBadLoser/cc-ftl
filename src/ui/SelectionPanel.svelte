@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCrew, UiInspect, UiModule, UiShuttles } from './api';
+  import type { UiApi, UiCrew, UiInspect, UiModule, UiShuttles, UiSite } from './api';
   import GridPanel from './GridPanel.svelte';
   import AsteroidPanel from './AsteroidPanel.svelte';
   import CrewInspector from './CrewInspector.svelte';
   import ModuleInspector from './ModuleInspector.svelte';
+  import SiteInspector from './SiteInspector.svelte';
   import ShuttlePanel from './ShuttlePanel.svelte';
   import TileInspector from './TileInspector.svelte';
 
@@ -18,6 +19,8 @@
   let selMod = $state<number | null>(null);
   let selShip = $state<number | null>(null);
   let selAst = $state<number | null>(null);
+  let sites = $state<UiSite[]>([]);
+  let selSite = $state<number | null>(null);
 
   onMount(() => {
     const u = [
@@ -30,6 +33,8 @@
       api.selectedModule.subscribe((v) => (selMod = v)),
       api.selectedShip.subscribe((v) => (selShip = v)),
       api.selectedAsteroid.subscribe((v) => (selAst = v)),
+      api.sites.subscribe((v) => (sites = v)),
+      api.selectedSite.subscribe((v) => (selSite = v)),
     ];
     return () => u.forEach((f) => f());
   });
@@ -38,10 +43,11 @@
   const back = () => api.selectCrew(null);
   const hasCrew = $derived(selCrew !== null && (crew.some((c) => c.id === selCrew) || foes.some((c) => c.id === selCrew)));
   const mod = $derived(selMod === null ? undefined : mods.find((m) => m.id === selMod));
+  const site = $derived(selSite !== null && sites.some((x) => x.id === selSite));
   const tile = $derived(info?.selected ? info : null);
   const wide = $derived(!hasCrew && !!mod && (mod.crafting || !!mod.storage));
   /** The inspector exists only while something is selected; ship stats live behind the ship tab. */
-  const shown = $derived(selAst !== null || selShip !== null || hasCrew || !!mod || !!tile);
+  const shown = $derived(selAst !== null || selShip !== null || hasCrew || !!mod || site || !!tile);
 </script>
 
 {#if shown}
@@ -52,6 +58,8 @@
     <GridPanel {api} ship={selShip} onBack={back} {onTrade} />
   {:else if hasCrew}
     <CrewInspector {api} {onPriorities} onBack={back} />
+  {:else if site}
+    <SiteInspector {api} onBack={back} />
   {:else if mod && bays.some((b) => b.id === mod.id)}
     <ShuttlePanel {api} onBack={back} />
   {:else if mod}
