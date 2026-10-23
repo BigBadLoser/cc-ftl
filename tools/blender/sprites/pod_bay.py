@@ -22,7 +22,8 @@ SHAFT = 0.8
 IRIS_R, IRIS_N = 1.18, 8               # iris radius and blade count
 IRIS_T = 0.04
 ARM_V = -0.42                          # the clamps reach over the pod's top aft of its yellow band (u)
-ARM = ((1.5, 0.12), (1.5, 1.25), (1.25, 1.55), (0.85, 1.5), (0.6, 1.3))   # (|v|, z): lip pivot, up, over, onto the top
+ARM = ((1.5, 0.12), (1.5, 1.18), (1.3, 1.4), (0.9, 1.36), (0.62, 1.22))   # (|v|, z): lip pivot, up, over, onto the
+                                                                           # top of the pod's drum
 ARM_W, ARM_TH = 0.3, 0.11
 FOLD = (0.45, 0.85)                    # arm fold per .fold.f<i>
 OPENS = (0.3, 0.65, 1.0)               # iris open fraction per .open.f<i>
