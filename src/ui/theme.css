@@ -16,7 +16,7 @@
   --rest: #36d4ff;
   --hunger: #f0b13a;
   --focus: var(--cyan);
-  --kit-dialog-radius: 12px;
+  --kit-dialog-radius: 0;
   --sat: env(safe-area-inset-top, 0px);
   --sar: env(safe-area-inset-right, 0px);
   --sab: env(safe-area-inset-bottom, 0px);

@@ -179,12 +179,12 @@
 
 <style>
   .veil { position: fixed; inset: 0; z-index: 25; background: rgba(4, 8, 14, 0.5); display: grid; place-items: center; padding: 12px; touch-action: none; }
-  .card { box-sizing: border-box; width: min(760px, 100%); max-height: calc(100dvh - 24px); overflow-y: auto; touch-action: pan-y; background: var(--panel-2); border: 1px solid var(--cyan); border-radius: 12px; padding: 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
+  .card { box-sizing: border-box; width: min(760px, 100%); max-height: calc(100dvh - 24px); overflow-y: auto; touch-action: pan-y; background: var(--panel-2); border: 1px solid var(--cyan); border-radius: 0; padding: 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
   header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
   .who { flex: 1; min-width: 0; }
   h2 { margin: 0; font-size: 18px; color: var(--cyan); }
   .who small { color: var(--dim); }
-  .chip { padding: 5px 10px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); color: var(--amber); white-space: nowrap; }
+  .chip { padding: 5px 10px; border-radius: 0; background: var(--bg); border: 1px solid var(--line); color: var(--amber); white-space: nowrap; }
   header button { min-width: 36px; min-height: 36px; padding: 0; font-size: 18px; }
   .greet { margin: 4px 0 8px; font-style: italic; }
   .greet small { color: var(--dim); font-style: normal; margin-left: 6px; }
@@ -193,10 +193,10 @@
   .tabs { display: none; gap: 6px; margin-bottom: 6px; }
   .tabs button { flex: 1; }
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .col { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px; min-height: 120px; max-height: 330px; overflow-y: auto; }
+  .col { background: var(--bg); border: 1px solid var(--line); border-radius: 0; padding: 8px; min-height: 120px; max-height: 330px; overflow-y: auto; }
   h3 { margin: 0 0 6px; font-size: 13px; color: var(--cyan); }
   h3 small { color: var(--dim); font-weight: normal; margin-left: 4px; }
-  .row { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 6px; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 0; }
   .row.set { background: #0e2a36; }
   .nm { flex: 1; min-width: 0; display: grid; line-height: 1.15; }
   .nm small { color: var(--dim); font-size: 11px; }
@@ -218,7 +218,7 @@
   .status span { color: var(--dim); font-size: 13px; }
   @media (max-width: 600px) {
     .veil { place-items: end stretch; padding: 0; }
-    .card { width: 100%; max-height: 88dvh; border-radius: 16px 16px 0 0; border-width: 1px 0 0; padding: 12px 12px calc(12px + var(--sab)); }
+    .card { width: 100%; max-height: 88dvh; border-radius: 0; border-width: 1px 0 0; padding: 12px 12px calc(12px + var(--sab)); }
     .tabs { display: flex; }
     .cols { grid-template-columns: 1fr; }
     .col.hide { display: none; }
