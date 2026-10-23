@@ -107,7 +107,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   // A dug outpost is roofed with rock, not plating (PLACEHOLDER, rockRoofView.ts).
   // It sits in the fx layer, and while it is on the region's own tile and entity layers hide: the rock around the base is drawn
   // by the asteroid's view, which lies under them, so anything of the base left showing would cut through the rock.
-  const rockRoof = world.get(grid.id, ShipC)?.outpost?.style === 'dug' ? createRockRoofView(grid, L.fx) : null;
+  const rockRoof = world.get(grid.id, ShipC)?.outpost?.style === 'dug' ? createRockRoofView(grid, atlas, L, L.fx) : null;
   const showRoof = (on: boolean) => {
     roof.setVisible(on && !rockRoof);
     rockRoof?.setVisible(on);

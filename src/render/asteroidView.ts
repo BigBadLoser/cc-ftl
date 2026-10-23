@@ -31,7 +31,7 @@ export interface AsteroidView {
 /** Height of a rock-mass block in tiles of height (the art's ZM). */
 export const ROCK_MASS_Z = 1.2;
 /** Mass sits a hair behind other things on its diagonal. */
-const MASS_DZ = -0.1;
+export const MASS_DZ = -0.1;
 
 const ORE_KIND: Record<string, string> = { 'ore.iron': 'iron', 'ore.ice': 'ice', 'ore.rare': 'rare' };
 
@@ -46,15 +46,23 @@ function revision(sector: SectorGrid, a: Asteroid): number {
   return rev;
 }
 
-const cuts = (c: number) => (c ? `.c${c}` : '');
+export const cuts = (c: number) => (c ? `.c${c}` : '');
 
 /** Inner-corner cut bits: the diagonal is not `solid` while both neighbours beside it are. */
-function cutBits(solid: (dx: number, dy: number) => boolean, nw: boolean): number {
+export function cutBits(solid: (dx: number, dy: number) => boolean, nw: boolean): number {
   const n = solid(0, -1), e = solid(1, 0), s = solid(0, 1), w = solid(-1, 0);
   return (s && e && !solid(1, 1) ? 1 : 0) | (s && w && !solid(-1, 1) ? 2 : 0) | (n && e && !solid(1, -1) ? 4 : 0) | (nw && n && w && !solid(-1, -1) ? 8 : 0);
 }
-const maskOf = (solid: (dx: number, dy: number) => boolean): number =>
+export const maskOf = (solid: (dx: number, dy: number) => boolean): number =>
   (solid(0, -1) ? 1 : 0) | (solid(1, 0) ? 2 : 0) | (solid(0, 1) ? 4 : 0) | (solid(-1, 0) ? 8 : 0);
+
+/** Art ids of the rock-mass block at (x, y), best first: `isRock` says which neighbours are rock; `oreId` is `rock.ore.<kind>.<rich|thin>` for an ore tile. */
+export function massChain(isRock: (dx: number, dy: number) => boolean, x: number, y: number, oreId?: string): string[] {
+  const v = (tileHash(x, y) >>> 8) % 4;
+  const m = maskOf(isRock), c = cutBits(isRock, false);
+  const mm = `m${m}${cuts(c)}`;
+  return [...(oreId ? [`${oreId}.${mm}`] : []), `rock.mass.${mm}.v${v}`, `rock.mass.${mm}.v0`, `rock.mass.m${m}.v0`];
+}
 
 interface Built {
   root: Container;
@@ -95,15 +103,10 @@ export function createAsteroidView(world: World, atlas: Atlas, L: Layers, ores: 
         }
         const under = atlas.stat(`${g}.under`);
         if (under) addStatic(L, under, x, y, 0, b.root);
-        const rock = (dx: number, dy: number) => kind(x + dx, y + dy) === Struct.Rock;
-        const m = maskOf(rock), c = cutBits(rock, false);
         const ore = sector.get('ore', x, y);
         const def = ore ? byCode.get(ore) : undefined;
-        const mm = `m${m}${cuts(c)}`;
-        const chain = def
-          ? [`rock.ore.${def.kind}.${sector.get('oreAmt', x, y) >= def.mid ? 'rich' : 'thin'}.${mm}`, `rock.mass.${mm}.v${h % 4}`, `rock.mass.m${m}.v${h % 4}`]
-          : [`rock.mass.${mm}.v${h % 4}`, `rock.mass.${mm}.v0`, `rock.mass.m${m}.v0`];
-        const s = atlas.firstOf(chain);
+        const oreId = def ? `rock.ore.${def.kind}.${sector.get('oreAmt', x, y) >= def.mid ? 'rich' : 'thin'}` : undefined;
+        const s = atlas.firstOf(massChain((dx, dy) => kind(x + dx, y + dy) === Struct.Rock, x, y, oreId));
         if (s) b.mass.push(...addStatic(L, s, x, y, depthKey(x, y) + MASS_DZ, L.sorted));
       }
     }
