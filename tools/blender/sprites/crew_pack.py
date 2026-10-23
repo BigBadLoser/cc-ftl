@@ -1,11 +1,14 @@
 """Packs cached crew renders into one sheet per (item, clip) + glow twins, and merges them into the manifest.
 
-Sheet `crew.human.torso.tee.walk` = 8 direction rows x that clip's frames, every cell the fixed crew frame (crew_spec).
-A layer's manifest asset lists its clips, each with the sheet it lives in (`clips.walk.sheet`, `start` is always 0)."""
+Sheet `crew.human.torso.tee.walk` = 8 direction rows x that clip's frames. Cells are rendered in the fixed crew frame
+(crew_spec) but each sheet is cropped to the union of its opaque pixels (crew_trim): the clip records the cell size and
+offset (`cw`, `ch`, `ox`, `oy`). A layer's manifest asset lists its clips, each with the sheet it lives in
+(`clips.walk.sheet`, `start` is always 0)."""
 import json
 import numpy as np
 from . import crew_cache as cc
 from . import crew_spec as cs
+from . import crew_trim
 from . import post
 from .scale import MAX_SHEET
 
@@ -53,8 +56,9 @@ def pack(items, entries, outdir, log=print):
         img, gl = f"sprites/{sid}.png", f"sprites/{sid}.glow.png"
         tag = f"{outdir.resolve()}::{sid}"
         cached = seen.get(tag)
-        if cached and cached["key"] == skey and (outdir / img).exists() and (not cached["glow"] or (outdir / gl).exists()):
+        if cached and cached["key"] == skey and cached.get("box") and (outdir / img).exists() and (not cached["glow"] or (outdir / gl).exists()):
             has_glow = cached["glow"]
+            box = tuple(cached["box"])
             kept += 1
         else:
             if 8 * cs.FRAME_H > MAX_SHEET or n * cs.FRAME_W > MAX_SHEET:
@@ -68,12 +72,13 @@ def pack(items, entries, outdir, log=print):
                 if g is not None:
                     glow[sl] = g
             has_glow = bool(glow[..., 3].any())
+            sheet, glow, box = crew_trim.trim_sheet(sheet, glow if has_glow else None, cs.FRAME_W, cs.FRAME_H)
             post.write_png(outdir / img, sheet)
             if has_glow:
                 post.write_png(outdir / gl, glow)
             elif (outdir / gl).exists():
                 (outdir / gl).unlink()
-            seen[tag] = {"key": skey, "glow": has_glow}
+            seen[tag] = {"key": skey, "glow": has_glow, "box": list(box)}
             wrote += 1
         sd = {"image": img}
         if has_glow:
@@ -83,6 +88,7 @@ def pack(items, entries, outdir, log=print):
                                       "frameW": cs.FRAME_W, "frameH": cs.FRAME_H, "anchor": {"x": cs.ANCHOR[0], "y": cs.ANCHOR[1]},
                                       "clips": {}})
         a["clips"][clip] = {"sheet": sid, "start": 0, "frames": n, "fps": fps, "loop": loop}
+        crew_trim.apply_trim(a["clips"][clip], a, box)
         if getattr(it, "muzzle", None) is not None:          # held weapons: [direction][frame] -> [x, y] px from the anchor
             mz = [[None] * n for _ in range(8)]
             for _, _, d, i, _, path in es:

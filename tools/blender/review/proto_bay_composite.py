@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sprites import compose  # noqa: E402
+from sprites import compose, crew_trim  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 AS = ROOT / "public/assets"
@@ -57,7 +57,7 @@ def crew(sc, cx, cy, d=0, cloth=(114, 132, 95)):
         c, fw, fh = a["clips"]["idle"], a["frameW"], a["frameH"]
         if arr is None:
             arr = np.zeros((fh, fw, 4), np.uint8)
-        sl = sh[d * fh:(d + 1) * fh, c["start"] * fw:(c["start"] + 1) * fw]
+        sl = crew_trim.full_cell(sh, a, c, d, c["start"])
         compose.over(arr, compose.remap_keys(sl, cols), 0, 0)
         an = a["anchor"]
     sc.put(arr, None, cx - an["x"], cy - an["y"])

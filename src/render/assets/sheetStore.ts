@@ -214,6 +214,13 @@ export class SheetStore<T> {
     return !!b && b.resident > b.limit;
   }
 
+  /** The `n` biggest resident sheets (name, decoded bytes), for the debug readout. */
+  biggest(n: number): [string, number][] {
+    const all: [string, number][] = [];
+    for (const b of this.budgets.values()) for (const [k, e] of b.entries) all.push([k, e.bytes]);
+    return all.sort((a, b) => b[1] - a[1]).slice(0, n);
+  }
+
   stats(): { pools: Record<string, PoolStats>; requests: number; ready: number; pending: number; failed: number } {
     const pools: Record<string, PoolStats> = {};
     for (const [k, b] of this.budgets) pools[k] = { resident: b.resident, budget: b.limit, sheets: b.entries.size };

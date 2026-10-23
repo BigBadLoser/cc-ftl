@@ -14,6 +14,9 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from sprites import crew_trim  # noqa: E402
+
 
 class Set:
     def __init__(self, d):
@@ -40,7 +43,7 @@ class Set:
         if rel is None:
             return np.zeros((fh, fw, 4), np.uint8)
         col = c["start"] + i
-        return self.img(rel)[d * fh:(d + 1) * fh, col * fw:(col + 1) * fw]
+        return crew_trim.full_cell(self.img(rel), a, c, d, col)
 
 
 def main():

@@ -13,6 +13,7 @@ import numpy as np
 
 ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/"tools/blender"))
+from sprites import crew_trim
 BG=(13,19,28,255)
 FACTION={"primary":(82,117,147),"secondary":(199,161,94)}
 
@@ -216,7 +217,7 @@ def compose(out):
         fw,fh=a["frameW"],a["frameH"]
         sh=np.array(Image.open(assets/shipped["sheets"][a["clips"]["idle"].get("sheet",a.get("sheet"))]["image"]))
         frame=a["clips"]["idle"]["start"]
-        fr=sh[3*fh:4*fh,frame*fw:(frame+1)*fw]
+        fr=crew_trim.full_cell(sh,a,a["clips"]["idle"],3,frame)
         fr=C.remap_keys(fr,{"team.skin":(212,156,116),"team.cloth":(114,132,95),"team.hair":(58,42,30),"team.accent":(201,162,39)})
         if stack is None:
             stack=np.zeros_like(fr)

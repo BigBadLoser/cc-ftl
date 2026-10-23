@@ -41,6 +41,8 @@ export interface AtlasStats {
   residentBytes: number;
   pools: Record<string, { resident: number; budget: number; sheets: number }>;
   generation: number;
+  /** The biggest resident sheets, [name, decoded bytes]. */
+  biggest: [string, number][];
 }
 
 export interface Atlas {
@@ -280,6 +282,7 @@ export async function loadAtlas(base = assetBase()): Promise<Atlas> {
         residentBytes: Object.values(st.pools).reduce((n, p) => n + p.resident, 0),
         pools: st.pools,
         generation: store.generation,
+        biggest: store.biggest(10),
       };
     },
   };

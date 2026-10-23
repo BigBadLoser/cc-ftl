@@ -12,7 +12,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sprites import compose  # noqa: E402
+from sprites import compose, crew_trim  # noqa: E402
 
 BG = (10, 12, 18)
 RIM, RIM_MIX = np.array([120, 205, 255.0]), 0.38
@@ -55,7 +55,7 @@ class Assets:
             return None
         fw, fh = a["frameW"], a["frameH"]
         col = cl["start"] + i % cl["frames"]
-        return self.img(sh["image"])[d * fh:(d + 1) * fh, col * fw:(col + 1) * fw], a["anchor"], a["order"]
+        return crew_trim.full_cell(self.img(sh["image"]), a, cl, d, col), a["anchor"], a["order"]
 
 
 def crew(A, outfit, pal, d, clip, i, solid):
