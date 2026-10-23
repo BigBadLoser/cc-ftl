@@ -4,6 +4,7 @@ import type { AsteroidPlan } from '../asteroids/types';
 import type { ContentRegistry } from '../registry';
 import { Sim } from '../sim';
 import { Struct } from '../structure';
+import { BodyC } from '../body';
 import { MiningPodC, type MiningPod } from './components';
 import { hoverSpot, orderTiles, pickTile } from './pick';
 
@@ -39,16 +40,30 @@ describe('mining tile picks', () => {
     expect(pickTile(sim, other, order(asteroid, { tiles: [{ x: 14, y: 10 }] }), { x: 0, y: 0 })).toEqual({ x: 14, y: 10 });
   });
 
-  it('hovers over the tile, or a pod width clear of every other pod', () => {
+  it('hovers diagonally beside the ore, nearest the pod first, orthogonally only when no diagonal is open', () => {
     const { sim, asteroid } = bar();
-    expect(hoverSpot(sim, 99, { x: 12, y: 10 }, 2.6)).toEqual({ x: 12.5, y: 10.5 });
+    // The 5x1 bar: every tile above and below it is open space, so the diagonal south-west of (12, 10) is the nearest to a pod there.
+    const pod = sim.world.createEntity();
+    sim.world.add(pod, BodyC, { x: 8, y: 14, heading: 0, alt: 2.5 });
+    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: 11.5, y: 11.5 });
+    sim.world.get(pod, BodyC)!.y = 6;
+    expect(hoverSpot(sim, pod, { x: 12, y: 10 }, 2.6)).toEqual({ x: 11.5, y: 9.5 });
+    // Rock on all four diagonals of the end tile (10, 10): fill them and the west neighbour is the only open spot left near.
+    for (const [x, y] of [[9, 9], [11, 9], [9, 11], [11, 11]]) sim.sector.grid.set('struct', x, y, Struct.Rock);
+    const o = hoverSpot(sim, pod, { x: 10, y: 10 }, 2.6);
+    expect([[10.5, 9.5], [10.5, 11.5], [9.5, 10.5]].some(([x, y]) => o.x === x && o.y === y)).toBe(true);
+    void asteroid;
+  });
+
+  it('keeps pods a width apart and is deterministic', () => {
+    const { sim, asteroid } = bar();
     const other = sim.world.createEntity();
-    sim.world.add(other, MiningPodC, order(asteroid, { phase: 'mining', target: { x: 12, y: 10 }, spot: { x: 12.5, y: 10.5 } }));
+    sim.world.add(other, MiningPodC, order(asteroid, { phase: 'mining', target: { x: 12, y: 10 }, spot: { x: 11.5, y: 9.5 } }));
     const a = hoverSpot(sim, 99, { x: 12, y: 10 }, 2.6);
-    expect(Math.hypot(a.x - 12.5, a.y - 10.5)).toBeGreaterThanOrEqual(2.6 - 1e-9);
-    // A neighbouring tile is too close too: that pod moves off as well.
+    expect(Math.hypot(a.x - 11.5, a.y - 9.5)).toBeGreaterThanOrEqual(2.6 - 1e-9);
+    expect(hoverSpot(sim, 99, { x: 12, y: 10 }, 2.6)).toEqual(a);
+    // A neighbouring tile's pod stays clear as well.
     const b = hoverSpot(sim, 99, { x: 13, y: 10 }, 2.6);
-    expect(Math.hypot(b.x - 12.5, b.y - 10.5)).toBeGreaterThanOrEqual(2.6 - 1e-9);
-    expect(hoverSpot(sim, 99, { x: 13, y: 10 }, 2.6)).toEqual(b); // deterministic
+    expect(Math.hypot(b.x - 11.5, b.y - 9.5)).toBeGreaterThanOrEqual(2.6 - 1e-9);
   });
 });

@@ -14,8 +14,8 @@ import { headingIndex } from './shuttleView';
  * Mining pods (VehicleC with a pod def, placed by their BodyC) drawn with the pipeline sprites: `vehicle.mining_pod.fly.d<0..7>`
  * in flight, `.mine.d<k>.f<0|1>` (a two-frame hover loop) while the laser works, and in the bay `.docked.d<k>` (only until the bay
  * layer draws `vehicle.mining_pod.parked.r<r>` itself, see vehicleBayArt; then a stowed pod is not drawn here). The sprites'
- * origin is the pod's centre with the bell's foot at z 0, so the hover is added here: in flight it hovers above the tallest rock
- * (ROCK_MASS_Z plus a margin), so it never dips into rock mass. A soft ground shadow and the pulsing mining laser are effects
+ * origin is the pod's centre with the bell's foot at z 0, so the hover is added here: in flight it hovers beside the ore it
+ * cuts, facing it (the sim picks the spot and heading, MiningPod.spot), its foot a little under the rock's top. A soft ground shadow and the pulsing mining laser are effects
  * drawn in code. Reads the sim only.
  */
 export interface PodView {
@@ -23,8 +23,11 @@ export interface PodView {
   dispose(): void;
 }
 
-/** Hover height above the floor in tiles of height: clear of rock mass. */
-const POD_Z = ROCK_MASS_Z + 0.5;
+/** Hover height above the floor in tiles of height: its foot a little under the rock tops, as it floats beside them. */
+const POD_Z = ROCK_MASS_Z - 0.2;
+/** The laser's muzzle: tiles ahead of the pod's centre along its heading, and its height above the pod's foot in tiles of height. */
+const MUZZLE_AHEAD = 0.9;
+const MUZZLE_UP = 0.8;
 const LASER = 0xff6a3a;
 /** A stowed pod (placeholder until the bay's parked sprite exists) sits this far below the deck, on the pit floor, and sorts behind the pit's near lip. */
 const PIT_Z = -0.6;
@@ -113,7 +116,9 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
           const tp = iso(m.target.x, m.target.y);
           const top = tp.y - ROCK_MASS_Z * Z_PX; // the laser ends on the rock's top face
           const pulse = 0.6 + 0.4 * Math.sin(clock * 18);
-          t.fx.moveTo(0, 0).lineTo(tp.x - p.x, top - p.y + lift).stroke({ color: LASER, width: Math.max(1, TILE_H / 12), alpha: pulse });
+          const mx = iso(Math.cos(b.heading) * MUZZLE_AHEAD, Math.sin(b.heading) * MUZZLE_AHEAD);
+          const my = mx.y - iso(0, 0).y - MUZZLE_UP * Z_PX;
+          t.fx.moveTo(mx.x - iso(0, 0).x, my).lineTo(tp.x - p.x, top - p.y + lift).stroke({ color: LASER, width: Math.max(1, TILE_H / 12), alpha: pulse });
           t.fx.circle(tp.x - p.x, top - p.y + lift, TILE_H * 0.15).fill({ color: 0xffd0a0, alpha: pulse });
         }
         t.root.position.set(Math.round(p.x), Math.round(p.y - lift));
