@@ -75,8 +75,10 @@ const float MULT[5] = float[5](0.42, 0.62, 0.82, 1.0, 1.22);
 const vec3 RIM = vec3(0.47, 0.8, 1.0);
 // Sit clips mark crew pixels hidden behind the chair with a faint alpha: drawn as nothing, and no outline or rim along the cut.
 const float HIDDEN = 0.01;
-// Darkest key shade still swapped: ambient-occlusion shadows in the sheets reach about 0.15 x the key colour (below the lowest ramp step, they take it).
-const float KEY_MIN = 0.1;
+// Darkest key shade still swapped: ambient-occlusion shadows in the sheets reach about 0.2 x the key colour (below the lowest ramp step, they take it).
+const float KEY_MIN = 0.2;
+// Below the ramp's first step a key shade is exact in the sheets (residual ~0); dark blue-grey trousers sit near the cyan key's direction (residual 0.06 at s 0.1), so there the match is strict.
+const float DARK_TOL = 0.02;
 
 vec3 ramp(vec3 col, float s) {
   int lv = int(s > 0.385) + int(s > 0.555) + int(s > 0.73) + int(s > 0.91);
@@ -91,7 +93,7 @@ vec3 swapColor(vec4 c) {
     if (float(i) >= uCount) break;
     vec3 k = uKeys[i].rgb;
     float s = dot(p, k) / dot(k, k);
-    if (s > KEY_MIN && s < 1.4 && length(p - s * k) < 0.14 * max(s, 0.5)) return clamp(ramp(uRepl[i].rgb, s), 0.0, 1.0);
+    if (s > KEY_MIN && s < 1.4 && length(p - s * k) < (s < 0.385 ? DARK_TOL : 0.14 * max(s, 0.5))) return clamp(ramp(uRepl[i].rgb, s), 0.0, 1.0);
   }
   return p;
 }
