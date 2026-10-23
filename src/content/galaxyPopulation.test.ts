@@ -68,7 +68,7 @@ describe('rosters (persistent population)', () => {
       for (const c of f.ships) if (prefix) expect(c.name?.startsWith(`${prefix} `)).toBe(true);
     }
     expect(sim.galaxy.fleets.some((f) => f.faction === 'navy' && fleetName(f).startsWith('CNS '))).toBe(true);
-    expect(fleetName({ role: 'pirate', ships: [{ name: 'Rust Jackal' }, { name: 'Gutter Saint' }] } as Fleet)).toBe('Rust Jackal +1');
+    expect(fleetName({ role: 'pirate', ships: [{ name: 'Rust Jackal' }, { name: 'Gutter Saint' }] } as Fleet)).toBe('Rust Jackal (2 ships)');
   });
 
   it('size budgets: groups stay within their faction\'s caps; traders, civilians and miners are always one ship', () => {

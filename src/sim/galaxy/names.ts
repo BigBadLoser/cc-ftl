@@ -18,8 +18,8 @@ export function shipNameFor(def: FactionFleetDef['names'], key: readonly number[
   return name;
 }
 
-/** The fleet's display name: its first ship's name, and how many more ships follow ("CNS Valiant +1"). */
+/** The fleet's display name: its lead ship's name, and the ship count when there are several ("CNS Valiant (2 ships)"). */
 export function fleetName(f: Pick<Fleet, 'ships' | 'role'>): string {
   const first = f.ships[0]?.name ?? f.role;
-  return f.ships.length > 1 ? `${first} +${f.ships.length - 1}` : first;
+  return f.ships.length > 1 ? `${first} (${f.ships.length} ships)` : first;
 }

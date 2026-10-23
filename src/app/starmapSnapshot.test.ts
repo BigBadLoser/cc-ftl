@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, newGame, playerShip, visibleFleets } from '../sim';
+import { CombatC, burnFuel, fuelStock, FTL_CHARGE_SEC, START_NODE, newGame, playerShip, visibleFleets } from '../sim';
 import { content } from '../content';
 import { buildStarmap, emptyStarmap, planStarmapRoute } from './starmapSnapshot';
 import { toneOf } from './starmapTone';
@@ -54,5 +54,17 @@ describe('starmap snapshot', () => {
     combat.ftl = FTL_CHARGE_SEC;
     expect(planStarmapRoute(sim, to)).toMatchObject({ chargeOk: true, blocker: null });
     expect(planStarmapRoute(sim, START_NODE)).toBeNull();
+  });
+
+  it('reports a fuel shortfall as a positive count, never a negative fuel left', () => {
+    const sim = newGame(2, content);
+    const to = buildStarmap(sim).nodes.find((n) => n.reachable)!.id;
+    const full = planStarmapRoute(sim, to)!;
+    expect(full).toMatchObject({ fuelOk: true, fuelShort: 0 });
+    burnFuel(sim, fuelStock(sim));
+    const dry = planStarmapRoute(sim, to)!;
+    expect(dry.fuelOk).toBe(false);
+    expect(dry.fuelShort).toBe(dry.fuel);
+    expect(dry.fuelShort).toBeGreaterThan(0);
   });
 });

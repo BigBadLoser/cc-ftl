@@ -28,7 +28,6 @@
   };
   const legs = $derived(travel ? travel.route.slice(1).map((id, i) => ({ id, done: i < travel.at, now: i === travel.at && travel.phase === 'hop' })) : []);
   const traffic = $derived(node ? map.fleets.filter((f) => f.node === node.id) : []);
-  const afterRoute = $derived(route ? map.fuel - route.fuel : map.fuel);
   const blocked = $derived(travel?.phase === 'interdicted' || travel?.phase === 'event');
   const recent = $derived(map.result && map.encounters.length === 0 && map.turn - map.result.turn <= 3 ? map.result : null);
   const title = $derived(travel ? (travel.phase === 'interdicted' ? 'Interdicted' : 'In hyperspace') : node ? (node.known ? node.name : 'Unexplored') : 'Course');
@@ -115,7 +114,11 @@
         <div class="cells" data-testid="starmap-route">
           <span class="cell" title="Fuel now"><Icon name="fuel" size={18} /><b>{map.fuel}</b></span>
           <span class="cell" class:bad={!route.fuelOk} title="Fuel the whole route burns"><Icon name="fuel" size={18} /><b>-{route.fuel}</b></span>
-          <span class="cell" class:bad={afterRoute < 0} title="Fuel left after the route"><Icon name="fuel" size={18} /><b>{afterRoute}</b><small>left</small></span>
+          {#if route.fuelShort > 0}
+            <span class="cell bad" title="Fuel missing for the whole route" data-testid="starmap-fuel-short"><Icon name="fuel" size={18} /><b>{route.fuelShort}</b><small>short</small></span>
+          {:else}
+            <span class="cell" title="Fuel left after the route" data-testid="starmap-fuel-left"><Icon name="fuel" size={18} /><b>{map.fuel - route.fuel}</b><small>left</small></span>
+          {/if}
           <span class="cell" class:bad={!route.chargeOk} title="FTL charge needed to enter hyperspace (spent once)"><Icon name="bolt" size={18} /><b>{route.nextCharge}</b><small>s</small></span>
         </div>
         {#if !route.fuelOk}<p class="note warn">Not enough fuel for the whole route: the trip will stop where the fuel runs out.</p>{/if}

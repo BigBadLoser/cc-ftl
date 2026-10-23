@@ -102,7 +102,7 @@ export type {
 export { galaxyIndex, nodeOf, currentNode, START_NODE, type GalaxyIndex } from './galaxy/state';
 export { edgeBetween, planStarRoute } from './galaxy/route';
 export { jumpBlocker } from './galaxy/travel';
-export { FUEL_ITEM, fuelStock, ftlCharge } from './galaxy/fuel';
+export { FUEL_ITEM, burnFuel, fuelStock, ftlCharge } from './galaxy/fuel';
 export { routeEdges, routeBlocker, routeCharge, hopTicksOf } from './galaxy/hyperspace';
 export { standing, standings, tierOf, isHostileFaction } from './galaxy/standing';
 export { galaxyGen, chunkOfId } from './galaxy/generator';

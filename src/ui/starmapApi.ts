@@ -309,6 +309,8 @@ export interface UiStarRoute {
   /** FTL charge needed to enter hyperspace (the largest hop's, spent once), and whether the tank and the drive cover the route / the first hop. */
   nextCharge: number;
   fuelOk: boolean;
+  /** Fuel units missing for the whole route (0 when the stock covers it). */
+  fuelShort: number;
   chargeOk: boolean;
   /** Why the next jump cannot go now (a short sentence), or null. */
   blocker: string | null;

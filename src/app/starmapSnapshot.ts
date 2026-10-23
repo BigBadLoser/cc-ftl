@@ -142,7 +142,7 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
   return {
     to, path: r.path, hops: r.path.length - 1, fuel: r.fuel, time: r.time,
     legs: r.edges.map((e, i) => ({ to: r.path[i + 1] as string, fuel: e.fuel, time: e.time, kind: e.kind, gate: !!e.gate })),
-    nextCharge: charge, fuelOk: status.fuel >= r.fuel, chargeOk: charge <= status.charge + 1e-9,
+    nextCharge: charge, fuelOk: status.fuel >= r.fuel, fuelShort: Math.max(0, r.fuel - status.fuel), chargeOk: charge <= status.charge + 1e-9,
     blocker: block ? BLOCKERS[block] ?? block : null,
   };
 }
