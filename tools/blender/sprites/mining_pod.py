@@ -17,7 +17,9 @@ import math
 
 from . import core
 from .shuttle_bay import lbox
-from .shuttle_craft import Spin, _g, profile, smooth, station
+from . import mining_pod_hull as H
+from .mining_pod_hull import BORE_N, bore_corner
+from .shuttle_craft import Spin, _g, profile, smooth
 
 C = 1.18                      # the body's axis height above the pad (parked, on the bell)
 R = 0.86                      # the hull's radius: the band's, and each half-dome's
@@ -54,88 +56,12 @@ GLOW = "cyan"
 BEAM = "orange"
 
 
-def _halfplane(poly, a, b, c):
-    """The part of a convex 2D polygon where a*x + b*y <= c."""
-    out = []
-    for i, p in enumerate(poly):
-        q = poly[(i + 1) % len(poly)]
-        dp, dq = a * p[0] + b * p[1] - c, a * q[0] + b * q[1] - c
-        if dp <= 0:
-            out.append(p)
-        if (dp < 0) != (dq < 0) and abs(dp - dq) > 1e-12:
-            t = dp / (dp - dq)
-            out.append((p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t))
-    return out
-
-
-BORE_N = 64                   # the bore is this many-sided: the hull is cut along exactly the polygon its wall follows
-
-
-def _bore_corner(i, r, zc):
-    a = i * math.tau / BORE_N
-    return r * math.cos(a), zc + r * math.sin(a)
-
-
-def _minus_bore(poly, r, zc):
-    """A convex (u, z) polygon less the bore's (BORE_N-gon) disc about (0, zc): convex pieces, peeled off edge by edge."""
-    pieces, rest = [], poly
-    h = r * math.cos(math.pi / BORE_N)                                      # each edge's distance from the axis
-    for i in range(BORE_N):
-        a = (i + 0.5) * math.tau / BORE_N
-        nx, nz = math.cos(a), math.sin(a)
-        piece = _halfplane(rest, -nx, -nz, -nz * zc - h)                     # outside this edge
-        if len(piece) >= 3:
-            pieces.append(piece)
-        rest = _halfplane(rest, nx, nz, nz * zc + h)                         # inside it: carry on round
-        if len(rest) < 3:
-            break
-    return pieces
-
-
-def _on_face(q, u, z):
-    """The point of the hull face q (corners: station a at profile i, a at j, b at j, b at i) at (u, z), on the face
-    itself (bilinear), so cut pieces sit flush with their uncut neighbours."""
-    s = 0.0 if abs(q[3][0] - q[0][0]) < 1e-9 else (u - q[0][0]) / (q[3][0] - q[0][0])
-    lo = q[0][2] + (q[3][2] - q[0][2]) * s                                  # z of the face's i edge at u
-    hi = q[1][2] + (q[2][2] - q[1][2]) * s                                  # and of its j edge
-    t = 0.0 if abs(hi - lo) < 1e-9 else (z - lo) / (hi - lo)
-    a = [q[0][x] + (q[3][x] - q[0][x]) * s for x in range(3)]
-    b = [q[1][x] + (q[2][x] - q[1][x]) * s for x in range(3)]
-    return (u, a[1] + (b[1] - a[1]) * t, z)
-
-
-def loft(f, stations, prof, mat, cap0=None, cap1=None, closed=True, hole=None):
-    """shuttle_craft.sweep, optionally cut by the rear thruster's bore: a cylinder of radius `hole` along the pod's u
-    (the body frame's v) through the back. Faces on the back that reach the bore are cut along it exactly: in the
-    (u, z) plane each is a quad less the bore's disc, and the pieces go back onto the hull's round surface."""
-    local = [[(u, v0 + pv * sv, z0 + pz * sz) for pv, pz in prof] for u, sv, sz, v0, z0 in stations]
-    rings = [[f.pt(*p) for p in ring_] for ring_ in local]
-    n = len(prof)
-    zc = REAR[0]
-    for k, (A, B) in enumerate(zip(rings, rings[1:])):
-        for i in range(n if closed else n - 1):
-            j = (i + 1) % n
-            q = [local[k][i], local[k][j], local[k + 1][j], local[k + 1][i]]
-            if hole and all(p[1] > 1e-6 for p in q) and min(abs(p[2] - zc) for p in q) < hole + 0.05 and \
-                    min(abs(p[0]) for p in q) < hole + 0.05:
-                uz = [(p[0], p[2]) for p in q]
-                cw = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(uz, uz[1:] + uz[:1])) < 0
-                for piece in _minus_bore(uz[::-1] if cw else uz, hole, zc):      # cut counter-clockwise,
-                    pts = [f.pt(*_on_face(q, u, z)) for u, z in piece]
-                    f.poly(pts[::-1] if cw else pts, mat, flip=True)            # drawn in the face's own winding
-                continue
-            f.poly([A[i], A[j], B[j], B[i]], mat, flip=True)
-    if cap0:
-        f.poly(rings[0], cap0, flip=True)
-    if cap1:
-        f.poly(rings[-1][::-1], cap1, flip=True)
+def loft(f, stations, prof, mat, **kw):
+    return H.loft(f, stations, prof, mat, zc=REAR[0], **kw)
 
 
 def patch(f, body, u0, u1, t0, t1, k, mat, n=9, steps=4):
-    """A panel lying on the hull: the arc t0..t1 (degrees) of its round section, scaled by k, over u0..u1 (as
-    shuttle_craft.patch, but on the hull's own circle, not the shuttle's rounded square)."""
-    us = [u0 + (u1 - u0) * i / steps for i in range(steps + 1)]
-    loft(f, [station(body, u, k) for u in us], profile(t0, t1, n, p=2.0), mat, closed=False, hole=BORE)
+    H.patch(f, body, u0, u1, t0, t1, k, mat, n, steps, hole=BORE, zc=REAR[0])
 
 
 def strut(f, p0, p1, w, mat):
@@ -156,11 +82,11 @@ def body(fb):
     a little bigger than them with flat dark sides, so it stands out of the domes by DRUM_R - R all round."""
     _g("hull")
     B = [(u, r, r, 0, C) for u, r in BALL]
-    loft(fb, B, SECTION, HULL, cap0=HULL_D, hole=BORE)                      # (they run on through the drum)
+    cuts = [(*sorted((sg * a, sg * b)), t0, t1) for (a, b), (t0, t1) in PANELS for sg in (1, -1)]
+    loft(fb, B, SECTION, HULL, cap0=HULL_D, hole=BORE, recesses=cuts)      # (they run on through the drum)
     _g("panels")
-    for (a, b), (t0, t1) in PANELS:
-        for sg in (1, -1):
-            panel(fb, B, *sorted((sg * a, sg * b)), t0, t1)
+    for u0, u1, t0, t1 in cuts:
+        H.recess(fb, B, SECTION, u0, u1, t0, t1, PANEL_DEPTH, "steelD", HULL, screw="steelL")
     _g("drum")
     D = [(BAND[0] + (BAND[1] - BAND[0]) * i / 24, DRUM_R, DRUM_R, 0, C) for i in range(25)]   # fine, for the bore
     loft(fb, D, profile(n=72, p=2.0), HULL, cap0="steelD", cap1="steelD", hole=BORE)   # the drum and its flat sides
@@ -174,22 +100,20 @@ def body(fb):
     patch(fb, D, -0.1, 0.1, t0, t1, 1.022, YEL, n=61, steps=5)
     for u0 in (BAND[0] + 0.05, BAND[1] - 0.15):
         patch(fb, D, u0, u0 + 0.1, t0, t1, 1.022, YEL_D, n=61, steps=3)
-
-
-def panel(fb, body, u0, u1, t0, t1):
-    """A maintenance panel: a curved plate lying on the hull over u0..u1 and the arc t0..t1 (degrees), a hair proud of
-    it, with a dark seam round it and a fastener in each corner."""
-    n = max(3, int((t1 - t0) / 5) + 2)
-    patch(fb, body, u0 - 0.018, u1 + 0.018, t0 - 2.5, t1 + 2.5, 1.008, "steelD", n=n, steps=4)   # the seam
-    patch(fb, body, u0, u1, t0, t1, 1.016, HULL, n=n, steps=4)                                     # the plate
-    du, dt = 0.03, 4.0
-    for uu in (u0 + du, u1 - du):                                            # its fasteners
-        for tt in (t0 + dt, t1 - dt):
-            patch(fb, body, uu - 0.013, uu + 0.013, tt - 1.6, tt + 1.6, 1.022, "steelL", n=2, steps=1)
+    _g("top_panel")                                                          # a big raised panel on the drum's top,
+    u0, u1, t0, t1 = TOP_PANEL                                               # the centre stripe carried over it
+    patch(fb, D, u0 - 0.02, u1 + 0.02, t0 - 2, t1 + 2, 1.032, "steelD", n=15, steps=6)    # its edge
+    patch(fb, D, u0, u1, t0, t1, 1.042, HULL_L, n=15, steps=6)
+    patch(fb, D, -0.1, 0.1, t0, t1, 1.05, YEL, n=15, steps=2)
+    for uu in (u0 + 0.04, u1 - 0.04):                                        # screws
+        for tt in (t0 + 4.5, t1 - 4.5):
+            patch(fb, D, uu - 0.022, uu + 0.022, tt - 2.2, tt + 2.2, 1.056, "steelL", n=3, steps=1)
 
 
 # the domes' maintenance panels, (|u| range, arc), mirrored onto both domes: upper front, top, back and lower front,
-# clear of the hatches, the arms' panels and the drum
+# clear of the hatches, the arms' panels and the drum. Each is recessed: cut out of the dome, sunk, walled round.
+TOP_PANEL = (-0.29, 0.29, 70, 124)   # the drum-top panel: u range, arc (clear of the antenna and the windshield)
+PANEL_DEPTH = 0.035           # how far the domes' panels are sunk (a fraction of the radius)
 PANELS = (((0.53, 0.72), (112, 152)), ((0.53, 0.72), (42, 96)), ((0.53, 0.72), (-42, 12)), ((0.53, 0.72), (206, 244)))
 
 
@@ -256,7 +180,7 @@ def rear_thruster(f, lit):
     wall running in to a throat plate with the injector at its centre. Lit, the inner wall and the injector burn."""
     _g("rear")
     z, rt, rm = REAR
-    rim = [(_bore_corner(i, BORE, z), math.sqrt(max((DRUM_R * 1.012) ** 2 - (_bore_corner(i, BORE, z)[1] - z) ** 2, 0.0)))
+    rim = [(bore_corner(i, BORE, z), math.sqrt(max((DRUM_R * 1.012) ** 2 - (bore_corner(i, BORE, z)[1] - z) ** 2, 0.0)))
            for i in range(BORE_N)]
     for i in range(BORE_N):                                                  # the bore's wall, floor to hull
         (pa, va), (pb, vb) = rim[i], rim[(i + 1) % BORE_N]
@@ -393,8 +317,8 @@ def laser(f, down, lit):
 
 def greeble(f):
     _g("greeble")
-    f.vcyl(-0.45, 0, C + 0.8, 0.022, 0.3, "steelL", sides=6)               # antenna, on the centre line aft
-    f.box(-0.45, 0, C + 1.1, 0.05, 0.05, 0.04, "red")
+    f.vcyl(-0.64, 0, C + 0.66, 0.022, 0.32, "steelL", sides=6)             # antenna, on the centre line aft of
+    f.box(-0.64, 0, C + 0.98, 0.05, 0.05, 0.04, "red")                       # the top panel
 
 
 def pod(heading, state="parked", bob=0.0, dz=0.0):
