@@ -165,7 +165,7 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
 - Skin, hair and cloth colours use **palette swap**. `team.*` materials render as reserved key colours,
   which a shader remaps per crew member.
 - **Weapons, armour and cover** (`human_v2_weapons.py`, `human_aim.py`, `human_crouch.py`, `human_v2_armor.py`;
-  art only, the game wiring is pending):
+  weapons, armour and the fight fx are wired, cover is not: see "Wiring" below):
   - Held weapons are `crew.human.gear.hand.<weapon>` (slot order 55, over the arms). Each pose family has its own
     clips, and a weapon layer only exists in its family's:
     - `1h`: sidearm, ion_pistol, laser_pistol, plasma_cutter. Clips `aim_1h`, `fire_1h`, `walk_aim_1h`.
@@ -189,6 +189,30 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
     `gear.back.fuel_tanks`.
   - Armour: the security `torso.armor_vest`, plus `torso.armor_heavy`, `gear.shoulder.pads` (slot order 53) and
     `gear.head.heavy_helmet`. The heavy helmet covers the hair like the EVA helmet, so drop the hair layer under it.
+  - **Wiring** (`render/handWeapon.ts`, `crewMuzzle.ts`, `crewSprites.ts`, `crewView.ts`, `loadout.ts`, `fightFx.ts`):
+    - Content: `HandWeaponDef.art = { id, family }` on the hand items (`item.sidearm` -> `sidearm` 1h, `item.rifle` ->
+      `rifle` 2h, `item.ion_pistol` -> `ion_pistol` 1h, `item.blade` -> `blade` 1m). The sim never reads it. Art weapons
+      without an item yet (add the item with `art` and they draw): laser_pistol, plasma_cutter (1h); laser_rifle,
+      shotgun, smg, rail_rifle (2h); flamethrower, heavy_repeater (heavy); shock_baton (1m); breach_axe (2m).
+    - Loadout: a crew member with an art weapon wears both its holster and held layers (`crewLoadout(..., weapon)`); the
+      slot is rebuilt when the equipped weapon changes. Robots and creatures (single body layer) and suited crew wear none.
+      Security wears `armor_vest` and `gear.shoulder.pads`; the `role.marine` kit (no such role yet) wears `armor_heavy`,
+      pads and `heavy_helmet` with no hair.
+    - Clip choice (`crewView`): the fighter is engaged (`FighterC.mode === 'engage'`, kept up 1.5 s after) -> `aim_*` /
+      `ready_*`; engaged and moving -> `walk_aim_*` / `walk_heavy` (melee walks plainly); the cooldown restarting (the
+      shot tick) -> `fire_*` / `swing_*` once, or looped for the whole cooldown for `heavy`. Not engaged, seated, downed or
+      floating -> the ordinary clip. A layer without the combat pose falls back (`loadout.CLIP_FALLBACK`: aim -> idle,
+      fire -> aim, swing -> ready, walk_aim -> walk, crouch_* -> crouch_idle -> idle, lean -> idle).
+    - Holster vs held (`handWeapon.layerShown`, `crewSprites.drawLayers`): the held layer is drawn only in combat clips
+      and only once its sheet and the body's are loaded, the holster otherwise, so never both and never neither.
+    - Lazy sheets: drafted or engaged crew with a weapon request the family's aim, fire and walk sheets on every layer
+      once (`prefetchClips`), before the first shot.
+    - Muzzle: `ClipDef.muzzle` is read by `crewMuzzle` (facing from `PositionC`, frame 0 of the fire clip; the swing's
+      frame 2 for melee) and added to the feet's iso point in `fightFx`: flash and tracer start at the barrel, the melee
+      slash at the tip. No weapon drawn (robots, bare hands): the old chest-height start.
+    - Not wired: cover. The sim has per-shot `Cover` (`fight/los.ts`) but no crew posture, so `crouch_*` and `lean_*`
+      clips only have fallback rules (`FAMILY.crouchAim/crouchFire` in `handWeapon.ts` list them) until a cover/posture
+      state exists.
 
 **Lighting.**
 - Base sprites are lit in Blender with a fixed key light. A separate **glow sheet** (the emission pass)
