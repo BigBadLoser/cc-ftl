@@ -35,7 +35,7 @@ describe('cargo containers', () => {
       }
       expect(ks.some((m) => m.stock?.length)).toBe(true);
       // Only the two container sizes, and no walk-in pods: cargo rooms left are the crew body's own stores.
-      expect(ks.every((m) => m.def === 'container.2x3' || m.def === 'container.3x5')).toBe(true);
+      expect(ks.every((m) => m.def === 'container.2x4' || m.def === 'container.3x6')).toBe(true);
       expect(g.rooms.filter((r) => r.role === 'cargo').length).toBeLessThan(ks.length);
     }
   });

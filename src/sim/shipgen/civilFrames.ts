@@ -27,7 +27,7 @@ export interface FrameOpts {
   lane: number;
   /** Open columns of spine between neighbouring containers. */
   gap: number;
-  /** The usual container on this frame, short (door) end along the spine by length out from it: 2 x 3 or 3 x 5. */
+  /** The usual container on this frame, short (door) end along the spine by length out from it: 2 x 4 or 3 x 6. */
   cw: number;
   ch: number;
   /** Container bands: 1 or 2 spines, each with a row of containers on both faces. */
@@ -55,9 +55,9 @@ const stampContainer = (b: Builder, x: number, y: number, w: number, h: number, 
 export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
   const b = localBuilder(rng);
   const bands = Math.max(1, Math.min(2, o.bands ?? 1));
-  // Containers clamp by their short (door) end: 2 or 3 along the spine, 3 or 5 out from it.
-  const base: Box = o.cw === 2 ? [2, 3] : [3, 5];
-  const other: Box = base[0] === 2 ? [3, 5] : [2, 3];
+  // Containers clamp by their short (door) end: 2 or 3 along the spine, 4 or 6 out from it.
+  const base: Box = o.cw === 2 ? [2, 4] : [3, 6];
+  const other: Box = base[0] === 2 ? [3, 6] : [2, 4];
   const T = o.crawl || o.lane > 0 ? 3 : 1;
   const k = Math.max(2 * bands, Math.min(24, Math.ceil(crates / ((base[0] * base[1]) / 4))));
   const perRow = Math.ceil(k / (2 * bands));
@@ -78,7 +78,7 @@ export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
     rows.push(row);
     L = Math.max(L, x - o.gap + 2);
   }
-  const D = 5;
+  const D = 6;
   const pitch = 2 * D + T + 1;
   const H = bands * pitch - 1;
   const oy = -Math.round(H / 2);

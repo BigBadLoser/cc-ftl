@@ -1,5 +1,5 @@
 import { makeHalo } from './haloTex';
-import { Rectangle, Sprite, Texture } from 'pixi.js';
+import { Rectangle, Sprite, Texture, type Geometry, type Mesh, type Shader } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ModuleC, type Module } from '../sim/modules/components';
@@ -13,6 +13,8 @@ import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
 import { boxState, containerBox } from './containerBox';
 import { ContainerC } from '../sim/containers/components';
+import { createContainerOverlay } from './containerPaint';
+import { SCHEMES } from './roofArt';
 import type { ShipRuin } from '../sim/combat/components';
 import { airlockLayers, createCollarAnimator, dockedAt } from './airlockArt';
 import { robotBayLayers } from './robotBayArt';
@@ -32,6 +34,8 @@ export interface ModuleViewHost {
   level(): WallLevel;
   /** The derelict dressing of this ship, if it is one (module art overrides and wreck darkening). */
   ruin?(): ShipRuin | undefined;
+  /** The ship's livery (its containers wear the scheme's colours and a company logo); none = bare plating. */
+  livery?(): { scheme: string; seed: number } | null;
 }
 
 export interface ModuleView {
@@ -67,7 +71,7 @@ function alphaOf(tex: Texture): Uint8ClampedArray | null {
 }
 
 interface Part {
-  spr: Sprite;
+  spr: Sprite | Mesh<Geometry, Shader>;
   glow: Sprite | null;
   halo: Sprite | null;
   /** Art-px rectangle the sprite covers. */
@@ -135,7 +139,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     }
   }
 
-  function makePart(s: StaticSprite, tx: number, ty: number, flip: boolean, key: number, art = 0xffffff, glowKey = key + 0.01): Part {
+  function makePart(s: StaticSprite, tx: number, ty: number, flip: boolean, key: number, art = 0xffffff, glowKey = key + 0.01, overlay?: 'paint' | 'lv'): Part {
     const p = iso(tx, ty);
     const w = s.tex.width;
     const h = s.tex.height;
@@ -147,7 +151,9 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       if (flip) spr.scale.x = -1;
       return spr;
     };
-    const spr = mk(s.tex);
+    const sch = overlay && SCHEMES[host.livery?.()?.scheme ?? ''];
+    const spr = sch && overlay ? createContainerOverlay(overlay, s, sch.P, sch.S) : mk(s.tex);
+    if (sch && overlay) spr.position.set(x, y);
     spr.zIndex = key;
     L.sorted.addChild(spr);
     let glow: Sprite | null = null;
@@ -214,7 +220,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       // A quarter turn of a non-square footprint without its own sprite is drawn mirrored.
       const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
       const k = key(m.x + w - 1, m.y + h - 1);
-      out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k)));
+      out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k), layer.overlay));
     });
     return out;
   }
@@ -280,14 +286,20 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const raw = def.robotBay ? robotBayLayers(world, id, lm, def, now)
           : def.vehicleBay ? vehicleBayLayers(lm, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
           : def.airlock?.layout ? airlockLayers(world, id, lm, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
-          : moduleLayers(world, id, lm, def, active, true);
+          : moduleLayers(world, id, lm, def, active, true, host.livery?.());
         const wreck = ruinLook(id, m, def, on, now);
         const withRuin = wreck.chain.length ? raw.map((l, i) => (i === 0 ? { ...l, chain: [...wreck.chain, ...l.chain] } : l)) : raw;
         const layers = withRuin.flatMap((layer) => {
           // Containers ride outside the hull: never under a roof.
           if (roofed && !def.container && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
-          if (def.container && atlas.loading(layer.chain)) return []; // its sheet is on the way
-          if (def.container && !atlas.firstOf(layer.chain)) {
+          // firstOf queues the sheet; while it loads the container draws nothing (not the stand-in box).
+          const first = def.container ? atlas.firstOf(layer.chain) : undefined;
+          if (def.container && !first && atlas.loading(layer.chain)) return [];
+          if (layer.optional) {
+            const o = first;
+            return o ? [{ layer, art: { s: o, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }] : [];
+          }
+          if (def.container && !first) {
             // PLACEHOLDER until the container sheets land: a drawn box (with its own clamp mark) for the shell, no clamp layer.
             if (layer.at) return [];
             const [bw, bh] = rotatedSize(def, m.rot);

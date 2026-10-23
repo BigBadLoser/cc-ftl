@@ -54,8 +54,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v41: `Combat.cruisePilot` / `Combat.cruiseEvasion` (evade odds outside combat).
  * v42: base logistics and the living world in one save.
  * v43 (art/2x): 2x art merge; mining pod geometry (v33 on art/2x) reconciled with main's v42. Sim shape unchanged.
+ * v44 (art/2x): cargo containers are 2x4 and 3x6 (the art's sizes; were 2x3 and 3x5): new def ids, footprints and stock capacity; shipgen frames repacked.
  */
-export const SAVE_VERSION = 43;
+export const SAVE_VERSION = 44;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

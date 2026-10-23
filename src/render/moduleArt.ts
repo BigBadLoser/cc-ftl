@@ -55,12 +55,19 @@ export function moduleAssets(world: World, id: number, m: Module, def: ModuleDef
  * Art ids of a container shell, most specific first, and its stand-in key: damaged under half hp, destroyed at 0. The
  * door end (the clamped short end, `n e s w`) picks the sprite: `container.<W>x<H>.r<N>.<end>[.state]` first.
  */
-export function containerChain(def: ModuleDef, rot: number, hp: number, end = 'n'): { chain: string[]; key: string } {
+export function containerChain(def: ModuleDef, rot: number, hp: number, end = 'n', variant = ''): { chain: string[]; key: string } {
   const a = def.asset;
   const state = hp <= 0 ? '.destroyed' : hp < def.maxHp / 2 ? '.damaged' : '';
   const r = `.r${rot}`;
-  return { chain: [`${a}${r}.${end}${state}`, `${a}${r}.${end}`, `${a}${r}${state}`, `${a}${r}`, `${a}${state}`, a], key: `${a}${state}` };
+  const v = variant ? [`${a}${r}.${end}${variant}${state}`, `${a}${r}.${end}${variant}`] : [];
+  return { chain: [...v, `${a}${r}.${end}${state}`, `${a}${r}.${end}`, `${a}${r}${state}`, `${a}${r}`, `${a}${state}`, a], key: `${a}${state}` };
 }
+
+/** Shell variants of the container art (`.v1` stencil code and hazard roof edge, `.v2` flat panelled and rusted; none = the plain one), picked by the container's id. */
+export const containerVariant = (id: number): string => ['', '.v1', '.v2'][id % 3] as string;
+/** Company logos of the container art; a ship's containers mostly carry the logo its seed picks, now and then another. */
+export const CONTAINER_LOGOS = ['halvard', 'meridian', 'vantor', 'talos', 'sable'] as const;
+export const containerLogo = (id: number, seed: number): string => CONTAINER_LOGOS[(seed + (id % 4 === 0 ? 1 + (id % 3) : 0)) % CONTAINER_LOGOS.length] as string;
 
 /** The footprint tile in the middle of a container's clamped side (where the clamp mark sits). */
 function clampTile(def: ModuleDef, m: Module, side: string): { x: number; y: number } {
@@ -89,6 +96,10 @@ export interface ModuleLayer {
   at?: { x: number; y: number };
   /** With `at`: a deck mark, sorted under everything standing on the floor. */
   flat?: boolean;
+  /** A livery overlay of a container shell (`<shell>.paint`, `<shell>.lv`): recoloured by the ship's livery; drawn only if the art has it. */
+  overlay?: 'paint' | 'lv';
+  /** Drawn only if the art has it (never a stand-in): container paint, lv and logo layers. */
+  optional?: boolean;
   /** Stays drawn on a roofed ship (hull block, collar); the other parts are under the roof. */
   roofVisible?: boolean;
 }
@@ -117,15 +128,27 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
  *  - Consoles: the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
  *  - Everything else: the usual chain from `moduleAssets`.
  */
-export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false): ModuleLayer[] {
+export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false, livery?: { seed: number } | null): ModuleLayer[] {
   const a = def.asset;
   const r = `.r${m.rot}`;
   if (def.container) {
-    // The shell (`container.<W>x<H>[.rN][.damaged|.destroyed]`) and the clamp gripping it on the frame side.
+    // The shell (`container.<W>x<H>[.rN].<end>[.vN][.damaged|.destroyed]`), its livery overlays (paint, trim, a company logo; none
+    // on a destroyed one: burnt off) and the clamp gripping it on the frame side.
     const box = world.get(id, ContainerC);
-    const shell = containerChain(def, m.rot, m.hp, box?.clamp ?? 'n');
-    const at = clampTile(def, m, box?.clamp ?? 'n');
-    return [{ ...shell, tiles: 'all' }, { chain: [`container.clamp.${box?.clamp ?? 'n'}`, 'container.clamp'], key: 'container.clamp', tiles: 'all', at, dz: 0.04 }];
+    const clamp = box?.clamp ?? 'n';
+    const shell = containerChain(def, m.rot, m.hp, clamp, containerVariant(id));
+    const at = clampTile(def, m, clamp);
+    const dressed = m.hp > 0 && livery;
+    const over = (suffix: string): string[] => shell.chain.map((c) => c + suffix);
+    return [
+      { ...shell, tiles: 'all' },
+      ...(dressed ? [
+        { chain: over('.paint'), key: `${shell.key}.paint`, tiles: 'all', overlay: 'paint', optional: true, dz: 0.001 },
+        { chain: over('.lv'), key: `${shell.key}.lv`, tiles: 'all', overlay: 'lv', optional: true, dz: 0.002 },
+        { chain: over(`.logo.${containerLogo(id, livery.seed)}`), key: `${shell.key}.logo`, tiles: 'all', optional: true, dz: 0.003 },
+      ] as ModuleLayer[] : []),
+      { chain: [`container.clamp.${clamp}`, 'container.clamp'], key: 'container.clamp', tiles: 'all', at, dz: 0.04 },
+    ];
   }
   if (def.hullEdge) {
     const burn = active ? ['.active'] : [];

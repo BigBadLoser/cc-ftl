@@ -115,7 +115,7 @@ export function barge(rng: Rng, crates: number, count?: number): Builder | null 
 }
 
 /** Container footprints a pod string draws from: the short (door) end along the tube, the length off it. */
-const STRING_BOXES: readonly (readonly [number, number])[] = [[3, 5], [2, 3]];
+const STRING_BOXES: readonly (readonly [number, number])[] = [[3, 6], [2, 4]];
 
 /**
  * Cargo pod string: sealed containers clamped along both walls of a crawl tube (crew walk the tube to whatever lies

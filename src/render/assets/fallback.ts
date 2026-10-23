@@ -47,7 +47,7 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.galley': { ids: ['module.fabricator'], tint: 0x8affc0 },
   // Ore refinery (3x4): a crate per footprint tile, tinted orange, until it has art.
   'module.refinery': { ids: CRATE, tint: 0xffa060, perTile: true },
-  // Cargo containers have no entry: until their sheets land they are drawn boxes (render/containerBox.ts).
+  // Cargo containers have no entry: the real sheets exist; drawn boxes only if art is missing (render/containerBox.ts).
   // Roof turret: a crate with a barrel nub pointing along the aim (see turretView).
   'turret.generic': { ids: CRATE, tint: 0xd0d8e8 },
   'turret.generic.charged': { ids: CRATE, tint: 0xfff0b0 },

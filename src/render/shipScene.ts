@@ -94,7 +94,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     weaponArt: (item) => items[item]?.hand?.art,
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null });
   const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency, view);
   const jamMarks = createJamMarks(grid, atlas, L);
   const sacView = createEggSacView(grid, world, atlas, L, (x, y, wall) => view.tintAt(x, y, wall));
