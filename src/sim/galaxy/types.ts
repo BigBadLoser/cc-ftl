@@ -1,4 +1,7 @@
+import type { FleetRole, ShipSize } from './defs';
 import type { Vec } from './geometry';
+
+export type { FleetRole, ShipSize } from './defs';
 
 /**
  * The starmap model. Terms (user decision): a **node** is one playable location (older code says "sector" for it); a
@@ -107,6 +110,9 @@ export interface Contact {
   ship?: number;
   /** Tick it turned up (0 for ships there from the start). */
   since: number;
+  /** Fleet ships only: the ship's name ("CNS Valiant") and size class (what its home port rebuilds when it is lost). */
+  name?: string;
+  size?: ShipSize;
 }
 
 export interface NodeState {
@@ -144,19 +150,20 @@ export interface Travel {
   stopping?: true;
 }
 
-/** What a fleet does for a living; derived from its faction's kind when it is made (fleets.ts). */
-export type FleetRole = 'trader' | 'patrol' | 'pirate' | 'raider';
-
 /**
- * An NPC fleet moving on the starmap, one hop per turn. The same ships become real ones in a node the player is in: `ships` are
- * `Contact`s (the node-contact descriptor), `Contact.ship` is set while the fleet is materialised in the player's active node and
- * unset (descriptors only) everywhere else. A fleet is never in a node archive: its ships are lifted out when the player leaves.
+ * An NPC fleet (user decisions 2026-10-22: a living world). Fleets are created with their home port when its chunk is generated (roster.ts) and live
+ * until every ship in them is destroyed; a lost ship is rebuilt by the port, slowly (ports.ts). They move on the starmap one hop per turn along an
+ * agenda (agenda.ts), and the same ships become real ones in a node the player is in: `ships` are `Contact`s (the node-contact descriptor),
+ * `Contact.ship` is set while the fleet is materialised in the player's active node and unset (descriptors only) everywhere else. A fleet is
+ * never in a node archive: its ships are lifted out when the player leaves.
  */
 export interface Fleet {
   id: number;
   faction: string;
   role: FleetRole;
   ships: Contact[];
+  /** Its home port (`<node id>#<structure index>`, ports.ts). */
+  home: string;
   /** The node it is at (or has just reached this turn). */
   node: string;
   /** The node it was at before this turn's move; equals `node` when it did not move. */
@@ -167,14 +174,24 @@ export interface Fleet {
   route: string[];
   /** Where it is heading (last of the route, or `node`). */
   dest: string;
-  /** Turns left idle at a station before its next trip. */
+  /** Turns left idle (resting at home, working at a destination) before it plans its next leg; while stranded, turns left to repair. */
   dwell: number;
-  /** Turns left to live (the fleet despawns at 0). */
-  ttl: number;
-  /** Stranded and damaged: it does not move and calls for help. */
+  /** Stops left on this outing before it heads home (0 = going home, or at home). */
+  legs: number;
+  /** The turn its agenda has been played up to. Fleets away from the player are not stepped; `catchUp` plays them forward on approach. */
+  synced: number;
+  /** Stranded (broke down, or badly damaged in a fight): it does not move and calls for help until it is repaired (`dwell` turns) or helped. */
   damaged?: true;
   /** Turn of its last encounter with the player (a cooldown against repeats). */
   met?: number;
+}
+
+/** A port that lost ships: the replacements it owes (in build order) and the turn the first is done; one is built every `PortKindDef.rebuildTurns`. */
+export interface PortState {
+  queue: { faction: string; role: FleetRole; size: ShipSize }[];
+  next: number;
+  /** Ships built here so far (keeps replacement seeds apart). */
+  built: number;
 }
 
 /** What a crossing with a fleet turns into. 'interdict' halts the player's travel; the others are alerts for now. */
@@ -192,6 +209,8 @@ export interface Encounter {
   fleet: number;
   faction: string;
   role: FleetRole;
+  /** The fleet's display name (its first ship, "+n" for the rest). */
+  name: string;
   ships: number;
   /** Fleet strength (`fleetStrength`) and the node's danger when it was met: the odds and the bribe are computed from these. */
   strength: number;
@@ -218,6 +237,8 @@ export interface EventGrid {
   encounter: Encounter;
   /** The fleet while inside the grid (its ships are real ones here). */
   fleet: Fleet;
+  /** Its ships that escaped from the grid (jumped away); they rejoin the fleet when the grid is left. */
+  fled: Contact[];
 }
 
 /** How the last encounter ended, for the view's outcome line (`GalaxyState.lastResult`). `odds` and `roll` for an evade, `cost` for a bribe. */
@@ -264,6 +285,8 @@ export interface GalaxyState {
   lastResult: EncounterResult | null;
   /** Ids for fleets, their ships and encounters (apart from `nextId`, so node contacts keep their ids). */
   nextFleet: number;
+  /** Ports that owe replacement ships, by port id (ports.ts). Ports with nothing owed have no entry. */
+  ports: Record<string, PortState>;
   /** Travel days spent in jumps. */
   days: number;
   /** The hyperspace trip in progress, or null. */

@@ -25,8 +25,8 @@
     <div class="body">
       <div class="who">
         <i style={`background: ${toneColor(encounter.tone)}`}></i>
-        <b>{encounter.faction} {encounter.role.toLowerCase()}</b>
-        <small>{encounter.ships} ship{encounter.ships > 1 ? 's' : ''}</small>
+        <b>{encounter.name}</b>
+        <small>{encounter.faction} {encounter.role.toLowerCase()}</small>
       </div>
       <div class="facts">
         <span class="chip" class:warn={encounter.threat === 'Heavy' || encounter.threat === 'Overwhelming'} title="Fleet strength">{encounter.threat}</span>

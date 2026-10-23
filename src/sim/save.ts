@@ -42,8 +42,11 @@ import { newTrade, type TradeState } from './trade/types';
  * v33: `MiningPodC.spot` (where a pod hovers to cut its tile, clear of other pods).
  * v34 (NPC traffic): `galaxy.turnClock`, `galaxy.fleets`, `galaxy.encounters`, `galaxy.nextFleet`.
  * v35 (encounters): `galaxy.event` (the event grid, node id `event:<id>`), `Encounter.strength` / `danger`, `Travel.phase` 'interdicted' | 'event' and `Travel.held`.
+ * v36 (stage 1 of the living world): `Combat.pilot` (the helm's piloting skill, for evade odds).
+ * v37 (stage 2, persistent population): `galaxy.fleets` are persistent roster fleets (`home` port, `legs`, `synced`, ship `name` / `size`; `ttl` is gone), `galaxy.ports` (replacement queues of ports that lost ships),
+ * `Encounter.name`, `EventGrid.fled`. Fleets are created when their chunk is generated and live until destroyed.
  */
-export const SAVE_VERSION = 36;
+export const SAVE_VERSION = 37;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

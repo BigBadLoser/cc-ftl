@@ -45,7 +45,7 @@ function interdiction(seed: number, faction = 'pirates', role: Fleet['role'] = '
   while (!passingMeets(sim, g.nextFleet, g.turn + 1)) g.nextFleet++;
   const f: Fleet = {
     id: g.nextFleet++, faction, role, ships: [{ id: g.nextFleet++, faction, shipgen: faction === 'pirates' ? 'faction.scrapper' : 'faction.civilian', seed: 77, depth: 1, since: 0 }],
-    node: to, from: to, moved: -1, route: [START_NODE], dest: START_NODE, dwell: 0, ttl: 99, ...over,
+    node: to, from: to, moved: -1, route: [START_NODE], dest: START_NODE, dwell: 0, legs: 0, home: `${START_NODE}#0`, synced: g.turn, ...over,
   };
   g.fleets.push(f);
   step(sim);
@@ -337,7 +337,7 @@ describe('alerts: hail, scan, distress', () => {
     const g = sim.galaxy;
     const f: Fleet = {
       id: g.nextFleet++, faction: 'traders', role: 'trader', ships: [{ id: g.nextFleet++, faction: 'traders', shipgen: 'faction.civilian', seed: 5, depth: 1, since: 0 }],
-      node: to, from: to, moved: -1, route: [], dest: to, dwell: 99, ttl: 99, damaged: true,
+      node: to, from: to, moved: -1, route: [], dest: to, dwell: 99, legs: 0, home: `${START_NODE}#0`, synced: g.turn, damaged: true,
     };
     g.fleets.push(f);
     sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [to, next] });

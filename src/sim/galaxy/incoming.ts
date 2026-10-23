@@ -1,11 +1,14 @@
 import type { Sim } from '../sim';
 import { sensorNodes } from './fleets';
+import { fleetName } from './names';
 import { isHostileFaction } from './standing';
 import type { Fleet } from './types';
 
 /** A fleet on its way to the player's node (a pure query for the arrival warning; nothing here changes the sim). */
 export interface IncomingFleet {
   fleet: number;
+  /** The fleet's display name: its first ship's name, "+n" for the rest. */
+  name: string;
   faction: string;
   role: Fleet['role'];
   ships: number;
@@ -29,7 +32,7 @@ export function incomingFleets(sim: Sim): IncomingFleet[] {
     const at = f.route.indexOf(g.current);
     if (at < 0) continue;
     out.push({
-      fleet: f.id, faction: f.faction, role: f.role, ships: f.ships.length, hostile: isHostileFaction(sim, f.faction),
+      fleet: f.id, name: fleetName(f), faction: f.faction, role: f.role, ships: f.ships.length, hostile: isHostileFaction(sim, f.faction),
       eta: at + 1, stops: at === f.route.length - 1,
     });
   }

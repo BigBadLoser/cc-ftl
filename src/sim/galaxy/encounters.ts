@@ -1,5 +1,6 @@
 import type { Sim } from '../sim';
 import { unit } from './hash';
+import { fleetName } from './names';
 import { fleetStrength } from './encounterOdds';
 import { isHostileFaction } from './standing';
 import { nodeOf } from './state';
@@ -23,8 +24,8 @@ import type { CrossingHow, Encounter, EncounterKind, Fleet } from './types';
  */
 export function encounterKind(sim: Sim, f: Fleet): EncounterKind {
   const hostile = isHostileFaction(sim, f.faction);
+  if (f.damaged) return hostile ? 'hail' : 'distress';
   if ((f.role === 'pirate' || f.role === 'raider') && hostile) return 'interdict';
-  if (f.damaged && !hostile) return 'distress';
   if (f.role === 'patrol') return 'scan';
   return 'hail';
 }
@@ -63,7 +64,7 @@ export function crossAfterHop(sim: Sim, from: string, to: string): boolean {
     f.met = g.turn;
     const ttl = kind === 'interdict' ? ENCOUNTER_TTL.interdict : ENCOUNTER_TTL.alert;
     const e: Encounter = {
-      id: g.nextFleet++, kind, fleet: f.id, faction: f.faction, role: f.role, ships: f.ships.length, strength: fleetStrength(f.ships), danger: nodeOf(sim, to)?.danger ?? 0, how, node: to, turn: g.turn, expires: g.turn + ttl,
+      id: g.nextFleet++, kind, fleet: f.id, faction: f.faction, role: f.role, name: fleetName(f), ships: f.ships.length, strength: fleetStrength(f.ships), danger: nodeOf(sim, to)?.danger ?? 0, how, node: to, turn: g.turn, expires: g.turn + ttl,
     };
     g.encounters.push(e);
     if (g.encounters.length > ENCOUNTER_MAX) g.encounters.splice(0, g.encounters.length - ENCOUNTER_MAX);

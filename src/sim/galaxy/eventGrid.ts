@@ -8,7 +8,7 @@ import { isLive } from '../trade/deals';
 import { FTL_CHARGE_SEC, SECTOR_HEIGHT, SECTOR_WIDTH } from '../tuning';
 import { playerShipInfo } from './arrivals';
 import { ftlCharge, spendCharge } from './fuel';
-import { inPlay, materialiseFleet, tendFleet } from './fleetShips';
+import { materialiseFleet, reap, strandIfCrippled, tendFleet } from './fleetShips';
 import { repKey } from './standing';
 import { RESCUE_REPUTATION } from './tuning';
 import type { Encounter, EventGrid, Fleet } from './types';
@@ -42,7 +42,7 @@ export function enterEvent(sim: Sim, e: Encounter, kind: EventGrid['kind']): boo
   const f = g.fleets.find((x) => x.id === e.fleet);
   if (!t || !f || sim.sector.state !== 'hyperspace' || g.event) return false;
   g.fleets = g.fleets.filter((x) => x !== f);
-  g.event = { id: e.id, kind, encounter: { ...e }, fleet: f };
+  g.event = { id: e.id, kind, encounter: { ...e }, fleet: f, fled: [] };
   t.held = t.phase === 'event' ? 'hop' : t.phase;
   t.phase = 'event';
   const from = sim.sector.node;
@@ -70,14 +70,15 @@ export function leaveBlocker(sim: Sim): string | null {
   return null;
 }
 
-/** What is left of the fleet: ships still in play (or never spawned) go back as descriptors, the rest are forgotten. */
+/**
+ * What is left of the fleet: ships still in play, escaped (fled) or never spawned go back as descriptors; wrecked and taken ones are gone and their
+ * home port owes a replacement each. A ship left crippled strands the fleet (a distress call), unless it was a rescue.
+ */
 function settleFleet(sim: Sim, ev: EventGrid): Fleet {
   const f = ev.fleet;
-  f.ships = f.ships.filter((c) => {
-    const alive = c.ship === undefined || inPlay(sim, c.ship);
-    c.ship = undefined;
-    return alive;
-  });
+  f.ships.push(...reap(sim, f).fled, ...ev.fled);
+  strandIfCrippled(sim, f, sim.galaxy.turn);
+  for (const c of f.ships) c.ship = undefined;
   f.met = sim.galaxy.turn;
   if (ev.kind === 'rescue' && f.ships.length) {
     delete f.damaged;
@@ -135,5 +136,5 @@ export function leaveEvent(sim: Sim, resume: (sim: Sim) => void, command = 'gala
 /** Once a second in the event grid: forget the fleet's ships that are gone and retry the ones that had no room. */
 export function tendEvent(sim: Sim): void {
   const ev = sim.galaxy.event;
-  if (ev && tendFleet(sim, ev.fleet, sim.galaxy.current)) sim.galaxy.rev++;
+  if (ev && tendFleet(sim, ev.fleet, sim.galaxy.current, ev.fled)) sim.galaxy.rev++;
 }

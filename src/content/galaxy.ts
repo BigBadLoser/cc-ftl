@@ -1,4 +1,5 @@
 import type { GalaxyContent, GalaxyFactionDef, StructureDef } from '../sim';
+import { factionFleets, fleetContent } from './galaxyFleets';
 
 /**
  * Galaxy factions: who holds space, how they feel about you and each other, and which ship generator styles
@@ -15,6 +16,7 @@ const factions = {
     territory: { weight: 2.2, danger: { max: 4 }, reach: 820 },
     stations: [{ value: 'structure.station_military', weight: 3 }, { value: 'structure.station_trade', weight: 1 }],
     baseStanding: 1,
+    fleet: factionFleets.navy,
     relations: { pirates: -0.6, rogue: -0.5, meridian: 0.3, helix: 0.2, vantor: 0.2 },
     traffic: { weight: 1, danger: { max: 5 } },
   },
@@ -24,6 +26,7 @@ const factions = {
     territory: { weight: 1.6, danger: { min: 1, max: 7 } },
     stations: [{ value: 'structure.station_trade', weight: 3 }, { value: 'structure.station_research', weight: 1 }],
     baseStanding: 0,
+    fleet: factionFleets.meridian,
     relations: { navy: 0.3, helix: -0.4, vantor: -0.2, pirates: -0.4 },
     traffic: { weight: 0.8, danger: { max: 7 } },
   },
@@ -33,6 +36,7 @@ const factions = {
     territory: { weight: 1.1, danger: { min: 2, max: 8 } },
     stations: [{ value: 'structure.station_research', weight: 3 }, { value: 'structure.station_trade', weight: 1 }],
     baseStanding: 0,
+    fleet: factionFleets.helix,
     relations: { meridian: -0.4, navy: 0.2, rogue: -0.3 },
     traffic: { weight: 0.5, danger: { min: 1 } },
   },
@@ -42,6 +46,7 @@ const factions = {
     territory: { weight: 1.2, danger: { min: 1, max: 9 } },
     stations: [{ value: 'structure.station_trade', weight: 2 }, { value: 'structure.station_military', weight: 1 }],
     baseStanding: 0,
+    fleet: factionFleets.vantor,
     relations: { meridian: -0.2, traders: 0.2, pirates: -0.3 },
     traffic: { weight: 0.6, danger: { min: 1 } },
   },
@@ -49,6 +54,7 @@ const factions = {
     name: 'Free Traders', kind: 'civilian', reputation: 'traders',
     ships: [{ value: 'faction.civilian', weight: 1 }],
     baseStanding: 2,
+    fleet: factionFleets.traders,
     relations: { pirates: -0.3, vantor: 0.2 },
     traffic: { weight: 2, danger: { max: 7 } },
   },
@@ -58,6 +64,7 @@ const factions = {
     territory: { weight: 1.4, danger: { min: 3 }, reach: 680 },
     stations: [{ value: 'structure.station_trade', weight: 1 }],
     baseStanding: -5,
+    fleet: factionFleets.pirates,
     relations: { navy: -0.5, traders: -0.3 },
     traffic: { weight: 1.6, danger: { min: 1 } },
   },
@@ -66,6 +73,7 @@ const factions = {
     ships: [{ value: 'faction.drones', weight: 1 }],
     territory: { weight: 1, danger: { min: 5 }, reach: 640 },
     baseStanding: -10,
+    fleet: factionFleets.rogue,
     traffic: { weight: 0.9, danger: { min: 4 } },
   },
 } satisfies Record<string, GalaxyFactionDef>;
@@ -91,4 +99,4 @@ const names = {
   suffix: ['Reach', 'Expanse', 'Drift', 'Verge', 'Hollow', 'Spur', 'Gate', 'Shoals', 'March', 'Deep', 'Rim', 'Belt'],
 };
 
-export const galaxy = { factions, structures, names } satisfies GalaxyContent;
+export const galaxy = { factions, structures, names, fleet: fleetContent } satisfies GalaxyContent;

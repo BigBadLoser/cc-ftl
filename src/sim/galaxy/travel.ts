@@ -4,7 +4,7 @@ import { isLive } from '../trade/deals';
 import { playerShipInfo } from './arrivals';
 import { ftlCharge, fuelStock } from './fuel';
 import { chunkOfId } from './generator';
-import { seedFleets } from './fleets';
+import { syncFleets } from './fleets';
 import { repKey } from './standing';
 import { currentNode, ensureAround, ensureChunkOf, galaxyIndex } from './state';
 import { ARRIVAL_EVERY_SEC, SENSOR_HOPS } from './tuning';
@@ -85,6 +85,7 @@ export function arrive(sim: Sim): void {
   discover(sim);
   const data = currentNode(sim);
   if (data) setContext(sim, data);
+  syncFleets(sim, g.turn);
   g.rev++;
 }
 
@@ -93,7 +94,6 @@ export function startGalaxy(sim: Sim): void {
   arrive(sim);
   sim.galaxy.nodes[sim.galaxy.current] = { contacts: [], entered: true };
   sim.galaxy.nextArrival = sim.tick + Math.round(ARRIVAL_EVERY_SEC * TICK_HZ);
-  seedFleets(sim);
 }
 
 export type Reject = (reason: string) => false;

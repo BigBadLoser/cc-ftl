@@ -89,7 +89,10 @@ export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
   const side = isHostileFaction(sim, c.faction) ? sim.content.galaxy?.factions[c.faction]?.combatFaction ?? 'hostile' : 'neutral';
   const id = spawnShip(sim, gen.template, { faction: side, x: spot.x, y: spot.y, rest: 100 });
   const ship = sim.world.get(id, ShipC);
-  if (ship) ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth };
+  if (ship) {
+    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth };
+    if (c.name) ship.name = c.name;
+  }
   c.ship = id;
   sim.galaxy.rev++;
   sim.events.emit({ type: 'galaxy.shipArrived', node, faction: c.faction, ship: id });

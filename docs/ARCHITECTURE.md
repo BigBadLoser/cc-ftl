@@ -868,15 +868,31 @@ ties on time then node id, over discovered nodes.
 TURN_SEC (180, three minutes) seconds of game time while the sector is `'active'` (`tickTurnClock`, `galaxy.turn` with `cause: 'time'`). `GalaxyState.turnClock` counts only active ticks
 and is reset by a hop's turn and at `sector.deploy` (`resetTurnClock`), so a hop never also fires a time turn for the same stretch.
 
-**NPC traffic** (`fleets.ts`, `fleetShips.ts`, `encounters.ts`). `GalaxyState.fleets` are persistent plain-data fleets (`Fleet`: faction, role, `ships: Contact[]`, `node`, `from`,
-`moved`, `route`, `dest`, `dwell`, `ttl`). `onTurn` runs `stepFleets`: each fleet takes one hop of its planned route (`planStarRoute`), rests at its destination, then sets out again until
-its `ttl` is spent; new ones spawn deterministically from (seed, turn, slot) among the generated nodes within FLEET_AREA_HOPS of the player, up to FLEET_CAP. The same ships are the
-node's: when the player's node is live a fleet that arrives is materialised through `spawnContact` and one that leaves (or the player leaving) is lifted out with `liftShip`, so
-`Contact.ship` is set only for fleets in the live node and node archives never hold fleet ships. Crossings (`crossAfterHop`, when the player's hop ends): `pass`, `overlap`
-or `node` -> `galaxy.crossing`, an `Encounter` (`interdict` | `hail` | `scan` | `distress`, by faction and role) stored in `GalaxyState.encounters` and `galaxy.encounter`. A pending
+**NPC population** (stage 2 of the living world; `ports.ts`, `roster.ts`, `agenda.ts`, `fleets.ts`, `fleetShips.ts`, `rebuild.ts`, `graph.ts`, `names.ts`, `dock.ts`). Fleets are
+persistent: nothing spawns or despawns.
+- **Ports** (`ports.ts`, derived from node structures, nothing stored): a station of a pirate faction is a `den`, a military station of a government a `depot`, any other station a `station`;
+  an asteroid field a faction owns (its territory) is a mining `outpost` (if it fields miners); a derelict in rogue space is a drone `nest`. `Port { id: '<node>#<i>', kind, size 1..3, owner, role, trade }`;
+  size = 1, +1 on a coin flip, +1 in a hub sector. `PortKindDef.groups[size - 1]` (content) is how many groups it fields; a market also hosts free traders (TRADE_GUESTS).
+- **Rosters** (`roster.ts`): `ensureChunk` calls `populate(sim, chunk)`, which makes each port's fleets from (seed, port, slot), so a region has its ships the moment it exists. A group's size is a
+  budget (`FleetGroupDef`: a drawn `budget` spent on `sizes` costing `FleetContent.sizeCost`, up to `maxShips`; traders, miners and civilians are `maxShips: 1`). `FleetContent.classes` maps each generator
+  hull family to a size class and roles; a seed is searched whose first generation attempt builds that family (`previewHull` in `shipgen/generate.ts`), so a heavy ship is a cruiser. A `Fleet`
+  holds `home` (port id), `Contact`s with `name` (`names.ts`, per-faction `FactionFleetDef.names`, unique among living ships) and `size`, `legs`, `synced`. Nothing is made in the player's own node: a port
+  homed there starts its fleets one hop out and coming in. No `GENERATOR_VERSION` bump: chunk output is unchanged (rosters are state, not chunk data).
+- **Agendas** (`agenda.ts`, `stepAgenda`; all tuning in `tuning.ts`): rest at home, then an outing of `FLEET_LEGS` stops, `FLEET_WORK` turns at each, then home. Traders pick stations within `FLEET_RANGE` of home
+  (`onDock(sim, fleet, port)` in `dock.ts` is the stage 3 hook, called on every arrival at a port), miners the nearest ore fields, patrols nodes of their faction's territory, pirates and raiders any node near the den.
+  A hop away from home may break the fleet down (`BREAKDOWN_CHANCE`): it is stranded (`damaged`, `dwell` = repair turns) and calls for help; a crippled ship after a fight strands its fleet too.
+  Every step is a function of (seed, fleet id, turn) hashes, never an Rng. Paths and targets come from cached BFS reaches (`graph.ts`, per galaxy index).
+- **Scale** (`fleets.ts`): `stepFleets` runs once per turn from `onTurn`. A fleet is *simulated* while its node or its home is within FLEET_AREA_HOPS of the player; others are frozen (`Fleet.synced` stays
+  behind). `syncFleets` (at the start of a turn and on arrival) plays simulated fleets forward with `catchUp`: exactly turn by turn for up to CATCHUP_MAX turns, so a region caught up equals one stepped; after a
+  longer absence the fleet goes back to its home with a hashed rest and only the last CATCHUP_MAX turns are played (the cycle phase differs; deterministic and valid). The save holds descriptors only.
+- **Losses and rebuilds** (`fleetShips.ts` `reap`, `portIndex.ts` `owe`, `rebuild.ts`): ships only become real in the player's node (`materialiseFleet`, `Contact.ship` set, `ShipC.name` is the ship's name) and are lifted out when
+  the fleet or the player leaves. A ship found wrecked or taken is gone: the fleet forgets it and its port owes a replacement (`GalaxyState.ports[port].queue`), one built every `PortKindDef.rebuildTurns`
+  (a single-ship fleet of the lost role and size, at the due turn; frozen ports build what fell due when the player comes near). A ship that fled survives and its fleet runs for home. A fleet with no ship left is gone.
+- The same ships are the node's: crossings (`crossAfterHop`, when the player's hop ends): `pass`, `overlap`
+or `node` -> `galaxy.crossing`, an `Encounter` (`interdict` | `hail` | `scan` | `distress`, by faction and role; a stranded fleet never interdicts) stored in `GalaxyState.encounters` and `galaxy.encounter`. A pending
 interdiction halts the trip in hyperspace (`Travel.phase === 'interdicted'`, `galaxy.interdicted`; the ship stays a packet, `galaxy.drop` and `galaxy.jump` are refused) until `galaxy.respond`.
 The view shows fleets within SENSOR_HOPS (`visibleFleets`, `UiStarFleet`): chevrons beside their nodes at the sector level
-and a Traffic list in the node drawer. Tests: `content/galaxyTraffic.test.ts` and `.slow.test.ts`.
+and a Traffic list in the node drawer (ship name, faction and role, what it is doing, home port). Tests: `content/galaxyPopulation.test.ts` (+ `.slow`), `galaxyTraffic.test.ts`.
 
 **Encounters and event grids** (`encounterOdds.ts`, `respond.ts`, `eventGrid.ts`). `galaxy.respond { encounter, choice }` is the one answer (`respond`; the stub
 `galaxy.dismissEncounter` is gone). Interdiction: `evade` (roll `unit(seed, encounter id, salt)` against `evadeOdds`: mainly the pilot, `(0.32 + 0.57 x pilot) x (0.6 + 0.4 x engine) - 0.06 x fleet strength`, clamped to [0.05, 0.9], from `Combat.pilot` / `Combat.evasion` read from
@@ -887,8 +903,8 @@ An **event grid** (`GalaxyState.event`, node id `event:<encounter id>`) is a poc
 archived, and runs no turns, arrivals or story draws. `enterEvent` takes the fleet out of `GalaxyState.fleets`, swaps in an empty sector, makes the fleet's ships real
 (`materialiseFleet` with the real node as `node`) and sets the packet waiting to deploy (the deploy picker). `GalaxyState.current` stays the real node; `sim.sector.node` is the event id and the
 trip is `phase: 'event'` (`held` remembers the phase to return to). `galaxy.leaveEvent` (also the player's `combat.flee` there) lifts the ship back into a packet, wipes the sector (every
-entity destroyed, a fresh grid), returns the fleet's survivors as descriptors (cooldown set) or forgets the fleet if none are left, and carries the trip on. Leaving with hostiles
-about is a flee and needs the drive charged (spent). `GalaxyState.lastResult` keeps the last outcome for the drawer's outcome line. Save v36.
+entity destroyed, a fresh grid), returns the fleet's survivors as descriptors (cooldown set; a crippled ship strands the fleet; lost ships are owed by the home port) or forgets the fleet if none are left, and carries the trip on. Leaving with hostiles
+about is a flee and needs the drive charged (spent). `GalaxyState.lastResult` keeps the last outcome for the drawer's outcome line. `EventGrid.fled` keeps ships that jumped away from the grid. Save v37.
 
 **Arrivals** (`galaxySystem`, `arrivals.ts`). Every `ARRIVAL_EVERY_SEC` (60) at the current node: chance `ARRIVAL_PER_DANGER x danger` (cap
 `ARRIVAL_MAX_CHANCE`; x1.5 in hostile territory, x0.4 in friendly), up to `MAX_HOSTILE_CONTACTS`, the faction drawn from the node's traffic pool

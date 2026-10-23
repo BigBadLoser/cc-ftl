@@ -193,6 +193,7 @@ describe('galaxy.jump, archives and sector.deploy', () => {
 
   it('freezes a restored node while the deploy waits, including after a rejected deploy', () => {
     const sim = newGame(6, content);
+    sim.galaxy.fleets = []; // no NPC ship drops in and takes the deploy spot
     const player = homeShip(sim);
     // A fresh combat wreck with crew aboard: left to tick, its air, heat and crew would change.
     stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40 });

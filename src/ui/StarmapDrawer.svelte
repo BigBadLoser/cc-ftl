@@ -87,7 +87,11 @@
         {#if traffic.length}
           <ul class="traffic" data-testid="starmap-traffic">
             {#each traffic as f (f.id)}
-              <li class:hostile={f.hostile} title={f.heading}><i style={`background: ${toneColor(f.tone)}`}></i><span>{f.faction} {f.role.toLowerCase()}{f.ships > 1 ? ` x${f.ships}` : ''}</span><small>{f.heading}</small></li>
+              <li class:hostile={f.hostile} title={`${f.heading}. Home: ${f.home}`}>
+                <i style={`background: ${toneColor(f.tone)}`}></i>
+                <span><b>{f.name}</b> <small>{f.faction} {f.role.toLowerCase()}</small></span>
+                <small class="sub">{f.heading} · home {f.home}</small>
+              </li>
             {/each}
           </ul>
         {/if}
@@ -165,10 +169,12 @@
   .legs li.done { color: var(--cyan); }
   .legs li.now { border-color: var(--cyan); background: var(--panel-3); color: var(--cyan); }
   .traffic { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
-  .traffic li { display: flex; align-items: center; gap: 8px; padding: 3px 8px; background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; }
+  .traffic li { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; row-gap: 1px; padding: 3px 8px; background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; }
+  .traffic li b { font-weight: 600; }
+  .traffic .sub { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .traffic li.hostile { border-color: var(--red); }
   .traffic i { width: 8px; height: 8px; flex: none; clip-path: polygon(100% 50%, 0 0, 25% 50%, 0 100%); }
-  .traffic span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .traffic span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .traffic small { color: var(--dim); font-size: 11px; }
   .n { font: 600 12px var(--head-font); color: var(--cyan); min-width: 12px; }
   .confirm { padding: 8px; border: 1px solid var(--amber); background: var(--panel-2); }

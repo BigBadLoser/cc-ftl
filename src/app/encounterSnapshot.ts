@@ -4,7 +4,7 @@ import {
 import type { UiEncounter, UiEncounterChoice, UiEncounterResult, UiEventGrid } from '../ui/starmapApi';
 import { toneOf } from './starmapTone';
 
-export const ROLE_LABEL: Record<string, string> = { trader: 'Trader', patrol: 'Patrol', pirate: 'Pirate', raider: 'Raider' };
+export const ROLE_LABEL: Record<string, string> = { trader: 'Trader', miner: 'Miner', patrol: 'Patrol', pirate: 'Pirate', raider: 'Raider' };
 const TITLE = { interdict: 'Interdiction', hail: 'Hail', scan: 'Patrol scan', distress: 'Distress call' } as const;
 const HOW = { pass: 'Met you on the lane', overlap: 'Caught up with you on the lane', node: 'Waiting where you came out' } as const;
 
@@ -38,7 +38,7 @@ function choicesFor(sim: Sim, e: Encounter): UiEncounterChoice[] {
 /** The pending encounters as cards. */
 export function encountersOf(sim: Sim): UiEncounter[] {
   return sim.galaxy.encounters.map((e) => ({
-    id: e.id, kind: e.kind, title: TITLE[e.kind], faction: factionName(sim, e.faction), role: ROLE_LABEL[e.role] ?? e.role,
+    id: e.id, kind: e.kind, title: TITLE[e.kind], name: e.name, faction: factionName(sim, e.faction), role: ROLE_LABEL[e.role] ?? e.role,
     tone: toneOf(sim.content.galaxy?.factions[e.faction]?.kind), hostile: isHostileFaction(sim, e.faction), ships: e.ships, threat: threatOf(e.strength),
     how: HOW[e.how], node: nodeName(sim, e.node), choices: choicesFor(sim, e),
   }));

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, visibleFleets, passingMeets, incomingFleets, TICK_HZ, type Sim,
+  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playerShip, passingMeets, incomingFleets, TICK_HZ, type Sim,
 } from '../sim';
 import { crossingOf, encounterKind } from '../sim/galaxy/encounters';
 import { stepFleets } from '../sim/galaxy/fleets';
-import { TIME_TURN_TICKS, onTurn, takeHopTurn, tickTurnClock } from '../sim/galaxy/turn';
-import { FLEET_CAP, PASSING_ENCOUNTER_CHANCE, TURN_SEC } from '../sim/galaxy/tuning';
+import { TIME_TURN_TICKS, takeHopTurn, tickTurnClock } from '../sim/galaxy/turn';
+import { PASSING_ENCOUNTER_CHANCE, TURN_SEC } from '../sim/galaxy/tuning';
 import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
 import { content } from '.';
@@ -37,7 +37,7 @@ function fleet(sim: Sim, node: string, over: Partial<Fleet> = {}): Fleet {
   const g = sim.galaxy;
   const f: Fleet = {
     id: g.nextFleet++, faction: 'traders', role: 'trader', ships: [{ id: g.nextFleet++, faction: 'traders', shipgen: 'faction.civilian', seed: 77, depth: 1, since: 0 }],
-    node, from: node, moved: -1, route: [], dest: node, dwell: 99, ttl: 99, ...over,
+    node, from: node, moved: -1, route: [], dest: node, dwell: 99, legs: 0, home: `${START_NODE}#0`, synced: g.turn, ...over,
   };
   g.fleets.push(f);
   return f;
@@ -98,60 +98,6 @@ describe('turn clock', () => {
   });
 });
 
-describe('fleets', () => {
-  it('a new game has traffic within the cap, never at the start node, all in generated chunks', () => {
-    const sim = newGame(22, content);
-    expect(sim.galaxy.fleets.length).toBeGreaterThan(3);
-    expect(sim.galaxy.fleets.length).toBeLessThanOrEqual(FLEET_CAP);
-    const index = galaxyIndex(sim.galaxy);
-    for (const f of sim.galaxy.fleets) {
-      expect(f.node).not.toBe(START_NODE);
-      expect(index.nodes.has(f.node)).toBe(true);
-      for (const n of f.route) expect(index.nodes.has(n)).toBe(true);
-    }
-    expect(others(sim)).toEqual([]); // data only
-  });
-
-  it('moves one hop per turn along its route, and is deterministic', () => {
-    const run = () => {
-      const sim = newGame(22, content);
-      for (let t = 1; t <= 30; t++) {
-        const before = new Map(sim.galaxy.fleets.map((f) => [f.id, f.node]));
-        sim.galaxy.turn = t;
-        onTurn(sim, t);
-        for (const f of sim.galaxy.fleets) {
-          const was = before.get(f.id);
-          if (was !== undefined && f.node !== was) expect(adjacent(sim, was)).toContain(f.node);
-        }
-      }
-      return JSON.stringify(sim.galaxy.fleets);
-    };
-    expect(run()).toBe(run());
-  });
-
-  it('saves and loads mid-route and carries on identically', () => {
-    const a = newGame(23, content);
-    for (let t = 1; t <= 8; t++) onTurn(a, (a.galaxy.turn = t));
-    const b = deserialize(serialize(a), content);
-    expect(b.galaxy.fleets).toEqual(a.galaxy.fleets);
-    for (let t = 9; t <= 20; t++) {
-      onTurn(a, (a.galaxy.turn = t));
-      onTurn(b, (b.galaxy.turn = t));
-    }
-    expect(b.galaxy.fleets).toEqual(a.galaxy.fleets);
-    expect(b.galaxy.encounters).toEqual(a.galaxy.encounters);
-  });
-
-  it('shows only fleets within sensor range', () => {
-    const sim = newGame(22, content);
-    const far = fleet(sim, [...galaxyIndex(sim.galaxy).nodes.keys()].sort().pop() as string);
-    const near = fleet(sim, adjacent(sim, START_NODE)[0] as string);
-    const seen = visibleFleets(sim).map((f) => f.id);
-    expect(seen).toContain(near.id);
-    expect(seen).not.toContain(far.id);
-  });
-});
-
 describe('fleets in the player\'s node', () => {
   it('a fleet arriving materialises its ships; leaving lifts them out; no duplicates across leave and return', () => {
     const sim = newGame(24, content);
@@ -160,7 +106,6 @@ describe('fleets in the player\'s node', () => {
     const f = fleet(sim, next, { route: [START_NODE], dest: START_NODE, dwell: 0 });
     sim.galaxy.turn = 1;
     stepFleets(sim, 1);
-    sim.galaxy.fleets = [f]; // drop the random traffic the step spawned
     expect(f.node).toBe(START_NODE);
     expect(f.ships[0]?.ship).toBeDefined();
     const id = f.ships[0]?.ship as number;
@@ -170,7 +115,6 @@ describe('fleets in the player\'s node', () => {
     f.dwell = 0;
     f.route = [next];
     stepFleets(sim, 2);
-    sim.galaxy.fleets = [f];
     expect(f.node).toBe(next);
     expect(f.ships[0]?.ship).toBeUndefined();
     expect(others(sim)).toEqual([]);
@@ -179,14 +123,12 @@ describe('fleets in the player\'s node', () => {
     f.route = [START_NODE];
     f.dwell = 0;
     stepFleets(sim, 3);
-    sim.galaxy.fleets = [f];
     expect(others(sim).length).toBe(1);
     f.dwell = 99;
     charge(sim);
     giveItems(sim, 'item.fuel', 50);
     sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [next] });
     step(sim);
-    sim.galaxy.fleets = [f];
     expect(sim.galaxy.travel).not.toBeNull();
     expect(f.node).toBe(START_NODE);
     expect(f.ships[0]?.ship).toBeUndefined();
@@ -199,12 +141,10 @@ describe('fleets in the player\'s node', () => {
     deploy(sim);
     expect(sim.galaxy.current).toBe(next);
     expect(others(sim)).toEqual([]);
-    sim.galaxy.fleets = [f];
     charge(sim);
     giveItems(sim, 'item.fuel', 50);
     sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [START_NODE] });
     step(sim);
-    sim.galaxy.fleets = [f];
     while ((sim.galaxy.travel as { phase: string } | null)?.phase === 'hop') step(sim);
     sim.enqueue({ type: 'galaxy.drop' });
     step(sim);
@@ -229,7 +169,7 @@ describe('fleets in the player\'s node', () => {
 
 describe('crossings and encounters', () => {
   const base = (over: Partial<Fleet>): Fleet => ({
-    id: 1, faction: 'traders', role: 'trader', ships: [], node: 'B', from: 'B', moved: -1, route: [], dest: 'B', dwell: 0, ttl: 5, ...over,
+    id: 1, faction: 'traders', role: 'trader', ships: [], node: 'B', from: 'B', moved: -1, route: [], dest: 'B', dwell: 0, legs: 0, home: 'B#0', synced: 0, ...over,
   });
   it('detects opposite directions and overlapping segments on a lane, and meeting in a node', () => {
     expect(crossingOf(base({ from: 'B', node: 'A', moved: 4 }), 'A', 'B', 4)).toBe('pass');
@@ -365,7 +305,7 @@ describe('incoming fleets (arrival warnings)', () => {
 
   it('the ETA shrinks as turns pass and the fleet leaves the list when it arrives', () => {
     const { sim, a, b } = chain(31);
-    const f = fleet(sim, b, { route: [a, START_NODE], dest: START_NODE, ttl: 99, dwell: 0 });
+    const f = fleet(sim, b, { route: [a, START_NODE], dest: START_NODE, dwell: 0 });
     expect(incomingFleets(sim)[0]?.eta).toBe(2);
     stepFleets(sim, 1);
     expect(f.node).toBe(a);

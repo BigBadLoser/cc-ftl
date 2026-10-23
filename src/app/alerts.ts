@@ -165,8 +165,7 @@ export function createAlerts(sim: Sim): Alerts {
     }
     for (const w of want) {
       if (muted.has(w.fleet)) continue;
-      const name = `${sim.content.galaxy?.factions[w.faction]?.name ?? w.faction} ${w.role}${w.ships > 1 ? ` x${w.ships}` : ''}`;
-      const text = `${name} drops from hyperspace in ${w.eta} turn${w.eta === 1 ? '' : 's'}`;
+      const text = `${w.name} drops from hyperspace in ${w.eta} turn${w.eta === 1 ? '' : 's'}`;
       const kind: UiAlertKind = w.hostile ? 'galaxy.incomingHostile' : 'galaxy.incoming';
       const id = incoming.get(w.fleet);
       if (id !== undefined) {

@@ -38,7 +38,7 @@ function run(seed: number, choice: 'evade' | 'bribe' | 'fight', leave: 'wipe' | 
   sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [to, next] });
   const f: Fleet = {
     id: g.nextFleet++, faction: 'pirates', role: 'pirate', ships: [1, 2].map((i) => ({ id: g.nextFleet++, faction: 'pirates', shipgen: 'faction.scrapper', seed: seed * 7 + i, depth: 1, since: 0 })),
-    node: to, from: to, moved: -1, route: [START_NODE], dest: START_NODE, dwell: 0, ttl: 99,
+    node: to, from: to, moved: -1, route: [START_NODE], dest: START_NODE, dwell: 0, legs: 0, home: `${START_NODE}#0`, synced: g.turn,
   };
   g.fleets.push(f);
   step(sim);

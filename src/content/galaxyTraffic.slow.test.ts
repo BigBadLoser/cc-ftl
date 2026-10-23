@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, FTL_CHARGE_SEC, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim } from '../sim';
-import { FLEET_CAP } from '../sim/galaxy/tuning';
+
 import { TIME_TURN_TICKS } from '../sim/galaxy/turn';
 import { giveItems } from '../sim/story/effects';
 import { content } from '.';
@@ -15,7 +15,6 @@ const stateOf = (sim: Sim): string => sim.sector.state;
 function check(sim: Sim): void {
   const g = sim.galaxy;
   const index = galaxyIndex(g);
-  expect(g.fleets.length).toBeLessThanOrEqual(FLEET_CAP);
   expect(g.encounters.length).toBeLessThanOrEqual(8);
   const ids = new Set<number>();
   for (const f of g.fleets) {

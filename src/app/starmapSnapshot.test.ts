@@ -29,7 +29,9 @@ describe('starmap snapshot', () => {
     expect(map.fleets.length).toBeLessThan(sim.galaxy.fleets.length);
     for (const f of map.fleets) {
       expect(['cyan', 'amber', 'green', 'red', 'text', 'dim']).toContain(f.tone);
-      expect(f.heading).toMatch(/^(Heading to .+|Resting|Adrift)$/);
+      expect(f.heading).toMatch(/^(Resting at|Returning home to|Trading run to|Mining run to|On patrol to|Prowling to|Trading at|Mining at|On patrol at|Lurking at) .+|Adrift$/);
+      expect(f.name.length).toBeGreaterThan(3);
+      expect(f.home).not.toBe('');
     }
   });
 

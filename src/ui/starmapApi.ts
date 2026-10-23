@@ -113,6 +113,8 @@ export interface UiStarFleet {
   /** The next node on its route (position), or null when it rests or is stranded. */
   tx: number | null;
   ty: number | null;
+  /** The fleet's name (its first ship, "+n" for the rest), e.g. "CNS Valiant +1". */
+  name: string;
   /** Faction name, role label ("Trader", "Patrol", "Raider"), ship count, tone by faction kind, and whether it is hostile to the player. */
   faction: string;
   role: string;
@@ -120,8 +122,10 @@ export interface UiStarFleet {
   tone: Tone;
   hostile: boolean;
   damaged: boolean;
-  /** "Heading to X", "Resting" or "Adrift". */
+  /** What it is doing: "Resting at X", "Trading run to X", "Returning home to X", "Adrift"... */
   heading: string;
+  /** Its home port's node. */
+  home: string;
 }
 
 export interface UiStarEdge {
@@ -199,6 +203,8 @@ export interface UiEncounter {
   id: number;
   kind: 'interdict' | 'hail' | 'scan' | 'distress';
   title: string;
+  /** The fleet's name ("Rust Jackal +1"), then its faction and role label. */
+  name: string;
   faction: string;
   role: string;
   tone: Tone;

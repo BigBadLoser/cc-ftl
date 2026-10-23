@@ -1,6 +1,6 @@
 import {
   DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
-  nodeOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Sim,
+  fleetName, nodeOf, portNode, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
 import type { UiStarExit, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { toneOf } from './starmapTone';
@@ -8,6 +8,19 @@ import { ROLE_LABEL, encountersOf, eventOf, resultOf } from './encounterSnapshot
 import { nebulaAround } from './starmapNebula';
 import { buildClusters, sectorOutline } from './starmapClusters';
 
+
+const WORKING: Record<Fleet['role'], [on: string, to: string]> = {
+  trader: ['Trading at', 'Trading run to'], miner: ['Mining at', 'Mining run to'], patrol: ['On patrol at', 'On patrol to'],
+  pirate: ['Lurking at', 'Prowling to'], raider: ['Lurking at', 'Prowling to'],
+};
+
+/** What a fleet is doing, in a few words: its agenda (agenda.ts) as the map shows it. */
+function headingOf(f: Fleet, nodeName: (id: string) => string): string {
+  if (f.damaged) return 'Adrift';
+  const home = portNode(f.home);
+  if (f.route.length) return f.dest === home ? `Returning home to ${nodeName(home)}` : `${WORKING[f.role][1]} ${nodeName(f.dest)}`;
+  return f.node === home ? `Resting at ${nodeName(home)}` : `${WORKING[f.role][0]} ${nodeName(f.node)}`;
+}
 
 /** The NPC fleets the sensors see, with where each is heading. */
 function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
@@ -19,9 +32,9 @@ function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
     if (!at) return [];
     return [{
       id: f.id, node: f.node, x: Math.round(at.x), y: Math.round(at.y), tx: next ? Math.round(next.x) : null, ty: next ? Math.round(next.y) : null,
-      faction: content?.factions[f.faction]?.name ?? f.faction, role: ROLE_LABEL[f.role] ?? f.role, ships: f.ships.length,
+      name: fleetName(f), faction: content?.factions[f.faction]?.name ?? f.faction, role: ROLE_LABEL[f.role] ?? f.role, ships: f.ships.length,
       tone: toneOf(content?.factions[f.faction]?.kind), hostile: isHostileFaction(sim, f.faction), damaged: !!f.damaged,
-      heading: f.damaged ? 'Adrift' : f.route.length ? `Heading to ${nodeName(f.route[0] as string)}` : 'Resting',
+      heading: headingOf(f, nodeName), home: nodeName(portNode(f.home)),
     }];
   });
 }

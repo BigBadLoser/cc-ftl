@@ -47,7 +47,7 @@ describe('alerts', () => {
       const a = edge(START_NODE);
       const b = (index.adjacent.get(a) ?? []).map((e) => (e.a === a ? e.b : e.a)).sort().find((n) => n !== START_NODE) as string;
       const add = (faction: string, role: 'trader' | 'pirate', node: string, route: string[]) => {
-        const f = { id: sim.galaxy.nextFleet++, faction, role, ships: [{ id: sim.galaxy.nextFleet++, faction, shipgen: 'faction.civilian', seed: 1, depth: 1, since: 0 }], node, from: node, moved: -1, route, dest: route[route.length - 1] as string, dwell: 0, ttl: 99 };
+        const f = { id: sim.galaxy.nextFleet++, faction, role, ships: [{ id: sim.galaxy.nextFleet++, faction, shipgen: 'faction.civilian', seed: 1, depth: 1, since: 0, name: faction === 'pirates' ? 'Rust Jackal' : 'Lucky Margin' }], node, from: node, moved: -1, route, dest: route[route.length - 1] as string, dwell: 0, legs: 0, home: `${START_NODE}#0`, synced: 0 };
         sim.galaxy.fleets.push(f);
         return f;
       };
@@ -63,7 +63,7 @@ describe('alerts', () => {
       let list = current(alerts);
       expect(list).toHaveLength(1);
       expect(list[0]?.kind).toBe('galaxy.incomingHostile');
-      expect(list[0]?.text).toMatch(/drops from hyperspace in 2 turns$/);
+      expect(list[0]?.text).toBe('Rust Jackal drops from hyperspace in 2 turns');
       const id = list[0]?.id;
       pirate.node = a;
       pirate.route = [START_NODE];
