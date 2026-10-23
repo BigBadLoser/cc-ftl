@@ -235,3 +235,27 @@ export const MAX_HOSTILE_CONTACTS = 2;
 export const STANDING_SPILLOVER = 0.25;
 export const HOSTILE_BELOW = -2;
 export const FRIENDLY_AT = 3;
+
+/**
+ * The NPC economy (market.ts). A port's stock of an item moves toward `level = baseline + net / MARKET_DRIFT` by the fraction MARKET_DRIFT of the gap every turn
+ * (net = production - consumption per turn), clamped to [0, cap]; a trade is an impulse on top. So with nobody trading, a market settles on its level and
+ * returns to it after a shock (half-life about 17 turns). cap = max(MARKET_CAP_MIN, MARKET_CAP_MULT x baseline).
+ */
+export const MARKET_DRIFT = 0.04;
+export const MARKET_CAP_MIN = 40;
+export const MARKET_CAP_MULT = 3;
+/** A consumed good's baseline is at least this many turns of its consumption (so a port that eats a good wants it). */
+export const MARKET_WANT_TURNS = 20;
+/** Deviations smaller than this from the baseline are not stored. */
+export const MARKET_EPS = 0.05;
+/** Units one hull of a size class hauls. */
+export const CARGO_BY_SIZE = { small: 20, medium: 40, heavy: 80 } as const;
+/** A trader only buys a good for the next stop when the price there beats the price here by this fraction, and takes at most this share of the stock. */
+export const TRADE_MIN_MARGIN = 0.15;
+export const TRADE_TAKE_SHARE = 0.5;
+/** Stops a trader weighs (the nearest of its range). */
+export const TRADE_CANDIDATES = 6;
+/** Share of a miner's load that is rare ore. */
+export const MINER_RARE_SHARE = 0.2;
+/** What a miner digs: the common ore, then the rare one (MINER_RARE_SHARE of the load). */
+export const MINER_ORE = ['item.iron_ore', 'item.rare_ore'] as const;

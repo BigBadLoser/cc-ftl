@@ -97,7 +97,7 @@ export { isDormant, wake, type WakeReason } from './combat/dormant';
 export { DISCOVER_RANGE } from './systems/outposts';
 export * from './galaxy/types';
 export type {
-  GalaxyFactionDef, StructureDef, GalaxyContent, StandingTier, DangerRange, FactionFleetDef, FleetContent, FleetGroupDef, PortKind, PortKindDef, ShipClassDef,
+  GalaxyFactionDef, StructureDef, GalaxyContent, StandingTier, DangerRange, FactionFleetDef, FleetContent, FleetGroupDef, MarketContent, MarketRates, PortKind, PortKindDef, ShipClassDef,
 } from './galaxy/defs';
 export { galaxyIndex, nodeOf, currentNode, START_NODE, type GalaxyIndex } from './galaxy/state';
 export { edgeBetween, planStarRoute } from './galaxy/route';
@@ -111,6 +111,9 @@ export { visibleFleets, sensorNodes } from './galaxy/fleets';
 export { fleetName } from './galaxy/names';
 export { portsAt, portOf } from './galaxy/portIndex';
 export { portNode, type Port } from './galaxy/ports';
+export { econOf, stockAt, factorAt, moveStock, advance, capOf, type Econ } from './galaxy/market';
+export { bindMarkets, unbindMarkets } from './galaxy/marketLive';
+export { cargoCap, cargoLoad, dockPort } from './galaxy/dock';
 export { interdicted, finishEncounter } from './galaxy/encounters';
 export { respond, choicesOf, evadeRoll } from './galaxy/respond';
 export { passingMeets } from './galaxy/encounters';

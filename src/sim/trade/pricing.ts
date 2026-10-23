@@ -2,7 +2,13 @@ import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
 import { isSurplus } from './traders';
-import { TraderC } from './types';
+import { TraderC, type Trader } from './types';
+
+/** How far scarcity moves a price (see `stockFactor`). */
+export const MARKET_SWING = 0.6;
+export const MARKET_REF = 20;
+export const MARKET_CHEAP = 0.5;
+export const MARKET_DEAR = 1.6;
 
 export type PriceSide = 'sell' | 'buy';
 
@@ -25,14 +31,11 @@ export function unitPrice(sim: Sim, trader: number, item: string, side: PriceSid
   const t = sim.world.get(trader, TraderC);
   const base = sim.content.items[item]?.price;
   if (!cfg || !t || base === undefined) return null;
-  const kind = cfg.traders[t.profile];
-  const fac = cfg.factions[t.faction];
   const rep = reputationWith(sim, trader);
+  const level = stockFactor(t.stock.find((l) => l.item === item)?.count ?? 0, t.base?.find((l) => l.item === item)?.count);
   const raw = (s: PriceSide): number => {
-    let p = base * (s === 'sell' ? cfg.spread.sell : cfg.spread.buy) * (fac?.[s] ?? 1) * (kind?.[s] ?? 1);
-    for (const tag of sim.content.items[item]?.tags ?? []) p *= kind?.tagMods?.[tag]?.[s] ?? 1;
-    // Surplus gear sells at the kind's markup.
-    if (s === 'sell' && isSurplus(sim, t.profile, item)) p *= kind?.surplus?.markup ?? 1;
+    let p = applyMods(sim, t, item, s, base * (s === 'sell' ? cfg.spread.sell : cfg.spread.buy));
+    p *= level;
     // A friend gets better prices: they sell for less and pay more.
     const shift = clamp(cfg.repStep * rep, -cfg.repMax, cfg.repMax);
     p *= s === 'sell' ? 1 - shift : 1 + shift;
@@ -40,6 +43,32 @@ export function unitPrice(sim: Sim, trader: number, item: string, side: PriceSid
   };
   const sell = raw('sell');
   return side === 'sell' ? sell : Math.min(raw('buy'), sell);
+}
+
+/** The faction, trader kind, item-tag and surplus multipliers of a trader applied to a price. */
+function applyMods(sim: Sim, t: Trader, item: string, s: PriceSide, price: number): number {
+  const cfg = sim.content.trade;
+  const kind = cfg?.traders[t.profile];
+  let p = price * (cfg?.factions[t.faction]?.[s] ?? 1) * (kind?.[s] ?? 1);
+  for (const tag of sim.content.items[item]?.tags ?? []) p *= kind?.tagMods?.[tag]?.[s] ?? 1;
+  // Surplus gear sells at the kind's markup.
+  if (s === 'sell' && isSurplus(sim, t.profile, item)) p *= kind?.surplus?.markup ?? 1;
+  return p;
+}
+
+/**
+ * Scarcity in the price: 1 at the baseline, up to MARKET_DEAR when the port is out of a good and down to MARKET_CHEAP when it is swamped (a swing of
+ * MARKET_SWING x the shortfall over max(baseline, MARKET_REF)). `base` undefined = not a tracked good: 1.
+ */
+export function stockFactor(stock: number, base: number | undefined): number {
+  if (base === undefined) return 1;
+  return clamp(1 + (MARKET_SWING * (base - stock)) / Math.max(base, MARKET_REF), MARKET_CHEAP, MARKET_DEAR);
+}
+
+/** What one unit of an item is worth at a trader of this kind, as a number (no spread, rounding or reputation): the mid price NPC traders compare stops by. */
+export function marketValue(sim: Sim, t: Trader, item: string, stock: number, base: number | undefined): number {
+  const p = sim.content.items[item]?.price;
+  return p === undefined ? 0 : applyMods(sim, t, item, 'sell', p) * stockFactor(stock, base);
 }
 
 /** Total credits of item lines at the trader's price on one side, or null if any line has no price. */

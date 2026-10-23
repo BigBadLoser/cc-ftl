@@ -8,6 +8,7 @@ import { ensureAround, galaxyIndex, nodeState } from './state';
 import { TURN_TICKS } from './tuning';
 import { crossAfterHop, interdicted } from './encounters';
 import { liftFleetsAt, materialiseFleetsAt } from './fleetShips';
+import { bindMarkets, unbindMarkets } from './marketLive';
 import { takeHopTurn } from './turn';
 import type { EdgeData, Travel } from './types';
 
@@ -72,6 +73,7 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   spendCharge(sim, charge, ship);
   burnFuel(sim, first.fuel, ship);
   g.pendingDraw = null;
+  unbindMarkets(sim);
   liftFleetsAt(sim, g.current);
   enterHyperspace(sim, ship, withDocked ?? false);
   // The node left keeps its ships in its archive: no descriptors of it remain.
@@ -163,6 +165,7 @@ export function drop(sim: Sim, command = 'galaxy.drop'): boolean {
     st.contacts = st.contacts.filter((c) => c.ship !== undefined);
   }
   materialiseFleetsAt(sim, g.current);
+  bindMarkets(sim);
   g.travel = null;
   g.rev++;
   sim.events.emit({ type: 'galaxy.dropped', node: g.current });
@@ -192,6 +195,7 @@ export function teleport(sim: Sim, to: string): boolean {
   if (!me) return reject('notPlayerShip');
   if (!checkLeaving(sim, me.id, reject)) return false;
   const from = g.current;
+  unbindMarkets(sim);
   liftFleetsAt(sim, from);
   enterHyperspace(sim, me.id, false);
   const left = g.nodes[from];

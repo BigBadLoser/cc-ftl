@@ -1,5 +1,6 @@
 import type { GalaxyContent, GalaxyFactionDef, StructureDef } from '../sim';
 import { factionFleets, fleetContent } from './galaxyFleets';
+import { market } from './galaxyMarket';
 
 /**
  * Galaxy factions: who holds space, how they feel about you and each other, and which ship generator styles
@@ -99,4 +100,4 @@ const names = {
   suffix: ['Reach', 'Expanse', 'Drift', 'Verge', 'Hollow', 'Spur', 'Gate', 'Shoals', 'March', 'Deep', 'Rim', 'Belt'],
 };
 
-export const galaxy = { factions, structures, names, fleet: fleetContent } satisfies GalaxyContent;
+export const galaxy = { factions, structures, names, fleet: fleetContent, market } satisfies GalaxyContent;

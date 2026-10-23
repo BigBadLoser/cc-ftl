@@ -2,6 +2,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { expireEncounters } from './encounters';
 import { stepFleets } from './fleets';
+import { stepLiveMarkets } from './marketLive';
 import { TURN_SEC } from './tuning';
 
 /**
@@ -17,13 +18,14 @@ export const TIME_TURN_TICKS = Math.round(TURN_SEC * TICK_HZ);
 
 /**
  * The per-turn hook, called once per turn with the new turn number (`GalaxyState.turn`, already advanced). It emits `galaxy.turn`
- * (`cause: 'time'` for a game-time turn, absent for a hop), expires old encounters and moves the NPC fleets one step
+ * (`cause: 'time'` for a game-time turn, absent for a hop), expires old encounters, moves the live station's market one turn (marketLive.ts) and the NPC fleets one step
  * (fleets.ts).
  * Runs inside the sim step, so it may enqueue nothing and must only read and write sim state through the sim's own functions.
  */
 export function onTurn(sim: Sim, turn: number, cause: 'hop' | 'time' = 'hop'): void {
   sim.events.emit(cause === 'time' ? { type: 'galaxy.turn', turn, cause } : { type: 'galaxy.turn', turn });
   expireEncounters(sim, turn);
+  stepLiveMarkets(sim, turn);
   stepFleets(sim, turn);
 }
 

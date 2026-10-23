@@ -45,8 +45,10 @@ import { newTrade, type TradeState } from './trade/types';
  * v36 (stage 1 of the living world): `Combat.pilot` (the helm's piloting skill, for evade odds).
  * v37 (stage 2, persistent population): `galaxy.fleets` are persistent roster fleets (`home` port, `legs`, `synced`, ship `name` / `size`; `ttl` is gone), `galaxy.ports` (replacement queues of ports that lost ships),
  * `Encounter.name`, `EventGrid.fled`. Fleets are created when their chunk is generated and live until destroyed.
+ * v38 (stage 3, NPC economy): `galaxy.markets` (port stock that differs from its baseline), `Fleet.cargo` / `Fleet.pick`, `Trader.port` / `Trader.base`
+ * (a live station that is a port's market).
  */
-export const SAVE_VERSION = 37;
+export const SAVE_VERSION = 38;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

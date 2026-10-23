@@ -1,3 +1,4 @@
+import type { ItemQty } from '../registry';
 import type { FleetRole, ShipSize } from './defs';
 import type { Vec } from './geometry';
 
@@ -184,6 +185,20 @@ export interface Fleet {
   damaged?: true;
   /** Turn of its last encounter with the player (a cooldown against repeats). */
   met?: number;
+  /** What it carries (traders and miners; market.ts, dock.ts): plain item counts, capped by its hulls (`CARGO_BY_SIZE`). */
+  cargo?: ItemQty[];
+  /** The node a trader bought its cargo for: its next stop, if that is still a valid stop (agenda.ts). */
+  pick?: string;
+}
+
+/**
+ * A port's market where it differs from the world's: `stock` holds the items whose level is not the port's baseline (market.ts `baselineOf`), as of
+ * `turn`; everything else sits at the baseline. No entry = baseline at turn 0. Ports in the player's live node keep their stock on the station's
+ * trader instead (`Trader.port`) and the entry waits until the player leaves.
+ */
+export interface MarketState {
+  turn: number;
+  stock: Record<string, number>;
 }
 
 /** A port that lost ships: the replacements it owes (in build order) and the turn the first is done; one is built every `PortKindDef.rebuildTurns`. */
@@ -287,6 +302,8 @@ export interface GalaxyState {
   nextFleet: number;
   /** Ports that owe replacement ships, by port id (ports.ts). Ports with nothing owed have no entry. */
   ports: Record<string, PortState>;
+  /** Port markets that differ from their baseline, by port id (market.ts). */
+  markets: Record<string, MarketState>;
   /** Travel days spent in jumps. */
   days: number;
   /** The hyperspace trip in progress, or null. */
