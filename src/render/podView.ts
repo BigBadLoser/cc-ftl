@@ -8,6 +8,7 @@ import { ROCK_MASS_Z } from './asteroidView';
 import { Z_PX } from './heights';
 import { iso, TILE_H } from './iso';
 import { sectorArt } from './sectorPos';
+import { HIDDEN, MUZZLE } from './podMuzzle';
 import { headingIndex } from './shuttleView';
 
 /**
@@ -23,16 +24,9 @@ export interface PodView {
   dispose(): void;
 }
 
-/** Hover height above the floor in tiles of height: its foot a little under the rock tops, as it floats beside them. */
-const POD_Z = ROCK_MASS_Z - 0.2;
-/**
- * The laser's emitter face in the mining pose, from tools/blender/sprites/mining_pod.py: the gimbal pivots at (LASER_U 0.98 ahead,
- * z 0.54), the barrel is pitched down 60 degrees and the emitter face is 0.71 along it. That is 0.98 + 0.71 cos 60 ahead of the pod's
- * centre along its heading, and 0.54 - 0.71 sin 60 above the foot (just under it); the second mining frame bobs the pod up 0.03.
- */
-const MUZZLE_AHEAD = 0.98 + 0.71 * Math.cos(Math.PI / 3);
-const MUZZLE_UP = 0.54 - 0.71 * Math.sin(Math.PI / 3);
-const MINE_BOB = [0, 0.03];
+/** Hover height above the floor in tiles of height: the barrel tip (a hair under the foot) above the rock's top, so the beam drops onto the ore. */
+const POD_Z = ROCK_MASS_Z + 0.4;
+
 const LASER = 0xff6a3a;
 /** A stowed pod (placeholder until the bay's parked sprite exists) sits this far below the deck, on the pit floor, and sorts behind the pit's near lip. */
 const PIT_Z = -0.6;
@@ -51,7 +45,9 @@ export interface PodHost {
 interface Track {
   root: Container;
   shadow: Graphics;
+  /** The mining beam: in front of the pod, or behind it while the barrel is hidden by the hull. */
   fx: Graphics;
+  fxBack: Graphics;
   body: Sprite;
   glow: Sprite;
   low: boolean;
@@ -103,12 +99,13 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
           const root = new Container();
           const shadow = new Graphics();
           const fx = new Graphics();
+          const fxBack = new Graphics();
           const body = new Sprite();
           const glow = new Sprite();
           glow.blendMode = 'add';
-          root.addChild(shadow, body, glow, fx);
+          root.addChild(shadow, fxBack, body, glow, fx);
           (low ? host.low : host.air).addChild(root);
-          t = { root, shadow, fx, body, glow, low };
+          t = { root, shadow, fx, fxBack, body, glow, low };
           tracks.set(id, t);
         }
         show(t, sprite);
@@ -118,13 +115,15 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         t.shadow.clear();
         if (!low) t.shadow.ellipse(0, lift, size * 30, size * 15).fill({ color: 0x000000, alpha: 0.3 });
         t.fx.clear();
+        t.fxBack.clear();
         if (mining && m?.target) {
           const tp = iso(m.target.x, m.target.y);
           const top = tp.y - ROCK_MASS_Z * Z_PX; // the laser ends on the rock's top face
           const pulse = 0.6 + 0.4 * Math.sin(clock * 18);
-          const mx = iso(Math.cos(b.heading) * MUZZLE_AHEAD, Math.sin(b.heading) * MUZZLE_AHEAD);
-          const my = mx.y - iso(0, 0).y - (MUZZLE_UP + (MINE_BOB[frame] ?? 0)) * Z_PX;
-          t.fx.moveTo(mx.x - iso(0, 0).x, my).lineTo(tp.x - p.x, top - p.y + lift).stroke({ color: LASER, width: Math.max(1, TILE_H / 12), alpha: pulse });
+          // From the barrel's tip (measured from the sprite, podMuzzle.ts) to the rock's top face; behind the pod while the hull hides the barrel.
+          const [mx, my] = (MUZZLE[d]?.[frame] ?? [0, 0]) as readonly [number, number];
+          const beam = HIDDEN.has(d) ? t.fxBack : t.fx;
+          beam.moveTo(mx, my).lineTo(tp.x - p.x, top - p.y + lift).stroke({ color: LASER, width: Math.max(1, TILE_H / 12), alpha: pulse });
           t.fx.circle(tp.x - p.x, top - p.y + lift, TILE_H * 0.15).fill({ color: 0xffd0a0, alpha: pulse });
         }
         t.root.position.set(Math.round(p.x), Math.round(p.y - lift));

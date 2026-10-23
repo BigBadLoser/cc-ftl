@@ -38,6 +38,8 @@ export interface StaticAsset {
   footprint: [number, number];
   /** True if the glow sheet has non-empty pixels for this frame. */
   glow?: boolean;
+  /** A tool's tip in sprite px from the anchor (the mining pod's laser barrel in its `mine` frames; pod_muzzle.py). */
+  muzzle?: [number, number];
 }
 
 /** One animation clip of a layer. */

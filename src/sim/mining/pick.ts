@@ -57,10 +57,13 @@ export function pickTile(sim: Sim, pod: number, order: MiningPod, from: { x: num
 
 /**
  * Hover offsets in tiles from the target tile's centre, in groups tried in order. Screen up-left is grid (-1, 0) and up-right is
- * (0, -1) (iso.ts: x = (gx - gy) / 2, y = (gx + gy) / 4), so the first group sits behind the ore, where the pod faces down-left or
- * down-right toward the camera; then the two in front, then the four grid diagonals; then the same a step further out.
+ * (0, -1) (iso.ts: x = (gx - gy) / 2, y = (gx + gy) / 4), so the first group of each ring sits behind the ore, where the pod faces
+ * down-left or down-right toward the camera; then the two in front, then the four grid diagonals. The first ring is `FAR` tiles out:
+ * the pod's laser barrel reaches 1.3 tiles ahead of it, so that leaves the barrel tip clear of the rock (a tile short of the ore's
+ * centre) with a stretch of beam crossing to the ore. The second ring is one tile out, for ore with rock all round it.
  */
-const NEAR: readonly (readonly (readonly [number, number])[])[] = [1, 2].flatMap((r) => [
+export const FAR = 2.5;
+const NEAR: readonly (readonly (readonly [number, number])[])[] = [FAR, 1].flatMap((r) => [
   [[-r, 0], [0, -r]],
   [[r, 0], [0, r]],
   [[r, r], [-r, r], [r, -r], [-r, -r]],
