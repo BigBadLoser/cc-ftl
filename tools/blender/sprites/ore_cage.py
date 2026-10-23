@@ -126,20 +126,33 @@ def _band(k, p, q, z, sz, off, w, seg=0.15):
         k.box(u + nu * off, v + nv * off, z, L / n, 0.016, sz, w(("hazY", "hazK")[i % 2], u, v, z), rz=math.atan2(dv, du))
 
 
-def frame(k, b, w):
+def bars(b, p, q, drop=0):
+    """Bar positions along the wall p -> q: every BAR_PITCH, clear of the posts. With drop, each section between posts
+    has `drop` fewer bars, spaced evenly post to post."""
+    L = math.dist(p, q)
+    n = max(1, int(L / BAR_PITCH))
+    at = lambda t: (p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t)  # noqa: E731
+    ts = [i / n for i in range(1, n) if min(math.dist(at(i / n), c) for c in b.posts()) > GIRDER * 0.8]
+    if not drop:
+        return [at(t) for t in ts]
+    cuts = sorted({0.0, 1.0} | {round(math.dist(p, c) / L, 6) for c in b.posts()
+                                if abs(math.dist(p, c) + math.dist(c, q) - L) < 1e-6})
+    out = []
+    for t0, t1 in zip(cuts, cuts[1:]):
+        m = sum(t0 < t < t1 for t in ts) - drop
+        out += [at(t0 + (t1 - t0) * (j + 1) / (m + 1)) for j in range(max(0, m))]
+    return out
+
+
+def frame(k, b, w, drop=0):
     for p, q in b.walls():
         _run(k, p, q, 0.0, GIRDER, GIRDER, "steelD", top="steel", w=w)                   # base girders
         _run(k, p, q, GIRDER, KICK - GIRDER, 0.05, "steel", top="steelD", w=w)           # kick band
         _run(k, p, q, MID[0], MID[1] - MID[0], 0.07, "steel", top="steelL", w=w)         # mid rail
         _run(k, p, q, H - 0.1, 0.1, RAIL, "steel", top="steelL", w=w)                    # top rail
         _band(k, p, q, H - 0.09, 0.07, RAIL / 2 + 0.008, w)                              # its hazard band
-        L = math.dist(p, q)
-        n = max(1, int(L / BAR_PITCH))
-        for i in range(1, n):                                                            # bars
-            t = i / n
-            u, v = p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t
-            if min(math.dist((u, v), c) for c in b.posts()) > GIRDER * 0.8:
-                k.cyl(u, v, KICK, BAR_R, H - 0.1 - KICK, w("steelL", u, v, 0.45), sides=6)
+        for u, v in bars(b, p, q, drop):
+            k.cyl(u, v, KICK, BAR_R, H - 0.1 - KICK, w("steelL", u, v, 0.45), sides=6)
     k.box((b.u0 + b.u1) / 2, (b.v0 + b.v1) / 2, 0.06, b.u1 - b.u0, b.v1 - b.v0, 0.06, "plateC")   # floor plate
     for u, v in b.posts():
         for z0, z1 in ((0.0, 0.3), (0.3, 0.7), (0.7, H)):                               # posts, stained in courses
@@ -187,7 +200,7 @@ class Heap:
         r = min(1.0, math.hypot(x, y) / math.sqrt(2) * 1.15)
         return self.level + self.rise * (1 - r * r) + 0.03 * math.sin(7 * u + 1.3) * math.sin(6 * v + 0.4)
 
-    def build(self, k, ore):
+    def build(self, k, ore, walls=True):
         o, rng = ORES[ore], self.rng
         nu = max(4, round(2 * self.a / 0.1))
         nv = max(4, round(2 * self.bv / 0.1))
@@ -212,7 +225,7 @@ class Heap:
                 _poly(k, [a, c, d], face())
         ring = ([P[i, 0] for i in range(nu)] + [P[nu, j] for j in range(nv)] +       # the skirt against the bars
                 [P[i, nv] for i in range(nu, 0, -1)] + [P[0, j] for j in range(nv, 0, -1)])
-        for i in range(len(ring)):
+        for i in range(len(ring) if walls else 0):
             p, q = ring[i], ring[(i + 1) % len(ring)]
             _poly(k, [(p[0], p[1], 0.09), (q[0], q[1], 0.09), q, p], face())
         area = 4 * self.a * self.bv
@@ -222,7 +235,7 @@ class Heap:
             r = rng.uniform(0.045, 0.11)
             _lump(k, (u, v, self.h(u, v) + 0.01), (rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4), 1), r,
                   r * rng.uniform(0.6, 1.1), o["chunk"][rng.integers(len(o["chunk"]))], rng)
-        for i in range(len(ring)):                                                 # chunks pressed into the sides
+        for i in range(len(ring) if walls else 0):                                 # chunks pressed into the sides
             p, q = ring[i], ring[(i + 1) % len(ring)]
             out = Vector((q[1] - p[1], -(q[0] - p[0]), 0)).normalized()
             top = min(p[2], q[2])
@@ -249,10 +262,10 @@ def spill(k, b, ore, n, seed, front=True):
                   o["chunk"][rng.integers(len(o["chunk"]))], rng)
 
 
-def cage(fp, fill, rot, ore="iron"):
+def cage(fp, fill, rot, ore="iron", drop=0):
     k = K(f"ore_cage_{ore}_{fill}_{rot}", fp, rot)
     b = Bin(fp)
-    frame(k, b, Wear(fp[0] * 7 + fp[1]))
+    frame(k, b, Wear(fp[0] * 7 + fp[1]), drop)
     chute(k, b)
     seed = {"iron": 11, "ice": 23, "rare": 37}[ore] + FILLS.index(fill)
     if HEAP[fill]:
