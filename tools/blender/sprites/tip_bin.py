@@ -10,6 +10,7 @@ from mathutils import Vector
 
 from . import ore_cage as C
 from .modkit import K
+from .steelkit import channel, face as _face, ibeam, slab, tube
 from .tip_bin_wear import band, grime, plate
 
 YEL, YEL_L, YEL_D = "nvT2", "nvT1", "nvT3"      # faded paint
@@ -72,20 +73,6 @@ def _skin(k, pr, s, col, inward=False):
         band(k, q[::-1] if inward else q, col)
 
 
-def tube(k, p0, p1, r, col, sides=8, cap=None):
-    """A round tube from p0 to p1 (local u, v, z), capped at both ends."""
-    p0, p1 = Vector(p0), Vector(p1)
-    a = (p1 - p0).normalized()
-    t = a.cross(Vector((0, 0, 1)) if abs(a.z) < 0.9 else Vector((1, 0, 0))).normalized()
-    s = a.cross(t)
-    ring = [(t * math.cos(i * math.tau / sides) + s * math.sin(i * math.tau / sides)) * r for i in range(sides)]
-    for i in range(sides):
-        j = (i + 1) % sides
-        C._poly(k, [tuple(p0 + ring[i]), tuple(p0 + ring[j]), tuple(p1 + ring[j]), tuple(p1 + ring[i])], col)
-    C._poly(k, [tuple(p1 + q) for q in ring], cap or col)
-    C._poly(k, [tuple(p0 + q) for q in ring[::-1]], cap or col)
-
-
 def body(k, w):
     pr = profile()
     ip = inset(pr, T)
@@ -98,7 +85,7 @@ def body(k, w):
     flange(k)
     for v in HOOPS:
         hoop(k, w, v)
-    for u in (-0.4, 0.0, 0.4):
+    for u in _spread(S - 0.3, 0.4):
         back_rib(k, w, u)
     for s in (-1, 1):                                                       # ram lugs: a plate pair and its pin
         k.box(s * (S + 0.05), RAM[1][0], RAM[1][1] - 0.12, 0.1, 0.24, 0.24, "steelD", top="steel")
@@ -173,16 +160,6 @@ def back_rib(k, w, u):
     strip(k, pts, RIB, 0.08, YEL, b=Vector((1, 0, 0)))
 
 
-def _face(k, pts, want, col):
-    """A polygon turned to face `want`."""
-    P = [Vector(p) for p in pts]
-    n = Vector()
-    for i, a in enumerate(P):
-        b = P[(i + 1) % len(P)]
-        n += Vector(((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y)))
-    C._poly(k, [tuple(p) for p in (P if n.dot(Vector(want)) >= 0 else P[::-1])], col)
-
-
 def strip(k, path, depth, width, col, b=None):
     """A rib of rectangular section along path [(point, outward normal, depth scale)], its back on the surface."""
     b = b or Vector((0, 1, 0))
@@ -199,19 +176,6 @@ def strip(k, path, depth, width, col, b=None):
         _face(k, [r0, ro0, ro1, r1], b, col)
     for (l, r, lo, ro, _), d in ((rows[0], path[0][0] - path[1][0]), (rows[-1], path[-1][0] - path[-2][0])):
         _face(k, [l, r, ro, lo], d, col)
-
-
-def slab(k, pts, axis, t, col, side=None):
-    """A flat plate: the planar polygon pts thickened by t along axis."""
-    a = Vector(axis).normalized() * t / 2
-    P = [Vector(p) for p in pts]
-    c = sum(P, Vector()) / len(P)
-    f, b = [p + a for p in P], [p - a for p in P]
-    _face(k, f, a, col)
-    _face(k, b, -a, col)
-    for i in range(len(P)):
-        j = (i + 1) % len(P)
-        _face(k, [b[i], b[j], f[j], f[i]], (P[i] + P[j]) / 2 - c, side or col)
 
 
 def heap(k, fill, ore, rng):
@@ -231,7 +195,7 @@ def heap(k, fill, ore, rng):
 
     o = C.ORES[ore]
     a = S - T - 0.02
-    nu, nv = 14, 14
+    nu, nv = max(8, round(2 * a / 0.11)), 14
 
     def at(i, j, jit=True):
         u = -a + 2 * a * i / nu
@@ -257,45 +221,26 @@ def heap(k, fill, ore, rng):
             p, q, r_, s_ = P[i, j], P[i + 1, j], P[i + 1, j + 1], P[i, j + 1]
             C._poly(k, [p, q, r_], face())
             C._poly(k, [p, r_, s_], face())
-    for _ in range(70):
+    for _ in range(int(46 * S)):
         u, v, z = at(rng.uniform(0.6, nu - 0.6), rng.uniform(0.6, nv - 0.6), jit=False)
         r = rng.uniform(0.045, 0.1)
         C._lump(k, (u, v, z + 0.01), (rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4), 1), r, r * rng.uniform(0.6, 1.1),
                 o["chunk"][rng.integers(len(o["chunk"]))], rng)
 
 
-def channel(k, w, u, v0, v1, out):
-    """A C-channel skid rail along v at u, its flanges turned out (to `out`)."""
-    H_, F, t = 0.2, 0.13, 0.025
-    c = "steel"
-    k.box(u, (v0 + v1) / 2, 0.0, t, v1 - v0, H_, "steelD")
-    for z in (0.0, H_ - t):
-        k.box(u + out * (F / 2 - t / 2), (v0 + v1) / 2, z, F, v1 - v0, t, c, top="steelL" if z else None)
-    for v in (v0 + 0.2, (v0 + v1) / 2, v1 - 0.2):                          # stiffeners inside the channel
-        k.box(u + out * F / 2, v, t, F - t, 0.02, H_ - 2 * t, "steelD")
-
-
-def ibeam(k, w, v, u0, u1, z0=0.0, H_=0.18):
-    t, F = 0.025, 0.12
-    c = w("steel", 0, v, z0 + 0.1)
-    k.box((u0 + u1) / 2, v, z0, u1 - u0, F, t, "steelD")
-    k.box((u0 + u1) / 2, v, z0 + t, u1 - u0, t, H_ - 2 * t, "steelD")
-    k.box((u0 + u1) / 2, v, z0 + H_ - t, u1 - u0, F, t, c, top="steel")
-
-
 def base(k, w):
     for s in (-1, 1):
-        channel(k, w, s * 0.8, -0.92, 0.92, s)
+        channel(k, (s * (S + 0.04), -0.92), (s * (S + 0.04), 0.92), s)
         for v in (-0.84, 0.84):                                             # foot plates
-            k.box(s * 0.84, v, 0.0, 0.2, 0.16, 0.02, "steelD", top="steel")
+            k.box(s * (S + 0.08), v, 0.0, 0.2, 0.16, 0.02, "steelD", top="steel")
     for v in (-0.8, 0.62):
-        ibeam(k, w, v, -0.79, 0.79)
-    ibeam(k, w, -0.1, -0.79, 0.79, H_=0.2)                                   # the cradle beam
-    for u in (-0.42, 0.42):                                                 # saddles, rubber on top
+        ibeam(k, (-S - 0.03, v), (S + 0.03, v), col=w("steel", 0, v, 0.1))
+    ibeam(k, (-S - 0.03, -0.1), (S + 0.03, -0.1), H=0.2)                     # the cradle beam
+    for u in (-0.55 * S, 0.55 * S):                                         # saddles, rubber on top
         k.box(u, -0.1, 0.2, 0.22, 0.16, 0.09, "steelD", top="steel")
         k.box(u, -0.1, 0.29, 0.2, 0.14, _arc(-0.1) - 0.29, "dark")
     tube(k, (-RAM_U - 0.07, PIVOT[0], PIVOT[1]), (RAM_U + 0.07, PIVOT[0], PIVOT[1]), 0.04, "steelL", cap="steelD")
-    for u in (-0.5, -0.1, 0.3):                                             # hinge knuckles under the bin
+    for u in _spread(S - 0.2, 0.45):                                        # hinge knuckles under the bin
         tube(k, (u - 0.07, PIVOT[0], PIVOT[1]), (u + 0.07, PIVOT[0], PIVOT[1]), 0.07, "steelD", sides=10)
         k.box(u, PIVOT[0], PIVOT[1], 0.14, 0.08, _arc(PIVOT[0]) - PIVOT[1] + 0.03, "steelD")
     pv, pz = PIVOT
@@ -317,7 +262,7 @@ def base(k, w):
         for q in (foot + a * 0.08, mid - a * 0.05):                         # collars
             tube(k, q - a * 0.025, q + a * 0.025, 0.088, "steel", sides=10)
         tube(k, mid, Vector((u, v1, z1)), 0.038, "plate", sides=8, cap="steelL")
-        hose = [Vector((-0.45, -0.7, 0.36)), Vector((s * 0.6, -0.66, 0.3)), Vector((u, -0.66, 0.3)), foot + a * 0.1]
+        hose = [Vector((-0.45, -0.7, 0.36)), Vector((s * (S - 0.16), -0.66, 0.3)), Vector((u, -0.66, 0.3)), foot + a * 0.1]
         for p, q in zip(hose, hose[1:]):
             tube(k, p, q, 0.018, "dark", sides=6)
     # the power pack on the back cross member: a tank on straps and its motor
@@ -327,7 +272,22 @@ def base(k, w):
     tube(k, (-0.2, -0.8, 0.3), (-0.06, -0.8, 0.3), 0.07, "steelD", sides=10, cap="dark")
 
 
+def _spread(half, pitch):
+    """Evenly spaced positions across -half .. half, about `pitch` apart."""
+    n = max(1, round(2 * half / pitch))
+    return [-half + 2 * half * i / n for i in range(n + 1)]
+
+
+def _width(w):
+    """Size the bin across its width (u) for a footprint w tiles wide: the profile along v stays the same."""
+    global S, RAM_U
+    S = w / 2 - 0.24
+    RAM_U = S + 0.15
+
+
 def tip_bin(fp, fill, rot, ore="iron"):
+    """fp = (width along the lip, depth): (2, 2), or (3, 2) for the long bin."""
+    _width(fp[0])
     k = K(f"tip_bin_{ore}_{fill}_{rot}", fp, rot)
     w = TipWear(17, amount=0.9)
     base(k, w)

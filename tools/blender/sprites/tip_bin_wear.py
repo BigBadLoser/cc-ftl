@@ -72,10 +72,11 @@ def _s(x):
     return x * x * (3 - 2 * x)
 
 
-def grime(k, n0, n1, centre, top_z, seed=5):
-    """Wear on faces n0 .. n1: centre (local) is a point inside the bin, top_z(v) its rim height."""
+def grime(k, n0, n1, centre, top_z, seed=5, low_z=0.85, run_k=0.9, dust_k=1.0, run_col="rust"):
+    """Wear on faces n0 .. n1: centre (local) is a point inside the bin, top_z(v) its rim height. low_z: dust gathers
+    below it; run_k, dust_k: how strong the run-off and the dust are."""
     from lib import palette
-    rust, dust, ore = (Vector(palette.linear(c)) for c in ("rust", "gdD", "rkD"))
+    rust, dust, ore = (Vector(palette.linear(c)) for c in (run_col, "gdD", "rkD"))
     rng = np.random.default_rng(seed)
     streaks = [(rng.uniform(0, 1), rng.uniform(0.3, 0.8), rng.uniform(0.02, 0.05)) for _ in range(18)]
     cx, cy = centre.x, centre.y
@@ -101,7 +102,7 @@ def grime(k, n0, n1, centre, top_z, seed=5):
             run = sum(math.exp(-(((t - st + 0.5) % 1 - 0.5) * 6.0 / sw) ** 2) * 0.5 ** (max(0.0, below) / L)
                       for st, L, sw in streaks)
             run *= 1 - _s((abs(n.normalized().z) - 0.5) / 0.3)                # run-off only on upright faces
-            low = _s((0.85 - c.z) / 0.5)
-            col = col.lerp(rust, min(0.8, 0.9 * run))
-            col = col.lerp(dust, min(0.8, 0.7 * low + 0.4 * _s((blot - 0.4) / 0.4)))
+            low = _s((low_z - c.z) / (low_z * 0.6))
+            col = col.lerp(rust, min(0.8, run_k * run))
+            col = col.lerp(dust, dust_k * min(0.8, 0.7 * low + 0.4 * _s((blot - 0.4) / 0.4)))
         k.m.f[i] = (idx, tuple(col), own, glow)

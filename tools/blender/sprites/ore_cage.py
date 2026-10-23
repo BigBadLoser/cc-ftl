@@ -1,11 +1,11 @@
 """ORE CAGE (family `ore_cage`): an open-frame bin of heavy girders with barred sides, holding loose raw ore, for mining
 ships and stations. Local frame and placement: modkit.K (front = +v).
 
-The bin: a girder base round a floor plate, corner posts (a middle post on a long side), a solid kick band, round bars to
-a mid rail and a hazard-striped top rail. A drop chute with a slide gate stands on the front. The ore is a faceted heap:
-a jittered height field closed by a skirt against the bars, with loose chunks scattered on it and pressed into the sides,
-so it shows through the bars. Wear (rust in blotches and low down, the asteroid's dust gathered at the foot) is shading
-on the frame's own faces, not placed detail.
+The bin: a base frame of C-channels on foot pads round a floor plate, fork pockets through the long sides, posts on base
+plates with gussets (a middle post on a long side), kick plates recessed between the posts, round bars to a mid rail and
+a hazard-striped top rail. A drop chute with a slide gate stands on the front. The ore is a faceted heap: a jittered
+height field closed by a skirt against the bars, with loose chunks scattered on it and pressed into the sides, so it
+shows through the bars. Wear is tip_bin_wear's soft grime on the frame's fine faces (rust run-off, dust low).
 
 Fills: .empty (a little spill on the floor), .fill1 (a low pile), .fill2 (half), .full (heaped over the rim). Ores use
 the rock family's colours: iron (or*), ice (ic*, a faint glow) and rare metals (rv*, glints on the glow layer)."""
@@ -14,13 +14,14 @@ import math
 import numpy as np
 from mathutils import Vector
 
-from . import core
 from .modkit import K
+from .steelkit import channel, poly as _poly, slab
 
 FILLS = ("empty", "fill1", "fill2", "full")
 H = 1.05                      # top of the top rail
 GIRDER = 0.14                 # base girders and corner posts
-KICK = 0.36                   # top of the solid kick band
+KICK = 0.36                   # top of the kick plates
+BASE = 0.16                   # top of the base frame
 MID = (0.64, 0.71)            # the mid rail
 RAIL = 0.12                   # the top rail's depth
 BAR_R, BAR_PITCH = 0.022, 0.13
@@ -34,16 +35,6 @@ ORES = {
     "ice": dict(faces=("icM", "ic", "icD", "icL", "icM", "rkM"), glow=("icG",), chunk=(("icL", "ic"), ("ic", "icD"), ("icM", "icD"))),
     "rare": dict(faces=("rkD", "rkM", "rvD", "rk", "rvM", "rkD"), glow=("rvG",), chunk=(("rvM", "rvD"), ("rkM", "rkD"), ("rk", "rkD"))),
 }
-
-
-def _p(k, u, v, z):
-    x, y = k.p(u, v)
-    return core.G(x, y, z)
-
-
-def _poly(k, pts, col):
-    """pts: local (u, v, z), counter-clockwise seen from outside."""
-    k.m.poly([_p(k, *q) for q in pts], col, flip=True)
 
 
 def _smooth(x):
@@ -114,7 +105,7 @@ def _run(k, p, q, z, sz, wd, col, top=None, seg=None, w=None, piece=0.22):
         k.box(u, v, z, s, wd, sz, c, top=tc, rz=rz)
 
 
-def _band(k, p, q, z, sz, off, w, seg=0.15):
+def _band(k, p, q, z, sz, off, seg=0.15):
     """Hazard stripes on the outer face of the wall p -> q (off out from its centre line)."""
     L = math.dist(p, q)
     du, dv = (q[0] - p[0]) / L, (q[1] - p[1]) / L
@@ -123,7 +114,15 @@ def _band(k, p, q, z, sz, off, w, seg=0.15):
     for i in range(n):
         t = (i + 0.5) * L / n
         u, v = p[0] + du * t, p[1] + dv * t
-        k.box(u + nu * off, v + nv * off, z, L / n, 0.016, sz, w(("hazY", "hazK")[i % 2], u, v, z), rz=math.atan2(dv, du))
+        k.box(u + nu * off, v + nv * off, z, L / n, 0.016, sz, ("hazY", "hazK")[i % 2], rz=math.atan2(dv, du))
+
+
+def _sections(b, p, q):
+    """(t0, t1) spans of the wall p -> q between its posts."""
+    L = math.dist(p, q)
+    cuts = sorted({0.0, 1.0} | {round(math.dist(p, c) / L, 6) for c in b.posts()
+                                if abs(math.dist(p, c) + math.dist(c, q) - L) < 1e-6})
+    return list(zip(cuts, cuts[1:]))
 
 
 def bars(b, p, q, drop=0):
@@ -135,29 +134,75 @@ def bars(b, p, q, drop=0):
     ts = [i / n for i in range(1, n) if min(math.dist(at(i / n), c) for c in b.posts()) > GIRDER * 0.8]
     if not drop:
         return [at(t) for t in ts]
-    cuts = sorted({0.0, 1.0} | {round(math.dist(p, c) / L, 6) for c in b.posts()
-                                if abs(math.dist(p, c) + math.dist(c, q) - L) < 1e-6})
     out = []
-    for t0, t1 in zip(cuts, cuts[1:]):
+    for t0, t1 in _sections(b, p, q):
         m = sum(t0 < t < t1 for t in ts) - drop
         out += [at(t0 + (t1 - t0) * (j + 1) / (m + 1)) for j in range(max(0, m))]
     return out
 
 
-def frame(k, b, w, drop=0):
+def base(k, b):
+    """The base frame: C-channels round the walls on foot pads, fork pockets through the long sides."""
+    for (p, q) in b.walls():
+        along_u = abs(q[0] - p[0]) > abs(q[1] - p[1])
+        du, dv = (q[0] - p[0]) / math.dist(p, q), (q[1] - p[1]) / math.dist(p, q)
+        out = round(-du) if along_u else round(dv)                          # the wall's outward side (walls run ccw)
+        e = GIRDER / 2
+        channel(k, (p[0] - du * e, p[1] - dv * e), (q[0] + du * e, q[1] + dv * e), out,
+                z0=0.02, H=BASE - 0.02, F=0.1, web="steel")
+    for u, v in b.posts():                                                  # foot pads under the corners
+        k.box(u, v, 0.0, 0.3, 0.3, 0.025, "steelD", top="steel")
+    for v in ((b.v0 * 2 + b.v1) / 3, (b.v0 + b.v1 * 2) / 3):                 # fork pockets across
+        k.box(0, v, 0.03, 2 * b.u1 + 0.22, 0.24, 0.11, "steelL", top="steelL")
+        for s in (-1, 1):
+            k.box(s * (b.u1 + 0.112), v, 0.042, 0.008, 0.2, 0.086, "dark")
+
+
+def kick(k, b, p, q):
+    """Kick plates between the posts of the wall p -> q, set in from the posts' faces, a flat bar on top."""
+    from .tip_bin_wear import band
+    L = math.dist(p, q)
+    du, dv = (q[0] - p[0]) / L, (q[1] - p[1]) / L
+    nu, nv = dv, -du                                                        # outward (walls run ccw)
+    for t0, t1 in _sections(b, p, q):
+        a0, a1 = t0 * L + GIRDER / 2, t1 * L - GIRDER / 2
+        pt = lambda t, off, z: (p[0] + du * t + nu * off, p[1] + dv * t + nv * off, z)   # noqa: E731
+        band(k, [pt(a0, 0.02, BASE), pt(a1, 0.02, BASE), pt(a1, 0.02, KICK), pt(a0, 0.02, KICK)], "steelL")
+        band(k, [pt(a1, -0.02, BASE), pt(a0, -0.02, BASE), pt(a0, -0.02, KICK), pt(a1, -0.02, KICK)], "steelD")
+        m = (a0 + a1) / 2
+        k.box(p[0] + du * m, p[1] + dv * m, KICK - 0.02, a1 - a0, 0.06, 0.04, "steelD", top="steelL", rz=math.atan2(dv, du))
+
+
+def post(k, u, v, b):
+    """A post on a base plate, gussets on its outer faces, in courses (for the wear), a cap plate."""
+    k.box(u, v, BASE, GIRDER + 0.1, GIRDER + 0.1, 0.025, "steelD", top="steel")
+    z = BASE
+    while z < H - 1e-6:
+        z1 = min(H, z + 0.12)
+        k.box(u, v, z, GIRDER, GIRDER, z1 - z, "steel", top="steelD")
+        z = z1
+    k.box(u, v, H, GIRDER + 0.04, GIRDER + 0.04, 0.04, "steelD", top="steel")
+    for su, sv in ((1, 0), (-1, 0), (0, 1), (0, -1)):                        # gussets, on the outside only
+        if (su and u * su <= 0) or (sv and (v - (b.v0 + b.v1) / 2) * sv <= 0):
+            continue
+        f = GIRDER / 2
+        pts = [(u + su * f, v + sv * f, BASE + 0.02), (u + su * (f + 0.1), v + sv * (f + 0.1), BASE + 0.02),
+               (u + su * f, v + sv * f, BASE + 0.22)]
+        slab(k, pts, (sv, su, 0), 0.02, "steelD")
+
+
+def frame(k, b, drop=0):
+    base(k, b)
     for p, q in b.walls():
-        _run(k, p, q, 0.0, GIRDER, GIRDER, "steelD", top="steel", w=w)                   # base girders
-        _run(k, p, q, GIRDER, KICK - GIRDER, 0.05, "steel", top="steelD", w=w)           # kick band
-        _run(k, p, q, MID[0], MID[1] - MID[0], 0.07, "steel", top="steelL", w=w)         # mid rail
-        _run(k, p, q, H - 0.1, 0.1, RAIL, "steel", top="steelL", w=w)                    # top rail
-        _band(k, p, q, H - 0.09, 0.07, RAIL / 2 + 0.008, w)                              # its hazard band
+        kick(k, b, p, q)
+        _run(k, p, q, MID[0], MID[1] - MID[0], 0.07, "steel", top="steelL", piece=0.1)   # mid rail
+        _run(k, p, q, H - 0.1, 0.1, RAIL, "steel", top="steelL", piece=0.1)              # top rail
+        _band(k, p, q, H - 0.09, 0.07, RAIL / 2 + 0.008)                                 # its hazard band
         for u, v in bars(b, p, q, drop):
-            k.cyl(u, v, KICK, BAR_R, H - 0.1 - KICK, w("steelL", u, v, 0.45), sides=6)
-    k.box((b.u0 + b.u1) / 2, (b.v0 + b.v1) / 2, 0.06, b.u1 - b.u0, b.v1 - b.v0, 0.06, "plateC")   # floor plate
+            k.cyl(u, v, KICK, BAR_R, H - 0.1 - KICK, "steelL", sides=6)
+    k.box((b.u0 + b.u1) / 2, (b.v0 + b.v1) / 2, 0.06, b.u1 - b.u0, b.v1 - b.v0, 0.1, "plateC")   # floor plate
     for u, v in b.posts():
-        for z0, z1 in ((0.0, 0.3), (0.3, 0.7), (0.7, H)):                               # posts, stained in courses
-            k.box(u, v, z0, GIRDER, GIRDER, z1 - z0, w("steel", u, v, z0), top="steelD")
-        k.box(u, v, H, GIRDER + 0.04, GIRDER + 0.04, 0.04, "steelD", top=w("steel", u, v, H))   # cap plate
+        post(k, u, v, b)
 
 
 def chute(k, b):
@@ -263,10 +308,12 @@ def spill(k, b, ore, n, seed, front=True):
 
 
 def cage(fp, fill, rot, ore="iron", drop=0):
+    from .tip_bin_wear import grime
     k = K(f"ore_cage_{ore}_{fill}_{rot}", fp, rot)
     b = Bin(fp)
-    frame(k, b, Wear(fp[0] * 7 + fp[1]), drop)
+    frame(k, b, drop)
     chute(k, b)
+    grime(k, 0, len(k.m.f), Vector((0, (b.v0 + b.v1) / 2, 0.6)), lambda v: H, low_z=0.45, run_k=0.5, dust_k=0.6, run_col="grime")
     seed = {"iron": 11, "ice": 23, "rare": 37}[ore] + FILLS.index(fill)
     if HEAP[fill]:
         Heap(b, fill, seed).build(k, ore)
