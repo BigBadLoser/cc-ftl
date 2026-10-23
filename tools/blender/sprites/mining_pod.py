@@ -327,7 +327,10 @@ def pod(heading, state="parked", bob=0.0, dz=0.0):
     m = core.Mesh(f"mining_pod_{state}")
     m.dz = dz + (0.0 if state in ("parked", "docked") else 0.35 + bob)
     f, fb = Spin(m, heading), Spin(m, heading + math.pi / 2)
-    body(fb)
+    mh = core.Mesh(f"mining_pod_hull_{state}")                               # the hull, shaded by its true surface
+    mh.dz = m.dz
+    fh = Spin(mh, heading + math.pi / 2)
+    body(fh)
     hatch(fb)
     hatch(Spin(m, heading - math.pi / 2))                                    # the same hatch on the other end
     windshield(f)
@@ -337,4 +340,7 @@ def pod(heading, state="parked", bob=0.0, dz=0.0):
     arms(f, state == "mine")
     lights(f, state in ("fly", "mine"))
     greeble(f)
-    return [smooth(m.build())]
+    c0, c1 = fh.pt(0, 0, C), fh.pt(1, 0, C)
+    hull = H.true_normals(mh.build(), (c0[0], c0[1], c0[2] + mh.dz), tuple(c1[i] - c0[i] for i in range(3)), DOME_C,
+                          (R + DRUM_R) / 2)
+    return [smooth(m.build()), hull]
