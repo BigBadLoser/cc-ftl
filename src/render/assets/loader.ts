@@ -1,4 +1,4 @@
-import { Assets, Rectangle, Texture } from 'pixi.js';
+import { Assets, Rectangle, Texture, type TextureSource } from 'pixi.js';
 import { cellOf, MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest, type StaticAsset } from './manifest';
 import { dropHalo } from '../haloTex';
 import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
@@ -27,6 +27,15 @@ export interface LayerSprite {
   glowFrame(clip: ClipDef, dir: number, col: number): Texture | null;
   /** Queue the clip's sheet (no-op when loaded or on its way). */
   request(clip: ClipDef): void;
+}
+
+export interface AtlasHooks {
+  /**
+   * Upload a freshly loaded sheet to the GPU now (the renderer's `texture.initSource`). The atlas then closes the decoded
+   * ImageBitmap, so only the GPU copy stays resident (it would otherwise be kept in memory twice). After a lost WebGL
+   * context the atlas decodes the sheets again (`contextRestored`).
+   */
+  upload(source: TextureSource): void;
 }
 
 export interface AtlasStats {
@@ -73,6 +82,11 @@ export interface Atlas {
   sweepEnv(mark: number): string[];
   /** True when the env pool is over its budget. */
   envOver(): boolean;
+  /** True from a lost WebGL context until the sheets are back on the GPU: do not draw meanwhile. */
+  readonly restoring: boolean;
+  contextLost(): void;
+  /** Decode and upload every loaded sheet again (the closed bitmaps cannot be re-uploaded by themselves). */
+  contextRestored(): Promise<void>;
   /** Resolves when no sheet is queued or loading. */
   whenIdle(): Promise<void>;
   /** Decoded sizes and load counters (the `?hook` debug API shows them). */
@@ -81,11 +95,18 @@ export interface Atlas {
 
 /** Sheets every ship draws (walls and floors, beams, the item/puff sheet, combat fx): loaded at start, never evicted. */
 export const EAGER_SHEETS: readonly string[] = ['walls', 'struct', 'env', 'fx'];
-/** Decoded-byte budgets. Crew clips are evicted by idle time; env sheets by `sweepEnv` (their textures live in built sprites). */
+/** Decoded-byte budgets (`?crewmb=` and `?envmb=` override them, in MiB). Crew clips are evicted by idle time; env sheets by `sweepEnv` (their textures live in built sprites). */
 export const CREW_BUDGET = 256 * 2 ** 20;
 export const ENV_BUDGET = 384 * 2 ** 20;
 /** A crew sheet nobody drew with for this long may be evicted. */
 export const CREW_IDLE_MS = 4000;
+
+/** Budget in bytes, or the `?<param>=<MiB>` URL override (to try a phone-sized budget on a desktop). */
+function budgetParam(param: string, dflt: number): number {
+  const v = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get(param);
+  const mb = v === null ? NaN : Number(v);
+  return Number.isFinite(mb) && mb > 0 ? mb * 2 ** 20 : dflt;
+}
 
 function validate(m: Manifest): void {
   if (!m || m.version !== MANIFEST_VERSION || !m.assets || Array.isArray(m.assets) || !m.sheets) {
@@ -93,7 +114,7 @@ function validate(m: Manifest): void {
   }
 }
 
-export async function loadAtlas(base = assetBase()): Promise<Atlas> {
+export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise<Atlas> {
   const res = await fetch(`${base}manifest.json`);
   if (!res.ok) throw new Error(`Cannot load ${base}manifest.json (${res.status})`);
   const manifest = (await res.json()) as Manifest;
@@ -102,11 +123,26 @@ export async function loadAtlas(base = assetBase()): Promise<Atlas> {
   let smooth = false;
   let clock = performance.now();
   const bytesOf = (t: Texture): number => t.source.pixelWidth * t.source.pixelHeight * 4;
+  let restoring = false;
+  /** Upload to the GPU and drop the CPU copy; not while the context is gone (the bitmap stays for the lazy upload). */
+  const toGpu = (src: TextureSource): void => {
+    if (!hooks || restoring) return;
+    hooks.upload(src);
+    (src.resource as { close?: () => void }).close?.();
+  };
   const loadTex = async (path: string): Promise<Texture> => {
     const t = await Assets.load<Texture>({ src: base + path, data: { scaleMode: smooth ? 'linear' : 'nearest' } });
     t.source.scaleMode = smooth ? 'linear' : 'nearest';
     t.source.autoGenerateMipmaps = false;
+    toGpu(t.source);
     return t;
+  };
+  const redecode = async (url: string, src: TextureSource): Promise<void> => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${url} ${res.status}`);
+    src.resource = await createImageBitmap(await res.blob());
+    hooks?.upload(src);
+    (src.resource as { close?: () => void }).close?.();
   };
   // Textures cut from a sheet, by sheet: dropped on eviction and destroyed when the sheet is.
   const cuts = new Map<string, Texture[]>();
@@ -131,8 +167,8 @@ export async function loadAtlas(base = assetBase()): Promise<Atlas> {
     io,
     pools: {
       core: { budget: Infinity },
-      env: { budget: ENV_BUDGET },
-      crew: { budget: CREW_BUDGET, idleMs: CREW_IDLE_MS },
+      env: { budget: budgetParam('envmb', ENV_BUDGET) },
+      crew: { budget: budgetParam('crewmb', CREW_BUDGET), idleMs: CREW_IDLE_MS },
     },
     concurrency: 4,
     now: () => clock,
@@ -259,6 +295,24 @@ export async function loadAtlas(base = assetBase()): Promise<Atlas> {
       store.forEachReady((_n, s) => {
         for (const t of [s.image, s.glow]) if (t) t.source.scaleMode = on ? 'linear' : 'nearest';
       });
+    },
+    get restoring() {
+      return restoring;
+    },
+    contextLost() {
+      restoring = true;
+    },
+    async contextRestored() {
+      const jobs: Promise<void>[] = [];
+      store.forEachReady((name, s) => {
+        const def = manifest.sheets[name];
+        if (!def) return;
+        jobs.push(redecode(base + def.image, s.image.source));
+        if (s.glow && def.glow) jobs.push(redecode(base + def.glow, s.glow.source));
+      });
+      const done = await Promise.allSettled(jobs);
+      for (const d of done) if (d.status === 'rejected') console.warn('Sheet re-decode failed', d.reason);
+      restoring = false;
     },
     mark() {
       clock = Math.max(performance.now(), clock + 0.001);

@@ -6,6 +6,8 @@ export const REBUILD_MIN_MS = 1000;
 export const FRESH_MS = 3000;
 /** Env sheets are looked at for eviction at most this often, and only when the pool is over budget. */
 export const CENSUS_MS = 8000;
+/** When a look finds nothing to evict (everything is in use) the wait doubles, up to this. */
+export const CENSUS_MAX_MS = 64000;
 
 export interface ArtStreamHost {
   /** Drop every built scene so the next sync builds them again from the atlas (they re-ask for the art they use). */
@@ -35,6 +37,7 @@ export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => nu
   let builtGen = atlas.generation;
   let lastRebuild = -Infinity;
   let lastCensus = now();
+  let gap = CENSUS_MS;
   let count = 0;
   const fresh = new Map<number, number>();
 
@@ -56,11 +59,11 @@ export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => nu
         rebuild(t);
       } else if (!stale && busy === 0) {
         fresh.clear();
-        if (t - lastCensus >= CENSUS_MS && atlas.envOver()) {
+        if (t - lastCensus >= gap && atlas.envOver()) {
           lastCensus = t;
           const mark = atlas.mark();
           rebuild(t);
-          atlas.sweepEnv(mark);
+          gap = atlas.sweepEnv(mark).length ? CENSUS_MS : Math.min(CENSUS_MAX_MS, gap * 2);
           builtGen = atlas.generation;
         }
       }

@@ -147,10 +147,17 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
 **Crew.**
 - Composited at runtime from **sprite layers**: a species body plus slot layers (hair, eyes, arms,
   implants, clothing, gear).
-- Every layer has the same fixed frame size and anchor (`tools/blender/sprites/crew_spec.py`), and one sheet
+- Every layer is rendered in the same fixed frame and anchor (`tools/blender/sprites/crew_spec.py`), and has one sheet
   per clip (8 directions x that clip's frames), so the layers always line up and a new item or clip never
   touches existing sheets. A layer lacking a clip falls back to idle, or is hidden for the seated clips
   (`resolveClip` in `src/render/loadout.ts`).
+- **Trimmed sheets** (`tools/blender/sprites/crew_trim.py`, run by `crew_pack.py`): a clip uses a small part of the frame, so
+  each clip sheet is cropped to the union of its opaque pixels (image and glow, all directions and frames). The manifest
+  clip records the cell size `cw`/`ch` and its offset `ox`/`oy` in the layer frame; the renderer cuts `cw x ch` cells and
+  draws at `ox - anchor.x, oy - anchor.y` (`cellOf` in `assets/manifest.ts`). That is the whole contract: the layer's
+  `frameW`/`frameH`/`anchor` and the muzzle offsets are unchanged, so no layer re-renders. At 2x it takes the human set from
+  12.3 GiB decoded to 0.93 GiB. `python3 -m sprites.crew_trim [assets dir]` (from `tools/blender`) trims an existing output
+  in place (idempotent); the review tools that stack crew cells re-pad with `crew_trim.full_cell`.
 - Layers are rendered in Blender with the rest of the character as a **holdout**, so the hidden parts
   are already cut out. Layers then stack in a fixed order in every direction.
 - Which layers to use comes from sim components (species, role gear, implants, injuries, appearance
@@ -225,6 +232,33 @@ tools/blender/
 palette.json    the single palette, read by Blender scripts and the game
 ```
 
+- **Loading and memory (`src/render/assets`, `artStream.ts`):** sheets are loaded on demand, never all at start (the 2x art is
+  1452 sheets, ~13 GiB if decoded at once, which crashed headless Chromium; phones need a few hundred MiB).
+  - `loadAtlas` registers every manifest sheet in a `SheetStore` (`sheetStore.ts`, generic over the texture type so it is
+    unit-tested without Pixi) in one of three pools: `core` (`EAGER_SHEETS`: walls, beams, the env item sheet and fx, loaded
+    before the renderer starts and never evicted, ~92 MiB), `env` (every other static sheet) and `crew` (`crew.*` sheets).
+    Image and glow twin load and free together. At most 4 loads run at once.
+  - The atlas API is unchanged, but art may not be there yet. `stat(id)` / `firstOf(chain)` return undefined for an id whose
+    sheet is not loaded and queue the load (an unloaded id ends a fallback chain: a later id is a worse stand-in, not an
+    alternative; `loading(chain)` tells "on its way" from "absent", and `resolveArt` draws nothing for the former instead of
+    the `FALLBACK` stand-in). `LayerSprite.frame()` is undefined until the clip's sheet is in.
+  - Crew: the common clips (idle/walk/run/work) of a crew member's layers are queued when its figure appears, others on
+    first use. While a clip loads `pickFrame` (`loadout.ts`) draws the layer's idle, then walk, so a figure is never
+    blank. Crew sheets are evicted by idle time (`CREW_IDLE_MS`) when the `crew` pool is over `CREW_BUDGET` (256 MiB
+    decoded; a typical crew needs ~50 MiB trimmed). Lookups happen every frame, so nothing holds a crew texture for long.
+  - Static art is different: built sprites (gridView, roofs, modules) keep their textures. `atlas.generation` counts env/core
+    sheets arriving or leaving; `createArtStream` (`artStream.ts`) rebuilds the ship scenes when it changes (immediately once
+    nothing is loading, else at most once a second) and keeps a scene hidden while the sheets of its first build load (at
+    most 3 s). When the `env` pool is over `ENV_BUDGET` (384 MiB) it runs a mark and sweep every 8 s (backing off when
+    everything is in use): rebuild the scenes (marks the sheets they use), then evict the env sheets nothing used since.
+  - Evicted sheets are destroyed one frame later (`atlas.tick()` after drawing), and are restored without a reload if asked
+    for again in that frame. Sub-textures and baked halos of an evicted sheet are destroyed with it.
+  - Each sheet is uploaded to the GPU as soon as it loads and its decoded ImageBitmap closed, so it is not held twice. After
+    a lost WebGL context (`webglcontextlost`) drawing pauses until every loaded sheet has been decoded and uploaded again.
+  - Debug: `?hook` gives `__cc.art()` (resident decoded bytes per pool, requests, pending, rebuilds, biggest sheets);
+    `?crewmb=N` and `?envmb=N` override the budgets in MiB.
+  - Not done: GPU texture compression (KTX2/Basis), and splitting the big static env sheets (vehicle_bay, weapons, containers)
+    by family, which would shave the ~245 MiB the starting ship's env sheets take.
 - **Run with `npm run sprites`** (Blender headless). Generated sheets, JSON and the manifest are
   **committed**, because Cloudflare's build doesn't run Blender.
 - **Families:** the art is split into families that each render into their own sheets and are merged

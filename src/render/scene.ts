@@ -116,7 +116,6 @@ interface RendererContent {
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
 export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality, world: World, content: RendererContent): Promise<Renderer> {
   const high = quality === 'high';
-  const atlas = await loadAtlas();
   const gl = await autoDetectRenderer({
     canvas,
     width: 1,
@@ -128,6 +127,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     preference: 'webgl',
     powerPreference: 'high-performance',
   });
+  // Sheets go to the GPU as they load and their decoded copy is dropped; if the context is lost they are decoded again.
+  const atlas = await loadAtlas(undefined, { upload: (src) => gl.texture.initSource(src) });
+  canvas.addEventListener('webglcontextlost', () => atlas.contextLost());
+  canvas.addEventListener('webglcontextrestored', () => void atlas.contextRestored());
   if (high) initHalos(gl);
   const stage = new Container();
   const cam = createCamera(high ? 3 : 2);
@@ -310,6 +313,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
 
   return {
     render(alpha) {
+      if (atlas.restoring) return;
       sync();
       art.update();
       const now = performance.now();

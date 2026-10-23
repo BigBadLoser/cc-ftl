@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { Atlas } from './assets/loader';
-import { CENSUS_MS, createArtStream, FRESH_MS, REBUILD_MIN_MS } from './artStream';
+import { CENSUS_MAX_MS, CENSUS_MS, createArtStream, FRESH_MS, REBUILD_MIN_MS } from './artStream';
 
-function rig(over = false) {
+function rig(over = false, evicts = 0) {
   const st = { gen: 0, busy: 0, over, t: 0, mark: 0, swept: [] as number[], rebuilt: 0, synced: 0 };
   const atlas = {
     get generation() { return st.gen; },
     busy: () => st.busy,
     envOver: () => st.over,
     mark: () => ++st.mark,
-    sweepEnv: (m: number) => { st.swept.push(m); return []; },
+    sweepEnv: (m: number) => { st.swept.push(m); return Array(evicts).fill('x') as string[]; },
   } as unknown as Atlas;
   const s = createArtStream(atlas, { rebuild: () => void st.rebuilt++, sync: () => void st.synced++ }, () => st.t);
   return { st, s };
@@ -77,6 +77,20 @@ describe('artStream', () => {
     st.t += 10;
     s.update();
     expect(st.rebuilt).toBe(1);
+  });
+  it('backs off when over budget but everything is in use, and resets after an eviction', () => {
+    const { st, s } = rig(true, 0);
+    let rebuilds = 0;
+    for (let k = 0; k < 40; k++) {
+      st.t += CENSUS_MS;
+      s.update();
+      rebuilds = st.rebuilt;
+    }
+    expect(rebuilds).toBeLessThan(15); // not every CENSUS_MS
+    st.t += CENSUS_MAX_MS;
+    const before = st.rebuilt;
+    s.update();
+    expect(st.rebuilt).toBe(before + 1);
   });
   it('does not sweep when under budget', () => {
     const { st, s } = rig(false);
