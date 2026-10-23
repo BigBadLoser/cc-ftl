@@ -4,7 +4,7 @@ Local frame as shuttle_craft (u = nose, v across, z up, origin at the footprint 
 The body is a capsule swept along the pod's v axis (built in its own frame turned a quarter turn, `Spin(heading + 90)`):
 a ball cut in half with the halves pushed a little apart, a band between two ribs round its middle, armour plates, and
 the big round HATCH (a heavy ring round a red-lit door with lamps) closing each end. The nose (+u) carries a boxy
-WINDSHIELD that juts out of the hull, red-lit like the hatches, a big raked pane over a small lower one. Underneath: one
+WINDSHIELD that juts out of the hull, a big raked pane over a smaller lower one in dark glass. Underneath: one
 big thruster bell in a housing, which it rests on when parked; a mining laser on a chin mount under the windshield.
 Warm dark steel (c4F), industrial yellow accents (c4T).
 
@@ -18,7 +18,7 @@ from .shuttle_craft import Spin, _g, patch, profile, smooth, sweep
 
 C = 1.18                      # the body's axis height above the pad (parked, on the bell)
 R = 0.86                      # the hull's radius: the band's, and each half-dome's
-BAND = (-0.5, 0.44)           # the band between the two ribs (along the pod's v)
+BAND = (-0.47, 0.47)          # the band between the two ribs (along the pod's v); everything mirrors about v = 0
 DOME_C = 0.235                # each half-dome's centre, out from the middle (0: the whole ball; the ribs: split wide)
 HATCH_END = 0.6               # the domes end where the hull's radius is this, under the hatch rings
 
@@ -37,7 +37,7 @@ BALL = _dome(-DOME_C, -1, HATCH_END)[::-1] + _dome(DOME_C, 1, HATCH_END)   # hal
 SECTION = profile(n=20, p=2.3)          # round, a little squared: a pressure hull
 HATCH_R = 0.5                 # the round hatch's door radius
 BELL = (0.0, 0.42, 0.28)      # the main thruster: mouth z, mouth radius, throat radius
-WIND = (0.62, 1.08, 0.42)     # windshield box: back u (inside the hull), front u, half width
+WIND = (0.5, 1.02, 0.4)       # windshield box: back u (inside the hull), front u at its foot, half width
 LASER_U, LASER_Z = 0.6, C - 0.62
 HULL, HULL_D, HULL_L = "c4F2", "c4F4", "c4F1"
 YEL, YEL_D = "c4T2", "c4T4"
@@ -71,13 +71,14 @@ def body(fb):
     _g("hull")
     B = [(u, r, r, 0, C) for u, r in BALL]
     sweep(fb, B, SECTION, HULL, cap0=HULL_D)
-    patch(fb, B, -0.55, 0.42, 200, 340, 1.01, HULL_D, n=9, steps=5)           # the shaded underside plates
-    patch(fb, B, -0.3, 0.25, 235, 305, 1.02, "grime", n=5, steps=2)
+    patch(fb, B, -0.6, 0.6, 200, 340, 1.01, HULL_D, n=9, steps=6)             # the shaded underside plates
+    patch(fb, B, -0.28, 0.28, 235, 305, 1.02, "grime", n=5, steps=2)
     _g("plates")
-    patch(fb, B, -0.5, 0.36, 55, 125, 1.035, HULL_L, n=7, steps=4)            # the dorsal armour plate
-    patch(fb, B, -0.12, 0.08, 45, 135, 1.06, YEL, n=9, steps=2)               # its yellow band
-    patch(fb, B, -0.42, -0.32, 50, 130, 1.06, YEL_D, n=7, steps=1)
-    patch(fb, B, -0.45, 0.4, -25, 25, 1.03, HULL_L, n=5, steps=4)             # the aft plate (profile 0 = pod -u)
+    patch(fb, B, -0.43, 0.43, 55, 125, 1.035, HULL_L, n=7, steps=4)           # the dorsal armour plate
+    patch(fb, B, -0.1, 0.1, 45, 135, 1.06, YEL, n=9, steps=2)                 # its yellow band
+    for u0 in (-0.42, 0.32):
+        patch(fb, B, u0, u0 + 0.1, 50, 130, 1.06, YEL_D, n=7, steps=1)       # and a dark one each side
+    patch(fb, B, -0.43, 0.43, -25, 25, 1.03, HULL_L, n=5, steps=4)            # the aft plate (profile 0 = pod -u)
     for u in BAND:                                                           # the ribs
         k = _r(u) * 1.055
         sweep(fb, [(u - 0.035, k, k, 0, C), (u + 0.035, k, k, 0, C)], SECTION, "steelD")
@@ -100,27 +101,29 @@ def hatch(fb):
 
 
 def windshield(f):
-    """A box jutting out of the nose: a big raked upper pane over a small lower one, framed in dark steel, the cockpit
-    lit red behind the glass like the hatches."""
+    """The reference's windshield: a chunky box jutting out of the nose, its raked face a thick frame round a big upper pane
+    over a smaller lower one, dark glass with a lit bezel and one reflection, a yellow brow on top."""
     _g("windshield")
     u0, u1, hw = WIND
-    zb, zt, rake = C - 0.18, C + 0.36, 0.12
+    zb, zt, rake = C - 0.44, C + 0.4, 0.14
 
     def frame(a, b, d):
         return (u0 if b < 0 else (u1 - (rake if d > 0 else 0.0)), a * hw, zt if d > 0 else zb)
     lbox(f, frame, {"side": HULL_D, "top": HULL})
-    inset, eps = 0.06, 0.006
 
-    def p(a, z):                                                             # a point on the raked face
+    def p(a, z, eps):                                                        # a point on the raked face
         return f.pt(u1 - rake * (z - zb) / (zt - zb) + eps, a, z)
-    f.poly([p(-hw + inset, zb + inset), p(hw - inset, zb + inset), p(hw - inset, zt - inset), p(-hw + inset, zt - inset)],
-           "drD", flip=True)
-    zr = zt - 0.15
-    f.poly([p(-hw + inset, zr), p(hw - inset, zr), p(hw - inset, zr + 0.04), p(-hw + inset, zr + 0.04)], "lens", flip=True)
-    f.box(u1 - rake / 2 + 0.01, 0, (zb + zt) / 2, 0.02, 0.04, zt - zb - 0.1, HULL_D, base=False)   # mullion
-    f.box(u0 + 0.12, 0, C - 0.4, 0.3, 0.5, 0.2, HULL_D, top=HULL)            # the small lower pane's box
-    f.box(u0 + 0.27, 0, C - 0.3, 0.012, 0.4, 0.1, "drD", base=False)
-    f.box((u0 + u1) / 2 - 0.05, 0, zt, u1 - u0 - 0.1, 2 * hw + 0.04, 0.03, YEL)   # a yellow brow over it
+
+    def pane(z0, z1, inset, col, eps):
+        f.poly([p(-hw + inset, z0, eps), p(hw - inset, z0, eps), p(hw - inset, z1, eps), p(-hw + inset, z1, eps)], col,
+               flip=True)
+    zm = C - 0.08                                                            # the bar between the panes
+    for z0, z1 in ((zm + 0.04, zt - 0.07), (zb + 0.07, zm - 0.04)):
+        pane(z0 - 0.025, z1 + 0.025, 0.045, HULL_L, 0.003)                   # the lit bezel
+        pane(z0, z1, 0.07, "glassD", 0.006)
+    pane(zt - 0.2, zt - 0.16, 0.07, "lens", 0.009)                           # a reflection across the upper pane
+    pane(zt - 0.26, zt - 0.245, 0.07, "lens", 0.009)
+    f.box((u0 + u1) / 2 - 0.06, 0, zt, u1 - u0 - 0.12, 2 * hw + 0.04, 0.035, YEL)   # the yellow brow
 
 
 def thruster(f, lit):
@@ -153,8 +156,8 @@ def laser(f, down, lit):
 
 def greeble(f):
     _g("greeble")
-    f.vcyl(-0.3, -0.35, C + 0.78, 0.022, 0.26, "steelL", sides=6)          # antenna
-    f.box(-0.3, -0.35, C + 1.04, 0.05, 0.05, 0.04, "red")
+    f.vcyl(-0.45, 0, C + 0.66, 0.022, 0.3, "steelL", sides=6)              # antenna, on the centre line aft
+    f.box(-0.45, 0, C + 0.96, 0.05, 0.05, 0.04, "red")
     for sv in (-1, 1):
         f.box(0.72, sv * 0.3, C - 0.58, 0.1, 0.08, 0.06, "steelD", base=False)         # lamps either side of the chin
         f.box(0.77, sv * 0.3, C - 0.58, 0.012, 0.06, 0.04, "arc", base=False)
