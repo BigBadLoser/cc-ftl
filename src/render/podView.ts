@@ -1,4 +1,5 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
+import { createPodBeam, type PodBeam } from './podBeam';
 import { BodyC } from '../sim/body';
 import type { World } from '../sim/ecs';
 import { MiningPodC } from '../sim/mining/components';
@@ -6,9 +7,7 @@ import { VehicleC } from '../sim/vehicles/components';
 import type { Atlas, StaticSprite } from './assets/loader';
 import { POD_HOVER_Z } from '../sim/mining/geometry';
 import { Z_PX } from './heights';
-import { TILE_H } from './iso';
 import { sectorArt } from './sectorPos';
-import { barrel, beamEnd, HIDDEN } from './podMuzzle';
 import { headingIndex } from './shuttleView';
 
 /**
@@ -16,8 +15,7 @@ import { headingIndex } from './shuttleView';
  * in flight, `.mine.d<k>.f<0|1>` (a two-frame hover loop) while the laser works, and in the bay `.docked.d<k>` (only until the bay
  * layer draws `vehicle.mining_pod.parked.r<r>` itself, see vehicleBayArt; then a stowed pod is not drawn here). The sprites'
  * origin is the pod's centre with the bell's foot at z 0, so the hover is added here: in flight it hovers beside the ore it
- * cuts, facing it (the sim picks the spot and heading, MiningPod.spot), its foot a little under the rock's top. A soft ground shadow and the pulsing mining laser are effects
- * drawn in code. Reads the sim only.
+ * cuts, facing it (the sim picks the spot and heading, MiningPod.spot), its foot a little under the rock's top. A soft ground shadow is drawn in code; the mining laser and its impact are the `fx.mining.*` sprites (podBeam.ts). Reads the sim only.
  */
 export interface PodView {
   update(dt: number): void;
@@ -27,7 +25,6 @@ export interface PodView {
 /** Hover height above the floor in tiles of height: the barrel tip (a hair under the foot) above the rock's top, so the beam drops onto the ore. */
 const POD_Z = POD_HOVER_Z;
 
-const LASER = 0xff6a3a;
 /** A stowed pod (placeholder until the bay's parked sprite exists) sits this far below the deck, on the pit floor, and sorts behind the pit's near lip. */
 const PIT_Z = -0.6;
 const PIT_DEPTH = 0.6;
@@ -45,9 +42,8 @@ export interface PodHost {
 interface Track {
   root: Container;
   shadow: Graphics;
-  /** The mining beam: in front of the pod, or behind it while the barrel is hidden by the hull. */
-  fx: Graphics;
-  fxBack: Graphics;
+  /** The mining beam and its impact (podBeam.ts): in front of the pod, or behind it while the barrel is hidden by the hull. */
+  beam: PodBeam;
   body: Sprite;
   glow: Sprite;
   low: boolean;
@@ -98,14 +94,13 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
           drop(id);
           const root = new Container();
           const shadow = new Graphics();
-          const fx = new Graphics();
-          const fxBack = new Graphics();
+          const beam = createPodBeam(atlas);
           const body = new Sprite();
           const glow = new Sprite();
           glow.blendMode = 'add';
-          root.addChild(shadow, fxBack, body, glow, fx);
+          root.addChild(shadow, beam.back, body, glow, beam.front);
           (low ? host.low : host.air).addChild(root);
-          t = { root, shadow, fx, fxBack, body, glow, low };
+          t = { root, shadow, beam, body, glow, low };
           tracks.set(id, t);
         }
         show(t, sprite);
@@ -114,18 +109,8 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         // The shadow stays on the ground under the hovering pod.
         t.shadow.clear();
         if (!low) t.shadow.ellipse(0, lift, size * 30, size * 15).fill({ color: 0x000000, alpha: 0.3 });
-        t.fx.clear();
-        t.fxBack.clear();
-        if (mining && m?.target) {
-          const pulse = 0.6 + 0.4 * Math.sin(clock * 18);
-          // From the barrel's emitter face straight along its axis (the sim puts the pod on a heading ray so the axis meets the ore's top
-          // face, sim/mining/geometry.ts); behind the pod while the hull hides the barrel.
-          const [sx, sy] = barrel(d, frame).tip;
-          const [ex, ey] = beamEnd(d, frame);
-          const beam = HIDDEN.has(d) ? t.fxBack : t.fx;
-          beam.moveTo(sx, sy).lineTo(ex, ey).stroke({ color: LASER, width: Math.max(1, TILE_H / 12), alpha: pulse });
-          t.fx.circle(ex, ey, TILE_H * 0.15).fill({ color: 0xffd0a0, alpha: pulse });
-        }
+        if (mining) t.beam.show(d, frame, clock, 0.6 + 0.4 * Math.sin(clock * 18));
+        else t.beam.hide();
         t.root.position.set(Math.round(p.x), Math.round(p.y - lift));
         t.root.zIndex = b.x + b.y + (low ? PIT_DEPTH : 0);
       }
