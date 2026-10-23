@@ -25,8 +25,10 @@ export interface IncomingFleet {
  */
 export function incomingFleets(sim: Sim): IncomingFleet[] {
   const g = sim.galaxy;
-  const seen = sensorNodes(sim);
   const out: IncomingFleet[] = [];
+  // Inside an event grid the player is in a pocket off the map: nothing drops out at a node there.
+  if (g.event) return out;
+  const seen = sensorNodes(sim);
   for (const f of g.fleets) {
     if (f.damaged || f.node === g.current || !seen.has(f.node)) continue;
     const at = f.route.indexOf(g.current);

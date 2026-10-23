@@ -113,7 +113,7 @@
         <h4>Fuel</h4>
         <div class="cells" data-testid="starmap-route">
           <span class="cell" title="Fuel now"><Icon name="fuel" size={18} /><b>{map.fuel}</b></span>
-          <span class="cell" class:bad={!route.fuelOk} title="Fuel the whole route burns"><Icon name="fuel" size={18} /><b>-{route.fuel}</b></span>
+          <span class="cell" class:bad={!route.fuelOk} title="Fuel the whole route burns"><Icon name="fuel" size={18} /><b>{route.fuel}</b><small>burn</small></span>
           {#if route.fuelShort > 0}
             <span class="cell bad" title="Fuel missing for the whole route" data-testid="starmap-fuel-short"><Icon name="fuel" size={18} /><b>{route.fuelShort}</b><small>short</small></span>
           {:else}

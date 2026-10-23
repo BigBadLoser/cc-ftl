@@ -292,6 +292,14 @@ describe('incoming fleets (arrival warnings)', () => {
     expect(list[1]?.hostile).toBe(false);
   }, 60000);
 
+  it('warns of nothing while the player is inside an event grid', () => {
+    const { sim, a } = chain(31);
+    fleet(sim, a, { route: [START_NODE], dest: START_NODE });
+    expect(incomingFleets(sim)).toHaveLength(1);
+    sim.galaxy.event = { id: 1, node: 'event:1' } as never;
+    expect(incomingFleets(sim)).toEqual([]);
+  }, 60000);
+
   it('ignores fleets heading elsewhere, stranded ones and ones beyond sensor range; counts a pass-through with stops=false', () => {
     const { sim, a, b } = chain(31);
     fleet(sim, a, { route: [b], dest: b });

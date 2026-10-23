@@ -45,9 +45,9 @@
 </div>
 
 <style>
-  .veil { position: absolute; inset: 0; z-index: 8; background: rgba(4, 8, 14, 0.62); display: grid; place-items: center; padding: 16px; touch-action: none; }
+  .veil { position: absolute; inset: 0; z-index: 14; background: rgba(4, 8, 14, 0.62); display: grid; place-items: center; padding: 16px; touch-action: none; }
   .card { box-sizing: border-box; width: min(440px, 100%); max-height: 100%; overflow-y: auto; touch-action: pan-y; background: var(--panel-2); border: 1px solid var(--red); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
-  .card :global(.ph) { padding: 6px 12px; min-height: 36px; }
+  .card :global(.ph) { margin: 0; padding: 6px 12px; min-height: 36px; }
   .body { display: grid; gap: 10px; padding: 12px; }
   .who { display: flex; align-items: center; gap: 8px; font: 600 18px var(--head-font); }
   .who i { width: 10px; height: 10px; flex: none; clip-path: polygon(100% 50%, 0 0, 25% 50%, 0 100%); }
