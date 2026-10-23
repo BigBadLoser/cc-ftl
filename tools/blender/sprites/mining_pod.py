@@ -8,7 +8,7 @@ the big round HATCH (a heavy ring round a red-lit door with lamps) closing each 
 WINDSHIELD that juts out of the hull, a big raked pane over a smaller lower one in dark glass. Underneath: one
 big thruster bell in a housing, which it rests on when parked; a big mining laser in a gimbal hung from the
 windshield's flat underside, two grab arms behind hatch panels either side of it, and two work lamps on the windshield's
-top corners. The rear thruster is sunk in a round cut-out in the drum's back.
+top corners. The rear thruster sits in a bore cut into the drum's back, its cone running out past the hull.
 The ship's blue-grey steel, industrial yellow accents (c4T).
 
 States: parked / docked (laser stowed, thruster dark), fly (thruster lit), mine (laser lowered, emitter lit; `bob` lifts
@@ -23,8 +23,8 @@ C = 1.18                      # the body's axis height above the pad (parked, on
 R = 0.86                      # the hull's radius: the band's, and each half-dome's
 BAND = (-0.47, 0.47)          # the drum's flat sides (along the pod's v); everything mirrors about v = 0
 DRUM_R = 0.95                 # the drum's radius: it stands this much proud of the domes (R) all round
-BORE, RIM = 0.45, 0.51        # the round cut-out in the drum's back for the rear thruster, and its rim (the drum is
-                              # +-0.47 wide)
+BORE = 0.45                   # the bore cut into the drum's back for the rear thruster (the drum is +-0.47 wide)
+BORE_FLOOR = 0.6              # the bore's floor, this far behind the centre
 REAR = (C, 0.32, 0.4)         # the rear thruster, sunk in the bore: centre z, throat and mouth radius
 ARM_AT = (0.62, C - 0.02)     # the grab arms' panels: |v| and z on the front of each dome, either side of the windshield
 DOME_C = 0.235                # each half-dome's centre, out from the middle (0: the whole ball; the ribs: split wide)
@@ -54,20 +54,76 @@ GLOW = "cyan"
 BEAM = "orange"
 
 
+def _halfplane(poly, a, b, c):
+    """The part of a convex 2D polygon where a*x + b*y <= c."""
+    out = []
+    for i, p in enumerate(poly):
+        q = poly[(i + 1) % len(poly)]
+        dp, dq = a * p[0] + b * p[1] - c, a * q[0] + b * q[1] - c
+        if dp <= 0:
+            out.append(p)
+        if (dp < 0) != (dq < 0) and abs(dp - dq) > 1e-12:
+            t = dp / (dp - dq)
+            out.append((p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t))
+    return out
+
+
+BORE_N = 64                   # the bore is this many-sided: the hull is cut along exactly the polygon its wall follows
+
+
+def _bore_corner(i, r, zc):
+    a = i * math.tau / BORE_N
+    return r * math.cos(a), zc + r * math.sin(a)
+
+
+def _minus_bore(poly, r, zc):
+    """A convex (u, z) polygon less the bore's (BORE_N-gon) disc about (0, zc): convex pieces, peeled off edge by edge."""
+    pieces, rest = [], poly
+    h = r * math.cos(math.pi / BORE_N)                                      # each edge's distance from the axis
+    for i in range(BORE_N):
+        a = (i + 0.5) * math.tau / BORE_N
+        nx, nz = math.cos(a), math.sin(a)
+        piece = _halfplane(rest, -nx, -nz, -nz * zc - h)                     # outside this edge
+        if len(piece) >= 3:
+            pieces.append(piece)
+        rest = _halfplane(rest, nx, nz, nz * zc + h)                         # inside it: carry on round
+        if len(rest) < 3:
+            break
+    return pieces
+
+
+def _on_face(q, u, z):
+    """The point of the hull face q (corners: station a at profile i, a at j, b at j, b at i) at (u, z), on the face
+    itself (bilinear), so cut pieces sit flush with their uncut neighbours."""
+    s = 0.0 if abs(q[3][0] - q[0][0]) < 1e-9 else (u - q[0][0]) / (q[3][0] - q[0][0])
+    lo = q[0][2] + (q[3][2] - q[0][2]) * s                                  # z of the face's i edge at u
+    hi = q[1][2] + (q[2][2] - q[1][2]) * s                                  # and of its j edge
+    t = 0.0 if abs(hi - lo) < 1e-9 else (z - lo) / (hi - lo)
+    a = [q[0][x] + (q[3][x] - q[0][x]) * s for x in range(3)]
+    b = [q[1][x] + (q[2][x] - q[1][x]) * s for x in range(3)]
+    return (u, a[1] + (b[1] - a[1]) * t, z)
+
+
 def loft(f, stations, prof, mat, cap0=None, cap1=None, closed=True, hole=None):
-    """shuttle_craft.sweep, optionally with the round cut-out in the back: faces whose middle lies within `hole` of the
-    rear thruster's axis (on the body frame's +v side, the pod's back) are left out."""
+    """shuttle_craft.sweep, optionally cut by the rear thruster's bore: a cylinder of radius `hole` along the pod's u
+    (the body frame's v) through the back. Faces on the back that reach the bore are cut along it exactly: in the
+    (u, z) plane each is a quad less the bore's disc, and the pieces go back onto the hull's round surface."""
     local = [[(u, v0 + pv * sv, z0 + pz * sz) for pv, pz in prof] for u, sv, sz, v0, z0 in stations]
     rings = [[f.pt(*p) for p in ring_] for ring_ in local]
     n = len(prof)
+    zc = REAR[0]
     for k, (A, B) in enumerate(zip(rings, rings[1:])):
         for i in range(n if closed else n - 1):
             j = (i + 1) % n
-            if hole:
-                q = [local[k][i], local[k][j], local[k + 1][j], local[k + 1][i]]
-                cu, cv, cz = (sum(p[x] for p in q) / 4 for x in range(3))
-                if cv > 0 and cu * cu + (cz - REAR[0]) ** 2 < hole * hole:
-                    continue
+            q = [local[k][i], local[k][j], local[k + 1][j], local[k + 1][i]]
+            if hole and all(p[1] > 1e-6 for p in q) and min(abs(p[2] - zc) for p in q) < hole + 0.05 and \
+                    min(abs(p[0]) for p in q) < hole + 0.05:
+                uz = [(p[0], p[2]) for p in q]
+                cw = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(uz, uz[1:] + uz[:1])) < 0
+                for piece in _minus_bore(uz[::-1] if cw else uz, hole, zc):      # cut counter-clockwise,
+                    pts = [f.pt(*_on_face(q, u, z)) for u, z in piece]
+                    f.poly(pts[::-1] if cw else pts, mat, flip=True)            # drawn in the face's own winding
+                continue
             f.poly([A[i], A[j], B[j], B[i]], mat, flip=True)
     if cap0:
         f.poly(rings[0], cap0, flip=True)
@@ -174,19 +230,20 @@ def ring(f, u, z, r0, r1, mat, sides=24):
 
 
 def rear_thruster(f, lit):
-    """A wide, short thruster sunk in a round cut-out in the drum's back: a raised rim round the opening, a dark bore,
-    and in it a collar, a flared bell with a lip ring, its inner wall running in to a throat plate with the injector at
-    its centre. Lit, the inner wall and the injector burn."""
+    """A wide thruster in a bore cut into the drum's back, its cone running out past the hull: the bore's wall (the hull
+    is cut along the same polygon, so the two meet exactly) and floor, a collar, a flared bell with a lip ring, its inner
+    wall running in to a throat plate with the injector at its centre. Lit, the inner wall and the injector burn."""
     _g("rear")
     z, rt, rm = REAR
-    ur = -0.86                                                               # the rim's face, just off the drum
-    f.hcyl(-0.76, ur, 0, z, RIM, HULL_D, sides=32)                           # the rim's outer wall
-    ring(f, ur, z, BORE + 0.02, RIM, HULL_D)                                 # its face
-    ring(f, ur - 0.001, z, BORE, BORE + 0.02, "steelL")                      # and lit inner edge
-    ub = -0.62                                                               # the bore's floor
-    f.hcyl(ur, ub, 0, z, BORE, "steelD", sides=32)                           # the bore
-    ring(f, ub, z, 0.0, BORE, "dark")
-    ut, um = ub - 0.07, ub - 0.22                                            # throat, mouth (just inside the rim)
+    rim = [(_bore_corner(i, BORE, z), math.sqrt(max((DRUM_R * 1.012) ** 2 - (_bore_corner(i, BORE, z)[1] - z) ** 2, 0.0)))
+           for i in range(BORE_N)]
+    for i in range(BORE_N):                                                  # the bore's wall, floor to hull
+        (pa, va), (pb, vb) = rim[i], rim[(i + 1) % BORE_N]
+        f.poly([f.pt(-BORE_FLOOR, pa[0], pa[1]), f.pt(-BORE_FLOOR, pb[0], pb[1]), f.pt(-vb, pb[0], pb[1]),
+                f.pt(-va, pa[0], pa[1])], "steelD", flip=True)
+    ring(f, -BORE_FLOOR, z, 0.0, BORE, "dark", sides=BORE_N)                 # its floor
+    ub = -BORE_FLOOR
+    ut, um = ub - 0.14, ub - 0.42                                            # throat, mouth (out past the hull)
     f.hcyl(ub, ut, 0, z, rt + 0.04, "steelD", sides=24)                       # collar
     f.hcyl(ut, um, 0, z, rt, HULL_D, r1=rm, sides=24)                         # the bell, outside
     ring(f, um, z, rm - 0.035, rm, "steelL")                                 # its lip
@@ -222,7 +279,7 @@ def _add(p, *terms):
 def arms(f, out):
     """Two grab arms either side of the windshield, each behind a hatch panel set square into the front of its dome.
     Stowed, the panels are shut; mining, the doors stand open on their top hinges and the arms reach forward, down and
-    in toward the laser's mark: a shoulder, an upper arm with its piston, a forearm and a two-fingered claw."""
+    in toward the laser's mark: a shoulder, an upper arm with its piston, a forearm and a four-fingered claw."""
     _g("arms")
     av, az = ARM_AT
     for sv in (-1, 1):
@@ -253,8 +310,13 @@ def arms(f, out):
         strut(f, _add(S, (0.06, (1, 0, 0)), (0.02, (0, 0, 1))), _add(E, (0.1, (1, 0, 0)), (0.03, (0, 0, 1))), 0.035, YEL)   # piston
         for p_, r in ((S, 0.075), (E, 0.065), (W, 0.055)):
             pin(f, p_, r, 0.13, "steelL")                                    # round pivots
-        strut(f, W, _add(W, (0.16, (1, 0, 0)), (0.03, (0, 0, 1))), 0.04, "steelD")      # the claw's fingers
-        strut(f, W, _add(W, (0.15, (1, 0, 0)), (-0.07, (0, 0, 1))), 0.04, "steelD")
+        for k in range(4):                                                   # the claw: four fingers round the wrist,
+            a = k * math.tau / 4 + math.pi / 4                               # splayed out then curled in at the tips
+            ca, sa = math.cos(a), math.sin(a)
+            knuckle = _add(W, (0.1, (1, 0, 0)), (0.07 * ca, (0, 1, 0)), (0.07 * sa, (0, 0, 1)))
+            tip = _add(W, (0.19, (1, 0, 0)), (0.03 * ca, (0, 1, 0)), (0.03 * sa, (0, 0, 1)))
+            strut(f, W, knuckle, 0.035, "steelD")
+            strut(f, knuckle, tip, 0.03, "steelL")
 
 
 def lights(f, on):
