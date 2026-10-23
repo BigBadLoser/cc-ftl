@@ -282,6 +282,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         else if (e.type === 'ship.captured') showToast(e.by === 'player' ? 'Ship captured! It is now a prize.' : 'Your ship was captured!', 8000);
       }
       alerts.onEvents(events);
+      alerts.syncIncoming();
       log.onEvents(events, alerts.covers);
     },
     attach(renderer) {

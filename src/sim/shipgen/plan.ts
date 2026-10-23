@@ -1,9 +1,19 @@
 import type { Rng } from '../rng';
 import type { ModuleDef } from '../registry';
-import type { FactionDef, RoomRole, Scaled, ShipBudget, ShipRoleDef, Weighted } from './types';
+import type { FactionDef, HullFamilyDef, RoomRole, Scaled, ShipBudget, ShipRoleDef, Weighted } from './types';
 
 /** min(max, floor(base + perDepth * depth)). */
 export const scaled = (s: Scaled, depth: number): number => Math.min(s.max, Math.floor(s.base + s.perDepth * depth));
+
+/**
+ * What a faction can build at this depth: its hull families (assembly-driven factions) or else its ship roles, weighted by depth. When no
+ * weight is positive every entry counts equally. The first draw of a generation attempt picks from this list (`previewHull`).
+ */
+export function hullChoices(f: FactionDef, depth: number): Weighted<HullFamilyDef | ShipRoleDef>[] {
+  const items: readonly (HullFamilyDef | ShipRoleDef)[] = f.hullFamilies && f.hullFamilies.length > 0 ? f.hullFamilies : f.architecture.roles;
+  const w = items.map((value) => ({ value, weight: scaled(value.weight, depth) }));
+  return w.some((x) => x.weight > 0) ? w : w.map((x) => ({ ...x, weight: 1 }));
+}
 
 export function pickWeighted<T>(rng: Rng, items: readonly Weighted<T>[]): T {
   const total = items.reduce((s, i) => s + Math.max(0, i.weight), 0);

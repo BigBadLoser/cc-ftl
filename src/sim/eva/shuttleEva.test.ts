@@ -81,7 +81,7 @@ function world(ships = 1, gap = 5, at2?: { x: number; y: number }): Sim {
     const origin = g === 1 ? { x: 0, y: 0 } : (at2 ?? { x: (g - 1) * (14 + gap - 1), y: 0 });
     origins.push(origin);
     const ship = stampShip(sim, { name: `s${g}`, rows: ring() }, { faction: 'player', x: origin.x, y: origin.y });
-    sim.world.add(ship, CombatC, { hold: false, volley: false, target: null, doctrine: 'random', ftl: 0, shield: { layers: 0, max: 0, timer: 0 }, evasion: 0, aiTimer: 0 });
+    sim.world.add(ship, CombatC, { hold: false, volley: false, target: null, doctrine: 'random', ftl: 0, shield: { layers: 0, max: 0, timer: 0 }, evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0 });
   }
   for (let g = 1; g <= ships; g++) {
     const origin = origins[g - 1] as { x: number; y: number };

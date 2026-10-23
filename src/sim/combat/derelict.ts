@@ -3,7 +3,11 @@ import type { ShipTemplate } from '../registry';
 import type { Sim } from '../sim';
 import { spillItems } from '../items/stacks';
 import type { RuinMeta } from '../shipgen/ruinTypes';
-import { shipGrid, shipIdOf } from '../regions';
+import { placeAt, placementGapError, shipGrid, shipIdOf, type Place } from '../regions';
+import { generateShip } from '../shipgen/generate';
+import { ruin } from '../shipgen/ruin';
+import type { RuinCause } from '../shipgen/ruinTypes';
+import { shipById, stampShip } from './ships';
 import { DoorJam } from '../structure';
 import { ShipC, type ShipRuin } from './components';
 import { spawnDriftingContainer } from '../containers/detach';
@@ -87,4 +91,42 @@ function renderRuin(template: ShipTemplate, meta: RuinMeta): ShipRuin {
     hooks: meta.hooks.filter((h) => h.art && h.kind !== 'eggsac').map((h) => ({ x: h.x, y: h.y, size: h.size, art: h.art })),
     modules,
   };
+}
+
+/** What `spawnDerelict` takes: the generator faction (`faction.*`) and seed that make the hull, its depth, where it goes, and how ruined it is. */
+export interface DerelictSpec {
+  faction: string;
+  depth: number;
+  seed: number;
+  at: Place;
+  intensity?: number;
+  cause?: RuinCause;
+  /** The wreck's name (default: the generator's). */
+  name?: string;
+  /** Who moves in: aliens or robots by the faction (default), or nobody (a fresh battle wreck). */
+  infest?: 'none';
+}
+
+/**
+ * Generate a hull, ruin it and stamp it as a neutral wreck (`debug.spawnDerelict`, and the galaxy's derelicts and battle wrecks). Wrecks of a living faction are
+ * infested with aliens, the rest with robots. Returns the ship id, or the reason it could not be made or placed.
+ */
+export function spawnDerelict(sim: Sim, spec: DerelictSpec): number | string {
+  const faction = sim.content.factions?.[spec.faction];
+  if (!faction) return 'badFaction';
+  const gen = generateShip(faction, spec.faction, spec.seed, spec.depth, sim.content.modules);
+  if (gen.problems.length > 0) return 'noLayout';
+  const infest = spec.infest ?? (faction.living ? 'alien' : 'robot');
+  const { template, meta } = ruin(gen.template, spec.seed, { defs: sim.content.modules, intensity: spec.intensity ?? 0.5, infest, origin: spec.faction, ...(spec.cause ? { cause: spec.cause } : {}) });
+  const { x, y } = placeAt(spec.at, gen.width, gen.height);
+  if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0) return 'badValue';
+  const gap = placementGapError(sim, { x, y, w: gen.width, h: gen.height });
+  if (gap) return gap;
+  sim.sector.width = Math.max(sim.sector.width, x + gen.width + 8);
+  sim.sector.height = Math.max(sim.sector.height, y + gen.height + 8);
+  const shipId = stampShip(sim, spec.name ? { ...template, name: spec.name } : template, { faction: 'neutral', x, y, state: 'wreck' });
+  applyRuin(sim, shipId, template, meta);
+  const ship = shipById(sim, shipId);
+  if (ship) ship.gen = { faction: spec.faction, seed: spec.seed, depth: spec.depth, role: gen.role };
+  return shipId;
 }

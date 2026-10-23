@@ -138,6 +138,7 @@ describe('ship packets', () => {
 describe('galaxy.jump, archives and sector.deploy', () => {
   it('jumps, archives the rest, deploys, and restores the archive on return', () => {
     const sim = newGame(3, content);
+    sim.galaxy.fleets = []; // this test is about archives: no NPC fleet waits at the node it drops into
     const raider = stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40, state: 'wreck' });
     run(sim, 20);
     const player = homeShip(sim);
@@ -192,6 +193,7 @@ describe('galaxy.jump, archives and sector.deploy', () => {
 
   it('freezes a restored node while the deploy waits, including after a rejected deploy', () => {
     const sim = newGame(6, content);
+    sim.galaxy.fleets = []; // no NPC ship drops in and takes the deploy spot
     const player = homeShip(sim);
     // A fresh combat wreck with crew aboard: left to tick, its air, heat and crew would change.
     stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40 });

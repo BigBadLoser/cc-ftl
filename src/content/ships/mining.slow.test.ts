@@ -5,6 +5,7 @@ import { content } from '../index';
 /** The starter ship with `n` pod bays (first spots that fit, scanning rows), a pod in each, and a field. */
 function setup(n: number): { sim: Sim; pods: number[]; asteroid: number } {
   const sim = newGame(7, content);
+  sim.galaxy.fleets = []; // keep NPC traffic out of this long run (fleets arrive in the node every minute)
   const ship = homeShip(sim);
   const g = shipGrid(sim, ship)!;
   const pods: number[] = [];

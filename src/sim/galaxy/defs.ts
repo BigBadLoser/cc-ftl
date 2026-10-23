@@ -9,6 +9,12 @@ import type { Weighted as GenWeighted } from '../shipgen/types';
 /** A weighted choice (the ship generator's shape); string ids by default. */
 export type Weighted<T = string> = GenWeighted<T>;
 
+/** What a fleet does for a living. Its agenda (agenda.ts) follows from it. */
+export type FleetRole = 'trader' | 'miner' | 'patrol' | 'pirate' | 'raider';
+
+/** A ship's size class, from the generator's hull families (`FleetContent.classes`). */
+export type ShipSize = 'small' | 'medium' | 'heavy';
+
 /** A danger-tier range, both ends inclusive and optional. */
 export interface DangerRange {
   min?: number;
@@ -46,6 +52,51 @@ export interface GalaxyFactionDef {
   traffic?: { weight: number; danger?: DangerRange };
   /** The start node's territory belongs to it. */
   home?: true;
+  /** The fleets its ports field: which roles, and each role's group budget. Absent = no ships of its own. */
+  fleet?: FactionFleetDef;
+}
+
+/**
+ * A group (fleet) of a role. Its size is a budget: a group's `budget` is drawn (weighted), then ships are drawn from `sizes` (weighted) while
+ * their `FleetContent.sizeCost` fits in what is left, up to `maxShips`. So a navy patrol with budget 4 is two small ships (2 + 2), one medium
+ * (3) or one heavy (4); pirates mostly get budget 2 (one small ship) and sometimes 4 (two). `maxShips: 1` makes the group always a single ship.
+ */
+export interface FleetGroupDef {
+  /** Weight of this role among the groups a plain station of the faction fields (dens, depots, outposts and nests each field one role). */
+  weight: number;
+  budget: readonly Weighted<number>[];
+  sizes: readonly Weighted<ShipSize>[];
+  maxShips: number;
+}
+
+export interface FactionFleetDef {
+  groups: Partial<Record<FleetRole, FleetGroupDef>>;
+  /** Ship names: `prefix` (optional), then one of `first`, then one of `second` (optional), joined by spaces. */
+  names: { prefix?: string; first: readonly string[]; second?: readonly string[] };
+}
+
+/** Where a faction's ships call home: stations, dens, depots, mining outposts and drone nests (derived from structures, ports.ts). */
+export type PortKind = 'station' | 'den' | 'depot' | 'outpost' | 'nest';
+
+export interface PortKindDef {
+  name: string;
+  /** Groups the port fields at size 1, 2 and 3. */
+  groups: readonly [number, number, number];
+  /** Turns the port takes to build one replacement ship. */
+  rebuildTurns: number;
+}
+
+/** A hull family of a generator faction as a ship: its size class and the roles it can serve (any when absent). */
+export interface ShipClassDef {
+  size: ShipSize;
+  roles?: readonly FleetRole[];
+}
+
+/** Fleet tables the roster (roster.ts) reads: size costs, hull classes by generator faction and family, port kinds. */
+export interface FleetContent {
+  sizeCost: Record<ShipSize, number>;
+  classes: Record<string, Record<string, ShipClassDef>>;
+  ports: Record<PortKind, PortKindDef>;
 }
 
 /** A fixed structure a node can hold. It is a descriptor until the node grids can place it (sector refactor). */
@@ -70,6 +121,23 @@ export type StandingTier = 'hostile' | 'neutral' | 'friendly';
 export const inDanger = (r: DangerRange | undefined, danger: number): boolean =>
   !r || (danger >= (r.min ?? -Infinity) && danger <= (r.max ?? Infinity));
 
+/** Units a port produces or consumes per turn at size 1 (scaled by its size). */
+export interface MarketRates {
+  produce?: Readonly<Record<string, number>>;
+  consume?: Readonly<Record<string, number>>;
+}
+
+/**
+ * The NPC economy's tables (market.ts). `profiles` is the trade profile (`TradeDef.traders`) whose stock is a port kind's baseline (null = no market);
+ * a plain station is a farm (`farm.profile`) with chance `farm.chance`. `rates` are per profile; `goods` are the commodities NPC traders carry.
+ */
+export interface MarketContent {
+  profiles: Record<PortKind, string | null>;
+  farm: { profile: string; chance: number };
+  rates: Record<string, MarketRates>;
+  goods: readonly string[];
+}
+
 /** Everything the galaxy generator reads from content (`ContentRegistry.galaxy`). */
 export interface GalaxyContent {
   /** By faction id (also the reputation key). */
@@ -78,4 +146,6 @@ export interface GalaxyContent {
   structures: Record<string, StructureDef>;
   /** Name parts for sectors: a prefix plus a suffix ("Kessa Reach"). Nodes add a Greek letter. */
   names: { prefix: readonly string[]; suffix: readonly string[] };
+  fleet: FleetContent;
+  market: MarketContent;
 }

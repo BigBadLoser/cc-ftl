@@ -4,6 +4,7 @@ import { shipIdOf, shipGrid } from '../sim/regions';
 import { AlienC, EggSacC } from '../sim/aliens/components';
 import { DeadC } from '../sim/crew/components';
 import { StationAlarmC, StationC } from '../sim/stations/components';
+import { AsteroidC } from '../sim/asteroids/components';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -75,6 +76,18 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       });
       return { sacs, aliens };
     },
+    /** Everything standing in the sector: ships (stations, wrecks, NPCs) and asteroids, with their rectangles in sector tiles (screenshot scripts). */
+    structures: () => ({
+      ships: [...sim.world.query(ShipC)].map((id) => {
+        const s = sim.world.get(id, ShipC);
+        return s && { id, name: s.name, faction: s.faction, state: s.state, x: s.x, y: s.y, w: s.width, h: s.height, immobile: !!s.immobile, outpost: s.outpost?.kind ?? null };
+      }),
+      asteroids: [...sim.world.query(AsteroidC)].map((id) => {
+        const a = sim.world.get(id, AsteroidC);
+        return a && { id, kind: a.kind, x: a.x, y: a.y, w: a.width, h: a.height };
+      }),
+      sector: { w: sim.sector.width, h: sim.sector.height, node: sim.sector.node },
+    }),
     /** Queue a sim command (debug commands included) from a script. */
     /** The sim itself, so scripts can stage states no command reaches (docked shuttle with cargo). Debug only. */
     sim,

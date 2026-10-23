@@ -22,6 +22,7 @@ const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extrac
 function withCivilian(role: string, gameSeed = 1): { sim: Sim; ship: number } {
   for (let seed = 1; seed < 80; seed++) {
     const sim = newGame(gameSeed, content);
+    sim.galaxy.fleets = []; // keep NPC traffic out of this long run (fleets arrive in the node every minute)
     sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.civilian', seed, depth: 2, cx: 130, cy: 70 });
     sim.step();
     sim.events.drain();
@@ -46,6 +47,7 @@ const stored = (sim: Sim, item: string): number => playerItems(sim, item);
 /** A new game with a trading outpost east of the player, hailed; and the starter's first crate. */
 function atStation(): { sim: Sim; station: number; crate: number } {
   const sim = newGame(1, content);
+  sim.galaxy.fleets = []; // keep NPC traffic out of this long run (fleets arrive in the node every minute)
   sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 });
   run(sim, 2);
   const station = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;

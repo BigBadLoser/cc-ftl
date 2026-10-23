@@ -4,6 +4,7 @@ import { isLive } from '../trade/deals';
 import { playerShipInfo } from './arrivals';
 import { ftlCharge, fuelStock } from './fuel';
 import { chunkOfId } from './generator';
+import { syncFleets } from './fleets';
 import { repKey } from './standing';
 import { currentNode, ensureAround, ensureChunkOf, galaxyIndex } from './state';
 import { ARRIVAL_EVERY_SEC, SENSOR_HOPS } from './tuning';
@@ -84,6 +85,7 @@ export function arrive(sim: Sim): void {
   discover(sim);
   const data = currentNode(sim);
   if (data) setContext(sim, data);
+  syncFleets(sim, g.turn);
   g.rev++;
 }
 
@@ -98,6 +100,7 @@ export type Reject = (reason: string) => false;
 
 /** The player's flown ship may leave now: sector active, a ship with combat state, no live trade deal. */
 export function checkLeaving(sim: Sim, ship: number, reject: Reject): boolean {
+  if (sim.galaxy.event) return reject('inEvent');
   if (sim.sector.state === 'hyperspace') return reject('inHyperspace');
   if (sim.sector.state !== 'active') return reject('deploying');
   const me = playerShipInfo(sim);

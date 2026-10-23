@@ -82,6 +82,12 @@ export interface UiStarLink {
   count: number;
 }
 
+/** A port's market in a few words: the goods that are cheap and the goods that are dear there right now. */
+export interface UiStarMarket {
+  cheap: string[];
+  dear: string[];
+}
+
 export interface UiStarNode {
   id: string;
   sector: string;
@@ -102,6 +108,34 @@ export interface UiStarNode {
   others: number;
   /** One jump from the player's node. */
   reachable: boolean;
+  /** The market of its trading port, when sensors reach it and it has one. */
+  market?: UiStarMarket | null;
+}
+
+/** An NPC fleet the sensors can see: drawn beside its node, heading for `next` (null while resting). */
+export interface UiStarFleet {
+  id: number;
+  node: string;
+  x: number;
+  y: number;
+  /** The next node on its route (position), or null when it rests or is stranded. */
+  tx: number | null;
+  ty: number | null;
+  /** The fleet's name (its first ship, "+n" for the rest), e.g. "CNS Valiant +1". */
+  name: string;
+  /** Faction name, role label ("Trader", "Patrol", "Raider"), ship count, tone by faction kind, and whether it is hostile to the player. */
+  faction: string;
+  role: string;
+  ships: number;
+  tone: Tone;
+  hostile: boolean;
+  damaged: boolean;
+  /** What it is doing: "Resting at X", "Trading run to X", "Returning home to X", "Adrift"... */
+  heading: string;
+  /** Its home port's node. */
+  home: string;
+  /** What it carries ("20 Metal, 4 Ice"), or empty. */
+  cargo?: string;
 }
 
 export interface UiStarEdge {
@@ -124,6 +158,18 @@ export interface UiStarFaction {
   standing: number;
 }
 
+/** One line of the news feed (what the world did lately): precise inside sensor range, a rumour outside it. */
+export interface UiNews {
+  id: number;
+  turn: number;
+  icon: 'skull' | 'evasion' | 'combat' | 'trade' | 'stock' | 'ship';
+  tone: Tone;
+  text: string;
+  /** Where: the node's name for news in range, the region (sector) for a rumour. */
+  place: string;
+  rumour: boolean;
+}
+
 export interface UiStarmap {
   rev: number;
   current: string;
@@ -143,6 +189,15 @@ export interface UiStarmap {
   dangerStep: number;
   sectors: UiStarSector[];
   nodes: UiStarNode[];
+  /** NPC fleets within sensor range. */
+  fleets: UiStarFleet[];
+  /** The news feed, newest first. */
+  news: UiNews[];
+  /** The player's credits (what a bribe costs is compared to this), pending encounters, the event grid and how the last encounter ended. */
+  credits: number;
+  encounters: UiEncounter[];
+  event: UiEventGrid | null;
+  result: UiEncounterResult | null;
   /** Only edges whose both ends are discovered. */
   edges: UiStarEdge[];
   factions: UiStarFaction[];
@@ -158,12 +213,71 @@ export interface UiStarmap {
   nebula: UiNebulaTile[];
 }
 
+/** One thing the player can do about an encounter. `detail` is the odds or the price ("62%", "84 cr"), `why` the reason when it is disabled. */
+export interface UiEncounterChoice {
+  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge';
+  label: string;
+  detail: string;
+  enabled: boolean;
+  why: string | null;
+}
+
+/** A pending encounter as the drawer shows it: who, how strong, how it came about and the choices. */
+export interface UiEncounter {
+  id: number;
+  kind: 'interdict' | 'hail' | 'scan' | 'distress';
+  title: string;
+  /** The fleet's name ("Rust Jackal +1"), then its faction and role label. */
+  name: string;
+  faction: string;
+  role: string;
+  tone: Tone;
+  hostile: boolean;
+  ships: number;
+  /** "Light" | "Moderate" | "Heavy" | "Overwhelming", from the fleet strength. */
+  threat: string;
+  /** "Intercepted you on the lane" etc., and the node name. */
+  how: string;
+  node: string;
+  choices: UiEncounterChoice[];
+}
+
+/** How the last encounter ended, as a line with a tone. */
+export interface UiEncounterResult {
+  text: string;
+  /** The starmap turn it happened. */
+  turn: number;
+  tone: 'green' | 'amber' | 'red' | 'dim';
+}
+
+/** The event grid the player is in (a deep-space pocket for a fight or a rescue). */
+export interface UiEventGrid {
+  id: number;
+  kind: 'fight' | 'rescue';
+  title: string;
+  faction: string;
+  role: string;
+  tone: Tone;
+  /** Fleet ships still in the grid, and how many of them are hostile and active. */
+  ships: number;
+  hostiles: number;
+  /** The ship is still being placed (the deploy picker is up). */
+  deploying: boolean;
+  /** Leaving is allowed now; `why` says what is missing when it is not. Under fire leaving is a flee that spends the charged drive. */
+  canLeave: boolean;
+  why: string | null;
+  fleeing: boolean;
+  /** The destination of the held trip (node name) and the hops left. */
+  resumeTo: string;
+  hopsLeft: number;
+}
+
 /** The hyperspace trip: the route's node ids, the index of the node last passed, and the hop's pace. */
 export interface UiTravel {
   route: string[];
   at: number;
-  /** 'hop': under way to route[at + 1]; 'arrived': at the end; 'noFuel': stopped for want of fuel. */
-  phase: 'hop' | 'arrived' | 'noFuel';
+  /** 'hop': under way to route[at + 1]; 'arrived': at the end; 'noFuel': stopped for want of fuel; 'interdicted': halted by an encounter; 'event': in an event grid. */
+  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event';
   /** A drop was asked for: the route ends at the next node, where the ship drops out. */
   stopping: boolean;
   /** Fuel the next hop needs (when stopped for want of it). */
@@ -195,6 +309,8 @@ export interface UiStarRoute {
   /** FTL charge needed to enter hyperspace (the largest hop's, spent once), and whether the tank and the drive cover the route / the first hop. */
   nextCharge: number;
   fuelOk: boolean;
+  /** Fuel units missing for the whole route (0 when the stock covers it). */
+  fuelShort: number;
   chargeOk: boolean;
   /** Why the next jump cannot go now (a short sentence), or null. */
   blocker: string | null;

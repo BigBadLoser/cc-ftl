@@ -71,6 +71,12 @@ export interface Trader {
   stock: ItemQty[];
   /** True for a station (an immobile ship): its trades run like any ship's, by shuttle. */
   station: boolean;
+  /**
+   * Set while a station stands in a node with a port (galaxy/marketLive.ts): the port whose market this trader is. Its `stock` is then the port's stock, and
+   * `base` the port's baseline for the commodities (item, count; 0 allowed), against which prices rise with scarcity and fall with plenty (`stockFactor`).
+   */
+  port?: string;
+  base?: ItemQty[];
 }
 export const TraderC = defineComponent<Trader>('trader');
 

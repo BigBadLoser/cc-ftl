@@ -8,7 +8,7 @@ import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne, rotsOf } from './fit';
 import { RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
 import { Layout } from './layout';
-import { pickWeighted, planShip, scaled, type RoomSpec, type ShipPlan } from './plan';
+import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
 import { salvage } from './topoSalvage';
@@ -16,7 +16,7 @@ import { validateTemplate } from './validate';
 import { thinWalls } from './thinWalls';
 import { extractContainers } from './containerCells';
 import { openBareDocks } from './openDocks';
-import type { ArchetypeId, FactionDef, GenResult, GenRoom, RoomRole, ShipRoleDef } from './types';
+import type { ArchetypeId, FactionDef, GenResult, GenRoom, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
 
 /** Attempts before giving up on a seed (each reseeds deterministically). */
 export const GEN_ATTEMPTS = 24;
@@ -186,10 +186,16 @@ function stockOf(rng: Rng, f: FactionDef, def: ModuleDef | undefined): { stock?:
 
 /** Pick a ship role (weights scaled by depth) and one of its archetypes. */
 function pickRole(rng: Rng, f: FactionDef, depth: number): { role: ShipRoleDef; archetype: ArchetypeId } {
-  const roles = f.architecture.roles.map((r) => ({ value: r, weight: scaled(r.weight, depth) }));
-  const role = pickWeighted(rng, roles.some((r) => r.weight > 0) ? roles : f.architecture.roles.map((r) => ({ value: r, weight: 1 })));
+  const role = pickWeighted(rng, hullChoices(f, depth)) as ShipRoleDef;
   return { role, archetype: pickWeighted(rng, role.archetypes) };
 }
+
+/**
+ * The hull family (or ship role) id the first attempt of `seed` builds, without building anything (one draw of the attempt's Rng). A ship
+ * whose first attempt fails is built by a later attempt, which may pick another; the galaxy uses this to give a ship a size class cheaply.
+ */
+export const previewHull = (f: FactionDef, seed: number, depth: number): string =>
+  pickWeighted(new Rng(attemptSeed(seed, 0)), hullChoices(f, depth)).id;
 
 /** One generation attempt (attempt `n` of `seed`): the result, or the stage that failed. */
 export function generateAttempt(
@@ -205,8 +211,7 @@ export function generateAttempt(
   let profile = '';
   if (f.hullFamilies && f.hullFamilies.length > 0) {
     // Assembly-driven: a hull family, its standard sections, composed by constraints.
-    const fams = f.hullFamilies.map((h) => ({ value: h, weight: scaled(h.weight, depth) }));
-    const fam = pickWeighted(rng, fams.some((x) => x.weight > 0) ? fams : fams.map((x) => ({ ...x, weight: 1 })));
+    const fam = pickWeighted(rng, hullChoices(f, depth)) as HullFamilyDef;
     role = { id: fam.id, weight: fam.weight, archetypes: [], ...(fam.bonus ? { bonus: fam.bonus } : {}), ...(fam.bays ? { bays: fam.bays } : {}) };
     archetype = 'sections';
     plan = planShip(rng, f, role, depth, defs);

@@ -23,6 +23,7 @@ const rejected = (events: SimEvent[]): string[] => ofType(events, 'command.rejec
 function withCivilian(role: string, gameSeed = 1): { sim: Sim; ship: number } {
   for (let seed = 1; seed < 80; seed++) {
     const sim = newGame(gameSeed, content);
+    sim.galaxy.fleets = []; // keep NPC traffic out of this long run (fleets arrive in the node every minute)
     sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.civilian', seed, depth: 2, cx: 130, cy: 70 });
     sim.step();
     sim.events.drain();
@@ -35,6 +36,7 @@ function withCivilian(role: string, gameSeed = 1): { sim: Sim; ship: number } {
 /** A started game with a trading outpost (a generated station grid) and the hail already answered. */
 function withStation(): { sim: Sim; station: number } {
   const sim = newGame(7, content);
+  sim.galaxy.fleets = []; // keep NPC traffic out of this long run (fleets arrive in the node every minute)
   sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4, name: 'Haven' });
   sim.step();
   const station = [...sim.world.query(TraderC)][0] as number;
@@ -137,6 +139,7 @@ describe('hailing', () => {
 
   it('hostile ships refuse; reputation with their faction can turn a refusal into an answer', () => {
     const sim = newGame(3, content);
+    sim.galaxy.fleets = []; // keep NPC traffic out of this long run (fleets arrive in the node every minute)
     sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.scrapper', seed: 5, depth: 2, cx: 130, cy: 70 });
     sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.drones', seed: 5, depth: 2, cx: 130, cy: 110 });
     sim.step();
@@ -281,6 +284,7 @@ describe('trade state', () => {
 
   it('an old save without trade state loads with none', () => {
     const sim = newGame(2, content);
+    sim.galaxy.fleets = []; // keep NPC traffic out of this long run (fleets arrive in the node every minute)
     const raw = JSON.parse(serialize(sim)) as Record<string, unknown>;
     delete raw['trade'];
     const loaded = deserialize(JSON.stringify(raw), content);

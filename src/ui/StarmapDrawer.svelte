@@ -6,17 +6,18 @@
    */
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
-  import type { UiJumpWarnings, UiStarCluster, UiStarFaction, UiStarmap, UiStarNode, UiStarRoute, UiStarSector } from './starmapApi';
+  import StarmapEncounter from './StarmapEncounter.svelte';
+  import type { UiEncounterChoice, UiJumpWarnings, UiStarCluster, UiStarFaction, UiStarmap, UiStarNode, UiStarRoute, UiStarSector } from './starmapApi';
   import { dangerColor, toneColor } from './starmapStyle';
 
-  let { map, node, sector, cluster, factions, route, nodes, fleeing = false, warnings = null, taking, onGo, onConfirm, onCancel, onToggle, onDrop, onClear }: {
+  let { map, node, sector, cluster, factions, route, nodes, fleeing = false, warnings = null, taking, onGo, onConfirm, onCancel, onToggle, onDrop, onClear, onRespond }: {
     map: UiStarmap; node: UiStarNode | null; sector: UiStarSector | null; cluster: UiStarCluster | null; factions: UiStarFaction[];
     route: UiStarRoute | null; nodes: Map<string, UiStarNode>;
     /** Flee-target mode: the button flees (a one-hop trip away from the fight) instead of jumping. */
     fleeing?: boolean;
     /** The confirm step: what the jump would leave behind (null = not confirming) and which docked shuttles come along. */
     warnings?: UiJumpWarnings | null; taking: Set<number>;
-    onGo: () => void; onConfirm: () => void; onCancel: () => void; onToggle: (id: number) => void; onDrop: () => void; onClear: () => void;
+    onGo: () => void; onConfirm: () => void; onCancel: () => void; onToggle: (id: number) => void; onDrop: () => void; onClear: () => void; onRespond: (id: number, choice: UiEncounterChoice['choice']) => void;
   } = $props();
 
   const travel = $derived(map.travel);
@@ -26,13 +27,16 @@
     return n?.known ? n.name : 'Uncharted';
   };
   const legs = $derived(travel ? travel.route.slice(1).map((id, i) => ({ id, done: i < travel.at, now: i === travel.at && travel.phase === 'hop' })) : []);
-  const afterRoute = $derived(route ? map.fuel - route.fuel : map.fuel);
-  const title = $derived(travel ? 'In hyperspace' : node ? (node.known ? node.name : 'Unexplored') : 'Course');
+  const traffic = $derived(node ? map.fleets.filter((f) => f.node === node.id) : []);
+  const blocked = $derived(travel?.phase === 'interdicted' || travel?.phase === 'event');
+  const recent = $derived(map.result && map.encounters.length === 0 && map.turn - map.result.turn <= 3 ? map.result : null);
+  const title = $derived(travel ? (travel.phase === 'interdicted' ? 'Interdicted' : 'In hyperspace') : node ? (node.known ? node.name : 'Unexplored') : 'Course');
   const sub = $derived(travel ? `Turn ${map.turn}` : `Danger ${node?.danger ?? 0}`);
   const label = $derived(fleeing ? 'Flee here' : route && route.hops > 1 ? `Jump (${route.hops} hops)` : 'Jump');
   const dropNote = $derived(
     travel?.phase === 'noFuel' ? `Out of fuel for the next hop (needs ${travel.need}). Drop here or refuel.`
     : travel?.phase === 'arrived' ? 'You have reached the end of the route.'
+    : travel?.phase === 'interdicted' ? 'Travel is halted until you answer the interdiction.'
     : travel?.stopping ? `Dropping out at ${nameOf(travel.route[travel.at + 1] as string)} when the hop ends.`
     : 'Mid-hop, you drop out at the next node.',
   );
@@ -42,6 +46,10 @@
   <PanelHead icon="map" {title} {sub} onBack={travel ? undefined : onClear} backIcon="close" backTitle="Close drawer" backTestId="starmap-card-close" />
 
   {#if travel}
+    {#each map.encounters.filter((x) => x.kind !== 'interdict') as e (e.id)}
+      <StarmapEncounter encounter={e} onChoose={onRespond} />
+    {/each}
+    {#if recent}<p class="note result {recent.tone}" data-testid="starmap-result"><Icon name={recent.tone === 'red' ? 'alert' : 'chevUp'} size={14} />{recent.text}</p>{/if}
     <section>
       <h4>Progress</h4>
       <div class="bar" role="progressbar" aria-valuemin={0} aria-valuemax={travel.route.length - 1} aria-valuenow={travel.at}><i style={`width: ${(travel.at / Math.max(1, travel.route.length - 1)) * 100}%`}></i></div>
@@ -60,7 +68,7 @@
       </div>
     </section>
     <p class="note" class:warn={travel.phase === 'noFuel'}>{dropNote}</p>
-    <button class="go" onclick={onDrop} disabled={travel.stopping} data-testid="starmap-drop">Drop from hyperspace</button>
+    <button class="go" onclick={onDrop} disabled={travel.stopping || blocked} data-testid="starmap-drop">Drop from hyperspace</button>
   {:else if node}
     <section>
       <h4>Sector</h4>
@@ -74,7 +82,27 @@
       {#if node.known}
         <div class="row">{node.structures.length ? node.structures.join(', ') : 'Empty space'}</div>
         {#if node.resources.length}<div class="row dim">Resources: {node.resources.join(', ')}</div>{/if}
+        {#if node.market}
+          <div class="row market" data-testid="starmap-market" title="Prices follow the port's stock: cheap where plentiful, dear where scarce">
+            <span class="dim">Market</span>
+            {#each node.market.cheap as g (g)}<span class="good cheap"><Icon name="chevDown" size={11} />{g}</span>{/each}
+            {#each node.market.dear as g (g)}<span class="good dear"><Icon name="chevUp" size={11} />{g}</span>{/each}
+            {#if !node.market.cheap.length && !node.market.dear.length}<span class="dim">prices steady</span>{/if}
+          </div>
+        {/if}
         {#if node.hostiles}<div class="row warn" data-testid="starmap-hostiles"><Icon name="alert" size={14} />{node.hostiles} hostile ship{node.hostiles > 1 ? 's' : ''} present</div>{/if}
+        {#if traffic.length}
+          <ul class="traffic" data-testid="starmap-traffic">
+            {#each traffic as f (f.id)}
+              <li class:hostile={f.hostile} title={`${f.heading}. Home: ${f.home}`}>
+                <i style={`background: ${toneColor(f.tone)}`}></i>
+                <span><b>{f.name}</b> <small>{f.faction} {f.role.toLowerCase()}</small></span>
+                <small class="sub">{f.heading.endsWith(f.home) ? f.heading : `${f.heading} · home ${f.home}`}</small>
+                {#if f.cargo}<small class="sub cargo" data-testid="starmap-cargo">Carrying {f.cargo}</small>{/if}
+              </li>
+            {/each}
+          </ul>
+        {/if}
         {#if node.others}<div class="row dim">{node.others} other ship{node.others > 1 ? 's' : ''} in the area</div>{/if}
       {/if}
     </section>
@@ -85,8 +113,12 @@
         <h4>Fuel</h4>
         <div class="cells" data-testid="starmap-route">
           <span class="cell" title="Fuel now"><Icon name="fuel" size={18} /><b>{map.fuel}</b></span>
-          <span class="cell" class:bad={!route.fuelOk} title="Fuel the whole route burns"><Icon name="fuel" size={18} /><b>-{route.fuel}</b></span>
-          <span class="cell" class:bad={afterRoute < 0} title="Fuel left after the route"><Icon name="fuel" size={18} /><b>{afterRoute}</b><small>left</small></span>
+          <span class="cell" class:bad={!route.fuelOk} title="Fuel the whole route burns"><Icon name="fuel" size={18} /><b>{route.fuel}</b><small>burn</small></span>
+          {#if route.fuelShort > 0}
+            <span class="cell bad" title="Fuel missing for the whole route" data-testid="starmap-fuel-short"><Icon name="fuel" size={18} /><b>{route.fuelShort}</b><small>short</small></span>
+          {:else}
+            <span class="cell" title="Fuel left after the route" data-testid="starmap-fuel-left"><Icon name="fuel" size={18} /><b>{map.fuel - route.fuel}</b><small>left</small></span>
+          {/if}
           <span class="cell" class:bad={!route.chargeOk} title="FTL charge needed to enter hyperspace (spent once)"><Icon name="bolt" size={18} /><b>{route.nextCharge}</b><small>s</small></span>
         </div>
         {#if !route.fuelOk}<p class="note warn">Not enough fuel for the whole route: the trip will stop where the fuel runs out.</p>{/if}
@@ -131,6 +163,9 @@
   .dim { color: var(--dim); }
   .warn { color: var(--red); }
   .here { color: var(--cyan); }
+  .result { padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); }
+  .result.green { color: var(--green); border-color: var(--green); } .result.amber { color: var(--amber); border-color: var(--amber); }
+  .result.red { color: var(--red); border-color: var(--red); } .result.dim { color: var(--dim); }
   .note { margin: 0; font-size: 12px; display: flex; gap: 6px; align-items: center; }
   .chip { font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border: 1px solid currentColor; }
   .tier.hostile { color: var(--red); } .tier.friendly { color: var(--green); } .tier.neutral { color: var(--dim); }
@@ -145,6 +180,18 @@
   .legs li small { display: inline-flex; align-items: center; gap: 4px; color: var(--dim); font-size: 11px; }
   .legs li.done { color: var(--cyan); }
   .legs li.now { border-color: var(--cyan); background: var(--panel-3); color: var(--cyan); }
+  .traffic { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+  .traffic li { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; row-gap: 1px; padding: 3px 8px; background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; }
+  .traffic li b { font-weight: 600; }
+  .market .good { display: inline-flex; align-items: center; gap: 2px; }
+  .market .cheap { color: var(--green); }
+  .market .dear { color: var(--amber); }
+  .traffic .cargo { color: var(--text); }
+  .traffic .sub { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .traffic li.hostile { border-color: var(--red); }
+  .traffic i { width: 8px; height: 8px; flex: none; clip-path: polygon(100% 50%, 0 0, 25% 50%, 0 100%); }
+  .traffic span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .traffic small { color: var(--dim); font-size: 11px; }
   .n { font: 600 12px var(--head-font); color: var(--cyan); min-width: 12px; }
   .confirm { padding: 8px; border: 1px solid var(--amber); background: var(--panel-2); }
   .take { display: flex; gap: 8px; align-items: center; font-size: 13px; min-height: 32px; }

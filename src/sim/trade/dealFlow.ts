@@ -7,7 +7,7 @@ import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
 import { cargoAdd, cargoCount, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { undock } from '../vehicles/lifecycle';
-import { addStock, failDeal, isLive, settleDeal } from './deals';
+import { addStock, failDeal, isLive, settleDeal, touchMarket } from './deals';
 import { spawnCourier } from './courier';
 import { storagesHolding } from './player';
 import { isStation, stageGoods, stationAirlock, stationWork, takeDelivery, unwindStation } from './stationDock';
@@ -113,6 +113,7 @@ function exchange(sim: Sim, d: Deal, v: Vehicle): void {
   if (d.timer < Math.round((sim.content.trade?.exchangeSec ?? 3) * TICK_HZ)) return;
   const trader = sim.world.get(d.ship, TraderC);
   for (const l of d.give) if (trader) addStock(trader.stock, l.item, cargoTake(sim, d.vehicle, l.item, l.count));
+  touchMarket(sim, trader);
   v.outbound = false;
   for (const l of d.get) cargoAdd(sim, d.vehicle, l.item, l.count);
   if (d.give.length > 0) sim.events.emit({ type: 'trade.delivered', deal: d.id, ship: d.ship, to: 'trader' });

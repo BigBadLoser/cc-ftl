@@ -18,6 +18,12 @@ export interface Region {
   frame: Rect;
 }
 
+/** Where a thing goes: a top-left, or a function of its size (so a caller can place by size, e.g. centred) that returns one. */
+export type Place = { x: number; y: number } | ((w: number, h: number) => { x: number; y: number });
+
+/** The top-left a place gives a thing of w x h tiles. */
+export const placeAt = (at: Place, w: number, h: number): { x: number; y: number } => (typeof at === 'function' ? at(w, h) : at);
+
 /** Every ship id (ShipC entity), ascending: the order ships were created in. */
 export function shipIds(sim: Sim): number[] {
   return [...sim.world.query(ShipC)].sort((a, b) => a - b);
