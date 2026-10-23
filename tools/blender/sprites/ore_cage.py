@@ -34,6 +34,8 @@ ORES = {
     "iron": dict(faces=("orM", "orD", "rkD", "rkM", "orD", "or", "rk"), glow=(), chunk=(("orM", "orD"), ("rkM", "rkD"), ("or", "orM"))),
     "ice": dict(faces=("icM", "ic", "icD", "icL", "icM", "rkM"), glow=("icG",), chunk=(("icL", "ic"), ("ic", "icD"), ("icM", "icD"))),
     "rare": dict(faces=("rkD", "rkM", "rvD", "rk", "rvM", "rkD"), glow=("rvG",), chunk=(("rvM", "rvD"), ("rkM", "rkD"), ("rk", "rkD"))),
+    # scrap: the heap's bed under the pieces (scrap.py), dark and rusty
+    "scrap": dict(faces=("grime", "steelD", "grime", "rustD", "gmD", "dark"), glow=(), chunk=(("steel", "steelD"), ("rust", "rustD"))),
 }
 
 
@@ -278,7 +280,7 @@ class Heap:
         r = min(1.0, math.hypot(x, y) / math.sqrt(2) * 1.15)
         return self.level + self.rise * (1 - r * r) + 0.03 * math.sin(7 * u + 1.3) * math.sin(6 * v + 0.4)
 
-    def build(self, k, ore, walls=True):
+    def build(self, k, ore, walls=True, chunks=True):
         o, rng = ORES[ore], self.rng
         nu = max(4, round(2 * self.a / 0.1))
         nv = max(4, round(2 * self.bv / 0.1))
@@ -307,13 +309,13 @@ class Heap:
             p, q = ring[i], ring[(i + 1) % len(ring)]
             _poly(k, [(p[0], p[1], 0.09), (q[0], q[1], 0.09), q, p], face())
         area = 4 * self.a * self.bv
-        for _ in range(int(area * 34)):                                             # chunks on the surface
+        for _ in range(int(area * 34) if chunks else 0):                            # chunks on the surface
             u = self.cu + rng.uniform(-0.94, 0.94) * self.a
             v = self.cv + rng.uniform(-0.94, 0.94) * self.bv
             r = rng.uniform(0.045, 0.11)
             _lump(k, (u, v, self.h(u, v) + 0.01), (rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4), 1), r,
                   r * rng.uniform(0.6, 1.1), o["chunk"][rng.integers(len(o["chunk"]))], rng)
-        for i in range(len(ring) if walls else 0):                                 # chunks pressed into the sides
+        for i in range(len(ring) if walls and chunks else 0):                      # chunks pressed into the sides
             p, q = ring[i], ring[(i + 1) % len(ring)]
             out = Vector((q[1] - p[1], -(q[0] - p[0]), 0)).normalized()
             top = min(p[2], q[2])
@@ -342,8 +344,16 @@ def cage(fp, fill, rot, ore="iron", drop=0):
     frame(k, b, drop)
     chute(k, b)
     grime(k, 0, len(k.m.f), Vector((0, (b.v0 + b.v1) / 2, 0.6)), lambda v: H, low_z=0.45, run_k=0.5, dust_k=0.6, run_col="grime")
-    seed = {"iron": 11, "ice": 23, "rare": 37}[ore] + FILLS.index(fill)
-    if HEAP[fill]:
+    seed = {"iron": 11, "ice": 23, "rare": 37, "scrap": 53}[ore] + FILLS.index(fill)
+    if ore == "scrap":
+        from . import scrap
+        if HEAP[fill]:
+            h = Heap(b, fill, seed)
+            h.build(k, ore, chunks=False)
+            scrap.pile(k, h, seed)
+        else:
+            scrap.floor(k, b, seed)
+    elif HEAP[fill]:
         Heap(b, fill, seed).build(k, ore)
     else:
         spill(k, b, ore, 7, seed)
