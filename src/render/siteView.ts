@@ -145,7 +145,7 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
         const j = world.get(id, JobC);
         const def = j?.kind === 'module' && j.module ? defs[j.module.def] : undefined;
         if (!j?.module || !def || !grid.inBounds(j.x, j.y)) continue;
-        const lm = { def: j.module.def, x: j.x - grid.x0, y: j.y - grid.y0, rot: j.module.rot, hp: def.maxHp, priority: 3, enabled: true, powered: false, reservedBy: 0 } satisfies Module;
+        const lm = { def: j.module.def, x: j.x - grid.x0, y: j.y - grid.y0, rot: j.module.rot, hp: def.maxHp, powerPriority: 3, enabled: true, powered: false, reservedBy: 0 } satisfies Module;
         const layers = moduleLayers(world, id, lm, def, false, true).flatMap((layer) => {
           const art = resolveArt(atlas, layer.chain, layer.key);
           return art ? [{ layer, art }] : [];
