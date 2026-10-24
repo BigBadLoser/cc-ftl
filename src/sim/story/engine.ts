@@ -10,7 +10,7 @@ export const NOTICE_LIFE_SEC = 45;
 
 type TriggerKind = EventTrigger['kind'];
 /** Trigger kinds drawn from a weighted pool. */
-export type DrawKind = Extract<TriggerKind, 'arrival' | 'periodic' | 'transit'>;
+export type DrawKind = Extract<TriggerKind, 'transit'>;
 
 function rejected(sim: Sim, command: string, reason: string): void {
   sim.events.emit({ type: 'command.rejected', command, reason });
@@ -87,7 +87,9 @@ export function pump(sim: Sim): void {
   const story = sim.story;
   for (let i = 0; i < story.queue.length && !story.active; ) {
     const q = story.queue[i] as (typeof story.queue)[number];
-    if (q.due > sim.tick) {
+    // A flag-queued decision never opens while the ship idles: it waits for hyperspace. (Chained follow-ups are forced and follow their parent.)
+    const idle = !q.force && sim.content.events?.[q.event]?.mode === 'decision' && sim.sector.state !== 'hyperspace';
+    if (q.due > sim.tick || idle) {
       i++;
       continue;
     }
@@ -158,14 +160,9 @@ export function dismissNotice(sim: Sim, noticeId: number): void {
   story.notices = story.notices.filter((n) => n.id !== noticeId);
 }
 
-/** Per tick: lapse old leads, run the periodic draw, start due queued events. */
+/** Per tick: lapse old leads, start due queued events. (Drawn events come only from hops of a trip.) */
 export function tickStory(sim: Sim): void {
   const story = sim.story;
   if (story.notices.length) story.notices = story.notices.filter((n) => n.expires > sim.tick);
-  if (story.periodicSec > 0 && sim.tick >= story.nextPeriodic && !story.active && !sim.sector.inCombat) {
-    drawEvent(sim, 'periodic');
-    const jitter = withRng(story, (rng) => 0.75 + rng.next() * 0.5);
-    story.nextPeriodic = sim.tick + Math.round(story.periodicSec * TICK_HZ * jitter);
-  }
   pump(sim);
 }

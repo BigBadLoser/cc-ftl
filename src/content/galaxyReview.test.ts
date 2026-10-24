@@ -65,8 +65,8 @@ describe('review: arrivals count restored hostile ships', () => {
   }, 60000);
 });
 
-describe('review: transit draws survive later hops', () => {
-  it('an anchored hop followed by a plain one still draws the transit event at deploy', () => {
+describe('review: an anchored lane always draws an event', () => {
+  it('the anchored hop holds the trip for a story decision', () => {
     const sim = newGame(32, content);
     ensureAround(sim, 's.4.0.n0');
     const index = galaxyIndex(sim.galaxy);
@@ -89,8 +89,14 @@ describe('review: transit draws survive later hops', () => {
     sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [found!.b, found!.c] });
     step(sim);
     for (let i = 0; i < 90000 && sim.galaxy.travel?.phase === 'hop'; i++) sim.step();
+    expect(sim.galaxy.travel).toMatchObject({ phase: 'story', at: 1, held: 'hopEnd' });
+    expect(sim.story.active).not.toBeNull();
+    sim.story.active = null;
+    for (let i = 0; i < 90000 && sim.galaxy.travel?.phase !== 'arrived'; i++) {
+      sim.step();
+      sim.story.active = null;
+    }
     expect(sim.galaxy.travel).toMatchObject({ phase: 'arrived', at: 2 });
-    expect(sim.galaxy.pendingDraw).toBe('transit');
   }, 60000);
 });
 
