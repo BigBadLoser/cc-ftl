@@ -1,4 +1,4 @@
-"""Preserve cradle A exactly; render integrated B at the same game-camera scale."""
+"""Preserve cradle A exactly; render new upright B at the same game-camera scale."""
 import argparse,hashlib,json,math,shutil,sys
 from pathlib import Path
 import numpy as np
@@ -18,9 +18,9 @@ def render(out):
     import bpy
     from sprites import core,post
     from sprites.refinery_blockout import GREY
-    from sprites.refinery_revision_b import IntegratedRefinery,refinery_revision_b
+    from sprites.refinery_revision_b import VesselRefinery,refinery_revision_b
     digest=preserve_a(out)
-    path=out/'b.parameters.json';p=IntegratedRefinery(**json.loads(path.read_text())) if path.exists() else IntegratedRefinery()
+    path=out/'b.parameters.json';p=VesselRefinery(**json.loads(path.read_text())) if path.exists() else VesselRefinery()
     core.setup_scene();core._state['scene'].cycles.samples=4;core._state['sun'].data.use_shadow=True
     core.palette._data.update(GREY);post._BASE_PAL.update(GREY);post._STATES.clear();post.select(False)
     obs=refinery_revision_b(p)
@@ -32,7 +32,7 @@ def render(out):
     rgb,a=core.render(w,h,'color');c,op=post.downsample(rgb,a>.5,core.SS,8,True);c,op=post.outline(c,op,True)
     assert not (op[0].any() or op[-1].any() or op[:,0].any() or op[:,-1].any())
     x0,y0,x1,y1=post.crop_box(op);post.write_png(out/'b.png',post.to_rgba(c,op)[y0:y1,x0:x1])
-    meta={'revision':'B / integrated sloping case','footprint':[3,4],
+    meta={'revision':'B / upright pressure vessel','footprint':[3,4],
           'bounds':[float(x) for x in np.ptp(q,axis=0)],'anchor':[w//2+1-int(x0),h//2+1-int(y0)],
           'tile':[core.TILE_W,core.TILE_H],'camera':{'yaw':45,'elevation':30},'samples':4,'SS':core.SS,
           'material':'one neutral grey, no emission','preservedAImageSha256':digest}
@@ -53,7 +53,7 @@ def compose(out):
         src.resize((src.width*3,src.height*3),Image.Resampling.NEAREST).save(out/f'{name}-3x.png')
     font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',22)
     board=Image.new('RGB',(1900,770),bg[:3]);d=ImageDraw.Draw(board)
-    for x,title,im in ((10,'A / OPEN CRADLE',panes[0]),(960,'B / INTEGRATED PROCESSING CASE',panes[1])):
+    for x,title,im in ((10,'A / OPEN CRADLE',panes[0]),(960,'B / UPRIGHT REFINING VESSEL',panes[1])):
         d.text((x+10,15),title,font=font,fill=(220,229,236))
         board.paste(im.convert('RGB').resize((940,680),Image.Resampling.NEAREST),(x,55))
     d.text((20,740),'3 x 4 / same camera, grey material and world scale / geometry concepts',font=font,fill=(170,185,199))
