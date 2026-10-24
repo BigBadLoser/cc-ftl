@@ -131,6 +131,22 @@ describe('crafting', () => {
   });
 });
 
+describe('keep orders count only our own stock', () => {
+  it("a station's crates do not satisfy a keep order, so the fab still prints", () => {
+    const { sim, fab, store, out } = setup(30);
+    const other = stampShip(sim, { name: 'station', rows }, { faction: 'neutral', state: 'prize', x: 40, y: 0 });
+    const crate = spawnModule(sim, 'storage', 49, 1, 0);
+    expect(crate).toBeGreaterThan(0);
+    expect(other).toBeGreaterThan(0);
+    storageAdd(sim, crate, 'metal', 10);
+    expect(totalStock(sim, 'metal')).toBe(0);
+    order(sim, fab, 'keep', 3);
+    run(sim, 1500);
+    expect(metalInStorage(sim, store, out)).toBe(3);
+    expect(totalStock(sim, 'metal')).toBe(3);
+  });
+});
+
 describe('work categories', () => {
   const refineOrder = (sim: Sim, fab: number) => sim.enqueue({ type: 'production.add', moduleId: fab, recipe: 'refine', mode: 'count', target: 1 });
 
