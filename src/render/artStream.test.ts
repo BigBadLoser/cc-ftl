@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Atlas } from './assets/loader';
+import { SheetStore, type Loaded } from './assets/sheetStore';
 import { CENSUS_MAX_MS, CENSUS_MS, createArtStream, FRESH_MS, REBUILD_MIN_MS } from './artStream';
 
 function rig(over = false, evicts = 0) {
@@ -73,6 +74,8 @@ describe('artStream', () => {
     st.t = CENSUS_MS;
     s.update();
     expect(st.rebuilt).toBe(1);
+    expect(st.swept).toEqual([]); // waits for the views to resolve their textures
+    s.settle();
     expect(st.swept).toEqual([1]);
     st.t += 10;
     s.update();
@@ -84,12 +87,14 @@ describe('artStream', () => {
     for (let k = 0; k < 40; k++) {
       st.t += CENSUS_MS;
       s.update();
+      s.settle();
       rebuilds = st.rebuilt;
     }
     expect(rebuilds).toBeLessThan(15); // not every CENSUS_MS
     st.t += CENSUS_MAX_MS;
     const before = st.rebuilt;
     s.update();
+    s.settle();
     expect(st.rebuilt).toBe(before + 1);
   });
   it('does not sweep when under budget', () => {
@@ -97,5 +102,38 @@ describe('artStream', () => {
     st.t = CENSUS_MS * 3;
     s.update();
     expect(st.rebuilt).toBe(0);
+  });
+  it('an over-budget sweep keeps the sheets the rebuilt scenes use and evicts an unused one', async () => {
+    let clock = 1;
+    const evicted: string[] = [];
+    const store = new SheetStore<string>({
+      io: { load: (image) => Promise.resolve({ sheet: { image, glow: null } as Loaded<string>, bytes: 10 }), unload: () => undefined },
+      pools: { env: { budget: 15 } },
+      concurrency: 4,
+      now: () => clock,
+      onEvict: (n) => void evicted.push(n),
+    });
+    for (const n of ['a', 'b', 'c']) store.register(n, { image: n, pool: 'env', pinned: false });
+    for (const n of ['a', 'b', 'c']) store.get(n);
+    await store.idle();
+    clock = 100; // all three were last used long ago
+    const atlas = {
+      get generation() { return store.generationOf('env'); },
+      busy: () => store.pending,
+      envOver: () => store.over('env'),
+      mark: () => ++clock,
+      sweepEnv: (m: number) => (store.over('env') ? store.sweep('env', m) : []),
+    } as unknown as Atlas;
+    // A scene resolves its textures only in its own update, after the rebuild (as shipScene does).
+    let wall = 0;
+    let scene: string[] | null = null;
+    const s = createArtStream(atlas, { rebuild: () => { scene = null; }, sync: () => { scene = ['a', 'b']; } }, () => wall);
+    wall = CENSUS_MS;
+    s.update();
+    for (const n of scene ?? []) store.get(n); // sc.update(dt)
+    expect(evicted).toEqual([]);
+    s.settle();
+    expect(evicted).toEqual(['c']);
+    expect(store.isReady('a') && store.isReady('b')).toBe(true);
   });
 });

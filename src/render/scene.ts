@@ -337,6 +337,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       crewMarks.update();
       fx.update(dt, alpha);
       sectorParticles.update(dt);
+      art.settle();
       pass.render(gl, stage);
       place(cam, null);
       gl.render({ container: stage });

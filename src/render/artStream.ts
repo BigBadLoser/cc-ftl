@@ -19,6 +19,8 @@ export interface ArtStreamHost {
 export interface ArtStream {
   /** Once a frame, before drawing: rebuild scenes whose art arrived, and trim the env pool when it is over budget. */
   update(): void;
+  /** Once a frame, after every view has updated (and so resolved its textures): finishes a census begun in `update`. */
+  settle(): void;
   /** A scene was just built: it stays hidden until the sheets it asked for are in (or `FRESH_MS` pass). */
   built(id: number): void;
   /** True while the scene is waiting for its sheets. */
@@ -31,7 +33,8 @@ export interface ArtStream {
  * The renderer's side of lazy sheet loading. Built sprites hold the textures they were made with, so a scene built before
  * its sheets arrived is built again once they have (batched: when nothing is loading, or at most every `REBUILD_MIN_MS`
  * while loads trickle in). Memory is freed the same way: when the env pool is over budget, the scenes are rebuilt (which
- * marks the sheets they still use) and the sheets nothing used since are evicted.
+ * marks the sheets they still use) and the sheets nothing used since are evicted. A rebuilt scene only resolves its
+ * textures in its own `update`, so the sweep runs in `settle`, after the frame's views have asked for what they draw.
  */
 export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => number): ArtStream {
   let builtGen = atlas.generation;
@@ -39,6 +42,8 @@ export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => nu
   let lastCensus = now();
   let gap = CENSUS_MS;
   let count = 0;
+  /** Use-clock mark of a census whose sweep waits for `settle`, or null. */
+  let pending: number | null = null;
   const fresh = new Map<number, number>();
 
   const rebuild = (t: number): void => {
@@ -61,12 +66,17 @@ export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => nu
         fresh.clear();
         if (t - lastCensus >= gap && atlas.envOver()) {
           lastCensus = t;
-          const mark = atlas.mark();
+          pending = atlas.mark();
           rebuild(t);
-          gap = atlas.sweepEnv(mark).length ? CENSUS_MS : Math.min(CENSUS_MAX_MS, gap * 2);
-          builtGen = atlas.generation;
         }
       }
+    },
+    settle() {
+      if (pending === null) return;
+      const mark = pending;
+      pending = null;
+      gap = atlas.sweepEnv(mark).length ? CENSUS_MS : Math.min(CENSUS_MAX_MS, gap * 2);
+      builtGen = atlas.generation;
     },
     built(id) {
       if (atlas.busy() > 0 && !fresh.has(id)) fresh.set(id, now() + FRESH_MS);

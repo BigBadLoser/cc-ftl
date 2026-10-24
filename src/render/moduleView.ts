@@ -7,6 +7,7 @@ import { footprintTiles, hullRow, openTilesOf, rotatedSize } from '../sim/module
 import type { ModuleDef } from '../sim/registry';
 import type { Atlas, StaticSprite } from './assets/loader';
 import type { Art } from './assets/fallback';
+import { pickParts } from './partPick';
 import { iso, depthKey, TILE_W } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
@@ -43,31 +44,6 @@ export interface ModuleView {
   /** Module entity whose sprite covers an art-px point (topmost), or null. */
   pick(ax: number, ay: number): number | null;
   dispose(): void;
-}
-
-/** Alpha channel of a sprite's frame, cut lazily from its sheet so picking ignores transparent corners. */
-const alphaCache = new WeakMap<Texture, Uint8ClampedArray | null>();
-function alphaOf(tex: Texture): Uint8ClampedArray | null {
-  if (alphaCache.has(tex)) return alphaCache.get(tex) ?? null;
-  let out: Uint8ClampedArray | null = null;
-  try {
-    const { x, y, width, height } = tex.frame;
-    const c = document.createElement('canvas');
-    c.width = width;
-    c.height = height;
-    const g = c.getContext('2d', { willReadFrequently: true });
-    const src = tex.source.resource as CanvasImageSource;
-    if (g) {
-      g.drawImage(src, x, y, width, height, 0, 0, width, height);
-      const d = g.getImageData(0, 0, width, height).data;
-      out = new Uint8ClampedArray(width * height);
-      for (let i = 0; i < out.length; i++) out[i] = d[i * 4 + 3] as number;
-    }
-  } catch {
-    out = null;
-  }
-  alphaCache.set(tex, out);
-  return out;
 }
 
 interface Part {
@@ -344,22 +320,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
 
   return {
     update,
-    pick(ax, ay) {
-      let best: number | null = null;
-      let bestKey = -Infinity;
-      for (const [id, e] of mods)
-        for (const p of e.parts)
-          if (ax >= p.rect.x0 && ax < p.rect.x1 && ay >= p.rect.y0 && ay < p.rect.y1 && p.key > bestKey) {
-            const tex = p.spr.texture;
-            const a = alphaOf(tex);
-            const u = Math.floor(p.flip ? p.rect.x1 - ax : ax - p.rect.x0);
-            const v = Math.floor(ay - p.rect.y0);
-            if (a && (a[v * tex.frame.width + u] as number) < 40) continue;
-            bestKey = p.key;
-            best = id;
-          }
-      return best;
-    },
+    pick: (ax, ay) => pickParts(mods, ax, ay),
     dispose() {
       for (const e of mods.values()) dropEntry(e);
       mods.clear();

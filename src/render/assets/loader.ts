@@ -1,6 +1,7 @@
 import { Assets, Rectangle, Texture, type TextureSource } from 'pixi.js';
 import { cellOf, MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest, type StaticAsset } from './manifest';
 import { dropHalo } from '../haloTex';
+import { buildMask, keepMask } from './alphaMask';
 import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
 
 /** Base URL of the asset folder. `VITE_ASSET_BASE` only relocates it (used to point at a fixture). */
@@ -134,11 +135,22 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     hooks.upload(src);
     (src.resource as { close?: () => void }).close?.();
   };
-  const loadTex = async (path: string, keyed = false): Promise<Texture> => {
+  /** Sheets that host sprites a click can land on (module art, vehicles, containers, stand-in props): they keep an opacity mask for picking. */
+  const pickable = new Set<string>();
+  for (const [id, a] of Object.entries(manifest.assets)) {
+    const img = a.kind === 'static' && /^(module|vehicle|container|prop)\./.test(id) ? manifest.sheets[a.sheet]?.image : undefined;
+    if (img) pickable.add(img);
+  }
+  const loadTex = async (path: string, keyed = false, mask = false): Promise<Texture> => {
     const mode = smooth && !keyed ? 'linear' : 'nearest';
     const t = await Assets.load<Texture>({ src: base + path, data: { scaleMode: mode } });
     t.source.scaleMode = mode;
     t.source.autoGenerateMipmaps = false;
+    // The bitmap is closed once uploaded; picking reads sprite alpha from this mask instead (moduleView/partPick).
+    if (mask && hooks) {
+      const m = buildMask(t.source.resource, t.source.pixelWidth, t.source.pixelHeight);
+      if (m) keepMask(t.source, m);
+    }
     toGpu(t.source);
     return t;
   };
@@ -158,7 +170,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
 
   const io: SheetIO<Texture> = {
     async load(image, glow) {
-      const [img, gl] = await Promise.all([loadTex(image, isCrewImage(image)), glow ? loadTex(glow) : null]);
+      const [img, gl] = await Promise.all([loadTex(image, isCrewImage(image), pickable.has(image)), glow ? loadTex(glow) : null]);
       return { sheet: { image: img, glow: gl }, bytes: bytesOf(img) + (gl ? bytesOf(gl) : 0) };
     },
     unload(name, _sheet, image, glow) {
