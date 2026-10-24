@@ -43,7 +43,7 @@ export interface ModuleView {
 
 /** Alpha channel of a sprite's frame, cut lazily from its sheet so picking ignores transparent corners. */
 const alphaCache = new WeakMap<Texture, Uint8ClampedArray | null>();
-function alphaOf(tex: Texture): Uint8ClampedArray | null {
+export function alphaOf(tex: Texture): Uint8ClampedArray | null {
   if (alphaCache.has(tex)) return alphaCache.get(tex) ?? null;
   let out: Uint8ClampedArray | null = null;
   try {

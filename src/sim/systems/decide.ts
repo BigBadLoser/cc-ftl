@@ -1,4 +1,5 @@
 import { findFreeBed, releaseBedClaim } from '../crew/beds';
+import { vacateSite } from '../crew/vacate';
 import { goEat, wantsToEat } from '../crew/eating';
 import {
   AssignmentC, BedClaimC, CarriedC, CrewC, DraftedC, EatC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
@@ -75,7 +76,7 @@ export function decideSystem(sim: Sim): void {
     }
 
     dropCarried(sim, id); // a load left over from a lost haul job
-    if (!pickJob(sim, id, pos) && !stowSuit(sim, id, pos) && !strollTurn(sim, id, pos)) wander(sim, id, pos, crew);
+    if (!pickJob(sim, id, pos) && !stowSuit(sim, id, pos) && !(isSettled(pos) && vacateSite(sim, id, pos)) && !strollTurn(sim, id, pos)) wander(sim, id, pos, crew);
   }
 }
 

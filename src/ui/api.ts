@@ -150,6 +150,31 @@ export interface UiRobotBay {
 }
 
 /** An item amount with its display name. */
+/** A module under construction (a blueprint job): what it needs, who works on it, and why it is stuck (if it is). */
+export interface UiSite {
+  /** The job entity id (selection key). */
+  id: number;
+  ship: number;
+  def: string;
+  name: string;
+  /** Sector tile of the top-left footprint tile (what commands take), and the same in the ship's local tiles. */
+  x: number;
+  y: number;
+  local: { x: number; y: number };
+  w: number;
+  h: number;
+  /** 0..1 */
+  frac: number;
+  /** Seconds of work left at the builder's speed (hauling not counted), or null with nobody able to build. */
+  etaSec: number | null;
+  state: 'blocked' | 'waiting' | 'building';
+  /** Why it is stuck ('' when it is not): "Missing 6 metal", "Nobody can reach the site". */
+  reason: string;
+  materials: { item: string; name: string; need: number; delivered: number; inTransit: number; missing: number }[];
+  builders: { id: number; name: string }[];
+  haulers: { id: number; name: string }[];
+}
+
 export interface UiCost {
   item: string;
   name: string;
@@ -655,6 +680,10 @@ export interface UiApi {
   fabs: Subscribable<UiFab[]>;
   selectedModule: Subscribable<number | null>;
   selectModule(id: number | null): void;
+  /** Module construction sites, and the selected one (a job id). */
+  sites: Subscribable<UiSite[]>;
+  selectedSite: Subscribable<number | null>;
+  selectSite(id: number | null): void;
   /** Another ship or station picked from the node strip; the selection panel drills into it. */
   selectedShip: Subscribable<number | null>;
   /** Select another ship (ShipC entity id) or station (its trader entity id) and move the camera to a ship (null clears). A station has no ship, so no camera move. */
