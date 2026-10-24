@@ -164,7 +164,6 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
             s.anchor.set(0.5);
             const p = iso(tt.x, tt.y);
             s.position.set(p.x, p.y);
-            s.tint = BLOCKED;
             L.decal.addChild(s);
             return s;
           });
@@ -181,17 +180,17 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
         const line = Math.round(e.bottom - frac * (e.bottom - e.top));
         const pulse = 0.7 + 0.3 * Math.sin(now / 220);
         e.baseF.matrix = blend(stuck ? HOLO_AMBER : HOLO_CYAN, IDENTITY, 0);
-        e.fillF.matrix = blend(stuck ? HOLO_AMBER : HOLO_CYAN, IDENTITY, frac * 0.85);
+        e.fillF.matrix = blend(IDENTITY, IDENTITY, 0); // the built part is opaque in the module's real colours
         for (const p of e.parts) {
           const done = Math.max(0, Math.min(p.h, p.y + p.h - line));
           p.base.tint = 0xffffff;
-          p.base.alpha = (id === selected ? 0.5 : GHOST_ALPHA) * (stuck ? pulse + 0.2 : 1);
+          p.base.alpha = (id === selected ? 0.65 : GHOST_ALPHA) * (stuck ? 0.8 + 0.2 * pulse : 1);
           p.fill.visible = done > 0;
           if (done > 0) {
             p.fill.texture = crop(p.tex, p.h - done, done);
             p.fill.position.y = p.y + p.h - done;
             p.fill.tint = 0xffffff;
-            p.fill.alpha = 0.75 + 0.25 * frac;
+            p.fill.alpha = 1;
           }
           // the bright line riding the fill edge
           const r0 = Math.max(0, line - EDGE_ROWS - p.y);
@@ -206,8 +205,10 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
           for (const s of [p.base, p.fill, p.edge]) s.zIndex = p.key + (s === p.fill ? 0.0001 : s === p.edge ? 0.0002 : 0);
         }
         for (const s of e.outline) {
-          s.visible = stuck;
-          s.alpha = pulse;
+          // on the floor, under everything: amber and pulsing when stuck, plain cyan when selected
+          s.visible = stuck || id === selected;
+          s.tint = stuck ? BLOCKED : 0x22d3ee;
+          s.alpha = stuck ? pulse : 1;
         }
       }
     }

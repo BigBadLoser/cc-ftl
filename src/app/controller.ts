@@ -1,6 +1,6 @@
 import { asteroidAt, inShip, shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { AsteroidC } from '../sim/asteroids/components';
-import { JobC, AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isOreTile, isSolidRock, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
+import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isOreTile, isSolidRock, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
 import { ROCK_MASS_Z } from '../render/asteroidView';
 import type { UiBuildKind, UiToolState } from '../ui/api';
@@ -143,8 +143,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     bridge.setSelected(null);
     siteSel.set(id);
     pushSites();
-    const def = sim.content.modules[s.def];
-    r?.setSelection(def ? footprintTiles(def, s.x, s.y, sim.world.get(id, JobC)?.module?.rot ?? 0) : null);
+    r?.setSelection(null); // the site draws its own outline, on the floor under everything
   };
   const isMineTool = () => {
     const t = tool.get();
