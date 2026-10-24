@@ -38,7 +38,13 @@ export function reservations(sim: Sim): Reservations {
     const h = sim.world.get(id, JobC)?.haul;
     if (!h) continue;
     if (h.phase === 'pickup') bump(res.out, refKey(h.src.kind, h.src.id, h.item), h.count);
-    bump(res.incoming, refKey(h.dst.kind, h.dst.id, h.item), h.count);
+    const later = (h.then ?? []).reduce((n, t) => n + t.count, 0);
+    bump(res.incoming, refKey(h.dst.kind, h.dst.id, h.item), h.count - later);
+    for (const t of h.then ?? []) bump(res.incoming, refKey('job', t.job, h.item), t.count);
+    for (const q of h.extra ?? []) {
+      if (h.phase === 'pickup') bump(res.out, refKey(h.src.kind, h.src.id, q.item), q.count);
+      bump(res.incoming, refKey(h.dst.kind, h.dst.id, q.item), q.count);
+    }
   }
   return res;
 }

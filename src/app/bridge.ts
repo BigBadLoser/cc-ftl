@@ -1,8 +1,9 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
+import { buildSites } from './siteSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
 import { buildFtl } from './ftlSnapshot';
@@ -17,7 +18,7 @@ import { buildStarmap, emptyStarmap, planStarmapRoute, starmapStatus } from './s
 import { PREFETCH_BOOST_BUDGET_MS, PREFETCH_BOOST_MS, PREFETCH_EVERY, prefetchGalaxy } from './galaxyPrefetch';
 import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute } from '../ui/starmapApi';
 import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
-import { createStore, type Readable } from './store';
+import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
 
@@ -68,6 +69,7 @@ export interface Bridge {
   crew: Readable<UiCrew[]>;
   hostiles: Readable<UiCrew[]>;
   modules: Readable<UiModule[]>;
+  sites: Writable<UiSite[]>;
   stats: Readable<UiStats>;
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
@@ -121,6 +123,8 @@ export function createBridge(sim: Sim): Bridge {
   const hostiles = createStore<UiCrew[]>([]);
   let lastHostiles = '';
   const modules = createStore<UiModule[]>([]);
+  const sites = createStore<UiSite[]>([]);
+  let lastSites = '[]';
   const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, o2: null });
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
@@ -212,6 +216,12 @@ export function createBridge(sim: Sim): Bridge {
     if (mk !== lastMods) {
       lastMods = mk;
       modules.set(ml);
+    }
+    const sl = buildSites(sim);
+    const slk = JSON.stringify(sl);
+    if (slk !== lastSites) {
+      lastSites = slk;
+      sites.set(sl);
     }
     const logs = [buildStock(sim), buildStorages(sim), buildFabs(sim)] as const;
     const keys = logs.map((l) => JSON.stringify(l));
@@ -341,6 +351,7 @@ export function createBridge(sim: Sim): Bridge {
     crew,
     hostiles,
     modules,
+    sites,
     stats,
     stock,
     storages,

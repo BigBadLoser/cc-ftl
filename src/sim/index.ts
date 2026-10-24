@@ -130,3 +130,4 @@ export { incomingFleets, type IncomingFleet } from './galaxy/incoming';
 export { evadeOdds, bribeCost, fleetStrength, playerHelm, evadeOddsFor } from './galaxy/encounterOdds';
 export { eventNodeId, isEventNode, inEvent, leaveBlocker, hostilesPresent } from './galaxy/eventGrid';
 export { playerStock } from './story/world';
+export { siteStatus, siteIds, type SiteStatus, type SiteBlock, type SiteMaterial } from './crew/site';

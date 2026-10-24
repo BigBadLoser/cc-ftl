@@ -4,7 +4,7 @@ import { JobC } from '../crew/components';
 import { findJobAt } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { AUTO_LEVEL_TICKS } from '../rock/dig';
-import { footprintTiles } from './footprint';
+import { footprintTiles, rotatedSize } from './footprint';
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
 import { AirlockC, requestAirlock } from './airlock';
@@ -40,6 +40,7 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     sim.world.add(id, JobC, {
       category: 'construction', kind: 'module', x: cmd.x, y: cmd.y, struct: 0,
       work: (def?.buildWork ?? TICK_HZ) + rock * AUTO_LEVEL_TICKS, progress: 0, reservedBy: 0, module: { def: cmd.def, rot: cmd.rot },
+      ...(def ? { size: rotatedSize(def, cmd.rot) } : {}),
       ...(needs ? { needs, delivered: [] } : {}),
     });
   },

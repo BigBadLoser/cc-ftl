@@ -81,6 +81,10 @@ export interface Renderer {
   pickCrew(screenX: number, screenY: number): number | null;
   /** Module entity under a canvas-relative position (its sprite bounds), or null. */
   pickModule(screenX: number, screenY: number): number | null;
+  /** Module construction site (its job id) whose ghost is under a canvas-relative position, or null. */
+  pickSite(screenX: number, screenY: number): number | null;
+  /** Mark module sites that are stuck (amber) and the selected one (job ids). */
+  setSites(blocked: ReadonlySet<number>, selected: number | null): void;
   /** The ship tile (any ship in the sector) under a canvas-relative position, or null. */
   pickTileAny(screenX: number, screenY: number): { shipId: number; x: number; y: number } | null;
   /** The sector tile under a canvas-relative position, wherever it is (painting tools, asteroid rock). `lift`: read the point as that many tiles above the ground (the top of a rock block). */
@@ -142,6 +146,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let selection: Tile | readonly Tile[] | null = null;
   let selShip = 0;
   let selectedCrew: number | null = null;
+  let siteMarks: { blocked: ReadonlySet<number>; selected: number | null } = { blocked: new Set(), selected: null };
   let lastFrame = performance.now();
 
   // One world layer stack for every region (ship), in the sector frame: art origin = sector tile (0, 0).
@@ -226,6 +231,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       sc.view.setHover(hover);
     } else if (grid.id === selShip) sc.view.setSelection(selection);
     sc.setSelectedCrew(selectedCrew);
+    sc.setSites(siteMarks.blocked, siteMarks.selected);
     scenes.set(grid.id, sc);
     return sc;
   }
@@ -412,6 +418,16 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       const o = origin(refId);
       const p = iso(o.x, o.y);
       return scenes.get(refId)?.pickModule(a.x - p.x, a.y - p.y) ?? null;
+    },
+    pickSite(sx, sy) {
+      const a = cam.toArt(sx, sy);
+      const o = origin(refId);
+      const p = iso(o.x, o.y);
+      return scenes.get(refId)?.pickSite(a.x - p.x, a.y - p.y) ?? null;
+    },
+    setSites(blocked, selected) {
+      siteMarks = { blocked, selected };
+      for (const sc of scenes.values()) sc.setSites(blocked, selected);
     },
     setSelectedCrew(id) {
       selectedCrew = id;

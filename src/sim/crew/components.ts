@@ -112,6 +112,8 @@ export interface Job {
   reservedBy: number;
   /** For 'module' jobs: the blueprint. */
   module?: { def: string; rot: number };
+  /** For 'module' jobs: the rotated footprint [w, h] from (x, y); builders work from beside it, never on it. */
+  size?: [number, number];
   /** Entity the job acts on: module (moduleDecon, repair) or downed crew (rescue). */
   target?: number;
   /** For 'rescue': the bed module reserved for the patient, or 0. */

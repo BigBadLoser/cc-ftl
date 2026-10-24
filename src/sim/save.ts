@@ -55,9 +55,10 @@ import { newTrade, type TradeState } from './trade/types';
  * v42: base logistics and the living world in one save.
  * v43 (story events in transit): no `galaxy.pendingDraw`, no `story.periodicSec` / `nextPeriodic`, `Travel.phase` 'story' and `Travel.held` 'hopEnd'.
  * v44: `Combat.ftlOrder` (the standing `ftl.charge` order and its queued jump).
- * v45: `powerPriority` rename, Refine/Craft work categories split.
+ * v45: construction hauling carries several item types per trip (bigger carry capacity, chained haul jobs).
+ * v46: `powerPriority` rename, Refine/Craft work categories split.
  */
-export const SAVE_VERSION = 45;
+export const SAVE_VERSION = 46;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
