@@ -1,0 +1,15 @@
+{
+  "length": 3.78,
+  "width": 2.64,
+  "case_top": 1.0,
+  "hood_top": 1.43,
+  "hood_length": 2.1,
+  "hood_width": 1.7,
+  "hopper_u": -1.26,
+  "hopper_v": -0.16,
+  "hopper_top": 1.6,
+  "hopper_width": 0.96,
+  "hopper_depth": 1.1,
+  "hopper_well": 0.44,
+  "output_u": 1.82
+}
