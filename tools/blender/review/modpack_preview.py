@@ -7,7 +7,7 @@ along the back wall, a crew member for scale, the way the runtime draws them (gl
                     on each bed, a medic working the console)
          row <asset id> <w> <d> <state,state,...>  -> row-<asset>-3x.png: one room, the module once per state in a row
          props <id,id,...> [name]  -> props-<name>-3x.png: one-tile props spaced along a room, a crew member for scale
-Floor, walls and the crew member come from public/assets."""
+Floor, walls and the crew member come from public/assets/2x."""
 import sys
 from pathlib import Path
 
@@ -219,7 +219,7 @@ def props(P, pub, out, ids, name):
 
 def main():
     P, out, which = Assets(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
-    pub = Assets(ROOT / "public/assets")
+    pub = Assets(ROOT / "public/assets/2x")
     out.mkdir(parents=True, exist_ok=True)
     if which == "props":
         props(P, pub, out, sys.argv[4].split(","), sys.argv[5] if len(sys.argv) > 5 else "set")

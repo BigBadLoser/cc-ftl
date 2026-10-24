@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Texture } from 'pixi.js';
 import { buildMask, keepMask } from './assets/alphaMask';
 import { pickParts, type PickPart } from './partPick';
@@ -60,5 +60,33 @@ describe('pickParts with a closed sheet bitmap', () => {
     const mods: [number, { parts: PickPart[] }][] = [[1, { parts: [under] }], [2, { parts: [a] }]];
     expect(pickParts(mods, 100.5, 50.5)).toBe(1);
     expect(pickParts(mods, 105.5, 55.5)).toBe(2);
+  });
+  it('picks a 1x sheet (resolution 0.5) by art pixel: the 3x3 transparent corner is 6x6 world px', () => {
+    const { b, ctx } = bitmap();
+    const source = { resource: b, resolution: 0.5 };
+    keepMask(source, buildMask(b, W, H, ctx)!);
+    b.close();
+    // The frame is in world px (the 8x8 art-px sheet is 16x16 here), the sprite is drawn at that size.
+    const mods: [number, { parts: PickPart[] }][] = [[7, { parts: [part(source, { x: 0, y: 0, width: 2 * W, height: 2 * H })] }]];
+    expect(pickParts(mods, 105.5, 55.5)).toBeNull(); // world (5.5, 5.5) = art px (2, 2): transparent
+    expect(pickParts(mods, 106.5, 50.5)).toBe(7); // world x 6.5 = art px 3: opaque
+    expect(pickParts(mods, 100.5, 56.5)).toBe(7); // world y 6.5 = art px 3: opaque
+  });
+  it('reads the same art pixel through the unmasked fallback at 1x', () => {
+    const { b, ctx } = bitmap();
+    const source = { resource: b, resolution: 0.5 };
+    // No kept mask: the frame's alpha is cut from the bitmap in art px.
+    const c = ctx(W, H);
+    const draw = vi.fn();
+    const canvas = { width: 0, height: 0, getContext: () => ({ drawImage: (...a: unknown[]) => { draw(a); c.drawImage(...a); }, getImageData: (_x: number, _y: number, w: number, h: number) => c.getImageData(0, 0, w, h) }) };
+    vi.stubGlobal('document', { createElement: () => canvas });
+    try {
+      const mods: [number, { parts: PickPart[] }][] = [[7, { parts: [part(source, { x: 0, y: 0, width: 2 * W, height: 2 * H })] }]];
+      expect(pickParts(mods, 105.5, 55.5)).toBeNull();
+      expect(pickParts(mods, 106.5, 50.5)).toBe(7);
+      expect(draw.mock.calls[0]?.[0]).toEqual([b, 0, 0, W, H, 0, 0, W, H]); // cut in art px, not world px
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

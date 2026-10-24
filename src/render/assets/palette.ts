@@ -175,8 +175,11 @@ export function setFilterTint(filter: Filter, color: number): void {
   group.update();
 }
 
+/** Zoom in device px per art px: the camera scale (device px per world px) times the art set's world px per art px (2 for 1x art). */
+export const artZoom = (cameraScale: number, px: number): number => cameraScale * px;
+
 /**
- * Resolution of the filter's offscreen texture for a camera scale (device px per art px): one texel per art px when the
+ * Resolution of the filter's offscreen texture for a zoom in device px per art px (`artZoom`): one texel per art px when the
  * art is shrunk (scale < 1: the texture is denser than the screen by 1 / scale), and one texel per device px otherwise
  * (the layers are then magnified with nearest sampling, which keeps art px whole).
  */

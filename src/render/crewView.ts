@@ -17,7 +17,7 @@ import { accessTile, footprintTiles, openTilesOf } from '../sim/modules/footprin
 import { moduleKey } from './moduleView';
 import { SEAT_DZ } from './moduleArt';
 import type { Atlas, LayerSprite } from './assets/loader';
-import { createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
+import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
 import { diamondTextures } from './diamonds';
 import { heldAssets } from './itemView';
@@ -69,6 +69,8 @@ interface Slot {
   /** The stacked layers the filter runs on, and whether its filters are the shrunk-art chain (`crewFilters`). */
   body: Container;
   shrunk: boolean;
+  /** World px per art px of the figure's art set (2 for 1x art): the filter works on the art grid, so its zoom is the camera scale times this. */
+  px: number;
   /** The item held in the hands while hauling: one sprite drawn over the body, one under it (when facing away). */
   carry: Sprite;
   carryBack: Sprite;
@@ -128,6 +130,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     const layers = crewLoadout(atlas, crew, suited, art);
     const first = layers[0];
     if (!first) return null;
+    const px = first.def.px ?? 1;
     preloadLayers(layers);
     const root = new Container();
     const shadow = new Sprite(tex.shadow);
@@ -137,7 +140,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     ring.visible = false;
     const body = new Container();
     const filter = createCrewFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed));
-    body.filters = crewFilters(filter, L.scale);
+    body.filters = crewFilters(filter, artZoom(L.scale, px));
     const parts = layers.map((layer) => {
       const sprite = new Sprite();
       sprite.position.set(-layer.def.anchor.x, -layer.def.anchor.y);
@@ -176,7 +179,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, shadow, filter, body, shrunk: L.scale < 1, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
+    return { root, parts, glows, ring, shadow, filter, body, shrunk: artZoom(L.scale, px) < 1, px, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -185,11 +188,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(performance.now()) : -1);
     if (dead) tint = mulColor(tint, 0x7c7c7c);
     setFilterTint(s.filter, tint);
-    setFilterZoom(s.filter, L.scale);
-    const shrunk = L.scale < 1;
+    setFilterZoom(s.filter, artZoom(L.scale, s.px));
+    const shrunk = artZoom(L.scale, s.px) < 1;
     if (shrunk !== s.shrunk) {
       s.shrunk = shrunk;
-      s.body.filters = crewFilters(s.filter, L.scale);
+      s.body.filters = crewFilters(s.filter, artZoom(L.scale, s.px));
     }
   }
 

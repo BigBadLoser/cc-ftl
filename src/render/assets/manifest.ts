@@ -1,7 +1,7 @@
 /**
  * Asset contract between the Blender sprite pipeline (tools/blender/sprites) and the renderer.
- * The pipeline writes public/assets/manifest.json in this shape; the renderer only reads it.
- * Pixel units are art pixels at 1x. Tiles are 64x32 diamonds.
+ * The pipeline writes public/assets/<scale>x/manifest.json in this shape (1x: 64x32 tiles, 2x: 128x64); the renderer only
+ * reads it, through `compose.ts`, which turns every set into world pixels (128x64 tiles) before anything else sees it.
  */
 
 export const MANIFEST_VERSION = 1;
@@ -22,10 +22,12 @@ export interface Anchor {
 
 /** A sprite sheet image plus its optional emission (glow) twin with an identical layout. */
 export interface SheetDef {
-  /** Path relative to public/assets/. */
+  /** Path relative to public/assets/<scale>x/ in the file; `compose.ts` makes it relative to public/assets/. */
   image: string;
   /** Glow sheet (additive), same size and layout as `image`. */
   glow?: string;
+  /** Composed manifests only: texture resolution of the sheet (0.5 for a 1x sheet, drawn at 2x; absent = 1). */
+  resolution?: number;
 }
 
 /** Static environment piece: floor, wall, hull, door, prop, module. */
@@ -90,16 +92,20 @@ export interface LayerAsset {
   anchor: Anchor;
   clips: Record<string, ClipDef>;
   glow?: boolean;
+  /** Composed manifests only: world px per art px of this layer's set (2 for a 1x layer, else 1). */
+  px?: number;
 }
 
 export type AssetDef = StaticAsset | LayerAsset;
 
 export interface Manifest {
   version: number;
-  /** Tile size at 1x in pixels (64x32). */
+  /** Tile size in pixels: 64x32 in the 1x file, 128x64 in the 2x file and in any composed manifest. */
   tile: { w: number; h: number };
   /** Palette-swap key colours ('#rrggbb') rendered for team.* materials, e.g. { 'team.skin': '#ff00ff' }. */
   keyColors: Record<string, string>;
+  /** Wall and roof heights in tiles, and px per tile of height (pipeline writes them; heights.test.ts checks them). */
+  heights?: { wall: number; roof: number; zPx: number };
   sheets: Record<string, SheetDef>;
   /** Asset id (e.g. 'tile.floor.a', 'crew.human.hair.mohawk') -> definition. */
   assets: Record<string, AssetDef>;

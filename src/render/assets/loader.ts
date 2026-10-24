@@ -2,6 +2,8 @@ import { Assets, Rectangle, Texture, type TextureSource } from 'pixi.js';
 import { cellOf, MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest, type StaticAsset } from './manifest';
 import { dropHalo } from '../haloTex';
 import { buildMask, keepMask } from './alphaMask';
+import { composeManifest } from './compose';
+import { budgetFactor, currentArtScale, setDir, type ArtScale } from './artSet';
 import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
 
 /** Base URL of the asset folder. `VITE_ASSET_BASE` only relocates it (used to point at a fixture). */
@@ -52,13 +54,20 @@ export interface AtlasStats {
   /** Decoded bytes resident (width * height * 4 over loaded images and glows), total and per pool. */
   residentBytes: number;
   pools: Record<string, { resident: number; budget: number; sheets: number }>;
+  artScale: ArtScale;
+  fallbacks: string[];
   generation: number;
   /** The biggest resident sheets, [name, decoded bytes]. */
   biggest: [string, number][];
 }
 
 export interface Atlas {
+  /** The composed manifest: every geometry value in world px (128x64 tile), whatever set an asset comes from (see compose.ts). */
   readonly manifest: Manifest;
+  /** The art set in use. */
+  readonly artScale: ArtScale;
+  /** Ids drawn from the 2x set because the 1x set lacks them (empty in 2x mode). */
+  readonly fallbacks: readonly string[];
   /** Bumps whenever an environment sheet arrives or is evicted (crew clips are looked up per frame and do not count): views that cached a resolved texture re-resolve when it changes. */
   readonly generation: number;
   /** Sheets queued or loading. */
@@ -101,6 +110,8 @@ export const EAGER_SHEETS: readonly string[] = ['walls', 'struct', 'env', 'fx'];
 /** Decoded-byte budgets (`?crewmb=` and `?envmb=` override them, in MiB). Crew clips are evicted by idle time; env sheets by `sweepEnv` (their textures live in built sprites). */
 export const CREW_BUDGET = 256 * 2 ** 20;
 export const ENV_BUDGET = 384 * 2 ** 20;
+/** The budgets of an art set: 1x sheets decode to a quarter of the bytes, so they get a quarter of the pool. */
+export const budgetsFor = (s: ArtScale): { crew: number; env: number } => ({ crew: CREW_BUDGET * budgetFactor(s), env: ENV_BUDGET * budgetFactor(s) });
 /** A crew sheet nobody drew with for this long may be evicted. */
 export const CREW_IDLE_MS = 4000;
 
@@ -117,15 +128,35 @@ function validate(m: Manifest): void {
   }
 }
 
-export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise<Atlas> {
-  const res = await fetch(`${base}manifest.json`);
-  if (!res.ok) throw new Error(`Cannot load ${base}manifest.json (${res.status})`);
-  const manifest = (await res.json()) as Manifest;
-  validate(manifest);
+async function fetchManifest(url: string): Promise<Manifest> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Cannot load ${url} (${res.status})`);
+  const m = (await res.json()) as Manifest;
+  validate(m);
+  return m;
+}
+
+/** The composed manifest of an art set (1x: with the 2x set behind it for ids it lacks) and the ids that fell back. */
+export async function loadComposed(base = assetBase(), scale: ArtScale = currentArtScale()): Promise<{ manifest: Manifest; fallbacks: string[] }> {
+  const primary = await fetchManifest(`${base}${setDir(scale)}/manifest.json`);
+  const fb = scale === 1 ? await fetchManifest(`${base}${setDir(2)}/manifest.json`).catch(() => null) : null;
+  return composeManifest(primary, setDir(scale), fb, setDir(2));
+}
+
+export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks, scale: ArtScale = currentArtScale()): Promise<Atlas> {
+  const { manifest, fallbacks } = await loadComposed(base, scale);
+  if (fallbacks.length) console.info(`[art] ${setDir(scale)} set: ${fallbacks.length} ids drawn from the 2x set (not rendered at 1x yet); list in __cc.art().fallbacks`);
+  const budgets = budgetsFor(scale);
+  /** Texture resolution by image path (0.5 for a 1x sheet: it is drawn at twice its pixel size). */
+  const resOf = new Map<string, number>();
+  for (const s of Object.values(manifest.sheets)) {
+    resOf.set(s.image, s.resolution ?? 1);
+    if (s.glow) resOf.set(s.glow, s.resolution ?? 1);
+  }
 
   let smooth = false;
   /** Crew sheet images hold palette-swap key colours: the crew filter reads them, so they are always sampled nearest (a blend of a key with its neighbour would escape the swap). The filter's own output is what the camera smooths. */
-  const isCrewImage = (path: string): boolean => path.startsWith('sprites/crew.');
+  const isCrewImage = (path: string): boolean => path.includes('sprites/crew.');
   let clock = performance.now();
   const bytesOf = (t: Texture): number => t.source.pixelWidth * t.source.pixelHeight * 4;
   let restoring = false;
@@ -142,8 +173,10 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     if (img) pickable.add(img);
   }
   const loadTex = async (path: string, keyed = false, mask = false): Promise<Texture> => {
-    const mode = smooth && !keyed ? 'linear' : 'nearest';
-    const t = await Assets.load<Texture>({ src: base + path, data: { scaleMode: mode } });
+    const resolution = resOf.get(path) ?? 1;
+    // 1x sheets are always nearest: each art pixel must stay a hard 2x2 block (smoothing is for 2x art shrunk below zoom 1).
+    const mode = smooth && !keyed && resolution === 1 ? 'linear' : 'nearest';
+    const t = await Assets.load<Texture>({ src: base + path, data: { scaleMode: mode, resolution } });
     t.source.scaleMode = mode;
     t.source.autoGenerateMipmaps = false;
     // The bitmap is closed once uploaded; picking reads sprite alpha from this mask instead (moduleView/partPick).
@@ -184,8 +217,8 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     io,
     pools: {
       core: { budget: Infinity },
-      env: { budget: budgetParam('envmb', ENV_BUDGET) },
-      crew: { budget: budgetParam('crewmb', CREW_BUDGET), idleMs: CREW_IDLE_MS },
+      env: { budget: budgetParam('envmb', budgets.env) },
+      crew: { budget: budgetParam('crewmb', budgets.crew), idleMs: CREW_IDLE_MS },
     },
     concurrency: 4,
     now: () => clock,
@@ -204,7 +237,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
   const eager = new Set(EAGER_SHEETS);
   for (const [name, def] of Object.entries(manifest.sheets)) {
     const pinned = eager.has(name);
-    store.register(name, { image: def.image, glow: def.glow, pool: pinned ? 'core' : name.startsWith('crew.') ? 'crew' : 'env', pinned });
+    store.register(name, { image: def.image, glow: def.glow, pool: pinned ? 'core' : /^(\dx:)?crew\./.test(name) ? 'crew' : 'env', pinned });
   }
   for (const name of EAGER_SHEETS) if (store.has(name)) store.request(name);
   await store.idle();
@@ -266,6 +299,8 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
   };
   const atlas: Atlas = {
     manifest,
+    artScale: scale,
+    fallbacks,
     get generation() {
       return store.generationOf('core', 'env');
     },
@@ -311,7 +346,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
       if (on === smooth) return;
       smooth = on;
       store.forEachReady((name, s) => {
-        for (const [i, t] of [s.image, s.glow].entries()) if (t) t.source.scaleMode = on && !(i === 0 && name.startsWith('crew.')) ? 'linear' : 'nearest';
+        for (const [i, t] of [s.image, s.glow].entries()) if (t) t.source.scaleMode = on && !(i === 0 && name.includes('crew.')) && t.source.resolution === 1 ? 'linear' : 'nearest';
       });
     },
     get restoring() {
@@ -353,6 +388,8 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
         requests: st.requests,
         residentBytes: Object.values(st.pools).reduce((n, p) => n + p.resident, 0),
         pools: st.pools,
+        artScale: scale,
+        fallbacks: [...fallbacks],
         generation: store.generation,
         biggest: store.biggest(10),
       };

@@ -117,7 +117,7 @@ def build(out, log=print):
     """Render (or reuse) every pack's damage job and pack them into the `damage_sol` sheets."""
     import bpy
     from . import pack
-    base = Path(os.environ.get("SOL_DIR", Path(tempfile.gettempdir()) / "sol-pack"))
+    base = Path(os.environ.get("SOL_DIR", Path(tempfile.gettempdir()) / f"sol-pack-{os.environ.get('ART_SCALE', '2')}x"))
     rots = [str(r) for r in range(int(os.environ.get("SOL_DAMAGE_ROTS", 4)))]
     quality = os.environ.get("SOL_DAMAGE_QUALITY", "final")
     items = []

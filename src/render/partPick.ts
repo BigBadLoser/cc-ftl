@@ -15,7 +15,12 @@ function alphaOf(tex: Texture): Uint8ClampedArray | null {
   if (alphaCache.has(tex)) return alphaCache.get(tex) ?? null;
   let out: Uint8ClampedArray | null = null;
   try {
-    const { x, y, width, height } = tex.frame;
+    // The frame is in world px; the bitmap is in art px (a 1x sheet has resolution 0.5): cut and index it in art px.
+    const r = tex.source.resolution ?? 1;
+    const x = Math.round(tex.frame.x * r);
+    const y = Math.round(tex.frame.y * r);
+    const width = Math.round(tex.frame.width * r);
+    const height = Math.round(tex.frame.height * r);
     const c = document.createElement('canvas');
     c.width = width;
     c.height = height;
@@ -36,10 +41,14 @@ function alphaOf(tex: Texture): Uint8ClampedArray | null {
 
 /** True unless the pixel (u, v) of the sprite's frame is known to be transparent. */
 function solid(tex: Texture, u: number, v: number): boolean {
-  const kept = opaqueAt(tex.source, tex.frame.x + u, tex.frame.y + v);
+  // (u, v) is in world px of the frame: one art px covers 1 / resolution of them.
+  const r = tex.source.resolution ?? 1;
+  const au = Math.floor(u * r);
+  const av = Math.floor(v * r);
+  const kept = opaqueAt(tex.source, Math.round(tex.frame.x * r) + au, Math.round(tex.frame.y * r) + av);
   if (kept !== null) return kept;
   const a = alphaOf(tex);
-  return !a || (a[v * tex.frame.width + u] as number) >= ALPHA_MIN;
+  return !a || (a[av * Math.round(tex.frame.width * r) + au] as number) >= ALPHA_MIN;
 }
 
 /** Entity whose topmost sprite is opaque at an art-px point, or null. */
