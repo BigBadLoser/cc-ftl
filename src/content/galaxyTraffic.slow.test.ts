@@ -53,6 +53,7 @@ describe('NPC traffic over a long run', () => {
         sim.step();
         for (let k = 0; k < 200 && stateOf(sim) === 'hyperspace'; k++) {
           sim.step();
+          sim.story.active = null; // a hop may draw a story decision, which holds the trip
           if (sim.galaxy.travel?.phase === 'arrived') sim.enqueue({ type: 'galaxy.drop' });
         }
         sim.events.drain();

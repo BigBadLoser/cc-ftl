@@ -3,7 +3,7 @@ import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
 import type { ChoiceDef, EventDef, Requirement, SkillCheck } from './defs';
 import { flagValue, reputationOf } from './state';
-import { bestAt, hasImplant, playerCrew, playerModules, playerStock } from './world';
+import { bestAt, hasImplant, playerCrew, playerModules, playerStock, withPlayerAboard } from './world';
 
 const SKILL_LABEL: Record<string, string> = {
   gunnery: 'Gunnery', piloting: 'Piloting', shielding: 'Shielding', melee: 'Melee', repair: 'Repair', hacking: 'Hacking',
@@ -13,7 +13,8 @@ const itemName = (sim: Sim, id: string): string => sim.content.items[id]?.name ?
 const qty = (sim: Sim, q: ItemQty): string => `${q.count}x ${itemName(sim, q.item)}`;
 
 /** True when the requirement holds right now. */
-export function meets(sim: Sim, req: Requirement): boolean {
+export const meets = (sim: Sim, req: Requirement): boolean => withPlayerAboard(sim, () => meetsNow(sim, req));
+function meetsNow(sim: Sim, req: Requirement): boolean {
   const story = sim.story;
   switch (req.kind) {
     case 'species':
@@ -61,14 +62,11 @@ export function choiceRequirements(choice: ChoiceDef): Requirement[] {
 }
 
 /** Unmet requirement reasons for a choice (empty = available). */
-export function unmetReasons(sim: Sim, choice: ChoiceDef): string[] {
-  return choiceRequirements(choice).filter((r) => !meets(sim, r)).map((r) => describeRequirement(sim, r));
-}
+export const unmetReasons = (sim: Sim, choice: ChoiceDef): string[] =>
+  withPlayerAboard(sim, () => choiceRequirements(choice).filter((r) => !meets(sim, r)).map((r) => describeRequirement(sim, r)));
 
 /** True when every eligibility condition of the event holds. */
-export function eligible(sim: Sim, def: EventDef): boolean {
-  return (def.eligible ?? []).every((r) => meets(sim, r));
-}
+export const eligible = (sim: Sim, def: EventDef): boolean => withPlayerAboard(sim, () => (def.eligible ?? []).every((r) => meets(sim, r)));
 
 export interface Odds {
   /** 0..1 chance of success. */
@@ -86,7 +84,8 @@ export const CHECK_MIN = 0.05;
 export const CHECK_MAX = 0.95;
 
 /** Odds of a skill check with the best crew member rolling. Null with no crew to roll. */
-export function checkOdds(sim: Sim, check: SkillCheck): Odds | null {
+export const checkOdds = (sim: Sim, check: SkillCheck): Odds | null => withPlayerAboard(sim, () => checkOddsNow(sim, check));
+function checkOddsNow(sim: Sim, check: SkillCheck): Odds | null {
   const best = bestAt(sim, check.skill);
   if (!best) return null;
   const raw = (check.base ?? CHECK_DEFAULT_BASE) + (check.perLevel ?? CHECK_DEFAULT_PER_LEVEL) * (best.level - check.difficulty);

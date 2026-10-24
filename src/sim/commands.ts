@@ -158,9 +158,8 @@ export type Command =
   /** Debug: start an event by id, ignoring its triggers and eligibility. */
   | { type: 'story.fire'; event: string }
   /** Set the pool context (danger tier, faction territory) and/or the periodic draw interval in seconds (0 = off). */
-  | { type: 'story.setContext'; danger?: number; faction?: string | null; periodicSec?: number }
+  | { type: 'story.setContext'; danger?: number; faction?: string | null }
   /** The player arrived somewhere: draw one event from the arrival pool for the current context. */
-  | { type: 'story.arrive' }
   /** Open the decision a lead notice points at, or drop the notice. */
   | { type: 'story.openNotice'; notice: number }
   | { type: 'story.dismissNotice'; notice: number }

@@ -13,7 +13,7 @@ export const events = {
     title: 'Distress call',
     text: 'A battered freighter drifts nearby, its engines dead. The captain begs for help restoring power before the cold gets to the crew.',
     mode: 'decision',
-    triggers: [{ kind: 'transit', weight: 2 }, { kind: 'arrival', weight: 3 }, { kind: 'periodic', weight: 3 }],
+    triggers: [{ kind: 'transit', weight: 8 }],
     cooldownSec: 600,
     choices: [
       {
@@ -37,7 +37,7 @@ export const events = {
     title: 'Trader offers a swap',
     text: 'A trading skiff pulls alongside. "Scrap for chips, friend. I always need scrap, and my electronics are the good kind."',
     mode: 'decision',
-    triggers: [{ kind: 'arrival', weight: 3 }, { kind: 'periodic', weight: 2 }],
+    triggers: [{ kind: 'transit', weight: 5 }],
     cooldownSec: 600,
     choices: [
       { id: 'swap', label: 'Swap 20 scrap for 5 electronics', cost: [{ item: 'item.scrap', count: 20 }], outcome: { text: 'A fair deal. The skiff peels away.', effects: [{ type: 'items', item: 'item.electronics', count: 5 }] } },
@@ -54,7 +54,7 @@ export const events = {
     title: 'Derelict sighted',
     text: 'Long-range scans pick out a dark, drifting hull. No transponder, no heat. It could hold salvage, or something worse.',
     mode: 'decision',
-    triggers: [{ kind: 'transit', weight: 3 }, { kind: 'arrival', weight: 2 }, { kind: 'periodic', weight: 2 }],
+    triggers: [{ kind: 'transit', weight: 7 }],
     danger: { max: 3 },
     choices: [
       {
@@ -73,7 +73,7 @@ export const events = {
     title: 'Pirate scout surrenders',
     text: 'A pirate skiff took a hit from something else and its pilot hails you, hands up. "I only fly the boat. Please. I have a kid."',
     mode: 'decision',
-    triggers: [{ kind: 'transit', weight: 2 }, { kind: 'periodic', weight: 3 }, { kind: 'arrival', weight: 1 }],
+    triggers: [{ kind: 'transit', weight: 6 }],
     danger: { min: 1 },
     once: true,
     choices: [
@@ -100,7 +100,7 @@ export const events = {
     title: 'Maintenance terminal',
     text: 'A dead station relay still blinks a service port, a connector pattern no human tool fits. The core behind it is intact.',
     mode: 'decision',
-    triggers: [{ kind: 'transit', weight: 1 }, { kind: 'arrival', weight: 2 }, { kind: 'periodic', weight: 1 }],
+    triggers: [{ kind: 'transit', weight: 4 }],
     cooldownSec: 900,
     choices: [
       { id: 'interface', label: 'Interface directly', requires: [{ kind: 'species', species: 'species.robot' }], outcome: { text: 'The robot plugs in and downloads the station logs: parts caches, coordinates and a long lullaby.', effects: [{ type: 'items', item: 'item.parts', count: 8 }, { type: 'items', item: 'item.electronics', count: 4 }, { type: 'skillXp', skill: 'hacking', amount: 30, who: 'random' }] } },
@@ -113,7 +113,7 @@ export const events = {
     title: 'Meridian checkpoint',
     text: 'A corporate patrol cutter hails you. "Transit tariff applies in Meridian space. Cargo manifest, captain."',
     mode: 'decision',
-    triggers: [{ kind: 'arrival', weight: 6 }, { kind: 'periodic', weight: 2 }],
+    triggers: [{ kind: 'transit', weight: 8 }],
     factions: ['corp'],
     cooldownSec: 600,
     choices: [
@@ -127,7 +127,7 @@ export const events = {
     title: 'Medical emergency',
     text: 'A stranded prospector floats in a leaking escape pod, barely conscious. Your crew could patch them up if you have somewhere to lay them.',
     mode: 'decision',
-    triggers: [{ kind: 'periodic', weight: 2 }, { kind: 'arrival', weight: 1 }],
+    triggers: [{ kind: 'transit', weight: 3 }],
     cooldownSec: 900,
     choices: [
       { id: 'treat', label: 'Take them aboard', requires: [{ kind: 'module', def: 'module.bed' }], outcome: { text: 'Rested and fed, the prospector rewards you and your crew feel the better for the good deed.', effects: [{ type: 'items', item: 'item.metal', count: 15 }, { type: 'crewHeal', amount: 20, who: 'all' }, { type: 'reputation', faction: 'traders', delta: 1 }] } },
@@ -139,7 +139,7 @@ export const events = {
     title: 'Comet pass',
     text: 'A comet sweeps by close enough to light the viewports. A few crew linger to watch.',
     mode: 'notice',
-    triggers: [{ kind: 'periodic', weight: 3 }],
+    triggers: [{ kind: 'transit', weight: 3 }],
     cooldownSec: 900,
     effects: [{ type: 'crewHeal', amount: 5, who: 'all' }],
   },
@@ -147,7 +147,7 @@ export const events = {
     title: 'Radio chatter',
     text: 'Faint pirate chatter on an old channel. Something about a rendezvous at the dead moon.',
     mode: 'notice',
-    triggers: [{ kind: 'periodic', weight: 2 }, { kind: 'arrival', weight: 2 }],
+    triggers: [{ kind: 'transit', weight: 4 }],
     danger: { min: 1 },
     cooldownSec: 600,
   },
@@ -156,7 +156,7 @@ export const events = {
     title: 'Faint beacon',
     text: 'A weak automated beacon repeats on the long-range band. It might be worth a look.',
     mode: 'notice',
-    triggers: [{ kind: 'periodic', weight: 2 }],
+    triggers: [{ kind: 'transit', weight: 2 }],
     lead: 'event.derelict_sighting',
     cooldownSec: 900,
   },
