@@ -7,7 +7,7 @@
   import ShipMeters from './ShipMeters.svelte';
 
   let { api, stockOpen, onStock, onClose }: { api: UiApi; stockOpen: boolean; onStock: () => void; onClose: () => void } = $props();
-  let st = $state<UiStats>({ supply: 0, demand: 0, o2: null });
+  let st = $state<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, o2: null });
   let stock = $state<UiStock[]>([]);
   let credits = $state(0);
   let crew = $state<UiCrew[]>([]);
@@ -27,6 +27,9 @@
   const total = $derived(stock.reduce((n, s) => n + s.floor + s.stored, 0));
   const fuel = $derived(stock.filter((s) => s.item === 'item.fuel').reduce((n, s) => n + s.floor + s.stored, 0));
   const hasFuel = $derived(stock.some((s) => s.item === 'item.fuel'));
+  /** Crew food: hours left at the current rate; amber under an hour, red under 15 minutes or with none. */
+  const foodLevel = $derived(st.food.units === 0 && st.food.eaters > 0 ? 'out' : st.food.hours !== null && st.food.hours < 0.25 ? 'out' : st.food.hours !== null && st.food.hours < 1 ? 'low' : 'ok');
+  const foodTime = $derived(st.food.hours === null ? '–' : st.food.hours >= 1 ? `~${st.food.hours.toFixed(1)} h` : `~${Math.max(1, Math.round(st.food.hours * 60))} min`);
   const short = $derived(st.demand > st.supply);
   const o2Low = $derived(st.o2 !== null && st.o2 < 16);
   const off = $derived(mods.filter((m) => !m.enabled || m.hp <= 0 || (!m.powered && m.power < 0)));
@@ -44,6 +47,12 @@
     <Tooltip text="Crew"><span class="cell"><Icon name="person" size={18} /><b>{crew.length}</b></span></Tooltip>
     <Tooltip text="Modules ({off.length} offline)"><span class="cell" class:bad={off.length > 0}><Icon name="module" size={18} /><b>{mods.length - off.length}/{mods.length}</b></span></Tooltip>
   </div>
+  {#if st.food.eaters > 0}
+    <div class="food" class:low={foodLevel === 'low'} class:out={foodLevel === 'out'} data-testid="stat-food" data-level={foodLevel}>
+      <span class="ft">Crew food <b>{st.food.units} rations</b></span>
+      <span class="fs">Eating {st.food.perHour}/h for {st.food.eaters} crew: food for <b>{foodTime}</b></span>
+    </div>
+  {/if}
   {#if combat.player}<div class="meters"><ShipMeters ship={combat.player} compact /></div>{/if}
 </aside>
 
@@ -55,6 +64,11 @@
   .cell b { color: var(--text); font-weight: 600; }
   button.cell { cursor: pointer; } button.cell.on { border-color: var(--cyan); background: var(--panel-3); }
   .cell.bad { border-color: var(--red); color: var(--red); }
+  .food { display: grid; gap: 2px; margin-top: 4px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); font-size: 13px; }
+  .food b { color: var(--text); font-weight: 600; }
+  .food .fs { color: var(--dim); font-size: 12px; }
+  .food.low { border-color: #ffb43c; } .food.low b { color: #ffb43c; }
+  .food.out { border-color: var(--red); } .food.out b { color: var(--red); }
   .meters { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
   @media (max-width: 600px) { :global(html[data-combat]) .over { display: none; } .over { bottom: auto; left: 8px; right: calc(46px + var(--sar)); width: auto; border-width: 1px; padding: 10px; } }
 </style>

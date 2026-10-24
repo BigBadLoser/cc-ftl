@@ -13,7 +13,7 @@ import { placementError, spawnModule } from './spawn';
 import { needsFrom } from '../items/materials';
 import { shipGrid } from '../regions';
 
-type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPriority' | 'module.setEnabled' | 'debug.spawnModule' | 'airlock.cycle';
+type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPowerPriority' | 'module.setEnabled' | 'debug.spawnModule' | 'airlock.cycle';
 type Handler<T extends ModuleCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 const DECON_FRACTION = 0.5;
@@ -60,11 +60,11 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
       work, progress: 0, reservedBy: 0, target,
     });
   },
-  'module.setPriority': (sim, cmd) => {
+  'module.setPowerPriority': (sim, cmd) => {
     const m = sim.world.get(cmd.id, ModuleC);
     if (!m) return reject(sim, cmd.type, 'noModule');
-    if (!Number.isInteger(cmd.priority) || cmd.priority < 1 || cmd.priority > 5) return reject(sim, cmd.type, 'badValue');
-    m.priority = cmd.priority;
+    if (!Number.isInteger(cmd.powerPriority) || cmd.powerPriority < 1 || cmd.powerPriority > 5) return reject(sim, cmd.type, 'badValue');
+    m.powerPriority = cmd.powerPriority;
   },
   'debug.spawnModule': (sim, cmd) => {
     const err = placementError(sim, cmd.ship, cmd.def, cmd.x, cmd.y, cmd.rot);

@@ -20,9 +20,12 @@ export function boarded(world: World, shipId: number): boolean {
   return false;
 }
 
-/** A hostile region is roofed (when enemy roofs are on) unless player crew are in its frame, or it is a wreck. */
-export const wantsRoof = (world: World, shipId: number, s: Ship, roofEnemies: boolean): boolean =>
-  roofEnemies && s.faction === 'hostile' && s.state !== 'wreck' && !boarded(world, shipId);
+/**
+ * A hostile region is roofed (when enemy roofs are on) unless player crew are in its frame, or it is a wreck.
+ * The player's own ship is roofed only when the player asks to see it from outside (`roofPlayer`).
+ */
+export const wantsRoof = (world: World, shipId: number, s: Ship, roofEnemies: boolean, roofPlayer = false): boolean =>
+  (roofPlayer && s.faction === 'player' && s.state !== 'wreck') || (roofEnemies && s.faction === 'hostile' && s.state !== 'wreck' && !boarded(world, shipId));
 
 /** An interior tile: floor, door, or under a module. Crew on one of a roofed region are hidden under its roof. */
 export function isInterior(grid: Grid, x: number, y: number): boolean {

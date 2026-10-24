@@ -37,6 +37,18 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
+## Playtest clarity (branch `playtest-clarity`, save v43; not merged)
+
+- **Food:** the stock drawer lists Food first (rations stay listed at 0, in red); `buildStock` now counts only the player's ships
+  (it used to sum every grid, stations included). Production orders show `inputs -> outputs` and "missing X" (`UiOrder.missing`). The ship
+  overview has a crew-food cell (rations, rate, hours left; amber under 1 h, red under 15 min) from `app/foodSnapshot.ts`.
+- **Priority:** the per-module `priority` was a power-shedding order (`power.ts` serves consumers 1 first), so it stays as
+  `powerPriority` / `module.setPowerPriority`, shown only on power consumers as "Power order".
+- **Work categories:** `crafting` split into `refining` (refinery recipes, `RecipeDef.category`) and `crafting` (fab, workbench,
+  galley). Proposed next splits: `cooking` is a dead column (nothing posts cooking jobs; the galley uses crafting), so either wire the
+  galley to it or drop it; split `repair` (modules) from `maintenance`/`firefighting`; split `hauling` into supply (to crafters/builds) and tidying.
+- **Roof toggle:** a Roof button beside Walls draws the player ship roofed (`wantsRoof(..., roofPlayer)`).
+
 ## Asteroids (branch `asteroids`; slices 1-3; not merged; visual: needs the user's screenshot approval)
 
 **User decisions (2026-10-21):**

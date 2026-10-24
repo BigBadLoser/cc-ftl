@@ -57,6 +57,8 @@ export interface Renderer {
   setCutaway(mode: CutawayMode): void;
   /** Roof hostile ships (default on); off shows their interior. */
   setRoofEnemies(on: boolean): void;
+  /** Roof the player's own ship too (default off), to see it from outside. */
+  setRoofPlayer(on: boolean): void;
   setOverlay(field: string | null): void;
   /** Selected tile(s) on `shipId`'s grid (default the camera ship's; derelicts and other ships take their own). */
   setSelection(tile: Tile | readonly Tile[] | null, shipId?: number): void;
@@ -134,6 +136,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let refId = 0;
   let cutaway: CutawayMode = 'auto';
   let roofEnemies = true;
+  let roofPlayer = false;
   let overlay: string | null = null;
   let hover: Tile | null = null;
   let selection: Tile | readonly Tile[] | null = null;
@@ -212,7 +215,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const bowParam = new URLSearchParams(window.location.search).get('bow');
   const shipLivery = (s: Ship) => ({ ...liveryFor(s.faction, s.name), ...(bowParam ? { bowWest: bowParam === 'west' } : {}) });
   // a hidden outpost stays under its rock roof whatever the roof toggle says
-  const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || wantsRoof(world, id, s, roofEnemies);
+  const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || wantsRoof(world, id, s, roofEnemies, roofPlayer);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
     const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
@@ -338,6 +341,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     setRoofEnemies(on) {
       roofEnemies = on;
+    },
+    setRoofPlayer(on) {
+      roofPlayer = on;
     },
     setOverlay(f) {
       overlay = f;

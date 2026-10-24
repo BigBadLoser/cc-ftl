@@ -36,7 +36,7 @@ export function craftJobsSystem(sim: Sim): void {
     if (!order || !recipe || recipe.station !== m.def) continue;
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, {
-      category: 'crafting', kind: 'craft', x: m.x, y: m.y, struct: 0, work: recipe.work, progress: 0,
+      category: recipe.category ?? 'crafting', kind: 'craft', x: m.x, y: m.y, struct: 0, work: recipe.work, progress: 0,
       reservedBy: 0, target: moduleId, needs: needsFrom(recipe.inputs), delivered: [], craft: { recipe: order.recipe },
     });
   }

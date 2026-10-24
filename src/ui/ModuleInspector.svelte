@@ -36,12 +36,12 @@
     {#if m.crafting}<FabPanel {api} id={m.id} def={m.def} />{/if}
     {#if m.storage}<StoragePanel {api} id={m.id} />{/if}
     {#if m.bay}<RobotBayPanel {api} id={m.id} bay={m.bay} />{/if}
-    {#if m.power !== 0}
-      <div class="row">
-        <span class="lbl">Priority</span>
+    {#if m.power < 0}
+      <div class="row" title="When the ship is short of power, lower numbers keep power first">
+        <span class="lbl">Power order</span>
         <span class="prio">
           {#each [1, 2, 3, 4, 5] as p (p)}
-            <button class:on={m.priority === p} data-testid="prio-{p}" onclick={() => api.dispatch({ type: 'module.setPriority', id: m.id, priority: p })}>{p}</button>
+            <button class:on={m.powerPriority === p} data-testid="power-order-{p}" onclick={() => api.dispatch({ type: 'module.setPowerPriority', id: m.id, powerPriority: p })}>{p}</button>
           {/each}
         </span>
       </div>

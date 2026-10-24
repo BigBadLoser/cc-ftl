@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { Grid } from '../sim/grid';
 import { Struct } from '../sim/structure';
-import { crewHidden } from './regionRules';
+import { ShipC, newGame } from '../sim';
+import { content } from '../content';
+import { crewHidden, wantsRoof } from './regionRules';
 
 describe('crew visibility (sector grid §5)', () => {
   const g = new Grid(1, 4, 1, { struct: 'u8', module: 'u32' });
@@ -18,5 +20,26 @@ describe('crew visibility (sector grid §5)', () => {
 
   it('always draws crew outside the region', () => {
     expect(crewHidden(g, true, 9, 0)).toBe(false);
+  });
+});
+
+describe('wantsRoof', () => {
+  it("never roofs the player's ship unless asked, and the roof-enemies setting does not affect it", () => {
+    const sim = newGame(1, content);
+    const id = sim.world.query(ShipC).find((e) => sim.world.get(e, ShipC)?.faction === 'player') as number;
+    const ship = sim.world.get(id, ShipC)!;
+    expect(wantsRoof(sim.world, id, ship, true)).toBe(false);
+    expect(wantsRoof(sim.world, id, ship, true, true)).toBe(true);
+    expect(wantsRoof(sim.world, id, ship, false, true)).toBe(true);
+  });
+
+  it('still roofs hostile ships only when enemy roofs are on', () => {
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    sim.step();
+    const id = sim.world.query(ShipC).find((e) => sim.world.get(e, ShipC)?.faction === 'hostile') as number;
+    const ship = sim.world.get(id, ShipC)!;
+    expect(wantsRoof(sim.world, id, ship, true, true)).toBe(true);
+    expect(wantsRoof(sim.world, id, ship, false, true)).toBe(false);
   });
 });

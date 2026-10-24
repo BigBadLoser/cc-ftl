@@ -56,6 +56,8 @@
   let prizes = $state<UiPrize[]>([]);
 
   let cutaway = $state<UiCutaway>('auto');
+  /** Draw the player ship's roof and hull exterior (view from outside). */
+  let roofOn = $state(false);
   let tool = $state<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
   $effect(() => {
     document.documentElement.toggleAttribute('data-combat', combat.inCombat && combatOpen);
@@ -68,6 +70,10 @@
   const phone = () => window.matchMedia('(max-width: 600px)').matches;
   const cutLabel: Record<UiCutaway, string> = { auto: 'Cutaway', up: 'Up', down: 'Low' };
   const cutNext: Record<UiCutaway, UiCutaway> = { auto: 'up', up: 'down', down: 'auto' };
+  function toggleRoof() {
+    roofOn = !roofOn;
+    api.setRoofPlayer(roofOn);
+  }
   function cycleWalls() {
     cutaway = cutNext[cutaway];
     api.setCutaway(cutaway);
@@ -174,6 +180,7 @@
 {/if}
 <ToolBar {api}>
     <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
+    <button class="tile" class:on={roofOn} aria-pressed={roofOn} title="Roof: {roofOn ? 'on (outside view)' : 'off'}" aria-label="Roof" data-testid="toggle-roof" onclick={toggleRoof}><Icon name="roof" size={18} /></button>
     <OverlayPicker {api} />
     <button class="tile" class:on={debug} title="Debug" aria-label="Debug" onclick={() => (debug = !debug)}><Icon name="debug" size={18} /></button>
 </ToolBar>

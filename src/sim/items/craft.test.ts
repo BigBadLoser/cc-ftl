@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CrewC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
+import { CrewC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
 
 import type { SimEvent } from '../events';
 import { spawnModule } from '../modules/spawn';
@@ -41,16 +41,17 @@ const content: ContentRegistry = {
   items: { scrap: item(100), metal: item(100), poly: item(50, 0.8) },
   recipes: {
     metal: { name: 'Metal', station: 'fab', inputs: [{ item: 'scrap', count: 2 }], outputs: [{ item: 'metal', count: 1 }], work: 20 },
+    refine: { name: 'Refine', station: 'fab', inputs: [{ item: 'scrap', count: 2 }], outputs: [{ item: 'metal', count: 1 }], work: 20, category: 'refining' },
     other: { name: 'Other', station: 'nope', inputs: [], outputs: [], work: 20 },
   },
   structCosts: {},
 };
 const rows = ['##############', '#____________#', '#____________#', '#____________#', '#____________#', '##############'];
 const all = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v, patrol: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, cooking: v, patrol: v,
 });
 
-function setup(scrap: number): { sim: Sim; fab: number; store: number; out: number } {
+function setup(scrap: number, prio: Partial<Priorities> = { crafting: 1, refining: 1 }): { sim: Sim; fab: number; store: number; out: number } {
   const sim = new Sim(5, content);
   fixtureShip(sim, { name: 't', rows });
   spawnModule(sim, 'reactor', 12, 4, 0);
@@ -62,10 +63,11 @@ function setup(scrap: number): { sim: Sim; fab: number; store: number; out: numb
   sim.world.add(id, CrewC, { name: 'T', role: 'r', species: 'species.human', appearanceSeed: 1, activity: 'idle' });
   sim.world.add(id, PositionC, { x: 5, y: 3, toX: 5, toY: 3, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
-  sim.world.add(id, PrioritiesC, { ...all(4), hauling: 1, crafting: 1 });
+  sim.world.add(id, PrioritiesC, { ...all(4), hauling: 1, ...prio });
   sim.world.add(id, NeedsC, { rest: 100 });
   return { sim, fab, store, out };
 }
+const jobCategories = (sim: Sim): string[] => sim.world.query(JobC).map((j) => sim.world.get(j, JobC)).filter((j) => j?.kind === 'craft').map((j) => j?.category ?? '');
 const run = (sim: Sim, n: number): SimEvent[] => {
   const events: SimEvent[] = [];
   for (let i = 0; i < n; i++) {
@@ -126,6 +128,36 @@ describe('crafting', () => {
     sim.enqueue({ type: 'production.remove', moduleId: fab, index: 0 });
     run(sim, 1);
     expect(sim.world.get(fab, ProductionC)?.orders).toHaveLength(1);
+  });
+});
+
+describe('work categories', () => {
+  const refineOrder = (sim: Sim, fab: number) => sim.enqueue({ type: 'production.add', moduleId: fab, recipe: 'refine', mode: 'count', target: 1 });
+
+  it("a recipe's category sets its craft job's category (default crafting)", () => {
+    const { sim, fab } = setup(20);
+    order(sim, fab, 'count', 1);
+    run(sim, 40);
+    expect(jobCategories(sim)).toEqual(['crafting']);
+    const r = setup(20);
+    refineOrder(r.sim, r.fab);
+    run(r.sim, 40);
+    expect(jobCategories(r.sim)).toEqual(['refining']);
+  });
+
+  it('crew only take refining work with refining on, and crafting work with crafting on', () => {
+    const noRefine = setup(20, { crafting: 1, refining: 0 });
+    refineOrder(noRefine.sim, noRefine.fab);
+    run(noRefine.sim, 600);
+    expect(metalInStorage(noRefine.sim, noRefine.store, noRefine.out)).toBe(0);
+    const noCraft = setup(20, { crafting: 0, refining: 1 });
+    order(noCraft.sim, noCraft.fab, 'count', 1);
+    run(noCraft.sim, 600);
+    expect(metalInStorage(noCraft.sim, noCraft.store, noCraft.out)).toBe(0);
+    const both = setup(20, { crafting: 0, refining: 1 });
+    refineOrder(both.sim, both.fab);
+    run(both.sim, 600);
+    expect(metalInStorage(both.sim, both.store, both.out)).toBe(1);
   });
 });
 

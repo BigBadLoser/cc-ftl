@@ -35,6 +35,9 @@ export const WORK_CATEGORIES = [
   'repair',
   'construction',
   'hauling',
+  /** Raw materials into materials (the refinery). */
+  'refining',
+  /** Materials into items (fabricator, workbench, galley; a recipe's `category` can override). */
   'crafting',
   'cooking',
   /** Walking a patrol (station guards; patrol jobs come from a ship's director, see stations/director). */

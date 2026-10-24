@@ -1,6 +1,8 @@
 import { CrewC, DeadC, ModuleC, PositionC, airlockSuits, roomTiles, type Sim } from '../sim';
 import { buildRobotBay } from './robotSnapshot';
 import { costsOf } from './logisticsSnapshot';
+import { buildFood } from './foodSnapshot';
+import { buildStock } from './logisticsSnapshot';
 import type { UiModule, UiModuleDef, UiStats } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
@@ -23,7 +25,7 @@ export function buildModuleList(sim: Sim): UiModule[] {
     if (!m || !def || shipIdOf(sim, m) !== GRID) continue;
     out.push({
       id, ship: home, def: m.def, name: def.name, x: m.x, y: m.y, local: localOf(sim, shipIdOf(sim, m), m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp,
-      priority: m.priority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
+      powerPriority: m.powerPriority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
       storage: !!def.storage, crafting: !!def.crafting, bay: def.robotBay ? buildRobotBay(sim, id) : null,
       suits: def.airlock ? { stowed: airlockSuits(sim, id), max: def.airlock.suits ?? 0 } : null,
     });
@@ -73,5 +75,5 @@ export function buildStats(sim: Sim): UiStats {
     }
     if (rooms.size) o2 = sum / rooms.size;
   }
-  return { supply, demand, o2 };
+  return { supply, demand, food: buildFood(sim, buildStock(sim)), o2 };
 }

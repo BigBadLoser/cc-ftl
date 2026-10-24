@@ -17,7 +17,7 @@ const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'Crate', asset: 'm', footprint: [1, 1], solid: true, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
 });
 const item = (name: string, stackSize = 100) => ({ name, tags: [], stackSize });
-const all = { firefighting: 2, medical: 2, operating: 2, repair: 2, construction: 2, hauling: 2, crafting: 2, cooking: 2, patrol: 0 };
+const all = { firefighting: 2, medical: 2, operating: 2, repair: 2, construction: 2, hauling: 2, refining: 2, crafting: 2, cooking: 2, patrol: 0 };
 
 export const baseContent = (events: Record<string, EventDef>): ContentRegistry => ({
   ships: {},
