@@ -32,14 +32,15 @@
   };
   const legs = $derived(travel ? travel.route.slice(1).map((id, i) => ({ id, done: i < travel.at, now: i === travel.at && travel.phase === 'hop' })) : []);
   const traffic = $derived(node ? map.fleets.filter((f) => f.node === node.id) : []);
-  const blocked = $derived(travel?.phase === 'interdicted' || travel?.phase === 'event');
+  const blocked = $derived(travel?.phase === 'interdicted' || travel?.phase === 'event' || travel?.phase === 'story');
   const recent = $derived(map.result && map.encounters.length === 0 && map.turn - map.result.turn <= 3 ? map.result : null);
-  const title = $derived(travel ? (travel.phase === 'interdicted' ? 'Interdicted' : 'In hyperspace') : node ? (node.known ? node.name : 'Unexplored') : 'Course');
+  const title = $derived(travel ? (travel.phase === 'interdicted' ? 'Interdicted' : travel.phase === 'story' ? 'Signal received' : 'In hyperspace') : node ? (node.known ? node.name : 'Unexplored') : 'Course');
   const sub = $derived(travel ? `Turn ${map.turn}` : `Danger ${node?.danger ?? 0}`);
   const label = $derived(fleeing ? 'Flee here' : route && route.hops > 1 ? `Jump (${route.hops} hops)` : 'Jump');
   const dropNote = $derived(
     travel?.phase === 'noFuel' ? `Out of fuel for the next hop (needs ${travel.need}). Drop here or refuel.`
     : travel?.phase === 'arrived' ? 'You have reached the end of the route.'
+    : travel?.phase === 'story' ? 'Travel is held until you answer the signal.'
     : travel?.phase === 'interdicted' ? 'Travel is halted until you answer the interdiction.'
     : travel?.stopping ? `Dropping out at ${nameOf(travel.route[travel.at + 1] as string)} when the hop ends.`
     : 'Mid-hop, you drop out at the next node.',

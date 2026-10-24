@@ -14,13 +14,9 @@ export interface StoryContext {
 
 /** When an event may start. An event lists any number of triggers. */
 export type EventTrigger =
-  /** Drawn (weighted) when the player arrives somewhere (`story.arrive`). */
-  | { kind: 'arrival'; weight: number }
-  /** Drawn (weighted) when the player crosses a hyperlane with a mid-lane anchor (starmap), instead of an arrival draw. */
+  /** Drawn (weighted) at a hop of a hyperspace trip (see galaxy/hyperspace.ts `storyAtHop`). The only drawn pool: nothing starts while the ship idles in a node. */
   | { kind: 'transit'; weight: number }
-  /** Drawn (weighted) every `periodicSec` of play, outside combat. */
-  | { kind: 'periodic'; weight: number }
-  /** Queued `delaySec` after the flag first reaches `atLeast` (default 1); eligibility is checked when it comes due. */
+  /** Queued `delaySec` after the flag first reaches `atLeast` (default 1); eligibility is checked when it comes due. A decision waits for the ship to be in hyperspace. */
   | { kind: 'flag'; flag: string; atLeast?: number; delaySec?: number }
   /** Never drawn: only a `chain` effect or the debug command reaches it. */
   | { kind: 'chain' };

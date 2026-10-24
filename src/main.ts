@@ -249,7 +249,4 @@ const api: UiApi = {
   },
 };
 
-// Periodic events: one draw about every 3 minutes of play. Danger tier and territory follow the current starmap node.
-bridge.dispatch({ type: 'story.setContext', periodicSec: 180 });
-
 mount(App, { target, props: { api } });

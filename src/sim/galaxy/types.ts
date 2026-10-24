@@ -178,11 +178,15 @@ export interface Travel {
   /**
    * 'hop': under way; 'arrived': at the end of the route; 'noFuel': stopped at `route[at]` for want of fuel for the next hop;
    * 'interdicted': halted at `route[at]` by a pending interdiction (resolved by `galaxy.respond`, the ship stays in hyperspace);
-   * 'event': the ship is in an event grid (`GalaxyState.event`) and the trip waits.
+   * 'event': the ship is in an event grid (`GalaxyState.event`) and the trip waits;
+   * 'story': a story decision is open (`sim.story.active`) and the trip waits until it is answered.
    */
-  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event';
-  /** Set in phase 'event': the phase to go back to when the grid is left ('interdicted' resumes the trip). */
-  held?: 'hop' | 'arrived' | 'noFuel' | 'interdicted';
+  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story';
+  /**
+   * Set in phase 'event' or 'story': the phase to go back to when the grid is left or the decision answered ('interdicted' resumes the trip after
+   * a hop; so does 'hopEnd', a story drawn at the hop just finished; 'hop' goes on with the hop under way).
+   */
+  held?: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'hopEnd';
   /** A drop was asked for mid-hop: the route was cut after the hop under way and the ship drops out when it gets there. */
   stopping?: true;
 }
@@ -348,8 +352,6 @@ export interface GalaxyState {
   days: number;
   /** The hyperspace trip in progress, or null. */
   travel: Travel | null;
-  /** The story draw owed at the next `sector.deploy` ('transit' after an anchored hyperlane), or null. */
-  pendingDraw: 'arrival' | 'transit' | null;
   /** Bumped on every change the starmap view shows. */
   rev: number;
 }

@@ -48,9 +48,6 @@ export interface StoryState {
   flags: Record<string, number>;
   reputation: Record<string, number>;
   context: StoryContext;
-  /** Seconds between periodic draws; 0 = periodic events off. */
-  periodicSec: number;
-  nextPeriodic: number;
   seen: Record<string, { count: number; last: number }>;
   active: ActiveEvent | null;
   queue: QueuedEvent[];
@@ -66,7 +63,7 @@ export const PHYSICAL_LOG_MAX = 50;
 
 export function newStory(seed: number): StoryState {
   return {
-    flags: {}, reputation: {}, context: { danger: 0, faction: null }, periodicSec: 0, nextPeriodic: 0,
+    flags: {}, reputation: {}, context: { danger: 0, faction: null },
     seen: {}, active: null, queue: [], notices: [], nextId: 1, last: null, physical: [],
     rng: (seed ^ 0x5eed5eed) >>> 0,
   };
