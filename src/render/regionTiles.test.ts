@@ -8,7 +8,7 @@ import type { Atlas, StaticSprite } from './assets/loader';
 import { createGridView } from './gridView';
 import { createWorldStack } from './worldLayers';
 import { createChunkViews, regionTiles, type ChunkRef } from './regionTiles';
-import { ghostVerts, ghostVertsIn } from './tiles';
+import { ghostVerts, ghostVertsIn, HullSide, hullSide, wallPieces } from './tiles';
 
 /** A w x h hull ring with floor inside, stamped at sector (ox, oy), plus a few interior walls and a door. */
 function ship(ox: number, oy: number, w = 40, h = 20): ShipGrid {
@@ -29,6 +29,24 @@ const createLayers = () => createWorldStack().region(false);
 const key = (c: ChunkRef) => `${c.cx},${c.cy}`;
 
 describe('region tiles', () => {
+  it('wall art reads a truss tile as outside: a hull wall facing it is near hull, and a wall run ending there gets its end face', () => {
+    const g = ship(0, 0, 12, 8);
+    // A truss along the whole south side, one tile off the hull (the hull's own south run stays at y = 7).
+    for (let x = 1; x < 11; x++) g.set('struct', x, 7, Struct.Beam);
+    for (let x = 0; x < 12; x++) g.set('struct', x, 6, Struct.Wall); // the south hull run now at y = 6, facing the truss
+    const t = regionTiles(g);
+    expect(t.kindAt(5, 7)).toBe(Struct.Beam);
+    expect(t.wallAt(5, 7)).toBe(Struct.Space);
+    expect(hullSide(t.wallAt, 5, 6)).toBe(HullSide.Near);
+    // With the truss read as solid-but-not-space the same wall would be a partition.
+    expect(hullSide(t.kindAt, 5, 6)).toBe(HullSide.None);
+    // An interior wall butting into that ghost run from the north gets the end face.
+    g.set('struct', 5, 5, Struct.Wall);
+    g.set('struct', 5, 4, Struct.Wall);
+    const u = regionTiles(g);
+    const pieces = wallPieces(u.wallAt, 5, 5, Struct.Wall, 'auto').map((p) => p.chain[0]);
+    expect(pieces.some((id) => id?.includes('end.s'))).toBe(true);
+  });
   it('wallAt keeps a rock wall, kindAt reads it as wall; rock mass is Space for both', () => {
     const g = ship(0, 0, 8, 6);
     g.set('struct', 3, 3, Struct.RockWall);

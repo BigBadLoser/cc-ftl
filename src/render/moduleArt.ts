@@ -78,6 +78,15 @@ function clampTile(def: ModuleDef, m: Module, side: string): { x: number; y: num
   return { x: m.x + w - 1, y: m.y + (h >> 1) };
 }
 
+/** The front-most footprint tile (largest x + y) on diagonal `d` = x - y of the footprint [x, x + w) x [y, y + h): the depth key of that diagonal's screen strip. */
+export function diagonalFront(x: number, y: number, w: number, h: number, d: number): { x: number; y: number } {
+  const tx = x + w - 1;
+  const ty = y + h - 1;
+  const dd = Math.min(tx - y, Math.max(x - ty, d));
+  const fx = Math.min(tx, dd + ty);
+  return { x: fx, y: fx - dd };
+}
+
 /** Which footprint tiles a stand-in sprite of a layer is repeated on (real art is one sprite per layer). */
 export type LayerTiles = 'all' | 'hull' | 'rest';
 
@@ -141,11 +150,11 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     const dressed = m.hp > 0 && livery;
     const over = (suffix: string): string[] => shell.chain.map((c) => c + suffix);
     return [
-      { ...shell, tiles: 'all' },
+      { ...shell, tiles: 'all', strips: true },
       ...(dressed ? [
-        { chain: over('.paint'), key: `${shell.key}.paint`, tiles: 'all', overlay: 'paint', optional: true, dz: 0.001 },
-        { chain: over('.lv'), key: `${shell.key}.lv`, tiles: 'all', overlay: 'lv', optional: true, dz: 0.002 },
-        { chain: over(`.logo.${containerLogo(id, livery.seed)}`), key: `${shell.key}.logo`, tiles: 'all', optional: true, dz: 0.003 },
+        { chain: over('.paint'), key: `${shell.key}.paint`, tiles: 'all', overlay: 'paint', optional: true, strips: true, dz: 0.001 },
+        { chain: over('.lv'), key: `${shell.key}.lv`, tiles: 'all', overlay: 'lv', optional: true, strips: true, dz: 0.002 },
+        { chain: over(`.logo.${containerLogo(id, livery.seed)}`), key: `${shell.key}.logo`, tiles: 'all', optional: true, strips: true, dz: 0.003 },
       ] as ModuleLayer[] : []),
       { chain: [`container.clamp.${clamp}`, 'container.clamp'], key: 'container.clamp', tiles: 'all', at, dz: 0.04 },
     ];

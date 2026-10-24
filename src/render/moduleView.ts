@@ -20,7 +20,7 @@ import { airlockLayers, createCollarAnimator, dockedAt } from './airlockArt';
 import { robotBayLayers } from './robotBayArt';
 import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, vehicleBayLayers } from './vehicleBayArt';
-import { craftProgress, moduleAssets, glowKey, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
+import { craftProgress, diagonalFront, moduleAssets, glowKey, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -210,10 +210,10 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           const x1 = Math.min(s.tex.width, Math.round(k * STRIP_W + STRIP_W / 2 + s.ax));
           if (x1 <= x0) continue;
           const d = Math.min(dMax, Math.max(dMin, tx - ty + k));
-          const fx = Math.min(tx, d + ty);
-          const sk = key(fx, fx - d);
+          const f = diagonalFront(m.x, m.y, w, h, d);
+          const sk = key(f.x, f.y);
           const sub = { tex: cut(s.tex, x0, x1), glow: s.glow ? cut(s.glow, x0, x1) : null, ax: s.ax - x0, ay: s.ay, footprint: s.footprint };
-          out.push(makePart(sub, tx, ty, false, sk, art.tint, glowKey(layer, sk)));
+          out.push(makePart(sub, tx, ty, false, sk, art.tint, glowKey(layer, sk), layer.overlay));
         }
         return;
       }
