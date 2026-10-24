@@ -58,7 +58,7 @@
   {/if}
   {#if st.heat.notoriety > 0 || st.heat.hunters.length}
     <div class="food heat" class:low={!st.heat.wanted} class:out={st.heat.wanted} data-testid="stat-heat" data-wanted={st.heat.wanted}>
-      <span class="ft">Notoriety <b>{st.heat.notoriety}</b>{#if st.heat.wanted} · <b>wanted by the law</b>{:else} <span class="fs">(wanted from {st.heat.wantedAt})</span>{/if}</span>
+      <span class="ft">Notoriety <b>{st.heat.notoriety}</b>{#if st.heat.wanted}&nbsp;· <b>wanted by the law</b>{:else} <span class="fs">(wanted from {st.heat.wantedAt})</span>{/if}</span>
       {#if st.heat.hunters.length}<span class="fs">Hunted by <b>{st.heat.hunters.join(', ')}</b></span>{/if}
       {#if st.heat.clearBlocker === null || st.heat.clearBlocker === 'cantAfford'}
         <button class="pay" data-testid="heat-clear" disabled={st.heat.clearBlocker !== null} onclick={() => api.dispatch({ type: 'galaxy.clearNotoriety' })}>Pay the den to clear it ({st.heat.clearCost} cr)</button>

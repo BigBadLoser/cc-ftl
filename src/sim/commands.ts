@@ -187,6 +187,8 @@ export type Command =
   | { type: 'galaxy.respond'; encounter: number; choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' }
   /** Pay a pirate den at the current node to clear the player's notoriety (galaxy/heat.ts). */
   | { type: 'galaxy.clearNotoriety' }
+  /** Debug: set the player's notoriety (galaxy/heat.ts). */
+  | { type: 'debug.notoriety'; value: number }
   /** Leave the event grid (the player's `combat.flee` does the same): the ship goes back into hyperspace and the trip carries on. Hostiles about need a charged drive. */
   | { type: 'galaxy.leaveEvent' }
   /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */

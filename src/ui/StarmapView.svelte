@@ -461,7 +461,7 @@
     {#if seenFactions.length && !cardOpen && !newsOpen}
       <ul class="legend" aria-label="Territory">
         {#if map && (map.heat.notoriety > 0 || map.heat.hunters.length)}
-          <li class="heat" class:wanted={map.heat.wanted} data-testid="starmap-heat">Notoriety {map.heat.notoriety}{#if map.heat.wanted} · wanted{/if}{#if map.heat.hunters.length}<br />Hunted by {map.heat.hunters.join(', ')}{/if}</li>
+          <li class="heat" class:wanted={map.heat.wanted} data-testid="starmap-heat">Notoriety {map.heat.notoriety}{#if map.heat.wanted}&nbsp;· wanted{/if}{#if map.heat.hunters.length}<br />Hunted by {map.heat.hunters.join(', ')}{/if}</li>
         {/if}
         <li class="lh">Territory</li>
         {#each seenFactions as f (f.id)}

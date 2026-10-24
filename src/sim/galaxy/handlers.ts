@@ -8,9 +8,9 @@ import { ensureChunk, ensureChunkOf, galaxyIndex } from './state';
 import { drop, jump, teleport } from './hyperspace';
 import { discover } from './travel';
 import { leave, respond } from './respond';
-import { clearNotoriety } from './heat';
+import { addNotoriety, clearNotoriety } from './heat';
 
-type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl'>;
+type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl' | 'debug.notoriety'>;
 type Handler<T extends GalaxyCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
@@ -33,6 +33,7 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
     if (sim.galaxy.event) return void sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: 'inEvent' });
     if (cmd.node !== sim.galaxy.current) teleport(sim, cmd.node);
   },
+  'debug.notoriety': (sim, cmd) => addNotoriety(sim, (Number.isFinite(cmd.value) ? cmd.value : 0) - sim.galaxy.heat.notoriety),
   'debug.chargeFtl': (sim) => {
     const me = playerShipInfo(sim);
     const combat = me ? sim.world.get(me.id, CombatC) : undefined;
