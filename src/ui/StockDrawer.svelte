@@ -13,7 +13,10 @@
     const u = [api.stock.subscribe((v) => (stock = v)), api.shuttles.subscribe((v) => (queued = v.transfers.length))];
     return () => u.forEach((f) => f());
   });
-  const rows = $derived(api.items.map((it) => ({ it, s: stock.find((x) => x.item === it.id) })));
+  const all = $derived(api.items.map((it) => ({ it, s: stock.find((x) => x.item === it.id) })));
+  /** Food is always listed first (even at zero), then the other items in stock, then the empty ones. */
+  const food = $derived(all.filter((r) => r.it.food));
+  const rows = $derived([...all.filter((r) => !r.it.food && r.s), ...all.filter((r) => !r.it.food && !r.s)]);
 </script>
 
 <aside class="sheet" class:tall={tab === 'transfers'} data-testid="stock-drawer">
@@ -25,6 +28,15 @@
   {:else}
   <div class="head"><span></span><span>Total</span><span>Floor</span><span>Stored</span><span>Carried</span></div>
   <ul>
+    <li class="sec">Food</li>
+    {#each food as { it, s } (it.id)}
+      <li class:out={!s} data-testid="stock-{it.id}">
+        <span class="nm"><ItemIcon {api} item={it.id} size={30} />{it.name}</span>
+        <b data-testid="stock-total-{it.id}">{s ? s.floor + s.stored : 0}</b>
+        <span>{s?.floor ?? 0}</span><span>{s?.stored ?? 0}</span><span>{s?.carried ?? 0}</span>
+      </li>
+    {/each}
+    <li class="sec">Materials and goods</li>
     {#each rows as { it, s } (it.id)}
       <li class:none={!s} data-testid="stock-{it.id}">
         <span class="nm"><ItemIcon {api} item={it.id} size={30} />{it.name}</span>
@@ -48,6 +60,8 @@
   .head { color: var(--dim); font-size: 11px; }
   .nm { display: flex; align-items: center; gap: 6px; text-align: left; }
   li.none { opacity: 0.45; }
+  li.out b { color: var(--red); }
+  li.sec { display: block; text-align: left; color: var(--cyan); font-size: 12px; margin-top: 4px; }
   li > span:not(.nm) { color: var(--dim); }
   @media (max-width: 600px) {
     aside { top: calc(var(--hdr) + var(--sat)); bottom: auto; left: 0; right: 0; width: auto; transform: none; border-radius: 0; border-width: 1px 0; padding: 10px 12px calc(10px + var(--sab)); max-height: calc(100dvh - var(--hdr) - var(--sat)); }

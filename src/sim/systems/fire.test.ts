@@ -39,7 +39,7 @@ const content: ContentRegistry = {
   structCosts: {},
 };
 const prio = (v: number): Priorities => ({
-  firefighting: 1, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v, patrol: v,
+  firefighting: 1, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, cooking: v, patrol: v,
 });
 
 // A 5x4 room with crates along the north wall, in a sealed hull.

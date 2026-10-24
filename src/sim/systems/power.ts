@@ -50,7 +50,7 @@ function allocate(sim: Sim, members: Member[]): void {
       mem.m.powered = true;
     }
   }
-  consumers.sort((a, b) => a.m.priority - b.m.priority || a.id - b.id);
+  consumers.sort((a, b) => a.m.powerPriority - b.m.powerPriority || a.id - b.id);
   let remaining = supply;
   let cut = false;
   let lostPower = false;

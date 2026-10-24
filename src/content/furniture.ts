@@ -52,7 +52,7 @@ export const furniture = {
   // Ore refinery 3x4: crew refine raw ore at the access tile (middle of the east long side at rotation 0). Player-buildable
   // and laid out on mining stations' processing floors.
   'module.refinery': {
-    name: 'Ore refinery', asset: 'module.refinery', footprint: [3, 4], solid: true, access: [3, 1], power: -8, priority: 3,
+    name: 'Ore refinery', asset: 'module.refinery', footprint: [3, 4], solid: true, access: [3, 1], power: -8, powerPriority: 3,
     flammability: 0.1, maxHp: 220, buildWork: 300, workstation: true, crafting: true,
     cost: [{ item: 'item.metal', count: 30 }, { item: 'item.electronics', count: 8 }, { item: 'item.parts', count: 4 }],
   },

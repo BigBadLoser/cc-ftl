@@ -32,6 +32,7 @@ export const recipes = {
   },
   // Refinery recipes: raw ore from mining pods and digging becomes building materials.
   'recipe.refine_iron': {
+    category: 'refining',
     name: 'Refine iron ore',
     station: 'module.refinery',
     inputs: [{ item: 'item.iron_ore', count: 3 }],
@@ -39,6 +40,7 @@ export const recipes = {
     work: 80,
   },
   'recipe.refine_rare': {
+    category: 'refining',
     name: 'Refine rare ore',
     station: 'module.refinery',
     inputs: [{ item: 'item.rare_ore', count: 2 }],

@@ -125,7 +125,7 @@ export interface UiModule {
   local: { x: number; y: number };
   hp: number;
   maxHp: number;
-  priority: number;
+  powerPriority: number;
   enabled: boolean;
   powered: boolean;
   /** Units per second: positive supplies, negative draws. */
@@ -185,6 +185,8 @@ export interface UiItemDef {
   id: string;
   name: string;
   stackSize: number;
+  /** Crew can eat it. */
+  food: boolean;
 }
 
 export interface UiRecipe {
@@ -234,6 +236,8 @@ export interface UiOrder {
   done: number;
   /** 'keep' orders: units in stock of the first output. */
   have: number;
+  /** Inputs of one batch that are not in stock in the needed amount (item names). */
+  missing: string[];
   /** The order the station is working on now. */
   active: boolean;
 }
@@ -255,9 +259,18 @@ export interface UiModuleDef {
   cost: UiCost[];
 }
 
+/** Crew food: units of food in stock, how many crew eat, rations used per hour at the current rate and hours left (null with no eaters). */
+export interface UiFood {
+  units: number;
+  eaters: number;
+  perHour: number;
+  hours: number | null;
+}
+
 export interface UiStats {
   supply: number;
   demand: number;
+  food: UiFood;
   /** Average O2 (kPa) of rooms with crew in them, or null when nobody is inside one. */
   o2: number | null;
 }
@@ -728,6 +741,8 @@ export interface UiApi {
   pickCombat(x: number, y: number): { moduleId: number } | null;
   /** Roof hostile ships (default) or show their interior. */
   setRoofEnemies(on: boolean): void;
+  /** Show the player's ship with its roof on (view from outside). */
+  setRoofPlayer(on: boolean): void;
   /** Frame the player's ship and a hostile ship (or only the player's ship) in the camera. */
   focusFight(ship: number | null): void;
   /** Spawn a raider about 30 tiles from the player's ship. */

@@ -60,7 +60,7 @@ export function supplyJobsSystem(sim: Sim): void {
           break;
         }
         const n = Math.min(lack, src.avail, DEFAULT_CARRY_CAPACITY);
-        const category = job.kind === 'craft' ? 'crafting' : 'construction';
+        const category = job.kind === 'craft' ? (sim.content.recipes[job.craft?.recipe ?? '']?.category ?? 'crafting') : 'construction';
         // One trip carries the job's other materials from the same crate too (builders carry what they need).
         const extra: ItemQty[] = [];
         if (src.ref.kind === 'storage' && job.kind !== 'craft') {

@@ -3,7 +3,7 @@ import { CrewC, JobC, PositionC } from '../crew/components';
 import { ProductionC, StorageC } from '../items/components';
 import { spillItems } from '../items/stacks';
 import type { Sim } from '../sim';
-import { DEFAULT_PRIORITY } from '../tuning';
+import { DEFAULT_POWER_PRIORITY } from '../tuning';
 import { Struct } from '../structure';
 import { ModuleC } from './components';
 import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, inFootprint, openTilesOf } from './footprint';
@@ -22,7 +22,7 @@ export function spawnModule(sim: Sim, defId: string, x: number, y: number, rot: 
   if (!def) throw new Error(`spawnModule: unknown def "${defId}"`);
   const id = sim.world.createEntity();
   sim.world.add(id, ModuleC, {
-    def: defId, x, y, rot, hp: def.maxHp, priority: def.priority ?? DEFAULT_PRIORITY,
+    def: defId, x, y, rot, hp: def.maxHp, powerPriority: def.powerPriority ?? DEFAULT_POWER_PRIORITY,
     enabled: true, powered: false, reservedBy: 0,
   });
   if (def.storage) sim.world.add(id, StorageC, { capacity: def.storage.capacity, filter: null, stacks: [] });

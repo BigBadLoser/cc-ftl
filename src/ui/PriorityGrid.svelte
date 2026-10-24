@@ -8,8 +8,9 @@
   onMount(() => api.crew.subscribe((v) => (crew = v)));
 
   const SHORT: Record<WorkCategory, string> = {
-    firefighting: 'Fire', medical: 'Med', operating: 'Ops', repair: 'Fix', construction: 'Build', hauling: 'Haul', crafting: 'Craft', cooking: 'Cook', patrol: 'Watch',
+    firefighting: 'Fire', medical: 'Med', operating: 'Ops', repair: 'Fix', construction: 'Build', hauling: 'Haul', refining: 'Refine', crafting: 'Craft', cooking: 'Cook', patrol: 'Watch',
   };
+  const HELP: Partial<Record<WorkCategory, string>> = { refining: 'Refine: raw ore into materials (refinery)', crafting: 'Craft: materials into items (fabricator, workbench, galley)' };
   /** Patrols are posted only by NPC ship directors (stations): no column for the player's crew. */
   const SHOWN = WORK_CATEGORIES.filter((c) => c !== 'patrol');
   /** 1 -> 2 -> 3 -> 4 -> off -> 1 */
@@ -28,7 +29,7 @@
       <thead>
         <tr>
           <th></th>
-          {#each SHOWN as cat (cat)}<th title={cat}>{SHORT[cat]}</th>{/each}
+          {#each SHOWN as cat (cat)}<th title={HELP[cat] ?? cat}>{SHORT[cat]}</th>{/each}
           <th></th>
         </tr>
       </thead>
@@ -40,7 +41,7 @@
               <td>
                 <button
                   class="cell" class:changed={c.priorities[cat] !== c.defaults[cat]} class:off={c.priorities[cat] === 0}
-                  data-testid="prio-{c.id}-{cat}" title="{cat}: role default {c.defaults[cat] || 'off'}" onclick={() => cycle(c, cat)}
+                  data-testid="prio-{c.id}-{cat}" title="{HELP[cat] ?? cat}: role default {c.defaults[cat] || 'off'}" onclick={() => cycle(c, cat)}
                 >{c.priorities[cat] || ''}</button>
               </td>
             {/each}

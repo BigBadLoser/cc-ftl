@@ -213,6 +213,8 @@ export interface RecipeDef {
   outputs: ItemQty[];
   /** Ticks of work at workSpeed 1. */
   work: number;
+  /** Work category of the craft job (default 'crafting'; refinery recipes use 'refining'). */
+  category?: WorkCategory;
 }
 
 /** A crew role: default priorities for each work category (0 = off, 1 = highest .. 4). */
@@ -328,8 +330,8 @@ export interface ModuleDef {
   openTiles?: readonly (readonly [number, number])[];
   /** Positive supplies power, negative draws it (units per second). */
   power: number;
-  /** Power priority 1 (served first) .. 5. Default DEFAULT_PRIORITY. */
-  priority?: number;
+  /** Power-shedding order 1 (served first) .. 5 when the ship is short of power. Default DEFAULT_POWER_PRIORITY. */
+  powerPriority?: number;
   /** Oxygen added per second, spread over the module's room. */
   o2PerSec?: number;
   /** CO2 removed per second, spread over the module's room. */

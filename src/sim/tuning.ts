@@ -50,7 +50,7 @@ export const FIRE_SMOKE = 80;
 export const FIRE_MODULE_DAMAGE = 8;
 
 // --- Modules / power ---
-export const DEFAULT_PRIORITY = 3;
+export const DEFAULT_POWER_PRIORITY = 3;
 export const LIGHT_DARK_BELOW = 40;
 /** Light falloff: level is scaled by (1 - FALLOFF * dist / radius). */
 export const LIGHT_FALLOFF = 0.55;
