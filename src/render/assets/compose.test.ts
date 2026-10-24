@@ -70,11 +70,10 @@ describe('the shipped sets composed', () => {
   const c1 = composeManifest(one, '1x', two, '2x');
   const c2 = composeManifest(two, '2x', null, '2x');
 
-  it('2x composes unchanged and 1x lacks only what the render has not made yet', () => {
+  it('2x composes unchanged and 1x falls back only for what the 1x render lacks', () => {
     expect(Object.keys(c2.manifest.assets)).toEqual(Object.keys(two.assets));
     expect(Object.keys(c1.manifest.assets).sort()).toEqual(Object.keys(two.assets).sort());
-    expect(c1.fallbacks.length).toBe(Object.keys(two.assets).length - Object.keys(one.assets).length);
-    expect(c1.fallbacks.length).toBeGreaterThan(0);
+    expect(c1.fallbacks.length).toBe(Object.keys(two.assets).filter((id) => !one.assets[id]).length);
     for (const id of c1.fallbacks) expect(one.assets[id]).toBeUndefined();
   });
   it('puts ids both sets have on the same world point (the tile centre within the 1x pixel grid)', () => {
@@ -115,13 +114,19 @@ describe('art set choice and budgets', () => {
 
 describe('loadComposed', () => {
   afterEach(() => vi.unstubAllGlobals());
-  const serve = () =>
+  /** Serve the shipped manifests; `drop` takes ids out of the 1x one (an id the 1x render has not made). */
+  const serve = (drop: (id: string) => boolean = () => false) =>
     vi.fn(async (url: string) => {
-      const body = raws[`../../../public/assets/${url.replace('/base/', '')}`];
+      let body = raws[`../../../public/assets/${url.replace('/base/', '')}`];
+      if (body !== undefined && url.includes('1x/')) {
+        const m = JSON.parse(body) as { assets: Record<string, unknown> };
+        for (const id of Object.keys(m.assets)) if (drop(id)) delete m.assets[id];
+        body = JSON.stringify(m);
+      }
       return body === undefined ? { ok: false, status: 404, json: async () => ({}) } : { ok: true, status: 200, json: async () => JSON.parse(body) as unknown };
     });
   it('1x loads both manifests and an id missing from 1x resolves from the 2x set', async () => {
-    const f = serve();
+    const f = serve((id) => id.startsWith('rock.'));
     vi.stubGlobal('fetch', f);
     const { manifest, fallbacks } = await loadComposed('/base/', 1);
     expect(f.mock.calls.map((c) => c[0])).toEqual(['/base/1x/manifest.json', '/base/2x/manifest.json']);
