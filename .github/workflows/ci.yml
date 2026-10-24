@@ -1,7 +1,10 @@
 name: CI
 
+# PR pushes run lint, typecheck, the fast tests and the build. The slow tier (*.slow.test.ts) runs on main,
+# and on a PR once it carries the `full-ci` label (add it before merging; later pushes keep running it).
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
 
@@ -11,6 +14,8 @@ concurrency:
 
 jobs:
   check:
+    # adding some other label is no reason to run CI again
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -24,7 +29,10 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
-      - name: Test
-        run: npm test
+      - name: Test (fast tier)
+        run: npm run test:quick
+      - name: Test (slow tier)
+        if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'full-ci')
+        run: npm run test:slow
       - name: Build
         run: npm run build
