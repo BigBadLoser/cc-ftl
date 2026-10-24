@@ -37,6 +37,18 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
+## Playtest clarity (branch `playtest-clarity`, save v43; not merged)
+
+- **Food:** the stock drawer lists Food first (rations stay listed at 0, in red); `buildStock` now counts only the player's ships
+  (it used to sum every grid, stations included). Production orders show `inputs -> outputs` and "missing X" (`UiOrder.missing`). The ship
+  overview has a crew-food cell (rations, rate, hours left; amber under 1 h, red under 15 min) from `app/foodSnapshot.ts`.
+- **Priority:** the per-module `priority` was a power-shedding order (`power.ts` serves consumers 1 first), so it stays as
+  `powerPriority` / `module.setPowerPriority`, shown only on power consumers as "Power order".
+- **Work categories:** `crafting` split into `refining` (refinery recipes, `RecipeDef.category`) and `crafting` (fab, workbench,
+  galley). Proposed next splits: `cooking` is a dead column (nothing posts cooking jobs; the galley uses crafting), so either wire the
+  galley to it or drop it; split `repair` (modules) from `maintenance`/`firefighting`; split `hauling` into supply (to crafters/builds) and tidying.
+- **Roof toggle:** a Roof button beside Walls draws the player ship roofed (`wantsRoof(..., roofPlayer)`).
+
 ## Asteroids (branch `asteroids`; slices 1-3; not merged; visual: needs the user's screenshot approval)
 
 **User decisions (2026-10-21):**
@@ -707,6 +719,9 @@ Details in `tools/blender/README.md` (Crew layers, Incremental builds) and `docs
 - **Follow-up (not built):** render rigid, non-deforming gear once per direction and attach it per frame at runtime
   (needs per-frame attachment offsets in the clip data); robots on the same per-clip layout and fixed frame; lazy loading of
   clip sheets (now about 200 crew images load up front).
+
+## Story events in transit (branch `playtest-events`, save v43)
+Fix for "events pop up while I'm idle in a node": the periodic draw (180 s in `main.ts`) and the arrival draw at deploy (`pendingDraw`) are gone; story events are drawn only at hyperspace hops (`galaxy/storyHop.ts`), hold the trip (`Travel.phase 'story'`) and never share a hop with an interdiction. Details in `docs/ARCHITECTURE.md` (Events). Open: lead notices still open their decision when tapped, even idle (player-initiated).
 
 ## Event system (branch `events`, based on `eva`; not merged; awaiting user approval of the in-game look)
 

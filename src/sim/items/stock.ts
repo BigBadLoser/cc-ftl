@@ -1,3 +1,4 @@
+import { ShipC } from '../combat/components';
 import { ContainerC } from '../containers/components';
 import { shipIdAt , shipIdOf } from '../regions';
 import { JobC } from '../crew/components';
@@ -37,7 +38,13 @@ export function reservations(sim: Sim): Reservations {
     const h = sim.world.get(id, JobC)?.haul;
     if (!h) continue;
     if (h.phase === 'pickup') bump(res.out, refKey(h.src.kind, h.src.id, h.item), h.count);
-    bump(res.incoming, refKey(h.dst.kind, h.dst.id, h.item), h.count);
+    const later = (h.then ?? []).reduce((n, t) => n + t.count, 0);
+    bump(res.incoming, refKey(h.dst.kind, h.dst.id, h.item), h.count - later);
+    for (const t of h.then ?? []) bump(res.incoming, refKey('job', t.job, h.item), t.count);
+    for (const q of h.extra ?? []) {
+      if (h.phase === 'pickup') bump(res.out, refKey(h.src.kind, h.src.id, q.item), q.count);
+      bump(res.incoming, refKey(h.dst.kind, h.dst.id, q.item), q.count);
+    }
   }
   return res;
 }
@@ -94,13 +101,20 @@ export function nearestStorageFor(sim: Sim, shipId: number, item: string, at: { 
   return best;
 }
 
-/** Total stock of an item across all grids: loose stacks plus storage (not carried or delivered). */
+/**
+ * Stock of an item on the player's own ships (home ship, claimed bases, prizes): loose stacks plus storage, not carried or
+ * delivered. Other ships' and stations' stock is not ours: a docked station's crates must not satisfy a 'keep' order.
+ */
 export function totalStock(sim: Sim, item: string): number {
+  const ours = (shipId: number): boolean => sim.world.get(shipId, ShipC)?.faction === 'player';
   let n = 0;
   for (const id of sim.world.query(ItemStackC)) {
     const s = sim.world.get(id, ItemStackC);
-    if (s?.item === item) n += s.count;
+    if (s?.item === item && ours(shipIdAt(sim, s.x, s.y))) n += s.count;
   }
-  for (const id of sim.world.query(StorageC)) n += storageCount(sim, id, item);
+  for (const id of sim.world.query(StorageC, ModuleC)) {
+    const m = sim.world.get(id, ModuleC);
+    if (m && ours(shipIdOf(sim, m))) n += storageCount(sim, id, item);
+  }
   return n;
 }

@@ -1,10 +1,12 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
+import { buildSites } from './siteSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
+import { buildFtl } from './ftlSnapshot';
 import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildMining } from './miningSnapshot';
@@ -16,7 +18,7 @@ import { buildStarmap, emptyStarmap, planStarmapRoute, starmapStatus } from './s
 import { PREFETCH_BOOST_BUDGET_MS, PREFETCH_BOOST_MS, PREFETCH_EVERY, prefetchGalaxy } from './galaxyPrefetch';
 import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute } from '../ui/starmapApi';
 import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
-import { createStore, type Readable } from './store';
+import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
 
@@ -67,11 +69,13 @@ export interface Bridge {
   crew: Readable<UiCrew[]>;
   hostiles: Readable<UiCrew[]>;
   modules: Readable<UiModule[]>;
+  sites: Writable<UiSite[]>;
   stats: Readable<UiStats>;
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
   fabs: Readable<UiFab[]>;
   combat: Readable<UiCombat>;
+  ftl: Readable<UiFtl | null>;
   shuttles: Readable<UiShuttles>;
   trade: Readable<UiTrade>;
   prizes: Readable<UiPrize[]>;
@@ -119,11 +123,15 @@ export function createBridge(sim: Sim): Bridge {
   const hostiles = createStore<UiCrew[]>([]);
   let lastHostiles = '';
   const modules = createStore<UiModule[]>([]);
-  const stats = createStore<UiStats>({ supply: 0, demand: 0, o2: null });
+  const sites = createStore<UiSite[]>([]);
+  let lastSites = '[]';
+  const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, o2: null });
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
+  const ftl = createStore<UiFtl | null>(null);
+  let lastFtl = '';
   const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
   let lastTrade = '';
@@ -209,6 +217,12 @@ export function createBridge(sim: Sim): Bridge {
       lastMods = mk;
       modules.set(ml);
     }
+    const sl = buildSites(sim);
+    const slk = JSON.stringify(sl);
+    if (slk !== lastSites) {
+      lastSites = slk;
+      sites.set(sl);
+    }
     const logs = [buildStock(sim), buildStorages(sim), buildFabs(sim)] as const;
     const keys = logs.map((l) => JSON.stringify(l));
     if (keys[0] !== lastLog[0]) stock.set(logs[0]);
@@ -230,6 +244,14 @@ export function createBridge(sim: Sim): Bridge {
     if (key === lastCombat) return;
     lastCombat = key;
     combat.set(snap);
+  };
+  const refreshFtl = () => {
+    if (combatFrame % 3) return;
+    const snap = buildFtl(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastFtl) return;
+    lastFtl = key;
+    ftl.set(snap);
   };
   const refreshShuttles = () => {
     if (combatFrame % 3) return;
@@ -329,11 +351,13 @@ export function createBridge(sim: Sim): Bridge {
     crew,
     hostiles,
     modules,
+    sites,
     stats,
     stock,
     storages,
     fabs,
     combat,
+    ftl,
     shuttles,
     trade,
     prizes,
@@ -396,6 +420,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshPrizes();
       refreshMining();
       refreshCombat();
+      refreshFtl();
       refreshStory();
       refreshDeploy();
       refreshStarmap();

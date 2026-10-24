@@ -53,10 +53,13 @@ import { newTrade, type TradeState } from './trade/types';
  * v40 (stage 4, off-screen life): `galaxy.news` / `galaxy.nextNews` (the bounded news log), `NodeState.wrecks` (ships destroyed in NPC fights, waiting to be found as wrecks).
  * v41: `Combat.cruisePilot` / `Combat.cruiseEvasion` (evade odds outside combat).
  * v42: base logistics and the living world in one save.
- * v43 (art/2x): 2x art merge; mining pod geometry (v33 on art/2x) reconciled with main's v42. Sim shape unchanged.
- * v44 (art/2x): cargo containers are 2x4 and 3x6 (the art's sizes; were 2x3 and 3x5): new def ids, footprints and stock capacity; shipgen frames repacked.
+ * v43 (story events in transit): no `galaxy.pendingDraw`, no `story.periodicSec` / `nextPeriodic`, `Travel.phase` 'story' and `Travel.held` 'hopEnd'.
+ * v44: `Combat.ftlOrder` (the standing `ftl.charge` order and its queued jump).
+ * v45: construction hauling carries several item types per trip (bigger carry capacity, chained haul jobs).
+ * v46: `powerPriority` rename, Refine/Craft work categories split.
+ * v47: art/2x and dual art sets on top of v46: cargo containers are 2x4 and 3x6 (the art's sizes; were 2x3 and 3x5), new def ids, footprints and stock capacity; shipgen frames repacked; mining pod geometry.
  */
-export const SAVE_VERSION = 44;
+export const SAVE_VERSION = 47;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

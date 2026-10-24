@@ -40,6 +40,9 @@ export interface Controller {
   /** Order drafted crew (the selected one, else all) to attack a hostile crew member. */
   attack(target: number): void;
   selectModule(id: number | null): void;
+  /** A module under construction (its job id), or null. */
+  selectedSite: Readable<number | null>;
+  selectSite(id: number | null): void;
   focusAlert(id: number): void;
   onEvents(events: SimEvent[]): void;
   /** Wire up the renderer once the canvas exists; returns handlers for attachInput. */
@@ -49,6 +52,7 @@ export interface Controller {
 export function createController(sim: Sim, bridge: Bridge): Controller {
   const tool = createStore<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
   const modSel = createStore<number | null>(null);
+  const siteSel = createStore<number | null>(null);
   const shipSel = createStore<number | null>(null);
   const astSel = createStore<number | null>(null);
   /** The player's ship (home grid 1) as a ShipC entity id. */
@@ -72,11 +76,15 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     toastTimer = setTimeout(() => toast.set(null), ms);
   };
 
+  /** Hand the renderer the stuck sites (amber) and the selected one. */
+  const pushSites = () => r?.setSites(new Set(bridge.sites.get().filter((s) => s.state === 'blocked').map((s) => s.id)), siteSel.get());
   const selectTile = (t: Tile | null, ship = homeShipId()) => {
     shipSel.set(null);
     astSel.set(null);
     crewSel.set(null);
     modSel.set(null);
+    siteSel.set(null);
+    pushSites();
     r?.setSelectedCrew(null);
     r?.setSelection(t, ship);
     bridge.setSelected(t ? { ship, ...t } : null);
@@ -96,6 +104,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     modSel.set(null);
     shipSel.set(null);
     astSel.set(null);
+    siteSel.set(null);
+    pushSites();
     crewSel.set(id);
     r?.setSelection(null);
     bridge.setSelected(null);
@@ -116,12 +126,27 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     crewSel.set(null);
     shipSel.set(null);
     astSel.set(null);
+    siteSel.set(null);
+    pushSites();
     r?.setSelectedCrew(null);
     bridge.setSelected(null);
     modSel.set(id);
     r?.setSelection(footprintTiles(def, m.x, m.y, m.rot));
   };
 
+  const selectSite = (id: number | null) => {
+    const s = id === null ? undefined : bridge.sites.get().find((x) => x.id === id);
+    if (id === null || !s) return selectTile(null);
+    crewSel.set(null);
+    shipSel.set(null);
+    astSel.set(null);
+    modSel.set(null);
+    r?.setSelectedCrew(null);
+    bridge.setSelected(null);
+    siteSel.set(id);
+    pushSites();
+    r?.setSelection(null); // the site draws its own outline, on the floor under everything
+  };
   const isMineTool = () => {
     const t = tool.get();
     return t.tool === 'build' && t.build === 'mine';
@@ -267,6 +292,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     selectAsteroid,
     selectedCrew: crewSel,
     selectModule,
+    selectedSite: siteSel,
+    selectSite,
     focusAlert(id) {
       const at = alerts.get(id)?.at;
       if (at) r?.focusTile(at.x, at.y);
@@ -287,6 +314,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     },
     attach(renderer) {
       r = renderer;
+      bridge.sites.subscribe(() => {
+        pushSites();
+        const id = siteSel.get();
+        if (id !== null && !bridge.sites.get().some((s) => s.id === id)) siteSel.set(null); // built or cancelled
+      });
       return {
         onTap(sx, sy) {
           const crewId = renderer.pickCrew(sx, sy);
@@ -307,6 +339,10 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
             }
           }
           if (modId) return selectModule(modId);
+          // a module under construction: its ghost, or any tile of its footprint
+          const sites = bridge.sites.get();
+          const siteHit = renderer.pickSite(sx, sy) ?? (tile ? sites.find((s) => tile.x >= s.x && tile.x < s.x + s.w && tile.y >= s.y && tile.y < s.y + s.h)?.id : undefined);
+          if (siteHit !== undefined && siteHit !== null && sites.some((s) => s.id === siteHit)) return selectSite(siteHit);
           const sel = crewSel.get();
           const any = renderer.pickTileAny(sx, sy);
           const ag = any && shipGrid(sim, any.shipId);

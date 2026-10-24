@@ -11,7 +11,7 @@ export interface Module {
   rot: number;
   hp: number;
   /** Power priority 1 (served first) .. 5; ties go to the lower entity id. */
-  priority: number;
+  powerPriority: number;
   /** Player switch. A disabled module draws and supplies nothing. */
   enabled: boolean;
   /** Derived by the power system each tick: running (supplied / allocated). */

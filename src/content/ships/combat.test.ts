@@ -348,7 +348,7 @@ describe('enemy AI, endings', () => {
     expect(ofType(events, 'ship.fled')).toEqual([]);
     expect(sim.sector).toMatchObject({ state: 'hyperspace', inCombat: false });
     expect(sim.archives.map((a) => a.node)).toEqual([entered[0]!.route[0]]);
-    for (let i = 0; i < 2000 && sim.galaxy.travel?.phase === 'hop'; i++) sim.step();
+    for (let i = 0; i < 2000 && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) { sim.step(); sim.story.active = null; }
     expect(sim.galaxy.current).toBe(to);
     sim.enqueue({ type: 'galaxy.drop' });
     run(sim, 1);

@@ -169,12 +169,16 @@ const api: UiApi = {
   storages: bridge.storages,
   fabs: bridge.fabs,
   selectedModule: controller.selectedModule,
+  sites: bridge.sites,
+  selectedSite: controller.selectedSite,
+  selectSite: controller.selectSite,
   selectedShip: controller.selectedShip,
   selectShip: controller.selectShip,
   stats: bridge.stats,
   alerts: controller.alerts.list,
   log: controller.log.list,
   combat: bridge.combat,
+  ftl: bridge.ftl,
   shuttles: bridge.shuttles,
   trade: bridge.trade,
   prizes: bridge.prizes,
@@ -202,6 +206,7 @@ const api: UiApi = {
   artScale: currentArtScale(),
   setArtScale: (scale) => setArtScale(scale),
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
+  setRoofPlayer: (on) => renderer?.setRoofPlayer(on),
   focusFight: (ship) => focusFight(ship),
   spawnRaider: (boarders) => spawnRaider(boarders),
   spawnGenerated: (faction) => spawnGenerated(faction),
@@ -250,8 +255,5 @@ const api: UiApi = {
       .catch((e: unknown) => errorLog.push(e));
   },
 };
-
-// Periodic events: one draw about every 3 minutes of play. Danger tier and territory follow the current starmap node.
-bridge.dispatch({ type: 'story.setContext', periodicSec: 180 });
 
 mount(App, { target, props: { api } });

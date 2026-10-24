@@ -7,6 +7,7 @@ const REASONS: Record<string, string> = {
   fleetGone: 'They are gone',
   noEvent: 'You are not in an event grid',
   interdicted: 'Answer the interdiction first',
+  inStory: 'Answer the signal first',
   jobExists: "There's already a job on that tile",
   noJob: 'No job on that tile to cancel',
   sameStruct: "That's already built there",
@@ -70,6 +71,11 @@ const REASONS: Record<string, string> = {
   inTransit: 'The shuttle has already left',
   tooBig: 'Too much for one shuttle hold',
   noCourier: 'No shuttle to carry the goods: fit one in a bay',
+  noHelm: 'The ship has no helm',
+  helmOffline: 'The helm has no power',
+  noEngines: 'No powered engine: the drive cannot charge',
+  noCrewAboard: 'No crew available to sit at the helm',
+  alreadyCharged: 'The FTL drive is already charged',
   courierBusy: 'Your shuttle is busy: it needs an empty hold and no other job',
 };
 

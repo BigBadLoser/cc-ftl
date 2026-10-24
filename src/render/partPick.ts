@@ -40,7 +40,7 @@ function alphaOf(tex: Texture): Uint8ClampedArray | null {
 }
 
 /** True unless the pixel (u, v) of the sprite's frame is known to be transparent. */
-function solid(tex: Texture, u: number, v: number): boolean {
+export function solid(tex: Texture, u: number, v: number): boolean {
   // (u, v) is in world px of the frame: one art px covers 1 / resolution of them.
   const r = tex.source.resolution ?? 1;
   const au = Math.floor(u * r);

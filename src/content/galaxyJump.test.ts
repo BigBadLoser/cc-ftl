@@ -46,8 +46,13 @@ const charge = (sim: Sim) => {
 const jump = (sim: Sim, route: string[], extra: { withDocked?: number[] } = {}) => sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route, ...extra });
 /** Run until the current hop ends. */
 function untilStops(sim: Sim, max = 90000): void {
-  for (let i = 0; i < max && sim.sector.state === 'hyperspace' && sim.galaxy.travel?.phase === 'hop'; i++) sim.step();
+  for (let i = 0; i < max && sim.sector.state === 'hyperspace' && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) {
+    sim.step();
+    quietStory(sim);
+  }
 }
+/** Answer any story decision at once (hops may draw one; these tests are about the travel, galaxyStory.test.ts is about the events). */
+const quietStory = (sim: Sim): void => void (sim.story.active = null);
 /** The first node (by id) of a danger tier with generated contacts. */
 function nodeWithContacts(sim: Sim, minDanger: number): string {
   ensureAround(sim, 's.12.0.n0');
@@ -76,8 +81,9 @@ describe('hyperspace travel', () => {
     expect(fuelStock(sim)).toBe(fuel0 - edges[0]!.fuel);
     const seen: string[] = [];
     const turns: number[] = [];
-    for (let i = 0; i < 90000 && sim.galaxy.travel?.phase === 'hop'; i++) {
+    for (let i = 0; i < 90000 && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) {
       sim.step();
+      quietStory(sim);
       for (const e of sim.events.drain()) {
         if (e.type === 'galaxy.jumped') seen.push(e.to);
         if (e.type === 'galaxy.turn') turns.push(e.turn);
@@ -150,7 +156,7 @@ describe('hyperspace travel', () => {
     expect(sim.galaxy.travel).toMatchObject({ stopping: true });
     expect(sim.galaxy.travel!.route).toEqual([START_NODE, route[0]]);
     const events = [];
-    for (let i = 0; i < 30000 && sim.sector.state === 'hyperspace'; i++) events.push(...step(sim));
+    for (let i = 0; i < 30000 && sim.sector.state === 'hyperspace'; i++) { events.push(...step(sim)); quietStory(sim); }
     expect(events).toContainEqual(expect.objectContaining({ type: 'sector.jumped', from: START_NODE, to: route[0] }));
     expect(sim.sector).toMatchObject({ state: 'deploying', node: route[0] });
     expect(sim.galaxy).toMatchObject({ current: route[0], travel: null });
@@ -210,18 +216,19 @@ describe('hyperspace travel', () => {
     expect(others(sim)).toEqual(spawned);
   }, 60000);
 
-  it('draws the arrival event at deploy time, not while travelling or dropping', () => {
+  it('draws no event on dropping or deploying: events belong to the hops', () => {
     const sim = newGame(13, content);
     charge(sim);
     jump(sim, [neighbour(sim, START_NODE)]);
     step(sim);
     untilStops(sim);
+    sim.story.active = null; // the hop may have drawn one; this test is about what follows
+    sim.events.drain();
+    sim.galaxy.travel!.phase = 'arrived';
     sim.enqueue({ type: 'galaxy.drop' });
     expect(step(sim).filter((e) => e.type === 'story.started')).toEqual([]);
+    expect(deploy(sim).filter((e) => e.type === 'story.started')).toEqual([]);
     expect(sim.story.active).toBeNull();
-    expect(sim.galaxy.pendingDraw).not.toBeNull();
-    expect(deploy(sim).filter((e) => e.type === 'story.started')).toHaveLength(1);
-    expect(sim.galaxy.pendingDraw).toBeNull();
   }, 60000);
 
   it('round-trips a save taken mid-hyperspace and carries on identically', () => {
@@ -230,7 +237,7 @@ describe('hyperspace travel', () => {
       charge(sim);
       giveItems(sim, 'item.fuel', 60);
       jump(sim, routeOf(sim, 2));
-      step(sim, 20);
+      for (let i = 0; i < 20; i++) { step(sim); quietStory(sim); }
       return sim;
     };
     const a = make();

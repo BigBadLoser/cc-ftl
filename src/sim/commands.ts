@@ -16,7 +16,7 @@ export type Command =
   | { type: 'job.buildModule'; ship: number; x: number; y: number; def: string; rot: number }
   /** Deconstruct the module covering tile (x, y). */
   | { type: 'job.deconstructModule'; ship: number; x: number; y: number }
-  | { type: 'module.setPriority'; id: number; priority: number }
+  | { type: 'module.setPowerPriority'; id: number; powerPriority: number }
   | { type: 'module.setEnabled'; id: number; enabled: boolean }
   /** Unclamp a container module from its ship: its tiles leave the ship and it drifts off as a free body with its stock. */
   | { type: 'container.detach'; id: number }
@@ -158,9 +158,8 @@ export type Command =
   /** Debug: start an event by id, ignoring its triggers and eligibility. */
   | { type: 'story.fire'; event: string }
   /** Set the pool context (danger tier, faction territory) and/or the periodic draw interval in seconds (0 = off). */
-  | { type: 'story.setContext'; danger?: number; faction?: string | null; periodicSec?: number }
+  | { type: 'story.setContext'; danger?: number; faction?: string | null }
   /** The player arrived somewhere: draw one event from the arrival pool for the current context. */
-  | { type: 'story.arrive' }
   /** Open the decision a lead notice points at, or drop the notice. */
   | { type: 'story.openNotice'; notice: number }
   | { type: 'story.dismissNotice'; notice: number }
@@ -177,6 +176,10 @@ export type Command =
   | { type: 'galaxy.jump'; ship: number; route: string[]; withDocked?: number[] }
   /** End the hyperspace trip at the node last passed: its archive comes back (or its ships appear on the first visit) and the ship waits to deploy. */
   | { type: 'galaxy.drop' }
+  /** Charge the drive: post the helm job (the best free pilot, else any crew, walks over and sits). With `jump`, fly that route (without the current node) once charged. */
+  | { type: 'ftl.charge'; ship: number; jump?: string[]; withDocked?: number[] }
+  /** Cancel the charge order and any queued jump. */
+  | { type: 'ftl.cancelCharge'; ship: number }
   /**
    * Answer a pending encounter (galaxy/respond.ts): an interdiction takes `evade` (a seeded roll against the fleet), `bribe` (credits) or `fight`
    * (the event grid opens); a distress call `respond` (an event grid with the damaged fleet) or `ignore`; a hail or scan `acknowledge`.

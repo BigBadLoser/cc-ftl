@@ -36,8 +36,8 @@ const content: ContentRegistry = {
   species: { 'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 } },
   modules: {
     reactor: mod({ footprint: [2, 2], power: 20 }),
-    ls: mod({ power: -6, priority: 1, o2PerSec: 3, co2ScrubPerSec: 1 }),
-    light: mod({ solid: false, power: -1, priority: 2, light: { radius: 6, level: 230 } }),
+    ls: mod({ power: -6, powerPriority: 1, o2PerSec: 3, co2ScrubPerSec: 1 }),
+    light: mod({ solid: false, power: -1, powerPriority: 2, light: { radius: 6, level: 230 } }),
   },
   crewNames: [],
   items: {},
@@ -174,7 +174,7 @@ describe('power', () => {
     expect([powered(ls), powered(l1), powered(l2)]).toEqual([true, true, false]);
     sim.events.drain();
     // Demote life support: both lights outrank it, and it no longer fits.
-    sim.enqueue({ type: 'module.setPriority', id: ls, priority: 5 });
+    sim.enqueue({ type: 'module.setPowerPriority', id: ls, powerPriority: 5 });
     sim.step();
     expect([powered(ls), powered(l1), powered(l2)]).toEqual([false, true, true]);
     expect(sim.events.drain().filter((e) => e.type === 'power.shortage')).toHaveLength(1);

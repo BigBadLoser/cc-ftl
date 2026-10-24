@@ -6,6 +6,7 @@ import { playerStock } from './world';
 import { deserialize, serialize } from '../save';
 import { TICK_HZ } from '../time';
 import type { EventDef } from './defs';
+import { pump } from './engine';
 import { spawnShip } from '../combat/ships';
 import { createCrew } from '../crew/spawn';
 import type { ContentRegistry, ModuleDef } from '../registry';
@@ -24,7 +25,7 @@ const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'Crate', asset: 'm', footprint: [1, 1], solid: true, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
 });
 const item = (name: string, stackSize = 100) => ({ name, tags: [], stackSize });
-const all = { firefighting: 2, medical: 2, operating: 2, repair: 2, construction: 2, hauling: 2, crafting: 2, cooking: 2, patrol: 0 };
+const all = { firefighting: 2, medical: 2, operating: 2, repair: 2, construction: 2, hauling: 2, refining: 2, crafting: 2, cooking: 2, patrol: 0 };
 
 export const baseContent = (events: Record<string, EventDef>): ContentRegistry => ({
   ships: {},
@@ -352,6 +353,9 @@ describe('chaining and arcs', () => {
     run(sim, 9 * TICK_HZ);
     expect(sim.story.active).toBeNull();
     run(sim, 2 * TICK_HZ);
+    expect(sim.story.active).toBeNull(); // due, but a flag-queued decision opens only in transit
+    sim.sector.state = 'hyperspace';
+    pump(sim);
     expect(sim.story.active?.event).toBe('back');
   });
 });

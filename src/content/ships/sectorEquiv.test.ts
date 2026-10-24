@@ -48,8 +48,12 @@ function legacyWorld(sim: Sim): unknown {
   stores.priorities = (stores.priorities ?? []).map(([id, raw]) => {
     const rest = { ...(raw as Record<string, unknown>) };
     delete rest.patrol;
+    // `refining` was split from `crafting` later still.
+    delete rest.refining;
     return [id, rest];
   });
+  // `priority` on modules was renamed `powerPriority` (same place in the key order).
+  stores.module = (stores.module ?? []).map(([id, raw]) => [id, Object.fromEntries(Object.entries(raw as object).map(([k, v]) => [k === 'powerPriority' ? 'priority' : k, v]))]);
   stores.vehicle = (stores.vehicle ?? []).map(([id, raw]) => {
     const { def, homeShip, home, state, hp, ...rest } = raw as Vehicle;
     const b = bodies.get(id) as Body;

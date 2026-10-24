@@ -125,7 +125,7 @@ export interface UiModule {
   local: { x: number; y: number };
   hp: number;
   maxHp: number;
-  priority: number;
+  powerPriority: number;
   enabled: boolean;
   powered: boolean;
   /** Units per second: positive supplies, negative draws. */
@@ -150,6 +150,31 @@ export interface UiRobotBay {
 }
 
 /** An item amount with its display name. */
+/** A module under construction (a blueprint job): what it needs, who works on it, and why it is stuck (if it is). */
+export interface UiSite {
+  /** The job entity id (selection key). */
+  id: number;
+  ship: number;
+  def: string;
+  name: string;
+  /** Sector tile of the top-left footprint tile (what commands take), and the same in the ship's local tiles. */
+  x: number;
+  y: number;
+  local: { x: number; y: number };
+  w: number;
+  h: number;
+  /** 0..1 */
+  frac: number;
+  /** Seconds of work left at the builder's speed (hauling not counted), or null with nobody able to build. */
+  etaSec: number | null;
+  state: 'blocked' | 'waiting' | 'building';
+  /** Why it is stuck ('' when it is not): "Missing 6 metal", "Nobody can reach the site". */
+  reason: string;
+  materials: { item: string; name: string; need: number; delivered: number; inTransit: number; missing: number }[];
+  builders: { id: number; name: string }[];
+  haulers: { id: number; name: string }[];
+}
+
 export interface UiCost {
   item: string;
   name: string;
@@ -160,6 +185,8 @@ export interface UiItemDef {
   id: string;
   name: string;
   stackSize: number;
+  /** Crew can eat it. */
+  food: boolean;
 }
 
 export interface UiRecipe {
@@ -209,6 +236,8 @@ export interface UiOrder {
   done: number;
   /** 'keep' orders: units in stock of the first output. */
   have: number;
+  /** Inputs of one batch that are not in stock in the needed amount (item names). */
+  missing: string[];
   /** The order the station is working on now. */
   active: boolean;
 }
@@ -230,9 +259,18 @@ export interface UiModuleDef {
   cost: UiCost[];
 }
 
+/** Crew food: units of food in stock, how many crew eat, rations used per hour at the current rate and hours left (null with no eaters). */
+export interface UiFood {
+  units: number;
+  eaters: number;
+  perHour: number;
+  hours: number | null;
+}
+
 export interface UiStats {
   supply: number;
   demand: number;
+  food: UiFood;
   /** Average O2 (kPa) of rooms with crew in them, or null when nobody is inside one. */
   o2: number | null;
 }
@@ -333,6 +371,23 @@ export interface UiShipCombat {
   /** Ship-wide target, with a label. */
   target: { ship: number; moduleId: number; label: string } | null;
   modules: UiShipModule[];
+}
+
+/** The player's FTL drive and its charge order (the starmap's and the ship panel's Charge FTL button). */
+export interface UiFtl {
+  /** ShipC entity id: the `ship` of `ftl.charge`. */
+  ship: number;
+  /** idle, ordered but nobody seated yet, a crew member walking to the helm, charging at the helm, or full. */
+  state: 'idle' | 'waiting' | 'heading' | 'charging' | 'ready';
+  /** Why the drive cannot charge now (null = it can). */
+  blocker: 'noShip' | 'notActive' | 'noHelm' | 'helmOffline' | 'noEngines' | 'noCrewAboard' | null;
+  charge: number;
+  max: number;
+  /** A charge order stands, and a jump is queued behind it. */
+  ordered: boolean;
+  queued: boolean;
+  /** The crew member heading to or sitting at the helm. */
+  pilot: string | null;
 }
 
 export interface UiCombat {
@@ -638,6 +693,10 @@ export interface UiApi {
   fabs: Subscribable<UiFab[]>;
   selectedModule: Subscribable<number | null>;
   selectModule(id: number | null): void;
+  /** Module construction sites, and the selected one (a job id). */
+  sites: Subscribable<UiSite[]>;
+  selectedSite: Subscribable<number | null>;
+  selectSite(id: number | null): void;
   /** Another ship or station picked from the node strip; the selection panel drills into it. */
   selectedShip: Subscribable<number | null>;
   /** Select another ship (ShipC entity id) or station (its trader entity id) and move the camera to a ship (null clears). A station has no ship, so no camera move. */
@@ -660,6 +719,8 @@ export interface UiApi {
   /** Pick an option of the open decision and resume play. */
   chooseStory(choice: string): void;
   combat: Subscribable<UiCombat>;
+  /** The FTL drive and its charge order (null when the ship is not on the map). */
+  ftl: Subscribable<UiFtl | null>;
   /** Credits, hailable ships and stations, and the running deliveries. */
   trade: Subscribable<UiTrade>;
   shuttles: Subscribable<UiShuttles>;
@@ -684,6 +745,8 @@ export interface UiApi {
   setArtScale(scale: 1 | 2): void;
   /** Roof hostile ships (default) or show their interior. */
   setRoofEnemies(on: boolean): void;
+  /** Show the player's ship with its roof on (view from outside). */
+  setRoofPlayer(on: boolean): void;
   /** Frame the player's ship and a hostile ship (or only the player's ship) in the camera. */
   focusFight(ship: number | null): void;
   /** Spawn a raider about 30 tiles from the player's ship. */

@@ -10,6 +10,7 @@ import { createFxView } from './fxView';
 import { createGridView, type CutawayMode, type GridView } from './gridView';
 import { createItemView } from './itemView';
 import { createJobView } from './jobView';
+import { createSiteView } from './siteView';
 import type { RegionLayers } from './worldLayers';
 import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
@@ -62,6 +63,10 @@ export interface ShipScene {
   /** Crew under a region-local art point, with its feet's art y (the nearest to the viewer wins across regions). */
   pickCrew(ax: number, ay: number): { id: number; y: number } | null;
   pickModule(ax: number, ay: number): number | null;
+  /** Module construction sites that are stuck, and the selected one (job ids). */
+  setSites(blocked: ReadonlySet<number>, selected: number | null): void;
+  /** Module construction site (job id) whose ghost covers a region-local art point, or null. */
+  pickSite(ax: number, ay: number): number | null;
   /** Display objects drawn, for the debug stats. */
   sprites(): number;
   dispose(): void;
@@ -94,6 +99,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     weaponArt: (item) => items[item]?.hand?.art,
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
+  const siteView = createSiteView(world, atlas, L, modules, { target: inside });
   const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null });
   const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency, view);
   const jamMarks = createJamMarks(grid, atlas, L);
@@ -147,6 +153,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       jamMarks.update();
       sacView.update();
       moduleView.update();
+      siteView.update();
       itemView.update();
       fxView.update();
       atmosphere.update(dt);
@@ -182,6 +189,8 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       return c && s ? (s.y > c.y ? s : c) : (c ?? s);
     },
     pickModule: (ax, ay) => moduleView.pick(ax, ay),
+    setSites: (blocked, selected) => siteView.setMarks(blocked, selected),
+    pickSite: (ax, ay) => (roofed ? null : siteView.pick(ax, ay)),
     sprites: () => particles.count() + L.floor.children.reduce((n, c) => n + c.children.length, 0) + L.sorted.children.length + L.decal.children.length,
     dispose() {
       rockRoof?.dispose();
@@ -194,6 +203,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       turretView.dispose();
       crewView.dispose();
       moduleView.dispose();
+      siteView.dispose();
       itemView.dispose();
       fxView.dispose();
       particles.dispose();
