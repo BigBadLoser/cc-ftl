@@ -8,8 +8,9 @@ on:
   push:
     branches: [main]
 
+# A label event the job ignores gets a group of its own, so it cannot cancel the run validating this commit.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ (github.event.action == 'labeled' && github.event.label.name != 'full-ci') && github.run_id || github.ref }}
   cancel-in-progress: true
 
 jobs:
