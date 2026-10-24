@@ -1,4 +1,6 @@
-import { ShipC, type Ship } from '../combat/components';
+import { PrizeC, ShipC, type Faction, type Ship } from '../combat/components';
+import { TraderC } from '../trade/types';
+import { portNode } from './ports';
 import { factionsHostile } from '../combat/factions';
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
@@ -65,26 +67,40 @@ export function decayNotoriety(sim: Sim): void {
   sim.galaxy.rev++;
 }
 
-/** The galaxy faction a ship in the active sector flies for: from its node or fleet descriptor, else its combat side's faction. */
-function factionOfShip(sim: Sim, id: number, ship: Ship): string | null {
+/** The galaxy faction that owns a station: the port its trader is bound to (populateSpawn.ts `bindStation`). */
+function stationOwner(sim: Sim, id: number): string | null {
+  const port = sim.world.get(id, TraderC)?.port;
+  return port ? portsAt(sim, portNode(port)).find((p) => p.id === port)?.owner ?? null : null;
+}
+
+/**
+ * The galaxy faction a ship in the active sector flies (or flew) for: its node or fleet descriptor, the owner of a station, else its combat `side`'s
+ * faction (a prize's side is the one it was taken from).
+ */
+function factionOfShip(sim: Sim, id: number, ship: Ship, side: Faction): string | null {
   const g = sim.galaxy;
   const owns = (cs: readonly Contact[]): Contact | undefined => cs.find((c) => c.ship === id);
   const c = owns(g.event?.fleet.ships ?? []) ?? g.fleets.map((f) => owns(f.ships)).find(Boolean) ?? owns(nodeState(sim, g.current).contacts);
   if (c) return c.faction;
+  if (ship.immobile) {
+    const owner = stationOwner(sim, id);
+    if (owner) return owner;
+  }
   // No descriptor (a debug spawn, a ship from an old archive): the galaxy faction whose combat side it is, or the only one flying its generator.
   const factions = sim.content.galaxy?.factions ?? {};
   const ids = Object.keys(factions).sort();
-  const side = ids.find((f) => factions[f]?.combatFaction === ship.faction);
-  if (side) return side;
+  const bySide = ids.find((f) => factions[f]?.combatFaction === side);
+  if (bySide) return bySide;
   const flying = ship.gen ? ids.filter((f) => factions[f]?.ships.some((w) => w.value === ship.gen?.faction)) : [];
   return flying.length === 1 ? (flying[0] as string) : null;
 }
 
 /** What destroying (or taking) this ship costs: notoriety and the reputation the victim faction loses. */
 function charge(sim: Sim, id: number, ship: Ship, captured: boolean): void {
-  const faction = factionOfShip(sim, id, ship);
+  const side = (captured ? sim.world.get(id, PrizeC)?.from : undefined) ?? ship.faction;
+  const faction = factionOfShip(sim, id, ship, side);
   const def = faction ? sim.content.galaxy?.factions[faction] : undefined;
-  const tier = faction ? tierOf(sim, faction) : factionsHostile(ship.faction, 'player') ? 'hostile' : 'neutral';
+  const tier = faction ? tierOf(sim, faction) : factionsHostile(side, 'player') ? 'hostile' : 'neutral';
   // Outlaws (pirates, the rogue AI) are fair game: the law does not mind, though they remember it (the reputation below).
   const outlaw = def?.alwaysHostile || OUTLAW_KINDS.includes(def?.kind ?? '');
   let n = outlaw ? 0 : ship.immobile ? STATION_NOTORIETY : KILL_NOTORIETY[tier];
@@ -100,8 +116,9 @@ function charge(sim: Sim, id: number, ship: Ship, captured: boolean): void {
 export function tallyLosses(sim: Sim): void {
   for (const id of sim.world.query(ShipC)) {
     const ship = sim.world.get(id, ShipC) as Ship;
-    if (ship.tallied || ship.faction === 'player') continue;
     const captured = ship.state === 'prize';
+    // A prize flies for the player now (capturePrize): it still counts, as the side it was taken from.
+    if (ship.tallied || (ship.faction === 'player' && !captured)) continue;
     if (!captured && !(ship.state === 'wreck' && ship.killedBy === 'player')) continue;
     ship.tallied = true;
     charge(sim, id, ship, captured);

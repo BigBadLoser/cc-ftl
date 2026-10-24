@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, tierOf, type Sim } from '../sim';
 import { wreckShip } from '../sim/combat/wreck';
+import { capturePrize } from '../sim/capture/prize';
+import { TraderC } from '../sim/trade/types';
 import { addNotoriety, clearBlocker, clearCost, grudgeOf, huntPressure, tallyLosses } from '../sim/galaxy/heat';
 import { dispatchHunters } from '../sim/galaxy/hunters';
 import { encounterKind } from '../sim/galaxy/encounters';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { ensureAround } from '../sim/galaxy/state';
 import { onTurn } from '../sim/galaxy/turn';
-import { HUNT_TURNS, KILL_NOTORIETY, MAX_HUNTERS, WANTED_AT } from '../sim/galaxy/tuningHeat';
+import { CAPTURE_FACTOR, HUNT_TURNS, KILL_NOTORIETY, MAX_HUNTERS, WANTED_AT } from '../sim/galaxy/tuningHeat';
 import { content } from '.';
 
 /** Spawn a generated ship next to the player's and return its id. */
@@ -47,6 +49,35 @@ describe('notoriety', () => {
     wreckShip(other, hauler);
     tallyLosses(other);
     expect(other.galaxy.heat.notoriety).toBe(KILL_NOTORIETY.neutral);
+  });
+
+  it('counts a capture (the prize now flies for the player) as 1.5 kills of the side it was taken from', () => {
+    const sim = newGame(3, content);
+    const hauler = spawn(sim, 'faction.civilian');
+    capturePrize(sim, hauler);
+    tallyLosses(sim);
+    expect(sim.galaxy.heat.notoriety).toBe(KILL_NOTORIETY.neutral * CAPTURE_FACTOR);
+  });
+
+  it('resolves a station through the port it is bound to: a pirate den is outlaw, the pirates remember it', () => {
+    const sim = newGame(3, content);
+    sim.enqueue({ type: 'debug.galaxyReveal', radius: 3 });
+    sim.step();
+    const den = [...galaxyIndex(sim.galaxy).nodes.keys()].flatMap((n) => portsAt(sim, n)).find((p) => p.kind === 'den' && p.owner === 'pirates');
+    expect(den).toBeDefined();
+    if (!den) return;
+    const before = new Set(sim.world.query(ShipC));
+    sim.enqueue({ type: 'debug.spawnStation', kind: 'station.pirate', size: 'outpost', seed: 3, x: sim.sector.width + 40, y: 20 });
+    sim.step();
+    const st = sim.world.query(ShipC).find((s) => !before.has(s))!;
+    const trader = sim.world.get(st, TraderC);
+    expect(trader).toBeDefined();
+    trader!.port = den.id;
+    target(sim, st);
+    wreckShip(sim, st);
+    tallyLosses(sim);
+    expect(sim.galaxy.heat.notoriety).toBe(0);
+    expect(grudgeOf(sim, 'pirates')).toBe(1);
   });
 
   it('does not count a ship the player was not shooting at', () => {
