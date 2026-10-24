@@ -1,4 +1,4 @@
-import { Rectangle, Sprite, Texture } from 'pixi.js';
+import { ColorMatrixFilter, Rectangle, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { JobC } from '../sim/crew/components';
 import type { Grid } from '../sim/grid';
@@ -14,9 +14,12 @@ import { layerKey, moduleLayers, type ModuleLayer } from './moduleArt';
 import { alphaOf, moduleKey, type ModuleDefs } from './moduleView';
 
 /** Ghost look: a translucent cyan copy of the module's own sprite that fills in from the bottom as the work progresses. */
-const GHOST = 0x7fdcff;
-const GHOST_ALPHA = 0.34;
-const FILL_FROM = 0xa8ecff;
+const GHOST_ALPHA = 0.55;
+/** Colour matrices that turn the art into a glowing hologram (cyan, or amber when stuck); the fill blends back to the real colours as the work completes. */
+const HOLO_CYAN = [0.15, 0.3, 0.1, 0, 0.1, 0.35, 0.7, 0.2, 0, 0.4, 0.45, 0.8, 0.25, 0, 0.55, 0, 0, 0, 1, 0];
+const HOLO_AMBER = [0.5, 0.9, 0.3, 0, 0.45, 0.35, 0.6, 0.2, 0, 0.25, 0.1, 0.15, 0.05, 0, 0.02, 0, 0, 0, 1, 0];
+const IDENTITY = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+const blend = (a: number[], b: number[], t: number): never => a.map((v, i) => v * (1 - t) + (b[i] as number) * t) as never;
 const EDGE = 0x66f0ff;
 const BLOCKED = 0xffb020;
 /** Art px of the bright line riding the fill edge. */
@@ -56,6 +59,8 @@ interface Entry {
   top: number;
   bottom: number;
   outline: Sprite[];
+  baseF: ColorMatrixFilter;
+  fillF: ColorMatrixFilter;
 }
 
 const crops = new WeakMap<Texture, Map<string, Texture>>();
@@ -68,11 +73,6 @@ function crop(tex: Texture, start: number, rows: number): Texture {
   if (!t) m.set(k, (t = new Texture({ source: tex.source, frame: new Rectangle(tex.frame.x, tex.frame.y + start, tex.frame.width, rows) })));
   return t;
 }
-
-const lerpColor = (a: number, b: number, t: number): number => {
-  const ch = (s: number) => Math.round(((a >> s) & 255) * (1 - t) + ((b >> s) & 255) * t);
-  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
-};
 
 /** Module construction sites (blueprint jobs) drawn as ghosts of the module's real art. */
 export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: ModuleDefs, host: SiteViewHost): SiteView {
@@ -168,22 +168,30 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
             L.decal.addChild(s);
             return s;
           });
-          sites.set(id, (e = { sig, parts, top: Math.min(...parts.map((p) => p.y)), bottom: Math.max(...parts.map((p) => p.y + p.h)), outline: marks }));
+          const baseF = new ColorMatrixFilter();
+          const fillF = new ColorMatrixFilter();
+          for (const p of parts) {
+            p.base.filters = [baseF];
+            p.fill.filters = [fillF];
+          }
+          sites.set(id, (e = { baseF, fillF, sig, parts, top: Math.min(...parts.map((p) => p.y)), bottom: Math.max(...parts.map((p) => p.y + p.h)), outline: marks }));
         }
         const frac = j.work > 0 ? Math.min(1, j.progress / j.work) : 0;
         const stuck = blocked.has(id);
         const line = Math.round(e.bottom - frac * (e.bottom - e.top));
         const pulse = 0.7 + 0.3 * Math.sin(now / 220);
+        e.baseF.matrix = blend(stuck ? HOLO_AMBER : HOLO_CYAN, IDENTITY, 0);
+        e.fillF.matrix = blend(stuck ? HOLO_AMBER : HOLO_CYAN, IDENTITY, frac * 0.85);
         for (const p of e.parts) {
           const done = Math.max(0, Math.min(p.h, p.y + p.h - line));
-          p.base.tint = stuck ? BLOCKED : GHOST;
+          p.base.tint = 0xffffff;
           p.base.alpha = (id === selected ? 0.5 : GHOST_ALPHA) * (stuck ? pulse + 0.2 : 1);
           p.fill.visible = done > 0;
           if (done > 0) {
             p.fill.texture = crop(p.tex, p.h - done, done);
             p.fill.position.y = p.y + p.h - done;
-            p.fill.tint = lerpColor(stuck ? BLOCKED : FILL_FROM, 0xffffff, frac);
-            p.fill.alpha = 0.55 + 0.4 * frac;
+            p.fill.tint = 0xffffff;
+            p.fill.alpha = 0.75 + 0.25 * frac;
           }
           // the bright line riding the fill edge
           const r0 = Math.max(0, line - EDGE_ROWS - p.y);
