@@ -21,6 +21,8 @@
   pod_bay   the mining pod's 3x3 bay (pit, iris, clamp arms) and the pod parked in it, 4 rotations (pod_family.py)
   mining_pod the mining pod: 8 fly headings, 8 mining headings x 2 frames, 4 docked poses (pod_family.py craft_jobs)
   fx_mining the mining laser's beam segment, its hit on the rock, rock chips, the dust of a tile mined out (fx_mining.py)
+  storage_ore   ore storage: the hydraulic tip bin, 2x2 and 3x2, 4 rotations, empty and iron / ice / rare fills (tip_bin.py)
+  storage_scrap scrap storage: the barred cage full of salvage, 2x2 and 2x3, 4 rotations, 4 fills (ore_cage.py, scrap.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -88,11 +90,17 @@ def jobs(name):
     if name == "fx_mining":
         from . import fx_mining
         return fx_mining.SPRITES, True
+    if name == "storage_ore":
+        from . import tip_bin
+        return tip_bin.jobs(), True
+    if name == "storage_scrap":
+        from . import scrap
+        return scrap.jobs(), True
     raise KeyError(name)
 
 
 # `structure` is preview-only (no full build yet): build it by name, it is not part of `all`.
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "rock", "rockwall", "pod_bay", "mining_pod",
-            "fx_mining")
+            "fx_mining", "storage_ore", "storage_scrap")
 ALL = RENDERED + ("sol",)
