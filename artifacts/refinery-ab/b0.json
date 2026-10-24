@@ -1,0 +1,28 @@
+{
+  "revision": "B / integrated sloping case",
+  "footprint": [
+    3,
+    4
+  ],
+  "bounds": [
+    3.740000009536743,
+    2.619999885559082,
+    1.596022691577673
+  ],
+  "anchor": [
+    164,
+    194
+  ],
+  "tile": [
+    128,
+    64
+  ],
+  "camera": {
+    "yaw": 45,
+    "elevation": 30
+  },
+  "samples": 4,
+  "SS": 2,
+  "material": "one neutral grey, no emission",
+  "preservedAImageSha256": "8b2207881ccf6773aea0c488ed56bfc738213beaa5513d8d42d04f6c371c32a9"
+}

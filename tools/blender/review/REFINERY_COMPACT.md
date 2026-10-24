@@ -1,6 +1,33 @@
 # Fresh 3x4 refinery mockup
 
-## Current: v2 grey geometry
+## Current: A/B grey geometry
+
+A preserves the v2 open-cradle model, parameters, Blender scene and render
+byte-for-byte. B explores one continuous tapered case, with an integrated loading
+mouth, a recessed side processing section and a low forming head. After feedback
+that the initial B read as a blob, the current B exposes paired ribbed feed
+rollers, a coarse helical auger, a forming collar and three output moulds with
+one cast billet. All surfaces still use one grey material, without emission.
+
+- B model: `sprites/refinery_revision_b.py`, parametric `IntegratedRefinery`.
+- Review: `review/refinery_ab_preview.py`. Only B is rendered; A is copied from v2.
+- Artifacts: `artifacts/refinery-ab/comparison.png` at matched camera, world scale
+  and deck origin; `a.png` / `b.png` native sprites, nearest-neighbour 3x images,
+  editable `a.blend` / `b.blend`, parameters and measured bounds alongside them.
+- B bounds: **3.762 long x 2.685 wide x 1.631 high**, within 3x4 and below 1.85.
+- `b0.*` retains the initial smooth B for comparison with the processing revision.
+- A render SHA-256: `8b2207881ccf6773aea0c488ed56bfc738213beaa5513d8d42d04f6c371c32a9`.
+- Remaining concern: the broad upper case still dominates the silhouette; the
+  exposed mechanisms communicate processing, but this remains a geometry study.
+  No materials pass, game integration or full sprite build.
+
+```sh
+# Check no Blender process is running first.
+SPRITE_PREVIEW=1 SPRITE_SAMPLES=4 blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/refinery_ab_preview.py -- --out artifacts/refinery-ab
+python3 tools/blender/review/refinery_ab_preview.py --out artifacts/refinery-ab --compose
+```
+
+## Preserved A: v2 grey geometry
 
 The user found the first case too square. The revised blockout replaces the full
 box with a raised, faceted processing vessel on separated cradles, a canted

@@ -1,0 +1,15 @@
+{
+  "rear_u": -1.8,
+  "front_u": 1.76,
+  "rear_roof": 1.56,
+  "inlet_back": -1.5,
+  "inlet_front": -0.62,
+  "inlet_half_width": 0.49,
+  "inlet_depth": 0.45,
+  "lip_height": 0.075,
+  "waist_depth": 0.18,
+  "feed_rollers": true,
+  "process_screw": true,
+  "casting_bays": true,
+  "forming_collar": true
+}

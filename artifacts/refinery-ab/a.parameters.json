@@ -1,0 +1,19 @@
+{
+  "chamber_z": 0.87,
+  "chamber_radius_v": 0.9,
+  "chamber_radius_z": 0.6,
+  "chamber_back": -0.82,
+  "chamber_front": 0.9,
+  "hopper_u": -1.23,
+  "hopper_v": -0.44,
+  "hopper_top": 1.62,
+  "hopper_width": 1.1,
+  "hopper_depth": 1.08,
+  "hopper_cant": 0.18,
+  "outlet_u": 1.78,
+  "skid_length": 2.8,
+  "straps": [
+    -0.4,
+    0.43
+  ]
+}
