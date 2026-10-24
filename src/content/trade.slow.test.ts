@@ -231,7 +231,10 @@ describe('offers', () => {
     expect(offer(10, 1).error).toEqual([]);
     sim.enqueue({ type: 'trade.accept', offer: sim.trade.offers[0]!.id });
     // The player's shuttle carries the goods over to the station and back (no instant fallback any more).
-    const ev = run(sim, 8000);
+    // Step until the deal settles (bounded), not a fixed span: the shuttle trip is the only thing being waited for.
+    const ev: SimEvent[] = [];
+    for (let i = 0; i < 8000 && ofType(ev, 'trade.settled').length === 0; i++) ev.push(...run(sim, 1));
+    ev.push(...run(sim, 100)); // a short tail: nothing is rejected or settled twice afterwards
     expect(rejected(ev)).toEqual([]);
     expect(ofType(ev, 'trade.settled')).toHaveLength(1);
     expect(sim.trade.credits).toBe(before);
