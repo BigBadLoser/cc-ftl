@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { HealthC } from '../sim/crew/components';
 import { CombatC, FTL_CHARGE_SEC, START_NODE, deserialize, galaxyIndex, newGame, passingMeets, playerShip, serialize, type Sim } from '../sim';
 import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
+import { packetCount } from '../sim/sector/packet';
+import { checkOdds, unmetReasons } from '../sim/story/requirements';
+import { playerStock } from '../sim/story/world';
+import type { EventDef } from '../sim/story/defs';
 import { content } from '.';
 
 /** Story events belong to hyperspace hops (storyHop.ts): none while the ship idles, one at most per hop, never on an interdicted hop. */
@@ -45,6 +50,30 @@ function answer(sim: Sim): void {
     if (sim.story.active?.event !== ev) return;
   }
   throw new Error(`no choice of ${ev} was accepted`);
+}
+/** An event that needs cargo and a skill check, and whose outcome (either way) gives fuel and hurts the crew member who rolled. */
+const FUEL_EVENT: EventDef = {
+  title: 'Packet test', text: 'Cargo and crew are packet data in hyperspace.', mode: 'decision', triggers: [{ kind: 'chain' }],
+  choices: [{
+    id: 'go', label: 'Go', requires: [{ kind: 'item', item: 'item.fuel', count: 10 }, { kind: 'crew', count: 1 }],
+    check: { skill: 'repair', difficulty: 0 },
+    success: { effects: [{ type: 'items', item: 'item.fuel', count: 30 }, { type: 'crewDamage', amount: 7, who: 'actor' }] },
+    failure: { effects: [{ type: 'items', item: 'item.fuel', count: 30 }, { type: 'crewDamage', amount: 7, who: 'actor' }] },
+  }],
+};
+const packetHp = (sim: Sim): number[] => (sim.sector.packet?.entities ?? []).filter((e) => e.c['crew'] && e.c['health']).map((e) => (e.c['health'] as { hp: number }).hp);
+/** A one-hop trip that ends in the packet-test event (queued, so it opens at the hop). */
+const withEvent = { ...content, events: { ...content.events, 'test.packet': FUEL_EVENT } };
+function eventTrip(seed: number): Sim {
+  const sim = newGame(seed, withEvent);
+  sim.galaxy.fleets = [];
+  giveItems(sim, 'item.fuel', 80);
+  const c = sim.world.get(playerShip(sim), CombatC);
+  if (c) c.ftl = FTL_CHARGE_SEC;
+  sim.story.queue.push({ event: 'test.packet', due: 0 });
+  sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: routeOf(sim, 1) });
+  for (let i = 0; i < 90000 && sim.galaxy.travel?.phase !== 'story'; i++) sim.step();
+  return sim;
 }
 const started = (sim: Sim, n: number) => step(sim, n).filter((e) => e.type === 'story.started' && e.mode === 'decision');
 
@@ -122,6 +151,60 @@ describe('story events happen in transit', () => {
     }
     expect(interdictions).toBe(24);
   }, 240000);
+
+  it('an event in hyperspace sees and changes the packet: cargo, crew, rewards and harm survive the drop', () => {
+    const sim = eventTrip(5);
+    expect(sim.galaxy.travel?.phase).toBe('story');
+    expect(sim.story.active?.event).toBe('test.packet');
+    expect(sim.sector.state).toBe('hyperspace');
+    const choice = sim.content.events!['test.packet']!.choices![0]!;
+    // Read side: the packet's cargo meets the requirement, a crew member is found to roll the check.
+    expect(unmetReasons(sim, choice)).toEqual([]);
+    expect(checkOdds(sim, choice.check!)).not.toBeNull();
+    const fuel0 = packetCount(sim.sector.packet!, 'item.fuel');
+    const hp0 = packetHp(sim);
+    expect(hp0.length).toBeGreaterThan(0);
+    const world0 = sim.world.ids().length;
+    // The look leaves nothing behind in the world.
+    expect(world0).toBe(sim.world.ids().length);
+    sim.enqueue({ type: 'story.choose', choice: 'go' });
+    step(sim);
+    expect(sim.story.active).toBeNull();
+    // Write side: the reward is in the packet, one crew member took the harm.
+    expect(packetCount(sim.sector.packet!, 'item.fuel')).toBe(fuel0 + 30);
+    const hp1 = packetHp(sim);
+    expect(hp1.filter((h, i) => h < (hp0[i] as number))).toHaveLength(1);
+    expect(sim.sector.packet!.entities.some((e) => e.c['crew'])).toBe(true);
+    // The trip goes on and ends; dropping and deploying keeps it all.
+    for (let i = 0; i < 90000 && sim.galaxy.travel?.phase !== 'arrived'; i++) { sim.step(); sim.story.active = null; }
+    const fuelEnd = packetCount(sim.sector.packet!, 'item.fuel');
+    sim.enqueue({ type: 'galaxy.drop' });
+    step(sim);
+    for (const [x, y] of [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const) {
+      sim.enqueue({ type: 'sector.deploy', x, y });
+      step(sim);
+      if (sim.sector.state === 'active') break;
+    }
+    expect(sim.sector.state).toBe('active');
+    expect(playerStock(sim, 'item.fuel')).toBe(fuelEnd);
+    expect(fuelEnd).toBeGreaterThan(fuel0 + 20);
+    const hurt = sim.world.query(HealthC).filter((id) => sim.world.get(id, HealthC)!.hp < sim.world.get(id, HealthC)!.max);
+    expect(hurt.length).toBeGreaterThanOrEqual(1);
+  }, 120000);
+
+  it('answering after a save and load acts on the loaded packet the same way', () => {
+    const a = eventTrip(5);
+    const b = deserialize(serialize(a), withEvent);
+    expect(b.story.active?.event).toBe('test.packet');
+    expect(unmetReasons(b, b.content.events!['test.packet']!.choices![0]!)).toEqual([]);
+    for (const s of [a, b]) {
+      s.enqueue({ type: 'story.choose', choice: 'go' });
+      step(s);
+    }
+    expect(packetCount(b.sector.packet!, 'item.fuel')).toBe(packetCount(a.sector.packet!, 'item.fuel'));
+    expect(packetHp(b)).toEqual(packetHp(a));
+    expect(serialize(b)).toBe(serialize(a));
+  }, 120000);
 
   it('a save taken mid-event loads with the decision open and the trip held, and carries on identically', () => {
     for (let seed = 1; seed <= 12; seed++) {

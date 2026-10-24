@@ -4,6 +4,7 @@ import { applyEffect, takeItems } from './effects';
 import type { EventDef, EventTrigger, Outcome } from './defs';
 import { checkOdds, describeQty, eligible, unmetReasons } from './requirements';
 import { withRng } from './state';
+import { withPlayerAboard } from './world';
 
 /** Seconds an unopened lead notice stays before it lapses. */
 export const NOTICE_LIFE_SEC = 45;
@@ -32,7 +33,8 @@ function allowedAgain(sim: Sim, id: string, def: EventDef): boolean {
 }
 
 /** Candidates of a pool with their weights, in content order (stable). */
-export function poolFor(sim: Sim, kind: DrawKind): { id: string; weight: number }[] {
+export const poolFor = (sim: Sim, kind: DrawKind): { id: string; weight: number }[] => withPlayerAboard(sim, () => poolNow(sim, kind));
+function poolNow(sim: Sim, kind: DrawKind): { id: string; weight: number }[] {
   const out: { id: string; weight: number }[] = [];
   for (const [id, def] of Object.entries(sim.content.events ?? {})) {
     if (!drawable(sim, id, def)) continue;
