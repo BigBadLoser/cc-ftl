@@ -81,7 +81,7 @@ def anim(A, pub, out):
 
 def main():
     A, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    pub = Assets(ROOT / "public/assets")
+    pub = Assets(ROOT / "public/assets/2x")
     out.mkdir(parents=True, exist_ok=True)
     if len(sys.argv) > 3 and sys.argv[3] == "anim":
         anim(A, pub, out)

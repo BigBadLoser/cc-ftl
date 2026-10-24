@@ -11,7 +11,8 @@ import { diamondTextures } from './diamonds';
 import { iso } from './iso';
 import type { Layers } from './layers';
 import { layerKey, moduleLayers, type ModuleLayer } from './moduleArt';
-import { alphaOf, moduleKey, type ModuleDefs } from './moduleView';
+import { moduleKey, type ModuleDefs } from './moduleView';
+import { solid } from './partPick';
 
 /** Ghost look: a translucent cyan copy of the module's own sprite that fills in from the bottom as the work progresses. */
 const GHOST_ALPHA = 0.55;
@@ -233,10 +234,9 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
       for (const [id, e] of sites)
         for (const p of e.parts) {
           if (ax < p.x || ax >= p.x + p.w || ay < p.y || ay >= p.y + p.h || p.key <= bestKey) continue;
-          const a = alphaOf(p.tex);
           const u = Math.floor(p.flip ? p.x + p.w - 1 - ax : ax - p.x);
           const v = Math.floor(ay - p.y);
-          if (a && (a[v * p.tex.frame.width + u] as number) < 40) continue;
+          if (!solid(p.tex, u, v)) continue;
           bestKey = p.key;
           best = id;
         }

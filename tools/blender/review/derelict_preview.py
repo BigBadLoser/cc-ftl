@@ -147,7 +147,7 @@ def ai_room(D, pub, level):
 
 def main():
     D, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    pub = Assets(ROOT / "public/assets")
+    pub = Assets(ROOT / "public/assets/2x")
     out.mkdir(parents=True, exist_ok=True)
     W, H = 540, 370
     for view in ("up", "cut", "roof"):

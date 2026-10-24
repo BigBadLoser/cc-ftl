@@ -1,7 +1,7 @@
 """Crew base v2: role kits and extra hairstyles (see human_v2_items for the starter gear).
 
   medic     torso.medic_vest (white, red band and cross), gear.back.medkit
-  security  torso.armor_vest (gunmetal plates), gear.head.tactical_helmet
+  security  torso.armor_vest (gunmetal plates: in human_v2_armor), gear.head.tactical_helmet
   gunner    torso.harness (straps over a team-colour top), gear.head.headset
   pilot     torso.flight_vest (olive, team-colour collar), gear.head.visor_cap
   hair      hair.bun, hair.long
@@ -58,21 +58,6 @@ def medkit(A, R):
 
 
 # ---- security --------------------------------------------------------------------------------------------------------
-
-def armor_vest(A, R):
-    """A gunmetal plate carrier: dark plates front and back, lighter sides, a team-colour band at the hem."""
-    b = Build()
-    _vest(b, R, 0.035, scoop=0)
-    lo = R.hips.z + 0.09
-
-    def col(c, n):
-        if c.z < lo + 0.04:
-            return "team.cloth"
-        if abs(n.y) > 0.5 and abs(c.x) < 0.12 and c.z < R.shoulder_z:
-            return "gmD"
-        return "gm"
-    return Item("torso", "armor_vest", [b.mesh("v2.armor_vest", A, col)])
-
 
 def tactical_helmet(A, R):
     """A gunmetal helmet that sits above the brows (the face stays visible), with a dark rim round its edge, a
@@ -186,5 +171,6 @@ def hair_long(A, R):
 
 
 def build(A, R):
+    from .human_v2_armor import armor_vest
     return [medic_vest(A, R), medkit(A, R), armor_vest(A, R), tactical_helmet(A, R), harness(A, R), headset(A, R),
             flight_vest(A, R), visor_cap(A, R), hair_bun(A, R), hair_long(A, R)]

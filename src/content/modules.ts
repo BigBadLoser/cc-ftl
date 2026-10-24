@@ -127,14 +127,14 @@ export const modules = {
   },
 
   // Sealed cargo containers (sim/containers): solid boxes on Beam tiles clamped to a freighter's frame, no interior.
-  // Footprint W x H at rotation 0 (art `container.<W>x<H>`); a storage slot per tile and a bit.
-  'container.2x3': {
-    name: 'Cargo container (small)', asset: 'container.2x3', footprint: [2, 3], solid: true, cover: 'full', power: 0,
-    flammability: 0.1, maxHp: 90, buildWork: 240, cost: [{ item: 'item.metal', count: 12 }], storage: { capacity: 7 }, container: true,
+  // Footprint W x H at rotation 0 (art `container.<W>x<H>`); a storage slot per tile and a bit (capacity, hp and cost scale with the area: 8 and 18 tiles).
+  'container.2x4': {
+    name: 'Cargo container (small)', asset: 'container.2x4', footprint: [2, 4], solid: true, cover: 'full', power: 0,
+    flammability: 0.1, maxHp: 120, buildWork: 320, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 9 }, container: true,
   },
-  'container.3x5': {
-    name: 'Cargo container', asset: 'container.3x5', footprint: [3, 5], solid: true, cover: 'full', power: 0,
-    flammability: 0.1, maxHp: 160, buildWork: 420, cost: [{ item: 'item.metal', count: 26 }], storage: { capacity: 18 }, container: true,
+  'container.3x6': {
+    name: 'Cargo container', asset: 'container.3x6', footprint: [3, 6], solid: true, cover: 'full', power: 0,
+    flammability: 0.1, maxHp: 190, buildWork: 500, cost: [{ item: 'item.metal', count: 31 }], storage: { capacity: 22 }, container: true,
   },
 
   // --- Combat. Offsets are (x, y) from the footprint's top-left at rotation 0; crew face south at rotation 0. ---

@@ -1,6 +1,6 @@
 /** 2:1 isometric projection. Art pixels at 1x; tile (x, y)'s floor-diamond centre is iso(x, y). */
-export const TILE_W = 64;
-export const TILE_H = 32;
+export const TILE_W = 128;
+export const TILE_H = 64;
 /**
  * Art scale against the 64x32-tile baseline all hand-tuned pixel literals were written at. Any render-side pixel offset,
  * size or speed that is really a fraction of a tile or of a height is written `n * ART_SCALE` (), so the

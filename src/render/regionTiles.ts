@@ -123,7 +123,12 @@ export function createRegionTiles(src: ChunkSource, ox: number, oy: number, widt
     get,
     // asteroid rock (mass and ground) inside a region is drawn by asteroidView: the region's tile art sees it as Space
     kindAt: (lx, ly) => { const k = inside(lx, ly) ? get('struct', lx, ly) : Struct.Space; return k === Struct.Rock || k === Struct.Ground ? Struct.Space : artKind(k); },
-    wallAt: (lx, ly) => (inside(lx, ly) && get('struct', lx, ly) === Struct.RockWall ? Struct.RockWall : self.kindAt(lx, ly)),
+    // Wall art also reads an open truss (Beam: frames, container seats) as outside: a hull wall facing it is exterior hull,
+    // so it is near / far hull with end faces like one facing Space, not a partition.
+    wallAt: (lx, ly) => {
+      const k = inside(lx, ly) ? get('struct', lx, ly) : Struct.Space;
+      return k === Struct.RockWall ? Struct.RockWall : k === Struct.Beam ? Struct.Space : self.kindAt(lx, ly);
+    },
     chunks(pad = 0) {
       const out: ChunkRef[] = [];
       if (width <= 0 || height <= 0) return out;

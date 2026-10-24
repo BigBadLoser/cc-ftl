@@ -2,11 +2,11 @@
 
 ## Sprite pipeline (current): `npm run sprites`
 
-`sprites/build_sprites.py` renders pre-baked isometric pixel sprites into `public/assets/sprites/*.png` and merges them
-into `public/assets/manifest.json` in the shape of `src/render/assets/manifest.ts` (the contract). The art is split into
+`sprites/build_sprites.py` renders pre-baked isometric pixel sprites into `public/assets/<scale>x/sprites/*.png` and merges them
+into `public/assets/<scale>x/manifest.json` (`--scale 1|2` or `ART_SCALE`, default 2) in the shape of `src/render/assets/manifest.ts` (the contract). The art is split into
 families (`sprites/families.py`): `crew`, `env`, `walls`, `consoles`, `weapons`, `roof`, `sol`. Each renders into its own
 sheets (`pack.py`: pages of at most 2048 px) and replaces only its own sheets and ids in the manifest, so
-`npm run sprites -- public/assets walls` rebuilds one family and the committed manifest is the cache (`all` = every
+`npm run sprites -- public/assets/2x walls` rebuilds one family and the committed manifest is the cache (`all` = every
 family). `sol` runs Sol's renderers in `experiments/` (final quality, one Blender job at a time) and packs their output
 (`sol_pack.py`). The manifest also records the art heights (`heights`: wall 1.85, roof top 2.05, px per tile of height).
 The older GLB pipeline below (`build.py`, `crew/`, `lib/`) is kept as source for the CC0 base import but no longer feeds the game.
@@ -46,7 +46,7 @@ Stack order (`order`): body 0, eyes 10, legs 20, torso 30, gear.belt 40, arm.R 5
 implant.temple 65, gear.head 70, gear.back 80.
 
 #### Incremental builds and the render cache
-`npm run sprites -- -- public/assets crew` renders only what the cache lacks (`<repo>/.cache/sprites/crew`, gitignored,
+`npm run sprites -- -- public/assets/2x crew` renders only what the cache lacks (`<repo>/.cache/sprites/crew`, gitignored,
 `$SPRITE_CACHE` to move it), then packs. Options after `crew`:
 `--item S[,S]` (substring of the layer id, e.g. `torso.tee`), `--clip C[,C]` (e.g. `walk`), `--force` (ignore the cache for the
 selected entries), `--plan` (print the hit/miss report and render nothing). With `--item`/`--clip` only those sheets are

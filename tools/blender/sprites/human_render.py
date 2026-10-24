@@ -4,7 +4,11 @@
 Stack order / holdout: layers are drawn in ascending ORDER. When layer L is rendered, the default items of every
 LOWER slot are in the scene as Cycles holdout objects, so L is cut away wherever a lower layer is nearer to the
 camera. Higher layers never need cutting by lower ones' absence: they are drawn over them anyway. (Arm slots use the
-union of all arm variants as holdout so a chunky cyber arm still occludes a rig that was cut by a flesh arm.)
+union of all arm variants as holdout so a chunky cyber arm still occludes a rig that was cut by a flesh arm. Likewise a
+held weapon is cut by every shoulder armour piece, so a rifle behind the pauldrons in a back view stays hidden; a crew
+member without them loses at most a pixel or two of the weapon round the shoulder. A stowed weapon (gear.holster) sits
+above the arms and the shoulder armour for the same reason: a rifle slung on the back is nearest the camera in a back
+view, and the arms and the pauldrons (held out) still hide it from the front.)
 
 Sit clips (sit_idle, sit_work): the console chair is in the scene as a holdout (chair_holdout), so every layer is already
 cut where the backrest, seat or armrests are nearer the camera, and those pixels carry alpha HIDDEN_A so the runtime
@@ -26,6 +30,7 @@ from .crew_spec import ORDER, CLIPS, W, H, ORIGIN, FRAME_W, FRAME_H, ANCHOR  # n
 
 SS = core.SS
 UNION_SLOTS = ("arm.L", "arm.R")
+UNION_FOR = {"gear.holster": ("gear.shoulder",), "gear.hand": ("gear.shoulder",)}   # extra slots held out (all items)
 # sim facing d: 0 = grid +x, CCW in grid space, 2 = grid +y. Character faces Blender -Y at azimuth 0, and Blender
 # y = -grid y, so the azimuth about +Z that faces grid angle phi=45*d deg is theta = 90 - phi.
 THETA = [90 - 45 * d for d in range(8)]
@@ -51,7 +56,8 @@ def hold_set(item, items):
             continue
         if suit.is_eva(o):
             continue
-        if o.default or (item.slot not in ("body",) and o.slot in UNION_SLOTS and o.slot != item.slot):
+        if o.default or (item.slot not in ("body",) and o.slot in UNION_SLOTS and o.slot != item.slot) or \
+                o.slot in UNION_FOR.get(item.slot, ()):
             out.append(o)
     return out
 

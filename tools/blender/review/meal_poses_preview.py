@@ -23,7 +23,7 @@ COLS = [("idle", 0, None), ("carry", 0, "carry"), ("carry", 2, "carry"), ("carry
 
 def main():
     C, G, out = Assets(sys.argv[1]), Assets(sys.argv[2]), Path(sys.argv[3])
-    pub = Assets(ROOT / "public/assets")
+    pub = Assets(ROOT / "public/assets/2x")
     out.mkdir(parents=True, exist_ok=True)
     dirs = (0, 2, 4, 6)
     cv = Canvas(70 * len(COLS) + 20, 90 * len(dirs) + 30)

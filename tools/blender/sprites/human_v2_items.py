@@ -3,8 +3,9 @@ human_items uses in place of the old build when CREW_BASE is v2 (the default on 
 
 Colour roles as before: team.skin / team.hair / team.cloth / team.accent are the palette-swap keys; fixed parts use
 plain palette colours. Flat colour regions with hard edges; nothing smaller than ~2 px."""
+import math
+
 import bpy
-import numpy as np
 from mathutils import Vector
 
 from . import core
@@ -33,16 +34,23 @@ def body(A, R):
 
 
 def eyes(A, R, cyber=False):
-    """Two dark eyes and brows in the hair colour. cyber: the right eye (x < 0) is a gunmetal implant with a cyan lens."""
-    b = Build()
+    """Two dark eyes and brows in the hair colour, a nose, a mouth line and ears. cyber: the right eye (x < 0) is a
+    gunmetal implant with a cyan lens."""
+    b, face = Build(), Build()
     c = R.head_c
+    w = W("head")
+    face.blob(Vector((0, R.front + 0.004, c.z - 0.035)), 0.017, 0.022, 0.032, w, exp=2.4, nlat=6)     # the nose
+    mouth = c.z - 0.088
+    face.blob(Vector((0, R.front + 0.01, mouth)), 0.03, 0.008, 0.008, w, exp=2.6, nlat=6)
+    for sx in (1, -1):                                                       # the ears
+        face.blob(Vector((sx * (R.HX + 0.004), c.y + 0.012, c.z - 0.012)), 0.018, 0.034, 0.044, w, exp=2.4, nlat=6)
     for sx in (1, -1):                                         # two dark eyes, ~2 x 3 px: they show which way the head faces
         if cyber and sx < 0:
             continue
         b.blob(Vector((sx * 0.048, R.front + 0.018, c.z + 0.0)), 0.022, 0.012, 0.028, W("head"), exp=2.4, nlat=6)
-    brow = c.z + 0.052
+    brow = c.z + 0.048
     for sx in (1, -1):                                         # brows, in the hair colour, a little wider than the eyes
-        b.blob(Vector((sx * 0.05, R.front + 0.016, brow)), 0.034, 0.012, 0.012, W("head"), exp=2.6, nlat=6)
+        b.blob(Vector((sx * 0.05, R.front + 0.014, brow)), 0.036, 0.013, 0.015, W("head"), exp=2.6, nlat=6)
     if cyber:
         eye = Vector((-0.048, R.front + 0.012, c.z))
         b.blob(eye, 0.032, 0.016, 0.034, W("head"), exp=3.0, nlat=6)
@@ -54,8 +62,10 @@ def eyes(A, R, cyber=False):
         if cyber and p.x < -0.01:
             return "cyan" if p.y < R.front - 0.004 else "gmD"
         return "dark"
-    return Item("eyes", "cyber" if cyber else "organic", [b.mesh("v2.eyes" + (".cyber" if cyber else ""), A, col)],
-                default=not cyber, glow=cyber)
+    sfx = ".cyber" if cyber else ""
+    objs = [b.mesh("v2.eyes" + sfx, A, col),
+            face.mesh("v2.face" + sfx, A, lambda p, n: "team.skin*0.5" if abs(p.z - mouth) < 0.012 else "team.skin")]
+    return Item("eyes", "cyber" if cyber else "organic", objs, default=not cyber, glow=cyber)
 
 
 def flesh_arm(A, R, s):
@@ -77,18 +87,28 @@ def tee(A, R):
     swing in front of the body), which would always hide a torso-layer sleeve under the bare arm."""
     b = Build()
     nz = R.neck.z
-    crew_neck = lambda c: not (c.z > nz - 0.02 and abs(c.x) < 0.09 and c.y < R.neck.y - 0.02)  # noqa: E731
-    torso(b, R, grow=0.02, lo=R.hips.z + 0.09, keep=crew_neck)
-    return Item("torso", "tee", [b.mesh("v2.tee", A, flat("team.cloth"))])
+    lo = R.hips.z + 0.09
+    torso(b, R, grow=0.02, lo=lo, cuts=(lo + 0.03, nz - 0.045))          # closed at the top: the neck cuts a clean
+                                                                             # round collar (a cut-out neck shows ragged)
+    arm_x, bz = R.h["arm.L"].x - 0.02, R.chest.z + 0.06
+
+    def col(c, n):                                                           # collar, hem and armholes a shade darker
+        if c.z > nz - 0.03 and math.hypot(c.x, c.y - R.neck.y) < 0.12 or c.z < lo + 0.03 or \
+                abs(c.x) > arm_x and c.z > R.chest.z:
+            return "team.cloth*0.7"
+        if n.y < -0.5 and 0.05 < c.x < 0.1 and abs(c.z - bz) < 0.025:
+            return "team.accent"                                             # a crew badge on the left chest
+        return "team.cloth"
+    return Item("torso", "tee", [b.mesh("v2.tee", A, col)])
 
 
 def work_shirt(A, R):
-    """The hi-vis work vest, as on the old base: sleeveless (bare arms), a scoop neck at the front, a hi-vis band round the
-    chest and hi-vis shoulder straps."""
+    """The hi-vis work vest, as on the old base: sleeveless (bare arms), a hi-vis band round the chest and hi-vis
+    shoulder straps."""
     b = Build()
-    nz, sz = R.neck.z, R.shoulder_z
-    scoop = lambda c: not (c.z > nz - 0.04 and abs(c.x) < 0.1 and c.y < R.neck.y - 0.02)  # noqa: E731  front only
-    torso(b, R, grow=0.016, lo=R.hips.z + 0.09, keep=scoop, cuts=(R.chest.z + 0.03, R.chest.z + 0.09, sz - 0.03))
+    sz = R.shoulder_z
+    torso(b, R, grow=0.016, lo=R.hips.z + 0.09, cuts=(R.chest.z + 0.03, R.chest.z + 0.09, sz - 0.03))   # closed top
+                                                                             # (the neck cuts a clean collar, see tee)
 
     def col(c, n):
         if R.chest.z + 0.03 < c.z < R.chest.z + 0.09:
@@ -108,39 +128,65 @@ def cargo_pants(A, R):
         leg(b, R, s, grow=0.018, boot=0.02)
     k0, k1 = R.t["leg.L"].z + 0.06, R.h["leg.L"].z - 0.1
     kz = R.t["leg.L"].z
+    fx, fy = abs(R.h["foot.L"].x), R.h["foot.L"].y
 
     def col(c, n):
         if c.z < 0.035:
             return "steelD"                                                 # a dark sole edge
         if c.z < 0.17:
+            if abs(abs(c.x) - fx) < 0.026 and c.y < fy and c.z > 0.05 and (n.z > 0.35 or n.y < -0.45):
+                return "steelD"                                             # the laces, up the instep and the ankle
+            if c.z < 0.075 and n.y < -0.3:
+                return "sole"                                               # the toe cap
             return "boot"
+        if c.z < 0.2:
+            return "steelD"                                                 # the cuff over the boot
         if abs(c.z - kz) < CREASE:
             return "steelD"                                                 # a crease line round the knee
         if c.z > top - 0.065:
             return "rust"                                                   # the waistband: a belt line under the hem
         if k0 < c.z < k1 and n.x * (1 if c.x > 0 else -1) > 0.55:
-            return "pocket"
+            return "steelD" if c.z > k1 - 0.04 else "pocket"               # the pocket and its flap
         return "pants"
     return Item("legs", "cargo_pants", [b.mesh("v2.cargo_pants", A, col)], default=True)
 
 
-HAIR_GROW, HAIR_FRONT, HAIR_SIDE = 0.01, 0.07, 0.02      # a close cap; hairline height at the front and the sides
+HAIR_GROW, HAIR_FRONT, HAIR_SIDE = 0.01, 0.095, 0.02     # a close cap; hairline height at the front and the sides
 
 
 def _hair_cap(b, R, back=-0.15, grow=HAIR_GROW):
-    front, side = HAIR_FRONT, HAIR_SIDE
+    """The hair as the head grown a little, kept above one smooth hairline: HAIR_FRONT over the forehead, a little higher
+    at the temples, easing down to HAIR_SIDE over the ears and to `back` at the nape (no step at the temples)."""
     c = R.head_c
+    ss = lambda e0, e1, t: (lambda u: u * u * (3 - 2 * u))(min(1.0, max(0.0, (t - e0) / (e1 - e0))))  # noqa: E731
 
     def keep(p):
         r = p - c
-        return r.z > front or (r.y > 0.02 and r.z > back) or (r.y > -0.04 and r.z > side and abs(r.x) > R.HX - 0.02)
+        t = (r.y + R.HY) / (2 * R.HY)                                        # 0 at the face, 1 at the back
+        line = HAIR_FRONT + 0.03 * min(1.0, abs(r.x) / R.HX) ** 2
+        line += (HAIR_SIDE - line) * ss(0.1, 0.45, t)
+        line += (back - line) * ss(0.55, 0.85, t)
+        return r.z > line
     head(b, R, grow=grow, keep=keep)
+
+
+def _strands(p, n):
+    """Hair colour with darker strands running front to back on the upper surfaces."""
+    return "team.hair*0.6" if n.z > 0.2 and int((p.x + 1.0) / 0.026) % 2 else "team.hair"
+
+
+def _fringe(b, R):
+    c = R.head_c
+    for x, dz in ((-0.065, 0.004), (-0.022, -0.002), (0.02, 0.0), (0.062, 0.005)):    # on the hairline (its curve),
+        z = c.z + HAIR_FRONT + 0.03 * (abs(x) / R.HX) ** 2 + 0.016 + dz        # not jutting out of it: 2 px of brow
+        b.blob(Vector((x, R.front + 0.022, z)), 0.028, 0.016, 0.02, W("head"), exp=2.2, nlat=6)   # clear below
 
 
 def hair_short(A, R):
     b = Build()
     _hair_cap(b, R)
-    return Item("hair", "short", [b.mesh("v2.hair.short", A, flat("team.hair"))], default=True)
+    _fringe(b, R)
+    return Item("hair", "short", [b.mesh("v2.hair.short", A, _strands)], default=True)
 
 
 def hair_ponytail(A, R):
@@ -149,21 +195,6 @@ def hair_ponytail(A, R):
     c = R.head_c
     b.tube(c + Vector((0, R.HY + 0.02, 0.04)), c + Vector((0, R.HY + 0.1, -0.17)), 0.055, 0.04, W("head"))
     return Item("hair", "ponytail", [b.mesh("v2.hair.ponytail", A, flat("team.hair"))])
-
-
-def _fit_helmet(it, R, margin=0.07, wide=1.06, deep=1.12):
-    """The old helmet over the taller v2 head: stretched up from its rim until the crown clears the head by `margin`,
-    and a little wider and deeper (the shell is nearly round: the squarer forehead pokes through its front), so the head
-    does not show through the shell or the visor."""
-    top = max(r[0].z for r in R.T["head"]) + 0.012
-    cos = [np.array([v.co[:] for v in ob.data.vertices]) for ob in it.objs]
-    allc = np.vstack(cos)
-    lo, hi = allc.min(0), allc.max(0)
-    base = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
-    k = np.array([wide, deep, max(1.0, (top + margin - lo[2]) / (hi[2] - lo[2]))])
-    for ob, co in zip(it.objs, cos):
-        ob.data.vertices.foreach_set("co", ((co - base) * k + base).ravel())
-        ob.data.update()
 
 
 def hair_shaved(A, R):
@@ -194,7 +225,7 @@ def _to_v2_head(items, R):
                 ob.data.update()
 
 
-CYBER_K = {"arm": 1.25, "forearm": 1.1, "hand": 1.0}                 # cyber arm thickness, to match the v2 flesh arm
+CYBER_K = {"arm": 1.1, "forearm": 1.1, "hand": 1.0}                   # cyber arm thickness, to match the v2 flesh arm
 
 
 def _cyber_bulk(items, A):
@@ -216,22 +247,23 @@ def _cyber_bulk(items, A):
 
 
 def build_items():
-    from . import human_v2_kits
+    from . import human_v2_armor, human_v2_eva, human_v2_kits, human_v2_weapons
     core.setup_scene()
     A = import_base()
     src = bpy.data.objects["skin@body.team.skin"]
     T = human_trace.measure(A, src)                                          # trace the realistic base, then drop it
-    eva = suit.build_suit(A, src)                                           # the EVA suit as on the old base (same rig)
+    eva = suit.build_suit(A, src)                                           # the old suit: its pack and cyber forearm
     keep = {ob.name for it in eva for ob in it.objs}
     for ob in [o for o in bpy.data.objects if o.type == "MESH" and o.name not in keep]:
         bpy.data.objects.remove(ob, do_unlink=True)
     R = Rig(A, T)
+    eva = human_v2_eva.build(A, R, eva)                                      # the suit rebuilt on the v2 body
     gear = [hg.hair_mohawk(A), hg.jack(A), hg.goggles(A), hg.engineer_rig(A), hg.cyber_arm(A, "L"),
             hg.cyber_arm(A, "R")]                                            # the old rigid gear (same rig)
     belt = tool_belt(A, R)
     items = [body(A, R), eyes(A, R), eyes(A, R, cyber=True), flesh_arm(A, R, "L"), flesh_arm(A, R, "R"), tee(A, R),
              work_shirt(A, R), cargo_pants(A, R), hair_short(A, R), hair_ponytail(A, R), hair_shaved(A, R),
-             belt] + gear + eva + human_v2_kits.build(A, R)
+             belt] + gear + eva + human_v2_kits.build(A, R) + human_v2_weapons.build(A, R) + human_v2_armor.build(A, R)
     for it in items:
         it.order = hr.ORDER[it.slot]
     for act in bpy.data.actions:       # we drive bone scale ourselves (torso width, breathing)
@@ -244,7 +276,6 @@ def build_items():
     hb.warp_gear(eva + gear + [belt])                                        # rigid parts, as the old build
     _to_v2_head(gear, R)
     _cyber_bulk(gear, A)
-    _fit_helmet(next(it for it in eva if it.slot == "gear.head"), R)
     A.rotation_mode = "XYZ"
     A.scale = (SCALE,) * 3
     A.data.pose_position = "POSE"

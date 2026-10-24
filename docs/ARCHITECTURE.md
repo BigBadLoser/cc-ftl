@@ -147,16 +147,72 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
 **Crew.**
 - Composited at runtime from **sprite layers**: a species body plus slot layers (hair, eyes, arms,
   implants, clothing, gear).
-- Every layer has the same fixed frame size and anchor (`tools/blender/sprites/crew_spec.py`), and one sheet
+- Every layer is rendered in the same fixed frame and anchor (`tools/blender/sprites/crew_spec.py`), and has one sheet
   per clip (8 directions x that clip's frames), so the layers always line up and a new item or clip never
   touches existing sheets. A layer lacking a clip falls back to idle, or is hidden for the seated clips
   (`resolveClip` in `src/render/loadout.ts`).
+- **Trimmed sheets** (`tools/blender/sprites/crew_trim.py`, run by `crew_pack.py`): a clip uses a small part of the frame, so
+  each clip sheet is cropped to the union of its opaque pixels (image and glow, all directions and frames). The manifest
+  clip records the cell size `cw`/`ch` and its offset `ox`/`oy` in the layer frame; the renderer cuts `cw x ch` cells and
+  draws at `ox - anchor.x, oy - anchor.y` (`cellOf` in `assets/manifest.ts`). That is the whole contract: the layer's
+  `frameW`/`frameH`/`anchor` and the muzzle offsets are unchanged, so no layer re-renders. At 2x it takes the human set from
+  12.3 GiB decoded to 0.93 GiB. `python3 -m sprites.crew_trim [assets dir]` (from `tools/blender`) trims an existing output
+  in place (idempotent); the review tools that stack crew cells re-pad with `crew_trim.full_cell`.
 - Layers are rendered in Blender with the rest of the character as a **holdout**, so the hidden parts
   are already cut out. Layers then stack in a fixed order in every direction.
 - Which layers to use comes from sim components (species, role gear, implants, injuries, appearance
   seed).
 - Skin, hair and cloth colours use **palette swap**. `team.*` materials render as reserved key colours,
   which a shader remaps per crew member.
+- **Weapons, armour and cover** (`human_v2_weapons.py`, `human_aim.py`, `human_crouch.py`, `human_v2_armor.py`;
+  weapons, armour and the fight fx are wired, cover is not: see "Wiring" below):
+  - Held weapons are `crew.human.gear.hand.<weapon>` (slot order 55, over the arms). Each pose family has its own
+    clips, and a weapon layer only exists in its family's:
+    - `1h`: sidearm, ion_pistol, laser_pistol, plasma_cutter. Clips `aim_1h`, `fire_1h`, `walk_aim_1h`.
+    - `2h`: rifle, laser_rifle, shotgun, smg, rail_rifle. Clips `aim_2h`, `fire_2h`, `walk_aim_2h`.
+    - `heavy`: flamethrower, heavy_repeater. Clips `aim_heavy`, `fire_heavy`, `walk_heavy`.
+    - `1m`: blade, shock_baton. Clips `ready_1m`, `swing_1m`.
+    - `2m`: breach_axe. Clips `ready_2m`, `swing_2m`.
+  - Cover:
+    - `crouch_idle` and `crouch_walk` exist for every layer but the held weapons.
+    - Crouched combat clips: `crouch_aim_1h`, `crouch_fire_1h`, `crouch_aim_2h`, `crouch_fire_2h`,
+      `crouch_fire_heavy` and `crouch_ready_1m`.
+    - Leans: `lean_l_1h`, `lean_r_1h`, `lean_l_2h`, `lean_r_2h`.
+  - Every held weapon's clip entry carries `muzzle[direction][frame] = [x, y]`: the muzzle, or the tip for melee, in
+    sprite px from the anchor. Flashes, tracers and beams start there.
+  - Out of the hands a weapon is `crew.human.gear.holster.<weapon>` (slot order 45):
+    - 1h guns ride in a hip holster; 1h melee hangs at the left hip.
+    - Long guns and the axe are slung across the back.
+    - Heavies are stowed on the back.
+
+    Holsters have no combat clips. Show either the holster or the held layer, never both. The flamethrower also wears
+    `gear.back.fuel_tanks`.
+  - Armour: the security `torso.armor_vest`, plus `torso.armor_heavy`, `gear.shoulder.pads` (slot order 53) and
+    `gear.head.heavy_helmet`. The heavy helmet covers the hair like the EVA helmet, so drop the hair layer under it.
+  - **Wiring** (`render/handWeapon.ts`, `crewMuzzle.ts`, `crewSprites.ts`, `crewView.ts`, `loadout.ts`, `fightFx.ts`):
+    - Content: `HandWeaponDef.art = { id, family }` on the hand items (`item.sidearm` -> `sidearm` 1h, `item.rifle` ->
+      `rifle` 2h, `item.ion_pistol` -> `ion_pistol` 1h, `item.blade` -> `blade` 1m). The sim never reads it. Art weapons
+      without an item yet (add the item with `art` and they draw): laser_pistol, plasma_cutter (1h); laser_rifle,
+      shotgun, smg, rail_rifle (2h); flamethrower, heavy_repeater (heavy); shock_baton (1m); breach_axe (2m).
+    - Loadout: a crew member with an art weapon wears both its holster and held layers (`crewLoadout(..., weapon)`); the
+      slot is rebuilt when the equipped weapon changes. Robots and creatures (single body layer) and suited crew wear none.
+      Security wears `armor_vest` and `gear.shoulder.pads`; the `role.marine` kit (no such role yet) wears `armor_heavy`,
+      pads and `heavy_helmet` with no hair.
+    - Clip choice (`crewView`): the fighter is engaged (`FighterC.mode === 'engage'`, kept up 1.5 s after) -> `aim_*` /
+      `ready_*`; engaged and moving -> `walk_aim_*` / `walk_heavy` (melee walks plainly); the cooldown restarting (the
+      shot tick) -> `fire_*` / `swing_*` once, or looped for the whole cooldown for `heavy`. Not engaged, seated, downed or
+      floating -> the ordinary clip. A layer without the combat pose falls back (`loadout.CLIP_FALLBACK`: aim -> idle,
+      fire -> aim, swing -> ready, walk_aim -> walk, crouch_* -> crouch_idle -> idle, lean -> idle).
+    - Holster vs held (`handWeapon.layerShown`, `crewSprites.drawLayers`): the held layer is drawn only in combat clips
+      and only once its sheet and the body's are loaded, the holster otherwise, so never both and never neither.
+    - Lazy sheets: drafted or engaged crew with a weapon request the family's aim, fire and walk sheets on every layer
+      once (`prefetchClips`), before the first shot.
+    - Muzzle: `ClipDef.muzzle` is read by `crewMuzzle` (facing from `PositionC`, frame 0 of the fire clip; the swing's
+      frame 2 for melee) and added to the feet's iso point in `fightFx`: flash and tracer start at the barrel, the melee
+      slash at the tip. No weapon drawn (robots, bare hands): the old chest-height start.
+    - Not wired: cover. The sim has per-shot `Cover` (`fight/los.ts`) but no crew posture, so `crouch_*` and `lean_*`
+      clips only have fallback rules (`FAMILY.crouchAim/crouchFire` in `handWeapon.ts` list them) until a cover/posture
+      state exists.
 
 **Lighting.**
 - Base sprites are lit in Blender with a fixed key light. A separate **glow sheet** (the emission pass)
@@ -200,7 +256,86 @@ tools/blender/
 palette.json    the single palette, read by Blender scripts and the game
 ```
 
-- **Run with `npm run sprites`** (Blender headless). Generated sheets, JSON and the manifest are
+- **Loading and memory (`src/render/assets`, `artStream.ts`):** sheets are loaded on demand, never all at start (the 2x art is
+  1452 sheets, ~13 GiB if decoded at once, which crashed headless Chromium; phones need a few hundred MiB).
+  - `loadAtlas` registers every manifest sheet in a `SheetStore` (`sheetStore.ts`, generic over the texture type so it is
+    unit-tested without Pixi) in one of three pools: `core` (`EAGER_SHEETS`: walls, beams, the env item sheet and fx, loaded
+    before the renderer starts and never evicted, ~92 MiB), `env` (every other static sheet) and `crew` (`crew.*` sheets).
+    Image and glow twin load and free together. At most 4 loads run at once.
+  - The atlas API is unchanged, but art may not be there yet. `stat(id)` / `firstOf(chain)` return undefined for an id whose
+    sheet is not loaded and queue the load (an unloaded id ends a fallback chain: a later id is a worse stand-in, not an
+    alternative; `loading(chain)` tells "on its way" from "absent", and `resolveArt` draws nothing for the former instead of
+    the `FALLBACK` stand-in). `LayerSprite.frame()` is undefined until the clip's sheet is in.
+  - Crew: the common clips (idle/walk/run/work) of a crew member's layers are queued when its figure appears, others on
+    first use. While a clip loads `pickFrame` (`loadout.ts`) draws the layer's idle, then walk, so a figure is never
+    blank. Crew sheets are evicted by idle time (`CREW_IDLE_MS`) when the `crew` pool is over `CREW_BUDGET` (256 MiB
+    decoded; a typical crew needs ~50 MiB trimmed). Lookups happen every frame, so nothing holds a crew texture for long.
+  - Static art is different: built sprites (gridView, roofs, modules) keep their textures. `atlas.generation` counts env/core
+    sheets arriving or leaving; `createArtStream` (`artStream.ts`) rebuilds the ship scenes when it changes (immediately once
+    nothing is loading, else at most once a second) and keeps a scene hidden while the sheets of its first build load (at
+    most 3 s). When the `env` pool is over `ENV_BUDGET` (384 MiB) it runs a mark and sweep every 8 s (backing off when
+    everything is in use): rebuild the scenes (marks the sheets they use), then evict the env sheets nothing used since.
+  - Evicted sheets are destroyed one frame later (`atlas.tick()` after drawing), and are restored without a reload if asked
+    for again in that frame. Sub-textures and baked halos of an evicted sheet are destroyed with it.
+  - Each sheet is uploaded to the GPU as soon as it loads and its decoded ImageBitmap closed, so it is not held twice. After
+    a lost WebGL context (`webglcontextlost`) drawing pauses until every loaded sheet has been decoded and uploaded again.
+  - Debug: `?hook` gives `__cc.art()` (resident decoded bytes per pool, requests, pending, rebuilds, biggest sheets);
+    `?crewmb=N` and `?envmb=N` override the budgets in MiB.
+  - Not done: GPU texture compression (KTX2/Basis), and splitting the big static env sheets (vehicle_bay, weapons, containers)
+    by family, which would shave the ~245 MiB the starting ship's env sheets take.
+- **Two art sets (`public/assets/1x/`, `public/assets/2x/`):** each has its own `manifest.json` and `sprites/`. Ids are the same
+  in both; the 1x set may lack ids the 2x set has (never downsample 2x art to fill a gap: render it).
+  - 1x is 64x32 pixel art that the game draws at half resolution, so each art pixel is a hard 2x2 block. The game's geometry
+    (`iso.ts` `TILE_W`/`TILE_H`, `Z_PX`, every `ART_SCALE` literal) stays 128x64 in both modes.
+  - `src/render/assets/compose.ts` turns the chosen set into the one manifest the renderer sees, in world px: a 1x set's frames,
+    anchors, clip cells (`cw`/`ch`/`ox`/`oy`), muzzles and `heights.zPx` are multiplied by 2 and its sheets get texture
+    `resolution` 0.5 (loaded nearest, never smoothed). So nothing downstream knows the set. Exceptions work in art px and
+    convert through `texture.source.resolution`: alpha picking (`partPick.ts`, `alphaMask.ts`) and CSS item icons
+    (`itemIcons.ts`). The crew filter's zoom is camera scale times the layer's `px` (2 for 1x; `palette.ts` `artZoom`).
+  - Per-id fallback: in 1x mode an id the 1x manifest lacks loads from the 2x set at native scale (sheet names prefixed `2x:`).
+    One console line reports how many; `__cc.art().fallbacks` (with `?hook`) lists them.
+  - Choice: `?art=1x|2x` (remembered), else the remembered value in localStorage `cc.artScale`, else 1x. The debug panel has a
+    switch. Switching reloads the page (`artSet.ts` `setArtScale`): sheet stores, built sprites and filters all hold one set's
+    textures. Pool budgets are a quarter at 1x (`budgetsFor`).
+  - Tests: `sheets.contract.test.ts` (per-set manifests, same ids), `compose.test.ts` (scaling, fallback, set choice, budgets),
+    `partPick.test.ts` (1x picking), `palette.test.ts` (crew filter at 1x).
+- **Render scale (pipeline contract with the cloud renderer):**
+- `tools/blender/sprites/scale.py` reads `ART_SCALE` (`1` = 64x32, `2` = 128x64, default 2). `build_sprites.py ... --scale 1|2`
+  sets the same variable (give it after the `--` that ends Blender's own arguments).
+- Output goes to `public/assets/<ART_SCALE>x/`; `scale.assets_dir()` returns that path (cloud tooling should import it).
+  `build_sprites.py` refuses an outdir whose `manifest.json` has the other tile size.
+- The manifest `tile` is `{w: 64*ART_SCALE, h: 32*ART_SCALE}`; `heights.zPx` scales the same way.
+- Cache keys include the scale: env families hash `TILE_W/TILE_H`, crew hashes `FRAME_W/FRAME_H` (both derive from
+  `ART_SCALE`), and the sol/damage_sol scratch dir defaults to `sol-pack-<scale>x` (cloud sets `SOL_DIR` with its own scale
+  signature). `--cache-only` works at both scales (it is a crew flag and does not look at the scale).
+- **Rendering the missing 1x art:**
+   (from the repo root, on branch `art/dual-scale`)
+
+  Direct, one Blender process (add `-t N` for threads; the render caches under `.cache/sprites/` are keyed by scale):
+
+  ```bash
+  export ART_SCALE=1
+  BL="$HOME/tools/blender-4.2.9-linux-x64/blender -b -t 4 --factory-startup --python-exit-code 1 --python tools/blender/sprites/build_sprites.py --"
+  # the missing non-crew families (merged into public/assets/1x/manifest.json; other families are kept)
+  $BL public/assets/1x battery,clutter,containers,corpse,cryo,damage,damage_sol,decay,fx_mining,hazards,hydroponics,medbay,mining_pod,ops_consoles,pod_bay,rock,rockwall,storage_set,wallprops,workbench --scale 1
+  # plus the crew (incremental: re-run after an interruption and finished frames are skipped; --plan reports hits/misses)
+  $BL public/assets/1x crew --scale 1
+  # parallel crew workers: one clip each, cache only (no packing), then pack once
+  $BL /tmp/crew-scratch crew --clip walk --cache-only --scale 1     # repeat per clip in crew_spec.CLIPS
+  $BL public/assets/1x crew --scale 1
+  python3 tools/blender/sprites/crew_check.py public/assets/1x      # sanity composite (optional)
+  ```
+
+  Through the cloud orchestrator (needs the matching change in `blender-cloud-render` that sets `OUT` to
+  `public/assets/<scale>x`; `ART_SCALE` is already exported to every Blender process by `cloud_render.py run --scale 1`):
+
+  ```bash
+  python3 tools/cloud_render.py run --workers 4 --threads 2 --scale 1
+  ```
+
+  Then fetch `public/assets/1x/` (`remote.sh ... fetch`), commit the sheets, JSON and manifest, and check with
+  `npm test -- src/render/assets` (manifest contract tests run on both sets) and `?art=1x&hook`.
+- **Run with `npm run sprites`** (Blender headless; `-- ... --scale 1|2` or `ART_SCALE`, default 2, writes `public/assets/<scale>x/`). Generated sheets, JSON and the manifest are
   **committed**, because Cloudflare's build doesn't run Blender.
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
@@ -239,7 +374,7 @@ palette.json    the single palette, read by Blender scripts and the game
   - Beams top out about 0.6 high, so every wall view level uses the same sprites. A 2–3-thick beam reads as
     twin trusses tied at each tile.
   - Preview from a shipgen dump: `tools/blender/review/beams_preview.py <dir> <out> ship <txt> <seed> <look>`.
-- **Cargo containers (no sheet yet; placeholder boxes drawn by `src/render/containerBox.ts`):** sealed container modules
+- **Cargo containers (sheets `containers*`; `src/render/containerBox.ts` is only the stand-in while art is missing; livery overlays `.paint` / `.lv` are recoloured by `containerPaint.ts`, logos `.logo.<company>` are plain sprites; variants `.v1`/`.v2` by id):** sealed container modules
   (`ModuleDef.container`, `src/sim/containers`) stand on Beam tiles clamped to a freighter frame. Ids the renderer asks
   for, most specific first (`moduleArt.containerChain`), anchored at the footprint's front tile like any module:
   - A container's cargo doors are on one short end, and that end always faces the frame it is clamped to (the clamp
@@ -247,7 +382,7 @@ palette.json    the single palette, read by Blender scripts and the game
     the doors drawn on that end (on r0 spines today: `.n` hangs below a spine, `.s` stands on one).
   - `container.<W>x<H>.r<N>.<end>[.damaged|.destroyed]`, then `container.<W>x<H>.r<N>.<end>`,
     `container.<W>x<H>.r<N>[.damaged|.destroyed]`, then `container.<W>x<H>.r<N>`, `container.<W>x<H>[.damaged|.destroyed]`,
-    `container.<W>x<H>`. Sizes: `container.2x3` and `container.3x5`. On today's spines (along x) they stand at r0, the
+    `container.<W>x<H>`. Sizes: `container.2x4` and `container.3x6`. On today's spines (along x) they stand at r0, the
     short end on the spine; r1 is for a spine running along y. `.damaged` under half hp, `.destroyed` at 0. Ruins also name
     `.patched` (a scrapper box welded shut, `RuinContainer.patched`) in their meta; the renderer shows it as `.damaged`.
   - `container.clamp.<n|e|s|w>`, then `container.clamp`: the clamp gripping the frame, one sprite at the middle tile of

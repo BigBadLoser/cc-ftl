@@ -58,7 +58,7 @@ void main(void) {
  *    tools/blender compose.shade: cooler shadows, warmer lights), then the light tint;
  *  - ONE 1 px outline around the combined alpha: a darkened version of the adjacent pixel's colour;
  *  - a thin cool rim on the left silhouette edge.
- * Neighbours are sampled `uZoom` px away (one art px at the camera's integer zoom), so everything stays on the art grid.
+ * Neighbours are sampled `uZoom` px away (one art px: the camera scale, in the filter's unit of device px; the filter texture is at art resolution when the art is shrunk, see `filterResolution`), so everything stays on the art grid.
  */
 const FRAG = `#version 300 es
 precision highp float;
@@ -75,6 +75,10 @@ const float MULT[5] = float[5](0.42, 0.62, 0.82, 1.0, 1.22);
 const vec3 RIM = vec3(0.47, 0.8, 1.0);
 // Sit clips mark crew pixels hidden behind the chair with a faint alpha: drawn as nothing, and no outline or rim along the cut.
 const float HIDDEN = 0.01;
+// Darkest key shade still swapped: ambient-occlusion shadows in the sheets reach about 0.2 x the key colour (below the lowest ramp step, they take it).
+const float KEY_MIN = 0.2;
+// Below the ramp's first step a key shade is exact in the sheets (residual ~0); dark blue-grey trousers sit near the cyan key's direction (residual 0.06 at s 0.1), so there the match is strict.
+const float DARK_TOL = 0.02;
 
 vec3 ramp(vec3 col, float s) {
   int lv = int(s > 0.385) + int(s > 0.555) + int(s > 0.73) + int(s > 0.91);
@@ -89,7 +93,7 @@ vec3 swapColor(vec4 c) {
     if (float(i) >= uCount) break;
     vec3 k = uKeys[i].rgb;
     float s = dot(p, k) / dot(k, k);
-    if (s > 0.3 && s < 1.4 && length(p - s * k) < 0.14 * max(s, 0.5)) return clamp(ramp(uRepl[i].rgb, s), 0.0, 1.0);
+    if (s > KEY_MIN && s < 1.4 && length(p - s * k) < (s < 0.385 ? DARK_TOL : 0.14 * max(s, 0.5))) return clamp(ramp(uRepl[i].rgb, s), 0.0, 1.0);
   }
   return p;
 }
@@ -171,12 +175,50 @@ export function setFilterTint(filter: Filter, color: number): void {
   group.update();
 }
 
-/** Camera zoom (device px per art px): the outline and rim step this far, and the filter pads one art px. Below 1 (shrunk art) they stay one device px. */
+/** Zoom in device px per art px: the camera scale (device px per world px) times the art set's world px per art px (2 for 1x art). */
+export const artZoom = (cameraScale: number, px: number): number => cameraScale * px;
+
+/**
+ * Resolution of the filter's offscreen texture for a zoom in device px per art px (`artZoom`): one texel per art px when the
+ * art is shrunk (scale < 1: the texture is denser than the screen by 1 / scale), and one texel per device px otherwise
+ * (the layers are then magnified with nearest sampling, which keeps art px whole).
+ */
+export function filterResolution(scale: number): number {
+  return scale > 0 && scale < 1 ? 1 / scale : 1;
+}
+
+const BLIT = `#version 300 es
+precision highp float;
+in vec2 vTextureCoord;
+out vec4 finalColor;
+uniform sampler2D uTexture;
+void main(void) {
+  finalColor = texture(uTexture, vTextureCoord);
+}`;
+
+let blit: Filter | undefined;
+
+/**
+ * The filters of a crew figure's body at a camera scale. A filter pass runs once per OUTPUT pixel, so with art shrunk
+ * (scale < 1) the swap alone would sample the art-resolution layers with the screen's linear filter first, blending a
+ * key colour with its neighbours before the key test (raw magenta/green fringes). So below 1 the swap runs as its own
+ * pass into an intermediate texture at art resolution (`filterResolution`), and a plain blit then shrinks the finished
+ * figure to the screen with linear filtering. From 1 up the swap output is the screen itself (one texel per device px).
+ */
+export function crewFilters(swap: Filter, scale: number): Filter[] {
+  if (scale >= 1) return [swap];
+  blit ??= new Filter({ glProgram: GlProgram.from({ vertex: VERT, fragment: BLIT, name: 'crew-blit' }), resources: {} });
+  return [swap, blit];
+}
+
+/** Camera zoom (device px per art px): the outline and rim step one art px (`scale` device px, the shader's unit), and the filter pads one art px. */
 export function setFilterZoom(filter: Filter, scale: number): void {
-  const zoom = Math.max(1, scale);
+  const zoom = scale;
   const group = filter.resources.palette as { uniforms: { uZoom: number }; update(): void };
+  filter.resolution = filterResolution(scale);
+  if (blit) blit.resolution = filter.resolution;
   if (group.uniforms.uZoom === zoom) return;
   group.uniforms.uZoom = zoom;
-  filter.padding = zoom;
+  filter.padding = Math.max(1, Math.ceil(zoom));
   group.update();
 }

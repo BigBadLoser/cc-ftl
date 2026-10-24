@@ -68,7 +68,7 @@ def render(base):
 
 
 def build(out, log=print):
-    base = Path(os.environ.get("SOL_DIR", Path(tempfile.gettempdir()) / "sol-pack"))
+    base = Path(os.environ.get("SOL_DIR", Path(tempfile.gettempdir()) / f"sol-pack-{os.environ.get('ART_SCALE', '2')}x"))
     base.mkdir(parents=True, exist_ok=True)
     render(base)
     by = {f: [] for f in SHEETS}

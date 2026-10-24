@@ -6,7 +6,7 @@ import { rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import type { Atlas } from './assets/loader';
 import { resolveArt } from './assets/fallback';
-import { containerChain } from './moduleArt';
+import { containerChain, containerVariant } from './moduleArt';
 import { boxState, containerBox } from './containerBox';
 import type { Pt } from './iso';
 
@@ -40,7 +40,7 @@ export function createContainerBodyView(world: World, atlas: Atlas, defs: Readon
         const b = world.get(id, BodyC);
         const def = c && defs[c.def];
         if (!c || !b || !def || c.state !== 'drifting') continue;
-        const { chain, key } = containerChain(def, c.rot, c.hp, c.clamp);
+        const { chain, key } = containerChain(def, c.rot, c.hp, c.clamp, containerVariant(id));
         const [w, h] = rotatedSize(def, c.rot);
         // PLACEHOLDER: the drawn box (no clamp: it is loose) until the container sheets land.
         const art = resolveArt(atlas, chain, key) ?? { s: containerBox(w, h, boxState(c.hp, def.maxHp), c.clamp, false), tint: 0xffffff, perTile: false };

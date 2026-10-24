@@ -10,10 +10,10 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sprites import compose  # noqa: E402
+from sprites import compose, crew_trim  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
-AS = ROOT / "public/assets"
+AS = ROOT / "public/assets/2x"
 D, WD, OUTD = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
 REF = Path(sys.argv[4]) if len(sys.argv) > 4 else None
 MAN = json.loads((AS / "manifest.json").read_text())
@@ -57,7 +57,7 @@ def crew(sc, cx, cy, d=0, cloth=(114, 132, 95)):
         c, fw, fh = a["clips"]["idle"], a["frameW"], a["frameH"]
         if arr is None:
             arr = np.zeros((fh, fw, 4), np.uint8)
-        sl = sh[d * fh:(d + 1) * fh, c["start"] * fw:(c["start"] + 1) * fw]
+        sl = crew_trim.full_cell(sh, a, c, d, c["start"])
         compose.over(arr, compose.remap_keys(sl, cols), 0, 0)
         an = a["anchor"]
     sc.put(arr, None, cx - an["x"], cy - an["y"])

@@ -10,7 +10,7 @@ ROOT=Path(__file__).resolve().parents[4]
 sys.path.insert(0,str(ROOT/"tools/blender"))
 from sprites import compose, post  # noqa: E402
 
-AS=ROOT/"public/assets"
+AS=ROOT/"public/assets/2x"
 MAN=json.loads((AS/"manifest.json").read_text())
 CACHE={}
 W,H=720,500
