@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCombat, UiCrew, UiModule, UiStats, UiStock } from './api';
+  import type { UiApi, UiCombat, UiCrew, UiFtl, UiModule, UiStats, UiStock } from './api';
+  import FtlCharge from './FtlCharge.svelte';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
   import { Tooltip } from './kit';
@@ -13,6 +14,7 @@
   let crew = $state<UiCrew[]>([]);
   let mods = $state<UiModule[]>([]);
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
+  let ftl = $state<UiFtl | null>(null);
   onMount(() => {
     const u = [
       api.stats.subscribe((s) => (st = s)),
@@ -21,6 +23,7 @@
       api.crew.subscribe((v) => (crew = v)),
       api.modules.subscribe((v) => (mods = v)),
       api.combat.subscribe((v) => (combat = v)),
+      api.ftl.subscribe((v) => (ftl = v)),
     ];
     return () => u.forEach((f) => f());
   });
@@ -53,6 +56,7 @@
       <span class="fs">Eating {st.food.perHour}/h for {st.food.eaters} crew: food for <b>{foodTime}</b></span>
     </div>
   {/if}
+  {#if ftl}<div class="drive"><FtlCharge {ftl} testid="overview-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: ftl!.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: ftl!.ship })} /></div>{/if}
   {#if combat.player}<div class="meters"><ShipMeters ship={combat.player} compact /></div>{/if}
 </aside>
 
@@ -69,6 +73,7 @@
   .food .fs { color: var(--dim); font-size: 12px; }
   .food.low { border-color: #ffb43c; } .food.low b { color: #ffb43c; }
   .food.out { border-color: var(--red); } .food.out b { color: var(--red); }
+  .drive { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
   .meters { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
   @media (max-width: 600px) { :global(html[data-combat]) .over { display: none; } .over { bottom: auto; left: 8px; right: calc(46px + var(--sar)); width: auto; border-width: 1px; padding: 10px; } }
 </style>

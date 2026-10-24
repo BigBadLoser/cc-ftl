@@ -37,7 +37,7 @@ function run(sim: Sim, n: number): string[] {
 /** Run the trip to its last node, then drop out of hyperspace (the ship then waits to deploy). Returns the event log. */
 function land(sim: Sim): string[] {
   const log: string[] = run(sim, 1); // the queued jump
-  for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && sim.galaxy.travel?.phase === 'hop'; i++) log.push(...run(sim, 1));
+  for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) { log.push(...run(sim, 1)); sim.story.active = null; }
   sim.enqueue({ type: 'galaxy.drop' });
   log.push(...run(sim, 1));
   return log;

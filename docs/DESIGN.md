@@ -204,6 +204,7 @@ FTL's decision-making with physical consequences, in a shared sector.
 - **Persistent flags and arcs:** the pirate you spared comes back; the corp you robbed puts out a bounty.
 - **Skill checks show their odds.**
 - Event pools are weighted by danger tier and faction territory (the current node's, set on every jump).
+- **Story events happen in transit** only: a hop of a hyperspace trip may draw one (never the hop that is interdicted), and the trip is held until you answer. Nothing starts while the ship idles in a node. Hostile arrivals and NPC traffic are node-local happenings, not story events.
 - **Presentation:** decisions pause in a modal; flavour and optional leads arrive in-world and can be
   ignored.
 

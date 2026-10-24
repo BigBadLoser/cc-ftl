@@ -12,6 +12,7 @@ import { bindMarkets, unbindMarkets } from './marketLive';
 import { populateNode } from './populate';
 import { placeWrecks } from './wrecks';
 import { takeHopTurn } from './turn';
+import { storyAtHop, storyHold } from './storyHop';
 import type { EdgeData, Travel } from './types';
 
 /**
@@ -74,7 +75,6 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   const charge = routeCharge(edges);
   spendCharge(sim, charge, ship);
   burnFuel(sim, first.fuel, ship);
-  g.pendingDraw = null;
   unbindMarkets(sim);
   liftFleetsAt(sim, g.current);
   enterHyperspace(sim, ship, withDocked ?? false);
@@ -95,7 +95,7 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
 export function advanceTravel(sim: Sim): void {
   const g = sim.galaxy;
   const t = g.travel;
-  if (!t || t.phase !== 'hop') return;
+  if (!t || storyHold(sim, t, resumeAfterHop) || t.phase !== 'hop') return;
   if (++t.elapsed < t.hopTicks) return;
   const edge = edgeBetween(g, t.route[t.at] as string, t.route[t.at + 1] as string) as EdgeData;
   const from = t.route[t.at] as string;
@@ -106,9 +106,6 @@ export function advanceTravel(sim: Sim): void {
   g.days = Math.round((g.days + edge.time) * 10) / 10;
   sim.events.emit({ type: 'galaxy.jumped', from, to: g.current, edge: edge.id, fuel: edge.fuel, charge: from === t.route[0] ? t.charge : 0 });
   arrive(sim);
-  // One draw per trip, resolved at deploy. An anchored lane anywhere on the route owes the (rarer) transit draw, which a later plain hop
-  // must not overwrite: transit wins over arrival.
-  g.pendingDraw = g.pendingDraw === 'transit' || edge.anchor ? 'transit' : 'arrival';
   t.elapsed = 0;
   // The turn ends here: a fleet that crossed the hop, or is in this node, may interdict. The ship halts in hyperspace until `galaxy.respond` settles it.
   if (crossAfterHop(sim, from, g.current)) {
@@ -116,6 +113,8 @@ export function advanceTravel(sim: Sim): void {
     sim.events.emit({ type: 'galaxy.interdicted', node: g.current });
     return;
   }
+  // A story event may come up at this hop (never on one that interdicted); a decision holds the trip until it is answered.
+  if (storyAtHop(sim, t, edge)) return;
   resumeAfterHop(sim, t);
 }
 
@@ -152,8 +151,8 @@ export function drop(sim: Sim, command = 'galaxy.drop'): boolean {
   const g = sim.galaxy;
   const t = g.travel;
   if (sim.sector.state !== 'hyperspace' || !t) return sim.events.emit({ type: 'command.rejected', command, reason: 'notInHyperspace' }), false;
-  // An interdiction or an event grid must be settled first.
-  if (t.phase === 'interdicted' || t.phase === 'event') return sim.events.emit({ type: 'command.rejected', command, reason: t.phase === 'event' ? 'inEvent' : 'interdicted' }), false;
+  // An interdiction, an open story decision or an event grid must be settled first.
+  if (t.phase === 'interdicted' || t.phase === 'event' || t.phase === 'story') return sim.events.emit({ type: 'command.rejected', command, reason: t.phase === 'event' ? 'inEvent' : t.phase === 'story' ? 'inStory' : 'interdicted' }), false;
   if (t.phase === 'hop' && t.elapsed > 0) {
     t.route.length = t.at + 2;
     t.stopping = true;
@@ -210,7 +209,6 @@ export function teleport(sim: Sim, to: string): boolean {
   g.current = to;
   sim.sector.node = to;
   arrive(sim);
-  g.pendingDraw = null;
   g.travel = { route: [from, to], charge: 0, at: 1, elapsed: 0, hopTicks: 1, phase: 'arrived' };
   return drop(sim, 'debug.galaxyTeleport');
 }

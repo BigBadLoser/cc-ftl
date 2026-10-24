@@ -562,9 +562,8 @@ counters, reputation per faction, the open decision (`active`), a `queue` of due
 **EventDef**
 - `mode`: `'decision'` (pauses the game in a modal) or `'notice'` (in-world, non-pausing alert; `effects` apply on arrival; `lead`
   makes the notice open that decision when tapped; `expireSec`).
-- `triggers[]`: `arrival` (weight; drawn by `story.arrive` and on a galaxy jump), `transit` (weight; drawn instead of an arrival after crossing an
-  anchored hyperlane), `periodic` (weight; drawn every `periodicSec` outside combat while no
-  decision is open), `flag` (`flag`, `atLeast`, `delaySec`: queued when the flag first reaches the level), `chain` (only reached by a
+- `triggers[]`: `transit` (weight; the only drawn pool: drawn at a hop of a hyperspace trip, see "Story events in transit" below; nothing is drawn
+  while the ship idles in a node), `flag` (`flag`, `atLeast`, `delaySec`: queued when the flag first reaches the level), `chain` (only reached by a
   `chain` effect or debug fire).
 - Pool filters: `danger {min,max}`, `factions[]` (null = open space), `eligible: Requirement[]`, `once`, `cooldownSec`. A draw sums
   the weights of a def's triggers of that kind and picks by weight with the story Rng.
@@ -580,12 +579,11 @@ counters, reputation per faction, the open decision (`active`), a `queue` of due
 - `physical` outcomes (`derelict`, `boarders`, `fire`, `combat`) are only **recorded** in `story.physical` (capped log). The sector
   layer will add a system that consumes and removes those entries; nothing else needs to change.
 
-**Commands** (`story.*`): `choose {choice}`, `fire {event}` (debug, ignores triggers and eligibility), `setContext {danger?, faction?,
-periodicSec?}` (periodic draws are off until `periodicSec > 0`; `main.ts` turns them on), `arrive`, `openNotice`, `dismissNotice`,
+**Commands** (`story.*`): `choose {choice}`, `fire {event}` (debug, ignores triggers and eligibility), `setContext {danger?, faction?}`, `openNotice`, `dismissNotice`,
 `setFlag` (debug). **Events** (output only): `story.started {event, mode, notice}`, `story.resolved {event, choice, success}`,
 `story.effect {event, effect, text}`. `?hook` exposes `__cc.fireEvent(id)`, `setFlag`, `setContext`, `story()`.
 
-**Pipeline:** `storySystem` runs last: lapses notices, the periodic draw, starts due queued events. Everything else happens in
+**Pipeline:** `storySystem` runs last (not in hyperspace): lapses notices, starts due queued events (a flag-queued decision waits for hyperspace; `galaxy/storyHop.ts` pumps the queue there). Everything else happens in
 command handlers. **UI:** `app/storySnapshot.ts` builds `UiStory`; the bridge pauses the game while a decision is open (and
 answering it, `chooseStory`, restores the speed); `ui/StoryModal.svelte` is a centred card on desktop and a bottom sheet at <= 600px;
 notices arrive through `alerts.ts` (`UiAlert.notice`).
@@ -876,7 +874,8 @@ ties on time then node id, over discovered nodes.
   `advanceTravel`) and emits `galaxy.turn`; NPC movement runs there (see NPC traffic below). The map's glide between nodes is a fixed 700 ms tween in the view, not sim time.
 - **Fuel in hyperspace** is read from and burnt in the packet (`galaxy/fuel.ts`: `fuelStock`, `burnFuel`, `ftlCharge`), each hop's fuel as it is entered. A route may start
   with fuel for its first hop only; the trip stops (`noFuel`, event `galaxy.stalled`) at the last node reached when the next hop cannot be paid, and waits there.
-  `galaxy.current` and `sector.node` move as each node is passed; the arrival scan, `story.context` and the owed story draw (`pendingDraw`) follow.
+  `galaxy.current` and `sector.node` move as each node is passed; the arrival scan and `story.context` follow, then the hop's interdiction check and story draw.
+- **Story events in transit** (user, 2026-10-23: they used to pop up while idle, from a periodic draw every ~3 minutes and an arrival draw at deploy). `galaxy/storyHop.ts`: after a hop that did not interdict, a due queued follow-up opens, else one roll (`STORY_HOP_CHANCE` 0.2, `STORY_ANCHOR_CHANCE` 0.5 on an anchored lane; user, 2026-10-24) draws from the `transit` pool. A decision holds the trip (`Travel.phase 'story'`, `held 'hopEnd'` resumes the hop's end; mid-hop `held 'hop'`) until `story.choose`; `galaxy.drop` is refused (`inStory`). Notices do not hold. Physical outcomes are still only recorded, so no outcome needs a node. Save v43. **Packet-aware:** in hyperspace the ship's crew and cargo are packet data, so story requirements, odds, pools and effects run inside `story/world.ts` `withPlayerAboard` (the packet's entities are restored into the world under their ids, used, and lifted back; re-entrant, a plain call in a node). Every effect kind works on the packet; only item overflow differs (no floor to spill on, so what does not fit in storage is lost) and `physical` stays a log entry.
 - **`galaxy.drop`** ends the trip. At a node (the end, stalled) it drops at once; mid-hop it cuts the route after the hop under way and drops at the next node on arrival
   (the ship is in a lane, not at a node, and falling back would waste the hop's fuel). Dropping restores the node's archive (`dropOut`), or on the first entry makes its
   generated contacts real ships (the node's archive owns them once left), and the ship waits in state `'deploying'`; `sector.deploy` places it (the deploy picker),

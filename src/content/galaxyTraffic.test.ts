@@ -72,7 +72,7 @@ describe('turn clock', () => {
     expect(sim.galaxy.turn).toBe(1);
     expect(sim.galaxy.turnClock).toBe(0);
     // Hyperspace and deploying do not run the clock.
-    while (sim.sector.state === 'hyperspace' && sim.galaxy.travel?.phase === 'hop') step(sim);
+    while (sim.sector.state === 'hyperspace' && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story')) { step(sim); sim.story.active = null; }
     sim.enqueue({ type: 'galaxy.drop' });
     step(sim, 3);
     step(sim, 2000);
@@ -135,7 +135,7 @@ describe('fleets in the player\'s node', () => {
     expect(others(sim)).toEqual([]);
     const archive = sim.archives.find((a) => a.node === START_NODE);
     expect(archive?.entities.some((e) => (e.c as Record<string, { faction?: string }>).ShipC?.faction === 'traders')).toBe(false);
-    while ((sim.galaxy.travel as { phase: string } | null)?.phase === 'hop') step(sim);
+    while (['hop', 'story'].includes((sim.galaxy.travel as { phase: string } | null)?.phase ?? '')) { step(sim); sim.story.active = null; }
     sim.enqueue({ type: 'galaxy.drop' });
     step(sim);
     deploy(sim);
@@ -145,7 +145,7 @@ describe('fleets in the player\'s node', () => {
     giveItems(sim, 'item.fuel', 50);
     sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [START_NODE] });
     step(sim);
-    while ((sim.galaxy.travel as { phase: string } | null)?.phase === 'hop') step(sim);
+    while (['hop', 'story'].includes((sim.galaxy.travel as { phase: string } | null)?.phase ?? '')) { step(sim); sim.story.active = null; }
     sim.enqueue({ type: 'galaxy.drop' });
     step(sim);
     // Back at the start: its archive returns and the fleet's ship appears once (from the descriptor, not the archive).
@@ -208,7 +208,7 @@ describe('crossings and encounters', () => {
     while (passingMeets(sim, sim.galaxy.nextFleet, sim.galaxy.turn + 1) !== passes) sim.galaxy.nextFleet++;
     const f = fleet(sim, to, { faction, role, ...make(to, START_NODE), dwell: 0 });
     const events = step(sim, 1);
-    while (sim.galaxy.travel?.phase === 'hop') events.push(...step(sim));
+    while ((sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story')) { events.push(...step(sim)); sim.story.active = null; }
     return { sim, f, events, to, next };
   }
 

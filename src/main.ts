@@ -174,6 +174,7 @@ const api: UiApi = {
   alerts: controller.alerts.list,
   log: controller.log.list,
   combat: bridge.combat,
+  ftl: bridge.ftl,
   shuttles: bridge.shuttles,
   trade: bridge.trade,
   prizes: bridge.prizes,
@@ -248,8 +249,5 @@ const api: UiApi = {
       .catch((e: unknown) => errorLog.push(e));
   },
 };
-
-// Periodic events: one draw about every 3 minutes of play. Danger tier and territory follow the current starmap node.
-bridge.dispatch({ type: 'story.setContext', periodicSec: 180 });
 
 mount(App, { target, props: { api } });

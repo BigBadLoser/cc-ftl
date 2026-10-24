@@ -6,6 +6,7 @@ import { playerStock } from './world';
 import { deserialize, serialize } from '../save';
 import { TICK_HZ } from '../time';
 import type { EventDef } from './defs';
+import { pump } from './engine';
 import { spawnShip } from '../combat/ships';
 import { createCrew } from '../crew/spawn';
 import type { ContentRegistry, ModuleDef } from '../registry';
@@ -352,6 +353,9 @@ describe('chaining and arcs', () => {
     run(sim, 9 * TICK_HZ);
     expect(sim.story.active).toBeNull();
     run(sim, 2 * TICK_HZ);
+    expect(sim.story.active).toBeNull(); // due, but a flag-queued decision opens only in transit
+    sim.sector.state = 'hyperspace';
+    pump(sim);
     expect(sim.story.active?.event).toBe('back');
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '.';
-import { newGame, unmetReasons, type EventDef, type EventEffect, type Outcome, type Requirement } from '../sim';
+import { giveItems } from '../sim/story/effects';
+import { CombatC, FTL_CHARGE_SEC, START_NODE, galaxyIndex, newGame, playerShip, unmetReasons, type EventDef, type EventEffect, type Outcome, type Requirement } from '../sim';
 
 const defs = Object.entries<EventDef>(content.events);
 const outcomes = (): Outcome[] => defs.flatMap(([, d]) => (d.choices ?? []).flatMap((c) => [c.outcome, c.success, c.failure].filter((o): o is Outcome => !!o)));
@@ -73,6 +74,17 @@ describe('event content', () => {
     sim.enqueue({ type: 'story.choose', choice: 'spare' });
     sim.step();
     for (let i = 0; i < 245 * 20; i++) sim.step();
+    // Due now, but follow-ups wait for hyperspace (storyHop.ts): it opens at the next hop.
+    expect(sim.story.active).toBeNull();
+    expect(sim.story.queue.map((q) => q.event)).toContain('event.pirate_returns');
+    sim.galaxy.fleets = [];
+    giveItems(sim, 'item.fuel', 20);
+    const c = sim.world.get(playerShip(sim), CombatC);
+    if (c) c.ftl = FTL_CHARGE_SEC;
+    const next = (galaxyIndex(sim.galaxy).adjacent.get(START_NODE) ?? []).map((e) => (e.a === START_NODE ? e.b : e.a)).sort()[0] as string;
+    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [next] });
+    for (let i = 0; i < 20000 && !sim.story.active; i++) sim.step();
     expect(sim.story.active?.event).toBe('event.pirate_returns');
-  });
+    expect(sim.galaxy.travel?.phase).toBe('story');
+  }, 60000);
 });

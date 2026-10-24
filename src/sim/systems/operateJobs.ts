@@ -1,16 +1,18 @@
 import { JobC } from '../crew/components';
 import { releaseAssignment } from '../crew/helpers';
-import { IonC } from '../combat/components';
+import { CombatC, IonC } from '../combat/components';
 
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
 import { shipById } from '../combat/ships';
+import { chargeOrdered, seatHelms } from '../ftl/order';
 
 /**
  * Opens one 'operate' job (category operating) per console while it is needed and drops it when it is not.
- * A console is needed during combat while its ship is active, the console is powered and intact.
+ * A console is needed during combat while its ship is active, the console is powered and intact; outside combat the helm is needed while
+ * a charge order stands (`ftl.charge`), and `seatHelms` sends the best free pilot (else any crew) to it.
  * Crew who hold the job stand on the access tile ("manning" the console, see combat/operators).
  * Seam: automation (AI core tiers) would stand in for missing operators here, at reduced efficiency.
  */
@@ -26,7 +28,9 @@ export function operateJobsSystem(sim: Sim): void {
     if (job.reservedBy) releaseAssignment(sim, job.reservedBy);
     sim.world.destroyEntity(jobId);
   }
-  if (!sim.sector.inCombat) return;
+  // Nothing to open outside combat unless a charge order stands.
+  if (!sim.sector.inCombat && !sim.world.query(CombatC).some((id) => sim.world.get(id, CombatC)?.ftlOrder)) return;
+  const fresh = new Set<number>();
   for (const id of sim.world.query(ModuleC)) {
     if (open.has(id) || !consoleNeeded(sim, id)) continue;
     const m = sim.world.get(id, ModuleC);
@@ -38,12 +42,17 @@ export function operateJobsSystem(sim: Sim): void {
       category: 'operating', kind: 'operate', x: at.x, y: at.y, struct: 0, work: 1, progress: 0,
       reservedBy: 0, target: id,
     });
+    fresh.add(job);
   }
+  seatHelms(sim, fresh);
 }
 
 function consoleNeeded(sim: Sim, id: number): boolean {
   const m = sim.world.get(id, ModuleC);
-  if (!m || !sim.sector.inCombat || !sim.content.modules[m.def]?.console) return false;
+  const console = m && sim.content.modules[m.def]?.console;
+  if (!m || !console) return false;
+  // Outside combat only an ordered drive charge (`ftl.charge`) needs a console: the helm.
+  if (!sim.sector.inCombat && !(console === 'helm' && chargeOrdered(sim, shipIdOf(sim, m)))) return false;
   if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC)) return false;
   return shipById(sim, shipIdOf(sim, m))?.state === 'active';
 }

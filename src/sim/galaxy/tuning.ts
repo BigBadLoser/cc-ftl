@@ -150,6 +150,13 @@ export const FLEET_START_REST = 10;
 export const TRADE_GUESTS = 3;
 /** Tries at finding a generator seed whose hull family is the size class a roster slot asked for. */
 export const SEED_TRIES = 48;
+/**
+ * Story events (storyHop.ts): the chance a finished hop draws one, and on a lane with a mid-lane anchor. Before, every trip drew one on arrival
+ * (certain) plus a timed draw about every 3 minutes wherever the ship sat; now only hops draw: one in five plain hops, one in two anchored lanes
+ * (user, 2026-10-24: 50% per hop was too often; a 3-hop trip averages 0.6 events).
+ */
+export const STORY_HOP_CHANCE = 0.2;
+export const STORY_ANCHOR_CHANCE = 0.5;
 /** Chance a non-hostile fleet crossing the player produces a hail or scan (distress always offers help; hostile interdictions always happen). */
 export const PASSING_ENCOUNTER_CHANCE = 0.12;
 /** At most this many ships other than the player's are in a live node when a fleet's ships materialise (the sector is small; the rest wait as descriptors). */

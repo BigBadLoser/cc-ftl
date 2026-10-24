@@ -19,7 +19,7 @@ const jumpTo = (sim: Sim, ...route: string[]) => sim.enqueue({ type: 'galaxy.jum
 /** Run a trip to its last node and drop out of hyperspace. */
 const land = (sim: Sim) => {
   sim.step();
-  for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && sim.galaxy.travel?.phase === 'hop'; i++) sim.step();
+  for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) { sim.step(); sim.story.active = null; }
   sim.enqueue({ type: 'galaxy.drop' });
   sim.step();
 };
