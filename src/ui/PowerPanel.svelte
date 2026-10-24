@@ -6,6 +6,7 @@
   let { api, m, mods, onBack }: { api: UiApi; m: UiModule; mods: UiModule[]; onBack: () => void } = $props();
   /** Every power consumer of the ship in the order the power system serves them (lower number first, ties by id). */
   const order = $derived.by(() => {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a temporary built inside $derived, never mutated after
     const groups = new Map<string, { key: string; prio: number; name: string; n: number; draw: number; me: boolean; dark: boolean }>();
     for (const x of mods.filter((y) => y.power < 0).sort((a, b) => a.powerPriority - b.powerPriority || a.id - b.id)) {
       const key = `${x.powerPriority}|${x.name}`;
