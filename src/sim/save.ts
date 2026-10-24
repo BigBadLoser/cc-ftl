@@ -54,8 +54,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v41: `Combat.cruisePilot` / `Combat.cruiseEvasion` (evade odds outside combat).
  * v42: base logistics and the living world in one save.
  * v43 (story events in transit): no `galaxy.pendingDraw`, no `story.periodicSec` / `nextPeriodic`, `Travel.phase` 'story' and `Travel.held` 'hopEnd'.
+ * v44: `Combat.ftlOrder` (the standing `ftl.charge` order and its queued jump).
  */
-export const SAVE_VERSION = 43;
+export const SAVE_VERSION = 44;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

@@ -1,10 +1,11 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
+import { buildFtl } from './ftlSnapshot';
 import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildMining } from './miningSnapshot';
@@ -72,6 +73,7 @@ export interface Bridge {
   storages: Readable<UiStorage[]>;
   fabs: Readable<UiFab[]>;
   combat: Readable<UiCombat>;
+  ftl: Readable<UiFtl | null>;
   shuttles: Readable<UiShuttles>;
   trade: Readable<UiTrade>;
   prizes: Readable<UiPrize[]>;
@@ -124,6 +126,8 @@ export function createBridge(sim: Sim): Bridge {
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
+  const ftl = createStore<UiFtl | null>(null);
+  let lastFtl = '';
   const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
   let lastTrade = '';
@@ -231,6 +235,14 @@ export function createBridge(sim: Sim): Bridge {
     lastCombat = key;
     combat.set(snap);
   };
+  const refreshFtl = () => {
+    if (combatFrame % 3) return;
+    const snap = buildFtl(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastFtl) return;
+    lastFtl = key;
+    ftl.set(snap);
+  };
   const refreshShuttles = () => {
     if (combatFrame % 3) return;
     const snap = buildShuttles(sim);
@@ -334,6 +346,7 @@ export function createBridge(sim: Sim): Bridge {
     storages,
     fabs,
     combat,
+    ftl,
     shuttles,
     trade,
     prizes,
@@ -396,6 +409,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshPrizes();
       refreshMining();
       refreshCombat();
+      refreshFtl();
       refreshStory();
       refreshDeploy();
       refreshStarmap();

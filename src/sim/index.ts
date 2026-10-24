@@ -105,6 +105,7 @@ export type {
 export { galaxyIndex, nodeOf, currentNode, START_NODE, type GalaxyIndex } from './galaxy/state';
 export { edgeBetween, planStarRoute } from './galaxy/route';
 export { jumpBlocker } from './galaxy/travel';
+export { ftlStatus, ftlBlocker, type FtlStatus, type FtlBlock, type FtlState } from './ftl/status';
 export { FUEL_ITEM, burnFuel, fuelStock, ftlCharge } from './galaxy/fuel';
 export { routeEdges, routeBlocker, routeCharge, hopTicksOf } from './galaxy/hyperspace';
 export { standing, standings, tierOf, isHostileFaction } from './galaxy/standing';

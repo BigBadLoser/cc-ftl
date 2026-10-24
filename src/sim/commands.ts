@@ -176,6 +176,10 @@ export type Command =
   | { type: 'galaxy.jump'; ship: number; route: string[]; withDocked?: number[] }
   /** End the hyperspace trip at the node last passed: its archive comes back (or its ships appear on the first visit) and the ship waits to deploy. */
   | { type: 'galaxy.drop' }
+  /** Charge the drive: post the helm job (the best free pilot, else any crew, walks over and sits). With `jump`, fly that route (without the current node) once charged. */
+  | { type: 'ftl.charge'; ship: number; jump?: string[]; withDocked?: number[] }
+  /** Cancel the charge order and any queued jump. */
+  | { type: 'ftl.cancelCharge'; ship: number }
   /**
    * Answer a pending encounter (galaxy/respond.ts): an interdiction takes `evade` (a seeded roll against the fleet), `bribe` (credits) or `fight`
    * (the event grid opens); a distress call `respond` (an event grid with the damaged fleet) or `ignore`; a hail or scan `acknowledge`.
