@@ -86,7 +86,10 @@ export function buildFabs(sim: Sim): UiFab[] {
       return {
         recipe: o.recipe, name: recipe?.name ?? o.recipe, mode: o.mode, target: o.target, done: o.done,
         have: first ? have(first.item) : 0, active,
-        missing: (recipe?.inputs ?? []).filter((q) => have(q.item) < q.count).map((q) => nameOf(sim, q.item)),
+        // the batch in progress already holds what was hauled to it
+        missing: (recipe?.inputs ?? [])
+          .filter((q) => have(q.item) + (active ? (job?.delivered?.find((d) => d.item === q.item)?.count ?? 0) : 0) < q.count)
+          .map((q) => nameOf(sim, q.item)),
       };
     });
     let state: NonNullable<UiFab['job']> | null = null;

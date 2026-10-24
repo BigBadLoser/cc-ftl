@@ -5,8 +5,9 @@ import type { UiFood, UiStock } from '../ui/api';
 const FALLBACK_NUTRITION = 50;
 
 /**
- * The crew's food situation: food units in stock (every item with `food`), how many player crew eat, how fast
- * they use it and how long it lasts at that rate. `stock` is the output of buildStock (floor + stored + carried).
+ * The crew's food situation: food units in storage (every item with `food`), how many player crew eat, how fast
+ * they use it and how long it lasts at that rate. `stock` is the output of buildStock; only its `stored` counts,
+ * because crew eat from storage alone (food on the floor or in hand waits to be hauled).
  * The rate is the awake decay (sleepers eat half as fast), so the estimate errs on the short side.
  */
 export function buildFood(sim: Sim, stock: readonly UiStock[]): UiFood {
@@ -15,7 +16,7 @@ export function buildFood(sim: Sim, stock: readonly UiStock[]): UiFood {
   for (const s of stock) {
     const food = sim.content.items[s.item]?.food;
     if (!food) continue;
-    const n = s.floor + s.stored + s.carried;
+    const n = s.stored;
     units += n;
     nutrition += n * food.nutrition;
   }
