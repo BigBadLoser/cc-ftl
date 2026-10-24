@@ -2,12 +2,15 @@
  * Heat: the player's notoriety and the hunters it brings (user decisions 2026-10-24, issue #52). Danger itself never scales with the player's ship:
  * distance sets the baseline (`dangerAt`), notoriety is what the player has done, and faction standing decides who comes for them.
  *
- * Notoriety is one number. Destroying or capturing a ship adds KILL_NOTORIETY by the victim faction's tier before the kill (a hostile ship that attacked
- * is almost free, a friendly one is piracy), a station adds STATION_NOTORIETY, and each costs the victim faction KILL_REPUTATION. Every turn it decays by
+ * Notoriety is one number. Destroying or capturing a ship adds KILL_NOTORIETY by the victim faction's tier before the kill (a friendly one is piracy),
+ * a station adds STATION_NOTORIETY, and each costs the victim faction KILL_REPUTATION. Outlaws (OUTLAW_KINDS) add none: shooting pirates who
+ * attack you is self-defence, though they remember it. Every turn it decays by
  * NOTORIETY_DECAY of itself (at least NOTORIETY_DECAY_MIN). At a pirate den it can be paid off for CLEAR_COST_PER_POINT credits a point.
  * From WANTED_AT the law (LAW_KINDS) treats the player as hostile.
  */
-export const KILL_NOTORIETY = { friendly: 8, neutral: 5, hostile: 1 } as const;
+export const KILL_NOTORIETY = { friendly: 8, neutral: 5, hostile: 2 } as const;
+/** Victims of these faction kinds add no notoriety (they still lose reputation, so they still hunt). */
+export const OUTLAW_KINDS: readonly string[] = ['pirates', 'rogue'];
 export const STATION_NOTORIETY = 15;
 /** Capturing a ship counts this many times a kill. */
 export const CAPTURE_FACTOR = 1.5;
@@ -40,6 +43,9 @@ export const HUNT_BUDGET_MAX = 12;
 export const HUNT_SHIPS_PER = 4;
 export const HUNT_SHIPS_MAX = 4;
 export const HUNT_TURNS = 15;
+/** A hunter's bribe is the usual one times min(HUNT_BRIBE_MAX, 1 + HUNT_BRIBE_PER_PRESSURE x pressure): buying off a faction that wants you badly is dear. */
+export const HUNT_BRIBE_PER_PRESSURE = 0.5;
+export const HUNT_BRIBE_MAX = 3;
 
 /**
  * The start-area floor (#45): nodes up to SCAVENGER_MAX_DANGER, where the traffic pool holds nobody hostile, still see a lone scavenger of

@@ -109,8 +109,7 @@ export { ftlStatus, ftlBlocker, type FtlStatus, type FtlBlock, type FtlState } f
 export { FUEL_ITEM, burnFuel, fuelStock, ftlCharge } from './galaxy/fuel';
 export { routeEdges, routeBlocker, routeCharge, hopTicksOf } from './galaxy/hyperspace';
 export { standing, standings, tierOf, isHostileFaction } from './galaxy/standing';
-export { clearBlocker, clearCost, grudgeOf, isWanted, notorietyOf } from './galaxy/heat';
-export { huntPressure } from './galaxy/hunters';
+export { clearBlocker, clearCost, grudgeOf, huntPressure, isWanted, notorietyOf } from './galaxy/heat';
 export { WANTED_AT } from './galaxy/tuningHeat';
 export { galaxyGen, chunkOfId } from './galaxy/generator';
 export { SENSOR_HOPS, DANGER_STEP } from './galaxy/tuning';

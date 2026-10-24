@@ -6,9 +6,10 @@ import { portsAt } from './portIndex';
 import { repKey, tierOf } from './standing';
 import { nodeState } from './state';
 import {
-  CAPTURE_FACTOR, CLEAR_COST_PER_POINT, KILL_NOTORIETY, KILL_REPUTATION, LAW_KINDS, NOTORIETY_DECAY, NOTORIETY_DECAY_MIN, NOTORIETY_MAX,
-  STATION_NOTORIETY, WANTED_AT,
+  CAPTURE_FACTOR, CLEAR_COST_PER_POINT, GRUDGE_WEIGHT, KILL_NOTORIETY, KILL_REPUTATION, LAW_KINDS, NOTORIETY_DECAY, NOTORIETY_DECAY_MIN, NOTORIETY_MAX,
+  NOTORIETY_WEIGHT, OUTLAW_KINDS, STATION_NOTORIETY, WANTED_AT,
 } from './tuningHeat';
+import type { FleetRole } from './defs';
 import type { Contact } from './types';
 
 /**
@@ -27,6 +28,23 @@ export const isLaw = (sim: Sim, faction: string): boolean => LAW_KINDS.includes(
  * reputation key share their grudge.
  */
 export const grudgeOf = (sim: Sim, faction: string): number => Math.max(0, -reputationOf(sim.story, repKey(sim, faction)));
+
+const ARMED_ROLES: readonly FleetRole[] = ['patrol', 'pirate', 'raider'];
+
+/** The armed role a faction hunts with, or null when it fields none. */
+export function huntRole(sim: Sim, faction: string): FleetRole | null {
+  const groups = sim.content.galaxy?.factions[faction]?.fleet?.groups ?? {};
+  return ARMED_ROLES.find((r) => groups[r]) ?? null;
+}
+
+/** How hard the faction wants the player (0 = not at all). */
+export function huntPressure(sim: Sim, faction: string): number {
+  if (!huntRole(sim, faction) || tierOf(sim, faction) !== 'hostile') return 0;
+  let p = GRUDGE_WEIGHT * grudgeOf(sim, faction);
+  const n = sim.galaxy.heat.notoriety;
+  if (isLaw(sim, faction) && n >= WANTED_AT) p += 1 + NOTORIETY_WEIGHT * (n - WANTED_AT);
+  return Math.round(p * 100) / 100;
+}
 
 export function addNotoriety(sim: Sim, delta: number, faction: string | null = null): void {
   const h = sim.galaxy.heat;
@@ -67,7 +85,9 @@ function charge(sim: Sim, id: number, ship: Ship, captured: boolean): void {
   const faction = factionOfShip(sim, id, ship);
   const def = faction ? sim.content.galaxy?.factions[faction] : undefined;
   const tier = faction ? tierOf(sim, faction) : factionsHostile(ship.faction, 'player') ? 'hostile' : 'neutral';
-  let n = ship.immobile ? STATION_NOTORIETY : def?.alwaysHostile ? 0 : KILL_NOTORIETY[tier];
+  // Outlaws (pirates, the rogue AI) are fair game: the law does not mind, though they remember it (the reputation below).
+  const outlaw = def?.alwaysHostile || OUTLAW_KINDS.includes(def?.kind ?? '');
+  let n = outlaw ? 0 : ship.immobile ? STATION_NOTORIETY : KILL_NOTORIETY[tier];
   if (captured) n *= CAPTURE_FACTOR;
   if (faction) {
     const key = repKey(sim, faction);

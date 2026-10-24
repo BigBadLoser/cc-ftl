@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, tierOf, type Sim } from '../sim';
 import { wreckShip } from '../sim/combat/wreck';
-import { addNotoriety, clearBlocker, clearCost, grudgeOf, tallyLosses } from '../sim/galaxy/heat';
-import { dispatchHunters, huntPressure } from '../sim/galaxy/hunters';
+import { addNotoriety, clearBlocker, clearCost, grudgeOf, huntPressure, tallyLosses } from '../sim/galaxy/heat';
+import { dispatchHunters } from '../sim/galaxy/hunters';
 import { encounterKind } from '../sim/galaxy/encounters';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { ensureAround } from '../sim/galaxy/state';
@@ -37,9 +37,16 @@ describe('notoriety', () => {
     expect(sim.world.get(pirate, ShipC)?.killedBy).toBe('player');
     tallyLosses(sim);
     tallyLosses(sim);
-    // Pirates are hostile from the start: killing one is nearly free, but they remember it.
-    expect(sim.galaxy.heat.notoriety).toBe(KILL_NOTORIETY.hostile);
+    // Pirates are outlaws: shooting one is self-defence as far as the law cares, but they remember it.
+    expect(sim.galaxy.heat.notoriety).toBe(0);
     expect(grudgeOf(sim, 'pirates')).toBe(1);
+    // A civilian hull (flown by several factions, so nobody in particular) counts as a neutral kill.
+    const other = newGame(3, content);
+    const hauler = spawn(other, 'faction.civilian');
+    target(other, hauler);
+    wreckShip(other, hauler);
+    tallyLosses(other);
+    expect(other.galaxy.heat.notoriety).toBe(KILL_NOTORIETY.neutral);
   });
 
   it('does not count a ship the player was not shooting at', () => {

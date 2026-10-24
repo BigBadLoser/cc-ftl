@@ -3,16 +3,15 @@ import type { FleetRole } from './defs';
 import { materialiseFleet } from './fleetShips';
 import { nodesWithin } from './graph';
 import { strHash, unit } from './hash';
-import { grudgeOf, isLaw } from './heat';
+import { huntPressure, huntRole } from './heat';
 import { fleetName } from './names';
 import { report } from './news';
 import { portsAt } from './portIndex';
 import { makeHunters } from './roster';
-import { tierOf } from './standing';
 import { nodeOf } from './state';
 import {
-  GRUDGE_WEIGHT, HUNT_BUDGET_BASE, HUNT_BUDGET_MAX, HUNT_BUDGET_PER_PRESSURE, HUNT_COOLDOWN, HUNT_MAX_CHANCE, HUNT_PER_PRESSURE, HUNT_RANGE,
-  HUNT_SHIPS_MAX, HUNT_SHIPS_PER, HUNT_TURNS, MAX_HUNTERS, NOTORIETY_WEIGHT, WANTED_AT,
+  HUNT_BUDGET_BASE, HUNT_BUDGET_MAX, HUNT_BUDGET_PER_PRESSURE, HUNT_COOLDOWN, HUNT_MAX_CHANCE, HUNT_PER_PRESSURE, HUNT_RANGE,
+  HUNT_SHIPS_MAX, HUNT_SHIPS_PER, HUNT_TURNS, MAX_HUNTERS,
 } from './tuningHeat';
 
 /**
@@ -24,23 +23,6 @@ import {
  */
 
 const SALT = 0x4e7;
-const ARMED_ROLES: readonly FleetRole[] = ['patrol', 'pirate', 'raider'];
-
-/** The armed role a faction hunts with, or null when it fields none. */
-function huntRole(sim: Sim, faction: string): FleetRole | null {
-  const groups = sim.content.galaxy?.factions[faction]?.fleet?.groups ?? {};
-  return ARMED_ROLES.find((r) => groups[r]) ?? null;
-}
-
-/** How hard the faction wants the player (0 = not at all). */
-export function huntPressure(sim: Sim, faction: string): number {
-  if (!huntRole(sim, faction) || tierOf(sim, faction) !== 'hostile') return 0;
-  let p = GRUDGE_WEIGHT * grudgeOf(sim, faction);
-  const n = sim.galaxy.heat.notoriety;
-  if (isLaw(sim, faction) && n >= WANTED_AT) p += 1 + NOTORIETY_WEIGHT * (n - WANTED_AT);
-  return Math.round(p * 100) / 100;
-}
-
 /** The faction's nearest port to the player that can field `role`, within HUNT_RANGE jumps. */
 function nearestPort(sim: Sim, faction: string, role: FleetRole) {
   for (const node of nodesWithin(sim, sim.galaxy.current, HUNT_RANGE).keys()) {
