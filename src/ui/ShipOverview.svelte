@@ -8,7 +8,7 @@
   import ShipMeters from './ShipMeters.svelte';
 
   let { api, stockOpen, onStock, onClose }: { api: UiApi; stockOpen: boolean; onStock: () => void; onClose: () => void } = $props();
-  let st = $state<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, o2: null });
+  let st = $state<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null });
   let stock = $state<UiStock[]>([]);
   let credits = $state(0);
   let crew = $state<UiCrew[]>([]);
@@ -56,6 +56,15 @@
       <span class="fs">Eating {st.food.perHour}/h for {st.food.eaters} crew: food for <b>{foodTime}</b></span>
     </div>
   {/if}
+  {#if st.heat.notoriety > 0 || st.heat.hunters.length}
+    <div class="food heat" class:low={!st.heat.wanted} class:out={st.heat.wanted} data-testid="stat-heat" data-wanted={st.heat.wanted}>
+      <span class="ft">Notoriety <b>{st.heat.notoriety}</b>{#if st.heat.wanted} · <b>wanted by the law</b>{:else} <span class="fs">(wanted from {st.heat.wantedAt})</span>{/if}</span>
+      {#if st.heat.hunters.length}<span class="fs">Hunted by <b>{st.heat.hunters.join(', ')}</b></span>{/if}
+      {#if st.heat.clearBlocker === null || st.heat.clearBlocker === 'cantAfford'}
+        <button class="pay" data-testid="heat-clear" disabled={st.heat.clearBlocker !== null} onclick={() => api.dispatch({ type: 'galaxy.clearNotoriety' })}>Pay the den to clear it ({st.heat.clearCost} cr)</button>
+      {/if}
+    </div>
+  {/if}
   {#if ftl}<div class="drive"><FtlCharge {ftl} testid="overview-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: ftl!.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: ftl!.ship })} /></div>{/if}
   {#if combat.player}<div class="meters"><ShipMeters ship={combat.player} compact /></div>{/if}
 </aside>
@@ -73,6 +82,8 @@
   .food .fs { color: var(--dim); font-size: 12px; }
   .food.low { border-color: #ffb43c; } .food.low b { color: #ffb43c; }
   .food.out { border-color: var(--red); } .food.out b { color: var(--red); }
+  .heat .pay { margin-top: 4px; padding: 6px 8px; background: var(--panel-3); border: 1px solid var(--line); color: var(--text); font: inherit; cursor: pointer; }
+  .heat .pay:disabled { color: var(--dim); cursor: default; }
   .drive { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
   .meters { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
   @media (max-width: 600px) { :global(html[data-combat]) .over { display: none; } .over { bottom: auto; left: 8px; right: calc(46px + var(--sar)); width: auto; border-width: 1px; padding: 10px; } }

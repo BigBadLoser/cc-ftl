@@ -1,4 +1,5 @@
 /** Starmap view data (published by app/starmapSnapshot.ts). Plain data; map units, y down. */
+import type { UiHeat } from './api';
 
 /** A theme colour by token name (`--cyan`...): the view maps it through `starmapStyle.ts`; the data holds no CSS. */
 export type Tone = 'cyan' | 'amber' | 'green' | 'red' | 'text' | 'dim';
@@ -195,6 +196,8 @@ export interface UiStarmap {
   news: UiNews[];
   /** The player's credits (what a bribe costs is compared to this), pending encounters, the event grid and how the last encounter ended. */
   credits: number;
+  /** The player's notoriety and who hunts them. */
+  heat: UiHeat;
   encounters: UiEncounter[];
   event: UiEventGrid | null;
   result: UiEncounterResult | null;

@@ -145,9 +145,9 @@ export interface WreckSeed {
 /**
  * What the news log reports (news.ts). `destroyed`: `who` destroyed `foe`; `driven`: `who` drove `foe` off; `clash`: `who` and `foe` fought to a bloody draw;
  * `raid`: `who` raided a den and destroyed `foe`; `cut`: a trade route is cut, `foe` (a trader) was lost near here; `loot`: `who` took `count` of `item`
- * from `foe`; `shortage`: the port here is short of `item`; `rebuilt`: `who` was launched from the port here.
+ * from `foe`; `shortage`: the port here is short of `item`; `rebuilt`: `who` was launched from the port here; `hunt`: `who` set out from here after the player.
  */
-export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt';
+export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt' | 'hunt';
 
 export interface NewsItem {
   id: number;
@@ -229,6 +229,10 @@ export interface Fleet {
   cargo?: ItemQty[];
   /** The node a trader bought its cargo for: its next stop, if that is still a valid stop (agenda.ts). */
   pick?: string;
+  /** A hunter (hunters.ts): it follows the player until turn `until`, then stands down. */
+  hunt?: { until: number };
+  /** A hunter that has stood down: it heads home and is disbanded when it gets there. */
+  standDown?: true;
 }
 
 /**
@@ -310,6 +314,13 @@ export interface EncounterResult {
   cost?: number;
 }
 
+/** The player's notoriety and who last sent hunters after them (heat.ts, hunters.ts). */
+export interface HeatState {
+  notoriety: number;
+  /** Turn each faction last sent hunters, by galaxy faction id. */
+  hunted: Record<string, number>;
+}
+
 /** Mutable starmap state on the Sim (`sim.galaxy`), saved with the game. */
 export interface GalaxyState {
   current: string;
@@ -350,6 +361,7 @@ export interface GalaxyState {
   nextNews: number;
   /** Travel days spent in jumps. */
   days: number;
+  heat: HeatState;
   /** The hyperspace trip in progress, or null. */
   travel: Travel | null;
   /** Bumped on every change the starmap view shows. */

@@ -70,6 +70,10 @@ export interface Ship {
   hullMax: number;
   /** 0..1 overall integrity: wall integrity (lightly weighted) plus module hp. Updated by the ship-state system. */
   integrity: number;
+  /** Set by `wreckShip` when the player's guns were on it: the player destroyed it (galaxy/heat.ts counts it). */
+  killedBy?: 'player';
+  /** Its loss (destroyed by the player, or taken) has been counted towards the player's notoriety. */
+  tallied?: true;
   /** Set on generated ships: the faction, seed and depth they were generated from (the grid itself is saved). */
   gen?: GenOrigin;
   /** Set on derelicts: dressing data for the renderer (see ShipRuin). */

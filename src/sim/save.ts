@@ -57,8 +57,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v44: `Combat.ftlOrder` (the standing `ftl.charge` order and its queued jump).
  * v45: construction hauling carries several item types per trip (bigger carry capacity, chained haul jobs).
  * v46: `powerPriority` rename, Refine/Craft work categories split.
+ * v47 (danger layers): `GalaxyState.heat` (notoriety, last hunt per faction), `Fleet.hunt` / `standDown`, `Ship.killedBy` / `tallied`.
  */
-export const SAVE_VERSION = 46;
+export const SAVE_VERSION = 47;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

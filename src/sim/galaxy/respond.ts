@@ -1,4 +1,5 @@
 import type { Sim } from '../sim';
+import { headHome } from './agenda';
 import { bribeCost, evadeOdds } from './encounterOdds';
 import { finishEncounter } from './encounters';
 import { enterEvent, inEvent, leaveEvent } from './eventGrid';
@@ -57,6 +58,12 @@ export function respond(sim: Sim, id: number, choice: EncounterChoice, command =
     sim.trade.credits -= cost;
     const f = g.fleets.find((x) => x.id === e.fleet);
     if (f) f.met = g.turn;
+    // A bought-off hunter calls off the hunt.
+    if (f?.hunt) {
+      delete f.hunt;
+      f.standDown = true;
+      headHome(sim, f);
+    }
     sim.events.emit({ type: 'galaxy.bribed', id, cost, faction: e.faction });
     finishEncounter(sim, id, 'bribed', { cost });
     resume(sim);

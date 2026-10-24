@@ -19,13 +19,13 @@ import type { CrossingHow, Encounter, EncounterKind, Fleet } from './types';
  */
 
 /**
- * What a fleet wants of the player: pirates and raiders that are hostile to the player interdict; traders hail; patrols scan;
+ * What a fleet wants of the player: pirates, raiders and hunters (hunters.ts) that are hostile to the player interdict; traders hail; patrols scan;
  * a damaged (stranded) fleet that is not hostile calls for help.
  */
 export function encounterKind(sim: Sim, f: Fleet): EncounterKind {
   const hostile = isHostileFaction(sim, f.faction);
   if (f.damaged) return hostile ? 'hail' : 'distress';
-  if ((f.role === 'pirate' || f.role === 'raider') && hostile) return 'interdict';
+  if ((f.role === 'pirate' || f.role === 'raider' || f.hunt) && hostile) return 'interdict';
   if (f.role === 'patrol') return 'scan';
   return 'hail';
 }

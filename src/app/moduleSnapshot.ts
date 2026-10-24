@@ -2,6 +2,7 @@ import { CrewC, DeadC, ModuleC, PositionC, airlockSuits, roomTiles, type Sim } f
 import { buildRobotBay } from './robotSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import { buildFood } from './foodSnapshot';
+import { buildHeat } from './heatSnapshot';
 import { buildStock } from './logisticsSnapshot';
 import type { UiModule, UiModuleDef, UiStats } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
@@ -75,5 +76,5 @@ export function buildStats(sim: Sim): UiStats {
     }
     if (rooms.size) o2 = sum / rooms.size;
   }
-  return { supply, demand, food: buildFood(sim, buildStock(sim)), o2 };
+  return { supply, demand, food: buildFood(sim, buildStock(sim)), heat: buildHeat(sim), o2 };
 }

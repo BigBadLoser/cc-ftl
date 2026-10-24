@@ -1,6 +1,8 @@
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { expireEncounters } from './encounters';
+import { decayNotoriety } from './heat';
+import { dispatchHunters } from './hunters';
 import { stepFleets } from './fleets';
 import { stepLiveMarkets } from './marketLive';
 import { TURN_SEC } from './tuning';
@@ -19,7 +21,7 @@ export const TIME_TURN_TICKS = Math.round(TURN_SEC * TICK_HZ);
 /**
  * The per-turn hook, called once per turn with the new turn number (`GalaxyState.turn`, already advanced). It emits `galaxy.turn`
  * (`cause: 'time'` for a game-time turn, absent for a hop), expires old encounters, moves the live station's market one turn (marketLive.ts) and the NPC fleets one step
- * (fleets.ts).
+ * (fleets.ts), lets the player's notoriety decay and lets factions that want the player send hunters (heat.ts, hunters.ts).
  * Runs inside the sim step, so it may enqueue nothing and must only read and write sim state through the sim's own functions.
  */
 export function onTurn(sim: Sim, turn: number, cause: 'hop' | 'time' = 'hop'): void {
@@ -27,6 +29,8 @@ export function onTurn(sim: Sim, turn: number, cause: 'hop' | 'time' = 'hop'): v
   expireEncounters(sim, turn);
   stepLiveMarkets(sim, turn);
   stepFleets(sim, turn);
+  decayNotoriety(sim);
+  dispatchHunters(sim, turn);
 }
 
 /** A hop is entered: the next turn, and the game-time clock starts over. */

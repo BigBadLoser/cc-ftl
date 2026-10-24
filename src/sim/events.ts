@@ -195,6 +195,10 @@ export type SimEvent =
   | { type: 'galaxy.dropped'; node: string }
   | { type: 'galaxy.populated'; node: string; count: number }
   | { type: 'galaxy.news'; id: number; kind: string; node: string }
+  /** The player's notoriety changed (galaxy/heat.ts); `faction` is the victim's when a kill caused it. */
+  | { type: 'galaxy.notoriety'; value: number; delta: number; faction: string | null }
+  /** A faction sent a hunter fleet after the player (galaxy/hunters.ts). */
+  | { type: 'galaxy.hunt'; fleet: number; faction: string; node: string; ships: number }
   | { type: 'galaxy.discovered'; count: number }
   | { type: 'galaxy.shipArrived'; node: string; faction: string; ship: number | null }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */

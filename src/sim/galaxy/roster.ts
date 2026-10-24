@@ -127,6 +127,32 @@ export function makeFleet(
   };
 }
 
+/**
+ * A hunter fleet (hunters.ts) for the owner's armed `role` at a port: the owner's group for the role with its budget and ship count replaced, so the ships
+ * are the faction's usual hulls for this depth, only more of them. Null when the owner fields no such group or no ship fits.
+ */
+export function makeHunters(
+  sim: Sim, port: Port, faction: string, role: FleetRole, depth: number, key: readonly number[], budget: number, maxShips: number, turn: number,
+): Fleet | null {
+  const owner = sim.content.galaxy?.factions[faction];
+  const base = owner?.fleet?.groups[role];
+  if (!owner || !base) return null;
+  const table = tableFor(sim, owner, role, depth);
+  const h = (salt: number): number => unit(sim.seed, ...key, salt);
+  const sizes = groupSizes(sim, { ...base, budget: [{ value: budget, weight: 1 }], maxShips }, table, (salt) => h(10 + salt));
+  const used = usedNames(sim);
+  const ships: Contact[] = [];
+  sizes.forEach((size, i) => {
+    const c = makeShip(sim, owner, faction, table, size, depth, [...key, i], used);
+    if (c) ships.push(c);
+  });
+  if (!ships.length) return null;
+  return {
+    id: sim.galaxy.nextFleet++, faction, role, ships, home: port.id, node: port.node, from: port.node, moved: -1, route: [], dest: port.node,
+    dwell: 0, legs: 0, synced: turn,
+  };
+}
+
 /** A node of the same chunk next to `node` (for a fleet that should arrive rather than already be there). */
 function neighbour(chunk: ChunkData, node: string): string | null {
   const ids = new Set(chunk.nodes.map((n) => n.id));

@@ -8,6 +8,7 @@ import { ensureChunk, ensureChunkOf, galaxyIndex } from './state';
 import { drop, jump, teleport } from './hyperspace';
 import { discover } from './travel';
 import { leave, respond } from './respond';
+import { clearNotoriety } from './heat';
 
 type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl'>;
 type Handler<T extends GalaxyCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -17,6 +18,7 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
   'galaxy.drop': (sim) => void drop(sim),
   'galaxy.respond': (sim, cmd) => void respond(sim, cmd.encounter, cmd.choice),
   'galaxy.leaveEvent': (sim) => void leave(sim),
+  'galaxy.clearNotoriety': (sim) => void clearNotoriety(sim),
   'debug.galaxyReveal': (sim, cmd) => {
     const r = Math.max(0, Math.min(12, Math.floor(cmd.radius)));
     const [cx, cy] = (chunkOfId(sim.galaxy.current) ?? '0,0').split(',').map(Number) as [number, number];
