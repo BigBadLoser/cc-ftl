@@ -128,7 +128,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
 }
 
 const BLOCKERS: Record<string, string> = {
-  noRoute: 'No route there.', noShip: 'Your ship cannot jump.', notCharged: 'The FTL drive is still charging (a pilot at the helm charges it).',
+  noRoute: 'No route there.', noShip: 'Your ship cannot jump.', notCharged: 'The FTL drive is still charging (press Charge FTL to send a pilot to the helm).',
   noFuel: 'Not enough fuel for the first hop.',
 };
 

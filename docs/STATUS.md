@@ -708,6 +708,9 @@ Details in `tools/blender/README.md` (Crew layers, Incremental builds) and `docs
   (needs per-frame attachment offsets in the clip data); robots on the same per-clip layout and fixed frame; lazy loading of
   clip sheets (now about 200 crew images load up front).
 
+## Story events in transit (branch `playtest-events`, save v43)
+Fix for "events pop up while I'm idle in a node": the periodic draw (180 s in `main.ts`) and the arrival draw at deploy (`pendingDraw`) are gone; story events are drawn only at hyperspace hops (`galaxy/storyHop.ts`), hold the trip (`Travel.phase 'story'`) and never share a hop with an interdiction. Details in `docs/ARCHITECTURE.md` (Events). Open: lead notices still open their decision when tapped, even idle (player-initiated).
+
 ## Event system (branch `events`, based on `eva`; not merged; awaiting user approval of the in-game look)
 
 Design in `docs/DESIGN.md` (Exploration & events); schema and "adding an event" in `docs/ARCHITECTURE.md` (Events). Sim in

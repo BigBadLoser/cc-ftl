@@ -360,6 +360,23 @@ export interface UiShipCombat {
   modules: UiShipModule[];
 }
 
+/** The player's FTL drive and its charge order (the starmap's and the ship panel's Charge FTL button). */
+export interface UiFtl {
+  /** ShipC entity id: the `ship` of `ftl.charge`. */
+  ship: number;
+  /** idle, ordered but nobody seated yet, a crew member walking to the helm, charging at the helm, or full. */
+  state: 'idle' | 'waiting' | 'heading' | 'charging' | 'ready';
+  /** Why the drive cannot charge now (null = it can). */
+  blocker: 'noShip' | 'notActive' | 'noHelm' | 'helmOffline' | 'noEngines' | 'noCrewAboard' | null;
+  charge: number;
+  max: number;
+  /** A charge order stands, and a jump is queued behind it. */
+  ordered: boolean;
+  queued: boolean;
+  /** The crew member heading to or sitting at the helm. */
+  pilot: string | null;
+}
+
 export interface UiCombat {
   inCombat: boolean;
   player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[] }) | null;
@@ -689,6 +706,8 @@ export interface UiApi {
   /** Pick an option of the open decision and resume play. */
   chooseStory(choice: string): void;
   combat: Subscribable<UiCombat>;
+  /** The FTL drive and its charge order (null when the ship is not on the map). */
+  ftl: Subscribable<UiFtl | null>;
   /** Credits, hailable ships and stations, and the running deliveries. */
   trade: Subscribable<UiTrade>;
   shuttles: Subscribable<UiShuttles>;
