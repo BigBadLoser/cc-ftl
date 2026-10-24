@@ -8,6 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:quick": "vitest run --exclude 'src/**/*.slow.test.ts'",
+    "test:slow": "vitest run .slow.test",
     "test:fast": "vitest run --changed --passWithNoTests --exclude 'src/**/*.slow.test.ts'",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p . && svelte-check --tsconfig ./tsconfig.json",
