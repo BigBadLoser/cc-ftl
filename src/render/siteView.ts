@@ -15,6 +15,8 @@ import { alphaOf, moduleKey, type ModuleDefs } from './moduleView';
 
 /** Ghost look: a translucent cyan copy of the module's own sprite that fills in from the bottom as the work progresses. */
 const GHOST_ALPHA = 0.55;
+/** The built part: the real colours, still a little see-through so it reads as unfinished (user, 2026-10-24). */
+const FILL_ALPHA = 0.8;
 /** Colour matrices that turn the art into a glowing hologram (cyan, or amber when stuck); the fill blends back to the real colours as the work completes. */
 const HOLO_CYAN = [0.15, 0.3, 0.1, 0, 0.1, 0.35, 0.7, 0.2, 0, 0.4, 0.45, 0.8, 0.25, 0, 0.55, 0, 0, 0, 1, 0];
 const HOLO_AMBER = [0.5, 0.9, 0.3, 0, 0.45, 0.35, 0.6, 0.2, 0, 0.25, 0.1, 0.15, 0.05, 0, 0.02, 0, 0, 0, 1, 0];
@@ -190,7 +192,7 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
             p.fill.texture = crop(p.tex, p.h - done, done);
             p.fill.position.y = p.y + p.h - done;
             p.fill.tint = 0xffffff;
-            p.fill.alpha = 1;
+            p.fill.alpha = FILL_ALPHA;
           }
           // the bright line riding the fill edge
           const r0 = Math.max(0, line - EDGE_ROWS - p.y);
