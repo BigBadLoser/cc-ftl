@@ -10,5 +10,9 @@
   "feed_width": 1.02,
   "feed_depth": 1.42,
   "outlet_end": 1.86,
-  "condenser_v": 1.04
+  "condenser_v": 1.04,
+  "lid_gap": 0.025,
+  "clamp_width": 0.14,
+  "feed_well": 0.4,
+  "condenser_fins": 7
 }

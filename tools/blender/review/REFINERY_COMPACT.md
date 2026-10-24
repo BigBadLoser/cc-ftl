@@ -10,12 +10,37 @@ through broad return plumbing, and a circular die discharges into an open
 inclined casting trough. A low cast chassis connects the main parts. All surfaces
 still use one grey material, without emission.
 
+### B mechanical refinement (after concept selection)
+
+The chosen B blockout is now the geometric reference. `b-blockout.png` and its
+anchor metadata preserve that approved render; `b-refinement-comparison.png`
+shows it beside the current model at identical camera, deck anchor and scale.
+The 1.82-diameter pressure vessel, hopper rim, feed/outlet positions and overall
+height remain unchanged. A remains byte-for-byte preserved.
+
+The three main changes visible in the comparison are:
+
+1. The upper pressure joint is split into two physical flanges with a 0.025 gap.
+   Four shaped clamp castings replace the isolated square studs. The motor has
+   four cooling ribs, retaining its original axis and envelope.
+2. The loading well is deeper and has larger internal clearance, with shaft
+   bearings and a shared drive housing attached to the hopper's near cheek.
+3. Seven spaced condenser fins replace the broad solid side face. Pipe sockets
+   describe the condenser connections, and the die has six fasteners. Guides
+   and billet now follow the actual slope of the output trough.
+
+Current B bounds: **3.670 long x 2.426 wide x 1.794 high**. The rear feed throat
+remains partly obscured in this angle; the broad pressure lid remains a strong
+shape. This is still a low-sample grey mechanical preview, without a materials
+pass or production sprite build.
+
 - B model: `sprites/refinery_revision_b.py`, parametric `VesselRefinery`.
 - Review: `review/refinery_ab_preview.py`. Only B is rendered; A is copied from v2.
 - Artifacts: `artifacts/refinery-ab/comparison.png` at matched camera, world scale
   and deck origin; `a.png` / `b.png` native sprites, nearest-neighbour 3x images,
   editable `a.blend` / `b.blend`, parameters and measured bounds alongside them.
-- B bounds: **3.670 long x 2.431 wide x 1.794 high**, within 3x4 and below 1.85.
+- Chosen B blockout bounds: **3.670 long x 2.431 wide x 1.794 high**, within 3x4
+  and below 1.85. Mechanical refinement bounds are listed above.
 - The rejected B's model, parameters and renders were replaced; its older `b0.*`
   files were deleted. Git history retains the earlier work.
 - A render SHA-256: `8b2207881ccf6773aea0c488ed56bfc738213beaa5513d8d42d04f6c371c32a9`.

@@ -1,4 +1,4 @@
-"""Fresh B: upright refining vessel, low feed jaw and gravity discharge.
+"""Refined B: upright refining vessel, low feed jaw and gravity discharge.
 
 Grey geometry only. The feed, vessel and condenser share one cast lower body;
 openings and large plumbing describe the process without a covering shell.
@@ -25,6 +25,10 @@ class VesselRefinery:
     feed_depth:float=1.42
     outlet_end:float=1.86
     condenser_v:float=1.04
+    lid_gap:float=.025
+    clamp_width:float=.14
+    feed_well:float=.40
+    condenser_fins:int=7
 
     def spec(self): return asdict(self)
 
@@ -38,29 +42,41 @@ def vertical_ring(f,u,v,z,r,sides=16):
 
 
 def vessel(f,p):
-    # A squat pressure chamber with a dished shoulder and distinct raised head.
+    # Keep the chosen chamber silhouette; split the pressure joint into two
+    # physical flanges with an actual clearance seam and shaped clamp castings.
     profile=((p.vessel_floor,.73),(p.vessel_floor+.15,p.vessel_radius),
-             (p.vessel_shoulder-.11,p.vessel_radius),
-             (p.vessel_shoulder,.74),(p.vessel_shoulder+.10,.59))
+             (1.14,p.vessel_radius))
     rings=[vertical_ring(f,p.vessel_u,p.vessel_v,z,r) for z,r in profile]
     cap(f,rings[0][::-1])
     for a,b in zip(rings,rings[1:]): bridge(f,a,b,COL)
     cap(f,rings[-1])
-    for z in (.51,1.13):
-        f.vcyl(p.vessel_u,p.vessel_v,z,p.vessel_radius+.055,.10,COL,sides=16)
+    lid=[vertical_ring(f,p.vessel_u,p.vessel_v,z,r) for z,r in
+         ((1.16+p.lid_gap,p.vessel_radius),(p.vessel_shoulder,.74),
+          (p.vessel_shoulder+.10,.59))]
+    cap(f,lid[0][::-1])
+    for a,b in zip(lid,lid[1:]): bridge(f,a,b,COL)
+    cap(f,lid[-1])
+    for z,h in ((.51,.10),(1.105,.055),(1.16+p.lid_gap,.045)):
+        f.vcyl(p.vessel_u,p.vessel_v,z,p.vessel_radius+.055,h,COL,sides=16)
     f.vcyl(p.vessel_u,p.vessel_v,p.vessel_shoulder+.10,.30,.16,COL,sides=12)
     f.vcyl(p.vessel_u,p.vessel_v,p.vessel_shoulder+.23,.42,.085,COL,sides=12)
     # A horizontal agitator motor distinguishes the head from a simple lid knob.
     motor_z=p.head_top-.16
     f.hcyl(p.vessel_u-.30,p.vessel_u+.29,p.vessel_v,motor_z,.16,COL,sides=12,cap=COL,capstart=COL)
-    for u in (p.vessel_u-.19,p.vessel_u+.05):
-        f.hcyl(u,u+.055,p.vessel_v,motor_z,.18,COL,sides=12)
+    for du in (-.24,-.12,0,.12):
+        f.hcyl(p.vessel_u+du,p.vessel_u+du+.04,p.vessel_v,motor_z,.18,COL,sides=12)
     case(f,p.vessel_u+.36,p.vessel_v,p.vessel_shoulder+.23,.26,.37,.26,COL,.04,.06)
     # The lower sump bears on the common chassis rather than hovering above it.
     f.vcyl(p.vessel_u,p.vessel_v,.20,.64,.17,COL,rtop=.74,sides=16)
     for a in (math.pi/4,3*math.pi/4,5*math.pi/4,7*math.pi/4):
-        u=p.vessel_u+.71*math.cos(a);v=p.vessel_v+.71*math.sin(a)
-        case(f,u,v,1.11,.18,.18,.27,COL,.025,.04)
+        profile=((.88,1.08),(1.01,1.08),(1.04,1.14),(1.04,1.27),
+                 (.86,1.41),(.77,1.38),(.92,1.23),(.92,1.16),(.88,1.16))
+        loops=[]
+        for t in (-p.clamp_width/2,p.clamp_width/2):
+            loops.append([f.pt(p.vessel_u+r*math.cos(a)-t*math.sin(a),
+                               p.vessel_v+r*math.sin(a)+t*math.cos(a),z)
+                          for r,z in profile])
+        bridge(f,*loops,COL);cap(f,loops[0][::-1]);cap(f,loops[1])
 
 
 def feed(f,p):
@@ -68,15 +84,21 @@ def feed(f,p):
     top=ring(p.feed_u,p.feed_width,p.feed_depth,p.feed_top)
     low=ring(p.feed_u+.21,.52,.77,.44)
     inner=ring(p.feed_u,p.feed_width-.14,p.feed_depth-.14,p.feed_top)
-    well=ring(p.feed_u+.10,.56,.91,p.feed_top-.31)
+    well=ring(p.feed_u+.06,.68,1.06,p.feed_top-p.feed_well)
     bridge(f,low,top,COL);bridge(f,top,inner,COL);bridge(f,inner,well,COL)
     cap(f,well[::-1]);bridge(f,top,ring(p.feed_u,p.feed_width,p.feed_depth,p.feed_top-.10),COL)
     case(f,-.88,p.vessel_v,.35,.92,.78,.40,COL,.07,.12)
     cross=Frame(f.m,rot=2,centre=(0,0))
     for u in (p.feed_u-.16,p.feed_u+.16):
-        cross.hcyl(p.vessel_v-.49,p.vessel_v+.49,-u,p.feed_top-.22,.11,COL,sides=16,cap=COL,capstart=COL)
+        cross.hcyl(p.vessel_v-.64,p.vessel_v+.64,-u,p.feed_top-.22,.075,COL,sides=16,cap=COL,capstart=COL)
+        cross.hcyl(p.vessel_v-.49,p.vessel_v+.49,-u,p.feed_top-.22,.11,COL,sides=16)
         for v in (-.40,-.20,0,.20,.40):
             cross.hcyl(p.vessel_v+v-.027,p.vessel_v+v+.027,-u,p.feed_top-.22,.13,COL,sides=10)
+        for sign in (-1,1):
+            v=p.vessel_v+sign*.60
+            cross.hcyl(v-.055,v+.055,-u,p.feed_top-.22,.16,COL,sides=12,cap=COL,capstart=COL)
+    # A common enclosed roller drive bridges both shafts on the near cheek.
+    case(f,p.feed_u,p.vessel_v+.71,p.feed_top-.39,.57,.25,.28,COL,.04,.06)
 
 
 def discharge(f,p):
@@ -90,6 +112,9 @@ def discharge(f,p):
     bridge(f,ring(1.17,.31),ring(1.17,.18),COL)
     bridge(f,ring(1.17,.18),ring(.85,.18),COL)
     cap(f,ring(.85,.18)[::-1])
+    for a in ((i+.5)*math.tau/6 for i in range(6)):
+        f.hcyl(1.17,1.22,p.vessel_v+.25*math.cos(a),.51+.25*math.sin(a),
+               .037,COL,sides=6,cap=COL)
     u0,u1=1.10,p.outlet_end
     inside=[];outside=[]
     for u,z,w in ((u0,.35,.38),(u1,.17,.51)):
@@ -103,7 +128,15 @@ def discharge(f,p):
     for j in (0,3): cap(f,[inside[0][j],outside[0][j],outside[1][j],inside[1][j]])
     for i in (0,1):
         for j in range(3): cap(f,[inside[i][j],outside[i][j],outside[i][j+1],inside[i][j+1]])
-    case(f,1.59,p.vessel_v,.235,.31,.51,.085,COL,.02,.04)
+    slope=(.35-.17)/(u1-u0)
+    def inclined(u,v,w,d,h):
+        z=.35-slope*(u-u0)
+        loops=[[f.pt(x,y,z+dz-slope*(x-u)) for x,y in outline(u,v,w,d,.025)]
+               for dz in (0,h)]
+        bridge(f,*loops,COL);cap(f,loops[0][::-1]);cap(f,loops[1])
+    # Guides and billet follow the trough's incline rather than intersecting it.
+    for v in (-.34,.34): inclined(1.53,p.vessel_v+v,.60,.055,.045)
+    inclined(1.59,p.vessel_v,.31,.51,.085)
 
 
 def pipe(f,path,r=.11):
@@ -118,15 +151,35 @@ def pipe(f,path,r=.11):
     for a,b in zip(rings,rings[1:]): bridge(f,a,b,COL)
 
 
+def pipe_socket(f,centre,axis,r=.15,length=.12):
+    from mathutils import Vector
+    c=Vector(centre);d=Vector(axis).normalized()
+    a=d.cross(Vector((0,0,1)) if abs(d.z)<.9 else Vector((1,0,0))).normalized()
+    b=d.cross(a).normalized()
+    def ring(offset,radius):
+        return [f.pt(*(c+d*offset+radius*(a*math.cos(t)+b*math.sin(t))))
+                for t in (i*math.tau/12 for i in range(12))]
+    outer=[ring(x,r) for x in (-length/2,length/2)]
+    inner=[ring(x,.105) for x in (-length/2,length/2)]
+    bridge(f,*outer,COL)
+    for i in (0,1): bridge(f,outer[i],inner[i],COL)
+
+
 def condenser(f,p):
     for u in (-.35,.57):
         case(f,u,p.condenser_v,0,.23,.40,.24,COL,.025,.04)
     case(f,.12,.67,.17,1.16,.76,.15,COL,.035,.10)
-    case(f,.12,p.condenser_v,.18,1.16,.43,.61,COL,.06,.10)
-    for u in (-.35,-.12,.11,.34,.57):
-        case(f,u,p.condenser_v+.04,.26,.085,.43,.45,COL,.015,.02)
+    # True spaces between cooling fins expose a narrower connected core.
+    case(f,.12,p.condenser_v,.22,1.06,.20,.51,COL,.035,.06)
+    for z in (.20,.70): case(f,.12,p.condenser_v,z,1.16,.38,.09,COL,.025,.06)
+    for i in range(p.condenser_fins):
+        u=-.35+i*.92/(p.condenser_fins-1)
+        case(f,u,p.condenser_v,.28,.065,.50,.42,COL,.012,.025)
     pipe(f,[(-.42,.43,1.15),(-.45,.81,1.25),(-.34,p.condenser_v,1.25),
             (.43,p.condenser_v,1.25),(.65,p.condenser_v,1.08),(.65,p.condenser_v,.72)])
+    pipe_socket(f,(-.44,.66,1.21),(0,1,.26))
+    pipe_socket(f,(.02,p.condenser_v,1.25),(1,0,0))
+    pipe_socket(f,(.65,p.condenser_v,.82),(0,0,1))
     pipe(f,[(.60,p.condenser_v,.28),(.90,.92,.28),(.90,.46,.39),(.66,.35,.50)],.085)
 
 

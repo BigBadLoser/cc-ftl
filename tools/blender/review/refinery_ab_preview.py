@@ -62,6 +62,21 @@ def compose(out):
     single=Image.new('RGB',(im.width+40,im.height+90),bg[:3]);d=ImageDraw.Draw(single)
     d.text((20,12),'REFINERY / REVISION B / GREY GEOMETRY',font=font,fill=(220,229,236))
     single.paste(im,(20,55),im);single.save(out/'b-preview.png')
+    # The chosen B blockout is the geometric reference for mechanical refinement.
+    # Align both sprites by their stored deck anchors, without resizing either.
+    if (out/'b-blockout.png').exists():
+        before=Image.open(out/'b-blockout.png').convert('RGBA')
+        meta=json.loads((out/'b-blockout.json').read_text())
+        canvas=np.full((340,470,4),bg,np.uint8);xy=np.array([235,245])-meta['anchor']
+        C.over(canvas,np.array(before),round(xy[0]),round(xy[1]))
+        board=Image.new('RGB',(1900,770),bg[:3]);d=ImageDraw.Draw(board)
+        pairs=((10,'APPROVED B / GREY BLOCKOUT',Image.fromarray(canvas)),
+               (960,'B / MECHANICAL REFINEMENT',panes[1]))
+        for x,title,pane in pairs:
+            d.text((x+10,15),title,font=font,fill=(220,229,236))
+            board.paste(pane.convert('RGB').resize((940,680),Image.Resampling.NEAREST),(x,55))
+        d.text((20,740),'Same camera, grey material and world scale / 3 x 4 footprint',font=font,fill=(170,185,199))
+        board.save(out/'b-refinement-comparison.png')
 
 
 if __name__=='__main__':
