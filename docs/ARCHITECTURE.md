@@ -283,7 +283,59 @@ palette.json    the single palette, read by Blender scripts and the game
     `?crewmb=N` and `?envmb=N` override the budgets in MiB.
   - Not done: GPU texture compression (KTX2/Basis), and splitting the big static env sheets (vehicle_bay, weapons, containers)
     by family, which would shave the ~245 MiB the starting ship's env sheets take.
-- **Run with `npm run sprites`** (Blender headless). Generated sheets, JSON and the manifest are
+- **Two art sets (`public/assets/1x/`, `public/assets/2x/`):** each has its own `manifest.json` and `sprites/`. Ids are the same
+  in both; the 1x set may lack ids the 2x set has (never downsample 2x art to fill a gap: render it).
+  - 1x is 64x32 pixel art that the game draws at half resolution, so each art pixel is a hard 2x2 block. The game's geometry
+    (`iso.ts` `TILE_W`/`TILE_H`, `Z_PX`, every `ART_SCALE` literal) stays 128x64 in both modes.
+  - `src/render/assets/compose.ts` turns the chosen set into the one manifest the renderer sees, in world px: a 1x set's frames,
+    anchors, clip cells (`cw`/`ch`/`ox`/`oy`), muzzles and `heights.zPx` are multiplied by 2 and its sheets get texture
+    `resolution` 0.5 (loaded nearest, never smoothed). So nothing downstream knows the set. Exceptions work in art px and
+    convert through `texture.source.resolution`: alpha picking (`partPick.ts`, `alphaMask.ts`) and CSS item icons
+    (`itemIcons.ts`). The crew filter's zoom is camera scale times the layer's `px` (2 for 1x; `palette.ts` `artZoom`).
+  - Per-id fallback: in 1x mode an id the 1x manifest lacks loads from the 2x set at native scale (sheet names prefixed `2x:`).
+    One console line reports how many; `__cc.art().fallbacks` (with `?hook`) lists them.
+  - Choice: `?art=1x|2x` (remembered), else the remembered value in localStorage `cc.artScale`, else 1x. The debug panel has a
+    switch. Switching reloads the page (`artSet.ts` `setArtScale`): sheet stores, built sprites and filters all hold one set's
+    textures. Pool budgets are a quarter at 1x (`budgetsFor`).
+  - Tests: `sheets.contract.test.ts` (per-set manifests, same ids), `compose.test.ts` (scaling, fallback, set choice, budgets),
+    `partPick.test.ts` (1x picking), `palette.test.ts` (crew filter at 1x).
+- **Render scale (pipeline contract with the cloud renderer):**
+- `tools/blender/sprites/scale.py` reads `ART_SCALE` (`1` = 64x32, `2` = 128x64, default 2). `build_sprites.py ... --scale 1|2`
+  sets the same variable (give it after the `--` that ends Blender's own arguments).
+- Output goes to `public/assets/<ART_SCALE>x/`; `scale.assets_dir()` returns that path (cloud tooling should import it).
+  `build_sprites.py` refuses an outdir whose `manifest.json` has the other tile size.
+- The manifest `tile` is `{w: 64*ART_SCALE, h: 32*ART_SCALE}`; `heights.zPx` scales the same way.
+- Cache keys include the scale: env families hash `TILE_W/TILE_H`, crew hashes `FRAME_W/FRAME_H` (both derive from
+  `ART_SCALE`), and the sol/damage_sol scratch dir defaults to `sol-pack-<scale>x` (cloud sets `SOL_DIR` with its own scale
+  signature). `--cache-only` works at both scales (it is a crew flag and does not look at the scale).
+- **Rendering the missing 1x art:**
+   (from the repo root, on branch `art/dual-scale`)
+
+  Direct, one Blender process (add `-t N` for threads; the render caches under `.cache/sprites/` are keyed by scale):
+
+  ```bash
+  export ART_SCALE=1
+  BL="$HOME/tools/blender-4.2.9-linux-x64/blender -b -t 4 --factory-startup --python-exit-code 1 --python tools/blender/sprites/build_sprites.py --"
+  # the missing non-crew families (merged into public/assets/1x/manifest.json; other families are kept)
+  $BL public/assets/1x battery,clutter,containers,corpse,cryo,damage,damage_sol,decay,fx_mining,hazards,hydroponics,medbay,mining_pod,ops_consoles,pod_bay,rock,rockwall,storage_set,wallprops,workbench --scale 1
+  # plus the crew (incremental: re-run after an interruption and finished frames are skipped; --plan reports hits/misses)
+  $BL public/assets/1x crew --scale 1
+  # parallel crew workers: one clip each, cache only (no packing), then pack once
+  $BL /tmp/crew-scratch crew --clip walk --cache-only --scale 1     # repeat per clip in crew_spec.CLIPS
+  $BL public/assets/1x crew --scale 1
+  python3 tools/blender/sprites/crew_check.py public/assets/1x      # sanity composite (optional)
+  ```
+
+  Through the cloud orchestrator (needs the matching change in `blender-cloud-render` that sets `OUT` to
+  `public/assets/<scale>x`; `ART_SCALE` is already exported to every Blender process by `cloud_render.py run --scale 1`):
+
+  ```bash
+  python3 tools/cloud_render.py run --workers 4 --threads 2 --scale 1
+  ```
+
+  Then fetch `public/assets/1x/` (`remote.sh ... fetch`), commit the sheets, JSON and manifest, and check with
+  `npm test -- src/render/assets` (manifest contract tests run on both sets) and `?art=1x&hook`.
+- **Run with `npm run sprites`** (Blender headless; `-- ... --scale 1|2` or `ART_SCALE`, default 2, writes `public/assets/<scale>x/`). Generated sheets, JSON and the manifest are
   **committed**, because Cloudflare's build doesn't run Blender.
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
