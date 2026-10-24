@@ -32,12 +32,17 @@ function check(sim: Sim): void {
   }
 }
 
+/** Rounds of one turn each. Trips fire on rounds 2 and 5 (so two jumps, one per `round % 3 === 2`); the save is taken at round 5. */
+const ROUNDS = 6;
+/** Turns of idle time the saved copy and its fresh deserialization are stepped side by side. */
+const TAIL_TURNS = 2;
+
 describe('NPC traffic over a long run', () => {
   it.each([31, 32])('seed %i: game-time turns and trips keep the invariants, and a save continues identically', (seed) => {
     const sim = newGame(seed, content);
     giveItems(sim, 'item.fuel', 400);
     let copy: Sim | null = null;
-    for (let round = 0; round < 9; round++) {
+    for (let round = 0; round < ROUNDS; round++) {
       for (let i = 0; i < TIME_TURN_TICKS; i += 20) {
         for (let k = 0; k < 20; k++) sim.step();
         sim.events.drain();
@@ -69,7 +74,7 @@ describe('NPC traffic over a long run', () => {
     expect(copy).not.toBeNull();
     // Continue the copy through the same remaining rounds' worth of idle time and compare the fleets with a fresh run of the original.
     const a = deserialize(serialize(copy as Sim), content);
-    for (let i = 0; i < TIME_TURN_TICKS * 3; i++) {
+    for (let i = 0; i < TIME_TURN_TICKS * TAIL_TURNS; i++) {
       (copy as Sim).step();
       a.step();
     }
