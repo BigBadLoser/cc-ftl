@@ -55,6 +55,15 @@ describe('SheetStore', () => {
     expect(r.loaded).toEqual(['a.png']);
     expect(r.store.stats().requests).toBe(1);
   });
+  it('loads what is drawn now ahead of the preload backlog', async () => {
+    const r = rig({}, 1);
+    for (const n of ['a', 'b', 'c', 'd']) r.store.register(n, spec('crew', `${n}.png`));
+    for (const n of ['a', 'b', 'c']) r.store.request(n); // a is loading; b, c wait
+    r.store.get('d'); // a figure is drawing without d: it goes first
+    r.store.get('c'); // and a queued one moves up when it is needed
+    await r.store.idle();
+    expect(r.loaded).toEqual(['a.png', 'c.png', 'd.png', 'b.png']);
+  });
   it('limits concurrent loads', async () => {
     const r = rig({}, 2);
     for (const n of ['a', 'b', 'c', 'd']) {

@@ -111,14 +111,26 @@ export class SheetStore<T> {
       this.budgets.get(r.spec.pool)?.touch(name, this.o.now());
       return r.sheet as Loaded<T>;
     }
-    this.request(name);
+    this.request(name, true);
     return undefined;
   }
 
-  /** Queue a sheet's load if it is not loaded or on its way. */
-  request(name: string): void {
+  /**
+   * Queue a sheet's load if it is not loaded or on its way. `urgent`: something is drawing without it right now, so it
+   * goes ahead of the preload backlog (and a queued one moves up); preloads wait their turn in request order.
+   */
+  request(name: string, urgent = false): void {
     const r = this.recs.get(name);
-    if (!r || r.state !== 'idle') return;
+    if (!r) return;
+    if (r.state === 'queued' && urgent) {
+      const at = this.queue.indexOf(name);
+      if (at > 0) {
+        this.queue.splice(at, 1);
+        this.queue.unshift(name);
+      }
+      return;
+    }
+    if (r.state !== 'idle') return;
     const i = this.dying.findIndex((d) => d.name === name);
     if (i >= 0) {
       const [d] = this.dying.splice(i, 1) as [(typeof this.dying)[number]];
@@ -130,9 +142,15 @@ export class SheetStore<T> {
       return;
     }
     r.state = 'queued';
-    this.queue.push(name);
+    if (urgent) this.queue.unshift(name);
+    else this.queue.push(name);
     this.requests++;
     this.pump();
+  }
+
+  /** True if the sheet is loaded now (not a use, and queues nothing). */
+  isReady(name: string): boolean {
+    return this.recs.get(name)?.state === 'ready';
   }
 
   /** Sheets queued or loading. */

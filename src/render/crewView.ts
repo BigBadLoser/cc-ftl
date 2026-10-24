@@ -27,6 +27,7 @@ import type { Layers } from './layers';
 import { clipFor, crewLoadout, preloadLayers } from './loadout';
 import type { ClipDef } from './assets/manifest';
 import { drawLayers } from './crewSprites';
+import { BED_LIFT, bedPose } from './bedPose';
 import { FAMILY, fireClip, prefetchClips, stanceClip } from './handWeapon';
 
 export interface CrewViewHost {
@@ -300,8 +301,10 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         if (s.shot && (hurtLying || s.t >= s.shot.until)) s.shot = null;
         const clipName = hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : s.shot?.clip ?? (gun ? stanceClip(gun.family, { engaged: nowSec < s.engagedUntil, moving: speed > 0.3 }) : null) ?? clipFor(crew.activity, speed > 0.3, flight);
         const docked = crew.activity === 'charging' && !!at?.def.robotBay && !hurtLying;
-        const dir = (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
-        s.shadow.visible = !sitting;
+        // A sleeper in a bed lies along it, head on the pillow, centred on its footprint and raised to the mattress.
+        const bed = clipName === 'sleep' && !carried && !dead && !downed && speed <= 0.3 && at?.def.bed ? bedPose(at.def, at.m.x, at.m.y, at.m.rot, !!atlas.manifest.assets[`${at.def.asset}.r${at.m.rot % 4}`]) : null;
+        const dir = bed ? bed.dir : (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
+        s.shadow.visible = !sitting && !bed; // a sleeper in a bed lies on the mattress: no floor shadow under the bed
         if (clipName !== s.clip) {
           if (s.shot && clipName === s.shot.clip) s.shot.until -= s.t;
           s.clip = clipName;
@@ -312,12 +315,13 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         s.lying = clipName === 'sleep';
         drawLayers(s, clipName, dir, s.t);
         // Region-local art position and depth (the region's containers sit at its sector offset).
-        const lx = s.x - target.ox, ly = s.y - target.oy;
+        const lx = (bed ? bed.x : s.x) - target.ox, ly = (bed ? bed.y : s.y) - target.oy;
         const p = iso(lx, ly);
+        if (bed) p.y -= BED_LIFT * S;
         // A carried body hangs at the carrier's side, drawn just over them.
         s.root.position.set(Math.round(p.x) + (carried ? 9 * S : 0), Math.round(p.y) + (carried ? -13 * S : 0));
         let z = depthKey(lx, ly) + (carried ? 0.02 : 0);
-        if (at && onOpen) {
+        if (at && (onOpen || bed)) {
           const f = footprintTiles(at.def, at.m.x, at.m.y, at.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
           z = Math.max(z, moduleKey(at.def, f.x - target.ox, f.y - target.oy) + SEAT_DZ);
         }
