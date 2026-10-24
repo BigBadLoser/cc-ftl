@@ -104,4 +104,42 @@ describe('construction sites', () => {
     expect(r.sim.world.get(id, JobC)).toBeUndefined();
     expect(ticks / TICK_HZ).toBeLessThan(40);
   });
+
+  it('a chained haul counts as in transit for every stop and drops the delivered bundle at the next', () => {
+    const r = rig('module.pod_bay');
+    for (const q of content.modules['module.pod_bay'].cost) storageAdd(r.sim, r.crate, q.item, q.count);
+    // both sites exist before the first planning pass, so one trip can serve both
+    const [fw, fh] = content.modules['module.pod_bay'].footprint;
+    const g = shipGrid(r.sim, r.ship)!;
+    let at2: { x: number; y: number } | null = null;
+    for (let y = g.y0 + g.height - 1; y >= g.y0 && !at2; y--) {
+      for (let x = g.x0 + g.width - 1; x >= g.x0 && !at2; x--) {
+        const apart = x + fw <= r.at.x || x >= r.at.x + fw || y + fh <= r.at.y || y >= r.at.y + fh;
+        if (apart && !placementError(r.sim, r.ship, 'module.pod_bay', x, y, 0)) at2 = { x, y };
+      }
+    }
+    for (const at of [r.at, at2!]) r.sim.enqueue({ type: 'job.buildModule', ship: r.ship, def: 'module.pod_bay', x: at.x, y: at.y, rot: 0 });
+    run(r.sim, 1);
+    expect(siteIds(r.sim).length).toBe(2);
+    let chained = 0;
+    let advanced = 0;
+    const dst = new Map<number, number>();
+    for (let i = 0; i < TICK_HZ * 60 && siteIds(r.sim).length === 2; i++) {
+      run(r.sim, 1);
+      for (const jid of r.sim.world.query(JobC)) {
+        const h = r.sim.world.get(jid, JobC)!.haul;
+        if (!h) continue;
+        if (dst.has(jid) && dst.get(jid) !== h.dst.id) { advanced++; expect(h.extra).toBeUndefined(); }
+        dst.set(jid, h.dst.id);
+        for (const t of h.then ?? []) {
+          chained++;
+          const s = siteStatus(r.sim, t.job)!;
+          expect(s.block?.kind).not.toBe('noStock');
+          expect(s.materials.find((m) => m.item === h.item)!.inTransit).toBeGreaterThan(0);
+        }
+      }
+    }
+    expect(chained).toBeGreaterThan(0);
+    expect(advanced).toBeGreaterThan(0);
+  });
 });

@@ -126,6 +126,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     crewSel.set(null);
     shipSel.set(null);
     astSel.set(null);
+    siteSel.set(null);
+    pushSites();
     r?.setSelectedCrew(null);
     bridge.setSelected(null);
     modSel.set(id);

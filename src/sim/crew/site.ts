@@ -81,10 +81,19 @@ export function siteStatus(sim: Sim, id: number): SiteStatus | null {
   const flight = new Map<string, number>();
   for (const jid of sim.world.query(JobC)) {
     const j = sim.world.get(jid, JobC);
-    if (!j) continue;
-    if (j.haul?.dst.kind === 'job' && j.haul.dst.id === id) {
-      for (const q of [{ item: j.haul.item, count: j.haul.count }, ...(j.haul.extra ?? [])]) flight.set(q.item, (flight.get(q.item) ?? 0) + q.count);
+    if (!j?.haul) continue;
+    const h = j.haul;
+    const add = (item: string, n: number) => flight.set(item, (flight.get(item) ?? 0) + n);
+    // the current stop gets what the later stops on the route do not (as in reservations())
+    if (h.dst.kind === 'job' && h.dst.id === id) {
+      add(h.item, h.count - (h.then ?? []).reduce((n, t) => n + t.count, 0));
+      for (const q of h.extra ?? []) add(q.item, q.count);
       if (j.reservedBy) haulers.push(j.reservedBy);
+    }
+    for (const t of h.then ?? []) {
+      if (t.job !== id) continue;
+      add(h.item, t.count);
+      if (j.reservedBy && !haulers.includes(j.reservedBy)) haulers.push(j.reservedBy);
     }
   }
   for (const c of sim.world.query(AssignmentC)) if (sim.world.get(c, AssignmentC)?.jobId === id) builders.push(c);

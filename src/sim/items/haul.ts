@@ -89,6 +89,7 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     if (h.then.length === 0) delete h.then;
     carrying.count = left;
     delete carrying.extra;
+    delete h.extra; // delivered above; reservations() must not count it at the next stop
     job.x = nj.x;
     job.y = nj.y;
     return 'working';
