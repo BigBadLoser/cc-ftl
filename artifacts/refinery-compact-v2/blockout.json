@@ -1,0 +1,27 @@
+{
+  "footprint": [
+    3,
+    4
+  ],
+  "bounds": [
+    3.659999966621399,
+    2.583911180496216,
+    1.718999981880188
+  ],
+  "anchor": [
+    160,
+    206
+  ],
+  "tile": [
+    128,
+    64
+  ],
+  "camera": {
+    "yaw": 45,
+    "elevation": 30
+  },
+  "samples": 4,
+  "SS": 2,
+  "material": "single neutral grey; no emission",
+  "reviewLighting": "project sun, shadows enabled for geometry inspection"
+}

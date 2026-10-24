@@ -1,5 +1,36 @@
 # Fresh 3x4 refinery mockup
 
+## Current: v2 grey geometry
+
+The user found the first case too square. The revised blockout replaces the full
+box with a raised, faceted processing vessel on separated cradles, a canted
+offset loading hopper, a tapered feed throat and a lower projecting die/receiver.
+Broad pressure bands follow the vessel's changing cross-section. A large return
+manifold connects a small side pump, with open space around the support frame.
+There are no lights, paint groups, display panels or surface decorations.
+
+- Model: `sprites/refinery_blockout.py`, parametric `RefineryBlockout`.
+- Review: `review/refinery_blockout_preview.py`.
+- Artifacts: `artifacts/refinery-compact-v2/preview.png`, native/3x grey sprites,
+  parameters and measured bounds. `comparison.png` shows v1 and v2 in the same
+  single grey material, at identical camera and world scale. `blockout.blend`
+  contains the editable grey model and review camera.
+- Bounds: approximately **3.690 long x 2.584 wide x 1.719 high**. Fits 3x4 and
+  remains below the 1.85 wall height.
+- Geometry review uses the project sun with shadows enabled on both versions
+  to expose overlaps and gaps. Camera, 128x64 scale, four samples and SS 2 remain
+  unchanged. No room or floor plane.
+- Shape/layout preview only. The hopper, chamber proportions, open supports and
+  outlet are still available for iteration. No integration or full sprite build.
+
+```sh
+# Check no Blender process is running first.
+SPRITE_PREVIEW=1 SPRITE_SAMPLES=4 blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/refinery_blockout_preview.py -- --out artifacts/refinery-compact-v2
+python3 tools/blender/review/refinery_blockout_preview.py --out artifacts/refinery-compact-v2 --compose
+```
+
+## Earlier v1 — retained
+
 Independent concept requested by the user after the reference-led 3x5 study.
 One enclosed processing hood joins a loading hopper to an output die/drawer.
 The radiator, coolant line and control bezel are attached to the same case.
