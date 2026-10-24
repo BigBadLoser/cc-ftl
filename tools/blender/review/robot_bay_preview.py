@@ -91,7 +91,7 @@ def _bay(draw, rot, st, bot, gx, gy, label):
 def main():
     bay, rob, out = Assets(sys.argv[1]), Assets(sys.argv[2]), Path(sys.argv[3])
     out.mkdir(parents=True, exist_ok=True)
-    pub = Assets(Path(__file__).resolve().parents[3] / "public/assets")
+    pub = Assets(Path(__file__).resolve().parents[3] / "public/assets/2x")
     scene(bay, rob, pub, out)
     if len(sys.argv) > 4 and sys.argv[4] == "anim":
         anim(bay, rob, pub, out)

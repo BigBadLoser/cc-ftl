@@ -14,7 +14,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { artKind, floorChain, ghostVertsIn, ROCK_WALL_TINT, HULL_RAY, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, floorChain, ghostVertsIn, HULL_RAY, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 
 export type { CutawayMode };
 
@@ -61,8 +61,6 @@ interface Tinted {
   wall: boolean;
   /** Walls and doors darken as their integrity drops. */
   solid: boolean;
-  /** A finished rock wall: tinted stone. */
-  stone?: boolean;
 }
 
 /** The tile sprites of one sector chunk of the region. */
@@ -216,7 +214,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (gapAt(x, y) || airlocks.has(idx)) continue;
-          for (const piece of wallPieces(wallAt, x, y, k, mode, ghosts, gapAt)) {
+          for (const piece of wallPieces(wallAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt)) {
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
             // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
@@ -229,7 +227,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
               const open = atlas.stat(`${closedId}.open`);
               if (open) doors.push({ objs: made, closed: s, open, ci });
             }
-            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: !isDoor, solid: true, ...(stone ? { stone } : {}) });
+            // A door is lit like a wall (the brightest light round it): its own tile is dark while it is closed (light stops at a
+            // closed door) and takes its neighbours' light once open, which made the sprite change colour as it swung.
+            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: true, solid: true });
           }
         }
     if (ghosts) {
@@ -288,7 +288,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const lv = t.wall ? wallLight(t.x, t.y) : at(light, t.ci);
       const lit = lightTint(lv, !t.wall && at(o2, t.ci) < VACUUM_O2, pulse);
       const base = t.solid ? mulColor(lit, damageTint(at(hp, t.ci))) : lit;
-      t.spr.tint = t.stone ? mulColor(base, ROCK_WALL_TINT) : base;
+      t.spr.tint = base;
     }
   }
 

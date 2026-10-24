@@ -24,9 +24,9 @@ export const items = {
   'item.shuttle': { name: 'Shuttle', tags: ['vehicle'], stackSize: 1, price: 650, vehicle: 'vehicle.shuttle' },
   // Hand weapons: crew equip them from storage (crew.equip, or automatically for a role's loadout). Range in tiles.
   // `tier`: 1 basic, 2 middle grade, 3 the best (depots sell surplus up to tier 2).
-  'item.sidearm': { name: 'Sidearm', tags: ['weapon', 'ranged'], stackSize: 5, price: 45, tier: 1, hand: { kind: 'ranged', damage: 12, range: 8, cooldownSec: 1, accuracy: 0.7 } },
-  'item.rifle': { name: 'Rifle', tags: ['weapon', 'ranged'], stackSize: 5, price: 95, tier: 3, hand: { kind: 'ranged', damage: 18, range: 14, cooldownSec: 1.6, accuracy: 0.75 } },
+  'item.sidearm': { name: 'Sidearm', tags: ['weapon', 'ranged'], stackSize: 5, price: 45, tier: 1, hand: { kind: 'ranged', damage: 12, range: 8, cooldownSec: 1, accuracy: 0.7, art: { id: 'sidearm', family: '1h' } } },
+  'item.rifle': { name: 'Rifle', tags: ['weapon', 'ranged'], stackSize: 5, price: 95, tier: 3, hand: { kind: 'ranged', damage: 18, range: 14, cooldownSec: 1.6, accuracy: 0.75, art: { id: 'rifle', family: '2h' } } },
   // Ion pistol: weak, but every hit stuns ion-vulnerable targets (robots).
-  'item.ion_pistol': { name: 'Ion pistol', tags: ['weapon', 'ranged'], stackSize: 5, price: 70, tier: 2, hand: { kind: 'ranged', damage: 4, range: 8, cooldownSec: 1.4, accuracy: 0.7, ion: true } },
-  'item.blade': { name: 'Blade', tags: ['weapon', 'melee'], stackSize: 5, price: 30, tier: 1, hand: { kind: 'melee', damage: 20, range: 1, cooldownSec: 1.2, accuracy: 0.8 } },
+  'item.ion_pistol': { name: 'Ion pistol', tags: ['weapon', 'ranged'], stackSize: 5, price: 70, tier: 2, hand: { kind: 'ranged', damage: 4, range: 8, cooldownSec: 1.4, accuracy: 0.7, ion: true, art: { id: 'ion_pistol', family: '1h' } } },
+  'item.blade': { name: 'Blade', tags: ['weapon', 'melee'], stackSize: 5, price: 30, tier: 1, hand: { kind: 'melee', damage: 20, range: 1, cooldownSec: 1.2, accuracy: 0.8, art: { id: 'blade', family: '1m' } } },
 } satisfies Record<string, ItemDef>;

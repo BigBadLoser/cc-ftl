@@ -4,6 +4,7 @@ import {
   totalStock, type Sim,
 } from '../../sim';
 import { content } from '../index';
+import { STANDOFF } from '../../sim/mining/geometry';
 
 const HOLD = content.vehicles['vehicle.mining_pod'].cargo;
 
@@ -113,16 +114,17 @@ describe('mining pods', () => {
       for (let x = g.x0; x < g.x0 + g.width && !bay2; x++) if (!placementError(sim, ship, 'module.pod_bay', x, y, 0)) bay2 = spawnModule(sim, 'module.pod_bay', x, y, 0);
     }
     const other = spawnVehicle(sim, 'vehicle.mining_pod', bay2);
-    sim.world.add(other, MiningPodC, { asteroid, tiles: [{ x: t.x, y: t.y }], phase: 'mining', target: { x: t.x, y: t.y }, spot: { x: t.x + 0.5, y: t.y + 0.5 }, progress: 0, recall: false, trips: 1, pilot: 0, waiting: false });
+    sim.world.add(other, MiningPodC, { asteroid, tiles: [{ x: t.x, y: t.y }], phase: 'mining', target: { x: t.x, y: t.y }, spot: { x: t.x + 0.5, y: t.y + 0.5 - STANDOFF }, progress: 0, recall: false, trips: 1, pilot: 0, waiting: false });
     sim.enqueue({ type: 'mining.order', pod, asteroid, tiles: [t] });
     const log = until(sim, 6000, () => hold(sim, pod) > 0);
     expect(log).not.toContain('mining.done');
     expect(sim.world.get(pod, MiningPodC)?.target).toEqual({ x: t.x, y: t.y });
     expect(hold(sim, pod)).toBeGreaterThan(0);
-    // It hovers beside the other pod, not on top of it.
+    // It hovers clear of the other pod (on another heading ray), STANDOFF from the tile.
     const size = content.vehicles['vehicle.mining_pod'].size ?? 1;
     const b = sim.world.get(pod, BodyC)!;
-    expect(Math.hypot(b.x - (t.x + 0.5), b.y - (t.y + 0.5))).toBeGreaterThanOrEqual(size - 1e-6);
+    expect(Math.hypot(b.x - (t.x + 0.5), b.y - (t.y + 0.5))).toBeCloseTo(STANDOFF, 6);
+    expect(Math.hypot(b.x - (t.x + 0.5), b.y - (t.y + 0.5 - STANDOFF))).toBeGreaterThanOrEqual(size - 1e-6);
   });
 
   it('a save mid-trip loads and plays on identically; two runs of a seed match', () => {

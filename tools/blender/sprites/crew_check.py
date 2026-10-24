@@ -12,8 +12,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sprites import compose  # noqa: E402
-from sprites.scale import ART_SCALE as S, TILE_H, TILE_W  # noqa: E402
+from sprites import compose, crew_trim  # noqa: E402
+from sprites.scale import ART_SCALE as S, TILE_H, TILE_W, assets_dir  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 BG = (14, 17, 22)
@@ -46,9 +46,8 @@ def stack(man, assets, char, d, clip, frame):
         img = np.array(Image.open(assets / sh["image"]).convert("RGBA"))
         col = cd["start"] + frame
         fw, fh = a["frameW"], a["frameH"]
-        sl = (slice(d * fh, (d + 1) * fh), slice(col * fw, (col + 1) * fw))
         x, y = 70 * S - a["anchor"]["x"], 120 * S - a["anchor"]["y"]
-        lay = compose.remap_keys(img[sl], COLOURS[char])
+        lay = compose.remap_keys(crew_trim.full_cell(img, a, cd, d, col), COLOURS[char])
         hid = (lay[..., 3] > 0) & (lay[..., 3] < 128)       # sit clips: pixels hidden behind the chair (faint alpha)
         if hid.any():
             sub = cv[y:y + fh, x:x + fw]
@@ -56,7 +55,7 @@ def stack(man, assets, char, d, clip, frame):
             lay[hid] = 0
         compose.over(cv, lay, x, y)
         if "glow" in sh:
-            compose.over(gl, np.array(Image.open(assets / sh["glow"]).convert("RGBA"))[sl], x, y)
+            compose.over(gl, crew_trim.full_cell(np.array(Image.open(assets / sh["glow"]).convert("RGBA")), a, cd, d, col), x, y)
     return cv, gl
 
 
@@ -101,7 +100,7 @@ def cell(man, assets, char, d, clip, frame, floor):
 
 
 def main():
-    assets = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "public/assets"
+    assets = Path(sys.argv[1]) if len(sys.argv) > 1 else assets_dir()
     out = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("crew-4x.png")
     man = json.loads((assets / "manifest.json").read_text())
     floor = tile(man, assets)

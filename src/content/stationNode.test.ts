@@ -26,6 +26,15 @@ function withStation(kind = 'station.trading', size: 'outpost' | 'station' | 'hu
   return { sim, station };
 }
 
+/** Deploy at the first spot from (x, y) the node lets through (a generated ship may lie on the usual one). */
+function deployClear(sim: Sim, x: number, y: number): void {
+  for (let i = 0; i < 30; i++) {
+    sim.enqueue({ type: 'sector.deploy', x: x + (i % 6) * 40, y: y + Math.floor(i / 6) * 40 });
+    if (!run(sim, 1).some((e) => e.startsWith('command.rejected'))) return;
+  }
+  throw new Error('no free deploy spot');
+}
+
 const crewOn = (sim: Sim, ship: number): number[] => sim.world.query(CrewC, PositionC).filter((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === ship);
 
 describe('stations in the node', () => {
@@ -71,8 +80,7 @@ describe('stations in the node', () => {
     expect(run(sim, 1)).toContain('sector.jumped');
     expect(sim.world.has(station, ShipC)).toBe(false);
     expect(sim.archives.find((a) => a.node === home)!.entities.some((e) => e.id === station)).toBe(true);
-    sim.enqueue({ type: 'sector.deploy', x: 40, y: 40 });
-    run(sim, 1);
+    deployClear(sim, 40, 40);
     sim.enqueue({ type: 'debug.galaxyTeleport', node: home });
     expect(run(sim, 1)).toContain('sector.jumped');
     expect(sim.world.get(station, ShipC)).toMatchObject({ name, immobile: true });

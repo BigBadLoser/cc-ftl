@@ -6,7 +6,8 @@ import type { Grid } from '../sim/grid';
 import type { SectorGrid } from '../sim/sectorGrid';
 import { shipGridOf } from '../sim/shipGrid';
 import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
-import { loadAtlas } from './assets/loader';
+import { loadAtlas, type AtlasStats } from './assets/loader';
+import { createArtStream } from './artStream';
 import { createCamera, type Camera } from './camera';
 import { createCombatPass, type CombatMarks, type CombatViewRect } from './combatPass';
 import type { CutawayMode } from './gridView';
@@ -22,6 +23,7 @@ import { liveryFor } from './roofArt';
 import { createShuttleView } from './shuttleView';
 import { createContainerBodyView } from './containerBodyView';
 import { createFightFx } from './fightFx';
+import { crewMuzzle } from './crewMuzzle';
 import { createCrewMarks } from './crewMarks';
 import { sectorTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
 import { targetedModules, wantsRoof } from './regionRules';
@@ -71,6 +73,8 @@ export interface Renderer {
   /** Frame the given ships (by grid id) in the view: centered, at the largest zoom that fits them (at least 1). */
   frameShips(gridIds: readonly number[]): void;
   info(): RenderInfo;
+  /** Sheet streaming counters (decoded bytes resident, requests, pending...) and scene rebuilds, for the debug hook. */
+  art(): AtlasStats & { rebuilds: number };
   /** Drag the view by a screen-space delta in CSS px. */
   pan(dxPx: number, dyPx: number): void;
   /** Zoom by factor (>1 zooms in), snapped to integer steps, keeping the point under (screenX, screenY) fixed. */
@@ -112,7 +116,7 @@ interface RendererContent {
   /** The EVA suit, for the air bar over suited crew. */
   suit?: { airSec: number };
   /** Ore kinds (code and placeholder colour) for the asteroid placeholder drawing. */
-  ores?: Readonly<Record<string, { code: number; color: number }>>;
+  ores?: Readonly<Record<string, { code: number; color: number; amount: readonly [number, number] }>>;
   /** Vehicle classes by def id: pods ('pod') are drawn by podView, not as shuttles. */
   vehicles?: Readonly<Record<string, { class: string; size?: number }>>;
 }
@@ -120,7 +124,6 @@ interface RendererContent {
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
 export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality, world: World, content: RendererContent): Promise<Renderer> {
   const high = quality === 'high';
-  const atlas = await loadAtlas();
   const gl = await autoDetectRenderer({
     canvas,
     width: 1,
@@ -132,6 +135,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     preference: 'webgl',
     powerPreference: 'high-performance',
   });
+  // Sheets go to the GPU as they load and their decoded copy is dropped; if the context is lost they are decoded again.
+  const atlas = await loadAtlas(undefined, { upload: (src) => gl.texture.initSource(src) });
+  canvas.addEventListener('webglcontextlost', () => atlas.contextLost());
+  canvas.addEventListener('webglcontextrestored', () => void atlas.contextRestored());
   if (high) initHalos(gl);
   const stage = new Container();
   const cam = createCamera(high ? 3 : 2);
@@ -157,12 +164,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   stage.addChild(SL.world);
   const sectorParticles = createParticles(atlas, SL);
   const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules });
-  // Asteroids (PLACEHOLDER drawing, asteroidView.ts): one region layer set in the sector frame, under every ship's tiles.
+  // Asteroids (rock sprites, asteroidView.ts): one region layer set in the sector frame, under every ship's tiles.
   const rockLayers = W.region(false);
   rockLayers.setOrigin(0, 0, 0);
-  const asteroids = createAsteroidView(world, rockLayers.floor, content.ores ?? {});
+  const asteroids = createAsteroidView(world, atlas, rockLayers, content.ores ?? {});
   const isPod = (def: string) => content.vehicles?.[def]?.class === 'pod';
-  const pods = createPodView(world, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined) });
+  const pods = createPodView(world, atlas, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined) });
 
   // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle
   // parked in a bay is the bay's own layer (vehicleBayArt).
@@ -188,7 +195,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const NONE: ReadonlySet<number> = new Set();
   const pickHost = (): PickHost => ({ scenes, cam, origin, hidden: (id) => !!world.get(id, ShipC)?.outpost?.hidden });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
-  const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf });
+  const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
   const sectorMarks = createMarkers(SL.ui);
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
@@ -233,6 +240,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     sc.setSelectedCrew(selectedCrew);
     sc.setSites(siteMarks.blocked, siteMarks.selected);
     scenes.set(grid.id, sc);
+    art.built(grid.id);
     return sc;
   }
 
@@ -258,6 +266,20 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     }
   }
 
+  // Sheets load on demand: scenes are rebuilt when the art they asked for arrives (artStream.ts).
+  const art = createArtStream(
+    atlas,
+    {
+      rebuild() {
+        for (const sc of scenes.values()) sc.dispose();
+        scenes.clear();
+        asteroids.rebuild();
+      },
+      sync,
+    },
+    () => performance.now(),
+  );
+
   /** Art px box of a region (padded for the roof, turrets, bells and docked bodies), for culling per camera. */
   function regionInView(id: number, grid: Grid, c: Camera): boolean {
     const o = origin(id);
@@ -274,7 +296,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   /** Place the world for a camera pass: the main pass (target null) or the combat panel (pass B, showing `target`). */
   function place(c: Camera, target: number | null): void {
     const any = shipOf(refId) !== undefined;
-    for (const [id, sc] of scenes) sc.layers.setVisible(any && regionInView(id, sc.grid, c));
+    for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && regionInView(id, sc.grid, c));
     // Shrunk art (the main camera below zoom 1) is drawn with linear filtering; the combat panel keeps nearest.
     atlas.setSmooth(target === null && c.scale < 1);
     W.setUiVisible(target === null);
@@ -301,7 +323,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
 
   return {
     render(alpha) {
+      if (atlas.restoring) return;
       sync();
+      art.update();
       const now = performance.now();
       const dt = Math.min(0.1, (now - lastFrame) / 1000);
       lastFrame = now;
@@ -322,9 +346,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       crewMarks.update();
       fx.update(dt, alpha);
       sectorParticles.update(dt);
+      art.settle();
       pass.render(gl, stage);
       place(cam, null);
       gl.render({ container: stage });
+      atlas.tick();
     },
     resize,
     resetWorld() {
@@ -398,6 +424,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       for (const sc of scenes.values()) sprites += sc.sprites();
       return { sprites, zoom: cam.zoom };
     },
+    art: () => ({ ...atlas.stats(), rebuilds: art.rebuilds() }),
     pan: (dx, dy) => cam.pan(dx, dy),
     zoomAt: (f, x, y) => cam.zoomAt(f, x, y),
     pickTile(sx, sy) {

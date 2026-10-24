@@ -96,10 +96,11 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     },
     light: (x, y) => (grid.inBounds(x, y) ? grid.get('light', x, y) : 0),
     suitAirSec: o.suitAirSec,
+    weaponArt: (item) => items[item]?.hand?.art,
   });
   const jobView = createJobView(world, atlas, L, { target: inside });
   const siteView = createSiteView(world, atlas, L, modules, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null });
   const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency, view);
   const jamMarks = createJamMarks(grid, atlas, L);
   const sacView = createEggSacView(grid, world, atlas, L, (x, y, wall) => view.tintAt(x, y, wall));
@@ -112,7 +113,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   // A dug outpost is roofed with rock, not plating (PLACEHOLDER, rockRoofView.ts).
   // It sits in the fx layer, and while it is on the region's own tile and entity layers hide: the rock around the base is drawn
   // by the asteroid's view, which lies under them, so anything of the base left showing would cut through the rock.
-  const rockRoof = world.get(grid.id, ShipC)?.outpost?.style === 'dug' ? createRockRoofView(grid, L.fx) : null;
+  const rockRoof = world.get(grid.id, ShipC)?.outpost?.style === 'dug' ? createRockRoofView(grid, atlas, L, L.fx) : null;
   const showRoof = (on: boolean) => {
     roof.setVisible(on && !rockRoof);
     rockRoof?.setVisible(on);

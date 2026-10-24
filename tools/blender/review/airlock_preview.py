@@ -220,7 +220,7 @@ def states(al, pub, out, level="cut"):
 
 def main():
     al, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    pub = Assets(ROOT / "public/assets")
+    pub = Assets(ROOT / "public/assets/2x")
     out.mkdir(parents=True, exist_ok=True)
     for level in ("up", "cut", "low"):
         scene(al, pub, out, level)

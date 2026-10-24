@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ROOF_H, ROOF_Z, WALL_Z, Z_PX } from './heights';
 import { ART_SCALE, TILE_H, TILE_W } from './iso';
-import raw from '../../public/assets/manifest.json?raw';
+import raw from '../../public/assets/2x/manifest.json?raw';
 
 describe('art heights', () => {
   it('match the heights the sprite pipeline wrote to the manifest', () => {

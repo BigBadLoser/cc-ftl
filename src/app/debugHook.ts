@@ -16,6 +16,18 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     screenOf: (shipId: number, x: number, y: number) => r.screenOf(shipId, x, y),
     /** Centre the camera on a sector position in tiles (screenshot scripts). */
     focus: (x: number, y: number) => r.focusSector(x, y),
+    /** Step the camera to the zoom level nearest `z` (screenshot scripts); returns the zoom reached. */
+    zoomTo(z: number) {
+      for (let i = 0; i < 30; i++) {
+        const cur = r.info().zoom;
+        if (Math.abs(cur - z) < 1e-6) break;
+        r.zoomAt(cur < z ? 1.2 : 1 / 1.2, innerWidth / 2, innerHeight / 2);
+        if (r.info().zoom === cur) break;
+      }
+      return r.info().zoom;
+    },
+    /** Sheet streaming: decoded bytes resident (total and per pool), requests, pending, scene rebuilds. */
+    art: () => r.art(),
     /** Modules of a def: grid, origin and access tile. */
     modules(def: string) {
       const out: { id: number; shipId: number; ship: number; x: number; y: number; ax: number; ay: number }[] = [];

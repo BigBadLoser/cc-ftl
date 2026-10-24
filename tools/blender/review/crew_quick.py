@@ -44,7 +44,7 @@ def composite(raw, out):
     from sprites import compose
     sys.path.insert(0, str(ROOT / "tools/blender/review"))
     from crew_compare import Assets
-    pub = Assets(ROOT / "public/assets")
+    pub = Assets(ROOT / "public/assets/2x")
     z = np.load(raw)
     new = {}
     for key in z.files:

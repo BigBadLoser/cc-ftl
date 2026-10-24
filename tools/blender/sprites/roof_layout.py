@@ -8,11 +8,12 @@ Sprite rule (deterministic, local): for roof tile (x, y) of a ship,
 Plates are tile-aligned and a module has one colour, so a tile's overlays always match its plate.
 
 Look (lit like the walls: +y faces lit, +x faces shaded):
-  - frame girder: each module's N / W side is a 2-cell groove plus a dark band with a pair of rivets per tile.
+  - frame girder: each module's N / W side is a 2-cell groove plus a dark band with one pair of rivets.
     An open N / W side gets the same girder from its overlay, so the ship outline is framed wherever it runs;
   - 2-3 raised plates per module: 1-cell groove on N / W, lit lip on S, shaded lip on E, two tones of the hue;
-  - each plate has its own surfacing: recessed pocket with corner bolts, twin pockets, riveted strap, bolted lap seam,
-    corner bolts only, or plain. Every layout mixes them differently;
+  - the production layouts keep it quiet (the Space Haven lesson: large calm slabs, structure from the girder grid):
+    a recessed pocket on one plate or two a module, the rest plain; grooves are the shade tone, not near-black. The
+    other surfacings (twin pockets, riveted strap, bolted lap seam, corner bolts) remain for the variant studies;
   - colour courses: module columns are grouped into bands (blue-grey 1-3 modules wide, hashed by band index, between
     1-module ochre bands), so the ship reads as blue-grey armour with ochre bands, like the hull.
 Bolts are 2x2-cell lit heads with a 1-cell dark foot on S / E. Cells are 1/32 tile (a 2x1 px diamond at 1x).
@@ -23,18 +24,18 @@ MC = M * GN
 
 # colour family roles -> palette names (palette_extra.json)
 FAM = {
-    "o": dict(top="rO1", t2="rO2", lit="rOL", shd="rOS", rl="rOR", k="rOK", fs="rOD", fe="rOE"),
-    "b": dict(top="rB1", t2="rB2", lit="rBL", shd="rBS", rl="rBR", k="rBK", fs="rBD", fe="rBE"),
+    "o": dict(top="rO1", t2="rO2", lit="rOL", shd="rOS", rl="rOR", k="rOS", fs="rOD", fe="rOE"),     # k (grooves) =
+    "b": dict(top="rB1", t2="rB2", lit="rBL", shd="rBS", rl="rBR", k="rBS", fs="rBD", fe="rBE"),     # the shade tone
 }
 
 # plates per layout, in tile units: (x0, y0, w, h, tone, feature)
 # features: P pocket + corner bolts, PP twin pockets, X / Y riveted strap along x / y, LX / LY bolted lap seam
 # across x / y, C corner bolts only, - plain
-LAYOUTS = (
-    ((0, 0, 4, 2, 0, "P"), (0, 2, 2, 2, 1, "LX"), (2, 2, 2, 2, 0, "-")),
-    ((0, 0, 2, 4, 0, "Y"), (2, 0, 2, 2, 1, "C"), (2, 2, 2, 2, 0, "P")),
-    ((0, 0, 4, 1, 1, "-"), (0, 1, 2, 3, 0, "P"), (2, 1, 2, 3, 1, "LY")),
-    ((0, 0, 2, 2, 1, "-"), (2, 0, 2, 2, 0, "X"), (0, 2, 4, 2, 1, "PP")),
+LAYOUTS = (                                             # quiet (Space Haven-like): big plates, a recessed pocket or two a
+    ((0, 0, 4, 2, 0, "P"), (0, 2, 2, 2, 1, "-"), (2, 2, 2, 2, 0, "-")),     # module, no straps or lap seams
+    ((0, 0, 2, 4, 0, "-"), (2, 0, 2, 2, 1, "-"), (2, 2, 2, 2, 0, "P")),
+    ((0, 0, 4, 1, 1, "-"), (0, 1, 2, 3, 0, "P"), (2, 1, 2, 3, 1, "-")),
+    ((0, 0, 2, 2, 1, "-"), (2, 0, 2, 2, 0, "-"), (0, 2, 4, 2, 1, "-")),
 )
 RAIL = 9               # girder width (cells): 2-cell groove, 6-cell band, 1-cell weld line
 RIVETS = (12, 17)      # girder rivet pair, offsets along each tile (cells)
@@ -134,9 +135,8 @@ def _corners(cv, X0, Y0, X1, Y1):
 
 def _feature(cv, feat, X0, Y0, X1, Y1, other):
     w, h = X1 - X0, Y1 - Y0
-    if feat == "P":
+    if feat == "P":                                      # (no corner bolts: the roof stays quiet)
         _pocket(cv, X0 + FM + 5, Y0 + FM + 5, X1 - 10, Y1 - 10, other)
-        _corners(cv, X0, Y0, X1, Y1)
     elif feat == "PP":                                   # twin pockets split along the plate's long axis
         if w >= h:
             mid = X0 + w // 2
@@ -206,7 +206,7 @@ def _girder(cv, side, n):
                     cv.put(X, Y, "k")
             else:
                 cv.put(X, Y, "rl", True)
-    for t in range(n // GN):
+    for t in range(1, n // GN, M):                       # one rivet pair a module (its second tile), not every tile
         for q in RIVETS:
             p = t * GN + q
             cv.bolt(*((p, 4) if side == "n" else (4, p)), foot=False)

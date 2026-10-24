@@ -20,7 +20,7 @@ from . import human_shape
 from .human_base import paint
 
 SHIN_SLANT = 0.25                     # how much of the base's backward shin slant is kept in the rest pose
-N_RING = 16
+N_RING = 24
 
 
 # ---- mesh builder --------------------------------------------------------------------------------------------------
@@ -232,6 +232,9 @@ def torso(b, R, grow=0.0, lo=None, hi=None, cuts=(), keep=None):
     lo, hi = zs[0] if lo is None else lo, zs[-1] if hi is None else hi
     mid = [r for r in rings if lo < r[0].z < hi] + [at(z) for z in cuts if lo < z < hi]
     clip = [at(lo)] + sorted(mid, key=lambda r: r[0].z) + [at(hi)]
+    if grow and hi == zs[-1]:                    # a garment's top clears the body's by its thickness too (level tops fight)
+        c, hx, hy, w = clip[-1]
+        clip[-1] = (c + Vector((0, 0, grow)), hx, hy, w)
     b.loft(clip, keep=keep)
 
 
@@ -309,11 +312,23 @@ def arm(b, R, side, grow=0.0, upper=1.0, fore=True, hand=True):
         chain(b, R, bones, grow, t1=upper * (n_up - 1) / (n - 1))
     else:
         chain(b, R, bones, grow)
-    if hand:                                                                 # the thumb, along the front of the hand
-        t0, t1 = R.h[f"thumb_1.{s}"], R.t[f"thumb_2.{s}"]
-        ax = (R.t[f"hand.{s}"] - R.h[f"hand.{s}"]).normalized()
-        tip = t0.lerp(t1, 0.5) + ax * 0.02                                  # short and laid in along the hand
-        b.tube(t0 - ax * 0.015, tip, 0.024 + grow, 0.02 + grow, W(f"hand.{s}"))
+    if hand:
+        fingers(b, R, s, grow)
+
+
+FINGER_R = (0.017, 0.015, 0.013)      # finger radius per segment (base to tip): ~3 px wide at 2x, with a groove between
+
+
+def fingers(b, R, s, grow=0.0):
+    """Four fingers and a thumb as tubes on their own bones, so they curl with the clips' finger poses (a closed hand,
+    a grip) and read as fingers at 2x: each segment on its bone, slightly shorter than the bone so the joints show."""
+    for f in ("index", "middle", "ring", "pinky"):
+        for k, r in zip((1, 2, 3), FINGER_R):
+            h, t = R.h[f"{f}_{k}.{s}"], R.t[f"{f}_{k}.{s}"]
+            b.tube(h, t, r + grow, r * 0.95 + grow, W(f"{f}_{k}.{s}"))
+    for k, r in ((1, 0.022), (2, 0.019), (3, 0.016)):                        # the thumb, thicker
+        h, t = R.h[f"thumb_{k}.{s}"], R.t[f"thumb_{k}.{s}"]
+        b.tube(h, t, r + grow, r * 0.92 + grow, W(f"thumb_{k}.{s}"))
 
 
 def leg(b, R, side, grow=0.0, foot=True, boot=0.0):
@@ -324,10 +339,10 @@ def leg(b, R, side, grow=0.0, foot=True, boot=0.0):
         b.sweep(transport([(c, e1, e2, r1, r2, W(f"foot.{s}")) for c, e1, e2, r1, r2 in secs]), grow=grow + boot, exp=2.6)
 
 
-HEAD_EXP = 3.6                        # squarer sections (2: round)
-HEAD_TOP = 0.35                       # how much of the traced cranium's rounding off is taken out (a flatter top)
-HEAD_JAW = 0.4                        # likewise for the narrowing to the chin (a squarer jaw)
-HEAD_CROWN = 0.7
+HEAD_EXP = 2.8                        # sections between round (2) and square (3.6 read as a box at 2x)
+HEAD_TOP = 0.1                        # how much of the traced cranium's rounding off is taken out (a flatter top)
+HEAD_JAW = 0.15                       # likewise for the narrowing to the chin (a squarer jaw)
+HEAD_CROWN = 0.8
 
 
 def head(b, R, grow=0.0, keep=None):

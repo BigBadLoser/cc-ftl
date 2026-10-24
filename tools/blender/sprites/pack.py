@@ -10,6 +10,7 @@ import re
 
 import numpy as np
 
+from . import pod_muzzle
 from .post import write_png
 from .scale import MAX_SHEET
 
@@ -70,6 +71,9 @@ def pack(family, items, out, log=print):
                  "anchor": {"x": int(it["ax"]), "y": int(it["ay"])}, "footprint": [int(v) for v in it["fp"]]}
             if it["g"][..., 3].any():
                 a["glow"] = True
+            mz = pod_muzzle.muzzle_px(it["id"])          # the mining pod's laser tip (sprite px from the anchor)
+            if mz is not None:
+                a["muzzle"] = mz
             assets[it["id"]] = a
         write_png(out / f"sprites/{name}.png", atlas)
         sd = {"image": f"sprites/{name}.png"}

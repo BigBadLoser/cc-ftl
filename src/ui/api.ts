@@ -739,6 +739,10 @@ export interface UiApi {
   setCombatMarks(marks: { shipTarget?: number; overrides: number[]; hover?: number; arming: boolean }): void;
   /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
   pickCombat(x: number, y: number): { moduleId: number } | null;
+  /** The art set in use: 1 = 64x32 pixel art drawn doubled (hard 2x2 blocks), 2 = the 128x64 art. */
+  artScale: 1 | 2;
+  /** Remember an art set and reload the page into it (the sheet stores and every built sprite hold one set's textures). */
+  setArtScale(scale: 1 | 2): void;
   /** Roof hostile ships (default) or show their interior. */
   setRoofEnemies(on: boolean): void;
   /** Show the player's ship with its roof on (view from outside). */

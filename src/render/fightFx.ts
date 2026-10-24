@@ -15,6 +15,8 @@ import { ART_SCALE as S, iso, type Pt } from './iso';
 
 export interface FightFxHost {
   ship(shipId: number): Ship | undefined;
+  /** Where the crew member's drawn weapon fires from (art px from their feet), or null when no weapon is drawn on them. */
+  muzzle?(crew: number): Pt | null;
 }
 
 export interface FightFx {
@@ -29,7 +31,7 @@ const TRACER_LIFE = 0.32;
 const FLASH_LIFE = 0.35;
 const TEXT_LIFE = 0.8;
 
-interface Tracer { a: Pt; b: Pt; age: number; ranged: boolean; glob?: boolean }
+interface Tracer { a: Pt; b: Pt; age: number; ranged: boolean; glob?: boolean; /** Melee slash drawn at `a` (the blade's tip) instead of on the target. */ tip?: boolean }
 /** A spitter's glob (natural weapon 'spit'): a slow glowing ball along the line. PLACEHOLDER until a glob sprite exists. */
 const GLOB_LIFE = 0.55;
 interface Flash { x: number; y: number; age: number; life: number; color: number; r: number }
@@ -69,12 +71,16 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
     onEvents(events) {
       for (const e of events) {
         if (e.type === 'crew.attacked') {
-          const a = at(gridOf(e.ship), e.x, e.y, MUZZLE_Z);
+          // From the drawn weapon's muzzle (its tip, for melee) when there is one, else from the crew's chest.
+          const feet = at(gridOf(e.ship), e.x, e.y, 0);
+          const m = host.muzzle?.(e.crew);
+          const a = feet && m ? { x: feet.x + m.x, y: feet.y + m.y } : at(gridOf(e.ship), e.x, e.y, MUZZLE_Z);
           const b = at(gridOf(e.ship), e.tx, e.ty, BODY_Z);
           if (!a || !b) continue;
           const glob = e.weapon === 'spit';
-          tracers.push({ a, b, age: 0, ranged: e.ranged, glob });
-          if (!glob) flashes.push({ x: e.ranged ? a.x : b.x, y: e.ranged ? a.y : b.y, age: 0, life: 0.2, color: 0xfff1a8, r: (e.ranged ? 6 : 8) * S });
+          const tip = !e.ranged && !!m;
+          tracers.push({ a, b, age: 0, ranged: e.ranged, glob, tip });
+          if (!glob) flashes.push({ x: e.ranged || tip ? a.x : b.x, y: e.ranged || tip ? a.y : b.y, age: 0, life: 0.2, color: 0xfff1a8, r: (e.ranged ? 6 : 8) * S });
         } else if (e.type === 'crew.hit') {
           const p = crewAt(e.target, BODY_Z);
           if (!p) continue;
@@ -103,7 +109,10 @@ export function createFightFx(world: World, parent: Container, scale: () => numb
         }
         const k = 1 - t.age / TRACER_LIFE;
         if (t.ranged) g.moveTo(t.a.x, t.a.y).lineTo(t.b.x, t.b.y).stroke({ width: 2 * S, color: 0xffe08a, alpha: k });
-        else g.moveTo(t.b.x - 8 * S, t.b.y - 8 * S).lineTo(t.b.x + 8 * S, t.b.y + 8 * S).stroke({ width: 2 * S, color: 0xffffff, alpha: k });
+        else {
+          const c = t.tip ? t.a : t.b;
+          g.moveTo(c.x - 8 * S, c.y - 8 * S).lineTo(c.x + 8 * S, c.y + 8 * S).stroke({ width: 2 * S, color: 0xffffff, alpha: k });
+        }
       }
       for (let i = flashes.length - 1; i >= 0; i--) {
         const f = flashes[i] as Flash;

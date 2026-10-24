@@ -142,6 +142,9 @@ export function miningSystem(sim: Sim): void {
       if (approach(sim, v, b, to)) order.phase = 'mining';
       continue;
     }
+    // The pod faces the ore it cuts (the laser points at it).
+    const face = order.target as { x: number; y: number };
+    if (Math.hypot(face.x + 0.5 - b.x, face.y + 0.5 - b.y) > 0.0001) b.heading = Math.atan2(face.y + 0.5 - b.y, face.x + 0.5 - b.x);
     mine(sim, pod, v, order);
     if (cargoSpace(sim, v) <= 0) goHome(sim, pod, v, order);
   }

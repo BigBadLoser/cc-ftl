@@ -1,6 +1,6 @@
 """Incremental crew build: render only what the cache lacks, then pack per-clip sheets.
 
-  blender -b --factory-startup --python tools/blender/sprites/build_sprites.py -- public/assets crew [--item S[,S]] [--clip C[,C]] [--force] [--plan]
+  blender -b --factory-startup --python tools/blender/sprites/build_sprites.py -- public/assets/2x crew [--item S[,S]] [--clip C[,C]] [--force] [--plan]
 
 Pipeline: build the scene (human_items) -> digest every item and the rig -> key every (item, clip, direction, frame) ->
 render the misses (pose each frame once, render only the items that miss it, store each result at once so an
@@ -16,6 +16,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 import bpy
+import numpy as np
 from . import core, crew_cache as cc, crew_digest as dg, crew_pack
 from . import crew_spec as cs
 from . import crew_clips as clips
@@ -28,11 +29,30 @@ GLOBAL_FILES = [SRC / "core.py", SRC / "post.py", SRC / "human_render.py",
                 BL / "lib/palette.py", REPO / "palette.json", BL / "palette_extra.json", BL / "source/base_cc0.glb"]
 CLIP_FILES = {"sit_idle": ["human_sit.py", "console_proto.py", "cmbkit.py"], "sit_work": ["human_sit.py", "console_proto.py", "cmbkit.py"],
               "eva_float": ["human_suit.py", "human_sit.py"]}      # files a clip's pose/chair code leans on (hashed for that clip only)
+for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy", "walk_aim_1h", "walk_aim_2h",
+           "walk_heavy", "ready_1m", "swing_1m", "ready_2m", "swing_2m", "crouch_aim_1h", "crouch_fire_1h",
+           "crouch_aim_2h", "crouch_fire_2h", "crouch_fire_heavy", "crouch_ready_1m", "lean_l_1h", "lean_r_1h",
+           "lean_l_2h", "lean_r_2h"):
+    CLIP_FILES[_c] = ["human_aim.py", "human_v2_weapons.py", "human_sit.py", "human_crouch.py"]
+for _c in ("crouch_idle", "crouch_walk"):
+    CLIP_FILES[_c] = ["human_crouch.py", "human_aim.py", "human_sit.py"]
 
 
 def item_clips(it):
-    """Clips an item has sheets for (Pose.items in crew_clips: no sit_* for gear.back, eva_float only for body and suit)."""
+    """Clips an item has sheets for (Pose.items in crew_clips: no sit_* for gear.back, eva_float only for body and suit).
+    Held weapons (gear.hand) only get the clips that ask for them: they are drawn only in their own family's combat clips."""
+    if it.slot == "gear.hand":
+        return [clip for clip, _, _, _ in cs.CLIPS if clips.pose_of(clip).items and clips.pose_of(clip).items(it)]
     return [clip for clip, _, _, _ in cs.CLIPS if not clips.pose_of(clip).items or clips.pose_of(clip).items(it)]
+
+
+def muzzle_px(arm, it):
+    """A held weapon's muzzle in sprite px from the anchor (x right, y down), or None."""
+    mz = getattr(it, "muzzle", None)
+    if mz is None:
+        return None
+    sx, sy = core.screen_xy(np.array(arm.matrix_world @ (arm.pose.bones["hand.R"].matrix @ mz)))
+    return np.array([round(sx, 1), round(-sy, 1)], np.float32)
 
 
 def clip_key(clip, n):
@@ -105,6 +125,9 @@ def build(out, opts, log=_log):
     _render(arm, items, miss, log)
     if miss:
         log(f"CREW rendered {len(miss)} entries in {time.time() - t1:.1f}s")
+    if opts.get("cache-only"):
+        log("CREW cache-only complete; skipping temporary sheet packing")
+        return {}, {}, full
     t2 = time.time()
     sheets, assets = crew_pack.pack(items, entries, out, log)
     log(f"CREW pack {time.time() - t2:.1f}s; total {time.time() - t0:.1f}s; hits {len(entries) - len(miss)} misses {len(miss)}")
@@ -136,7 +159,7 @@ def _render(arm, items, miss, log):
         chair.hide_render, chair.rotation_euler = not p.chair, arm.rotation_euler
         for k, _, _, _, _, path in todo[(d, clip, i)]:
             rgba, g = hr.render_item(items[k], items, head, chair=chair if p.chair else None)
-            cc.store(path, rgba, g)
+            cc.store(path, rgba, g, muzzle_px(arm, items[k]))
             done += 1
         if done % 200 < len(todo[(d, clip, i)]):
             log(f"  rendered {done}/{len(miss)}")

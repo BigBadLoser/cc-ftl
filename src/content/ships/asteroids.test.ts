@@ -99,8 +99,12 @@ describe('asteroids in the sector', () => {
     run(sim, 1);
     expect(asteroids(sim)).toEqual([]);
     expect(sim.archives.find((x) => x.node === start)?.entities.some((e) => e.id === id)).toBe(true);
-    sim.enqueue({ type: 'sector.deploy', ...home });
-    run(sim, 1);
+    // a generated ship may lie on the home spot in the away node: deploy at the first clear one
+    for (let i = 0; i < 30; i++) {
+      sim.enqueue({ type: 'sector.deploy', x: home.x + (i % 6) * 40, y: home.y + Math.floor(i / 6) * 40 });
+      sim.step();
+      if (!sim.events.drain().some((e) => e.type === 'command.rejected')) break;
+    }
     sim.enqueue({ type: 'debug.galaxyTeleport', node: start });
     run(sim, 1);
     expect(asteroids(sim)).toEqual([id]);

@@ -37,8 +37,6 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.engine.hull': { ids: ['tile.hull.full.m15', 'tile.hull.m15'], tint: 0xffc080, perTile: true },
   'module.engine.machine': { ids: CRATE, tint: 0xffb060, perTile: true },
   'module.engine.machine.active': { ids: CRATE, tint: 0xffe0a0, perTile: true },
-  // Pod bay (asteroids slice 2): a hatch plate per tile until its art exists.
-  'module.pod_bay': { ids: FLOOR, tint: 0xd8c070, perTile: true },
   'module.shield_gen': { ids: CRATE, tint: 0x7fe6ff, perTile: true },
   'module.shield_gen_small': { ids: CRATE, tint: 0x7fe6ff, perTile: true },
   'module.weapons_console': { ids: CONSOLE, tint: 0xff9a8a, perTile: true },
@@ -49,7 +47,7 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.galley': { ids: ['module.fabricator'], tint: 0x8affc0 },
   // Ore refinery (3x4): a crate per footprint tile, tinted orange, until it has art.
   'module.refinery': { ids: CRATE, tint: 0xffa060, perTile: true },
-  // Cargo containers have no entry: until their sheets land they are drawn boxes (render/containerBox.ts).
+  // Cargo containers have no entry: the real sheets exist; drawn boxes only if art is missing (render/containerBox.ts).
   // Roof turret: a crate with a barrel nub pointing along the aim (see turretView).
   'turret.generic': { ids: CRATE, tint: 0xd0d8e8 },
   'turret.generic.charged': { ids: CRATE, tint: 0xfff0b0 },
@@ -108,6 +106,7 @@ export interface Art {
 export function resolveArt(atlas: Atlas, chain: readonly string[], key: string = chain[chain.length - 1] ?? ''): Art | undefined {
   const real = atlas.firstOf(chain);
   if (real) return { s: real, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 };
+  if (atlas.loading(chain)) return undefined; // the real art is on its way: draw nothing, not the stand-in
   const fb = FALLBACK[key];
   const s = fb && atlas.firstOf(fb.ids);
   return fb && s ? { s, tint: fb.tint ?? 0xffffff, scale: fb.scale ?? 1, fallback: true, lift: fb.lift ?? 0, add: fb.add, perTile: !!fb.perTile, rise: fb.rise ?? 1 } : undefined;

@@ -1,6 +1,8 @@
 import { AsteroidC } from '../asteroids/components';
 import type { Sim } from '../sim';
-import { isAsteroidRock } from '../structure';
+import { BodyC } from '../body';
+import { isAsteroidRock, Struct } from '../structure';
+import { DIRS, STANDOFF } from './geometry';
 import { MiningPodC, type MiningPod } from './components';
 
 /** True if the sector tile is ore-bearing rock owned by `asteroid`. */
@@ -54,13 +56,18 @@ export function pickTile(sim: Sim, pod: number, order: MiningPod, from: { x: num
   return nearest(tiles.filter((t) => !taken.has(`${t.x},${t.y}`))) ?? nearest(tiles);
 }
 
-/** Hover offsets tried around a target tile's centre, in pod widths: over it, then a ring of 8, then a wider ring. */
-const SPOTS: readonly [number, number][] = [[0, 0], ...[1, 2].flatMap((r) =>
-  Array.from({ length: 8 }, (_, k): [number, number] => [r * Math.cos((k * Math.PI) / 4), r * Math.sin((k * Math.PI) / 4)]))];
+/**
+ * Headings (sprite directions, `DIRS`) in the order a pod tries them. The pod faces the ore, so it sits at the ore's centre minus
+ * `STANDOFF` along the heading: heading d0 puts it at grid -x of the ore and d2 at grid -y (screen up-left and up-right, behind the
+ * ore, facing down-right and down-left toward the camera), then d4 and d6 (in front), then the four grid diagonals.
+ */
+const HEADINGS: readonly (readonly number[])[] = [[0, 2], [4, 6], [1, 3, 5, 7]];
 
 /**
- * Where a pod hovers to cut `target`: the first spot (over the tile, then rings around it) at least `size` from every other
- * pod's spot, so pods sharing a tile or working neighbouring ones never sit on top of each other. Deterministic.
+ * Where a pod hovers to cut `target`: on one of the eight heading rays out from the tile's centre, `STANDOFF` away, so its laser
+ * barrel's axis ends on the tile (geometry.ts). The first heading (in `HEADINGS` order, nearest the pod first within a group, ties
+ * in list order) whose spot is over open space or ground (not rock mass) and at least `size` from every other pod's spot wins;
+ * with none, the same ignoring the open-space rule (the pod flies above rock), then ignoring the separation. Deterministic.
  */
 export function hoverSpot(sim: Sim, pod: number, target: { x: number; y: number }, size: number): { x: number; y: number } {
   const others: { x: number; y: number }[] = [];
@@ -69,9 +76,20 @@ export function hoverSpot(sim: Sim, pod: number, target: { x: number; y: number 
     if (s) others.push(s);
   }
   const cx = target.x + 0.5, cy = target.y + 0.5;
-  for (const [ox, oy] of SPOTS) {
-    const x = cx + ox * size, y = cy + oy * size;
-    if (others.every((o) => (o.x - x) ** 2 + (o.y - y) ** 2 >= size * size - 1e-9)) return { x, y };
-  }
-  return { x: cx, y: cy };
+  const clear = (x: number, y: number) => others.every((o) => (o.x - x) ** 2 + (o.y - y) ** 2 >= size * size - 1e-9);
+  const g = sim.sector.grid;
+  const open = (x: number, y: number) => {
+    const tx = Math.floor(x), ty = Math.floor(y);
+    if (tx < 0 || ty < 0 || tx >= sim.sector.width || ty >= sim.sector.height) return false;
+    const k = g.get('struct', tx, ty);
+    return k === Struct.Space || k === Struct.Ground;
+  };
+  const at = sim.world.get(pod, BodyC) ?? { x: cx, y: cy };
+  const spots = HEADINGS.map((group) =>
+    group
+      .map((k, i) => ({ x: cx - (DIRS[k] as readonly [number, number])[0] * STANDOFF, y: cy - (DIRS[k] as readonly [number, number])[1] * STANDOFF, i }))
+      .sort((a, b) => (a.x - at.x) ** 2 + (a.y - at.y) ** 2 - ((b.x - at.x) ** 2 + (b.y - at.y) ** 2) || a.i - b.i),
+  ).flat();
+  const hit = spots.find((c) => open(c.x, c.y) && clear(c.x, c.y)) ?? spots.find((c) => clear(c.x, c.y)) ?? spots[0];
+  return hit ? { x: hit.x, y: hit.y } : { x: cx, y: cy };
 }

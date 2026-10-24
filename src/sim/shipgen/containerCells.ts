@@ -13,10 +13,10 @@ export interface ContainerKind {
 }
 
 export const CONTAINER_CHARS: Readonly<Record<string, ContainerKind>> = {
-  '%': { def: 'container.2x3', rot: 0, w: 2, h: 3 },
-  '^': { def: 'container.2x3', rot: 1, w: 3, h: 2 },
-  '&': { def: 'container.3x5', rot: 0, w: 3, h: 5 },
-  '+': { def: 'container.3x5', rot: 1, w: 5, h: 3 },
+  '%': { def: 'container.2x4', rot: 0, w: 2, h: 4 },
+  '^': { def: 'container.2x4', rot: 1, w: 4, h: 2 },
+  '&': { def: 'container.3x6', rot: 0, w: 3, h: 6 },
+  '+': { def: 'container.3x6', rot: 1, w: 6, h: 3 },
 };
 
 export const isContainerCell = (c: string | undefined): boolean => c !== undefined && c in CONTAINER_CHARS;

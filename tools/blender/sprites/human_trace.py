@@ -13,11 +13,15 @@ FOLD = {"index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand", "thu
 TORSO = ("hips", "spine", "spine_02", "spine_03", "clavicle.L", "clavicle.R")
 HEAD = ("neck_01", "head")
 LIMBS = ("arm", "forearm", "hand", "leg", "shin", "foot")
-UPPER_K = (1.12, 1.45, 1.12)          # upper arm thickness against the traced arm: shoulder, bicep, elbow
+UPPER_K = (1.05, 1.18, 1.02)          # upper arm thickness against the traced arm: shoulder, bicep, elbow
+                                      # (a bigger bicep made a ball at the top of the arm at 2x)
 FORE_K = (1.08, 1.02, 0.95)           # forearm: elbow, a third down, wrist
-SHIN_K = (1.0, 1.14, 0.88)            # lower leg: knee, the calf a third down, a narrower ankle
+SHIN_K = (0.88, 1.08, 0.76)           # lower leg: a narrow knee, the calf a third down, a slim ankle
+THIGH_K = (1.04, 1.0, 0.84)           # thigh: full at the hip, tapering to the knee
+FOOT_K = (0.85, 0.88)                 # foot length (from the ankle) and girth: the 1x feet were oversized to read
 HEAD_W, HEAD_H = 0.84, 1.14           # head width and height against the traced head
-HAND_LEN = 0.17                       # wrist to the curled finger ends (the traced hand, fingers out, is 0.26)
+HEAD_K = 1.0                          # the whole head's size (about the chin)
+HAND_LEN = 0.15                       # wrist to just past the knuckles: the palm (the fingers are separate tubes)
 
 
 def fold(name):
@@ -182,7 +186,8 @@ def to_joint(secs, head):
 def oval(rows):
     """The traced head made narrower (HEAD_W) and taller (HEAD_H, up from the chin): an oval from the front, not a ball."""
     z0 = rows[0][0].z
-    return [(Vector((c.x, c.y, z0 + (c.z - z0) * HEAD_H)), hx * HEAD_W, hy, wt) for c, hx, hy, wt in rows]
+    return [(Vector((c.x, c.y, z0 + (c.z - z0) * HEAD_H * HEAD_K)), hx * HEAD_W * HEAD_K, hy * HEAD_K, wt)
+            for c, hx, hy, wt in rows]
 
 
 def shape_hand(secs, head):
@@ -201,8 +206,8 @@ def shape_hand(secs, head):
         f = min(1.0, max(0.0, (t - ts[k]) / (ts[k + 1] - ts[k])))
         c = Vector(secs[k][0]).lerp(Vector(secs[k + 1][0]), f)
         u = t / HAND_LEN
-        curl = 0.035 * max(0.0, (u - 0.5) / 0.5) ** 2                       # the fingers bend down under the palm
-        width = 0.038 + 0.016 * min(1.0, u / 0.7) - 0.01 * max(0.0, (u - 0.7) / 0.3)
+        curl = 0.0
+        width = 0.038 + 0.016 * min(1.0, u / 0.7) - 0.006 * max(0.0, (u - 0.7) / 0.3)
         thick = 0.028 + 0.008 * min(1.0, u / 0.6)
         out.append((c - e2 * curl, e1, e2, width, thick))
     return out
@@ -235,9 +240,12 @@ def measure(arm, body):
                                                 axis=True), FORE_K)
         out["limb"][f"hand.{s}"] = shape_hand(wrist(limb(by[f"hand.{s}"], h[f"hand.{s}"], t[f"hand.{s}"], step=0.03),
                                                     h[f"hand.{s}"]), h[f"hand.{s}"])
-        out["limb"][f"leg.{s}"] = to_joint(limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"]), h[f"leg.{s}"])
+        out["limb"][f"leg.{s}"] = bulk(to_joint(limb(by[f"leg.{s}"], h[f"leg.{s}"], t[f"leg.{s}"]), h[f"leg.{s}"]),
+                                       THIGH_K)
         out["limb"][f"shin.{s}"] = bulk(limb(by[f"shin.{s}"], h[f"shin.{s}"], t[f"shin.{s}"]), SHIN_K)
-        out["limb"][f"foot.{s}"] = limb(by[f"foot.{s}"], h[f"foot.{s}"], t[f"toe.{s}"], step=0.035)[:-1]   # toe shorter
+        fh, (fl, fg) = h[f"foot.{s}"], FOOT_K
+        out["limb"][f"foot.{s}"] = [(fh + (Vector(c) - fh) * fl, e1, e2, r1 * fg, r2 * fg) for c, e1, e2, r1, r2 in
+                                    limb(by[f"foot.{s}"], fh, t[f"toe.{s}"], step=0.035)[:-1]]   # toe shorter
     hz = max(b[:, 2].max() for k, b in by.items() if k == "head")
     tz = by["hips"][:, 2].min()
     lg = out["limb"]["leg.L"][0]

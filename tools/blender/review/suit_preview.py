@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "tools/blender"))
-from sprites import compose  # noqa: E402
+from sprites import compose, crew_trim  # noqa: E402
 
 BG = (14, 17, 22)
 COL = {"team.skin": (232, 190, 150), "team.hair": (70, 48, 34), "team.cloth": (60, 96, 150), "team.accent": (200, 150, 40)}
@@ -40,10 +40,10 @@ class Assets:
     def frame(self, aid, d, clip, i):
         a = self.m["assets"][aid]
         sh = self.m["sheets"][a["clips"][clip].get("sheet", a.get("sheet"))]
-        col, fw, fh = a["clips"][clip]["start"] + i, a["frameW"], a["frameH"]
-        sl = (slice(d * fh, (d + 1) * fh), slice(col * fw, (col + 1) * fw))
-        g = self.img(sh["glow"])[sl] if "glow" in sh else None
-        return self.img(sh["image"])[sl], g, a["anchor"]
+        c = a["clips"][clip]
+        col = c["start"] + i
+        g = crew_trim.full_cell(self.img(sh["glow"]), a, c, d, col) if "glow" in sh else None
+        return crew_trim.full_cell(self.img(sh["image"]), a, c, d, col), g, a["anchor"]
 
 
 def outline_rim(cv):
@@ -80,7 +80,7 @@ def iso(ox, oy, gx, gy):
 
 def main():
     A, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    pub = Assets(ROOT / "public/assets")
+    pub = Assets(ROOT / "public/assets/2x")
     out.mkdir(parents=True, exist_ok=True)
     W, H = 900, 300
     px = np.zeros((H, W, 4), np.uint8)
