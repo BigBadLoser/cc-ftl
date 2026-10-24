@@ -4,8 +4,13 @@ import { footprintTiles } from '../sim/modules/footprint';
 /** Facing (sleep clip row) whose head lies toward each grid direction: -y (screen NE), +x (SE), +y (SW), -x (NW). */
 const HEAD_DIR = { negY: 2, posX: 4, posY: 6, negX: 0 } as const;
 
-/** Art px a sleeper is raised above the floor tile: the mattress top over the floor. */
-export const BED_LIFT = 7;
+/**
+ * 1x art px a sleeper is raised above the floor point of the bed's centre. Measured on the 2x sheets: the mattress top
+ * at the centre of `module.bed` is 16 px above the floor point (bed sprite column through the centre: top surface
+ * midpoint at row 68, floor point row 84), and the `sleep` frames already rest their underside at the body's centre
+ * 8 px above their anchor (4 to 11 over the headings), so the lift is the difference, 8 px = 4 at 1x.
+ */
+export const BED_LIFT = 4;
 
 export interface BedPose {
   /** Where the sleeper lies: the centre of the bed's footprint, in sector tiles. */

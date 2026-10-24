@@ -304,7 +304,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         // A sleeper in a bed lies along it, head on the pillow, centred on its footprint and raised to the mattress.
         const bed = clipName === 'sleep' && !carried && !dead && !downed && speed <= 0.3 && at?.def.bed ? bedPose(at.def, at.m.x, at.m.y, at.m.rot, !!atlas.manifest.assets[`${at.def.asset}.r${at.m.rot % 4}`]) : null;
         const dir = bed ? bed.dir : (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
-        s.shadow.visible = !sitting;
+        s.shadow.visible = !sitting && !bed; // a sleeper in a bed lies on the mattress: no floor shadow under the bed
         if (clipName !== s.clip) {
           if (s.shot && clipName === s.shot.clip) s.shot.until -= s.t;
           s.clip = clipName;
