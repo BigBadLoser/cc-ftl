@@ -8,6 +8,7 @@
   import StarmapBody from './StarmapBody.svelte';
   import StarmapSprite, { crispPx } from './StarmapSprite.svelte';
   import { toneTint } from './starmapTint';
+  import { strHash } from './starmapArtIds';
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
   import { pixelArrow, pixelDiamond, pixelLine, pixelOutline, pixelPolyline, pixelSquare } from './starmapPixel';
@@ -78,11 +79,18 @@
   /** Icons at the crisp size (whole device px per art px, StarmapSprite `crispPx`), in map units: structures, fleets. */
   const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
   const structPx = $derived(px(crispPx(art?.frames['starmap.struct.den']?.w ?? 48, 24, dpr)));
+  /** The radius structures orbit at: clear of the node's pip and rings. */
+  const orbitR = $derived(px(30));
   const fleetPx = $derived(px(crispPx(art?.frames['starmap.fleet.patrol.d0']?.w ?? 40, 48, dpr)));
   /** An icon heading (degrees, the SVG sense: 0 east, clockwise) as one of the eight `d` frames. */
   const dir = (deg: number) => (((Math.round(deg / 45) % 8) + 8) % 8);
   /** A node shows its name when it matters (yours, a jump away, picked, under the cursor) or when zoomed in. */
-  const named = (n: UiStarNode) => n.known && (n.current || n.reachable || selected === n.id || hover === n.id || s > 1.2);
+  /** A node shows its name only when it matters: yours, the picked one, the one under the cursor. */
+  const named = (n: UiStarNode) => n.known && (n.current || selected === n.id || hover === n.id);
+  /** Structure icons orbit their node: one lap a minute, each node from its own starting angle; still with reduced motion. */
+  const ORBIT_SEC = 60;
+  const still = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const phase = (id: string) => strHash(id) % 360;
 </script>
 
 {#each map.sectors as sec (sec.id)}
@@ -134,9 +142,22 @@
       {#if n.current && !ship}<rect {...sq(n.x, n.y, 11)} class="here" />{/if}
       {#if hover === n.id}<rect {...sq(n.x, n.y, 12)} class="hov" />{/if}
       {#if s > 0.7 && art}
-        {#each n.icons as ic, i (i)}
-          <StarmapSprite {art} id={ic.sprite} x={n.x + px(8) + structPx * (i + 0.5)} y={n.y} size={structPx} tint={ic.tone ? toneTint(ic.tone) : null} />
-        {/each}
+        {@const a0 = phase(n.id)}
+        <g transform="translate({n.x} {n.y})">
+          <g transform="rotate({a0})">
+            {#if !still}<animateTransform attributeName="transform" type="rotate" from={a0} to={a0 + 360} dur="{ORBIT_SEC}s" repeatCount="indefinite" />{/if}
+            {#each n.icons as ic, i (i)}
+              {@const t = (i / n.icons.length) * Math.PI * 2}
+              <g transform="translate({Math.cos(t) * orbitR} {Math.sin(t) * orbitR})">
+                <!-- Turned back as the ring turns, so the icon stays upright. -->
+                <g transform="rotate({-a0})">
+                  {#if !still}<animateTransform attributeName="transform" type="rotate" from={-a0} to={-a0 - 360} dur="{ORBIT_SEC}s" repeatCount="indefinite" />{/if}
+                  <StarmapSprite {art} id={ic.sprite} x={0} y={0} size={structPx} tint={ic.tone ? toneTint(ic.tone) : null} />
+                </g>
+              </g>
+            {/each}
+          </g>
+        </g>
       {:else if s > 0.7}
         {#each n.badges as b, i (i)}
           <rect x={n.x + px(9 + i * 13)} y={n.y - px(6)} width={px(12)} height={px(12)} class="chip" style={`fill: ${BADGE[b] ?? 'var(--dim)'}`} />
@@ -144,7 +165,7 @@
         {/each}
       {/if}
       {#each n.jobs ?? [] as j, i (i)}
-        <path d={pixelDiamond(n.x - px(16), n.y + px(i * 16 - ((n.jobs?.length ?? 1) - 1) * 8), px(7), g)} class="job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job-mark"><title>{j.label}</title></path>
+        <path d={pixelDiamond(n.x - (art ? orbitR + px(26) : px(16)), n.y + px(i * 16 - ((n.jobs?.length ?? 1) - 1) * 8), px(7), g)} class="job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job-mark"><title>{j.label}</title></path>
       {/each}
       {#if named(n)}<text x={n.x} y={n.y + px(20)} class="nname" class:cur={n.current} font-size={px(13)} stroke-width={px(3)}>{n.name}</text>{/if}
     </g>
@@ -157,7 +178,7 @@
   {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] })} class="lane heading" style={`fill: ${toneColor(m.f.tone)}`} />{/if}
 {/each}
 {#each marks as m (m.f.id)}
-  <g transform={`translate(${m.f.x + m.ox * px(40)} ${m.f.y + m.oy * px(40)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
+  <g transform={`translate(${m.f.x + m.ox * px(48)} ${m.f.y + m.oy * px(48)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
     <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
     {#if art && art.frames[`starmap.fleet.${m.f.kind}.d0`]}
       <StarmapSprite {art} id={`starmap.fleet.${m.f.kind}.d${dir(m.heading)}`} x={0} y={0} size={fleetPx} tint={toneTint(m.f.tone)} />
