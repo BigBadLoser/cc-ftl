@@ -2,7 +2,7 @@ import {
   DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
   fleetName, nodeOf, portNode, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
-import type { UiStarExit, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
+import type { UiNodeJob, UiStarExit, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { cargoOf, marketOf } from './marketSnapshot';
 import { newsOf } from './newsSnapshot';
 import { buildHeat } from './heatSnapshot';
@@ -60,6 +60,18 @@ export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'ch
   };
 }
 
+/** The held jobs by the node they end at: a delivery's destination, a bounty's target node. */
+function jobMarkers(sim: Sim): Map<string, UiNodeJob[]> {
+  const out = new Map<string, UiNodeJob[]>();
+  for (const j of sim.galaxy.jobs) {
+    const at = j.kind === 'delivery' ? j.to : j.node;
+    if (!at) continue;
+    const label = j.kind === 'delivery' ? `Deliver ${j.count ?? 0}× ${(j.item && sim.content.items[j.item]?.name) || j.item || 'goods'}` : `Bounty: ${j.target ?? 'target'}`;
+    out.set(at, [...(out.get(at) ?? []), { kind: j.kind, label }]);
+  }
+  return out;
+}
+
 /** The whole generated starmap as the view draws it. Rebuilt only when `galaxy.rev` changes. */
 export function buildStarmap(sim: Sim): UiStarmap {
   const g = sim.galaxy;
@@ -68,6 +80,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
   const sensors = sensorNodes(sim);
   const known = (id: string) => g.discovered[id] !== undefined;
   const nodes: UiStarNode[] = [];
+  const jobsAt = jobMarkers(sim);
   const knownSectors = new Set<string>();
   const reachable = new Set((index.adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a)));
   for (const n of index.nodes.values()) {
@@ -82,6 +95,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       structures: k ? n.structures.map((s) => content?.structures[s.def]?.name ?? s.def) : [],
       resources: k ? n.resources.map((r) => sim.content.items[r]?.name ?? r) : [],
       hostiles, others: contacts.length - hostiles, reachable: reachable.has(n.id), market: k && sensors.has(n.id) ? marketOf(sim, n.id) : null,
+      jobs: k ? jobsAt.get(n.id) ?? [] : [],
     });
   }
   const sectors = [...index.sectors.values()].map((s) => {

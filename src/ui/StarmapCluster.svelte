@@ -8,6 +8,7 @@
   import type { UiStarmap } from './starmapApi';
   import StarmapBody from './StarmapBody.svelte';
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
+  import { pixelLine, pixelOutline, pixelPolyline, pixelSquare } from './starmapPixel';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
 
   let { map, px, picked, hover, routePts = '', routeSectors = new Set() }: {
@@ -16,6 +17,8 @@
     routePts?: string; routeSectors?: Set<string>;
   } = $props();
 
+  /** The pixel grid (starmapPixel.ts): two screen pixels at this zoom. */
+  const g = $derived(px(2));
   const tint = $derived(new Map(map.clusters.map((r) => [r.id, r.revealed ? toneColor(r.tone) : 'var(--dim)'])));
   /** Known services per sector: the structure badges of its discovered nodes. */
   const services = $derived.by(() => {
@@ -64,17 +67,21 @@
 </script>
 
 {#each map.clusters as r (r.id)}
-  <path d={r.outline} class="area" class:known={r.known} class:revealed={r.revealed} style={`--c: ${r.revealed ? toneColor(r.tone) : 'var(--dim)'}`} fill-rule="evenodd" />
+  {@const c = r.revealed ? toneColor(r.tone) : 'var(--dim)'}
+  <path d={r.outline} class="area" class:known={r.known} class:revealed={r.revealed} style={`--c: ${c}`} fill-rule="evenodd" />
+  <path d={pixelOutline(r.outline, g, r.known ? 2 : 1)} class="aline" class:known={r.known} class:revealed={r.revealed} style={`--c: ${c}`} />
 {/each}
 {#each map.sectorLinks as l (l.id)}
-  <line x1={l.ax} y1={l.ay} x2={l.bx} y2={l.by} class="conn {l.kind}" class:mine={l.mine} />
+  <path d={pixelLine(l.ax, l.ay, l.bx, l.by, g, { w: l.kind === 'gate' ? 3 : 2, dash: l.kind === 'rift' ? [2, 3] : undefined })} class="conn {l.kind}" class:mine={l.mine} />
 {/each}
 {#each map.sectors as sec (sec.id)}
   {@const c = sec.known ? (tint.get(sec.cluster ?? '') ?? 'var(--dim)') : 'var(--dim)'}
   <path d={sec.outline} class="patch-base" fill-rule="evenodd" />
   <path d={sec.outline} class="patch" class:known={sec.known} class:cur={sec.id === map.currentSector} class:onroute={routeSectors.has(sec.id)} class:picked={sec.id === picked} class:hov={sec.id === hover} style={`--c: ${c}`} fill-rule="evenodd" />
+  {@const strong = sec.id === map.currentSector || sec.id === picked || routeSectors.has(sec.id)}
+  <path d={pixelOutline(sec.outline, g, strong ? 2 : 1)} class="pline" class:known={sec.known} class:cur={sec.id === map.currentSector} class:onroute={routeSectors.has(sec.id)} class:picked={sec.id === picked} class:hov={sec.id === hover} style={`--c: ${c}`} />
 {/each}
-{#if routePts}<polyline points={routePts} class="route" />{/if}
+{#if routePts}<path d={pixelPolyline(routePts, g, { w: 2 })} class="route" />{/if}
 {#each map.sectors as sec (sec.id)}
   {#if sec.known}
     <StarmapBody kind={sec.body?.kind ?? 'star'} x={sec.x} y={sec.y} r={px(sec.hub ? 7 : 5.5)} />
@@ -92,7 +99,7 @@
   {:else}
     <text stroke-width={px(3)} x={sec.x} y={sec.y + px(4)} class="unk" font-size={px(10)}>?</text>
   {/if}
-  {#if sec.id === map.currentSector}<circle cx={sec.x} cy={sec.y} r={px(12)} class="here" />{/if}
+  {#if sec.id === map.currentSector}<rect {...pixelSquare(sec.x, sec.y, px(12), g)} class="here" />{/if}
 {/each}
 {#each map.clusters as r (r.id)}
   {@const b = labels.get(`r:${r.id}`)}
@@ -103,28 +110,37 @@
 {/each}
 
 <style>
-  .area { fill: var(--c); fill-opacity: 0.02; stroke: var(--c); stroke-opacity: 0.35; stroke-dasharray: 6 6; vector-effect: non-scaling-stroke; }
-  .area.revealed { fill-opacity: 0.03; stroke-opacity: 0.5; stroke-width: 1.5; }
-  .area.known { fill-opacity: 0.05; stroke-opacity: 0.8; stroke-dasharray: none; stroke-width: 3; }
-  .conn { stroke: var(--dim); stroke-opacity: 0.8; stroke-width: 3; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-  .conn.gate { stroke: var(--cyan); stroke-width: 5; }
-  .conn.rift { stroke: var(--text); stroke-opacity: 0.5; stroke-dasharray: 4 6; stroke-width: 3; }
-  .conn.mine { stroke: var(--green); }
+  /* Pixel look (starmapPixel.ts): borders and lines are filled pixel cells, never anti-aliased. */
+  path, rect { shape-rendering: crispEdges; }
+  .area { fill: var(--c); fill-opacity: 0.02; stroke: none; }
+  .area.revealed { fill-opacity: 0.03; }
+  .area.known { fill-opacity: 0.05; }
+  .aline { fill: var(--c); fill-opacity: 0.3; }
+  .aline.revealed { fill-opacity: 0.5; }
+  .aline.known { fill-opacity: 0.8; }
+  .conn { fill: var(--dim); fill-opacity: 0.8; }
+  .conn.gate { fill: var(--cyan); }
+  .conn.rift { fill: var(--text); fill-opacity: 0.5; }
+  .conn.mine { fill: var(--green); }
   .patch-base { fill: var(--bg); }
-  .patch { fill: var(--panel-3); fill-opacity: 0.55; stroke: var(--dim); stroke-opacity: 0.7; stroke-width: 1.2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
-  .patch.known { fill: var(--c); fill-opacity: 0.3; stroke: var(--c); stroke-opacity: 0.85; stroke-dasharray: none; }
-  .patch.onroute { stroke: var(--amber); stroke-opacity: 1; stroke-width: 2; }
-  .patch.cur { fill-opacity: 0.45; stroke: var(--cyan); stroke-opacity: 1; stroke-width: 2.5; }
-  .patch.hov { stroke: var(--text); stroke-opacity: 1; stroke-width: 2; stroke-dasharray: none; fill-opacity: 0.42; }
-  .patch.picked { stroke: var(--amber); stroke-opacity: 1; stroke-width: 3; stroke-dasharray: 6 4; }
-  .route { fill: none; stroke: var(--amber); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-  .here { fill: none; stroke: var(--cyan); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+  .patch { fill: var(--panel-3); fill-opacity: 0.55; stroke: none; }
+  .patch.known { fill: var(--c); fill-opacity: 0.3; }
+  .patch.cur { fill-opacity: 0.45; }
+  .patch.hov { fill-opacity: 0.42; }
+  .pline { fill: var(--dim); fill-opacity: 0.5; }
+  .pline.known { fill: var(--c); fill-opacity: 0.85; }
+  .pline.onroute { fill: var(--amber); fill-opacity: 1; }
+  .pline.cur { fill: var(--cyan); fill-opacity: 1; }
+  .pline.hov { fill: var(--text); fill-opacity: 1; }
+  .pline.picked { fill: var(--amber); fill-opacity: 1; }
+  .route { fill: var(--amber); }
+  .here { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; }
   text { text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-linejoin: round; font-family: var(--head-font); }
   .badge { fill: var(--bg); font-weight: 700; stroke: none; }
   .danger { font-weight: 600; letter-spacing: 0.05em; }
-  .unk { fill: var(--dim); fill-opacity: 0.6; font-weight: 600; }
+  .unk { fill: var(--dim); fill-opacity: 0.6; font-family: var(--pixel-font); font-weight: 400; }
   .sname { fill: var(--text); font-weight: 600; letter-spacing: 0.04em; }
   .sname.cur { fill: var(--cyan); }
-  .rname { font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
+  .rname { font-family: var(--pixel-font); font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; }
   .rtype { fill: var(--dim); }
 </style>

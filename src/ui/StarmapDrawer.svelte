@@ -87,6 +87,7 @@
       {#if node.known}
         <div class="row">{node.structures.length ? node.structures.join(', ') : 'Empty space'}</div>
         {#if node.resources.length}<div class="row dim">Resources: {node.resources.join(', ')}</div>{/if}
+        {#each node.jobs ?? [] as j, i (i)}<div class="row job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job">{j.label}</div>{/each}
         {#if node.market}
           <div class="row market" data-testid="starmap-market" title="Prices follow the port's stock: cheap where plentiful, dear where scarce">
             <span class="dim">Market</span>
@@ -214,4 +215,6 @@
   .bar { height: 8px; }
   @media (min-width: 601px) { .drawer { top: 0; right: 0; bottom: 0; width: 340px; border-width: 0 0 0 1px; } }
   @media (max-width: 600px) { .drawer { left: 0; right: 0; bottom: 0; } }
+  .row.job { color: var(--amber); font-weight: 600; }
+  .row.job.bounty { color: var(--red); }
 </style>

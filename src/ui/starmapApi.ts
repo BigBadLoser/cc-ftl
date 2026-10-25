@@ -89,6 +89,13 @@ export interface UiStarMarket {
   dear: string[];
 }
 
+/** A held station job that ends at a node: a delivery's destination or a bounty's target. */
+export interface UiNodeJob {
+  kind: 'delivery' | 'bounty';
+  /** "Deliver 12× Ration" or "Bounty: Bone Saint". */
+  label: string;
+}
+
 export interface UiStarNode {
   id: string;
   sector: string;
@@ -111,6 +118,8 @@ export interface UiStarNode {
   reachable: boolean;
   /** The market of its trading port, when sensors reach it and it has one. */
   market?: UiStarMarket | null;
+  /** The player's held jobs that end here (discovered nodes only). */
+  jobs?: UiNodeJob[];
 }
 
 /** An NPC fleet the sensors can see: drawn beside its node, heading for `next` (null while resting). */

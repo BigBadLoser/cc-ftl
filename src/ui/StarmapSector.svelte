@@ -8,6 +8,7 @@
   import StarmapBody from './StarmapBody.svelte';
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
+  import { pixelArrow, pixelDiamond, pixelLine, pixelOutline, pixelPolyline, pixelSquare } from './starmapPixel';
 
   let { map, px, s, view, current, route, routePts, selected, hover, only = null, ship, inset = 0 }: {
     map: UiStarmap; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
@@ -20,6 +21,9 @@
     ship: { x: number; y: number; fx: number; fy: number; tx: number; ty: number } | null;
   } = $props();
 
+  /** The pixel grid: two screen pixels at this zoom (the size of the game's art pixels). Lines step on it, shapes snap to it. */
+  const g = $derived(px(2));
+  const sq = (x: number, y: number, r: number) => pixelSquare(x, y, px(r), g);
   const clampX = (x: number, m: number) => Math.max(view.x0 + px(m), Math.min(view.x1 - px(inset) - px(m), x));
   const clampY = (y: number, top: number, bottom: number) => Math.max(view.y0 + px(top), Math.min(view.y1 - px(bottom), y));
   /**
@@ -73,7 +77,8 @@
 </script>
 
 {#each map.sectors as sec (sec.id)}
-  <path d={sec.outline} class="outline" class:known={sec.known} class:cur={sec.id === map.currentSector} style={`--c: ${toneColor(sec.tone)}`} fill-rule="evenodd" />
+  <path d={sec.outline} class="area" class:known={sec.known} class:cur={sec.id === map.currentSector} style={`--c: ${toneColor(sec.tone)}`} fill-rule="evenodd" />
+  <path d={pixelOutline(sec.outline, g)} class="outline" class:known={sec.known} class:cur={sec.id === map.currentSector} style={`--c: ${toneColor(sec.tone)}`} />
 {/each}
 {#each map.sectors as sec (sec.id)}
   {#if sec.known && sec.body}<StarmapBody kind={sec.body.kind} x={sec.body.x} y={sec.body.y} r={sec.body.r * 0.75} dim={sec.id === map.currentSector ? 1 : 0.55} />{/if}
@@ -87,89 +92,94 @@
 </defs>
 <g mask="url(#sm-lane-mask)">
   {#each map.edges as e (e.id)}
-    <line x1={e.ax} y1={e.ay} x2={e.bx} y2={e.by} class={e.kind} class:anchor={e.anchor} class:gate={e.gate} class:rift={e.rift} />
+    <path d={pixelLine(e.ax, e.ay, e.bx, e.by, g, { w: e.gate ? 2 : 1, dash: e.rift ? [1, 3] : e.anchor ? [4, 2] : undefined })} class="lane {e.kind}" class:gate={e.gate} class:rift={e.rift} />
   {/each}
   {#each map.exits as e (e.id)}
-    <line x1={e.ax} y1={e.ay} x2={e.bx} y2={e.by} class="exit {e.kind}" />
+    <path d={pixelLine(e.ax, e.ay, e.bx, e.by, g, { w: e.kind === 'gate' ? 2 : 1, dash: e.kind === 'rift' ? [1, 3] : undefined })} class="lane exit {e.kind}" />
   {/each}
 </g>
 {#if current && !ship}
   {#each map.nodes.filter((n) => n.reachable && (!only || only.has(n.id))) as n (n.id)}
-    <line x1={current.x} y1={current.y} x2={n.x} y2={n.y} class="reach" />
+    <path d={pixelLine(current.x, current.y, n.x, n.y, g)} class="lane reach" />
   {/each}
 {/if}
 {#if routePts}
-  <polyline points={routePts} class="route" class:blocked={!!route?.blocker} />
+  <path d={pixelPolyline(routePts, g, { w: 2, dash: route?.blocker ? [4, 3] : undefined })} class="route" class:blocked={!!route?.blocker} />
 {/if}
 {#each map.nodes as n (n.id)}
   {@const dimmed = !!only && !only.has(n.id) && !n.current}
   {#if n.known}
     <g class:dimmed>
-      {#if n.hostiles}<circle cx={n.x} cy={n.y} r={px(9)} class="hostile" />{/if}
-      <circle cx={n.x} cy={n.y} r={px(n.current ? 6 : n.visited ? 4.5 : 4.2)} class="node" class:visited={n.visited} class:cur={n.current} />
-      {#if n.current && !ship}<circle cx={n.x} cy={n.y} r={px(11)} class="pulse" />{/if}
-      {#if n.reachable && !ship && (!only || only.has(n.id))}<circle cx={n.x} cy={n.y} r={px(8.5)} class="reachable" />{/if}
-      {#if n.current && !ship}<circle cx={n.x} cy={n.y} r={px(11)} class="here" />{/if}
-      {#if hover === n.id}<circle cx={n.x} cy={n.y} r={px(12)} class="hov" />{/if}
+      {#if n.hostiles}<rect {...sq(n.x, n.y, 9)} class="hostile" />{/if}
+      <rect {...sq(n.x, n.y, n.current ? 5 : 4)} class="node" class:visited={n.visited} class:cur={n.current} />
+      {#if n.current && !ship}<rect {...sq(n.x, n.y, 11)} class="pulse" />{/if}
+      {#if n.reachable && !ship && (!only || only.has(n.id))}<rect {...sq(n.x, n.y, 8)} class="reachable" />{/if}
+      {#if n.current && !ship}<rect {...sq(n.x, n.y, 11)} class="here" />{/if}
+      {#if hover === n.id}<rect {...sq(n.x, n.y, 12)} class="hov" />{/if}
       {#if s > 0.7}
         {#each n.badges as b, i (i)}
           <rect x={n.x + px(9 + i * 13)} y={n.y - px(6)} width={px(12)} height={px(12)} class="chip" style={`fill: ${BADGE[b] ?? 'var(--dim)'}`} />
           <text x={n.x + px(15 + i * 13)} y={n.y + px(3.6)} class="badge" font-size={px(10)}>{b}</text>
         {/each}
       {/if}
+      {#each n.jobs ?? [] as j, i (i)}
+        <path d={pixelDiamond(n.x - px(16), n.y + px(i * 16 - ((n.jobs?.length ?? 1) - 1) * 8), px(7), g)} class="job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job-mark"><title>{j.label}</title></path>
+      {/each}
       {#if named(n)}<text x={n.x} y={n.y + px(20)} class="nname" class:cur={n.current} font-size={px(13)} stroke-width={px(3)}>{n.name}</text>{/if}
     </g>
   {:else}
-    <circle cx={n.x} cy={n.y} r={px(4)} class="unknown" class:dimmed />
+    <rect {...sq(n.x, n.y, 4)} class="unknown" class:dimmed />
   {/if}
-  {#if selected === n.id}<circle cx={n.x} cy={n.y} r={px(14)} class="sel" />{/if}
+  {#if selected === n.id}<rect {...sq(n.x, n.y, 14)} class="sel" />{/if}
 {/each}
 {#each marks as m (m.f.id)}
-  {#if m.f.tx !== null && m.f.ty !== null}<line x1={m.f.x} y1={m.f.y} x2={m.f.tx} y2={m.f.ty} class="heading" style={`stroke: ${toneColor(m.f.tone)}`} />{/if}
+  {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] })} class="lane heading" style={`fill: ${toneColor(m.f.tone)}`} />{/if}
 {/each}
 {#each marks as m (m.f.id)}
-  <g transform={`translate(${m.f.x + m.ox * px(17)} ${m.f.y + m.oy * px(17)}) rotate(${m.heading})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
+  <g transform={`translate(${m.f.x + m.ox * px(21)} ${m.f.y + m.oy * px(21)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
     <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
-    <path d={`M ${px(10)} 0 L ${px(-7)} ${px(-7)} L ${px(-3)} 0 L ${px(-7)} ${px(7)} Z`} style={`fill: ${toneColor(m.f.tone)}`} />
-    {#if m.f.damaged}<circle r={px(11)} class="adrift" />{/if}
+    <path d={pixelArrow(m.heading, g, 1.5)} style={`fill: ${toneColor(m.f.tone)}`} />
+    {#if m.f.damaged}<rect x={-px(11)} y={-px(11)} width={px(22)} height={px(22)} class="adrift" />{/if}
   </g>
 {/each}
 {#if ship}
   {@const ang = (Math.atan2(ship.ty - ship.fy, ship.tx - ship.fx) * 180) / Math.PI}
-  <line x1={ship.fx} y1={ship.fy} x2={ship.x} y2={ship.y} class="trail" />
-  <circle cx={ship.x} cy={ship.y} r={px(11)} class="here" />
-  <path d={`M ${px(8)} 0 L ${px(-6)} ${px(-5)} L ${px(-3)} 0 L ${px(-6)} ${px(5)} Z`} transform={`translate(${ship.x} ${ship.y}) rotate(${ang})`} class="ship" />
+  <path d={pixelLine(ship.fx, ship.fy, ship.x, ship.y, g, { w: 2 })} class="lane trail" />
+  <rect {...sq(ship.x, ship.y, 11)} class="here" />
+  <path d={pixelArrow(ang, g, 2)} transform={`translate(${ship.x} ${ship.y})`} class="ship" />
 {/if}
 {#each map.sectors as sec (sec.id)}
   {#if sec.known && sec.x > view.x0 && sec.x < view.x1 && sec.y > view.y0 && sec.y < view.y1}
     {@const lx = clampX(sec.x, 80)}
     {@const ly = clampY(sec.top - px(24), 24, 50)}
-    <text x={lx} y={ly} class="sname" class:cur={sec.id === map.currentSector} font-size={px(15)} stroke-width={px(3)}>{sec.name}</text>
+    <text x={lx} y={ly} class="sname" class:cur={sec.id === map.currentSector} font-size={px(14)} stroke-width={px(2)}>{sec.name}</text>
     <text x={lx} y={ly + px(15)} class="sdanger" font-size={px(12)} stroke-width={px(3)} style={`fill: ${dangerColor(sec.danger)}`}>Danger {sec.danger}</text>
   {/if}
 {/each}
 {#each exitLabels as l (l.e.to)}
-  <text x={l.x} y={l.y} class="exitname" class:unk={!l.e.name} font-size={px(14)} stroke-width={px(3)}>To {l.e.name ?? 'uncharted space'}</text>
+  <text x={l.x} y={l.y} class="exitname" class:unk={!l.e.name} font-size={px(12)} stroke-width={px(2)}>To {l.e.name ?? 'uncharted space'}</text>
   <text x={l.x} y={l.y + px(15)} class="exitsub" font-size={px(12)} stroke-width={px(3)}>danger {l.e.danger}{l.e.kind === 'gate' ? ' · gate' : l.e.kind === 'rift' ? ' · rift' : ''} · {l.e.fuel} fuel</text>
 {/each}
 
 <style>
-  .outline { fill: var(--c); fill-opacity: 0.02; stroke: var(--c); stroke-opacity: 0.22; stroke-dasharray: 4 5; vector-effect: non-scaling-stroke; }
-  .outline.known { fill-opacity: 0.07; stroke-opacity: 0.5; stroke-dasharray: none; stroke-width: 1.4; }
-  .outline.cur { fill-opacity: 0.12; stroke-opacity: 0.85; stroke-width: 2; }
-  line { vector-effect: non-scaling-stroke; }
-  line.hyperlane { stroke: var(--cyan); stroke-opacity: 0.6; stroke-width: 1.8; }
-  line.hyperlane.anchor { stroke-dasharray: 7 4; }
-  line.hyperlane.gate { stroke-width: 2.6; stroke-opacity: 0.9; }
-  line.hyperlane.rift { stroke: var(--text); stroke-opacity: 0.5; stroke-dasharray: 3 6; }
-  line.route { stroke: var(--dim); stroke-opacity: 0.7; stroke-width: 1; }
-  line.exit { stroke: var(--cyan); stroke-opacity: 0.6; stroke-width: 1.8; }
-  line.exit.gate { stroke-width: 2.6; }
-  line.exit.rift { stroke: var(--text); stroke-opacity: 0.5; stroke-dasharray: 3 6; }
-  line.reach { stroke: var(--green); stroke-opacity: 0.8; stroke-width: 2.4; }
-  polyline.route { fill: none; stroke: var(--amber); stroke-width: 3.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-  polyline.route.blocked { stroke-dasharray: 8 5; }
-  .node { fill: var(--dim); stroke: var(--bg); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  /* Pixel look (starmapPixel.ts): every line is a set of filled pixel cells, never anti-aliased. */
+  path, rect { shape-rendering: crispEdges; }
+  .area { fill: var(--c); fill-opacity: 0.02; stroke: none; }
+  .area.known { fill-opacity: 0.07; }
+  .area.cur { fill-opacity: 0.12; }
+  .outline { fill: var(--c); fill-opacity: 0.22; }
+  .outline.known { fill-opacity: 0.5; }
+  .outline.cur { fill-opacity: 0.85; }
+  .lane { stroke: none; }
+  .lane.hyperlane { fill: var(--cyan); fill-opacity: 0.6; }
+  .lane.hyperlane.gate { fill-opacity: 0.9; }
+  .lane.hyperlane.rift { fill: var(--text); fill-opacity: 0.5; }
+  .lane.route { fill: var(--dim); fill-opacity: 0.7; }
+  .lane.exit { fill: var(--cyan); fill-opacity: 0.6; }
+  .lane.exit.rift { fill: var(--text); fill-opacity: 0.5; }
+  .lane.reach { fill: var(--green); fill-opacity: 0.8; }
+  path.route { fill: var(--amber); stroke: none; }
+  .node { fill: var(--dim); }
   .node.visited { fill: var(--text); }
   .node.cur { fill: var(--cyan); }
   .reachable { fill: none; stroke: var(--green); stroke-width: 2; vector-effect: non-scaling-stroke; }
@@ -178,24 +188,26 @@
   .pulse { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; transform-box: fill-box; transform-origin: center; animation: pulse 2.2s ease-out infinite; pointer-events: none; }
   @keyframes pulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(2.2); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .pulse { display: none; } }
-  .ship { fill: var(--cyan); stroke: var(--bg); stroke-width: 1; vector-effect: non-scaling-stroke; }
-  line.trail { stroke: var(--cyan); stroke-opacity: 0.8; stroke-width: 3; stroke-linecap: round; }
-  line.heading { stroke-opacity: 0.55; stroke-width: 1.6; stroke-dasharray: 4 4; }
-  .fleet path { stroke: var(--bg); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .ship { fill: var(--cyan); }
+  .lane.trail { fill: var(--cyan); fill-opacity: 0.8; }
+  .lane.heading { fill-opacity: 0.55; }
+  .fleet path { stroke: none; }
   .fleet { pointer-events: all; }
   .adrift { fill: none; stroke: var(--amber); stroke-width: 1.2; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
   .sel { fill: none; stroke: var(--amber); stroke-width: 2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
   .hostile { fill: color-mix(in srgb, var(--red) 25%, transparent); stroke: var(--red); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
   .unknown { fill: var(--bg); stroke: var(--dim); stroke-opacity: 0.85; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .job { fill: var(--amber); }
+  .job.bounty { fill: var(--red); }
   .dimmed { opacity: 0.35; }
   text { text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-linejoin: round; font-family: var(--head-font); }
   .badge { fill: var(--bg); font-weight: 700; stroke: none; }
   .nname { fill: var(--text); font-weight: 600; letter-spacing: 0.04em; }
   .nname.cur { fill: var(--cyan); }
-  .sname { fill: var(--text); fill-opacity: 0.85; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; }
+  .sname { fill: var(--text); fill-opacity: 0.85; font-family: var(--pixel-font); font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; }
   .sname.cur { fill: var(--cyan); fill-opacity: 1; }
   .sdanger { font-weight: 600; letter-spacing: 0.05em; }
-  .exitname { fill: var(--text); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+  .exitname { fill: var(--text); font-family: var(--pixel-font); font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; }
   .exitname.unk { fill: var(--dim); }
   .exitsub { fill: var(--dim); }
 </style>
