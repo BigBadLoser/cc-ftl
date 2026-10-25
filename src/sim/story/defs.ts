@@ -122,3 +122,28 @@ export interface EventDef {
   /** Notices: seconds before an unopened lead lapses (default NOTICE_LIFE_SEC). */
   expireSec?: number;
 }
+
+/** What finishes a goal (the tutorial goal chain, content/goals.ts). */
+export type GoalCheck =
+  /** A `stat.<stat>` counter (story/goals.ts `bumpStat`) reached `atLeast` (default 1). */
+  | { kind: 'stat'; stat: string; atLeast?: number }
+  /** The player has been to at least `count` nodes (the start node counts). */
+  | { kind: 'visited'; count: number }
+  /** The player is in a cluster other than the one the game started in. */
+  | { kind: 'otherCluster' };
+
+export interface GoalDef {
+  id: string;
+  title: string;
+  /** One line on how to do it. */
+  text: string;
+  check: GoalCheck;
+}
+
+/** One act of the goal chain: its goals, done in any order, and what finishing them all gives. */
+export interface GoalActDef {
+  id: string;
+  title: string;
+  goals: GoalDef[];
+  reward: { credits?: number; items?: ItemQty[]; reputation?: number };
+}

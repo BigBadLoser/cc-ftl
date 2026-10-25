@@ -392,6 +392,8 @@ export interface GalaxyState {
   /** Jobs the player holds (jobs.ts), and the offer keys already taken or finished (newest last). */
   jobs: StationJob[];
   jobLog: string[];
+  /** Crew-for-hire keys already hired (recruit.ts), newest last. */
+  recruitLog: string[];
   nextJob: number;
   /** The hyperspace trip in progress, or null. */
   travel: Travel | null;

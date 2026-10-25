@@ -1,8 +1,11 @@
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
+import { bumpStat } from '../story/goals';
+import { FUEL_ITEM } from '../galaxy/fuel';
 import { settlement, type OfferCheck } from './offers';
 import { TraderC, type Deal, type Offer } from './types';
 import type { CourierPlan } from './courier';
+import { releaseRecruits } from './recruitLand';
 
 /** Finished deals kept for the UI's history. */
 export const DEAL_HISTORY = 8;
@@ -70,6 +73,8 @@ export function settleDeal(sim: Sim, d: Deal): void {
   d.phase = 'done';
   d.timer = 0;
   sim.events.emit({ type: 'trade.settled', deal: d.id, ship: d.ship, credits: amount });
+  bumpStat(sim, 'trades');
+  if (d.get.some((q) => q.item === FUEL_ITEM && q.count > 0)) bumpStat(sim, 'fuelBought');
   trimHistory(sim);
 }
 
@@ -91,6 +96,14 @@ export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void 
   if (v) {
     v.outbound = false;
     v.autopilot = false;
+  }
+  if (d.crew) {
+    // A hiring run called off: the recruits go back to the station, and the shuttle flies home (parkCourier clears its autopilot there).
+    releaseRecruits(sim, d);
+    if (v && v.state !== 'stowed') {
+      v.autopilot = true;
+      sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
+    }
   }
   sim.events.emit({ type: 'trade.failed', deal: d.id, ship: d.ship, reason });
   trimHistory(sim);

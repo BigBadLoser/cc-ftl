@@ -38,3 +38,14 @@ export interface Wanted {
   station: number;
 }
 export const WantedC = defineComponent<Wanted>('wanted');
+
+/**
+ * A person aboard a station who can be hired (galaxy/recruit.ts keeps them in step with the port's candidates): `key` names the candidate,
+ * `cost` is the hire price. Hiring sends the player's shuttle to pick them up (a trade Deal carrying `crew`).
+ */
+export interface ForHire {
+  key: string;
+  cost: number;
+  station: number;
+}
+export const ForHireC = defineComponent<ForHire>('forHire');

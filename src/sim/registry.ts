@@ -4,7 +4,7 @@ import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
-export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking';
+export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine';
 
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
@@ -27,7 +27,7 @@ export interface ShipTemplate {
   boarding?: { party: number; afterSec: number; losingBelow: number; /** Hand weapon (item id) issued to the party when it leaves. */ weapon?: string };
 }
 
-import type { EventDef } from './story/defs';
+import type { EventDef, GoalActDef } from './story/defs';
 import type { TradeDef } from './trade/types';
 import type { OreDef } from './asteroids/types';
 import type { GalaxyContent } from './galaxy/defs';
@@ -55,6 +55,8 @@ export interface ContentRegistry {
   vehicles?: Record<string, VehicleDef>;
   /** Event content (story/defs.ts) by id. Absent = no events. */
   events?: Record<string, EventDef>;
+  /** The tutorial goal chain, in order (story/goals.ts). Absent = none. */
+  goals?: GoalActDef[];
   /** The EVA spacesuit. Absent = DEFAULT_SUIT (tuning.ts). */
   suit?: SuitDef;
   /** Starmap content: galaxy factions (territory, standings), node structures, sector names. Absent = a bare galaxy. */

@@ -133,6 +133,8 @@ export interface Deal {
   via?: 'dock' | 'hover';
   /** Docking at a station: the station airlock (reserved by the dock order) and the bought goods staged in its storage. */
   dock?: { airlock: number; staged: { storage: number; item: string; count: number }[] };
+  /** A hiring run: the recruits (crew entities of the station) the shuttle fetches. The escrow is their cost, paid when they arrive. */
+  crew?: number[];
 }
 
 /** All trade state. Plain data on the Sim, saved with it (optional in old saves). */

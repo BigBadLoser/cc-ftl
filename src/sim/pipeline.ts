@@ -60,6 +60,7 @@ import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
 import { galaxySystem } from './systems/galaxy';
 import { storySystem } from './systems/story';
+import { recruitsSystem } from './systems/recruits';
 import { tradeSystem } from './systems/trade';
 import { eggSacSystem } from './systems/eggSacs';
 import { alienSystem } from './systems/aliens';
@@ -191,6 +192,8 @@ export const pipeline: readonly System[] = [
   // Starmap after ship state (contacts of wrecked or fled ships are dropped) and before events: an arrival spawns its
   // ship for the next tick's systems. Does not run while the sector is deploying (the whole pipeline is skipped then).
   galaxySystem,
+  // Crew for hire aboard the node's stations follow the ports' candidates (and the turn the galaxy system just moved on).
+  recruitsSystem,
   // Events last: periodic draws, due chains and lapsing notices read the finished tick. Reads no grid state.
   storySystem,
 ];
