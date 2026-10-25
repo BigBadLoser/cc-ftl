@@ -605,8 +605,11 @@ palette.json    the single palette, read by Blender scripts and the game
     disc and the nebula glow; the gas giant has no glow and is outlined. The nebula is glow only (its colour pixels are
     empty): draw it under the nodes.
   - Structures, `starmap.struct.<kind>`, kinds `station_trade`, `station_military`, `station_research`, `den`, `asteroids`,
-    `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): 48 px frame, for about 16-20 screen px.
-  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: 40 px frame.
+    `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): 96 px frame. Icons are rendered at
+    twice the size they show at by default (about 16-20 screen px), so they stay crisp when the map zooms in: draw them
+    scaled down.
+  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: 80 px frame
+    (also twice the default 14-18 screen px).
     `d0` points east on screen, then clockwise by 45 degrees (the SVG `rotate(heading)` sense), so `d = round(heading / 45)
     mod 8`. Each heading is the ground heading whose three-quarter projection points that way, so north and south facings
     are foreshortened like the ships.

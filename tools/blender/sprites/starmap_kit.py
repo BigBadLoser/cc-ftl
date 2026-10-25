@@ -223,22 +223,32 @@ def turn(pts, heading, at=(0.0, 0.0)):
     return [(at[0] + u * c - v * s, at[1] + u * s + v * c) for u, v in pts]
 
 
-def rock(m, c, r, seed, cols=("rk", "rkM", "rkL"), squash=0.75, rough=0.28):
-    """A lumpy rock: an icosphere at Blender point c, displaced by seeded noise, faces in a mix of palette colours."""
+def rock(c, r, seed, cols=("rk", "rkM", "rkL"), squash=0.75, rough=0.28):
+    """A lumpy rock object: an icosphere at Blender point c, displaced by seeded noise, smooth shaded (bands, not facets),
+    faces in a mix of lit palette colours."""
     import bmesh
+    import bpy
     noise = Noise(seed)
     bm = bmesh.new()
-    bmesh.ops.create_icosphere(bm, subdivisions=2, radius=1.0)
+    bmesh.ops.create_icosphere(bm, subdivisions=3, radius=1.0)
     for v in bm.verts:
         d = np.array(v.co)
         k = 1 + (float(noise.fbm(d * 1.7 + seed % 13)) - 0.5) * 2 * rough
-        v.co = Vector((d[0] * k, d[1] * k, d[2] * k * squash))
+        v.co = Vector(c) + Vector((d[0] * k, d[1] * k, d[2] * k * squash)) * r
+    bm.normal_update()
+    picks = []
     for f in bm.faces:
-        n = np.array(f.normal)
-        pick = float(noise(np.array(f.calc_center_median()) * 3.1 + 5))
-        col = cols[0] if pick < 0.45 else cols[1] if pick < 0.7 else cols[2] if n[2] > 0.2 else cols[0]
-        m.poly([c + v.co * r for v in f.verts], col)
+        pick = float(noise((np.array(f.calc_center_median()) - np.array(c)) / r * 1.2 + 5))    # broad patches, not speckle
+        picks.append(cols[0] if pick < 0.45 else cols[1] if pick < 0.7 else cols[2] if f.normal.z > 0.2 else cols[0])
+    me = bpy.data.meshes.new("rock")
+    bm.to_mesh(me)
     bm.free()
+    me.shade_smooth()
+    ob = bpy.data.objects.new("rock", me)
+    bpy.context.scene.collection.objects.link(ob)
+    core.finalize(ob)
+    core.set_attr(me, "Col", [lin(n) for n in picks])
+    return ob
 
 
 def place(objs, size):

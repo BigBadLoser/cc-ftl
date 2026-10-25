@@ -5,7 +5,7 @@ Every body renders into the same FRAME (96 px at 1x, 192 at 2x), centred on the 
 
   star        yellow-white, granulated, a couple of spots and prominences; warm halo (glow)
   red_dwarf   deep red, heavily spotted, more flares; red halo (glow)
-  blue_giant  blue-white, smooth; cyan halo and a four-point sparkle (glow)
+  blue_giant  blue-white, smooth; cyan halo (glow)
   gas_giant   banded amber planet with a tilted ring, lit from the upper left like the ships; no glow; outlined
   black_hole  dark core, photon ring and the lensed far side of an amber accretion disc; the disc glows
   nebula      glow only (nothing on the colour sheet): self-lit gas puffs at low strength, dark lanes, a few young stars
@@ -18,7 +18,7 @@ import numpy as np
 from mathutils import Matrix, Vector
 
 from . import core
-from .starmap_kit import (N, R, U, Noise, P, annulus, face, flat, frame_item, glow_only, hue, px, selflit, sphere,
+from .starmap_kit import (N, R, U, Noise, P, annulus, flat, frame_item, glow_only, hue, px, selflit, sphere,
                           start, streak)
 
 FRAME = 96                      # frame side, 1x px
@@ -39,7 +39,7 @@ STARS = {
     "red_dwarf": dict(ramp=("fxO", "fxR", "emR", "fxD"), edges=(0.9, 0.6, 0.3), spot=("rK", "fxD"), halo="fxR", glow=0.12,
                       bands=(0.4, 0.2, 0.1, 0.045), gran=0.26, spots=5, flares=3, flare=("fxO", "fxR")),
     "blue_giant": dict(ramp=("fxH0", "fxH1", "fxC2", "fxH2"), edges=(0.86, 0.5, 0.22), spot=("fxH2", "fxH1"), halo="fxH1", glow=0.1,
-                       bands=(0.46, 0.24, 0.12, 0.055), gran=0.12, spots=0, flares=1, flare=("fxH0", "fxH1"), sparkle=True),
+                       bands=(0.46, 0.24, 0.12, 0.055), gran=0.12, spots=0, flares=1, flare=("fxH0", "fxH1")),
 }
 
 
@@ -94,12 +94,6 @@ def star(kind, seed):
     for k, level in enumerate(spec["bands"]):
         annulus(halo, P(0, 0, -RB * (1.5 + 0.01 * k)), N, radii[k], radii[k + 1],
                 lambda f, a, c, level=level: [glow_only(hue(spec["halo"], level))] * len(f), segs=128)
-    if spec.get("sparkle"):
-        for a in (0, math.pi / 2, math.pi, 3 * math.pi / 2):
-            d = R * math.cos(a) + U * math.sin(a)
-            for k, (r0, r1, w, lv) in enumerate(((0.9, 1.3, 3.2, 0.9), (1.3, 1.55, 2.2, 0.5), (1.55, 1.75, 1.4, 0.25))):
-                o = N * (-RB * (1.2 - 0.01 * k))
-                streak(halo, d * RB * r0 + o, d * RB * min(r1, EDGE / RB) + o, px(w), px(w * 0.7), glow_only(hue("arc", lv)))
     return [body.build()], [halo.build()]
 
 

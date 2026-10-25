@@ -1,7 +1,8 @@
 """Structure icons for the starmap (family `starmap`): starmap.struct.<kind>, replacing the letter badges beside the nodes.
 
-24 px frame at 1x (48 at 2x), anchor at the centre, lit by the scene sun like the ships, outlined. Each reads by silhouette
-alone at 16-20 screen px:
+48 px frame at 1x (96 at 2x), anchor at the centre, lit by the scene sun like the ships, outlined. The models are laid out
+in the px of a 24 px icon and rendered at ZOOM times that, so they stay crisp when the map zooms in; each reads by
+silhouette alone even when drawn at 16-20 screen px:
 
   station_trade      a wheel: a ring on spokes round a hub with a docking mast
   station_military   a star fort: four armoured prongs with guns round a tall command tower
@@ -11,7 +12,7 @@ alone at 16-20 screen px:
   derelict           a slim hull broken in two, the stern tumbling away, ribs at the break, a dim red light
 
 Livery is in the crew key colours (team.cloth panels, team.accent trim) on the stations and the den, so the map tints them
-by owner. Asteroids and derelicts own nothing, so they carry no key colour. Sizes are 1x px (starmap_kit.px)."""
+by owner. Asteroids and derelicts own nothing, so they carry no key colour. Sizes are 1x px of the 24 px layout."""
 import math
 
 from mathutils import Vector
@@ -19,7 +20,8 @@ from mathutils import Vector
 from . import core
 from .starmap_kit import frame_item, ground, place, prism, px, rock, screen_heading, start, turn
 
-SIZE = 24
+SIZE = 48                       # frame, 1x px
+ZOOM = 2                        # render scale of the 24 px layout
 KINDS = ("station_trade", "station_military", "station_research", "den", "asteroids", "derelict")
 
 
@@ -36,13 +38,13 @@ def cylinder(m, c, r, z0, z1, side, top=None, sides=16, inset=0.0):
 
 def trade():
     m = core.Mesh("trade")
-    ring_r, segs = px(9), 20
+    ring_r, segs = px(9), 32
     for k in range(segs):                                   # the wheel: segments of a ring in the ground plane
         a = k * math.tau / segs
         c = (ring_r * math.cos(a), ring_r * math.sin(a))
-        box(m, c, px(2.6), ring_r * math.tau / segs * 1.04, px(-1.2), px(1.2), "steelL", "team.cloth" if k % 2 else "plate",
+        box(m, c, px(2.6), ring_r * math.tau / segs * 1.04, px(-1.2), px(1.2), "steelL", "team.cloth" if k // 2 % 2 else "plate",
             heading=a)
-        if k % 5 == 2:
+        if k % 8 == 3:
             box(m, c, px(1.0), px(1.0), px(1.2), px(1.8), "green")
     for k in range(4):                                      # spokes
         a = k * math.tau / 4 + math.pi / 4
@@ -76,7 +78,7 @@ def dish(m, c, axis, r, depth, col, inner):
     a = Vector(axis).normalized()
     e1 = a.cross(Vector((0, 0, 1))).normalized() if abs(a.z) < 0.99 else Vector((1, 0, 0))
     e2 = a.cross(e1).normalized()
-    rings, segs = 3, 18
+    rings, segs = 3, 28
     pts = lambda i, j: c + (e1 * math.cos(j * math.tau / segs) + e2 * math.sin(j * math.tau / segs)) * (r * i / rings) \
         + a * (depth * (i / rings) ** 2)  # noqa: E731
     for i in range(rings):
@@ -84,7 +86,7 @@ def dish(m, c, axis, r, depth, col, inner):
             q = [pts(i, j), pts(i + 1, j), pts(i + 1, j + 1), pts(i, j + 1)]
             m.poly(q if i else [q[0], q[1], q[2]], inner if i < rings - 1 else col)
     tip = c + a * (depth + r * 0.6)
-    for j in (0, 6, 12):
+    for j in (0, segs // 3, 2 * segs // 3):
         b = pts(rings, j)
         s = (tip - b).cross(a).normalized() * px(0.35)
         m.poly([b - s, tip - s, tip + s, b + s], "steelD")
@@ -95,11 +97,11 @@ def research():
     m = core.Mesh("research")
     cylinder(m, (0, 0), px(1.3), px(-4), px(10), "plate", sides=10)
     cylinder(m, (0, 0), px(3.6), px(-6.5), px(-2), "steelL", "team.cloth", sides=14, inset=0.35)
-    ring_r, segs = px(5.2), 16                              # a habitat ring round the spire
+    ring_r, segs = px(5.2), 28                              # a habitat ring round the spire
     for k in range(segs):
         a = k * math.tau / segs
         box(m, (ring_r * math.cos(a), ring_r * math.sin(a)), px(1.8), ring_r * math.tau / segs * 1.05, px(2), px(3.4),
-            "steelL", "team.cloth" if k % 2 else "plate", heading=a)
+            "steelL", "team.cloth" if k // 2 % 2 else "plate", heading=a)
     for k in range(2):
         box(m, (0, 0), ring_r * 2 - px(1), px(0.8), px(2.3), px(3.1), "steel", heading=k * math.pi / 2 + math.pi / 4)
     box(m, (px(1.4), px(-0.2)), px(0.6), px(0.6), px(-1.5), px(9), "cyan")
@@ -111,7 +113,7 @@ def research():
 
 def den():
     m = core.Mesh("den")
-    rock(m, Vector((0, 0, 0)), px(7.5), 31, cols=("rkM", "rkD", "rk"), squash=0.7, rough=0.3)
+    stone = rock(Vector((0, 0, 0)), px(7.5), 31, cols=("rkM", "rkD", "rk"), squash=0.7, rough=0.3)
     box(m, (px(3.5), px(-3)), px(5), px(3.5), px(1), px(5), "rust", "team.cloth", heading=0.3)
     box(m, (px(-4), px(2.5)), px(3.4), px(3), px(2), px(5.5), "steel", "rustD", heading=-0.4)
     box(m, (px(4.3), px(-3.6)), px(1.0), px(1.0), px(5), px(6), "orange")
@@ -122,14 +124,12 @@ def den():
         prism(m, turn([(px(6.2), px(0.8)), (px(6.2), px(-0.8)), (px(6.2 + ln), 0)], a), px(z), px(z + 1.4), "rustD", "steelL")
     box(m, (px(-0.5), px(0.5)), px(0.6), px(0.6), px(3), px(10), "steelD")
     box(m, (px(-0.5), px(-0.8)), px(0.4), px(2.6), px(7.6), px(10), "team.accent")
-    return [m.build()]
+    return [m.build(), stone]
 
 
 def asteroids():
-    m = core.Mesh("asteroids")
-    for (x, y, r, seed) in ((-3.5, -2.5, 5.6, 3), (5.5, 0.5, 4.0, 7), (-1.0, 6.5, 3.0, 11)):    # screen px from the centre
-        rock(m, Vector((*ground(x, y), 0)), px(r), seed, squash=0.8)
-    return [m.build()]
+    return [rock(Vector((*ground(x, y), 0)), px(r), seed, squash=0.8)                          # screen px from the centre
+            for x, y, r, seed in ((-3.5, -2.5, 5.6, 3), (5.5, 0.5, 4.0, 7), (-1.0, 6.5, 3.0, 11))]
 
 
 def derelict():
@@ -160,6 +160,8 @@ BUILD = {"station_trade": trade, "station_military": military, "station_research
 def icon_item(kind):
     start()
     objs = BUILD[kind]()
+    for ob in objs:
+        ob.scale = (ZOOM,) * 3
     place(objs, SIZE)
     return [frame_item(f"starmap.struct.{kind}", SIZE)]
 

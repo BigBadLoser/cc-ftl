@@ -1,7 +1,8 @@
 """Fleet icons for the starmap (family `starmap`): starmap.fleet.<role>.d0..d7, replacing the arrow glyphs of NPC fleets and
 the player's ship marker.
 
-20 px frame at 1x (40 at 2x), anchor at the centre (the ship's middle), lit and outlined like the ships. Pixel art cannot
+40 px frame at 1x (80 at 2x), anchor at the centre (the ship's middle), lit and outlined like the ships. The models are
+laid out in the px of a 20 px icon and rendered at ZOOM times that, so they stay crisp when the map zooms in. Pixel art cannot
 be rotated in code, so there are 8 headings: d0 points east in screen space, then clockwise (d2 south, d4 west, d6 north),
 the way the map's `rotate(heading)` turns. Each heading is the ground heading whose three-quarter projection points that
 way, so north and south facings are foreshortened, as on the ships. Every heading uses the same model scale.
@@ -13,23 +14,26 @@ way, so north and south facings are foreshortened, as on the ships. Every headin
   miner    small mining craft: a stubby cab with two drill arms and side pods
   player   the player's ship: a broad-winged corvette with a canopy
 
-Livery is team.cloth (main panels) and team.accent (trim), so the map tints each fleet by faction. Sizes are 1x px."""
+Livery is team.cloth (main panels) and team.accent (trim), so the map tints each fleet by faction. Sizes are 1x px of the
+20 px layout."""
 from . import core
 from .starmap_kit import frame_item, prism, px, screen_heading, start, turn
 
-SIZE = 20
+SIZE = 40                       # frame, 1x px
+ZOOM = 2                        # render scale of the 20 px layout
 ROLES = ("patrol", "pirate", "raider", "trader", "miner", "player")
 
 
 class Ship:
-    """Builds a ship in its local frame (u forward, v to the left, z up; 1x px) turned to a heading."""
+    """Builds a ship in its local frame (u forward, v to the left, z up; 1x px of the 20 px layout) turned to a heading."""
 
     def __init__(self, heading):
         self.m = core.Mesh("ship")
         self.h = heading
 
     def hull(self, outline, z0, z1, side, top=None, inset=0.0):
-        prism(self.m, turn([(px(u), px(v)) for u, v in outline], self.h), px(z0), px(z1), side, top, inset)
+        prism(self.m, turn([(px(u * ZOOM), px(v * ZOOM)) for u, v in outline], self.h), px(z0 * ZOOM), px(z1 * ZOOM), side,
+              top, inset)
 
     def box(self, u, v, su, sv, z0, z1, side, top=None, inset=0.0):
         self.hull([(u + su / 2, v + sv / 2), (u - su / 2, v + sv / 2), (u - su / 2, v - sv / 2), (u + su / 2, v - sv / 2)],
