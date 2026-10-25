@@ -18,6 +18,8 @@ import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position
 import { isTileOccupied, origin } from './helpers';
 import { shipIdOf, shipGrid } from '../regions';
 import { finishDig } from '../rock/dig';
+import { bumpStat } from '../story/goals';
+import { playerShips } from '../story/world';
 import { AsteroidC } from '../asteroids/components';
 import { spawnVehicle } from '../vehicles/lifecycle';
 
@@ -38,6 +40,8 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
       const cost = m && sim.content.modules[m.def]?.cost;
       removeModule(sim, job.target ?? 0);
       if (m) refundCost(sim, shipIdOf(sim, job), m.x, m.y, cost); // after the tiles are free
+      // Taking a module apart on a ship that is not the player's is salvage (the goal chain counts it).
+      if (m && !playerShips(sim).has(shipIdOf(sim, job))) bumpStat(sim, 'gathered');
       return 'done';
     });
     case 'extinguish': return extinguish(sim, job, speed);
@@ -103,6 +107,7 @@ function finishModule(sim: Sim, job: Job): WorkResult {
   if (comes && sim.content.vehicles?.[comes]) spawnVehicle(sim, comes, id); // the pod bay comes with its pod
   consumeDelivered(job);
   if (grid.has('item')) for (const t of footprintTiles(def, job.x, job.y, bp.rot)) evictStack(sim, shipIdOf(sim, job), t.x, t.y);
+  if (playerShips(sim).has(shipIdOf(sim, job))) bumpStat(sim, 'built');
   return 'done';
 }
 
@@ -119,7 +124,9 @@ function repair(sim: Sim, job: Job, speed: number): WorkResult {
   const def = m && sim.content.modules[m.def];
   if (!m || !def) return 'done';
   m.hp = Math.min(def.maxHp, m.hp + (REPAIR_PER_SEC * speed) / TICK_HZ);
-  return m.hp >= def.maxHp ? 'done' : 'working';
+  if (m.hp < def.maxHp) return 'working';
+  if (playerShips(sim).has(shipIdOf(sim, m))) bumpStat(sim, 'repaired');
+  return 'done';
 }
 
 /**
