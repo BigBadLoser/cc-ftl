@@ -11,6 +11,7 @@
 
 <script lang="ts">
   import type { UiStarArt } from './starmapApi';
+  import { untrack } from 'svelte';
   import { tintedFrame } from './starmapTint';
 
   /**
@@ -24,10 +25,11 @@
 
   const f = $derived(art.frames[id]);
   let tinted = $state<string | null>(null);
+  /** The tint by value: callers may pass a fresh object each render, and only a new colour should cut a new frame. */
+  const tintKey = $derived(tint ? `${id}|${tint.cloth.join(',')}|${tint.accent.join(',')}` : '');
   $effect(() => {
-    const t = tint;
-    tinted = null;
-    if (!t) return;
+    if (!tintKey) return;
+    const t = untrack(() => tint)!;
     let live = true;
     void tintedFrame(art, id, t.cloth, t.accent).then((u) => live && (tinted = u));
     return () => (live = false);

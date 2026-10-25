@@ -6,6 +6,8 @@
    */
   import type { UiStarArt, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import StarmapBody from './StarmapBody.svelte';
+  import StarmapSprite, { crispPx } from './StarmapSprite.svelte';
+  import { toneTint } from './starmapTint';
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
   import { pixelArrow, pixelDiamond, pixelLine, pixelOutline, pixelPolyline, pixelSquare } from './starmapPixel';
@@ -67,11 +69,18 @@
     return map.fleets.map((f) => {
       const k = count.get(f.node) ?? 0;
       count.set(f.node, k + 1);
-      const side = (-135 + k * 55) * (Math.PI / 180);
+      // Above the node, fanning left and right (structure icons sit to its right, job marks to its left).
+      const side = ([-90, -135, -45, -160, -20][k % 5] as number) * (Math.PI / 180);
       const heading = f.tx !== null && f.ty !== null ? (Math.atan2(f.ty - f.y, f.tx - f.x) * 180) / Math.PI : -90;
       return { f, ox: Math.cos(side), oy: Math.sin(side), heading };
     });
   });
+  /** Icons at the crisp size (whole device px per art px, StarmapSprite `crispPx`), in map units: structures, fleets. */
+  const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+  const structPx = $derived(px(crispPx(art?.frames['starmap.struct.den']?.w ?? 48, 24, dpr)));
+  const fleetPx = $derived(px(crispPx(art?.frames['starmap.fleet.patrol.d0']?.w ?? 40, 34, dpr)));
+  /** An icon heading (degrees, the SVG sense: 0 east, clockwise) as one of the eight `d` frames. */
+  const dir = (deg: number) => (((Math.round(deg / 45) % 8) + 8) % 8);
   /** A node shows its name when it matters (yours, a jump away, picked, under the cursor) or when zoomed in. */
   const named = (n: UiStarNode) => n.known && (n.current || n.reachable || selected === n.id || hover === n.id || s > 1.2);
 </script>
@@ -98,6 +107,11 @@
     <path d={pixelLine(e.ax, e.ay, e.bx, e.by, g, { w: e.kind === 'gate' ? 2 : 1, dash: e.kind === 'rift' ? [1, 3] : undefined })} class="lane exit {e.kind}" />
   {/each}
 </g>
+{#if art}
+  {#each map.exits.filter((e) => e.kind !== 'lane') as e (e.id)}
+    <StarmapSprite {art} id={`starmap.exit.${e.kind}`} x={(e.ax + e.bx) / 2} y={(e.ay + e.by) / 2} size={structPx * 1.25} />
+  {/each}
+{/if}
 {#if current && !ship}
   {#each map.nodes.filter((n) => n.reachable && (!only || only.has(n.id))) as n (n.id)}
     <path d={pixelLine(current.x, current.y, n.x, n.y, g)} class="lane reach" />
@@ -116,7 +130,11 @@
       {#if n.reachable && !ship && (!only || only.has(n.id))}<rect {...sq(n.x, n.y, 8)} class="reachable" />{/if}
       {#if n.current && !ship}<rect {...sq(n.x, n.y, 11)} class="here" />{/if}
       {#if hover === n.id}<rect {...sq(n.x, n.y, 12)} class="hov" />{/if}
-      {#if s > 0.7}
+      {#if s > 0.7 && art}
+        {#each n.icons as ic, i (i)}
+          <StarmapSprite {art} id={ic.sprite} x={n.x + px(8) + structPx * (i + 0.5)} y={n.y} size={structPx} tint={ic.tone ? toneTint(ic.tone) : null} />
+        {/each}
+      {:else if s > 0.7}
         {#each n.badges as b, i (i)}
           <rect x={n.x + px(9 + i * 13)} y={n.y - px(6)} width={px(12)} height={px(12)} class="chip" style={`fill: ${BADGE[b] ?? 'var(--dim)'}`} />
           <text x={n.x + px(15 + i * 13)} y={n.y + px(3.6)} class="badge" font-size={px(10)}>{b}</text>
@@ -136,9 +154,13 @@
   {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] })} class="lane heading" style={`fill: ${toneColor(m.f.tone)}`} />{/if}
 {/each}
 {#each marks as m (m.f.id)}
-  <g transform={`translate(${m.f.x + m.ox * px(21)} ${m.f.y + m.oy * px(21)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
+  <g transform={`translate(${m.f.x + m.ox * px(30)} ${m.f.y + m.oy * px(30)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
     <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
-    <path d={pixelArrow(m.heading, g, 1.5)} style={`fill: ${toneColor(m.f.tone)}`} />
+    {#if art && art.frames[`starmap.fleet.${m.f.kind}.d0`]}
+      <StarmapSprite {art} id={`starmap.fleet.${m.f.kind}.d${dir(m.heading)}`} x={0} y={0} size={fleetPx} tint={toneTint(m.f.tone)} />
+    {:else}
+      <path d={pixelArrow(m.heading, g, 1.5)} style={`fill: ${toneColor(m.f.tone)}`} />
+    {/if}
     {#if m.f.damaged}<rect x={-px(11)} y={-px(11)} width={px(22)} height={px(22)} class="adrift" />{/if}
   </g>
 {/each}
@@ -146,7 +168,11 @@
   {@const ang = (Math.atan2(ship.ty - ship.fy, ship.tx - ship.fx) * 180) / Math.PI}
   <path d={pixelLine(ship.fx, ship.fy, ship.x, ship.y, g, { w: 2 })} class="lane trail" />
   <rect {...sq(ship.x, ship.y, 11)} class="here" />
-  <path d={pixelArrow(ang, g, 2)} transform={`translate(${ship.x} ${ship.y})`} class="ship" />
+  {#if art && art.frames['starmap.fleet.player.d0']}
+    <StarmapSprite {art} id={`starmap.fleet.player.d${dir(ang)}`} x={ship.x} y={ship.y} size={fleetPx * 1.25} />
+  {:else}
+    <path d={pixelArrow(ang, g, 2)} transform={`translate(${ship.x} ${ship.y})`} class="ship" />
+  {/if}
 {/if}
 {#each map.sectors as sec (sec.id)}
   {#if sec.known && sec.x > view.x0 && sec.x < view.x1 && sec.y > view.y0 && sec.y < view.y1}

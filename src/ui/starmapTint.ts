@@ -4,6 +4,7 @@
  * (`render/assets/palette.ts`, a port of its `swapColor`), on a canvas cut of the icon's frame, cached as an image URL.
  */
 import type { UiStarArt } from './starmapApi';
+import { tokenRgb } from './starmapStyle';
 
 type Rgb = [number, number, number];
 
@@ -81,4 +82,10 @@ export async function tintedFrame(art: UiStarArt, id: string, cloth: Rgb, accent
   const url = c.toDataURL();
   urls.set(key, url);
   return url;
+}
+
+/** A tone's livery: the owner colour for the panels and a lighter one for the trim (0..1 rgb), from the theme tokens. */
+export function toneTint(tone: string): { cloth: Rgb; accent: Rgb } {
+  const [r, g, b] = tokenRgb(`--${tone}`).map((v) => v / 255) as Rgb;
+  return { cloth: [r, g, b], accent: [r + (1 - r) * 0.45, g + (1 - g) * 0.45, b + (1 - b) * 0.45] };
 }
