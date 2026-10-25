@@ -201,6 +201,9 @@ export type SimEvent =
   | { type: 'galaxy.hunt'; fleet: number; faction: string; node: string; ships: number }
   /** A station job was taken, or closed: 'done' (paid), 'failed' (ran out of time), 'abandoned'. */
   | { type: 'job.accepted'; id: number; kind: 'delivery' | 'bounty'; issuer: string }
+  /** A goal of the tutorial chain was met, and an act of it finished (its reward paid). */
+  | { type: 'goal.done'; goal: string; title: string }
+  | { type: 'goal.actDone'; act: string; title: string }
   | { type: 'job.closed'; id: number; kind: 'delivery' | 'bounty'; outcome: 'done' | 'failed' | 'abandoned'; reward: number }
   | { type: 'galaxy.discovered'; count: number }
   | { type: 'galaxy.shipArrived'; node: string; faction: string; ship: number | null }

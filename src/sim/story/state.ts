@@ -56,6 +56,16 @@ export interface StoryState {
   last: Resolution | null;
   physical: PhysicalEntry[];
   rng: number;
+  /** The tutorial goal chain's progress (story/goals.ts). */
+  goals: GoalProgress;
+}
+
+/** Where the player is in the goal chain: the current act, its goals done, skipped, and the cluster the game began in. */
+export interface GoalProgress {
+  act: number;
+  done: string[];
+  skipped: boolean;
+  home: string | null;
 }
 
 /** Most physical entries kept (a stub's log is bounded). */
@@ -66,6 +76,7 @@ export function newStory(seed: number): StoryState {
     flags: {}, reputation: {}, context: { danger: 0, faction: null },
     seen: {}, active: null, queue: [], notices: [], nextId: 1, last: null, physical: [],
     rng: (seed ^ 0x5eed5eed) >>> 0,
+    goals: { act: 0, done: [], skipped: false, home: null },
   };
 }
 

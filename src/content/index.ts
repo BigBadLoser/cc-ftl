@@ -12,6 +12,7 @@ import { suit } from './suit';
 import { factions } from './factions';
 import { raiderBoarder, raiderBoarderId, raiderShip, raiderShipId } from './ships/raider';
 import { events } from './events';
+import { goals } from './goals';
 import { galaxy } from './galaxy';
 import { trade } from './trade';
 import { stations } from './stations';
@@ -33,6 +34,7 @@ export const content = {
   vehicles,
   suit,
   events,
+  goals,
   factions,
   galaxy,
   stations,

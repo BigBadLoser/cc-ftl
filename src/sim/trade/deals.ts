@@ -1,5 +1,7 @@
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
+import { bumpStat } from '../story/goals';
+import { FUEL_ITEM } from '../galaxy/fuel';
 import { settlement, type OfferCheck } from './offers';
 import { TraderC, type Deal, type Offer } from './types';
 import type { CourierPlan } from './courier';
@@ -70,6 +72,8 @@ export function settleDeal(sim: Sim, d: Deal): void {
   d.phase = 'done';
   d.timer = 0;
   sim.events.emit({ type: 'trade.settled', deal: d.id, ship: d.ship, credits: amount });
+  bumpStat(sim, 'trades');
+  if (d.get.some((q) => q.item === FUEL_ITEM && q.count > 0)) bumpStat(sim, 'fuelBought');
   trimHistory(sim);
 }
 
