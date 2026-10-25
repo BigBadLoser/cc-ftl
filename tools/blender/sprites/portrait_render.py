@@ -163,7 +163,11 @@ def singles(log):
 def build(out, opts=None, log=print):
     """-> (sheets, assets) of the `portraits` family (merge with pack.merge(manifest, 'portraits', ...))."""
     t0 = time.time()
-    items = humans(log) + singles(log)
+    pxu = core.PXU
+    try:
+        items = humans(log) + singles(log)
+    finally:
+        core.PXU = pxu          # _aim set the portrait scale; later families in this process need the iso one back
     sheets, assets = pack.pack("portraits", items, out, log)
     log(f"PORTRAITS {len(items)} portraits in {time.time() - t0:.1f}s")
     return sheets, assets

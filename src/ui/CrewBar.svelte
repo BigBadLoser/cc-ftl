@@ -14,7 +14,12 @@
   const portrait = (c: UiCrew): string | null => (void rev, api.portrait(c.id));
 
   onMount(() => {
-    const poll = setInterval(() => { if (crew.some((c) => !api.portrait(c.id))) rev++; }, 500);
+    // Re-render the cards when a portrait appears (or changes) since the last poll, and keep polling while some are missing.
+    let seen = '';
+    const poll = setInterval(() => {
+      const have = crew.map((c) => (api.portrait(c.id) ? c.id : -1)).join(',');
+      if (have !== seen) { seen = have; rev++; }
+    }, 500);
     const a = api.crew.subscribe((c) => (crew = c));
     const b = api.selectedCrew.subscribe((s) => (sel = s));
     return () => (a(), b(), clearInterval(poll));
