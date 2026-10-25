@@ -3,6 +3,7 @@ import { TICK_HZ } from '../time';
 import { expireEncounters } from './encounters';
 import { decayNotoriety } from './heat';
 import { dispatchHunters } from './hunters';
+import { expireJobs } from './jobs';
 import { stepFleets } from './fleets';
 import { stepLiveMarkets } from './marketLive';
 import { TURN_SEC } from './tuning';
@@ -31,6 +32,7 @@ export function onTurn(sim: Sim, turn: number, cause: 'hop' | 'time' = 'hop'): v
   stepFleets(sim, turn);
   decayNotoriety(sim);
   dispatchHunters(sim, turn);
+  expireJobs(sim, turn);
 }
 
 /** A hop is entered: the next turn, and the game-time clock starts over. */

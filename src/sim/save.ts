@@ -59,8 +59,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v46: `powerPriority` rename, Refine/Craft work categories split.
  * v47: art/2x and dual art sets on top of v46: cargo containers are 2x4 and 3x6 (the art's sizes; were 2x3 and 3x5), new def ids, footprints and stock capacity; shipgen frames repacked; mining pod geometry.
  * v48 (danger layers): `GalaxyState.heat` (notoriety, last hunt per faction), `Fleet.hunt` / `standDown`, `Ship.killedBy` / `tallied`.
+ * v49 (station jobs): `GalaxyState.jobs`, `jobLog`, `nextJob`.
  */
-export const SAVE_VERSION = 48;
+export const SAVE_VERSION = 49;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
