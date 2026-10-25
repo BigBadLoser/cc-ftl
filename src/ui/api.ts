@@ -19,6 +19,12 @@ export interface UiSnapshot {
   sprites: number;
 }
 
+/** The game session: a notice shown once on start (an old save could not be loaded), and why the game was lost (null while it goes on). */
+export interface UiSession {
+  notice: string | null;
+  lost: string | null;
+}
+
 /** A loose stack on a floor tile. */
 export interface UiStack {
   item: string;
@@ -707,6 +713,12 @@ export interface UiError {
 
 /** Everything the UI may call or observe; built in main.ts. */
 export interface UiApi {
+  session: Subscribable<UiSession>;
+  /** Throw this game away and start a new one (reloads the page). */
+  newGame: () => void;
+  /** Go back to the last save, from before the loss (reloads the page). */
+  loadLastSave: () => void;
+  dismissNotice: () => void;
   snapshot: Subscribable<UiSnapshot>;
   errors: Subscribable<UiError[]>;
   inspect: Subscribable<UiInspect | null>;

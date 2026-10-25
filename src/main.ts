@@ -1,6 +1,6 @@
 import { mount } from 'svelte';
 import App from './ui/App.svelte';
-import type { UiApi, UiIcon } from './ui/api';
+import type { UiApi, UiIcon, UiSession } from './ui/api';
 import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
 import { buildModuleDefs } from './app/moduleSnapshot';
@@ -14,8 +14,9 @@ import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { createRenderer, type Renderer } from './render/scene';
+import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
-import { BodyC, newGame, ShipC } from './sim';
+import { BodyC, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
@@ -23,11 +24,11 @@ import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
 
-const param = new URLSearchParams(location.search).get('seed');
-const seed = param !== null && Number.isFinite(Number(param)) ? Number(param) >>> 0 : (Math.random() * 0x100000000) >>> 0;
 
 const errorLog = createErrorLog();
-const sim = newGame(seed, content, undefined, true);
+// The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
+const start = startGame(new URLSearchParams(location.search).get('seed'));
+const sim = start.sim;
 const bridge = createBridge(sim);
 const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
@@ -53,6 +54,7 @@ const loop = createLoop({
       else if (e.type === 'sector.deployed') {
         const grid = shipGrid(sim, e.ship);
         if (grid) renderer?.setGrid(grid);
+        setTimeout(save, 0); // after a jump lands: the new node is in the save
       }
     }
     hook?.onEvents(events.map((e) => e.type));
@@ -60,6 +62,27 @@ const loop = createLoop({
   onFrame: (stats) => bridge.update(stats, renderer?.info()),
 });
 bridge.attachLoop(loop);
+
+/**
+ * Saving: the game is written every AUTOSAVE_MS, when the page is hidden or closed (a phone killing the tab), and after a
+ * jump lands. Once the game is lost it is never written again, so the save on disk is the last one before the loss and
+ * "Load last save" goes back to it.
+ */
+const AUTOSAVE_MS = 30_000;
+const session = createStore<UiSession>({ notice: start.notice, lost: null });
+const save = (): void => {
+  if (!session.get().lost) writeSave(sim);
+};
+setInterval(save, AUTOSAVE_MS);
+setInterval(() => {
+  if (session.get().lost) return;
+  const lost = lostReason(sim);
+  if (!lost) return;
+  bridge.setSpeed(0); // the world stops behind the game-over screen
+  session.set({ ...session.get(), lost });
+}, 1000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
+window.addEventListener('pagehide', save);
 
 /** Frame the player's ship and a hostile one (or only the player's ship) in the camera. */
 function focusFight(ship: number | null): void {
@@ -151,6 +174,10 @@ const stationFlag = params.get('station');
 
 const api: UiApi = {
   snapshot: bridge.snapshot,
+  session,
+  newGame: restartNewGame,
+  loadLastSave: reloadLastSave,
+  dismissNotice: () => session.set({ ...session.get(), notice: null }),
   inspect: bridge.inspect,
   errors: errorLog.errors,
   crew: bridge.crew,

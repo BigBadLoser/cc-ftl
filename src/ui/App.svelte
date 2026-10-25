@@ -1,4 +1,5 @@
 <script lang="ts">
+  import GameSession from './GameSession.svelte';
   import { onMount } from 'svelte';
   import type { UiStarmap, UiDeploy } from './starmapApi';
   import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
@@ -209,6 +210,7 @@
 {#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} flee={fleeShip} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; fleeShip = null; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />
+<GameSession {api} />
 
 <!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; alerts stack below as separate cards. -->
 <div class="rcol" bind:clientHeight={rcolH}>
