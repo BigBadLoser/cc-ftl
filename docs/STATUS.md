@@ -12,6 +12,18 @@ map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design histor
 `npm run sprites` (see "Ore refinery" in ARCHITECTURE.md). Nothing old was removed: the manifest had no refinery entries (the
 module used the tinted-crate placeholder in `fallback.ts`, which stays as the fallback). Awaiting visual approval before `main`.
 
+**Ore bins (tip bins, same branch):** the Blender sources of PR #56's hydraulic tip bin (`tip_bin.py`, `tip_bin_wear.py`, shared
+`steelkit.py`, and `ore_cage.py` which the tip bin imports; the scrap cage `scrap.py` and its `storage_scrap` family were left out)
+render at native 1x as family `storage_ore` (`npm run sprites -- public/assets/1x storage_ore`, ~2 min; 82 sprites, sheet
+`storage_ore`). `module.storage_ore` (2x2, 24 slots) and `module.storage_ore_large` (3x2, 40; not placed by any generator yet) are
+ordinary storage in `furniture.ts`, buildable like the pallet. Storage cannot be limited to item kinds, so they hold anything; the
+`ModuleDef.storageArt` map (item to art kind) only picks the sprite: `.empty`, else `.<iron|ice|rare>.<fill1|fill2|full>` by the
+dominant ore and the share of slots in use (`storageState` in `render/moduleArt.ts`; thirds). Station industry rooms set up to two
+bins flush against each refinery, away from its access tile (`with` on a `count: 'spec'` step, `flank()` in `rooms/furnish.ts`; it
+runs after all planned modules are in, falls back to taking walkway floor if every tile stays reachable, and reserves each bin's own
+access tile). The scattered `module.storage` crates left the refinery floor; pallets stay. The mining industry room stocks ore.
+Scrap cage: add `scrap.py`, the `storage_scrap` family entry in `families.py` and render it (about 1x work, same pattern).
+
 ## Where things are
 
 **Art sets:** the 2x set (`public/assets/2x/`), the `?art=` choice and the 2x fallback are gone. `public/assets/1x/` (64x32 art

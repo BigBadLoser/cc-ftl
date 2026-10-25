@@ -1,3 +1,4 @@
+import type { World } from '../sim/ecs';
 import { describe, expect, it } from 'vitest';
 import type { Module } from '../sim/modules/components';
 import { content } from '../content';
@@ -87,5 +88,28 @@ describe('module state art', () => {
     expect(moduleAssets(null as never, 1, mr, refinery, true, none)).toEqual(moduleAssets(null as never, 1, mr, refinery, true));
     expect(moduleLayers(null as never, 1, mr, refinery, true, true, null, look(500))[0]!.anim).toBe('module.refinery.r2.active');
     expect(moduleLayers(null as never, 1, mr, refinery, false, true, null, look(500))[0]!.anim).toBeUndefined();
+  });
+});
+
+describe('ore bin art', () => {
+  const bin = content.modules['module.storage_ore']!;
+  const m = { def: 'module.storage_ore', x: 4, y: 4, rot: 1 } as unknown as Module;
+  const hold = (stacks: { item: string; count: number }[]): World =>
+    ({ get: (_id: number, c: { name: string }) => (c.name === 'storage' ? { stacks, capacity: 24 } : undefined) }) as unknown as World;
+  const head = (stacks: { item: string; count: number }[]) => moduleAssets(hold(stacks), 1, m, bin, false)[0];
+  const slots = (item: string, n: number) => Array.from({ length: n }, () => ({ item, count: 10 }));
+
+  it('shows the empty bin', () => {
+    expect(head([])).toBe('module.storage_ore.r1.empty');
+  });
+  it('picks the dominant ore and the fill from the slots in use', () => {
+    expect(head(slots('item.iron_ore', 3))).toBe('module.storage_ore.r1.iron.fill1');
+    expect(head(slots('item.ice', 12))).toBe('module.storage_ore.r1.ice.fill2');
+    expect(head(slots('item.rare_ore', 20))).toBe('module.storage_ore.r1.rare.full');
+    expect(head([{ item: 'item.iron_ore', count: 5 }, { item: 'item.rare_ore', count: 40 }])).toBe('module.storage_ore.r1.rare.fill1');
+  });
+  it('ignores items with no ore art and falls back to the plain asset', () => {
+    expect(head([{ item: 'item.metal', count: 5 }, { item: 'item.ice', count: 1 }])).toBe('module.storage_ore.r1.ice.fill1');
+    expect(moduleAssets(hold(slots('item.metal', 3)), 1, m, bin, false).at(-1)).toBe('module.storage_ore');
   });
 });

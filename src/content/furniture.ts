@@ -5,6 +5,9 @@ import type { ModuleDef } from '../sim';
  * (the food pack); the rest are planned modules with no art yet, drawn by the fallback until their sheets exist.
  * None of them adds a mechanic: storage holds items like a crate, the others are dressing (no sit-to-eat yet).
  */
+/** What an ore bin's sprite shows for each ore (art kind of `module.storage_ore.<kind>.<fill>`). */
+const ORE_ART = { 'item.iron_ore': 'iron', 'item.ice': 'ice', 'item.rare_ore': 'rare' };
+
 export const furniture = {
   // 2x1 table; crew sit on chairs beside its long sides. Not in the sim yet: eating at a table.
   'module.mess_table': {
@@ -28,6 +31,15 @@ export const furniture = {
   'module.storage_pallet': {
     name: 'Cargo pallet', asset: 'module.storage_pallet', footprint: [2, 2], solid: true, access: [0, 2], power: 0,
     flammability: 0.3, maxHp: 100, buildWork: 80, cost: [{ item: 'item.metal', count: 8 }], storage: { capacity: 24 },
+  },
+  // Ore tip bins (art: storage_ore): the refinery's ore stores. Storage cannot be limited to item kinds yet, so they hold anything.
+  'module.storage_ore': {
+    name: 'Ore bin', asset: 'module.storage_ore', footprint: [2, 2], solid: true, access: [0, 2], power: 0,
+    flammability: 0.1, maxHp: 120, buildWork: 90, cost: [{ item: 'item.metal', count: 10 }], storage: { capacity: 24 }, storageArt: ORE_ART,
+  },
+  'module.storage_ore_large': {
+    name: 'Large ore bin', asset: 'module.storage_ore_large', footprint: [3, 2], solid: true, access: [1, 2], power: 0,
+    flammability: 0.1, maxHp: 180, buildWork: 130, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 40 }, storageArt: ORE_ART,
   },
   // A freight container, opened from the doors on one long side. Cargo holds pack them around their walkway.
   'module.cargo_container': {

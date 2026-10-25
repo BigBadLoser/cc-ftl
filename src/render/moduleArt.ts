@@ -18,6 +18,28 @@ export function storageFill(world: World, id: number): 'empty' | 'partial' | 'fu
   return s.stacks.length >= s.capacity * FULL_SHARE ? 'full' : 'partial';
 }
 
+/** Share of an ore bin's slots in use up to which it shows its first and second fill sprite. */
+const BIN_FILLS = [1 / 3, 2 / 3] as const;
+
+/**
+ * Art state of a storage module: `.empty/.partial/.full`, or for a def with `storageArt` (ore bins) `.empty`, else
+ * `.<kind>.<fill1|fill2|full>` by the dominant mapped item and the slots in use. Items with no kind are ignored.
+ */
+export function storageState(world: World, id: number, def: ModuleDef): string {
+  const s = def.storageArt ? world.get(id, StorageC) : undefined;
+  if (!def.storageArt || !s) return storageFill(world, id);
+  if (s.stacks.length === 0) return 'empty';
+  const by = new Map<string, number>();
+  for (const q of s.stacks) {
+    const kind = def.storageArt[q.item];
+    if (kind) by.set(kind, (by.get(kind) ?? 0) + q.count);
+  }
+  const kind = [...by.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (!kind) return storageFill(world, id);
+  const share = s.stacks.length / Math.max(1, s.capacity);
+  return `${kind}.${share <= BIN_FILLS[0] ? 'fill1' : share <= BIN_FILLS[1] ? 'fill2' : 'full'}`;
+}
+
 /** Craft jobs by module id, for the renderer's "is it crafting" test. */
 export function craftProgress(world: World): Map<number, number> {
   const out = new Map<number, number>();
@@ -82,7 +104,7 @@ export function stateArt(def: ModuleDef, rot: number, active: boolean, look?: Mo
  * `.unpowered` art or the current `.active` animation frame comes first (see `stateArt`).
  */
 export function moduleAssets(world: World, id: number, m: Module, def: ModuleDef, active: boolean, look?: ModuleLook): string[] {
-  const state = def.storage ? `.${storageFill(world, id)}` : active ? '.active' : '';
+  const state = def.storage ? `.${storageState(world, id, def)}` : active ? '.active' : '';
   const rot = `.r${m.rot}`;
   return [...stateArt(def, m.rot, active, look).head, `${def.asset}${rot}${state}`, `${def.asset}${rot}`, `${def.asset}${state}`, def.asset];
 }

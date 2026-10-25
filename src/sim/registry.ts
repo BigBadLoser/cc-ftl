@@ -368,6 +368,11 @@ export interface ModuleDef {
   cost?: ItemQty[];
   /** Holds items: capacity in stacks. */
   storage?: { capacity: number };
+  /**
+   * Art only: item id -> art kind for a storage module whose sprite shows what it holds (ore bins:
+   * `.empty`, else `.<kind>.<fill1|fill2|full>` by the dominant mapped item). The sim never reads it.
+   */
+  storageArt?: Record<string, string>;
   /** Crafts recipes whose `station` is this def (gets a ProductionC order list). */
   crafting?: true;
   /**
