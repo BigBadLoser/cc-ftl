@@ -1,3 +1,4 @@
+import { settleLosses } from './jobs';
 import { ShipC } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
 import { liftShip } from '../sector/packet';
@@ -104,6 +105,8 @@ export function leaveEvent(sim: Sim, resume: (sim: Sim) => void, command = 'gala
   const blocked = leaveBlocker(sim);
   if (blocked) return reject(blocked);
   let packet = sim.sector.packet;
+  // Kills in the grid count before its ships are gone.
+  settleLosses(sim);
   if (sim.sector.state === 'active') {
     const me = playerShipInfo(sim) as NonNullable<ReturnType<typeof playerShipInfo>>;
     if (hostilesPresent(sim) > 0) spendCharge(sim, FTL_CHARGE_SEC, me.id);

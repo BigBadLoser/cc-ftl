@@ -2,7 +2,7 @@ import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
 import { giveItems, takeItems } from '../story/effects';
 import { playerStock } from '../story/world';
-import { addNotoriety } from './heat';
+import { addNotoriety, tallyLosses } from './heat';
 import { offersHere } from './jobOffers';
 import { repKey } from './standing';
 import { nodeState } from './state';
@@ -89,6 +89,14 @@ export function tendJobs(sim: Sim, destroyed: readonly number[]): void {
       close(sim, job, 'done');
     }
   }
+}
+
+/**
+ * Count the player's kills and takes (heat.ts) and settle the jobs that hang on them. The galaxy system calls it every second; leaving a node (a jump, leaving
+ * an event grid) calls it first too, before the node is archived, so a target destroyed just before the jump still counts.
+ */
+export function settleLosses(sim: Sim): void {
+  tendJobs(sim, tallyLosses(sim));
 }
 
 /** Fail the jobs whose time ran out. Once a turn. */

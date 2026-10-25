@@ -103,7 +103,13 @@ describe('station jobs', () => {
     const c = sim.world.get(playerShip(sim), CombatC)!;
     c.target = { ship: target!, moduleId: 0 };
     wreckShip(sim, target!);
-    for (let i = 0; i < 25; i++) sim.step();
+    // Jump away at once, before the galaxy system's next tally: the kill still counts.
+    sim.enqueue({ type: 'debug.chargeFtl' });
+    sim.step();
+    const next = (galaxyIndex(sim.galaxy).adjacent.get(sim.galaxy.current) ?? []).map((e) => (e.a === sim.galaxy.current ? e.b : e.a))[0]!;
+    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [next] });
+    sim.step();
+    expect(sim.sector.state).toBe('hyperspace');
     expect(sim.galaxy.jobs.some((j) => j.id === job.id)).toBe(false);
     expect(sim.trade.credits).toBe(credits + job.reward);
   });
