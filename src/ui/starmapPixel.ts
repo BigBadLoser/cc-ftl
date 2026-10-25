@@ -6,7 +6,7 @@
  */
 
 /** Lines longer than this many cells are drawn as a plain band (a lane far off-screen at a deep zoom). */
-const MAX_CELLS = 3000;
+const MAX_CELLS = 6000;
 
 const f = (v: number): string => (Math.round(v * 100) / 100).toString();
 
@@ -76,11 +76,18 @@ function band(ax: number, ay: number, bx: number, by: number, g: number, w: numb
   return `M${f(ax + nx)} ${f(ay + ny)}L${f(bx + nx)} ${f(by + ny)}L${f(bx - nx)} ${f(by - ny)}L${f(ax - nx)} ${f(ay - ny)}Z`;
 }
 
-/** A lane (or any segment) as a pixel line. */
+/**
+ * A lane (or any segment) as a pixel line `w` cells thick. It steps by half a cell (one screen pixel), not a whole one: a diagonal on whole cells
+ * drops two pixels a step, which reads as a staircase rather than a line.
+ */
 export function pixelLine(ax: number, ay: number, bx: number, by: number, g: number, o: PixelLineOpts = {}): string {
-  const [x0, y0, x1, y1] = [ax, ay, bx, by].map((v) => Math.round(v / g)) as [number, number, number, number];
-  if (Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) > MAX_CELLS) return band(ax, ay, bx, by, g, o.w ?? 1);
-  return cells(x0, y0, x1, y1, g, o);
+  const h = g / 2;
+  const [x0, y0, x1, y1] = [ax, ay, bx, by].map((v) => Math.round(v / h)) as [number, number, number, number];
+  const major = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+  if (major > MAX_CELLS) return band(ax, ay, bx, by, h, 2 * (o.w ?? 1));
+  // Thickness is counted across the minor axis: widen a diagonal by its slope so it is as thick, measured across, as a straight line.
+  const w = Math.round(2 * (o.w ?? 1) * (Math.hypot(x1 - x0, y1 - y0) / (major || 1)));
+  return cells(x0, y0, x1, y1, h, { w, dash: o.dash && [2 * o.dash[0], 2 * o.dash[1]] });
 }
 
 /** A polyline ("x,y x,y ...", as the route is given) as one pixel path. */
