@@ -92,9 +92,9 @@ describe('station generator', () => {
     // Mining: refineries, several docks.
     expect(count(m, 'module.refinery')).toBeGreaterThanOrEqual(4);
     expect(m.station.docks).toBeGreaterThanOrEqual(4);
-    // Farming: hydroponics bays.
-    expect(count(f, 'module.hydroponics')).toBeGreaterThanOrEqual(16);
-    expect(count(f, 'module.hydroponics')).toBeGreaterThan(2 * count(t, 'module.hydroponics'));
+    // No station grows hydroponics beds (they read as clutter); farming stations are messes and quarters instead.
+    for (const g of [t, m, f, d, p]) expect(count(g, 'module.hydroponics')).toBe(0);
+    expect(f.rooms.filter((r) => r.role === 'support').length).toBeGreaterThanOrEqual(4);
     // Military depot: the most guns and shields, few docks, an armoury.
     for (const g of [t, m, f, p]) {
       expect(d.station.guns).toBeGreaterThan(g.station.guns);

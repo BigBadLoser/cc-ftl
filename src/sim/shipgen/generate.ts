@@ -6,7 +6,7 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
+import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
 import { Layout } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -58,6 +58,7 @@ interface Fitted {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
+  recipes = RECIPES,
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   const out: Fitted = { lay, stock: new Map(), vehicles: new Set() };
@@ -69,7 +70,7 @@ function fitOut(
   // Rooms with a recipe draw their arrangement once; their planned modules go where the recipe says.
   const draws = new Map<number, RoomDraw>();
   const drawOf = (room: number): RoomDraw | null => {
-    const recipe = RECIPES[roles[room] as RoomRole];
+    const recipe = recipes[roles[room] as RoomRole];
     if (!recipe || specs[room]?.sealed) return null;
     if (!draws.has(room)) {
       const d = drawRoom(rng, recipe);
@@ -272,7 +273,7 @@ export function finishLayout(
   const rows = pruneDoors(framed, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
-  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs);
+  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? STATION_RECIPES : RECIPES);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };

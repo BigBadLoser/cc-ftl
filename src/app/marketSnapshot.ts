@@ -1,4 +1,4 @@
-import { dockPort, econOf, factorAt, portsAt, stockAt, type Fleet, type Sim } from '../sim';
+import { dockPort, econOf, factorAt, portsAt, stockAt, type Fleet, type Port, type Sim } from '../sim';
 import type { UiStarMarket } from '../ui/starmapApi';
 
 /** A good counts as cheap below this price factor and as dear above that one. */
@@ -10,7 +10,12 @@ const SHOWN = 2;
 /** The market of the node's trading port as a short line (its cheapest and dearest goods), or null when the node has none. */
 export function marketOf(sim: Sim, node: string): UiStarMarket | null {
   const port = dockPort(portsAt(sim, node), 'trader');
-  const e = port && econOf(sim, port);
+  return port ? marketAt(sim, port) : null;
+}
+
+/** The market of one port as a short line, or null when it does not trade. */
+export function marketAt(sim: Sim, port: Port): UiStarMarket | null {
+  const e = econOf(sim, port);
   if (!e) return null;
   const stock = stockAt(sim, e, sim.galaxy.turn);
   const rows = (sim.content.galaxy?.market.goods ?? []).map((item) => ({ name: sim.content.items[item]?.name ?? item, f: factorAt(e, item, stock[item] ?? 0) }));

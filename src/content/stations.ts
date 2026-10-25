@@ -97,18 +97,17 @@ export const stations = {
     ],
     atrium: { role: 'plaza', chance: 0.4 },
   },
-  // Farming: hydroponics bays, extra crew quarters and messes; lightly guarded.
+  // Farming: extra crew quarters and messes round a plaza, ration stores; lightly guarded. (No hydroponics beds on stations.)
   'station.farming': {
     name: 'Agri station', kind: 'farming', side: 'neutral', motif: 'motif.civilian', security: 0.2, crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.ration', min: 4, max: 12 }, { item: 'item.polymer', min: 0, max: 4 }],
     tiers: tiers({ crew: 1.1, guns: per(2, 4, 8), heavyPct: 15, shields: per(0, 1, 2), pd: per(1, 1, 2), crates: per(6, 14, 28), docks: per(2, 2, 3), shapes: SHAPES.farming }),
     rooms: [
-      room('farm', ['module.lifeSupport', ...n(6, 'module.hydroponics')], 8, 4, per(2, 4, 8)),
-      room('support', ['module.lifeSupport'], 6, 3, per(0, 1, 2)),
+      room('support', ['module.lifeSupport'], 6, 3, per(2, 4, 8)),
       armoury(per(1, 1, 1)),
     ],
-    atrium: { role: 'garden', chance: 0.85 },
+    atrium: { role: 'plaza', chance: 0.85 },
   },
   // Military depot: heavy guns, shield generators, armouries and barracks, few docks.
   'station.military': {

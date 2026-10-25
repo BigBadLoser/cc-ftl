@@ -2,7 +2,7 @@ import {
   DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
   fleetName, nodeOf, portNode, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
-import type { UiNodeJob, UiStarExit, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
+import type { UiNodeJob, UiStarExit, UiStarIcon, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { cargoOf, marketOf } from './marketSnapshot';
 import { newsOf } from './newsSnapshot';
 import { buildHeat } from './heatSnapshot';
@@ -35,11 +35,21 @@ function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
     if (!at) return [];
     return [{
       id: f.id, node: f.node, x: Math.round(at.x), y: Math.round(at.y), tx: next ? Math.round(next.x) : null, ty: next ? Math.round(next.y) : null,
-      name: fleetName(f), faction: content?.factions[f.faction]?.name ?? f.faction, role: ROLE_LABEL[f.role] ?? f.role, ships: f.ships.length,
+      name: fleetName(f), faction: content?.factions[f.faction]?.name ?? f.faction, role: ROLE_LABEL[f.role] ?? f.role, kind: f.role, ships: f.ships.length,
       tone: toneOf(content?.factions[f.faction]?.kind), hostile: isHostileFaction(sim, f.faction), damaged: !!f.damaged,
       heading: headingOf(f, nodeName), home: nodeName(portNode(f.home)), cargo: cargoOf(sim, f),
     }];
   });
+}
+
+/** A structure's starmap icon: its sprite (a station held by pirates is their den) and the owner's tone for stations. */
+function iconOf(sim: Sim, def: string, faction: string | null): UiStarIcon {
+  const content = sim.content.galaxy;
+  const d = content?.structures[def];
+  const kind = faction ? content?.factions[faction]?.kind : undefined;
+  const name = d?.name ?? def;
+  if (d?.kind !== 'station') return { sprite: `starmap.struct.${d?.kind ?? 'derelict'}`, tone: null, name };
+  return { sprite: kind === 'pirates' ? 'starmap.struct.den' : `starmap.struct.station_${d.station ?? 'trade'}`, tone: toneOf(kind), name };
 }
 
 /** The trip in progress as the view draws it. */
@@ -93,6 +103,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       visited: g.visited[n.id] !== undefined, current: n.id === g.current, danger: n.danger, faction: n.faction,
       badges: k ? n.structures.map((s) => content?.structures[s.def]?.badge ?? '?') : [],
       structures: k ? n.structures.map((s) => content?.structures[s.def]?.name ?? s.def) : [],
+      icons: k ? n.structures.map((s) => iconOf(sim, s.def, n.faction)) : [],
       resources: k ? n.resources.map((r) => sim.content.items[r]?.name ?? r) : [],
       hostiles, others: contacts.length - hostiles, reachable: reachable.has(n.id), market: k && sensors.has(n.id) ? marketOf(sim, n.id) : null,
       jobs: k ? jobsAt.get(n.id) ?? [] : [],

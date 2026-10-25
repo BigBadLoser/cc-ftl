@@ -110,6 +110,8 @@ export interface UiStarNode {
   /** Structure badges ("T", "A", "D"...). Empty for unknown nodes. */
   badges: string[];
   structures: string[];
+  /** The same structures as starmap icons: sprite id (`starmap.struct.*`), owner tone for its livery (null: none), name. */
+  icons: UiStarIcon[];
   resources: string[];
   /** Ships seen at the node (within sensor range only): hostile and other. */
   hostiles: number;
@@ -120,6 +122,13 @@ export interface UiStarNode {
   market?: UiStarMarket | null;
   /** The player's held jobs that end here (discovered nodes only). */
   jobs?: UiNodeJob[];
+}
+
+/** A structure's starmap icon. */
+export interface UiStarIcon {
+  sprite: string;
+  tone: Tone | null;
+  name: string;
 }
 
 /** An NPC fleet the sensors can see: drawn beside its node, heading for `next` (null while resting). */
@@ -136,6 +145,8 @@ export interface UiStarFleet {
   /** Faction name, role label ("Trader", "Patrol", "Raider"), ship count, tone by faction kind, and whether it is hostile to the player. */
   faction: string;
   role: string;
+  /** The role id, for its icon (`starmap.fleet.<kind>.d0..d7`). */
+  kind: string;
   ships: number;
   tone: Tone;
   hostile: boolean;
@@ -178,6 +189,18 @@ export interface UiNews {
   /** Where: the node's name for news in range, the region (sector) for a rumour. */
   place: string;
   rumour: boolean;
+}
+
+/**
+ * The starmap's pipeline art (the `starmap` sprite family): the sheet image, its glow twin (same layout) and their sizes, and
+ * each `starmap.*` frame in the sheet's own pixels (`glow`: the glow twin has pixels there).
+ */
+export interface UiStarArt {
+  src: string;
+  glow: string | null;
+  w: number;
+  h: number;
+  frames: Record<string, { x: number; y: number; w: number; h: number; glow: boolean }>;
 }
 
 export interface UiStarmap {

@@ -7,6 +7,7 @@ import { StationCrewC } from '../../sim/stations/components';
 import { dockError } from '../../sim/vehicles/handlers';
 import { stationAirlock } from '../../sim/trade/stationDock';
 import { shipIdOf } from '../../sim/regions';
+import { isTileWalkable } from '../../sim/modules/walk';
 import { content } from '../index';
 
 function run(sim: Sim, n: number, log: string[] = []): string[] {
@@ -25,11 +26,11 @@ function spawn(style: 'dug' | 'surface', kind: OutpostKind, seed = 1): { sim: Si
   return { sim, base: [...sim.world.query(ShipC)].find((id) => sim.world.get(id, ShipC)?.outpost)! };
 }
 
-/** A floor tile of the base in its east half (a spot well inside, clear of the rock). */
+/** A walkable floor tile of the base in its east half (a spot well inside, clear of the rock and the furniture). */
 function insideTile(sim: Sim, base: number): { x: number; y: number } {
   const g = shipGrid(sim, base)!;
   for (let y = g.y0; y < g.y0 + g.height; y++) {
-    for (let x = g.x0 + Math.floor(g.width / 2); x < g.x0 + g.width; x++) if (g.get('ship', x, y) === base && g.get('struct', x, y) === Struct.Floor) return { x, y };
+    for (let x = g.x0 + Math.floor(g.width / 2); x < g.x0 + g.width; x++) if (g.get('ship', x, y) === base && g.get('struct', x, y) === Struct.Floor && isTileWalkable(sim, g, x, y)) return { x, y };
   }
   throw new Error('no floor');
 }

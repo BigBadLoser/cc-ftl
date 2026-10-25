@@ -56,7 +56,9 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     // Once the shuttle has left with the goods there is nothing to call back, except at a station dock: the run is
     // unwound there (goods back where they were) and the shuttle flies home.
     const atStation = deal.phase === 'dockStation' || deal.phase === 'stationWork';
-    if (deal.phase !== 'dispatch' && deal.phase !== 'load' && !atStation) return reject(sim, cmd.type, 'inTransit');
+    // A hiring run can be called off until the recruits are aboard and the shuttle has left the station.
+    const fetching = !!deal.crew && (deal.phase === 'out' || atStation);
+    if (deal.phase !== 'dispatch' && deal.phase !== 'load' && !atStation && !fetching) return reject(sim, cmd.type, 'inTransit');
     if (atStation) unwindStation(sim, deal);
     failDeal(sim, deal, 'cancelled');
     const v = atStation ? sim.world.get(deal.vehicle, VehicleC) : undefined;

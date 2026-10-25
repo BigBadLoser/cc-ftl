@@ -79,6 +79,7 @@ export const FIRE_CREW_DAMAGE = 8;
 export const BLEED_OUT_SECONDS = 120;
 /** Hp per second regained in a bed while stabilized. */
 export const BED_HEAL_PER_SEC = 1.5;
+/** Bed healing is SKILL_STEP faster per medicine level of the best conscious medic aboard the patient's ship. */
 /** Stabilized crew get up at this hp. */
 export const GET_UP_HP = 40;
 /** Hp per second regained by upright crew in safe air. */
