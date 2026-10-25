@@ -71,14 +71,17 @@ bridge.attachLoop(loop);
 const AUTOSAVE_MS = 30_000;
 const session = createStore<UiSession>({ notice: start.notice, lost: null });
 const save = (): void => {
-  if (!session.get().lost) writeSave(sim);
+  // Read the loss from the sim, not the session: the poll below lags by up to a second.
+  if (!session.get().lost && !lostReason(sim)) writeSave(sim);
 };
 setInterval(save, AUTOSAVE_MS);
 setInterval(() => {
   if (session.get().lost) return;
   const lost = lostReason(sim);
   if (!lost) return;
-  bridge.setSpeed(0); // the world stops behind the game-over screen
+  // The world stops behind the game-over screen for good: no speed key or button can start it again.
+  bridge.setSpeed(0);
+  loop.stop();
   session.set({ ...session.get(), lost });
 }, 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
