@@ -152,6 +152,16 @@ class NavyShell(FreeEnds, T.Shell):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.find_ends()
+        self.holes = []                                 # a ramp variant's hole: (ax, plane, u0, u1, d0, d1)
+        rh = (T.STYLE or {}).get("ramp_hole")
+        hd = rh(T.VARIANT[1]) if rh and T.VARIANT[1] else None
+        if hd:
+            off = (T.STYLE or {}).get("seam", T.STILE)
+            for ax, plane, a, b, _ in T.faces(self):
+                for s0, s1 in T.spans(a, b):
+                    if s1 - s0 > 2 * off + 0.3:
+                        self.holes.append((ax, T.snap(plane), s0 + off - hd[2], s1 - off + hd[2], hd[0] * self.run,
+                                           hd[1] * self.run))
         for r in self.rects:
             x0, x1, y0, y1 = r[0]
             if any(sd[0] == "+" for sd, _ in self.end_sides):
@@ -162,6 +172,14 @@ class NavyShell(FreeEnds, T.Shell):
                 lim = self.line[0] + self.line[1] - NAVY_C + 1e-9
                 self.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
                 self.diag = self.skirt_halves = True
+
+    def skip_skirt(self, i, j):                         # no ramp over a ramp variant's hole
+        x, y = (i + 0.5) / T.W.GN - 0.5, (j + 0.5) / T.W.GN - 0.5
+        for ax, plane, u0, u1, d0, d1 in self.holes:
+            u, d = (x, y - plane) if ax == "y" else (y, x - plane)
+            if u0 < u < u1 and d0 < d < d1:
+                return True
+        return super().skip_skirt(i, j)
 
     def drop_at(self, x, y):
         return 0.0
@@ -276,7 +294,14 @@ def navy(hull):
             return
         mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
         T.run(k, ax, plane, a, b, pe, zh, rt - 0.02, PX, "rose", 1, 0)                           # the dark header
-        T.run(k, ax, plane, a, b, pe, zh - 0.33 * H, zh, PAINT, "ochre", 3, 0)                  # the maroon band
+        tv = T.VARIANT[0]                               # (a straight piece's variant: factions_variants)
+        if tv == 5:
+            FV.navy_band(k, ax, plane, a, b, pe, zh, H)
+        else:
+            T.run(k, ax, plane, a, b, pe, zh - 0.33 * H, zh, PAINT, "ochre", 3, 0)              # the maroon band
+        if tv in (1, 2, 3, 4):
+            for s0, s1 in T.spans(a, b):
+                FV.navy_top(k, ax, plane, s0 + 0.06, s1 - 0.06, zs + 0.1, zh - 0.02, F, tv)
         zc, r, dc = rt - 0.1, 0.055, PX + 0.055                                                  # the tube, high up
         if not endf:                                    # (none on a wall's end face; it stops in the end bracket)
             tube(k, ax, plane, a + (0.02 if back else 0.0), b - (0.02 if end1 else 0.0), dc, zc, r,

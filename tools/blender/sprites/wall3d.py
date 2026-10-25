@@ -265,6 +265,22 @@ F_LOCK = "wall"                                  # the hull's box keeps the wall
 
 # ---- the skirt ------------------------------------------------------------------------------------------------
 
+def _minus(q, holes):
+    """A (u0, u1, d0, d1) rectangle less some holes (the same form): the rectangles left."""
+    out = [q]
+    for h in holes:
+        nxt = []
+        for r in out:
+            if h[0] >= r[1] or h[1] <= r[0] or h[2] >= r[3] or h[3] <= r[2]:
+                nxt.append(r)
+                continue
+            hu0, hu1, hd0, hd1 = max(h[0], r[0]), min(h[1], r[1]), max(h[2], r[2]), min(h[3], r[3])
+            nxt += [x for x in ((r[0], r[1], r[2], hd0), (r[0], r[1], hd1, r[3]), (r[0], hu0, hd0, hd1),
+                                (hu1, r[1], hd0, hd1)) if x[1] - x[0] > 1e-6 and x[3] - x[2] > 1e-6]
+        out = nxt
+    return out
+
+
 def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     """The face's posts and fields carried down the slope: a narrow plate under each post, a wide one under each field
     with a panel (a raised frame, a lighter plate sunk in it and a dark slot under it), on the shell's dark joints,
@@ -301,17 +317,23 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             segs += [(e0, s0 + off, False), (s0 + off, e1, True)]
             continue
         segs += [(e0, s0 + off, False), (s0 + off, s1 - off, True), (s1 - off, e1, False)]
+    holes = [h[2:] for h in getattr(sp, "holes", ()) if h[0] == ax and abs(h[1] - plane) < 1e-6]
     for u0, u1, field in segs:
+        hole = next((h for h in holes if field and h[0] < u1 and h[1] > u0), None)
+        for q in _minus((u0 + g, u1 - g, d0, d1), holes):                      # (round a look's ramp hole)
+            poly = _clip(_clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], lo), hi)
+            if len(poly) >= 3:
+                plate(k, poly, pt, nrm, 0.0, rise, fam, 2)
         poly = _clip(_clip([(u0 + g, d0), (u1 - g, d0), (u1 - g, d1), (u0 + g, d1)], lo), hi)
         if len(poly) < 3:
             continue
-        plate(k, poly, pt, nrm, 0.0, rise, fam, 2)
         w = u1 - u0
         sk = (STYLE or {}).get("skirt", "panel")
-        rv = (STYLE or {}).get("ramp_var")                              # a look's own ramp variant
-        if field and w >= 0.36 and sk == "outline" and VARIANT[1] and rv:
-            rv(lambda q, rr, lvl, bb: plate(k, q, pt, nrm, 0.0, rise + rr, fam, lvl, base=rise + bb),
-               max(u0, a), min(u1, ub), run_, VARIANT[1])
+        rv = (STYLE or {}).get("ramp_var")                              # a look's own ramp variant (in place
+        if field and w >= 0.36 and VARIANT[1] and rv:                  # of its panel, whatever its style)
+            rv(lambda q, rr, lvl, bb, f=None: plate(k, q, pt, nrm, 0.0, rise + rr, f or fam, lvl, base=rise + bb),
+               max(u0, a), min(u1, ub), run_, VARIANT[1], k=k, pt=lambda u, dd, h: pt(u, dd, rise + h),
+               P=lambda u, z, dd: P(ax, plane, u, z, dd), zs=zs, hole=hole, ax=ax, plane=plane)
         elif field and w >= 0.36 and sk == "outline":                   # a faction's plain outlined panel
             fu0, fu1 = max(u0, a) + 0.08, min(u1, ub) - 0.08                # (on the face, not the mitred run-on)
             fd0, fd1 = 0.15 * run_, 0.62 * run_
@@ -323,12 +345,12 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                 uc = (fu0 + fu1) / 2
                 plate(k, [(uc - 0.1, 0.5 * run_), (uc + 0.1, 0.5 * run_), (uc + 0.1, 0.57 * run_),
                           (uc - 0.1, 0.57 * run_)], pt, nrm, 0.0, rise + PAINT, fam, 0, base=rise)
-        if field and w >= 0.36 and sk == "panel" and VARIANT[1]:
+        if field and w >= 0.36 and sk == "panel" and VARIANT[1] and not rv:
             from . import wall3d_variants as V
             V.ramp_panel(k, lambda q, rr, lvl, bb: plate(k, q, pt, nrm, 0.0, rise + rr, fam, lvl, base=rise + bb),
                          u0 + 0.06, u1 - 0.06, run_, VARIANT[1])
-        elif field and w >= 0.36 and sk == "panel":         # a panel under each field (insets scale down on a short
-                                                            # field)
+        elif field and w >= 0.36 and sk == "panel" and not (VARIANT[1] and rv):   # a panel under each field
+                                                            # (insets scale down on a short field)
             im = 0.2 * min(1.0, w / 0.76)
             fu0, fu1, fd0, fd1 = u0 + 0.06, u1 - 0.06, 0.12 * run_, 0.88 * run_
             plate(k, [(fu0, fd0), (fu1, fd0), (fu1, fd1), (fu0, fd1)], pt, nrm, 0.0, rise + PAINT, fam, 1,
@@ -346,10 +368,10 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     toe_fam, toe_at = (STYLE or {}).get("toe"), (STYLE or {}).get("toe_at", 0.72)
     if toe_fam:                                 # a faction's colour band along the skirt's foot, mitred like the plates
         for u0, u1, _ in segs:
-            poly = _clip(_clip([(u0, toe_at * run_), (u1, toe_at * run_), (u1, run_ - 0.03), (u0, run_ - 0.03)], lo),
-                         hi)                    # (on down to the foot line)
-            if len(poly) >= 3:
-                plate(k, poly, pt, nrm, 0.0, rise + 2 * PAINT, toe_fam, 3, base=rise)
+            for q in _minus((u0, u1, toe_at * run_, run_ - 0.03), holes):     # (on down to the foot line)
+                poly = _clip(_clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], lo), hi)
+                if len(poly) >= 3:
+                    plate(k, poly, pt, nrm, 0.0, rise + 2 * PAINT, toe_fam, 3, base=rise)
             poly = _clip(_clip([(u0, run_ - 0.03), (u1, run_ - 0.03), (u1, run_), (u0, run_)], lo), hi)
             if len(poly) >= 3:                  # under it the foot line, a strip of the ramp in the plates' tone
                 plate(k, poly, pt, nrm, 0.0, rise, fam, 2)
