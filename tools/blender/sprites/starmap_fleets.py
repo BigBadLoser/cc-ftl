@@ -1,12 +1,14 @@
 """Fleet icons for the starmap (family `starmap`): starmap.fleet.<role>.d0..d7, replacing the arrow glyphs of NPC fleets and
 the player's ship marker.
 
-Shown at 20 px at 1x (40 at 2x) on the map, rendered at ZOOM (2) times the pixels, as the 2x tiles carry twice the 1x
-tiles': a 40 px frame at 1x (80 at 2x) the map draws at half. Anchor at the centre (the ship's middle), lit and outlined
-like the ships. The models are laid out in the px of the 20 px icon. Pixel art cannot
+A 40 px frame at 1x (80 at 2x), anchor at the centre, lit and outlined like the ships. The map draws icons at one art px
+per screen px, so each heading is rendered with the ship's longest side at about 35 px (LONG plus the outline) and its
+screen box centred in the frame: the ship fills the frame at every heading. The models are laid out in the px of a 20 px
+icon. Pixel art cannot
 be rotated in code, so there are 8 headings: d0 points east in screen space, then clockwise (d2 south, d4 west, d6 north),
 the way the map's `rotate(heading)` turns. Each heading is the ground heading whose three-quarter projection points that
-way, so north and south facings are foreshortened, as on the ships. Every heading uses the same model scale.
+way, so north and south facings are foreshortened, as on the ships; the per-heading fit then brings them up to the same
+on-screen length as the others.
 
   patrol   sleek warship: a long needle hull, swept wings, twin drives
   pirate   scrappy raider: a lumpy rust hull, a ram spike, one side pod, mismatched drives
@@ -18,10 +20,11 @@ way, so north and south facings are foreshortened, as on the ships. Every headin
 Livery is team.cloth (main panels) and team.accent (trim), so the map tints each fleet by faction. Sizes are 1x px of the
 20 px layout."""
 from . import core
-from .starmap_kit import frame_item, prism, px, screen_heading, start, turn
+from .starmap_kit import frame_item, place, prism, px, screen_heading, start, turn
 
 SIZE = 40                       # frame, 1x px
-ZOOM = 2                        # render scale of the 20 px layout
+ZOOM = 2                        # render scale of the 20 px layout (before each heading is fitted to LONG)
+LONG = 33.5                     # the ship's longest side on screen, 1x px, before the 1 px outline (about 35 px with it)
 ROLES = ("patrol", "pirate", "raider", "trader", "miner", "player")
 
 
@@ -121,9 +124,10 @@ def fleet_items(role):
         BUILD[role](s)
         objs = s.build()
         x0, x1, y0, y1 = core.extent_px(objs)
-        half = (SIZE * core.ART_SCALE - 2) / 2
-        if max(-x0, x1, -y0, y1) > half:
-            raise ValueError(f"starmap.fleet.{role}.d{d} reaches {max(-x0, x1, -y0, y1):.1f} px: past the {SIZE} px frame")
+        k = LONG * core.ART_SCALE / max(x1 - x0, y1 - y0)          # this heading's longest side to LONG px
+        for ob in objs:
+            ob.scale = (k,) * 3
+        place(objs, SIZE)                                            # centred in the frame (shrunk only if it would not fit)
         items.append(frame_item(f"starmap.fleet.{role}.d{d}", SIZE))
     return items
 
