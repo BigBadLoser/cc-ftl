@@ -78,7 +78,7 @@
   /** Icons at the crisp size (whole device px per art px, StarmapSprite `crispPx`), in map units: structures, fleets. */
   const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
   const structPx = $derived(px(crispPx(art?.frames['starmap.struct.den']?.w ?? 48, 24, dpr)));
-  const fleetPx = $derived(px(crispPx(art?.frames['starmap.fleet.patrol.d0']?.w ?? 40, 34, dpr)));
+  const fleetPx = $derived(px(crispPx(art?.frames['starmap.fleet.patrol.d0']?.w ?? 40, 48, dpr)));
   /** An icon heading (degrees, the SVG sense: 0 east, clockwise) as one of the eight `d` frames. */
   const dir = (deg: number) => (((Math.round(deg / 45) % 8) + 8) % 8);
   /** A node shows its name when it matters (yours, a jump away, picked, under the cursor) or when zoomed in. */
@@ -157,7 +157,7 @@
   {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] })} class="lane heading" style={`fill: ${toneColor(m.f.tone)}`} />{/if}
 {/each}
 {#each marks as m (m.f.id)}
-  <g transform={`translate(${m.f.x + m.ox * px(30)} ${m.f.y + m.oy * px(30)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
+  <g transform={`translate(${m.f.x + m.ox * px(40)} ${m.f.y + m.oy * px(40)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
     <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
     {#if art && art.frames[`starmap.fleet.${m.f.kind}.d0`]}
       <StarmapSprite {art} id={`starmap.fleet.${m.f.kind}.d${dir(m.heading)}`} x={0} y={0} size={fleetPx} tint={toneTint(m.f.tone)} />
