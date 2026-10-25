@@ -1,3 +1,5 @@
+@font-face { font-family: 'Silkscreen'; src: url('/fonts/Silkscreen-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Silkscreen'; src: url('/fonts/Silkscreen-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
 /* Design language: sharp corners, near-opaque panels, thin cyan rules, condensed caps headings, icon-first buttons. */
 :root {
   --bg: #04080e;
@@ -22,6 +24,8 @@
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
   --hdr: 92px;
+  /** Pixel headings (the starmap): Silkscreen, SIL Open Font License (public/fonts/Silkscreen-OFL.txt). */
+  --pixel-font: 'Silkscreen', 'Rajdhani', monospace;
   --head-font: 'Rajdhani', 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif;
 }
 @media (max-width: 600px) { :root { --hdr: 144px; } }

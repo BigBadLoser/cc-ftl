@@ -6,10 +6,13 @@
    */
   import type { UiStarmap } from './starmapApi';
   import { boxAt, placeLabels, type LabelItem } from './starmapLabels';
+  import { pixelLine, pixelOutline, pixelSquare } from './starmapPixel';
   import { toneColor } from './starmapStyle';
 
   let { map, px, picked, hover }: { map: UiStarmap; px: (v: number) => number; picked: string | null; hover: string | null } = $props();
 
+  /** The pixel grid (starmapPixel.ts): two screen pixels at this zoom. */
+  const g = $derived(px(2));
   const here = $derived(map.sectors.find((x) => x.id === map.currentSector) ?? null);
   /** Cluster labels: yours first, then charted ones, then by size; each on the cluster's centre, else above or below it. */
   const labels = $derived.by(() => {
@@ -27,15 +30,16 @@
 </script>
 
 {#each map.clusterLinks as l (l.id)}
-  <line x1={l.ax} y1={l.ay} x2={l.bx} y2={l.by} class="link {l.kind}" class:mine={l.mine} style={`--w: ${2 + Math.min(4, l.count)}px`} />
+  <path d={pixelLine(l.ax, l.ay, l.bx, l.by, g, { w: l.kind === 'gate' ? 1 + Math.min(2, Math.ceil(l.count / 2)) : 1, dash: l.kind === 'rift' ? [2, 3] : l.kind === 'through' ? [4, 3] : undefined })} class="link {l.kind}" class:mine={l.mine} />
 {/each}
 {#each map.clusters as r (r.id)}
   <path d={r.outline} class="patch-base" fill-rule="evenodd" />
   <path d={r.outline} class="patch" class:revealed={r.revealed} class:known={r.known} class:cur={r.current} class:picked={r.id === picked} class:hov={r.id === hover} style={`--c: ${toneColor(r.tone)}`} fill-rule="evenodd" />
+  <path d={pixelOutline(r.outline, g, r.current || r.id === picked ? 2 : 1)} class="pline" class:revealed={r.revealed} class:known={r.known} class:cur={r.current} class:picked={r.id === picked} class:hov={r.id === hover} style={`--c: ${toneColor(r.tone)}`} />
 {/each}
 {#if here}
-  <circle cx={here.x} cy={here.y} r={px(4)} class="ship" />
-  <circle cx={here.x} cy={here.y} r={px(8)} class="here" />
+  <rect {...pixelSquare(here.x, here.y, px(3), g)} class="ship" />
+  <rect {...pixelSquare(here.x, here.y, px(8), g)} class="here" />
 {/if}
 {#each map.clusters as r (r.id)}
   {@const b = labels.get(r.id)}
@@ -46,22 +50,28 @@
 {/each}
 
 <style>
-  .link { stroke: var(--dim); stroke-opacity: 0.7; stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-  .link.gate { stroke: var(--cyan); stroke-opacity: 0.95; stroke-width: var(--w, 3px); }
-  .link.rift { stroke: var(--text); stroke-opacity: 0.5; stroke-dasharray: 4 6; stroke-width: var(--w, 2px); }
-  .link.through { stroke-dasharray: 8 7; stroke-opacity: 0.6; }
-  .link.mine { stroke: var(--green); }
+  /* Pixel look (starmapPixel.ts): borders and lines are filled pixel cells, never anti-aliased. */
+  path, rect { shape-rendering: crispEdges; }
+  .link { fill: var(--dim); fill-opacity: 0.7; }
+  .link.gate { fill: var(--cyan); fill-opacity: 0.95; }
+  .link.rift { fill: var(--text); fill-opacity: 0.5; }
+  .link.through { fill-opacity: 0.6; }
+  .link.mine { fill: var(--green); }
   .patch-base { fill: var(--bg); }
-  .patch { fill: var(--panel-3); fill-opacity: 0.5; stroke: var(--dim); stroke-opacity: 0.6; stroke-width: 1.2; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
-  .patch.revealed { fill: var(--c); fill-opacity: 0.18; stroke: var(--c); stroke-opacity: 0.7; stroke-dasharray: none; }
-  .patch.known { fill-opacity: 0.32; stroke-opacity: 0.95; stroke-width: 2; }
-  .patch.cur { stroke: var(--cyan); stroke-width: 2.5; }
-  .patch.hov { stroke: var(--text); stroke-opacity: 1; stroke-width: 2.5; stroke-dasharray: none; fill-opacity: 0.4; }
-  .patch.picked { stroke: var(--amber); stroke-opacity: 1; stroke-width: 3; stroke-dasharray: 6 4; }
-  .ship { fill: var(--cyan); stroke: var(--bg); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .patch { fill: var(--panel-3); fill-opacity: 0.5; stroke: none; }
+  .patch.revealed { fill: var(--c); fill-opacity: 0.18; }
+  .patch.known { fill-opacity: 0.32; }
+  .patch.hov { fill-opacity: 0.4; }
+  .pline { fill: var(--dim); fill-opacity: 0.5; }
+  .pline.revealed { fill: var(--c); fill-opacity: 0.7; }
+  .pline.known { fill-opacity: 0.95; }
+  .pline.cur { fill: var(--cyan); fill-opacity: 1; }
+  .pline.hov { fill: var(--text); fill-opacity: 1; }
+  .pline.picked { fill: var(--amber); fill-opacity: 1; }
+  .ship { fill: var(--cyan); }
   .here { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; }
   text { text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-linejoin: round; font-family: var(--head-font); }
-  .rname { font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
-  .rname.dim { fill-opacity: 0.7; font-weight: 500; }
+  .rname { font-family: var(--pixel-font); font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; }
+  .rname.dim { fill-opacity: 0.7; }
   .rtype { fill: var(--dim); letter-spacing: 0.04em; }
 </style>
