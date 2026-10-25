@@ -2,6 +2,7 @@ import {
   CrewC, ForHireC, ShipC, TraderC, VehicleC, courierDef, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, reputationWith, unitPrice, type Deal, type Sim,
 } from '../sim';
 import { fetching } from '../sim/galaxy/recruit';
+import { isIncapacitated } from '../sim/crew/helpers';
 import { hardware, stationInfo } from './stationInfo';
 import type { UiRecruit, UiTrade, UiTradeDeal, UiTradePartner } from '../ui/api';
 
@@ -35,7 +36,8 @@ function recruitsAt(sim: Sim, station: number): UiRecruit[] {
   for (const id of sim.world.query(ForHireC)) {
     const fh = sim.world.get(id, ForHireC);
     const crew = sim.world.get(id, CrewC);
-    if (!fh || !crew || fh.station !== station) continue;
+    // Dead, downed or otherwise out of action: not hireable now (a dead one drops out for good at the next sync).
+    if (!fh || !crew || fh.station !== station || isIncapacitated(sim, id)) continue;
     const role = sim.content.roles[crew.role];
     out.push({
       key: fh.key, name: crew.name, role: role?.name ?? crew.role, species: sim.content.species[crew.species]?.name ?? crew.species, cost: fh.cost,

@@ -137,6 +137,19 @@ describe('crew for hire', () => {
     expect(sim.trade.credits).toBe(credits);
   });
 
+  it('a candidate who dies is no longer for hire, and is not replaced in that window', () => {
+    const sim = atStation();
+    const [c] = people(sim) as [number];
+    const key = keyOf(sim, c);
+    sim.trade.credits = 1000;
+    sim.world.add(c, DeadC, {} as never);
+    expect(rejected(hire(sim, key))).toEqual(['noCandidate']);
+    step(sim, 25);
+    expect(sim.world.has(c, ForHireC)).toBe(false);
+    expect(people(sim).map((id) => keyOf(sim, id))).not.toContain(key);
+    expect(sim.trade.deals).toHaveLength(0);
+  });
+
   it('rejects an unknown candidate, a poor player, no shuttle and a player away from a node', () => {
     const sim = atStation();
     const [c] = people(sim) as [number];

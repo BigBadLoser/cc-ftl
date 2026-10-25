@@ -5,7 +5,7 @@ import { isTileWalkable } from '../modules/walk';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { ForHireC, StationCrewC } from '../stations/components';
-import { RECRUIT_LOG_MAX } from '../galaxy/tuningRecruit';
+import { logRecruit } from '../galaxy/recruit';
 import { AboardC, EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
 import { unboardCrew } from '../vehicles/lifecycle';
@@ -61,10 +61,8 @@ export function landRecruits(sim: Sim, d: Deal): boolean {
     sim.world.remove(c, DraftedC);
     const a = sim.world.get(c, AllegianceC);
     if (a) a.faction = 'player';
-    const g = sim.galaxy;
-    g.recruitLog.push(hire.key);
-    if (g.recruitLog.length > RECRUIT_LOG_MAX) g.recruitLog.splice(0, g.recruitLog.length - RECRUIT_LOG_MAX);
-    g.rev++;
+    logRecruit(sim, hire.key);
+    sim.galaxy.rev++;
     sim.events.emit({ type: 'crew.hired', crew: c, role: crew?.role ?? '', cost: hire.cost });
   }
   return done;

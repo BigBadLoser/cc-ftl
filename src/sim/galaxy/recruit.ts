@@ -1,8 +1,8 @@
 import type { Sim } from '../sim';
 import { spawnNamedCrew } from '../combat/ships';
-import { releaseAssignment } from '../crew/helpers';
+import { isIncapacitated, releaseAssignment } from '../crew/helpers';
 import { releaseBedClaim } from '../crew/beds';
-import { CrewC } from '../crew/components';
+import { CrewC, DeadC } from '../crew/components';
 import { ShipC } from '../combat/components';
 import { VehicleC } from '../vehicles/components';
 import { ForHireC, StationCrewC } from '../stations/components';
@@ -14,7 +14,7 @@ import { portsAt } from './portIndex';
 import type { Port } from './ports';
 import { tierOf } from './standing';
 import { nodeOf } from './state';
-import { RECRUIT_BASE, RECRUIT_JITTER, RECRUIT_PER_WORTH, RECRUIT_ROLES, RECRUIT_SLOTS, RECRUIT_TURNS } from './tuningRecruit';
+import { RECRUIT_BASE, RECRUIT_JITTER, RECRUIT_LOG_MAX, RECRUIT_PER_WORTH, RECRUIT_ROLES, RECRUIT_SLOTS, RECRUIT_TURNS } from './tuningRecruit';
 
 /**
  * Crew for hire. A port whose structure lists the `recruit` service (trade stations) posts candidates, derived from hashes of (seed, port, window, slot) the way
@@ -78,6 +78,13 @@ export function candidateEntity(sim: Sim, key: string): number {
 export const fetching = (sim: Sim, crew: number): Deal | undefined => sim.trade.deals.find((d) => isLive(d) && !!d.crew?.includes(crew));
 
 /** Keep the people aboard the node's stations in step with the ports' candidates: spawn the missing, remove the unhired whose window passed. */
+/** Note a candidate key as taken (hired, or dead): it is not offered again in its window. The log is capped. */
+export function logRecruit(sim: Sim, key: string): void {
+  const log = sim.galaxy.recruitLog;
+  log.push(key);
+  if (log.length > RECRUIT_LOG_MAX) log.splice(0, log.length - RECRUIT_LOG_MAX);
+}
+
 export function syncRecruits(sim: Sim): void {
   const g = sim.galaxy;
   if (!sim.content.galaxy || sim.sector.state !== 'active' || g.event || sim.sector.node !== g.current) return;
@@ -87,6 +94,13 @@ export function syncRecruits(sim: Sim): void {
   for (const id of sim.world.query(TraderC)) {
     const port = ports.find((p) => p.id === sim.world.get(id, TraderC)?.port);
     if (port && sim.world.get(id, ShipC)?.immobile) stations.set(id, port);
+  }
+  // A candidate who died is no longer for hire (the body stays), and the slot stays empty for the rest of its window.
+  for (const id of sim.world.query(ForHireC)) {
+    const fh = sim.world.get(id, ForHireC);
+    if (!fh || !sim.world.has(id, DeadC) || fetching(sim, id)) continue;
+    sim.world.remove(id, ForHireC);
+    logRecruit(sim, fh.key);
   }
   const here = new Map<number, Recruit[]>();
   for (const [id, port] of stations) here.set(id, portRecruits(sim, port));
@@ -119,7 +133,7 @@ export function hireCrew(sim: Sim, key: string): void {
   if (sim.sector.state !== 'active' || g.event) return reject(sim, 'notHere');
   const id = candidateEntity(sim, key);
   const fh = id ? sim.world.get(id, ForHireC) : undefined;
-  if (!fh || !sim.world.has(id, CrewC)) return reject(sim, 'noCandidate');
+  if (!fh || !sim.world.has(id, CrewC) || isIncapacitated(sim, id)) return reject(sim, 'noCandidate');
   if (liveDealWith(sim, fh.station)) return reject(sim, 'dealOpen');
   if (sim.trade.credits < fh.cost) return reject(sim, 'cantAfford');
   const plan = planCourier(sim, fh.station, [], [], true);
