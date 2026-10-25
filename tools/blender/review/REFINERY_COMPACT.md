@@ -34,6 +34,30 @@ remains partly obscured in this angle; the broad pressure lid remains a strong
 shape. This is still a low-sample grey mechanical preview, without a materials
 pass or production sprite build.
 
+### B pipe seating correction
+
+Feedback identified pipework overhanging its terminating geometry. The prior
+mechanical preview is retained as `b-pipes-before.png` with its anchor metadata;
+`b-pipes-comparison.png` compares that reference against the current render.
+
+The three main corrections are:
+
+1. The upper condenser connection moves inward from the collector's end and
+   enters a supported pad on its top face. The pipe terminates inside the header.
+2. The lower condenser connection leaves a thick end collector through its end
+   face, with the pipe end buried in that collector instead of grazing the edge
+   of the thin lower header.
+3. Both vessel connections use radial necks embedded in the wall. The upper one
+   is below the lid joint. Their collars and pipe sections are coaxial; straight
+   segments continue through each fitting before the bends begin.
+
+Pipe section frames now carry their orientation through bends, avoiding the
+previous reference-axis switch near vertical. `pipe-contact-review.json`
+records a diagnostic check of terminal rings against the faceted vessel and
+bevelled collectors: the four ends and two collector-side collar backs all have
+positive receiving-solid clearance. Vessel, hopper, output and overall bounds
+remain unchanged. Still grey, four samples, one Blender process at a time.
+
 - B model: `sprites/refinery_revision_b.py`, parametric `VesselRefinery`.
 - Review: `review/refinery_ab_preview.py`. Only B is rendered; A is copied from v2.
 - Artifacts: `artifacts/refinery-ab/comparison.png` at matched camera, world scale

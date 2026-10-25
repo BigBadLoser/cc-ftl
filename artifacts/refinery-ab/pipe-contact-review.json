@@ -1,0 +1,11 @@
+{
+  "method": "Minimum receiving-solid clearance sampled around each terminal ring; positive means embedded. Vessel check uses its faceted section and lower taper; collector checks include case bevels.",
+  "minimum_clearance_units": {
+    "upper_vessel_neck": 0.04499999999999993,
+    "lower_vessel_neck": 0.02750747815765206,
+    "upper_pipe_end_inside_header": 0.020000000000000018,
+    "lower_pipe_end_inside_end_collector": 0.09499999999999997,
+    "upper_socket_back_seated_in_top_pad": 0.029999999999999912,
+    "lower_socket_back_seated_in_end_collector": 0.03889087296526012
+  }
+}

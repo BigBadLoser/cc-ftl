@@ -141,17 +141,22 @@ def discharge(f,p):
 
 def pipe(f,path,r=.11):
     from mathutils import Vector
-    rings=[]
+    rings=[];previous=None
     for i,xyz in enumerate(path):
         tangent=(Vector(path[min(i+1,len(path)-1)])-Vector(path[max(i-1,0)])).normalized()
-        axis=Vector((0,0,1)) if abs(tangent.z)<.9 else Vector((1,0,0))
-        a=tangent.cross(axis).normalized();b=tangent.cross(a).normalized();c=Vector(xyz)
+        # Transport the section frame through each bend instead of switching its
+        # reference axis near vertical and twisting the faces between rings.
+        a=previous-tangent*previous.dot(tangent) if previous is not None else Vector((0,0,0))
+        if a.length<1e-5:
+            axis=Vector((0,0,1)) if abs(tangent.z)<.9 else Vector((1,0,0))
+            a=tangent.cross(axis)
+        a.normalize();previous=a.copy();b=tangent.cross(a).normalized();c=Vector(xyz)
         rings.append([f.pt(*(c+r*(a*math.cos(t)+b*math.sin(t))))
                       for t in (j*math.tau/12 for j in range(12))])
     for a,b in zip(rings,rings[1:]): bridge(f,a,b,COL)
 
 
-def pipe_socket(f,centre,axis,r=.15,length=.12):
+def pipe_socket(f,centre,axis,r=.15,length=.12,bore=.105):
     from mathutils import Vector
     c=Vector(centre);d=Vector(axis).normalized()
     a=d.cross(Vector((0,0,1)) if abs(d.z)<.9 else Vector((1,0,0))).normalized()
@@ -160,9 +165,22 @@ def pipe_socket(f,centre,axis,r=.15,length=.12):
         return [f.pt(*(c+d*offset+radius*(a*math.cos(t)+b*math.sin(t))))
                 for t in (i*math.tau/12 for i in range(12))]
     outer=[ring(x,r) for x in (-length/2,length/2)]
-    inner=[ring(x,.105) for x in (-length/2,length/2)]
+    inner=[ring(x,bore) for x in (-length/2,length/2)]
     bridge(f,*outer,COL)
     for i in (0,1): bridge(f,outer[i],inner[i],COL)
+
+
+def vessel_port(f,p,angle,z,r):
+    """Radial neck starts inside the shell; its flange seats on that neck.
+
+    Return embedded, straight-seat and bend points, so the attached pipe's
+    final straight segment stays coaxial with the complete fitting.
+    """
+    d=(math.cos(angle),math.sin(angle),0)
+    def at(radius): return (p.vessel_u+d[0]*radius,p.vessel_v+d[1]*radius,z)
+    pipe(f,[at(.76),at(1.05)],r=r+.025)
+    pipe_socket(f,at(1.02),d,r=r+.045,length=.12,bore=r-.005)
+    return at(.76),at(1.08),at(1.14)
 
 
 def condenser(f,p):
@@ -175,12 +193,24 @@ def condenser(f,p):
     for i in range(p.condenser_fins):
         u=-.35+i*.92/(p.condenser_fins-1)
         case(f,u,p.condenser_v,.28,.065,.50,.42,COL,.012,.025)
-    pipe(f,[(-.42,.43,1.15),(-.45,.81,1.25),(-.34,p.condenser_v,1.25),
-            (.43,p.condenser_v,1.25),(.65,p.condenser_v,1.08),(.65,p.condenser_v,.72)])
-    pipe_socket(f,(-.44,.66,1.21),(0,1,.26))
+    # Seat the upper return in the vessel wall below the pressure joint. Its
+    # condenser end is inset from the header's end, with a supported top pad.
+    inlet,straight,exposed=vessel_port(f,p,math.radians(120),.96,.11)
+    port_u=.46
+    case(f,port_u,p.condenser_v,.70,.36,.36,.14,COL,.025,.045)
+    pipe(f,[inlet,straight,exposed,(-.47,p.condenser_v,1.08),(-.30,p.condenser_v,1.25),
+            (.29,p.condenser_v,1.25),(port_u,p.condenser_v,1.08),
+            (port_u,p.condenser_v,.94),(port_u,p.condenser_v,.72)])
     pipe_socket(f,(.02,p.condenser_v,1.25),(1,0,0))
-    pipe_socket(f,(.65,p.condenser_v,.82),(0,0,1))
-    pipe(f,[(.60,p.condenser_v,.28),(.90,.92,.28),(.90,.46,.39),(.66,.35,.50)],.085)
+    pipe_socket(f,(port_u,p.condenser_v,.86),(0,0,1))
+    # A proper end collector supports the lower return's whole circular seat.
+    # The connection exits the end face, above the foot and chassis, rather than
+    # clipping across the thin header edge and radiator fins.
+    case(f,.62,p.condenser_v,.20,.24,.38,.36,COL,.025,.045)
+    pipe_socket(f,(.76,p.condenser_v,.38),(1,0,0),r=.13,bore=.08)
+    inlet,straight,exposed=vessel_port(f,p,math.radians(42),.49,.085)
+    pipe(f,[(.63,p.condenser_v,.38),(.83,p.condenser_v,.38),(.90,p.condenser_v,.38),
+            (1.02,.87,.38),(1.02,.69,.45),exposed,straight,inlet],.085)
 
 
 def refinery_revision_b(p=VesselRefinery()):
