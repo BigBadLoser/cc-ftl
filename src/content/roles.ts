@@ -16,6 +16,7 @@ export const roles = {
   },
   'role.medic': {
     name: 'Medic',
+    skills: { medicine: 3 },
     priorities: { firefighting: 2, medical: 1, operating: 4, repair: 4, construction: 4, hauling: 3, refining: 3, crafting: 3, cooking: 3, patrol: 0 },
   },
   'role.security': {

@@ -29,13 +29,6 @@ function probe(sim: Sim, ship: number, dir: 'out' | 'in'): { courier: string; er
   return 'error' in plan ? { courier: '', error: plan.error } : { courier: plan.courier, error: '' };
 }
 
-/** A role's skills strongest first; a role with none (the medic) shows the work it does first instead ('medical'). */
-function skillsOf(role: { skills?: Partial<Record<string, number>>; priorities?: Partial<Record<string, number>> } | undefined): string[] {
-  const skills = Object.entries(role?.skills ?? {}).filter((e): e is [string, number] => (e[1] ?? 0) > 0);
-  if (skills.length) return skills.sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`);
-  return Object.entries(role?.priorities ?? {}).filter(([, p]) => p === 1).map(([k]) => k);
-}
-
 /** The people for hire aboard a station: the role's skills strongest first, and whether the shuttle is already fetching them. */
 function recruitsAt(sim: Sim, station: number): UiRecruit[] {
   const out: UiRecruit[] = [];
@@ -46,7 +39,7 @@ function recruitsAt(sim: Sim, station: number): UiRecruit[] {
     const role = sim.content.roles[crew.role];
     out.push({
       key: fh.key, name: crew.name, role: role?.name ?? crew.role, species: sim.content.species[crew.species]?.name ?? crew.species, cost: fh.cost,
-      skills: skillsOf(role), coming: !!fetching(sim, id),
+      skills: Object.entries(role?.skills ?? {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`), coming: !!fetching(sim, id),
     });
   }
   return out.sort((a, b) => (a.key < b.key ? -1 : 1));

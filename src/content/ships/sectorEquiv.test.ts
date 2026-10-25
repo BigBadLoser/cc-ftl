@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   deserialize, homeShip as homeShipOf, newGame, serialize, shipGrid, shipIdAt, shipIds, Struct, type Body, type Drafted, type Module, type Sim, type Vehicle,
+  type RoleDef,
 } from '../../sim';
 import { content } from '../index';
 
@@ -158,10 +159,14 @@ function run(sim: Sim, n: number, log: string[]): void {
 
 /**
  * Content as the pre-refactor code had it: the starter's crate held no fuel (the starmap added 16 units, which would change
- * the recorded world). Everything else is the live content, so the recorded hashes still pin the refactor.
+ * the recorded world), and the medic had no medicine skill (it speeds up bed healing). Everything else is the live content,
+ * so the recorded hashes still pin the refactor.
  */
+const medic: RoleDef = { ...content.roles['role.medic'] };
+delete medic.skills;
 const legacy: typeof content = {
   ...content,
+  roles: { ...content.roles, 'role.medic': medic } as typeof content.roles,
   ships: {
     ...content.ships,
     'ship.starter': {
