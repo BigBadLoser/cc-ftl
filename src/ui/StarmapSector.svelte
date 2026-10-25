@@ -77,7 +77,8 @@
 </script>
 
 {#each map.sectors as sec (sec.id)}
-  <path d={pixelOutline(sec.outline, g)} class="outline" class:known={sec.known} class:cur={sec.id === map.currentSector} style={`--c: ${toneColor(sec.tone)}`} fill-rule="evenodd" />
+  <path d={sec.outline} class="area" class:known={sec.known} class:cur={sec.id === map.currentSector} style={`--c: ${toneColor(sec.tone)}`} fill-rule="evenodd" />
+  <path d={pixelOutline(sec.outline, g)} class="outline" class:known={sec.known} class:cur={sec.id === map.currentSector} style={`--c: ${toneColor(sec.tone)}`} />
 {/each}
 {#each map.sectors as sec (sec.id)}
   {#if sec.known && sec.body}<StarmapBody kind={sec.body.kind} x={sec.body.x} y={sec.body.y} r={sec.body.r * 0.75} dim={sec.id === map.currentSector ? 1 : 0.55} />{/if}
@@ -91,10 +92,10 @@
 </defs>
 <g mask="url(#sm-lane-mask)">
   {#each map.edges as e (e.id)}
-    <path d={pixelLine(e.ax, e.ay, e.bx, e.by, g)} class="lane {e.kind}" class:anchor={e.anchor} class:gate={e.gate} class:rift={e.rift} />
+    <path d={pixelLine(e.ax, e.ay, e.bx, e.by, g, { w: e.gate ? 2 : 1, dash: e.rift ? [1, 3] : e.anchor ? [4, 2] : undefined })} class="lane {e.kind}" class:gate={e.gate} class:rift={e.rift} />
   {/each}
   {#each map.exits as e (e.id)}
-    <path d={pixelLine(e.ax, e.ay, e.bx, e.by, g)} class="lane exit {e.kind}" />
+    <path d={pixelLine(e.ax, e.ay, e.bx, e.by, g, { w: e.kind === 'gate' ? 2 : 1, dash: e.kind === 'rift' ? [1, 3] : undefined })} class="lane exit {e.kind}" />
   {/each}
 </g>
 {#if current && !ship}
@@ -103,7 +104,7 @@
   {/each}
 {/if}
 {#if routePts}
-  <path d={pixelPolyline(routePts, g)} class="route" class:blocked={!!route?.blocker} />
+  <path d={pixelPolyline(routePts, g, { w: 2, dash: route?.blocker ? [4, 3] : undefined })} class="route" class:blocked={!!route?.blocker} />
 {/if}
 {#each map.nodes as n (n.id)}
   {@const dimmed = !!only && !only.has(n.id) && !n.current}
@@ -132,7 +133,7 @@
   {#if selected === n.id}<rect {...sq(n.x, n.y, 14)} class="sel" />{/if}
 {/each}
 {#each marks as m (m.f.id)}
-  {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g)} class="lane heading" style={`stroke: ${toneColor(m.f.tone)}`} />{/if}
+  {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] })} class="lane heading" style={`fill: ${toneColor(m.f.tone)}`} />{/if}
 {/each}
 {#each marks as m (m.f.id)}
   <g transform={`translate(${m.f.x + m.ox * px(21)} ${m.f.y + m.oy * px(21)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
@@ -143,7 +144,7 @@
 {/each}
 {#if ship}
   {@const ang = (Math.atan2(ship.ty - ship.fy, ship.tx - ship.fx) * 180) / Math.PI}
-  <path d={pixelLine(ship.fx, ship.fy, ship.x, ship.y, g)} class="lane trail" />
+  <path d={pixelLine(ship.fx, ship.fy, ship.x, ship.y, g, { w: 2 })} class="lane trail" />
   <rect {...sq(ship.x, ship.y, 11)} class="here" />
   <path d={pixelArrow(ang, g, 2)} transform={`translate(${ship.x} ${ship.y})`} class="ship" />
 {/if}
@@ -161,23 +162,23 @@
 {/each}
 
 <style>
-  .outline { fill: var(--c); fill-opacity: 0.02; stroke: var(--c); stroke-opacity: 0.22; stroke-dasharray: 4 5; vector-effect: non-scaling-stroke; }
-  .outline.known { fill-opacity: 0.07; stroke-opacity: 0.5; stroke-dasharray: none; stroke-width: 2; }
-  .outline.cur { fill-opacity: 0.12; stroke-opacity: 0.85; stroke-width: 2; }
-  /* Pixel look (starmapPixel.ts): no anti-aliasing, square ends; lines are stair-steps on a two-pixel grid. */
+  /* Pixel look (starmapPixel.ts): every line is a set of filled pixel cells, never anti-aliased. */
   path, rect { shape-rendering: crispEdges; }
-  .lane { fill: none; stroke-linecap: square; stroke-linejoin: miter; vector-effect: non-scaling-stroke; }
-  .lane.hyperlane { stroke: var(--cyan); stroke-opacity: 0.6; stroke-width: 2; }
-  .lane.hyperlane.anchor { stroke-dasharray: 7 4; }
-  .lane.hyperlane.gate { stroke-width: 4; stroke-opacity: 0.9; }
-  .lane.hyperlane.rift { stroke: var(--text); stroke-opacity: 0.5; stroke-dasharray: 3 6; }
-  .lane.route { stroke: var(--dim); stroke-opacity: 0.7; stroke-width: 2; }
-  .lane.exit { stroke: var(--cyan); stroke-opacity: 0.6; stroke-width: 2; }
-  .lane.exit.gate { stroke-width: 4; }
-  .lane.exit.rift { stroke: var(--text); stroke-opacity: 0.5; stroke-dasharray: 3 6; }
-  .lane.reach { stroke: var(--green); stroke-opacity: 0.8; stroke-width: 2; }
-  path.route { fill: none; stroke: var(--amber); stroke-width: 4; stroke-linecap: square; stroke-linejoin: miter; vector-effect: non-scaling-stroke; }
-  path.route.blocked { stroke-dasharray: 8 5; }
+  .area { fill: var(--c); fill-opacity: 0.02; stroke: none; }
+  .area.known { fill-opacity: 0.07; }
+  .area.cur { fill-opacity: 0.12; }
+  .outline { fill: var(--c); fill-opacity: 0.22; }
+  .outline.known { fill-opacity: 0.5; }
+  .outline.cur { fill-opacity: 0.85; }
+  .lane { stroke: none; }
+  .lane.hyperlane { fill: var(--cyan); fill-opacity: 0.6; }
+  .lane.hyperlane.gate { fill-opacity: 0.9; }
+  .lane.hyperlane.rift { fill: var(--text); fill-opacity: 0.5; }
+  .lane.route { fill: var(--dim); fill-opacity: 0.7; }
+  .lane.exit { fill: var(--cyan); fill-opacity: 0.6; }
+  .lane.exit.rift { fill: var(--text); fill-opacity: 0.5; }
+  .lane.reach { fill: var(--green); fill-opacity: 0.8; }
+  path.route { fill: var(--amber); stroke: none; }
   .node { fill: var(--dim); }
   .node.visited { fill: var(--text); }
   .node.cur { fill: var(--cyan); }
@@ -188,8 +189,8 @@
   @keyframes pulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(2.2); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .pulse { display: none; } }
   .ship { fill: var(--cyan); }
-  .lane.trail { stroke: var(--cyan); stroke-opacity: 0.8; stroke-width: 4; }
-  .lane.heading { stroke-opacity: 0.55; stroke-width: 1.6; stroke-dasharray: 4 4; }
+  .lane.trail { fill: var(--cyan); fill-opacity: 0.8; }
+  .lane.heading { fill-opacity: 0.55; }
   .fleet path { stroke: none; }
   .fleet { pointer-events: all; }
   .adrift { fill: none; stroke: var(--amber); stroke-width: 1.2; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
