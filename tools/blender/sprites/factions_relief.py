@@ -90,21 +90,21 @@ def seams(a, b):
 NAVY_SEAM = 0.24                    # the plate seams, in from each tile edge, up the face and down the ramp
 
 
-OPP = {"+x": "-x", "-x": "+x", "+y": "-y", "-y": "+y"}
 NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
 
 
-class NavyShell(T.Shell):
-    """The shell with its faces in the ramp plates' tone (set 4's wall and ramp are one light grey, its shade side a
-    step darker); the dark outlines at the foot and under the top stay. A partition's outer corner is chamfered
-    (NAVY_C) down the wall and the ramp, the ramp's chamfer a band of constant width (as Recessed's) carrying the
-    plates' tone, the toe band and the foot line."""
-    line = None
+OPP = {"+x": "-x", "-x": "+x", "+y": "-y", "-y": "+y"}
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.end_sides = []                             # a partition's free ends: ("+x" | "-x" | "+y" | "-y", plane)
-        for r in self.rects:                            # (a free side with an arm opposite and none beside it)
+
+class FreeEnds:
+    """A shell mixin: a partition's free ends ("+x" | "-x" | "+y" | "-y", plane: a free side with an arm opposite and
+    none beside it), where the wall stops square: no ramp past it (skip_skirt), the ramps beside it cut square
+    (wall3d.skirt reads is_end) and no ramp across its end face (end_face)."""
+    end_sides = ()
+
+    def find_ends(self):
+        self.end_sides = []
+        for r in self.rects:
             x0, x1, y0, y1 = r[0]
             pl = {"+x": x1, "-x": x0, "+y": y1, "-y": y0}
             for sd in pl:
@@ -112,16 +112,6 @@ class NavyShell(T.Shell):
                 if (r[1] == "wall" and abs(pl[sd]) < 0.5 - 1e-9 and not self._adj(r, sd)
                         and self._adj(r, OPP[sd]) and not any(self._adj(r, q) for q in perp)):
                     self.end_sides.append((sd, T.snap(pl[sd])))
-        for r in self.rects:
-            x0, x1, y0, y1 = r[0]
-            if any(sd[0] == "+" for sd, _ in self.end_sides):
-                break                                   # (a wall's end is not a corner)
-            if (not self._adj(r, "+x") and not self._adj(r, "+y") and x1 < 0.5 - 1e-9 and y1 < 0.5 - 1e-9
-                    and self.keep is None):
-                self.line = (T.snap(x1), T.snap(y1))
-                lim = self.line[0] + self.line[1] - NAVY_C + 1e-9
-                self.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
-                self.diag = self.skirt_halves = True
 
     def _adj(self, r, sd):
         """Does another rect touch r's side sd?"""
@@ -149,6 +139,28 @@ class NavyShell(T.Shell):
         if any((c[s[1]] - p) * (1 if s[0] == "+" else -1) > 0 for s, p in self.end_sides):
             return True
         return super().skip_skirt(i, j)
+
+
+class NavyShell(FreeEnds, T.Shell):
+    """The shell with its faces in the ramp plates' tone (set 4's wall and ramp are one light grey, its shade side a
+    step darker); the dark outlines at the foot and under the top stay. A partition's outer corner is chamfered
+    (NAVY_C) down the wall and the ramp, the ramp's chamfer a band of constant width (as Recessed's) carrying the
+    plates' tone, the toe band and the foot line."""
+    line = None
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.find_ends()
+        for r in self.rects:
+            x0, x1, y0, y1 = r[0]
+            if any(sd[0] == "+" for sd, _ in self.end_sides):
+                break                                   # (a wall's end is not a corner)
+            if (not self._adj(r, "+x") and not self._adj(r, "+y") and x1 < 0.5 - 1e-9 and y1 < 0.5 - 1e-9
+                    and self.keep is None):
+                self.line = (T.snap(x1), T.snap(y1))
+                lim = self.line[0] + self.line[1] - NAVY_C + 1e-9
+                self.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
+                self.diag = self.skirt_halves = True
 
     def drop_at(self, x, y):
         return 0.0
@@ -571,7 +583,7 @@ EPS = 0.002
 R2 = 2 ** -0.5
 
 
-class Recessed(T.Shell):
+class Recessed(FreeEnds, T.Shell):
     """The shell with its camera-facing faces set back by BAST_R: the cornice, posts and lower wall then stand at the
     wall's line and the face between them is cut in. The skirt, the face planes and the ends keep the wall's line
     (they read self.rects); only the covered cells (the body and its cap) shrink, and an outer corner of the body is
@@ -579,17 +591,19 @@ class Recessed(T.Shell):
     turn the same corner on their own 45-degree face (BAST_CS)."""
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
+        self.find_ends()                                # (a free end is not recessed, nor chamfered)
         R = BAST_L + BAST_R
         body = []
         corner = None
-        for (x0, x1, y0, y1), fam, t, top in self.rects:
-            adj_x = any(abs(o[0][0] - x1) < 1e-9 and o[0][2] < y1 and o[0][3] > y0 for o in self.rects)
-            adj_y = any(abs(o[0][2] - y1) < 1e-9 and o[0][0] < x1 and o[0][1] > x0 for o in self.rects)
-            cx, cy = not adj_x and x1 < 0.5 - 1e-9, not adj_y and y1 < 0.5 - 1e-9
+        ends = {sd for sd, _ in self.end_sides}
+        for r in self.rects:
+            (x0, x1, y0, y1), fam, t, top = r
+            cx = not self._adj(r, "+x") and x1 < 0.5 - 1e-9 and "+x" not in ends
+            cy = not self._adj(r, "+y") and y1 < 0.5 - 1e-9 and "+y" not in ends
             body.append(((x0, x1 - (R if cx else 0), y0, y1 - (R if cy else 0)), fam, t, top))
-            if cx and cy and fam == "wall":
-                corner = (x1 - R, y1 - R)
-                self.line = (x1, y1)                    # the wall's line at the corner
+            if cx and cy:                               # a partition's outer corner or the far hull's end
+                self.line = (T.snap(x1), T.snap(y1))    # the wall's line at the corner
+                corner = (self.line[0] - R, self.line[1] - R)
         self.body = body
         if corner and self.keep is None:
             lim = corner[0] + corner[1] - BAST_CR + 1e-9
@@ -600,6 +614,9 @@ class Recessed(T.Shell):
         return 0.0
 
     line = None
+
+    def cap_clip(self, q):                              # the far hull's armour plates cut on the cornice's chamfer
+        return self.line[0] + self.line[1] - BAST_C - q[0] - q[1]
 
     def _cdist(self, x, y):
         """(distance from the wall's line with the corner chamfered, its rect, on the chamfer?). The chamfer is a band
@@ -615,11 +632,24 @@ class Recessed(T.Shell):
         return self.zs * max(0.0, 1.0 - self._cdist(x, y)[0] / self.run)
 
     def _body_at(self, x, y):
-        for r in self.body:
-            x0, x1, y0, y1 = r[0]
-            if x0 < x < x1 and y0 < y < y1:
-                return r
-        return None
+        """The body: the footprint less a band R deep behind every camera-facing face, so the recess runs along the
+        faces, into an inner corner and round a junction alike (a point is body when the footprint also holds it
+        moved R along +x, +y and both; a probe past a tile edge the footprint reaches, or past a free end, counts as
+        held). The outer corner's chamfer is the keep predicate's."""
+        r = self._rect_at(x, y, 0.0)
+        if r is None:
+            return None
+        R = BAST_L + BAST_R
+
+        def held(px, py):
+            px, py = min(px, 0.5 - 1e-6), min(py, 0.5 - 1e-6)
+            for sd, pl in self.end_sides:
+                if sd == "+x" and px > pl:
+                    px = pl - 1e-6
+                if sd == "+y" and py > pl:
+                    py = pl - 1e-6
+            return self._rect_at(px, py, 0.0) is not None
+        return r if held(x + R, y) and held(x, y + R) and held(x + R, y + R) else None
 
     def cover(self, i, j):
         cx, cy = (i + 0.5) / T.W.GN - 0.5, (j + 0.5) / T.W.GN - 0.5
@@ -673,14 +703,23 @@ def bastion(hull):
         F = body(hull)
         H = top - zs
         R, C, L, PW = BAST_R, BAST_C, BAST_L, BAST_P
+        endf, end1, _, _ = _ends(ax, plane, b, ends)
         d0 = -(L + R) + EPS                             # the parts fill the cut from the recessed face out to the lip
         dl = -L                                         # (the cornice to the wall's line)
-        out = full and ends[1] == "out"
+        out = full and ends[1] == "out" and not end1
+        kb = BAST_K if end1 else 0.0                    # (the cornice runs on to meet the end face's)
         bb = b - C if out else b                        # the chamfer takes over at an outer corner, on a joint
-        mt = (False, out)                               # straight at the camera
+        ina, inb = ends[0] == "in", ends[1] == "in"     # inner corners: no posts; the recess and its parts run on
+        mt = (-1.0 if ina else 0.0, 1.0 if out else -1.0 if inb else 0.0)    # into the corner, mitred to meet the
+                                                                              # other face's (straight at the camera)
 
         def band(u0, u1, z0, z1, lvl, cap=None, front=dl, m=(False, False)):
             prism(k, ax, plane, u0, u1, [(d0, z0), (front, z0), (front, z1), (d0, z1)], F, lvl, cap=cap, mitre=m)
+        if endf:                                        # a wall's end face: not recessed; its section, and the
+            _end_section(k, ax, plane, a, b, zs, top - 0.21 if full else top, F)    # cornice turned onto it
+            if full:
+                band(a, b + BAST_K, top - 0.21, top - 0.02, 3, front=BAST_K)
+            return
         zlo = zs + (0.08 if full else 0.3)                                                       # the lower wall's top
         zlo = min(zlo, top - 0.02)
         band(a, bb, zs, zlo, 3, m=mt)                                                            # the lower wall
@@ -689,23 +728,27 @@ def bastion(hull):
             return
         zsl = zlo + 0.12 * H                                                                     # the slope's top
         zc0 = top - 0.21
-        band(a - (BAST_K if ends[0] == "out" else 0.0), bb, zc0, top - 0.02, 3, front=BAST_K, m=mt)  # the cornice
+        band(a - (BAST_K if ends[0] == "out" else 0.0), bb + kb, zc0, top - 0.02, 3, front=BAST_K, m=mt)  # cornice
         for s0, s1 in T.spans(a, b):
             for u in (s0 + 0.1, s1 - 0.1 - LINE):
                 if s1 - s0 > 0.5 and u + LINE < bb:
                     T.paint(k, ax, plane, u, u + LINE, zc0, top - 0.02, BAST_K, F, 1)            # ... its joints
+            ia, ib = ina and abs(s0 - a) < 1e-6, inb and abs(s1 - b) < 1e-6
             for lo, edge in ((True, s0), (False, s1)):           # the posts: the first shows its side too, so
                 if not lo and out and abs(edge - b) < 1e-6:      # it is narrower by the depth, and the two read
                     continue                                     # the same width; none at a chamfered corner
+                if (lo and ia) or (not lo and ib):
+                    continue                                     # (nor an inner one)
                 q0, q1 = (max(edge, a), edge + PW - R) if lo else (edge - PW, min(edge, bb))
                 if q1 - q0 > 1e-6:
                     band(q0, q1, zlo, zc0, 3, cap="wD")                                          # (dark inner walls)
             corner = out and abs(s1 - b) < 1e-6
-            f0, f1 = s0 + PW - R, bb if corner else min(s1 - PW, bb)
+            f0 = s0 if ia else s0 + PW - R
+            f1 = bb if corner or ib else min(s1 - PW, bb)
             if f1 - f0 < 0.1:
                 continue
             prism(k, ax, plane, f0, f1, [(d0 + EPS, zlo), (dl, zlo), (d0 + EPS, zsl)], F, 3,
-                  mitre=mt if corner else (False, False))                                        # the slope into it
+                  mitre=(mt[0] if ia else 0.0, mt[1] if corner or ib else 0.0))                  # the slope into it
         if out and ax == "y":                           # round the chamfer, once (the corner is the y face's end):
             X, Y = b, plane                             # the same parts, their backs sunk into the shell's cut corner
             db = -(L + R) - 0.03
