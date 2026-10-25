@@ -37,6 +37,7 @@ DZ = 1 / 40        # vertical face row height (about 1 px)
 BIT = {"n": 1, "e": 2, "s": 4, "w": 8}
 EDGES = {"f": "y0y1x0x1", "se": "y0x0", "nw": "y1x1", "ne": "y1x0", "sw": "y0x1"}
 TRI = {"se": (0, 1, 3), "nw": (1, 2, 3), "ne": (0, 2, 3), "sw": (0, 1, 2)}   # kept corners of a half cell
+HALF_OPP = {"se": "nw", "nw": "se", "ne": "sw", "sw": "ne"}
 LEVELS = ("up", "cut", "low")        # walls up / cutaway / shortest (see wall_top)
 
 
@@ -142,6 +143,7 @@ class Spec:
     drop_z = DROP
     part = None                  # None = whole piece; "rim" = the tops only; "belly" = the dropped faces (to the top)
     diag = False                 # 'se' half cells get a camera-facing 45 degree face (reaching -DROP)
+    skirt_halves = False         # half cells carry the skirt on their open half (a cut set into a skirt)
 
     def cover(self, i, j):
         return None
@@ -223,6 +225,9 @@ def emit(m, sp):
                 Pz = [(x, y, sp.topz(x, y) if ct is None else ct) for x, y in P]
                 for poly in _polys(Pz, cv):
                     m.poly([core.G(*p) for p in poly], sp.col_top(i, j, _kind(poly), (x0 + x1) / 2, (y0 + y1) / 2))
+                if cv != "f" and sp.skirt_halves and not sp.skip_skirt(i, j):
+                    poly = [(x, y, sp.skirtz(x, y)) for x, y in (P[k] for k in TRI[HALF_OPP[cv]])]
+                    m.poly([core.G(*p) for p in poly], sp.col_skirt(i, j, _kind(poly), (x0 + x1) / 2, (y0 + y1) / 2))
             elif not sp.skip_skirt(i, j):
                 Pz = [(x, y, sp.skirtz(x, y)) for x, y in P]
                 if max(p[2] for p in Pz) < 1e-9:

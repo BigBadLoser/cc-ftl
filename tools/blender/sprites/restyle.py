@@ -29,6 +29,11 @@ ROLE = {}
 for (_fam, _face), _d in A.RAMP.items():
     for _role, _name in _d.items():
         ROLE.setdefault(_name, ({"blue": "hull", "ochre": "trim"}.get(_fam, _fam), _face, _role))
+ROLE_X = {}                    # a name's role on a shade (x) face: some names serve both ramps in different roles
+for (_fam, _face), _d in A.RAMP.items():     # (blue x: L is bM, T is bD), so the y-first ROLE alone collapsed them
+    if _face == "x":
+        for _role, _name in _d.items():
+            ROLE_X.setdefault(_name, ({"blue": "hull", "ochre": "trim"}.get(_fam, _fam), "x", _role))
 for _name, _role in (("gB3", "rail"), ("gB2", "edge"), ("gB1", "body"), ("gO", "trim")):
     ROLE[_name] = ("belly", "y", _role)
 for _name, _role in (("gBX3", "rail"), ("gBX2", "edge"), ("gBX1", "body"), ("gOX", "trim")):
@@ -82,7 +87,7 @@ class Poly:
         self.s = self.x + 0.5 if self.kind in ("y", "slope_y", "top") else 0.5 - self.y
         self.fam, self.face, self.role = ROLE.get(name, (None, "y", None))
         if self.kind in ("x", "slope_x"):
-            self.face = "x"
+            self.fam, self.face, self.role = ROLE_X.get(name, (self.fam, "x", self.role))
 
 
 class Look:
