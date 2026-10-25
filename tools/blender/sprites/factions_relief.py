@@ -5,6 +5,7 @@ import math
 
 from mathutils import Vector
 
+from . import factions_variants as FV
 from . import wall3d as T
 from .restyle import hashf
 
@@ -476,9 +477,18 @@ def drone(hull):
             hc = (h0 + h1) / 2
             m0, m1 = (mit[0] if at0 else 0.0), (mit[1] if at1 and not corner else 0.0)
             sides = T.RAMPS[F][1 if ax == "y" else 0]               # its ends a shade darker than they'd light
-            prism(k, ax, plane, h0, h1, [(0.0, z0), (D, z0 + c), (D, z1 - c), (0.0, z1)], F, 2,
-                  mitre=(m0, m1), cap=sides[1])                                                  # the block
-            Dc = D + 0.5 * PX
+            tv = T.VARIANT[0]                                       # (a straight piece's variant: factions_variants)
+            if tv == 3:                                 # a red block, set back and shorter, between the columns
+                Dr, cr, ri = D - PX, c * (D - PX) / D, 0.1  # only (under them it poked through their sides)
+                prism(k, ax, plane, h0 + 0.12, h1 - 0.12,
+                      [(0.0, z0 + ri), (Dr, z0 + ri + cr), (Dr, z1 - ri - cr), (0.0, z1 - ri)],
+                      F, 2, cols=["lvR2", "lvR", "drM", "lvR2"], cap="lvR2")
+            elif tv not in (1, 2):
+                prism(k, ax, plane, h0, h1, [(0.0, z0), (D, z0 + c), (D, z1 - c), (0.0, z1)], F, 2,
+                      mitre=(m0, m1), cap=sides[1])                                              # the block
+            else:                                                                                # ... or its bay
+                FV.drone_open(k, ax, plane, h0 + 0.12, h1 - 0.12, z0, z1, F, tv)
+            Dc = D + 0.5 * PX if tv not in (1, 2) else D - PX     # (an open bay's columns stand back)
             lift = 0.5 * PX * math.hypot(c, D) / D          # the columns stand proud of the block's front and of its
             col = [(0.0, z0 - lift), (Dc, z0 - lift + c * Dc / D),         # sloped top and foot alike (raised
                    (Dc, z1 + lift - c * Dc / D), (0.0, z1 + lift)]          # strips carried up the slopes)
@@ -487,9 +497,12 @@ def drone(hull):
                 prism(k, ax, plane, u0, u1, col, F, 3, mitre=mt, cap=sides[1])                   # its two columns
             f0, f1 = z0 + c, z1 - c                                                              # its front
             q0, q1 = h0 + o0, h1 - o1                           # (the front clear of the other face there)
-            T.paint(k, ax, plane, q0 + 0.14, q1 - 0.14, f1 - 0.16, f1 - 0.04, D, "rose", 1)      # a dark recess ...
-            for u in (q0 + 0.18, (q0 + q1) / 2 - 0.04, q1 - 0.26):
-                T.slab(k, ax, plane, u, u + 0.08, f1 - 0.13, f1 - 0.07, Dc, F, 3)                # ... with parts in it
+            if tv == 3:                                                                          # a seam across it
+                FV.flat(k, ax, plane, q0 + 0.14, q1 - 0.14, f0 + 0.14, f0 + 0.166, D - PX + PAINT, "lvR2")
+            elif not tv:
+                T.paint(k, ax, plane, q0 + 0.14, q1 - 0.14, f1 - 0.16, f1 - 0.04, D, "rose", 1)  # a dark recess ...
+                for u in (q0 + 0.18, (q0 + q1) / 2 - 0.04, q1 - 0.26):
+                    T.slab(k, ax, plane, u, u + 0.08, f1 - 0.13, f1 - 0.07, Dc, F, 3)            # ... with parts in it
             hw = (h1 - h0) / 2 - 0.07
             g0 = max(hc - hw, a + Dc + 0.05) if at0 and ends[0] == "in" else hc - hw     # (clear of the other
             g1 = min(hc + hw, b - Dc - 0.05) if at1 and ends[1] == "in" and not corner else hc + hw   # face's block)

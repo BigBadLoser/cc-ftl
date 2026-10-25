@@ -308,14 +308,18 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         plate(k, poly, pt, nrm, 0.0, rise, fam, 2)
         w = u1 - u0
         sk = (STYLE or {}).get("skirt", "panel")
-        if field and w >= 0.36 and sk == "outline":                     # a faction's plain outlined panel
+        rv = (STYLE or {}).get("ramp_var")                              # a look's own ramp variant
+        if field and w >= 0.36 and sk == "outline" and VARIANT[1] and rv:
+            rv(lambda q, rr, lvl, bb: plate(k, q, pt, nrm, 0.0, rise + rr, fam, lvl, base=rise + bb),
+               max(u0, a), min(u1, ub), run_, VARIANT[1])
+        elif field and w >= 0.36 and sk == "outline":                   # a faction's plain outlined panel
             fu0, fu1 = max(u0, a) + 0.08, min(u1, ub) - 0.08                # (on the face, not the mitred run-on)
             fd0, fd1 = 0.15 * run_, 0.62 * run_
             for q in ((fu0, fu1, fd0, fd0 + 0.03), (fu0, fu1, fd1 - 0.03, fd1), (fu0, fu0 + LINE, fd0, fd1),
                       (fu1 - LINE, fu1, fd0, fd1)):
                 plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT, fam, 0,
                       base=rise)
-            if (STYLE or {}).get("slot"):                                   # a dark handle slot in it
+            if (STYLE or {}).get("slot") and not VARIANT[1]:                # a dark handle slot in it
                 uc = (fu0 + fu1) / 2
                 plate(k, [(uc - 0.1, 0.5 * run_), (uc + 0.1, 0.5 * run_), (uc + 0.1, 0.57 * run_),
                           (uc - 0.1, 0.57 * run_)], pt, nrm, 0.0, rise + PAINT, fam, 0, base=rise)

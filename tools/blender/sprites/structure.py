@@ -12,7 +12,7 @@ import os
 import re
 
 from . import wall3d
-from .envtiles import SPRITES as DEFAULT
+from .envtiles import SPRITES as DEFAULT, _variant
 from .factions import look
 from .restyle import restyled
 
@@ -21,6 +21,8 @@ LOOKS = ("navy", "drone", "civil.v1", "civil.v2", "civil.v3", "civil.v4", "basti
 
 
 CORNER = re.compile(r"\.m\d+c\d+|\.end\.[se]\.c\d")     # corner-fill pieces: default look only for now
+STRAIGHT = re.compile(r"^tile\.(wall|hull)\.full\.m(10|5)$")   # straight runs: a look's variants (its pairs)
+DEFAULT_VARIANT = re.compile(r"\.a\d+$")                       # (the default look's own; a look builds its own)
 
 
 def faction_id(sid, name):
@@ -48,6 +50,11 @@ def jobs():
         for sid, fp, kind, fn in DEFAULT:
             if kind == "ghost" or sid.startswith("tile.door") or CORNER.search(sid) or (only and sid not in only):
                 continue
+            if DEFAULT_VARIANT.search(sid):
+                continue
             fid = faction_id(sid, name)
             out.append((fid, fp, kind, _wrap(lk, fid, fn)))
+            if STRAIGHT.match(sid):
+                for n, tr in enumerate(getattr(lk, "pairs", ()), 1):
+                    out.append((f"{fid}.a{n}", fp, kind, _wrap(lk, f"{fid}.a{n}", _variant(fn, tr))))
     return out

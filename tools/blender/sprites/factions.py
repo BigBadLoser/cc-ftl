@@ -15,6 +15,7 @@ roles onto its ramps). Floors, caps and ghosts keep the default geometry and tak
 Both faces of a wall are lit, as in the Space Haven sets (the +x face only a step darker); the dark navy-slate is the
 wall's cut end (the end pieces' section), in the look's own shade ramp. Scrap keeps its plain ends."""
 from . import factions_relief as R
+from . import factions_variants as FV
 from .restyle import STEP, Look, ramp
 from .structure_looks import FLOOR_STEP
 
@@ -77,7 +78,9 @@ class Drone(Faction):
     pre = "fD"
 
     def relief(self, sprite):
-        return _style(R.drone, skirt="outline", slot=True, seam=0, shell=R.CornerCut)
+        return _style(R.drone, skirt="outline", slot=True, seam=0, shell=R.CornerCut, ramp_var=FV.drone_ramp)
+
+    pairs = FV.DRONE_PAIRS
 
 
 class Civil(Faction):
