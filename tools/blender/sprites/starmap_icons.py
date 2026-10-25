@@ -1,8 +1,9 @@
 """Structure icons for the starmap (family `starmap`): starmap.struct.<kind>, replacing the letter badges beside the nodes.
 
-48 px frame at 1x (96 at 2x), anchor at the centre, lit by the scene sun like the ships, outlined. The models are laid out
-in the px of a 24 px icon and rendered at ZOOM times that, so they stay crisp when the map zooms in; each reads by
-silhouette alone even when drawn at 16-20 screen px:
+Shown at 24 px at 1x (48 at 2x) on the map, rendered at ZOOM (2) times the pixels, as the 2x tiles carry twice the 1x
+tiles': a 48 px frame at 1x (96 at 2x) the map draws at half, so it holds detail when zoomed in. Anchor at the centre, lit
+by the scene sun like the ships, outlined. The models are laid out in the px of the 24 px icon. Each reads by silhouette
+alone at 16-20 screen px:
 
   station_trade      a wheel: a ring on spokes round a hub with a docking mast
   station_military   a star fort: four armoured prongs with guns round a tall command tower

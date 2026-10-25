@@ -1,8 +1,9 @@
 """Fleet icons for the starmap (family `starmap`): starmap.fleet.<role>.d0..d7, replacing the arrow glyphs of NPC fleets and
 the player's ship marker.
 
-40 px frame at 1x (80 at 2x), anchor at the centre (the ship's middle), lit and outlined like the ships. The models are
-laid out in the px of a 20 px icon and rendered at ZOOM times that, so they stay crisp when the map zooms in. Pixel art cannot
+Shown at 20 px at 1x (40 at 2x) on the map, rendered at ZOOM (2) times the pixels, as the 2x tiles carry twice the 1x
+tiles': a 40 px frame at 1x (80 at 2x) the map draws at half. Anchor at the centre (the ship's middle), lit and outlined
+like the ships. The models are laid out in the px of the 20 px icon. Pixel art cannot
 be rotated in code, so there are 8 headings: d0 points east in screen space, then clockwise (d2 south, d4 west, d6 north),
 the way the map's `rotate(heading)` turns. Each heading is the ground heading whose three-quarter projection points that
 way, so north and south facings are foreshortened, as on the ships. Every heading uses the same model scale.

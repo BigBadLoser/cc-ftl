@@ -43,8 +43,9 @@ are already merged or superseded. Don't build on them.
   (6 roles x 8 headings), a backdrop tile. Contract (frames, scale `r / 60`, headings, tint, glow) in `docs/ARCHITECTURE.md`,
   "Starmap art". Contact sheet: `python3 -I tools/blender/review/starmap_preview.py public/assets/2x public/assets/1x <out.png>`.
 - Not wired: `src/ui/StarmapBody.svelte`, the badges and the fleet arrows in `StarmapSector.svelte` still draw in code.
-- User review (round 1): bodies approved. Icons now render at twice the brief's size (structures 96 px, fleets 80 px at
-  2x) so they hold up on zoom; the blue giant's four-point sparkle was dropped.
+- User review (round 1): bodies approved; the blue giant's four-point sparkle was dropped. Icons carry twice the pixels of
+  their on-map size (like 2x tiles over 1x) so they hold up on zoom: frames 96 px (structures) and 80 px (fleets) in world
+  px, drawn at half, so on the map they stay 48 and 40.
 - Open choices: body fill is about 62% of the frame (the brief suggested about 70%) to leave room for the gas giant's
   ring and the black hole's disc; the backdrop is placed in numpy (dots need no 3D model), not rendered.
 

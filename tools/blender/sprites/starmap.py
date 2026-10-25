@@ -3,8 +3,8 @@ Lanes, node pips, territory outlines and labels stay UI. Same camera, palette an
 view, hard pixels); each sprite has a fixed frame with the anchor at its centre (starmap_kit.frame_item).
 
   starmap.body.<kind>[.v0..v2]   sector bodies, 96 px frame at 1x (192 at 2x), body radius 30 px (60): starmap_bodies.py
-  starmap.struct.<kind>          structure icons, 48 px frame (96), team-tinted: starmap_icons.py
-  starmap.fleet.<role>.d0..d7    fleet icons, 40 px frame (80), d0 = screen east, then clockwise, team-tinted: starmap_fleets.py
+  starmap.struct.<kind>          structure icons, 48 px frame (96) drawn at half (twice the density), team-tinted: starmap_icons.py
+  starmap.fleet.<role>.d0..d7    fleet icons, 40 px frame (80) drawn at half, d0 = screen east, clockwise, team-tinted: starmap_fleets.py
   starmap.backdrop               a tileable, very dim starfield, 256 px (512), colour sheet only (backdrop below)
 
 Team tint: structures and fleets paint their livery in the crew key colours (manifest `keyColors`, team.cloth and

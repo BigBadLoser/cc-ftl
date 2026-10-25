@@ -605,14 +605,14 @@ palette.json    the single palette, read by Blender scripts and the game
     disc and the nebula glow; the gas giant has no glow and is outlined. The nebula is glow only (its colour pixels are
     empty): draw it under the nodes.
   - Structures, `starmap.struct.<kind>`, kinds `station_trade`, `station_military`, `station_research`, `den`, `asteroids`,
-    `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): 96 px frame. Icons are rendered at
-    twice the size they show at by default (about 16-20 screen px), so they stay crisp when the map zooms in: draw them
-    scaled down.
-  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: 80 px frame
-    (also twice the default 14-18 screen px).
+    `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): shown at 48 px.
+  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: shown at 40 px.
     `d0` points east on screen, then clockwise by 45 degrees (the SVG `rotate(heading)` sense), so `d = round(heading / 45)
     mod 8`. Each heading is the ground heading whose three-quarter projection points that way, so north and south facings
     are foreshortened like the ships.
+  - Icon density: structure and fleet icons carry twice the pixels of their on-map size in both sets, the way the 2x tiles
+    (128x64) carry twice the 1x tiles' (64x32), so they hold detail when the map zooms in. Their frames are 96 and 80 px:
+    draw them at half that (48 and 40), centred on the anchor. Bodies and the backdrop are at plain density.
   - `starmap.backdrop`: a 512 px tile of dim 1-2 px stars (anchor 0,0), colour only and transparent between stars; tile it
     over the map's background.
   - Tint: stations, the den and fleets paint their livery in the crew key colours (`keyColors`: `team.cloth` panels,
