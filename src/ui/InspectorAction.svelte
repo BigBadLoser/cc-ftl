@@ -18,7 +18,7 @@
 
   /**
    * A boxed action in an inspector: a line saying what it is about (`message`, with an alert icon when `alert`), anything
-   * else it needs to show (`children`, such as a progress bar), and its buttons as one centred group. `resetKey`: a
+   * else it needs to show (`children`, such as a progress bar), and its buttons as one full-width group. `resetKey`: a
    * pending confirmation is dropped when it changes (another object selected).
    */
   let { message, alert = false, buttons, testid, resetKey, children }: {
@@ -63,7 +63,8 @@
   .msg { display: flex; align-items: center; gap: 4px; color: var(--text); }
   .alert .msg { color: var(--amber); }
   .warn { color: var(--amber); }
-  .group { display: flex; justify-content: center; gap: 8px; }
+  /* Full width, the buttons sharing it equally, spaced like the inspectors' other button grids. */
+  .group { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
   .group button { min-height: 32px; padding: 0 14px; }
   .group button.danger { border-color: var(--red); color: var(--red); }
 </style>
