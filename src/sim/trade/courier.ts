@@ -55,15 +55,16 @@ function playerCourier(sim: Sim, units: number): { vehicle: number } | { error: 
 /**
  * Decide who flies a deal and where the goods come in. Goods the player hands over always travel on the player's shuttle,
  * and so do goods from a seller with no shuttle of its own (stations included); otherwise the seller sends its own.
+ * `ownShuttle` forces the player's (a hiring run).
  */
-export function planCourier(sim: Sim, ship: number, give: readonly ItemQty[], get: readonly ItemQty[]): CourierPlan | { error: string } {
+export function planCourier(sim: Sim, ship: number, give: readonly ItemQty[], get: readonly ItemQty[], ownShuttle = false): CourierPlan | { error: string } {
   const trader = sim.world.get(ship, TraderC);
   if (!trader) return { error: 'noTrader' };
   if (!sim.world.has(ship, ShipC)) return { error: 'noTrader' };
   if (!playerShip(sim)) return { error: 'noShip' };
   const kind = sim.content.trade?.traders[trader.profile];
   const units = Math.max(unitsOf(give), unitsOf(get));
-  if (give.length > 0 || !kind?.shuttle) {
+  if (ownShuttle || give.length > 0 || !kind?.shuttle) {
     const c = playerCourier(sim, units);
     if ('error' in c) return c;
     const v = sim.world.get(c.vehicle, VehicleC) as Vehicle;
