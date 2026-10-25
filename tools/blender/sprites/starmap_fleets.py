@@ -82,9 +82,9 @@ def trader(s):
     s.box(6.9, 0, 0.8, 2.2, 0.6, 1.6, "lens")
     s.box(-0.5, 0, 12.5, 1.4, -1.0, 0.0, "steelD")
     for k, u in enumerate((2.6, -0.6, -3.8)):
-        top = "team.cloth" if k % 2 == 0 else "team.accent"
-        for v in (1.4, -1.4):
-            s.box(u, v, 2.8, 2.5, -1.3, 1.3, "plate", top, 0.06)
+        paint = "team.cloth" if k % 2 == 0 else "team.accent"         # painted all over; the sides a shade darker than
+        for v in (1.4, -1.4):                                          # the top, so the top edge reads at every heading
+            s.box(u, v, 2.8, 2.5, -1.3, 1.3, f"{paint}*0.62", paint)
     s.box(-6.6, 0, 2.0, 3.4, -1.1, 1.1, "steel", "steelL", 0.1)
     for v in (0.9, -0.9):
         s.box(-7.9, v, 0.8, 1.2, -0.8, 0.6, "cyan")
