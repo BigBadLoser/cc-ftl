@@ -3,6 +3,7 @@ import { CombatC, ShipC, deserialize, galaxyIndex, newGame, playerShip, serializ
 import { wreckShip } from '../sim/combat/wreck';
 import { capturePrize } from '../sim/capture/prize';
 import { TraderC } from '../sim/trade/types';
+import { flagValue } from '../sim/story/state';
 import { addNotoriety, clearBlocker, clearCost, grudgeOf, huntPressure, tallyLosses } from '../sim/galaxy/heat';
 import { dispatchHunters } from '../sim/galaxy/hunters';
 import { encounterKind } from '../sim/galaxy/encounters';
@@ -49,6 +50,9 @@ describe('notoriety', () => {
     wreckShip(other, hauler);
     tallyLosses(other);
     expect(other.galaxy.heat.notoriety).toBe(KILL_NOTORIETY.neutral);
+    // Only the hostile one counts toward the goals' kills.
+    expect(flagValue(sim.story, 'stat.kills')).toBe(1);
+    expect(flagValue(other.story, 'stat.kills')).toBe(0);
   });
 
   it('counts a capture (the prize now flies for the player) as 1.5 kills of the side it was taken from', () => {

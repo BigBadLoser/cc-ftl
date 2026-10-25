@@ -19,6 +19,15 @@ export interface UiSnapshot {
   sprites: number;
 }
 
+/** The tutorial goal chain: act `act` of `acts`, its title, what finishing it pays (a short line), and its goals. */
+export interface UiGoals {
+  act: number;
+  acts: number;
+  title: string;
+  reward: string;
+  goals: { id: string; title: string; text: string; done: boolean }[];
+}
+
 /** A loose stack on a floor tile. */
 export interface UiStack {
   item: string;
@@ -772,6 +781,8 @@ export interface UiApi {
   /** Module construction sites, and the selected one (a job id). */
   sites: Subscribable<UiSite[]>;
   jobs: Subscribable<UiJobs>;
+  /** The tutorial goal chain (null when finished or skipped). */
+  goals: Subscribable<UiGoals | null>;
   selectedSite: Subscribable<number | null>;
   selectSite(id: number | null): void;
   /** Another ship or station picked from the node strip; the selection panel drills into it. */
