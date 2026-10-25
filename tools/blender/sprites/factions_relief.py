@@ -47,8 +47,9 @@ def prism(k, ax, plane, u0, u1, prof, fam, lvl, cols=None, cap=None, mitre=(Fals
         k.poly([T.P(ax, plane, u, z, d) for u, (d, z) in zip(us, prof)], fam, lvl, ALONG(ax) * sg + o * 0.01, fixed=cap)
 
 
-def tube(k, ax, plane, u0, u1, dc, zc, r, n=8):
-    """A round lit tube along the face: a lit orange front line, plain orange round it, darker underneath."""
+def tube_prof(dc, zc, r, n=8):
+    """A round lit tube's section and its edge colours: a lit orange front line, plain orange round it, darker
+    underneath."""
     prof = [(dc + r * math.cos(2 * math.pi * i / n + math.pi / n), zc + r * math.sin(2 * math.pi * i / n + math.pi / n))
             for i in range(n)]
     cols = []
@@ -56,13 +57,22 @@ def tube(k, ax, plane, u0, u1, dc, zc, r, n=8):
         s = math.sin(2 * math.pi * (i + 1) / n)
         c = math.cos(2 * math.pi * (i + 1) / n)
         cols.append("fxO" if c > 0.9 else "orL" if s > -0.2 else "orM")
-    prism(k, ax, plane, u0, u1, prof, "wall", 0, cols, "or")
+    return prof, cols
 
 
-def bracket(k, ax, plane, u0, u1, dc, zc, rb, zlo, zhi, fam, lvl):
-    """A rounded arm from the face out to a tube's axis, its underside angled back to the face."""
-    arc = [(dc + rb * math.cos(math.radians(t)), zc + rb * math.sin(math.radians(t))) for t in (90, 45, 0, -45, -90)]
-    prism(k, ax, plane, u0, u1, [(0.0, zhi)] + arc + [(0.0, zlo)], fam, lvl)
+def tube(k, ax, plane, u0, u1, dc, zc, r, n=8, mitre=(0.0, 0.0)):
+    """A round lit tube along the face (tube_prof)."""
+    prof, cols = tube_prof(dc, zc, r, n)
+    prism(k, ax, plane, u0, u1, prof, "wall", 0, cols, "or", mitre=mitre)
+
+
+def bracket(k, ax, plane, u0, u1, dc, zc, rb, zlo, zhi, fam, lvl, cap=None):
+    """An arm from the face out over a tube, rounded over its top, its front straight down a little past the axis and
+    its underside flat back to the face (any facet turned down toward the camera meets it near edge-on and breaks
+    into specks at the art's size). zlo is unused."""
+    arc = [(dc + rb * math.cos(math.radians(t)), zc + rb * math.sin(math.radians(t))) for t in (90, 45, 0)]
+    zb = zc - 0.4 * rb
+    prism(k, ax, plane, u0, u1, [(0.0, zhi)] + arc + [(dc + rb, zb), (0.0, zb)], fam, lvl, cap=cap)
 
 
 def cuts(a, b, off):
@@ -80,37 +90,186 @@ def seams(a, b):
 NAVY_SEAM = 0.24                    # the plate seams, in from each tile edge, up the face and down the ramp
 
 
+OPP = {"+x": "-x", "-x": "+x", "+y": "-y", "-y": "+y"}
+NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
+
+
+class NavyShell(T.Shell):
+    """The shell with its faces in the ramp plates' tone (set 4's wall and ramp are one light grey, its shade side a
+    step darker); the dark outlines at the foot and under the top stay. A partition's outer corner is chamfered
+    (NAVY_C) down the wall and the ramp, the ramp's chamfer a band of constant width (as Recessed's) carrying the
+    plates' tone, the toe band and the foot line."""
+    line = None
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.end_sides = []                             # a partition's free ends: ("+x" | "-x" | "+y" | "-y", plane)
+        for r in self.rects:                            # (a free side with an arm opposite and none beside it)
+            x0, x1, y0, y1 = r[0]
+            pl = {"+x": x1, "-x": x0, "+y": y1, "-y": y0}
+            for sd in pl:
+                perp = ("+y", "-y") if sd[1] == "x" else ("+x", "-x")
+                if (r[1] == "wall" and abs(pl[sd]) < 0.5 - 1e-9 and not self._adj(r, sd)
+                        and self._adj(r, OPP[sd]) and not any(self._adj(r, q) for q in perp)):
+                    self.end_sides.append((sd, T.snap(pl[sd])))
+        for r in self.rects:
+            x0, x1, y0, y1 = r[0]
+            if any(sd[0] == "+" for sd, _ in self.end_sides):
+                break                                   # (a wall's end is not a corner)
+            if (not self._adj(r, "+x") and not self._adj(r, "+y") and x1 < 0.5 - 1e-9 and y1 < 0.5 - 1e-9
+                    and self.keep is None):
+                self.line = (T.snap(x1), T.snap(y1))
+                lim = self.line[0] + self.line[1] - NAVY_C + 1e-9
+                self.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
+                self.diag = self.skirt_halves = True
+
+    def _adj(self, r, sd):
+        """Does another rect touch r's side sd?"""
+        x0, x1, y0, y1 = r[0]
+        for o in self.rects:
+            ox0, ox1, oy0, oy1 = o[0]
+            if o is r:
+                continue
+            if sd[1] == "x" and oy0 < y1 and oy1 > y0 and abs((ox0 - x1) if sd[0] == "+" else (ox1 - x0)) < 1e-9:
+                return True
+            if sd[1] == "y" and ox0 < x1 and ox1 > x0 and abs((oy0 - y1) if sd[0] == "+" else (oy1 - y0)) < 1e-9:
+                return True
+        return False
+
+    def is_end(self, ax, u, side):
+        """Does a face along ax end at u (its low end: side -1) on a wall's free end?"""
+        sd = ("+" if side > 0 else "-") + ("x" if ax == "y" else "y")
+        return any(s == sd and abs(p - u) < 1e-6 for s, p in self.end_sides)
+
+    def end_face(self, ax, plane):
+        return any(s == "+" + ax and abs(p - plane) < 1e-6 for s, p in self.end_sides)
+
+    def skip_skirt(self, i, j):                         # no ramp past a wall's end
+        c = {"x": (i + 0.5) / T.W.GN - 0.5, "y": (j + 0.5) / T.W.GN - 0.5}
+        if any((c[s[1]] - p) * (1 if s[0] == "+" else -1) > 0 for s, p in self.end_sides):
+            return True
+        return super().skip_skirt(i, j)
+
+    def drop_at(self, x, y):
+        return 0.0
+
+    def cap_clip(self, q):                              # the far hull's armour plates cut on the chamfer too
+        return self.line[0] + self.line[1] - NAVY_C - q[0] - q[1]
+
+    def _cdist(self, x, y):
+        d, r = self._dist(x, y)
+        if self.line is None:
+            return d, r, False
+        c = (x - self.line[0] + y - self.line[1] + NAVY_C) / 2
+        return (c, r, True) if c > d + 1e-9 else (d, r, False)
+
+    def skirtz(self, x, y):
+        return self.zs * max(0.0, 1.0 - self._cdist(x, y)[0] / self.run)
+
+    def col_skirt(self, i, j, kind, x, y):
+        d, r = self._dist(x, y)
+        if self.line is None or (x - self.line[0] + y - self.line[1] + NAVY_C) / 2 < d - 1 / T.W.GN:
+            return super().col_skirt(i, j, kind, x, y)
+        d = max(d, (x - self.line[0] + y - self.line[1] + NAVY_C) / 2)   # (the cells along its edges too: they reach
+        fam = "blue" if r[1] == "hull" else "wall"                       # past the plates, so in the joints' tone they
+                                                                         # dotted the edges)
+        if d < 0.02:                                                     # the line where the ramp meets the wall
+            return T.RAMPS[fam][0][(T.STYLE or {}).get("joint", 1)]
+        if self.run - 0.03 > d >= (T.STYLE or {}).get("toe_at", 0.72) * self.run:
+            return T.RAMPS["ochre"][0][4]
+        return T.RAMPS[fam][0][3]
+
+    def col_face(self, face, x, y, z):
+        c = super().col_face(face, x, y, z)
+        e = 0.5 / T.W.GN
+        r = self._rect_at(x, y - e) if face == "y" else self._rect_at(x - e, y)
+        top = r[3] if r else self.top
+        if z < self.zs + 0.02 or z > top - 0.03:
+            return c
+        return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][4 if face == "d" else 3]
+
+
+def _slab(z0, z1, d):
+    return [(0.0, z0), (d, z0), (d, z1), (0.0, z1)]
+
+
 def navy(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
-        T.run(k, ax, plane, a, b, ends, zs - 0.03, zs + 0.06, PAINT, F, 3, 0)
-        H = top - zs
-        zh = top - 0.25 * H if full else top                                                     # the header's foot
-        for u in cuts(a, b, NAVY_SEAM):                                                          # plate seams
-            T.paint(k, ax, plane, u - LINE / 2, u + LINE / 2, zs - 0.03, zh, PAINT, F, 1)
+        X, C = b, NAVY_C
+        sh = T.SHELL
+        endf = bool(getattr(sh, "end_face", None) and sh.end_face(ax, plane))     # a wall's end face, and a face
+        end1 = bool(getattr(sh, "is_end", None) and sh.is_end(ax, b, 1))         # running to one: the tube stops
+        corner = ends[1] == "out" and not (endf or end1)  # the chamfered corner: the parts stop where it starts and
+        if corner:                                      # carry round it on corner pieces (drawn with the y face)
+            b -= C
+        cp = corner and ax == "y"
+        back = ends[0] == "out"                         # a free end at the low end turns onto a hidden face: the parts
+        pe = ("in" if back else ends[0], ends[1])       # stop square there (run on, they stuck out past the end)
+        T.run(k, ax, plane, a, b, pe, zs - 0.03, zs + 0.06, PAINT, F, 3, 0)
+        if cp:
+            corner_piece(k, X, plane, C, _slab(zs - 0.03, zs + 0.06, PAINT), F, 3)
+            run, ta = T.W.skirt_run(), (T.STYLE or {}).get("toe_at", 0.72)
+            nrm = Vector((zs / (2 * run), zs / (2 * run), 1.0)).normalized()
+
+            def cq(t):                                  # the ramp's chamfer t down its slope: its two edges
+                z = zs * (1 - t / run)
+                return Vector((X - C + t, plane + t, z)), Vector((X + t, plane - C + t, z))
+            for t0, t1, fam, lvl in ((0.02, ta * run, F, 3), (ta * run, run - 0.03, "ochre", 3),
+                                     (run - 0.03, run, F, 2)):          # plates on it: one step lighter (a highlight),
+                (a0, b0), (a1, b1) = cq(t0), cq(t1)                    # the toe band and the foot line across it
+                k.poly([q + nrm * 2 * PAINT for q in (a0, b0, b1, a1)], fam, lvl, nrm)
+        rt = min(top, T.W.wall_top("wall", "up")) if full else top     # laid out on a partition's height on every
+        H = rt - zs                                                     # wall, so the far hull's parts line up
+        zh = rt - 0.25 * H if full else top                             # the header's foot
+        for s0, s1 in T.spans(a, b):                                    # plate seams (none on a corner's tile)
+            if (abs(s0 - a) < 1e-6 and ends[0] != "cont") or (abs(s1 - b) < 1e-6 and ends[1] != "cont"):
+                continue
+            if s1 - s0 > 2 * NAVY_SEAM + 1e-3:
+                for u in (s0 + NAVY_SEAM, s1 - NAVY_SEAM):
+                    T.paint(k, ax, plane, u - LINE / 2, u + LINE / 2, zs - 0.03, zh, PAINT, F, 1)
+        if ax == "y":                                   # a seam up an inner corner (on the lit face, one px, as the
+            for u, e in ((a, ends[0]), (b, ends[1])):   # plates' seams)
+                if e == "in":
+                    u0 = u if u == a else u - LINE
+                    T.paint(k, ax, plane, u0, u0 + LINE, zs - 0.03, zh, PAINT, F, 1)
+        if endf:                                        # the section at a wall's end, under its face: the wall's foot
+            run = T.W.skirt_run()                       # and the two ramps, down to the floor
+            k.poly([T.P(ax, plane, u, z, 0.0) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b, zs), (a, zs))],
+                   F, 2, T.OUT(ax))
+            zt = zh - 0.33 * H if full else top                  # edge highlights: up its two edges (to the band) and
+            hl = [[(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)],               # down the two ramps' slopes
+                  [(a, zs), (a + LINE, zs), (a + LINE, zt), (a, zt)],
+                  [(b, zs), (b + run, 0.0035), (b + run - 0.06, 0.0035), (b, zs - 0.035)],
+                  [(a, zs), (a, zs - 0.035), (a - run + 0.06, 0.0035), (a - run, 0.0035)]]
+            for q in hl:
+                k.poly([T.P(ax, plane, u, z, PAINT) for u, z in q], F, 5, T.OUT(ax))
         if not full:
             return
-        T.run(k, ax, plane, a, b, ends, zh, top - 0.02, PX, "rose", 1, 0)                       # the dark header
-        zc, r, dc = top - 0.1, 0.055, PX + 0.055                                                 # the tube, high up
+        mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
+        T.run(k, ax, plane, a, b, pe, zh, rt - 0.02, PX, "rose", 1, 0)                           # the dark header
+        T.run(k, ax, plane, a, b, pe, zh - 0.33 * H, zh, PAINT, "ochre", 3, 0)                  # the maroon band
+        zc, r, dc = rt - 0.1, 0.055, PX + 0.055                                                  # the tube, high up
+        if not endf:                                    # (none on a wall's end face; it stops in the end bracket)
+            tube(k, ax, plane, a + (0.02 if back else 0.0), b - (0.02 if end1 else 0.0), dc, zc, r,
+                 mitre=(mit[0], 0.0 if end1 else mit[1]))
+        if cp:
+            corner_piece(k, X, plane, C, _slab(zh, rt - 0.02, PX), "rose", 1)
+            corner_piece(k, X, plane, C, _slab(zh - 0.33 * H, zh, PAINT), "ochre", 3)
+            prof, cols = tube_prof(dc, zc, r)
+            corner_piece(k, X, plane, C, prof, "wall", 0, cols, "or")
         bw = 0.1
-        for s0, s1 in T.spans(a, b):
-            lo = s0 + (0.05 if abs(s0 - a) < 1e-6 and ends[0] == "out" else 0.0)
-            hi = s1 - (0.05 if abs(s1 - b) < 1e-6 and ends[1] == "out" else 0.0)
-            for u0 in (lo, hi - bw):                                                             # the brackets
-                bracket(k, ax, plane, u0, u0 + bw, dc, zc, 0.085, zc - 0.15, zc + 0.1, F, 4)
-            tube(k, ax, plane, lo + bw, hi - bw, dc, zc, r)                                      # the tube
-            if hi - lo > 0.5:                                                                    # a grille under it
-                for i in range(4):
-                    z = zh + 0.025 + i * 0.03
-                    T.paint(k, ax, plane, hi - 0.3, hi - 0.12, z, z + 0.012, PX, F, 3)
-        if ends[1] == "out":                                                 # round the corner: the tubes elbow
-            tube(k, ax, plane, b - 0.05, b + dc + r, dc, zc, r)
-        if ends[0] == "out":
-            tube(k, ax, plane, a - dc - r, a + 0.05, dc, zc, r)
-        T.run(k, ax, plane, a, b, ends, zh - 0.33 * H, zh, PAINT, "ochre", 3, 0)                # the maroon band
-        if hull:
+        clear = {"out": 0.05, "in": dc + r + 0.03}      # brackets clear of a corner (and of the other face's tube)
+        for s0, s1 in ([] if endf else T.spans(a, b)):
+            lo = s0 + ((0.02 if back else clear.get(ends[0], 0.0)) if abs(s0 - a) < 1e-6 else 0.0)
+            hi = s1 - ((0.02 if end1 else clear.get(ends[1], 0.0)) if abs(s1 - b) < 1e-6 else 0.0)
+            if hi - lo < 2 * bw:
+                continue
+            for u0, u1 in ((lo - 0.003, lo + bw), (hi - bw, hi + 0.003)):                        # the brackets
+                bracket(k, ax, plane, u0, u1, dc, zc, 0.085, zc - 0.15, zc + 0.1, F, 4)    # (past the tube's end)
+        if hull and variant:
             for s0, s1 in T.spans(a, b):
-                if s1 - s0 > 0.6 and variant:
+                if s1 - s0 > 0.6:
                     uc = (s0 + s1) / 2
                     T.paint(k, ax, plane, uc - 0.1, uc + 0.1, zh - 0.3, zh - 0.06, 2 * PAINT, F, 4)
     return face
@@ -455,7 +614,7 @@ class Recessed(T.Shell):
         return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][2]
 
 
-def corner_piece(k, X, Y, C, prof, fam, lvl):
+def corner_piece(k, X, Y, C, prof, fam, lvl, cols=None, cap=None):
     """A face part's profile ((d, z): d out from the wall's line) carried round an outer corner chamfered C along each
     axis: each point runs from (X - C + d, Y + d) on the y face to (X + d, Y - C + d) on the x face. So every
     chamfer on the corner, at any depth, has the same width and the same two edges on screen (the joints run along
@@ -471,9 +630,9 @@ def corner_piece(k, X, Y, C, prof, fam, lvl):
         pd, pz = z1 - z0, d0 - d1
         if pd * ((d0 + d1) / 2 - dc) + pz * ((z0 + z1) / 2 - zc) < 0:
             pd, pz = -pd, -pz
-        k.poly([J1[i], J2[i], J2[j], J1[j]], fam, lvl, n_ * pd + up * pz)
-    k.poly(J1, fam, lvl, Vector((-1, 0, 0)))
-    k.poly(J2, fam, lvl, Vector((0, -1, 0)))
+        k.poly([J1[i], J2[i], J2[j], J1[j]], fam, lvl, n_ * pd + up * pz, fixed=cols[i] if cols else None)
+    k.poly(J1, fam, lvl, Vector((-1, 0, 0)), fixed=cap)
+    k.poly(J2, fam, lvl, Vector((0, -1, 0)), fixed=cap)
 
 
 def bastion(hull):

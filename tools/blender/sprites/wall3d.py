@@ -256,18 +256,24 @@ F_LOCK = "wall"                                  # the hull's box keeps the wall
 
 # ---- the skirt ------------------------------------------------------------------------------------------------
 
-def skirt(k, sp, ax, plane, a, b, fam):
+def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     """The face's posts and fields carried down the slope: a narrow plate under each post, a wide one under each field
     with a panel (a raised frame, a lighter plate sunk in it and a dark slot under it), on the shell's dark joints,
     mitred round corners."""
     run_, zs = sp.run, sp.zs
     o = OUT(ax)
     nrm = (o * zs / run_ + Vector((0, 0, 1))).normalized()
-    lo_t, hi_t = _end(sp, ax, plane, a, -1), _end(sp, ax, plane, b, 1)
-    lo = {"cont": lambda p: p[0] - a, "in": lambda p: p[0] - (a + p[1]), "out": lambda p: p[0] - (a - p[1])}[lo_t]
-    hi = {"cont": lambda p: b - p[0], "in": lambda p: (b - p[1]) - p[0], "out": lambda p: (b + p[1]) - p[0]}[hi_t]
-    cr = (STYLE or {}).get("chamfer") if hi_t == "out" else None      # a look whose shell chamfers its outer corners:
-    if cr:                                                             # the plates stop at the chamfer's edge, which
+    if getattr(sp, "end_face", None) and sp.end_face(ax, plane):
+        return                                  # a look's wall end: no ramp across it
+    lo_t, hi_t = ends or (_end(sp, ax, plane, a, -1), _end(sp, ax, plane, b, 1))
+    if getattr(sp, "is_end", None):             # ... and the ramps beside it stop square at its line
+        lo_t, hi_t = ("end" if sp.is_end(ax, a, -1) else lo_t), ("end" if sp.is_end(ax, b, 1) else hi_t)
+    lo = {"cont": lambda p: p[0] - a, "in": lambda p: p[0] - (a + p[1]), "out": lambda p: p[0] - (a - p[1]),
+          "end": lambda p: p[0] - a}[lo_t]
+    hi = {"cont": lambda p: b - p[0], "in": lambda p: (b - p[1]) - p[0], "out": lambda p: (b + p[1]) - p[0],
+          "end": lambda p: b - p[0]}[hi_t]
+    cr = (STYLE or {}).get("chamfer") if hi_t == "out" and getattr(sp, "line", None) else None
+    if cr:          # a look whose shell chamfers a partition's outer corner: the plates stop at the chamfer's edge, which
         hi = lambda p: (b - cr + p[1]) - p[0]                          # noqa: E731  runs straight down the corner
     ub = b - cr if cr else b
 
@@ -281,6 +287,9 @@ def skirt(k, sp, ax, plane, a, b, fam):
         e0, e1 = s0 - (run_ if abs(s0 - a) < 1e-6 else 0.0), s1 + (run_ if abs(s1 - b) < 1e-6 else 0.0)
         if off <= 0 or s1 - s0 <= 2 * off + 1e-3:
             segs.append((e0, e1, s1 - s0 > 0.3))
+            continue
+        if cr and abs(s1 - b) < 1e-6:           # no seam beside a chamfered corner (it doubled the chamfer's edge)
+            segs += [(e0, s0 + off, False), (s0 + off, e1, True)]
             continue
         segs += [(e0, s0 + off, False), (s0 + off, s1 - off, True), (s1 - off, e1, False)]
     for u0, u1, field in segs:
@@ -320,9 +329,14 @@ def skirt(k, sp, ax, plane, a, b, fam):
     toe_fam, toe_at = (STYLE or {}).get("toe"), (STYLE or {}).get("toe_at", 0.72)
     if toe_fam:                                 # a faction's colour band along the skirt's foot, mitred like the plates
         for u0, u1, _ in segs:
-            poly = _clip(_clip([(u0, toe_at * run_), (u1, toe_at * run_), (u1, d1), (u0, d1)], lo), hi)
+            poly = _clip(_clip([(u0, toe_at * run_), (u1, toe_at * run_), (u1, run_ - 0.03), (u0, run_ - 0.03)], lo),
+                         hi)                    # (on down to the foot line)
             if len(poly) >= 3:
                 plate(k, poly, pt, nrm, 0.0, rise + 2 * PAINT, toe_fam, 3, base=rise)
+            poly = _clip(_clip([(u0, run_ - 0.03), (u1, run_ - 0.03), (u1, run_), (u0, run_)], lo), hi)
+            if len(poly) >= 3:                  # under it the foot line, a strip of the ramp in the plates' tone
+                plate(k, poly, pt, nrm, 0.0, rise, fam, 2)
+        return
     tb = b - cr + run_ if cr else b
     toe = [P(ax, plane, u, 0.0035, dd) for u, dd in ((a, run_ - 0.03), (tb, run_ - 0.03), (tb, run_), (a, run_))]
     k.poly(toe, fam, 1, Vector((0, 0, 1)))
@@ -387,7 +401,9 @@ def cap(k, sp):
             poly = [(u0 + g, b0 + g), (u1 - g, b0 + g), (u1 - g, b1 - g), (u0 + g, b1 - g)]
             if not ax:
                 poly = [(b, a) for a, b in poly][::-1]
-            if sp.keep:                                  # the chamfered outer corner
+            if getattr(sp, "cap_clip", None) and getattr(sp, "line", None):     # a look's chamfered outer corner
+                poly = _clip(poly, sp.cap_clip)
+            elif sp.keep:                                # the chamfered outer corner
                 kk = round(W.hull_thick() * W.GN) / W.GN - 1.0
                 poly = _clip(poly, lambda q: q[0] + q[1] - kk)
             if len(poly) < 3:
@@ -422,6 +438,7 @@ class Shell(W.Strip):
         return R[0] if z < self.zs + 0.02 or z > top - 0.03 or face == "x" else R[1]
 
 
+SHELL = None              # while a face is dressed: its shell (a look's shell may tell its parts where a wall ends)
 END_TOPS = (None, None)   # while a face is dressed: the top of the wall that meets each of its "in" ends (a face
                           # may carry a part over a lower wall, such as the far hull's rail over a partition)
 
@@ -440,7 +457,8 @@ def snap(plane):
 
 def block(mask, fam, deco=None, name=None, level="cut", corners=0):
     """walls.block in relief."""
-    sp = (STYLE or {}).get("shell", Shell)(mask, fam, level, 1 if deco == 1 else 0, corners)
+    global END_TOPS, SHELL
+    sp = SHELL = (STYLE or {}).get("shell", Shell)(mask, fam, level, 1 if deco == 1 else 0, corners)
     k = Relief(name or f"wall3d_{fam}_{mask}_{level}_{corners}")
     W.emit(k.m, sp)
     cap(k, sp)
@@ -450,17 +468,16 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0):
         r = sp._rect_at(*((um, plane - e) if ax == "y" else (plane - e, um)), 0.0)
         hull = r is not None and r[1] == "hull"
         plane = snap(plane)
-        a, b = (snap(u) if _end(sp, ax, plane, u, sd) == "out" else u for u, sd in ((a, -1), (b, 1)))   # (an outer
-        k.side = ax                                     # end too, so two faces' skirts meet on the corner's diagonal)
-        skirt(k, sp, ax, plane, a, b, "blue" if hull else "wall")
+        ends = (_end(sp, ax, plane, a, -1), _end(sp, ax, plane, b, 1))
+        END_TOPS = tuple(_in_top(sp, ax, plane, u, sd) if t == "in" else None
+                         for u, sd, t in ((a, -1, ends[0]), (b, 1, ends[1])))
+        a, b = (snap(u) if t != "cont" else u for u, t in ((a, ends[0]), (b, ends[1])))   # (its ends too, so two
+        k.side = ax                                                     # faces meet on the corner's diagonal)
+        skirt(k, sp, ax, plane, a, b, "blue" if hull else "wall", ends)
         if top <= sp.zs + 0.05:
             continue
         full = top > W.skirt_top() + W.CUT + 0.05            # the hull stays full in the cutaway
         k.top = None if full else top
-        ends = (_end(sp, ax, plane, a, -1), _end(sp, ax, plane, b, 1))
-        global END_TOPS
-        END_TOPS = tuple(_in_top(sp, ax, plane, u, sd) if t == "in" else None
-                         for u, sd, t in ((a, -1, ends[0]), (b, 1, ends[1])))
         st = STYLE or {}
         if hull:
             st.get("hull", hull_face)(k, ax, plane, a, b, ends, sp.zs, top, full, sp.variant)

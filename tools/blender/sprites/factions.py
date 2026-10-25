@@ -70,7 +70,7 @@ class Navy(Faction):
     pre = "fN"
 
     def relief(self, sprite):
-        return _style(R.navy, skirt=None, toe="ochre", seam=R.NAVY_SEAM, joint=4)
+        return _style(R.navy, skirt=None, toe="ochre", seam=R.NAVY_SEAM, joint=4, shell=R.NavyShell, chamfer=R.NAVY_C)
 
 
 class Drone(Faction):

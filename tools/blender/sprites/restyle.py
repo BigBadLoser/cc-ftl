@@ -80,10 +80,10 @@ class Poly:
         m = max(ax, ay, az) or 1.0
         if az >= 0.95 * m and ax < 0.2 * m and ay < 0.2 * m:
             self.kind = "top"
-        elif az > 0.25 * m:
-            self.kind = "slope_y" if ay >= ax else "slope_x"
+        elif az > 0.25 * m:                             # (a 45-degree face is lit: its triangles' normals
+            self.kind = "slope_y" if ay >= ax - 1e-3 * m else "slope_x"     # differ in rounding, which dotted it)
         else:
-            self.kind = "y" if ay >= ax else "x"
+            self.kind = "y" if ay >= ax - 1e-3 * m else "x"
         self.s = self.x + 0.5 if self.kind in ("y", "slope_y", "top") else 0.5 - self.y
         self.fam, self.face, self.role = ROLE.get(name, (None, "y", None))
         if self.kind in ("x", "slope_x"):
