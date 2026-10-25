@@ -29,7 +29,10 @@ function remember(sim: Sim, key: string): void {
   if (log.length > JOB_LOG_MAX) log.splice(0, log.length - JOB_LOG_MAX);
 }
 
-/** `jobs.accept`: take an offer at the player's node. A delivery's goods go into the player's storage (what does not fit lands on the floor beside it). */
+/**
+ * `jobs.accept`: take an offer at the player's node. A delivery's goods go into the player's storage (what does not fit lands on the floor beside it);
+ * the job's destination is marked discovered on the starmap.
+ */
 export function acceptJob(sim: Sim, key: string): boolean {
   const g = sim.galaxy;
   if (sim.sector.state !== 'active' || g.event) return reject(sim, 'jobs.accept', 'notHere');
@@ -46,6 +49,9 @@ export function acceptJob(sim: Sim, key: string): boolean {
   }
   g.jobs.push(job);
   remember(sim, key);
+  // The issuer says where: the destination (or the target's node) goes on the player's map.
+  const where = job.kind === 'delivery' ? job.to : job.node;
+  if (where) g.discovered[where] ??= sim.tick;
   g.rev++;
   sim.events.emit({ type: 'job.accepted', id: job.id, kind: job.kind, issuer: job.issuer });
   return true;
