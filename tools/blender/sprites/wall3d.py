@@ -157,6 +157,7 @@ STILE = 0.12                                    # the posts at each tile edge
 PX = 1 / 16                                     # a depth whose top shows as one art px (its side as two)
 PAINT = 0.004                                   # a flat inlay: colour only, no visible sides
 LINE = 1 / 32                                   # one art px along a face
+FR = PX / 2                                     # the default faces' frame (posts, bands, header): its side one px
 
 
 def paint(k, ax, plane, u0, u1, z0, z1, on, fam, lvl):
@@ -175,9 +176,9 @@ def posts(k, ax, plane, a, b, ends, z0, z1, fam):
             x = PX if at_end and end == "out" else 0.0
             seam = not at_end or end == "cont"
             q0, q1 = (edge - x, edge + STILE) if lo else (edge - STILE, edge + x)
-            slab(k, ax, plane, q0, q1, z0, z1, PX, fam, 3, ends=(not seam, True) if lo else (True, not seam))
+            slab(k, ax, plane, q0, q1, z0, z1, FR, fam, 3, ends=(not seam, True) if lo else (True, not seam))
             g = edge + 0.065 if lo else edge - 0.065 - LINE
-            paint(k, ax, plane, g, g + LINE, z0, z1, PX, fam, 1)
+            paint(k, ax, plane, g, g + LINE, z0, z1, FR, fam, 1)
             if lo:
                 f0 = edge + STILE
             else:
@@ -192,7 +193,7 @@ def header_marks(k, ax, plane, a, b, z0, z1, fam):
     for c in range(-1, 2):
         for u in (c - 0.18, c + 0.18 - LINE):
             if a < u < b - LINE:
-                paint(k, ax, plane, u, u + LINE, z0, z1, PX, fam, 1)
+                paint(k, ax, plane, u, u + LINE, z0, z1, FR, fam, 1)
 
 
 def wall_face(k, ax, plane, a, b, ends, zs, top, full):
@@ -200,11 +201,11 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
     with two ochre bars in a dark slot, a raised bar across it and two fine lines under it."""
     F = "wall"
     zb = zs + 0.2
-    run(k, ax, plane, a, b, ends, zs - 0.03, zb, PX, F, 3, 0)                                    # low band
+    run(k, ax, plane, a, b, ends, zs - 0.03, zb, FR, F, 3, 0)                                    # low band
     if not full:
         return
     zh = top - 0.15
-    run(k, ax, plane, a, b, ends, zh, top - 0.02, PX, F, 3, 0)                                   # header
+    run(k, ax, plane, a, b, ends, zh, top - 0.02, FR, F, 3, 0)                                   # header
     header_marks(k, ax, plane, a, b, zh, top - 0.02, F)
     for f0, f1 in posts(k, ax, plane, a, b, ends, zb, zh, F):
         paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                                            # the field
@@ -214,13 +215,17 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04, zb + 0.1, zh - 0.06
         paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                          # panel outline
         paint(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
+        if VARIANT[0]:
+            from . import wall3d_variants as V
+            V.wall_top(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, F, VARIANT[0])
+            continue
         bw = 0.42 * w
         paint(k, ax, plane, uc - bw / 2 - LINE, uc + bw / 2 + LINE, q1 - 0.27, q1 - 0.07, 3 * PAINT, F, 0)
         for j in range(2):                                                                       # ochre bars
             bz = q1 - 0.09 - j * 0.085
             paint(k, ax, plane, uc - bw / 2, uc + bw / 2, bz - 0.05, bz, 4 * PAINT, "ochre", 3)
         zr = q1 - 0.5
-        slab(k, ax, plane, p0 + LINE, p1 - LINE, zr - 0.07, zr, PX, F, 3, ends=(False, False))   # raised bar
+        slab(k, ax, plane, p0 + LINE, p1 - LINE, zr - 0.07, zr, FR, F, 3, ends=(False, False))   # raised bar
         for zz in (zr - 0.17, zr - 0.27):
             paint(k, ax, plane, uc - 0.25 * w, uc + 0.25 * w, zz - 0.026, zz, 3 * PAINT, F, 1)
 
@@ -230,12 +235,12 @@ def hull_face(k, ax, plane, a, b, ends, zs, top, full, variant):
     and a deep box under it (the teal locker; ochre on the .v1 variant)."""
     B = "blue"
     zb = zs + 0.2
-    run(k, ax, plane, a, b, ends, zs - 0.03, zb, PX, B, 2, 0)                                    # low band
+    run(k, ax, plane, a, b, ends, zs - 0.03, zb, FR, B, 2, 0)                                    # low band
     if not full:
         return
     zh = top - 0.24
-    run(k, ax, plane, a, b, ends, top - 0.13, top - 0.02, PX, B, 3, 0)                           # double header
-    run(k, ax, plane, a, b, ends, zh, top - 0.145, PX, B, 2, 0)
+    run(k, ax, plane, a, b, ends, top - 0.13, top - 0.02, FR, B, 3, 0)                           # double header
+    run(k, ax, plane, a, b, ends, zh, top - 0.145, FR, B, 2, 0)
     header_marks(k, ax, plane, a, b, top - 0.13, top - 0.02, B)
     for f0, f1 in posts(k, ax, plane, a, b, ends, zb, zh, B):
         paint(k, ax, plane, f0, f1, zb, zh, 0.0, B, 2)
@@ -244,6 +249,10 @@ def hull_face(k, ax, plane, a, b, ends, zs, top, full, variant):
         zt = zb + 0.42                                                                           # the box's top
         slab(k, ax, plane, f0 + 0.03, f1 - 0.03, zb + 0.08, zt, PX, "ochre" if variant else F_LOCK, 3)
         paint(k, ax, plane, f0 + 0.12, f1 - 0.12, zb + 0.2, zb + 0.23, PX, "ochre" if variant else F_LOCK, 1)
+        if VARIANT[0]:
+            from . import wall3d_variants as V
+            V.hull_recess(k, ax, plane, f0 + 0.02, f1 - 0.02, zt + 0.08, zh - 0.04, B, VARIANT[0])
+            continue
         paint(k, ax, plane, f0 + 0.02, f1 - 0.02, zt + 0.08, zh - 0.04, PAINT, B, 1)               # the recess
         n = 3
         for j in range(n):                                                                       # its slats
@@ -310,7 +319,11 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                 uc = (fu0 + fu1) / 2
                 plate(k, [(uc - 0.1, 0.5 * run_), (uc + 0.1, 0.5 * run_), (uc + 0.1, 0.57 * run_),
                           (uc - 0.1, 0.57 * run_)], pt, nrm, 0.0, rise + PAINT, fam, 0, base=rise)
-        if field and w >= 0.36 and sk == "panel":           # a panel under each field (insets scale down on a short
+        if field and w >= 0.36 and sk == "panel" and VARIANT[1]:
+            from . import wall3d_variants as V
+            V.ramp_panel(k, lambda q, rr, lvl, bb: plate(k, q, pt, nrm, 0.0, rise + rr, fam, lvl, base=rise + bb),
+                         u0 + 0.06, u1 - 0.06, run_, VARIANT[1])
+        elif field and w >= 0.36 and sk == "panel":         # a panel under each field (insets scale down on a short
                                                             # field)
             im = 0.2 * min(1.0, w / 0.76)
             fu0, fu1, fd0, fd1 = u0 + 0.06, u1 - 0.06, 0.12 * run_, 0.88 * run_
@@ -438,6 +451,8 @@ class Shell(W.Strip):
         return R[0] if z < self.zs + 0.02 or z > top - 0.03 or face == "x" else R[1]
 
 
+VARIANT = (0, 0)          # a straight piece's variant while it is built: (top design, ramp design), 0 the base
+                          # (wall3d_variants)
 SHELL = None              # while a face is dressed: its shell (a look's shell may tell its parts where a wall ends)
 END_TOPS = (None, None)   # while a face is dressed: the top of the wall that meets each of its "in" ends (a face
                           # may carry a part over a lower wall, such as the far hull's rail over a partition)

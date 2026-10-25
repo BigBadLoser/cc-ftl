@@ -20,6 +20,7 @@ from .doors import door
 from .floors import floor
 from .hull import drop, out_block, vert
 from .wall3d import block, end_face              # the relief walls (wall3d.py)
+from .wall3d_variants import PAIRS
 from .walls import corner_sets
 
 FLOORS = "abcdefgh"
@@ -41,6 +42,22 @@ for _m in range(16):
                 continue
             SPRITES.append((f"tile.hull.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1), "ghost",
                             lambda m=_m, r=_r, c=_c: out_block(m, 0, room=r, corners=c)))
+def _variant(fn, tr):
+    """fn built as a straight piece's variant (wall3d.VARIANT = tr)."""
+    def build():
+        from . import wall3d
+        wall3d.VARIANT = tr
+        try:
+            return fn()
+        finally:
+            wall3d.VARIANT = (0, 0)
+    return build
+
+
+for _fam, _m in (("wall", 10), ("wall", 5), ("hull", 10), ("hull", 5)):      # straight runs' variants .a1 .. .a7
+    for _n, _tr in enumerate(PAIRS, 1):                                      # (wall3d_variants; the renderer picks
+        SPRITES.append((f"tile.{_fam}.full.m{_m}.a{_n}", (1, 1), "block",    # one a tile)
+                        _variant(lambda m=_m, f=_fam: block(m, f, level="up"), _tr)))
 OUT_MASK = {1: 4, 2: 2, 3: 6, 4: 0}    # mask bits that must be clear for each outward set (4: concave corner)
 for _o, _clear in OUT_MASK.items():
     for _m in range(16):
