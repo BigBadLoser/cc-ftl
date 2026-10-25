@@ -127,7 +127,7 @@ export function createBridge(sim: Sim): Bridge {
   let lastHostiles = '';
   const modules = createStore<UiModule[]>([]);
   const sites = createStore<UiSite[]>([]);
-  const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], max: 0 });
+  const jobs = createStore<UiJobs>({ here: null, crew: [], credits: 0, offers: [], active: [], max: 0 });
   let lastJobsKey = '';
   let lastSites = '[]';
   const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null });
@@ -230,7 +230,7 @@ export function createBridge(sim: Sim): Bridge {
     }
     // The board only changes with the galaxy (offers, jobs, the player's node) or the cargo a delivery needs: rebuilt on those, not every frame.
     const g = sim.galaxy;
-    const jk = `${g.rev}|${g.turn}|${g.current}|${sim.sector.state}|${frame >> 5}`;
+    const jk = `${g.rev}|${g.turn}|${g.current}|${sim.sector.state}|${sim.trade.credits}|${frame >> 5}`;
     if (jk !== lastJobsKey) {
       lastJobsKey = jk;
       jobs.set(buildJobs(sim));

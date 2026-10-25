@@ -3,14 +3,14 @@
   import type { UiApi, UiJob, UiJobs } from './api';
 
   let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
-  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], max: 0 });
+  let jobs = $state<UiJobs>({ here: null, crew: [], credits: 0, offers: [], active: [], max: 0 });
   onMount(() => api.jobs.subscribe((v) => (jobs = v)));
   const full = $derived(jobs.active.length >= jobs.max);
   const far = (j: UiJob): string => (j.here ? 'here' : j.hops === null ? 'out of range' : `${j.hops} jump${j.hops === 1 ? '' : 's'}`);
 </script>
 
 <aside class="sheet" data-testid="jobs-panel">
-  <div class="top"><h2>Jobs</h2><button aria-label="Close" onclick={onClose}>×</button></div>
+  <div class="top"><h2>Jobs and crew</h2><button aria-label="Close" onclick={onClose}>×</button></div>
 
   <h3>Your jobs <span>{jobs.active.length}/{jobs.max}</span></h3>
   {#if !jobs.active.length}<p class="none">None taken. Stations, depots and dens post work.</p>{/if}
@@ -40,6 +40,19 @@
       </li>
     {/each}
   </ul>
+  {#if jobs.crew.length}
+    <h3>Crew for hire<span>{jobs.credits} cr</span></h3>
+    <ul>
+      {#each jobs.crew as r (r.key)}
+        <li data-testid="recruit">
+          <div class="t"><b>{r.name}</b><span class="pay">{r.cost} cr</span></div>
+          <div class="d">{r.species} {r.role}{r.skills.length ? ` · ${r.skills.join(', ')}` : ''}</div>
+          <button data-testid="recruit-hire" disabled={r.cost > jobs.credits} title={r.cost > jobs.credits ? `Costs ${r.cost - jobs.credits} credits more than you have` : ''} onclick={() => api.dispatch({ type: 'crew.hire', key: r.key })}>Hire</button>
+          {#if r.cost > jobs.credits}<div class="warn">Not enough credits</div>{/if}
+        </li>
+      {/each}
+    </ul>
+  {/if}
   <p class="note">A delivery comes aboard as a sealed crate, set on deck apart from your hold. A missed one is broken open, its goods yours, but it costs standing with the issuer and marks you a thief (notoriety). Bounties pay when you destroy the target.</p>
 </aside>
 

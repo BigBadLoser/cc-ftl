@@ -299,8 +299,21 @@ export interface UiJob {
 }
 
 /** The job board: offers at the node the player is at (`here` its name, null when jobs cannot be taken now: in hyperspace or an event grid), and the jobs they hold (at most `max`). */
+/** A candidate for hire at the node's trade station (sim galaxy/recruit.ts): `skills` are the role's, `cost` in credits. */
+export interface UiRecruit {
+  key: string;
+  name: string;
+  species: string;
+  role: string;
+  skills: string[];
+  cost: number;
+}
+
 export interface UiJobs {
   here: string | null;
+  /** Crew for hire here, and the credits the player holds. */
+  crew: UiRecruit[];
+  credits: number;
   offers: UiJob[];
   active: UiJob[];
   max: number;

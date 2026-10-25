@@ -4,6 +4,7 @@ import { offersHere, type JobOffer } from '../sim/galaxy/jobOffers';
 import { crateAboard } from '../sim/galaxy/jobs';
 import { MAX_JOBS } from '../sim/galaxy/tuningJobs';
 import type { StationJob } from '../sim/galaxy/types';
+import { recruitsHere } from '../sim/galaxy/recruit';
 import type { UiJob, UiJobs } from '../ui/api';
 
 /** What a delivery crate on deck is, for the inspector: its job, its contents and destination. Null for any other stack. */
@@ -37,6 +38,14 @@ export function buildJobs(sim: Sim): UiJobs {
   const canTake = sim.sector.state === 'active' && !g.event;
   return {
     here: canTake ? place(g.current) : null,
+    crew: canTake ? recruitsHere(sim).map((r) => {
+      const role = sim.content.roles[r.role];
+      return {
+        key: r.key, name: r.name, role: role?.name ?? r.role, species: sim.content.species[r.species]?.name ?? r.species, cost: r.cost,
+        skills: Object.entries(role?.skills ?? {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`),
+      };
+    }) : [],
+    credits: sim.trade.credits,
     offers: canTake ? offersHere(sim).map(view) : [],
     active: g.jobs.map(view),
     max: MAX_JOBS,
