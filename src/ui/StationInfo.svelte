@@ -4,10 +4,11 @@
 
   let { info }: { info: UiStationInfo } = $props();
   const TIER = { friendly: 'Friendly', neutral: 'Neutral', hostile: 'Hostile' } as const;
-  const offers = $derived([
-    ...info.services,
-    ...(info.jobs ? [`${info.jobs} ${info.jobs === 1 ? 'job' : 'jobs'}`] : []),
-    ...(info.hire ? [`${info.hire} for hire`] : []),
+  /** One chip per service; job and crew counts lead with their number. */
+  const offers = $derived<{ n?: number; label: string }[]>([
+    ...info.services.map((label) => ({ label })),
+    ...(info.jobs ? [{ n: info.jobs, label: info.jobs === 1 ? 'job' : 'jobs' }] : []),
+    ...(info.hire ? [{ n: info.hire, label: 'for hire' }] : []),
   ]);
 </script>
 
@@ -16,7 +17,7 @@
     <span class="cell wide" class:warn={info.owner.tier === 'hostile'} title="Owner and how they regard you"><Icon name="station" size={18} /><b data-testid="si-owner">{info.owner.name}</b><small>{TIER[info.owner.tier]}</small></span>
   {/if}
   {#if offers.length}
-    <span class="cell wide" title="What the station offers"><Icon name="trade" size={18} /><b data-testid="si-services">{offers.join(' · ')}</b></span>
+    <span class="cell wide" title="What the station offers"><Icon name="trade" size={18} /><span class="chips" data-testid="si-services">{#each offers as o (o.label)}<span class="chip">{#if o.n}<em>{o.n}</em>{/if}{o.label}</span>{/each}</span></span>
   {/if}
   {#if info.market && (info.market.cheap.length || info.market.dear.length)}
     <span class="cell wide" title="Goods that are cheap or wanted here now"><Icon name="trade" size={18} /><b data-testid="si-market">{#if info.market.cheap.length}Cheap: {info.market.cheap.join(', ')}{/if}{#if info.market.cheap.length && info.market.dear.length} · {/if}{#if info.market.dear.length}Wanted: {info.market.dear.join(', ')}{/if}</b></span>
@@ -34,4 +35,7 @@
   .cell.warn { border-color: var(--amber); color: var(--amber); }
   .cell.warn small { color: var(--amber); }
   .cell.wide { grid-column: 1 / -1; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { padding: 1px 7px; border: 1px solid var(--line-hi); background: var(--bg); color: var(--text); font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .chip em { font-style: normal; color: var(--amber); margin-right: 4px; }
 </style>
