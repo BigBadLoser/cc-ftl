@@ -31,7 +31,7 @@ def case(m, L, W, H, detail=True):
         m.box((0, W / 2 + 0.017, H - lid - 0.022), (0.022, 0.008, 0.022), "red", base=True)
         return
     for y in (-W * 0.18, W * 0.18):                                           # raised ribs the length of the lid
-        m.box((0, y, H - 0.004), (L * 0.78, 0.035, 0.022), SHELL, top=LID_TOP, base=True, bevel=0.008)
+        m.box((0, y, H - 0.004), (L * 0.78, 0.055, 0.03), "c3W6", top="c3W0", base=True)   # bright top, dark side: reads at 1x
     m.box((0, W / 2 + 0.014, H - lid - 0.075), (0.095, 0.022, 0.12), "steelD", top="steel", base=True)  # the seal, over the seam
     m.box((0, W / 2 + 0.027, H - lid - 0.05), (0.03, 0.01, 0.03), "red", base=True)
     hz = (H - lid) * 0.5                                                      # bar handles, centred on each end face
