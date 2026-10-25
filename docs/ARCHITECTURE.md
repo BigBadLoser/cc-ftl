@@ -605,14 +605,19 @@ palette.json    the single palette, read by Blender scripts and the game
     disc and the nebula glow; the gas giant has no glow and is outlined. The nebula is glow only (its colour pixels are
     empty): draw it under the nodes.
   - Structures, `starmap.struct.<kind>`, kinds `station_trade`, `station_military`, `station_research`, `den`, `asteroids`,
-    `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): shown at 48 px.
-  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: shown at 40 px.
+    `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): frame 96 px (48 in the 1x file).
+  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: frame 80 px (40).
     `d0` points east on screen, then clockwise by 45 degrees (the SVG `rotate(heading)` sense), so `d = round(heading / 45)
     mod 8`. Each heading is the ground heading whose three-quarter projection points that way, so north and south facings
     are foreshortened like the ships.
-  - Icon density: structure and fleet icons carry twice the pixels of their on-map size in both sets, the way the 2x tiles
-    (128x64) carry twice the 1x tiles' (64x32), so they hold detail when the map zooms in. Their frames are 96 and 80 px:
-    draw them at half that (48 and 40), centred on the anchor. Bodies and the backdrop are at plain density.
+  - Icon drawing (crisp pixels): structure and fleet icons are a fixed screen size, like today's badges. Never draw them
+    smaller than their art: a shrunk sprite is smoothed (soft), even with `image-rendering: pixelated` (seen in Chromium),
+    while an enlarged one keeps hard edges. Draw each art px as a whole number k >= 1 of device px, nearest-neighbour, at a
+    device-pixel-aligned position: for a target screen size T (about 24 px for structures, 20 for fleets) and the frame's
+    file px F, k = max(1, round(T * devicePixelRatio / F)) and the drawn size is F * k / devicePixelRatio. On a 3x phone
+    that is 32 px structures and 27 px fleets from either set (2x art at k 1, 1x art at k 2).
+  - Bodies follow the map scale (`r / 60`), so they are enlarged (crisp) when zoomed in and shrunk (soft) at the outer
+    zooms; the backdrop is drawn 1:1.
   - `starmap.backdrop`: a 512 px tile of dim 1-2 px stars (anchor 0,0), colour only and transparent between stars; tile it
     over the map's background.
   - Tint: stations, the den and fleets paint their livery in the crew key colours (`keyColors`: `team.cloth` panels,
