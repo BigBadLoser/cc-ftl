@@ -53,3 +53,37 @@ Operator indicators, final plumbing, maintenance hardware, industrial colours,
 powered/unpowered/damage states, final orientation review and sprite export
 come after geometry approval. Existing sprite IDs and game definitions remain
 unchanged; this branch does not yet contain a finished replacement atlas.
+
+## Mechanical pass, after approval of both blockouts
+
+`artifacts/core-systems-v2/` contains the second grey pass. Its comparison uses
+the approved v1 renders as the left-hand reference, aligned at the same tile
+origin and display scale. V1 artifacts and the original blockout source are
+preserved. Added details live in `sprites/core_systems_detail.py` as a separate
+mesh layered over each unmodified approved model.
+
+- Reactor: crown locking dogs and lifting bridge, seated short coolant returns,
+  heat-exchanger fins, service sockets and an upper sensor housing.
+- Life support: cassette pulls and latch hardware, lower guides, a pressure
+  equalisation manifold, a blanked duct flange, divider-mounted status housing
+  and a removable end plate with a stand-off lifting handle.
+- Comparison priorities: primary silhouettes remain unchanged except the low
+  crown lifting bridge; cassette spacing and hood proportions are unchanged;
+  all pipe connections seat into the pods/body or a continuous manifold.
+- The rendering audit compares every approved mesh's vertices, topology and
+  attributes before and after adding detail, for all four rotations. Digests
+  and `approvedBaseUnchanged` are recorded in each JSON file.
+- Reactor maximum deck-relative top is 1.781, life-support top is 1.500. All
+  details remain inside the original footprints. Individual mounting feet
+  connect both lower castings to deck height zero. There is no floor slab.
+- Small latches and service sockets are deliberately secondary at native size;
+  the crown, coolant loop and pull handles do most of the mechanical reading.
+  Finish, power indicators and operating/damage states remain pending.
+
+Reproduce by adding `--detailed` to the Blender invocation and using
+`--out artifacts/core-systems-v2`; then compose with:
+
+```sh
+python3 tools/blender/review/core_systems_preview.py --compose \
+  --out artifacts/core-systems-v2 --baseline artifacts/core-systems-v1
+```

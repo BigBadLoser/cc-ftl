@@ -13,12 +13,22 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools/blender'))
 
 
-def render(out):
+def render(out, detailed=False):
+    import hashlib
     import bpy
     import numpy as np
     from lib import palette
     from sprites import core, env_build, post
     from sprites.core_systems_blockout import PALETTE, Reactor, LifeSupport, reactor, life_support
+    original_builders = {'reactor': reactor, 'life_support': life_support}
+    if detailed:
+        from sprites.core_systems_detail import reactor, life_support
+
+    def original_digest(obs):
+        from sprites.geom_digest import _mesh
+        digest = hashlib.sha256()
+        for ob in obs: _mesh(ob, digest)
+        return digest.hexdigest()
     assert bpy.app.version[:3] == (4, 2, 9)
     assert (core.TILE_W, core.TILE_H) == (64, 32)
     assert core.SS == 4 and core.SAMPLES == 4 and not core.PREVIEW
@@ -29,7 +39,8 @@ def render(out):
                 'gameDisplayScale': 2, 'SS': core.SS, 'samples': core.SAMPLES,
                 'cameraEuler': list(core.CAM_ROT), 'sunEnergy': core._state['sun'].data.energy,
                 'sunShadows': core._state['sun'].data.use_shadow,
-                'stage': 'primary geometry, neutral grey', 'floorSlab': False}
+                'stage': 'mechanical geometry, neutral grey' if detailed else 'primary geometry, neutral grey',
+                'floorSlab': False}
     (out / 'settings.json').write_text(json.dumps(settings, indent=2) + '\n')
     for name, cls, builder in (('reactor', Reactor, reactor), ('life_support', LifeSupport, life_support)):
         p = cls()
@@ -37,7 +48,12 @@ def render(out):
         # Audit all physical rotations; render only the first view for review.
         for rotation in range(4):
             core.clear_scene_meshes()
+            original = original_builders[name](p, rotation)
+            digest = original_digest(original)
+            original_count = len(original)
+            core.clear_scene_meshes()
             obs = builder(p, rotation)
+            assert original_digest(obs[:original_count]) == digest
             q = np.concatenate([np.array([v.co[:] for v in ob.data.vertices]) for ob in obs])
             q[:, 1] *= -1  # Blender back to grid axes
             w, h = p.footprint if rotation % 2 == 0 else p.footprint[::-1]
@@ -46,7 +62,8 @@ def render(out):
             assert lo[1] >= -h + .5 and hi[1] <= .5
             assert lo[2] >= 0 and hi[2] < 1.85
             audit.append({'rotation': rotation, 'footprint': [w, h], 'min': lo.tolist(),
-                          'max': hi.tolist(), 'size': (hi - lo).tolist()})
+                          'max': hi.tolist(), 'size': (hi - lo).tolist(),
+                          'approvedBaseUnchanged': True, 'approvedBaseDigest': digest})
         core.clear_scene_meshes()
         obs = builder(p, 0)
         it = env_build.crop_item(name, list(p.footprint), *env_build.render_sprite(name, 'prop', obs))
@@ -60,7 +77,7 @@ def render(out):
         print('BLOCKOUT COMPLETE', name, meta['frameSize'], flush=True)
 
 
-def compose(out):
+def compose(out, baseline=None):
     from PIL import Image, ImageDraw, ImageFont
     root = ROOT / 'public/assets/1x'
     manifest = json.loads((root / 'manifest.json').read_text())
@@ -89,10 +106,12 @@ def compose(out):
 
     comparison = Image.new('RGBA', (700, 650), bg)
     d = ImageDraw.Draw(comparison)
-    d.text((22, 14), 'DROP-IN MODULES / GEOMETRY PASS 1', font=font, fill='#dfe5e8')
-    d.text((22, 41), 'Current shipped art vs grey proposal / same game scale', font=small, fill='#a7b6c0')
-    d.text((42, 75), 'CURRENT', font=small, fill='#a7b6c0')
-    d.text((390, 75), 'NEW BLOCKOUT', font=small, fill='#a7b6c0')
+    title = 'DROP-IN MODULES / MECHANICAL PASS' if baseline else 'DROP-IN MODULES / GEOMETRY PASS 1'
+    d.text((22, 14), title, font=font, fill='#dfe5e8')
+    subtitle = 'Approved blockout vs mechanical pass / same game scale' if baseline else 'Current shipped art vs grey proposal / same game scale'
+    d.text((22, 41), subtitle, font=small, fill='#a7b6c0')
+    d.text((42, 75), 'APPROVED BLOCKOUT' if baseline else 'CURRENT', font=small, fill='#a7b6c0')
+    d.text((390, 75), 'MECHANICAL PASS' if baseline else 'NEW BLOCKOUT', font=small, fill='#a7b6c0')
     lineup = Image.new('RGBA', (1050, 620), bg)
     dl = ImageDraw.Draw(lineup)
     dl.text((24, 16), 'REACTOR 2 x 2', font=font, fill='#dfe5e8')
@@ -105,9 +124,13 @@ def compose(out):
         sheet = Image.open(root / manifest['sheets'][asset['sheet']]['image']).convert('RGBA')
         f = asset['frame']
         current = sheet.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h']))
+        old_anchor = (asset['anchor']['x'], asset['anchor']['y'])
+        if baseline:
+            current = Image.open(baseline / f'{name}.png').convert('RGBA')
+            old_anchor = json.loads((baseline / f'{name}.json').read_text())['anchor']
         cy = 310 + index * 290
         for cx in (190, 540): grid(comparison, (cx, cy), meta['parameters']['footprint'], 2)
-        paste(comparison, current, (asset['anchor']['x'], asset['anchor']['y']), (190, cy), 2)
+        paste(comparison, current, old_anchor, (190, cy), 2)
         paste(comparison, proposed, meta['anchor'], (540, cy), 2)
         label = 'REACTOR / 2 x 2' if index == 0 else 'LIFE SUPPORT / 1 x 2'
         d.text((24, cy + 37), label, font=small, fill='#a7b6c0')
@@ -118,7 +141,7 @@ def compose(out):
         dl.text((index * 515 + 24, 570),
                 f"Body {dimensions[0]:.2f} x {dimensions[1]:.2f}, height {dimensions[2]:.2f}",
                 font=small, fill='#a7b6c0')
-    comparison.save(out / 'current-vs-blockout.png')
+    comparison.save(out / ('blockout-vs-detail.png' if baseline else 'current-vs-blockout.png'))
     lineup.save(out / 'blockouts-zoom.png')
 
 
@@ -127,10 +150,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--compose', action='store_true')
+    ap.add_argument('--detailed', action='store_true')
+    ap.add_argument('--baseline', type=Path)
     args = ap.parse_args(argv)
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
-    compose(out) if args.compose else render(out)
+    compose(out, args.baseline) if args.compose else render(out, args.detailed)
 
 
 if __name__ == '__main__': main()
