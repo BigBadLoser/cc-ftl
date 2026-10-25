@@ -14,7 +14,7 @@ def render(out):
     import bpy
     from sprites import core,post,human_items,human_render,crew_clips
     from sprites.refinery_blockout import GREY
-    from sprites.refinery_revision_b import CONTROL_GREYS,VesselRefinery,refinery_revision_b
+    from sprites.refinery_revision_b import CONTROL_GREYS,FINISH_PALETTE,VesselRefinery,refinery_revision_b
     arm,items=human_items.build_items()
     outfit={'body','eyes.organic','legs.cargo_pants','torso.work_shirt',
             'arm.L.flesh','arm.R.flesh','hair.short'}
@@ -39,6 +39,7 @@ def render(out):
     q=vertices();height=float(np.ptp(q[:,2]));assert 1.4<height<1.65,height
     core._state['scene'].cycles.samples=4;core._state['sun'].data.use_shadow=True
     core.palette._data.update(GREY);post._BASE_PAL.update(GREY);post._BASE_PAL.update(CONTROL_GREYS)
+    post._BASE_PAL.update(FINISH_PALETTE)
     post._STATES.clear();post.select(False)
     machine=refinery_revision_b(p)
     x0,x1,y0,y1=core.extent_px(machine+crew)

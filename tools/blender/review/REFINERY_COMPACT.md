@@ -1,14 +1,43 @@
 # Fresh 3x4 refinery mockup
 
-## Current: A/B grey geometry
+## Current: preserved A / B material preview
 
 A preserves the v2 open-cradle model, parameters, Blender scene and render
 byte-for-byte. The rejected wedge B has been removed. Its replacement is a new
 upright pressure-vessel concept: a low roller hopper feeds the vessel's side,
 an agitator motor sits on the dished pressure head, a side condenser connects
 through broad return plumbing, and a circular die discharges into an open
-inclined casting trough. A low cast chassis connects the main parts. The machine
-remains grey; the terminal uses a charcoal inset and pale gauges. No emission.
+inclined casting trough. A low cast chassis connects the main parts. The approved
+B geometry now has a first industrial material pass, described below.
+
+### B material preview
+
+The user's ore-bin image establishes a muted industrial yellow as the shared
+highlight language. This pass uses yellow `#b6a45d` on the feed bowl/shutter,
+motor and receiver service covers, pressure clamps and one tactile control.
+The large vessel remains blue-grey, with a lighter pressure lid, graphite chassis
+and flanges, pale working steel for pipes/rollers, and a bright neutral billet.
+The terminal has a dark screen and restrained self-lit cyan gauges.
+
+The three principal changes against the grey reference are:
+
+1. Blue-grey paint separates the pressure vessel from its dark structural joints.
+2. Yellow identifies loading and service mechanisms, following the bin reference.
+3. Pale steel distinguishes the material path and connected plumbing; the cyan
+   display identifies the crew operating position.
+
+Material roles live in `sprites/refinery_finish.py`; the `materials` parameter
+switches between this finish and the grey study. The geometry builder only marks
+roles: it does not change part positions or dimensions for the material pass.
+`b-material-before.png`, `.json` and `.blend` preserve the approved grey reference.
+The review loads that Blender reference and asserts equal vertex positions and
+polygon topology before rendering. `b.json` records the matching result and a
+vertex digest. `b-material-comparison.png` shows the two at the same camera/scale.
+
+Native and 3x previews were inspected. Bounds remain **3.670 x 2.496 x 1.794**.
+Only one angle is reviewed so far; the low-sample surface speckling and other
+rotations are still pending review. No wear pass, full sprite build or game
+integration. The existing crew scale image is retained from the grey pass.
 
 ### B mechanical refinement (after concept selection)
 

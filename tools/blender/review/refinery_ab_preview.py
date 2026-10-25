@@ -18,15 +18,27 @@ def render(out):
     import bpy
     from sprites import core,post
     from sprites.refinery_blockout import GREY
-    from sprites.refinery_revision_b import CONTROL_GREYS,VesselRefinery,refinery_revision_b
+    from sprites.refinery_revision_b import CONTROL_GREYS,FINISH_PALETTE,VesselRefinery,refinery_revision_b
     digest=preserve_a(out)
     path=out/'b.parameters.json';p=VesselRefinery(**json.loads(path.read_text())) if path.exists() else VesselRefinery()
     core.setup_scene();core._state['scene'].cycles.samples=4;core._state['sun'].data.use_shadow=True
-    core.palette._data.update(GREY);post._BASE_PAL.update(GREY);post._BASE_PAL.update(CONTROL_GREYS);post._STATES.clear();post.select(False)
+    core.palette._data.update(GREY);post._BASE_PAL.update(GREY);post._BASE_PAL.update(CONTROL_GREYS)
+    post._BASE_PAL.update(FINISH_PALETTE);post._STATES.clear();post.select(False)
     obs=refinery_revision_b(p)
     q=np.concatenate([np.array([v.co[:] for v in ob.data.vertices]) for ob in obs])
     assert np.abs(q[:,0]).max()<=2 and np.abs(q[:,1]).max()<=1.5
     assert q[:,2].min()>=0 and q[:,2].max()<1.85
+    reference=out/'b-material-before.blend';geometry_match=None
+    if reference.exists():
+        with bpy.data.libraries.load(str(reference.resolve()),link=False) as (source,target):
+            target.objects=[n for n in source.objects if n=='refinery_b_vertical_vessel']
+        assert len(target.objects)==1
+        old=target.objects[0];mesh=old.data
+        previous=np.array([v.co[:] for v in mesh.vertices])
+        assert np.array_equal(previous,q),'Material pass changed vertex positions'
+        assert [tuple(f.vertices) for f in mesh.polygons]==[tuple(f.vertices) for f in obs[0].data.polygons]
+        geometry_match=True;bpy.data.objects.remove(old,do_unlink=True)
+        if mesh.users==0: bpy.data.meshes.remove(mesh)
     x0,x1,y0,y1=core.extent_px(obs)
     w=2*(math.ceil(max(abs(x0),abs(x1)))+12);h=2*(math.ceil(max(abs(y0),abs(y1)))+12)
     rgb,a=core.render(w,h,'color');c,op=post.downsample(rgb,a>.5,core.SS,8,True);c,op=post.outline(c,op,True)
@@ -35,7 +47,11 @@ def render(out):
     meta={'revision':'B / upright pressure vessel','footprint':[3,4],
           'bounds':[float(x) for x in np.ptp(q,axis=0)],'anchor':[w//2+1-int(x0),h//2+1-int(y0)],
           'tile':[core.TILE_W,core.TILE_H],'camera':{'yaw':45,'elevation':30},'samples':4,'SS':core.SS,
-          'material':'neutral grey body, charcoal screen and pale diagnostic blocks; no emission','preservedAImageSha256':digest}
+          'materialsEnabled':p.materials,'geometryMatchesGreyReference':geometry_match,
+          'vertexDigest':hashlib.sha256(np.asarray(q,dtype='<f4').tobytes()).hexdigest(),
+          'material':('blue-grey vessel, muted industrial yellow hardware, graphite frame, working steel and cyan display'
+                      if p.materials else 'neutral grey body, charcoal screen and pale diagnostic blocks; no emission'),
+          'preservedAImageSha256':digest}
     (out/'b.json').write_text(json.dumps(meta,indent=2)+'\n');path.write_text(json.dumps(p.spec(),indent=2)+'\n')
     bpy.context.preferences.filepaths.save_version=0
     bpy.ops.wm.save_as_mainfile(filepath=str((out/'b.blend').resolve()),compress=True)
@@ -56,18 +72,21 @@ def compose(out):
     for x,title,im in ((10,'A / OPEN CRADLE',panes[0]),(960,'B / UPRIGHT REFINING VESSEL',panes[1])):
         d.text((x+10,15),title,font=font,fill=(220,229,236))
         board.paste(im.convert('RGB').resize((940,680),Image.Resampling.NEAREST),(x,55))
-    d.text((20,740),'3 x 4 / same camera, grey material and world scale / geometry concepts',font=font,fill=(170,185,199))
+    d.text((20,740),'3 x 4 / same camera and world scale / refinery concepts',font=font,fill=(170,185,199))
     board.save(out/'comparison.png')
     im=Image.open(out/'b-3x.png').convert('RGBA')
     single=Image.new('RGB',(im.width+40,im.height+90),bg[:3]);d=ImageDraw.Draw(single)
-    d.text((20,12),'REFINERY / REVISION B / GREY GEOMETRY',font=font,fill=(220,229,236))
+    finished=json.loads((out/'b.json').read_text()).get('materialsEnabled',False)
+    title='REFINERY / INDUSTRIAL MATERIAL PREVIEW' if finished else 'REFINERY / REVISION B / GREY GEOMETRY'
+    d.text((20,12),title,font=font,fill=(220,229,236))
     single.paste(im,(20,55),im);single.save(out/'b-preview.png')
     # The chosen B blockout is the geometric reference for mechanical refinement.
     # Align both sprites by their stored deck anchors, without resizing either.
     comparisons=(('b-blockout','APPROVED B / GREY BLOCKOUT','B / MECHANICAL REFINEMENT','b-refinement-comparison'),
                  ('b-pipes-before','BEFORE / PIPE CONNECTIONS','AFTER / SEATED CONNECTIONS','b-pipes-comparison'),
                  ('b-automation-before','BEFORE / OPERATION DETAILS','AFTER / AUTOMATED HANDLING','b-automation-comparison'),
-                 ('b-console-before','BEFORE / CONSOLE HEIGHT','AFTER / CONSOLE LOWERED 0.15','b-console-comparison'))
+                 ('b-console-before','BEFORE / CONSOLE HEIGHT','AFTER / CONSOLE LOWERED 0.15','b-console-comparison'),
+                 ('b-material-before','APPROVED GREY GEOMETRY','B / INDUSTRIAL YELLOW MATERIALS','b-material-comparison'))
     for source,before_label,after_label,target in comparisons:
         if not (out/f'{source}.png').exists(): continue
         before=Image.open(out/f'{source}.png').convert('RGBA')
@@ -79,7 +98,7 @@ def compose(out):
         for x,title,pane in pairs:
             d.text((x+10,15),title,font=font,fill=(220,229,236))
             board.paste(pane.convert('RGB').resize((940,680),Image.Resampling.NEAREST),(x,55))
-        d.text((20,740),'Same camera, grey material and world scale / 3 x 4 footprint',font=font,fill=(170,185,199))
+        d.text((20,740),'Same camera and world scale / 3 x 4 footprint',font=font,fill=(170,185,199))
         board.save(out/f'{target}.png')
 
 

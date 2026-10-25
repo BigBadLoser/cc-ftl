@@ -23,6 +23,9 @@
   },
   "samples": 4,
   "SS": 2,
-  "material": "neutral grey body, charcoal screen and pale diagnostic blocks; no emission",
+  "materialsEnabled": true,
+  "geometryMatchesGreyReference": true,
+  "vertexDigest": "bff6101534674e3f4314cb930be5fc2ce1a8acce6753ca35ff7072c07d3aae78",
+  "material": "blue-grey vessel, muted industrial yellow hardware, graphite frame, working steel and cyan display",
   "preservedAImageSha256": "8b2207881ccf6773aea0c488ed56bfc738213beaa5513d8d42d04f6c371c32a9"
 }
