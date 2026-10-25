@@ -37,6 +37,7 @@
     select: 'M5 3l14 8-6 2 4 7-3 1-4-7-5 4z',
     trash: 'M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6',
     close: 'M5 5l14 14M19 5L5 19',
+    check: 'M4 12l5 5L20 6',
     wall: 'M3 5h18v14H3zM3 12h18M9 5v7M15 12v7',
     floor: 'M3 12l9-5 9 5-9 5zM3 12v3l9 5 9-5v-3',
     door: 'M6 21V4h12v17M3 21h18M15 12h.01',

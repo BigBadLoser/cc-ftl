@@ -1,4 +1,5 @@
 <script lang="ts">
+  import GoalsCard from './GoalsCard.svelte';
   import { onMount } from 'svelte';
   import type { UiStarmap, UiDeploy } from './starmapApi';
   import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
@@ -210,12 +211,13 @@
 <StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />
 
-<!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; alerts stack below as separate cards. -->
+<!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; the tutorial goals, then alerts, stack below as separate cards. -->
 <div class="rcol" bind:clientHeight={rcolH}>
   <div class="frame">
     <EventLog {api} />
     {#if !narrow}{@render time()}{/if}
   </div>
+  <GoalsCard {api} />
   <AlertList {api} />
 </div>
 

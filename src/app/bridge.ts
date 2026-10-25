@@ -1,10 +1,11 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiGoals, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildSites } from './siteSnapshot';
 import { buildJobs } from './jobsSnapshot';
+import { buildGoals } from './goalsSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
 import { buildFtl } from './ftlSnapshot';
@@ -73,6 +74,7 @@ export interface Bridge {
   modules: Readable<UiModule[]>;
   sites: Writable<UiSite[]>;
   jobs: Readable<UiJobs>;
+  goals: Readable<UiGoals | null>;
   stats: Readable<UiStats>;
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
@@ -128,6 +130,8 @@ export function createBridge(sim: Sim): Bridge {
   const modules = createStore<UiModule[]>([]);
   const sites = createStore<UiSite[]>([]);
   const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], max: 0 });
+  const goals = createStore<UiGoals | null>(null);
+  let lastGoals = '';
   let lastJobsKey = '';
   let lastSites = '[]';
   const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null });
@@ -234,6 +238,15 @@ export function createBridge(sim: Sim): Bridge {
     if (jk !== lastJobsKey) {
       lastJobsKey = jk;
       jobs.set(buildJobs(sim));
+    }
+    // The goal chain: cheap, but only sent on when it changed.
+    if ((frame >> 2) % 4 === 0) {
+      const gl = buildGoals(sim);
+      const gk = JSON.stringify(gl);
+      if (gk !== lastGoals) {
+        lastGoals = gk;
+        goals.set(gl);
+      }
     }
     const logs = [buildStock(sim), buildStorages(sim), buildFabs(sim)] as const;
     const keys = logs.map((l) => JSON.stringify(l));
@@ -365,6 +378,7 @@ export function createBridge(sim: Sim): Bridge {
     modules,
     sites,
     jobs,
+    goals,
     stats,
     stock,
     storages,
