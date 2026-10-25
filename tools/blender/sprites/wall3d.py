@@ -84,7 +84,9 @@ STYLE = None            # a faction's relief (factions.py): {"wall": face fn, "h
                         # where down the slope the toe band starts (0.72), "shade": SHADE for this look, "shell": a
                         # Shell subclass to build the piece on (a look whose faces are cut into the wall), "end_out":
                         # how far an end piece's section runs past the face's line (PX; < 0 stops short of it),
-                        # "chamfer": an outer corner's ramp chamfer width at its top edge (the shell must match)}
+                        # "chamfer": an outer corner's ramp chamfer width at its top edge (the shell must match),
+                        # "outline_lvl": the outlined panel's seam level (0 dark; a level under the face seams'
+                        # matches them, as the slope is a step lighter), "outline_round": its corners softened}
 
 
 def slab(k, ax, plane, u0, u1, z0, z1, d, fam, lvl, ch=0.0, ends=(True, True), chz=None):
@@ -337,10 +339,16 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         elif field and w >= 0.36 and sk == "outline":                   # a faction's plain outlined panel
             fu0, fu1 = max(u0, a) + 0.08, min(u1, ub) - 0.08                # (on the face, not the mitred run-on)
             fd0, fd1 = 0.15 * run_, 0.62 * run_
-            for q in ((fu0, fu1, fd0, fd0 + 0.03), (fu0, fu1, fd1 - 0.03, fd1), (fu0, fu0 + LINE, fd0, fd1),
-                      (fu1 - LINE, fu1, fd0, fd1)):
-                plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT, fam, 0,
-                      base=rise)
+            L, t = LINE, 0.03
+            if (STYLE or {}).get("outline_round"):                         # its corners softened (each corner
+                qs = [(fu0 + L, fu1 - L, fd0, fd0 + t), (fu0 + L, fu1 - L, fd1 - t, fd1),   # pixel left out)
+                      (fu0, fu0 + L, fd0 + t, fd1 - t), (fu1 - L, fu1, fd0 + t, fd1 - t)]
+            else:
+                qs = [(fu0, fu1, fd0, fd0 + t), (fu0, fu1, fd1 - t, fd1), (fu0, fu0 + L, fd0, fd1),
+                      (fu1 - L, fu1, fd0, fd1)]
+            for q in qs:
+                plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT, fam,
+                      (STYLE or {}).get("outline_lvl", 0), base=rise)
             if (STYLE or {}).get("slot") and not VARIANT[1]:                # a dark handle slot in it
                 uc = (fu0 + fu1) / 2
                 plate(k, [(uc - 0.1, 0.5 * run_), (uc + 0.1, 0.5 * run_), (uc + 0.1, 0.57 * run_),

@@ -162,6 +162,11 @@ class NavyShell(FreeEnds, T.Shell):
                     if s1 - s0 > 2 * off + 0.3:
                         self.holes.append((ax, T.snap(plane), s0 + off - hd[2], s1 - off + hd[2], hd[0] * self.run,
                                            hd[1] * self.run))
+        fh = (T.STYLE or {}).get("face_holes")                  # a top variant's openings in the face: (ax, plane,
+        self.face_holes = []                                    # u0, u1, z0, z1)
+        if fh and T.VARIANT[0]:
+            for ax, plane, a, b, top in T.faces(self):
+                self.face_holes += [(ax, T.snap(plane)) + h for h in fh(a, b, self.zs, top, T.VARIANT[0])]
         for r in self.rects:
             x0, x1, y0, y1 = r[0]
             if any(sd[0] == "+" for sd, _ in self.end_sides):
@@ -211,6 +216,10 @@ class NavyShell(FreeEnds, T.Shell):
         return T.RAMPS[fam][0][3]
 
     def col_face(self, face, x, y, z):
+        for ax, plane, u0, u1, z0, z1 in self.face_holes:
+            if face == ax and abs((y if ax == "y" else x) - plane) < 1e-6 and u0 < (x if ax == "y" else y) < u1 \
+                    and z0 < z < z1:
+                return None                             # (open: the variant builds the opening's inside)
         c = super().col_face(face, x, y, z)
         e = 0.5 / T.W.GN
         r = self._rect_at(x, y - e) if face == "y" else self._rect_at(x - e, y)
@@ -592,11 +601,14 @@ def civil(hull):
         for s0, s1 in T.spans(a, b):
             if s1 - s0 < 0.45:                          # (a short stretch, by a corner or a junction, stays plain:
                 continue                                # its frame came out a cramped strip)
-            gm = 0.08                                                                           # the drawers centred
-            f0, f1, g0, g1 = s0 + 0.07, s1 - 0.07, zs + 0.05 + gm, zh - gm                      # between the foot strip
+            f0, f1, g0, g1 = FV.civil_field(s0, s1, zs, zh)                                     # the drawers centred
+                                                                                                # between the foot strip
             n = 2                                                                               # and the band, each
             h, gap = (g1 - g0) / n, 0.035                                                       # its own outline with
             uc = (f0 + f1) / 2                                                                  # rounded corners
+            if T.VARIANT[0]:
+                FV.civil_top(k, ax, plane, f0, f1, g0, g1, F, T.VARIANT[0])
+                continue                                    # (a variant's own top)
             for i in range(n):
                 z0, z1 = g0 + i * h + (gap / 2 if i else 0.0), g0 + (i + 1) * h - (gap / 2 if i < n - 1 else 0.0)
                 rbox(k, ax, plane, f0, f1, z0, z1, F, 2)
