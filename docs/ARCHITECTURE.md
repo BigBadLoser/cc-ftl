@@ -613,11 +613,12 @@ palette.json    the single palette, read by Blender scripts and the game
     (11, 24), pulsar (16, 40), protostar (22, 34), ice_giant (18, 28), lava_world (10, 18), ocean_world (11, 18).
   - Structures, `starmap.struct.<kind>`, kinds `station_trade`, `station_military`, `station_research`, `den`, `asteroids`,
     `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): frame 96 px (48 in the 1x file).
-  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: frame 80 px (40).
-    `d0` points east on screen, then clockwise by 45 degrees (the SVG `rotate(heading)` sense), so `d = round(heading / 45)
-    mod 8`. Each heading is the ground heading whose three-quarter projection points that way, then fitted so the ship's
-    longest side is about 35 px of the 40 px frame (1x) and centred: the map draws icons at one art px per screen px, so
-    the ship fills its frame at every heading, and north and south views are as long on screen as east and west.
+  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: frame 48 px in
+    the 1x set (the old 2x set still has 80 px frames from before). `d0` points east on screen, then clockwise by 45
+    degrees (the SVG `rotate(heading)` sense), so `d = round(heading / 45) mod 8`. Each heading is the ground heading whose
+    three-quarter projection points that way. One model scale per ship for all its headings, the one that makes its
+    longest heading (east or west) about 46 px, each heading centred in the frame; north and south views stay shorter,
+    foreshortened like the ships.
   - Icon drawing (crisp pixels): structure and fleet icons are a fixed screen size, like today's badges. Never draw them
     smaller than their art: a shrunk sprite is smoothed (soft), even with `image-rendering: pixelated` (seen in Chromium),
     while an enlarged one keeps hard edges. Draw each art px as a whole number k >= 1 of device px, nearest-neighbour, at a

@@ -1,14 +1,13 @@
 """Fleet icons for the starmap (family `starmap`): starmap.fleet.<role>.d0..d7, replacing the arrow glyphs of NPC fleets and
 the player's ship marker.
 
-A 40 px frame at 1x (80 at 2x), anchor at the centre, lit and outlined like the ships. The map draws icons at one art px
-per screen px, so each heading is rendered with the ship's longest side at about 35 px (LONG plus the outline) and its
-screen box centred in the frame: the ship fills the frame at every heading. The models are laid out in the px of a 20 px
-icon. Pixel art cannot
+A 48 px frame at 1x, anchor at the centre, lit and outlined like the ships. The map draws icons at one art px per screen
+px, so each ship is rendered at one model scale for all its headings, the one that makes its longest heading about 46 px
+(LONG plus the outline); each heading's screen box is centred in the frame. The models are laid out in the px of a 20
+px icon. Pixel art cannot
 be rotated in code, so there are 8 headings: d0 points east in screen space, then clockwise (d2 south, d4 west, d6 north),
 the way the map's `rotate(heading)` turns. Each heading is the ground heading whose three-quarter projection points that
-way, so north and south facings are foreshortened, as on the ships; the per-heading fit then brings them up to the same
-on-screen length as the others.
+way, so north and south facings are foreshortened, as on the ships (one scale per ship, so they stay shorter on screen).
 
   patrol   sleek warship: a long needle hull, swept wings, twin drives
   pirate   scrappy raider: a lumpy rust hull, a ram spike, one side pod, mismatched drives
@@ -22,9 +21,9 @@ Livery is team.cloth (main panels) and team.accent (trim), so the map tints each
 from . import core
 from .starmap_kit import frame_item, place, prism, px, screen_heading, start, turn
 
-SIZE = 40                       # frame, 1x px
-ZOOM = 2                        # render scale of the 20 px layout (before each heading is fitted to LONG)
-LONG = 33.5                     # the ship's longest side on screen, 1x px, before the 1 px outline (about 35 px with it)
+SIZE = 48                       # frame, 1x px
+ZOOM = 2                        # render scale of the 20 px layout (before the ship is scaled to LONG)
+LONG = 44                       # the ship's longest side at its longest heading, 1x px, before the 1 px outline (46 with it)
 ROLES = ("patrol", "pirate", "raider", "trader", "miner", "player")
 
 
@@ -115,19 +114,27 @@ def player(s):
 BUILD = {"patrol": patrol, "pirate": pirate, "raider": raider, "trader": trader, "miner": miner, "player": player}
 
 
+def _build(role, d):
+    start()
+    s = Ship(screen_heading(d * 45))
+    BUILD[role](s)
+    return s.build()
+
+
 def fleet_items(role):
-    """All 8 headings of a role (one job, so the model is built and checked once per heading)."""
+    """All 8 headings of a role at one model scale: the one that makes its longest heading LONG px."""
+    longest = 0.0
+    for d in range(8):
+        x0, x1, y0, y1 = core.extent_px(_build(role, d))
+        longest = max(longest, x1 - x0, y1 - y0)
+    k = LONG * core.ART_SCALE / longest
     items = []
     for d in range(8):
-        start()
-        s = Ship(screen_heading(d * 45))
-        BUILD[role](s)
-        objs = s.build()
-        x0, x1, y0, y1 = core.extent_px(objs)
-        k = LONG * core.ART_SCALE / max(x1 - x0, y1 - y0)          # this heading's longest side to LONG px
+        objs = _build(role, d)
         for ob in objs:
             ob.scale = (k,) * 3
-        place(objs, SIZE)                                            # centred in the frame (shrunk only if it would not fit)
+        if place(objs, SIZE) < 0.999:                            # centred in the frame; it must not need shrinking
+            raise ValueError(f"starmap.fleet.{role}.d{d} does not fit the {SIZE} px frame at the role's scale")
         items.append(frame_item(f"starmap.fleet.{role}.d{d}", SIZE))
     return items
 
