@@ -4,8 +4,8 @@
   item.cargo_crate.held  the small version a crew member carries, sized like the other .held sprites
 
 A rugged moulded transport case: a low, chunky off-white shell with rounded moulded edges, a flush lid seam, two
-raised ribs the length of the lid, dark rubber guards on the corners, fold-down bar handles on the ends, a latch, and a seal centred
-on the seam that glows red: sealed, someone else's. Origin = centre of the tile at floor level, as items.py;
+raised ribs the length of the lid, dark rubber guards on the corners, bar handles centred on the ends, and a security seal centred on
+the seam that glows red: sealed, someone else's. Origin = centre of the tile at floor level, as items.py;
 the camera sees the +x end and the +y long side. The renderer finds both ids already (itemView.ts stackAssets /
 heldAssets)."""
 from . import core
@@ -31,14 +31,14 @@ def case(m, L, W, H, detail=True):
         return
     for y in (-W * 0.18, W * 0.18):                                           # raised ribs the length of the lid
         m.box((0, y, H - 0.004), (L * 0.78, 0.035, 0.022), SHELL, top=LID_TOP, base=True, bevel=0.008)
-    m.box((-0.3 * L, W / 2 + 0.018, H - lid - 0.05), (0.07, 0.02, 0.08), "steel", top="steelL", base=True)     # a latch
-    m.box((0, W / 2 + 0.012, H - lid - 0.06), (0.05, 0.016, 0.06), "steelD", base=True)          # the seal, centred
-    m.box((0, W / 2 + 0.022, H - lid - 0.05), (0.03, 0.01, 0.03), "red", base=True)
-    for sx in (-1, 1):                                                        # fold-down bar handles on the ends
-        for sy in (-0.2, 0.2):
-            m.box((sx * (L / 2 + 0.02), sy * W, H * 0.45), (0.03, 0.03, 0.03), "steelD", base=True)
-        m.box((sx * (L / 2 + 0.035), 0, H * 0.38), (0.025, W * 0.46, 0.03), "steel", top="steelL", base=True)
-    m.box((-L * 0.18, W / 2 + 0.008, H * 0.2), (0.12, 0.01, 0.07), "hivis", base=True)           # an orange freight label
+    m.box((0, W / 2 + 0.014, H - lid - 0.075), (0.08, 0.022, 0.09), "steelD", top="steel", base=True)   # the seal, centred
+    m.box((0, W / 2 + 0.027, H - lid - 0.055), (0.045, 0.01, 0.045), "red", base=True)
+    hz = (H - lid) * 0.5                                                      # bar handles, centred on each end face
+    for sx in (-1, 1):
+        for sy in (-0.17, 0.17):
+            m.box((sx * (L / 2 + 0.01), sy * W, hz - 0.018), (0.024, 0.026, 0.036), "steelD", base=True)
+        m.box((sx * (L / 2 + 0.024), 0, hz - 0.012), (0.018, W * 0.4, 0.024), "steel", top="steelL", base=True)
+    m.box((-L * 0.27, W / 2 + 0.008, H * 0.2), (0.12, 0.01, 0.07), "hivis", base=True)           # an orange freight label
 
 
 def floor_case():
