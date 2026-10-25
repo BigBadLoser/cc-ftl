@@ -4,7 +4,7 @@
   import type { UiApi, UiInspect } from './api';
   import PanelHead from './PanelHead.svelte';
   import ItemIcon from './ItemIcon.svelte';
-  import Icon from './Icon.svelte';
+  import InspectorAction from './InspectorAction.svelte';
 
   let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
   let info = $state<UiInspect | null>(null);
@@ -30,22 +30,6 @@
   function cancelForce() {
     if (info) api.dispatch({ type: 'job.cancel', ship: info.ship, x: info.x, y: info.y });
   }
-  /** Breaking a crate open fails its delivery: the first tap asks, the second does it. */
-  let confirmOpen = $state(false);
-  $effect(() => {
-    void info?.stack?.crate?.job;
-    confirmOpen = false;
-  });
-  function openCrate() {
-    const crate = info?.stack?.crate;
-    if (!crate) return;
-    if (!confirmOpen) {
-      confirmOpen = true;
-      return;
-    }
-    api.dispatch({ type: 'jobs.openCrate', id: crate.job });
-    confirmOpen = false;
-  }
   function setKind(kind: number) {
     if (info?.selected) api.dispatch({ type: 'debug.setStruct', ship: info.ship, x: info.x, y: info.y, kind });
   }
@@ -67,26 +51,17 @@
     </dl>
     {#if info.stack?.crate}
       {@const crate = info.stack.crate}
-      <div class="crate" data-testid="inspect-crate">
-        <p>Sealed delivery: {crate.title}, to {crate.to}.</p>
-        {#if confirmOpen}<p class="warn">The delivery fails: you keep the goods, but lose standing with the issuer and gain notoriety.</p>{/if}
-        <div class="row">
-          {#if confirmOpen}<button data-testid="crate-keep" onclick={() => (confirmOpen = false)}>Keep it sealed</button>{/if}
-          <button class:danger={confirmOpen} data-testid="crate-open" onclick={openCrate}>{confirmOpen ? 'Break it open' : 'Break open'}</button>
-        </div>
-      </div>
+      <InspectorAction testid="inspect-crate" resetKey={crate.job} message="Sealed delivery: {crate.title}, to {crate.to}."
+        buttons={[{ label: 'Break open', testid: 'crate-open', onclick: () => api.dispatch({ type: 'jobs.openCrate', id: crate.job }),
+          confirm: { warning: 'The delivery fails: you keep the goods, but lose standing with the issuer and gain notoriety.', label: 'Break it open', cancel: 'Keep it sealed' } }]} />
     {/if}
     {#if jammedDoor}
-      <div class="force" data-testid="force-door">
-        <span class="state"><Icon name="alert" size={16} />Jammed {jam === 1 ? 'open' : 'shut'}</span>
-        {#if forcing}
-          <div class="bar" role="progressbar" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100" title="Forcing the door: {pct}%" data-testid="force-progress"><i style="width:{pct}%"></i></div>
-          <button class="tile" title="Cancel forcing the door" aria-label="Cancel forcing the door" data-testid="force-cancel" onclick={cancelForce}><Icon name="close" size={18} /></button>
-        {:else}
-          <button class="tile act" title="Force door: crew pry it free" aria-label="Force door" data-testid="force-door-btn" onclick={forceDoor}><Icon name="door" size={20} /></button>
-          <span class="lbl">Force door</span>
-        {/if}
-      </div>
+      <InspectorAction testid="force-door" alert message="Jammed {jam === 1 ? 'open' : 'shut'}"
+        buttons={forcing
+          ? [{ label: 'Stop forcing', testid: 'force-cancel', title: 'Cancel forcing the door', onclick: cancelForce }]
+          : [{ label: 'Force door', testid: 'force-door-btn', title: 'Force door: crew pry it free', onclick: forceDoor }]}>
+        {#if forcing}<div class="bar" role="progressbar" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100" title="Forcing the door: {pct}%" data-testid="force-progress"><i style="width:{pct}%"></i></div>{/if}
+      </InspectorAction>
     {/if}
     {#if info.selected}
       <div class="dbg">Debug: instant</div>
@@ -103,16 +78,7 @@
   dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; margin: 0 0 8px; font-variant-numeric: tabular-nums; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; }
   dd.stack { display: flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--text); }
-  .crate { margin: 0 0 8px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); }
-  .crate p { margin: 0 0 6px; color: var(--text); font-size: 12px; }
-  .crate p.warn { color: var(--amber); }
-  .crate .row { display: flex; justify-content: flex-end; gap: 6px; }
-  .crate button { min-height: 30px; padding: 0 12px; }
-  .crate button.danger { border-color: var(--red); color: var(--red); }
-  .force { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--amber); }
-  .state { display: inline-flex; align-items: center; gap: 4px; color: var(--amber); flex: 1; }
-  .lbl { color: var(--text); font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
-  .bar { flex: 1; height: 8px; background: var(--panel); border: 1px solid var(--line); }
+  .bar { height: 8px; background: var(--panel); border: 1px solid var(--line); }
   .bar i { display: block; height: 100%; background: var(--amber); }
   .dbg { color: var(--dim); font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
