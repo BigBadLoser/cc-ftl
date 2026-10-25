@@ -19,7 +19,8 @@ and low (shortest: partitions are skirt-high stubs, every hull side is a ghost).
 from .doors import door
 from .floors import floor
 from .hull import drop, out_block, vert
-from .walls import block, corner_sets, end_face
+from .wall3d import block, end_face              # the relief walls (wall3d.py)
+from .walls import corner_sets
 
 FLOORS = "abcdefgh"
 PRE = {"up": "full.", "cut": "", "low": "low."}

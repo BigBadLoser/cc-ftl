@@ -85,11 +85,13 @@ export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World
       if (wallMask(kindAt, b.x, b.y) === 0) continue; // only the torn edge: it must border a standing wall
       const fam = b.art.includes('hull') ? 'hull' : 'wall';
       const mask = wallMask(kindAt, b.x, b.y);
-      put([`tile.${fam}.${pre}m${mask}.breach`, `tile.${fam}.m${mask}.breach`], b.x, b.y, base + 0.001, undefined, 'wall');
+      const v = tileHash(b.x, b.y) % 3; // three tears, so a long breach does not repeat (v0 has no suffix); its end faces match
+      const sfx = v ? `.v${v}` : '';
+      put([`tile.${fam}.${pre}m${mask}.breach${sfx}`, `tile.${fam}.${pre}m${mask}.breach`, `tile.${fam}.m${mask}.breach`], b.x, b.y, base + 0.001, undefined, 'wall');
       // Where the -x / -y neighbour is intact the tear needs an end face; cut partitions have none.
       if (fam === 'wall' && level !== 'up') continue;
-      if (kindAt(b.x - 1, b.y) === Struct.Wall) put([`tile.${fam}.${pre}breach.end.w`, `tile.${fam}.breach.end.w`], b.x, b.y, base + 0.002, undefined, 'wall');
-      if (kindAt(b.x, b.y - 1) === Struct.Wall) put([`tile.${fam}.${pre}breach.end.n`, `tile.${fam}.breach.end.n`], b.x, b.y, base + 0.002, undefined, 'wall');
+      if (kindAt(b.x - 1, b.y) === Struct.Wall) put([`tile.${fam}.${pre}breach.end.w${sfx}`, `tile.${fam}.${pre}breach.end.w`, `tile.${fam}.breach.end.w`], b.x, b.y, base + 0.002, undefined, 'wall');
+      if (kindAt(b.x, b.y - 1) === Struct.Wall) put([`tile.${fam}.${pre}breach.end.n${sfx}`, `tile.${fam}.${pre}breach.end.n`, `tile.${fam}.breach.end.n`], b.x, b.y, base + 0.002, undefined, 'wall');
     }
   }
 
