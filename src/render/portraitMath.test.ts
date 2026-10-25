@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cropRect, HEAD_CROP, HEAD_CROP_H, portraitKey } from './portraitMath';
+import { artSize, portraitAssetId, portraitKey } from './portraitMath';
 
 describe('portraitKey', () => {
   it('is stable and changes with each part of the look', () => {
@@ -9,18 +9,13 @@ describe('portraitKey', () => {
   });
 });
 
-describe('cropRect', () => {
-  const body = { ox: 47, oy: 32, w: 34, h: 69, ax: 64, ay: 94 };
-  it('crops a humanoid head square centred on the anchor, just above the body top', () => {
-    const r = cropRect(body, true);
-    expect(r).toEqual({ x: -HEAD_CROP / 2, y: 32 - 94 - 2, w: HEAD_CROP, h: HEAD_CROP_H });
+describe('portrait assets', () => {
+  it('names the portrait of a layer', () => {
+    expect(portraitAssetId('crew.human.hair.short')).toBe('portrait.crew.human.hair.short');
+    expect(portraitAssetId('crew.robot.body.worker')).toBe('portrait.crew.robot.body.worker');
   });
-  it('crops the top of a single body, centred on its cell, in whole art px', () => {
-    const r = cropRect({ ox: 10, oy: 11, w: 41, h: 60, ax: 36, ay: 58 }, false);
-    expect(r.w).toBe(40);
-    expect(r.h).toBe(40);
-    expect(Math.abs(r.x % 2)).toBe(0);
-    expect(Math.abs(r.y % 2)).toBe(0);
-    expect(r.y).toBe(-48);
+  it('halves a world-px texture to whole art px', () => {
+    expect(artSize(116, 124, 2)).toEqual({ w: 58, h: 62 });
+    expect(artSize(1, 1, 2)).toEqual({ w: 1, h: 1 });
   });
 });

@@ -164,6 +164,20 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
   seed).
 - Skin, hair and cloth colours use **palette swap**. `team.*` materials render as reserved key colours,
   which a shader remaps per crew member.
+- **Portraits** (the crew bar's faces; `sprites/portrait_render.py`, family `portraits`, `npm run sprites -- public/assets/1x portraits`,
+  about 15 s): one **front-facing** render per crew layer, not the isometric camera. An orthographic camera looks along the
+  horizon (4 degrees down) at the face, framed on head and shoulders (human head about 38 px tall), idle frame 0. Every
+  layer of a species shares one 58x62 frame (56x60 plus the 1 px pad), so layers stack exactly, with the same holdout rules
+  as the clip sheets and the same `team.*` key colours. Humans: every item but the EVA suit and the held weapons (holsters
+  show); robots and creatures: their one body, fitted by width. They pack as one static sheet `portraits`, assets
+  `portrait.<crew layer id>` (about 20 KB), and load lazily through the normal env pool. `render/portrait.ts` (cached per
+  species, role, appearance seed and weapon art: `portraitMath.portraitKey`) stacks the layers a crew member wears, runs the
+  crew palette filter at zoom `ART_SCALE`, and reads the result back at whole art px (`Renderer.portrait(id)` ->
+  `UiApi.portrait(id)`, a PNG data URL, `null` while the sheet loads; `CrewBar.svelte` shows it 1:1 with
+  `image-rendering: pixelated`; dead crew are greyed and downed ones red-tinted with CSS filters). `Portraits.source` is the
+  one place the pixels come from, so a higher-resolution source (a 2x render was tried: sharper, but needs a taller card)
+  can replace it. `--hdr` in `ui/theme.css` is the header height the right-hand column hangs below: keep it above the
+  crew bar's height.
 - **Weapons, armour and cover** (`human_v2_weapons.py`, `human_aim.py`, `human_crouch.py`, `human_v2_armor.py`;
   weapons, armour and the fight fx are wired, cover is not: see "Wiring" below):
   - Held weapons are `crew.human.gear.hand.<weapon>` (slot order 55, over the arms). Each pose family has its own
@@ -314,7 +328,7 @@ palette.json    the single palette, read by Blender scripts and the game
   **committed**, because Cloudflare's build doesn't run Blender.
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
-  be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `robots` (robot
+  be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `portraits` (crew portrait renders, see "Crew"), `robots` (robot
   crew, see below), `aliens`, `robot_bay`, `env` (props,
   economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see

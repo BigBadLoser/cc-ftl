@@ -8,6 +8,12 @@ map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design histor
 
 ## Where things are
 
+**Crew portraits (branch `feat/crew-portraits`, PR open):** the crew bar cards show a face: a front-facing Blender render of the
+crew member's real layers (head and shoulders, 58x62 px at 1x), palette-swapped like the world figure. New `portraits` sprite
+family (`portrait_render.py`), `render/portrait.ts`, `UiApi.portrait`. The isometric crop was tried first and rejected (a tilted,
+tiny head); a 2x render and tall cards were mocked and not taken. Bar cards are about 142x88 px, so `--hdr` grew to 100 / 180 px.
+Not done: the legacy `tools/blender/build.py` (old `npm run assets` crew pipeline) has no portraits.
+
 **Art sets:** the 2x set (`public/assets/2x/`), the `?art=` choice and the 2x fallback are gone. `public/assets/1x/` (64x32 art
 drawn as hard 2x2 blocks) is the only art set; see "One art set" in [ARCHITECTURE.md](ARCHITECTURE.md). Older notes below that
 mention 2x art describe the earlier state.

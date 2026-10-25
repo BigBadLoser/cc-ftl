@@ -4639,6 +4639,10 @@
    "image": "sprites/pod_bay.png",
    "glow": "sprites/pod_bay.glow.png"
   },
+  "portraits": {
+   "image": "sprites/portraits.png",
+   "glow": "sprites/portraits.glow.png"
+  },
   "robot_bay": {
    "image": "sprites/robot_bay.png",
    "glow": "sprites/robot_bay.glow.png"
@@ -69067,6 +69071,951 @@
     1,
     2
    ]
+  },
+  "portrait.crew.alien.body.brute": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "portrait.crew.alien.body.hunter": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 60,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "portrait.crew.alien.body.spitter": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 119,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "portrait.crew.human.arm.L.cyber": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 178,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.arm.L.flesh": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 237,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.arm.R.cyber": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 296,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.arm.R.flesh": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 355,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.body": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 414,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.eyes.cyber": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 473,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.eyes.organic": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 532,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.back.engineer_rig": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 591,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "portrait.crew.human.gear.back.fuel_tanks": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 650,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.back.medkit": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 709,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.belt.tool_belt": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 768,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.head.headset": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 827,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.head.heavy_helmet": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 886,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.head.tactical_helmet": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 945,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.head.visor_cap": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1004,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.head.welding_goggles": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1063,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.blade": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1122,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.breach_axe": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1181,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.flamethrower": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1240,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "portrait.crew.human.gear.holster.heavy_repeater": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1299,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.ion_pistol": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1358,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.laser_pistol": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1417,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.laser_rifle": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1476,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.plasma_cutter": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1535,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.rail_rifle": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1594,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.rifle": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1653,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.shock_baton": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1712,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.shotgun": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1771,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.sidearm": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1830,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.holster.smg": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1889,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.gear.shoulder.pads": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 1948,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.hair.bun": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2007,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.hair.long": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2066,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.hair.mohawk": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2125,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.hair.ponytail": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2184,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.hair.shaved": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2243,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.hair.short": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2302,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.implant.temple.neural_jack": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2361,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "portrait.crew.human.legs.cargo_pants": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2420,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.torso.armor_heavy": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2479,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.torso.armor_vest": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2538,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.torso.flight_vest": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2597,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.torso.harness": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2656,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.torso.medic_vest": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2715,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.torso.tee": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2774,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.human.torso.work_shirt": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2833,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "portrait.crew.robot.body.repair": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2892,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "portrait.crew.robot.body.worker": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 2951,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "portrait.crew.robot_heavy.body.security": {
+   "kind": "static",
+   "sheet": "portraits",
+   "frame": {
+    "x": 3010,
+    "y": 1,
+    "w": 58,
+    "h": 62
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
   },
   "prop.barrel": {
    "kind": "static",
