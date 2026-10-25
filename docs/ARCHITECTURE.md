@@ -629,8 +629,8 @@ palette.json    the single palette, read by Blender scripts and the game
     (= v0), one per body variant, the same scene shrunk to a sixth and rendered at that size: frame 32 px (16 in the 1x
     file), body radius 10 px. The Cluster view draws bodies at about 6 screen px radius, so draw these by the icon rule
     (whole device px per art px; on a 3x phone 21 px from either set) and pick the same variant as the sector's body.
-  - Exit markers (`sprites/starmap_exits.py`): `starmap.exit.gate` (an upright ring gate, a cyan membrane on the glow
-    sheet) and `starmap.exit.rift` (a glowing tear), at the gateway where a gate or rift lane leaves the sector, in place
+  - Exit markers (`sprites/starmap_exits.py`): `starmap.exit.gate` (a free-floating ring gate with emitter pods, a cyan
+    membrane on the glow sheet) and `starmap.exit.rift` (a tear with a banded rim, a starry core and drifting shards), at the gateway where a gate or rift lane leaves the sector, in place
     of the thick or dashed lane end. Frame 96 px like the structures, same crisp rule.
   - Nebula field tiles (`sprites/starmap_fields.py`): `starmap.nebula.haze`, `.body`, `.core`, seamless 512 px tiles
     (256 in the 1x file, anchor 0,0), glow only, for the field `StarmapNebula` paints in code today. Tile each across the
