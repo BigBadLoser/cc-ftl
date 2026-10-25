@@ -14,5 +14,10 @@
   "lid_gap": 0.025,
   "clamp_width": 0.14,
   "feed_well": 0.4,
-  "condenser_fins": 7
+  "condenser_fins": 7,
+  "terminal": true,
+  "powered_feed": true,
+  "powered_output": true,
+  "terminal_u": -1.0,
+  "terminal_v": 1.12
 }

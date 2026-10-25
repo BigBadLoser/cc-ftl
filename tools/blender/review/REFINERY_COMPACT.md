@@ -7,8 +7,8 @@ byte-for-byte. The rejected wedge B has been removed. Its replacement is a new
 upright pressure-vessel concept: a low roller hopper feeds the vessel's side,
 an agitator motor sits on the dished pressure head, a side condenser connects
 through broad return plumbing, and a circular die discharges into an open
-inclined casting trough. A low cast chassis connects the main parts. All surfaces
-still use one grey material, without emission.
+inclined casting trough. A low cast chassis connects the main parts. The machine
+remains grey; the terminal uses a charcoal inset and pale gauges. No emission.
 
 ### B mechanical refinement (after concept selection)
 
@@ -29,7 +29,7 @@ The three main changes visible in the comparison are:
    describe the condenser connections, and the die has six fasteners. Guides
    and billet now follow the actual slope of the output trough.
 
-Current B bounds: **3.670 long x 2.426 wide x 1.794 high**. The rear feed throat
+Mechanical-pass B bounds: **3.670 long x 2.426 wide x 1.794 high**. The rear feed throat
 remains partly obscured in this angle; the broad pressure lid remains a strong
 shape. This is still a low-sample grey mechanical preview, without a materials
 pass or production sprite build.
@@ -57,6 +57,36 @@ records a diagnostic check of terminal rings against the faceted vessel and
 bevelled collectors: the four ends and two collector-side collar backs all have
 positive receiving-solid clearance. Vessel, hopper, output and overall bounds
 remain unchanged. Still grey, four samples, one Blender process at a time.
+
+### B automated handling and operator terminal
+
+The user asked for a crew terminal, powered feed gate and automated output
+receiver, provided the additions read at 128x64 tile scale. The preceding pipe
+pass is preserved as `b-automation-before.png` / `.json` and compared at the same
+deck origin and camera in `b-automation-comparison.png`.
+
+- A braced terminal arm attaches to the chassis beside the hopper. Its inclined
+  screen uses a broad recessed bezel, charcoal inset and three large pale gauges;
+  two tactile controls follow the screen's incline. There is no small lettering.
+- A half-covering sliding shutter rides on raised hopper rails. The fixed
+  cylinder and extended piston connect to the moving leaf's side cleat. One feed
+  roller remains exposed in this static operating pose.
+- Four powered rollers replace the output tray guides, with a side drive case
+  and end stops. The smaller billet rests on their inclined tangent plane,
+  leaving three roller positions substantially visible.
+
+The first native render identified three clarity issues: the blank screen read
+as a tray, the shutter leaves were too narrow, and the billet hid too much of the
+roller bed. The next pass steepened the terminal face and added its neutral
+screen contrast, broadened the gate leaves, and raised/exposed more of the
+output rollers. Final native and 3x renders were inspected. The terminal reads
+most strongly; the feed actuator remains a smaller supporting detail.
+
+Current bounds: **3.670 long x 2.496 wide x 1.794 high**, inside 3x4 and under
+the 1.85 walls. The vessel and corrected pipework are retained. The three additions
+have independent `terminal`, `powered_feed` and `powered_output` parameters;
+terminal placement is also adjustable. Preview only, without handling animation,
+game integration or a full materials/sprite build.
 
 - B model: `sprites/refinery_revision_b.py`, parametric `VesselRefinery`.
 - Review: `review/refinery_ab_preview.py`. Only B is rendered; A is copied from v2.

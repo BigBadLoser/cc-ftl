@@ -18,11 +18,11 @@ def render(out):
     import bpy
     from sprites import core,post
     from sprites.refinery_blockout import GREY
-    from sprites.refinery_revision_b import VesselRefinery,refinery_revision_b
+    from sprites.refinery_revision_b import CONTROL_GREYS,VesselRefinery,refinery_revision_b
     digest=preserve_a(out)
     path=out/'b.parameters.json';p=VesselRefinery(**json.loads(path.read_text())) if path.exists() else VesselRefinery()
     core.setup_scene();core._state['scene'].cycles.samples=4;core._state['sun'].data.use_shadow=True
-    core.palette._data.update(GREY);post._BASE_PAL.update(GREY);post._STATES.clear();post.select(False)
+    core.palette._data.update(GREY);post._BASE_PAL.update(GREY);post._BASE_PAL.update(CONTROL_GREYS);post._STATES.clear();post.select(False)
     obs=refinery_revision_b(p)
     q=np.concatenate([np.array([v.co[:] for v in ob.data.vertices]) for ob in obs])
     assert np.abs(q[:,0]).max()<=2 and np.abs(q[:,1]).max()<=1.5
@@ -35,7 +35,7 @@ def render(out):
     meta={'revision':'B / upright pressure vessel','footprint':[3,4],
           'bounds':[float(x) for x in np.ptp(q,axis=0)],'anchor':[w//2+1-int(x0),h//2+1-int(y0)],
           'tile':[core.TILE_W,core.TILE_H],'camera':{'yaw':45,'elevation':30},'samples':4,'SS':core.SS,
-          'material':'one neutral grey, no emission','preservedAImageSha256':digest}
+          'material':'neutral grey body, charcoal screen and pale diagnostic blocks; no emission','preservedAImageSha256':digest}
     (out/'b.json').write_text(json.dumps(meta,indent=2)+'\n');path.write_text(json.dumps(p.spec(),indent=2)+'\n')
     bpy.context.preferences.filepaths.save_version=0
     bpy.ops.wm.save_as_mainfile(filepath=str((out/'b.blend').resolve()),compress=True)
@@ -65,7 +65,8 @@ def compose(out):
     # The chosen B blockout is the geometric reference for mechanical refinement.
     # Align both sprites by their stored deck anchors, without resizing either.
     comparisons=(('b-blockout','APPROVED B / GREY BLOCKOUT','B / MECHANICAL REFINEMENT','b-refinement-comparison'),
-                 ('b-pipes-before','BEFORE / PIPE CONNECTIONS','AFTER / SEATED CONNECTIONS','b-pipes-comparison'))
+                 ('b-pipes-before','BEFORE / PIPE CONNECTIONS','AFTER / SEATED CONNECTIONS','b-pipes-comparison'),
+                 ('b-automation-before','BEFORE / OPERATION DETAILS','AFTER / AUTOMATED HANDLING','b-automation-comparison'))
     for source,before_label,after_label,target in comparisons:
         if not (out/f'{source}.png').exists(): continue
         before=Image.open(out/f'{source}.png').convert('RGBA')

@@ -10,6 +10,10 @@ from .cmbkit import Frame
 from .refinery_compact import bridge,case,outline
 from .refinery_blockout import COL,GREY
 
+SCREEN='refinery.terminal.screen'
+UI='refinery.terminal.ui'
+CONTROL_GREYS={SCREEN:{'hex':'#29323a'},UI:{'hex':'#c1cbd2'}}
+
 
 @dataclass(frozen=True)
 class VesselRefinery:
@@ -29,6 +33,11 @@ class VesselRefinery:
     clamp_width:float=.14
     feed_well:float=.40
     condenser_fins:int=7
+    terminal:bool=True
+    powered_feed:bool=True
+    powered_output:bool=True
+    terminal_u:float=-1.00
+    terminal_v:float=1.12
 
     def spec(self): return asdict(self)
 
@@ -99,6 +108,22 @@ def feed(f,p):
             cross.hcyl(v-.055,v+.055,-u,p.feed_top-.22,.16,COL,sides=12,cap=COL,capstart=COL)
     # A common enclosed roller drive bridges both shafts on the near cheek.
     case(f,p.feed_u,p.vessel_v+.71,p.feed_top-.39,.57,.25,.28,COL,.04,.06)
+    if p.powered_feed: feed_gate(f,p)
+
+
+def feed_gate(f,p):
+    # Part-open sliding shutter, visibly carried by its two raised guide rails.
+    # Two broad leaves and one actuator survive the native sprite reduction.
+    for side in (-1,1):
+        case(f,p.feed_u,p.vessel_v+side*.64,p.feed_top-.02,.96,.11,.10,COL,.02,.025)
+    for du in (-.32,-.10):
+        case(f,p.feed_u+du,p.vessel_v,p.feed_top+.025,.20,1.27,.065,COL,.012,.025)
+    v=p.vessel_v+.76;z=p.feed_top+.10
+    f.hcyl(p.feed_u+.08,p.feed_u+.40,v,z,.075,COL,sides=12,cap=COL,capstart=COL)
+    f.hcyl(p.feed_u-.10,p.feed_u+.08,v,z,.035,COL,sides=12,cap=COL)
+    case(f,p.feed_u-.10,p.vessel_v+.60,p.feed_top+.02,.12,.39,.12,COL,.02,.025)
+    for du in (.12,.35):
+        case(f,p.feed_u+du,v,p.feed_top-.04,.12,.17,.12,COL,.02,.025)
 
 
 def discharge(f,p):
@@ -129,14 +154,56 @@ def discharge(f,p):
     for i in (0,1):
         for j in range(3): cap(f,[inside[i][j],outside[i][j],outside[i][j+1],inside[i][j+1]])
     slope=(.35-.17)/(u1-u0)
-    def inclined(u,v,w,d,h):
-        z=.35-slope*(u-u0)
+    def inclined(u,v,w,d,h,lift=0):
+        z=.35-slope*(u-u0)+lift
         loops=[[f.pt(x,y,z+dz-slope*(x-u)) for x,y in outline(u,v,w,d,.025)]
                for dz in (0,h)]
         bridge(f,*loops,COL);cap(f,loops[0][::-1]);cap(f,loops[1])
-    # Guides and billet follow the trough's incline rather than intersecting it.
-    for v in (-.34,.34): inclined(1.53,p.vessel_v+v,.60,.055,.045)
-    inclined(1.59,p.vessel_v,.31,.51,.085)
+    if p.powered_output:
+        cross=Frame(f.m,rot=2,centre=(0,0));radius=.075;axle_lift=.070
+        for u in (1.24,1.42,1.60,1.78):
+            z=.35-slope*(u-u0)+axle_lift
+            half=.38+.13*(u-u0)/(u1-u0)
+            cross.hcyl(p.vessel_v-half,p.vessel_v+half,-u,z,radius,COL,sides=16,cap=COL,capstart=COL)
+        # Near-side drive case and end stops belong to the same inclined frame.
+        inclined(1.48,p.vessel_v+.51,.64,.18,.18,.035)
+        for v in (-.43,.43): inclined(1.80,p.vessel_v+v,.105,.12,.17,.04)
+        # Offset the billet to the inclined tangent plane of the powered rollers.
+        lift=axle_lift+radius*math.sqrt(1+slope*slope)
+        inclined(1.60,p.vessel_v,.23,.44,.095,lift)
+    else:
+        for v in (-.34,.34): inclined(1.53,p.vessel_v+v,.60,.055,.045)
+        inclined(1.59,p.vessel_v,.31,.51,.085)
+
+
+def operator_terminal(f,p):
+    # Braced arm originates inside the chassis; a broad inclined screen sits
+    # outside the vessel silhouette, facing the near-side crew access position.
+    u,v=p.terminal_u,p.terminal_v
+    case(f,u,.49,.17,.34,.28,.15,COL,.03,.05)
+    profile=((.48,.20),(.62,.20),(v+.10,.99),(v,1.09),(.54,.35))
+    loops=[[f.pt(u+du,y,z) for y,z in profile] for du in (-.075,.075)]
+    bridge(f,*loops,COL);cap(f,loops[0][::-1]);cap(f,loops[1])
+    def ring(width,depth,dz=0,offset=0):
+        return [f.pt(x,y,1.15-.90*(y-v)+dz)
+                for x,y in outline(u,v+offset,width,depth,.04)]
+    outer=ring(.70,.48);back=ring(.70,.48,-.11)
+    inner=ring(.53,.29,0,-.035);screen=ring(.53,.29,-.045,-.035)
+    bridge(f,back,outer,COL);cap(f,back[::-1]);bridge(f,outer,inner,COL)
+    bridge(f,inner,screen,COL);f.poly(screen,SCREEN,flip=True)
+    # Three broad gauges, large enough to survive the native render.
+    # Flat neutral screen colours, without text, tiny icons or emission.
+    def graphic(x0,y0,width,depth):
+        f.poly([f.pt(x,y,1.15-.90*(y-v)-.043) for x,y in
+                ((x0,y0),(x0+width,y0),(x0+width,y0+depth),(x0,y0+depth))],UI,flip=True)
+    graphic(u-.20,v-.13,.065,.19)
+    graphic(u-.065,v-.04,.065,.10)
+    graphic(u+.07,v-.09,.065,.15)
+    # Two large tactile controls; no tiny labels or fabricated UI lettering.
+    for du in (-.20,.20):
+        points=outline(u+du,v+.17,.10,.085,.015)
+        loops=[[f.pt(x,y,1.15-.90*(y-v)+dz) for x,y in points] for dz in (-.008,.027)]
+        bridge(f,*loops,COL);cap(f,loops[0][::-1]);cap(f,loops[1])
 
 
 def pipe(f,path,r=.11):
@@ -214,7 +281,7 @@ def condenser(f,p):
 
 
 def refinery_revision_b(p=VesselRefinery()):
-    core.palette._data.update(GREY)
+    core.palette._data.update(GREY);core.palette._data.update(CONTROL_GREYS)
     m=core.Mesh('refinery_b_vertical_vessel');f=Frame(m,rot=1,centre=(0,0))
     # One low cast chassis joins the feed, pressure vessel and discharge roots.
     case(f,-.02,p.vessel_v,0,3.00,1.56,.26,COL,.065,.26)
@@ -222,4 +289,5 @@ def refinery_revision_b(p=VesselRefinery()):
         for v in (p.vessel_v-.68,p.vessel_v+.68):
             case(f,u,v,0,.35,.36,.20,COL,.035,.06)
     vessel(f,p);feed(f,p);discharge(f,p);condenser(f,p)
+    if p.terminal: operator_terminal(f,p)
     return [m.build()]
