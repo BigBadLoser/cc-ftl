@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 import math
 from . import core
 from .cmbkit import Frame
+from .core_systems_finish import FinishMesh
 
 BODY = 'systems.blockout.body'
 FRAME = 'systems.blockout.frame'
@@ -88,20 +89,23 @@ def make_frame(m, footprint, rotation):
     return Frame(m, rot=rotation, centre=(-(w - 1) / 2, -(h - 1) / 2))
 
 
-def reactor(p=None, rotation=0):
+def reactor(p=None, rotation=0, finished=False, powered=True):
     p = p or Reactor()
-    m = core.Mesh('reactor_dropin_blockout')
+    m = FinishMesh('reactor_dropin_blockout', finished, powered)
     f = make_frame(m, p.footprint, rotation)
     # A shielded core with a broad crown, separate from the external load frame.
+    m.paint(body='shield')
     radial(m, f, ((.49, .12), (.67, .22), (.67, .35),
                   (p.core_radius, .43), (p.core_radius, p.core_shoulder),
                   (.48, 1.43)), col=BODY)
     for z, r, h in ((.36, .64, .09), (1.15, .64, .10)):
         radial(m, f, ((r, z), (r, z + h)), col=FRAME)
     # Closed inspection crown. No giant exposed glowing column.
+    m.paint(body='crown')
     radial(m, f, ((.61, 1.39), (.73, 1.45), (.73, 1.55),
                   (.58, p.crown_top)), col=BODY)
     radial(m, f, ((.43, p.crown_top + .005), (.43, p.crown_top + .035)), col=FRAME)
+    m.paint(body='shield')
     radial(m, f, ((.28, p.crown_top + .036), (.28, p.crown_top + .045)), col=BODY)
     profile = ((.48, .08), (.77, .08), (p.rib_radius, .22),
                (.86, .48), (.76, .76), (.76, 1.28), (.66, 1.53),
@@ -110,13 +114,16 @@ def reactor(p=None, rotation=0):
         rib(m, f, profile, math.pi / 4 + i * math.pi / 2, p.rib_width, FRAME)
     # Two coolant pods bear directly on the lower frame; upper necks enter core.
     for v in (-.76, .76):
+        m.paint(body='shield')
         casing(m, f, 0, v, .16, 1.01, .34, .59, cut=.07, taper=.93)
         f.box(0, v, .31, .79, .365, .25, FRAME)
         f.box(0, v * .79, .69, .52, .31, .17, FRAME)
     # Recessed service panel on the crew-facing pod, no external console tile.
+    m.paint(body='steel')
     f.box(-.10, .935, .38, p.service_width, .018, .25, RECESS)
     f.box(-.10, .949, .425, p.service_width - .13, .014, .15, BODY)
     # Four protected inspection slots between ribs: actual framed recesses.
+    m.paint(recess='core_light')
     for i in range(4):
         a = i * math.pi / 2
         rib(m, f, ((.568, .66), (.59, .66), (.59, 1.055), (.568, 1.055)),
@@ -127,39 +134,47 @@ def reactor(p=None, rotation=0):
     return [m.build()]
 
 
-def life_support(p=None, rotation=0):
+def life_support(p=None, rotation=0, finished=False, powered=True):
     p = p or LifeSupport()
-    m = core.Mesh('life_support_dropin_blockout')
+    m = FinishMesh('life_support_dropin_blockout', finished, powered)
     f = make_frame(m, p.footprint, rotation)
     # Shared lower pump/manifold and upper air handler tie all parts together.
     casing(m, f, 0, -.005, .09, p.length - .06, p.width - .04, .25, cut=.09, col=FRAME)
     casing(m, f, 0, -.105, .30, p.length - .12, .53, .85, cut=.06, col=FRAME)
     # Pressure reservoirs are visible at the ends/back; not two loose tanks.
     for u in (-p.cartridge_spacing / 2, p.cartridge_spacing / 2):
+        m.paint(body='steel')
         f.vcyl(u, -.13, .30, .265, .70, BODY, sides=12)
         f.vcyl(u, -.13, .99, .265, .14, BODY, rtop=.17, sides=12)
         # Proud, removable scrubber cassette with a proper recessed face.
+        m.paint(body='pale')
         casing(m, f, u, .245, p.cartridge_bottom, p.cartridge_width, .35,
                p.cartridge_top - p.cartridge_bottom, cut=.045)
         f.box(u, .424, .41, p.cartridge_width - .14, .016, .48, RECESS)
+        m.paint(body='cartridge')
         f.box(u, .436, .445, p.cartridge_width - .21, .012, .40, BODY)
         # Broad top latch: geometric readability now; small hardware comes later.
+        m.paint(frame='teal')
         f.box(u, .424, .945, .23, .028, .065, FRAME)
     # Chamfered hood overhangs and connects the whole cartridge bank.
+    m.paint(body='pale')
     casing(m, f, 0, 0, 1.11, p.length, p.width, .25, cut=.13, taper=.96)
     # Raised inlet coamings have open tops, actual inner walls and recessed floors.
     for u in (-.41, .41):
+        m.paint(body='teal')
         casing(m, f, u, -.025, 1.36, .72, .65, p.top - 1.36,
                cut=.08, taper=.94, closed=False)
         outer = chamfer_loop(f, u, -.025, p.top, .72 * .94, .65 * .94, .08)
         inner = chamfer_loop(f, u, -.025, p.top, .55, .44, .025)
         bottom = chamfer_loop(f, u, -.025, 1.37, .55, .44, .025)
         bridge(m, outer, inner, BODY)
+        m.paint()
         bridge(m, inner, bottom, FRAME)
         m.poly(bottom, RECESS, flip=True)
         for du in (-.18, 0, .18):
             f.box(u + du, -.025, p.top - .06, .055, .44, .08, FRAME)
     # Common front air outlet and low service manifold cover.
+    m.paint()
     f.box(0, .432, 1.18, 1.40, .012, .105, RECESS)
     for u in (-.5, -.25, 0, .25, .5):
         f.box(u, .441, 1.18, .035, .025, .105, FRAME)

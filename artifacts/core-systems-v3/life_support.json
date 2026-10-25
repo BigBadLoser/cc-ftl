@@ -1,0 +1,133 @@
+{
+  "parameters": {
+    "footprint": [
+      1,
+      2
+    ],
+    "length": 1.82,
+    "width": 0.88,
+    "top": 1.48,
+    "cartridge_spacing": 0.8,
+    "cartridge_width": 0.65,
+    "cartridge_bottom": 0.27,
+    "cartridge_top": 1.09
+  },
+  "frameSize": [
+    80,
+    94
+  ],
+  "anchor": [
+    24,
+    83
+  ],
+  "rotationAudit": [
+    {
+      "rotation": 0,
+      "footprint": [
+        1,
+        2
+      ],
+      "min": [
+        -0.4599999785423279,
+        -1.4550000429153442,
+        0.0
+      ],
+      "max": [
+        0.49399998784065247,
+        0.41350001096725464,
+        1.5
+      ],
+      "size": [
+        0.9539999663829803,
+        1.8685000538825989,
+        1.5
+      ],
+      "approvedBaseUnchanged": true,
+      "approvedBaseDigest": "4f95b47fdb4cc5a79cea87c9995073721e3e5cbaf0613bfdd73017ec0863f9be",
+      "approvedGeometryUnchanged": true,
+      "geometryDigest": "cee6b0e69c087b344425b141abc64d12a9f78887bb367293843ea1705aabace8"
+    },
+    {
+      "rotation": 1,
+      "footprint": [
+        2,
+        1
+      ],
+      "min": [
+        -1.4134999513626099,
+        -0.4599999785423279,
+        0.0
+      ],
+      "max": [
+        0.45500001311302185,
+        0.49399998784065247,
+        1.5
+      ],
+      "size": [
+        1.8684999644756317,
+        0.9539999663829803,
+        1.5
+      ],
+      "approvedBaseUnchanged": true,
+      "approvedBaseDigest": "8e51e226efaa403d4907b92f0119fa34cd4b444fb7dbe22006a68a31514bcbca",
+      "approvedGeometryUnchanged": true,
+      "geometryDigest": "50124b3468089c9488db7e6f7aad502f675bf5ab8d3666195b6b3d348fd9341e"
+    },
+    {
+      "rotation": 2,
+      "footprint": [
+        1,
+        2
+      ],
+      "min": [
+        -0.49399998784065247,
+        -1.4134999513626099,
+        0.0
+      ],
+      "max": [
+        0.4599999785423279,
+        0.45500001311302185,
+        1.5
+      ],
+      "size": [
+        0.9539999663829803,
+        1.8684999644756317,
+        1.5
+      ],
+      "approvedBaseUnchanged": true,
+      "approvedBaseDigest": "4603350e9d2746bd5e832a8897bb7fd7b413913486ed028edf21e6cd8389ac35",
+      "approvedGeometryUnchanged": true,
+      "geometryDigest": "811d9e7d71153b0f3ed73dc154639f9bd483d8b518663442db8a3386deef40cf"
+    },
+    {
+      "rotation": 3,
+      "footprint": [
+        2,
+        1
+      ],
+      "min": [
+        -1.4550000429153442,
+        -0.49399998784065247,
+        0.0
+      ],
+      "max": [
+        0.41350001096725464,
+        0.4599999785423279,
+        1.5
+      ],
+      "size": [
+        1.8685000538825989,
+        0.9539999663829803,
+        1.5
+      ],
+      "approvedBaseUnchanged": true,
+      "approvedBaseDigest": "a205b8ca69f308a5697b23442e0cbbcafd50b66cac6858e3388b6e3ec6467eaf",
+      "approvedGeometryUnchanged": true,
+      "geometryDigest": "d33750d0a26bf05fcb749590638a379ad99724ac2fc8489a59aef0abbc405e5e"
+    }
+  ],
+  "geometryPreserved": true,
+  "approvedMechanicalFileVerified": true,
+  "glowPixels": 16,
+  "unpoweredGlowZero": true
+}

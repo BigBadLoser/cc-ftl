@@ -87,3 +87,40 @@ Reproduce by adding `--detailed` to the Blender invocation and using
 python3 tools/blender/review/core_systems_preview.py --compose \
   --out artifacts/core-systems-v2 --baseline artifacts/core-systems-v1
 ```
+
+## Material pass, after approval of mechanical detail
+
+`artifacts/core-systems-v3/` adds material roles and restrained self-lit
+inspection/status faces, with colour/glow twins and editable Blender files.
+`materials-zoom.png` is the enlarged review; `grey-vs-materials.png` compares
+against the approved mechanical pass at normal game display scale.
+
+- Reactor: blue-grey shield shell, lighter crown, graphite supports, muted
+  industrial yellow on locks/collars/lifting grip, pale coolant tubes, cyan
+  inspection slots and small mint/amber indicators.
+- Life support: pale hood/cassette surrounds, teal vent coamings, grey-teal
+  cartridge faces, yellow service grips and a small mint divider display.
+- The palette uses refinery industrial yellow `#b6a45d`. Material colours pass
+  through the unchanged standard game palette quantization and shared lighting.
+- Semantic material calls were inserted into the original geometry builders;
+  their defaults still produce the approved grey attributes exactly. Vertex
+  positions and topology are unchanged. For finished previews the audit also
+  independently loads the approved v2 `.blend` meshes and matches their exact
+  geometry digest. All four rotation bounds match the approved mechanical pass.
+- Unpowered geometry was built and its complete emission attributes checked:
+  zero glow. A separate unpowered render is pending state review.
+- Glow is limited to designated inspection slots and indicators. There is no
+  whole-machine emissive material, bloom, smoke, room or floor in these assets.
+
+Reproduce with `--finished --out artifacts/core-systems-v3` in the Blender
+invocation, then:
+
+```sh
+python3 tools/blender/review/core_systems_preview.py --compose \
+  --out artifacts/core-systems-v3 --baseline artifacts/core-systems-v2
+```
+
+This is a one-angle material preview, not the final export. User review of
+materials, then four rendered orientations and operating/damage states, remain
+before production packing or integration. No runtime definitions or live assets
+have been changed.
