@@ -319,7 +319,7 @@ palette.json    the single palette, read by Blender scripts and the game
   economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
   below), `structure` (faction tile looks, see below), `galley`
-  (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below), `starmap` (the map's pictures, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
+  (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below), `starmap` (the map's pictures, see below), `cargo` (a delivery job's sealed hard case, `item.cargo_crate.l` and `.held`, `sprites/cargo.py`) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
 - **Wall corner fills (`walls`, the 47-tile blob set):** wall and hull pieces are picked by the 4-neighbour mask
   (N1 E2 S4 W8) plus corner bits (`tiles.ts` `wallCorners`: NE 1, SE 2, SW 4, NW 8, set when both arms beside the
@@ -588,10 +588,12 @@ palette.json    the single palette, read by Blender scripts and the game
     (11, 24), pulsar (16, 40), protostar (22, 34), ice_giant (18, 28), lava_world (10, 18), ocean_world (11, 18).
   - Structures, `starmap.struct.<kind>`, kinds `station_trade`, `station_military`, `station_research`, `den`, `asteroids`,
     `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): frame 96 px (48 in the 1x file).
-  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: frame 80 px (40).
-    `d0` points east on screen, then clockwise by 45 degrees (the SVG `rotate(heading)` sense), so `d = round(heading / 45)
-    mod 8`. Each heading is the ground heading whose three-quarter projection points that way, so north and south facings
-    are foreshortened like the ships.
+  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: frame 96 px (48 in
+    the 1x file). `d0` points east on screen, then clockwise by 45
+    degrees (the SVG `rotate(heading)` sense), so `d = round(heading / 45) mod 8`. Each heading is the ground heading whose
+    three-quarter projection points that way. One model scale per ship for all its headings, the one that makes its
+    longest heading (east or west) about 46 px, each heading centred in the frame; north and south views stay shorter,
+    foreshortened like the ships.
   - Icon drawing (crisp pixels): structure and fleet icons are a fixed screen size, like today's badges. Never draw them
     smaller than their art: a shrunk sprite is smoothed (soft), even with `image-rendering: pixelated` (seen in Chromium),
     while an enlarged one keeps hard edges. Draw each art px as a whole number k >= 1 of device px, nearest-neighbour, at a
