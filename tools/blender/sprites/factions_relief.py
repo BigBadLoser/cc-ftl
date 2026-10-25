@@ -193,32 +193,56 @@ def _slab(z0, z1, d):
     return [(0.0, z0), (d, z0), (d, z1), (0.0, z1)]
 
 
+def _ends(ax, plane, b, ends):
+    """How a face of a chamfering look (NavyShell) ends: (endf: it is a wall's end face; end1: it runs to one at b;
+    corner: its b end is a chamfered corner; back: its low end is a free end turning onto a hidden face)."""
+    sh = T.SHELL
+    endf = bool(getattr(sh, "end_face", None) and sh.end_face(ax, plane))
+    end1 = bool(getattr(sh, "is_end", None) and sh.is_end(ax, b, 1))
+    return endf, end1, ends[1] == "out" and not (endf or end1), ends[0] == "out"
+
+
+def _ramp_chamfer(k, X, Y, C, zs, F):
+    """Plates on the ramp's chamfer at a corner (X, Y), C along each axis: one step lighter than the ramp (a
+    highlight), with the toe band and the foot line across it."""
+    run, ta = T.W.skirt_run(), (T.STYLE or {}).get("toe_at", 0.72)
+    nrm = Vector((zs / (2 * run), zs / (2 * run), 1.0)).normalized()
+
+    def cq(t):                                          # the chamfer t down its slope: its two edges
+        z = zs * (1 - t / run)
+        return Vector((X - C + t, Y + t, z)), Vector((X + t, Y - C + t, z))
+    for t0, t1, fam, lvl in ((0.02, ta * run, F, 3), (ta * run, run - 0.03, "ochre", 3), (run - 0.03, run, F, 2)):
+        (a0, b0), (a1, b1) = cq(t0), cq(t1)
+        k.poly([q + nrm * 2 * PAINT for q in (a0, b0, b1, a1)], fam, lvl, nrm)
+
+
+def _end_section(k, ax, plane, a, b, zs, zt, F):
+    """A wall's end face, under its face parts: the section of its foot and its two ramps down to the floor, with
+    edge highlights up its two edges (to zt) and down the ramps' slopes."""
+    run = T.W.skirt_run()
+    k.poly([T.P(ax, plane, u, z, 0.0) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b, zs), (a, zs))],
+           F, 2, T.OUT(ax))
+    hl = [[(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)], [(a, zs), (a + LINE, zs), (a + LINE, zt), (a, zt)],
+          [(b, zs), (b + run, 0.0035), (b + run - 0.06, 0.0035), (b, zs - 0.035)],
+          [(a, zs), (a, zs - 0.035), (a - run + 0.06, 0.0035), (a - run, 0.0035)]]
+    for q in hl:
+        k.poly([T.P(ax, plane, u, z, PAINT) for u, z in q], F, 5, T.OUT(ax))
+
+
 def navy(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
         X, C = b, NAVY_C
-        sh = T.SHELL
-        endf = bool(getattr(sh, "end_face", None) and sh.end_face(ax, plane))     # a wall's end face, and a face
-        end1 = bool(getattr(sh, "is_end", None) and sh.is_end(ax, b, 1))         # running to one: the tube stops
-        corner = ends[1] == "out" and not (endf or end1)  # the chamfered corner: the parts stop where it starts and
-        if corner:                                      # carry round it on corner pieces (drawn with the y face)
-            b -= C
+        endf, end1, corner, back = _ends(ax, plane, b, ends)    # (at a wall's end the tube stops)
+        if corner:                                      # the chamfered corner: the parts stop where it starts and
+            b -= C                                      # carry round it on corner pieces (drawn with the y face)
         cp = corner and ax == "y"
-        back = ends[0] == "out"                         # a free end at the low end turns onto a hidden face: the parts
-        pe = ("in" if back else ends[0], ends[1])       # stop square there (run on, they stuck out past the end)
+        pe = ("in" if back else ends[0], ends[1])       # (at a hidden free end the parts stop square: run on, they
+                                                        # stuck out past the end)
         T.run(k, ax, plane, a, b, pe, zs - 0.03, zs + 0.06, PAINT, F, 3, 0)
         if cp:
             corner_piece(k, X, plane, C, _slab(zs - 0.03, zs + 0.06, PAINT), F, 3)
-            run, ta = T.W.skirt_run(), (T.STYLE or {}).get("toe_at", 0.72)
-            nrm = Vector((zs / (2 * run), zs / (2 * run), 1.0)).normalized()
-
-            def cq(t):                                  # the ramp's chamfer t down its slope: its two edges
-                z = zs * (1 - t / run)
-                return Vector((X - C + t, plane + t, z)), Vector((X + t, plane - C + t, z))
-            for t0, t1, fam, lvl in ((0.02, ta * run, F, 3), (ta * run, run - 0.03, "ochre", 3),
-                                     (run - 0.03, run, F, 2)):          # plates on it: one step lighter (a highlight),
-                (a0, b0), (a1, b1) = cq(t0), cq(t1)                    # the toe band and the foot line across it
-                k.poly([q + nrm * 2 * PAINT for q in (a0, b0, b1, a1)], fam, lvl, nrm)
+            _ramp_chamfer(k, X, plane, C, zs, F)
         rt = min(top, T.W.wall_top("wall", "up")) if full else top     # laid out on a partition's height on every
         H = rt - zs                                                     # wall, so the far hull's parts line up
         zh = rt - 0.25 * H if full else top                             # the header's foot
@@ -233,17 +257,8 @@ def navy(hull):
                 if e == "in":
                     u0 = u if u == a else u - LINE
                     T.paint(k, ax, plane, u0, u0 + LINE, zs - 0.03, zh, PAINT, F, 1)
-        if endf:                                        # the section at a wall's end, under its face: the wall's foot
-            run = T.W.skirt_run()                       # and the two ramps, down to the floor
-            k.poly([T.P(ax, plane, u, z, 0.0) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b, zs), (a, zs))],
-                   F, 2, T.OUT(ax))
-            zt = zh - 0.33 * H if full else top                  # edge highlights: up its two edges (to the band) and
-            hl = [[(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)],               # down the two ramps' slopes
-                  [(a, zs), (a + LINE, zs), (a + LINE, zt), (a, zt)],
-                  [(b, zs), (b + run, 0.0035), (b + run - 0.06, 0.0035), (b, zs - 0.035)],
-                  [(a, zs), (a, zs - 0.035), (a - run + 0.06, 0.0035), (a - run, 0.0035)]]
-            for q in hl:
-                k.poly([T.P(ax, plane, u, z, PAINT) for u, z in q], F, 5, T.OUT(ax))
+        if endf:
+            _end_section(k, ax, plane, a, b, zs, zh - 0.33 * H if full else top, F)
         if not full:
             return
         mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
@@ -488,37 +503,55 @@ def drone(hull):
 # ---- civil (set 6): white drawers flush with the wall, only their seams cut in; a colour band under the cap and
 # along the skirt's foot ----------------------------------------------------------------------------------------------
 
+def rbox(k, ax, plane, u0, u1, z0, z1, fam, lvl):
+    """A one-px seam outline round [u0, u1] x [z0, z1] on a face, its corners rounded (a two-px radius: each corner
+    a single diagonal step)."""
+    L, t = LINE, 0.026                                  # one art px along the face, and up it
+    for q in ((u0 + 2 * L, u1 - 2 * L, z0, z0 + t), (u0 + 2 * L, u1 - 2 * L, z1 - t, z1),
+              (u0, u0 + L, z0 + 2 * t, z1 - 2 * t), (u1 - L, u1, z0 + 2 * t, z1 - 2 * t),
+              (u0 + L, u0 + 2 * L, z0 + t, z0 + 2 * t), (u1 - 2 * L, u1 - L, z0 + t, z0 + 2 * t),
+              (u0 + L, u0 + 2 * L, z1 - 2 * t, z1 - t), (u1 - 2 * L, u1 - L, z1 - 2 * t, z1 - t)):
+        T.paint(k, ax, plane, q[0], q[1], q[2], q[3], 0.0, fam, lvl)
+
+
 def civil(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
-        T.run(k, ax, plane, a, b, ends, zs - 0.03, zs + 0.05, PAINT, F, 4, 0)
-        if not full:
+        X, C = b, NAVY_C                                # (the corners and wall ends as navy's)
+        endf, end1, corner, back = _ends(ax, plane, b, ends)
+        if corner:
+            b -= C
+        cp = corner and ax == "y"
+        pe = ("in" if back else ends[0], ends[1])
+        zh = top - 0.13 * (top - zs) if full else top
+        parts = [(zs - 0.03, zs + 0.05, PAINT, F, 4)]
+        if full:
+            parts += [(zh, top - 0.02, PX, "ochre", 3),                                         # the colour band ...
+                      (top - 0.045, top - 0.02, PX + PAINT, "ochre", 4),                        # ... lit on top,
+                      (zh, zh + 0.025, PX + PAINT, "ochre", 2)]                                 # ... dark below
+        for z0, z1, d, fam, lvl in parts:
+            T.run(k, ax, plane, a, b, pe, z0, z1, d, fam, lvl, 0)
+            if cp:
+                corner_piece(k, X, plane, C, _slab(z0, z1, d), fam, lvl)
+        if cp:
+            _ramp_chamfer(k, X, plane, C, zs, F)
+        if endf:
+            _end_section(k, ax, plane, a, b, zs, zh, F)
+        if not full or endf:
             return
-        zh = top - 0.13 * (top - zs)
-        T.run(k, ax, plane, a, b, ends, zh, top - 0.02, PX, "ochre", 3, 0)                      # the colour band ...
-        T.run(k, ax, plane, a, b, ends, top - 0.045, top - 0.02, PX + PAINT, "ochre", 4, 0)     # ... lit on top,
-        T.run(k, ax, plane, a, b, ends, zh, zh + 0.025, PX + PAINT, "ochre", 2, 0)             # ... dark below
         for s0, s1 in T.spans(a, b):
-            if s1 - s0 < 0.3:
-                continue
-            f0, f1, g0, g1 = s0 + 0.07, s1 - 0.07, zs + 0.12, zh - 0.06
-            for q in ((f0, f1, g0, g0 + 0.026), (f0, f1, g1 - 0.026, g1), (f0, f0 + LINE, g0, g1),
-                      (f1 - LINE, f1, g0, g1)):
-                T.paint(k, ax, plane, q[0], q[1], q[2], q[3], 0.0, "rose", 2)                   # the frame's seam
-            for z in (g0 + 0.2, g1 - 0.2):
-                for u in (f0, f1 - LINE):
-                    T.paint(k, ax, plane, u - LINE, u + 2 * LINE, z - 0.013, z + 0.013, PAINT, "rose", 2)  # ticks
-            n = 3 if hull else 2
-            h = (g1 - g0) / n
-            uc = (f0 + f1) / 2
-            for i in range(n):                                                                  # the drawers: a seam
-                z0 = g0 + i * h                                                                 # between them
-                if i:
-                    T.paint(k, ax, plane, f0 + LINE, f1 - LINE, z0 - 0.013, z0 + 0.013, 0.0, "rose", 2)
-                T.paint(k, ax, plane, uc - 0.09, uc + 0.09, z0 + h - 0.2, z0 + h - 0.09, 0.0, "rose", 1)   # handle:
-                for z in (z0 + h - 0.175, z0 + h - 0.125):                                      # light lines on dark
-                    T.paint(k, ax, plane, uc - 0.07, uc + 0.07, z, z + 0.026, PAINT, F, 5)
-                T.paint(k, ax, plane, uc - 0.013, uc + 0.013, z0 + h - 0.27, z0 + h - 0.245, 0.0, "rose", 1)  # lock
+            if s1 - s0 < 0.45:                          # (a short stretch, by a corner or a junction, stays plain:
+                continue                                # its frame came out a cramped strip)
+            gm = 0.08                                                                           # the drawers centred
+            f0, f1, g0, g1 = s0 + 0.07, s1 - 0.07, zs + 0.05 + gm, zh - gm                      # between the foot strip
+            n = 2                                                                               # and the band, each
+            h, gap = (g1 - g0) / n, 0.035                                                       # its own outline with
+            uc = (f0 + f1) / 2                                                                  # rounded corners
+            for i in range(n):
+                z0, z1 = g0 + i * h + (gap / 2 if i else 0.0), g0 + (i + 1) * h - (gap / 2 if i < n - 1 else 0.0)
+                rbox(k, ax, plane, f0, f1, z0, z1, F, 2)
+                T.paint(k, ax, plane, uc - 0.08, uc + 0.08, z1 - 0.15, z1 - 0.09, 0.0, F, 2)     # a handle recess in the
+                T.paint(k, ax, plane, uc - 0.08, uc + 0.08, z1 - 0.115, z1 - 0.09, PAINT, F, 1)  # seams' tone, its lip
     return face
 
 

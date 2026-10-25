@@ -86,7 +86,8 @@ class Civil(Faction):
         super().__init__()
 
     def relief(self, sprite):
-        return _style(R.civil, skirt="outline", toe="ochre", seam=0, toe_at=0.66)
+        return _style(R.civil, skirt="outline", toe="ochre", seam=0, toe_at=0.66, shell=R.NavyShell,
+                          chamfer=R.NAVY_C)
 
 
 class Bastion(Faction):
