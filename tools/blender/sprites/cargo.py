@@ -3,61 +3,56 @@
   item.cargo_crate.l     the case on the deck, at the item stacks' tile scale (it never stacks, so it has one size)
   item.cargo_crate.held  the small version a crew member carries, sized like the other .held sprites
 
-An armoured cargo container, not luggage: a squat gunmetal block inside heavy light bumper rails on every edge, a raised
-lid panel with stencil marks, locking clamps across the lid seam, recessed grips in the ends, a hazard stripe along the
-foot, and a glowing red seal band all round the seam with a status panel (glow): sealed, someone else's. Origin = centre
-of the tile at floor level, as items.py; the camera sees the +x end and the +y long side. The renderer finds both ids
-already (itemView.ts stackAssets / heldAssets)."""
+A rugged moulded transport case: a low, chunky off-white shell with rounded moulded edges, a lid with a pronounced lip
+and two raised ribs, dark rubber guards on the corners, fold-down bar handles on the ends, flush latches, and a red strap
+over the lid held by a glowing seal tag: sealed, someone else's. Origin = centre of the tile at floor level, as items.py;
+the camera sees the +x end and the +y long side. The renderer finds both ids already (itemView.ts stackAssets /
+heldAssets)."""
 from . import core
 from .items import HELD_K, STACK_K, _fin
 
-BODY, BODY_TOP, RAIL, RAIL_TOP = "nvF3", "nvF2", "nvW3", "nvW2"
+SHELL, SHELL_TOP, LID_TOP, GUARD = "c3W4", "c3W2", "c3W1", "steelD"
 
 
 def case(m, L, W, H, detail=True):
-    """The container L x W x H (grid units, long side along x), standing on the floor."""
-    seam = H * 0.68
-    r = min(L, W, H) * 0.11                                                   # bumper rail thickness
-    m.box((0, 0, 0), (L, W, H), BODY, top=BODY_TOP, base=True, bevel=r * 0.3)
-    for sx in (-1, 1):                                                        # the 12 edge rails
+    """The case L x W x H (grid units, long side along x), standing on the floor."""
+    lid = H * 0.34
+    b = min(W, H) * 0.22                                                      # moulded edge rounding
+    m.box((0, 0, 0), (L, W, H - lid), SHELL, top=SHELL, base=True, bevel=b)
+    m.box((0, 0, H - lid - 0.02), (L * 1.03, W * 1.04, 0.04), "c3W5", top=SHELL_TOP, base=True, bevel=0.012)   # the lip
+    m.box((0, 0, H - lid + 0.012), (L * 0.98, W * 0.97, lid - 0.012), SHELL, top=LID_TOP, base=True, bevel=b * 0.8)
+    g = min(W, H) * 0.3                                                       # rubber corner guards, full height
+    for sx in (-1, 1):
         for sy in (-1, 1):
-            m.box((sx * (L / 2 - r / 2), sy * (W / 2 - r / 2), 0), (r * 1.15, r * 1.15, H), RAIL, top=RAIL_TOP, base=True)
-        for z in (0, H - r):
-            m.box((sx * (L / 2 - r / 2), 0, z), (r * 1.15, W, r * 1.1), RAIL, top=RAIL_TOP, base=True)
-    for sy in (-1, 1):
-        for z in (0, H - r):
-            m.box((0, sy * (W / 2 - r / 2), z), (L, r * 1.15, r * 1.1), RAIL, top=RAIL_TOP, base=True)
-    # the seal: a glowing band all round the seam, under the clamps
-    m.box((0, 0, seam - 0.012), (L - r * 1.6, W + 0.012, 0.024), "red", base=True)
-    m.box((0, 0, seam - 0.012), (L + 0.012, W - r * 1.6, 0.024), "red", base=True)
+            m.box((sx * (L / 2 - g * 0.35), sy * (W / 2 - g * 0.35), 0), (g, g, H * 0.97), GUARD, top="steel", base=True,
+                  bevel=g * 0.3)
+    strap = L * 0.22                                                          # the seal strap over the lid, front to back
+    m.box((strap, 0, 0.02), (0.05, W * 1.06, H - 0.01), "medRed", top="medRed", base=True)
     if not detail:
-        m.box((0, 0, H), (L * 0.5, W * 0.5, 0.02), "nvW4", top="nvW3", base=True)
+        m.box((strap, W * 0.53, H * 0.45), (0.035, 0.02, 0.035), "red", base=True)
         return
-    m.box((0, 0, H), (L - r * 2.6, W - r * 2.6, 0.03), BODY, top="nvF1", base=True, bevel=0.008)     # raised lid panel
-    for k, (x, y, w, d) in enumerate(((-0.12, -0.05, 0.1, 0.03), (-0.12, 0.03, 0.06, 0.03), (0.08, -0.04, 0.05, 0.1))):
-        m.box((x * L / 0.56, y * W / 0.44, H + 0.03), (w, d, 0.004), "medWhite" if k < 2 else "hazY", base=True)  # stencils
-    for sx in (-0.26, 0.26):                                                  # locking clamps across the seam, both sides
-        for sy in (-1, 1):
-            m.box((sx * L, sy * (W / 2 + 0.008), seam - 0.06), (0.07, 0.035, 0.12), "steelD", top="steel", base=True)
-    for sx in (-1, 1):                                                        # recessed grips in the ends
-        m.box((sx * (L / 2 + 0.001), 0, H * 0.32), (0.012, W * 0.36, 0.05), "black", base=True)
-    for k in range(5):                                                        # hazard stripe along the foot, +y side
-        m.box((-L * 0.28 + k * L * 0.07, W / 2 + 0.004, r * 1.2), (L * 0.035, 0.008, 0.035), "hazY" if k % 2 == 0 else "hazK",
-              base=True)
-    m.box((L * 0.2, W / 2 + 0.006, H * 0.3), (0.09, 0.01, 0.07), "black", base=True)            # status panel
-    m.box((L * 0.18, W / 2 + 0.012, H * 0.33), (0.025, 0.008, 0.025), "red", base=True)
-    m.box((L * 0.23, W / 2 + 0.012, H * 0.33), (0.025, 0.008, 0.025), "steelD", base=True)
+    for y in (-W * 0.18, W * 0.18):                                           # raised ribs along the lid
+        m.box((-L * 0.08, y, H - 0.004), (L * 0.6, 0.035, 0.022), SHELL, top=LID_TOP, base=True, bevel=0.008)
+    m.box((strap, W / 2 + 0.03, H * 0.42), (0.07, 0.025, 0.08), "steelD", top="steel", base=True)      # the seal tag
+    m.box((strap, W / 2 + 0.045, H * 0.45), (0.035, 0.012, 0.04), "red", base=True)
+    for sx in (-0.3, 0.06):                                                   # flush latches across the lip, +y side
+        m.box((sx * L, W / 2 + 0.018, H - lid - 0.05), (0.07, 0.02, 0.08), "steel", top="steelL", base=True)
+    for sx in (-1, 1):                                                        # fold-down bar handles on the ends
+        for sy in (-0.2, 0.2):
+            m.box((sx * (L / 2 + 0.02), sy * W, H * 0.45), (0.03, 0.03, 0.03), "steelD", base=True)
+        m.box((sx * (L / 2 + 0.035), 0, H * 0.38), (0.025, W * 0.46, 0.03), "steel", top="steelL", base=True)
+    m.box((-L * 0.18, W / 2 + 0.008, H * 0.2), (0.12, 0.01, 0.07), "hivis", base=True)           # an orange freight label
 
 
 def floor_case():
     m = core.Mesh("cargo_case")
-    case(m, 0.56, 0.44, 0.36)
+    case(m, 0.6, 0.42, 0.3)
     return [_fin(m, STACK_K)]
 
 
 def held_case():
     m = core.Mesh("cargo_case_held")
-    case(m, 0.22, 0.17, 0.15, detail=False)
+    case(m, 0.24, 0.17, 0.13, detail=False)
     return [_fin(m, HELD_K)]
 
 
