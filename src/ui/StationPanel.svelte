@@ -51,7 +51,7 @@
 </aside>
 
 <style>
-  aside { z-index: 6; box-sizing: border-box; top: calc(var(--rcol-h, 120px) + var(--sat) + 16px); right: calc(8px + var(--sar)); width: 400px; max-height: calc(100dvh - var(--rcol-h, 120px) - var(--sat) - 28px); overflow-y: auto; }
+  aside { z-index: 6; box-sizing: border-box; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(520px, calc(100vw - 32px)); height: min(600px, calc(100dvh - var(--sat) - var(--sab) - 48px)); padding: 14px; overflow-y: auto; }
   header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
   .who { flex: 1; min-width: 0; }
   h2 { margin: 0; font-size: 16px; color: var(--cyan); }
@@ -64,5 +64,5 @@
   .n { margin-left: 6px; color: var(--amber); }
   .none, .note { color: var(--dim); font-size: 12px; margin: 2px 0; }
   .note { margin-top: 8px; }
-  @media (max-width: 600px) { aside { width: auto; top: auto; right: 0; } }
+  @media (max-width: 600px) { aside { width: auto; height: auto; top: auto; left: 0; right: 0; transform: none; } }
 </style>
