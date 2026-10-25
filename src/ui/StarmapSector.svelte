@@ -188,6 +188,8 @@
   <g transform={`translate(${m.f.x + m.ox * px(54)} ${m.f.y + m.oy * px(54)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
     <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
     {#if art && art.frames[`starmap.fleet.${m.f.kind}.d0`]}
+      <!-- The sprite takes no pointer events: this catches the hover for the fleet's tooltip. -->
+      <rect x={-fleetPx / 2} y={-fleetPx / 2} width={fleetPx} height={fleetPx} class="hit" />
       <StarmapSprite {art} id={`starmap.fleet.${m.f.kind}.d${dir(m.heading)}`} x={0} y={0} size={fleetPx} tint={toneTint(m.f.tone)} />
     {:else}
       <path d={pixelArrow(m.heading, g, 1.5)} style={`fill: ${toneColor(m.f.tone)}`} />
@@ -250,6 +252,7 @@
   .lane.heading { fill-opacity: 0.55; }
   .fleet path { stroke: none; }
   .fleet { pointer-events: all; }
+  .hit { fill: transparent; }
   .adrift { fill: none; stroke: var(--amber); stroke-width: 1.2; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
   .sel { fill: var(--amber); }
   .hostile { fill: color-mix(in srgb, var(--red) 25%, transparent); }
