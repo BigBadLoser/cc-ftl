@@ -16,6 +16,15 @@ UI='refinery.terminal.ui'
 CONTROL_GREYS={SCREEN:{'hex':'#29323a'},UI:{'hex':'#c1cbd2'}}
 
 
+class RefineryFrame(Frame):
+    def vcyl(self,u,v,z,r,h,color,top=None,rtop=None,sides=8):
+        # Rotate the faceted cylinder's section as well as its centre. r1 keeps
+        # the approved vertex order and appearance; other views are rigid turns.
+        x,y=self.xy(u,v)
+        self.m.cyl((x,y,z),r,h,color,sides=sides,top=top,rtop=rtop,
+                   rz=(self.rot-1)*math.pi/2)
+
+
 @dataclass(frozen=True)
 class VesselRefinery:
     vessel_u:float=.05
@@ -112,7 +121,7 @@ def feed(f,p):
     f.m.paint('frame')
     case(f,-.88,p.vessel_v,.35,.92,.78,.40,COL,.07,.12)
     f.m.paint('steel')
-    cross=Frame(f.m,rot=2,centre=(0,0))
+    cross=Frame(f.m,rot=(f.rot+1)%4,centre=(f.cx,f.cy))
     for u in (p.feed_u-.16,p.feed_u+.16):
         cross.hcyl(p.vessel_v-.64,p.vessel_v+.64,-u,p.feed_top-.22,.075,COL,sides=16,cap=COL,capstart=COL)
         cross.hcyl(p.vessel_v-.49,p.vessel_v+.49,-u,p.feed_top-.22,.11,COL,sides=16)
@@ -188,7 +197,7 @@ def discharge(f,p):
                for dz in (0,h)]
         bridge(f,*loops,COL);cap(f,loops[0][::-1]);cap(f,loops[1])
     if p.powered_output:
-        cross=Frame(f.m,rot=2,centre=(0,0));radius=.075;axle_lift=.070
+        cross=Frame(f.m,rot=(f.rot+1)%4,centre=(f.cx,f.cy));radius=.075;axle_lift=.070
         f.m.paint('steel')
         for u in (1.24,1.42,1.60,1.78):
             z=.35-slope*(u-u0)+axle_lift
@@ -322,10 +331,11 @@ def condenser(f,p):
             (1.02,.87,.38),(1.02,.69,.45),exposed,straight,inlet],.085)
 
 
-def refinery_revision_b(p=VesselRefinery()):
+def refinery_revision_b(p=VesselRefinery(),rotation=1):
     core.palette._data.update(GREY);core.palette._data.update(CONTROL_GREYS)
     core.palette._data.update(FINISH_PALETTE)
-    m=FinishMesh('refinery_b_vertical_vessel',finished=p.materials);f=Frame(m,rot=1,centre=(0,0))
+    assert rotation in (0,1,2,3)
+    m=FinishMesh('refinery_b_vertical_vessel',finished=p.materials);f=RefineryFrame(m,rot=rotation,centre=(0,0))
     # One low cast chassis joins the feed, pressure vessel and discharge roots.
     case(f,-.02,p.vessel_v,0,3.00,1.56,.26,COL,.065,.26)
     for u in (-1.28,.75):

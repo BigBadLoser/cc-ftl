@@ -35,9 +35,37 @@ polygon topology before rendering. `b.json` records the matching result and a
 vertex digest. `b-material-comparison.png` shows the two at the same camera/scale.
 
 Native and 3x previews were inspected. Bounds remain **3.670 x 2.496 x 1.794**.
-Only one angle is reviewed so far; the low-sample surface speckling and other
-rotations are still pending review. No wear pass, full sprite build or game
-integration. The existing crew scale image is retained from the grey pass.
+The initial material pass reviewed one angle; the user approved its colour
+scheme. The four-orientation review is described below. No wear pass, full
+sprite build or game integration. The existing crew scale image is retained
+from the grey pass.
+
+### Four-rotation review
+
+`review/refinery_rotation_preview.py` renders r0–r3 in one sequential Blender
+process, four samples per view, at 128x64 tile scale. Artifacts are in
+`artifacts/refinery-rotations/`: native and 3x PNGs, measured bounds and deck
+anchors per view, parameters, review metadata and `rotations.png` at matched
+world scale. r1 is the previously approved camera angle.
+
+`refinery_revision_b(..., rotation=...)` now accepts all four orientations.
+Crosswise feed/output rollers inherit their parent orientation, and vertical
+cylinder facets turn with their frames. The review checks every vertex against
+a rigid rotation of the approved Blender model, plus identical topology and
+material attributes. The r1 image is pixel-for-pixel identical to the approved
+material preview. All orientations fit the rotated 3x4 footprint and stay below
+1.85 high, without cropped geometry.
+
+Visible limitations: the console faces the camera in r0/r1 and is largely hidden
+on the far side in r2/r3. The outlet is also mostly behind the vessel in r3.
+These are physical occlusions; components have not been repositioned per view.
+Rotations are ready for visual review. Operating/unpowered state previews and
+production exports are still pending.
+
+```sh
+SPRITE_PREVIEW=1 SPRITE_SAMPLES=4 blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/refinery_rotation_preview.py -- --out artifacts/refinery-rotations
+python3 tools/blender/review/refinery_rotation_preview.py --out artifacts/refinery-rotations --compose
+```
 
 ### B mechanical refinement (after concept selection)
 

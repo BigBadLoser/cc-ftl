@@ -1,0 +1,9 @@
+{
+  "approvedR1PixelIdentical": true,
+  "samples": 4,
+  "scale": [
+    128,
+    64
+  ],
+  "notes": "Physical orientations; terminal visibility depends on occlusion. No per-view repositioning."
+}
