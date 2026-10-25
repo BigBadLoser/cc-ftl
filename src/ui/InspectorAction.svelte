@@ -63,8 +63,7 @@
   .msg { display: flex; align-items: center; gap: 4px; color: var(--text); }
   .alert .msg { color: var(--amber); }
   .warn { color: var(--amber); }
-  .group { display: flex; justify-content: center; }
+  .group { display: flex; justify-content: center; gap: 8px; }
   .group button { min-height: 32px; padding: 0 14px; }
-  .group button + button { margin-left: -1px; }
-  .group button.danger { border-color: var(--red); color: var(--red); position: relative; }
+  .group button.danger { border-color: var(--red); color: var(--red); }
 </style>
