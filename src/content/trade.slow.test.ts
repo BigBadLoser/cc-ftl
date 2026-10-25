@@ -45,9 +45,12 @@ function withStation(): { sim: Sim; station: number } {
   return { sim, station };
 }
 
+/** Items that change hands: all but a job's sealed cargo (ItemDef.cargo), which is never for sale. */
+const traded = Object.entries(content.items).filter(([, d]) => !(d as { cargo?: true }).cargo);
+
 describe('content', () => {
-  it('prices every item and every trader stocks only priced items; faction and trader tables resolve', () => {
-    for (const [id, d] of Object.entries(content.items)) expect((d as { price?: number }).price, id).toBeGreaterThan(0);
+  it('prices every item but job cargo, and every trader stocks only priced items; faction and trader tables resolve', () => {
+    for (const [id, d] of traded) expect((d as { price?: number }).price, id).toBeGreaterThan(0);
     for (const [id, t] of Object.entries(content.trade.traders)) {
       for (const s of t.stock) expect(content.items[s.item as keyof typeof content.items], `${id} ${s.item}`).toBeDefined();
       const fid = (t.match as { faction?: string }).faction;
@@ -71,7 +74,7 @@ describe('pricing', () => {
         t.faction = faction;
         for (const rep of [-8, -2, 0, 3, 9]) {
           sim.story.reputation[content.trade.factions[faction as keyof typeof content.trade.factions].reputation] = rep;
-          for (const item of Object.keys(content.items)) {
+          for (const [item] of traded) {
             const sell = unitPrice(sim, station, item, 'sell')!;
             const buy = unitPrice(sim, station, item, 'buy')!;
             expect(buy, `${profile} ${faction} rep ${rep} ${item}`).toBeLessThanOrEqual(sell);
