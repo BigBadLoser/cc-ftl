@@ -109,7 +109,10 @@
 </g>
 {#if art}
   {#each map.exits.filter((e) => e.kind !== 'lane') as e (e.id)}
-    <StarmapSprite {art} id={`starmap.exit.${e.kind}`} x={(e.ax + e.bx) / 2} y={(e.ay + e.by) / 2} size={structPx * 1.25} />
+    <!-- Just out from the gateway, on the lane where it leaves the sector (the far end is usually off the view). -->
+    {@const len = Math.hypot(e.bx - e.ax, e.by - e.ay) || 1}
+    {@const out = Math.min(len / 2, px(48))}
+    <StarmapSprite {art} id={`starmap.exit.${e.kind}`} x={e.ax + ((e.bx - e.ax) / len) * out} y={e.ay + ((e.by - e.ay) / len) * out} size={structPx * 1.25} />
   {/each}
 {/if}
 {#if current && !ship}

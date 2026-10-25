@@ -48,18 +48,37 @@ export function swapPixels(data: Uint8ClampedArray, keys: readonly Rgb[], repl: 
   }
 }
 
-let sheet: HTMLImageElement | null = null;
-let sheetSrc = '';
-let sheetReady: Promise<HTMLImageElement> | null = null;
+const sheets = new Map<string, Promise<HTMLImageElement>>();
 const urls = new Map<string, string>();
 
 function loadSheet(src: string): Promise<HTMLImageElement> {
-  if (sheetReady && sheetSrc === src) return sheetReady;
-  sheetSrc = src;
-  const img = new Image();
-  img.src = src;
-  sheetReady = img.decode().then(() => (sheet = img));
-  return sheetReady;
+  let p = sheets.get(src);
+  if (!p) {
+    const img = new Image();
+    img.src = src;
+    sheets.set(src, (p = img.decode().then(() => img)));
+  }
+  return p;
+}
+
+/** A frame of the colour sheet (or its glow twin) as its own image URL, the size of the frame: for SVG patterns, which cannot crop. */
+export async function frameUrl(art: UiStarArt, id: string, glow = false): Promise<string | null> {
+  const f = art.frames[id];
+  const src = glow ? art.glow : art.src;
+  if (!f || !src) return null;
+  const key = `${id}|${glow ? 'glow' : 'colour'}`;
+  const hit = urls.get(key);
+  if (hit) return hit;
+  const img = await loadSheet(src);
+  const c = document.createElement('canvas');
+  c.width = f.w;
+  c.height = f.h;
+  const ctx = c.getContext('2d');
+  if (!ctx) return null;
+  ctx.drawImage(img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+  const url = c.toDataURL();
+  urls.set(key, url);
+  return url;
 }
 
 /** An icon's frame with its key colours swapped for `cloth` and `accent` (0..1 rgb), as an image URL the size of the frame. */
@@ -69,7 +88,7 @@ export async function tintedFrame(art: UiStarArt, id: string, cloth: Rgb, accent
   const key = `${id}|${cloth.join(',')}|${accent.join(',')}`;
   const hit = urls.get(key);
   if (hit) return hit;
-  const img = sheet && sheetSrc === art.src ? sheet : await loadSheet(art.src);
+  const img = await loadSheet(art.src);
   const c = document.createElement('canvas');
   c.width = f.w;
   c.height = f.h;

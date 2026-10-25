@@ -15,6 +15,7 @@
   import StarmapCluster from './StarmapCluster.svelte';
   import StarmapSector from './StarmapSector.svelte';
   import { jumpCommand, toggleTake } from './starmapJump';
+  import { frameUrl } from './starmapTint';
   import { BODY_LOOK, toneColor } from './starmapStyle';
 
   /**
@@ -26,6 +27,15 @@
   let map = $state<UiStarmap | null>(null);
   /** The starmap's sprites (null until loaded: the levels draw their code shapes meanwhile). */
   let art = $state<UiStarArt | null>(null);
+  /** The starfield backdrop tile (`starmap.backdrop`), repeated behind the map at two screen px per art px. */
+  let backdrop = $state<string | null>(null);
+  $effect(() => {
+    const a = art;
+    if (!a?.frames['starmap.backdrop']) return;
+    let live = true;
+    void frameUrl(a, 'starmap.backdrop').then((u) => live && (backdrop = u));
+    return () => (live = false);
+  });
   /** Flee-target mode: only while the ship is still in the node (once it is in hyperspace the map is the ordinary trip view). */
   /** In hyperspace the map cannot be closed: it is the view until the ship drops. */
   const locked = $derived(map?.state === 'hyperspace');
@@ -426,7 +436,7 @@
   <div class="statbar">
     {#if map}<StarmapStats {map} fuelBad={!!route && !route.fuelOk} chargeBad={!!route && !route.chargeOk} />{/if}
   </div>
-  <div class="view" bind:clientWidth={w} bind:clientHeight={h}>
+  <div class="view" bind:clientWidth={w} bind:clientHeight={h} style:background-image={backdrop ? `url(${backdrop})` : null}>
     <svg bind:this={svg} width={w} height={h} role="application" aria-label="Starmap" class:drag={dragging} class:over={!!hover && !dragging}
       onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onpointerleave={() => (hover = null)}>
       {#if map}
@@ -436,7 +446,7 @@
           {/each}
         </defs>
         <g transform={`translate(${w / 2 - cx * s} ${h / 2 - cy * s}) scale(${s})`}>
-          {#if level < 3}<StarmapNebula tiles={map.nebula} opacity={level === 1 ? 0.6 : 1} />{/if}
+          {#if level < 3}<StarmapNebula tiles={map.nebula} {art} opacity={level === 1 ? 0.6 : 1} />{/if}
           {#key level}
             <g transition:fade={{ duration: 180 }}>
               {#if level === 1}
@@ -492,7 +502,7 @@
   .head { flex: none; padding: 10px 10px 0; border-bottom: 1px solid var(--line-hi); background: var(--panel); }
   .head :global(.ph) { margin: -10px -10px 0; }
   .statbar { flex: none; padding: 6px 10px; background: var(--panel); border-bottom: 1px solid var(--line); min-height: 34px; box-sizing: border-box; }
-  .view { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+  .view { position: relative; flex: 1; min-height: 0; overflow: hidden; background-size: 512px 512px; background-repeat: repeat; image-rendering: pixelated; }
   svg { display: block; touch-action: none; cursor: default; }
   svg.over { cursor: pointer; }
   svg.drag { cursor: grab; }
