@@ -6,7 +6,8 @@ Every body renders into the same FRAME (96 px at 1x, 192 at 2x), centred on the 
   star        yellow-white, granulated, a couple of spots and prominences; warm halo (glow)
   red_dwarf   deep red, heavily spotted, more flares; red halo (glow)
   blue_giant  blue-white, smooth; cyan halo (glow)
-  gas_giant   banded amber planet with a tilted ring, lit from the upper left like the ships; no glow; outlined
+  gas_giant   banded amber planet with a tilted ring (v0..v2) or none (v3..v5), lit from the upper left like the ships; no
+              glow; outlined
   black_hole  dark core, photon ring and the lensed far side of an amber accretion disc; the disc glows
   nebula      glow only (nothing on the colour sheet): self-lit gas puffs at low strength, dark lanes, a few young stars
 
@@ -114,8 +115,11 @@ RAMP = {
     "cream": ("c2T1", "c2T2", "c2T4", "c2T6", "oK"),
     "rust": ("c1T1", "c1T2", "c1T4", "c1T5", "c1T6"),
     "ochre": ("ochL", "ochM", "ochD", "ochK", "oXK"),
+    "red": ("lvRL", "lvR", "lvR2", "lvRS", "rustD"),                # storms only
 }
-# bands: (upper latitude in degrees, ramp) from the south pole up; storm: (latitude, longitude, size) or None
+# bands: (upper latitude in degrees, ramp) from the south pole up; storm: (latitude, longitude, size[, inner, outer ramp])
+# or None; oval: stretch a storm along its latitude; ring: False for none (then the axis stands upright); turb: band
+# waviness in degrees; fine: a finer sphere mesh
 GIANTS = (
     dict(bands=((-50, "ochre"), (-34, "amber"), (-20, "cream"), (-8, "rust"), (8, "cream"), (22, "amber"), (36, "cream"),
                 (52, "amber"), (90, "ochre")), storm=None),
@@ -123,8 +127,17 @@ GIANTS = (
          storm=None),
     dict(bands=((-52, "ochre"), (-30, "amber"), (-22, "cream"), (-6, "rust"), (12, "amber"), (26, "cream"), (44, "rust"),
                 (90, "ochre")), storm=(-16, 0.5, 0.17)),
+    # v3..v5 have no ring: a Jupiter with a great red storm, a pale smooth one with a light oval, a dark churned one
+    dict(bands=((-56, "ochre"), (-40, "rust"), (-30, "cream"), (-18, "amber"), (-10, "rust"), (-2, "cream"), (8, "amber"),
+                (16, "cream"), (26, "rust"), (36, "cream"), (50, "amber"), (90, "ochre")), storm=(-22, 0.35, 0.16, "red", "cream"), oval=1.7,
+         ring=False, turb=6, fine=True),
+    dict(bands=((-60, "ochre"), (-30, "cream"), (-24, "amber"), (24, "cream"), (30, "amber"), (90, "ochre")),
+         storm=(14, -0.3, 0.1, "cream", "amber"), oval=1.6, ring=False, turb=4, fine=True),
+    dict(bands=((-48, "ochre"), (-28, "rust"), (-12, "ochre"), (6, "rust"), (22, "amber"), (40, "rust"), (90, "ochre")),
+         storm=(30, 0.2, 0.09, "ochre", "rust"), oval=1.6, ring=False, turb=11, fine=True),
 )
 AXIS = (-0.22 * R + 0.88 * U + 0.42 * N).normalized()       # the ring opens about 0.42 and leans right
+UPRIGHT = (-0.1 * R + 0.97 * U + 0.22 * N).normalized()     # a ringless giant's axis
 RING = ((1.2, 1.31, "c2T3"), (1.35, 1.49, "c2T1"), (1.49, 1.55, "c2T4"))   # (inner, outer in body radii, colour)
 
 
@@ -164,20 +177,31 @@ def gas_giant(seed, spec, ramps=RAMP, axis=AXIS, ring=RING, shadow=RAMP["cream"]
             inner, outer = cols or ("rust", "cream")
             c = math.radians(la)
             d = math.cos(c) * (math.cos(lo) * NV + math.sin(lo) * e1) + math.sin(c) * A     # longitude 0 faces the camera
-            ang = np.arccos(np.clip(ns @ (d / np.linalg.norm(d)), -1, 1))
+            d = d / np.linalg.norm(d)
+            if spec.get("oval"):                # an oval storm, stretched along its latitude by `oval`
+                east = np.cross(A, d)
+                east /= np.linalg.norm(east)
+                north = np.cross(d, east)
+                ang = np.hypot(ns @ east / spec["oval"], ns @ north) + (ns @ d <= 0) * 9
+            else:
+                ang = np.arccos(np.clip(ns @ d, -1, 1))
             ramp = np.where(ang < size * 0.6, inner, np.where(ang < size, outer, ramp))
         return [flat(ramps[r][min(int(s), 4)]) for r, s in zip(ramp, step)]
     body = core.Mesh("giant")
-    sphere(body, Vector(), RB, paint, axis=axis)
-    rings = core.Mesh("ring")
-    for r0, r1, col in ring:
-        def rpaint(f, a, c, col=col):
-            c = np.asarray(c)
-            b = c @ LV
-            dark = (b < 0) & (b * b > (c * c).sum(1) - RB * RB)
-            return [flat(shadow if s else col) for s in dark]
-        annulus(rings, Vector(), axis, RB * r0, RB * r1, rpaint, segs=160)
-    return [body.build(), rings.build()], []
+    fine = spec.get("fine", False)                 # a finer mesh, so small storms are round
+    sphere(body, Vector(), RB, paint, axis=axis, segs=192 if fine else 96, rings=128 if fine else 64)
+    objs = [body.build()]
+    if ring:
+        rings = core.Mesh("ring")
+        for r0, r1, col in ring:
+            def rpaint(f, a, c, col=col):
+                c = np.asarray(c)
+                b = c @ LV
+                dark = (b < 0) & (b * b > (c * c).sum(1) - RB * RB)
+                return [flat(shadow if s else col) for s in dark]
+            annulus(rings, Vector(), axis, RB * r0, RB * r1, rpaint, segs=160)
+        objs.append(rings.build())
+    return objs, []
 
 
 # ---- black hole -------------------------------------------------------------------------------------------------------
@@ -257,7 +281,8 @@ def body_items(kind, v):
     if kind in STARS:
         objs, halo = star(kind, seed)
     elif kind == "gas_giant":
-        objs, halo = gas_giant(seed, GIANTS[v])
+        ringed = GIANTS[v].get("ring", True)
+        objs, halo = gas_giant(seed, GIANTS[v], axis=AXIS if ringed else UPRIGHT, ring=RING if ringed else ())
     elif kind == "black_hole":
         objs, halo = black_hole(seed, HOLE[v])
     else:
@@ -272,4 +297,9 @@ def items(kind, v, halo, outline=False):
 
 
 def jobs():
-    return [lambda kind=kind, v=v: body_items(kind, v) for kind in KINDS for v in range(VARIANTS)]
+    return [lambda kind=kind, v=v: body_items(kind, v) for kind in KINDS for v in range(variants(kind))]
+
+
+def variants(kind):
+    """How many variants a kind has: three, and six gas giants (v3..v5 without a ring)."""
+    return len(GIANTS) if kind == "gas_giant" else VARIANTS

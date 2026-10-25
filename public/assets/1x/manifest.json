@@ -100240,7 +100240,7 @@
     1
    ]
   },
-  "starmap.body.ice_giant": {
+  "starmap.body.gas_giant.v3": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100258,7 +100258,7 @@
     1
    ]
   },
-  "starmap.body.ice_giant.v0": {
+  "starmap.body.gas_giant.v4": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100276,7 +100276,7 @@
     1
    ]
   },
-  "starmap.body.ice_giant.v1": {
+  "starmap.body.gas_giant.v5": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100294,7 +100294,7 @@
     1
    ]
   },
-  "starmap.body.ice_giant.v2": {
+  "starmap.body.ice_giant": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100312,7 +100312,7 @@
     1
    ]
   },
-  "starmap.body.lava_world": {
+  "starmap.body.ice_giant.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100328,10 +100328,9 @@
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
-  "starmap.body.lava_world.v0": {
+  "starmap.body.ice_giant.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100347,10 +100346,9 @@
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
-  "starmap.body.lava_world.v1": {
+  "starmap.body.ice_giant.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100366,10 +100364,9 @@
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
-  "starmap.body.lava_world.v2": {
+  "starmap.body.lava_world": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100388,7 +100385,7 @@
    ],
    "glow": true
   },
-  "starmap.body.nebula": {
+  "starmap.body.lava_world.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100407,7 +100404,7 @@
    ],
    "glow": true
   },
-  "starmap.body.nebula.v0": {
+  "starmap.body.lava_world.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100426,7 +100423,7 @@
    ],
    "glow": true
   },
-  "starmap.body.nebula.v1": {
+  "starmap.body.lava_world.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100445,7 +100442,7 @@
    ],
    "glow": true
   },
-  "starmap.body.nebula.v2": {
+  "starmap.body.nebula": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100464,7 +100461,7 @@
    ],
    "glow": true
   },
-  "starmap.body.ocean_world": {
+  "starmap.body.nebula.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100483,7 +100480,7 @@
    ],
    "glow": true
   },
-  "starmap.body.ocean_world.v0": {
+  "starmap.body.nebula.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100502,7 +100499,7 @@
    ],
    "glow": true
   },
-  "starmap.body.ocean_world.v1": {
+  "starmap.body.nebula.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100521,7 +100518,7 @@
    ],
    "glow": true
   },
-  "starmap.body.ocean_world.v2": {
+  "starmap.body.ocean_world": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100540,7 +100537,7 @@
    ],
    "glow": true
   },
-  "starmap.body.protostar": {
+  "starmap.body.ocean_world.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100559,7 +100556,7 @@
    ],
    "glow": true
   },
-  "starmap.body.protostar.v0": {
+  "starmap.body.ocean_world.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100578,7 +100575,7 @@
    ],
    "glow": true
   },
-  "starmap.body.protostar.v1": {
+  "starmap.body.ocean_world.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100597,7 +100594,7 @@
    ],
    "glow": true
   },
-  "starmap.body.protostar.v2": {
+  "starmap.body.protostar": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100616,7 +100613,7 @@
    ],
    "glow": true
   },
-  "starmap.body.pulsar": {
+  "starmap.body.protostar.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100635,7 +100632,7 @@
    ],
    "glow": true
   },
-  "starmap.body.pulsar.v0": {
+  "starmap.body.protostar.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100654,7 +100651,7 @@
    ],
    "glow": true
   },
-  "starmap.body.pulsar.v1": {
+  "starmap.body.protostar.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100673,7 +100670,7 @@
    ],
    "glow": true
   },
-  "starmap.body.pulsar.v2": {
+  "starmap.body.pulsar": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100692,7 +100689,7 @@
    ],
    "glow": true
   },
-  "starmap.body.red_dwarf": {
+  "starmap.body.pulsar.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100711,7 +100708,7 @@
    ],
    "glow": true
   },
-  "starmap.body.red_dwarf.v0": {
+  "starmap.body.pulsar.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100730,7 +100727,7 @@
    ],
    "glow": true
   },
-  "starmap.body.red_dwarf.v1": {
+  "starmap.body.pulsar.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100749,7 +100746,7 @@
    ],
    "glow": true
   },
-  "starmap.body.red_dwarf.v2": {
+  "starmap.body.red_dwarf": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100768,7 +100765,7 @@
    ],
    "glow": true
   },
-  "starmap.body.star": {
+  "starmap.body.red_dwarf.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100787,7 +100784,7 @@
    ],
    "glow": true
   },
-  "starmap.body.star.v0": {
+  "starmap.body.red_dwarf.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100806,7 +100803,7 @@
    ],
    "glow": true
   },
-  "starmap.body.star.v1": {
+  "starmap.body.red_dwarf.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100825,7 +100822,7 @@
    ],
    "glow": true
   },
-  "starmap.body.star.v2": {
+  "starmap.body.star": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100844,7 +100841,7 @@
    ],
    "glow": true
   },
-  "starmap.body.white_dwarf": {
+  "starmap.body.star.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100863,7 +100860,7 @@
    ],
    "glow": true
   },
-  "starmap.body.white_dwarf.v0": {
+  "starmap.body.star.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100882,7 +100879,7 @@
    ],
    "glow": true
   },
-  "starmap.body.white_dwarf.v1": {
+  "starmap.body.star.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100901,7 +100898,7 @@
    ],
    "glow": true
   },
-  "starmap.body.white_dwarf.v2": {
+  "starmap.body.white_dwarf": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100920,11 +100917,68 @@
    ],
    "glow": true
   },
+  "starmap.body.white_dwarf.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1262,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.white_dwarf.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1359,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.white_dwarf.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1456,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
   "starmap.fleet.miner.d0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1556,
+    "x": 1847,
     "y": 258,
     "w": 40,
     "h": 40
@@ -100943,7 +100997,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1597,
+    "x": 1888,
     "y": 258,
     "w": 40,
     "h": 40
@@ -100962,7 +101016,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1638,
+    "x": 1929,
     "y": 258,
     "w": 40,
     "h": 40
@@ -100981,7 +101035,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1679,
+    "x": 1970,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101000,7 +101054,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1720,
+    "x": 2011,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101019,7 +101073,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1761,
+    "x": 2052,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101038,7 +101092,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1802,
+    "x": 2093,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101057,7 +101111,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1843,
+    "x": 2134,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101076,7 +101130,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1884,
+    "x": 2175,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101095,7 +101149,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1925,
+    "x": 2216,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101114,7 +101168,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1966,
+    "x": 2257,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101133,7 +101187,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2007,
+    "x": 2298,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101152,7 +101206,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2048,
+    "x": 2339,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101171,7 +101225,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2089,
+    "x": 2380,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101190,7 +101244,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2130,
+    "x": 2421,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101209,7 +101263,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2171,
+    "x": 2462,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101228,7 +101282,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2212,
+    "x": 2503,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101247,7 +101301,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2253,
+    "x": 2544,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101266,7 +101320,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2294,
+    "x": 2585,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101285,7 +101339,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2335,
+    "x": 2626,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101304,7 +101358,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2376,
+    "x": 2667,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101323,7 +101377,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2417,
+    "x": 2708,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101342,7 +101396,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2458,
+    "x": 2749,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101361,7 +101415,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2499,
+    "x": 2790,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101380,7 +101434,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2540,
+    "x": 2831,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101399,7 +101453,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2581,
+    "x": 2872,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101418,7 +101472,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2622,
+    "x": 2913,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101437,7 +101491,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2663,
+    "x": 2954,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101456,7 +101510,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2704,
+    "x": 2995,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101475,7 +101529,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2745,
+    "x": 3036,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101494,7 +101548,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2786,
+    "x": 3077,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101513,7 +101567,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2827,
+    "x": 3118,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101532,7 +101586,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2868,
+    "x": 3159,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101551,7 +101605,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2909,
+    "x": 3200,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101570,7 +101624,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2950,
+    "x": 3241,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101589,7 +101643,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2991,
+    "x": 3282,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101608,7 +101662,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3032,
+    "x": 3323,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101627,7 +101681,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3073,
+    "x": 3364,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101646,7 +101700,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3114,
+    "x": 3405,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101665,7 +101719,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3155,
+    "x": 3446,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101684,7 +101738,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3196,
+    "x": 3487,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101703,7 +101757,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3237,
+    "x": 3528,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101722,7 +101776,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3278,
+    "x": 3569,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101740,7 +101794,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3319,
+    "x": 3610,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101759,7 +101813,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3360,
+    "x": 3651,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101778,7 +101832,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3401,
+    "x": 3692,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101797,7 +101851,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3442,
+    "x": 3733,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101816,7 +101870,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3483,
+    "x": 3774,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101835,7 +101889,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1262,
+    "x": 1553,
     "y": 258,
     "w": 48,
     "h": 48
@@ -101853,7 +101907,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1311,
+    "x": 1602,
     "y": 258,
     "w": 48,
     "h": 48
@@ -101872,7 +101926,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1360,
+    "x": 1651,
     "y": 258,
     "w": 48,
     "h": 48
@@ -101891,7 +101945,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1409,
+    "x": 1700,
     "y": 258,
     "w": 48,
     "h": 48
@@ -101910,7 +101964,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1458,
+    "x": 1749,
     "y": 258,
     "w": 48,
     "h": 48
@@ -101929,7 +101983,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1507,
+    "x": 1798,
     "y": 258,
     "w": 48,
     "h": 48

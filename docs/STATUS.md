@@ -46,6 +46,8 @@ are already merged or superseded. Don't build on them.
 - Seven more body kinds (user's picks, art only, 3 variants each): binary_star, white_dwarf, pulsar, protostar, ice_giant,
   lava_world, ocean_world. The sim needs them in `BodyKind` / `BODY_SIZE` / `BODY_WEIGHTS` (suggested sizes in
   ARCHITECTURE.md); awaiting the user's review.
+- Three ringless gas giants (user ask): `starmap.body.gas_giant.v3..v5` (a Jupiter with an oval red storm, a pale one, a
+  dark churned one), so the gas giant has six variants.
 - User review (round 1): bodies approved; the blue giant's four-point sparkle was dropped. Icons render at twice the
   brief's pixels (frames 96 px structures, 80 px fleets at 2x).
 - User review (round 2, on-map mock): icons looked soft because the mock shrank them (96 art px into 72 phone px). Rule

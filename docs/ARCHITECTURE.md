@@ -601,7 +601,8 @@ palette.json    the single palette, read by Blender scripts and the game
     was drawn. Sizes below are world px (what `compose.ts` hands out for both sets; the 1x frames are half in the 1x file).
   - Bodies, `starmap.body.<kind>.v0..v2` and `starmap.body.<kind>` (= v0), kinds `star`, `red_dwarf`, `blue_giant`,
     `gas_giant`, `black_hole`, `nebula`: 192 px frame, body radius 60 px. Draw at scale `r / 60` (`layout.ts` `BODY_SIZE`),
-    centred on the body; halos, the ring and the disc reach 1.6 r. Pick the variant by sector id. Stars, the black hole's
+    centred on the body; halos, the ring and the disc reach 1.6 r. Pick the variant by sector id from the `.v<n>` ids a
+    kind has: three for most, six for `gas_giant` (v0..v2 ringed, v3..v5 without a ring). Stars, the black hole's
     disc and the nebula glow; the gas giant has no glow and is outlined. The nebula is glow only (its colour pixels are
     empty): draw it under the nodes.
   - More body kinds, same ids, frame and scale, art only (the sim's `BodyKind`, `BODY_SIZE` and `BODY_WEIGHTS` do not have

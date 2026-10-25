@@ -97,7 +97,7 @@ def panel(S, zoom, title):
     pad, lab = 12 * zoom, 14
     rows = []                                                    # (label, [(sprite, faction)])
     for kind in KINDS:
-        rows.append((kind, [(S.get(f"starmap.body.{kind}.v{v}"), None) for v in range(3)]))
+        rows.append((kind, [(S.get(f"starmap.body.{kind}.v{v}"), None) for v in range(8) if S.get(f"starmap.body.{kind}.v{v}")]))
     rows.append(("structures", [(S.get(f"starmap.struct.{s}"), None) for s in STRUCTS]))
     for fac in ("navy", "pirate", "trader"):
         rows.append((f"structures ({fac})", [(S.get(f"starmap.struct.{s}"), fac) for s in STRUCTS]))
