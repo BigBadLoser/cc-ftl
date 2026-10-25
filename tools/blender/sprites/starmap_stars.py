@@ -186,10 +186,15 @@ BUILD = {"binary_star": (binary, BINARIES), "white_dwarf": (white_dwarf, DWARFS)
 
 
 def star_items(kind, v):
+    return items(kind, v, *scene(kind, v))
+
+
+def scene(kind, v):
+    """Build variant v of a star kind in a fresh scene; -> (halo objects, outlined?)."""
     start()
     fn, specs = BUILD[kind]
     objs, halo = fn(12001 + 37 * KINDS.index(kind) + v, specs[v])
-    return items(kind, v, halo)
+    return halo, False
 
 
 def jobs():

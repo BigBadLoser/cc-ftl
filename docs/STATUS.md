@@ -48,6 +48,8 @@ are already merged or superseded. Don't build on them.
   ARCHITECTURE.md); awaiting the user's review.
 - Three ringless gas giants (user ask): `starmap.body.gas_giant.v3..v5` (a Jupiter with an oval red storm, a pale one, a
   dark churned one), so the gas giant has six variants.
+- Mini bodies for the Cluster view (`starmap.mini.*`, every body variant), exit markers (`starmap.exit.gate`, `.rift`) and
+  seamless nebula field tiles (`starmap.nebula.haze|body|core`). Contract in ARCHITECTURE.md; awaiting the user's review.
 - User review (round 1): bodies approved; the blue giant's four-point sparkle was dropped. Icons render at twice the
   brief's pixels (frames 96 px structures, 80 px fleets at 2x).
 - User review (round 2, on-map mock): icons looked soft because the mock shrank them (96 art px into 72 phone px). Rule

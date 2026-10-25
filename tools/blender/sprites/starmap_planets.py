@@ -152,10 +152,15 @@ BUILD = {"ice_giant": (ice_giant, ICES), "lava_world": (lava_world, LAVAS), "oce
 
 
 def planet_items(kind, v):
+    return items(kind, v, *scene(kind, v))
+
+
+def scene(kind, v):
+    """Build variant v of a planet kind in a fresh scene; -> (halo objects, outlined?)."""
     start()
     fn, specs = BUILD[kind]
     objs, halo = fn(14001 + 37 * KINDS.index(kind) + v, specs[v])
-    return items(kind, v, halo, outline=True)
+    return halo, True
 
 
 def jobs():

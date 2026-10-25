@@ -99944,7 +99944,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 258,
+    "x": 1029,
     "y": 1,
     "w": 96,
     "h": 96
@@ -99963,7 +99963,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 355,
+    "x": 1126,
     "y": 1,
     "w": 96,
     "h": 96
@@ -99982,7 +99982,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 452,
+    "x": 1223,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100001,7 +100001,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 549,
+    "x": 1320,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100020,7 +100020,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 646,
+    "x": 1417,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100039,7 +100039,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 743,
+    "x": 1514,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100058,7 +100058,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 840,
+    "x": 1611,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100077,7 +100077,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 937,
+    "x": 1708,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100096,7 +100096,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1034,
+    "x": 1805,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100115,7 +100115,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1131,
+    "x": 1902,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100134,7 +100134,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1228,
+    "x": 1999,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100153,7 +100153,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1325,
+    "x": 2096,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100172,7 +100172,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1422,
+    "x": 2193,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100190,7 +100190,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1519,
+    "x": 2290,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100208,7 +100208,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1616,
+    "x": 2387,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100226,7 +100226,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1713,
+    "x": 2484,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100244,7 +100244,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1810,
+    "x": 2581,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100262,7 +100262,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1907,
+    "x": 2678,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100280,7 +100280,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2004,
+    "x": 2775,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100298,7 +100298,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2101,
+    "x": 2872,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100316,7 +100316,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2198,
+    "x": 2969,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100334,7 +100334,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2295,
+    "x": 3066,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100352,7 +100352,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2392,
+    "x": 3163,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100370,7 +100370,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2489,
+    "x": 3260,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100389,7 +100389,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2586,
+    "x": 3357,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100408,7 +100408,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2683,
+    "x": 3454,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100427,7 +100427,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2780,
+    "x": 3551,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100446,7 +100446,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2877,
+    "x": 3648,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100465,7 +100465,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2974,
+    "x": 3745,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100484,7 +100484,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3071,
+    "x": 3842,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100503,7 +100503,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3168,
+    "x": 3939,
     "y": 1,
     "w": 96,
     "h": 96
@@ -100522,158 +100522,6 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3265,
-    "y": 1,
-    "w": 96,
-    "h": 96
-   },
-   "anchor": {
-    "x": 48,
-    "y": 48
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "starmap.body.ocean_world.v0": {
-   "kind": "static",
-   "sheet": "starmap",
-   "frame": {
-    "x": 3362,
-    "y": 1,
-    "w": 96,
-    "h": 96
-   },
-   "anchor": {
-    "x": 48,
-    "y": 48
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "starmap.body.ocean_world.v1": {
-   "kind": "static",
-   "sheet": "starmap",
-   "frame": {
-    "x": 3459,
-    "y": 1,
-    "w": 96,
-    "h": 96
-   },
-   "anchor": {
-    "x": 48,
-    "y": 48
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "starmap.body.ocean_world.v2": {
-   "kind": "static",
-   "sheet": "starmap",
-   "frame": {
-    "x": 3556,
-    "y": 1,
-    "w": 96,
-    "h": 96
-   },
-   "anchor": {
-    "x": 48,
-    "y": 48
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "starmap.body.protostar": {
-   "kind": "static",
-   "sheet": "starmap",
-   "frame": {
-    "x": 3653,
-    "y": 1,
-    "w": 96,
-    "h": 96
-   },
-   "anchor": {
-    "x": 48,
-    "y": 48
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "starmap.body.protostar.v0": {
-   "kind": "static",
-   "sheet": "starmap",
-   "frame": {
-    "x": 3750,
-    "y": 1,
-    "w": 96,
-    "h": 96
-   },
-   "anchor": {
-    "x": 48,
-    "y": 48
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "starmap.body.protostar.v1": {
-   "kind": "static",
-   "sheet": "starmap",
-   "frame": {
-    "x": 3847,
-    "y": 1,
-    "w": 96,
-    "h": 96
-   },
-   "anchor": {
-    "x": 48,
-    "y": 48
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "starmap.body.protostar.v2": {
-   "kind": "static",
-   "sheet": "starmap",
-   "frame": {
-    "x": 3944,
-    "y": 1,
-    "w": 96,
-    "h": 96
-   },
-   "anchor": {
-    "x": 48,
-    "y": 48
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "starmap.body.pulsar": {
-   "kind": "static",
-   "sheet": "starmap",
-   "frame": {
     "x": 1,
     "y": 258,
     "w": 96,
@@ -100689,7 +100537,7 @@
    ],
    "glow": true
   },
-  "starmap.body.pulsar.v0": {
+  "starmap.body.ocean_world.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100708,7 +100556,7 @@
    ],
    "glow": true
   },
-  "starmap.body.pulsar.v1": {
+  "starmap.body.ocean_world.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100727,7 +100575,7 @@
    ],
    "glow": true
   },
-  "starmap.body.pulsar.v2": {
+  "starmap.body.ocean_world.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100746,7 +100594,7 @@
    ],
    "glow": true
   },
-  "starmap.body.red_dwarf": {
+  "starmap.body.protostar": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100765,7 +100613,7 @@
    ],
    "glow": true
   },
-  "starmap.body.red_dwarf.v0": {
+  "starmap.body.protostar.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100784,7 +100632,7 @@
    ],
    "glow": true
   },
-  "starmap.body.red_dwarf.v1": {
+  "starmap.body.protostar.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100803,7 +100651,7 @@
    ],
    "glow": true
   },
-  "starmap.body.red_dwarf.v2": {
+  "starmap.body.protostar.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100822,7 +100670,7 @@
    ],
    "glow": true
   },
-  "starmap.body.star": {
+  "starmap.body.pulsar": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100841,7 +100689,7 @@
    ],
    "glow": true
   },
-  "starmap.body.star.v0": {
+  "starmap.body.pulsar.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100860,7 +100708,7 @@
    ],
    "glow": true
   },
-  "starmap.body.star.v1": {
+  "starmap.body.pulsar.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100879,7 +100727,7 @@
    ],
    "glow": true
   },
-  "starmap.body.star.v2": {
+  "starmap.body.pulsar.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100898,7 +100746,7 @@
    ],
    "glow": true
   },
-  "starmap.body.white_dwarf": {
+  "starmap.body.red_dwarf": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100917,7 +100765,7 @@
    ],
    "glow": true
   },
-  "starmap.body.white_dwarf.v0": {
+  "starmap.body.red_dwarf.v0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100936,7 +100784,7 @@
    ],
    "glow": true
   },
-  "starmap.body.white_dwarf.v1": {
+  "starmap.body.red_dwarf.v1": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100955,7 +100803,7 @@
    ],
    "glow": true
   },
-  "starmap.body.white_dwarf.v2": {
+  "starmap.body.red_dwarf.v2": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
@@ -100974,11 +100822,201 @@
    ],
    "glow": true
   },
+  "starmap.body.star": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1553,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1650,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1747,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1844,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.white_dwarf": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1941,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.white_dwarf.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2038,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.white_dwarf.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2135,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.white_dwarf.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2232,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.exit.gate": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2329,
+    "y": 258,
+    "w": 48,
+    "h": 48
+   },
+   "anchor": {
+    "x": 24,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.exit.rift": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2378,
+    "y": 258,
+    "w": 48,
+    "h": 48
+   },
+   "anchor": {
+    "x": 24,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
   "starmap.fleet.miner.d0": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1847,
+    "x": 2721,
     "y": 258,
     "w": 40,
     "h": 40
@@ -100997,7 +101035,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1888,
+    "x": 2762,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101016,7 +101054,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1929,
+    "x": 2803,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101035,7 +101073,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1970,
+    "x": 2844,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101054,7 +101092,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2011,
+    "x": 2885,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101073,7 +101111,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2052,
+    "x": 2926,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101092,7 +101130,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2093,
+    "x": 2967,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101111,7 +101149,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2134,
+    "x": 3008,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101130,7 +101168,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2175,
+    "x": 3049,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101149,7 +101187,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2216,
+    "x": 3090,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101168,7 +101206,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2257,
+    "x": 3131,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101187,7 +101225,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2298,
+    "x": 3172,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101206,7 +101244,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2339,
+    "x": 3213,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101225,7 +101263,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2380,
+    "x": 3254,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101244,7 +101282,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2421,
+    "x": 3295,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101263,7 +101301,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2462,
+    "x": 3336,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101282,7 +101320,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2503,
+    "x": 3377,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101301,7 +101339,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2544,
+    "x": 3418,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101320,7 +101358,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2585,
+    "x": 3459,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101339,7 +101377,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2626,
+    "x": 3500,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101358,7 +101396,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2667,
+    "x": 3541,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101377,7 +101415,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2708,
+    "x": 3582,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101396,7 +101434,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2749,
+    "x": 3623,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101415,7 +101453,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2790,
+    "x": 3664,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101434,7 +101472,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2831,
+    "x": 3705,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101453,7 +101491,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2872,
+    "x": 3746,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101472,7 +101510,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2913,
+    "x": 3787,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101491,7 +101529,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2954,
+    "x": 3828,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101510,7 +101548,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 2995,
+    "x": 3869,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101529,7 +101567,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3036,
+    "x": 3910,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101548,7 +101586,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3077,
+    "x": 3951,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101567,7 +101605,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3118,
+    "x": 3992,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101586,7 +101624,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3159,
+    "x": 4033,
     "y": 258,
     "w": 40,
     "h": 40
@@ -101605,8 +101643,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3200,
-    "y": 258,
+    "x": 1,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101624,8 +101662,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3241,
-    "y": 258,
+    "x": 42,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101643,8 +101681,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3282,
-    "y": 258,
+    "x": 83,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101662,8 +101700,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3323,
-    "y": 258,
+    "x": 124,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101681,8 +101719,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3364,
-    "y": 258,
+    "x": 165,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101700,8 +101738,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3405,
-    "y": 258,
+    "x": 206,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101719,8 +101757,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3446,
-    "y": 258,
+    "x": 247,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101738,8 +101776,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3487,
-    "y": 258,
+    "x": 288,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101757,8 +101795,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3528,
-    "y": 258,
+    "x": 329,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101776,8 +101814,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3569,
-    "y": 258,
+    "x": 370,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101794,8 +101832,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3610,
-    "y": 258,
+    "x": 411,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101813,8 +101851,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3651,
-    "y": 258,
+    "x": 452,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101832,8 +101870,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3692,
-    "y": 258,
+    "x": 493,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101851,8 +101889,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3733,
-    "y": 258,
+    "x": 534,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101870,8 +101908,8 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 3774,
-    "y": 258,
+    "x": 575,
+    "y": 355,
     "w": 40,
     "h": 40
    },
@@ -101885,11 +101923,1102 @@
    ],
    "glow": true
   },
+  "starmap.mini.binary_star": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 616,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.binary_star.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 633,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.binary_star.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 650,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.binary_star.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 667,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.black_hole": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 684,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.black_hole.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 701,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.black_hole.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 718,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.black_hole.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 735,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.blue_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 752,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.blue_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 769,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.blue_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 786,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.blue_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 803,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.gas_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 820,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 837,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 854,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 871,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 888,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 905,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 922,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.ice_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 939,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.ice_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 956,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.ice_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 973,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.ice_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 990,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.lava_world": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1007,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.lava_world.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1024,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.lava_world.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1041,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.lava_world.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1058,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.nebula": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1075,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.nebula.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1092,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.nebula.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1109,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.nebula.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1126,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.ocean_world": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1143,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.ocean_world.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1160,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.ocean_world.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1177,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.ocean_world.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1194,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.protostar": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1211,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.protostar.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1228,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.protostar.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1245,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.protostar.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1262,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.pulsar": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1279,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.pulsar.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1296,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.pulsar.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1313,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.pulsar.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1330,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.red_dwarf": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1347,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.red_dwarf.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1364,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.red_dwarf.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1381,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.red_dwarf.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1398,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.star": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1415,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.star.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1432,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.star.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1449,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.star.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1466,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.white_dwarf": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1483,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.white_dwarf.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1500,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.white_dwarf.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1517,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.white_dwarf.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1534,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.nebula.body": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 258,
+    "y": 1,
+    "w": 256,
+    "h": 256
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.nebula.core": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 515,
+    "y": 1,
+    "w": 256,
+    "h": 256
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.nebula.haze": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 772,
+    "y": 1,
+    "w": 256,
+    "h": 256
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
   "starmap.struct.asteroids": {
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1553,
+    "x": 2427,
     "y": 258,
     "w": 48,
     "h": 48
@@ -101907,7 +103036,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1602,
+    "x": 2476,
     "y": 258,
     "w": 48,
     "h": 48
@@ -101926,7 +103055,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1651,
+    "x": 2525,
     "y": 258,
     "w": 48,
     "h": 48
@@ -101945,7 +103074,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1700,
+    "x": 2574,
     "y": 258,
     "w": 48,
     "h": 48
@@ -101964,7 +103093,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1749,
+    "x": 2623,
     "y": 258,
     "w": 48,
     "h": 48
@@ -101983,7 +103112,7 @@
    "kind": "static",
    "sheet": "starmap",
    "frame": {
-    "x": 1798,
+    "x": 2672,
     "y": 258,
     "w": 48,
     "h": 48

@@ -7,6 +7,9 @@ view, hard pixels); each sprite has a fixed frame with the anchor at its centre 
                                  lava world, ocean world)
   starmap.struct.<kind>          structure icons, 48 px frame (96) drawn at half (twice the density), team-tinted: starmap_icons.py
   starmap.fleet.<role>.d0..d7    fleet icons, 40 px frame (80) drawn at half, d0 = screen east, clockwise, team-tinted: starmap_fleets.py
+  starmap.mini.<kind>[.v<n>]     every body variant shrunk for the Cluster view, 16 px frame (32): starmap_minis.py
+  starmap.exit.<gate|rift>       exit markers where a gate or rift lane leaves the sector, 48 px frame (96): starmap_exits.py
+  starmap.nebula.<step>          seamless nebula field tiles, haze / body / core, 256 px (512), glow only: starmap_fields.py
   starmap.backdrop               a tileable, very dim starfield, 256 px (512), colour sheet only (backdrop below)
 
 Team tint: structures and fleets paint their livery in the crew key colours (manifest `keyColors`, team.cloth and
@@ -15,7 +18,8 @@ import numpy as np
 
 from . import post
 from .scale import ART_SCALE
-from . import starmap_bodies, starmap_fleets, starmap_icons, starmap_planets, starmap_stars
+from . import (starmap_bodies, starmap_exits, starmap_fields, starmap_fleets, starmap_icons, starmap_minis, starmap_planets,
+               starmap_stars)
 
 BACKDROP = 256                  # 1x px; tiles seamlessly
 
@@ -48,5 +52,5 @@ def backdrop():
 
 
 def jobs():
-    return (starmap_bodies.jobs() + starmap_stars.jobs() + starmap_planets.jobs() + starmap_icons.jobs() + starmap_fleets.jobs()
-            + [backdrop])
+    return (starmap_bodies.jobs() + starmap_stars.jobs() + starmap_planets.jobs() + starmap_minis.jobs() + starmap_icons.jobs()
+            + starmap_exits.jobs() + starmap_fleets.jobs() + starmap_fields.jobs() + [backdrop])

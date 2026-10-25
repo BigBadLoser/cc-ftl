@@ -625,6 +625,17 @@ palette.json    the single palette, read by Blender scripts and the game
     that is 32 px structures and 27 px fleets from either set (2x art at k 1, 1x art at k 2).
   - Bodies follow the map scale (`r / 60`), so they are enlarged (crisp) when zoomed in and shrunk (soft) at the outer
     zooms; the backdrop is drawn 1:1.
+  - Mini bodies for the Cluster view (`sprites/starmap_minis.py`): `starmap.mini.<kind>.v<n>` and `starmap.mini.<kind>`
+    (= v0), one per body variant, the same scene shrunk to a sixth and rendered at that size: frame 32 px (16 in the 1x
+    file), body radius 10 px. The Cluster view draws bodies at about 6 screen px radius, so draw these by the icon rule
+    (whole device px per art px; on a 3x phone 21 px from either set) and pick the same variant as the sector's body.
+  - Exit markers (`sprites/starmap_exits.py`): `starmap.exit.gate` (an upright ring gate, a cyan membrane on the glow
+    sheet) and `starmap.exit.rift` (a glowing tear), at the gateway where a gate or rift lane leaves the sector, in place
+    of the thick or dashed lane end. Frame 96 px like the structures, same crisp rule.
+  - Nebula field tiles (`sprites/starmap_fields.py`): `starmap.nebula.haze`, `.body`, `.core`, seamless 512 px tiles
+    (256 in the 1x file, anchor 0,0), glow only, for the field `StarmapNebula` paints in code today. Tile each across the
+    field (the sim's density tiles are 3000 map units) and show it where the density passes its step (about 0.15 haze,
+    0.45 body, 0.8 core: a mask per step, hard edged for the stepped look), added at the opacity the map wants.
   - `starmap.backdrop`: a 512 px tile of dim 1-2 px stars (anchor 0,0), colour only and transparent between stars; tile it
     over the map's background.
   - Tint: stations, the den and fleets paint their livery in the crew key colours (`keyColors`: `team.cloth` panels,

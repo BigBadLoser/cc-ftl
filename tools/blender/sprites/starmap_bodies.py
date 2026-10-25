@@ -276,6 +276,11 @@ def nebula(seed, spec):
 
 def body_items(kind, v):
     """The variant v of a body kind (plus the plain id for v0)."""
+    return items(kind, v, *scene(kind, v))
+
+
+def scene(kind, v):
+    """Build variant v of a body kind in a fresh scene; -> (halo objects, outlined?)."""
     start()
     seed = 9001 + 37 * KINDS.index(kind) + v
     if kind in STARS:
@@ -287,7 +292,7 @@ def body_items(kind, v):
         objs, halo = black_hole(seed, HOLE[v])
     else:
         objs, halo = nebula(seed, NEBULAE[v])
-    return items(kind, v, halo, outline=kind == "gas_giant")
+    return halo, kind == "gas_giant"
 
 
 def items(kind, v, halo, outline=False):

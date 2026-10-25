@@ -98,6 +98,11 @@ def panel(S, zoom, title):
     rows = []                                                    # (label, [(sprite, faction)])
     for kind in KINDS:
         rows.append((kind, [(S.get(f"starmap.body.{kind}.v{v}"), None) for v in range(8) if S.get(f"starmap.body.{kind}.v{v}")]))
+    minis = [k for k in sorted(S.m["assets"]) if k.startswith("starmap.mini.") and ".v" in k]
+    for kind in KINDS:
+        rows.append((f"mini {kind}", [(S.get(k), None) for k in minis if k.startswith(f"starmap.mini.{kind}.v")]))
+    rows.append(("exits: gate, rift", [(S.get(f"starmap.exit.{e}"), None) for e in ("gate", "rift")]))
+    rows.append(("nebula field: haze, body, core", [(S.get(f"starmap.nebula.{n}"), None) for n in ("haze", "body", "core")]))
     rows.append(("structures", [(S.get(f"starmap.struct.{s}"), None) for s in STRUCTS]))
     for fac in ("navy", "pirate", "trader"):
         rows.append((f"structures ({fac})", [(S.get(f"starmap.struct.{s}"), fac) for s in STRUCTS]))
