@@ -321,6 +321,28 @@ palette.json    the single palette, read by Blender scripts and the game
   below), `structure` (faction tile looks, see below), `galley`
   (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below), `starmap` (the map's pictures, see below), `cargo` (a delivery job's sealed hard case, `item.cargo_crate.l` and `.held`, `sprites/cargo.py`) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
+- **Ore refinery (`sheet refinery`, not a `families.py` family):** a 3x4 prop with 4 rotations x idle, `.unpowered`, and a 4-frame
+  `.active` loop (`.active`, `.active.f1` to `.f3`); ids `module.refinery.rN[.state]` plus aliases. It is exported by its own
+  driver, not by `npm run sprites`: it needs fixed per-rotation frames and anchors across states
+  (`tools/blender/export_refinery.py` normalises them), which the family packer does not do. The model is
+  `tools/blender/sprites/refinery_*.py` (`refinery_asset.build` places it and the operator console). Rebuild it with one
+  Blender process, from the repo root, with the pinned Blender (`tools/blender/setup.sh`):
+
+  ```bash
+  OUT=/tmp/refinery-pack; BL="$(tools/blender/setup.sh)"
+  env -u SPRITE_SS -u SPRITE_SAMPLES SPRITE_PREVIEW=0 "$BL" -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/export_refinery.py -- --pipeline "$PWD" --out $OUT/1x
+  python3 tools/blender/validate_refinery.py --package $OUT/1x --pipeline "$PWD" --report $OUT/validation.json
+  ```
+
+  Then copy `$OUT/1x/sprites/refinery{,.glow}.png` into `public/assets/1x/sprites/` and merge `manifest.fragment.json` (sheets and
+  assets) into `public/assets/1x/manifest.json`, never replacing it. The pack was made at pipeline revision e8c50906;
+  `refinery_pipeline.provenance` hashes the renderer files, so a renderer change invalidates its frame cache and the art should be
+  re-exported. The `.blend` and review images are not kept in the repo.
+- **Module state art (`moduleArt.ts` `stateArt`, `moduleView.ts`):** any module whose art has `<asset>.rN.unpowered` shows it while
+  unpowered or disabled, and one with `<asset>.rN.active.f1` and up cycles `.active`, `.f1`... while it shows its active state
+  (a crafting refinery), at `ANIM_FPS` = 4 from the render clock. The manifest carries no animation data, so the rate is a
+  render-side constant (the pack's `animations.json` also says 4 fps). A frame change swaps the sprite's texture
+  (`swapFrame`); the part is not rebuilt.
 - **Wall corner fills (`walls`, the 47-tile blob set):** wall and hull pieces are picked by the 4-neighbour mask
   (N1 E2 S4 W8) plus corner bits (`tiles.ts` `wallCorners`: NE 1, SE 2, SW 4, NW 8, set when both arms beside the
   corner connect and the two edge tiles and the diagonal are all wall; a door breaks the block). Ids:

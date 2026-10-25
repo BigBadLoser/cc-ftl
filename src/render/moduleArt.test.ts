@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Module } from '../sim/modules/components';
 import { content } from '../content';
-import { diagonalFront, layerKey, moduleLayers } from './moduleArt';
+import { ANIM_FPS, animFrame, diagonalFront, frameCount, layerKey, moduleAssets, moduleLayers } from './moduleArt';
 import { depthKey } from './iso';
 
 const engine = content.modules['module.engine'];
@@ -53,5 +53,39 @@ describe('container depth against walls', () => {
       expect(f.y).toBeLessThanOrEqual(5);
       expect(f.x - f.y).toBe(d);
     }
+  });
+});
+
+describe('module state art', () => {
+  const refinery = content.modules['module.refinery']!;
+  const mr = { def: 'module.refinery', x: 4, y: 4, rot: 2 } as unknown as Module;
+  const ids = new Set(['module.refinery.r2', 'module.refinery.r2.unpowered', 'module.refinery.r2.active', ...[1, 2, 3].map((f) => `module.refinery.r2.active.f${f}`)]);
+  const has = (id: string) => ids.has(id);
+  const look = (now: number, off = false) => ({ off, now, has });
+
+  it('counts consecutive frames of a state', () => {
+    expect(frameCount(has, 'module.refinery.r2.active')).toBe(4);
+    expect(frameCount(has, 'module.refinery.r0.active')).toBe(1);
+  });
+  it('advances the frame at the animation rate and loops', () => {
+    const ms = 1000 / ANIM_FPS;
+    expect([0, 1, 2, 3, 4, 5].map((i) => animFrame(i * ms + 1, 4))).toEqual([0, 1, 2, 3, 0, 1]);
+  });
+  it('cycles the active frames while crafting, first the frame, then the plain chain', () => {
+    const at = (now: number) => moduleAssets(null as never, 1, mr, refinery, true, look(now));
+    expect(at(10)[0]).toBe('module.refinery.r2.active');
+    expect(at(300)[0]).toBe('module.refinery.r2.active.f1');
+    expect(at(800)[0]).toBe('module.refinery.r2.active.f3');
+    expect(at(10).slice(1)).toEqual(moduleAssets(null as never, 1, mr, refinery, true));
+  });
+  it('uses the unpowered art while off, and plain idle otherwise', () => {
+    expect(moduleAssets(null as never, 1, mr, refinery, false, look(0, true))[0]).toBe('module.refinery.r2.unpowered');
+    expect(moduleAssets(null as never, 1, mr, refinery, false, look(0))[0]).toBe('module.refinery.r2');
+  });
+  it('leaves art without those variants alone and marks only animated layers', () => {
+    const none = { ...look(500, true), has: () => false };
+    expect(moduleAssets(null as never, 1, mr, refinery, true, none)).toEqual(moduleAssets(null as never, 1, mr, refinery, true));
+    expect(moduleLayers(null as never, 1, mr, refinery, true, true, null, look(500))[0]!.anim).toBe('module.refinery.r2.active');
+    expect(moduleLayers(null as never, 1, mr, refinery, false, true, null, look(500))[0]!.anim).toBeUndefined();
   });
 });

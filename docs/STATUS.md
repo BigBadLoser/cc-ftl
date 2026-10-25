@@ -6,6 +6,12 @@ Last updated: 2026-10-22 (asteroids on `asteroids`, merged with stations and gal
 **Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
 map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
 
+**Refinery art (`feat/refinery-art`):** the ore refinery has final Blender art (sheet `refinery`, 4 rotations, idle, `.unpowered`,
+4-frame `.active` loop). `module.refinery.access` is now [3, 3] (the operator tile beside the console). Modules with
+`.unpowered` or `.active.fN` art now show them generically (4 fps, texture swap). The refinery is exported by its own driver, not
+`npm run sprites` (see "Ore refinery" in ARCHITECTURE.md). Nothing old was removed: the manifest had no refinery entries (the
+module used the tinted-crate placeholder in `fallback.ts`, which stays as the fallback). Awaiting visual approval before `main`.
+
 ## Where things are
 
 **Art sets:** the 2x set (`public/assets/2x/`), the `?art=` choice and the 2x fallback are gone. `public/assets/1x/` (64x32 art

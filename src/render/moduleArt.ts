@@ -40,15 +40,51 @@ export function mannedConsoles(world: World): Set<number> {
   return out;
 }
 
+/** Frames per second of a looping `.active` animation. The manifest does not carry animations.json, so this is the pack's rate (4 fps) for every module. */
+export const ANIM_FPS = 4;
+
+/** What the renderer knows about a module beyond the sim state: power off, the render clock, and whether the art has an id (no load queued). */
+export interface ModuleLook {
+  off: boolean;
+  now: number;
+  has(id: string): boolean;
+}
+
+/** Frames of a looping state: `base`, `base.f1`, `base.f2`... while the art has them consecutively (1 = not animated). */
+export function frameCount(has: (id: string) => boolean, base: string): number {
+  let n = 1;
+  while (has(`${base}.f${n}`)) n++;
+  return n;
+}
+
+/** Frame index at render time `now` (ms) of an animation of `count` frames. */
+export const animFrame = (now: number, count: number, fps = ANIM_FPS): number => Math.floor((Math.max(0, now) / 1000) * fps) % count;
+
+/**
+ * The state art of a module ahead of its idle chain: `<asset>.rN.unpowered` while off when the art has it, else the current
+ * `.active` frame (`.active`, `.active.f1`...) when the art animates. `anim` names the animation (frames swap texture, no rebuild).
+ */
+export function stateArt(def: ModuleDef, rot: number, active: boolean, look?: ModuleLook): { head: string[]; anim?: string } {
+  if (!look) return { head: [] };
+  const base = `${def.asset}.r${rot}`;
+  if (look.off && look.has(`${base}.unpowered`)) return { head: [`${base}.unpowered`] };
+  if (!active) return { head: [] };
+  const n = frameCount(look.has, `${base}.active`);
+  if (n < 2) return { head: [] };
+  const f = animFrame(look.now, n);
+  return { head: [f ? `${base}.active.f${f}` : `${base}.active`], anim: `${base}.active` };
+}
+
 /**
  * Asset ids to try for a module, most specific first: the rotation variant (`.r0`..`.r3`) with the state variant
  * (`.active`, or storage `.empty/.partial/.full`), the rotation variant, then the plain state variant and the plain
- * asset. A non-square module drawn from the plain asset at an odd rotation is mirrored (moduleView).
+ * asset. A non-square module drawn from the plain asset at an odd rotation is mirrored (moduleView). With a `look`, the
+ * `.unpowered` art or the current `.active` animation frame comes first (see `stateArt`).
  */
-export function moduleAssets(world: World, id: number, m: Module, def: ModuleDef, active: boolean): string[] {
+export function moduleAssets(world: World, id: number, m: Module, def: ModuleDef, active: boolean, look?: ModuleLook): string[] {
   const state = def.storage ? `.${storageFill(world, id)}` : active ? '.active' : '';
   const rot = `.r${m.rot}`;
-  return [`${def.asset}${rot}${state}`, `${def.asset}${rot}`, `${def.asset}${state}`, def.asset];
+  return [...stateArt(def, m.rot, active, look).head, `${def.asset}${rot}${state}`, `${def.asset}${rot}`, `${def.asset}${state}`, def.asset];
 }
 
 /**
@@ -109,6 +145,8 @@ export interface ModuleLayer {
   overlay?: 'paint' | 'lv';
   /** Drawn only if the art has it (never a stand-in): container paint, lv and logo layers. */
   optional?: boolean;
+  /** The chain's head is a frame of this looping animation (an `.active` base id): the view swaps the texture as frames advance instead of rebuilding. */
+  anim?: string;
   /** Stays drawn on a roofed ship (hull block, collar); the other parts are under the roof. */
   roofVisible?: boolean;
 }
@@ -137,7 +175,7 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
  *  - Consoles: the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
  *  - Everything else: the usual chain from `moduleAssets`.
  */
-export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false, livery?: { seed: number } | null): ModuleLayer[] {
+export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false, livery?: { seed: number } | null, look?: ModuleLook): ModuleLayer[] {
   const a = def.asset;
   const r = `.r${m.rot}`;
   if (def.container) {
@@ -170,7 +208,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     ];
   }
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
-  const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active), key: a, tiles: 'all' };
+  const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };
   if (!def.console) return [main];
   const front = active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}`];
   return [main, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ }];
