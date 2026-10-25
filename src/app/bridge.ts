@@ -1,9 +1,10 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildSites } from './siteSnapshot';
+import { buildJobs } from './jobsSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
 import { buildFtl } from './ftlSnapshot';
@@ -70,6 +71,7 @@ export interface Bridge {
   hostiles: Readable<UiCrew[]>;
   modules: Readable<UiModule[]>;
   sites: Writable<UiSite[]>;
+  jobs: Readable<UiJobs>;
   stats: Readable<UiStats>;
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
@@ -124,6 +126,8 @@ export function createBridge(sim: Sim): Bridge {
   let lastHostiles = '';
   const modules = createStore<UiModule[]>([]);
   const sites = createStore<UiSite[]>([]);
+  const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], max: 0 });
+  let lastJobsKey = '';
   let lastSites = '[]';
   const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null });
   const stock = createStore<UiStock[]>([]);
@@ -222,6 +226,13 @@ export function createBridge(sim: Sim): Bridge {
     if (slk !== lastSites) {
       lastSites = slk;
       sites.set(sl);
+    }
+    // The board only changes with the galaxy (offers, jobs, the player's node) or the cargo a delivery needs: rebuilt on those, not every frame.
+    const g = sim.galaxy;
+    const jk = `${g.rev}|${g.turn}|${g.current}|${sim.sector.state}|${frame >> 5}`;
+    if (jk !== lastJobsKey) {
+      lastJobsKey = jk;
+      jobs.set(buildJobs(sim));
     }
     const logs = [buildStock(sim), buildStorages(sim), buildFabs(sim)] as const;
     const keys = logs.map((l) => JSON.stringify(l));
@@ -352,6 +363,7 @@ export function createBridge(sim: Sim): Bridge {
     hostiles,
     modules,
     sites,
+    jobs,
     stats,
     stock,
     storages,
