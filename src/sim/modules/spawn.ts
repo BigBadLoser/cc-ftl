@@ -25,7 +25,7 @@ export function spawnModule(sim: Sim, defId: string, x: number, y: number, rot: 
     def: defId, x, y, rot, hp: def.maxHp, powerPriority: def.powerPriority ?? DEFAULT_POWER_PRIORITY,
     enabled: true, powered: false, reservedBy: 0,
   });
-  if (def.storage) sim.world.add(id, StorageC, { capacity: def.storage.capacity, filter: null, stacks: [] });
+  if (def.storage) sim.world.add(id, StorageC, { capacity: def.storage.capacity, filter: def.storageAccepts ? [...def.storageAccepts] : null, stacks: [] });
   if (def.weapon) sim.world.add(id, WeaponC, { charge: 0, target: null, shotsLeft: 0, nextShotTick: 0, volleyTarget: null, aim: 0 });
   if (def.pointDefense) sim.world.add(id, PointDefenseC, { aim: 0 });
   if (def.crafting) sim.world.add(id, ProductionC, { orders: [] });

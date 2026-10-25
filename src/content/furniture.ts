@@ -32,14 +32,14 @@ export const furniture = {
     name: 'Cargo pallet', asset: 'module.storage_pallet', footprint: [2, 2], solid: true, access: [0, 2], power: 0,
     flammability: 0.3, maxHp: 100, buildWork: 80, cost: [{ item: 'item.metal', count: 8 }], storage: { capacity: 24 },
   },
-  // Ore tip bins (art: storage_ore): the refinery's ore stores. Storage cannot be limited to item kinds yet, so they hold anything.
+  // Ore tip bins (art: storage_ore): the refinery's ore stores. They take only ores (`storageAccepts`).
   'module.storage_ore': {
     name: 'Ore bin', asset: 'module.storage_ore', footprint: [2, 2], solid: true, access: [0, 2], power: 0,
-    flammability: 0.1, maxHp: 120, buildWork: 90, cost: [{ item: 'item.metal', count: 10 }], storage: { capacity: 24 }, storageArt: ORE_ART,
+    flammability: 0.1, maxHp: 120, buildWork: 90, cost: [{ item: 'item.metal', count: 10 }], storage: { capacity: 24 }, storageAccepts: Object.keys(ORE_ART), storageArt: ORE_ART,
   },
   'module.storage_ore_large': {
     name: 'Large ore bin', asset: 'module.storage_ore_large', footprint: [3, 2], solid: true, access: [1, 2], power: 0,
-    flammability: 0.1, maxHp: 180, buildWork: 130, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 40 }, storageArt: ORE_ART,
+    flammability: 0.1, maxHp: 180, buildWork: 130, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 40 }, storageAccepts: Object.keys(ORE_ART), storageArt: ORE_ART,
   },
   // A freight container, opened from the doors on one long side. Cargo holds pack them around their walkway.
   'module.cargo_container': {
