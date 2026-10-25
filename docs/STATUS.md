@@ -8,6 +8,10 @@ map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design histor
 
 ## Where things are
 
+**Art sets:** the 2x set (`public/assets/2x/`), the `?art=` choice and the 2x fallback are gone. `public/assets/1x/` (64x32 art
+drawn as hard 2x2 blocks) is the only art set; see "One art set" in [ARCHITECTURE.md](ARCHITECTURE.md). Older notes below that
+mention 2x art describe the earlier state.
+
 **On `main`** (live at https://cc-ftl.bigbadloser.workers.dev):
 - **M0–M2:** the core sim (ECS, grids, commands, saves), crew, jobs, priorities and drafting.
 - **R1:** the PixiJS isometric pixel-art renderer with the Blender sprite pipeline. Tiles are 64x32.

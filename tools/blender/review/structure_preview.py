@@ -196,7 +196,7 @@ def main():
         print(",".join(used_ids()))
         return
     S, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    pub = Assets(ROOT / "public/assets/2x")
+    pub = Assets(ROOT / "public/assets/1x")
     out.mkdir(parents=True, exist_ok=True)
     W, H = 460, 330
     for label, seg in LOOKS:

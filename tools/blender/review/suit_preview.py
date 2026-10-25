@@ -80,7 +80,7 @@ def iso(ox, oy, gx, gy):
 
 def main():
     A, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    pub = Assets(ROOT / "public/assets/2x")
+    pub = Assets(ROOT / "public/assets/1x")
     out.mkdir(parents=True, exist_ok=True)
     W, H = 900, 300
     px = np.zeros((H, W, 4), np.uint8)

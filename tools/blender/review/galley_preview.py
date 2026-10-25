@@ -95,7 +95,7 @@ def chairs(cv, G, pub, ox, oy):
 
 def main():
     G, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    pub = Assets(ROOT / "public/assets/2x")
+    pub = Assets(ROOT / "public/assets/1x")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(860, 420)
     room(cv, G, pub, 200, 110, False, "galley idle")

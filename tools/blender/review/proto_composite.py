@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[3]
-AS = ROOT / "public/assets/2x"
+AS = ROOT / "public/assets/1x"
 D = Path(sys.argv[1])
 ROT = int(sys.argv[2]) if len(sys.argv) > 2 else 1
 MAN = json.loads((AS / "manifest.json").read_text())["assets"]
