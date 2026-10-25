@@ -267,10 +267,21 @@ export interface UiFood {
   hours: number | null;
 }
 
+/** The player's notoriety (sim galaxy/heat.ts): wanted by the law from `wantedAt`; `hunters` names the factions with a hunter fleet out; clearing it at a pirate den costs `clearCost` (`clearBlocker` says why not, when not). */
+export interface UiHeat {
+  notoriety: number;
+  wanted: boolean;
+  wantedAt: number;
+  hunters: string[];
+  clearCost: number;
+  clearBlocker: string | null;
+}
+
 export interface UiStats {
   supply: number;
   demand: number;
   food: UiFood;
+  heat: UiHeat;
   /** Average O2 (kPa) of rooms with crew in them, or null when nobody is inside one. */
   o2: number | null;
 }

@@ -4,6 +4,7 @@ import {
   standing, tierOf, type Sim,
 } from '../sim';
 import { GENERATOR_VERSION } from '../sim/galaxy/tuning';
+import { SCAVENGER_CHANCE, SCAVENGER_FACTION } from '../sim/galaxy/tuningHeat';
 import { galaxySystem } from '../sim/systems/galaxy';
 import { rollArrival } from '../sim/galaxy/arrivals';
 import { ensureAround } from '../sim/galaxy/state';
@@ -134,13 +135,16 @@ describe('starmap travel', () => {
     expect(sim.galaxy.current).toBe(START_NODE);
   });
 
-  it('rolls arrivals deterministically, never at danger 0, and spawns them by the gap rule', () => {
+  it('rolls arrivals deterministically, only the odd lone scavenger at danger 0, and spawns them by the gap rule', () => {
     const calm = newGame(4, content);
     for (let t = 0; t < 40; t++) {
       calm.tick = calm.galaxy.nextArrival;
       rollArrival(calm);
     }
-    expect(Object.values(calm.galaxy.nodes).flatMap((s) => s.contacts).filter((c) => c.since > 0)).toEqual([]);
+    // Near the start nobody hostile is in the traffic pool: only scavengers (SCAVENGER_CHANCE a roll), never more than the arrival cap.
+    const came = Object.values(calm.galaxy.nodes).flatMap((s) => s.contacts).filter((c) => c.since > 0);
+    expect(came.every((c) => c.faction === SCAVENGER_FACTION && c.depth === 0)).toBe(true);
+    expect(came.length).toBeLessThanOrEqual(Math.ceil(40 * SCAVENGER_CHANCE * 3));
 
     const run = () => {
       const sim = newGame(4, content);

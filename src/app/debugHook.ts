@@ -134,6 +134,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     fireEvent: (event: string) => sim.enqueue({ type: 'story.fire', event }),
     setFlag: (flag: string, value = 1) => sim.enqueue({ type: 'story.setFlag', flag, value }),
     setContext: (danger: number, faction: string | null = null) => sim.enqueue({ type: 'story.setContext', danger, faction }),
+    /** Set the player's notoriety (wanted from 10). */
+    notoriety: (value: number) => sim.enqueue({ type: 'debug.notoriety', value }),
     story: () => sim.story,
     vehicles: () => vehicleViews(sim),
     ships: () => [...sim.world.query(ShipC)].map((id) => sim.world.get(id, ShipC)),

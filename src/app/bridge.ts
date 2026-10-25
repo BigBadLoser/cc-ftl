@@ -125,7 +125,7 @@ export function createBridge(sim: Sim): Bridge {
   const modules = createStore<UiModule[]>([]);
   const sites = createStore<UiSite[]>([]);
   let lastSites = '[]';
-  const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, o2: null });
+  const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null });
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);

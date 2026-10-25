@@ -5,6 +5,7 @@ import {
 import type { UiStarExit, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { cargoOf, marketOf } from './marketSnapshot';
 import { newsOf } from './newsSnapshot';
+import { buildHeat } from './heatSnapshot';
 import { toneOf } from './starmapTone';
 import { ROLE_LABEL, encountersOf, eventOf, resultOf } from './encounterSnapshot';
 import { nebulaAround } from './starmapNebula';
@@ -51,11 +52,11 @@ function travelOf(sim: Sim): UiTravel | null {
 }
 
 /** The fuel, charge and progress figures (cheap; refreshed often). */
-export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'chargeMax' | 'jumps' | 'turn' | 'state' | 'travel' | 'current' | 'ship' | 'credits' | 'encounters' | 'event' | 'result'> {
+export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'chargeMax' | 'jumps' | 'turn' | 'state' | 'travel' | 'current' | 'ship' | 'credits' | 'heat' | 'encounters' | 'event' | 'result'> {
   return {
     ship: playerShip(sim), fuel: fuelStock(sim), charge: Math.floor(ftlCharge(sim) ?? 0), chargeMax: FTL_CHARGE_SEC,
     jumps: sim.galaxy.jumps, turn: sim.galaxy.turn, state: sim.sector.state, travel: travelOf(sim), current: sim.galaxy.current,
-    credits: Math.floor(sim.trade.credits), encounters: encountersOf(sim), event: eventOf(sim), result: resultOf(sim),
+    credits: Math.floor(sim.trade.credits), heat: buildHeat(sim), encounters: encountersOf(sim), event: eventOf(sim), result: resultOf(sim),
   };
 }
 
@@ -150,7 +151,7 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
 /** A starmap with nothing in it (rev -1): what the store holds until the screen is first built. */
 export function emptyStarmap(): UiStarmap {
   return {
-    rev: -1, current: '', ship: 0, fuel: 0, charge: 0, chargeMax: FTL_CHARGE_SEC, jumps: 0, turn: 0, state: 'active', travel: null, credits: 0, encounters: [], event: null, result: null, dangerStep: DANGER_STEP, sectors: [], nodes: [], fleets: [],
+    rev: -1, current: '', ship: 0, fuel: 0, charge: 0, chargeMax: FTL_CHARGE_SEC, jumps: 0, turn: 0, state: 'active', travel: null, credits: 0, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, encounters: [], event: null, result: null, dangerStep: DANGER_STEP, sectors: [], nodes: [], fleets: [],
     edges: [], factions: [], currentSector: '', currentCluster: null, clusters: [], exits: [], sectorLinks: [], clusterLinks: [], nebula: [], news: [],
   };
 }

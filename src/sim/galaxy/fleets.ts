@@ -73,6 +73,12 @@ export function stepFleets(sim: Sim, turn: number): void {
   }
   // Fleets of factions at war that met away from the player are settled by stats (meetings.ts).
   resolveMeetings(sim, turn, stepped);
+  // Hunters that stood down disband once they are home (hunters.ts).
+  g.fleets = g.fleets.filter((f) => {
+    if (!f.standDown || f.node !== portNode(f.home)) return true;
+    if (live && f.node === g.current) liftFleet(sim, f);
+    return false;
+  });
   rebuildPorts(sim, turn, area);
   g.rev++;
 }

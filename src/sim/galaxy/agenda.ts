@@ -123,6 +123,28 @@ function arrive(sim: Sim, f: Fleet, turn: number): void {
   else onWork(sim, f);
 }
 
+/**
+ * A hunter's turn (hunters.ts): past its time it stands down and heads home; otherwise it makes for the player's node, re-planned whenever the player moved.
+ * True when it has nothing else to do this turn (it is where the player is).
+ */
+function huntStep(sim: Sim, f: Fleet, turn: number): boolean {
+  const hunt = f.hunt as { until: number };
+  if (turn > hunt.until) {
+    delete f.hunt;
+    f.standDown = true;
+    headHome(sim, f);
+    return false;
+  }
+  const to = sim.galaxy.current;
+  f.dwell = 0;
+  f.legs = 0;
+  if (f.dest !== to || !f.route.length) {
+    f.route = pathTo(sim, f.node, to);
+    f.dest = f.route.length ? to : f.node;
+  }
+  return !f.route.length;
+}
+
 /** Play one turn of the fleet's agenda: `turn` is the turn number being played. Records the move for crossing detection (`from`, `moved`). */
 export function stepAgenda(sim: Sim, f: Fleet, turn: number): void {
   f.from = f.node;
@@ -134,6 +156,7 @@ export function stepAgenda(sim: Sim, f: Fleet, turn: number): void {
     }
     return;
   }
+  if (f.hunt && huntStep(sim, f, turn)) return;
   if (f.dwell > 0) {
     f.dwell--;
     return;

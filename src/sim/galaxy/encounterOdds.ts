@@ -1,6 +1,8 @@
 import { CombatC } from '../combat/components';
 import type { Sim } from '../sim';
 import { standing } from './standing';
+import { huntPressure } from './heat';
+import { HUNT_BRIBE_MAX, HUNT_BRIBE_PER_PRESSURE } from './tuningHeat';
 import { SKILL_STEP } from '../tuning';
 import {
   BRIBE_MIN, BRIBE_PER_DANGER, BRIBE_PER_STRENGTH, BRIBE_STANDING, EVADE_ENGINES_FULL, EVADE_ENGINE_FLOOR, EVADE_MAX, EVADE_MIN, EVADE_PILOT_BASE,
@@ -45,8 +47,9 @@ export function evadeOddsFor(helm: { evasion: number; pilot: number }, strength:
 /** Chance (0..1) an evade roll succeeds against this encounter's fleet. */
 export const evadeOdds = (sim: Sim, e: Encounter): number => evadeOddsFor(playerHelm(sim), e.strength);
 
-/** Credits the fleet asks to let the player pass. */
+/** Credits the fleet asks to let the player pass. A hunter (hunters.ts) asks more the harder its faction wants the player. */
 export function bribeCost(sim: Sim, e: Encounter): number {
   const mod = clamp(1 - BRIBE_STANDING * standing(sim, e.faction), 0.5, 2);
-  return Math.max(BRIBE_MIN, Math.round(BRIBE_PER_STRENGTH * e.strength * (1 + e.danger * BRIBE_PER_DANGER) * mod));
+  const hunt = sim.galaxy.fleets.find((f) => f.id === e.fleet)?.hunt ? Math.min(HUNT_BRIBE_MAX, 1 + HUNT_BRIBE_PER_PRESSURE * huntPressure(sim, e.faction)) : 1;
+  return Math.max(BRIBE_MIN, Math.round(BRIBE_PER_STRENGTH * e.strength * (1 + e.danger * BRIBE_PER_DANGER) * mod * hunt));
 }

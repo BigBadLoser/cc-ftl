@@ -12,6 +12,7 @@ import {
   ARRIVAL_EVERY_SEC, ARRIVAL_FRIENDLY_TERRITORY, ARRIVAL_HOSTILE_TERRITORY, ARRIVAL_MAX_CHANCE, ARRIVAL_PER_DANGER,
   MAX_HOSTILE_CONTACTS,
 } from './tuning';
+import { SCAVENGER_CHANCE, SCAVENGER_FACTION, SCAVENGER_MAX_DANGER } from './tuningHeat';
 import type { Contact } from './types';
 
 /**
@@ -140,7 +141,8 @@ function hostileShipsHere(sim: Sim, contacts: readonly Contact[]): number {
 
 /**
  * The arrival roll while the player stays: every ARRIVAL_EVERY_SEC, with `arrivalChance`, a ship of a faction hostile to
- * the player (drawn from the node's traffic pool) jumps in and is spawned. Uses the galaxy's own Rng.
+ * the player (drawn from the node's traffic pool) jumps in and is spawned. Where the pool holds nobody hostile near the start (danger up to
+ * SCAVENGER_MAX_DANGER), a lone scavenger still turns up with chance SCAVENGER_CHANCE, so the first hours are not empty (#45). Uses the galaxy's own Rng.
  */
 export function rollArrival(sim: Sim): void {
   const g = sim.galaxy;
@@ -150,9 +152,13 @@ export function rollArrival(sim: Sim): void {
   if (!node || !playerShipInfo(sim)) return;
   const st = nodeState(sim, node.id);
   if (hostileShipsHere(sim, st.contacts) >= MAX_HOSTILE_CONTACTS) return;
-  const p = arrivalChance(sim);
+  let p = arrivalChance(sim);
   const content = sim.content.galaxy;
-  const pool = trafficPool(content, node.faction, node.danger).filter((w) => isHostileFaction(sim, w.value));
+  let pool = trafficPool(content, node.faction, node.danger).filter((w) => isHostileFaction(sim, w.value));
+  if (!pool.length && node.danger <= SCAVENGER_MAX_DANGER && content?.factions[SCAVENGER_FACTION] && isHostileFaction(sim, SCAVENGER_FACTION)) {
+    pool = [{ value: SCAVENGER_FACTION, weight: 1 }];
+    p = Math.max(p, SCAVENGER_CHANCE);
+  }
   const roll = withGalaxyRng(g, (rng) => ({ hit: rng.next() < p, who: rng.next(), ship: rng.next(), seed: rng.int(0, 0x7fffffff) }));
   if (!roll.hit || !pool.length) return;
   const faction = pickWeighted(pool, roll.who) as string;

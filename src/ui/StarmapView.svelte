@@ -460,6 +460,9 @@
     </div>
     {#if seenFactions.length && !cardOpen && !newsOpen}
       <ul class="legend" aria-label="Territory">
+        {#if map && (map.heat.notoriety > 0 || map.heat.hunters.length)}
+          <li class="heat" class:wanted={map.heat.wanted} data-testid="starmap-heat">Notoriety {map.heat.notoriety}{#if map.heat.wanted}&nbsp;· wanted{/if}{#if map.heat.hunters.length}<br />Hunted by {map.heat.hunters.join(', ')}{/if}</li>
+        {/if}
         <li class="lh">Territory</li>
         {#each seenFactions as f (f.id)}
           <li><i style={`background: ${toneColor(f.tone)}`}></i>{f.name}<em class={f.tier}>{f.tier}</em></li>
@@ -503,6 +506,7 @@
   .badge { position: absolute; top: 2px; right: 2px; min-width: 14px; height: 14px; padding: 0 3px; box-sizing: border-box; display: grid; place-items: center; font: 700 10px/1 var(--head-font); color: var(--bg); background: var(--amber); }
   .tools button.tile.on { box-shadow: inset 0 0 0 1px var(--cyan); }
   .legend { position: absolute; left: 8px; bottom: 8px; margin: 0; padding: 6px 10px; list-style: none; background: var(--panel); border: 1px solid var(--line-hi); font-size: 12px; display: grid; gap: 3px; pointer-events: none; }
+  .legend .heat { color: #ffb43c; } .legend .heat.wanted { color: var(--red); }
   .legend .lh { font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); }
   .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
   .legend em { font-style: normal; margin-left: 6px; font: 600 11px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
