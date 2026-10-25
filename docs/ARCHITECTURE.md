@@ -319,7 +319,7 @@ palette.json    the single palette, read by Blender scripts and the game
   economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
   below), `structure` (faction tile looks, see below), `galley`
-  (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
+  (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below), `starmap` (the map's pictures, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
 - **Wall corner fills (`walls`, the 47-tile blob set):** wall and hull pieces are picked by the 4-neighbour mask
   (N1 E2 S4 W8) plus corner bits (`tiles.ts` `wallCorners`: NE 1, SE 2, SW 4, NW 8, set when both arms beside the
@@ -569,6 +569,55 @@ palette.json    the single palette, read by Blender scripts and the game
     `fx.ember`, `fx.puff.*`, `fx.ice`) stay in env.
   - Until the renderer is updated, the shots and fire already show in game (same ids) but drawn the old way: additive,
     single frame for the shots, the old one-sprite flash.
+- **Starmap art (`starmap` family, sheet `starmap`; `sprites/starmap.py`, `starmap_kit.py`, `starmap_bodies.py`,
+  `starmap_icons.py`, `starmap_fleets.py`; preview `review/starmap_preview.py`; not wired yet):** pipeline
+  sprites for the pictures the starmap draws in code today. Lanes, node pips, territory outlines and labels stay UI.
+  - Every sprite has a fixed square frame with the anchor at its centre, so the map places and scales it without knowing what
+    was drawn. Sizes below are world px (what `compose.ts` hands out; the frames are half that in the file).
+  - Bodies, `starmap.body.<kind>.v0..v2` and `starmap.body.<kind>` (= v0), kinds `star`, `red_dwarf`, `blue_giant`,
+    `gas_giant`, `black_hole`, `nebula`: 192 px frame, body radius 60 px. Draw at scale `r / 60` (`layout.ts` `BODY_SIZE`),
+    centred on the body; halos, the ring and the disc reach 1.6 r. Pick the variant by sector id from the `.v<n>` ids a
+    kind has: three for most, six for `gas_giant` (v0..v2 ringed, v3..v5 without a ring). Stars, the black hole's
+    disc and the nebula glow; the gas giant has no glow and is outlined. The nebula is glow only (its colour pixels are
+    empty): draw it under the nodes.
+  - More body kinds, same ids, frame and scale, art only (the sim's `BodyKind`, `BODY_SIZE` and `BODY_WEIGHTS` do not have
+    them yet): `binary_star`, `white_dwarf`, `pulsar`, `protostar` (`sprites/starmap_stars.py`) and `ice_giant`,
+    `lava_world`, `ocean_world` (`sprites/starmap_planets.py`, lit and outlined like the gas giant). Some keep a small core
+    so their glow fits the frame: the white dwarf's core is 0.45 r, the pulsar's 0.22 r (its beams reach 1.6 r), the
+    protostar's 0.36 r inside a disc out to 1.5 r. Suggested `BODY_SIZE` (r, clear): binary_star (26, 40), white_dwarf
+    (11, 24), pulsar (16, 40), protostar (22, 34), ice_giant (18, 28), lava_world (10, 18), ocean_world (11, 18).
+  - Structures, `starmap.struct.<kind>`, kinds `station_trade`, `station_military`, `station_research`, `den`, `asteroids`,
+    `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): frame 96 px (48 in the 1x file).
+  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: frame 80 px (40).
+    `d0` points east on screen, then clockwise by 45 degrees (the SVG `rotate(heading)` sense), so `d = round(heading / 45)
+    mod 8`. Each heading is the ground heading whose three-quarter projection points that way, so north and south facings
+    are foreshortened like the ships.
+  - Icon drawing (crisp pixels): structure and fleet icons are a fixed screen size, like today's badges. Never draw them
+    smaller than their art: a shrunk sprite is smoothed (soft), even with `image-rendering: pixelated` (seen in Chromium),
+    while an enlarged one keeps hard edges. Draw each art px as a whole number k >= 1 of device px, nearest-neighbour, at a
+    device-pixel-aligned position: for a target screen size T (about 24 px for structures, 20 for fleets) and the frame's
+    file px F, k = max(1, round(T * devicePixelRatio / F)) and the drawn size is F * k / devicePixelRatio. On a 3x phone
+    that is 32 px structures and 27 px fleets (k 2).
+  - Bodies follow the map scale (`r / 60`), so they are enlarged (crisp) when zoomed in and shrunk (soft) at the outer
+    zooms; the backdrop is drawn 1:1.
+  - Mini bodies for the Cluster view (`sprites/starmap_minis.py`): `starmap.mini.<kind>.v<n>` and `starmap.mini.<kind>`
+    (= v0), one per body variant, the same scene shrunk to a sixth and rendered at that size: frame 32 px (16 in the 1x
+    file), body radius 10 px. The Cluster view draws bodies at about 6 screen px radius, so draw these by the icon rule
+    (whole device px per art px; on a 3x phone 21 px) and pick the same variant as the sector's body.
+  - Exit markers (`sprites/starmap_exits.py`): `starmap.exit.gate` (a free-floating ring gate with emitter pods, a cyan
+    membrane on the glow sheet) and `starmap.exit.rift` (a tear with a banded rim, a starry core and drifting shards), at the gateway where a gate or rift lane leaves the sector, in place
+    of the thick or dashed lane end. Frame 96 px like the structures, same crisp rule.
+  - Nebula field tiles (`sprites/starmap_fields.py`): `starmap.nebula.haze`, `.body`, `.core`, seamless 512 px tiles
+    (256 in the 1x file, anchor 0,0), glow only, for the field `StarmapNebula` paints in code today. Tile each across the
+    field (the sim's density tiles are 3000 map units) and show it where the density passes its step (about 0.15 haze,
+    0.45 body, 0.8 core: a mask per step, hard edged for the stepped look), added at the opacity the map wants.
+  - `starmap.backdrop`: a 512 px tile of dim 1-2 px stars (anchor 0,0), colour only and transparent between stars; tile it
+    over the map's background.
+  - Tint: stations, the den and fleets paint their livery in the crew key colours (`keyColors`: `team.cloth` panels,
+    `team.accent` trim, 5 shade steps each); recolour them per owner as the crew filter does (`palette.ts`: a pixel s x key
+    becomes the owner's colour on the shade ramp `MULT`, 0.42 .. 1.22). Asteroids and derelicts carry no key colour.
+  - Glow: as everywhere, the glow twin is added over the colour sprite (SVG/CSS: `mix-blend-mode: plus-lighter` or
+    `screen`).
 
 ## UI
 

@@ -1,6 +1,7 @@
 import { PathC, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
-import { shipIdOf, shipGrid } from '../sim/regions';
+import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
+import { ItemStackC } from '../sim/items/components';
 import { AlienC, EggSacC } from '../sim/aliens/components';
 import { DeadC } from '../sim/crew/components';
 import { StationAlarmC, StationC } from '../sim/stations/components';
@@ -28,6 +29,11 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     },
     /** Sheet streaming: decoded bytes resident (total and per pool), requests, pending, scene rebuilds. */
     art: () => r.art(),
+    /** Loose floor stacks: item, count, tile and ship (a delivery crate carries its job id). */
+    stacks: () => sim.world.query(ItemStackC).flatMap((id) => {
+      const s = sim.world.get(id, ItemStackC);
+      return s ? [{ id, item: s.item, count: s.count, x: s.x, y: s.y, ship: shipIdAt(sim, s.x, s.y), job: s.job ?? null }] : [];
+    }),
     /** Modules of a def: grid, origin and access tile. */
     modules(def: string) {
       const out: { id: number; shipId: number; ship: number; x: number; y: number; ax: number; ay: number }[] = [];

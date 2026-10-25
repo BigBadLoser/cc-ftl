@@ -17,6 +17,7 @@
   import OverlayPicker from './OverlayPicker.svelte';
   import NodeStrip from './NodeStrip.svelte';
   import StockDrawer from './StockDrawer.svelte';
+  import JobsPanel from './JobsPanel.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
   import StarmapView from './StarmapView.svelte';
@@ -30,6 +31,8 @@
   let canvas: HTMLCanvasElement;
   let debug = $state(false);
   let stockOpen = $state(false);
+  let jobsOpen = $state(false);
+  let jobCount = $state(0);
   let priorities = $state(false);
   let toast = $state<string | null>(null);
   let snap = $state<UiSnapshot | undefined>(undefined);
@@ -86,6 +89,7 @@
     const unsubs = [
       () => mq.removeEventListener('change', onMq),
       api.snapshot.subscribe((s) => (snap = s)),
+      api.jobs.subscribe((j) => (jobCount = j.active.length)),
       api.toast.subscribe((t) => (toast = t)),
       api.starmap.subscribe((m) => (star = m)),
       api.deploy.subscribe((d) => (deploy = d)),
@@ -120,7 +124,8 @@
     else if (e.key === '`') debug = !debug;
     else if (e.key === 'm') { if (!mapLocked) { fleeShip = null; mapOpen = !mapOpen; } }
     else if (e.key === 'Escape') {
-      if (stockOpen) stockOpen = false;
+      if (jobsOpen) jobsOpen = false;
+      else if (stockOpen) stockOpen = false;
       else if (overviewOpen) overviewOpen = false;
       else api.selectCrew(null);
     }
@@ -154,6 +159,7 @@
   <NavStrip
     {mapOpen} {mapLocked} onMap={() => { fleeShip = null; mapOpen = !mapOpen; }}
     {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.some((e) => !e.dormant) || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
+    {jobsOpen} {jobCount} onJobs={() => (jobsOpen = !jobsOpen)}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
     onStock={() => (stockOpen = !stockOpen)}
@@ -168,6 +174,9 @@
 
 {#if overviewOpen}
   <ShipOverview {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} onClose={() => (overviewOpen = false)} />
+{/if}
+{#if jobsOpen}
+  <JobsPanel {api} onClose={() => (jobsOpen = false)} />
 {/if}
 {#if stockOpen}
   <StockDrawer {api} onClose={() => (stockOpen = false)} />

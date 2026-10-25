@@ -199,6 +199,9 @@ export type SimEvent =
   | { type: 'galaxy.notoriety'; value: number; delta: number; faction: string | null }
   /** A faction sent a hunter fleet after the player (galaxy/hunters.ts). */
   | { type: 'galaxy.hunt'; fleet: number; faction: string; node: string; ships: number }
+  /** A station job was taken, or closed: 'done' (paid), 'failed' (ran out of time), 'abandoned'. */
+  | { type: 'job.accepted'; id: number; kind: 'delivery' | 'bounty'; issuer: string }
+  | { type: 'job.closed'; id: number; kind: 'delivery' | 'bounty'; outcome: 'done' | 'failed' | 'abandoned'; reward: number }
   | { type: 'galaxy.discovered'; count: number }
   | { type: 'galaxy.shipArrived'; node: string; faction: string; ship: number | null }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */

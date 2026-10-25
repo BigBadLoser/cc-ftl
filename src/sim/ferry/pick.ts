@@ -37,7 +37,7 @@ export function regionStock(sim: Sim, ship: number): { item: string; count: numb
   }
   for (const id of sim.world.query(ItemStackC)) {
     const st = sim.world.get(id, ItemStackC);
-    if (st && shipIdAt(sim, st.x, st.y) === ship) totals.set(st.item, (totals.get(st.item) ?? 0) + st.count);
+    if (st && !st.job && shipIdAt(sim, st.x, st.y) === ship) totals.set(st.item, (totals.get(st.item) ?? 0) + st.count);
   }
   return [...totals].sort(([a], [b]) => a.localeCompare(b)).map(([item, count]) => ({ item, count }));
 }

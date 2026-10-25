@@ -114,6 +114,8 @@ export interface Contact {
   /** Fleet ships only: the ship's name ("CNS Valiant") and size class (what its home port rebuilds when it is lost). */
   name?: string;
   size?: ShipSize;
+  /** A bounty target (jobs.ts): the id of the job it is wanted by; its ship carries it too (`Ship.bounty`). */
+  bounty?: number;
 }
 
 export interface NodeState {
@@ -314,6 +316,31 @@ export interface EncounterResult {
   cost?: number;
 }
 
+/**
+ * A station job the player took (jobs.ts). `key` is the offer it came from (jobOffers.ts); `issuer` the galaxy faction that pays; `from` the port.
+ * A delivery carries `count` of `item` to `to` (a node). A bounty is for one ship named `target` of `targetFaction` (generator `shipgen`, `seed`, `depth`),
+ * placed at node `node` (one the player has not entered yet) when the job is taken.
+ */
+export interface StationJob {
+  id: number;
+  key: string;
+  kind: 'delivery' | 'bounty';
+  issuer: string;
+  from: string;
+  reward: number;
+  /** The turn it must be done by. */
+  due: number;
+  to?: string;
+  item?: string;
+  count?: number;
+  target?: string;
+  targetFaction?: string;
+  shipgen?: string;
+  seed?: number;
+  depth?: number;
+  node?: string;
+}
+
 /** The player's notoriety and who last sent hunters after them (heat.ts, hunters.ts). */
 export interface HeatState {
   notoriety: number;
@@ -362,6 +389,10 @@ export interface GalaxyState {
   /** Travel days spent in jumps. */
   days: number;
   heat: HeatState;
+  /** Jobs the player holds (jobs.ts), and the offer keys already taken or finished (newest last). */
+  jobs: StationJob[];
+  jobLog: string[];
+  nextJob: number;
   /** The hyperspace trip in progress, or null. */
   travel: Travel | null;
   /** Bumped on every change the starmap view shows. */

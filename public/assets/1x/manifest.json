@@ -4657,6 +4657,10 @@
    "image": "sprites/shuttle.png",
    "glow": "sprites/shuttle.glow.png"
   },
+  "starmap": {
+   "image": "sprites/starmap.png",
+   "glow": "sprites/starmap.glow.png"
+  },
   "storage_set": {
    "image": "sprites/storage_set.png",
    "glow": "sprites/storage_set.glow.png"
@@ -99915,6 +99919,3211 @@
    "footprint": [
     2,
     2
+   ],
+   "glow": true
+  },
+  "starmap.backdrop": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 256,
+    "h": 256
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.binary_star": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1029,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.binary_star.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1126,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.binary_star.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1223,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.binary_star.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1320,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.black_hole": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1417,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.black_hole.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1514,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.black_hole.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1611,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.black_hole.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1708,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.blue_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1805,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.blue_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1902,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.blue_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1999,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.blue_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2096,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.gas_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2193,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.gas_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2290,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.gas_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2387,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.gas_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2484,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.gas_giant.v3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2581,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.gas_giant.v4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2678,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.gas_giant.v5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2775,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.ice_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2872,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.ice_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2969,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.ice_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3066,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.ice_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3163,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.lava_world": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3260,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.lava_world.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3357,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.lava_world.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3454,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.lava_world.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3551,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.nebula": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3648,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.nebula.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3745,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.nebula.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3842,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.nebula.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3939,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.ocean_world": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.ocean_world.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 98,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.ocean_world.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 195,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.ocean_world.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 292,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.protostar": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 389,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.protostar.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 486,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.protostar.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 583,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.protostar.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 680,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.pulsar": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 777,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.pulsar.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 874,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.pulsar.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 971,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.pulsar.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1068,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.red_dwarf": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1165,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.red_dwarf.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1262,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.red_dwarf.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1359,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.red_dwarf.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1456,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1553,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1650,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1747,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1844,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.white_dwarf": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1941,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.white_dwarf.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2038,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.white_dwarf.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2135,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.white_dwarf.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2232,
+    "y": 258,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.exit.gate": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2329,
+    "y": 258,
+    "w": 48,
+    "h": 48
+   },
+   "anchor": {
+    "x": 24,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.exit.rift": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2378,
+    "y": 258,
+    "w": 48,
+    "h": 48
+   },
+   "anchor": {
+    "x": 24,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2721,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2762,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2803,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2844,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2885,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2926,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2967,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3008,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3049,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3090,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3131,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3172,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3213,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3254,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3295,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3336,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3377,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3418,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3459,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3500,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3541,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3582,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3623,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3664,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3705,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3746,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3787,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3828,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3869,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3910,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3951,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3992,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 4033,
+    "y": 258,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 42,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 83,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 124,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 165,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 206,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 247,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 288,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 329,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 370,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.fleet.trader.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 411,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 452,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 493,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 534,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 575,
+    "y": 355,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 20,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.binary_star": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 616,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.binary_star.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 633,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.binary_star.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 650,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.binary_star.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 667,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.black_hole": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 684,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.black_hole.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 701,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.black_hole.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 718,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.black_hole.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 735,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.blue_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 752,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.blue_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 769,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.blue_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 786,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.blue_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 803,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.gas_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 820,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 837,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 854,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 871,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 888,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 905,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.gas_giant.v5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 922,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.ice_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 939,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.ice_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 956,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.ice_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 973,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.ice_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 990,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.mini.lava_world": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1007,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.lava_world.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1024,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.lava_world.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1041,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.lava_world.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1058,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.nebula": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1075,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.nebula.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1092,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.nebula.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1109,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.nebula.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1126,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.ocean_world": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1143,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.ocean_world.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1160,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.ocean_world.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1177,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.ocean_world.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1194,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.protostar": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1211,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.protostar.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1228,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.protostar.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1245,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.protostar.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1262,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.pulsar": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1279,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.pulsar.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1296,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.pulsar.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1313,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.pulsar.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1330,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.red_dwarf": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1347,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.red_dwarf.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1364,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.red_dwarf.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1381,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.red_dwarf.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1398,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.star": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1415,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.star.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1432,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.star.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1449,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.star.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1466,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.white_dwarf": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1483,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.white_dwarf.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1500,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.white_dwarf.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1517,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.mini.white_dwarf.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1534,
+    "y": 355,
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.nebula.body": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 258,
+    "y": 1,
+    "w": 256,
+    "h": 256
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.nebula.core": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 515,
+    "y": 1,
+    "w": 256,
+    "h": 256
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.nebula.haze": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 772,
+    "y": 1,
+    "w": 256,
+    "h": 256
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.struct.asteroids": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2427,
+    "y": 258,
+    "w": 48,
+    "h": 48
+   },
+   "anchor": {
+    "x": 24,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.struct.den": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2476,
+    "y": 258,
+    "w": 48,
+    "h": 48
+   },
+   "anchor": {
+    "x": 24,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.struct.derelict": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2525,
+    "y": 258,
+    "w": 48,
+    "h": 48
+   },
+   "anchor": {
+    "x": 24,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.struct.station_military": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2574,
+    "y": 258,
+    "w": 48,
+    "h": 48
+   },
+   "anchor": {
+    "x": 24,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.struct.station_research": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2623,
+    "y": 258,
+    "w": 48,
+    "h": 48
+   },
+   "anchor": {
+    "x": 24,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.struct.station_trade": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2672,
+    "y": 258,
+    "w": 48,
+    "h": 48
+   },
+   "anchor": {
+    "x": 24,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
    ],
    "glow": true
   },

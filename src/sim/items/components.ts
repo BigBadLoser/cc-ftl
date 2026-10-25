@@ -9,6 +9,8 @@ export interface ItemStack {
   y: number;
   /** Tick of the last 'storage.full' warning for this stack (debounce). */
   warnedAt?: number;
+  /** A delivery crate: the StationJob id it belongs to. */
+  job?: number;
 }
 export const ItemStackC = defineComponent<ItemStack>('itemStack');
 

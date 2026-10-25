@@ -74,6 +74,8 @@ export interface Ship {
   killedBy?: 'player';
   /** Its loss (destroyed by the player, or taken) has been counted towards the player's notoriety. */
   tallied?: true;
+  /** A bounty target: the id of the station job that wants it destroyed (galaxy/jobs.ts). */
+  bounty?: number;
   /** Set on generated ships: the faction, seed and depth they were generated from (the grid itself is saved). */
   gen?: GenOrigin;
   /** Set on derelicts: dressing data for the renderer (see ShipRuin). */
