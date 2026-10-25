@@ -28,6 +28,10 @@
    "image": "sprites/battery.png",
    "glow": "sprites/battery.glow.png"
   },
+  "cargo": {
+   "image": "sprites/cargo.png",
+   "glow": "sprites/cargo.glow.png"
+  },
   "clutter": {
    "image": "sprites/clutter.png"
   },
@@ -51000,6 +51004,44 @@
    "anchor": {
     "x": 3,
     "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.cargo_crate.held": {
+   "kind": "static",
+   "sheet": "cargo",
+   "frame": {
+    "x": 90,
+    "y": 1,
+    "w": 36,
+    "h": 30
+   },
+   "anchor": {
+    "x": 18,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.cargo_crate.l": {
+   "kind": "static",
+   "sheet": "cargo",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 88,
+    "h": 72
+   },
+   "anchor": {
+    "x": 44,
+    "y": 51
    },
    "footprint": [
     1,
