@@ -117,6 +117,9 @@
           <text x={n.x + px(15 + i * 13)} y={n.y + px(3.6)} class="badge" font-size={px(10)}>{b}</text>
         {/each}
       {/if}
+      {#each n.jobs ?? [] as j, i (i)}
+        <path d={`M ${n.x - px(15)} ${n.y + px(i * 16 - ((n.jobs?.length ?? 1) - 1) * 8 - 7.5)} l ${px(7)} ${px(7.5)} l ${px(-7)} ${px(7.5)} l ${px(-7)} ${px(-7.5)} Z`} class="job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job-mark"><title>{j.label}</title></path>
+      {/each}
       {#if named(n)}<text x={n.x} y={n.y + px(20)} class="nname" class:cur={n.current} font-size={px(13)} stroke-width={px(3)}>{n.name}</text>{/if}
     </g>
   {:else}
@@ -187,6 +190,8 @@
   .sel { fill: none; stroke: var(--amber); stroke-width: 2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
   .hostile { fill: color-mix(in srgb, var(--red) 25%, transparent); stroke: var(--red); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
   .unknown { fill: var(--bg); stroke: var(--dim); stroke-opacity: 0.85; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .job { fill: var(--amber); stroke: var(--bg); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+  .job.bounty { fill: var(--red); }
   .dimmed { opacity: 0.35; }
   text { text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-linejoin: round; font-family: var(--head-font); }
   .badge { fill: var(--bg); font-weight: 700; stroke: none; }
