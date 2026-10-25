@@ -69,7 +69,7 @@
 <style>
   nav { display: flex; gap: 3px; align-items: stretch; min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .card {
-    --face: 32px; position: relative; flex: none; width: calc(var(--face) + 84px); height: calc(var(--face) * 1.125 + 31px); padding: 5px 6px 5px 5px; min-height: 0;
+    --face: 58px; position: relative; flex: none; width: calc(var(--face) + 84px); height: calc(var(--face) * 1.0689 + 26px); padding: 5px 6px 5px 5px; min-height: 0;
     display: grid; grid-template-columns: var(--face) 1fr; grid-template-rows: auto auto 1fr; column-gap: 5px; align-content: start;
     text-align: left; background: var(--panel);
   }
@@ -77,11 +77,11 @@
   .card.bad { border-color: var(--red); }
   .card.on { border-color: var(--cyan); box-shadow: inset 0 0 0 1px var(--cyan); }
   /* The portrait: a crop of the real crew sprite in whole art px (16 x 18), shown at a whole multiple (2x) with hard edges. */
-  .face { grid-row: 1 / 3; width: var(--face); height: calc(var(--face) * 1.125); background: #061020; overflow: hidden; }
+  .face { grid-row: 1 / 3; width: var(--face); height: calc(var(--face) * 1.0689); background: #061020; overflow: hidden; }
   .face img { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
   .face.dead img { filter: grayscale(1) brightness(0.6); }
   .face.down img { filter: saturate(0.6) brightness(0.75) sepia(1) hue-rotate(-45deg) saturate(2.2); }
-  .st { position: absolute; left: calc(var(--face) - 6px); top: calc(var(--face) * 1.125 - 5px); display: grid; place-items: center; padding: 1px; background: var(--panel); border-radius: 50%; }
+  .st { position: absolute; left: calc(var(--face) - 6px); top: calc(var(--face) * 1.0689 - 5px); display: grid; place-items: center; padding: 1px; background: var(--panel); border-radius: 50%; }
   .st.ok { color: var(--green); } .st.warn { color: var(--amber); } .st.bad { color: var(--red); } .st.dim { color: var(--dim); }
   .name { font: 600 14px/1.1 var(--head-font); color: var(--cyan); letter-spacing: 0.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .role { font: 10px/1.2 var(--head-font); color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -91,5 +91,5 @@
   .hp b { background: var(--hp); } .rest b { background: var(--rest); } .hunger b { background: var(--hunger); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .all { height: auto; align-self: stretch; }
-  @media (max-width: 600px) { .card { --face: 32px; width: 88px; padding: 4px; } .name { font-size: 12px; } .role { display: none; } }
+  @media (max-width: 600px) { .card { width: calc(var(--face) + 56px); padding: 4px; } .name { font-size: 12px; } .role { display: none; } }
 </style>

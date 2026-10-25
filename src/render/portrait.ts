@@ -1,4 +1,4 @@
-import { Container, Rectangle, Sprite, type ExtractSystem } from 'pixi.js';
+import { Container, Rectangle, Sprite, Texture, type ExtractSystem } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { ItemDef } from '../sim/registry';
 import { CrewC } from '../sim/crew/components';
@@ -23,6 +23,21 @@ export interface Portraits {
   url(id: number): string | null;
 }
 
+const FRONT_DIR = `${import.meta.env.BASE_URL}portraits-proto/`;
+const frontImgs = new Map<string, HTMLImageElement | 'none' | undefined>();
+/** A portrait render image: loads on first ask ('wait'); 'none' when the file is missing (glow twins mostly). */
+function frontImage(file: string): HTMLImageElement | 'wait' | 'none' {
+  const hit = frontImgs.get(file);
+  if (hit) return hit === 'none' ? 'none' : hit.complete && hit.naturalWidth ? hit : 'wait';
+  if (frontImgs.has(file)) return 'wait';
+  frontImgs.set(file, undefined);
+  const img = new Image();
+  img.onload = () => frontImgs.set(file, img);
+  img.onerror = () => frontImgs.set(file, 'none');
+  img.src = FRONT_DIR + file;
+  return 'wait';
+}
+
 export function createPortraits(extract: ExtractSystem, atlas: Atlas, world: World, items: Readonly<Record<string, ItemDef>>): Portraits {
   const cache = new Map<string, { canvas: HTMLCanvasElement; url: string }>();
 
@@ -34,7 +49,8 @@ export function createPortraits(extract: ExtractSystem, atlas: Atlas, world: Wor
     return layers.length ? { key: portraitKey(crew.species, crew.role, crew.appearanceSeed, art?.id), layers, seed: crew.appearanceSeed } : null;
   }
 
-  function source(id: number): { canvas: HTMLCanvasElement; url: string } | null {
+  /** Fallback (robots, creatures: no portrait renders yet): a crop of the isometric figure. */
+  function isoSource(id: number): { canvas: HTMLCanvasElement; url: string } | null {
     const crew = world.get(id, CrewC);
     if (!crew) return null;
     const art = items[world.get(id, EquipC)?.weapon ?? '']?.hand?.art;
@@ -92,5 +108,45 @@ export function createPortraits(extract: ExtractSystem, atlas: Atlas, world: Wor
     return entry;
   }
 
+  const ids = new Map<unknown, string>();
+  for (const [id, a] of Object.entries(atlas.manifest.assets)) ids.set(a, id);
+
+  /** Front-facing Blender portrait renders (portrait_build.py): one image per layer, all in one frame. */
+  function frontSource(id: number): { canvas: HTMLCanvasElement; url: string } | null {
+    const crew = world.get(id, CrewC);
+    if (!crew || singleBody(atlas, crew)) return null;
+    const art = items[world.get(id, EquipC)?.weapon ?? '']?.hand?.art;
+    const key = 'front|' + portraitKey(crew.species, crew.role, crew.appearanceSeed, art?.id);
+    const hit = cache.get(key);
+    if (hit) return hit;
+    const layers = crewLoadout(atlas, crew, false, art).filter((l) => l.def.slot !== 'gear.hand');
+    const want = layers.map((l) => ids.get(l.def)).filter((x): x is string => !!x);
+    const imgs = want.map((w) => frontImage(w + '.png'));
+    const glowOf = want.filter((w) => (atlas.manifest.assets[w] as { glow?: boolean } | undefined)?.glow).map((w) => frontImage(w + '.glow.png'));
+    if (imgs.some((i) => i === 'wait') || glowOf.some((i) => i === 'wait')) return null;
+    const sprites = imgs.filter((i): i is HTMLImageElement => i !== 'wait' && i !== 'none').map((i) => new Sprite(Texture.from(i)));
+    if (!sprites.length) return null;
+    const root = new Container();
+    root.addChild(...sprites);
+    for (const g of glowOf) {
+      if (g === 'wait' || g === 'none') continue;
+      const sp = new Sprite(Texture.from(g));
+      sp.blendMode = 'add';
+      root.addChild(sp);
+    }
+    const img0 = imgs.find((i): i is HTMLImageElement => i !== 'wait' && i !== 'none') as HTMLImageElement;
+    const filter = createCrewFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed));
+    setFilterZoom(filter, 1);
+    setFilterTint(filter, 0xffffff);
+    root.filters = [filter];
+    const canvas = extract.canvas({ target: root, frame: new Rectangle(0, 0, img0.naturalWidth, img0.naturalHeight), resolution: 1, antialias: false }) as HTMLCanvasElement;
+    root.destroy({ children: true });
+    filter.destroy();
+    const entry = { canvas, url: canvas.toDataURL() };
+    cache.set(key, entry);
+    return entry;
+  }
+
+  const source = (id: number) => frontSource(id) ?? isoSource(id);
   return { source: (id) => source(id)?.canvas ?? null, url: (id) => source(id)?.url ?? null };
 }
