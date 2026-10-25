@@ -58,9 +58,12 @@
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
   let prizes = $state<UiPrize[]>([]);
-  /** Station entity ids in the node. Selecting one opens its panel; selecting anything else closes it. */
+  /** Station entity ids in the node. "Hail station" in a selected station's inspector opens its panel; selecting anything else closes it. */
   let stations = $state<number[]>([]);
-  let stationOpen = $derived<number | null>(selShip !== null && stations.includes(selShip) ? selShip : null);
+  let stationOpen = $state<number | null>(null);
+  $effect(() => {
+    if (stationOpen !== null && (selShip !== stationOpen || !stations.includes(stationOpen))) stationOpen = null;
+  });
 
   let cutaway = $state<UiCutaway>('auto');
   /** Draw the player ship's roof and hull exterior (view from outside). */

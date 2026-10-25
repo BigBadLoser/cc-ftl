@@ -44,7 +44,7 @@
   {#if foe}<ShipMeters ship={foe} compact />{/if}
   {#if prize}<PrizePanel {api} {ship} />{/if}
   {#if partner && !foe && partner.station}
-    <button class="go" data-testid="open-station" onclick={() => onStation(ship)}>Open station panel</button>
+    <button class="go" data-testid="open-station" onclick={() => { if (partner.hail === 'none') api.dispatch({ type: 'trade.hail', ship }); onStation(ship); }}>Hail station</button>
   {:else if partner && !foe}<TradeList {api} {ship} onOpen={onTrade} />{/if}
   {#if !foe && !prize && !partner && !derelict}<p class="dim">Nothing to do here.</p>{/if}
   {#if foe && !prize}<button class="fight" data-testid="grid-focus-fight" onclick={() => api.focusFight(ship)}>Frame fight</button>{/if}
