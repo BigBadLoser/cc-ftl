@@ -66,7 +66,8 @@ def compose(out):
     # Align both sprites by their stored deck anchors, without resizing either.
     comparisons=(('b-blockout','APPROVED B / GREY BLOCKOUT','B / MECHANICAL REFINEMENT','b-refinement-comparison'),
                  ('b-pipes-before','BEFORE / PIPE CONNECTIONS','AFTER / SEATED CONNECTIONS','b-pipes-comparison'),
-                 ('b-automation-before','BEFORE / OPERATION DETAILS','AFTER / AUTOMATED HANDLING','b-automation-comparison'))
+                 ('b-automation-before','BEFORE / OPERATION DETAILS','AFTER / AUTOMATED HANDLING','b-automation-comparison'),
+                 ('b-console-before','BEFORE / CONSOLE HEIGHT','AFTER / CONSOLE LOWERED 0.15','b-console-comparison'))
     for source,before_label,after_label,target in comparisons:
         if not (out/f'{source}.png').exists(): continue
         before=Image.open(out/f'{source}.png').convert('RGBA')

@@ -1,0 +1,29 @@
+{
+  "crewNominalHeight": 1.5,
+  "crewMeasuredHeight": 1.5548317432403564,
+  "crewGridPosition": [
+    -1.0,
+    1.9
+  ],
+  "crewFeetZ": 0.0,
+  "consoleDrop": 0.15,
+  "controlTop": 0.8739999999999999,
+  "screenHeightRange": [
+    0.8559999999999999,
+    1.117
+  ],
+  "anchor": [
+    218,
+    179
+  ],
+  "tile": [
+    128,
+    64
+  ],
+  "camera": {
+    "yaw": 45,
+    "elevation": 30
+  },
+  "samples": 4,
+  "crewFinishing": "none; source outfit colours"
+}

@@ -38,6 +38,7 @@ class VesselRefinery:
     powered_output:bool=True
     terminal_u:float=-1.00
     terminal_v:float=1.12
+    terminal_drop:float=.15
 
     def spec(self): return asdict(self)
 
@@ -179,13 +180,14 @@ def discharge(f,p):
 def operator_terminal(f,p):
     # Braced arm originates inside the chassis; a broad inclined screen sits
     # outside the vessel silhouette, facing the near-side crew access position.
-    u,v=p.terminal_u,p.terminal_v
+    u,v=p.terminal_u,p.terminal_v;panel_z=1.15-p.terminal_drop
     case(f,u,.49,.17,.34,.28,.15,COL,.03,.05)
-    profile=((.48,.20),(.62,.20),(v+.10,.99),(v,1.09),(.54,.35))
+    profile=((.48,.20),(.62,.20),(v+.10,.99-p.terminal_drop),
+             (v,1.09-p.terminal_drop),(.54,.35))
     loops=[[f.pt(u+du,y,z) for y,z in profile] for du in (-.075,.075)]
     bridge(f,*loops,COL);cap(f,loops[0][::-1]);cap(f,loops[1])
     def ring(width,depth,dz=0,offset=0):
-        return [f.pt(x,y,1.15-.90*(y-v)+dz)
+        return [f.pt(x,y,panel_z-.90*(y-v)+dz)
                 for x,y in outline(u,v+offset,width,depth,.04)]
     outer=ring(.70,.48);back=ring(.70,.48,-.11)
     inner=ring(.53,.29,0,-.035);screen=ring(.53,.29,-.045,-.035)
@@ -194,7 +196,7 @@ def operator_terminal(f,p):
     # Three broad gauges, large enough to survive the native render.
     # Flat neutral screen colours, without text, tiny icons or emission.
     def graphic(x0,y0,width,depth):
-        f.poly([f.pt(x,y,1.15-.90*(y-v)-.043) for x,y in
+        f.poly([f.pt(x,y,panel_z-.90*(y-v)-.043) for x,y in
                 ((x0,y0),(x0+width,y0),(x0+width,y0+depth),(x0,y0+depth))],UI,flip=True)
     graphic(u-.20,v-.13,.065,.19)
     graphic(u-.065,v-.04,.065,.10)
@@ -202,7 +204,7 @@ def operator_terminal(f,p):
     # Two large tactile controls; no tiny labels or fabricated UI lettering.
     for du in (-.20,.20):
         points=outline(u+du,v+.17,.10,.085,.015)
-        loops=[[f.pt(x,y,1.15-.90*(y-v)+dz) for x,y in points] for dz in (-.008,.027)]
+        loops=[[f.pt(x,y,panel_z-.90*(y-v)+dz) for x,y in points] for dz in (-.008,.027)]
         bridge(f,*loops,COL);cap(f,loops[0][::-1]);cap(f,loops[1])
 
 

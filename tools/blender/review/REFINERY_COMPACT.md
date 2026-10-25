@@ -88,6 +88,29 @@ have independent `terminal`, `powered_feed` and `powered_output` parameters;
 terminal placement is also adjustable. Preview only, without handling animation,
 game integration or a full materials/sprite build.
 
+### Lower console and crew scale review
+
+The terminal pod, screen graphics and tactile controls move down exactly 0.15
+units using `terminal_drop`. Its arm keeps the chassis mounting foot and lowers
+the upper seat to meet the pod. Controls now top out at **0.874** and the screen
+spans **0.856–1.117** above deck. The refinery's other geometry and dimensions are
+unchanged. `b-console-before.png` / `.json` preserve the prior preview, and
+`b-console-comparison.png` compares the two console heights.
+
+`review/refinery_crew_preview.py` produces `crew-scale.png` (native),
+`crew-scale-preview.png` (3x nearest neighbour) and measured `crew-scale.json`.
+It uses the existing v2 game crew, idle frame 0, facing the terminal at grid
+(-1.0, 1.90). The source outfit colours remain uncorrected. Crew use the nominal
+1.5 game scale; the evaluated dressed figure measures about 1.555 with hair.
+Feet are at z=0, the same deck datum as the refinery. Crew are review-only and
+are absent from the standalone model/sprite.
+
+```sh
+# After the standalone preview; wait for its Blender process to finish first.
+SPRITE_PREVIEW=1 SPRITE_SAMPLES=4 blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/refinery_crew_preview.py -- --out artifacts/refinery-ab
+python3 tools/blender/review/refinery_crew_preview.py --out artifacts/refinery-ab --compose
+```
+
 - B model: `sprites/refinery_revision_b.py`, parametric `VesselRefinery`.
 - Review: `review/refinery_ab_preview.py`. Only B is rendered; A is copied from v2.
 - Artifacts: `artifacts/refinery-ab/comparison.png` at matched camera, world scale

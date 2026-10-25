@@ -19,5 +19,6 @@
   "powered_feed": true,
   "powered_output": true,
   "terminal_u": -1.0,
-  "terminal_v": 1.12
+  "terminal_v": 1.12,
+  "terminal_drop": 0.15
 }
