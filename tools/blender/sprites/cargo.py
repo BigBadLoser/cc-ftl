@@ -26,8 +26,9 @@ def case(m, L, W, H, detail=True):
         for sy in (-1, 1):
             m.box((sx * (L / 2 - g * 0.35), sy * (W / 2 - g * 0.35), 0), (g, g, H * 0.97), GUARD, top="steel", base=True,
                   bevel=g * 0.3)
-    if not detail:
-        m.box((0, W / 2 + 0.01, H - lid - 0.02), (0.035, 0.02, 0.035), "red", base=True)
+    if not detail:                                                            # the held case: just the seal over the seam
+        m.box((0, W / 2 + 0.008, H - lid - 0.04), (0.06, 0.016, 0.07), "steelD", top="steel", base=True)
+        m.box((0, W / 2 + 0.017, H - lid - 0.022), (0.022, 0.008, 0.022), "red", base=True)
         return
     for y in (-W * 0.18, W * 0.18):                                           # raised ribs the length of the lid
         m.box((0, y, H - 0.004), (L * 0.78, 0.035, 0.022), SHELL, top=LID_TOP, base=True, bevel=0.008)
