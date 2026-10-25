@@ -69960,63 +69960,6 @@
     1
    ]
   },
-  "portrait.crew.robot.body.repair": {
-   "kind": "static",
-   "sheet": "portraits",
-   "frame": {
-    "x": 2892,
-    "y": 1,
-    "w": 58,
-    "h": 62
-   },
-   "anchor": {
-    "x": 0,
-    "y": 0
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "portrait.crew.robot.body.worker": {
-   "kind": "static",
-   "sheet": "portraits",
-   "frame": {
-    "x": 2951,
-    "y": 1,
-    "w": 58,
-    "h": 62
-   },
-   "anchor": {
-    "x": 0,
-    "y": 0
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "portrait.crew.robot_heavy.body.security": {
-   "kind": "static",
-   "sheet": "portraits",
-   "frame": {
-    "x": 3010,
-    "y": 1,
-    "w": 58,
-    "h": 62
-   },
-   "anchor": {
-    "x": 0,
-    "y": 0
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
   "prop.barrel": {
    "kind": "static",
    "sheet": "clutter",

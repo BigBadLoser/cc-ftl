@@ -20,7 +20,7 @@
       const have = crew.map((c) => (api.portrait(c.id) ? c.id : -1)).join(',');
       if (have !== seen) { seen = have; rev++; }
     }, 500);
-    const a = api.crew.subscribe((c) => (crew = c));
+    const a = api.crew.subscribe((c) => (crew = c.filter((m) => !m.mechanical)));
     const b = api.selectedCrew.subscribe((s) => (sel = s));
     return () => (a(), b(), clearInterval(poll));
   });

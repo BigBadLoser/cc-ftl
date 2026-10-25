@@ -169,7 +169,7 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
   horizon (4 degrees down) at the face, framed on head and shoulders (human head about 38 px tall), idle frame 0. Every
   layer of a species shares one 58x62 frame (56x60 plus the 1 px pad), so layers stack exactly, with the same holdout rules
   as the clip sheets and the same `team.*` key colours. Humans: every item but the EVA suit and the held weapons (holsters
-  show); robots and creatures: their one body, fitted by width. They pack as one static sheet `portraits`, assets
+  show); creatures: their one body, fitted by width. Robots have none: they are not crew (the bar leaves out `UiCrew.mechanical`). They pack as one static sheet `portraits`, assets
   `portrait.<crew layer id>` (about 20 KB), and load lazily through the normal env pool. `render/portrait.ts` (cached per
   species, role, appearance seed and weapon art: `portraitMath.portraitKey`) stacks the layers a crew member wears, runs the
   crew palette filter at zoom `ART_SCALE`, and reads the result back at whole art px (`Renderer.portrait(id)` ->

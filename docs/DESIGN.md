@@ -110,6 +110,10 @@ Cybernetic implants are everywhere. Neon is both mood and information.
 
 ### Robots and the rogue AI
 
+- **Robots are not crew, androids will be.** A robot is a moving module run by its ship's AI core: not an individual with a
+  face, a name to follow or needs. It still uses the crew job system and species machinery in the sim, but the crew bar and
+  its portraits leave it out (the world view, inspector and priorities panel still list it). **Androids**, later, are the
+  robot-like crew members: individuals who count as crew.
 - **Robots** are a crew species with no needs (no air, food, sleep or mood) and no fear of vacuum or fire panic,
   though fire still damages them. They are **repaired, not healed**: crew with repair skill mend them using parts
   or metal, and a medbay does nothing for them. Ion and EMP **stun** them. They never surrender: at 0 hp they are

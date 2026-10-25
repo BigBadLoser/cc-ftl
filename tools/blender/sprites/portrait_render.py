@@ -7,8 +7,8 @@ crew_build). The runtime composes the layers a crew member wears and runs the cr
 (src/render/portrait.ts).
 
   humans   every human item but the EVA suit and the held weapons (the holsters show): `portrait.crew.human.<slot>.<name>`
-  robots   one body per type, `portrait.crew.robot.body.worker` ...: framed on the top of the body by its width
-  aliens   the same for the creatures
+  aliens   one body per creature, `portrait.crew.alien.body.hunter` ...: framed on the top of the body by its width
+           (robots have no portraits: they are machines run by the AI core, not crew; the crew bar leaves them out)
 
 Packed like any static family (pack.py): sheet `portraits`, assets `portrait.<crew layer id>` (kind static). Run alone:
   npm run sprites -- public/assets/1x portraits"""
@@ -137,11 +137,10 @@ def _bbox():
 
 
 def singles(log):
-    """Robots and creatures (one body each): the top of the figure, fitted by width."""
-    from . import robots, robot_render, alien, alien_render
+    """Creatures (one body each): the top of the figure, fitted by width."""
+    from . import alien, alien_render
     out = []
-    for mod, build, sp, kinds in ((robot_render, robots.BUILD, {"worker": "robot", "repair": "robot", "security": "robot_heavy"}, None),
-                                  (alien_render, alien.BUILD, None, None)):
+    for mod, build, sp in ((alien_render, alien.BUILD, None),):
         for kind, make in build.items():
             core.setup_scene()
             post.select(True)
@@ -156,7 +155,7 @@ def singles(log):
             rgba = _render(lambda r: r)
             species = sp[kind] if sp else "alien"
             out.append(_item(f"crew.{species}.body.{kind}", rgba, _glow()))
-    log(f"PORTRAITS robots and creatures {len(out)}")
+    log(f"PORTRAITS creatures {len(out)}")
     return out
 
 

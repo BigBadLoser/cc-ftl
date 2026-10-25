@@ -75,6 +75,8 @@ export interface UiCrew {
   /** Mood 0..100 with its reasons (label and points, biggest first) and what it does to work; null for crew without moods. */
   mood: { value: number; factors: { label: string; value: number }[]; workMult: number } | null;
   drafted: boolean;
+  /** A machine (a robot: a mover run by the AI core, not crew proper): the crew bar leaves it out. */
+  mechanical: boolean;
   /** Human-readable current job, or null. */
   job: string | null;
   priorities: Record<WorkCategory, number>;
