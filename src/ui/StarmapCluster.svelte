@@ -138,7 +138,7 @@
   text { text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-linejoin: round; font-family: var(--head-font); }
   .badge { fill: var(--bg); font-weight: 700; stroke: none; }
   .danger { font-weight: 600; letter-spacing: 0.05em; }
-  .unk { fill: var(--dim); fill-opacity: 0.6; font-weight: 600; }
+  .unk { fill: var(--dim); fill-opacity: 0.6; font-family: var(--pixel-font); font-weight: 400; }
   .sname { fill: var(--text); font-weight: 600; letter-spacing: 0.04em; }
   .sname.cur { fill: var(--cyan); }
   .rname { font-family: var(--pixel-font); font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; }
