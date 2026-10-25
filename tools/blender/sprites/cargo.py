@@ -39,7 +39,7 @@ def case(m, L, W, H, detail=True):
         for sy in (-0.17, 0.17):
             m.box((sx * (L / 2 + 0.01), sy * W, hz - 0.018), (0.024, 0.026, 0.036), "steelD", base=True)
         m.box((sx * (L / 2 + 0.024), 0, hz - 0.012), (0.018, W * 0.4, 0.024), "steel", top="steelL", base=True)
-    m.box((-L * 0.27, W / 2 + 0.008, H * 0.2), (0.12, 0.01, 0.07), "hivis", base=True)           # an orange freight label
+    m.box((-L * 0.23, W / 2 + 0.003, H * 0.2), (0.12, 0.004, 0.07), "hivis", top="hivis", base=True)  # an orange freight label
 
 
 def floor_case():
