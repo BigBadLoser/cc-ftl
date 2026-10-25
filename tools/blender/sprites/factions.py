@@ -108,7 +108,7 @@ class Scrap(Faction):
 
     def relief(self, sprite):
         seed = f"{sprite}|{self.p}"
-        return {"wall": R.scrap(False, seed), "hull": R.scrap(True, seed)}
+        return {"wall": R.scrap(False, seed), "hull": R.scrap(True, seed), "shell": R.ScrapShell}
 
 
 def look(name):
