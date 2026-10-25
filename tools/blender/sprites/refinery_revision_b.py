@@ -50,6 +50,12 @@ class VesselRefinery:
     terminal_v:float=1.12
     terminal_drop:float=.15
     materials:bool=True
+    display_power:bool=True
+    work_frame:int=-1
+    gate_closed:bool=False
+    gate_travel:float=0
+    billet_u:float=1.60
+    show_billet:bool=True
 
     def spec(self): return asdict(self)
 
@@ -145,15 +151,20 @@ def feed_gate(f,p):
     for side in (-1,1):
         case(f,p.feed_u,p.vessel_v+side*.64,p.feed_top-.02,.96,.11,.10,COL,.02,.025)
     f.m.paint('yellow')
-    for du in (-.32,-.10):
-        case(f,p.feed_u+du,p.vessel_v,p.feed_top+.025,.20,1.27,.065,COL,.012,.025)
+    # Four telescoping leaves extend to the throat stop when isolated; the
+    # approved idle pose has two leaves nested under the visible rear pair.
+    offsets=(-.32,-.128,.064,.256) if p.gate_closed else (-.32,-.10)
+    for du in offsets:
+        case(f,p.feed_u+du+p.gate_travel,p.vessel_v,p.feed_top+.025,
+             .205 if p.gate_closed else .20,1.27,.065,COL,.012,.025)
     v=p.vessel_v+.76;z=p.feed_top+.10
     f.m.paint('frame')
     f.hcyl(p.feed_u+.08,p.feed_u+.40,v,z,.075,COL,sides=12,cap=COL,capstart=COL)
     f.m.paint('steel')
-    f.hcyl(p.feed_u-.10,p.feed_u+.08,v,z,.035,COL,sides=12,cap=COL)
+    cleat=.12 if p.gate_closed else -.10+p.gate_travel
+    f.hcyl(p.feed_u+cleat,p.feed_u+.08,v,z,.035,COL,sides=12,cap=COL)
     f.m.paint('yellow')
-    case(f,p.feed_u-.10,p.vessel_v+.60,p.feed_top+.02,.12,.39,.12,COL,.02,.025)
+    case(f,p.feed_u+cleat,p.vessel_v+.60,p.feed_top+.02,.12,.39,.12,COL,.02,.025)
     for du in (.12,.35):
         case(f,p.feed_u+du,v,p.feed_top-.04,.12,.17,.12,COL,.02,.025)
 
@@ -210,7 +221,7 @@ def discharge(f,p):
         # Offset the billet to the inclined tangent plane of the powered rollers.
         lift=axle_lift+radius*math.sqrt(1+slope*slope)
         f.m.paint('billet')
-        inclined(1.60,p.vessel_v,.23,.44,.095,lift)
+        if p.show_billet: inclined(p.billet_u,p.vessel_v,.23,.44,.095,lift)
     else:
         for v in (-.34,.34): inclined(1.53,p.vessel_v+v,.60,.055,.045)
         inclined(1.59,p.vessel_v,.31,.51,.085)
@@ -238,9 +249,13 @@ def operator_terminal(f,p):
     def graphic(x0,y0,width,depth):
         f.poly([f.pt(x,y,panel_z-.90*(y-v)-.043) for x,y in
                 ((x0,y0),(x0+width,y0),(x0+width,y0+depth),(x0,y0+depth))],UI,flip=True)
-    graphic(u-.20,v-.13,.065,.19)
-    graphic(u-.065,v-.04,.065,.10)
-    graphic(u+.07,v-.09,.065,.15)
+    if p.work_frame<0:
+        graphic(u-.20,v-.13,.065,.19)
+        graphic(u-.065,v-.04,.065,.10)
+        graphic(u+.07,v-.09,.065,.15)
+    else:
+        heights=((.09,.16,.12),(.13,.10,.18),(.18,.13,.08),(.14,.19,.12))[p.work_frame%4]
+        for du,height in zip((-.20,-.065,.07),heights): graphic(u+du,v+.06-height,.065,height)
     # Two large tactile controls; no tiny labels or fabricated UI lettering.
     for du in (-.20,.20):
         f.m.paint('yellow' if du<0 else 'steel')
@@ -335,7 +350,8 @@ def refinery_revision_b(p=VesselRefinery(),rotation=1):
     core.palette._data.update(GREY);core.palette._data.update(CONTROL_GREYS)
     core.palette._data.update(FINISH_PALETTE)
     assert rotation in (0,1,2,3)
-    m=FinishMesh('refinery_b_vertical_vessel',finished=p.materials);f=RefineryFrame(m,rot=rotation,centre=(0,0))
+    m=FinishMesh('refinery_b_vertical_vessel',finished=p.materials,powered=p.display_power)
+    f=RefineryFrame(m,rot=rotation,centre=(0,0))
     # One low cast chassis joins the feed, pressure vessel and discharge roots.
     case(f,-.02,p.vessel_v,0,3.00,1.56,.26,COL,.065,.26)
     for u in (-1.28,.75):

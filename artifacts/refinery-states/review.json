@@ -1,0 +1,7 @@
+{
+  "approvedIdlePixelIdentical": true,
+  "workingFrames": 4,
+  "previewFps": 4,
+  "unpoweredGlowPixels": 0,
+  "scope": "r1 state review only; no runtime wiring"
+}

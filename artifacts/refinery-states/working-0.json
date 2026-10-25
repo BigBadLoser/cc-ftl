@@ -1,0 +1,29 @@
+{
+  "state": "working",
+  "frame": 0,
+  "rotation": 1,
+  "footprint": [
+    3,
+    4
+  ],
+  "bounds": [
+    3.6699999570846558,
+    2.496457815170288,
+    1.7938666343688965
+  ],
+  "anchor": [
+    172,
+    179
+  ],
+  "tile": [
+    128,
+    64
+  ],
+  "samples": 4,
+  "SS": 2,
+  "glowPixels": 245,
+  "gateClosed": false,
+  "gateTravel": 0,
+  "billetU": 1.33,
+  "billetVisible": true
+}

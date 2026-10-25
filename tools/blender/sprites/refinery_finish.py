@@ -21,14 +21,16 @@ PALETTE={
 
 
 class FinishMesh(core.Mesh):
-    def __init__(self,name,finished=False):
+    def __init__(self,name,finished=False,powered=True):
         super().__init__(name)
-        self.finished=finished;self.role='frame'
+        self.finished=finished;self.powered=powered;self.role='frame'
 
     def paint(self,role):
         self.role=role
 
     def _cols(self,color):
+        if color=='refinery.terminal.ui' and not self.powered:
+            return super()._cols(PREFIX+'screen' if self.finished else 'refinery.terminal.screen')
         if not self.finished: return super()._cols(color)
         if color=='refinery.blockout.grey': color=PREFIX+self.role
         elif color=='refinery.terminal.screen': color=PREFIX+'screen'

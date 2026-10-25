@@ -59,12 +59,45 @@ material preview. All orientations fit the rotated 3x4 footprint and stay below
 Visible limitations: the console faces the camera in r0/r1 and is largely hidden
 on the far side in r2/r3. The outlet is also mostly behind the vessel in r3.
 These are physical occlusions; components have not been repositioned per view.
-Rotations are ready for visual review. Operating/unpowered state previews and
+The user approved the rotations. Operating/unpowered previews follow below;
 production exports are still pending.
 
 ```sh
 SPRITE_PREVIEW=1 SPRITE_SAMPLES=4 blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/refinery_rotation_preview.py -- --out artifacts/refinery-rotations
 python3 tools/blender/review/refinery_rotation_preview.py --out artifacts/refinery-rotations --compose
+```
+
+### Operating state previews
+
+`review/refinery_state_preview.py` renders the approved r1 angle in powered idle,
+four working poses and unpowered, including colour and glow passes. Only these
+six review poses are rendered, in one sequential Blender process at four samples.
+`artifacts/refinery-states/` contains native/3x PNGs, matching glow images, pose
+metadata, `power-comparison.png`, `working-frames.png` and `working.gif` (4 fps).
+
+- Powered idle is pixel-for-pixel identical to the approved material image.
+- Working advances a billet from u=1.33 to 1.63 along the existing inclined
+  rollers, jogs the feed shutter by up to 0.07, moves its piston/cleat with the
+  leaf, and cycles the three large screen gauges. The one-second GIF represents
+  repeating batches; a brief empty receiver pose separates consecutive billets.
+- Unpowered blanks the screen with zero emission in the geometry and rendered
+  glow pass. The four overlapping shutter leaves extend to the throat stop;
+  the retained output billet represents material already on the stopped bed.
+
+`sprites/refinery_operating.py` supplies `operating_pose(parameters, state, frame)`
+without modifying the approved parameter set. `powered_feed` / `powered_output`
+remain hardware-presence options; state changes use the helper's display,
+gate and billet parameters. The machinery is unchanged outside these moving
+parts and display faces. All poses retain the 3.670 x 2.496 x 1.794 bounds.
+
+Review limits: only r1 state frames are rendered so far, and output collection
+is represented by the empty receiver pose. The shutter jog is subtle at native size; the
+moving billet and gauge changes carry the operating read. No runtime wiring,
+full sprite build or production atlas export yet.
+
+```sh
+SPRITE_PREVIEW=1 SPRITE_SAMPLES=4 blender -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/review/refinery_state_preview.py -- --out artifacts/refinery-states
+python3 tools/blender/review/refinery_state_preview.py --out artifacts/refinery-states --compose
 ```
 
 ### B mechanical refinement (after concept selection)
