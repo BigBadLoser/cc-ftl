@@ -812,6 +812,8 @@ export interface UiApi {
   /** Brief message (e.g. a rejected command), or null. */
   toast: Subscribable<string | null>;
   setTool(state: Partial<UiToolState>): void;
+  /** Portrait (PNG data URL, whole art px: show it pixelated) of a crew member, or null while their sheets load. */
+  portrait(id: number): string | null;
   /** Select a crew member (null clears) and optionally center the camera on them. */
   selectCrew(id: number | null, focus?: boolean): void;
   setCutaway(mode: UiCutaway): void;
