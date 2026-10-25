@@ -96,8 +96,8 @@ function factionOfShip(sim: Sim, id: number, ship: Ship, side: Faction): string 
   return flying.length === 1 ? (flying[0] as string) : null;
 }
 
-/** What destroying (or taking) this ship costs: notoriety and the reputation the victim faction loses. */
-function charge(sim: Sim, id: number, ship: Ship, captured: boolean): void {
+/** What destroying (or taking) this ship costs: notoriety and the reputation the victim faction loses. True when the victim was hostile (or an outlaw) before it. */
+function charge(sim: Sim, id: number, ship: Ship, captured: boolean): boolean {
   const side = (captured ? sim.world.get(id, PrizeC)?.from : undefined) ?? ship.faction;
   const faction = factionOfShip(sim, id, ship, side);
   const def = faction ? sim.content.galaxy?.factions[faction] : undefined;
@@ -111,11 +111,13 @@ function charge(sim: Sim, id: number, ship: Ship, captured: boolean): void {
     sim.story.reputation[key] = reputationOf(sim.story, key) - KILL_REPUTATION;
   }
   addNotoriety(sim, n, faction);
+  return outlaw || tier === 'hostile';
 }
 
 /** Count the ships the player destroyed or captured since the last call; returns their ids. Called by the galaxy system before contacts and fleets are pruned. */
 export function tallyLosses(sim: Sim): number[] {
   const out: number[] = [];
+  let hostile = 0;
   for (const id of sim.world.query(ShipC)) {
     const ship = sim.world.get(id, ShipC) as Ship;
     const captured = ship.state === 'prize';
@@ -123,10 +125,11 @@ export function tallyLosses(sim: Sim): number[] {
     if (ship.tallied || (ship.faction === 'player' && !captured)) continue;
     if (!captured && !(ship.state === 'wreck' && ship.killedBy === 'player')) continue;
     ship.tallied = true;
-    charge(sim, id, ship, captured);
+    if (charge(sim, id, ship, captured)) hostile++;
     out.push(id);
   }
-  if (out.length) bumpStat(sim, 'kills', out.length);
+  // The goals count fights won, not neutrals gunned down.
+  if (hostile) bumpStat(sim, 'kills', hostile);
   return out;
 }
 

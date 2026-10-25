@@ -12,6 +12,8 @@
   let goals = $state<UiGoals | null>(null);
   let finished = $state<{ title: string; reward: string } | null>(null);
   let confirmSkip = $state(false);
+  /** Set when the player skips: the chain ending then is not a finished act. */
+  let skipped = false;
   const KEY = 'cc.goalsCollapsed';
   let collapsed = $state(read());
 
@@ -35,7 +37,7 @@
     let timer: ReturnType<typeof setTimeout> | undefined;
     const unsub = api.goals.subscribe((g) => {
       // A new act (or the chain's end) after one was being played: show what was finished first.
-      if (goals && (!g || g.act !== goals.act)) {
+      if (goals && !skipped && (!g || g.act !== goals.act)) {
         finished = { title: goals.title, reward: goals.reward };
         clearTimeout(timer);
         timer = setTimeout(() => (finished = null), 6000);
@@ -70,7 +72,7 @@
         <p>Skip the goals for this game?</p>
         <div class="row">
           <button onclick={() => (confirmSkip = false)}>Keep them</button>
-          <button class="danger" data-testid="goals-skip-yes" onclick={() => { api.dispatch({ type: 'story.skipGoals' }); confirmSkip = false; }}>Skip</button>
+          <button class="danger" data-testid="goals-skip-yes" onclick={() => { skipped = true; api.dispatch({ type: 'story.skipGoals' }); confirmSkip = false; }}>Skip</button>
         </div>
       </div>
     {:else if !collapsed}
