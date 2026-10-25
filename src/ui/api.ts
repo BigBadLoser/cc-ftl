@@ -279,7 +279,7 @@ export interface UiHeat {
 
 /**
  * A station job (sim galaxy/jobs.ts) as the board shows it: an offer (`id` null) or one the player holds. `where` is the delivery's destination or the
- * bounty target's node, `hops` how many jumps away it is (null when out of the known map), `here` that the player is there; `ready` that a delivery's goods are aboard.
+ * bounty target's node, `hops` how many jumps away it is (null when out of the known map), `here` that the player is there; `ready` that a delivery's crate is aboard.
  */
 export interface UiJob {
   key: string;

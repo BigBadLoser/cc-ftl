@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim } from '../sim';
 import { offersHere, portOffers } from '../sim/galaxy/jobOffers';
-import { expireJobs } from '../sim/galaxy/jobs';
+import { CRATE, crateAboard, expireJobs } from '../sim/galaxy/jobs';
 import { wreckShip } from '../sim/combat/wreck';
+import { ItemStackC } from '../sim/items/components';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { repKey } from '../sim/galaxy/standing';
 import { ensureAround } from '../sim/galaxy/state';
@@ -51,15 +52,22 @@ describe('station jobs', () => {
     for (const o of a) expect(o.reward).toBeGreaterThan(0);
   });
 
-  it('a delivery: the goods come aboard, are handed over at the destination, and pay', () => {
+  it('a delivery: its crate comes aboard apart from storage, is handed over at the destination, and pays', () => {
     const sim = atBoard();
     const offer = offersHere(sim).find((o) => o.kind === 'delivery');
     expect(offer).toBeDefined();
-    const { item, count, to, reward, issuer } = offer as Required<Pick<StationJob, 'item' | 'count' | 'to' | 'reward' | 'issuer'>>;
+    const { item, to, reward, issuer } = offer as Required<Pick<StationJob, 'item' | 'count' | 'to' | 'reward' | 'issuer'>>;
     const before = playerStock(sim, item);
     accept(sim, offer!.key);
     expect(sim.galaxy.jobs).toHaveLength(1);
-    expect(playerStock(sim, item)).toBe(before + count);
+    const id = sim.galaxy.jobs[0]!.id;
+    // One crate on deck, tagged with the job; the goods are not in the hold, and haulers leave the crate where it is.
+    expect(playerStock(sim, item)).toBe(before);
+    expect(playerStock(sim, CRATE)).toBe(1);
+    const crate = sim.world.query(ItemStackC).find((e) => sim.world.get(e, ItemStackC)?.job === id)!;
+    const at = { ...sim.world.get(crate, ItemStackC)! };
+    for (let i = 0; i < 300; i++) sim.step();
+    expect(sim.world.get(crate, ItemStackC)).toMatchObject({ x: at.x, y: at.y, job: id });
     // Taken: it is no longer on the board.
     expect(offersHere(sim).some((o) => o.key === offer!.key)).toBe(false);
     const credits = sim.trade.credits;
@@ -69,16 +77,20 @@ describe('station jobs', () => {
     expect(sim.galaxy.jobs).toHaveLength(0);
     expect(sim.trade.credits).toBe(credits + reward);
     expect(rep(sim, issuer)).toBe(standing + 1);
-    expect(playerStock(sim, item)).toBe(before);
+    expect(playerStock(sim, CRATE)).toBe(0);
+    expect(crateAboard(sim, id)).toBe(false);
   });
 
-  it('a delivery not made in time costs reputation and notoriety (the goods were kept)', () => {
+  it('a delivery not made in time costs reputation and notoriety; the crate is broken open and its goods kept', () => {
     const sim = atBoard();
     const offer = offersHere(sim).find((o) => o.kind === 'delivery')!;
+    const before = playerStock(sim, offer.item!);
     accept(sim, offer.key);
     const job = sim.galaxy.jobs[0]!;
     expireJobs(sim, job.due + 1);
     expect(sim.galaxy.jobs).toHaveLength(0);
+    expect(playerStock(sim, CRATE)).toBe(0);
+    expect(playerStock(sim, offer.item!)).toBe(before + offer.count!);
     expect(rep(sim, job.issuer)).toBe(-1);
     expect(sim.galaxy.heat.notoriety).toBe(BREACH_NOTORIETY);
   });
