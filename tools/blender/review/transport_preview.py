@@ -208,7 +208,7 @@ def compose(out):
         im.resize((im.width*3,im.height*3),Image.Resampling.NEAREST).convert("RGB").save(out/(name+"-3x.png"))
     cv=np.full((520,640,4),BG,np.uint8)
     paste(cv,"parked-room-r0",320,270)
-    assets=ROOT/"public/assets/2x"
+    assets=ROOT/"public/assets/1x"
     shipped=json.loads((assets/"manifest.json").read_text())
     stack=None
     names=["body","eyes.organic","legs.cargo_pants","torso.work_shirt","arm.R.flesh","arm.L.flesh","hair.short"]

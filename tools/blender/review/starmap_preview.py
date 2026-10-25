@@ -3,7 +3,7 @@ colour over, glow added, team keys recoloured to a few faction colours.
 
   python3 -I tools/blender/review/starmap_preview.py <assets dir> [<assets dir> ...] <out png> [--zoom N]
 
-One panel per art set (public/assets/2x, public/assets/1x), side by side. Sprites are drawn at world size (a 1x set's pixels
+One panel per assets dir (normally just public/assets/1x), side by side. Sprites are drawn at world size (a 1x set's pixels
 doubled, as the game draws them), times zoom (default 1)."""
 import json
 import sys

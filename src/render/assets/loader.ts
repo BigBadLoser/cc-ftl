@@ -3,8 +3,10 @@ import { cellOf, MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest,
 import { dropHalo } from '../haloTex';
 import { buildMask, keepMask } from './alphaMask';
 import { composeManifest } from './compose';
-import { budgetFactor, currentArtScale, setDir, type ArtScale } from './artSet';
 import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
+
+/** The art directory under the asset base: 64x32 pixel art, each art pixel drawn as a hard 2x2 block (see compose.ts). */
+export const ART_DIR = '1x';
 
 /** Base URL of the asset folder. `VITE_ASSET_BASE` only relocates it (used to point at a fixture). */
 export function assetBase(): string {
@@ -54,20 +56,14 @@ export interface AtlasStats {
   /** Decoded bytes resident (width * height * 4 over loaded images and glows), total and per pool. */
   residentBytes: number;
   pools: Record<string, { resident: number; budget: number; sheets: number }>;
-  artScale: ArtScale;
-  fallbacks: string[];
   generation: number;
   /** The biggest resident sheets, [name, decoded bytes]. */
   biggest: [string, number][];
 }
 
 export interface Atlas {
-  /** The composed manifest: every geometry value in world px (128x64 tile), whatever set an asset comes from (see compose.ts). */
+  /** The composed manifest: every geometry value in world px (128x64 tile; see compose.ts). */
   readonly manifest: Manifest;
-  /** The art set in use. */
-  readonly artScale: ArtScale;
-  /** Ids drawn from the 2x set because the 1x set lacks them (empty in 2x mode). */
-  readonly fallbacks: readonly string[];
   /** Bumps whenever an environment sheet arrives or is evicted (crew clips are looked up per frame and do not count): views that cached a resolved texture re-resolve when it changes. */
   readonly generation: number;
   /** Sheets queued or loading. */
@@ -108,10 +104,8 @@ export interface Atlas {
 /** Sheets every ship draws (walls and floors, beams, the item/puff sheet, combat fx): loaded at start, never evicted. */
 export const EAGER_SHEETS: readonly string[] = ['walls', 'struct', 'env', 'fx'];
 /** Decoded-byte budgets (`?crewmb=` and `?envmb=` override them, in MiB). Crew clips are evicted by idle time; env sheets by `sweepEnv` (their textures live in built sprites). */
-export const CREW_BUDGET = 256 * 2 ** 20;
-export const ENV_BUDGET = 384 * 2 ** 20;
-/** The budgets of an art set: 1x sheets decode to a quarter of the bytes, so they get a quarter of the pool. */
-export const budgetsFor = (s: ArtScale): { crew: number; env: number } => ({ crew: CREW_BUDGET * budgetFactor(s), env: ENV_BUDGET * budgetFactor(s) });
+export const CREW_BUDGET = 64 * 2 ** 20;
+export const ENV_BUDGET = 96 * 2 ** 20;
 /** A crew sheet nobody drew with for this long may be evicted. */
 export const CREW_IDLE_MS = 4000;
 
@@ -136,17 +130,13 @@ async function fetchManifest(url: string): Promise<Manifest> {
   return m;
 }
 
-/** The composed manifest of an art set (1x: with the 2x set behind it for ids it lacks) and the ids that fell back. */
-export async function loadComposed(base = assetBase(), scale: ArtScale = currentArtScale()): Promise<{ manifest: Manifest; fallbacks: string[] }> {
-  const primary = await fetchManifest(`${base}${setDir(scale)}/manifest.json`);
-  const fb = scale === 1 ? await fetchManifest(`${base}${setDir(2)}/manifest.json`).catch(() => null) : null;
-  return composeManifest(primary, setDir(scale), fb, setDir(2));
+/** The art manifest, composed into world px. */
+export async function loadComposed(base = assetBase()): Promise<Manifest> {
+  return composeManifest(await fetchManifest(`${base}${ART_DIR}/manifest.json`), ART_DIR);
 }
 
-export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks, scale: ArtScale = currentArtScale()): Promise<Atlas> {
-  const { manifest, fallbacks } = await loadComposed(base, scale);
-  if (fallbacks.length) console.info(`[art] ${setDir(scale)} set: ${fallbacks.length} ids drawn from the 2x set (not rendered at 1x yet); list in __cc.art().fallbacks`);
-  const budgets = budgetsFor(scale);
+export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise<Atlas> {
+  const manifest = await loadComposed(base);
   /** Texture resolution by image path (0.5 for a 1x sheet: it is drawn at twice its pixel size). */
   const resOf = new Map<string, number>();
   for (const s of Object.values(manifest.sheets)) {
@@ -217,8 +207,8 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks, scale: A
     io,
     pools: {
       core: { budget: Infinity },
-      env: { budget: budgetParam('envmb', budgets.env) },
-      crew: { budget: budgetParam('crewmb', budgets.crew), idleMs: CREW_IDLE_MS },
+      env: { budget: budgetParam('envmb', ENV_BUDGET) },
+      crew: { budget: budgetParam('crewmb', CREW_BUDGET), idleMs: CREW_IDLE_MS },
     },
     concurrency: 4,
     now: () => clock,
@@ -299,8 +289,6 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks, scale: A
   };
   const atlas: Atlas = {
     manifest,
-    artScale: scale,
-    fallbacks,
     get generation() {
       return store.generationOf('core', 'env');
     },
@@ -388,8 +376,6 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks, scale: A
         requests: st.requests,
         residentBytes: Object.values(st.pools).reduce((n, p) => n + p.resident, 0),
         pools: st.pools,
-        artScale: scale,
-        fallbacks: [...fallbacks],
         generation: store.generation,
         biggest: store.biggest(10),
       };

@@ -5,7 +5,7 @@ import type { UiIcon } from '../ui/api';
 /** CSS icon frames for items, cut from the medium floor-stack sprite of each (falls back to the small or the held one). */
 export async function loadItemIcons(ids: readonly string[]): Promise<Record<string, UiIcon>> {
   const base = assetBase();
-  const { manifest } = await loadComposed(base);
+  const manifest = await loadComposed(base);
   const sizes = new Map<string, { w: number; h: number }>();
   const size = async (src: string) => {
     let s = sizes.get(src);

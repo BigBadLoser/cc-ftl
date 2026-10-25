@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[3]
-AS = ROOT / "public/assets/2x"
+AS = ROOT / "public/assets/1x"
 D, OUTD = Path(sys.argv[1]), Path(sys.argv[2])
 DIRS = [a for a in sys.argv[3:] if a in ("H", "S", "R")] or ["H", "S", "R"]
 MAN = json.loads((AS / "manifest.json").read_text())["assets"]

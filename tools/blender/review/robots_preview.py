@@ -8,7 +8,7 @@
     -> robots-shapes-1x.png / -3x.png (rest pose, 8 directions) and robots-shapes-blender.png
   python3 -I tools/blender/review/robots_preview.py <ROBOT_ANIM assets dir> <out dir> anim
     -> robots-anim-{player,rogue}-3x.gif and .mp4 (every clip facing SE, at the clip fps)
-The human comes from public/assets/2x. Rogue robots: crimson livery, and the cyan visor recoloured red."""
+The human comes from public/assets/1x. Rogue robots: crimson livery, and the cyan visor recoloured red."""
 import json
 import sys
 from pathlib import Path
@@ -303,7 +303,7 @@ def main():
     rob = Assets(sys.argv[1])
     out = Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
-    pub = Assets(ROOT / "public/assets/2x")
+    pub = Assets(ROOT / "public/assets/1x")
     if len(sys.argv) > 3 and sys.argv[3] == "anim":
         anim(pub, rob, out)
         anim(pub, rob, out, "rogue")

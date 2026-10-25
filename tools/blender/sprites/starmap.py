@@ -2,7 +2,7 @@
 Lanes, node pips, territory outlines and labels stay UI. Same camera, palette and post as every other sprite (three-quarter
 view, hard pixels); each sprite has a fixed frame with the anchor at its centre (starmap_kit.frame_item).
 
-  starmap.body.<kind>[.v0..v2]   sector bodies, 96 px frame at 1x (192 at 2x), body radius 30 px (60): starmap_bodies.py,
+  starmap.body.<kind>[.v0..v2]   sector bodies, 96 px frame at 1x, body radius 30 px (60): starmap_bodies.py,
                                  starmap_stars.py (binary, white dwarf, pulsar, protostar), starmap_planets.py (ice giant,
                                  lava world, ocean world)
   starmap.struct.<kind>          structure icons, 48 px frame (96) drawn at half (twice the density), team-tinted: starmap_icons.py
@@ -27,7 +27,7 @@ BACKDROP = 256                  # 1x px; tiles seamlessly
 def backdrop():
     """A tileable starfield: mostly dim one-pixel stars, a few brighter ones, very few with a small cross. Points need no 3D
     model, so it is placed in numpy (seeded) and snapped to palette colours. Positions are in 1x art px and a star is one
-    art px at either scale (a 2x2 block at 2x), so both sets look the same at world size. Transparent between stars: it
+    art px. Transparent between stars: it
     goes over the map's background."""
     post.select(True)
     S = BACKDROP * ART_SCALE

@@ -2,7 +2,7 @@
 that kind leaves the sector (StarmapSector's gateways), in place of the thicker or dashed lane end.
 
 Like the structure icons: laid out in the px of a 24 px icon and rendered at ZOOM (2) times the pixels, a 48 px frame at
-1x (96 at 2x), anchor at the centre; the map draws them by the crisp rule (whole device px per art px).
+1x, anchor at the centre; the map draws them by the crisp rule (whole device px per art px).
 
   gate   a free-floating upright ring of armoured segments with four emitter pods and a cyan energy membrane across it
          (glow only, so the map shows through); lit and outlined like the structures

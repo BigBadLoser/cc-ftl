@@ -132,7 +132,7 @@ field systems read.
 - It never writes to the sim.
 
 **Pixel-perfect isometric 2D (PixiJS).**
-- Tiles are 2:1 isometric, **64x32 px** at 1x.
+- Tiles are 2:1 isometric, **64x32 px** in the art (drawn as 128x64 world px).
 - Nearest-neighbour scaling, integer zoom steps only, and the camera snapped to whole pixels.
 - Each art pixel maps to a whole number of device pixels.
 
@@ -155,7 +155,7 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
   each clip sheet is cropped to the union of its opaque pixels (image and glow, all directions and frames). The manifest
   clip records the cell size `cw`/`ch` and its offset `ox`/`oy` in the layer frame; the renderer cuts `cw x ch` cells and
   draws at `ox - anchor.x, oy - anchor.y` (`cellOf` in `assets/manifest.ts`). That is the whole contract: the layer's
-  `frameW`/`frameH`/`anchor` and the muzzle offsets are unchanged, so no layer re-renders. At 2x it takes the human set from
+  `frameW`/`frameH`/`anchor` and the muzzle offsets are unchanged, so no layer re-renders. At the old 128x64 art size it took the human set from
   12.3 GiB decoded to 0.93 GiB. `python3 -m sprites.crew_trim [assets dir]` (from `tools/blender`) trims an existing output
   in place (idempotent); the review tools that stack crew cells re-pad with `crew_trim.full_cell`.
 - Layers are rendered in Blender with the rest of the character as a **holdout**, so the hidden parts
@@ -256,8 +256,8 @@ tools/blender/
 palette.json    the single palette, read by Blender scripts and the game
 ```
 
-- **Loading and memory (`src/render/assets`, `artStream.ts`):** sheets are loaded on demand, never all at start (the 2x art is
-  1452 sheets, ~13 GiB if decoded at once, which crashed headless Chromium; phones need a few hundred MiB).
+- **Loading and memory (`src/render/assets`, `artStream.ts`):** sheets are loaded on demand, never all at start (the art is
+  1452 sheets, gigabytes if decoded at once, which crashed headless Chromium; phones need a few hundred MiB).
   - `loadAtlas` registers every manifest sheet in a `SheetStore` (`sheetStore.ts`, generic over the texture type so it is
     unit-tested without Pixi) in one of three pools: `core` (`EAGER_SHEETS`: walls, beams, the env item sheet and fx, loaded
     before the renderer starts and never evicted, ~92 MiB), `env` (every other static sheet) and `crew` (`crew.*` sheets).
@@ -268,12 +268,12 @@ palette.json    the single palette, read by Blender scripts and the game
     the `FALLBACK` stand-in). `LayerSprite.frame()` is undefined until the clip's sheet is in.
   - Crew: the common clips (idle/walk/run/work) of a crew member's layers are queued when its figure appears, others on
     first use. While a clip loads `pickFrame` (`loadout.ts`) draws the layer's idle, then walk, so a figure is never
-    blank. Crew sheets are evicted by idle time (`CREW_IDLE_MS`) when the `crew` pool is over `CREW_BUDGET` (256 MiB
+    blank. Crew sheets are evicted by idle time (`CREW_IDLE_MS`) when the `crew` pool is over `CREW_BUDGET` (64 MiB
     decoded; a typical crew needs ~50 MiB trimmed). Lookups happen every frame, so nothing holds a crew texture for long.
   - Static art is different: built sprites (gridView, roofs, modules) keep their textures. `atlas.generation` counts env/core
     sheets arriving or leaving; `createArtStream` (`artStream.ts`) rebuilds the ship scenes when it changes (immediately once
     nothing is loading, else at most once a second) and keeps a scene hidden while the sheets of its first build load (at
-    most 3 s). When the `env` pool is over `ENV_BUDGET` (384 MiB) it runs a mark and sweep every 8 s (backing off when
+    most 3 s). When the `env` pool is over `ENV_BUDGET` (96 MiB) it runs a mark and sweep every 8 s (backing off when
     everything is in use): rebuild the scenes (marks the sheets they use), then evict the env sheets nothing used since.
   - Evicted sheets are destroyed one frame later (`atlas.tick()` after drawing), and are restored without a reload if asked
     for again in that frame. Sub-textures and baked halos of an evicted sheet are destroyed with it.
@@ -283,59 +283,34 @@ palette.json    the single palette, read by Blender scripts and the game
     `?crewmb=N` and `?envmb=N` override the budgets in MiB.
   - Not done: GPU texture compression (KTX2/Basis), and splitting the big static env sheets (vehicle_bay, weapons, containers)
     by family, which would shave the ~245 MiB the starting ship's env sheets take.
-- **Two art sets (`public/assets/1x/`, `public/assets/2x/`):** each has its own `manifest.json` and `sprites/`. Ids are the same
-  in both; the 1x set may lack ids the 2x set has (never downsample 2x art to fill a gap: render it).
-  - 1x is 64x32 pixel art that the game draws at half resolution, so each art pixel is a hard 2x2 block. The game's geometry
-    (`iso.ts` `TILE_W`/`TILE_H`, `Z_PX`, every `ART_SCALE` literal) stays 128x64 in both modes.
-  - `src/render/assets/compose.ts` turns the chosen set into the one manifest the renderer sees, in world px: a 1x set's frames,
-    anchors, clip cells (`cw`/`ch`/`ox`/`oy`), muzzles and `heights.zPx` are multiplied by 2 and its sheets get texture
-    `resolution` 0.5 (loaded nearest, never smoothed). So nothing downstream knows the set. Exceptions work in art px and
+- **One art set (`public/assets/1x/`):** `manifest.json` and `sprites/`. It is 64x32 pixel art that the game draws at half
+  resolution, so each art pixel is a hard 2x2 block. The game's geometry (`iso.ts` `TILE_W`/`TILE_H` = 128x64, `Z_PX`) is in
+  world px, and `ART_SCALE` (2) is the world px per art px that hand-tuned pixel literals are multiplied by.
+  - `src/render/assets/compose.ts` turns the manifest into the one the renderer sees, in world px: frames, anchors, clip
+    cells (`cw`/`ch`/`ox`/`oy`), muzzles and `heights.zPx` are multiplied by 2 and the sheets get texture `resolution` 0.5
+    (loaded nearest, never smoothed). So nothing downstream knows the art's pixel size. Exceptions work in art px and
     convert through `texture.source.resolution`: alpha picking (`partPick.ts`, `alphaMask.ts`) and CSS item icons
-    (`itemIcons.ts`). The crew filter's zoom is camera scale times the layer's `px` (2 for 1x; `palette.ts` `artZoom`).
-  - Per-id fallback: in 1x mode an id the 1x manifest lacks loads from the 2x set at native scale (sheet names prefixed `2x:`).
-    One console line reports how many; `__cc.art().fallbacks` (with `?hook`) lists them.
-  - Choice: `?art=1x|2x` (remembered), else the remembered value in localStorage `cc.artScale`, else 1x. The debug panel has a
-    switch. Switching reloads the page (`artSet.ts` `setArtScale`): sheet stores, built sprites and filters all hold one set's
-    textures. Pool budgets are a quarter at 1x (`budgetsFor`).
-  - Tests: `sheets.contract.test.ts` (per-set manifests, same ids), `compose.test.ts` (scaling, fallback, set choice, budgets),
-    `partPick.test.ts` (1x picking), `palette.test.ts` (crew filter at 1x).
-- **Render scale (pipeline contract with the cloud renderer):**
-- `tools/blender/sprites/scale.py` reads `ART_SCALE` (`1` = 64x32, `2` = 128x64, default 2). `build_sprites.py ... --scale 1|2`
-  sets the same variable (give it after the `--` that ends Blender's own arguments).
-- Output goes to `public/assets/<ART_SCALE>x/`; `scale.assets_dir()` returns that path (cloud tooling should import it).
-  `build_sprites.py` refuses an outdir whose `manifest.json` has the other tile size.
-- The manifest `tile` is `{w: 64*ART_SCALE, h: 32*ART_SCALE}`; `heights.zPx` scales the same way.
-- Cache keys include the scale: env families hash `TILE_W/TILE_H`, crew hashes `FRAME_W/FRAME_H` (both derive from
-  `ART_SCALE`), and the sol/damage_sol scratch dir defaults to `sol-pack-<scale>x` (cloud sets `SOL_DIR` with its own scale
-  signature). `--cache-only` works at both scales (it is a crew flag and does not look at the scale).
-- **Rendering the missing 1x art:**
-   (from the repo root, on branch `art/dual-scale`)
+    (`itemIcons.ts`). The crew filter's zoom is camera scale times `ART_SCALE` (`palette.ts` `artZoom`).
+  - The pool budgets (`CREW_BUDGET`, `ENV_BUDGET`) are sized for these half-resolution sheets.
+  - Tests: `sheets.contract.test.ts` (manifest contract), `compose.test.ts` (scaling, loading), `partPick.test.ts`
+    (picking), `palette.test.ts` (crew filter), `heights.test.ts` (pipeline heights match the code).
+- **Render pipeline (Blender):**
+  - `tools/blender/sprites/scale.py` fixes the tile at 64x32 (`TILE_W`/`TILE_H`; `ART_SCALE` stays 1 as the multiplier for
+    pixel literals written at that baseline). Output goes to `public/assets/1x/`; `scale.assets_dir()` returns that path.
+    `build_sprites.py` refuses an outdir whose `manifest.json` has another tile size.
+  - Cache keys include the tile size (env families hash `TILE_W/TILE_H`, crew hashes `FRAME_W/FRAME_H`). The sol/damage_sol
+    scratch dir defaults to `sol-pack-1x` (`SOL_DIR` overrides it). `--cache-only` is a crew flag.
+  - Direct run, one Blender process (add `-t N` for threads; the render caches live under `.cache/sprites/`):
 
-  Direct, one Blender process (add `-t N` for threads; the render caches under `.cache/sprites/` are keyed by scale):
+    ```bash
+    BL="$HOME/tools/blender-4.2.9-linux-x64/blender -b -t 4 --factory-startup --python-exit-code 1 --python tools/blender/sprites/build_sprites.py --"
+    $BL public/assets/1x walls,consoles          # families are merged into public/assets/1x/manifest.json; the rest is kept
+    $BL public/assets/1x crew                    # incremental: re-run after an interruption and finished frames are skipped (--plan reports hits/misses)
+    python3 tools/blender/sprites/crew_check.py public/assets/1x      # sanity composite (optional)
+    ```
 
-  ```bash
-  export ART_SCALE=1
-  BL="$HOME/tools/blender-4.2.9-linux-x64/blender -b -t 4 --factory-startup --python-exit-code 1 --python tools/blender/sprites/build_sprites.py --"
-  # the missing non-crew families (merged into public/assets/1x/manifest.json; other families are kept)
-  $BL public/assets/1x battery,clutter,containers,corpse,cryo,damage,damage_sol,decay,fx_mining,hazards,hydroponics,medbay,mining_pod,ops_consoles,pod_bay,rock,rockwall,storage_set,wallprops,workbench --scale 1
-  # plus the crew (incremental: re-run after an interruption and finished frames are skipped; --plan reports hits/misses)
-  $BL public/assets/1x crew --scale 1
-  # parallel crew workers: one clip each, cache only (no packing), then pack once
-  $BL /tmp/crew-scratch crew --clip walk --cache-only --scale 1     # repeat per clip in crew_spec.CLIPS
-  $BL public/assets/1x crew --scale 1
-  python3 tools/blender/sprites/crew_check.py public/assets/1x      # sanity composite (optional)
-  ```
-
-  Through the cloud orchestrator (needs the matching change in `blender-cloud-render` that sets `OUT` to
-  `public/assets/<scale>x`; `ART_SCALE` is already exported to every Blender process by `cloud_render.py run --scale 1`):
-
-  ```bash
-  python3 tools/cloud_render.py run --workers 4 --threads 2 --scale 1
-  ```
-
-  Then fetch `public/assets/1x/` (`remote.sh ... fetch`), commit the sheets, JSON and manifest, and check with
-  `npm test -- src/render/assets` (manifest contract tests run on both sets) and `?art=1x&hook`.
-- **Run with `npm run sprites`** (Blender headless; `-- ... --scale 1|2` or `ART_SCALE`, default 2, writes `public/assets/<scale>x/`). Generated sheets, JSON and the manifest are
+    Check with `npm test -- src/render/assets`.
+- **Run with `npm run sprites`** (Blender headless, writes `public/assets/1x/`). Generated sheets, JSON and the manifest are
   **committed**, because Cloudflare's build doesn't run Blender.
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
@@ -472,7 +447,7 @@ palette.json    the single palette, read by Blender scripts and the game
 - **Look:** flat colour bands (about 1.0 / 0.75 / 0.5 for top, left and right faces), muted palette
   with shade ramps, a dark 1 px outline taken from the neighbouring colour, binary alpha, and neon
   only in the glow pass.
-- **Crew:** about 60 px tall at 1x, 8 directions (no mirroring, since characters are asymmetric),
+- **Crew:** about 60 px tall in the art, 8 directions (no mirroring, since characters are asymmetric),
   clips at fixed frame counts (idle 4, walk 8, work 6, and more as needed).
   - **Sheets:** one per item and clip, `crew.human.torso.tee.walk` (+ `.glow` twin). The manifest layer
     `crew.human.torso.tee` lists its clips, each with its `sheet`. Every layer uses one fixed frame (128x120, feet
@@ -595,10 +570,10 @@ palette.json    the single palette, read by Blender scripts and the game
   - Until the renderer is updated, the shots and fire already show in game (same ids) but drawn the old way: additive,
     single frame for the shots, the old one-sprite flash.
 - **Starmap art (`starmap` family, sheet `starmap`; `sprites/starmap.py`, `starmap_kit.py`, `starmap_bodies.py`,
-  `starmap_icons.py`, `starmap_fleets.py`; preview `review/starmap_preview.py`; built in both sets, not wired yet):** pipeline
+  `starmap_icons.py`, `starmap_fleets.py`; preview `review/starmap_preview.py`; not wired yet):** pipeline
   sprites for the pictures the starmap draws in code today. Lanes, node pips, territory outlines and labels stay UI.
   - Every sprite has a fixed square frame with the anchor at its centre, so the map places and scales it without knowing what
-    was drawn. Sizes below are world px (what `compose.ts` hands out for both sets; the 1x frames are half in the 1x file).
+    was drawn. Sizes below are world px (what `compose.ts` hands out; the frames are half that in the file).
   - Bodies, `starmap.body.<kind>.v0..v2` and `starmap.body.<kind>` (= v0), kinds `star`, `red_dwarf`, `blue_giant`,
     `gas_giant`, `black_hole`, `nebula`: 192 px frame, body radius 60 px. Draw at scale `r / 60` (`layout.ts` `BODY_SIZE`),
     centred on the body; halos, the ring and the disc reach 1.6 r. Pick the variant by sector id from the `.v<n>` ids a
@@ -613,8 +588,8 @@ palette.json    the single palette, read by Blender scripts and the game
     (11, 24), pulsar (16, 40), protostar (22, 34), ice_giant (18, 28), lava_world (10, 18), ocean_world (11, 18).
   - Structures, `starmap.struct.<kind>`, kinds `station_trade`, `station_military`, `station_research`, `den`, `asteroids`,
     `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): frame 96 px (48 in the 1x file).
-  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: frame 48 px in
-    the 1x set (the old 2x set still has 80 px frames from before). `d0` points east on screen, then clockwise by 45
+  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: frame 96 px (48 in
+    the 1x file). `d0` points east on screen, then clockwise by 45
     degrees (the SVG `rotate(heading)` sense), so `d = round(heading / 45) mod 8`. Each heading is the ground heading whose
     three-quarter projection points that way. One model scale per ship for all its headings, the one that makes its
     longest heading (east or west) about 46 px, each heading centred in the frame; north and south views stay shorter,
@@ -624,13 +599,13 @@ palette.json    the single palette, read by Blender scripts and the game
     while an enlarged one keeps hard edges. Draw each art px as a whole number k >= 1 of device px, nearest-neighbour, at a
     device-pixel-aligned position: for a target screen size T (about 24 px for structures, 20 for fleets) and the frame's
     file px F, k = max(1, round(T * devicePixelRatio / F)) and the drawn size is F * k / devicePixelRatio. On a 3x phone
-    that is 32 px structures and 27 px fleets from either set (2x art at k 1, 1x art at k 2).
+    that is 32 px structures and 27 px fleets (k 2).
   - Bodies follow the map scale (`r / 60`), so they are enlarged (crisp) when zoomed in and shrunk (soft) at the outer
     zooms; the backdrop is drawn 1:1.
   - Mini bodies for the Cluster view (`sprites/starmap_minis.py`): `starmap.mini.<kind>.v<n>` and `starmap.mini.<kind>`
     (= v0), one per body variant, the same scene shrunk to a sixth and rendered at that size: frame 32 px (16 in the 1x
     file), body radius 10 px. The Cluster view draws bodies at about 6 screen px radius, so draw these by the icon rule
-    (whole device px per art px; on a 3x phone 21 px from either set) and pick the same variant as the sector's body.
+    (whole device px per art px; on a 3x phone 21 px) and pick the same variant as the sector's body.
   - Exit markers (`sprites/starmap_exits.py`): `starmap.exit.gate` (a free-floating ring gate with emitter pods, a cyan
     membrane on the glow sheet) and `starmap.exit.rift` (a tear with a banded rim, a starry core and drifting shards), at the gateway where a gate or rift lane leaves the sector, in place
     of the thick or dashed lane end. Frame 96 px like the structures, same crisp rule.

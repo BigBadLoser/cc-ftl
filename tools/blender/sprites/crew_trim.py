@@ -8,10 +8,9 @@ every cell stays the same size and the renderer's column/row maths is unchanged.
 (src/render/assets/manifest.ts `ClipDef`). The layer's `frameW`/`frameH`/`anchor` and the weapon muzzle offsets (px from the
 anchor) are untouched. Idempotent: a trimmed sheet's box is its whole cell.
 
-  python3 -m sprites.crew_trim [assets dir]      # retrofit an existing sprite output (default: public/assets/<ART_SCALE>x)
+  python3 -m sprites.crew_trim [assets dir]      # retrofit an existing sprite output (default: public/assets/1x)
 """
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -121,4 +120,4 @@ def retrofit(outdir, log=print):
 
 
 if __name__ == "__main__":
-    retrofit(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parents[3] / "public" / "assets" / (os.environ.get("ART_SCALE", "2") + "x"))
+    retrofit(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parents[3] / "public" / "assets" / "1x")

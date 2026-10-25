@@ -1,7 +1,7 @@
 """Sector bodies for the starmap (family `starmap`): starmap.body.<kind>.v0..v2, and starmap.body.<kind> (= v0).
 
-Every body renders into the same FRAME (96 px at 1x, 192 at 2x), centred on the anchor, with the body's radius BODY px (30 at
-1x, 60 at 2x). The map scales a sprite by r / BODY, so halos, rings and discs reach past r up to 1.6 r (the frame's edge).
+Every body renders into the same FRAME (96 px), centred on the anchor, with the body's radius BODY px (30;
+60 world px). The map scales a sprite by r / BODY, so halos, rings and discs reach past r up to 1.6 r (the frame's edge).
 
   star        yellow-white, granulated, a couple of spots and prominences; warm halo (glow)
   red_dwarf   deep red, heavily spotted, more flares; red halo (glow)

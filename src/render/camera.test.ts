@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createCamera, floorLevel, nearestLevel, zoomLevels } from './camera';
 import { ART_SCALE } from './iso';
 
-/** The fractional levels: down to 1/8 at any art scale (station hubs), with 1 / ART_SCALE among them. */
+/** The fractional levels: down to 1/8 (station hubs), with 1 / ART_SCALE among them. */
 const below = [...new Set([1 / 8, 1 / 6, 1 / 4, 1 / 3, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
 
 describe('zoom levels', () => {

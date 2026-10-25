@@ -1,7 +1,7 @@
 /**
  * Asset contract between the Blender sprite pipeline (tools/blender/sprites) and the renderer.
- * The pipeline writes public/assets/<scale>x/manifest.json in this shape (1x: 64x32 tiles, 2x: 128x64); the renderer only
- * reads it, through `compose.ts`, which turns every set into world pixels (128x64 tiles) before anything else sees it.
+ * The pipeline writes public/assets/1x/manifest.json in this shape (64x32 tiles, each art pixel drawn as a 2x2 block); the
+ * renderer only reads it, through `compose.ts`, which turns it into world pixels (128x64 tiles) before anything else sees it.
  */
 
 export const MANIFEST_VERSION = 1;
@@ -22,11 +22,11 @@ export interface Anchor {
 
 /** A sprite sheet image plus its optional emission (glow) twin with an identical layout. */
 export interface SheetDef {
-  /** Path relative to public/assets/<scale>x/ in the file; `compose.ts` makes it relative to public/assets/. */
+  /** Path relative to public/assets/1x/ in the file; `compose.ts` makes it relative to public/assets/. */
   image: string;
   /** Glow sheet (additive), same size and layout as `image`. */
   glow?: string;
-  /** Composed manifests only: texture resolution of the sheet (0.5 for a 1x sheet, drawn at 2x; absent = 1). */
+  /** Composed manifests only: texture resolution of the sheet (0.5: the sheet is drawn at twice its pixel size). */
   resolution?: number;
 }
 
@@ -92,15 +92,13 @@ export interface LayerAsset {
   anchor: Anchor;
   clips: Record<string, ClipDef>;
   glow?: boolean;
-  /** Composed manifests only: world px per art px of this layer's set (2 for a 1x layer, else 1). */
-  px?: number;
 }
 
 export type AssetDef = StaticAsset | LayerAsset;
 
 export interface Manifest {
   version: number;
-  /** Tile size in pixels: 64x32 in the 1x file, 128x64 in the 2x file and in any composed manifest. */
+  /** Tile size in pixels: 64x32 in the file, 128x64 in the composed manifest. */
   tile: { w: number; h: number };
   /** Palette-swap key colours ('#rrggbb') rendered for team.* materials, e.g. { 'team.skin': '#ff00ff' }. */
   keyColors: Record<string, string>;

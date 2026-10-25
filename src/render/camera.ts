@@ -1,9 +1,9 @@
 import { ART_SCALE } from './iso';
 
 /**
- * Zoom levels (device px per art px) of the main camera: one ladder at any art scale. From 1 up they are whole numbers,
+ * Zoom levels (device px per art px) of the main camera. From 1 up they are whole numbers,
  * so the art stays crisp with nearest-neighbour. Below 1 come fractional levels down to 1/8: framing things far bigger
- * than a ship (station hubs), and at 2x art (TILE_W 128) `1 / ART_SCALE` is the old zoom 1. The renderer draws every
+ * than a ship (station hubs), and `1 / ART_SCALE` is the old zoom 1 (one art px per world px). The renderer draws every
  * level below 1 with linear filtering (`scene.ts` `setSmooth`) so the pixel art does not shimmer when shrunk.
  */
 const BELOW_ONE: readonly number[] = [...new Set([1 / 8, 1 / 6, 1 / 4, 1 / 3, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
@@ -35,7 +35,7 @@ export function nearestLevel(levels: readonly number[], z: number): number {
  */
 export interface Camera {
   readonly zoom: number;
-  /** Device px per art px (a zoom level: whole from 1 up, fractional only below 1 at 2x art). */
+  /** Device px per art px (a zoom level: whole from 1 up, fractional only below 1). */
   readonly scale: number;
   /** Canvas size in device px. */
   readonly w: number;
@@ -96,8 +96,8 @@ export function createCamera(maxZoom: number): Camera {
     resize(cssW, cssH, dpr) {
       ratio = Math.max(1, dpr);
       dprInt = Math.max(1, Math.round(dpr));
-      // `maxZoom` and the starting zoom are in the 64 px-tile art's terms (art px = css px x dpr at the start): halve them
-      // at 2x art so the default and maximum take about the same screen size as before (rounded up to a whole level).
+      // `maxZoom` and the starting zoom are in the 64 px-tile art's terms (art px = css px x dpr at the start): divide them
+      // by ART_SCALE so the default and maximum take about the same screen size as before (rounded up to a whole level).
       levels = zoomLevels(Math.max(1, Math.ceil((maxZoom * dprInt) / ART_SCALE - 1e-9)));
       if (!sized) {
         zoom = nearestLevel(levels, dprInt / ART_SCALE);

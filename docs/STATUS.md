@@ -8,6 +8,10 @@ map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design histor
 
 ## Where things are
 
+**Art sets:** the 2x set (`public/assets/2x/`), the `?art=` choice and the 2x fallback are gone. `public/assets/1x/` (64x32 art
+drawn as hard 2x2 blocks) is the only art set; see "One art set" in [ARCHITECTURE.md](ARCHITECTURE.md). Older notes below that
+mention 2x art describe the earlier state.
+
 **On `main`** (live at https://cc-ftl.bigbadloser.workers.dev):
 - **M0–M2:** the core sim (ECS, grids, commands, saves), crew, jobs, priorities and drafting.
 - **R1:** the PixiJS isometric pixel-art renderer with the Blender sprite pipeline. Tiles are 64x32.
@@ -39,9 +43,9 @@ are already merged or superseded. Don't build on them.
 
 ## Starmap art (branch `claude/new-session-avb5cj`; art only; not merged; awaiting the user's review and the main thread's wiring)
 
-- Family `starmap` (sheet `starmap`, both sets): sector bodies (6 kinds x 3 variants), structure icons (6), fleet icons
+- Family `starmap` (sheet `starmap`): sector bodies (6 kinds x 3 variants), structure icons (6), fleet icons
   (6 roles x 8 headings), a backdrop tile. Contract (frames, scale `r / 60`, headings, tint, glow) in `docs/ARCHITECTURE.md`,
-  "Starmap art". Contact sheet: `python3 -I tools/blender/review/starmap_preview.py public/assets/2x public/assets/1x <out.png>`.
+  "Starmap art". Contact sheet: `python3 -I tools/blender/review/starmap_preview.py public/assets/1x <out.png>`.
 - Not wired: `src/ui/StarmapBody.svelte`, the badges and the fleet arrows in `StarmapSector.svelte` still draw in code.
 - Seven more body kinds (user's picks, art only, 3 variants each): binary_star, white_dwarf, pulsar, protostar, ice_giant,
   lava_world, ocean_world. The sim needs them in `BodyKind` / `BODY_SIZE` / `BODY_WEIGHTS` (suggested sizes in
@@ -51,7 +55,7 @@ are already merged or superseded. Don't build on them.
 - Mini bodies for the Cluster view (`starmap.mini.*`, every body variant), exit markers (`starmap.exit.gate`, `.rift`) and
   seamless nebula field tiles (`starmap.nebula.haze|body|core`). Contract in ARCHITECTURE.md; awaiting the user's review.
 - User review (round 1): bodies approved; the blue giant's four-point sparkle was dropped. Icons render at twice the
-  brief's pixels (frames 96 px structures, 80 px fleets at 2x).
+  brief's pixels (frames 48 px structures, 40 px fleets).
 - User review (round 2, on-map mock): icons looked soft because the mock shrank them (96 art px into 72 phone px). Rule
   for wiring, in ARCHITECTURE.md "Icon drawing": never shrink them, whole device px per art px, nearest, aligned. On a 3x
   phone that makes structures 32 px and fleets 27 px on screen; the user has not yet said whether that size is right.

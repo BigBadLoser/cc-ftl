@@ -1,6 +1,6 @@
 """Incremental crew build: render only what the cache lacks, then pack per-clip sheets.
 
-  blender -b --factory-startup --python tools/blender/sprites/build_sprites.py -- public/assets/2x crew [--item S[,S]] [--clip C[,C]] [--force] [--plan]
+  blender -b --factory-startup --python tools/blender/sprites/build_sprites.py -- public/assets/1x crew [--item S[,S]] [--clip C[,C]] [--force] [--plan]
 
 Pipeline: build the scene (human_items) -> digest every item and the rig -> key every (item, clip, direction, frame) ->
 render the misses (pose each frame once, render only the items that miss it, store each result at once so an

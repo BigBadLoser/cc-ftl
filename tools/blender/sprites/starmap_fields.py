@@ -1,5 +1,5 @@
 """Nebula field tiles for the starmap (family `starmap`): starmap.nebula.haze, .body and .core, seamless square tiles
-(256 px at 1x, 512 at 2x, anchor 0,0), glow only (their colour pixels are empty), one per density step of the map's
+(256 px, anchor 0,0), glow only (their colour pixels are empty), one per density step of the map's
 nebula field. StarmapNebula paints that field in code today from the sim's density tiles (starmapNebula.ts).
 
 The map tiles each texture across the field and shows it only where the density passes its step (about 0.15 haze, 0.45

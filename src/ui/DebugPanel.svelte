@@ -66,7 +66,6 @@
     <button data-testid="dbg-station-hub" onclick={() => api.spawnStation('station.trading', 'hub')}>Trade hub</button>
     <button data-testid="dbg-station-pirate" onclick={() => api.spawnStation('station.pirate', 'station')}>Pirate den</button>
     <button class:on={!roofed} data-testid="dbg-roof" onclick={toggleRoof}>{roofed ? 'Unroof enemies' : 'Roof enemies'}</button>
-    <button data-testid="dbg-art" onclick={() => api.setArtScale(api.artScale === 1 ? 2 : 1)}>Art: {api.artScale}x (switch, reloads)</button>
     <button disabled={!tile} onclick={() => spawnBot('role.robot_worker')}>Worker bot on tile</button>
     <button disabled={!tile} onclick={() => spawnBot('role.robot_repair')}>Repair bot on tile</button>
     <button disabled={!tile} onclick={() => spawnBot('role.robot_security', 'hostile')}>Hostile security bot on tile</button>

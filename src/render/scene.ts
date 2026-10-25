@@ -219,7 +219,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     cam.centerOn(c.x, c.y - 8 * ART_SCALE - WALL_RISE / 2);
     const spanW = (grid.width + grid.height) * (TILE_W / 2) + TILE_W;
     const spanH = (grid.width + grid.height) * (TILE_H / 2) + TILE_H * 2 + WALL_RISE;
-    // Largest zoom level (whole from 1 up; 0.75 and 0.5 below at 2x art) at which the whole ship fits (at least the smallest).
+    // Largest zoom level (whole from 1 up; fractional levels below 1) at which the whole ship fits (at least the smallest).
     cam.fitZoom(Math.min(cam.w / spanW, cam.h / spanH));
   }
 

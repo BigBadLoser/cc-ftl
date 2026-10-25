@@ -1,10 +1,10 @@
-/** 2:1 isometric projection. Art pixels at 1x; tile (x, y)'s floor-diamond centre is iso(x, y). */
+/** 2:1 isometric projection, in world px (the 128x64 tile; the art is 64x32, each art pixel a 2x2 block). Tile (x, y)'s floor-diamond centre is iso(x, y). */
 export const TILE_W = 128;
 export const TILE_H = 64;
 /**
- * Art scale against the 64x32-tile baseline all hand-tuned pixel literals were written at. Any render-side pixel offset,
- * size or speed that is really a fraction of a tile or of a height is written `n * ART_SCALE` (), so the
- * art can change resolution by changing TILE_W alone. Screen-space UI (CSS px, device-px line widths) is not scaled.
+ * World px per art px (2): the art is 64x32 pixel art drawn doubled. Hand-tuned pixel literals were written in art px, so any
+ * render-side pixel offset, size or speed that is really a fraction of a tile or of a height is written `n * ART_SCALE`.
+ * Screen-space UI (CSS px, device-px line widths) is not scaled.
  */
 export const ART_SCALE = TILE_W / 64;
 

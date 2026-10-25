@@ -175,7 +175,7 @@ def ship(st, pub, out, txt, seed, look):
 
 def main():
     st, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    pub = Assets(ROOT / "public/assets/2x")
+    pub = Assets(ROOT / "public/assets/1x")
     out.mkdir(parents=True, exist_ok=True)
     if len(sys.argv) > 3 and sys.argv[3] == "ship":
         ship(st, pub, out, sys.argv[4], int(sys.argv[5]), sys.argv[6])

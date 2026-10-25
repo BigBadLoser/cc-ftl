@@ -2,9 +2,9 @@
 every body variant (starmap_bodies, starmap_stars, starmap_planets), for the Cluster view, which draws each sector's body
 as a dot of about 6 screen px radius.
 
-Each is that variant's own scene shrunk to a sixth, a 16 px frame at 1x (32 at 2x), and rendered, not downscaled, so it
+Each is that variant's own scene shrunk to a sixth, a 16 px frame at 1x, and rendered, not downscaled, so it
 stays crisp at that size and matches its full body. Same layout as the big ones: anchor at the centre, body radius r = 5
-px at 1x (10 at 2x), frame = 3.2 r."""
+px at 1x, frame = 3.2 r."""
 import bpy
 
 from . import starmap_bodies, starmap_planets, starmap_stars

@@ -16,7 +16,7 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm run check`: lint, typecheck and every test, slow tier included. Run it in the testing round before opening a PR.
   CI runs it on `main`. On a PR, CI skips the slow tier (`*.slow.test.ts`) until the PR has the `full-ci` label,
   to save Actions minutes. Add the label once the PR is ready to merge.
-- `npm run sprites`: rebuild the sprite sheets in `public/assets/<scale>x/` with headless Blender (`--scale 1|2`, default 2; see "Asset pipeline")
+- `npm run sprites`: rebuild the sprite sheets in `public/assets/1x/` with headless Blender (see "Asset pipeline")
   (`tools/blender/setup.sh` installs it). Commit the generated sheets, JSON and manifest.
 
 ## Hard rules
