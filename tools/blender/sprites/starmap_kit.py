@@ -88,7 +88,7 @@ def basis(axis):
 
 def sphere(m, c, r, paint, axis=U, segs=96, rings=64):
     """Sphere at Blender point c, poles along axis. paint(normals (k,3) array) -> k looks, one per face (vectorised, so
-    noise and banding are computed for every face at once)."""
+    noise and banding are computed for every face at once); None leaves that face out."""
     a = Vector(axis).normalized()
     e1, e2 = basis(a)
     lat = np.linspace(-math.pi / 2, math.pi / 2, rings + 1)
@@ -112,7 +112,8 @@ def sphere(m, c, r, paint, axis=U, segs=96, rings=64):
     looks = paint(np.array(ns))
     cv = np.array(c, float)
     for q, look in zip(quads, looks):
-        face(m, [Vector(cv + p * r) for p in q], look)
+        if look is not None:                        # a paint may leave faces out (a cloud layer)
+            face(m, [Vector(cv + p * r) for p in q], look)
 
 
 def annulus(m, c, axis, r0, r1, paint, segs=96, rings=1, a0=0.0, a1=math.tau, e=None):

@@ -19,7 +19,8 @@ SHADE_MULT = (0.42, 0.62, 0.82, 1.0, 1.22)
 TINTS = {"navy": ((74, 118, 178), (210, 220, 235)), "pirate": ((168, 60, 48), (220, 170, 60)),
          "trader": ((70, 150, 96), (225, 210, 150)), "drone": ((120, 124, 132), (255, 60, 60)),
          "player": ((54, 212, 255), (240, 240, 240))}
-KINDS = ("star", "red_dwarf", "blue_giant", "gas_giant", "black_hole", "nebula")
+KINDS = ("star", "red_dwarf", "blue_giant", "gas_giant", "black_hole", "nebula", "binary_star", "white_dwarf", "pulsar",
+         "protostar", "ice_giant", "lava_world", "ocean_world")
 STRUCTS = ("station_trade", "station_military", "station_research", "den", "asteroids", "derelict")
 ROLES = (("patrol", "navy"), ("pirate", "pirate"), ("raider", "drone"), ("trader", "trader"), ("miner", "trader"),
          ("player", "player"))

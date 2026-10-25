@@ -2,7 +2,9 @@
 Lanes, node pips, territory outlines and labels stay UI. Same camera, palette and post as every other sprite (three-quarter
 view, hard pixels); each sprite has a fixed frame with the anchor at its centre (starmap_kit.frame_item).
 
-  starmap.body.<kind>[.v0..v2]   sector bodies, 96 px frame at 1x (192 at 2x), body radius 30 px (60): starmap_bodies.py
+  starmap.body.<kind>[.v0..v2]   sector bodies, 96 px frame at 1x (192 at 2x), body radius 30 px (60): starmap_bodies.py,
+                                 starmap_stars.py (binary, white dwarf, pulsar, protostar), starmap_planets.py (ice giant,
+                                 lava world, ocean world)
   starmap.struct.<kind>          structure icons, 48 px frame (96) drawn at half (twice the density), team-tinted: starmap_icons.py
   starmap.fleet.<role>.d0..d7    fleet icons, 40 px frame (80) drawn at half, d0 = screen east, clockwise, team-tinted: starmap_fleets.py
   starmap.backdrop               a tileable, very dim starfield, 256 px (512), colour sheet only (backdrop below)
@@ -13,7 +15,7 @@ import numpy as np
 
 from . import post
 from .scale import ART_SCALE
-from . import starmap_bodies, starmap_fleets, starmap_icons
+from . import starmap_bodies, starmap_fleets, starmap_icons, starmap_planets, starmap_stars
 
 BACKDROP = 256                  # 1x px; tiles seamlessly
 
@@ -46,4 +48,5 @@ def backdrop():
 
 
 def jobs():
-    return starmap_bodies.jobs() + starmap_icons.jobs() + starmap_fleets.jobs() + [backdrop]
+    return (starmap_bodies.jobs() + starmap_stars.jobs() + starmap_planets.jobs() + starmap_icons.jobs() + starmap_fleets.jobs()
+            + [backdrop])

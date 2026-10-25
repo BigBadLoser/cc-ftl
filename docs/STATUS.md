@@ -43,6 +43,9 @@ are already merged or superseded. Don't build on them.
   (6 roles x 8 headings), a backdrop tile. Contract (frames, scale `r / 60`, headings, tint, glow) in `docs/ARCHITECTURE.md`,
   "Starmap art". Contact sheet: `python3 -I tools/blender/review/starmap_preview.py public/assets/2x public/assets/1x <out.png>`.
 - Not wired: `src/ui/StarmapBody.svelte`, the badges and the fleet arrows in `StarmapSector.svelte` still draw in code.
+- Seven more body kinds (user's picks, art only, 3 variants each): binary_star, white_dwarf, pulsar, protostar, ice_giant,
+  lava_world, ocean_world. The sim needs them in `BodyKind` / `BODY_SIZE` / `BODY_WEIGHTS` (suggested sizes in
+  ARCHITECTURE.md); awaiting the user's review.
 - User review (round 1): bodies approved; the blue giant's four-point sparkle was dropped. Icons render at twice the
   brief's pixels (frames 96 px structures, 80 px fleets at 2x).
 - User review (round 2, on-map mock): icons looked soft because the mock shrank them (96 art px into 72 phone px). Rule

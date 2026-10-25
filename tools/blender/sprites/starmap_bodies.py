@@ -32,7 +32,8 @@ NV, LV = np.array(N), np.array(LIGHT)
 
 # ---- stars ------------------------------------------------------------------------------------------------------------
 # ramp: centre to limb; edges: facing (n . N) thresholds between ramp steps; spot: umbra, penumbra; halo: glow hue and the
-# strength of each band from the limb out; glow: the disc's own glow; gran: granulation strength; spots / flares: counts.
+# strength of each band from the limb out (halo may also list a hue per band); glow: the disc's own glow; gran: granulation
+# strength; spots / flares: counts.
 STARS = {
     "star": dict(ramp=("fxW", "lampY", "fxY", "fxO"), edges=(0.8, 0.55, 0.3), spot=("fxR", "fxO"), halo="fxY", glow=0.2,
                  bands=(0.42, 0.22, 0.11, 0.05), gran=0.2, spots=2, flares=2, flare=("fxY", "fxO")),
@@ -68,32 +69,41 @@ def _star_paint(spec, seed):
     return paint
 
 
-def _flare(m, rng, look):
-    """A prominence: a small loop standing on the limb, in the screen plane."""
+def _flare(m, rng, look, c=None, r=RB):
+    """A prominence: a small loop standing on the limb of a star of radius r at c, in the screen plane."""
+    c = Vector() if c is None else c
     phi = rng.uniform(0, math.tau)
-    span, height = rng.uniform(0.18, 0.3), RB * rng.uniform(0.12, 0.2)
+    span, height = rng.uniform(0.18, 0.3), r * rng.uniform(0.12, 0.2)
     pts = []
     for k in range(9):
         s = k / 8
         a = phi - span / 2 + span * s
-        r = RB * 0.97 + height * math.sin(math.pi * s)
-        pts.append(P(r * math.cos(a), r * math.sin(a), 0.0))
+        rr = r * 0.97 + height * math.sin(math.pi * s)
+        pts.append(c + P(rr * math.cos(a), rr * math.sin(a), 0.0))
     for a, b in zip(pts, pts[1:]):
         streak(m, a, b, px(1.6), px(1.6), look)
 
 
-def star(kind, seed):
-    spec = STARS[kind]
+def _band_hue(spec, k):
+    """A star's halo hue: one name, or one per band from the limb out."""
+    h = spec["halo"]
+    return h if isinstance(h, str) else h[k]
+
+
+def star(kind, seed, spec=None, c=None, r=RB, reach=EDGE):
+    """A star of radius r at c (default: the body radius at the origin), its halo bands out to `reach`."""
+    spec = spec or STARS[kind]
+    c = Vector() if c is None else c
     rng = np.random.default_rng(seed + 101)
     body = core.Mesh("star")
-    sphere(body, Vector(), RB, _star_paint(spec, seed))
+    sphere(body, c, r, _star_paint(spec, seed))
     for k in range(spec["flares"]):
-        _flare(body, rng, selflit(spec["flare"][k % 2], 0.8))
+        _flare(body, rng, selflit(spec["flare"][k % 2], 0.8), c, r)
     halo = core.Mesh("halo")
-    radii = np.linspace(RB * 0.96, EDGE, len(spec["bands"]) + 1)
+    radii = np.linspace(r * 0.96, reach, len(spec["bands"]) + 1)
     for k, level in enumerate(spec["bands"]):
-        annulus(halo, P(0, 0, -RB * (1.5 + 0.01 * k)), N, radii[k], radii[k + 1],
-                lambda f, a, c, level=level: [glow_only(hue(spec["halo"], level))] * len(f), segs=128)
+        annulus(halo, c + P(0, 0, -r * (1.5 + 0.01 * k)), N, radii[k], radii[k + 1],
+                lambda f, a, cc, k=k, level=level: [glow_only(hue(_band_hue(spec, k), level))] * len(f), segs=128)
     return [body.build()], [halo.build()]
 
 
@@ -122,47 +132,52 @@ def _shade(s):
     return np.select([s > 0.7, s > 0.42, s > 0.14, s > -0.12], [0, 1, 2, 3], 4)
 
 
-def _ring_shadow(p):
+def _ring_shadow(p, axis, ring):
     """Points p (k,3) on the planet: True where the ring stands between them and the sun."""
-    A, L = np.array(AXIS), LV
+    A, L = np.array(axis), LV
     t = -(p @ A) / (L @ A)
     q = p + t[:, None] * L
     rq = np.linalg.norm(q, axis=1) / RB
     inside = np.zeros(len(p), bool)
-    for r0, r1, _ in RING:
+    for r0, r1, *_ in ring:
         inside |= (rq > r0) & (rq < r1)
     return (t > 0) & inside
 
 
-def gas_giant(seed, spec):
+def gas_giant(seed, spec, ramps=RAMP, axis=AXIS, ring=RING, shadow=RAMP["cream"][3]):
+    """A banded planet. spec: bands, storm (latitude, longitude, size[, inner ramp, outer ramp]) or None, optional
+    `turb` (band waviness in degrees). ramps: 5-step ramps by name; ring: (inner, outer in body radii, colour) rows;
+    shadow: the ring's colour in the planet's shadow."""
     noise = Noise(seed)
-    A = np.array(AXIS)
+    A = np.array(axis)
     e1 = np.cross(A, NV)
     e1 /= np.linalg.norm(e1)
 
     def paint(ns):
         lat = np.degrees(np.arcsin(np.clip(ns @ A, -1, 1)))
-        lat = lat + (noise.fbm(ns * np.array([6.0, 6.0, 6.0])) - 0.5) * 7 + np.sin(np.arctan2(ns @ np.cross(A, e1), ns @ e1) * 5) * 1.2
+        lat = lat + (noise.fbm(ns * np.array([6.0, 6.0, 6.0])) - 0.5) * spec.get("turb", 7) \
+            + np.sin(np.arctan2(ns @ np.cross(A, e1), ns @ e1) * 5) * 1.2
         ramp = np.array([next(r for top, r in spec["bands"] if la < top) for la in np.clip(lat, -89, 89)], object)
-        step = _shade(ns @ LV) + _ring_shadow(ns * RB) * 2
+        step = _shade(ns @ LV) + _ring_shadow(ns * RB, axis, ring) * 2
         if spec["storm"]:
-            la, lo, size = spec["storm"]
+            la, lo, size, *cols = spec["storm"]
+            inner, outer = cols or ("rust", "cream")
             c = math.radians(la)
             d = math.cos(c) * (math.cos(lo) * NV + math.sin(lo) * e1) + math.sin(c) * A     # longitude 0 faces the camera
             ang = np.arccos(np.clip(ns @ (d / np.linalg.norm(d)), -1, 1))
-            ramp = np.where(ang < size * 0.6, "rust", np.where(ang < size, "cream", ramp))
-        return [flat(RAMP[r][min(int(s), 4)]) for r, s in zip(ramp, step)]
+            ramp = np.where(ang < size * 0.6, inner, np.where(ang < size, outer, ramp))
+        return [flat(ramps[r][min(int(s), 4)]) for r, s in zip(ramp, step)]
     body = core.Mesh("giant")
-    sphere(body, Vector(), RB, paint, axis=AXIS)
-    ring = core.Mesh("ring")
-    for r0, r1, col in RING:
+    sphere(body, Vector(), RB, paint, axis=axis)
+    rings = core.Mesh("ring")
+    for r0, r1, col in ring:
         def rpaint(f, a, c, col=col):
             c = np.asarray(c)
             b = c @ LV
-            shadow = (b < 0) & (b * b > (c * c).sum(1) - RB * RB)
-            return [flat(RAMP["cream"][3] if s else col) for s in shadow]
-        annulus(ring, Vector(), AXIS, RB * r0, RB * r1, rpaint, segs=160)
-    return [body.build(), ring.build()], []
+            dark = (b < 0) & (b * b > (c * c).sum(1) - RB * RB)
+            return [flat(shadow if s else col) for s in dark]
+        annulus(rings, Vector(), axis, RB * r0, RB * r1, rpaint, segs=160)
+    return [body.build(), rings.build()], []
 
 
 # ---- black hole -------------------------------------------------------------------------------------------------------
@@ -247,7 +262,12 @@ def body_items(kind, v):
         objs, halo = black_hole(seed, HOLE[v])
     else:
         objs, halo = nebula(seed, NEBULAE[v])
-    it = frame_item(f"starmap.body.{kind}.v{v}", FRAME, halo=halo, outline=kind == "gas_giant")
+    return items(kind, v, halo, outline=kind == "gas_giant")
+
+
+def items(kind, v, halo, outline=False):
+    """Render the scene as body `kind` variant v (and its plain id for v0)."""
+    it = frame_item(f"starmap.body.{kind}.v{v}", FRAME, halo=halo, outline=outline)
     return [it, {**it, "id": f"starmap.body.{kind}"}] if v == 0 else [it]
 
 

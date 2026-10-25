@@ -604,6 +604,12 @@ palette.json    the single palette, read by Blender scripts and the game
     centred on the body; halos, the ring and the disc reach 1.6 r. Pick the variant by sector id. Stars, the black hole's
     disc and the nebula glow; the gas giant has no glow and is outlined. The nebula is glow only (its colour pixels are
     empty): draw it under the nodes.
+  - More body kinds, same ids, frame and scale, art only (the sim's `BodyKind`, `BODY_SIZE` and `BODY_WEIGHTS` do not have
+    them yet): `binary_star`, `white_dwarf`, `pulsar`, `protostar` (`sprites/starmap_stars.py`) and `ice_giant`,
+    `lava_world`, `ocean_world` (`sprites/starmap_planets.py`, lit and outlined like the gas giant). Some keep a small core
+    so their glow fits the frame: the white dwarf's core is 0.45 r, the pulsar's 0.22 r (its beams reach 1.6 r), the
+    protostar's 0.36 r inside a disc out to 1.5 r. Suggested `BODY_SIZE` (r, clear): binary_star (26, 40), white_dwarf
+    (11, 24), pulsar (16, 40), protostar (22, 34), ice_giant (18, 28), lava_world (10, 18), ocean_world (11, 18).
   - Structures, `starmap.struct.<kind>`, kinds `station_trade`, `station_military`, `station_research`, `den`, `asteroids`,
     `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): frame 96 px (48 in the 1x file).
   - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: frame 80 px (40).
