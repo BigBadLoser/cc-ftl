@@ -112,8 +112,9 @@ function charge(sim: Sim, id: number, ship: Ship, captured: boolean): void {
   addNotoriety(sim, n, faction);
 }
 
-/** Count the ships the player destroyed or captured since the last call. Called by the galaxy system before contacts and fleets are pruned. */
-export function tallyLosses(sim: Sim): void {
+/** Count the ships the player destroyed or captured since the last call; returns their ids. Called by the galaxy system before contacts and fleets are pruned. */
+export function tallyLosses(sim: Sim): number[] {
+  const out: number[] = [];
   for (const id of sim.world.query(ShipC)) {
     const ship = sim.world.get(id, ShipC) as Ship;
     const captured = ship.state === 'prize';
@@ -122,7 +123,9 @@ export function tallyLosses(sim: Sim): void {
     if (!captured && !(ship.state === 'wreck' && ship.killedBy === 'player')) continue;
     ship.tallied = true;
     charge(sim, id, ship, captured);
+    out.push(id);
   }
+  return out;
 }
 
 /** What clearing all notoriety costs now. */

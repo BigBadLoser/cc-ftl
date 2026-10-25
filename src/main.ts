@@ -175,6 +175,7 @@ const api: UiApi = {
   selectedShip: controller.selectedShip,
   selectShip: controller.selectShip,
   stats: bridge.stats,
+  jobs: bridge.jobs,
   alerts: controller.alerts.list,
   log: controller.log.list,
   combat: bridge.combat,

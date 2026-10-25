@@ -1,9 +1,10 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildSites } from './siteSnapshot';
+import { buildJobs } from './jobsSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
 import { buildFtl } from './ftlSnapshot';
@@ -21,6 +22,7 @@ import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
 import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
+import { crateInfo } from './jobsSnapshot';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
 export interface Snapshot {
@@ -51,7 +53,7 @@ export interface InspectSnapshot extends TileRef {
   local: { x: number; y: number };
   structName: string;
   /** The loose item stack on the tile, or null. */
-  stack: { item: string; name: string; count: number } | null;
+  stack: { item: string; name: string; count: number; crate: { job: number; title: string; to: string } | null } | null;
   /** Room id, or 0 when none. */
   room: number;
   fields: { name: string; value: number }[];
@@ -70,6 +72,7 @@ export interface Bridge {
   hostiles: Readable<UiCrew[]>;
   modules: Readable<UiModule[]>;
   sites: Writable<UiSite[]>;
+  jobs: Readable<UiJobs>;
   stats: Readable<UiStats>;
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
@@ -124,6 +127,8 @@ export function createBridge(sim: Sim): Bridge {
   let lastHostiles = '';
   const modules = createStore<UiModule[]>([]);
   const sites = createStore<UiSite[]>([]);
+  const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], max: 0 });
+  let lastJobsKey = '';
   let lastSites = '[]';
   const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null });
   const stock = createStore<UiStock[]>([]);
@@ -184,7 +189,7 @@ export function createBridge(sim: Sim): Bridge {
         job: job ? { kind: job.kind, progress: job.progress, work: job.work } : null,
         grid: shipId,
         local: { x: ref.x - grid.x0, y: ref.y - grid.y0 },
-        stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count } : null,
+        stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count, crate: crateInfo(sim, st.job) } : null,
         structName: STRUCT_NAMES[struct] ?? `Unknown(${struct})`,
         room: fields.find((f) => f.name === 'room')?.value ?? 0,
         fields,
@@ -222,6 +227,13 @@ export function createBridge(sim: Sim): Bridge {
     if (slk !== lastSites) {
       lastSites = slk;
       sites.set(sl);
+    }
+    // The board only changes with the galaxy (offers, jobs, the player's node) or the cargo a delivery needs: rebuilt on those, not every frame.
+    const g = sim.galaxy;
+    const jk = `${g.rev}|${g.turn}|${g.current}|${sim.sector.state}|${frame >> 5}`;
+    if (jk !== lastJobsKey) {
+      lastJobsKey = jk;
+      jobs.set(buildJobs(sim));
     }
     const logs = [buildStock(sim), buildStorages(sim), buildFabs(sim)] as const;
     const keys = logs.map((l) => JSON.stringify(l));
@@ -352,6 +364,7 @@ export function createBridge(sim: Sim): Bridge {
     hostiles,
     modules,
     sites,
+    jobs,
     stats,
     stock,
     storages,

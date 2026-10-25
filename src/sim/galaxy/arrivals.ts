@@ -93,6 +93,7 @@ export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
   if (ship) {
     ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth };
     if (c.name) ship.name = c.name;
+    if (c.bounty !== undefined) ship.bounty = c.bounty;
   }
   c.ship = id;
   sim.galaxy.rev++;

@@ -16,6 +16,9 @@ export function stackSizeOf(sim: Sim, item: string): number {
   return sim.content.items[item]?.stackSize ?? UNKNOWN_STACK_SIZE;
 }
 
+/** A job's sealed cargo (ItemDef.cargo): left where it lies. */
+export const isCargo = (sim: Sim, item: string): boolean => !!sim.content.items[item]?.cargo;
+
 /** Entity id of the loose stack on a tile, or 0. */
 export function stackAt(sim: Sim, shipId: number, x: number, y: number): number {
   const grid = shipGrid(sim, shipId);
@@ -31,9 +34,9 @@ SPIRAL.sort((a, b) => (a.dx ** 2 + a.dy ** 2) - (b.dx ** 2 + b.dy ** 2) || a.dy 
 
 /**
  * Put items on the floor at the nearest tile with room: bare floor or open ground (no module, no door) that is
- * empty or holds the same item below its stack size. Returns how many units found no room (lost).
+ * empty or holds the same item below its stack size. Returns how many units found no room (lost). `job`: new stacks are that delivery's crate.
  */
-export function spillItems(sim: Sim, shipId: number, x: number, y: number, item: string, count: number): number {
+export function spillItems(sim: Sim, shipId: number, x: number, y: number, item: string, count: number, job?: number): number {
   const grid = shipGrid(sim, shipId);
   if (!grid?.has('item')) return count;
   const max = stackSizeOf(sim, item);
@@ -56,7 +59,7 @@ export function spillItems(sim: Sim, shipId: number, x: number, y: number, item:
     } else {
       const add = Math.min(left, max);
       const id = sim.world.createEntity();
-      sim.world.add(id, ItemStackC, { item, count: add, x: tx, y: ty });
+      sim.world.add(id, ItemStackC, job === undefined ? { item, count: add, x: tx, y: ty } : { item, count: add, x: tx, y: ty, job });
       grid.set('item', tx, ty, id);
       left -= add;
     }
@@ -83,9 +86,9 @@ export function evictStack(sim: Sim, shipId: number, x: number, y: number): void
   const id = stackAt(sim, shipId, x, y);
   const s = id ? sim.world.get(id, ItemStackC) : undefined;
   if (!s) return;
-  const { item, count } = s;
+  const { item, count, job } = s;
   takeFromStack(sim, id, count);
-  spillItems(sim, shipId, x, y, item, count);
+  spillItems(sim, shipId, x, y, item, count, job);
 }
 
 /** A crew member puts down whatever they carry, at their feet or the nearest free tile. */

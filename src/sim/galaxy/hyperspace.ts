@@ -1,3 +1,4 @@
+import { settleLosses } from './jobs';
 import { dropOut, enterHyperspace } from '../sector/jump';
 import type { Sim } from '../sim';
 import { playerShipInfo, spawnContact } from './arrivals';
@@ -75,6 +76,7 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   const charge = routeCharge(edges);
   spendCharge(sim, charge, ship);
   burnFuel(sim, first.fuel, ship);
+  settleLosses(sim);
   unbindMarkets(sim);
   liftFleetsAt(sim, g.current);
   enterHyperspace(sim, ship, withDocked ?? false);
@@ -201,6 +203,7 @@ export function teleport(sim: Sim, to: string): boolean {
   if (!me) return reject('notPlayerShip');
   if (!checkLeaving(sim, me.id, reject)) return false;
   const from = g.current;
+  settleLosses(sim);
   unbindMarkets(sim);
   liftFleetsAt(sim, from);
   enterHyperspace(sim, me.id, false);

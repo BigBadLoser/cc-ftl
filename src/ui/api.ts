@@ -24,6 +24,8 @@ export interface UiStack {
   item: string;
   name: string;
   count: number;
+  /** A delivery crate: its job (for `jobs.openCrate`), what it holds and where it goes. */
+  crate: { job: number; title: string; to: string } | null;
 }
 
 export interface UiInspect {
@@ -275,6 +277,33 @@ export interface UiHeat {
   hunters: string[];
   clearCost: number;
   clearBlocker: string | null;
+}
+
+/**
+ * A station job (sim galaxy/jobs.ts) as the board shows it: an offer (`id` null) or one the player holds. `where` is the delivery's destination or the
+ * bounty target's node, `hops` how many jumps away it is (null when out of the known map), `here` that the player is there; `ready` that a delivery's crate is aboard.
+ */
+export interface UiJob {
+  key: string;
+  id: number | null;
+  kind: 'delivery' | 'bounty';
+  issuer: string;
+  title: string;
+  detail: string;
+  reward: number;
+  turnsLeft: number;
+  where: string;
+  hops: number | null;
+  here: boolean;
+  ready: boolean;
+}
+
+/** The job board: offers at the node the player is at (`here` its name, null when jobs cannot be taken now: in hyperspace or an event grid), and the jobs they hold (at most `max`). */
+export interface UiJobs {
+  here: string | null;
+  offers: UiJob[];
+  active: UiJob[];
+  max: number;
 }
 
 export interface UiStats {
@@ -706,6 +735,7 @@ export interface UiApi {
   selectModule(id: number | null): void;
   /** Module construction sites, and the selected one (a job id). */
   sites: Subscribable<UiSite[]>;
+  jobs: Subscribable<UiJobs>;
   selectedSite: Subscribable<number | null>;
   selectSite(id: number | null): void;
   /** Another ship or station picked from the node strip; the selection panel drills into it. */

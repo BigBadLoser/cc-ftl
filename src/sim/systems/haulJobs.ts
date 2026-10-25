@@ -1,6 +1,7 @@
 import { shipIdAt, shipIdOf } from '../regions';
 import { ItemStackC } from '../items/components';
 import { makeHaul, warnDue } from '../items/plan';
+import { isCargo } from '../items/stacks';
 import { nearestStorageFor, refKey, reservations } from '../items/stock';
 import type { Sim } from '../sim';
 import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
@@ -15,7 +16,7 @@ export function haulJobsSystem(sim: Sim): void {
   const res = reservations(sim);
   for (const id of sim.world.query(ItemStackC)) {
     const stack = sim.world.get(id, ItemStackC);
-    if (!stack) continue;
+    if (!stack || isCargo(sim, stack.item)) continue;
     const avail = stack.count - (res.out.get(refKey('floor', id, stack.item)) ?? 0);
     if (avail <= 0) continue;
     const dest = nearestStorageFor(sim, shipIdAt(sim, stack.x, stack.y), stack.item, stack, res);
