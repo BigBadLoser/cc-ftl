@@ -6,12 +6,12 @@
    */
   import type { UiStarArt, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import StarmapBody from './StarmapBody.svelte';
-  import StarmapSprite, { crispPx } from './StarmapSprite.svelte';
+  import StarmapSprite from './StarmapSprite.svelte';
   import { toneTint } from './starmapTint';
   import { strHash } from './starmapArtIds';
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
-  import { pixelArrow, pixelLine, pixelOutline, pixelPolyline, pixelSquare } from './starmapPixel';
+  import { pixelArrow, pixelDiamond, pixelDiamondRing, pixelLine, pixelOutline, pixelPolyline } from './starmapPixel';
 
   let { map, art = null, px, s, view, current, route, routePts, selected, hover, only = null, ship, inset = 0 }: {
     map: UiStarmap; art?: UiStarArt | null; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
@@ -26,7 +26,9 @@
 
   /** The pixel grid: two screen pixels at this zoom (the size of the game's art pixels). Lines step on it, shapes snap to it. */
   const g = $derived(px(2));
-  const sq = (x: number, y: number, r: number) => pixelSquare(x, y, px(r), g);
+  /** Node marks are pixel diamonds (r in screen px): a filled one, and a one-cell outline of the same shape for rings and highlights. */
+  const dia = (x: number, y: number, r: number) => pixelDiamond(x, y, px(r), g);
+  const ring = (x: number, y: number, r: number) => pixelDiamondRing(x, y, px(r), g);
   const clampX = (x: number, m: number) => Math.max(view.x0 + px(m), Math.min(view.x1 - px(inset) - px(m), x));
   const clampY = (y: number, top: number, bottom: number) => Math.max(view.y0 + px(top), Math.min(view.y1 - px(bottom), y));
   /**
@@ -76,12 +78,16 @@
       return { f, ox: Math.cos(side), oy: Math.sin(side), heading };
     });
   });
-  /** Icons at the crisp size (whole device px per art px, StarmapSprite `crispPx`), in map units: structures, fleets. */
+  /**
+   * Icons at one shared pixel density, so structures and fleets look like the same art: a whole number of device px per art px
+   * (about one CSS px, rounded to the screen's density), never shrunk. In map units: structures, fleets.
+   */
+  const iconPx = (frame: number) => (frame * Math.max(1, Math.round(dpr))) / dpr;
   const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
-  const structPx = $derived(px(crispPx(art?.frames['starmap.struct.den']?.w ?? 48, 24, dpr)));
+  const structPx = $derived(px(iconPx(art?.frames['starmap.struct.den']?.w ?? 48)));
   /** The radius structures orbit at: clear of the node's pip and rings. */
-  const orbitR = $derived(px(34));
-  const fleetPx = $derived(px(crispPx(art?.frames['starmap.fleet.patrol.d0']?.w ?? 40, 48, dpr)));
+  const orbitR = $derived(px(40));
+  const fleetPx = $derived(px(iconPx(art?.frames['starmap.fleet.patrol.d0']?.w ?? 40)));
   /** An icon heading (degrees, the SVG sense: 0 east, clockwise) as one of the eight `d` frames. */
   const dir = (deg: number) => (((Math.round(deg / 45) % 8) + 8) % 8);
   /** A node shows its name when it matters (yours, a jump away, picked, under the cursor) or when zoomed in. */
@@ -135,12 +141,12 @@
   {@const dimmed = !!only && !only.has(n.id) && !n.current}
   {#if n.known}
     <g class:dimmed>
-      {#if n.hostiles}<rect {...sq(n.x, n.y, 9)} class="hostile" />{/if}
-      <rect {...sq(n.x, n.y, n.current ? 5 : 4)} class="node" class:visited={n.visited} class:cur={n.current} />
-      {#if n.current && !ship}<rect {...sq(n.x, n.y, 11)} class="pulse" />{/if}
-      {#if n.reachable && !ship && (!only || only.has(n.id))}<rect {...sq(n.x, n.y, 8)} class="reachable" />{/if}
-      {#if n.current && !ship}<rect {...sq(n.x, n.y, 11)} class="here" />{/if}
-      {#if hover === n.id}<rect {...sq(n.x, n.y, 12)} class="hov" />{/if}
+      {#if n.hostiles}<path d={dia(n.x, n.y, 9)} class="hostile" /><path d={ring(n.x, n.y, 9)} class="hostile-ring" />{/if}
+      <path d={dia(n.x, n.y, n.current ? 6 : 5)} class="node" class:visited={n.visited} class:cur={n.current} />
+      {#if n.current && !ship}<path d={ring(n.x, n.y, 13)} class="pulse" />{/if}
+      {#if n.reachable && !ship && (!only || only.has(n.id))}<path d={ring(n.x, n.y, 10)} class="reachable" />{/if}
+      {#if n.current && !ship}<path d={ring(n.x, n.y, 13)} class="here" />{/if}
+      {#if hover === n.id}<path d={ring(n.x, n.y, 15)} class="hov" />{/if}
       {#if s > 0.7 && art}
         {@const a0 = phase(n.id)}
         <g transform="translate({n.x} {n.y})">
@@ -171,15 +177,15 @@
       {#if named(n)}<text x={n.x} y={n.y + px(20)} class="nname" class:cur={n.current} font-size={px(13)} stroke-width={px(3)}>{n.name}</text>{/if}
     </g>
   {:else}
-    <rect {...sq(n.x, n.y, 4)} class="unknown" class:dimmed />
+    <path d={dia(n.x, n.y, 5)} class="unknown" class:dimmed /><path d={ring(n.x, n.y, 5)} class="unknown-ring" class:dimmed />
   {/if}
-  {#if selected === n.id}<rect {...sq(n.x, n.y, 14)} class="sel" />{/if}
+  {#if selected === n.id}<path d={ring(n.x, n.y, 17)} class="sel" />{/if}
 {/each}
 {#each marks as m (m.f.id)}
   {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] })} class="lane heading" style={`fill: ${toneColor(m.f.tone)}`} />{/if}
 {/each}
 {#each marks as m (m.f.id)}
-  <g transform={`translate(${m.f.x + m.ox * px(56)} ${m.f.y + m.oy * px(56)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
+  <g transform={`translate(${m.f.x + m.ox * px(54)} ${m.f.y + m.oy * px(54)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
     <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
     {#if art && art.frames[`starmap.fleet.${m.f.kind}.d0`]}
       <StarmapSprite {art} id={`starmap.fleet.${m.f.kind}.d${dir(m.heading)}`} x={0} y={0} size={fleetPx} tint={toneTint(m.f.tone)} />
@@ -192,7 +198,7 @@
 {#if ship}
   {@const ang = (Math.atan2(ship.ty - ship.fy, ship.tx - ship.fx) * 180) / Math.PI}
   <path d={pixelLine(ship.fx, ship.fy, ship.x, ship.y, g, { w: 2 })} class="lane trail" />
-  <rect {...sq(ship.x, ship.y, 11)} class="here" />
+  <path d={ring(ship.x, ship.y, 13)} class="here" />
   {#if art && art.frames['starmap.fleet.player.d0']}
     <StarmapSprite {art} id={`starmap.fleet.player.d${dir(ang)}`} x={ship.x} y={ship.y} size={fleetPx * 1.25} />
   {:else}
@@ -233,10 +239,10 @@
   .node { fill: var(--dim); }
   .node.visited { fill: var(--text); }
   .node.cur { fill: var(--cyan); }
-  .reachable { fill: none; stroke: var(--green); stroke-width: 2; vector-effect: non-scaling-stroke; }
-  .here { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; }
-  .hov { fill: none; stroke: var(--text); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-  .pulse { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; transform-box: fill-box; transform-origin: center; animation: pulse 2.2s ease-out infinite; pointer-events: none; }
+  .reachable { fill: var(--green); }
+  .here { fill: var(--cyan); }
+  .hov { fill: var(--text); }
+  .pulse { fill: var(--cyan); transform-box: fill-box; transform-origin: center; animation: pulse 2.2s ease-out infinite; pointer-events: none; }
   @keyframes pulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(2.2); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .pulse { display: none; } }
   .ship { fill: var(--cyan); }
@@ -245,9 +251,11 @@
   .fleet path { stroke: none; }
   .fleet { pointer-events: all; }
   .adrift { fill: none; stroke: var(--amber); stroke-width: 1.2; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
-  .sel { fill: none; stroke: var(--amber); stroke-width: 2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
-  .hostile { fill: color-mix(in srgb, var(--red) 25%, transparent); stroke: var(--red); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-  .unknown { fill: var(--bg); stroke: var(--dim); stroke-opacity: 0.85; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .sel { fill: var(--amber); }
+  .hostile { fill: color-mix(in srgb, var(--red) 25%, transparent); }
+  .hostile-ring { fill: var(--red); }
+  .unknown { fill: var(--bg); }
+  .unknown-ring { fill: var(--dim); fill-opacity: 0.85; }
   .job { fill: var(--amber); font-family: var(--pixel-font); text-anchor: middle; paint-order: stroke; stroke: var(--bg); pointer-events: all; }
   .job.bounty { fill: var(--red); }
   .dimmed { opacity: 0.35; }
