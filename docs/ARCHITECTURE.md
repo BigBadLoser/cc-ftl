@@ -344,7 +344,7 @@ palette.json    the single palette, read by Blender scripts and the game
   economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
   below), `structure` (faction tile looks, see below), `galley`
-  (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
+  (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below), `starmap` (the map's pictures, see below) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
 - **Wall corner fills (`walls`, the 47-tile blob set):** wall and hull pieces are picked by the 4-neighbour mask
   (N1 E2 S4 W8) plus corner bits (`tiles.ts` `wallCorners`: NE 1, SE 2, SW 4, NW 8, set when both arms beside the
@@ -594,6 +594,29 @@ palette.json    the single palette, read by Blender scripts and the game
     `fx.ember`, `fx.puff.*`, `fx.ice`) stay in env.
   - Until the renderer is updated, the shots and fire already show in game (same ids) but drawn the old way: additive,
     single frame for the shots, the old one-sprite flash.
+- **Starmap art (`starmap` family, sheet `starmap`; `sprites/starmap.py`, `starmap_kit.py`, `starmap_bodies.py`,
+  `starmap_icons.py`, `starmap_fleets.py`; preview `review/starmap_preview.py`; built in both sets, not wired yet):** pipeline
+  sprites for the pictures the starmap draws in code today. Lanes, node pips, territory outlines and labels stay UI.
+  - Every sprite has a fixed square frame with the anchor at its centre, so the map places and scales it without knowing what
+    was drawn. Sizes below are world px (what `compose.ts` hands out for both sets; the 1x frames are half in the 1x file).
+  - Bodies, `starmap.body.<kind>.v0..v2` and `starmap.body.<kind>` (= v0), kinds `star`, `red_dwarf`, `blue_giant`,
+    `gas_giant`, `black_hole`, `nebula`: 192 px frame, body radius 60 px. Draw at scale `r / 60` (`layout.ts` `BODY_SIZE`),
+    centred on the body; halos, the ring and the disc reach 1.6 r. Pick the variant by sector id. Stars, the black hole's
+    disc and the nebula glow; the gas giant has no glow and is outlined. The nebula is glow only (its colour pixels are
+    empty): draw it under the nodes.
+  - Structures, `starmap.struct.<kind>`, kinds `station_trade`, `station_military`, `station_research`, `den`, `asteroids`,
+    `derelict` (`content/galaxy.ts` `structures`; a pirate-owned station is the den): 48 px frame, for about 16-20 screen px.
+  - Fleets, `starmap.fleet.<role>.d0..d7`, roles `patrol`, `pirate`, `raider`, `trader`, `miner`, `player`: 40 px frame.
+    `d0` points east on screen, then clockwise by 45 degrees (the SVG `rotate(heading)` sense), so `d = round(heading / 45)
+    mod 8`. Each heading is the ground heading whose three-quarter projection points that way, so north and south facings
+    are foreshortened like the ships.
+  - `starmap.backdrop`: a 512 px tile of dim 1-2 px stars (anchor 0,0), colour only and transparent between stars; tile it
+    over the map's background.
+  - Tint: stations, the den and fleets paint their livery in the crew key colours (`keyColors`: `team.cloth` panels,
+    `team.accent` trim, 5 shade steps each); recolour them per owner as the crew filter does (`palette.ts`: a pixel s x key
+    becomes the owner's colour on the shade ramp `MULT`, 0.42 .. 1.22). Asteroids and derelicts carry no key colour.
+  - Glow: as everywhere, the glow twin is added over the colour sprite (SVG/CSS: `mix-blend-mode: plus-lighter` or
+    `screen`).
 
 ## UI
 

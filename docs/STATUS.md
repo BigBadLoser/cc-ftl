@@ -37,6 +37,15 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
+## Starmap art (branch `claude/new-session-avb5cj`; art only; not merged; awaiting the user's review and the main thread's wiring)
+
+- Family `starmap` (sheet `starmap`, both sets): sector bodies (6 kinds x 3 variants), structure icons (6), fleet icons
+  (6 roles x 8 headings), a backdrop tile. Contract (frames, scale `r / 60`, headings, tint, glow) in `docs/ARCHITECTURE.md`,
+  "Starmap art". Contact sheet: `python3 -I tools/blender/review/starmap_preview.py public/assets/2x public/assets/1x <out.png>`.
+- Not wired: `src/ui/StarmapBody.svelte`, the badges and the fleet arrows in `StarmapSector.svelte` still draw in code.
+- Open choices for the user: body fill is about 62% of the frame (the brief suggested about 70%) to leave room for the gas
+  giant's ring and the black hole's disc; the backdrop is placed in numpy (dots need no 3D model), not rendered.
+
 ## Playtest clarity (branch `playtest-clarity`, save v43; not merged)
 
 - **Food:** the stock drawer lists Food first (rations stay listed at 0, in red); `buildStock` now counts only the player's ships

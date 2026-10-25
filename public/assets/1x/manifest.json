@@ -4657,6 +4657,10 @@
    "image": "sprites/shuttle.png",
    "glow": "sprites/shuttle.glow.png"
   },
+  "starmap": {
+   "image": "sprites/starmap.png",
+   "glow": "sprites/starmap.glow.png"
+  },
   "storage_set": {
    "image": "sprites/storage_set.png",
    "glow": "sprites/storage_set.glow.png"
@@ -99915,6 +99919,1500 @@
    "footprint": [
     2,
     2
+   ],
+   "glow": true
+  },
+  "starmap.backdrop": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 256,
+    "h": 256
+   },
+   "anchor": {
+    "x": 0,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.black_hole": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 258,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.black_hole.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 355,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.black_hole.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 452,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.black_hole.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 549,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.blue_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 646,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.blue_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 743,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.blue_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 840,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.blue_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 937,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.gas_giant": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1034,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.gas_giant.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1131,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.gas_giant.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1228,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.gas_giant.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1325,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.body.nebula": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1422,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.nebula.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1519,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.nebula.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1616,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.nebula.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1713,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.red_dwarf": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1810,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.red_dwarf.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 1907,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.red_dwarf.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2004,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.red_dwarf.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2101,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2198,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star.v0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2295,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star.v1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2392,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.body.star.v2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2489,
+    "y": 1,
+    "w": 96,
+    "h": 96
+   },
+   "anchor": {
+    "x": 48,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2736,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2757,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2778,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2799,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2820,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2841,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2862,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.miner.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2883,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2904,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2925,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2946,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2967,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2988,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3009,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3030,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.patrol.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3051,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3072,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3093,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3114,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3135,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3156,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3177,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3198,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.pirate.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3219,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3240,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3261,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3282,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3303,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3324,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3345,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3366,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.player.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3387,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3408,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3429,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3450,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3471,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3492,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3513,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3534,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.raider.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3555,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d0": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3576,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d1": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3597,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d2": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3618,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.fleet.trader.d3": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3639,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d4": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3660,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d5": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3681,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d6": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3702,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.fleet.trader.d7": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 3723,
+    "y": 1,
+    "w": 20,
+    "h": 20
+   },
+   "anchor": {
+    "x": 10,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.struct.asteroids": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2586,
+    "y": 1,
+    "w": 24,
+    "h": 24
+   },
+   "anchor": {
+    "x": 12,
+    "y": 12
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "starmap.struct.den": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2611,
+    "y": 1,
+    "w": 24,
+    "h": 24
+   },
+   "anchor": {
+    "x": 12,
+    "y": 12
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.struct.derelict": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2636,
+    "y": 1,
+    "w": 24,
+    "h": 24
+   },
+   "anchor": {
+    "x": 12,
+    "y": 12
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.struct.station_military": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2661,
+    "y": 1,
+    "w": 24,
+    "h": 24
+   },
+   "anchor": {
+    "x": 12,
+    "y": 12
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.struct.station_research": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2686,
+    "y": 1,
+    "w": 24,
+    "h": 24
+   },
+   "anchor": {
+    "x": 12,
+    "y": 12
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "starmap.struct.station_trade": {
+   "kind": "static",
+   "sheet": "starmap",
+   "frame": {
+    "x": 2711,
+    "y": 1,
+    "w": 24,
+    "h": 24
+   },
+   "anchor": {
+    "x": 12,
+    "y": 12
+   },
+   "footprint": [
+    1,
+    1
    ],
    "glow": true
   },
