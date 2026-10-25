@@ -1,0 +1,59 @@
+{
+  "nativeTile": [
+    64,
+    32
+  ],
+  "displayGrid": [
+    128,
+    64
+  ],
+  "displayScale": 2,
+  "supersample": 4,
+  "cyclesSamples": 4,
+  "preview": false,
+  "cameraEulerDegrees": [
+    60,
+    0,
+    45
+  ],
+  "cameraYaw": 45,
+  "cameraElevation": 30,
+  "sunEnergy": 3.9,
+  "sunShadows": false,
+  "ambient": 0.15,
+  "viewTransform": "Standard",
+  "look": "None",
+  "filterWidth": 0.009999999776482582,
+  "maxBounces": 0,
+  "outline": "standard prop, 1 native pixel",
+  "palette": "env / extra=False + refinery material entries",
+  "maxSheet": 4096,
+  "blenderVersion": "4.2.9 LTS",
+  "pinnedBlender": "4.2.9",
+  "threadsFlag": "2",
+  "pipeline": {
+    "pipelineCommit": "e8c5090664615a9c96cf454f753ce7297e042184",
+    "pipelineFiles": {
+      "tools/blender/sprites/core.py": "2ed9454ce078ca273ac90e0abf5e1de35f1bb7854ad0fe56d30c387a70d2709a",
+      "tools/blender/sprites/post.py": "5c66a0b568b6585e6362f3324c2833398bb7d27fdd03c67c1f7eb27c4aef336a",
+      "tools/blender/sprites/env_build.py": "b0d78affcd3adc33f5fa8e9df856ef7bbfbcaeca3dd7d1946cf1db8f7ccd7e8e",
+      "tools/blender/sprites/pack.py": "1e4b478f6aba0a57e3818d0d7bfc7091f2b3cb3b3046c3adefcc5bcbb7bb42fb",
+      "tools/blender/sprites/scale.py": "e98bfd8dcd64b0447c81326d9fb714d8252d54339364a71219a0b987b29d68c4",
+      "tools/blender/sprites/cmbkit.py": "d2738e9018985d8588752612660599a50037a18489b750b011760e117839b3e4",
+      "tools/blender/lib/palette.py": "277815512ad48dcb2bcf877530358f9963788bfa80edf5e0d977feee4c6edcc4",
+      "tools/blender/palette_extra.json": "c54912d2f9c002f7c187c821ec394a82a73b61f13e9b2b35f80230e582790544",
+      "tools/blender/setup.sh": "4f7322b7749a263fb975bf298d476d0f33d189fc804518515c55c622bc04530b",
+      "palette.json": "702f0f4388bf6badf4a9a761be077b04c59e6f2538c20c6907215f3ab2718495"
+    },
+    "modelFiles": {
+      "refinery_asset.py": "e2418cab062b166440239bb54348e323cc543c5fefffee5277bb019d5d0e1f54",
+      "refinery_revision_b.py": "c4ed97a536752ebb01aec00eb1f47b016aa2262f4b88f9b6613d45bc7517b73c",
+      "refinery_finish.py": "8f05426964104e7b66325b125650fa9431682bf3c61632b09dd4d8c857d14aff",
+      "refinery_operating.py": "f40da0e64ddc4e58276911b131240ad3880813736849ef11f0fc8d0b5fdf5be9",
+      "refinery_compact.py": "956af1781c7cf5254a52efe3c00991119030a1ebe940d9d1a59e19104b478dbc",
+      "refinery_blockout.py": "e39e71ae4c5d240c7e99ce96cd83cfe4f417ccd3fad2d281897489b16a93215a"
+    },
+    "exporter": "8e557556661b361a1b37f2dc90a9459201864da11cd9591191bc77bfef963142"
+  },
+  "buildHash": "73401e2fe38983cb99c917fc0b71bd4efae0de1001ad7e3852bc7243397de211"
+}

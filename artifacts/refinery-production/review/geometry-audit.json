@@ -1,0 +1,14 @@
+{
+  "approvedVertexDigestMatches": true,
+  "approvedVertexDigest": "bff6101534674e3f4314cb930be5fc2ce1a8acce6753ca35ff7072c07d3aae78",
+  "productionGeometryChange": "Only terminal upper arm/pod/controls move 0.12 along local +v for access reach.",
+  "changedVertices": 232,
+  "vertexCount": 8790,
+  "heightChange": 0,
+  "materialAttributesUnchanged": true,
+  "bounds": [
+    3.6700000762939453,
+    2.616457939147949,
+    1.7938666343688965
+  ]
+}

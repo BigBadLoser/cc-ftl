@@ -1,6 +1,36 @@
 # Fresh 3x4 refinery mockup
 
-## Current: preserved A / B material preview
+## Current: final standalone production pack
+
+The user approved the geometry, materials, rotations and operating-state loop,
+then authorized final export using the other modules' settings and sheet sizes.
+The finished pack is `artifacts/refinery-production/`, with detailed handoff in
+its `README.md`; the downloadable bundle is `artifacts/refinery-production.zip`.
+
+Production uses current main e8c50906, which now ships 64x32-native art displayed
+2x on the 128x64 grid. It uses the project-pinned Blender 4.2.9 LTS, SS4/four
+samples, the shared camera/light defaults and standard `env_build` / `pack`
+functions. It does not use the previews' SS2/shadow override or their Blender
+4.3.2 binary. Historical 128x64-native previews below remain preserved.
+
+There are 24 final frames in matching 4096x126 colour/glow atlases, with 31
+manifest entries including aliases. The six states in each orientation share
+one fixed frame size and front-most-tile anchor. The fragment header matches the
+current 1x manifest. Shader, source and pipeline hashes are recorded.
+
+The placement audit found the existing access [3,1] was at the wrong end. The
+handoff requires [3,3]; no `src/` changes were made. `refinery_asset.py` moves the
+console outward by 0.12 within the footprint for reach, retaining its height.
+The geometry audit verifies that only those terminal vertices move, and that
+the original approved geometry and material attributes otherwise match exactly.
+
+The final atlas is validated pixel-for-pixel against the raw frames, with clear
+gutters, matched glow layout, zero unpowered glow and correct rotated bounds.
+`review/placement.png` composes the actual atlas with shipped crew/floor art at
+the exported anchors. Final integration, state selection and application access
+update remain a separate task.
+
+## Preserved design iteration history
 
 A preserves the v2 open-cradle model, parameters, Blender scene and render
 byte-for-byte. The rejected wedge B has been removed. Its replacement is a new

@@ -1,0 +1,41 @@
+{
+  "complete": true,
+  "buildHash": "73401e2fe38983cb99c917fc0b71bd4efae0de1001ad7e3852bc7243397de211",
+  "settings": "settings.json",
+  "uniqueFrames": 24,
+  "manifestEntries": 31,
+  "frameSets": {
+    "r0": {
+      "w": 159,
+      "h": 117,
+      "anchor": {
+        "x": 70,
+        "y": 124
+      }
+    },
+    "r1": {
+      "w": 175,
+      "h": 123,
+      "anchor": {
+        "x": 106,
+        "y": 130
+      }
+    },
+    "r2": {
+      "w": 159,
+      "h": 124,
+      "anchor": {
+        "x": 57,
+        "y": 125
+      }
+    },
+    "r3": {
+      "w": 175,
+      "h": 117,
+      "anchor": {
+        "x": 101,
+        "y": 118
+      }
+    }
+  }
+}

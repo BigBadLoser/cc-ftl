@@ -1,0 +1,32 @@
+{
+  "id": "module.refinery.r0.active.f1",
+  "rotation": 0,
+  "state": "working",
+  "frame": 1,
+  "footprint": [
+    3,
+    4
+  ],
+  "gridBounds": [
+    [
+      -2.136457920074463,
+      -3.3600001335144043,
+      0.0
+    ],
+    [
+      0.48000001907348633,
+      0.309999942779541,
+      1.7938666343688965
+    ]
+  ],
+  "glowPixels": 76,
+  "buildHash": "73401e2fe38983cb99c917fc0b71bd4efae0de1001ad7e3852bc7243397de211",
+  "anchor": {
+    "x": 70,
+    "y": 124
+  },
+  "size": [
+    159,
+    117
+  ]
+}

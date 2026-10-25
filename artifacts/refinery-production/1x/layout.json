@@ -1,0 +1,130 @@
+{
+  "r0": {
+    "rotation": 0,
+    "footprint": [
+      3,
+      4
+    ],
+    "centreFromFront": [
+      -1.0,
+      -1.5
+    ],
+    "accessTile": [
+      3,
+      3
+    ],
+    "accessFromFront": [
+      1,
+      0
+    ],
+    "controlsXY": [
+      [
+        2.41,
+        2.7
+      ],
+      [
+        2.41,
+        2.3
+      ]
+    ],
+    "nearestControlDistance": 0.6618912297349163,
+    "controlHeight": 0.874,
+    "terminalEdgeClearance": 0.020000000000000018
+  },
+  "r1": {
+    "rotation": 1,
+    "footprint": [
+      4,
+      3
+    ],
+    "centreFromFront": [
+      -1.5,
+      -1.0
+    ],
+    "accessTile": [
+      0,
+      3
+    ],
+    "accessFromFront": [
+      -3,
+      1
+    ],
+    "controlsXY": [
+      [
+        0.2999999999999998,
+        2.41
+      ],
+      [
+        0.7000000000000002,
+        2.41
+      ]
+    ],
+    "nearestControlDistance": 0.6618912297349163,
+    "controlHeight": 0.874,
+    "terminalEdgeClearance": 0.020000000000000018
+  },
+  "r2": {
+    "rotation": 2,
+    "footprint": [
+      3,
+      4
+    ],
+    "centreFromFront": [
+      -1.0,
+      -1.5
+    ],
+    "accessTile": [
+      -1,
+      0
+    ],
+    "accessFromFront": [
+      -3,
+      -3
+    ],
+    "controlsXY": [
+      [
+        -0.41000000000000014,
+        0.2999999999999998
+      ],
+      [
+        -0.41000000000000014,
+        0.7000000000000002
+      ]
+    ],
+    "nearestControlDistance": 0.6618912297349163,
+    "controlHeight": 0.874,
+    "terminalEdgeClearance": 0.020000000000000018
+  },
+  "r3": {
+    "rotation": 3,
+    "footprint": [
+      4,
+      3
+    ],
+    "centreFromFront": [
+      -1.5,
+      -1.0
+    ],
+    "accessTile": [
+      3,
+      -1
+    ],
+    "accessFromFront": [
+      0,
+      -3
+    ],
+    "controlsXY": [
+      [
+        2.7,
+        -0.41000000000000014
+      ],
+      [
+        2.3,
+        -0.41000000000000014
+      ]
+    ],
+    "nearestControlDistance": 0.6618912297349163,
+    "controlHeight": 0.874,
+    "terminalEdgeClearance": 0.020000000000000018
+  }
+}

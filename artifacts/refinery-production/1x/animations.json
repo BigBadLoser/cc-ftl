@@ -1,0 +1,42 @@
+{
+  "module.refinery.r0.active": {
+    "frames": [
+      "module.refinery.r0.active",
+      "module.refinery.r0.active.f1",
+      "module.refinery.r0.active.f2",
+      "module.refinery.r0.active.f3"
+    ],
+    "fps": 4,
+    "loop": true
+  },
+  "module.refinery.r1.active": {
+    "frames": [
+      "module.refinery.r1.active",
+      "module.refinery.r1.active.f1",
+      "module.refinery.r1.active.f2",
+      "module.refinery.r1.active.f3"
+    ],
+    "fps": 4,
+    "loop": true
+  },
+  "module.refinery.r2.active": {
+    "frames": [
+      "module.refinery.r2.active",
+      "module.refinery.r2.active.f1",
+      "module.refinery.r2.active.f2",
+      "module.refinery.r2.active.f3"
+    ],
+    "fps": 4,
+    "loop": true
+  },
+  "module.refinery.r3.active": {
+    "frames": [
+      "module.refinery.r3.active",
+      "module.refinery.r3.active.f1",
+      "module.refinery.r3.active.f2",
+      "module.refinery.r3.active.f3"
+    ],
+    "fps": 4,
+    "loop": true
+  }
+}

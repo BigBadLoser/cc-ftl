@@ -1,0 +1,76 @@
+{
+  "asset": "module.refinery",
+  "footprint": [
+    3,
+    4
+  ],
+  "currentAccess": [
+    3,
+    1
+  ],
+  "requiredAccess": [
+    3,
+    3
+  ],
+  "requiredContentChange": "module.refinery.access = [3, 3] when integrating; src is untouched in this pack",
+  "terminalOutwardAdjustment": 0.12,
+  "terminalHeightUnchanged": true,
+  "stateSelection": {
+    "poweredIdle": "module.refinery.rN",
+    "unpowered": "module.refinery.rN.unpowered",
+    "working": "module.refinery.rN.active, plus animations.json frames"
+  },
+  "runtimeNote": "The current module chain needs explicit unpowered and animated-frame selection; the active base already resolves as a static asset.",
+  "renderScale": "Native 64x32 1x art, drawn at 2x on the 128x64 grid; merge into the 1x manifest.",
+  "uniqueFrames": 24,
+  "manifestEntriesIncludingAliases": 31,
+  "aliases": {
+    "module.refinery.r0.active.f0": "module.refinery.r0.active",
+    "module.refinery.r1.active.f0": "module.refinery.r1.active",
+    "module.refinery.r2.active.f0": "module.refinery.r2.active",
+    "module.refinery.r3.active.f0": "module.refinery.r3.active",
+    "module.refinery": "module.refinery.r0",
+    "module.refinery.active": "module.refinery.r0.active",
+    "module.refinery.unpowered": "module.refinery.r0.unpowered"
+  },
+  "frameSets": {
+    "r0": {
+      "w": 159,
+      "h": 117,
+      "anchor": {
+        "x": 70,
+        "y": 124
+      }
+    },
+    "r1": {
+      "w": 175,
+      "h": 123,
+      "anchor": {
+        "x": 106,
+        "y": 130
+      }
+    },
+    "r2": {
+      "w": 159,
+      "h": 124,
+      "anchor": {
+        "x": 57,
+        "y": 125
+      }
+    },
+    "r3": {
+      "w": 175,
+      "h": 117,
+      "anchor": {
+        "x": 101,
+        "y": 118
+      }
+    }
+  },
+  "nativeSheetSizes": {
+    "refinery": [
+      4096,
+      126
+    ]
+  }
+}

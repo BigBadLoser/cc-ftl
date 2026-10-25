@@ -1,0 +1,102 @@
+{
+  "nativeTile": [
+    64,
+    32
+  ],
+  "displayGrid": [
+    128,
+    64
+  ],
+  "blender": "4.2.9 LTS",
+  "supersample": 4,
+  "cyclesSamples": 4,
+  "sheetSizes": {
+    "refinery": [
+      4096,
+      126
+    ]
+  },
+  "frameSets": {
+    "r0": {
+      "w": 159,
+      "h": 117,
+      "anchor": {
+        "x": 70,
+        "y": 124
+      }
+    },
+    "r1": {
+      "w": 175,
+      "h": 123,
+      "anchor": {
+        "x": 106,
+        "y": 130
+      }
+    },
+    "r2": {
+      "w": 159,
+      "h": 124,
+      "anchor": {
+        "x": 57,
+        "y": 125
+      }
+    },
+    "r3": {
+      "w": 175,
+      "h": 117,
+      "anchor": {
+        "x": 101,
+        "y": 118
+      }
+    }
+  },
+  "uniqueFrames": 24,
+  "manifestEntries": 31,
+  "access": [
+    3,
+    3
+  ],
+  "rotations": {
+    "r0": {
+      "accessTile": [
+        3,
+        3
+      ],
+      "nearestControlDistance": 0.6618912297349163,
+      "controlHeight": 0.874,
+      "framesAligned": true
+    },
+    "r1": {
+      "accessTile": [
+        0,
+        3
+      ],
+      "nearestControlDistance": 0.6618912297349163,
+      "controlHeight": 0.874,
+      "framesAligned": true
+    },
+    "r2": {
+      "accessTile": [
+        -1,
+        0
+      ],
+      "nearestControlDistance": 0.6618912297349163,
+      "controlHeight": 0.874,
+      "framesAligned": true
+    },
+    "r3": {
+      "accessTile": [
+        3,
+        -1
+      ],
+      "nearestControlDistance": 0.6618912297349163,
+      "controlHeight": 0.874,
+      "framesAligned": true
+    }
+  },
+  "atlasRoundTripExact": true,
+  "glowAlignedAndDisplayOnly": true,
+  "unpoweredEmissionZero": true,
+  "atlasGuttersClear": true,
+  "footprintsAndAnchorsVerified": true
+}
