@@ -4,14 +4,17 @@
    * route, jumps reachable now, and the exits from your sector labelled where they lead (pinned inside the view).
    * `px(v)` converts screen pixels to map units; `view` is the visible map rectangle. Colours: starmapStyle.ts.
    */
-  import type { UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
+  import type { UiStarArt, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import StarmapBody from './StarmapBody.svelte';
+  import StarmapSprite from './StarmapSprite.svelte';
+  import { toneTint } from './starmapTint';
+  import { strHash } from './starmapArtIds';
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
-  import { pixelArrow, pixelDiamond, pixelLine, pixelOutline, pixelPolyline, pixelSquare } from './starmapPixel';
+  import { pixelArrow, pixelDiamond, pixelDiamondRing, pixelLine, pixelOutline, pixelPolyline } from './starmapPixel';
 
-  let { map, px, s, view, current, route, routePts, selected, hover, only = null, ship, inset = 0 }: {
-    map: UiStarmap; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
+  let { map, art = null, px, s, view, current, route, routePts, selected, hover, only = null, ship, inset = 0 }: {
+    map: UiStarmap; art?: UiStarArt | null; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
     current: UiStarNode | null; route: UiStarRoute | null; routePts: string; selected: string | null; hover: string | null;
     /** Screen px at the right edge that the side drawer (and the map tools beside it) cover: labels stay clear of it. */
     inset?: number;
@@ -23,7 +26,9 @@
 
   /** The pixel grid: two screen pixels at this zoom (the size of the game's art pixels). Lines step on it, shapes snap to it. */
   const g = $derived(px(2));
-  const sq = (x: number, y: number, r: number) => pixelSquare(x, y, px(r), g);
+  /** Node marks are pixel diamonds (r in screen px): a filled one, and a one-cell outline of the same shape for rings and highlights. */
+  const dia = (x: number, y: number, r: number) => pixelDiamond(x, y, px(r), g);
+  const ring = (x: number, y: number, r: number) => pixelDiamondRing(x, y, px(r), g);
   const clampX = (x: number, m: number) => Math.max(view.x0 + px(m), Math.min(view.x1 - px(inset) - px(m), x));
   const clampY = (y: number, top: number, bottom: number) => Math.max(view.y0 + px(top), Math.min(view.y1 - px(bottom), y));
   /**
@@ -67,13 +72,31 @@
     return map.fleets.map((f) => {
       const k = count.get(f.node) ?? 0;
       count.set(f.node, k + 1);
-      const side = (-135 + k * 55) * (Math.PI / 180);
+      // Above the node, fanning left and right (structure icons sit to its right, job marks to its left).
+      const side = ([-90, -135, -45, -160, -20][k % 5] as number) * (Math.PI / 180);
       const heading = f.tx !== null && f.ty !== null ? (Math.atan2(f.ty - f.y, f.tx - f.x) * 180) / Math.PI : -90;
       return { f, ox: Math.cos(side), oy: Math.sin(side), heading };
     });
   });
+  /**
+   * Icons at one shared pixel density, so structures and fleets look like the same art: a whole number of device px per art px
+   * (about one CSS px, rounded to the screen's density), never shrunk. In map units: structures, fleets.
+   */
+  const iconPx = (frame: number) => (frame * Math.max(1, Math.round(dpr))) / dpr;
+  const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+  const structPx = $derived(px(iconPx(art?.frames['starmap.struct.den']?.w ?? 48)));
+  /** The radius structures orbit at: clear of the node's pip and rings. */
+  const orbitR = $derived(px(40));
+  const fleetPx = $derived(px(iconPx(art?.frames['starmap.fleet.patrol.d0']?.w ?? 40)));
+  /** An icon heading (degrees, the SVG sense: 0 east, clockwise) as one of the eight `d` frames. */
+  const dir = (deg: number) => (((Math.round(deg / 45) % 8) + 8) % 8);
   /** A node shows its name when it matters (yours, a jump away, picked, under the cursor) or when zoomed in. */
-  const named = (n: UiStarNode) => n.known && (n.current || n.reachable || selected === n.id || hover === n.id || s > 1.2);
+  /** A node shows its name only when it matters: yours, the picked one, the one under the cursor. */
+  const named = (n: UiStarNode) => n.known && (n.current || selected === n.id || hover === n.id);
+  /** Structure icons orbit their node: one lap a minute, each node from its own starting angle; still with reduced motion. */
+  const ORBIT_SEC = 60;
+  const still = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const phase = (id: string) => strHash(id) % 360;
 </script>
 
 {#each map.sectors as sec (sec.id)}
@@ -81,7 +104,7 @@
   <path d={pixelOutline(sec.outline, g)} class="outline" class:known={sec.known} class:cur={sec.id === map.currentSector} style={`--c: ${toneColor(sec.tone)}`} />
 {/each}
 {#each map.sectors as sec (sec.id)}
-  {#if sec.known && sec.body}<StarmapBody kind={sec.body.kind} x={sec.body.x} y={sec.body.y} r={sec.body.r * 0.75} dim={sec.id === map.currentSector ? 1 : 0.55} />{/if}
+  {#if sec.known && sec.body}<StarmapBody {art} seed={sec.id} kind={sec.body.kind} x={sec.body.x} y={sec.body.y} r={sec.body.r * 0.75} dim={sec.id === map.currentSector ? 1 : 0.55} />{/if}
 {/each}
 <!-- Lanes fade out toward the edges of the view, so long lanes leaving the sector do not crowd the frame. -->
 <defs>
@@ -98,6 +121,14 @@
     <path d={pixelLine(e.ax, e.ay, e.bx, e.by, g, { w: e.kind === 'gate' ? 2 : 1, dash: e.kind === 'rift' ? [1, 3] : undefined })} class="lane exit {e.kind}" />
   {/each}
 </g>
+{#if art}
+  {#each map.exits.filter((e) => e.kind !== 'lane') as e (e.id)}
+    <!-- Just out from the gateway, on the lane where it leaves the sector (the far end is usually off the view). -->
+    {@const len = Math.hypot(e.bx - e.ax, e.by - e.ay) || 1}
+    {@const out = Math.min(len / 2, px(48))}
+    <StarmapSprite {art} id={`starmap.exit.${e.kind}`} x={e.ax + ((e.bx - e.ax) / len) * out} y={e.ay + ((e.by - e.ay) / len) * out} size={structPx * 1.25} />
+  {/each}
+{/if}
 {#if current && !ship}
   {#each map.nodes.filter((n) => n.reachable && (!only || only.has(n.id))) as n (n.id)}
     <path d={pixelLine(current.x, current.y, n.x, n.y, g)} class="lane reach" />
@@ -110,43 +141,71 @@
   {@const dimmed = !!only && !only.has(n.id) && !n.current}
   {#if n.known}
     <g class:dimmed>
-      {#if n.hostiles}<rect {...sq(n.x, n.y, 9)} class="hostile" />{/if}
-      <rect {...sq(n.x, n.y, n.current ? 5 : 4)} class="node" class:visited={n.visited} class:cur={n.current} />
-      {#if n.current && !ship}<rect {...sq(n.x, n.y, 11)} class="pulse" />{/if}
-      {#if n.reachable && !ship && (!only || only.has(n.id))}<rect {...sq(n.x, n.y, 8)} class="reachable" />{/if}
-      {#if n.current && !ship}<rect {...sq(n.x, n.y, 11)} class="here" />{/if}
-      {#if hover === n.id}<rect {...sq(n.x, n.y, 12)} class="hov" />{/if}
-      {#if s > 0.7}
+      {#if n.hostiles}<path d={dia(n.x, n.y, 9)} class="hostile" /><path d={ring(n.x, n.y, 9)} class="hostile-ring" />{/if}
+      <path d={dia(n.x, n.y, n.current ? 6 : 5)} class="node" class:visited={n.visited} class:cur={n.current} />
+      {#if n.current && !ship}<path d={ring(n.x, n.y, 13)} class="pulse" />{/if}
+      {#if n.reachable && !ship && (!only || only.has(n.id))}<path d={ring(n.x, n.y, 10)} class="reachable" />{/if}
+      {#if n.current && !ship}<path d={ring(n.x, n.y, 13)} class="here" />{/if}
+      {#if hover === n.id}<path d={ring(n.x, n.y, 15)} class="hov" />{/if}
+      {#if s > 0.7 && art}
+        {@const a0 = phase(n.id)}
+        <g transform="translate({n.x} {n.y})">
+          <g transform="rotate({a0})">
+            {#if !still}<animateTransform attributeName="transform" type="rotate" from={a0} to={a0 + 360} dur="{ORBIT_SEC}s" repeatCount="indefinite" />{/if}
+            {#each n.icons as ic, i (i)}
+              {@const t = (i / n.icons.length) * Math.PI * 2}
+              <g transform="translate({Math.cos(t) * orbitR} {Math.sin(t) * orbitR})">
+                <!-- Turned back as the ring turns, so the icon stays upright. -->
+                <g transform="rotate({-a0})">
+                  {#if !still}<animateTransform attributeName="transform" type="rotate" from={-a0} to={-a0 - 360} dur="{ORBIT_SEC}s" repeatCount="indefinite" />{/if}
+                  <StarmapSprite {art} id={ic.sprite} x={0} y={0} size={structPx} tint={ic.tone ? toneTint(ic.tone) : null} />
+                </g>
+              </g>
+            {/each}
+          </g>
+        </g>
+      {:else if s > 0.7}
         {#each n.badges as b, i (i)}
           <rect x={n.x + px(9 + i * 13)} y={n.y - px(6)} width={px(12)} height={px(12)} class="chip" style={`fill: ${BADGE[b] ?? 'var(--dim)'}`} />
           <text x={n.x + px(15 + i * 13)} y={n.y + px(3.6)} class="badge" font-size={px(10)}>{b}</text>
         {/each}
       {/if}
-      {#each n.jobs ?? [] as j, i (i)}
-        <path d={pixelDiamond(n.x - px(16), n.y + px(i * 16 - ((n.jobs?.length ?? 1) - 1) * 8), px(7), g)} class="job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job-mark"><title>{j.label}</title></path>
-      {/each}
+      {#if n.jobs?.length}
+        <!-- One "!" for the jobs that end here, beside the pip and inside the orbit: red with a bounty among them, else amber. -->
+        <text x={n.x - px(14)} y={n.y + px(5)} class="job" class:bounty={n.jobs.some((j) => j.kind === 'bounty')} font-size={px(15)} stroke-width={px(3)} data-testid="starmap-job-mark"><title>{n.jobs.map((j) => j.label).join('\n')}</title>!</text>
+      {/if}
       {#if named(n)}<text x={n.x} y={n.y + px(20)} class="nname" class:cur={n.current} font-size={px(13)} stroke-width={px(3)}>{n.name}</text>{/if}
     </g>
   {:else}
-    <rect {...sq(n.x, n.y, 4)} class="unknown" class:dimmed />
+    <path d={dia(n.x, n.y, 5)} class="unknown" class:dimmed /><path d={ring(n.x, n.y, 5)} class="unknown-ring" class:dimmed />
   {/if}
-  {#if selected === n.id}<rect {...sq(n.x, n.y, 14)} class="sel" />{/if}
+  {#if selected === n.id}<path d={ring(n.x, n.y, 17)} class="sel" />{/if}
 {/each}
 {#each marks as m (m.f.id)}
   {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] })} class="lane heading" style={`fill: ${toneColor(m.f.tone)}`} />{/if}
 {/each}
 {#each marks as m (m.f.id)}
-  <g transform={`translate(${m.f.x + m.ox * px(21)} ${m.f.y + m.oy * px(21)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
+  <g transform={`translate(${m.f.x + m.ox * px(54)} ${m.f.y + m.oy * px(54)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
     <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
-    <path d={pixelArrow(m.heading, g, 1.5)} style={`fill: ${toneColor(m.f.tone)}`} />
+    {#if art && art.frames[`starmap.fleet.${m.f.kind}.d0`]}
+      <!-- The sprite takes no pointer events: this catches the hover for the fleet's tooltip. -->
+      <rect x={-fleetPx / 2} y={-fleetPx / 2} width={fleetPx} height={fleetPx} class="hit" />
+      <StarmapSprite {art} id={`starmap.fleet.${m.f.kind}.d${dir(m.heading)}`} x={0} y={0} size={fleetPx} tint={toneTint(m.f.tone)} />
+    {:else}
+      <path d={pixelArrow(m.heading, g, 1.5)} style={`fill: ${toneColor(m.f.tone)}`} />
+    {/if}
     {#if m.f.damaged}<rect x={-px(11)} y={-px(11)} width={px(22)} height={px(22)} class="adrift" />{/if}
   </g>
 {/each}
 {#if ship}
   {@const ang = (Math.atan2(ship.ty - ship.fy, ship.tx - ship.fx) * 180) / Math.PI}
   <path d={pixelLine(ship.fx, ship.fy, ship.x, ship.y, g, { w: 2 })} class="lane trail" />
-  <rect {...sq(ship.x, ship.y, 11)} class="here" />
-  <path d={pixelArrow(ang, g, 2)} transform={`translate(${ship.x} ${ship.y})`} class="ship" />
+  <path d={ring(ship.x, ship.y, 13)} class="here" />
+  {#if art && art.frames['starmap.fleet.player.d0']}
+    <StarmapSprite {art} id={`starmap.fleet.player.d${dir(ang)}`} x={ship.x} y={ship.y} size={fleetPx * 1.25} />
+  {:else}
+    <path d={pixelArrow(ang, g, 2)} transform={`translate(${ship.x} ${ship.y})`} class="ship" />
+  {/if}
 {/if}
 {#each map.sectors as sec (sec.id)}
   {#if sec.known && sec.x > view.x0 && sec.x < view.x1 && sec.y > view.y0 && sec.y < view.y1}
@@ -182,10 +241,10 @@
   .node { fill: var(--dim); }
   .node.visited { fill: var(--text); }
   .node.cur { fill: var(--cyan); }
-  .reachable { fill: none; stroke: var(--green); stroke-width: 2; vector-effect: non-scaling-stroke; }
-  .here { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; }
-  .hov { fill: none; stroke: var(--text); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-  .pulse { fill: none; stroke: var(--cyan); stroke-width: 2; vector-effect: non-scaling-stroke; transform-box: fill-box; transform-origin: center; animation: pulse 2.2s ease-out infinite; pointer-events: none; }
+  .reachable { fill: var(--green); }
+  .here { fill: var(--cyan); }
+  .hov { fill: var(--text); }
+  .pulse { fill: var(--cyan); transform-box: fill-box; transform-origin: center; animation: pulse 2.2s ease-out infinite; pointer-events: none; }
   @keyframes pulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(2.2); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .pulse { display: none; } }
   .ship { fill: var(--cyan); }
@@ -193,11 +252,14 @@
   .lane.heading { fill-opacity: 0.55; }
   .fleet path { stroke: none; }
   .fleet { pointer-events: all; }
+  .hit { fill: transparent; }
   .adrift { fill: none; stroke: var(--amber); stroke-width: 1.2; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
-  .sel { fill: none; stroke: var(--amber); stroke-width: 2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
-  .hostile { fill: color-mix(in srgb, var(--red) 25%, transparent); stroke: var(--red); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-  .unknown { fill: var(--bg); stroke: var(--dim); stroke-opacity: 0.85; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-  .job { fill: var(--amber); }
+  .sel { fill: var(--amber); }
+  .hostile { fill: color-mix(in srgb, var(--red) 25%, transparent); }
+  .hostile-ring { fill: var(--red); }
+  .unknown { fill: var(--bg); }
+  .unknown-ring { fill: var(--dim); fill-opacity: 0.85; }
+  .job { fill: var(--amber); font-family: var(--pixel-font); text-anchor: middle; paint-order: stroke; stroke: var(--bg); pointer-events: all; }
   .job.bounty { fill: var(--red); }
   .dimmed { opacity: 0.35; }
   text { text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-linejoin: round; font-family: var(--head-font); }

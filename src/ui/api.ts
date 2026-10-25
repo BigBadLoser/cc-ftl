@@ -1,4 +1,4 @@
-import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
+import type { UiDeploy, UiJumpWarnings, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
 import type { Command, WorkCategory } from '../sim';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
@@ -785,6 +785,8 @@ export interface UiApi {
   structCosts: Record<string, UiCost[]>;
   /** Icon frames by item id; fills in once the asset manifest is loaded. */
   itemIcons: Subscribable<Record<string, UiIcon>>;
+  /** The starmap's sprites, once loaded (null until then, or without the sheet: the map draws its code shapes). */
+  starmapArt: Subscribable<UiStarArt | null>;
   stock: Subscribable<UiStock[]>;
   storages: Subscribable<UiStorage[]>;
   fabs: Subscribable<UiFab[]>;

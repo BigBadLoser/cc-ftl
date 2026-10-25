@@ -1,11 +1,13 @@
 import { mount } from 'svelte';
 import App from './ui/App.svelte';
 import type { UiApi, UiIcon, UiSession } from './ui/api';
+import type { UiStarArt } from './ui/starmapApi';
 import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
 import { buildModuleDefs } from './app/moduleSnapshot';
 import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
 import { loadItemIcons } from './app/itemIcons';
+import { loadStarmapArt } from './app/starmapArt';
 import { createStore } from './app/store';
 import { overlayLegend, overlayList } from './app/overlayLegend';
 import { createErrorLog } from './app/errors';
@@ -37,6 +39,8 @@ let hook: { onEvents(types: readonly string[]): void } | undefined;
 
 const itemIcons = createStore<Record<string, UiIcon>>({});
 loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e: unknown) => errorLog.push(e));
+const starmapArt = createStore<UiStarArt | null>(null);
+loadStarmapArt().then((v) => starmapArt.set(v)).catch((e: unknown) => errorLog.push(e));
 
 const loop = createLoop({
   sim,
@@ -194,6 +198,7 @@ const api: UiApi = {
   recipes: buildRecipes(sim),
   structCosts: buildStructCosts(sim),
   itemIcons,
+  starmapArt,
   stock: bridge.stock,
   storages: bridge.storages,
   fabs: bridge.fabs,

@@ -213,3 +213,25 @@ export function pixelArrow(deg: number, g: number, scale = 1): string {
   }
   return d;
 }
+
+/**
+ * The outline of a pixel diamond of half-size `r` around (x, y), `w` cells thick: the cells whose distance (|dx| + |dy|, in
+ * cells) from the centre cell is within `w` of the edge, one rect per run. Matches `pixelDiamond` of the same size.
+ */
+export function pixelDiamondRing(x: number, y: number, r: number, g: number, w = 1): string {
+  const ci = Math.round(x / g);
+  const cj = Math.round(y / g);
+  const h = Math.max(1, Math.round(r / g));
+  const inner = Math.max(0, h - w);
+  let d = '';
+  for (let j = -h; j <= h; j++) {
+    const outer = h - Math.abs(j);
+    const hole = inner - Math.abs(j);
+    if (hole < 0) d += cellRect(ci - outer, ci + outer, cj + j, cj + j, g);
+    else {
+      d += cellRect(ci - outer, ci - hole - 1, cj + j, cj + j, g);
+      d += cellRect(ci + hole + 1, ci + outer, cj + j, cj + j, g);
+    }
+  }
+  return d;
+}
