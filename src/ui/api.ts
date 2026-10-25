@@ -1,4 +1,4 @@
-import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute } from './starmapApi';
+import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
 import type { Command, WorkCategory } from '../sim';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
@@ -17,6 +17,12 @@ export interface UiSnapshot {
   seed: number;
   zoom: number;
   sprites: number;
+}
+
+/** The game session: a notice shown once on start (an old save could not be loaded), and why the game was lost (null while it goes on). */
+export interface UiSession {
+  notice: string | null;
+  lost: string | null;
 }
 
 /** The tutorial goal chain: act `act` of `acts`, its title, what finishing it pays (a short line), and its goals. */
@@ -533,12 +539,43 @@ export interface UiTradeOffer {
   balance: number;
 }
 
+/** A person for hire aboard a station (sim galaxy/recruit.ts): `skills` are the role's, `cost` in credits, `coming` while the player's shuttle is fetching them. */
+export interface UiRecruit {
+  key: string;
+  name: string;
+  species: string;
+  role: string;
+  skills: string[];
+  cost: number;
+  coming: boolean;
+}
+
 /** A ship or station the player can hail. */
+/** What a player wants to know about a station before dealing with it (stations only). */
+export interface UiStationInfo {
+  /** Owning faction and the player's standing with it; null for a station without a port. */
+  owner: { name: string; tier: 'friendly' | 'neutral' | 'hostile' } | null;
+  /** Plain services ('Trade', 'Fuel', 'Repair'). */
+  services: string[];
+  jobs: number;
+  hire: number;
+  market: UiStarMarket | null;
+  /** Working airlocks to dock at. */
+  docks: number;
+  guns: number;
+  /** Shield layers. */
+  shields: number;
+  /** Why the alarm is up, or null while calm. */
+  alarm: string | null;
+}
+
 export interface UiTradePartner {
   /** The trader entity: the ShipC entity of a ship, a plain trader entity for a station (no ship). Also the UI key of the node. */
   id: number;
   name: string;
   kind: 'ship' | 'station';
+  /** A station (an immobile ship with a trader): it gets its own panel. */
+  station: boolean;
   /** Trader kind ('Freighter'), or '' if it has no trade profile. */
   role: string;
   trades: boolean;
@@ -555,6 +592,11 @@ export interface UiTradePartner {
   holdCap: number;
   offer: UiTradeOffer | null;
   distance: number;
+  /** People for hire aboard (stations only), and the reject code that would stop a hiring run now ('' if it can go). */
+  recruits: UiRecruit[];
+  hireError: string;
+  /** Stations only. */
+  info?: UiStationInfo;
 }
 
 export interface UiTradeDeal {
@@ -716,6 +758,12 @@ export interface UiError {
 
 /** Everything the UI may call or observe; built in main.ts. */
 export interface UiApi {
+  session: Subscribable<UiSession>;
+  /** Throw this game away and start a new one (reloads the page). */
+  newGame: () => void;
+  /** Go back to the last save, from before the loss (reloads the page). */
+  loadLastSave: () => void;
+  dismissNotice: () => void;
   snapshot: Subscribable<UiSnapshot>;
   errors: Subscribable<UiError[]>;
   inspect: Subscribable<UiInspect | null>;

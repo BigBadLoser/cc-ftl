@@ -190,6 +190,7 @@ export type Command =
   /** Pay a pirate den at the current node to clear the player's notoriety (galaxy/heat.ts). */
   | { type: 'galaxy.clearNotoriety' }
   /** Take a job offered at the player's node (galaxy/jobs.ts), by its offer key; give one up. */
+  | { type: 'crew.hire'; key: string }
   | { type: 'jobs.accept'; key: string }
   | { type: 'jobs.abandon'; id: number }
   /** Break a delivery's crate open on deck: its goods spill out, kept, and the delivery fails. */
