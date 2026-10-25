@@ -96,6 +96,8 @@ describe('station jobs', () => {
     accept(sim, offer!.key);
     const job = sim.galaxy.jobs.find((j) => j.kind === 'bounty')!;
     expect(sim.galaxy.nodes[job.node!]?.contacts.some((c) => c.bounty === job.id && c.name === job.target)).toBe(true);
+    // The issuer marks the target's node on the map.
+    expect(sim.galaxy.discovered[job.node!]).toBeDefined();
     goTo(sim, job.node!);
     const target = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)?.bounty === job.id);
     expect(target).toBeDefined();
