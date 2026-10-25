@@ -6,6 +6,8 @@
 
   let { api, snap }: { api: UiApi; snap: UiSnapshot } = $props();
   let toast = $state('');
+  /** New game asks once: the save is thrown away. */
+  let confirmNew = $state(false);
   let info = $state<UiInspect | null>(null);
   let mods = $state<UiModule[]>([]);
   let foes = $state<UiCombat['enemies']>([]);
@@ -53,6 +55,7 @@
     <dt>Seed</dt><dd>{snap.seed}</dd>
   </dl>
   <div class="btns">
+    <button data-testid="dbg-new-game" class:warn={confirmNew} onclick={() => (confirmNew ? api.newGame() : (confirmNew = true))}>{confirmNew ? 'Discard this game?' : 'New game'}</button>
     <button data-testid="dbg-ignite" disabled={!tile} onclick={ignite}>Ignite selected tile</button>
     <button data-testid="dbg-breach" disabled={!tile} onclick={breach}>Breach selected tile</button>
     <button data-testid="dbg-kill-reactor" onclick={killReactor}>Kill reactor</button>
