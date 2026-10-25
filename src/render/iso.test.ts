@@ -16,8 +16,9 @@ describe('iso', () => {
     expect(tileAt(c.x + 0.31 * TILE_W, c.y + 0.44 * TILE_H)).toEqual({ x: 5, y: 2 });
     expect(tileAt(c.x - 0.31 * TILE_W, c.y - 0.44 * TILE_H)).toEqual({ x: 3, y: 2 });
   });
-  it('is a 2:1 diamond and the art scale follows the tile width', () => {
+  it('is a 2:1 diamond and the art scale is 2 world px per art px', () => {
     expect(TILE_W).toBe(2 * TILE_H);
+    expect(ART_SCALE).toBe(2);
     expect(ART_SCALE).toBe(TILE_W / 64);
   });
 });

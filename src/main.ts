@@ -13,7 +13,6 @@ import { attachInput } from './app/input';
 import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
-import { currentArtScale, setArtScale } from './render/assets/artSet';
 import { createRenderer, type Renderer } from './render/scene';
 import { content } from './content';
 import { BodyC, newGame, ShipC } from './sim';
@@ -203,8 +202,6 @@ const api: UiApi = {
   setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, rect: view.rect }),
   setCombatMarks: (marks) => renderer?.setCombatMarks(marks),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
-  artScale: currentArtScale(),
-  setArtScale: (scale) => setArtScale(scale),
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   setRoofPlayer: (on) => renderer?.setRoofPlayer(on),
   focusFight: (ship) => focusFight(ship),
