@@ -29,13 +29,13 @@ export const industry = {
   arrangements: [
     {
       name: 'refinery floor', weight: 2, walkway: 'long', steps: [
-        { mod: 'module.refinery', count: 'spec', wall: 'long', row: true, with: { mod: 'module.storage_ore', n: 2 } },
+        { mod: 'module.refinery', count: 'spec', wall: 'long', row: true, with: { mod: 'module.storage_ore', n: 2, big: 'module.storage_ore_large' } },
         { mod: 'module.storage_pallet', count: 'fill', pack: true },
       ],
     },
     {
       name: 'ore hall', weight: 1, walkway: 'cross', steps: [
-        { mod: 'module.refinery', count: 'spec', wall: 'any', with: { mod: 'module.storage_ore', n: 1 } },
+        { mod: 'module.refinery', count: 'spec', wall: 'any', with: { mod: 'module.storage_ore', n: 1, big: 'module.storage_ore_large' } },
         { mod: 'module.cargo_container', count: 'fill', pack: true, wall: 'long' },
         { mod: 'module.storage_pallet', count: 'fill', pack: true },
       ],

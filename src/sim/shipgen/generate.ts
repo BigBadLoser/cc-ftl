@@ -82,7 +82,12 @@ function fitOut(
   const stockUp = (idx: number, spec: RoomSpec | undefined): void => {
     const id = lay.modules[idx]?.def as string;
     if (spec?.stock && defs[id]?.storage) {
-      out.stock.set(idx, (spec.items ?? f.stock).map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
+      const items = spec.items ?? f.stock;
+      // An ore bin holds one ore (its sprite shows one kind): pick one from the room's stock list.
+      const art = defs[id]?.storageArt;
+      const ores = art ? items.filter((s) => art[s.item]) : [];
+      const pick = ores.length > 0 ? [ores[rng.int(0, ores.length - 1)] as (typeof items)[number]] : items;
+      out.stock.set(idx, pick.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
     }
   };
   // Planned modules per room and def, for steps that place only a share of them.

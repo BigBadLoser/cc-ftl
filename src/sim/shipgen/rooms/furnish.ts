@@ -302,10 +302,10 @@ function companions(lay: Layout, rng: Rng, room: number, host: PlacedModule, id:
  * Set up to `n` bigger companions (ore bins) flush against a placed host, away from its access tile (the working end, so
  * the bins sit at the feed end), each turned so its own access tile is open floor. Every placement keeps the ship reachable.
  */
-export function flank(lay: Layout, rng: Rng, room: number, host: PlacedModule, id: string, n: number): void {
+export function flank(lay: Layout, rng: Rng, room: number, host: PlacedModule, id: string, n: number): number {
   const hdef = lay.defs[host.def] as ModuleDef;
   const def = lay.defs[id];
-  if (!def) return;
+  if (!def) return 0;
   const [hw, hh] = rotatedSize(hdef, host.rot);
   const work = accessTile(hdef, host.x, host.y, host.rot);
   // Tiles other modules are worked from: never covered.
@@ -320,7 +320,7 @@ export function flank(lay: Layout, rng: Rng, room: number, host: PlacedModule, i
   // Second pass: if the reserved walkway leaves no flush spot (a tight hall), a bin may take walkway floor, as long as
   // every tile stays reachable.
   for (const relax of [false, true]) {
-    if (placed >= n) return;
+    if (placed >= n) break;
     const keep = lay.keep.slice();
     if (relax) for (const i of lay.roomTiles(room)) lay.keep[i] = 0;
     const cands: { x: number; y: number; rot: number; v: number }[] = [];
@@ -354,6 +354,7 @@ export function flank(lay: Layout, rng: Rng, room: number, host: PlacedModule, i
     // Later furniture leaves each bin's working tile clear.
     for (const i of reserve.splice(0)) lay.keep[i] = (lay.keep[i] as number) + 1;
   }
+  return placed;
 }
 
 /** True if the step should be skipped in this room. */
@@ -372,7 +373,13 @@ export function furnish(
     if (s.count === 'spec') {
       // The planned modules are all in: set each one's flush companions (ore bins beside a refinery).
       const w = s.with;
-      if (w) for (const host of roomModules(lay, room).filter((m) => m.def === d.picks[si])) flank(lay, rng, room, host, w.mod, w.n);
+      if (w) {
+        for (const host of roomModules(lay, room).filter((m) => m.def === d.picks[si])) {
+          // One big piece first where it fits, then the small ones for the rest.
+          const big = w.big ? flank(lay, rng, room, host, w.big, 1) : 0;
+          if (big < w.n) flank(lay, rng, room, host, w.mod, w.n - big);
+        }
+      }
       return;
     }
     const id = d.picks[si] as string;

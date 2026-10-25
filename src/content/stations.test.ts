@@ -34,7 +34,7 @@ describe('mining stations', () => {
       const flush = (a: ReturnType<typeof box>, b: ReturnType<typeof box>): boolean =>
         ((a.x1 === b.x0 || b.x1 === a.x0) && Math.min(a.y1, b.y1) > Math.max(a.y0, b.y0))
         || ((a.y1 === b.y0 || b.y1 === a.y0) && Math.min(a.x1, b.x1) > Math.max(a.x0, b.x0));
-      const bins = mods.filter((m) => m.def === 'module.storage_ore');
+      const bins = mods.filter((m) => m.def.startsWith('module.storage_ore'));
       const refineries = mods.filter((m) => m.def === 'module.refinery');
       expect(refineries.length, `${size} ${seed}`).toBeGreaterThan(0);
       for (const r of refineries) expect(bins.some((b) => flush(box(r), box(b))), `${size} ${seed} refinery ${r.x},${r.y}`).toBe(true);

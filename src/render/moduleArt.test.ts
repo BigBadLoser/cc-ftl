@@ -106,7 +106,7 @@ describe('ore bin art', () => {
     expect(head(slots('item.iron_ore', 3))).toBe('module.storage_ore.r1.iron.fill1');
     expect(head(slots('item.ice', 12))).toBe('module.storage_ore.r1.ice.fill2');
     expect(head(slots('item.rare_ore', 20))).toBe('module.storage_ore.r1.rare.full');
-    expect(head([{ item: 'item.iron_ore', count: 5 }, { item: 'item.rare_ore', count: 40 }])).toBe('module.storage_ore.r1.rare.fill1');
+    expect(head([{ item: 'item.iron_ore', count: 90 }, { item: 'item.rare_ore', count: 4 }, { item: 'item.rare_ore', count: 4 }])).toBe('module.storage_ore.r1.rare.fill1');
   });
   it('ignores items with no ore art and falls back to the plain asset', () => {
     expect(head([{ item: 'item.metal', count: 5 }, { item: 'item.ice', count: 1 }])).toBe('module.storage_ore.r1.ice.fill1');
