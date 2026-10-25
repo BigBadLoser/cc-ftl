@@ -4,8 +4,8 @@
   item.cargo_crate.held  the small version a crew member carries, sized like the other .held sprites
 
 A rugged moulded transport case: a low, chunky off-white shell with rounded moulded edges, a lid with a pronounced lip
-and two raised ribs, dark rubber guards on the corners, fold-down bar handles on the ends, flush latches, and a red strap
-over the lid held by a glowing seal tag: sealed, someone else's. Origin = centre of the tile at floor level, as items.py;
+and two raised ribs, dark rubber guards on the corners, fold-down bar handles on the ends, flush latches, one of them
+closed with a seal that glows red: sealed, someone else's. Origin = centre of the tile at floor level, as items.py;
 the camera sees the +x end and the +y long side. The renderer finds both ids already (itemView.ts stackAssets /
 heldAssets)."""
 from . import core
@@ -26,17 +26,15 @@ def case(m, L, W, H, detail=True):
         for sy in (-1, 1):
             m.box((sx * (L / 2 - g * 0.35), sy * (W / 2 - g * 0.35), 0), (g, g, H * 0.97), GUARD, top="steel", base=True,
                   bevel=g * 0.3)
-    strap = L * 0.22                                                          # the seal strap over the lid, front to back
-    m.box((strap, 0, 0.02), (0.05, W * 1.06, H - 0.01), "medRed", top="medRed", base=True)
     if not detail:
-        m.box((strap, W * 0.53, H * 0.45), (0.035, 0.02, 0.035), "red", base=True)
+        m.box((L * 0.2, W / 2 + 0.01, H - lid - 0.02), (0.035, 0.02, 0.035), "red", base=True)
         return
     for y in (-W * 0.18, W * 0.18):                                           # raised ribs along the lid
         m.box((-L * 0.08, y, H - 0.004), (L * 0.6, 0.035, 0.022), SHELL, top=LID_TOP, base=True, bevel=0.008)
-    m.box((strap, W / 2 + 0.03, H * 0.42), (0.07, 0.025, 0.08), "steelD", top="steel", base=True)      # the seal tag
-    m.box((strap, W / 2 + 0.045, H * 0.45), (0.035, 0.012, 0.04), "red", base=True)
-    for sx in (-0.3, 0.06):                                                   # flush latches across the lip, +y side
+    for sx in (-0.3, 0.2):                                                    # flush latches across the lip, +y side
         m.box((sx * L, W / 2 + 0.018, H - lid - 0.05), (0.07, 0.02, 0.08), "steel", top="steelL", base=True)
+    m.box((0.2 * L, W / 2 + 0.032, H - lid - 0.06), (0.05, 0.016, 0.06), "steelD", base=True)      # the seal on a latch
+    m.box((0.2 * L, W / 2 + 0.042, H - lid - 0.05), (0.03, 0.01, 0.03), "red", base=True)
     for sx in (-1, 1):                                                        # fold-down bar handles on the ends
         for sy in (-0.2, 0.2):
             m.box((sx * (L / 2 + 0.02), sy * W, H * 0.45), (0.03, 0.03, 0.03), "steelD", base=True)
