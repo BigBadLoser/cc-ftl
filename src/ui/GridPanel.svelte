@@ -4,6 +4,7 @@
   import PanelHead from './PanelHead.svelte';
   import PrizePanel from './PrizePanel.svelte';
   import ShipMeters from './ShipMeters.svelte';
+  import StationInfo from './StationInfo.svelte';
   import TradeList from './TradeList.svelte';
   import Icon, { type IconName } from './Icon.svelte';
 
@@ -44,6 +45,7 @@
   {#if foe}<ShipMeters ship={foe} compact />{/if}
   {#if prize}<PrizePanel {api} {ship} />{/if}
   {#if partner && !foe && partner.station}
+    {#if partner.info}<StationInfo info={partner.info} />{/if}
     <button class="go" data-testid="open-station" onclick={() => { if (partner.hail === 'none') api.dispatch({ type: 'trade.hail', ship }); onStation(ship); }}>Hail station</button>
   {:else if partner && !foe}<TradeList {api} {ship} onOpen={onTrade} />{/if}
   {#if !foe && !prize && !partner && !derelict}<p class="dim">Nothing to do here.</p>{/if}

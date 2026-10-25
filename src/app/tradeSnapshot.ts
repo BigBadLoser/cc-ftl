@@ -2,6 +2,7 @@ import {
   CrewC, ForHireC, ShipC, TraderC, VehicleC, courierDef, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, reputationWith, unitPrice, type Deal, type Sim,
 } from '../sim';
 import { fetching } from '../sim/galaxy/recruit';
+import { hardware, stationInfo } from './stationInfo';
 import type { UiRecruit, UiTrade, UiTradeDeal, UiTradePartner } from '../ui/api';
 
 /** Short label of what a deal is doing now. */
@@ -54,6 +55,7 @@ function hireProbe(sim: Sim, ship: number): string {
 export function buildTrade(sim: Sim): UiTrade {
   const me = sim.world.get(playerShip(sim), ShipC);
   const partners: UiTradePartner[] = [];
+  let hw: ReturnType<typeof hardware> | undefined;
   const candidates = [...sim.world.query(ShipC), ...sim.world.query(TraderC).filter((i) => !sim.world.has(i, ShipC))];
   for (const id of candidates) {
     const ship = sim.world.get(id, ShipC);
@@ -85,6 +87,7 @@ export function buildTrade(sim: Sim): UiTrade {
       offer: offer ? { id: offer.id, give: offer.give, get: offer.get, barter: offer.barter, balance: offer.balance } : null,
       recruits: trader?.station ? recruitsAt(sim, id) : [],
       hireError: trader?.station ? hireProbe(sim, id) : '',
+      ...(trader?.station ? { info: stationInfo(sim, id, trader.port, (hw ??= hardware(sim))) } : {}),
       distance: ship && me ? Math.round(Math.hypot(ship.x - me.x, ship.y - me.y)) : 0,
     });
   }

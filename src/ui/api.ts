@@ -1,4 +1,4 @@
-import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute } from './starmapApi';
+import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
 import type { Command, WorkCategory } from '../sim';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
@@ -536,6 +536,24 @@ export interface UiRecruit {
 }
 
 /** A ship or station the player can hail. */
+/** What a player wants to know about a station before dealing with it (stations only). */
+export interface UiStationInfo {
+  /** Owning faction and the player's standing with it; null for a station without a port. */
+  owner: { name: string; tier: 'friendly' | 'neutral' | 'hostile' } | null;
+  /** Plain services ('Trade', 'Fuel', 'Repair'). */
+  services: string[];
+  jobs: number;
+  hire: number;
+  market: UiStarMarket | null;
+  /** Working airlocks to dock at. */
+  docks: number;
+  guns: number;
+  /** Shield layers. */
+  shields: number;
+  /** Why the alarm is up, or null while calm. */
+  alarm: string | null;
+}
+
 export interface UiTradePartner {
   /** The trader entity: the ShipC entity of a ship, a plain trader entity for a station (no ship). Also the UI key of the node. */
   id: number;
@@ -562,6 +580,8 @@ export interface UiTradePartner {
   /** People for hire aboard (stations only), and the reject code that would stop a hiring run now ('' if it can go). */
   recruits: UiRecruit[];
   hireError: string;
+  /** Stations only. */
+  info?: UiStationInfo;
 }
 
 export interface UiTradeDeal {
