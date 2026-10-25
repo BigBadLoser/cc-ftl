@@ -6,6 +6,7 @@
   import NavStrip from './NavStrip.svelte';
   import ShipOverview from './ShipOverview.svelte';
   import TradeWindow from './TradeWindow.svelte';
+  import StationPanel from './StationPanel.svelte';
   import DebugPanel from './DebugPanel.svelte';
   import SelectionPanel from './SelectionPanel.svelte';
   import CrewBar from './CrewBar.svelte';
@@ -57,6 +58,9 @@
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
   let prizes = $state<UiPrize[]>([]);
+  /** Station entity ids in the node. Selecting one opens its panel; selecting anything else closes it. */
+  let stations = $state<number[]>([]);
+  let stationOpen = $derived<number | null>(selShip !== null && stations.includes(selShip) ? selShip : null);
 
   let cutaway = $state<UiCutaway>('auto');
   /** Draw the player ship's roof and hull exterior (view from outside). */
@@ -94,6 +98,10 @@
       api.starmap.subscribe((m) => (star = m)),
       api.deploy.subscribe((d) => (deploy = d)),
       api.selectedShip.subscribe((g) => (selShip = g)),
+      api.trade.subscribe((t) => {
+        const ids = t.partners.filter((p) => p.station).map((p) => p.id);
+        if (ids.join() !== stations.join()) stations = ids;
+      }),
       api.prizes.subscribe((v) => {
         if (v.length > prizes.length) {
           const fresh = v.find((x) => !prizes.some((o) => o.ship === x.ship));
@@ -198,10 +206,13 @@
 {:else if tool.tool === 'build' && tool.build === 'module'}
   <BuildModules {api} />
 {:else}
-  <SelectionPanel {api} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} />
+  <SelectionPanel {api} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} onStation={(ship) => (stationOpen = ship)} />
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 
+{#if stationOpen !== null}
+  <StationPanel {api} station={stationOpen} onClose={() => (stationOpen = null)} />
+{/if}
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
 {/if}

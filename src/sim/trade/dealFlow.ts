@@ -13,6 +13,7 @@ import { storagesHolding } from './player';
 import { isStation, stageGoods, stationAirlock, stationWork, takeDelivery, unwindStation } from './stationDock';
 import { dockError } from '../vehicles/handlers';
 import { TraderC, type Deal } from './types';
+import { boardRecruits, landRecruits, lostRecruit } from './recruitLand';
 
 /** Ticks between repeats of a flight command a deal keeps asking for until the shuttle obeys. */
 const REPEAT = 20;
@@ -28,7 +29,7 @@ export function advanceDeals(sim: Sim): void {
   for (const d of [...sim.trade.deals]) {
     if (isLive(d)) step(sim, d);
     else if (d.courier === 'them' && d.vehicle) dismissCourier(sim, d);
-    else if (d.courier === 'you' && d.vehicle && (d.phase === 'done' || d.reason === 'cancelled')) parkCourier(sim, d);
+    else if (d.courier === 'you' && d.vehicle && (d.phase === 'done' || d.reason === 'cancelled' || d.crew)) parkCourier(sim, d);
   }
 }
 
@@ -42,7 +43,8 @@ function step(sim: Sim, d: Deal): void {
   }
   const v = sim.world.get(d.vehicle, VehicleC);
   if (!v) return failDeal(sim, d, 'lost', d.phase === 'back' || d.phase === 'unload' || d.phase === 'exchange');
-  if (!sim.world.get(d.ship, TraderC)) return failDeal(sim, d, 'traderGone');
+  if (!sim.world.get(d.ship, TraderC) && !(d.crew && (d.phase === 'back' || d.phase === 'unload'))) return failDeal(sim, d, 'traderGone');
+  if (d.crew && (d.phase === 'out' || d.phase === 'dockStation' || d.phase === 'stationWork') && lostRecruit(sim, d)) return failDeal(sim, d, 'recruitGone');
   switch (d.phase) {
     case 'dispatch': return dispatch(sim, d, v);
     case 'load': return load(sim, d, v);
@@ -100,6 +102,7 @@ function out(sim: Sim, d: Deal, v: Vehicle): void {
       d.dock = { airlock, staged: [] };
       return go(d, 'dockStation');
     }
+    if (d.crew) return; // recruits cannot be fetched from a hover: wait for an airlock (the timeout calls it off)
     d.via = 'hover';
   }
   if (v.state === 'flying' && !v.dest && v.hover === d.ship) return go(d, 'exchange');
@@ -127,6 +130,7 @@ function dockStation(sim: Sim, d: Deal, v: Vehicle): void {
   const airlock = d.dock?.airlock ?? 0;
   const lost = !airlock || (dockError(sim, d.vehicle, airlock) !== null && v.dock !== airlock);
   if (lost || d.timer > FLIGHT_SEC * TICK_HZ) {
+    if (d.crew) return failDeal(sim, d, 'noDock');
     d.via = 'hover';
     delete d.dock;
     return go(d, 'out');
@@ -142,6 +146,7 @@ function dockStation(sim: Sim, d: Deal, v: Vehicle): void {
 
 /** Step 4 (station): the station crew haul both ways; then the goods change hands and the shuttle leaves. */
 function work(sim: Sim, d: Deal, v: Vehicle): void {
+  if (d.crew) return recruitWork(sim, d, v);
   if (d.timer > LOAD_SEC * TICK_HZ) {
     // The station crew never got to it: put everything back and swap from a hover instead.
     unwindStation(sim, d);
@@ -159,6 +164,15 @@ function work(sim: Sim, d: Deal, v: Vehicle): void {
   sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
 }
 
+/** Step 4 (hiring run, docked at the station): the recruits walk aboard; then the shuttle leaves for home. */
+function recruitWork(sim: Sim, d: Deal, v: Vehicle): void {
+  if (d.timer > LOAD_SEC * TICK_HZ) return failDeal(sim, d, 'boardTimeout');
+  if (!boardRecruits(sim, d, due(d))) return;
+  v.outbound = false;
+  sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
+  go(d, 'back');
+}
+
 /** Step 5: fly home and dock at the player's airlock. */
 function back(sim: Sim, d: Deal, v: Vehicle): void {
   if (v.state === 'docked' && v.dock !== d.airlock) {
@@ -174,6 +188,11 @@ function back(sim: Sim, d: Deal, v: Vehicle): void {
 
 /** Step 6: crew haul the cargo out through the unloaders (cargoJobs does it); when the hold is empty, the deal settles. */
 function unload(sim: Sim, d: Deal, v: Vehicle): void {
+  if (d.crew) {
+    if (!landRecruits(sim, d)) return;
+    settleDeal(sim, d);
+    return void sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
+  }
   if (cargoCount(v) > 0) return;
   settleDeal(sim, d);
   if (d.courier === 'you') sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });

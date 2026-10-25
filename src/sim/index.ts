@@ -71,6 +71,7 @@ export * from './trade/types';
 export { unitPrice, linesValue, quote, reputationWith, type Quote, type PriceSide } from './trade/pricing';
 export { hailVerdict, ensureTrader, isSurplus, profileFor, rollTrader, tradeFactionOf, type HailVerdict } from './trade/traders';
 export { spawnStation, outfitStation } from './stations/spawn';
+export { ForHireC } from './stations/components';
 export { checkOffer, cleanLines, unitsOf, type OfferCheck } from './trade/offers';
 export { planCourier, courierDef, type CourierPlan } from './trade/courier';
 export { playerShip, playerItems } from './trade/player';

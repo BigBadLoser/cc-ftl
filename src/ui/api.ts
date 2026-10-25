@@ -299,21 +299,8 @@ export interface UiJob {
 }
 
 /** The job board: offers at the node the player is at (`here` its name, null when jobs cannot be taken now: in hyperspace or an event grid), and the jobs they hold (at most `max`). */
-/** A candidate for hire at the node's trade station (sim galaxy/recruit.ts): `skills` are the role's, `cost` in credits. */
-export interface UiRecruit {
-  key: string;
-  name: string;
-  species: string;
-  role: string;
-  skills: string[];
-  cost: number;
-}
-
 export interface UiJobs {
   here: string | null;
-  /** Crew for hire here, and the credits the player holds. */
-  crew: UiRecruit[];
-  credits: number;
   offers: UiJob[];
   active: UiJob[];
   max: number;
@@ -537,12 +524,25 @@ export interface UiTradeOffer {
   balance: number;
 }
 
+/** A person for hire aboard a station (sim galaxy/recruit.ts): `skills` are the role's, `cost` in credits, `coming` while the player's shuttle is fetching them. */
+export interface UiRecruit {
+  key: string;
+  name: string;
+  species: string;
+  role: string;
+  skills: string[];
+  cost: number;
+  coming: boolean;
+}
+
 /** A ship or station the player can hail. */
 export interface UiTradePartner {
   /** The trader entity: the ShipC entity of a ship, a plain trader entity for a station (no ship). Also the UI key of the node. */
   id: number;
   name: string;
   kind: 'ship' | 'station';
+  /** A station (an immobile ship with a trader): it gets its own panel. */
+  station: boolean;
   /** Trader kind ('Freighter'), or '' if it has no trade profile. */
   role: string;
   trades: boolean;
@@ -559,6 +559,9 @@ export interface UiTradePartner {
   holdCap: number;
   offer: UiTradeOffer | null;
   distance: number;
+  /** People for hire aboard (stations only), and the reject code that would stop a hiring run now ('' if it can go). */
+  recruits: UiRecruit[];
+  hireError: string;
 }
 
 export interface UiTradeDeal {

@@ -7,7 +7,7 @@
   import TradeList from './TradeList.svelte';
   import Icon, { type IconName } from './Icon.svelte';
 
-  let { api, ship, onBack, onTrade }: { api: UiApi; ship: number; onBack: () => void; onTrade: (ship: number) => void } = $props();
+  let { api, ship, onBack, onTrade, onStation }: { api: UiApi; ship: number; onBack: () => void; onTrade: (ship: number) => void; onStation: (ship: number) => void } = $props();
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   let prizes = $state<UiPrize[]>([]);
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
@@ -26,7 +26,7 @@
   const foe = $derived(combat.enemies.find((e) => e.ship === ship));
   const name = $derived(prize?.name ?? foe?.name ?? partner?.name ?? shuttles.targets.find((t) => t.ship === ship)?.name ?? `Ship ${ship}`);
   const derelict = $derived(shuttles.targets.find((t) => t.ship === ship)?.derelict);
-  const icon = $derived<IconName>(derelict ? 'derelict' : prize ? 'prize' : foe ? 'skull' : partner?.kind === 'station' ? 'station' : 'ship');
+  const icon = $derived<IconName>(derelict ? 'derelict' : prize ? 'prize' : foe ? 'skull' : partner?.station ? 'station' : 'ship');
   const sub = $derived(derelict ? 'Derelict' : prize ? 'prize' : foe ? foe.state : partner ? partner.role || partner.kind : '');
 </script>
 
@@ -43,7 +43,9 @@
   {/if}
   {#if foe}<ShipMeters ship={foe} compact />{/if}
   {#if prize}<PrizePanel {api} {ship} />{/if}
-  {#if partner && !foe}<TradeList {api} {ship} onOpen={onTrade} />{/if}
+  {#if partner && !foe && partner.station}
+    <button class="go" data-testid="open-station" onclick={() => onStation(ship)}>Open station panel</button>
+  {:else if partner && !foe}<TradeList {api} {ship} onOpen={onTrade} />{/if}
   {#if !foe && !prize && !partner && !derelict}<p class="dim">Nothing to do here.</p>{/if}
   {#if foe && !prize}<button class="fight" data-testid="grid-focus-fight" onclick={() => api.focusFight(ship)}>Frame fight</button>{/if}
 </div>
@@ -57,4 +59,5 @@
   .cell.warn { border-color: var(--amber); color: var(--amber); }
   .cell.wide { grid-column: 1 / -1; }
   .fight { margin-top: 8px; width: 100%; }
+  .go { width: 100%; background: #0e4a56; border-color: var(--cyan); }
 </style>
