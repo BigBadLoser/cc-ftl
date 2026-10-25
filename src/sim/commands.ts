@@ -190,6 +190,8 @@ export type Command =
   /** Take a job offered at the player's node (galaxy/jobs.ts), by its offer key; give one up. */
   | { type: 'jobs.accept'; key: string }
   | { type: 'jobs.abandon'; id: number }
+  /** Break a delivery's crate open on deck: its goods spill out, kept, and the delivery fails. */
+  | { type: 'jobs.openCrate'; id: number }
   /** Debug: set the player's notoriety (galaxy/heat.ts). */
   | { type: 'debug.notoriety'; value: number }
   /** Leave the event grid (the player's `combat.flee` does the same): the ship goes back into hyperspace and the trip carries on. Hostiles about need a charged drive. */

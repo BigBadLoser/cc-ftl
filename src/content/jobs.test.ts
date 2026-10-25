@@ -95,6 +95,24 @@ describe('station jobs', () => {
     expect(sim.galaxy.heat.notoriety).toBe(BREACH_NOTORIETY);
   });
 
+  it('breaking a crate open on deck fails the delivery and spills its goods, kept', () => {
+    const sim = atBoard();
+    const offer = offersHere(sim).find((o) => o.kind === 'delivery')!;
+    const before = playerStock(sim, offer.item!);
+    accept(sim, offer.key);
+    const job = sim.galaxy.jobs[0]!;
+    sim.enqueue({ type: 'jobs.openCrate', id: job.id });
+    sim.step();
+    expect(sim.galaxy.jobs).toHaveLength(0);
+    expect(playerStock(sim, CRATE)).toBe(0);
+    expect(playerStock(sim, offer.item!)).toBe(before + offer.count!);
+    expect(rep(sim, job.issuer)).toBe(-1);
+    expect(sim.galaxy.heat.notoriety).toBe(BREACH_NOTORIETY);
+    sim.enqueue({ type: 'jobs.openCrate', id: job.id });
+    sim.step();
+    expect(sim.events.drain().some((e) => e.type === 'command.rejected' && e.reason === 'noJob')).toBe(true);
+  });
+
   it('a bounty places its named target at an unvisited node and pays when the player destroys it there', () => {
     const sim = atBoard();
     // Bounties come up half the time a slot is drawn: look over the ports in reach for one.

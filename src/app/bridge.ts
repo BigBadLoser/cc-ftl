@@ -22,6 +22,7 @@ import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
 import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
+import { crateInfo } from './jobsSnapshot';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
 export interface Snapshot {
@@ -52,7 +53,7 @@ export interface InspectSnapshot extends TileRef {
   local: { x: number; y: number };
   structName: string;
   /** The loose item stack on the tile, or null. */
-  stack: { item: string; name: string; count: number } | null;
+  stack: { item: string; name: string; count: number; crate: { job: number; title: string; to: string } | null } | null;
   /** Room id, or 0 when none. */
   room: number;
   fields: { name: string; value: number }[];
@@ -188,7 +189,7 @@ export function createBridge(sim: Sim): Bridge {
         job: job ? { kind: job.kind, progress: job.progress, work: job.work } : null,
         grid: shipId,
         local: { x: ref.x - grid.x0, y: ref.y - grid.y0 },
-        stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count } : null,
+        stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count, crate: crateInfo(sim, st.job) } : null,
         structName: STRUCT_NAMES[struct] ?? `Unknown(${struct})`,
         room: fields.find((f) => f.name === 'room')?.value ?? 0,
         fields,

@@ -24,6 +24,8 @@ export interface UiStack {
   item: string;
   name: string;
   count: number;
+  /** A delivery crate: its job (for `jobs.openCrate`), what it holds and where it goes. */
+  crate: { job: number; title: string; to: string } | null;
 }
 
 export interface UiInspect {

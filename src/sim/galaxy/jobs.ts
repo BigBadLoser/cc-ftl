@@ -15,7 +15,7 @@ import { BREACH_NOTORIETY, JOB_FAIL_REPUTATION, JOB_LOG_MAX, JOB_REPUTATION, MAX
 import type { StationJob } from './types';
 
 /**
- * Taking, doing and failing station jobs (tuningJobs.ts, offers in jobOffers.ts). Commands: `jobs.accept` (an offer at the player's node) and `jobs.abandon`.
+ * Taking, doing and failing station jobs (tuningJobs.ts, offers in jobOffers.ts). Commands: `jobs.accept` (an offer at the player's node), `jobs.abandon` and `jobs.openCrate`.
  * A delivery's goods come aboard as one sealed crate (`CRATE`, ItemStack.job) set on deck beside the hold, apart from storage: haulers leave it be.
  * The galaxy system calls `tendJobs` while the player is at a node: a delivery is handed over on arrival with its crate aboard; a bounty is paid when the player
  * destroys or takes its target (`tallyLosses` hands their ids over; the target ship carries the job id). `expireJobs` fails what ran out of time, once a turn.
@@ -114,6 +114,15 @@ function close(sim: Sim, job: StationJob, outcome: 'done' | 'failed' | 'abandone
   }
   g.rev++;
   sim.events.emit({ type: 'job.closed', id: job.id, kind: job.kind, outcome, reward: outcome === 'done' ? job.reward : 0 });
+}
+
+/** `jobs.openCrate`: break a delivery's crate open where it lies (the player must be at a node, with the crate aboard). The delivery fails. */
+export function openCrate(sim: Sim, id: number): boolean {
+  const job = sim.galaxy.jobs.find((j) => j.id === id && j.kind === 'delivery');
+  if (!job) return reject(sim, 'jobs.openCrate', 'noJob');
+  if (sim.sector.state !== 'active' || crateOf(sim, id) === undefined) return reject(sim, 'jobs.openCrate', 'notAboard');
+  close(sim, job, 'failed');
+  return true;
 }
 
 /** `jobs.abandon`. */

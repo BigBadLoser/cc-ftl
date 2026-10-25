@@ -6,6 +6,14 @@ import { MAX_JOBS } from '../sim/galaxy/tuningJobs';
 import type { StationJob } from '../sim/galaxy/types';
 import type { UiJob, UiJobs } from '../ui/api';
 
+/** What a delivery crate on deck is, for the inspector: its job, its contents and destination. Null for any other stack. */
+export function crateInfo(sim: Sim, jobId: number | undefined): { job: number; title: string; to: string } | null {
+  const j = jobId === undefined ? undefined : sim.galaxy.jobs.find((x) => x.id === jobId);
+  if (!j) return null;
+  const item = j.item ? sim.content.items[j.item]?.name ?? j.item : '';
+  return { job: j.id, title: `${j.count ?? 0}× ${item}`, to: j.to ? nodeOf(sim, j.to)?.name ?? 'uncharted space' : '' };
+}
+
 /** The job board as the jobs panel shows it: the offers at the player's node and the jobs they hold. */
 export function buildJobs(sim: Sim): UiJobs {
   const g = sim.galaxy;
