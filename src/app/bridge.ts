@@ -234,7 +234,7 @@ export function createBridge(sim: Sim): Bridge {
     }
     // The board only changes with the galaxy (offers, jobs, the player's node) or the cargo a delivery needs: rebuilt on those, not every frame.
     const g = sim.galaxy;
-    const jk = `${g.rev}|${g.turn}|${g.current}|${sim.sector.state}|${frame >> 5}`;
+    const jk = `${g.rev}|${g.turn}|${g.current}|${sim.sector.state}|${sim.trade.credits}|${frame >> 5}`;
     if (jk !== lastJobsKey) {
       lastJobsKey = jk;
       jobs.set(buildJobs(sim));

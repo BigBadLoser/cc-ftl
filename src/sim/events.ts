@@ -200,6 +200,8 @@ export type SimEvent =
   /** A faction sent a hunter fleet after the player (galaxy/hunters.ts). */
   | { type: 'galaxy.hunt'; fleet: number; faction: string; node: string; ships: number }
   /** A station job was taken, or closed: 'done' (paid), 'failed' (ran out of time), 'abandoned'. */
+  /** Crew was hired at a station (galaxy/recruit.ts). */
+  | { type: 'crew.hired'; crew: number; role: string; cost: number }
   | { type: 'job.accepted'; id: number; kind: 'delivery' | 'bounty'; issuer: string }
   /** A goal of the tutorial chain was met, and an act of it finished (its reward paid). */
   | { type: 'goal.done'; goal: string; title: string }

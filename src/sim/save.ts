@@ -61,8 +61,10 @@ import { newTrade, type TradeState } from './trade/types';
  * v48 (danger layers): `GalaxyState.heat` (notoriety, last hunt per faction), `Fleet.hunt` / `standDown`, `Ship.killedBy` / `tallied`.
  * v49 (station jobs): `GalaxyState.jobs`, `jobLog`, `nextJob`.
  * v50 (goal chain): `StoryState.goals` (act, goals done, skipped, home cluster), `stat.*` story flags.
+ * v51 (crew for hire): `GalaxyState.recruitLog`, `ForHireC` on station crew who can be hired, `Deal.crew` (a hiring run fetches them by
+ *     shuttle).
  */
-export const SAVE_VERSION = 50;
+export const SAVE_VERSION = 51;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

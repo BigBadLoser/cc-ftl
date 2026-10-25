@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   deserialize, homeShip as homeShipOf, newGame, serialize, shipGrid, shipIdAt, shipIds, Struct, type Body, type Drafted, type Module, type Sim, type Vehicle,
+  type RoleDef,
 } from '../../sim';
 import { content } from '../index';
 
@@ -35,7 +36,7 @@ function legacyWorld(sim: Sim): unknown {
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   // And asteroids, mining pods and base-logistics runs and transfer orders: their empty stores are not part of it.
-  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
     const { pilot, cruisePilot, cruiseEvasion, ...rest } = raw as Record<string, unknown>;
@@ -158,10 +159,14 @@ function run(sim: Sim, n: number, log: string[]): void {
 
 /**
  * Content as the pre-refactor code had it: the starter's crate held no fuel (the starmap added 16 units, which would change
- * the recorded world). Everything else is the live content, so the recorded hashes still pin the refactor.
+ * the recorded world), and the medic had no medicine skill (it speeds up bed healing). Everything else is the live content,
+ * so the recorded hashes still pin the refactor.
  */
+const medic: RoleDef = { ...content.roles['role.medic'] };
+delete medic.skills;
 const legacy: typeof content = {
   ...content,
+  roles: { ...content.roles, 'role.medic': medic } as typeof content.roles,
   ships: {
     ...content.ships,
     'ship.starter': {

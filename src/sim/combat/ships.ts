@@ -38,16 +38,31 @@ export function shieldCapacity(sim: Sim, shipId: number, powered: boolean): numb
   }
   return layers;
 }
-/** Add crew of the given roles on random free floor tiles of a grid. Returns their ids. */
-export function spawnCrew(sim: Sim, shipId: number, roles: readonly string[], rest?: number): number[] {
-  const grid = shipGrid(sim, shipId);
-  if (!grid) return [];
+/** The free walkable floor tiles of a grid, in scan order. */
+function freeFloor(sim: Sim, grid: ShipGrid): { x: number; y: number }[] {
   const floor: { x: number; y: number }[] = [];
   for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
     for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
       if (grid.get('struct', x, y) === Struct.Floor && isTileWalkable(sim, grid, x, y)) floor.push({ x, y });
     }
   }
+  return floor;
+}
+
+/** Add one crew member of a role, named `name`, on a random free floor tile of a player-side grid. Returns the id, or 0 (no floor, unknown role). */
+export function spawnNamedCrew(sim: Sim, shipId: number, roleId: string, name: string | undefined): number {
+  const grid = shipGrid(sim, shipId);
+  const floor = grid ? freeFloor(sim, grid) : [];
+  if (!floor.length) return 0;
+  const tile = floor[sim.rng.int(0, floor.length - 1)] as { x: number; y: number };
+  return createCrew(sim, shipId, roleId, tile, { faction: shipById(sim, shipId)?.faction ?? 'player', ...(name ? { name } : {}) });
+}
+
+/** Add crew of the given roles on random free floor tiles of a grid. Returns their ids. */
+export function spawnCrew(sim: Sim, shipId: number, roles: readonly string[], rest?: number): number[] {
+  const grid = shipGrid(sim, shipId);
+  if (!grid) return [];
+  const floor = freeFloor(sim, grid);
   const names = [...sim.content.crewNames];
   const out: number[] = [];
   for (const roleId of roles) {
