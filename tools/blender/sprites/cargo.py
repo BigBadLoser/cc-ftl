@@ -3,8 +3,8 @@
   item.cargo_crate.l     the case on the deck, at the item stacks' tile scale (it never stacks, so it has one size)
   item.cargo_crate.held  the small version a crew member carries, sized like the other .held sprites
 
-A rugged moulded transport case: a low, chunky off-white shell with rounded moulded edges, a lid with a pronounced lip
-and two raised ribs, dark rubber guards on the corners, fold-down bar handles on the ends, flush latches, one of them
+A rugged moulded transport case: a low, chunky off-white shell with rounded moulded edges, a flush lid seam, two
+raised ribs the length of the lid, dark rubber guards on the corners, fold-down bar handles on the ends, flush latches, one of them
 closed with a seal that glows red: sealed, someone else's. Origin = centre of the tile at floor level, as items.py;
 the camera sees the +x end and the +y long side. The renderer finds both ids already (itemView.ts stackAssets /
 heldAssets)."""
@@ -17,10 +17,9 @@ SHELL, SHELL_TOP, LID_TOP, GUARD = "c3W4", "c3W2", "c3W1", "steelD"
 def case(m, L, W, H, detail=True):
     """The case L x W x H (grid units, long side along x), standing on the floor."""
     lid = H * 0.34
-    b = min(W, H) * 0.22                                                      # moulded edge rounding
-    m.box((0, 0, 0), (L, W, H - lid), SHELL, top=SHELL, base=True, bevel=b)
-    m.box((0, 0, H - lid - 0.02), (L * 1.03, W * 1.04, 0.04), "c3W5", top=SHELL_TOP, base=True, bevel=0.012)   # the lip
-    m.box((0, 0, H - lid + 0.012), (L * 0.98, W * 0.97, lid - 0.012), SHELL, top=LID_TOP, base=True, bevel=b * 0.8)
+    b = min(W, H) * 0.1                                                       # moulded edge rounding
+    m.box((0, 0, 0), (L, W, H), SHELL, top=LID_TOP, base=True, bevel=b)                                     # one shell
+    m.box((0, 0, H - lid - 0.006), (L * 0.985, W * 1.004, 0.012), "c3W6", base=True)                         # flush seam
     g = min(W, H) * 0.3                                                       # rubber corner guards, full height
     for sx in (-1, 1):
         for sy in (-1, 1):
@@ -29,8 +28,8 @@ def case(m, L, W, H, detail=True):
     if not detail:
         m.box((L * 0.2, W / 2 + 0.01, H - lid - 0.02), (0.035, 0.02, 0.035), "red", base=True)
         return
-    for y in (-W * 0.18, W * 0.18):                                           # raised ribs along the lid
-        m.box((-L * 0.08, y, H - 0.004), (L * 0.6, 0.035, 0.022), SHELL, top=LID_TOP, base=True, bevel=0.008)
+    for y in (-W * 0.18, W * 0.18):                                           # raised ribs the length of the lid
+        m.box((0, y, H - 0.004), (L * 0.9, 0.035, 0.022), SHELL, top=LID_TOP, base=True, bevel=0.008)
     for sx in (-0.3, 0.2):                                                    # flush latches across the lip, +y side
         m.box((sx * L, W / 2 + 0.018, H - lid - 0.05), (0.07, 0.02, 0.08), "steel", top="steelL", base=True)
     m.box((0.2 * L, W / 2 + 0.032, H - lid - 0.06), (0.05, 0.016, 0.06), "steelD", base=True)      # the seal on a latch
