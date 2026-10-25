@@ -40,3 +40,14 @@ describe('starmap pixel lines', () => {
     for (let a = 0; a < 360; a += 45) expect(area(pixelArrow(a, g), g)).toBeGreaterThan(6);
   });
 });
+
+describe('starmap dashed lines', () => {
+  it('draws every dash of a line in one shape, at a clean slope', () => {
+    const g = 2;
+    // Slope 0.55: each two-cell dash is drawn at 1/2, so all have the same offsets from their first cell.
+    const r = rects(pixelLine(0, 0, 200, 110, g, { dash: [2, 3] }), g);
+    const shapes = new Set<string>();
+    for (let i = 0; i + 1 < r.length; i += 2) shapes.add(`${r[i + 1]![0] - r[i]![0]},${r[i + 1]![1] - r[i]![1]}`);
+    expect(shapes.size).toBe(1);
+  });
+});

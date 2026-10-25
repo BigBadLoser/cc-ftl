@@ -80,7 +80,48 @@ function band(ax: number, ay: number, bx: number, by: number, g: number, w: numb
 export function pixelLine(ax: number, ay: number, bx: number, by: number, g: number, o: PixelLineOpts = {}): string {
   const [x0, y0, x1, y1] = [ax, ay, bx, by].map((v) => Math.round(v / g)) as [number, number, number, number];
   if (Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) > MAX_CELLS) return band(ax, ay, bx, by, g, o.w ?? 1);
-  return cells(x0, y0, x1, y1, g, o);
+  return o.dash ? dashed(x0, y0, x1, y1, g, o.w ?? 1, o.dash) : cells(x0, y0, x1, y1, g, o);
+}
+
+/** Clean slopes (minor over major), whose steps are all alike. */
+const CLEAN = [0, 1 / 3, 1 / 2, 1];
+
+/**
+ * A dashed line whose every dash is drawn at the clean slope nearest the line's, starting on the true line: the steps of a dash are all alike, and
+ * the correction back onto the line falls in the gap after it.
+ */
+function dashed(x0: number, y0: number, x1: number, y1: number, g: number, w: number, dash: readonly [number, number]): string {
+  const xMajor = Math.abs(x1 - x0) >= Math.abs(y1 - y0);
+  const [a0, m0, a1, m1] = xMajor ? [x0, y0, x1, y1] : [y0, x0, y1, x1];
+  const n = Math.abs(a1 - a0);
+  const sa = a1 >= a0 ? 1 : -1;
+  const slope = n ? (m1 - m0) / n : 0;
+  const near = CLEAN.reduce((b, c) => (Math.abs(c - Math.abs(slope)) < Math.abs(b - Math.abs(slope)) ? c : b), 0);
+  const clean = slope < 0 ? -near : near;
+  const lo = -Math.floor((w - 1) / 2);
+  let d = '';
+  const cell = (k: number, m: number, len: number) => {
+    const a = Math.min(a0 + sa * k, a0 + sa * (k + len - 1));
+    d += xMajor ? cellRect(a, a + len - 1, m + lo, m + lo + w - 1, g) : cellRect(m + lo, m + lo + w - 1, a, a + len - 1, g);
+  };
+  for (let k0 = 0; k0 <= n; k0 += dash[0] + dash[1]) {
+    const start = m0 + slope * k0;
+    const end = Math.min(n, k0 + dash[0] - 1);
+    // Runs of equal minor position within the dash.
+    let run = k0;
+    // The same pattern in every dash (offsets from its first cell), so the dashes along a line all have one shape.
+    const first = Math.round(start);
+    let cur = first;
+    for (let k = k0 + 1; k <= end + 1; k++) {
+      const m = k <= end ? first + Math.round(clean * (k - k0)) : NaN;
+      if (m !== cur) {
+        cell(run, cur, k - run);
+        run = k;
+        cur = m;
+      }
+    }
+  }
+  return d;
 }
 
 /** A polyline ("x,y x,y ...", as the route is given) as one pixel path. */
