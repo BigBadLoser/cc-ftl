@@ -257,7 +257,7 @@ palette.json    the single palette, read by Blender scripts and the game
 ```
 
 - **Loading and memory (`src/render/assets`, `artStream.ts`):** sheets are loaded on demand, never all at start (the art is
-  1452 sheets, ~3 GiB if decoded at once, which crashed headless Chromium; phones need a few hundred MiB).
+  1452 sheets, gigabytes if decoded at once, which crashed headless Chromium; phones need a few hundred MiB).
   - `loadAtlas` registers every manifest sheet in a `SheetStore` (`sheetStore.ts`, generic over the texture type so it is
     unit-tested without Pixi) in one of three pools: `core` (`EAGER_SHEETS`: walls, beams, the env item sheet and fx, loaded
     before the renderer starts and never evicted, ~92 MiB), `env` (every other static sheet) and `crew` (`crew.*` sheets).
