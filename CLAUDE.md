@@ -46,6 +46,7 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
      a branch is a backup, not a release).
   2. Then one round of testing and bug fixes: the full `npm run check`, plus fixing whatever it finds.
   3. Then open the PR. CI and Codex review it, and only the user merges it to `main`. Nothing reaches `main` any other way.
+  Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
 - Use Sonnet or Haiku subagents for well-scoped tasks, and keep token use low.
 - Verify visual changes with a headless screenshot before handing them to the user. The user often
   tests on a phone through `main` at https://cc-ftl.bigbadloser.workers.dev. Branch previews
