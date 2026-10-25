@@ -4,14 +4,14 @@
    * route, jumps reachable now, and the exits from your sector labelled where they lead (pinned inside the view).
    * `px(v)` converts screen pixels to map units; `view` is the visible map rectangle. Colours: starmapStyle.ts.
    */
-  import type { UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
+  import type { UiStarArt, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import StarmapBody from './StarmapBody.svelte';
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
   import { pixelArrow, pixelDiamond, pixelLine, pixelOutline, pixelPolyline, pixelSquare } from './starmapPixel';
 
-  let { map, px, s, view, current, route, routePts, selected, hover, only = null, ship, inset = 0 }: {
-    map: UiStarmap; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
+  let { map, art = null, px, s, view, current, route, routePts, selected, hover, only = null, ship, inset = 0 }: {
+    map: UiStarmap; art?: UiStarArt | null; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
     current: UiStarNode | null; route: UiStarRoute | null; routePts: string; selected: string | null; hover: string | null;
     /** Screen px at the right edge that the side drawer (and the map tools beside it) cover: labels stay clear of it. */
     inset?: number;
@@ -81,7 +81,7 @@
   <path d={pixelOutline(sec.outline, g)} class="outline" class:known={sec.known} class:cur={sec.id === map.currentSector} style={`--c: ${toneColor(sec.tone)}`} />
 {/each}
 {#each map.sectors as sec (sec.id)}
-  {#if sec.known && sec.body}<StarmapBody kind={sec.body.kind} x={sec.body.x} y={sec.body.y} r={sec.body.r * 0.75} dim={sec.id === map.currentSector ? 1 : 0.55} />{/if}
+  {#if sec.known && sec.body}<StarmapBody {art} seed={sec.id} kind={sec.body.kind} x={sec.body.x} y={sec.body.y} r={sec.body.r * 0.75} dim={sec.id === map.currentSector ? 1 : 0.55} />{/if}
 {/each}
 <!-- Lanes fade out toward the edges of the view, so long lanes leaving the sector do not crowd the frame. -->
 <defs>

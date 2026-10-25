@@ -5,14 +5,14 @@
    * show in the gaps between them, with the plotted route on top. Labels are placed so they never overlap.
    * `px(v)` converts screen pixels to map units at the current zoom.
    */
-  import type { UiStarmap } from './starmapApi';
+  import type { UiStarArt, UiStarmap } from './starmapApi';
   import StarmapBody from './StarmapBody.svelte';
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
   import { pixelLine, pixelOutline, pixelPolyline, pixelSquare } from './starmapPixel';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
 
-  let { map, px, picked, hover, routePts = '', routeSectors = new Set() }: {
-    map: UiStarmap; px: (v: number) => number; picked: string | null; hover: string | null;
+  let { map, art = null, px, picked, hover, routePts = '', routeSectors = new Set() }: {
+    map: UiStarmap; art?: UiStarArt | null; px: (v: number) => number; picked: string | null; hover: string | null;
     /** The plotted route (SVG points) and the sectors it passes through. */
     routePts?: string; routeSectors?: Set<string>;
   } = $props();
@@ -84,7 +84,7 @@
 {#if routePts}<path d={pixelPolyline(routePts, g, { w: 2 })} class="route" />{/if}
 {#each map.sectors as sec (sec.id)}
   {#if sec.known}
-    <StarmapBody kind={sec.body?.kind ?? 'star'} x={sec.x} y={sec.y} r={px(sec.hub ? 7 : 5.5)} />
+    <StarmapBody {art} seed={sec.id} mini={px(1)} kind={sec.body?.kind ?? 'star'} x={sec.x} y={sec.y} r={px(sec.hub ? 7 : 5.5)} />
     {@const b = labels.get(sec.id)}
     {#if b}
       {@const icons = services.get(sec.id) ?? []}

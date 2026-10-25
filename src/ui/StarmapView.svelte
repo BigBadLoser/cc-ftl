@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import type { UiApi, UiFtl } from './api';
-  import type { UiEncounterChoice, UiJumpWarnings, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
+  import type { UiEncounterChoice, UiJumpWarnings, UiStarArt, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
   import StarmapNebula from './StarmapNebula.svelte';
@@ -24,6 +24,8 @@
   let { api, flee = null, onClose, onSlide }: { api: UiApi; flee?: number | null; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
 
   let map = $state<UiStarmap | null>(null);
+  /** The starmap's sprites (null until loaded: the levels draw their code shapes meanwhile). */
+  let art = $state<UiStarArt | null>(null);
   /** Flee-target mode: only while the ship is still in the node (once it is in hyperspace the map is the ordinary trip view). */
   /** In hyperspace the map cannot be closed: it is the view until the ship drops. */
   const locked = $derived(map?.state === 'hyperspace');
@@ -189,11 +191,13 @@
       }
     });
     const unsubFtl = api.ftl.subscribe((f) => (ftl = f));
+    const unsubArt = api.starmapArt.subscribe((a) => (art = a));
     // A wheel listener must not be passive to stop the page from scrolling.
     svg.addEventListener('wheel', wheel, { passive: false });
     return () => {
       unsub();
       unsubFtl();
+      unsubArt();
       svg.removeEventListener('wheel', wheel);
     };
   });
@@ -436,9 +440,9 @@
           {#key level}
             <g transition:fade={{ duration: 180 }}>
               {#if level === 1}
-                <StarmapSector {map} {px} {s} {view} {current} {route} {routePts} {selected} {hover} {only} {ship} inset={drawerOpen && w > 600 ? 340 : 0} />
+                <StarmapSector {map} {art} {px} {s} {view} {current} {route} {routePts} {selected} {hover} {only} {ship} inset={drawerOpen && w > 600 ? 340 : 0} />
               {:else if level === 2}
-                <StarmapCluster {map} {px} picked={picked?.id ?? null} {hover} {routePts} {routeSectors} />
+                <StarmapCluster {map} {art} {px} picked={picked?.id ?? null} {hover} {routePts} {routeSectors} />
               {:else}
                 <StarmapGalaxy {map} {px} picked={picked?.id ?? null} {hover} />
               {/if}

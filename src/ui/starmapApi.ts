@@ -180,6 +180,18 @@ export interface UiNews {
   rumour: boolean;
 }
 
+/**
+ * The starmap's pipeline art (the `starmap` sprite family): the sheet image, its glow twin (same layout) and their sizes, and
+ * each `starmap.*` frame in the sheet's own pixels (`glow`: the glow twin has pixels there).
+ */
+export interface UiStarArt {
+  src: string;
+  glow: string | null;
+  w: number;
+  h: number;
+  frames: Record<string, { x: number; y: number; w: number; h: number; glow: boolean }>;
+}
+
 export interface UiStarmap {
   rev: number;
   current: string;
