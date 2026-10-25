@@ -11,7 +11,7 @@
   import { strHash } from './starmapArtIds';
   import { boxAt, placeLabels, type Box, type LabelItem } from './starmapLabels';
   import { BADGE, dangerColor, toneColor } from './starmapStyle';
-  import { pixelArrow, pixelDiamond, pixelLine, pixelOutline, pixelPolyline, pixelSquare } from './starmapPixel';
+  import { pixelArrow, pixelLine, pixelOutline, pixelPolyline, pixelSquare } from './starmapPixel';
 
   let { map, art = null, px, s, view, current, route, routePts, selected, hover, only = null, ship, inset = 0 }: {
     map: UiStarmap; art?: UiStarArt | null; px: (v: number) => number; s: number; view: { x0: number; y0: number; x1: number; y1: number };
@@ -80,7 +80,7 @@
   const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
   const structPx = $derived(px(crispPx(art?.frames['starmap.struct.den']?.w ?? 48, 24, dpr)));
   /** The radius structures orbit at: clear of the node's pip and rings. */
-  const orbitR = $derived(px(30));
+  const orbitR = $derived(px(34));
   const fleetPx = $derived(px(crispPx(art?.frames['starmap.fleet.patrol.d0']?.w ?? 40, 48, dpr)));
   /** An icon heading (degrees, the SVG sense: 0 east, clockwise) as one of the eight `d` frames. */
   const dir = (deg: number) => (((Math.round(deg / 45) % 8) + 8) % 8);
@@ -164,9 +164,10 @@
           <text x={n.x + px(15 + i * 13)} y={n.y + px(3.6)} class="badge" font-size={px(10)}>{b}</text>
         {/each}
       {/if}
-      {#each n.jobs ?? [] as j, i (i)}
-        <path d={pixelDiamond(n.x - (art ? orbitR + px(26) : px(16)), n.y + px(i * 16 - ((n.jobs?.length ?? 1) - 1) * 8), px(7), g)} class="job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job-mark"><title>{j.label}</title></path>
-      {/each}
+      {#if n.jobs?.length}
+        <!-- One "!" for the jobs that end here, beside the pip and inside the orbit: red with a bounty among them, else amber. -->
+        <text x={n.x - px(14)} y={n.y + px(5)} class="job" class:bounty={n.jobs.some((j) => j.kind === 'bounty')} font-size={px(15)} stroke-width={px(3)} data-testid="starmap-job-mark"><title>{n.jobs.map((j) => j.label).join('\n')}</title>!</text>
+      {/if}
       {#if named(n)}<text x={n.x} y={n.y + px(20)} class="nname" class:cur={n.current} font-size={px(13)} stroke-width={px(3)}>{n.name}</text>{/if}
     </g>
   {:else}
@@ -178,7 +179,7 @@
   {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] })} class="lane heading" style={`fill: ${toneColor(m.f.tone)}`} />{/if}
 {/each}
 {#each marks as m (m.f.id)}
-  <g transform={`translate(${m.f.x + m.ox * px(48)} ${m.f.y + m.oy * px(48)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
+  <g transform={`translate(${m.f.x + m.ox * px(56)} ${m.f.y + m.oy * px(56)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
     <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
     {#if art && art.frames[`starmap.fleet.${m.f.kind}.d0`]}
       <StarmapSprite {art} id={`starmap.fleet.${m.f.kind}.d${dir(m.heading)}`} x={0} y={0} size={fleetPx} tint={toneTint(m.f.tone)} />
@@ -247,7 +248,7 @@
   .sel { fill: none; stroke: var(--amber); stroke-width: 2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
   .hostile { fill: color-mix(in srgb, var(--red) 25%, transparent); stroke: var(--red); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
   .unknown { fill: var(--bg); stroke: var(--dim); stroke-opacity: 0.85; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-  .job { fill: var(--amber); }
+  .job { fill: var(--amber); font-family: var(--pixel-font); text-anchor: middle; paint-order: stroke; stroke: var(--bg); pointer-events: all; }
   .job.bounty { fill: var(--red); }
   .dimmed { opacity: 0.35; }
   text { text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-linejoin: round; font-family: var(--head-font); }
