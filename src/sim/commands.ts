@@ -155,6 +155,8 @@ export type Command =
   | { type: 'debug.capture'; ship: number }
   /** Event system: pick an option of the open decision. Rejected when none is open or its requirements are unmet. */
   | { type: 'story.choose'; choice: string }
+  /** Drop the tutorial goal chain for this game. */
+  | { type: 'story.skipGoals' }
   /** Debug: start an event by id, ignoring its triggers and eligibility. */
   | { type: 'story.fire'; event: string }
   /** Set the pool context (danger tier, faction territory) and/or the periodic draw interval in seconds (0 = off). */

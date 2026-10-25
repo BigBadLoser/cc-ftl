@@ -1,5 +1,6 @@
 import { PrizeC, ShipC, type Faction, type Ship } from '../combat/components';
 import { TraderC } from '../trade/types';
+import { bumpStat } from '../story/goals';
 import { portNode } from './ports';
 import { factionsHostile } from '../combat/factions';
 import type { Sim } from '../sim';
@@ -125,6 +126,7 @@ export function tallyLosses(sim: Sim): number[] {
     charge(sim, id, ship, captured);
     out.push(id);
   }
+  if (out.length) bumpStat(sim, 'kills', out.length);
   return out;
 }
 

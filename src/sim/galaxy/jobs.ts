@@ -1,5 +1,6 @@
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
+import { bumpStat } from '../story/goals';
 import { ItemStackC } from '../items/components';
 import { spillItems, takeFromStack } from '../items/stacks';
 import { ModuleC } from '../modules/components';
@@ -91,6 +92,7 @@ export function acceptJob(sim: Sim, key: string): boolean {
   }
   g.jobs.push(job);
   remember(sim, key);
+  bumpStat(sim, 'jobsTaken');
   // The issuer says where: the destination (or the target's node) goes on the player's map.
   const where = job.kind === 'delivery' ? job.to : job.node;
   if (where) g.discovered[where] ??= sim.tick;
@@ -107,6 +109,8 @@ function close(sim: Sim, job: StationJob, outcome: 'done' | 'failed' | 'abandone
   if (job.kind === 'delivery') unloadCrate(sim, job, outcome !== 'done');
   if (outcome === 'done') {
     sim.trade.credits += job.reward;
+    bumpStat(sim, 'jobsDone');
+    if (job.kind === 'bounty') bumpStat(sim, 'bountiesDone');
     standing(sim, job.issuer, JOB_REPUTATION);
   } else {
     standing(sim, job.issuer, -JOB_FAIL_REPUTATION);
