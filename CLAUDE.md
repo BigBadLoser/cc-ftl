@@ -53,7 +53,16 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - Visual changes: send the user the screenshots (default and zoomed-in) and get their approval before
   merging to `main`. Don't merge visual work on the strength of your own review alone.
 
-- Models: subagents default to Sonnet; if a task warrants Opus, say so and get the user's sign-off first.
+- Agents:
+  - The main session is the orchestrator. It talks with the user, plans, briefs agents, reviews their results and
+    drives the PRs, and does small things itself when that is quicker than a handoff.
+  - Subagents default to Sonnet, which handles most well-scoped work.
+  - Keep one Opus agent open for bug fixes and work that really needs Opus, and reuse it by message rather than
+    starting new ones, so its cache isn't rebuilt every time. Use it only when Opus is needed, and tell the user when it
+    gets a task.
+  - Visual work: build the minimum viewable prototype first, send the user screenshots and stop, so they can iterate or
+    change direction early. Finish the work and open the PR only after their go.
+  - Non-visual work: no prototype stop. Work it through to a tested PR.
 - Reference repos (e.g. `bigbadloser/space-web-game`) are design reference only; never port code from them.
 - No save migrations while this is a prototype: bump `SAVE_VERSION` instead.
 - Terminology: a **node** is one playable grid, a **sector** is a group of nodes, **hyperlanes** link sectors (older code
