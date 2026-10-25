@@ -185,6 +185,8 @@ export interface ItemDef {
   price?: number;
   /** Quality tier of gear (1 basic, 2 middle grade, 3 the best). Traders' surplus rules sell only up to a tier. */
   tier?: number;
+  /** A job's sealed cargo (a delivery crate): it stays where it is put on deck, never hauled into storage, loaded or sold. */
+  cargo?: true;
 }
 
 /** Pose family of a hand weapon's art (which aim/fire/ready/swing clips it has). */

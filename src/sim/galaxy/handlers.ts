@@ -9,7 +9,7 @@ import { drop, jump, teleport } from './hyperspace';
 import { discover } from './travel';
 import { leave, respond } from './respond';
 import { addNotoriety, clearNotoriety } from './heat';
-import { abandonJob, acceptJob } from './jobs';
+import { abandonJob, acceptJob, openCrate } from './jobs';
 
 type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | `jobs.${string}` | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl' | 'debug.notoriety'>;
 type Handler<T extends GalaxyCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -22,6 +22,7 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
   'galaxy.clearNotoriety': (sim) => void clearNotoriety(sim),
   'jobs.accept': (sim, cmd) => void acceptJob(sim, cmd.key),
   'jobs.abandon': (sim, cmd) => void abandonJob(sim, cmd.id),
+  'jobs.openCrate': (sim, cmd) => void openCrate(sim, cmd.id),
   'debug.galaxyReveal': (sim, cmd) => {
     const r = Math.max(0, Math.min(12, Math.floor(cmd.radius)));
     const [cx, cy] = (chunkOfId(sim.galaxy.current) ?? '0,0').split(',').map(Number) as [number, number];

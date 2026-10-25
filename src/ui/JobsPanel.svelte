@@ -19,7 +19,7 @@
       <li class:due={j.turnsLeft <= 3} data-testid="job-active">
         <div class="t"><b>{j.title}</b><span class="pay">{j.reward} cr</span></div>
         <div class="d">{j.detail} · {far(j)} · {j.turnsLeft} turn{j.turnsLeft === 1 ? '' : 's'} left · for {j.issuer}</div>
-        {#if j.kind === 'delivery' && !j.ready}<div class="warn">The goods are no longer aboard.</div>{/if}
+        {#if j.kind === 'delivery' && !j.ready}<div class="warn">The crate is no longer aboard.</div>{/if}
         <button class="ghost" data-testid="job-abandon" onclick={() => j.id !== null && api.dispatch({ type: 'jobs.abandon', id: j.id })}>Abandon</button>
       </li>
     {/each}
@@ -40,7 +40,7 @@
       </li>
     {/each}
   </ul>
-  <p class="note">A missed delivery costs standing with the issuer and marks you a thief (notoriety). Bounties pay when you destroy the target.</p>
+  <p class="note">A delivery comes aboard as a sealed crate, set on deck apart from your hold. A missed one is broken open, its goods yours, but it costs standing with the issuer and marks you a thief (notoriety). Bounties pay when you destroy the target.</p>
 </aside>
 
 <style>
