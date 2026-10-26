@@ -14,7 +14,7 @@ export const STEPS = [
 /** Mask samples per density sample: the step edges stay hard but follow the (interpolated) density, not its sample grid. */
 const UP = 8;
 /** The share of the square, at each edge, that fades out. */
-const EDGE = 0.18;
+const EDGE = 0.12;
 
 export interface Baked {
   canvas: HTMLCanvasElement;
@@ -58,6 +58,12 @@ function blur(src: Float32Array, w: number, r: number): Float32Array {
   return a;
 }
 
+/** Density falls to nothing toward the square's edge (over EDGE of its side), so the stepped contours close up before the edge instead of being cut by it. */
+const ramp = (u: number): number => {
+  const t = Math.max(0, Math.min(1, Math.min(u, 1 - u) / EDGE));
+  return t * t * (3 - 2 * t);
+};
+
 const canvasOf = (w: number) => Object.assign(document.createElement('canvas'), { width: w, height: w });
 
 /** The last bake: the same tiles come back on every snapshot until the player moves a tile or more. */
@@ -95,7 +101,7 @@ export function bakeNebula(tiles: UiNebulaTile[], art: UiStarArt, glow: HTMLImag
       const tx = fx - x;
       const top = at(x, y) + (at(x + 1, y) - at(x, y)) * tx;
       const bot = at(x, y + 1) + (at(x + 1, y + 1) - at(x, y + 1)) * tx;
-      fine[j * W + i] = Math.min(1, (top + (bot - top) * ty) * 1.2);
+      fine[j * W + i] = Math.min(1, (top + (bot - top) * ty) * 1.2) * ramp(i / W) * ramp(j / W);
     }
   }
   const out = canvasOf(W);
@@ -121,20 +127,6 @@ export function bakeNebula(tiles: UiNebulaTile[], art: UiStarArt, glow: HTMLImag
     octx.globalAlpha = step.alpha;
     octx.drawImage(layer, 0, 0);
   });
-  // Fade the square's edges into the backdrop, so zooming out never shows where the generated field ends.
-  octx.globalAlpha = 1;
-  octx.globalCompositeOperation = 'destination-in';
-  const edge = EDGE;
-  for (const vertical of [false, true]) {
-    const grad = vertical ? octx.createLinearGradient(0, 0, 0, W) : octx.createLinearGradient(0, 0, W, 0);
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(edge, 'rgba(0,0,0,1)');
-    grad.addColorStop(1 - edge, 'rgba(0,0,0,1)');
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    octx.fillStyle = grad;
-    octx.fillRect(0, 0, W, W);
-  }
-  octx.globalCompositeOperation = 'source-over';
   const baked = { canvas: out, x0, y0, side: cols * size };
   last = { key, baked };
   return baked;
