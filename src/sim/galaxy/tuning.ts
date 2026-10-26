@@ -230,6 +230,10 @@ export const SENSOR_HOPS = 3;
 export const FRONTIER_RING = 1;
 
 /** Arrival rolls while the player stays at a node: every ARRIVAL_EVERY_SEC, chance ARRIVAL_PER_DANGER x danger (x territory). */
+/** Opening grace (grace.ts): no unprompted hostile arrival at a danger-0 node for this many seconds of game time... */
+export const GRACE_SEC = 20 * 60;
+/** ...or until the goal chain is past this act index (0 = the first act, "Get underway", is done), whichever comes first. */
+export const GRACE_ACT = 0;
 export const ARRIVAL_EVERY_SEC = 60;
 export const ARRIVAL_PER_DANGER = 0.05;
 export const ARRIVAL_MAX_CHANCE = 0.45;

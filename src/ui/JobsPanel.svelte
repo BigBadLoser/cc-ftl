@@ -4,7 +4,7 @@
   import JobCards from './JobCards.svelte';
 
   let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
-  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], max: 0 });
+  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], max: 0, mine: null });
   onMount(() => api.jobs.subscribe((v) => (jobs = v)));
 </script>
 

@@ -217,6 +217,8 @@ export const DOOR_SIGHT_OPEN = 64;
 /** Ticks between flee replans. */
 export const FLEE_REPLAN_TICKS = 15;
 export const FLEE_RADIUS = 10;
+/** An unarmed crew member who is out of every intruder's sight and farther than this (tiles) stays where they are. */
+export const FLEE_HOLD_DIST = 5;
 /** Ticks between path replans while closing in on a target. */
 export const CHASE_REPLAN_TICKS = 6;
 /** Surrender: hp fraction under which a non-player crew member gives up when outnumbered within this many tiles. */

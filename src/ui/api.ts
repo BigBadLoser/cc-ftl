@@ -300,6 +300,15 @@ export interface UiHeat {
  * A station job (sim galaxy/jobs.ts) as the board shows it: an offer (`id` null) or one the player holds. `where` is the delivery's destination or the
  * bounty target's node, `hops` how many jumps away it is (null when out of the known map), `here` that the player is there; `ready` that a delivery's crate is aboard.
  */
+/** A ship's fighting strength as the job card shows it: working guns, shield layers, hull plates (walls and doors). */
+export interface UiStrength {
+  guns: number;
+  shields: number;
+  hull: number;
+}
+/** How a target compares with the player's ship. */
+export type UiStrengthRead = 'outmatched' | 'even' | 'weaker';
+
 export interface UiJob {
   key: string;
   id: number | null;
@@ -313,6 +322,8 @@ export interface UiJob {
   hops: number | null;
   here: boolean;
   ready: boolean;
+  /** Bounty only: the target ship's strength (what it is generated with when you arrive) and how it compares with yours. */
+  target: { strength: UiStrength; read: UiStrengthRead | null } | null;
 }
 
 /** The job board: offers at the node the player is at (`here` its name, null when jobs cannot be taken now: in hyperspace or an event grid), and the jobs they hold (at most `max`). */
@@ -321,6 +332,8 @@ export interface UiJobs {
   offers: UiJob[];
   active: UiJob[];
   max: number;
+  /** The player's own ship, for comparing with a bounty target. */
+  mine: UiStrength | null;
 }
 
 export interface UiStats {

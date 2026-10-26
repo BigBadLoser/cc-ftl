@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { newGame } from '../sim';
+import { ModuleC, WeaponC, newGame, shipIdOf } from '../sim';
+import { spawnContact } from '../sim/galaxy/arrivals';
+import { offersHere } from '../sim/galaxy/jobOffers';
 import { ensureAround } from '../sim/galaxy/state';
 import { content } from '../content';
 import { buildJobs } from './jobsSnapshot';
@@ -21,6 +23,34 @@ describe('buildJobs', () => {
     const after = buildJobs(sim);
     expect(after.active.map((j) => j.key)).toEqual([o.key]);
     expect(after.offers.some((j) => j.key === o.key)).toBe(false);
+  });
+});
+
+describe('buildJobs target strength', () => {
+  it('shows a bounty target\'s guns, shields and hull next to ours, and matches the ship that appears', () => {
+    let checked = 0;
+    for (let seed = 1; seed <= 12 && checked < 2; seed++) {
+      const sim = newGame(seed, content);
+      ensureAround(sim, sim.galaxy.current);
+      const board = buildJobs(sim);
+      expect(board.mine?.guns).toBeGreaterThan(0);
+      for (const o of board.offers) {
+        if (o.kind === 'delivery') expect(o.target).toBeNull();
+        if (o.kind !== 'bounty') continue;
+        expect(o.target).not.toBeNull();
+        expect(['outmatched', 'even', 'weaker']).toContain(o.target!.read);
+        expect(buildJobs(sim).offers.find((x) => x.key === o.key)!.target).toEqual(o.target); // deterministic
+        // The same key generates the real ship: its working guns are the ones the card promised.
+        const raw = offersHere(sim).find((x) => x.key === o.key)!;
+        const c = { id: 9000 + checked, faction: raw.targetFaction!, shipgen: raw.shipgen!, seed: raw.seed ?? 0, depth: raw.depth ?? 1, since: 0 };
+        expect(spawnContact(sim, sim.galaxy.current, c)).toBe(true);
+        const guns = sim.world.query(WeaponC).filter((m) => shipIdOf(sim, sim.world.get(m, ModuleC)) === (c as { ship?: number }).ship).length;
+        expect(guns).toBe(o.target!.strength.guns);
+        checked++;
+        break;
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
   });
 });
 

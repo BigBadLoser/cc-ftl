@@ -129,7 +129,7 @@ export function createBridge(sim: Sim): Bridge {
   let lastHostiles = '';
   const modules = createStore<UiModule[]>([]);
   const sites = createStore<UiSite[]>([]);
-  const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], max: 0 });
+  const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], max: 0, mine: null });
   const goals = createStore<UiGoals | null>(null);
   let lastGoals = '';
   let lastJobsKey = '';

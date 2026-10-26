@@ -51,6 +51,7 @@ describe('turn clock', () => {
     expect(TURN_SEC).toBe(180);
     expect(TIME_TURN_TICKS).toBe(TURN_SEC * TICK_HZ);
     const sim = newGame(21, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     clear(sim);
     step(sim, TIME_TURN_TICKS - 1);
     expect(sim.galaxy.turn).toBe(0);
@@ -63,6 +64,7 @@ describe('turn clock', () => {
 
   it('a hop resets the clock; no time turn fires for the same stretch; deploy resets it too', () => {
     const sim = newGame(21, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     clear(sim);
     step(sim, TIME_TURN_TICKS - 50);
     giveItems(sim, 'item.fuel', 50);
@@ -89,6 +91,7 @@ describe('turn clock', () => {
 
   it('hop and time turns share one counter and both call onTurn', () => {
     const sim = newGame(21, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     clear(sim);
     takeHopTurn(sim);
     sim.galaxy.turnClock = TIME_TURN_TICKS - 1;
@@ -101,6 +104,7 @@ describe('turn clock', () => {
 describe('fleets in the player\'s node', () => {
   it('a fleet arriving materialises its ships; leaving lifts them out; no duplicates across leave and return', () => {
     const sim = newGame(24, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     clear(sim);
     const next = adjacent(sim, START_NODE)[0] as string;
     const f = fleet(sim, next, { route: [START_NODE], dest: START_NODE, dwell: 0 });
@@ -156,6 +160,7 @@ describe('fleets in the player\'s node', () => {
 
   it('a fleet in the node holds while there is a fight', () => {
     const sim = newGame(24, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     clear(sim);
     const f = fleet(sim, START_NODE, { route: [adjacent(sim, START_NODE)[0] as string], dwell: 0 });
     sim.sector.inCombat = true;
@@ -183,6 +188,7 @@ describe('crossings and encounters', () => {
 
   it('picks the encounter kind from faction and role', () => {
     const sim = newGame(25, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     expect(encounterKind(sim, base({ faction: 'pirates', role: 'pirate' }))).toBe('interdict');
     expect(encounterKind(sim, base({ faction: 'rogue', role: 'raider' }))).toBe('interdict');
     expect(encounterKind(sim, base({ faction: 'traders', role: 'trader' }))).toBe('hail');
@@ -196,6 +202,7 @@ describe('crossings and encounters', () => {
   /** Fly one hop to `to`, with `f` set up to cross it, and report the result. */
   function hopWith(seed: number, make: (to: string, from: string) => Partial<Fleet>, faction: string, role: Fleet['role'], passes = true) {
     const sim = newGame(seed, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     clear(sim);
     giveItems(sim, 'item.fuel', 50);
     charge(sim);
@@ -259,6 +266,7 @@ describe('crossings and encounters', () => {
 
   it('the chance of a passing hail or scan is about PASSING_ENCOUNTER_CHANCE', () => {
     const sim = newGame(27, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     let n = 0;
     for (let id = 0; id < 4000; id++) if (passingMeets(sim, id, 5)) n++;
     expect(n / 4000).toBeGreaterThan(PASSING_ENCOUNTER_CHANCE - 0.03);
@@ -276,6 +284,7 @@ describe('incoming fleets (arrival warnings)', () => {
   /** A start node, a neighbour `a` and a node `b` beyond it that is not the start. */
   function chain(seed: number) {
     const sim = newGame(seed, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     clear(sim);
     const a = adjacent(sim, START_NODE)[0] as string;
     const b = adjacent(sim, a).find((n) => n !== START_NODE) as string;

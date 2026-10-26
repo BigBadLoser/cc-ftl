@@ -1,6 +1,7 @@
 import type { Sim } from '../sim';
 import { unit } from './hash';
 import { fleetName } from './names';
+import { graceHolds } from './grace';
 import { fleetStrength } from './encounterOdds';
 import { isHostileFaction } from './standing';
 import { nodeOf } from './state';
@@ -52,11 +53,12 @@ export const interdicted = (sim: Sim): boolean => sim.galaxy.encounters.some((e)
  */
 export function crossAfterHop(sim: Sim, from: string, to: string): boolean {
   const g = sim.galaxy;
+  const graced = (f: Fleet): boolean => graceHolds(sim, to, f.faction); // opening grace: no interdiction at a danger-0 node
   let halted = false;
   // One hop halts the trip once: when several hostile fleets cross it, the strongest (then the lowest id) holds the player and the rest find nothing to
   // intercept this turn (their cooldown is not started, so they can still interdict a later hop). Two pending interdictions could not both be answered.
   const interdictor = g.fleets
-    .filter((f) => crossingOf(f, from, to, g.turn) && !(f.met !== undefined && g.turn - f.met < ENCOUNTER_COOLDOWN) && encounterKind(sim, f) === 'interdict')
+    .filter((f) => crossingOf(f, from, to, g.turn) && !(f.met !== undefined && g.turn - f.met < ENCOUNTER_COOLDOWN) && encounterKind(sim, f) === 'interdict' && !graced(f))
     .sort((a, b) => fleetStrength(b.ships) - fleetStrength(a.ships) || a.id - b.id)[0]?.id;
   for (const f of g.fleets) {
     const how = crossingOf(f, from, to, g.turn);
@@ -64,7 +66,7 @@ export function crossAfterHop(sim: Sim, from: string, to: string): boolean {
     sim.events.emit({ type: 'galaxy.crossing', fleet: f.id, faction: f.faction, role: f.role, how, node: to });
     if (f.met !== undefined && g.turn - f.met < ENCOUNTER_COOLDOWN) continue;
     const kind = encounterKind(sim, f);
-    if (kind === 'interdict' && f.id !== interdictor) continue;
+    if (kind === 'interdict' && (f.id !== interdictor || graced(f))) continue;
     // Passing a non-hostile fleet usually means nothing: only a small chance of a hail or scan (distress and interdictions always happen).
     if ((kind === 'hail' || kind === 'scan') && !passingMeets(sim, f.id, g.turn)) continue;
     f.met = g.turn;
