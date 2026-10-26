@@ -304,6 +304,49 @@ and risk is worth taking.
   depending on the project) and takes time. Projects unlock blueprints: module tiers, upgrades, implants,
   construction pods and drones. Build plan: `docs/PROGRESSION_PLAN.md`.
 
+### Where blueprints are sold (user decision, 2026-10-26)
+
+Each station type has its own reason to visit:
+
+| Station | Sells blueprints for |
+|---|---|
+| **Research** (new station type) | Non-defence modules: reactors, engines, life support, production, storage, utility |
+| **Military** | Defence: weapons, shields, point defence. The best gear, gated by standing |
+| **Pirate / black market** | Weapons, a rougher or cheaper selection (see "Pirate factions and the black market") |
+| **Trading** | No blueprints. Later: furniture, comfort and leisure objects |
+| **Mining, farming** | Maybe their own speciality later (refinery or hydroponics upgrades) |
+
+- Research stations are rarer than trading posts and more common in calm, settled space. They start as a generator layout
+  built from existing modules; their art comes later through the pipeline.
+- Researching a blueprint yourself (research module, phase 3) is the other way to get any of these, paying the project's
+  materials cost.
+- Shields count as Defence. Mk I is on the starter ship, so Mk II/III being hard to get early is fine (open to revisit).
+
+### Pirate factions and the black market (user decisions, 2026-10-26; not built yet)
+
+Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be conquerable.
+
+- **Several pirate factions**, each with its own territory, livery, ship doctrine and player standing, so fights against
+  different crews play differently:
+  - **Scrappers** (existing): junk ships, salvage, many weak guns, on the fringes.
+  - **Raider clan:** fast, light ships that favour boarding: they try to take your ship rather than wreck it.
+  - **Cartel / smugglers:** cargo-heavy ships with missiles and escorts; less aggressive, but they guard their routes.
+  - **Zealots** and **mercenaries:** also wanted (flavour and doctrine to design when built).
+- **Pirate factions fight each other** too, so rival fleets clash on the starmap and the player can play them off against
+  one another. This needs a real faction relations table, not just hostile or not, plus per-faction player standing.
+- **Black market:** a neutral pirate trading hub.
+  - **Where:** a few **named, unique** black markets, plus some stations in lawless space that offer black market
+    services (a smaller selection).
+  - **Truce:** at a black market's node nobody starts a fight, pirates of any faction and the player included.
+  - **Breaking the truce:** everyone there turns on you, and you are banned for a while. Banned means they fire on you on
+    sight; the game never stops you travelling there.
+  - **Services:** pirate weapon blueprints (the pirate source in the blueprint table), contraband and stolen goods, a
+    fence that buys anything (captured loot included) with no questions, shady crew for hire, and a job board with
+    pirate-on-pirate contracts.
+  - **Navy:** dislikes it; being seen there may cost navy standing.
+- **Art:** each faction's livery and the black market's look come through the pipeline later; placeholders reuse the
+  Scrapper motif at first.
+
 ### Ship growth
 
 - **Early:** expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station builds the
