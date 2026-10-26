@@ -1,5 +1,5 @@
 import {
-  CombatC, CrewC, IonC, ModuleC, ShipC, WeaponC, ammoCount, isDormant, operatorOf, shieldRechargeSec, FTL_CHARGE_SEC, type Sim, type Target,
+  CombatC, CrewC, IonC, ModuleC, ShipC, WeaponC, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC, type Sim, type Target,
 } from '../sim';
 import type { UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
 import { shipIdOf } from '../sim/regions';
@@ -76,7 +76,7 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
           });
         }
       }
-      player = { ...base, weapons, consoles };
+      player = { ...base, weapons, consoles, idle: weaponsIdleReason(sim, playerGrid) };
     } else if (factionsHostile(s.faction, 'player') && s.state !== 'fled') {
       // The same test as the sim's combat state (combatStateSystem): every faction at war with the player (hostile, and the
       // rogue AI and aliens, at war with everyone). Listing only 'hostile' left the panel empty in a fight with a rogue ship.

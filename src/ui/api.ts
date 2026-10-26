@@ -503,7 +503,7 @@ export interface UiFtl {
 
 export interface UiCombat {
   inCombat: boolean;
-  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[] }) | null;
+  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null }) | null;
   /** Hostile ships (not fled), nearest first. */
   enemies: UiShipCombat[];
 }
