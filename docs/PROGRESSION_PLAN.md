@@ -17,6 +17,10 @@ its blueprint is known.
 
 ## Phases
 
+**Build order (user decision, 2026-10-26):** 1 (plus the tier art pack), 3 (research), 5 (shipyard hull expansion),
+2 and 2b together (faction stock, pirate factions, black market), 4 (upgrade slots, with weapon tiers), then 6, 7 and 8.
+The phase numbers below are names, not the order.
+
 1. **Blueprints and tiered core modules.**
    - Sim: a `GalaxyState`/story-level set of known blueprints, and a build menu that only lists known modules.
    - Content:
