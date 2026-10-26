@@ -7,6 +7,9 @@
   let st = $state<UiToolState>({ tool: 'select', build: 'module', moduleDef: null, rot: 0 });
 
   onMount(() => api.tool.subscribe((t) => (st = t)));
+  // The build catalog fits itself to the left of the dock (the dock never moves).
+  let dockW = $state(0);
+  $effect(() => { document.documentElement.style.setProperty('--tools-w', `${dockW}px`); return () => document.documentElement.style.removeProperty('--tools-w'); });
 
   const tools: { id: UiTool; label: string; icon: IconName }[] = [
     { id: 'select', label: 'Select', icon: 'select' },
@@ -17,7 +20,7 @@
 </script>
 
 <div class="tools" data-testid="toolbar">
-  <div class="dock">
+  <div class="dock" bind:offsetWidth={dockW}>
     {#each tools as t (t.id)}
       <button class="tile" class:on={st.tool === t.id} title={t.label} aria-label={t.label} data-testid="tool-{t.id}" onclick={() => api.setTool({ tool: t.id })}><Icon name={t.icon} size={18} /></button>
     {/each}
@@ -27,7 +30,7 @@
 
 <style>
   /* Bottom-right dock: build tools first, then view options and contextual panels. */
-  .tools { position: fixed; z-index: 4; right: calc(8px + var(--sar)); bottom: calc(8px + var(--sab) + var(--catalog-h, 0px)); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
+  .tools { position: fixed; z-index: 4; right: calc(8px + var(--sar)); bottom: calc(8px + var(--sab)); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
   :global(html[data-combat]) .tools { right: calc(388px + var(--sar)); }
   .dock { display: flex; gap: 2px; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end; }
   .dock { padding: 2px; background: var(--panel); border: 1px solid var(--line); max-width: calc(100vw - 16px); }
