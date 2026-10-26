@@ -1,8 +1,8 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
-import { buildModuleList, buildStats } from './moduleSnapshot';
+import { buildModuleDefs, buildModuleList, buildStats } from './moduleSnapshot';
 import { buildSites } from './siteSnapshot';
 import { buildJobs } from './jobsSnapshot';
 import { buildStranded } from './strandedSnapshot';
@@ -25,6 +25,7 @@ import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
 import { crateInfo } from './jobsSnapshot';
+import { buildResearch } from './researchSnapshot';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
 export interface Snapshot {
@@ -73,6 +74,8 @@ export interface Bridge {
   crew: Readable<UiCrew[]>;
   hostiles: Readable<UiCrew[]>;
   modules: Readable<UiModule[]>;
+  /** The build menu's modules; rebuilt when a blueprint is learnt. */
+  moduleDefs: Readable<UiModuleDef[]>;
   sites: Writable<UiSite[]>;
   jobs: Readable<UiJobs>;
   goals: Readable<UiGoals | null>;
@@ -81,6 +84,7 @@ export interface Bridge {
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
   fabs: Readable<UiFab[]>;
+  research: Readable<UiResearch>;
   combat: Readable<UiCombat>;
   ftl: Readable<UiFtl | null>;
   shuttles: Readable<UiShuttles>;
@@ -130,6 +134,8 @@ export function createBridge(sim: Sim): Bridge {
   const hostiles = createStore<UiCrew[]>([]);
   let lastHostiles = '';
   const modules = createStore<UiModule[]>([]);
+  const moduleDefs = createStore<UiModuleDef[]>(buildModuleDefs(sim));
+  let lastBlueprints = sim.story.blueprints.join(',');
   const sites = createStore<UiSite[]>([]);
   const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], max: 0, mine: null });
   const goals = createStore<UiGoals | null>(null);
@@ -142,6 +148,8 @@ export function createBridge(sim: Sim): Bridge {
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
+  const research = createStore<UiResearch>(buildResearch(sim));
+  let lastResearch = '';
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
   const ftl = createStore<UiFtl | null>(null);
   let lastFtl = '';
@@ -230,6 +238,11 @@ export function createBridge(sim: Sim): Bridge {
       lastMods = mk;
       modules.set(ml);
     }
+    const bk = sim.story.blueprints.join(',');
+    if (bk !== lastBlueprints) {
+      lastBlueprints = bk;
+      moduleDefs.set(buildModuleDefs(sim));
+    }
     const sl = buildSites(sim);
     const slk = JSON.stringify(sl);
     if (slk !== lastSites) {
@@ -260,6 +273,12 @@ export function createBridge(sim: Sim): Bridge {
         lastGoals = gk;
         goals.set(gl);
       }
+    }
+    const rs = buildResearch(sim);
+    const rk = JSON.stringify(rs);
+    if (rk !== lastResearch) {
+      lastResearch = rk;
+      research.set(rs);
     }
     const logs = [buildStock(sim), buildStorages(sim), buildFabs(sim)] as const;
     const keys = logs.map((l) => JSON.stringify(l));
@@ -389,6 +408,7 @@ export function createBridge(sim: Sim): Bridge {
     crew,
     hostiles,
     modules,
+    moduleDefs,
     sites,
     jobs,
     goals,
@@ -397,6 +417,7 @@ export function createBridge(sim: Sim): Bridge {
     stock,
     storages,
     fabs,
+    research,
     combat,
     ftl,
     shuttles,
@@ -443,8 +464,9 @@ export function createBridge(sim: Sim): Bridge {
     },
     dispatch(cmd) {
       sim.enqueue(cmd);
-      // Trade offers are answered at once even with the game paused: the window would otherwise wait for time to run.
-      if (cmd.type.startsWith('trade.') && store.get().paused) loop?.flush();
+      // A UI command (accept a job, answer a trade offer, hire, ...) takes effect at once even with the game paused: the panel would
+      // otherwise sit unchanged until time runs. The command still goes through the queue; flush() runs just the one tick that drains it.
+      if (store.get().paused) loop?.flush();
     },
     setSpeed,
     togglePause: () => setSpeed(store.get().paused ? lastSpeed : 0),

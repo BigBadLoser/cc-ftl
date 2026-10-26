@@ -47,7 +47,7 @@ const content: ContentRegistry = {
   structCosts: {},
 };
 const all = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, cooking: v, patrol: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v,
 });
 // A 5x3 corridor-like room: a solid block placed in the middle row can be walked around.
 const rows = ['.......', '.#####.', '.#___#.', '.#___#.', '.#___#.', '.#####.', '.......'];

@@ -49,10 +49,16 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   2. Then one round of testing and bug fixes: merge `main` in, run the full `npm run check`, and fix whatever it finds.
   3. Then open the PR, with the `npm run check` result in its body. CI and Codex review it, and only the user merges it to `main`. Nothing reaches `main` any other way.
   Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
+- GitHub issues track the work. Every bug or piece of work gets an issue (create one if none exists), and every PR
+  links it: `Closes #N` when it finishes the issue, `Part of #N` when it doesn't. Reference the issue in commit messages
+  (`Refs #N`). When work lands or stalls without a PR, comment on the issue.
 - Use Sonnet or Haiku subagents for well-scoped tasks, and keep token use low.
-- Verify visual changes with a headless screenshot before handing them to the user. The user often
-  tests on a phone through `main` at https://cc-ftl.bigbadloser.workers.dev. Branch previews
-  (`<branch>-cc-ftl.bigbadloser.workers.dev`) are unreliable, so finished, verified work goes to `main`.
+- Verify visual changes with a headless screenshot before handing them to the user. The user tests on desktop through
+  `main` at https://cc-ftl.bigbadloser.workers.dev. Branch previews (`<branch>-cc-ftl.bigbadloser.workers.dev`) are
+  unreliable, so finished, verified work goes to `main`.
+- **Desktop only.** The game will not be played on phones. Don't spend work on phone layouts, touch gestures or phone
+  screenshots, and don't add phone-specific requirements to briefs. Existing phone breakpoints may stay as they are; don't
+  extend or fix them unless the user asks.
 - Visual changes: send the user the screenshots (default and zoomed-in) and get their approval before
   merging to `main`. Don't merge visual work on the strength of your own review alone.
 

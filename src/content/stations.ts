@@ -19,7 +19,7 @@ type Shapes = Record<StationSize, Weighted<StationGrammar>[]>;
  * farming, spines and crosses for mining and depots, branching trees and welded heaps for pirates. Hubs use the
  * satellite hub, concentric rings or (mining, depots) a big cross; spines and arcs stay below hub size.
  */
-const SHAPES: Record<'trading' | 'mining' | 'farming' | 'military' | 'pirate', Shapes> = {
+const SHAPES: Record<'trading' | 'mining' | 'farming' | 'military' | 'pirate' | 'research', Shapes> = {
   trading: {
     outpost: g(['stationWheel', 3], ['stationCross', 2], ['stationRing', 1], ['stationArc', 1]),
     station: g(['stationWheel', 3], ['stationConcentric', 2], ['stationCross', 2], ['stationRing', 1]),
@@ -39,6 +39,11 @@ const SHAPES: Record<'trading' | 'mining' | 'farming' | 'military' | 'pirate', S
     outpost: g(['stationCross', 2], ['stationSpine', 2], ['stationRing', 1]),
     station: g(['stationSpine', 2], ['stationCross', 2], ['stationRing', 2], ['stationConcentric', 1]),
     hub: g(['stationHub', 2], ['stationConcentric', 2], ['stationCross', 1]),
+  },
+  research: {
+    outpost: g(['stationRing', 3], ['stationArc', 2], ['stationLattice', 1]),
+    station: g(['stationRing', 3], ['stationConcentric', 2], ['stationLattice', 2], ['stationWheel', 1]),
+    hub: g(['stationConcentric', 3], ['stationHub', 2]),
   },
   pirate: {
     outpost: g(['stationTree', 3], ['stationWelded', 2], ['stationArc', 1]),
@@ -66,13 +71,13 @@ const armoury = (count: Per, lockers = 4): StationRoomDef => room('armoury', n(l
 
 const CIVIL_CREW = {
   required: ['role.engineer', 'role.gunner'],
-  pool: [{ value: 'role.engineer', weight: 3 }, { value: 'role.medic', weight: 1 }, { value: 'role.gunner', weight: 1 }, { value: 'role.pilot', weight: 1 }],
+  pool: [{ value: 'role.engineer', weight: 3 }, { value: 'role.medic', weight: 1 }, { value: 'role.gunner', weight: 1 }, { value: 'role.pilot', weight: 1 }, { value: 'role.scientist', weight: 1 }],
   species: ['species.human'],
 };
 const FAIRING = { slope: 3, max: 2, jitter: 0, label: 'fairing' };
 const LIGHT = [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.ionCannon', weight: 1 }];
 const HEAVY = [{ value: 'module.massDriver', weight: 2 }, { value: 'module.missileLauncher', weight: 1 }];
-const SMALL_SHIELD = [{ value: 'module.shieldGenSmall', weight: 2 }, { value: 'module.shieldGen', weight: 1 }];
+const SMALL_SHIELD = [{ value: 'module.shieldGen', weight: 1 }];
 
 export const stations = {
   // Trade: big holds round a market core, many docking arms.
@@ -83,6 +88,20 @@ export const stations = {
     tiers: tiers({ crew: 1, guns: per(2, 6, 12), heavyPct: 25, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(12, 30, 60), docks: per(3, 5, 8), shapes: SHAPES.trading }),
     rooms: [room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 4)), armoury(per(1, 1, 2))],
     atrium: { role: 'plaza', chance: 0.8 },
+  },
+  // Research: consoles and fabricator benches round a quiet ring, stores of parts and electronics; lightly armed, calm space.
+  'station.research': {
+    name: 'Research station', kind: 'research', side: 'neutral', motif: 'motif.civilian', security: 0.2, crew: CIVIL_CREW,
+    weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
+    stock: [{ item: 'item.electronics', min: 3, max: 8 }, { item: 'item.parts', min: 1, max: 4 }, { item: 'item.polymer', min: 0, max: 4 }],
+    tiers: tiers({ crew: 0.9, guns: per(1, 3, 6), heavyPct: 10, shields: per(1, 1, 2), pd: per(1, 1, 2), crates: per(8, 18, 36), docks: per(2, 3, 4), shapes: SHAPES.research }),
+    rooms: [
+      room('support', ['module.console', 'module.console', 'module.console', 'module.fabricator'], 8, 4, per(1, 2, 4)),
+      room('industry', n(2, 'module.fabricator'), 7, 4, per(0, 1, 2)),
+      room('cargo', n(3, 'module.storage'), 7, 4, per(1, 1, 2), [{ item: 'item.electronics', min: 6, max: 20 }, { item: 'item.parts', min: 2, max: 8 }]),
+      armoury(per(1, 1, 1), 3),
+    ],
+    atrium: { role: 'garden', chance: 0.5 },
   },
   // Mining: refineries on ore-processing floors, ore cages and big ore stores, docks for the mining ships.
   'station.mining': {
@@ -125,7 +144,7 @@ export const stations = {
     name: 'Pirate den', kind: 'pirate', side: 'hostile', motif: 'motif.scrapper', security: 0.15,
     crew: { required: ['role.engineer'], pool: [{ value: 'role.gunner', weight: 2 }, { value: 'role.engineer', weight: 2 }, { value: 'role.pilot', weight: 1 }, { value: 'role.medic', weight: 1 }], species: ['species.human'] },
     weapons: { light: [{ value: 'module.burstLaser', weight: 2 }, { value: 'module.incendiaryLauncher', weight: 1 }], heavy: [{ value: 'module.massDriver', weight: 1 }] },
-    shields: [{ value: 'module.shieldGenSmall', weight: 1 }],
+    shields: [{ value: 'module.shieldGen', weight: 1 }],
     transition: { slope: 1, max: 3, jitter: 0.5, label: 'adapter plating' },
     stock: [{ item: 'item.scrap', min: 2, max: 8 }, { item: 'item.metal', min: 0, max: 4 }, { item: 'item.electronics', min: 0, max: 3 }],
     tiers: tiers({

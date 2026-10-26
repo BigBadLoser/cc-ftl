@@ -1,10 +1,10 @@
 import { mount } from 'svelte';
+import { setAnimPaused } from './render/animClock';
 import App from './ui/App.svelte';
 import type { UiApi, UiIcon, UiSession } from './ui/api';
 import type { UiStarArt } from './ui/starmapApi';
 import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
-import { buildModuleDefs } from './app/moduleSnapshot';
 import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
 import { loadItemIcons } from './app/itemIcons';
 import { loadStarmapArt } from './app/starmapArt';
@@ -45,7 +45,11 @@ loadStarmapArt().then((v) => starmapArt.set(v)).catch((e: unknown) => errorLog.p
 const loop = createLoop({
   sim,
   // The starmap covers the whole screen, and in hyperspace or while deploying the sector is empty: skip drawing the world.
-  render: (alpha) => { if (!starmapOpen && sim.sector.state === 'active') renderer?.render(alpha); },
+  render: (alpha) => {
+    // World animations freeze while the game is paused (speed 0); camera, UI and hover feedback keep running.
+    setAnimPaused(loop.getSpeed() === 0);
+    if (!starmapOpen && sim.sector.state === 'active') renderer?.render(alpha);
+  },
   onEvents: (events) => {
     controller.onEvents(events);
     renderer?.onEvents(events);
@@ -193,7 +197,7 @@ const api: UiApi = {
   attack: controller.attack,
   selectedCrew: controller.selectedCrew,
   modules: bridge.modules,
-  moduleDefs: buildModuleDefs(sim),
+  moduleDefs: bridge.moduleDefs,
   placeHint: controller.placeHint,
   items: buildItemDefs(sim),
   recipes: buildRecipes(sim),
@@ -203,6 +207,7 @@ const api: UiApi = {
   stock: bridge.stock,
   storages: bridge.storages,
   fabs: bridge.fabs,
+  research: bridge.research,
   selectedModule: controller.selectedModule,
   sites: bridge.sites,
   selectedSite: controller.selectedSite,

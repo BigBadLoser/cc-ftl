@@ -1,6 +1,7 @@
 <script lang="ts" module>
   import type { UiNebulaTile } from './starmapApi';
   import { tokenRgb } from './starmapStyle';
+  import { createBlobCache } from './blobCache';
 
   const smooth = (a: number, b: number, v: number) => {
     const t = Math.max(0, Math.min(1, (v - a) / (b - a)));
@@ -9,7 +10,6 @@
 
   /** The last painting: the same tiles come back on every snapshot until the player moves a tile or more. */
   let last: { key: string; url: string } | null = null;
-  let lastMasks: { key: string; urls: string[] } | null = null;
 
   /** Density steps of the nebula sprites (ARCHITECTURE.md, "Starmap art"): haze, body, core. */
   export const STEPS = [
@@ -35,13 +35,36 @@
   }
 
   /** One hard-edged mask per density step (white where the density passes it), as image URLs, for the sprite tiles. */
-  function masks(tiles: UiNebulaTile[], x0: number, y0: number, cols: number): string[] {
+  /** The baked nebula: the three masked texture layers composed once into one image (a blob URL), keyed by tiles and textures. */
+  const bakes = createBlobCache((u) => URL.revokeObjectURL(u));
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a decode cache, nothing renders from it
+  const decoded = new Map<string, Promise<HTMLImageElement>>();
+  const decode = (url: string) => {
+    let hit = decoded.get(url);
+    if (!hit) {
+      const img = new Image();
+      img.src = url;
+      hit = img.decode().then(() => img);
+      decoded.set(url, hit);
+    }
+    return hit;
+  };
+  const canvasOf = (w: number) => Object.assign(document.createElement('canvas'), { width: w, height: w });
+
+  /**
+   * Each step is its texture, tiled every half tile and cut by that step's density threshold, drawn at its alpha over the
+   * ones below: what the three masked pattern rects drew, but done once instead of on every repaint of the map. One mask pixel
+   * is one baked pixel and textures scale with nearest sampling, so the pixel look is the same.
+   */
+  async function bake(tiles: UiNebulaTile[], x0: number, y0: number, cols: number, tex: string[]): Promise<string> {
     const key = tiles.map((t) => t.id).join('|');
-    if (lastMasks?.key === key) return lastMasks.urls;
+    const hit = bakes.get(key);
+    if (hit) return hit;
     const { soft, w } = density(tiles, x0, y0, cols);
-    const at = (x: number, y: number) => soft[Math.max(0, Math.min(w - 1, y)) * w + Math.max(0, Math.min(w - 1, x))]!;
-    // The density at mask sample (i, j), bilinear between the density samples.
+    const size = tiles[0]!.size;
     const W = w * UP;
+    const imgs = await Promise.all(tex.map(decode));
+    const at = (x: number, y: number) => soft[Math.max(0, Math.min(w - 1, y)) * w + Math.max(0, Math.min(w - 1, x))]!;
     const fine = new Float32Array(W * W);
     for (let j = 0; j < W; j++) {
       const fy = (j + 0.5) / UP - 0.5;
@@ -56,25 +79,35 @@
         fine[j * W + i] = Math.min(1, (top + (bot - top) * ty) * 1.2);
       }
     }
-    const urls = STEPS.map((step) => {
-      const c = document.createElement('canvas');
-      c.width = c.height = W;
-      const ctx = c.getContext('2d');
-      if (!ctx) return '';
-      const img = ctx.createImageData(W, W);
-      for (let k = 0; k < fine.length; k++) {
-        const on = fine[k]! > step.at ? 255 : 0;
-        img.data[k * 4] = img.data[k * 4 + 1] = img.data[k * 4 + 2] = on;
-        img.data[k * 4 + 3] = 255;
-      }
-      ctx.putImageData(img, 0, 0);
-      return c.toDataURL();
+    const out = canvasOf(W);
+    const octx = out.getContext('2d')!;
+    const layer = canvasOf(W);
+    const lctx = layer.getContext('2d')!;
+    const mask = canvasOf(W);
+    const mctx = mask.getContext('2d')!;
+    const img = mctx.createImageData(W, W);
+    const cell = ((size / 2) * W) / (size * cols);
+    // The patterns tile from the map origin: shift by the box's offset into a pattern cell.
+    const shift = (v: number) => ((((-v * W) / (size * cols)) % cell) + cell) % cell - cell;
+    lctx.imageSmoothingEnabled = false;
+    octx.imageSmoothingEnabled = false;
+    STEPS.forEach((step, i) => {
+      lctx.globalCompositeOperation = 'source-over';
+      lctx.clearRect(0, 0, W, W);
+      for (let y = shift(y0); y < W; y += cell) for (let x = shift(x0); x < W; x += cell) lctx.drawImage(imgs[i]!, Math.round(x), Math.round(y), Math.ceil(cell), Math.ceil(cell));
+      for (let k = 0; k < fine.length; k++) img.data[k * 4 + 3] = fine[k]! > step.at ? 255 : 0;
+      mctx.putImageData(img, 0, 0);
+      lctx.globalCompositeOperation = 'destination-in';
+      lctx.drawImage(mask, 0, 0);
+      octx.globalAlpha = step.alpha;
+      octx.drawImage(layer, 0, 0);
     });
-    lastMasks = { key, urls };
-    return urls;
+    const blob = await new Promise<Blob | null>((res) => out.toBlob(res));
+    const url = blob ? URL.createObjectURL(blob) : '';
+    if (url) bakes.put(key, url);
+    return url;
   }
 
-  /** A separable box blur of `src` (side `w`), run twice: close to a Gaussian of about `r` samples. */
   function blur(src: Float32Array, w: number, r: number): Float32Array {
     let a = src;
     for (let pass = 0; pass < 4; pass++) {
@@ -132,6 +165,7 @@
 
 <script lang="ts">
   import type { UiStarArt } from './starmapApi';
+  import { onDestroy } from 'svelte';
   import { frameUrl } from './starmapTint';
 
   /**
@@ -156,32 +190,31 @@
     void Promise.all(STEPS.map((st) => frameUrl(a, st.id, true))).then((u) => live && (tex = u));
     return () => (live = false);
   });
-  const stepMasks = $derived(box && tex ? masks(tiles, box.x0, box.y0, box.cols) : null);
+  /** The baked image with the box it was made for (kept until the next one is ready, so moving across the galaxy never blanks the map). */
+  let baked = $state<{ box: NonNullable<typeof box>; url: string } | null>(null);
+  $effect(() => {
+    const b = box;
+    const t = tex;
+    if (!b || !t || t.some((u) => !u)) return;
+    let live = true;
+    void bake(tiles, b.x0, b.y0, b.cols, t as string[]).then((u) => {
+      if (!live || !u) return;
+      baked = { box: b, url: u };
+      bakes.show(u);
+    });
+    return () => (live = false);
+  });
+  onDestroy(() => bakes.show(null));
   const url = $derived(box && !tex ? paint(tiles, box.x0, box.y0, box.cols) : '');
 </script>
 
-{#if box && tex && stepMasks}
-  {@const t = box.size / 2}
-  <defs>
-    {#each STEPS as st, i (st.id)}
-      <pattern id="sm-neb-{i}" patternUnits="userSpaceOnUse" width={t} height={t}><image href={tex[i]} width={t} height={t} /></pattern>
-      <mask id="sm-neb-m{i}" maskUnits="userSpaceOnUse" x={box.x0} y={box.y0} width={box.side} height={box.side}>
-        <image href={stepMasks[i]} x={box.x0} y={box.y0} width={box.side} height={box.side} preserveAspectRatio="none" class="mask" />
-      </mask>
-    {/each}
-  </defs>
-  <g class="neb" {opacity}>
-    {#each STEPS as st, i (st.id)}
-      <rect x={box.x0} y={box.y0} width={box.side} height={box.side} fill="url(#sm-neb-{i})" mask="url(#sm-neb-m{i})" opacity={st.alpha} />
-    {/each}
-  </g>
+{#if baked}
+  <image href={baked.url} x={baked.box.x0} y={baked.box.y0} width={baked.box.side} height={baked.box.side} preserveAspectRatio="none" {opacity} class="neb" />
 {:else if box && url}
   <image href={url} x={box.x0} y={box.y0} width={box.side} height={box.side} preserveAspectRatio="none" {opacity} />
 {/if}
 
 <style>
-  image, rect { pointer-events: none; }
-  .neb { mix-blend-mode: screen; }
-  .mask { image-rendering: pixelated; }
-  pattern image { image-rendering: pixelated; }
+  image { pointer-events: none; }
+  .neb { mix-blend-mode: screen; image-rendering: pixelated; }
 </style>

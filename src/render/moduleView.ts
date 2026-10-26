@@ -1,14 +1,16 @@
 import { haloTex, makeHalo } from './haloTex';
-import { Rectangle, Sprite, Texture, type Geometry, type Mesh, type Shader } from 'pixi.js';
+import { animNow } from './animClock';
+import { Sprite, type Container, type Geometry, type Mesh, type Shader } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ModuleC, type Module } from '../sim/modules/components';
 import { footprintTiles, hullRow, openTilesOf, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import type { Atlas, StaticSprite } from './assets/loader';
+import { cut, STRIP_W, stripFrame, type StripCrop } from './moduleStrips';
 import type { Art } from './assets/fallback';
 import { pickParts } from './partPick';
-import { iso, depthKey, TILE_W } from './iso';
+import { iso, depthKey } from './iso';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
@@ -19,9 +21,10 @@ import { SCHEMES } from './roofArt';
 import type { ShipRuin } from '../sim/combat/components';
 import { createCollarAnimator, dockedAt } from './airlockArt';
 import { layersOf } from './layerPick';
+import { tierBase, tierMark } from './tierArt';
 import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, steady } from './vehicleBayArt';
-import { craftProgress, diagonalFront, moduleAssets, glowKey, layerKey, mannedConsoles, showsActive, type ModuleLayer } from './moduleArt';
+import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -58,10 +61,17 @@ interface Part {
   flip: boolean;
   /** Multiply tint of stand-in art (white for real art). */
   art: number;
+  /** False while the current frame of an animated layer has no glow (flicker-off). */
+  lit?: boolean;
+  /** A depth strip: the frame columns it shows, and the anchor and width of the frame it was cut from (see `stripFrame`). */
+  crop?: StripCrop;
 }
+
 interface Entry {
   sig: string;
   parts: Part[];
+  /** Tier outline and badge (placeholder, see tierArt.ts). */
+  mark?: Container;
 }
 
 /** Depth key of a module sprite drawn on tile (tx, ty): solid modules sit just behind the crew of their tile, flat ones under everything. */
@@ -69,18 +79,19 @@ export function moduleKey(def: ModuleDef, tx: number, ty: number): number {
   return depthKey(tx, ty) - (def.solid ? 0.05 : 0.5);
 }
 
-/** Width of a depth strip of a vehicle bay sprite: one footprint diagonal, half a tile wide each side of its centre line. */
-const STRIP_W = TILE_W / 2;
-const stripCache = new WeakMap<Texture, Map<string, Texture>>();
-/** Columns x0..x1 of a sheet frame as a texture of their own (cached: the animation re-cuts the same strips every loop). */
-function cut(tex: Texture, x0: number, x1: number): Texture {
-  let m = stripCache.get(tex);
-  if (!m) stripCache.set(tex, (m = new Map()));
-  const k = `${x0}:${x1}`;
-  let t = m.get(k);
-  if (!t) m.set(k, (t = new Texture({ source: tex.source, frame: new Rectangle(tex.frame.x + x0, tex.frame.y, x1 - x0, tex.frame.height) })));
-  return t;
+/**
+ * True if a layer of a big module is cut into depth strips although its art does not ask for it: a solid module covering
+ * more than one tile. Drawn whole and sorted by its front-most tile, such a sprite paints over crew standing beside it
+ * (an engine, a refinery, a pod bay): beside the module's back half their tile sorts lower than its front corner. Per
+ * diagonal strips sort each column by the front-most footprint tile on it, so crew in front of a column draw over it and
+ * crew behind it under it. Not for layers placed on their own tile (`at`), hung outside the hull (`out`, the bell), offset
+ * overlays (`dz`: a console's desk front over its operator), nor a roofed engine (sorted under the roof plates as a whole).
+ */
+export function autoStrips(def: ModuleDef, layer: ModuleLayer, w: number, h: number, roofed: boolean): boolean {
+  if (!def.solid || w * h <= 1 || layer.at || layer.out || layer.dz !== undefined) return false;
+  return !(roofed && def.hullEdge);
 }
+
 
 const grey = (f: number): number => {
   const c = Math.round(255 * f);
@@ -110,6 +121,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
   const collarAnim = createCollarAnimator();
 
   function dropEntry(e: Entry): void {
+    e.mark?.destroy({ children: true });
     for (const p of e.parts) {
       p.spr.destroy();
       p.glow?.destroy();
@@ -175,7 +187,9 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         }
         return;
       }
-      if (layer.strips && !art.fallback) {
+      // A quarter turn of a non-square footprint without its own sprite is drawn mirrored.
+      const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
+      if ((layer.strips || autoStrips(def, layer, w, h, roofed)) && !art.fallback && !flip) {
         // Cut into one strip per footprint diagonal, each sorted by the front-most footprint tile on its diagonal (the pit's
         // near lip, towers and gangway then draw over crew beside the pit, and under crew in front of it).
         const tx = m.x + w - 1;
@@ -192,12 +206,14 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           const f = diagonalFront(m.x, m.y, w, h, d);
           const sk = key(f.x, f.y);
           const sub = { tex: cut(s.tex, x0, x1), glow: s.glow ? cut(s.glow, x0, x1) : null, ax: s.ax - x0, ay: s.ay, footprint: s.footprint };
-          out.push(makePart(sub, tx, ty, false, sk, art.tint, glowKey(layer, sk), layer.overlay));
+          const part = makePart(sub, tx, ty, false, sk, art.tint, glowKey(layer, sk), layer.overlay);
+          // Animated layers swap frames on their parts (swapFrame): a strip keeps its layer and columns for that.
+          part.li = i;
+          part.crop = { x0, x1, ax: s.ax, w: s.tex.width };
+          out.push(part);
         }
         return;
       }
-      // A quarter turn of a non-square footprint without its own sprite is drawn mirrored.
-      const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
       const k = key(m.x + w - 1, m.y + h - 1);
       out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k), layer.overlay));
       for (let j = from; j < out.length; j++) out[j]!.li = i;
@@ -213,16 +229,24 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     return ids.has(id);
   };
 
-  /** Show the next frame of an animated layer on its existing parts: swap the textures, build nothing. */
-  function swapFrame(parts: Part[], li: number, s: StaticSprite): void {
+  /**
+   * Show the next frame of an animated layer on its existing parts: swap the textures, build nothing. A depth strip takes
+   * its own columns of the frame. False if a strip cannot (the frame does not line up): rebuild the module.
+   */
+  function swapFrame(parts: Part[], li: number, s: StaticSprite): boolean {
     for (const p of parts) {
-      if (p.li !== li || p.spr.texture === s.tex) continue;
-      p.spr.texture = s.tex;
-      if (p.glow && s.glow) {
-        p.glow.texture = s.glow;
-        if (p.halo) p.halo.texture = haloTex(s.glow);
+      if (p.li !== li) continue;
+      p.lit = !!s.glow;
+      const f = p.crop ? stripFrame(s, p.crop) : { tex: s.tex, glow: s.glow };
+      if (!f) return false;
+      if (p.spr.texture === f.tex) continue;
+      p.spr.texture = f.tex;
+      if (p.glow && f.glow) {
+        p.glow.texture = f.glow;
+        if (p.halo) p.halo.texture = haloTex(f.glow);
       }
     }
+    return true;
   }
 
   /** True while the module's craft job made progress in the last moment. */
@@ -244,8 +268,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
    * What a derelict's ruin does to a module's look: extra art ids to try first (state-suffix art, a ruin override such as a
    * broken light or a dormant fabricator, flickering) and a darkening factor when it has no art of its own.
    */
-  function ruinLook(id: number, m: Module, def: ModuleDefs[string], on: boolean, now: number): { chain: string[]; dark: number } {
-    const none = { chain: [] as string[], dark: 1 };
+  function ruinLook(id: number, m: Module, def: ModuleDefs[string], on: boolean, now: number): { art: string[]; suffix: string[]; dark: number } {
+    const none = { art: [] as string[], suffix: [] as string[], dark: 1 };
     const ruin = host.ruin?.();
     if (!ruin) return none;
     if (ruin !== ruinData) {
@@ -258,16 +282,16 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     const state = r.state === 'destroyed' ? (m.hp <= 0 ? 'destroyed' : '') : r.state === 'damaged' ? (m.hp < def.maxHp ? 'damaged' : '') : '';
     const art = r.art && !r.art.startsWith('decay.') && (state === 'destroyed' || !on) && (r.state !== 'damaged' || state === 'damaged' || !on) ? r.art : undefined;
     const blip = r.flicker && Math.floor(now / 170 + m.x * 7 + m.y * 3) % 3 === 0;
-    const chain = art && !blip ? [art] : [];
-    if (state && !art) chain.push(...moduleAssets(world, id, m, def, false).map((id) => `${id}.${state}`));
-    return { chain, dark: state === 'destroyed' ? 0.5 : state === 'damaged' ? 0.8 : 1 };
+    // The ruin's own art goes ahead of everything; its `.damaged` / `.destroyed` suffix stand-ins come after the live state art.
+    const suffix = state && !art ? moduleAssets(world, id, m, def, false).map((id) => `${id}.${state}`) : [];
+    return { art: art && !blip ? [art] : [], suffix, dark: state === 'destroyed' ? 0.5 : state === 'damaged' ? 0.8 : 1 };
   }
 
   function update(): void {
     const t = host.target();
     const live = new Set<number>();
     if (t) {
-      const now = performance.now();
+      const now = animNow();
       const progress = craftProgress(world);
       const manned = mannedConsoles(world);
       const { grid } = t;
@@ -283,13 +307,21 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
         const roofed = host.roofed();
         const level = host.level();
-        const raw = layersOf(world, id, lm, def, {
-          active, now, livery: host.livery?.(), look: { off: !on && m.hp > 0, now, has: hasArt(def.asset) },
+        // A bigger tier draws its base module's art at the base footprint (see tierBase).
+        const tb = def.tierArt ? tierBase(lm, def) : null;
+        const am = tb?.m ?? lm;
+        const ad = tb?.def ?? def;
+        const look = { off: !on && m.hp > 0, now, hp: m.hp, maxHp: def.maxHp, has: hasArt(def.asset) };
+        const raw = layersOf(world, id, am, ad, {
+          active, now, livery: host.livery?.(), look,
           airlock: { level, roofed, collar: def.airlock?.layout ? collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) : null },
           bay: def.vehicleBay ? bayAnim.stepOf(id, shuttleHome(world, id), now) : steady(true),
         });
         const wreck = ruinLook(id, m, def, on, now);
-        const withRuin = wreck.chain.length ? raw.map((l, i) => (i === 0 ? { ...l, chain: [...wreck.chain, ...l.chain] } : l)) : raw;
+        const ruined = wreck.art.length > 0 || wreck.suffix.length > 0;
+        const head = ruined ? stateArt(def, m.rot, active, look).head : [];
+        const headLen = head.every((h, i) => raw[0]?.chain[i] === h) ? head.length : 0;
+        const withRuin = ruined ? raw.map((l, i) => (i === 0 ? { ...l, chain: mergeRuinChain(l.chain, headLen, wreck.art, wreck.suffix) } : l)) : raw;
         const layers = withRuin.flatMap((layer) => {
           // Containers ride outside the hull: never under a roof.
           if (roofed && !def.container && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
@@ -318,8 +350,20 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           dropEntry(e);
           e = undefined;
         }
-        if (!e) mods.set(id, (e = { sig, parts: build(lm, def, layers, roofed) }));
-        layers.forEach((l, i) => { if (l.layer.anim) swapFrame(e.parts, i, l.art.s); });
+        // An animated layer is built from its base frame (which has the glow), then its frames swap texture on the same parts.
+        const fresh = (ls: typeof layers): Entry => ({ sig, parts: build(am, ad, ls, roofed), mark: def.tierArt && !roofed ? L.fx.addChild(tierMark(lm, def, L.scale)) : undefined });
+        if (!e) mods.set(id, (e = fresh(ruined ? layers : layers.map((l) => {
+          const base = l.layer.anim && atlas.stat(l.layer.anim);
+          return base && base.glow ? { ...l, art: { ...l.art, s: base } } : l;
+        }))));
+        let lined = true;
+        const built = e;
+        layers.forEach((l, i) => { if (l.layer.anim && lined) lined = swapFrame(built.parts, i, l.art.s); });
+        if (!lined) {
+          // A frame the strips cannot take in place: build the module again on it.
+          dropEntry(e);
+          mods.set(id, (e = fresh(layers)));
+        }
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
         for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
@@ -327,10 +371,10 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const base = def.container ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, tiles.length), false, pulse);
         const lit = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
         // A wreck without its own damaged / destroyed art is darkened instead.
-        const tint = wreck.dark < 1 && !wreck.chain.some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
+        const tint = wreck.dark < 1 && ![...wreck.art, ...wreck.suffix].some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
         for (const p of e.parts) {
           p.spr.tint = mulColor(tint, p.art);
-          for (const g of [p.glow, p.halo]) if (g) g.visible = on;
+          for (const g of [p.glow, p.halo]) if (g) g.visible = on && p.lit !== false;
           if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }
       }

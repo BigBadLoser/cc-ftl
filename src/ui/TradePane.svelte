@@ -196,6 +196,9 @@
 </div>
 
 <style>
+  /* A column: everything stays put except the item lists, which take the spare height and scroll. */
+  .pane { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+  .pane > :not(.cols) { flex: none; }
   .greet { margin: 4px 0 8px; font-style: italic; }
   .greet small { color: var(--dim); font-style: normal; margin-left: 6px; }
   .msg { color: var(--dim); margin: 8px 0; }
@@ -205,8 +208,8 @@
   .refuel small { color: var(--dim); font-size: 11px; }
   .tabs { display: none; gap: 6px; margin-bottom: 6px; }
   .tabs button { flex: 1; }
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .col { background: var(--bg); border: 1px solid var(--line); border-radius: 0; padding: 8px; min-height: 120px; max-height: 330px; overflow-y: auto; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 10px; flex: 1 1 auto; min-height: 0; }
+  .col { background: var(--bg); border: 1px solid var(--line); border-radius: 0; padding: 8px; min-height: 0; overflow-y: auto; }
   h3 { margin: 0 0 6px; font-size: 13px; color: var(--cyan); }
   h3 small { color: var(--dim); font-weight: normal; margin-left: 4px; }
   .row { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 0; }
@@ -232,11 +235,9 @@
   .compact .tabs { display: flex; }
   .compact .cols { grid-template-columns: 1fr; }
   .compact .col.hide { display: none; }
-  .compact .col { max-height: 300px; }
   @media (max-width: 600px) {
     .tabs { display: flex; }
     .cols { grid-template-columns: 1fr; }
     .col.hide { display: none; }
-    .col { max-height: 34dvh; }
   }
 </style>

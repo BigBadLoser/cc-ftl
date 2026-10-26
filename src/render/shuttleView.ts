@@ -1,4 +1,5 @@
 import { Container, Sprite } from 'pixi.js';
+import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
 import { ModuleC } from '../sim/modules/components';
 import { hullOutward, hullSide } from '../sim/modules/footprint';
@@ -175,7 +176,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
 
   return {
     update(dt) {
-      const now = performance.now();
+      const now = animNow();
       const seen = new Set<number>();
       for (const id of world.query(VehicleC, BodyC)) {
         const v = world.get(id, VehicleC);

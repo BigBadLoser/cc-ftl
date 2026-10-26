@@ -53,11 +53,11 @@ export const TRANSLATE: Record<string, Shift | null> = {
   station: (c, dx, dy) => [...(c.courts as Xy[]), ...(c.posts as Xy[])].forEach((t) => point(t, dx, dy)),
   // No coordinates:
   airlock: null, deploy: null, combat: null, weapon: null, pointDefense: null, ion: null, captureProgress: null, prize: null,
-  container: null, allegiance: null, equip: null, equipOrder: null, surrendered: null, prisoner: null, skillXp: null,
+  container: null, allegiance: null, equip: null, equipOrder: null, emergencyArm: null, stowOrder: null, surrendered: null, prisoner: null, skillXp: null,
   implants: null, storage: null, carrying: null, production: null, crew: null, priorities: null, needs: null,
   assignment: null, health: null, downed: null, dead: null, carried: null, bedClaim: null, mood: null, suit: null,
   trader: null, coreLink: null, inert: null, stun: null, wreck: null, hacked: null, robotBay: null, fabricator: null,
-  vehicle: null, ferry: null, transfer: null, salvageWatch: null, vehicleBay: null, aboard: null, embarkOrder: null, boarder: null, stationCrew: null, forHire: null, stationAlarm: null, wanted: null,
+  vehicle: null, ferry: null, transfer: null, salvageWatch: null, vehicleBay: null, aboard: null, embarkOrder: null, boarder: null, stationCrew: null, forHire: null, stationAlarm: null, wanted: null, research: null,
 };
 
 /** A deep copy of one entity's components with every coordinate moved by (dx, dy). Components are plain JSON data. */

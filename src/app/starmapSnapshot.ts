@@ -1,5 +1,5 @@
 import {
-  DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
+  DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
   fleetName, nodeOf, portNode, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
 import type { UiNodeJob, UiStarExit, UiStarIcon, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
@@ -43,7 +43,7 @@ function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
 }
 
 /** A structure's starmap icon: its sprite (a station held by pirates is their den) and the owner's tone for stations. */
-function iconOf(sim: Sim, def: string, faction: string | null): UiStarIcon {
+export function iconOf(sim: Sim, def: string, faction: string | null): UiStarIcon {
   const content = sim.content.galaxy;
   const d = content?.structures[def];
   const kind = faction ? content?.factions[faction]?.kind : undefined;
@@ -58,7 +58,7 @@ function travelOf(sim: Sim): UiTravel | null {
   if (!t) return null;
   const next = t.phase === 'noFuel' ? edgeBetween(sim.galaxy, sim.galaxy.current, t.route[t.at + 1] as string) : undefined;
   const names = t.route.map((id) => (sim.galaxy.discovered[id] !== undefined ? nodeOf(sim, id)?.name : undefined) ?? 'Uncharted');
-  return { route: [...t.route], at: t.at, phase: t.phase, stopping: !!t.stopping, need: next?.fuel ?? 0, names };
+  return { route: [...t.route], at: t.at, phase: t.phase, stopping: !!t.stopping, need: next ? jumpFuel(sim, next.fuel) : 0, names };
 }
 
 /** The fuel, charge and progress figures (cheap; refreshed often). */
@@ -142,7 +142,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       exits.push({
         id: e.id, ax: Math.round(a.x), ay: Math.round(a.y), bx: Math.round(b.x), by: Math.round(b.y), to: to.id,
         name: k ? to.name : null, tone: k && to.faction ? toneOf(content?.factions[to.faction]?.kind) : 'dim', danger: to.danger,
-        kind: e.rift ? 'rift' : e.gate ? 'gate' : 'lane', fuel: e.fuel,
+        kind: e.rift ? 'rift' : e.gate ? 'gate' : 'lane', fuel: jumpFuel(sim, e.fuel),
       });
     }
   }
@@ -165,10 +165,13 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
   const status = starmapStatus(sim);
   const block = routeBlocker(sim, r.edges);
   const charge = routeCharge(r.edges);
+  // The drive's engines may burn less per hop than the lane's base cost (Mk II / III engines).
+  const legFuel = r.edges.map((e) => jumpFuel(sim, e.fuel));
+  const fuel = legFuel.reduce((t, f) => t + f, 0);
   return {
-    to, path: r.path, hops: r.path.length - 1, fuel: r.fuel, time: r.time,
-    legs: r.edges.map((e, i) => ({ to: r.path[i + 1] as string, fuel: e.fuel, time: e.time, kind: e.kind, gate: !!e.gate })),
-    nextCharge: charge, fuelOk: status.fuel >= r.fuel, fuelShort: Math.max(0, r.fuel - status.fuel), chargeOk: charge <= status.charge + 1e-9,
+    to, path: r.path, hops: r.path.length - 1, fuel, time: r.time,
+    legs: r.edges.map((e, i) => ({ to: r.path[i + 1] as string, fuel: legFuel[i] as number, time: e.time, kind: e.kind, gate: !!e.gate })),
+    nextCharge: charge, fuelOk: status.fuel >= fuel, fuelShort: Math.max(0, fuel - status.fuel), chargeOk: charge <= status.charge + 1e-9,
     blocker: block ? BLOCKERS[block] ?? block : null,
   };
 }

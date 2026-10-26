@@ -1,4 +1,5 @@
 import { autoDetectRenderer, Container } from 'pixi.js';
+import { animNow } from './animClock';
 import { ShipC, type Ship } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
@@ -143,6 +144,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     background: 0x07090d,
     preference: 'webgl',
     powerPreference: 'high-performance',
+    // The game picks in its own coordinates; pixi's event system would hit-test the whole scene tree on every pointer move.
+    eventFeatures: { move: false, globalMove: false, click: false, wheel: false },
   });
   // Sheets go to the GPU as they load and their decoded copy is dropped; if the context is lost they are decoded again.
   const atlas = await loadAtlas(undefined, { upload: (src) => gl.texture.initSource(src) });
@@ -165,7 +168,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let selShip = 0;
   let selectedCrew: number | null = null;
   let siteMarks: { blocked: ReadonlySet<number>; selected: number | null } = { blocked: new Set(), selected: null };
-  let lastFrame = performance.now();
+  let lastFrame = animNow();
 
   // One world layer stack for every region (ship), in the sector frame: art origin = sector tile (0, 0).
   const W = createWorldStack();
@@ -338,7 +341,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       if (atlas.restoring) return;
       sync();
       art.update();
-      const now = performance.now();
+      const now = animNow();
       const dt = Math.min(0.1, (now - lastFrame) / 1000);
       lastFrame = now;
       W.setScale(cam.scale);

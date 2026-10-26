@@ -69,6 +69,9 @@ export const ANIM_FPS = 4;
 export interface ModuleLook {
   off: boolean;
   now: number;
+  /** Hit points and their maximum: the art's `.damaged` (below half) and `.destroyed` (0) states. */
+  hp?: number;
+  maxHp?: number;
   has(id: string): boolean;
 }
 
@@ -82,13 +85,35 @@ export function frameCount(has: (id: string) => boolean, base: string): number {
 /** Frame index at render time `now` (ms) of an animation of `count` frames. */
 export const animFrame = (now: number, count: number, fps = ANIM_FPS): number => Math.floor((Math.max(0, now) / 1000) * fps) % count;
 
+/** A module reads as damaged below this share of its max hp (the containers' rule). */
+export const DAMAGED_BELOW = 0.5;
+/** A powered damaged machine's lights flicker: lit this long, then dark this long (ms of render time). */
+export const FLICKER_LIT_MS = 340;
+export const FLICKER_DARK_MS = 170;
+
 /**
- * The state art of a module ahead of its idle chain: `<asset>.rN.unpowered` while off when the art has it, else the current
- * `.active` frame (`.active`, `.active.f1`...) when the art animates. `anim` names the animation (frames swap texture, no rebuild).
+ * The state art of a module ahead of its idle chain, first match wins:
+ * - `<asset>.rN.destroyed` at 0 hp;
+ * - `.damaged` under half hp, which while powered alternates with the dark `.damaged.flicker` (340 ms lit, 170 ms dark) and while
+ *   unpowered stays on `.damaged.flicker`;
+ * - `.unpowered` while off;
+ * - the current `.active` frame (`.active`, `.active.f1`...) when the art animates.
+ * Each only when the art has the id. `anim` names an animation whose frames swap texture (no rebuild).
  */
 export function stateArt(def: ModuleDef, rot: number, active: boolean, look?: ModuleLook): { head: string[]; anim?: string } {
   if (!look) return { head: [] };
   const base = `${def.asset}.r${rot}`;
+  if (look.hp !== undefined && look.maxHp) {
+    if (look.hp <= 0 && look.has(`${base}.destroyed`)) return { head: [`${base}.destroyed`] };
+    const lit = `${base}.damaged`;
+    const dark = `${base}.damaged.flicker`;
+    if (look.hp > 0 && look.hp < look.maxHp * DAMAGED_BELOW && look.has(lit)) {
+      if (!look.has(dark)) return { head: [lit] };
+      if (look.off) return { head: [dark] };
+      const on = Math.max(0, look.now) % (FLICKER_LIT_MS + FLICKER_DARK_MS) < FLICKER_LIT_MS;
+      return { head: [on ? lit : dark], anim: lit };
+    }
+  }
   if (look.off && look.has(`${base}.unpowered`)) return { head: [`${base}.unpowered`] };
   if (!active) return { head: [] };
   const n = frameCount(look.has, `${base}.active`);
@@ -96,6 +121,14 @@ export function stateArt(def: ModuleDef, rot: number, active: boolean, look?: Mo
   const f = animFrame(look.now, n);
   return { head: [f ? `${base}.active.f${f}` : `${base}.active`], anim: `${base}.active` };
 }
+
+/**
+ * A derelict ruin's look merged into a layer's chain: the ruin's own art first (an explicit override), then the first `headLen`
+ * ids (the live state art: destroyed, damaged / flicker, unpowered, active), then the ruin's `.damaged` / `.destroyed` suffix
+ * stand-ins, then the rest. The live state wins over the equivalent suffix, so a flickering or unpowered ruin shows its dark frame.
+ */
+export const mergeRuinChain = (chain: string[], headLen: number, art: string[], suffix: string[]): string[] =>
+  [...art, ...chain.slice(0, headLen), ...suffix, ...chain.slice(headLen)];
 
 /**
  * Asset ids to try for a module, most specific first: the rotation variant (`.r0`..`.r3`) with the state variant

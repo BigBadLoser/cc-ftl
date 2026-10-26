@@ -12,8 +12,9 @@ import { buildModuleDefs } from './moduleSnapshot';
 import { buildStructCosts } from './logisticsSnapshot';
 
 const sim = newGame(1, content);
-const api = { moduleDefs: buildModuleDefs(sim), structCosts: buildStructCosts(sim) } as unknown as UiApi;
-const entries = buildEntries(api);
+const defs = buildModuleDefs(sim);
+const api = { structCosts: buildStructCosts(sim) } as unknown as UiApi;
+const entries = buildEntries(api, defs);
 
 describe('build catalog', () => {
   it('puts every module in a known category and reaches it from some tab', () => {
@@ -49,6 +50,18 @@ describe('build catalog', () => {
     expect(filterEntries(entries, 'structure', 'dig', true).some((e) => e.id === 'dig')).toBe(true);
   });
 
+  it('shows modules with an unknown blueprint as locked cards with a source hint, and the tiers as a family', () => {
+    const e = (id: string) => entries.find((x) => x.id === id)!;
+    expect(e('module.reactor').locked).toBe(false);
+    for (const id of ['module.reactor.mk2', 'module.reactor.mk3', 'module.engine.mk2', 'module.shieldGen.mk3']) expect(e(id).locked, id).toBe(true);
+    expect(e('module.reactor.mk2').def!.lockHint).toBe('Blueprint: research stations');
+    expect(e('module.shieldGen.mk2').def!.lockHint).toBe('Blueprint: military stations');
+    expect(e('module.reactor').def!.lockHint).toBeNull();
+    const fam = entries.filter((x) => x.def?.family === 'module.reactor').map((x) => x.def!.tier);
+    expect(fam.sort()).toEqual(['Mk I', 'Mk II', 'Mk III']);
+    expect(e('module.bed').def!.family).toBeNull();
+  });
+
   it('keeps card names to two short lines', () => {
     for (const e of entries) expect(e.name.length, e.name).toBeLessThanOrEqual(22);
     const names = entries.filter((e) => e.kind === 'module').map((e) => e.name);
@@ -78,6 +91,19 @@ describe('placement tool state', () => {
     expect(toolOf(c)).toMatchObject({ tool: 'build', build: 'module', moduleDef: 'module.galley', rot: 2 });
     c.setTool({ tool: 'build', build: 'wall' });
     expect(toolOf(c)).toMatchObject({ build: 'wall', moduleDef: 'module.galley' });
+  });
+
+  it('a locked module cannot be picked for placement; an unlocked one can', () => {
+    const { c } = setup();
+    c.setTool({ tool: 'build', build: 'module', moduleDef: 'module.fabricator' });
+    c.setTool({ tool: 'build', build: 'module', moduleDef: 'module.reactor.mk2' });
+    expect(toolOf(c).moduleDef).toBe('module.fabricator');
+    const sim2 = newGame(1, content);
+    sim2.story.blueprints.push('module.reactor.mk2');
+    const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]) } as unknown as Bridge;
+    const c2 = createController(sim2, bridge);
+    c2.setTool({ tool: 'build', build: 'module', moduleDef: 'module.reactor.mk2' });
+    expect(toolOf(c2).moduleDef).toBe('module.reactor.mk2');
   });
 
   it('rotates with R and back with Shift+R', () => {

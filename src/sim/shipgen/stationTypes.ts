@@ -6,7 +6,7 @@ import type { TransitionStyle, Weighted } from './types';
  * builders, sized by tier and fitted out by kind. They carry no FTL drive and no main engines.
  */
 
-export type StationKind = 'trading' | 'mining' | 'farming' | 'military' | 'pirate';
+export type StationKind = 'trading' | 'mining' | 'farming' | 'military' | 'pirate' | 'research';
 export type StationSize = 'outpost' | 'station' | 'hub';
 export const STATION_SIZES: readonly StationSize[] = ['outpost', 'station', 'hub'];
 

@@ -1,6 +1,6 @@
 import { asteroidAt, inShip, shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { AsteroidC } from '../sim/asteroids/components';
-import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isOreTile, isSolidRock, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
+import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isBlueprintKnown, isOreTile, isSolidRock, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
 import { ROCK_MASS_Z } from '../render/asteroidView';
 import type { UiBuildKind, UiToolState } from '../ui/api';
@@ -11,6 +11,7 @@ import { createEventLog, type EventLog } from './eventLog';
 import { rejectionMessage } from './messages';
 import { createStore, type Readable } from './store';
 import { homeShip } from '../sim/index';
+import { foreignShipTarget } from './tapTarget';
 import { EggSacC } from '../sim/aliens/components';
 import { shipById } from '../sim/combat/ships';
 
@@ -173,7 +174,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (!at || !def || !t.moduleDef) return null;
     // The player region under the cursor (a claimed base), else the home ship (whose error then says why it does not fit).
     const ship = mineAt(at.x, at.y) || homeShipId();
-    return { tiles: footprintTiles(def, at.x, at.y, t.rot), at, ship, def: t.moduleDef, error: placementError(sim, ship, t.moduleDef, at.x, at.y, t.rot) };
+    return { tiles: footprintTiles(def, at.x, at.y, t.rot), at, ship, def: t.moduleDef, error: isBlueprintKnown(sim, t.moduleDef) ? placementError(sim, ship, t.moduleDef, at.x, at.y, t.rot) : 'unknownBlueprint' };
   };
 
   /** Tiles covered by the current drag: a line for wall/door, a rectangle otherwise. */
@@ -215,7 +216,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     }
     r?.setPreview(paintStart ? shape() : active && hover ? [hover] : []);
   };
-  const setTool = (s: Partial<UiToolState>) => {
+  const setTool = (state: Partial<UiToolState>) => {
+    // A module whose blueprint is not known cannot be picked for placement (the catalog shows it locked).
+    const s = state.moduleDef && !isBlueprintKnown(sim, state.moduleDef) ? { ...state, moduleDef: tool.get().moduleDef } : state;
     tool.update((cur) => ({ ...cur, ...s }));
     if (s.tool === 'select') modPos = null;
     paintStart = paintEnd = null;
@@ -288,11 +291,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     else setTool({ tool: 'select' });
   };
 
-  const selectShip = (ship: number | null) => {
+  const selectShip = (ship: number | null, frame = true) => {
     selectTile(null);
     if (ship === null) return;
     shipSel.set(ship);
-    if (ship > 0) r?.frameShips([ship]);
+    if (frame && ship > 0) r?.frameShips([ship]);
   };
   const selectAsteroid = (id: number | null) => {
     selectTile(null);
@@ -375,6 +378,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           } else if (any && (jammed || (!tile && any.shipId !== homeShipId() && sim.world.get(any.shipId, ShipC)?.state === 'wreck'))) {
             // A derelict tile selects like one of your own (its panel offers Force door on jammed doors); the ship panel is on the node strip.
             selectTile({ x: any.x, y: any.y }, any.shipId);
+          } else if (any && foreignShipTarget(sim, any.shipId, homeShipId()) !== null) {
+            // A station or another ship: its inspector (the same panel as its node-strip button), without moving the camera.
+            selectShip(any.shipId, false);
           } else if (!tile && !any && asteroidAt(sim, renderer.pickSector(sx, sy).x, renderer.pickSector(sx, sy).y)) {
             // plain asteroid rock (or a hidden base under it): the asteroid's panel
             const st = renderer.pickSector(sx, sy);

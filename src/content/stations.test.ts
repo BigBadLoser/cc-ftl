@@ -43,6 +43,23 @@ describe('mining stations', () => {
   }, 60000);
 });
 
+describe('research stations', () => {
+  it('generate valid layouts across seeds and sizes, with consoles and benches and no engines', () => {
+    for (const size of STATION_SIZES) {
+      for (const seed of [1, 2, 3, 4, 5, 6]) {
+        const g = gen('station.research', size, seed);
+        const label = `${size} ${seed}`;
+        expect(g.problems, label).toEqual([]);
+        expect(g.station.kind, label).toBe('research');
+        expect(count(g, 'module.console'), label).toBeGreaterThan(0);
+        expect(count(g, 'module.fabricator'), label).toBeGreaterThan(0);
+        expect(countBy(g, (d) => !!d.engine), label).toBe(0);
+        expect(g.station.docks, label).toBeGreaterThanOrEqual(stations['station.research'].tiers[size].docks);
+      }
+    }
+  }, 120000);
+});
+
 describe('station generator', () => {
   it('every kind builds a valid outpost, station and hub: one structure, docks, no engines, inside the limit', () => {
     for (const id of ids) {

@@ -59,7 +59,7 @@ export function populateNode(sim: Sim, id: string): number {
         // A den among the rocks is dug into a big asteroid and hidden there.
         ok = populateOutpost(sim, port, 'dug', 'pirate', structureSeed(sim, id, i, SALT.dug), at);
       } else {
-        const kind = stationKindOf(sim, port, def.station === 'military', pirate);
+        const kind = stationKindOf(sim, port, def.station === 'military', pirate, def.station === 'research');
         ok = populateStation(sim, port, kind, sizeOf(port), structureSeed(sim, id, i, SALT.station), at) !== null;
       }
     } else if (def.kind === 'asteroids') {

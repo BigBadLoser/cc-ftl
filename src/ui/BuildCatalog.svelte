@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiMining, UiStock, UiToolState } from './api';
+  import type { UiApi, UiMining, UiModuleDef, UiStock, UiToolState } from './api';
   import BuildCard from './BuildCard.svelte';
   import BuildPopover from './BuildPopover.svelte';
   import { buildEntries, filterEntries, isSelected, visibleCategories, type CategoryId, type Entry } from './buildCatalog';
@@ -10,6 +10,7 @@
   let { api }: { api: UiApi } = $props();
   let st = $state<UiToolState>({ tool: 'build', build: 'module', moduleDef: null, rot: 0 });
   let stock = $state<UiStock[]>([]);
+  let defs = $state<UiModuleDef[]>([]);
   let mining = $state<UiMining>({ asteroids: [], pods: [] });
   let hint = $state<{ x: number; y: number; text: string } | null>(null);
   let cat = $state<CategoryId>('structure');
@@ -19,7 +20,7 @@
   const thumbs = createThumbs(api, () => rev++);
   const thumbOf = (id: string, rot: number) => (rev >= 0 ? thumbs.get(id, rot) : undefined);
   onMount(() => {
-    const subs = [api.tool.subscribe((t) => (st = t)), api.stock.subscribe((v) => (stock = v)), api.mining.subscribe((m) => (mining = m)), api.placeHint.subscribe((h) => (hint = h))];
+    const subs = [api.tool.subscribe((t) => (st = t)), api.stock.subscribe((v) => (stock = v)), api.moduleDefs.subscribe((v) => (defs = v)), api.mining.subscribe((m) => (mining = m)), api.placeHint.subscribe((h) => (hint = h))];
     const stop = thumbs.start();
     return () => { subs.forEach((u) => u()); stop(); };
   });
@@ -37,7 +38,7 @@
   });
 
   const have = (item: string) => stock.reduce((n, s) => (s.item === item ? n + s.floor + s.stored : n), 0);
-  const entries = $derived(buildEntries(api));
+  const entries = $derived(buildEntries(api, defs));
   const miningRelevant = $derived(mining.asteroids.length > 0 || mining.pods.length > 0 || (st.tool === 'build' && ['dig', 'level', 'finish', 'mine', 'claim'].includes(st.build)));
   const cats = $derived(visibleCategories(entries, miningRelevant));
   const shown = $derived(filterEntries(entries, cats.some((c) => c.id === cat) ? cat : (cats[0]?.id ?? 'structure'), query, miningRelevant));
@@ -47,7 +48,20 @@
     if (sel && !query) cat = sel.category;
   });
 
-  const pick = (e: Entry) => (e.kind === 'module' ? api.setTool({ tool: 'build', build: 'module', moduleDef: e.id }) : api.setTool({ tool: 'build', build: e.id as UiToolState['build'] }));
+  const pick = (e: Entry) => {
+    if (e.locked) return;
+    if (e.kind === 'module') api.setTool({ tool: 'build', build: 'module', moduleDef: e.id });
+    else api.setTool({ tool: 'build', build: e.id as UiToolState['build'] });
+  };
+  /** The tiers of a module's family, lowest first. */
+  const variantsOf = (e: Entry): Entry[] => {
+    const fam = e.def?.family;
+    return fam ? entries.filter((o) => o.def?.family === fam).sort((a, b) => a.id.length - b.id.length || (a.id < b.id ? -1 : 1)) : [];
+  };
+  const showVariant = (v: Entry) => {
+    pick(v);
+    if (pop) pop = { entry: v, rect: pop.rect };
+  };
   const selectedEntry = $derived(entries.find((e) => isSelected(e, st)));
 
   // Popover: opens ~250ms after the pointer settles on a card, a pin keeps it, a long press opens it on touch.
@@ -96,7 +110,7 @@
   </div>
 
 {#if pop}
-  <BuildPopover {api} entry={pop.entry} rect={pop.rect} rot={st.rot} thumb={pop.entry.def ? thumbOf(pop.entry.id, st.rot) : undefined} {have} {pinned}
+  <BuildPopover {api} entry={pop.entry} rect={pop.rect} rot={st.rot} thumb={pop.entry.def ? thumbOf(pop.entry.id, st.rot) : undefined} {have} {pinned} variants={variantsOf(pop.entry)} onvariant={showVariant}
     onpin={() => (pinned = !pinned)} onenter={() => clearTimeout(closeT)} onleave={leave} />
 {/if}
 {#if hint}<div class="hint" role="status" data-testid="place-hint" style:left="{hint.x}px" style:top="{hint.y}px">{hint.text}</div>{/if}

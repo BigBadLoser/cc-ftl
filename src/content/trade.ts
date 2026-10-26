@@ -32,6 +32,7 @@ export const trade = {
     'station.trading': { name: 'Trade station', reputation: 'traders', relation: 2 },
     'station.mining': { name: 'Mining station', reputation: 'traders', relation: 2 },
     'station.farming': { name: 'Agri station', reputation: 'traders', relation: 2 },
+    'station.research': { name: 'Research station', reputation: 'traders', relation: 2 },
     'station.military': { name: 'Navy depot', reputation: 'navy', relation: 0, sell: 1.1, buy: 0.95 },
     'station.pirate': { name: 'Pirate den', reputation: 'pirates', relation: -2, sell: 1.3, buy: 0.8 },
   },
@@ -81,6 +82,13 @@ export const trade = {
     'trader.station.farming': {
       name: 'Agri station', match: { faction: 'station.farming' }, shuttle: false, credits: [800, 2500],
       stock: [{ item: 'item.ration', min: 60, max: 180 }, { item: 'item.polymer', min: 10, max: 40 }, { item: 'item.ice', min: 10, max: 30 }, { item: 'item.fuel', min: 15, max: 40 }],
+    },
+    'trader.station.research': {
+      name: 'Research station', match: { faction: 'station.research' }, shuttle: false, credits: [1500, 4000],
+      stock: [
+        { item: 'item.electronics', min: 30, max: 80 }, { item: 'item.parts', min: 10, max: 30 }, { item: 'item.polymer', min: 15, max: 45 },
+        { item: 'item.metal', min: 15, max: 50 }, { item: 'item.ration', min: 15, max: 40 }, { item: 'item.fuel', min: 20, max: 50 },
+      ],
     },
     'trader.station.military': {
       // Military surplus: older, middle-grade hand weapons (tiers 1-2, never the best) at a modest markup; it still buys.

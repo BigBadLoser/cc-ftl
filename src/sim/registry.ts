@@ -4,7 +4,7 @@ import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
-export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine';
+export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine' | 'science';
 
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
@@ -71,6 +71,35 @@ export interface ContentRegistry {
   creatures?: CreatureDefs;
   /** Ore kinds in asteroid rock (content/ores.ts) by id. Absent = asteroids carry no ore. */
   ores?: Record<string, OreDef>;
+  /** Research projects (content/research.ts) by id. Absent = nothing to research. */
+  research?: Record<string, ResearchDef>;
+  /** The research tree's bands in order (ids are `ResearchDef.category`). */
+  researchBands?: { id: string; name: string }[];
+}
+
+/**
+ * A research project (sim/research): crew work it at a research module until `work` is done, which unlocks the blueprints of `unlocks`
+ * (module def ids, as buying them at a station does). `cost` is taken from the ship's stock when the project becomes the active one.
+ * `requires`: module ids that must be known, or unlocked by a project queued ahead of it, before it can be queued (Mk III needs Mk II); it only starts once they are known.
+ */
+export interface ResearchDef {
+  name: string;
+  description?: string;
+  cost: ItemQty[];
+  /** Ticks of work at workSpeed 1 and science 0. */
+  work: number;
+  unlocks: string[];
+  requires?: string[];
+  /**
+   * Further prerequisites as OR groups: each inner list is "any one of these modules", and every group must hold. Not read yet; it is
+   * here so the data model has a place for "either of two weapon techs" without a rewrite.
+   */
+  requiresAny?: string[][];
+  /** The research tree band it sits in (content/research.ts researchBands). */
+  category: string;
+  /** Tree placement overrides: column (default: one right of the furthest prerequisite) and row within the band (default: stacked by the tree). */
+  col?: number;
+  row?: number;
 }
 
 /** Derelict creatures (content/creatures.ts). */
@@ -246,6 +275,8 @@ export interface RoleDef {
   loadout?: string[];
   /** Like `loadout`, but only for the player's own crew (so they can fight boarders without a draft); NPC crew of the role stay as they are. */
   playerLoadout?: string[];
+  /** Items (best first) this role's player crew may take from storage when intruders are aboard and they have no weapon (see fight/emergency.ts). */
+  emergencyLoadout?: string[];
   /** Species of crew spawned in this role (default 'species.human'). Robot variants are roles of robot species. */
   species?: string;
   /** A robot bay can assemble this role (module.assembleRobot): materials delivered, then `work` ticks at workSpeed 1. */
@@ -375,6 +406,8 @@ export interface ModuleDef {
   /** A galley: hungry crew eat on its access tile (a hot meal lifts mood). Pairs with `crafting` for a food printer. */
   galley?: true;
   workstation?: true;
+  /** A research module: crew work the ship's active research project here (sim/research). Several on a ship speed the one project up. */
+  research?: true;
   /** Materials to build it; deconstructing refunds DECON_REFUND of them. */
   cost?: ItemQty[];
   /** Holds items: capacity in stacks. */
@@ -419,8 +452,19 @@ export interface ModuleDef {
   weapon?: string;
   /** Shield generator: layers = floor(|power| * layersPerPower); one layer returns every `rechargeSec`. */
   shieldGen?: { layersPerPower: number; rechargeSec: number };
-  /** Engine: evasion added per unit of power (needs a pilot). */
-  engine?: { evasionPerPower: number };
+  /** Engine: evasion added per unit of power (needs a pilot); `fuelFactor` scales the fuel each jump burns (default 1, 0.85 = 15% less). */
+  engine?: { evasionPerPower: number; fuelFactor?: number };
+  /**
+   * Needs its blueprint before crew can build it (`job.buildModule` is refused until it is known, see sim/modules/blueprints.ts). Absent = a
+   * basic blueprint every game starts with. Stations sell the blueprint from danger tier `minDanger` up, for `price` credits scaled by
+   * the station's danger tier; `tier` (2, 3...) is only a label.
+   */
+  blueprint?: { tier: number; minDanger: number; price: number };
+  /**
+   * Placeholder art of a bigger tier of an existing module: the base `asset` is drawn normally at the footprint `base` (the one it was
+   * modelled for), with an outline in `tint` over the whole footprint and a tier badge. Render-only; goes when the tier has its own art.
+   */
+  tierArt?: { base: readonly [number, number]; tint: number };
   /** Point-defence turret: shoots down interceptable shots; needs a working AI core on the ship. */
   pointDefense?: true;
   /**

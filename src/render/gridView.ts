@@ -1,4 +1,5 @@
 import { Container, type Sprite } from "pixi.js";
+import { animNow } from './animClock';
 import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
@@ -292,7 +293,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     }
   }
 
-  const pulseNow = (): number => (host.emergency() ? pulsePhase(performance.now()) : -1);
+  const pulseNow = (): number => (host.emergency() ? pulsePhase(animNow()) : -1);
   const tintAt = (x: number, y: number, wall: boolean): number => {
     let lv = 0;
     if (wall) {
@@ -328,7 +329,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${specialsNear(c)}`, buildChunk);
         frameKey = "";
       }
-      const pulse = host.emergency() ? pulsePhase(performance.now()) : -1;
+      const pulse = host.emergency() ? pulsePhase(animNow()) : -1;
       const fk = `${grid.revision("door")}|${grid.revision("light")}|${grid.revision("o2")}|${grid.revision("hp")}|${pulse}`;
       if (fk !== frameKey) {
         frameKey = fk;

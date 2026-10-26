@@ -36,7 +36,7 @@ function legacyWorld(sim: Sim): unknown {
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   // And asteroids, mining pods and base-logistics runs and transfer orders: their empty stores are not part of it.
-  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
     const { pilot, cruisePilot, cruiseEvasion, ...rest } = raw as Record<string, unknown>;
@@ -51,6 +51,8 @@ function legacyWorld(sim: Sim): unknown {
     delete rest.patrol;
     // `refining` was split from `crafting` later still.
     delete rest.refining;
+    // And `research` (the research module's work category).
+    delete rest.research;
     return [id, rest];
   });
   // `priority` on modules was renamed `powerPriority` (same place in the key order).
@@ -236,4 +238,5 @@ describe('sector refactor equivalence', () => {
   });
 });
 
-const EXPECTED = { combat: 'b32b3991', disaster: '04df4a60' };
+// Repinned for the shield tiers (#105): the starter's generator is now the 2x2 Mk I (6 power, 2 layers) and the raider's gains a layer (1 to 2), so every starter-vs-raider run changed.
+const EXPECTED = { combat: 'c28a5816', disaster: 'fa40fdbe' };

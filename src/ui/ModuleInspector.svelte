@@ -9,7 +9,7 @@
   import PowerPanel from './PowerPanel.svelte';
   import StoragePanel from './StoragePanel.svelte';
 
-  let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
+  let { api, onBack, onResearch }: { api: UiApi; onBack: () => void; onResearch?: () => void } = $props();
   let mods = $state<UiModule[]>([]);
   let sel = $state<number | null>(null);
   /** The Power… sub-view of the selected module; closes when another module is selected. */
@@ -44,6 +44,7 @@
     <div class="bar hp" class:low={hpPct(m) < 40}><i style:width="{hpPct(m)}%"></i></div>
     {#if m.def === 'module.helm' && ftl && ftl.ship === m.ship}<div class="drive"><FtlCharge {ftl} testid="helm-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: m.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: m.ship })} /></div>{/if}
     {#if m.crafting}<FabPanel {api} id={m.id} def={m.def} />{/if}
+    {#if m.research}<button class="resbtn" data-testid="open-research" onclick={onResearch}><Icon name="research" size={18} /> Research projects</button>{/if}
     {#if m.storage}<StoragePanel {api} id={m.id} />{/if}
     {#if m.bay}<RobotBayPanel {api} id={m.id} bay={m.bay} />{/if}
     <div class="btns">
@@ -61,6 +62,7 @@
   dd.bad { color: #ff9a9a; }
   .hp > i { background: var(--hp); } .hp.low > i { background: #ff5a2d; }
   .btns { display: flex; gap: 4px; margin-top: 10px; }
+  .resbtn { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px; color: var(--amber); border-color: var(--amber); background: #000; justify-content: center; }
   .pow { padding: 0 10px; min-height: 36px; }
   .warn { border-color: #7a2a2a; color: var(--red); }
 </style>

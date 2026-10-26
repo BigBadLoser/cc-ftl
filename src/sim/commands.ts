@@ -193,6 +193,14 @@ export type Command =
   | { type: 'galaxy.distress' }
   /** Take a job offered at the player's node (galaxy/jobs.ts), by its offer key; give one up. */
   | { type: 'crew.hire'; key: string }
+  /** Buy a module blueprint from a station of the player's node (galaxy/blueprintShop.ts): known at once, then buildable. */
+  | { type: 'blueprint.buy'; port: string; def: string }
+  /** Queue a research project on a player ship (sim/research): it needs a research module, the project's `requires` known, and something left to unlock. */
+  | { type: 'research.queue'; ship: number; project: string }
+  /** Drop a project from the queue; an active one (materials already paid) is refunded and its progress lost. */
+  | { type: 'research.cancel'; ship: number; project: string }
+  /** Move a queued project to place `to` (0 = first). The active project (materials paid) keeps place 0. */
+  | { type: 'research.move'; ship: number; project: string; to: number }
   | { type: 'jobs.accept'; key: string }
   | { type: 'jobs.abandon'; id: number }
   /** Break a delivery's crate open on deck: its goods spill out, kept, and the delivery fails. */
