@@ -279,6 +279,51 @@ FTL's decision-making with physical consequences, in a shared sector.
   voids the deal (credits back, goods lost).
 - Stations have no grid yet, so their deliveries are instant (temporary).
 
+## Progression (user decisions, 2026-10-26; not built yet)
+
+Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits are worth saving
+and risk is worth taking.
+
+- **Where better gear comes from:**
+  - **Bought:** station markets sell better gear in higher danger tiers.
+  - **Salvaged:** tougher wrecks sometimes yield gear (a maybe, not the main source).
+  - **Research:** a planned research system (see below).
+- **What gets tiers:**
+  - **Weapons:** only simple weapons at the start; better ones come with progress. Full weapon tiers may come later.
+  - **Shield generators, engines, reactors:** tiered.
+  - **Crew implants:** tiered.
+- **Tiers plus upgrades:** both clean module tiers and **upgrade slots**.
+  - Some modules, mostly weapons, take slotted upgrades that change how they work. For example, a "nuclear warhead"
+    upgrade in a missile launcher instead of building a tier 2 launcher.
+  - Upgrades are items: bought, found or researched.
+- **Faction and territory gear:** some items are only available in certain faction territories or system types.
+  Faction-specific gear only to an extent, without multiplying the art needed: reuse module art with variants or
+  upgrades rather than a new model per faction.
+- **Research system (planned; to design):** the user wants one. Open questions:
+  - Where it happens: a research module on the ship, research stations in the galaxy, or both.
+  - What it consumes: data, samples, alien tissue, artifacts (the item art already exists for these).
+  - What it unlocks: module tiers, upgrades, implants, construction pods and drones.
+
+### Ship growth
+
+- **Early:** expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station builds the
+  new hull sections.
+- **Later:** build a construction pod or construction drones, and your crew can expand the hull anywhere.
+- **Size:** maybe no cap, or a cap set by the AI core or reactor tier and upgrades, so growing the ship is tied to
+  progression.
+- **Cost of size:** a bigger ship burns more fuel per jump.
+
+### Money
+
+- **No crew wages.** Credits are mostly for buying things: gear, upgrades, materials, fuel, station repairs, refits and
+  hull expansion, and hiring.
+
+### After the tutorial: story missions
+
+- **Self-contained stories**, not one overarching plot. Each mission is a short arc with its own setup and ending, and
+  arcs can tie into each other through shared factions, characters or places.
+- The first ones can start when the goal chain sets `goals.done`.
+
 ## Art direction
 
 - **Isometric pixel art in the spirit of Space Haven:** 2:1 isometric, 64x32 px tiles, detailed and
