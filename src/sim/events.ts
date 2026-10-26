@@ -187,6 +187,8 @@ export type SimEvent =
   | { type: 'galaxy.interdicted'; node: string }
   | { type: 'galaxy.encounterResolved'; id: number; outcome: string }
   | { type: 'galaxy.evadeRoll'; id: number; odds: number; roll: number; success: boolean }
+  | { type: 'galaxy.distressSent'; node: string; due: number }
+  | { type: 'galaxy.towArrived'; fuel: number; paid: number; owed: number }
   | { type: 'galaxy.bribed'; id: number; cost: number; faction: string }
   | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' }
   | { type: 'galaxy.eventLeft'; id: number; node: string }

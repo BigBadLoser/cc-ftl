@@ -72,6 +72,12 @@ Every ship, station, derelict and wreck is a `Grid` with:
 All tile writes go through a small grid API that also bumps a **revision counter** per field and per
 chunk. The renderer diffs revisions, so there's no manual `markDirty()`.
 
+The environment solvers use the same revisions to skip work (`SteadyState` in `sim/diffusion.ts`). A region whose
+last solve wrote nothing, and none of whose input fields has been written since, is at a fixed point, so the solve
+is skipped. Results are identical to a full solve. Lighting also keys on its lamps (powered, intact) and on the set
+of open doors. Any new input a solver reads must join its key. `src/content/ships/envSkip.test.ts` compares the
+solvers against cold-cache full solves.
+
 **Systems interact through these fields.** For example:
 - Fire reads O2 and material flammability, and writes heat and smoke while using up O2.
 - Atmosphere diffuses gas across open tiles and vents through breaches.
@@ -1186,6 +1192,13 @@ The sim side is `clusterName` / `clusterType` / `cluster` on sectors and the `ga
 nebula tiles; colours as theme tones). The bridge builds it lazily (`warmStarmap` in idle slots, or on first open), keeps fuel and charge fresh while the screen is open, and rebuilds on `galaxy.rev`. `StarmapView` owns the camera, hit testing and hover and
 picks the level by zoom (sector below 2200 units across the short side, cluster below 11000, galaxy above); the level components draw with `starmapStyle.ts`, the only module that maps tones and danger to theme tokens. Flee mode (`flee` prop) restricts picks to
 nodes one jump away. While the map is open the world is not rendered.
+
+**Fuel economy and stranding** (user decisions 2026-10-26; `galaxy/stranded.ts`, `content/galaxyMarket.ts`, `content/trade.ts`). `item.fuel` is a market good: trade stations make 1/turn x size, mining outposts 0.6, farms 0.3, and every
+civilian station, outpost, farm and depot profile stocks it at a price near 8 credits. A purchase through the normal deal flow bumps `fuelBought` (goal `goal.buy_fuel`). The station panel's Trade tab has a **Refuel** button
+(`TradePane`: fill up to 24 units, one `trade.offer` then an automatic `trade.accept`) when the structure lists the `fuel` service. **Distress tug:** `isStranded` (active at a node, fuel below the cheapest adjacent jump) and no
+affordable fuel on sale in the node (`fuelOnSale`) allow `galaxy.distress`; it saves `GalaxyState.distress { node, sent, due }` and the tug arrives `DISTRESS_TURNS` (2) turns later (`stepDistress`, from `onTurn`): fuel for two
+of the cheapest jumps (at least 6) at 3x the item price. It always delivers: the player pays what they can, the unpaid part costs `DISTRESS_UNPAID_REP` reputation with the traders (no debt to track, never a dead end). UI: `StrandedBanner`
+(`api.stranded`, `app/strandedSnapshot.ts`). Save v52.
 
 **Debug commands:** `debug.galaxyReveal {radius}`, `debug.galaxyTeleport {node}`, `debug.chargeFtl`.
 

@@ -92,9 +92,9 @@ describe('construction sites', () => {
   });
 
   it('an idle crew member standing on the site steps off so the module can finish', () => {
-    const r = rig('module.pod_bay', 5);
+    const r = rig('module.pod_bay', 4);
     const id = place(r, 'module.pod_bay');
-    const idler = r.crew[4]!;
+    const idler = r.crew[3]!;
     const p = r.sim.world.get(idler, PositionC)!;
     r.sim.enqueue({ type: 'crew.setPriority', id: idler, category: 'construction', value: 0 });
     p.x = p.toX = r.at.x + 1;

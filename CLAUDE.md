@@ -13,9 +13,11 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm run typecheck`: `tsc` and `svelte-check`
 - `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
   skipping `*.slow.test.ts`. Run it before every commit and before pushing a work branch.
-- `npm run check`: lint, typecheck and every test, slow tier included. Run it in the testing round before opening a PR.
-  CI runs it on `main`. On a PR, CI skips the slow tier (`*.slow.test.ts`) until the PR has the `full-ci` label,
-  to save Actions minutes. Add the label once the PR is ready to merge.
+- `npm run check`: lint, typecheck and every test, slow tier included. Run it in the testing round, after the last
+  merge of `main` into the branch, and paste its result (pass, test count, any load timeouts rerun alone) into the PR
+  body. Affected-only or partial runs don't count. CI minutes cost money: CI runs only lint, typecheck, the build and
+  the fast tests the change affects (on PR pushes and on `main`, skipping markdown-only changes), plus the full suite
+  once a day on `main` when it changed. Batch fixes into one push rather than pushing every commit to an open PR.
 - `npm run sprites`: rebuild the sprite sheets in `public/assets/1x/` with headless Blender (see "Asset pipeline")
   (`tools/blender/setup.sh` installs it). Commit the generated sheets, JSON and manifest.
 
@@ -44,8 +46,8 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - Flow for every piece of work:
   1. Iterate on a work branch until the user is happy. Commit often with `check:fast` and push the branch freely (a push to
      a branch is a backup, not a release).
-  2. Then one round of testing and bug fixes: the full `npm run check`, plus fixing whatever it finds.
-  3. Then open the PR. CI and Codex review it, and only the user merges it to `main`. Nothing reaches `main` any other way.
+  2. Then one round of testing and bug fixes: merge `main` in, run the full `npm run check`, and fix whatever it finds.
+  3. Then open the PR, with the `npm run check` result in its body. CI and Codex review it, and only the user merges it to `main`. Nothing reaches `main` any other way.
   Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
 - Use Sonnet or Haiku subagents for well-scoped tasks, and keep token use low.
 - Verify visual changes with a headless screenshot before handing them to the user. The user often

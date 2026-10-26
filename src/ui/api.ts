@@ -34,6 +34,22 @@ export interface UiGoals {
   goals: { id: string; title: string; text: string; done: boolean }[];
 }
 
+/**
+ * The ship cannot pay for any jump (null while it can). `canCall`: no fuel on sale here, so a distress call is allowed; `blocker` otherwise says why not
+ * ('fuelOnSale': buy it at the station). `pending`: a tug is on its way, `turnsLeft` turns off. `fuel` / `unit` / `total` is the tug's offer.
+ */
+export interface UiStranded {
+  need: number;
+  have: number;
+  canCall: boolean;
+  blocker: string;
+  pending: { turnsLeft: number } | null;
+  fuel: number;
+  unit: number;
+  total: number;
+  credits: number;
+}
+
 /** A loose stack on a floor tile. */
 export interface UiStack {
   item: string;
@@ -276,6 +292,27 @@ export interface UiModuleDef {
   h: number;
   power: number;
   cost: UiCost[];
+  /** Build catalog tab. */
+  category: 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+  description: string;
+  /** Access tile (offset from the footprint's top-left at rotation 0), or null. */
+  access: [number, number] | null;
+  /** Facts for the popover besides cost: power, operator, shield layers, capacity... */
+  facts: { label: string; value: string; tone?: 'warn' }[];
+  /** Tier chip text for variants (nothing has tiers yet), or null. */
+  tier: string | null;
+  /** Locked by progression (hook only: nothing is locked yet). */
+  locked?: boolean;
+}
+
+/** A module's art rendered to an image (see render/moduleThumb). */
+export interface UiThumb {
+  url: string;
+  w: number;
+  h: number;
+  /** Centre of the footprint's front tile inside the image. */
+  ax: number;
+  ay: number;
 }
 
 /** Crew food: units of food in stock, how many crew eat, rations used per hour at the current rate and hours left (null with no eaters). */
@@ -300,6 +337,15 @@ export interface UiHeat {
  * A station job (sim galaxy/jobs.ts) as the board shows it: an offer (`id` null) or one the player holds. `where` is the delivery's destination or the
  * bounty target's node, `hops` how many jumps away it is (null when out of the known map), `here` that the player is there; `ready` that a delivery's crate is aboard.
  */
+/** A ship's fighting strength as the job card shows it: working guns, shield layers, hull plates (walls and doors). */
+export interface UiStrength {
+  guns: number;
+  shields: number;
+  hull: number;
+}
+/** How a target compares with the player's ship. */
+export type UiStrengthRead = 'outmatched' | 'even' | 'weaker';
+
 export interface UiJob {
   key: string;
   id: number | null;
@@ -313,6 +359,8 @@ export interface UiJob {
   hops: number | null;
   here: boolean;
   ready: boolean;
+  /** Bounty only: the target ship's strength (what it is generated with when you arrive) and how it compares with yours. */
+  target: { strength: UiStrength; read: UiStrengthRead | null } | null;
 }
 
 /** The job board: offers at the node the player is at (`here` its name, null when jobs cannot be taken now: in hyperspace or an event grid), and the jobs they hold (at most `max`). */
@@ -321,6 +369,8 @@ export interface UiJobs {
   offers: UiJob[];
   active: UiJob[];
   max: number;
+  /** The player's own ship, for comparing with a bounty target. */
+  mine: UiStrength | null;
 }
 
 export interface UiStats {
@@ -799,6 +849,8 @@ export interface UiApi {
   jobs: Subscribable<UiJobs>;
   /** The tutorial goal chain (null when finished or skipped). */
   goals: Subscribable<UiGoals | null>;
+  /** Stranded without fuel (null when the ship can jump). */
+  stranded: Subscribable<UiStranded | null>;
   selectedSite: Subscribable<number | null>;
   selectSite(id: number | null): void;
   /** Another ship or station picked from the node strip; the selection panel drills into it. */
@@ -866,6 +918,10 @@ export interface UiApi {
   setTool(state: Partial<UiToolState>): void;
   /** Portrait (PNG data URL, whole art px: show it pixelated) of a crew member, or null while their sheets load. */
   portrait(id: number): string | null;
+  /** A module def's game art at a rotation, or null while its sheets load (`w` 0: no art). */
+  moduleThumb(def: string, rot: number): UiThumb | null;
+  /** Why the module being placed cannot go at the cursor (a placement error), with its screen position near the ghost, or null. */
+  placeHint: Subscribable<{ x: number; y: number; text: string } | null>;
   /** Select a crew member (null clears) and optionally center the camera on them. */
   selectCrew(id: number | null, focus?: boolean): void;
   setCutaway(mode: UiCutaway): void;

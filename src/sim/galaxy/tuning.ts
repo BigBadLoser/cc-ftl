@@ -230,6 +230,10 @@ export const SENSOR_HOPS = 3;
 export const FRONTIER_RING = 1;
 
 /** Arrival rolls while the player stays at a node: every ARRIVAL_EVERY_SEC, chance ARRIVAL_PER_DANGER x danger (x territory). */
+/** Opening grace (grace.ts): no unprompted hostile arrival at a danger-0 node for this many seconds of game time... */
+export const GRACE_SEC = 20 * 60;
+/** ...or until the goal chain is past this act index (0 = the first act, "Get underway", is done), whichever comes first. */
+export const GRACE_ACT = 0;
 export const ARRIVAL_EVERY_SEC = 60;
 export const ARRIVAL_PER_DANGER = 0.05;
 export const ARRIVAL_MAX_CHANCE = 0.45;
@@ -267,3 +271,14 @@ export const TRADE_CANDIDATES = 6;
 export const MINER_RARE_SHARE = 0.2;
 /** What a miner digs: the common ore, then the rare one (MINER_RARE_SHARE of the load). */
 export const MINER_ORE = ['item.iron_ore', 'item.rare_ore'] as const;
+
+/**
+ * Stranding (stranded.ts). A ship that cannot pay for any jump and finds no fuel on sale in its node may call for a tug. It arrives after DISTRESS_TURNS turns
+ * (game-time turns, TURN_SEC each) with enough fuel for DISTRESS_HOPS of the cheapest jumps (at least DISTRESS_MIN_FUEL units) at DISTRESS_MARKUP times the
+ * item's base price. The tug always delivers: the player pays what they can, and a shortfall costs DISTRESS_UNPAID_REP reputation with the traders.
+ */
+export const DISTRESS_TURNS = 2;
+export const DISTRESS_HOPS = 2;
+export const DISTRESS_MIN_FUEL = 6;
+export const DISTRESS_MARKUP = 3;
+export const DISTRESS_UNPAID_REP = 2;

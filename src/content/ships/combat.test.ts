@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, IonC, playerItems, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
+import { CombatC, CrewC, spawnCrew, IonC, playerItems, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
@@ -242,6 +242,7 @@ describe('weapons', () => {
     sim.enqueue({ type: 'module.setEnabled', id: gen, enabled: false });
     const fab = modulesOf(sim, 1, 'module.fabricator')[0] as number;
     sim.step(); // the raider exists once the spawn command has run: commands name it by ship id
+    spawnCrew(sim, nth(sim, 1), ['role.engineer']); // two hands on the hoses, as the starter once had
     aim(sim, 2, 1, fab);
     const events = run(sim, 20 * 60);
     expect(ofType(events, 'fire.started').length).toBeGreaterThan(0);
@@ -317,7 +318,10 @@ describe('enemy AI, endings', () => {
     const reg = registry({ 'ship.victim': victim });
     const sim = newGame(3, reg, 'ship.victim');
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
-    const events = run(sim, 20 * 400);
+    // Up to 400 s; once the victim is a wreck and the fight has ended, a minute more shows that nothing repeats (a second combat.ended, a second kill).
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 400 && !(shipById(sim, shipIds(sim)[0] as number)?.state === 'wreck' && !sim.sector.inCombat); i++) events.push(...run(sim, 20));
+    events.push(...run(sim, 20 * 60));
     expect(shipById(sim, shipIds(sim)[0] as number)?.state).toBe('wreck');
     expect(ofType(events, 'ship.destroyed').map((e) => e.ship)).toEqual([nth(sim, 1)]);
     expect(ofType(events, 'module.destroyed').length).toBeGreaterThan(0);

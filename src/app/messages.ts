@@ -76,10 +76,35 @@ const REASONS: Record<string, string> = {
   noEngines: 'No powered engine: the drive cannot charge',
   noCrewAboard: 'No crew available to sit at the helm',
   alreadyCharged: 'The FTL drive is already charged',
+  // Building and mining (placement reasons and the build commands' rejections)
+  notOnHull: 'This module must sit on the outer hull, with open space beyond it',
+  rockMass: 'Too much rock under it: dig or level the rock first',
+  noModule: 'There is no module there',
+  badValue: 'That is not a valid value',
+  badSize: 'That area is the wrong size',
+  badKind: "Can't do that here",
+  noAsteroid: 'There is no asteroid there',
+  offAsteroid: 'Drag over the asteroid: at least half the area has to be on rock',
+  overlap: 'That overlaps another base',
+  tooClose: 'Too close to another base or outpost',
+  moduleHere: 'A module stands there: remove it first',
+  notRock: 'That only works on asteroid rock',
+  notJammed: 'That door is not jammed',
+  noPod: 'No mining pod to send',
+  noOre: 'No ore in that area',
+  noOrder: 'There is no such order',
+  badCategory: "Can't do that kind of work",
+  badRole: "That crew member can't do that",
+  noBay: 'No bay free for that',
+  noWeapon: 'That is not a working weapon',
+  noRun: 'That run is not available',
+  noRoute: 'No route there',
+  notHere: "Can't do that here",
+  tooMany: 'Too many already',
   courierBusy: 'Your shuttle is busy: it needs an empty hold and no other job',
 };
 
 /** Plain-text version of a `command.rejected` reason code. */
 export function rejectionMessage(reason: string): string {
-  return REASONS[reason] ?? `Command rejected (${reason})`;
+  return REASONS[reason] ?? "Can't do that here";
 }

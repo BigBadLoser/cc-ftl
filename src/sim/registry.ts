@@ -155,6 +155,8 @@ export interface WeaponDef {
   ammo?: string;
   /** Point defence may shoot it down. */
   interceptable?: boolean;
+  /** Can be aimed at (and hurts) shuttles. Weapons without it never fire at a shuttle. */
+  antiVehicle?: boolean;
   /**
    * Shield rule: a shot is blocked when layers > pierce (and `bypass` is off), removing `damage` layers.
    * `bypass` skips shields entirely.
@@ -242,6 +244,8 @@ export interface RoleDef {
   fighter?: true;
   /** Item ids (best first) the crew member fetches from storage on their own when unarmed. */
   loadout?: string[];
+  /** Like `loadout`, but only for the player's own crew (so they can fight boarders without a draft); NPC crew of the role stay as they are. */
+  playerLoadout?: string[];
   /** Species of crew spawned in this role (default 'species.human'). Robot variants are roles of robot species. */
   species?: string;
   /** A robot bay can assemble this role (module.assembleRobot): materials delivered, then `work` ticks at workSpeed 1. */
@@ -324,8 +328,15 @@ export interface AirlockLayout {
  * A placeable ship module. `footprint` is [w, h] at rotation 0; (x, y) of a placed module is the
  * top-left of its rotated bounding box. Offsets (`access`) are in rotation-0 local tiles.
  */
+/** Build catalog tab of a module (tool cards live in their own tabs: structure tools in Structure, rock tools in Mining). */
+export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+
 export interface ModuleDef {
   name: string;
+  /** Build catalog tab. Absent = Utility. */
+  category?: ModuleCategory;
+  /** One or two sentences for the build catalog's popover. */
+  description?: string;
   /** Render asset id, e.g. 'module.reactor' (resolved through the asset manifest). */
   asset: string;
   footprint: readonly [number, number];

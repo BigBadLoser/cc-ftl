@@ -17,11 +17,11 @@ import { ContainerC } from '../sim/containers/components';
 import { createContainerOverlay } from './containerPaint';
 import { SCHEMES } from './roofArt';
 import type { ShipRuin } from '../sim/combat/components';
-import { airlockLayers, createCollarAnimator, dockedAt } from './airlockArt';
-import { robotBayLayers } from './robotBayArt';
+import { createCollarAnimator, dockedAt } from './airlockArt';
+import { layersOf } from './layerPick';
 import type { WallLevel } from './tiles';
-import { createBayAnimator, shuttleHome, vehicleBayLayers } from './vehicleBayArt';
-import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, moduleLayers, showsActive, type ModuleLayer } from './moduleArt';
+import { createBayAnimator, shuttleHome, steady } from './vehicleBayArt';
+import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -288,10 +288,11 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const roofed = host.roofed();
         const level = host.level();
         const look = { off: !on && m.hp > 0, now, hp: m.hp, maxHp: def.maxHp, has: hasArt(def.asset) };
-        const raw = def.robotBay ? robotBayLayers(world, id, lm, def, now)
-          : def.vehicleBay ? vehicleBayLayers(lm, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
-          : def.airlock?.layout ? airlockLayers(world, id, lm, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
-          : moduleLayers(world, id, lm, def, active, true, host.livery?.(), look);
+        const raw = layersOf(world, id, lm, def, {
+          active, now, livery: host.livery?.(), look,
+          airlock: { level, roofed, collar: def.airlock?.layout ? collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) : null },
+          bay: def.vehicleBay ? bayAnim.stepOf(id, shuttleHome(world, id), now) : steady(true),
+        });
         const wreck = ruinLook(id, m, def, on, now);
         const ruined = wreck.art.length > 0 || wreck.suffix.length > 0;
         const head = ruined ? stateArt(def, m.rot, active, look).head : [];

@@ -1,4 +1,4 @@
-import { CrewC, DeadC, ModuleC, PositionC, airlockSuits, roomTiles, type Sim } from '../sim';
+import { CrewC, DeadC, ModuleC, PositionC, airlockSuits, roomTiles, type ModuleDef, type Sim } from '../sim';
 import { buildRobotBay } from './robotSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import { buildFood } from './foodSnapshot';
@@ -34,6 +34,21 @@ export function buildModuleList(sim: Sim): UiModule[] {
   return out;
 }
 
+/** Popover facts of a module def: power, who operates it, then its own stats. */
+function moduleFacts(d: ModuleDef): UiModuleDef['facts'] {
+  const f: UiModuleDef['facts'] = [{ label: 'Power', value: d.power > 0 ? `+${d.power} ⚡` : d.power < 0 ? `−${-d.power} ⚡` : 'none', ...(d.power < 0 ? { tone: 'warn' as const } : {}) }];
+  const op = d.console ? `crew (${d.console})` : d.engine ? 'pilot' : d.crafting ? 'crew (crafting)' : d.galley ? 'crew (eats here)' : d.bed ? 'sleeper' : d.workstation ? 'crew' : null;
+  f.push({ label: 'Operator', value: op ?? 'none' });
+  if (d.shieldGen) f.push({ label: 'Shield layers', value: `${Math.floor(Math.abs(d.power) * d.shieldGen.layersPerPower)}, 1 per ${d.shieldGen.rechargeSec}s` });
+  if (d.storage) f.push({ label: 'Capacity', value: `${d.storage.capacity} stacks` });
+  if (d.o2PerSec) f.push({ label: 'Oxygen', value: `+${d.o2PerSec}/s` });
+  if (d.light) f.push({ label: 'Light radius', value: `${d.light.radius} tiles` });
+  if (d.engine) f.push({ label: 'Evasion', value: `+${d.engine.evasionPerPower} per power` });
+  if (d.airlock) f.push({ label: 'Cycle', value: `${d.airlock.cycleSec}s` });
+  f.push({ label: 'Hull points', value: String(d.maxHp) });
+  return f;
+}
+
 export function buildModuleDefs(sim: Sim): UiModuleDef[] {
   return Object.entries(sim.content.modules).map(([id, d]) => ({
     id,
@@ -42,6 +57,11 @@ export function buildModuleDefs(sim: Sim): UiModuleDef[] {
     h: d.footprint[1],
     power: d.power,
     cost: costsOf(sim, d.cost),
+    category: d.category ?? 'utility',
+    description: d.description ?? '',
+    access: d.access ? [d.access[0], d.access[1]] : null,
+    facts: moduleFacts(d),
+    tier: null,
   }));
 }
 

@@ -34,6 +34,7 @@ const packetCombat = (sim: Sim) => {
 /** The player flies two hops; a pirate fleet (or `faction`/`role`) at the first node flies the other way and interdicts there. */
 function interdiction(seed: number, faction = 'pirates', role: Fleet['role'] = 'pirate', over: Partial<Fleet> = {}, others = 0) {
   const sim = newGame(seed, content);
+  sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
   sim.galaxy.fleets = [];
   giveItems(sim, 'item.fuel', 50);
   const c = sim.world.get(playerShip(sim), CombatC);
@@ -148,6 +149,7 @@ describe('evade odds follow the pilot', () => {
 
   it('with nobody at the helm the best pilot aboard flies: the staged ship is no longer stuck at the floor', () => {
     const sim = newGame(26, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     const combat = sim.world.get(playerShip(sim), CombatC)!;
     for (let i = 0; i < 40; i++) sim.step();
     expect(combat.pilot).toBe(0);
@@ -391,6 +393,7 @@ describe('alerts: hail, scan, distress', () => {
   /** A stranded damaged trader sits at the node the player reaches. */
   function distress() {
     const sim = newGame(27, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     sim.galaxy.fleets = [];
     giveItems(sim, 'item.fuel', 50);
     const c = sim.world.get(playerShip(sim), CombatC);

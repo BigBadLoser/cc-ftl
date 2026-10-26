@@ -24,8 +24,8 @@ export function helmSystem(sim: Sim): void {
     if (pilot) {
       for (const mid of sim.world.query(ModuleC)) {
         const m = sim.world.get(mid, ModuleC);
-        const eng = m && shipIdOf(sim, m) === id ? sim.content.modules[m.def]?.engine : undefined;
-        if (!m || !eng || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC)) continue;
+        const eng = m && sim.content.modules[m.def]?.engine;
+        if (!m || !eng || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC) || shipIdOf(sim, m) !== id) continue;
         engines += Math.abs(sim.content.modules[m.def]?.power ?? 0) * eng.evasionPerPower;
       }
     }
@@ -55,7 +55,7 @@ function cruise(sim: Sim, id: number, combat: { cruisePilot: number; cruiseEvasi
   for (const mid of sim.world.query(ModuleC)) {
     const m = sim.world.get(mid, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC) || shipIdOf(sim, m) !== id) continue;
+    if (!m || !def || (def.console !== 'helm' && !def.engine) || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC) || shipIdOf(sim, m) !== id) continue;
     if (def.console === 'helm') helm = true;
     if (def.engine) engines += Math.abs(def.power ?? 0) * def.engine.evasionPerPower;
   }

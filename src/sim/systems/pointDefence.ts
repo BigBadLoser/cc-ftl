@@ -4,10 +4,10 @@ import { aimDirection, moduleCenter } from '../combat/geometry';
 import { ModuleC } from '../modules/components';
 import { isDeployed } from '../modules/deploy';
 import type { Sim } from '../sim';
-import { PD_CHANCE, PD_WINDOW, VEHICLE_PD_CHANCE, VEHICLE_PD_DAMAGE, VEHICLE_PD_INTERVAL, VEHICLE_PD_RANGE } from '../tuning';
+import { PD_CHANCE, PD_WINDOW, VEHICLE_PD_CHANCE, VEHICLE_PD_DAMAGE, VEHICLE_PD_FLOOR, VEHICLE_PD_INTERVAL, VEHICLE_PD_RANGE } from '../tuning';
 import { VehicleC } from '../vehicles/components';
 import { dockPoint } from '../vehicles/geometry';
-import { damageVehicle, vehicleFaction } from '../vehicles/lifecycle';
+import { damageVehicle, vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
 import { shipById } from '../combat/ships';
 import { shipIdOf } from '../regions';
 
@@ -20,7 +20,7 @@ import { shipIdOf } from '../regions';
  * Shuttles: a missile homing on a shuttle is covered by the shuttle's home ship's point defence while the shuttle is
  * within VEHICLE_PD_RANGE of it. A hostile shuttle in flight within range of a defending ship, or docked at it, is an
  * incoming threat too: every VEHICLE_PD_INTERVAL ticks each working module rolls VEHICLE_PD_CHANCE to hit it for
- * VEHICLE_PD_DAMAGE hp.
+ * VEHICLE_PD_DAMAGE hp, never below VEHICLE_PD_FLOOR of its max hp.
  */
 export function pointDefenceSystem(sim: Sim): void {
   const gunsByGrid = new Map<number, number[]>();
@@ -77,8 +77,9 @@ function engageVehicles(sim: Sim, gunsByGrid: Map<number, number[]>, coreByGrid:
       for (const g of guns) {
         track(sim, g, b.x, b.y);
         if (sim.rng.chance(VEHICLE_PD_CHANCE)) {
-          damageVehicle(sim, vid, VEHICLE_PD_DAMAGE, 'pointDefence');
-          if (!sim.world.get(vid, VehicleC)) break;
+          // Point defence only chips: it never takes a shuttle below the floor.
+          const floor = Math.ceil((vehicleDefOf(sim, v)?.maxHp ?? 0) * VEHICLE_PD_FLOOR);
+          damageVehicle(sim, vid, Math.min(VEHICLE_PD_DAMAGE, v.hp - floor), 'pointDefence');
         }
       }
       if (!sim.world.get(vid, VehicleC)) break;

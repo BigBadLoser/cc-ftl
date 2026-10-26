@@ -15,7 +15,7 @@ export const FUEL_ITEM = 'item.fuel';
 const inPacket = (sim: Sim): boolean => sim.sector.state === 'hyperspace' && !!sim.sector.packet;
 
 /** Storage modules on one ship, ascending id. */
-const storagesOf = (sim: Sim, ship: number): number[] =>
+export const storagesOf = (sim: Sim, ship: number): number[] =>
   sim.world.query(StorageC, ModuleC).filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === ship).sort((a, b) => a - b);
 
 /**

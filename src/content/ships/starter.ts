@@ -8,7 +8,7 @@ import type { ShipTemplate } from '../../sim';
  */
 export const starterShip = {
   name: 'Starter ship',
-  crew: ['role.engineer', 'role.engineer', 'role.gunner', 'role.pilot', 'role.medic'],
+  crew: ['role.engineer', 'role.gunner', 'role.pilot', 'role.medic'],
   rows: [
     '..............................',
     '.############################.',

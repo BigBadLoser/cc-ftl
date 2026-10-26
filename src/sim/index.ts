@@ -6,7 +6,7 @@ export { newSectorGrid, stampGrid } from './stamp';
 export { CommandQueue, type Command, type QueuedCommand } from './commands';
 export { EventBuffer, type SimEvent } from './events';
 export { Sim, TICK_HZ } from './sim';
-export type { CreatureDefs, SuitDef, VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ItemDef, HandWeaponDef, HandWeaponArt, WeaponFamily, ItemQty, RecipeDef } from './registry';
+export type { CreatureDefs, SuitDef, VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ModuleCategory, ItemDef, HandWeaponDef, HandWeaponArt, WeaponFamily, ItemQty, RecipeDef } from './registry';
 export { gridFromTemplate, spawnTemplateModules, placeTemplateModules } from './ship';
 export { ModuleC, DeployC, type Module, type Deploy } from './modules/components';
 export { isDeployed } from './modules/deploy';
@@ -107,6 +107,7 @@ export { galaxyIndex, nodeOf, currentNode, START_NODE, type GalaxyIndex } from '
 export { edgeBetween, planStarRoute } from './galaxy/route';
 export { jumpBlocker } from './galaxy/travel';
 export { ftlStatus, ftlBlocker, type FtlStatus, type FtlBlock, type FtlState } from './ftl/status';
+export { cheapestHop, distressBlocker, fuelOnSale, isStranded, tugQuote, type TugQuote } from './galaxy/stranded';
 export { FUEL_ITEM, burnFuel, fuelStock, ftlCharge } from './galaxy/fuel';
 export { routeEdges, routeBlocker, routeCharge, hopTicksOf } from './galaxy/hyperspace';
 export { standing, standings, tierOf, isHostileFaction } from './galaxy/standing';
