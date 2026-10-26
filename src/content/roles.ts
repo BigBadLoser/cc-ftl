@@ -3,11 +3,15 @@ import type { RoleDef } from '../sim';
 /** Priorities: 0 = off, 1 = highest ... 4 = lowest. Every role fights fires at 2. */
 const NO_WORK = { firefighting: 0, medical: 0, operating: 0, repair: 0, construction: 0, hauling: 0, refining: 0, crafting: 0, cooking: 0, patrol: 0 };
 
+/** Crew who are not gunners grab one of these from storage when boarders are aboard (best first), and put it back afterwards. */
+const EMERGENCY_ARMS = ['item.rifle', 'item.sidearm', 'item.blade'];
+
 export const roles = {
   'role.engineer': {
     name: 'Engineer',
     priorities: { firefighting: 2, medical: 4, operating: 3, repair: 1, construction: 1, hauling: 3, refining: 2, crafting: 2, cooking: 4, patrol: 0 },
     skills: { shielding: 2, repair: 2, hacking: 1 },
+    emergencyLoadout: EMERGENCY_ARMS,
   },
   'role.gunner': {
     name: 'Gunner',
@@ -19,6 +23,7 @@ export const roles = {
   'role.medic': {
     name: 'Medic',
     skills: { medicine: 3 },
+    emergencyLoadout: EMERGENCY_ARMS,
     priorities: { firefighting: 2, medical: 1, operating: 4, repair: 4, construction: 4, hauling: 3, refining: 3, crafting: 3, cooking: 3, patrol: 0 },
   },
   'role.security': {
@@ -33,6 +38,7 @@ export const roles = {
     name: 'Pilot',
     priorities: { firefighting: 2, medical: 4, operating: 1, repair: 4, construction: 4, hauling: 3, refining: 4, crafting: 4, cooking: 4, patrol: 0 },
     skills: { piloting: 3 },
+    emergencyLoadout: EMERGENCY_ARMS,
   },
   // --- Robot variants (species.robot). They never surrender; no medical or cooking work. ---
   'role.robot_worker': {

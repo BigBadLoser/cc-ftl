@@ -293,3 +293,5 @@ export const NEST_RADIUS = 4;
 /** Idle aliens wander within this many tiles of where they hatched (per-tick chance of a stroll). */
 export const ALIEN_ROAM = 4;
 export const ALIEN_WANDER_CHANCE = 0.01;
+/** Seconds the player's ship must stay clear of intruders before emergency-armed crew put their weapon back in storage. */
+export const EMERGENCY_STAND_DOWN_SEC = 30;
