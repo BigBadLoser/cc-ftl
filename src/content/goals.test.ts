@@ -11,6 +11,13 @@ const second = (sim: Sim) => {
 };
 
 describe('goal chain', () => {
+  it('keeps every act at three or four goals', () => {
+    for (const act of goals) {
+      expect(act.goals.length).toBeGreaterThanOrEqual(3);
+      expect(act.goals.length).toBeLessThanOrEqual(4);
+    }
+  });
+
   it('starts on the first act, remembers the home cluster, and marks goals in any order', () => {
     const sim = newGame(3, content);
     second(sim);
@@ -41,7 +48,7 @@ describe('goal chain', () => {
     for (const s of ['fuelBought', 'built', 'gathered', 'repaired']) bumpStat(sim, s);
     second(sim);
     expect(currentAct(sim)?.id).toBe('act.beyond');
-    for (const s of ['kills', 'bountiesDone']) bumpStat(sim, s);
+    for (const s of ['kills', 'bountiesDone', 'hired']) bumpStat(sim, s);
     second(sim);
     // Still home: the last goal waits for another cluster.
     expect(currentAct(sim)?.id).toBe('act.beyond');
