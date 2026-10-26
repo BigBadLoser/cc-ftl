@@ -19,10 +19,24 @@ import type { DroneGrammar, FactionDef } from './types';
 const pod = (c: Ctx, s: RoomSpec): Block => sealedPod(c.rng, s.role === 'engine' ? 'engine pod' : s.role === 'reactor' ? 'reactor bank' : `${s.role} pod`, s);
 const podLen = (b: Block, side: Side): number => (side === 'e' || side === 'w' ? b.rows.length : Math.max(...b.rows.map((r) => r.length))) - 2;
 
+/**
+ * A gun pod keeps its outward face (away from what it mounts on) open, so nothing placed later buries it: a gun
+ * mounts beside the hull, and a buried pod would stay empty and sealed.
+ */
+function outward(p: Block, side: Side): Block {
+  if (p.kind !== 'weapons pod') return p;
+  const W = Math.max(...p.rows.map((r) => r.length));
+  const H = p.rows.length;
+  const face = side === 'n' || side === 's'
+    ? Array.from({ length: W - 2 }, (_, i) => ({ x: i + 1, y: side === 'n' ? -1 : H }))
+    : Array.from({ length: H - 2 }, (_, i) => ({ x: side === 'w' ? -1 : W, y: i + 1 }));
+  return { ...p, exposed: [...p.exposed, ...face] };
+}
+
 /** Mount a pod on a side of `parent`, at socket offset `at` (or anywhere), directly or out on a beam strut. */
 function mount(c: Ctx, parent: number, side: Side, p: Block, strut: number, at?: number): number | null {
   const place = at === undefined ? { align: 'any' as const } : { align: 'start' as const, shift: at };
-  const turned = side === 's' ? mirrorBlock(p) : p;
+  const turned = side === 's' ? mirrorBlock(outward(p, 'n')) : outward(p, side);
   if (strut <= 0) return c.A.attach(parent, turned, { side, ...place, doors: 0, kind: 'graft' });
   const horiz = side === 'e' || side === 'w';
   const b = c.A.attach(parent, beam(c.rng, strut + 2, 1, horiz), { side, ...place, doors: 0, kind: 'beam' });
