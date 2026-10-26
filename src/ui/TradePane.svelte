@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { UiApi, UiTrade, UiTradeLine, UiTradePartner } from './api';
   import ItemIcon from './ItemIcon.svelte';
+  import Icon from './Icon.svelte';
 
   let { api, partner: id, trade, compact = false }: { api: UiApi; partner: number; trade: UiTrade; compact?: boolean } = $props();
 
@@ -26,6 +27,9 @@
   const units = $derived(Math.max(giveUnits, getUnits));
   const pays = $derived(barter ? 0 : balance);
   const route = $derived(giveUnits > 0 ? p?.out : p?.in);
+  /** An order bigger than one hold runs as several trips, in turn. */
+  const trips = $derived(route && route.cap > 0 ? Math.max(1, Math.ceil(units / route.cap)) : 1);
+  const MAX_TRIPS = 8;
 
   const REASONS: Record<string, string> = {
     noCourier: 'No shuttle to carry it: fit one in a bay',
@@ -47,7 +51,7 @@
     if (pays > trade.credits) return 'Not enough credits';
     if (pays < 0 && -pays > p.wallet) return 'They cannot afford to pay that';
     if (route?.error) return courierNote;
-    if (route && units > p.holdCap) return `Too much for one shuttle hold (${p.holdCap} units)`;
+    if (route && trips > MAX_TRIPS) return `Too much: at most ${MAX_TRIPS} trips of ${route.cap} units`;
     return '';
   });
 
@@ -164,6 +168,7 @@
     {#if deal}
       <div class="status" data-testid="trade-status">
         <b>{deal.status}</b>
+        {#if deal.trip}<span class="trip" data-testid="trade-trip"><Icon name="shuttle" size={12} /> Trip {deal.trip.n} of {deal.trip.of}{deal.trip.stopped ? ' (stopped early)' : ''}</span>{/if}
         <span>{deal.get ? `Receiving ${deal.get}` : ''}{deal.get && deal.give ? ', ' : ''}{deal.give ? `Sending ${deal.give}` : ''} · {bal(deal.balance, deal.barter)}</span>
         {#if deal.cancellable}<button data-testid="trade-cancel-deal" onclick={() => api.dispatch({ type: 'trade.cancel', id: deal.id })}>Call off</button>{/if}
       </div>
@@ -183,7 +188,7 @@
         <span class="bal" class:bad={barter && balance > 0} data-testid="trade-balance">{bal(balance, barter)}{barter && balance > 0 ? ` (short ${balance})` : ''}</span>
       </div>
       <label class="barter"><input type="checkbox" bind:checked={barter} data-testid="trade-barter" /> Barter: items for items, no credits</label>
-      {#if !route?.error}<div class="note" data-testid="trade-courier">{courierNote}</div>{/if}
+      {#if !route?.error}<div class="note" data-testid="trade-courier">{courierNote}{trips > 1 ? ` ${units} units: ${trips} trips of up to ${route?.cap}, one after another.` : ''}</div>{/if}
       <div class="btns">
         <button class="go" disabled={!!problem} data-testid="trade-propose" title={problem} onclick={propose}>Propose</button>
         <button onclick={reset}>Clear</button>
@@ -232,6 +237,7 @@
   .btns .go { background: #0e4a56; border-color: var(--cyan); flex: 1; }
   .status { display: grid; gap: 4px; }
   .status span { color: var(--dim); font-size: 13px; }
+  .status .trip { display: inline-flex; align-items: center; gap: 4px; color: var(--cyan); }
   .compact .tabs { display: flex; }
   .compact .cols { grid-template-columns: 1fr; }
   .compact .col.hide { display: none; }

@@ -659,10 +659,8 @@ export interface UiTradePartner {
   rep: number;
   lines: UiTradeLine[];
   /** How a delivery would go: who flies ('them' | 'you') or the reject code that stops it, for goods going out / coming in. */
-  out: { courier: string; error: string };
-  in: { courier: string; error: string };
-  /** Units a shuttle hold takes. */
-  holdCap: number;
+  out: { courier: string; error: string; cap: number };
+  in: { courier: string; error: string; cap: number };
   offer: UiTradeOffer | null;
   distance: number;
   /** People for hire aboard (stations only), and the reject code that would stop a hiring run now ('' if it can go). */
@@ -687,6 +685,8 @@ export interface UiTradeDeal {
   live: boolean;
   cancellable: boolean;
   flying: boolean;
+  /** A multi-trip order: the trip now running, how many there are, and the trips already settled ('' if none stopped early). */
+  trip: { n: number; of: number; stopped: string } | null;
 }
 
 export interface UiTrade {

@@ -3,6 +3,7 @@ import type { Sim } from '../sim';
 import { planCourier } from './courier';
 import { failDeal, isLive, liveDealWith, openDeal } from './deals';
 import { checkOffer } from './offers';
+import { MAX_TRIPS, planTrips, tripCount } from './trips';
 import { ensureTrader, hailVerdict } from './traders';
 import { spawnStation } from '../stations/spawn';
 import { unwindStation } from './stationDock';
@@ -42,9 +43,13 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     if (c.error || !c.quote) return reject(sim, cmd.type, c.error ?? 'noPrice');
     const plan = planCourier(sim, offer.ship, c.give, c.get);
     if ('error' in plan) return reject(sim, cmd.type, plan.error);
+    // More than one hold: haul trips in turn, each settled as it lands (see Deal.trip). The funds for the whole order were checked above.
+    if (tripCount(c.give, c.get, plan.cap) > MAX_TRIPS) return reject(sim, cmd.type, 'tooBig');
+    const trips = planTrips(sim, offer.ship, c.give, c.get, plan.cap);
+    if (!trips) return reject(sim, cmd.type, 'noPrice');
     offer.balance = c.quote.balance;
-    const deal = openDeal(sim, offer, c, plan);
-    sim.events.emit({ type: 'trade.dealMade', deal: deal.id, ship: deal.ship, courier: deal.courier, balance: deal.balance });
+    const deal = openDeal(sim, offer, c, plan, trips);
+    sim.events.emit({ type: 'trade.dealMade', deal: deal.id, ship: deal.ship, courier: deal.courier, balance: offer.balance });
   },
   'trade.cancel': (sim, cmd) => {
     if (sim.trade.offers.some((o) => o.id === cmd.id)) {
@@ -61,7 +66,8 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     if (deal.phase !== 'dispatch' && deal.phase !== 'load' && !atStation && !fetching) return reject(sim, cmd.type, 'inTransit');
     if (atStation) unwindStation(sim, deal);
     failDeal(sim, deal, 'cancelled');
-    const v = atStation ? sim.world.get(deal.vehicle, VehicleC) : undefined;
+    // A later trip of a multi-trip order is called off with the shuttle still out from the last one: it flies home.
+    const v = atStation || (deal.trip && deal.trip.n > 1 && deal.courier === 'you') ? sim.world.get(deal.vehicle, VehicleC) : undefined;
     if (v) {
       // Keep the autopilot until it is home (parkCourier clears it once the shuttle is stowed).
       v.autopilot = true;

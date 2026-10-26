@@ -5,7 +5,6 @@ import type { Sim } from '../sim';
 import { cargoCount } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { vehicleDefOf } from '../vehicles/lifecycle';
-import { unitsOf } from './offers';
 import { freeAirlock, playerShip } from './player';
 import { TraderC, type Deal } from './types';
 
@@ -15,6 +14,8 @@ export interface CourierPlan {
   vehicle: number;
   /** The player airlock the goods come in at. */
   airlock: number;
+  /** Units one trip of this courier carries each way; a larger order runs as several trips (trips.ts). */
+  cap: number;
 }
 
 /** The shuttle type a trader's own courier uses: the first cargo-carrying vehicle def (stable order). */
@@ -34,7 +35,7 @@ function busyVehicles(sim: Sim): Set<number> {
 }
 
 /** The player's shuttle that can make a trade run, or a reason it cannot. */
-function playerCourier(sim: Sim, units: number): { vehicle: number } | { error: string } {
+function playerCourier(sim: Sim): { vehicle: number; cap: number } | { error: string } {
   const me = playerShip(sim);
   const busy = busyVehicles(sim);
   let error = 'noCourier';
@@ -46,14 +47,13 @@ function playerCourier(sim: Sim, units: number): { vehicle: number } | { error: 
       error = 'courierBusy';
       continue;
     }
-    if (units > cap) return { error: 'tooBig' };
-    return { vehicle: id };
+    return { vehicle: id, cap };
   }
   return { error };
 }
 
 /**
- * Decide who flies a deal and where the goods come in. Goods the player hands over always travel on the player's shuttle,
+ * Decide who flies a deal and where the goods come in (and how much one trip carries: `cap`). Goods the player hands over always travel on the player's shuttle,
  * and so do goods from a seller with no shuttle of its own (stations included); otherwise the seller sends its own.
  * `ownShuttle` forces the player's (a hiring run).
  */
@@ -63,19 +63,17 @@ export function planCourier(sim: Sim, ship: number, give: readonly ItemQty[], ge
   if (!sim.world.has(ship, ShipC)) return { error: 'noTrader' };
   if (!playerShip(sim)) return { error: 'noShip' };
   const kind = sim.content.trade?.traders[trader.profile];
-  const units = Math.max(unitsOf(give), unitsOf(get));
   if (ownShuttle || give.length > 0 || !kind?.shuttle) {
-    const c = playerCourier(sim, units);
+    const c = playerCourier(sim);
     if ('error' in c) return c;
     const v = sim.world.get(c.vehicle, VehicleC) as Vehicle;
     const airlock = freeAirlock(sim, c.vehicle, v.state === 'docked' ? v.dock : 0);
-    return airlock ? { courier: 'you', vehicle: c.vehicle, airlock } : { error: 'noAirlock' };
+    return airlock ? { courier: 'you', vehicle: c.vehicle, airlock, cap: c.cap } : { error: 'noAirlock' };
   }
   const cd = courierDef(sim);
   if (!cd) return { error: 'noCourier' };
-  if (units > (cd.def.cargo ?? 0)) return { error: 'tooBig' };
   const airlock = freeAirlock(sim, 0);
-  return airlock ? { courier: 'them', vehicle: 0, airlock } : { error: 'noAirlock' };
+  return airlock ? { courier: 'them', vehicle: 0, airlock, cap: cd.def.cargo ?? 0 } : { error: 'noAirlock' };
 }
 
 /** Create the trader's own shuttle at its ship, loaded with the goods and bound for the player's airlock. */

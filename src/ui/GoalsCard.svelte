@@ -3,6 +3,7 @@
   import type { UiApi, UiGoals } from './api';
   import Icon from './Icon.svelte';
   import { readGoalsOpen, writeGoalsOpen } from './phoneHud';
+  import { readCollapsed, writeCollapsed } from './cardCollapse';
 
   /**
    * The tutorial goal chain under the time controls: the act being played, its goals with a tick when met, and what the act
@@ -15,20 +16,12 @@
   let confirmSkip = $state(false);
   /** Set when the player skips: the chain ending then is not a finished act. */
   let skipped = false;
-  const KEY = 'cc.goalsCollapsed';
   /** Phone: the card is a one-line chip, collapsed by default; its state lasts for the session (sessionStorage). */
   let narrow = $state(false);
   let openPhone = $state(readGoalsOpen());
-  let collapsedDesk = $state(read());
+  let collapsedDesk = $state(readCollapsed('goals'));
   const collapsed = $derived(narrow ? !openPhone : collapsedDesk);
 
-  function read(): boolean {
-    try {
-      return localStorage.getItem(KEY) === '1';
-    } catch {
-      return false;
-    }
-  }
   function toggle() {
     if (narrow) {
       openPhone = !openPhone;
@@ -36,11 +29,7 @@
       return;
     }
     collapsedDesk = !collapsedDesk;
-    try {
-      localStorage.setItem(KEY, collapsedDesk ? '1' : '0');
-    } catch {
-      /* not remembered */
-    }
+    writeCollapsed('goals', collapsedDesk);
   }
 
   onMount(() => {
@@ -79,8 +68,8 @@
         <span class="act">Goals {goals.act}/{goals.acts}</span>
         {#if narrow && collapsed}<span class="sep">·</span>{/if}
         <span class="name">{goals.title}</span>
-        {#if narrow}<Icon name={collapsed ? 'chevDown' : 'chevUp'} size={16} />
-        {:else if collapsed}<span class="left">{left} left</span>{/if}
+        {#if !narrow && collapsed}<span class="left">{left} left</span>{/if}
+        <Icon name={collapsed ? 'chevDown' : 'chevUp'} size={16} />
       </button>
       {#if !(narrow && collapsed)}<button class="x" title="Skip the goals" aria-label="Skip the goals" data-testid="goals-skip" onclick={() => (confirmSkip = !confirmSkip)}><Icon name="close" size={14} /></button>{/if}
     </div>
@@ -114,7 +103,7 @@
   .title { flex: 1; display: flex; align-items: baseline; gap: 6px; min-height: 28px; padding: 0; border: 0; background: none; text-align: left; color: var(--text); }
   .act { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); white-space: nowrap; }
   .name { font: 600 13px var(--head-font); }
-  .left { margin-left: auto; color: var(--dim); font-size: 12px; white-space: nowrap; }
+  .left { margin-left: auto; margin-right: 2px; color: var(--dim); font-size: 12px; white-space: nowrap; }
   .x { min-width: 28px; min-height: 28px; padding: 0; border: 0; background: none; color: var(--dim); }
   ul { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 4px; }
   li { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; }
@@ -133,6 +122,7 @@
   /* Phone chip: one line, name ellipsised, chevron at the right. */
   .chip { padding: 0 8px; }
   .title :global(.icon) { margin-left: auto; align-self: center; color: var(--cyan); }
+  .left + :global(.icon) { margin-left: 0; }
   .chip .title { min-height: 32px; align-items: center; min-width: 0; }
   .chip .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sep { color: var(--dim); }

@@ -223,23 +223,16 @@ describe('trade, end to end', () => {
     expect(v.pilot).toBe(0);
   });
 
-  it('refuses a hold that is too small', () => {
+  it('an order bigger than the hold is accepted as several trips, the first one held (more in tradeTrips.slow.test.ts)', () => {
     const { sim, ship } = withCivilian('mining');
     const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number)!;
     storageAdd(sim, crate, 'item.scrap', 90);
     sim.enqueue({ type: 'trade.hail', ship });
     run(sim, 2);
-    const sell = (n: number): number => {
-      sim.enqueue({ type: 'trade.offer', ship, give: [{ item: 'item.scrap', count: n }], get: [] });
-      return ofType(run(sim, 2), 'trade.offered')[0]!.offer;
-    };
-    const reasons = (offer: number): string[] => {
-      sim.enqueue({ type: 'trade.accept', offer });
-      return ofType(run(sim, 2), 'command.rejected').map((e) => e.reason);
-    };
-    expect(reasons(sell(80))).toEqual(['tooBig']);
-    expect(sim.trade.deals).toHaveLength(0);
-    expect(sim.trade.credits).toBe(500);
+    const deal = accept(sim, ship, [{ item: 'item.scrap', count: 80 }], []);
+    expect(deal().trip).toMatchObject({ n: 1, of: 2 });
+    expect(deal().give).toEqual([{ item: 'item.scrap', count: 40 }]);
+    expect(deal().trip!.rest[0]!.give).toEqual([{ item: 'item.scrap', count: 40 }]);
   });
 
   it('calling off a deal before the shuttle leaves restores everything; one in transit cannot be recalled', () => {
