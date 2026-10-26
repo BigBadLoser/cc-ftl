@@ -300,10 +300,14 @@ export interface UiModuleDef {
   access: [number, number] | null;
   /** Facts for the popover besides cost: power, operator, shield layers, capacity... */
   facts: { label: string; value: string; tone?: 'warn' }[];
-  /** Tier chip text for variants (nothing has tiers yet), or null. */
+  /** Tier name ("Mk I", "Mk II", "Mk III") of a module that comes in tiers, else null. */
   tier: string | null;
-  /** Locked by progression (hook only: nothing is locked yet). */
+  /** The tier family's id (the Mk I id) for a tiered module, else null. */
+  family: string | null;
+  /** Locked: its blueprint is not known yet. */
   locked?: boolean;
+  /** Where to get the blueprint ("Blueprint: research stations"), or null for a basic module. */
+  lockHint: string | null;
 }
 
 /** A module's art rendered to an image (see render/moduleThumb). */
@@ -603,6 +607,19 @@ export interface UiRecruit {
   coming: boolean;
 }
 
+/** A module blueprint a station sells (sim galaxy/blueprintShop.ts). */
+export interface UiBlueprint {
+  def: string;
+  name: string;
+  tier: number;
+  price: number;
+  known: boolean;
+  w: number;
+  h: number;
+  /** One line of what it does better than Mk I. */
+  blurb: string;
+}
+
 /** A ship or station the player can hail. */
 /** What a player wants to know about a station before dealing with it (stations only). */
 export interface UiStationInfo {
@@ -612,6 +629,10 @@ export interface UiStationInfo {
   services: string[];
   jobs: number;
   hire: number;
+  /** Blueprints on sale here (empty without the service). */
+  blueprints: UiBlueprint[];
+  /** The port id `blueprint.buy` takes (empty without a port). */
+  blueprintPort: string;
   market: UiStarMarket | null;
   /** Working airlocks to dock at. */
   docks: number;
@@ -831,7 +852,7 @@ export interface UiApi {
   selectedCrew: Subscribable<number | null>;
   tool: Subscribable<UiToolState>;
   modules: Subscribable<UiModule[]>;
-  moduleDefs: UiModuleDef[];
+  moduleDefs: Subscribable<UiModuleDef[]>;
   items: UiItemDef[];
   recipes: UiRecipe[];
   /** Build cost per struct kind ('floor', 'wall', 'door'). */

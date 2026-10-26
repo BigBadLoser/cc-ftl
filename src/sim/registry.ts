@@ -421,8 +421,19 @@ export interface ModuleDef {
   weapon?: string;
   /** Shield generator: layers = floor(|power| * layersPerPower); one layer returns every `rechargeSec`. */
   shieldGen?: { layersPerPower: number; rechargeSec: number };
-  /** Engine: evasion added per unit of power (needs a pilot). */
-  engine?: { evasionPerPower: number };
+  /** Engine: evasion added per unit of power (needs a pilot); `fuelFactor` scales the fuel each jump burns (default 1, 0.85 = 15% less). */
+  engine?: { evasionPerPower: number; fuelFactor?: number };
+  /**
+   * Needs its blueprint before crew can build it (`job.buildModule` is refused until it is known, see sim/modules/blueprints.ts). Absent = a
+   * basic blueprint every game starts with. Stations sell the blueprint from danger tier `minDanger` up, for `price` credits scaled by
+   * the station's danger tier; `tier` (2, 3...) is only a label.
+   */
+  blueprint?: { tier: number; minDanger: number; price: number };
+  /**
+   * Placeholder art of a bigger tier of an existing module: the base `asset` is drawn normally at the footprint `base` (the one it was
+   * modelled for), with an outline in `tint` over the whole footprint and a tier badge. Render-only; goes when the tier has its own art.
+   */
+  tierArt?: { base: readonly [number, number]; tint: number };
   /** Point-defence turret: shoots down interceptable shots; needs a working AI core on the ship. */
   pointDefense?: true;
   /**

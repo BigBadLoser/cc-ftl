@@ -5,8 +5,10 @@
   import Icon from './Icon.svelte';
   import ItemIcon from './ItemIcon.svelte';
 
-  let { api, entry, rect, rot, thumb, have, pinned, onpin, onenter, onleave }: {
+  let { api, entry, rect, rot, thumb, have, variants = [], onvariant, pinned, onpin, onenter, onleave }: {
     api: UiApi; entry: Entry; rect: DOMRect; rot: number; thumb?: UiThumb; have: (item: string) => number;
+    /** The tiers of the module's family (itself included), lowest first; empty when it has none. */
+    variants?: Entry[]; onvariant?: (v: Entry) => void;
     pinned: boolean; onpin: () => void; onenter: () => void; onleave: () => void;
   } = $props();
 
@@ -31,7 +33,15 @@
       {#if def}
         <BuildPreview {def} {thumb} {rot} />
         <div class="legend"><span><i class="k f"></i>Footprint</span>{#if def.access}<span><i class="k acc"></i>Access: keep clear</span>{/if}<span class="rot"><Icon name="rotate" size={13} /> R to rotate</span></div>
-        {#if def.tier}<div class="vars"><span class="v on">{def.tier}</span></div>{/if}
+        {#if variants.length > 1}
+          <div class="vars" data-testid="popover-variants">
+            {#each variants as v (v.key)}
+              <button class="v" class:on={v.id === entry.id} class:lock={v.locked} data-testid="variant-{v.id}" aria-pressed={v.id === entry.id} onclick={() => onvariant?.(v)}>
+                {#if v.locked}<Icon name="lock" size={12} />{/if}<span>{v.def?.tier ?? v.name}</span>
+              </button>
+            {/each}
+          </div>
+        {/if}
       {:else if entry.icon}
         <div class="toolart"><Icon name={entry.icon} size={72} /></div>
         <div class="legend"><span>Drag to paint it</span></div>
@@ -39,6 +49,7 @@
     </div>
     <div class="right">
       <p class="desc">{entry.description}</p>
+      {#if entry.locked}<p class="lockline" data-testid="lock-hint"><Icon name="lock" size={13} /> {def?.lockHint ?? 'Locked'}</p>{/if}
       {#if def}
         <div class="facts">{#each def.facts as f (f.label)}<div><span>{f.label}</span><b class:warn={f.tone === 'warn'}>{f.value}</b></div>{/each}</div>
       {/if}
@@ -70,8 +81,10 @@
   .k.f { background: rgba(54, 212, 255, 0.27); border: 1px solid #36d4ff; }
   .k.acc { background: rgba(240, 177, 58, 0.2); border: 1px dashed #f0b13a; }
   .vars { display: flex; gap: 4px; margin-top: 6px; }
-  .v { flex: 1; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid #242424; background: #0b0b0b; font-size: 11px; color: #9a9a9a; }
-  .v.on { border-color: var(--amber); background: #000; }
+  .v { flex: 1; height: 40px; min-height: 0; padding: 0 4px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid #242424; background: #0b0b0b; font-size: 12px; color: #d4d4d4; }
+  .v.lock { color: #7a7a7a; border-style: dashed; }
+  .v.on { border-color: var(--amber); background: #000; color: var(--amber); }
+  .lockline { margin: 0 0 8px; display: flex; align-items: center; gap: 5px; color: var(--amber); font-size: 12.5px; }
   .toolart { height: 200px; width: 300px; display: flex; align-items: center; justify-content: center; color: var(--amber); background: #000; border: 1px solid #242424; }
   .toolart :global(svg) { fill: none; stroke: currentColor; }
   .desc { margin: 0 0 8px; color: #d4d4d4; line-height: 1.35; }

@@ -10,6 +10,8 @@ export type { CreatureDefs, SuitDef, VehicleDef, WeaponDef, Effect, SkillName, C
 export { gridFromTemplate, spawnTemplateModules, placeTemplateModules } from './ship';
 export { ModuleC, DeployC, type Module, type Deploy } from './modules/components';
 export { isDeployed } from './modules/deploy';
+export { isKnown as isBlueprintKnown, blueprintVenue } from './modules/blueprints';
+export { portBlueprints, type BlueprintOffer } from './galaxy/blueprintShop';
 export { footprintTiles, accessTile, rotatedSize, openTilesOf, hullRow, hullSide, hullOutward, inFootprint } from './modules/footprint';
 export { spawnModule, removeModule, placementError } from './modules/spawn';
 export { isTileWalkable } from './modules/walk';
@@ -108,7 +110,7 @@ export { edgeBetween, planStarRoute } from './galaxy/route';
 export { jumpBlocker } from './galaxy/travel';
 export { ftlStatus, ftlBlocker, type FtlStatus, type FtlBlock, type FtlState } from './ftl/status';
 export { cheapestHop, distressBlocker, fuelOnSale, isStranded, tugQuote, type TugQuote } from './galaxy/stranded';
-export { FUEL_ITEM, burnFuel, fuelStock, ftlCharge } from './galaxy/fuel';
+export { FUEL_ITEM, burnFuel, fuelStock, ftlCharge, jumpFuel, engineFuelFactor } from './galaxy/fuel';
 export { routeEdges, routeBlocker, routeCharge, hopTicksOf } from './galaxy/hyperspace';
 export { standing, standings, tierOf, isHostileFaction } from './galaxy/standing';
 export { clearBlocker, clearCost, grudgeOf, huntPressure, isWanted, notorietyOf } from './galaxy/heat';

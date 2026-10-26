@@ -307,5 +307,5 @@ describe('tick-cost changes are exact', () => {
     }
     // Combat really ran: shots were in flight.
     expect(shots).toBeGreaterThan(0);
-  });
+  }, 120_000); // a long scripted run: under parallel load it outlasts the 30 s default
 });

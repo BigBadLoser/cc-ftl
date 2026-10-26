@@ -1,4 +1,5 @@
 import { Sprite } from 'pixi.js';
+import { animNow } from './animClock';
 import type { Grid } from '../sim/grid';
 import { Struct } from '../sim/structure';
 import type { Atlas, StaticSprite } from './assets/loader';
@@ -49,7 +50,7 @@ export function createFxView(atlas: Atlas, L: Layers, host: FxViewHost): FxView 
     update() {
       nf = 0;
       const t = host.target();
-      const now = performance.now() / 1000;
+      const now = animNow() / 1000;
       if (t && frames.length) {
         const tiles = regionTiles(t.grid);
         tiles.scan((x, y, i, ci, c) => {

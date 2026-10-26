@@ -8,6 +8,7 @@ const REASONS: Record<string, string> = {
   noEvent: 'You are not in an event grid',
   interdicted: 'Answer the interdiction first',
   inStory: 'Answer the signal first',
+  unknownBlueprint: 'You need this blueprint: buy it at a station',
   jobExists: "There's already a job on that tile",
   noJob: 'No job on that tile to cancel',
   sameStruct: "That's already built there",

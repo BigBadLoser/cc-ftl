@@ -107,7 +107,14 @@ function structuresFor(rng: Rng, ctx: SectorContext, nodes: readonly Vec[], fact
   nodes.forEach((p, k) => {
     const danger = dangerAt(p.x, p.y);
     for (const [id, def] of Object.entries(g.structures)) {
-      if (def.kind === 'station' || def.chance === undefined) continue;
+      if (def.chance === undefined) continue;
+      if (def.kind === 'station') {
+        // Extra stations (research): a hashed roll of their own, so the rest of the sector keeps its random stream. Never in hostile space.
+        const f = faction ? g.factions[faction] : undefined;
+        if (f?.kind === 'pirates' || f?.kind === 'rogue') continue;
+        if (unit(ctx.seed, Math.round(p.x), Math.round(p.y), 77) < def.chance + (def.perDanger ?? 0) * danger) out[k]?.push({ def: id, owner: faction ?? civilian });
+        continue;
+      }
       if (start && k === 0 && def.kind === 'derelict') continue;
       if (rng.chance(def.chance + (def.perDanger ?? 0) * danger)) out[k]?.push({ def: id, owner: def.kind === 'derelict' ? null : faction });
     }

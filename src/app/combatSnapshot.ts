@@ -3,6 +3,7 @@ import {
 } from '../sim';
 import type { UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
 import { shipIdOf } from '../sim/regions';
+import { factionsHostile } from '../sim/combat/factions';
 import { homeShip } from '../sim/index';
 
 const round = (v: number, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
@@ -76,7 +77,11 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
         }
       }
       player = { ...base, weapons, consoles };
-    } else if (s.faction === 'hostile' && s.state !== 'fled') enemies.push(isDormant(s) ? { ...base, dormant: true } : base);
+    } else if (factionsHostile(s.faction, 'player') && s.state !== 'fled') {
+      // The same test as the sim's combat state (combatStateSystem): every faction at war with the player (hostile, and the
+      // rogue AI and aliens, at war with everyone). Listing only 'hostile' left the panel empty in a fight with a rogue ship.
+      enemies.push(isDormant(s) ? { ...base, dormant: true } : base);
+    }
   }
   if (me) enemies.sort((a, b) => dist(sim, me, a.ship) - dist(sim, me, b.ship));
   // A ship in hyperspace or waiting to deploy is not in any fight, whatever is archived or placed in the empty sector.

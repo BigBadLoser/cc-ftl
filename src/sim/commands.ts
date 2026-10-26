@@ -193,6 +193,8 @@ export type Command =
   | { type: 'galaxy.distress' }
   /** Take a job offered at the player's node (galaxy/jobs.ts), by its offer key; give one up. */
   | { type: 'crew.hire'; key: string }
+  /** Buy a module blueprint from a station of the player's node (galaxy/blueprintShop.ts): known at once, then buildable. */
+  | { type: 'blueprint.buy'; port: string; def: string }
   | { type: 'jobs.accept'; key: string }
   | { type: 'jobs.abandon'; id: number }
   /** Break a delivery's crate open on deck: its goods spill out, kept, and the delivery fails. */

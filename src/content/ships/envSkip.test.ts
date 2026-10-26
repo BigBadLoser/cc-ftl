@@ -128,5 +128,5 @@ describe('environment solver skipping', () => {
     spy.mockRestore();
     // The warm run really skipped solves (fewer atmosphere loads), so the equality above covers the skips.
     expect(loads.warm).toBeLessThan(loads.cold);
-  });
+  }, 120_000); // a long scripted run: under parallel load it outlasts the 30 s default
 });

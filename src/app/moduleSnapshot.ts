@@ -1,4 +1,4 @@
-import { CrewC, DeadC, ModuleC, PositionC, airlockSuits, roomTiles, type ModuleDef, type Sim } from '../sim';
+import { CrewC, DeadC, blueprintVenue, isBlueprintKnown, ModuleC, PositionC, airlockSuits, roomTiles, type ModuleDef, type Sim } from '../sim';
 import { buildRobotBay } from './robotSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import { buildFood } from './foodSnapshot';
@@ -49,20 +49,31 @@ function moduleFacts(d: ModuleDef): UiModuleDef['facts'] {
   return f;
 }
 
+const TIER_NAME: Record<number, string> = { 1: 'Mk I', 2: 'Mk II', 3: 'Mk III' };
+const familyOf = (id: string): string => id.replace(/\.mk\d$/, '');
+
 export function buildModuleDefs(sim: Sim): UiModuleDef[] {
-  return Object.entries(sim.content.modules).map(([id, d]) => ({
-    id,
-    name: d.name,
-    w: d.footprint[0],
-    h: d.footprint[1],
-    power: d.power,
-    cost: costsOf(sim, d.cost),
-    category: d.category ?? 'utility',
-    description: d.description ?? '',
-    access: d.access ? [d.access[0], d.access[1]] : null,
-    facts: moduleFacts(d),
-    tier: null,
-  }));
+  const mods = sim.content.modules;
+  return Object.entries(mods).map(([id, d]) => {
+    const family = familyOf(id);
+    const tiered = !!d.blueprint || Object.keys(mods).some((o) => o !== id && familyOf(o) === id);
+    return {
+      id,
+      name: d.name,
+      w: d.footprint[0],
+      h: d.footprint[1],
+      power: d.power,
+      cost: costsOf(sim, d.cost),
+      category: d.category ?? 'utility',
+      description: d.description ?? '',
+      access: d.access ? [d.access[0], d.access[1]] : null,
+      facts: moduleFacts(d),
+      tier: tiered ? TIER_NAME[d.blueprint?.tier ?? 1] ?? null : null,
+      family: tiered ? family : null,
+      locked: !isBlueprintKnown(sim, id),
+      lockHint: d.blueprint ? `Blueprint: ${blueprintVenue(d) === 'military' ? 'military' : 'research'} stations` : null,
+    };
+  });
 }
 
 /** Power supply/demand of the ship and the average O2 of the rooms crew stand in. */

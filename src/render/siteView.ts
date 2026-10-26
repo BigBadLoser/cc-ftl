@@ -1,4 +1,5 @@
 import { ColorMatrixFilter, Rectangle, Sprite, Texture } from 'pixi.js';
+import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
 import { JobC } from '../sim/crew/components';
 import type { Grid } from '../sim/grid';
@@ -139,7 +140,7 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
   function update(): void {
     const t = host.target();
     const live = new Set<number>();
-    const now = performance.now();
+    const now = animNow();
     if (t) {
       const { grid } = t;
       for (const id of world.query(JobC)) {
