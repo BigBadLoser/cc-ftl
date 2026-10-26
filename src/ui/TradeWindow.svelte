@@ -9,7 +9,7 @@
   const p = $derived<UiTradePartner | undefined>(trade.partners.find((x) => x.id === id));
 </script>
 
-<div class="veil" data-testid="trade-window">
+<div class="veil" data-backdrop data-testid="trade-window">
   <div class="card" role="dialog" aria-modal="true" aria-label="Trade">
     <header>
       <div class="who">

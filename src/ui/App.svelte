@@ -29,6 +29,7 @@
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
   import Icon, { type IconName } from './Icon.svelte';
+  import { closeOutside, outsideTap, type ClosablePanel } from './outsideClick';
   import './theme.css';
 
   let { api }: { api: UiApi } = $props();
@@ -130,6 +131,23 @@
     return () => unsubs.forEach((u) => u());
   });
 
+  /**
+   * Panels the outside click knows about. A click on the world (or a modal's backdrop) closes every open one that is not `sticky`:
+   * combat and the build catalog (while in build mode) stay, as do the goals card, alerts, top bars and toolbar (never listed).
+   * The selection inspector is not here: the world tap itself selects or deselects, in the same click.
+   */
+  const panels: ClosablePanel[] = [
+    { id: 'overview', sticky: false, isOpen: () => overviewOpen, close: () => (overviewOpen = false) },
+    { id: 'jobs', sticky: false, isOpen: () => jobsOpen, close: () => (jobsOpen = false) },
+    { id: 'stock', sticky: false, isOpen: () => stockOpen, close: () => (stockOpen = false) },
+    { id: 'priorities', sticky: false, isOpen: () => priorities, close: () => (priorities = false) },
+    { id: 'station', sticky: false, isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
+    { id: 'trade', sticky: false, isOpen: () => tradeWith !== null, close: () => (tradeWith = null) },
+    { id: 'combat', sticky: true, isOpen: () => combat.inCombat && combatOpen, close: () => (combatOpen = false) },
+    { id: 'build', sticky: true, isOpen: () => tool.tool === 'build', close: () => {} },
+  ];
+  const outside = outsideTap(() => closeOutside(panels));
+
   function onKey(e: KeyboardEvent) {
     if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
     if (e.key === ' ') {
@@ -172,7 +190,7 @@
   </span>
 {/snippet}
 
-<svelte:window onkeydown={onKey} />
+<svelte:window onkeydown={onKey} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancel={() => outside.onCancel()} />
 
 <canvas bind:this={canvas}></canvas>
 
