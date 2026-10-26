@@ -98,7 +98,7 @@
   .done-act { border-color: var(--green); }
   .head { display: flex; align-items: center; gap: 6px; margin: 0; }
   .done-act .head { color: var(--green); font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
-  .title { flex: 1; display: flex; align-items: baseline; gap: 6px; min-height: 28px; padding: 0; border: 0; background: none; text-align: left; color: var(--text); }
+  .title { flex: 1; display: flex; align-items: center; gap: 6px; min-height: 24px; padding: 0; border: 0; background: none; text-align: left; color: var(--text); }
   .act { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); white-space: nowrap; }
   .name { font: 600 13px var(--head-font); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .x { min-width: 28px; min-height: 28px; padding: 0; border: 0; background: none; color: var(--dim); }
