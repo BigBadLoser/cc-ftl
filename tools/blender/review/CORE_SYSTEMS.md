@@ -186,3 +186,39 @@ byte-identical approved reactor files copied from V4. The renderer's `--only
 life_support` option avoids rendering the approved reactor again. Use the same
 V4 commands with that option and the V5 output directory, then compose against
 `--baseline artifacts/core-systems-v4`.
+
+## Four orientations and power-state review
+
+After user approval of both V5 models, `artifacts/core-systems-orientations/`
+renders the approved models through all four physical rotations, powered and
+unpowered: 16 isolated frames plus glow twins. No model source changed.
+
+- `orientations-powered.png`: all four views at normal game display scale.
+- `orientations-unpowered.png`: the corresponding unpowered views.
+- `power-states.png`: powered/unpowered r0 views side by side.
+- `review.json`: dimensions, anchors, footprint, geometry digest and glow counts
+  for every frame, plus exact r0 approval-match results.
+- `frames/`: native-size individual colour/glow PNGs, ready for inspection.
+
+Geometry digests match the approved V5 record in every rotation. All frames
+remain grounded, below wall height, and within the existing 2x2 / 1x2 footprints.
+Both r0 colour and glow renders reproduce V5 pixel-for-pixel. Every power-state
+pair has identical alpha coverage, frame dimensions and anchor; all unpowered
+glow images are zero. The life-support front display is occluded in r2/r3, so
+those views have no visible glow even when powered. This is expected visibility,
+not a view-specific model change.
+
+One Blender process, two threads, the unchanged SS4/four-sample project settings:
+
+```sh
+SPRITE_PREVIEW=0 SPRITE_SS=4 SPRITE_SAMPLES=4 \
+  /workspace/blender-tools/blender-4.2.9-linux-x64/blender -b -t 2 \
+  --factory-startup --python-exit-code 1 \
+  --python tools/blender/review/core_systems_orientations.py -- \
+  --out artifacts/core-systems-orientations
+python3 tools/blender/review/core_systems_orientations.py --compose \
+  --out artifacts/core-systems-orientations
+```
+
+These are review frames; damage variants, production atlas packing and runtime
+integration remain separate work. No live sprite build or runtime edits occur.
