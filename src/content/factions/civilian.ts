@@ -48,7 +48,7 @@ export const civilian = {
     light: [{ value: 'module.burstLaser', weight: 1 }],
     heavy: [],
   },
-  shields: [{ value: 'module.shieldGenSmall', weight: 1 }],
+  shields: [{ value: 'module.shieldGen', weight: 1 }],
   stock: [{ item: 'item.metal', min: 1, max: 6 }, { item: 'item.electronics', min: 0, max: 3 }],
   living: true,
   aiCore: true,

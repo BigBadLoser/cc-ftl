@@ -29,7 +29,7 @@ describe('deployable roof parts', () => {
 
   it('weapons and shields stay stowed in peace, deploy in combat in deploySec, and stow when it ends', () => {
     const sim = newGame(1, content);
-    const gens = mods(sim, 1, 'module.shieldGen').concat(mods(sim, 1, 'module.shieldGenSmall'));
+    const gens = mods(sim, 1, 'module.shieldGen');
     const weapons = sim.world.query(WeaponC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number);
     expect(weapons.length).toBeGreaterThan(0);
     run(sim, 100);

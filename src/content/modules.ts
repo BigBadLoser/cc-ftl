@@ -240,24 +240,15 @@ export const modules = {
     },
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 6 }],
   },
-  // 8 power -> 2 layers, one back every 10 s. Sits anywhere inside the ship.
+  // Mk I shield generator (2x2): 6 power -> 2 layers, one back every 10 s. Sits anywhere inside the ship. Mk II (2x3) and Mk III (3x3) are in tiers.ts.
   'module.shieldGen': {
     name: 'Shield generator',
     category: 'defence',
     description: "Projects shield layers that absorb incoming shots and recharge over time.",
-    asset: 'module.shield_gen', footprint: [2, 3], solid: true, power: -8, powerPriority: 2,
-    flammability: 0.2, maxHp: 100, buildWork: 220, shieldGen: { layersPerPower: 0.25, rechargeSec: 10 },
-    roofAsset: 'roof.shield_gen', deploySec: 2,
-    cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 12 }],
-  },
-  'module.shieldGenSmall': {
-    name: 'Small shield gen',
-    category: 'defence',
-    description: "A compact shield generator. Fewer layers for less power.",
-    asset: 'module.shield_gen_small', footprint: [2, 2], solid: true, power: -4, powerPriority: 2,
-    flammability: 0.2, maxHp: 70, buildWork: 140, shieldGen: { layersPerPower: 0.25, rechargeSec: 12 },
+    asset: 'module.shield_gen_small', footprint: [2, 2], solid: true, power: -6, powerPriority: 2,
+    flammability: 0.2, maxHp: 80, buildWork: 170, shieldGen: { layersPerPower: 0.34, rechargeSec: 10 },
     roofAsset: 'roof.shield_gen_small', deploySec: 2,
-    cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 8 }],
+    cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 10 }],
   },
   // Consoles: the chair is a walkable tile inside the footprint; crew sit there to run the ship system in combat.
   // Footprints, chairs and open tiles match the approved art (tools/blender/sprites/consoles.py meta()).
