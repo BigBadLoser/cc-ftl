@@ -14,10 +14,11 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
   skipping `*.slow.test.ts`. Run it before every commit and before pushing a work branch.
 - `npm run check`: lint, typecheck and every test, slow tier included. Run it in the testing round before opening a PR.
-  CI minutes cost money. CI runs the fast tier on every PR push and on `main`, and skips markdown-only changes.
-  The slow tier (`*.slow.test.ts`) runs once per PR, on the run that adding the `full-ci` label starts. Add the label
-  only when the PR is ready to merge (after review fixes). To run it again after a later push, remove and re-add the
-  label. Batch fixes into one push rather than pushing every commit to an open PR.
+  CI minutes cost money. On PR pushes and on `main`, CI runs lint, typecheck, the build and only the fast tests the
+  change affects, and it skips markdown-only changes. Every test, slow tier (`*.slow.test.ts`) included, runs once per
+  PR, on the run that adding the `full-ci` label starts. Add the label only when the PR is ready to merge (after
+  review fixes). To run it again after a later push, remove and re-add the label. Batch fixes into one push rather
+  than pushing every commit to an open PR.
 - `npm run sprites`: rebuild the sprite sheets in `public/assets/1x/` with headless Blender (see "Asset pipeline")
   (`tools/blender/setup.sh` installs it). Commit the generated sheets, JSON and manifest.
 
