@@ -1,4 +1,4 @@
-import { Container, Rectangle, Sprite, type ExtractSystem } from 'pixi.js';
+import { Container, Rectangle, Sprite, Texture, type ExtractSystem } from 'pixi.js';
 import { World } from '../sim/ecs';
 import type { Module } from '../sim/modules/components';
 import { rotatedSize } from '../sim/modules/footprint';
@@ -22,6 +22,8 @@ export interface ModuleThumb {
 export interface ModuleThumbs {
   /** The thumb of a module def at a rotation, or null while its sheets load (they are queued). `w` 0 = the def has no art. */
   get(defId: string, rot: number): ModuleThumb | null;
+  /** The same art as a texture (for the placement ghost), with the thumb's anchor; null while loading or without art. */
+  texture(defId: string, rot: number): { tex: Texture; ax: number; ay: number } | null;
 }
 
 /**
@@ -30,9 +32,11 @@ export interface ModuleThumbs {
  */
 export function createModuleThumbs(extract: ExtractSystem, atlas: Atlas, defs: Readonly<Record<string, ModuleDef>>): ModuleThumbs {
   const cache = new Map<string, ModuleThumb>();
+  const canvases = new Map<string, HTMLCanvasElement>();
+  const textures = new Map<string, Texture>();
   const world = new World();
 
-  function build(defId: string, rot: number): ModuleThumb | null {
+  function build(defId: string, rot: number, key: string): ModuleThumb | null {
     const def = defs[defId];
     if (!def) return null;
     const m: Module = { def: defId, x: 0, y: 0, rot, hp: def.maxHp, powerPriority: 3, enabled: true, powered: true, reservedBy: 0 };
@@ -66,6 +70,7 @@ export function createModuleThumbs(extract: ExtractSystem, atlas: Atlas, defs: R
       const b = root.getLocalBounds();
       const frame = new Rectangle(Math.floor(b.x), Math.floor(b.y), Math.ceil(b.width) + 1, Math.ceil(b.height) + 1);
       const canvas = extract.canvas({ target: root, frame, resolution: 1, antialias: false }) as HTMLCanvasElement;
+      canvases.set(key, canvas);
       out = { url: canvas.toDataURL(), w: frame.width, h: frame.height, ax: front.x - frame.x, ay: front.y - frame.y };
     }
     root.destroy({ children: true });
@@ -77,9 +82,18 @@ export function createModuleThumbs(extract: ExtractSystem, atlas: Atlas, defs: R
       const key = `${defId}|${rot}`;
       const hit = cache.get(key);
       if (hit) return hit;
-      const made = build(defId, rot);
+      const made = build(defId, rot, key);
       if (made) cache.set(key, made);
       return made;
+    },
+    texture(defId, rot) {
+      const t = this.get(defId, rot);
+      const key = `${defId}|${rot}`;
+      const canvas = canvases.get(key);
+      if (!t || !t.w || !canvas) return null;
+      let tex = textures.get(key);
+      if (!tex) textures.set(key, (tex = Texture.from(canvas)));
+      return { tex, ax: t.ax, ay: t.ay };
     },
   };
 }

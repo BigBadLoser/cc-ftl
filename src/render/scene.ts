@@ -34,6 +34,7 @@ import { createMarkers } from './markers';
 import { createPodView } from './podView';
 import { createPortraits } from './portrait';
 import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
+import { createModuleGhost, type ModuleGhostSpec } from './moduleGhost';
 import { createShipScene, type ShipScene } from './shipScene';
 
 export type { CutawayMode };
@@ -68,6 +69,8 @@ export interface Renderer {
   setSelection(tile: Tile | readonly Tile[] | null, shipId?: number): void;
   setHover(tile: Tile | null): void;
   setPreview(tiles: readonly Tile[], valid?: boolean): void;
+  /** The module being placed, drawn see-through at the cursor (red when invalid) with its access tile; null hides it. */
+  setModuleGhost(g: ModuleGhostSpec | null): void;
   /** Center the camera on a (fractional) tile position of the camera ship's grid. */
   focusTile(x: number, y: number): void;
   /** Center the camera on a sector position (tiles). */
@@ -205,6 +208,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
   const sectorMarks = createMarkers(SL.ui);
+  const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
   function shipOf(shipId: number): Ship | undefined {
@@ -403,6 +407,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       // Drawn in the shared sector layer, not the reference ship's: a drag over a distant asteroid has that ship culled away.
       sectorMarks.setPreview(tiles, valid);
     },
+    setModuleGhost: (g) => moduleGhost.set(g),
     focusTile(x, y) {
       const p = iso(x, y); // a sector tile
       cam.centerOn(p.x, p.y - 8 * ART_SCALE);

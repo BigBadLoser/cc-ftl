@@ -293,7 +293,7 @@ export interface UiModuleDef {
   power: number;
   cost: UiCost[];
   /** Build catalog tab. */
-  category: 'structure' | 'power' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+  category: 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
   description: string;
   /** Access tile (offset from the footprint's top-left at rotation 0), or null. */
   access: [number, number] | null;

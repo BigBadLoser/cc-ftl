@@ -72,7 +72,7 @@ export const modules = {
   },
   'module.console': {
     name: 'Console',
-    category: 'utility',
+    category: 'systems',
     description: "A general console. Crew sit at it to work.",
     asset: 'module.console',
     footprint: [1, 1],
@@ -145,14 +145,14 @@ export const modules = {
   // Sealed cargo containers (sim/containers): solid boxes on Beam tiles clamped to a freighter's frame, no interior.
   // Footprint W x H at rotation 0 (art `container.<W>x<H>`); a storage slot per tile and a bit (capacity, hp and cost scale with the area: 8 and 18 tiles).
   'container.2x4': {
-    name: 'Cargo container (small)',
+    name: 'Small container',
     category: 'storage',
     description: "A sealed cargo container clamped to the frame. Holds a modest load.",
     asset: 'container.2x4', footprint: [2, 4], solid: true, cover: 'full', power: 0,
     flammability: 0.1, maxHp: 120, buildWork: 320, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 9 }, container: true,
   },
   'container.3x6': {
-    name: 'Cargo container',
+    name: 'Large container',
     category: 'storage',
     description: "A large sealed cargo container clamped to the frame.",
     asset: 'container.3x6', footprint: [3, 6], solid: true, cover: 'full', power: 0,
@@ -206,7 +206,7 @@ export const modules = {
   // east, south, west); the bell protrudes into space beyond it.
   'module.engine': {
     name: 'Engine',
-    category: 'utility',
+    category: 'systems',
     description: "Pushes the ship and adds evasion in a fight. Needs a pilot. Sits on the hull edge.",
     asset: 'module.engine', footprint: [4, 5], solid: true, power: -6, powerPriority: 3,
     heatPerSec: 4, flammability: 0.2, maxHp: 160, buildWork: 320, engine: { evasionPerPower: 0.02 }, hullEdge: 'n',
@@ -251,7 +251,7 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 12 }],
   },
   'module.shieldGenSmall': {
-    name: 'Small shield generator',
+    name: 'Small shield gen',
     category: 'defence',
     description: "A compact shield generator. Fewer layers for less power.",
     asset: 'module.shield_gen_small', footprint: [2, 2], solid: true, power: -4, powerPriority: 2,
@@ -264,7 +264,7 @@ export const modules = {
   // Weapons console 2x2: desk (0,0) (1,0) and the right-hand bar (1,1); chair (0,1) in the U, the flight-stick pod on its left.
   'module.weaponsConsole': {
     name: 'Weapons console',
-    category: 'utility',
+    category: 'systems',
     description: "Crew at this console run the ship's weapons in combat.",
     asset: 'module.weapons_console', footprint: [2, 2], solid: true, access: [0, 1],
     openTiles: [[0, 1]], power: -3, powerPriority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true,
@@ -273,7 +273,7 @@ export const modules = {
   // Shield console 3x2: solid (0,0) (1,0) (2,0) (0,1); chair (1,1) and free floor (2,1). May shrink to 2x2 later.
   'module.shieldConsole': {
     name: 'Shield console',
-    category: 'utility',
+    category: 'systems',
     description: "Crew at this console run the ship's shields in combat.",
     asset: 'module.shield_console', footprint: [3, 2], solid: true, access: [1, 1],
     openTiles: [[1, 1], [2, 1]], power: -3, powerPriority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true,
@@ -282,7 +282,7 @@ export const modules = {
   // Helm 3x2: solid (0,0) (1,0) (2,0) (0,1) (2,1); chair (1,1) between the side panels.
   'module.helm': {
     name: 'Helm',
-    category: 'utility',
+    category: 'systems',
     description: "The pilot's seat. Steers the ship and holds the bridge.",
     asset: 'module.helm', footprint: [3, 2], solid: true, access: [1, 1], openTiles: [[1, 1]], power: -3,
     powerPriority: 4, flammability: 0.3, maxHp: 60, buildWork: 100, workstation: true, console: 'helm', bridge: {},
@@ -320,7 +320,7 @@ export const modules = {
   },
   'module.aiCore': {
     name: 'AI core',
-    category: 'utility',
+    category: 'systems',
     description: "Runs ship automation such as point defence.",
     asset: 'module.ai_core', footprint: [2, 2], solid: true, power: -4,
     powerPriority: 3, flammability: 0.2, maxHp: 80, buildWork: 240, aiCore: { tier: 1 }, roofAsset: 'roof.ai_core', deploySec: 2,

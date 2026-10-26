@@ -27,10 +27,8 @@
 
 <style>
   /* Bottom-right dock: build tools first, then view options and contextual panels. */
-  .tools { position: fixed; z-index: 4; right: calc(8px + var(--sar)); bottom: calc(8px + var(--sab)); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
+  .tools { position: fixed; z-index: 4; right: calc(8px + var(--sar)); bottom: calc(8px + var(--sab) + var(--catalog-h, 0px)); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
   :global(html[data-combat]) .tools { right: calc(388px + var(--sar)); }
-  /* Above the build catalog while it is open (the catalog is 150 + 36 px tall plus its border). */
-  :global(html[data-catalog='open']) .tools { bottom: calc(8px + var(--sab) + 226px); }
   .dock { display: flex; gap: 2px; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end; }
   .dock { padding: 2px; background: var(--panel); border: 1px solid var(--line); max-width: calc(100vw - 16px); }
   .dock :global(button.tile) { width: 32px; height: 32px; background: var(--panel-2); }
@@ -40,7 +38,6 @@
     /* A narrow column on the right edge; the selection sheet leaves this strip free. */
     .tools { flex-direction: row-reverse; align-items: flex-start; top: calc(var(--hdr) + 6px + var(--sat)); bottom: auto; }
     :global(html[data-combat]) .tools { display: none; }
-    :global(html[data-catalog='open']) .tools { bottom: auto; }
     .dock { flex-direction: column; flex-wrap: nowrap; width: 38px; box-sizing: border-box; align-items: center; }
     .dock :global(button.tile) { width: 34px; height: 34px; }
     .sep { width: auto; height: 1px; align-self: stretch; margin: 3px 2px; }

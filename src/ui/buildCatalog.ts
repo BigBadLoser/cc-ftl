@@ -6,6 +6,7 @@ type IconName = 'wall' | 'floor' | 'door' | 'pick' | 'flag';
 export const CATEGORIES = [
   { id: 'structure', label: 'Structure' },
   { id: 'power', label: 'Power' },
+  { id: 'systems', label: 'Systems' },
   { id: 'life', label: 'Life support' },
   { id: 'production', label: 'Production' },
   { id: 'storage', label: 'Storage' },

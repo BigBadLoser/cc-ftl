@@ -329,7 +329,7 @@ export interface AirlockLayout {
  * top-left of its rotated bounding box. Offsets (`access`) are in rotation-0 local tiles.
  */
 /** Build catalog tab of a module (tool cards live in their own tabs: structure tools in Structure, rock tools in Mining). */
-export type ModuleCategory = 'structure' | 'power' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
 
 export interface ModuleDef {
   name: string;

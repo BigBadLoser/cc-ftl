@@ -24,7 +24,7 @@
 
 <svelte:window bind:innerWidth={vw} bind:innerHeight={vh} />
 <div class="pop" role="tooltip" data-testid="build-popover" style:width="{W}px" style:left="{left}px" style:bottom="{vh - rect.top + 18}px" onmouseenter={onenter} onmouseleave={onleave}>
-  <div class="ph"><b>{entry.name}</b><span class="chip">{catLabel}{def?.tier ? ` · ${def.tier}` : ''}</span>
+  <div class="phd"><b>{entry.name}</b><span class="chip">{catLabel}{def?.tier ? ` · ${def.tier}` : ''}</span>
     <button class="pin" class:on={pinned} title={pinned ? 'Unpin' : 'Pin open'} aria-label="Pin" aria-pressed={pinned} onclick={onpin}>📌</button></div>
   <div class="cols" class:narrow>
     <div class="left">
@@ -54,13 +54,14 @@
 </div>
 
 <style>
-  .pop { position: fixed; z-index: 7; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); color: var(--text); font-size: 13px; box-shadow: 0 6px 24px #000a; max-height: calc(100vh - 220px); }
-  .ph { display: flex; align-items: center; gap: 8px; padding: 5px 8px 5px 10px; background: #000; border-bottom: 1px solid var(--amber); }
-  .ph b { font: 700 15px var(--head-font); text-transform: uppercase; letter-spacing: 0.05em; color: var(--amber); }
+  .pop { position: fixed; z-index: 7; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); color: var(--text); font-size: 13px; box-shadow: 0 6px 24px #000a; max-height: calc(100vh - 220px); box-sizing: border-box; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+  .pop > * { min-width: 0; }
+  .phd { box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 5px 8px 5px 10px; background: #000; border-bottom: 1px solid var(--amber); }
+  .phd b { font: 700 15px var(--head-font); text-transform: uppercase; letter-spacing: 0.05em; color: var(--amber); }
   .chip { font-size: 11px; color: #ffe2a6; border: 1px solid var(--amber); padding: 0 5px; }
   .pin { margin-left: auto; min-height: 22px; min-width: 22px; height: 22px; padding: 0 4px; font-size: 11px; background: transparent; border-color: transparent; }
   .pin.on { background: #2a1e06; border-color: var(--amber); }
-  .cols { display: grid; grid-template-columns: 302px 1fr; gap: 12px; padding: 10px; overflow-y: auto; }
+  .cols { box-sizing: border-box; display: grid; grid-template-columns: 302px minmax(0, 1fr); gap: 12px; padding: 10px; overflow-y: auto; }
   .cols.narrow { grid-template-columns: 1fr; }
   .left { min-width: 0; }
   .legend { display: flex; gap: 12px; margin-top: 5px; font-size: 11.5px; color: #9a9a9a; align-items: center; flex-wrap: wrap; }

@@ -24,7 +24,16 @@
     const stop = thumbs.start();
     return () => { subs.forEach((u) => u()); stop(); };
   });
-  $effect(() => { document.documentElement.dataset.catalog = collapsed ? 'collapsed' : 'open'; return () => delete document.documentElement.dataset.catalog; });
+  // The toolbar rides above whatever the catalog shows (open strip or the small reopen bar).
+  let boxH = $state(0);
+  $effect(() => { document.documentElement.style.setProperty('--catalog-h', `${boxH + 8}px`); return () => document.documentElement.style.removeProperty('--catalog-h'); });
+  let tabsEl: HTMLElement | undefined = $state();
+  $effect(() => {
+    // The active tab stays in view when the category or selection changes (the tab row scrolls on phones).
+    void cat;
+    void st.moduleDef;
+    tabsEl?.querySelector<HTMLElement>('.tab.on')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  });
 
   const have = (item: string) => stock.reduce((n, s) => (s.item === item ? n + s.floor + s.stored : n), 0);
   const entries = $derived(buildEntries(api));
@@ -62,9 +71,10 @@
 
 <svelte:window onpointerdown={(e) => { if (pop && !(e.target as Element).closest?.('[data-testid="build-popover"], .card')) dismiss(); }} />
 
-<div class="cat" class:collapsed data-testid="build-catalog">
-  <button class="coll" title={collapsed ? 'Show the build catalog' : 'Collapse (keeps your selection)'} aria-label="Collapse" aria-expanded={!collapsed} data-testid="catalog-collapse" onclick={() => { collapsed = !collapsed; dismiss(); }}>{collapsed ? '▴' : '▾'}</button>
-  {#if !collapsed}
+{#if collapsed}
+  <button class="reopen" bind:offsetHeight={boxH} title="Show the build catalog" aria-label="Show the build catalog" aria-expanded="false" data-testid="catalog-collapse" onclick={() => (collapsed = false)}>▴ Build</button>
+{:else}
+  <div class="cat" bind:offsetHeight={boxH} data-testid="build-catalog">
     <div class="strip" onscroll={dismiss}>
       <div class="cards">
         {#each shown as e (e.key)}
@@ -75,7 +85,7 @@
       </div>
     </div>
     <div class="nav">
-      <div class="tabs">
+      <div class="tabs" bind:this={tabsEl}>
         {#each cats as c (c.id)}
           <button class="tab" class:on={!query && cat === c.id} data-testid="tab-{c.id}" onclick={() => { cat = c.id; query = ''; }}>{c.label}<i>{c.count}</i></button>
         {/each}
@@ -84,10 +94,10 @@
         <button class="rotb" title="Rotate (R, Shift+R back)" aria-label="Rotate" data-testid="rotate" onclick={() => api.setTool({ rot: (st.rot + 1) % 4 })}><Icon name="rotate" size={16} /> {st.rot * 90}°</button>
       {/if}
       <input class="search" placeholder="Search modules…" aria-label="Search modules" bind:value={query} onkeydown={(e) => { if (e.key === 'Escape') { query = ''; (e.target as HTMLElement).blur(); } }} />
-      <button class="tool" class:on={st.tool === 'deconstruct'} data-testid="catalog-deconstruct" onclick={() => api.setTool({ tool: 'deconstruct' })}>✕ Deconstruct</button>
+      <button class="coll" title="Collapse (keeps your selection)" aria-label="Collapse" aria-expanded="true" data-testid="catalog-collapse" onclick={() => { collapsed = true; dismiss(); }}>▾</button>
     </div>
-  {/if}
-</div>
+  </div>
+{/if}
 
 {#if pop && !collapsed}
   <BuildPopover {api} entry={pop.entry} rect={pop.rect} rot={st.rot} thumb={pop.entry.def ? thumbOf(pop.entry.id, st.rot) : undefined} {have} {pinned}
@@ -97,8 +107,8 @@
 
 <style>
   .cat { position: fixed; z-index: 5; left: 50%; transform: translateX(-50%); bottom: calc(8px + var(--sab)); width: min(1180px, calc(100vw - 16px)); background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); }
-  .cat.collapsed { height: 0; border-color: transparent; background: none; }
-  .coll { position: absolute; top: -1px; right: -1px; transform: translateY(-100%); min-height: 22px; height: 22px; padding: 0 10px; font-size: 12px; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); color: var(--amber); }
+  .coll { flex: none; min-height: 28px; height: 28px; min-width: 0; padding: 0 12px; font-size: 13px; background: #050505; border: 1px solid var(--amber); color: var(--amber); }
+  .reopen { position: fixed; z-index: 5; left: 50%; transform: translateX(-50%); bottom: calc(8px + var(--sab)); min-height: 24px; height: 24px; min-width: 0; padding: 0 16px; font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); color: var(--amber); }
   .strip { display: flex; height: 150px; border-bottom: 1px solid #242424; }
   .cards { display: flex; gap: 6px; padding: 12px 8px 4px; overflow-x: auto; overflow-y: hidden; flex: 1; scrollbar-width: thin; scrollbar-color: #3a3a3a transparent; }
   .none { margin: auto; color: #9a9a9a; }
@@ -109,9 +119,8 @@
   .tab:hover { border-color: #3a3a3a; }
   .tab.on { background: var(--amber); border-color: var(--amber); color: #1a1204; }
   .tab.on i { color: #4a3508; }
-  .rotb, .tool { flex: none; min-height: 28px; height: 28px; min-width: 0; padding: 0 10px; font-size: 12px; white-space: nowrap; background: #050505; border-color: #2c2c2c; color: #c8c8c8; display: inline-flex; align-items: center; gap: 4px; }
+  .rotb { flex: none; min-height: 28px; height: 28px; min-width: 0; padding: 0 10px; font-size: 12px; white-space: nowrap; background: #050505; border-color: #2c2c2c; color: #c8c8c8; display: inline-flex; align-items: center; gap: 4px; }
   .rotb { color: var(--amber); }
-  .tool.on { border-color: var(--amber); color: var(--amber); }
   .search { width: 180px; flex: none; height: 26px; box-sizing: border-box; background: #050505; border: 1px solid #2c2c2c; color: #c8c8c8; padding: 0 8px; font: 13px system-ui; user-select: text; -webkit-user-select: text; }
     .search:focus { outline: none; border-color: var(--amber); }
   .hint { position: fixed; z-index: 6; transform: translate(-50%, -150%); pointer-events: none; padding: 3px 8px; background: rgba(4, 4, 4, 0.95); border: 1px solid var(--red); color: #ff9a9a; font-size: 12px; white-space: nowrap; }
@@ -119,6 +128,5 @@
     .cat { width: 100vw; border-width: 1px 0 0; bottom: 0; padding-bottom: var(--sab); }
     .strip { height: 146px; }
     .search { width: 84px; }
-    .tool { padding: 0 6px; }
   }
 </style>

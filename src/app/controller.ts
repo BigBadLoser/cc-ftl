@@ -65,6 +65,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   alerts.onRaised(log.defer);
   alerts.onCleared((a, _tick, replaced) => log.release(a.id, replaced));
   let modPos: Tile | null = null;
+  /** The renderer is drawing a placement ghost (so it must be cleared when the mode ends). */
+  let ghostOn = false;
   const crewSel = createStore<number | null>(null);
   const toast = createStore<string | null>(null);
   let r: Renderer | undefined;
@@ -196,11 +198,15 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (moduleMode()) {
       const plan = modulePlan();
       r?.setPreview(plan?.tiles ?? [], plan ? plan.error === null : true);
+      ghostOn = true;
+      r?.setModuleGhost(plan ? { def: plan.def, x: plan.at.x, y: plan.at.y, rot: tool.get().rot, valid: plan.error === null } : null);
       const at = plan?.error && r ? r.screenOf(plan.ship, plan.at.x, plan.at.y) : null;
       placeHint.set(plan?.error && at ? { x: at.x, y: at.y, text: rejectionMessage(plan.error) } : null);
       return;
     }
     placeHint.set(null);
+    if (ghostOn) r?.setModuleGhost(null);
+    ghostOn = false;
     if (isMineTool()) {
       // Only the ore tiles show: those are what the pods will cut.
       const covered = paintStart ? shape() : hover ? [hover] : [];

@@ -64,7 +64,7 @@ export const furniture = {
   },
   // A freight container, opened from the doors on one long side. Cargo holds pack them around their walkway.
   'module.cargo_container': {
-    name: 'Cargo container',
+    name: 'Freight container',
     category: 'storage',
     description: "A freight container opened from one long side. Cargo holds pack them around a walkway.",
     asset: 'module.cargo_container', footprint: [3, 2], solid: true, access: [1, 2], power: 0,

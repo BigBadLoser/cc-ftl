@@ -217,7 +217,7 @@
 </ToolBar>
 {#if priorities}
   <PriorityGrid {api} onClose={() => (priorities = false)} />
-{:else if tool.tool === 'build' || tool.tool === 'deconstruct'}
+{:else if tool.tool === 'build'}
   <BuildCatalog {api} />
 {:else}
   <SelectionPanel {api} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} onStation={(ship) => (stationOpen = ship)} />
