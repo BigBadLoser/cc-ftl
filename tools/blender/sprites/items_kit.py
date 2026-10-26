@@ -156,3 +156,57 @@ def gun_flat(m, build, at, rz, k, side=1):
     for f in bm.faces:
         m.poly([core.G(*v.co) for v in f.verts], cols.get(f, "dark"), flip=True)
     bm.free()
+
+
+# Standard layouts: (x, y, z, rz) per unit, filled in order. FLOOR spreads units over the deck; PILE also stacks them.
+FLOOR = {"held": [(0.0, 0.0, 0.0, 0.3)],
+         "s": [(-0.07, -0.03, 0.0, 0.3), (0.1, 0.07, 0.0, 0.1)],
+         "m": [(-0.12, -0.1, 0.0, 0.25), (0.13, -0.06, 0.0, 0.1), (-0.06, 0.15, 0.0, 0.4), (0.16, 0.18, 0.0, -0.1)],
+         "l": [(-0.2, -0.14, 0.0, 0.25), (0.06, -0.18, 0.0, 0.1), (0.26, 0.0, 0.0, -0.1), (-0.18, 0.1, 0.0, 0.4),
+               (0.08, 0.08, 0.0, 0.2), (-0.04, 0.3, 0.0, -0.2), (0.24, 0.26, 0.0, 0.3)]}
+
+
+U = 1.4                         # unit scale of place(): the item models are laid out small, then drawn this much bigger
+
+
+def place(m, size, unit, layout=FLOOR, held_k=0.8, k=U):
+    """unit(m, (x, y), z, rz, k) at each slot of the layout for this size (the held one at held_k of the size)."""
+    for x, y, z, rz in layout[size]:
+        unit(m, (x, y), z, rz, k * (held_k if size == "held" else 1.0))
+
+
+def pile(h, w=0.0, k=U):
+    """A PILE layout for units h high and about w wide (before the unit scale k): two, three, then five on the deck with
+    more stacked on top."""
+    h, w = h * k, w * k
+    d = max(w, 0.2) * 0.55
+    return {"held": [(0.0, 0.0, 0.0, 0.3)],
+            "s": [(-d * 0.4, 0.0, 0.0, 0.3), (d * 0.5, 0.05, 0.0, 0.15)],
+            "m": [(-d * 0.6, -d * 0.4, 0.0, 0.25), (d * 0.6, -d * 0.3, 0.0, 0.1), (-d * 0.1, d * 0.7, 0.0, 0.35),
+                  (-d * 0.55, -d * 0.35, h, 0.4)],
+            "l": [(-d * 0.8, -d * 0.6, 0.0, 0.25), (d * 0.5, -d * 0.7, 0.0, 0.1), (d * 0.9, d * 0.5, 0.0, -0.1),
+                  (-d * 0.5, d * 0.7, 0.0, 0.35), (-d * 0.75, -d * 0.55, h, 0.4), (d * 0.5, -d * 0.65, h, 0.2),
+                  (-d * 0.5, d * 0.65, h, 0.3), (-d * 0.2, -d * 0.1, 2 * h, 0.3)]}
+
+
+def rot(c, rz, u, v):
+    """The point (u, v) in a frame at c turned by rz (box-local offsets)."""
+    return (c[0] + u * math.cos(rz) - v * math.sin(rz), c[1] + u * math.sin(rz) + v * math.cos(rz))
+
+
+def ingot(m, c, z, rz, k, side, top, mark=None):
+    """A trapezoid ingot (wider at the foot), long along rz; an optional stamped mark on top."""
+    L, W, H = 0.26 * k, 0.1 * k, 0.06 * k
+    m.box((c[0], c[1], z), (L, W, H), side, top=top, rz=rz, taper=0.8, base=True, bevel=0.006)
+    if mark:
+        m.box((c[0], c[1], z + H), (L * 0.3, W * 0.4, 0.004), mark, rz=rz, base=True)
+
+
+def ingots(m, size, side, top, mark=None):
+    """Ingots stacked in crossed layers (counts per layer by size)."""
+    layers = {"held": (2, 1), "s": (2, 1), "m": (2, 2, 2), "l": (3, 3, 3, 2)}[size]
+    k = 0.9 if size == "held" else 1.2
+    for layer, cnt in enumerate(layers):
+        rz = 0.3 + (math.pi / 2 if layer % 2 else 0.0)
+        for i in range(cnt):
+            ingot(m, rot((0, 0), rz, 0, (i - (cnt - 1) / 2) * 0.115 * k), layer * 0.06 * k, rz, k, side, top, mark)

@@ -40,7 +40,8 @@
   fx_mining the mining laser's beam segment, its hit on the rock, rock chips, the dust of a tile mined out (fx_mining.py)
   starmap   the starmap's pictures: sector bodies, structure icons, fleet icons (8 headings), a backdrop tile (starmap.py)
   cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
-  items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py) and planned items (items_tech.py)
+  items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py), and
+            for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -178,8 +179,10 @@ def jobs(name):
         from . import cargo
         return cargo.SPRITES, True
     if name == "items":
-        from . import items_now, items_tech
-        return items_now.SPRITES + items_tech.SPRITES, True
+        from . import items_goods, items_materials, items_now, items_parts, items_tech
+        from .items_kit import jobs as item_jobs
+        planned = {**items_tech.ITEMS, **items_materials.ITEMS, **items_parts.ITEMS, **items_goods.ITEMS}
+        return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], True
     raise KeyError(name)
 
 

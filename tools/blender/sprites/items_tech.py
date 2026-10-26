@@ -9,7 +9,7 @@
   artifact     an alien relic: a twisted dark obelisk with glowing violet runes, shards round it"""
 import math
 
-from .items_kit import cone, crystal, jobs, tube
+from .items_kit import cone, crystal, tube
 
 # ---- plasma cells --------------------------------------------------------------------------------------------------
 
@@ -216,5 +216,4 @@ def artifact(m, size):
                  cap="steel", sides=6)
 
 
-SPRITES = (jobs("plasma_cell", plasma_cell) + jobs("medkit", medkit) + jobs("oxygen", oxygen) + jobs("circuit", circuit)
-           + jobs("crop", crop) + jobs("artifact", artifact))
+ITEMS = {"plasma_cell": plasma_cell, "medkit": medkit, "oxygen": oxygen, "circuit": circuit, "crop": crop, "artifact": artifact}
