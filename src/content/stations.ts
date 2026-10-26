@@ -71,7 +71,7 @@ const armoury = (count: Per, lockers = 4): StationRoomDef => room('armoury', n(l
 
 const CIVIL_CREW = {
   required: ['role.engineer', 'role.gunner'],
-  pool: [{ value: 'role.engineer', weight: 3 }, { value: 'role.medic', weight: 1 }, { value: 'role.gunner', weight: 1 }, { value: 'role.pilot', weight: 1 }],
+  pool: [{ value: 'role.engineer', weight: 3 }, { value: 'role.medic', weight: 1 }, { value: 'role.gunner', weight: 1 }, { value: 'role.pilot', weight: 1 }, { value: 'role.scientist', weight: 1 }],
   species: ['species.human'],
 };
 const FAIRING = { slope: 3, max: 2, jitter: 0, label: 'fairing' };

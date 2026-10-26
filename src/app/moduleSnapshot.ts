@@ -27,7 +27,7 @@ export function buildModuleList(sim: Sim): UiModule[] {
     out.push({
       id, ship: home, def: m.def, name: def.name, x: m.x, y: m.y, local: localOf(sim, shipIdOf(sim, m), m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp,
       powerPriority: m.powerPriority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
-      storage: !!def.storage, crafting: !!def.crafting, bay: def.robotBay ? buildRobotBay(sim, id) : null,
+      storage: !!def.storage, crafting: !!def.crafting, research: !!def.research, bay: def.robotBay ? buildRobotBay(sim, id) : null,
       suits: def.airlock ? { stowed: airlockSuits(sim, id), max: def.airlock.suits ?? 0 } : null,
     });
   }
