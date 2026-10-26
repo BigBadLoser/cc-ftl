@@ -362,7 +362,22 @@ palette.json    the single palette, read by Blender scripts and the game
   unpowered or disabled, and one with `<asset>.rN.active.f1` and up cycles `.active`, `.f1`... while it shows its active state
   (a crafting refinery), at `ANIM_FPS` = 4 from the render clock. The manifest carries no animation data, so the rate is a
   render-side constant (the pack's `animations.json` also says 4 fps). A frame change swaps the sprite's texture
-  (`swapFrame`); the part is not rebuilt.
+  (`swapFrame`); the part is not rebuilt. Damage extends it: at 0 hp `<asset>.rN.destroyed`; under half hp (`DAMAGED_BELOW`) `.damaged`, which while powered alternates with the dark `.damaged.flicker` (`FLICKER_LIT_MS` 340 / `FLICKER_DARK_MS` 170, render clock, by texture swap; a frame without glow hides the glow part) and while unpowered stays on `.damaged.flicker`. Precedence: destroyed, damaged, unpowered, `.active` animation. Each applies only if the art has the id.
+- **Core systems (reactor 2x2, life support 1x2; sheets `reactor`, `life_support`, not `families.py` families):** 4 rotations x healthy,
+  `.unpowered`, `.damaged`, `.damaged.flicker` (dark, no glow) and `.destroyed`; ids `module.reactor.rN[.state]`,
+  `module.life_support.rN[.state]` (content `module.lifeSupport` uses asset `module.life_support`) plus aliases. Exported by their own
+  driver with the approval lock (`tools/blender/core_systems_approved.json`, hashes of the locked reference frames in
+  `artifacts/core-systems-*`). Rebuild with one Blender process, from the repo root:
+
+  ```bash
+  OUT=/tmp/core-pack; BL="$(tools/blender/setup.sh)"
+  SPRITE_PREVIEW=0 SPRITE_SS=4 SPRITE_SAMPLES=4 "$BL" -b -t 2 --factory-startup --python-exit-code 1 --python tools/blender/export_core_systems.py -- --out $OUT/1x
+  python3 tools/blender/validate_core_systems.py --package $OUT/1x --report $OUT/validation.json
+  ```
+
+  Then copy `$OUT/1x/sprites/{reactor,life_support}{,.glow}.png` into `public/assets/1x/sprites/` and merge `manifest.fragment.json`
+  (sheets and assets) into `public/assets/1x/manifest.json`, replacing only those ids. Geometry, material or reference changes need a
+  new approval lock. The `.blend` files and review images are not kept in the repo.
 - **Wall corner fills (`walls`, the 47-tile blob set):** wall and hull pieces are picked by the 4-neighbour mask
   (N1 E2 S4 W8) plus corner bits (`tiles.ts` `wallCorners`: NE 1, SE 2, SW 4, NW 8, set when both arms beside the
   corner connect and the two edge tiles and the diagonal are all wall; a door breaks the block). Ids:

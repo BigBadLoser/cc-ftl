@@ -26,6 +26,12 @@ Scrap cage: add `scrap.py`, the `storage_scrap` family entry in `families.py` an
 
 ## Where things are
 
+**Core systems art (`art/core-systems`):** final Blender art for the reactor (2x2) and life support (1x2): 4 rotations x healthy,
+`.unpowered`, `.damaged`, `.damaged.flicker` (dark) and `.destroyed` (60 manifest entries with aliases; sheets `reactor`, `life_support`).
+Footprints unchanged. `stateArt` (render) now also picks them generically by hp: destroyed at 0, damaged under half hp (flickering
+340 ms lit / 170 ms dark while powered, dark variant while unpowered), then unpowered. Pipeline in `tools/blender/export_core_systems.py`
+(see ARCHITECTURE "Core systems"). Awaiting visual approval of the live states before the PR.
+
 **Crew portraits (branch `feat/crew-portraits`, PR open):** the crew bar cards show a face: a front-facing Blender render of the
 crew member's real layers (head and shoulders, 58x62 px at 1x), palette-swapped like the world figure. New `portraits` sprite
 family (`portrait_render.py`), `render/portrait.ts`, `UiApi.portrait`. The isometric crop was tried first and rejected (a tilted,
