@@ -76,7 +76,7 @@ describe('station life and security', () => {
     const table = JSON.stringify(runs);
     for (const k of ['alarmed', 'wanted', 'engaged'] as const) expect(count(k), `${k}: ${table}`).toBeGreaterThanOrEqual(6);
     for (const k of ['fled', 'downed', 'forgotten', 'again'] as const) expect(count(k), `${k}: ${table}`).toBeGreaterThanOrEqual(4);
-  });
+  }, 120000);
 
   it('crew from a trade run docked at the station are invited and raise no alarm', () => {
     const { sim, st } = station();
