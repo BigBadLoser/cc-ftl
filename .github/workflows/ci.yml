@@ -1,12 +1,17 @@
 name: CI
 
-# PR pushes run lint, typecheck, the fast tests and the build. The slow tier (*.slow.test.ts) runs on main,
-# and on a PR once it carries the `full-ci` label (add it before merging; later pushes keep running it).
+# Every run does lint, typecheck, the fast tests and the build. The slow tier (*.slow.test.ts) is expensive, so it
+# runs once per PR: on the run that adding the `full-ci` label starts (to run it again after later pushes, remove
+# and re-add the label). Pushes to main run the fast tier only; run the workflow by hand (workflow_dispatch) for a
+# full run on main. Markdown-only changes don't run CI.
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
+    paths-ignore: ['**/*.md']
   push:
     branches: [main]
+    paths-ignore: ['**/*.md']
+  workflow_dispatch:
 
 # A label event the job ignores gets a group of its own, so it cannot cancel the run validating this commit.
 concurrency:
@@ -18,7 +23,7 @@ jobs:
     # adding some other label is no reason to run CI again
     if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,7 +38,7 @@ jobs:
       - name: Test (fast tier)
         run: npm run test:quick
       - name: Test (slow tier)
-        if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'full-ci')
+        if: github.event_name == 'workflow_dispatch' || (github.event.action == 'labeled' && github.event.label.name == 'full-ci')
         run: npm run test:slow
       - name: Build
         run: npm run build
