@@ -27,6 +27,7 @@ const adjacent = (sim: Sim, id: string): string[] =>
 /** A whole interdiction scenario for one seed and choice, returning the final state hash. */
 function run(seed: number, choice: 'evade' | 'bribe' | 'fight', leave: 'wipe' | 'flee'): string {
   const sim = newGame(seed, content);
+  sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
   const g = sim.galaxy;
   g.fleets = [];
   giveItems(sim, 'item.fuel', 80);

@@ -87,13 +87,14 @@ describe('starter vs raider balance (fixed seeds)', { timeout: 120000 }, () => {
     }
   });
 
-  it('an unmanned ship takes serious hull and system damage over several minutes but loses no crew in 4 minutes', () => {
+  it('an unmanned ship takes serious hull and system damage over several minutes but loses at most three crew in 4 minutes', () => {
     const results = seeds.map((s) => fight(s, 'unmanned', 6));
     for (const r of results) {
       expect(r.winner).not.toBe('player'); // it cannot shoot back
       expect(r.firstDownSec).toBeGreaterThanOrEqual(30);
-      expect(r.deadAt4).toBe(0);
-      expect(r.downAt4).toBeLessThanOrEqual(3);
+      // Crew now keep away from boarders (and the armed gunner fights them), so nobody rescues the downed while intruders live: a bleed-out or two.
+      expect(r.deadAt4).toBeLessThanOrEqual(3);
+      expect(r.downAt4).toBeLessThanOrEqual(5);
       expect(r.minIntegrity).toBeLessThan(0.92); // 0.904 on one seed after the mirrored (engines east) layouts
       expect(r.destroyed).toBeGreaterThanOrEqual(20);
     }

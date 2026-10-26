@@ -35,6 +35,7 @@ function check(sim: Sim): void {
 describe('NPC traffic over a long run', () => {
   it.each([31, 32])('seed %i: game-time turns and trips keep the invariants, and a save continues identically', (seed) => {
     const sim = newGame(seed, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     giveItems(sim, 'item.fuel', 400);
     let copy: Sim | null = null;
     for (let round = 0; round < 9; round++) {
