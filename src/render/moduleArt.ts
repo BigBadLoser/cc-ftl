@@ -123,6 +123,14 @@ export function stateArt(def: ModuleDef, rot: number, active: boolean, look?: Mo
 }
 
 /**
+ * A derelict ruin's look merged into a layer's chain: the ruin's own art first (an explicit override), then the first `headLen`
+ * ids (the live state art: destroyed, damaged / flicker, unpowered, active), then the ruin's `.damaged` / `.destroyed` suffix
+ * stand-ins, then the rest. The live state wins over the equivalent suffix, so a flickering or unpowered ruin shows its dark frame.
+ */
+export const mergeRuinChain = (chain: string[], headLen: number, art: string[], suffix: string[]): string[] =>
+  [...art, ...chain.slice(0, headLen), ...suffix, ...chain.slice(headLen)];
+
+/**
  * Asset ids to try for a module, most specific first: the rotation variant (`.r0`..`.r3`) with the state variant
  * (`.active`, or storage `.empty/.partial/.full`), the rotation variant, then the plain state variant and the plain
  * asset. A non-square module drawn from the plain asset at an odd rotation is mirrored (moduleView). With a `look`, the

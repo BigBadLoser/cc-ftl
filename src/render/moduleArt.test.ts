@@ -2,7 +2,7 @@ import type { World } from '../sim/ecs';
 import { describe, expect, it } from 'vitest';
 import type { Module } from '../sim/modules/components';
 import { content } from '../content';
-import { ANIM_FPS, DAMAGED_BELOW, FLICKER_DARK_MS, FLICKER_LIT_MS, stateArt, animFrame, diagonalFront, frameCount, layerKey, moduleAssets, moduleLayers } from './moduleArt';
+import { mergeRuinChain, ANIM_FPS, DAMAGED_BELOW, FLICKER_DARK_MS, FLICKER_LIT_MS, stateArt, animFrame, diagonalFront, frameCount, layerKey, moduleAssets, moduleLayers } from './moduleArt';
 import { depthKey } from './iso';
 
 const engine = content.modules['module.engine'];
@@ -150,5 +150,17 @@ describe('damage, flicker and destroyed art', () => {
     expect(head(look({ hp: 0, has: none }))).toBeUndefined();
     expect(head(look({ hp: hurt, has: none }))).toBeUndefined();
     expect(head(look({ hp: hurt, has: (id) => id === `${base}.damaged` }))).toBe(`${base}.damaged`);
+  });
+});
+
+describe('ruin look merged with the live state', () => {
+  const chain = ['m.r0.damaged.flicker', 'm.r0', 'm.r0', 'm'];
+  it('puts the live damage frame ahead of the ruin suffix stand-ins', () => {
+    expect(mergeRuinChain(chain, 1, [], ['m.r0.damaged', 'm.damaged'])).toEqual(['m.r0.damaged.flicker', 'm.r0.damaged', 'm.damaged', 'm.r0', 'm.r0', 'm']);
+  });
+  it('keeps explicit ruin art first and changes nothing without a ruin', () => {
+    expect(mergeRuinChain(chain, 1, ['ruin.art'], ['m.damaged'])[0]).toBe('ruin.art');
+    expect(mergeRuinChain(chain, 1, [], [])).toEqual(chain);
+    expect(mergeRuinChain(chain, 0, [], ['m.damaged'])).toEqual(['m.damaged', ...chain]);
   });
 });
