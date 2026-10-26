@@ -15,7 +15,7 @@
 
 {#snippet head(j: UiJob)}
   <div class="t"><b>{j.title}</b><span class="pay">{j.reward} cr</span></div>
-  <div class="sub">{j.detail}</div>
+  {#if j.detail}<div class="sub">{j.detail}</div>{/if}
   <dl class="facts">
     <div><dt><Icon name="map" size={13} title="Where" /></dt><dd>{j.where}</dd></div>
     <div><dt><Icon name="ship" size={13} title="Distance" /></dt><dd>{far(j)}</dd></div>

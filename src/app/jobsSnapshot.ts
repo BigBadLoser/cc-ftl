@@ -29,9 +29,9 @@ export function buildJobs(sim: Sim): UiJobs {
     return {
       key: j.key, id: 'id' in j ? j.id : null, kind: j.kind, issuer: content?.factions[j.issuer]?.name ?? j.issuer, reward: j.reward,
       turnsLeft: Math.max(0, j.due - g.turn), where: place(where), hops: hops(where), here: where === g.current,
-      title: j.kind === 'delivery' ? `Deliver ${j.count ?? 0}× ${itemName}` : `Destroy the ${j.target ?? 'target'}`,
+      title: j.kind === 'delivery' ? `Deliver a sealed crate (${j.count ?? 0} ${itemName})` : `Destroy the ${j.target ?? 'target'}`,
       detail: j.kind === 'delivery'
-        ? 'a sealed crate'
+        ? ''
         : `a ${content?.factions[j.targetFaction ?? '']?.name ?? 'hostile'} ship`,
       ready: j.kind === 'delivery' && 'id' in j && crateAboard(sim, j.id),
       target: bountyTarget(j),

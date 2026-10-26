@@ -16,7 +16,7 @@ describe('buildJobs', () => {
     expect(board.offers.length).toBeGreaterThan(0);
     const o = board.offers[0]!;
     expect(o.id).toBeNull();
-    expect(o.title).toMatch(/^(Deliver \d+× .+|Destroy the .+)$/);
+    expect(o.title).toMatch(/^(Deliver a sealed crate \(\d+ .+\)|Destroy the .+)$/);
     expect(o.hops).toBeGreaterThan(0);
     sim.enqueue({ type: 'jobs.accept', key: o.key });
     sim.step();
@@ -65,7 +65,7 @@ describe('buildStarmap job markers', () => {
     for (const j of sim.galaxy.jobs) {
       const at = nodes.find((n) => n.id === (j.kind === 'delivery' ? j.to : j.node));
       if (!at?.known) { expect(at?.jobs ?? []).toEqual([]); continue; }
-      expect(at.jobs?.some((m) => m.kind === j.kind && (j.kind === 'delivery' ? /^Deliver \d+× .+/ : /^Bounty: .+/).test(m.label))).toBe(true);
+      expect(at.jobs?.some((m) => m.kind === j.kind && (j.kind === 'delivery' ? /^Deliver a sealed crate \(\d+ .+\)/ : /^Bounty: .+/).test(m.label))).toBe(true);
     }
     expect(nodes.filter((n) => !n.known).every((n) => !n.jobs?.length)).toBe(true);
     expect(nodes.some((n) => n.jobs?.length)).toBe(true);
