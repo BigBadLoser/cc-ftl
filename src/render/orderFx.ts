@@ -6,6 +6,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CrewC, DeadC, DraftedC, PathC, PositionC } from '../sim/crew/components';
 import { AllegianceC } from '../sim/fight/components';
+import { Z_PX } from './heights';
 import { ART_SCALE as S, iso } from './iso';
 
 export type OrderKind = 'move' | 'attack' | 'station' | 'board';
@@ -25,6 +26,8 @@ interface Marker {
 export interface OrderFx {
   /** Flash a marker on a sector tile (x, y are the tile, whose centre it marks, like the crew positions). */
   addMarker(x: number, y: number, kind?: OrderKind): void;
+  /** The selected crew: each gets a clear ring on the floor and a small arrow over the head. */
+  setSelected(ids: readonly number[]): void;
   update(): void;
   dispose(): void;
 }
@@ -39,7 +42,11 @@ export function createOrderFx(world: World, parent: Container): OrderFx {
   const g = new Graphics();
   parent.addChild(g);
   let markers: Marker[] = [];
+  let selected: readonly number[] = [];
   return {
+    setSelected(ids) {
+      selected = ids;
+    },
     addMarker(x, y, kind = 'move') {
       markers.push({ x, y, kind, born: performance.now() });
     },
@@ -61,6 +68,14 @@ export function createOrderFx(world: World, parent: Container): OrderFx {
         const end = iso(d.target.x, d.target.y);
         g.circle(end.x, end.y, 2.5 * S).fill({ color: COLOR.move, alpha: 0.9 });
       }
+      for (const id of selected) {
+        const pos = world.get(id, PositionC);
+        if (!pos || world.has(id, DeadC)) continue;
+        const c = iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress);
+        g.ellipse(c.x, c.y, 15 * S, 7.5 * S).stroke({ width: 2 * S, color: 0x22d3ee, alpha: 0.95 });
+        const top = c.y - 1.9 * Z_PX;
+        g.poly([c.x - 5 * S, top - 8 * S, c.x + 5 * S, top - 8 * S, c.x, top]).fill({ color: 0x22d3ee, alpha: 0.95 });
+      }
       // Markers: a flat ring on the floor with an arrow dropping onto it.
       const now = performance.now();
       markers = markers.filter((m) => now - m.born < MARKER_MS);
@@ -68,14 +83,14 @@ export function createOrderFx(world: World, parent: Container): OrderFx {
         const age = now - m.born;
         const a = markerAlpha(age);
         const c = iso(m.x, m.y);
-        const rx = (13 - 4 * (age / MARKER_MS)) * S;
+        const rx = (22 - 8 * (age / MARKER_MS)) * S;
         g.ellipse(c.x, c.y, rx, rx / 2).stroke({ width: 2 * S, color: COLOR[m.kind], alpha: a });
         g.ellipse(c.x, c.y, rx / 3, rx / 6).fill({ color: COLOR[m.kind], alpha: a * 0.5 });
         const bob = Math.sin(age / 90) * 1.5 * S;
-        const tip = c.y - 5 * S + bob;
-        const top = tip - 22 * S;
-        g.moveTo(c.x, top).lineTo(c.x, tip).stroke({ width: 3 * S, color: COLOR[m.kind], alpha: a });
-        g.poly([c.x - 6 * S, tip - 7 * S, c.x + 6 * S, tip - 7 * S, c.x, tip + 1 * S]).fill({ color: COLOR[m.kind], alpha: a });
+        const tip = c.y - 6 * S + bob;
+        const top = tip - 40 * S;
+        g.moveTo(c.x, top).lineTo(c.x, tip).stroke({ width: 4 * S, color: COLOR[m.kind], alpha: a });
+        g.poly([c.x - 10 * S, tip - 12 * S, c.x + 10 * S, tip - 12 * S, c.x, tip + 2 * S]).fill({ color: COLOR[m.kind], alpha: a });
       }
     },
     dispose() {

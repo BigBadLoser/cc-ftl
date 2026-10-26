@@ -14,7 +14,7 @@
 
 <svelte:window bind:innerWidth={vw} bind:innerHeight={vh} />
 {#if menu}
-  <div class="menu" role="menu" data-testid="context-menu" style:left="{left}px" style:top="{top}px" oncontextmenu={(e) => e.preventDefault()}>
+  <div class="menu" role="menu" tabindex="-1" data-testid="context-menu" style:left="{left}px" style:top="{top}px" oncontextmenu={(e) => e.preventDefault()}>
     {#each menu.items as it (it.id)}
       <button role="menuitem" data-testid="order-{it.id}" onclick={() => api.pickContext(it.id)}>{it.label}</button>
     {/each}

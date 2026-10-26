@@ -488,6 +488,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     setSelectedCrew(ids) {
       selectedCrew = ids;
+      orderFx.setSelected(ids);
       for (const sc of scenes.values()) sc.setSelectedCrew(ids);
     },
     onEvents: (events) => {
