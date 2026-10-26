@@ -31,7 +31,6 @@
 <style>
   /* Bottom-right dock: build tools first, then view options and contextual panels. */
   .tools { position: fixed; z-index: 4; right: calc(8px + var(--sar)); bottom: calc(8px + var(--sab)); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
-  :global(html[data-combat]) .tools { right: calc(388px + var(--sar)); }
   /* Two rows of four: the view group on top, the tools below (no divider; the divider is only for the phone column). */
   .dock { display: grid; grid-template-columns: repeat(4, 32px); gap: 2px; pointer-events: auto; padding: 2px; background: var(--panel); border: 1px solid var(--line); max-width: calc(100vw - 16px); }
   .dock :global(button.tile) { width: 32px; height: 32px; background: var(--panel-2); }

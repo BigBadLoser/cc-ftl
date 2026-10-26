@@ -68,6 +68,7 @@ function dispatch(sim: Sim, d: Deal, v: Vehicle): void {
   if (d.timer > DISPATCH_SEC * TICK_HZ) return failDeal(sim, d, 'noDock');
   if (d.give.length === 0) return go(d, 'out');
   if (v.state === 'docked' && v.dock === d.airlock) return go(d, 'load');
+  if (v.state === 'docked' && due(d)) return void sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle }); // left over from the last trip, at the trader
   if (due(d) && v.dest?.type !== 'dock') sim.enqueue({ type: 'vehicle.dock', vehicle: d.vehicle, airlock: d.airlock });
 }
 
@@ -121,8 +122,7 @@ function exchange(sim: Sim, d: Deal, v: Vehicle): void {
   for (const l of d.get) cargoAdd(sim, d.vehicle, l.item, l.count);
   if (d.give.length > 0) sim.events.emit({ type: 'trade.delivered', deal: d.id, ship: d.ship, to: 'trader' });
   if (d.get.length > 0) return go(d, 'back');
-  settleDeal(sim, d);
-  sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
+  if (!settleDeal(sim, d)) sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
 }
 
 /** Step 3b (station): fly over and dock at the reserved station airlock; if it cannot, fall back to the hover swap. */
@@ -160,8 +160,7 @@ function work(sim: Sim, d: Deal, v: Vehicle): void {
   if (d.give.length > 0) sim.events.emit({ type: 'trade.delivered', deal: d.id, ship: d.ship, to: 'trader' });
   sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
   if (d.get.length > 0) return go(d, 'back');
-  settleDeal(sim, d);
-  sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
+  if (!settleDeal(sim, d)) sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
 }
 
 /** Step 4 (hiring run, docked at the station): the recruits walk aboard; then the shuttle leaves for home. */
@@ -194,8 +193,7 @@ function unload(sim: Sim, d: Deal, v: Vehicle): void {
     return void sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
   }
   if (cargoCount(v) > 0) return;
-  settleDeal(sim, d);
-  if (d.courier === 'you') sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
+  if (!settleDeal(sim, d) && d.courier === 'you') sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
 }
 
 /** A trader's own shuttle that has been unloaded leaves for home and disappears when it gets there. */
