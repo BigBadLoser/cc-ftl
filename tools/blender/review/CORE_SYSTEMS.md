@@ -360,3 +360,49 @@ SPRITE_PREVIEW=0 SPRITE_SS=4 SPRITE_SAMPLES=4 \
 python3 tools/blender/review/reactor_upgrade_preview.py --compose \
   --out artifacts/reactor-upgrade-v1
 ```
+
+## Tandem mechanical pass: make the cores one system
+
+User found the family resemblance acceptable but asked for more mechanical
+connections between the two vessels. `reactor_upgrade_detail.py` layers one
+separate hardware object over the unchanged v1 blockout. Grey only; no runtime
+or live atlas changes. `artifacts/reactor-upgrade-v3/` is the review candidate;
+v2 preserves the first hardware pass before its visibility correction.
+
+Three largest changes from v1, compared at the same image scale and origin:
+
+1. A .49-diameter pressure coupling penetrates both shells beneath their
+   crowns. Flanges form one central joint, while a shoulder yoke spans 1.58
+   along the machine. In v2 the yoke was too far behind the crowns. V3 moves
+   it from v=.32 to .55 and narrows it to .26, so its edge and central clamp
+   are visible above the common controls. Crown silhouettes remain intact.
+2. Continuous 1.98-long coolant headers connect both cores on each side.
+   Four short branches seat into the vessels; central risers enter the common
+   coolant housings. The headers, flanged connections and risers establish
+   a shared circuit instead of two independent sets of local pipes.
+3. One central control cabinet spans the manifold junction, with a single
+   display and two channel indicators. Exchanger fin banks and service
+   hardware finish the existing long housings without obscuring that face.
+
+The central pressure cylinder is still partly occluded in this view; the
+shoulder yoke, long headers and shared controls carry the visible connection.
+Very small indicators remain secondary at native resolution. Materials and
+power/state previews await review of this mechanical pass.
+
+Validation: every original vertex and polygon matches the blockout builder
+in all four rotations, and the actual saved v1 r0 mesh independently matches.
+All locked 2x2/life-support/pipeline/reference inputs remain exact. Footprint
+2x3 (3x2 on odd rotations), deck contact z=0, maximum height still 1.781,
+no floor slab. The approved 2x2 render is copied rather than rendered again.
+
+```sh
+SPRITE_PREVIEW=0 SPRITE_SS=4 SPRITE_SAMPLES=4 \
+  /workspace/blender-tools/blender-4.2.9-linux-x64/blender -b -t 2 \
+  --factory-startup --python-exit-code 1 \
+  --python tools/blender/review/reactor_upgrade_preview.py -- \
+  --detailed --out artifacts/reactor-upgrade-v3
+python3 tools/blender/review/reactor_upgrade_preview.py --compose \
+  --out artifacts/reactor-upgrade-v3
+python3 tools/blender/review/reactor_upgrade_preview.py --compose \
+  --out artifacts/reactor-upgrade-v3 --baseline artifacts/reactor-upgrade-v1
+```
