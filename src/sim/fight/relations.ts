@@ -4,7 +4,7 @@ import { factionsHostile } from '../combat/factions';
 
 import { InertC, StunC } from '../robots/components';
 import type { Sim } from '../sim';
-import { AllegianceC, EquipOrderC, FighterC, SurrenderedC } from './components';
+import { AllegianceC, EquipOrderC, FighterC, StowOrderC, SurrenderedC } from './components';
 import { shipById } from '../combat/ships';
 import { AlienC } from '../aliens/components';
 import { StationCrewC, WantedC } from '../stations/components';
@@ -49,8 +49,8 @@ export function isPlayerControlled(sim: Sim, crew: number): boolean {
   return sim.world.get(crew, AllegianceC)?.faction === 'player' && sim.world.has(crew, DraftedC);
 }
 
-/** True if the crew member must not pick colony jobs: fighting, fetching a weapon, surrendered or invading. */
+/** True if the crew member must not pick colony jobs: fighting, fetching or stowing a weapon, surrendered or invading. */
 export function isOffDuty(sim: Sim, crew: number): boolean {
   const f = sim.world.get(crew, FighterC);
-  return (!!f && f.mode !== 'idle') || sim.world.has(crew, EquipOrderC) || sim.world.has(crew, SurrenderedC) || isInvader(sim, crew);
+  return (!!f && f.mode !== 'idle') || sim.world.has(crew, EquipOrderC) || sim.world.has(crew, StowOrderC) || sim.world.has(crew, SurrenderedC) || isInvader(sim, crew);
 }

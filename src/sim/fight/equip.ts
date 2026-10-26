@@ -28,7 +28,7 @@ function nearestStock(sim: Sim, shipId: number, at: { x: number; y: number }, it
 }
 
 /** True if the crew member stands next to (or on) a tile of the storage module. */
-function atStorage(sim: Sim, pos: Position, storage: number): boolean {
+export function atStorage(sim: Sim, pos: Position, storage: number): boolean {
   const m = sim.world.get(storage, ModuleC);
   const def = m && sim.content.modules[m.def];
   if (!m || !def || shipIdOf(sim, m) !== shipIdOf(sim, pos)) return false;
