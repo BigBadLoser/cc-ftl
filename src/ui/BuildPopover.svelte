@@ -25,12 +25,12 @@
 <svelte:window bind:innerWidth={vw} bind:innerHeight={vh} />
 <div class="pop" role="tooltip" data-testid="build-popover" style:width="{W}px" style:left="{left}px" style:bottom="{vh - rect.top + 18}px" onmouseenter={onenter} onmouseleave={onleave}>
   <div class="phd"><b>{entry.name}</b><span class="chip">{catLabel}{def?.tier ? ` · ${def.tier}` : ''}</span>
-    <button class="pin" class:on={pinned} title={pinned ? 'Unpin' : 'Pin open'} aria-label="Pin" aria-pressed={pinned} onclick={onpin}>📌</button></div>
+    <button class="pin" class:on={pinned} title={pinned ? 'Unpin' : 'Pin open'} aria-label="Pin" aria-pressed={pinned} onclick={onpin}><Icon name="pin" size={14} /></button></div>
   <div class="cols" class:narrow>
     <div class="left">
       {#if def}
         <BuildPreview {def} {thumb} {rot} />
-        <div class="legend"><span><i class="k f"></i>Footprint</span>{#if def.access}<span><i class="k acc"></i>Access: keep clear</span>{/if}<span class="rot">⟳ R to rotate</span></div>
+        <div class="legend"><span><i class="k f"></i>Footprint</span>{#if def.access}<span><i class="k acc"></i>Access: keep clear</span>{/if}<span class="rot"><Icon name="rotate" size={13} /> R to rotate</span></div>
         {#if def.tier}<div class="vars"><span class="v on">{def.tier}</span></div>{/if}
       {:else if entry.icon}
         <div class="toolart"><Icon name={entry.icon} size={72} /></div>
@@ -59,13 +59,13 @@
   .phd { box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 5px 8px 5px 10px; background: #000; border-bottom: 1px solid var(--amber); }
   .phd b { font: 700 15px var(--head-font); text-transform: uppercase; letter-spacing: 0.05em; color: var(--amber); }
   .chip { font-size: 11px; color: #ffe2a6; border: 1px solid var(--amber); padding: 0 5px; }
-  .pin { margin-left: auto; min-height: 22px; min-width: 22px; height: 22px; padding: 0 4px; font-size: 11px; background: transparent; border-color: transparent; }
+  .pin { margin-left: auto; min-height: 22px; min-width: 22px; height: 22px; padding: 0 4px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; color: var(--amber); background: transparent; border-color: transparent; }
   .pin.on { background: #2a1e06; border-color: var(--amber); }
   .cols { box-sizing: border-box; display: grid; grid-template-columns: 302px minmax(0, 1fr); gap: 12px; padding: 10px; overflow-y: auto; }
   .cols.narrow { grid-template-columns: 1fr; }
   .left { min-width: 0; }
   .legend { display: flex; gap: 12px; margin-top: 5px; font-size: 11.5px; color: #9a9a9a; align-items: center; flex-wrap: wrap; }
-  .rot { margin-left: auto; color: var(--amber); }
+  .rot { margin-left: auto; color: var(--amber); display: inline-flex; align-items: center; gap: 3px; }
   .k { display: inline-block; width: 12px; height: 8px; margin-right: 4px; vertical-align: middle; }
   .k.f { background: rgba(54, 212, 255, 0.27); border: 1px solid #36d4ff; }
   .k.acc { background: rgba(240, 177, 58, 0.2); border: 1px dashed #f0b13a; }

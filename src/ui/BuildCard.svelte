@@ -34,7 +34,7 @@
     {:else if entry.icon}<Icon name={entry.icon} size={40} />
     {:else if thumb}<Icon name="module" size={36} />{/if}
   </span>
-  {#if entry.locked}<span class="lockb" aria-label="Locked">🔒</span>{/if}
+  {#if entry.locked}<span class="lockb" aria-label="Locked"><Icon name="lock" size={14} /></span>{/if}
   <span class="nm">{entry.name}</span>
   <span class="cost" class:many={entry.cost.length > 2}>
     {#each entry.cost as c (c.item)}
