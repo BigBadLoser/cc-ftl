@@ -13,6 +13,8 @@ export const STEPS = [
 ] as const;
 /** Mask samples per density sample: the step edges stay hard but follow the (interpolated) density, not its sample grid. */
 const UP = 8;
+/** The share of the square, at each edge, that fades out. */
+const EDGE = 0.18;
 
 export interface Baked {
   canvas: HTMLCanvasElement;
@@ -119,6 +121,20 @@ export function bakeNebula(tiles: UiNebulaTile[], art: UiStarArt, glow: HTMLImag
     octx.globalAlpha = step.alpha;
     octx.drawImage(layer, 0, 0);
   });
+  // Fade the square's edges into the backdrop, so zooming out never shows where the generated field ends.
+  octx.globalAlpha = 1;
+  octx.globalCompositeOperation = 'destination-in';
+  const edge = EDGE;
+  for (const vertical of [false, true]) {
+    const grad = vertical ? octx.createLinearGradient(0, 0, 0, W) : octx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(edge, 'rgba(0,0,0,1)');
+    grad.addColorStop(1 - edge, 'rgba(0,0,0,1)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    octx.fillStyle = grad;
+    octx.fillRect(0, 0, W, W);
+  }
+  octx.globalCompositeOperation = 'source-over';
   const baked = { canvas: out, x0, y0, side: cols * size };
   last = { key, baked };
   return baked;

@@ -2,12 +2,14 @@
 import { Container, Graphics } from 'pixi.js';
 import type { UiStarmap, UiStarNode } from '../../ui/starmapApi';
 import { strHash } from './artIds';
-import { fillOps, iconPx, piece, spriteAt, syncPieces, type Cam, type Ctx, type Piece, type Scene, type View } from './kit';
+import { fillOps, HALF_BELOW, iconSize, piece, spriteAt, syncPieces, type Cam, type Ctx, type Piece, type Scene, type View } from './kit';
 import { newOps, pixelDiamond, pixelDiamondRing } from './pixel';
 
 /** Structure icons orbit their node: one lap a minute, each node from its own starting angle; still with reduced motion. */
 const ORBIT_SEC = 60;
 const PULSE_MS = 2200;
+/** The orbiting icons glide between device pixels (not snapped), so their motion is smooth; the art stays nearest-scaled. */
+const SMOOTH = true;
 const still = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 interface Orbit {
@@ -20,7 +22,8 @@ interface Orbit {
 export interface NodeLayer {
   camera(sc: Scene, cam: Cam, v: View, g: number, ship: boolean, zoomed: boolean): void;
   stale(): void;
-  tick(now: number, ship: boolean): boolean;
+  /** 'fast': orbits are on screen, draw at the display rate; true: only the pulse. */
+  tick(now: number): boolean | 'fast';
   destroy(): void;
 }
 
@@ -89,14 +92,15 @@ export function createNodeLayer(ctx: Ctx, root: Container, map: UiStarmap): Node
       const m = 100 / cam.s;
       live = [];
       if (art && cam.s > 0.7) {
-        const size = iconPx(structFrame, dpr) / cam.s;
+        const size = iconSize(structFrame, cam.s, dpr) / cam.s;
+        const half = cam.s < HALF_BELOW;
         for (const n of map.nodes) {
           if (!n.known || !n.icons.length) continue;
           const inView = n.x > v.x0 - m && n.x < v.x1 + m && n.y > v.y0 - m && n.y < v.y1 + m;
           let o = orbits.get(n.id);
           if (!o && inView) {
             const box = orbitBox.addChild(new Container());
-            const kids = n.icons.map((ic) => spriteAt(ctx, ic.sprite, 0, 0, size, ic.tone)).filter((c): c is Container => !!c);
+            const kids = n.icons.map((ic) => spriteAt(ctx, ic.sprite, 0, 0, size, ic.tone, half, SMOOTH)).filter((c): c is Container => !!c);
             kids.forEach((c) => box.addChild(c));
             o = { node: n, box, kids, a0: strHash(n.id) % 360 };
             orbits.set(n.id, o);
@@ -115,7 +119,7 @@ export function createNodeLayer(ctx: Ctx, root: Container, map: UiStarmap): Node
       pulse = null;
       const cur = sc.current;
       if (cur && !ship && !still) {
-        const gfx = pulseBox.addChild(new Graphics());
+        const gfx = pulseBox.addChild(new Graphics({ roundPixels: true }));
         const ops = newOps();
         pixelDiamondRing(ops, 0, 0, 13 / cam.s, g);
         fillOps(gfx, ops, pal.cyan, 1);
@@ -134,7 +138,7 @@ export function createNodeLayer(ctx: Ctx, root: Container, map: UiStarmap): Node
         pulse.gfx.scale.set(1 + 1.2 * e);
         pulse.gfx.alpha = 0.7 * (1 - e);
       }
-      return (live.length > 0 && !still) || !!pulse;
+      return live.length > 0 && !still ? 'fast' : !!pulse;
     },
     destroy() {
       dropOrbits();

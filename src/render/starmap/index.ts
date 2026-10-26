@@ -33,11 +33,11 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
   const stage = new Container();
   stage.eventMode = 'none';
   /** The starfield tile (`starmap.backdrop`), repeated behind the map at two screen px per art px. It is drawn here, not by the page, so the nebula's screen blend meets it. */
-  const backdrop = stage.addChild(new TilingSprite({ texture: Texture.EMPTY, width: 1, height: 1 }));
+  const backdrop = stage.addChild(new TilingSprite({ texture: Texture.EMPTY, width: 1, height: 1, roundPixels: true }));
   backdrop.eventMode = 'none';
   const world = stage.addChild(new Container());
   world.eventMode = 'none';
-  const nebulaSprite = world.addChild(new Sprite());
+  const nebulaSprite = world.addChild(new Sprite({ roundPixels: true }));
   nebulaSprite.blendMode = 'screen';
   nebulaSprite.visible = false;
 
@@ -57,7 +57,7 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
   let dirty = true;
   let raf = 0;
   let lastDraw = 0;
-  let animating = false;
+  let animating: boolean | 'fast' = false;
 
   const scene = (): Scene | null => {
     if (!scIn) return null;
@@ -128,7 +128,7 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
   function frame(now: number): void {
     raf = 0;
     if (dead || !renderer) return;
-    if (animating && !dirty && now - lastDraw < ANIM_MS) {
+    if (animating === true && !dirty && now - lastDraw < ANIM_MS) {
       raf = requestAnimationFrame(frame);
       return;
     }
@@ -142,7 +142,8 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
         if (level) level.root.alpha = 1;
       }
     }
-    animating = (level?.tick(now) ?? false) || !!fading;
+    const t = level?.tick(now) ?? false;
+    animating = t === 'fast' ? 'fast' : t || !!fading;
     renderer.render({ container: stage });
     lastDraw = now;
     dirty = false;
@@ -151,7 +152,7 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
 
   void (async () => {
     const r = await autoDetectRenderer({
-      canvas, width: 1, height: 1, resolution: dpr, autoDensity: true, antialias: false, roundPixels: true, backgroundAlpha: 1, background: 0x04080e,
+      canvas, width: 1, height: 1, resolution: dpr, autoDensity: true, antialias: false, roundPixels: false, backgroundAlpha: 1, background: 0x04080e,
       preference: 'webgl', powerPreference: 'high-performance',
       // The map picks in its own coordinates (the screen's pointer handlers); pixi's event system would hit-test the scene tree on every move.
       eventFeatures: { move: false, globalMove: false, click: false, wheel: false },

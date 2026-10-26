@@ -9,7 +9,7 @@ import type { UiStarNode } from '../../ui/starmapApi';
 import { fillArea } from './area';
 import { bodyVariant } from './artIds';
 import { createLaneMask } from './laneMask';
-import { drawOps, fillOps, iconPx, piece, spriteAt, syncPieces, viewOf, boxOf, type Cam, type Ctx, type Glide, type Level, type Piece, type Scene } from './kit';
+import { drawOps, fillOps, HALF_BELOW, iconSize, piece, spriteAt, syncPieces, viewOf, boxOf, type Cam, type Ctx, type Glide, type Level, type Piece, type Scene } from './kit';
 import { layoutLevel1 } from './level1Labels';
 import { createLabelPool } from './text';
 import { createNodeLayer } from './level1Nodes';
@@ -34,11 +34,11 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
   const bodies = add(new Container());
   const laneBox = add(new Container());
   const exitIcons = add(new Container());
-  const dyn = add(new Graphics());
+  const dyn = add(new Graphics({ roundPixels: true }));
   const fleetBox = add(new Container());
   const nodeLayer = createNodeLayer(ctx, root, map);
   const shipBox = add(new Container());
-  const top = add(new Graphics());
+  const top = add(new Graphics({ roundPixels: true }));
   for (const c of [areas, outlines, bodies, laneBox, exitIcons, dyn, fleetBox, shipBox, top]) c.eventMode = 'none';
   const labels = createLabelPool(root, pal.bg);
 
@@ -111,8 +111,9 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
   /** Everything drawn at the current grid that is not a piece: reach lines, route, fleets, exit icons, rings, the ship, labels. */
   function redraw(): void {
     const k = 1 / cam.s;
-    const fleetPx = iconPx(fleetFrame, dpr) * k;
-    const structPx = iconPx(structFrame, dpr) * k;
+    const half = cam.s < HALF_BELOW;
+    const fleetPx = iconSize(fleetFrame, cam.s, dpr) * k;
+    const structPx = iconSize(structFrame, cam.s, dpr) * k;
     dyn.clear();
     if (sc.current && !hasShip) {
       const o = newOps();
@@ -136,22 +137,22 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
       // Just out from the gateway, on the lane where it leaves the sector (the far end is usually off the view).
       const len = Math.hypot(e.bx - e.ax, e.by - e.ay) || 1;
       const out = Math.min(len / 2, 48 * k);
-      const s = spriteAt(ctx, `starmap.exit.${e.kind}`, e.ax + ((e.bx - e.ax) / len) * out, e.ay + ((e.by - e.ay) / len) * out, structPx * 1.25);
+      const s = spriteAt(ctx, `starmap.exit.${e.kind}`, e.ax + ((e.bx - e.ax) / len) * out, e.ay + ((e.by - e.ay) / len) * out, structPx * 1.25, null, half);
       if (s) exitIcons.addChild(s);
     }
     fleetBox.removeChildren().forEach((c) => c.destroy({ children: true }));
-    const fx = new Graphics();
+    const fx = new Graphics({ roundPixels: true });
     fleetBox.addChild(fx);
     for (const m of marks) {
       const x = m.f.x + m.ox * 54 * k;
       const y = m.f.y + m.oy * 54 * k;
       const id = `starmap.fleet.${m.f.kind}.d${dirOf(m.heading)}`;
-      const spr = art?.has(`starmap.fleet.${m.f.kind}.d0`) ? spriteAt(ctx, id, x, y, fleetPx, m.f.tone) : null;
+      const spr = art?.has(`starmap.fleet.${m.f.kind}.d0`) ? spriteAt(ctx, id, x, y, fleetPx, m.f.tone, half) : null;
       if (spr) fleetBox.addChild(spr);
       else {
         const o = newOps();
         pixelArrow(o, m.heading, g, 1.5);
-        const gf = new Graphics();
+        const gf = new Graphics({ roundPixels: true });
         gf.position.set(x, y);
         fillOps(gf, o, pal.tone(m.f.tone), 1);
         fleetBox.addChild(gf);
@@ -177,8 +178,8 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
   }
 
   let shipDir = -1;
-  const shipTrail = new Graphics();
-  const shipRing = new Graphics();
+  const shipTrail = new Graphics({ roundPixels: true });
+  const shipRing = new Graphics({ roundPixels: true });
   let shipSprite: Container | null = null;
   shipBox.addChild(shipTrail, shipRing);
   function drawShip(): void {
@@ -197,12 +198,12 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
     pixelDiamondRing(r, ship.x, ship.y, 13 * k, g);
     fillOps(shipRing, r, pal.cyan, 1);
     shipDir = dirOf(ang);
-    const size = iconPx(fleetFrame, dpr) * k * 1.25;
-    shipSprite = art?.has('starmap.fleet.player.d0') ? spriteAt(ctx, `starmap.fleet.player.d${shipDir}`, ship.x, ship.y, size) : null;
+    const size = iconSize(fleetFrame, cam.s, dpr) * k * 1.25;
+    shipSprite = art?.has('starmap.fleet.player.d0') ? spriteAt(ctx, `starmap.fleet.player.d${shipDir}`, ship.x, ship.y, size, null, cam.s < HALF_BELOW) : null;
     if (!shipSprite) {
       const o = newOps();
       pixelArrow(o, ang, g, 2);
-      const gf = new Graphics();
+      const gf = new Graphics({ roundPixels: true });
       gf.position.set(ship.x, ship.y);
       fillOps(gf, o, pal.cyan, 1);
       shipSprite = gf;
@@ -250,12 +251,12 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
         drawShip();
       }
     },
-    tick: (now) => nodeLayer.tick(now, hasShip),
+    tick: (now) => nodeLayer.tick(now),
     tip(x, y) {
       const k = 1 / cam.s;
       const mx = cam.cx + (x - cam.w / 2) * k;
       const my = cam.cy + (y - cam.h / 2) * k;
-      const half = (iconPx(fleetFrame, dpr) / 2) * k;
+      const half = (iconSize(fleetFrame, cam.s, dpr) / 2) * k;
       for (const m of marks) {
         const fx = m.f.x + m.ox * 54 * k;
         const fy = m.f.y + m.oy * 54 * k;

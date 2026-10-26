@@ -23,7 +23,7 @@ export function createLevel2(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
   const linkBox = root.addChild(new Container());
   const sectorBox = root.addChild(new Container());
   const minis = root.addChild(new Container());
-  const dyn = root.addChild(new Graphics());
+  const dyn = root.addChild(new Graphics({ roundPixels: true }));
   const labels = createLabelPool(root, pal.bg);
   for (const c of [root, clusterBox, linkBox, sectorBox, minis, dyn]) c.eventMode = 'none';
 

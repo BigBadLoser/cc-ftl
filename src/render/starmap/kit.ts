@@ -55,8 +55,8 @@ export interface Level {
   scene(sc: Scene): void;
   camera(cam: Cam): void;
   glide(g: Glide | null): void;
-  /** Advance animations to `now` (ms); true while the level still needs frames. */
-  tick(now: number): boolean;
+  /** Advance animations to `now` (ms); true while the level still needs frames ('fast': at the display rate, else 30 fps). */
+  tick(now: number): boolean | 'fast';
   /** The tooltip of what is at a screen point of the view, if any. */
   tip(px: number, py: number): string | null;
   destroy(): void;
@@ -95,11 +95,20 @@ export function crispPx(frame: number, target: number, dpr: number): number {
   return (frame * k) / dpr;
 }
 
-/** Icons at one shared pixel density: a whole number of device px per art px (about one CSS px), never shrunk. */
-export const iconPx = (frame: number, dpr: number): number => (frame * Math.max(1, Math.round(dpr))) / dpr;
+/** Below this map scale icons are drawn at half size (the sheet's frames halved, then whole device px per texel): far out they would be huge. */
+export const HALF_BELOW = 1.4;
 
-/** One frame centred on (x, y), `size` map units square, with its glow twin screen-blended over it (and the owner's livery if `tone`). */
-export function spriteAt(ctx: Ctx, id: string, x: number, y: number, size: number, tone: string | null = null): Container | null {
+/** An icon's size in screen px: the (half-size or full) frame at a whole number of device px per texel, never below one. */
+export function iconSize(frame: number, s: number, dpr: number): number {
+  const tex = s < HALF_BELOW ? frame / 2 : frame;
+  return (tex * Math.max(1, Math.round(dpr))) / dpr;
+}
+
+/**
+ * One frame centred on (x, y), `size` map units square, with its glow twin screen-blended over it (and the owner's livery if `tone`).
+ * `half`: the half-size frames (see HALF_BELOW). `smooth`: not snapped to device px, for sprites that glide (the orbits).
+ */
+export function spriteAt(ctx: Ctx, id: string, x: number, y: number, size: number, tone: string | null = null, half = false, smooth = false): Container | null {
   const art = ctx.art;
   const f = art?.art.frames[id];
   if (!art || !f) return null;
@@ -108,18 +117,18 @@ export function spriteAt(ctx: Ctx, id: string, x: number, y: number, size: numbe
   box.position.set(x, y);
   const put = (tex: Texture | null, screen = false) => {
     if (!tex) return;
-    const sp = new Sprite(tex);
+    const sp = new Sprite({ texture: tex, roundPixels: !smooth });
     sp.eventMode = 'none';
     sp.anchor.set(0.5);
-    sp.scale.set(size / f.w, size / f.h);
+    sp.scale.set(size / (half ? f.w / 2 : f.w), size / (half ? f.h / 2 : f.h));
     if (screen) sp.blendMode = 'screen';
     box.addChild(sp);
   };
   if (tone) {
     const t = toneTint(tone);
-    put(art.tinted(id, t.cloth, t.accent));
-  } else put(art.frame(id));
-  if (f.glow) put(art.frame(id, true), true);
+    put(art.tinted(id, t.cloth, t.accent, half));
+  } else put(art.frame(id, false, half));
+  if (f.glow) put(art.frame(id, true, half), true);
   return box;
 }
 
@@ -139,7 +148,7 @@ export interface Piece {
 }
 
 export function piece(parent: Container, box: [number, number, number, number], build: Piece['build'], independent = false): Piece {
-  const gfx = new Graphics();
+  const gfx = new Graphics({ roundPixels: true });
   gfx.eventMode = 'none';
   gfx.visible = false;
   parent.addChild(gfx);

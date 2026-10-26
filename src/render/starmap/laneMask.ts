@@ -30,7 +30,7 @@ export function createLaneMask(): { sprite: Sprite; fit(v: View): void; destroy(
   ctx.putImageData(img, 0, 0);
   // Not premultiplied: the mask reads the straight alpha, so the colour channels must not shrink with it a second time.
   const tex = new Texture({ source: new ImageSource({ resource: c, alphaMode: 'no-premultiply-alpha' }) });
-  const sprite = new Sprite(tex);
+  const sprite = new Sprite({ texture: tex, roundPixels: true });
   sprite.eventMode = 'none';
   return {
     sprite,
