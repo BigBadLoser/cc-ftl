@@ -222,3 +222,46 @@ python3 tools/blender/review/core_systems_orientations.py --compose \
 
 These are review frames; damage variants, production atlas packing and runtime
 integration remain separate work. No live sprite build or runtime edits occur.
+
+## Damage preview after orientation/power-state approval
+
+`artifacts/core-systems-damage/damage-review.png` compares the signed-off healthy
+r0 models with damaged, damaged-flicker and destroyed variants. Six native
+colour/glow pairs and their bounds/anchors live alongside it. This is a quick
+one-angle damage review before export, with the same native 64x32 / SS4 /
+four-sample Blender 4.2.9 settings.
+
+`sprites/core_systems_damage.py` applies the existing shared module damage
+recipe to freshly built approved geometry: dents, scorch, a breached/bent panel,
+partially failed lights and a collapsed charred wreck. It omits floating spark
+chips and scattered floor debris. Healthy model sources and approved renders
+are unchanged. The flicker frame repeats the exact damage with lights off.
+
+The shared recipe initially pushed bent hardware and the narrow life-support
+wreck outside their footprint. This adapter keeps them on their original tiles:
+
+- Reduce dent depth continuously if the original end hardware would cross a
+  tile boundary; this preserves each deformation's shape instead of clipping
+  vertices against a boundary plane.
+- Translate added loose panels inward while retaining their geometry.
+- Apply a continuous inward collapse to the wreck's upper assembly, leaving
+  its deck-level feet fixed. The life-support upper factor is about .805;
+  the reactor needs only a .995 factor. Recorded in the review JSON.
+
+Every r0 damage frame is grounded, below wall height and within its original
+footprint. Damaged-flicker and destroyed glow are zero. For subsequent rotation
+exports, damage is generated in canonical r0 and the entire assembly rotates
+rigidly, keeping hit locations on the same physical parts.
+
+```sh
+SPRITE_PREVIEW=0 SPRITE_SS=4 SPRITE_SAMPLES=4 \
+  /workspace/blender-tools/blender-4.2.9-linux-x64/blender -b -t 2 \
+  --factory-startup --python-exit-code 1 \
+  --python tools/blender/review/core_systems_damage_preview.py -- \
+  --out artifacts/core-systems-damage
+python3 tools/blender/review/core_systems_damage_preview.py --compose \
+  --out artifacts/core-systems-damage
+```
+
+Damage appearance awaits review. Final damage rotations, fixed frame-set
+packing, manifest aliases and the production handoff remain after approval.
