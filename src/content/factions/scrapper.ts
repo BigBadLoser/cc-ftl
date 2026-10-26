@@ -57,7 +57,7 @@ export const scrapper = {
     light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.incendiaryLauncher', weight: 2 }],
     heavy: [{ value: 'module.massDriver', weight: 1 }],
   },
-  shields: [{ value: 'module.shieldGenSmall', weight: 1 }],
+  shields: [{ value: 'module.shieldGen', weight: 1 }],
   stock: [{ item: 'item.scrap', min: 2, max: 8 }, { item: 'item.metal', min: 0, max: 4 }],
   living: true,
   aiCore: false,
