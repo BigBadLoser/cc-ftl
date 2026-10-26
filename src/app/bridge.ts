@@ -104,6 +104,8 @@ export interface Bridge {
   /** Pick an option of the open event decision and resume the speed the game was on. */
   chooseStory(choice: string): void;
   setSelected(tile: TileRef | null): void;
+  /** An enemy crew member being inspected: listed among the hostiles even where none of your crew stand. */
+  watchCrew(id: number | null): void;
   setHovered(tile: TileRef | null): void;
   dispatch(cmd: Command): void;
   setSpeed(speed: Speed): void;
@@ -213,8 +215,9 @@ export function createBridge(sim: Sim): Bridge {
     lastInspect = key;
     inspect.set(snap);
   };
+  let watched: number | null = null;
   const refreshCrew = () => {
-    const lists = buildCrewLists(sim);
+    const lists = buildCrewLists(sim, watched);
     const key = JSON.stringify(lists.crew);
     if (key !== lastCrew) {
       lastCrew = key;
@@ -442,6 +445,11 @@ export function createBridge(sim: Sim): Bridge {
       const back = heldSpeed;
       heldSpeed = null;
       if (back !== null) applySpeed(back === 0 ? lastSpeed : back);
+    },
+    watchCrew(id) {
+      if (id === watched) return;
+      watched = id;
+      refreshCrew();
     },
     setSelected(t) {
       selected = t;

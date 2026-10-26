@@ -12,6 +12,7 @@ import { createStore } from './app/store';
 import { overlayLegend, overlayList } from './app/overlayLegend';
 import { createErrorLog } from './app/errors';
 import { attachInput } from './app/input';
+import type { OrderId } from './app/orders';
 import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
@@ -196,6 +197,11 @@ const api: UiApi = {
   focusCrew: controller.focusCrew,
   attack: controller.attack,
   selectedCrew: controller.selectedCrew,
+  selectedGroup: controller.selectedGroup,
+  selectedShuttle: controller.selectedShuttle,
+  selectBox: controller.selectBox,
+  contextMenu: controller.contextMenu,
+  pickContext: (id) => controller.pickContext(id as OrderId | null),
   modules: bridge.modules,
   moduleDefs: bridge.moduleDefs,
   placeHint: controller.placeHint,

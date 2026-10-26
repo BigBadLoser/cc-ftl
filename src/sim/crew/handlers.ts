@@ -14,14 +14,16 @@ import { wake } from '../combat/dormant';
 import { ShipC } from '../combat/components';
 import { TICK_HZ } from '../time';
 import {
-  CrewC, DraftedC, JobC, PositionC, PrioritiesC, WORK_CATEGORIES, type Crew,
+  CrewC, DeadC, DraftedC, JobC, PositionC, PrioritiesC, WORK_CATEGORIES, type Crew, type Position,
 } from './components';
 import { releaseBedClaim } from './beds';
-import { clearPath, findJobAt, isIncapacitated, releaseAssignment } from './helpers';
+import { clearPath, findJobAt, isIncapacitated, origin, releaseAssignment } from './helpers';
+import { EmbarkOrderC } from '../vehicles/components';
+import { assignTiles, spreadTiles, tileKey, type Tile } from './spread';
 
 export type CrewCommandType = Exclude<
   Extract<Command['type'], `job.${string}` | `crew.${string}`>,
-  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip' | 'crew.hack' | 'crew.hire'
+  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.man' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip' | 'crew.hack' | 'crew.hire'
 >;
 type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
@@ -132,16 +134,53 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     }
   },
   'crew.moveTo': (sim, cmd) => {
-    const drafted = sim.world.get(cmd.id, DraftedC);
     const pos = sim.world.get(cmd.id, PositionC);
-    if (!drafted || !pos) return reject(sim, cmd.type, 'notDrafted');
-    const shipId = cmd.ship !== undefined ? cmd.ship : shipIdOf(sim, pos);
+    if (!sim.world.has(cmd.id, DraftedC) || !pos) return reject(sim, cmd.type, 'notDrafted');
+    const err = orderMove(sim, cmd.id, cmd.ship !== undefined ? cmd.ship : shipIdOf(sim, pos), cmd.x, cmd.y);
+    if (err) reject(sim, cmd.type, err);
+  },
+  'crew.moveGroup': (sim, cmd) => {
+    const walkers = cmd.ids.filter((id) => sim.world.has(id, DraftedC) && sim.world.has(id, PositionC));
+    if (!walkers.length) return reject(sim, cmd.type, 'notDrafted');
+    const shipId = cmd.ship !== undefined ? cmd.ship : shipIdOf(sim, sim.world.get(walkers[0] as number, PositionC));
     const grid = shipGrid(sim, shipId);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y)) return reject(sim, cmd.type, 'outOfBounds');
-    if (!isTileWalkable(sim, grid, cmd.x, cmd.y, sim.world.has(cmd.id, SuitC))) return reject(sim, cmd.type, 'notWalkable');
-    const fighter = sim.world.get(cmd.id, FighterC);
-    if (fighter) fighter.ordered = 0; // a move order cancels an attack order
-    releaseAssignment(sim, cmd.id); // and a suit errand
-    drafted.target = { x: cmd.x, y: cmd.y };
+    const here = walkers.filter((id) => shipIdOf(sim, sim.world.get(id, PositionC)) === shipId);
+    if (!here.length) return reject(sim, cmd.type, 'otherShip');
+    // Free tiles around the click: not where someone outside the group stands.
+    const taken = new Set<number>();
+    for (const o of sim.world.query(CrewC, PositionC)) {
+      const p = sim.world.get(o, PositionC) as Position;
+      if (!walkers.includes(o) && !sim.world.has(o, DeadC) && shipIdOf(sim, p) === shipId) taken.add(tileKey(Math.round(p.x), Math.round(p.y)));
+    }
+    const tiles = spreadTiles(sim, grid, { x: cmd.x, y: cmd.y }, here.length, taken);
+    const spots = assignTiles(here.map((id) => ({ id, ...origin(sim.world.get(id, PositionC) as Position) })), tiles.length ? tiles : [{ x: cmd.x, y: cmd.y }]);
+    let first: string | null = null;
+    let any = false;
+    for (const id of here) {
+      const t = spots.get(id) as Tile;
+      const err = orderMove(sim, id, shipId, t.x, t.y);
+      if (err) first ??= err;
+      else any = true;
+    }
+    if (!any && first) reject(sim, cmd.type, first);
   },
 };
+
+/** A drafted crew member's walk order to a tile of its own ship. Returns a reject reason, or null. */
+function orderMove(sim: Sim, id: number, shipId: number, x: number, y: number): string | null {
+  const drafted = sim.world.get(id, DraftedC);
+  const pos = sim.world.get(id, PositionC);
+  if (!drafted || !pos) return 'notDrafted';
+  const grid = shipGrid(sim, shipId);
+  if (!grid?.has('struct') || !grid.inBounds(x, y)) return 'outOfBounds';
+  if (shipIdOf(sim, pos) !== shipId) return 'otherShip'; // the walk planner stays on one grid: the order would only lapse
+  if (!isTileWalkable(sim, grid, x, y, sim.world.has(id, SuitC))) return 'notWalkable';
+  const fighter = sim.world.get(id, FighterC);
+  if (fighter) fighter.ordered = 0; // a move order cancels an attack order
+  releaseAssignment(sim, id); // and a suit errand
+  sim.world.remove(id, EmbarkOrderC); // and a walk to a shuttle
+  drafted.target = { x, y };
+  delete drafted.planned;
+  return null;
+}

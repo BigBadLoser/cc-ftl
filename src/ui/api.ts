@@ -514,6 +514,8 @@ export interface UiShuttleCrew {
   name: string;
   role: string;
   boarding: number;
+  /** The ship (ShipC entity) the crew member stands on, 0 while aboard a vehicle. */
+  ship: number;
 }
 
 export interface UiShuttle {
@@ -546,6 +548,8 @@ export interface UiShuttle {
   bay: number;
   /** Crew can climb in or out here right now (stowed in the bay, or docked). */
   boardable: boolean;
+  /** The ship whose floor crew board from (the boarding tile's): the home ship's bay, or the ship it is docked at. 0 if not boardable. */
+  boardShip: number;
 }
 
 export interface UiShuttleAirlock {
@@ -845,10 +849,19 @@ export interface UiApi {
   hostiles: Subscribable<UiCrew[]>;
   /** Center the camera on a crew member wherever they are. */
   focusCrew(id: number): void;
-  /** Order drafted crew (the selected one, else all) to attack a hostile crew member. */
+  /** Order the selected drafted crew to attack a hostile crew member. */
   attack(target: number): void;
-  /** Selected crew id, or null (tile selection is reported through `inspect`). */
+  /** Selected crew id, or null (tile selection is reported through `inspect`). With several selected it is null: see `selectedGroup`. */
   selectedCrew: Subscribable<number | null>;
+  /** Every selected crew member (click, box, shift-add). */
+  selectedGroup: Subscribable<number[]>;
+  /** The player's shuttle picked in the world, or null. */
+  selectedShuttle: Subscribable<number | null>;
+  /** The selection box being dragged (canvas px), or null. */
+  selectBox: Subscribable<{ x0: number; y0: number; x1: number; y1: number } | null>;
+  /** The order menu open at a canvas position, or null; `pickContext` runs a choice (null closes). */
+  contextMenu: Subscribable<{ x: number; y: number; items: { id: string; label: string }[] } | null>;
+  pickContext(id: string | null): void;
   tool: Subscribable<UiToolState>;
   modules: Subscribable<UiModule[]>;
   moduleDefs: Subscribable<UiModuleDef[]>;

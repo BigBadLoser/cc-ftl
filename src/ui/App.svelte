@@ -1,6 +1,8 @@
 <script lang="ts">
   import GameSession from './GameSession.svelte';
   import GoalsCard from './GoalsCard.svelte';
+  import ContextMenu from './ContextMenu.svelte';
+  import SelectBox from './SelectBox.svelte';
   import { onMount } from 'svelte';
   import { TICK_HZ } from '../sim/time';
   import type { UiStarmap, UiDeploy } from './starmapApi';
@@ -194,6 +196,8 @@
 <svelte:window onkeydown={onKey} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
 <canvas bind:this={canvas}></canvas>
+<SelectBox {api} />
+<ContextMenu {api} />
 
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->

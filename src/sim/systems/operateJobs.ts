@@ -1,4 +1,4 @@
-import { JobC } from '../crew/components';
+import { DraftedC, JobC } from '../crew/components';
 import { releaseAssignment } from '../crew/helpers';
 import { CombatC, IonC } from '../combat/components';
 
@@ -21,7 +21,9 @@ export function operateJobsSystem(sim: Sim): void {
   for (const jobId of [...sim.world.query(JobC)]) {
     const job = sim.world.get(jobId, JobC);
     if (job?.kind !== 'operate') continue;
-    if (consoleNeeded(sim, job.target ?? 0) && !open.has(job.target ?? 0)) {
+    // A console a drafted crew member was ordered to man stays open until they are released, fight or no fight.
+    const ordered = !!job.reservedBy && sim.world.has(job.reservedBy, DraftedC) && stationUsable(sim, job.target ?? 0);
+    if ((ordered || consoleNeeded(sim, job.target ?? 0)) && !open.has(job.target ?? 0)) {
       open.set(job.target ?? 0, jobId);
       continue;
     }
@@ -45,6 +47,12 @@ export function operateJobsSystem(sim: Sim): void {
     fresh.add(job);
   }
   seatHelms(sim, fresh);
+}
+
+/** A console that exists, is intact and is on a ship still in play. */
+function stationUsable(sim: Sim, id: number): boolean {
+  const m = sim.world.get(id, ModuleC);
+  return !!m && !!sim.content.modules[m.def]?.console && m.hp > 0 && shipById(sim, shipIdOf(sim, m))?.state === 'active';
 }
 
 function consoleNeeded(sim: Sim, id: number): boolean {

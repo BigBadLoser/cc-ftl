@@ -1,6 +1,6 @@
 import { asteroidAt, inShip, shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { AsteroidC } from '../sim/asteroids/components';
-import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isBlueprintKnown, isOreTile, isSolidRock, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
+import { AboardC, AllegianceC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isBlueprintKnown, isOreTile, isSolidRock, placementError, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
 import { ROCK_MASS_Z } from '../render/asteroidView';
 import type { UiBuildKind, UiToolState } from '../ui/api';
@@ -13,11 +13,16 @@ import { createStore, type Readable } from './store';
 import { homeShip } from '../sim/index';
 import { foreignShipTarget } from './tapTarget';
 import { EggSacC } from '../sim/aliens/components';
+import { draftedOf, moduleUnder, planOrders, type OrderPlan } from './crewOrders';
+import { boxSelection, clickSelection, idsInRect, normRect, type Rect } from './selection';
+import { needsMenu, type OrderChoice, type OrderId } from './orders';
 import { shipById } from '../sim/combat/ships';
 
 // dig, level and finish are builds on rock mass: Floor digs it out, Ground levels it, RockWall finishes it into a wall (the sim tells them apart by the tile)
 const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
 const TOAST_MS = 2500;
+/** Screen px from a crew member's feet to the middle of the body, for the selection box. */
+const BODY_PX = 16;
 
 /** Tool + selection state and the translation of input gestures into commands. */
 export interface Controller {
@@ -25,6 +30,16 @@ export interface Controller {
   /** Why the module being placed is invalid at the cursor, with a screen position near it. */
   placeHint: Readable<{ x: number; y: number; text: string } | null>;
   selectedCrew: Readable<number | null>;
+  /** The selected crew (a click, a box or shift-adds); orders go to the drafted ones among them. */
+  selectedGroup: Readable<number[]>;
+  /** One of the player's shuttles picked by clicking it in the world, or null. */
+  selectedShuttle: Readable<number | null>;
+  /** The selection box being dragged, in canvas px, or null. */
+  selectBox: Readable<Rect | null>;
+  /** The menu of order choices open at the cursor, or null. */
+  contextMenu: Readable<{ x: number; y: number; items: OrderChoice[] } | null>;
+  /** Run a choice of the open menu (null closes it). */
+  pickContext(id: OrderId | null): void;
   selectedModule: Readable<number | null>;
   /** Another ship or station picked from the node strip (a ShipC or trader entity id), or null. */
   selectedShip: Readable<number | null>;
@@ -40,7 +55,7 @@ export interface Controller {
   selectCrew(id: number | null, focus?: boolean): void;
   /** Center the camera on a crew member wherever they are. */
   focusCrew(id: number): void;
-  /** Order drafted crew (the selected one, else all) to attack a hostile crew member. */
+  /** Order the selected drafted crew to attack a hostile crew member. */
   attack(target: number): void;
   selectModule(id: number | null): void;
   /** A module under construction (its job id), or null. */
@@ -69,6 +84,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   /** The renderer is drawing a placement ghost (so it must be cleared when the mode ends). */
   let ghostOn = false;
   const crewSel = createStore<number | null>(null);
+  const group = createStore<number[]>([]);
+  const shuttleSel = createStore<number | null>(null);
+  const boxSel = createStore<Rect | null>(null);
+  const menu = createStore<{ x: number; y: number; items: OrderChoice[] } | null>(null);
+  let plan: OrderPlan | null = null;
   const toast = createStore<string | null>(null);
   let r: Renderer | undefined;
   let hover: Tile | null = null;
@@ -84,14 +104,27 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
 
   /** Hand the renderer the stuck sites (amber) and the selected one. */
   const pushSites = () => r?.setSites(new Set(bridge.sites.get().filter((s) => s.state === 'blocked').map((s) => s.id)), siteSel.get());
+  /** Hand the renderer the rings: the selected group, and the crew member being inspected. */
+  const pushRings = () => {
+    const c = crewSel.get();
+    r?.setSelectedCrew(c === null || group.get().includes(c) ? group.get() : [...group.get(), c]);
+  };
+  const clearCrew = () => {
+    crewSel.set(null);
+    group.set([]);
+    shuttleSel.set(null);
+    menu.set(null);
+    plan = null;
+    bridge.watchCrew(null);
+    pushRings();
+  };
   const selectTile = (t: Tile | null, ship = homeShipId()) => {
     shipSel.set(null);
     astSel.set(null);
-    crewSel.set(null);
+    clearCrew();
     modSel.set(null);
     siteSel.set(null);
     pushSites();
-    r?.setSelectedCrew(null);
     r?.setSelection(t, ship);
     bridge.setSelected(t ? { ship, ...t } : null);
   };
@@ -105,23 +138,29 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (b) r?.focusSector(b.x, b.y);
   };
   const isPlayerCrew = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
-  const selectCrew = (id: number | null, focus = false) => {
-    if (id === null) return selectTile(null);
+  /** Select crew: own crew join the group (alone, or as the whole box), an enemy is only inspected and the group keeps its place. */
+  const selectCrews = (ids: readonly number[], focus = false) => {
+    const first = ids[0];
+    if (first === undefined) return selectTile(null);
     modSel.set(null);
     shipSel.set(null);
     astSel.set(null);
     siteSel.set(null);
+    shuttleSel.set(null);
+    menu.set(null);
     pushSites();
-    crewSel.set(id);
+    if (isPlayerCrew(first)) group.set([...ids]);
+    crewSel.set(ids.length === 1 ? first : null);
     r?.setSelection(null);
     bridge.setSelected(null);
-    r?.setSelectedCrew(id);
-    if (focus) focusCrew(id);
+    bridge.watchCrew(ids.length === 1 ? first : null);
+    pushRings();
+    if (focus) focusCrew(first);
   };
+  const selectCrew = (id: number | null, focus = false) => (id === null ? selectTile(null) : selectCrews([id], focus));
   const attack = (target: number) => {
-    const sel = crewSel.get();
-    const ids = sel !== null && sim.world.has(sel, DraftedC) && isPlayerCrew(sel) ? [sel] : [...sim.world.query(CrewC, DraftedC)].filter(isPlayerCrew);
-    if (!ids.length) return showToast('Draft crew first');
+    const ids = draftedOf(sim, group.get());
+    if (!ids.length) return showToast('Select drafted crew first');
     for (const id of ids) sim.enqueue({ type: 'crew.attack', id, target });
   };
 
@@ -129,12 +168,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const m = id === null ? undefined : sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (id === null || !m || !def) return selectTile(null);
-    crewSel.set(null);
+    clearCrew();
     shipSel.set(null);
     astSel.set(null);
     siteSel.set(null);
     pushSites();
-    r?.setSelectedCrew(null);
     bridge.setSelected(null);
     modSel.set(id);
     r?.setSelection(footprintTiles(def, m.x, m.y, m.rot));
@@ -143,11 +181,10 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const selectSite = (id: number | null) => {
     const s = id === null ? undefined : bridge.sites.get().find((x) => x.id === id);
     if (id === null || !s) return selectTile(null);
-    crewSel.set(null);
+    clearCrew();
     shipSel.set(null);
     astSel.set(null);
     modSel.set(null);
-    r?.setSelectedCrew(null);
     bridge.setSelected(null);
     siteSel.set(id);
     pushSites();
@@ -269,9 +306,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     paintStart = paintEnd = null;
     refreshPreview();
   };
+  /** R: draft the selected crew, or stand them all down when every one is already drafted. */
   const toggleDraft = () => {
-    const id = crewSel.get();
-    if (id !== null && isPlayerCrew(id)) sim.enqueue({ type: 'crew.draft', id, drafted: !sim.world.has(id, DraftedC) });
+    const ids = group.get().filter(isPlayerCrew);
+    const all = ids.length > 0 && ids.every((id) => sim.world.has(id, DraftedC));
+    for (const id of ids) sim.enqueue({ type: 'crew.draft', id, drafted: !all });
   };
 
   const placeModule = () => {
@@ -291,6 +330,10 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     else setTool({ tool: 'select' });
   };
 
+  const selectShuttle = (id: number) => {
+    selectTile(null);
+    shuttleSel.set(id);
+  };
   const selectShip = (ship: number | null, frame = true) => {
     selectTile(null);
     if (ship === null) return;
@@ -316,6 +359,16 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     selectedAsteroid: astSel,
     selectAsteroid,
     selectedCrew: crewSel,
+    selectedGroup: group,
+    selectedShuttle: shuttleSel,
+    selectBox: boxSel,
+    contextMenu: menu,
+    pickContext(id) {
+      const p = plan;
+      menu.set(null);
+      plan = null;
+      if (id !== null) p?.run(id);
+    },
     selectModule,
     selectedSite: siteSel,
     selectSite,
@@ -345,37 +398,33 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         if (id !== null && !bridge.sites.get().some((s) => s.id === id)) siteSel.set(null); // built or cancelled
       });
       return {
-        onTap(sx, sy) {
-          const crewId = renderer.pickCrew(sx, sy);
-          if (crewId !== null && sim.world.has(crewId, EggSacC)) return attack(crewId); // an egg sac: only ever a target
-          if (crewId !== null) return isPlayerCrew(crewId) ? selectCrew(crewId) : crewSel.get() !== null && sim.world.has(crewSel.get() as number, DraftedC) ? attack(crewId) : selectCrew(crewId);
-          const tile = renderer.pickTile(sx, sy);
-          const grid0 = shipGrid(sim, homeShip(sim));
-          const modHere = tile && grid0 ? grid0.get('module', tile.x, tile.y) : 0;
-          let modId = modHere;
-          if (!modId && tile) {
-            // Tall sprites cover tiles behind them; a tile in front of the module's front tile never selects it.
-            const hit = renderer.pickModule(sx, sy) ?? 0;
-            const m = hit ? sim.world.get(hit, ModuleC) : undefined;
-            const def = m && sim.content.modules[m.def];
-            if (m && def) {
-              const [w, h] = rotatedSize(def, m.rot);
-              if (tile.x <= m.x + w - 1 && tile.y <= m.y + h - 1) modId = hit;
-            }
+        onTap(sx, sy, shift = false) {
+          if (menu.get()) {
+            menu.set(null); // a click away from the menu only closes it
+            plan = null;
+            return;
           }
+          const crewId = renderer.pickCrew(sx, sy);
+          if (crewId !== null && !sim.world.has(crewId, EggSacC)) {
+            // Your own crew join the selection (shift adds or removes); an enemy is only inspected, and the selection stays to order it.
+            if (!isPlayerCrew(crewId)) return selectCrews([crewId]);
+            const next = clickSelection(group.get(), crewId, shift);
+            return next.length ? selectCrews(next) : selectTile(null);
+          }
+          const shuttle = renderer.pickShuttle(sx, sy);
+          const sv = shuttle === null ? undefined : sim.world.get(shuttle, VehicleC);
+          if (shuttle !== null && sv && shipById(sim, sv.homeShip)?.faction === 'player') return selectShuttle(shuttle);
+          const tile = renderer.pickTile(sx, sy);
+          const modId = moduleUnder(sim, renderer, sx, sy, tile, homeShipId());
           if (modId) return selectModule(modId);
           // a module under construction: its ghost, or any tile of its footprint
           const sites = bridge.sites.get();
           const siteHit = renderer.pickSite(sx, sy) ?? (tile ? sites.find((s) => tile.x >= s.x && tile.x < s.x + s.w && tile.y >= s.y && tile.y < s.y + s.h)?.id : undefined);
           if (siteHit !== undefined && siteHit !== null && sites.some((s) => s.id === siteHit)) return selectSite(siteHit);
-          const sel = crewSel.get();
           const any = renderer.pickTileAny(sx, sy);
           const ag = any && shipGrid(sim, any.shipId);
           const jammed = !!any && !!ag && ag.get('struct', any.x, any.y) === Struct.Door && ag.get('jam', any.x, any.y) !== 0;
-          if (any && ag && sel !== null && sim.world.has(sel, DraftedC) && !jammed && isWalkable(ag.get('struct', any.x, any.y))) {
-            const here = shipIdOf(sim, sim.world.get(sel, PositionC));
-            sim.enqueue({ type: 'crew.moveTo', id: sel, x: any.x, y: any.y, ...(here !== any.shipId ? { ship: any.shipId } : {}) });
-          } else if (any && (jammed || (!tile && any.shipId !== homeShipId() && sim.world.get(any.shipId, ShipC)?.state === 'wreck'))) {
+          if (any && (jammed || (!tile && any.shipId !== homeShipId() && sim.world.get(any.shipId, ShipC)?.state === 'wreck'))) {
             // A derelict tile selects like one of your own (its panel offers Force door on jammed doors); the ship panel is on the node strip.
             selectTile({ x: any.x, y: any.y }, any.shipId);
           } else if (any && foreignShipTarget(sim, any.shipId, homeShipId()) !== null) {
@@ -386,6 +435,39 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
             const st = renderer.pickSector(sx, sy);
             selectAsteroid(asteroidAt(sim, st.x, st.y));
           } else selectTile(tile);
+        },
+        onBox(phase, a, b, shift) {
+          if (phase === 'cancel') return boxSel.set(null);
+          const rect = normRect(a, b);
+          if (phase !== 'end') return boxSel.set(rect);
+          boxSel.set(null);
+          // Your drafted crew whose feet or body fall in the box (aboard shuttles they have no position, so they are out).
+          const pts: { id: number; x: number; y: number }[] = [];
+          for (const id of draftedOf(sim, [...sim.world.query(DraftedC)])) {
+            const p = sim.world.get(id, PositionC);
+            if (!p) continue;
+            const at = renderer.screenOf(0, p.x + (p.toX - p.x) * p.progress, p.y + (p.toY - p.y) * p.progress);
+            pts.push({ id, x: at.x, y: at.y }, { id, x: at.x, y: at.y - BODY_PX });
+          }
+          const next = boxSelection(group.get(), [...new Set(idsInRect(rect, pts))], shift);
+          if (next.length) selectCrews(next);
+          else if (!shift) selectTile(null);
+        },
+        onContext(sx, sy) {
+          if (menu.get()) {
+            menu.set(null);
+            plan = null;
+          }
+          if (tool.get().tool !== 'select') return back();
+          const ids = group.get();
+          if (!ids.length) return;
+          if (!draftedOf(sim, ids).length) return showToast(rejectionMessage('notDrafted'));
+          const p = planOrders(sim, renderer, sx, sy, ids);
+          const only = p.choices[0];
+          if (!only) return showToast('Nothing to order there for the selected crew');
+          if (!needsMenu(p.choices)) return p.run(only.id);
+          plan = p;
+          menu.set({ x: sx, y: sy, items: p.choices });
         },
         onHover(t) {
           hover = t;
@@ -415,9 +497,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           }
           refreshPreview();
         },
-        onBack: back,
         onKey(key, shift) {
-          if (key === 'r') {
+          if (menu.get()) {
+            menu.set(null);
+            plan = null;
+          } else if (key === 'r') {
             if (moduleMode()) rotate(shift);
             else toggleDraft();
           }

@@ -26,6 +26,7 @@ import { createContainerBodyView } from './containerBodyView';
 import { createFightFx } from './fightFx';
 import { crewMuzzle } from './crewMuzzle';
 import { createCrewMarks } from './crewMarks';
+import { createOrderFx, type OrderKind } from './orderFx';
 import { sectorTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
 import { targetedModules, wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
@@ -106,7 +107,11 @@ export interface Renderer {
   /** Canvas-relative CSS px of a tile's centre on any ship. */
   screenOf(shipId: number, x: number, y: number): { x: number; y: number };
   /** Draw a ring under this crew member (null clears). */
-  setSelectedCrew(id: number | null): void;
+  setSelectedCrew(ids: readonly number[]): void;
+  /** The shuttle (vehicle entity) under a canvas-relative position, or null. */
+  pickShuttle(screenX: number, screenY: number): number | null;
+  /** Flash an order marker on a sector tile (centre x, y). */
+  addOrderMarker(x: number, y: number, kind?: OrderKind): void;
   /** Drop every ship scene (the sector changed under them: a jump lifted the ships out); the next frame builds them again. */
   resetWorld(): void;
   /** Sim events of the last frame, for combat fx. */
@@ -166,7 +171,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let hover: Tile | null = null;
   let selection: Tile | readonly Tile[] | null = null;
   let selShip = 0;
-  let selectedCrew: number | null = null;
+  let selectedCrew: readonly number[] = [];
   let siteMarks: { blocked: ReadonlySet<number>; selected: number | null } = { blocked: new Set(), selected: null };
   let lastFrame = animNow();
 
@@ -212,6 +217,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
   const sectorMarks = createMarkers(SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
+  const orderFx = createOrderFx(world, SL.ui);
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
   function shipOf(shipId: number): Ship | undefined {
@@ -359,6 +365,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       boxes.update();
       fightFx.update(dt);
       crewMarks.update();
+      orderFx.update();
       fx.update(dt, alpha);
       sectorParticles.update(dt);
       art.settle();
@@ -452,6 +459,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return grid.inBounds(t.x, t.y) ? t : null;
     },
     pickCrew: (sx, sy) => pickCrewAcross(pickHost(), sx, sy),
+    pickShuttle(sx, sy) {
+      const a = cam.toArt(sx, sy);
+      return shuttles.pick(a.x, a.y);
+    },
+    addOrderMarker: (x, y, kind) => orderFx.addMarker(x, y, kind),
     pickTileAny: (sx, sy) => pickTileAcross(pickHost(), sx, sy),
     pickSector: (sx, sy, lift = 0) => {
       const a = cam.toArt(sx, sy);
@@ -474,9 +486,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       siteMarks = { blocked, selected };
       for (const sc of scenes.values()) sc.setSites(blocked, selected);
     },
-    setSelectedCrew(id) {
-      selectedCrew = id;
-      for (const sc of scenes.values()) sc.setSelectedCrew(id);
+    setSelectedCrew(ids) {
+      selectedCrew = ids;
+      for (const sc of scenes.values()) sc.setSelectedCrew(ids);
     },
     onEvents: (events) => {
       fx.onEvents(events);
@@ -493,6 +505,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       boxes.dispose();
       fightFx.dispose();
       crewMarks.dispose();
+      orderFx.dispose();
       fx.dispose();
       sectorParticles.dispose();
       pass.dispose();
