@@ -26,7 +26,11 @@
 </aside>
 
 <style>
-  aside { z-index: 6; box-sizing: border-box; top: calc(var(--hdr) + var(--sat) + 4px); left: 50%; transform: translateX(-50%); width: min(560px, calc(100vw - 16px)); max-height: calc(100dvh - var(--hdr) - var(--sat) - 16px); overflow-y: auto; }
+  /* A card in the top-right column, directly under the goals card (App places it there): in the flow, not a floating sheet. */
+  /* A card in the top-right column, directly under the goals card (App places it there): in the flow, not a floating sheet.
+     The job cards need more than the column's 260px, so on desktop it grows to the left, keeping its right edge. */
+  aside { position: static; box-sizing: border-box; align-self: flex-end; width: min(380px, calc(100vw - 16px)); max-height: 44dvh; overflow-y: auto; border-width: 1px; padding: 8px 10px; }
+  @media (max-width: 600px) { aside { align-self: stretch; width: auto; max-height: 40dvh; } }
   .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
   h2 { margin: 0; font-size: 15px; color: var(--cyan); }
   .top button { min-height: 34px; min-width: 34px; padding: 0; font-size: 18px; }

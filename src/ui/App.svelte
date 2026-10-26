@@ -197,9 +197,6 @@
 {#if overviewOpen}
   <ShipOverview {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} onClose={() => (overviewOpen = false)} />
 {/if}
-{#if jobsOpen}
-  <JobsPanel {api} onClose={() => (jobsOpen = false)} />
-{/if}
 {#if stockOpen}
   <StockDrawer {api} onClose={() => (stockOpen = false)} />
 {/if}
@@ -243,6 +240,7 @@
     {#if !narrow}{@render time()}{/if}
   </div>
   <GoalsCard {api} />
+  {#if jobsOpen}<JobsPanel {api} onClose={() => (jobsOpen = false)} />{/if}
   <StrandedBanner {api} />
   <AlertList {api} />
 </div>
