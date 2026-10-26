@@ -1,4 +1,5 @@
 import { mount } from 'svelte';
+import { setAnimPaused } from './render/animClock';
 import App from './ui/App.svelte';
 import type { UiApi, UiIcon, UiSession } from './ui/api';
 import type { UiStarArt } from './ui/starmapApi';
@@ -44,7 +45,11 @@ loadStarmapArt().then((v) => starmapArt.set(v)).catch((e: unknown) => errorLog.p
 const loop = createLoop({
   sim,
   // The starmap covers the whole screen, and in hyperspace or while deploying the sector is empty: skip drawing the world.
-  render: (alpha) => { if (!starmapOpen && sim.sector.state === 'active') renderer?.render(alpha); },
+  render: (alpha) => {
+    // World animations freeze while the game is paused (speed 0); camera, UI and hover feedback keep running.
+    setAnimPaused(loop.getSpeed() === 0);
+    if (!starmapOpen && sim.sector.state === 'active') renderer?.render(alpha);
+  },
   onEvents: (events) => {
     controller.onEvents(events);
     renderer?.onEvents(events);

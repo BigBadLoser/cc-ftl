@@ -1,12 +1,12 @@
 /*
- * PLACEHOLDER ART. Drawn-in-code crew status marks so a fight can be read before real icons exist: a health bar over
- * hurt crew, a red cross on the downed, a white flag on those who surrendered, and a red (hostile) or green (yours)
+ * PLACEHOLDER ART. Drawn-in-code crew status marks so a fight can be read before real icons exist: a red cross on the
+ * downed, a white flag on those who surrendered, and a red (hostile) or green (yours)
  * foot diamond. Replace with sprite icons later; delete this file then.
  */
 import { shipIdAtTile } from './regionRules';
 import { Container, Graphics } from 'pixi.js';
 import type { World } from '../sim/ecs';
-import { CrewC, DeadC, DownedC, HealthC, PositionC } from '../sim/crew/components';
+import { CrewC, DeadC, DownedC, PositionC } from '../sim/crew/components';
 import { AllegianceC, SurrenderedC } from '../sim/fight/components';
 import type { Ship } from '../sim/combat/components';
 import { Z_PX } from './heights';
@@ -23,7 +23,6 @@ export interface CrewMarks {
   dispose(): void;
 }
 
-const BAR_W = 20 * S;
 
 export function createCrewMarks(world: World, parent: Container, host: CrewMarksHost): CrewMarks {
   const g = new Graphics();
@@ -39,16 +38,13 @@ export function createCrewMarks(world: World, parent: Container, host: CrewMarks
         const gy = pos.y + (pos.toY - pos.y) * pos.progress;
         const p = iso(gx, gy); // sector tiles
         const mine = world.get(id, AllegianceC)?.faction === 'player';
-        const hp = world.get(id, HealthC);
         const downed = world.has(id, DownedC);
         const flag = world.has(id, SurrenderedC);
         const foot = mine ? 0x4cd964 : 0xff4a3a;
         g.poly([p.x, p.y - 5 * S, p.x + 10 * S, p.y, p.x, p.y + 5 * S, p.x - 10 * S, p.y]).stroke({ width: S, color: foot, alpha: 0.8 });
         const top = p.y - (downed ? 0.55 : 1.7) * Z_PX;
-        if (hp && hp.hp < hp.max && !downed) {
-          g.rect(p.x - BAR_W / 2 - S, top - S, BAR_W + 2 * S, 5 * S).fill({ color: 0x05080d, alpha: 0.85 });
-          g.rect(p.x - BAR_W / 2, top, (BAR_W * Math.max(0, hp.hp)) / hp.max, 3 * S).fill(mine ? 0x4cd964 : 0xff5a4a);
-        }
+        // No health bar here: the crew view draws one on the figure itself (in bed, seated or standing). A second one at the
+        // sim tile floated over beds, apart from its sleeper, and stayed when the figure did not draw.
         if (downed) {
           g.rect(p.x - 2 * S, top - 8 * S, 4 * S, 12 * S).fill(0xff3b30);
           g.rect(p.x - 6 * S, top - 4 * S, 12 * S, 4 * S).fill(0xff3b30);

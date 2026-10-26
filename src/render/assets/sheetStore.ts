@@ -40,6 +40,12 @@ export interface StoreOpts<T> {
   /** A sheet asked for again before it was destroyed is kept as it is (no reload). */
   onRestore?(name: string): void;
   onError?(name: string, err: unknown): void;
+  /**
+   * Ms after a failed load before the sheet may be asked for again (doubling with each failure, up to 30 s). A load that
+   * fails once (a dropped request, a decode that ran out of memory on a phone) must not blank what it draws for the rest
+   * of the session. Default 2000.
+   */
+  retryMs?: number;
 }
 
 export interface PoolStats {
@@ -56,6 +62,9 @@ interface Rec<T> {
   sheet: Loaded<T> | null;
   /** Load requests made over the sheet's life (reloads after an eviction count). */
   loads: number;
+  /** Failed loads in a row, and when the last one failed (store clock). */
+  fails: number;
+  failedAt: number;
 }
 
 /**
@@ -80,7 +89,7 @@ export class SheetStore<T> {
 
   register(name: string, spec: SheetSpec): void {
     if (!this.budgets.has(spec.pool)) throw new Error(`Unknown sheet pool "${spec.pool}"`);
-    this.recs.set(name, { spec, state: 'idle', sheet: null, loads: 0 });
+    this.recs.set(name, { spec, state: 'idle', sheet: null, loads: 0, fails: 0, failedAt: 0 });
   }
 
   /** Like `generation`, counting only the given pools' changes (static art is cached in built sprites; crew frames are not). */
@@ -130,6 +139,7 @@ export class SheetStore<T> {
       }
       return;
     }
+    if (r.state === 'failed' && this.o.now() - r.failedAt >= this.retryDelay(r.fails)) r.state = 'idle';
     if (r.state !== 'idle') return;
     const i = this.dying.findIndex((d) => d.name === name);
     if (i >= 0) {
@@ -146,6 +156,11 @@ export class SheetStore<T> {
     else this.queue.push(name);
     this.requests++;
     this.pump();
+  }
+
+  /** Ms to wait after the `fails`-th failure in a row before loading again. */
+  private retryDelay(fails: number): number {
+    return Math.min(30_000, (this.o.retryMs ?? 2000) * 2 ** Math.max(0, fails - 1));
   }
 
   /** True if the sheet is loaded now (not a use, and queues nothing). */
@@ -175,11 +190,14 @@ export class SheetStore<T> {
         ({ sheet, bytes }) => {
           r.sheet = sheet;
           r.state = 'ready';
+          r.fails = 0;
           this.budgets.get(r.spec.pool)?.add(name, bytes, this.o.now(), !!r.spec.pinned);
           this.bump(r.spec.pool);
         },
         (err) => {
           r.state = 'failed';
+          r.fails++;
+          r.failedAt = this.o.now();
           this.o.onError?.(name, err);
         },
       ).finally(() => {

@@ -160,6 +160,40 @@ describe('SheetStore', () => {
     expect(r.store.get('ok')).toBeDefined();
     expect(r.store.stats().failed).toBe(1);
   });
+  it('loads a failed sheet again once its back-off has passed, so a passing failure does not blank its art for good', async () => {
+    const r = rig();
+    r.fail.add('bad.png');
+    r.store.register('bad', spec('crew', 'bad.png'));
+    r.store.request('bad');
+    await r.store.idle();
+    expect(r.store.state('bad')).toBe('failed');
+    r.clock.t = 1999;
+    r.store.get('bad'); // too soon: no new load
+    await r.store.idle();
+    expect(r.store.state('bad')).toBe('failed');
+    r.fail.delete('bad.png');
+    r.clock.t = 2000;
+    expect(r.store.get('bad')).toBeUndefined(); // queued again
+    await r.store.idle();
+    expect(r.store.get('bad')?.image).toBe('bad.png');
+  });
+  it('backs off longer after each failure in a row', async () => {
+    const r = rig();
+    r.fail.add('bad.png');
+    r.store.register('bad', spec('env', 'bad.png'));
+    r.store.request('bad');
+    await r.store.idle();
+    r.clock.t = 2000;
+    r.store.request('bad');
+    await r.store.idle(); // second failure at t 2000: next try after 4000 ms
+    r.clock.t = 5999;
+    r.store.request('bad');
+    expect(r.store.pending).toBe(0);
+    r.clock.t = 6000;
+    r.store.request('bad');
+    expect(r.store.pending).toBe(1);
+    await r.store.idle();
+  });
   it('reports decoded bytes per pool', async () => {
     const r = rig();
     r.store.register('a', spec('env', 'a.png'));

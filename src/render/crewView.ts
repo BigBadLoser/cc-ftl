@@ -1,4 +1,5 @@
 import { shipIdAtTile } from './regionRules';
+import { animNow } from './animClock';
 import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
@@ -114,7 +115,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
   const slots = new Map<number, Slot>();
   const tex = diamondTextures();
   let selected: number | null = null;
-  let last = performance.now();
+  let last = animNow();
 
   /** True if a grid has a ship (an EVA drift is drawn only while it does). */
   function hasShip(shipId: number): boolean {
@@ -182,7 +183,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
     const lv = host.light ? host.light(Math.round(tx), Math.round(ty)) : 255;
     const emergency = host.emergency?.() ?? false;
-    let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(performance.now()) : -1);
+    let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(animNow()) : -1);
     if (dead) tint = mulColor(tint, 0x7c7c7c);
     setFilterTint(s.filter, tint);
     setFilterZoom(s.filter, artZoom(L.scale));
@@ -212,7 +213,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
   }
 
   function update(): void {
-    const now = performance.now();
+    const now = animNow();
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
     const target = host.target();
@@ -254,7 +255,9 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const flight = !!drift; // eva_float only while drifting between the shuttle and the hull
         const dist = Math.hypot(tx - s.x, ty - s.y);
         const k = 1 - Math.exp(-dt * SMOOTH);
-        if (!s.placed || dist > 3) {
+        // Snap instead of smoothing when far off, or when the smoothed point is not a number (`!(dist <= 3)`): a NaN here would
+        // otherwise stick for good (NaN > 3 is false), leaving the figure undrawn while the status marks still show.
+        if (!s.placed || !(dist <= 3)) {
           s.x = tx;
           s.y = ty;
           s.placed = true;

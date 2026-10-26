@@ -1,12 +1,26 @@
 import { ART_SCALE } from './iso';
 
 /**
+ * Every fractional scale is a whole number of these (1/16): the half tile (64 x 32 world px) then spans a whole number
+ * of device px, so tiles and the sprites anchored on them land on the same device px. At 1/3 or 1/6 it spans 21.33 or
+ * 10.67 px, and with `roundPixels` each piece rounds on its own: neighbours end up a px apart (seams, off-by-one).
+ */
+export const SCALE_QUANTUM = 1 / 16;
+
+/**
  * Zoom levels (device px per art px) of the main camera. From 1 up they are whole numbers,
- * so the art stays crisp with nearest-neighbour. Below 1 come fractional levels down to 1/8: framing things far bigger
+ * so the art stays crisp with nearest-neighbour. Below 1 come fractional levels down to 1/8, each a multiple of
+ * SCALE_QUANTUM (3/16 and 3/8 stand where 1/6 and 1/3 were: about the same steps): framing things far bigger
  * than a ship (station hubs), and `1 / ART_SCALE` is the old zoom 1 (one art px per world px). The renderer draws every
  * level below 1 with linear filtering (`scene.ts` `setSmooth`) so the pixel art does not shimmer when shrunk.
  */
-const BELOW_ONE: readonly number[] = [...new Set([1 / 8, 1 / 6, 1 / 4, 1 / 3, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
+const BELOW_ONE: readonly number[] = [...new Set([1 / 8, 3 / 16, 1 / 4, 3 / 8, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
+
+/** A scale snapped down to an aligned one: a whole number from 1 up, a whole number of SCALE_QUANTUM below (at least one). */
+export function alignedScale(s: number): number {
+  if (s >= 1) return Math.floor(s + 1e-9);
+  return Math.max(SCALE_QUANTUM, Math.floor(s / SCALE_QUANTUM + 1e-9) * SCALE_QUANTUM);
+}
 
 /** Every allowed zoom up to `max`, ascending. */
 export function zoomLevels(max: number): number[] {
@@ -133,7 +147,8 @@ export function createCamera(maxZoom: number): Camera {
       cy = a.y - (py - h / 2) / scale();
     },
     setExactScale(s) {
-      zoom = s;
+      // Snapped down to an aligned scale, so the panel's tiles and sprites stay on whole device px (see SCALE_QUANTUM).
+      zoom = alignedScale(s);
     },
     centerOn(ax, ay) {
       cx = ax;
