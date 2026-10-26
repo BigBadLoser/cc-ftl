@@ -32,8 +32,8 @@ def prism(k, ax, plane, u0, u1, prof, fam, lvl, cols=None, cap=None, mitre=(Fals
     by each point's depth (times the mitre: True / 1 for a square corner, its diagonal; sqrt 2 - 1 for a 45-degree
     chamfer, the 135-degree joint's bisector), so it meets the next part."""
     o, up = T.OUT(ax), Vector((0, 0, 1))
-    ua = [u0 - d * float(mitre[0]) for d, _ in prof]
-    ub = [u1 + d * float(mitre[1]) for d, _ in prof]
+    ua = [u0 - (mitre[0](d, z) if callable(mitre[0]) else d * float(mitre[0])) for d, z in prof]  # (a callable:
+    ub = [u1 + (mitre[1](d, z) if callable(mitre[1]) else d * float(mitre[1])) for d, z in prof]  # the run-on)
     n = len(prof)
     dc, zc = sum(q[0] for q in prof) / n, sum(q[1] for q in prof) / n
     for i in range(n):
@@ -741,8 +741,9 @@ def corner_piece(k, X, Y, C, prof, fam, lvl, cols=None, cap=None):
     chamfer on the corner, at any depth, has the same width and the same two edges on screen (the joints run along
     x = y, straight at the camera), and it meets the faces' parts (prism with mitre=True at u = X - C)."""
     n_, up = Vector((R2, R2, 0)), Vector((0, 0, 1))
-    J1 = [Vector((X - C + d, Y + d, z)) for d, z in prof]
-    J2 = [Vector((X + d, Y - C + d, z)) for d, z in prof]
+    c = C if callable(C) else (lambda z: C)             # (C a callable: the chamfer by height)
+    J1 = [Vector((X - c(z) + d, Y + d, z)) for d, z in prof]
+    J2 = [Vector((X + d, Y - c(z) + d, z)) for d, z in prof]
     m = len(prof)
     dc, zc = sum(q[0] for q in prof) / m, sum(q[1] for q in prof) / m
     for i in range(m):
