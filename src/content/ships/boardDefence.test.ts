@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, CrewC, DeadC, DownedC, EquipC, FighterC, SurrenderedC, HealthC, PositionC, newGame, spawnCrew, type Sim, type SimEvent } from '../../sim';
+import { sightLine } from '../../sim/fight/los';
+import { AllegianceC, CrewC, DeadC, DownedC, EquipC, FighterC, JobC, PathC, Struct, shipGrid, SurrenderedC, HealthC, PositionC, newGame, spawnCrew, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 
@@ -71,5 +72,54 @@ describe('combat onboarding: undrafted crew vs boarders', () => {
     sim.world.add(b, AllegianceC, { faction: 'player' });
     run(sim, 20 * 2);
     expect(player(sim).every((c) => (sim.world.get(c, FighterC)?.mode ?? 'idle') === 'idle')).toBe(true);
+  });
+
+  it('a fleeing crew member rescues a downed one who is out of the boarders\' sight', { timeout: 60000 }, () => {
+    const sim = newGame(1, content);
+    run(sim, 20 * 5);
+    const grid = shipGrid(sim, ownShip(sim))!;
+    const [boarder] = land(sim, 1) as [number];
+    sim.world.remove(boarder, EquipC);
+    sim.world.get(boarder, HealthC)!.hp = 1e9;
+    sim.world.get(boarder, HealthC)!.max = 1e9;
+    const at = sim.world.get(boarder, PositionC)!;
+    const spot = { x: at.x, y: at.y };
+    // Floor tiles the boarder cannot see and that are well away from it; the first two hold the patient and a rescuer.
+    const hidden: { x: number; y: number }[] = [];
+    for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+      for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+        if (grid.get('struct', x, y) === Struct.Floor && Math.hypot(x - spot.x, y - spot.y) > 8 && !sightLine(sim, grid, spot, { x, y }).visible) hidden.push({ x, y });
+      }
+    }
+    expect(hidden.length).toBeGreaterThan(4);
+    const [patientAt, rescuerAt] = [hidden[0]!, hidden[hidden.length - 1]!];
+    const crew = player(sim).filter((c) => sim.world.get(c, CrewC)!.role !== 'role.gunner');
+    const [patient, rescuer] = [crew[0]!, crew[1]!];
+    for (const [c, t] of [[patient, patientAt], [rescuer, rescuerAt]] as const) {
+      sim.world.add(c, PositionC, { x: t.x, y: t.y, toX: t.x, toY: t.y, progress: 0, facing: 0 });
+      sim.world.add(c, PathC, { steps: [] });
+    }
+    const pin = (): void => {
+      sim.world.add(boarder, PositionC, { x: spot.x, y: spot.y, toX: spot.x, toY: spot.y, progress: 0, facing: 0 });
+    };
+    for (let i = 0; i < 40; i++) {
+      run(sim, 1);
+      pin();
+    }
+    expect(sim.world.get(rescuer, FighterC)?.mode).toBe('flee'); // hiding first: it is the flee mode that used to block rescues
+    sim.world.get(patient, HealthC)!.hp = 0;
+    // Pin the boarder where it is (it cannot walk): the scene must stay hidden for the rescuer to be free to go.
+    sim.world.get(boarder, PathC)!.steps = [];
+    let rescued = false;
+    for (let i = 0; i < 20 * 40 && !rescued; i++) {
+      run(sim, 1);
+      pin();
+      for (const j of sim.world.query(JobC)) {
+        const job = sim.world.get(j, JobC)!;
+        if (job.kind === 'rescue' && job.target === patient && job.reservedBy && job.reservedBy !== patient) rescued = true;
+      }
+    }
+    expect(sim.world.has(patient, DownedC)).toBe(true);
+    expect(rescued).toBe(true);
   });
 });
