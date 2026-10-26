@@ -315,3 +315,48 @@ The ZIP README explains manifest merging and remaining integration work. Current
 main already selects healthy rotation and `.unpowered` assets; live damage/HP
 and flicker selection remain an integration concern. Content footprints stay
 reactor 2x2 and life support 1x2.
+
+## Reactor upgrade: 2x3 grey family study
+
+User requested larger related reactors, starting with 2x3 and later 2x4.
+`sprites/reactor_upgrade.py` is an independent, parameter-controlled tandem
+variant. The approved 2x2 sources and every locked reference remain unchanged.
+No 2x4 geometry or production sprites have been built yet.
+
+`artifacts/reactor-upgrade-v1/reactor-family.png` compares the approved 2x2,
+rendered in grey, against the new 2x3 at the same game display scale.
+`reactor-family-zoom.png` enlarges both with nearest-neighbour pixels.
+One standard-camera angle each; editable compressed Blender files and four-
+rotation footprint audits accompany the PNGs. Same pinned Blender 4.2.9,
+SS4/four samples, two threads, environment palette and shadow-free lighting.
+
+Family landmarks retained: .57 pressure-body radius, .73 crown radius,
+1.64 crown shoulder/lid datum, 1.781 overall height, the same faceted crown
+profile, recessed inspection slots, four diagonal struts per pressure section,
+locking dogs and lifting grips. Crown centres are 1.48 apart; the combined
+length is 2.892, within the three-tile envelope. Overall width is 1.899.
+All rotations fit; individual feet contact z=0. There is no floor slab.
+
+Comparison of the three largest changes from the approved reference:
+
+1. Two crowns replace one, without scaling either crown or chamber. Their
+   separation remains readable at normal game scale; neither crosses the grid.
+2. One raised lower casting and a central structural tie join the sections.
+   The two original small side pods become continuous long coolant housings,
+   so the result is one machine rather than two detached reactors.
+3. The single low service face moves to the centre of that shared housing.
+   The grey blockout still has broad plain housing faces; seated plumbing,
+   exchanger fins, service hardware and finish are deliberately pending review.
+
+The primary geometry is ready for user review. This is a family design study,
+not a claim to reconstruct an external image. No runtime or live assets changed.
+
+```sh
+SPRITE_PREVIEW=0 SPRITE_SS=4 SPRITE_SAMPLES=4 \
+  /workspace/blender-tools/blender-4.2.9-linux-x64/blender -b -t 2 \
+  --factory-startup --python-exit-code 1 \
+  --python tools/blender/review/reactor_upgrade_preview.py -- \
+  --out artifacts/reactor-upgrade-v1
+python3 tools/blender/review/reactor_upgrade_preview.py --compose \
+  --out artifacts/reactor-upgrade-v1
+```
