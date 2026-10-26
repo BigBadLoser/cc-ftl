@@ -1,4 +1,5 @@
 import { Graphics } from 'pixi.js';
+import { animNow } from './animClock';
 import type { Grid } from '../sim/grid';
 import { DoorJam, Struct } from '../sim/structure';
 import type { Atlas } from './assets/loader';
@@ -68,7 +69,7 @@ export function createJamMarks(grid: Grid, atlas: Atlas, L: Layers): JamMarks {
         rebuild();
       }
       if (owned.length && ++tick % 3 === 0) {
-        const a = 0.75 + 0.25 * Math.sin(performance.now() / 260);
+        const a = 0.75 + 0.25 * Math.sin(animNow() / 260);
         for (const o of owned) o.alpha = a;
       }
     },

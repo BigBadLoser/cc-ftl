@@ -1,14 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { createCamera, floorLevel, nearestLevel, zoomLevels } from './camera';
+import { alignedScale, createCamera, floorLevel, nearestLevel, SCALE_QUANTUM, zoomLevels } from './camera';
 import { ART_SCALE } from './iso';
 
 /** The fractional levels: down to 1/8 (station hubs), with 1 / ART_SCALE among them. */
-const below = [...new Set([1 / 8, 1 / 6, 1 / 4, 1 / 3, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
+const below = [...new Set([1 / 8, 3 / 16, 1 / 4, 3 / 8, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
 
 describe('zoom levels', () => {
   it('are whole numbers from 1 up, plus fractional ones below 1 down to 1/8', () => {
     expect(zoomLevels(3)).toEqual([...below, 1, 2, 3]);
     expect(zoomLevels(1).every((z) => z <= 1)).toBe(true);
+  });
+  it('keep the tile grid on whole device px at every level (no seams between tiles and the sprites on them)', () => {
+    // The half tile is 64 x 32 world px; at an unaligned scale (1/3: 21.33 px) neighbours round apart.
+    for (const z of zoomLevels(4)) {
+      expect(Number.isInteger(64 * z) && Number.isInteger(32 * z), `level ${z}`).toBe(true);
+      expect(Number.isInteger(z / SCALE_QUANTUM) || Number.isInteger(z), `level ${z}`).toBe(true);
+    }
+  });
+  it('alignedScale snaps a fitted scale down to an aligned one', () => {
+    expect(alignedScale(1 / 3)).toBe(5 / 16);
+    expect(alignedScale(0.01)).toBe(SCALE_QUANTUM);
+    expect(alignedScale(0.75)).toBe(0.75);
+    expect(alignedScale(1.4)).toBe(1);
+    expect(alignedScale(2)).toBe(2);
+    const cam = createCamera(3);
+    cam.setExactScale(0.7);
+    expect(cam.scale).toBe(11 / 16);
   });
   it('floorLevel never exceeds the fit, and falls back to the smallest level', () => {
     const l = zoomLevels(4);
@@ -62,10 +79,10 @@ describe('framing big things', () => {
     const cam = createCamera(3);
     cam.resize(1440, 900, 1);
     cam.fitZoom(0.2);
-    expect(cam.zoom).toBe(1 / 6);
+    expect(cam.zoom).toBe(3 / 16);
     cam.fitZoom(0.01);
     expect(cam.zoom).toBe(1 / 8);
     cam.zoomAt(2, 700, 450);
-    expect(cam.zoom).toBe(1 / 6);
+    expect(cam.zoom).toBe(3 / 16);
   });
 });
