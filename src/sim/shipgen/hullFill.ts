@@ -46,6 +46,32 @@ export function plate(A: Arranger, maxGap: number, label = 'patch plates', donor
   return addPlate(A, [...cells.values()], label, donor);
 }
 
+/**
+ * Lengthways slots: runs of at most `maxGap` space cells between an east-facing and a west-facing hull wall (a spine
+ * section and its drive bank, the pods of a drive cluster). Frames and trusses (`bare`) keep their gaps.
+ */
+export function slots(A: Arranger, maxGap: number, label: string): number {
+  const owner = new Map<number, number>();
+  A.placed.forEach((p, i) => p.block.rows.forEach((row, j) => { for (let k = 0; k < row.length; k++) if (row[k] === '#') owner.set(key(p.x + k, p.y + j), i); }));
+  const walled = (x: number, y: number): number | undefined => {
+    const o = owner.get(key(x, y));
+    return o !== undefined && A.cell(x, y) === '#' && !A.placed[o]?.block.bare ? o : undefined;
+  };
+  const b = A.box();
+  const cells: Cell[] = [];
+  for (let y = b.y0; y <= b.y1; y++) {
+    for (let x = b.x0; x <= b.x1; x++) {
+      if (walled(x, y) === undefined || A.cell(x + 1, y) !== undefined) continue;
+      let n = 1;
+      while (n <= maxGap && free(A, x + n, y)) n++;
+      const c = walled(x + n, y);
+      if (n === 1 || c === undefined) continue;
+      for (let i = 1; i < n; i++) cells.push({ x: x + i, y });
+    }
+  }
+  return addPlate(A, cells, label);
+}
+
 /** Enclosed space (courtyards with no way out to open space), as connected regions of cells. */
 function enclosed(A: Arranger): Cell[][] {
   const b = A.box();

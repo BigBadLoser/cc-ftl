@@ -34,11 +34,11 @@ function mount(c: Ctx, parent: number, side: Side, p: Block, strut: number, at?:
  * struts from the profile at each socket. When they do not fit in one row they stagger into two, every other pod
  * out on a longer strut, so a crowded face stays ordered instead of clumping. Falls back to any free spot.
  */
-function socketed(c: Ctx, host: number, len: number, side: Side, specs: RoomSpec[], p: Profile, ends = false): boolean {
+function socketed(c: Ctx, host: number, len: number, side: Side, specs: RoomSpec[], p: Profile, ends = false, flat = false): boolean {
   const blocks = specs.map((s) => pod(c, s));
   const across: Side = side === 'n' || side === 's' ? 'e' : 'n';
   const used = blocks.reduce((t, b) => t + podLen(b, side), 0);
-  const stagger = blocks.length > 1 && used + blocks.length + 1 > len;
+  const stagger = !flat && blocks.length > 1 && used + blocks.length + 1 > len;
   const gap = Math.max(0, Math.floor((len - used) / (blocks.length + 1)));
   const step = stagger ? Math.max(2, Math.floor((len - podLen(blocks[blocks.length - 1] as Block, side)) / (blocks.length - 1))) : 0;
   const outer = stagger ? Math.max(...blocks.map((b) => podLen(b, across))) + 1 : 0;
@@ -154,7 +154,11 @@ function stores(c: Ctx, on: number, n: number): void {
 
 /** A carrier of the frame: a beam (or crawl) with the faces pods may ride on, fore-to-aft or bottom-to-top length. */
 /** `ends`: pods go to the carrier's two ends first (corner pods), then evenly between. */
-interface Carrier { id: number; len: number; faces: Side[]; ends?: boolean }
+/** A pod carrier; `inner` is a face looking into the frame (between prongs): its pods hug it, one row, no struts. */
+interface Carrier { id: number; len: number; faces: Side[]; ends?: boolean; inner?: Side }
+
+/** No struts: pods flush on the carrier. */
+const FLAT: Profile = { lo: 0, hi: 0, peak: 0.5, plateau: 0 };
 
 /** A beam on a face of `host`; `along` lays it across that face instead of out from it (cross pieces, rails). */
 const beamOn = (c: Ctx, host: number, side: Side, len: number, thick: number, align: 'start' | 'mid' | 'end' | 'flush' = 'mid', along = false): number | null =>
@@ -190,9 +194,10 @@ function frame(c: Ctx, core: number, topo: Topology, run: number, thick: number,
     for (const a of ['start', 'end'] as const) {
       const pr = beamOn(c, cross, 'w', run, thick, a);
       if (pr === null) return false;
-      // Outer faces always; the inner ones too when the prongs stand far enough apart for pods on both.
+      // Outer faces always. When the prongs stand far enough apart, the upper prong's inner face too (pods flush on
+      // it, so they never meet the lower prong or crowd against the stem).
       const outer: Side = a === 'start' ? 'n' : 's';
-      out.push({ id: pr, len: run, faces: sep >= 6 ? [outer, outer === 'n' ? 's' : 'n'] : [outer] });
+      out.push(sep >= 6 && a === 'start' ? { id: pr, len: run, faces: [outer, 's'], inner: 's' } : { id: pr, len: run, faces: [outer] });
     }
     tips.push(cross);
     return true;
@@ -261,13 +266,14 @@ function frame(c: Ctx, core: number, topo: Topology, run: number, thick: number,
 /** Share the pods out over the carriers' faces by length, then socket each face. */
 function load(c: Ctx, carriers: Carrier[], specs: RoomSpec[], p: Profile): boolean {
   // Each face's share is seeded (some ships load the flanks, others the bow), within what fits.
-  const faces = carriers.flatMap((k) => k.faces.map((f) => ({ k, f, list: [] as RoomSpec[], room: k.len * (0.7 + 0.6 * c.rng.next()) })));
+  // Inner faces take a smaller share (one row of flush pods).
+  const faces = carriers.flatMap((k) => k.faces.map((f) => ({ k, f, list: [] as RoomSpec[], room: k.len * (0.7 + 0.6 * c.rng.next()) * (f === k.inner ? 0.5 : 1) })));
   for (const s of specs) {
     const f = faces.reduce((a, b) => (b.room > a.room ? b : a));
     f.list.push(s);
     f.room -= s.w + 3;
   }
-  return faces.every((f) => f.list.length === 0 || socketed(c, f.k.id, f.k.len, f.f, f.list, p, f.k.ends));
+  return faces.every((f) => f.list.length === 0 || socketed(c, f.k.id, f.k.len, f.f, f.list, f.f === f.k.inner ? FLAT : p, f.k.ends, f.f === f.k.inner));
 }
 
 /**
@@ -363,20 +369,30 @@ function cluster(c: Ctx): boolean {
   const p = rollProfile(() => c.rng.next(), 0, c.rng.int(1, 2), [0.3, 0.7]);
   const per = c.rng.int(1, 2);
   const nodes: number[] = [core];
+  // Nodes already linked lengthways: a node takes at most one lengthways link, so no three nodes run in one line (a
+  // straight run reads as a comb on a spine). Links up and down step sideways (aligned to a node's end) and stay free.
+  const along = new Set<number>();
   let placed = 0;
-  for (let guard = 0; placed < all.length && guard < 40; guard++) {
+  for (let guard = 0; placed < all.length && guard < 60; guard++) {
     const list = all.slice(placed, placed + per);
     // Any earlier node, any face but the core's bow: the lattice grows in two dimensions, never a spine.
     const from = c.rng.pick(nodes);
-    const side = c.rng.pick(from === core ? (['n', 's', 'e'] as const) : (['n', 's', 'e', 'w'] as const));
+    // Aft counts three times: swarms still stretch lengthways, through runs of two that step up or down between them.
+    const sides = (from === core ? (['n', 's', 'e', 'e', 'e'] as const) : (['n', 's', 'e', 'e', 'e', 'w'] as const)).filter((d) => d === 'n' || d === 's' || !along.has(from));
+    const side = c.rng.pick(sides);
     const vertical = side === 'n' || side === 's';
+    const mark = c.A.placed.length;
     const link = c.A.attach(from, crawl(c.rng, c.rng.int(1, 2), !vertical), { side, align: 'any', doors: 1 });
     if (link === null) continue;
-    const len = runOf(list);
+    const len = runOf(list, 1);
     const node = c.A.attach(link, crawl(c.rng, len, true), { side, align: vertical ? c.rng.pick(['start', 'end'] as const) : 'mid', doors: 1 });
-    if (node === null) { c.A.undoLast(); continue; }
-    if (!bothSides(c, node, len, list, p)) return no(c, 'node');
+    // A node whose pods find no sockets (crowded by its neighbours) is taken back, and the lattice grows elsewhere.
+    if (node === null || !bothSides(c, node, len, list, p)) {
+      while (c.A.placed.length > mark) c.A.undoLast();
+      continue;
+    }
     nodes.push(node);
+    if (!vertical) { along.add(from); along.add(node); }
     placed += list.length;
   }
   if (placed < all.length) return no(c, 'lattice');

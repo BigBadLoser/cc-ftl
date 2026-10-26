@@ -5,7 +5,7 @@ import { storeRoom } from './droneBlocks';
 import { dockBlock, podBlock } from './navyBlocks';
 import { no, type Ctx } from './navyKit';
 import { pickWeighted, shuffle } from './plan';
-import { DONORS, leftovers, poolOf, clonePool, restorePool, type Need, type Pool } from './scrapDonors';
+import { DONORS, leftovers, poolOf, clonePool, restorePool, smallness, type Need, type Pool } from './scrapDonors';
 import type { DonorKind, FactionDef, ScrapGrammar } from './types';
 
 /**
@@ -21,21 +21,33 @@ import type { DonorKind, FactionDef, ScrapGrammar } from './types';
 const OPP: Record<Side, Side> = { n: 's', s: 'n', e: 'w', w: 'e' };
 const NEEDS: Need[] = ['command', 'hangar', 'crew', 'guns', 'crates', 'drive'];
 
-/** Donors for this ship: the anchor, one per job nobody carries yet, then extras the role likes. */
+/**
+ * Donors for this ship: the anchor, one per job nobody carries yet, then extras the role likes. Small ships lean on
+ * light donors and on donors that carry several of the open jobs at once, and take fewer extras, so they need fewer
+ * and smaller pieces.
+ */
 function choose(c: Ctx): DonorKind[] {
   const w = c.fam.donors ?? {};
   const kinds = Object.keys(w) as DonorKind[];
-  const anchor = c.fam.anchors && c.fam.anchors.length > 0 ? pickWeighted(c.rng, c.fam.anchors) : 'freighter';
+  const s = smallness(c.plan);
+  const light = (k: DonorKind): number => DONORS[k].small ** s;
+  const anchors = c.fam.anchors?.map((a) => ({ value: a.value, weight: a.weight * light(a.value) }));
+  const anchor = anchors && anchors.length > 0 ? pickWeighted(c.rng, anchors) : 'freighter';
   const out: DonorKind[] = [anchor];
+  const open = (need: Need): boolean => !(need === 'hangar' && c.plan.hangars.length === 0) && !out.some((k) => DONORS[k].serves.includes(need));
   for (const need of NEEDS) {
-    if (need === 'hangar' && c.plan.hangars.length === 0) continue;
-    if (out.some((k) => DONORS[k].serves.includes(need))) continue;
+    if (!open(need)) continue;
     const opts = kinds.filter((k) => DONORS[k].serves.includes(need) && (w[k] ?? 0) > 0);
-    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
+    const carry = (k: DonorKind): number => 1 + s * (DONORS[k].serves.filter(open).length - 1);
+    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: (w[k] ?? 0) * light(k) * carry(k) }))));
   }
-  for (let n = c.rng.int(0, 1 + Math.floor(c.plan.size / 2)); n > 0; n--) {
-    const opts = kinds.filter((k) => (w[k] ?? 0) > 0 && out.filter((x) => x === k).length < 2 && !['navyBow', 'tug', 'navyDrive'].includes(k));
-    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
+  // The smallest ships take at most one extra, and only a light one (pod string, liner segment, drone guns).
+  const n0 = c.rng.int(0, 1 + Math.floor(c.plan.size / 2));
+  const tiny = s > 0.5;
+  for (let n = tiny ? Math.min(1, n0) : Math.floor(n0 * (1 - s)); n > 0; n--) {
+    const opts = kinds.filter((k) => (w[k] ?? 0) > 0 && out.filter((x) => x === k).length < 2 && !['navyBow', 'tug', 'navyDrive'].includes(k)
+      && (!tiny || (DONORS[k].small > 1 && !DONORS[k].serves.includes('command'))));
+    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: (w[k] ?? 0) * light(k) }))));
   }
   return out;
 }

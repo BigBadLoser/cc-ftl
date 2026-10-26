@@ -164,6 +164,8 @@ export interface TransitionStyle {
   /** 0 for regular stairs; up to 1 for ragged, improvised plating. */
   jitter: number;
   label: string;
+  /** Plate over lengthways slots (space between two blocks' end walls, e.g. a spine and its drive bank) up to this wide. */
+  slots?: number;
 }
 
 /** Diagnostic metric bands: a generated ship outside a band is rejected and reseeded. */
