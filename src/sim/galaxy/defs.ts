@@ -108,7 +108,7 @@ export interface StructureDef {
   badge: string;
   /** Items the node is a source of: a hint for the UI and for later mining, salvage and stores. */
   resources: readonly string[];
-  /** Chance per node of holding one (asteroids, derelicts), plus `perDanger` per danger tier. Stations are placed per sector. */
+  /** Chance per node of holding one (asteroids, derelicts), plus `perDanger` per danger tier. A station with a chance is an extra one (research), rolled per node outside hostile space; the others are placed per sector. */
   chance?: number;
   perDanger?: number;
   /** Services a station offers ('fuel', 'trade', 'repair', 'recruit'); the trade layer reads them. */
