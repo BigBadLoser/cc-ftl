@@ -134,6 +134,8 @@ export interface MarketRates {
 export interface MarketContent {
   profiles: Record<PortKind, string | null>;
   farm: { profile: string; chance: number };
+  /** The trade profile of a research station's market (instead of the plain station profile). */
+  research?: string;
   rates: Record<string, MarketRates>;
   goods: readonly string[];
 }

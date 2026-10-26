@@ -4,6 +4,7 @@
 |-------|--------|---------|--------|---------|
 | Universal Base Characters [Standard] (free), `Superhero_Male_FullBody` | Quaternius | CC0 1.0 (public domain dedication) | https://quaternius.itch.io/universal-base-characters (also https://quaternius.com/packs/universalbasecharacters.html) | `public/assets/crew/human/base_cc0.glb` (restyled mesh and rig, by `tools/blender/crew/base_import.py`) |
 | Universal Animation Library [Standard] (free), `UAL1_Standard.glb` | Quaternius | CC0 1.0 (public domain dedication) | https://quaternius.itch.io/universal-animation-library (also https://quaternius.com/packs/universalanimationlibrary.html) | idle, walk, work, sit and sleep clips in `base_cc0.glb` |
+| Tabler Icons (outline set), v3.49.0 | Paweł Kuna and contributors | MIT | https://tabler.io/icons (https://github.com/tabler/tabler-icons) | the UI line icons in `src/ui/Icon.svelte` (only the files listed in `src/ui/tablerIcons.ts` are bundled) |
 
 Licence text: https://creativecommons.org/publicdomain/zero/1.0/ . Both packs ship a `License*.txt` that states
 "CC0 1.0 Universal (CC0 1.0) Public Domain Dedication"; both itch.io pages list "Creative Commons Zero v1.0

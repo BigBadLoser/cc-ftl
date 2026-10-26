@@ -11,7 +11,7 @@
   type Tab = 'trade' | 'jobs' | 'crew' | 'blueprints';
   let tab = $state<Tab>('trade');
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
-  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], max: 0 });
+  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], max: 0, mine: null });
   onMount(() => {
     const u = [api.trade.subscribe((t) => (trade = t)), api.jobs.subscribe((j) => (jobs = j))];
     return () => u.forEach((f) => f());

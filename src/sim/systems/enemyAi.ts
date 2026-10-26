@@ -2,11 +2,10 @@
 import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
 import { isDormant } from '../combat/dormant';
 import { factionsHostile, isAiFaction } from '../combat/factions';
-import { modulesOnGrid, randomModule } from '../combat/targets';
+import { hostileVehicle, modulesOnGrid, randomModule } from '../combat/targets';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
-import { vehicleFaction } from '../vehicles/lifecycle';
 import { AI_RETARGET_TICKS, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
 
 /**
@@ -14,7 +13,7 @@ import { AI_RETARGET_TICKS, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
  * is charged, (b) never hold fire, and (c) every AI_RETARGET_TICKS pick a target on the first live player ship
  * (else any ship at war with them; rogue AIs fight raiders too) when theirs is missing or destroyed: 'weapons' doctrine aims at weapon modules, 'shields' at shield
  * generators, 'random' at any module weighted by max hp. A hostile shuttle of another faction in flight is targeted
- * before any ship. The AI only issues commands, like the player does.
+ * by the anti-vehicle weapons only (the others keep their ship target). The AI only issues commands, like the player does.
  */
 export function enemyAiSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC, CombatC)) {
@@ -31,13 +30,9 @@ export function enemyAiSystem(sim: Sim): void {
       continue;
     }
     const fv = flyingFoeVehicle(sim, ship.faction);
-    if (fv) {
-      // A foe shuttle in flight is shot down first (all weapons; the ship-wide target).
-      if (combat.target?.vehicle !== fv) {
-        combat.aiTimer = AI_RETARGET_TICKS;
-        sim.enqueue({ type: 'combat.setTarget', ship: id, weaponId: null, targetShip: 0, targetModuleId: 0, targetVehicle: fv });
-      }
-      continue;
+    // A foe shuttle in flight is hunted by the anti-vehicle weapons only; the rest keep shooting the ship below.
+    if (fv && combat.vehicleTarget !== fv) {
+      sim.enqueue({ type: 'combat.setTarget', ship: id, weaponId: null, targetShip: 0, targetModuleId: 0, targetVehicle: fv });
     }
     const foe = firstFoe(sim, ship.faction);
     if (!foe) continue;
@@ -49,11 +44,10 @@ export function enemyAiSystem(sim: Sim): void {
   }
 }
 
-/** The first shuttle in flight that belongs to a different faction, or 0. */
-function flyingFoeVehicle(sim: Sim, faction: string): number {
+/** The first shuttle in flight that is hostile to `faction` (the same test targeting keeps it by), or 0. */
+function flyingFoeVehicle(sim: Sim, faction: Ship['faction']): number {
   for (const id of sim.world.query(VehicleC)) {
-    const v = sim.world.get(id, VehicleC);
-    if (v?.state === 'flying' && vehicleFaction(sim, v) !== faction) return id;
+    if (sim.world.get(id, VehicleC)?.state === 'flying' && hostileVehicle(sim, id, faction)) return id;
   }
   return 0;
 }

@@ -1,4 +1,5 @@
 import type { Sim } from '../sim';
+import type { ModuleDef } from '../registry';
 
 /**
  * Blueprints. A module def with `ModuleDef.blueprint` can only be built once its blueprint is known; every other def is a basic one,
@@ -12,4 +13,9 @@ export function isKnown(sim: Sim, def: string): boolean {
 /** Learn a blueprint (idempotent). */
 export function learn(sim: Sim, def: string): void {
   if (!sim.story.blueprints.includes(def)) sim.story.blueprints.push(def);
+}
+
+/** Which station type sells a blueprint: military stations sell defence modules (weapons, shields), research stations the rest. */
+export function blueprintVenue(d: ModuleDef): 'research' | 'military' {
+  return d.category === 'defence' ? 'military' : 'research';
 }

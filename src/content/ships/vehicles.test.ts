@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AboardC, BodyC, CrewC, DeadC, DownedC, ModuleC, PositionC, VehicleBayC, VehicleC, destroyVehicle, deserialize, newGame, serialize, accessTile, boardingTile, footprintTiles, isTileWalkable, rotatedSize, storageAdd, vehicleViews, type ContentRegistry, type ModuleDef, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
+import { missileRaiderId, shuttleContent } from './shuttleFixture';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
 
@@ -125,8 +126,8 @@ describe('shuttle round trip', () => {
 });
 
 describe('shuttle combat', () => {
-  it('is shot down in flight by an armed raider, and everyone aboard dies', () => {
-    const sim = setup();
+  it('is shot down in flight by a raider with a missile launcher, and everyone aboard dies', () => {
+    const sim = setup(1, shuttleContent, missileRaiderId);
     const shuttle = shuttleOf(sim, 1);
     const crew = crewOn(sim, 1).slice(0, 2);
     embark(sim, crew, shuttle);

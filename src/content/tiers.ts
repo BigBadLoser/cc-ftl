@@ -9,7 +9,7 @@ import { modules as base } from './modules';
  * All the numbers are here, provisional, to tune in one place. A tier lists only what differs from Mk I.
  *  - `footprint`: grows per tier, always along its local y (the hull-edge engine grows inboard).
  *  - `minDanger` / `price`: the station danger tier a blueprint is sold from, and its base price (the sale price grows with danger).
- *  - `tint`: the placeholder art tint (see `ModuleDef.tierArt`).
+ *  - `tint`: the placeholder outline colour (see `ModuleDef.tierArt`, render/tierArt.ts).
  */
 interface Tier {
   footprint: [number, number];
@@ -22,8 +22,8 @@ interface Tier {
   tint: number;
 }
 
-const MK2_TINT = 0xa8e4ff;
-const MK3_TINT = 0xffd27a;
+const MK2_TINT = 0x3fa0ff;
+const MK3_TINT = 0xffc83a;
 
 /** Reactor power: 50 / 100 / 180. */
 const REACTOR: Record<2 | 3, Tier & { heatPerSec: number }> = {
@@ -61,7 +61,7 @@ function tiered<T extends Tier>(id: keyof typeof base, tiers: Record<2 | 3, T>, 
     delete rest.roofAsset;
     delete rest.deploySec;
     out[`${id}.mk${n}`] = {
-      ...rest, name: `${mk1.name} ${NAME[n]}`, footprint: t.footprint, power: t.power, maxHp: t.maxHp, buildWork: t.buildWork, cost: t.cost,
+      ...rest, name: `${mk1.name.replace('Shield generator', 'Shield gen')} ${NAME[n]}`, footprint: t.footprint, power: t.power, maxHp: t.maxHp, buildWork: t.buildWork, cost: t.cost,
       blueprint: { tier: n, minDanger: t.minDanger, price: t.price }, tierArt: { base: mk1.footprint, tint: t.tint }, ...extra(t),
     };
   }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ModuleC, deserialize, engineFuelFactor, galaxyIndex, isBlueprintKnown, jumpFuel, newGame, playerShip, portBlueprints, serialize, shieldCapacity, shipGrid, type ModuleDef, type Sim,
+  ModuleC, deserialize, engineFuelFactor, galaxyIndex, isBlueprintKnown, nodeOf, jumpFuel, newGame, playerShip, portBlueprints, SAVE_VERSION, serialize, shieldCapacity, shipGrid, type ModuleDef, type Sim, type StructureDef,
 } from '../sim';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { ensureAround } from '../sim/galaxy/state';
@@ -26,17 +26,24 @@ const step = (sim: Sim, n = 1): void => {
 };
 const rejected = (sim: Sim, command: string): string[] => sim.events.drain().flatMap((e) => (e.type === 'command.rejected' && e.command === command ? [e.reason] : []));
 
-/** A game whose player is at a node with a blueprint stall of at least `danger`, with credits to spend. */
-function atBlueprintStation(minDanger: number): { sim: Sim; port: string } {
-  const sim = newGame(7, content);
-  step(sim, 2);
-  sim.enqueue({ type: 'debug.galaxyReveal', radius: 12 });
+/** The structure def a port stands for. */
+const structureOf = (sim: Sim, port: { id: string; node: string }): StructureDef | undefined =>
+  content.galaxy.structures[nodeOf(sim, port.node)!.structures[Number(port.id.slice(port.id.indexOf('#') + 1))]!.def as keyof typeof content.galaxy.structures];
+
+/** Every port of the revealed galaxy with its node, in a stable order. */
+function allPorts(sim: Sim): { id: string; node: string }[] {
+  sim.enqueue({ type: 'debug.galaxyReveal', radius: 14 });
   step(sim);
-  const nodes = [...galaxyIndex(sim.galaxy).nodes.values()].filter((n) => n.danger >= minDanger).sort((a, b) => (a.id < b.id ? -1 : 1));
-  for (const n of nodes) {
-    const p = portsAt(sim, n.id).find((q) => portBlueprints(sim, q).length > 0);
-    if (!p) continue;
-    sim.enqueue({ type: 'debug.galaxyTeleport', node: n.id });
+  return [...galaxyIndex(sim.galaxy).nodes.values()].sort((a, b) => (a.id < b.id ? -1 : 1)).flatMap((n) => portsAt(sim, n.id));
+}
+
+/** A game whose player is at a node with a stall selling `want` (a def id), with credits to spend. */
+function atBlueprintStation(want: string): { sim: Sim; port: string } {
+  const sim = newGame(3, content); // a seed with deep research stations near the start
+  step(sim, 2);
+  for (const p of allPorts(sim)) {
+    if (!portBlueprints(sim, p as never).some((o) => o.def === want)) continue;
+    sim.enqueue({ type: 'debug.galaxyTeleport', node: p.node });
     step(sim);
     deploy(sim);
     step(sim, 25);
@@ -44,7 +51,7 @@ function atBlueprintStation(minDanger: number): { sim: Sim; port: string } {
     sim.events.drain();
     return { sim, port: p.id };
   }
-  throw new Error(`no blueprint station at danger ${minDanger}`);
+  throw new Error(`no station selling ${want}`);
 }
 
 /** Where a 2x2 reactor-sized module fits on the home ship: a floor tile with free floor around (found by trying the placement). */
@@ -81,19 +88,45 @@ describe('blueprints', () => {
   });
 
   it('Mk II is sold from the middle danger tiers and Mk III only deep, priced up with danger', () => {
-    const mid = atBlueprintStation(3);
-    const midOffers = portBlueprints(mid.sim, portsAt(mid.sim, mid.sim.galaxy.current).find((p) => p.id === mid.port)!);
-    expect(midOffers.some((o) => o.tier === 2)).toBe(true);
-    const deep = atBlueprintStation(6);
+    const mid = atBlueprintStation('module.reactor.mk2');
+    const midPort = portsAt(mid.sim, mid.sim.galaxy.current).find((p) => p.id === mid.port)!;
+    expect(nodeOf(mid.sim, midPort.node)!.danger).toBeGreaterThanOrEqual(3);
+    expect(portBlueprints(mid.sim, midPort).some((o) => o.tier === 3)).toBe(nodeOf(mid.sim, midPort.node)!.danger >= 6);
+    const deep = atBlueprintStation('module.reactor.mk3');
     const port = portsAt(deep.sim, deep.sim.galaxy.current).find((p) => p.id === deep.port)!;
-    const offers = portBlueprints(deep.sim, port);
-    expect(offers.some((o) => o.tier === 3)).toBe(true);
-    const mk2 = offers.find((o) => o.def === 'module.reactor.mk2')!;
-    expect(mk2.price).toBeGreaterThan(m['module.reactor.mk2']!.blueprint!.price);
+    const danger = nodeOf(deep.sim, port.node)!.danger;
+    expect(danger).toBeGreaterThanOrEqual(6);
+    const mk2 = portBlueprints(deep.sim, port).find((o) => o.def === 'module.reactor.mk2')!;
+    expect(mk2.price).toBe(Math.round(m['module.reactor.mk2']!.blueprint!.price * (1 + 0.15 * danger)));
+  });
+
+  it('trading stations sell no blueprints; research stations sell reactor and engine tiers; military stations sell shield tiers', () => {
+    const sim = newGame(3, content);
+    step(sim, 2);
+    const seen = { trade: 0, research: 0, military: 0 };
+    const offered = { research: new Set<string>(), military: new Set<string>() };
+    for (const p of allPorts(sim)) {
+      const kind = structureOf(sim, p)?.station;
+      const offers = portBlueprints(sim, p as never);
+      if (kind === 'trade') {
+        seen.trade++;
+        expect(offers, p.id).toEqual([]);
+      } else if (kind === 'research' || kind === 'military') {
+        seen[kind]++;
+        for (const o of offers) offered[kind].add(o.def);
+      } else expect(offers, p.id).toEqual([]);
+    }
+    expect(seen.trade).toBeGreaterThan(0);
+    expect(seen.research).toBeGreaterThan(0);
+    expect(seen.military).toBeGreaterThan(0);
+    expect([...offered.research].every((d) => m[d]!.category !== 'defence')).toBe(true);
+    expect(offered.research.has('module.reactor.mk2') && offered.research.has('module.engine.mk2')).toBe(true);
+    expect(offered.military.size).toBeGreaterThan(0);
+    expect([...offered.military].every((d) => m[d]!.category === 'defence' && d.startsWith('module.shieldGen.'))).toBe(true);
   });
 
   it('a blueprint bought at a deep station can then be built; a second purchase and a broke player are refused', () => {
-    const { sim, port } = atBlueprintStation(6);
+    const { sim, port } = atBlueprintStation('module.reactor.mk3');
     const def = 'module.reactor.mk2';
     const price = portBlueprints(sim, portsAt(sim, sim.galaxy.current).find((p) => p.id === port)!).find((o) => o.def === def)!.price;
     sim.trade.credits = price - 1;
@@ -113,12 +146,21 @@ describe('blueprints', () => {
     expect(rejected(sim, 'blueprint.buy')).toEqual(['alreadyKnown']);
   });
 
-  it('a save round-trip keeps the known set', () => {
-    const { sim, port } = atBlueprintStation(6);
+  it('a research station refuses to sell a defence blueprint', () => {
+    const { sim, port } = atBlueprintStation('module.reactor.mk2');
+    sim.enqueue({ type: 'blueprint.buy', port, def: 'module.shieldGen.mk2' });
+    step(sim);
+    expect(rejected(sim, 'blueprint.buy')).toEqual(['noOffer']);
+  });
+
+  it('a save round-trip at v54 keeps the known set', () => {
+    const { sim, port } = atBlueprintStation('module.engine.mk3');
     sim.enqueue({ type: 'blueprint.buy', port, def: 'module.engine.mk3' });
     step(sim);
     expect(isBlueprintKnown(sim, 'module.engine.mk3')).toBe(true);
-    const back = deserialize(serialize(sim), content);
+    const saved = serialize(sim);
+    expect(JSON.parse(saved).version ?? SAVE_VERSION).toBe(54);
+    const back = deserialize(saved, content);
     expect(isBlueprintKnown(back, 'module.engine.mk3')).toBe(true);
     expect(isBlueprintKnown(back, 'module.engine.mk2')).toBe(false);
   });

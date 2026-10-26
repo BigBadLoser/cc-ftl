@@ -93,6 +93,8 @@ function moduleDamage(sim: Sim, at: Impact, amount: number, radius: number): voi
     const box = sim.world.get(id, ContainerC);
     if (box) box.hp = m.hp;
     if (m.hp !== 0) continue;
+    if (m.wrecked) continue; // still a wreck from the last time: no second announcement
+    m.wrecked = true;
     // A destroyed container's shell is torn open: its stock is lost to space.
     const store = box && sim.world.get(id, StorageC);
     if (store) store.stacks = [];

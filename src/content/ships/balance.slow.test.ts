@@ -80,7 +80,7 @@ describe('starter vs raider balance (fixed seeds)', { timeout: 120000 }, () => {
     for (const r of results) {
       expect(r.winner).toBe('player');
       expect(r.seconds).toBeGreaterThan(60); // not a walkover
-      expect(r.seconds).toBeLessThan(6 * 60);
+      expect(r.seconds).toBeLessThan(8 * 60); // was 6: the gunner now arms and leaves the console for boarders, which shifts the chaotic timeline
       expect(r.minIntegrity).toBeLessThan(0.975); // some damage (was 0.96 before the 2 s roof-part deploy delay)
       expect(r.minIntegrity).toBeGreaterThan(0.6);
       expect(r.deadAt4).toBe(0);
@@ -89,14 +89,14 @@ describe('starter vs raider balance (fixed seeds)', { timeout: 120000 }, () => {
   });
 
   it('an unmanned ship takes serious hull and system damage over several minutes but loses no crew in 4 minutes', () => {
-    const results = seeds.map((s) => fight(s, 'unmanned', 6));
+    const results = seeds.map((s) => fight(s, 'unmanned', 5));
     for (const r of results) {
       expect(r.winner).not.toBe('player'); // it cannot shoot back
       expect(r.firstDownSec).toBeGreaterThanOrEqual(30);
       expect(r.deadAt4).toBe(0);
       expect(r.downAt4).toBeLessThanOrEqual(3);
       expect(r.minIntegrity).toBeLessThan(0.92); // 0.904 on one seed after the mirrored (engines east) layouts
-      expect(r.destroyed).toBeGreaterThanOrEqual(20);
+      expect(r.destroyed).toBeGreaterThanOrEqual(5); // distinct announcements: a module is announced once until repaired past half (main counted 100+ per seed, mostly the same wrecks re-announced); 7, 9, 12 on seeds 1, 2, 6 at the old 6 minute length
     }
   });
 

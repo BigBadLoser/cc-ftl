@@ -1,5 +1,5 @@
 import type { Sim } from '../sim';
-import { isKnown, learn } from '../modules/blueprints';
+import { blueprintVenue, isKnown, learn } from '../modules/blueprints';
 import { portOf, portsAt } from './portIndex';
 import type { Port } from './ports';
 import { tierOf } from './standing';
@@ -17,19 +17,25 @@ export interface BlueprintOffer {
   known: boolean;
 }
 
-/** Whether the port's structure lists the blueprints service. */
-function sells(sim: Sim, port: Port): boolean {
+/** The station type of a port's structure when it lists the blueprints service (research stations and military stations), else null. */
+function venue(sim: Sim, port: Port): 'research' | 'military' | null {
   const s = nodeOf(sim, port.node)?.structures[Number(port.id.slice(port.id.indexOf('#') + 1))];
-  return !!s && !!sim.content.galaxy?.structures[s.def]?.services?.includes('blueprints');
+  const d = s && sim.content.galaxy?.structures[s.def];
+  return d?.services?.includes('blueprints') && (d.station === 'research' || d.station === 'military') ? d.station : null;
 }
 
-/** The blueprints a port sells: those whose `minDanger` its node's danger tier reaches (Mk II from the middle tiers, Mk III only deep). None from a hostile faction. */
+/**
+ * The blueprints a port sells: research stations sell the non-defence modules, military stations the defence ones (`blueprintVenue`);
+ * trading stations and dens sell none. Only those whose `minDanger` its node's danger tier reaches (Mk II from the middle tiers, Mk III
+ * only deep). None from a hostile faction.
+ */
 export function portBlueprints(sim: Sim, port: Port): BlueprintOffer[] {
-  if (!sells(sim, port) || tierOf(sim, port.owner) === 'hostile') return [];
+  const kind = venue(sim, port);
+  if (!kind || tierOf(sim, port.owner) === 'hostile') return [];
   const danger = nodeOf(sim, port.node)?.danger ?? 0;
   const out: BlueprintOffer[] = [];
   for (const [def, d] of Object.entries(sim.content.modules)) {
-    if (!d.blueprint || danger < d.blueprint.minDanger) continue;
+    if (!d.blueprint || danger < d.blueprint.minDanger || blueprintVenue(d) !== kind) continue;
     out.push({ def, name: d.name, tier: d.blueprint.tier, price: Math.round(d.blueprint.price * (1 + BLUEPRINT_PRICE_PER_DANGER * danger)), known: isKnown(sim, def) });
   }
   return out.sort((a, b) => a.tier - b.tier || (a.def < b.def ? -1 : 1));

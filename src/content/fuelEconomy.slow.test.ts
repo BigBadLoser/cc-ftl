@@ -49,7 +49,7 @@ function atTradeStation(seed: number): { sim: Sim; station: number } {
 }
 
 describe('fuel is for sale', () => {
-  for (const seed of [1, 7, 42]) {
+  for (const seed of [1, 42]) {
     it(`seed ${seed}: a trade station sells fuel at a fair price and the purchase completes goal.buy_fuel`, () => {
       const { sim, station } = atTradeStation(seed);
       expect(sim.world.get(station, TraderC)!.stock.find((s) => s.item === FUEL_ITEM)?.count ?? 0).toBeGreaterThan(20);

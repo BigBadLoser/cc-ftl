@@ -5,6 +5,7 @@ import { rollTrader } from '../trade/traders';
 import { TraderC, type Trader } from '../trade/types';
 import { strHash, unit } from './hash';
 import type { Port } from './ports';
+import { nodeOf } from './state';
 import { MARKET_CAP_MIN, MARKET_CAP_MULT, MARKET_DRIFT, MARKET_EPS, MARKET_WANT_TURNS } from './tuning';
 import type { MarketState } from './types';
 
@@ -37,6 +38,9 @@ export function profileOf(sim: Sim, port: Port): string | null {
   const m = sim.content.galaxy?.market;
   const p = m?.profiles[port.kind];
   if (!m || !p) return null;
+  const node = nodeOf(sim, port.node);
+  const def = node && sim.content.galaxy?.structures[node.structures[Number(port.id.slice(port.id.indexOf('#') + 1))]?.def ?? ''];
+  if (port.kind === 'station' && def?.station === 'research' && m.research && sim.content.trade?.traders[m.research]) return m.research;
   const pick = port.kind === 'station' && unit(sim.seed, strHash(port.id), 73) < m.farm.chance ? m.farm.profile : p;
   return sim.content.trade?.traders[pick] ? pick : null;
 }

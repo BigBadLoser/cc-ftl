@@ -193,6 +193,10 @@ export const VEHICLE_PD_INTERVAL = 10;
 /** Chance per roll, and hp taken on a hit. */
 export const VEHICLE_PD_CHANCE = 0.35;
 export const VEHICLE_PD_DAMAGE = 10;
+/** Point defence never takes a shuttle below this fraction of its max hp: it chips, only anti-vehicle weapons kill. */
+export const VEHICLE_PD_FLOOR = 0.3;
+/** Player anti-vehicle weapons engage a hostile shuttle in flight within this many tiles of the ship centre (or one heading for it at any range). */
+export const ANTI_VEHICLE_RANGE = 70;
 /** Boarding parties never leave the ship with fewer than this many crew aboard. */
 export const BOARDING_MIN_HOME = 1;
 /** Ticks the boarding AI waits for its party to reach the bay before it launches with whoever is aboard. */
@@ -217,6 +221,8 @@ export const DOOR_SIGHT_OPEN = 64;
 /** Ticks between flee replans. */
 export const FLEE_REPLAN_TICKS = 15;
 export const FLEE_RADIUS = 10;
+/** An unarmed crew member who is out of every intruder's sight and farther than this (tiles) stays where they are. */
+export const FLEE_HOLD_DIST = 5;
 /** Ticks between path replans while closing in on a target. */
 export const CHASE_REPLAN_TICKS = 6;
 /** Surrender: hp fraction under which a non-player crew member gives up when outnumbered within this many tiles. */

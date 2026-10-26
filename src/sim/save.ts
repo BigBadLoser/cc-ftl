@@ -64,9 +64,10 @@ import { newTrade, type TradeState } from './trade/types';
  * v51 (crew for hire): `GalaxyState.recruitLog`, `ForHireC` on station crew who can be hired, `Deal.crew` (a hiring run fetches them by
  *     shuttle).
  * v52 (fuel economy): `GalaxyState.distress` (a pending call for a tug), `item.fuel` in the market goods.
- * v53 (blueprints): `StoryState.blueprints` (the bought module blueprints), Mk II / III core module defs.
+ * v53 (playtest fixes): optional `Module.wrecked` (set at 0 hp, cleared past half hp; a patched wreck is not announced twice).
+ * v54 (blueprints): `StoryState.blueprints` (the bought module blueprints), Mk II / III core module defs, research stations.
  */
-export const SAVE_VERSION = 53;
+export const SAVE_VERSION = 54;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

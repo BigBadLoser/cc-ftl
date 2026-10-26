@@ -118,6 +118,11 @@ export interface Combat {
   volley: boolean;
   /** Ship-wide target, used by weapons without their own. */
   target: Target | null;
+  /**
+   * A shuttle that only anti-vehicle weapons (`WeaponDef.antiVehicle`) aim at, ahead of the ship-wide target; the other weapons keep
+   * shooting `target`. Set by `combat.setTarget` with a vehicle and no weapon, or by the vehicle defence system. Cleared once it is gone.
+   */
+  vehicleTarget?: number;
   doctrine: Doctrine;
   /** Seconds of FTL charge (flee needs FTL_CHARGE_SEC). */
   ftl: number;

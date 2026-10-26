@@ -5,6 +5,7 @@ import { placementGapError } from '../regions';
 import { generateShip } from '../shipgen/generate';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
+import { graceHolds } from './grace';
 import { pickWeighted, trafficPool } from './sector';
 import { isHostileFaction, tierOf } from './standing';
 import { currentNode, nodeState, withGalaxyRng } from './state';
@@ -150,7 +151,7 @@ export function rollArrival(sim: Sim): void {
   if (sim.sector.state !== 'active' || sim.tick < g.nextArrival) return;
   g.nextArrival = sim.tick + Math.round(ARRIVAL_EVERY_SEC * TICK_HZ);
   const node = currentNode(sim);
-  if (!node || !playerShipInfo(sim)) return;
+  if (!node || !playerShipInfo(sim) || graceHolds(sim, node.id)) return;
   const st = nodeState(sim, node.id);
   if (hostileShipsHere(sim, st.contacts) >= MAX_HOSTILE_CONTACTS) return;
   let p = arrivalChance(sim);

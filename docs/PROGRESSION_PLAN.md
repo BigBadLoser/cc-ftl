@@ -22,7 +22,11 @@ its blueprint is known.
    - Content:
      - Mk I, II and III for shield generators, engines and reactors, with stats and costs.
      - Start weapons limited to the simple ones.
-   - Blueprints are sold at stations as items or services, with availability and price scaled by danger tier.
+   - Blueprints are sold by station type (see "Where blueprints are sold" in `docs/DESIGN.md`): research stations sell
+     the Mk II/III reactors and engines, military stations the defence modules (shields included), trading posts sell
+     none. Availability and price scale with danger tier.
+   - Add the **research station** type: a generator layout from existing modules, rarer than trading posts, more common
+     in calm space. Art later.
    - Tests:
      - Gating holds.
      - A blueprint bought deep can be built.
@@ -31,6 +35,14 @@ its blueprint is known.
 2. **Faction and territory availability.**
    - Availability tables: some blueprints and items are only sold in certain faction territories or system types.
    - The starmap and the station inspector hint at notable stock ("Mk II shields here").
+2b. **Pirate factions and the black market** (design in `docs/DESIGN.md`).
+   - Sim: a faction relations table (pirates at war with each other too) and per-faction player standing; the truce rule
+     (AI never starts a fight at a black market's node; a player who does is flagged and banned for a while, which means
+     fired on sight).
+   - Content: new pirate factions (raider clan, cartel, zealots, mercenaries) with doctrine, territory and ship templates
+     built from existing donors; the black market station (a few named ones, plus black market services on some lawless
+     stations); a contraband item tag; the fence, pirate weapon blueprints, shady hires and pirate-on-pirate jobs.
+   - Art: liveries and the black market look as a later pack; placeholders reuse the Scrapper motif.
 3. **Research module and projects.**
    - Sim:
      - A research module, buildable once its blueprint is known.
@@ -56,7 +68,8 @@ its blueprint is known.
    - Self-contained arcs on the existing event and story system. The first start after `goals.done`.
    - Arcs can share factions, characters and places.
 
-Later, not scheduled: building your own research station, full weapon tiers, and recoverable failure.
+Later, not scheduled: building your own research station, full weapon tiers, recoverable failure, and tier scaling in
+shipgen (generated ships fit Mk II and Mk III cores by depth and faction; see `docs/SHIPGEN.md`).
 
 ## Open questions, to settle at each phase
 

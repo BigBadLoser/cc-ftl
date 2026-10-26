@@ -77,7 +77,7 @@ describe('a woken hostile outpost defends like a woken pirate den', () => {
     expect(log).toContain('crew.attacked');
   });
 
-  it('a woken outpost shoots down the player shuttle hovering beside it', () => {
+  it('a woken outpost with only lasers cannot shoot the player shuttle hovering beside it', () => {
     const { sim, base } = spawn('dug', 'pirate');
     discoverOutpost(sim, base, 'proximity');
     const shuttle = [...sim.world.query(VehicleC)][0]!;
@@ -86,7 +86,7 @@ describe('a woken hostile outpost defends like a woken pirate den', () => {
     sim.enqueue({ type: 'vehicle.hover', vehicle: shuttle, ship: base });
     const log = run(sim, 1500);
     expect(log).toContain('combat.started');
-    expect(log).toContain('vehicle.damaged');
+    expect(log).not.toContain('vehicle.damaged'); // only the missile launcher can hit a shuttle
   });
 
   it('sleeping outposts stay quiet: no crew fight, no combat', () => {

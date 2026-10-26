@@ -18,6 +18,8 @@ export interface Module {
   powered: boolean;
   /** Crew entity that has reserved this bed (0 = free). Only used by bed modules. */
   reservedBy: number;
+  /** Set when hp hits 0 and cleared once repaired past half: a wrecked module that is patched and shot again does not announce its destruction again. */
+  wrecked?: boolean;
 }
 export const ModuleC = defineComponent<Module>('module');
 

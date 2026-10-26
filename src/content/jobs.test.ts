@@ -4,6 +4,7 @@ import { offersHere, portOffers } from '../sim/galaxy/jobOffers';
 import { CRATE, crateAboard, expireJobs } from '../sim/galaxy/jobs';
 import { wreckShip } from '../sim/combat/wreck';
 import { ItemStackC } from '../sim/items/components';
+import { planStarRoute } from '../sim/galaxy/route';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { repKey } from '../sim/galaxy/standing';
 import { ensureAround } from '../sim/galaxy/state';
@@ -111,6 +112,24 @@ describe('station jobs', () => {
     sim.enqueue({ type: 'jobs.openCrate', id: job.id });
     sim.step();
     expect(sim.events.drain().some((e) => e.type === 'command.rejected' && e.reason === 'noJob')).toBe(true);
+  });
+
+  it('accepting a distant delivery reveals the route, so the starmap can plot it', () => {
+    let tested = 0;
+    for (const seed of [1, 3, 7, 42]) {
+      const sim = atBoard(seed);
+      const far = offersHere(sim).filter((o) => o.kind === 'delivery').sort((a, b) => planStarRoute(sim.galaxy, sim.galaxy.current, b.to!, { known: false })!.path.length - planStarRoute(sim.galaxy, sim.galaxy.current, a.to!, { known: false })!.path.length)[0];
+      if (!far) continue;
+      const full = planStarRoute(sim.galaxy, sim.galaxy.current, far.to!, { known: false })!;
+      if (full.path.length < 3) continue;
+      const hidden = full.path.slice(1, -1).some((n) => sim.galaxy.discovered[n] === undefined);
+      accept(sim, far.key);
+      const known = planStarRoute(sim.galaxy, sim.galaxy.current, far.to!);
+      expect(known, `seed ${seed} (${hidden ? 'had' : 'no'} unknown legs)`).not.toBeNull();
+      expect(known!.path).toEqual(full.path);
+      tested++;
+    }
+    expect(tested).toBeGreaterThan(0);
   });
 
   it('a bounty places its named target at an unvisited node and pays when the player destroys it there', () => {

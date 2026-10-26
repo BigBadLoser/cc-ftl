@@ -159,14 +159,17 @@ function run(sim: Sim, n: number, log: string[]): void {
 
 /**
  * Content as the pre-refactor code had it: the starter's crate held no fuel (the starmap added 16 units, which would change
- * the recorded world), the starter had two engineers, and the medic had no medicine skill (it speeds up bed healing). Everything else is the live content,
+ * the recorded world), the starter had two engineers, the medic had no medicine skill (it speeds up bed healing), and the gunner fetched no gun. Everything else is the live content,
  * so the recorded hashes still pin the refactor.
  */
 const medic: RoleDef = { ...content.roles['role.medic'] };
 delete medic.skills;
+// ...and the gunner took no gun from the crate on its own (the combat-onboarding playerLoadout).
+const gunner: RoleDef = { ...content.roles['role.gunner'] };
+delete gunner.playerLoadout;
 const legacy: typeof content = {
   ...content,
-  roles: { ...content.roles, 'role.medic': medic } as typeof content.roles,
+  roles: { ...content.roles, 'role.medic': medic, 'role.gunner': gunner } as typeof content.roles,
   ships: {
     ...content.ships,
     'ship.starter': {
@@ -233,4 +236,4 @@ describe('sector refactor equivalence', () => {
   });
 });
 
-const EXPECTED = { combat: 'd44fb7e2', disaster: '04df4a60' };
+const EXPECTED = { combat: 'b32b3991', disaster: '04df4a60' };

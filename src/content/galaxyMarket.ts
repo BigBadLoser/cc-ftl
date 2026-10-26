@@ -9,6 +9,7 @@ import type { MarketContent } from '../sim';
 export const market = {
   profiles: { station: 'trader.station.trading', den: 'trader.station.pirate', depot: 'trader.station.military', outpost: 'trader.station.mining', nest: null },
   farm: { profile: 'trader.station.farming', chance: 0.3 },
+  research: 'trader.station.research',
   rates: {
     'trader.station.mining': {
       produce: { 'item.iron_ore': 2, 'item.metal': 1, 'item.ice': 1, 'item.rare_ore': 0.2, 'item.fuel': 0.6 },

@@ -193,6 +193,7 @@ const api: UiApi = {
   selectedCrew: controller.selectedCrew,
   modules: bridge.modules,
   moduleDefs: bridge.moduleDefs,
+  placeHint: controller.placeHint,
   items: buildItemDefs(sim),
   recipes: buildRecipes(sim),
   structCosts: buildStructCosts(sim),
@@ -265,6 +266,7 @@ const api: UiApi = {
     }, 0);
   },
   portrait: (id) => renderer?.portrait(id) ?? null,
+  moduleThumb: (def, rot) => renderer?.moduleThumb(def, rot) ?? null,
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
   attachCanvas(canvas) {

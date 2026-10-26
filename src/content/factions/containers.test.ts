@@ -72,8 +72,8 @@ describe('cargo containers', () => {
     const b1 = { ...sim.world.get(id, BodyC)! };
     expect(Math.hypot(b1.x - b0.x, b1.y - b0.y)).toBeGreaterThan(0.05);
     // Damped: it comes to rest a few tiles out and stays (loot in the node).
-    for (let i = 0; i < 60 * 120; i++) sim.step();
     const box = sim.world.get(id, ContainerC)!;
+    for (let i = 0; i < 60 * 120 && !(box.vx === 0 && box.vy === 0); i++) sim.step(); // up to two minutes; stop once it is at rest
     expect(box.vx === 0 && box.vy === 0).toBe(true);
     const rest = { ...sim.world.get(id, BodyC)! };
     expect(Math.hypot(rest.x - b0.x, rest.y - b0.y)).toBeLessThan(8);

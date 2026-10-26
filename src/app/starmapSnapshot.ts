@@ -76,7 +76,7 @@ function jobMarkers(sim: Sim): Map<string, UiNodeJob[]> {
   for (const j of sim.galaxy.jobs) {
     const at = j.kind === 'delivery' ? j.to : j.node;
     if (!at) continue;
-    const label = j.kind === 'delivery' ? `Deliver ${j.count ?? 0}× ${(j.item && sim.content.items[j.item]?.name) || j.item || 'goods'}` : `Bounty: ${j.target ?? 'target'}`;
+    const label = j.kind === 'delivery' ? `Deliver a sealed crate (${j.count ?? 0} ${(j.item && sim.content.items[j.item]?.name) || j.item || 'goods'})` : `Bounty: ${j.target ?? 'target'}`;
     out.set(at, [...(out.get(at) ?? []), { kind: j.kind, label }]);
   }
   return out;

@@ -8,6 +8,7 @@ import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { placementGapError , shipIdOf } from '../regions';
 import { shipById, spawnShip } from './ships';
+import { weaponAntiVehicle } from './targets';
 import { generateShip } from '../shipgen/generate';
 import { spawnDerelict } from './derelict';
 
@@ -71,6 +72,11 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (cmd.targetVehicle !== undefined) {
       const v = sim.world.get(cmd.targetVehicle, VehicleC);
       if (!v || v.state === 'stowed' || v.homeShip === ship) return reject(sim, cmd.type, 'badTarget');
+      if (cmd.weaponId === null) {
+        combat.vehicleTarget = cmd.targetVehicle; // the ship-wide ship target stays for the weapons that cannot hit a shuttle
+        return;
+      }
+      if (!weaponAntiVehicle(sim, cmd.weaponId)) return reject(sim, cmd.type, 'notAntiVehicle');
       target = { ship: 0, moduleId: 0, vehicle: cmd.targetVehicle };
     } else if (cmd.targetShip !== 0) {
       if (cmd.targetShip === cmd.ship || !shipById(sim, cmd.targetShip)) return reject(sim, cmd.type, 'badTarget');

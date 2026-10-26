@@ -1,4 +1,4 @@
-import { CrewC, DeadC, isBlueprintKnown, ModuleC, PositionC, airlockSuits, roomTiles, type Sim } from '../sim';
+import { CrewC, DeadC, blueprintVenue, isBlueprintKnown, ModuleC, PositionC, airlockSuits, roomTiles, type ModuleDef, type Sim } from '../sim';
 import { buildRobotBay } from './robotSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import { buildFood } from './foodSnapshot';
@@ -34,17 +34,46 @@ export function buildModuleList(sim: Sim): UiModule[] {
   return out;
 }
 
+/** Popover facts of a module def: power, who operates it, then its own stats. */
+function moduleFacts(d: ModuleDef): UiModuleDef['facts'] {
+  const f: UiModuleDef['facts'] = [{ label: 'Power', value: d.power > 0 ? `+${d.power} ⚡` : d.power < 0 ? `−${-d.power} ⚡` : 'none', ...(d.power < 0 ? { tone: 'warn' as const } : {}) }];
+  const op = d.console ? `crew (${d.console})` : d.engine ? 'pilot' : d.crafting ? 'crew (crafting)' : d.galley ? 'crew (eats here)' : d.bed ? 'sleeper' : d.workstation ? 'crew' : null;
+  f.push({ label: 'Operator', value: op ?? 'none' });
+  if (d.shieldGen) f.push({ label: 'Shield layers', value: `${Math.floor(Math.abs(d.power) * d.shieldGen.layersPerPower)}, 1 per ${d.shieldGen.rechargeSec}s` });
+  if (d.storage) f.push({ label: 'Capacity', value: `${d.storage.capacity} stacks` });
+  if (d.o2PerSec) f.push({ label: 'Oxygen', value: `+${d.o2PerSec}/s` });
+  if (d.light) f.push({ label: 'Light radius', value: `${d.light.radius} tiles` });
+  if (d.engine) f.push({ label: 'Evasion', value: `+${d.engine.evasionPerPower} per power` });
+  if (d.airlock) f.push({ label: 'Cycle', value: `${d.airlock.cycleSec}s` });
+  f.push({ label: 'Hull points', value: String(d.maxHp) });
+  return f;
+}
+
+const TIER_NAME: Record<number, string> = { 1: 'Mk I', 2: 'Mk II', 3: 'Mk III' };
+const familyOf = (id: string): string => id.replace(/\.mk\d$/, '');
+
 export function buildModuleDefs(sim: Sim): UiModuleDef[] {
-  return Object.entries(sim.content.modules).map(([id, d]) => ({
-    id,
-    name: d.name,
-    w: d.footprint[0],
-    h: d.footprint[1],
-    power: d.power,
-    cost: costsOf(sim, d.cost),
-    known: isBlueprintKnown(sim, id),
-    tier: d.blueprint?.tier ?? 0,
-  }));
+  const mods = sim.content.modules;
+  return Object.entries(mods).map(([id, d]) => {
+    const family = familyOf(id);
+    const tiered = !!d.blueprint || Object.keys(mods).some((o) => o !== id && familyOf(o) === id);
+    return {
+      id,
+      name: d.name,
+      w: d.footprint[0],
+      h: d.footprint[1],
+      power: d.power,
+      cost: costsOf(sim, d.cost),
+      category: d.category ?? 'utility',
+      description: d.description ?? '',
+      access: d.access ? [d.access[0], d.access[1]] : null,
+      facts: moduleFacts(d),
+      tier: tiered ? TIER_NAME[d.blueprint?.tier ?? 1] ?? null : null,
+      family: tiered ? family : null,
+      locked: !isBlueprintKnown(sim, id),
+      lockHint: d.blueprint ? `Blueprint: ${blueprintVenue(d) === 'military' ? 'military' : 'research'} stations` : null,
+    };
+  });
 }
 
 /** Power supply/demand of the ship and the average O2 of the rooms crew stand in. */

@@ -72,6 +72,12 @@ Every ship, station, derelict and wreck is a `Grid` with:
 All tile writes go through a small grid API that also bumps a **revision counter** per field and per
 chunk. The renderer diffs revisions, so there's no manual `markDirty()`.
 
+The environment solvers use the same revisions to skip work (`SteadyState` in `sim/diffusion.ts`). A region whose
+last solve wrote nothing, and none of whose input fields has been written since, is at a fixed point, so the solve
+is skipped. Results are identical to a full solve. Lighting also keys on its lamps (powered, intact) and on the set
+of open doors. Any new input a solver reads must join its key. `src/content/ships/envSkip.test.ts` compares the
+solvers against cold-cache full solves.
+
 **Systems interact through these fields.** For example:
 - Fire reads O2 and material flammability, and writes heat and smoke while using up O2.
 - Atmosphere diffuses gas across open tiles and vents through breaches.
