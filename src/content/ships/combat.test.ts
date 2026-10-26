@@ -318,7 +318,10 @@ describe('enemy AI, endings', () => {
     const reg = registry({ 'ship.victim': victim });
     const sim = newGame(3, reg, 'ship.victim');
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
-    const events = run(sim, 20 * 400);
+    // Up to 400 s; once the victim is a wreck and the fight has ended, a minute more shows that nothing repeats (a second combat.ended, a second kill).
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 400 && !(shipById(sim, shipIds(sim)[0] as number)?.state === 'wreck' && !sim.sector.inCombat); i++) events.push(...run(sim, 20));
+    events.push(...run(sim, 20 * 60));
     expect(shipById(sim, shipIds(sim)[0] as number)?.state).toBe('wreck');
     expect(ofType(events, 'ship.destroyed').map((e) => e.ship)).toEqual([nth(sim, 1)]);
     expect(ofType(events, 'module.destroyed').length).toBeGreaterThan(0);

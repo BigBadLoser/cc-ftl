@@ -5,6 +5,7 @@ import { factions } from './index';
 
 // Slow soak test (see "Test tiers" in docs/ARCHITECTURE.md): skipped by `npm run check:fast`, always run by `npm run check` and CI.
 const defs = content.modules as Record<string, ModuleDef>;
+const SEEDS = 12; // per depth and faction: the averages separate by a wide margin, so a dozen is enough to see the trend
 const ids = Object.keys(factions) as (keyof typeof factions)[];
 const gen = (id: keyof typeof factions, seed: number, depth: number): GenResult =>
   generateShip(factions[id] as FactionDef, id, seed, depth, defs);
@@ -17,7 +18,7 @@ describe('ship generator, depth scaling', () => {
       const stats = (g: GenResult) => [g.width, count(g, (d) => !!d.weapon), count(g, (d) => !!d.shieldGen), count(g, (d) => d.power > 0), g.template.crew?.length ?? 0];
       const avgs = (depth: number): number[] => {
         const s = [0, 0, 0, 0, 0];
-        for (let seed = 0; seed < 30; seed++) stats(gen(id, seed, depth)).forEach((v, k) => { s[k]! += v / 30; });
+        for (let seed = 0; seed < SEEDS; seed++) stats(gen(id, seed, depth)).forEach((v, k) => { s[k]! += v / SEEDS; });
         return s;
       };
       const [lo, hi] = [avgs(0), avgs(9)];

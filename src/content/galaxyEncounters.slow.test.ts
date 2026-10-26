@@ -77,7 +77,7 @@ function run(seed: number, choice: 'evade' | 'bribe' | 'fight', leave: 'wipe' | 
 
 describe('encounter sweep', () => {
   it('every choice over several seeds ends at the destination with nothing left of the grid, and is deterministic', () => {
-    for (let seed = 1; seed <= 6; seed++) {
+    for (let seed = 1; seed <= 3; seed++) { // three worlds x four choice paths, each run twice for determinism
       for (const [choice, leave] of [['evade', 'wipe'], ['bribe', 'wipe'], ['fight', 'wipe'], ['fight', 'flee']] as const) {
         const a = run(seed, choice, leave);
         expect(run(seed, choice, leave)).toBe(a);

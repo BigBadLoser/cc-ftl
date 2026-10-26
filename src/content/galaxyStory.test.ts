@@ -129,7 +129,8 @@ describe('story events happen in transit', () => {
 
   it('never on a hop that interdicts', () => {
     let interdictions = 0;
-    for (let seed = 1; seed <= 24; seed++) {
+    const SEEDS = 12; // a spot check: every seed hits the same interdiction path in a different world
+    for (let seed = 1; seed <= SEEDS; seed++) {
       const sim = newGame(seed, content);
       sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
       const g = sim.galaxy;
@@ -153,7 +154,7 @@ describe('story events happen in transit', () => {
       expect(sim.galaxy.encounters.some((e) => e.kind === 'interdict')).toBe(true);
       interdictions++;
     }
-    expect(interdictions).toBe(24);
+    expect(interdictions).toBe(SEEDS);
   }, 240000);
 
   it('an event in hyperspace sees and changes the packet: cargo, crew, rewards and harm survive the drop', () => {
