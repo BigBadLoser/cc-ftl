@@ -5,7 +5,19 @@
 
   let { api }: { api: UiApi } = $props();
   let list = $state<UiAlert[]>([]);
-  onMount(() => api.alerts.subscribe((a) => (list = a)));
+  /** Phone: one compact toast (the newest) with a count badge; a tap opens the whole list under it. */
+  let narrow = $state(false);
+  let open = $state(false);
+  onMount(() => {
+    const mq = window.matchMedia('(max-width: 600px)');
+    const onMq = () => (narrow = mq.matches);
+    onMq();
+    mq.addEventListener('change', onMq);
+    const un = api.alerts.subscribe((a) => (list = a));
+    return () => { un(); mq.removeEventListener('change', onMq); };
+  });
+  $effect(() => { if (list.length < 2) open = false; });
+  const extra = $derived(list.length - 1);
 
   const danger = new Set(['fire.started', 'hull.breach', 'crew.died', 'crew.downed', 'crew.starving', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'module.destroyed', 'ship.lost', 'creatures.aboard', 'ship.provoked', 'galaxy.encounter', 'galaxy.incomingHostile']);
   const good = new Set(['production.done', 'crew.rescued', 'ship.destroyed', 'trade']);
@@ -15,22 +27,38 @@
   };
 </script>
 
-{#if list.length}
-<div class="alerts" data-testid="alerts">
-  {#each list.slice(0, 4) as a (a.id)}
-    <div class="alert" class:danger={danger.has(a.kind)} class:good={good.has(a.kind)} data-testid="alert" data-kind={a.kind}>
-      {#if a.notice}
-        <button class="go story" data-testid="story-notice" disabled={!a.notice.lead} onclick={() => { if (a.notice) api.dispatch({ type: 'story.openNotice', notice: a.notice.id }); api.dismissAlert(a.id); }}>
-          <b>{a.notice.title}</b>
-          <span class="body">{a.text}</span>
-          {#if a.notice.lead}<span class="tap">Tap to look</span>{/if}
-        </button>
-      {:else}
-        <button class="go" disabled={!a.at} onclick={() => api.focusAlert(a.id)}><span class="ic"><Icon name={icon[a.kind] ?? 'alert'} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
+{#snippet row(a: UiAlert)}
+  <div class="alert" class:danger={danger.has(a.kind)} class:good={good.has(a.kind)} data-testid="alert" data-kind={a.kind}>
+    {#if a.notice}
+      <button class="go story" data-testid="story-notice" disabled={!a.notice.lead} onclick={() => { if (a.notice) api.dispatch({ type: 'story.openNotice', notice: a.notice.id }); api.dismissAlert(a.id); }}>
+        <b>{a.notice.title}</b>
+        <span class="body">{a.text}</span>
+        {#if a.notice.lead}<span class="tap">Tap to look</span>{/if}
+      </button>
+    {:else}
+      <button class="go" disabled={!a.at} onclick={() => api.focusAlert(a.id)}><span class="ic"><Icon name={icon[a.kind] ?? 'alert'} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
+    {/if}
+    <button class="x" aria-label="Dismiss" onclick={() => api.dismissAlert(a.id)}><Icon name="close" size={14} /></button>
+  </div>
+{/snippet}
+
+{#if list.length && narrow}
+  <div class="alerts phone" data-testid="alerts">
+    <div class="toastrow">
+      <div class="one">{@render row(list[0] as UiAlert)}</div>
+      {#if extra > 0}
+        <button class="badge" aria-expanded={open} aria-label="{open ? 'Hide' : 'Show'} {extra} more notifications" data-testid="alerts-more" onclick={() => (open = !open)}>+{extra}<Icon name={open ? 'chevUp' : 'chevDown'} size={14} /></button>
       {/if}
-      <button class="x" aria-label="Dismiss" onclick={() => api.dismissAlert(a.id)}><Icon name="close" size={14} /></button>
     </div>
-  {/each}
+    {#if open}
+      <div class="drop" data-testid="alerts-list">
+        {#each list.slice(1) as a (a.id)}{@render row(a)}{/each}
+      </div>
+    {/if}
+  </div>
+{:else if list.length}
+<div class="alerts" data-testid="alerts">
+  {#each list.slice(0, 4) as a (a.id)}{@render row(a)}{/each}
   {#if list.length > 4}<div class="more">+{list.length - 4} more</div>{/if}
 </div>
 {/if}
@@ -59,4 +87,12 @@
   .danger .ic { color: var(--red); } .good .ic { color: var(--green); }
   .more { color: var(--dim); font-size: 12px; padding-left: 4px; }
   @media (max-width: 600px) { :global(html[data-combat]) .alerts { display: none; } }
+  /* Phone: a single-line toast, cyan-panel badge for the rest, the rest listed in a dropdown on tap. */
+  .toastrow { display: flex; gap: 2px; align-items: stretch; }
+  .one { flex: 1; min-width: 0; display: grid; }
+  .phone .go .t { -webkit-line-clamp: 1; line-clamp: 1; }
+  .phone .alert:hover .t, .phone .alert:focus-within .t { -webkit-line-clamp: 1; line-clamp: 1; }
+  .phone .alert button { min-height: 30px; }
+  .badge { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 0 8px; background: var(--panel); border: 1px solid var(--line-hi); color: var(--cyan); font: 600 13px var(--head-font); }
+  .drop { display: grid; gap: 2px; margin-top: 2px; max-height: 45vh; overflow-y: auto; }
 </style>
