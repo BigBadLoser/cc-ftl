@@ -12,7 +12,9 @@ import { shipIdOf } from '../regions';
 export function targetingSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC, CombatC)) {
     const combat = sim.world.get(id, CombatC);
-    if (combat) combat.target = fix(sim, combat.target);
+    if (!combat) continue;
+    combat.target = fix(sim, combat.target);
+    if (combat.vehicleTarget && !targetableVehicle(sim, combat.vehicleTarget)) delete combat.vehicleTarget;
   }
   for (const id of sim.world.query(WeaponC, ModuleC)) {
     const w = sim.world.get(id, WeaponC);

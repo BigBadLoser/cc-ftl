@@ -23,7 +23,7 @@ export const weapons = {
   // Ignores shields, uses crafted ammo, slow enough for point defence to catch.
   'weapon.missile': {
     name: 'Missile', projectileAsset: 'fx.missile', shots: 1, shotDelaySec: 0, chargeSec: 10, speed: 12, spread: 0.6,
-    ammo: 'item.missile', interceptable: true, shield: { damage: 0, pierce: 0, bypass: true },
+    ammo: 'item.missile', interceptable: true, antiVehicle: true, shield: { damage: 0, pierce: 0, bypass: true },
     effects: [
       { type: 'hullDamage', amount: 90, radius: 1, falloff: 0.5 },
       { type: 'moduleDamage', amount: 60 }, { type: 'crewDamage', amount: 20 },

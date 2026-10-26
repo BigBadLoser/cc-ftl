@@ -18,6 +18,13 @@ export function targetableVehicle(sim: Sim, id: number): boolean {
   return !!v && v.state !== 'stowed';
 }
 
+/** True if the weapon module carries a weapon that may fire at shuttles. */
+export function weaponAntiVehicle(sim: Sim, weaponId: number): boolean {
+  const m = sim.world.get(weaponId, ModuleC);
+  const w = m && sim.content.modules[m.def]?.weapon;
+  return !!w && !!sim.content.weapons?.[w]?.antiVehicle;
+}
+
 /** Module ids on a grid, ascending. */
 export function modulesOnGrid(sim: Sim, shipId: number): number[] {
   return sim.world.query(ModuleC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipId) as number[];
@@ -29,7 +36,11 @@ export function modulesOnGrid(sim: Sim, shipId: number): number[] {
  * intact ones) drawn from sim.rng. Null if there is no valid target ship.
  */
 export function resolveTarget(sim: Sim, weaponId: number, combat: Combat): Target | null {
-  const t = sim.world.get(weaponId, WeaponC)?.target ?? combat.target;
+  const anti = weaponAntiVehicle(sim, weaponId);
+  const own = sim.world.get(weaponId, WeaponC)?.target;
+  let t = own && (anti || !own.vehicle) ? own : null; // a weapon's own target wins, but only anti-vehicle weapons may hold a shuttle
+  if (!t && anti && combat.vehicleTarget && targetableVehicle(sim, combat.vehicleTarget)) t = { ship: 0, moduleId: 0, vehicle: combat.vehicleTarget };
+  t ??= combat.target && (anti || !combat.target.vehicle) ? combat.target : null;
   if (t?.vehicle) return targetableVehicle(sim, t.vehicle) ? t : null;
   const shipId = t ? t.ship : 0;
   if (!t || !targetableShip(sim, shipId)) return null;
