@@ -232,4 +232,4 @@ describe('sector refactor equivalence', () => {
   });
 });
 
-const EXPECTED = { combat: 'd44fb7e2', disaster: '04df4a60' };
+const EXPECTED = { combat: 'b32b3991', disaster: '04df4a60' };

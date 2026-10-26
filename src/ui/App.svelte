@@ -2,6 +2,7 @@
   import GameSession from './GameSession.svelte';
   import GoalsCard from './GoalsCard.svelte';
   import { onMount } from 'svelte';
+  import { TICK_HZ } from '../sim/time';
   import type { UiStarmap, UiDeploy } from './starmapApi';
   import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
   import CombatPanel from './CombatPanel.svelte';
@@ -150,11 +151,18 @@
     { label: '2×', icon: 'fast', speed: 2 },
     { label: '3×', icon: 'faster', speed: 3 },
   ];
+  /** Game time played as m:ss (h:mm:ss from an hour), from sim ticks. */
+  function clock(tick: number): string {
+    const t = Math.floor(tick / TICK_HZ);
+    const m = Math.floor(t / 60) % 60;
+    const ss = String(t % 60).padStart(2, '0');
+    return t >= 3600 ? `${Math.floor(t / 3600)}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
+  }
 </script>
 
 {#snippet time()}
   <span class="time sec">
-    <span class="tick">T {snap?.tick ?? 0}</span>
+    <span class="tick" title="Starmap turn (one per hop, and one every 3 minutes of game time) and game time played" data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}</span>
     <span class="speeds">
       {#each speeds as s (s.speed)}
         <button class="tile" class:on={snap?.speed === s.speed} title={s.label} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
@@ -241,15 +249,16 @@
   canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
   header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 3; pointer-events: none;
-    display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 8px;
-    padding: calc(8px + var(--sat)) calc(8px + var(--sar)) 0 calc(8px + var(--sal));
+    display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 8px;
+    /* The right padding keeps the header's content clear of the fixed top-right column (.rcol, 260px wide), so nothing slides under the clock. */
+    padding: calc(8px + var(--sat)) calc(16px + var(--sar) + min(260px, 100vw - 110px)) 0 calc(8px + var(--sal));
   }
   header > :global(*) { pointer-events: auto; }
   .toast { position: fixed; left: 50%; top: calc(var(--hdr) + 100px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); pointer-events: none; z-index: 9; }
   /* The phone sheet leaves a transparent window for the enemy view; keep other overlays out of it. */
   @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
   header > :global(.strip) { grid-column: 1; justify-self: start; }
-  .mid { grid-column: 2; display: flex; gap: 6px; align-items: start; min-width: 0; }
+  .mid { grid-column: 2; justify-self: start; max-width: 100%; display: flex; gap: 6px; align-items: start; min-width: 0; }
   /* The top-right frame: log and time in a single box divided by a hairline; alerts hang below it. */
   .rcol { position: fixed; z-index: 4; top: calc(var(--sat) + 8px); right: calc(8px + var(--sar)); width: min(260px, calc(100vw - 110px)); display: flex; flex-direction: column; gap: 4px; }
   /* An expanded alert (hover or tap) draws over the combat panel below it. */
@@ -264,7 +273,7 @@
   .speeds :global(button.tile.on) { background: var(--panel-3); box-shadow: inset 0 0 0 1px var(--cyan); }
   @media (max-width: 600px) {
     /* Row 1: tick and speed. Row 2: resources. Row 3: crew. */
-    header { grid-template-columns: auto 1fr; gap: 4px; padding-top: calc(4px + var(--sat)); }
+    header { grid-template-columns: auto 1fr; gap: 4px; padding: calc(4px + var(--sat)) calc(8px + var(--sar)) 0 calc(8px + var(--sal)); }
     .rcol { right: auto; left: calc(8px + var(--sal)); top: calc(var(--hdr) + var(--sat) + 6px); width: calc(100vw - 62px - var(--sar)); }
     .frame:not(:has(.sec)) { display: none; }
     header .time { background: var(--panel); border: 1px solid var(--line-hi); }
