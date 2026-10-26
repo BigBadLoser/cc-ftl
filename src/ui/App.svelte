@@ -255,6 +255,14 @@
     /* The right padding keeps the header's content clear of the fixed top-right column (.rcol, 260px wide), so nothing slides under the clock. */
     padding: calc(8px + var(--sat)) calc(16px + var(--sar) + min(260px, 100vw - 110px)) 0 calc(8px + var(--sal));
   }
+  /* Desktop: a third column, as wide as the top-right column, balances the nav strip so the crew bar sits centred on the screen
+     when it fits. Where it does not, the side columns keep their minimum and it centres in the free space between them. */
+  @media (min-width: 601px) {
+    header { grid-template-columns: minmax(auto, 1fr) minmax(0, auto) minmax(auto, 1fr); padding-right: calc(8px + var(--sar)); }
+    header::after { content: ''; grid-column: 3; grid-row: 1; width: calc(16px + var(--sar) + min(260px, 100vw - 110px)); justify-self: end; }
+    header > :global(.strip) { grid-row: 1; }
+    header > .mid { grid-row: 1; justify-self: center; }
+  }
   header > :global(*) { pointer-events: auto; }
   .toast { position: fixed; left: 50%; top: calc(var(--hdr) + 100px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); pointer-events: none; z-index: 9; }
   /* The phone sheet leaves a transparent window for the enemy view; keep other overlays out of it. */
