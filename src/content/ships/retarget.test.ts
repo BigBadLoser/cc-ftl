@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ModuleC, ShipC, WeaponC, newGame, type Sim, type SimEvent } from '../../sim';
+import { CombatC, ModuleC, ShipC, WeaponC, newGame, type Sim } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { resolveTarget } from '../../sim/combat/targets';
@@ -65,15 +65,25 @@ describe('retargeting when the aimed module dies', () => {
     expect(combat.target).toBeNull();
   });
 
-  it('emits module.destroyed once per module in a long fight against the aimed reactor', { timeout: 120000 }, () => {
+  it('announces a module as destroyed once, until it has been repaired past half', { timeout: 120000 }, () => {
     const sim = setup();
     sim.enqueue({ type: 'combat.setHold', ship: nth(sim, 1), hold: false });
     aim(sim, modulesOf(sim, 2, 'module.reactor')[0] as number);
-    const events: SimEvent[] = [];
+    const down = new Set<number>();
+    let announced = 0;
     for (let i = 0; i < 3000; i++) {
       sim.step();
+      for (const e of sim.events.drain()) {
+        if (e.type !== 'module.destroyed') continue;
+        expect(down.has(e.moduleId), `module ${e.moduleId} announced again at tick ${sim.tick} without being repaired`).toBe(false);
+        down.add(e.moduleId);
+        announced++;
+      }
+      for (const id of down) {
+        const m = sim.world.get(id, ModuleC)!;
+        if (m.hp >= sim.content.modules[m.def]!.maxHp / 2) down.delete(id);
+      }
     }
-    const ids = events.filter((e) => e.type === 'module.destroyed').map((e) => (e as Extract<SimEvent, { type: 'module.destroyed' }>).moduleId);
-    expect(new Set(ids).size).toBe(ids.length);
+    expect(announced).toBeGreaterThan(0);
   });
 });
