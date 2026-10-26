@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, ShipC, ModuleC, PositionC, VehicleC, newGame, type ModuleDef, type Sim, type SimEvent, type Vehicle } from '../../sim';
+import { BodyC, CombatC, CrewC, ShipC, ModuleC, PositionC, VehicleC, newGame, type ModuleDef, type Sim, type SimEvent, type Vehicle } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { missileRaiderId, shuttleContent } from './shuttleFixture';
@@ -143,5 +143,33 @@ describe('shuttle targets after a capture', () => {
     sim.world.get(nth(sim, 2), ShipC)!.faction = 'player'; // what capturePrize does
     run(sim, 3);
     expect(combat.vehicleTarget).toBeUndefined();
+  });
+});
+
+describe('enemy shuttle choice', () => {
+  it('skips a neutral flying shuttle listed before the hostile one', () => {
+    const sim = setup(3, missileRaiderId);
+    disarm(sim, 1);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 20, y: 100 });
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 20, y: 0 });
+    run(sim, 2);
+    sim.world.get(nth(sim, 3), ShipC)!.faction = 'neutral'; // its shuttle is no foe of the missile raider
+    sim.world.get(nth(sim, 4), ShipC)!.faction = 'rogue'; // at war with it
+    const neutral = shuttleOf(sim, 3);
+    const foe = shuttleOf(sim, 4);
+    expect(neutral).toBeLessThan(foe);
+    for (const v of [neutral, foe]) {
+      sim.world.get(v, VehicleC)!.state = 'flying';
+      const b = sim.world.get(v, BodyC);
+      if (b) Object.assign(b, { x: 90, y: 50 });
+      else sim.world.add(v, BodyC, { x: 90, y: 50, heading: 0, alt: 0 });
+    }
+    const targets = new Set<number | undefined>();
+    for (let i = 0; i < 100; i++) {
+      run(sim, 1);
+      targets.add(sim.world.get(nth(sim, 2), CombatC)!.vehicleTarget);
+    }
+    expect(targets.has(foe)).toBe(true);
+    expect(targets.has(neutral)).toBe(false);
   });
 });
