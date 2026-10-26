@@ -244,6 +244,8 @@ export interface RoleDef {
   fighter?: true;
   /** Item ids (best first) the crew member fetches from storage on their own when unarmed. */
   loadout?: string[];
+  /** Like `loadout`, but only for the player's own crew (so they can fight boarders without a draft); NPC crew of the role stay as they are. */
+  playerLoadout?: string[];
   /** Species of crew spawned in this role (default 'species.human'). Robot variants are roles of robot species. */
   species?: string;
   /** A robot bay can assemble this role (module.assembleRobot): materials delivered, then `work` ticks at workSpeed 1. */

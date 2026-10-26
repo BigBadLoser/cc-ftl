@@ -7,7 +7,7 @@ import { StorageC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import type { Sim } from '../sim';
-import { EquipC, EquipOrderC } from './components';
+import { AllegianceC, EquipC, EquipOrderC } from './components';
 import { handDefOf } from './weapons';
 import { shipIdOf } from '../regions';
 
@@ -98,7 +98,8 @@ export function equipOrders(sim: Sim): void {
 export function autoLoadout(sim: Sim): void {
   for (const id of sim.world.query(CrewC, PositionC)) {
     if ((sim.tick + id) % 10 !== 0) continue;
-    const loadout = sim.content.roles[sim.world.get(id, CrewC)?.role ?? '']?.loadout;
+    const role = sim.content.roles[sim.world.get(id, CrewC)?.role ?? ''];
+    const loadout = role?.loadout ?? (sim.world.get(id, AllegianceC)?.faction === 'player' ? role?.playerLoadout : undefined);
     if (!loadout || sim.world.get(id, EquipC)?.weapon || sim.world.has(id, EquipOrderC) || sim.world.has(id, DraftedC)) continue;
     if (sim.world.get(id, CrewC)?.activity === 'sleeping') continue;
     for (const item of loadout) if (orderEquip(sim, id, item) === null) break;

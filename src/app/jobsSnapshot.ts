@@ -5,6 +5,7 @@ import { crateAboard } from '../sim/galaxy/jobs';
 import { MAX_JOBS } from '../sim/galaxy/tuningJobs';
 import type { StationJob } from '../sim/galaxy/types';
 import type { UiJob, UiJobs } from '../ui/api';
+import { playerStrength, readStrength, targetStrength } from './shipStrength';
 
 /** What a delivery crate on deck is, for the inspector: its job, its contents and destination. Null for any other stack. */
 export function crateInfo(sim: Sim, jobId: number | undefined): { job: number; title: string; to: string } | null {
@@ -21,6 +22,7 @@ export function buildJobs(sim: Sim): UiJobs {
   const reach = reachFrom(sim, g.current);
   const place = (node: string | undefined) => (node ? nodeOf(sim, node)?.name ?? 'uncharted space' : '');
   const hops = (node: string | undefined) => (node ? reach.dist.get(node) ?? null : null);
+  const mine = playerStrength(sim);
   const view = (j: JobOffer | StationJob): UiJob => {
     const where = j.kind === 'delivery' ? j.to : j.node;
     const itemName = j.item ? sim.content.items[j.item]?.name ?? j.item : '';
@@ -29,10 +31,15 @@ export function buildJobs(sim: Sim): UiJobs {
       turnsLeft: Math.max(0, j.due - g.turn), where: place(where), hops: hops(where), here: where === g.current,
       title: j.kind === 'delivery' ? `Deliver a sealed crate (${j.count ?? 0} ${itemName})` : `Destroy the ${j.target ?? 'target'}`,
       detail: j.kind === 'delivery'
-        ? `to ${place(j.to)}`
-        : `a ${content?.factions[j.targetFaction ?? '']?.name ?? 'hostile'} ship waiting at ${place(j.node)}`,
+        ? ''
+        : `a ${content?.factions[j.targetFaction ?? '']?.name ?? 'hostile'} ship`,
       ready: j.kind === 'delivery' && 'id' in j && crateAboard(sim, j.id),
+      target: bountyTarget(j),
     };
+  };
+  const bountyTarget = (j: JobOffer | StationJob): UiJob['target'] => {
+    const strength = j.kind === 'bounty' && j.shipgen ? targetStrength(sim, j.shipgen, j.seed ?? 0, j.depth ?? 1) : null;
+    return strength ? { strength, read: readStrength(strength, mine) } : null;
   };
   const canTake = sim.sector.state === 'active' && !g.event;
   return {
@@ -40,5 +47,6 @@ export function buildJobs(sim: Sim): UiJobs {
     offers: canTake ? offersHere(sim).map(view) : [],
     active: g.jobs.map(view),
     max: MAX_JOBS,
+    mine,
   };
 }

@@ -10,6 +10,7 @@ import type { Sim } from '../sim';
 import { CHASE_REPLAN_TICKS, COMBAT_SIGHT, FLEE_REPLAN_TICKS } from '../tuning';
 import { AllegianceC, EquipOrderC, FighterC, type Fighter } from './components';
 import { fleePath } from './flee';
+import { claimHiddenRescue, hiddenFrom, onRescue } from './rescue';
 import { sightLine, type Cover } from './los';
 import { isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
 import { armorOf } from '../robots/core';
@@ -140,7 +141,9 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const faction = sim.world.get(id, AllegianceC)?.faction;
   // Station civilians (crew who are neither armed nor fighters) run from trouble like the player's do.
   const canFight = isArmed(sim, id) || !!role?.fighter || (faction !== 'player' && !sim.world.has(id, StationCrewC));
-  const hunter = invader || !!role?.fighter;
+  // Armed undrafted crew of the player's own ship hunt intruders they have not seen yet (onboarding: no draft needed).
+  const defender = faction === 'player' && !controlled && !invader && isArmed(sim, id);
+  const hunter = invader || !!role?.fighter || defender;
 
   // The nearest foe we can see (sight range, clear line).
   let seen: (typeof foes)[number] | undefined;
@@ -159,7 +162,22 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     target = ordered ?? (sac ? { id: f.ordered, pos: sac } : f.engage && canFight ? seen ?? autoSac ?? undefined : undefined);
   } else if (creatureTurn(sim, grid, id, f, pos, seen, foes)) return;
   else if (canFight) target = seen ?? (hunter ? foes[0] : undefined);
-  else if (seen && !sim.content.species[crew.species]?.fearless) return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
+  else if (!sim.content.species[crew.species]?.fearless) {
+    // Unarmed player crew know about every intruder aboard (a small ship): they keep away from all of them, not just those in view.
+    // Others (station civilians) run only from what they see.
+    if (faction === 'player') {
+      const threats = foes.map((o) => o.pos);
+      // Hidden from every intruder: a rescue (on the way or just claimed, for a patient out of their sight) goes on instead of hiding.
+      if (hiddenFrom(sim, grid, pos, threats)) {
+        if (onRescue(sim, id)) return;
+        const wasFleeing = f.mode === 'flee';
+        if (wasFleeing) setMode(sim, id, f, 'idle');
+        if (claimHiddenRescue(sim, grid, id, pos, threats)) return;
+      }
+      return flee(sim, grid, id, f, pos, threats, true);
+    }
+    if (seen) return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
+  }
 
   if (!target) {
     setMode(sim, id, f, 'idle');
@@ -239,10 +257,12 @@ function attack(
 }
 
 /** Unarmed non-fighters run from hostiles they can see: replan every FLEE_REPLAN_TICKS or when the path runs out. */
-function flee(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, threats: Position[]): void {
+function flee(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, threats: Position[], holdWhenHidden = false): void {
   setMode(sim, id, f, 'flee');
   const path = sim.world.get(id, PathC) as Path;
   const idle = path.steps.length === 0 && isSettled(pos);
+  // Already out of every intruder's sight and well away: stay put until the ship is clear (then back to work).
+  if (holdWhenHidden && idle && hiddenFrom(sim, grid, pos, threats)) return;
   if (!idle && sim.tick - f.planned < FLEE_REPLAN_TICKS) return;
   f.planned = sim.tick;
   const steps = fleePath(sim, grid, origin(pos), threats);

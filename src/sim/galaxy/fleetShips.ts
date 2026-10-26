@@ -3,6 +3,7 @@ import { liftShip } from '../sector/packet';
 import type { Sim } from '../sim';
 import { retreat, strand } from './agenda';
 import { spawnContact } from './arrivals';
+import { graceHolds } from './grace';
 import { owe } from './portIndex';
 import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY } from './tuning';
 import type { Contact, Fleet } from './types';
@@ -39,6 +40,7 @@ function shipsInPlay(sim: Sim): number {
  * event grid), up to FLEET_NODE_SHIPS ships in the sector. Ships that find no room stay descriptors and are retried by `tendFleets`.
  */
 export function materialiseFleet(sim: Sim, f: Fleet, node: string = f.node): void {
+  if (node === f.node && !sim.galaxy.event && graceHolds(sim, node, f.faction)) return; // opening grace: it stays a descriptor
   for (const c of f.ships) if (c.ship === undefined && shipsInPlay(sim) < FLEET_NODE_SHIPS) spawnContact(sim, node, c);
 }
 

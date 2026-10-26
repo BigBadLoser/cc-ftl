@@ -13,6 +13,8 @@ export const roles = {
     name: 'Gunner',
     priorities: { firefighting: 2, medical: 4, operating: 1, repair: 3, construction: 4, hauling: 3, refining: 4, crafting: 4, cooking: 4, patrol: 0 },
     skills: { gunnery: 3 },
+    // Gunners take a gun from storage when one is there, so they fight boarders without being drafted (not `fighter`: they do not patrol).
+    playerLoadout: ['item.rifle', 'item.sidearm'],
   },
   'role.medic': {
     name: 'Medic',

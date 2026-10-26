@@ -80,7 +80,7 @@ describe('starter vs raider balance (fixed seeds)', { timeout: 120000 }, () => {
     for (const r of results) {
       expect(r.winner).toBe('player');
       expect(r.seconds).toBeGreaterThan(60); // not a walkover
-      expect(r.seconds).toBeLessThan(6 * 60);
+      expect(r.seconds).toBeLessThan(8 * 60); // was 6: the gunner now arms and leaves the console for boarders, which shifts the chaotic timeline
       expect(r.minIntegrity).toBeLessThan(0.975); // some damage (was 0.96 before the 2 s roof-part deploy delay)
       expect(r.minIntegrity).toBeGreaterThan(0.6);
       expect(r.deadAt4).toBe(0);
