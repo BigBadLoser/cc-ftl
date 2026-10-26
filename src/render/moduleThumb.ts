@@ -9,6 +9,7 @@ import { iso } from './iso';
 import { AirlockC } from '../sim/modules/airlock';
 import { TICK_HZ } from '../sim/time';
 import { PREVIEW_LEVEL, layersOf } from './layerPick';
+import { tierBase } from './tierArt';
 import { steady } from './vehicleBayArt';
 import { turretStem } from './turretView';
 
@@ -56,7 +57,10 @@ export function createModuleThumbs(extract: ExtractSystem, atlas: Atlas, defs: R
     // A fixed preview state: powered, idle, an airlock with both doors shut and nothing docked, bays holding their craft.
     const id = world.createEntity();
     if (def.airlock) world.add(id, AirlockC, { state: 'toInner', timer: Math.round((def.airlock.cycleSec * TICK_HZ) / 2), request: null });
-    const layers = layersOf(world, id, m, def, { active: false, now: 0, airlock: { level: PREVIEW_LEVEL, roofed: false, collar: null }, bay: steady(true) });
+    const tb = def.tierArt ? tierBase(m, def) : null;
+    const [bw, bh] = tb ? rotatedSize(tb.def, rot) : [w, h];
+    const bf = tb ? { x: tb.m.x + bw - 1, y: tb.m.y + bh - 1 } : { x: w - 1, y: h - 1 };
+    const layers = layersOf(world, id, tb?.m ?? m, tb?.def ?? def, { active: false, now: 0, airlock: { level: PREVIEW_LEVEL, roofed: false, collar: null }, bay: steady(true) });
     world.destroyEntity(id);
     for (const layer of layers) {
       const art = resolveArt(atlas, layer.chain, layer.key);
@@ -66,7 +70,7 @@ export function createModuleThumbs(extract: ExtractSystem, atlas: Atlas, defs: R
       }
       if (art.fallback) continue; // stand-ins are drawn per tile in the world; the catalog shows real art only
       const flip = !layer.at && nw !== nh && rot % 2 === 1 && art.s.footprint[0] === nw && art.s.footprint[1] === nh;
-      place(new Sprite(art.s.tex), art.s.ax, art.s.ay, layer.at ?? { x: w - 1, y: h - 1 }, flip);
+      place(new Sprite(art.s.tex), art.s.ax, art.s.ay, layer.at ?? bf, flip);
     }
     if (def.weapon || def.pointDefense) {
       const t = resolveArt(atlas, [`turret.${turretStem(def.asset)}.d0`]);

@@ -2,7 +2,7 @@ import { settleLosses } from './jobs';
 import { dropOut, enterHyperspace } from '../sector/jump';
 import type { Sim } from '../sim';
 import { playerShipInfo, spawnContact } from './arrivals';
-import { burnFuel, ftlCharge, fuelStock, spendCharge } from './fuel';
+import { burnFuel, ftlCharge, fuelStock, jumpFuel, spendCharge } from './fuel';
 import { arrive, checkLeaving, type Reject } from './travel';
 import { edgeBetween } from './route';
 import { ensureAround, galaxyIndex, nodeState } from './state';
@@ -56,7 +56,7 @@ export function routeBlocker(sim: Sim, edges: readonly EdgeData[] | null, ship?:
   const charge = ftlCharge(sim, ship);
   if (charge === null) return 'noShip';
   if (charge + 1e-9 < routeCharge(edges)) return 'notCharged';
-  if (fuelStock(sim, ship) < (edges[0] as EdgeData).fuel) return 'noFuel';
+  if (fuelStock(sim, ship) < jumpFuel(sim, (edges[0] as EdgeData).fuel, ship)) return 'noFuel';
   return null;
 }
 
@@ -75,7 +75,7 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   const first = edges[0] as EdgeData;
   const charge = routeCharge(edges);
   spendCharge(sim, charge, ship);
-  burnFuel(sim, first.fuel, ship);
+  burnFuel(sim, jumpFuel(sim, first.fuel, ship), ship);
   settleLosses(sim);
   unbindMarkets(sim);
   liftFleetsAt(sim, g.current);
@@ -134,12 +134,13 @@ export function resumeAfterHop(sim: Sim, t: Travel | null = sim.galaxy.travel): 
   }
   t.phase = 'hop';
   const next = edgeBetween(g, g.current, t.route[t.at + 1] as string) as EdgeData;
-  if (fuelStock(sim) < next.fuel) {
+  const fuel = jumpFuel(sim, next.fuel);
+  if (fuelStock(sim) < fuel) {
     t.phase = 'noFuel';
-    sim.events.emit({ type: 'galaxy.stalled', node: g.current, need: next.fuel });
+    sim.events.emit({ type: 'galaxy.stalled', node: g.current, need: fuel });
     return;
   }
-  burnFuel(sim, next.fuel);
+  burnFuel(sim, fuel);
   t.hopTicks = hopTicksOf();
   takeHopTurn(sim);
 }

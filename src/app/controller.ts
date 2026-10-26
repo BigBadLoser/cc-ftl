@@ -1,6 +1,6 @@
 import { asteroidAt, inShip, shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { AsteroidC } from '../sim/asteroids/components';
-import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isOreTile, isSolidRock, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
+import { AboardC, AllegianceC, BodyC, CrewC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, isBlueprintKnown, isOreTile, isSolidRock, isWalkable, placementError, rotatedSize, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
 import { ROCK_MASS_Z } from '../render/asteroidView';
 import type { UiBuildKind, UiToolState } from '../ui/api';
@@ -174,7 +174,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (!at || !def || !t.moduleDef) return null;
     // The player region under the cursor (a claimed base), else the home ship (whose error then says why it does not fit).
     const ship = mineAt(at.x, at.y) || homeShipId();
-    return { tiles: footprintTiles(def, at.x, at.y, t.rot), at, ship, def: t.moduleDef, error: placementError(sim, ship, t.moduleDef, at.x, at.y, t.rot) };
+    return { tiles: footprintTiles(def, at.x, at.y, t.rot), at, ship, def: t.moduleDef, error: isBlueprintKnown(sim, t.moduleDef) ? placementError(sim, ship, t.moduleDef, at.x, at.y, t.rot) : 'unknownBlueprint' };
   };
 
   /** Tiles covered by the current drag: a line for wall/door, a rectangle otherwise. */
@@ -216,7 +216,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     }
     r?.setPreview(paintStart ? shape() : active && hover ? [hover] : []);
   };
-  const setTool = (s: Partial<UiToolState>) => {
+  const setTool = (state: Partial<UiToolState>) => {
+    // A module whose blueprint is not known cannot be picked for placement (the catalog shows it locked).
+    const s = state.moduleDef && !isBlueprintKnown(sim, state.moduleDef) ? { ...state, moduleDef: tool.get().moduleDef } : state;
     tool.update((cur) => ({ ...cur, ...s }));
     if (s.tool === 'select') modPos = null;
     paintStart = paintEnd = null;

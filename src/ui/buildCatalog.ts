@@ -41,9 +41,9 @@ const TOOLS: { id: UiBuildKind; name: string; category: CategoryId; icon: IconNa
   { id: 'claim', name: 'Claim asteroid', category: 'mining', icon: 'flag', description: 'Drag a rectangle on an asteroid to start a base there.' },
 ];
 
-export function buildEntries(api: UiApi): Entry[] {
+export function buildEntries(api: UiApi, defs: UiModuleDef[]): Entry[] {
   const tools: Entry[] = TOOLS.map((t) => ({ key: `tool:${t.id}`, kind: 'tool', id: t.id, name: t.name, category: t.category, cost: api.structCosts[t.id] ?? [], description: t.description, icon: t.icon }));
-  const mods: Entry[] = api.moduleDefs.map((d) => ({ key: d.id, kind: 'module', id: d.id, name: d.name, category: d.category, cost: d.cost, description: d.description, def: d, locked: d.locked }));
+  const mods: Entry[] = defs.map((d) => ({ key: d.id, kind: 'module', id: d.id, name: d.name, category: d.category, cost: d.cost, description: d.description, def: d, locked: d.locked }));
   return [...tools, ...mods];
 }
 

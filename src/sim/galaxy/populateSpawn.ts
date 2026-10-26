@@ -24,10 +24,11 @@ import type { NodeData } from './types';
 const SIZES: readonly StationSize[] = ['outpost', 'station', 'hub'];
 
 /** The station kind (content `station.*`) a station structure is: from its port when it has one, else from its definition and owner. */
-export function stationKindOf(sim: Sim, port: Port | undefined, military: boolean, pirate: boolean): string {
+export function stationKindOf(sim: Sim, port: Port | undefined, military: boolean, pirate: boolean, research = false): string {
   const stations = sim.content.stations ?? {};
   if (port?.kind === 'den') return 'station.pirate';
   if (port?.kind === 'depot') return 'station.military';
+  if (research && !pirate && stations['station.research']) return 'station.research';
   if (port) {
     // A market's trade profile names the station kind it is (trading or farming).
     const profile = profileOf(sim, port);
