@@ -6,7 +6,10 @@ import type { ModuleDef } from '../sim/registry';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
 import { iso } from './iso';
-import { moduleLayers } from './moduleArt';
+import { AirlockC } from '../sim/modules/airlock';
+import { TICK_HZ } from '../sim/time';
+import { PREVIEW_LEVEL, layersOf } from './layerPick';
+import { steady } from './vehicleBayArt';
 import { turretStem } from './turretView';
 
 /** A module's art as one cached image (a PNG data URL, in world px) with the pixel of its front footprint tile's centre (the sprite anchor). */
@@ -50,7 +53,12 @@ export function createModuleThumbs(extract: ExtractSystem, atlas: Atlas, defs: R
       root.addChild(s);
     };
     const [nw, nh] = def.footprint;
-    for (const layer of moduleLayers(world, 0, m, def, false, true)) {
+    // A fixed preview state: powered, idle, an airlock with both doors shut and nothing docked, bays holding their craft.
+    const id = world.createEntity();
+    if (def.airlock) world.add(id, AirlockC, { state: 'toInner', timer: Math.round((def.airlock.cycleSec * TICK_HZ) / 2), request: null });
+    const layers = layersOf(world, id, m, def, { active: false, now: 0, airlock: { level: PREVIEW_LEVEL, roofed: false, collar: null }, bay: steady(true) });
+    world.destroyEntity(id);
+    for (const layer of layers) {
       const art = resolveArt(atlas, layer.chain, layer.key);
       if (!art) {
         if (atlas.loading(layer.chain)) { root.destroy({ children: true }); return null; }
