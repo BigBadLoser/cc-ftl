@@ -7,9 +7,10 @@ import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
 import type { Sim } from '../sim';
-import { CHASE_REPLAN_TICKS, COMBAT_SIGHT, FLEE_HOLD_DIST, FLEE_REPLAN_TICKS } from '../tuning';
+import { CHASE_REPLAN_TICKS, COMBAT_SIGHT, FLEE_REPLAN_TICKS } from '../tuning';
 import { AllegianceC, EquipOrderC, FighterC, type Fighter } from './components';
 import { fleePath } from './flee';
+import { claimHiddenRescue, hiddenFrom, onRescue } from './rescue';
 import { sightLine, type Cover } from './los';
 import { isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
 import { armorOf } from '../robots/core';
@@ -164,7 +165,17 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   else if (!sim.content.species[crew.species]?.fearless) {
     // Unarmed player crew know about every intruder aboard (a small ship): they keep away from all of them, not just those in view.
     // Others (station civilians) run only from what they see.
-    if (faction === 'player') return flee(sim, grid, id, f, pos, foes.map((o) => o.pos), true);
+    if (faction === 'player') {
+      const threats = foes.map((o) => o.pos);
+      // Hidden from every intruder: a rescue (on the way or just claimed, for a patient out of their sight) goes on instead of hiding.
+      if (hiddenFrom(sim, grid, pos, threats)) {
+        if (onRescue(sim, id)) return;
+        const wasFleeing = f.mode === 'flee';
+        if (wasFleeing) setMode(sim, id, f, 'idle');
+        if (claimHiddenRescue(sim, grid, id, pos, threats)) return;
+      }
+      return flee(sim, grid, id, f, pos, threats, true);
+    }
     if (seen) return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
   }
 
@@ -251,7 +262,7 @@ function flee(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, threa
   const path = sim.world.get(id, PathC) as Path;
   const idle = path.steps.length === 0 && isSettled(pos);
   // Already out of every intruder's sight and well away: stay put until the ship is clear (then back to work).
-  if (holdWhenHidden && idle && threats.every((t) => dist(pos, t) > FLEE_HOLD_DIST && !sightLine(sim, grid, t, pos).visible)) return;
+  if (holdWhenHidden && idle && hiddenFrom(sim, grid, pos, threats)) return;
   if (!idle && sim.tick - f.planned < FLEE_REPLAN_TICKS) return;
   f.planned = sim.tick;
   const steps = fleePath(sim, grid, origin(pos), threats);
