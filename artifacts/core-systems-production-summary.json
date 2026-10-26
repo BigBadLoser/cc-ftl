@@ -1,0 +1,21 @@
+{
+  "complete": true,
+  "zip": "core-systems-production.zip",
+  "bytes": 841963,
+  "sha256": "d1d47146b9278087bcad3c447971ed3a2bab2a0c62771f32d3fe21ce553bfefd",
+  "uniqueFrames": 40,
+  "manifestEntries": 60,
+  "sheetSizes": {
+    "life_support": [
+      2048,
+      96
+    ],
+    "reactor": [
+      2048,
+      98
+    ]
+  },
+  "approvedFramePairsPixelExact": 22,
+  "sourceSnapshotValidated": true,
+  "allChecksumsAndZipEntriesVerified": true
+}

@@ -265,3 +265,53 @@ python3 tools/blender/review/core_systems_damage_preview.py --compose \
 
 Damage appearance awaits review. Final damage rotations, fixed frame-set
 packing, manifest aliases and the production handoff remain after approval.
+
+## Final production handoff after damage approval
+
+**Complete:** `artifacts/core-systems-production.zip` is the portable handoff.
+`artifacts/core-systems-production-summary.json` records its checksum, size and
+atlas dimensions; `artifacts/core-systems-production-review.png` previews the
+actual final atlas. The unpacked output directory is ignored by Git to avoid
+publishing hundreds of individual frame/source-copy files.
+
+- 40 unique frames: two models x four rotations x five states (powered,
+  unpowered, damaged, damaged-flicker, destroyed). 60 manifest entries include
+  the bare legacy and `.active` aliases.
+- Reactor atlas twins: **2048x98**; life-support twins: **2048x96**. One fixed
+  size/anchor per asset and rotation across every state, using padding only.
+- Reused all 22 approved frame pairs exactly and rendered only the remaining
+  18 damage rotations. The approved geometry/material source hashes are locked.
+- Every damaged assembly is a rigid rotation of its canonical r0 damage.
+  Bounds, heights, floor contact, flicker geometry/alpha, glow containment,
+  atlas round trips, overlaps and gutters pass validation.
+- Package contains editable healthy r0 `.blend` files, final individual frames,
+  a manifest fragment, integration notes, complete standalone source/reference
+  snapshot, all-rotation review sheets, flicker GIF and SHA256 checksums.
+- Validation also succeeds against the bundled source snapshot. ZIP entries
+  match the unpacked files byte-for-byte and the archive integrity check passes.
+
+The renderer files (core, post, env_build, pack, scale, damage, palette and setup)
+are unchanged on current main at `71d83c23953eda87b5f7cb0a77a45c8b63d73156`.
+The production settings therefore reproduce the approved views exactly:
+Blender4.2.9, two threads, SS4/four samples, standard 64x32 environment art drawn
+at 2x on the 128x64 grid. No full sprite build, runtime code or live asset edit.
+
+Rebuild from the repository root (one Blender process at a time):
+
+```sh
+SPRITE_PREVIEW=0 SPRITE_SS=4 SPRITE_SAMPLES=4 \
+  /workspace/blender-tools/blender-4.2.9-linux-x64/blender -b -t 2 \
+  --factory-startup --python-exit-code 1 \
+  --python tools/blender/export_core_systems.py -- \
+  --out artifacts/core-systems-production/1x
+python3 tools/blender/pack_core_systems_handoff.py \
+  --package artifacts/core-systems-production
+```
+
+`tools/blender/core_systems_approved.json` locks model/pipeline/reference inputs;
+`validate_core_systems.py` independently audits actual atlas pixels. Final export
+uses the corrected parameters in `core_systems_touchups.parameters(name)`.
+The ZIP README explains manifest merging and remaining integration work. Current
+main already selects healthy rotation and `.unpowered` assets; live damage/HP
+and flicker selection remain an integration concern. Content footprints stay
+reactor 2x2 and life support 1x2.

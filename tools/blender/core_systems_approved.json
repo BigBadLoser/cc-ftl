@@ -1,0 +1,732 @@
+{
+  "approvedModelCommit": "ca450865f183da165d1f26d87c7c9f9a3337befe",
+  "pipelineBaseCommit": "12a91d3f4bc01f160043dd64d63a12257d2073eb",
+  "currentMainVerified": "71d83c23953eda87b5f7cb0a77a45c8b63d73156",
+  "renderCoreUnchangedOnMain": true,
+  "files": {
+    "palette.json": "702f0f4388bf6badf4a9a761be077b04c59e6f2538c20c6907215f3ab2718495",
+    "tools/blender/palette_extra.json": "c54912d2f9c002f7c187c821ec394a82a73b61f13e9b2b35f80230e582790544",
+    "tools/blender/setup.sh": "4f7322b7749a263fb975bf298d476d0f33d189fc804518515c55c622bc04530b",
+    "tools/blender/lib/palette.py": "277815512ad48dcb2bcf877530358f9963788bfa80edf5e0d977feee4c6edcc4",
+    "tools/blender/sprites/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tools/blender/sprites/core.py": "2ed9454ce078ca273ac90e0abf5e1de35f1bb7854ad0fe56d30c387a70d2709a",
+    "tools/blender/sprites/post.py": "5c66a0b568b6585e6362f3324c2833398bb7d27fdd03c67c1f7eb27c4aef336a",
+    "tools/blender/sprites/scale.py": "e98bfd8dcd64b0447c81326d9fb714d8252d54339364a71219a0b987b29d68c4",
+    "tools/blender/sprites/cmbkit.py": "d2738e9018985d8588752612660599a50037a18489b750b011760e117839b3e4",
+    "tools/blender/sprites/damage.py": "3cf057b6be7b8e2536890f39f931f688e40a60d81394df66463b7dbd8b333637",
+    "tools/blender/sprites/env_build.py": "b0d78affcd3adc33f5fa8e9df856ef7bbfbcaeca3dd7d1946cf1db8f7ccd7e8e",
+    "tools/blender/sprites/pack.py": "1e4b478f6aba0a57e3818d0d7bfc7091f2b3cb3b3046c3adefcc5bcbb7bb42fb",
+    "tools/blender/sprites/pod_muzzle.py": "cf7e803aafb5bc02fd1d346cbbd188c4e916c114b537c53b1df99115de69cf89",
+    "tools/blender/sprites/geom_digest.py": "4dd3aa5747743b18c2961d62705de52c7beeb27dc0565f3786e001da141ad278",
+    "tools/blender/sprites/sprite_cache.py": "151b38c6b06b33644d545a0d25340727eddf6c9fd84f656165de883f2a59dc3c",
+    "tools/blender/sprites/crew_cache.py": "b6d3df7567c0ef8a4e9de6f08d2942286f705909673dce2fa6c7fe8247f2a658",
+    "tools/blender/sprites/core_systems_blockout.py": "52b45c543be6209f907078ddd90d8171f07a6fac86db0a453a8a551d1679919b",
+    "tools/blender/sprites/core_systems_detail.py": "216a4439ed99d4c568aef0489c51f8c7c8109d99c17180c0cae340eee203a606",
+    "tools/blender/sprites/core_systems_finish.py": "7b41d5e7abc346e66bf9e19405b97cf7557fa6fb0a599ec21bbfa9bbcedad9ca",
+    "tools/blender/sprites/core_systems_touchups.py": "e79537e8e57c1eab28e5ccd07dcf5b445e169b865acdd8a423ef02bf023b1305",
+    "tools/blender/sprites/core_systems_damage.py": "2df961e05949903c9201381fb2a324d38a14bdd09f83e1570e8ffde8089563d9",
+    "artifacts/core-systems-orientations/review.json": "cbf7e04d9c6e388ad0b6875b88da58be3aa66a14cf71c3d305d121e47f5f5b4f",
+    "artifacts/core-systems-orientations/frames/reactor.r0.powered.png": "fea16da7b9e5b86a37986e985fb198d634f8c39160e8b8b605c55c863330bbb6",
+    "artifacts/core-systems-orientations/frames/reactor.r0.powered.glow.png": "6d45d8dbb7496ff3a1a000d9c7c5d32289205e4e1aa52f0918de368c9fc82aad",
+    "artifacts/core-systems-orientations/frames/reactor.r0.unpowered.png": "1044f62059209e8bfbc497af805dfed3698c3d1eda60cbd0e9fd6fdfd8d3557a",
+    "artifacts/core-systems-orientations/frames/reactor.r0.unpowered.glow.png": "1a6b9cc503426bb27696c85fb1c28aa57eb5c571faad07a4ce83a0980d448a89",
+    "artifacts/core-systems-orientations/frames/reactor.r1.powered.png": "d72a6a52581317e104d0855b56698980cbc031327e3e7f8ebb02463f62b41577",
+    "artifacts/core-systems-orientations/frames/reactor.r1.powered.glow.png": "484009d2d1928f00d2cc92bbed553ea383f5cd3bac3fa1a7feebccae7f61450b",
+    "artifacts/core-systems-orientations/frames/reactor.r1.unpowered.png": "2cf214da64beaf7db842be14f3716e43dba146818652557a15be8022f3f080e2",
+    "artifacts/core-systems-orientations/frames/reactor.r1.unpowered.glow.png": "1a6b9cc503426bb27696c85fb1c28aa57eb5c571faad07a4ce83a0980d448a89",
+    "artifacts/core-systems-orientations/frames/reactor.r2.powered.png": "8b77928a19e53d0545ed0584309c3f33f89d91e89df5070dc644479e5b3da738",
+    "artifacts/core-systems-orientations/frames/reactor.r2.powered.glow.png": "76b17aec216d345a070f0e0450dc716470069f0aef33a5f407a227831f0c9a41",
+    "artifacts/core-systems-orientations/frames/reactor.r2.unpowered.png": "94c00b78a532e3ab51a5c246eeca351c8e0e6535c37b48d22dd226a2273a1770",
+    "artifacts/core-systems-orientations/frames/reactor.r2.unpowered.glow.png": "1a6b9cc503426bb27696c85fb1c28aa57eb5c571faad07a4ce83a0980d448a89",
+    "artifacts/core-systems-orientations/frames/reactor.r3.powered.png": "5c4350e5cb377dc008cc2e6816a23eb7ae941a4df4db6cd15e584921b3316120",
+    "artifacts/core-systems-orientations/frames/reactor.r3.powered.glow.png": "4191fb4786f19a3a885742f831269a400322229cd54aa1ca89914597f21af455",
+    "artifacts/core-systems-orientations/frames/reactor.r3.unpowered.png": "7abb79156e2d656f8d8e9a5820db6d1f20998645f1599ec832eab5082a24fe04",
+    "artifacts/core-systems-orientations/frames/reactor.r3.unpowered.glow.png": "1a6b9cc503426bb27696c85fb1c28aa57eb5c571faad07a4ce83a0980d448a89",
+    "artifacts/core-systems-orientations/frames/life_support.r0.powered.png": "7197f9fd6a24faf1f58cb1bf9cac9612b7045268e95d42fd303c9e046708e3f6",
+    "artifacts/core-systems-orientations/frames/life_support.r0.powered.glow.png": "6ed843be70fa32390212ab9e69a9c7a5b8022d77bef1d8180367964ed0ffd3d2",
+    "artifacts/core-systems-orientations/frames/life_support.r0.unpowered.png": "58b583a1f6483d95fbdf22c23dc4b219983b7fe5a64b510558d5057d25312a33",
+    "artifacts/core-systems-orientations/frames/life_support.r0.unpowered.glow.png": "731aa52879cfaa8cc0679be72c15aad974945bd7f3e1db118d23283796c19737",
+    "artifacts/core-systems-orientations/frames/life_support.r1.powered.png": "9938b7c956a60d66eb09f2e93e524e0185babeeed27391c570bb40a2c819e041",
+    "artifacts/core-systems-orientations/frames/life_support.r1.powered.glow.png": "5386bca4b75a50ac705447a67e5374adb426f8de6cc65be1fe31891cec94a230",
+    "artifacts/core-systems-orientations/frames/life_support.r1.unpowered.png": "569f81056c8892759721c939727d211d393b7db19b7773ac5c7a352113749f77",
+    "artifacts/core-systems-orientations/frames/life_support.r1.unpowered.glow.png": "731aa52879cfaa8cc0679be72c15aad974945bd7f3e1db118d23283796c19737",
+    "artifacts/core-systems-orientations/frames/life_support.r2.powered.png": "ac43189a5e7948032ac8569266a998158711198637770b4eafdf6f31ff55e351",
+    "artifacts/core-systems-orientations/frames/life_support.r2.powered.glow.png": "003631f55efdc77ad3503e98f1ae6862620031113124cae09fb564969f0648c5",
+    "artifacts/core-systems-orientations/frames/life_support.r2.unpowered.png": "ac43189a5e7948032ac8569266a998158711198637770b4eafdf6f31ff55e351",
+    "artifacts/core-systems-orientations/frames/life_support.r2.unpowered.glow.png": "003631f55efdc77ad3503e98f1ae6862620031113124cae09fb564969f0648c5",
+    "artifacts/core-systems-orientations/frames/life_support.r3.powered.png": "d2c15fa61af653aa0ef2c83fedd1b414f2dfc28d69a35e097b35aa76a737d993",
+    "artifacts/core-systems-orientations/frames/life_support.r3.powered.glow.png": "003631f55efdc77ad3503e98f1ae6862620031113124cae09fb564969f0648c5",
+    "artifacts/core-systems-orientations/frames/life_support.r3.unpowered.png": "d2c15fa61af653aa0ef2c83fedd1b414f2dfc28d69a35e097b35aa76a737d993",
+    "artifacts/core-systems-orientations/frames/life_support.r3.unpowered.glow.png": "003631f55efdc77ad3503e98f1ae6862620031113124cae09fb564969f0648c5",
+    "artifacts/core-systems-damage/review.json": "c63ee7d218da70b3c131ef3ba1691cf331cf69400c7dbe76720cd4616b88cd7a",
+    "artifacts/core-systems-damage/frames/reactor.r0.damaged.png": "60ccafeb3c865444e60ce91dec6e9c6492f103b2515fbca532a01623cb7dbc1e",
+    "artifacts/core-systems-damage/frames/reactor.r0.damaged.glow.png": "5f3578da631e9e26f7dff9b5c7d5c1c5c8428c662257d086f37fca2b6d5471d7",
+    "artifacts/core-systems-damage/frames/reactor.r0.damaged.flicker.png": "9857b228a06cb6d3f0b3c9cd3a288eabd00b0ef45246a93f0bf3bba3662006b2",
+    "artifacts/core-systems-damage/frames/reactor.r0.damaged.flicker.glow.png": "1a6b9cc503426bb27696c85fb1c28aa57eb5c571faad07a4ce83a0980d448a89",
+    "artifacts/core-systems-damage/frames/reactor.r0.destroyed.png": "368df52f0e95887e7aac028140d9209fad175d69b16dfac7e6c4c7c438d1d74d",
+    "artifacts/core-systems-damage/frames/reactor.r0.destroyed.glow.png": "b0e82ae6afaa3f21afa11b54390ba0f964a5e85664804fe76b16e0674e8a70e7",
+    "artifacts/core-systems-damage/frames/life_support.r0.damaged.png": "6fa43d1b1698116089580599c99b149bbed6adbbbe5c0779ac72b1788dd94b68",
+    "artifacts/core-systems-damage/frames/life_support.r0.damaged.glow.png": "82ecd72ccc0b208efb5cac074f4051485a457d6424a566049a7428fa91d076cb",
+    "artifacts/core-systems-damage/frames/life_support.r0.damaged.flicker.png": "64b01fa554fdb7b3af33c1094bcaac14d1fb4db5942f0a62027c168803e86fb1",
+    "artifacts/core-systems-damage/frames/life_support.r0.damaged.flicker.glow.png": "731aa52879cfaa8cc0679be72c15aad974945bd7f3e1db118d23283796c19737",
+    "artifacts/core-systems-damage/frames/life_support.r0.destroyed.png": "7bcefb3cae57905d8acaa6ea13220dfca8dd9c10fb3d7e9b96675deb9763467f",
+    "artifacts/core-systems-damage/frames/life_support.r0.destroyed.glow.png": "118b259ff92bff2fc7a69d9da4b5ede91219f9c05d8376b6c3ac7480c7a7e623"
+  },
+  "pipelineFiles": [
+    "palette.json",
+    "tools/blender/palette_extra.json",
+    "tools/blender/setup.sh",
+    "tools/blender/lib/palette.py",
+    "tools/blender/sprites/__init__.py",
+    "tools/blender/sprites/core.py",
+    "tools/blender/sprites/post.py",
+    "tools/blender/sprites/scale.py",
+    "tools/blender/sprites/cmbkit.py",
+    "tools/blender/sprites/damage.py",
+    "tools/blender/sprites/env_build.py",
+    "tools/blender/sprites/pack.py",
+    "tools/blender/sprites/pod_muzzle.py",
+    "tools/blender/sprites/geom_digest.py",
+    "tools/blender/sprites/sprite_cache.py",
+    "tools/blender/sprites/crew_cache.py"
+  ],
+  "modelFiles": [
+    "tools/blender/sprites/core_systems_blockout.py",
+    "tools/blender/sprites/core_systems_detail.py",
+    "tools/blender/sprites/core_systems_finish.py",
+    "tools/blender/sprites/core_systems_touchups.py",
+    "tools/blender/sprites/core_systems_damage.py"
+  ],
+  "approvedFrames": {
+    "reactor.r0.powered": {
+      "image": "artifacts/core-systems-orientations/frames/reactor.r0.powered.png",
+      "glow": "artifacts/core-systems-orientations/frames/reactor.r0.powered.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "rotation": 0,
+        "state": "powered",
+        "frameSize": [
+          90,
+          96
+        ],
+        "anchor": [
+          45,
+          94
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "geometryDigest": "31bf9e064cf58751882aa2e864028a3b51899c0a1924e865eeb51329d0a3c52d",
+        "approvedGeometryExact": true,
+        "glowPixels": 188
+      }
+    },
+    "reactor.r0.unpowered": {
+      "image": "artifacts/core-systems-orientations/frames/reactor.r0.unpowered.png",
+      "glow": "artifacts/core-systems-orientations/frames/reactor.r0.unpowered.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "rotation": 0,
+        "state": "unpowered",
+        "frameSize": [
+          90,
+          96
+        ],
+        "anchor": [
+          45,
+          94
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "geometryDigest": "31bf9e064cf58751882aa2e864028a3b51899c0a1924e865eeb51329d0a3c52d",
+        "approvedGeometryExact": true,
+        "glowPixels": 0
+      }
+    },
+    "reactor.r1.powered": {
+      "image": "artifacts/core-systems-orientations/frames/reactor.r1.powered.png",
+      "glow": "artifacts/core-systems-orientations/frames/reactor.r1.powered.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "rotation": 1,
+        "state": "powered",
+        "frameSize": [
+          90,
+          96
+        ],
+        "anchor": [
+          45,
+          94
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "geometryDigest": "23c07a8b118211743333e9ed95472b7a0a7406576eb8a7833c3bbd8a6160f135",
+        "approvedGeometryExact": true,
+        "glowPixels": 190
+      }
+    },
+    "reactor.r1.unpowered": {
+      "image": "artifacts/core-systems-orientations/frames/reactor.r1.unpowered.png",
+      "glow": "artifacts/core-systems-orientations/frames/reactor.r1.unpowered.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "rotation": 1,
+        "state": "unpowered",
+        "frameSize": [
+          90,
+          96
+        ],
+        "anchor": [
+          45,
+          94
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "geometryDigest": "23c07a8b118211743333e9ed95472b7a0a7406576eb8a7833c3bbd8a6160f135",
+        "approvedGeometryExact": true,
+        "glowPixels": 0
+      }
+    },
+    "reactor.r2.powered": {
+      "image": "artifacts/core-systems-orientations/frames/reactor.r2.powered.png",
+      "glow": "artifacts/core-systems-orientations/frames/reactor.r2.powered.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "rotation": 2,
+        "state": "powered",
+        "frameSize": [
+          90,
+          96
+        ],
+        "anchor": [
+          45,
+          94
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "geometryDigest": "d2e682c09033b7ecf3a751f998f3275a1069494b1b0c804cbc6819a801a130a0",
+        "approvedGeometryExact": true,
+        "glowPixels": 142
+      }
+    },
+    "reactor.r2.unpowered": {
+      "image": "artifacts/core-systems-orientations/frames/reactor.r2.unpowered.png",
+      "glow": "artifacts/core-systems-orientations/frames/reactor.r2.unpowered.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "rotation": 2,
+        "state": "unpowered",
+        "frameSize": [
+          90,
+          96
+        ],
+        "anchor": [
+          45,
+          94
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "geometryDigest": "d2e682c09033b7ecf3a751f998f3275a1069494b1b0c804cbc6819a801a130a0",
+        "approvedGeometryExact": true,
+        "glowPixels": 0
+      }
+    },
+    "reactor.r3.powered": {
+      "image": "artifacts/core-systems-orientations/frames/reactor.r3.powered.png",
+      "glow": "artifacts/core-systems-orientations/frames/reactor.r3.powered.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "rotation": 3,
+        "state": "powered",
+        "frameSize": [
+          90,
+          96
+        ],
+        "anchor": [
+          45,
+          94
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "geometryDigest": "2ec6f685dfa201dca9b0b83aac81a7266e4b847dfb651ee1de65deee06724954",
+        "approvedGeometryExact": true,
+        "glowPixels": 144
+      }
+    },
+    "reactor.r3.unpowered": {
+      "image": "artifacts/core-systems-orientations/frames/reactor.r3.unpowered.png",
+      "glow": "artifacts/core-systems-orientations/frames/reactor.r3.unpowered.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "rotation": 3,
+        "state": "unpowered",
+        "frameSize": [
+          90,
+          96
+        ],
+        "anchor": [
+          45,
+          94
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "geometryDigest": "2ec6f685dfa201dca9b0b83aac81a7266e4b847dfb651ee1de65deee06724954",
+        "approvedGeometryExact": true,
+        "glowPixels": 0
+      }
+    },
+    "life_support.r0.powered": {
+      "image": "artifacts/core-systems-orientations/frames/life_support.r0.powered.png",
+      "glow": "artifacts/core-systems-orientations/frames/life_support.r0.powered.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "rotation": 0,
+        "state": "powered",
+        "frameSize": [
+          80,
+          94
+        ],
+        "anchor": [
+          24,
+          83
+        ],
+        "footprint": [
+          1,
+          2
+        ],
+        "geometryDigest": "70046e93c30ee18f39995fd8e2374380315922bbae408718faa4d4e629c062d3",
+        "approvedGeometryExact": true,
+        "glowPixels": 16
+      }
+    },
+    "life_support.r0.unpowered": {
+      "image": "artifacts/core-systems-orientations/frames/life_support.r0.unpowered.png",
+      "glow": "artifacts/core-systems-orientations/frames/life_support.r0.unpowered.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "rotation": 0,
+        "state": "unpowered",
+        "frameSize": [
+          80,
+          94
+        ],
+        "anchor": [
+          24,
+          83
+        ],
+        "footprint": [
+          1,
+          2
+        ],
+        "geometryDigest": "70046e93c30ee18f39995fd8e2374380315922bbae408718faa4d4e629c062d3",
+        "approvedGeometryExact": true,
+        "glowPixels": 0
+      }
+    },
+    "life_support.r1.powered": {
+      "image": "artifacts/core-systems-orientations/frames/life_support.r1.powered.png",
+      "glow": "artifacts/core-systems-orientations/frames/life_support.r1.powered.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "rotation": 1,
+        "state": "powered",
+        "frameSize": [
+          80,
+          94
+        ],
+        "anchor": [
+          56,
+          83
+        ],
+        "footprint": [
+          2,
+          1
+        ],
+        "geometryDigest": "b96ad5425823fb3071429cae049f9c54d6c3a67da13d6e07ccb7e006716002d3",
+        "approvedGeometryExact": true,
+        "glowPixels": 16
+      }
+    },
+    "life_support.r1.unpowered": {
+      "image": "artifacts/core-systems-orientations/frames/life_support.r1.unpowered.png",
+      "glow": "artifacts/core-systems-orientations/frames/life_support.r1.unpowered.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "rotation": 1,
+        "state": "unpowered",
+        "frameSize": [
+          80,
+          94
+        ],
+        "anchor": [
+          56,
+          83
+        ],
+        "footprint": [
+          2,
+          1
+        ],
+        "geometryDigest": "b96ad5425823fb3071429cae049f9c54d6c3a67da13d6e07ccb7e006716002d3",
+        "approvedGeometryExact": true,
+        "glowPixels": 0
+      }
+    },
+    "life_support.r2.powered": {
+      "image": "artifacts/core-systems-orientations/frames/life_support.r2.powered.png",
+      "glow": "artifacts/core-systems-orientations/frames/life_support.r2.powered.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "rotation": 2,
+        "state": "powered",
+        "frameSize": [
+          80,
+          93
+        ],
+        "anchor": [
+          24,
+          82
+        ],
+        "footprint": [
+          1,
+          2
+        ],
+        "geometryDigest": "e7f8ee8bb61c7600ce5b3b55d1a2e2a41c94c84e1c99bcdf4c7861bc6166386d",
+        "approvedGeometryExact": true,
+        "glowPixels": 0
+      }
+    },
+    "life_support.r2.unpowered": {
+      "image": "artifacts/core-systems-orientations/frames/life_support.r2.unpowered.png",
+      "glow": "artifacts/core-systems-orientations/frames/life_support.r2.unpowered.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "rotation": 2,
+        "state": "unpowered",
+        "frameSize": [
+          80,
+          93
+        ],
+        "anchor": [
+          24,
+          82
+        ],
+        "footprint": [
+          1,
+          2
+        ],
+        "geometryDigest": "e7f8ee8bb61c7600ce5b3b55d1a2e2a41c94c84e1c99bcdf4c7861bc6166386d",
+        "approvedGeometryExact": true,
+        "glowPixels": 0
+      }
+    },
+    "life_support.r3.powered": {
+      "image": "artifacts/core-systems-orientations/frames/life_support.r3.powered.png",
+      "glow": "artifacts/core-systems-orientations/frames/life_support.r3.powered.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "rotation": 3,
+        "state": "powered",
+        "frameSize": [
+          80,
+          93
+        ],
+        "anchor": [
+          56,
+          82
+        ],
+        "footprint": [
+          2,
+          1
+        ],
+        "geometryDigest": "10336dbdb2a210994b4ce2c1ca343d894078f7eebdf9ed8cfb5875a8b45012ce",
+        "approvedGeometryExact": true,
+        "glowPixels": 0
+      }
+    },
+    "life_support.r3.unpowered": {
+      "image": "artifacts/core-systems-orientations/frames/life_support.r3.unpowered.png",
+      "glow": "artifacts/core-systems-orientations/frames/life_support.r3.unpowered.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "rotation": 3,
+        "state": "unpowered",
+        "frameSize": [
+          80,
+          93
+        ],
+        "anchor": [
+          56,
+          82
+        ],
+        "footprint": [
+          2,
+          1
+        ],
+        "geometryDigest": "10336dbdb2a210994b4ce2c1ca343d894078f7eebdf9ed8cfb5875a8b45012ce",
+        "approvedGeometryExact": true,
+        "glowPixels": 0
+      }
+    },
+    "reactor.r0.damaged": {
+      "image": "artifacts/core-systems-damage/frames/reactor.r0.damaged.png",
+      "glow": "artifacts/core-systems-damage/frames/reactor.r0.damaged.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "state": "damaged",
+        "rotation": 0,
+        "frameSize": [
+          90,
+          96
+        ],
+        "anchor": [
+          45,
+          94
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "bounds": [
+          [
+            -1.4464999437332153,
+            -1.2059671878814697,
+            0.0
+          ],
+          [
+            0.4819999933242798,
+            0.20596717298030853,
+            1.7269275188446045
+          ]
+        ],
+        "withinFootprint": true,
+        "wreckInsetFactor": null,
+        "dentDepthFactor": 1.0,
+        "tuckedDamageAttachments": 0,
+        "glowPixels": 103
+      }
+    },
+    "reactor.r0.damaged.flicker": {
+      "image": "artifacts/core-systems-damage/frames/reactor.r0.damaged.flicker.png",
+      "glow": "artifacts/core-systems-damage/frames/reactor.r0.damaged.flicker.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "state": "damaged.flicker",
+        "rotation": 0,
+        "frameSize": [
+          90,
+          96
+        ],
+        "anchor": [
+          45,
+          94
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "bounds": [
+          [
+            -1.4464999437332153,
+            -1.2059671878814697,
+            0.0
+          ],
+          [
+            0.4819999933242798,
+            0.20596717298030853,
+            1.7269275188446045
+          ]
+        ],
+        "withinFootprint": true,
+        "wreckInsetFactor": null,
+        "dentDepthFactor": 1.0,
+        "tuckedDamageAttachments": 0,
+        "glowPixels": 0
+      }
+    },
+    "reactor.r0.destroyed": {
+      "image": "artifacts/core-systems-damage/frames/reactor.r0.destroyed.png",
+      "glow": "artifacts/core-systems-damage/frames/reactor.r0.destroyed.glow.png",
+      "metadata": {
+        "name": "reactor",
+        "state": "destroyed",
+        "rotation": 0,
+        "frameSize": [
+          90,
+          79
+        ],
+        "anchor": [
+          45,
+          77
+        ],
+        "footprint": [
+          2,
+          2
+        ],
+        "bounds": [
+          [
+            -1.4464999437332153,
+            -1.2638187408447266,
+            0.0
+          ],
+          [
+            0.4950000047683716,
+            0.20596717298030853,
+            1.3756492137908936
+          ]
+        ],
+        "withinFootprint": true,
+        "wreckInsetFactor": 0.9947174249144112,
+        "dentDepthFactor": null,
+        "tuckedDamageAttachments": 0,
+        "glowPixels": 0
+      }
+    },
+    "life_support.r0.damaged": {
+      "image": "artifacts/core-systems-damage/frames/life_support.r0.damaged.png",
+      "glow": "artifacts/core-systems-damage/frames/life_support.r0.damaged.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "state": "damaged",
+        "rotation": 0,
+        "frameSize": [
+          80,
+          94
+        ],
+        "anchor": [
+          24,
+          83
+        ],
+        "footprint": [
+          1,
+          2
+        ],
+        "bounds": [
+          [
+            -0.4599999785423279,
+            -1.4550000429153442,
+            0.0
+          ],
+          [
+            0.4950000047683716,
+            0.4950000047683716,
+            1.4800000190734863
+          ]
+        ],
+        "withinFootprint": true,
+        "wreckInsetFactor": null,
+        "dentDepthFactor": 0.7665986525375789,
+        "tuckedDamageAttachments": 1,
+        "glowPixels": 16
+      }
+    },
+    "life_support.r0.damaged.flicker": {
+      "image": "artifacts/core-systems-damage/frames/life_support.r0.damaged.flicker.png",
+      "glow": "artifacts/core-systems-damage/frames/life_support.r0.damaged.flicker.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "state": "damaged.flicker",
+        "rotation": 0,
+        "frameSize": [
+          80,
+          94
+        ],
+        "anchor": [
+          24,
+          83
+        ],
+        "footprint": [
+          1,
+          2
+        ],
+        "bounds": [
+          [
+            -0.4599999785423279,
+            -1.4550000429153442,
+            0.0
+          ],
+          [
+            0.4950000047683716,
+            0.4950000047683716,
+            1.4800000190734863
+          ]
+        ],
+        "withinFootprint": true,
+        "wreckInsetFactor": null,
+        "dentDepthFactor": 0.7665986525375789,
+        "tuckedDamageAttachments": 1,
+        "glowPixels": 0
+      }
+    },
+    "life_support.r0.destroyed": {
+      "image": "artifacts/core-systems-damage/frames/life_support.r0.destroyed.png",
+      "glow": "artifacts/core-systems-damage/frames/life_support.r0.destroyed.glow.png",
+      "metadata": {
+        "name": "life_support",
+        "state": "destroyed",
+        "rotation": 0,
+        "frameSize": [
+          81,
+          79
+        ],
+        "anchor": [
+          24,
+          68
+        ],
+        "footprint": [
+          1,
+          2
+        ],
+        "bounds": [
+          [
+            -0.42500001192092896,
+            -1.4013406038284302,
+            0.0
+          ],
+          [
+            0.4950000047683716,
+            0.3799999952316284,
+            1.1497406959533691
+          ]
+        ],
+        "withinFootprint": true,
+        "wreckInsetFactor": 0.8053214397127626,
+        "dentDepthFactor": null,
+        "tuckedDamageAttachments": 0,
+        "glowPixels": 0
+      }
+    }
+  },
+  "manifestHeader": {
+    "version": 1,
+    "tile": {
+      "w": 64,
+      "h": 32
+    },
+    "heights": {
+      "wall": 1.85,
+      "roof": 2.05,
+      "zPx": 39.1918
+    },
+    "keyColors": {
+      "team.skin": "#ff00ff",
+      "team.hair": "#00ff00",
+      "team.cloth": "#ffff00",
+      "team.accent": "#00ffff"
+    }
+  }
+}
