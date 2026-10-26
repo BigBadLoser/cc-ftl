@@ -77,7 +77,7 @@ const CIVIL_CREW = {
 const FAIRING = { slope: 3, max: 2, jitter: 0, label: 'fairing' };
 const LIGHT = [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.ionCannon', weight: 1 }];
 const HEAVY = [{ value: 'module.massDriver', weight: 2 }, { value: 'module.missileLauncher', weight: 1 }];
-const SMALL_SHIELD = [{ value: 'module.shieldGenSmall', weight: 2 }, { value: 'module.shieldGen', weight: 1 }];
+const SMALL_SHIELD = [{ value: 'module.shieldGen', weight: 1 }];
 
 export const stations = {
   // Trade: big holds round a market core, many docking arms.
@@ -144,7 +144,7 @@ export const stations = {
     name: 'Pirate den', kind: 'pirate', side: 'hostile', motif: 'motif.scrapper', security: 0.15,
     crew: { required: ['role.engineer'], pool: [{ value: 'role.gunner', weight: 2 }, { value: 'role.engineer', weight: 2 }, { value: 'role.pilot', weight: 1 }, { value: 'role.medic', weight: 1 }], species: ['species.human'] },
     weapons: { light: [{ value: 'module.burstLaser', weight: 2 }, { value: 'module.incendiaryLauncher', weight: 1 }], heavy: [{ value: 'module.massDriver', weight: 1 }] },
-    shields: [{ value: 'module.shieldGenSmall', weight: 1 }],
+    shields: [{ value: 'module.shieldGen', weight: 1 }],
     transition: { slope: 1, max: 3, jitter: 0.5, label: 'adapter plating' },
     stock: [{ item: 'item.scrap', min: 2, max: 8 }, { item: 'item.metal', min: 0, max: 4 }, { item: 'item.electronics', min: 0, max: 3 }],
     tiers: tiers({
