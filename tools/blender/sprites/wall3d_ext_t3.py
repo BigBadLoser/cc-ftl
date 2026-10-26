@@ -16,7 +16,8 @@ def px(n):
 TOP_PX = 1 / 16                     # an art px across a line along the top (on screen: its depth is half a px a px)
 BACK = px(8)                        # the block's face this far further in (the top panel runs this far over the top)
 REC = px(1)                         # a recess's depth
-CORNER_C = px(18)                   # the outer corner's chamfer along each axis (hull 46's: a triangle up the lean)
+CORNER_C = px(16)                   # the outer corner's chamfer along each axis (hull 46's: a triangle up the lean;
+                                    # its front 2.2 times its side faces at the bend, as hull 46's)
 PANEL_IN, PANEL_DOWN = px(5), 8     # the top panel: in from each tile edge; down the lean from the top, px on screen
 STRIP = px(9)                       # the lower lean's recessed edge strips, from each tile edge
 UPRIGHT_SEAM = 0.6325               # the upright part's seam: a dark px over this height, a lit one under it
@@ -28,6 +29,10 @@ PANEL_GAP = 2                       # side), this many px from the seam; bolts 2
 CORNER_SEAM = 6                     # the corner's front: seams down it this many px in from its edges (hull 46's)
 CORNER_CLAMP = (2, 5, 3)            # two clamps over the upright seam, from / to this many px either side of the
                                     # middle, this many px up and down from the seam
+SIDE_SEAM = 5                       # the corner tile's side faces: a seam down the lean this many px from the tile's
+SIDE_GAP = 5                        # (its top this many px under the lean's seam)
+SIDE_BRACKET = ((8, 18), (9, 14, (8, 14)))     # edge; a bracket: px over the bend (bottom, top); its stem, top
+                                                # bar's end, bottom bar (px from the tile's edge)
 CORNER_BLOCK = (5, 6, 2)            # a block over each seam down the front: px wide, px under the bend, px on over it
 
 
@@ -90,8 +95,8 @@ def build(k, ax, plane, a, b, ends, H):
 
 def _seams(f, L, s0, s1):
     gz = UPRIGHT_SEAM
-    f.line(s0, s1, gz, L.px(gz, -1), YS[1])
-    f.line(s0, s1, L.px(gz, 1), gz, YS[4])
+    f.line(s0, s1, gz, L.px(gz, -1), YS[1], bevel=False)    # (its own lit line under it)
+    f.line(s0, s1, L.px(gz, 1), gz, YS[4], bevel=False)
     f.line(s0, s1, L.px(L.l1, 1), L.l1, YS[3], wrap=False)    # (the lean's lines stop at a corner's chamfer)
 
 
@@ -102,7 +107,7 @@ def _top_panel(f, L, s0, s1):
     f.line(s0 + R, s1 - R, L.zr, L.px(L.zr, -1), YS[3])
     zt = L.px(L.zr, -2)
     for u0, u1 in ((s0, s0 + R), (s1 - R, s1)):
-        f.line(u0, u1, zt, L.px(zt, -1), YS[4])
+        f.line(u0, u1, zt, L.px(zt, -1), YS[4], bevel=False)
     for u in (s0 + R, s1 - R - ln):
         f.line(u, u + ln, L.zr, L.H, YS[3])
         f.top_line(u, u + ln, 0.0, BACK, YS[2])
@@ -112,13 +117,9 @@ def _top_panel(f, L, s0, s1):
 def _lower_lean(f, L, s0, s1):
     """The centre block's seam, and plates up out of the edge strips to the lean's face, a px in from their edges:
     two stacked in the left one, one in the right."""
-    S, ln = STRIP, LINE
-    f.line(s0 + S, s1 - S, L.zs, L.px(L.zs, -1), YS[3])
-    p0, p1 = L.px(L.zb, -1), L.px(L.zp, 2)
-    pm = (p0 + p1) / 2
-    for u0, u1, z0, z1 in ((ln, S - 2 * ln, L.px(p0, -1), L.px(pm, 1)), (ln, S - 2 * ln, L.px(pm, -2), p1),
-                           (1 - S + 2 * ln, 1 - ln, p0, p1)):
-        f.raised(s0 + u0, s0 + u1, z0, z1, -REC - 0.005, 0.0)
+    f.line(s0 + STRIP, s1 - STRIP, L.zs, L.px(L.zs, -1), YS[3])
+    _strip_plates(f, L, s0, True)
+    _strip_plates(f, L, s1 - STRIP, False)
 
 
 def _upright_armour(f, L, s0, s1):
@@ -134,14 +135,34 @@ def _upright_armour(f, L, s0, s1):
 
 
 
+def _strip_plates(f, L, u0, left):
+    """Plates up out of an edge strip from u0 to the lean's face, a px in from its edges: two stacked in a left
+    strip, one in a right."""
+    S, ln = STRIP, LINE
+    p0, p1 = L.px(L.zb, -1), L.px(L.zp, 2)
+    pm = (p0 + p1) / 2
+    for v0, v1, z0, z1 in (((ln, S - 2 * ln, L.px(p0, -1), L.px(pm, 1)), (ln, S - 2 * ln, L.px(pm, -2), p1))
+                           if left else ((2 * ln, S - ln, p0, p1),)):
+        f.raised(u0 + v0, u0 + v1, z0, z1, -REC - 0.005, 0.0)
+
+
 def _corner_side(f, L, s0, s1):
     """The corner tile's side of the corner: the run's top panel, open to the chamfer, its side down to the lean's
     seam; a seam along the chamfer's edge from the floor up to the lean's seam (short of the chamfer's tip, as hull
     46's)."""
     R, ln = PANEL_IN, LINE
     zt = L.px(L.zr, -2)
-    f.line(s0, s0 + R, zt, L.px(zt, -1), YS[4])
+    f.line(s0, s0 + R, zt, L.px(zt, -1), YS[4], bevel=False)
     f.line(s0 + R, s0 + R + ln, L.l1, L.H, YS[3])
+    u = s0 + px(SIDE_SEAM)                              # a seam down the lean from the bend to SIDE_GAP px under
+    zg = L.px(L.px(L.l1, 1), SIDE_GAP)                  # the lean's seam, one across from there to the tile's edge,
+    f.line(u, u + ln, L.zb, zg, YS[3], end=False)       # a bracket between it and the chamfer (hull 46's)
+    f.line(s0, u + ln, L.px(zg, 1), zg, YS[3], end=False)
+    (t0, t1), (bu, bt, bb) = SIDE_BRACKET
+    zt, zb = L.px(L.zb, -t1), L.px(L.zb, -t0)
+    f.line(s0 + px(bu), s0 + px(bu) + ln, zb, zt, YS[3], end=False, weight=1.0)
+    f.line(s0 + px(bu), s0 + px(bt), L.px(zt, 1), zt, YS[3], end=False)
+    f.line(u, s0 + px(bb[1]), zb, L.px(zb, -1), YS[3], end=False)     # (its foot on to the seam down)
     f.top_line(s0 + R, s0 + R + ln, 0.0, BACK, YS[2])
     f.top_line(s0 + R, s1, 0.0, 0.75 * TOP_PX, YS[2])
     f.edge_line(0.0, L.zb, YS[1])
@@ -156,6 +177,7 @@ def _corner(f, L):
     for e in (CORNER_SEAM, f.c * core.TILE_W - CORNER_SEAM - 1):
         pf = f.on(0.0, L.zb, -0.01, 0.001)
         f.on_chamfer(t(e), t(e + 1), pf, [YS[1]] * len(pf), YS[1])
+        f.on_chamfer(t(e + 1), t(e + 2), pf, [YS[4]] * len(pf), YS[4])      # (its lit edge)
         w, h, over = CORNER_BLOCK
         for z0, z1 in ((L.px(L.zb, h), L.zb), (L.zb, L.px(L.zb, -over))):     # (on over the bend onto the lean,
             pf = f.on(z0, z1, -0.01, LINE)                                      # in its own tone)

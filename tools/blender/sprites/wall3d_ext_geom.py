@@ -19,9 +19,12 @@ LEAN_RISE = 0.8                     # hull 46 T3's front (measured off its end):
                                     # edge D in (its measured roll onto the top made a second angle at a corner)
 F = "steel"
 YS = T.RAMPS[F][0]                  # the tones (both near faces alike: hull 46 mirrors its art, no shade side)
+HILITE = "hsW"                      # a seam's lit edge on the lean (a step over its near-white)
 TOP = YS[3]                         # the tops (the lean a step lighter, the upright part a step darker)
 DEBUG = set(filter(None, os.environ.get("EXT_DEBUG", "").split(",")))   # detail groups (Face.tag) drawn all in
 DEBUG_COL = "dbgR"                                                      # DEBUG_COL, to check their shape and size
+LINE_W = 1.3                        # long painted lines' weight, in px (the sprites coverage anti-aliased,
+                                    # env_build.AA: a line over a pixel wide keeps its rows joined along an edge)
 ROLES = {"face": 0, "plate": 1, "plate2": 2, "floor": -1}   # a part's tone, in steps over its face's; "dark" (a
                                                             # seam's floor, a recess's shadowed edge) three under
 
@@ -131,16 +134,18 @@ class Face:
     def _cols(self, cols, cap, n):
         return ([DEBUG_COL] * n, DEBUG_COL) if self.dbg else (cols, cap)
 
-    def part(self, u0, u1, prof, cols=None, cap=None, fam=F, lvl=3, wrap=True):
-        """A part over [u0, u1] with a (d, z) section; at an outer corner it stops at the chamfer and (wrap) runs on
-        round it."""
+    def part(self, u0, u1, prof, cols=None, cap=None, fam=F, lvl=3, wrap=True, short=0.0, end=None):
+        """A part over [u0, u1] with a (d, z) section; at the face's b end (end: whether it reaches it, by default
+        when u1 is b; a detail placed beside the corner says not) it is mitred, and at an outer corner it stops at
+        the chamfer (or `short` of it) and (wrap) runs on round it."""
         from .factions_relief import corner_piece, prism
         cols, cap = self._cols(cols, cap, len(prof))
         m0 = self.mt[0] if abs(u0 - self.a) < 1e-6 else 0.0
-        end = abs(u1 - self.b) < 1e-6
+        end = abs(u1 - self.b) < 1e-6 if end is None else end
         if end and self.ch:
             ch = self.ch
-            prism(self.k, self.ax, self.plane, u0, u1, prof, fam, lvl, cols, cap, mitre=(m0, lambda d, z: d - ch(z)))
+            prism(self.k, self.ax, self.plane, u0, u1 - short, prof, fam, lvl, cols, cap,
+                  mitre=(m0, lambda d, z: d - ch(z)))
             if wrap and self.ax == "y":
                 corner_piece(self.k, self.b, self.plane, ch, prof, fam, lvl, cols, cap)
         else:
@@ -156,10 +161,35 @@ class Face:
         fr = self.sec.front(z0, z1)
         return [(d + base, z) for d, z in fr] + [(d + out, z) for d, z in fr[::-1]]
 
-    def line(self, u0, u1, z0, z1, col, wrap=True):
-        """A painted band on the front (all but flush)."""
-        pf = self.on(z0, z1, -0.01, 0.001)
-        self.part(u0, u1, pf, [col] * len(pf), col, wrap=wrap)
+    def line(self, u0, u1, z0, z1, col, wrap=True, end=None, bevel=True, weight=None):
+        """A painted band on the front (all but flush); one that does not wrap an outer corner stops at the edge
+        seam along its chamfer (a px short of it). bevel: a px of highlight beside it, as hull 46's seams (a dark
+        core, its lit edge): under a band along the face, on its +u side of one down it (the art mirrored, so both
+        faces alike)."""
+        short = 0.0 if wrap else LINE
+        along = (u1 - u0) / LINE >= self.sec.sy(z0) - self.sec.sy(z1)
+        length = (u1 - u0) / LINE if along else self.sec.sy(z0) - self.sec.sy(z1)
+        w = weight if weight is not None else (LINE_W if bevel and length >= 6 else 1.0)
+        c0, c1 = z0, z1                                 # (the core thinned to w px away from its lit edge:
+        if along:                                       # coverage anti-aliasing tones it; short, paired and faint
+            c1 = z0 + (z1 - z0) * w                     # lines stay whole)
+            pf = self.on(c0, c1, -0.01, 0.001)
+        else:
+            pf = self.on(z0, z1, -0.01, 0.001)
+        cu0 = u1 - (u1 - u0) * w if not along else u0
+        self.part(cu0, u1, pf, [col] * len(pf), col, wrap=wrap, short=short, end=end)
+        if not bevel:
+            return
+        hi = HILITE if z0 >= self.sec.zb - 1e-6 else YS[4]
+        if along:
+            pf = self.on(self.sec.z_at(z0, 1), z0, -0.01, 0.001)
+            self.part(u0, u1, pf, [hi] * len(pf), hi, wrap=wrap, short=short, end=end)
+        else:
+            self.part(u1, u1 + LINE, pf, [hi] * len(pf), hi, end=False)
+
+    def edge_u(self, z):
+        """Where the front meets the outer corner's chamfer at height z, along the face."""
+        return self.b + self.sec.front(z, z)[0][0] - self.ch(z)
 
     def edge_line(self, z0, z1, col):
         """A painted band a px wide along the outer corner's chamfer edge on this face (each face its own)."""

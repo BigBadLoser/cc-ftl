@@ -143,8 +143,35 @@ def _block_modes(idx, n):
     return np.take_along_axis(s, eq.argmax(1)[:, None], 1)[:, 0]
 
 
-def downsample(rgb, alpha, S, thresh, quant):
-    """rgb (H*S,W*S,3) 0..255, alpha bool. Returns (rgb (h,w,3) uint8, opaque bool (h,w))."""
+# coverage anti-aliasing (downsample's aa, per sprite: env_build.AA) among the cool greys (the steel family: _aa_set):
+# a pixel whose covered samples are all of them takes the one nearest their mean; any other keeps the crisp majority
+
+
+def _aa_set():
+    """The palette's cool greys (low chroma, blue at least red): the tones anti-aliasing blends among."""
+    p = PALETTE[:NB]
+    return np.nonzero((p.max(1) - p.min(1) < 48) & (p[:, 2] >= p[:, 0]))[0]
+
+
+def _aa(mode, blk, n, S):
+    """mode (h*w,) majority indices, blk (h*w, S*S) sample indices: a pixel whose covered samples are all cool greys
+    takes the one nearest their mean (its coverage); any other keeps the majority."""
+    aa = _aa_set()
+    cov = blk != n
+    sel = (np.isin(blk, aa) | ~cov).all(1) & cov.any(1)
+    if not sel.any():
+        return mode
+    b, c = blk[sel], cov[sel]
+    mean = (PALETTE[np.where(c, b, 0)] * c[..., None]).sum(1) / c.sum(1)[:, None]
+    d = ((mean[:, None, :] - PALETTE[aa][None]) ** 2).sum(-1)
+    out = mode.copy()
+    out[sel] = aa[d.argmin(1)]
+    return out
+
+
+def downsample(rgb, alpha, S, thresh, quant, aa=False):
+    """rgb (H*S,W*S,3) 0..255, alpha bool, aa coverage anti-aliasing (_aa). Returns (rgb (h,w,3) uint8, opaque bool
+    (h,w))."""
     am = blocks(alpha, S)
     cnt = am.sum(-1)
     opaque = cnt >= scaled(thresh, S)
@@ -155,7 +182,10 @@ def downsample(rgb, alpha, S, thresh, quant):
         full[alpha] = quantize(rgb[alpha])                  # only covered pixels: most of a frame is empty
         sel = (cnt > 0).ravel()
         mode = np.zeros(h * w, np.int64)                    # empty blocks: PALETTE[0], as the histogram argmax gave
-        mode[sel] = _block_modes(blocks(full, S).reshape(h * w, S * S)[sel], n)
+        blk = blocks(full, S).reshape(h * w, S * S)[sel]
+        mode[sel] = _block_modes(blk, n)
+        if aa:
+            mode[sel] = _aa(mode[sel], blk, n, S)
         out = PALETTE[mode].reshape(h, w, 3)
     else:
         rb = blocks(rgb, S)

@@ -10,6 +10,7 @@ from . import core, post, sprite_cache
 from . import geom_digest as gd
 
 SS = core.SS
+AA = ("tile.hull.ext.",)              # sprites coverage anti-aliased (post.downsample aa): their painted seams
 
 
 def diamond_mask(W, H):
@@ -61,7 +62,7 @@ def render_sprite(sid, kind, objs):
     W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
     H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
     rgb, a = core.render(W, H, "color")
-    c, op = post.downsample(rgb, a > 0.5, SS, 8, True)
+    c, op = post.downsample(rgb, a > 0.5, SS, 8, True, sid.startswith(AA))
     if kind == "floor":
         op = diamond_mask(W, H)
         c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
