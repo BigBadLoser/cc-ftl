@@ -1,8 +1,9 @@
 import { mirrorBlock, mirrorX, type Block, type Side } from './arranger';
 import { hallBlock } from './blocks';
-import { plate } from './hullFill';
+import { buried, plate } from './hullFill';
 import { storeRoom } from './droneBlocks';
-import { dockBlock, podBlock } from './navyBlocks';
+import { dockBlock } from './navyBlocks';
+import { strappedEngine } from './scrapBlocks';
 import { no, type Ctx } from './navyKit';
 import { pickWeighted, shuffle } from './plan';
 import { DONORS, leftovers, poolOf, clonePool, restorePool, smallness, type Need, type Pool } from './scrapDonors';
@@ -75,10 +76,10 @@ function variants(c: Ctx, b: Block): Block[] {
   return shuffle(c.rng, v);
 }
 
-/** Weld `child` onto one of `hosts` (in order) on one of `sides`: flush first, then through a short scrap tube. */
-function weld(c: Ctx, hosts: number[], child: Block, sides: Side[], align: 'any' | 'start' | 'end' = 'any'): number | null {
+/** Weld `child` onto one of `hosts` (in order) on one of `sides`: flush first, then through a short scrap tube (or tube first). */
+function weld(c: Ctx, hosts: number[], child: Block, sides: Side[], align: 'any' | 'start' | 'end' = 'any', tubeFirst = false): number | null {
   const vs = variants(c, child);
-  for (const tube of [false, true]) {
+  for (const tube of tubeFirst ? [true, false] : [false, true]) {
     for (const h of hosts) {
       for (const side of sides) {
         for (const v of vs) {
@@ -106,7 +107,7 @@ const hostsOf = (c: Ctx): number[] => c.A.placed.map((_, i) => i).filter((i) => 
 /** Strap the extra engines on as pods, bolt on crates and airlocks, plate the seams. */
 function improvise(c: Ctx, p: Pool): boolean {
   for (; p.engines > 0; p.engines--) {
-    const pod = { ...podBlock(c.rng, 1), donor: 'scrap', label: 'scrap: strapped engine' };
+    const pod = { ...strappedEngine(c.rng), donor: 'scrap', label: 'scrap: strapped engine' };
     if (weld(c, shuffle(c.rng, hostsOf(c)), pod, ['n', 's']) === null) return no(c, 'strapped engine');
     c.parts.push('strapped engine');
   }
@@ -116,7 +117,8 @@ function improvise(c: Ctx, p: Pool): boolean {
   }
   for (; p.docks > 0; p.docks--) weld(c, shuffle(c.rng, hostsOf(c)), { ...dockBlock(c.rng), donor: 'scrap', label: 'scrap: airlock' }, ['n', 's']);
   if (plate(c.A, 2) > 0) c.parts.push('plates');
-  return true;
+  // Welds wrapping round a gun or airlock can wall its kept-open face into a sealed pocket: no use, try another.
+  return !buried(c.A) || no(c, 'buried face');
 }
 
 /** Compose: build the donors, place the anchor, weld the rest on as the grammar says. */
@@ -136,7 +138,8 @@ function compose(c: Ctx, f: FactionDef, mode: ScrapGrammar): boolean {
     let id: number | null = null;
     if (mode === 'raft' && i === 0) id = weld(c, [0], b, shuffle(c.rng, ['n', 's'] as Side[]), c.rng.pick(['start', 'end'] as const));
     else if (mode === 'chain') id = weld(c, [last, ...all.filter((h) => h !== last)], b, [...shuffle(c.rng, ['e', 'w'] as Side[]), 'n', 's']);
-    id ??= weld(c, all, b, sides);
+    // Big heaps would merge into one blob: from the third donor on, half of them hang off a short scrap tube.
+    id ??= weld(c, all, b, sides, 'any', mode === 'heap' && i >= 2 && c.rng.chance(0.5));
     if (id === null) return no(c, `weld ${b.label}`);
     last = id;
     c.parts.push(b.label);

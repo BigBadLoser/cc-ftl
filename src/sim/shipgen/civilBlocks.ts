@@ -24,7 +24,7 @@ import { containerChar } from './containerCells';
  */
 
 /** Salvaged reactor rooms are patched up around whatever doors the welds cut: a spare column and row. */
-const roomy = (k: number): RoomSpec => ({ ...reactorSpec(k), w: 2 * k + 2, h: 4 });
+export const roomy = (k: number): RoomSpec => ({ ...reactorSpec(k), w: 2 * k + 2, h: 4 });
 
 const run = (specs: RoomSpec[]): number => specs.reduce((t, r) => t + r.w + 1, 1);
 
@@ -165,16 +165,6 @@ export function tug(rng: Rng, hopper: RoomSpec, reactors: number): Builder | nul
   const e = engineSpec(1, 'w');
   const eng = b.place({ x: L + 1, y: -3, w: e.w + 2, h: e.h + 2 }, 'engine', e);
   if (!eng || !b.door(h, eng)) return null;
-  return b;
-}
-
-/** A patched-in reactor room (power the donors did not bring) on a short access passage. */
-export function reactorRoom(rng: Rng, k: number): Builder | null {
-  const b = localBuilder(rng);
-  const r = roomy(k);
-  const room = b.place({ x: 0, y: -4, w: r.w + 2, h: r.h + 2 }, 'reactor', r);
-  const pass = b.place({ x: 0, y: 1, w: r.w + 2, h: 3 }, 'hall');
-  if (!room || !pass || !b.door(room, pass)) return null;
   return b;
 }
 

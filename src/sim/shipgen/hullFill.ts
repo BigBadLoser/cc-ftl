@@ -101,6 +101,9 @@ function enclosed(A: Arranger): Cell[][] {
   return regions;
 }
 
+/** True when an enclosed pocket holds a kept-open cell: a gun, airlock or exhaust face walled in by later blocks. */
+export const buried = (A: Arranger): boolean => enclosed(A).some((r) => r.some((c) => A.reserved(c.x, c.y)));
+
 /** Enclosed space cells in all (scoring pressure against courtyards). */
 export const holes = (A: Arranger): number => enclosed(A).reduce((t, r) => t + r.length, 0);
 

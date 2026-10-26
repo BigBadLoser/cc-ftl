@@ -5,7 +5,8 @@ import type { Ctx } from './navyKit';
 import { arrangeHull } from './navyLayouts';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
 import { cutSeam, freeze, notch, survivors } from './salvage';
-import { barge, freighter, habitat, liner, podString, reactorRoom, station, tug } from './civilBlocks';
+import { barge, freighter, habitat, liner, podString, station, tug } from './civilBlocks';
+import { reactorRoom } from './scrapBlocks';
 import { pickNose } from './topoNavy';
 import type { DonorKind, FactionDef } from './types';
 

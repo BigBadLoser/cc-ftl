@@ -174,8 +174,9 @@ distance over join tokens `kindA>dir>kindB` and assembly-degree tokens. It is re
 ### Navy follow-ups
 
 - Battleships still bulge amidships (citadel plus turret); a lower citadel would read longer.
-- Carriers (about 2.3) and twin-hull cruisers stay broader than their targets.
+- Twin-hull cruisers stay broader than their target. Carriers are fixed (pass 1, below).
 - Small corvettes with one gun look alike (depth-1 adjacency within family 0.33).
+- Island carriers have a blunt bow (the bow battery, no nose); a nose ahead of it would read better.
 
 ## Drones v13: sockets and profiles on trusses
 
@@ -243,9 +244,7 @@ The navy's structural helpers carry over:
 
 ### Drone follow-ups
 
-- Swarm grammar is mixed: some lattices grow a run of nodes in one line (swarm #4 at depth 9 is half comb, half
-  blob). Node links could prefer turning.
-- Fork and twin prongs still crowd: inner-face pods clump against the stem.
+- Swarm lines and prong crowding are fixed (pass 1, below).
 - Pickets at depth 1 to 4 look alike (one collar); a second compact chassis (a ring with corner pods) would help.
 - Staggered picket rows read busier than single rows.
 
@@ -293,7 +292,7 @@ The navy's structural helpers carry over:
 
 Same arranger, no sim changes. Files:
 - `scrapDonors.ts`: the donor registry and its pool of jobs.
-- `scrapBlocks.ts`: the hand-made civil and one-off hulls.
+- `scrapBlocks.ts`: the improvised pieces (patched reactor, strapped engine); the civil donors are in `civilBlocks.ts`.
 - `salvage.ts`: cut, damage, outline ports and freezing a section.
 - `scrapGrammars.ts`: composition.
 
@@ -332,16 +331,50 @@ Same arranger, no sim changes. Files:
 
 ### Generator follow-ups
 
-- Size does not scale enough: depth-1 scrappers are almost as large as depth-9 ones. Each job gets a donor and
-  donors have minimum sizes; small ships need fewer, smaller donors (or cut ones).
-- Patched reactors and strapped engines are frequent and read as grey slabs; give them a donor look.
-- Some enclosed one-tile space pockets survive between welded hulls; plate enclosed pockets too.
+- Size scaling, grey slabs, blobs, liner and pod-string weights and most first-attempt failures are addressed in pass
+  1 (below). Depth-1 scrappers are smaller but still about half the depth-9 size: the habitat ring (about 200 tiles,
+  a 10-wide minimum) is now the bulky piece; a compact crew donor would shrink them further.
 - No rotation by 90 degrees (gun and airlock faces are north / south only); flips only.
-- Liner and pod string are rare at depth 1 to 4; families could weight them by size.
 - Navy and drone donor shapes improve with the navy and drone passes.
-- About 10% of first attempts still fail fit-out (a gun or engine squeezed by a weld); reseeding covers it.
+- About 6% of first attempts still fail fit-out (no engine fits, a donor's reactor room one reactor short).
+- Enclosed space pockets beside trusses (pod strings, fins, struts) stay open on purpose; one rare 3-tile pocket
+  inside thick plating comes from wall thinning after the arrangement.
 - Tier scaling (after progression phase 1): fit Mk II and Mk III reactors, shields and engines by depth and faction.
   Their bigger footprints (reactor 2x3 and 2x4, shield 2x4 and 2x5, engine 4x6 and 4x7) need room in the donor layouts.
+
+### Shipgen pass 1 (backlog items 1 to 6, freighter playtest bugs)
+
+- **Navy drive-bank notch.** `slots` (`hullFill.ts`, `TransitionStyle.slots`, navy only) plates one-tile lengthways gaps
+  between facing hull walls (spine and drive bank, the pods of a drive cluster) before tapers run.
+- **Scrapper size.** `smallness(plan)` is 1 at plan size 0 and fades out by size 3. Each donor has a `small` weight
+  factor (`DONORS`, light pieces above 1, bulky hulls below); open jobs prefer donors that carry several of them; small
+  ships take at most one light extra and no spare salvage reactor; hulks come from the first (smallest) salvage family
+  and keep a smaller piece. Raiders and gunrunners list the liner segment, so liners and pod strings appear at depth 1
+  to 4. Depth-1 fill about 693 tiles (was 833), depth 9 about 1300.
+- **Island carriers.** The core and stores run forward of the hangar as a spine, the island stands on its flank (in the
+  step down from the decks, not above them), and the hull decks run 8 to 14 tiles past the hangar so the well stays
+  open aft. Depth-9 carrier aspect 2.84 (was 2.3).
+- **Swarm lines.** A node takes at most one lengthways link (no combs; links up and down step sideways), aft growth is
+  weighted, a node whose pods find no sockets is taken back instead of failing the ship, nodes are a tile shorter.
+- **Prong crowding.** Only the upper prong's inner face carries pods, flush, in one row (`Carrier.inner`).
+- **Gun pods stay open.** A drone gun pod keeps its outward face clear (`outward` in `droneGrammars.ts`): lattice nodes
+  used to bury pods, the gun never fit, and the empty sealed pod failed fit-out (the old "no airlock fits").
+- **Grey slabs.** `scrapBlocks.ts`: the patched reactor stands on a short access stub with radiator fins (bare truss)
+  on its outer wall and a spare row; strapped engines are nacelles on a narrow neck clamped by truss straps.
+- **Blobs.** In heaps, from the third donor on, half the welds go through a short scrap tube first.
+- **Buried faces.** A scrapper composition fails (the next candidate is used) when its welds wall a gun, airlock or exhaust face into an enclosed
+  pocket (`buried`); welds wrapping round an airlock used to leave it opening into sealed space.
+- **Arranger undo** remembers how many doors a join opened (undoing a door-less graft or beam spliced earlier doors).
+- **Playtest bugs (freighters).** No plating pass lays hull against a truss tile (beam or container): the pocket fill
+  was plating the gaps between an open truss's ties, drone beam pockets and scrapper donors. Salvage corner damage
+  keeps a neighbouring room's hull corner. Freighter container frames always use the open truss (a single beam hides
+  under the boxes in game) with a cell guide strut between neighbouring boxes. `hullIntegrity.test.ts` checks all of
+  it.
+
+For the planned pirate factions (DESIGN.md, "Pirate factions and the black market"): donor sets are already per
+hull family (`HullFamilyDef.donors`, `anchors`), and a donor's size behaviour is data (`DONORS[k].small`), so a raider
+clan or a cartel can be a scrapper-style faction with its own donor weights; `salvage` names which factions' generators
+build navy and drone donors, so a faction can salvage from a different navy.
 
 ### Render follow-ups (not started)
 
