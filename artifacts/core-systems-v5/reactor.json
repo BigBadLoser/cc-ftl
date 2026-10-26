@@ -1,0 +1,140 @@
+{
+  "parameters": {
+    "footprint": [
+      2,
+      2
+    ],
+    "core_radius": 0.57,
+    "core_bottom": 0.25,
+    "core_shoulder": 1.26,
+    "crown_top": 1.64,
+    "rib_radius": 0.91,
+    "rib_width": 0.1767766952966369,
+    "service_width": 0.65
+  },
+  "frameSize": [
+    90,
+    96
+  ],
+  "anchor": [
+    45,
+    94
+  ],
+  "rotationAudit": [
+    {
+      "rotation": 0,
+      "footprint": [
+        2,
+        2
+      ],
+      "min": [
+        -1.4464999437332153,
+        -1.2059671878814697,
+        0.0
+      ],
+      "max": [
+        0.4819999933242798,
+        0.20596717298030853,
+        1.781000018119812
+      ],
+      "size": [
+        1.9284999370574951,
+        1.4119343608617783,
+        1.781000018119812
+      ],
+      "approvedBaseUnchanged": true,
+      "approvedBaseDigest": "80d54ced416030e5fee38d1d34687bb0b617eca6f8a3954c4a8019cc264d7172",
+      "approvedGeometryUnchanged": true,
+      "geometryDigest": "31bf9e064cf58751882aa2e864028a3b51899c0a1924e865eeb51329d0a3c52d"
+    },
+    {
+      "rotation": 1,
+      "footprint": [
+        2,
+        2
+      ],
+      "min": [
+        -1.2059671878814697,
+        -1.4464999437332153,
+        0.0
+      ],
+      "max": [
+        0.20596717298030853,
+        0.4819999933242798,
+        1.781000018119812
+      ],
+      "size": [
+        1.4119343608617783,
+        1.9284999370574951,
+        1.781000018119812
+      ],
+      "approvedBaseUnchanged": true,
+      "approvedBaseDigest": "44c8341c86967ed3af95abfa071f407040c9fb51dce69ea458cb500c0ae068ae",
+      "approvedGeometryUnchanged": true,
+      "geometryDigest": "23c07a8b118211743333e9ed95472b7a0a7406576eb8a7833c3bbd8a6160f135"
+    },
+    {
+      "rotation": 2,
+      "footprint": [
+        2,
+        2
+      ],
+      "min": [
+        -1.4819999933242798,
+        -1.2059671878814697,
+        0.0
+      ],
+      "max": [
+        0.4465000033378601,
+        0.20596717298030853,
+        1.781000018119812
+      ],
+      "size": [
+        1.92849999666214,
+        1.4119343608617783,
+        1.781000018119812
+      ],
+      "approvedBaseUnchanged": true,
+      "approvedBaseDigest": "d9df0aa6739e1638183ac759e45dde4773bc8030de5f1b2a3d09f08a61a41a2e",
+      "approvedGeometryUnchanged": true,
+      "geometryDigest": "d2e682c09033b7ecf3a751f998f3275a1069494b1b0c804cbc6819a801a130a0"
+    },
+    {
+      "rotation": 3,
+      "footprint": [
+        2,
+        2
+      ],
+      "min": [
+        -1.2059671878814697,
+        -1.4819999933242798,
+        0.0
+      ],
+      "max": [
+        0.20596717298030853,
+        0.4465000033378601,
+        1.781000018119812
+      ],
+      "size": [
+        1.4119343608617783,
+        1.92849999666214,
+        1.781000018119812
+      ],
+      "approvedBaseUnchanged": true,
+      "approvedBaseDigest": "7d856e138607910dfa47ba505c8138c3ecfdd15f541c2ba277d8620bd5fd4f95",
+      "approvedGeometryUnchanged": true,
+      "geometryDigest": "2ec6f685dfa201dca9b0b83aac81a7266e4b847dfb651ee1de65deee06724954"
+    }
+  ],
+  "geometryPreserved": false,
+  "targetedGeometryAudit": {
+    "strutVerticesChanged": 288,
+    "otherVerticesExact": true,
+    "topologyExact": true,
+    "strutWidth": 0.1767766952966369,
+    "changePerSide": 0.008388347648318445
+  },
+  "approvedMechanicalFileVerified": true,
+  "glowPixels": 188,
+  "unpoweredGlowZero": true
+}

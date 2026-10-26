@@ -1,0 +1,20 @@
+{
+  "blender": "4.2.9 LTS",
+  "nativeTile": [
+    64,
+    32
+  ],
+  "gameDisplayScale": 2,
+  "SS": 4,
+  "samples": 4,
+  "cameraEuler": [
+    1.0471975511965976,
+    0,
+    0.7853981633974483
+  ],
+  "sunEnergy": 3.9000000953674316,
+  "sunShadows": false,
+  "stage": "material and lighting preview",
+  "floorSlab": false,
+  "strutVentTouchups": true
+}

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools/blender'))
 
 
-def render(out, detailed=False, finished=False, touchups=False):
+def render(out, detailed=False, finished=False, touchups=False, only=None):
     import hashlib
     import bpy
     import numpy as np
@@ -54,6 +54,7 @@ def render(out, detailed=False, finished=False, touchups=False):
                 'floorSlab': False, 'strutVentTouchups': touchups}
     (out / 'settings.json').write_text(json.dumps(settings, indent=2) + '\n')
     for name, cls, builder in (('reactor', Reactor, reactor), ('life_support', LifeSupport, life_support)):
+        if only and name != only: continue
         if touchups:
             from sprites.core_systems_touchups import parameters
             p = parameters(name)
@@ -207,11 +208,12 @@ def main():
     ap.add_argument('--detailed', action='store_true')
     ap.add_argument('--finished', action='store_true')
     ap.add_argument('--touchups', action='store_true')
+    ap.add_argument('--only', choices=('reactor', 'life_support'))
     ap.add_argument('--baseline', type=Path)
     args = ap.parse_args(argv)
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
-    compose(out, args.baseline) if args.compose else render(out, args.detailed, args.finished or args.touchups, args.touchups)
+    compose(out, args.baseline) if args.compose else render(out, args.detailed, args.finished or args.touchups, args.touchups, args.only)
 
 
 if __name__ == '__main__': main()

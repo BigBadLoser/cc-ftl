@@ -172,3 +172,17 @@ python3 tools/blender/review/core_systems_preview.py --compose \
 ```
 
 The rendering contract is unchanged. No runtime code or live atlas is modified.
+
+## Grey top-vent cross beams restored
+
+The user approved the corrected reactor and preferred the original grey
+cross beams inside the life-support roof vents. V5 restores the `frame`
+material on those blades, keeping the cyan coamings/inner walls and the V4
+front grille. This is a material-only correction: all four geometry digests,
+alpha coverage and glow match V4 exactly. Only roof-vent colour pixels differ.
+
+`artifacts/core-systems-v5/` contains the new life-support render and the
+byte-identical approved reactor files copied from V4. The renderer's `--only
+life_support` option avoids rendering the approved reactor again. Use the same
+V4 commands with that option and the V5 output directory, then compose against
+`--baseline artifacts/core-systems-v4`.

@@ -207,6 +207,8 @@ def life_support(p=None, rotation=0, finished=False, powered=True):
         m.paint(frame='vent_teal' if p.refined_vents else 'frame')
         bridge(m, inner, bottom, FRAME)
         m.poly(bottom, RECESS, flip=True)
+        # The cross beams are bare grey metal inside the cyan vent surround.
+        m.paint(frame='frame')
         for du in (-.18, 0, .18):
             # Embed the end caps into the walls, rather than leaving opposing
             # faces coplanar. Revised blades sit just below the cyan rim.
