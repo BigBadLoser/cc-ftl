@@ -26,8 +26,8 @@
 </aside>
 
 <style>
-  /* The combat panel takes the left 380px while it is open: centre in the space right of it. */
-  @media (min-width: 601px) { :global(html[data-combat]) aside { left: calc(50vw + 194px); } }
+  /* The combat panel takes the left 380px while it is open: centre in the space right of it, and never wider than that space. */
+  @media (min-width: 601px) { :global(html[data-combat]) aside { left: calc(50vw + 194px); max-width: calc(100vw - 396px); } }
   aside { z-index: 6; box-sizing: border-box; top: calc(var(--hdr) + var(--sat) + 4px); left: 50%; transform: translateX(-50%); width: min(560px, calc(100vw - 16px)); max-height: calc(100dvh - var(--hdr) - var(--sat) - 16px); overflow-y: auto; }
   .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
   h2 { margin: 0; font-size: 15px; color: var(--cyan); }

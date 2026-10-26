@@ -55,8 +55,8 @@
 </section>
 
 <style>
-  /* The combat panel takes the left 380px while it is open: centre in the space right of it. */
-  @media (min-width: 601px) { :global(html[data-combat]) section { left: calc(50vw + 194px); } }
+  /* The combat panel takes the left 380px while it is open: centre in the space right of it, and never wider than that space. */
+  @media (min-width: 601px) { :global(html[data-combat]) section { left: calc(50vw + 194px); max-width: calc(100vw - 396px); } }
   section { left: 50%; bottom: 16px; transform: translateX(-50%); width: min(640px, calc(100vw - 16px)); }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
   h2 { margin: 0; font-size: 15px; color: var(--cyan); }

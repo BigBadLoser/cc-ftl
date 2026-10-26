@@ -3,11 +3,12 @@ import type { Sim } from '../sim';
 import { planCourier } from './courier';
 import { failDeal, isLive, liveDealWith, openDeal } from './deals';
 import { checkOffer } from './offers';
-import { MAX_TRIPS, planTrips, tripCount } from './trips';
+import { peakFunding, planTrips } from './trips';
 import { ensureTrader, hailVerdict } from './traders';
 import { spawnStation } from '../stations/spawn';
 import { unwindStation } from './stationDock';
 import { VehicleC } from '../vehicles/components';
+import { TraderC } from './types';
 
 type TradeCommandType = Extract<Command['type'], `trade.${string}` | 'debug.spawnStation' | 'debug.setCredits'>;
 type Handler<T extends TradeCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -44,9 +45,13 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     const plan = planCourier(sim, offer.ship, c.give, c.get);
     if ('error' in plan) return reject(sim, cmd.type, plan.error);
     // More than one hold: haul trips in turn, each settled as it lands (see Deal.trip). The funds for the whole order were checked above.
-    if (tripCount(c.give, c.get, plan.cap) > MAX_TRIPS) return reject(sim, cmd.type, 'tooBig');
-    const trips = planTrips(sim, offer.ship, c.give, c.get, plan.cap);
-    if (!trips) return reject(sim, cmd.type, 'noPrice');
+    const trips = planTrips(sim, offer.ship, c.give, c.get, plan.cap, offer.barter);
+    if (!trips) return reject(sim, cmd.type, offer.barter ? 'unbalanced' : 'noPrice');
+    if (trips === 'tooBig') return reject(sim, cmd.type, 'tooBig');
+    // Each trip settles on its own, so a mixed order can need more than its net balance along the way: check the peak, never overdraw a wallet.
+    const need = peakFunding(trips, offer.barter);
+    if (need.player > sim.trade.credits) return reject(sim, cmd.type, 'noFunds');
+    if (need.trader > (sim.world.get(offer.ship, TraderC)?.credits ?? 0)) return reject(sim, cmd.type, 'theyBroke');
     offer.balance = c.quote.balance;
     const deal = openDeal(sim, offer, c, plan, trips);
     sim.events.emit({ type: 'trade.dealMade', deal: deal.id, ship: deal.ship, courier: deal.courier, balance: offer.balance });

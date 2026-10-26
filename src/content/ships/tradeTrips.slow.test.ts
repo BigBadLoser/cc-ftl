@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ShipC, StorageC, TraderC, VehicleC, destroyVehicle, newGame, storageAdd, playerItems, type Deal, type Sim, type SimEvent } from '../../sim';
+import { ModuleC, ShipC, StorageC, TraderC, VehicleC, destroyVehicle, newGame, storageAdd, unitPrice, playerItems, type Deal, type Sim, type SimEvent } from '../../sim';
 import { MAX_TRIPS, planTrips } from '../../sim/trade/trips';
+import type { Trip } from '../../sim/trade/types';
 import { shipIds, shipIdOf } from '../../sim/regions';
 import { content } from '../index';
 
@@ -176,11 +177,101 @@ describe('orders on the player shuttle (hold of 40)', () => {
   });
 });
 
+/** Two items (by id order) where the trader pays `lo` < `hi` < 2 x `lo` per unit of the first and sells the second at `hi`, or the mirror, as `want` says. */
+function pricePair(sim: Sim, ship: number, want: 'sellBetweenBuy' | 'buyBetweenSell'): { a: string; b: string } {
+  const ids = ['item.electronics', 'item.ice', 'item.metal', 'item.parts', 'item.polymer', 'item.ration', 'item.scrap']; // bulk goods that stack in a crate
+  for (const a of ids) {
+    for (const b of ids) {
+      const buyA = unitPrice(sim, ship, a, 'buy');
+      const sellB = unitPrice(sim, ship, b, 'sell');
+      if (a === b || buyA === null || sellB === null) continue;
+      if (want === 'sellBetweenBuy' ? buyA < sellB && sellB < 2 * buyA : sellB < buyA && buyA < 2 * sellB) return { a, b };
+    }
+  }
+  throw new Error('no such price pair');
+}
+
+describe('a wallet is never overdrawn by the first trip', () => {
+  it('a mixed order that nets out for the player but starts with a payment is refused with no credits', () => {
+    const { sim, ship } = seller();
+    const t = sim.world.get(ship, TraderC)!;
+    const { a, b } = pricePair(sim, ship, 'sellBetweenBuy'); // trip 1: 40 of b for 40 of a (the player pays); trip 2: 40 of a for nothing (the player is paid)
+    const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === (shipIds(sim)[0] as number))!;
+    storageAdd(sim, crate, a, 80);
+    t.stock = t.stock.filter((x) => x.item !== b);
+    t.stock.push({ item: b, count: 100 });
+    sim.enqueue({ type: 'debug.setCredits', value: 0 });
+    run(sim, 1);
+    sim.enqueue({ type: 'trade.offer', ship, give: [{ item: a, count: 80 }], get: [{ item: b, count: 40 }] });
+    const evs = run(sim, 2);
+    const offered = ofType(evs, 'trade.offered')[0]!;
+    expect(offered.balance).toBeLessThanOrEqual(0); // the order as a whole costs the player nothing
+    sim.enqueue({ type: 'trade.accept', offer: offered.offer });
+    expect(ofType(run(sim, 2), 'command.rejected').map((e) => e.reason)).toEqual(['noFunds']);
+    expect(sim.trade.deals).toHaveLength(0);
+    expect(sim.trade.credits).toBe(0);
+  });
+
+  it('a mixed order whose first trip the trader cannot fund is refused, and its wallet stays whole', () => {
+    const { sim, ship } = seller();
+    const t = sim.world.get(ship, TraderC)!;
+    const { a, b } = pricePair(sim, ship, 'buyBetweenSell'); // trip 1: 40 of a for 40 of b (the trader pays); trip 2: 40 of b for nothing (the player pays)
+    const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === (shipIds(sim)[0] as number))!;
+    storageAdd(sim, crate, a, 40);
+    t.stock = t.stock.filter((x) => x.item !== b);
+    t.stock.push({ item: b, count: 100 });
+    t.credits = 0;
+    sim.enqueue({ type: 'debug.setCredits', value: 100000 });
+    run(sim, 1);
+    sim.enqueue({ type: 'trade.offer', ship, give: [{ item: a, count: 40 }], get: [{ item: b, count: 80 }] });
+    const offered = ofType(run(sim, 2), 'trade.offered');
+    expect(offered).toHaveLength(1); // the order's net is the player's to pay, so an empty trader wallet does not stop the offer
+    expect(offered[0]!.balance).toBeGreaterThanOrEqual(0);
+    sim.enqueue({ type: 'trade.accept', offer: offered[0]!.offer });
+    expect(ofType(run(sim, 2), 'command.rejected').map((e) => e.reason)).toEqual(['theyBroke']);
+    expect(sim.trade.deals).toHaveLength(0);
+    expect(t.credits).toBe(0);
+    expect(sim.trade.credits).toBe(100000);
+  });
+});
+
+describe('a barter called off midway never leaves the player ahead', () => {
+  it('after trip 1 the goods received are worth no more than the goods handed over, and the cancel keeps it so', () => {
+    const { sim, ship } = seller();
+    const t = sim.world.get(ship, TraderC)!;
+    const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === (shipIds(sim)[0] as number))!;
+    storageAdd(sim, crate, 'item.ice', 140); // many cheap units to give
+    t.stock = t.stock.filter((x) => x.item !== 'item.metal');
+    t.stock.push({ item: 'item.metal', count: 500 });
+    const start = { ice: playerItems(sim, 'item.ice'), metal: playerItems(sim, 'item.metal'), credits: sim.trade.credits, theirs: t.credits };
+    const buyIce = unitPrice(sim, ship, 'item.ice', 'buy')!;
+    const sellMetal = unitPrice(sim, ship, 'item.metal', 'sell')!;
+    const metal = Math.floor((80 * buyIce) / sellMetal); // as much metal as 80 ice pays for: a balanced barter of more than one trip
+    sim.enqueue({ type: 'trade.offer', ship, give: [{ item: 'item.ice', count: 80 }], get: [{ item: 'item.metal', count: metal }], barter: true });
+    const offered = ofType(run(sim, 2), 'trade.offered')[0]!;
+    sim.enqueue({ type: 'trade.accept', offer: offered.offer });
+    const made = ofType(run(sim, 2), 'trade.dealMade')[0]!;
+    const deal = () => sim.trade.deals.find((d) => d.id === made.deal)!;
+    expect(deal().trip?.of).toBeGreaterThan(1);
+    for (let i = 0; i < 40000 && deal().trip?.n !== 2; i++) run(sim, 1);
+    expect(deal().trip?.n).toBe(2);
+    sim.enqueue({ type: 'trade.cancel', id: deal().id });
+    expect(ofType(run(sim, 2), 'trade.failed')[0]).toMatchObject({ reason: 'cancelled' });
+    run(sim, 3000);
+    const gave = (start.ice - playerItems(sim, 'item.ice')) * buyIce;
+    const got = (playerItems(sim, 'item.metal') - start.metal) * sellMetal;
+    expect(gave).toBeGreaterThan(0);
+    expect(got).toBeLessThanOrEqual(gave);
+    expect(sim.trade.credits).toBe(start.credits); // a barter moves no credits
+    expect(t.credits).toBe(start.theirs);
+  });
+});
+
 describe('the cap of one trip', () => {
   it('splits by the hold and never puts more than a hold in a trip', () => {
     const { sim, ship } = freighter();
     for (const n of [1, HOLD, HOLD + 1, 2 * HOLD, 60, HOLD * MAX_TRIPS]) {
-      const trips = planTrips(sim, ship, [], [{ item: 'item.metal', count: n }], HOLD)!;
+      const trips = planTrips(sim, ship, [], [{ item: 'item.metal', count: n }], HOLD) as Trip[];
       expect(trips.length).toBe(Math.ceil(n / HOLD));
       for (const tr of trips) expect(tr.get.reduce((a, l) => a + l.count, 0)).toBeLessThanOrEqual(HOLD);
       expect(trips.reduce((a, tr) => a + tr.get.reduce((x, l) => x + l.count, 0), 0)).toBe(n);
