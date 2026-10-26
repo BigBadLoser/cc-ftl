@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools/blender'))
 
 
-def render(out, detailed=False, finished=False):
+def render(out, detailed=False, finished=False, touchups=False):
     import hashlib
     import bpy
     import numpy as np
@@ -51,10 +51,15 @@ def render(out, detailed=False, finished=False):
                 'cameraEuler': list(core.CAM_ROT), 'sunEnergy': core._state['sun'].data.energy,
                 'sunShadows': core._state['sun'].data.use_shadow,
                 'stage': 'material and lighting preview' if finished else ('mechanical geometry, neutral grey' if detailed else 'primary geometry, neutral grey'),
-                'floorSlab': False}
+                'floorSlab': False, 'strutVentTouchups': touchups}
     (out / 'settings.json').write_text(json.dumps(settings, indent=2) + '\n')
     for name, cls, builder in (('reactor', Reactor, reactor), ('life_support', LifeSupport, life_support)):
-        p = cls()
+        if touchups:
+            from sprites.core_systems_touchups import parameters
+            p = parameters(name)
+        else:
+            p = cls()
+        targeted_audit = None
         audit = []
         # Audit all physical rotations; render only the first view for review.
         for rotation in range(4):
@@ -96,7 +101,11 @@ def render(out, detailed=False, finished=False):
             with bpy.data.libraries.load(str(approved), link=False) as (source, target):
                 assert all(n in source.meshes for n in names)
                 target.meshes = names
-            assert geometry_digest(target.meshes) == geometry_digest(obs)
+            if touchups:
+                from sprites.core_systems_touchups import audit as touchup_audit
+                targeted_audit = touchup_audit(name, target.meshes, obs)
+            else:
+                assert geometry_digest(target.meshes) == geometry_digest(obs)
             for me in target.meshes: bpy.data.meshes.remove(me)
         it = env_build.crop_item(name, list(p.footprint), *env_build.render_sprite(name, 'prop', obs))
         assert it is not None
@@ -105,7 +114,8 @@ def render(out, detailed=False, finished=False):
         if finished: post.write_png(out / f'{name}.glow.png', it['g'])
         meta = {'parameters': p.spec(), 'frameSize': list(it['rgba'].shape[1::-1]),
                 'anchor': [int(it['ax']), int(it['ay'])], 'rotationAudit': audit,
-                'geometryPreserved': True, 'approvedMechanicalFileVerified': finished,
+                'geometryPreserved': not touchups, 'targetedGeometryAudit': targeted_audit,
+                'approvedMechanicalFileVerified': finished,
                 'glowPixels': int(np.count_nonzero(it['g'][..., 3])),
                 'unpoweredGlowZero': True if finished else None}
         (out / f'{name}.json').write_text(json.dumps(meta, indent=2) + '\n')
@@ -118,7 +128,9 @@ def compose(out, baseline=None):
     from PIL import Image, ImageDraw, ImageFont
     root = ROOT / 'public/assets/1x'
     manifest = json.loads((root / 'manifest.json').read_text())
-    finished = json.loads((out / 'settings.json').read_text())['stage'] == 'material and lighting preview'
+    settings = json.loads((out / 'settings.json').read_text())
+    finished = settings['stage'] == 'material and lighting preview'
+    touchups = settings.get('strutVentTouchups', False)
     bg = (27, 34, 43, 255)
     try:
         font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 17)
@@ -146,12 +158,14 @@ def compose(out, baseline=None):
     d = ImageDraw.Draw(comparison)
     title = 'DROP-IN MODULES / MECHANICAL PASS' if baseline else 'DROP-IN MODULES / GEOMETRY PASS 1'
     if finished: title = 'DROP-IN MODULES / MATERIAL PASS'
+    if touchups: title = 'DROP-IN MODULES / STRUT AND VENT CLEANUP'
     d.text((22, 14), title, font=font, fill='#dfe5e8')
     subtitle = 'Approved blockout vs mechanical pass / same game scale' if baseline else 'Current shipped art vs grey proposal / same game scale'
     if finished: subtitle = 'Approved mechanical model vs material preview / same game scale'
+    if touchups: subtitle = 'Previous material preview vs corrections / same game scale'
     d.text((22, 41), subtitle, font=small, fill='#a7b6c0')
-    d.text((42, 75), 'APPROVED GREY' if finished else ('APPROVED BLOCKOUT' if baseline else 'CURRENT'), font=small, fill='#a7b6c0')
-    d.text((390, 75), 'MATERIAL PREVIEW' if finished else ('MECHANICAL PASS' if baseline else 'NEW BLOCKOUT'), font=small, fill='#a7b6c0')
+    d.text((42, 75), 'PREVIOUS PREVIEW' if touchups else ('APPROVED GREY' if finished else ('APPROVED BLOCKOUT' if baseline else 'CURRENT')), font=small, fill='#a7b6c0')
+    d.text((390, 75), 'STRUTS / VENTS' if touchups else ('MATERIAL PREVIEW' if finished else ('MECHANICAL PASS' if baseline else 'NEW BLOCKOUT')), font=small, fill='#a7b6c0')
     lineup = Image.new('RGBA', (1050, 620), bg)
     dl = ImageDraw.Draw(lineup)
     dl.text((24, 16), 'REACTOR 2 x 2', font=font, fill='#dfe5e8')
@@ -181,8 +195,8 @@ def compose(out, baseline=None):
         dl.text((index * 515 + 24, 570),
                 f"Body {dimensions[0]:.2f} x {dimensions[1]:.2f}, height {dimensions[2]:.2f}",
                 font=small, fill='#a7b6c0')
-    comparison.save(out / ('grey-vs-materials.png' if finished else ('blockout-vs-detail.png' if baseline else 'current-vs-blockout.png')))
-    lineup.save(out / ('materials-zoom.png' if finished else 'blockouts-zoom.png'))
+    comparison.save(out / ('before-vs-touchups.png' if touchups else ('grey-vs-materials.png' if finished else ('blockout-vs-detail.png' if baseline else 'current-vs-blockout.png'))))
+    lineup.save(out / ('touchups-zoom.png' if touchups else ('materials-zoom.png' if finished else 'blockouts-zoom.png')))
 
 
 def main():
@@ -192,11 +206,12 @@ def main():
     ap.add_argument('--compose', action='store_true')
     ap.add_argument('--detailed', action='store_true')
     ap.add_argument('--finished', action='store_true')
+    ap.add_argument('--touchups', action='store_true')
     ap.add_argument('--baseline', type=Path)
     args = ap.parse_args(argv)
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
-    compose(out, args.baseline) if args.compose else render(out, args.detailed, args.finished)
+    compose(out, args.baseline) if args.compose else render(out, args.detailed, args.finished or args.touchups, args.touchups)
 
 
 if __name__ == '__main__': main()

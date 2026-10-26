@@ -40,6 +40,7 @@ class LifeSupport:
     cartridge_width: float = .65
     cartridge_bottom: float = .27
     cartridge_top: float = 1.09
+    refined_vents: bool = False
 
     def spec(self): return asdict(self)
 
@@ -76,12 +77,44 @@ def chamfer_loop(f, u, v, z, length, width, cut):
              (a - cut, b), (-a + cut, b), (-a, b - cut), (-a, -b + cut))]
 
 
-def casing(m, f, u, v, z, length, width, height, cut=.06, taper=1, col=BODY, closed=True):
+def casing(m, f, u, v, z, length, width, height, cut=.06, taper=1, col=BODY, closed=True, bottom=True):
     a = chamfer_loop(f, u, v, z, length, width, cut)
     b = chamfer_loop(f, u, v, z + height, length * taper, width * taper, cut)
-    m.poly(a[::-1], col, flip=True)
+    if bottom: m.poly(a[::-1], col, flip=True)
     bridge(m, a, b, col)
     if closed: m.poly(b, col, flip=True)
+
+
+def vented_hood(m, f, p):
+    """Keep the hood envelope, replacing only its front wall with a real grille."""
+    a = chamfer_loop(f, 0, 0, 1.11, p.length, p.width, .13)
+    b = chamfer_loop(f, 0, 0, 1.36, p.length * .96, p.width * .96, .13)
+    m.poly(a[::-1], BODY, flip=True)
+    for i in range(8):
+        if i == 4: continue  # the flat +v front wall becomes a framed aperture
+        j = (i + 1) % 8
+        m.poly([a[i], a[j], b[j], b[i]], BODY, flip=True)
+    m.poly(b, BODY, flip=True)
+
+    def front(z): return p.width / 2 * (1 - .04 * (z - 1.11) / .25)
+    opening = ((.69, 1.155), (-.69, 1.155), (-.69, 1.325), (.69, 1.325))
+    edge = [f.pt(u, front(z), z) for u, z in opening]
+    back = [f.pt(u, front(z) - .065, z) for u, z in opening]
+    bridge(m, [a[4], a[5], b[5], b[4]], edge, BODY)
+    m.paint(frame='teal')
+    bridge(m, edge, back, FRAME)
+    m.poly(back, RECESS, flip=True)
+    # Two broad inclined blades leave actual dark gaps between their edges.
+    m.paint(body='steel', frame='teal')
+    for z in (1.175, 1.25):
+        section = ((.392, z + .012), (.445, z), (.445, z + .035), (.392, z + .047))
+        loops = [[f.pt(u, v, zz) for v, zz in section] for u in (-.69, .69)]
+        m.poly(loops[0][::-1], BODY, flip=True)
+        bridge(m, *loops, BODY)
+        m.poly(loops[1], BODY, flip=True)
+    for u in (-.23, .23):
+        f.box(u, .432, 1.155, .045, .056, .17, FRAME)
+    m.paint()
 
 
 def make_frame(m, footprint, rotation):
@@ -158,26 +191,34 @@ def life_support(p=None, rotation=0, finished=False, powered=True):
         f.box(u, .424, .945, .23, .028, .065, FRAME)
     # Chamfered hood overhangs and connects the whole cartridge bank.
     m.paint(body='pale')
-    casing(m, f, 0, 0, 1.11, p.length, p.width, .25, cut=.13, taper=.96)
+    if p.refined_vents:
+        vented_hood(m, f, p)
+    else:
+        casing(m, f, 0, 0, 1.11, p.length, p.width, .25, cut=.13, taper=.96)
     # Raised inlet coamings have open tops, actual inner walls and recessed floors.
     for u in (-.41, .41):
-        m.paint(body='teal')
+        m.paint(body='vent_teal' if p.refined_vents else 'teal')
         casing(m, f, u, -.025, 1.36, .72, .65, p.top - 1.36,
-               cut=.08, taper=.94, closed=False)
+               cut=.08, taper=.94, closed=False, bottom=not p.refined_vents)
         outer = chamfer_loop(f, u, -.025, p.top, .72 * .94, .65 * .94, .08)
         inner = chamfer_loop(f, u, -.025, p.top, .55, .44, .025)
         bottom = chamfer_loop(f, u, -.025, 1.37, .55, .44, .025)
         bridge(m, outer, inner, BODY)
-        m.paint()
+        m.paint(frame='vent_teal' if p.refined_vents else 'frame')
         bridge(m, inner, bottom, FRAME)
         m.poly(bottom, RECESS, flip=True)
         for du in (-.18, 0, .18):
-            f.box(u + du, -.025, p.top - .06, .055, .44, .08, FRAME)
+            # Embed the end caps into the walls, rather than leaving opposing
+            # faces coplanar. Revised blades sit just below the cyan rim.
+            f.box(u + du, -.025, p.top - .06, .055,
+                  .48 if p.refined_vents else .44,
+                  .055 if p.refined_vents else .08, FRAME)
     # Common front air outlet and low service manifold cover.
     m.paint()
-    f.box(0, .432, 1.18, 1.40, .012, .105, RECESS)
-    for u in (-.5, -.25, 0, .25, .5):
-        f.box(u, .441, 1.18, .035, .025, .105, FRAME)
+    if not p.refined_vents:
+        f.box(0, .432, 1.18, 1.40, .012, .105, RECESS)
+        for u in (-.5, -.25, 0, .25, .5):
+            f.box(u, .441, 1.18, .035, .025, .105, FRAME)
     casing(m, f, -.67, .25, .25, .30, .34, .25, cut=.025, col=FRAME)
     f.box(-.67, .425, .33, .23, .012, .12, RECESS)
     return [m.build()]

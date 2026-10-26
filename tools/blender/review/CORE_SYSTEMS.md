@@ -124,3 +124,51 @@ This is a one-angle material preview, not the final export. User review of
 materials, then four rendered orientations and operating/damage states, remain
 before production packing or integration. No runtime definitions or live assets
 have been changed.
+
+## Strut and vent corrections requested after material review
+
+`artifacts/core-systems-v4/` addresses the three reported readability issues.
+`before-vs-touchups.png` compares against v3 at normal game display scale;
+`touchups-zoom.png` enlarges the revised models with nearest-neighbour pixels.
+The previous previews remain intact.
+
+1. Reactor supports: width changes from .16 to .1767767 tile units, or .0083883
+   per side. At the established orthographic camera this makes the face-on
+   support eight native pixels wide, with straight edges aligned to pixel
+   boundaries. This removes the alternating partial-coverage edge pixels
+   without changing camera, sampling, lighting, post-processing or topology.
+2. Roof vents: cyan is assigned to the coamings, inner walls and blades. A
+   slightly bluer cyan avoids green/grey palette jumps under the shared light.
+   Removed coaming bottom caps that coincided with the pale hood roof; blade
+   ends now penetrate the inner walls, and blade tops sit below the rim.
+3. Front grille: replaced the narrow applied vent band with a real .17-high,
+   .065-deep aperture. Two broad inclined louvres, visible dark gaps and two
+   vertical dividers read as three grille sections within the existing hood.
+
+All four physical rotations pass footprint/height checks. The detailed audit
+against the approved v2 Blender files permits only the requested edits:
+
+- Reactor: exactly 288 repeated support vertices shift tangentially; all other
+  vertices and every polygon index are exact. Separate hardware is unchanged.
+- Life support: only faces wholly within the hood/roof region may differ;
+  the lower castings, cassettes, reservoirs and separate hardware remain exact.
+- Reactor height remains 1.781. Life support is 1.480 high with its blades
+  recessed below the existing rim. Footprints remain 2x2 and 1x2.
+- Both unpowered emission checks still pass with zero glow.
+
+The named revision parameters live in `sprites/core_systems_touchups.py`.
+Historical default parameters still reproduce the earlier geometry. Use the
+corrected parameters for subsequent rotation/state previews and final export.
+The older `approvedBaseUnchanged` JSON flags describe consistency between the
+grey and coloured builders at the same parameters; the new
+`targetedGeometryAudit` records the explicit differences from the approved mesh.
+
+Reproduce using `--touchups --out artifacts/core-systems-v4` in the Blender
+invocation, then:
+
+```sh
+python3 tools/blender/review/core_systems_preview.py --compose \
+  --out artifacts/core-systems-v4 --baseline artifacts/core-systems-v3
+```
+
+The rendering contract is unchanged. No runtime code or live atlas is modified.

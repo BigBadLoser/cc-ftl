@@ -10,7 +10,7 @@ PALETTE = {PREFIX + k: {'hex': v} for k, v in {
     'shield': '#566e80', 'crown': '#718594', 'frame': '#303e49',
     'steel': '#8d9fa6', 'yellow': '#b6a45d', 'dark': '#222e36',
     'screen': '#1c3038', 'pale': '#b6c2c5', 'cartridge': '#7c969b',
-    'teal': '#46787c', 'core_light': '#76c5dc',
+    'teal': '#46787c', 'vent_teal': '#447d94', 'core_light': '#76c5dc',
     'display': '#80c8b8', 'amber': '#cdb86c',
 }.items()}
 GREYS = {'systems.blockout.body': 'body', 'systems.blockout.frame': 'frame',
