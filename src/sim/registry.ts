@@ -328,8 +328,15 @@ export interface AirlockLayout {
  * A placeable ship module. `footprint` is [w, h] at rotation 0; (x, y) of a placed module is the
  * top-left of its rotated bounding box. Offsets (`access`) are in rotation-0 local tiles.
  */
+/** Build catalog tab of a module (tool cards live in their own tabs: structure tools in Structure, rock tools in Mining). */
+export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+
 export interface ModuleDef {
   name: string;
+  /** Build catalog tab. Absent = Utility. */
+  category?: ModuleCategory;
+  /** One or two sentences for the build catalog's popover. */
+  description?: string;
   /** Render asset id, e.g. 'module.reactor' (resolved through the asset manifest). */
   asset: string;
   footprint: readonly [number, number];

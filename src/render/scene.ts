@@ -33,6 +33,8 @@ import { createAsteroidView } from './asteroidView';
 import { createMarkers } from './markers';
 import { createPodView } from './podView';
 import { createPortraits } from './portrait';
+import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
+import { createModuleGhost, type ModuleGhostSpec } from './moduleGhost';
 import { createShipScene, type ShipScene } from './shipScene';
 
 export type { CutawayMode };
@@ -67,6 +69,8 @@ export interface Renderer {
   setSelection(tile: Tile | readonly Tile[] | null, shipId?: number): void;
   setHover(tile: Tile | null): void;
   setPreview(tiles: readonly Tile[], valid?: boolean): void;
+  /** The module being placed, drawn see-through at the cursor (red when invalid) with its access tile; null hides it. */
+  setModuleGhost(g: ModuleGhostSpec | null): void;
   /** Center the camera on a (fractional) tile position of the camera ship's grid. */
   focusTile(x: number, y: number): void;
   /** Center the camera on a sector position (tiles). */
@@ -76,6 +80,8 @@ export interface Renderer {
   info(): RenderInfo;
   /** Head-and-shoulders portrait of a crew member (a PNG data URL, cached per look), or null while its sheets load. */
   portrait(id: number): string | null;
+  /** A module def's art as an image at a rotation (the build catalog's thumbnail), or null while its sheets load. */
+  moduleThumb(def: string, rot: number): ModuleThumb | null;
   /** Sheet streaming counters (decoded bytes resident, requests, pending...) and scene rebuilds, for the debug hook. */
   art(): AtlasStats & { rebuilds: number };
   /** Drag the view by a screen-space delta in CSS px. */
@@ -144,6 +150,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   canvas.addEventListener('webglcontextrestored', () => void atlas.contextRestored());
   if (high) initHalos(gl);
   const portraits = createPortraits(gl.extract, atlas, world, content.items);
+  const thumbs = createModuleThumbs(gl.extract, atlas, content.modules);
   const stage = new Container();
   const cam = createCamera(high ? 3 : 2);
   const scenes = new Map<number, ShipScene>();
@@ -201,6 +208,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
   const sectorMarks = createMarkers(SL.ui);
+  const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
   function shipOf(shipId: number): Ship | undefined {
@@ -399,6 +407,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       // Drawn in the shared sector layer, not the reference ship's: a drag over a distant asteroid has that ship culled away.
       sectorMarks.setPreview(tiles, valid);
     },
+    setModuleGhost: (g) => moduleGhost.set(g),
     focusTile(x, y) {
       const p = iso(x, y); // a sector tile
       cam.centerOn(p.x, p.y - 8 * ART_SCALE);
@@ -429,6 +438,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return { sprites, zoom: cam.zoom };
     },
     portrait: (id) => portraits.url(id),
+    moduleThumb: (def, rot) => thumbs.get(def, rot),
     art: () => ({ ...atlas.stats(), rebuilds: art.rebuilds() }),
     pan: (dx, dy) => cam.pan(dx, dy),
     zoomAt: (f, x, y) => cam.zoomAt(f, x, y),

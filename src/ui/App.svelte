@@ -18,7 +18,7 @@
   import AlertList from './AlertList.svelte';
   import StrandedBanner from './StrandedBanner.svelte';
   import EventLog from './EventLog.svelte';
-  import BuildModules from './BuildModules.svelte';
+  import BuildCatalog from './BuildCatalog.svelte';
   import OverlayPicker from './OverlayPicker.svelte';
   import NodeStrip from './NodeStrip.svelte';
   import StockDrawer from './StockDrawer.svelte';
@@ -72,7 +72,7 @@
   let cutaway = $state<UiCutaway>('auto');
   /** Draw the player ship's roof and hull exterior (view from outside). */
   let roofOn = $state(false);
-  let tool = $state<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
+  let tool = $state<UiToolState>({ tool: 'select', build: 'module', moduleDef: null, rot: 0 });
   $effect(() => {
     document.documentElement.toggleAttribute('data-combat', combat.inCombat && combatOpen);
   });
@@ -217,8 +217,8 @@
 </ToolBar>
 {#if priorities}
   <PriorityGrid {api} onClose={() => (priorities = false)} />
-{:else if tool.tool === 'build' && tool.build === 'module'}
-  <BuildModules {api} />
+{:else if tool.tool === 'build'}
+  <BuildCatalog {api} />
 {:else}
   <SelectionPanel {api} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} onStation={(ship) => (stationOpen = ship)} />
 {/if}

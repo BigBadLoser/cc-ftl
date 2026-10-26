@@ -292,6 +292,27 @@ export interface UiModuleDef {
   h: number;
   power: number;
   cost: UiCost[];
+  /** Build catalog tab. */
+  category: 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+  description: string;
+  /** Access tile (offset from the footprint's top-left at rotation 0), or null. */
+  access: [number, number] | null;
+  /** Facts for the popover besides cost: power, operator, shield layers, capacity... */
+  facts: { label: string; value: string; tone?: 'warn' }[];
+  /** Tier chip text for variants (nothing has tiers yet), or null. */
+  tier: string | null;
+  /** Locked by progression (hook only: nothing is locked yet). */
+  locked?: boolean;
+}
+
+/** A module's art rendered to an image (see render/moduleThumb). */
+export interface UiThumb {
+  url: string;
+  w: number;
+  h: number;
+  /** Centre of the footprint's front tile inside the image. */
+  ax: number;
+  ay: number;
 }
 
 /** Crew food: units of food in stock, how many crew eat, rations used per hour at the current rate and hours left (null with no eaters). */
@@ -897,6 +918,10 @@ export interface UiApi {
   setTool(state: Partial<UiToolState>): void;
   /** Portrait (PNG data URL, whole art px: show it pixelated) of a crew member, or null while their sheets load. */
   portrait(id: number): string | null;
+  /** A module def's game art at a rotation, or null while its sheets load (`w` 0: no art). */
+  moduleThumb(def: string, rot: number): UiThumb | null;
+  /** Why the module being placed cannot go at the cursor (a placement error), with its screen position near the ghost, or null. */
+  placeHint: Subscribable<{ x: number; y: number; text: string } | null>;
   /** Select a crew member (null clears) and optionally center the camera on them. */
   selectCrew(id: number | null, focus?: boolean): void;
   setCutaway(mode: UiCutaway): void;
