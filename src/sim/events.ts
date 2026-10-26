@@ -203,6 +203,8 @@ export type SimEvent =
   | { type: 'galaxy.hunt'; fleet: number; faction: string; node: string; ships: number }
   /** A station job was taken, or closed: 'done' (paid), 'failed' (ran out of time), 'abandoned'. */
   /** Crew was hired at a station (galaxy/recruit.ts). */
+  /** A research project finished and its blueprints are known (sim/research). */
+  | { type: 'research.done'; ship: number; project: string }
   /** A blueprint was bought at a station (galaxy/blueprintShop.ts). */
   | { type: 'blueprint.bought'; def: string; port: string; cost: number }
   | { type: 'crew.hired'; crew: number; role: string; cost: number }

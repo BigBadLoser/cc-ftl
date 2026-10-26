@@ -153,13 +153,13 @@ describe('blueprints', () => {
     expect(rejected(sim, 'blueprint.buy')).toEqual(['noOffer']);
   });
 
-  it('a save round-trip at v54 keeps the known set', () => {
+  it('a save round-trip across saves keeps the known set', () => {
     const { sim, port } = atBlueprintStation('module.engine.mk3');
     sim.enqueue({ type: 'blueprint.buy', port, def: 'module.engine.mk3' });
     step(sim);
     expect(isBlueprintKnown(sim, 'module.engine.mk3')).toBe(true);
     const saved = serialize(sim);
-    expect(JSON.parse(saved).version ?? SAVE_VERSION).toBe(55);
+    expect(JSON.parse(saved).version ?? SAVE_VERSION).toBe(SAVE_VERSION);
     const back = deserialize(saved, content);
     expect(isBlueprintKnown(back, 'module.engine.mk3')).toBe(true);
     expect(isBlueprintKnown(back, 'module.engine.mk2')).toBe(false);
