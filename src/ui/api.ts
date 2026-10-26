@@ -292,6 +292,10 @@ export interface UiModuleDef {
   h: number;
   power: number;
   cost: UiCost[];
+  /** False while its blueprint is not known: the menu shows it greyed with "blueprint needed". */
+  known: boolean;
+  /** Tier label (2, 3) of a blueprint module; 0 for a basic one. */
+  tier: number;
 }
 
 /** Crew food: units of food in stock, how many crew eat, rations used per hour at the current rate and hours left (null with no eaters). */
@@ -568,6 +572,19 @@ export interface UiRecruit {
   coming: boolean;
 }
 
+/** A module blueprint a station sells (sim galaxy/blueprintShop.ts). */
+export interface UiBlueprint {
+  def: string;
+  name: string;
+  tier: number;
+  price: number;
+  known: boolean;
+  w: number;
+  h: number;
+  /** One line of what it does better than Mk I. */
+  blurb: string;
+}
+
 /** A ship or station the player can hail. */
 /** What a player wants to know about a station before dealing with it (stations only). */
 export interface UiStationInfo {
@@ -577,6 +594,10 @@ export interface UiStationInfo {
   services: string[];
   jobs: number;
   hire: number;
+  /** Blueprints on sale here (empty without the service). */
+  blueprints: UiBlueprint[];
+  /** The port id `blueprint.buy` takes (empty without a port). */
+  blueprintPort: string;
   market: UiStarMarket | null;
   /** Working airlocks to dock at. */
   docks: number;
@@ -796,7 +817,7 @@ export interface UiApi {
   selectedCrew: Subscribable<number | null>;
   tool: Subscribable<UiToolState>;
   modules: Subscribable<UiModule[]>;
-  moduleDefs: UiModuleDef[];
+  moduleDefs: Subscribable<UiModuleDef[]>;
   items: UiItemDef[];
   recipes: UiRecipe[];
   /** Build cost per struct kind ('floor', 'wall', 'door'). */

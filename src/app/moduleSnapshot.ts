@@ -1,4 +1,4 @@
-import { CrewC, DeadC, ModuleC, PositionC, airlockSuits, roomTiles, type Sim } from '../sim';
+import { CrewC, DeadC, isBlueprintKnown, ModuleC, PositionC, airlockSuits, roomTiles, type Sim } from '../sim';
 import { buildRobotBay } from './robotSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import { buildFood } from './foodSnapshot';
@@ -42,6 +42,8 @@ export function buildModuleDefs(sim: Sim): UiModuleDef[] {
     h: d.footprint[1],
     power: d.power,
     cost: costsOf(sim, d.cost),
+    known: isBlueprintKnown(sim, id),
+    tier: d.blueprint?.tier ?? 0,
   }));
 }
 

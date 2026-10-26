@@ -1,5 +1,5 @@
 import {
-  DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
+  DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
   fleetName, nodeOf, portNode, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
 import type { UiNodeJob, UiStarExit, UiStarIcon, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
@@ -165,10 +165,13 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
   const status = starmapStatus(sim);
   const block = routeBlocker(sim, r.edges);
   const charge = routeCharge(r.edges);
+  // The drive's engines may burn less per hop than the lane's base cost (Mk II / III engines).
+  const legFuel = r.edges.map((e) => jumpFuel(sim, e.fuel));
+  const fuel = legFuel.reduce((t, f) => t + f, 0);
   return {
-    to, path: r.path, hops: r.path.length - 1, fuel: r.fuel, time: r.time,
-    legs: r.edges.map((e, i) => ({ to: r.path[i + 1] as string, fuel: e.fuel, time: e.time, kind: e.kind, gate: !!e.gate })),
-    nextCharge: charge, fuelOk: status.fuel >= r.fuel, fuelShort: Math.max(0, r.fuel - status.fuel), chargeOk: charge <= status.charge + 1e-9,
+    to, path: r.path, hops: r.path.length - 1, fuel, time: r.time,
+    legs: r.edges.map((e, i) => ({ to: r.path[i + 1] as string, fuel: legFuel[i] as number, time: e.time, kind: e.kind, gate: !!e.gate })),
+    nextCharge: charge, fuelOk: status.fuel >= fuel, fuelShort: Math.max(0, fuel - status.fuel), chargeOk: charge <= status.charge + 1e-9,
     blocker: block ? BLOCKERS[block] ?? block : null,
   };
 }

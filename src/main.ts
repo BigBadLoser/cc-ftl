@@ -4,7 +4,6 @@ import type { UiApi, UiIcon, UiSession } from './ui/api';
 import type { UiStarArt } from './ui/starmapApi';
 import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
-import { buildModuleDefs } from './app/moduleSnapshot';
 import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
 import { loadItemIcons } from './app/itemIcons';
 import { loadStarmapArt } from './app/starmapArt';
@@ -193,7 +192,7 @@ const api: UiApi = {
   attack: controller.attack,
   selectedCrew: controller.selectedCrew,
   modules: bridge.modules,
-  moduleDefs: buildModuleDefs(sim),
+  moduleDefs: bridge.moduleDefs,
   items: buildItemDefs(sim),
   recipes: buildRecipes(sim),
   structCosts: buildStructCosts(sim),

@@ -3,7 +3,7 @@ import { Rectangle, Sprite, Texture, type Geometry, type Mesh, type Shader } fro
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ModuleC, type Module } from '../sim/modules/components';
-import { footprintTiles, hullRow, openTilesOf, rotatedSize } from '../sim/modules/footprint';
+import { footprintTiles, hullRow, openTilesOf, rotateOffset, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import type { Atlas, StaticSprite } from './assets/loader';
 import type { Art } from './assets/fallback';
@@ -205,6 +205,25 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     return out;
   }
 
+  /**
+   * Placeholder art of a bigger tier (`ModuleDef.tierArt`): the base art is drawn as a module of the base footprint, placed at the
+   * local origin (the hull side of an engine, which grows inboard), and the extra tiles get a tinted crate plate. Returns the stand-in
+   * module the art is built from, and the plates (the whole thing is tinted by the tier).
+   */
+  function tierBase(m: Module, def: ModuleDefs[string]): { m: Module; def: ModuleDefs[string] } {
+    const base = def.tierArt!.base;
+    const a = rotateOffset(def, m.rot, 0, 0);
+    const b = rotateOffset(def, m.rot, base[0] - 1, base[1] - 1);
+    return { m: { ...m, x: m.x + Math.min(a.x, b.x), y: m.y + Math.min(a.y, b.y) }, def: { ...def, footprint: base } };
+  }
+  function tierPlates(m: Module, def: ModuleDefs[string], vm: Module, vdef: ModuleDefs[string]): Part[] {
+    const art = resolveArt(atlas, ['prop.crate'], 'prop.crate');
+    if (!art) return [];
+    const inBase = new Set(footprintTiles(vdef, vm.x, vm.y, vm.rot).map((t) => `${t.x},${t.y}`));
+    return footprintTiles(def, m.x, m.y, m.rot).filter((t) => !inBase.has(`${t.x},${t.y}`))
+      .map((t) => makePart(art.s, t.x, t.y, false, moduleKey(def, t.x, t.y), mulColor(art.tint, def.tierArt!.tint)));
+  }
+
   /** Module art ids by asset prefix (the manifest is fixed, so this is read once per def), for "does the art have .unpowered / .active.f1". */
   const artIds = new Map<string, Set<string>>();
   const hasArt = (asset: string) => (id: string): boolean => {
@@ -283,10 +302,14 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
         const roofed = host.roofed();
         const level = host.level();
+        // A bigger tier draws its base module's art at the base footprint (see tierBase).
+        const tb = def.tierArt ? tierBase(lm, def) : null;
+        const am = tb?.m ?? lm;
+        const ad = tb?.def ?? def;
         const raw = def.robotBay ? robotBayLayers(world, id, lm, def, now)
           : def.vehicleBay ? vehicleBayLayers(lm, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
           : def.airlock?.layout ? airlockLayers(world, id, lm, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
-          : moduleLayers(world, id, lm, def, active, true, host.livery?.(), { off: !on && m.hp > 0, now, has: hasArt(def.asset) });
+          : moduleLayers(world, id, am, ad, active, true, host.livery?.(), { off: !on && m.hp > 0, now, has: hasArt(def.asset) });
         const wreck = ruinLook(id, m, def, on, now);
         const withRuin = wreck.chain.length ? raw.map((l, i) => (i === 0 ? { ...l, chain: [...wreck.chain, ...l.chain] } : l)) : raw;
         const layers = withRuin.flatMap((layer) => {
@@ -317,7 +340,14 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           dropEntry(e);
           e = undefined;
         }
-        if (!e) mods.set(id, (e = { sig, parts: build(lm, def, layers, roofed) }));
+        if (!e) {
+          const parts = build(am, ad, layers, roofed);
+          if (tb && def.tierArt) {
+            for (const p of parts) p.art = mulColor(p.art, def.tierArt.tint);
+            if (!roofed) parts.push(...tierPlates(lm, def, tb.m, tb.def));
+          }
+          mods.set(id, (e = { sig, parts }));
+        }
         layers.forEach((l, i) => { if (l.layer.anim) swapFrame(e.parts, i, l.art.s); });
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;

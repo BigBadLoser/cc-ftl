@@ -1,13 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiJobs, UiTrade } from './api';
+  import BlueprintList from './BlueprintList.svelte';
   import JobCards from './JobCards.svelte';
   import RecruitList from './RecruitList.svelte';
   import TradePane from './TradePane.svelte';
 
   /** A station's own panel (opened by selecting the station): Trade (the trade window's content), Jobs (the work posted at the node), Crew (people for hire). */
   let { api, station, onClose }: { api: UiApi; station: number; onClose: () => void } = $props();
-  type Tab = 'trade' | 'jobs' | 'crew';
+  type Tab = 'trade' | 'jobs' | 'crew' | 'blueprints';
   let tab = $state<Tab>('trade');
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   let jobs = $state<UiJobs>({ here: null, offers: [], active: [], max: 0 });
@@ -19,6 +20,7 @@
   const hiring = $derived(trade.deals.find((d) => d.ship === station && d.live && p?.recruits.some((r) => r.coming)));
   const tabs = $derived<{ id: Tab; label: string; n: number }[]>([
     { id: 'trade', label: 'Trade', n: 0 }, { id: 'jobs', label: 'Jobs', n: jobs.offers.length }, { id: 'crew', label: 'Crew', n: p?.recruits.length ?? 0 },
+    ...(p?.info?.services.includes('Blueprints') ? [{ id: 'blueprints' as const, label: 'Blueprints', n: p.info.blueprints.filter((b) => !b.known).length }] : []),
   ]);
 </script>
 
@@ -45,6 +47,8 @@
     {:else if !jobs.offers.length}<p class="none">No work posted here.</p>{/if}
     <JobCards {api} {jobs} list="offers" />
     <p class="note">You hold {jobs.active.length}/{jobs.max} jobs. The jobs button in the top bar lists them.</p>
+  {:else if tab === 'blueprints' && p.info}
+    <BlueprintList {api} port={p.info.blueprintPort} blueprints={p.info.blueprints} credits={trade.credits} />
   {:else}
     <RecruitList {api} partner={p} credits={trade.credits} deal={hiring} />
   {/if}
