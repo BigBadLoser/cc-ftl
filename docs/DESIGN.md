@@ -127,6 +127,18 @@ Cybernetic implants are everywhere. Neon is both mood and information.
 - **The player gets robots by assembling them in a robot bay.** You pick a robot type; the bay's materials (parts,
   metal, electronics) are delivered and worked over time. The new robot calls that bay home.
 - **Security bots** use a heavy chassis: more hp, armour against crew damage, slower.
+- **Planned: robot classes limit the work a player's robots can do** (user, 2026-10-26; not built). Robots are not
+  crew: they are moving modules run by the AI core, with no individual sentience. They still use the crew job system,
+  but each class can only take some work:
+  - **Heavy** (security bots): can haul and is strong in combat, but does no skilled work.
+  - **Medium**: does skilled labour (repair, construction, manning stations) and is average in combat, but carries
+    little.
+  - **Drone** (flying, more drone types planned): mostly repair. It can't haul or man stations.
+  - The limits apply only to robots the player salvages or builds and sets to work on their ship. NPC and rogue-AI
+    robots keep the full job set.
+  - **Androids** (later) will be the robot-like crew members: real crew, with portraits and a crew-bar card.
+  - Open UI question: once classes exist, the work-priorities grid shows only the categories a robot's class allows, and
+    robots may get their own section there. Robots stay out of the crew bar.
 - **Robot fabricators** stay the rogue AI's own spawner: no materials, just a live core and power, up to a cap.
   Rogue ships and shipyards also have robot bays, where their robots recharge.
 - **Derelicts come in two kinds:**
