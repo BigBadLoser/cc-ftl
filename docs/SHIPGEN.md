@@ -348,9 +348,10 @@ Same arranger, no sim changes. Files:
   between facing hull walls (spine and drive bank, the pods of a drive cluster) before tapers run.
 - **Scrapper size.** `smallness(plan)` is 1 at plan size 0 and fades out by size 3. Each donor has a `small` weight
   factor (`DONORS`, light pieces above 1, bulky hulls below); open jobs prefer donors that carry several of them; small
-  ships take at most one light extra and no spare salvage reactor; hulks come from the first (smallest) salvage family
+  ships take at most one light extra (none at plan size under 0.6) and no spare salvage reactor; hulks come from the first (smallest) salvage family
   and keep a smaller piece. Raiders and gunrunners list the liner segment, so liners and pod strings appear at depth 1
-  to 4. Depth-1 fill about 693 tiles (was 833), depth 9 about 1300.
+  to 4. Depth-1 fill about 693 tiles (was 833), depth 9 about 1300. Raiders and gunrunners aim at an aspect of 1.3 to
+  2.4 (was 1 to 2.2): tall heaps found no free spot in a crowded start node (a depth-0 raider 43x39 never spawned).
 - **Island carriers.** The core and stores run forward of the hangar as a spine, the island stands on its flank (in the
   step down from the decks, not above them), and the hull decks run 8 to 14 tiles past the hangar so the well stays
   open aft. Depth-9 carrier aspect 2.84 (was 2.3).

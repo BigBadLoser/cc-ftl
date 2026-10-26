@@ -42,10 +42,11 @@ function choose(c: Ctx): DonorKind[] {
     const carry = (k: DonorKind): number => 1 + s * (DONORS[k].serves.filter(open).length - 1);
     if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: (w[k] ?? 0) * light(k) * carry(k) }))));
   }
-  // The smallest ships take at most one extra, and only a light one (pod string, liner segment, drone guns).
+  // Small ships take at most one extra, and only a light one (pod string, liner segment, drone guns); the very
+  // smallest (plan size under 0.6) none.
   const n0 = c.rng.int(0, 1 + Math.floor(c.plan.size / 2));
   const tiny = s > 0.5;
-  for (let n = tiny ? Math.min(1, n0) : Math.floor(n0 * (1 - s)); n > 0; n--) {
+  for (let n = s > 0.8 ? 0 : tiny ? Math.min(1, n0) : Math.floor(n0 * (1 - s)); n > 0; n--) {
     const opts = kinds.filter((k) => (w[k] ?? 0) > 0 && out.filter((x) => x === k).length < 2 && !['navyBow', 'tug', 'navyDrive'].includes(k)
       && (!tiny || (DONORS[k].small > 1 && !DONORS[k].serves.includes('command'))));
     if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: (w[k] ?? 0) * light(k) }))));
