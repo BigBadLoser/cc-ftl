@@ -6,7 +6,7 @@ export { newSectorGrid, stampGrid } from './stamp';
 export { CommandQueue, type Command, type QueuedCommand } from './commands';
 export { EventBuffer, type SimEvent } from './events';
 export { Sim, TICK_HZ } from './sim';
-export type { CreatureDefs, SuitDef, VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ItemDef, HandWeaponDef, HandWeaponArt, WeaponFamily, ItemQty, RecipeDef } from './registry';
+export type { CreatureDefs, SuitDef, VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ModuleCategory, ItemDef, HandWeaponDef, HandWeaponArt, WeaponFamily, ItemQty, RecipeDef } from './registry';
 export { gridFromTemplate, spawnTemplateModules, placeTemplateModules } from './ship';
 export { ModuleC, DeployC, type Module, type Deploy } from './modules/components';
 export { isDeployed } from './modules/deploy';

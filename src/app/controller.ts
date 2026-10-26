@@ -21,6 +21,8 @@ const TOAST_MS = 2500;
 /** Tool + selection state and the translation of input gestures into commands. */
 export interface Controller {
   tool: Readable<UiToolState>;
+  /** Why the module being placed is invalid at the cursor, with a screen position near it. */
+  placeHint: Readable<{ x: number; y: number; text: string } | null>;
   selectedCrew: Readable<number | null>;
   selectedModule: Readable<number | null>;
   /** Another ship or station picked from the node strip (a ShipC or trader entity id), or null. */
@@ -50,7 +52,8 @@ export interface Controller {
 }
 
 export function createController(sim: Sim, bridge: Bridge): Controller {
-  const tool = createStore<UiToolState>({ tool: 'select', build: 'wall', moduleDef: null, rot: 0 });
+  const tool = createStore<UiToolState>({ tool: 'select', build: 'module', moduleDef: null, rot: 0 });
+  const placeHint = createStore<{ x: number; y: number; text: string } | null>(null);
   const modSel = createStore<number | null>(null);
   const siteSel = createStore<number | null>(null);
   const shipSel = createStore<number | null>(null);
@@ -193,8 +196,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (moduleMode()) {
       const plan = modulePlan();
       r?.setPreview(plan?.tiles ?? [], plan ? plan.error === null : true);
+      const at = plan?.error && r ? r.screenOf(plan.ship, plan.at.x, plan.at.y) : null;
+      placeHint.set(plan?.error && at ? { x: at.x, y: at.y, text: rejectionMessage(plan.error) } : null);
       return;
     }
+    placeHint.set(null);
     if (isMineTool()) {
       // Only the ore tiles show: those are what the pods will cut.
       const covered = paintStart ? shape() : hover ? [hover] : [];
@@ -265,7 +271,16 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     if (plan.error) showToast(rejectionMessage(plan.error));
     else sim.enqueue({ type: 'job.buildModule', ship: plan.ship, x: plan.at.x, y: plan.at.y, def: plan.def, rot: tool.get().rot });
   };
-  const rotate = () => setTool({ rot: (tool.get().rot + 1) % 4 });
+  const rotate = (back = false) => setTool({ rot: (tool.get().rot + (back ? 3 : 1)) % 4 });
+  /**
+   * Right-click / Escape in build mode: first drop the placement (the catalog stays open with nothing selected), then
+   * leave build mode. 'module' with no def is the "nothing selected" state.
+   */
+  const back = () => {
+    const t = tool.get();
+    if (t.tool === 'build' && !(t.build === 'module' && t.moduleDef === null)) setTool({ build: 'module', moduleDef: null });
+    else setTool({ tool: 'select' });
+  };
 
   const selectShip = (ship: number | null) => {
     selectTile(null);
@@ -283,6 +298,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
 
   return {
     tool,
+    placeHint,
     alerts,
     log,
     selectedModule: modSel,
@@ -387,13 +403,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           }
           refreshPreview();
         },
-        onBack: () => setTool({ tool: 'select' }),
-        onKey(key) {
+        onBack: back,
+        onKey(key, shift) {
           if (key === 'r') {
-            if (moduleMode()) rotate();
+            if (moduleMode()) rotate(shift);
             else toggleDraft();
           }
-          else if (tool.get().tool !== 'select') setTool({ tool: 'select' });
+          else if (tool.get().tool !== 'select') back();
           else selectTile(null);
         },
       };

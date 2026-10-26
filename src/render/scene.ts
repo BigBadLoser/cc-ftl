@@ -33,6 +33,7 @@ import { createAsteroidView } from './asteroidView';
 import { createMarkers } from './markers';
 import { createPodView } from './podView';
 import { createPortraits } from './portrait';
+import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
 import { createShipScene, type ShipScene } from './shipScene';
 
 export type { CutawayMode };
@@ -76,6 +77,8 @@ export interface Renderer {
   info(): RenderInfo;
   /** Head-and-shoulders portrait of a crew member (a PNG data URL, cached per look), or null while its sheets load. */
   portrait(id: number): string | null;
+  /** A module def's art as an image at a rotation (the build catalog's thumbnail), or null while its sheets load. */
+  moduleThumb(def: string, rot: number): ModuleThumb | null;
   /** Sheet streaming counters (decoded bytes resident, requests, pending...) and scene rebuilds, for the debug hook. */
   art(): AtlasStats & { rebuilds: number };
   /** Drag the view by a screen-space delta in CSS px. */
@@ -144,6 +147,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   canvas.addEventListener('webglcontextrestored', () => void atlas.contextRestored());
   if (high) initHalos(gl);
   const portraits = createPortraits(gl.extract, atlas, world, content.items);
+  const thumbs = createModuleThumbs(gl.extract, atlas, content.modules);
   const stage = new Container();
   const cam = createCamera(high ? 3 : 2);
   const scenes = new Map<number, ShipScene>();
@@ -429,6 +433,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return { sprites, zoom: cam.zoom };
     },
     portrait: (id) => portraits.url(id),
+    moduleThumb: (def, rot) => thumbs.get(def, rot),
     art: () => ({ ...atlas.stats(), rebuilds: art.rebuilds() }),
     pan: (dx, dy) => cam.pan(dx, dy),
     zoomAt: (f, x, y) => cam.zoomAt(f, x, y),

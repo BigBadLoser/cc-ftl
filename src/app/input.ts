@@ -14,8 +14,8 @@ export interface InputHandlers {
   onPaint(phase: 'start' | 'move' | 'end' | 'cancel', tile: Tile | null): void;
   /** Right-click: back out of the current tool. */
   onBack(): void;
-  /** Non-camera hotkeys: 'escape', 'r'. */
-  onKey(key: string): void;
+  /** Non-camera hotkeys: 'escape', 'r' (shift = the other way). */
+  onKey(key: string, shift?: boolean): void;
   /** Mouse hover tile (null when off-grid or pointer left). */
   onHover(tile: Tile | null): void;
   /** Height (tiles) above the ground that picked tiles are read at: the mining tool paints the tops of rock blocks. Default 0. */
@@ -158,7 +158,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
         raf = requestAnimationFrame(tick);
       }
     } else if (k === 'escape' || k === 'r') {
-      h.onKey(k);
+      h.onKey(k, e.shiftKey);
     } else if (k === '+' || k === '=' || k === '-' || k === '_') {
       const r = canvas.getBoundingClientRect();
       renderer.zoomAt(k === '-' || k === '_' ? 1 / KEY_ZOOM : KEY_ZOOM, r.width / 2, r.height / 2);
