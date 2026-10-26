@@ -40,6 +40,7 @@
   fx_mining the mining laser's beam segment, its hit on the rock, rock chips, the dust of a tile mined out (fx_mining.py)
   starmap   the starmap's pictures: sector bodies, structure icons, fleet icons (8 headings), a backdrop tile (starmap.py)
   cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
+  items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py) and planned items (items_tech.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -176,6 +177,9 @@ def jobs(name):
     if name == "cargo":
         from . import cargo
         return cargo.SPRITES, True
+    if name == "items":
+        from . import items_now, items_tech
+        return items_now.SPRITES + items_tech.SPRITES, True
     raise KeyError(name)
 
 
@@ -183,5 +187,5 @@ def jobs(name):
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
-            "pod_bay", "mining_pod", "fx_mining", "starmap", "cargo")
+            "pod_bay", "mining_pod", "fx_mining", "starmap", "cargo", "items")
 ALL = RENDERED + ("sol", "damage_sol")
