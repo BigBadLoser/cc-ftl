@@ -13,7 +13,9 @@ function hopsTo(sim: Sim, def: string): number | null {
     if (nodeOf(sim, n)?.structures.some((s) => s.def === def)) return d;
     for (const e of gi.adjacent.get(n) ?? []) {
       const o = e.a === n ? e.b : e.a;
-      if (!dist.has(o)) dist.set(o, d + 1), queue.push(o);
+      if (dist.has(o)) continue;
+      dist.set(o, d + 1);
+      queue.push(o);
     }
   }
   return null;
