@@ -2,6 +2,9 @@ import { assetBase, loadComposed } from '../render/assets/loader';
 import type { StaticAsset } from '../render/assets/manifest';
 import type { UiIcon } from '../ui/api';
 
+/** Items with no floor-stack art of their own, drawn with an existing sprite that fits (pipeline art, not code). */
+const ART_FALLBACK: Record<string, string> = { 'item.parts': 'decay.debris.parts' };
+
 /** CSS icon frames for items, cut from the medium floor-stack sprite of each (falls back to the small or the held one). */
 export async function loadItemIcons(ids: readonly string[]): Promise<Record<string, UiIcon>> {
   const base = assetBase();
@@ -19,7 +22,7 @@ export async function loadItemIcons(ids: readonly string[]): Promise<Record<stri
   };
   const out: Record<string, UiIcon> = {};
   for (const id of ids) {
-    const a = [`${id}.m`, `${id}.s`, `${id}.held`].map((k) => manifest.assets[k]).find((x): x is StaticAsset => x?.kind === 'static');
+    const a = [`${id}.m`, `${id}.s`, `${id}.held`, ART_FALLBACK[id] ?? ''].map((k) => manifest.assets[k]).find((x): x is StaticAsset => x?.kind === 'static');
     const sheet = a && manifest.sheets[a.sheet];
     if (!a || !sheet) continue;
     const src = base + sheet.image;

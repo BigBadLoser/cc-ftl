@@ -32,6 +32,7 @@ export function createEventLog(sim: Sim): EventLog {
   const ship = (id: number) => sim.world.get(id, ShipC);
   const mine = (id: number) => ship(id)?.faction === 'player';
   const shipName = (id: number) => ship(id)?.name ?? 'Ship';
+  const hireOf = (deal: number) => sim.trade.deals.find((d) => d.id === deal)?.crew?.[0];
   const trader = (id: number) => sim.world.get(id, TraderC)?.name ?? 'trader';
 
   function describe(e: SimEvent): Entry | null {
@@ -58,10 +59,17 @@ export function createEventLog(sim: Sim): EventLog {
       case 'production.done': return { kind: 'production', tone: 'good', text: `${sim.content.recipes[e.recipe]?.name ?? 'Batch'} finished` };
       case 'trade.hailAnswered': return { kind: 'hail', tone: 'info', text: `${e.name} answered the hail` };
       case 'trade.hailRefused': return { kind: 'hail', tone: 'warn', text: `${e.name} refused to talk` };
-      case 'trade.dealMade': return { kind: 'trade', tone: 'good', text: `Deal made with ${trader(e.ship)}` };
+      case 'trade.dealMade': {
+        const hire = hireOf(e.deal);
+        return { kind: 'trade', tone: 'good', text: hire ? `${crewName(hire)} hired: your shuttle is on its way to pick them up` : `Deal made with ${trader(e.ship)}` };
+      }
+      case 'crew.hired': return { kind: 'trade', tone: 'good', text: `${crewName(e.crew)} joins the crew` };
       case 'trade.delivered': return { kind: 'trade', tone: 'good', text: e.to === 'player' ? `Cargo from ${trader(e.ship)} arrived` : `Cargo delivered to ${trader(e.ship)}` };
       case 'trade.settled': return { kind: 'trade', tone: 'good', text: `Trade with ${trader(e.ship)} completed` };
-      case 'trade.failed': return { kind: 'trade', tone: 'warn', text: `Deal with ${trader(e.ship)} called off` };
+      case 'trade.failed': {
+        const hire = hireOf(e.deal);
+        return { kind: 'trade', tone: 'warn', text: hire ? `The hire of ${crewName(hire)} fell through: fee refunded` : `Deal with ${trader(e.ship)} called off` };
+      }
       case 'story.started': {
         const def = sim.content.events?.[e.event];
         return def ? { kind: 'story', tone: 'info', text: def.title } : null;

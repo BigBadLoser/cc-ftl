@@ -5,6 +5,7 @@ import { isTileWalkable } from '../modules/walk';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { ForHireC, StationCrewC } from '../stations/components';
+import { bumpStat } from '../story/goals';
 import { logRecruit } from '../galaxy/recruit';
 import { AboardC, EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
@@ -63,6 +64,7 @@ export function landRecruits(sim: Sim, d: Deal): boolean {
     if (a) a.faction = 'player';
     logRecruit(sim, hire.key);
     sim.galaxy.rev++;
+    bumpStat(sim, 'hired');
     sim.events.emit({ type: 'crew.hired', crew: c, role: crew?.role ?? '', cost: hire.cost });
   }
   return done;

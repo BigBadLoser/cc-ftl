@@ -95,6 +95,7 @@ describe('crew for hire', () => {
     const seen = run(sim, () => sim.world.get(c, AllegianceC)?.faction === 'player');
     expect(sim.world.get(c, AllegianceC)?.faction).toBe('player');
     expect(seen.some((e) => e.type === 'crew.hired')).toBe(true);
+    expect(sim.story.flags['stat.hired']).toBe(1);
     expect(sim.world.has(c, ForHireC)).toBe(false);
     expect(sim.world.has(c, AboardC)).toBe(false);
     expect(playerCrew(sim).length).toBe(crew + 1);
