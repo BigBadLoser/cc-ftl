@@ -166,6 +166,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     // Unarmed player crew know about every intruder aboard (a small ship): they keep away from all of them, not just those in view.
     // Others (station civilians) run only from what they see.
     if (faction === 'player') {
+      if (sim.world.has(id, EquipOrderC)) return; // on the way to arm (emergency arming): keep walking to the locker
       const threats = foes.map((o) => o.pos);
       // Hidden from every intruder: a rescue (on the way or just claimed, for a patient out of their sight) goes on instead of hiding.
       if (hiddenFrom(sim, grid, pos, threats)) {
