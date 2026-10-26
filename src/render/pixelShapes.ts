@@ -65,3 +65,20 @@ export function blockPx(x: number, y: number, w: number, h: number): Px[] {
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) out.push({ x: x + i, y: y + j });
   return out;
 }
+
+/**
+ * One continuous dash pattern along a whole polyline (its corner points, start first), counted in art pixels from the LAST point
+ * backwards: the dashes stay where they are while the walker's end of the line is cut off, and short legs and corners do not
+ * restart the pattern. The shared pixel at each corner is counted once.
+ */
+export function dashedPath(points: readonly Px[], on: number, off: number): Px[] {
+  const run: Px[] = [];
+  for (let i = points.length - 1; i > 0; i--) {
+    const a = points[i] as Px;
+    const b = points[i - 1] as Px;
+    const leg = linePx(a.x, a.y, b.x, b.y);
+    run.push(...(run.length ? leg.slice(1) : leg));
+  }
+  if (points.length === 1) run.push(points[0] as Px);
+  return dashPx(run, on, off);
+}

@@ -9,7 +9,7 @@ import { CrewC, DeadC, DraftedC, PathC, PositionC } from '../sim/crew/components
 import { AllegianceC } from '../sim/fight/components';
 import { Z_PX } from './heights';
 import { ART_SCALE as S, iso } from './iso';
-import { arrowHeadPx, blockPx, dashPx, ellipsePx, linePx, type Px } from './pixelShapes';
+import { arrowHeadPx, blockPx, dashedPath, ellipsePx, type Px } from './pixelShapes';
 
 export type OrderKind = 'move' | 'attack' | 'station' | 'board';
 
@@ -79,16 +79,10 @@ export function createOrderFx(world: World, parent: Container): OrderFx {
         const walk = world.get(id, PathC);
         const pos = world.get(id, PositionC);
         if (!d?.target || !walk || !pos || walk.steps.length === 0 || world.has(id, DeadC) || world.get(id, AllegianceC)?.faction !== 'player') continue;
-        let from = art(iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress));
-        let phase = 0;
-        for (const st of walk.steps) {
-          const to = art(iso(st.x, st.y));
-          const run = linePx(from.x, from.y, to.x, to.y);
-          // 2x2 art pixels thick, like the art's own pixel blocks
-          for (const d of dashPx(run, 3, 2, phase)) path.pts.push(d, { x: d.x + 1, y: d.y }, { x: d.x, y: d.y + 1 }, { x: d.x + 1, y: d.y + 1 });
-          phase += run.length - 1;
-          from = to;
-        }
+        // One dash pattern for the whole line, counted from the target end so the dashes hold still while the walker moves.
+        const corners = [art(iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress)), ...walk.steps.map((st) => art(iso(st.x, st.y)))];
+        // 2x2 art pixels thick, like the art's own pixel blocks
+        for (const d of dashedPath(corners, 3, 2)) path.pts.push(d, { x: d.x + 1, y: d.y }, { x: d.x, y: d.y + 1 }, { x: d.x + 1, y: d.y + 1 });
         const end = art(iso(d.target.x, d.target.y));
         ends.pts.push(...blockPx(end.x - 2, end.y - 2, 5, 5));
       }

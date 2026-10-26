@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrowHeadPx, blockPx, dashPx, ellipsePx, linePx } from './pixelShapes';
+import { arrowHeadPx, blockPx, dashPx, dashedPath, ellipsePx, linePx, type Px } from './pixelShapes';
 
 describe('pixel shapes', () => {
   it('draws an ellipse outline of whole pixels, symmetric about its centre and without repeats', () => {
@@ -35,5 +35,36 @@ describe('pixel shapes', () => {
     expect(a).toHaveLength(9);
     expect(a.filter((p) => p.y === 0)).toEqual([{ x: 0, y: 0 }]);
     expect(blockPx(1, 1, 3, 2)).toHaveLength(6);
+  });
+
+  describe('dashedPath', () => {
+    // Short legs, a corner and a diagonal: 2, 3, 1 and 4 pixels long between corners.
+    const pts: Px[] = [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 3 }, { x: 3, y: 3 }, { x: 7, y: 5 }];
+    const key = (p: Px): string => `${p.x},${p.y}`;
+    /** Every pixel of the polyline from the last point back, each shared corner once. */
+    const run = (): Px[] => {
+      const out: Px[] = [];
+      for (let i = pts.length - 1; i > 0; i--) out.push(...linePx((pts[i] as Px).x, (pts[i] as Px).y, (pts[i - 1] as Px).x, (pts[i - 1] as Px).y).slice(i === pts.length - 1 ? 0 : 1));
+      return out;
+    };
+
+    it('alternates 3 on and 2 off along the whole line, across corners and short legs', () => {
+      const all = run();
+      expect(all.length).toBeGreaterThan(10);
+      expect(dashedPath(pts, 3, 2).map(key)).toEqual(all.filter((_, i) => i % 5 < 3).map(key));
+    });
+
+    it('keeps the dashes in place when the walker end of the line is cut off', () => {
+      const full = new Set(dashedPath(pts, 3, 2).map(key));
+      for (const cut of [1, 2, 3]) {
+        const rest = dashedPath(pts.slice(cut), 3, 2);
+        expect(rest.length).toBeGreaterThan(0);
+        for (const p of rest) expect(full.has(key(p))).toBe(true);
+      }
+    });
+
+    it('handles a single point', () => {
+      expect(dashedPath([{ x: 4, y: 4 }], 3, 2)).toEqual([{ x: 4, y: 4 }]);
+    });
   });
 });
