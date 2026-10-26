@@ -1,6 +1,7 @@
 <script lang="ts" module>
   import type { UiNebulaTile } from './starmapApi';
   import { tokenRgb } from './starmapStyle';
+  import { createBlobCache } from './blobCache';
 
   const smooth = (a: number, b: number, v: number) => {
     const t = Math.max(0, Math.min(1, (v - a) / (b - a)));
@@ -35,7 +36,7 @@
 
   /** One hard-edged mask per density step (white where the density passes it), as image URLs, for the sprite tiles. */
   /** The baked nebula: the three masked texture layers composed once into one image (a blob URL), keyed by tiles and textures. */
-  let lastBake: { key: string; url: string } | null = null;
+  const bakes = createBlobCache((u) => URL.revokeObjectURL(u));
   // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a decode cache, nothing renders from it
   const decoded = new Map<string, Promise<HTMLImageElement>>();
   const decode = (url: string) => {
@@ -57,7 +58,8 @@
    */
   async function bake(tiles: UiNebulaTile[], x0: number, y0: number, cols: number, tex: string[]): Promise<string> {
     const key = tiles.map((t) => t.id).join('|');
-    if (lastBake?.key === key) return lastBake.url;
+    const hit = bakes.get(key);
+    if (hit) return hit;
     const { soft, w } = density(tiles, x0, y0, cols);
     const size = tiles[0]!.size;
     const W = w * UP;
@@ -102,7 +104,7 @@
     });
     const blob = await new Promise<Blob | null>((res) => out.toBlob(res));
     const url = blob ? URL.createObjectURL(blob) : '';
-    lastBake = { key, url };
+    if (url) bakes.put(key, url);
     return url;
   }
 
@@ -163,6 +165,7 @@
 
 <script lang="ts">
   import type { UiStarArt } from './starmapApi';
+  import { onDestroy } from 'svelte';
   import { frameUrl } from './starmapTint';
 
   /**
@@ -196,13 +199,12 @@
     let live = true;
     void bake(tiles, b.x0, b.y0, b.cols, t as string[]).then((u) => {
       if (!live || !u) return;
-      const old = baked?.url;
       baked = { box: b, url: u };
-      // The previous image has been replaced; free it once the new one is in place (the module cache keeps only the latest).
-      if (old && old !== u) setTimeout(() => URL.revokeObjectURL(old), 1000);
+      bakes.show(u);
     });
     return () => (live = false);
   });
+  onDestroy(() => bakes.show(null));
   const url = $derived(box && !tex ? paint(tiles, box.x0, box.y0, box.cols) : '');
 </script>
 
