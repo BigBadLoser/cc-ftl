@@ -150,7 +150,8 @@ describe('robot species', () => {
     expect(sim.world.get(robot, PositionC)).toMatchObject({ x: pos.x, y: pos.y });
     run(sim, 10);
     expect(sim.world.has(robot, StunC)).toBe(false);
-    applyEffects(sim, { shipId: nth(sim, 2), x: at.x + 3, y: at.y, projectile: 0, weapon: 'emp' }, [{ type: 'emp', seconds: 5, radius: 3 }]);
+    const now = sim.world.get(robot, PositionC)!; // it has moved since the first hit: aim the EMP at where it stands now
+    applyEffects(sim, { shipId: nth(sim, 2), x: now.toX + 3, y: now.toY, projectile: 0, weapon: 'emp' }, [{ type: 'emp', seconds: 5, radius: 3 }]);
     expect(sim.world.has(robot, StunC)).toBe(true);
   });
 });

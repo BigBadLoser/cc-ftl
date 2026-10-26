@@ -159,7 +159,7 @@ function run(sim: Sim, n: number, log: string[]): void {
 
 /**
  * Content as the pre-refactor code had it: the starter's crate held no fuel (the starmap added 16 units, which would change
- * the recorded world), and the medic had no medicine skill (it speeds up bed healing). Everything else is the live content,
+ * the recorded world), the starter had two engineers, and the medic had no medicine skill (it speeds up bed healing). Everything else is the live content,
  * so the recorded hashes still pin the refactor.
  */
 const medic: RoleDef = { ...content.roles['role.medic'] };
@@ -171,6 +171,7 @@ const legacy: typeof content = {
     ...content.ships,
     'ship.starter': {
       ...content.ships['ship.starter'],
+      crew: ['role.engineer', 'role.engineer', 'role.gunner', 'role.pilot', 'role.medic'], // the second engineer came off later
       modules: content.ships['ship.starter'].modules.map((m) => ('stock' in m && m.stock ? { ...m, stock: m.stock.filter((q) => q.item !== 'item.fuel') } : m)),
     },
   },

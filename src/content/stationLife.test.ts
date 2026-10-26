@@ -15,7 +15,8 @@ const run = (sim: Sim, n: number): SimEvent[] => {
 };
 const types = (ev: SimEvent[]): string[] => ev.map((e) => e.type);
 
-function station(kind = 'station.trading', size: 'outpost' | 'station' | 'hub' = 'outpost', seed = 4): { sim: Sim; st: number } {
+function station(kind = 'station.trading', size: 'outpost' | 'station' | 'hub' = 'outpost', seed = 6): { sim: Sim; st: number } {
+  // Seed 6, not 4: whether civilians see the intruder at the first post within the run depends on the sim's rng state, which the starter's crew size shifts.
   const sim = newGame(3, content);
   sim.enqueue({ type: 'debug.spawnStation', kind, size, seed });
   run(sim, 1);
