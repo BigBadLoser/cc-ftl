@@ -246,6 +246,8 @@ export interface RoleDef {
   loadout?: string[];
   /** Like `loadout`, but only for the player's own crew (so they can fight boarders without a draft); NPC crew of the role stay as they are. */
   playerLoadout?: string[];
+  /** Items (best first) this role's player crew may take from storage when intruders are aboard and they have no weapon (see fight/emergency.ts). */
+  emergencyLoadout?: string[];
   /** Species of crew spawned in this role (default 'species.human'). Robot variants are roles of robot species. */
   species?: string;
   /** A robot bay can assemble this role (module.assembleRobot): materials delivered, then `work` ticks at workSpeed 1. */

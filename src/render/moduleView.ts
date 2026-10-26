@@ -21,7 +21,7 @@ import { createCollarAnimator, dockedAt } from './airlockArt';
 import { layersOf } from './layerPick';
 import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, steady } from './vehicleBayArt';
-import { craftProgress, diagonalFront, moduleAssets, glowKey, layerKey, mannedConsoles, showsActive, type ModuleLayer } from './moduleArt';
+import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -58,6 +58,8 @@ interface Part {
   flip: boolean;
   /** Multiply tint of stand-in art (white for real art). */
   art: number;
+  /** False while the current frame of an animated layer has no glow (flicker-off). */
+  lit?: boolean;
 }
 interface Entry {
   sig: string;
@@ -216,7 +218,9 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
   /** Show the next frame of an animated layer on its existing parts: swap the textures, build nothing. */
   function swapFrame(parts: Part[], li: number, s: StaticSprite): void {
     for (const p of parts) {
-      if (p.li !== li || p.spr.texture === s.tex) continue;
+      if (p.li !== li) continue;
+      p.lit = !!s.glow;
+      if (p.spr.texture === s.tex) continue;
       p.spr.texture = s.tex;
       if (p.glow && s.glow) {
         p.glow.texture = s.glow;
@@ -244,8 +248,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
    * What a derelict's ruin does to a module's look: extra art ids to try first (state-suffix art, a ruin override such as a
    * broken light or a dormant fabricator, flickering) and a darkening factor when it has no art of its own.
    */
-  function ruinLook(id: number, m: Module, def: ModuleDefs[string], on: boolean, now: number): { chain: string[]; dark: number } {
-    const none = { chain: [] as string[], dark: 1 };
+  function ruinLook(id: number, m: Module, def: ModuleDefs[string], on: boolean, now: number): { art: string[]; suffix: string[]; dark: number } {
+    const none = { art: [] as string[], suffix: [] as string[], dark: 1 };
     const ruin = host.ruin?.();
     if (!ruin) return none;
     if (ruin !== ruinData) {
@@ -258,9 +262,9 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     const state = r.state === 'destroyed' ? (m.hp <= 0 ? 'destroyed' : '') : r.state === 'damaged' ? (m.hp < def.maxHp ? 'damaged' : '') : '';
     const art = r.art && !r.art.startsWith('decay.') && (state === 'destroyed' || !on) && (r.state !== 'damaged' || state === 'damaged' || !on) ? r.art : undefined;
     const blip = r.flicker && Math.floor(now / 170 + m.x * 7 + m.y * 3) % 3 === 0;
-    const chain = art && !blip ? [art] : [];
-    if (state && !art) chain.push(...moduleAssets(world, id, m, def, false).map((id) => `${id}.${state}`));
-    return { chain, dark: state === 'destroyed' ? 0.5 : state === 'damaged' ? 0.8 : 1 };
+    // The ruin's own art goes ahead of everything; its `.damaged` / `.destroyed` suffix stand-ins come after the live state art.
+    const suffix = state && !art ? moduleAssets(world, id, m, def, false).map((id) => `${id}.${state}`) : [];
+    return { art: art && !blip ? [art] : [], suffix, dark: state === 'destroyed' ? 0.5 : state === 'damaged' ? 0.8 : 1 };
   }
 
   function update(): void {
@@ -283,13 +287,17 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
         const roofed = host.roofed();
         const level = host.level();
+        const look = { off: !on && m.hp > 0, now, hp: m.hp, maxHp: def.maxHp, has: hasArt(def.asset) };
         const raw = layersOf(world, id, lm, def, {
-          active, now, livery: host.livery?.(), look: { off: !on && m.hp > 0, now, has: hasArt(def.asset) },
+          active, now, livery: host.livery?.(), look,
           airlock: { level, roofed, collar: def.airlock?.layout ? collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) : null },
           bay: def.vehicleBay ? bayAnim.stepOf(id, shuttleHome(world, id), now) : steady(true),
         });
         const wreck = ruinLook(id, m, def, on, now);
-        const withRuin = wreck.chain.length ? raw.map((l, i) => (i === 0 ? { ...l, chain: [...wreck.chain, ...l.chain] } : l)) : raw;
+        const ruined = wreck.art.length > 0 || wreck.suffix.length > 0;
+        const head = ruined ? stateArt(def, m.rot, active, look).head : [];
+        const headLen = head.every((h, i) => raw[0]?.chain[i] === h) ? head.length : 0;
+        const withRuin = ruined ? raw.map((l, i) => (i === 0 ? { ...l, chain: mergeRuinChain(l.chain, headLen, wreck.art, wreck.suffix) } : l)) : raw;
         const layers = withRuin.flatMap((layer) => {
           // Containers ride outside the hull: never under a roof.
           if (roofed && !def.container && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
@@ -318,7 +326,11 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           dropEntry(e);
           e = undefined;
         }
-        if (!e) mods.set(id, (e = { sig, parts: build(lm, def, layers, roofed) }));
+        // An animated layer is built from its base frame (which has the glow), then its frames swap texture on the same parts.
+        if (!e) mods.set(id, (e = { sig, parts: build(lm, def, ruined ? layers : layers.map((l) => {
+          const base = l.layer.anim && atlas.stat(l.layer.anim);
+          return base && base.glow ? { ...l, art: { ...l.art, s: base } } : l;
+        }), roofed) }));
         layers.forEach((l, i) => { if (l.layer.anim) swapFrame(e.parts, i, l.art.s); });
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
@@ -327,10 +339,10 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const base = def.container ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, tiles.length), false, pulse);
         const lit = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
         // A wreck without its own damaged / destroyed art is darkened instead.
-        const tint = wreck.dark < 1 && !wreck.chain.some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
+        const tint = wreck.dark < 1 && ![...wreck.art, ...wreck.suffix].some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
         for (const p of e.parts) {
           p.spr.tint = mulColor(tint, p.art);
-          for (const g of [p.glow, p.halo]) if (g) g.visible = on;
+          for (const g of [p.glow, p.halo]) if (g) g.visible = on && p.lit !== false;
           if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }
       }

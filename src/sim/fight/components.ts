@@ -20,6 +20,20 @@ export interface EquipOrder {
 }
 export const EquipOrderC = defineComponent<EquipOrder>('equipOrder');
 
+/** The wielded weapon was issued in an emergency (boarders aboard): it goes back to storage once the ship has been clear a while. */
+export interface EmergencyArm {
+  item: string;
+  /** Tick the ship was last seen clear of intruders (or became clear), or -1 while they are aboard. */
+  quietSince: number;
+}
+export const EmergencyArmC = defineComponent<EmergencyArm>('emergencyArm');
+
+/** Emergency-armed crew walking to a storage module to put their weapon back. */
+export interface StowOrder {
+  storage: number;
+}
+export const StowOrderC = defineComponent<StowOrder>('stowOrder');
+
 /**
  * Combat state of a crew member (created lazily by the crew combat system).
  * 'idle': not fighting, free to take jobs. 'engage': closing on or shooting `target`. 'flee': running from hostiles.

@@ -1,0 +1,343 @@
+{
+  "nativeTile": [
+    64,
+    32
+  ],
+  "displayScale": 2,
+  "SS": 4,
+  "samples": 4,
+  "blender": "4.2.9 LTS",
+  "sunEnergy": 3.9000000953674316,
+  "sunShadows": false,
+  "cameraEuler": [
+    1.0471975511965976,
+    0,
+    0.7853981633974483
+  ],
+  "frames": {
+    "reactor.r0.powered": {
+      "name": "reactor",
+      "rotation": 0,
+      "state": "powered",
+      "frameSize": [
+        90,
+        96
+      ],
+      "anchor": [
+        45,
+        94
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "geometryDigest": "31bf9e064cf58751882aa2e864028a3b51899c0a1924e865eeb51329d0a3c52d",
+      "approvedGeometryExact": true,
+      "glowPixels": 188
+    },
+    "reactor.r0.unpowered": {
+      "name": "reactor",
+      "rotation": 0,
+      "state": "unpowered",
+      "frameSize": [
+        90,
+        96
+      ],
+      "anchor": [
+        45,
+        94
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "geometryDigest": "31bf9e064cf58751882aa2e864028a3b51899c0a1924e865eeb51329d0a3c52d",
+      "approvedGeometryExact": true,
+      "glowPixels": 0
+    },
+    "reactor.r1.powered": {
+      "name": "reactor",
+      "rotation": 1,
+      "state": "powered",
+      "frameSize": [
+        90,
+        96
+      ],
+      "anchor": [
+        45,
+        94
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "geometryDigest": "23c07a8b118211743333e9ed95472b7a0a7406576eb8a7833c3bbd8a6160f135",
+      "approvedGeometryExact": true,
+      "glowPixels": 190
+    },
+    "reactor.r1.unpowered": {
+      "name": "reactor",
+      "rotation": 1,
+      "state": "unpowered",
+      "frameSize": [
+        90,
+        96
+      ],
+      "anchor": [
+        45,
+        94
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "geometryDigest": "23c07a8b118211743333e9ed95472b7a0a7406576eb8a7833c3bbd8a6160f135",
+      "approvedGeometryExact": true,
+      "glowPixels": 0
+    },
+    "reactor.r2.powered": {
+      "name": "reactor",
+      "rotation": 2,
+      "state": "powered",
+      "frameSize": [
+        90,
+        96
+      ],
+      "anchor": [
+        45,
+        94
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "geometryDigest": "d2e682c09033b7ecf3a751f998f3275a1069494b1b0c804cbc6819a801a130a0",
+      "approvedGeometryExact": true,
+      "glowPixels": 142
+    },
+    "reactor.r2.unpowered": {
+      "name": "reactor",
+      "rotation": 2,
+      "state": "unpowered",
+      "frameSize": [
+        90,
+        96
+      ],
+      "anchor": [
+        45,
+        94
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "geometryDigest": "d2e682c09033b7ecf3a751f998f3275a1069494b1b0c804cbc6819a801a130a0",
+      "approvedGeometryExact": true,
+      "glowPixels": 0
+    },
+    "reactor.r3.powered": {
+      "name": "reactor",
+      "rotation": 3,
+      "state": "powered",
+      "frameSize": [
+        90,
+        96
+      ],
+      "anchor": [
+        45,
+        94
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "geometryDigest": "2ec6f685dfa201dca9b0b83aac81a7266e4b847dfb651ee1de65deee06724954",
+      "approvedGeometryExact": true,
+      "glowPixels": 144
+    },
+    "reactor.r3.unpowered": {
+      "name": "reactor",
+      "rotation": 3,
+      "state": "unpowered",
+      "frameSize": [
+        90,
+        96
+      ],
+      "anchor": [
+        45,
+        94
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "geometryDigest": "2ec6f685dfa201dca9b0b83aac81a7266e4b847dfb651ee1de65deee06724954",
+      "approvedGeometryExact": true,
+      "glowPixels": 0
+    },
+    "life_support.r0.powered": {
+      "name": "life_support",
+      "rotation": 0,
+      "state": "powered",
+      "frameSize": [
+        80,
+        94
+      ],
+      "anchor": [
+        24,
+        83
+      ],
+      "footprint": [
+        1,
+        2
+      ],
+      "geometryDigest": "70046e93c30ee18f39995fd8e2374380315922bbae408718faa4d4e629c062d3",
+      "approvedGeometryExact": true,
+      "glowPixels": 16
+    },
+    "life_support.r0.unpowered": {
+      "name": "life_support",
+      "rotation": 0,
+      "state": "unpowered",
+      "frameSize": [
+        80,
+        94
+      ],
+      "anchor": [
+        24,
+        83
+      ],
+      "footprint": [
+        1,
+        2
+      ],
+      "geometryDigest": "70046e93c30ee18f39995fd8e2374380315922bbae408718faa4d4e629c062d3",
+      "approvedGeometryExact": true,
+      "glowPixels": 0
+    },
+    "life_support.r1.powered": {
+      "name": "life_support",
+      "rotation": 1,
+      "state": "powered",
+      "frameSize": [
+        80,
+        94
+      ],
+      "anchor": [
+        56,
+        83
+      ],
+      "footprint": [
+        2,
+        1
+      ],
+      "geometryDigest": "b96ad5425823fb3071429cae049f9c54d6c3a67da13d6e07ccb7e006716002d3",
+      "approvedGeometryExact": true,
+      "glowPixels": 16
+    },
+    "life_support.r1.unpowered": {
+      "name": "life_support",
+      "rotation": 1,
+      "state": "unpowered",
+      "frameSize": [
+        80,
+        94
+      ],
+      "anchor": [
+        56,
+        83
+      ],
+      "footprint": [
+        2,
+        1
+      ],
+      "geometryDigest": "b96ad5425823fb3071429cae049f9c54d6c3a67da13d6e07ccb7e006716002d3",
+      "approvedGeometryExact": true,
+      "glowPixels": 0
+    },
+    "life_support.r2.powered": {
+      "name": "life_support",
+      "rotation": 2,
+      "state": "powered",
+      "frameSize": [
+        80,
+        93
+      ],
+      "anchor": [
+        24,
+        82
+      ],
+      "footprint": [
+        1,
+        2
+      ],
+      "geometryDigest": "e7f8ee8bb61c7600ce5b3b55d1a2e2a41c94c84e1c99bcdf4c7861bc6166386d",
+      "approvedGeometryExact": true,
+      "glowPixels": 0
+    },
+    "life_support.r2.unpowered": {
+      "name": "life_support",
+      "rotation": 2,
+      "state": "unpowered",
+      "frameSize": [
+        80,
+        93
+      ],
+      "anchor": [
+        24,
+        82
+      ],
+      "footprint": [
+        1,
+        2
+      ],
+      "geometryDigest": "e7f8ee8bb61c7600ce5b3b55d1a2e2a41c94c84e1c99bcdf4c7861bc6166386d",
+      "approvedGeometryExact": true,
+      "glowPixels": 0
+    },
+    "life_support.r3.powered": {
+      "name": "life_support",
+      "rotation": 3,
+      "state": "powered",
+      "frameSize": [
+        80,
+        93
+      ],
+      "anchor": [
+        56,
+        82
+      ],
+      "footprint": [
+        2,
+        1
+      ],
+      "geometryDigest": "10336dbdb2a210994b4ce2c1ca343d894078f7eebdf9ed8cfb5875a8b45012ce",
+      "approvedGeometryExact": true,
+      "glowPixels": 0
+    },
+    "life_support.r3.unpowered": {
+      "name": "life_support",
+      "rotation": 3,
+      "state": "unpowered",
+      "frameSize": [
+        80,
+        93
+      ],
+      "anchor": [
+        56,
+        82
+      ],
+      "footprint": [
+        2,
+        1
+      ],
+      "geometryDigest": "10336dbdb2a210994b4ce2c1ca343d894078f7eebdf9ed8cfb5875a8b45012ce",
+      "approvedGeometryExact": true,
+      "glowPixels": 0
+    }
+  },
+  "approvedR0PixelIdentical": {
+    "reactor": true,
+    "life_support": true
+  }
+}
