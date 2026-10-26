@@ -43,7 +43,7 @@ function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
 }
 
 /** A structure's starmap icon: its sprite (a station held by pirates is their den) and the owner's tone for stations. */
-function iconOf(sim: Sim, def: string, faction: string | null): UiStarIcon {
+export function iconOf(sim: Sim, def: string, faction: string | null): UiStarIcon {
   const content = sim.content.galaxy;
   const d = content?.structures[def];
   const kind = faction ? content?.factions[faction]?.kind : undefined;
