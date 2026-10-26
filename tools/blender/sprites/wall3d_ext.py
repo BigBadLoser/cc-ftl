@@ -88,19 +88,17 @@ def ext_face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
     mt = tuple(1.0 if e == "out" else 0.0 for e in ends)
     H = top
     base = [(0.0, 0.0), (D, 0.0)] + _lean(H) + [(0.0, H)]
-    q, r = 1 / 32, 0.14                                 # T3-3's box: the base filled out upright, its top a px
-    box = [[(0.0, 0.0), (D, 0.0)] + [(d, z - q) for d, z in _arc(H, r, 6)] +             # under the cap's, its
-           _lean(H, H - q) + [(0.0, H)]]                                                     # edge rounded
+    def box(q, r=0.14):                                 # T3-3's box: the base filled out upright, its edge
+        return [(0.0, 0.0), (D, 0.0)] + [(d, z - q) for d, z in _arc(H, r, 6)] + \
+            (_lean(H, H - q) if q else []) + [(0.0, H)]  # rounded (q: its top that far under the cap's)
     if t == 3:
-        for pr in box:
-            prism(k, ax, plane, a, b, pr, F, 3, mitre=mt)
+        prism(k, ax, plane, a, b, box(1 / 32), F, 3, mitre=mt)
     elif t == 2:                                        # the base's lean a few px in from each side, T3-3's box
         e = 6 / 32                                      # between
         for s0, s1 in T.spans(a, b):
             first, last = abs(s0 - a) < 1e-6, abs(s1 - b) < 1e-6
             prism(k, ax, plane, s0, s0 + e, base, F, 3, mitre=(mt[0] if first else 0.0, 0.0))
-            for pr in box:
-                prism(k, ax, plane, s0 + e, s1 - e, pr, F, 3)
+            prism(k, ax, plane, s0 + e, s1 - e, box(0.0), F, 3)                                   # (flush)
             prism(k, ax, plane, s1 - e, s1, base, F, 3, mitre=(0.0, mt[1] if last else 0.0))
     elif t == 1:                                        # (measured off hull 46 T3-1)
         hc = H + T.LIP                                  # the cap's front, built back out round the slot (its top
