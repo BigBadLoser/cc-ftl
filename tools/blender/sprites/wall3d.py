@@ -335,7 +335,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         if field and w >= 0.36 and VARIANT[1] and rv:                  # of its panel, whatever its style)
             rv(lambda q, rr, lvl, bb, f=None: plate(k, q, pt, nrm, 0.0, rise + rr, f or fam, lvl, base=rise + bb),
                max(u0, a), min(u1, ub), run_, VARIANT[1], k=k, pt=lambda u, dd, h: pt(u, dd, rise + h),
-               P=lambda u, z, dd: P(ax, plane, u, z, dd), zs=zs, hole=hole, ax=ax, plane=plane)
+               P=lambda u, z, dd: P(ax, plane, u, z, dd), zs=zs, hole=hole, ax=ax, plane=plane, fam=fam)
         elif field and w >= 0.36 and sk == "outline":                   # a faction's plain outlined panel
             fu0, fu1 = max(u0, a) + 0.08, min(u1, ub) - 0.08                # (on the face, not the mitred run-on)
             fd0, fd1 = 0.15 * run_, 0.62 * run_

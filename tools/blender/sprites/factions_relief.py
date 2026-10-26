@@ -135,10 +135,27 @@ class FreeEnds:
     def end_face(self, ax, plane):
         return any(s == "+" + ax and abs(p - plane) < 1e-6 for s, p in self.end_sides)
 
-    def skip_skirt(self, i, j):                         # no ramp past a wall's end
+    def find_holes(self):
+        """A ramp variant's holes (STYLE ramp_hole): (ax, plane, u0, u1, d0, d1), one per stretch."""
+        self.holes = []
+        rh = (T.STYLE or {}).get("ramp_hole")
+        hd = rh(T.VARIANT[1]) if rh and T.VARIANT[1] else None
+        if hd:
+            off = (T.STYLE or {}).get("seam", T.STILE)
+            for ax, plane, a, b, _ in T.faces(self):
+                for s0, s1 in T.spans(a, b):
+                    if s1 - s0 > 2 * off + 0.3:
+                        self.holes.append((ax, T.snap(plane), s0 + off - hd[2], s1 - off + hd[2], hd[0] * self.run,
+                                           hd[1] * self.run))
+
+    def skip_skirt(self, i, j):                         # no ramp past a wall's end, nor over a ramp variant's hole
         c = {"x": (i + 0.5) / T.W.GN - 0.5, "y": (j + 0.5) / T.W.GN - 0.5}
         if any((c[s[1]] - p) * (1 if s[0] == "+" else -1) > 0 for s, p in self.end_sides):
             return True
+        for ax, plane, u0, u1, d0, d1 in getattr(self, "holes", ()):
+            u, d = (c["x"], c["y"] - plane) if ax == "y" else (c["y"], c["x"] - plane)
+            if u0 < u < u1 and d0 < d < d1:
+                return True
         return super().skip_skirt(i, j)
 
 
@@ -152,16 +169,7 @@ class NavyShell(FreeEnds, T.Shell):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.find_ends()
-        self.holes = []                                 # a ramp variant's hole: (ax, plane, u0, u1, d0, d1)
-        rh = (T.STYLE or {}).get("ramp_hole")
-        hd = rh(T.VARIANT[1]) if rh and T.VARIANT[1] else None
-        if hd:
-            off = (T.STYLE or {}).get("seam", T.STILE)
-            for ax, plane, a, b, _ in T.faces(self):
-                for s0, s1 in T.spans(a, b):
-                    if s1 - s0 > 2 * off + 0.3:
-                        self.holes.append((ax, T.snap(plane), s0 + off - hd[2], s1 - off + hd[2], hd[0] * self.run,
-                                           hd[1] * self.run))
+        self.find_holes()
         fh = (T.STYLE or {}).get("face_holes")                  # a top variant's openings in the face: (ax, plane,
         self.face_holes = []                                    # u0, u1, z0, z1)
         if fh and T.VARIANT[0]:
@@ -177,14 +185,6 @@ class NavyShell(FreeEnds, T.Shell):
                 lim = self.line[0] + self.line[1] - NAVY_C + 1e-9
                 self.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
                 self.diag = self.skirt_halves = True
-
-    def skip_skirt(self, i, j):                         # no ramp over a ramp variant's hole
-        x, y = (i + 0.5) / T.W.GN - 0.5, (j + 0.5) / T.W.GN - 0.5
-        for ax, plane, u0, u1, d0, d1 in self.holes:
-            u, d = (x, y - plane) if ax == "y" else (y, x - plane)
-            if u0 < u < u1 and d0 < d < d1:
-                return True
-        return super().skip_skirt(i, j)
 
     def drop_at(self, x, y):
         return 0.0
@@ -624,6 +624,13 @@ def civil(hull):
 
 BAST_L = 2 / 32                     # the lip: the wall below the cornice stands this far back from the ramp's edge
 BAST_R = 2 / 32                     # how far the recess is cut in behind that (two of the shell's cells)
+
+
+def bast_r():
+    """The recess's depth behind the lip: BAST_R, more for a top variant that wants a deeper cut
+    (factions_variants.BAST_DEEP)."""
+    from .factions_variants import BAST_DEEP
+    return BAST_R + BAST_DEEP.get(T.VARIANT[0], 0.0)
 BAST_P = T.STILE + 1 / 32           # a post's width
 BAST_K = 1 / 32                     # how far the cornice stands out past the wall's line
 BAST_C = 5 / 32                     # the corner chamfer's width along each axis, at the wall's line
@@ -642,7 +649,8 @@ class Recessed(FreeEnds, T.Shell):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.find_ends()                                # (a free end is not recessed, nor chamfered)
-        R = BAST_L + BAST_R
+        self.find_holes()
+        R = BAST_L + bast_r()
         body = []
         corner = None
         ends = {sd for sd, _ in self.end_sides}
@@ -689,7 +697,7 @@ class Recessed(FreeEnds, T.Shell):
         r = self._rect_at(x, y, 0.0)
         if r is None:
             return None
-        R = BAST_L + BAST_R
+        R = BAST_L + bast_r()
 
         def held(px, py):
             px, py = min(px, 0.5 - 1e-6), min(py, 0.5 - 1e-6)
@@ -748,11 +756,26 @@ def corner_piece(k, X, Y, C, prof, fam, lvl, cols=None, cap=None):
     k.poly(J2, fam, lvl, Vector((0, -1, 0)), fixed=cap)
 
 
+def _arm(ax, plane, u, top, i, side):
+    """How far a face's cornice runs on past its end at u (side -1: its low end; i: its index in END_TOPS) over the
+    arm of a lower wall that meets it there (a partition joining the far hull): the arm's width, else 0."""
+    lo = T.END_TOPS[i]
+    if lo is None or lo > top - 0.05:
+        return 0.0
+    e = 1e-3
+    r = T.SHELL._rect_at(*((u + side * e, plane + e) if ax == "y" else (plane + e, u + side * e)), 0.0)
+    if r is None:
+        return 0.0
+    x0, x1, y0, y1 = r[0]
+    lo_, hi = (x0, x1) if ax == "y" else (y0, y1)
+    return hi - u if side > 0 else u - lo_
+
+
 def bastion(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
         H = top - zs
-        R, C, L, PW = BAST_R, BAST_C, BAST_L, BAST_P
+        R, C, L, PW = bast_r(), BAST_C, BAST_L, BAST_P
         endf, end1, _, _ = _ends(ax, plane, b, ends)
         d0 = -(L + R) + EPS                             # the parts fill the cut from the recessed face out to the lip
         dl = -L                                         # (the cornice to the wall's line)
@@ -776,13 +799,14 @@ def bastion(hull):
         if not full:
             band(a, bb, zlo, top, 3)
             return
-        zsl = zlo + 0.12 * H                                                                     # the slope's top
+        zsl = zlo + 0.12 * min(H, T.W.HF - zs)          # the slope's top (a partition's on the hull too, so the cut's
+                                                        # parts line up where they meet)
         zc0 = top - 0.21
-        band(a - (BAST_K if ends[0] == "out" else 0.0), bb + kb, zc0, top - 0.02, 3, front=BAST_K, m=mt)  # cornice
+        ca, cb = _arm(ax, plane, a, top, 0, -1), _arm(ax, plane, b, top, 1, 1)   # (run on over a lower wall's arm)
+        band(a - (BAST_K if ends[0] == "out" else 0.0) - ca, bb + kb + cb, zc0, top - 0.02, 3, front=BAST_K,
+             m=(0.0 if ca else mt[0], 0.0 if cb else mt[1]))                                     # cornice
+        cp = []                                         # (what fills the cut, for the corner to carry round)
         for s0, s1 in T.spans(a, b):
-            for u in (s0 + 0.1, s1 - 0.1 - LINE):
-                if s1 - s0 > 0.5 and u + LINE < bb:
-                    T.paint(k, ax, plane, u, u + LINE, zc0, top - 0.02, BAST_K, F, 1)            # ... its joints
             ia, ib = ina and abs(s0 - a) < 1e-6, inb and abs(s1 - b) < 1e-6
             for lo, edge in ((True, s0), (False, s1)):           # the posts: the first shows its side too, so
                 if not lo and out and abs(edge - b) < 1e-6:      # it is narrower by the depth, and the two read
@@ -797,8 +821,11 @@ def bastion(hull):
             f1 = bb if corner or ib else min(s1 - PW, bb)
             if f1 - f0 < 0.1:
                 continue
-            prism(k, ax, plane, f0, f1, [(d0 + EPS, zlo), (dl, zlo), (d0 + EPS, zsl)], F, 3,
-                  mitre=(mt[0] if ia else 0.0, mt[1] if corner or ib else 0.0))                  # the slope into it
+            m = (mt[0] if ia else 0.0, mt[1] if corner or ib else 0.0)
+            if T.VARIANT[0] not in FV.BAST_FLAT:                                                 # the slope into
+                prism(k, ax, plane, f0, f1, [(d0 + EPS, zlo), (dl, zlo), (d0 + EPS, zsl)], F, 3,    # it (a variant
+                      mitre=m)                                                                   # may want it flat)
+            cp = FV.bastion_top(k, ax, plane + d0, f0, f1, zlo, zsl, zc0, top, F, T.VARIANT[0], m, d0) or cp
         if out and ax == "y":                           # round the chamfer, once (the corner is the y face's end):
             X, Y = b, plane                             # the same parts, their backs sunk into the shell's cut corner
             db = -(L + R) - 0.03
@@ -816,6 +843,8 @@ def bastion(hull):
             corner_piece(k, X, Y, C, [(db, zlo), (dl, zlo), (d0 + EPS, zsl), (db, zsl)], F, 3)      # the slope (its
             # face the faces' own, so its edges meet theirs; only its hidden back is sunk)
             corner_piece(k, X, Y, C, [(db, zc0), (BAST_K, zc0), (BAST_K, top - 0.02), (db, top - 0.02)], F, 3)
+            for pr, lvl in cp:
+                corner_piece(k, X, Y, C, [(db if abs(d - d0) < 1e-9 else d, z) for d, z in pr], F, lvl)
     return face
 
 

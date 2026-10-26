@@ -104,7 +104,9 @@ class Bastion(Faction):
 
     def relief(self, sprite):
         return _style(R.bastion, skirt="outline", slot=True, seam=0, shell=R.Recessed, end_out=-R.BAST_L,
-                      chamfer=R.BAST_CS)
+                      chamfer=R.BAST_CS, ramp_var=FV.bastion_ramp, ramp_hole=FV.bastion_hole, outline_lvl=1)
+
+    pairs = FV.BAST_PAIRS
 
 
 class Scrap(Faction):
