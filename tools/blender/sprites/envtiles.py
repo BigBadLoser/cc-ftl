@@ -19,6 +19,7 @@ and low (shortest: partitions are skirt-high stubs, every hull side is a ghost).
 from .doors import door
 from .floors import floor
 from .hull import drop, out_block, vert
+from .wall3d_ext import EXT_PAIRS, ext_block
 from .wall3d import block, end_face              # the relief walls (wall3d.py)
 from .wall3d_variants import PAIRS
 from .walls import corner_sets
@@ -70,6 +71,14 @@ for _o, _clear in OUT_MASK.items():
         if _o < 3:
             SPRITES.append((f"tile.hull.belly.o{_o}.m{_m}.v1", (1, 1), "block",
                             lambda m=_m, o=_o: out_block(m, o, 1, "belly")))
+        if _o < 4:                                                  # the hull from outside (roofed ships)
+            for _v in (0, 1):
+                SPRITES.append((f"tile.hull.ext.o{_o}.m{_m}{'.v1' if _v else ''}", (1, 1), "block",
+                                lambda m=_m, o=_o, v=_v: ext_block(m, o, v)))
+            if (_o, _m) in ((1, 10), (2, 5)):                       # (its straight runs' variants .a1 ..)
+                for _n, _tr in enumerate(EXT_PAIRS, 1):
+                    SPRITES.append((f"tile.hull.ext.o{_o}.m{_m}.a{_n}", (1, 1), "block",
+                                    _variant(lambda m=_m, o=_o: ext_block(m, o), _tr)))
 SPRITES.append(("tile.hull.ghost.vert", (1, 1), "ghost", vert))
 END_CORNERS = {"s": (0, 2, 4, 6), "e": (0, 1, 2, 3)}   # the corner fills reaching each end face's edge
 for _s in ("s", "e"):

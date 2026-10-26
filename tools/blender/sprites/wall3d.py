@@ -24,7 +24,9 @@ from .rockwall_stone import _clip, _end, _inset
 RAMPS = {"wall": (("wK", "wD", "wM", "wS", "wL", "wH"), ("wK", "wXD", "wXM", "wXS", "wXL", "wL")),
          "blue": (("bK", "bD", "bM", "bT", "bL", "bH"), ("bXK", "bXD", "bXM", "bD", "bM", "bXH")),
          "ochre": (("oK", "oD", "oM", "oT", "oL", "oH"), ("oXK", "oXD", "oXM", "oD", "oXH", "oH")),
-         "rose": (("rK", "rD", "rM", "rM", "rL", "rH"), ("rK", "rXD", "rXM", "rXM", "rXL", "rL"))}   # factions: a 2nd tone
+         "rose": (("rK", "rD", "rM", "rM", "rL", "rH"), ("rK", "rXD", "rXM", "rXM", "rXL", "rL")),  # factions: 2nd tone
+         "steel": (("hsK", "hsD", "hsM", "hsS", "hsL", "hsH"),                                     # the hull from
+                   ("hsXK", "hsXD", "hsXM", "hsXS", "hsXL", "hsL"))}                               # outside
 CUT = "wK"                                    # a sliced top (cutaway level)
 HARD = True                                   # hard edges: no chamfers, so an edge is one crisp line
 SHADE = 2                                     # how many ramp levels darker the shade (+x) side sits
@@ -438,9 +440,9 @@ def cap(k, sp):
         x0, x1, y0, y1 = r[0]
         ax, _ = along(sp, r, (x0 + x1) / 2, (y0 + y1) / 2)
         if ax:
-            a0, a1, b0, b1 = x0, x1, y0, y1 - BAND
+            a0, a1, b0, b1 = x0, x1, y0, y1 - getattr(sp, "cap_band", BAND)
         else:
-            a0, a1, b0, b1 = y0, y1, x0, x1 - BAND
+            a0, a1, b0, b1 = y0, y1, x0, x1 - getattr(sp, "cap_band", BAND)
         cuts = (0.16, 0.84) if sp.variant else (0.5,)
         edges = sorted({a0, a1} | {c - 0.5 + t for c in (-1, 0, 1) for t in (0.0,) + cuts if a0 < c - 0.5 + t < a1})
         for u0, u1 in zip(edges, edges[1:]):
@@ -456,7 +458,7 @@ def cap(k, sp):
             if len(poly) < 3:
                 continue
             mid = ((u0 + u1) / 2 + 0.5) % 1.0
-            fam = "ochre" if sp.variant and 0.16 < mid < 0.84 else "blue"
+            fam = "ochre" if sp.variant and 0.16 < mid < 0.84 else getattr(sp, "cap_fam", "blue")
             raised(k, poly, r[3], LIP, fam, 2)
 
 
@@ -504,10 +506,11 @@ def snap(plane):
     return math.floor((plane + 0.5) * W.GN + 0.5) / W.GN - 0.5
 
 
-def block(mask, fam, deco=None, name=None, level="cut", corners=0):
-    """walls.block in relief."""
+def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, dress=None):
+    """walls.block in relief. shell: a Shell class to build on instead of the look's; dress: the hull faces'
+    dressing instead of the look's (the exterior hull, wall3d_ext); a shell with no_skirt has no skirt plates."""
     global END_TOPS, SHELL
-    sp = SHELL = (STYLE or {}).get("shell", Shell)(mask, fam, level, 1 if deco == 1 else 0, corners)
+    sp = SHELL = (shell or (STYLE or {}).get("shell", Shell))(mask, fam, level, 1 if deco == 1 else 0, corners)
     k = Relief(name or f"wall3d_{fam}_{mask}_{level}_{corners}")
     W.emit(k.m, sp)
     cap(k, sp)
@@ -522,14 +525,15 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0):
                          for u, sd, t in ((a, -1, ends[0]), (b, 1, ends[1])))
         a, b = (snap(u) if t != "cont" else u for u, t in ((a, ends[0]), (b, ends[1])))   # (its ends too, so two
         k.side = ax                                                     # faces meet on the corner's diagonal)
-        skirt(k, sp, ax, plane, a, b, "blue" if hull else "wall", ends)
+        if not getattr(sp, "no_skirt", False):
+            skirt(k, sp, ax, plane, a, b, "blue" if hull else "wall", ends)
         if top <= sp.zs + 0.05:
             continue
         full = top > W.skirt_top() + W.CUT + 0.05            # the hull stays full in the cutaway
         k.top = None if full else top
         st = STYLE or {}
         if hull:
-            st.get("hull", hull_face)(k, ax, plane, a, b, ends, sp.zs, top, full, sp.variant)
+            (dress or st.get("hull", hull_face))(k, ax, plane, a, b, ends, sp.zs, top, full, sp.variant)
         else:
             st.get("wall", wall_face)(k, ax, plane, a, b, ends, sp.zs, top, full)
     return [k.m.build()]
