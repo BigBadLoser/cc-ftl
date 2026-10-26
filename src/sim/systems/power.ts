@@ -22,9 +22,10 @@ export function powerSystem(sim: Sim): void {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC) as Module;
     const def = sim.content.modules[m.def];
-    const grid = shipGrid(sim, shipIdOf(sim, m));
+    const ship = shipIdOf(sim, m);
+    const grid = shipGrid(sim, ship);
     if (!def || !grid) continue;
-    const key = shipIdOf(sim, m) * 65536 + networkOf(grid, m.x, m.y);
+    const key = ship * 65536 + networkOf(grid, m.x, m.y);
     const list = networks.get(key);
     if (list) list.push({ id, m, def });
     else networks.set(key, [{ id, m, def }]);
