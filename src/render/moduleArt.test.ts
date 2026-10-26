@@ -2,7 +2,7 @@ import type { World } from '../sim/ecs';
 import { describe, expect, it } from 'vitest';
 import type { Module } from '../sim/modules/components';
 import { content } from '../content';
-import { ANIM_FPS, animFrame, diagonalFront, frameCount, layerKey, moduleAssets, moduleLayers } from './moduleArt';
+import { ANIM_FPS, DAMAGED_BELOW, FLICKER_DARK_MS, FLICKER_LIT_MS, stateArt, animFrame, diagonalFront, frameCount, layerKey, moduleAssets, moduleLayers } from './moduleArt';
 import { depthKey } from './iso';
 
 const engine = content.modules['module.engine'];
@@ -111,5 +111,44 @@ describe('ore bin art', () => {
   it('ignores items with no ore art and falls back to the plain asset', () => {
     expect(head([{ item: 'item.metal', count: 5 }, { item: 'item.ice', count: 1 }])).toBe('module.storage_ore.r1.ice.fill1');
     expect(moduleAssets(hold(slots('item.metal', 3)), 1, m, bin, false).at(-1)).toBe('module.storage_ore');
+  });
+});
+
+
+describe('damage, flicker and destroyed art', () => {
+  const reactor = content.modules['module.reactor']!;
+  const base = 'module.reactor.r1';
+  const ids = new Set([base, `${base}.unpowered`, `${base}.damaged`, `${base}.damaged.flicker`, `${base}.destroyed`]);
+  const look = (o: { hp: number; off?: boolean; now?: number; has?: (id: string) => boolean }) =>
+    ({ off: !!o.off, now: o.now ?? 0, hp: o.hp, maxHp: reactor.maxHp, has: o.has ?? ((id: string) => ids.has(id)) });
+  const head = (l: ReturnType<typeof look>, active = false) => stateArt(reactor, 1, active, l).head[0];
+  const hurt = Math.floor(reactor.maxHp * DAMAGED_BELOW) - 1;
+
+  it('healthy powered and unpowered keep their usual art', () => {
+    expect(head(look({ hp: reactor.maxHp }))).toBeUndefined();
+    expect(head(look({ hp: reactor.maxHp, off: true }))).toBe(`${base}.unpowered`);
+  });
+  it('destroyed beats everything, damaged beats unpowered', () => {
+    expect(head(look({ hp: 0 }))).toBe(`${base}.destroyed`);
+    expect(head(look({ hp: 0, off: true }))).toBe(`${base}.destroyed`);
+    expect(head(look({ hp: hurt, off: true }))).toBe(`${base}.damaged.flicker`);
+  });
+  it('a powered damaged machine flickers 340 ms lit, 170 ms dark, swapping textures of one animation', () => {
+    const at = (now: number) => stateArt(reactor, 1, true, look({ hp: hurt, now }));
+    expect(at(0).head[0]).toBe(`${base}.damaged`);
+    expect(at(FLICKER_LIT_MS - 1).head[0]).toBe(`${base}.damaged`);
+    expect(at(FLICKER_LIT_MS).head[0]).toBe(`${base}.damaged.flicker`);
+    expect(at(FLICKER_LIT_MS + FLICKER_DARK_MS).head[0]).toBe(`${base}.damaged`);
+    expect(at(0).anim).toBe(`${base}.damaged`);
+    expect(at(FLICKER_LIT_MS).anim).toBe(at(0).anim);
+  });
+  it('is only slightly hurt above half hp', () => {
+    expect(head(look({ hp: reactor.maxHp * DAMAGED_BELOW }))).toBeUndefined();
+  });
+  it('art without damage or flicker variants falls back', () => {
+    const none = (id: string) => id === base;
+    expect(head(look({ hp: 0, has: none }))).toBeUndefined();
+    expect(head(look({ hp: hurt, has: none }))).toBeUndefined();
+    expect(head(look({ hp: hurt, has: (id) => id === `${base}.damaged` }))).toBe(`${base}.damaged`);
   });
 });

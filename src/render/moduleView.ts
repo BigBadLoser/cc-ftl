@@ -58,6 +58,8 @@ interface Part {
   flip: boolean;
   /** Multiply tint of stand-in art (white for real art). */
   art: number;
+  /** False while the current frame of an animated layer has no glow (flicker-off). */
+  lit?: boolean;
 }
 interface Entry {
   sig: string;
@@ -216,7 +218,9 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
   /** Show the next frame of an animated layer on its existing parts: swap the textures, build nothing. */
   function swapFrame(parts: Part[], li: number, s: StaticSprite): void {
     for (const p of parts) {
-      if (p.li !== li || p.spr.texture === s.tex) continue;
+      if (p.li !== li) continue;
+      p.lit = !!s.glow;
+      if (p.spr.texture === s.tex) continue;
       p.spr.texture = s.tex;
       if (p.glow && s.glow) {
         p.glow.texture = s.glow;
@@ -286,7 +290,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const raw = def.robotBay ? robotBayLayers(world, id, lm, def, now)
           : def.vehicleBay ? vehicleBayLayers(lm, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
           : def.airlock?.layout ? airlockLayers(world, id, lm, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
-          : moduleLayers(world, id, lm, def, active, true, host.livery?.(), { off: !on && m.hp > 0, now, has: hasArt(def.asset) });
+          : moduleLayers(world, id, lm, def, active, true, host.livery?.(), { off: !on && m.hp > 0, now, hp: m.hp, maxHp: def.maxHp, has: hasArt(def.asset) });
         const wreck = ruinLook(id, m, def, on, now);
         const withRuin = wreck.chain.length ? raw.map((l, i) => (i === 0 ? { ...l, chain: [...wreck.chain, ...l.chain] } : l)) : raw;
         const layers = withRuin.flatMap((layer) => {
@@ -317,7 +321,11 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           dropEntry(e);
           e = undefined;
         }
-        if (!e) mods.set(id, (e = { sig, parts: build(lm, def, layers, roofed) }));
+        // An animated layer is built from its base frame (which has the glow), then its frames swap texture on the same parts.
+        if (!e) mods.set(id, (e = { sig, parts: build(lm, def, wreck.chain.length ? layers : layers.map((l) => {
+          const base = l.layer.anim && atlas.stat(l.layer.anim);
+          return base && base.glow ? { ...l, art: { ...l.art, s: base } } : l;
+        }), roofed) }));
         layers.forEach((l, i) => { if (l.layer.anim) swapFrame(e.parts, i, l.art.s); });
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
@@ -329,7 +337,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const tint = wreck.dark < 1 && !wreck.chain.some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
         for (const p of e.parts) {
           p.spr.tint = mulColor(tint, p.art);
-          for (const g of [p.glow, p.halo]) if (g) g.visible = on;
+          for (const g of [p.glow, p.halo]) if (g) g.visible = on && p.lit !== false;
           if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }
       }
