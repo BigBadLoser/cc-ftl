@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, IonC, playerItems, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
+import { CombatC, CrewC, spawnCrew, IonC, playerItems, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
@@ -242,6 +242,7 @@ describe('weapons', () => {
     sim.enqueue({ type: 'module.setEnabled', id: gen, enabled: false });
     const fab = modulesOf(sim, 1, 'module.fabricator')[0] as number;
     sim.step(); // the raider exists once the spawn command has run: commands name it by ship id
+    spawnCrew(sim, nth(sim, 1), ['role.engineer']); // two hands on the hoses, as the starter once had
     aim(sim, 2, 1, fab);
     const events = run(sim, 20 * 60);
     expect(ofType(events, 'fire.started').length).toBeGreaterThan(0);

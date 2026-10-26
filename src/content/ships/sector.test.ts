@@ -24,6 +24,6 @@ describe('sector and ships', () => {
     expect(shipGrid(sim, shipIds(sim)[1]!)).toBeDefined();
     expect(sim.world.query(ShipC)).toHaveLength(2);
     expect(shipById(sim, shipIds(sim)[1] as number)?.faction).toBe('hostile');
-    expect(sim.world.query(CrewC).length).toBe(10);
+    expect(sim.world.query(CrewC).length).toBe(8);
   });
 });

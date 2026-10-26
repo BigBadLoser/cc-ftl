@@ -1,10 +1,11 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiGoals, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleList, buildStats } from './moduleSnapshot';
 import { buildSites } from './siteSnapshot';
 import { buildJobs } from './jobsSnapshot';
+import { buildStranded } from './strandedSnapshot';
 import { buildGoals } from './goalsSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCombat } from './combatSnapshot';
@@ -75,6 +76,7 @@ export interface Bridge {
   sites: Writable<UiSite[]>;
   jobs: Readable<UiJobs>;
   goals: Readable<UiGoals | null>;
+  stranded: Readable<UiStranded | null>;
   stats: Readable<UiStats>;
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
@@ -131,6 +133,8 @@ export function createBridge(sim: Sim): Bridge {
   const sites = createStore<UiSite[]>([]);
   const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], max: 0, mine: null });
   const goals = createStore<UiGoals | null>(null);
+  const stranded = createStore<UiStranded | null>(null);
+  let lastStranded = 'null';
   let lastGoals = '';
   let lastJobsKey = '';
   let lastSites = '[]';
@@ -238,6 +242,15 @@ export function createBridge(sim: Sim): Bridge {
     if (jk !== lastJobsKey) {
       lastJobsKey = jk;
       jobs.set(buildJobs(sim));
+    }
+    // Stranded without fuel: cheap checks, sent on when changed.
+    if ((frame >> 1) % 4 === 0) {
+      const st = buildStranded(sim);
+      const sk = JSON.stringify(st);
+      if (sk !== lastStranded) {
+        lastStranded = sk;
+        stranded.set(st);
+      }
     }
     // The goal chain: cheap, but only sent on when it changed.
     if ((frame >> 2) % 4 === 0) {
@@ -379,6 +392,7 @@ export function createBridge(sim: Sim): Bridge {
     sites,
     jobs,
     goals,
+    stranded,
     stats,
     stock,
     storages,

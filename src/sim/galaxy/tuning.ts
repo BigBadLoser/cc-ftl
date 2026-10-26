@@ -271,3 +271,14 @@ export const TRADE_CANDIDATES = 6;
 export const MINER_RARE_SHARE = 0.2;
 /** What a miner digs: the common ore, then the rare one (MINER_RARE_SHARE of the load). */
 export const MINER_ORE = ['item.iron_ore', 'item.rare_ore'] as const;
+
+/**
+ * Stranding (stranded.ts). A ship that cannot pay for any jump and finds no fuel on sale in its node may call for a tug. It arrives after DISTRESS_TURNS turns
+ * (game-time turns, TURN_SEC each) with enough fuel for DISTRESS_HOPS of the cheapest jumps (at least DISTRESS_MIN_FUEL units) at DISTRESS_MARKUP times the
+ * item's base price. The tug always delivers: the player pays what they can, and a shortfall costs DISTRESS_UNPAID_REP reputation with the traders.
+ */
+export const DISTRESS_TURNS = 2;
+export const DISTRESS_HOPS = 2;
+export const DISTRESS_MIN_FUEL = 6;
+export const DISTRESS_MARKUP = 3;
+export const DISTRESS_UNPAID_REP = 2;

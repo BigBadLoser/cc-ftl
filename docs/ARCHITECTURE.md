@@ -333,7 +333,7 @@ palette.json    the single palette, read by Blender scripts and the game
   economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
   below), `structure` (faction tile looks, see below), `galley`
-  (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below), `starmap` (the map's pictures, see below), `cargo` (a delivery job's sealed hard case, `item.cargo_crate.l` and `.held`, `sprites/cargo.py`) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
+  (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below), `starmap` (the map's pictures, see below), `cargo` (a delivery job's sealed hard case, `item.cargo_crate.l` and `.held`, `sprites/cargo.py`), `items` (the item pack, sheet `items`: `item.<id>.s/.m/.l/.held` for the items `env` does not draw, `sprites/items_now.py`, and for planned items not yet in content, `items_tech.py`, `items_materials.py`, `items_parts.py`, `items_goods.py`; shared shapes in `items_kit.py`) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
 - **Ore refinery (`sheet refinery`, not a `families.py` family):** a 3x4 prop with 4 rotations x idle, `.unpowered`, and a 4-frame
   `.active` loop (`.active`, `.active.f1` to `.f3`); ids `module.refinery.rN[.state]` plus aliases. It is exported by its own
@@ -1171,6 +1171,13 @@ The sim side is `clusterName` / `clusterType` / `cluster` on sectors and the `ga
 nebula tiles; colours as theme tones). The bridge builds it lazily (`warmStarmap` in idle slots, or on first open), keeps fuel and charge fresh while the screen is open, and rebuilds on `galaxy.rev`. `StarmapView` owns the camera, hit testing and hover and
 picks the level by zoom (sector below 2200 units across the short side, cluster below 11000, galaxy above); the level components draw with `starmapStyle.ts`, the only module that maps tones and danger to theme tokens. Flee mode (`flee` prop) restricts picks to
 nodes one jump away. While the map is open the world is not rendered.
+
+**Fuel economy and stranding** (user decisions 2026-10-26; `galaxy/stranded.ts`, `content/galaxyMarket.ts`, `content/trade.ts`). `item.fuel` is a market good: trade stations make 1/turn x size, mining outposts 0.6, farms 0.3, and every
+civilian station, outpost, farm and depot profile stocks it at a price near 8 credits. A purchase through the normal deal flow bumps `fuelBought` (goal `goal.buy_fuel`). The station panel's Trade tab has a **Refuel** button
+(`TradePane`: fill up to 24 units, one `trade.offer` then an automatic `trade.accept`) when the structure lists the `fuel` service. **Distress tug:** `isStranded` (active at a node, fuel below the cheapest adjacent jump) and no
+affordable fuel on sale in the node (`fuelOnSale`) allow `galaxy.distress`; it saves `GalaxyState.distress { node, sent, due }` and the tug arrives `DISTRESS_TURNS` (2) turns later (`stepDistress`, from `onTurn`): fuel for two
+of the cheapest jumps (at least 6) at 3x the item price. It always delivers: the player pays what they can, the unpaid part costs `DISTRESS_UNPAID_REP` reputation with the traders (no debt to track, never a dead end). UI: `StrandedBanner`
+(`api.stranded`, `app/strandedSnapshot.ts`). Save v52.
 
 **Debug commands:** `debug.galaxyReveal {radius}`, `debug.galaxyTeleport {node}`, `debug.chargeFtl`.
 

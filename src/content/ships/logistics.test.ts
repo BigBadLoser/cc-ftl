@@ -195,6 +195,8 @@ describe('logistics: salvage auto-transfer', () => {
 
   it('queues at once when the loot fills a shuttle, one order per site', () => {
     const { sim, site } = prizeSite(45);
+    // Keep the boarder off hauling: carried goods are not counted, and how soon it picks them up depends on the crew list.
+    for (const c of sim.world.query(CrewC)) if (shipIdOf(sim, sim.world.get(c, PositionC)) === site) sim.enqueue({ type: 'crew.setPriority', id: c, category: 'hauling', value: 0 });
     const all = play(sim, 120);
     expect(of(all, 'transfer.queued')).toHaveLength(1);
     expect(of(all, 'transfer.queued')[0]).toMatchObject({ from: site, items: 45, auto: true });
