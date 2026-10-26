@@ -168,6 +168,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     hunger: hungerOf(sim, id),
     mood: moodOf(sim, id),
     drafted: sim.world.has(id, DraftedC),
+    mechanical: !!sim.content.species[crew.species]?.mechanical,
     job,
     priorities: { ...(sim.world.get(id, PrioritiesC) ?? NONE) },
     defaults: { ...(role?.priorities ?? NONE) },

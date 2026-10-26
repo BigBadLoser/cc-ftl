@@ -264,6 +264,7 @@ const api: UiApi = {
       throw new Error('Test error from debug panel');
     }, 0);
   },
+  portrait: (id) => renderer?.portrait(id) ?? null,
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
   attachCanvas(canvas) {
