@@ -15,8 +15,10 @@ export function modulesSystem(sim: Sim): void {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    const grid = m && shipGrid(sim, shipIdOf(sim, m));
-    if (!m || !def || !grid?.has('o2') || !m.powered || m.hp <= 0) continue;
+    // Only running modules with a field effect act; check that before the ship lookup (pure checks, same result).
+    if (!m || !def || !m.powered || m.hp <= 0 || !(def.o2PerSec || def.co2ScrubPerSec || def.heatPerSec)) continue;
+    const grid = shipGrid(sim, shipIdOf(sim, m));
+    if (!grid?.has('o2')) continue;
 
     if (def.o2PerSec || def.co2ScrubPerSec) {
       const room = grid.get('room', m.x, m.y);

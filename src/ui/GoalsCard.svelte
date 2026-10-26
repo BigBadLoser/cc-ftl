@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiGoals } from './api';
   import Icon from './Icon.svelte';
+  import { readGoalsOpen, writeGoalsOpen } from './phoneHud';
 
   /**
    * The tutorial goal chain under the time controls: the act being played, its goals with a tick when met, and what the act
@@ -15,7 +16,11 @@
   /** Set when the player skips: the chain ending then is not a finished act. */
   let skipped = false;
   const KEY = 'cc.goalsCollapsed';
-  let collapsed = $state(read());
+  /** Phone: the card is a one-line chip, collapsed by default; its state lasts for the session (sessionStorage). */
+  let narrow = $state(false);
+  let openPhone = $state(readGoalsOpen());
+  let collapsedDesk = $state(read());
+  const collapsed = $derived(narrow ? !openPhone : collapsedDesk);
 
   function read(): boolean {
     try {
@@ -25,15 +30,24 @@
     }
   }
   function toggle() {
-    collapsed = !collapsed;
+    if (narrow) {
+      openPhone = !openPhone;
+      writeGoalsOpen(openPhone);
+      return;
+    }
+    collapsedDesk = !collapsedDesk;
     try {
-      localStorage.setItem(KEY, collapsed ? '1' : '0');
+      localStorage.setItem(KEY, collapsedDesk ? '1' : '0');
     } catch {
       /* not remembered */
     }
   }
 
   onMount(() => {
+    const mq = window.matchMedia('(max-width: 600px)');
+    const onMq = () => (narrow = mq.matches);
+    onMq();
+    mq.addEventListener('change', onMq);
     let timer: ReturnType<typeof setTimeout> | undefined;
     const unsub = api.goals.subscribe((g) => {
       // A new act (or the chain's end) after one was being played: show what was finished first.
@@ -45,6 +59,7 @@
       goals = g;
     });
     return () => {
+      mq.removeEventListener('change', onMq);
       unsub();
       clearTimeout(timer);
     };
@@ -58,14 +73,16 @@
     {#if finished.reward}<p class="reward">{finished.reward}</p>{/if}
   </section>
 {:else if goals}
-  <section class="card" data-testid="goals">
+  <section class="card" class:chip={narrow && collapsed} data-testid="goals">
     <div class="head">
       <button class="title" onclick={toggle} aria-expanded={!collapsed} data-testid="goals-toggle">
         <span class="act">Goals {goals.act}/{goals.acts}</span>
+        {#if narrow && collapsed}<span class="sep">·</span>{/if}
         <span class="name">{goals.title}</span>
-        {#if collapsed}<span class="left">{left} left</span>{/if}
+        {#if narrow}<Icon name={collapsed ? 'chevDown' : 'chevUp'} size={16} />
+        {:else if collapsed}<span class="left">{left} left</span>{/if}
       </button>
-      <button class="x" title="Skip the goals" aria-label="Skip the goals" data-testid="goals-skip" onclick={() => (confirmSkip = !confirmSkip)}><Icon name="close" size={14} /></button>
+      {#if !(narrow && collapsed)}<button class="x" title="Skip the goals" aria-label="Skip the goals" data-testid="goals-skip" onclick={() => (confirmSkip = !confirmSkip)}><Icon name="close" size={14} /></button>{/if}
     </div>
     {#if confirmSkip}
       <div class="confirm">
@@ -113,4 +130,10 @@
   .confirm .row { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
   .confirm button { min-height: 30px; }
   .confirm .danger { border-color: var(--red); color: var(--red); }
+  /* Phone chip: one line, name ellipsised, chevron at the right. */
+  .chip { padding: 0 8px; }
+  .title :global(.icon) { margin-left: auto; align-self: center; color: var(--cyan); }
+  .chip .title { min-height: 32px; align-items: center; min-width: 0; }
+  .chip .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sep { color: var(--dim); }
 </style>
