@@ -124,6 +124,7 @@ function repair(sim: Sim, job: Job, speed: number): WorkResult {
   const def = m && sim.content.modules[m.def];
   if (!m || !def) return 'done';
   m.hp = Math.min(def.maxHp, m.hp + (REPAIR_PER_SEC * speed) / TICK_HZ);
+  if (m.wrecked && m.hp >= def.maxHp / 2) delete m.wrecked;
   if (m.hp < def.maxHp) return 'working';
   if (playerShips(sim).has(shipIdOf(sim, m))) bumpStat(sim, 'repaired');
   return 'done';

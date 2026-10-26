@@ -11,6 +11,7 @@ import { addNotoriety, tallyLosses } from './heat';
 import { offersHere } from './jobOffers';
 import { repKey } from './standing';
 import { nodeState } from './state';
+import { planStarRoute } from './route';
 import { ShipC } from '../combat/components';
 import { BREACH_NOTORIETY, JOB_FAIL_REPUTATION, JOB_LOG_MAX, JOB_REPUTATION, MAX_JOBS } from './tuningJobs';
 import type { StationJob } from './types';
@@ -73,7 +74,7 @@ function remember(sim: Sim, key: string): void {
 
 /**
  * `jobs.accept`: take an offer at the player's node. A delivery's crate is set on deck (refused with no free floor for it); the job's destination is
- * marked discovered on the starmap.
+ * marked discovered on the starmap along with the nodes of the cheapest route to it.
  */
 export function acceptJob(sim: Sim, key: string): boolean {
   const g = sim.galaxy;
@@ -93,9 +94,12 @@ export function acceptJob(sim: Sim, key: string): boolean {
   g.jobs.push(job);
   remember(sim, key);
   bumpStat(sim, 'jobsTaken');
-  // The issuer says where: the destination (or the target's node) goes on the player's map.
+  // The issuer says where: the destination (or the target's node) goes on the player's map, with the cheapest way there, so the
+  // starmap can plot the whole trip (the planner only routes through discovered nodes) instead of showing a lone dot out of sensor range.
   const where = job.kind === 'delivery' ? job.to : job.node;
-  if (where) g.discovered[where] ??= sim.tick;
+  if (where) {
+    for (const n of planStarRoute(g, g.current, where, { known: false })?.path ?? [where]) g.discovered[n] ??= sim.tick;
+  }
   g.rev++;
   sim.events.emit({ type: 'job.accepted', id: job.id, kind: job.kind, issuer: job.issuer });
   return true;
